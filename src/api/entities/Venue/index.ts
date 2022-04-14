@@ -122,7 +122,7 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
       settlement.details(venueId),
     ]);
 
-    const { creator, venue_type: type } = venueInfo.unwrap();
+    const { creator, venueType: type } = venueInfo.unwrap();
 
     return {
       owner: new Identity({ did: identityIdToString(creator) }, context),

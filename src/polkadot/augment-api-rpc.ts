@@ -1,14 +1,14 @@
 // Auto-generated via `yarn polkadot-types-from-chain`, do not edit
 /* eslint-disable */
 
+import type { AugmentedRpc } from '@polkadot/rpc-core/types';
+import type { Metadata, StorageKey } from '@polkadot/types';
 import type {
   Bytes,
   HashMap,
   Json,
-  Metadata,
   Null,
   Option,
-  StorageKey,
   Text,
   U256,
   U64,
@@ -16,8 +16,8 @@ import type {
   bool,
   u32,
   u64,
-} from '@polkadot/types';
-import type { AnyNumber, Codec, IExtrinsic, ITuple, Observable } from '@polkadot/types/types';
+} from '@polkadot/types-codec';
+import type { AnyNumber, Codec, ITuple } from '@polkadot/types-codec/types';
 import type { ExtrinsicOrHash, ExtrinsicStatus } from '@polkadot/types/interfaces/author';
 import type { EpochAuthorship } from '@polkadot/types/interfaces/babe';
 import type { BeefySignedCommitment } from '@polkadot/types/interfaces/beefy';
@@ -25,11 +25,14 @@ import type { BlockHash } from '@polkadot/types/interfaces/chain';
 import type { PrefixedStorageKey } from '@polkadot/types/interfaces/childstate';
 import type { AuthorityId } from '@polkadot/types/interfaces/consensus';
 import type {
+  CodeUploadRequest,
+  CodeUploadResult,
   ContractCallRequest,
   ContractExecResult,
   ContractInstantiateResult,
   InstantiateRequest,
 } from '@polkadot/types/interfaces/contracts';
+import type { BlockStats } from '@polkadot/types/interfaces/dev';
 import type { CreatedBlock } from '@polkadot/types/interfaces/engine';
 import type {
   EthAccount,
@@ -73,6 +76,7 @@ import type {
   StorageData,
 } from '@polkadot/types/interfaces/runtime';
 import type {
+  MigrationStatusResult,
   ReadProof,
   RuntimeVersion,
   TraceBlockResponse,
@@ -87,6 +91,7 @@ import type {
   PeerInfo,
   SyncState,
 } from '@polkadot/types/interfaces/system';
+import type { IExtrinsic, Observable } from '@polkadot/types/types';
 import type {
   AssetComplianceResult,
   AssetDidResult,
@@ -108,7 +113,7 @@ import type {
   VoteCount,
 } from 'polymesh-types/polymesh';
 
-declare module '@polkadot/rpc-core/types.jsonrpc' {
+declare module '@polkadot/rpc-core/types/jsonrpc' {
   export interface RpcInterface {
     asset: {
       /**
@@ -197,6 +202,10 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
     };
     beefy: {
       /**
+       * Returns hash of the latest BEEFY finalized block as seen by this client.
+       **/
+      getFinalizedHead: AugmentedRpc<() => Observable<H256>>;
+      /**
        * Returns the block most recently finalized by BEEFY, alongside side its justification.
        **/
       subscribeJustifications: AugmentedRpc<() => Observable<BeefySignedCommitment>>;
@@ -267,6 +276,16 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
         ) => Observable<Option<StorageData>>
       >;
       /**
+       * Returns child storage entries for multiple keys at a specific block state
+       **/
+      getStorageEntries: AugmentedRpc<
+        (
+          childKey: PrefixedStorageKey | string | Uint8Array,
+          keys: Vec<StorageKey> | (StorageKey | string | Uint8Array | any)[],
+          at?: Hash | string | Uint8Array
+        ) => Observable<Vec<Option<StorageData>>>
+      >;
+      /**
        * Returns the hash of a child storage entry at a block state
        **/
       getStorageHash: AugmentedRpc<
@@ -308,7 +327,14 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
         (
           callRequest:
             | ContractCallRequest
-            | { origin?: any; dest?: any; value?: any; gasLimit?: any; inputData?: any }
+            | {
+                origin?: any;
+                dest?: any;
+                value?: any;
+                gasLimit?: any;
+                storageDepositLimit?: any;
+                inputData?: any;
+              }
             | string
             | Uint8Array,
           at?: BlockHash | string | Uint8Array
@@ -331,7 +357,15 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
         (
           request:
             | InstantiateRequest
-            | { origin?: any; endowment?: any; gasLimit?: any; code?: any; data?: any; salt?: any }
+            | {
+                origin?: any;
+                value?: any;
+                gasLimit?: any;
+                storageDepositLimit?: any;
+                code?: any;
+                data?: any;
+                salt?: any;
+              }
             | string
             | Uint8Array,
           at?: BlockHash | string | Uint8Array
@@ -345,6 +379,27 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
           address: AccountId | string | Uint8Array,
           at?: BlockHash | string | Uint8Array
         ) => Observable<Option<BlockNumber>>
+      >;
+      /**
+       * Upload new code without instantiating a contract from it
+       **/
+      uploadCode: AugmentedRpc<
+        (
+          uploadRequest:
+            | CodeUploadRequest
+            | { origin?: any; code?: any; storageDepositLimit?: any }
+            | string
+            | Uint8Array,
+          at?: BlockHash | string | Uint8Array
+        ) => Observable<CodeUploadResult>
+      >;
+    };
+    dev: {
+      /**
+       * Reexecute the specified `block_hash` and gather statistics while doing so
+       **/
+      getBlockStats: AugmentedRpc<
+        (at: Hash | string | Uint8Array) => Observable<Option<BlockStats>>
       >;
     };
     engine: {
@@ -692,13 +747,11 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
     };
     grandpa: {
       /**
-       * Prove finality for the range (begin; end] hash.
+       * Prove finality for the given block number, returning the Justification for the last block in the set.
        **/
       proveFinality: AugmentedRpc<
         (
-          begin: BlockHash | string | Uint8Array,
-          end: BlockHash | string | Uint8Array,
-          authoritiesSetId?: u64 | AnyNumber | Uint8Array
+          blockNumber: BlockNumber | AnyNumber | Uint8Array
         ) => Observable<Option<EncodedFinalityProofs>>
       >;
       /**
@@ -1100,8 +1153,15 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
         (
           block: Hash | string | Uint8Array,
           targets: Option<Text> | null | object | string | Uint8Array,
-          storageKeys: Option<Text> | null | object | string | Uint8Array
+          storageKeys: Option<Text> | null | object | string | Uint8Array,
+          methods: Option<Text> | null | object | string | Uint8Array
         ) => Observable<TraceBlockResponse>
+      >;
+      /**
+       * Check current migration state
+       **/
+      trieMigrationStatus: AugmentedRpc<
+        (at?: BlockHash | string | Uint8Array) => Observable<MigrationStatusResult>
       >;
     };
     syncstate: {
@@ -1205,5 +1265,5 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
        **/
       sha3: AugmentedRpc<(data: Bytes | string | Uint8Array) => Observable<H256>>;
     };
-  }
-}
+  } // RpcInterface
+} // declare module

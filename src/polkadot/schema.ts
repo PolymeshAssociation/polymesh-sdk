@@ -78,6 +78,33 @@ export default {
       divisible: 'bool',
       asset_type: 'AssetType',
     },
+    AssetMetadataName: 'Text',
+    AssetMetadataValue: 'Vec<u8>',
+    AssetMetadataLocalKey: 'u64',
+    AssetMetadataGlobalKey: 'u64',
+    AssetMetadataKey: {
+      _enum: {
+        Global: 'u64',
+        Local: 'u64',
+      },
+    },
+    AssetMetadataLockStatus: {
+      _enum: {
+        Unlocked: '',
+        Locked: '',
+        LockedUntil: 'Moment',
+      },
+    },
+    AssetMetadataValueDetail: {
+      expire: 'Option<Moment>',
+      lock_status: 'AssetMetadataLockStatus<Moment>',
+    },
+    AssetMetadataDescription: 'Text',
+    AssetMetadataSpec: {
+      url: 'Option<Url>',
+      description: 'Option<AssetMetadataDescription>',
+      type_def: 'Option<Vec<u8>>',
+    },
     PalletName: 'Text',
     DispatchableName: 'Text',
     AssetPermissions: {
@@ -432,7 +459,11 @@ export default {
         Custom: 'Vec<u8>',
       },
     },
-    InvestorZKProofData: 'Signature',
+    InvestorZKProofData: {
+      r: 'CompressedRistretto',
+      s: 'Scalar',
+    },
+    CompressedRistretto: '[u8; 32]',
     Scalar: '[u8; 32]',
     RistrettoPoint: '[u8; 32]',
     ZkProofData: {
@@ -644,13 +675,7 @@ export default {
         Proposal: 'Vec<u8>',
       },
     },
-    OffChainSignature: {
-      _enum: {
-        Ed25519: 'H512',
-        Sr25519: 'H512',
-        Ecdsa: 'H512',
-      },
-    },
+    OffChainSignature: 'MultiSignature',
     Authorization: {
       authorization_data: 'AuthorizationData',
       authorized_by: 'IdentityId',
@@ -703,23 +728,66 @@ export default {
       frozen: 'bool',
     },
     AuthorizationNonce: 'u64',
-    Counter: 'u64',
     Percentage: 'Permill',
-    TransferManager: {
-      _enum: {
-        CountTransferManager: 'Counter',
-        PercentageTransferManager: 'Percentage',
-      },
-    },
     RestrictionResult: {
       _enum: ['Valid', 'Invalid', 'ForceValid'],
     },
-    Memo: '[u8;32]',
+    Memo: '[u8; 32]',
     BridgeTx: {
       nonce: 'u32',
       recipient: 'AccountId',
       amount: 'Balance',
       tx_hash: 'H256',
+    },
+    AssetScope: {
+      _enum: {
+        Ticker: 'Ticker',
+      },
+    },
+    StatOpType: {
+      _enum: ['Count', 'Balance'],
+    },
+    StatType: {
+      op: 'StatOpType',
+      claim_issuer: 'Option<(ClaimType, IdentityId)>',
+    },
+    StatClaim: {
+      _enum: {
+        Accredited: 'bool',
+        Affiliate: 'bool',
+        Jurisdiction: 'Option<CountryCode>',
+      },
+    },
+    Stat1stKey: {
+      asset: 'AssetScope',
+      stat_type: 'StatType',
+    },
+    Stat2ndKey: {
+      _enum: {
+        NoClaimStat: '',
+        Claim: 'StatClaim',
+      },
+    },
+    StatUpdate: {
+      key2: 'Stat2ndKey',
+      value: 'Option<u128>',
+    },
+    TransferCondition: {
+      _enum: {
+        MaxInvestorCount: 'u64',
+        MaxInvestorOwnership: 'Percentage',
+        ClaimCount: '(StatClaim, IdentityId, u64, Option<u64>)',
+        ClaimOwnership: '(StatClaim, IdentityId, Percentage, Percentage)',
+      },
+    },
+    AssetTransferCompliance: {
+      paused: 'bool',
+      requirements: 'Vec<TransferCondition>',
+    },
+    TransferConditionExemptKey: {
+      asset: 'AssetScope',
+      op: 'StatOpType',
+      claim_type: 'Option<ClaimType>',
     },
     AssetCompliance: {
       paused: 'bool',
@@ -983,6 +1051,12 @@ export default {
       negative: 'bool',
       degree: 'u8',
     },
+    WeightPerClass: {
+      baseExtrinsic: 'Weight',
+      maxExtrinsic: 'Option<Weight>',
+      maxTotal: 'Option<Weight>',
+      reserved: 'Option<Weight>',
+    },
     TargetIdentity: {
       _enum: {
         ExternalAgent: '',
@@ -1100,7 +1174,7 @@ export default {
       sender_insufficient_balance: 'bool',
       portfolio_validity_result: 'PortfolioValidityResult',
       asset_frozen: 'bool',
-      statistics_result: 'Vec<TransferManagerResult>',
+      transfer_condition_result: 'Vec<TransferConditionResult>',
       compliance_result: 'AssetComplianceResult',
       result: 'bool',
     },
@@ -1111,8 +1185,8 @@ export default {
       sender_insufficient_balance: 'bool',
       result: 'bool',
     },
-    TransferManagerResult: {
-      tm: 'TransferManager',
+    TransferConditionResult: {
+      condition: 'TransferCondition',
       result: 'bool',
     },
     AGId: 'u32',

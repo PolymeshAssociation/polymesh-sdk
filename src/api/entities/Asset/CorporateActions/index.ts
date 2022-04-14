@@ -117,7 +117,7 @@ export class CorporateActions extends Namespace<Asset> {
 
     groupOfAgent.forEach(([storageKey, agentGroup]) => {
       const rawAgentGroup = agentGroup.unwrap();
-      if (rawAgentGroup.isPolymeshV1Caa) {
+      if (rawAgentGroup.isPolymeshV1PIA) {
         agentIdentities.push(
           new Identity({ did: identityIdToString(storageKey.args[1]) }, context)
         );

@@ -1,10 +1,10 @@
 // Auto-generated via `yarn polkadot-types-from-chain`, do not edit
 /* eslint-disable */
 
-import type { ApiTypes } from '@polkadot/api/types';
+import type { ApiTypes } from '@polkadot/api-base/types';
 
-declare module '@polkadot/api/types/errors' {
-  export interface AugmentedErrors<ApiType> {
+declare module '@polkadot/api-base/types/errors' {
+  export interface AugmentedErrors<ApiType extends ApiTypes> {
     asset: {
       /**
        * When extension already archived.
@@ -26,6 +26,34 @@ declare module '@polkadot/api/types/errors' {
        * The token is already divisible.
        **/
       AssetAlreadyDivisible: AugmentedError<ApiType>;
+      /**
+       * Asset Metadata Global type already exists.
+       **/
+      AssetMetadataGlobalKeyAlreadyExists: AugmentedError<ApiType>;
+      /**
+       * Asset Metadata key is missing.
+       **/
+      AssetMetadataKeyIsMissing: AugmentedError<ApiType>;
+      /**
+       * Asset Metadata Local type already exists for asset.
+       **/
+      AssetMetadataLocalKeyAlreadyExists: AugmentedError<ApiType>;
+      /**
+       * Maximum length of the asset metadata type name has been exceeded.
+       **/
+      AssetMetadataNameMaxLengthExceeded: AugmentedError<ApiType>;
+      /**
+       * Maximum length of the asset metadata type definition has been exceeded.
+       **/
+      AssetMetadataTypeDefMaxLengthExceeded: AugmentedError<ApiType>;
+      /**
+       * Asset Metadata value is locked.
+       **/
+      AssetMetadataValueIsLocked: AugmentedError<ApiType>;
+      /**
+       * Maximum length of the asset metadata value has been exceeded.
+       **/
+      AssetMetadataValueMaxLengthExceeded: AugmentedError<ApiType>;
       /**
        * An overflow while calculating the balance.
        **/
@@ -160,6 +188,20 @@ declare module '@polkadot/api/types/errors' {
        * Uncles already set in the block.
        **/
       UnclesAlreadySet: AugmentedError<ApiType>;
+    };
+    babe: {
+      /**
+       * A given equivocation report is valid but already previously reported.
+       **/
+      DuplicateOffenceReport: AugmentedError<ApiType>;
+      /**
+       * An equivocation proof provided as part of an equivocation report is invalid.
+       **/
+      InvalidEquivocationProof: AugmentedError<ApiType>;
+      /**
+       * A key ownership proof provided as part of an equivocation report is invalid.
+       **/
+      InvalidKeyOwnershipProof: AugmentedError<ApiType>;
     };
     balances: {
       /**
@@ -738,6 +780,28 @@ declare module '@polkadot/api/types/errors' {
        **/
       InvalidKey: AugmentedError<ApiType>;
     };
+    indices: {
+      /**
+       * The index was not available.
+       **/
+      InUse: AugmentedError<ApiType>;
+      /**
+       * The index was not already assigned.
+       **/
+      NotAssigned: AugmentedError<ApiType>;
+      /**
+       * The index is assigned to another account.
+       **/
+      NotOwner: AugmentedError<ApiType>;
+      /**
+       * The source and destination accounts are identical.
+       **/
+      NotTransfer: AugmentedError<ApiType>;
+      /**
+       * The index is permanent and may not be freed/changed.
+       **/
+      Permanent: AugmentedError<ApiType>;
+    };
     multiSig: {
       /**
        * Already a signer.
@@ -824,9 +888,13 @@ declare module '@polkadot/api/types/errors' {
        **/
       RequiredSignaturesOutOfBounds: AugmentedError<ApiType>;
       /**
+       * Signer is an account key that is already associated with an identity.
+       **/
+      SignerAlreadyLinkedToIdentity: AugmentedError<ApiType>;
+      /**
        * Signer is an account key that is already associated with a multisig.
        **/
-      SignerAlreadyLinked: AugmentedError<ApiType>;
+      SignerAlreadyLinkedToMultisig: AugmentedError<ApiType>;
       /**
        * More signers than required.
        **/
@@ -1373,21 +1441,29 @@ declare module '@polkadot/api/types/errors' {
     };
     statistics: {
       /**
-       * The transfer manager already exists
+       * A Stattype is in use and can't be removed.
        **/
-      DuplicateTransferManager: AugmentedError<ApiType>;
+      CannotRemoveStatTypeInUse: AugmentedError<ApiType>;
       /**
-       * Transfer not allowed
+       * Transfer not allowed.
        **/
       InvalidTransfer: AugmentedError<ApiType>;
       /**
-       * Transfer manager is not enabled
+       * The limit of StatTypes allowed for an asset has been reached.
        **/
-      TransferManagerMissing: AugmentedError<ApiType>;
+      StatTypeLimitReached: AugmentedError<ApiType>;
       /**
-       * The limit of transfer managers allowed for an asset has been reached
+       * StatType is not enabled.
        **/
-      TransferManagersLimitReached: AugmentedError<ApiType>;
+      StatTypeMissing: AugmentedError<ApiType>;
+      /**
+       * StatType is needed by TransferCondition.
+       **/
+      StatTypeNeededByTransferCondition: AugmentedError<ApiType>;
+      /**
+       * The limit of TransferConditions allowed for an asset has been reached.
+       **/
+      TransferConditionLimitReached: AugmentedError<ApiType>;
     };
     sto: {
       /**
@@ -1542,6 +1618,7 @@ declare module '@polkadot/api/types/errors' {
        **/
       OnlyPrimaryKeyAllowed: AugmentedError<ApiType>;
     };
+    testUtils: {};
     treasury: {
       /**
        * Proposer's balance is too low.
@@ -1635,7 +1712,5 @@ declare module '@polkadot/api/types/errors' {
        **/
       TargetCddMissing: AugmentedError<ApiType>;
     };
-  }
-
-  export interface DecoratedErrors<ApiType extends ApiTypes> extends AugmentedErrors<ApiType> {}
-}
+  } // AugmentedErrors
+} // declare module

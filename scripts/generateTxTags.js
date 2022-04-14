@@ -27,7 +27,7 @@ websocket.onmessage = message => {
   const registry = new TypeRegistry();
 
   const metadata = new Metadata(registry, JSON.parse(message.data).result);
-  const modules = metadata.asLatest.modules;
+  const modules = metadata.asLatest.pallets;
 
   // add new calls to historic ones
   modules.forEach(({ name, calls }) => {

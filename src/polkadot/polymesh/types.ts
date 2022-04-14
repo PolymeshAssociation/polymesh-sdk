@@ -10,24 +10,25 @@ import type {
   U8aFixed,
   Vec,
   bool,
+  u128,
   u16,
   u32,
   u64,
   u8,
-} from '@polkadot/types';
-import type { ITuple } from '@polkadot/types/types';
-import type { Signature } from '@polkadot/types/interfaces/extrinsics';
+} from '@polkadot/types-codec';
+import type { ITuple } from '@polkadot/types-codec/types';
+import type { MultiSignature, Signature } from '@polkadot/types/interfaces/extrinsics';
 import type {
   AccountId,
   Balance,
   BlockNumber,
   Call,
   H256,
-  H512,
   Hash,
   MultiAddress,
   Perbill,
   Permill,
+  Weight,
 } from '@polkadot/types/interfaces/runtime';
 import type { AccountInfoWithDualRefCount, DispatchError } from '@polkadot/types/interfaces/system';
 
@@ -42,6 +43,7 @@ export interface AffirmationStatus extends Enum {
   readonly isUnknown: boolean;
   readonly isPending: boolean;
   readonly isAffirmed: boolean;
+  readonly type: 'Unknown' | 'Pending' | 'Affirmed';
 }
 
 /** @name AgentGroup */
@@ -50,8 +52,9 @@ export interface AgentGroup extends Enum {
   readonly isCustom: boolean;
   readonly asCustom: AGId;
   readonly isExceptMeta: boolean;
-  readonly isPolymeshV1Caa: boolean;
-  readonly isPolymeshV1Pia: boolean;
+  readonly isPolymeshV1CAA: boolean;
+  readonly isPolymeshV1PIA: boolean;
+  readonly type: 'Full' | 'Custom' | 'ExceptMeta' | 'PolymeshV1CAA' | 'PolymeshV1PIA';
 }
 
 /** @name AGId */
@@ -76,6 +79,7 @@ export interface AssetDidResult extends Enum {
   readonly asOk: IdentityId;
   readonly isErr: boolean;
   readonly asErr: Bytes;
+  readonly type: 'Ok' | 'Err';
 }
 
 /** @name AssetIdentifier */
@@ -88,6 +92,53 @@ export interface AssetIdentifier extends Enum {
   readonly asIsin: U8aFixed;
   readonly isLei: boolean;
   readonly asLei: U8aFixed;
+  readonly type: 'Cusip' | 'Cins' | 'Isin' | 'Lei';
+}
+
+/** @name AssetMetadataDescription */
+export interface AssetMetadataDescription extends Text {}
+
+/** @name AssetMetadataGlobalKey */
+export interface AssetMetadataGlobalKey extends u64 {}
+
+/** @name AssetMetadataKey */
+export interface AssetMetadataKey extends Enum {
+  readonly isGlobal: boolean;
+  readonly asGlobal: u64;
+  readonly isLocal: boolean;
+  readonly asLocal: u64;
+  readonly type: 'Global' | 'Local';
+}
+
+/** @name AssetMetadataLocalKey */
+export interface AssetMetadataLocalKey extends u64 {}
+
+/** @name AssetMetadataLockStatus */
+export interface AssetMetadataLockStatus extends Enum {
+  readonly isUnlocked: boolean;
+  readonly isLocked: boolean;
+  readonly isLockedUntil: boolean;
+  readonly asLockedUntil: Moment;
+  readonly type: 'Unlocked' | 'Locked' | 'LockedUntil';
+}
+
+/** @name AssetMetadataName */
+export interface AssetMetadataName extends Text {}
+
+/** @name AssetMetadataSpec */
+export interface AssetMetadataSpec extends Struct {
+  readonly url: Option<Url>;
+  readonly description: Option<AssetMetadataDescription>;
+  readonly type_def: Option<Bytes>;
+}
+
+/** @name AssetMetadataValue */
+export interface AssetMetadataValue extends Bytes {}
+
+/** @name AssetMetadataValueDetail */
+export interface AssetMetadataValueDetail extends Struct {
+  readonly expire: Option<Moment>;
+  readonly lock_status: AssetMetadataLockStatus;
 }
 
 /** @name AssetName */
@@ -98,6 +149,7 @@ export interface AssetOwnershipRelation extends Enum {
   readonly isNotOwned: boolean;
   readonly isTickerOwned: boolean;
   readonly isAssetOwned: boolean;
+  readonly type: 'NotOwned' | 'TickerOwned' | 'AssetOwned';
 }
 
 /** @name AssetPermissions */
@@ -107,6 +159,20 @@ export interface AssetPermissions extends Enum {
   readonly asThese: Vec<Ticker>;
   readonly isExcept: boolean;
   readonly asExcept: Vec<Ticker>;
+  readonly type: 'Whole' | 'These' | 'Except';
+}
+
+/** @name AssetScope */
+export interface AssetScope extends Enum {
+  readonly isTicker: boolean;
+  readonly asTicker: Ticker;
+  readonly type: 'Ticker';
+}
+
+/** @name AssetTransferCompliance */
+export interface AssetTransferCompliance extends Struct {
+  readonly paused: bool;
+  readonly requirements: Vec<TransferCondition>;
 }
 
 /** @name AssetType */
@@ -123,6 +189,18 @@ export interface AssetType extends Enum {
   readonly isCustom: boolean;
   readonly asCustom: CustomAssetTypeId;
   readonly isStableCoin: boolean;
+  readonly type:
+    | 'EquityCommon'
+    | 'EquityPreferred'
+    | 'Commodity'
+    | 'FixedIncome'
+    | 'Reit'
+    | 'Fund'
+    | 'RevenueShareAgreement'
+    | 'StructuredProduct'
+    | 'Derivative'
+    | 'Custom'
+    | 'StableCoin';
 }
 
 /** @name Authorization */
@@ -154,6 +232,17 @@ export interface AuthorizationData extends Enum {
   readonly asAddRelayerPayingKey: ITuple<[AccountId, AccountId, Balance]>;
   readonly isRotatePrimaryKeyToSecondary: boolean;
   readonly asRotatePrimaryKeyToSecondary: Permissions;
+  readonly type:
+    | 'AttestPrimaryKeyRotation'
+    | 'RotatePrimaryKey'
+    | 'TransferTicker'
+    | 'AddMultiSigSigner'
+    | 'TransferAssetOwnership'
+    | 'JoinIdentity'
+    | 'PortfolioCustody'
+    | 'BecomeAgent'
+    | 'AddRelayerPayingKey'
+    | 'RotatePrimaryKeyToSecondary';
 }
 
 /** @name AuthorizationNonce */
@@ -171,6 +260,17 @@ export interface AuthorizationType extends Enum {
   readonly isBecomeAgent: boolean;
   readonly isAddRelayerPayingKey: boolean;
   readonly isRotatePrimaryKeyToSecondary: boolean;
+  readonly type:
+    | 'AttestPrimaryKeyRotation'
+    | 'RotatePrimaryKey'
+    | 'TransferTicker'
+    | 'AddMultiSigSigner'
+    | 'TransferAssetOwnership'
+    | 'JoinIdentity'
+    | 'PortfolioCustody'
+    | 'BecomeAgent'
+    | 'AddRelayerPayingKey'
+    | 'RotatePrimaryKeyToSecondary';
 }
 
 /** @name BallotMeta */
@@ -224,6 +324,7 @@ export interface BridgeTxStatus extends Enum {
   readonly isFrozen: boolean;
   readonly isTimelocked: boolean;
   readonly isHandled: boolean;
+  readonly type: 'Absent' | 'Pending' | 'Frozen' | 'Timelocked' | 'Handled';
 }
 
 /** @name CACheckpoint */
@@ -232,6 +333,7 @@ export interface CACheckpoint extends Enum {
   readonly asScheduled: ITuple<[ScheduleId, u64]>;
   readonly isExisting: boolean;
   readonly asExisting: CheckpointId;
+  readonly type: 'Scheduled' | 'Existing';
 }
 
 /** @name CADetails */
@@ -250,6 +352,12 @@ export interface CAKind extends Enum {
   readonly isIssuerNotice: boolean;
   readonly isReorganization: boolean;
   readonly isOther: boolean;
+  readonly type:
+    | 'PredictableBenefit'
+    | 'UnpredictableBenefit'
+    | 'IssuerNotice'
+    | 'Reorganization'
+    | 'Other';
 }
 
 /** @name CalendarPeriod */
@@ -267,6 +375,7 @@ export interface CalendarUnit extends Enum {
   readonly isWeek: boolean;
   readonly isMonth: boolean;
   readonly isYear: boolean;
+  readonly type: 'Second' | 'Minute' | 'Hour' | 'Day' | 'Week' | 'Month' | 'Year';
 }
 
 /** @name CanTransferResult */
@@ -275,6 +384,7 @@ export interface CanTransferResult extends Enum {
   readonly asOk: u8;
   readonly isErr: boolean;
   readonly asErr: Bytes;
+  readonly type: 'Ok' | 'Err';
 }
 
 /** @name CappedFee */
@@ -289,6 +399,7 @@ export interface CddStatus extends Enum {
   readonly asOk: IdentityId;
   readonly isErr: boolean;
   readonly asErr: Bytes;
+  readonly type: 'Ok' | 'Err';
 }
 
 /** @name CheckpointId */
@@ -328,6 +439,19 @@ export interface Claim extends Enum {
   readonly isNoData: boolean;
   readonly isInvestorUniquenessV2: boolean;
   readonly asInvestorUniquenessV2: CddId;
+  readonly type:
+    | 'Accredited'
+    | 'Affiliate'
+    | 'BuyLockup'
+    | 'SellLockup'
+    | 'CustomerDueDiligence'
+    | 'KnowYourCustomer'
+    | 'Jurisdiction'
+    | 'Exempted'
+    | 'Blocked'
+    | 'InvestorUniqueness'
+    | 'NoData'
+    | 'InvestorUniquenessV2';
 }
 
 /** @name Claim1stKey */
@@ -356,6 +480,19 @@ export interface ClaimType extends Enum {
   readonly isInvestorUniqueness: boolean;
   readonly isNoData: boolean;
   readonly isInvestorUniquenessV2: boolean;
+  readonly type:
+    | 'Accredited'
+    | 'Affiliate'
+    | 'BuyLockup'
+    | 'SellLockup'
+    | 'CustomerDueDiligence'
+    | 'KnowYourCustomer'
+    | 'Jurisdiction'
+    | 'Exempted'
+    | 'Blocked'
+    | 'InvestorUniqueness'
+    | 'NoData'
+    | 'InvestorUniquenessV2';
 }
 
 /** @name ClassicTickerImport */
@@ -376,6 +513,7 @@ export interface ClassicTickerRegistration extends Struct {
 export interface Committee extends Enum {
   readonly isTechnical: boolean;
   readonly isUpgrade: boolean;
+  readonly type: 'Technical' | 'Upgrade';
 }
 
 /** @name ComplianceRequirement */
@@ -392,6 +530,9 @@ export interface ComplianceRequirementResult extends Struct {
   readonly id: u32;
   readonly result: bool;
 }
+
+/** @name CompressedRistretto */
+export interface CompressedRistretto extends U8aFixed {}
 
 /** @name Condition */
 export interface Condition extends Struct {
@@ -417,6 +558,7 @@ export interface ConditionType extends Enum {
   readonly asIsNoneOf: Vec<Claim>;
   readonly isIsIdentity: boolean;
   readonly asIsIdentity: TargetIdentity;
+  readonly type: 'IsPresent' | 'IsAbsent' | 'IsAnyOf' | 'IsNoneOf' | 'IsIdentity';
 }
 
 /** @name CorporateAction */
@@ -428,9 +570,6 @@ export interface CorporateAction extends Struct {
   readonly default_withholding_tax: Tax;
   readonly withholding_tax: Vec<ITuple<[IdentityId, Tax]>>;
 }
-
-/** @name Counter */
-export interface Counter extends u64 {}
 
 /** @name CountryCode */
 export interface CountryCode extends Enum {
@@ -684,6 +823,257 @@ export interface CountryCode extends Enum {
   readonly isBq: boolean;
   readonly isCw: boolean;
   readonly isSx: boolean;
+  readonly type:
+    | 'Af'
+    | 'Ax'
+    | 'Al'
+    | 'Dz'
+    | 'As'
+    | 'Ad'
+    | 'Ao'
+    | 'Ai'
+    | 'Aq'
+    | 'Ag'
+    | 'Ar'
+    | 'Am'
+    | 'Aw'
+    | 'Au'
+    | 'At'
+    | 'Az'
+    | 'Bs'
+    | 'Bh'
+    | 'Bd'
+    | 'Bb'
+    | 'By'
+    | 'Be'
+    | 'Bz'
+    | 'Bj'
+    | 'Bm'
+    | 'Bt'
+    | 'Bo'
+    | 'Ba'
+    | 'Bw'
+    | 'Bv'
+    | 'Br'
+    | 'Vg'
+    | 'Io'
+    | 'Bn'
+    | 'Bg'
+    | 'Bf'
+    | 'Bi'
+    | 'Kh'
+    | 'Cm'
+    | 'Ca'
+    | 'Cv'
+    | 'Ky'
+    | 'Cf'
+    | 'Td'
+    | 'Cl'
+    | 'Cn'
+    | 'Hk'
+    | 'Mo'
+    | 'Cx'
+    | 'Cc'
+    | 'Co'
+    | 'Km'
+    | 'Cg'
+    | 'Cd'
+    | 'Ck'
+    | 'Cr'
+    | 'Ci'
+    | 'Hr'
+    | 'Cu'
+    | 'Cy'
+    | 'Cz'
+    | 'Dk'
+    | 'Dj'
+    | 'Dm'
+    | 'Do'
+    | 'Ec'
+    | 'Eg'
+    | 'Sv'
+    | 'Gq'
+    | 'Er'
+    | 'Ee'
+    | 'Et'
+    | 'Fk'
+    | 'Fo'
+    | 'Fj'
+    | 'Fi'
+    | 'Fr'
+    | 'Gf'
+    | 'Pf'
+    | 'Tf'
+    | 'Ga'
+    | 'Gm'
+    | 'Ge'
+    | 'De'
+    | 'Gh'
+    | 'Gi'
+    | 'Gr'
+    | 'Gl'
+    | 'Gd'
+    | 'Gp'
+    | 'Gu'
+    | 'Gt'
+    | 'Gg'
+    | 'Gn'
+    | 'Gw'
+    | 'Gy'
+    | 'Ht'
+    | 'Hm'
+    | 'Va'
+    | 'Hn'
+    | 'Hu'
+    | 'Is'
+    | 'In'
+    | 'Id'
+    | 'Ir'
+    | 'Iq'
+    | 'Ie'
+    | 'Im'
+    | 'Il'
+    | 'It'
+    | 'Jm'
+    | 'Jp'
+    | 'Je'
+    | 'Jo'
+    | 'Kz'
+    | 'Ke'
+    | 'Ki'
+    | 'Kp'
+    | 'Kr'
+    | 'Kw'
+    | 'Kg'
+    | 'La'
+    | 'Lv'
+    | 'Lb'
+    | 'Ls'
+    | 'Lr'
+    | 'Ly'
+    | 'Li'
+    | 'Lt'
+    | 'Lu'
+    | 'Mk'
+    | 'Mg'
+    | 'Mw'
+    | 'My'
+    | 'Mv'
+    | 'Ml'
+    | 'Mt'
+    | 'Mh'
+    | 'Mq'
+    | 'Mr'
+    | 'Mu'
+    | 'Yt'
+    | 'Mx'
+    | 'Fm'
+    | 'Md'
+    | 'Mc'
+    | 'Mn'
+    | 'Me'
+    | 'Ms'
+    | 'Ma'
+    | 'Mz'
+    | 'Mm'
+    | 'Na'
+    | 'Nr'
+    | 'Np'
+    | 'Nl'
+    | 'An'
+    | 'Nc'
+    | 'Nz'
+    | 'Ni'
+    | 'Ne'
+    | 'Ng'
+    | 'Nu'
+    | 'Nf'
+    | 'Mp'
+    | 'No'
+    | 'Om'
+    | 'Pk'
+    | 'Pw'
+    | 'Ps'
+    | 'Pa'
+    | 'Pg'
+    | 'Py'
+    | 'Pe'
+    | 'Ph'
+    | 'Pn'
+    | 'Pl'
+    | 'Pt'
+    | 'Pr'
+    | 'Qa'
+    | 'Re'
+    | 'Ro'
+    | 'Ru'
+    | 'Rw'
+    | 'Bl'
+    | 'Sh'
+    | 'Kn'
+    | 'Lc'
+    | 'Mf'
+    | 'Pm'
+    | 'Vc'
+    | 'Ws'
+    | 'Sm'
+    | 'St'
+    | 'Sa'
+    | 'Sn'
+    | 'Rs'
+    | 'Sc'
+    | 'Sl'
+    | 'Sg'
+    | 'Sk'
+    | 'Si'
+    | 'Sb'
+    | 'So'
+    | 'Za'
+    | 'Gs'
+    | 'Ss'
+    | 'Es'
+    | 'Lk'
+    | 'Sd'
+    | 'Sr'
+    | 'Sj'
+    | 'Sz'
+    | 'Se'
+    | 'Ch'
+    | 'Sy'
+    | 'Tw'
+    | 'Tj'
+    | 'Tz'
+    | 'Th'
+    | 'Tl'
+    | 'Tg'
+    | 'Tk'
+    | 'To'
+    | 'Tt'
+    | 'Tn'
+    | 'Tr'
+    | 'Tm'
+    | 'Tc'
+    | 'Tv'
+    | 'Ug'
+    | 'Ua'
+    | 'Ae'
+    | 'Gb'
+    | 'Us'
+    | 'Um'
+    | 'Uy'
+    | 'Uz'
+    | 'Vu'
+    | 'Ve'
+    | 'Vn'
+    | 'Vi'
+    | 'Wf'
+    | 'Eh'
+    | 'Ye'
+    | 'Zm'
+    | 'Zw'
+    | 'Bq'
+    | 'Cw'
+    | 'Sx';
 }
 
 /** @name CustomAssetTypeId */
@@ -707,6 +1097,7 @@ export interface DidRecords extends Enum {
   readonly asSuccess: DidRecordsSuccess;
   readonly isIdNotFound: boolean;
   readonly asIdNotFound: Bytes;
+  readonly type: 'Success' | 'IdNotFound';
 }
 
 /** @name DidRecordsSuccess */
@@ -720,6 +1111,7 @@ export interface DidStatus extends Enum {
   readonly isUnknown: boolean;
   readonly isExists: boolean;
   readonly isCddVerified: boolean;
+  readonly type: 'Unknown' | 'Exists' | 'CddVerified';
 }
 
 /** @name DispatchableName */
@@ -732,6 +1124,7 @@ export interface DispatchableNames extends Enum {
   readonly asThese: Vec<DispatchableName>;
   readonly isExcept: boolean;
   readonly asExcept: Vec<DispatchableName>;
+  readonly type: 'Whole' | 'These' | 'Except';
 }
 
 /** @name Distribution */
@@ -774,6 +1167,7 @@ export interface DocumentHash extends Enum {
   readonly asH160: U8aFixed;
   readonly isH128: boolean;
   readonly asH128: U8aFixed;
+  readonly type: 'None' | 'H512' | 'H384' | 'H320' | 'H256' | 'H224' | 'H192' | 'H160' | 'H128';
 }
 
 /** @name DocumentId */
@@ -816,6 +1210,7 @@ export interface ExtrinsicPermissions extends Enum {
   readonly asThese: Vec<PalletPermissions>;
   readonly isExcept: boolean;
   readonly asExcept: Vec<PalletPermissions>;
+  readonly type: 'Whole' | 'These' | 'Except';
 }
 
 /** @name ExtVersion */
@@ -851,6 +1246,7 @@ export interface FundraiserStatus extends Enum {
   readonly isFrozen: boolean;
   readonly isClosed: boolean;
   readonly isClosedEarly: boolean;
+  readonly type: 'Live' | 'Frozen' | 'Closed' | 'ClosedEarly';
 }
 
 /** @name FundraiserTier */
@@ -872,7 +1268,7 @@ export interface GranularCanTransferResult extends Struct {
   readonly sender_insufficient_balance: bool;
   readonly portfolio_validity_result: PortfolioValidityResult;
   readonly asset_frozen: bool;
-  readonly statistics_result: Vec<TransferManagerResult>;
+  readonly transfer_condition_result: Vec<TransferConditionResult>;
   readonly compliance_result: AssetComplianceResult;
   readonly result: bool;
 }
@@ -882,6 +1278,7 @@ export interface HandledTxStatus extends Enum {
   readonly isSuccess: boolean;
   readonly isError: boolean;
   readonly asError: Text;
+  readonly type: 'Success' | 'Error';
 }
 
 /** @name IdentityClaim */
@@ -908,6 +1305,17 @@ export interface IdentityRole extends Enum {
   readonly isCddamlClaimIssuer: boolean;
   readonly isAccreditedInvestorClaimIssuer: boolean;
   readonly isVerifiedIdentityClaimIssuer: boolean;
+  readonly type:
+    | 'Issuer'
+    | 'SimpleTokenIssuer'
+    | 'Validator'
+    | 'ClaimIssuer'
+    | 'Investor'
+    | 'NodeRunner'
+    | 'Pm'
+    | 'CddamlClaimIssuer'
+    | 'AccreditedInvestorClaimIssuer'
+    | 'VerifiedIdentityClaimIssuer';
 }
 
 /** @name InactiveMember */
@@ -936,19 +1344,24 @@ export interface InstructionStatus extends Enum {
   readonly isUnknown: boolean;
   readonly isPending: boolean;
   readonly isFailed: boolean;
+  readonly type: 'Unknown' | 'Pending' | 'Failed';
 }
 
 /** @name InvestorUid */
 export interface InvestorUid extends U8aFixed {}
 
 /** @name InvestorZKProofData */
-export interface InvestorZKProofData extends Signature {}
+export interface InvestorZKProofData extends Struct {
+  readonly r: CompressedRistretto;
+  readonly s: Scalar;
+}
 
 /** @name ItnRewardStatus */
 export interface ItnRewardStatus extends Enum {
   readonly isUnclaimed: boolean;
   readonly asUnclaimed: Balance;
   readonly isClaimed: boolean;
+  readonly type: 'Unclaimed' | 'Claimed';
 }
 
 /** @name KeyIdentityData */
@@ -988,6 +1401,7 @@ export interface LegStatus extends Enum {
   readonly isExecutionPending: boolean;
   readonly isExecutionToBeSkipped: boolean;
   readonly asExecutionToBeSkipped: ITuple<[AccountId, u64]>;
+  readonly type: 'PendingTokenLock' | 'ExecutionPending' | 'ExecutionToBeSkipped';
 }
 
 /** @name LocalCAId */
@@ -1001,6 +1415,7 @@ export interface MaybeBlock extends Enum {
   readonly isSome: boolean;
   readonly asSome: BlockNumber;
   readonly isNone: boolean;
+  readonly type: 'Some' | 'None';
 }
 
 /** @name Memo */
@@ -1039,14 +1454,7 @@ export interface MovePortfolioItem extends Struct {
 }
 
 /** @name OffChainSignature */
-export interface OffChainSignature extends Enum {
-  readonly isEd25519: boolean;
-  readonly asEd25519: H512;
-  readonly isSr25519: boolean;
-  readonly asSr25519: H512;
-  readonly isEcdsa: boolean;
-  readonly asEcdsa: H512;
-}
+export interface OffChainSignature extends MultiSignature {}
 
 /** @name PalletName */
 export interface PalletName extends Text {}
@@ -1116,6 +1524,7 @@ export interface PortfolioKind extends Enum {
   readonly isDefault: boolean;
   readonly isUser: boolean;
   readonly asUser: PortfolioNumber;
+  readonly type: 'Default' | 'User';
 }
 
 /** @name PortfolioName */
@@ -1131,6 +1540,7 @@ export interface PortfolioPermissions extends Enum {
   readonly asThese: Vec<PortfolioId>;
   readonly isExcept: boolean;
   readonly asExcept: Vec<PortfolioId>;
+  readonly type: 'Whole' | 'These' | 'Except';
 }
 
 /** @name PortfolioValidityResult */
@@ -1163,6 +1573,7 @@ export interface ProposalData extends Enum {
   readonly asHash: Hash;
   readonly isProposal: boolean;
   readonly asProposal: Bytes;
+  readonly type: 'Hash' | 'Proposal';
 }
 
 /** @name ProposalDetails */
@@ -1182,6 +1593,7 @@ export interface ProposalState extends Enum {
   readonly isFailed: boolean;
   readonly isExecuted: boolean;
   readonly isExpired: boolean;
+  readonly type: 'Pending' | 'Rejected' | 'Scheduled' | 'Failed' | 'Executed' | 'Expired';
 }
 
 /** @name ProposalStatus */
@@ -1191,6 +1603,12 @@ export interface ProposalStatus extends Enum {
   readonly isExecutionSuccessful: boolean;
   readonly isExecutionFailed: boolean;
   readonly isRejected: boolean;
+  readonly type:
+    | 'Invalid'
+    | 'ActiveOrExpired'
+    | 'ExecutionSuccessful'
+    | 'ExecutionFailed'
+    | 'Rejected';
 }
 
 /** @name Proposer */
@@ -1199,6 +1617,7 @@ export interface Proposer extends Enum {
   readonly asCommunity: AccountId;
   readonly isCommittee: boolean;
   readonly asCommittee: Committee;
+  readonly type: 'Community' | 'Committee';
 }
 
 /** @name ProtocolOp */
@@ -1216,6 +1635,20 @@ export interface ProtocolOp extends Enum {
   readonly isContractsPutCode: boolean;
   readonly isCorporateBallotAttachBallot: boolean;
   readonly isCapitalDistributionDistribute: boolean;
+  readonly type:
+    | 'AssetRegisterTicker'
+    | 'AssetIssue'
+    | 'AssetAddDocuments'
+    | 'AssetCreateAsset'
+    | 'CheckpointCreateSchedule'
+    | 'ComplianceManagerAddComplianceRequirement'
+    | 'IdentityCddRegisterDid'
+    | 'IdentityAddClaim'
+    | 'IdentityAddSecondaryKeysWithAuthorization'
+    | 'PipsPropose'
+    | 'ContractsPutCode'
+    | 'CorporateBallotAttachBallot'
+    | 'CapitalDistributionDistribute';
 }
 
 /** @name Receipt */
@@ -1253,6 +1686,7 @@ export interface RecordDateSpec extends Enum {
   readonly asExistingSchedule: ScheduleId;
   readonly isExisting: boolean;
   readonly asExisting: CheckpointId;
+  readonly type: 'Scheduled' | 'ExistingSchedule' | 'Existing';
 }
 
 /** @name RestrictionResult */
@@ -1260,6 +1694,7 @@ export interface RestrictionResult extends Enum {
   readonly isValid: boolean;
   readonly isInvalid: boolean;
   readonly isForceValid: boolean;
+  readonly type: 'Valid' | 'Invalid' | 'ForceValid';
 }
 
 /** @name RistrettoPoint */
@@ -1286,6 +1721,7 @@ export interface Scope extends Enum {
   readonly asTicker: Ticker;
   readonly isCustom: boolean;
   readonly asCustom: Bytes;
+  readonly type: 'Identity' | 'Ticker' | 'Custom';
 }
 
 /** @name ScopeClaimProof */
@@ -1323,6 +1759,7 @@ export interface SettlementType extends Enum {
   readonly isSettleOnAffirmation: boolean;
   readonly isSettleOnBlock: boolean;
   readonly asSettleOnBlock: BlockNumber;
+  readonly type: 'SettleOnAffirmation' | 'SettleOnBlock';
 }
 
 /** @name Signatory */
@@ -1331,6 +1768,7 @@ export interface Signatory extends Enum {
   readonly asIdentity: IdentityId;
   readonly isAccount: boolean;
   readonly asAccount: AccountId;
+  readonly type: 'Identity' | 'Account';
 }
 
 /** @name SkippedCount */
@@ -1341,6 +1779,7 @@ export interface SlashingSwitch extends Enum {
   readonly isValidator: boolean;
   readonly isValidatorAndNominator: boolean;
   readonly isNone: boolean;
+  readonly type: 'Validator' | 'ValidatorAndNominator' | 'None';
 }
 
 /** @name SmartExtension */
@@ -1361,6 +1800,7 @@ export interface SmartExtensionType extends Enum {
   readonly isSmartWallet: boolean;
   readonly isCustom: boolean;
   readonly asCustom: Bytes;
+  readonly type: 'TransferManager' | 'Offerings' | 'SmartWallet' | 'Custom';
 }
 
 /** @name SnapshotId */
@@ -1378,12 +1818,57 @@ export interface SnapshotResult extends Enum {
   readonly isApprove: boolean;
   readonly isReject: boolean;
   readonly isSkip: boolean;
+  readonly type: 'Approve' | 'Reject' | 'Skip';
 }
 
 /** @name SnapshottedPip */
 export interface SnapshottedPip extends Struct {
   readonly id: PipId;
   readonly weight: ITuple<[bool, Balance]>;
+}
+
+/** @name Stat1stKey */
+export interface Stat1stKey extends Struct {
+  readonly asset: AssetScope;
+  readonly stat_type: StatType;
+}
+
+/** @name Stat2ndKey */
+export interface Stat2ndKey extends Enum {
+  readonly isNoClaimStat: boolean;
+  readonly isClaim: boolean;
+  readonly asClaim: StatClaim;
+  readonly type: 'NoClaimStat' | 'Claim';
+}
+
+/** @name StatClaim */
+export interface StatClaim extends Enum {
+  readonly isAccredited: boolean;
+  readonly asAccredited: bool;
+  readonly isAffiliate: boolean;
+  readonly asAffiliate: bool;
+  readonly isJurisdiction: boolean;
+  readonly asJurisdiction: Option<CountryCode>;
+  readonly type: 'Accredited' | 'Affiliate' | 'Jurisdiction';
+}
+
+/** @name StatOpType */
+export interface StatOpType extends Enum {
+  readonly isCount: boolean;
+  readonly isBalance: boolean;
+  readonly type: 'Count' | 'Balance';
+}
+
+/** @name StatType */
+export interface StatType extends Struct {
+  readonly op: StatOpType;
+  readonly claim_issuer: Option<ITuple<[ClaimType, IdentityId]>>;
+}
+
+/** @name StatUpdate */
+export interface StatUpdate extends Struct {
+  readonly key2: Stat2ndKey;
+  readonly value: Option<u128>;
 }
 
 /** @name StoredSchedule */
@@ -1418,12 +1903,14 @@ export interface TargetIdentity extends Enum {
   readonly isExternalAgent: boolean;
   readonly isSpecific: boolean;
   readonly asSpecific: IdentityId;
+  readonly type: 'ExternalAgent' | 'Specific';
 }
 
 /** @name TargetTreatment */
 export interface TargetTreatment extends Enum {
   readonly isInclude: boolean;
   readonly isExclude: boolean;
+  readonly type: 'Include' | 'Exclude';
 }
 
 /** @name Tax */
@@ -1460,17 +1947,29 @@ export interface TickerRegistrationConfig extends Struct {
   readonly registration_length: Option<Moment>;
 }
 
-/** @name TransferManager */
-export interface TransferManager extends Enum {
-  readonly isCountTransferManager: boolean;
-  readonly asCountTransferManager: Counter;
-  readonly isPercentageTransferManager: boolean;
-  readonly asPercentageTransferManager: Percentage;
+/** @name TransferCondition */
+export interface TransferCondition extends Enum {
+  readonly isMaxInvestorCount: boolean;
+  readonly asMaxInvestorCount: u64;
+  readonly isMaxInvestorOwnership: boolean;
+  readonly asMaxInvestorOwnership: Percentage;
+  readonly isClaimCount: boolean;
+  readonly asClaimCount: ITuple<[StatClaim, IdentityId, u64, Option<u64>]>;
+  readonly isClaimOwnership: boolean;
+  readonly asClaimOwnership: ITuple<[StatClaim, IdentityId, Percentage, Percentage]>;
+  readonly type: 'MaxInvestorCount' | 'MaxInvestorOwnership' | 'ClaimCount' | 'ClaimOwnership';
 }
 
-/** @name TransferManagerResult */
-export interface TransferManagerResult extends Struct {
-  readonly tm: TransferManager;
+/** @name TransferConditionExemptKey */
+export interface TransferConditionExemptKey extends Struct {
+  readonly asset: AssetScope;
+  readonly op: StatOpType;
+  readonly claim_type: Option<ClaimType>;
+}
+
+/** @name TransferConditionResult */
+export interface TransferConditionResult extends Struct {
+  readonly condition: TransferCondition;
   readonly result: bool;
 }
 
@@ -1479,6 +1978,7 @@ export interface TrustedFor extends Enum {
   readonly isAny: boolean;
   readonly isSpecific: boolean;
   readonly asSpecific: Vec<ClaimType>;
+  readonly type: 'Any' | 'Specific';
 }
 
 /** @name TrustedIssuer */
@@ -1514,6 +2014,7 @@ export interface VenueType extends Enum {
   readonly isDistribution: boolean;
   readonly isSto: boolean;
   readonly isExchange: boolean;
+  readonly type: 'Other' | 'Distribution' | 'Sto' | 'Exchange';
 }
 
 /** @name Version */
@@ -1533,6 +2034,7 @@ export interface VoteCount extends Enum {
   readonly isProposalFound: boolean;
   readonly asProposalFound: VoteCountProposalFound;
   readonly isProposalNotFound: boolean;
+  readonly type: 'ProposalFound' | 'ProposalNotFound';
 }
 
 /** @name VoteCountProposalFound */
@@ -1547,6 +2049,14 @@ export interface VotingResult extends Struct {
   readonly ayes_stake: Balance;
   readonly nays_count: u32;
   readonly nays_stake: Balance;
+}
+
+/** @name WeightPerClass */
+export interface WeightPerClass extends Struct {
+  readonly baseExtrinsic: Weight;
+  readonly maxExtrinsic: Option<Weight>;
+  readonly maxTotal: Option<Weight>;
+  readonly reserved: Option<Weight>;
 }
 
 /** @name WeightToFeeCoefficient */

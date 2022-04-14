@@ -229,7 +229,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
 
       agentGroups.forEach(([storageKey, agentGroup]) => {
         const rawAgentGroup = agentGroup.unwrap();
-        if (rawAgentGroup.isPolymeshV1Pia) {
+        if (rawAgentGroup.isPolymeshV1PIA) {
           primaryIssuanceAgents.push(
             new Identity({ did: identityIdToString(storageKey.args[1]) }, context)
           );

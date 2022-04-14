@@ -65,7 +65,7 @@ const assertCaIsRemovable = async (
       });
     }
   } else {
-    const { payment_at: rawPaymentAt } = distribution.unwrap();
+    const { paymentAt: rawPaymentAt } = distribution.unwrap();
 
     if (momentToDate(rawPaymentAt) < new Date()) {
       throw new PolymeshError({

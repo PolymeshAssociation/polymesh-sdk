@@ -185,7 +185,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const meshAsset = await asset.tokens(rawTicker);
 
-    if (meshAsset.owner_did.isEmpty) {
+    if (meshAsset.ownerDid.isEmpty) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
         message: `There is no Asset with ticker "${ticker}"`,
@@ -572,7 +572,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     return rawInstructions
       .filter(({ status }) => status.isPending)
-      .map(({ instruction_id: id }) => new Instruction({ id: u64ToBigNumber(id) }, context));
+      .map(({ instructionId: id }) => new Instruction({ id: u64ToBigNumber(id) }, context));
   }
 
   /**
