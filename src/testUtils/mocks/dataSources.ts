@@ -147,7 +147,6 @@ import {
   ZkProofData,
 } from 'polymesh-types/types';
 import sinon, { SinonStub, SinonStubbedInstance } from 'sinon';
-import WebSocketAsPromised from 'websocket-as-promised';
 
 import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
 import { Mocked } from '~/testUtils/types';
@@ -198,18 +197,80 @@ function createApolloClient(): Mutable<ApolloClient<NormalizedCacheObject>> {
 let apolloConstructorStub: SinonStub;
 
 /**
- * Create a mock instance of the WebSocketAsPromised lib
+ * Creates mock websocket class. Contains additional methods for tests to control it
  */
-function createWebSocketAsPromised(): WebSocketAsPromised {
-  return {
-    open: sinon.stub(),
-    send: sinon.stub(),
-    sendRequest: sinon.stub().resolves({ result: '4.1.0' }),
-    close: sinon.stub(),
-  } as unknown as WebSocketAsPromised;
+export class MockWebSocket {
+  /**
+   * @hidden
+   */
+  onopen(): void {
+    // stub for onopen
+  }
+
+  /**
+   * @hidden
+   */
+  onclose(): void {
+    // stub for onclose
+  }
+
+  /* eslint-disable @typescript-eslint/no-unused-vars */
+  /**
+   * @hidden
+   */
+  onerror(_err: Error): void {
+    // stub for onerror
+  }
+
+  /**
+   * @hidden
+   */
+  onmessage(_msg: Record<string, unknown>): void {
+    // stub for onmessage
+  }
+
+  /**
+   * @hidden
+   */
+  close(): void {
+    // stub for close
+  }
+
+  /**
+   * @hidden
+   */
+  send(_msg: string): void {
+    const response = { data: '{ "result": "4.1.1" }' };
+    this.onmessage(response);
+  }
+  /* eslint-enable @typescript-eslint/no-unused-vars */
+
+  /**
+   * @hidden
+   * Calls the onerror handler with the given error
+   */
+  triggerError(err: Error): void {
+    this.onerror(err);
+  }
+
+  /**
+   * @hidden
+   * Calls onmessage with the given version
+   */
+  sendVersion(version: string): void {
+    const response = { data: `{ "result": "${version}" }` };
+    this.onmessage(response);
+  }
 }
 
-let webSocketAsPromisedConstructorStub: SinonStub;
+/**
+ * Create a mock instance of the WebSocket lib
+ */
+function createWebSocket(): MockWebSocket {
+  return new MockWebSocket();
+}
+
+let webSocketConstructorStub: SinonStub;
 
 export type MockContext = Mocked<Context>;
 
@@ -240,15 +301,15 @@ const mockInstanceContainer = {
   apiInstance: createApi(),
   signingManagerInstance: {} as Mutable<SigningManager>,
   apolloInstance: createApolloClient(),
-  webSocketAsPromisedInstance: createWebSocketAsPromised(),
+  webSocketInstance: createWebSocket(),
 };
 
-const MockWebSocketAsPromisedClass = class {
+const MockWebSocketClass = class {
   /**
    * @hidden
    */
   public constructor() {
-    return webSocketAsPromisedConstructorStub();
+    return webSocketConstructorStub();
   }
 };
 
@@ -487,7 +548,7 @@ export const mockApolloModule = (path: string) => (): Record<string, unknown> =>
   ApolloClient: MockApolloClientClass,
 });
 
-export const mockWebSocketAsPromisedModule = () => (): unknown => MockWebSocketAsPromisedClass;
+export const mockWebSocketModule = () => (): unknown => ({ w3cwebsocket: MockWebSocketClass });
 
 const txMocksData = new Map<unknown, TxMockData>();
 let txModule = {} as Extrinsics;
@@ -909,10 +970,7 @@ export function initMocks(opts?: {
   // Apollo
   apolloConstructorStub = sinon.stub().returns(mockInstanceContainer.apolloInstance);
 
-  // WebSocketAsPromised
-  webSocketAsPromisedConstructorStub = sinon
-    .stub()
-    .returns(mockInstanceContainer.webSocketAsPromisedInstance);
+  webSocketConstructorStub = sinon.stub().returns(mockInstanceContainer.webSocketInstance);
 
   txMocksData.clear();
   errorStub = sinon.stub().throws(new Error('Error'));
@@ -927,7 +985,7 @@ export function cleanup(): void {
   mockInstanceContainer.contextInstance = {} as MockContext;
   mockInstanceContainer.signingManagerInstance = {} as Mutable<SigningManager>;
   mockInstanceContainer.apolloInstance = createApolloClient();
-  mockInstanceContainer.webSocketAsPromisedInstance = createWebSocketAsPromised();
+  mockInstanceContainer.webSocketInstance = createWebSocket();
 }
 
 /**
@@ -1305,6 +1363,14 @@ export function getApiInstance(): ApiPromise & SinonStubbedInstance<ApiPromise> 
   return mockInstanceContainer.apiInstance as unknown as ApiPromise &
     SinonStubbedInstance<ApiPromise> &
     EventEmitter;
+}
+
+/**
+ * @hidden
+ * Retrieve an instance of the mocked WebSocket
+ */
+export function getWebSocketInstance(): MockWebSocket {
+  return mockInstanceContainer.webSocketInstance;
 }
 
 /**

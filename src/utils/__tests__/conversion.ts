@@ -1151,6 +1151,20 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       expect(result).toBe(fakeResult);
 
       value = {
+        type: AuthorizationType.TransferTicker,
+        value: 'TICKER',
+      };
+
+      createTypeStub.withArgs('Ticker', padString('TICKER', MAX_TICKER_LENGTH)).returns(fakeTicker);
+
+      createTypeStub
+        .withArgs('AuthorizationData', { [value.type]: fakeTicker })
+        .returns(fakeResult);
+
+      result = authorizationToAuthorizationData(value, context);
+      expect(result).toBe(fakeResult);
+
+      value = {
         type: AuthorizationType.RotatePrimaryKeyToSecondary,
         value: {
           assets: null,

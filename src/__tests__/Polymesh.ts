@@ -1,13 +1,15 @@
 import { SigningManager } from '@polymathnetwork/signing-manager-types';
 import { ApolloLink, GraphQLRequest } from 'apollo-link';
 import * as apolloLinkContextModule from 'apollo-link-context';
-import semver from 'semver';
 import sinon from 'sinon';
 
+import { PolymeshError } from '~/internal';
 import { heartbeat } from '~/middleware/queries';
 import { Polymesh } from '~/Polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { ErrorCode } from '~/types';
 import { SUPPORTED_VERSION_RANGE } from '~/utils/constants';
+import * as internalUtils from '~/utils/internal';
 
 jest.mock(
   '@polkadot/api',
@@ -43,12 +45,13 @@ jest.mock(
   '~/api/entities/Asset',
   require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
-jest.mock(
-  'websocket-as-promised',
-  require('~/testUtils/mocks/dataSources').mockWebSocketAsPromisedModule()
-);
 
 describe('Polymesh Class', () => {
+  let versionStub: sinon.SinonStub;
+  beforeEach(() => {
+    versionStub = sinon.stub(internalUtils, 'assertExpectedChainVersion').resolves(undefined);
+  });
+
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
@@ -56,6 +59,7 @@ describe('Polymesh Class', () => {
   });
 
   afterEach(() => {
+    sinon.restore();
     dsMockUtils.reset();
     entityMockUtils.reset();
     procedureMockUtils.reset();
@@ -120,20 +124,38 @@ describe('Polymesh Class', () => {
       });
     });
 
-    it('should throw an error if the Polymesh version does not satisfy the supported version range', async () => {
-      jest.spyOn(semver, 'satisfies').mockImplementationOnce(() => false);
+    it('should warn if the Polymesh version does not satisfy the supported version range', async () => {
+      const error = new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: 'Unsupported Polymesh version. Please upgrade the SDK',
+        data: { supportedVersionRange: SUPPORTED_VERSION_RANGE },
+      });
+      versionStub.rejects(error);
+      const warn = jest.spyOn(console, 'warn').mockImplementation(() => {
+        // no-op
+      });
 
-      let err;
-      try {
-        await Polymesh.connect({
+      await expect(
+        Polymesh.connect({
           nodeUrl: 'wss://some.url',
-        });
-      } catch (e) {
-        err = e;
-      }
+        })
+      ).resolves.not.toThrow();
+      expect(warn).toBeCalled();
+      warn.mockRestore();
+    });
 
-      expect(err.message).toBe('Unsupported Polymesh version. Please upgrade the SDK');
-      expect(err.data.supportedVersionRange).toBe(SUPPORTED_VERSION_RANGE);
+    it('should throw an error if the Polymesh version check could not connect to the node', async () => {
+      const error = new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: 'Unable to connect',
+      });
+      versionStub.rejects(error);
+
+      return expect(
+        Polymesh.connect({
+          nodeUrl: 'wss://some.url',
+        })
+      ).rejects.toThrowError(error);
     });
 
     it('should throw an error if the middleware credentials are incorrect', async () => {
