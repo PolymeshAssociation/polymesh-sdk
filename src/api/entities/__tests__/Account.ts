@@ -436,30 +436,33 @@ describe('Account class', () => {
     it("should return the Account's permissions if it is a secondary Account", async () => {
       const permissions = {
         assets: null,
-        transactions: null,
+        transactions: {
+          values: [TxTags.identity.AcceptPrimaryKey],
+          type: PermissionType.Include,
+        },
         transactionGroups: [],
         portfolios: null,
       };
 
       const identity = entityMockUtils.getIdentityInstance({
         getSecondaryAccounts: [
-          { account: entityMockUtils.getAccountInstance({ address }), permissions },
           {
-            account: entityMockUtils.getAccountInstance({ address: 'otherAddress' }),
+            account: entityMockUtils.getAccountInstance({ address }),
             permissions: {
               assets: null,
-              transactions: {
-                values: [TxTags.identity.AcceptPrimaryKey],
-                type: PermissionType.Include,
-              },
+              transactions: null,
               transactionGroups: [],
               portfolios: null,
             },
           },
+          {
+            account: entityMockUtils.getAccountInstance({ address: 'otherAddress' }),
+            permissions,
+          },
         ],
       });
 
-      account = new Account({ address }, context);
+      account = new Account({ address: 'otherAddress' }, context);
 
       const getIdentitySpy = jest.spyOn(account, 'getIdentity').mockResolvedValue(identity);
 
