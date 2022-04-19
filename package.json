@@ -125,6 +125,7 @@
     "json-stable-stringify": "^1.0.1",
     "lodash": "^4.17.15",
     "semver": "^7.3.5",
-    "websocket": "^1.0.31"
+    "websocket": "^1.0.31",
+    "websocket-as-promised": "^2.0.1"
   }
 }
