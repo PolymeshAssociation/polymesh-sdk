@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import { EcdsaSignature, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
@@ -78,12 +79,11 @@ describe('claimClassicTicker procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the ticker is not in the reserved classic ticker list', () => {
+  it('should throw an error if the ticker is not in the reserved classic ticker list', () => {
     dsMockUtils.createQueryStub('asset', 'classicTickers', {
       returnValue: dsMockUtils.createMockOption(),
     });
@@ -97,11 +97,11 @@ describe('claimClassicTicker procedure', () => {
     ).rejects.toThrow('The supplied ticker is not in the reserved classic ticker list');
   });
 
-  test('should throw an error if the ticker reservation has expired', () => {
+  it('should throw an error if the ticker reservation has expired', () => {
     dsMockUtils.createQueryStub('asset', 'tickers', {
       returnValue: dsMockUtils.createMockTickerRegistration({
         expiry: dsMockUtils.createMockOption(
-          dsMockUtils.createMockMoment(new Date('10/14/1987').getTime())
+          dsMockUtils.createMockMoment(new BigNumber(new Date('10/14/1987').getTime()))
         ),
         owner: CLASSIC_TICKER_OWNER_DID,
       }),
@@ -116,7 +116,7 @@ describe('claimClassicTicker procedure', () => {
     ).rejects.toThrow("The Ticker's claiming period has already expired");
   });
 
-  test('should throw an error if the ticker has already been claimed', () => {
+  it('should throw an error if the ticker has already been claimed', () => {
     dsMockUtils.createQueryStub('asset', 'tickers', {
       returnValue: dsMockUtils.createMockTickerRegistration({
         expiry: null,
@@ -133,7 +133,7 @@ describe('claimClassicTicker procedure', () => {
     ).rejects.toThrow('Ticker already claimed');
   });
 
-  test('should throw an error if the ethereum signature is not valid', async () => {
+  it('should throw an error if the ethereum signature is not valid', async () => {
     const proc = procedureMockUtils.getInstance<ClaimClassicTickerParams, TickerReservation>(
       mockContext
     );
@@ -152,7 +152,7 @@ describe('claimClassicTicker procedure', () => {
     });
   });
 
-  test('should throw an error if the ethereum address that owns the ticker is not the same one that signed', async () => {
+  it('should throw an error if the ethereum address that owns the ticker is not the same one that signed', async () => {
     dsMockUtils.createQueryStub('asset', 'classicTickers', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockClassicTickerRegistration({
@@ -177,14 +177,14 @@ describe('claimClassicTicker procedure', () => {
     }
 
     expect(error.message).toBe(
-      'The account that signed the message is not the classic Ticker owner'
+      'The Account that signed the message is not the classic Ticker owner'
     );
     expect(error.data).toEqual({
       signerAddress: ethereumAddress,
     });
   });
 
-  test('should add a claim classic ticker transaction to the queue', async () => {
+  it('should add a claim classic ticker transaction to the queue', async () => {
     const transaction = dsMockUtils.createTxStub('asset', 'claimClassicTicker');
     const proc = procedureMockUtils.getInstance<ClaimClassicTickerParams, TickerReservation>(
       mockContext
@@ -192,6 +192,9 @@ describe('claimClassicTicker procedure', () => {
 
     await prepareClaimClassicTicker.call(proc, { ticker, ethereumSignature });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawEthereumSignature);
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction,
+      args: [rawTicker, rawEthereumSignature],
+    });
   });
 });

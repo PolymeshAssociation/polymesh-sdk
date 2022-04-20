@@ -11,13 +11,12 @@ import {
   Instruction,
   modifyVenue,
   ModifyVenueParams,
-  PolymeshError,
 } from '~/internal';
-import { ErrorCode, GroupedInstructions, InstructionStatus, ProcedureMethod } from '~/types';
+import { GroupedInstructions, InstructionStatus, ProcedureMethod } from '~/types';
 import {
+  bigNumberToU64,
   identityIdToString,
   meshVenueTypeToVenueType,
-  numberToU64,
   u64ToBigNumber,
   venueDetailsToString,
 } from '~/utils/conversion';
@@ -42,16 +41,16 @@ export function addInstructionTransformer([instruction]: Instruction[]): Instruc
 export class Venue extends Entity<UniqueIdentifiers, string> {
   /**
    * @hidden
-   * Check if a value is of type [[UniqueIdentifiers]]
+   * Check if a value is of type {@link UniqueIdentifiers}
    */
-  public static isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
+  public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { id } = identifier as UniqueIdentifiers;
 
     return id instanceof BigNumber;
   }
 
   /**
-   * Identifier number of the venue
+   * identifier number of the Venue
    */
   public id: BigNumber;
 
@@ -67,19 +66,19 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
 
     this.addInstruction = createProcedureMethod(
       {
-        getProcedureAndArgs: args => [addInstruction, { instructions: [args], venueId: id }],
+        getProcedureAndArgs: args => [addInstruction, { instructions: [args], venueId: this.id }],
         transformer: addInstructionTransformer,
       },
       context
     );
 
     this.addInstructions = createProcedureMethod(
-      { getProcedureAndArgs: args => [addInstruction, { ...args, venueId: id }] },
+      { getProcedureAndArgs: args => [addInstruction, { ...args, venueId: this.id }] },
       context
     );
 
     this.modify = createProcedureMethod(
-      { getProcedureAndArgs: args => [modifyVenue, { ...args, venueId: id }] },
+      { getProcedureAndArgs: args => [modifyVenue, { ...args, venue: this }] },
       context
     );
   }
@@ -98,13 +97,13 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const venueInfo = await settlement.venueInfo(numberToU64(id, context));
+    const venueInfo = await settlement.venueInfo(bigNumberToU64(id, context));
 
-    return !venueInfo.isEmpty;
+    return !venueInfo.isNone;
   }
 
   /**
-   * Retrieve information specific to this venue
+   * Retrieve information specific to this Venue
    */
   public async details(): Promise<VenueDetails> {
     const {
@@ -117,18 +116,11 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const venueId = numberToU64(id, context);
+    const venueId = bigNumberToU64(id, context);
     const [venueInfo, details] = await Promise.all([
       settlement.venueInfo(venueId),
       settlement.details(venueId),
     ]);
-
-    if (venueInfo.isEmpty) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: "The Venue doesn't exist",
-      });
-    }
 
     const { creator, venue_type: type } = venueInfo.unwrap();
 
@@ -143,15 +135,6 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
    * Retrieve all pending and failed Instructions in this Venue
    */
   public async getInstructions(): Promise<Pick<GroupedInstructions, 'pending' | 'failed'>> {
-    const exists = await this.exists();
-
-    if (!exists) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: "The Venue doesn't exist",
-      });
-    }
-
     const instructions = await this.fetchInstructions();
 
     const failed: Instruction[] = [];
@@ -181,15 +164,6 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
    * @deprecated in favor of `getInstructions`
    */
   public async getPendingInstructions(): Promise<Instruction[]> {
-    const exists = await this.exists();
-
-    if (!exists) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: "The Venue doesn't exist",
-      });
-    }
-
     const instructions = await this.fetchInstructions();
 
     return P.filter(instructions, async instruction => {
@@ -213,7 +187,9 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const instructionEntries = await settlement.venueInstructions.entries(numberToU64(id, context));
+    const instructionEntries = await settlement.venueInstructions.entries(
+      bigNumberToU64(id, context)
+    );
 
     return instructionEntries.map(
       ([

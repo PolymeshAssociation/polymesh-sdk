@@ -13,11 +13,6 @@ import { PermissionType, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
-jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
-);
-
 describe('setGroupPermissions procedure', () => {
   const ticker = 'SOME_TICKER';
   const permissions = {
@@ -40,7 +35,7 @@ describe('setGroupPermissions procedure', () => {
     ],
   });
   const customId = new BigNumber(1);
-  const rawAgId = dsMockUtils.createMockU32(customId.toNumber());
+  const rawAgId = dsMockUtils.createMockU32(customId);
 
   let mockContext: Mocked<Context>;
   let addTransactionStub: sinon.SinonStub;
@@ -56,7 +51,7 @@ describe('setGroupPermissions procedure', () => {
     sinon
       .stub(utilsConversionModule, 'transactionPermissionsToExtrinsicPermissions')
       .returns(rawExtrinsicPermissions);
-    sinon.stub(utilsConversionModule, 'numberToU32').returns(rawAgId);
+    sinon.stub(utilsConversionModule, 'bigNumberToU32').returns(rawAgId);
 
     permissionsLikeToPermissionsStub = sinon.stub(
       utilsConversionModule,
@@ -80,12 +75,11 @@ describe('setGroupPermissions procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if new permissions are the same as the current ones', async () => {
+  it('should throw an error if new permissions are the same as the current ones', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     permissionsLikeToPermissionsStub.returns(permissions);
@@ -111,7 +105,7 @@ describe('setGroupPermissions procedure', () => {
     expect(error.message).toBe('New permissions are the same as the current ones');
   });
 
-  test('should add a set group permissions transaction to the queue', async () => {
+  it('should add a set group permissions transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const fakePermissions = { transactions: permissions.transactions };
@@ -131,18 +125,14 @@ describe('setGroupPermissions procedure', () => {
       permissions: fakePermissions,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      externalAgentsSetGroupPermissionsTransaction,
-      {},
-      rawTicker,
-      rawAgId,
-      rawExtrinsicPermissions
-    );
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: externalAgentsSetGroupPermissionsTransaction,
+      args: [rawTicker, rawAgId, rawExtrinsicPermissions],
+    });
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
@@ -154,7 +144,7 @@ describe('setGroupPermissions procedure', () => {
       ).toEqual({
         permissions: {
           transactions: [TxTags.externalAgents.SetGroupPermissions],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

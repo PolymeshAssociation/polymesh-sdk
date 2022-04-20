@@ -1,4 +1,4 @@
-import { DividendDistribution, PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { Asset, DividendDistribution, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { corporateActionIdentifierToCaId, portfolioToPortfolioId } from '~/utils/conversion';
@@ -25,13 +25,17 @@ export async function prepareReclaimDividendDistributionFunds(
   } = this;
 
   const {
-    distribution: { id: localId, ticker, expiryDate },
+    distribution: {
+      id: localId,
+      asset: { ticker },
+      expiryDate,
+    },
     distribution,
   } = args;
 
   if (expiryDate && expiryDate >= new Date()) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'The Distribution must be expired',
       data: {
         expiryDate,
@@ -43,13 +47,17 @@ export async function prepareReclaimDividendDistributionFunds(
 
   if (fundsReclaimed) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'Distribution funds have already been reclaimed',
     });
   }
 
   const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
-  this.addTransaction(tx.capitalDistribution.reclaim, {}, rawCaId);
+
+  this.addTransaction({
+    transaction: tx.capitalDistribution.reclaim,
+    args: [rawCaId],
+  });
 }
 
 /**
@@ -57,7 +65,12 @@ export async function prepareReclaimDividendDistributionFunds(
  */
 export async function getAuthorization(
   this: Procedure<Params, void>,
-  { distribution: { origin, ticker } }: Params
+  {
+    distribution: {
+      origin,
+      asset: { ticker },
+    },
+  }: Params
 ): Promise<ProcedureAuthorization> {
   const { context } = this;
 
@@ -65,7 +78,7 @@ export async function getAuthorization(
     roles: [{ type: RoleType.PortfolioCustodian, portfolioId: portfolioToPortfolioId(origin) }],
     permissions: {
       transactions: [TxTags.capitalDistribution.Reclaim],
-      tokens: [new SecurityToken({ ticker }, context)],
+      assets: [new Asset({ ticker }, context)],
       portfolios: [origin],
     },
   };

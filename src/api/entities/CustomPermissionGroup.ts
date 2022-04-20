@@ -8,16 +8,16 @@ import {
 } from '~/internal';
 import { GroupPermissions, ProcedureMethod } from '~/types';
 import {
+  bigNumberToU32,
   extrinsicPermissionsToTransactionPermissions,
-  numberToU32,
   stringToTicker,
   transactionPermissionsToTxGroups,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
+import { createProcedureMethod, toHumanReadable } from '~/utils/internal';
 
 export interface HumanReadable {
-  id: BigNumber;
+  id: string;
   ticker: string;
 }
 
@@ -27,14 +27,14 @@ export interface UniqueIdentifiers {
 }
 
 /**
- * Represents a group of custom permissions for a Security Token
+ * Represents a group of custom permissions for an Asset
  */
 export class CustomPermissionGroup extends PermissionGroup {
   /**
    * @hidden
-   * Check if a value is of type [[UniqueIdentifiers]]
+   * Check if a value is of type {@link UniqueIdentifiers}
    */
-  public static isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
+  public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { id, ticker } = identifier as UniqueIdentifiers;
 
     return id instanceof BigNumber && typeof ticker === 'string';
@@ -59,17 +59,6 @@ export class CustomPermissionGroup extends PermissionGroup {
   }
 
   /**
-   * Return the Group's ID
-   */
-  public toJson(): HumanReadable {
-    const { id, ticker } = this;
-    return {
-      id,
-      ticker,
-    };
-  }
-
-  /**
    * Modify the group's permissions
    */
   public setPermissions: ProcedureMethod<SetGroupPermissionsParams, void>;
@@ -85,12 +74,12 @@ export class CustomPermissionGroup extends PermissionGroup {
         },
       },
       context,
-      ticker,
+      asset: { ticker },
       id,
     } = this;
 
     const rawTicker = stringToTicker(ticker, context);
-    const rawAgId = numberToU32(id, context);
+    const rawAgId = bigNumberToU32(id, context);
 
     const rawGroupPermissions = await externalAgents.groupPermissions(rawTicker, rawAgId);
 
@@ -108,7 +97,11 @@ export class CustomPermissionGroup extends PermissionGroup {
    * Determine whether this Custom Permission Group exists on chain
    */
   public async exists(): Promise<boolean> {
-    const { ticker, id, context } = this;
+    const {
+      asset: { ticker },
+      id,
+      context,
+    } = this;
 
     const nextId = await context.polymeshApi.query.externalAgents.aGIdSequence(
       stringToTicker(ticker, context)
@@ -116,5 +109,17 @@ export class CustomPermissionGroup extends PermissionGroup {
 
     // 1 < id < next
     return u32ToBigNumber(nextId).gt(id) && id.gte(1);
+  }
+
+  /**
+   * Return the Group's static data
+   */
+  public toJson(): HumanReadable {
+    const { id, asset } = this;
+
+    return toHumanReadable({
+      id,
+      ticker: asset,
+    });
   }
 }

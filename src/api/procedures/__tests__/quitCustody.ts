@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { PortfolioId as MeshPortfolioId, TxTags } from 'polymesh-types/types';
+import { PortfolioId as MeshPortfolioId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -13,7 +13,7 @@ import * as procedureUtilsModule from '~/api/procedures/utils';
 import { Context, DefaultPortfolio, NumberedPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType } from '~/types';
+import { RoleType, TxTags } from '~/types';
 import { PortfolioId } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -65,12 +65,11 @@ describe('quitCustody procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the current Identity is the Portfolio owner', async () => {
+  it('should throw an error if the signing Identity is the Portfolio owner', async () => {
     const portfolio = new NumberedPortfolio({ id, did }, mockContext);
 
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
@@ -90,7 +89,7 @@ describe('quitCustody procedure', () => {
     expect(error.message).toBe('The Portfolio owner cannot quit custody');
   });
 
-  test('should add a quit portfolio custody transaction to the queue', async () => {
+  it('should add a quit portfolio custody transaction to the queue', async () => {
     const portfolio = entityMockUtils.getNumberedPortfolioInstance({
       id,
       did,
@@ -100,7 +99,7 @@ describe('quitCustody procedure', () => {
     const rawMeshPortfolioId = dsMockUtils.createMockPortfolioId({
       did: dsMockUtils.createMockIdentityId(did),
       kind: dsMockUtils.createMockPortfolioKind({
-        User: dsMockUtils.createMockU64(id.toNumber()),
+        User: dsMockUtils.createMockU64(id),
       }),
     });
 
@@ -120,11 +119,11 @@ describe('quitCustody procedure', () => {
 
     const addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawMeshPortfolioId);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawMeshPortfolioId] });
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       let portfolioId: PortfolioId = { did, number: id };
 
       let proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
@@ -132,10 +131,8 @@ describe('quitCustody procedure', () => {
       });
       let boundFunc = getAuthorization.bind(proc);
 
-      let portfolio: DefaultPortfolio | NumberedPortfolio = new NumberedPortfolio(
-        { id, did },
-        mockContext
-      );
+      let portfolio: DefaultPortfolio | NumberedPortfolio =
+        entityMockUtils.getNumberedPortfolioInstance({ id, did });
 
       let args = {
         portfolio,
@@ -145,8 +142,8 @@ describe('quitCustody procedure', () => {
         roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
         permissions: {
           transactions: [TxTags.portfolio.QuitPortfolioCustody],
-          portfolios: [portfolio],
-          tokens: [],
+          portfolios: [expect.objectContaining({ owner: expect.objectContaining({ did }), id })],
+          assets: [],
         },
       });
 
@@ -157,7 +154,7 @@ describe('quitCustody procedure', () => {
       });
       boundFunc = getAuthorization.bind(proc);
 
-      portfolio = new DefaultPortfolio(portfolioId, mockContext);
+      portfolio = entityMockUtils.getDefaultPortfolioInstance(portfolioId);
 
       args = {
         portfolio,
@@ -167,15 +164,15 @@ describe('quitCustody procedure', () => {
         roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
         permissions: {
           transactions: [TxTags.portfolio.QuitPortfolioCustody],
-          portfolios: [portfolio],
-          tokens: [],
+          portfolios: [expect.objectContaining({ owner: expect.objectContaining({ did }) })],
+          assets: [],
         },
       });
     });
   });
 
   describe('prepareStorage', () => {
-    test('should return the portfolio id', async () => {
+    it('should return the portfolio id', async () => {
       const portfolio = new NumberedPortfolio({ id, did }, mockContext);
 
       const portfolioId: { did: string; number?: BigNumber } = { did, number: id };

@@ -1,4 +1,4 @@
-import { IdentityId, Ticker, TxTags } from 'polymesh-types/types';
+import { IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -9,11 +9,12 @@ import {
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
+import { TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('removePrimaryIssuanceAgent procedure', () => {
@@ -52,18 +53,17 @@ describe('removePrimaryIssuanceAgent procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
-  test('should add a remove primary issuance agent transaction to the queue', async () => {
+  it('should add a remove primary issuance agent transaction to the queue', async () => {
     const args = {
       ticker,
     };
 
     entityMockUtils.configureMocks({
-      securityTokenOptions: {
+      assetOptions: {
         details: {
           primaryIssuanceAgents: [entityMockUtils.getIdentityInstance({ did })],
         },
@@ -75,16 +75,16 @@ describe('removePrimaryIssuanceAgent procedure', () => {
 
     await prepareRemovePrimaryIssuanceAgent.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawIdentityId);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawIdentityId] });
   });
 
-  test('should throw an error if Primary Issuance Agent list has more than one identity', () => {
+  it('should throw an error if primary issuance agent list has more than one Identity', () => {
     const args = {
       ticker,
     };
 
     entityMockUtils.configureMocks({
-      securityTokenOptions: {
+      assetOptions: {
         details: {
           primaryIssuanceAgents: [
             entityMockUtils.getIdentityInstance({ did: 'did' }),
@@ -97,12 +97,12 @@ describe('removePrimaryIssuanceAgent procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     return expect(prepareRemovePrimaryIssuanceAgent.call(proc, args)).rejects.toThrow(
-      'There must be one (and only one) Primary Issuance Agent assigned to this Security Token'
+      'There must be one (and only one) Primary Issuance Agent assigned to this Asset'
     );
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args = {
@@ -112,7 +112,7 @@ describe('removePrimaryIssuanceAgent procedure', () => {
       expect(boundFunc(args)).toEqual({
         permissions: {
           transactions: [TxTags.externalAgents.RemoveAgent],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

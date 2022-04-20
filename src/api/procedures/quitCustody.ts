@@ -36,7 +36,7 @@ export async function prepareQuitCustody(
 
   if (isOwnedBy) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'The Portfolio owner cannot quit custody',
     });
   }
@@ -45,7 +45,10 @@ export async function prepareQuitCustody(
 
   const rawPortfolioId = portfolioIdToMeshPortfolioId(portfolioId, context);
 
-  this.addTransaction(tx.portfolio.quitPortfolioCustody, {}, rawPortfolioId);
+  this.addTransaction({
+    transaction: tx.portfolio.quitPortfolioCustody,
+    args: [rawPortfolioId],
+  });
 }
 
 /**
@@ -61,7 +64,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.portfolio.QuitPortfolioCustody],
-      tokens: [],
+      assets: [],
       portfolios: [portfolio],
     },
     roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],

@@ -1,4 +1,4 @@
-import { AgentGroup, AuthorizationData, Signatory, Ticker, TxTags } from 'polymesh-types/types';
+import { AgentGroup, AuthorizationData, Signatory, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -8,15 +8,15 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/inviteExternalAgent';
-import { Account, Context, Identity, SecurityToken } from '~/internal';
+import { Account, Asset, AuthorizationRequest, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, PermissionType, SignerValue } from '~/types';
+import { Authorization, PermissionType, SignerValue, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 jest.mock(
   '~/api/entities/CustomPermissionGroup',
@@ -40,7 +40,7 @@ describe('inviteExternalAgent procedure', () => {
   let signerToStringStub: sinon.SinonStub<[string | Identity | Account], string>;
   let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
   let ticker: string;
-  let token: SecurityToken;
+  let asset: Asset;
   let rawTicker: Ticker;
   let rawAgentGroup: AgentGroup;
   let target: string;
@@ -61,7 +61,7 @@ describe('inviteExternalAgent procedure', () => {
     ticker = 'someTicker';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawAgentGroup = dsMockUtils.createMockAgentGroup('Full');
-    token = entityMockUtils.getSecurityTokenInstance({ ticker });
+    asset = entityMockUtils.getAssetInstance({ ticker });
     target = 'someDid';
     rawSignatory = dsMockUtils.createMockSignatory({
       Identity: dsMockUtils.createMockIdentityId(target),
@@ -73,7 +73,7 @@ describe('inviteExternalAgent procedure', () => {
 
   beforeEach(() => {
     entityMockUtils.configureMocks({
-      securityTokenOptions: {
+      assetOptions: {
         corporateActionsGetAgents: [],
       },
     });
@@ -91,14 +91,15 @@ describe('inviteExternalAgent procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
   describe('prepareStorage', () => {
-    test('should return the security token', () => {
-      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
+    it('should return the Asset', () => {
+      const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest, Storage>(
+        mockContext
+      );
       const boundFunc = prepareStorage.bind(proc);
 
       const result = boundFunc({
@@ -108,66 +109,82 @@ describe('inviteExternalAgent procedure', () => {
       });
 
       expect(result).toEqual({
-        token,
+        asset: expect.objectContaining({ ticker }),
       });
     });
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-        token,
-      });
+    it('should return the appropriate roles and permissions', () => {
+      const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest, Storage>(
+        mockContext,
+        {
+          asset,
+        }
+      );
       const boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc()).toEqual({
         permissions: {
           transactions: [TxTags.identity.AddAuthorization],
-          tokens: [token],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });
     });
   });
 
-  test('should throw an error if the target identity is already an External Agent', () => {
+  it('should throw an error if the target Identity is already an external agent', () => {
     const args = {
       target,
       ticker,
       permissions: entityMockUtils.getKnownPermissionGroupInstance(),
     };
 
-    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      token: entityMockUtils.getSecurityTokenInstance({
-        permissionsGetAgents: [
-          {
-            agent: entityMockUtils.getIdentityInstance({ did: target }),
-            group: entityMockUtils.getKnownPermissionGroupInstance(),
-          },
-        ],
-      }),
-    });
+    const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest, Storage>(
+      mockContext,
+      {
+        asset: entityMockUtils.getAssetInstance({
+          permissionsGetAgents: [
+            {
+              agent: entityMockUtils.getIdentityInstance({ did: target }),
+              group: entityMockUtils.getKnownPermissionGroupInstance(),
+            },
+          ],
+        }),
+      }
+    );
 
     return expect(prepareInviteExternalAgent.call(proc, args)).rejects.toThrow(
       'The target Identity is already an External Agent'
     );
   });
 
-  test('should add an add authorization transaction to the queue', async () => {
+  it('should add an add authorization transaction to the queue', async () => {
     const transaction = dsMockUtils.createTxStub('identity', 'addAuthorization');
-    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      token: entityMockUtils.getSecurityTokenInstance({
-        permissionsGetAgents: [
-          {
-            agent: { did: 'otherDid' } as Identity,
-            group: entityMockUtils.getCustomPermissionGroupInstance(),
-          },
-        ],
-      }),
-    });
+    const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest, Storage>(
+      mockContext,
+      {
+        asset: entityMockUtils.getAssetInstance({
+          permissionsGetAgents: [
+            {
+              agent: entityMockUtils.getIdentityInstance({ isEqual: false }),
+              group: entityMockUtils.getCustomPermissionGroupInstance(),
+            },
+          ],
+        }),
+      }
+    );
 
+    type AuthCallback = () => AuthorizationData;
     procedureMockUtils.getAddProcedureStub().resolves({
-      transform: (cb: () => AuthorizationData) => cb(),
+      transform: (cb: AuthCallback & { transform: { cb: AuthCallback } }) => {
+        const res = cb();
+        return {
+          ...res,
+          transform: (ocb: AuthCallback) => ocb(),
+        };
+      },
     });
 
     await prepareInviteExternalAgent.call(proc, {
@@ -178,15 +195,15 @@ describe('inviteExternalAgent procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      transaction,
-      {},
-      rawSignatory,
-      rawAuthorizationData,
-      null
+      sinon.match({
+        transaction,
+        resolvers: sinon.match.array,
+        args: [rawSignatory, rawAuthorizationData, null],
+      })
     );
 
     await prepareInviteExternalAgent.call(proc, {
-      target,
+      target: entityMockUtils.getIdentityInstance({ did: target }),
       ticker,
       permissions: {
         transactions: {
@@ -198,11 +215,11 @@ describe('inviteExternalAgent procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      transaction,
-      {},
-      rawSignatory,
-      rawAuthorizationData,
-      null
+      sinon.match({
+        transaction,
+        resolvers: sinon.match.array,
+        args: [rawSignatory, rawAuthorizationData, null],
+      })
     );
   });
 });

@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import { NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { numberToU64, portfolioLikeToPortfolio, stringToIdentityId } from '~/utils/conversion';
+import { bigNumberToU64, portfolioLikeToPortfolio } from '~/utils/conversion';
 
 export interface DeletePortfolioParams {
   did: string;
@@ -20,7 +20,6 @@ export async function prepareDeletePortfolio(
   const {
     context: {
       polymeshApi: {
-        query: { portfolio: queryPortfolio },
         tx: { portfolio },
       },
     },
@@ -30,29 +29,31 @@ export async function prepareDeletePortfolio(
   const { did, id } = args;
 
   const numberedPortfolio = new NumberedPortfolio({ did, id }, context);
-  const identityId = stringToIdentityId(did, context);
-  const rawPortfolioNumber = numberToU64(id, context);
+  const rawPortfolioNumber = bigNumberToU64(id, context);
 
-  const [rawPortfolioName, portfolioBalances] = await Promise.all([
-    queryPortfolio.portfolios(identityId, rawPortfolioNumber),
-    numberedPortfolio.getTokenBalances(),
+  const [exists, portfolioBalances] = await Promise.all([
+    numberedPortfolio.exists(),
+    numberedPortfolio.getAssetBalances(),
   ]);
 
-  if (rawPortfolioName.isEmpty) {
+  if (!exists) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.DataUnavailable,
       message: "The Portfolio doesn't exist",
     });
   }
 
   if (portfolioBalances.some(({ total }) => total.gt(0))) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'You cannot delete a Portfolio that contains any assets',
+      code: ErrorCode.EntityInUse,
+      message: 'Only empty Portfolios can be deleted',
     });
   }
 
-  this.addTransaction(portfolio.deletePortfolio, {}, rawPortfolioNumber);
+  this.addTransaction({
+    transaction: portfolio.deletePortfolio,
+    args: [rawPortfolioNumber],
+  });
 }
 
 /**
@@ -69,7 +70,7 @@ export function getAuthorization(
     permissions: {
       transactions: [TxTags.portfolio.DeletePortfolio],
       portfolios: [portfolioLikeToPortfolio({ identity: did, id }, context)],
-      tokens: [],
+      assets: [],
     },
   };
 }

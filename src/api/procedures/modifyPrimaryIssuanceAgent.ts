@@ -1,10 +1,4 @@
-import {
-  Identity,
-  KnownPermissionGroup,
-  PolymeshError,
-  Procedure,
-  SecurityToken,
-} from '~/internal';
+import { Asset, Identity, KnownPermissionGroup, PolymeshError, Procedure } from '~/internal';
 import { AuthorizationType, ErrorCode, PermissionGroupType, SignerType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
@@ -16,7 +10,7 @@ import {
 
 export interface ModifyPrimaryIssuanceAgentParams {
   /**
-   * identity to be set as primary issuance agent
+   * Identity to be set as primary issuance agent
    */
   target: string | Identity;
   /**
@@ -52,23 +46,23 @@ export async function prepareModifyPrimaryIssuanceAgent(
 
   const { target, ticker, requestExpiry } = args;
 
-  const securityToken = new SecurityToken({ ticker }, context);
+  const asset = new Asset({ ticker }, context);
 
   const [invalidDids, { primaryIssuanceAgents }] = await Promise.all([
     context.getInvalidDids([target]),
-    securityToken.details(),
+    asset.details(),
   ]);
 
   if (primaryIssuanceAgents.length) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'The Primary Issuance Agents must be undefined to perform this procedure',
     });
   }
 
   if (invalidDids.length) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.DataUnavailable,
       message: 'The supplied Identity does not exist',
     });
   }
@@ -100,7 +94,10 @@ export async function prepareModifyPrimaryIssuanceAgent(
     rawExpiry = null;
   }
 
-  this.addTransaction(identity.addAuthorization, {}, rawSignatory, rawAuthorizationData, rawExpiry);
+  this.addTransaction({
+    transaction: identity.addAuthorization,
+    args: [rawSignatory, rawAuthorizationData, rawExpiry],
+  });
 }
 
 /**
@@ -114,7 +111,7 @@ export function getAuthorization(
     permissions: {
       transactions: [TxTags.identity.AddAuthorization],
       portfolios: [],
-      tokens: [new SecurityToken({ ticker }, this.context)],
+      assets: [new Asset({ ticker }, this.context)],
     },
   };
 }

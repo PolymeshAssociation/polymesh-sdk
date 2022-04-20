@@ -1,8 +1,7 @@
-import { assertSecondaryKeys } from '~/api/procedures/utils';
-import { Identity, Procedure } from '~/internal';
-import { PermissionsLike, RoleType, Signer, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
-import { tuple } from '~/types/utils';
+import { assertSecondaryAccounts } from '~/api/procedures/utils';
+import { Procedure } from '~/internal';
+import { PermissionedAccount, PermissionsLike, TxTags } from '~/types';
+import { Modify, tuple } from '~/types/utils';
 import {
   permissionsLikeToPermissions,
   permissionsToMeshPermissions,
@@ -12,27 +11,17 @@ import {
 
 export interface ModifySignerPermissionsParams {
   /**
-   * list of secondary keys
+   * list of secondary Accounts
    */
-  secondaryKeys: {
-    signer: Signer;
-    /**
-     * list of permissions
-     */
-    permissions: PermissionsLike;
-  }[];
+  secondaryAccounts: Modify<PermissionedAccount, { permissions: PermissionsLike }>[];
 }
-
-export type Params = ModifySignerPermissionsParams & {
-  identity: Identity;
-};
 
 /**
  * @hidden
  */
 export async function prepareModifySignerPermissions(
-  this: Procedure<Params>,
-  args: Params
+  this: Procedure<ModifySignerPermissionsParams>,
+  args: ModifySignerPermissionsParams
 ): Promise<void> {
   const {
     context: {
@@ -41,51 +30,43 @@ export async function prepareModifySignerPermissions(
     context,
   } = this;
 
-  const { secondaryKeys: signers, identity } = args;
+  const { secondaryAccounts } = args;
 
-  const secondaryKeys = await identity.getSecondaryKeys();
-  const signerValues = signers.map(({ signer, permissions }) => {
-    return {
-      signer: signerToSignerValue(signer),
-      permissions,
-    };
-  });
+  const identity = await context.getSigningIdentity();
 
-  assertSecondaryKeys(
-    signerValues.map(({ signer }) => signer),
-    secondaryKeys
+  const existingSecondaryAccounts = await identity.getSecondaryAccounts();
+
+  assertSecondaryAccounts(
+    secondaryAccounts.map(({ account }) => account),
+    existingSecondaryAccounts
   );
 
-  const signersList = signerValues.map(({ signer, permissions: permissionsLike }) => {
+  const signersList = secondaryAccounts.map(({ account, permissions: permissionsLike }) => {
     const permissions = permissionsLikeToPermissions(permissionsLike, context);
 
     const rawPermissions = permissionsToMeshPermissions(permissions, context);
 
-    return tuple(signerValueToSignatory(signer, context), rawPermissions);
+    return tuple(signerValueToSignatory(signerToSignerValue(account), context), rawPermissions);
   });
 
-  this.addBatchTransaction(tx.identity.setPermissionToSigner, {}, signersList);
+  const transaction = tx.identity.setPermissionToSigner;
+
+  this.addBatchTransaction({
+    transactions: signersList.map(params => ({
+      transaction,
+      args: params,
+    })),
+  });
 }
 
 /**
  * @hidden
  */
-export function getAuthorization(
-  this: Procedure<Params>,
-  { identity: { did } }: Params
-): ProcedureAuthorization {
-  return {
-    roles: [{ type: RoleType.Identity, did }],
+export const modifySignerPermissions = (): Procedure<ModifySignerPermissionsParams> =>
+  new Procedure(prepareModifySignerPermissions, {
     permissions: {
       transactions: [TxTags.identity.SetPermissionToSigner],
-      tokens: [],
+      assets: [],
       portfolios: [],
     },
-  };
-}
-
-/**
- * @hidden
- */
-export const modifySignerPermissions = (): Procedure<Params> =>
-  new Procedure(prepareModifySignerPermissions, getAuthorization);
+  });

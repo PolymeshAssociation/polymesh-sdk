@@ -1,6 +1,6 @@
 import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import { StoredSchedule, Ticker, TxTags } from 'polymesh-types/types';
+import { StoredSchedule, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -11,17 +11,18 @@ import {
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
+import { TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('removeCheckpointSchedule procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub;
-  let numberToU64Stub: sinon.SinonStub;
+  let bigNumberToU64Stub: sinon.SinonStub;
   let u32ToBigNumberStub: sinon.SinonStub;
   let ticker: string;
   let rawTicker: Ticker;
@@ -34,18 +35,18 @@ describe('removeCheckpointSchedule procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
+    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
     u32ToBigNumberStub = sinon.stub(utilsConversionModule, 'u32ToBigNumber');
     ticker = 'someTicker';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     id = new BigNumber(1);
-    rawId = dsMockUtils.createMockU64(id.toNumber());
+    rawId = dsMockUtils.createMockU64(id);
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
     stringToTickerStub.returns(rawTicker);
-    numberToU64Stub.returns(rawId);
+    bigNumberToU64Stub.returns(rawId);
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
     dsMockUtils.createQueryStub('checkpoint', 'scheduleRefCount');
@@ -58,12 +59,11 @@ describe('removeCheckpointSchedule procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the Schedule no longer exists', () => {
+  it('should throw an error if the Schedule no longer exists', () => {
     const args = {
       ticker,
       schedule: id,
@@ -72,7 +72,7 @@ describe('removeCheckpointSchedule procedure', () => {
     dsMockUtils.createQueryStub('checkpoint', 'schedules', {
       returnValue: [
         dsMockUtils.createMockStoredSchedule({
-          id: dsMockUtils.createMockU64(5),
+          id: dsMockUtils.createMockU64(new BigNumber(5)),
         } as StoredSchedule),
       ],
     });
@@ -80,11 +80,11 @@ describe('removeCheckpointSchedule procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     return expect(prepareRemoveCheckpointSchedule.call(proc, args)).rejects.toThrow(
-      'Schedule no longer exists. It was either removed or it expired'
+      'Schedule was not found. It may have been removed or expired'
     );
   });
 
-  test('should throw an error if Schedule Ref Count is not zero', () => {
+  it('should throw an error if Schedule Ref Count is not zero', () => {
     const args = {
       ticker,
       schedule: id,
@@ -93,7 +93,7 @@ describe('removeCheckpointSchedule procedure', () => {
     dsMockUtils.createQueryStub('checkpoint', 'schedules', {
       returnValue: [
         dsMockUtils.createMockStoredSchedule({
-          id: dsMockUtils.createMockU64(id.toNumber()),
+          id: dsMockUtils.createMockU64(id),
         } as StoredSchedule),
       ],
     });
@@ -103,11 +103,11 @@ describe('removeCheckpointSchedule procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     return expect(prepareRemoveCheckpointSchedule.call(proc, args)).rejects.toThrow(
-      'You cannot remove this Schedule'
+      'This Schedule is being referenced by other Entities. It cannot be removed'
     );
   });
 
-  test('should add a remove schedule transaction to the queue', async () => {
+  it('should add a remove schedule transaction to the queue', async () => {
     const args = {
       ticker,
       schedule: id,
@@ -116,7 +116,7 @@ describe('removeCheckpointSchedule procedure', () => {
     dsMockUtils.createQueryStub('checkpoint', 'schedules', {
       returnValue: [
         dsMockUtils.createMockStoredSchedule({
-          id: dsMockUtils.createMockU64(id.toNumber()),
+          id: rawId,
         } as StoredSchedule),
       ],
     });
@@ -128,7 +128,7 @@ describe('removeCheckpointSchedule procedure', () => {
 
     await prepareRemoveCheckpointSchedule.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawId] });
 
     transaction = dsMockUtils.createTxStub('checkpoint', 'removeSchedule');
     proc = procedureMockUtils.getInstance<Params, void>(mockContext);
@@ -140,11 +140,11 @@ describe('removeCheckpointSchedule procedure', () => {
       }),
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawId] });
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args = {
@@ -154,7 +154,7 @@ describe('removeCheckpointSchedule procedure', () => {
       expect(boundFunc(args)).toEqual({
         permissions: {
           transactions: [TxTags.checkpoint.RemoveSchedule],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

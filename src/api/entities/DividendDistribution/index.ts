@@ -1,4 +1,5 @@
 import { Option } from '@polkadot/types';
+import { BlockNumber, Hash } from '@polkadot/types/interfaces/runtime';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, flatten, remove } from 'lodash';
@@ -13,11 +14,11 @@ import {
   CheckpointSchedule,
   claimDividends,
   Context,
-  CorporateAction,
+  CorporateActionBase,
   DefaultPortfolio,
   Identity,
+  ModifyCaCheckpointParams,
   modifyDistributionCheckpoint,
-  ModifyDistributionCheckpointParams,
   NumberedPortfolio,
   payDividends,
   PayDividendsParams,
@@ -31,25 +32,28 @@ import {
   CorporateActionKind,
   DistributionPayment,
   DividendDistributionDetails,
-  Ensured,
   ErrorCode,
   IdentityBalance,
+  InputCaCheckpoint,
+  NoArgsProcedureMethod,
   ProcedureMethod,
   ResultSet,
   TargetTreatment,
 } from '~/types';
-import { HumanReadableType, QueryReturnType, tuple } from '~/types/utils';
+import { Ensured, HumanReadableType, Modify, QueryReturnType, tuple } from '~/types/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   balanceToBigNumber,
+  bigNumberToU32,
   boolToBoolean,
   corporateActionIdentifierToCaId,
+  hashToString,
   stringToIdentityId,
 } from '~/utils/conversion';
 import {
   calculateNextKey,
   createProcedureMethod,
-  getDid,
+  getIdentity,
   toHumanReadable,
   xor,
 } from '~/utils/internal';
@@ -79,28 +83,28 @@ export type Params = CorporateActionParams & DividendDistributionParams;
 const notExistsMessage = 'The Dividend Distribution no longer exists';
 
 /**
- * Represents a Corporate Action via which a Security Token issuer wishes to distribute dividends
- *   between a subset of the Tokenholders (targets)
+ * Represents a Corporate Action via which an Asset issuer wishes to distribute dividends
+ *   between a subset of the Asset Holders (targets)
  */
-export class DividendDistribution extends CorporateAction {
+export class DividendDistribution extends CorporateActionBase {
   /**
    * Portfolio from which the dividends will be distributed
    */
   public origin: DefaultPortfolio | NumberedPortfolio;
 
   /**
-   * ticker of the currency in which dividends are being distibuted
+   * ticker of the currency in which dividends are being distributed
    */
   public currency: string;
 
   /**
-   * amount of `currency` to pay for each share the Tokenholder holds
+   * amount of `currency` to pay for each share held by the Asset Holders
    */
   public perShare: BigNumber;
 
   /**
    * maximum amount of `currency` to be distributed. Distributions are "first come, first served", so funds can be depleted before
-   *   every Tokenholder receives their corresponding amount
+   *   every Asset Holder receives their corresponding amount
    */
   public maxAmount: BigNumber;
 
@@ -117,7 +121,7 @@ export class DividendDistribution extends CorporateAction {
   /**
    * type of dividend distribution being represented. The chain enforces it to be either PredictableBenefit or UnpredictableBenefit
    */
-  protected kind!:
+  protected declare kind:
     | CorporateActionKind.UnpredictableBenefit
     | CorporateActionKind.PredictableBenefit;
 
@@ -155,7 +159,7 @@ export class DividendDistribution extends CorporateAction {
     );
 
     this.claim = createProcedureMethod(
-      { getProcedureAndArgs: () => [claimDividends, { distribution: this }] },
+      { getProcedureAndArgs: () => [claimDividends, { distribution: this }], voidArgs: true },
       context
     );
 
@@ -172,22 +176,31 @@ export class DividendDistribution extends CorporateAction {
     this.reclaimFunds = createProcedureMethod(
       {
         getProcedureAndArgs: () => [reclaimDividendDistributionFunds, { distribution: this }],
+        voidArgs: true,
       },
       context
     );
   }
 
   /**
-   * Claim the Dividends corresponding to the current Identity
+   * Claim the Dividends corresponding to the signing Identity
    *
    * @note if `currency` is indivisible, the Identity's share will be rounded down to the nearest integer (after taxes are withheld)
    */
-  public claim: ProcedureMethod<void, void>;
+  public claim: NoArgsProcedureMethod<void>;
 
   /**
-   * Modify the Distribution's checkpoint
+   * Modify the Distribution's Checkpoint
    */
-  public modifyCheckpoint: ProcedureMethod<ModifyDistributionCheckpointParams, void>;
+  public modifyCheckpoint: ProcedureMethod<
+    Modify<
+      ModifyCaCheckpointParams,
+      {
+        checkpoint: InputCaCheckpoint;
+      }
+    >,
+    void
+  >;
 
   /**
    * Transfer the corresponding share of the dividends to a list of Identities
@@ -205,13 +218,13 @@ export class DividendDistribution extends CorporateAction {
    * @note required roles:
    *   - Origin Portfolio Custodian
    */
-  public reclaimFunds: ProcedureMethod<void, void>;
+  public reclaimFunds: NoArgsProcedureMethod<void>;
 
   /**
    * Retrieve the Checkpoint associated with this Dividend Distribution. If the Checkpoint is scheduled and has not been created yet,
    *   the corresponding CheckpointSchedule is returned instead
    */
-  public async checkpoint(): Promise<Checkpoint | CheckpointSchedule> {
+  public override async checkpoint(): Promise<Checkpoint | CheckpointSchedule> {
     const exists = await this.exists();
 
     if (!exists) {
@@ -230,7 +243,7 @@ export class DividendDistribution extends CorporateAction {
   /**
    * Retrieve whether the Distribution exists
    */
-  public async exists(): Promise<boolean> {
+  public override async exists(): Promise<boolean> {
     const distribution = await this.fetchDistribution();
 
     return distribution.isSome;
@@ -261,7 +274,7 @@ export class DividendDistribution extends CorporateAction {
    * Retrieve a comprehensive list of all Identities that are entitled to dividends in this Distribution (participants),
    *   the amount they are entitled to and whether they have been paid or not
    *
-   * @note this request can take a lot of time with large amounts of Tokenholders
+   * @note this request can take a lot of time with large amounts of Asset Holders
    * @note if the Distribution Checkpoint hasn't been created yet, the result will be an empty array.
    *   This is because the Distribution participants cannot be determined without a Checkpoint
    */
@@ -294,9 +307,9 @@ export class DividendDistribution extends CorporateAction {
 
     const participants: DistributionParticipant[] = [];
     const clonedTargets = [...targetIdentities];
-    balances.forEach(({ identity: { did }, identity, balance }) => {
-      const isTarget = !!remove(clonedTargets, ({ did: targetDid }) => did === targetDid).length;
 
+    balances.forEach(({ identity, balance }) => {
+      const isTarget = !!remove(clonedTargets, target => identity.isEqual(target)).length;
       if (balance.gt(0) && xor(isTarget, isExclusion)) {
         participants.push({
           identity,
@@ -320,7 +333,7 @@ export class DividendDistribution extends CorporateAction {
    * Retrieve an Identity that is entitled to dividends in this Distribution (participant),
    *   the amount it is entitled to and whether it has been paid or not
    *
-   * @param args.identity - defaults to the current Identity
+   * @param args.identity - defaults to the signing Identity
    *
    * @note if the Distribution Checkpoint hasn't been created yet, the result will be null.
    *   This is because the Distribution participant's corresponding payment cannot be determined without a Checkpoint
@@ -330,7 +343,7 @@ export class DividendDistribution extends CorporateAction {
   }): Promise<DistributionParticipant | null> {
     const {
       id: localId,
-      ticker,
+      asset: { ticker },
       targets: { identities: targetIdentities, treatment },
       paymentDate,
       perShare,
@@ -346,14 +359,12 @@ export class DividendDistribution extends CorporateAction {
       return null;
     }
 
-    const [did, balance] = await Promise.all([
-      getDid(args?.identity, context),
+    const [identity, balance] = await Promise.all([
+      getIdentity(args?.identity, context),
       checkpoint.balance(args),
     ]);
 
-    const identity = new Identity({ did }, context);
-
-    const isTarget = !!targetIdentities.find(({ did: targetDid }) => did === targetDid);
+    const isTarget = !!targetIdentities.find(target => identity.isEqual(target));
 
     let participant: DistributionParticipant;
 
@@ -374,7 +385,7 @@ export class DividendDistribution extends CorporateAction {
       return participant;
     }
 
-    const rawDid = stringToIdentityId(did, context);
+    const rawDid = stringToIdentityId(identity.did, context);
     const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
     const holderPaid = await query.capitalDistribution.holderPaid([rawCaId, rawDid]);
     const paid = boolToBoolean(holderPaid);
@@ -386,7 +397,11 @@ export class DividendDistribution extends CorporateAction {
    * @hidden
    */
   private fetchDistribution(): Promise<Option<Distribution>> {
-    const { ticker, id, context } = this;
+    const {
+      asset: { ticker },
+      id,
+      context,
+    } = this;
 
     return context.polymeshApi.query.capitalDistribution.distributions(
       corporateActionIdentifierToCaId({ ticker, localId: id }, context)
@@ -399,7 +414,11 @@ export class DividendDistribution extends CorporateAction {
    * @note uses the middleware
    */
   public async getWithheldTax(): Promise<BigNumber> {
-    const { id, ticker, context } = this;
+    const {
+      id,
+      asset: { ticker },
+      context,
+    } = this;
 
     const taxPromise = context.queryMiddleware<Ensured<Query, 'getWithholdingTaxesOfCA'>>(
       getWithholdingTaxesOfCa({
@@ -430,9 +449,18 @@ export class DividendDistribution extends CorporateAction {
    * @note supports pagination
    */
   public async getPaymentHistory(
-    opts: { size?: number; start?: number } = {}
+    opts: { size?: BigNumber; start?: BigNumber } = {}
   ): Promise<ResultSet<DistributionPayment>> {
-    const { id, ticker, context } = this;
+    const {
+      id,
+      asset: { ticker },
+      context,
+      context: {
+        polymeshApi: {
+          query: { system },
+        },
+      },
+    } = this;
     const { size, start } = opts;
 
     const paymentsPromise = context.queryMiddleware<
@@ -442,8 +470,8 @@ export class DividendDistribution extends CorporateAction {
         CAId: { ticker, localId: id.toNumber() },
         fromDate: null,
         toDate: null,
-        count: size,
-        skip: start,
+        count: size?.toNumber(),
+        skip: start?.toNumber(),
       })
     );
 
@@ -460,30 +488,41 @@ export class DividendDistribution extends CorporateAction {
       data: { getHistoryOfPaymentEventsForCA: getHistoryOfPaymentEventsForCaResult },
     } = result;
 
-    const { items, totalCount: count } = getHistoryOfPaymentEventsForCaResult;
+    const { items, totalCount } = getHistoryOfPaymentEventsForCaResult;
 
-    const data: DistributionPayment[] = [];
-    let next = null;
+    const count = new BigNumber(totalCount);
+    const data: Omit<DistributionPayment, 'blockHash'>[] = [];
+    const multiParams: BlockNumber[] = [];
 
-    if (items) {
-      items.forEach(item => {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const { blockId, datetime, eventDid: did, balance, tax } = item!;
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
+    items!.forEach(item => {
+      const { blockId, datetime, eventDid: did, balance, tax } = item!;
 
-        data.push({
-          blockNumber: new BigNumber(blockId),
-          date: new Date(datetime),
-          target: new Identity({ did }, context),
-          amount: new BigNumber(balance),
-          withheldTax: new BigNumber(tax),
-        });
+      const blockNumber = new BigNumber(blockId);
+      multiParams.push(bigNumberToU32(blockNumber, context));
+      data.push({
+        blockNumber,
+        date: new Date(datetime),
+        target: new Identity({ did }, context),
+        amount: new BigNumber(balance),
+        withheldTax: new BigNumber(tax),
       });
+    });
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
-      next = calculateNextKey(count, size, start);
+    const next = calculateNextKey(count, size, start);
+
+    let hashes: Hash[] = [];
+
+    if (multiParams.length) {
+      hashes = await system.blockHash.multi<QueryReturnType<typeof system.blockHash>>(multiParams);
     }
 
     return {
-      data,
+      data: data.map((payment, index) => ({
+        ...payment,
+        blockHash: hashToString(hashes[index]),
+      })),
       next,
       count,
     };
@@ -496,7 +535,7 @@ export class DividendDistribution extends CorporateAction {
     participants: DistributionParticipant[]
   ): Promise<boolean[]> {
     const {
-      ticker,
+      asset: { ticker },
       id: localId,
       context: {
         polymeshApi: {
@@ -510,7 +549,7 @@ export class DividendDistribution extends CorporateAction {
      * For optimization, we separate the participants into chunks that can fit into one multi call
      * and then sequentially perform bunches of said multi requests in parallel
      */
-    const participantChunks = chunk(participants, MAX_PAGE_SIZE);
+    const participantChunks = chunk(participants, MAX_PAGE_SIZE.toNumber());
     const parallelCallChunks = chunk(participantChunks, MAX_CONCURRENT_REQUESTS);
 
     let paidStatuses: boolean[] = [];
@@ -539,7 +578,7 @@ export class DividendDistribution extends CorporateAction {
   /**
    * Return the Dividend Distribution's static data
    */
-  public toJson(): HumanReadable {
+  public override toJson(): HumanReadable {
     const { origin, currency, perShare, maxAmount, expiryDate, paymentDate } = this;
 
     const parentReadable = super.toJson();

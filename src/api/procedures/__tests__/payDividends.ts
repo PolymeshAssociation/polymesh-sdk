@@ -10,14 +10,14 @@ import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('payDividends procedure', () => {
-  const ticker = 'SOMETICKER';
+  const ticker = 'SOME_TICKER';
   const did = 'someDid';
   const id = new BigNumber(1);
   const paymentDate = new Date('10/14/1987');
   const expiryDate = new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 365);
 
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  const rawCaId = dsMockUtils.createMockCAId({ ticker, local_id: id.toNumber() });
+  const rawCaId = dsMockUtils.createMockCAId({ ticker, local_id: id });
 
   let distribution: DividendDistribution;
 
@@ -55,12 +55,11 @@ describe('payDividends procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
-  test('should add a stop sto transaction to the queue', async () => {
+  it('should add a stop Offering transaction to the queue', async () => {
     const targets = ['someDid'];
     const identityId = dsMockUtils.createMockIdentityId(targets[0]);
 
@@ -86,12 +85,12 @@ describe('payDividends procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     await preparePayDividends.call(proc, { targets, distribution });
-    sinon.assert.calledWith(addBatchTransactionStub, payDividendsTransaction, {}, [
-      [rawCaId, identityId],
-    ]);
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: [{ transaction: payDividendsTransaction, args: [rawCaId, identityId] }],
+    });
   });
 
-  test('should throw an error if the Distribution is expired', async () => {
+  it('should throw an error if the Distribution is expired', async () => {
     const targets = ['someDid'];
     const date = new Date(new Date().getTime() + 1000 * 60 * 60);
     distribution = entityMockUtils.getDividendDistributionInstance({
@@ -115,7 +114,7 @@ describe('payDividends procedure', () => {
     });
   });
 
-  test('should throw an error if the Distribution is expired', async () => {
+  it('should throw an error if the Distribution is expired', async () => {
     const targets = ['someDid'];
     const date = new Date(new Date().getTime() - 1000);
     distribution = entityMockUtils.getDividendDistributionInstance({
@@ -139,7 +138,7 @@ describe('payDividends procedure', () => {
     });
   });
 
-  test('should throw an error if some of the supplied targets are not included in the Distribution', async () => {
+  it('should throw an error if some of the supplied targets are not included in the Distribution', async () => {
     const excludedDid = 'someDid';
 
     dsMockUtils.createQueryStub('capitalDistribution', 'holderPaid', {
@@ -148,7 +147,7 @@ describe('payDividends procedure', () => {
 
     distribution = entityMockUtils.getDividendDistributionInstance({
       targets: {
-        identities: [entityMockUtils.getIdentityInstance({ did: 'otherDid' })],
+        identities: [entityMockUtils.getIdentityInstance({ isEqual: false, did: 'otherDid' })],
         treatment: TargetTreatment.Include,
       },
       paymentDate,
@@ -171,9 +170,9 @@ describe('payDividends procedure', () => {
     expect(err.data.excluded[0].did).toBe(excludedDid);
   });
 
-  test('should throw an error if some of the supplied targets has already claimed their benefits', async () => {
+  it('should throw an error if some of the supplied targets has already claimed their benefits', async () => {
     const dids = ['someDid', 'otherDid'];
-    const targets = [dids[0], entityMockUtils.getIdentityInstance({ did: dids[1] })];
+    const targets = [dids[0], entityMockUtils.getIdentityInstance({ isEqual: true, did: dids[1] })];
 
     dsMockUtils.createQueryStub('capitalDistribution', 'holderPaid', {
       multi: [dsMockUtils.createMockBool(true)],
@@ -188,7 +187,7 @@ describe('payDividends procedure', () => {
     distribution = entityMockUtils.getDividendDistributionInstance({
       targets: {
         identities: dids.map(identityDid =>
-          entityMockUtils.getIdentityInstance({ did: identityDid })
+          entityMockUtils.getIdentityInstance({ isEqual: true, did: identityDid })
         ),
         treatment: TargetTreatment.Include,
       },
@@ -213,7 +212,7 @@ describe('payDividends procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', async () => {
+    it('should return the appropriate roles and permissions', async () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
@@ -225,7 +224,7 @@ describe('payDividends procedure', () => {
 
       expect(result).toEqual({
         permissions: {
-          tokens: [],
+          assets: [],
           portfolios: [],
           transactions: [TxTags.capitalDistribution.PushBenefit],
         },

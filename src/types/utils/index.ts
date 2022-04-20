@@ -8,13 +8,9 @@ export type Mutable<Immutable> = {
   -readonly [K in keyof Immutable]: Immutable[K];
 };
 
-export type ProcedureFunc<Args extends unknown, ReturnValue, Storage> = () => Procedure<
-  Args,
-  ReturnValue,
-  Storage
->;
+export type ProcedureFunc<Args, ReturnValue, Storage> = () => Procedure<Args, ReturnValue, Storage>;
 
-export type UnionOfProcedureFuncs<Args extends unknown, ReturnValue, Storage> = Args extends unknown
+export type UnionOfProcedureFuncs<Args, ReturnValue, Storage> = Args extends unknown
   ? ProcedureFunc<Args, ReturnValue, Storage>
   : never;
 
@@ -47,11 +43,26 @@ export type HumanReadableType<T> = T extends Entity<unknown, infer H>
  *
  * @example `QueryReturnType<typeof identity.authorizations>` returns `Option<Authorization>`
  */
-export type QueryReturnType<T extends unknown> = T extends AugmentedQuery<'promise', infer Fun>
+export type QueryReturnType<T> = T extends AugmentedQuery<'promise', infer Fun>
   ? ReturnType<Fun> extends Observable<infer R>
     ? R
     : never
   : never;
+
+/**
+ * Override T with the properties of R
+ */
+export type Modify<T, R> = Omit<T, keyof R> & R;
+
+/**
+ * Ensure a specific property of T is defined
+ */
+export type WithRequired<T, K extends keyof T> = T & { [P in K]-?: T[P] };
+
+/**
+ * Pick a single property from T and ensure it is defined
+ */
+export type Ensured<T, K extends keyof T> = Required<Pick<T, K>>;
 
 /**
  * Create a literal tuple type from a list of arguments

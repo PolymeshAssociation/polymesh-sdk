@@ -3,8 +3,8 @@ import BigNumber from 'bignumber.js';
 
 import { assertDistributionDatesValid } from '~/api/procedures/utils';
 import {
+  Asset,
   Checkpoint,
-  CheckpointSchedule,
   Context,
   DefaultPortfolio,
   DividendDistribution,
@@ -14,50 +14,49 @@ import {
   PolymeshError,
   PostTransactionValue,
   Procedure,
-  SecurityToken,
 } from '~/internal';
-import { CorporateActionKind, ErrorCode, RoleType, TxTags } from '~/types';
+import { CorporateActionKind, ErrorCode, InputCaCheckpoint, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
+  bigNumberToBalance,
+  bigNumberToU64,
   dateToMoment,
   distributionToDividendDistributionParams,
   meshCorporateActionToCorporateActionParams,
-  numberToBalance,
-  numberToU64,
   portfolioToPortfolioId,
   stringToTicker,
   tickerToString,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { filterEventRecords, optionize } from '~/utils/internal';
+import { filterEventRecords, getCheckpointValue, optionize } from '~/utils/internal';
 
 /**
  * @hidden
  */
-export const createDividendDistributionResolver = (context: Context) => async (
-  receipt: ISubmittableResult
-): Promise<DividendDistribution> => {
-  const [{ data }] = filterEventRecords(receipt, 'capitalDistribution', 'Created');
-  const [, caId, distribution] = data;
-  const { ticker, local_id: localId } = caId;
+export const createDividendDistributionResolver =
+  (context: Context) =>
+  async (receipt: ISubmittableResult): Promise<DividendDistribution> => {
+    const [{ data }] = filterEventRecords(receipt, 'capitalDistribution', 'Created');
+    const [, caId, distribution] = data;
+    const { ticker, local_id: localId } = caId;
 
-  const { corporateAction } = context.polymeshApi.query;
+    const { corporateAction } = context.polymeshApi.query;
 
-  const [corpAction, details] = await Promise.all([
-    corporateAction.corporateActions(ticker, localId),
-    corporateAction.details(caId),
-  ]);
+    const [corpAction, details] = await Promise.all([
+      corporateAction.corporateActions(ticker, localId),
+      corporateAction.details(caId),
+    ]);
 
-  return new DividendDistribution(
-    {
-      ticker: tickerToString(ticker),
-      id: u32ToBigNumber(localId),
-      ...meshCorporateActionToCorporateActionParams(corpAction.unwrap(), details, context),
-      ...distributionToDividendDistributionParams(distribution, context),
-    },
-    context
-  );
-};
+    return new DividendDistribution(
+      {
+        ticker: tickerToString(ticker),
+        id: u32ToBigNumber(localId),
+        ...meshCorporateActionToCorporateActionParams(corpAction.unwrap(), details, context),
+        ...distributionToDividendDistributionParams(distribution, context),
+      },
+      context
+    );
+  };
 
 export type ConfigureDividendDistributionParams = Omit<
   InitiateCorporateActionParams,
@@ -67,7 +66,7 @@ export type ConfigureDividendDistributionParams = Omit<
    * checkpoint to be used to calculate Dividends. If a Schedule is passed, the next Checkpoint it creates will be used.
    *   If a Date is passed, a Checkpoint will be created at that date and used
    */
-  checkpoint: Checkpoint | Date | CheckpointSchedule;
+  checkpoint: InputCaCheckpoint;
   /**
    * portfolio from which the Dividends will be distributed. Optional, defaults to the Corporate Actions Agent's Default Portfolio
    */
@@ -77,7 +76,7 @@ export type ConfigureDividendDistributionParams = Omit<
    */
   currency: string;
   /**
-   * amount of `currency` to distribute per each share of the Security Token that a target holds
+   * amount of `currency` to distribute per each share of the Asset that a target holds
    */
   perShare: BigNumber;
   /**
@@ -85,7 +84,7 @@ export type ConfigureDividendDistributionParams = Omit<
    */
   maxAmount: BigNumber;
   /**
-   * date from which Tokenholders can claim their Dividends
+   * date from which Asset Holders can claim their Dividends
    */
   paymentDate: Date;
   /**
@@ -137,7 +136,7 @@ export async function prepareConfigureDividendDistribution(
   if (currency === ticker) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'Cannot distribute Dividends using the Security Token as currency',
+      message: 'Cannot distribute Dividends using the Asset as currency',
     });
   }
 
@@ -155,8 +154,10 @@ export async function prepareConfigureDividendDistribution(
     });
   }
 
-  if (!(checkpoint instanceof Checkpoint)) {
-    await assertDistributionDatesValid(checkpoint, paymentDate, expiryDate);
+  const checkpointValue = await getCheckpointValue(checkpoint, ticker, context);
+
+  if (!(checkpointValue instanceof Checkpoint)) {
+    await assertDistributionDatesValid(checkpointValue, paymentDate, expiryDate);
   }
 
   if (portfolio instanceof NumberedPortfolio) {
@@ -164,18 +165,18 @@ export async function prepareConfigureDividendDistribution(
 
     if (!exists) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: "The Portfolio doesn't exist",
+        code: ErrorCode.DataUnavailable,
+        message: "The origin Portfolio doesn't exist",
       });
     }
   }
 
-  const [{ free }] = await portfolio.getTokenBalances({ tokens: [currency] });
+  const [{ free }] = await portfolio.getAssetBalances({ assets: [currency] });
 
   if (free.lt(maxAmount)) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Origin Portfolio free balance is not enough to cover the distribution amount',
+      code: ErrorCode.InsufficientBalance,
+      message: "The origin Portfolio's free balance is not enough to cover the Distribution amount",
       data: {
         free,
       },
@@ -185,35 +186,35 @@ export async function prepareConfigureDividendDistribution(
   const caId = await this.addProcedure(initiateCorporateAction(), {
     ticker,
     kind: CorporateActionKind.UnpredictableBenefit,
-    checkpoint,
+    checkpoint: checkpointValue,
     ...corporateActionArgs,
   });
 
   const rawPortfolioNumber =
     originPortfolio &&
-    optionize(numberToU64)(
+    optionize(bigNumberToU64)(
       originPortfolio instanceof BigNumber ? originPortfolio : originPortfolio.id,
       context
     );
   const rawCurrency = stringToTicker(currency, context);
-  const rawPerShare = numberToBalance(perShare, context);
-  const rawAmount = numberToBalance(maxAmount, context);
+  const rawPerShare = bigNumberToBalance(perShare, context);
+  const rawAmount = bigNumberToBalance(maxAmount, context);
   const rawPaymentAt = dateToMoment(paymentDate, context);
   const rawExpiresAt = optionize(dateToMoment)(expiryDate, context);
 
-  const [dividendDistribution] = this.addTransaction(
-    tx.capitalDistribution.distribute,
-    {
-      resolvers: [createDividendDistributionResolver(context)],
-    },
-    caId,
-    rawPortfolioNumber,
-    rawCurrency,
-    rawPerShare,
-    rawAmount,
-    rawPaymentAt,
-    rawExpiresAt
-  );
+  const [dividendDistribution] = this.addTransaction({
+    transaction: tx.capitalDistribution.distribute,
+    resolvers: [createDividendDistributionResolver(context)],
+    args: [
+      caId,
+      rawPortfolioNumber,
+      rawCurrency,
+      rawPerShare,
+      rawAmount,
+      rawPaymentAt,
+      rawExpiresAt,
+    ],
+  });
 
   return dividendDistribution;
 }
@@ -234,7 +235,7 @@ export function getAuthorization(
     roles: [{ type: RoleType.PortfolioCustodian, portfolioId: portfolioToPortfolioId(portfolio) }],
     permissions: {
       transactions: [TxTags.capitalDistribution.Distribute],
-      tokens: [new SecurityToken({ ticker }, context)],
+      assets: [new Asset({ ticker }, context)],
       portfolios: [portfolio],
     },
   };
@@ -249,7 +250,7 @@ export async function prepareStorage(
 ): Promise<Storage> {
   const { context } = this;
 
-  const { did } = await context.getCurrentIdentity();
+  const { did } = await context.getSigningIdentity();
 
   let portfolio = originPortfolio || new DefaultPortfolio({ did }, context);
 

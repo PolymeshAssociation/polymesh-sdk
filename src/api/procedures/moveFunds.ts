@@ -9,6 +9,7 @@ import {
   portfolioLikeToPortfolioId,
   portfolioMovementToMovePortfolioItem,
 } from '~/utils/conversion';
+import { asTicker } from '~/utils/internal';
 
 export interface MoveFundsParams {
   /**
@@ -16,7 +17,7 @@ export interface MoveFundsParams {
    */
   to?: BigNumber | DefaultPortfolio | NumberedPortfolio;
   /**
-   * list of tokens (and their corresponding amounts) that will be moved
+   * list of Assets (and the corresponding token amounts) that will be moved
    */
   items: PortfolioMovement[];
 }
@@ -82,16 +83,14 @@ export async function prepareMoveFunds(this: Procedure<Params, void>, args: Para
     });
   }
 
-  const portfolioBalances = await fromPortfolio.getTokenBalances({
-    tokens: items.map(({ token }) => token),
+  const portfolioBalances = await fromPortfolio.getAssetBalances({
+    assets: items.map(({ asset }) => asset),
   });
   const balanceExceeded: (PortfolioMovement & { free: BigNumber })[] = [];
 
-  portfolioBalances.forEach(({ token: { ticker }, free }) => {
+  portfolioBalances.forEach(({ asset: { ticker }, free }) => {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const transferItem = items.find(
-      ({ token: t }) => (typeof t === 'string' ? t : t.ticker) === ticker
-    )!;
+    const transferItem = items.find(({ asset: itemAsset }) => asTicker(itemAsset) === ticker)!;
 
     if (transferItem.amount.gt(free)) {
       balanceExceeded.push({ ...transferItem, free });
@@ -100,7 +99,7 @@ export async function prepareMoveFunds(this: Procedure<Params, void>, args: Para
 
   if (balanceExceeded.length) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.InsufficientBalance,
       message: "Some of the amounts being transferred exceed the Portfolio's balance",
       data: {
         balanceExceeded,
@@ -115,7 +114,10 @@ export async function prepareMoveFunds(this: Procedure<Params, void>, args: Para
     portfolioMovementToMovePortfolioItem(item, context)
   );
 
-  this.addTransaction(portfolio.movePortfolioFunds, {}, rawFrom, rawTo, rawMovePortfolioItems);
+  this.addTransaction({
+    transaction: portfolio.movePortfolioFunds,
+    args: [rawFrom, rawTo, rawMovePortfolioItems],
+  });
 }
 
 /**
@@ -147,7 +149,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.portfolio.MovePortfolioFunds],
-      tokens: [],
+      assets: [],
       portfolios: [from, toPortfolio],
     },
     roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],

@@ -34,7 +34,7 @@ describe('Portfolios class', () => {
   const did = 'someDid';
   const rawIdentityId = dsMockUtils.createMockIdentityId(did);
   const numberedPortfolioId = new BigNumber(1);
-  const rawNumberedPortfolioId = dsMockUtils.createMockU64(numberedPortfolioId.toNumber());
+  const rawNumberedPortfolioId = dsMockUtils.createMockU64(numberedPortfolioId);
   let mockContext: Mocked<Context>;
   let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
   let u64ToBigNumberStub: sinon.SinonStub<[u64], BigNumber>;
@@ -62,17 +62,16 @@ describe('Portfolios class', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     dsMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 
-  test('should extend namespace', () => {
+  it('should extend namespace', () => {
     expect(Portfolios.prototype instanceof Namespace).toBe(true);
   });
 
   describe('method: getPortfolios', () => {
-    test('should retrieve all the portfolios for the identity', async () => {
+    it('should retrieve all the portfolios for the Identity', async () => {
       dsMockUtils.createQueryStub('portfolio', 'portfolios', {
         entries: [
           tuple(
@@ -94,13 +93,13 @@ describe('Portfolios class', () => {
     });
   });
 
-  describe('method: getCustodiedPortfolos', () => {
-    test('should retrieve all the Portfolios custodied by the Identity', async () => {
+  describe('method: getCustodiedPortfolios', () => {
+    it('should retrieve all the Portfolios custodied by the Identity', async () => {
       dsMockUtils.createQueryStub('portfolio', 'portfoliosInCustody');
 
       const entries = [
         tuple(
-          ({
+          {
             args: [
               rawIdentityId,
               dsMockUtils.createMockPortfolioId({
@@ -108,11 +107,11 @@ describe('Portfolios class', () => {
                 kind: dsMockUtils.createMockPortfolioKind('Default'),
               }),
             ],
-          } as unknown) as StorageKey,
+          } as unknown as StorageKey,
           dsMockUtils.createMockBool(true)
         ),
         tuple(
-          ({
+          {
             args: [
               rawIdentityId,
               dsMockUtils.createMockPortfolioId({
@@ -120,7 +119,7 @@ describe('Portfolios class', () => {
                 kind: dsMockUtils.createMockPortfolioKind({ User: rawNumberedPortfolioId }),
               }),
             ],
-          } as unknown) as StorageKey,
+          } as unknown as StorageKey,
           dsMockUtils.createMockBool(true)
         ),
       ];
@@ -140,13 +139,13 @@ describe('Portfolios class', () => {
   });
 
   describe('method: getPortfolio', () => {
-    test('should return the default portfolio for the current identity', async () => {
+    it('should return the default portfolio for the signing Identity', async () => {
       const result = await portfolios.getPortfolio();
       expect(result instanceof DefaultPortfolio).toBe(true);
       expect(result.owner.did).toEqual(did);
     });
 
-    test('should return a numbered portfolio', async () => {
+    it('should return a numbered portfolio', async () => {
       const portfolioId = new BigNumber(1);
 
       const result = await portfolios.getPortfolio({ portfolioId });
@@ -155,7 +154,7 @@ describe('Portfolios class', () => {
       expect(result.id).toEqual(portfolioId);
     });
 
-    test("should throw an error if a numbered portfolio doesn't exist", () => {
+    it("should throw an error if a numbered portfolio doesn't exist", () => {
       const portfolioId = new BigNumber(1);
 
       entityMockUtils.configureMocks({
@@ -170,26 +169,10 @@ describe('Portfolios class', () => {
     });
   });
 
-  describe('method: create', () => {
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
-      const name = 'someName';
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<NumberedPortfolio>;
-
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { name }, transformer: undefined }, mockContext)
-        .resolves(expectedQueue);
-
-      const queue = await portfolios.create({ name });
-
-      expect(queue).toBe(expectedQueue);
-    });
-  });
-
   describe('method: delete', () => {
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
       const portfolioId = new BigNumber(5);
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()

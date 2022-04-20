@@ -1,9 +1,9 @@
 import BigNumber from 'bignumber.js';
 
-import { CheckpointSchedule, PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { Asset, CheckpointSchedule, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { numberToU64, stringToTicker, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
+import { bigNumberToU64, stringToTicker, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
 
 export interface RemoveCheckpointScheduleParams {
   /**
@@ -42,23 +42,30 @@ export async function prepareRemoveCheckpointSchedule(
 
   if (!exists) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Schedule no longer exists. It was either removed or it expired',
+      code: ErrorCode.DataUnavailable,
+      message: 'Schedule was not found. It may have been removed or expired',
     });
   }
 
-  const rawScheduleId = numberToU64(id, context);
+  const rawScheduleId = bigNumberToU64(id, context);
 
   const scheduleRefCount = await query.checkpoint.scheduleRefCount(rawTicker, rawScheduleId);
+  const referenceCount = u32ToBigNumber(scheduleRefCount);
 
-  if (u32ToBigNumber(scheduleRefCount).gt(0)) {
+  if (referenceCount.gt(0)) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'You cannot remove this Schedule',
+      code: ErrorCode.EntityInUse,
+      message: 'This Schedule is being referenced by other Entities. It cannot be removed',
+      data: {
+        referenceCount,
+      },
     });
   }
 
-  this.addTransaction(tx.checkpoint.removeSchedule, {}, rawTicker, rawScheduleId);
+  this.addTransaction({
+    transaction: tx.checkpoint.removeSchedule,
+    args: [rawTicker, rawScheduleId],
+  });
 }
 
 /**
@@ -72,7 +79,7 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.checkpoint.RemoveSchedule],
-      tokens: [new SecurityToken({ ticker }, context)],
+      assets: [new Asset({ ticker }, context)],
       portfolios: [],
     },
   };

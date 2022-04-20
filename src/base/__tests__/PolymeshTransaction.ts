@@ -1,3 +1,4 @@
+import { Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
 import { Context, PolymeshTransaction } from '~/internal';
@@ -17,11 +18,10 @@ describe('Polymesh Transaction class', () => {
   });
 
   const txSpec = {
-    signer: 'signer',
+    signingAddress: 'signingAddress',
     isCritical: false,
+    signer: 'signer' as PolkadotSigner,
     fee: new BigNumber(100),
-    batchSize: null,
-    paidByThirdParty: false,
   };
 
   afterEach(() => {
@@ -29,21 +29,39 @@ describe('Polymesh Transaction class', () => {
   });
 
   describe('get: args', () => {
-    test('should return unwrapped args', () => {
-      const tx = dsMockUtils.createTxStub('asset', 'registerTicker');
+    it('should return unwrapped args', () => {
+      const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
       const args = tuple('A_TICKER');
 
-      const transaction = new PolymeshTransaction(
+      const tx = new PolymeshTransaction(
         {
           ...txSpec,
-          tx,
+          transaction,
           args,
         },
         context
       );
 
-      expect(transaction.args).toEqual(args);
-      expect(transaction.args).toEqual(args); // this second call is to cover the case where the internal value is already set
+      expect(tx.args).toEqual(args);
+      expect(tx.args).toEqual(args); // this second call is to cover the case where the internal value is already set
+    });
+  });
+
+  describe('method: supportsSubsidy', () => {
+    it('should return whether the transaction supports subsidy', () => {
+      context.supportsSubsidy.onFirstCall().returns(false);
+
+      const transaction = dsMockUtils.createTxStub('identity', 'leaveIdentityAsKey');
+
+      const tx = new PolymeshTransaction<[]>(
+        {
+          ...txSpec,
+          transaction,
+        },
+        context
+      );
+
+      expect(tx.supportsSubsidy()).toBe(false);
     });
   });
 });

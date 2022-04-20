@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Claims } from '~/Claims';
@@ -51,12 +52,11 @@ describe('Claims Class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 
   describe('method: getIssuedClaims', () => {
-    test('should return a list of issued claims', async () => {
+    it('should return a list of issued claims', async () => {
       const target = 'someDid';
       const getIdentityClaimsFromMiddleware: ResultSet<ClaimData> = {
         data: [
@@ -68,8 +68,8 @@ describe('Claims Class', () => {
             claim: { type: ClaimType.NoData },
           },
         ],
-        next: 1,
-        count: 1,
+        next: new BigNumber(1),
+        count: new BigNumber(1),
       };
 
       dsMockUtils.configureMocks({
@@ -87,7 +87,7 @@ describe('Claims Class', () => {
   });
 
   describe('method: getIdentitiesWithClaims', () => {
-    test('should return a list of Identities with claims associated to them', async () => {
+    it('should return a list of Identities with claims associated to them', async () => {
       const targetDid = 'someTargetDid';
       const issuerDid = 'someIssuerDid';
       const date = 1589816265000;
@@ -151,7 +151,7 @@ describe('Claims Class', () => {
       };
       /* eslint-enable @typescript-eslint/naming-convention */
 
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
       dsMockUtils.createApolloQueryStub(
         didsWithClaims({
@@ -161,7 +161,7 @@ describe('Claims Class', () => {
           claimTypes: [ClaimTypeEnum.Accredited],
           includeExpired: false,
           count: 1,
-          skip: undefined,
+          skip: 0,
         }),
         {
           didsWithClaims: didsWithClaimsQueryResponse,
@@ -173,12 +173,13 @@ describe('Claims Class', () => {
         trustedClaimIssuers: [targetDid],
         claimTypes: [ClaimType.Accredited],
         includeExpired: false,
-        size: 1,
+        size: new BigNumber(1),
+        start: new BigNumber(0),
       });
 
       expect(JSON.stringify(result.data)).toBe(JSON.stringify(fakeClaims));
-      expect(result.count).toEqual(25);
-      expect(result.next).toEqual(1);
+      expect(result.count).toEqual(new BigNumber(25));
+      expect(result.next).toEqual(new BigNumber(1));
 
       dsMockUtils.createApolloQueryStub(
         didsWithClaims({
@@ -198,11 +199,11 @@ describe('Claims Class', () => {
       result = await claims.getIdentitiesWithClaims();
 
       expect(JSON.stringify(result.data)).toBe(JSON.stringify(fakeClaims));
-      expect(result.count).toEqual(25);
+      expect(result.count).toEqual(new BigNumber(25));
       expect(result.next).toEqual(null);
     });
 
-    test('should return a list of Identities with claims associated to them filtered by scope', async () => {
+    it('should return a list of Identities with claims associated to them filtered by scope', async () => {
       const targetDid = 'someTargetDid';
       const issuerDid = 'someIssuerDid';
       const scope: Scope = { type: ScopeType.Ticker, value: 'someValue' };
@@ -274,7 +275,7 @@ describe('Claims Class', () => {
         ],
       };
 
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
       dsMockUtils.createApolloQueryStub(
         didsWithClaims({
@@ -284,7 +285,7 @@ describe('Claims Class', () => {
           claimTypes: [ClaimTypeEnum.Accredited],
           includeExpired: false,
           count: 1,
-          skip: undefined,
+          skip: 0,
         }),
         {
           didsWithClaims: didsWithClaimsQueryResponse,
@@ -297,12 +298,13 @@ describe('Claims Class', () => {
         scope,
         claimTypes: [ClaimType.Accredited],
         includeExpired: false,
-        size: 1,
+        size: new BigNumber(1),
+        start: new BigNumber(0),
       });
 
       expect(JSON.stringify(result.data)).toBe(JSON.stringify(fakeClaims));
-      expect(result.count).toBe(25);
-      expect(result.next).toBe(1);
+      expect(result.count).toEqual(new BigNumber(25));
+      expect(result.next).toEqual(new BigNumber(1));
     });
   });
 
@@ -311,7 +313,7 @@ describe('Claims Class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const targets: ClaimTarget[] = [
         {
           target: 'someDid',
@@ -324,7 +326,7 @@ describe('Claims Class', () => {
 
       const args = { claims: targets };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -345,8 +347,8 @@ describe('Claims Class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const ticker = 'SOME_TOKEN';
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const ticker = 'SOME_ASSET';
       const cddId = 'someId';
       const proof = 'someProof';
       const scopeId = 'someScopeId';
@@ -360,7 +362,7 @@ describe('Claims Class', () => {
         expiry,
       };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -378,7 +380,7 @@ describe('Claims Class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const targets: ClaimTarget[] = [
         {
           target: 'someDid',
@@ -391,7 +393,7 @@ describe('Claims Class', () => {
 
       const args = { claims: targets };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -412,7 +414,7 @@ describe('Claims Class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const targets: ClaimTarget[] = [
         {
           target: 'someDid',
@@ -425,7 +427,7 @@ describe('Claims Class', () => {
 
       const args = { claims: targets };
 
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -442,7 +444,7 @@ describe('Claims Class', () => {
   });
 
   describe('method: getCddClaims', () => {
-    test('should return a list of cdd claims', async () => {
+    it('should return a list of cdd claims', async () => {
       const target = 'someTarget';
 
       const identityClaims: ClaimData[] = [
@@ -473,9 +475,9 @@ describe('Claims Class', () => {
   });
 
   describe('method: getClaimScopes', () => {
-    test('should return a list of scopes and tickers', async () => {
+    it('should return a list of scopes and tickers', async () => {
       const target = 'someTarget';
-      const ticker = 'FAKETICKER';
+      const ticker = 'FAKE_TICKER';
       const someDid = 'someDid';
       const fakeClaimData = [
         {
@@ -532,7 +534,7 @@ describe('Claims Class', () => {
       sinon.restore();
     });
 
-    test('should return a list of claims issued with an Identity as target', async () => {
+    it('should return a list of claims issued with an Identity as target', async () => {
       const did = 'someDid';
       const issuerDid = 'someIssuerDid';
       const date = 1589816265000;
@@ -580,7 +582,7 @@ describe('Claims Class', () => {
         ],
       };
 
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
       sinon
         .stub(utilsConversionModule, 'toIdentityWithClaimsArray')
@@ -594,7 +596,7 @@ describe('Claims Class', () => {
           trustedClaimIssuers: [did],
           includeExpired: false,
           count: 1,
-          skip: undefined,
+          skip: 0,
         }),
         {
           issuerDidsWithClaimsByTarget: issuerDidsWithClaimsByTargetQueryResponse,
@@ -605,12 +607,13 @@ describe('Claims Class', () => {
         target: did,
         trustedClaimIssuers: [did],
         includeExpired: false,
-        size: 1,
+        size: new BigNumber(1),
+        start: new BigNumber(0),
       });
 
       expect(result.data).toEqual(fakeClaims);
-      expect(result.count).toEqual(25);
-      expect(result.next).toEqual(1);
+      expect(result.count).toEqual(new BigNumber(25));
+      expect(result.next).toEqual(new BigNumber(1));
 
       dsMockUtils.createApolloQueryStub(
         issuerDidsWithClaimsByTarget({
@@ -629,11 +632,11 @@ describe('Claims Class', () => {
       result = await claims.getTargetingClaims();
 
       expect(result.data).toEqual(fakeClaims);
-      expect(result.count).toEqual(25);
+      expect(result.count).toEqual(new BigNumber(25));
       expect(result.next).toBeNull();
     });
 
-    test('should return a list of claims issued with an Identity as target from chain', async () => {
+    it('should return a list of claims issued with an Identity as target from chain', async () => {
       const target = 'someTarget';
       const issuer = 'someIssuer';
       const otherIssuer = 'otherIssuer';
@@ -643,10 +646,17 @@ describe('Claims Class', () => {
         value: 'someIdentityScope',
       };
 
+      const issuer1 = entityMockUtils.getIdentityInstance({ did: issuer });
+      issuer1.isEqual.onFirstCall().returns(true).onSecondCall().returns(false);
+      const issuer2 = entityMockUtils.getIdentityInstance({ did: issuer });
+      issuer2.isEqual.onFirstCall().returns(true).onSecondCall().returns(false);
+      const issuer3 = entityMockUtils.getIdentityInstance({ did: otherIssuer });
+      issuer3.isEqual.onFirstCall().returns(false).onSecondCall().returns(true);
+
       const identityClaims: ClaimData[] = [
         {
           target: entityMockUtils.getIdentityInstance({ did: target }),
-          issuer: entityMockUtils.getIdentityInstance({ did: issuer }),
+          issuer: issuer1,
           issuedAt: new Date(),
           expiry: null,
           claim: {
@@ -656,7 +666,7 @@ describe('Claims Class', () => {
         },
         {
           target: entityMockUtils.getIdentityInstance({ did: target }),
-          issuer: entityMockUtils.getIdentityInstance({ did: issuer }),
+          issuer: issuer2,
           issuedAt: new Date(),
           expiry: null,
           claim: {
@@ -668,7 +678,7 @@ describe('Claims Class', () => {
         },
         {
           target: entityMockUtils.getIdentityInstance({ did: target }),
-          issuer: entityMockUtils.getIdentityInstance({ did: otherIssuer }),
+          issuer: issuer3,
           issuedAt: new Date(),
           expiry: null,
           claim: {
@@ -688,7 +698,7 @@ describe('Claims Class', () => {
       });
 
       let result = await claims.getTargetingClaims({
-        target: target,
+        target,
       });
 
       expect(result.data.length).toEqual(2);
@@ -701,7 +711,7 @@ describe('Claims Class', () => {
       expect(result.data[1].claims[0].claim).toEqual(identityClaims[2].claim);
 
       result = await claims.getTargetingClaims({
-        target: target,
+        target,
         trustedClaimIssuers: ['trusted'],
       });
 
@@ -710,7 +720,7 @@ describe('Claims Class', () => {
   });
 
   describe('method: getInvestorUniquenessClaims', () => {
-    test('should return a list of claim data', async () => {
+    it('should return a list of claim data', async () => {
       const target = 'someTarget';
 
       const scope = {
@@ -747,7 +757,7 @@ describe('Claims Class', () => {
     });
   });
 
-  test('should return a list of claims issued with an Identity as target and a given Scope', async () => {
+  it('should return a list of claims issued with an Identity as target and a given Scope', async () => {
     const did = 'someDid';
     const issuerDid = 'someIssuerDid';
     const scope: Scope = { type: ScopeType.Ticker, value: 'someValue' };
@@ -798,7 +808,7 @@ describe('Claims Class', () => {
       ],
     };
 
-    dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+    dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
     sinon
       .stub(utilsConversionModule, 'toIdentityWithClaimsArray')
@@ -824,11 +834,11 @@ describe('Claims Class', () => {
       trustedClaimIssuers: [did],
       scope,
       includeExpired: false,
-      size: 1,
+      size: new BigNumber(1),
     });
 
     expect(result.data).toEqual(fakeClaims);
-    expect(result.count).toEqual(25);
-    expect(result.next).toEqual(1);
+    expect(result.count).toEqual(new BigNumber(25));
+    expect(result.next).toEqual(new BigNumber(1));
   });
 });

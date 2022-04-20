@@ -9,7 +9,7 @@ import {
   signerToString,
   stringToIdentityId,
 } from '~/utils/conversion';
-import { xor } from '~/utils/internal';
+import { asIdentity, xor } from '~/utils/internal';
 
 export interface PayDividendsParams {
   targets: (string | Identity)[];
@@ -40,7 +40,7 @@ export async function preparePayDividends(
     distribution: {
       targets: { identities, treatment },
       id: localId,
-      ticker,
+      asset: { ticker },
       paymentDate,
       expiryDate,
     },
@@ -51,28 +51,30 @@ export async function preparePayDividends(
 
   const excluded: Identity[] = [];
   targets.forEach(target => {
-    const targetassertDistributionOpenDid = signerToString(target);
-    const found = !!identities.find(({ did }) => did === targetassertDistributionOpenDid);
+    const targetIdentity = asIdentity(target, context);
+    const found = !!identities.find(identity => identity.isEqual(targetIdentity));
     if (xor(found, treatment === TargetTreatment.Include)) {
-      excluded.push(new Identity({ did: targetassertDistributionOpenDid }, context));
+      excluded.push(targetIdentity);
     }
   });
 
   if (excluded.length) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'Some of the supplied Identities are not included in this Distribution',
       data: { excluded },
     });
   }
 
-  const rawDids = targets.map(target => stringToIdentityId(signerToString(target), context));
-
   const rawCaId = corporateActionIdentifierToCaId({ ticker, localId }, context);
+
+  const rawArgs = targets.map(target =>
+    tuple(rawCaId, stringToIdentityId(signerToString(target), context))
+  );
 
   const holderPaidList = await capitalDistribution.holderPaid.multi<
     QueryReturnType<typeof capitalDistribution.holderPaid>
-  >(rawDids.map(rawDid => tuple(rawCaId, rawDid)));
+  >(rawArgs);
 
   const alreadyClaimedList: Identity[] = [];
   holderPaidList.forEach((holderPaid, i) => {
@@ -83,7 +85,7 @@ export async function preparePayDividends(
 
   if (alreadyClaimedList.length) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message:
         'Some of the supplied Identities have already either been paid or claimed their share of the Distribution',
       data: {
@@ -92,11 +94,14 @@ export async function preparePayDividends(
     });
   }
 
-  this.addBatchTransaction(
-    tx.capitalDistribution.pushBenefit,
-    {},
-    rawDids.map(rawDid => tuple(rawCaId, rawDid))
-  );
+  const transaction = tx.capitalDistribution.pushBenefit;
+
+  this.addBatchTransaction({
+    transactions: rawArgs.map(txArgs => ({
+      transaction,
+      args: txArgs,
+    })),
+  });
 }
 
 /**
@@ -108,7 +113,7 @@ export async function getAuthorization(
   return {
     permissions: {
       transactions: [TxTags.capitalDistribution.PushBenefit],
-      tokens: [],
+      assets: [],
       portfolios: [],
     },
   };

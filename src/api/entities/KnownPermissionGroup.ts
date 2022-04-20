@@ -14,14 +14,14 @@ export interface UniqueIdentifiers {
 }
 
 /**
- * Represents a pre-defined group of permissions for a Security Token
+ * Represents a pre-defined group of permissions for an Asset
  */
 export class KnownPermissionGroup extends PermissionGroup {
   /**
    * @hidden
-   * Check if a value is of type [[UniqueIdentifiers]]
+   * Check if a value is of type {@link UniqueIdentifiers}
    */
-  public static isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
+  public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { type, ticker } = identifier as UniqueIdentifiers;
 
     return type in PermissionGroupType && typeof ticker === 'string';
@@ -95,11 +95,11 @@ export class KnownPermissionGroup extends PermissionGroup {
    * Return the KnownPermissionGroup's static data
    */
   public toJson(): HumanReadable {
-    const { type, ticker } = this;
+    const { type, asset } = this;
 
     return toHumanReadable({
       type,
-      ticker,
+      ticker: asset,
     });
   }
 }

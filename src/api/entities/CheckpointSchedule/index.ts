@@ -1,11 +1,11 @@
 import BigNumber from 'bignumber.js';
 import dayjs from 'dayjs';
 
-import { Checkpoint, Context, Entity, PolymeshError } from '~/internal';
-import { CalendarPeriod, ErrorCode, ScheduleDetails } from '~/types';
+import { Asset, Checkpoint, Context, Entity, PolymeshError } from '~/internal';
+import { CalendarPeriod, CalendarUnit, ErrorCode, ScheduleDetails } from '~/types';
 import {
+  bigNumberToU64,
   momentToDate,
-  numberToU64,
   stringToTicker,
   u32ToBigNumber,
   u64ToBigNumber,
@@ -17,34 +17,38 @@ export interface UniqueIdentifiers {
   ticker: string;
 }
 
+interface CalendarPeriodHumanReadable {
+  unit: CalendarUnit;
+  amount: string;
+}
+
 interface HumanReadable {
   id: string;
   ticker: string;
-  period: CalendarPeriod | null;
+  period: CalendarPeriodHumanReadable | null;
   start: string;
   expiryDate: string | null;
-  complexity: number;
+  complexity: string;
 }
 
 export interface Params {
   period: CalendarPeriod;
   start: Date;
-  remaining: number;
+  remaining: BigNumber;
   nextCheckpointDate: Date;
 }
 
 const notExistsMessage = 'Schedule no longer exists. It was either removed or it expired';
 
 /**
- * Represents a Schedule in which Checkpoints are created for a specific
- *  Security Token. Schedules can be set up to create checkpoints
+ * Represents a Checkpoint Schedule for an Asset. Schedules can be set up to create Checkpoints at regular intervals
  */
 export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable> {
   /**
    * @hidden
-   * Check if a value is of type [[UniqueIdentifiers]]
+   * Check if a value is of type {@link UniqueIdentifiers}
    */
-  public static isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
+  public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { id, ticker } = identifier as UniqueIdentifiers;
 
     return id instanceof BigNumber && typeof ticker === 'string';
@@ -56,9 +60,9 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
   public id: BigNumber;
 
   /**
-   * ticker of the Security Token for which Checkpoints are scheduled
+   * Asset for which Checkpoints are scheduled
    */
-  public ticker: string;
+  public asset: Asset;
 
   /**
    * how often this Schedule creates a Checkpoint. A null value means this Schedule
@@ -80,7 +84,7 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
   /**
    * abstract measure of the complexity of this Schedule. Shorter periods translate into more complexity
    */
-  public complexity: number;
+  public complexity: BigNumber;
 
   /**
    * @hidden
@@ -92,15 +96,15 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
 
     const { id, ticker } = identifiers;
 
-    const noPeriod = period.amount === 0;
+    const noPeriod = period.amount.isZero();
 
     this.id = id;
-    this.ticker = ticker;
+    this.asset = new Asset({ ticker }, context);
     this.period = noPeriod ? null : period;
     this.start = start;
     this.complexity = periodComplexity(period);
 
-    if (remaining === 0 && !noPeriod) {
+    if (remaining.isZero() && !noPeriod) {
       this.expiryDate = null;
     } else if (!this.period) {
       this.expiryDate = start;
@@ -108,7 +112,7 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
       const { amount, unit } = period;
 
       this.expiryDate = dayjs(nextCheckpointDate)
-        .add(amount * (remaining - 1), unit)
+        .add(amount.multipliedBy(remaining.minus(1)).toNumber(), unit)
         .toDate();
     }
   }
@@ -125,7 +129,7 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
       },
       id,
       context,
-      ticker,
+      asset: { ticker },
     } = this;
 
     const rawSchedules = await checkpoint.schedules(stringToTicker(ticker, context));
@@ -134,7 +138,7 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
 
     if (!schedule) {
       throw new PolymeshError({
-        code: ErrorCode.FatalError,
+        code: ErrorCode.DataUnavailable,
         message: notExistsMessage,
       });
     }
@@ -142,7 +146,7 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
     const { at, remaining } = schedule;
 
     return {
-      remainingCheckpoints: u32ToBigNumber(remaining).toNumber(),
+      remainingCheckpoints: u32ToBigNumber(remaining),
       nextCheckpointDate: momentToDate(at),
     };
   }
@@ -158,7 +162,7 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
         },
       },
       context,
-      ticker,
+      asset: { ticker },
       id,
     } = this;
 
@@ -166,14 +170,14 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
 
     if (!exists) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.DataUnavailable,
         message: notExistsMessage,
       });
     }
 
     const result = await checkpoint.schedulePoints(
       stringToTicker(ticker, context),
-      numberToU64(id, context)
+      bigNumberToU64(id, context)
     );
 
     return result.map(rawId => new Checkpoint({ id: u64ToBigNumber(rawId), ticker }, context));
@@ -190,7 +194,7 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
         },
       },
       context,
-      ticker,
+      asset: { ticker },
       id,
     } = this;
 
@@ -202,13 +206,13 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
   }
 
   /**
-   * Return the Schedule's ID and Token ticker
+   * Return the Schedule's static data
    */
   public toJson(): HumanReadable {
-    const { ticker, id, expiryDate, complexity, start, period } = this;
+    const { asset, id, expiryDate, complexity, start, period } = this;
 
     return toHumanReadable({
-      ticker,
+      ticker: asset,
       id,
       start,
       expiryDate,

@@ -3,12 +3,12 @@ import P from 'bluebird';
 import { isEqual } from 'lodash';
 
 import {
+  Asset,
   Context,
   CustomPermissionGroup,
   PolymeshError,
   PostTransactionValue,
   Procedure,
-  SecurityToken,
 } from '~/internal';
 import { ErrorCode, TransactionPermissions, TxGroup, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
@@ -42,22 +42,22 @@ export type Params = CreateGroupParams & {
  * @hidden
  */
 export interface Storage {
-  token: SecurityToken;
+  asset: Asset;
 }
 
 /**
  * @hidden
  */
-export const createCreateGroupResolver = (context: Context) => (
-  receipt: ISubmittableResult
-): CustomPermissionGroup => {
-  const [{ data }] = filterEventRecords(receipt, 'externalAgents', 'GroupCreated');
+export const createCreateGroupResolver =
+  (context: Context) =>
+  (receipt: ISubmittableResult): CustomPermissionGroup => {
+    const [{ data }] = filterEventRecords(receipt, 'externalAgents', 'GroupCreated');
 
-  return new CustomPermissionGroup(
-    { id: u64ToBigNumber(data[2]), ticker: tickerToString(data[1]) },
-    context
-  );
-};
+    return new CustomPermissionGroup(
+      { id: u64ToBigNumber(data[2]), ticker: tickerToString(data[1]) },
+      context
+    );
+  };
 
 /**
  * @hidden
@@ -73,14 +73,14 @@ export async function prepareCreateGroup(
       },
     },
     context,
-    storage: { token },
+    storage: { asset },
   } = this;
   const { ticker, permissions } = args;
 
   const rawTicker = stringToTicker(ticker, context);
   const { transactions } = permissionsLikeToPermissions(permissions, context);
 
-  const { custom, known } = await token.permissions.getGroups();
+  const { custom, known } = await asset.permissions.getGroups();
   const allGroups = [...custom, ...known];
 
   const currentGroupPermissions = await P.map(allGroups, group => group.getPermissions());
@@ -93,7 +93,7 @@ export async function prepareCreateGroup(
     const group = allGroups[duplicatedGroupIndex];
 
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.NoDataChange,
       message: 'There already exists a group with the exact same permissions',
       data: { groupId: group instanceof CustomPermissionGroup ? group.id : group.type },
     });
@@ -104,14 +104,11 @@ export async function prepareCreateGroup(
     context
   );
 
-  const [customPermissionGroup] = this.addTransaction(
-    externalAgents.createGroup,
-    {
-      resolvers: [createCreateGroupResolver(context)],
-    },
-    rawTicker,
-    rawExtrinsicPermissions
-  );
+  const [customPermissionGroup] = this.addTransaction({
+    transaction: externalAgents.createGroup,
+    resolvers: [createCreateGroupResolver(context)],
+    args: [rawTicker, rawExtrinsicPermissions],
+  });
 
   return customPermissionGroup;
 }
@@ -123,12 +120,12 @@ export function getAuthorization(
   this: Procedure<Params, CustomPermissionGroup, Storage>
 ): ProcedureAuthorization {
   const {
-    storage: { token },
+    storage: { asset },
   } = this;
   return {
     permissions: {
       transactions: [TxTags.externalAgents.CreateGroup],
-      tokens: [token],
+      assets: [asset],
       portfolios: [],
     },
   };
@@ -144,7 +141,7 @@ export function prepareStorage(
   const { context } = this;
 
   return {
-    token: new SecurityToken({ ticker }, context),
+    asset: new Asset({ ticker }, context),
   };
 }
 

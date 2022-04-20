@@ -2,9 +2,14 @@
 
 import { PolymeshError as PolymeshErrorClass } from './PolymeshError';
 import { PolymeshTransaction as PolymeshTransactionClass } from './PolymeshTransaction';
+import { PolymeshTransactionBatch as PolymeshTransactionBatchClass } from './PolymeshTransactionBatch';
 import { TransactionQueue as TransactionQueueClass } from './TransactionQueue';
 
-export type PolymeshTransaction = InstanceType<typeof PolymeshTransactionClass>;
-export type TransactionQueue = InstanceType<typeof TransactionQueueClass>;
-export type PolymeshError = InstanceType<typeof PolymeshErrorClass>;
-export { isPolymeshError } from './PolymeshError';
+export type PolymeshTransaction = PolymeshTransactionClass;
+export type PolymeshTransactionBatch = PolymeshTransactionBatchClass;
+export type TransactionQueue<
+  ProcedureReturnType = void,
+  ReturnType = ProcedureReturnType,
+  TransactionArgs extends unknown[][] = unknown[][]
+> = TransactionQueueClass<ProcedureReturnType, ReturnType, TransactionArgs>;
+export type PolymeshError = PolymeshErrorClass;

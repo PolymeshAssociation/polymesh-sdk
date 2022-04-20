@@ -1,14 +1,14 @@
-import { AddressOrPair, SubmittableExtrinsic } from '@polkadot/api/types';
-import { DispatchError } from '@polkadot/types/interfaces';
-import { ISubmittableResult, RegistryError } from '@polkadot/types/types';
+import { SubmittableExtrinsic } from '@polkadot/api/types';
+import { DispatchError, EventRecord } from '@polkadot/types/interfaces';
+import { ISubmittableResult, RegistryError, Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { EventEmitter } from 'events';
-import { TxTag, TxTags } from 'polymesh-types/types';
 
-import { Account, Context, Identity, PolymeshError } from '~/internal';
-import { ErrorCode, Fees, TransactionStatus } from '~/types';
-import { BaseTransactionSpec, PolymeshTx, PostTransactionValueArray } from '~/types/internal';
-import { balanceToBigNumber, transactionToTxTag } from '~/utils/conversion';
+import { Context, Identity, PolymeshError } from '~/internal';
+import { ErrorCode, Fees, PayingAccount, PayingAccountType, TransactionStatus } from '~/types';
+import { BaseTransactionSpec, PostTransactionValueArray } from '~/types/internal';
+import { balanceToBigNumber, hashToString, u32ToBigNumber } from '~/utils/conversion';
+import { defusePromise } from '~/utils/internal';
 
 /**
  * @hidden
@@ -20,10 +20,7 @@ enum Event {
 /**
  * Wrapper class for a Polymesh Transaction
  */
-export abstract class PolymeshTransactionBase<
-  Args extends unknown[],
-  Values extends unknown[] = unknown[]
-> {
+export abstract class PolymeshTransactionBase<Values extends unknown[] = unknown[]> {
   /**
    * current status of the transaction
    */
@@ -50,14 +47,14 @@ export abstract class PolymeshTransactionBase<
   public blockHash?: string;
 
   /**
+   * number of the block where this transaction resides (status: `Succeeded`, `Failed`)
+   */
+  public blockNumber?: BigNumber;
+
+  /**
    * whether this transaction failing makes the entire transaction queue fail or not
    */
   public isCritical: boolean;
-
-  /**
-   * type of transaction represented by this instance (mostly for display purposes)
-   */
-  public tag: TxTag;
 
   /**
    * @hidden
@@ -70,23 +67,10 @@ export abstract class PolymeshTransactionBase<
   /**
    * @hidden
    *
-   * underlying transaction to be executed
-   */
-  protected tx: PolymeshTx<Args>;
-
-  /**
-   * @hidden
-   *
-   * number of elements in the batch (only applicable to batch transactions)
-   */
-  protected batchSize: number | null;
-
-  /**
-   * @hidden
-   *
    * wrappers for values that will exist after this transaction has executed
    */
-  protected postValues: PostTransactionValueArray<Values> = ([] as unknown) as PostTransactionValueArray<Values>;
+  protected postValues: PostTransactionValueArray<Values> =
+    [] as unknown as PostTransactionValueArray<Values>;
 
   /**
    * @hidden
@@ -98,39 +82,46 @@ export abstract class PolymeshTransactionBase<
   /**
    * @hidden
    *
-   * account that will sign the transaction
+   * Account that will sign the transaction
    */
-  protected signer: AddressOrPair;
+  protected signingAddress: string;
+
+  /**
+   * @hidden
+   *
+   * object that performs the payload signing logic
+   */
+  protected signer: PolkadotSigner;
 
   /**
    * @hidden
    *
    * used by procedures to set the fee manually in case the protocol op can't be
-   *   dynamically generated from the transaction name
+   *   dynamically generated from the transaction name, or a specific procedure has
+   *   special rules for calculating them
    */
-  protected protocolFee: BigNumber | null;
+  protected protocolFee?: BigNumber;
 
   protected context: Context;
 
   /**
    * @hidden
    */
-  constructor(transactionSpec: BaseTransactionSpec<Args, Values>, context: Context) {
-    const { postTransactionValues, tx, signer, isCritical, fee, paidForBy } = transactionSpec;
+  constructor(transactionSpec: BaseTransactionSpec<Values>, context: Context) {
+    const { postTransactionValues, signingAddress, signer, isCritical, fee, paidForBy } =
+      transactionSpec;
 
     if (postTransactionValues) {
       this.postValues = postTransactionValues;
     }
 
     this.emitter = new EventEmitter();
-    this.tx = tx;
-    this.tag = transactionToTxTag(tx);
+    this.signingAddress = signingAddress;
     this.signer = signer;
     this.isCritical = isCritical;
     this.protocolFee = fee;
     this.context = context;
     this.paidForBy = paidForBy;
-    this.batchSize = null;
   }
 
   /**
@@ -176,49 +167,84 @@ export abstract class PolymeshTransactionBase<
    * Execute the underlying transaction, updating the status where applicable and
    *   throwing any pertinent errors
    */
-  private internalRun(): Promise<ISubmittableResult> {
+  private async internalRun(): Promise<ISubmittableResult> {
+    const { signingAddress, signer } = this;
     this.updateStatus(TransactionStatus.Unapproved);
 
     return new Promise((resolve, reject) => {
       const txWithArgs = this.composeTx();
-      const gettingUnsub = txWithArgs.signAndSend(this.signer, receipt => {
-        const { status } = receipt;
-        let unsubscribe = false;
+      let settingBlockData = Promise.resolve();
 
-        if (receipt.isCompleted) {
-          /* isCompleted === isFinalized || isInBlock || isError */
+      // nonce: -1 takes pending transactions into consideration.
+      // More information can be found at: https://polkadot.js.org/docs/api/cookbook/tx/#how-do-i-take-the-pending-tx-pool-into-account-in-my-nonce
+      const gettingUnsub = txWithArgs.signAndSend(
+        signingAddress,
+        { nonce: -1, signer },
+        receipt => {
+          const { status } = receipt;
+          let isLastCallback = false;
+          let unsubscribing = Promise.resolve();
+          let extrinsicFailedEvent: EventRecord | undefined;
 
-          // TODO @monitz87: replace with event object when it is auto-generated by the polkadot fork
-          const failed = receipt.findRecord('system', 'ExtrinsicFailed');
+          // isCompleted === isFinalized || isInBlock || isError
+          if (receipt.isCompleted) {
+            if (receipt.isInBlock) {
+              const blockHash = status.asInBlock;
 
-          if (receipt.isInBlock) {
-            // tx included in a block
-            this.blockHash = status.asInBlock.toString();
+              /*
+               * this must be done to ensure that the block hash and number are set before the success event
+               *   is emitted, and at the same time. We do not resolve or reject the containing promise until this
+               *   one resolves
+               */
+              settingBlockData = defusePromise(
+                this.context.polymeshApi.rpc.chain.getBlock(blockHash).then(({ block }) => {
+                  this.blockHash = hashToString(blockHash);
+                  this.blockNumber = u32ToBigNumber(block.header.number.unwrap());
+                })
+              );
 
-            if (failed) {
-              unsubscribe = true;
-              this.handleExtrinsicFailure(resolve, reject, failed.event.data[0] as DispatchError);
+              // if the extrinsic failed due to an on-chain error, we should handle it in a special way
+              extrinsicFailedEvent = receipt.findRecord('system', 'ExtrinsicFailed');
+
+              // extrinsic failed so we can unsubscribe
+              isLastCallback = !!extrinsicFailedEvent;
+            } else {
+              // isFinalized || isError so we know we can unsubscribe
+              isLastCallback = true;
             }
-          } else {
-            unsubscribe = true;
-          }
 
-          if (unsubscribe) {
-            gettingUnsub.then(unsub => {
-              unsub();
-            });
-          }
+            if (isLastCallback) {
+              unsubscribing = gettingUnsub.then(unsub => {
+                unsub();
+              });
+            }
 
-          if (receipt.isFinalized) {
-            // tx finalized
-            this.handleExtrinsicSuccess(resolve, reject, receipt);
-          }
+            /*
+             * Promise chain that handles all sub-promises in this pass through the signAndSend callback.
+             * Primarily for consistent error handling
+             */
+            let finishing = Promise.resolve();
 
-          if (receipt.isError) {
-            reject(new PolymeshError({ code: ErrorCode.TransactionAborted }));
+            if (extrinsicFailedEvent) {
+              const {
+                event: { data },
+              } = extrinsicFailedEvent;
+
+              finishing = Promise.all([settingBlockData, unsubscribing]).then(() => {
+                this.handleExtrinsicFailure(resolve, reject, data[0] as DispatchError);
+              });
+            } else if (receipt.isFinalized) {
+              finishing = Promise.all([settingBlockData, unsubscribing]).then(() => {
+                this.handleExtrinsicSuccess(resolve, reject, receipt);
+              });
+            } else if (receipt.isError) {
+              reject(new PolymeshError({ code: ErrorCode.TransactionAborted }));
+            }
+
+            finishing.catch((err: Error) => reject(err));
           }
         }
-      });
+      );
 
       gettingUnsub
         .then(() => {
@@ -234,7 +260,7 @@ export abstract class PolymeshTransactionBase<
             error = { code: ErrorCode.TransactionRejectedByUser };
           } else {
             // unexpected error
-            error = { code: ErrorCode.FatalError, message: err.message };
+            error = { code: ErrorCode.UnexpectedError, message: err.message };
           }
 
           reject(new PolymeshError(error));
@@ -258,39 +284,44 @@ export abstract class PolymeshTransactionBase<
   }
 
   /**
-   * Retrieve the Account that would pay for the transaction fees if it was run at this moment, as well as the maximum amount that can be
-   *   charged to it. A null allowance means that there is no limit to that amount
+   * Retrieve the Account that would pay fees for the transaction if it was run at this moment, as well as the total amount that can be
+   *   charged to it (allowance). A null allowance means that there is no limit to that amount
    *
-   * A null return value signifies that the current Account will pay for the fees
+   * A null return value signifies that the caller Account would pay the fees
    *
-   * @note this value might change if, before running the transaction, the current Account enters (or leaves)
+   * @note this value might change if, before running the transaction, the caller Account enters (or leaves)
    *   a subsidizer relationship
    */
-  public async getPayingAccount(): Promise<{
-    account: Account;
-    allowance: BigNumber | null;
-  } | null> {
-    const { paidForBy, context, tag } = this;
+  public async getPayingAccount(): Promise<PayingAccount | null> {
+    const { paidForBy, context } = this;
+
+    if (this.ignoresSubsidy()) {
+      return null;
+    }
 
     if (paidForBy) {
-      const primaryKey = await paidForBy.getPrimaryKey();
+      const { account: primaryAccount } = await paidForBy.getPrimaryAccount();
 
       return {
-        account: primaryKey,
+        type: PayingAccountType.Other,
+        account: primaryAccount,
         allowance: null,
       };
     }
 
-    const subsidy = await context.accountSubsidy();
+    const subsidyWithAllowance = await context.accountSubsidy();
 
-    // `relayer.removePayingKey` is always paid by the caller
-    if (!subsidy || tag === TxTags.relayer.RemovePayingKey) {
+    if (!subsidyWithAllowance) {
       return null;
     }
 
-    const { subsidizer: account, allowance } = subsidy;
+    const {
+      subsidy: { subsidizer: account },
+      allowance,
+    } = subsidyWithAllowance;
 
     return {
+      type: PayingAccountType.Subsidy,
       account,
       allowance,
     };
@@ -304,8 +335,8 @@ export abstract class PolymeshTransactionBase<
    * @note this value might change if the transaction is run at a later time. This can be due to a governance vote
    */
   public async getFees(): Promise<Fees | null> {
-    const { signer, context } = this;
-    let { protocolFee } = this;
+    const { signingAddress } = this;
+    let { protocolFee: protocol } = this;
 
     let composedTx;
 
@@ -315,16 +346,16 @@ export abstract class PolymeshTransactionBase<
       return null;
     }
 
-    const paymentInfoPromise = composedTx.paymentInfo(signer);
+    const paymentInfoPromise = composedTx.paymentInfo(signingAddress);
 
-    if (!protocolFee) {
-      protocolFee = await context.getTransactionFees(this.tag);
+    if (!protocol) {
+      protocol = await this.getProtocolFees();
     }
 
     const { partialFee } = await paymentInfoPromise;
 
     return {
-      protocol: protocolFee.multipliedBy(this.batchSize || 1),
+      protocol,
       gas: balanceToBigNumber(partialFee),
     };
   }
@@ -353,11 +384,41 @@ export abstract class PolymeshTransactionBase<
   }
 
   /**
+   * Return whether the transaction can be subsidized. If the result is false
+   *   AND the caller is being subsidized by a third party, the transaction can't be executed and trying
+   *   to do so will result in an error
+   *
+   * @note this depends on the type of transaction itself (i.e. `staking.bond` can't be subsidized, but `asset.createAsset` can)
+   */
+  public abstract supportsSubsidy(): boolean;
+
+  /**
    * @hidden
    *
    * Compose a Transaction Object with arguments that can be signed
    */
   protected abstract composeTx(): SubmittableExtrinsic<'promise', ISubmittableResult>;
+
+  /**
+   * @hidden
+   *
+   * Return whether the transaction ignores any existing subsidizer relationships
+   *   and is always paid by the caller
+   */
+  protected ignoresSubsidy(): boolean {
+    /*
+     * since we don't know anything about the transaction, a safe default is
+     *   to assume it doesn't ignore subsidies
+     */
+    return false;
+  }
+
+  /**
+   * @hidden
+   *
+   * Fetch and calculate this transaction's protocol fees
+   */
+  protected abstract getProtocolFees(): Promise<BigNumber>;
 
   /**
    * @hidden

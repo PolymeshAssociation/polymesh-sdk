@@ -1,5 +1,5 @@
 import { bool, Bytes, Text, u8, u32, u64 } from '@polkadot/types';
-import { AccountId, Balance, Moment, Permill, Signature } from '@polkadot/types/interfaces';
+import { AccountId, Balance, Hash, Moment, Permill, Signature } from '@polkadot/types/interfaces';
 import {
   hexToU8a,
   isHex,
@@ -18,7 +18,6 @@ import {
   camelCase,
   flatten,
   includes,
-  isEqual,
   map,
   padEnd,
   range,
@@ -70,7 +69,6 @@ import {
   ModuleName,
   MovePortfolioItem,
   Permissions as MeshPermissions,
-  PipId,
   PortfolioId as MeshPortfolioId,
   PosRatio,
   PriceTier,
@@ -98,9 +96,9 @@ import {
 } from 'polymesh-types/types';
 
 import { meshCountryCodeToCountryCode } from '~/generated/utils';
-// import { ProposalDetails } from '~/api/types';
 import {
   Account,
+  Asset,
   Checkpoint,
   CheckpointSchedule,
   Context,
@@ -111,7 +109,6 @@ import {
   NumberedPortfolio,
   PolymeshError,
   Portfolio,
-  SecurityToken,
   Venue,
 } from '~/internal';
 import {
@@ -121,11 +118,11 @@ import {
   IdentityWithClaims as MiddlewareIdentityWithClaims,
   ModuleIdEnum,
   Portfolio as MiddlewarePortfolio,
-  // Proposal,
   Scope as MiddlewareScope,
 } from '~/middleware/types';
 import {
   AffirmationStatus,
+  AssetDocument,
   Authorization,
   AuthorizationType,
   CalendarPeriod,
@@ -147,11 +144,17 @@ import {
   ExternalAgentCondition,
   IdentityCondition,
   IdentityWithClaims,
+  InputRequirement,
+  InputTrustedClaimIssuer,
   InstructionType,
-  isMultiClaimCondition,
-  isSingleClaimCondition,
-  KnownTokenType,
+  KnownAssetType,
   MultiClaimCondition,
+  OfferingBalanceStatus,
+  OfferingDetails,
+  OfferingSaleStatus,
+  OfferingTier,
+  OfferingTimingStatus,
+  PermissionedAccount,
   PermissionGroupType,
   Permissions,
   PermissionsLike,
@@ -162,22 +165,15 @@ import {
   RequirementCompliance,
   Scope,
   ScopeType,
-  SecondaryKey,
   SectionPermissions,
+  SecurityIdentifier,
+  SecurityIdentifierType,
   Signer,
   SignerType,
   SignerValue,
   SingleClaimCondition,
-  StoBalanceStatus,
-  StoDetails,
-  StoSaleStatus,
-  StoTier,
-  StoTimingStatus,
   TargetTreatment,
   Tier,
-  TokenDocument,
-  TokenIdentifier,
-  TokenIdentifierType,
   TransactionPermissions,
   TransferBreakdown,
   TransferError,
@@ -192,7 +188,7 @@ import {
   CorporateActionIdentifier,
   ExtrinsicIdentifier,
   InstructionStatus,
-  InternalTokenType,
+  InternalAssetType,
   PalletPermissions,
   PermissionGroupIdentifier,
   PermissionsEnum,
@@ -211,21 +207,29 @@ import {
   MAX_TICKER_LENGTH,
 } from '~/utils/constants';
 import {
+  asDid,
+  assertAddressValid,
   assertIsInteger,
   assertIsPositive,
+  asTicker,
+  conditionsAreEqual,
   createClaim,
-  getTicker,
   isModuleOrTagMatch,
   isPrintableAscii,
   optionize,
   padString,
   removePadding,
 } from '~/utils/internal';
+import {
+  isIdentityCondition,
+  isMultiClaimCondition,
+  isSingleClaimCondition,
+} from '~/utils/typeguards';
 
 export * from '~/generated/utils';
 
 /**
- * Generate a Security Token's DID from a ticker
+ * Generate an Asset's DID from a ticker
  */
 export function tickerToDid(ticker: string): string {
   return blake2AsHex(
@@ -237,7 +241,7 @@ export function tickerToDid(ticker: string): string {
  * @hidden
  */
 export function stringToAssetName(name: string, context: Context): AssetName {
-  return context.polymeshApi.createType('AssetName', name);
+  return context.createType('AssetName', name);
 }
 
 /**
@@ -251,7 +255,7 @@ export function assetNameToString(name: AssetName): string {
  * @hidden
  */
 export function booleanToBool(value: boolean, context: Context): bool {
-  return context.polymeshApi.createType('bool', value);
+  return context.createType('bool', value);
 }
 
 /**
@@ -265,7 +269,7 @@ export function boolToBoolean(value: bool): boolean {
  * @hidden
  */
 export function stringToBytes(bytes: string, context: Context): Bytes {
-  return context.polymeshApi.createType('Bytes', bytes);
+  return context.createType('Bytes', bytes);
 }
 
 /**
@@ -282,7 +286,7 @@ export function stringToTicker(ticker: string, context: Context): Ticker {
   if (!ticker.length || ticker.length > MAX_TICKER_LENGTH) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} character`,
+      message: `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} characters`,
     });
   }
 
@@ -300,7 +304,7 @@ export function stringToTicker(ticker: string, context: Context): Ticker {
     });
   }
 
-  return context.polymeshApi.createType('Ticker', padString(ticker, MAX_TICKER_LENGTH));
+  return context.createType('Ticker', padString(ticker, MAX_TICKER_LENGTH));
 }
 
 /**
@@ -315,15 +319,15 @@ export function tickerToString(ticker: Ticker): string {
  * @hidden
  */
 export function stringToInvestorZKProofData(proof: string, context: Context): InvestorZKProofData {
-  return context.polymeshApi.createType('InvestorZKProofData', proof);
+  return context.createType('InvestorZKProofData', proof);
 }
-/* eslint-disable @typescript-eslint/naming-convention */
+/* eslint-enable @typescript-eslint/naming-convention */
 
 /**
  * @hidden
  */
 export function dateToMoment(date: Date, context: Context): Moment {
-  return context.polymeshApi.createType('Moment', date.getTime());
+  return context.createType('Moment', date.getTime());
 }
 
 /**
@@ -337,7 +341,9 @@ export function momentToDate(moment: Moment): Date {
  * @hidden
  */
 export function stringToAccountId(accountId: string, context: Context): AccountId {
-  return context.polymeshApi.createType('AccountId', accountId);
+  assertAddressValid(accountId, context.ss58Format);
+
+  return context.createType('AccountId', accountId);
 }
 
 /**
@@ -350,8 +356,22 @@ export function accountIdToString(accountId: AccountId): string {
 /**
  * @hidden
  */
+export function hashToString(hash: Hash): string {
+  return hash.toString();
+}
+
+/**
+ * @hidden
+ */
+export function stringToHash(hash: string, context: Context): Hash {
+  return context.createType('Hash', hash);
+}
+
+/**
+ * @hidden
+ */
 export function stringToIdentityId(identityId: string, context: Context): IdentityId {
-  return context.polymeshApi.createType('IdentityId', identityId);
+  return context.createType('IdentityId', identityId);
 }
 
 /**
@@ -365,14 +385,29 @@ export function identityIdToString(identityId: IdentityId): string {
  * @hidden
  */
 export function stringToEcdsaSignature(signature: string, context: Context): EcdsaSignature {
-  return context.polymeshApi.createType('EcdsaSignature', signature);
+  return context.createType('EcdsaSignature', signature);
+}
+
+/**
+ * @hidden
+ */
+export function signatoryToAccount(signatory: Signatory, context: Context): Account {
+  if (signatory.isAccount) {
+    return new Account({ address: accountIdToString(signatory.asAccount) }, context);
+  }
+
+  throw new PolymeshError({
+    code: ErrorCode.UnexpectedError,
+    message:
+      'Received an Identity where an Account was expected. Please report this issue to the Polymath team',
+  });
 }
 
 /**
  * @hidden
  */
 export function signerValueToSignatory(signer: SignerValue, context: Context): Signatory {
-  return context.polymeshApi.createType('Signatory', {
+  return context.createType('Signatory', {
     [signer.type]: signer.value,
   });
 }
@@ -443,28 +478,26 @@ export function u64ToBigNumber(value: u64): BigNumber {
 /**
  * @hidden
  */
-export function numberToU64(value: number | BigNumber, context: Context): u64 {
+export function bigNumberToU64(value: BigNumber, context: Context): u64 {
   assertIsInteger(value);
   assertIsPositive(value);
-  return context.polymeshApi.createType('u64', new BigNumber(value).toString());
+  return context.createType('u64', value.toString());
 }
 
 /**
  * @hidden
  */
-export function percentageToPermill(value: number | BigNumber, context: Context): Permill {
+export function percentageToPermill(value: BigNumber, context: Context): Permill {
   assertIsPositive(value);
 
-  const val = new BigNumber(value);
-
-  if (val.gt(100)) {
+  if (value.gt(100)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: "Percentage shouldn't exceed 100",
     });
   }
 
-  return context.polymeshApi.createType('Permill', val.shiftedBy(4).toString()); // (value : 100) * 10^6
+  return context.createType('Permill', value.shiftedBy(4).toString()); // (value : 100) * 10^6
 }
 
 /**
@@ -527,11 +560,7 @@ export function portfolioLikeToPortfolioId(value: PortfolioLike): PortfolioId {
     const { identity: valueIdentity } = value;
     ({ id: number } = value);
 
-    if (typeof valueIdentity === 'string') {
-      did = valueIdentity;
-    } else {
-      ({ did } = valueIdentity);
-    }
+    did = asDid(valueIdentity);
   }
 
   return { did, number };
@@ -568,10 +597,10 @@ export function portfolioIdToMeshPortfolioId(
   context: Context
 ): MeshPortfolioId {
   const { did, number } = portfolioId;
-  return context.polymeshApi.createType('PortfolioId', {
+  return context.createType('PortfolioId', {
     did: stringToIdentityId(did, context),
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    kind: number ? { User: numberToU64(number, context) } : 'Default',
+    kind: number ? { User: bigNumberToU64(number, context) } : 'Default',
   });
 }
 
@@ -579,7 +608,7 @@ export function portfolioIdToMeshPortfolioId(
  * @hidden
  */
 export function stringToText(text: string, context: Context): Text {
-  return context.polymeshApi.createType('Text', text);
+  return context.createType('Text', text);
 }
 
 /**
@@ -605,7 +634,7 @@ export function txGroupToTxTags(group: TxGroup): TxTag[] {
         TxTags.settlement.CreateVenue,
       ];
     }
-    case TxGroup.TokenManagement: {
+    case TxGroup.AssetManagement: {
       return [
         TxTags.asset.MakeDivisible,
         TxTags.asset.RenameAsset,
@@ -614,7 +643,7 @@ export function txGroupToTxTags(group: TxGroup): TxTag[] {
         TxTags.asset.RemoveDocuments,
       ];
     }
-    case TxGroup.AdvancedTokenManagement: {
+    case TxGroup.AdvancedAssetManagement: {
       return [
         TxTags.asset.Freeze,
         TxTags.asset.Unfreeze,
@@ -790,7 +819,7 @@ function buildPalletPermissions(
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message:
-          'Attempting to add an transaction permission exception without its corresponding module being included/excluded',
+          'Attempting to add a transaction permission exception without its corresponding module being included/excluded',
       });
     } else if (pallet === null) {
       extrinsicDict[palletName] = { tx: [dispatchableName], exception: true };
@@ -847,19 +876,32 @@ function buildPalletPermissions(
 /**
  * @hidden
  */
+export function transactionPermissionsToExtrinsicPermissions(
+  transactionPermissions: TransactionPermissions | null,
+  context: Context
+): ExtrinsicPermissions {
+  return context.createType(
+    'ExtrinsicPermissions',
+    transactionPermissions ? buildPalletPermissions(transactionPermissions) : 'Whole'
+  );
+}
+
+/**
+ * @hidden
+ */
 export function permissionsToMeshPermissions(
   permissions: Permissions,
   context: Context
 ): MeshPermissions {
-  const { tokens, transactions, portfolios } = permissions;
+  const { assets, transactions, portfolios } = permissions;
 
   const extrinsic = transactionPermissionsToExtrinsicPermissions(transactions, context);
 
   let asset: PermissionsEnum<Ticker> = 'Whole';
-  if (tokens) {
-    const { values: tokenValues, type } = tokens;
-    tokenValues.sort(({ ticker: tickerA }, { ticker: tickerB }) => tickerA.localeCompare(tickerB));
-    const tickers = tokenValues.map(({ ticker }) => stringToTicker(ticker, context));
+  if (assets) {
+    const { values: assetValues, type } = assets;
+    assetValues.sort(({ ticker: tickerA }, { ticker: tickerB }) => tickerA.localeCompare(tickerB));
+    const tickers = assetValues.map(({ ticker }) => stringToTicker(ticker, context));
     if (type === PermissionType.Include) {
       asset = {
         These: tickers,
@@ -895,20 +937,7 @@ export function permissionsToMeshPermissions(
     portfolio,
   };
 
-  return context.polymeshApi.createType('Permissions', value);
-}
-
-/**
- * @hidden
- */
-export function transactionPermissionsToExtrinsicPermissions(
-  transactionPermissions: TransactionPermissions | null,
-  context: Context
-): ExtrinsicPermissions {
-  return context.polymeshApi.createType(
-    'ExtrinsicPermissions',
-    transactionPermissions ? buildPalletPermissions(transactionPermissions) : 'Whole'
-  );
+  return context.createType('Permissions', value);
 }
 
 /**
@@ -970,27 +999,27 @@ export function meshPermissionsToPermissions(
 ): Permissions {
   const { asset, extrinsic, portfolio } = permissions;
 
-  let tokens: SectionPermissions<SecurityToken> | null = null;
+  let assets: SectionPermissions<Asset> | null = null;
   let transactions: TransactionPermissions | null = null;
   let portfolios: SectionPermissions<DefaultPortfolio | NumberedPortfolio> | null = null;
 
-  let tokensType: PermissionType;
-  let securityTokens;
+  let assetsType: PermissionType;
+  let assetsPermissions;
   if (asset.isThese) {
-    tokensType = PermissionType.Include;
-    securityTokens = asset.asThese;
+    assetsType = PermissionType.Include;
+    assetsPermissions = asset.asThese;
   } else if (asset.isExcept) {
-    tokensType = PermissionType.Exclude;
-    securityTokens = asset.asExcept;
+    assetsType = PermissionType.Exclude;
+    assetsPermissions = asset.asExcept;
   }
 
-  if (securityTokens) {
-    tokens = {
-      values: securityTokens.map(
-        ticker => new SecurityToken({ ticker: tickerToString(ticker) }, context)
+  if (assetsPermissions) {
+    assets = {
+      values: assetsPermissions.map(
+        ticker => new Asset({ ticker: tickerToString(ticker) }, context)
       ),
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      type: tokensType!,
+      type: assetsType!,
     };
   }
 
@@ -1015,7 +1044,7 @@ export function meshPermissionsToPermissions(
   }
 
   return {
-    tokens,
+    assets,
     transactions,
     transactionGroups: transactions ? transactionPermissionsToTxGroups(transactions) : [],
     portfolios,
@@ -1025,15 +1054,38 @@ export function meshPermissionsToPermissions(
 /**
  * @hidden
  */
+export function bigNumberToU32(value: BigNumber, context: Context): u32 {
+  assertIsInteger(value);
+  assertIsPositive(value);
+  return context.createType('u32', value.toString());
+}
+
+/**
+ * @hidden
+ */
+export function u32ToBigNumber(value: u32): BigNumber {
+  return new BigNumber(value.toString());
+}
+
+/**
+ * @hidden
+ */
+export function u8ToBigNumber(value: u8): BigNumber {
+  return new BigNumber(value.toString());
+}
+
+/**
+ * @hidden
+ */
 export function permissionGroupIdentifierToAgentGroup(
   permissionGroup: PermissionGroupIdentifier,
   context: Context
 ): AgentGroup {
-  return context.polymeshApi.createType(
+  return context.createType(
     'AgentGroup',
     typeof permissionGroup !== 'object'
       ? permissionGroup
-      : { Custom: numberToU32(permissionGroup.custom, context) }
+      : { Custom: bigNumberToU32(permissionGroup.custom, context) }
   );
 }
 
@@ -1065,32 +1117,36 @@ export function authorizationToAuthorizationData(
 ): AuthorizationData {
   let value;
 
-  if (auth.type === AuthorizationType.RotatePrimaryKey) {
+  const { type } = auth;
+
+  if (type === AuthorizationType.RotatePrimaryKey) {
     value = null;
-  } else if (auth.type === AuthorizationType.JoinIdentity) {
+  } else if (type === AuthorizationType.JoinIdentity) {
     value = permissionsToMeshPermissions(auth.value, context);
-  } else if (auth.type === AuthorizationType.PortfolioCustody) {
+  } else if (type === AuthorizationType.PortfolioCustody) {
     value = portfolioIdToMeshPortfolioId(portfolioToPortfolioId(auth.value), context);
   } else if (
     auth.type === AuthorizationType.TransferAssetOwnership ||
     auth.type === AuthorizationType.TransferTicker
   ) {
     value = stringToTicker(auth.value, context);
-  } else if (auth.type === AuthorizationType.BecomeAgent) {
-    const ticker = stringToTicker(auth.value.ticker, context);
+  } else if (type === AuthorizationType.RotatePrimaryKeyToSecondary) {
+    value = permissionsToMeshPermissions(auth.value, context);
+  } else if (type === AuthorizationType.BecomeAgent) {
+    const ticker = stringToTicker(auth.value.asset.ticker, context);
     if (auth.value instanceof CustomPermissionGroup) {
       const { id } = auth.value;
       value = [ticker, permissionGroupIdentifierToAgentGroup({ custom: id }, context)];
     } else {
-      const { type } = auth.value;
-      value = [ticker, permissionGroupIdentifierToAgentGroup(type, context)];
+      const { type: groupType } = auth.value;
+      value = [ticker, permissionGroupIdentifierToAgentGroup(groupType, context)];
     }
   } else {
     value = auth.value;
   }
 
-  return context.polymeshApi.createType('AuthorizationData', {
-    [auth.type]: value,
+  return context.createType('AuthorizationData', {
+    [type]: value,
   });
 }
 
@@ -1101,7 +1157,77 @@ export function authorizationTypeToMeshAuthorizationType(
   authorizationType: AuthorizationType,
   context: Context
 ): MeshAuthorizationType {
-  return context.polymeshApi.createType('AuthorizationType', authorizationType);
+  return context.createType('AuthorizationType', authorizationType);
+}
+
+/**
+ * @hidden
+ */
+export function bigNumberToBalance(value: BigNumber, context: Context, divisible = true): Balance {
+  assertIsPositive(value);
+
+  if (value.isGreaterThan(MAX_BALANCE)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The value exceeds the maximum possible balance',
+      data: {
+        currentValue: value,
+        amountLimit: MAX_BALANCE,
+      },
+    });
+  }
+
+  if (divisible) {
+    if (value.decimalPlaces() > MAX_DECIMALS) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'The value has more decimal places than allowed',
+        data: {
+          currentValue: value,
+          decimalsLimit: MAX_DECIMALS,
+        },
+      });
+    }
+  } else {
+    if (value.decimalPlaces()) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'The value has decimals but the Asset is indivisible',
+      });
+    }
+  }
+
+  return context.createType('Balance', value.shiftedBy(6).toString());
+}
+
+/**
+ * @hidden
+ */
+export function balanceToBigNumber(balance: Balance): BigNumber {
+  return new BigNumber(balance.toString()).shiftedBy(-6);
+}
+
+/**
+ * @hidden
+ */
+export function agentGroupToPermissionGroup(
+  agentGroup: AgentGroup,
+  ticker: string,
+  context: Context
+): KnownPermissionGroup | CustomPermissionGroup {
+  const permissionGroupIdentifier = agentGroupToPermissionGroupIdentifier(agentGroup);
+  switch (permissionGroupIdentifier) {
+    case PermissionGroupType.ExceptMeta:
+    case PermissionGroupType.Full:
+    case PermissionGroupType.PolymeshV1Caa:
+    case PermissionGroupType.PolymeshV1Pia: {
+      return new KnownPermissionGroup({ type: permissionGroupIdentifier, ticker }, context);
+    }
+    default: {
+      const { custom: id } = permissionGroupIdentifier;
+      return new CustomPermissionGroup({ id, ticker }, context);
+    }
+  }
 }
 
 /**
@@ -1181,68 +1307,20 @@ export function authorizationDataToAuthorization(
     };
   }
 
+  if (auth.isRotatePrimaryKeyToSecondary) {
+    return {
+      type: AuthorizationType.RotatePrimaryKeyToSecondary,
+      value: meshPermissionsToPermissions(auth.asRotatePrimaryKeyToSecondary, context),
+    };
+  }
+
   throw new PolymeshError({
-    code: ErrorCode.FatalError,
+    code: ErrorCode.UnexpectedError,
     message: 'Unsupported Authorization Type. Please contact the Polymath team',
     data: {
       auth: JSON.stringify(auth, null, 2),
     },
   });
-}
-
-/**
- * @hidden
- */
-export function numberToBalance(
-  value: number | BigNumber,
-  context: Context,
-  divisible?: boolean
-): Balance {
-  const rawValue = new BigNumber(value);
-
-  assertIsPositive(value);
-
-  divisible = divisible ?? true;
-
-  if (rawValue.isGreaterThan(MAX_BALANCE)) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'The value exceeds the maximum possible balance',
-      data: {
-        currentValue: rawValue,
-        amountLimit: MAX_BALANCE,
-      },
-    });
-  }
-
-  if (divisible) {
-    if (rawValue.decimalPlaces() > MAX_DECIMALS) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'The value has more decimal places than allowed',
-        data: {
-          currentValue: rawValue,
-          decimalsLimit: MAX_DECIMALS,
-        },
-      });
-    }
-  } else {
-    if (rawValue.decimalPlaces()) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'The value has decimals but the token is indivisible',
-      });
-    }
-  }
-
-  return context.polymeshApi.createType('Balance', rawValue.shiftedBy(6).toString());
-}
-
-/**
- * @hidden
- */
-export function balanceToBigNumber(balance: Balance): BigNumber {
-  return new BigNumber(balance.toString()).shiftedBy(-6);
 }
 
 /**
@@ -1259,30 +1337,7 @@ export function stringToMemo(value: string, context: Context): Memo {
     });
   }
 
-  return context.polymeshApi.createType('Memo', padString(value, MAX_MEMO_LENGTH));
-}
-
-/**
- * @hidden
- */
-export function numberToU32(value: number | BigNumber, context: Context): u32 {
-  assertIsInteger(value);
-  assertIsPositive(value);
-  return context.polymeshApi.createType('u32', new BigNumber(value).toString());
-}
-
-/**
- * @hidden
- */
-export function u32ToBigNumber(value: u32): BigNumber {
-  return new BigNumber(value.toString());
-}
-
-/**
- * @hidden
- */
-export function u8ToBigNumber(value: u8): BigNumber {
-  return new BigNumber(value.toString());
+  return context.createType('Memo', padString(value, MAX_MEMO_LENGTH));
 }
 
 /**
@@ -1357,7 +1412,7 @@ export function u8ToTransferStatus(status: u8): TransferStatus {
     }
     default: {
       throw new PolymeshError({
-        code: ErrorCode.FatalError,
+        code: ErrorCode.UnexpectedError,
         message: `Unsupported status code "${status.toString()}". Please report this issue to the Polymath team`,
       });
     }
@@ -1367,43 +1422,43 @@ export function u8ToTransferStatus(status: u8): TransferStatus {
 /**
  * @hidden
  */
-export function internalTokenTypeToAssetType(type: InternalTokenType, context: Context): AssetType {
-  return context.polymeshApi.createType('AssetType', type);
+export function internalAssetTypeToAssetType(type: InternalAssetType, context: Context): AssetType {
+  return context.createType('AssetType', type);
 }
 
 /**
  * @hidden
  */
-export function assetTypeToKnownOrId(assetType: AssetType): KnownTokenType | BigNumber {
+export function assetTypeToKnownOrId(assetType: AssetType): KnownAssetType | BigNumber {
   if (assetType.isEquityCommon) {
-    return KnownTokenType.EquityCommon;
+    return KnownAssetType.EquityCommon;
   }
   if (assetType.isEquityPreferred) {
-    return KnownTokenType.EquityPreferred;
+    return KnownAssetType.EquityPreferred;
   }
   if (assetType.isCommodity) {
-    return KnownTokenType.Commodity;
+    return KnownAssetType.Commodity;
   }
   if (assetType.isFixedIncome) {
-    return KnownTokenType.FixedIncome;
+    return KnownAssetType.FixedIncome;
   }
   if (assetType.isReit) {
-    return KnownTokenType.Reit;
+    return KnownAssetType.Reit;
   }
   if (assetType.isFund) {
-    return KnownTokenType.Fund;
+    return KnownAssetType.Fund;
   }
   if (assetType.isRevenueShareAgreement) {
-    return KnownTokenType.RevenueShareAgreement;
+    return KnownAssetType.RevenueShareAgreement;
   }
   if (assetType.isStructuredProduct) {
-    return KnownTokenType.StructuredProduct;
+    return KnownAssetType.StructuredProduct;
   }
   if (assetType.isDerivative) {
-    return KnownTokenType.Derivative;
+    return KnownAssetType.Derivative;
   }
   if (assetType.isStableCoin) {
-    return KnownTokenType.StableCoin;
+    return KnownAssetType.StableCoin;
   }
 
   return u32ToBigNumber(assetType.asCustom);
@@ -1469,7 +1524,9 @@ export function isCusipValid(cusip: string): boolean {
 
   let sum = 0;
 
+  // cSpell: disable-next-line
   const cusipChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ*@#'.split('');
+
   const cusipLength = cusip.length - 1;
 
   range(cusipLength).forEach(i => {
@@ -1511,8 +1568,8 @@ export function isLeiValid(lei: string): boolean {
 /**
  * @hidden
  */
-export function tokenIdentifierToAssetIdentifier(
-  identifier: TokenIdentifier,
+export function securityIdentifierToAssetIdentifier(
+  identifier: SecurityIdentifier,
   context: Context
 ): AssetIdentifier {
   const { type, value } = identifier;
@@ -1520,13 +1577,13 @@ export function tokenIdentifierToAssetIdentifier(
   let error = false;
 
   switch (type) {
-    case TokenIdentifierType.Isin: {
+    case SecurityIdentifierType.Isin: {
       if (!isIsinValid(value)) {
         error = true;
       }
       break;
     }
-    case TokenIdentifierType.Lei: {
+    case SecurityIdentifierType.Lei: {
       if (!isLeiValid(value)) {
         error = true;
       }
@@ -1543,38 +1600,40 @@ export function tokenIdentifierToAssetIdentifier(
   if (error) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: `Error while checking value identifier ${value} as ${type} type`,
+      message: `Invalid security identifier ${value} of type ${type}`,
     });
   }
 
-  return context.polymeshApi.createType('AssetIdentifier', { [type]: value });
+  return context.createType('AssetIdentifier', { [type]: value });
 }
 
 /**
  * @hidden
  */
-export function assetIdentifierToTokenIdentifier(identifier: AssetIdentifier): TokenIdentifier {
+export function assetIdentifierToSecurityIdentifier(
+  identifier: AssetIdentifier
+): SecurityIdentifier {
   if (identifier.isCusip) {
     return {
-      type: TokenIdentifierType.Cusip,
+      type: SecurityIdentifierType.Cusip,
       value: u8aToString(identifier.asCusip),
     };
   }
   if (identifier.isIsin) {
     return {
-      type: TokenIdentifierType.Isin,
+      type: SecurityIdentifierType.Isin,
       value: u8aToString(identifier.asIsin),
     };
   }
   if (identifier.isCins) {
     return {
-      type: TokenIdentifierType.Cins,
+      type: SecurityIdentifierType.Cins,
       value: u8aToString(identifier.asCins),
     };
   }
 
   return {
-    type: TokenIdentifierType.Lei,
+    type: SecurityIdentifierType.Lei,
     value: u8aToString(identifier.asLei),
   };
 }
@@ -1583,7 +1642,7 @@ export function assetIdentifierToTokenIdentifier(identifier: AssetIdentifier): T
  * @hidden
  */
 export function stringToFundingRoundName(roundName: string, context: Context): FundingRoundName {
-  return context.polymeshApi.createType('FundingRoundName', roundName);
+  return context.createType('FundingRoundName', roundName);
 }
 
 /**
@@ -1597,7 +1656,7 @@ export function fundingRoundNameToString(roundName: FundingRoundName): string {
  * @hidden
  */
 export function stringToDocumentName(docName: string, context: Context): DocumentName {
-  return context.polymeshApi.createType('DocumentName', docName);
+  return context.createType('DocumentName', docName);
 }
 
 /**
@@ -1611,7 +1670,7 @@ export function documentNameToString(docName: DocumentName): string {
  * @hidden
  */
 export function stringToDocumentType(docType: string, context: Context): DocumentType {
-  return context.polymeshApi.createType('DocumentType', docType);
+  return context.createType('DocumentType', docType);
 }
 
 /**
@@ -1625,7 +1684,7 @@ export function documentTypeToString(docType: DocumentType): string {
  * @hidden
  */
 export function stringToDocumentUri(docUri: string, context: Context): DocumentUri {
-  return context.polymeshApi.createType('DocumentUri', docUri);
+  return context.createType('DocumentUri', docUri);
 }
 
 /**
@@ -1639,10 +1698,8 @@ export function documentUriToString(docUri: DocumentUri): string {
  * @hidden
  */
 export function stringToDocumentHash(docHash: string | undefined, context: Context): DocumentHash {
-  const { polymeshApi } = context;
-
   if (docHash === undefined) {
-    return polymeshApi.createType('DocumentHash', 'None');
+    return context.createType('DocumentHash', 'None');
   }
 
   if (!isHex(docHash, -1, true)) {
@@ -1671,7 +1728,7 @@ export function stringToDocumentHash(docHash: string | undefined, context: Conte
 
   const { maxLength, key } = type;
 
-  return context.polymeshApi.createType('DocumentHash', {
+  return context.createType('DocumentHash', {
     [key]: hexToU8a(docHash.padEnd(maxLength, '0')),
   });
 }
@@ -1718,11 +1775,11 @@ export function documentHashToString(docHash: DocumentHash): string | undefined 
 /**
  * @hidden
  */
-export function tokenDocumentToDocument(
-  { uri, contentHash, name, filedAt, type }: TokenDocument,
+export function assetDocumentToDocument(
+  { uri, contentHash, name, filedAt, type }: AssetDocument,
   context: Context
 ): Document {
-  return context.polymeshApi.createType('Document', {
+  return context.createType('Document', {
     uri: stringToDocumentUri(uri, context),
     name: stringToDocumentName(name, context),
     /* eslint-disable @typescript-eslint/naming-convention */
@@ -1736,15 +1793,18 @@ export function tokenDocumentToDocument(
 /**
  * @hidden
  */
-export function documentToTokenDocument(
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  { uri, content_hash: hash, name, doc_type: docType, filing_date: filingDate }: Document
-): TokenDocument {
+export function documentToAssetDocument({
+  uri,
+  content_hash: hash,
+  name,
+  doc_type: docType,
+  filing_date: filingDate,
+}: Document): AssetDocument {
   const filedAt = filingDate.unwrapOr(undefined);
   const type = docType.unwrapOr(undefined);
   const contentHash = documentHashToString(hash);
 
-  let doc: TokenDocument = {
+  let doc: AssetDocument = {
     uri: documentUriToString(uri),
     name: documentNameToString(name),
   };
@@ -1782,7 +1842,7 @@ export function canTransferResultToTransferStatus(
 ): TransferStatus {
   if (canTransferResult.isErr) {
     throw new PolymeshError({
-      code: ErrorCode.FatalError,
+      code: ErrorCode.UnexpectedError,
       message: `Error while checking transfer validity: ${bytesToString(canTransferResult.asErr)}`,
     });
   }
@@ -1809,7 +1869,7 @@ export function scopeToMeshScope(scope: Scope, context: Context): MeshScope {
       break;
   }
 
-  return context.polymeshApi.createType('Scope', {
+  return context.createType('Scope', {
     [type]: scopeValue,
   });
 }
@@ -1842,7 +1902,7 @@ export function meshScopeToScope(scope: MeshScope): Scope {
  * @hidden
  */
 export function stringToCddId(cddId: string, context: Context): CddId {
-  return context.polymeshApi.createType('CddId', cddId);
+  return context.createType('CddId', cddId);
 }
 
 /**
@@ -1856,7 +1916,7 @@ export function cddIdToString(cddId: CddId): string {
  * @hidden
  */
 export function stringToScopeId(scopeId: string, context: Context): ScopeId {
-  return context.polymeshApi.createType('ScopeId', scopeId);
+  return context.createType('ScopeId', scopeId);
 }
 
 /**
@@ -1904,7 +1964,7 @@ export function claimToMeshClaim(claim: Claim, context: Context): MeshClaim {
     }
   }
 
-  return context.polymeshApi.createType('Claim', { [claim.type]: value });
+  return context.createType('Claim', { [claim.type]: value });
 }
 
 /**
@@ -1946,9 +2006,11 @@ export function middlewareEventToEventIdentifier(event: MiddlewareEvent): EventI
 
   return {
     blockNumber: new BigNumber(blockNumber),
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
     blockDate: new Date(block!.datetime),
-    eventIndex,
+    blockHash: block!.hash!,
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
+    eventIndex: new BigNumber(eventIndex),
   };
 }
 
@@ -2047,7 +2109,7 @@ export function meshClaimToClaim(claim: MeshClaim): Claim {
  * @hidden
  */
 export function stringToTargetIdentity(did: string | null, context: Context): TargetIdentity {
-  return context.polymeshApi.createType(
+  return context.createType(
     'TargetIdentity',
     // eslint-disable-next-line @typescript-eslint/naming-convention
     did ? { Specific: stringToIdentityId(did, context) } : 'ExternalAgent'
@@ -2108,7 +2170,7 @@ export function trustedIssuerToTrustedClaimIssuer(
 
   const identity = new Identity({ did: identityIdToString(issuer) }, context);
 
-  let trustedFor: ClaimType[] | undefined;
+  let trustedFor: ClaimType[] | null = null;
 
   if (claimTypes.isSpecific) {
     trustedFor = claimTypes.asSpecific.map(meshClaimTypeToClaimType);
@@ -2124,13 +2186,11 @@ export function trustedIssuerToTrustedClaimIssuer(
  * @hidden
  */
 export function trustedClaimIssuerToTrustedIssuer(
-  issuer: TrustedClaimIssuer,
+  issuer: InputTrustedClaimIssuer,
   context: Context
 ): TrustedIssuer {
-  const {
-    identity: { did },
-    trustedFor: claimTypes,
-  } = issuer;
+  const { trustedFor: claimTypes, identity } = issuer;
+  const did = signerToString(identity);
 
   let trustedFor;
 
@@ -2141,7 +2201,7 @@ export function trustedClaimIssuerToTrustedIssuer(
     trustedFor = { Specific: claimTypes };
   }
 
-  return context.polymeshApi.createType('TrustedIssuer', {
+  return context.createType('TrustedIssuer', {
     issuer: stringToIdentityId(did, context),
     // eslint-disable-next-line @typescript-eslint/naming-convention
     trusted_for: trustedFor,
@@ -2152,10 +2212,9 @@ export function trustedClaimIssuerToTrustedIssuer(
  * @hidden
  */
 export function requirementToComplianceRequirement(
-  requirement: Requirement,
+  requirement: InputRequirement,
   context: Context
 ): ComplianceRequirement {
-  const { polymeshApi } = context;
   const senderConditions: MeshCondition[] = [];
   const receiverConditions: MeshCondition[] = [];
 
@@ -2168,11 +2227,9 @@ export function requirementToComplianceRequirement(
     } else if (isMultiClaimCondition(condition)) {
       const { claims } = condition;
       conditionContent = claims.map(claim => claimToMeshClaim(claim, context));
-    } else if (condition.type === ConditionType.IsIdentity) {
-      const {
-        identity: { did },
-      } = condition;
-      conditionContent = stringToTargetIdentity(did, context);
+    } else if (isIdentityCondition(condition)) {
+      const { identity } = condition;
+      conditionContent = stringToTargetIdentity(signerToString(identity), context);
     } else {
       // IsExternalAgent does not exist as a condition type in Polymesh, it's SDK sugar
       type = ConditionType.IsIdentity;
@@ -2181,7 +2238,7 @@ export function requirementToComplianceRequirement(
 
     const { target, trustedClaimIssuers = [] } = condition;
 
-    const meshCondition = polymeshApi.createType('Condition', {
+    const meshCondition = context.createType('Condition', {
       // eslint-disable-next-line @typescript-eslint/naming-convention
       condition_type: {
         [type]: conditionContent,
@@ -2200,11 +2257,11 @@ export function requirementToComplianceRequirement(
     }
   });
 
-  return polymeshApi.createType('ComplianceRequirement', {
+  return context.createType('ComplianceRequirement', {
     /* eslint-disable @typescript-eslint/naming-convention */
     sender_conditions: senderConditions,
     receiver_conditions: receiverConditions,
-    id: numberToU32(requirement.id, context),
+    id: bigNumberToU32(requirement.id, context),
     /* eslint-enable @typescript-eslint/naming-convention */
   });
 }
@@ -2274,23 +2331,7 @@ export function complianceRequirementResultToRequirementCompliance(
   const conditionCompliancesAreEqual = (
     { condition: aCondition, complies: aComplies }: ConditionCompliance,
     { condition: bCondition, complies: bComplies }: ConditionCompliance
-  ): boolean => {
-    let equalClaims = false;
-
-    if (isSingleClaimCondition(aCondition) && isSingleClaimCondition(bCondition)) {
-      equalClaims = isEqual(aCondition.claim, bCondition.claim);
-    }
-
-    if (isMultiClaimCondition(aCondition) && isMultiClaimCondition(bCondition)) {
-      equalClaims = isEqual(aCondition.claims, bCondition.claims);
-    }
-
-    return (
-      equalClaims &&
-      isEqual(aCondition.trustedClaimIssuers, bCondition.trustedClaimIssuers) &&
-      aComplies === bComplies
-    );
-  };
+  ): boolean => conditionsAreEqual(aCondition, bCondition) && aComplies === bComplies;
 
   complianceRequirement.sender_conditions.forEach(
     ({ condition: { condition_type: conditionType, issuers }, result }) => {
@@ -2341,7 +2382,7 @@ export function complianceRequirementResultToRequirementCompliance(
   );
 
   return {
-    id: u32ToBigNumber(complianceRequirement.id).toNumber(),
+    id: u32ToBigNumber(complianceRequirement.id),
     conditions,
     complies: boolToBoolean(complianceRequirement.result),
   };
@@ -2356,28 +2397,18 @@ export function complianceRequirementToRequirement(
 ): Requirement {
   const conditions: Condition[] = [];
 
-  const conditionsAreEqual = (a: Condition, b: Condition): boolean => {
-    let equalClaims = false;
-
-    if (isSingleClaimCondition(a) && isSingleClaimCondition(b)) {
-      equalClaims = isEqual(a.claim, b.claim);
-    }
-
-    if (isMultiClaimCondition(a) && isMultiClaimCondition(b)) {
-      equalClaims = isEqual(a.claims, b.claims);
-    }
-
-    return equalClaims && isEqual(a.trustedClaimIssuers, b.trustedClaimIssuers);
-  };
-
   complianceRequirement.sender_conditions.forEach(({ condition_type: conditionType, issuers }) => {
-    const newCondition = {
+    const newCondition: Condition = {
       ...meshConditionTypeToCondition(conditionType, context),
       target: ConditionTarget.Sender,
-      trustedClaimIssuers: issuers.map(trustedIssuer =>
-        trustedIssuerToTrustedClaimIssuer(trustedIssuer, context)
-      ),
     };
+
+    if (issuers.length) {
+      newCondition.trustedClaimIssuers = issuers.map(trustedIssuer =>
+        trustedIssuerToTrustedClaimIssuer(trustedIssuer, context)
+      );
+    }
+
     const existingCondition = conditions.find(condition =>
       conditionsAreEqual(condition, newCondition)
     );
@@ -2389,13 +2420,16 @@ export function complianceRequirementToRequirement(
 
   complianceRequirement.receiver_conditions.forEach(
     ({ condition_type: conditionType, issuers }) => {
-      const newCondition = {
+      const newCondition: Condition = {
         ...meshConditionTypeToCondition(conditionType, context),
         target: ConditionTarget.Receiver,
-        trustedClaimIssuers: issuers.map(trustedIssuer =>
-          trustedIssuerToTrustedClaimIssuer(trustedIssuer, context)
-        ),
       };
+
+      if (issuers.length) {
+        newCondition.trustedClaimIssuers = issuers.map(trustedIssuer =>
+          trustedIssuerToTrustedClaimIssuer(trustedIssuer, context)
+        );
+      }
 
       const existingCondition = conditions.find(condition =>
         conditionsAreEqual(condition, newCondition)
@@ -2410,7 +2444,7 @@ export function complianceRequirementToRequirement(
   );
 
   return {
-    id: u32ToBigNumber(complianceRequirement.id).toNumber(),
+    id: u32ToBigNumber(complianceRequirement.id),
     conditions,
   };
 }
@@ -2445,7 +2479,7 @@ export function txTagToProtocolOp(tag: TxTag, context: Context): ProtocolOp {
     });
   }
 
-  return context.polymeshApi.createType('ProtocolOp', value);
+  return context.createType('ProtocolOp', value);
 }
 
 /**
@@ -2477,15 +2511,6 @@ export function extrinsicIdentifierToTxTag(extrinsicIdentifier: ExtrinsicIdentif
 /**
  * @hidden
  */
-export function numberToPipId(id: number | BigNumber, context: Context): PipId {
-  assertIsInteger(id);
-  assertIsPositive(id);
-  return context.polymeshApi.createType('PipId', new BigNumber(id).toString());
-}
-
-/**
- * @hidden
- */
 export function assetComplianceResultToCompliance(
   assetComplianceResult: AssetComplianceResult,
   context: Context
@@ -2507,7 +2532,7 @@ export function assetComplianceResultToCompliance(
 export function moduleAddressToString(moduleAddress: string, context: Context): string {
   return encodeAddress(
     stringToU8a(padString(moduleAddress, MAX_MODULE_LENGTH)),
-    context.ss58Format
+    context.ss58Format.toNumber()
   );
 }
 
@@ -2515,21 +2540,21 @@ export function moduleAddressToString(moduleAddress: string, context: Context): 
  * @hidden
  */
 export function keyToAddress(key: string, context: Context): string {
-  return encodeAddress(key, context.ss58Format);
+  return encodeAddress(key, context.ss58Format.toNumber());
 }
 
 /**
  * @hidden
  */
 export function addressToKey(address: string, context: Context): string {
-  return u8aToHex(decodeAddress(address, IGNORE_CHECKSUM, context.ss58Format));
+  return u8aToHex(decodeAddress(address, IGNORE_CHECKSUM, context.ss58Format.toNumber()));
 }
 
 /**
  * @hidden
  */
 export function transactionHexToTxTag(bytes: string, context: Context): TxTag {
-  const { section, method } = context.polymeshApi.createType('Proposal', bytes);
+  const { section, method } = context.createType('Proposal', bytes);
 
   return extrinsicIdentifierToTxTag({
     moduleId: section.toLowerCase() as ModuleIdEnum,
@@ -2544,80 +2569,17 @@ export function transactionToTxTag<Args extends unknown[]>(tx: PolymeshTx<Args>)
   return `${tx.section}.${tx.method}` as TxTag;
 }
 
-// /**
-//  * @hidden
-//  */
-// export function middlewareProposalToProposalDetails(
-//   proposal: Proposal,
-//   context: Context
-// ): ProposalDetails {
-//   const {
-//     proposer: proposerAddress,
-//     createdAt,
-//     url: discussionUrl,
-//     description,
-//     coolOffEndBlock,
-//     endBlock,
-//     proposal: rawProposal,
-//     lastState,
-//     lastStateUpdatedAt,
-//     totalVotes,
-//     totalAyesWeight,
-//     totalNaysWeight,
-//   } = proposal;
-
-//   return {
-//     proposerAddress,
-//     createdAt: new BigNumber(createdAt),
-//     discussionUrl,
-//     description,
-//     coolOffEndBlock: new BigNumber(coolOffEndBlock),
-//     endBlock: new BigNumber(endBlock),
-//     transaction: rawProposal ? transactionHexToTxTag(rawProposal, context) : null,
-//     lastState,
-//     lastStateUpdatedAt: new BigNumber(lastStateUpdatedAt),
-//     totalVotes: new BigNumber(totalVotes),
-//     totalAyesWeight: new BigNumber(totalAyesWeight),
-//     totalNaysWeight: new BigNumber(totalNaysWeight),
-//   };
-// }
-
-// NOTE uncomment in Governance v2 upgrade
-// /**
-//  * @hidden
-//  */
-// export function meshProposalStateToProposalState(proposalState: MeshProposalState): ProposalState {
-//   if (proposalState.isPending) {
-//     return ProposalState.Pending;
-//   }
-
-//   if (proposalState.isCancelled) {
-//     return ProposalState.Cancelled;
-//   }
-
-//   if (proposalState.isKilled) {
-//     return ProposalState.Killed;
-//   }
-
-//   if (proposalState.isRejected) {
-//     return ProposalState.Rejected;
-//   }
-
-//   return ProposalState.Referendum;
-// }
-
 /**
  * @hidden
  */
-export function secondaryKeyToMeshSecondaryKey(
-  secondaryKey: SecondaryKey,
+export function secondaryAccountToMeshSecondaryKey(
+  secondaryKey: PermissionedAccount,
   context: Context
 ): MeshSecondaryKey {
-  const { polymeshApi } = context;
-  const { signer, permissions } = secondaryKey;
+  const { account, permissions } = secondaryKey;
 
-  return polymeshApi.createType('SecondaryKey', {
-    signer: signerValueToSignatory(signerToSignerValue(signer), context),
+  return context.createType('SecondaryKey', {
+    signer: signerValueToSignatory(signerToSignerValue(account), context),
     permissions: permissionsToMeshPermissions(permissions, context),
   });
 }
@@ -2645,14 +2607,14 @@ export function meshVenueTypeToVenueType(type: MeshVenueType): VenueType {
  * @hidden
  */
 export function venueTypeToMeshVenueType(type: VenueType, context: Context): MeshVenueType {
-  return context.polymeshApi.createType('VenueType', type);
+  return context.createType('VenueType', type);
 }
 
 /**
  * @hidden
  */
 export function stringToVenueDetails(details: string, context: Context): VenueDetails {
-  return context.polymeshApi.createType('VenueDetails', details);
+  return context.createType('VenueDetails', details);
 }
 
 /**
@@ -2702,7 +2664,7 @@ export function meshAffirmationStatusToAffirmationStatus(
 export function endConditionToSettlementType(
   endCondition:
     | { type: InstructionType.SettleOnAffirmation }
-    | { type: InstructionType; value: BigNumber },
+    | { type: InstructionType.SettleOnBlock; value: BigNumber },
   context: Context
 ): SettlementType {
   let value;
@@ -2711,11 +2673,11 @@ export function endConditionToSettlementType(
     value = InstructionType.SettleOnAffirmation;
   } else {
     value = {
-      [InstructionType.SettleOnBlock]: numberToU32(endCondition.value, context),
+      [InstructionType.SettleOnBlock]: bigNumberToU32(endCondition.value, context),
     };
   }
 
-  return context.polymeshApi.createType('SettlementType', value);
+  return context.createType('SettlementType', value);
 }
 
 /**
@@ -2755,10 +2717,10 @@ export function portfolioMovementToMovePortfolioItem(
   portfolioItem: PortfolioMovement,
   context: Context
 ): MovePortfolioItem {
-  const { token, amount, memo } = portfolioItem;
-  return context.polymeshApi.createType('MovePortfolioItem', {
-    ticker: stringToTicker(getTicker(token), context),
-    amount: numberToBalance(amount, context),
+  const { asset, amount, memo } = portfolioItem;
+  return context.createType('MovePortfolioItem', {
+    ticker: stringToTicker(asTicker(asset), context),
+    amount: bigNumberToBalance(amount, context),
     memo: optionize(stringToMemo)(memo, context),
   });
 }
@@ -2767,7 +2729,7 @@ export function portfolioMovementToMovePortfolioItem(
  * @hidden
  */
 export function claimTypeToMeshClaimType(claimType: ClaimType, context: Context): MeshClaimType {
-  return context.polymeshApi.createType('ClaimType', claimType);
+  return context.createType('ClaimType', claimType);
 }
 
 /**
@@ -2783,13 +2745,13 @@ export function transferRestrictionToTransferManager(
 
   if (type === TransferRestrictionType.Count) {
     tmType = 'CountTransferManager';
-    tmValue = numberToU64(value, context);
+    tmValue = bigNumberToU64(value, context);
   } else {
     tmType = 'PercentageTransferManager';
     tmValue = percentageToPermill(value, context);
   }
 
-  return context.polymeshApi.createType('TransferManager', {
+  return context.createType('TransferManager', {
     [tmType]: tmValue,
   });
 }
@@ -2896,11 +2858,11 @@ export function granularCanTransferResultToTransferBreakdown(
 /**
  * @hidden
  */
-export function stoTierToPriceTier(tier: StoTier, context: Context): PriceTier {
+export function offeringTierToPriceTier(tier: OfferingTier, context: Context): PriceTier {
   const { price, amount } = tier;
-  return context.polymeshApi.createType('PriceTier', {
-    total: numberToBalance(amount, context),
-    price: numberToBalance(price, context),
+  return context.createType('PriceTier', {
+    total: bigNumberToBalance(amount, context),
+    price: bigNumberToBalance(price, context),
   });
 }
 
@@ -2911,7 +2873,7 @@ export function permissionsLikeToPermissions(
   permissionsLike: PermissionsLike,
   context: Context
 ): Permissions {
-  let tokenPermissions: SectionPermissions<SecurityToken> | null = {
+  let assetPermissions: SectionPermissions<Asset> | null = {
     values: [],
     type: PermissionType.Include,
   };
@@ -2936,15 +2898,15 @@ export function permissionsLikeToPermissions(
     ({ transactionGroups } = permissionsLike);
   }
 
-  const { tokens, portfolios } = permissionsLike;
+  const { assets, portfolios } = permissionsLike;
 
-  if (tokens === null) {
-    tokenPermissions = null;
-  } else if (tokens) {
-    tokenPermissions = {
-      ...tokens,
-      values: tokens.values.map(ticker =>
-        typeof ticker !== 'string' ? ticker : new SecurityToken({ ticker }, context)
+  if (assets === null) {
+    assetPermissions = null;
+  } else if (assets) {
+    assetPermissions = {
+      ...assets,
+      values: assets.values.map(ticker =>
+        typeof ticker !== 'string' ? ticker : new Asset({ ticker }, context)
       ),
     };
   }
@@ -2970,7 +2932,7 @@ export function permissionsLikeToPermissions(
   }
 
   return {
-    tokens: tokenPermissions,
+    assets: assetPermissions,
     transactions: transactionPermissions && {
       ...transactionPermissions,
       values: [...transactionPermissions.values].sort(),
@@ -3010,11 +2972,11 @@ export function fundraiserTierToTier(fundraiserTier: FundraiserTier): Tier {
 /**
  * @hidden
  */
-export function fundraiserToStoDetails(
+export function fundraiserToOfferingDetails(
   fundraiser: Fundraiser,
   name: FundraiserName,
   context: Context
-): StoDetails {
+): OfferingDetails {
   const {
     creator,
     offering_portfolio: offeringPortfolio,
@@ -3053,28 +3015,28 @@ export function fundraiserToStoDetails(
 
   const minInvestment = balanceToBigNumber(rawMinInvestment);
 
-  let timing: StoTimingStatus = StoTimingStatus.NotStarted;
-  let balance: StoBalanceStatus = StoBalanceStatus.Available;
-  let sale: StoSaleStatus = StoSaleStatus.Live;
+  let timing: OfferingTimingStatus = OfferingTimingStatus.NotStarted;
+  let balance: OfferingBalanceStatus = OfferingBalanceStatus.Available;
+  let sale: OfferingSaleStatus = OfferingSaleStatus.Live;
 
   if (isExpired) {
-    timing = StoTimingStatus.Expired;
+    timing = OfferingTimingStatus.Expired;
   } else if (isStarted) {
-    timing = StoTimingStatus.Started;
+    timing = OfferingTimingStatus.Started;
   }
 
   if (totalRemainingValue.isZero()) {
-    balance = StoBalanceStatus.SoldOut;
+    balance = OfferingBalanceStatus.SoldOut;
   } else if (totalRemainingValue.lt(minInvestment)) {
-    balance = StoBalanceStatus.Residual;
+    balance = OfferingBalanceStatus.Residual;
   }
 
   if (rawStatus.isClosedEarly) {
-    sale = StoSaleStatus.ClosedEarly;
+    sale = OfferingSaleStatus.ClosedEarly;
   } else if (rawStatus.isClosed) {
-    sale = StoSaleStatus.Closed;
+    sale = OfferingSaleStatus.Closed;
   } else if (rawStatus.isFrozen) {
-    sale = StoSaleStatus.Frozen;
+    sale = OfferingSaleStatus.Frozen;
   }
 
   return {
@@ -3107,16 +3069,16 @@ export function calendarPeriodToMeshCalendarPeriod(
 ): MeshCalendarPeriod {
   const { unit, amount } = period;
 
-  if (amount < 0) {
+  if (amount.isNegative()) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Calendar period cannot have a negative amount',
     });
   }
 
-  return context.polymeshApi.createType('CalendarPeriod', {
+  return context.createType('CalendarPeriod', {
     unit: stringUpperFirst(unit),
-    amount: numberToU64(amount, context),
+    amount: bigNumberToU64(amount, context),
   });
 }
 
@@ -3146,7 +3108,7 @@ export function meshCalendarPeriodToCalendarPeriod(period: MeshCalendarPeriod): 
 
   return {
     unit,
-    amount: u64ToBigNumber(amount).toNumber(),
+    amount: u64ToBigNumber(amount),
   };
 }
 
@@ -3159,13 +3121,13 @@ export function scheduleSpecToMeshScheduleSpec(
 ): MeshScheduleSpec {
   const { start, period, repetitions } = details;
 
-  return context.polymeshApi.createType('ScheduleSpec', {
+  return context.createType('ScheduleSpec', {
     start: start && dateToMoment(start, context),
     period: calendarPeriodToMeshCalendarPeriod(
-      period || { unit: CalendarUnit.Month, amount: 0 },
+      period || { unit: CalendarUnit.Month, amount: new BigNumber(0) },
       context
     ),
-    remaining: numberToU64(repetitions || 0, context),
+    remaining: bigNumberToU64(repetitions || new BigNumber(0), context),
   });
 }
 
@@ -3181,11 +3143,12 @@ export function storedScheduleToCheckpointScheduleParams(
     at,
     remaining,
   } = storedSchedule;
+
   return {
     id: u64ToBigNumber(id),
     period: meshCalendarPeriodToCalendarPeriod(period),
     start: momentToDate(start),
-    remaining: u32ToBigNumber(remaining).toNumber(),
+    remaining: u32ToBigNumber(remaining),
     nextCheckpointDate: momentToDate(at),
   };
 }
@@ -3194,7 +3157,7 @@ export function storedScheduleToCheckpointScheduleParams(
  * @hidden
  */
 export function stringToSignature(signature: string, context: Context): Signature {
-  return context.polymeshApi.createType('Signature', signature);
+  return context.createType('Signature', signature);
 }
 
 /**
@@ -3253,21 +3216,21 @@ export function meshCorporateActionToCorporateActionParams(
  * @hidden
  */
 export function stringToRistrettoPoint(ristrettoPoint: string, context: Context): RistrettoPoint {
-  return context.polymeshApi.createType('RistrettoPoint', ristrettoPoint);
+  return context.createType('RistrettoPoint', ristrettoPoint);
 }
 
 /**
  * @hidden
  */
 export function corporateActionKindToCaKind(kind: CorporateActionKind, context: Context): CAKind {
-  return context.polymeshApi.createType('CAKind', kind);
+  return context.createType('CAKind', kind);
 }
 
 /**
  * @hidden
  */
 export function stringToScalar(scalar: string, context: Context): Scalar {
-  return context.polymeshApi.createType('Scalar', scalar);
+  return context.createType('Scalar', scalar);
 }
 
 /**
@@ -3281,15 +3244,15 @@ export function checkpointToRecordDateSpec(
 
   if (checkpoint instanceof Checkpoint) {
     /* eslint-disable @typescript-eslint/naming-convention */
-    value = { Existing: numberToU64(checkpoint.id, context) };
+    value = { Existing: bigNumberToU64(checkpoint.id, context) };
   } else if (checkpoint instanceof Date) {
     value = { Scheduled: dateToMoment(checkpoint, context) };
   } else {
-    value = { ExistingSchedule: numberToU64(checkpoint.id, context) };
+    value = { ExistingSchedule: bigNumberToU64(checkpoint.id, context) };
     /* eslint-enable @typescript-eslint/naming-convention */
   }
 
-  return context.polymeshApi.createType('RecordDateSpec', value);
+  return context.createType('RecordDateSpec', value);
 }
 
 /**
@@ -3300,13 +3263,12 @@ export function scopeClaimProofToMeshScopeClaimProof(
   scopeId: string,
   context: Context
 ): MeshScopeClaimProof {
-  const { polymeshApi } = context;
   const {
-    proofScopeIdWellformed,
+    proofScopeIdWellFormed,
     proofScopeIdCddIdMatch: { challengeResponses, subtractExpressionsRes, blindedScopeDidHash },
   } = proof;
 
-  const zkProofData = polymeshApi.createType('ZkProofData', {
+  const zkProofData = context.createType('ZkProofData', {
     /* eslint-disable @typescript-eslint/naming-convention */
     challenge_responses: challengeResponses.map(cr => stringToScalar(cr, context)),
     subtract_expressions_res: stringToRistrettoPoint(subtractExpressionsRes, context),
@@ -3314,9 +3276,9 @@ export function scopeClaimProofToMeshScopeClaimProof(
     /* eslint-enable @typescript-eslint/naming-convention */
   });
 
-  return polymeshApi.createType('ScopeClaimProof', {
+  return context.createType('ScopeClaimProof', {
     /* eslint-disable @typescript-eslint/naming-convention */
-    proof_scope_id_wellformed: stringToSignature(proofScopeIdWellformed, context),
+    proof_scope_id_wellformed: stringToSignature(proofScopeIdWellFormed, context),
     proof_scope_id_cdd_id_match: zkProofData,
     scope_id: stringToRistrettoPoint(scopeId, context),
     /* eslint-enable @typescript-eslint/naming-convention */
@@ -3349,12 +3311,11 @@ export function targetsToTargetIdentities(
   },
   context: Context
 ): TargetIdentities {
-  const { polymeshApi } = context;
   const { treatment, identities } = targets;
 
-  return polymeshApi.createType('TargetIdentities', {
+  return context.createType('TargetIdentities', {
     identities: identities.map(identity => stringToIdentityId(signerToString(identity), context)),
-    treatment: polymeshApi.createType('TargetTreatment', treatment),
+    treatment: context.createType('TargetTreatment', treatment),
   });
 }
 
@@ -3392,32 +3353,9 @@ export function corporateActionIdentifierToCaId(
   context: Context
 ): CAId {
   const { ticker, localId } = corporateActionIdentifier;
-  return context.polymeshApi.createType('CAId', {
+  return context.createType('CAId', {
     ticker: stringToTicker(ticker, context),
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    local_id: numberToU32(localId, context),
+    local_id: bigNumberToU32(localId, context),
   });
-}
-
-/**
- * @hidden
- */
-export function agentGroupToPermissionGroup(
-  agentGroup: AgentGroup,
-  ticker: string,
-  context: Context
-): KnownPermissionGroup | CustomPermissionGroup {
-  const permissionGroupIdentifier = agentGroupToPermissionGroupIdentifier(agentGroup);
-  switch (permissionGroupIdentifier) {
-    case PermissionGroupType.ExceptMeta:
-    case PermissionGroupType.Full:
-    case PermissionGroupType.PolymeshV1Caa:
-    case PermissionGroupType.PolymeshV1Pia: {
-      return new KnownPermissionGroup({ type: permissionGroupIdentifier, ticker }, context);
-    }
-    default: {
-      const { custom: id } = permissionGroupIdentifier;
-      return new CustomPermissionGroup({ id, ticker }, context);
-    }
-  }
 }

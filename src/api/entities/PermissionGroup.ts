@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { Context, Entity } from '~/internal';
+import { Asset, Context, Entity } from '~/internal';
 import { GroupPermissions, PermissionGroupType } from '~/types';
 
 export interface UniqueIdentifiers {
@@ -10,9 +10,14 @@ export interface UniqueIdentifiers {
 }
 
 /**
- * Represents a group of permissions for a Security Token
+ * Represents a group of permissions for an Asset
  */
 export abstract class PermissionGroup extends Entity<UniqueIdentifiers, unknown> {
+  /**
+   * Asset for which this group specifies permissions
+   */
+  public asset: Asset;
+
   /**
    * @hidden
    */
@@ -21,10 +26,8 @@ export abstract class PermissionGroup extends Entity<UniqueIdentifiers, unknown>
 
     const { ticker } = identifiers;
 
-    this.ticker = ticker;
+    this.asset = new Asset({ ticker }, context);
   }
-
-  public ticker: string;
 
   /**
    * Retrieve the Permissions associated with this Permission Group

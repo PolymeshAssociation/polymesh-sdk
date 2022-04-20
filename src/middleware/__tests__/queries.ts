@@ -32,7 +32,7 @@ import {
 } from '../queries';
 
 describe('proposalVotes', () => {
-  test('should pass the variables to the grapqhl query', () => {
+  it('should pass the variables to the grapqhl query', () => {
     const variables = {
       pipId: 10,
       vote: false,
@@ -52,7 +52,7 @@ describe('proposalVotes', () => {
 });
 
 describe('didsWithClaims', () => {
-  test('should pass the variables to the grapqhl query', () => {
+  it('should pass the variables to the grapqhl query', () => {
     const variables = {
       dids: ['someDid', 'otherDid'],
       scope: { type: ClaimScopeTypeEnum.Ticker, value: 'someScope' },
@@ -70,7 +70,7 @@ describe('didsWithClaims', () => {
 });
 
 describe('eventByIndexedArgs', () => {
-  test('should pass the variables to the grapqhl query', () => {
+  it('should pass the variables to the grapqhl query', () => {
     const variables = {
       moduleId: ModuleIdEnum.Asset,
       eventId: EventIdEnum.AssetFrozen,
@@ -85,7 +85,7 @@ describe('eventByIndexedArgs', () => {
 });
 
 describe('eventsByIndexedArgs', () => {
-  test('should pass the variables to the grapqhl query', () => {
+  it('should pass the variables to the grapqhl query', () => {
     const variables = {
       moduleId: ModuleIdEnum.Asset,
       eventId: EventIdEnum.AssetFrozen,
@@ -100,7 +100,7 @@ describe('eventsByIndexedArgs', () => {
 });
 
 describe('transactionByHash', () => {
-  test('should pass the variables to the grapqhl query', () => {
+  it('should pass the variables to the grapqhl query', () => {
     const variables = {
       transactionHash: 'someTransactionHash',
     };
@@ -113,7 +113,7 @@ describe('transactionByHash', () => {
 });
 
 describe('proposals', () => {
-  test('should pass the variables to the grapqhl query', () => {
+  it('should pass the variables to the grapqhl query', () => {
     const variables = {
       proposers: ['someProposer'],
       states: [ProposalStateEnum.Scheduled],
@@ -130,11 +130,10 @@ describe('proposals', () => {
   });
 });
 
-describe('tokensByTrustedClaimIssuer', () => {
-  test('should pass the variables to the grapqhl query', () => {
+describe('assetsByTrustedClaimIssuer', () => {
+  it('should pass the variables to the grapqhl query', () => {
     const variables = {
       claimIssuerDid: 'someDid',
-      order: Order.Asc,
     };
 
     const result = tokensByTrustedClaimIssuer(variables);
@@ -144,8 +143,8 @@ describe('tokensByTrustedClaimIssuer', () => {
   });
 });
 
-describe('tokensHeldByDid', () => {
-  test('should pass the variables to the grapqhl query', () => {
+describe('assetsHeldByDid', () => {
+  it('should pass the variables to the grapqhl query', () => {
     const variables = {
       did: 'someDid',
     };
@@ -158,7 +157,7 @@ describe('tokensHeldByDid', () => {
 });
 
 describe('transactions', () => {
-  test('should pass the variables to the grapqhl query', () => {
+  it('should pass the variables to the grapqhl query', () => {
     let result = transactions();
 
     expect(result.query).toBeDefined();
@@ -174,7 +173,7 @@ describe('transactions', () => {
 });
 
 describe('scopesByIdentity', () => {
-  test('should pass the variables to the grapqhl query', () => {
+  it('should pass the variables to the grapqhl query', () => {
     const variables = {
       did: 'someDid',
     };
@@ -187,7 +186,7 @@ describe('scopesByIdentity', () => {
 });
 
 describe('issuerDidsWithClaimsByTarget', () => {
-  test('should pass the variables to the grapqhl query', () => {
+  it('should pass the variables to the grapqhl query', () => {
     const variables = {
       target: 'someDid',
       scope: { type: ClaimScopeTypeEnum.Identity, value: 'someScope' },
@@ -202,7 +201,7 @@ describe('issuerDidsWithClaimsByTarget', () => {
 });
 
 describe('proposal', () => {
-  test('should pass the variables to the grapqhl query', () => {
+  it('should pass the variables to the grapqhl query', () => {
     const variables = {
       pipId: 1,
     };
@@ -215,9 +214,9 @@ describe('proposal', () => {
 });
 
 describe('eventByAddedTrustedClaimIssuer', () => {
-  test('should pass the variables to the grapqhl query', () => {
+  it('should pass the variables to the grapqhl query', () => {
     const variables = {
-      ticker: 'SOMETICKER',
+      ticker: 'SOME_TICKER',
       identityId: 'someDid',
     };
 
@@ -229,7 +228,7 @@ describe('eventByAddedTrustedClaimIssuer', () => {
 });
 
 describe('settlements', () => {
-  test('should pass the variables to the grapqhl query', () => {
+  it('should pass the variables to the grapqhl query', () => {
     const variables = {
       identityId: 'someIdentityId',
     };
@@ -242,10 +241,10 @@ describe('settlements', () => {
 });
 
 describe('investments', () => {
-  test('should pass the variables to the grapqhl query', () => {
+  it('should pass the variables to the grapqhl query', () => {
     const variables = {
       stoId: 1,
-      ticker: 'SOMETICKER',
+      ticker: 'SOME_TICKER',
     };
 
     const result = investments(variables);
@@ -256,9 +255,9 @@ describe('investments', () => {
 });
 
 describe('getWithholdingTaxesOfCa', () => {
-  test('should pass the variables to the grapqhl query', () => {
+  it('should pass the variables to the grapqhl query', () => {
     const variables = {
-      CAId: { ticker: 'SOMETICKER', localId: 1 },
+      CAId: { ticker: 'SOME_TICKER', localId: 1 },
     };
 
     const result = getWithholdingTaxesOfCa(variables);
@@ -269,9 +268,9 @@ describe('getWithholdingTaxesOfCa', () => {
 });
 
 describe('getHistoryOfPaymentEventsForCa', () => {
-  test('should pass the variables to the grapqhl query', () => {
+  it('should pass the variables to the grapqhl query', () => {
     const variables = {
-      CAId: { ticker: 'SOMETICKER', localId: 1 },
+      CAId: { ticker: 'SOME_TICKER', localId: 1 },
     };
 
     const result = getHistoryOfPaymentEventsForCa(variables);
@@ -282,9 +281,9 @@ describe('getHistoryOfPaymentEventsForCa', () => {
 });
 
 describe('tickerExternalAgentHistory', () => {
-  test('should pass the variables to the grapqhl query', () => {
+  it('should pass the variables to the grapqhl query', () => {
     const variables = {
-      ticker: 'SOMETICKER',
+      ticker: 'SOME_TICKER',
     };
 
     const result = tickerExternalAgentHistory(variables);
@@ -295,9 +294,10 @@ describe('tickerExternalAgentHistory', () => {
 });
 
 describe('tickerExternalAgentActions', () => {
-  test('should pass the variables to the grapqhl query', () => {
+  it('should pass the variables to the grapqhl query', () => {
     const variables = {
-      ticker: 'SOMETICKER',
+      ticker: 'SOME_TICKER',
+      // eslint-disable-next-line @typescript-eslint/naming-convention
       caller_did: 'someDid',
     };
 

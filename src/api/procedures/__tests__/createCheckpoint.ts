@@ -1,6 +1,6 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { Ticker, TxTags } from 'polymesh-types/types';
+import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -12,6 +12,7 @@ import {
 import { Checkpoint, Context, PostTransactionValue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
+import { TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -20,8 +21,8 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockCheckpointModule('~/api/entities/Checkpoint')
 );
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('createCheckpoint procedure', () => {
@@ -38,7 +39,7 @@ describe('createCheckpoint procedure', () => {
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    checkpoint = ('checkpoint' as unknown) as PostTransactionValue<Checkpoint>;
+    checkpoint = 'checkpoint' as unknown as PostTransactionValue<Checkpoint>;
   });
 
   let addTransactionStub: sinon.SinonStub;
@@ -56,12 +57,11 @@ describe('createCheckpoint procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
-  test('should add a create checkpoint transaction to the queue', async () => {
+  it('should add a create checkpoint transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, Checkpoint>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('checkpoint', 'createCheckpoint');
@@ -72,9 +72,7 @@ describe('createCheckpoint procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      transaction,
-      sinon.match({ resolvers: sinon.match.array }),
-      rawTicker
+      sinon.match({ transaction, resolvers: sinon.match.array, args: [rawTicker] })
     );
 
     expect(result).toBe(checkpoint);
@@ -96,25 +94,22 @@ describe('createCheckpoint procedure', () => {
       filterEventRecordsStub.reset();
     });
 
-    test('should return the new Checkpoint', () => {
+    it('should return the new Checkpoint', () => {
       const result = createCheckpointResolver(ticker, mockContext)({} as ISubmittableResult);
-
-      expect(result.ticker).toBe(ticker);
+      expect(result.asset.ticker).toBe(ticker);
       expect(result.id).toEqual(id);
     });
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, Checkpoint>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
-
-      const token = entityMockUtils.getSecurityTokenInstance({ ticker });
 
       expect(boundFunc({ ticker })).toEqual({
         permissions: {
           transactions: [TxTags.checkpoint.CreateCheckpoint],
-          tokens: [token],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

@@ -5,12 +5,11 @@ const fs = require('fs');
 const rimraf = require('rimraf');
 const util = require('util');
 const { upperFirst, toLower, forEach } = require('lodash');
+const { NODE_URL, SCHEMA_PORT } = require('./consts');
 
 const definitionsDir = path.resolve('src', 'polkadot');
 const typesDir = path.resolve(definitionsDir, 'polymesh');
 const generatedDir = path.resolve('src', 'generated');
-
-const urlPath = 'http://localhost:3008';
 
 rimraf.sync(typesDir);
 fs.mkdirSync(typesDir);
@@ -126,7 +125,7 @@ export function meshCountryCodeToCountryCode(meshCountryCode: MeshCountryCode): 
   fs.writeFileSync(path.resolve(generatedDir, 'utils.ts'), utilsFile);
 }
 
-http.get(`${urlPath}/polymesh_schema.json`, res => {
+http.get(`http://${NODE_URL}:${SCHEMA_PORT}/polymesh_schema.json`, res => {
   const chunks = [];
   res.on('data', chunk => {
     chunks.push(chunk);

@@ -1,11 +1,11 @@
-import { Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { Asset, Identity, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { stringToTicker } from '~/utils/conversion';
-import { getToken } from '~/utils/internal';
+import { asAsset } from '~/utils/internal';
 
 export interface WaivePermissionsParams {
-  token: string | SecurityToken;
+  asset: string | Asset;
 }
 
 /**
@@ -19,7 +19,7 @@ export type Params = WaivePermissionsParams & {
  * @hidden
  */
 export interface Storage {
-  token: SecurityToken;
+  asset: Asset;
 }
 
 /**
@@ -34,24 +34,27 @@ export async function prepareWaivePermissions(
       polymeshApi: { tx },
     },
     context,
-    storage: { token },
+    storage: { asset },
   } = this;
 
   const { identity } = args;
 
-  const agents = await token.permissions.getAgents();
-  const isAgent = agents.some(agentWithGroup => agentWithGroup.agent.did === identity.did);
+  const agents = await asset.permissions.getAgents();
+  const isAgent = agents.some(agentWithGroup => agentWithGroup.agent.isEqual(identity));
 
   if (!isAgent) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'The Identity is not an Agent for the Security Token',
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The Identity is not an Agent for the Asset',
     });
   }
 
-  const rawTicker = stringToTicker(token.ticker, context);
+  const rawTicker = stringToTicker(asset.ticker, context);
 
-  this.addTransaction(tx.externalAgents.abdicate, {}, rawTicker);
+  this.addTransaction({
+    transaction: tx.externalAgents.abdicate,
+    args: [rawTicker],
+  });
 }
 
 /**
@@ -62,12 +65,12 @@ export function getAuthorization(
   { identity: { did } }: Params
 ): ProcedureAuthorization {
   const {
-    storage: { token },
+    storage: { asset },
   } = this;
   return {
     signerPermissions: {
       transactions: [TxTags.externalAgents.Abdicate],
-      tokens: [token],
+      assets: [asset],
       portfolios: [],
     },
     roles: [{ type: RoleType.Identity, did }],
@@ -77,11 +80,11 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export function prepareStorage(this: Procedure<Params, void, Storage>, { token }: Params): Storage {
+export function prepareStorage(this: Procedure<Params, void, Storage>, { asset }: Params): Storage {
   const { context } = this;
 
   return {
-    token: getToken(token, context),
+    asset: asAsset(asset, context),
   };
 }
 
