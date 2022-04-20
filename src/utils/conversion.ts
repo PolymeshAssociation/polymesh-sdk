@@ -751,7 +751,7 @@ export function transactionPermissionsToTxGroups(
 /**
  * @hidden
  */
-function splitTag(tag: TxTag) {
+function splitTag(tag: TxTag): { palletName: string; dispatchableName: string } {
   const [modName, txName] = tag.split('.');
   const palletName = stringUpperFirst(modName);
   const dispatchableName = snakeCase(txName);
