@@ -193,7 +193,7 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
       });
     }
 
-    const { record_date: recordDate } = corporateAction.unwrap();
+    const { recordDate } = corporateAction.unwrap();
 
     if (recordDate.isNone) {
       return null;

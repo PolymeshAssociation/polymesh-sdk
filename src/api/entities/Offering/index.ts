@@ -1,6 +1,6 @@
-import { Option } from '@polkadot/types';
+import { Bytes, Option } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import { Fundraiser, FundraiserName } from 'polymesh-types/types';
+import { Fundraiser } from 'polymesh-types/types';
 
 import {
   Asset,
@@ -125,15 +125,13 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
       context,
     } = this;
 
-    const assembleResult = (
-      rawFundraiser: Option<Fundraiser>,
-      rawName: FundraiserName
-    ): OfferingDetails => fundraiserToOfferingDetails(rawFundraiser.unwrap(), rawName, context);
+    const assembleResult = (rawFundraiser: Option<Fundraiser>, rawName: Bytes): OfferingDetails =>
+      fundraiserToOfferingDetails(rawFundraiser.unwrap(), rawName, context);
 
     const rawTicker = stringToTicker(ticker, context);
     const rawU64 = bigNumberToU64(id, context);
 
-    const fetchName = (): Promise<FundraiserName> => sto.fundraiserNames(rawTicker, rawU64);
+    const fetchName = (): Promise<Bytes> => sto.fundraiserNames(rawTicker, rawU64);
 
     if (callback) {
       const fundraiserName = await fetchName();

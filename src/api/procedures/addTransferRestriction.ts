@@ -1,3 +1,4 @@
+import { BTreeSetTransferCondition } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
@@ -10,10 +11,8 @@ import {
 } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
-  stringToScopeId,
+  polymeshPrimitivesTransferComplianceTransferCondition,
   stringToTicker,
-  transferManagerToTransferRestriction,
-  transferRestrictionToTransferManager,
   u32ToBigNumber,
 } from '~/utils/conversion';
 import { checkTxType, getExemptedIds } from '~/utils/internal';
@@ -55,9 +54,9 @@ export async function prepareAddTransferRestriction(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  const maxTransferManagers = u32ToBigNumber(consts.statistics.maxTransferManagersPerAsset);
+  const maxTransferManagers = u32ToBigNumber(consts.statistics.maxTransferConditionsPerAsset);
 
-  const currentTms = await query.statistics.activeTransferManagers(ticker);
+  const { requirements: currentTms } = await query.statistics.assetTransferCompliances(ticker);
   const restrictionAmount = new BigNumber(currentTms.length);
 
   if (restrictionAmount.gte(maxTransferManagers)) {
@@ -77,9 +76,13 @@ export async function prepareAddTransferRestriction(
   }
 
   const exists = !!currentTms.find(transferManager => {
-    const restriction = transferManagerToTransferRestriction(transferManager);
+    // const restriction = transferConditionToTransferRestriction(transferManager);
+    const restriction = polymeshPrimitivesTransferComplianceTransferCondition(
+      [transferManager],
+      context
+    );
 
-    return restriction.type === type && restriction.value.eq(value);
+    return restriction.type.toString() === type && restriction.value.eq(value);
   });
 
   if (exists) {
@@ -89,12 +92,19 @@ export async function prepareAddTransferRestriction(
     });
   }
 
-  const rawTransferManager = transferRestrictionToTransferManager({ type, value }, context);
+  // const rawTransferCondition = transferRestrictionToTransferCondition(
+  //   { type, value: bigNumberToU64(value, context) },
+  //   context
+  // );
+  const rawTransferCondition = polymeshPrimitivesTransferComplianceTransferCondition([], context);
+  const newTransferConditions = [...currentTms, rawTransferCondition];
+
+  // const rawNewConditions = context.createType('Vec', newTransferConditions);
 
   const transactions = [
     checkTxType({
-      transaction: statistics.addTransferManager,
-      args: [rawTicker, rawTransferManager],
+      transaction: statistics.setAssetTransferCompliance,
+      args: [rawTicker, newTransferConditions as BTreeSetTransferCondition],
     }),
   ];
 
@@ -103,12 +113,12 @@ export async function prepareAddTransferRestriction(
 
     transactions.push(
       checkTxType({
-        transaction: statistics.addExemptedEntities,
+        transaction: statistics.setAssetTransferCompliance,
         feeMultiplier: new BigNumber(exemptedIds.length),
         args: [
           rawTicker,
-          rawTransferManager,
-          exemptedIds.map(entityId => stringToScopeId(entityId, context)),
+          newTransferConditions as BTreeSetTransferCondition,
+          // exemptedIds.map(entityId => stringToScopeId(entityId, context)),
         ],
       })
     );

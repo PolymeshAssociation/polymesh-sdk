@@ -15,10 +15,10 @@ import {
 import { GroupedInstructions, InstructionStatus, ProcedureMethod } from '~/types';
 import {
   bigNumberToU64,
+  bytesToString,
   identityIdToString,
   meshVenueTypeToVenueType,
   u64ToBigNumber,
-  venueDetailsToString,
 } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
@@ -126,7 +126,7 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
 
     return {
       owner: new Identity({ did: identityIdToString(creator) }, context),
-      description: venueDetailsToString(details),
+      description: bytesToString(details),
       type: meshVenueTypeToVenueType(type),
     };
   }

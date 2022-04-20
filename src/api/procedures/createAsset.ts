@@ -178,7 +178,7 @@ export async function prepareCreateAsset(
 
   const classicTicker = await asset.classicTickers(rawTicker);
   const assetCreatedInEthereum =
-    classicTicker.isSome && boolToBoolean(classicTicker.unwrap().is_created);
+    classicTicker.isSome && boolToBoolean(classicTicker.unwrap().isCreated);
 
   if (assetCreatedInEthereum) {
     fee = new BigNumber(0);

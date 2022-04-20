@@ -101,7 +101,7 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
     return auths
       .map(auth => {
         const {
-          auth: { expiry, auth_id: authId, authorization_data: data, authorized_by: issuer },
+          auth: { expiry, authId, authorizationData: data, authorizedBy: issuer },
           target: rawTarget,
         } = auth;
 

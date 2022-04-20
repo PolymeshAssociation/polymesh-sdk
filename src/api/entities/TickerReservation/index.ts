@@ -106,7 +106,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
 
     const assembleResult = (
       { owner: tickerOwner, expiry }: TickerRegistration,
-      { owner_did: assetOwner }: MeshToken
+      { ownerDid: assetOwner }: MeshToken
     ): TickerReservationDetails => {
       const tickerOwned = !tickerOwner.isEmpty;
       const assetOwned = !assetOwner.isEmpty;

@@ -278,7 +278,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const assembleResult = ({ primary_key: primaryKey }: DidRecord): PermissionedAccount => {
+    const assembleResult = ({ primaryKey }: DidRecord): PermissionedAccount => {
       return {
         account: new Account({ address: accountIdToString(primaryKey) }, context),
         permissions: {
@@ -691,7 +691,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     } = this;
 
     const assembleResult = ({
-      secondary_keys: secondaryAccounts,
+      secondaryKeys: secondaryAccounts,
     }: DidRecord): PermissionedAccount[] => {
       return secondaryAccounts.map(({ signer: rawSigner, permissions }) => ({
         account: signatoryToAccount(rawSigner, context),

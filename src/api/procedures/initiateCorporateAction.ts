@@ -25,8 +25,8 @@ import {
   dateToMoment,
   percentageToPermill,
   signerToString,
+  stringToBytes,
   stringToIdentityId,
-  stringToText,
   stringToTicker,
   targetsToTargetIdentities,
   u32ToBigNumber,
@@ -149,7 +149,7 @@ export async function prepareInitiateCorporateAction(
   const rawKind = corporateActionKindToCaKind(kind, context);
   const rawDeclDate = dateToMoment(declarationDate, context);
   const rawRecordDate = optionize(checkpointToRecordDateSpec)(checkpointValue, context);
-  const rawDetails = stringToText(description, context);
+  const rawDetails = stringToBytes(description, context);
   const rawTargets = optionize(targetsToTargetIdentities)(targets, context);
   const rawTax = optionize(percentageToPermill)(defaultTaxWithholding, context);
   const rawWithholdings =

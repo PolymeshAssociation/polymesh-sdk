@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import { NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { bigNumberToU64, stringToIdentityId, stringToText } from '~/utils/conversion';
+import { bigNumberToU64, stringToBytes, stringToIdentityId } from '~/utils/conversion';
 import { getPortfolioIdByName } from '~/utils/internal';
 
 export interface RenamePortfolioParams {
@@ -35,7 +35,7 @@ export async function prepareRenamePortfolio(
 
   const identityId = stringToIdentityId(did, context);
 
-  const rawNewName = stringToText(newName, context);
+  const rawNewName = stringToBytes(newName, context);
 
   const existingPortfolioNumber = await getPortfolioIdByName(identityId, rawNewName, context);
 

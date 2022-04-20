@@ -10,8 +10,8 @@ import {
 import { ErrorCode, TxTags } from '~/types';
 import {
   identityIdToString,
+  stringToBytes,
   stringToIdentityId,
-  stringToText,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { filterEventRecords, getPortfolioIdByName } from '~/utils/internal';
@@ -55,7 +55,7 @@ export async function prepareCreatePortfolio(
 
   const rawIdentityId = stringToIdentityId(did, context);
 
-  const rawName = stringToText(portfolioName, context);
+  const rawName = stringToBytes(portfolioName, context);
 
   const existingPortfolioNumber = await getPortfolioIdByName(rawIdentityId, rawName, context);
 

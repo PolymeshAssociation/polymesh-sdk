@@ -171,6 +171,7 @@ export interface AssetDocument {
   type?: string;
   filedAt?: Date;
 }
+// export type AssetDocument = PolymeshPrimitivesAssetAssetType;
 
 /**
  * Type of Authorization Request
@@ -433,6 +434,7 @@ export interface ComplianceRequirements {
    */
   defaultTrustedClaimIssuers: TrustedClaimIssuer[];
 }
+// export type ComplianceRequirements = PolymeshPrimitivesComplianceManagerComplianceRequirement;
 
 export type InputRequirement = Modify<Requirement, { conditions: InputCondition[] }>;
 
@@ -1276,6 +1278,7 @@ export interface TransferRestriction {
   type: TransferRestrictionType;
   value: BigNumber;
 }
+// export type TransferRestriction = PolymeshPrimitivesTransferComplianceTransferCondition;
 
 export enum CalendarUnit {
   Second = 'second',

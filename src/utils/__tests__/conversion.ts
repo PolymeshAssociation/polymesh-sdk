@@ -230,8 +230,8 @@ import {
   transactionPermissionsToExtrinsicPermissions,
   transactionPermissionsToTxGroups,
   transactionToTxTag,
-  transferManagerToTransferRestriction,
-  transferRestrictionToTransferManager,
+  transferConditionToTransferRestriction,
+  transferRestrictionToTransferCondition,
   trustedClaimIssuerToTrustedIssuer,
   trustedIssuerToTrustedClaimIssuer,
   txGroupToTxTags,
@@ -5501,7 +5501,7 @@ describe('transferRestrictionToTransferManager', () => {
 
     createTypeStub.withArgs('u64', count.toString()).returns(rawCount);
 
-    let result = transferRestrictionToTransferManager(value, context);
+    let result = transferRestrictionToTransferCondition(value, context);
 
     expect(result).toBe(fakeResult);
 
@@ -5520,7 +5520,7 @@ describe('transferRestrictionToTransferManager', () => {
       .withArgs('Permill', percentage.multipliedBy(10000).toString())
       .returns(rawPercentage);
 
-    result = transferRestrictionToTransferManager(value, context);
+    result = transferRestrictionToTransferCondition(value, context);
 
     expect(result).toBe(fakeResult);
   });
@@ -5535,7 +5535,7 @@ describe('transferRestrictionToTransferManager', () => {
       CountTransferManager: dsMockUtils.createMockU64(count),
     });
 
-    let result = transferManagerToTransferRestriction(transferManager);
+    let result = transferConditionToTransferRestriction(transferManager);
     expect(result).toEqual(fakeResult);
 
     const percentage = new BigNumber(49);
@@ -5547,7 +5547,7 @@ describe('transferRestrictionToTransferManager', () => {
       PercentageTransferManager: dsMockUtils.createMockPermill(percentage.multipliedBy(10000)),
     });
 
-    result = transferManagerToTransferRestriction(transferManager);
+    result = transferConditionToTransferRestriction(transferManager);
     expect(result).toEqual(fakeResult);
   });
 });

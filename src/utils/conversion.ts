@@ -1,5 +1,12 @@
-import { bool, Bytes, Text, u8, u32, u64 } from '@polkadot/types';
-import { AccountId, Balance, Hash, Moment, Permill, Signature } from '@polkadot/types/interfaces';
+import { bool, Bytes, Text, u8, u16, u32, u64, u128 } from '@polkadot/types';
+import { AccountId, Balance, Hash, Permill, Signature } from '@polkadot/types/interfaces';
+import {
+  ConfidentialIdentityClaimProofsScopeClaimProof,
+  // PolymeshPrimitivesCondition,
+  // PolymeshPrimitivesStatisticsStatType,
+  // PolymeshPrimitivesTransferComplianceAssetTransferCompliance,
+  PolymeshPrimitivesTransferComplianceTransferCondition,
+} from '@polkadot/types/lookup';
 import {
   hexToU8a,
   isHex,
@@ -59,7 +66,6 @@ import {
   ExtrinsicPermissions,
   FundingRoundName,
   Fundraiser,
-  FundraiserName,
   FundraiserTier,
   GranularCanTransferResult,
   IdentityId,
@@ -67,6 +73,7 @@ import {
   InvestorZKProofData,
   Memo,
   ModuleName,
+  Moment,
   MovePortfolioItem,
   Permissions as MeshPermissions,
   PortfolioId as MeshPortfolioId,
@@ -87,7 +94,7 @@ import {
   TargetIdentities,
   TargetIdentity,
   Ticker,
-  TransferManager,
+  TransferCondition,
   TrustedIssuer,
   TxTag,
   TxTags,
@@ -327,7 +334,7 @@ export function stringToInvestorZKProofData(proof: string, context: Context): In
  * @hidden
  */
 export function dateToMoment(date: Date, context: Context): Moment {
-  return context.createType('Moment', date.getTime());
+  return context.createType('Moment', date.getTime()) as Moment; // TODO type assertion is weird
 }
 
 /**
@@ -472,6 +479,13 @@ export function signerToString(signer: string | Signer): string {
  * @hidden
  */
 export function u64ToBigNumber(value: u64): BigNumber {
+  return new BigNumber(value.toString());
+}
+
+/**
+ * @hidden
+ */
+export function u128ToBigNumber(value: u128): BigNumber {
   return new BigNumber(value.toString());
 }
 
@@ -960,11 +974,11 @@ export function extrinsicPermissionsToTransactionPermissions(
   let exceptions: TxTag[] = [];
 
   const formatTxTag = (dispatchable: DispatchableName, moduleName: string): TxTag =>
-    `${moduleName}.${camelCase(textToString(dispatchable))}` as TxTag;
+    `${moduleName}.${camelCase(bytesToString(dispatchable))}` as TxTag;
 
   if (pallets) {
-    pallets.forEach(({ pallet_name: palletName, dispatchable_names: dispatchableNames }) => {
-      const moduleName = stringLowerFirst(textToString(palletName));
+    pallets.forEach(({ palletName, dispatchableNames }) => {
+      const moduleName = stringLowerFirst(bytesToString(palletName));
 
       if (dispatchableNames.isExcept) {
         const dispatchables = dispatchableNames.asExcept;
@@ -1070,6 +1084,13 @@ export function u32ToBigNumber(value: u32): BigNumber {
 /**
  * @hidden
  */
+export function u16ToBigNumber(value: u16): BigNumber {
+  return new BigNumber(value.toString());
+}
+
+/**
+ * @hidden
+ */
 export function u8ToBigNumber(value: u8): BigNumber {
   return new BigNumber(value.toString());
 }
@@ -1099,9 +1120,9 @@ export function agentGroupToPermissionGroupIdentifier(
     return PermissionGroupType.Full;
   } else if (agentGroup.isExceptMeta) {
     return PermissionGroupType.ExceptMeta;
-  } else if (agentGroup.isPolymeshV1Caa) {
+  } else if (agentGroup.isPolymeshV1CAA) {
     return PermissionGroupType.PolymeshV1Caa;
-  } else if (agentGroup.isPolymeshV1Pia) {
+  } else if (agentGroup.isPolymeshV1PIA) {
     return PermissionGroupType.PolymeshV1Pia;
   } else {
     return { custom: u32ToBigNumber(agentGroup.asCustom) };
@@ -1792,10 +1813,10 @@ export function assetDocumentToDocument(
  */
 export function documentToAssetDocument({
   uri,
-  content_hash: hash,
+  contentHash: hash,
   name,
-  doc_type: docType,
-  filing_date: filingDate,
+  docType,
+  filingDate,
 }: Document): AssetDocument {
   const filedAt = filingDate.unwrapOr(undefined);
   const type = docType.unwrapOr(undefined);
@@ -2121,9 +2142,9 @@ export function meshClaimTypeToClaimType(claimType: MeshClaimType): ClaimType {
     return ClaimType.Jurisdiction;
   }
 
-  if (claimType.isNoData) {
-    return ClaimType.NoData;
-  }
+  // if (claimType.isNoData) {
+  //   return ClaimType.NoData;
+  // }
 
   if (claimType.isAccredited) {
     return ClaimType.Accredited;
@@ -2163,7 +2184,7 @@ export function trustedIssuerToTrustedClaimIssuer(
   trustedIssuer: TrustedIssuer,
   context: Context
 ): TrustedClaimIssuer {
-  const { issuer, trusted_for: claimTypes } = trustedIssuer;
+  const { issuer, trustedFor: claimTypes } = trustedIssuer;
 
   const identity = new Identity({ did: identityIdToString(issuer) }, context);
 
@@ -2394,7 +2415,7 @@ export function complianceRequirementToRequirement(
 ): Requirement {
   const conditions: Condition[] = [];
 
-  complianceRequirement.sender_conditions.forEach(({ condition_type: conditionType, issuers }) => {
+  complianceRequirement.senderConditions.forEach(({ conditionType, issuers }) => {
     const newCondition: Condition = {
       ...meshConditionTypeToCondition(conditionType, context),
       target: ConditionTarget.Sender,
@@ -2415,30 +2436,28 @@ export function complianceRequirementToRequirement(
     }
   });
 
-  complianceRequirement.receiver_conditions.forEach(
-    ({ condition_type: conditionType, issuers }) => {
-      const newCondition: Condition = {
-        ...meshConditionTypeToCondition(conditionType, context),
-        target: ConditionTarget.Receiver,
-      };
+  complianceRequirement.receiverConditions.forEach(({ conditionType, issuers }) => {
+    const newCondition: Condition = {
+      ...meshConditionTypeToCondition(conditionType, context),
+      target: ConditionTarget.Receiver,
+    };
 
-      if (issuers.length) {
-        newCondition.trustedClaimIssuers = issuers.map(trustedIssuer =>
-          trustedIssuerToTrustedClaimIssuer(trustedIssuer, context)
-        );
-      }
-
-      const existingCondition = conditions.find(condition =>
-        conditionsAreEqual(condition, newCondition)
+    if (issuers.length) {
+      newCondition.trustedClaimIssuers = issuers.map(trustedIssuer =>
+        trustedIssuerToTrustedClaimIssuer(trustedIssuer, context)
       );
-
-      if (existingCondition && existingCondition.target === ConditionTarget.Sender) {
-        existingCondition.target = ConditionTarget.Both;
-      } else {
-        conditions.push(newCondition);
-      }
     }
-  );
+
+    const existingCondition = conditions.find(condition =>
+      conditionsAreEqual(condition, newCondition)
+    );
+
+    if (existingCondition && existingCondition.target === ConditionTarget.Sender) {
+      existingCondition.target = ConditionTarget.Both;
+    } else {
+      conditions.push(newCondition);
+    }
+  });
 
   return {
     id: u32ToBigNumber(complianceRequirement.id),
@@ -2610,8 +2629,8 @@ export function venueTypeToMeshVenueType(type: VenueType, context: Context): Mes
 /**
  * @hidden
  */
-export function stringToVenueDetails(details: string, context: Context): VenueDetails {
-  return context.createType('VenueDetails', details);
+export function stringToVenueDetails(details: string, context: Context): Bytes {
+  return context.createType('Bytes', details);
 }
 
 /**
@@ -2732,10 +2751,10 @@ export function claimTypeToMeshClaimType(claimType: ClaimType, context: Context)
 /**
  * @hidden
  */
-export function transferRestrictionToTransferManager(
+export function transferRestrictionToTransferCondition(
   restriction: TransferRestriction,
   context: Context
-): TransferManager {
+): TransferCondition {
   const { type, value } = restriction;
   let tmType;
   let tmValue;
@@ -2748,7 +2767,7 @@ export function transferRestrictionToTransferManager(
     tmValue = percentageToPermill(value, context);
   }
 
-  return context.createType('TransferManager', {
+  return context.createType('TransferCondition', {
     [tmType]: tmValue,
   });
 }
@@ -2756,19 +2775,24 @@ export function transferRestrictionToTransferManager(
 /**
  * @hidden
  */
-export function transferManagerToTransferRestriction(
-  transferManager: TransferManager
+export function transferConditionToTransferRestriction(
+  transferCondition: TransferCondition
 ): TransferRestriction {
-  if (transferManager.isCountTransferManager) {
+  if (transferCondition.isMaxInvestorCount) {
     return {
       type: TransferRestrictionType.Count,
-      value: u64ToBigNumber(transferManager.asCountTransferManager),
+      value: u64ToBigNumber(transferCondition.asMaxInvestorCount),
     };
-  } else {
+  } else if (transferCondition.isMaxInvestorOwnership) {
     return {
       type: TransferRestrictionType.Percentage,
-      value: permillToBigNumber(transferManager.asPercentageTransferManager),
+      value: permillToBigNumber(transferCondition.asMaxInvestorOwnership),
     };
+  } else {
+    throw new PolymeshError({
+      code: ErrorCode.FatalError,
+      message: 'unexpected transfer condition type',
+    });
   }
 }
 
@@ -2792,7 +2816,7 @@ export function granularCanTransferResultToTransferBreakdown(
       receiver_portfolio_does_not_exist: receiverPortfolioNotExists,
       sender_insufficient_balance: senderInsufficientBalance,
     },
-    statistics_result: transferRestrictionResults,
+    // statistics_result: transferRestrictionResults,
     compliance_result: complianceResult,
     result: finalResult,
   } = result;
@@ -2839,15 +2863,15 @@ export function granularCanTransferResultToTransferBreakdown(
     general.push(TransferError.InsufficientPortfolioBalance);
   }
 
-  const restrictions = transferRestrictionResults.map(({ tm, result: tmResult }) => ({
-    restriction: transferManagerToTransferRestriction(tm),
-    result: boolToBoolean(tmResult),
-  }));
+  // const restrictions = transferRestrictionResults.map(({ tm, result: tmResult }) => ({
+  //   restriction: transferConditionToTransferRestriction(tm),
+  //   result: boolToBoolean(tmResult),
+  // }));
 
   return {
     general,
     compliance: assetComplianceResultToCompliance(complianceResult, context),
-    restrictions,
+    restrictions: [],
     result: boolToBoolean(finalResult),
   };
 }
@@ -2971,20 +2995,20 @@ export function fundraiserTierToTier(fundraiserTier: FundraiserTier): Tier {
  */
 export function fundraiserToOfferingDetails(
   fundraiser: Fundraiser,
-  name: FundraiserName,
+  name: Bytes,
   context: Context
 ): OfferingDetails {
   const {
     creator,
-    offering_portfolio: offeringPortfolio,
-    raising_portfolio: raisingPortfolio,
-    raising_asset: raisingAsset,
+    offeringPortfolio,
+    raisingPortfolio,
+    raisingAsset,
     tiers: rawTiers,
-    venue_id: venueId,
+    venueId,
     start: rawStart,
     end: rawEnd,
     status: rawStatus,
-    minimum_investment: rawMinInvestment,
+    minimumInvestment: rawMinInvestment,
   } = fundraiser;
 
   const tiers: Tier[] = [];
@@ -3038,7 +3062,7 @@ export function fundraiserToOfferingDetails(
 
   return {
     creator: new Identity({ did: identityIdToString(creator) }, context),
-    name: textToString(name),
+    name: bytesToString(name),
     offeringPortfolio: meshPortfolioIdToPortfolio(offeringPortfolio, context),
     raisingPortfolio: meshPortfolioIdToPortfolio(raisingPortfolio, context),
     raisingCurrency: tickerToString(raisingAsset),
@@ -3162,15 +3186,15 @@ export function stringToSignature(signature: string, context: Context): Signatur
  */
 export function meshCorporateActionToCorporateActionParams(
   corporateAction: MeshCorporateAction,
-  details: Text,
+  details: Bytes,
   context: Context
 ): CorporateActionParams {
   const {
     kind: rawKind,
-    decl_date: declDate,
+    declDate,
     targets: { identities, treatment },
-    default_withholding_tax: defaultWithholdingTax,
-    withholding_tax: withholdingTax,
+    defaultWithholdingTax,
+    withholdingTax,
   } = corporateAction;
 
   let kind: CorporateActionKind;
@@ -3202,7 +3226,7 @@ export function meshCorporateActionToCorporateActionParams(
   return {
     kind,
     declarationDate: momentToDate(declDate),
-    description: textToString(details),
+    description: bytesToString(details),
     targets,
     defaultTaxWithholding: permillToBigNumber(defaultWithholdingTax),
     taxWithholdings,
@@ -3285,6 +3309,46 @@ export function scopeClaimProofToMeshScopeClaimProof(
 /**
  * @hidden
  */
+export function scopeClaimProofToConfidentialIdentityClaimProof(
+  proof: ScopeClaimProof,
+  scopeId: string,
+  context: Context
+): ConfidentialIdentityClaimProofsScopeClaimProof {
+  const {
+    proofScopeIdWellFormed,
+    proofScopeIdCddIdMatch: { challengeResponses, subtractExpressionsRes, blindedScopeDidHash },
+  } = proof;
+
+  const zkProofData = context.createType('ZkProofData', {
+    /* eslint-disable @typescript-eslint/naming-convention */
+    challenge_responses: challengeResponses.map(cr => stringToScalar(cr, context)),
+    subtract_expressions_res: stringToRistrettoPoint(subtractExpressionsRes, context),
+    blinded_scope_did_hash: stringToRistrettoPoint(blindedScopeDidHash, context),
+    /* eslint-enable @typescript-eslint/naming-convention */
+  });
+
+  return context.createType('ConfidentialIdentityClaimProofsScopeClaimProof', {
+    /* eslint-disable @typescript-eslint/naming-convention */
+    proof_scope_id_wellformed: stringToSignature(proofScopeIdWellFormed, context),
+    proof_scope_id_cdd_id_match: zkProofData,
+    scope_id: stringToRistrettoPoint(scopeId, context),
+    /* eslint-enable @typescript-eslint/naming-convention */
+  });
+}
+
+/**
+ * @hidden
+ */
+export function polymeshPrimitivesTransferComplianceTransferCondition(
+  params: unknown[],
+  context: Context
+): PolymeshPrimitivesTransferComplianceTransferCondition {
+  return context.createType('PolymeshPrimitivesTransferComplianceTransferCondition', params);
+}
+
+/**
+ * @hidden
+ */
 export function targetIdentitiesToCorporateActionTargets(
   targetIdentities: TargetIdentities,
   context: Context
@@ -3326,10 +3390,10 @@ export function distributionToDividendDistributionParams(
   const {
     from,
     currency,
-    per_share: perShare,
+    perShare,
     amount,
-    expires_at: expiryDate,
-    payment_at: paymentDate,
+    expiresAt: expiryDate,
+    paymentAt: paymentDate,
   } = distribution;
 
   return {

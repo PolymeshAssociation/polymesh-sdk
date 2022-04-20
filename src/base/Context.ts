@@ -68,7 +68,7 @@ import {
   textToString,
   tickerToString,
   txTagToProtocolOp,
-  u8ToBigNumber,
+  u16ToBigNumber,
   u32ToBigNumber,
 } from '~/utils/conversion';
 import { assertAddressValid, calculateNextKey, createClaim } from '~/utils/internal';
@@ -151,7 +151,7 @@ export class Context {
   }): Promise<Context> {
     const { polymeshApi, middlewareApi, signingManager } = params;
 
-    const ss58Format: BigNumber = u8ToBigNumber(polymeshApi.consts.system.ss58Prefix);
+    const ss58Format: BigNumber = u16ToBigNumber(polymeshApi.consts.system.ss58Prefix);
 
     const context = new Context({ polymeshApi, middlewareApi, signingManager, ss58Format });
 
@@ -375,7 +375,7 @@ export class Context {
       if (meshSubsidy.isNone) {
         return null;
       }
-      const { paying_key: payingKey, remaining } = meshSubsidy.unwrap();
+      const { payingKey, remaining } = meshSubsidy.unwrap();
       const allowance = balanceToBigNumber(remaining);
       const subsidy = new Subsidy(
         { beneficiary: address, subsidizer: accountIdToString(payingKey) },
@@ -879,24 +879,19 @@ export class Context {
     const claimData = await P.map(claim1stKeys, async claim1stKey => {
       const entries = await identity.claims.entries(claim1stKey);
       const data: ClaimData[] = [];
-      entries.forEach(
-        ([
-          key,
-          { claim_issuer: claimIssuer, issuance_date: issuanceDate, expiry: rawExpiry, claim },
-        ]) => {
-          const { target } = key.args[0];
-          const expiry = !rawExpiry.isEmpty ? momentToDate(rawExpiry.unwrap()) : null;
-          if ((!includeExpired && (expiry === null || expiry > new Date())) || includeExpired) {
-            data.push({
-              target: new Identity({ did: identityIdToString(target) }, this),
-              issuer: new Identity({ did: identityIdToString(claimIssuer) }, this),
-              issuedAt: momentToDate(issuanceDate),
-              expiry,
-              claim: meshClaimToClaim(claim),
-            });
-          }
+      entries.forEach(([key, { claimIssuer, issuanceDate, expiry: rawExpiry, claim }]) => {
+        const { target } = key.args[0];
+        const expiry = !rawExpiry.isEmpty ? momentToDate(rawExpiry.unwrap()) : null;
+        if ((!includeExpired && (expiry === null || expiry > new Date())) || includeExpired) {
+          data.push({
+            target: new Identity({ did: identityIdToString(target) }, this),
+            issuer: new Identity({ did: identityIdToString(claimIssuer) }, this),
+            issuedAt: momentToDate(issuanceDate),
+            expiry,
+            claim: meshClaimToClaim(claim),
+          });
         }
-      );
+      });
       return data;
     });
 

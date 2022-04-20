@@ -31,6 +31,23 @@ import type {
   Weight,
 } from '@polkadot/types/interfaces/runtime';
 import type { AccountInfoWithDualRefCount, DispatchError } from '@polkadot/types/interfaces/system';
+import {
+  PalletAssetSecurityToken,
+  PalletCorporateActionsCaId,
+  PalletCorporateActionsCorporateAction,
+  PalletCorporateActionsDistribution,
+  PalletRelayerSubsidy,
+  PalletStoFundraiser,
+  PolymeshPrimitivesAuthorization,
+  PolymeshPrimitivesAuthorizationAuthorizationData,
+  PolymeshPrimitivesComplianceManagerAssetCompliance,
+  PolymeshPrimitivesComplianceManagerComplianceRequirement,
+  PolymeshPrimitivesConditionTrustedIssuer,
+  PolymeshPrimitivesDocument,
+  PolymeshPrimitivesIdentity,
+  PolymeshPrimitivesIdentityClaimClaimType,
+  PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions,
+} from '@polkadot/types/lookup';
 
 /** @name AccountInfo */
 export interface AccountInfo extends AccountInfoWithDualRefCount {}
@@ -61,10 +78,11 @@ export interface AgentGroup extends Enum {
 export interface AGId extends u32 {}
 
 /** @name AssetCompliance */
-export interface AssetCompliance extends Struct {
-  readonly paused: bool;
-  readonly requirements: Vec<ComplianceRequirement>;
-}
+// export interface AssetCompliance extends Struct {
+//   readonly paused: bool;
+//   readonly requirements: Vec<ComplianceRequirement>;
+// }
+export interface AssetCompliance extends PolymeshPrimitivesComplianceManagerAssetCompliance {}
 
 /** @name AssetComplianceResult */
 export interface AssetComplianceResult extends Struct {
@@ -142,7 +160,7 @@ export interface AssetMetadataValueDetail extends Struct {
 }
 
 /** @name AssetName */
-export interface AssetName extends Text {}
+export interface AssetName extends Bytes {}
 
 /** @name AssetOwnershipRelation */
 export interface AssetOwnershipRelation extends Enum {
@@ -204,46 +222,48 @@ export interface AssetType extends Enum {
 }
 
 /** @name Authorization */
-export interface Authorization extends Struct {
-  readonly authorization_data: AuthorizationData;
-  readonly authorized_by: IdentityId;
-  readonly expiry: Option<Moment>;
-  readonly auth_id: u64;
-}
+// export interface Authorization extends Struct {
+//   readonly authorization_data: AuthorizationData;
+//   readonly authorized_by: IdentityId;
+//   readonly expiry: Option<Moment>;
+//   readonly auth_id: u64;
+// }
+export interface Authorization extends PolymeshPrimitivesAuthorization {}
 
 /** @name AuthorizationData */
-export interface AuthorizationData extends Enum {
-  readonly isAttestPrimaryKeyRotation: boolean;
-  readonly asAttestPrimaryKeyRotation: IdentityId;
-  readonly isRotatePrimaryKey: boolean;
-  readonly isTransferTicker: boolean;
-  readonly asTransferTicker: Ticker;
-  readonly isAddMultiSigSigner: boolean;
-  readonly asAddMultiSigSigner: AccountId;
-  readonly isTransferAssetOwnership: boolean;
-  readonly asTransferAssetOwnership: Ticker;
-  readonly isJoinIdentity: boolean;
-  readonly asJoinIdentity: Permissions;
-  readonly isPortfolioCustody: boolean;
-  readonly asPortfolioCustody: PortfolioId;
-  readonly isBecomeAgent: boolean;
-  readonly asBecomeAgent: ITuple<[Ticker, AgentGroup]>;
-  readonly isAddRelayerPayingKey: boolean;
-  readonly asAddRelayerPayingKey: ITuple<[AccountId, AccountId, Balance]>;
-  readonly isRotatePrimaryKeyToSecondary: boolean;
-  readonly asRotatePrimaryKeyToSecondary: Permissions;
-  readonly type:
-    | 'AttestPrimaryKeyRotation'
-    | 'RotatePrimaryKey'
-    | 'TransferTicker'
-    | 'AddMultiSigSigner'
-    | 'TransferAssetOwnership'
-    | 'JoinIdentity'
-    | 'PortfolioCustody'
-    | 'BecomeAgent'
-    | 'AddRelayerPayingKey'
-    | 'RotatePrimaryKeyToSecondary';
-}
+// export interface AuthorizationData extends Enum {
+//   readonly isAttestPrimaryKeyRotation: boolean;
+//   readonly asAttestPrimaryKeyRotation: IdentityId;
+//   readonly isRotatePrimaryKey: boolean;
+//   readonly isTransferTicker: boolean;
+//   readonly asTransferTicker: Ticker;
+//   readonly isAddMultiSigSigner: boolean;
+//   readonly asAddMultiSigSigner: AccountId;
+//   readonly isTransferAssetOwnership: boolean;
+//   readonly asTransferAssetOwnership: Ticker;
+//   readonly isJoinIdentity: boolean;
+//   readonly asJoinIdentity: Permissions;
+//   readonly isPortfolioCustody: boolean;
+//   readonly asPortfolioCustody: PortfolioId;
+//   readonly isBecomeAgent: boolean;
+//   readonly asBecomeAgent: ITuple<[Ticker, AgentGroup]>;
+//   readonly isAddRelayerPayingKey: boolean;
+//   readonly asAddRelayerPayingKey: ITuple<[AccountId, AccountId, Balance]>;
+//   readonly isRotatePrimaryKeyToSecondary: boolean;
+//   readonly asRotatePrimaryKeyToSecondary: Permissions;
+//   readonly type:
+//     | 'AttestPrimaryKeyRotation'
+//     | 'RotatePrimaryKey'
+//     | 'TransferTicker'
+//     | 'AddMultiSigSigner'
+//     | 'TransferAssetOwnership'
+//     | 'JoinIdentity'
+//     | 'PortfolioCustody'
+//     | 'BecomeAgent'
+//     | 'AddRelayerPayingKey'
+//     | 'RotatePrimaryKeyToSecondary';
+// }
+export interface AuthorizationData extends PolymeshPrimitivesAuthorizationAuthorizationData {}
 
 /** @name AuthorizationNonce */
 export interface AuthorizationNonce extends u64 {}
@@ -340,10 +360,11 @@ export interface CACheckpoint extends Enum {
 export interface CADetails extends Text {}
 
 /** @name CAId */
-export interface CAId extends Struct {
-  readonly ticker: Ticker;
-  readonly local_id: LocalCAId;
-}
+// export interface CAId extends Struct {
+//   readonly ticker: Ticker;
+//   readonly local_id: LocalCAId;
+// }
+export interface CAId extends PalletCorporateActionsCaId {}
 
 /** @name CAKind */
 export interface CAKind extends Enum {
@@ -467,33 +488,34 @@ export interface Claim2ndKey extends Struct {
 }
 
 /** @name ClaimType */
-export interface ClaimType extends Enum {
-  readonly isAccredited: boolean;
-  readonly isAffiliate: boolean;
-  readonly isBuyLockup: boolean;
-  readonly isSellLockup: boolean;
-  readonly isCustomerDueDiligence: boolean;
-  readonly isKnowYourCustomer: boolean;
-  readonly isJurisdiction: boolean;
-  readonly isExempted: boolean;
-  readonly isBlocked: boolean;
-  readonly isInvestorUniqueness: boolean;
-  readonly isNoData: boolean;
-  readonly isInvestorUniquenessV2: boolean;
-  readonly type:
-    | 'Accredited'
-    | 'Affiliate'
-    | 'BuyLockup'
-    | 'SellLockup'
-    | 'CustomerDueDiligence'
-    | 'KnowYourCustomer'
-    | 'Jurisdiction'
-    | 'Exempted'
-    | 'Blocked'
-    | 'InvestorUniqueness'
-    | 'NoData'
-    | 'InvestorUniquenessV2';
-}
+// export interface ClaimType extends Enum {
+//   readonly isAccredited: boolean;
+//   readonly isAffiliate: boolean;
+//   readonly isBuyLockup: boolean;
+//   readonly isSellLockup: boolean;
+//   readonly isCustomerDueDiligence: boolean;
+//   readonly isKnowYourCustomer: boolean;
+//   readonly isJurisdiction: boolean;
+//   readonly isExempted: boolean;
+//   readonly isBlocked: boolean;
+//   readonly isInvestorUniqueness: boolean;
+//   readonly isNoData: boolean;
+//   readonly isInvestorUniquenessV2: boolean;
+//   readonly type:
+//     | 'Accredited'
+//     | 'Affiliate'
+//     | 'BuyLockup'
+//     | 'SellLockup'
+//     | 'CustomerDueDiligence'
+//     | 'KnowYourCustomer'
+//     | 'Jurisdiction'
+//     | 'Exempted'
+//     | 'Blocked'
+//     | 'InvestorUniqueness'
+//     | 'NoData'
+//     | 'InvestorUniquenessV2';
+// }
+export interface ClaimType extends PolymeshPrimitivesIdentityClaimClaimType {}
 
 /** @name ClassicTickerImport */
 export interface ClassicTickerImport extends Struct {
@@ -517,11 +539,13 @@ export interface Committee extends Enum {
 }
 
 /** @name ComplianceRequirement */
-export interface ComplianceRequirement extends Struct {
-  readonly sender_conditions: Vec<Condition>;
-  readonly receiver_conditions: Vec<Condition>;
-  readonly id: u32;
-}
+// export interface ComplianceRequirement extends Struct {
+//   readonly sender_conditions: Vec<Condition>;
+//   readonly receiver_conditions: Vec<Condition>;
+//   readonly id: u32;
+// }
+export interface ComplianceRequirement
+  extends PolymeshPrimitivesComplianceManagerComplianceRequirement {}
 
 /** @name ComplianceRequirementResult */
 export interface ComplianceRequirementResult extends Struct {
@@ -562,14 +586,15 @@ export interface ConditionType extends Enum {
 }
 
 /** @name CorporateAction */
-export interface CorporateAction extends Struct {
-  readonly kind: CAKind;
-  readonly decl_date: Moment;
-  readonly record_date: Option<RecordDate>;
-  readonly targets: TargetIdentities;
-  readonly default_withholding_tax: Tax;
-  readonly withholding_tax: Vec<ITuple<[IdentityId, Tax]>>;
-}
+// export interface CorporateAction extends Struct {
+//   readonly kind: CAKind;
+//   readonly decl_date: Moment;
+//   readonly record_date: Option<RecordDate>;
+//   readonly targets: TargetIdentities;
+//   readonly default_withholding_tax: Tax;
+//   readonly withholding_tax: Vec<ITuple<[IdentityId, Tax]>>;
+// }
+export interface CorporateAction extends PalletCorporateActionsCorporateAction {}
 
 /** @name CountryCode */
 export interface CountryCode extends Enum {
@@ -1086,10 +1111,11 @@ export interface DepositInfo extends Struct {
 }
 
 /** @name DidRecord */
-export interface DidRecord extends Struct {
-  readonly primary_key: AccountId;
-  readonly secondary_keys: Vec<SecondaryKey>;
-}
+// export interface DidRecord extends Struct {
+//   readonly primary_key: AccountId;
+//   readonly secondary_keys: Vec<SecondaryKey>;
+// }
+export interface DidRecord extends PolymeshPrimitivesIdentity {}
 
 /** @name DidRecords */
 export interface DidRecords extends Enum {
@@ -1115,7 +1141,7 @@ export interface DidStatus extends Enum {
 }
 
 /** @name DispatchableName */
-export interface DispatchableName extends Text {}
+export interface DispatchableName extends Bytes {}
 
 /** @name DispatchableNames */
 export interface DispatchableNames extends Enum {
@@ -1128,25 +1154,27 @@ export interface DispatchableNames extends Enum {
 }
 
 /** @name Distribution */
-export interface Distribution extends Struct {
-  readonly from: PortfolioId;
-  readonly currency: Ticker;
-  readonly per_share: Balance;
-  readonly amount: Balance;
-  readonly remaining: Balance;
-  readonly reclaimed: bool;
-  readonly payment_at: Moment;
-  readonly expires_at: Option<Moment>;
-}
+// export interface Distribution extends Struct {
+//   readonly from: PortfolioId;
+//   readonly currency: Ticker;
+//   readonly per_share: Balance;
+//   readonly amount: Balance;
+//   readonly remaining: Balance;
+//   readonly reclaimed: bool;
+//   readonly payment_at: Moment;
+//   readonly expires_at: Option<Moment>;
+// }
+export interface Distribution extends PalletCorporateActionsDistribution {}
 
 /** @name Document */
-export interface Document extends Struct {
-  readonly uri: DocumentUri;
-  readonly content_hash: DocumentHash;
-  readonly name: DocumentName;
-  readonly doc_type: Option<DocumentType>;
-  readonly filing_date: Option<Moment>;
-}
+// export interface Document extends Struct {
+//   readonly uri: DocumentUri;
+//   readonly content_hash: DocumentHash;
+//   readonly name: DocumentName;
+//   readonly doc_type: Option<DocumentType>;
+//   readonly filing_date: Option<Moment>;
+// }
+export interface Document extends PolymeshPrimitivesDocument {}
 
 /** @name DocumentHash */
 export interface DocumentHash extends Enum {
@@ -1174,13 +1202,13 @@ export interface DocumentHash extends Enum {
 export interface DocumentId extends u32 {}
 
 /** @name DocumentName */
-export interface DocumentName extends Text {}
+export interface DocumentName extends Bytes {}
 
 /** @name DocumentType */
-export interface DocumentType extends Text {}
+export interface DocumentType extends Bytes {}
 
 /** @name DocumentUri */
-export interface DocumentUri extends Text {}
+export interface DocumentUri extends Bytes {}
 
 /** @name EcdsaSignature */
 export interface EcdsaSignature extends U8aFixed {}
@@ -1204,41 +1232,45 @@ export interface ExtensionAttributes extends Struct {
 }
 
 /** @name ExtrinsicPermissions */
-export interface ExtrinsicPermissions extends Enum {
-  readonly isWhole: boolean;
-  readonly isThese: boolean;
-  readonly asThese: Vec<PalletPermissions>;
-  readonly isExcept: boolean;
-  readonly asExcept: Vec<PalletPermissions>;
-  readonly type: 'Whole' | 'These' | 'Except';
-}
+// export interface ExtrinsicPermissions extends Enum {
+//   readonly isWhole: boolean;
+//   readonly isThese: boolean;
+//   readonly asThese: Vec<PalletPermissions>;
+//   readonly isExcept: boolean;
+//   readonly asExcept: Vec<PalletPermissions>;
+//   readonly type: 'Whole' | 'These' | 'Except';
+// }
+export interface ExtrinsicPermissions
+  extends PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions {}
 
 /** @name ExtVersion */
 export interface ExtVersion extends u32 {}
 
 /** @name FundingRoundName */
-export interface FundingRoundName extends Text {}
+export interface FundingRoundName extends Bytes {}
 
 /** @name Fundraiser */
-export interface Fundraiser extends Struct {
-  readonly creator: IdentityId;
-  readonly offering_portfolio: PortfolioId;
-  readonly offering_asset: Ticker;
-  readonly raising_portfolio: PortfolioId;
-  readonly raising_asset: Ticker;
-  readonly tiers: Vec<FundraiserTier>;
-  readonly venue_id: VenueId;
-  readonly start: Moment;
-  readonly end: Option<Moment>;
-  readonly status: FundraiserStatus;
-  readonly minimum_investment: Balance;
-}
+// export interface Fundraiser extends Struct {
+//   readonly creator: IdentityId;
+//   readonly offering_portfolio: PortfolioId;
+//   readonly offering_asset: Ticker;
+//   readonly raising_portfolio: PortfolioId;
+//   readonly raising_asset: Ticker;
+//   readonly tiers: Vec<FundraiserTier>;
+//   readonly venue_id: VenueId;
+//   readonly start: Moment;
+//   readonly end: Option<Moment>;
+//   readonly status: FundraiserStatus;
+//   readonly minimum_investment: Balance;
+// }
+export interface Fundraiser extends PalletStoFundraiser {}
 
 /** @name FundraiserId */
 export interface FundraiserId extends u64 {}
 
 /** @name FundraiserName */
-export interface FundraiserName extends Text {}
+// export interface FundraiserName extends Text {}
+export interface FundraiserName extends PalletStoFundraiser {}
 
 /** @name FundraiserStatus */
 export interface FundraiserStatus extends Enum {
@@ -1528,7 +1560,7 @@ export interface PortfolioKind extends Enum {
 }
 
 /** @name PortfolioName */
-export interface PortfolioName extends Text {}
+export interface PortfolioName extends Bytes {}
 
 /** @name PortfolioNumber */
 export interface PortfolioNumber extends u64 {}
@@ -1747,12 +1779,13 @@ export interface SecondaryKeyWithAuth extends Struct {
 }
 
 /** @name SecurityToken */
-export interface SecurityToken extends Struct {
-  readonly total_supply: Balance;
-  readonly owner_did: IdentityId;
-  readonly divisible: bool;
-  readonly asset_type: AssetType;
-}
+// export interface SecurityToken extends Struct {
+//   readonly total_supply: Balance;
+//   readonly owner_did: IdentityId;
+//   readonly divisible: bool;
+//   readonly asset_type: AssetType;
+// }
+export interface SecurityToken extends PalletAssetSecurityToken {}
 
 /** @name SettlementType */
 export interface SettlementType extends Enum {
@@ -1880,10 +1913,11 @@ export interface StoredSchedule extends Struct {
 }
 
 /** @name Subsidy */
-export interface Subsidy extends Struct {
-  readonly paying_key: AccountId;
-  readonly remaining: Balance;
-}
+// export interface Subsidy extends Struct {
+//   readonly paying_key: AccountId;
+//   readonly remaining: Balance;
+// }
+export interface Subsidy extends PalletRelayerSubsidy {}
 
 /** @name TargetIdAuthorization */
 export interface TargetIdAuthorization extends Struct {
@@ -1982,10 +2016,11 @@ export interface TrustedFor extends Enum {
 }
 
 /** @name TrustedIssuer */
-export interface TrustedIssuer extends Struct {
-  readonly issuer: IdentityId;
-  readonly trusted_for: TrustedFor;
-}
+// export interface TrustedIssuer extends Struct {
+//   readonly issuer: IdentityId;
+//   readonly trusted_for: TrustedFor;
+// }
+export interface TrustedIssuer extends PolymeshPrimitivesConditionTrustedIssuer {}
 
 /** @name UniqueCall */
 export interface UniqueCall extends Struct {

@@ -250,7 +250,7 @@ export class AssetPermissions extends Namespace<Identity> {
      *   - corporateBallot
      *   - capitalDistribution
      */
-    if (group.isPolymeshV1Caa) {
+    if (group.isPolymeshV1CAA) {
       missingPermissions = transactions.filter(
         tag =>
           ![

@@ -2,7 +2,7 @@ import { U8aFixed } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { difference, differenceWith, isEqual } from 'lodash';
-import { Ticker, TransferManager, TxTag } from 'polymesh-types/types';
+import { Ticker, TransferCondition, TxTag } from 'polymesh-types/types';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import {
@@ -18,7 +18,7 @@ import { tuple } from '~/types/utils';
 import {
   stringToScopeId,
   stringToTicker,
-  transferRestrictionToTransferManager,
+  transferRestrictionToTransferCondition,
   u32ToBigNumber,
 } from '~/utils/conversion';
 import { assembleBatchTransactions, defusePromise, getExemptedIds } from '~/utils/internal';
@@ -48,10 +48,10 @@ export type SetTransferRestrictionsParams = { ticker: string } & (
  * @hidden
  */
 export interface Storage {
-  restrictionsToAdd: [Ticker, TransferManager][];
-  restrictionsToRemove: [Ticker, TransferManager][];
-  exemptionsToAdd: [Ticker, TransferManager, U8aFixed[]][];
-  exemptionsToRemove: [Ticker, TransferManager, U8aFixed[]][];
+  restrictionsToAdd: [Ticker, TransferCondition][];
+  restrictionsToRemove: [Ticker, TransferCondition][];
+  exemptionsToAdd: [Ticker, TransferCondition, U8aFixed[]][];
+  exemptionsToRemove: [Ticker, TransferCondition, U8aFixed[]][];
   occupiedSlots: BigNumber;
 }
 
@@ -100,37 +100,41 @@ export async function prepareSetTransferRestrictions(
     });
   }
 
-  const maxTransferManagers = u32ToBigNumber(consts.statistics.maxTransferManagersPerAsset);
+  const maxTransferConditions = u32ToBigNumber(consts.statistics.maxTransferConditionsPerAsset);
   const finalCount = occupiedSlots.plus(newRestrictionAmount);
-  if (finalCount.gte(maxTransferManagers)) {
+  if (finalCount.gte(maxTransferConditions)) {
     throw new PolymeshError({
       code: ErrorCode.LimitExceeded,
       message: 'Cannot set more Transfer Restrictions than there are slots available',
       data: {
-        availableSlots: maxTransferManagers.minus(occupiedSlots),
+        availableSlots: maxTransferConditions.minus(occupiedSlots),
       },
     });
   }
 
   const transactions = assembleBatchTransactions(
-    tuple(
-      {
-        transaction: statistics.removeTransferManager,
-        argsArray: restrictionsToRemove,
-      },
-      {
-        transaction: statistics.addTransferManager,
-        argsArray: restrictionsToAdd,
-      },
-      {
-        transaction: statistics.removeExemptedEntities,
-        argsArray: exemptionsToRemove,
-      },
-      {
-        transaction: statistics.addExemptedEntities,
-        argsArray: exemptionsToAdd,
-      }
-    )
+    tuple({
+      transaction: statistics.setEntitiesExempt,
+      argsArray: [],
+    })
+    // tuple(
+    //   {
+    //     transaction: statistics.removeTransferManager,
+    //     argsArray: restrictionsToRemove,
+    //   },
+    //   {
+    //     transaction: statistics.addTransferManager,
+    //     argsArray: restrictionsToAdd,
+    //   },
+    //   {
+    //     transaction: statistics.removeExemptedEntities,
+    //     argsArray: exemptionsToRemove,
+    //   },
+    //   {
+    //     transaction: statistics.addExemptedEntities,
+    //     argsArray: exemptionsToAdd,
+    //   }
+    // )
   );
 
   this.addBatchTransaction({ transactions });
@@ -244,8 +248,8 @@ export async function prepareStorage(
   const newRestrictions = differenceWith(toAddRestrictions, currentRestrictions, isEqual);
   const toRemoveRestrictions = differenceWith(currentRestrictions, toAddRestrictions, isEqual);
 
-  const transformRestriction = (restriction: TransferRestriction): [Ticker, TransferManager] =>
-    tuple(rawTicker, transferRestrictionToTransferManager(restriction, context));
+  const transformRestriction = (restriction: TransferRestriction): [Ticker, TransferCondition] =>
+    tuple(rawTicker, transferRestrictionToTransferCondition(restriction, context));
 
   const restrictionsToRemove = toRemoveRestrictions.map(transformRestriction);
   const restrictionsToAdd = newRestrictions.map(transformRestriction);
@@ -291,12 +295,12 @@ export async function prepareStorage(
 
   const transformExemptions = ([restriction, entityIds]: [TransferRestriction, string[]]): [
     Ticker,
-    TransferManager,
+    TransferCondition,
     U8aFixed[]
   ] =>
     tuple(
       rawTicker,
-      transferRestrictionToTransferManager(restriction, context),
+      transferRestrictionToTransferCondition(restriction, context),
       // we use `stringToScopeId` because both `ScopeId` and `IdentityId` are aliases for `U8aFixed`
       entityIds.map(entityId => stringToScopeId(entityId, context))
     );

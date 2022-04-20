@@ -1,10 +1,9 @@
-import { bool, Option, StorageKey } from '@polkadot/types';
+import { bool, Bytes, Option, StorageKey } from '@polkadot/types';
 import { BlockNumber, Hash } from '@polkadot/types/interfaces/runtime';
 import BigNumber from 'bignumber.js';
 import {
   AgentGroup,
   AssetName,
-  FundingRoundName,
   IdentityId,
   SecurityToken as MeshSecurityToken,
   Ticker,
@@ -48,14 +47,12 @@ import {
   bigNumberToU32,
   boolToBoolean,
   bytesToString,
-  fundingRoundNameToString,
   hashToString,
   identityIdToString,
   middlewareEventToEventIdentifier,
   stringToTicker,
-  textToString,
   tickerToDid,
-  u64ToBigNumber,
+  u128ToBigNumber,
 } from '~/utils/conversion';
 import { createProcedureMethod, optionize, padString } from '~/utils/internal';
 
@@ -219,7 +216,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
 
     /* eslint-disable @typescript-eslint/naming-convention */
     const assembleResult = async (
-      { total_supply, divisible, owner_did, asset_type }: MeshSecurityToken,
+      { totalSupply, divisible, ownerDid, assetType: asset_type }: MeshSecurityToken,
       agentGroups: [StorageKey<[Ticker, IdentityId]>, Option<AgentGroup>][],
       assetName: AssetName,
       iuDisabled: bool
@@ -238,7 +235,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
         }
       });
 
-      const owner = new Identity({ did: identityIdToString(owner_did) }, context);
+      const owner = new Identity({ did: identityIdToString(ownerDid) }, context);
       const type = assetTypeToKnownOrId(asset_type);
 
       let assetType: string;
@@ -252,9 +249,9 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       return {
         assetType,
         isDivisible: boolToBoolean(divisible),
-        name: textToString(assetName),
+        name: bytesToString(assetName),
         owner,
-        totalSupply: balanceToBigNumber(total_supply),
+        totalSupply: balanceToBigNumber(totalSupply),
         primaryIssuanceAgents,
         fullAgents,
         requiresInvestorUniqueness: !boolToBoolean(iuDisabled),
@@ -320,8 +317,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
 
     const rawTicker = stringToTicker(ticker, context);
 
-    const assembleResult = (roundName: FundingRoundName): string | null =>
-      fundingRoundNameToString(roundName) || null;
+    const assembleResult = (roundName: Bytes): string | null => bytesToString(roundName) || null;
 
     if (callback) {
       return asset.fundingRound(rawTicker, round => {
@@ -490,17 +486,14 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
     } = this;
 
     const rawTicker = stringToTicker(ticker, context);
+    const count = await statistics.assetStats(rawTicker, ' Count');
 
     if (callback) {
-      return statistics.investorCountPerAsset(rawTicker, count => {
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
-        callback(u64ToBigNumber(count));
-      });
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      callback(u128ToBigNumber(count));
     }
 
-    const result = await statistics.investorCountPerAsset(stringToTicker(ticker, context));
-
-    return u64ToBigNumber(result);
+    return u128ToBigNumber(count);
   }
 
   /**

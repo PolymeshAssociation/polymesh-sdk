@@ -25,7 +25,7 @@ import {
 import {
   scopeIdToString,
   stringToTicker,
-  transferManagerToTransferRestriction,
+  transferConditionToTransferRestriction,
   u32ToBigNumber,
 } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
@@ -155,31 +155,33 @@ export abstract class TransferRestrictionBase<
     } = this;
 
     const rawTicker = stringToTicker(ticker, context);
-    const activeTms = await statistics.activeTransferManagers(rawTicker);
-    const filteredTms = activeTms.filter(tm => {
+    const complianceRules = await statistics.assetTransferCompliances(rawTicker);
+    const filteredRequirements = complianceRules.requirements.filter(requirement => {
       if (type === TransferRestrictionType.Count) {
-        return tm.isCountTransferManager;
+        return requirement.isMaxInvestorCount;
       }
 
-      return tm.isPercentageTransferManager;
+      return requirement.isMaxInvestorOwnership;
     });
 
     const rawExemptedLists = await Promise.all(
-      filteredTms.map(tm => statistics.exemptEntities.entries([rawTicker, tm]))
+      filteredRequirements.map(() => statistics.transferConditionExemptEntities.entries(rawTicker))
     );
 
+    // const exemptList = await statistics.transferConditionExemptEntities.entries(rawTicker);
+
     const restrictions = rawExemptedLists.map((list, index) => {
-      const exemptedIds = list.map(
+      const exemptedScopeIds = list.map(
         ([
           {
             args: [, scopeId],
           },
-        ]) => scopeIdToString(scopeId) // `ScopeId` and `IdentityId` are the same type, so this is fine
+        ]) => scopeIdToString(scopeId)
       );
-      const { value } = transferManagerToTransferRestriction(filteredTms[index]);
+      const { value } = transferConditionToTransferRestriction(filteredRequirements[index]);
       let restriction;
 
-      if (type === TransferRestrictionType.Count) {
+      if (this.type === TransferRestrictionType.Count) {
         restriction = {
           count: value,
         };
@@ -189,20 +191,20 @@ export abstract class TransferRestrictionBase<
         };
       }
 
-      if (exemptedIds.length) {
+      if (exemptedScopeIds.length) {
         return {
           ...restriction,
-          exemptedIds,
+          exemptedScopeIds,
         };
       }
       return restriction;
     });
 
-    const maxTransferManagers = u32ToBigNumber(consts.statistics.maxTransferManagersPerAsset);
+    const maxTransferConditions = u32ToBigNumber(consts.statistics.maxTransferConditionsPerAsset);
 
     return {
-      restrictions,
-      availableSlots: maxTransferManagers.minus(activeTms.length),
+      restrictions: Object.values(restrictions),
+      availableSlots: maxTransferConditions.minus(Object.keys(restrictions).length),
     } as GetReturnType<T>;
   }
 }

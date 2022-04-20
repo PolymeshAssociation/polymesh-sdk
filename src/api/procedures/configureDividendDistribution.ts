@@ -38,7 +38,7 @@ export const createDividendDistributionResolver =
   async (receipt: ISubmittableResult): Promise<DividendDistribution> => {
     const [{ data }] = filterEventRecords(receipt, 'capitalDistribution', 'Created');
     const [, caId, distribution] = data;
-    const { ticker, local_id: localId } = caId;
+    const { ticker, localId } = caId;
 
     const { corporateAction } = context.polymeshApi.query;
 
