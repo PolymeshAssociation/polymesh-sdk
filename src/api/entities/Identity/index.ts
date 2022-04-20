@@ -1,4 +1,5 @@
 import { u64 } from '@polkadot/types';
+import { PolymeshPrimitivesIdentity } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, flatten, uniqBy } from 'lodash';
@@ -278,7 +279,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const assembleResult = ({ primaryKey }: DidRecord): PermissionedAccount => {
+    const assembleResult = ({ primaryKey }: PolymeshPrimitivesIdentity): PermissionedAccount => {
       return {
         account: new Account({ address: accountIdToString(primaryKey) }, context),
         permissions: {
@@ -692,7 +693,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const assembleResult = ({
       secondaryKeys: secondaryAccounts,
-    }: DidRecord): PermissionedAccount[] => {
+    }: PolymeshPrimitivesIdentity): PermissionedAccount[] => {
       return secondaryAccounts.map(({ signer: rawSigner, permissions }) => ({
         account: signatoryToAccount(rawSigner, context),
         permissions: meshPermissionsToPermissions(permissions, context),

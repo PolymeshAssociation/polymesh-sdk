@@ -162,7 +162,7 @@ export async function prepareCreateAsset(
     rawType = internalAssetTypeToAssetType(assetType as KnownAssetType, context);
   }
 
-  const rawName = stringToAssetName(name, context);
+  const rawName = stringToBytes(name, context);
   const rawIsDivisible = booleanToBool(isDivisible, context);
   const rawIdentifiers = securityIdentifiers.map(identifier =>
     securityIdentifierToAssetIdentifier(identifier, context)

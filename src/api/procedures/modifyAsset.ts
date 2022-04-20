@@ -4,6 +4,7 @@ import { ProcedureAuthorization } from '~/types/internal';
 import {
   securityIdentifierToAssetIdentifier,
   stringToAssetName,
+  stringToBytes,
   stringToFundingRoundName,
   stringToTicker,
 } from '~/utils/conversion';
@@ -112,10 +113,11 @@ export async function prepareModifyAsset(
       });
     }
 
+    const nameBytes = stringToBytes(newName, context);
     transactions.push(
       checkTxType({
         transaction: tx.asset.renameAsset,
-        args: [rawTicker, stringToAssetName(newName, context)],
+        args: [rawTicker, nameBytes],
       })
     );
   }
@@ -128,10 +130,11 @@ export async function prepareModifyAsset(
       });
     }
 
+    const fundingBytes = stringToBytes(newFundingRound, context);
     transactions.push(
       checkTxType({
         transaction: tx.asset.setFundingRound,
-        args: [rawTicker, stringToFundingRoundName(newFundingRound, context)],
+        args: [rawTicker, fundingBytes],
       })
     );
   }

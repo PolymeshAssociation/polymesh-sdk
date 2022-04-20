@@ -1,6 +1,7 @@
 import { ApiPromise } from '@polkadot/api';
 import { getTypeDef, Option } from '@polkadot/types';
 import { AccountInfo } from '@polkadot/types/interfaces';
+import { PalletCorporateActionsDistribution, PalletRelayerSubsidy } from '@polkadot/types/lookup';
 import {
   CallFunction,
   InterfaceTypes,
@@ -15,14 +16,7 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, clone, flatMap, flatten, flattenDeep } from 'lodash';
 import { polymesh } from 'polymesh-types/definitions';
-import {
-  CAId,
-  Distribution,
-  ModuleName,
-  ProtocolOp,
-  Subsidy as MeshSubsidy,
-  TxTag,
-} from 'polymesh-types/types';
+import { CAId, ModuleName, ProtocolOp, Subsidy as MeshSubsidy, TxTag } from 'polymesh-types/types';
 
 import { Account, Asset, DividendDistribution, Identity, PolymeshError, Subsidy } from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
@@ -371,7 +365,9 @@ export class Context {
 
     const rawAddress = stringToAccountId(address, this);
 
-    const assembleResult = (meshSubsidy: Option<MeshSubsidy>): SubsidyWithAllowance | null => {
+    const assembleResult = (
+      meshSubsidy: Option<PalletRelayerSubsidy>
+    ): SubsidyWithAllowance | null => {
       if (meshSubsidy.isNone) {
         return null;
       }
@@ -809,31 +805,33 @@ export class Context {
 
     const result: DistributionWithDetails[] = [];
 
-    flattenDeep<Option<Distribution>>(distributions).forEach((distribution, index) => {
-      if (distribution.isNone) {
-        return;
-      }
+    flattenDeep<Option<PalletCorporateActionsDistribution>>(distributions).forEach(
+      (distribution, index) => {
+        if (distribution.isNone) {
+          return;
+        }
 
-      const dist = distribution.unwrap();
+        const dist = distribution.unwrap();
 
-      const { reclaimed, remaining } = dist;
+        const { reclaimed, remaining } = dist;
 
-      result.push({
-        distribution: new DividendDistribution(
-          {
-            ticker: tickers[index],
-            id: corporateActionIds[index],
-            ...corporateActionParams[index],
-            ...distributionToDividendDistributionParams(dist, this),
+        result.push({
+          distribution: new DividendDistribution(
+            {
+              ticker: tickers[index],
+              id: corporateActionIds[index],
+              ...corporateActionParams[index],
+              ...distributionToDividendDistributionParams(dist, this),
+            },
+            this
+          ),
+          details: {
+            remainingFunds: balanceToBigNumber(remaining),
+            fundsReclaimed: boolToBoolean(reclaimed),
           },
-          this
-        ),
-        details: {
-          remainingFunds: balanceToBigNumber(remaining),
-          fundsReclaimed: boolToBoolean(reclaimed),
-        },
-      });
-    });
+        });
+      }
+    );
 
     return result;
   }
@@ -1153,12 +1151,14 @@ export class Context {
     return cloned;
   }
 
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   /**
    *  @hidden
    *
    * Creates an instance of a type as registered in the polymeshApi instance
    */
-  public createType<K extends keyof InterfaceTypes>(type: K, params: unknown): InterfaceTypes[K] {
+  public createType<K extends keyof InterfaceTypes>(type: K, params: unknown): any {
+    /* eslint-enable @typescript-eslint/no-explicit-any */
     try {
       return this.polymeshApi.createType(type, params);
     } catch (error) {

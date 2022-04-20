@@ -1,5 +1,6 @@
 import { Option } from '@polkadot/types';
 import { BlockNumber, Hash } from '@polkadot/types/interfaces/runtime';
+import { PalletCorporateActionsDistribution } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, flatten, remove } from 'lodash';
@@ -27,7 +28,6 @@ import {
 } from '~/internal';
 import { getHistoryOfPaymentEventsForCa, getWithholdingTaxesOfCa } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
-import { Distribution } from '~/polkadot';
 import {
   CorporateActionKind,
   DistributionPayment,
@@ -396,7 +396,7 @@ export class DividendDistribution extends CorporateActionBase {
   /**
    * @hidden
    */
-  private fetchDistribution(): Promise<Option<Distribution>> {
+  private fetchDistribution(): Promise<Option<PalletCorporateActionsDistribution>> {
     const {
       asset: { ticker },
       id,

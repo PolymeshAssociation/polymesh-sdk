@@ -1,3 +1,4 @@
+import { PolymeshPrimitivesConditionTrustedIssuer } from '@polkadot/types/lookup';
 import { TrustedIssuer } from 'polymesh-types/types';
 
 import {
@@ -12,7 +13,7 @@ import {
 } from '~/internal';
 import { ProcedureMethod, SubCallback, TrustedClaimIssuer, UnsubCallback } from '~/types';
 import { TrustedClaimIssuerOperation } from '~/types/internal';
-import { stringToTicker, trustedIssuerToTrustedClaimIssuer } from '~/utils/conversion';
+import { primitiveTrustedIssuerToTrustedClaimIssuer,stringToTicker } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
 /**
@@ -109,12 +110,14 @@ export class TrustedClaimIssuers extends Namespace<Asset> {
 
     const rawTicker = stringToTicker(ticker, context);
 
-    const assembleResult = (issuers: TrustedIssuer[]): TrustedClaimIssuer<true>[] =>
+    const assembleResult = (
+      issuers: PolymeshPrimitivesConditionTrustedIssuer[]
+    ): TrustedClaimIssuer<true>[] =>
       issuers.map(issuer => {
         const {
           identity: { did },
           trustedFor,
-        } = trustedIssuerToTrustedClaimIssuer(issuer, context);
+        } = primitiveTrustedIssuerToTrustedClaimIssuer(issuer, context);
         return {
           identity: new DefaultTrustedClaimIssuer({ did, ticker }, context),
           trustedFor,

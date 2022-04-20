@@ -52,7 +52,6 @@ export async function prepareRenamePortfolio(
       });
     }
   }
-
   this.addTransaction({
     transaction: portfolio.renamePortfolio,
     args: [bigNumberToU64(id, context), rawNewName],

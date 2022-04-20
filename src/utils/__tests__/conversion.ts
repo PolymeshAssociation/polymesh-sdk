@@ -184,6 +184,7 @@ import {
   portfolioLikeToPortfolioId,
   portfolioMovementToMovePortfolioItem,
   posRatioToBigNumber,
+  primitiveTrustedIssuerToTrustedClaimIssuer,
   requirementToComplianceRequirement,
   scheduleSpecToMeshScheduleSpec,
   scopeClaimProofToMeshScopeClaimProof,
@@ -233,7 +234,6 @@ import {
   transferConditionToTransferRestriction,
   transferRestrictionToTransferCondition,
   trustedClaimIssuerToTrustedIssuer,
-  trustedIssuerToTrustedClaimIssuer,
   txGroupToTxTags,
   txTagToExtrinsicIdentifier,
   txTagToProtocolOp,
@@ -5285,7 +5285,7 @@ describe('trustedClaimIssuerToTrustedIssuer and trustedIssuerToTrustedClaimIssue
         trusted_for: dsMockUtils.createMockTrustedFor('Any'),
       });
 
-      let result = trustedIssuerToTrustedClaimIssuer(trustedIssuer, context);
+      let result = primitiveTrustedIssuerToTrustedClaimIssuer(trustedIssuer, context);
       expect(result).toEqual(fakeResult);
 
       fakeResult = {
@@ -5300,7 +5300,7 @@ describe('trustedClaimIssuerToTrustedIssuer and trustedIssuerToTrustedClaimIssue
         }),
       });
 
-      result = trustedIssuerToTrustedClaimIssuer(trustedIssuer, context);
+      result = primitiveTrustedIssuerToTrustedClaimIssuer(trustedIssuer, context);
       expect(result).toEqual(fakeResult);
     });
   });

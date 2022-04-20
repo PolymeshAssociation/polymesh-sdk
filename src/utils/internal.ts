@@ -5,7 +5,7 @@ import {
   DropLast,
   ObsInnerType,
 } from '@polkadot/api/types';
-import { StorageKey } from '@polkadot/types';
+import { Bytes, StorageKey } from '@polkadot/types';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
 import { AnyFunction, AnyTuple, IEvent, ISubmittableResult } from '@polkadot/types/types';
 import { stringUpperFirst } from '@polkadot/util';
@@ -14,7 +14,7 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import stringify from 'json-stable-stringify';
 import { differenceWith, flatMap, isEqual, mapValues, noop, padEnd, uniq } from 'lodash';
-import { IdentityId, ModuleName, PortfolioName, TxTag } from 'polymesh-types/types';
+import { IdentityId, ModuleName, TxTag } from 'polymesh-types/types';
 
 import {
   Asset,
@@ -857,7 +857,7 @@ export function assembleBatchTransactions<ArgsArray extends unknown[][]>(
  */
 export async function getPortfolioIdByName(
   rawIdentityId: IdentityId,
-  rawName: PortfolioName,
+  rawName: Bytes,
   context: Context
 ): Promise<BigNumber | null> {
   const {

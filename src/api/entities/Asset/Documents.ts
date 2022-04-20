@@ -1,3 +1,5 @@
+import { PolymeshPrimitivesDocument } from '@polkadot/types/lookup';
+
 import { Asset, Context, Namespace, setAssetDocuments, SetAssetDocumentsParams } from '~/internal';
 import { AssetDocument, PaginationOptions, ProcedureMethod, ResultSet } from '~/types';
 import { documentToAssetDocument, stringToTicker } from '~/utils/conversion';

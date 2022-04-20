@@ -1,5 +1,6 @@
 import { bool, Bytes, Option, StorageKey } from '@polkadot/types';
 import { BlockNumber, Hash } from '@polkadot/types/interfaces/runtime';
+import { PalletAssetSecurityToken } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import {
   AgentGroup,
@@ -50,7 +51,9 @@ import {
   hashToString,
   identityIdToString,
   middlewareEventToEventIdentifier,
+  stringToText,
   stringToTicker,
+  textToString,
   tickerToDid,
   u128ToBigNumber,
 } from '~/utils/conversion';
@@ -216,7 +219,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
 
     /* eslint-disable @typescript-eslint/naming-convention */
     const assembleResult = async (
-      { totalSupply, divisible, ownerDid, assetType: asset_type }: MeshSecurityToken,
+      { totalSupply, divisible, ownerDid, assetType: asset_type }: PalletAssetSecurityToken,
       agentGroups: [StorageKey<[Ticker, IdentityId]>, Option<AgentGroup>][],
       assetName: AssetName,
       iuDisabled: bool
@@ -249,7 +252,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       return {
         assetType,
         isDivisible: boolToBoolean(divisible),
-        name: bytesToString(assetName),
+        name: textToString(assetName),
         owner,
         totalSupply: balanceToBigNumber(totalSupply),
         primaryIssuanceAgents,
@@ -274,7 +277,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
         const result = await assembleResult(
           securityToken,
           groupEntries,
-          assetName,
+          stringToText(bytesToString(assetName), context), // TODO clean up
           disabledInvestorUniqueness
         );
 
@@ -289,8 +292,8 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       namePromise,
       disabledIuPromise,
     ]);
-
-    return assembleResult(token, groups, name, disabledIu);
+    const textName = stringToText(bytesToString(name), context);
+    return assembleResult(token, groups, textName, disabledIu);
   }
 
   /**

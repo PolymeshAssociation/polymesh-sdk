@@ -1,3 +1,4 @@
+import { PolymeshPrimitivesAuthorization } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { Authorization } from 'polymesh-types/types';
 
@@ -6,6 +7,7 @@ import { AuthorizationType, ErrorCode, Signer, SignerValue } from '~/types';
 import {
   authorizationDataToAuthorization,
   authorizationTypeToMeshAuthorizationType,
+  basicAuthorizationDataToAuthorization,
   bigNumberToU64,
   booleanToBool,
   identityIdToString,
@@ -54,7 +56,9 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
       result = await rpc.identity.getFilteredAuthorizations(signatory, rawBoolean);
     }
 
-    return this.createAuthorizationRequests(result.map(auth => ({ auth, target: signerValue })));
+    return this.createAuthorizationRequestsFromBasic(
+      result.map(auth => ({ auth, target: signerValue }))
+    );
   }
 
   /**
@@ -94,7 +98,7 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
    * Create an array of AuthorizationRequests from an array of on-chain Authorizations
    */
   protected createAuthorizationRequests(
-    auths: { auth: Authorization; target: SignerValue }[]
+    auths: { auth: PolymeshPrimitivesAuthorization; target: SignerValue }[]
   ): AuthorizationRequest[] {
     const { context } = this;
 
@@ -111,6 +115,38 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
           authId: u64ToBigNumber(authId),
           expiry: expiry.isSome ? momentToDate(expiry.unwrap()) : null,
           data: authorizationDataToAuthorization(data, context),
+          target,
+          issuer: new Identity({ did: identityIdToString(issuer) }, context),
+        };
+      })
+      .filter(({ expiry }) => expiry === null || expiry > new Date())
+      .map(args => {
+        return new AuthorizationRequest(args, context);
+      });
+  }
+
+  /**
+   * @hidden
+   * TODO take out just a test
+   */
+  protected createAuthorizationRequestsFromBasic(
+    auths: { auth: Authorization; target: SignerValue }[]
+  ): AuthorizationRequest[] {
+    const { context } = this;
+
+    return auths
+      .map(auth => {
+        const {
+          auth: { expiry, auth_id: authId, authorization_data: data, authorized_by: issuer },
+          target: rawTarget,
+        } = auth;
+
+        const target = signerValueToSigner(rawTarget, context);
+
+        return {
+          authId: u64ToBigNumber(authId),
+          expiry: expiry.isSome ? momentToDate(expiry.unwrap()) : null,
+          data: basicAuthorizationDataToAuthorization(data, context),
           target,
           issuer: new Identity({ did: identityIdToString(issuer) }, context),
         };

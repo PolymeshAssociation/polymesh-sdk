@@ -1,5 +1,9 @@
 import { QueryableStorageEntry } from '@polkadot/api/types';
 import { Vec } from '@polkadot/types/codec';
+import {
+  PolymeshPrimitivesComplianceManagerAssetCompliance,
+  PolymeshPrimitivesConditionTrustedIssuer,
+} from '@polkadot/types/lookup';
 import { AssetCompliance, AssetComplianceResult, TrustedIssuer } from 'polymesh-types/types';
 
 import {
@@ -30,10 +34,10 @@ import {
   assetComplianceResultToCompliance,
   boolToBoolean,
   complianceRequirementToRequirement,
+  primitiveTrustedIssuerToTrustedClaimIssuer,
   signerToString,
   stringToIdentityId,
   stringToTicker,
-  trustedIssuerToTrustedClaimIssuer,
 } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
@@ -132,15 +136,15 @@ export class Requirements extends Namespace<Asset> {
     const rawTicker = stringToTicker(ticker, context);
 
     const assembleResult = ([assetCompliance, claimIssuers]: [
-      AssetCompliance,
-      Vec<TrustedIssuer>
+      PolymeshPrimitivesComplianceManagerAssetCompliance,
+      Vec<PolymeshPrimitivesConditionTrustedIssuer>
     ]): ComplianceRequirements => {
       const requirements = assetCompliance.requirements.map(complianceRequirement =>
         complianceRequirementToRequirement(complianceRequirement, context)
       );
 
       const defaultTrustedClaimIssuers = claimIssuers.map(issuer =>
-        trustedIssuerToTrustedClaimIssuer(issuer, context)
+        primitiveTrustedIssuerToTrustedClaimIssuer(issuer, context)
       );
 
       return { requirements, defaultTrustedClaimIssuers };
