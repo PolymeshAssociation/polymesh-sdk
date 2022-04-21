@@ -383,9 +383,9 @@ describe('Account class', () => {
     });
   });
 
-  describe('method: toJson', () => {
+  describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
-      expect(account.toJson()).toBe(account.address);
+      expect(account.toHuman()).toBe(account.address);
     });
   });
 

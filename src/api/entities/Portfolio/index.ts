@@ -381,7 +381,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
   /**
    * Return the Portfolio ID and owner DID
    */
-  public toJson(): HumanReadable {
+  public toHuman(): HumanReadable {
     const {
       _id: id,
       owner: { did },

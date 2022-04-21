@@ -94,7 +94,7 @@ export class KnownPermissionGroup extends PermissionGroup {
   /**
    * Return the KnownPermissionGroup's static data
    */
-  public toJson(): HumanReadable {
+  public toHuman(): HumanReadable {
     const { type, asset } = this;
 
     return toHumanReadable({

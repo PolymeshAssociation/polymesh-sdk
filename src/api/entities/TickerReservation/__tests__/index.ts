@@ -302,12 +302,12 @@ describe('TickerReservation class', () => {
     });
   });
 
-  describe('method: toJson', () => {
+  describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
       const context = dsMockUtils.getContextInstance();
       const tickerRes = new TickerReservation({ ticker: 'SOME_TICKER' }, context);
 
-      expect(tickerRes.toJson()).toBe('SOME_TICKER');
+      expect(tickerRes.toHuman()).toBe('SOME_TICKER');
     });
   });
 });

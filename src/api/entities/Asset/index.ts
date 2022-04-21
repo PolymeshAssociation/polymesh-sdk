@@ -609,7 +609,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
   /**
    * Return the Asset's ticker
    */
-  public toJson(): string {
+  public toHuman(): string {
     return this.ticker;
   }
 }

@@ -212,7 +212,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
   /**
    * Return the Reservation's ticker
    */
-  public toJson(): string {
+  public toHuman(): string {
     return this.ticker;
   }
 }

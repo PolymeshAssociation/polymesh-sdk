@@ -252,7 +252,7 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
   /**
    * Return the Corporate Action's static data
    */
-  public toJson(): HumanReadable {
+  public toHuman(): HumanReadable {
     const {
       asset,
       id,

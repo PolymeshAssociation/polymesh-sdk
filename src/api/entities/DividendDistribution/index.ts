@@ -578,10 +578,10 @@ export class DividendDistribution extends CorporateActionBase {
   /**
    * Return the Dividend Distribution's static data
    */
-  public override toJson(): HumanReadable {
+  public override toHuman(): HumanReadable {
     const { origin, currency, perShare, maxAmount, expiryDate, paymentDate } = this;
 
-    const parentReadable = super.toJson();
+    const parentReadable = super.toHuman();
 
     return {
       ...toHumanReadable({ origin, currency, perShare, maxAmount, expiryDate, paymentDate }),

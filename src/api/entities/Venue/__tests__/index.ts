@@ -352,11 +352,11 @@ describe('Venue class', () => {
     });
   });
 
-  describe('method: toJson', () => {
+  describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
       const venueEntity = new Venue({ id: new BigNumber(1) }, context);
 
-      expect(venueEntity.toJson()).toBe('1');
+      expect(venueEntity.toHuman()).toBe('1');
     });
   });
 });
