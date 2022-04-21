@@ -16,7 +16,7 @@ import {
 import { NoArgsProcedureMethod, ProcedureMethod, SubCallback, UnsubCallback } from '~/types';
 import { QueryReturnType } from '~/types/utils';
 import { identityIdToString, momentToDate, stringToTicker } from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
+import { assertTickerValid, createProcedureMethod } from '~/utils/internal';
 
 import { TickerReservationDetails, TickerReservationStatus } from './types';
 
@@ -55,6 +55,8 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
     super(identifiers, context);
 
     const { ticker } = identifiers;
+
+    assertTickerValid(ticker);
 
     this.ticker = ticker;
 
