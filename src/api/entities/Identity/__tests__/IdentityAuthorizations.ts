@@ -58,7 +58,6 @@ describe('IdentityAuthorizations class', () => {
       const identity = entityMockUtils.getIdentityInstance({ did });
       const authsNamespace = new IdentityAuthorizations(identity, context);
 
-      /* eslint-disable @typescript-eslint/naming-convention */
       const authParams = [
         {
           authId: new BigNumber(1),
@@ -78,20 +77,19 @@ describe('IdentityAuthorizations class', () => {
 
       const authorizations = authParams.map(({ authId, expiry, data }) =>
         dsMockUtils.createMockAuthorization({
-          auth_id: dsMockUtils.createMockU64(authId),
+          authId: dsMockUtils.createMockU64(authId),
           expiry: dsMockUtils.createMockOption(
             expiry ? dsMockUtils.createMockMoment(new BigNumber(expiry.getTime())) : expiry
           ),
-          authorization_data: dsMockUtils.createMockAuthorizationData({
+          authorizationData: dsMockUtils.createMockAuthorizationData({
             TransferAssetOwnership: dsMockUtils.createMockTicker(data.value),
           }),
-          authorized_by: dsMockUtils.createMockIdentityId(did),
+          authorizedBy: dsMockUtils.createMockIdentityId(did),
         })
       );
-      /* eslint-enable @typescript-eslint/naming-convention */
 
       const authorizationsGivenEntries = authorizations.map(
-        ({ authorized_by: issuer, auth_id: authId }, index) =>
+        ({ authorizedBy: issuer, authId }, index) =>
           tuple(
             { args: [issuer, authId] } as unknown as StorageKey,
             dsMockUtils.createMockSignatory({

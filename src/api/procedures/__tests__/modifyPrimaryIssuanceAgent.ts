@@ -1,4 +1,5 @@
 import { Moment } from '@polkadot/types/interfaces';
+import { PolymeshPrimitivesAuthorizationAuthorizationData } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { AuthorizationData, Signatory, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
@@ -23,7 +24,7 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
   let mockContext: Mocked<Context>;
   let authorizationToAuthorizationDataStub: sinon.SinonStub<
     [Authorization, Context],
-    AuthorizationData
+    PolymeshPrimitivesAuthorizationAuthorizationData
   >;
   let dateToMomentStub: sinon.SinonStub<[Date, Context], Moment>;
   let signerToStringStub: sinon.SinonStub<[string | Identity | Account], string>;
@@ -33,7 +34,7 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
   let target: string;
   let addTransactionStub: sinon.SinonStub;
   let rawSignatory: Signatory;
-  let rawAuthorizationData: AuthorizationData;
+  let rawAuthorizationData: PolymeshPrimitivesAuthorizationAuthorizationData;
 
   beforeAll(() => {
     dsMockUtils.initMocks();

@@ -478,7 +478,8 @@ export interface ClaimType extends Enum {
   readonly isExempted: boolean;
   readonly isBlocked: boolean;
   readonly isInvestorUniqueness: boolean;
-  readonly isNoData: boolean;
+  // readonly isNoData: boolean;
+  readonly isNoType: boolean;
   readonly isInvestorUniquenessV2: boolean;
   readonly type:
     | 'Accredited'

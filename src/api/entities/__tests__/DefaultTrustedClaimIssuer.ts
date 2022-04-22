@@ -1,3 +1,4 @@
+import { PolymeshPrimitivesConditionTrustedIssuer } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { Ticker, TrustedIssuer } from 'polymesh-types/types';
 import sinon from 'sinon';
@@ -100,7 +101,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
     let ticker: string;
     let rawTicker: Ticker;
     let stringToTickerStub: sinon.SinonStub;
-    let claimIssuers: TrustedIssuer[];
+    let claimIssuers: PolymeshPrimitivesConditionTrustedIssuer[];
     let trustedClaimIssuerStub: sinon.SinonStub;
 
     beforeAll(() => {
@@ -111,12 +112,12 @@ describe('DefaultTrustedClaimIssuer class', () => {
         dsMockUtils.createMockTrustedIssuer({
           issuer: dsMockUtils.createMockIdentityId('someDid'),
           // eslint-disable-next-line @typescript-eslint/naming-convention
-          trusted_for: dsMockUtils.createMockTrustedFor('Any'),
+          trustedFor: dsMockUtils.createMockTrustedFor('Any'),
         }),
         dsMockUtils.createMockTrustedIssuer({
           issuer: dsMockUtils.createMockIdentityId('otherDid'),
           // eslint-disable-next-line @typescript-eslint/naming-convention
-          trusted_for: dsMockUtils.createMockTrustedFor({
+          trustedFor: dsMockUtils.createMockTrustedFor({
             Specific: [dsMockUtils.createMockClaimType(ClaimType.Exempted)],
           }),
         }),

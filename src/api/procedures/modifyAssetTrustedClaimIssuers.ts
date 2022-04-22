@@ -1,5 +1,6 @@
+import { PolymeshPrimitivesConditionTrustedIssuer } from '@polkadot/types/lookup';
 import { difference, intersection, isEqual, sortBy } from 'lodash';
-import { IdentityId, Ticker, TrustedIssuer } from 'polymesh-types/types';
+import { IdentityId, Ticker } from 'polymesh-types/types';
 
 import { Asset, Context, Identity, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, InputTrustedClaimIssuer, TrustedClaimIssuer, TxTags } from '~/types';
@@ -41,8 +42,11 @@ const convertArgsToRaw = (
   claimIssuers: ModifyAssetTrustedClaimIssuersAddSetParams['claimIssuers'],
   rawTicker: Ticker,
   context: Context
-): { claimIssuersToAdd: [Ticker, TrustedIssuer][]; inputDids: string[] } => {
-  const claimIssuersToAdd: [Ticker, TrustedIssuer][] = [];
+): {
+  claimIssuersToAdd: [Ticker, PolymeshPrimitivesConditionTrustedIssuer][];
+  inputDids: string[];
+} => {
+  const claimIssuersToAdd: [Ticker, PolymeshPrimitivesConditionTrustedIssuer][] = [];
   const inputDids: string[] = [];
   claimIssuers.forEach(({ identity, trustedFor }) => {
     const issuerIdentity = asIdentity(identity, context);
@@ -99,7 +103,7 @@ export async function prepareModifyAssetTrustedClaimIssuers(
   const rawTicker = stringToTicker(ticker, context);
 
   let claimIssuersToDelete: [Ticker, IdentityId][] = [];
-  let claimIssuersToAdd: [Ticker, TrustedIssuer][] = [];
+  let claimIssuersToAdd: [Ticker, PolymeshPrimitivesConditionTrustedIssuer][] = [];
 
   let inputDids: string[];
 

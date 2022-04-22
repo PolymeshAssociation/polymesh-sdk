@@ -1,4 +1,8 @@
 import { Vec } from '@polkadot/types';
+import {
+  PolymeshPrimitivesConditionConditionType,
+  PolymeshPrimitivesDocument,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { CAId, Document, DocumentId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
@@ -24,9 +28,9 @@ describe('linkCaDocs procedure', () => {
   let id: BigNumber;
   let documents: AssetDocument[];
   let rawTicker: Ticker;
-  let rawDocuments: Document[];
+  let rawDocuments: PolymeshPrimitivesDocument[];
   let rawDocumentIds: DocumentId[];
-  let documentEntries: [[Ticker, DocumentId], Document][];
+  let documentEntries: [[Ticker, DocumentId], PolymeshPrimitivesDocument][];
   let args: Params;
   let rawCaId: CAId;
 
@@ -54,17 +58,15 @@ describe('linkCaDocs procedure', () => {
       dsMockUtils.createMockDocument({
         name: dsMockUtils.createMockDocumentName(name),
         uri: dsMockUtils.createMockDocumentUri(uri),
-        /* eslint-disable @typescript-eslint/naming-convention */
-        content_hash: dsMockUtils.createMockDocumentHash({
+        contentHash: dsMockUtils.createMockDocumentHash({
           H128: dsMockUtils.createMockU8aFixed(contentHash, true),
         }),
-        doc_type: dsMockUtils.createMockOption(
+        docType: dsMockUtils.createMockOption(
           type ? dsMockUtils.createMockDocumentType(type) : null
         ),
-        filing_date: dsMockUtils.createMockOption(
+        filingDate: dsMockUtils.createMockOption(
           filedAt ? dsMockUtils.createMockMoment(new BigNumber(filedAt.getTime())) : null
         ),
-        /* eslint-enable @typescript-eslint/naming-convention */
       })
     );
     documentEntries = [];

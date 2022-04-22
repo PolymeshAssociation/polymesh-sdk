@@ -1,3 +1,8 @@
+import {
+  PolymeshPrimitivesComplianceManagerAssetCompliance,
+  PolymeshPrimitivesComplianceManagerComplianceRequirement,
+  PolymeshPrimitivesCondition,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import {
   ComplianceRequirement,
@@ -29,7 +34,7 @@ describe('addAssetRequirement procedure', () => {
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let requirementToComplianceRequirementStub: sinon.SinonStub<
     [InputRequirement, Context],
-    ComplianceRequirement
+    PolymeshPrimitivesComplianceManagerComplianceRequirement
   >;
   let ticker: string;
   let conditions: Condition[];
@@ -119,18 +124,16 @@ describe('addAssetRequirement procedure', () => {
 
   it('should add an add compliance requirement transaction to the queue', async () => {
     const fakeConditions = ['condition'] as unknown as Condition[];
-    const fakeSenderConditions = 'senderConditions' as unknown as MeshCondition[];
-    const fakeReceiverConditions = 'receiverConditions' as unknown as MeshCondition[];
+    const fakeSenderConditions = 'senderConditions' as unknown as PolymeshPrimitivesCondition[];
+    const fakeReceiverConditions = 'receiverConditions' as unknown as PolymeshPrimitivesCondition[];
 
     requirementToComplianceRequirementStub
       .withArgs({ conditions: fakeConditions, id: new BigNumber(1) }, mockContext)
       .returns(
         dsMockUtils.createMockComplianceRequirement({
-          /* eslint-disable @typescript-eslint/naming-convention */
-          sender_conditions: fakeSenderConditions,
-          receiver_conditions: fakeReceiverConditions,
+          senderConditions: fakeSenderConditions,
+          receiverConditions: fakeReceiverConditions,
           id: dsMockUtils.createMockU32(new BigNumber(1)),
-          /* eslint-enable @typescript-eslint/naming-convention */
         })
       );
 

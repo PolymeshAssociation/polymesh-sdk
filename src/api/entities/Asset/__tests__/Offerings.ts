@@ -1,5 +1,7 @@
+import { Bytes } from '@polkadot/types';
+import { PalletStoFundraiser } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { Fundraiser, FundraiserName, Ticker } from 'polymesh-types/types';
+import { FundraiserName, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Asset, Context, Namespace, Offering, TransactionQueue } from '~/internal';
@@ -119,16 +121,16 @@ describe('Offerings class', () => {
 
   describe('method: get', () => {
     let rawTicker: Ticker;
-    let rawName: FundraiserName;
+    let rawName: Bytes;
 
     let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
     let fundraiserToOfferingDetailsStub: sinon.SinonStub<
-      [Fundraiser, FundraiserName, Context],
+      [PalletStoFundraiser, Bytes, Context],
       OfferingDetails
     >;
 
     let details: OfferingDetails[];
-    let fundraisers: Fundraiser[];
+    let fundraisers: PalletStoFundraiser[];
 
     beforeAll(() => {
       rawTicker = dsMockUtils.createMockTicker(ticker);
@@ -140,7 +142,7 @@ describe('Offerings class', () => {
 
       const creator = entityMockUtils.getIdentityInstance();
       const name = 'someSto';
-      rawName = dsMockUtils.createMockFundraiserName(name);
+      rawName = dsMockUtils.createMockBytes(name);
       const offeringPortfolio = entityMockUtils.getDefaultPortfolioInstance();
       const raisingPortfolio = entityMockUtils.getDefaultPortfolioInstance();
       const venue = entityMockUtils.getVenueInstance();

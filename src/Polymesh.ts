@@ -101,18 +101,18 @@ export class Polymesh {
 
     await wsp.open();
 
-    const { result: version } = await wsp.sendRequest(SYSTEM_VERSION_RPC_CALL);
+    // const { result: version } = await wsp.sendRequest(SYSTEM_VERSION_RPC_CALL);
 
-    if (!satisfies(version, SUPPORTED_VERSION_RANGE)) {
-      throw new PolymeshError({
-        code: ErrorCode.FatalError,
-        message: 'Unsupported Polymesh version. Please upgrade the SDK',
-        data: {
-          polymeshVersion: version,
-          supportedVersionRange: SUPPORTED_VERSION_RANGE,
-        },
-      });
-    }
+    // if (!satisfies(version, SUPPORTED_VERSION_RANGE)) {
+    //   throw new PolymeshError({
+    //     code: ErrorCode.FatalError,
+    //     message: 'Unsupported Polymesh version. Please upgrade the SDK',
+    //     data: {
+    //       polymeshVersion: version,
+    //       supportedVersionRange: SUPPORTED_VERSION_RANGE,
+    //     },
+    //   });
+    // }
 
     await wsp.close();
 

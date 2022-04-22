@@ -103,17 +103,15 @@ describe('Documents class', () => {
           dsMockUtils.createMockDocument({
             uri: dsMockUtils.createMockDocumentUri(uri),
             name: dsMockUtils.createMockDocumentName(name),
-            /* eslint-disable @typescript-eslint/naming-convention */
-            content_hash: dsMockUtils.createMockDocumentHash({
+            contentHash: dsMockUtils.createMockDocumentHash({
               H128: dsMockUtils.createMockU8aFixed(contentHash, true),
             }),
-            doc_type: dsMockUtils.createMockOption(
+            docType: dsMockUtils.createMockOption(
               type ? dsMockUtils.createMockDocumentType(type) : null
             ),
-            filing_date: dsMockUtils.createMockOption(
+            filingDate: dsMockUtils.createMockOption(
               filedAt ? dsMockUtils.createMockMoment(new BigNumber(filedAt.getTime())) : null
             ),
-            /* eslint-enable @typescript-eslint/naming-convention */
           })
         )
       );

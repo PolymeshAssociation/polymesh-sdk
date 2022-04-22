@@ -1,7 +1,7 @@
 import { u64 } from '@polkadot/types';
 import { Permill } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import { ScopeId, Ticker, TransferManager } from 'polymesh-types/types';
+import { ScopeId, Ticker, TransferCondition } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -31,7 +31,7 @@ describe('setTransferRestrictions procedure', () => {
   let mockContext: Mocked<Context>;
   let transferRestrictionToTransferManagerStub: sinon.SinonStub<
     [TransferRestriction, Context],
-    TransferManager
+    TransferCondition
   >;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let stringToScopeIdStub: sinon.SinonStub<[string, Context], ScopeId>;
@@ -44,8 +44,8 @@ describe('setTransferRestrictions procedure', () => {
   let rawTicker: Ticker;
   let rawCount: u64;
   let rawPercentage: Permill;
-  let rawCountTm: TransferManager;
-  let rawPercentageTm: TransferManager;
+  let rawCountTm: TransferCondition;
+  let rawPercentageTm: TransferCondition;
   let rawScopeId: ScopeId;
   let args: SetTransferRestrictionsParams;
 
@@ -55,7 +55,7 @@ describe('setTransferRestrictions procedure', () => {
     entityMockUtils.initMocks();
     transferRestrictionToTransferManagerStub = sinon.stub(
       utilsConversionModule,
-      'transferRestrictionToTransferManager'
+      'transferRestrictionToTransferCondition'
     );
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     stringToScopeIdStub = sinon.stub(utilsConversionModule, 'stringToScopeId');
@@ -74,36 +74,33 @@ describe('setTransferRestrictions procedure', () => {
 
   let addBatchTransactionStub: sinon.SinonStub;
 
-  let addTransferManagerTransaction: PolymeshTx<[Ticker, TransferManager]>;
-  let addExemptedEntitiesTransaction: PolymeshTx<[Ticker, TransferManager, ScopeId[]]>;
-  let removeTransferManagerTransaction: PolymeshTx<[Ticker, TransferManager]>;
-  let removeExemptedEntitiesTransaction: PolymeshTx<[Ticker, TransferManager, ScopeId[]]>;
+  let addTransferManagerTransaction: PolymeshTx<[Ticker, TransferCondition]>;
+  let addExemptedEntitiesTransaction: PolymeshTx<[Ticker, TransferCondition, ScopeId[]]>;
+  let removeTransferManagerTransaction: PolymeshTx<[Ticker, TransferCondition]>;
+  let removeExemptedEntitiesTransaction: PolymeshTx<[Ticker, TransferCondition, ScopeId[]]>;
 
   beforeEach(() => {
-    dsMockUtils.setConstMock('statistics', 'maxTransferManagersPerAsset', {
+    dsMockUtils.setConstMock('statistics', 'maxTransferConditionsPerAsset', {
       returnValue: dsMockUtils.createMockU32(new BigNumber(3)),
     });
 
     addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
 
-    addTransferManagerTransaction = dsMockUtils.createTxStub('statistics', 'addTransferManager');
-    addExemptedEntitiesTransaction = dsMockUtils.createTxStub('statistics', 'addExemptedEntities');
-    removeTransferManagerTransaction = dsMockUtils.createTxStub(
+    addTransferManagerTransaction = dsMockUtils.createTxStub(
       'statistics',
-      'removeTransferManager'
+      'setAssetTransferCompliance'
     );
-    removeExemptedEntitiesTransaction = dsMockUtils.createTxStub(
-      'statistics',
-      'removeExemptedEntities'
-    );
+    addExemptedEntitiesTransaction = dsMockUtils.createTxStub('statistics', 'setEntitiesExempt');
+    removeTransferManagerTransaction = dsMockUtils.createTxStub('statistics', 'setEntitiesExempt');
+    removeExemptedEntitiesTransaction = dsMockUtils.createTxStub('statistics', 'setEntitiesExempt');
 
     mockContext = dsMockUtils.getContextInstance();
 
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawCount = dsMockUtils.createMockU64(count);
     rawPercentage = dsMockUtils.createMockPermill(percentage.multipliedBy(10000));
-    rawCountTm = dsMockUtils.createMockTransferManager({ CountTransferManager: rawCount });
-    rawPercentageTm = dsMockUtils.createMockTransferManager({
+    rawCountTm = dsMockUtils.createMockTransferCondition({ CountTransferManager: rawCount });
+    rawPercentageTm = dsMockUtils.createMockTransferCondition({
       PercentageTransferManager: rawPercentage,
     });
     rawScopeId = dsMockUtils.createMockScopeId(exemptedDid);

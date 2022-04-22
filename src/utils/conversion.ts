@@ -7,6 +7,7 @@ import {
   PalletStoFundraiser,
   PolymeshPrimitivesAuthorizationAuthorizationData,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
+  PolymeshPrimitivesConditionTrustedFor,
   PolymeshPrimitivesConditionTrustedIssuer,
   PolymeshPrimitivesDocument,
   PolymeshPrimitivesIdentityClaimClaimType,
@@ -1132,6 +1133,7 @@ export function agentGroupToPermissionGroupIdentifier(
   } else if (agentGroup.isPolymeshV1PIA) {
     return PermissionGroupType.PolymeshV1Pia;
   } else {
+    console.log('else u32', agentGroup);
     return { custom: u32ToBigNumber(agentGroup.asCustom) };
   }
 }
@@ -1897,8 +1899,8 @@ export function documentHashToString(docHash: DocumentHash): string | undefined 
 export function assetDocumentToDocument(
   { uri, contentHash, name, filedAt, type }: AssetDocument,
   context: Context
-): Document {
-  return context.createType('Document', {
+): PolymeshPrimitivesDocument {
+  return context.createType('PolymeshPrimitivesDocument', {
     uri: stringToDocumentUri(uri, context),
     name: stringToDocumentName(name, context),
     /* eslint-disable @typescript-eslint/naming-convention */
@@ -2243,7 +2245,7 @@ export function meshClaimTypeToClaimType(claimType: MeshClaimType): ClaimType {
     return ClaimType.Jurisdiction;
   }
 
-  if (claimType.isNoData) {
+  if (claimType.isNoType) {
     return ClaimType.NoData;
   }
 
@@ -2375,7 +2377,7 @@ export function trustedIssuerToTrustedClaimIssuer(
 export function trustedClaimIssuerToTrustedIssuer(
   issuer: InputTrustedClaimIssuer,
   context: Context
-): TrustedIssuer {
+): PolymeshPrimitivesConditionTrustedIssuer {
   const { trustedFor: claimTypes, identity } = issuer;
   const did = signerToString(identity);
 
@@ -2384,14 +2386,12 @@ export function trustedClaimIssuerToTrustedIssuer(
   if (!claimTypes) {
     trustedFor = 'Any';
   } else {
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     trustedFor = { Specific: claimTypes };
   }
 
-  return context.createType('TrustedIssuer', {
+  return context.createType('PolymeshPrimitivesConditionTrustedIssuer', {
     issuer: stringToIdentityId(did, context),
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    trusted_for: trustedFor,
+    trustedFor,
   });
 }
 

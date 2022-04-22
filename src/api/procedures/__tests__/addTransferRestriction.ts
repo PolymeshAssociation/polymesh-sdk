@@ -1,7 +1,7 @@
 import { u64 } from '@polkadot/types';
 import { Permill } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import { ScopeId, Ticker, TransferManager } from 'polymesh-types/types';
+import { ScopeId, Ticker, TransferCondition } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -27,9 +27,9 @@ jest.mock(
 
 describe('addTransferRestriction procedure', () => {
   let mockContext: Mocked<Context>;
-  let transferRestrictionToTransferManagerStub: sinon.SinonStub<
+  let transferRestrictionToTransferRestrictionStub: sinon.SinonStub<
     [TransferRestriction, Context],
-    TransferManager
+    TransferCondition
   >;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let ticker: string;
@@ -40,17 +40,17 @@ describe('addTransferRestriction procedure', () => {
   let rawTicker: Ticker;
   let rawCount: u64;
   let rawPercentage: Permill;
-  let rawCountTm: TransferManager;
-  let rawPercentageTm: TransferManager;
+  let rawCountTm: TransferCondition;
+  let rawPercentageTm: TransferCondition;
   let args: AddTransferRestrictionParams;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    transferRestrictionToTransferManagerStub = sinon.stub(
+    transferRestrictionToTransferRestrictionStub = sinon.stub(
       utilsConversionModule,
-      'transferRestrictionToTransferManager'
+      'transferRestrictionToTransferCondition'
     );
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     ticker = 'someTicker';
@@ -62,30 +62,33 @@ describe('addTransferRestriction procedure', () => {
 
   let addBatchTransactionStub: sinon.SinonStub;
 
-  let addTransferManagerTransaction: PolymeshTx<[Ticker, TransferManager]>;
-  let addExemptedEntitiesTransaction: PolymeshTx<[Ticker, TransferManager, ScopeId[]]>;
+  let addTransferManagerTransaction: PolymeshTx<[Ticker, TransferCondition]>;
+  let addExemptedEntitiesTransaction: PolymeshTx<[Ticker, TransferCondition, ScopeId[]]>;
 
   beforeEach(() => {
     addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
 
-    addTransferManagerTransaction = dsMockUtils.createTxStub('statistics', 'addTransferManager');
-    addExemptedEntitiesTransaction = dsMockUtils.createTxStub('statistics', 'addExemptedEntities');
+    addTransferManagerTransaction = dsMockUtils.createTxStub(
+      'statistics',
+      'setAssetTransferCompliance'
+    );
+    addExemptedEntitiesTransaction = dsMockUtils.createTxStub('statistics', 'setEntitiesExempt');
 
     mockContext = dsMockUtils.getContextInstance();
 
-    dsMockUtils.setConstMock('statistics', 'maxTransferManagersPerAsset', {
+    dsMockUtils.setConstMock('statistics', 'maxTransferConditionsPerAsset', {
       returnValue: dsMockUtils.createMockU32(new BigNumber(3)),
     });
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawCount = dsMockUtils.createMockU64(count);
     rawPercentage = dsMockUtils.createMockPermill(percentage.multipliedBy(10000));
-    rawCountTm = dsMockUtils.createMockTransferManager({ CountTransferManager: rawCount });
-    rawPercentageTm = dsMockUtils.createMockTransferManager({
+    rawCountTm = dsMockUtils.createMockTransferCondition({ CountTransferManager: rawCount });
+    rawPercentageTm = dsMockUtils.createMockTransferCondition({
       PercentageTransferManager: rawPercentage,
     });
 
-    transferRestrictionToTransferManagerStub.withArgs(countTm, mockContext).returns(rawCountTm);
-    transferRestrictionToTransferManagerStub
+    transferRestrictionToTransferRestrictionStub.withArgs(countTm, mockContext).returns(rawCountTm);
+    transferRestrictionToTransferRestrictionStub
       .withArgs(percentageTm, mockContext)
       .returns(rawPercentageTm);
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
@@ -113,7 +116,7 @@ describe('addTransferRestriction procedure', () => {
       mockContext
     );
 
-    dsMockUtils.createQueryStub('statistics', 'activeTransferManagers', {
+    dsMockUtils.createQueryStub('statistics', 'activeAssetStats', {
       returnValue: [],
     });
 
@@ -171,7 +174,7 @@ describe('addTransferRestriction procedure', () => {
       mockContext
     );
 
-    dsMockUtils.createQueryStub('statistics', 'activeTransferManagers', {
+    dsMockUtils.createQueryStub('statistics', 'activeAssetStats', {
       returnValue: [],
     });
 
@@ -231,7 +234,7 @@ describe('addTransferRestriction procedure', () => {
       mockContext
     );
 
-    dsMockUtils.createQueryStub('statistics', 'activeTransferManagers', {
+    dsMockUtils.createQueryStub('statistics', 'activeAssetStats', {
       returnValue: [rawCountTm],
     });
 
@@ -256,7 +259,7 @@ describe('addTransferRestriction procedure', () => {
       mockContext
     );
 
-    dsMockUtils.createQueryStub('statistics', 'activeTransferManagers', {
+    dsMockUtils.createQueryStub('statistics', 'activeAssetStats', {
       returnValue: [rawPercentageTm, rawPercentageTm, rawPercentageTm],
     });
 
@@ -283,7 +286,7 @@ describe('addTransferRestriction procedure', () => {
       mockContext
     );
 
-    dsMockUtils.createQueryStub('statistics', 'activeTransferManagers', {
+    dsMockUtils.createQueryStub('statistics', 'activeAssetStats', {
       returnValue: [],
     });
 

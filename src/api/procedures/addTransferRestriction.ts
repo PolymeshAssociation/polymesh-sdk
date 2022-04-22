@@ -56,8 +56,9 @@ export async function prepareAddTransferRestriction(
 
   const maxTransferManagers = u32ToBigNumber(consts.statistics.maxTransferConditionsPerAsset);
 
-  const { requirements: currentTms } = await query.statistics.assetTransferCompliances(ticker);
-  const restrictionAmount = new BigNumber(currentTms.length);
+  const { requirements: currentTransferCompliances } =
+    await query.statistics.assetTransferCompliances(ticker);
+  const restrictionAmount = new BigNumber(currentTransferCompliances.length);
 
   if (restrictionAmount.gte(maxTransferManagers)) {
     throw new PolymeshError({
@@ -75,10 +76,9 @@ export async function prepareAddTransferRestriction(
     value = args.percentage;
   }
 
-  const exists = !!currentTms.find(transferManager => {
-    // const restriction = transferConditionToTransferRestriction(transferManager);
+  const exists = !!currentTransferCompliances.find(transferCondition => {
     const restriction = polymeshPrimitivesTransferComplianceTransferCondition(
-      [transferManager],
+      [transferCondition],
       context
     );
 
@@ -97,7 +97,7 @@ export async function prepareAddTransferRestriction(
   //   context
   // );
   const rawTransferCondition = polymeshPrimitivesTransferComplianceTransferCondition([], context);
-  const newTransferConditions = [...currentTms, rawTransferCondition];
+  const newTransferConditions = [...currentTransferCompliances, rawTransferCondition];
 
   // const rawNewConditions = context.createType('Vec', newTransferConditions);
 

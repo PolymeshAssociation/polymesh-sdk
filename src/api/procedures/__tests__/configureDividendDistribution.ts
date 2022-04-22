@@ -1,14 +1,11 @@
 import { Balance } from '@polkadot/types/interfaces';
+import {
+  PalletCorporateActionsCorporateAction,
+  PalletCorporateActionsDistribution,
+} from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import {
-  CAId,
-  CorporateAction,
-  Distribution,
-  Moment,
-  PortfolioNumber,
-  Ticker,
-} from 'polymesh-types/types';
+import { CAId, Moment, PortfolioNumber, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -511,8 +508,8 @@ describe('configureDividendDistribution procedure', () => {
     const portfolioNumber = new BigNumber(3);
     const did = 'someDid';
 
-    let rawCorporateAction: CorporateAction;
-    let rawDistribution: Distribution;
+    let rawCorporateAction: PalletCorporateActionsCorporateAction;
+    let rawDistribution: PalletCorporateActionsDistribution;
 
     beforeAll(() => {
       entityMockUtils.initMocks();

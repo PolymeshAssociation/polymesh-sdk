@@ -92,7 +92,8 @@ export class NumberedPortfolio extends Portfolio {
         message: "The Portfolio doesn't exist",
       });
     }
-    return bytesToString(rawPortfolioName);
+
+    return rawPortfolioName.toString();
   }
 
   /**

@@ -375,16 +375,14 @@ describe('Identity class', () => {
     });
 
     beforeEach(() => {
-      /* eslint-disable @typescript-eslint/naming-convention */
       assetStub.withArgs(rawTicker).resolves(
         dsMockUtils.createMockSecurityToken({
-          owner_did: dsMockUtils.createMockIdentityId('tokenOwner'),
-          total_supply: dsMockUtils.createMockBalance(new BigNumber(3000)),
+          ownerDid: dsMockUtils.createMockIdentityId('tokenOwner'),
+          totalSupply: dsMockUtils.createMockBalance(new BigNumber(3000)),
           divisible: dsMockUtils.createMockBool(true),
-          asset_type: dsMockUtils.createMockAssetType('EquityCommon'),
+          assetType: dsMockUtils.createMockAssetType('EquityCommon'),
         })
       );
-      /* eslint-enable @typescript-eslint/naming-convention */
     });
 
     it('should return the balance of a given Asset', async () => {

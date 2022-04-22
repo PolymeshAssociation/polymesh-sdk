@@ -99,12 +99,10 @@ describe('Asset class', () => {
 
     beforeEach(() => {
       rawToken = dsMockUtils.createMockSecurityToken({
-        /* eslint-disable @typescript-eslint/naming-convention */
-        owner_did: dsMockUtils.createMockIdentityId(owner),
-        asset_type: dsMockUtils.createMockAssetType(assetType),
+        ownerDid: dsMockUtils.createMockIdentityId(owner),
+        assetType: dsMockUtils.createMockAssetType(assetType),
         divisible: dsMockUtils.createMockBool(isDivisible),
-        total_supply: dsMockUtils.createMockBalance(totalSupply),
-        /* eslint-enable @typescript-eslint/naming-convention */
+        totalSupply: dsMockUtils.createMockBalance(totalSupply),
       });
       rawIuDisabled = dsMockUtils.createMockBool(iuDisabled);
       rawName = dsMockUtils.createMockAssetName(name);
@@ -168,14 +166,12 @@ describe('Asset class', () => {
 
       tokensStub.resolves(
         dsMockUtils.createMockSecurityToken({
-          /* eslint-disable @typescript-eslint/naming-convention */
-          owner_did: dsMockUtils.createMockIdentityId(owner),
-          asset_type: dsMockUtils.createMockAssetType({
+          ownerDid: dsMockUtils.createMockIdentityId(owner),
+          assetType: dsMockUtils.createMockAssetType({
             Custom: dsMockUtils.createMockU32(new BigNumber(10)),
           }),
           divisible: dsMockUtils.createMockBool(isDivisible),
-          total_supply: dsMockUtils.createMockBalance(totalSupply),
-          /* eslint-enable @typescript-eslint/naming-convention */
+          totalSupply: dsMockUtils.createMockBalance(totalSupply),
         })
       );
 
@@ -613,10 +609,7 @@ describe('Asset class', () => {
     });
 
     beforeEach(() => {
-      investorCountPerAssetStub = dsMockUtils.createQueryStub(
-        'statistics',
-        'investorCountPerAsset'
-      );
+      investorCountPerAssetStub = dsMockUtils.createQueryStub('statistics', 'assetStats');
     });
 
     it('should return the amount of unique investors that hold the Asset', async () => {

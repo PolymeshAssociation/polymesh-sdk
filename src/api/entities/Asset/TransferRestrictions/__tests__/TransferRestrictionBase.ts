@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { TransferManager } from 'polymesh-types/types';
+import { TransferCondition } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -258,8 +258,8 @@ describe('TransferRestrictionBase class', () => {
     let scopeId: string;
     let countRestriction: CountTransferRestriction;
     let percentageRestriction: PercentageTransferRestriction;
-    let rawCountRestriction: TransferManager;
-    let rawPercentageRestriction: TransferManager;
+    let rawCountRestriction: TransferCondition;
+    let rawPercentageRestriction: TransferCondition;
 
     beforeAll(() => {
       scopeId = 'someScopeId';
@@ -271,10 +271,10 @@ describe('TransferRestrictionBase class', () => {
         exemptedIds: [scopeId],
         percentage: new BigNumber(49),
       };
-      rawCountRestriction = dsMockUtils.createMockTransferManager({
+      rawCountRestriction = dsMockUtils.createMockTransferCondition({
         CountTransferManager: dsMockUtils.createMockU64(countRestriction.count),
       });
-      rawPercentageRestriction = dsMockUtils.createMockTransferManager({
+      rawPercentageRestriction = dsMockUtils.createMockTransferCondition({
         PercentageTransferManager: dsMockUtils.createMockPermill(
           percentageRestriction.percentage.multipliedBy(10000)
         ),
@@ -284,13 +284,13 @@ describe('TransferRestrictionBase class', () => {
     beforeEach(() => {
       context = dsMockUtils.getContextInstance();
       asset = entityMockUtils.getAssetInstance();
-      dsMockUtils.setConstMock('statistics', 'maxTransferManagersPerAsset', {
+      dsMockUtils.setConstMock('statistics', 'maxStatsPerAsset', {
         returnValue: dsMockUtils.createMockU32(new BigNumber(3)),
       });
-      dsMockUtils.createQueryStub('statistics', 'activeTransferManagers', {
+      dsMockUtils.createQueryStub('statistics', 'assetTransferCompliances', {
         returnValue: [rawCountRestriction, rawPercentageRestriction],
       });
-      dsMockUtils.createQueryStub('statistics', 'exemptEntities', {
+      dsMockUtils.createQueryStub('statistics', 'transferConditionExemptEntities', {
         entries: [[[null, dsMockUtils.createMockScopeId(scopeId)], true]],
       });
     });
@@ -320,7 +320,7 @@ describe('TransferRestrictionBase class', () => {
         availableSlots: new BigNumber(1),
       });
 
-      dsMockUtils.createQueryStub('statistics', 'exemptEntities', {
+      dsMockUtils.createQueryStub('statistics', 'transferConditionExemptEntities', {
         entries: [],
       });
 

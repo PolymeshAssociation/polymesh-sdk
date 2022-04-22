@@ -89,7 +89,7 @@ describe('modifyVenue procedure', () => {
     const description = 'someDetails';
     const type = VenueType.Exchange;
 
-    const rawDetails = dsMockUtils.createMockVenueDetails(description);
+    const rawDetails = dsMockUtils.createMockBytes(description);
     const rawType = dsMockUtils.createMockVenueType(type);
     const rawId = dsMockUtils.createMockU64(venueId);
 

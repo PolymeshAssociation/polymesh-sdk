@@ -1,6 +1,7 @@
 import { Moment } from '@polkadot/types/interfaces';
+import { PolymeshPrimitivesAuthorizationAuthorizationData } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { AuthorizationData, Signatory } from 'polymesh-types/types';
+import { Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { getAuthorization, Params, prepareSetCustodian } from '~/api/procedures/setCustodian';
@@ -46,7 +47,7 @@ describe('setCustodian procedure', () => {
   let addTransactionStub: sinon.SinonStub;
   let authorizationToAuthorizationDataStub: sinon.SinonStub<
     [Authorization, Context],
-    AuthorizationData
+    PolymeshPrimitivesAuthorizationAuthorizationData
   >;
   let dateToMomentStub: sinon.SinonStub<[Date, Context], Moment>;
   let signerToStringStub: sinon.SinonStub<[string | Identity | Account], string>;

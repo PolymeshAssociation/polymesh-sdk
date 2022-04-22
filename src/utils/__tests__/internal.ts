@@ -1,6 +1,7 @@
+import { Bytes } from '@polkadot/types';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { IdentityId, ModuleName, PortfolioName } from 'polymesh-types/types';
+import { IdentityId, ModuleName } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Asset, Context, PostTransactionValue, Procedure } from '~/internal';
@@ -737,7 +738,7 @@ describe('getPortfolioIdByName', () => {
   let context: Context;
   let nameToNumberStub: sinon.SinonStub;
   let portfoliosStub: sinon.SinonStub;
-  let rawName: PortfolioName;
+  let rawName: Bytes;
   let identityId: IdentityId;
 
   beforeAll(() => {
@@ -747,7 +748,7 @@ describe('getPortfolioIdByName', () => {
 
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
-    rawName = dsMockUtils.createMockText('someName');
+    rawName = dsMockUtils.createMockBytes('someName');
     identityId = dsMockUtils.createMockIdentityId('someDid');
     nameToNumberStub = dsMockUtils.createQueryStub('portfolio', 'nameToNumber');
     portfoliosStub = dsMockUtils.createQueryStub('portfolio', 'portfolios');

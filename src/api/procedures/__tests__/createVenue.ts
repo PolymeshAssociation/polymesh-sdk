@@ -1,6 +1,7 @@
+import { Bytes } from '@polkadot/types';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { VenueDetails, VenueType as MeshVenueType } from 'polymesh-types/types';
+import { VenueType as MeshVenueType } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { createCreateVenueResolver, prepareCreateVenue } from '~/api/procedures/createVenue';
@@ -14,7 +15,7 @@ import * as utilsInternalModule from '~/utils/internal';
 
 describe('createVenue procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToVenueDetailsStub: sinon.SinonStub<[string, Context], VenueDetails>;
+  let stringToVenueDetailsStub: sinon.SinonStub<[string, Context], Bytes>;
   let venueTypeToMeshVenueTypeStub: sinon.SinonStub<[VenueType, Context], MeshVenueType>;
   let addTransactionStub: sinon.SinonStub;
   let createVenueTransaction: PolymeshTx<unknown[]>;
@@ -58,7 +59,7 @@ describe('createVenue procedure', () => {
 
     const proc = procedureMockUtils.getInstance<CreateVenueParams, Venue>(mockContext);
 
-    stringToVenueDetailsStub.withArgs(description, mockContext).returns(rawDetails);
+    stringToVenueDetailsStub.withArgs(description, mockContext).returns(rawDetails as any);
     venueTypeToMeshVenueTypeStub.withArgs(type, mockContext).returns(rawType);
 
     const result = await prepareCreateVenue.call(proc, args);

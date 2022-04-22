@@ -23,7 +23,6 @@ import {
   ScopeId,
   SettlementType,
   TargetIdentities,
-  TransferManager,
   TrustedIssuer,
   VenueDetails,
 } from 'polymesh-types/polymesh';
@@ -47,6 +46,7 @@ import {
   Scope as MeshScope,
   Signatory,
   Ticker,
+  TransferCondition,
   TxTags,
   VenueType as MeshVenueType,
 } from 'polymesh-types/types';
@@ -2652,9 +2652,10 @@ describe('stringToDocumentUri and documentUriToString', () => {
   describe('documentUriToString', () => {
     it('documentUriToString should convert a polkadot DocumentUri object to a string', () => {
       const fakeResult = 'someDocumentUri';
-      const docUri = dsMockUtils.createMockDocumentUri(fakeResult);
+      // const docUri = dsMockUtils.createMockDocumentUri(fakeResult);
+      const textDocUri = dsMockUtils.createMockBytes(fakeResult);
 
-      const result = documentUriToString(docUri);
+      const result = documentUriToString(textDocUri);
       expect(result).toEqual(fakeResult);
     });
   });
@@ -2952,11 +2953,9 @@ describe('assetDocumentToDocument and documentToAssetDocument', () => {
       let doc = dsMockUtils.createMockDocument({
         uri: dsMockUtils.createMockDocumentUri(uri),
         name: dsMockUtils.createMockDocumentName(name),
-        /* eslint-disable @typescript-eslint/naming-convention */
-        content_hash: dsMockUtils.createMockDocumentHash('None'),
-        doc_type: dsMockUtils.createMockOption(),
-        filing_date: dsMockUtils.createMockOption(),
-        /* eslint-enable @typescript-eslint/naming-convention */
+        contentHash: dsMockUtils.createMockDocumentHash('None'),
+        docType: dsMockUtils.createMockOption(),
+        filingDate: dsMockUtils.createMockOption(),
       });
 
       let result = documentToAssetDocument(doc);
@@ -2972,15 +2971,13 @@ describe('assetDocumentToDocument and documentToAssetDocument', () => {
       doc = dsMockUtils.createMockDocument({
         uri: dsMockUtils.createMockDocumentUri(uri),
         name: dsMockUtils.createMockDocumentName(name),
-        /* eslint-disable @typescript-eslint/naming-convention */
-        content_hash: dsMockUtils.createMockDocumentHash({
+        contentHash: dsMockUtils.createMockDocumentHash({
           H128: dsMockUtils.createMockU8aFixed(contentHash, true),
         }),
-        doc_type: dsMockUtils.createMockOption(dsMockUtils.createMockDocumentType(type)),
-        filing_date: dsMockUtils.createMockOption(
+        docType: dsMockUtils.createMockOption(dsMockUtils.createMockDocumentType(type)),
+        filingDate: dsMockUtils.createMockOption(
           dsMockUtils.createMockMoment(new BigNumber(filedAt.getTime()))
         ),
-        /* eslint-enable @typescript-eslint/naming-convention */
       });
 
       result = documentToAssetDocument(doc);
@@ -3050,7 +3047,7 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
         asset_frozen: true,
         statistics_result: [
           {
-            tm: {
+            condition: {
               CountTransferManager: dsMockUtils.createMockU64(new BigNumber(100)),
             },
             result: false,
@@ -3117,7 +3114,7 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
         asset_frozen: false,
         statistics_result: [
           {
-            tm: {
+            condition: {
               CountTransferManager: dsMockUtils.createMockU64(new BigNumber(100)),
             },
             result: false,
@@ -3964,24 +3961,24 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
       const issuers = issuerDids.map(({ identity }) =>
         dsMockUtils.createMockTrustedIssuer({
           issuer: dsMockUtils.createMockIdentityId(identity.did),
-          trusted_for: dsMockUtils.createMockTrustedFor(),
+          trustedFor: dsMockUtils.createMockTrustedFor(),
         })
       );
       const rawConditions = [
         dsMockUtils.createMockCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+          conditionType: dsMockUtils.createMockConditionType({
             IsPresent: dsMockUtils.createMockClaim({ KnowYourCustomer: scope }),
           }),
           issuers,
         }),
         dsMockUtils.createMockCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+          conditionType: dsMockUtils.createMockConditionType({
             IsAbsent: dsMockUtils.createMockClaim({ BuyLockup: scope }),
           }),
           issuers,
         }),
         dsMockUtils.createMockCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+          conditionType: dsMockUtils.createMockConditionType({
             IsNoneOf: [
               dsMockUtils.createMockClaim({ Blocked: scope }),
               dsMockUtils.createMockClaim({ SellLockup: scope }),
@@ -3990,7 +3987,7 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
           issuers,
         }),
         dsMockUtils.createMockCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+          conditionType: dsMockUtils.createMockConditionType({
             IsAnyOf: [
               dsMockUtils.createMockClaim({ Exempted: scope }),
               dsMockUtils.createMockClaim({
@@ -4001,7 +3998,7 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
           issuers,
         }),
         dsMockUtils.createMockCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+          conditionType: dsMockUtils.createMockConditionType({
             IsIdentity: dsMockUtils.createMockTargetIdentity({
               Specific: dsMockUtils.createMockIdentityId(targetIdentityDid),
             }),
@@ -4009,21 +4006,21 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
           issuers,
         }),
         dsMockUtils.createMockCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+          conditionType: dsMockUtils.createMockConditionType({
             IsIdentity: dsMockUtils.createMockTargetIdentity('ExternalAgent'),
           }),
           issuers,
         }),
       ];
       const complianceRequirement = dsMockUtils.createMockComplianceRequirement({
-        sender_conditions: [
+        senderConditions: [
           rawConditions[0],
           rawConditions[2],
           rawConditions[2],
           rawConditions[3],
           rawConditions[4],
         ],
-        receiver_conditions: [
+        receiverConditions: [
           rawConditions[0],
           rawConditions[1],
           rawConditions[1],
@@ -4365,13 +4362,13 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
     const issuers = issuerDids.map(({ identity: { did } }) =>
       dsMockUtils.createMockTrustedIssuer({
         issuer: dsMockUtils.createMockIdentityId(did),
-        trusted_for: dsMockUtils.createMockTrustedFor(),
+        trustedFor: dsMockUtils.createMockTrustedFor(),
       })
     );
     const rawConditions = [
       dsMockUtils.createMockConditionResult({
         condition: dsMockUtils.createMockCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+          conditionType: dsMockUtils.createMockConditionType({
             IsPresent: dsMockUtils.createMockClaim({ KnowYourCustomer: scope }),
           }),
           issuers,
@@ -4380,7 +4377,7 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
       }),
       dsMockUtils.createMockConditionResult({
         condition: dsMockUtils.createMockCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+          conditionType: dsMockUtils.createMockConditionType({
             IsAbsent: dsMockUtils.createMockClaim({ BuyLockup: scope }),
           }),
           issuers,
@@ -4389,7 +4386,7 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
       }),
       dsMockUtils.createMockConditionResult({
         condition: dsMockUtils.createMockCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+          conditionType: dsMockUtils.createMockConditionType({
             IsNoneOf: [
               dsMockUtils.createMockClaim({ Blocked: scope }),
               dsMockUtils.createMockClaim({ SellLockup: scope }),
@@ -4401,7 +4398,7 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
       }),
       dsMockUtils.createMockConditionResult({
         condition: dsMockUtils.createMockCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+          conditionType: dsMockUtils.createMockConditionType({
             IsAnyOf: [
               dsMockUtils.createMockClaim({ Exempted: scope }),
               dsMockUtils.createMockClaim({
@@ -4415,7 +4412,7 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
       }),
       dsMockUtils.createMockConditionResult({
         condition: dsMockUtils.createMockCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+          conditionType: dsMockUtils.createMockConditionType({
             IsIdentity: dsMockUtils.createMockTargetIdentity({
               Specific: dsMockUtils.createMockIdentityId(targetIdentityDid),
             }),
@@ -4426,7 +4423,7 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
       }),
       dsMockUtils.createMockConditionResult({
         condition: dsMockUtils.createMockCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+          conditionType: dsMockUtils.createMockConditionType({
             IsIdentity: dsMockUtils.createMockTargetIdentity('ExternalAgent'),
           }),
           issuers,
@@ -4435,14 +4432,14 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
       }),
     ];
     const complianceRequirement = dsMockUtils.createMockComplianceRequirementResult({
-      sender_conditions: [
+      senderConditions: [
         rawConditions[0],
         rawConditions[2],
         rawConditions[2],
         rawConditions[3],
         rawConditions[4],
       ],
-      receiver_conditions: [
+      receiverConditions: [
         rawConditions[0],
         rawConditions[1],
         rawConditions[1],
@@ -4562,14 +4559,14 @@ describe('assetComplianceResultToCompliance', () => {
     const issuers = issuerDids.map(({ identity: { did } }) =>
       dsMockUtils.createMockTrustedIssuer({
         issuer: dsMockUtils.createMockIdentityId(did),
-        trusted_for: dsMockUtils.createMockTrustedFor(),
+        trustedFor: dsMockUtils.createMockTrustedFor(),
       })
     );
     const rawConditions = [
       /* eslint-disable @typescript-eslint/naming-convention */
       dsMockUtils.createMockConditionResult({
         condition: dsMockUtils.createMockCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+          conditionType: dsMockUtils.createMockConditionType({
             IsPresent: dsMockUtils.createMockClaim({ KnowYourCustomer: scope }),
           }),
           issuers,
@@ -4578,7 +4575,7 @@ describe('assetComplianceResultToCompliance', () => {
       }),
       dsMockUtils.createMockConditionResult({
         condition: dsMockUtils.createMockCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+          conditionType: dsMockUtils.createMockConditionType({
             IsAbsent: dsMockUtils.createMockClaim({ BuyLockup: scope }),
           }),
           issuers,
@@ -4587,7 +4584,7 @@ describe('assetComplianceResultToCompliance', () => {
       }),
       dsMockUtils.createMockConditionResult({
         condition: dsMockUtils.createMockCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+          conditionType: dsMockUtils.createMockConditionType({
             IsNoneOf: [
               dsMockUtils.createMockClaim({ Blocked: scope }),
               dsMockUtils.createMockClaim({ SellLockup: scope }),
@@ -4599,7 +4596,7 @@ describe('assetComplianceResultToCompliance', () => {
       }),
       dsMockUtils.createMockConditionResult({
         condition: dsMockUtils.createMockCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+          conditionType: dsMockUtils.createMockConditionType({
             IsAnyOf: [
               dsMockUtils.createMockClaim({ Exempted: scope }),
               dsMockUtils.createMockClaim({
@@ -4614,8 +4611,8 @@ describe('assetComplianceResultToCompliance', () => {
     ];
 
     const rawRequirements = dsMockUtils.createMockComplianceRequirementResult({
-      sender_conditions: [rawConditions[0], rawConditions[2], rawConditions[3]],
-      receiver_conditions: [rawConditions[0], rawConditions[1], rawConditions[3]],
+      senderConditions: [rawConditions[0], rawConditions[2], rawConditions[3]],
+      receiverConditions: [rawConditions[0], rawConditions[1], rawConditions[3]],
       id: dsMockUtils.createMockU32(new BigNumber(1)),
       result: dsMockUtils.createMockBool(false),
     });
@@ -4623,7 +4620,7 @@ describe('assetComplianceResultToCompliance', () => {
 
     let assetComplianceResult = dsMockUtils.createMockAssetComplianceResult({
       paused: dsMockUtils.createMockBool(true),
-      requirements: [rawRequirements],
+      requirements: [rawRequirements as any],
       result: dsMockUtils.createMockBool(true),
     });
 
@@ -4635,7 +4632,7 @@ describe('assetComplianceResultToCompliance', () => {
 
     assetComplianceResult = dsMockUtils.createMockAssetComplianceResult({
       paused: dsMockUtils.createMockBool(false),
-      requirements: [rawRequirements],
+      requirements: [rawRequirements as any],
       result: dsMockUtils.createMockBool(true),
     });
 
@@ -5282,7 +5279,7 @@ describe('trustedClaimIssuerToTrustedIssuer and trustedIssuerToTrustedClaimIssue
       let trustedIssuer = dsMockUtils.createMockTrustedIssuer({
         issuer: dsMockUtils.createMockIdentityId(did),
         // eslint-disable-next-line @typescript-eslint/naming-convention
-        trusted_for: dsMockUtils.createMockTrustedFor('Any'),
+        trustedFor: dsMockUtils.createMockTrustedFor('Any'),
       });
 
       let result = primitiveTrustedIssuerToTrustedClaimIssuer(trustedIssuer, context);
@@ -5295,7 +5292,7 @@ describe('trustedClaimIssuerToTrustedIssuer and trustedIssuerToTrustedClaimIssue
       trustedIssuer = dsMockUtils.createMockTrustedIssuer({
         issuer: dsMockUtils.createMockIdentityId(did),
         // eslint-disable-next-line @typescript-eslint/naming-convention
-        trusted_for: dsMockUtils.createMockTrustedFor({
+        trustedFor: dsMockUtils.createMockTrustedFor({
           Specific: [dsMockUtils.createMockClaimType(ClaimType.SellLockup)],
         }),
       });
@@ -5483,20 +5480,20 @@ describe('transferRestrictionToTransferManager', () => {
     sinon.restore();
   });
 
-  it('should convert a Transfer Restriction to a polkadot TransferManager object', () => {
+  it('should convert a Transfer Restriction to a polkadot TransferCondition object', () => {
     const count = new BigNumber(10);
     let value = {
       type: TransferRestrictionType.Count,
       value: count,
     };
-    const fakeResult = 'TransferManagerEnum' as unknown as TransferManager;
+    const fakeResult = 'TransferConditionEnum' as unknown as TransferCondition;
     const context = dsMockUtils.getContextInstance();
 
     const rawCount = dsMockUtils.createMockU64(count);
 
     const createTypeStub = context.createType;
     createTypeStub
-      .withArgs('TransferManager', { CountTransferManager: rawCount })
+      .withArgs('TransferCondition', { CountTransferManager: rawCount })
       .returns(fakeResult);
 
     createTypeStub.withArgs('u64', count.toString()).returns(rawCount);
@@ -5513,7 +5510,7 @@ describe('transferRestrictionToTransferManager', () => {
     };
 
     createTypeStub
-      .withArgs('TransferManager', { PercentageTransferManager: rawPercentage })
+      .withArgs('TransferCondition', { PercentageTransferManager: rawPercentage })
       .returns(fakeResult);
 
     createTypeStub
@@ -5531,7 +5528,7 @@ describe('transferRestrictionToTransferManager', () => {
       type: TransferRestrictionType.Count,
       value: count,
     };
-    let transferManager = dsMockUtils.createMockTransferManager({
+    let transferManager = dsMockUtils.createMockTransferCondition({
       CountTransferManager: dsMockUtils.createMockU64(count),
     });
 
@@ -5543,7 +5540,7 @@ describe('transferRestrictionToTransferManager', () => {
       type: TransferRestrictionType.Percentage,
       value: percentage,
     };
-    transferManager = dsMockUtils.createMockTransferManager({
+    transferManager = dsMockUtils.createMockTransferCondition({
       PercentageTransferManager: dsMockUtils.createMockPermill(percentage.multipliedBy(10000)),
     });
 
@@ -5859,7 +5856,7 @@ describe('fundraiserToOfferingDetails', () => {
     };
 
     const creator = dsMockUtils.createMockIdentityId(someDid);
-    const rawName = dsMockUtils.createMockFundraiserName(name);
+    const rawName = dsMockUtils.createMockBytes(name);
     const offeringPortfolio = dsMockUtils.createMockPortfolioId({
       did: creator,
       kind: dsMockUtils.createMockPortfolioKind('Default'),
@@ -6347,7 +6344,7 @@ describe('meshCorporateActionToCorporateActionParams', () => {
     /* eslint-enable @typescript-eslint/naming-convention */
 
     let corporateAction = dsMockUtils.createMockCorporateAction(params);
-    const details = dsMockUtils.createMockText(description);
+    const details = dsMockUtils.createMockBytes(description);
 
     let result = meshCorporateActionToCorporateActionParams(corporateAction, details, context);
 

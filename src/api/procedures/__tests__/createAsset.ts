@@ -1,12 +1,12 @@
 import { bool, Option, Vec } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
+import { PolymeshPrimitivesDocument } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import {
   AssetIdentifier,
   AssetName,
   AssetType,
-  Document,
   FundingRoundName,
   Ticker,
   TxTags,
@@ -59,7 +59,10 @@ describe('createAsset procedure', () => {
     AssetIdentifier
   >;
   let stringToFundingRoundNameStub: sinon.SinonStub<[string, Context], FundingRoundName>;
-  let assetDocumentToDocumentStub: sinon.SinonStub<[AssetDocument, Context], Document>;
+  let assetDocumentToDocumentStub: sinon.SinonStub<
+    [AssetDocument, Context],
+    PolymeshPrimitivesDocument
+  >;
   let ticker: string;
   let name: string;
   let initialSupply: BigNumber;
@@ -77,7 +80,7 @@ describe('createAsset procedure', () => {
   let rawIdentifiers: AssetIdentifier[];
   let rawFundingRound: FundingRoundName;
   let rawDisableIu: bool;
-  let rawDocuments: Document[];
+  let rawDocuments: PolymeshPrimitivesDocument[];
   let args: Params;
   let protocolFees: BigNumber[];
 
@@ -141,17 +144,15 @@ describe('createAsset procedure', () => {
       dsMockUtils.createMockDocument({
         name: dsMockUtils.createMockDocumentName(docName),
         uri: dsMockUtils.createMockDocumentUri(uri),
-        /* eslint-disable @typescript-eslint/naming-convention */
-        content_hash: dsMockUtils.createMockDocumentHash({
+        contentHash: dsMockUtils.createMockDocumentHash({
           H128: dsMockUtils.createMockU8aFixed(contentHash),
         }),
-        doc_type: dsMockUtils.createMockOption(
+        docType: dsMockUtils.createMockOption(
           type ? dsMockUtils.createMockDocumentType(type) : null
         ),
-        filing_date: dsMockUtils.createMockOption(
+        filingDate: dsMockUtils.createMockOption(
           filedAt ? dsMockUtils.createMockMoment(new BigNumber(filedAt.getTime())) : null
         ),
-        /* eslint-enable @typescript-eslint/naming-convention */
       })
     );
     rawFundingRound = dsMockUtils.createMockFundingRoundName(fundingRound);
