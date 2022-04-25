@@ -2,7 +2,7 @@ import { Option, u32, u64 } from '@polkadot/types';
 import { Balance, Moment } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { PortfolioId, SettlementType, Ticker, TxTags } from 'polymesh-types/types';
+import { PortfolioId, SettlementType, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -22,7 +22,14 @@ import {
 } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { InstructionType, PortfolioLike, RoleType, TickerReservationStatus } from '~/types';
+import {
+  ErrorCode,
+  InstructionType,
+  PortfolioLike,
+  RoleType,
+  TickerReservationStatus,
+  TxTags,
+} from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
@@ -39,9 +46,9 @@ describe('addInstruction procedure', () => {
   let portfolioLikeToPortfolioStub: sinon.SinonStub;
   let getCustodianStub: sinon.SinonStub;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let numberToU64Stub: sinon.SinonStub<[number | BigNumber, Context], u64>;
-  let numberToBalanceStub: sinon.SinonStub<
-    [number | BigNumber, Context, (boolean | undefined)?],
+  let bigNumberToU64Stub: sinon.SinonStub<[BigNumber, Context], u64>;
+  let bigNumberToBalanceStub: sinon.SinonStub<
+    [BigNumber, Context, (boolean | undefined)?],
     Balance
   >;
   let endConditionToSettlementTypeStub: sinon.SinonStub<
@@ -63,7 +70,7 @@ describe('addInstruction procedure', () => {
   let toDid: string;
   let fromPortfolio: DefaultPortfolio | NumberedPortfolio;
   let toPortfolio: DefaultPortfolio | NumberedPortfolio;
-  let token: string;
+  let asset: string;
   let tradeDate: Date;
   let valueDate: Date;
   let endBlock: BigNumber;
@@ -73,7 +80,7 @@ describe('addInstruction procedure', () => {
   let rawAmount: Balance;
   let rawFrom: PortfolioId;
   let rawTo: PortfolioId;
-  let rawToken: Ticker;
+  let rawTicker: Ticker;
   let rawTradeDate: Moment;
   let rawValueDate: Moment;
   let rawEndBlock: u32;
@@ -87,7 +94,11 @@ describe('addInstruction procedure', () => {
   beforeAll(() => {
     dsMockUtils.initMocks({
       contextOptions: {
-        balance: { free: new BigNumber(500), locked: new BigNumber(0), total: new BigNumber(500) },
+        balance: {
+          free: new BigNumber(500),
+          locked: new BigNumber(0),
+          total: new BigNumber(500),
+        },
       },
     });
     procedureMockUtils.initMocks();
@@ -101,10 +112,10 @@ describe('addInstruction procedure', () => {
       'portfolioLikeToPortfolioId'
     );
     portfolioLikeToPortfolioStub = sinon.stub(utilsConversionModule, 'portfolioLikeToPortfolio');
-    getCustodianStub = entityMockUtils.getNumberedPortfolioGetCustodianStub();
+    getCustodianStub = sinon.stub();
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    numberToU64Stub = sinon.stub(utilsConversionModule, 'numberToU64');
-    numberToBalanceStub = sinon.stub(utilsConversionModule, 'numberToBalance');
+    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
+    bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
     endConditionToSettlementTypeStub = sinon.stub(
       utilsConversionModule,
       'endConditionToSettlementType'
@@ -124,13 +135,13 @@ describe('addInstruction procedure', () => {
       did: toDid,
       id: new BigNumber(2),
     });
-    token = 'SOME_TOKEN';
+    asset = 'SOME_ASSET';
     const now = new Date();
     tradeDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     valueDate = new Date(now.getTime() + 24 * 60 * 60 * 1000 + 1);
     endBlock = new BigNumber(1000);
-    rawVenueId = dsMockUtils.createMockU64(venueId.toNumber());
-    rawAmount = dsMockUtils.createMockBalance(amount.toNumber());
+    rawVenueId = dsMockUtils.createMockU64(venueId);
+    rawAmount = dsMockUtils.createMockBalance(amount);
     rawFrom = dsMockUtils.createMockPortfolioId({
       did: dsMockUtils.createMockIdentityId(from),
       kind: dsMockUtils.createMockPortfolioKind('Default'),
@@ -139,35 +150,20 @@ describe('addInstruction procedure', () => {
       did: dsMockUtils.createMockIdentityId(to),
       kind: dsMockUtils.createMockPortfolioKind('Default'),
     });
-    rawToken = dsMockUtils.createMockTicker(token);
-    rawTradeDate = dsMockUtils.createMockMoment(tradeDate.getTime());
-    rawValueDate = dsMockUtils.createMockMoment(valueDate.getTime());
-    rawEndBlock = dsMockUtils.createMockU32(endBlock.toNumber());
+    rawTicker = dsMockUtils.createMockTicker(asset);
+    rawTradeDate = dsMockUtils.createMockMoment(new BigNumber(tradeDate.getTime()));
+    rawValueDate = dsMockUtils.createMockMoment(new BigNumber(valueDate.getTime()));
+    rawEndBlock = dsMockUtils.createMockU32(endBlock);
     rawAuthSettlementType = dsMockUtils.createMockSettlementType('SettleOnAffirmation');
     rawBlockSettlementType = dsMockUtils.createMockSettlementType({ SettleOnBlock: rawEndBlock });
     rawLeg = {
       from: rawFrom,
       to: rawTo,
       amount: rawAmount,
-      asset: rawToken,
-    };
-    args = {
-      venueId,
-      instructions: [
-        {
-          legs: [
-            {
-              from,
-              to,
-              token,
-              amount,
-            },
-          ],
-        },
-      ],
+      asset: rawTicker,
     };
 
-    instruction = (['instruction'] as unknown) as PostTransactionValue<[Instruction]>;
+    instruction = ['instruction'] as unknown as PostTransactionValue<[Instruction]>;
   });
 
   let addAndAuthorizeInstructionTransaction: PolymeshTx<
@@ -193,7 +189,8 @@ describe('addInstruction procedure', () => {
       .getAddBatchTransactionStub()
       .returns([instruction]);
 
-    entityMockUtils.getTickerReservationDetailsStub().resolves({
+    const tickerReservationDetailsStub = sinon.stub();
+    tickerReservationDetailsStub.resolves({
       owner: entityMockUtils.getIdentityInstance(),
       expiryDate: null,
       status: TickerReservationStatus.Free,
@@ -217,9 +214,17 @@ describe('addInstruction procedure', () => {
     portfolioIdToMeshPortfolioIdStub.withArgs({ did: toDid }, mockContext).returns(rawTo);
     getCustodianStub.onCall(0).returns({ did: fromDid });
     getCustodianStub.onCall(1).returns({ did: toDid });
-    stringToTickerStub.withArgs(token, mockContext).returns(rawToken);
-    numberToU64Stub.withArgs(venueId, mockContext).returns(rawVenueId);
-    numberToBalanceStub.withArgs(amount, mockContext).returns(rawAmount);
+    entityMockUtils.configureMocks({
+      numberedPortfolioOptions: {
+        getCustodian: getCustodianStub,
+      },
+      tickerReservationOptions: {
+        details: tickerReservationDetailsStub,
+      },
+    });
+    stringToTickerStub.withArgs(asset, mockContext).returns(rawTicker);
+    bigNumberToU64Stub.withArgs(venueId, mockContext).returns(rawVenueId);
+    bigNumberToBalanceStub.withArgs(amount, mockContext).returns(rawAmount);
     endConditionToSettlementTypeStub
       .withArgs({ type: InstructionType.SettleOnBlock, value: endBlock }, mockContext)
       .returns(rawBlockSettlementType);
@@ -228,6 +233,22 @@ describe('addInstruction procedure', () => {
       .returns(rawAuthSettlementType);
     dateToMomentStub.withArgs(tradeDate, mockContext).returns(rawTradeDate);
     dateToMomentStub.withArgs(valueDate, mockContext).returns(rawValueDate);
+
+    args = {
+      venueId,
+      instructions: [
+        {
+          legs: [
+            {
+              from,
+              to,
+              asset,
+              amount,
+            },
+          ],
+        },
+      ],
+    };
   });
 
   afterEach(() => {
@@ -238,14 +259,34 @@ describe('addInstruction procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the legs array is empty', async () => {
+  it('should throw an error if the instructions array is empty', async () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
       portfoliosToAffirm: [],
+    });
+
+    let error;
+
+    try {
+      await prepareAddInstruction.call(proc, { venueId, instructions: [] });
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('The Instructions array cannot be empty');
+    expect(error.code).toBe(ErrorCode.ValidationError);
+  });
+
+  it('should throw an error if the legs array is empty', async () => {
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
+      portfoliosToAffirm: [],
+    });
+
+    entityMockUtils.configureMocks({
+      venueOptions: { exists: true },
     });
 
     let error;
@@ -257,10 +298,62 @@ describe('addInstruction procedure', () => {
     }
 
     expect(error.message).toBe("The legs array can't be empty");
+    expect(error.code).toBe(ErrorCode.ValidationError);
     expect(error.data.failedInstructionIndexes[0]).toBe(0);
   });
 
-  test('should throw an error if the end block is in the past', async () => {
+  it("should throw an error if the Venue doesn't exist", async () => {
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
+      portfoliosToAffirm: [],
+    });
+
+    entityMockUtils.configureMocks({
+      venueOptions: { exists: false },
+    });
+
+    let error;
+
+    try {
+      await prepareAddInstruction.call(proc, args);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe("The Venue doesn't exist");
+    expect(error.code).toBe(ErrorCode.DataUnavailable);
+  });
+
+  it('should throw an error if the legs array exceeds limit', async () => {
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
+      portfoliosToAffirm: [],
+    });
+
+    entityMockUtils.configureMocks({
+      venueOptions: {
+        exists: true,
+      },
+    });
+
+    let error;
+
+    const legs = Array(11).fill({
+      from,
+      to,
+      amount,
+      asset: entityMockUtils.getAssetInstance({ ticker: asset }),
+    });
+
+    try {
+      await prepareAddInstruction.call(proc, { venueId, instructions: [{ legs }] });
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('The legs array exceeds the maximum allowed length');
+    expect(error.code).toBe(ErrorCode.LimitExceeded);
+  });
+
+  it('should throw an error if the end block is in the past', async () => {
     dsMockUtils.configureMocks({ contextOptions: { latestBlock: new BigNumber(1000) } });
 
     entityMockUtils.configureMocks({
@@ -285,7 +378,7 @@ describe('addInstruction procedure', () => {
                 from,
                 to,
                 amount,
-                token: entityMockUtils.getSecurityTokenInstance({ ticker: token }),
+                asset: entityMockUtils.getAssetInstance({ ticker: asset }),
               },
             ],
             endBlock: new BigNumber(100),
@@ -297,10 +390,11 @@ describe('addInstruction procedure', () => {
     }
 
     expect(error.message).toBe('End block must be a future block');
+    expect(error.code).toBe(ErrorCode.ValidationError);
     expect(error.data.failedInstructionIndexes[0]).toBe(0);
   });
 
-  test('should throw an error if the value date is before the trade date', async () => {
+  it('should throw an error if the value date is before the trade date', async () => {
     dsMockUtils.configureMocks({ contextOptions: { latestBlock: new BigNumber(1000) } });
     entityMockUtils.configureMocks({
       venueOptions: {
@@ -322,7 +416,7 @@ describe('addInstruction procedure', () => {
               {
                 from,
                 to,
-                token,
+                asset: asset,
                 amount,
               },
             ],
@@ -336,10 +430,11 @@ describe('addInstruction procedure', () => {
     }
 
     expect(error.message).toBe('Value date must be after trade date');
+    expect(error.code).toBe(ErrorCode.ValidationError);
     expect(error.data.failedInstructionIndexes[0]).toBe(0);
   });
 
-  test('should add an add and authorize instruction transaction to the queue', async () => {
+  it('should add an add and authorize instruction transaction to the queue', async () => {
     dsMockUtils.configureMocks({ contextOptions: { did: fromDid } });
     entityMockUtils.configureMocks({
       venueOptions: {
@@ -355,16 +450,20 @@ describe('addInstruction procedure', () => {
 
     sinon.assert.calledWith(
       addBatchTransactionStub,
-      addAndAuthorizeInstructionTransaction,
       sinon.match({
+        transactions: [
+          {
+            transaction: addAndAuthorizeInstructionTransaction,
+            args: [rawVenueId, rawAuthSettlementType, null, null, [rawLeg], [rawFrom, rawTo]],
+          },
+        ],
         resolvers: sinon.match.array,
-      }),
-      [[rawVenueId, rawAuthSettlementType, null, null, [rawLeg], [rawFrom, rawTo]]]
+      })
     );
     expect(result).toBe(instruction);
   });
 
-  test('should add an add instruction transaction to the queue', async () => {
+  it('should add an add instruction transaction to the queue', async () => {
     dsMockUtils.configureMocks({ contextOptions: { did: fromDid } });
     entityMockUtils.configureMocks({
       venueOptions: {
@@ -385,7 +484,7 @@ describe('addInstruction procedure', () => {
               from,
               to,
               amount,
-              token: entityMockUtils.getSecurityTokenInstance({ ticker: token }),
+              asset: entityMockUtils.getAssetInstance({ ticker: asset }),
             },
           ],
           tradeDate,
@@ -397,39 +496,21 @@ describe('addInstruction procedure', () => {
 
     sinon.assert.calledWith(
       addBatchTransactionStub,
-      addInstructionTransaction,
       sinon.match({
+        transactions: [
+          {
+            transaction: addInstructionTransaction,
+            args: [rawVenueId, rawBlockSettlementType, rawTradeDate, rawValueDate, [rawLeg]],
+          },
+        ],
         resolvers: sinon.match.array,
-      }),
-      [[rawVenueId, rawBlockSettlementType, rawTradeDate, rawValueDate, [rawLeg]]]
+      })
     );
     expect(result).toBe(instruction);
   });
 
-  test("should throw an error if the venue doesn't exist", async () => {
-    entityMockUtils.configureMocks({
-      venueOptions: {
-        exists: false,
-      },
-    });
-
-    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
-      portfoliosToAffirm: [],
-    });
-
-    let error;
-
-    try {
-      await prepareAddInstruction.call(proc, { venueId, instructions: [{ legs: [] }] });
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe("The Venue doesn't exist");
-  });
-
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', async () => {
+    it('should return the appropriate roles and permissions', async () => {
       let proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
         portfoliosToAffirm: [[fromPortfolio, toPortfolio]],
       });
@@ -438,14 +519,14 @@ describe('addInstruction procedure', () => {
       let result = await boundFunc({
         venueId,
         instructions: [
-          { legs: [{ from: fromPortfolio, to: toPortfolio, amount, token: 'SOME_TOKEN' }] },
+          { legs: [{ from: fromPortfolio, to: toPortfolio, amount, asset: 'SOME_ASSET' }] },
         ],
       });
 
       expect(result).toEqual({
         roles: [{ type: RoleType.VenueOwner, venueId }],
         permissions: {
-          tokens: [],
+          assets: [],
           portfolios: [fromPortfolio, toPortfolio],
           transactions: [TxTags.settlement.AddAndAffirmInstruction],
         },
@@ -459,14 +540,14 @@ describe('addInstruction procedure', () => {
       result = await boundFunc({
         venueId,
         instructions: [
-          { legs: [{ from: fromPortfolio, to: toPortfolio, amount, token: 'SOME_TOKEN' }] },
+          { legs: [{ from: fromPortfolio, to: toPortfolio, amount, asset: 'SOME_ASSET' }] },
         ],
       });
 
       expect(result).toEqual({
         roles: [{ type: RoleType.VenueOwner, venueId }],
         permissions: {
-          tokens: [],
+          assets: [],
           portfolios: [],
           transactions: [TxTags.settlement.AddInstruction],
         },
@@ -475,7 +556,7 @@ describe('addInstruction procedure', () => {
   });
 
   describe('prepareStorage', () => {
-    test('should return the list of portfolios that will be affirmed', async () => {
+    it('should return the list of portfolios that will be affirmed', async () => {
       const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
@@ -509,7 +590,7 @@ describe('addInstruction procedure', () => {
 describe('createAddInstructionResolver', () => {
   const filterEventRecordsStub = sinon.stub(utilsInternalModule, 'filterEventRecords');
   const id = new BigNumber(10);
-  const rawId = dsMockUtils.createMockU64(id.toNumber());
+  const rawId = dsMockUtils.createMockU64(id);
 
   beforeAll(() => {
     entityMockUtils.initMocks({
@@ -527,7 +608,7 @@ describe('createAddInstructionResolver', () => {
     filterEventRecordsStub.reset();
   });
 
-  test('should return the new Instruction', () => {
+  it('should return the new Instruction', () => {
     const fakeContext = {} as Context;
 
     const result = createAddInstructionResolver(fakeContext)({} as ISubmittableResult);
@@ -535,13 +616,13 @@ describe('createAddInstructionResolver', () => {
     expect(result[0].id).toEqual(id);
   });
 
-  test('should return a list of new Instructions', () => {
+  it('should return a list of new Instructions', () => {
     const fakeContext = {} as Context;
     const previousInstructionId = new BigNumber(2);
 
-    const previousInstructions = ({
+    const previousInstructions = {
       value: [new Instruction({ id: previousInstructionId }, fakeContext)],
-    } as unknown) as PostTransactionValue<Instruction[]>;
+    } as unknown as PostTransactionValue<Instruction[]>;
 
     const result = createAddInstructionResolver(
       fakeContext,

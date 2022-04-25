@@ -1,12 +1,11 @@
 import BigNumber from 'bignumber.js';
-import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { getAuthorization, Params, prepareModifyVenue } from '~/api/procedures/modifyVenue';
-import { Context } from '~/internal';
+import { Context, Venue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType, VenueType } from '~/types';
+import { RoleType, TxTags, VenueType } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -16,8 +15,10 @@ jest.mock(
 
 describe('modifyVenue procedure', () => {
   let mockContext: Mocked<Context>;
-  let addTransactionStub: sinon.SinonStub;
+  let addBatchTransactionStub: sinon.SinonStub;
   let venueId: BigNumber;
+
+  let venue: Venue;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -29,7 +30,9 @@ describe('modifyVenue procedure', () => {
   beforeEach(() => {
     entityMockUtils.configureMocks();
     mockContext = dsMockUtils.getContextInstance();
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
+    addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
+
+    venue = entityMockUtils.getVenueInstance({ id: venueId });
   });
 
   afterEach(() => {
@@ -39,26 +42,21 @@ describe('modifyVenue procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the supplied description is the same as the current one', () => {
+  it('should throw an error if the supplied description is the same as the current one', () => {
     const description = 'someDetails';
 
     const args = {
-      venueId,
-      description,
-    };
-
-    entityMockUtils.configureMocks({
-      venueOptions: {
+      venue: entityMockUtils.getVenueInstance({
         details: {
           description,
         },
-      },
-    });
+      }),
+      description,
+    };
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
@@ -67,22 +65,18 @@ describe('modifyVenue procedure', () => {
     );
   });
 
-  test('should throw an error if the supplied type is the same as the current one', () => {
+  it('should throw an error if the supplied type is the same as the current one', () => {
     const type = VenueType.Exchange;
 
     const args = {
-      venueId,
-      type,
-    };
-
-    entityMockUtils.configureMocks({
-      venueOptions: {
+      venue: entityMockUtils.getVenueInstance({
         details: {
           description: 'someDescription',
           type,
         },
-      },
-    });
+      }),
+      type,
+    };
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
@@ -91,21 +85,21 @@ describe('modifyVenue procedure', () => {
     );
   });
 
-  test('should add an update venue transaction to the queue', async () => {
+  it('should add an update venue transaction to the queue', async () => {
     const description = 'someDetails';
     const type = VenueType.Exchange;
 
     const rawDetails = dsMockUtils.createMockVenueDetails(description);
     const rawType = dsMockUtils.createMockVenueType(type);
-    const rawId = dsMockUtils.createMockU64(venueId.toNumber());
+    const rawId = dsMockUtils.createMockU64(venueId);
 
     const args = {
-      venueId,
+      venue,
       description,
       type,
     };
 
-    sinon.stub(utilsConversionModule, 'numberToU64').returns(rawId);
+    sinon.stub(utilsConversionModule, 'bigNumberToU64').returns(rawId);
     sinon.stub(utilsConversionModule, 'stringToVenueDetails').returns(rawDetails);
     sinon.stub(utilsConversionModule, 'venueTypeToMeshVenueType').returns(rawType);
 
@@ -118,42 +112,54 @@ describe('modifyVenue procedure', () => {
 
     await prepareModifyVenue.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      updateVenueDetailsTransaction,
-      {},
-      rawId,
-      rawDetails
-    );
-    sinon.assert.calledWith(addTransactionStub, updateVenueTypeTransaction, {}, rawId, rawType);
+    sinon.assert.calledWith(addBatchTransactionStub.firstCall, {
+      transactions: [
+        {
+          transaction: updateVenueDetailsTransaction,
+          args: [rawId, rawDetails],
+        },
+        {
+          transaction: updateVenueTypeTransaction,
+          args: [rawId, rawType],
+        },
+      ],
+    });
 
     await prepareModifyVenue.call(proc, {
-      venueId,
+      venue,
       type,
     });
 
-    sinon.assert.calledWith(addTransactionStub, updateVenueTypeTransaction, {}, rawId, rawType);
+    sinon.assert.calledWith(addBatchTransactionStub.secondCall, {
+      transactions: [
+        {
+          transaction: updateVenueTypeTransaction,
+          args: [rawId, rawType],
+        },
+      ],
+    });
 
     await prepareModifyVenue.call(proc, {
-      venueId,
+      venue,
       description,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      updateVenueDetailsTransaction,
-      {},
-      rawId,
-      rawDetails
-    );
+    sinon.assert.calledWith(addBatchTransactionStub.thirdCall, {
+      transactions: [
+        {
+          transaction: updateVenueDetailsTransaction,
+          args: [rawId, rawDetails],
+        },
+      ],
+    });
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       let args = {
-        venueId,
+        venue,
         type: VenueType.Distribution,
       } as Params;
 
@@ -162,12 +168,12 @@ describe('modifyVenue procedure', () => {
         permissions: {
           portfolios: [],
           transactions: [TxTags.settlement.UpdateVenueType],
-          tokens: [],
+          assets: [],
         },
       });
 
       args = {
-        venueId,
+        venue,
         description: 'someDescription',
       } as Params;
 
@@ -176,7 +182,7 @@ describe('modifyVenue procedure', () => {
         permissions: {
           portfolios: [],
           transactions: [TxTags.settlement.UpdateVenueDetails],
-          tokens: [],
+          assets: [],
         },
       });
     });

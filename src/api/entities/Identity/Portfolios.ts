@@ -2,7 +2,6 @@ import BigNumber from 'bignumber.js';
 
 import {
   Context,
-  createPortfolio,
   DefaultPortfolio,
   deletePortfolio,
   Identity,
@@ -26,10 +25,6 @@ export class Portfolios extends Namespace<Identity> {
 
     const { did } = parent;
 
-    this.create = createProcedureMethod(
-      { getProcedureAndArgs: args => [createPortfolio, args] },
-      context
-    );
     this.delete = createProcedureMethod(
       {
         getProcedureAndArgs: args => {
@@ -73,7 +68,7 @@ export class Portfolios extends Namespace<Identity> {
   /**
    * Retrieve all Portfolios custodied by this Identity.
    *   This only includes portfolios owned by a different Identity but custodied by this one.
-   *   To fetch Portfolios owned by this Identity, use [[getPortfolios]]
+   *   To fetch Portfolios owned by this Identity, use {@link getPortfolios}
    *
    * @note supports pagination
    */
@@ -147,18 +142,13 @@ export class Portfolios extends Namespace<Identity> {
 
     if (!exists) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.DataUnavailable,
         message: "The Portfolio doesn't exist",
       });
     }
 
     return numberedPortfolio;
   }
-
-  /**
-   * Create a new Portfolio for the Identity
-   */
-  public create: ProcedureMethod<{ name: string }, NumberedPortfolio>;
 
   /**
    * Delete a Portfolio by ID

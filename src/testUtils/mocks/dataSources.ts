@@ -2,8 +2,8 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ApiPromise, Keyring } from '@polkadot/api';
-import { Signer } from '@polkadot/api/types';
+import { ApiPromise } from '@polkadot/api';
+import { DecoratedRpc } from '@polkadot/api/types';
 import { bool, Bytes, Compact, Enum, Option, Text, u8, U8aFixed, u32, u64 } from '@polkadot/types';
 import { CompactEncodable } from '@polkadot/types/codec/types';
 import {
@@ -11,24 +11,34 @@ import {
   AccountId,
   AccountInfo,
   Balance,
+  Block,
+  Call,
   DispatchError,
   DispatchErrorModule,
   EventRecord,
   ExtrinsicStatus,
   Hash,
+  Header,
   Index,
   Moment,
   Permill,
   RefCount,
   RuntimeVersion,
   Signature,
+  SignedBlock,
 } from '@polkadot/types/interfaces';
-import { Call } from '@polkadot/types/interfaces/runtime';
-import { Codec, IEvent, ISubmittableResult, Registry } from '@polkadot/types/types';
+import {
+  Codec,
+  IEvent,
+  ISubmittableResult,
+  Registry,
+  Signer as PolkadotSigner,
+} from '@polkadot/types/types';
 import { hexToU8a, stringToU8a } from '@polkadot/util';
+import { SigningManager } from '@polymathnetwork/signing-manager-types';
 import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient from 'apollo-client';
-import { BigNumber } from 'bignumber.js';
+import BigNumber from 'bignumber.js';
 import { EventEmitter } from 'events';
 import { cloneDeep, map, merge, upperFirst } from 'lodash';
 import {
@@ -142,15 +152,17 @@ import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
 import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
+  CheckPermissionsResult,
+  CheckRolesResult,
   ClaimData,
   ClaimType,
   CountryCode as CountryCodeEnum,
   DistributionWithDetails,
   ExtrinsicData,
-  KeyringPair,
+  PermissionedAccount,
   ResultSet,
-  SecondaryKey,
-  Subsidy,
+  SignerType,
+  SubsidyWithAllowance,
 } from '~/types';
 import { Consts, Extrinsics, GraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
 import { ArgsType, Mutable, tuple } from '~/types/utils';
@@ -169,7 +181,6 @@ function createApi(): Mutable<ApiPromise> & EventEmitter {
       apiEmitter.on(event, listener),
     off: (event: string, listener: (...args: unknown[]) => unknown) =>
       apiEmitter.off(event, listener),
-    setSigner: sinon.stub() as (signer: Signer) => void,
     disconnect: sinon.stub() as () => Promise<void>,
   } as Mutable<ApiPromise> & EventEmitter;
 }
@@ -184,13 +195,6 @@ function createApolloClient(): Mutable<ApolloClient<NormalizedCacheObject>> {
 }
 
 let apolloConstructorStub: SinonStub;
-
-/**
- * Create a mock instance of the WebSocket lib
- */
-function createWebSocket(): MockWebSocket {
-  return new MockWebSocket();
-}
 
 /**
  * Creates mock websocket class. Contains additional methods for tests to control it
@@ -259,6 +263,13 @@ export class MockWebSocket {
   }
 }
 
+/**
+ * Create a mock instance of the WebSocket lib
+ */
+function createWebSocket(): MockWebSocket {
+  return new MockWebSocket();
+}
+
 let webSocketConstructorStub: SinonStub;
 
 export type MockContext = Mocked<Context>;
@@ -273,6 +284,7 @@ export enum MockTxStatus {
   InBlock = 'InBlock',
   BatchFailed = 'BatchFailed',
   FinalizedFailed = 'FinalizedFailed',
+  FailedToUnsubscribe = 'FailedToUnsubscribe',
 }
 
 const MockApolloClientClass = class {
@@ -287,7 +299,7 @@ const MockApolloClientClass = class {
 const mockInstanceContainer = {
   contextInstance: {} as MockContext,
   apiInstance: createApi(),
-  keyringInstance: {} as Mutable<Keyring>,
+  signingManagerInstance: {} as Mutable<SigningManager>,
   apolloInstance: createApolloClient(),
   webSocketInstance: createWebSocket(),
 };
@@ -312,17 +324,6 @@ const MockApiPromiseClass = class {
 
 const MockWsProviderClass = class {};
 
-let keyringConstructorStub: SinonStub;
-
-const MockKeyringClass = class {
-  /**
-   * @hidden
-   */
-  public constructor() {
-    return keyringConstructorStub();
-  }
-};
-
 let contextCreateStub: SinonStub;
 
 const MockContextClass = class {
@@ -343,62 +344,48 @@ interface TxMockData {
   status: MockTxStatus;
   resolved: boolean;
 }
-
-interface Pair {
-  address: string;
-  meta: Record<string, unknown>;
-  publicKey: string;
-  isLocked?: boolean;
-}
-
 interface ContextOptions {
   did?: string;
-  withSeed?: boolean;
+  withSigningManager?: boolean;
   balance?: AccountBalance;
-  subsidy?: Omit<Subsidy, 'beneficiary'>;
+  subsidy?: SubsidyWithAllowance;
   hasRoles?: boolean;
+  checkRoles?: CheckRolesResult;
   hasPermissions?: boolean;
-  hasTokenPermissions?: boolean;
+  checkPermissions?: CheckPermissionsResult<SignerType.Account>;
+  hasAssetPermissions?: boolean;
+  checkAssetPermissions?: CheckPermissionsResult<SignerType.Identity>;
   validCdd?: boolean;
-  tokenBalance?: BigNumber;
+  assetBalance?: BigNumber;
   invalidDids?: string[];
   transactionFee?: BigNumber;
-  currentPairAddress?: string;
-  currentPairIsLocked?: boolean;
+  signingAddress?: string;
   issuedClaims?: ResultSet<ClaimData>;
+  getIdentity?: Identity;
   getIdentityClaimsFromChain?: ClaimData[];
   getIdentityClaimsFromMiddleware?: ResultSet<ClaimData>;
-  primaryKey?: string;
-  secondaryKeys?: SecondaryKey[];
+  getExternalSigner?: PolkadotSigner;
+  primaryAccount?: string;
+  secondaryAccounts?: PermissionedAccount[];
   transactionHistory?: ResultSet<ExtrinsicData>;
   latestBlock?: BigNumber;
   middlewareEnabled?: boolean;
   middlewareAvailable?: boolean;
   sentAuthorizations?: ResultSet<AuthorizationRequest>;
   isArchiveNode?: boolean;
-  ss58Format?: number;
-  areScondaryKeysFrozen?: boolean;
-  getDividendDistributionsForTokens?: DistributionWithDetails[];
+  ss58Format?: BigNumber;
+  areSecondaryAccountsFrozen?: boolean;
+  getDividendDistributionsForAssets?: DistributionWithDetails[];
   isFrozen?: boolean;
-  addPair?: Pair;
-  getAccounts?: Account[];
-  currentIdentityIsEqual?: boolean;
+  getSigningAccounts?: Account[];
+  signingIdentityIsEqual?: boolean;
   networkVersion?: string;
+  supportsSubsidy?: boolean;
 }
 
-interface KeyringOptions {
-  getPair?: Pair;
-  getPairs?: Pair[];
-  addFromUri?: Pair;
-  addFromSeed?: Pair;
-  addFromMnemonic?: Pair;
-  addPair?: Pair;
-  encodeAddress?: string;
-  /**
-   * @hidden
-   * Whether keyring functions should throw
-   */
-  error?: boolean;
+interface SigningManagerOptions {
+  getAccounts?: string[];
+  getExternalSigner?: PolkadotSigner | null;
 }
 
 export interface StubQuery {
@@ -523,7 +510,7 @@ const statusToReceipt = (status: MockTxStatus, failReason?: TxFailReason): ISubm
   if (status === MockTxStatus.Failed) {
     return failReasonToReceipt(failReason);
   }
-  if (status === MockTxStatus.Succeeded) {
+  if ([MockTxStatus.Succeeded, MockTxStatus.FailedToUnsubscribe].includes(status)) {
     return successReceipt;
   }
   if (status === MockTxStatus.Ready) {
@@ -549,7 +536,6 @@ export const mockPolkadotModule = (path: string) => (): Record<string, unknown> 
   ...jest.requireActual(path),
   ApiPromise: MockApiPromiseClass,
   WsProvider: MockWsProviderClass,
-  Keyring: MockKeyringClass,
 });
 
 export const mockContextModule = (path: string) => (): Record<string, unknown> => ({
@@ -569,28 +555,36 @@ let txModule = {} as Extrinsics;
 let queryModule = {} as Queries;
 let constsModule = {} as Consts;
 
-// TODO cast rpcModule to a better type
-let rpcModule = {} as any;
+let rpcModule = {} as DecoratedRpc<any, any>;
 
 let queryMultiStub = sinon.stub();
 
 const defaultContextOptions: ContextOptions = {
   did: 'someDid',
-  withSeed: true,
+  withSigningManager: true,
   balance: {
     free: new BigNumber(100),
     locked: new BigNumber(10),
     total: new BigNumber(110),
   },
   hasRoles: true,
+  checkRoles: {
+    result: true,
+  },
   hasPermissions: true,
-  hasTokenPermissions: true,
+  checkPermissions: {
+    result: true,
+  },
+  hasAssetPermissions: true,
+  checkAssetPermissions: {
+    result: true,
+  },
+  getExternalSigner: 'signer' as PolkadotSigner,
   validCdd: true,
-  tokenBalance: new BigNumber(1000),
+  assetBalance: new BigNumber(1000),
   invalidDids: [],
   transactionFee: new BigNumber(200),
-  currentPairAddress: '0xdummy',
-  currentPairIsLocked: false,
+  signingAddress: '0xdummy',
   issuedClaims: {
     data: [
       {
@@ -601,8 +595,8 @@ const defaultContextOptions: ContextOptions = {
         claim: { type: ClaimType.NoData },
       },
     ],
-    next: 1,
-    count: 1,
+    next: new BigNumber(1),
+    count: new BigNumber(1),
   },
   getIdentityClaimsFromChain: [
     {
@@ -623,145 +617,124 @@ const defaultContextOptions: ContextOptions = {
         claim: { type: ClaimType.NoData },
       },
     ],
-    next: 1,
-    count: 1,
+    next: new BigNumber(1),
+    count: new BigNumber(1),
   },
-  primaryKey: 'primaryKey',
-  secondaryKeys: [],
+  primaryAccount: 'primaryAccount',
+  secondaryAccounts: [],
   transactionHistory: {
     data: [],
     next: null,
-    count: 1,
+    count: new BigNumber(1),
   },
   latestBlock: new BigNumber(100),
   middlewareEnabled: true,
   middlewareAvailable: true,
   sentAuthorizations: {
     data: [{} as AuthorizationRequest],
-    next: 1,
-    count: 1,
+    next: new BigNumber(1),
+    count: new BigNumber(1),
   },
   isArchiveNode: true,
-  ss58Format: 42,
-  areScondaryKeysFrozen: false,
-  getDividendDistributionsForTokens: [],
+  ss58Format: new BigNumber(42),
+  getDividendDistributionsForAssets: [],
+  areSecondaryAccountsFrozen: false,
   isFrozen: false,
-  addPair: {
-    address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-    meta: {},
-    isLocked: false,
-    publicKey: 'someKey',
-  },
-  getAccounts: [],
-  currentIdentityIsEqual: true,
+  getSigningAccounts: [],
+  signingIdentityIsEqual: true,
   networkVersion: '1.0.0',
+  supportsSubsidy: true,
 };
 let contextOptions: ContextOptions = defaultContextOptions;
-const defaultKeyringOptions: KeyringOptions = {
-  getPair: {
-    address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-    meta: {},
-    publicKey: 'publicKey1',
-  },
-  getPairs: [
-    {
-      address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-      meta: {},
-      publicKey: 'publicKey2',
-    },
-  ],
-  addFromSeed: {
-    address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-    meta: {},
-    publicKey: 'publicKey3',
-  },
-  addFromUri: {
-    address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-    meta: {},
-    publicKey: 'publicKey4',
-  },
-  addFromMnemonic: {
-    address: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
-    meta: {},
-    publicKey: 'publicKey5',
-  },
-  encodeAddress: '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY',
+const defaultSigningManagerOptions: SigningManagerOptions = {
+  getAccounts: ['someAccount', 'otherAccount'],
+  getExternalSigner: 'signer' as PolkadotSigner,
 };
-let keyringOptions: KeyringOptions = defaultKeyringOptions;
+let signingManagerOptions = defaultSigningManagerOptions;
 
 /**
  * @hidden
  */
 function configureContext(opts: ContextOptions): void {
-  const getCurrentIdentity = sinon.stub();
+  const getSigningIdentity = sinon.stub();
   const identity = {
     did: opts.did,
     hasRoles: sinon.stub().resolves(opts.hasRoles),
+    checkRoles: sinon.stub().resolves(opts.checkRoles),
     hasValidCdd: sinon.stub().resolves(opts.validCdd),
-    getTokenBalance: sinon.stub().resolves(opts.tokenBalance),
-    getPrimaryKey: sinon.stub().resolves({ address: opts.primaryKey }),
-    getSecondaryKeys: sinon.stub().resolves(opts.secondaryKeys),
+    getAssetBalance: sinon.stub().resolves(opts.assetBalance),
+    getPrimaryAccount: sinon.stub().resolves({
+      account: {
+        address: opts.primaryAccount,
+      },
+      permissions: {
+        tokens: null,
+        transactions: null,
+        transactionGroups: [],
+        portfolios: null,
+      },
+    }),
+    getSecondaryAccounts: sinon.stub().resolves(opts.secondaryAccounts),
     authorizations: {
       getSent: sinon.stub().resolves(opts.sentAuthorizations),
     },
-    tokenPermissions: {
-      hasPermissions: sinon.stub().resolves(opts.hasTokenPermissions),
+    assetPermissions: {
+      hasPermissions: sinon.stub().resolves(opts.hasAssetPermissions),
+      checkPermissions: sinon.stub().resolves(opts.checkAssetPermissions),
     },
-    areSecondaryKeysFrozen: sinon.stub().resolves(opts.areScondaryKeysFrozen),
-    isEqual: sinon.stub().returns(opts.currentIdentityIsEqual),
+    areSecondaryAccountsFrozen: sinon.stub().resolves(opts.areSecondaryAccountsFrozen),
+    isEqual: sinon.stub().returns(opts.signingIdentityIsEqual),
   };
-  opts.withSeed
-    ? getCurrentIdentity.resolves(identity)
-    : getCurrentIdentity.throws(
-        new Error('The current account does not have an associated identity')
+  opts.withSigningManager
+    ? getSigningIdentity.resolves(identity)
+    : getSigningIdentity.throws(
+        new Error('The signing Account does not have an associated Identity')
       );
-  const getCurrentAccount = sinon.stub();
-  opts.withSeed
-    ? getCurrentAccount.returns({
-        address: opts.currentPairAddress,
+  const getSigningAccount = sinon.stub();
+  opts.withSigningManager
+    ? getSigningAccount.returns({
+        address: opts.signingAddress,
         getBalance: sinon.stub().resolves(opts.balance),
         getSubsidy: sinon.stub().resolves(opts.subsidy),
         getIdentity: sinon.stub().resolves(identity),
         getTransactionHistory: sinon.stub().resolves(opts.transactionHistory),
         hasPermissions: sinon.stub().resolves(opts.hasPermissions),
+        checkPermissions: sinon.stub().resolves(opts.checkPermissions),
         isFrozen: sinon.stub().resolves(opts.isFrozen),
       })
-    : getCurrentAccount.throws(new Error('There is no account associated with the SDK'));
-  const currentPair = opts.withSeed
-    ? ({
-        address: opts.currentPairAddress,
-        isLocked: opts.currentPairIsLocked,
-      } as KeyringPair)
-    : undefined;
-  const getCurrentPair = sinon.stub();
-  opts.withSeed
-    ? getCurrentPair.returns(currentPair)
-    : getCurrentPair.throws(
-        new Error('There is no account associated with the current SDK instance')
+    : getSigningAccount.throws(new Error('There is no Account associated with the SDK'));
+  const signingAddress = opts.withSigningManager ? opts.signingAddress : undefined;
+  const getSigningAddress = sinon.stub();
+  opts.withSigningManager
+    ? getSigningAddress.returns(signingAddress)
+    : getSigningAddress.throws(
+        new Error('There is no Account associated with the current SDK instance')
       );
 
   const contextInstance = {
-    currentPair,
-    getCurrentIdentity,
-    getCurrentAccount,
-    getCurrentPair,
+    signingAddress,
+    getSigningIdentity,
+    getSigningAccount,
+    getSigningAddress,
     accountBalance: sinon.stub().resolves(opts.balance),
     accountSubsidy: sinon.stub().resolves(opts.subsidy),
-    getAccounts: sinon.stub().returns(opts.getAccounts),
-    setPair: sinon.stub().callsFake(address => {
-      contextInstance.currentPair = { address } as KeyringPair;
+    getSigningAccounts: sinon.stub().resolves(opts.getSigningAccounts),
+    setSigningAddress: sinon.stub().callsFake(address => {
+      (contextInstance as any).signingAddress = address;
     }),
-    getSigner: sinon.stub().returns(currentPair),
+    setSigningManager: sinon.stub(),
+    getExternalSigner: sinon.stub().returns(opts.getExternalSigner),
     polymeshApi: mockInstanceContainer.apiInstance,
     middlewareApi: mockInstanceContainer.apolloInstance,
     queryMiddleware: sinon
       .stub()
       .callsFake(query => mockInstanceContainer.apolloInstance.query(query)),
     getInvalidDids: sinon.stub().resolves(opts.invalidDids),
-    getTransactionFees: sinon.stub().resolves(opts.transactionFee),
+    getProtocolFees: sinon.stub().resolves(opts.transactionFee),
     getTransactionArguments: sinon.stub().returns([]),
-    getSecondaryKeys: sinon.stub().returns(opts.secondaryKeys),
+    getSecondaryAccounts: sinon.stub().returns(opts.secondaryAccounts),
     issuedClaims: sinon.stub().resolves(opts.issuedClaims),
+    getIdentity: sinon.stub().resolves(opts.getIdentity),
     getIdentityClaimsFromChain: sinon.stub().resolves(opts.getIdentityClaimsFromChain),
     getIdentityClaimsFromMiddleware: sinon.stub().resolves(opts.getIdentityClaimsFromMiddleware),
     getLatestBlock: sinon.stub().resolves(opts.latestBlock),
@@ -770,11 +743,12 @@ function configureContext(opts: ContextOptions): void {
     isArchiveNode: opts.isArchiveNode,
     ss58Format: opts.ss58Format,
     disconnect: sinon.stub(),
-    getDividendDistributionsForTokens: sinon
+    getDividendDistributionsForAssets: sinon
       .stub()
-      .resolves(opts.getDividendDistributionsForTokens),
-    addPair: sinon.stub().returns(opts.addPair),
+      .resolves(opts.getDividendDistributionsForAssets),
     getNetworkVersion: sinon.stub().resolves(opts.networkVersion),
+    supportsSubsidy: sinon.stub().returns(opts.supportsSubsidy),
+    createType: sinon.stub(),
   } as unknown as MockContext;
 
   contextInstance.clone = sinon.stub<[], Context>().returns(contextInstance);
@@ -924,55 +898,28 @@ function initApi(): void {
 }
 
 /**
- * @hidden
+ * Create a mock instance of a Signing Manager
  */
-function configureKeyring(opts: KeyringOptions): void {
-  const {
-    error,
-    getPair,
-    getPairs,
-    addFromUri,
-    addFromSeed,
-    addFromMnemonic,
-    addPair,
-    encodeAddress,
-  } = opts;
-
-  const err = new Error('Error');
-
-  const keyringInstance = {
-    getPair: sinon.stub().returns(getPair),
-    getPairs: sinon.stub().returns(getPairs),
-    addFromSeed: sinon.stub().returns(addFromSeed),
-    addFromUri: sinon.stub().returns(addFromUri),
-    addFromMnemonic: sinon.stub().returns(addFromMnemonic),
-    addPair: sinon.stub().returns(addPair),
-    encodeAddress: sinon.stub().returns(encodeAddress),
+function configureSigningManager(opts: SigningManagerOptions): void {
+  const signingManagerInstance = {
+    getAccounts: sinon.stub().resolves(opts.getAccounts),
+    getExternalSigner: sinon.stub().returns(opts.getExternalSigner),
+    setSs58Format: sinon.stub(),
   };
 
-  if (error) {
-    keyringInstance.getPair.throws(err);
-    keyringInstance.getPairs.throws(err);
-    keyringInstance.addFromSeed.throws(err);
-    keyringInstance.addFromUri.throws(err);
-    keyringInstance.addFromMnemonic.throws(err);
-    keyringInstance.encodeAddress.throws(err);
-  }
-
-  Object.assign(mockInstanceContainer.keyringInstance, keyringInstance as unknown as Keyring);
-
-  keyringConstructorStub.returns(keyringInstance);
+  Object.assign(
+    mockInstanceContainer.signingManagerInstance,
+    signingManagerInstance as unknown as SigningManager
+  );
 }
 
 /**
  * @hidden
  */
-function initKeyring(opts?: KeyringOptions): void {
-  keyringConstructorStub = sinon.stub();
+function initSigningManager(opts?: SigningManagerOptions): void {
+  signingManagerOptions = { ...defaultSigningManagerOptions, ...opts };
 
-  keyringOptions = { ...defaultKeyringOptions, ...opts };
-
-  configureKeyring(keyringOptions);
+  configureSigningManager(signingManagerOptions);
 }
 
 /**
@@ -982,26 +929,29 @@ function initKeyring(opts?: KeyringOptions): void {
  */
 export function configureMocks(opts?: {
   contextOptions?: ContextOptions;
-  keyringOptions?: KeyringOptions;
+  signingManagerOptions?: SigningManagerOptions;
 }): void {
-  const tempKeyringOptions = { ...defaultKeyringOptions, ...opts?.keyringOptions };
-
-  configureKeyring(tempKeyringOptions);
-
   const tempContextOptions = { ...defaultContextOptions, ...opts?.contextOptions };
 
   configureContext(tempContextOptions);
+
+  const tempSigningManagerOptions = {
+    ...defaultSigningManagerOptions,
+    ...opts?.signingManagerOptions,
+  };
+
+  configureSigningManager(tempSigningManagerOptions);
 }
 
 /**
  * @hidden
  * Initialize the factory by adding default all-purpose functionality to the mock manager
  *
- * @param opts.mockContext - if defined, the internal [[Context]] class will also be mocked with custom properties
+ * @param opts.mockContext - if defined, the internal {@link Context} class will also be mocked with custom properties
  */
 export function initMocks(opts?: {
   contextOptions?: ContextOptions;
-  keyringOptions?: KeyringOptions;
+  signingManagerOptions?: SigningManagerOptions;
 }): void {
   /*
     NOTE: the idea is to expand this function to mock things as we need them
@@ -1014,8 +964,8 @@ export function initMocks(opts?: {
   // Api
   initApi();
 
-  // Keyring
-  initKeyring(opts?.keyringOptions);
+  // Signing Manager
+  initSigningManager(opts?.signingManagerOptions);
 
   // Apollo
   apolloConstructorStub = sinon.stub().returns(mockInstanceContainer.apolloInstance);
@@ -1033,7 +983,7 @@ export function initMocks(opts?: {
 export function cleanup(): void {
   mockInstanceContainer.apiInstance = createApi();
   mockInstanceContainer.contextInstance = {} as MockContext;
-  mockInstanceContainer.keyringInstance = {} as Mutable<Keyring>;
+  mockInstanceContainer.signingManagerInstance = {} as Mutable<SigningManager>;
   mockInstanceContainer.apolloInstance = createApolloClient();
   mockInstanceContainer.webSocketInstance = createWebSocket();
 }
@@ -1045,7 +995,7 @@ export function cleanup(): void {
 export function reset(): void {
   cleanup();
 
-  initMocks({ contextOptions, keyringOptions });
+  initMocks({ contextOptions });
 }
 
 /**
@@ -1054,8 +1004,8 @@ export function reset(): void {
  *
  * @param mod - name of the module
  * @param tx - name of the transaction function
- * @param autoresolve - if set to a status, the transaction will resolve immediately with that status.
- *  If set to false, the transaction lifecycle will be controlled by [[updateTxStatus]]
+ * @param autoResolve - if set to a status, the transaction will resolve immediately with that status.
+ *  If set to false, the transaction lifecycle will be controlled by {@link updateTxStatus}
  */
 export function createTxStub<
   ModuleName extends keyof Extrinsics,
@@ -1064,7 +1014,7 @@ export function createTxStub<
   mod: ModuleName,
   tx: TransactionName,
   opts: {
-    autoresolve?: MockTxStatus | false;
+    autoResolve?: MockTxStatus | false;
     gas?: Balance;
     meta?: { args: Array<{ name: string; type: string }> };
   } = {}
@@ -1077,31 +1027,31 @@ export function createTxStub<
   }
 
   const {
-    autoresolve = MockTxStatus.Succeeded,
+    autoResolve = MockTxStatus.Succeeded,
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
-    gas = createMockBalance(1),
+    gas = createMockBalance(new BigNumber(1)),
     meta = { args: [] },
   } = opts;
 
   const transaction = sinon.stub().returns({
     method: tx, // should be a `Call` object, but this is enough for testing
     hash: tx,
-    signAndSend: sinon.stub().callsFake((_, cback: StatusCallback) => {
-      if (autoresolve === MockTxStatus.Rejected) {
+    signAndSend: sinon.stub().callsFake((_, __, cb: StatusCallback) => {
+      if (autoResolve === MockTxStatus.Rejected) {
         return Promise.reject(new Error('Cancelled'));
       }
 
       const unsubCallback = sinon.stub();
 
       txMocksData.set(runtimeModule[tx], {
-        statusCallback: cback,
+        statusCallback: cb,
         unsubCallback,
-        resolved: !!autoresolve,
+        resolved: !!autoResolve,
         status: null as unknown as MockTxStatus,
       });
 
-      if (autoresolve) {
-        process.nextTick(() => cback(statusToReceipt(autoresolve)));
+      if (autoResolve) {
+        process.nextTick(() => cb(statusToReceipt(autoResolve)));
       }
 
       return Promise.resolve(unsubCallback);
@@ -1186,7 +1136,7 @@ export function createQueryStub<
     returnValue?: unknown;
     entries?: [unknown[], unknown][]; // [Keys, Codec]
     multi?: unknown;
-    size?: number;
+    size?: BigNumber;
   }
 ): Queries[ModuleName][QueryName] & SinonStub & StubQuery {
   let runtimeModule = queryModule[mod];
@@ -1229,7 +1179,7 @@ export function createQueryStub<
   }
   if (typeof opts?.size !== 'undefined') {
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
-    stub.size.resolves(createMockU64(opts.size));
+    stub.size.resolves(createMockU64(new BigNumber(opts.size)));
   }
   if (opts?.returnValue) {
     stub.resolves(opts.returnValue);
@@ -1343,12 +1293,23 @@ export function updateTxStatus<
     throw new Error(`Status is already ${status}`);
   }
 
-  if ([MockTxStatus.Aborted, MockTxStatus.Failed, MockTxStatus.Succeeded].includes(status)) {
+  if (
+    [
+      MockTxStatus.Aborted,
+      MockTxStatus.Failed,
+      MockTxStatus.Succeeded,
+      MockTxStatus.FailedToUnsubscribe,
+    ].includes(status)
+  ) {
     txMocksData.set(tx, {
       ...txMockData,
       status,
       resolved: true,
     });
+  }
+
+  if (status === MockTxStatus.FailedToUnsubscribe) {
+    (txMockData.unsubCallback as sinon.SinonStub).throws('Unsub error');
   }
 
   txMockData.statusCallback(statusToReceipt(status, failReason));
@@ -1451,13 +1412,13 @@ export function getContextCreateStub(): SinonStub {
 
 /**
  * @hidden
- * Retrieve an instance of the mocked Keyring
+ * Retrieve an instance of the mocked SigningManager
  */
-export function getKeyringInstance(opts?: KeyringOptions): Mocked<Keyring> {
+export function getSigningManagerInstance(opts?: SigningManagerOptions): Mocked<SigningManager> {
   if (opts) {
-    configureKeyring({ ...defaultKeyringOptions, ...opts });
+    configureSigningManager({ ...defaultSigningManagerOptions, ...opts });
   }
-  return mockInstanceContainer.keyringInstance as Mocked<Keyring>;
+  return mockInstanceContainer.signingManagerInstance as Mocked<SigningManager>;
 }
 
 /**
@@ -1498,6 +1459,7 @@ const createMockStringCodec = (value?: string): Codec =>
   createMockCodec(
     {
       toString: () => value,
+      eq: (compareValue: Codec) => value === compareValue.toString(),
     },
     value === undefined
   );
@@ -1511,12 +1473,12 @@ const createMockU8aCodec = (value?: string, hex?: boolean): Codec =>
 /**
  * @hidden
  */
-const createMockNumberCodec = (value?: number): Codec =>
+const createMockNumberCodec = (value?: BigNumber): Codec =>
   createMockCodec(
     {
-      toNumber: () => value,
-      toString: () => `${value}`,
-      isZero: () => value === 0,
+      toNumber: () => value?.toNumber(),
+      toString: () => value?.toString(),
+      isZero: () => value?.isZero(),
     },
     value === undefined
   );
@@ -1531,6 +1493,25 @@ export const createMockIdentityId = (did?: string | IdentityId): IdentityId => {
   }
 
   return createMockStringCodec(did) as IdentityId;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+const createMockEnum = (enumValue?: string | Record<string, Codec | Codec[]>): Enum => {
+  const codec: Record<string, unknown> = {};
+
+  if (typeof enumValue === 'string') {
+    codec[`is${upperFirst(enumValue)}`] = true;
+  } else if (typeof enumValue === 'object') {
+    const key = Object.keys(enumValue)[0];
+
+    codec[`is${upperFirst(key)}`] = true;
+    codec[`as${upperFirst(key)}`] = enumValue[key];
+  }
+
+  return createMockCodec(codec, !enumValue) as Enum;
 };
 
 /**
@@ -1590,7 +1571,7 @@ export const createMockAccountId = (accountId?: string): AccountId =>
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockBalance = (balance?: number | Balance): Balance => {
+export const createMockBalance = (balance?: BigNumber | Balance): Balance => {
   if (isCodec<Balance>(balance)) {
     return balance;
   }
@@ -1684,7 +1665,7 @@ export const createMockCompact = <T extends CompactEncodable>(
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockMoment = (millis?: number | Moment): Moment => {
+export const createMockMoment = (millis?: BigNumber | Moment): Moment => {
   if (isCodec<Moment>(millis)) {
     return millis;
   }
@@ -1721,13 +1702,13 @@ export const createMockTickerRegistration = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockU8 = (value?: number): u8 => createMockNumberCodec(value) as u8;
+export const createMockU8 = (value?: BigNumber): u8 => createMockNumberCodec(value) as u8;
 
 /**
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockU32 = (value?: number | u32): u32 => {
+export const createMockU32 = (value?: BigNumber | u32): u32 => {
   if (isCodec<u32>(value)) {
     return value;
   }
@@ -1738,7 +1719,7 @@ export const createMockU32 = (value?: number | u32): u32 => {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockU64 = (value?: number | u64): u64 => {
+export const createMockU64 = (value?: BigNumber | u64): u64 => {
   if (isCodec<u64>(value)) {
     return value;
   }
@@ -1749,7 +1730,7 @@ export const createMockU64 = (value?: number | u64): u64 => {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockPermill = (value?: number | Permill): Permill => {
+export const createMockPermill = (value?: BigNumber | Permill): Permill => {
   if (isCodec<Permill>(value)) {
     return value;
   }
@@ -1765,7 +1746,13 @@ export const createMockBytes = (value?: string): Bytes => createMockU8aCodec(val
 /**
  * @hidden
  */
-export const createMockHash = (value?: string): Hash => createMockStringCodec(value) as Hash;
+export const createMockHash = (value?: string | Hash): Hash => {
+  if (isCodec<Hash>(value)) {
+    return value;
+  }
+
+  return createMockStringCodec(value) as Hash;
+};
 
 /**
  * @hidden
@@ -1777,7 +1764,7 @@ export const createMockAssetName = (name?: string): AssetName =>
 /**
  * @hidden
  */
-export const createMockPosRatio = (numerator: number, denominator: number): PosRatio =>
+export const createMockPosRatio = (numerator: BigNumber, denominator: BigNumber): PosRatio =>
   [createMockU32(numerator), createMockU32(denominator)] as PosRatio;
 
 /**
@@ -1803,25 +1790,6 @@ export const createMockBool = (value?: boolean | bool): bool => {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-const createMockEnum = (enumValue?: string | Record<string, Codec | Codec[]>): Enum => {
-  const codec: Record<string, unknown> = {};
-
-  if (typeof enumValue === 'string') {
-    codec[`is${upperFirst(enumValue)}`] = true;
-  } else if (typeof enumValue === 'object') {
-    const key = Object.keys(enumValue)[0];
-
-    codec[`is${upperFirst(key)}`] = true;
-    codec[`as${upperFirst(key)}`] = enumValue[key];
-  }
-
-  return createMockCodec(codec, false) as Enum;
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
 export const createMockPortfolioKind = (
   portfolioKind?: 'Default' | { User: u64 } | PortfolioKind
 ): PortfolioKind => {
@@ -1836,14 +1804,14 @@ export const createMockPortfolioKind = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockPortfolioId = (
-  portfiolioId?:
+  portfolioId?:
     | PortfolioId
     | {
         did: IdentityId | Parameters<typeof createMockIdentityId>[0];
         kind: PortfolioKind | Parameters<typeof createMockPortfolioKind>[0];
       }
 ): PortfolioId => {
-  const { did, kind } = portfiolioId || {
+  const { did, kind } = portfolioId || {
     did: createMockIdentityId(),
     kind: createMockPortfolioKind(),
   };
@@ -1852,7 +1820,7 @@ export const createMockPortfolioId = (
       did: createMockIdentityId(did),
       kind: createMockPortfolioKind(kind),
     },
-    !portfiolioId
+    !portfolioId
   ) as PortfolioId;
 };
 
@@ -1961,6 +1929,35 @@ export const createMockDocument = (document?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockPalletName = (name?: string | PalletName): PalletName => {
+  if (isCodec<PalletName>(name)) {
+    return name;
+  }
+
+  return createMockStringCodec(name) as PalletName;
+};
+
+/**
+ * @hidden
+ */
+export const createMockDispatchableNames = (
+  dispatchableNames?:
+    | 'Whole'
+    | { These: DispatchableName[] }
+    | { Except: DispatchableName[] }
+    | DispatchableNames
+): DispatchableNames => {
+  if (isCodec<DispatchableNames>(dispatchableNames)) {
+    return dispatchableNames;
+  }
+
+  return createMockEnum(dispatchableNames) as DispatchableNames;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockPalletPermissions = (permissions?: {
   pallet_name: PalletName | Parameters<typeof createMockPalletName>[0];
   dispatchable_names: DispatchableNames | Parameters<typeof createMockDispatchableNames>[0];
@@ -2011,13 +2008,13 @@ export const createMockAccountData = (accountData?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockIndex = (value?: number): Index => createMockNumberCodec(value) as Index;
+export const createMockIndex = (value?: BigNumber): Index => createMockNumberCodec(value) as Index;
 
 /**
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockRefCount = (value?: number): RefCount =>
+export const createMockRefCount = (value?: BigNumber): RefCount =>
   createMockNumberCodec(value) as RefCount;
 
 /**
@@ -2088,6 +2085,7 @@ export const createMockAuthorizationType = (
     | 'JoinIdentity'
     | 'Custom'
     | 'NoData'
+    | 'RotatePrimaryKeyToSecondary'
 ): MeshAuthorizationType => {
   return createMockEnum(authorizationType) as MeshAuthorizationType;
 };
@@ -2118,18 +2116,6 @@ export const createMockFundingRoundName = (roundName?: string): FundingRoundName
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockPalletName = (name?: string | PalletName): PalletName => {
-  if (isCodec<PalletName>(name)) {
-    return name;
-  }
-
-  return createMockStringCodec(name) as PalletName;
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
 export const createMockDispatchableName = (name?: string | DispatchableName): DispatchableName => {
   if (isCodec<DispatchableName>(name)) {
     return name;
@@ -2144,29 +2130,6 @@ export const createMockDispatchableName = (name?: string | DispatchableName): Di
  */
 export const createMockFundraiserName = (name?: string): FundraiserName =>
   createMockStringCodec(name) as FundraiserName;
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockPermissions = (permissions?: {
-  asset: AssetPermissions;
-  extrinsic: ExtrinsicPermissions;
-  portfolio: PortfolioPermissions;
-}): Permissions => {
-  const perms = permissions || {
-    asset: createMockAssetPermissions(),
-    extrinsic: createMockExtrinsicPermissions(),
-    portfolio: createMockPortfolioPermissions(),
-  };
-
-  return createMockCodec(
-    {
-      ...perms,
-    },
-    !permissions
-  ) as Permissions;
-};
 
 /**
  * @hidden
@@ -2197,19 +2160,25 @@ export const createMockPortfolioPermissions = (
 
 /**
  * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockDispatchableNames = (
-  dispatchableNames?:
-    | 'Whole'
-    | { These: DispatchableName[] }
-    | { Except: DispatchableName[] }
-    | DispatchableNames
-): DispatchableNames => {
-  if (isCodec<DispatchableNames>(dispatchableNames)) {
-    return dispatchableNames;
-  }
+export const createMockPermissions = (permissions?: {
+  asset: AssetPermissions;
+  extrinsic: ExtrinsicPermissions;
+  portfolio: PortfolioPermissions;
+}): Permissions => {
+  const perms = permissions || {
+    asset: createMockAssetPermissions(),
+    extrinsic: createMockExtrinsicPermissions(),
+    portfolio: createMockPortfolioPermissions(),
+  };
 
-  return createMockEnum(dispatchableNames) as DispatchableNames;
+  return createMockCodec(
+    {
+      ...perms,
+    },
+    !permissions
+  ) as Permissions;
 };
 
 /**
@@ -2220,6 +2189,7 @@ export const createMockAuthorizationData = (
   authorizationData?:
     | { AttestPrimaryKeyRotation: IdentityId }
     | 'RotatePrimaryKey'
+    | { RotatePrimaryKeyToSecondary: Permissions }
     | { TransferTicker: Ticker }
     | { AddMultiSigSigner: AccountId }
     | { TransferAssetOwnership: Ticker }
@@ -2706,8 +2676,7 @@ export const createMockSecondaryKey = (secondaryKey?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockPipId = (id: number | BigNumber): PipId =>
-  createMockU32(new BigNumber(id).toNumber()) as PipId;
+export const createMockPipId = (id: BigNumber): PipId => createMockU32(new BigNumber(id)) as PipId;
 
 /**
  * @hidden
@@ -2733,7 +2702,6 @@ export const createMockVenueType = (
 export const createMockVenue = (venue?: { creator: IdentityId; venue_type: VenueType }): Venue => {
   const vn = venue || {
     creator: createMockIdentityId(),
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     venue_type: createMockVenueType(),
   };
 
@@ -3509,4 +3477,79 @@ export const createMockClassicTickerRegistration = (
     },
     !registration
   ) as ClassicTickerRegistration;
+};
+
+/**
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockHeader = (
+  header?:
+    | Header
+    | {
+        parentHash: Hash | Parameters<typeof createMockHash>[0];
+        number: Compact<u32>;
+        stateRoot: Hash | Parameters<typeof createMockHash>[0];
+        extrinsicsRoot: Hash | Parameters<typeof createMockHash>[0];
+      }
+): Header => {
+  const { parentHash, number, stateRoot, extrinsicsRoot } = header || {
+    parentHash: createMockHash(),
+    number: createMockCompact(),
+    stateRoot: createMockHash(),
+    extrinsicsRoot: createMockHash(),
+  };
+
+  return createMockCodec(
+    {
+      parentHash: createMockHash(parentHash),
+      number: createMockCompact(number.unwrap()),
+      stateRoot: createMockHash(stateRoot),
+      extrinsicsRoot: createMockHash(extrinsicsRoot),
+    },
+    !header
+  ) as Header;
+};
+
+/**
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockBlock = (
+  block?:
+    | Block
+    | {
+        header: Header | Parameters<typeof createMockHeader>[0];
+      }
+): Block => {
+  const { header } = block || {
+    header: createMockHeader(),
+  };
+
+  return createMockCodec(
+    {
+      header: createMockHeader(header),
+    },
+    !block
+  ) as Block;
+};
+
+/**
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockSignedBlock = (
+  signedBlock?:
+    | SignedBlock
+    | {
+        block: Block | Parameters<typeof createMockBlock>[0];
+      }
+): SignedBlock => {
+  const { block } = signedBlock || {
+    block: createMockBlock(),
+  };
+
+  return createMockCodec(
+    {
+      block: createMockBlock(block),
+    },
+    !signedBlock
+  ) as SignedBlock;
 };

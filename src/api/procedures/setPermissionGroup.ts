@@ -1,7 +1,8 @@
-import { AgentGroup, TxTags } from 'polymesh-types/types';
+import { AgentGroup } from 'polymesh-types/types';
 
 import { isFullGroupType } from '~/api/procedures/utils';
 import {
+  Asset,
   Context,
   createGroup,
   CustomPermissionGroup,
@@ -9,40 +10,40 @@ import {
   PolymeshError,
   PostTransactionValue,
   Procedure,
-  SecurityToken,
 } from '~/internal';
-import { ErrorCode, Identity, isEntity, TransactionPermissions, TxGroup } from '~/types';
+import { ErrorCode, Identity, TransactionPermissions, TxGroup, TxTags } from '~/types';
 import { MaybePostTransactionValue, ProcedureAuthorization } from '~/types/internal';
+import { isEntity } from '~/utils';
 import {
   permissionGroupIdentifierToAgentGroup,
   stringToIdentityId,
   stringToTicker,
 } from '~/utils/conversion';
-import { getToken } from '~/utils/internal';
+import { asAsset } from '~/utils/internal';
 
-interface TokenBase {
+interface AssetBase {
   /**
-   * Security Token over which the Identity will be granted permissions
+   * Asset over which the Identity will be granted permissions
    */
-  token: string | SecurityToken;
+  asset: string | Asset;
 }
 
-interface TransactionsParams extends TokenBase {
+interface TransactionsParams extends AssetBase {
   transactions: TransactionPermissions;
 }
 
-interface TxGroupParams extends TokenBase {
+interface TxGroupParams extends AssetBase {
   transactionGroups: TxGroup[];
 }
 
 /**
  * This procedure can be called with:
- *   - A Security Token's existing Custom Permission Group. The Identity will be assigned as an Agent of that Group for that Token
- *   - A Known Permission Group and a Security Token. The Identity will be assigned as an Agent of that Group for that Token
- *   - A set of Transaction Permissions and a Security Token. A Custom Permission Group will be created for that Token with those permissions, and
- *     the Identity will be assigned as an Agent of that Group for that Token
- *   - An array of [[TxGroup]]s that represent a set of permissions. A Custom Permission Group will be created with those permissions, and
- *     the Identity will be assigned as an Agent of that Group for that Token
+ *   - An Asset's existing Custom Permission Group. The Identity will be assigned as an Agent of that Group for that Asset
+ *   - A Known Permission Group and an Asset. The Identity will be assigned as an Agent of that Group for that Asset
+ *   - A set of Transaction Permissions and an Asset. A Custom Permission Group will be created for that Asset with those permissions, and
+ *     the Identity will be assigned as an Agent of that Group for that Asset
+ *   - An array of {@link TxGroup | Transaction Groups} that represent a set of permissions. A Custom Permission Group will be created with those permissions, and
+ *     the Identity will be assigned as an Agent of that Group for that Asset
  */
 export interface SetPermissionGroupParams {
   group: KnownPermissionGroup | CustomPermissionGroup | TransactionsParams | TxGroupParams;
@@ -59,7 +60,7 @@ export type Params = SetPermissionGroupParams & {
  * @hidden
  */
 export interface Storage {
-  token: SecurityToken;
+  asset: Asset;
 }
 
 /**
@@ -88,16 +89,15 @@ export async function prepareSetPermissionGroup(
       },
     },
     context,
-    storage: { token },
+    storage: { asset },
   } = this;
 
   const { identity, group } = args;
-  const { ticker } = token;
-  const { did } = identity;
+  const { ticker } = asset;
 
   const [currentGroup, currentAgents] = await Promise.all([
-    identity.tokenPermissions.getGroup({ token }),
-    token.permissions.getAgents(),
+    identity.assetPermissions.getGroup({ asset: asset }),
+    asset.permissions.getAgents(),
   ]);
 
   if (isFullGroupType(currentGroup)) {
@@ -106,17 +106,17 @@ export async function prepareSetPermissionGroup(
     );
     if (fullGroupAgents.length === 1) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.EntityInUse,
         message:
-          'The target is the last Agent with full permissions for this Security Token. There should always be at least one Agent with full permissions',
+          'The target is the last Agent with full permissions for this Asset. There should always be at least one Agent with full permissions',
       });
     }
   }
 
-  if (!currentAgents.find(({ agent }) => agent.did === did)) {
+  if (!currentAgents.find(({ agent }) => agent.isEqual(identity))) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'The target must already be an Agent for the Security Token',
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The target must already be an Agent for the Asset',
     });
   }
 
@@ -134,7 +134,7 @@ export async function prepareSetPermissionGroup(
   } else {
     if (group.isEqual(currentGroup)) {
       throw new PolymeshError({
-        code: ErrorCode.ValidationError,
+        code: ErrorCode.NoDataChange,
         message: 'The Agent is already part of this permission group',
       });
     }
@@ -144,9 +144,12 @@ export async function prepareSetPermissionGroup(
   }
 
   const rawTicker = stringToTicker(ticker, context);
-  const rawIdentityId = stringToIdentityId(did, context);
+  const rawIdentityId = stringToIdentityId(identity.did, context);
 
-  this.addTransaction(externalAgents.changeGroup, {}, rawTicker, rawIdentityId, rawAgentGroup);
+  this.addTransaction({
+    transaction: externalAgents.changeGroup,
+    args: [rawTicker, rawIdentityId, rawAgentGroup],
+  });
 
   return returnValue;
 }
@@ -158,12 +161,12 @@ export function getAuthorization(
   this: Procedure<Params, CustomPermissionGroup | KnownPermissionGroup, Storage>
 ): ProcedureAuthorization {
   const {
-    storage: { token },
+    storage: { asset },
   } = this;
   return {
     permissions: {
       transactions: [TxTags.externalAgents.ChangeGroup],
-      tokens: [token],
+      assets: [asset],
       portfolios: [],
     },
   };
@@ -174,20 +177,12 @@ export function getAuthorization(
  */
 export function prepareStorage(
   this: Procedure<Params, CustomPermissionGroup | KnownPermissionGroup, Storage>,
-  { group }: Params
+  { group: { asset } }: Params
 ): Storage {
   const { context } = this;
 
-  let token: string | SecurityToken;
-
-  if (isEntity(group)) {
-    ({ ticker: token } = group);
-  } else {
-    ({ token } = group);
-  }
-
   return {
-    token: getToken(token, context),
+    asset: asAsset(asset, context),
   };
 }
 

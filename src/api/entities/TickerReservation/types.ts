@@ -10,18 +10,18 @@ export enum TickerReservationStatus {
    */
   Reserved = 'Reserved',
   /**
-   * a Security Token using this ticker has already been created
+   * an Asset using this ticker has already been created
    */
-  TokenCreated = 'TokenCreated',
+  AssetCreated = 'AssetCreated',
 }
 
 export interface TickerReservationDetails {
   /**
-   * identity ID of the owner of the ticker, null if it hasn't been reserved
+   * Identity ID of the owner of the ticker, null if it hasn't been reserved
    */
   owner: Identity | null;
   /**
-   * date at which the reservation expires, null if it never expires (permanent reservation or token already launched)
+   * date at which the reservation expires, null if it never expires (permanent reservation or Asset already launched)
    */
   expiryDate: Date | null;
   status: TickerReservationStatus;

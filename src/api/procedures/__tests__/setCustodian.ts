@@ -1,13 +1,20 @@
 import { Moment } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import { AuthorizationData, Signatory, TxTags } from 'polymesh-types/types';
+import { AuthorizationData, Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { getAuthorization, Params, prepareSetCustodian } from '~/api/procedures/setCustodian';
 import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, AuthorizationType, RoleType, SignerType, SignerValue } from '~/types';
+import {
+  Authorization,
+  AuthorizationType,
+  RoleType,
+  SignerType,
+  SignerValue,
+  TxTags,
+} from '~/types';
 import { PortfolioId } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -71,12 +78,11 @@ describe('setCustodian procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the passed account has a pending authorization to accept', () => {
+  it('should throw an error if the passed Account has a pending authorization to accept', () => {
     const did = 'someDid';
     const args = { targetIdentity: 'targetIdentity', did };
 
@@ -95,9 +101,7 @@ describe('setCustodian procedure', () => {
 
     entityMockUtils.configureMocks({
       identityOptions: {
-        authorizations: {
-          getReceived: receivedAuthorizations,
-        },
+        authorizationsGetReceived: receivedAuthorizations,
       },
     });
 
@@ -105,14 +109,14 @@ describe('setCustodian procedure', () => {
     signerToStringStub.withArgs(args.targetIdentity).returns(args.targetIdentity);
     signerToStringStub.withArgs(target).returns(args.targetIdentity);
 
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
 
     return expect(prepareSetCustodian.call(proc, args)).rejects.toThrow(
       "The target Identity already has a pending invitation to be the Portfolio's custodian"
     );
   });
 
-  test('should add an add authorization transaction to the queue', async () => {
+  it('should add an add authorization transaction to the queue', async () => {
     const did = 'someDid';
     const id = new BigNumber(1);
     const expiry = new Date('1/1/2040');
@@ -124,12 +128,12 @@ describe('setCustodian procedure', () => {
     });
     const rawDid = dsMockUtils.createMockIdentityId(did);
     const rawPortfolioKind = dsMockUtils.createMockPortfolioKind({
-      User: dsMockUtils.createMockU64(id.toNumber()),
+      User: dsMockUtils.createMockU64(id),
     });
     const rawAuthorizationData = dsMockUtils.createMockAuthorizationData({
       PortfolioCustody: dsMockUtils.createMockPortfolioId({ did: rawDid, kind: rawPortfolioKind }),
     });
-    const rawExpiry = dsMockUtils.createMockMoment(expiry.getTime());
+    const rawExpiry = dsMockUtils.createMockMoment(new BigNumber(expiry.getTime()));
     const fakePortfolio = entityMockUtils.getNumberedPortfolioInstance({ isEqual: false });
     const receivedAuthorizations: AuthorizationRequest[] = [
       entityMockUtils.getAuthorizationRequestInstance({
@@ -143,9 +147,7 @@ describe('setCustodian procedure', () => {
 
     entityMockUtils.configureMocks({
       identityOptions: {
-        authorizations: {
-          getReceived: receivedAuthorizations,
-        },
+        authorizationsGetReceived: receivedAuthorizations,
       },
       defaultPortfolioOptions: {
         isEqual: false,
@@ -164,7 +166,7 @@ describe('setCustodian procedure', () => {
     authorizationToAuthorizationDataStub.returns(rawAuthorizationData);
     dateToMomentStub.withArgs(expiry, mockContext).returns(rawExpiry);
 
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('identity', 'addAuthorization');
 
@@ -172,28 +174,28 @@ describe('setCustodian procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      transaction,
-      {},
-      rawSignatory,
-      rawAuthorizationData,
-      null
+      sinon.match({
+        transaction,
+        resolvers: sinon.match.array,
+        args: [rawSignatory, rawAuthorizationData, null],
+      })
     );
 
     await prepareSetCustodian.call(proc, { ...args, id, expiry });
 
     sinon.assert.calledWith(
       addTransactionStub,
-      transaction,
-      {},
-      rawSignatory,
-      rawAuthorizationData,
-      rawExpiry
+      sinon.match({
+        transaction,
+        resolvers: sinon.match.array,
+        args: [rawSignatory, rawAuthorizationData, rawExpiry],
+      })
     );
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+    it('should return the appropriate roles and permissions', () => {
+      const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const id = new BigNumber(1);
       const did = 'someDid';
@@ -208,8 +210,8 @@ describe('setCustodian procedure', () => {
         roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
         permissions: {
           transactions: [TxTags.identity.AddAuthorization],
-          portfolios: [entityMockUtils.getNumberedPortfolioInstance({ did, id })],
-          tokens: [],
+          portfolios: [expect.objectContaining({ owner: expect.objectContaining({ did }), id })],
+          assets: [],
         },
       });
 
@@ -223,8 +225,8 @@ describe('setCustodian procedure', () => {
         roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
         permissions: {
           transactions: [TxTags.identity.AddAuthorization],
-          portfolios: [entityMockUtils.getDefaultPortfolioInstance({ did })],
-          tokens: [],
+          portfolios: [expect.objectContaining({ owner: expect.objectContaining({ did }) })],
+          assets: [],
         },
       });
     });

@@ -1,16 +1,21 @@
-import { TxTags } from 'polymesh-types/types';
-
-import { Account, Identity, PolymeshError, Procedure } from '~/internal';
+import { createAuthorizationResolver } from '~/api/procedures/utils';
 import {
+  Account,
+  AuthorizationRequest,
+  PolymeshError,
+  PostTransactionValue,
+  Procedure,
+} from '~/internal';
+import {
+  Authorization,
   AuthorizationType,
   ErrorCode,
   Permissions,
   PermissionsLike,
   PermissionType,
-  RoleType,
   SignerType,
+  TxTags,
 } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
   dateToMoment,
@@ -18,6 +23,7 @@ import {
   signerToString,
   signerValueToSignatory,
 } from '~/utils/conversion';
+import { optionize } from '~/utils/internal';
 
 export interface InviteAccountParams {
   targetAccount: string | Account;
@@ -25,17 +31,13 @@ export interface InviteAccountParams {
   expiry?: Date;
 }
 
-export type Params = InviteAccountParams & {
-  identity: Identity;
-};
-
 /**
  * @hidden
  */
 export async function prepareInviteAccount(
-  this: Procedure<Params, void>,
-  args: Params
-): Promise<void> {
+  this: Procedure<InviteAccountParams, AuthorizationRequest>,
+  args: InviteAccountParams
+): Promise<PostTransactionValue<AuthorizationRequest>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -43,7 +45,9 @@ export async function prepareInviteAccount(
     context,
   } = this;
 
-  const { targetAccount, permissions: permissionsLike, expiry, identity } = args;
+  const { targetAccount, permissions: permissionsLike, expiry = null } = args;
+
+  const identity = await context.getSigningIdentity();
 
   const address = signerToString(targetAccount);
 
@@ -62,7 +66,7 @@ export async function prepareInviteAccount(
 
   if (existingIdentity) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'The target Account is already part of an Identity',
     });
   }
@@ -81,7 +85,7 @@ export async function prepareInviteAccount(
 
   if (hasPendingAuth) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.NoDataChange,
       message: 'The target Account already has a pending invitation to join this Identity',
     });
   }
@@ -92,7 +96,7 @@ export async function prepareInviteAccount(
   );
 
   let authorizationValue: Permissions = {
-    tokens: { type: PermissionType.Include, values: [] },
+    assets: { type: PermissionType.Include, values: [] },
     transactions: { type: PermissionType.Include, values: [] },
     transactionGroups: [],
     portfolios: { type: PermissionType.Include, values: [] },
@@ -102,43 +106,30 @@ export async function prepareInviteAccount(
     authorizationValue = permissionsLikeToPermissions(permissionsLike, context);
   }
 
-  const rawAuthorizationData = authorizationToAuthorizationData(
-    {
-      type: AuthorizationType.JoinIdentity,
-      value: authorizationValue,
-    },
-    context
-  );
-  const rawExpiry = expiry ? dateToMoment(expiry, context) : null;
+  const authRequest: Authorization = {
+    type: AuthorizationType.JoinIdentity,
+    value: authorizationValue,
+  };
+  const rawAuthorizationData = authorizationToAuthorizationData(authRequest, context);
+  const rawExpiry = optionize(dateToMoment)(expiry, context);
 
-  this.addTransaction(
-    tx.identity.addAuthorization,
-    {},
-    rawSignatory,
-    rawAuthorizationData,
-    rawExpiry
-  );
+  const [auth] = this.addTransaction({
+    transaction: tx.identity.addAuthorization,
+    resolvers: [createAuthorizationResolver(authRequest, identity, account, expiry, context)],
+    args: [rawSignatory, rawAuthorizationData, rawExpiry],
+  });
+
+  return auth;
 }
 
 /**
  * @hidden
  */
-export function getAuthorization(
-  this: Procedure<Params>,
-  { identity: { did } }: Params
-): ProcedureAuthorization {
-  return {
-    roles: [{ type: RoleType.Identity, did }],
+export const inviteAccount = (): Procedure<InviteAccountParams, AuthorizationRequest> =>
+  new Procedure(prepareInviteAccount, {
     permissions: {
       transactions: [TxTags.identity.AddAuthorization],
-      tokens: [],
+      assets: [],
       portfolios: [],
     },
-  };
-}
-
-/**
- * @hidden
- */
-export const inviteAccount = (): Procedure<Params, void> =>
-  new Procedure(prepareInviteAccount, getAuthorization);
+  });

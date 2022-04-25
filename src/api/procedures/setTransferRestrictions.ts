@@ -1,8 +1,10 @@
+import { U8aFixed } from '@polkadot/types';
+import BigNumber from 'bignumber.js';
 import P from 'bluebird';
-import { difference, differenceWith, isEqual, some, uniq } from 'lodash';
-import { ScopeId, Ticker, TransferManager, TxTag } from 'polymesh-types/types';
+import { difference, differenceWith, isEqual } from 'lodash';
+import { Ticker, TransferManager, TxTag } from 'polymesh-types/types';
 
-import { Context, Identity, PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { Asset, PolymeshError, Procedure } from '~/internal';
 import {
   CountTransferRestrictionInput,
   ErrorCode,
@@ -19,6 +21,7 @@ import {
   transferRestrictionToTransferManager,
   u32ToBigNumber,
 } from '~/utils/conversion';
+import { assembleBatchTransactions, defusePromise, getExemptedIds } from '~/utils/internal';
 
 export interface SetCountTransferRestrictionsParams {
   /**
@@ -47,19 +50,18 @@ export type SetTransferRestrictionsParams = { ticker: string } & (
 export interface Storage {
   restrictionsToAdd: [Ticker, TransferManager][];
   restrictionsToRemove: [Ticker, TransferManager][];
-  exemptionsToAdd: [Ticker, TransferManager, ScopeId[]][];
-  exemptionsToRemove: [Ticker, TransferManager, ScopeId[]][];
-  occupiedSlots: number;
-  exemptionsRepeated: boolean;
+  exemptionsToAdd: [Ticker, TransferManager, U8aFixed[]][];
+  exemptionsToRemove: [Ticker, TransferManager, U8aFixed[]][];
+  occupiedSlots: BigNumber;
 }
 
 /**
  * @hidden
  */
 export async function prepareSetTransferRestrictions(
-  this: Procedure<SetTransferRestrictionsParams, number, Storage>,
+  this: Procedure<SetTransferRestrictionsParams, BigNumber, Storage>,
   args: SetTransferRestrictionsParams
-): Promise<number> {
+): Promise<BigNumber> {
   const {
     context: {
       polymeshApi: {
@@ -73,19 +75,11 @@ export async function prepareSetTransferRestrictions(
       exemptionsToAdd,
       exemptionsToRemove,
       occupiedSlots,
-      exemptionsRepeated,
     },
   } = this;
   const {
     restrictions: { length: newRestrictionAmount },
   } = args;
-
-  if (exemptionsRepeated) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'One or more restrictions have repeated exempted Scope IDs/Identities',
-    });
-  }
 
   const restrictionsToAddAmount = restrictionsToAdd.length;
   const restrictionsToRemoveAmount = restrictionsToRemove.length;
@@ -99,42 +93,47 @@ export async function prepareSetTransferRestrictions(
     !exemptionsToRemoveAmount
   ) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.NoDataChange,
       message: newRestrictionAmount
         ? 'The supplied restrictions are already in place'
         : 'There are no restrictions to remove',
     });
   }
 
-  const maxTransferManagers = u32ToBigNumber(
-    consts.statistics.maxTransferManagersPerAsset
-  ).toNumber();
-  const finalCount = occupiedSlots + newRestrictionAmount;
-  if (finalCount >= maxTransferManagers) {
+  const maxTransferManagers = u32ToBigNumber(consts.statistics.maxTransferManagersPerAsset);
+  const finalCount = occupiedSlots.plus(newRestrictionAmount);
+  if (finalCount.gte(maxTransferManagers)) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.LimitExceeded,
       message: 'Cannot set more Transfer Restrictions than there are slots available',
       data: {
-        availableSlots: maxTransferManagers - occupiedSlots,
+        availableSlots: maxTransferManagers.minus(occupiedSlots),
       },
     });
   }
 
-  if (restrictionsToRemoveAmount) {
-    this.addBatchTransaction(statistics.removeTransferManager, {}, restrictionsToRemove);
-  }
+  const transactions = assembleBatchTransactions(
+    tuple(
+      {
+        transaction: statistics.removeTransferManager,
+        argsArray: restrictionsToRemove,
+      },
+      {
+        transaction: statistics.addTransferManager,
+        argsArray: restrictionsToAdd,
+      },
+      {
+        transaction: statistics.removeExemptedEntities,
+        argsArray: exemptionsToRemove,
+      },
+      {
+        transaction: statistics.addExemptedEntities,
+        argsArray: exemptionsToAdd,
+      }
+    )
+  );
 
-  if (restrictionsToAddAmount) {
-    this.addBatchTransaction(statistics.addTransferManager, {}, restrictionsToAdd);
-  }
-
-  if (exemptionsToRemoveAmount) {
-    this.addBatchTransaction(statistics.removeExemptedEntities, {}, exemptionsToRemove);
-  }
-
-  if (exemptionsToAddAmount) {
-    this.addBatchTransaction(statistics.addExemptedEntities, {}, exemptionsToAdd);
-  }
+  this.addBatchTransaction({ transactions });
 
   return finalCount;
 }
@@ -143,15 +142,11 @@ export async function prepareSetTransferRestrictions(
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<SetTransferRestrictionsParams, number, Storage>,
+  this: Procedure<SetTransferRestrictionsParams, BigNumber, Storage>,
   { ticker }: SetTransferRestrictionsParams
 ): ProcedureAuthorization {
-  const {
-    restrictionsToRemove,
-    restrictionsToAdd,
-    exemptionsToAdd,
-    exemptionsToRemove,
-  } = this.storage;
+  const { restrictionsToRemove, restrictionsToAdd, exemptionsToAdd, exemptionsToRemove } =
+    this.storage;
   const transactions: TxTag[] = [];
   if (restrictionsToAdd.length) {
     transactions.push(TxTags.statistics.AddTransferManager);
@@ -171,7 +166,7 @@ export function getAuthorization(
 
   return {
     permissions: {
-      tokens: [new SecurityToken({ ticker }, this.context)],
+      assets: [new Asset({ ticker }, this.context)],
       transactions,
       portfolios: [],
     },
@@ -180,47 +175,19 @@ export function getAuthorization(
 
 /**
  * @hidden
- *
- * Merge an array of Identity IDs and Scope IDs into an array of only Scope IDs
- *
- * @note fetches missing scope IDs from the chain
- */
-const getScopeIds = async (
-  identities: (string | Identity)[],
-  scopeIds: string[],
-  context: Context,
-  ticker: string
-): Promise<string[]> => {
-  const identityScopeIds = await P.map(identities, async value => {
-    let identity: Identity;
-
-    if (typeof value === 'string') {
-      identity = new Identity({ did: value }, context);
-    } else {
-      identity = value;
-    }
-
-    return identity.getScopeId({ token: ticker });
-  });
-
-  return [...scopeIds, ...identityScopeIds];
-};
-
-/**
- * @hidden
  */
 export async function prepareStorage(
-  this: Procedure<SetTransferRestrictionsParams, number, Storage>,
+  this: Procedure<SetTransferRestrictionsParams, BigNumber, Storage>,
   args: SetTransferRestrictionsParams
 ): Promise<Storage> {
   const { context } = this;
-  const { ticker } = args;
+  const { ticker, type, restrictions } = args;
 
   const rawTicker = stringToTicker(ticker, context);
 
   const {
     transferRestrictions: { count, percentage },
-  } = new SecurityToken({ ticker }, context);
+  } = new Asset({ ticker }, context);
 
   const [
     { restrictions: currentCountRestrictions },
@@ -233,35 +200,35 @@ export async function prepareStorage(
   const toAddExemptionPromises: [TransferRestriction, Promise<string[]>][] = [];
   let occupiedSlots = currentCountRestrictions.length + currentPercentageRestrictions.length;
 
-  if (args.type === TransferRestrictionType.Count) {
-    args.restrictions.forEach(
-      ({ exemptedScopeIds = [], exemptedIdentities = [], count: value }) => {
-        const restriction = { type: TransferRestrictionType.Count, value };
-        toAddRestrictions.push(restriction);
-        toAddExemptionPromises.push(
-          tuple(restriction, getScopeIds(exemptedIdentities, exemptedScopeIds, context, ticker))
-        );
-      }
-    );
-    currentCountRestrictions.forEach(({ exemptedScopeIds = [], count: value }) => {
+  /*
+   * we're using `defusePromise` here because we KNOW the exempted ID promises are being
+   * awaited later and errors WILL be caught
+   */
+  if (type === TransferRestrictionType.Count) {
+    restrictions.forEach(({ exemptedIdentities = [], count: value }) => {
+      const restriction = { type: TransferRestrictionType.Count, value };
+      toAddRestrictions.push(restriction);
+      toAddExemptionPromises.push(
+        tuple(restriction, defusePromise(getExemptedIds(exemptedIdentities, context, ticker)))
+      );
+    });
+    currentCountRestrictions.forEach(({ exemptedIds = [], count: value }) => {
       const restriction = { type: TransferRestrictionType.Count, value };
       currentRestrictions.push(restriction);
-      currentExemptions.push(tuple(restriction, exemptedScopeIds));
+      currentExemptions.push(tuple(restriction, exemptedIds));
     });
   } else {
-    args.restrictions.forEach(
-      ({ exemptedIdentities = [], exemptedScopeIds = [], percentage: value }) => {
-        const restriction = { type: TransferRestrictionType.Percentage, value };
-        toAddRestrictions.push(restriction);
-        toAddExemptionPromises.push(
-          tuple(restriction, getScopeIds(exemptedIdentities, exemptedScopeIds, context, ticker))
-        );
-      }
-    );
-    currentPercentageRestrictions.forEach(({ exemptedScopeIds = [], percentage: value }) => {
+    restrictions.forEach(({ exemptedIdentities = [], percentage: value }) => {
+      const restriction = { type: TransferRestrictionType.Percentage, value };
+      toAddRestrictions.push(restriction);
+      toAddExemptionPromises.push(
+        tuple(restriction, defusePromise(getExemptedIds(exemptedIdentities, context, ticker)))
+      );
+    });
+    currentPercentageRestrictions.forEach(({ exemptedIds = [], percentage: value }) => {
       const restriction = { type: TransferRestrictionType.Percentage, value };
       currentRestrictions.push(restriction);
-      currentExemptions.push(tuple(restriction, exemptedScopeIds));
+      currentExemptions.push(tuple(restriction, exemptedIds));
     });
   }
 
@@ -299,13 +266,13 @@ export async function prepareStorage(
     const currentExemption = currentExemptions.find(([res]) => isEqual(res, restriction));
     const currentExempted = currentExemption?.[1] || [];
 
-    // scope IDs that weren't exempted before for that restriction
+    // Scope/Identity IDs that weren't exempted before for that restriction
     const newExempted = difference(exempted, currentExempted);
     if (newExempted.length) {
       newExemptions.push(tuple(restriction, newExempted));
     }
 
-    // scope IDs that will no longer be exempted for that restriction
+    // Scope/Identity IDs that will no longer be exempted for that restriction
     const toRemoveExempted = difference(currentExempted, exempted);
     if (toRemoveExempted.length) {
       toRemoveExemptions.push(tuple(restriction, toRemoveExempted));
@@ -322,20 +289,16 @@ export async function prepareStorage(
     }
   });
 
-  const exemptionsRepeated = some(
-    newExemptions,
-    ([, scopeIds]) => uniq(scopeIds).length !== scopeIds.length
-  );
-
-  const transformExemptions = ([restriction, scopeIds]: [TransferRestriction, string[]]): [
+  const transformExemptions = ([restriction, entityIds]: [TransferRestriction, string[]]): [
     Ticker,
     TransferManager,
-    ScopeId[]
+    U8aFixed[]
   ] =>
     tuple(
       rawTicker,
       transferRestrictionToTransferManager(restriction, context),
-      scopeIds.map(scopeId => stringToScopeId(scopeId, context))
+      // we use `stringToScopeId` because both `ScopeId` and `IdentityId` are aliases for `U8aFixed`
+      entityIds.map(entityId => stringToScopeId(entityId, context))
     );
 
   const exemptionsToAdd = newExemptions.map(transformExemptions);
@@ -347,8 +310,7 @@ export async function prepareStorage(
     restrictionsToAdd,
     exemptionsToAdd,
     exemptionsToRemove,
-    occupiedSlots,
-    exemptionsRepeated,
+    occupiedSlots: new BigNumber(occupiedSlots),
   };
 }
 
@@ -357,6 +319,6 @@ export async function prepareStorage(
  */
 export const setTransferRestrictions = (): Procedure<
   SetTransferRestrictionsParams,
-  number,
+  BigNumber,
   Storage
 > => new Procedure(prepareSetTransferRestrictions, getAuthorization, prepareStorage);

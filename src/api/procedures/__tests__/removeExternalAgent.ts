@@ -1,4 +1,3 @@
-import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -8,15 +7,15 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/removeExternalAgent';
-import { Context, Identity, SecurityToken } from '~/internal';
+import { Asset, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { PermissionGroupType } from '~/types';
+import { PermissionGroupType, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 jest.mock(
   '~/api/entities/CustomPermissionGroup',
@@ -34,7 +33,7 @@ jest.mock(
 describe('removeExternalAgent procedure', () => {
   let mockContext: Mocked<Context>;
   let ticker: string;
-  let token: SecurityToken;
+  let asset: Asset;
   let target: string;
   let addTransactionStub: sinon.SinonStub;
   let stringToTickerStub: sinon.SinonStub;
@@ -44,8 +43,8 @@ describe('removeExternalAgent procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    ticker = 'SOMETICKER';
-    token = entityMockUtils.getSecurityTokenInstance({ ticker });
+    ticker = 'SOME_TICKER';
+    asset = entityMockUtils.getAssetInstance({ ticker });
     target = 'someDid';
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
@@ -64,13 +63,12 @@ describe('removeExternalAgent procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
   describe('prepareStorage', () => {
-    test('should return the security token', () => {
+    it('should return the Asset', () => {
       const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
@@ -80,36 +78,36 @@ describe('removeExternalAgent procedure', () => {
       });
 
       expect(result).toEqual({
-        token,
+        asset: expect.objectContaining({ ticker }),
       });
     });
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-        token,
+        asset,
       });
       const boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc()).toEqual({
         permissions: {
           transactions: [TxTags.externalAgents.RemoveAgent],
-          tokens: [token],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });
     });
   });
 
-  test('should throw an error if the identity is not an External Agent', () => {
+  it('should throw an error if the Identity is not an external agent', () => {
     const args = {
       target,
       ticker,
     };
 
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      token: entityMockUtils.getSecurityTokenInstance({
+      asset: entityMockUtils.getAssetInstance({
         permissionsGetAgents: [],
       }),
     });
@@ -119,17 +117,17 @@ describe('removeExternalAgent procedure', () => {
     );
   });
 
-  test('should throw an error if the agent to remove is the last one assigned to the full group', () => {
+  it('should throw an error if the agent to remove is the last one assigned to the full group', () => {
     const args = {
       target,
       ticker,
     };
 
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      token: entityMockUtils.getSecurityTokenInstance({
+      asset: entityMockUtils.getAssetInstance({
         permissionsGetAgents: [
           {
-            agent: { did: 'someDid' } as Identity,
+            agent: entityMockUtils.getIdentityInstance({ isEqual: true }),
             group: entityMockUtils.getKnownPermissionGroupInstance({
               ticker,
               type: PermissionGroupType.Full,
@@ -140,24 +138,24 @@ describe('removeExternalAgent procedure', () => {
     });
 
     return expect(prepareRemoveExternalAgent.call(proc, args)).rejects.toThrow(
-      'The target is the last Agent with full permissions for this Security Token. There should always be at least one Agent with full permissions'
+      'The target is the last Agent with full permissions for this Asset. There should always be at least one Agent with full permissions'
     );
   });
 
-  test('should add a remove agent transaction to the queue', async () => {
+  it('should add a remove agent transaction to the queue', async () => {
     const transaction = dsMockUtils.createTxStub('externalAgents', 'removeAgent');
     let proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      token: entityMockUtils.getSecurityTokenInstance({
+      asset: entityMockUtils.getAssetInstance({
         permissionsGetAgents: [
           {
-            agent: { did: 'someDid' } as Identity,
+            agent: entityMockUtils.getIdentityInstance({ isEqual: true }),
             group: entityMockUtils.getKnownPermissionGroupInstance({
               ticker,
               type: PermissionGroupType.ExceptMeta,
             }),
           },
           {
-            agent: { did: 'otherDid' } as Identity,
+            agent: entityMockUtils.getIdentityInstance({ isEqual: false }),
             group: entityMockUtils.getKnownPermissionGroupInstance({
               ticker,
               type: PermissionGroupType.Full,
@@ -178,20 +176,20 @@ describe('removeExternalAgent procedure', () => {
       ticker,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawAgent);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawAgent] });
 
     proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
-      token: entityMockUtils.getSecurityTokenInstance({
+      asset: entityMockUtils.getAssetInstance({
         permissionsGetAgents: [
           {
-            agent: { did: 'someDid' } as Identity,
+            agent: entityMockUtils.getIdentityInstance({ isEqual: false }),
             group: entityMockUtils.getKnownPermissionGroupInstance({
               ticker,
               type: PermissionGroupType.Full,
             }),
           },
           {
-            agent: { did: 'otherDid' } as Identity,
+            agent: entityMockUtils.getIdentityInstance({ isEqual: true }),
             group: entityMockUtils.getKnownPermissionGroupInstance({
               ticker,
               type: PermissionGroupType.Full,
@@ -206,6 +204,6 @@ describe('removeExternalAgent procedure', () => {
       ticker,
     });
 
-    sinon.assert.calledWith(addTransactionStub, transaction, {}, rawTicker, rawAgent);
+    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawAgent] });
   });
 });

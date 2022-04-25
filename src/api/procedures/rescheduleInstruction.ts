@@ -1,9 +1,8 @@
 import BigNumber from 'bignumber.js';
-import { TxTags } from 'polymesh-types/types';
 
 import { Instruction, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, InstructionStatus } from '~/types';
-import { numberToU64 } from '~/utils/conversion';
+import { ErrorCode, InstructionStatus, TxTags } from '~/types';
+import { bigNumberToU64 } from '~/utils/conversion';
 
 /**
  * @hidden
@@ -32,7 +31,7 @@ export async function prepareRescheduleInstruction(
 
   if (status !== InstructionStatus.Failed) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.UnmetPrerequisite,
       message: 'Only failed Instructions can be rescheduled',
       data: {
         instructionStatus: status,
@@ -40,9 +39,12 @@ export async function prepareRescheduleInstruction(
     });
   }
 
-  const rawId = numberToU64(id, context);
+  const rawId = bigNumberToU64(id, context);
 
-  this.addTransaction(tx.settlement.rescheduleInstruction, {}, rawId);
+  this.addTransaction({
+    transaction: tx.settlement.rescheduleInstruction,
+    args: [rawId],
+  });
 
   return instruction;
 }

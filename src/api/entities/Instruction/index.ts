@@ -1,38 +1,38 @@
 import BigNumber from 'bignumber.js';
 
 import {
+  Asset,
   Context,
   Entity,
   Identity,
   modifyInstructionAffirmation,
   PolymeshError,
   rescheduleInstruction,
-  SecurityToken,
   Venue,
 } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import {
-  Ensured,
   ErrorCode,
   EventIdentifier,
+  NoArgsProcedureMethod,
   PaginationOptions,
-  ProcedureMethod,
   ResultSet,
 } from '~/types';
 import {
   InstructionAffirmationOperation,
   InstructionStatus as InternalInstructionStatus,
 } from '~/types/internal';
+import { Ensured } from '~/types/utils';
 import {
   balanceToBigNumber,
+  bigNumberToU64,
   identityIdToString,
   meshAffirmationStatusToAffirmationStatus,
   meshInstructionStatusToInstructionStatus,
   meshPortfolioIdToPortfolio,
   middlewareEventToEventIdentifier,
   momentToDate,
-  numberToU64,
   tickerToString,
   u32ToBigNumber,
   u64ToBigNumber,
@@ -61,9 +61,9 @@ const executedMessage =
 export class Instruction extends Entity<UniqueIdentifiers, string> {
   /**
    * @hidden
-   * Check if a value is of type [[UniqueIdentifiers]]
+   * Check if a value is of type {@link UniqueIdentifiers}
    */
-  public static isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
+  public static override isUniqueIdentifiers(identifier: unknown): identifier is UniqueIdentifiers {
     const { id } = identifier as UniqueIdentifiers;
 
     return id instanceof BigNumber;
@@ -90,6 +90,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
           modifyInstructionAffirmation,
           { id, operation: InstructionAffirmationOperation.Reject },
         ],
+        voidArgs: true,
       },
       context
     );
@@ -100,6 +101,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
           modifyInstructionAffirmation,
           { id, operation: InstructionAffirmationOperation.Affirm },
         ],
+        voidArgs: true,
       },
       context
     );
@@ -110,6 +112,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
           modifyInstructionAffirmation,
           { id, operation: InstructionAffirmationOperation.Withdraw },
         ],
+        voidArgs: true,
       },
       context
     );
@@ -117,6 +120,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     this.reschedule = createProcedureMethod(
       {
         getProcedureAndArgs: () => [rescheduleInstruction, { id }],
+        voidArgs: true,
       },
       context
     );
@@ -138,7 +142,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     } = this;
 
     const [{ status }, exists] = await Promise.all([
-      settlement.instructionDetails(numberToU64(id, context)),
+      settlement.instructionDetails(bigNumberToU64(id, context)),
       this.exists(),
     ]);
 
@@ -161,7 +165,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const { status } = await settlement.instructionDetails(numberToU64(id, context));
+    const { status } = await settlement.instructionDetails(bigNumberToU64(id, context));
 
     const statusResult = meshInstructionStatusToInstructionStatus(status);
 
@@ -207,13 +211,13 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       value_date: valueDate,
       settlement_type: type,
       venue_id: venueId,
-    } = await settlement.instructionDetails(numberToU64(id, context));
+    } = await settlement.instructionDetails(bigNumberToU64(id, context));
 
     const status = meshInstructionStatusToInstructionStatus(rawStatus);
 
     if (status === InternalInstructionStatus.Unknown) {
       throw new PolymeshError({
-        code: ErrorCode.FatalError,
+        code: ErrorCode.DataUnavailable,
         message: executedMessage,
       });
     }
@@ -265,13 +269,13 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     if (isExecuted) {
       throw new PolymeshError({
-        code: ErrorCode.FatalError,
+        code: ErrorCode.DataUnavailable,
         message: executedMessage,
       });
     }
 
     const { entries, lastKey: next } = await requestPaginated(settlement.affirmsReceived, {
-      arg: numberToU64(id, context),
+      arg: bigNumberToU64(id, context),
       paginationOpts,
     });
 
@@ -309,13 +313,13 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     if (isExecuted) {
       throw new PolymeshError({
-        code: ErrorCode.FatalError,
+        code: ErrorCode.DataUnavailable,
         message: executedMessage,
       });
     }
 
     const { entries: legs, lastKey: next } = await requestPaginated(settlement.instructionLegs, {
-      arg: numberToU64(id, context),
+      arg: bigNumberToU64(id, context),
       paginationOpts,
     });
 
@@ -330,7 +334,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
         from: fromPortfolio,
         to: toPortfolio,
         amount: balanceToBigNumber(amount),
-        token: new SecurityToken({ ticker }, context),
+        asset: new Asset({ ticker }, context),
       };
     });
 
@@ -373,7 +377,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     }
 
     throw new PolymeshError({
-      code: ErrorCode.FatalError,
+      code: ErrorCode.DataUnavailable,
       message: "It isn't possible to determine the current status of this Instruction",
     });
   }
@@ -385,23 +389,25 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    * @note reject on `SettleOnBlock` behaves just like unauthorize
    */
 
-  public reject: ProcedureMethod<void, Instruction>;
+  public reject: NoArgsProcedureMethod<Instruction>;
 
   /**
    * Affirm this instruction (authorize)
    */
 
-  public affirm: ProcedureMethod<void, Instruction>;
+  public affirm: NoArgsProcedureMethod<Instruction>;
 
   /**
    * Withdraw affirmation from this instruction (unauthorize)
    */
-  public withdraw: ProcedureMethod<void, Instruction>;
+  public withdraw: NoArgsProcedureMethod<Instruction>;
 
   /**
-   * Schedule a failed Instructi oto rwaa
+   * Reschedules a failed Instruction to be tried again
+   *
+   * @throws if the Instruction status is not `InstructionStatus.Failed`
    */
-  public reschedule: ProcedureMethod<void, Instruction>;
+  public reschedule: NoArgsProcedureMethod<Instruction>;
 
   /**
    * @hidden

@@ -2,8 +2,13 @@ import { Context, KnownPermissionGroup, PermissionGroup } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { PermissionGroupType } from '~/types';
 
+jest.mock(
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+);
+
 describe('KnownPermissionGroup class', () => {
-  const ticker = 'TOKENNAME';
+  const ticker = 'ASSET_NAME';
 
   let context: Context;
 
@@ -23,25 +28,24 @@ describe('KnownPermissionGroup class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
   });
 
-  test('should extend PermissionGroup', () => {
+  it('should extend PermissionGroup', () => {
     expect(KnownPermissionGroup.prototype instanceof PermissionGroup).toBe(true);
   });
 
   describe('constructor', () => {
-    test('should assign id to instance', () => {
+    it('should assign id to instance', () => {
       const type = PermissionGroupType.Full;
       const knownPermissionGroup = new KnownPermissionGroup({ type, ticker }, context);
 
-      expect(knownPermissionGroup.ticker).toBe(ticker);
+      expect(knownPermissionGroup.asset.ticker).toBe(ticker);
       expect(knownPermissionGroup.type).toBe(type);
     });
   });
 
   describe('method: isUniqueIdentifiers', () => {
-    test('should return true if the object conforms to the interface', () => {
+    it('should return true if the object conforms to the interface', () => {
       expect(
         KnownPermissionGroup.isUniqueIdentifiers({
           type: PermissionGroupType.PolymeshV1Caa,
@@ -54,7 +58,12 @@ describe('KnownPermissionGroup class', () => {
   });
 
   describe('method: toJson', () => {
-    test('should return a human readable version of the entity', () => {
+    it('should return a human readable version of the entity', () => {
+      entityMockUtils.configureMocks({
+        assetOptions: {
+          toJson: ticker,
+        },
+      });
       const type = PermissionGroupType.Full;
       const knownPermissionGroup = new KnownPermissionGroup({ type, ticker }, context);
       expect(knownPermissionGroup.toJson()).toEqual({
@@ -65,7 +74,7 @@ describe('KnownPermissionGroup class', () => {
   });
 
   describe('method: getPermissions', () => {
-    test('should return a list of permissions and transaction groups', async () => {
+    it('should return a list of permissions and transaction groups', async () => {
       let type = PermissionGroupType.ExceptMeta;
       let knownPermissionGroup = new KnownPermissionGroup({ type, ticker }, context);
 
@@ -113,7 +122,7 @@ describe('KnownPermissionGroup class', () => {
   });
 
   describe('exists', () => {
-    test('should return true', () => {
+    it('should return true', () => {
       const type = PermissionGroupType.ExceptMeta;
       const knownPermissionGroup = new KnownPermissionGroup({ type, ticker }, context);
 

@@ -12,6 +12,10 @@ jest.mock(
   '~/api/entities/Identity',
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
 );
+jest.mock(
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+);
 
 describe('Checkpoint class', () => {
   let context: Context;
@@ -42,24 +46,23 @@ describe('Checkpoint class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
   });
 
-  test('should extend Entity', () => {
+  it('should extend Entity', () => {
     expect(Checkpoint.prototype instanceof Entity).toBe(true);
   });
 
   describe('constructor', () => {
-    test('should assign ticker and id to instance', () => {
+    it('should assign ticker and id to instance', () => {
       const checkpoint = new Checkpoint({ id, ticker }, context);
 
-      expect(checkpoint.ticker).toBe(ticker);
+      expect(checkpoint.asset.ticker).toBe(ticker);
       expect(checkpoint.id).toEqual(id);
     });
   });
 
   describe('method: isUniqueIdentifiers', () => {
-    test('should return true if the object conforms to the interface', () => {
+    it('should return true if the object conforms to the interface', () => {
       expect(Checkpoint.isUniqueIdentifiers({ id: new BigNumber(1), ticker: 'symbol' })).toBe(true);
       expect(Checkpoint.isUniqueIdentifiers({})).toBe(false);
       expect(Checkpoint.isUniqueIdentifiers({ id: new BigNumber(1) })).toBe(false);
@@ -68,12 +71,12 @@ describe('Checkpoint class', () => {
   });
 
   describe('method: createdAt', () => {
-    test("should return the Checkpoint's creation date", async () => {
+    it("should return the Checkpoint's creation date", async () => {
       const checkpoint = new Checkpoint({ id, ticker }, context);
       const timestamp = 12000;
 
       dsMockUtils.createQueryStub('checkpoint', 'timestamps', {
-        returnValue: dsMockUtils.createMockMoment(timestamp),
+        returnValue: dsMockUtils.createMockMoment(new BigNumber(timestamp)),
       });
 
       const result = await checkpoint.createdAt();
@@ -83,9 +86,9 @@ describe('Checkpoint class', () => {
   });
 
   describe('method: totalSupply', () => {
-    test("should return the Checkpoint's total supply", async () => {
+    it("should return the Checkpoint's total supply", async () => {
       const checkpoint = new Checkpoint({ id, ticker }, context);
-      const balance = 10000000000;
+      const balance = new BigNumber(10000000000);
       const expected = new BigNumber(balance).shiftedBy(-6);
 
       dsMockUtils.createQueryStub('checkpoint', 'totalSupply', {
@@ -106,7 +109,7 @@ describe('Checkpoint class', () => {
       stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
     });
 
-    test("should return the Checkpoint's tokenholder balances", async () => {
+    it("should return the Checkpoint's Asset Holder balances", async () => {
       const checkpoint = new Checkpoint({ id, ticker }, context);
 
       const balanceOf = [
@@ -127,7 +130,7 @@ describe('Checkpoint class', () => {
       const rawTicker = dsMockUtils.createMockTicker(ticker);
       const rawBalanceOf = balanceOf.map(({ identity, balance }) => ({
         identityId: dsMockUtils.createMockIdentityId(identity),
-        balance: dsMockUtils.createMockBalance(balance.toNumber()),
+        balance: dsMockUtils.createMockBalance(balance),
       }));
 
       rawBalanceOf.forEach(({ identityId, balance: rawBalance }, index) => {
@@ -137,7 +140,7 @@ describe('Checkpoint class', () => {
       });
 
       const balanceOfEntries = rawBalanceOf.map(({ identityId, balance }) =>
-        tuple(({ args: [rawTicker, identityId] } as unknown) as StorageKey, balance)
+        tuple({ args: [rawTicker, identityId] } as unknown as StorageKey, balance)
       );
 
       dsMockUtils.createQueryStub('asset', 'balanceOf');
@@ -148,24 +151,25 @@ describe('Checkpoint class', () => {
 
       dsMockUtils.createQueryStub('checkpoint', 'balanceUpdates', {
         multi: [
-          [dsMockUtils.createMockU64(1), dsMockUtils.createMockU64(2)],
-          [dsMockUtils.createMockU64(2)],
+          [
+            dsMockUtils.createMockU64(new BigNumber(1)),
+            dsMockUtils.createMockU64(new BigNumber(2)),
+          ],
+          [dsMockUtils.createMockU64(new BigNumber(2))],
           [],
         ],
       });
 
       const balanceMulti = [new BigNumber(10000), new BigNumber(20000)];
 
-      const rawBalanceMulti = balanceMulti.map(balance =>
-        dsMockUtils.createMockBalance(balance.toNumber())
-      );
+      const rawBalanceMulti = balanceMulti.map(balance => dsMockUtils.createMockBalance(balance));
 
       dsMockUtils.createQueryStub('checkpoint', 'balance', {
         multi: rawBalanceMulti,
       });
 
-      rawBalanceMulti.forEach((rawBlance, index) => {
-        balanceToBigNumberStub.withArgs(rawBlance).returns(balanceMulti[index]);
+      rawBalanceMulti.forEach((rawBalance, index) => {
+        balanceToBigNumberStub.withArgs(rawBalance).returns(balanceMulti[index]);
       });
 
       const { data } = await checkpoint.allBalances();
@@ -180,9 +184,9 @@ describe('Checkpoint class', () => {
   });
 
   describe('method: balance', () => {
-    test("should return a specific Identity's balance at the Checkpoint", async () => {
+    it("should return a specific Identity's balance at the Checkpoint", async () => {
       const checkpoint = new Checkpoint({ id, ticker }, context);
-      const balance = 10000000000;
+      const balance = new BigNumber(10000000000);
 
       const expected = new BigNumber(balance).shiftedBy(-6);
 
@@ -190,9 +194,9 @@ describe('Checkpoint class', () => {
 
       dsMockUtils.createQueryStub('checkpoint', 'balanceUpdates', {
         returnValue: [
-          dsMockUtils.createMockU64(1),
-          dsMockUtils.createMockU64(2),
-          dsMockUtils.createMockU64(5),
+          dsMockUtils.createMockU64(new BigNumber(1)),
+          dsMockUtils.createMockU64(new BigNumber(2)),
+          dsMockUtils.createMockU64(new BigNumber(5)),
         ],
       });
 
@@ -200,7 +204,7 @@ describe('Checkpoint class', () => {
         returnValue: dsMockUtils.createMockBalance(balance),
       });
 
-      let result = await checkpoint.balance({ identity: 'someDid' });
+      let result = await checkpoint.balance({ identity: entityMockUtils.getIdentityInstance() });
 
       expect(result).toEqual(expected);
 
@@ -212,28 +216,22 @@ describe('Checkpoint class', () => {
         returnValue: [],
       });
 
-      const tokenBalance = new BigNumber(10);
-
-      entityMockUtils.configureMocks({
-        identityOptions: {
-          getTokenBalance: tokenBalance,
-        },
-      });
+      const assetBalance = new BigNumber(1000);
 
       result = await checkpoint.balance();
 
-      expect(result).toEqual(tokenBalance);
+      expect(result).toEqual(assetBalance);
     });
   });
 
   describe('method: exists', () => {
-    test('should return whether the checkpoint exists', async () => {
+    it('should return whether the checkpoint exists', async () => {
       sinon.stub(utilsConversionModule, 'stringToTicker');
 
       const checkpoint = new Checkpoint({ id, ticker }, context);
 
       dsMockUtils.createQueryStub('checkpoint', 'checkpointIdSequence', {
-        returnValue: [dsMockUtils.createMockU64(5)],
+        returnValue: [dsMockUtils.createMockU64(new BigNumber(5))],
       });
 
       let result = await checkpoint.exists();
@@ -241,7 +239,7 @@ describe('Checkpoint class', () => {
       expect(result).toBe(true);
 
       dsMockUtils.createQueryStub('checkpoint', 'checkpointIdSequence', {
-        returnValue: [dsMockUtils.createMockU64(0)],
+        returnValue: [dsMockUtils.createMockU64(new BigNumber(0))],
       });
 
       result = await checkpoint.exists();
@@ -251,7 +249,7 @@ describe('Checkpoint class', () => {
   });
 
   describe('method: toJson', () => {
-    test('should return a human readable version of the entity', () => {
+    it('should return a human readable version of the entity', () => {
       const checkpoint = new Checkpoint({ id: new BigNumber(1), ticker: 'SOME_TICKER' }, context);
       expect(checkpoint.toJson()).toEqual({
         id: '1',

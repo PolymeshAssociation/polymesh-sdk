@@ -1,11 +1,19 @@
 import { u32, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
-import { PortfolioId, TxTag, TxTags } from 'polymesh-types/types';
+import { PortfolioId } from 'polymesh-types/types';
 
 import { assertInstructionValid } from '~/api/procedures/utils';
 import { Instruction, PolymeshError, Procedure } from '~/internal';
-import { AffirmationStatus, DefaultPortfolio, ErrorCode, Leg, NumberedPortfolio } from '~/types';
+import {
+  AffirmationStatus,
+  DefaultPortfolio,
+  ErrorCode,
+  Leg,
+  NumberedPortfolio,
+  TxTag,
+  TxTags,
+} from '~/types';
 import {
   InstructionAffirmationOperation,
   PolymeshTx,
@@ -13,13 +21,16 @@ import {
 } from '~/types/internal';
 import { QueryReturnType, tuple } from '~/types/utils';
 import {
+  bigNumberToU32,
+  bigNumberToU64,
   meshAffirmationStatusToAffirmationStatus,
-  numberToU32,
-  numberToU64,
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolioId,
 } from '~/utils/conversion';
 
+export interface AffirmInstructionParams {
+  id: BigNumber;
+}
 export interface ModifyInstructionAffirmationParams {
   id: BigNumber;
   operation: InstructionAffirmationOperation;
@@ -27,8 +38,8 @@ export interface ModifyInstructionAffirmationParams {
 
 export interface Storage {
   portfolios: (DefaultPortfolio | NumberedPortfolio)[];
-  senderLegAmount: number;
-  totalLegAmount: number;
+  senderLegAmount: BigNumber;
+  totalLegAmount: BigNumber;
 }
 
 /**
@@ -57,12 +68,12 @@ export async function prepareModifyInstructionAffirmation(
 
   if (!portfolios.length) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Current Identity is not involved in this Instruction',
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The signing Identity is not involved in this Instruction',
     });
   }
 
-  const rawInstructionId = numberToU64(id, context);
+  const rawInstructionId = bigNumberToU64(id, context);
   const rawPortfolioIds: PortfolioId[] = portfolios.map(portfolio =>
     portfolioIdToMeshPortfolioId(portfolioLikeToPortfolioId(portfolio), context)
   );
@@ -102,7 +113,7 @@ export async function prepareModifyInstructionAffirmation(
 
   if (!validPortfolioIds.length) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.NoDataChange,
       // As InstructionAffirmationOperation.Reject has no excludeCriteria, if this error is thrown
       // it means that the operation had to be either affirm or withdraw, and so the errorMessage was set
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -112,21 +123,17 @@ export async function prepareModifyInstructionAffirmation(
 
   // rejection works a bit different
   if (transaction) {
-    this.addTransaction(
+    this.addTransaction({
       transaction,
-      { batchSize: senderLegAmount },
-      rawInstructionId,
-      validPortfolioIds,
-      numberToU32(senderLegAmount, context)
-    );
+      feeMultiplier: senderLegAmount,
+      args: [rawInstructionId, validPortfolioIds, bigNumberToU32(senderLegAmount, context)],
+    });
   } else {
-    this.addTransaction(
-      settlementTx.rejectInstruction,
-      { batchSize: totalLegAmount },
-      rawInstructionId,
-      validPortfolioIds[0],
-      numberToU32(totalLegAmount, context)
-    );
+    this.addTransaction({
+      transaction: settlementTx.rejectInstruction,
+      feeMultiplier: totalLegAmount,
+      args: [rawInstructionId, validPortfolioIds[0], bigNumberToU32(totalLegAmount, context)],
+    });
   }
 
   return instruction;
@@ -167,7 +174,7 @@ export async function getAuthorization(
     permissions: {
       portfolios,
       transactions,
-      tokens: [],
+      assets: [],
     },
   };
 }
@@ -183,12 +190,12 @@ export async function prepareStorage(
   const instruction = new Instruction({ id }, context);
   const [{ data: legs }, { did }] = await Promise.all([
     instruction.getLegs(),
-    context.getCurrentIdentity(),
+    context.getSigningIdentity(),
   ]);
 
   const [portfolios, senderLegAmount] = await P.reduce<
     Leg,
-    [(DefaultPortfolio | NumberedPortfolio)[], number]
+    [(DefaultPortfolio | NumberedPortfolio)[], BigNumber]
   >(
     legs,
     async (result, { from, to }) => {
@@ -204,7 +211,7 @@ export async function prepareStorage(
 
       if (fromIsCustodied) {
         res = [...res, from];
-        legAmount += 1;
+        legAmount = legAmount.plus(1);
       }
 
       if (toIsCustodied) {
@@ -213,10 +220,10 @@ export async function prepareStorage(
 
       return tuple(res, legAmount);
     },
-    [[], 0]
+    [[], new BigNumber(0)]
   );
 
-  return { portfolios, senderLegAmount, totalLegAmount: legs.length };
+  return { portfolios, senderLegAmount, totalLegAmount: new BigNumber(legs.length) };
 }
 
 /**

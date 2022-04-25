@@ -2,7 +2,7 @@ import { StorageKey } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Namespace } from '~/internal';
+import { Authorizations, Identity, Namespace } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { AuthorizationType } from '~/types';
 import { tuple } from '~/types/utils';
@@ -34,11 +34,10 @@ describe('IdentityAuthorizations class', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
-  test('should extend namespace', () => {
+  it('should extend namespace', () => {
     expect(IdentityAuthorizations.prototype instanceof Namespace).toBe(true);
   });
 
@@ -47,7 +46,7 @@ describe('IdentityAuthorizations class', () => {
       sinon.restore();
     });
 
-    test('should retrieve all pending authorizations sent by the Identity', async () => {
+    it('should retrieve all pending authorizations sent by the Identity', async () => {
       sinon.stub(utilsConversionModule, 'signerValueToSignatory');
       dsMockUtils.createQueryStub('identity', 'authorizationsGiven');
 
@@ -59,7 +58,6 @@ describe('IdentityAuthorizations class', () => {
       const identity = entityMockUtils.getIdentityInstance({ did });
       const authsNamespace = new IdentityAuthorizations(identity, context);
 
-      /* eslint-disable @typescript-eslint/naming-convention */
       const authParams = [
         {
           authId: new BigNumber(1),
@@ -77,11 +75,12 @@ describe('IdentityAuthorizations class', () => {
         } as const,
       ];
 
+      /* eslint-disable @typescript-eslint/naming-convention */
       const authorizations = authParams.map(({ authId, expiry, data }) =>
         dsMockUtils.createMockAuthorization({
-          auth_id: dsMockUtils.createMockU64(authId.toNumber()),
+          auth_id: dsMockUtils.createMockU64(authId),
           expiry: dsMockUtils.createMockOption(
-            expiry ? dsMockUtils.createMockMoment(expiry.getTime()) : expiry
+            expiry ? dsMockUtils.createMockMoment(new BigNumber(expiry.getTime())) : expiry
           ),
           authorization_data: dsMockUtils.createMockAuthorizationData({
             TransferAssetOwnership: dsMockUtils.createMockTicker(data.value),
@@ -94,7 +93,7 @@ describe('IdentityAuthorizations class', () => {
       const authorizationsGivenEntries = authorizations.map(
         ({ authorized_by: issuer, auth_id: authId }, index) =>
           tuple(
-            ({ args: [issuer, authId] } as unknown) as StorageKey,
+            { args: [issuer, authId] } as unknown as StorageKey,
             dsMockUtils.createMockSignatory({
               Identity: dsMockUtils.createMockIdentityId(authParams[index].target.did),
             })
@@ -142,6 +141,111 @@ describe('IdentityAuthorizations class', () => {
         expect(data).toEqual(expectedData);
       });
       expect(result.next).toBeNull();
+    });
+  });
+
+  describe('method: getOne', () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    beforeAll(() => {
+      sinon.stub(utilsConversionModule, 'signerValueToSignatory');
+      sinon.stub(utilsConversionModule, 'bigNumberToU64');
+    });
+
+    it('should return the requested Authorization Request issued by the parent Identity', async () => {
+      const did = 'someDid';
+      const targetDid = 'alice';
+      const context = dsMockUtils.getContextInstance({ did });
+      const identity = entityMockUtils.getIdentityInstance({ did });
+
+      const identityAuthorization = new IdentityAuthorizations(identity, context);
+      const id = new BigNumber(1);
+
+      const data = { type: AuthorizationType.TransferAssetOwnership, value: 'myTicker' } as const;
+
+      dsMockUtils.createQueryStub('identity', 'authorizationsGiven', {
+        returnValue: dsMockUtils.createMockSignatory({
+          Identity: dsMockUtils.createMockIdentityId(targetDid),
+        }),
+      });
+
+      /* eslint-disable @typescript-eslint/naming-convention */
+      dsMockUtils.createQueryStub('identity', 'authorizations', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockAuthorization({
+            auth_id: dsMockUtils.createMockU64(id),
+            authorization_data: dsMockUtils.createMockAuthorizationData({
+              TransferAssetOwnership: dsMockUtils.createMockTicker(data.value),
+            }),
+            expiry: dsMockUtils.createMockOption(),
+            authorized_by: dsMockUtils.createMockIdentityId(did),
+          })
+        ),
+      });
+      /* eslint-enable @typescript-eslint/naming-convention */
+
+      const result = await identityAuthorization.getOne({ id });
+
+      expect(result.authId).toEqual(id);
+      expect(result.expiry).toBeNull();
+      expect(result.data).toEqual(data);
+      expect((result.target as Identity).did).toEqual(targetDid);
+      expect(result.issuer.did).toEqual(did);
+    });
+
+    it('should return the requested Authorization Request targeting the parent Identity', async () => {
+      const did = 'someDid';
+      const issuerDid = 'alice';
+      const context = dsMockUtils.getContextInstance({ did });
+      const identity = entityMockUtils.getIdentityInstance({ did });
+
+      const identityAuthorization = new IdentityAuthorizations(identity, context);
+      const id = new BigNumber(1);
+
+      const data = { type: AuthorizationType.TransferAssetOwnership, value: 'myTicker' } as const;
+
+      dsMockUtils.createQueryStub('identity', 'authorizationsGiven', {
+        returnValue: dsMockUtils.createMockSignatory(),
+      });
+
+      const authParams = {
+        authId: id,
+        expiry: null,
+        data,
+        target: identity,
+        issuer: entityMockUtils.getIdentityInstance({ did: issuerDid }),
+      };
+      const mockAuthRequest = entityMockUtils.getAuthorizationRequestInstance(authParams);
+
+      const spy = jest.spyOn(Authorizations.prototype, 'getOne').mockResolvedValue(mockAuthRequest);
+
+      const result = await identityAuthorization.getOne({ id });
+
+      expect(result).toBe(mockAuthRequest);
+      spy.mockRestore();
+    });
+
+    it('should throw an error if the Authorization Request does not exist', async () => {
+      const did = 'someDid';
+      const context = dsMockUtils.getContextInstance({ did });
+      const identity = entityMockUtils.getIdentityInstance({ did });
+      const authsNamespace = new IdentityAuthorizations(identity, context);
+      const id = new BigNumber(1);
+
+      dsMockUtils.createQueryStub('identity', 'authorizationsGiven', {
+        returnValue: dsMockUtils.createMockSignatory(),
+      });
+
+      const spy = jest
+        .spyOn(Authorizations.prototype, 'getOne')
+        .mockRejectedValue(new Error('The Authorization Request does not exist'));
+
+      await expect(authsNamespace.getOne({ id })).rejects.toThrow(
+        'The Authorization Request does not exist'
+      );
+      spy.mockRestore();
     });
   });
 });

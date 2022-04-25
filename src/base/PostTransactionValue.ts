@@ -97,6 +97,7 @@ export class PostTransactionValue<Value> {
    */
   public merge<PostValue, NewValue>(
     postValue: MaybePostTransactionValue<PostValue>,
+    // cSpell: disable-next-line
     callback: (val: Value, pval: PostValue) => NewValue
   ): PostTransactionValue<NewValue> {
     let newResolver;

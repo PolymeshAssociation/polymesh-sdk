@@ -20,31 +20,25 @@ import {
   prepareInitiateCorporateAction,
 } from '~/api/procedures/initiateCorporateAction';
 import * as utilsProcedureModule from '~/api/procedures/utils';
-import {
-  Checkpoint,
-  CheckpointSchedule,
-  Context,
-  Identity,
-  PostTransactionValue,
-} from '~/internal';
+import { Context, Identity, PostTransactionValue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { CorporateActionKind, TargetTreatment, TxTags } from '~/types';
+import { CorporateActionKind, InputCaCheckpoint, TargetTreatment, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
-  '~/api/entities/SecurityToken',
-  require('~/testUtils/mocks/entities').mockSecurityTokenModule('~/api/entities/SecurityToken')
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
 describe('initiateCorporateAction procedure', () => {
   let ticker: string;
   let kind: CorporateActionKind;
   let declarationDate: Date;
-  let checkpoint: Checkpoint | CheckpointSchedule | Date;
+  let checkpoint: InputCaCheckpoint;
   let description: string;
   let targets: { identities: (string | Identity)[]; treatment: TargetTreatment };
   let defaultTaxWithholding: BigNumber;
@@ -98,21 +92,24 @@ describe('initiateCorporateAction procedure', () => {
 
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawKind = dsMockUtils.createMockCAKind(kind);
-    rawDeclDate = dsMockUtils.createMockMoment(declarationDate.getTime());
+    rawDeclDate = dsMockUtils.createMockMoment(new BigNumber(declarationDate.getTime()));
     rawRecordDate = dsMockUtils.createMockRecordDateSpec({
-      Scheduled: dsMockUtils.createMockMoment(checkpoint.getTime()),
+      Scheduled: dsMockUtils.createMockMoment(new BigNumber(checkpoint.getTime())),
     });
     rawDetails = dsMockUtils.createMockText(description);
     rawTargets = dsMockUtils.createMockTargetIdentities({
       identities: targets.identities as string[],
       treatment: targets.treatment,
     });
-    rawTax = dsMockUtils.createMockPermill(defaultTaxWithholding.toNumber());
+    rawTax = dsMockUtils.createMockPermill(defaultTaxWithholding);
     rawWithholdings = [
-      tuple(dsMockUtils.createMockIdentityId('someDid'), dsMockUtils.createMockPermill(30)),
+      tuple(
+        dsMockUtils.createMockIdentityId('someDid'),
+        dsMockUtils.createMockPermill(new BigNumber(30))
+      ),
     ];
 
-    rawCaId = ('caId' as unknown) as PostTransactionValue<CAId>;
+    rawCaId = 'caId' as unknown as PostTransactionValue<CAId>;
 
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     corporateActionKindToCaKindStub = sinon.stub(
@@ -143,7 +140,7 @@ describe('initiateCorporateAction procedure', () => {
     );
 
     maxDetailsLengthQueryStub = dsMockUtils.createQueryStub('corporateAction', 'maxDetailsLength', {
-      returnValue: dsMockUtils.createMockU32(100),
+      returnValue: dsMockUtils.createMockU32(new BigNumber(100)),
     });
     mockContext = dsMockUtils.getContextInstance();
 
@@ -167,12 +164,11 @@ describe('initiateCorporateAction procedure', () => {
   });
 
   afterAll(() => {
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
   });
 
-  test('should throw an error if the declaration date is in the future', async () => {
+  it('should throw an error if the declaration date is in the future', async () => {
     const proc = procedureMockUtils.getInstance<Params, CAId>(mockContext);
 
     let err;
@@ -195,10 +191,10 @@ describe('initiateCorporateAction procedure', () => {
     expect(err.message).toBe('Declaration date must be in the past');
   });
 
-  test('should throw an error if the description is too long', async () => {
+  it('should throw an error if the description is too long', async () => {
     const proc = procedureMockUtils.getInstance<Params, CAId>(mockContext);
 
-    maxDetailsLengthQueryStub.returns(dsMockUtils.createMockU32(1));
+    maxDetailsLengthQueryStub.returns(dsMockUtils.createMockU32(new BigNumber(1)));
 
     let err;
 
@@ -219,7 +215,7 @@ describe('initiateCorporateAction procedure', () => {
     });
   });
 
-  test('should add a initiate corporate action transaction to the queue', async () => {
+  it('should add a initiate corporate action transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, CAId>(mockContext);
 
     const result = await prepareInitiateCorporateAction.call(proc, {
@@ -238,18 +234,20 @@ describe('initiateCorporateAction procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      initiateCorporateActionTransaction,
       sinon.match({
+        transaction: initiateCorporateActionTransaction,
         resolvers: sinon.match.array,
-      }),
-      rawTicker,
-      rawKind,
-      rawDeclDate,
-      rawRecordDate,
-      rawDetails,
-      rawTargets,
-      rawTax,
-      rawWithholdings
+        args: [
+          rawTicker,
+          rawKind,
+          rawDeclDate,
+          rawRecordDate,
+          rawDetails,
+          rawTargets,
+          rawTax,
+          rawWithholdings,
+        ],
+      })
     );
 
     expect(result).toEqual(rawCaId);
@@ -266,18 +264,20 @@ describe('initiateCorporateAction procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      initiateCorporateActionTransaction,
       sinon.match({
+        transaction: initiateCorporateActionTransaction,
         resolvers: sinon.match.array,
-      }),
-      rawTicker,
-      rawKind,
-      rawDeclDate,
-      null,
-      rawDetails,
-      rawTargets,
-      rawTax,
-      rawWithholdings
+        args: [
+          rawTicker,
+          rawKind,
+          rawDeclDate,
+          null,
+          rawDetails,
+          rawTargets,
+          rawTax,
+          rawWithholdings,
+        ],
+      })
     );
 
     await prepareInitiateCorporateAction.call(proc, {
@@ -291,24 +291,17 @@ describe('initiateCorporateAction procedure', () => {
 
     sinon.assert.calledWith(
       addTransactionStub,
-      initiateCorporateActionTransaction,
       sinon.match({
+        transaction: initiateCorporateActionTransaction,
         resolvers: sinon.match.array,
-      }),
-      rawTicker,
-      rawKind,
-      rawDeclDate,
-      null,
-      rawDetails,
-      rawTargets,
-      rawTax,
-      null
+        args: [rawTicker, rawKind, rawDeclDate, null, rawDetails, rawTargets, rawTax, null],
+      })
     );
   });
 
   describe('caIdResolver', () => {
     const filterEventRecordsStub = sinon.stub(utilsInternalModule, 'filterEventRecords');
-    const id = ('caId' as unknown) as CAId;
+    const id = 'caId' as unknown as CAId;
 
     beforeEach(() => {
       filterEventRecordsStub.returns([dsMockUtils.createMockIEvent(['data', id])]);
@@ -318,7 +311,7 @@ describe('initiateCorporateAction procedure', () => {
       filterEventRecordsStub.reset();
     });
 
-    test('should return the CAId ', () => {
+    it('should return the CAId ', () => {
       const result = createCaIdResolver()({} as ISubmittableResult);
 
       expect(result).toBe(id);
@@ -326,7 +319,7 @@ describe('initiateCorporateAction procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    test('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions', () => {
       const proc = procedureMockUtils.getInstance<Params, CAId>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args = {
@@ -336,7 +329,7 @@ describe('initiateCorporateAction procedure', () => {
       expect(boundFunc(args)).toEqual({
         permissions: {
           transactions: [TxTags.corporateAction.InitiateCorporateAction],
-          tokens: [entityMockUtils.getSecurityTokenInstance({ ticker })],
+          assets: [expect.objectContaining({ ticker })],
           portfolios: [],
         },
       });

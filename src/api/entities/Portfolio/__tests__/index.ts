@@ -3,15 +3,7 @@ import BigNumber from 'bignumber.js';
 import { PortfolioId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import {
-  Context,
-  DefaultPortfolio,
-  Entity,
-  NumberedPortfolio,
-  Portfolio,
-  SecurityToken,
-  TransactionQueue,
-} from '~/internal';
+import { Asset, Context, Entity, NumberedPortfolio, Portfolio, TransactionQueue } from '~/internal';
 import { heartbeat, settlements } from '~/middleware/queries';
 import {
   SettlementDirectionEnum,
@@ -75,26 +67,24 @@ describe('Portfolio class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    entityMockUtils.cleanup();
     procedureMockUtils.cleanup();
   });
 
-  test('should extend Entity', () => {
+  it('should extend Entity', () => {
     expect(Portfolio.prototype instanceof Entity).toBe(true);
   });
 
   describe('constructor', () => {
-    test('should assign Identity to instance', () => {
+    it('should assign Identity to instance', () => {
       const did = 'someDid';
-      const identity = entityMockUtils.getIdentityInstance({ did });
       const portfolio = new NonAbstract({ did }, context);
 
-      expect(portfolio.owner).toEqual(identity);
+      expect(portfolio.owner.did).toBe(did);
     });
   });
 
   describe('method: isUniqueIdentifiers', () => {
-    test('should return true if the object conforms to the interface', () => {
+    it('should return true if the object conforms to the interface', () => {
       expect(Portfolio.isUniqueIdentifiers({ did: 'someDid', id: new BigNumber(1) })).toBe(true);
       expect(Portfolio.isUniqueIdentifiers({ did: 'someDid' })).toBe(true);
       expect(Portfolio.isUniqueIdentifiers({})).toBe(false);
@@ -107,22 +97,24 @@ describe('Portfolio class', () => {
     let did: string;
 
     beforeAll(() => {
-      did = 'currentIdentity';
+      did = 'signingIdentity';
       dsMockUtils.configureMocks({ contextOptions: { did } });
     });
 
-    test('should return whether the current Identity is the Portfolio owner', async () => {
+    it('should return whether the signing Identity is the Portfolio owner', async () => {
       let portfolio = new NonAbstract({ did }, context);
 
       let result = await portfolio.isOwnedBy();
 
       expect(result).toBe(true);
 
-      portfolio = new NonAbstract({ did: 'notTheCurrentIdentity' }, context);
+      portfolio = new NonAbstract({ did: 'notTheSigningIdentity' }, context);
+      const spy = jest.spyOn(portfolio.owner, 'isEqual').mockReturnValue(false);
 
       result = await portfolio.isOwnedBy({ identity: did });
 
       expect(result).toBe(false);
+      spy.mockRestore();
     });
   });
 
@@ -139,10 +131,10 @@ describe('Portfolio class', () => {
       sinon.restore();
     });
 
-    test('should return the custodian of the portfolio', async () => {
+    it('should return the custodian of the portfolio', async () => {
       const portfolio = new NonAbstract({ did, id }, context);
       const custodianDid = 'custodianDid';
-      const currentIdentityDid = 'currentIdentity';
+      const signingIdentityDid = 'signingIdentity';
       const identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
       const portfolioCustodianStub = dsMockUtils.createQueryStub('portfolio', 'portfolioCustodian');
 
@@ -151,20 +143,28 @@ describe('Portfolio class', () => {
       );
       identityIdToStringStub.returns(custodianDid);
 
+      const spy = jest
+        .spyOn(portfolio, 'getCustodian')
+        .mockResolvedValue(entityMockUtils.getIdentityInstance({ isEqual: false }));
+
       let result = await portfolio.isCustodiedBy();
       expect(result).toEqual(false);
 
       portfolioCustodianStub.returns(
-        dsMockUtils.createMockOption(dsMockUtils.createMockIdentityId(currentIdentityDid))
+        dsMockUtils.createMockOption(dsMockUtils.createMockIdentityId(signingIdentityDid))
       );
-      identityIdToStringStub.returns(currentIdentityDid);
+      identityIdToStringStub.returns(signingIdentityDid);
+      spy.mockResolvedValue(entityMockUtils.getIdentityInstance({ isEqual: true }));
 
-      result = await portfolio.isCustodiedBy({ identity: currentIdentityDid });
+      result = await portfolio.isCustodiedBy({
+        identity: entityMockUtils.getIdentityInstance({ isEqual: true }),
+      });
       expect(result).toEqual(true);
+      spy.mockRestore();
     });
   });
 
-  describe('method: getTokenBalances', () => {
+  describe('method: getAssetBalance', () => {
     let did: string;
     let id: BigNumber;
     let ticker0: string;
@@ -192,14 +192,14 @@ describe('Portfolio class', () => {
       locked1 = new BigNumber(25);
       rawTicker0 = dsMockUtils.createMockTicker(ticker0);
       rawTicker1 = dsMockUtils.createMockTicker(ticker1);
-      rawTotal0 = dsMockUtils.createMockBalance(total0.shiftedBy(6).toNumber());
-      rawTotal1 = dsMockUtils.createMockBalance(total1.shiftedBy(6).toNumber());
-      rawLocked0 = dsMockUtils.createMockBalance(locked0.shiftedBy(6).toNumber());
-      rawLocked1 = dsMockUtils.createMockBalance(locked1.shiftedBy(6).toNumber());
+      rawTotal0 = dsMockUtils.createMockBalance(total0.shiftedBy(6));
+      rawTotal1 = dsMockUtils.createMockBalance(total1.shiftedBy(6));
+      rawLocked0 = dsMockUtils.createMockBalance(locked0.shiftedBy(6));
+      rawLocked1 = dsMockUtils.createMockBalance(locked1.shiftedBy(6));
       rawPortfolioId = dsMockUtils.createMockPortfolioId({
         did: dsMockUtils.createMockIdentityId(did),
         kind: dsMockUtils.createMockPortfolioKind({
-          User: dsMockUtils.createMockU64(id.toNumber()),
+          User: dsMockUtils.createMockU64(id),
         }),
       });
       sinon.stub(utilsConversionModule, 'portfolioIdToMeshPortfolioId');
@@ -225,46 +225,46 @@ describe('Portfolio class', () => {
       sinon.restore();
     });
 
-    test("should return all of the portfolio's assets and their balances", async () => {
+    it("should return all of the portfolio's assets and their balances", async () => {
       const portfolio = new NonAbstract({ did, id }, context);
 
-      const result = await portfolio.getTokenBalances();
+      const result = await portfolio.getAssetBalances();
 
-      expect(result[0].token.ticker).toBe(ticker0);
+      expect(result[0].asset.ticker).toBe(ticker0);
       expect(result[0].total).toEqual(total0);
       expect(result[0].locked).toEqual(locked0);
       expect(result[0].free).toEqual(total0.minus(locked0));
-      expect(result[1].token.ticker).toBe(ticker1);
+      expect(result[1].asset.ticker).toBe(ticker1);
       expect(result[1].total).toEqual(total1);
       expect(result[1].locked).toEqual(locked1);
       expect(result[1].free).toEqual(total1.minus(locked1));
     });
 
-    test('should return the requested portfolio assets and their balances', async () => {
+    it('should return the requested portfolio assets and their balances', async () => {
       const portfolio = new NonAbstract({ did, id }, context);
 
       const otherTicker = 'OTHER_TICKER';
-      const result = await portfolio.getTokenBalances({
-        tokens: [ticker0, new SecurityToken({ ticker: otherTicker }, context)],
+      const result = await portfolio.getAssetBalances({
+        assets: [ticker0, new Asset({ ticker: otherTicker }, context)],
       });
 
       expect(result.length).toBe(2);
-      expect(result[0].token.ticker).toBe(ticker0);
+      expect(result[0].asset.ticker).toBe(ticker0);
       expect(result[0].total).toEqual(total0);
       expect(result[0].locked).toEqual(locked0);
       expect(result[0].free).toEqual(total0.minus(locked0));
-      expect(result[1].token.ticker).toBe(otherTicker);
+      expect(result[1].asset.ticker).toBe(otherTicker);
       expect(result[1].total).toEqual(new BigNumber(0));
       expect(result[1].locked).toEqual(new BigNumber(0));
       expect(result[1].free).toEqual(new BigNumber(0));
     });
 
-    test('should throw an error if the portfolio does not exist', () => {
+    it('should throw an error if the portfolio does not exist', () => {
       const portfolio = new NonAbstract({ did, id }, context);
       exists = false;
 
-      return expect(portfolio.getTokenBalances()).rejects.toThrow(
-        'The Portfolio was removed and no longer exists'
+      return expect(portfolio.getAssetBalances()).rejects.toThrow(
+        "The Portfolio doesn't exist or was removed by its owner"
       );
     });
   });
@@ -283,7 +283,7 @@ describe('Portfolio class', () => {
       sinon.restore();
     });
 
-    test('should return the custodian of the portfolio', async () => {
+    it('should return the custodian of the portfolio', async () => {
       const custodianDid = 'custodianDid';
       const identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
 
@@ -306,25 +306,25 @@ describe('Portfolio class', () => {
       expect(result.did).toEqual(did);
     });
 
-    test('should throw an error if the portfolio does not exist', () => {
+    it('should throw an error if the portfolio does not exist', () => {
       const portfolio = new NonAbstract({ did, id }, context);
       exists = false;
       dsMockUtils.createQueryStub('portfolio', 'portfolioCustodian');
 
       return expect(portfolio.getCustodian()).rejects.toThrow(
-        'The Portfolio was removed and no longer exists'
+        "The Portfolio doesn't exist or was removed by its owner"
       );
     });
   });
 
   describe('method: moveFunds', () => {
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
       const args = {
         to: new NumberedPortfolio({ id: new BigNumber(1), did: 'someDid' }, context),
-        items: [{ token: 'someToken', amount: new BigNumber(100) }],
+        items: [{ asset: 'someAsset', amount: new BigNumber(100) }],
       };
       const portfolio = new NonAbstract({ did: 'someDid' }, context);
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -338,9 +338,9 @@ describe('Portfolio class', () => {
   });
 
   describe('method: quitCustody', () => {
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
       const portfolio = new NonAbstract({ did: 'someDid' }, context);
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -366,10 +366,10 @@ describe('Portfolio class', () => {
       sinon.restore();
     });
 
-    test('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
       const portfolio = new NonAbstract({ id, did }, context);
       const targetIdentity = 'someTarget';
-      const expectedQueue = ('someQueue' as unknown) as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -395,7 +395,7 @@ describe('Portfolio class', () => {
       sinon.restore();
     });
 
-    test('should return a list of transactions', async () => {
+    it('should return a list of transactions', async () => {
       let portfolio = new NonAbstract({ id, did }, context);
 
       const account = 'someAccount';
@@ -404,26 +404,26 @@ describe('Portfolio class', () => {
       const blockNumber1 = new BigNumber(1);
       const blockNumber2 = new BigNumber(2);
 
-      const token1 = new SecurityToken({ ticker: 'TICKER1' }, context);
+      const blockHash1 = 'someHash';
+      const blockHash2 = 'otherHash';
+
+      const ticker1 = 'TICKER_1';
+      const ticker2 = 'TICKER_2';
+
       const amount1 = new BigNumber(1000);
-      const token2 = new SecurityToken({ ticker: 'TICKER2' }, context);
       const amount2 = new BigNumber(2000);
 
-      const portfolioDid1 = 'somePortfolioDid';
+      const portfolioDid1 = 'portfolioDid1';
       const portfolioKind1 = 'Default';
 
-      const portfolioDid2 = 'somePortfolioDid2';
+      const portfolioDid2 = 'portfolioDid2';
       const portfolioKind2 = '10';
 
-      const portfolio1 = new DefaultPortfolio({ did: portfolioDid1 }, context);
-      const portfolio2 = new NumberedPortfolio(
-        { did: portfolioDid2, id: new BigNumber(portfolioKind2) },
-        context
-      );
+      const portfolioId2 = new BigNumber(portfolioKind2);
 
-      const leg1 = [
+      const legs1 = [
         {
-          ticker: token1.ticker,
+          ticker: ticker1,
           amount: amount1.toString(),
           direction: SettlementDirectionEnum.Incoming,
           from: {
@@ -436,9 +436,9 @@ describe('Portfolio class', () => {
           },
         },
       ];
-      const leg2 = [
+      const legs2 = [
         {
-          ticker: token2.ticker,
+          ticker: ticker2,
           amount: amount2.toString(),
           direction: SettlementDirectionEnum.Outgoing,
           from: {
@@ -460,21 +460,25 @@ describe('Portfolio class', () => {
             block_id: blockNumber1.toNumber(),
             addresses: ['be865155e5b6be843e99117a825e9580bb03e401a9c2ace644fff604fe624917'],
             result: SettlementResultEnum.Executed,
-            legs: leg1,
+            legs: legs1,
           },
           {
             block_id: blockNumber2.toNumber(),
             addresses: ['be865155e5b6be843e99117a825e9580bb03e401a9c2ace644fff604fe624917'],
             result: SettlementResultEnum.Executed,
-            legs: leg2,
+            legs: legs2,
           },
         ],
       };
-      /* eslint-enabled @typescript-eslint/naming-convention */
+      /* eslint-enable @typescript-eslint/naming-convention */
 
-      dsMockUtils.configureMocks({ contextOptions: { withSeed: true } });
+      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
       dsMockUtils.createApolloQueryStub(heartbeat(), true);
       sinon.stub(utilsConversionModule, 'addressToKey').withArgs(account, context).returns(key);
+
+      dsMockUtils.createQueryStub('system', 'blockHash', {
+        multi: [dsMockUtils.createMockHash(blockHash1), dsMockUtils.createMockHash(blockHash2)],
+      });
 
       dsMockUtils.createApolloQueryStub(
         settlements({
@@ -492,24 +496,28 @@ describe('Portfolio class', () => {
 
       let result = await portfolio.getTransactionHistory({
         account,
-        size: 5,
-        start: 0,
+        size: new BigNumber(5),
+        start: new BigNumber(0),
       });
 
       /* eslint-disable @typescript-eslint/no-non-null-assertion */
       expect(result.data[0].blockNumber).toEqual(blockNumber1);
       expect(result.data[1].blockNumber).toEqual(blockNumber2);
-      expect(result.data[0].legs[0].token.ticker).toEqual(token1.ticker);
-      expect(result.data[1].legs[0].token.ticker).toEqual(token2.ticker);
+      expect(result.data[0].blockHash).toBe(blockHash1);
+      expect(result.data[1].blockHash).toBe(blockHash2);
+      expect(result.data[0].legs[0].asset.ticker).toBe(ticker1);
+      expect(result.data[1].legs[0].asset.ticker).toBe(ticker2);
       expect(result.data[0].legs[0].amount).toEqual(amount1.div(Math.pow(10, 6)));
       expect(result.data[1].legs[0].amount).toEqual(amount2.div(Math.pow(10, 6)));
-      expect(result.data[0].legs[0].from).toEqual(portfolio1);
-      expect(result.data[0].legs[0].to).toEqual(portfolio2);
-      expect(result.data[1].legs[0].from).toEqual(portfolio2);
-      expect(result.data[1].legs[0].to).toEqual(portfolio1);
-      expect(result.count).toEqual(20);
-      expect(result.next).toEqual(5);
-      /* eslint-enabled @typescript-eslint/no-non-null-assertion */
+      expect(result.data[0].legs[0].from.owner.did).toBe(portfolioDid1);
+      expect(result.data[0].legs[0].to.owner.did).toBe(portfolioDid2);
+      expect((result.data[0].legs[0].to as NumberedPortfolio).id).toEqual(portfolioId2);
+      expect(result.data[1].legs[0].from.owner.did).toBe(portfolioDid2);
+      expect((result.data[1].legs[0].from as NumberedPortfolio).id).toEqual(portfolioId2);
+      expect(result.data[1].legs[0].to.owner.did).toEqual(portfolioDid1);
+      expect(result.count).toEqual(new BigNumber(20));
+      expect(result.next).toEqual(new BigNumber(5));
+      /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
       dsMockUtils.createApolloQueryStub(
         settlements({
@@ -523,7 +531,7 @@ describe('Portfolio class', () => {
         {
           settlements: {
             totalCount: 0,
-            items: null,
+            items: [],
           },
         }
       );
@@ -535,7 +543,7 @@ describe('Portfolio class', () => {
       expect(result.next).toBeNull();
     });
 
-    test('should throw an error if the portfolio does not exist', () => {
+    it('should throw an error if the portfolio does not exist', () => {
       const portfolio = new NonAbstract({ did, id }, context);
       exists = false;
 
@@ -558,13 +566,13 @@ describe('Portfolio class', () => {
       );
 
       return expect(portfolio.getTransactionHistory()).rejects.toThrow(
-        'The Portfolio was removed and no longer exists'
+        "The Portfolio doesn't exist or was removed by its owner"
       );
     });
   });
 
   describe('method: toJson', () => {
-    test('should return a human readable version of the entity', () => {
+    it('should return a human readable version of the entity', () => {
       let portfolio = new NonAbstract({ did: 'someDid', id: new BigNumber(1) }, context);
 
       expect(portfolio.toJson()).toEqual({

@@ -6,21 +6,21 @@ import { stringToVenueDetails, u64ToBigNumber, venueTypeToMeshVenueType } from '
 import { filterEventRecords } from '~/utils/internal';
 
 export interface CreateVenueParams {
-  details: string;
+  description: string;
   type: VenueType;
 }
 
 /**
  * @hidden
  */
-export const createCreateVenueResolver = (context: Context) => (
-  receipt: ISubmittableResult
-): Venue => {
-  const [{ data }] = filterEventRecords(receipt, 'settlement', 'VenueCreated');
-  const id = u64ToBigNumber(data[1]);
+export const createCreateVenueResolver =
+  (context: Context) =>
+  (receipt: ISubmittableResult): Venue => {
+    const [{ data }] = filterEventRecords(receipt, 'settlement', 'VenueCreated');
+    const id = u64ToBigNumber(data[1]);
 
-  return new Venue({ id }, context);
-};
+    return new Venue({ id }, context);
+  };
 
 /**
  * @hidden
@@ -37,21 +37,17 @@ export async function prepareCreateVenue(
     },
     context,
   } = this;
-  const { details, type } = args;
+  const { description, type } = args;
 
-  const rawDetails = stringToVenueDetails(details, context);
+  const rawDetails = stringToVenueDetails(description, context);
   const rawType = venueTypeToMeshVenueType(type, context);
 
   // NOTE @monitz87: we're sending an empty signer array for the moment
-  const [newVenue] = this.addTransaction(
-    settlement.createVenue,
-    {
-      resolvers: [createCreateVenueResolver(context)],
-    },
-    rawDetails,
-    [],
-    rawType
-  );
+  const [newVenue] = this.addTransaction({
+    transaction: settlement.createVenue,
+    resolvers: [createCreateVenueResolver(context)],
+    args: [rawDetails, [], rawType],
+  });
 
   return newVenue;
 }
@@ -63,7 +59,7 @@ export const createVenue = (): Procedure<CreateVenueParams, Venue> =>
   new Procedure(prepareCreateVenue, {
     permissions: {
       transactions: [TxTags.settlement.CreateVenue],
-      tokens: [],
+      assets: [],
       portfolios: [],
     },
   });

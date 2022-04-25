@@ -1,10 +1,10 @@
 import BigNumber from 'bignumber.js';
 
-import { DefaultPortfolio, PolymeshError, Procedure, SecurityToken } from '~/internal';
+import { Asset, DefaultPortfolio, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, PortfolioLike, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
-  numberToBalance,
+  bigNumberToBalance,
   portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
@@ -13,11 +13,11 @@ import {
 
 export interface ControllerTransferParams {
   /**
-   * portfolio (or portfolio ID) from which tokens will be transferred
+   * portfolio (or portfolio ID) from which Assets will be transferred
    */
   originPortfolio: PortfolioLike;
   /**
-   * amount of tokens to transfer
+   * amount of Asset tokens to transfer
    */
   amount: BigNumber;
 }
@@ -42,31 +42,32 @@ export async function prepareControllerTransfer(
   } = this;
   const { ticker, originPortfolio, amount } = args;
 
-  const token = new SecurityToken({ ticker }, context);
+  const asset = new Asset({ ticker }, context);
 
   const originPortfolioId = portfolioLikeToPortfolioId(originPortfolio);
 
   const fromPortfolio = portfolioIdToPortfolio(originPortfolioId, context);
 
-  const [{ free }] = await fromPortfolio.getTokenBalances({
-    tokens: [token],
+  const [{ free }] = await fromPortfolio.getAssetBalances({
+    assets: [asset],
   });
 
   if (free.lt(amount)) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'The Portfolio does not have enough free balance for this transfer',
+      code: ErrorCode.InsufficientBalance,
+      message: 'The origin Portfolio does not have enough free balance for this transfer',
       data: { free },
     });
   }
 
-  this.addTransaction(
-    tx.asset.controllerTransfer,
-    {},
-    stringToTicker(ticker, context),
-    numberToBalance(amount, context),
-    portfolioIdToMeshPortfolioId(originPortfolioId, context)
-  );
+  this.addTransaction({
+    transaction: tx.asset.controllerTransfer,
+    args: [
+      stringToTicker(ticker, context),
+      bigNumberToBalance(amount, context),
+      portfolioIdToMeshPortfolioId(originPortfolioId, context),
+    ],
+  });
 }
 
 /**
@@ -78,15 +79,15 @@ export async function getAuthorization(
 ): Promise<ProcedureAuthorization> {
   const { context } = this;
 
-  const token = new SecurityToken({ ticker }, context);
+  const asset = new Asset({ ticker }, context);
 
-  const { did } = await context.getCurrentIdentity();
+  const { did } = await context.getSigningIdentity();
   const portfolioId = { did };
 
   return {
     roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
     permissions: {
-      tokens: [token],
+      assets: [asset],
       transactions: [TxTags.asset.ControllerTransfer],
       portfolios: [new DefaultPortfolio({ did }, context)],
     },
