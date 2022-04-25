@@ -1,6 +1,6 @@
 import { PolymeshPrimitivesConditionTrustedIssuer } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { Ticker, TrustedIssuer } from 'polymesh-types/types';
+import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Context, DefaultTrustedClaimIssuer, Identity } from '~/internal';

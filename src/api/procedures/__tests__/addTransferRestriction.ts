@@ -62,13 +62,13 @@ describe('addTransferRestriction procedure', () => {
 
   let addBatchTransactionStub: sinon.SinonStub;
 
-  let addTransferManagerTransaction: PolymeshTx<[Ticker, TransferCondition]>;
+  let setAssetTransferCompliance: PolymeshTx<[Ticker, TransferCondition]>;
   let addExemptedEntitiesTransaction: PolymeshTx<[Ticker, TransferCondition, ScopeId[]]>;
 
   beforeEach(() => {
     addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
 
-    addTransferManagerTransaction = dsMockUtils.createTxStub(
+    setAssetTransferCompliance = dsMockUtils.createTxStub(
       'statistics',
       'setAssetTransferCompliance'
     );
@@ -82,9 +82,9 @@ describe('addTransferRestriction procedure', () => {
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawCount = dsMockUtils.createMockU64(count);
     rawPercentage = dsMockUtils.createMockPermill(percentage.multipliedBy(10000));
-    rawCountTm = dsMockUtils.createMockTransferCondition({ CountTransferManager: rawCount });
+    rawCountTm = dsMockUtils.createMockTransferCondition({ MaxInvestorCount: rawCount });
     rawPercentageTm = dsMockUtils.createMockTransferCondition({
-      PercentageTransferManager: rawPercentage,
+      MaxInvestorOwnership: rawPercentage,
     });
 
     transferRestrictionToTransferRestrictionStub.withArgs(countTm, mockContext).returns(rawCountTm);
@@ -107,7 +107,7 @@ describe('addTransferRestriction procedure', () => {
 
   it('should add an add transfer manager transaction to the queue', async () => {
     args = {
-      type: TransferRestrictionType.Count,
+      type: 'MaxInvestorCount',
       exemptedIdentities: [],
       count,
       ticker,
@@ -116,8 +116,8 @@ describe('addTransferRestriction procedure', () => {
       mockContext
     );
 
-    dsMockUtils.createQueryStub('statistics', 'activeAssetStats', {
-      returnValue: [],
+    dsMockUtils.createQueryStub('statistics', 'assetTransferCompliances', {
+      returnValue: { requirements: [] },
     });
 
     let result = await prepareAddTransferRestriction.call(proc, args);
@@ -125,7 +125,7 @@ describe('addTransferRestriction procedure', () => {
     sinon.assert.calledWith(addBatchTransactionStub.firstCall, {
       transactions: [
         {
-          transaction: addTransferManagerTransaction,
+          transaction: setAssetTransferCompliance,
           args: [rawTicker, rawCountTm],
         },
       ],
@@ -134,7 +134,7 @@ describe('addTransferRestriction procedure', () => {
     expect(result).toEqual(new BigNumber(1));
 
     args = {
-      type: TransferRestrictionType.Percentage,
+      type: 'MaxInvestorOwnership',
       exemptedIdentities: [],
       percentage,
       ticker,
@@ -145,7 +145,7 @@ describe('addTransferRestriction procedure', () => {
     sinon.assert.calledWith(addBatchTransactionStub.secondCall, {
       transactions: [
         {
-          transaction: addTransferManagerTransaction,
+          transaction: setAssetTransferCompliance,
           args: [rawTicker, rawPercentageTm],
         },
       ],
@@ -165,7 +165,7 @@ describe('addTransferRestriction procedure', () => {
       assetOptions: { details: { requiresInvestorUniqueness: true } },
     });
     args = {
-      type: TransferRestrictionType.Count,
+      type: 'MaxInvestorCount',
       exemptedIdentities: [did],
       count,
       ticker,
@@ -174,8 +174,8 @@ describe('addTransferRestriction procedure', () => {
       mockContext
     );
 
-    dsMockUtils.createQueryStub('statistics', 'activeAssetStats', {
-      returnValue: [],
+    dsMockUtils.createQueryStub('statistics', 'assetTransferCompliances', {
+      returnValue: { requirements: [] },
     });
 
     const stringToScopeIdStub = sinon.stub(utilsConversionModule, 'stringToScopeId');
@@ -188,7 +188,7 @@ describe('addTransferRestriction procedure', () => {
     sinon.assert.calledWith(addBatchTransactionStub.firstCall, {
       transactions: [
         {
-          transaction: addTransferManagerTransaction,
+          transaction: setAssetTransferCompliance,
           args: [rawTicker, rawCountTm],
         },
         {
@@ -209,7 +209,7 @@ describe('addTransferRestriction procedure', () => {
     sinon.assert.calledWith(addBatchTransactionStub.secondCall, {
       transactions: [
         {
-          transaction: addTransferManagerTransaction,
+          transaction: setAssetTransferCompliance,
           args: [rawTicker, rawCountTm],
         },
         {
@@ -225,7 +225,7 @@ describe('addTransferRestriction procedure', () => {
 
   it('should throw an error if attempting to add a restriction that already exists', async () => {
     args = {
-      type: TransferRestrictionType.Count,
+      type: 'MaxInvestorCount',
       exemptedIdentities: [],
       count,
       ticker,
@@ -234,8 +234,8 @@ describe('addTransferRestriction procedure', () => {
       mockContext
     );
 
-    dsMockUtils.createQueryStub('statistics', 'activeAssetStats', {
-      returnValue: [rawCountTm],
+    dsMockUtils.createQueryStub('statistics', 'assetTransferCompliances', {
+      returnValue: { requirements: [rawCountTm] },
     });
 
     let err;
@@ -251,7 +251,7 @@ describe('addTransferRestriction procedure', () => {
 
   it('should throw an error if attempting to add a restriction when the restriction limit has been reached', async () => {
     args = {
-      type: TransferRestrictionType.Count,
+      type: 'MaxInvestorCount',
       count,
       ticker,
     };
@@ -259,8 +259,8 @@ describe('addTransferRestriction procedure', () => {
       mockContext
     );
 
-    dsMockUtils.createQueryStub('statistics', 'activeAssetStats', {
-      returnValue: [rawPercentageTm, rawPercentageTm, rawPercentageTm],
+    dsMockUtils.createQueryStub('statistics', 'assetTransferCompliances', {
+      returnValue: { requirements: [rawPercentageTm, rawPercentageTm, rawPercentageTm] },
     });
 
     let err;
@@ -277,7 +277,7 @@ describe('addTransferRestriction procedure', () => {
 
   it('should throw an error if exempted entities are repeated', async () => {
     args = {
-      type: TransferRestrictionType.Count,
+      type: 'MaxInvestorCount',
       exemptedIdentities: ['someScopeId', 'someScopeId'],
       count,
       ticker,
@@ -286,8 +286,8 @@ describe('addTransferRestriction procedure', () => {
       mockContext
     );
 
-    dsMockUtils.createQueryStub('statistics', 'activeAssetStats', {
-      returnValue: [],
+    dsMockUtils.createQueryStub('statistics', 'assetTransferCompliances', {
+      returnValue: { requirements: [] },
     });
 
     let err;
@@ -308,7 +308,7 @@ describe('addTransferRestriction procedure', () => {
       args = {
         ticker,
         count,
-        type: TransferRestrictionType.Count,
+        type: 'MaxInvestorCount',
       };
 
       const proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, BigNumber>(

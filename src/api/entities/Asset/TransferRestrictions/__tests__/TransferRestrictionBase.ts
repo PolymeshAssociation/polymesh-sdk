@@ -18,6 +18,7 @@ import {
   PercentageTransferRestriction,
   TransferRestrictionType,
 } from '~/types';
+import * as utilsConversionModule from '~/utils/conversion';
 
 import { Count } from '../Count';
 import { Percentage } from '../Percentage';
@@ -272,27 +273,29 @@ describe('TransferRestrictionBase class', () => {
         percentage: new BigNumber(49),
       };
       rawCountRestriction = dsMockUtils.createMockTransferCondition({
-        CountTransferManager: dsMockUtils.createMockU64(countRestriction.count),
+        MaxInvestorCount: dsMockUtils.createMockU64(countRestriction.count),
       });
       rawPercentageRestriction = dsMockUtils.createMockTransferCondition({
-        PercentageTransferManager: dsMockUtils.createMockPermill(
+        MaxInvestorOwnership: dsMockUtils.createMockPermill(
           percentageRestriction.percentage.multipliedBy(10000)
         ),
       });
     });
 
     beforeEach(() => {
+      const maxStats = new BigNumber(2);
       context = dsMockUtils.getContextInstance();
       asset = entityMockUtils.getAssetInstance();
       dsMockUtils.setConstMock('statistics', 'maxStatsPerAsset', {
-        returnValue: dsMockUtils.createMockU32(new BigNumber(3)),
+        returnValue: dsMockUtils.createMockU32(maxStats),
       });
       dsMockUtils.createQueryStub('statistics', 'assetTransferCompliances', {
-        returnValue: [rawCountRestriction, rawPercentageRestriction],
+        returnValue: { requirements: [rawCountRestriction, rawPercentageRestriction] },
       });
       dsMockUtils.createQueryStub('statistics', 'transferConditionExemptEntities', {
         entries: [[[null, dsMockUtils.createMockScopeId(scopeId)], true]],
       });
+      sinon.stub(utilsConversionModule, 'u32ToBigNumber').returns(maxStats);
     });
 
     afterEach(() => {
@@ -301,7 +304,6 @@ describe('TransferRestrictionBase class', () => {
 
     it('should return all count transfer restrictions', async () => {
       const count = new Count(asset, context);
-
       const result = await count.get();
 
       expect(result).toEqual({

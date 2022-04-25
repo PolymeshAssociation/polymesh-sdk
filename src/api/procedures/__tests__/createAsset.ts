@@ -1,4 +1,4 @@
-import { bool, Option, Vec } from '@polkadot/types';
+import { bool, Bytes, Option, Vec } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import { PolymeshPrimitivesDocument } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
@@ -51,7 +51,7 @@ describe('createAsset procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let bigNumberToBalanceStub: sinon.SinonStub;
-  let stringToAssetNameStub: sinon.SinonStub<[string, Context], AssetName>;
+  let stringToBytesStub: sinon.SinonStub<[string, Context], Bytes>;
   let booleanToBoolStub: sinon.SinonStub<[boolean, Context], bool>;
   let internalAssetTypeToAssetTypeStub: sinon.SinonStub<[InternalAssetType, Context], AssetType>;
   let securityIdentifierToAssetIdentifierStub: sinon.SinonStub<
@@ -73,7 +73,7 @@ describe('createAsset procedure', () => {
   let requireInvestorUniqueness: boolean;
   let documents: AssetDocument[];
   let rawTicker: Ticker;
-  let rawName: AssetName;
+  let rawName: Bytes;
   let rawInitialSupply: Balance;
   let rawIsDivisible: bool;
   let rawType: AssetType;
@@ -98,7 +98,7 @@ describe('createAsset procedure', () => {
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
-    stringToAssetNameStub = sinon.stub(utilsConversionModule, 'stringToAssetName');
+    stringToBytesStub = sinon.stub(utilsConversionModule, 'stringToBytes');
     booleanToBoolStub = sinon.stub(utilsConversionModule, 'booleanToBool');
     internalAssetTypeToAssetTypeStub = sinon.stub(
       utilsConversionModule,
@@ -131,7 +131,7 @@ describe('createAsset procedure', () => {
       },
     ];
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    rawName = dsMockUtils.createMockAssetName(name);
+    rawName = dsMockUtils.createMockBytes(name);
     rawInitialSupply = dsMockUtils.createMockBalance(initialSupply);
     rawIsDivisible = dsMockUtils.createMockBool(isDivisible);
     rawType = dsMockUtils.createMockAssetType(assetType as KnownAssetType);
@@ -194,7 +194,7 @@ describe('createAsset procedure', () => {
     bigNumberToBalanceStub
       .withArgs(initialSupply, mockContext, isDivisible)
       .returns(rawInitialSupply);
-    stringToAssetNameStub.withArgs(name, mockContext).returns(rawName);
+    stringToBytesStub.withArgs(name, mockContext).returns(rawName);
     booleanToBoolStub.withArgs(isDivisible, mockContext).returns(rawIsDivisible);
     booleanToBoolStub.withArgs(!requireInvestorUniqueness, mockContext).returns(rawDisableIu);
     internalAssetTypeToAssetTypeStub
@@ -355,10 +355,8 @@ describe('createAsset procedure', () => {
     dsMockUtils.createQueryStub('asset', 'classicTickers', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockClassicTickerRegistration({
-          /* eslint-disable @typescript-eslint/naming-convention */
-          eth_owner: 'someAddress',
-          is_created: true,
-          /* eslint-enable @typescript-eslint/naming-convention */
+          ethOwner: 'someAddress',
+          isCreated: true,
         })
       ),
     });
@@ -593,10 +591,7 @@ describe('createAsset procedure', () => {
       });
 
       const rawValue = dsMockUtils.createMockBytes('something');
-      sinon
-        .stub(utilsConversionModule, 'stringToBytes')
-        .withArgs('something', mockContext)
-        .returns(rawValue);
+      stringToBytesStub.withArgs('something', mockContext).returns(rawValue);
       let id = dsMockUtils.createMockU32();
 
       const customTypesStub = dsMockUtils.createQueryStub('asset', 'customTypesInverse', {

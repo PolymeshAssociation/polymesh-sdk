@@ -1,4 +1,5 @@
-import { AssetName, FundingRoundName, Ticker } from 'polymesh-types/types';
+import { Bytes } from '@polkadot/types';
+import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { getAuthorization, Params, prepareModifyAsset } from '~/api/procedures/modifyAsset';
@@ -16,8 +17,7 @@ jest.mock(
 describe('modifyAsset procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let stringToAssetNameStub: sinon.SinonStub<[string, Context], AssetName>;
-  let stringToFundingRoundNameStub: sinon.SinonStub<[string, Context], FundingRoundName>;
+  let stringToBytesStub: sinon.SinonStub<[string, Context], Bytes>;
   let ticker: string;
   let rawTicker: Ticker;
   let fundingRound: string;
@@ -29,8 +29,7 @@ describe('modifyAsset procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    stringToAssetNameStub = sinon.stub(utilsConversionModule, 'stringToAssetName');
-    stringToFundingRoundNameStub = sinon.stub(utilsConversionModule, 'stringToFundingRoundName');
+    stringToBytesStub = sinon.stub(utilsConversionModule, 'stringToBytes');
     ticker = 'someTicker';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     fundingRound = 'Series A';
@@ -142,8 +141,8 @@ describe('modifyAsset procedure', () => {
 
   it('should add a rename Asset transaction to the queue', async () => {
     const newName = 'NEW_NAME';
-    const rawAssetName = dsMockUtils.createMockAssetName(newName);
-    stringToAssetNameStub.withArgs(newName, mockContext).returns(rawAssetName);
+    const rawAssetName = dsMockUtils.createMockBytes(newName);
+    stringToBytesStub.withArgs(newName, mockContext).returns(rawAssetName);
 
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
@@ -167,8 +166,8 @@ describe('modifyAsset procedure', () => {
 
   it('should add a set funding round transaction to the queue', async () => {
     const newFundingRound = 'Series B';
-    const rawFundingRound = dsMockUtils.createMockFundingRoundName(newFundingRound);
-    stringToFundingRoundNameStub.withArgs(newFundingRound, mockContext).returns(rawFundingRound);
+    const rawFundingRound = dsMockUtils.createMockBytes(newFundingRound);
+    stringToBytesStub.withArgs(newFundingRound, mockContext).returns(rawFundingRound);
 
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 

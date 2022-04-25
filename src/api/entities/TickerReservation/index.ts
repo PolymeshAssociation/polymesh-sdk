@@ -1,6 +1,6 @@
 import { QueryableStorageEntry } from '@polkadot/api/types';
 import { PalletAssetSecurityToken } from '@polkadot/types/lookup';
-import { SecurityToken as MeshToken, TickerRegistration } from 'polymesh-types/types';
+import { TickerRegistration } from 'polymesh-types/types';
 
 import {
   Asset,

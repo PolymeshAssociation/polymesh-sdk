@@ -204,7 +204,7 @@ describe('AssetPermissions class', () => {
 
       dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
         returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockAgentGroup('PolymeshV1Pia')
+          dsMockUtils.createMockAgentGroup('PolymeshV1PIA')
         ),
       });
 
@@ -239,7 +239,7 @@ describe('AssetPermissions class', () => {
 
       dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
         returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockAgentGroup('PolymeshV1Caa')
+          dsMockUtils.createMockAgentGroup('PolymeshV1CAA')
         ),
       });
 
@@ -288,8 +288,8 @@ describe('AssetPermissions class', () => {
           dsMockUtils.createMockExtrinsicPermissions({
             These: [
               dsMockUtils.createMockPalletPermissions({
-                pallet_name: 'asset',
-                dispatchable_names: {
+                palletName: 'asset',
+                dispatchableNames: {
                   Except: [dsMockUtils.createMockDispatchableName('createAsset')],
                 },
               }),
@@ -323,8 +323,8 @@ describe('AssetPermissions class', () => {
           dsMockUtils.createMockExtrinsicPermissions({
             Except: [
               dsMockUtils.createMockPalletPermissions({
-                pallet_name: 'asset',
-                dispatchable_names: 'Whole',
+                palletName: 'asset',
+                dispatchableNames: 'Whole',
               }),
             ],
           })

@@ -15,7 +15,7 @@ jest.mock(
 );
 
 describe('CustomPermissionGroup class', () => {
-  const ticker = 'ASSET_NAME';
+  const ticker = 'ASSETNAME';
   const id = new BigNumber(1);
 
   let context: Context;
@@ -110,27 +110,24 @@ describe('CustomPermissionGroup class', () => {
   describe('method: getPermissions', () => {
     it('should return a list of permissions and transaction groups', async () => {
       const customPermissionGroup = new CustomPermissionGroup({ id, ticker }, context);
-
       sinon.stub(utilsConversionModule, 'bigNumberToU32');
 
       dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockExtrinsicPermissions({
             These: [
-              /* eslint-disable @typescript-eslint/naming-convention */
               dsMockUtils.createMockPalletPermissions({
-                pallet_name: dsMockUtils.createMockPalletName('Sto'),
-                dispatchable_names: dsMockUtils.createMockDispatchableNames({
+                palletName: dsMockUtils.createMockPalletName('Sto'),
+                dispatchableNames: dsMockUtils.createMockDispatchableNames({
                   These: [dsMockUtils.createMockDispatchableName('invest')],
                 }),
               }),
               dsMockUtils.createMockPalletPermissions({
-                pallet_name: dsMockUtils.createMockPalletName('Identity'),
-                dispatchable_names: dsMockUtils.createMockDispatchableNames({
-                  These: [dsMockUtils.createMockDispatchableName('add_claim')],
+                palletName: dsMockUtils.createMockPalletName('Identity'),
+                dispatchableNames: dsMockUtils.createMockDispatchableNames({
+                  These: [dsMockUtils.createMockDispatchableName('addClaim')],
                 }),
               }),
-              /* eslint-enable @typescript-eslint/naming-convention */
             ],
           })
         ),

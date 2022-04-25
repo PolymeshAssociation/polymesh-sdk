@@ -3,7 +3,7 @@ import {
   PolymeshPrimitivesCondition,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { Condition as MeshCondition, Ticker, TxTags } from 'polymesh-types/types';
+import { Ticker, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {

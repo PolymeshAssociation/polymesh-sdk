@@ -749,6 +749,7 @@ describe('getPortfolioIdByName', () => {
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
     rawName = dsMockUtils.createMockBytes('someName');
+    rawName.eq = (_: Bytes) => true; // TODO this is a hack
     identityId = dsMockUtils.createMockIdentityId('someDid');
     nameToNumberStub = dsMockUtils.createQueryStub('portfolio', 'nameToNumber');
     portfoliosStub = dsMockUtils.createQueryStub('portfolio', 'portfolios');
@@ -766,6 +767,7 @@ describe('getPortfolioIdByName', () => {
   it('should return null if no portfolio with given name is found', async () => {
     nameToNumberStub.returns(dsMockUtils.createMockU64(new BigNumber(1)));
     portfoliosStub.returns(dsMockUtils.createMockText('randomName'));
+    rawName.eq = (_: Bytes) => false; // TODO this is a hack
 
     const result = await getPortfolioIdByName(identityId, rawName, context);
     expect(result).toBeNull();

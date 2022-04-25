@@ -2,12 +2,13 @@ import { bool, Bytes, Text, u8, u16, u32, u64, u128 } from '@polkadot/types';
 import { AccountId, Balance, Hash, Permill, Signature } from '@polkadot/types/interfaces';
 import {
   ConfidentialIdentityClaimProofsScopeClaimProof,
+  PalletCorporateActionsCaId,
   PalletCorporateActionsCorporateAction,
   PalletCorporateActionsDistribution,
   PalletStoFundraiser,
   PolymeshPrimitivesAuthorizationAuthorizationData,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
-  PolymeshPrimitivesConditionTrustedFor,
+  PolymeshPrimitivesCondition,
   PolymeshPrimitivesConditionTrustedIssuer,
   PolymeshPrimitivesDocument,
   PolymeshPrimitivesIdentityClaimClaimType,
@@ -50,7 +51,6 @@ import {
   AssetType,
   AuthorizationData,
   AuthorizationType as MeshAuthorizationType,
-  CAId,
   CAKind,
   CalendarPeriod as MeshCalendarPeriod,
   CanTransferResult,
@@ -58,14 +58,9 @@ import {
   CddStatus,
   Claim as MeshClaim,
   ClaimType as MeshClaimType,
-  ComplianceRequirement,
   ComplianceRequirementResult,
-  Condition as MeshCondition,
   ConditionType as MeshConditionType,
-  CorporateAction as MeshCorporateAction,
   DispatchableName,
-  Distribution,
-  Document,
   DocumentHash,
   DocumentName,
   DocumentType,
@@ -73,7 +68,6 @@ import {
   EcdsaSignature,
   ExtrinsicPermissions,
   FundingRoundName,
-  Fundraiser,
   FundraiserTier,
   GranularCanTransferResult,
   IdentityId,
@@ -621,7 +615,6 @@ export function portfolioIdToMeshPortfolioId(
   const { did, number } = portfolioId;
   return context.createType('PortfolioId', {
     did: stringToIdentityId(did, context),
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     kind: number ? { User: bigNumberToU64(number, context) } : 'Default',
   });
 }
@@ -980,9 +973,9 @@ export function extrinsicPermissionsToTransactionPermissions(
 
   let txValues: (ModuleName | TxTag)[] = [];
   let exceptions: TxTag[] = [];
-
-  const formatTxTag = (dispatchable: Bytes, moduleName: string): TxTag =>
-    `${moduleName}.${camelCase(bytesToString(dispatchable))}` as TxTag;
+  const formatTxTag = (dispatchable: string, moduleName: string): TxTag => {
+    return `${moduleName}.${camelCase(dispatchable)}` as TxTag;
+  };
 
   if (pallets) {
     pallets.forEach(({ palletName, dispatchableNames }) => {
@@ -990,15 +983,75 @@ export function extrinsicPermissionsToTransactionPermissions(
 
       if (dispatchableNames.isExcept) {
         const dispatchables = dispatchableNames.asExcept;
-        exceptions = [...exceptions, ...dispatchables.map(name => formatTxTag(name, moduleName))];
+        exceptions = [
+          ...exceptions,
+          ...dispatchables.map(name => formatTxTag(bytesToString(name), moduleName)),
+        ];
         txValues = [...txValues, moduleName as ModuleName];
       } else if (dispatchableNames.isThese) {
         const dispatchables = dispatchableNames.asThese;
+        txValues = [
+          ...txValues,
+          ...dispatchables.map(name => formatTxTag(bytesToString(name), moduleName)),
+        ];
+      } else {
+        txValues = [...txValues, moduleName as ModuleName];
+      }
+    });
+
+    const result = {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      type: extrinsicType!,
+      values: txValues,
+    };
+
+    return exceptions.length ? { ...result, exceptions } : result;
+  }
+
+  return null;
+}
+
+/**
+ * @hidden
+ *
+ * needed to get around RPC not using updated types
+ */
+export function basicExtrinsicPermissionsToTransactionPermissions(
+  permissions: ExtrinsicPermissions
+): TransactionPermissions | null {
+  let extrinsicType: PermissionType;
+  let pallets;
+  if (permissions.isThese) {
+    extrinsicType = PermissionType.Include;
+    pallets = permissions.asThese;
+  } else if (permissions.isExcept) {
+    extrinsicType = PermissionType.Exclude;
+    pallets = permissions.asExcept;
+  }
+
+  let txValues: (ModuleName | TxTag)[] = [];
+  let exceptions: TxTag[] = [];
+
+  const formatTxTag = (dispatchable: DispatchableName, moduleName: string): TxTag =>
+    `${moduleName}.${camelCase(dispatchable.toString())}` as TxTag;
+
+  if (pallets) {
+    /* eslint-disable @typescript-eslint/naming-convention */
+    pallets.forEach(({ pallet_name, dispatchable_names }) => {
+      const moduleName = stringLowerFirst(pallet_name);
+
+      if (dispatchable_names.isExcept) {
+        const dispatchables = dispatchable_names.asExcept;
+        exceptions = [...exceptions, ...dispatchables.map(name => formatTxTag(name, moduleName))];
+        txValues = [...txValues, moduleName as ModuleName];
+      } else if (dispatchable_names.isThese) {
+        const dispatchables = dispatchable_names.asThese;
         txValues = [...txValues, ...dispatchables.map(name => formatTxTag(name, moduleName))];
       } else {
         txValues = [...txValues, moduleName as ModuleName];
       }
     });
+    /* eslint-enable @typescript-eslint/naming-convention */
 
     const result = {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -1046,6 +1099,69 @@ export function meshPermissionsToPermissions(
   }
 
   transactions = extrinsicPermissionsToTransactionPermissions(extrinsic);
+
+  let portfoliosType: PermissionType;
+  let portfolioIds;
+  if (portfolio.isThese) {
+    portfoliosType = PermissionType.Include;
+    portfolioIds = portfolio.asThese;
+  } else if (portfolio.isExcept) {
+    portfoliosType = PermissionType.Exclude;
+    portfolioIds = portfolio.asExcept;
+  }
+
+  if (portfolioIds) {
+    portfolios = {
+      values: portfolioIds.map(portfolioId => meshPortfolioIdToPortfolio(portfolioId, context)),
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      type: portfoliosType!,
+    };
+  }
+
+  return {
+    assets,
+    transactions,
+    transactionGroups: transactions ? transactionPermissionsToTxGroups(transactions) : [],
+    portfolios,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * used to get around RPC types not updating
+ */
+export function basicMeshPermissionsToPermissions(
+  permissions: MeshPermissions,
+  context: Context
+): Permissions {
+  const { asset, extrinsic, portfolio } = permissions;
+
+  let assets: SectionPermissions<Asset> | null = null;
+  let transactions: TransactionPermissions | null = null;
+  let portfolios: SectionPermissions<DefaultPortfolio | NumberedPortfolio> | null = null;
+
+  let assetsType: PermissionType;
+  let assetsPermissions;
+  if (asset.isThese) {
+    assetsType = PermissionType.Include;
+    assetsPermissions = asset.asThese;
+  } else if (asset.isExcept) {
+    assetsType = PermissionType.Exclude;
+    assetsPermissions = asset.asExcept;
+  }
+
+  if (assetsPermissions) {
+    assets = {
+      values: assetsPermissions.map(
+        ticker => new Asset({ ticker: tickerToString(ticker) }, context)
+      ),
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      type: assetsType!,
+    };
+  }
+
+  transactions = basicExtrinsicPermissionsToTransactionPermissions(extrinsic);
 
   let portfoliosType: PermissionType;
   let portfolioIds;
@@ -1133,7 +1249,6 @@ export function agentGroupToPermissionGroupIdentifier(
   } else if (agentGroup.isPolymeshV1PIA) {
     return PermissionGroupType.PolymeshV1Pia;
   } else {
-    console.log('else u32', agentGroup);
     return { custom: u32ToBigNumber(agentGroup.asCustom) };
   }
 }
@@ -1399,12 +1514,12 @@ export function basicAuthorizationDataToAuthorization(
     };
   }
 
-  // if (auth.isJoinIdentity) {
-  //   return {
-  //     type: AuthorizationType.JoinIdentity,
-  //     value: meshPermissionsToPermissions(auth.asJoinIdentity, context),
-  //   };
-  // }
+  if (auth.isJoinIdentity) {
+    return {
+      type: AuthorizationType.JoinIdentity,
+      value: basicMeshPermissionsToPermissions(auth.asJoinIdentity, context),
+    };
+  }
 
   if (auth.isAddRelayerPayingKey) {
     const [userKey, payingKey, polyxLimit] = auth.asAddRelayerPayingKey;
@@ -1428,12 +1543,12 @@ export function basicAuthorizationDataToAuthorization(
     };
   }
 
-  // if (auth.isRotatePrimaryKeyToSecondary) {
-  //   return {
-  //     type: AuthorizationType.RotatePrimaryKeyToSecondary,
-  //     value: meshPermissionsToPermissions(auth.asRotatePrimaryKeyToSecondary, context),
-  //   };
-  // }
+  if (auth.isRotatePrimaryKeyToSecondary) {
+    return {
+      type: AuthorizationType.RotatePrimaryKeyToSecondary,
+      value: basicMeshPermissionsToPermissions(auth.asRotatePrimaryKeyToSecondary, context),
+    };
+  }
 
   throw new PolymeshError({
     code: ErrorCode.UnexpectedError,
@@ -1783,8 +1898,10 @@ export function stringToDocumentName(docName: string, context: Context): Documen
 /**
  * @hidden
  */
-export function documentNameToString(docName: DocumentName): string {
+export function documentNameToString(docName: Bytes): string {
   return docName.toString();
+  console.log('doc name is: ', docName.toString());
+  return bytesToString(docName);
 }
 
 /**
@@ -1797,8 +1914,9 @@ export function stringToDocumentType(docType: string, context: Context): Documen
 /**
  * @hidden
  */
-export function documentTypeToString(docType: DocumentType): string {
+export function documentTypeToString(docType: Bytes): string {
   return docType.toString();
+  // return bytesToString(docType);
 }
 
 /**
@@ -1903,11 +2021,9 @@ export function assetDocumentToDocument(
   return context.createType('PolymeshPrimitivesDocument', {
     uri: stringToDocumentUri(uri, context),
     name: stringToDocumentName(name, context),
-    /* eslint-disable @typescript-eslint/naming-convention */
-    content_hash: stringToDocumentHash(contentHash, context),
-    doc_type: optionize(stringToDocumentType)(type, context),
-    filing_date: optionize(dateToMoment)(filedAt, context),
-    /* eslint-enable @typescript-eslint/naming-convention */
+    contentHash: stringToDocumentHash(contentHash, context),
+    docType: optionize(stringToDocumentType)(type, context),
+    filingDate: optionize(dateToMoment)(filedAt, context),
   });
 }
 
@@ -2245,7 +2361,7 @@ export function meshClaimTypeToClaimType(claimType: MeshClaimType): ClaimType {
     return ClaimType.Jurisdiction;
   }
 
-  if (claimType.isNoType) {
+  if (claimType.isNoData) {
     return ClaimType.NoData;
   }
 
@@ -2402,8 +2518,8 @@ export function requirementToComplianceRequirement(
   requirement: InputRequirement,
   context: Context
 ): PolymeshPrimitivesComplianceManagerComplianceRequirement {
-  const senderConditions: MeshCondition[] = [];
-  const receiverConditions: MeshCondition[] = [];
+  const senderConditions: PolymeshPrimitivesCondition[] = [];
+  const receiverConditions: PolymeshPrimitivesCondition[] = [];
 
   requirement.conditions.forEach(condition => {
     let conditionContent: MeshClaim | MeshClaim[] | TargetIdentity;
@@ -2425,9 +2541,8 @@ export function requirementToComplianceRequirement(
 
     const { target, trustedClaimIssuers = [] } = condition;
 
-    const meshCondition = context.createType('Condition', {
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      condition_type: {
+    const meshCondition = context.createType('PolymeshPrimitivesCondition', {
+      conditionType: {
         [type]: conditionContent,
       },
       issuers: trustedClaimIssuers.map(issuer =>
@@ -3495,11 +3610,9 @@ export function scopeClaimProofToConfidentialIdentityClaimProof(
   });
 
   return context.createType('ConfidentialIdentityClaimProofsScopeClaimProof', {
-    /* eslint-disable @typescript-eslint/naming-convention */
-    proof_scope_id_wellformed: stringToSignature(proofScopeIdWellFormed, context),
-    proof_scope_id_cdd_id_match: zkProofData,
-    scope_id: stringToRistrettoPoint(scopeId, context),
-    /* eslint-enable @typescript-eslint/naming-convention */
+    proofScopeIdWellformed: stringToSignature(proofScopeIdWellFormed, context),
+    proofScopeIdCddIdMatch: zkProofData,
+    scopeId: stringToRistrettoPoint(scopeId, context),
   });
 }
 
@@ -3579,11 +3692,10 @@ export function distributionToDividendDistributionParams(
 export function corporateActionIdentifierToCaId(
   corporateActionIdentifier: CorporateActionIdentifier,
   context: Context
-): CAId {
+): PalletCorporateActionsCaId {
   const { ticker, localId } = corporateActionIdentifier;
-  return context.createType('CAId', {
+  return context.createType('PalletCorporateActionsCaId', {
     ticker: stringToTicker(ticker, context),
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    local_id: bigNumberToU32(localId, context),
+    localId: bigNumberToU32(localId, context),
   });
 }

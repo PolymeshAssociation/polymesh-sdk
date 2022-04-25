@@ -71,17 +71,16 @@ describe('Authorizations class', () => {
       const rawAuthorizationType = dsMockUtils.createMockAuthorizationType(filter);
 
       /* eslint-disable @typescript-eslint/naming-convention */
-
       const authParams = [
         {
-          authId: new BigNumber(1),
+          auth_id: new BigNumber(1),
           expiry: null,
           data: { type: AuthorizationType.TransferAssetOwnership, value: 'myTicker' },
           target: identity,
           issuer: entityMockUtils.getIdentityInstance({ did: 'alice' }),
         } as const,
         {
-          authId: new BigNumber(2),
+          auth_id: new BigNumber(2),
           expiry: new Date('10/14/3040'),
           data: { type: AuthorizationType.TransferAssetOwnership, value: 'otherTicker' },
           target: identity,
@@ -89,16 +88,16 @@ describe('Authorizations class', () => {
         } as const,
       ];
 
-      const fakeAuthorizations = authParams.map(({ authId, expiry, issuer, data }) =>
-        dsMockUtils.createMockAuthorization({
-          auth_id: dsMockUtils.createMockU64(authId),
+      const fakeAuthorizations = authParams.map(({ auth_id: authId, expiry, issuer, data }) =>
+        dsMockUtils.createBasicMockAuthorization({
+          authId: dsMockUtils.createMockU64(authId),
           expiry: dsMockUtils.createMockOption(
             expiry ? dsMockUtils.createMockMoment(new BigNumber(expiry.getTime())) : expiry
           ),
-          authorization_data: dsMockUtils.createMockAuthorizationData({
+          authorizationData: dsMockUtils.createMockAuthorizationData({
             TransferAssetOwnership: dsMockUtils.createMockTicker(data.value),
           }),
-          authorized_by: dsMockUtils.createMockIdentityId(issuer.did),
+          authorizedBy: dsMockUtils.createMockIdentityId(issuer.did),
         })
       );
 
@@ -113,14 +112,15 @@ describe('Authorizations class', () => {
         .createRpcStub('identity', 'getFilteredAuthorizations')
         .resolves(fakeAuthorizations);
 
-      const expectedAuthorizations = authParams.map(({ authId, target, issuer, expiry, data }) =>
-        entityMockUtils.getAuthorizationRequestInstance({
-          authId,
-          issuer,
-          target,
-          expiry,
-          data,
-        })
+      const expectedAuthorizations = authParams.map(
+        ({ auth_id: authId, target, issuer, expiry, data }) =>
+          entityMockUtils.getAuthorizationRequestInstance({
+            authId,
+            issuer,
+            target,
+            expiry,
+            data,
+          })
       );
 
       let result = await authsNamespace.getReceived();
@@ -154,20 +154,18 @@ describe('Authorizations class', () => {
       const authsNamespace = new Authorizations(identity, context);
       const id = new BigNumber(1);
 
-      /* eslint-disable @typescript-eslint/naming-convention */
-
       const authId = new BigNumber(1);
       const data = { type: AuthorizationType.TransferAssetOwnership, value: 'myTicker' } as const;
 
       dsMockUtils.createQueryStub('identity', 'authorizations', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockAuthorization({
-            auth_id: dsMockUtils.createMockU64(authId),
-            authorization_data: dsMockUtils.createMockAuthorizationData({
+            authId: dsMockUtils.createMockU64(authId),
+            authorizationData: dsMockUtils.createMockAuthorizationData({
               TransferAssetOwnership: dsMockUtils.createMockTicker(data.value),
             }),
             expiry: dsMockUtils.createMockOption(),
-            authorized_by: dsMockUtils.createMockIdentityId(issuerDid),
+            authorizedBy: dsMockUtils.createMockIdentityId(issuerDid),
           })
         ),
       });
@@ -187,8 +185,6 @@ describe('Authorizations class', () => {
       const identity = entityMockUtils.getIdentityInstance({ did });
       const authsNamespace = new Authorizations(identity, context);
       const id = new BigNumber(1);
-
-      /* eslint-disable @typescript-eslint/naming-convention */
 
       const authId = new BigNumber(1);
       const data = { type: AuthorizationType.TransferAssetOwnership, value: 'myTicker' } as const;

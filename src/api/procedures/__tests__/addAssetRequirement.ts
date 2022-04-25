@@ -1,15 +1,9 @@
 import {
-  PolymeshPrimitivesComplianceManagerAssetCompliance,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
   PolymeshPrimitivesCondition,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import {
-  ComplianceRequirement,
-  Condition as MeshCondition,
-  Ticker,
-  TxTags,
-} from 'polymesh-types/types';
+import { Ticker, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {

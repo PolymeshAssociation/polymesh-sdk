@@ -99,9 +99,9 @@ describe('setTransferRestrictions procedure', () => {
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawCount = dsMockUtils.createMockU64(count);
     rawPercentage = dsMockUtils.createMockPermill(percentage.multipliedBy(10000));
-    rawCountTm = dsMockUtils.createMockTransferCondition({ CountTransferManager: rawCount });
+    rawCountTm = dsMockUtils.createMockTransferCondition({ MaxInvestorCount: rawCount });
     rawPercentageTm = dsMockUtils.createMockTransferCondition({
-      PercentageTransferManager: rawPercentage,
+      MaxInvestorOwnership: rawPercentage,
     });
     rawScopeId = dsMockUtils.createMockScopeId(exemptedDid);
 

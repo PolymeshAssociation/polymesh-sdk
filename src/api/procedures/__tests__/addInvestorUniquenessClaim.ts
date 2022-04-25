@@ -1,3 +1,4 @@
+import { ConfidentialIdentityClaimProofsScopeClaimProof } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import {
   Claim as MeshClaim,
@@ -5,7 +6,6 @@ import {
   InvestorZKProofData,
   Moment,
   Scope as MeshScope,
-  ScopeClaimProof as MeshScopeClaimProof,
   ScopeId,
   Ticker,
   TxTags,
@@ -44,7 +44,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
   let stringToInvestorZkProofDataStub: sinon.SinonStub<[string, Context], InvestorZKProofData>;
   let scopeClaimProofToMeshScopeClaimProofStub: sinon.SinonStub<
     [ScopeClaimProof, string, Context],
-    MeshScopeClaimProof
+    ConfidentialIdentityClaimProofsScopeClaimProof
   >;
   let scopeToMeshScopeStub: sinon.SinonStub<[Scope, Context], MeshScope>;
   let stringToScopeIdStub: sinon.SinonStub<[string, Context], ScopeId>;
@@ -56,7 +56,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
   let rawClaim: MeshClaim;
   let rawClaimV2: MeshClaim;
   let rawProof: InvestorZKProofData;
-  let rawScopeClaimProof: MeshScopeClaimProof;
+  let rawScopeClaimProof: ConfidentialIdentityClaimProofsScopeClaimProof;
   let rawExpiry: Moment;
   let addTransactionStub: sinon.SinonStub;
 
@@ -94,7 +94,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
     );
     scopeClaimProofToMeshScopeClaimProofStub = sinon.stub(
       utilsConversionModule,
-      'scopeClaimProofToMeshScopeClaimProof'
+      'scopeClaimProofToConfidentialIdentityClaimProof'
     );
     dateToMomentStub = sinon.stub(utilsConversionModule, 'dateToMoment');
     stringToScopeIdStub = sinon.stub(utilsConversionModule, 'stringToScopeId');
@@ -116,13 +116,13 @@ describe('addInvestorUniquenessClaim procedure', () => {
     rawScopeId = dsMockUtils.createMockScopeId(scopeId);
     rawProof = dsMockUtils.createMockInvestorZKProofData(proof);
     rawScopeClaimProof = dsMockUtils.createMockScopeClaimProof({
-      proof_scope_id_wellformed: proofScopeIdWellFormed,
-      proof_scope_id_cdd_id_match: {
-        subtract_expressions_res: subtractExpressionsRes,
-        challenge_responses: [firstChallengeResponse, secondChallengeResponse],
-        blinded_scope_did_hash: blindedScopeDidHash,
+      proofScopeIdWellformed: proofScopeIdWellFormed,
+      proofScopeIdCddIdMatch: {
+        subtractExpressionsRes,
+        challengeResponses: [firstChallengeResponse, secondChallengeResponse],
+        blindedScopeDidHash,
       },
-      scope_id: scopeId,
+      scopeId,
     });
     /* eslint-enable @typescript-eslint/naming-convention */
     rawExpiry = dsMockUtils.createMockMoment(new BigNumber(expiry.getTime()));

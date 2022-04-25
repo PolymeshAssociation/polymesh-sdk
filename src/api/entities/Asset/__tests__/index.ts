@@ -1,10 +1,9 @@
-import { bool, u64 } from '@polkadot/types';
+import { bool, Bytes, u64 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import {
   AssetIdentifier,
   AssetName,
-  FundingRoundName,
   SecurityToken as MeshSecurityToken,
 } from 'polymesh-types/types';
 import sinon from 'sinon';
@@ -95,6 +94,7 @@ describe('Asset class', () => {
       assetType = 'EquityCommon';
       iuDisabled = false;
       did = 'someDid';
+      sinon.stub(utilsConversionModule, 'textToString').returns(name);
     });
 
     beforeEach(() => {
@@ -113,7 +113,7 @@ describe('Asset class', () => {
         entries: [
           tuple(
             [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(did)],
-            dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('PolymeshV1Pia'))
+            dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('PolymeshV1PIA'))
           ),
           tuple(
             [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(owner)],
@@ -269,7 +269,7 @@ describe('Asset class', () => {
   describe('method: currentFundingRound', () => {
     let ticker: string;
     let fundingRound: string;
-    let rawFundingRound: FundingRoundName;
+    let rawFundingRound: Bytes;
 
     let context: Context;
     let asset: Asset;
@@ -280,7 +280,7 @@ describe('Asset class', () => {
     });
 
     beforeEach(() => {
-      rawFundingRound = dsMockUtils.createMockFundingRoundName(fundingRound);
+      rawFundingRound = dsMockUtils.createMockBytes(fundingRound);
       context = dsMockUtils.getContextInstance();
       asset = new Asset({ ticker }, context);
     });
@@ -299,7 +299,10 @@ describe('Asset class', () => {
       dsMockUtils.createQueryStub('asset', 'fundingRound', {
         returnValue: rawFundingRound,
       });
-
+      sinon
+        .stub(utilsConversionModule, 'bytesToString')
+        .withArgs(rawFundingRound)
+        .returns(fundingRound);
       const result = await asset.currentFundingRound();
 
       expect(result).toBe(fundingRound);
@@ -630,7 +633,7 @@ describe('Asset class', () => {
       const asset = new Asset({ ticker }, context);
       const unsubCallback = 'unsubCallBack';
 
-      investorCountPerAssetStub.callsFake(async (_, cbFunc) => {
+      investorCountPerAssetStub.callsFake(async (_, _holder, cbFunc) => {
         cbFunc(rawInvestorCount);
         return unsubCallback;
       });

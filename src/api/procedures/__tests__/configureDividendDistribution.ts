@@ -536,12 +536,12 @@ describe('configureDividendDistribution procedure', () => {
       rawDistribution = dsMockUtils.createMockDistribution({
         from: { did, kind: { User: dsMockUtils.createMockU64(portfolioNumber) } },
         currency,
-        per_share: perShare.shiftedBy(6),
+        perShare: perShare.shiftedBy(6),
         amount: maxAmount.shiftedBy(6),
         remaining: new BigNumber(10000),
         reclaimed: false,
-        payment_at: new BigNumber(paymentDate.getTime()),
-        expires_at: dsMockUtils.createMockOption(
+        paymentAt: new BigNumber(paymentDate.getTime()),
+        expiresAt: dsMockUtils.createMockOption(
           dsMockUtils.createMockMoment(new BigNumber(expiryDate?.getTime()))
         ),
       });
@@ -551,23 +551,21 @@ describe('configureDividendDistribution procedure', () => {
         returnValue: dsMockUtils.createMockOption(rawCorporateAction),
       });
       dsMockUtils.createQueryStub('corporateAction', 'details', {
-        returnValue: dsMockUtils.createMockText(description),
+        returnValue: dsMockUtils.createMockBytes(description),
       });
     });
 
     beforeEach(() => {
-      /* eslint-disable @typescript-eslint/naming-convention */
       filterEventRecordsStub.returns([
         dsMockUtils.createMockIEvent([
           'data',
           dsMockUtils.createMockCAId({
             ticker,
-            local_id: id,
+            localId: id,
           }),
           rawDistribution,
         ]),
       ]);
-      /* eslint-enable @typescript-eslint/naming-convention */
     });
 
     afterEach(() => {

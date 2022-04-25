@@ -2,13 +2,7 @@ import { bool, Bytes, Option, StorageKey } from '@polkadot/types';
 import { BlockNumber, Hash } from '@polkadot/types/interfaces/runtime';
 import { PalletAssetSecurityToken } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import {
-  AgentGroup,
-  AssetName,
-  IdentityId,
-  SecurityToken as MeshSecurityToken,
-  Ticker,
-} from 'polymesh-types/types';
+import { AgentGroup, AssetName, IdentityId, Ticker } from 'polymesh-types/types';
 
 import {
   AuthorizationRequest,
@@ -489,14 +483,17 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
     } = this;
 
     const rawTicker = stringToTicker(ticker, context);
-    const count = await statistics.assetStats(rawTicker, ' Count');
 
     if (callback) {
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      callback(u128ToBigNumber(count));
+      return statistics.assetStats(rawTicker, 'Count', count => {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
+        callback(u128ToBigNumber(count));
+      });
     }
 
-    return u128ToBigNumber(count);
+    const result = await statistics.assetStats(stringToTicker(ticker, context), 'Count');
+
+    return u128ToBigNumber(result);
   }
 
   /**

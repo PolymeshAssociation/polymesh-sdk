@@ -168,10 +168,8 @@ export abstract class TransferRestrictionBase<
       filteredRequirements.map(() => statistics.transferConditionExemptEntities.entries(rawTicker))
     );
 
-    // const exemptList = await statistics.transferConditionExemptEntities.entries(rawTicker);
-
     const restrictions = rawExemptedLists.map((list, index) => {
-      const exemptedScopeIds = list.map(
+      const exemptedIds = list.map(
         ([
           {
             args: [, scopeId],
@@ -191,10 +189,10 @@ export abstract class TransferRestrictionBase<
         };
       }
 
-      if (exemptedScopeIds.length) {
+      if (exemptedIds.length) {
         return {
           ...restriction,
-          exemptedScopeIds,
+          exemptedIds,
         };
       }
       return restriction;

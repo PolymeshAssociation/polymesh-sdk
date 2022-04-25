@@ -478,8 +478,7 @@ export interface ClaimType extends Enum {
   readonly isExempted: boolean;
   readonly isBlocked: boolean;
   readonly isInvestorUniqueness: boolean;
-  // readonly isNoData: boolean;
-  readonly isNoType: boolean;
+  readonly isNoData: boolean;
   readonly isInvestorUniquenessV2: boolean;
   readonly type:
     | 'Accredited'
@@ -1175,10 +1174,10 @@ export interface DocumentHash extends Enum {
 export interface DocumentId extends u32 {}
 
 /** @name DocumentName */
-export interface DocumentName extends Bytes {}
+export interface DocumentName extends Text {}
 
 /** @name DocumentType */
-export interface DocumentType extends Bytes {}
+export interface DocumentType extends Text {}
 
 /** @name DocumentUri */
 export interface DocumentUri extends Text {}

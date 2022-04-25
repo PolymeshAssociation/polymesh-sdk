@@ -1,7 +1,7 @@
 import { Moment } from '@polkadot/types/interfaces';
 import { PolymeshPrimitivesAuthorizationAuthorizationData } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { AuthorizationData, Signatory, Ticker } from 'polymesh-types/types';
+import { Signatory, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {

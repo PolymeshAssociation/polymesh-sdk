@@ -1,7 +1,6 @@
 import { Bytes, Option } from '@polkadot/types';
 import { PalletStoFundraiser } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { Fundraiser } from 'polymesh-types/types';
 
 import {
   Asset,

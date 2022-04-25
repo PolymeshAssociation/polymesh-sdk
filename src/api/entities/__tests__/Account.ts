@@ -347,15 +347,13 @@ describe('Account class', () => {
     it('should return if the Account is frozen or not', async () => {
       const keyToIdentityIdsStub = dsMockUtils.createQueryStub('identity', 'keyToIdentityIds');
 
-      /* eslint-disable @typescript-eslint/naming-convention */
       dsMockUtils.createQueryStub('identity', 'didRecords').returns(
-        dsMockUtils.createMockDidRecord({
-          primary_key: dsMockUtils.createMockAccountId(address),
-          roles: [],
-          secondary_keys: [],
+        dsMockUtils.createMockPolymeshPrimitivesIdentity({
+          primaryKey: dsMockUtils.createMockAccountId(address),
+          secondaryKeys: [],
         })
       );
-      /* eslint-enable @typescript-eslint/naming-convention */
+
       const isDidFrozenStub = dsMockUtils.createQueryStub('identity', 'isDidFrozen', {
         returnValue: dsMockUtils.createMockBool(false),
       });

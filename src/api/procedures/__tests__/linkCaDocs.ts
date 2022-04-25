@@ -1,10 +1,7 @@
 import { Vec } from '@polkadot/types';
-import {
-  PolymeshPrimitivesConditionConditionType,
-  PolymeshPrimitivesDocument,
-} from '@polkadot/types/lookup';
+import { PalletCorporateActionsCaId, PolymeshPrimitivesDocument } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { CAId, Document, DocumentId, Ticker } from 'polymesh-types/types';
+import { Document, DocumentId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { getAuthorization, Params, prepareLinkCaDocs } from '~/api/procedures/linkCaDocs';
@@ -32,7 +29,7 @@ describe('linkCaDocs procedure', () => {
   let rawDocumentIds: DocumentId[];
   let documentEntries: [[Ticker, DocumentId], PolymeshPrimitivesDocument][];
   let args: Params;
-  let rawCaId: CAId;
+  let rawCaId: PalletCorporateActionsCaId;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -81,8 +78,7 @@ describe('linkCaDocs procedure', () => {
       ticker,
       documents,
     };
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    rawCaId = dsMockUtils.createMockCAId({ ticker, local_id: id });
+    rawCaId = dsMockUtils.createMockCAId({ ticker, localId: id });
     sinon.stub(utilsConversionModule, 'corporateActionIdentifierToCaId').returns(rawCaId);
   });
 

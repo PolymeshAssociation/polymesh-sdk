@@ -1,7 +1,11 @@
 import { ApiPromise } from '@polkadot/api';
 import { getTypeDef, Option } from '@polkadot/types';
 import { AccountInfo } from '@polkadot/types/interfaces';
-import { PalletCorporateActionsDistribution, PalletRelayerSubsidy } from '@polkadot/types/lookup';
+import {
+  PalletCorporateActionsCaId,
+  PalletCorporateActionsDistribution,
+  PalletRelayerSubsidy,
+} from '@polkadot/types/lookup';
 import {
   CallFunction,
   InterfaceTypes,
@@ -16,7 +20,7 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, clone, flatMap, flatten, flattenDeep } from 'lodash';
 import { polymesh } from 'polymesh-types/definitions';
-import { CAId, ModuleName, ProtocolOp, Subsidy as MeshSubsidy, TxTag } from 'polymesh-types/types';
+import { ModuleName, ProtocolOp, TxTag } from 'polymesh-types/types';
 
 import { Account, Asset, DividendDistribution, Identity, PolymeshError, Subsidy } from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
@@ -738,7 +742,7 @@ export class Context {
       },
     } = this;
     const { assets } = args;
-    const distributionsMultiParams: CAId[] = [];
+    const distributionsMultiParams: PalletCorporateActionsCaId[] = [];
     const corporateActionParams: CorporateActionParams[] = [];
     const corporateActionIds: BigNumber[] = [];
     const tickers: string[] = [];

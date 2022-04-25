@@ -1,7 +1,7 @@
 import { Vec } from '@polkadot/types/codec';
 import { PolymeshPrimitivesComplianceManagerAssetCompliance } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { AssetCompliance, AssetComplianceResult, IdentityId, Ticker } from 'polymesh-types/types';
+import { AssetComplianceResult, IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Params } from '~/api/procedures/setAssetRequirements';
@@ -204,7 +204,7 @@ describe('Requirements class', () => {
     let notDefaultClaimIssuer: TrustedClaimIssuer;
     let assetDid: string;
     let cddId: string;
-    let trustedIssuerToTrustedClaimIssuerStub: sinon.SinonStub;
+    let primitiveTrustedIssuerToTrustedClaimIssuer: sinon.SinonStub;
 
     let expected: ComplianceRequirements;
 
@@ -212,9 +212,9 @@ describe('Requirements class', () => {
     let queryMultiResult: [PolymeshPrimitivesComplianceManagerAssetCompliance, Vec<IdentityId>];
 
     beforeAll(() => {
-      trustedIssuerToTrustedClaimIssuerStub = sinon.stub(
+      primitiveTrustedIssuerToTrustedClaimIssuer = sinon.stub(
         utilsConversionModule,
-        'trustedIssuerToTrustedClaimIssuer'
+        'primitiveTrustedIssuerToTrustedClaimIssuer'
       );
     });
 
@@ -240,7 +240,7 @@ describe('Requirements class', () => {
 
       queryMultiStub = dsMockUtils.getQueryMultiStub();
 
-      trustedIssuerToTrustedClaimIssuerStub.returns({
+      primitiveTrustedIssuerToTrustedClaimIssuer.returns({
         identity: defaultClaimIssuers[0].identity,
         trustedFor: null,
       });

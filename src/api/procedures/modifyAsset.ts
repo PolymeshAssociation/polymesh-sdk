@@ -3,9 +3,7 @@ import { ErrorCode, SecurityIdentifier, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   securityIdentifierToAssetIdentifier,
-  stringToAssetName,
   stringToBytes,
-  stringToFundingRoundName,
   stringToTicker,
 } from '~/utils/conversion';
 import { checkTxType, hasSameElements } from '~/utils/internal';

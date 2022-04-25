@@ -1,10 +1,10 @@
 import { Bytes } from '@polkadot/types';
 import { PalletStoFundraiser } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { FundraiserName, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Asset, Context, Namespace, Offering, TransactionQueue } from '~/internal';
+import { Ticker } from '~/polkadot/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   OfferingBalanceStatus,
@@ -201,18 +201,17 @@ describe('Offerings class', () => {
       fundraisers = [
         dsMockUtils.createMockFundraiser({
           creator: dsMockUtils.createMockIdentityId(creator.did),
-          /* eslint-disable @typescript-eslint/naming-convention */
-          offering_portfolio: dsMockUtils.createMockPortfolioId({
+          offeringPortfolio: dsMockUtils.createMockPortfolioId({
             did: dsMockUtils.createMockIdentityId(offeringPortfolio.owner.did),
             kind: dsMockUtils.createMockPortfolioKind('Default'),
           }),
-          raising_portfolio: dsMockUtils.createMockPortfolioId({
+          raisingPortfolio: dsMockUtils.createMockPortfolioId({
             did: dsMockUtils.createMockIdentityId(raisingPortfolio.owner.did),
             kind: dsMockUtils.createMockPortfolioKind('Default'),
           }),
-          offering_asset: rawTicker,
-          raising_asset: dsMockUtils.createMockTicker(raisingCurrency),
-          venue_id: dsMockUtils.createMockU64(venue.id),
+          offeringAsset: rawTicker,
+          raisingAsset: dsMockUtils.createMockTicker(raisingCurrency),
+          venueId: dsMockUtils.createMockU64(venue.id),
           tiers: [
             dsMockUtils.createMockFundraiserTier({
               total: dsMockUtils.createMockBalance(tiers[0].amount),
@@ -224,23 +223,22 @@ describe('Offerings class', () => {
           end: dsMockUtils.createMockOption(
             dsMockUtils.createMockMoment(new BigNumber(end.getTime()))
           ),
-          minimum_investment: dsMockUtils.createMockBalance(minInvestment),
+          minimumInvestment: dsMockUtils.createMockBalance(minInvestment),
           status: dsMockUtils.createMockFundraiserStatus('Closed'),
         }),
         dsMockUtils.createMockFundraiser({
           creator: dsMockUtils.createMockIdentityId(creator.did),
-          /* eslint-disable @typescript-eslint/naming-convention */
-          offering_portfolio: dsMockUtils.createMockPortfolioId({
+          offeringPortfolio: dsMockUtils.createMockPortfolioId({
             did: dsMockUtils.createMockIdentityId(offeringPortfolio.owner.did),
             kind: dsMockUtils.createMockPortfolioKind('Default'),
           }),
-          raising_portfolio: dsMockUtils.createMockPortfolioId({
+          raisingPortfolio: dsMockUtils.createMockPortfolioId({
             did: dsMockUtils.createMockIdentityId(raisingPortfolio.owner.did),
             kind: dsMockUtils.createMockPortfolioKind('Default'),
           }),
-          offering_asset: rawTicker,
-          raising_asset: dsMockUtils.createMockTicker(raisingCurrency),
-          venue_id: dsMockUtils.createMockU64(venue.id),
+          offeringAsset: rawTicker,
+          raisingAsset: dsMockUtils.createMockTicker(raisingCurrency),
+          venueId: dsMockUtils.createMockU64(venue.id),
           tiers: [
             dsMockUtils.createMockFundraiserTier({
               total: dsMockUtils.createMockBalance(tiers[0].amount),
@@ -252,7 +250,7 @@ describe('Offerings class', () => {
           end: dsMockUtils.createMockOption(
             dsMockUtils.createMockMoment(new BigNumber(end.getTime()))
           ),
-          minimum_investment: dsMockUtils.createMockBalance(minInvestment),
+          minimumInvestment: dsMockUtils.createMockBalance(minInvestment),
           status: dsMockUtils.createMockFundraiserStatus('Live'),
         }),
       ];

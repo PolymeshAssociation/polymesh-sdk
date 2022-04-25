@@ -22,7 +22,6 @@ import {
   boolToBoolean,
   internalAssetTypeToAssetType,
   securityIdentifierToAssetIdentifier,
-  stringToAssetName,
   stringToBytes,
   stringToFundingRoundName,
   stringToTicker,

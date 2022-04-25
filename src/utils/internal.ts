@@ -259,7 +259,9 @@ export function filterEventRecords<
   if (!eventRecords.length) {
     throw new PolymeshError({
       code: ErrorCode.UnexpectedError,
-      message: `Event "${mod}.${eventName}" wasn't fired even though the corresponding transaction was completed. Please report this to the Polymath team`,
+      message: `Event "${mod}.${String(
+        eventName
+      )}" wasn't fired even though the corresponding transaction was completed. Please report this to the Polymath team`,
     });
   }
 

@@ -13,7 +13,6 @@ import { ErrorCode, EventIdentifier, ProcedureMethod } from '~/types';
 import { Ensured } from '~/types/utils';
 import {
   bigNumberToU64,
-  bytesToString,
   middlewareEventToEventIdentifier,
   stringToIdentityId,
 } from '~/utils/conversion';

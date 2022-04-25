@@ -1,6 +1,6 @@
 import { QueryableStorage } from '@polkadot/api/types';
+import { PalletCorporateActionsCaId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { CAId } from 'polymesh-types/polymesh';
 
 import {
   Asset,
@@ -36,7 +36,7 @@ const caNotExistsMessage = "The Corporate Action doesn't exist";
  * @hidden
  */
 const assertCaIsRemovable = async (
-  rawCaId: CAId,
+  rawCaId: PalletCorporateActionsCaId,
   query: QueryableStorage<'promise'>,
   ticker: string,
   context: Context,

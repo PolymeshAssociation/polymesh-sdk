@@ -3,7 +3,7 @@ import { PolymeshPrimitivesIdentity } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, flatten, uniqBy } from 'lodash';
-import { CddStatus, DidRecord } from 'polymesh-types/types';
+import { CddStatus } from 'polymesh-types/types';
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import {

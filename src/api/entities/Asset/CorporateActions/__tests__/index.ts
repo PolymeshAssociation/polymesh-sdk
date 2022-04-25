@@ -160,11 +160,11 @@ describe('CorporateActions class', () => {
         entries: [
           tuple(
             [dsMockUtils.createMockTicker(fakeTicker), dsMockUtils.createMockIdentityId(did)],
-            dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('PolymeshV1Caa'))
+            dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('PolymeshV1CAA'))
           ),
           tuple(
             [dsMockUtils.createMockTicker(fakeTicker), dsMockUtils.createMockIdentityId(otherDid)],
-            dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('PolymeshV1Pia'))
+            dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('PolymeshV1PIA'))
           ),
         ],
       });
