@@ -182,7 +182,7 @@ describe('inviteExternalAgent procedure', () => {
         const res = cb();
         return {
           ...res,
-          transform: (ocb: AuthCallback) => ocb(),
+          transform: (ocb: AuthCallback): AuthorizationData => ocb(),
         };
       },
     });
