@@ -70,17 +70,16 @@ describe('Authorizations class', () => {
       const rawSignatory = dsMockUtils.createMockSignatory();
       const rawAuthorizationType = dsMockUtils.createMockAuthorizationType(filter);
 
-      /* eslint-disable @typescript-eslint/naming-convention */
       const authParams = [
         {
-          auth_id: new BigNumber(1),
+          authId: new BigNumber(1),
           expiry: null,
           data: { type: AuthorizationType.TransferAssetOwnership, value: 'myTicker' },
           target: identity,
           issuer: entityMockUtils.getIdentityInstance({ did: 'alice' }),
         } as const,
         {
-          auth_id: new BigNumber(2),
+          authId: new BigNumber(2),
           expiry: new Date('10/14/3040'),
           data: { type: AuthorizationType.TransferAssetOwnership, value: 'otherTicker' },
           target: identity,
@@ -88,7 +87,7 @@ describe('Authorizations class', () => {
         } as const,
       ];
 
-      const fakeAuthorizations = authParams.map(({ auth_id: authId, expiry, issuer, data }) =>
+      const fakeAuthorizations = authParams.map(({ authId, expiry, issuer, data }) =>
         dsMockUtils.createBasicMockAuthorization({
           authId: dsMockUtils.createMockU64(authId),
           expiry: dsMockUtils.createMockOption(
@@ -112,15 +111,14 @@ describe('Authorizations class', () => {
         .createRpcStub('identity', 'getFilteredAuthorizations')
         .resolves(fakeAuthorizations);
 
-      const expectedAuthorizations = authParams.map(
-        ({ auth_id: authId, target, issuer, expiry, data }) =>
-          entityMockUtils.getAuthorizationRequestInstance({
-            authId,
-            issuer,
-            target,
-            expiry,
-            data,
-          })
+      const expectedAuthorizations = authParams.map(({ authId, target, issuer, expiry, data }) =>
+        entityMockUtils.getAuthorizationRequestInstance({
+          authId,
+          issuer,
+          target,
+          expiry,
+          data,
+        })
       );
 
       let result = await authsNamespace.getReceived();
@@ -186,24 +184,9 @@ describe('Authorizations class', () => {
       const authsNamespace = new Authorizations(identity, context);
       const id = new BigNumber(1);
 
-      const authId = new BigNumber(1);
-      const data = { type: AuthorizationType.TransferAssetOwnership, value: 'myTicker' } as const;
-      const target = identity;
-      const issuer = entityMockUtils.getIdentityInstance({ did: 'alice' });
-
-      const authParams = {
-        authId,
-        expiry: null,
-        data,
-        target,
-        issuer,
-      };
-
       dsMockUtils.createQueryStub('identity', 'authorizations', {
         returnValue: dsMockUtils.createMockOption(),
       });
-
-      entityMockUtils.getAuthorizationRequestInstance(authParams);
 
       return expect(authsNamespace.getOne({ id })).rejects.toThrow(
         'The Authorization Request does not exist'

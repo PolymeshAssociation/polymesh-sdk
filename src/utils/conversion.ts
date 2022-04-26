@@ -1273,7 +1273,10 @@ export function authorizationToAuthorizationData(
     value = permissionsToMeshPermissions(auth.value, context);
   } else if (type === AuthorizationType.PortfolioCustody) {
     value = portfolioIdToMeshPortfolioId(portfolioToPortfolioId(auth.value), context);
-  } else if (type === AuthorizationType.TransferAssetOwnership) {
+  } else if (
+    auth.type === AuthorizationType.TransferAssetOwnership ||
+    auth.type === AuthorizationType.TransferTicker
+  ) {
     value = stringToTicker(auth.value, context);
   } else if (type === AuthorizationType.RotatePrimaryKeyToSecondary) {
     value = permissionsToMeshPermissions(auth.value, context);

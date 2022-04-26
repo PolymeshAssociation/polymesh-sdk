@@ -1,4 +1,4 @@
-## Description
+### Description
 
 <!-- Describe your changes in detail -->
 
@@ -8,7 +8,7 @@
 
 ### JIRA Link
 
-<!-- Insert JIRA url here   -->
+<!-- Insert JIRA issue here. Example: DA-40  -->
 
 ### Checklist
 

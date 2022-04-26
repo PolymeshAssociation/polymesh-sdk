@@ -1,4 +1,4 @@
-import { BTreeSetIdentityId, BTreeSetTransferCondition } from '@polkadot/types/lookup';
+import { BTreeSetTransferCondition } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';

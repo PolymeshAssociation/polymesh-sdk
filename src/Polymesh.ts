@@ -6,20 +6,17 @@ import { ApolloLink } from 'apollo-link';
 import { setContext } from 'apollo-link-context';
 import { HttpLink } from 'apollo-link-http';
 import fetch from 'cross-fetch';
-import { satisfies } from 'semver';
-import { w3cwebsocket as W3CWebSocket } from 'websocket';
-import WebSocketAsPromised from 'websocket-as-promised';
+import schema from 'polymesh-types/schema';
 
 import { AccountManagement } from '~/AccountManagement';
 import { Assets } from '~/Assets';
 import { Identities } from '~/Identities';
 import { Account, Context, Identity, PolymeshError } from '~/internal';
 import { heartbeat } from '~/middleware/queries';
-import schema from '~/polkadot/schema';
 import { Settlements } from '~/Settlements';
 import { ErrorCode, MiddlewareConfig } from '~/types';
-import { SUPPORTED_VERSION_RANGE, SYSTEM_VERSION_RPC_CALL } from '~/utils/constants';
 import { signerToString } from '~/utils/conversion';
+import { assertExpectedChainVersion } from '~/utils/internal';
 
 import { Claims } from './Claims';
 import { Network } from './Network';
@@ -90,31 +87,16 @@ export class Polymesh {
     const { nodeUrl, signingManager, middleware } = params;
     let context: Context;
 
-    /* istanbul ignore next: part of configuration, doesn't need to be tested */
-    const wsp = new WebSocketAsPromised(nodeUrl, {
-      createWebSocket: url => new W3CWebSocket(url) as unknown as WebSocket,
-      packMessage: data => JSON.stringify(data),
-      unpackMessage: data => JSON.parse(data.toString()),
-      attachRequestId: (data, requestId) => Object.assign({ id: requestId }, data),
-      extractRequestId: data => data && data.id,
+    await assertExpectedChainVersion(nodeUrl).catch(error => {
+      if (
+        error instanceof PolymeshError &&
+        error.message.includes('Unsupported Polymesh version')
+      ) {
+        console.warn(error.message);
+      } else {
+        throw error;
+      }
     });
-
-    await wsp.open();
-
-    const { result: version } = await wsp.sendRequest(SYSTEM_VERSION_RPC_CALL);
-
-    if (!satisfies(version, SUPPORTED_VERSION_RANGE)) {
-      throw new PolymeshError({
-        code: ErrorCode.FatalError,
-        message: 'Unsupported Polymesh version. Please upgrade the SDK',
-        data: {
-          polymeshVersion: version,
-          supportedVersionRange: SUPPORTED_VERSION_RANGE,
-        },
-      });
-    }
-
-    await wsp.close();
 
     try {
       const { types, rpc } = schema;

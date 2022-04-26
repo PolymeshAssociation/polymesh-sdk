@@ -61,12 +61,7 @@ import {
   ModuleIdEnum,
 } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import {
-  createMockConditionResult,
-  createMockTransferCondition,
-  createMockTransferConditionResult,
-  createMockU64,
-} from '~/testUtils/mocks/dataSources';
+import { createMockU64 } from '~/testUtils/mocks/dataSources';
 import {
   AffirmationStatus,
   AssetDocument,
@@ -1150,6 +1145,20 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
       value = {
         type: AuthorizationType.TransferAssetOwnership,
+        value: 'TICKER',
+      };
+
+      createTypeStub.withArgs('Ticker', padString('TICKER', MAX_TICKER_LENGTH)).returns(fakeTicker);
+
+      createTypeStub
+        .withArgs('PolymeshPrimitivesAuthorizationAuthorizationData', { [value.type]: fakeTicker })
+        .returns(fakeResult);
+
+      result = authorizationToAuthorizationData(value, context);
+      expect(result).toBe(fakeResult);
+
+      value = {
+        type: AuthorizationType.TransferTicker,
         value: 'TICKER',
       };
 

@@ -15,6 +15,8 @@ import P from 'bluebird';
 import stringify from 'json-stable-stringify';
 import { differenceWith, flatMap, isEqual, mapValues, noop, padEnd, uniq } from 'lodash';
 import { IdentityId, ModuleName, TxTag } from 'polymesh-types/types';
+import { satisfies } from 'semver';
+import { w3cwebsocket as W3CWebSocket } from 'websocket';
 
 import {
   Asset,
@@ -57,7 +59,11 @@ import {
   TxWithArgs,
 } from '~/types/internal';
 import { HumanReadableType, ProcedureFunc, UnionOfProcedureFuncs } from '~/types/utils';
-import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
+import {
+  DEFAULT_GQL_PAGE_SIZE,
+  SUPPORTED_VERSION_RANGE,
+  SYSTEM_VERSION_RPC_CALL,
+} from '~/utils/constants';
 import { middlewareScopeToScope, signerToString, u64ToBigNumber } from '~/utils/conversion';
 import { isEntity, isMultiClaimCondition, isSingleClaimCondition } from '~/utils/typeguards';
 
@@ -982,4 +988,50 @@ export async function getExemptedIds(
   }
 
   return exemptedIds;
+}
+
+/**
+ * @hidden
+ *
+ * Checks chain version. This function uses a websocket as it's intended to be called during initialization
+ * @param nodeUrl - URL for the chain node
+ * @returns A promise that resolves if the version is in the expected range, otherwise it will reject
+ */
+export function assertExpectedChainVersion(nodeUrl: string): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    const client = new W3CWebSocket(nodeUrl);
+
+    client.onopen = () => {
+      const msg = { ...SYSTEM_VERSION_RPC_CALL, id: 'assertExpectedChainVersion' };
+      client.send(JSON.stringify(msg));
+    };
+
+    client.onmessage = msg => {
+      client.close();
+      const { result: version } = JSON.parse(msg.data.toString());
+      if (!satisfies(version, SUPPORTED_VERSION_RANGE)) {
+        const error = new PolymeshError({
+          code: ErrorCode.FatalError,
+          message: 'Unsupported Polymesh version. Please upgrade the SDK',
+          data: {
+            polymeshVersion: version,
+            supportedVersionRange: SUPPORTED_VERSION_RANGE,
+          },
+        });
+        reject(error);
+      } else {
+        resolve();
+      }
+    };
+
+    client.onerror = (error: Error) => {
+      client.close();
+      const err = new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: `Could not connect to the Polymesh node at ${nodeUrl}`,
+        data: { error },
+      });
+      reject(err);
+    };
+  });
 }
