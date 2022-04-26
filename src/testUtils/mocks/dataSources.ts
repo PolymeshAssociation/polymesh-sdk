@@ -89,6 +89,7 @@ import {
   Claim1stKey,
   ClaimType as MeshClaimType,
   ComplianceRequirementResult,
+  ConditionResult,
   ConditionType,
   CountryCode,
   CustomAssetTypeId,
@@ -146,6 +147,8 @@ import {
   TickerRegistrationConfig,
   TransferCondition,
   TransferConditionResult,
+  TrustedFor,
+  TrustedIssuer,
   VenueDetails,
   VenueType,
   ZkProofData,
@@ -161,6 +164,7 @@ import {
   CheckRolesResult,
   ClaimData,
   ClaimType,
+  Condition,
   CountryCode as CountryCodeEnum,
   DistributionWithDetails,
   ExtrinsicData,
@@ -2350,7 +2354,27 @@ export const createMockConditionType = (
     return conditionType;
   }
 
+  // return createMockEnum(conditionType) as ConditionType;
   return createMockEnum(conditionType) as PolymeshPrimitivesConditionConditionType;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockBasicConditionType = (
+  conditionType?:
+    | { IsPresent: Claim }
+    | { IsAbsent: Claim }
+    | { IsAnyOf: Claim[] }
+    | { IsNoneOf: Claim[] }
+    | { IsIdentity: TargetIdentity }
+    | ConditionType
+): ConditionType => {
+  if (isCodec<ConditionType>(conditionType)) {
+    return conditionType;
+  }
+  return createMockEnum(conditionType) as ConditionType;
 };
 
 /**
@@ -2389,6 +2413,10 @@ export const createMockTrustedFor = (
 ): PolymeshPrimitivesConditionTrustedFor =>
   createMockEnum(trustedFor) as PolymeshPrimitivesConditionTrustedFor;
 
+export const createMockBasicTrustedFor = (
+  trustedFor?: 'Any' | { Specific: MeshClaimType[] }
+): TrustedFor => createMockEnum(trustedFor) as TrustedFor;
+
 /**
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
@@ -2408,6 +2436,27 @@ export const createMockTrustedIssuer = (issuer?: {
     },
     !issuer
   ) as PolymeshPrimitivesConditionTrustedIssuer;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockBasicTrustedIssuer = (issuer?: {
+  issuer: IdentityId;
+  trusted_for: TrustedFor;
+}): TrustedIssuer => {
+  const trustedIssuer = issuer || {
+    issuer: createMockIdentityId(),
+    trusted_for: createMockBasicTrustedFor(),
+  };
+
+  return createMockCodec(
+    {
+      ...trustedIssuer,
+    },
+    !issuer
+  ) as TrustedIssuer;
 };
 
 /**
@@ -2439,22 +2488,44 @@ export const createMockCondition = (condition?: {
 /**
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
+ * needed to support RPC calls
+ */
+export const createMockBasicCondition = (condition?: {
+  condition_type: ConditionType | Parameters<typeof createMockBasicConditionType>[0];
+  issuers: (TrustedIssuer | Parameters<typeof createMockBasicTrustedIssuer>[0])[];
+}): Condition => {
+  const { condition_type, issuers } = condition || {
+    condition_type: createMockConditionType(),
+    issuers: [],
+  };
+  return createMockCodec(
+    {
+      condition_type: createMockBasicConditionType(condition_type),
+      issuers: issuers.map(issuer => createMockBasicTrustedIssuer(issuer)),
+    },
+    !condition
+  ) as unknown as Condition;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockConditionResult = (conditionResult?: {
-  condition: PolymeshPrimitivesCondition | Parameters<typeof createMockCondition>[0];
+  condition: Condition | Parameters<typeof createMockBasicCondition>[0];
   result: bool | Parameters<typeof createMockBool>[0];
-}): MockConditionResult => {
+}): ConditionResult => {
   const { condition, result } = conditionResult || {
-    condition: createMockCondition(),
+    condition: createMockBasicCondition(),
     result: createMockBool(),
   };
   return createMockCodec(
     {
-      condition: createMockCondition(condition),
+      condition: createMockBasicCondition(condition as any),
       result: createMockBool(result),
     },
     !conditionResult
-  ) as unknown as MockConditionResult;
+  ) as unknown as ConditionResult;
 };
 
 /**
@@ -2480,23 +2551,24 @@ export const createMockComplianceRequirement = (complianceRequirement?: {
   ) as PolymeshPrimitivesComplianceManagerComplianceRequirement;
 };
 
-interface MockConditionResult {
-  condition: PolymeshPrimitivesCondition;
-  result: boolean;
-}
 /**
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockComplianceRequirementResult = (complianceRequirementResult?: {
-  senderConditions: (MockConditionResult | Parameters<typeof createMockConditionResult>[0])[];
-  receiverConditions: (MockConditionResult | Parameters<typeof createMockConditionResult>[0])[];
+  sender_conditions: (ConditionResult | Parameters<typeof createMockConditionResult>[0])[];
+  receiver_conditions: (ConditionResult | Parameters<typeof createMockConditionResult>[0])[];
   id: u32 | Parameters<typeof createMockU32>[0];
   result: bool | Parameters<typeof createMockBool>[0];
 }): ComplianceRequirementResult => {
-  const { senderConditions, receiverConditions, id, result } = complianceRequirementResult || {
-    senderConditions: [],
-    receiverConditions: [],
+  const {
+    sender_conditions: senderConditions,
+    receiver_conditions: receiverConditions,
+    id,
+    result,
+  } = complianceRequirementResult || {
+    sender_conditions: [],
+    receiver_conditions: [],
     id: createMockU32(),
     result: createMockBool(),
   };
@@ -2520,8 +2592,8 @@ export const createMockComplianceRequirementResult = (complianceRequirementResul
 export const createMockAssetComplianceResult = (assetComplianceResult?: {
   paused: bool | Parameters<typeof createMockBool>[0];
   requirements: {
-    senderConditions: MockConditionResult[];
-    receiverConditions: MockConditionResult[];
+    sender_conditions: ConditionResult[];
+    receiver_conditions: ConditionResult[];
     result: boolean;
     id: u32 | Parameters<typeof createMockU32>[0];
   }[];
@@ -3350,17 +3422,17 @@ export const createMockDistribution = (distribution?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockTransferManagerResult = (transferManagerResult?: {
+export const createMockTransferConditionResult = (transferManagerResult?: {
   condition: TransferCondition | Parameters<typeof createMockTransferCondition>[0];
   result: bool | Parameters<typeof createMockBool>[0];
 }): TransferConditionResult => {
-  const { condition: tm, result } = transferManagerResult || {
+  const { condition, result } = transferManagerResult || {
     condition: createMockTransferCondition(),
     result: createMockBool(),
   };
   return createMockCodec(
     {
-      tm: createMockTransferCondition(tm),
+      condition: createMockTransferCondition(condition),
       result: createMockBool(result),
     },
     !transferManagerResult
@@ -3420,9 +3492,9 @@ export const createMockGranularCanTransferResult = (granularCanTransferResult?: 
     | PortfolioValidityResult
     | Parameters<typeof createMockPortfolioValidityResult>[0];
   asset_frozen: bool | Parameters<typeof createMockBool>[0];
-  statistics_result: (
+  transfer_condition_result: (
     | TransferConditionResult
-    | Parameters<typeof createMockTransferManagerResult>[0]
+    | Parameters<typeof createMockTransferConditionResult>[0]
   )[];
   compliance_result: AssetComplianceResult | Parameters<typeof createMockAssetComplianceResult>[0];
   result: bool | Parameters<typeof createMockBool>[0];
@@ -3438,7 +3510,7 @@ export const createMockGranularCanTransferResult = (granularCanTransferResult?: 
     sender_insufficient_balance,
     portfolio_validity_result,
     asset_frozen,
-    statistics_result,
+    transfer_condition_result,
     compliance_result,
     result,
   } = granularCanTransferResult || {
@@ -3452,7 +3524,7 @@ export const createMockGranularCanTransferResult = (granularCanTransferResult?: 
     sender_insufficient_balance: createMockBool(),
     portfolio_validity_result: createMockPortfolioValidityResult(),
     asset_frozen: createMockBool(),
-    statistics_result: [],
+    transfer_condition_result: [],
     compliance_result: createMockAssetComplianceResult(),
     result: createMockBool(),
   };
@@ -3468,7 +3540,9 @@ export const createMockGranularCanTransferResult = (granularCanTransferResult?: 
       sender_insufficient_balance: createMockBool(sender_insufficient_balance),
       portfolio_validity_result: createMockPortfolioValidityResult(portfolio_validity_result),
       asset_frozen: createMockBool(asset_frozen),
-      statistics_result: statistics_result.map(res => createMockTransferManagerResult(res)),
+      transfer_condition_result: transfer_condition_result.map(res =>
+        createMockTransferConditionResult(res)
+      ),
       compliance_result: createMockAssetComplianceResult(compliance_result as any),
       result: createMockBool(result),
     },

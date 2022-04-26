@@ -2633,6 +2633,7 @@ function meshConditionTypeToCondition(
 
 /**
  * @hidden
+ * @note - the data for this method comes from an RPC call, which hasn't been updated to the camelCase types
  */
 export function complianceRequirementResultToRequirementCompliance(
   complianceRequirement: ComplianceRequirementResult,
@@ -3120,7 +3121,7 @@ export function granularCanTransferResultToTransferBreakdown(
       receiver_portfolio_does_not_exist: receiverPortfolioNotExists,
       sender_insufficient_balance: senderInsufficientBalance,
     },
-    // statistics_result: transferRestrictionResults,
+    transfer_condition_result: transferConditionResult,
     compliance_result: complianceResult,
     result: finalResult,
   } = result;
@@ -3167,15 +3168,17 @@ export function granularCanTransferResultToTransferBreakdown(
     general.push(TransferError.InsufficientPortfolioBalance);
   }
 
-  // const restrictions = transferRestrictionResults.map(({ tm, result: tmResult }) => ({
-  //   restriction: transferConditionToTransferRestriction(tm),
-  //   result: boolToBoolean(tmResult),
-  // }));
+  const restrictions = transferConditionResult.map(({ condition, result: tmResult }) => {
+    return {
+      restriction: transferConditionToTransferRestriction(condition),
+      result: boolToBoolean(tmResult),
+    };
+  });
 
   return {
     general,
     compliance: assetComplianceResultToCompliance(complianceResult, context),
-    restrictions: [],
+    restrictions,
     result: boolToBoolean(finalResult),
   };
 }

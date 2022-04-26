@@ -62,6 +62,12 @@ import {
 } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
+  createMockConditionResult,
+  createMockTransferCondition,
+  createMockTransferConditionResult,
+  createMockU64,
+} from '~/testUtils/mocks/dataSources';
+import {
   AffirmationStatus,
   AssetDocument,
   Authorization,
@@ -3058,10 +3064,10 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
           result: false,
         },
         asset_frozen: true,
-        statistics_result: [
+        transfer_condition_result: [
           {
             condition: {
-              MaxInvestorCount: dsMockUtils.createMockU64(new BigNumber(100)),
+              MaxInvestorCount: createMockU64(new BigNumber(100)),
             },
             result: false,
           },
@@ -3125,7 +3131,7 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
           result: false,
         },
         asset_frozen: false,
-        statistics_result: [
+        transfer_condition_result: [
           {
             condition: {
               MaxInvestorCount: dsMockUtils.createMockU64(new BigNumber(100)),
@@ -4370,15 +4376,15 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
     });
     /* eslint-disable @typescript-eslint/naming-convention */
     const issuers = issuerDids.map(({ identity: { did } }) =>
-      dsMockUtils.createMockTrustedIssuer({
+      dsMockUtils.createMockBasicTrustedIssuer({
         issuer: dsMockUtils.createMockIdentityId(did),
-        trustedFor: dsMockUtils.createMockTrustedFor(),
+        trusted_for: dsMockUtils.createMockBasicTrustedFor(),
       })
     );
     const rawConditions = [
       dsMockUtils.createMockConditionResult({
-        condition: dsMockUtils.createMockCondition({
-          conditionType: dsMockUtils.createMockConditionType({
+        condition: dsMockUtils.createMockBasicCondition({
+          condition_type: dsMockUtils.createMockConditionType({
             IsPresent: dsMockUtils.createMockClaim({ KnowYourCustomer: scope }),
           }),
           issuers,
@@ -4386,8 +4392,8 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
         result: dsMockUtils.createMockBool(true),
       }),
       dsMockUtils.createMockConditionResult({
-        condition: dsMockUtils.createMockCondition({
-          conditionType: dsMockUtils.createMockConditionType({
+        condition: dsMockUtils.createMockBasicCondition({
+          condition_type: dsMockUtils.createMockConditionType({
             IsAbsent: dsMockUtils.createMockClaim({ BuyLockup: scope }),
           }),
           issuers,
@@ -4395,8 +4401,8 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
         result: dsMockUtils.createMockBool(false),
       }),
       dsMockUtils.createMockConditionResult({
-        condition: dsMockUtils.createMockCondition({
-          conditionType: dsMockUtils.createMockConditionType({
+        condition: dsMockUtils.createMockBasicCondition({
+          condition_type: dsMockUtils.createMockConditionType({
             IsNoneOf: [
               dsMockUtils.createMockClaim({ Blocked: scope }),
               dsMockUtils.createMockClaim({ SellLockup: scope }),
@@ -4407,8 +4413,8 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
         result: dsMockUtils.createMockBool(true),
       }),
       dsMockUtils.createMockConditionResult({
-        condition: dsMockUtils.createMockCondition({
-          conditionType: dsMockUtils.createMockConditionType({
+        condition: dsMockUtils.createMockBasicCondition({
+          condition_type: dsMockUtils.createMockConditionType({
             IsAnyOf: [
               dsMockUtils.createMockClaim({ Exempted: scope }),
               dsMockUtils.createMockClaim({
@@ -4421,8 +4427,8 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
         result: dsMockUtils.createMockBool(false),
       }),
       dsMockUtils.createMockConditionResult({
-        condition: dsMockUtils.createMockCondition({
-          conditionType: dsMockUtils.createMockConditionType({
+        condition: dsMockUtils.createMockBasicCondition({
+          condition_type: dsMockUtils.createMockConditionType({
             IsIdentity: dsMockUtils.createMockTargetIdentity({
               Specific: dsMockUtils.createMockIdentityId(targetIdentityDid),
             }),
@@ -4432,8 +4438,8 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
         result: dsMockUtils.createMockBool(true),
       }),
       dsMockUtils.createMockConditionResult({
-        condition: dsMockUtils.createMockCondition({
-          conditionType: dsMockUtils.createMockConditionType({
+        condition: dsMockUtils.createMockBasicCondition({
+          condition_type: dsMockUtils.createMockConditionType({
             IsIdentity: dsMockUtils.createMockTargetIdentity('ExternalAgent'),
           }),
           issuers,
@@ -4442,14 +4448,14 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
       }),
     ];
     const complianceRequirement = dsMockUtils.createMockComplianceRequirementResult({
-      senderConditions: [
+      sender_conditions: [
         rawConditions[0],
         rawConditions[2],
         rawConditions[2],
         rawConditions[3],
         rawConditions[4],
       ],
-      receiverConditions: [
+      receiver_conditions: [
         rawConditions[0],
         rawConditions[1],
         rawConditions[1],
@@ -4567,15 +4573,15 @@ describe('assetComplianceResultToCompliance', () => {
     });
     /* eslint-disable @typescript-eslint/naming-convention */
     const issuers = issuerDids.map(({ identity: { did } }) =>
-      dsMockUtils.createMockTrustedIssuer({
+      dsMockUtils.createMockBasicTrustedIssuer({
         issuer: dsMockUtils.createMockIdentityId(did),
-        trustedFor: dsMockUtils.createMockTrustedFor(),
+        trusted_for: dsMockUtils.createMockBasicTrustedFor(),
       })
     );
     const rawConditions = [
       dsMockUtils.createMockConditionResult({
-        condition: dsMockUtils.createMockCondition({
-          conditionType: dsMockUtils.createMockConditionType({
+        condition: dsMockUtils.createMockBasicCondition({
+          condition_type: dsMockUtils.createMockConditionType({
             IsPresent: dsMockUtils.createMockClaim({ KnowYourCustomer: scope }),
           }),
           issuers,
@@ -4583,8 +4589,8 @@ describe('assetComplianceResultToCompliance', () => {
         result: dsMockUtils.createMockBool(true),
       }),
       dsMockUtils.createMockConditionResult({
-        condition: dsMockUtils.createMockCondition({
-          conditionType: dsMockUtils.createMockConditionType({
+        condition: dsMockUtils.createMockBasicCondition({
+          condition_type: dsMockUtils.createMockConditionType({
             IsAbsent: dsMockUtils.createMockClaim({ BuyLockup: scope }),
           }),
           issuers,
@@ -4592,8 +4598,8 @@ describe('assetComplianceResultToCompliance', () => {
         result: dsMockUtils.createMockBool(false),
       }),
       dsMockUtils.createMockConditionResult({
-        condition: dsMockUtils.createMockCondition({
-          conditionType: dsMockUtils.createMockConditionType({
+        condition: dsMockUtils.createMockBasicCondition({
+          condition_type: dsMockUtils.createMockConditionType({
             IsNoneOf: [
               dsMockUtils.createMockClaim({ Blocked: scope }),
               dsMockUtils.createMockClaim({ SellLockup: scope }),
@@ -4604,8 +4610,8 @@ describe('assetComplianceResultToCompliance', () => {
         result: dsMockUtils.createMockBool(true),
       }),
       dsMockUtils.createMockConditionResult({
-        condition: dsMockUtils.createMockCondition({
-          conditionType: dsMockUtils.createMockConditionType({
+        condition: dsMockUtils.createMockBasicCondition({
+          condition_type: dsMockUtils.createMockConditionType({
             IsAnyOf: [
               dsMockUtils.createMockClaim({ Exempted: scope }),
               dsMockUtils.createMockClaim({
@@ -4620,8 +4626,8 @@ describe('assetComplianceResultToCompliance', () => {
     ];
 
     const rawRequirements = dsMockUtils.createMockComplianceRequirementResult({
-      senderConditions: [rawConditions[0], rawConditions[2], rawConditions[3]],
-      receiverConditions: [rawConditions[0], rawConditions[1], rawConditions[3]],
+      sender_conditions: [rawConditions[0], rawConditions[2], rawConditions[3]],
+      receiver_conditions: [rawConditions[0], rawConditions[1], rawConditions[3]],
       id: dsMockUtils.createMockU32(new BigNumber(1)),
       result: dsMockUtils.createMockBool(false),
     });
