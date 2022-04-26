@@ -16,7 +16,7 @@ import stringify from 'json-stable-stringify';
 import { differenceWith, flatMap, isEqual, mapValues, noop, padEnd, uniq } from 'lodash';
 import { IdentityId, ModuleName, PortfolioName, TxTag } from 'polymesh-types/types';
 import { satisfies } from 'semver';
-import { w3cwebsocket as W3CWebSocket } from 'websocket';
+import { IMessageEvent, w3cwebsocket as W3CWebSocket } from 'websocket';
 
 import {
   Asset,
@@ -1000,12 +1000,12 @@ export function assertExpectedChainVersion(nodeUrl: string): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     const client = new W3CWebSocket(nodeUrl);
 
-    client.onopen = () => {
+    client.onopen = (): void => {
       const msg = { ...SYSTEM_VERSION_RPC_CALL, id: 'assertExpectedChainVersion' };
       client.send(JSON.stringify(msg));
     };
 
-    client.onmessage = msg => {
+    client.onmessage = (msg: IMessageEvent): void => {
       client.close();
       const { result: version } = JSON.parse(msg.data.toString());
       if (!satisfies(version, SUPPORTED_VERSION_RANGE)) {
@@ -1023,7 +1023,7 @@ export function assertExpectedChainVersion(nodeUrl: string): Promise<void> {
       }
     };
 
-    client.onerror = (error: Error) => {
+    client.onerror = (error: Error): void => {
       client.close();
       const err = new PolymeshError({
         code: ErrorCode.FatalError,
