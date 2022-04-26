@@ -1,5 +1,6 @@
 import { u64 } from '@polkadot/types';
 import { Permill } from '@polkadot/types/interfaces';
+import { BTreeSetIdentityId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { ScopeId, Ticker, TransferCondition } from 'polymesh-types/types';
 import sinon from 'sinon';
@@ -50,7 +51,7 @@ describe('addTransferRestriction procedure', () => {
     entityMockUtils.initMocks();
     transferRestrictionToTransferRestrictionStub = sinon.stub(
       utilsConversionModule,
-      'transferRestrictionToTransferCondition'
+      'transferRestrictionToPolymeshTransferCondition'
     );
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     ticker = 'someTicker';
@@ -107,7 +108,7 @@ describe('addTransferRestriction procedure', () => {
 
   it('should add an add transfer manager transaction to the queue', async () => {
     args = {
-      type: 'MaxInvestorCount',
+      type: 'Count',
       exemptedIdentities: [],
       count,
       ticker,
@@ -126,7 +127,7 @@ describe('addTransferRestriction procedure', () => {
       transactions: [
         {
           transaction: setAssetTransferCompliance,
-          args: [rawTicker, rawCountTm],
+          args: [{ Ticker: rawTicker }, [rawCountTm]],
         },
       ],
     });
@@ -134,7 +135,7 @@ describe('addTransferRestriction procedure', () => {
     expect(result).toEqual(new BigNumber(1));
 
     args = {
-      type: 'MaxInvestorOwnership',
+      type: 'Percentage',
       exemptedIdentities: [],
       percentage,
       ticker,
@@ -146,7 +147,7 @@ describe('addTransferRestriction procedure', () => {
       transactions: [
         {
           transaction: setAssetTransferCompliance,
-          args: [rawTicker, rawPercentageTm],
+          args: [{ Ticker: rawTicker }, [rawPercentageTm]],
         },
       ],
     });
@@ -165,7 +166,7 @@ describe('addTransferRestriction procedure', () => {
       assetOptions: { details: { requiresInvestorUniqueness: true } },
     });
     args = {
-      type: 'MaxInvestorCount',
+      type: 'Count',
       exemptedIdentities: [did],
       count,
       ticker,
@@ -183,18 +184,21 @@ describe('addTransferRestriction procedure', () => {
     stringToScopeIdStub.withArgs(scopeId, mockContext).returns(rawScopeId);
     stringToScopeIdStub.withArgs(identityScopeId, mockContext).returns(rawIdentityScopeId);
 
-    let result = await prepareAddTransferRestriction.call(proc, args);
+    sinon
+      .stub(utilsConversionModule, 'scopeIdsToBtreeSetIdentityId')
+      .returns([rawIdentityScopeId] as unknown as BTreeSetIdentityId);
 
+    let result = await prepareAddTransferRestriction.call(proc, args);
     sinon.assert.calledWith(addBatchTransactionStub.firstCall, {
       transactions: [
         {
           transaction: setAssetTransferCompliance,
-          args: [rawTicker, rawCountTm],
+          args: [{ Ticker: rawTicker }, [rawCountTm]],
         },
         {
           transaction: addExemptedEntitiesTransaction,
           feeMultiplier: new BigNumber(1),
-          args: [rawTicker, rawCountTm, [rawIdentityScopeId]],
+          args: [true, { asset: { Ticker: rawTicker } }, [rawIdentityScopeId]],
         },
       ],
     });
@@ -210,12 +214,12 @@ describe('addTransferRestriction procedure', () => {
       transactions: [
         {
           transaction: setAssetTransferCompliance,
-          args: [rawTicker, rawCountTm],
+          args: [{ Ticker: rawTicker }, [rawCountTm]],
         },
         {
           transaction: addExemptedEntitiesTransaction,
           feeMultiplier: new BigNumber(1),
-          args: [rawTicker, rawCountTm, [rawIdentityScopeId]],
+          args: [true, { asset: { Ticker: rawTicker } }, [rawIdentityScopeId]],
         },
       ],
     });
@@ -225,7 +229,7 @@ describe('addTransferRestriction procedure', () => {
 
   it('should throw an error if attempting to add a restriction that already exists', async () => {
     args = {
-      type: 'MaxInvestorCount',
+      type: 'Count',
       exemptedIdentities: [],
       count,
       ticker,
@@ -251,7 +255,7 @@ describe('addTransferRestriction procedure', () => {
 
   it('should throw an error if attempting to add a restriction when the restriction limit has been reached', async () => {
     args = {
-      type: 'MaxInvestorCount',
+      type: 'Count',
       count,
       ticker,
     };
@@ -277,7 +281,7 @@ describe('addTransferRestriction procedure', () => {
 
   it('should throw an error if exempted entities are repeated', async () => {
     args = {
-      type: 'MaxInvestorCount',
+      type: 'Count',
       exemptedIdentities: ['someScopeId', 'someScopeId'],
       count,
       ticker,
@@ -308,7 +312,7 @@ describe('addTransferRestriction procedure', () => {
       args = {
         ticker,
         count,
-        type: 'MaxInvestorCount',
+        type: 'Count',
       };
 
       const proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, BigNumber>(

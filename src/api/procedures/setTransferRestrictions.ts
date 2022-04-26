@@ -1,8 +1,9 @@
 import { U8aFixed } from '@polkadot/types';
+import { BTreeSetTransferCondition } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { difference, differenceWith, isEqual } from 'lodash';
-import { Ticker, TransferCondition, TxTag } from 'polymesh-types/types';
+import { TransferCondition, TxTag } from 'polymesh-types/types';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import {
@@ -11,17 +12,18 @@ import {
   PercentageTransferRestrictionInput,
   TransferRestriction,
   TransferRestrictionType,
-  TxTags,
 } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
+  permillToBigNumber,
   stringToScopeId,
   stringToTicker,
-  transferRestrictionToTransferCondition,
+  transferRestrictionToPolymeshTransferCondition,
   u32ToBigNumber,
+  u64ToBigNumber,
 } from '~/utils/conversion';
-import { assembleBatchTransactions, defusePromise, getExemptedIds } from '~/utils/internal';
+import { defusePromise, getExemptedIds } from '~/utils/internal';
 
 export interface SetCountTransferRestrictionsParams {
   /**
@@ -48,10 +50,8 @@ export type SetTransferRestrictionsParams = { ticker: string } & (
  * @hidden
  */
 export interface Storage {
-  restrictionsToAdd: [Ticker, TransferCondition][];
-  restrictionsToRemove: [Ticker, TransferCondition][];
-  exemptionsToAdd: [Ticker, TransferCondition, U8aFixed[]][];
-  exemptionsToRemove: [Ticker, TransferCondition, U8aFixed[]][];
+  currentRestrictions: TransferCondition[];
+  currentExemptions: [TransferCondition, U8aFixed[]][];
   occupiedSlots: BigNumber;
 }
 
@@ -69,29 +69,49 @@ export async function prepareSetTransferRestrictions(
         consts,
       },
     },
-    storage: {
-      restrictionsToAdd,
-      restrictionsToRemove,
-      exemptionsToAdd,
-      exemptionsToRemove,
-      occupiedSlots,
-    },
+    storage: { currentRestrictions, currentExemptions, occupiedSlots },
+    context,
   } = this;
   const {
     restrictions: { length: newRestrictionAmount },
+    restrictions,
+    type,
+    ticker,
   } = args;
 
-  const restrictionsToAddAmount = restrictionsToAdd.length;
-  const restrictionsToRemoveAmount = restrictionsToRemove.length;
-  const exemptionsToAddAmount = exemptionsToAdd.length;
-  const exemptionsToRemoveAmount = exemptionsToRemove.length;
+  const rawTicker = stringToTicker(ticker, context);
 
-  if (
-    !restrictionsToAddAmount &&
-    !restrictionsToRemoveAmount &&
-    !exemptionsToAddAmount &&
-    !exemptionsToRemoveAmount
-  ) {
+  let someDifference = restrictions.length !== currentRestrictions.length;
+  const conditions = restrictions.map(r => {
+    if (!someDifference) {
+      someDifference = !currentRestrictions.find(transferRestriction => {
+        if (transferRestriction.isMaxInvestorCount && type === TransferRestrictionType.Count) {
+          const currentCount = u64ToBigNumber(transferRestriction.asMaxInvestorCount);
+          return currentCount.eq((r as CountTransferRestrictionInput).count);
+        } else if (transferRestriction.isMaxInvestorOwnership && type === 'Percentage') {
+          const currentOwnership = permillToBigNumber(transferRestriction.asMaxInvestorOwnership);
+          return currentOwnership.eq((r as PercentageTransferRestrictionInput).percentage);
+        }
+        return false;
+      });
+    }
+
+    let condition: TransferRestriction;
+    if (type === TransferRestrictionType.Count) {
+      condition = { type, value: (r as CountTransferRestrictionInput).count };
+    } else if (type === TransferRestrictionType.Percentage) {
+      condition = { type, value: (r as PercentageTransferRestrictionInput).percentage };
+    } else {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: `Unknown transfer restriction type: ${type}`,
+      });
+    }
+
+    return transferRestrictionToPolymeshTransferCondition(condition, context);
+  });
+
+  if (!someDifference) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
       message: newRestrictionAmount
@@ -112,32 +132,37 @@ export async function prepareSetTransferRestrictions(
     });
   }
 
-  const transactions = assembleBatchTransactions(
-    tuple({
-      transaction: statistics.setEntitiesExempt,
-      argsArray: [],
-    })
-    // tuple(
-    //   {
-    //     transaction: statistics.removeTransferManager,
-    //     argsArray: restrictionsToRemove,
-    //   },
-    //   {
-    //     transaction: statistics.addTransferManager,
-    //     argsArray: restrictionsToAdd,
-    //   },
-    //   {
-    //     transaction: statistics.removeExemptedEntities,
-    //     argsArray: exemptionsToRemove,
-    //   },
-    //   {
-    //     transaction: statistics.addExemptedEntities,
-    //     argsArray: exemptionsToAdd,
-    //   }
-    // )
-  );
+  this.addTransaction({
+    transaction: statistics.setAssetTransferCompliance,
+    args: [{ Ticker: rawTicker }, conditions as BTreeSetTransferCondition],
+  });
 
-  this.addBatchTransaction({ transactions });
+  // const transactions = assembleBatchTransactions(
+  //   tuple({
+  //     transaction: statistics.setEntitiesExempt,
+  //     argsArray: [],
+  //   })
+  // tuple(
+  //   {
+  //     transaction: statistics.removeTransferManager,
+  //     argsArray: restrictionsToRemove,
+  //   },
+  //   {
+  //     transaction: statistics.addTransferManager,
+  //     argsArray: restrictionsToAdd,
+  //   },
+  //   {
+  //     transaction: statistics.removeExemptedEntities,
+  //     argsArray: exemptionsToRemove,
+  //   },
+  //   {
+  //     transaction: statistics.addExemptedEntities,
+  //     argsArray: exemptionsToAdd,
+  //   }
+  // )
+  // );
+
+  // this.addBatchTransaction({ transactions });
 
   return finalCount;
 }
@@ -149,24 +174,24 @@ export function getAuthorization(
   this: Procedure<SetTransferRestrictionsParams, BigNumber, Storage>,
   { ticker }: SetTransferRestrictionsParams
 ): ProcedureAuthorization {
-  const { restrictionsToRemove, restrictionsToAdd, exemptionsToAdd, exemptionsToRemove } =
-    this.storage;
+  // const { restrictionsToRemove, restrictionsToAdd, exemptionsToAdd, exemptionsToRemove } =
+  // this.storage;
   const transactions: TxTag[] = [];
-  if (restrictionsToAdd.length) {
-    transactions.push(TxTags.statistics.AddTransferManager);
-  }
+  // if (restrictionsToAdd.length) {
+  //   transactions.push(TxTags.statistics.AddTransferManager);
+  // }
 
-  if (restrictionsToRemove.length) {
-    transactions.push(TxTags.statistics.RemoveTransferManager);
-  }
+  // if (restrictionsToRemove.length) {
+  //   transactions.push(TxTags.statistics.RemoveTransferManager);
+  // }
 
-  if (exemptionsToAdd.length) {
-    transactions.push(TxTags.statistics.AddExemptedEntities);
-  }
+  // if (exemptionsToAdd.length) {
+  //   transactions.push(TxTags.statistics.AddExemptedEntities);
+  // }
 
-  if (exemptionsToRemove.length) {
-    transactions.push(TxTags.statistics.RemoveExemptedEntities);
-  }
+  // if (exemptionsToRemove.length) {
+  //   transactions.push(TxTags.statistics.RemoveExemptedEntities);
+  // }
 
   return {
     permissions: {
@@ -248,11 +273,8 @@ export async function prepareStorage(
   const newRestrictions = differenceWith(toAddRestrictions, currentRestrictions, isEqual);
   const toRemoveRestrictions = differenceWith(currentRestrictions, toAddRestrictions, isEqual);
 
-  const transformRestriction = (restriction: TransferRestriction): [Ticker, TransferCondition] =>
-    tuple(rawTicker, transferRestrictionToTransferCondition(restriction, context));
-
-  const restrictionsToRemove = toRemoveRestrictions.map(transformRestriction);
-  const restrictionsToAdd = newRestrictions.map(transformRestriction);
+  const transformRestriction = (restriction: TransferRestriction): TransferCondition =>
+    transferRestrictionToPolymeshTransferCondition(restriction, context);
 
   occupiedSlots -= currentRestrictions.length;
 
@@ -294,27 +316,19 @@ export async function prepareStorage(
   });
 
   const transformExemptions = ([restriction, entityIds]: [TransferRestriction, string[]]): [
-    Ticker,
     TransferCondition,
     U8aFixed[]
   ] =>
     tuple(
-      rawTicker,
-      transferRestrictionToTransferCondition(restriction, context),
+      transferRestrictionToPolymeshTransferCondition(restriction, context),
       // we use `stringToScopeId` because both `ScopeId` and `IdentityId` are aliases for `U8aFixed`
       entityIds.map(entityId => stringToScopeId(entityId, context))
     );
 
-  const exemptionsToAdd = newExemptions.map(transformExemptions);
-
-  const exemptionsToRemove = toRemoveExemptions.map(transformExemptions);
-
   return {
-    restrictionsToRemove,
-    restrictionsToAdd,
-    exemptionsToAdd,
-    exemptionsToRemove,
     occupiedSlots: new BigNumber(occupiedSlots),
+    currentExemptions: currentExemptions.map(transformExemptions),
+    currentRestrictions: currentRestrictions.map(transformRestriction),
   };
 }
 

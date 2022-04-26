@@ -1,4 +1,4 @@
-import { BTreeSetTransferCondition } from '@polkadot/types/lookup';
+import { BTreeSetIdentityId, BTreeSetTransferCondition } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
@@ -6,26 +6,27 @@ import {
   CountTransferRestrictionInput,
   ErrorCode,
   PercentageTransferRestrictionInput,
+  TransferRestrictionType,
   TxTags,
 } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   permillToBigNumber,
-  polymeshPrimitivesTransferComplianceTransferCondition,
+  scopeIdsToBtreeSetIdentityId,
+  stringToIdentityId,
   stringToTicker,
+  transferRestrictionToPolymeshTransferCondition,
   u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { checkTxType } from '~/utils/internal';
+import { checkTxType, getExemptedIds } from '~/utils/internal';
 
 export type AddCountTransferRestrictionParams = CountTransferRestrictionInput & {
-  // type: TransferRestrictionType.Count;
-  type: 'MaxInvestorCount';
+  type: 'Count';
 };
 
 export type AddPercentageTransferRestrictionParams = PercentageTransferRestrictionInput & {
-  // type: TransferRestrictionType.Percentage;
-  type: 'MaxInvestorOwnership';
+  type: 'Percentage';
 };
 
 /**
@@ -56,33 +57,41 @@ export async function prepareAddTransferRestriction(
   const { ticker, exemptedIdentities = [], type } = args;
   const rawTicker = stringToTicker(ticker, context);
 
-  const maxTransferManagers = u32ToBigNumber(consts.statistics.maxTransferConditionsPerAsset);
+  const maxConditions = u32ToBigNumber(consts.statistics.maxTransferConditionsPerAsset);
 
   const { requirements: currentTransferRestrictions } =
-    await query.statistics.assetTransferCompliances(ticker);
+    await query.statistics.assetTransferCompliances({ Ticker: ticker });
   const restrictionAmount = new BigNumber(currentTransferRestrictions.length);
 
-  if (restrictionAmount.gte(maxTransferManagers)) {
+  if (restrictionAmount.gte(maxConditions)) {
     throw new PolymeshError({
       code: ErrorCode.LimitExceeded,
       message: 'Transfer Restriction limit reached',
-      data: { limit: maxTransferManagers },
+      data: { limit: maxConditions },
     });
   }
 
   let value: BigNumber;
+  let inputType: TransferRestrictionType;
 
-  if (type === 'MaxInvestorCount') {
+  if (type === 'Count') {
     value = args.count;
-  } else {
+    inputType = TransferRestrictionType.Count;
+  } else if (type === 'Percentage') {
     value = args.percentage;
+    inputType = TransferRestrictionType.Percentage;
+  } else {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: `Unknown type: ${type}`,
+    });
   }
 
   const exists = !!currentTransferRestrictions.find(transferRestriction => {
-    if (transferRestriction.isMaxInvestorCount && type === 'MaxInvestorCount') {
+    if (transferRestriction.isMaxInvestorCount && type === 'Count') {
       const currentCount = u64ToBigNumber(transferRestriction.asMaxInvestorCount);
       return currentCount.eq(value);
-    } else if (transferRestriction.isMaxInvestorOwnership && type === 'MaxInvestorOwnership') {
+    } else if (transferRestriction.isMaxInvestorOwnership && type === 'Percentage') {
       const currentOwnership = permillToBigNumber(transferRestriction.asMaxInvestorOwnership);
       return currentOwnership.eq(value);
     }
@@ -96,41 +105,34 @@ export async function prepareAddTransferRestriction(
     });
   }
 
-  // const rawTransferCondition = transferRestrictionToTransferCondition(
-  //   { type, value: bigNumberToU64(value, context) },
-  //   context
-  // );
-  // TODO need to use the current restrictions here
-  const rawTransferCondition = polymeshPrimitivesTransferComplianceTransferCondition([], context);
-  const newTransferConditions = [...currentTransferRestrictions, rawTransferCondition];
+  const rawTransferCondition = transferRestrictionToPolymeshTransferCondition(
+    { type: inputType, value },
+    context
+  );
 
-  // const rawNewConditions = context.createType('Vec', newTransferConditions);
+  const newTransferConditions = [...currentTransferRestrictions, rawTransferCondition];
 
   const transactions = [
     checkTxType({
       transaction: statistics.setAssetTransferCompliance,
-      args: [rawTicker, newTransferConditions as BTreeSetTransferCondition],
+      args: [{ Ticker: rawTicker }, newTransferConditions as BTreeSetTransferCondition],
     }),
   ];
 
   if (exemptedIdentities.length) {
-    // const exemptedIds = await getExemptedIds(exemptedIdentities, context, ticker);
-    // transactions.push(
-    // checkTxType({
-    // transaction: statistics.setEntitiesExempt,
-    // feeMultiplier: new BigNumber(exemptedIds.length),
-    // args: [
-    // rawTicker,
-    // exemptedIds,
-    // newTransferConditions as BTreeSetTransferCondition,
-    // exemptedIds.map(entityId => stringToScopeId(entityId, context)),
-    // ],
-    // })
-    // );
+    const exemptedIds = await getExemptedIds(exemptedIdentities, context, ticker);
+    const exemptedScopeIds = exemptedIds.map(entityId => stringToIdentityId(entityId, context));
+    const btreeIds = scopeIdsToBtreeSetIdentityId(exemptedScopeIds, context);
+    transactions.push(
+      checkTxType({
+        transaction: statistics.setEntitiesExempt,
+        feeMultiplier: new BigNumber(exemptedIds.length),
+        args: [true, { asset: { Ticker: rawTicker } }, btreeIds],
+      })
+    );
   }
 
   this.addBatchTransaction({ transactions });
-
   return restrictionAmount.plus(1);
 }
 

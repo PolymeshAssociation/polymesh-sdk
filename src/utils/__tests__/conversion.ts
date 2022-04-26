@@ -232,7 +232,7 @@ import {
   transactionPermissionsToTxGroups,
   transactionToTxTag,
   transferConditionToTransferRestriction,
-  transferRestrictionToTransferCondition,
+  transferRestrictionToPolymeshTransferCondition,
   trustedClaimIssuerToTrustedIssuer,
   txGroupToTxTags,
   txTagToExtrinsicIdentifier,
@@ -5484,7 +5484,7 @@ describe('transferRestrictionToTransferManager', () => {
     sinon.restore();
   });
 
-  it('should convert a Transfer Restriction to a polkadot TransferCondition object', () => {
+  it('should convert a Transfer Restriction to a PolymeshTransferCondition object', () => {
     const count = new BigNumber(10);
     let value = {
       type: TransferRestrictionType.Count,
@@ -5497,12 +5497,14 @@ describe('transferRestrictionToTransferManager', () => {
 
     const createTypeStub = context.createType;
     createTypeStub
-      .withArgs('TransferCondition', { CountTransferManager: rawCount })
+      .withArgs('PolymeshPrimitivesTransferComplianceTransferCondition', {
+        MaxInvestorCount: rawCount,
+      })
       .returns(fakeResult);
 
     createTypeStub.withArgs('u64', count.toString()).returns(rawCount);
 
-    let result = transferRestrictionToTransferCondition(value, context);
+    let result = transferRestrictionToPolymeshTransferCondition(value, context);
 
     expect(result).toBe(fakeResult);
 
@@ -5514,14 +5516,16 @@ describe('transferRestrictionToTransferManager', () => {
     };
 
     createTypeStub
-      .withArgs('TransferCondition', { PercentageTransferManager: rawPercentage })
+      .withArgs('PolymeshPrimitivesTransferComplianceTransferCondition', {
+        MaxInvestorOwnership: rawPercentage,
+      })
       .returns(fakeResult);
 
     createTypeStub
       .withArgs('Permill', percentage.multipliedBy(10000).toString())
       .returns(rawPercentage);
 
-    result = transferRestrictionToTransferCondition(value, context);
+    result = transferRestrictionToPolymeshTransferCondition(value, context);
 
     expect(result).toBe(fakeResult);
   });

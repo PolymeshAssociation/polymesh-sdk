@@ -1,6 +1,7 @@
 import { bool, Bytes, Text, u8, u16, u32, u64, u128 } from '@polkadot/types';
 import { AccountId, Balance, Hash, Permill, Signature } from '@polkadot/types/interfaces';
 import {
+  BTreeSetIdentityId,
   ConfidentialIdentityClaimProofsScopeClaimProof,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCorporateAction,
@@ -11,7 +12,9 @@ import {
   PolymeshPrimitivesCondition,
   PolymeshPrimitivesConditionTrustedIssuer,
   PolymeshPrimitivesDocument,
+  PolymeshPrimitivesIdentity,
   PolymeshPrimitivesIdentityClaimClaimType,
+  PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesSecondaryKeyPermissions,
   PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions,
   PolymeshPrimitivesTransferComplianceTransferCondition,
@@ -979,20 +982,20 @@ export function extrinsicPermissionsToTransactionPermissions(
 
   if (pallets) {
     pallets.forEach(({ palletName, dispatchableNames }) => {
-      const moduleName = stringLowerFirst(bytesToString(palletName));
+      const moduleName = stringLowerFirst(palletName.toString());
 
       if (dispatchableNames.isExcept) {
         const dispatchables = dispatchableNames.asExcept;
         exceptions = [
           ...exceptions,
-          ...dispatchables.map(name => formatTxTag(bytesToString(name), moduleName)),
+          ...dispatchables.map(name => formatTxTag(name.toString(), moduleName)),
         ];
         txValues = [...txValues, moduleName as ModuleName];
       } else if (dispatchableNames.isThese) {
         const dispatchables = dispatchableNames.asThese;
         txValues = [
           ...txValues,
-          ...dispatchables.map(name => formatTxTag(bytesToString(name), moduleName)),
+          ...dispatchables.map(name => formatTxTag(name.toString(), moduleName)),
         ];
       } else {
         txValues = [...txValues, moduleName as ModuleName];
@@ -1900,8 +1903,7 @@ export function stringToDocumentName(docName: string, context: Context): Documen
  */
 export function documentNameToString(docName: Bytes): string {
   return docName.toString();
-  console.log('doc name is: ', docName.toString());
-  return bytesToString(docName);
+  // return bytesToString(docName);
 }
 
 /**
@@ -2154,6 +2156,16 @@ export function cddIdToString(cddId: CddId): string {
  */
 export function stringToScopeId(scopeId: string, context: Context): ScopeId {
   return context.createType('ScopeId', scopeId);
+}
+
+/**
+ * @hidden
+ */
+export function stringToPolymeshIdentity(
+  scopeId: string,
+  context: Context
+): PolymeshPrimitivesIdentity {
+  return context.createType('PolymeshPrimitivesIdentity', scopeId);
 }
 
 /**
@@ -3033,25 +3045,35 @@ export function claimTypeToMeshClaimType(claimType: ClaimType, context: Context)
 /**
  * @hidden
  */
-export function transferRestrictionToTransferCondition(
+export function transferRestrictionToPolymeshTransferCondition(
   restriction: TransferRestriction,
   context: Context
-): TransferCondition {
+): PolymeshPrimitivesTransferComplianceTransferCondition {
   const { type, value } = restriction;
-  let tmType;
-  let tmValue;
+  let restrictionType;
+  let restrictionValue;
 
   if (type === TransferRestrictionType.Count) {
-    tmType = 'CountTransferManager';
-    tmValue = bigNumberToU64(value, context);
+    restrictionType = 'MaxInvestorCount';
+    restrictionValue = bigNumberToU64(value, context);
   } else {
-    tmType = 'PercentageTransferManager';
-    tmValue = percentageToPermill(value, context);
+    restrictionType = 'MaxInvestorOwnership';
+    restrictionValue = percentageToPermill(value, context);
   }
 
-  return context.createType('TransferCondition', {
-    [tmType]: tmValue,
+  return context.createType('PolymeshPrimitivesTransferComplianceTransferCondition', {
+    [restrictionType]: restrictionValue,
   });
+}
+
+/**
+ * @hidden
+ */
+export function scopeIdsToBtreeSetIdentityId(
+  scopeIds: PolymeshPrimitivesIdentityId[],
+  context: Context
+): BTreeSetIdentityId {
+  return context.createType('BTreeSetIdentityId', scopeIds);
 }
 
 /**
@@ -3619,7 +3641,7 @@ export function scopeClaimProofToConfidentialIdentityClaimProof(
 /**
  * @hidden
  */
-export function polymeshPrimitivesTransferComplianceTransferCondition(
+export function transferComplianceInputToMeshTransferCondition(
   params: unknown[],
   context: Context
 ): PolymeshPrimitivesTransferComplianceTransferCondition {
