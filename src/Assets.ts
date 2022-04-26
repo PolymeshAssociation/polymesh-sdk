@@ -112,7 +112,7 @@ export class Assets {
    *
    * @param args.ticker - Asset ticker
    */
-  public async getTickerReservation(args: { ticker: string }): Promise<TickerReservation> {
+  public getTickerReservation(args: { ticker: string }): TickerReservation {
     const { ticker } = args;
     const { context } = this;
 

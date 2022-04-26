@@ -201,9 +201,9 @@ describe('Assets Class', () => {
   });
 
   describe('method: getTickerReservation', () => {
-    it('should return a Ticker Reservation', async () => {
+    it('should return a Ticker Reservation', () => {
       const ticker = 'TEST';
-      const tickerReservation = await assets.getTickerReservation({ ticker });
+      const tickerReservation = assets.getTickerReservation({ ticker });
       expect(tickerReservation.ticker).toBe(ticker);
     });
   });
