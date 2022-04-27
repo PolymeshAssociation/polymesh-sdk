@@ -1803,7 +1803,7 @@ describe('Context class', () => {
     });
   });
 
-  describe('setNonce', () => {
+  describe('method: setNonce', () => {
     beforeAll(() => {
       sinon.stub(utilsInternalModule, 'assertAddressValid');
     });
@@ -1827,7 +1827,7 @@ describe('Context class', () => {
     });
   });
 
-  describe('getNonce', () => {
+  describe('method: getNonce', () => {
     let context: Context;
 
     beforeAll(() => {
