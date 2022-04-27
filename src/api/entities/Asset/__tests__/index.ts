@@ -766,12 +766,12 @@ describe('Asset class', () => {
     });
   });
 
-  describe('method: toJson', () => {
+  describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker: 'SOME_TICKER' }, context);
 
-      expect(asset.toJson()).toBe('SOME_TICKER');
+      expect(asset.toHuman()).toBe('SOME_TICKER');
     });
   });
 });

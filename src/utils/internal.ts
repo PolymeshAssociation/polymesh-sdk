@@ -708,13 +708,13 @@ export function isModuleOrTagMatch(a: TxTag | ModuleName, b: TxTag | ModuleName)
  * @hidden
  *
  * Recursively convert a value into a human readable (JSON compliant) version:
- *   - Entities are converted via their `.toJson` method
+ *   - Entities are converted via their `.toHuman` method
  *   - Dates are converted to ISO strings
  *   - BigNumbers are converted to numerical strings
  */
 export function toHumanReadable<T>(obj: T): HumanReadableType<T> {
   if (isEntity<unknown, HumanReadableType<T>>(obj)) {
-    return obj.toJson();
+    return obj.toHuman();
   }
 
   if (obj instanceof BigNumber) {

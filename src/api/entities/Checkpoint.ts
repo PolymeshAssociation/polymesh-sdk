@@ -262,7 +262,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
   /**
    * Return the Checkpoint's ticker and identifier
    */
-  public toJson(): HumanReadable {
+  public toHuman(): HumanReadable {
     const { asset, id } = this;
 
     return toHumanReadable({

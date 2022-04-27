@@ -21,7 +21,7 @@ export type ArgsType<T> = T extends (...args: infer A) => unknown ? A : never;
 
 /**
  * Recursively traverse a type and transform its Entity properties into their
- *   human readable version (as if `.toJson` had been called on all of them)
+ *   human readable version (as if `.toHuman` had been called on all of them)
  */
 export type HumanReadableType<T> = T extends Entity<unknown, infer H>
   ? HumanReadableType<H>

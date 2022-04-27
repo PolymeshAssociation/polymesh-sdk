@@ -248,10 +248,10 @@ describe('Checkpoint class', () => {
     });
   });
 
-  describe('method: toJson', () => {
+  describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
       const checkpoint = new Checkpoint({ id: new BigNumber(1), ticker: 'SOME_TICKER' }, context);
-      expect(checkpoint.toJson()).toEqual({
+      expect(checkpoint.toHuman()).toEqual({
         id: '1',
         ticker: 'SOME_TICKER',
       });
