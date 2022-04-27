@@ -275,7 +275,7 @@ describe('CheckpointSchedule class', () => {
     });
   });
 
-  describe('method: toJson', () => {
+  describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
       const schedule = new CheckpointSchedule(
         {
@@ -288,7 +288,7 @@ describe('CheckpointSchedule class', () => {
         },
         context
       );
-      expect(schedule.toJson()).toEqual({
+      expect(schedule.toHuman()).toEqual({
         id: '1',
         ticker: 'SOME_TICKER',
         period: {

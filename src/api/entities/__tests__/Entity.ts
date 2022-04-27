@@ -6,7 +6,7 @@ import * as utilsInternalModule from '~/utils/internal';
 // eslint-disable-next-line require-jsdoc
 class NonAbstract extends Entity<unknown, boolean> {
   // eslint-disable-next-line require-jsdoc
-  public toJson(): boolean {
+  public toHuman(): boolean {
     return true;
   }
 

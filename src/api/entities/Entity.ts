@@ -70,5 +70,5 @@ export abstract class Entity<UniqueIdentifiers, HumanReadable> {
   /**
    * Returns Entity data in a human readable (JSON) format
    */
-  public abstract toJson(): HumanReadable;
+  public abstract toHuman(): HumanReadable;
 }

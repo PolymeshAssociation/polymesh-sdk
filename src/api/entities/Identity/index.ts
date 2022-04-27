@@ -723,7 +723,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   /**
    * Return the Identity's DID
    */
-  public toJson(): string {
+  public toHuman(): string {
     return this.did;
   }
 }

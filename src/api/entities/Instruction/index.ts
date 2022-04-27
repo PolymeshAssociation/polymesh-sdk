@@ -434,7 +434,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
   /**
    * Return the Instruction's ID
    */
-  public toJson(): string {
+  public toHuman(): string {
     return this.id.toString();
   }
 }

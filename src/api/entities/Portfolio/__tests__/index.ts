@@ -571,18 +571,18 @@ describe('Portfolio class', () => {
     });
   });
 
-  describe('method: toJson', () => {
+  describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
       let portfolio = new NonAbstract({ did: 'someDid', id: new BigNumber(1) }, context);
 
-      expect(portfolio.toJson()).toEqual({
+      expect(portfolio.toHuman()).toEqual({
         did: 'someDid',
         id: '1',
       });
 
       portfolio = new NonAbstract({ did: 'someDid' }, context);
 
-      expect(portfolio.toJson()).toEqual({
+      expect(portfolio.toHuman()).toEqual({
         did: 'someDid',
       });
     });

@@ -239,11 +239,11 @@ describe('Subsidy class', () => {
     });
   });
 
-  describe('method: toJson', () => {
+  describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
-      subsidy.beneficiary.toJson = sinon.stub().returns(beneficiary);
-      subsidy.subsidizer.toJson = sinon.stub().returns(subsidizer);
-      expect(subsidy.toJson()).toEqual({ beneficiary, subsidizer });
+      subsidy.beneficiary.toHuman = sinon.stub().returns(beneficiary);
+      subsidy.subsidizer.toHuman = sinon.stub().returns(subsidizer);
+      expect(subsidy.toHuman()).toEqual({ beneficiary, subsidizer });
     });
   });
 });

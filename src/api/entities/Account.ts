@@ -588,7 +588,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   /**
    * Return the Account's address
    */
-  public toJson(): string {
+  public toHuman(): string {
     return this.address;
   }
 }

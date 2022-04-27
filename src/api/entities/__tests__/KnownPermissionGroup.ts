@@ -57,16 +57,16 @@ describe('KnownPermissionGroup class', () => {
     });
   });
 
-  describe('method: toJson', () => {
+  describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
       entityMockUtils.configureMocks({
         assetOptions: {
-          toJson: ticker,
+          toHuman: ticker,
         },
       });
       const type = PermissionGroupType.Full;
       const knownPermissionGroup = new KnownPermissionGroup({ type, ticker }, context);
-      expect(knownPermissionGroup.toJson()).toEqual({
+      expect(knownPermissionGroup.toHuman()).toEqual({
         type,
         ticker,
       });

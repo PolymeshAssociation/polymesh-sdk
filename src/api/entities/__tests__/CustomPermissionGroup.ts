@@ -66,15 +66,15 @@ describe('CustomPermissionGroup class', () => {
     });
   });
 
-  describe('method: toJson', () => {
+  describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
       entityMockUtils.configureMocks({
         assetOptions: {
-          toJson: ticker,
+          toHuman: ticker,
         },
       });
       const customPermissionGroup = new CustomPermissionGroup({ id, ticker }, context);
-      expect(customPermissionGroup.toJson()).toEqual({
+      expect(customPermissionGroup.toHuman()).toEqual({
         id: id.toString(),
         ticker,
       });

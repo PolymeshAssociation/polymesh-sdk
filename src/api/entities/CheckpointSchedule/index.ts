@@ -208,7 +208,7 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
   /**
    * Return the Schedule's static data
    */
-  public toJson(): HumanReadable {
+  public toHuman(): HumanReadable {
     const { asset, id, expiryDate, complexity, start, period } = this;
 
     return toHumanReadable({

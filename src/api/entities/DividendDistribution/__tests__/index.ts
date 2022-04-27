@@ -593,13 +593,13 @@ describe('DividendDistribution class', () => {
     });
   });
 
-  describe('method: toJson', () => {
+  describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
       dividendDistribution.targets = {
         treatment: TargetTreatment.Exclude,
         identities: [],
       };
-      expect(dividendDistribution.toJson()).toEqual({
+      expect(dividendDistribution.toHuman()).toEqual({
         id: '1',
         ticker: 'SOME_TICKER',
         declarationDate: '1987-10-14T00:00:00.000Z',
