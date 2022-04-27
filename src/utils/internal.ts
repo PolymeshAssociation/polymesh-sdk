@@ -1040,7 +1040,7 @@ export function assertExpectedChainVersion(nodeUrl: string): Promise<void> {
  *
  * Validates a ticker value
  */
-export function assertTickerValid(ticker: string) {
+export function assertTickerValid(ticker: string): void {
   if (!ticker.length || ticker.length > MAX_TICKER_LENGTH) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
