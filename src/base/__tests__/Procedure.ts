@@ -325,6 +325,7 @@ describe('Procedure class', () => {
 
       const transaction = await proc1.prepare({ args: procArgs }, context, {
         signingAccount: 'something',
+        nonce: new BigNumber(15),
       });
 
       const batchConstructorStub =
@@ -336,6 +337,7 @@ describe('Procedure class', () => {
           { transaction: tx2, args: [secondaryAccounts] },
         ],
       });
+
       sinon.assert.calledWith(
         batchConstructorStub,
         sinon.match({
@@ -344,9 +346,10 @@ describe('Procedure class', () => {
             sinon.match({ transaction: tx2, args: [secondaryAccounts] }),
           ]),
         }),
-        { ...context, signingAddress: 'something' }
+        { ...context, signingAddress: 'something', nonce: new BigNumber(15) }
       );
       sinon.assert.calledWith(context.setSigningAddress, 'something');
+      sinon.assert.calledWith(context.setNonce, new BigNumber(15));
 
       const func2 = async function (
         this: Procedure<typeof procArgs, string>,
@@ -374,6 +377,7 @@ describe('Procedure class', () => {
       sinon.assert.calledWith(constructorStub, sinon.match({ transaction: tx1, args: [ticker] }), {
         ...context,
         signingAddress: 'something',
+        nonce: new BigNumber(-1),
       });
       sinon.assert.calledWith(context.setSigningAddress, 'something');
 
@@ -402,6 +406,7 @@ describe('Procedure class', () => {
       sinon.assert.calledWith(constructorStub, sinon.match({ transaction: tx1, args: [ticker] }), {
         ...context,
         signingAddress: 'something',
+        nonce: new BigNumber(-1),
       });
       sinon.assert.calledWith(context.setSigningAddress, 'something');
     });

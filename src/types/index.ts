@@ -1284,6 +1284,13 @@ export interface ProcedureOpts {
    * Account or address of a signing key to replace the current one (for this procedure only)
    */
   signingAccount?: string | Account;
+
+  /**
+   * nonce value for signing the transaction
+   *
+   * More information can be found at: https://polkadot.js.org/docs/api/cookbook/tx/#how-do-i-take-the-pending-tx-pool-into-account-in-my-nonce
+   */
+  nonce?: BigNumber;
 }
 
 export interface ProcedureMethod<
