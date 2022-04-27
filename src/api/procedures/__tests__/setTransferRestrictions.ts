@@ -1,5 +1,6 @@
 import { u64 } from '@polkadot/types';
 import { Permill } from '@polkadot/types/interfaces';
+import { BTreeSetStatType } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { ScopeId, Ticker, TransferCondition } from 'polymesh-types/types';
 import sinon from 'sinon';
@@ -128,6 +129,8 @@ describe('setTransferRestrictions procedure', () => {
         currentRestrictions: [],
         currentExemptions: [],
         occupiedSlots: new BigNumber(0),
+        needStat: false,
+        currentStats: [] as unknown as BTreeSetStatType,
       }
     );
 
@@ -154,6 +157,8 @@ describe('setTransferRestrictions procedure', () => {
         currentRestrictions: [rawCountTm],
         currentExemptions: [],
         occupiedSlots: new BigNumber(0),
+        needStat: false,
+        currentStats: [] as unknown as BTreeSetStatType,
       }
     );
 
@@ -218,6 +223,8 @@ describe('setTransferRestrictions procedure', () => {
         currentRestrictions: [rawCountTm],
         currentExemptions: [],
         occupiedSlots: new BigNumber(0),
+        needStat: false,
+        currentStats: [] as unknown as BTreeSetStatType,
       }
     );
 
@@ -249,6 +256,8 @@ describe('setTransferRestrictions procedure', () => {
         currentExemptions: [],
         currentRestrictions: [],
         occupiedSlots: new BigNumber(0),
+        needStat: false,
+        currentStats: [] as unknown as BTreeSetStatType,
       }
     );
 
@@ -277,6 +286,8 @@ describe('setTransferRestrictions procedure', () => {
         currentRestrictions: [rawCountTm],
         currentExemptions: [],
         occupiedSlots: new BigNumber(3),
+        needStat: false,
+        currentStats: [] as unknown as BTreeSetStatType,
       }
     );
 
@@ -303,6 +314,8 @@ describe('setTransferRestrictions procedure', () => {
           currentRestrictions: [],
           currentExemptions: [],
           occupiedSlots: new BigNumber(0),
+          needStat: false,
+          currentStats: [] as unknown as BTreeSetStatType,
         }
       );
 
@@ -323,6 +336,8 @@ describe('setTransferRestrictions procedure', () => {
           currentExemptions: [],
           currentRestrictions: [],
           occupiedSlots: new BigNumber(0),
+          needStat: false,
+          currentStats: [] as unknown as BTreeSetStatType,
         }
       );
 
@@ -342,6 +357,8 @@ describe('setTransferRestrictions procedure', () => {
           currentRestrictions: [rawCountTm],
           currentExemptions: [],
           occupiedSlots: new BigNumber(0),
+          needStat: false,
+          currentStats: [] as unknown as BTreeSetStatType,
         }
       );
 
@@ -361,6 +378,8 @@ describe('setTransferRestrictions procedure', () => {
           currentRestrictions: [],
           currentExemptions: [[rawCountTm, [rawScopeId]]],
           occupiedSlots: new BigNumber(0),
+          currentStats: [] as unknown as BTreeSetStatType,
+          needStat: false,
         }
       );
 

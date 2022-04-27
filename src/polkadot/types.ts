@@ -371,10 +371,10 @@ export enum SettlementTx {
 }
 
 export enum StatisticsTx {
-  AddTransferManager = 'statistics.addTransferManager',
-  RemoveTransferManager = 'statistics.removeTransferManager',
-  AddExemptedEntities = 'statistics.addExemptedEntities',
-  RemoveExemptedEntities = 'statistics.removeExemptedEntities',
+  SetAssetTransferCompliance = 'statistics.setAssetTransferCompliance',
+  SetEntitiesExempt = 'statistics.setEntitiesExempt',
+  SetActiveAssetStats = 'statistics.setActiveAssetStats',
+  BatchUpdateAssetStats = 'statistics.batchUpdateAssetStats',
 }
 
 export enum StoTx {

@@ -5,6 +5,7 @@ import {
   AddPercentageTransferRestrictionParams,
   addTransferRestriction,
   AddTransferRestrictionParams,
+  AddTransferREstrictionStorage,
   Asset,
   Context,
   Namespace,
@@ -67,7 +68,8 @@ export abstract class TransferRestrictionBase<
     this.addRestriction = createProcedureMethod<
       AddRestrictionParams<T>,
       AddTransferRestrictionParams,
-      BigNumber
+      BigNumber,
+      AddTransferREstrictionStorage
     >(
       {
         getProcedureAndArgs: args => [

@@ -329,10 +329,10 @@
     "reschedule_instruction": "reschedule_instruction"
   },
   "Statistics": {
-    "add_transfer_manager": "add_transfer_manager",
-    "remove_transfer_manager": "remove_transfer_manager",
-    "add_exempted_entities": "add_exempted_entities",
-    "remove_exempted_entities": "remove_exempted_entities"
+    "set_asset_transfer_compliance": "set_asset_transfer_compliance",
+    "set_entities_exempt": "set_entities_exempt",
+    "set_active_asset_stats": "set_active_asset_stats",
+    "batch_update_asset_stats": "batch_update_asset_stats"
   },
   "Sto": {
     "create_fundraiser": "create_fundraiser",

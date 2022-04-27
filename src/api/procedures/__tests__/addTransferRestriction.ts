@@ -9,6 +9,7 @@ import {
   AddTransferRestrictionParams,
   getAuthorization,
   prepareAddTransferRestriction,
+  Storage,
 } from '~/api/procedures/addTransferRestriction';
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -44,6 +45,13 @@ describe('addTransferRestriction procedure', () => {
   let rawCountTm: TransferCondition;
   let rawPercentageTm: TransferCondition;
   let args: AddTransferRestrictionParams;
+
+  const emptyStorage = {
+    needStat: false,
+    currentExemptions: [],
+    currentRestrictions: [],
+    currentStats: [] as any,
+  };
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -113,8 +121,9 @@ describe('addTransferRestriction procedure', () => {
       count,
       ticker,
     };
-    const proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, BigNumber>(
-      mockContext
+    const proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, BigNumber, Storage>(
+      mockContext,
+      emptyStorage
     );
 
     dsMockUtils.createQueryStub('statistics', 'assetTransferCompliances', {
@@ -171,8 +180,9 @@ describe('addTransferRestriction procedure', () => {
       count,
       ticker,
     };
-    const proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, BigNumber>(
-      mockContext
+    const proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, BigNumber, Storage>(
+      mockContext,
+      emptyStorage
     );
 
     dsMockUtils.createQueryStub('statistics', 'assetTransferCompliances', {
@@ -234,8 +244,9 @@ describe('addTransferRestriction procedure', () => {
       count,
       ticker,
     };
-    const proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, BigNumber>(
-      mockContext
+    const proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, BigNumber, Storage>(
+      mockContext,
+      emptyStorage
     );
 
     dsMockUtils.createQueryStub('statistics', 'assetTransferCompliances', {
@@ -259,8 +270,9 @@ describe('addTransferRestriction procedure', () => {
       count,
       ticker,
     };
-    const proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, BigNumber>(
-      mockContext
+    const proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, BigNumber, Storage>(
+      mockContext,
+      emptyStorage
     );
 
     dsMockUtils.createQueryStub('statistics', 'assetTransferCompliances', {
@@ -286,8 +298,9 @@ describe('addTransferRestriction procedure', () => {
       count,
       ticker,
     };
-    const proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, BigNumber>(
-      mockContext
+    const proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, BigNumber, Storage>(
+      mockContext,
+      emptyStorage
     );
 
     dsMockUtils.createQueryStub('statistics', 'assetTransferCompliances', {
@@ -315,15 +328,16 @@ describe('addTransferRestriction procedure', () => {
         type: 'Count',
       };
 
-      const proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, BigNumber>(
-        mockContext
+      let proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, BigNumber, Storage>(
+        mockContext,
+        emptyStorage
       );
-      const boundFunc = getAuthorization.bind(proc);
+      let boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc(args)).toEqual({
         permissions: {
           assets: [expect.objectContaining({ ticker })],
-          transactions: [TxTags.statistics.AddTransferManager],
+          transactions: [TxTags.statistics.SetAssetTransferCompliance],
           portfolios: [],
         },
       });
@@ -331,12 +345,38 @@ describe('addTransferRestriction procedure', () => {
         permissions: {
           assets: [expect.objectContaining({ ticker })],
           transactions: [
-            TxTags.statistics.AddTransferManager,
-            TxTags.statistics.AddExemptedEntities,
+            TxTags.statistics.SetAssetTransferCompliance,
+            TxTags.statistics.SetEntitiesExempt,
+          ],
+          portfolios: [],
+        },
+      });
+
+      proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, BigNumber, Storage>(
+        mockContext,
+        {
+          ...emptyStorage,
+          needStat: true,
+        }
+      );
+      boundFunc = getAuthorization.bind(proc);
+
+      expect(boundFunc(args)).toEqual({
+        permissions: {
+          assets: [expect.objectContaining({ ticker })],
+          transactions: [
+            TxTags.statistics.SetAssetTransferCompliance,
+            TxTags.statistics.SetActiveAssetStats,
           ],
           portfolios: [],
         },
       });
     });
   });
+
+  // describe('perpareStorage', () => {
+  //   it('should fetch, process and return shared data', async () => {
+
+  //   });
+  // });
 });

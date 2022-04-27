@@ -16,6 +16,10 @@ import {
   PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesSecondaryKeyPermissions,
+  PolymeshPrimitivesStatisticsStat2ndKey,
+  PolymeshPrimitivesStatisticsStatOpType,
+  PolymeshPrimitivesStatisticsStatType,
+  PolymeshPrimitivesStatisticsStatUpdate,
   PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions,
   PolymeshPrimitivesTransferComplianceTransferCondition,
 } from '@polkadot/types/lookup';
@@ -107,6 +111,7 @@ import {
   VenueType as MeshVenueType,
 } from 'polymesh-types/types';
 
+import { StatisticsType } from '~/api/entities/Asset/TransferRestrictions/types';
 import { meshCountryCodeToCountryCode } from '~/generated/utils';
 import {
   Account,
@@ -501,6 +506,14 @@ export function bigNumberToU64(value: BigNumber, context: Context): u64 {
   assertIsInteger(value);
   assertIsPositive(value);
   return context.createType('u64', value.toString());
+}
+/**
+ * @hidden
+ */
+export function bigNumberToU128(value: BigNumber, context: Context): u128 {
+  assertIsInteger(value);
+  assertIsPositive(value);
+  return context.createType('u128', value.toString());
 }
 
 /**
@@ -3726,4 +3739,56 @@ export function corporateActionIdentifierToCaId(
     ticker: stringToTicker(ticker, context),
     localId: bigNumberToU32(localId, context),
   });
+}
+
+/**
+ * @hidden
+ */
+export function opToStatType(
+  op: PolymeshPrimitivesStatisticsStatOpType,
+  context: Context
+): PolymeshPrimitivesStatisticsStatType {
+  return context.createType('PolymeshPrimitivesStatisticsStatType', { op });
+}
+
+/**
+ * @hidden
+ */
+export function statUpdate(
+  key2: PolymeshPrimitivesStatisticsStat2ndKey,
+  value: u128,
+  context: Context
+): PolymeshPrimitivesStatisticsStatUpdate {
+  return context.createType('PolymeshPrimitivesStatisticsStatUpdate', { key2, value });
+}
+
+type Stat = {
+  type: 'Count' | 'Balance';
+  value: '';
+};
+/**
+ * @hidden
+ */
+export function meshStatToStat(rawStat: PolymeshPrimitivesStatisticsStatType): Stat {
+  return {
+    type: rawStat.op.type,
+    value: '',
+  };
+}
+
+/**
+ * @hidden
+ */
+export function primitiveOpType(
+  type: StatisticsType,
+  context: Context
+): PolymeshPrimitivesStatisticsStatOpType {
+  return context.createType('PolymeshPrimitivesStatisticsStatOpType', type);
+}
+
+/**
+ * @hidden
+ */
+export function primitive2ndKey(context: Context): PolymeshPrimitivesStatisticsStat2ndKey {
+  return context.createType('PolymeshPrimitivesStatisticsStat2ndKey', 'NoClaimStat');
 }

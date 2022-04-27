@@ -108,6 +108,7 @@ export {
   AddTransferRestrictionParams,
   AddCountTransferRestrictionParams,
   AddPercentageTransferRestrictionParams,
+  Storage as AddTransferREstrictionStorage,
 } from '~/api/procedures/addTransferRestriction';
 export { launchOffering, LaunchOfferingParams } from '~/api/procedures/launchOffering';
 export {
