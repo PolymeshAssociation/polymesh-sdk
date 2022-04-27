@@ -5,7 +5,7 @@ import { Assets } from '~/Assets';
 import { Asset, Context, TickerReservation, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { KnownAssetType, SecurityIdentifierType, TickerReservationStatus } from '~/types';
+import { KnownAssetType, SecurityIdentifierType } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -118,68 +118,6 @@ describe('Assets Class', () => {
     });
   });
 
-  describe('method: isTickerAvailable', () => {
-    afterEach(() => {
-      entityMockUtils.reset();
-    });
-
-    it('should return true if ticker is available to reserve it', async () => {
-      entityMockUtils.configureMocks({
-        tickerReservationOptions: {
-          details: {
-            owner: entityMockUtils.getIdentityInstance(),
-            expiryDate: new Date(),
-            status: TickerReservationStatus.Free,
-          },
-        },
-      });
-
-      const isTickerAvailable = await assets.isTickerAvailable({ ticker: 'SOME_TICKER' });
-
-      expect(isTickerAvailable).toBeTruthy();
-    });
-
-    it('should return false if ticker is not available to reserve it', async () => {
-      entityMockUtils.configureMocks({
-        tickerReservationOptions: {
-          details: {
-            owner: entityMockUtils.getIdentityInstance(),
-            expiryDate: new Date(),
-            status: TickerReservationStatus.Reserved,
-          },
-        },
-      });
-
-      const isTickerAvailable = await assets.isTickerAvailable({ ticker: 'someTicker' });
-
-      expect(isTickerAvailable).toBeFalsy();
-    });
-
-    it('should allow subscription', async () => {
-      const unsubCallback = 'unsubCallBack';
-
-      entityMockUtils.configureMocks({
-        tickerReservationOptions: {
-          details: async cbFunc => {
-            cbFunc({
-              owner: entityMockUtils.getIdentityInstance(),
-              expiryDate: new Date(),
-              status: TickerReservationStatus.Free,
-            });
-
-            return unsubCallback;
-          },
-        },
-      });
-
-      const callback = sinon.stub();
-      const result = await assets.isTickerAvailable({ ticker: 'someTicker' }, callback);
-
-      expect(result).toBe(unsubCallback);
-      sinon.assert.calledWithExactly(callback, true);
-    });
-  });
-
   describe('method: getTickerReservations', () => {
     beforeAll(() => {
       sinon.stub(utilsConversionModule, 'signerValueToSignatory');
@@ -263,51 +201,10 @@ describe('Assets Class', () => {
   });
 
   describe('method: getTickerReservation', () => {
-    it('should return a specific ticker reservation owned by the Identity', async () => {
+    it('should return a Ticker Reservation', () => {
       const ticker = 'TEST';
-      const expiry = new Date();
-
-      dsMockUtils.createQueryStub('asset', 'tickers', {
-        returnValue: dsMockUtils.createMockTickerRegistration({
-          owner: dsMockUtils.createMockIdentityId('someDid'),
-          expiry: dsMockUtils.createMockOption(
-            dsMockUtils.createMockMoment(new BigNumber(expiry.getTime()))
-          ),
-        }),
-      });
-
-      const tickerReservation = await assets.getTickerReservation({ ticker });
+      const tickerReservation = assets.getTickerReservation({ ticker });
       expect(tickerReservation.ticker).toBe(ticker);
-    });
-
-    it('should throw if ticker reservation does not exist', async () => {
-      const ticker = 'TEST';
-
-      dsMockUtils.createQueryStub('asset', 'tickers', {
-        returnValue: dsMockUtils.createMockTickerRegistration({
-          owner: dsMockUtils.createMockIdentityId(),
-          expiry: dsMockUtils.createMockOption(),
-        }),
-      });
-
-      return expect(assets.getTickerReservation({ ticker })).rejects.toThrow(
-        `There is no reservation for ${ticker} ticker`
-      );
-    });
-
-    it('should throw if ticker is already an Asset', async () => {
-      const ticker = 'TEST';
-
-      dsMockUtils.createQueryStub('asset', 'tickers', {
-        returnValue: dsMockUtils.createMockTickerRegistration({
-          owner: dsMockUtils.createMockIdentityId('someDid'),
-          expiry: dsMockUtils.createMockOption(),
-        }),
-      });
-
-      return expect(assets.getTickerReservation({ ticker })).rejects.toThrow(
-        `${ticker} Asset has been created`
-      );
     });
   });
 

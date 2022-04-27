@@ -61,6 +61,7 @@ import {
 import { HumanReadableType, ProcedureFunc, UnionOfProcedureFuncs } from '~/types/utils';
 import {
   DEFAULT_GQL_PAGE_SIZE,
+  MAX_TICKER_LENGTH,
   SUPPORTED_VERSION_RANGE,
   SYSTEM_VERSION_RPC_CALL,
 } from '~/utils/constants';
@@ -1032,4 +1033,32 @@ export function assertExpectedChainVersion(nodeUrl: string): Promise<void> {
       reject(err);
     };
   });
+}
+
+/**
+ * @hidden
+ *
+ * Validates a ticker value
+ */
+export function assertTickerValid(ticker: string): void {
+  if (!ticker.length || ticker.length > MAX_TICKER_LENGTH) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} characters`,
+    });
+  }
+
+  if (!isPrintableAscii(ticker)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Only printable ASCII is allowed as ticker name',
+    });
+  }
+
+  if (ticker !== ticker.toUpperCase()) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Ticker cannot contain lower case letters',
+    });
+  }
 }

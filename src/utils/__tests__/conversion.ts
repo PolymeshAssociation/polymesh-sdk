@@ -550,42 +550,6 @@ describe('stringToTicker and tickerToString', () => {
 
       expect(result).toBe(fakeResult);
     });
-
-    it('should throw an error if the string is empty', () => {
-      const value = '';
-      const context = dsMockUtils.getContextInstance();
-
-      expect(() => stringToTicker(value, context)).toThrow(
-        `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} character`
-      );
-    });
-
-    it('should throw an error if the string length exceeds the max ticker length', () => {
-      const value = 'veryLongTicker';
-      const context = dsMockUtils.getContextInstance();
-
-      expect(() => stringToTicker(value, context)).toThrow(
-        `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} character`
-      );
-    });
-
-    it('should throw an error if the string contains unreadable characters', () => {
-      const value = `Illegal ${String.fromCharCode(65533)}`;
-      const context = dsMockUtils.getContextInstance();
-
-      expect(() => stringToTicker(value, context)).toThrow(
-        'Only printable ASCII is allowed as ticker name'
-      );
-    });
-
-    it('should throw an error if the string is not in upper case', () => {
-      const value = 'FakeTicker';
-      const context = dsMockUtils.getContextInstance();
-
-      expect(() => stringToTicker(value, context)).toThrow(
-        'Ticker cannot contain lower case letters'
-      );
-    });
   });
 
   describe('tickerToString', () => {

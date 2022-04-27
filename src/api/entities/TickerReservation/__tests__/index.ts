@@ -1,9 +1,11 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Asset, Entity, TickerReservation, TransactionQueue } from '~/internal';
+import { Asset, Context, Entity, TickerReservation, TransactionQueue } from '~/internal';
 import { dsMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { Mocked } from '~/testUtils/types';
 import { KnownAssetType, SecurityIdentifierType, TickerReservationStatus } from '~/types';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/base/Procedure',
@@ -11,16 +13,20 @@ jest.mock(
 );
 
 describe('TickerReservation class', () => {
-  const ticker = 'FAKETICKER';
+  const ticker = 'FAKE_TICKER';
+  let assertTickerValidStub: sinon.SinonStub;
+  let context: Mocked<Context>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
+    assertTickerValidStub = sinon.stub(utilsInternalModule, 'assertTickerValid');
   });
 
   afterEach(() => {
     dsMockUtils.reset();
     procedureMockUtils.reset();
+    context = dsMockUtils.getContextInstance();
   });
 
   afterAll(() => {
@@ -33,8 +39,15 @@ describe('TickerReservation class', () => {
   });
 
   describe('constructor', () => {
+    it('should throw an error if the supplied ticker is invalid', () => {
+      assertTickerValidStub.throws();
+
+      expect(() => new TickerReservation({ ticker: 'some_ticker' }, context)).toThrow();
+
+      sinon.reset();
+    });
+
     it('should assign ticker to instance', () => {
-      const context = dsMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
 
       expect(tickerReservation.ticker).toBe(ticker);
@@ -59,7 +72,6 @@ describe('TickerReservation class', () => {
     });
 
     it('should return details for a free ticker', async () => {
-      const context = dsMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
 
       queryMultiStub.resolves([
@@ -79,7 +91,7 @@ describe('TickerReservation class', () => {
     it('should return details for a reserved ticker', async () => {
       const ownerDid = 'someDid';
       const expiryDate = new Date(new Date().getTime() + 100000);
-      const context = dsMockUtils.getContextInstance();
+
       const tickerReservation = new TickerReservation({ ticker }, context);
 
       queryMultiStub.resolves([
@@ -104,7 +116,7 @@ describe('TickerReservation class', () => {
     it('should return details for a permanently reserved ticker', async () => {
       const ownerDid = 'someDid';
       const expiryDate = null;
-      const context = dsMockUtils.getContextInstance();
+
       const tickerReservation = new TickerReservation({ ticker }, context);
 
       queryMultiStub.resolves([
@@ -127,7 +139,7 @@ describe('TickerReservation class', () => {
     it('should return details for a ticker for which a reservation expired', async () => {
       const ownerDid = 'someDid';
       const expiryDate = new Date(new Date().getTime() - 100000);
-      const context = dsMockUtils.getContextInstance();
+
       const tickerReservation = new TickerReservation({ ticker }, context);
 
       queryMultiStub.resolves([
@@ -152,7 +164,7 @@ describe('TickerReservation class', () => {
     it('should return details for a ticker for which an Asset has already been created', async () => {
       const ownerDid = 'someDid';
       const expiryDate = null;
-      const context = dsMockUtils.getContextInstance();
+
       const tickerReservation = new TickerReservation({ ticker }, context);
 
       queryMultiStub.resolves([
@@ -180,7 +192,6 @@ describe('TickerReservation class', () => {
     });
 
     it('should allow subscription', async () => {
-      const context = dsMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
 
       const unsubCallback = 'unsubCallback';
@@ -204,7 +215,6 @@ describe('TickerReservation class', () => {
 
   describe('method: extend', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const context = dsMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
 
       const args = {
@@ -227,7 +237,6 @@ describe('TickerReservation class', () => {
 
   describe('method: createAsset', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const context = dsMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
 
       const args = {
@@ -257,7 +266,6 @@ describe('TickerReservation class', () => {
 
   describe('method: transferOwnership', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const context = dsMockUtils.getContextInstance();
       const tickerReservation = new TickerReservation({ ticker }, context);
       const target = 'someOtherDid';
       const expiry = new Date('10/10/2022');
@@ -283,7 +291,6 @@ describe('TickerReservation class', () => {
 
   describe('method: exists', () => {
     it('should return whether the Reservation exists', async () => {
-      const context = dsMockUtils.getContextInstance();
       const tickerRes = new TickerReservation({ ticker: 'SOME_TICKER' }, context);
 
       dsMockUtils.createQueryStub('asset', 'tickers', {
@@ -304,7 +311,6 @@ describe('TickerReservation class', () => {
 
   describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
-      const context = dsMockUtils.getContextInstance();
       const tickerRes = new TickerReservation({ ticker: 'SOME_TICKER' }, context);
 
       expect(tickerRes.toHuman()).toBe('SOME_TICKER');

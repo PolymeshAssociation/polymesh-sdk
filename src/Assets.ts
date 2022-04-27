@@ -11,14 +11,8 @@ import {
   ReserveTickerParams,
   TickerReservation,
 } from '~/internal';
-import {
-  ErrorCode,
-  ProcedureMethod,
-  SubCallback,
-  TickerReservationStatus,
-  UnsubCallback,
-} from '~/types';
-import { stringToIdentityId, stringToTicker, tickerToString } from '~/utils/conversion';
+import { ErrorCode, ProcedureMethod } from '~/types';
+import { stringToIdentityId, tickerToString } from '~/utils/conversion';
 import { createProcedureMethod, getDid, isPrintableAscii } from '~/utils/internal';
 
 /**
@@ -77,35 +71,6 @@ export class Assets {
   public createAsset: ProcedureMethod<CreateAssetWithTickerParams, Asset>;
 
   /**
-   * Check if a ticker hasn't been reserved
-   *
-   * @note can be subscribed to
-   */
-  public isTickerAvailable(args: { ticker: string }): Promise<boolean>;
-  public isTickerAvailable(
-    args: { ticker: string },
-    callback: SubCallback<boolean>
-  ): Promise<UnsubCallback>;
-
-  // eslint-disable-next-line require-jsdoc
-  public async isTickerAvailable(
-    args: { ticker: string },
-    callback?: SubCallback<boolean>
-  ): Promise<boolean | UnsubCallback> {
-    const reservation = new TickerReservation(args, this.context);
-
-    if (callback) {
-      return reservation.details(({ status: reservationStatus }) => {
-        // eslint-disable-next-line node/no-callback-literal, @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
-        callback(reservationStatus === TickerReservationStatus.Free);
-      });
-    }
-    const { status } = await reservation.details();
-
-    return status === TickerReservationStatus.Free;
-  }
-
-  /**
    * Retrieve all the ticker reservations currently owned by an Identity. This doesn't include Assets that
    *   have already been launched
    *
@@ -147,34 +112,11 @@ export class Assets {
    *
    * @param args.ticker - Asset ticker
    */
-  public async getTickerReservation(args: { ticker: string }): Promise<TickerReservation> {
+  public getTickerReservation(args: { ticker: string }): TickerReservation {
     const { ticker } = args;
-    const {
-      context: {
-        polymeshApi: {
-          query: { asset },
-        },
-      },
-      context,
-    } = this;
+    const { context } = this;
 
-    const { owner, expiry } = await asset.tickers(stringToTicker(ticker, context));
-
-    if (!owner.isEmpty) {
-      if (!expiry.isNone) {
-        return new TickerReservation({ ticker }, context);
-      }
-
-      throw new PolymeshError({
-        code: ErrorCode.UnmetPrerequisite,
-        message: `${ticker} Asset has been created`,
-      });
-    }
-
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: `There is no reservation for ${ticker} ticker`,
-    });
+    return new TickerReservation({ ticker }, context);
   }
 
   /**
