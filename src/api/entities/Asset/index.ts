@@ -491,7 +491,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       });
     }
 
-    const result = await statistics.assetStats(stringToTicker(ticker, context), 'Count');
+    const result = await statistics.assetStats({ asset: { Ticker: rawTicker } }, 'Count');
 
     return u128ToBigNumber(result);
   }

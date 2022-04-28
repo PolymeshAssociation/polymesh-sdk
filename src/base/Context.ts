@@ -1164,9 +1164,7 @@ export class Context {
   public createType<K extends keyof InterfaceTypes>(type: K, params: unknown): any {
     /* eslint-enable @typescript-eslint/no-explicit-any */
     try {
-      const api = this.polymeshApi;
-      const madeType = api.createType(type, params);
-      return madeType;
+      return this.polymeshApi.createType(type, params);
     } catch (error) {
       throw new PolymeshError({
         code: ErrorCode.UnexpectedError,

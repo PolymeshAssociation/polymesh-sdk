@@ -976,7 +976,6 @@ export async function getExemptedIds(
   } else {
     exemptedIds.push(...identityEntities.map(identity => asDid(identity), context));
   }
-
   const hasDuplicates = uniq(exemptedIds).length !== exemptedIds.length;
 
   if (hasDuplicates) {

@@ -4,7 +4,19 @@
 
 import { ApiPromise } from '@polkadot/api';
 import { DecoratedRpc } from '@polkadot/api/types';
-import { bool, Bytes, Compact, Enum, Option, Text, u8, U8aFixed, u32, u64 } from '@polkadot/types';
+import {
+  bool,
+  Bytes,
+  Compact,
+  Enum,
+  Option,
+  Text,
+  u8,
+  U8aFixed,
+  u32,
+  u64,
+  u128,
+} from '@polkadot/types';
 import {
   AccountData,
   AccountId,
@@ -45,8 +57,14 @@ import {
   PolymeshPrimitivesConditionTrustedIssuer,
   PolymeshPrimitivesDocument,
   PolymeshPrimitivesIdentity,
+  PolymeshPrimitivesIdentityClaimClaimType,
+  PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesSecondaryKeyPalletPermissions,
   PolymeshPrimitivesSecondaryKeyPermissions,
+  PolymeshPrimitivesStatisticsStat2ndKey,
+  PolymeshPrimitivesStatisticsStatOpType,
+  PolymeshPrimitivesStatisticsStatType,
+  PolymeshPrimitivesStatisticsStatUpdate,
   PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions,
 } from '@polkadot/types/lookup';
 import {
@@ -155,6 +173,7 @@ import {
 } from 'polymesh-types/types';
 import sinon, { SinonStub, SinonStubbedInstance } from 'sinon';
 
+import { StatisticsOpType } from '~/api/entities/Asset/TransferRestrictions/types';
 import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -421,7 +440,7 @@ const defaultReceipt: ISubmittableResult = {
   isInBlock: false,
   isWarning: false,
   events: [],
-  txHash: '0x123' as any, // TODO fix this cast
+  txHash: '0x123' as unknown as Hash, // TODO figure out proper type
   toHuman: () => ({}),
 };
 
@@ -1741,6 +1760,17 @@ export const createMockU64 = (value?: BigNumber | u64): u64 => {
     return value;
   }
   return createMockNumberCodec(value) as u64;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockU128 = (value?: BigNumber | u128): u128 => {
+  if (isCodec<u128>(value)) {
+    return value;
+  }
+  return createMockNumberCodec(value) as u128;
 };
 
 /**
@@ -3714,4 +3744,94 @@ export const createMockSignedBlock = (
     },
     !signedBlock
   ) as SignedBlock;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockStatisticsOpType = (
+  op?: PolymeshPrimitivesStatisticsStatOpType | StatisticsOpType
+): PolymeshPrimitivesStatisticsStatOpType => {
+  if (isCodec<PolymeshPrimitivesStatisticsStatOpType>(op)) {
+    return op;
+  }
+
+  return createMockCodec(
+    {
+      type: op,
+      isCount: op === StatisticsOpType.Count,
+      isBalance: op === StatisticsOpType.Balance,
+    },
+    !op
+  ) as PolymeshPrimitivesStatisticsStatOpType;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockStatistics = (
+  stat?:
+    | PolymeshPrimitivesStatisticsStatType
+    | {
+        op: PolymeshPrimitivesStatisticsStatType;
+        claimIssuers?: [PolymeshPrimitivesIdentityClaimClaimType, PolymeshPrimitivesIdentityId];
+      }
+): PolymeshPrimitivesStatisticsStatType => {
+  if (isCodec<PolymeshPrimitivesStatisticsStatType>(stat)) {
+    return stat;
+  }
+
+  const { op, claimIssuers } = stat || {
+    op: '',
+  };
+
+  return createMockCodec(
+    {
+      op,
+      claimIssuers,
+    },
+    !op
+  ) as PolymeshPrimitivesStatisticsStatType;
+};
+
+/**
+ * @hidden
+ *
+ */
+export const createMock2ndKey = (): PolymeshPrimitivesStatisticsStat2ndKey => {
+  return createMockCodec(
+    {
+      isNoClaimStat: true,
+      type: 'NoClaimStat',
+    },
+    true
+  ) as PolymeshPrimitivesStatisticsStat2ndKey;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockStatUpdate = (
+  update?:
+    | PolymeshPrimitivesStatisticsStatUpdate
+    | {
+        key2: PolymeshPrimitivesStatisticsStat2ndKey | Parameters<typeof createMock2ndKey>;
+        value: u128 | Parameters<typeof createMockU128>[0];
+      }
+): PolymeshPrimitivesStatisticsStatUpdate => {
+  const { key2, value } = update || {
+    key2: createMock2ndKey(),
+    value: createMockU128(),
+  };
+
+  return createMockCodec(
+    {
+      key2,
+      value,
+    },
+    !update
+  ) as PolymeshPrimitivesStatisticsStatUpdate;
 };

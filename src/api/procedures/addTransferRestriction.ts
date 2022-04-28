@@ -1,4 +1,3 @@
-import { U8aFixed } from '@polkadot/types';
 import {
   BTreeSetStatType,
   BTreeSetStatUpdate,
@@ -6,7 +5,7 @@ import {
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
-import { StatisticsType } from '~/api/entities/Asset/TransferRestrictions/types';
+import { StatisticsOpType } from '~/api/entities/Asset/TransferRestrictions/types';
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import { TransferCondition } from '~/polkadot/types';
 import {
@@ -18,18 +17,16 @@ import {
   TxTags,
 } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { tuple } from '~/types/utils';
 import {
   bigNumberToU128,
   meshStatToStat,
-  opToStatType,
   permillToBigNumber,
   primitive2ndKey,
   primitiveOpType,
+  primitiveStatisticsStatType,
   scopeIdsToBtreeSetIdentityId,
   statUpdate,
   stringToIdentityId,
-  stringToScopeId,
   stringToTicker,
   transferRestrictionToPolymeshTransferCondition,
   u32ToBigNumber,
@@ -55,9 +52,8 @@ export type AddTransferRestrictionParams = { ticker: string } & (
 
 export interface Storage {
   currentRestrictions: TransferCondition[];
-  currentExemptions: [TransferCondition, U8aFixed[]][];
-  needStat: boolean;
   currentStats: BTreeSetStatType;
+  needStat: boolean;
 }
 
 /**
@@ -86,7 +82,6 @@ export async function prepareAddTransferRestriction(
   const { requirements: currentTransferRestrictions } =
     await query.statistics.assetTransferCompliances({ Ticker: rawTicker });
   const restrictionAmount = new BigNumber(currentTransferRestrictions.length);
-
   if (restrictionAmount.gte(maxConditions)) {
     throw new PolymeshError({
       code: ErrorCode.LimitExceeded,
@@ -96,19 +91,13 @@ export async function prepareAddTransferRestriction(
   }
 
   let value: BigNumber;
-  let inputType: TransferRestrictionType;
-
-  if (type === 'Count') {
+  let chainType: TransferRestrictionType;
+  if (type === TransferRestrictionType.Count) {
     value = args.count;
-    inputType = TransferRestrictionType.Count;
-  } else if (type === 'Percentage') {
-    value = args.percentage;
-    inputType = TransferRestrictionType.Percentage;
+    chainType = TransferRestrictionType.Count;
   } else {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: `Unknown type: ${type}`,
-    });
+    value = args.percentage;
+    chainType = TransferRestrictionType.Percentage;
   }
 
   const exists = !!currentTransferRestrictions.find(transferRestriction => {
@@ -130,36 +119,31 @@ export async function prepareAddTransferRestriction(
   }
 
   const rawTransferCondition = transferRestrictionToPolymeshTransferCondition(
-    { type: inputType, value },
+    { type: chainType, value },
     context
   );
 
-  const newTransferConditions = [...currentTransferRestrictions, rawTransferCondition];
+  // BTreeSets need to be sorted
+  const conditions = [...currentTransferRestrictions, rawTransferCondition].sort();
 
   const transactions = [
     checkTxType({
       transaction: statistics.setAssetTransferCompliance,
-      args: [{ Ticker: rawTicker }, newTransferConditions as BTreeSetTransferCondition],
+      args: [{ Ticker: rawTicker }, conditions as BTreeSetTransferCondition],
     }),
   ];
 
+  const op =
+    type === TransferRestrictionType.Count
+      ? primitiveOpType(StatisticsOpType.Count, context)
+      : primitiveOpType(StatisticsOpType.Balance, context);
+
   if (needStat) {
-    const op =
-      type === TransferRestrictionType.Count
-        ? primitiveOpType(StatisticsType.Count, context)
-        : primitiveOpType(StatisticsType.Balance, context);
-    const newStat = opToStatType(op, context);
+    const newStat = primitiveStatisticsStatType(op, context);
     currentStats.push(newStat);
+    currentStats.sort().reverse(); // sort needed as it is a BTreeSet
 
-    // it seems to error if the stats transaction is in the same block as the rest
-
-    // transactions.unshift(
-    //   checkTxType({
-    //     transaction: statistics.setActiveAssetStats,
-    //     args: [{ Ticker: rawTicker }, currentStats],
-    //   })
-    // );
-
+    // it seems to error if the stats transaction is in the same batch as the rest
     this.addTransaction({
       transaction: statistics.setActiveAssetStats,
       args: [{ Ticker: rawTicker }, currentStats],
@@ -176,19 +160,15 @@ export async function prepareAddTransferRestriction(
         statUpdate(secondKey, bigNumberToU128(holderCount, context), context),
       ] as BTreeSetStatUpdate;
 
-      // transactions.unshift(
-      //   checkTxType({
-      //     transaction: statistics.batchUpdateAssetStats,
-      //     args: [{ Ticker: rawTicker }, newStat, statValue],
-      //   })
-      // );
-
-      this.addTransaction({
-        transaction: statistics.batchUpdateAssetStats,
-        args: [{ Ticker: rawTicker }, newStat, statValue],
-      });
+      transactions.push(
+        checkTxType({
+          transaction: statistics.batchUpdateAssetStats,
+          args: [{ Ticker: rawTicker }, newStat, statValue],
+        })
+      );
     }
   }
+
   if (exemptedIdentities.length) {
     const exemptedIds = await getExemptedIds(exemptedIdentities, context, ticker);
     const exemptedScopeIds = exemptedIds.map(entityId => stringToIdentityId(entityId, context));
@@ -197,7 +177,7 @@ export async function prepareAddTransferRestriction(
       checkTxType({
         transaction: statistics.setEntitiesExempt,
         feeMultiplier: new BigNumber(exemptedIds.length),
-        args: [true, { asset: { Ticker: rawTicker } }, btreeIds],
+        args: [true, { asset: { Ticker: rawTicker }, op }, btreeIds],
       })
     );
   }
@@ -255,33 +235,18 @@ export async function prepareStorage(
 
   const rawTicker = stringToTicker(ticker, context);
   const currentStats = await statistics.activeAssetStats({ Ticker: rawTicker });
-  const needStat =
-    !currentStats.find(s => meshStatToStat(s).type === 'Count') &&
-    type === TransferRestrictionType.Count;
+  const needStat = !currentStats.find(s => {
+    const stat = meshStatToStat(s);
+    const cmpStat = stat.type === 'Balance' ? 'Percentage' : 'Count';
+    return cmpStat === type;
+  });
 
   const currentRestrictions: TransferRestriction[] = [];
-  const currentExemptions: [TransferRestriction, string[]][] = [];
-
-  /*
-   * we're using `defusePromise` here because we KNOW the exempted ID promises are being
-   * awaited later and errors WILL be caught
-   */
 
   const transformRestriction = (restriction: TransferRestriction): TransferCondition =>
     transferRestrictionToPolymeshTransferCondition(restriction, context);
 
-  const transformExemptions = ([restriction, entityIds]: [TransferRestriction, string[]]): [
-    TransferCondition,
-    U8aFixed[]
-  ] =>
-    tuple(
-      transferRestrictionToPolymeshTransferCondition(restriction, context),
-      // we use `stringToScopeId` because both `ScopeId` and `IdentityId` are aliases for `U8aFixed`
-      entityIds.map(entityId => stringToScopeId(entityId, context))
-    );
-
   return {
-    currentExemptions: currentExemptions.map(transformExemptions),
     currentRestrictions: currentRestrictions.map(transformRestriction),
     needStat,
     currentStats,

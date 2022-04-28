@@ -11,10 +11,8 @@ const { NODE_URL, WS_PORT } = require('./consts');
 const { transformSync } = require('@babel/core');
 
 const websocket = new w3cwebsocket(`ws://${NODE_URL}:${WS_PORT}`);
-console.log('generating tags');
 websocket.onopen = () => {
   websocket.send('{"id":"1","jsonrpc":"2.0","method":"state_getMetadata","params":[]}');
-  console.log('sent');
 };
 websocket.onmessage = message => {
   let namespaces = '';

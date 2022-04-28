@@ -111,7 +111,7 @@ import {
   VenueType as MeshVenueType,
 } from 'polymesh-types/types';
 
-import { StatisticsType } from '~/api/entities/Asset/TransferRestrictions/types';
+import { StatisticsOpType } from '~/api/entities/Asset/TransferRestrictions/types';
 import { meshCountryCodeToCountryCode } from '~/generated/utils';
 import {
   Account,
@@ -3090,7 +3090,8 @@ export function scopeIdsToBtreeSetIdentityId(
   scopeIds: PolymeshPrimitivesIdentityId[],
   context: Context
 ): BTreeSetIdentityId {
-  return context.createType('BTreeSetIdentityId', scopeIds);
+  // BTreeSet need to be sorted
+  return context.createType('BTreeSetIdentityId', scopeIds.sort());
 }
 
 /**
@@ -3744,7 +3745,7 @@ export function corporateActionIdentifierToCaId(
 /**
  * @hidden
  */
-export function opToStatType(
+export function primitiveStatisticsStatType(
   op: PolymeshPrimitivesStatisticsStatOpType,
   context: Context
 ): PolymeshPrimitivesStatisticsStatType {
@@ -3780,13 +3781,14 @@ export function meshStatToStat(rawStat: PolymeshPrimitivesStatisticsStatType): S
  * @hidden
  */
 export function primitiveOpType(
-  type: StatisticsType,
+  type: StatisticsOpType,
   context: Context
 ): PolymeshPrimitivesStatisticsStatOpType {
   return context.createType('PolymeshPrimitivesStatisticsStatOpType', type);
 }
 
 /**
+ * For now this is hard coded to return a NoClaimStat type. Once Claim support is added this should be extended
  * @hidden
  */
 export function primitive2ndKey(context: Context): PolymeshPrimitivesStatisticsStat2ndKey {

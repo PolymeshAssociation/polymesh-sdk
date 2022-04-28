@@ -155,9 +155,8 @@ export abstract class TransferRestrictionBase<
       context,
       type,
     } = this;
-
     const rawTicker = stringToTicker(ticker, context);
-    const complianceRules = await statistics.assetTransferCompliances(rawTicker);
+    const complianceRules = await statistics.assetTransferCompliances({ Ticker: rawTicker });
     const filteredRequirements = complianceRules.requirements.filter(requirement => {
       if (type === TransferRestrictionType.Count) {
         return requirement.isMaxInvestorCount;
@@ -167,7 +166,9 @@ export abstract class TransferRestrictionBase<
     });
 
     const rawExemptedLists = await Promise.all(
-      filteredRequirements.map(() => statistics.transferConditionExemptEntities.entries(rawTicker))
+      filteredRequirements.map(() =>
+        statistics.transferConditionExemptEntities.entries({ asset: { Ticker: rawTicker } })
+      )
     );
 
     const restrictions = rawExemptedLists.map((list, index) => {

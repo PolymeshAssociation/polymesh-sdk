@@ -1,4 +1,4 @@
-export enum StatisticsType {
+export enum StatisticsOpType {
   Count = 'Count',
   Balance = 'Balance',
 }
