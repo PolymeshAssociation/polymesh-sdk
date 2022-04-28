@@ -641,6 +641,12 @@ export function portfolioIdToMeshPortfolioId(
 export function stringToText(text: string, context: Context): Text {
   return context.createType('Text', text);
 }
+/**
+ * @hidden
+ */
+export function bytesToText(text: Bytes, context: Context): Text {
+  return context.createType('Text', text);
+}
 
 /**
  * @hidden
@@ -1030,7 +1036,7 @@ export function extrinsicPermissionsToTransactionPermissions(
 /**
  * @hidden
  *
- * needed to get around RPC not using updated types
+ * needed to support RPC types still on snake case
  */
 export function basicExtrinsicPermissionsToTransactionPermissions(
   permissions: ExtrinsicPermissions
@@ -1144,8 +1150,7 @@ export function meshPermissionsToPermissions(
 
 /**
  * @hidden
- *
- * used to get around RPC types not updating
+ * needed to support RPC types still using snake case
  */
 export function basicMeshPermissionsToPermissions(
   permissions: MeshPermissions,
@@ -1486,7 +1491,7 @@ export function authorizationDataToAuthorization(
 
 /**
  * @hidden
- * TODO remove, just a test
+ * needed to support RPC types still on snake case
  */
 export function basicAuthorizationDataToAuthorization(
   auth: AuthorizationData,

@@ -76,7 +76,6 @@ describe('setTransferRestrictions procedure', () => {
   let addTransactionStub: sinon.SinonStub;
 
   let setTransferRestrictionsTransaction: PolymeshTx<[Ticker, TransferCondition]>;
-  // let setExemptedEntitiesTransaction: PolymeshTx<[Ticker, TransferCondition, ScopeId[]]>;
 
   beforeEach(() => {
     dsMockUtils.setConstMock('statistics', 'maxTransferConditionsPerAsset', {
@@ -124,7 +123,6 @@ describe('setTransferRestrictions procedure', () => {
   });
 
   it('should add a setTransferRestrictions transaction to the queue', async () => {
-    // restrictionsToAdd: [[rawTicker, rawCountTm]]
     const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
@@ -227,7 +225,6 @@ describe('setTransferRestrictions procedure', () => {
   });
 
   it('should throw an error if attempting to add more restrictions than there are slots available', async () => {
-    // restrictionsToAdd: [[rawTicker, rawCountTm]],
     args = {
       ticker,
       restrictions: [{ count }, { count: new BigNumber(2) }],
@@ -260,7 +257,6 @@ describe('setTransferRestrictions procedure', () => {
 
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
-      // restrictionsToAdd: [[rawTicker, rawCountTm]],
       let proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
         mockContext,
         {
@@ -281,7 +277,6 @@ describe('setTransferRestrictions procedure', () => {
         },
       });
 
-      // exemptionsToAdd: [[ rawCountTm, [rawScopeId]]],
       proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
         mockContext,
         {
@@ -298,8 +293,9 @@ describe('setTransferRestrictions procedure', () => {
         permissions: {
           assets: [expect.objectContaining({ ticker })],
           transactions: [
+            TxTags.statistics.SetAssetTransferCompliance,
             TxTags.statistics.SetActiveAssetStats,
-            TxTags.statistics.SetEntitiesExempt,
+            // TxTags.statistics.SetEntitiesExempt,
           ],
           portfolios: [],
         },

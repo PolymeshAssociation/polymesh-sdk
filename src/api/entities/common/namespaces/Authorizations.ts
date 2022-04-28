@@ -127,9 +127,9 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
 
   /**
    * @hidden
-   * TODO take out just a test
+   * Needed to handle snake case from rpc request
    */
-  protected createAuthorizationRequestsFromBasic(
+  private createAuthorizationRequestsFromBasic(
     auths: { auth: Authorization; target: SignerValue }[]
   ): AuthorizationRequest[] {
     const { context } = this;

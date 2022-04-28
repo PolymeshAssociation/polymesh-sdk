@@ -373,7 +373,7 @@ describe('addTransferRestriction procedure', () => {
 
   it('should throw an error if attempting to add a restriction when the restriction limit has been reached', async () => {
     args = {
-      type: 'Count',
+      type: TransferRestrictionType.Count,
       count,
       ticker,
     };
@@ -402,7 +402,7 @@ describe('addTransferRestriction procedure', () => {
 
   it('should throw an error if exempted entities are repeated', async () => {
     args = {
-      type: 'Count',
+      type: TransferRestrictionType.Count,
       exemptedIdentities: ['someScopeId', 'someScopeId'],
       count,
       ticker,

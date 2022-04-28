@@ -62,7 +62,6 @@ export async function prepareModifyComplianceRequirement(
   }
 
   const [{ conditions: existingConditions }] = existingRequirements;
-  // const existingConditions = existingRequirements.map(conditonToInputCondition);
 
   if (hasSameElements(newConditions, existingConditions, conditionsAreEqual)) {
     throw new PolymeshError({

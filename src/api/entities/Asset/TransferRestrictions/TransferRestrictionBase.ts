@@ -177,7 +177,7 @@ export abstract class TransferRestrictionBase<
           {
             args: [, scopeId],
           },
-        ]) => scopeIdToString(scopeId)
+        ]) => scopeIdToString(scopeId) // `ScopeId` and `IdentityId` are the same type, so this is fine
       );
       const { value } = transferConditionToTransferRestriction(filteredRequirements[index]);
       let restriction;

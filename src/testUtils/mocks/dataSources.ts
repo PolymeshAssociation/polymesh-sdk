@@ -121,7 +121,6 @@ import {
   EcdsaSignature,
   EthereumAddress,
   FundingRoundName,
-  FundraiserName,
   FundraiserStatus,
   FundraiserTier,
   GranularCanTransferResult,
@@ -2175,8 +2174,7 @@ export const createMockDispatchableName = (name?: string | DispatchableName): Di
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockFundraiserName = (name?: string): FundraiserName =>
-  createMockStringCodec(name) as FundraiserName;
+export const createMockFundraiserName = (name?: string): Bytes => createMockBytes(name) as Bytes;
 
 /**
  * @hidden

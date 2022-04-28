@@ -42,6 +42,7 @@ import {
   bigNumberToU32,
   boolToBoolean,
   bytesToString,
+  bytesToText,
   hashToString,
   identityIdToString,
   middlewareEventToEventIdentifier,
@@ -271,7 +272,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
         const result = await assembleResult(
           securityToken,
           groupEntries,
-          stringToText(bytesToString(assetName), context), // TODO clean up
+          bytesToText(assetName, context),
           disabledInvestorUniqueness
         );
 

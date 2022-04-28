@@ -142,7 +142,7 @@ describe('Offerings class', () => {
 
       const creator = entityMockUtils.getIdentityInstance();
       const name = 'someSto';
-      rawName = dsMockUtils.createMockBytes(name);
+      rawName = dsMockUtils.createMockFundraiserName(name);
       const offeringPortfolio = entityMockUtils.getDefaultPortfolioInstance();
       const raisingPortfolio = entityMockUtils.getDefaultPortfolioInstance();
       const venue = entityMockUtils.getVenueInstance();
