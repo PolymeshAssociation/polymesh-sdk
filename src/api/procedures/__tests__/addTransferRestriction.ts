@@ -2,6 +2,7 @@ import { u64, u128, Vec } from '@polkadot/types';
 import { Permill } from '@polkadot/types/interfaces';
 import {
   BTreeSetIdentityId,
+  BTreeSetStatType,
   BTreeSetStatUpdate,
   PolymeshPrimitivesStatisticsStat2ndKey,
   PolymeshPrimitivesStatisticsStatOpType,
@@ -47,7 +48,7 @@ describe('addTransferRestriction procedure', () => {
     [StatisticsOpType, Context],
     PolymeshPrimitivesStatisticsStatOpType
   >;
-  let primitivesStatisticsStatType: sinon.SinonStub<
+  let primitivesStatisticsStatTypeStub: sinon.SinonStub<
     [PolymeshPrimitivesStatisticsStatOpType, Context],
     PolymeshPrimitivesStatisticsStatType
   >;
@@ -89,7 +90,10 @@ describe('addTransferRestriction procedure', () => {
     );
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     opPrimitiveStub = sinon.stub(utilsConversionModule, 'primitiveOpType');
-    primitivesStatisticsStatType = sinon.stub(utilsConversionModule, 'primitiveStatisticsStatType');
+    primitivesStatisticsStatTypeStub = sinon.stub(
+      utilsConversionModule,
+      'primitiveStatisticsStatType'
+    );
     statUpdateStub = sinon.stub(utilsConversionModule, 'statUpdate');
     primitive2ndKeyStub = sinon.stub(utilsConversionModule, 'primitive2ndKey');
 
@@ -103,6 +107,7 @@ describe('addTransferRestriction procedure', () => {
   let addBatchTransactionStub: sinon.SinonStub;
 
   let setAssetTransferCompliance: PolymeshTx<[Ticker, TransferCondition]>;
+  let setActiveAssetStats: PolymeshTx<[Ticker, BTreeSetStatType]>;
   let addExemptedEntitiesTransaction: PolymeshTx<[Ticker, TransferCondition, ScopeId[]]>;
   let batchUpdateAssetStatsTransaction: PolymeshTx<
     [Ticker, PolymeshPrimitivesStatisticsStatType, BTreeSetStatUpdate[]]
@@ -115,6 +120,7 @@ describe('addTransferRestriction procedure', () => {
       'statistics',
       'setAssetTransferCompliance'
     );
+    setActiveAssetStats = dsMockUtils.createTxStub('statistics', 'setActiveAssetStats');
     addExemptedEntitiesTransaction = dsMockUtils.createTxStub('statistics', 'setEntitiesExempt');
     batchUpdateAssetStatsTransaction = dsMockUtils.createTxStub(
       'statistics',
@@ -247,13 +253,13 @@ describe('addTransferRestriction procedure', () => {
     sinon.assert.calledWith(addBatchTransactionStub.firstCall, {
       transactions: [
         {
-          transaction: setAssetTransferCompliance,
-          args: [{ Ticker: rawTicker }, [rawCountCondition]],
-        },
-        {
           transaction: addExemptedEntitiesTransaction,
           feeMultiplier: new BigNumber(1),
           args: [true, { asset: { Ticker: rawTicker }, op: rawOp }, [rawIdentityScopeId]],
+        },
+        {
+          transaction: setAssetTransferCompliance,
+          args: [{ Ticker: rawTicker }, [rawCountCondition]],
         },
       ],
     });
@@ -268,13 +274,13 @@ describe('addTransferRestriction procedure', () => {
     sinon.assert.calledWith(addBatchTransactionStub.secondCall, {
       transactions: [
         {
-          transaction: setAssetTransferCompliance,
-          args: [{ Ticker: rawTicker }, [rawCountCondition]],
-        },
-        {
           transaction: addExemptedEntitiesTransaction,
           feeMultiplier: new BigNumber(1),
           args: [true, { asset: { Ticker: rawTicker }, op: rawOp }, [rawIdentityScopeId]],
+        },
+        {
+          transaction: setAssetTransferCompliance,
+          args: [{ Ticker: rawTicker }, [rawCountCondition]],
         },
       ],
     });
@@ -305,7 +311,7 @@ describe('addTransferRestriction procedure', () => {
       returnValue: ['one', 'two', 'three'],
     });
 
-    primitivesStatisticsStatType.returns(rawStatType);
+    primitivesStatisticsStatTypeStub.returns(rawStatType);
     primitive2ndKeyStub.withArgs(mockContext).returns(raw2ndKey);
     statUpdateStub.returns(rawStatUpdate);
 
@@ -314,12 +320,16 @@ describe('addTransferRestriction procedure', () => {
     sinon.assert.calledWith(addBatchTransactionStub, {
       transactions: [
         {
-          transaction: setAssetTransferCompliance,
-          args: [{ Ticker: rawTicker }, [rawCountCondition]],
+          transaction: setActiveAssetStats,
+          args: [{ Ticker: rawTicker }, [rawStatType]],
         },
         {
           transaction: batchUpdateAssetStatsTransaction,
           args: [{ Ticker: rawTicker }, rawStatType, [rawStatUpdate]],
+        },
+        {
+          transaction: setAssetTransferCompliance,
+          args: [{ Ticker: rawTicker }, [rawCountCondition]],
         },
       ],
     });

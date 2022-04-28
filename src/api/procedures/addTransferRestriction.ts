@@ -126,12 +126,7 @@ export async function prepareAddTransferRestriction(
   // BTreeSets need to be sorted
   const conditions = [...currentTransferRestrictions, rawTransferCondition].sort();
 
-  const transactions = [
-    checkTxType({
-      transaction: statistics.setAssetTransferCompliance,
-      args: [{ Ticker: rawTicker }, conditions as BTreeSetTransferCondition],
-    }),
-  ];
+  const transactions = [];
 
   const op =
     type === TransferRestrictionType.Count
@@ -142,12 +137,13 @@ export async function prepareAddTransferRestriction(
     const newStat = primitiveStatisticsStatType(op, context);
     currentStats.push(newStat);
     currentStats.sort().reverse(); // sort needed as it is a BTreeSet
-
-    // it seems to error if the stats transaction is in the same batch as the rest
-    this.addTransaction({
-      transaction: statistics.setActiveAssetStats,
-      args: [{ Ticker: rawTicker }, currentStats],
-    });
+    console.log('pushing with current stats: ', currentStats);
+    transactions.push(
+      checkTxType({
+        transaction: statistics.setActiveAssetStats,
+        args: [{ Ticker: rawTicker }, currentStats],
+      })
+    );
 
     // If the stat restriction is a Count the actual value needs to be set. This is due to the potentially slow transaction of counting all holders for the chain
     if (type === TransferRestrictionType.Count) {
@@ -181,7 +177,13 @@ export async function prepareAddTransferRestriction(
       })
     );
   }
-
+  transactions.push(
+    checkTxType({
+      transaction: statistics.setAssetTransferCompliance,
+      args: [{ Ticker: rawTicker }, conditions as BTreeSetTransferCondition],
+    })
+  );
+  console.log(JSON.stringify(transactions, null, 2));
   this.addBatchTransaction({ transactions });
   return restrictionAmount.plus(1);
 }
