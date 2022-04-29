@@ -73,7 +73,7 @@ describe('setTransferRestrictions procedure', () => {
     };
   });
 
-  let addTransactionStub: sinon.SinonStub;
+  let addBatchTransactionStub: sinon.SinonStub;
 
   let setTransferRestrictionsTransaction: PolymeshTx<[Ticker, TransferCondition]>;
 
@@ -82,7 +82,7 @@ describe('setTransferRestrictions procedure', () => {
       returnValue: dsMockUtils.createMockU32(new BigNumber(3)),
     });
 
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
+    addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
 
     setTransferRestrictionsTransaction = dsMockUtils.createTxStub(
       'statistics',
@@ -135,9 +135,13 @@ describe('setTransferRestrictions procedure', () => {
 
     const result = await prepareSetTransferRestrictions.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, {
-      transaction: setTransferRestrictionsTransaction,
-      args: [{ Ticker: rawTicker }, [rawCountRestriction]],
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: [
+        {
+          transaction: setTransferRestrictionsTransaction,
+          args: [{ Ticker: rawTicker }, [rawCountRestriction]],
+        },
+      ],
     });
 
     expect(result).toEqual(new BigNumber(1));
@@ -162,9 +166,13 @@ describe('setTransferRestrictions procedure', () => {
 
     const result = await prepareSetTransferRestrictions.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, {
-      transaction: setTransferRestrictionsTransaction,
-      args: [{ Ticker: rawTicker }, []],
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: [
+        {
+          transaction: setTransferRestrictionsTransaction,
+          args: [{ Ticker: rawTicker }, []],
+        },
+      ],
     });
 
     expect(result).toEqual(new BigNumber(0));
@@ -272,7 +280,10 @@ describe('setTransferRestrictions procedure', () => {
       expect(boundFunc(args)).toEqual({
         permissions: {
           assets: [expect.objectContaining({ ticker })],
-          transactions: [TxTags.statistics.SetAssetTransferCompliance],
+          transactions: [
+            TxTags.statistics.SetAssetTransferCompliance,
+            TxTags.statistics.SetEntitiesExempt,
+          ],
           portfolios: [],
         },
       });
@@ -294,8 +305,8 @@ describe('setTransferRestrictions procedure', () => {
           assets: [expect.objectContaining({ ticker })],
           transactions: [
             TxTags.statistics.SetAssetTransferCompliance,
+            TxTags.statistics.SetEntitiesExempt,
             TxTags.statistics.SetActiveAssetStats,
-            // TxTags.statistics.SetEntitiesExempt,
           ],
           portfolios: [],
         },

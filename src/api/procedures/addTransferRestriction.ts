@@ -137,7 +137,6 @@ export async function prepareAddTransferRestriction(
     const newStat = primitiveStatisticsStatType(op, context);
     currentStats.push(newStat);
     currentStats.sort().reverse(); // sort needed as it is a BTreeSet
-    console.log('pushing with current stats: ', currentStats);
     transactions.push(
       checkTxType({
         transaction: statistics.setActiveAssetStats,
@@ -183,7 +182,7 @@ export async function prepareAddTransferRestriction(
       args: [{ Ticker: rawTicker }, conditions as BTreeSetTransferCondition],
     })
   );
-  console.log(JSON.stringify(transactions, null, 2));
+
   this.addBatchTransaction({ transactions });
   return restrictionAmount.plus(1);
 }

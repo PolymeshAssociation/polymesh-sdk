@@ -32,7 +32,7 @@ import {
   u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { getExemptedIds } from '~/utils/internal';
+import { checkTxType, getExemptedIds } from '~/utils/internal';
 
 export interface SetCountTransferRestrictionsParams {
   /**
@@ -95,36 +95,38 @@ export async function prepareSetTransferRestrictions(
   const exemptions: (string | Identity)[] = [];
 
   let someDifference = restrictions.length !== currentRestrictions.length;
-  const conditions = restrictions.map(r => {
-    if (!someDifference) {
-      someDifference = !currentRestrictions.find(transferRestriction => {
-        if (transferRestriction.isMaxInvestorCount && type === TransferRestrictionType.Count) {
-          const currentCount = u64ToBigNumber(transferRestriction.asMaxInvestorCount);
-          return currentCount.eq((r as CountTransferRestrictionInput).count);
-        } else if (transferRestriction.isMaxInvestorOwnership && type === 'Percentage') {
-          const currentOwnership = permillToBigNumber(transferRestriction.asMaxInvestorOwnership);
-          return currentOwnership.eq((r as PercentageTransferRestrictionInput).percentage);
-        }
-        return false;
-      });
-    }
-    let condition: TransferRestriction;
-    if (type === TransferRestrictionType.Count) {
-      condition = { type, value: (r as CountTransferRestrictionInput).count };
-    } else {
-      condition = { type, value: (r as PercentageTransferRestrictionInput).percentage };
-    }
+  const conditions = restrictions
+    .map(r => {
+      if (!someDifference) {
+        someDifference = !currentRestrictions.find(transferRestriction => {
+          if (transferRestriction.isMaxInvestorCount && type === TransferRestrictionType.Count) {
+            const currentCount = u64ToBigNumber(transferRestriction.asMaxInvestorCount);
+            return currentCount.eq((r as CountTransferRestrictionInput).count);
+          } else if (transferRestriction.isMaxInvestorOwnership && type === 'Percentage') {
+            const currentOwnership = permillToBigNumber(transferRestriction.asMaxInvestorOwnership);
+            return currentOwnership.eq((r as PercentageTransferRestrictionInput).percentage);
+          }
+          return false;
+        });
+      }
+      let condition: TransferRestriction;
+      if (type === TransferRestrictionType.Count) {
+        condition = { type, value: (r as CountTransferRestrictionInput).count };
+      } else {
+        condition = { type, value: (r as PercentageTransferRestrictionInput).percentage };
+      }
 
-    const rawCondition = transferRestrictionToPolymeshTransferCondition(condition, context);
+      const rawCondition = transferRestrictionToPolymeshTransferCondition(condition, context);
 
-    if (r.exemptedIdentities) {
-      r.exemptedIdentities.forEach(e => {
-        exemptions.push(e);
-      });
-    }
+      if (r.exemptedIdentities) {
+        r.exemptedIdentities.forEach(e => {
+          exemptions.push(e);
+        });
+      }
 
-    return rawCondition;
-  }) as BTreeSetTransferCondition;
+      return rawCondition;
+    })
+    .sort() as BTreeSetTransferCondition;
 
   if (!someDifference) {
     throw new PolymeshError({
@@ -147,6 +149,8 @@ export async function prepareSetTransferRestrictions(
     });
   }
 
+  const transactions = [];
+
   const op =
     type === TransferRestrictionType.Count
       ? primitiveOpType(StatisticsOpType.Count, context)
@@ -157,10 +161,12 @@ export async function prepareSetTransferRestrictions(
     currentStats.push(newStat);
     currentStats.sort().reverse();
 
-    this.addTransaction({
-      transaction: statistics.setActiveAssetStats,
-      args: [{ Ticker: rawTicker }, currentStats],
-    });
+    transactions.push(
+      checkTxType({
+        transaction: statistics.setActiveAssetStats,
+        args: [{ Ticker: rawTicker }, currentStats],
+      })
+    );
 
     // Count stats need to be initialized manually
     if (type === TransferRestrictionType.Count) {
@@ -171,30 +177,37 @@ export async function prepareSetTransferRestrictions(
         statUpdate(secondKey, bigNumberToU128(holderCount, context), context),
       ] as BTreeSetStatUpdate;
 
-      this.addTransaction({
-        transaction: statistics.batchUpdateAssetStats,
-        args: [{ Ticker: rawTicker }, newStat, stat],
-      });
+      transactions.push(
+        checkTxType({
+          transaction: statistics.batchUpdateAssetStats,
+          args: [{ Ticker: rawTicker }, newStat, stat],
+        })
+      );
     }
   }
 
-  this.addTransaction({
-    transaction: statistics.setAssetTransferCompliance,
-    args: [{ Ticker: rawTicker }, conditions],
-  });
+  transactions.push(
+    checkTxType({
+      transaction: statistics.setAssetTransferCompliance,
+      args: [{ Ticker: rawTicker }, conditions],
+    })
+  );
 
   if (exemptions.length) {
     const exemptedIds = await getExemptedIds(exemptions, context, ticker);
     const exemptedScopeIds = exemptedIds.map(entityId => stringToIdentityId(entityId, context));
     const btreeIds = scopeIdsToBtreeSetIdentityId(exemptedScopeIds, context);
 
-    this.addTransaction({
-      transaction: statistics.setEntitiesExempt,
-      feeMultiplier: new BigNumber(exemptions.length),
-      args: [true, { asset: { Ticker: rawTicker }, op }, btreeIds],
-    });
+    transactions.push(
+      checkTxType({
+        transaction: statistics.setEntitiesExempt,
+        feeMultiplier: new BigNumber(exemptions.length),
+        args: [true, { asset: { Ticker: rawTicker }, op }, btreeIds],
+      })
+    );
   }
 
+  this.addBatchTransaction({ transactions });
   return finalCount;
 }
 
@@ -207,7 +220,10 @@ export function getAuthorization(
 ): ProcedureAuthorization {
   const { needStat } = this.storage;
 
-  const transactions: TxTag[] = [TxTags.statistics.SetAssetTransferCompliance];
+  const transactions: TxTag[] = [
+    TxTags.statistics.SetAssetTransferCompliance,
+    TxTags.statistics.SetEntitiesExempt,
+  ];
 
   if (needStat) {
     transactions.push(TxTags.statistics.SetActiveAssetStats);
