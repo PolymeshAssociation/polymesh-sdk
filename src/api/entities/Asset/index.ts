@@ -393,12 +393,12 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Freeze transfers and minting of the Asset
+   * Freeze transfers of the Asset
    */
   public freeze: NoArgsProcedureMethod<Asset>;
 
   /**
-   * Unfreeze transfers and minting of the Asset
+   * Unfreeze transfers of the Asset
    */
   public unfreeze: NoArgsProcedureMethod<Asset>;
 
