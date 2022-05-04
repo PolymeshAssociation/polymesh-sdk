@@ -46,6 +46,15 @@ export async function prepareControllerTransfer(
 
   const originPortfolioId = portfolioLikeToPortfolioId(originPortfolio);
 
+  const { did } = await context.getSigningIdentity();
+
+  if (did === originPortfolioId.did) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Transfers to self are not allowed',
+    });
+  }
+
   const fromPortfolio = portfolioIdToPortfolio(originPortfolioId, context);
 
   const [{ free }] = await fromPortfolio.getAssetBalances({

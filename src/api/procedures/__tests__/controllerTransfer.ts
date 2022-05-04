@@ -59,7 +59,7 @@ describe('controllerTransfer procedure', () => {
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    did = 'someDid';
+    did = 'fakeDid';
     rawPortfolioId = dsMockUtils.createMockPortfolioId({
       did: dsMockUtils.createMockIdentityId(did),
       kind: dsMockUtils.createMockPortfolioKind('Default'),
@@ -92,6 +92,22 @@ describe('controllerTransfer procedure', () => {
   afterAll(() => {
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
+  });
+
+  it('should throw an error in case of self Transfer', () => {
+    const selfPortfolio = entityMockUtils.getDefaultPortfolioInstance({
+      did: 'someDid',
+      getAssetBalances: [{ free: new BigNumber(90) }] as PortfolioBalance[],
+    });
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+
+    return expect(
+      prepareControllerTransfer.call(proc, {
+        ticker,
+        originPortfolio: selfPortfolio,
+        amount: new BigNumber(1000),
+      })
+    ).rejects.toThrow('Transfers to self are not allowed');
   });
 
   it('should throw an error if the Portfolio does not have enough balance to transfer', () => {
