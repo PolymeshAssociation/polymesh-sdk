@@ -7,6 +7,8 @@ import {
   getAuthorization,
   Params,
   prepareControllerTransfer,
+  prepareStorage,
+  Storage,
 } from '~/api/procedures/controllerTransfer';
 import { Context, DefaultPortfolio, NumberedPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -99,7 +101,9 @@ describe('controllerTransfer procedure', () => {
       did: 'someDid',
       getAssetBalances: [{ free: new BigNumber(90) }] as PortfolioBalance[],
     });
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      did: 'someDid',
+    });
 
     return expect(
       prepareControllerTransfer.call(proc, {
@@ -107,11 +111,13 @@ describe('controllerTransfer procedure', () => {
         originPortfolio: selfPortfolio,
         amount: new BigNumber(1000),
       })
-    ).rejects.toThrow('Transfers to self are not allowed');
+    ).rejects.toThrow('Controller transfers to self are not allowed');
   });
 
   it('should throw an error if the Portfolio does not have enough balance to transfer', () => {
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      did: 'someDid',
+    });
 
     return expect(
       prepareControllerTransfer.call(proc, {
@@ -123,7 +129,9 @@ describe('controllerTransfer procedure', () => {
   });
 
   it('should add a controller transfer transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+      did: 'someDid',
+    });
 
     const transaction = dsMockUtils.createTxStub('asset', 'controllerTransfer');
 
@@ -141,13 +149,11 @@ describe('controllerTransfer procedure', () => {
 
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', async () => {
-      const portfolioId = {
+      const portfolioId = { did: 'oneDid' };
+
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
         did: 'oneDid',
-      };
-
-      dsMockUtils.getContextInstance({ did: portfolioId.did });
-
-      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+      });
       const boundFunc = getAuthorization.bind(proc);
 
       const roles = [
@@ -166,6 +172,18 @@ describe('controllerTransfer procedure', () => {
             expect.objectContaining({ owner: expect.objectContaining({ did: portfolioId.did }) }),
           ],
         },
+      });
+    });
+  });
+
+  describe('prepareStorage', () => {
+    it('should return the DID of signing Identity', async () => {
+      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
+      const boundFunc = prepareStorage.bind(proc);
+      const result = await boundFunc();
+
+      expect(result).toEqual({
+        did: 'someDid',
       });
     });
   });
