@@ -22,6 +22,10 @@ export interface ControllerTransferParams {
   amount: BigNumber;
 }
 
+export interface Storage {
+  did: string;
+}
+
 /**
  * @hidden
  */
@@ -31,13 +35,14 @@ export type Params = { ticker: string } & ControllerTransferParams;
  * @hidden
  */
 export async function prepareControllerTransfer(
-  this: Procedure<Params, void>,
+  this: Procedure<Params, void, Storage>,
   args: Params
 ): Promise<void> {
   const {
     context: {
       polymeshApi: { tx },
     },
+    storage: { did },
     context,
   } = this;
   const { ticker, originPortfolio, amount } = args;
@@ -45,6 +50,13 @@ export async function prepareControllerTransfer(
   const asset = new Asset({ ticker }, context);
 
   const originPortfolioId = portfolioLikeToPortfolioId(originPortfolio);
+
+  if (did === originPortfolioId.did) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Controller transfers to self are not allowed',
+    });
+  }
 
   const fromPortfolio = portfolioIdToPortfolio(originPortfolioId, context);
 
@@ -74,14 +86,16 @@ export async function prepareControllerTransfer(
  * @hidden
  */
 export async function getAuthorization(
-  this: Procedure<Params, void>,
+  this: Procedure<Params, void, Storage>,
   { ticker }: Params
 ): Promise<ProcedureAuthorization> {
-  const { context } = this;
+  const {
+    context,
+    storage: { did },
+  } = this;
 
   const asset = new Asset({ ticker }, context);
 
-  const { did } = await context.getSigningIdentity();
   const portfolioId = { did };
 
   return {
@@ -97,5 +111,18 @@ export async function getAuthorization(
 /**
  * @hidden
  */
-export const controllerTransfer = (): Procedure<Params, void> =>
-  new Procedure(prepareControllerTransfer, getAuthorization);
+export async function prepareStorage(this: Procedure<Params, void, Storage>): Promise<Storage> {
+  const { context } = this;
+
+  const { did } = await context.getSigningIdentity();
+
+  return {
+    did,
+  };
+}
+
+/**
+ * @hidden
+ */
+export const controllerTransfer = (): Procedure<Params, void, Storage> =>
+  new Procedure(prepareControllerTransfer, getAuthorization, prepareStorage);
