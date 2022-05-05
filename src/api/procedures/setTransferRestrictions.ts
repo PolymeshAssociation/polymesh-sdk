@@ -274,7 +274,6 @@ export async function prepareStorage(
   ] = await Promise.all([count.get(), percentage.get()]);
 
   const currentRestrictions: TransferRestriction[] = [];
-  const currentExemptions: [TransferRestriction, string[]][] = [];
 
   // take the count of the type of restrictions not being changed
   const occupiedSlots =
@@ -285,16 +284,14 @@ export async function prepareStorage(
    * awaited later and errors WILL be caught
    */
   if (type === TransferRestrictionType.Count) {
-    currentCountRestrictions.forEach(({ exemptedIds = [], count: value }) => {
+    currentCountRestrictions.forEach(({ count: value }) => {
       const restriction = { type: TransferRestrictionType.Count, value };
       currentRestrictions.push(restriction);
-      currentExemptions.push(tuple(restriction, exemptedIds));
     });
   } else {
-    currentPercentageRestrictions.forEach(({ exemptedIds = [], percentage: value }) => {
+    currentPercentageRestrictions.forEach(({ percentage: value }) => {
       const restriction = { type: TransferRestrictionType.Percentage, value };
       currentRestrictions.push(restriction);
-      currentExemptions.push(tuple(restriction, exemptedIds));
     });
   }
 

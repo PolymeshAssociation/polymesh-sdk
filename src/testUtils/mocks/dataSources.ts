@@ -1498,14 +1498,16 @@ const createMockU8aCodec = (value?: string, hex?: boolean): Codec =>
   createMockCodec(hex ? hexToU8a(value) : stringToU8a(value), value === undefined);
 
 // TODO this is to give bytes eq method when mocked. Codec should have it
-// const createMockU8aCodec = (value?: string, hex?: boolean): Codec =>
-//   createMockCodec(
+// const createMockU8aCodec = (value?: string, hex?: boolean): Codec => {
+//   const v = hex ? hexToU8a(value) : stringToU8a(value);
+//   return createMockCodec(
 //     {
 //       toString: () => value,
 //       eq: (compareValue: Codec) => value === compareValue.toString(),
 //     },
 //     value === undefined
 //   );
+// };
 
 /**
  * @hidden
@@ -2174,7 +2176,7 @@ export const createMockDispatchableName = (name?: string | DispatchableName): Di
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockFundraiserName = (name?: string): Bytes => createMockBytes(name) as Bytes;
+export const createMockFundraiserName = (name?: string): Bytes => createMockBytes(name);
 
 /**
  * @hidden

@@ -39,8 +39,8 @@ describe('setTransferRestrictions procedure', () => {
   let ticker: string;
   let count: BigNumber;
   let percentage: BigNumber;
-  let countTm: TransferRestriction;
-  let percentageTm: TransferRestriction;
+  let maxInvestorRestriction: TransferRestriction;
+  let maxOwnershipRestriction: TransferRestriction;
   let exemptedDid: string;
   let rawTicker: Ticker;
   let rawCount: u64;
@@ -63,8 +63,8 @@ describe('setTransferRestrictions procedure', () => {
     ticker = 'someTicker';
     count = new BigNumber(10);
     percentage = new BigNumber(49);
-    countTm = { type: TransferRestrictionType.Count, value: count };
-    percentageTm = { type: TransferRestrictionType.Percentage, value: percentage };
+    maxInvestorRestriction = { type: TransferRestrictionType.Count, value: count };
+    maxOwnershipRestriction = { type: TransferRestrictionType.Percentage, value: percentage };
     exemptedDid = 'exemptedDid';
     args = {
       ticker,
@@ -102,10 +102,10 @@ describe('setTransferRestrictions procedure', () => {
     rawScopeId = dsMockUtils.createMockScopeId(exemptedDid);
 
     transferRestrictionToTransferManagerStub
-      .withArgs(countTm, mockContext)
+      .withArgs(maxInvestorRestriction, mockContext)
       .returns(rawCountRestriction);
     transferRestrictionToTransferManagerStub
-      .withArgs(percentageTm, mockContext)
+      .withArgs(maxOwnershipRestriction, mockContext)
       .returns(rawPercentageRestriction);
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
     stringToScopeIdStub.withArgs(exemptedDid, mockContext).returns(rawScopeId);
@@ -394,6 +394,13 @@ describe('setTransferRestrictions procedure', () => {
       getCountStub.resolves({
         restrictions: [{ count, exemptedIds: [exemptedDid] }],
         availableSlots: 1,
+      });
+
+      expect(result).toEqual({
+        currentRestrictions: [rawCountRestriction],
+        occupiedSlots: new BigNumber(1),
+        needStat: true,
+        currentStats: [],
       });
     });
   });

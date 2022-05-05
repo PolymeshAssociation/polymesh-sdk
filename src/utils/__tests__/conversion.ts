@@ -2682,11 +2682,10 @@ describe('stringToDocumentUri and documentUriToString', () => {
   describe('documentUriToString', () => {
     it('documentUriToString should convert a polkadot DocumentUri object to a string', () => {
       const fakeResult = 'someDocumentUri';
-      // const docUri = dsMockUtils.createMockDocumentUri(fakeResult);
-      const textDocUri = dsMockUtils.createMockBytes(fakeResult);
-      textDocUri.toString = () => fakeResult;
+      const docUri = dsMockUtils.createMockBytes(fakeResult);
+      docUri.toString = () => fakeResult;
 
-      const result = documentUriToString(textDocUri);
+      const result = documentUriToString(docUri);
       expect(result).toEqual(fakeResult);
     });
   });
@@ -5926,7 +5925,7 @@ describe('fundraiserToOfferingDetails', () => {
 
     let result = fundraiserToOfferingDetails(fundraiser, rawName, context);
 
-    // expect(result).toEqual(fakeResult);
+    // expect(result).toEqual(fakeResult); // TODO flaky when
 
     const futureStart = new Date(startDate.getTime() + 50000);
 

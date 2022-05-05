@@ -344,7 +344,7 @@ export function stringToInvestorZKProofData(proof: string, context: Context): In
  * @hidden
  */
 export function dateToMoment(date: Date, context: Context): Moment {
-  return context.createType('Moment', date.getTime()) as Moment; // TODO type assertion is weird
+  return context.createType('Moment', date.getTime());
 }
 
 /**
@@ -1924,7 +1924,6 @@ export function stringToDocumentName(docName: string, context: Context): Documen
  */
 export function documentNameToString(docName: Bytes): string {
   return docName.toString();
-  // return bytesToString(docName);
 }
 
 /**
@@ -1939,7 +1938,6 @@ export function stringToDocumentType(docType: string, context: Context): Documen
  */
 export function documentTypeToString(docType: Bytes): string {
   return docType.toString();
-  // return bytesToString(docType);
 }
 
 /**
@@ -3096,7 +3094,8 @@ export function scopeIdsToBtreeSetIdentityId(
   context: Context
 ): BTreeSetIdentityId {
   // BTreeSet need to be sorted
-  return context.createType('BTreeSetIdentityId', scopeIds.sort());
+  const sortedScopes = [...scopeIds].sort();
+  return context.createType('BTreeSetIdentityId', sortedScopes);
 }
 
 /**
