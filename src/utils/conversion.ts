@@ -2387,7 +2387,7 @@ export function stringToTargetIdentity(did: string | null, context: Context): Ta
 /**
  * @hidden
  */
-export function meshClaimTypeToClaimType(claimType: MeshClaimType): ClaimType {
+export function basicMeshClaimTypeToClaimType(claimType: MeshClaimType): ClaimType {
   if (claimType.isJurisdiction) {
     return ClaimType.Jurisdiction;
   }
@@ -2509,7 +2509,7 @@ export function trustedIssuerToTrustedClaimIssuer(
   let trustedFor: ClaimType[] | null = null;
 
   if (claimTypes.isSpecific) {
-    trustedFor = claimTypes.asSpecific.map(meshClaimTypeToClaimType);
+    trustedFor = claimTypes.asSpecific.map(basicMeshClaimTypeToClaimType);
   }
 
   return {
@@ -3607,36 +3607,6 @@ export function checkpointToRecordDateSpec(
 /**
  * @hidden
  */
-export function scopeClaimProofToMeshScopeClaimProof(
-  proof: ScopeClaimProof,
-  scopeId: string,
-  context: Context
-): MeshScopeClaimProof {
-  const {
-    proofScopeIdWellFormed,
-    proofScopeIdCddIdMatch: { challengeResponses, subtractExpressionsRes, blindedScopeDidHash },
-  } = proof;
-
-  const zkProofData = context.createType('ZkProofData', {
-    /* eslint-disable @typescript-eslint/naming-convention */
-    challenge_responses: challengeResponses.map(cr => stringToScalar(cr, context)),
-    subtract_expressions_res: stringToRistrettoPoint(subtractExpressionsRes, context),
-    blinded_scope_did_hash: stringToRistrettoPoint(blindedScopeDidHash, context),
-    /* eslint-enable @typescript-eslint/naming-convention */
-  });
-
-  return context.createType('ScopeClaimProof', {
-    /* eslint-disable @typescript-eslint/naming-convention */
-    proof_scope_id_wellformed: stringToSignature(proofScopeIdWellFormed, context),
-    proof_scope_id_cdd_id_match: zkProofData,
-    scope_id: stringToRistrettoPoint(scopeId, context),
-    /* eslint-enable @typescript-eslint/naming-convention */
-  });
-}
-
-/**
- * @hidden
- */
 export function scopeClaimProofToConfidentialIdentityClaimProof(
   proof: ScopeClaimProof,
   scopeId: string,
@@ -3660,16 +3630,6 @@ export function scopeClaimProofToConfidentialIdentityClaimProof(
     proofScopeIdCddIdMatch: zkProofData,
     scopeId: stringToRistrettoPoint(scopeId, context),
   });
-}
-
-/**
- * @hidden
- */
-export function transferComplianceInputToMeshTransferCondition(
-  params: unknown[],
-  context: Context
-): PolymeshPrimitivesTransferComplianceTransferCondition {
-  return context.createType('PolymeshPrimitivesTransferComplianceTransferCondition', params);
 }
 
 /**
@@ -3769,15 +3729,14 @@ export function statUpdate(
 
 type Stat = {
   type: 'Count' | 'Balance';
-  value: '';
 };
 /**
+ * This should be extended to support Claim scope when we support them
  * @hidden
  */
 export function meshStatToStat(rawStat: PolymeshPrimitivesStatisticsStatType): Stat {
   return {
     type: rawStat.op.type,
-    value: '',
   };
 }
 
@@ -3792,7 +3751,7 @@ export function primitiveOpType(
 }
 
 /**
- * For now this is hard coded to return a NoClaimStat type. Once Claim support is added this should be extended
+ * For now this is hard coded to return a NoClaimStat type. Once Claim scopes are added this should be extended
  * @hidden
  */
 export function primitive2ndKey(context: Context): PolymeshPrimitivesStatisticsStat2ndKey {

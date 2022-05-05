@@ -1,5 +1,11 @@
 import { bool, Bytes, u32, u64 } from '@polkadot/types';
 import { AccountId, Balance, Hash, Moment, Permill, Signature } from '@polkadot/types/interfaces';
+import {
+  PolymeshPrimitivesIdentityId,
+  PolymeshPrimitivesStatisticsStat2ndKey,
+  PolymeshPrimitivesStatisticsStatOpType,
+  PolymeshPrimitivesStatisticsStatType,
+} from '@polkadot/types/lookup';
 import { hexToU8a } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 import {
@@ -61,7 +67,7 @@ import {
   ModuleIdEnum,
 } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { createMockU64 } from '~/testUtils/mocks/dataSources';
+import { createMockU64,createMockU128 } from '~/testUtils/mocks/dataSources';
 import {
   AffirmationStatus,
   AssetDocument,
@@ -123,6 +129,7 @@ import {
   authorizationToAuthorizationData,
   authorizationTypeToMeshAuthorizationType,
   balanceToBigNumber,
+  basicMeshClaimTypeToClaimType,
   bigNumberToBalance,
   bigNumberToU32,
   bigNumberToU64,
@@ -163,11 +170,11 @@ import {
   meshAffirmationStatusToAffirmationStatus,
   meshCalendarPeriodToCalendarPeriod,
   meshClaimToClaim,
-  meshClaimTypeToClaimType,
   meshCorporateActionToCorporateActionParams,
   meshInstructionStatusToInstructionStatus,
   meshPermissionsToPermissions,
   meshScopeToScope,
+  meshStatToStat,
   meshVenueTypeToVenueType,
   middlewareEventToEventIdentifier,
   middlewarePortfolioToPortfolio,
@@ -185,10 +192,13 @@ import {
   portfolioLikeToPortfolioId,
   portfolioMovementToMovePortfolioItem,
   posRatioToBigNumber,
+  primitive2ndKey,
+  primitiveStatisticsStatType,
   primitiveTrustedIssuerToTrustedClaimIssuer,
   requirementToComplianceRequirement,
   scheduleSpecToMeshScheduleSpec,
-  scopeClaimProofToMeshScopeClaimProof,
+  scopeClaimProofToConfidentialIdentityClaimProof,
+  scopeIdsToBtreeSetIdentityId,
   scopeIdToString,
   scopeToMeshScope,
   scopeToMiddlewareScope,
@@ -200,6 +210,7 @@ import {
   signerToString,
   signerValueToSignatory,
   signerValueToSigner,
+  statUpdate,
   storedScheduleToCheckpointScheduleParams,
   stringToAccountId,
   stringToAssetName,
@@ -3577,70 +3588,70 @@ describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
 
       let claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      let result = meshClaimTypeToClaimType(claimType);
+      let result = basicMeshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.Affiliate;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = meshClaimTypeToClaimType(claimType);
+      result = basicMeshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.Blocked;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = meshClaimTypeToClaimType(claimType);
+      result = basicMeshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.BuyLockup;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = meshClaimTypeToClaimType(claimType);
+      result = basicMeshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.CustomerDueDiligence;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = meshClaimTypeToClaimType(claimType);
+      result = basicMeshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.Exempted;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = meshClaimTypeToClaimType(claimType);
+      result = basicMeshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.Jurisdiction;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = meshClaimTypeToClaimType(claimType);
+      result = basicMeshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.KnowYourCustomer;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = meshClaimTypeToClaimType(claimType);
+      result = basicMeshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.NoData;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = meshClaimTypeToClaimType(claimType);
+      result = basicMeshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.SellLockup;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = meshClaimTypeToClaimType(claimType);
+      result = basicMeshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
     });
   });
@@ -6759,7 +6770,7 @@ describe('stringToScalar', () => {
   });
 });
 
-describe('scopeClaimProofToMeshScopeClaimProof', () => {
+describe('scopeClaimProofToConfidentialIdentityClaimProof', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -6824,9 +6835,9 @@ describe('scopeClaimProofToMeshScopeClaimProof', () => {
       blinded_scope_did_hash: rawBlindedScopeDidHash,
     };
     const scopeClaimProof = {
-      proof_scope_id_wellformed: rawProofScopeIdWellFormed,
-      proof_scope_id_cdd_id_match: rawZkProofData,
-      scope_id: rawScopeId,
+      proofScopeIdWellformed: rawProofScopeIdWellFormed,
+      proofScopeIdCddIdMatch: rawZkProofData,
+      scopeId: rawScopeId,
     };
     /* eslint-enable @typescript-eslint/naming-convention */
     const context = dsMockUtils.getContextInstance();
@@ -6850,9 +6861,11 @@ describe('scopeClaimProofToMeshScopeClaimProof', () => {
       .returns(rawProofScopeIdWellFormed);
     context.createType.withArgs('RistrettoPoint', scopeId).returns(rawScopeId);
 
-    context.createType.withArgs('ScopeClaimProof', scopeClaimProof).returns(fakeResult);
+    context.createType
+      .withArgs('ConfidentialIdentityClaimProofsScopeClaimProof', scopeClaimProof)
+      .returns(fakeResult);
 
-    const result = scopeClaimProofToMeshScopeClaimProof(proof, scopeId, context);
+    const result = scopeClaimProofToConfidentialIdentityClaimProof(proof, scopeId, context);
 
     expect(result).toEqual(fakeResult);
   });
@@ -6966,5 +6979,70 @@ describe('agentGroupToPermissionGroup', () => {
     expect(result).toEqual(
       expect.objectContaining({ asset: expect.objectContaining({ ticker }), id })
     );
+  });
+
+  describe('scopeIdsToBtreeSetIdentityId', () => {
+    it('should convert scopeIds to a BTreeSetIdentityID', () => {
+      const context = dsMockUtils.getContextInstance();
+      const ids = ['b', 'a', 'c'] as unknown as PolymeshPrimitivesIdentityId[];
+      context.createType.withArgs('BTreeSetIdentityId', ['a', 'b', 'c']).returns(['a', 'b', 'c']);
+
+      const result = scopeIdsToBtreeSetIdentityId(ids, context);
+      expect(result).toEqual(['a', 'b', 'c']);
+    });
+  });
+
+  describe('primitiveStatisticsStatType', () => {
+    it('should return a statType', () => {
+      const op = 'MaxInvestorCount' as unknown as PolymeshPrimitivesStatisticsStatOpType;
+      const context = dsMockUtils.getContextInstance();
+      context.createType
+        .withArgs('PolymeshPrimitivesStatisticsStatType', { op })
+        .returns('statType');
+
+      const result = primitiveStatisticsStatType(op, context);
+
+      expect(result).toEqual('statType');
+    });
+  });
+
+  describe('statUpdate', () => {
+    it('should return a statUpdate', () => {
+      const key2 = 'key2' as unknown as PolymeshPrimitivesStatisticsStat2ndKey;
+      const value = createMockU128(new BigNumber(3));
+      const context = dsMockUtils.getContextInstance();
+
+      context.createType
+        .withArgs('PolymeshPrimitivesStatisticsStatUpdate', { key2, value })
+        .returns('statUpdate');
+
+      const result = statUpdate(key2, value, context);
+
+      expect(result).toEqual('statUpdate');
+    });
+  });
+
+  describe('meshStatToStat', () => {
+    it('should return an object with the type', () => {
+      const rawStat = { op: { type: 'Count' } } as unknown as PolymeshPrimitivesStatisticsStatType;
+
+      const result = meshStatToStat(rawStat);
+
+      expect(result).toEqual({ type: 'Count' });
+    });
+  });
+
+  describe('primitive2ndKey', () => {
+    it('should return a NoClaimStat 2ndkey', () => {
+      const context = dsMockUtils.getContextInstance();
+
+      context.createType
+        .withArgs('PolymeshPrimitivesStatisticsStat2ndKey', 'NoClaimStat')
+        .returns('2ndKey');
+
+      const result = primitive2ndKey(context);
+
+      expect(result).toEqual('2ndKey');
+    });
   });
 });
