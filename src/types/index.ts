@@ -1398,11 +1398,6 @@ export type PrivateKey =
       seed: string;
     };
 
-export type QueryInfo = {
-  gasFees: BigNumber;
-  protocolFees: BigNumber;
-};
-
 export { TxTags, TxTag, ModuleName };
 export { EventRecord } from '@polkadot/types/interfaces';
 export * from '~/api/entities/types';
