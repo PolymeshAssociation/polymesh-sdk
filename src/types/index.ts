@@ -330,6 +330,11 @@ export interface ExtrinsicData {
   extrinsicHash: string;
 }
 
+export interface ExtrinsicDataWithFees extends ExtrinsicData {
+  gasFees: BigNumber;
+  protocolFees: BigNumber;
+}
+
 export interface ClaimScope {
   scope: Scope | null;
   ticker?: string;
@@ -1392,6 +1397,11 @@ export type PrivateKey =
   | {
       seed: string;
     };
+
+export type QueryInfo = {
+  gasFees: BigNumber;
+  protocolFees: BigNumber;
+};
 
 export { TxTags, TxTag, ModuleName };
 export { EventRecord } from '@polkadot/types/interfaces';

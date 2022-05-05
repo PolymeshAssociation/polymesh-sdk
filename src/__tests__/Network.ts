@@ -13,6 +13,7 @@ import { Network } from '~/Network';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { AccountBalance, TxTags } from '~/types';
+import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/Account',
@@ -296,13 +297,29 @@ describe('Network Class', () => {
 
   describe('method: getTransactionByHash', () => {
     const variable = { txHash: 'someHash' };
+    let stringToBlockHashStub: sinon.SinonStub;
+    let balanceToBigNumberStub: sinon.SinonStub;
+    let getBlockStub: sinon.SinonStub;
+    let queryInfoStub: sinon.SinonStub;
+
+    beforeAll(() => {
+      stringToBlockHashStub = sinon.stub(utilsConversionModule, 'stringToBlockHash');
+      balanceToBigNumberStub = sinon.stub(utilsConversionModule, 'balanceToBigNumber');
+    });
+
+    beforeEach(() => {
+      getBlockStub = dsMockUtils.createRpcStub('chain', 'getBlock');
+      queryInfoStub = dsMockUtils.createRpcStub('payment', 'queryInfo');
+    });
 
     it('should return a transaction', async () => {
       const blockNumber = new BigNumber(1);
-      const blockHash = 'someHash';
-      const extrinsicIdx = new BigNumber(2);
+      const blockHash = 'blockHash';
+      const extrinsicIdx = new BigNumber(0);
       const address = 'someAddress';
       const specVersionId = new BigNumber(2006);
+      const gasFees = new BigNumber(10);
+      const protocolFees = new BigNumber(1000);
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
@@ -324,6 +341,35 @@ describe('Network Class', () => {
         /* eslint-enable @typescript-eslint/naming-convention */
       });
 
+      const rawBlockHash = dsMockUtils.createMockBlockHash(blockHash);
+
+      stringToBlockHashStub.withArgs(blockHash).returns(rawBlockHash);
+
+      getBlockStub.withArgs(rawBlockHash).resolves(
+        dsMockUtils.createMockSignedBlock({
+          block: {
+            header: undefined,
+            extrinsics: [
+              {
+                toHex: jest.fn().mockImplementation(() => 'hex'),
+              },
+            ],
+          },
+        })
+      );
+
+      const rawGasFees = dsMockUtils.createMockBalance(gasFees);
+
+      balanceToBigNumberStub.withArgs(rawGasFees).returns(gasFees);
+
+      queryInfoStub.withArgs('hex', rawBlockHash).resolves(
+        dsMockUtils.createMockRuntimeDispatchInfo({
+          partialFee: rawGasFees,
+        })
+      );
+
+      jest.spyOn(network, 'getProtocolFees').mockResolvedValue(protocolFees);
+
       let result = await network.getTransactionByHash(variable);
       expect(result).toEqual({
         blockNumber,
@@ -336,6 +382,8 @@ describe('Network Class', () => {
         success: false,
         specVersionId,
         extrinsicHash: undefined,
+        gasFees,
+        protocolFees,
       });
 
       dsMockUtils.createApolloQueryStub(transactionByHash({ transactionHash: variable.txHash }), {
@@ -369,6 +417,8 @@ describe('Network Class', () => {
         success: false,
         specVersionId,
         extrinsicHash: undefined,
+        gasFees,
+        protocolFees,
       });
     });
 

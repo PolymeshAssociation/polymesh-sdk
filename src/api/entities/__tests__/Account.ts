@@ -293,6 +293,7 @@ describe('Account class', () => {
               extrinsicsRoot: 'hash',
               stateRoot: 'hash',
             },
+            extrinsics: undefined,
           },
         }),
       });

@@ -60,6 +60,7 @@ describe('Polymesh Transaction Base class', () => {
               stateRoot: 'hash',
               extrinsicsRoot: 'hash',
             },
+            extrinsics: undefined,
           },
         }),
       });

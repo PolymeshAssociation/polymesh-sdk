@@ -4,14 +4,28 @@
 
 import { ApiPromise } from '@polkadot/api';
 import { DecoratedRpc } from '@polkadot/api/types';
-import { bool, Bytes, Compact, Enum, Option, Text, u8, U8aFixed, u32, u64 } from '@polkadot/types';
+import {
+  bool,
+  Bytes,
+  Compact,
+  Enum,
+  Option,
+  Text,
+  u8,
+  U8aFixed,
+  u32,
+  u64,
+  Vec,
+} from '@polkadot/types';
 import { CompactEncodable } from '@polkadot/types/codec/types';
+import { GenericExtrinsic } from '@polkadot/types/extrinsic';
 import {
   AccountData,
   AccountId,
   AccountInfo,
   Balance,
   Block,
+  BlockHash,
   Call,
   DispatchError,
   DispatchErrorModule,
@@ -23,6 +37,7 @@ import {
   Moment,
   Permill,
   RefCount,
+  RuntimeDispatchInfo,
   RuntimeVersion,
   Signature,
   SignedBlock,
@@ -3513,20 +3528,48 @@ export const createMockHeader = (
 /**
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockExtrinsics = (
+  extrinsics?:
+    | Vec<GenericExtrinsic>
+    | {
+        toHex: () => string;
+      }[]
+): Vec<GenericExtrinsic> => {
+  const [{ toHex }] = extrinsics || [
+    {
+      toHex: () => createMockStringCodec(),
+    },
+  ];
+  return createMockCodec(
+    [
+      {
+        toHex,
+      },
+    ],
+    !extrinsics
+  ) as Vec<GenericExtrinsic>;
+};
+
+/**
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockBlock = (
   block?:
     | Block
     | {
         header: Header | Parameters<typeof createMockHeader>[0];
+        extrinsics: Vec<GenericExtrinsic> | Parameters<typeof createMockExtrinsics>[0];
       }
 ): Block => {
-  const { header } = block || {
+  const { header, extrinsics } = block || {
     header: createMockHeader(),
+    extrinsics: createMockExtrinsics(),
   };
 
   return createMockCodec(
     {
       header: createMockHeader(header),
+      extrinsics: createMockExtrinsics(extrinsics),
     },
     !block
   ) as Block;
@@ -3552,4 +3595,37 @@ export const createMockSignedBlock = (
     },
     !signedBlock
   ) as SignedBlock;
+};
+
+/**
+ * @hidden
+ */
+export const createMockBlockHash = (value?: string | BlockHash): BlockHash => {
+  if (isCodec<BlockHash>(value)) {
+    return value;
+  }
+
+  return createMockStringCodec(value) as BlockHash;
+};
+
+/**
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockRuntimeDispatchInfo = (
+  runtimeDispatchInfo?:
+    | RuntimeDispatchInfo
+    | {
+        partialFee: Balance | Parameters<typeof createMockBalance>[0];
+      }
+): RuntimeDispatchInfo => {
+  const { partialFee } = runtimeDispatchInfo || {
+    partialFee: createMockBalance(),
+  };
+
+  return createMockCodec(
+    {
+      partialFee: createMockBalance(partialFee),
+    },
+    !runtimeDispatchInfo
+  ) as RuntimeDispatchInfo;
 };

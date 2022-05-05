@@ -1,5 +1,13 @@
 import { bool, Bytes, u32, u64 } from '@polkadot/types';
-import { AccountId, Balance, Hash, Moment, Permill, Signature } from '@polkadot/types/interfaces';
+import {
+  AccountId,
+  Balance,
+  BlockHash,
+  Hash,
+  Moment,
+  Permill,
+  Signature,
+} from '@polkadot/types/interfaces';
 import { hexToU8a } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 import {
@@ -201,6 +209,7 @@ import {
   storedScheduleToCheckpointScheduleParams,
   stringToAccountId,
   stringToAssetName,
+  stringToBlockHash,
   stringToBytes,
   stringToCddId,
   stringToDocumentHash,
@@ -683,6 +692,32 @@ describe('stringToHash and hashToString', () => {
       const result = hashToString(accountId);
       expect(result).toEqual(fakeResult);
     });
+  });
+});
+
+describe('stringToBlockHash', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a block hash string into an BlockHash', () => {
+    const blockHash = 'BlockHash';
+    const fakeResult = 'type' as unknown as BlockHash;
+    const context = dsMockUtils.getContextInstance();
+
+    context.createType.withArgs('BlockHash', blockHash).returns(fakeResult);
+
+    const result = stringToBlockHash(blockHash, context);
+
+    expect(result).toBe(fakeResult);
   });
 });
 
