@@ -12,7 +12,6 @@ import {
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { ScopeId, Ticker, TransferCondition, TxTags } from 'polymesh-types/types';
-import { util } from 'prettier';
 import sinon from 'sinon';
 
 import { StatisticsOpType } from '~/api/entities/Asset/TransferRestrictions/types';
@@ -115,7 +114,13 @@ describe('setTransferRestrictions procedure', () => {
   let addBatchTransactionStub: sinon.SinonStub;
 
   let setAssetTransferComplianceTransaction: PolymeshTx<[Ticker, TransferCondition]>;
-  let setEntitiesExemptTransaction: PolymeshTx<[Ticker, TransferCondition]>;
+  let setEntitiesExemptTransaction: PolymeshTx<
+    [
+      boolean,
+      { asset: { Ticker: Ticker }; op: PolymeshPrimitivesStatisticsStatOpType },
+      BTreeSetIdentityId
+    ]
+  >;
   let setActiveAssetStatsTransaction: PolymeshTx<[Ticker, BTreeSetStatType]>;
 
   beforeEach(() => {
@@ -140,8 +145,6 @@ describe('setTransferRestrictions procedure', () => {
       'statistics',
       'batchUpdateAssetStats'
     );
-
-    dsMockUtils.createTxStub('statistics', 'setEntitiesExempt');
 
     mockContext = dsMockUtils.getContextInstance();
 
@@ -213,7 +216,7 @@ describe('setTransferRestrictions procedure', () => {
       }
     );
 
-    const exemptedDids = ['0x1000'];
+    const exemptedDids = ['0x1000', '0x2000', '0x3000'];
     const op = 'Count';
 
     scopeIdsToBtreeSetStub
@@ -240,7 +243,7 @@ describe('setTransferRestrictions procedure', () => {
         },
         {
           transaction: setEntitiesExemptTransaction,
-          feeMultiplier: new BigNumber(1),
+          feeMultiplier: new BigNumber(3),
           args: [true, { asset: { Ticker: rawTicker }, op }, exemptedDids],
         },
       ],
@@ -479,6 +482,9 @@ describe('setTransferRestrictions procedure', () => {
 
     let rawIdentityScopeId: ScopeId;
 
+    const getCountStub = sinon.stub();
+    const getPercentageStub = sinon.stub();
+
     beforeAll(() => {
       identityScopeId = 'someScopeId';
 
@@ -487,24 +493,15 @@ describe('setTransferRestrictions procedure', () => {
 
     beforeEach(() => {
       stringToScopeIdStub.withArgs(identityScopeId, mockContext).returns(rawIdentityScopeId);
-    });
 
-    afterAll(() => {
-      sinon.restore();
-    });
-
-    it('should fetch, process and return shared data', async () => {
-      const getCountStub = sinon.stub();
       getCountStub.resolves({
-        restrictions: [],
+        restrictions: [{ count }],
         availableSlots: new BigNumber(1),
       });
-      const getPercentageStub = sinon.stub();
       getPercentageStub.resolves({
         restrictions: [{ percentage }],
         availableSlots: new BigNumber(1),
       });
-
       entityMockUtils.configureMocks({
         identityOptions: {
           getScopeId: identityScopeId,
@@ -515,6 +512,16 @@ describe('setTransferRestrictions procedure', () => {
         },
       });
 
+      dsMockUtils.createQueryStub('statistics', 'activeAssetStats', {
+        returnValue: [],
+      });
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    it('should fetch, process and return shared data', async () => {
       const proc = procedureMockUtils.getInstance<
         SetTransferRestrictionsParams,
         BigNumber,
@@ -532,14 +539,29 @@ describe('setTransferRestrictions procedure', () => {
         ],
       };
 
-      dsMockUtils.createQueryStub('statistics', 'activeAssetStats', {
-        returnValue: [],
-      });
-
       let result = await boundFunc(args);
 
       expect(result).toEqual({
-        currentRestrictions: [],
+        currentRestrictions: [rawCountRestriction],
+        occupiedSlots: new BigNumber(1),
+        currentStats: [],
+        needStat: true,
+      });
+
+      args = {
+        ticker,
+        type: TransferRestrictionType.Percentage,
+        restrictions: [
+          {
+            percentage,
+          },
+        ],
+      };
+
+      result = await boundFunc(args);
+
+      expect(result).toEqual({
+        currentRestrictions: [rawPercentageRestriction],
         occupiedSlots: new BigNumber(1),
         currentStats: [],
         needStat: true,
@@ -557,10 +579,35 @@ describe('setTransferRestrictions procedure', () => {
       });
 
       expect(result).toEqual({
-        currentRestrictions: [rawCountRestriction],
+        currentRestrictions: [rawPercentageRestriction],
         occupiedSlots: new BigNumber(1),
         needStat: true,
         currentStats: [],
+      });
+    });
+
+    it('should detect when an asset stat does not need to be made', async () => {
+      const mockCountStat = [{ type: 'Count' }];
+      dsMockUtils.createQueryStub('statistics', 'activeAssetStats', {
+        returnValue: [mockCountStat],
+      });
+
+      const proc = procedureMockUtils.getInstance<
+        SetTransferRestrictionsParams,
+        BigNumber,
+        Storage
+      >(mockContext);
+      const boundFunc = prepareStorage.bind(proc);
+
+      sinon.stub(utilsConversionModule, 'meshStatToStat').returns({ type: 'Count' });
+
+      const result = await boundFunc(args);
+
+      expect(result).toEqual({
+        currentRestrictions: [rawCountRestriction],
+        occupiedSlots: new BigNumber(1),
+        needStat: false,
+        currentStats: [mockCountStat],
       });
     });
   });

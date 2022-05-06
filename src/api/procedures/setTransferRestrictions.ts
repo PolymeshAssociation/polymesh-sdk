@@ -106,7 +106,6 @@ export async function prepareSetTransferRestrictions(
             const currentOwnership = permillToBigNumber(transferRestriction.asMaxInvestorOwnership);
             return currentOwnership.eq((r as PercentageTransferRestrictionInput).percentage);
           }
-          return false;
         });
       }
       let condition: TransferRestriction;
