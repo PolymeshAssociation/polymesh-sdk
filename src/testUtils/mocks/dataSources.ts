@@ -2690,7 +2690,7 @@ export const createMockAssetComplianceResult = (assetComplianceResult?: {
   requirements: {
     sender_conditions: ConditionResult[];
     receiver_conditions: ConditionResult[];
-    result: boolean;
+    result: bool;
     id: u32 | Parameters<typeof createMockU32>[0];
   }[];
   result: bool | Parameters<typeof createMockBool>[0];

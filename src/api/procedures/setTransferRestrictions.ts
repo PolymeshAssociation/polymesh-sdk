@@ -16,7 +16,6 @@ import {
   TransferRestrictionType,
 } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { tuple } from '~/types/utils';
 import {
   bigNumberToU128,
   meshStatToStat,
@@ -98,6 +97,7 @@ export async function prepareSetTransferRestrictions(
   const conditions = restrictions
     .map(r => {
       if (!someDifference) {
+        // eslint-disable-next-line array-callback-return
         someDifference = !currentRestrictions.find(transferRestriction => {
           if (transferRestriction.isMaxInvestorCount && type === TransferRestrictionType.Count) {
             const currentCount = u64ToBigNumber(transferRestriction.asMaxInvestorCount);

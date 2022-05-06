@@ -54,12 +54,12 @@ describe('createVenue procedure', () => {
       description,
       type,
     };
-    const rawDetails = dsMockUtils.createMockVenueDetails(description);
+    const rawDetails = dsMockUtils.createMockBytes(description);
     const rawType = dsMockUtils.createMockVenueType(type);
 
     const proc = procedureMockUtils.getInstance<CreateVenueParams, Venue>(mockContext);
 
-    stringToVenueDetailsStub.withArgs(description, mockContext).returns(rawDetails as any);
+    stringToVenueDetailsStub.withArgs(description, mockContext).returns(rawDetails);
     venueTypeToMeshVenueTypeStub.withArgs(type, mockContext).returns(rawType);
 
     const result = await prepareCreateVenue.call(proc, args);

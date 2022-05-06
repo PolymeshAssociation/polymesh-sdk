@@ -94,7 +94,6 @@ import {
   Scalar,
   ScheduleSpec as MeshScheduleSpec,
   Scope as MeshScope,
-  ScopeClaimProof as MeshScopeClaimProof,
   ScopeId,
   SecondaryKey as MeshSecondaryKey,
   SettlementType,

@@ -67,7 +67,7 @@ import {
   ModuleIdEnum,
 } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { createMockU64,createMockU128 } from '~/testUtils/mocks/dataSources';
+import { createMockU64, createMockU128 } from '~/testUtils/mocks/dataSources';
 import {
   AffirmationStatus,
   AssetDocument,
@@ -4653,7 +4653,7 @@ describe('assetComplianceResultToCompliance', () => {
 
     let assetComplianceResult = dsMockUtils.createMockAssetComplianceResult({
       paused: dsMockUtils.createMockBool(true),
-      requirements: [rawRequirements as any],
+      requirements: [rawRequirements],
       result: dsMockUtils.createMockBool(true),
     });
 
@@ -4665,7 +4665,7 @@ describe('assetComplianceResultToCompliance', () => {
 
     assetComplianceResult = dsMockUtils.createMockAssetComplianceResult({
       paused: dsMockUtils.createMockBool(false),
-      requirements: [rawRequirements as any],
+      requirements: [rawRequirements],
       result: dsMockUtils.createMockBool(true),
     });
 
