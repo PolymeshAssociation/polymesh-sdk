@@ -176,10 +176,6 @@ describe('addTransferRestriction procedure', () => {
       emptyStorage
     );
 
-    dsMockUtils.createQueryStub('statistics', 'assetTransferCompliances', {
-      returnValue: { requirements: [] },
-    });
-
     let result = await prepareAddTransferRestriction.call(proc, args);
 
     sinon.assert.calledWith(addBatchTransactionStub.firstCall, {
@@ -234,10 +230,6 @@ describe('addTransferRestriction procedure', () => {
       mockContext,
       emptyStorage
     );
-
-    dsMockUtils.createQueryStub('statistics', 'assetTransferCompliances', {
-      returnValue: { requirements: [] },
-    });
 
     const stringToScopeIdStub = sinon.stub(utilsConversionModule, 'stringToScopeId');
 
@@ -303,10 +295,6 @@ describe('addTransferRestriction procedure', () => {
       }
     );
 
-    dsMockUtils.createQueryStub('statistics', 'assetTransferCompliances', {
-      returnValue: { requirements: [] },
-    });
-
     dsMockUtils.createQueryStub('asset', 'balanceOf', {
       returnValue: ['one', 'two', 'three'],
     });
@@ -342,14 +330,13 @@ describe('addTransferRestriction procedure', () => {
       count,
       ticker,
     };
-    const proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, BigNumber, Storage>(
+    let proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, BigNumber, Storage>(
       mockContext,
-      emptyStorage
+      {
+        ...emptyStorage,
+        currentRestrictions: [rawCountCondition],
+      }
     );
-
-    dsMockUtils.createQueryStub('statistics', 'assetTransferCompliances', {
-      returnValue: { requirements: [rawCountCondition] },
-    });
 
     let err;
 
@@ -368,9 +355,13 @@ describe('addTransferRestriction procedure', () => {
       ticker,
     };
 
-    dsMockUtils.createQueryStub('statistics', 'assetTransferCompliances', {
-      returnValue: { requirements: [rawCountCondition, rawPercentageCondition] },
-    });
+    proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, BigNumber, Storage>(
+      mockContext,
+      {
+        ...emptyStorage,
+        currentRestrictions: [rawCountCondition, rawPercentageCondition],
+      }
+    );
 
     try {
       await prepareAddTransferRestriction.call(proc, args);
@@ -389,14 +380,15 @@ describe('addTransferRestriction procedure', () => {
     };
     const proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, BigNumber, Storage>(
       mockContext,
-      emptyStorage
+      {
+        ...emptyStorage,
+        currentRestrictions: [
+          rawPercentageCondition,
+          rawPercentageCondition,
+          rawPercentageCondition,
+        ],
+      }
     );
-
-    dsMockUtils.createQueryStub('statistics', 'assetTransferCompliances', {
-      returnValue: {
-        requirements: [rawPercentageCondition, rawPercentageCondition, rawPercentageCondition],
-      },
-    });
 
     let err;
 
@@ -421,10 +413,6 @@ describe('addTransferRestriction procedure', () => {
       mockContext,
       emptyStorage
     );
-
-    dsMockUtils.createQueryStub('statistics', 'assetTransferCompliances', {
-      returnValue: { requirements: [] },
-    });
 
     let err;
 
@@ -504,12 +492,17 @@ describe('addTransferRestriction procedure', () => {
       dsMockUtils.createQueryStub('statistics', 'activeAssetStats', {
         returnValue: [],
       });
+
+      dsMockUtils.createQueryStub('statistics', 'assetTransferCompliances', {
+        returnValue: { requirements: [] },
+      });
+
       const proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, BigNumber, Storage>(
         mockContext
       );
       const boundFunc = prepareStorage.bind(proc);
 
-      const result = await boundFunc({
+      let result = await boundFunc({
         ticker: 'TICKER',
         type: 'Count',
         count: new BigNumber(1),
@@ -519,6 +512,26 @@ describe('addTransferRestriction procedure', () => {
         currentRestrictions: [],
         currentStats: [],
         needStat: true,
+      });
+
+      dsMockUtils.createQueryStub('statistics', 'assetTransferCompliances', {
+        returnValue: { requirements: [rawCountCondition] },
+      });
+
+      dsMockUtils.createQueryStub('statistics', 'activeAssetStats', {
+        returnValue: [rawStatType],
+      });
+
+      result = await boundFunc({
+        ticker: 'TICKER',
+        type: 'Count',
+        count: new BigNumber(1),
+      } as AddTransferRestrictionParams);
+
+      expect(result).toEqual({
+        currentRestrictions: [rawCountCondition],
+        currentStats: [rawStatType],
+        needStat: false,
       });
     });
   });

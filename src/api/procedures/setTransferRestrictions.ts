@@ -176,7 +176,6 @@ export async function prepareSetTransferRestrictions(
       const stat = [
         statUpdate(secondKey, bigNumberToU128(holderCount, context), context),
       ] as BTreeSetStatUpdate;
-
       transactions.push(
         checkTxType({
           transaction: statistics.batchUpdateAssetStats,
@@ -197,7 +196,6 @@ export async function prepareSetTransferRestrictions(
     const exemptedIds = await getExemptedIds(exemptions, context, ticker);
     const exemptedScopeIds = exemptedIds.map(entityId => stringToIdentityId(entityId, context));
     const btreeIds = scopeIdsToBtreeSetIdentityId(exemptedScopeIds, context);
-
     transactions.push(
       checkTxType({
         transaction: statistics.setEntitiesExempt,
@@ -206,7 +204,6 @@ export async function prepareSetTransferRestrictions(
       })
     );
   }
-
   this.addBatchTransaction({ transactions });
   return finalCount;
 }

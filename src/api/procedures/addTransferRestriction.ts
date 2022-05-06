@@ -12,7 +12,6 @@ import {
   CountTransferRestrictionInput,
   ErrorCode,
   PercentageTransferRestrictionInput,
-  TransferRestriction,
   TransferRestrictionType,
   TxTags,
 } from '~/types';
@@ -71,7 +70,7 @@ export async function prepareAddTransferRestriction(
         consts,
       },
     },
-    storage: { needStat, currentStats },
+    storage: { needStat, currentStats, currentRestrictions },
     context,
   } = this;
   const { ticker, exemptedIdentities = [], type } = args;
@@ -79,9 +78,7 @@ export async function prepareAddTransferRestriction(
 
   const maxConditions = u32ToBigNumber(consts.statistics.maxTransferConditionsPerAsset);
 
-  const { requirements: currentTransferRestrictions } =
-    await query.statistics.assetTransferCompliances({ Ticker: rawTicker });
-  const restrictionAmount = new BigNumber(currentTransferRestrictions.length);
+  const restrictionAmount = new BigNumber(currentRestrictions.length);
   if (restrictionAmount.gte(maxConditions)) {
     throw new PolymeshError({
       code: ErrorCode.LimitExceeded,
@@ -100,7 +97,7 @@ export async function prepareAddTransferRestriction(
     chainType = TransferRestrictionType.Percentage;
   }
 
-  const exists = !!currentTransferRestrictions.find(transferRestriction => {
+  const exists = !!currentRestrictions.find(transferRestriction => {
     if (transferRestriction.isMaxInvestorCount && type === 'Count') {
       const currentCount = u64ToBigNumber(transferRestriction.asMaxInvestorCount);
       return currentCount.eq(value);
@@ -124,7 +121,7 @@ export async function prepareAddTransferRestriction(
   );
 
   // BTreeSets need to be sorted
-  const conditions = [...currentTransferRestrictions, rawTransferCondition].sort();
+  const conditions = [...currentRestrictions, rawTransferCondition].sort();
 
   const transactions = [];
 
@@ -235,20 +232,20 @@ export async function prepareStorage(
   const { ticker, type } = args;
 
   const rawTicker = stringToTicker(ticker, context);
-  const currentStats = await statistics.activeAssetStats({ Ticker: rawTicker });
+
+  const [{ requirements: currentRestrictions }, currentStats] = await Promise.all([
+    statistics.assetTransferCompliances({ Ticker: rawTicker }),
+    statistics.activeAssetStats({ Ticker: rawTicker }),
+  ]);
+
   const needStat = !currentStats.find(s => {
     const stat = meshStatToStat(s);
     const cmpStat = stat.type === 'Balance' ? 'Percentage' : 'Count';
     return cmpStat === type;
   });
 
-  const currentRestrictions: TransferRestriction[] = [];
-
-  const transformRestriction = (restriction: TransferRestriction): TransferCondition =>
-    transferRestrictionToPolymeshTransferCondition(restriction, context);
-
   return {
-    currentRestrictions: currentRestrictions.map(transformRestriction),
+    currentRestrictions,
     needStat,
     currentStats,
   };
