@@ -202,7 +202,7 @@ describe('setTransferRestrictions procedure', () => {
     expect(result).toEqual(new BigNumber(1));
   });
 
-  it.only('should add exempted identities if they were given', async () => {
+  it('should add exempted identities if they were given', async () => {
     const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
