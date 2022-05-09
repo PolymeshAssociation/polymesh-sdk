@@ -526,8 +526,8 @@ export class DividendDistribution extends CorporateActionBase {
         blockNumber,
         date: new Date(datetime),
         target: new Identity({ did }, context),
-        amount: new BigNumber(balance),
-        withheldTax: new BigNumber(tax),
+        amount: new BigNumber(balance).shiftedBy(-6),
+        withheldTax: new BigNumber(tax).shiftedBy(-4),
       });
     });
     /* eslint-enable @typescript-eslint/no-non-null-assertion */

@@ -362,7 +362,9 @@ describe('DividendDistribution class', () => {
 
       const amount = balances[0].balance.multipliedBy(dividendDistribution.perShare);
       const amountAfterTax = amount
-        .minus(amount.multipliedBy(defaultTaxWithholding).decimalPlaces(MAX_DECIMALS))
+        .minus(
+          amount.multipliedBy(defaultTaxWithholding).dividedBy(100).decimalPlaces(MAX_DECIMALS)
+        )
         .decimalPlaces(MAX_DECIMALS);
 
       expect(result).toEqual([
@@ -580,8 +582,8 @@ describe('DividendDistribution class', () => {
       expect(result.blockHash).toEqual(blockHash);
       expect(result.date).toEqual(new Date(`${datetime}Z`));
       expect(result.target.did).toBe(eventDid);
-      expect(result.amount).toEqual(balance);
-      expect(result.withheldTax).toEqual(tax);
+      expect(result.amount).toEqual(balance.shiftedBy(-6));
+      expect(result.withheldTax).toEqual(tax.shiftedBy(-4));
     });
 
     it('should return null if the query result is empty', async () => {
