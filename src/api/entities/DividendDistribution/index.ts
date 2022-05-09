@@ -41,7 +41,7 @@ import {
   TargetTreatment,
 } from '~/types';
 import { Ensured, HumanReadableType, Modify, QueryReturnType, tuple } from '~/types/utils';
-import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
+import { MAX_CONCURRENT_REQUESTS, MAX_DECIMALS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   balanceToBigNumber,
   bigNumberToU32,
@@ -282,7 +282,6 @@ export class DividendDistribution extends CorporateActionBase {
     const {
       targets: { identities: targetIdentities, treatment },
       paymentDate,
-      perShare,
     } = this;
 
     let balances: IdentityBalance[] = [];
@@ -311,11 +310,7 @@ export class DividendDistribution extends CorporateActionBase {
     balances.forEach(({ identity, balance }) => {
       const isTarget = !!remove(clonedTargets, target => identity.isEqual(target)).length;
       if (balance.gt(0) && xor(isTarget, isExclusion)) {
-        participants.push({
-          identity,
-          amount: balance.multipliedBy(perShare),
-          paid: false,
-        });
+        participants.push(this.assembleParticipant(identity, balance));
       }
     });
 
@@ -346,7 +341,6 @@ export class DividendDistribution extends CorporateActionBase {
       asset: { ticker },
       targets: { identities: targetIdentities, treatment },
       paymentDate,
-      perShare,
       context,
       context: {
         polymeshApi: { query },
@@ -371,11 +365,7 @@ export class DividendDistribution extends CorporateActionBase {
     const isExclusion = treatment === TargetTreatment.Exclude;
 
     if (balance.gt(0) && xor(isTarget, isExclusion)) {
-      participant = {
-        identity,
-        amount: balance.multipliedBy(perShare),
-        paid: false,
-      };
+      participant = this.assembleParticipant(identity, balance);
     } else {
       return null;
     }
@@ -391,6 +381,38 @@ export class DividendDistribution extends CorporateActionBase {
     const paid = boolToBoolean(holderPaid);
 
     return { ...participant, paid };
+  }
+
+  /**
+   * @hidden
+   */
+  private assembleParticipant(identity: Identity, balance: BigNumber): DistributionParticipant {
+    const { defaultTaxWithholding, taxWithholdings, perShare } = this;
+
+    let taxWithholdingPercentage = defaultTaxWithholding;
+
+    const taxWithholding = taxWithholdings.find(({ identity: taxIdentity }) =>
+      identity.isEqual(taxIdentity)
+    );
+    if (taxWithholding) {
+      taxWithholdingPercentage = taxWithholding.percentage;
+    }
+
+    const amount = balance.multipliedBy(perShare);
+
+    const amountAfterTax = amount
+      .minus(
+        amount.multipliedBy(taxWithholdingPercentage).dividedBy(100).decimalPlaces(MAX_DECIMALS)
+      )
+      .decimalPlaces(MAX_DECIMALS);
+
+    return {
+      identity,
+      amount,
+      taxWithholdingPercentage,
+      amountAfterTax,
+      paid: false,
+    };
   }
 
   /**
