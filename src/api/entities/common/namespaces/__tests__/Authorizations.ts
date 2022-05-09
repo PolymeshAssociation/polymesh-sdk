@@ -88,7 +88,7 @@ describe('Authorizations class', () => {
       ];
 
       const fakeAuthorizations = authParams.map(({ authId, expiry, issuer, data }) =>
-        dsMockUtils.createBasicMockAuthorization({
+        dsMockUtils.createRpcMockAuthorization({
           authId: dsMockUtils.createMockU64(authId),
           expiry: dsMockUtils.createMockOption(
             expiry ? dsMockUtils.createMockMoment(new BigNumber(expiry.getTime())) : expiry

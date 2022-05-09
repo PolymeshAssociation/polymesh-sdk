@@ -14,7 +14,6 @@ import BigNumber from 'bignumber.js';
 import { ScopeId, Ticker, TransferCondition, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { StatisticsOpType } from '~/api/entities/Asset/TransferRestrictions/types';
 import {
   getAuthorization,
   prepareSetTransferRestrictions,
@@ -26,7 +25,7 @@ import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { TransferRestriction, TransferRestrictionType } from '~/types';
-import { PolymeshTx } from '~/types/internal';
+import { PolymeshTx, StatisticsOpType, TickerKey } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -44,7 +43,7 @@ describe('setTransferRestrictions procedure', () => {
     [TransferRestriction, Context],
     TransferCondition
   >;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
+  let stringToTickerKeyStub: sinon.SinonStub<[string, Context], TickerKey>;
   let stringToScopeIdStub: sinon.SinonStub<[string, Context], ScopeId>;
   let scopeIdsToBtreeSetStub: sinon.SinonStub<
     [PolymeshPrimitivesIdentityId[], Context],
@@ -93,7 +92,7 @@ describe('setTransferRestrictions procedure', () => {
       utilsConversionModule,
       'transferRestrictionToPolymeshTransferCondition'
     );
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
+    stringToTickerKeyStub = sinon.stub(utilsConversionModule, 'stringToTickerKey');
     stringToScopeIdStub = sinon.stub(utilsConversionModule, 'stringToScopeId');
     scopeIdsToBtreeSetStub = sinon.stub(utilsConversionModule, 'scopeIdsToBtreeSetIdentityId');
     primitiveOpTypeStub = sinon.stub(utilsConversionModule, 'primitiveOpType');
@@ -103,7 +102,7 @@ describe('setTransferRestrictions procedure', () => {
     );
     statUpdateStub = sinon.stub(utilsConversionModule, 'statUpdate');
     primitive2ndKeyStub = sinon.stub(utilsConversionModule, 'primitive2ndKey');
-    ticker = 'someTicker';
+    ticker = 'TICKER';
     count = new BigNumber(10);
     percentage = new BigNumber(49);
     maxInvestorRestriction = { type: TransferRestrictionType.Count, value: count };
@@ -165,7 +164,7 @@ describe('setTransferRestrictions procedure', () => {
     transferRestrictionToTransferManagerStub
       .withArgs(maxOwnershipRestriction, mockContext)
       .returns(rawPercentageRestriction);
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
+    stringToTickerKeyStub.withArgs(ticker, mockContext).returns({ Ticker: rawTicker });
     stringToScopeIdStub.withArgs(exemptedDid, mockContext).returns(rawScopeId);
   });
 
@@ -587,7 +586,7 @@ describe('setTransferRestrictions procedure', () => {
     });
 
     it('should detect when an asset stat does not need to be made', async () => {
-      const mockCountStat = [{ type: 'Count' }];
+      const mockCountStat = [{ type: StatisticsOpType.Count }];
       dsMockUtils.createQueryStub('statistics', 'activeAssetStats', {
         returnValue: [mockCountStat],
       });
@@ -599,7 +598,9 @@ describe('setTransferRestrictions procedure', () => {
       >(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
-      sinon.stub(utilsConversionModule, 'meshStatToStat').returns({ type: 'Count' });
+      sinon
+        .stub(utilsConversionModule, 'meshStatToStatisticsOpType')
+        .returns(StatisticsOpType.Count);
 
       const result = await boundFunc(args);
 

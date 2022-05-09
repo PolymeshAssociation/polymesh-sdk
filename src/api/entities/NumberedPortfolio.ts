@@ -13,6 +13,7 @@ import { ErrorCode, EventIdentifier, ProcedureMethod } from '~/types';
 import { Ensured } from '~/types/utils';
 import {
   bigNumberToU64,
+  bytesToString,
   middlewareEventToEventIdentifier,
   stringToIdentityId,
 } from '~/utils/conversion';
@@ -92,7 +93,7 @@ export class NumberedPortfolio extends Portfolio {
       });
     }
 
-    return rawPortfolioName.toString();
+    return bytesToString(rawPortfolioName);
   }
 
   /**

@@ -1,8 +1,12 @@
 import { bool, Bytes, Option, StorageKey } from '@polkadot/types';
 import { BlockNumber, Hash } from '@polkadot/types/interfaces/runtime';
-import { PalletAssetSecurityToken } from '@polkadot/types/lookup';
+import {
+  PalletAssetSecurityToken,
+  PolymeshPrimitivesAgentAgentGroup,
+  PolymeshPrimitivesIdentityId,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { AgentGroup, AssetName, IdentityId, Ticker } from 'polymesh-types/types';
 
 import {
   AuthorizationRequest,
@@ -33,6 +37,7 @@ import {
   SubCallback,
   UnsubCallback,
 } from '~/types';
+import { StatisticsOpType } from '~/types/internal';
 import { Ensured, Modify, QueryReturnType } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
@@ -42,13 +47,11 @@ import {
   bigNumberToU32,
   boolToBoolean,
   bytesToString,
-  bytesToText,
   hashToString,
   identityIdToString,
   middlewareEventToEventIdentifier,
-  stringToText,
+  primitive2ndKey,
   stringToTicker,
-  textToString,
   tickerToDid,
   u128ToBigNumber,
 } from '~/utils/conversion';
@@ -212,11 +215,13 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    /* eslint-disable @typescript-eslint/naming-convention */
     const assembleResult = async (
-      { totalSupply, divisible, ownerDid, assetType: asset_type }: PalletAssetSecurityToken,
-      agentGroups: [StorageKey<[Ticker, IdentityId]>, Option<AgentGroup>][],
-      assetName: AssetName,
+      { totalSupply, divisible, ownerDid, assetType: rawAssetType }: PalletAssetSecurityToken,
+      agentGroups: [
+        StorageKey<[PolymeshPrimitivesTicker, PolymeshPrimitivesIdentityId]>,
+        Option<PolymeshPrimitivesAgentAgentGroup>
+      ][],
+      assetName: Bytes,
       iuDisabled: bool
     ): Promise<AssetDetails> => {
       const primaryIssuanceAgents: Identity[] = [];
@@ -234,7 +239,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       });
 
       const owner = new Identity({ did: identityIdToString(ownerDid) }, context);
-      const type = assetTypeToKnownOrId(asset_type);
+      const type = assetTypeToKnownOrId(rawAssetType);
 
       let assetType: string;
       if (typeof type === 'string') {
@@ -247,7 +252,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       return {
         assetType,
         isDivisible: boolToBoolean(divisible),
-        name: textToString(assetName),
+        name: bytesToString(assetName),
         owner,
         totalSupply: balanceToBigNumber(totalSupply),
         primaryIssuanceAgents,
@@ -255,7 +260,6 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
         requiresInvestorUniqueness: !boolToBoolean(iuDisabled),
       };
     };
-    /* eslint-enable @typescript-eslint/naming-convention */
 
     const rawTicker = stringToTicker(ticker, context);
 
@@ -272,7 +276,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
         const result = await assembleResult(
           securityToken,
           groupEntries,
-          bytesToText(assetName, context),
+          assetName,
           disabledInvestorUniqueness
         );
 
@@ -287,8 +291,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       namePromise,
       disabledIuPromise,
     ]);
-    const textName = stringToText(bytesToString(name), context);
-    return assembleResult(token, groups, textName, disabledIu);
+    return assembleResult(token, groups, name, disabledIu);
   }
 
   /**
@@ -486,13 +489,13 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
     const rawTicker = stringToTicker(ticker, context);
 
     if (callback) {
-      return statistics.assetStats(rawTicker, 'Count', count => {
+      return statistics.assetStats(rawTicker, StatisticsOpType.Count, count => {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(u128ToBigNumber(count));
       });
     }
-
-    const result = await statistics.assetStats({ asset: { Ticker: rawTicker } }, 'Count');
+    const key = primitive2ndKey(context);
+    const result = await statistics.assetStats({ asset: { Ticker: rawTicker } }, key);
 
     return u128ToBigNumber(result);
   }

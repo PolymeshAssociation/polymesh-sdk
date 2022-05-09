@@ -5,7 +5,7 @@ import {
   AddPercentageTransferRestrictionParams,
   addTransferRestriction,
   AddTransferRestrictionParams,
-  AddTransferREstrictionStorage,
+  AddTransferRestrictionStorage,
   Asset,
   Context,
   Namespace,
@@ -69,7 +69,7 @@ export abstract class TransferRestrictionBase<
       AddRestrictionParams<T>,
       AddTransferRestrictionParams,
       BigNumber,
-      AddTransferREstrictionStorage
+      AddTransferRestrictionStorage
     >(
       {
         getProcedureAndArgs: args => [
@@ -182,7 +182,7 @@ export abstract class TransferRestrictionBase<
       const { value } = transferConditionToTransferRestriction(filteredRequirements[index]);
       let restriction;
 
-      if (this.type === TransferRestrictionType.Count) {
+      if (type === TransferRestrictionType.Count) {
         restriction = {
           count: value,
         };
@@ -204,8 +204,8 @@ export abstract class TransferRestrictionBase<
     const maxTransferConditions = u32ToBigNumber(consts.statistics.maxTransferConditionsPerAsset);
 
     return {
-      restrictions: Object.values(restrictions),
-      availableSlots: maxTransferConditions.minus(Object.keys(restrictions).length),
+      restrictions: restrictions,
+      availableSlots: maxTransferConditions.minus(restrictions.length),
     } as GetReturnType<T>;
   }
 }

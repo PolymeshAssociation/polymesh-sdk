@@ -94,10 +94,14 @@ describe('NumberedPortfolio class', () => {
     it('should return the name of the Portfolio', async () => {
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
       const spy = jest.spyOn(numberedPortfolio, 'exists').mockResolvedValue(true);
-      const rawPortfolioName = dsMockUtils.createMockText(portfolioName);
+      const rawPortfolioName = dsMockUtils.createMockBytes(portfolioName);
       dsMockUtils.createQueryStub('portfolio', 'portfolios', {
         returnValue: rawPortfolioName,
       });
+      sinon
+        .stub(utilsConversionModule, 'bytesToString')
+        .withArgs(rawPortfolioName)
+        .returns(portfolioName);
 
       const result = await numberedPortfolio.getName();
 

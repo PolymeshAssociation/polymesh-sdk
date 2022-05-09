@@ -110,7 +110,12 @@ import {
   TxGroup,
   VenueType,
 } from '~/types';
-import { InstructionStatus, PermissionGroupIdentifier, ScopeClaimProof } from '~/types/internal';
+import {
+  InstructionStatus,
+  PermissionGroupIdentifier,
+  ScopeClaimProof,
+  StatisticsOpType,
+} from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { DUMMY_ACCOUNT_ID, MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '~/utils/constants';
 import { padString } from '~/utils/internal';
@@ -129,7 +134,6 @@ import {
   authorizationToAuthorizationData,
   authorizationTypeToMeshAuthorizationType,
   balanceToBigNumber,
-  basicMeshClaimTypeToClaimType,
   bigNumberToBalance,
   bigNumberToU32,
   bigNumberToU64,
@@ -174,7 +178,7 @@ import {
   meshInstructionStatusToInstructionStatus,
   meshPermissionsToPermissions,
   meshScopeToScope,
-  meshStatToStat,
+  meshStatToStatisticsOpType,
   meshVenueTypeToVenueType,
   middlewareEventToEventIdentifier,
   middlewarePortfolioToPortfolio,
@@ -196,6 +200,7 @@ import {
   primitiveStatisticsStatType,
   primitiveTrustedIssuerToTrustedClaimIssuer,
   requirementToComplianceRequirement,
+  rpcMeshClaimTypeToClaimType,
   scheduleSpecToMeshScheduleSpec,
   scopeClaimProofToConfidentialIdentityClaimProof,
   scopeIdsToBtreeSetIdentityId,
@@ -488,7 +493,9 @@ describe('portfolioMovementToMovePortfolioItem', () => {
       amount,
     };
 
-    context.createType.withArgs('Ticker', padString(ticker, 12)).returns(rawTicker);
+    context.createType
+      .withArgs('PolymeshPrimitivesTicker', padString(ticker, 12))
+      .returns(rawTicker);
 
     context.createType
       .withArgs('Balance', portfolioMovement.amount.multipliedBy(Math.pow(10, 6)).toString())
@@ -556,7 +563,9 @@ describe('stringToTicker and tickerToString', () => {
       const fakeResult = 'convertedTicker' as unknown as Ticker;
       const context = dsMockUtils.getContextInstance();
 
-      context.createType.withArgs('Ticker', padString(value, 12)).returns(fakeResult);
+      context.createType
+        .withArgs('PolymeshPrimitivesTicker', padString(value, 12))
+        .returns(fakeResult);
 
       const result = stringToTicker(value, context);
 
@@ -1042,7 +1051,9 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
         .returns(fakeResult);
 
       const fakeTicker = 'convertedTicker' as unknown as Ticker;
-      createTypeStub.withArgs('Ticker', padString(ticker, 12)).returns(fakeTicker);
+      createTypeStub
+        .withArgs('PolymeshPrimitivesTicker', padString(ticker, 12))
+        .returns(fakeTicker);
 
       let result = authorizationToAuthorizationData(value, context);
       expect(result).toBe(fakeResult);
@@ -1159,7 +1170,9 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
         value: 'TICKER',
       };
 
-      createTypeStub.withArgs('Ticker', padString('TICKER', MAX_TICKER_LENGTH)).returns(fakeTicker);
+      createTypeStub
+        .withArgs('PolymeshPrimitivesTicker', padString('TICKER', MAX_TICKER_LENGTH))
+        .returns(fakeTicker);
 
       createTypeStub
         .withArgs('PolymeshPrimitivesAuthorizationAuthorizationData', { [value.type]: fakeTicker })
@@ -1173,7 +1186,9 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
         value: 'TICKER',
       };
 
-      createTypeStub.withArgs('Ticker', padString('TICKER', MAX_TICKER_LENGTH)).returns(fakeTicker);
+      createTypeStub
+        .withArgs('PolymeshPrimitivesTicker', padString('TICKER', MAX_TICKER_LENGTH))
+        .returns(fakeTicker);
 
       createTypeStub
         .withArgs('PolymeshPrimitivesAuthorizationAuthorizationData', { [value.type]: fakeTicker })
@@ -1580,7 +1595,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
           },
         })
         .returns(fakeResult);
-      createTypeStub.withArgs('Ticker', padString(ticker, 12)).returns(rawTicker);
+      createTypeStub.withArgs('PolymeshPrimitivesTicker', padString(ticker, 12)).returns(rawTicker);
       createTypeStub
         .withArgs('PortfolioId', sinon.match(sinon.match.object))
         .returns(rawPortfolioId);
@@ -1725,7 +1740,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         .returns(fakeResult);
 
       tickers.forEach((t, i) =>
-        createTypeStub.withArgs('Ticker', padString(t, 12)).returns(rawTickers[i])
+        createTypeStub.withArgs('PolymeshPrimitivesTicker', padString(t, 12)).returns(rawTickers[i])
       );
 
       result = permissionsToMeshPermissions(value, context);
@@ -3247,7 +3262,7 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
       const fakeTicker = 'SOME_TICKER' as unknown as Ticker;
 
       context.createType
-        .withArgs('Ticker', padString(value.value, MAX_TICKER_LENGTH))
+        .withArgs('PolymeshPrimitivesTicker', padString(value.value, MAX_TICKER_LENGTH))
         .returns(fakeTicker);
 
       context.createType.withArgs('Scope', { [value.type]: fakeTicker }).returns(fakeResult);
@@ -3588,70 +3603,70 @@ describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
 
       let claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      let result = basicMeshClaimTypeToClaimType(claimType);
+      let result = rpcMeshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.Affiliate;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = basicMeshClaimTypeToClaimType(claimType);
+      result = rpcMeshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.Blocked;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = basicMeshClaimTypeToClaimType(claimType);
+      result = rpcMeshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.BuyLockup;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = basicMeshClaimTypeToClaimType(claimType);
+      result = rpcMeshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.CustomerDueDiligence;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = basicMeshClaimTypeToClaimType(claimType);
+      result = rpcMeshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.Exempted;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = basicMeshClaimTypeToClaimType(claimType);
+      result = rpcMeshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.Jurisdiction;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = basicMeshClaimTypeToClaimType(claimType);
+      result = rpcMeshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.KnowYourCustomer;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = basicMeshClaimTypeToClaimType(claimType);
+      result = rpcMeshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.NoData;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = basicMeshClaimTypeToClaimType(claimType);
+      result = rpcMeshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.SellLockup;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = basicMeshClaimTypeToClaimType(claimType);
+      result = rpcMeshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
     });
   });
@@ -4395,14 +4410,14 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
     });
     /* eslint-disable @typescript-eslint/naming-convention */
     const issuers = issuerDids.map(({ identity: { did } }) =>
-      dsMockUtils.createMockBasicTrustedIssuer({
+      dsMockUtils.createMockRpcTrustedIssuer({
         issuer: dsMockUtils.createMockIdentityId(did),
-        trusted_for: dsMockUtils.createMockBasicTrustedFor(),
+        trusted_for: dsMockUtils.createMockRpcTrustedFor(),
       })
     );
     const rawConditions = [
       dsMockUtils.createMockConditionResult({
-        condition: dsMockUtils.createMockBasicCondition({
+        condition: dsMockUtils.createMockRpcCondition({
           condition_type: dsMockUtils.createMockConditionType({
             IsPresent: dsMockUtils.createMockClaim({ KnowYourCustomer: scope }),
           }),
@@ -4411,7 +4426,7 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
         result: dsMockUtils.createMockBool(true),
       }),
       dsMockUtils.createMockConditionResult({
-        condition: dsMockUtils.createMockBasicCondition({
+        condition: dsMockUtils.createMockRpcCondition({
           condition_type: dsMockUtils.createMockConditionType({
             IsAbsent: dsMockUtils.createMockClaim({ BuyLockup: scope }),
           }),
@@ -4420,7 +4435,7 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
         result: dsMockUtils.createMockBool(false),
       }),
       dsMockUtils.createMockConditionResult({
-        condition: dsMockUtils.createMockBasicCondition({
+        condition: dsMockUtils.createMockRpcCondition({
           condition_type: dsMockUtils.createMockConditionType({
             IsNoneOf: [
               dsMockUtils.createMockClaim({ Blocked: scope }),
@@ -4432,7 +4447,7 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
         result: dsMockUtils.createMockBool(true),
       }),
       dsMockUtils.createMockConditionResult({
-        condition: dsMockUtils.createMockBasicCondition({
+        condition: dsMockUtils.createMockRpcCondition({
           condition_type: dsMockUtils.createMockConditionType({
             IsAnyOf: [
               dsMockUtils.createMockClaim({ Exempted: scope }),
@@ -4446,7 +4461,7 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
         result: dsMockUtils.createMockBool(false),
       }),
       dsMockUtils.createMockConditionResult({
-        condition: dsMockUtils.createMockBasicCondition({
+        condition: dsMockUtils.createMockRpcCondition({
           condition_type: dsMockUtils.createMockConditionType({
             IsIdentity: dsMockUtils.createMockTargetIdentity({
               Specific: dsMockUtils.createMockIdentityId(targetIdentityDid),
@@ -4457,7 +4472,7 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
         result: dsMockUtils.createMockBool(true),
       }),
       dsMockUtils.createMockConditionResult({
-        condition: dsMockUtils.createMockBasicCondition({
+        condition: dsMockUtils.createMockRpcCondition({
           condition_type: dsMockUtils.createMockConditionType({
             IsIdentity: dsMockUtils.createMockTargetIdentity('ExternalAgent'),
           }),
@@ -4592,14 +4607,14 @@ describe('assetComplianceResultToCompliance', () => {
     });
     /* eslint-disable @typescript-eslint/naming-convention */
     const issuers = issuerDids.map(({ identity: { did } }) =>
-      dsMockUtils.createMockBasicTrustedIssuer({
+      dsMockUtils.createMockRpcTrustedIssuer({
         issuer: dsMockUtils.createMockIdentityId(did),
-        trusted_for: dsMockUtils.createMockBasicTrustedFor(),
+        trusted_for: dsMockUtils.createMockRpcTrustedFor(),
       })
     );
     const rawConditions = [
       dsMockUtils.createMockConditionResult({
-        condition: dsMockUtils.createMockBasicCondition({
+        condition: dsMockUtils.createMockRpcCondition({
           condition_type: dsMockUtils.createMockConditionType({
             IsPresent: dsMockUtils.createMockClaim({ KnowYourCustomer: scope }),
           }),
@@ -4608,7 +4623,7 @@ describe('assetComplianceResultToCompliance', () => {
         result: dsMockUtils.createMockBool(true),
       }),
       dsMockUtils.createMockConditionResult({
-        condition: dsMockUtils.createMockBasicCondition({
+        condition: dsMockUtils.createMockRpcCondition({
           condition_type: dsMockUtils.createMockConditionType({
             IsAbsent: dsMockUtils.createMockClaim({ BuyLockup: scope }),
           }),
@@ -4617,7 +4632,7 @@ describe('assetComplianceResultToCompliance', () => {
         result: dsMockUtils.createMockBool(false),
       }),
       dsMockUtils.createMockConditionResult({
-        condition: dsMockUtils.createMockBasicCondition({
+        condition: dsMockUtils.createMockRpcCondition({
           condition_type: dsMockUtils.createMockConditionType({
             IsNoneOf: [
               dsMockUtils.createMockClaim({ Blocked: scope }),
@@ -4629,7 +4644,7 @@ describe('assetComplianceResultToCompliance', () => {
         result: dsMockUtils.createMockBool(true),
       }),
       dsMockUtils.createMockConditionResult({
-        condition: dsMockUtils.createMockBasicCondition({
+        condition: dsMockUtils.createMockRpcCondition({
           condition_type: dsMockUtils.createMockConditionType({
             IsAnyOf: [
               dsMockUtils.createMockClaim({ Exempted: scope }),
@@ -6677,7 +6692,9 @@ describe('corporateActionIdentifierToCaId', () => {
     const localId = dsMockUtils.createMockU32(args.localId);
     const fakeResult = 'CAId' as unknown as CAId;
 
-    context.createType.withArgs('Ticker', padString(args.ticker, 12)).returns(ticker);
+    context.createType
+      .withArgs('PolymeshPrimitivesTicker', padString(args.ticker, 12))
+      .returns(ticker);
     context.createType.withArgs('u32', args.localId.toString()).returns(localId);
 
     context.createType
@@ -7023,12 +7040,12 @@ describe('agentGroupToPermissionGroup', () => {
   });
 
   describe('meshStatToStat', () => {
-    it('should return an object with the type', () => {
+    it('should return the type', () => {
       const rawStat = { op: { type: 'Count' } } as unknown as PolymeshPrimitivesStatisticsStatType;
 
-      const result = meshStatToStat(rawStat);
+      const result = meshStatToStatisticsOpType(rawStat);
 
-      expect(result).toEqual({ type: 'Count' });
+      expect(result).toEqual(StatisticsOpType.Count);
     });
   });
 

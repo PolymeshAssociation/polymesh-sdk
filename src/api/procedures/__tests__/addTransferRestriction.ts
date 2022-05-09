@@ -8,12 +8,12 @@ import {
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesStatisticsStatUpdate,
+  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { ScopeId, Ticker, TransferCondition } from 'polymesh-types/types';
+import { ScopeId, TransferCondition } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { StatisticsOpType } from '~/api/entities/Asset/TransferRestrictions/types';
 import {
   AddTransferRestrictionParams,
   getAuthorization,
@@ -25,7 +25,7 @@ import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { TransferRestriction, TransferRestrictionType, TxTags } from '~/types';
-import { PolymeshTx } from '~/types/internal';
+import { PolymeshTx, StatisticsOpType, TickerKey } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -43,7 +43,7 @@ describe('addTransferRestriction procedure', () => {
     [TransferRestriction, Context],
     TransferCondition
   >;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
+  let stringToTickerKeyStub: sinon.SinonStub<[string, Context], TickerKey>;
   let opPrimitiveStub: sinon.SinonStub<
     [StatisticsOpType, Context],
     PolymeshPrimitivesStatisticsStatOpType
@@ -62,7 +62,7 @@ describe('addTransferRestriction procedure', () => {
   let percentage: BigNumber;
   let countTm: TransferRestriction;
   let percentageTm: TransferRestriction;
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
   let rawCount: u64;
   let rawPercentage: Permill;
   let rawCountCondition: TransferCondition;
@@ -88,7 +88,7 @@ describe('addTransferRestriction procedure', () => {
       utilsConversionModule,
       'transferRestrictionToPolymeshTransferCondition'
     );
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
+    stringToTickerKeyStub = sinon.stub(utilsConversionModule, 'stringToTickerKey');
     opPrimitiveStub = sinon.stub(utilsConversionModule, 'primitiveOpType');
     primitivesStatisticsStatTypeStub = sinon.stub(
       utilsConversionModule,
@@ -97,7 +97,7 @@ describe('addTransferRestriction procedure', () => {
     statUpdateStub = sinon.stub(utilsConversionModule, 'statUpdate');
     primitive2ndKeyStub = sinon.stub(utilsConversionModule, 'primitive2ndKey');
 
-    ticker = 'someTicker';
+    ticker = 'TICKER';
     count = new BigNumber(10);
     percentage = new BigNumber(49);
     countTm = { type: TransferRestrictionType.Count, value: count };
@@ -106,11 +106,13 @@ describe('addTransferRestriction procedure', () => {
 
   let addBatchTransactionStub: sinon.SinonStub;
 
-  let setAssetTransferCompliance: PolymeshTx<[Ticker, TransferCondition]>;
-  let setActiveAssetStats: PolymeshTx<[Ticker, BTreeSetStatType]>;
-  let addExemptedEntitiesTransaction: PolymeshTx<[Ticker, TransferCondition, ScopeId[]]>;
+  let setAssetTransferCompliance: PolymeshTx<[PolymeshPrimitivesTicker, TransferCondition]>;
+  let setActiveAssetStats: PolymeshTx<[PolymeshPrimitivesTicker, BTreeSetStatType]>;
+  let addExemptedEntitiesTransaction: PolymeshTx<
+    [PolymeshPrimitivesTicker, TransferCondition, ScopeId[]]
+  >;
   let batchUpdateAssetStatsTransaction: PolymeshTx<
-    [Ticker, PolymeshPrimitivesStatisticsStatType, BTreeSetStatUpdate[]]
+    [PolymeshPrimitivesTicker, PolymeshPrimitivesStatisticsStatType, BTreeSetStatUpdate[]]
   >;
 
   beforeEach(() => {
@@ -150,7 +152,7 @@ describe('addTransferRestriction procedure', () => {
     transferRestrictionToTransferRestrictionStub
       .withArgs(percentageTm, mockContext)
       .returns(rawPercentageCondition);
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
+    stringToTickerKeyStub.withArgs(ticker, mockContext).returns({ Ticker: rawTicker });
   });
 
   afterEach(() => {
@@ -166,7 +168,7 @@ describe('addTransferRestriction procedure', () => {
 
   it('should add an add asset transfer compliance transaction to the queue', async () => {
     args = {
-      type: 'Count',
+      type: TransferRestrictionType.Count,
       exemptedIdentities: [],
       count,
       ticker,
@@ -190,7 +192,7 @@ describe('addTransferRestriction procedure', () => {
     expect(result).toEqual(new BigNumber(1));
 
     args = {
-      type: 'Percentage',
+      type: TransferRestrictionType.Percentage,
       exemptedIdentities: [],
       percentage,
       ticker,
@@ -221,7 +223,7 @@ describe('addTransferRestriction procedure', () => {
       assetOptions: { details: { requiresInvestorUniqueness: true } },
     });
     args = {
-      type: 'Count',
+      type: TransferRestrictionType.Count,
       exemptedIdentities: [did],
       count,
       ticker,
@@ -282,7 +284,7 @@ describe('addTransferRestriction procedure', () => {
 
   it('should create stats and initialize stats if they do not exist', async () => {
     args = {
-      type: 'Count',
+      type: TransferRestrictionType.Count,
       exemptedIdentities: [],
       count,
       ticker,
@@ -325,7 +327,7 @@ describe('addTransferRestriction procedure', () => {
 
   it('should throw an error if attempting to add a restriction that already exists', async () => {
     args = {
-      type: 'Count',
+      type: TransferRestrictionType.Count,
       exemptedIdentities: [],
       count,
       ticker,
@@ -349,7 +351,7 @@ describe('addTransferRestriction procedure', () => {
     expect(err.message).toBe('Cannot add the same restriction more than once');
 
     args = {
-      type: 'Percentage',
+      type: TransferRestrictionType.Percentage,
       exemptedIdentities: [],
       percentage,
       ticker,
@@ -432,7 +434,7 @@ describe('addTransferRestriction procedure', () => {
       args = {
         ticker,
         count,
-        type: 'Count',
+        type: TransferRestrictionType.Count,
       };
 
       let proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, BigNumber, Storage>(
@@ -504,7 +506,7 @@ describe('addTransferRestriction procedure', () => {
 
       let result = await boundFunc({
         ticker: 'TICKER',
-        type: 'Count',
+        type: TransferRestrictionType.Count,
         count: new BigNumber(1),
       } as AddTransferRestrictionParams);
 
@@ -524,7 +526,7 @@ describe('addTransferRestriction procedure', () => {
 
       result = await boundFunc({
         ticker: 'TICKER',
-        type: 'Count',
+        type: TransferRestrictionType.Count,
         count: new BigNumber(1),
       } as AddTransferRestrictionParams);
 

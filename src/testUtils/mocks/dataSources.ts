@@ -172,7 +172,6 @@ import {
 } from 'polymesh-types/types';
 import sinon, { SinonStub, SinonStubbedInstance } from 'sinon';
 
-import { StatisticsOpType } from '~/api/entities/Asset/TransferRestrictions/types';
 import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -190,7 +189,14 @@ import {
   SignerType,
   SubsidyWithAllowance,
 } from '~/types';
-import { Consts, Extrinsics, GraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
+import {
+  Consts,
+  Extrinsics,
+  GraphqlQuery,
+  PolymeshTx,
+  Queries,
+  StatisticsOpType,
+} from '~/types/internal';
 import { ArgsType, Mutable, tuple } from '~/types/utils';
 
 let apiEmitter: EventEmitter;
@@ -2292,7 +2298,7 @@ export const createMockAuthorization = (authorization?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createBasicMockAuthorization = (authorization?: {
+export const createRpcMockAuthorization = (authorization?: {
   authorizationData:
     | PolymeshPrimitivesAuthorizationAuthorizationData
     | Parameters<typeof createMockAuthorizationData>[0];
@@ -2458,7 +2464,7 @@ export const createMockConditionType = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockBasicConditionType = (
+export const createMockRpcConditionType = (
   conditionType?:
     | { IsPresent: Claim }
     | { IsAbsent: Claim }
@@ -2509,7 +2515,11 @@ export const createMockTrustedFor = (
 ): PolymeshPrimitivesConditionTrustedFor =>
   createMockEnum(trustedFor) as PolymeshPrimitivesConditionTrustedFor;
 
-export const createMockBasicTrustedFor = (
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockRpcTrustedFor = (
   trustedFor?: 'Any' | { Specific: MeshClaimType[] }
 ): TrustedFor => createMockEnum(trustedFor) as TrustedFor;
 
@@ -2538,13 +2548,13 @@ export const createMockTrustedIssuer = (issuer?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockBasicTrustedIssuer = (issuer?: {
+export const createMockRpcTrustedIssuer = (issuer?: {
   issuer: IdentityId;
   trusted_for: TrustedFor;
 }): TrustedIssuer => {
   const trustedIssuer = issuer || {
     issuer: createMockIdentityId(),
-    trusted_for: createMockBasicTrustedFor(),
+    trusted_for: createMockRpcTrustedFor(),
   };
 
   return createMockCodec(
@@ -2586,9 +2596,9 @@ export const createMockCondition = (condition?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  * needed to support RPC calls
  */
-export const createMockBasicCondition = (condition?: {
-  condition_type: ConditionType | Parameters<typeof createMockBasicConditionType>[0];
-  issuers: (TrustedIssuer | Parameters<typeof createMockBasicTrustedIssuer>[0])[];
+export const createMockRpcCondition = (condition?: {
+  condition_type: ConditionType | Parameters<typeof createMockRpcConditionType>[0];
+  issuers: (TrustedIssuer | Parameters<typeof createMockRpcTrustedIssuer>[0])[];
 }): Condition => {
   const { condition_type, issuers } = condition || {
     condition_type: createMockConditionType(),
@@ -2596,8 +2606,8 @@ export const createMockBasicCondition = (condition?: {
   };
   return createMockCodec(
     {
-      condition_type: createMockBasicConditionType(condition_type),
-      issuers: issuers.map(issuer => createMockBasicTrustedIssuer(issuer)),
+      condition_type: createMockRpcConditionType(condition_type),
+      issuers: issuers.map(issuer => createMockRpcTrustedIssuer(issuer)),
     },
     !condition
   ) as unknown as Condition;
@@ -2608,16 +2618,16 @@ export const createMockBasicCondition = (condition?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockConditionResult = (conditionResult?: {
-  condition: Condition | Parameters<typeof createMockBasicCondition>[0];
+  condition: Condition | Parameters<typeof createMockRpcCondition>[0];
   result: bool | Parameters<typeof createMockBool>[0];
 }): ConditionResult => {
   const { condition, result } = conditionResult || {
-    condition: createMockBasicCondition(),
+    condition: createMockRpcCondition(),
     result: createMockBool(),
   };
   return createMockCodec(
     {
-      condition: createMockBasicCondition(condition as any),
+      condition: createMockRpcCondition(condition as any),
       result: createMockBool(result),
     },
     !conditionResult

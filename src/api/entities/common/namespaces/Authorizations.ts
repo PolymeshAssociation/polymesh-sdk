@@ -7,11 +7,11 @@ import { AuthorizationType, ErrorCode, Signer, SignerValue } from '~/types';
 import {
   authorizationDataToAuthorization,
   authorizationTypeToMeshAuthorizationType,
-  basicAuthorizationDataToAuthorization,
   bigNumberToU64,
   booleanToBool,
   identityIdToString,
   momentToDate,
+  rpcAuthorizationDataToAuthorization,
   signerToSignerValue,
   signerValueToSignatory,
   signerValueToSigner,
@@ -56,7 +56,7 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
       result = await rpc.identity.getFilteredAuthorizations(signatory, rawBoolean);
     }
 
-    return this.createAuthorizationRequestsFromBasic(
+    return this.createAuthorizationRequestsFromRpc(
       result.map(auth => ({ auth, target: signerValue }))
     );
   }
@@ -129,7 +129,7 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
    * @hidden
    * Needed to handle snake case from rpc request
    */
-  private createAuthorizationRequestsFromBasic(
+  private createAuthorizationRequestsFromRpc(
     auths: { auth: Authorization; target: SignerValue }[]
   ): AuthorizationRequest[] {
     const { context } = this;
@@ -145,7 +145,7 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
         return {
           authId: u64ToBigNumber(authId),
           expiry: expiry.isSome ? momentToDate(expiry.unwrap()) : null,
-          data: basicAuthorizationDataToAuthorization(data, context),
+          data: rpcAuthorizationDataToAuthorization(data, context),
           target,
           issuer: new Identity({ did: identityIdToString(issuer) }, context),
         };

@@ -2,6 +2,8 @@ import { bool, Bytes, Text, u8, u16, u32, u64, u128 } from '@polkadot/types';
 import { AccountId, Balance, Hash, Permill, Signature } from '@polkadot/types/interfaces';
 import {
   BTreeSetIdentityId,
+  BTreeSetStatUpdate,
+  BTreeSetTransferCondition,
   ConfidentialIdentityClaimProofsScopeClaimProof,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCorporateAction,
@@ -21,6 +23,7 @@ import {
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesStatisticsStatUpdate,
   PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions,
+  PolymeshPrimitivesTicker,
   PolymeshPrimitivesTransferComplianceTransferCondition,
 } from '@polkadot/types/lookup';
 import {
@@ -101,7 +104,6 @@ import {
   StoredSchedule,
   TargetIdentities,
   TargetIdentity,
-  Ticker,
   TransferCondition,
   TrustedIssuer,
   TxTag,
@@ -110,7 +112,6 @@ import {
   VenueType as MeshVenueType,
 } from 'polymesh-types/types';
 
-import { StatisticsOpType } from '~/api/entities/Asset/TransferRestrictions/types';
 import { meshCountryCodeToCountryCode } from '~/generated/utils';
 import {
   Account,
@@ -212,6 +213,8 @@ import {
   PortfolioId,
   ScheduleSpec,
   ScopeClaimProof,
+  StatisticsOpType,
+  TickerKey,
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
@@ -298,7 +301,7 @@ export function bytesToString(bytes: Bytes): string {
 /**
  * @hidden
  */
-export function stringToTicker(ticker: string, context: Context): Ticker {
+export function stringToTicker(ticker: string, context: Context): PolymeshPrimitivesTicker {
   if (!ticker.length || ticker.length > MAX_TICKER_LENGTH) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
@@ -320,13 +323,20 @@ export function stringToTicker(ticker: string, context: Context): Ticker {
     });
   }
 
-  return context.createType('Ticker', padString(ticker, MAX_TICKER_LENGTH));
+  return context.createType('PolymeshPrimitivesTicker', padString(ticker, MAX_TICKER_LENGTH));
 }
 
 /**
  * @hidden
  */
-export function tickerToString(ticker: Ticker): string {
+export function stringToTickerKey(ticker: string, context: Context): TickerKey {
+  return { Ticker: stringToTicker(ticker, context) };
+}
+
+/**
+ * @hidden
+ */
+export function tickerToString(ticker: PolymeshPrimitivesTicker): string {
   return removePadding(u8aToString(ticker));
 }
 
@@ -933,7 +943,7 @@ export function permissionsToMeshPermissions(
 
   const extrinsic = transactionPermissionsToExtrinsicPermissions(transactions, context);
 
-  let asset: PermissionsEnum<Ticker> = 'Whole';
+  let asset: PermissionsEnum<PolymeshPrimitivesTicker> = 'Whole';
   if (assets) {
     const { values: assetValues, type } = assets;
     assetValues.sort(({ ticker: tickerA }, { ticker: tickerB }) => tickerA.localeCompare(tickerB));
@@ -1037,7 +1047,7 @@ export function extrinsicPermissionsToTransactionPermissions(
  *
  * needed to support RPC types still on snake case
  */
-export function basicExtrinsicPermissionsToTransactionPermissions(
+export function rpcExtrinsicPermissionsToTransactionPermissions(
   permissions: ExtrinsicPermissions
 ): TransactionPermissions | null {
   let extrinsicType: PermissionType;
@@ -1151,7 +1161,7 @@ export function meshPermissionsToPermissions(
  * @hidden
  * needed to support RPC types still using snake case
  */
-export function basicMeshPermissionsToPermissions(
+export function rpcMeshPermissionsToPermissions(
   permissions: MeshPermissions,
   context: Context
 ): Permissions {
@@ -1181,7 +1191,7 @@ export function basicMeshPermissionsToPermissions(
     };
   }
 
-  transactions = basicExtrinsicPermissionsToTransactionPermissions(extrinsic);
+  transactions = rpcExtrinsicPermissionsToTransactionPermissions(extrinsic);
 
   let portfoliosType: PermissionType;
   let portfolioIds;
@@ -1492,7 +1502,7 @@ export function authorizationDataToAuthorization(
  * @hidden
  * needed to support RPC types still on snake case
  */
-export function basicAuthorizationDataToAuthorization(
+export function rpcAuthorizationDataToAuthorization(
   auth: AuthorizationData,
   context: Context
 ): Authorization {
@@ -1540,7 +1550,7 @@ export function basicAuthorizationDataToAuthorization(
   if (auth.isJoinIdentity) {
     return {
       type: AuthorizationType.JoinIdentity,
-      value: basicMeshPermissionsToPermissions(auth.asJoinIdentity, context),
+      value: rpcMeshPermissionsToPermissions(auth.asJoinIdentity, context),
     };
   }
 
@@ -1569,7 +1579,7 @@ export function basicAuthorizationDataToAuthorization(
   if (auth.isRotatePrimaryKeyToSecondary) {
     return {
       type: AuthorizationType.RotatePrimaryKeyToSecondary,
-      value: basicMeshPermissionsToPermissions(auth.asRotatePrimaryKeyToSecondary, context),
+      value: rpcMeshPermissionsToPermissions(auth.asRotatePrimaryKeyToSecondary, context),
     };
   }
 
@@ -2113,7 +2123,7 @@ export function canTransferResultToTransferStatus(
 export function scopeToMeshScope(scope: Scope, context: Context): MeshScope {
   const { type, value } = scope;
 
-  let scopeValue: Ticker | IdentityId | string;
+  let scopeValue: PolymeshPrimitivesTicker | IdentityId | string;
   switch (type) {
     case ScopeType.Ticker:
       scopeValue = stringToTicker(value, context);
@@ -2386,7 +2396,7 @@ export function stringToTargetIdentity(did: string | null, context: Context): Ta
 /**
  * @hidden
  */
-export function basicMeshClaimTypeToClaimType(claimType: MeshClaimType): ClaimType {
+export function rpcMeshClaimTypeToClaimType(claimType: MeshClaimType): ClaimType {
   if (claimType.isJurisdiction) {
     return ClaimType.Jurisdiction;
   }
@@ -2508,7 +2518,7 @@ export function trustedIssuerToTrustedClaimIssuer(
   let trustedFor: ClaimType[] | null = null;
 
   if (claimTypes.isSpecific) {
-    trustedFor = claimTypes.asSpecific.map(basicMeshClaimTypeToClaimType);
+    trustedFor = claimTypes.asSpecific.map(rpcMeshClaimTypeToClaimType);
   }
 
   return {
@@ -3726,17 +3736,22 @@ export function statUpdate(
   return context.createType('PolymeshPrimitivesStatisticsStatUpdate', { key2, value });
 }
 
-type Stat = {
-  type: 'Count' | 'Balance';
-};
 /**
- * This should be extended to support Claim scope when we support them
  * @hidden
  */
-export function meshStatToStat(rawStat: PolymeshPrimitivesStatisticsStatType): Stat {
-  return {
-    type: rawStat.op.type,
-  };
+export function statUpdatesToBtreeStatUpdate(
+  statUpdates: PolymeshPrimitivesStatisticsStatUpdate[]
+): BTreeSetStatUpdate {
+  return statUpdates.sort() as BTreeSetStatUpdate;
+}
+
+/**
+ * @hidden
+ */
+export function meshStatToStatisticsOpType(
+  rawStat: PolymeshPrimitivesStatisticsStatType
+): keyof typeof StatisticsOpType {
+  return rawStat.op.type;
 }
 
 /**
@@ -3755,4 +3770,14 @@ export function primitiveOpType(
  */
 export function primitive2ndKey(context: Context): PolymeshPrimitivesStatisticsStat2ndKey {
   return context.createType('PolymeshPrimitivesStatisticsStat2ndKey', 'NoClaimStat');
+}
+
+/**
+ * @hidden
+ */
+export function complianceRequirementsToBtreeSet(
+  conditions: PolymeshPrimitivesTransferComplianceTransferCondition[]
+): BTreeSetTransferCondition {
+  const cloned = [...conditions];
+  return cloned.sort() as BTreeSetTransferCondition;
 }

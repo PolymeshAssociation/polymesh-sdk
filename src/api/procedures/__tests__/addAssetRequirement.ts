@@ -44,7 +44,7 @@ describe('addAssetRequirement procedure', () => {
       utilsConversionModule,
       'requirementToComplianceRequirement'
     );
-    ticker = 'someTicker';
+    ticker = 'TICKER';
     conditions = [
       {
         type: ConditionType.IsIdentity,

@@ -1,11 +1,7 @@
 import { bool, Bytes, u64 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import {
-  AssetIdentifier,
-  AssetName,
-  SecurityToken as MeshSecurityToken,
-} from 'polymesh-types/types';
+import { AssetIdentifier, SecurityToken as MeshSecurityToken } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Asset, Context, Entity, TransactionQueue } from '~/internal';
@@ -28,6 +24,7 @@ jest.mock(
 );
 
 describe('Asset class', () => {
+  let bytesToStringStub: sinon.SinonStub;
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
@@ -79,7 +76,7 @@ describe('Asset class', () => {
     let did: string;
 
     let rawToken: MeshSecurityToken;
-    let rawName: AssetName;
+    let rawName: Bytes;
     let rawIuDisabled: bool;
 
     let context: Context;
@@ -94,7 +91,7 @@ describe('Asset class', () => {
       assetType = 'EquityCommon';
       iuDisabled = false;
       did = 'someDid';
-      sinon.stub(utilsConversionModule, 'textToString').returns(name);
+      bytesToStringStub = sinon.stub(utilsConversionModule, 'bytesToString');
     });
 
     beforeEach(() => {
@@ -105,7 +102,7 @@ describe('Asset class', () => {
         totalSupply: dsMockUtils.createMockBalance(totalSupply),
       });
       rawIuDisabled = dsMockUtils.createMockBool(iuDisabled);
-      rawName = dsMockUtils.createMockAssetName(name);
+      rawName = dsMockUtils.createMockBytes(name);
       context = dsMockUtils.getContextInstance();
       asset = new Asset({ ticker }, context);
 
@@ -138,6 +135,7 @@ describe('Asset class', () => {
         returnValue: rawToken,
       });
 
+      bytesToStringStub.withArgs(rawName).returns(name);
       let details = await asset.details();
 
       expect(details.name).toBe(name);
@@ -176,10 +174,11 @@ describe('Asset class', () => {
       );
 
       const customType = 'something';
-
+      const rawCustomType = dsMockUtils.createMockBytes(customType);
       dsMockUtils.createQueryStub('asset', 'customTypes', {
-        returnValue: dsMockUtils.createMockBytes(customType),
+        returnValue: rawCustomType,
       });
+      bytesToStringStub.withArgs(rawCustomType).returns(customType);
 
       details = await asset.details();
       expect(details.assetType).toEqual(customType);
@@ -299,10 +298,7 @@ describe('Asset class', () => {
       dsMockUtils.createQueryStub('asset', 'fundingRound', {
         returnValue: rawFundingRound,
       });
-      sinon
-        .stub(utilsConversionModule, 'bytesToString')
-        .withArgs(rawFundingRound)
-        .returns(fundingRound);
+      bytesToStringStub.withArgs(rawFundingRound).returns(fundingRound);
       const result = await asset.currentFundingRound();
 
       expect(result).toBe(fundingRound);
