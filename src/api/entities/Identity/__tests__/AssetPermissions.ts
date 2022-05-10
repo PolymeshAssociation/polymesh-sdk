@@ -290,7 +290,7 @@ describe('AssetPermissions class', () => {
               dsMockUtils.createMockPalletPermissions({
                 palletName: 'asset',
                 dispatchableNames: {
-                  Except: [dsMockUtils.createMockDispatchableName('createAsset')],
+                  Except: [dsMockUtils.createMockBytes('createAsset')],
                 },
               }),
             ],

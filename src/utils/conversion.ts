@@ -646,12 +646,6 @@ export function portfolioIdToMeshPortfolioId(
 export function stringToText(text: string, context: Context): Text {
   return context.createType('Text', text);
 }
-/**
- * @hidden
- */
-export function bytesToText(text: Bytes, context: Context): Text {
-  return context.createType('Text', text);
-}
 
 /**
  * @hidden
@@ -1007,19 +1001,18 @@ export function extrinsicPermissionsToTransactionPermissions(
   if (pallets) {
     pallets.forEach(({ palletName, dispatchableNames }) => {
       const moduleName = stringLowerFirst(palletName.toString());
-
       if (dispatchableNames.isExcept) {
         const dispatchables = dispatchableNames.asExcept;
         exceptions = [
           ...exceptions,
-          ...dispatchables.map(name => formatTxTag(name.toString(), moduleName)),
+          ...dispatchables.map(name => formatTxTag(bytesToString(name), moduleName)),
         ];
         txValues = [...txValues, moduleName as ModuleName];
       } else if (dispatchableNames.isThese) {
         const dispatchables = dispatchableNames.asThese;
         txValues = [
           ...txValues,
-          ...dispatchables.map(name => formatTxTag(name.toString(), moduleName)),
+          ...dispatchables.map(name => formatTxTag(bytesToString(name), moduleName)),
         ];
       } else {
         txValues = [...txValues, moduleName as ModuleName];
@@ -1990,6 +1983,10 @@ export function claimToMeshClaim(claim: Claim, context: Context): MeshClaim {
       value = null;
       break;
     }
+    case ClaimType.NoType: {
+      value = null;
+      break;
+    }
     case ClaimType.CustomerDueDiligence: {
       value = stringToCddId(claim.id, context);
       break;
@@ -2171,14 +2168,12 @@ export function stringToTargetIdentity(did: string | null, context: Context): Ta
 
 /**
  * @hidden
+ *
+ * @note helper to reduce code duplication
  */
-export function rpcMeshClaimTypeToClaimType(claimType: MeshClaimType): ClaimType {
+function claimConversion(claimType: MeshClaimType | PolymeshPrimitivesIdentityClaimClaimType) {
   if (claimType.isJurisdiction) {
     return ClaimType.Jurisdiction;
-  }
-
-  if (claimType.isNoData) {
-    return ClaimType.NoData;
   }
 
   if (claimType.isAccredited) {
@@ -2215,48 +2210,30 @@ export function rpcMeshClaimTypeToClaimType(claimType: MeshClaimType): ClaimType
 /**
  * @hidden
  */
-export function claimTypeToClaimType(
-  claimType: PolymeshPrimitivesIdentityClaimClaimType
-): ClaimType {
+export function rpcMeshClaimTypeToClaimType(claimType: MeshClaimType): ClaimType {
   if (claimType.isJurisdiction) {
     return ClaimType.Jurisdiction;
   }
 
-  if (claimType.isNoType) {
+  if (claimType.isNoData) {
     return ClaimType.NoData;
   }
 
-  if (claimType.isAccredited) {
-    return ClaimType.Accredited;
-  }
-
-  if (claimType.isAffiliate) {
-    return ClaimType.Affiliate;
-  }
-
-  if (claimType.isBuyLockup) {
-    return ClaimType.BuyLockup;
-  }
-
-  if (claimType.isSellLockup) {
-    return ClaimType.SellLockup;
-  }
-
-  if (claimType.isCustomerDueDiligence) {
-    return ClaimType.CustomerDueDiligence;
-  }
-
-  if (claimType.isKnowYourCustomer) {
-    return ClaimType.KnowYourCustomer;
-  }
-
-  if (claimType.isExempted) {
-    return ClaimType.Exempted;
-  }
-
-  return ClaimType.Blocked;
+  return claimConversion(claimType);
 }
 
+/**
+ * @hidden
+ */
+export function claimTypeToClaimType(
+  claimType: PolymeshPrimitivesIdentityClaimClaimType
+): ClaimType {
+  if (claimType.isNoType) {
+    return ClaimType.NoType;
+  }
+
+  return claimConversion(claimType);
+}
 /**
  * @hidden
  */
@@ -2723,13 +2700,6 @@ export function meshVenueTypeToVenueType(type: MeshVenueType): VenueType {
  */
 export function venueTypeToMeshVenueType(type: VenueType, context: Context): MeshVenueType {
   return context.createType('VenueType', type);
-}
-
-/**
- * @hidden
- */
-export function stringToVenueDetails(details: string, context: Context): Bytes {
-  return context.createType('Bytes', details);
 }
 
 /**

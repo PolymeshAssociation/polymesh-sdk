@@ -112,7 +112,6 @@ import {
   CountryCode,
   CustomAssetTypeId,
   DidRecord,
-  DispatchableName,
   DispatchableNames,
   DocumentHash,
   DocumentName,
@@ -445,7 +444,7 @@ const defaultReceipt: ISubmittableResult = {
   isInBlock: false,
   isWarning: false,
   events: [],
-  txHash: '0x123' as unknown as Hash, // TODO figure out proper type
+  txHash: '0x123' as unknown as Hash,
   toHuman: () => ({}),
 };
 
@@ -1994,11 +1993,7 @@ export const createMockPalletName = (name?: string | PalletName): PalletName => 
  * @hidden
  */
 export const createMockDispatchableNames = (
-  dispatchableNames?:
-    | 'Whole'
-    | { These: DispatchableName[] }
-    | { Except: DispatchableName[] }
-    | DispatchableNames
+  dispatchableNames?: 'Whole' | { These: Bytes[] } | { Except: Bytes[] } | DispatchableNames
 ): DispatchableNames => {
   if (isCodec<DispatchableNames>(dispatchableNames)) {
     return dispatchableNames;
@@ -2164,18 +2159,6 @@ export const createMockAssetIdentifier = (
  */
 export const createMockFundingRoundName = (roundName?: string): FundingRoundName =>
   createMockStringCodec(roundName) as FundingRoundName;
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockDispatchableName = (name?: string | DispatchableName): DispatchableName => {
-  if (isCodec<DispatchableName>(name)) {
-    return name;
-  }
-
-  return createMockStringCodec(name) as DispatchableName;
-};
 
 /**
  * @hidden

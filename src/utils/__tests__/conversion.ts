@@ -30,7 +30,6 @@ import {
   SettlementType,
   TargetIdentities,
   TrustedIssuer,
-  VenueDetails,
 } from 'polymesh-types/polymesh';
 import {
   AssetIdentifier,
@@ -74,7 +73,7 @@ import {
   ModuleIdEnum,
 } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { createMockBytes, createMockU64, createMockU128 } from '~/testUtils/mocks/dataSources';
+import { createMockU64, createMockU128 } from '~/testUtils/mocks/dataSources';
 import {
   AffirmationStatus,
   AssetDocument,
@@ -149,7 +148,6 @@ import {
   booleanToBool,
   boolToBoolean,
   bytesToString,
-  bytesToText,
   calendarPeriodToMeshCalendarPeriod,
   canTransferResultToTransferStatus,
   cddIdToString,
@@ -250,7 +248,6 @@ import {
   stringToText,
   stringToTicker,
   stringToTickerKey,
-  stringToVenueDetails,
   targetIdentitiesToCorporateActionTargets,
   targetsToTargetIdentities,
   textToString,
@@ -1872,7 +1869,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
             dsMockUtils.createMockPalletPermissions({
               palletName: dsMockUtils.createMockPalletName('Identity'),
               dispatchableNames: dsMockUtils.createMockDispatchableNames({
-                These: [dsMockUtils.createMockDispatchableName('add_claim')],
+                These: [dsMockUtils.createMockBytes('add_claim')],
               }),
             }),
             dsMockUtils.createMockPalletPermissions({
@@ -1935,7 +1932,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
             dsMockUtils.createMockPalletPermissions({
               palletName: dsMockUtils.createMockPalletName('Identity'),
               dispatchableNames: dsMockUtils.createMockDispatchableNames({
-                Except: [dsMockUtils.createMockDispatchableName('add_claim')],
+                Except: [dsMockUtils.createMockBytes('add_claim')],
               }),
             }),
           ],
@@ -3533,6 +3530,20 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
       result = claimToMeshClaim(value, context);
 
       expect(result).toBe(fakeResult);
+
+      value = {
+        type: ClaimType.NoType,
+      };
+
+      createTypeStub
+        .withArgs('Claim', {
+          [value.type]: null,
+        })
+        .returns(fakeResult);
+
+      result = claimToMeshClaim(value, context);
+
+      expect(result).toBe(fakeResult);
     });
   });
 
@@ -3871,30 +3882,18 @@ describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
       result = claimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
-      fakeResult = ClaimType.NoData;
+      fakeResult = ClaimType.NoType;
 
-      // claimType = dsMockUtils.createMockClaimType(fakeResult);
+      claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      // result = claimTypeToClaimType(claimType);
-      // expect(result).toEqual(fakeResult);
+      result = claimTypeToClaimType(claimType);
+      expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.SellLockup;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
       result = claimTypeToClaimType(claimType);
-      expect(result).toEqual(fakeResult);
-    });
-  });
-
-  describe('claimTypeToMeshClaimType', () => {
-    it('should convert a ClaimType to a polkadot ClaimType object', () => {
-      const context = dsMockUtils.getContextInstance();
-      const fakeResult = 'meshClaim' as unknown as MeshClaim;
-
-      context.createType.returns(fakeResult);
-
-      const result = claimTypeToMeshClaimType(ClaimType.SellLockup, context);
       expect(result).toEqual(fakeResult);
     });
   });
@@ -4453,34 +4452,6 @@ describe('stringToText and textToString', () => {
 
       const result = textToString(mockText);
       expect(result).toEqual(text);
-    });
-  });
-});
-
-describe('bytesToText', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  describe('bytesToText', () => {
-    it('should convert bytes to a polkadot Text object', () => {
-      const value = createMockBytes('value');
-      const fakeResult = 'convertedText' as unknown as Text;
-      const context = dsMockUtils.getContextInstance();
-
-      context.createType.withArgs('Text', value).returns(fakeResult);
-
-      const result = bytesToText(value, context);
-
-      expect(result).toEqual(fakeResult);
     });
   });
 });
@@ -5174,20 +5145,6 @@ describe('stringToVenueDetails and venueDetailsToString', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-  });
-
-  describe('stringToVenueDetails', () => {
-    it('should convert a string into a polkadot VenueDetails object', () => {
-      const details = 'details';
-      const fakeResult = 'type' as unknown as VenueDetails;
-      const context = dsMockUtils.getContextInstance();
-
-      context.createType.withArgs('Bytes', details).returns(fakeResult);
-
-      const result = stringToVenueDetails(details, context);
-
-      expect(result).toBe(fakeResult);
-    });
   });
 
   describe('venueDetailsToString', () => {

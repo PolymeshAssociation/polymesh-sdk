@@ -100,7 +100,7 @@ describe('modifyVenue procedure', () => {
     };
 
     sinon.stub(utilsConversionModule, 'bigNumberToU64').returns(rawId);
-    sinon.stub(utilsConversionModule, 'stringToVenueDetails').returns(rawDetails);
+    sinon.stub(utilsConversionModule, 'stringToBytes').returns(rawDetails);
     sinon.stub(utilsConversionModule, 'venueTypeToMeshVenueType').returns(rawType);
 
     const updateVenueDetailsTransaction = dsMockUtils.createTxStub(

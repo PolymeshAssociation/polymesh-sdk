@@ -27,7 +27,7 @@ describe('setGroupPermissions procedure', () => {
       dsMockUtils.createMockPalletPermissions({
         palletName: dsMockUtils.createMockPalletName('Sto'),
         dispatchableNames: dsMockUtils.createMockDispatchableNames({
-          These: [dsMockUtils.createMockDispatchableName('invest')],
+          These: [dsMockUtils.createMockBytes('invest')],
         }),
       }),
     ],

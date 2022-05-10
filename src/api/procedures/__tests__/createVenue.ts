@@ -15,7 +15,7 @@ import * as utilsInternalModule from '~/utils/internal';
 
 describe('createVenue procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToVenueDetailsStub: sinon.SinonStub<[string, Context], Bytes>;
+  let stringToBytes: sinon.SinonStub<[string, Context], Bytes>;
   let venueTypeToMeshVenueTypeStub: sinon.SinonStub<[VenueType, Context], MeshVenueType>;
   let addTransactionStub: sinon.SinonStub;
   let createVenueTransaction: PolymeshTx<unknown[]>;
@@ -25,7 +25,7 @@ describe('createVenue procedure', () => {
     entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
     dsMockUtils.initMocks();
-    stringToVenueDetailsStub = sinon.stub(utilsConversionModule, 'stringToVenueDetails');
+    stringToBytes = sinon.stub(utilsConversionModule, 'stringToBytes');
     venueTypeToMeshVenueTypeStub = sinon.stub(utilsConversionModule, 'venueTypeToMeshVenueType');
     venue = 'venue' as unknown as PostTransactionValue<Venue>;
   });
@@ -59,7 +59,7 @@ describe('createVenue procedure', () => {
 
     const proc = procedureMockUtils.getInstance<CreateVenueParams, Venue>(mockContext);
 
-    stringToVenueDetailsStub.withArgs(description, mockContext).returns(rawDetails);
+    stringToBytes.withArgs(description, mockContext).returns(rawDetails);
     venueTypeToMeshVenueTypeStub.withArgs(type, mockContext).returns(rawType);
 
     const result = await prepareCreateVenue.call(proc, args);

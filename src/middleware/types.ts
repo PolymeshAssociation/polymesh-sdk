@@ -575,6 +575,7 @@ export enum ClaimTypeEnum {
   Blocked = 'Blocked',
   InvestorUniqueness = 'InvestorUniqueness',
   NoData = 'NoData',
+  NoType = 'NoType',
   InvestorUniquenessV2 = 'InvestorUniquenessV2',
 }
 
