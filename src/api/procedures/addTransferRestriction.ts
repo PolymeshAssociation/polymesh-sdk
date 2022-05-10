@@ -16,9 +16,9 @@ import {
   meshStatToStatisticsOpType,
   permillToBigNumber,
   primitive2ndKey,
-  primitiveOpType,
-  primitiveStatisticsStatType,
   scopeIdsToBtreeSetIdentityId,
+  statisticsOpTypeToStatOpType,
+  statisticsOpTypeToStatType,
   statUpdate,
   statUpdatesToBtreeStatUpdate,
   stringToIdentityId,
@@ -127,11 +127,11 @@ export async function prepareAddTransferRestriction(
 
   const op =
     type === TransferRestrictionType.Count
-      ? primitiveOpType(StatisticsOpType.Count, context)
-      : primitiveOpType(StatisticsOpType.Balance, context);
+      ? statisticsOpTypeToStatOpType(StatisticsOpType.Count, context)
+      : statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
 
   if (needStat) {
-    const newStat = primitiveStatisticsStatType(op, context);
+    const newStat = statisticsOpTypeToStatType(op, context);
     currentStats.push(newStat);
     currentStats.sort().reverse(); // sort needed as it is a BTreeSet
     transactions.push(

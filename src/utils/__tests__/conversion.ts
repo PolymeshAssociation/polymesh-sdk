@@ -1,7 +1,6 @@
 import { bool, Bytes, u32, u64, u128 } from '@polkadot/types';
 import { AccountId, Balance, Hash, Moment, Permill, Signature } from '@polkadot/types/interfaces';
 import {
-  PolymeshPrimitivesIdentity,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesStatisticsStat2ndKey,
   PolymeshPrimitivesStatisticsStatOpType,
@@ -59,7 +58,14 @@ import {
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Account, Context, DefaultPortfolio, Identity, NumberedPortfolio } from '~/internal';
+import {
+  Account,
+  Context,
+  DefaultPortfolio,
+  Identity,
+  NumberedPortfolio,
+  PolymeshError,
+} from '~/internal';
 import {
   CallIdEnum,
   ClaimScopeTypeEnum,
@@ -85,6 +91,7 @@ import {
   CorporateActionParams,
   CountryCode,
   DividendDistributionParams,
+  ErrorCode,
   InputCondition,
   InstructionType,
   KnownAssetType,
@@ -201,7 +208,6 @@ import {
   portfolioMovementToMovePortfolioItem,
   posRatioToBigNumber,
   primitive2ndKey,
-  primitiveStatisticsStatType,
   primitiveTrustedIssuerToTrustedClaimIssuer,
   requirementToComplianceRequirement,
   rpcMeshClaimTypeToClaimType,
@@ -219,6 +225,8 @@ import {
   signerToString,
   signerValueToSignatory,
   signerValueToSigner,
+  statisticsOpTypeToStatOpType,
+  statisticsOpTypeToStatType,
   statUpdate,
   storedScheduleToCheckpointScheduleParams,
   stringToAccountId,
@@ -5806,17 +5814,17 @@ describe('transferRestrictionToTransferManager', () => {
     expect(result).toBe(fakeResult);
   });
 
-  it('should convert a polkadot Signatory object to a SignerValue', () => {
+  it('should convert a TransferRestriction to a TransferCondition', () => {
     const count = new BigNumber(10);
     let fakeResult = {
       type: TransferRestrictionType.Count,
       value: count,
     };
-    let transferManager = dsMockUtils.createMockTransferCondition({
+    let transferCondition = dsMockUtils.createMockTransferCondition({
       MaxInvestorCount: dsMockUtils.createMockU64(count),
     });
 
-    let result = transferConditionToTransferRestriction(transferManager);
+    let result = transferConditionToTransferRestriction(transferCondition);
     expect(result).toEqual(fakeResult);
 
     const percentage = new BigNumber(49);
@@ -5824,12 +5832,23 @@ describe('transferRestrictionToTransferManager', () => {
       type: TransferRestrictionType.Percentage,
       value: percentage,
     };
-    transferManager = dsMockUtils.createMockTransferCondition({
+    transferCondition = dsMockUtils.createMockTransferCondition({
       MaxInvestorOwnership: dsMockUtils.createMockPermill(percentage.multipliedBy(10000)),
     });
 
-    result = transferConditionToTransferRestriction(transferManager);
+    result = transferConditionToTransferRestriction(transferCondition);
     expect(result).toEqual(fakeResult);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (transferCondition as any).isMaxInvestorOwnership = false;
+    const expectedError = new PolymeshError({
+      code: ErrorCode.FatalError,
+      message: 'Unexpected transfer condition type',
+    });
+
+    expect(() => transferConditionToTransferRestriction(transferCondition)).toThrowError(
+      expectedError
+    );
   });
 });
 
@@ -7246,7 +7265,7 @@ describe('agentGroupToPermissionGroup', () => {
     });
   });
 
-  describe('primitiveStatisticsStatType', () => {
+  describe('statisticsOpTypeToStatType', () => {
     it('should return a statType', () => {
       const op = 'MaxInvestorCount' as unknown as PolymeshPrimitivesStatisticsStatOpType;
       const context = dsMockUtils.getContextInstance();
@@ -7254,7 +7273,7 @@ describe('agentGroupToPermissionGroup', () => {
         .withArgs('PolymeshPrimitivesStatisticsStatType', { op })
         .returns('statType');
 
-      const result = primitiveStatisticsStatType(op, context);
+      const result = statisticsOpTypeToStatType(op, context);
 
       expect(result).toEqual('statType');
     });
@@ -7298,5 +7317,30 @@ describe('agentGroupToPermissionGroup', () => {
 
       expect(result).toEqual('2ndKey');
     });
+  });
+});
+
+describe('statisticsOpTypeToStatOpType', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert an Offering Tier into a polkadot PriceTier object', () => {
+    const context = dsMockUtils.getContextInstance();
+    const fakeStat = 'fakeStat';
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStatOpType', StatisticsOpType.Count)
+      .returns(fakeStat);
+
+    const result = statisticsOpTypeToStatOpType(StatisticsOpType.Count, context);
+    expect(result).toEqual(fakeStat);
   });
 });

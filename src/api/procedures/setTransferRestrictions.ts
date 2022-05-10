@@ -1,8 +1,11 @@
-import { BTreeSetStatType } from '@polkadot/types/lookup';
+import {
+  BTreeSetStatType,
+  PolymeshPrimitivesTransferComplianceTransferCondition,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { TransferCondition, TxTag, TxTags } from 'polymesh-types/types';
 
-import { Asset, Identity, PolymeshError, Procedure } from '~/internal';
+import { Asset, Context, Identity, PolymeshError, Procedure } from '~/internal';
 import {
   CountTransferRestrictionInput,
   ErrorCode,
@@ -17,9 +20,9 @@ import {
   meshStatToStatisticsOpType,
   permillToBigNumber,
   primitive2ndKey,
-  primitiveOpType,
-  primitiveStatisticsStatType,
   scopeIdsToBtreeSetIdentityId,
+  statisticsOpTypeToStatOpType,
+  statisticsOpTypeToStatType,
   statUpdate,
   statUpdatesToBtreeStatUpdate,
   stringToIdentityId,
@@ -64,30 +67,12 @@ export interface Storage {
 /**
  * @hidden
  */
-export async function prepareSetTransferRestrictions(
-  this: Procedure<SetTransferRestrictionsParams, BigNumber, Storage>,
-  args: SetTransferRestrictionsParams
-): Promise<BigNumber> {
-  const {
-    context: {
-      polymeshApi: {
-        tx: { statistics },
-        query,
-        consts,
-      },
-    },
-    storage: { currentRestrictions, occupiedSlots, needStat, currentStats },
-    context,
-  } = this;
-  const {
-    restrictions: { length: newRestrictionAmount },
-    restrictions,
-    type,
-    ticker,
-  } = args;
-
-  const tickerKey = stringToTickerKey(ticker, context);
-
+function transformRestrictions(
+  restrictions: CountTransferRestrictionInput[] | PercentageTransferRestrictionInput[],
+  currentRestrictions: TransferCondition[],
+  type: TransferRestrictionType,
+  context: Context
+): [PolymeshPrimitivesTransferComplianceTransferCondition[], (string | Identity)[]] {
   const exemptions: (string | Identity)[] = [];
 
   let someDifference = restrictions.length !== currentRestrictions.length;
@@ -98,7 +83,10 @@ export async function prepareSetTransferRestrictions(
         if (transferRestriction.isMaxInvestorCount && type === TransferRestrictionType.Count) {
           const currentCount = u64ToBigNumber(transferRestriction.asMaxInvestorCount);
           return currentCount.eq((r as CountTransferRestrictionInput).count);
-        } else if (transferRestriction.isMaxInvestorOwnership && type === 'Percentage') {
+        } else if (
+          transferRestriction.isMaxInvestorOwnership &&
+          type === TransferRestrictionType.Percentage
+        ) {
           const currentOwnership = permillToBigNumber(transferRestriction.asMaxInvestorOwnership);
           return currentOwnership.eq((r as PercentageTransferRestrictionInput).percentage);
         }
@@ -125,11 +113,47 @@ export async function prepareSetTransferRestrictions(
   if (!someDifference) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
-      message: newRestrictionAmount
+      message: restrictions.length
         ? 'The supplied restrictions are already in place'
         : 'There are no restrictions to remove',
     });
   }
+
+  return [conditions, exemptions];
+}
+
+/**
+ * @hidden
+ */
+export async function prepareSetTransferRestrictions(
+  this: Procedure<SetTransferRestrictionsParams, BigNumber, Storage>,
+  args: SetTransferRestrictionsParams
+): Promise<BigNumber> {
+  const {
+    context: {
+      polymeshApi: {
+        tx: { statistics },
+        query,
+        consts,
+      },
+    },
+    storage: { currentRestrictions, occupiedSlots, needStat, currentStats },
+    context,
+  } = this;
+  const {
+    restrictions: { length: newRestrictionAmount },
+    restrictions,
+    type,
+    ticker,
+  } = args;
+  const tickerKey = stringToTickerKey(ticker, context);
+
+  const [conditions, exemptions] = transformRestrictions(
+    restrictions,
+    currentRestrictions,
+    type,
+    context
+  );
 
   const maxTransferConditions = u32ToBigNumber(consts.statistics.maxTransferConditionsPerAsset);
   const finalCount = occupiedSlots.plus(newRestrictionAmount);
@@ -147,11 +171,11 @@ export async function prepareSetTransferRestrictions(
 
   const op =
     type === TransferRestrictionType.Count
-      ? primitiveOpType(StatisticsOpType.Count, context)
-      : primitiveOpType(StatisticsOpType.Balance, context);
+      ? statisticsOpTypeToStatOpType(StatisticsOpType.Count, context)
+      : statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
 
   if (needStat) {
-    const newStat = primitiveStatisticsStatType(op, context);
+    const newStat = statisticsOpTypeToStatType(op, context);
     currentStats.push(newStat);
     currentStats.sort().reverse();
 

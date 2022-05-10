@@ -14,7 +14,6 @@ import {
   PolymeshPrimitivesCondition,
   PolymeshPrimitivesConditionTrustedIssuer,
   PolymeshPrimitivesDocument,
-  PolymeshPrimitivesIdentity,
   PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesSecondaryKeyPermissions,
@@ -69,13 +68,11 @@ import {
   ClaimType as MeshClaimType,
   ComplianceRequirementResult,
   ConditionType as MeshConditionType,
-  DispatchableName,
   DocumentHash,
   DocumentName,
   DocumentType,
   DocumentUri,
   EcdsaSignature,
-  ExtrinsicPermissions,
   FundingRoundName,
   FundraiserTier,
   GranularCanTransferResult,
@@ -2881,7 +2878,7 @@ export function scopeIdsToBtreeSetIdentityId(
   scopeIds: PolymeshPrimitivesIdentityId[],
   context: Context
 ): BTreeSetIdentityId {
-  // BTreeSet need to be sorted
+  // The chain expects inputs to be sorted. Copy to avoid mutating input
   const sortedScopes = [...scopeIds].sort();
   return context.createType('BTreeSetIdentityId', sortedScopes);
 }
@@ -2905,7 +2902,7 @@ export function transferConditionToTransferRestriction(
   } else {
     throw new PolymeshError({
       code: ErrorCode.FatalError,
-      message: 'unexpected transfer condition type',
+      message: 'Unexpected transfer condition type',
     });
   }
 }
@@ -3497,7 +3494,7 @@ export function corporateActionIdentifierToCaId(
 /**
  * @hidden
  */
-export function primitiveStatisticsStatType(
+export function statisticsOpTypeToStatType(
   op: PolymeshPrimitivesStatisticsStatOpType,
   context: Context
 ): PolymeshPrimitivesStatisticsStatType {
@@ -3521,7 +3518,8 @@ export function statUpdate(
 export function statUpdatesToBtreeStatUpdate(
   statUpdates: PolymeshPrimitivesStatisticsStatUpdate[]
 ): BTreeSetStatUpdate {
-  return statUpdates.sort() as BTreeSetStatUpdate;
+  const sorted = [...statUpdates];
+  return sorted as BTreeSetStatUpdate;
 }
 
 /**
@@ -3536,7 +3534,7 @@ export function meshStatToStatisticsOpType(
 /**
  * @hidden
  */
-export function primitiveOpType(
+export function statisticsOpTypeToStatOpType(
   type: StatisticsOpType,
   context: Context
 ): PolymeshPrimitivesStatisticsStatOpType {
@@ -3557,6 +3555,7 @@ export function primitive2ndKey(context: Context): PolymeshPrimitivesStatisticsS
 export function complianceRequirementsToBtreeSet(
   conditions: PolymeshPrimitivesTransferComplianceTransferCondition[]
 ): BTreeSetTransferCondition {
-  const cloned = [...conditions];
-  return cloned.sort() as BTreeSetTransferCondition;
+  // The chain expects inputs to be sorted. Copy to avoid mutating input
+  const sorted = [...conditions].sort();
+  return sorted as BTreeSetTransferCondition;
 }

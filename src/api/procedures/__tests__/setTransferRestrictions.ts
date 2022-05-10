@@ -49,14 +49,14 @@ describe('setTransferRestrictions procedure', () => {
     [PolymeshPrimitivesIdentityId[], Context],
     BTreeSetIdentityId
   >;
-  let primitiveOpTypeStub: sinon.SinonStub<
+  let statisticsOpTypeToStatOpTypeStub: sinon.SinonStub<
     [StatisticsOpType, Context],
     PolymeshPrimitivesStatisticsStatOpType
   >;
   let batchUpdateAssetStatsTransaction: PolymeshTx<
     [Ticker, PolymeshPrimitivesStatisticsStatType, BTreeSetStatUpdate[]]
   >;
-  let primitivesStatisticsStatTypeStub: sinon.SinonStub<
+  let statisticsOpTypeToStatTypeStub: sinon.SinonStub<
     [PolymeshPrimitivesStatisticsStatOpType, Context],
     PolymeshPrimitivesStatisticsStatType
   >;
@@ -95,10 +95,13 @@ describe('setTransferRestrictions procedure', () => {
     stringToTickerKeyStub = sinon.stub(utilsConversionModule, 'stringToTickerKey');
     stringToScopeIdStub = sinon.stub(utilsConversionModule, 'stringToScopeId');
     scopeIdsToBtreeSetStub = sinon.stub(utilsConversionModule, 'scopeIdsToBtreeSetIdentityId');
-    primitiveOpTypeStub = sinon.stub(utilsConversionModule, 'primitiveOpType');
-    primitivesStatisticsStatTypeStub = sinon.stub(
+    statisticsOpTypeToStatOpTypeStub = sinon.stub(
       utilsConversionModule,
-      'primitiveStatisticsStatType'
+      'statisticsOpTypeToStatOpType'
+    );
+    statisticsOpTypeToStatTypeStub = sinon.stub(
+      utilsConversionModule,
+      'statisticsOpTypeToStatType'
     );
     statUpdateStub = sinon.stub(utilsConversionModule, 'statUpdate');
     primitive2ndKeyStub = sinon.stub(utilsConversionModule, 'primitive2ndKey');
@@ -190,7 +193,7 @@ describe('setTransferRestrictions procedure', () => {
       }
     );
 
-    const result = await prepareSetTransferRestrictions.call(proc, args);
+    let result = await prepareSetTransferRestrictions.call(proc, args);
 
     sinon.assert.calledWith(addBatchTransactionStub, {
       transactions: [
@@ -202,6 +205,23 @@ describe('setTransferRestrictions procedure', () => {
     });
 
     expect(result).toEqual(new BigNumber(1));
+
+    args = {
+      ticker,
+      restrictions: [{ percentage }],
+      type: TransferRestrictionType.Percentage,
+    };
+
+    result = await prepareSetTransferRestrictions.call(proc, args);
+
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: [
+        {
+          transaction: setAssetTransferComplianceTransaction,
+          args: [{ Ticker: rawTicker }, [rawPercentageRestriction]],
+        },
+      ],
+    });
   });
 
   it('should add exempted identities if they were given', async () => {
@@ -218,11 +238,9 @@ describe('setTransferRestrictions procedure', () => {
     const exemptedDids = ['0x1000', '0x2000', '0x3000'];
     const op = 'Count';
 
-    scopeIdsToBtreeSetStub
-      // .withArgs(exemptedDids, mockContext)
-      .returns(exemptedDids as unknown as BTreeSetIdentityId);
+    scopeIdsToBtreeSetStub.returns(exemptedDids as unknown as BTreeSetIdentityId);
 
-    primitiveOpTypeStub
+    statisticsOpTypeToStatOpTypeStub
       .withArgs(StatisticsOpType.Count, mockContext)
       .returns(op as unknown as PolymeshPrimitivesStatisticsStatOpType);
 
@@ -390,7 +408,7 @@ describe('setTransferRestrictions procedure', () => {
       returnValue: ['one', 'two', 'three'],
     });
 
-    primitivesStatisticsStatTypeStub.returns(rawStatType);
+    statisticsOpTypeToStatTypeStub.returns(rawStatType);
     primitive2ndKeyStub.withArgs(mockContext).returns(raw2ndKey);
     rawStatUpdate = dsMockUtils.createMockStatUpdate();
     statUpdateStub.returns(rawStatUpdate);
