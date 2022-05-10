@@ -59,7 +59,6 @@ import {
   AssetIdentifier,
   AssetName,
   AssetType,
-  AuthorizationData,
   AuthorizationType as MeshAuthorizationType,
   CAKind,
   CalendarPeriod as MeshCalendarPeriod,
@@ -1044,60 +1043,6 @@ export function extrinsicPermissionsToTransactionPermissions(
 
 /**
  * @hidden
- *
- * needed to support RPC types still on snake case
- */
-export function rpcExtrinsicPermissionsToTransactionPermissions(
-  permissions: ExtrinsicPermissions
-): TransactionPermissions | null {
-  let extrinsicType: PermissionType;
-  let pallets;
-  if (permissions.isThese) {
-    extrinsicType = PermissionType.Include;
-    pallets = permissions.asThese;
-  } else if (permissions.isExcept) {
-    extrinsicType = PermissionType.Exclude;
-    pallets = permissions.asExcept;
-  }
-
-  let txValues: (ModuleName | TxTag)[] = [];
-  let exceptions: TxTag[] = [];
-
-  const formatTxTag = (dispatchable: DispatchableName, moduleName: string): TxTag =>
-    `${moduleName}.${camelCase(dispatchable.toString())}` as TxTag;
-
-  if (pallets) {
-    /* eslint-disable @typescript-eslint/naming-convention */
-    pallets.forEach(({ pallet_name, dispatchable_names }) => {
-      const moduleName = stringLowerFirst(pallet_name);
-
-      if (dispatchable_names.isExcept) {
-        const dispatchables = dispatchable_names.asExcept;
-        exceptions = [...exceptions, ...dispatchables.map(name => formatTxTag(name, moduleName))];
-        txValues = [...txValues, moduleName as ModuleName];
-      } else if (dispatchable_names.isThese) {
-        const dispatchables = dispatchable_names.asThese;
-        txValues = [...txValues, ...dispatchables.map(name => formatTxTag(name, moduleName))];
-      } else {
-        txValues = [...txValues, moduleName as ModuleName];
-      }
-    });
-    /* eslint-enable @typescript-eslint/naming-convention */
-
-    const result = {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      type: extrinsicType!,
-      values: txValues,
-    };
-
-    return exceptions.length ? { ...result, exceptions } : result;
-  }
-
-  return null;
-}
-
-/**
- * @hidden
  */
 export function meshPermissionsToPermissions(
   permissions: PolymeshPrimitivesSecondaryKeyPermissions,
@@ -1130,68 +1075,6 @@ export function meshPermissionsToPermissions(
   }
 
   transactions = extrinsicPermissionsToTransactionPermissions(extrinsic);
-
-  let portfoliosType: PermissionType;
-  let portfolioIds;
-  if (portfolio.isThese) {
-    portfoliosType = PermissionType.Include;
-    portfolioIds = portfolio.asThese;
-  } else if (portfolio.isExcept) {
-    portfoliosType = PermissionType.Exclude;
-    portfolioIds = portfolio.asExcept;
-  }
-
-  if (portfolioIds) {
-    portfolios = {
-      values: portfolioIds.map(portfolioId => meshPortfolioIdToPortfolio(portfolioId, context)),
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      type: portfoliosType!,
-    };
-  }
-
-  return {
-    assets,
-    transactions,
-    transactionGroups: transactions ? transactionPermissionsToTxGroups(transactions) : [],
-    portfolios,
-  };
-}
-
-/**
- * @hidden
- * needed to support RPC types still using snake case
- */
-export function rpcMeshPermissionsToPermissions(
-  permissions: MeshPermissions,
-  context: Context
-): Permissions {
-  const { asset, extrinsic, portfolio } = permissions;
-
-  let assets: SectionPermissions<Asset> | null = null;
-  let transactions: TransactionPermissions | null = null;
-  let portfolios: SectionPermissions<DefaultPortfolio | NumberedPortfolio> | null = null;
-
-  let assetsType: PermissionType;
-  let assetsPermissions;
-  if (asset.isThese) {
-    assetsType = PermissionType.Include;
-    assetsPermissions = asset.asThese;
-  } else if (asset.isExcept) {
-    assetsType = PermissionType.Exclude;
-    assetsPermissions = asset.asExcept;
-  }
-
-  if (assetsPermissions) {
-    assets = {
-      values: assetsPermissions.map(
-        ticker => new Asset({ ticker: tickerToString(ticker) }, context)
-      ),
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      type: assetsType!,
-    };
-  }
-
-  transactions = rpcExtrinsicPermissionsToTransactionPermissions(extrinsic);
 
   let portfoliosType: PermissionType;
   let portfolioIds;
@@ -1486,100 +1369,6 @@ export function authorizationDataToAuthorization(
     return {
       type: AuthorizationType.RotatePrimaryKeyToSecondary,
       value: meshPermissionsToPermissions(auth.asRotatePrimaryKeyToSecondary, context),
-    };
-  }
-
-  throw new PolymeshError({
-    code: ErrorCode.UnexpectedError,
-    message: 'Unsupported Authorization Type. Please contact the Polymath team',
-    data: {
-      auth: JSON.stringify(auth, null, 2),
-    },
-  });
-}
-
-/**
- * @hidden
- * needed to support RPC types still on snake case
- */
-export function rpcAuthorizationDataToAuthorization(
-  auth: AuthorizationData,
-  context: Context
-): Authorization {
-  if (auth.isAttestPrimaryKeyRotation) {
-    return {
-      type: AuthorizationType.AttestPrimaryKeyRotation,
-      value: identityIdToString(auth.asAttestPrimaryKeyRotation),
-    };
-  }
-
-  if (auth.isRotatePrimaryKey) {
-    return {
-      type: AuthorizationType.RotatePrimaryKey,
-    };
-  }
-
-  if (auth.isTransferTicker) {
-    return {
-      type: AuthorizationType.TransferTicker,
-      value: tickerToString(auth.asTransferTicker),
-    };
-  }
-
-  if (auth.isAddMultiSigSigner) {
-    return {
-      type: AuthorizationType.AddMultiSigSigner,
-      value: accountIdToString(auth.asAddMultiSigSigner),
-    };
-  }
-
-  if (auth.isTransferAssetOwnership) {
-    return {
-      type: AuthorizationType.TransferAssetOwnership,
-      value: tickerToString(auth.asTransferAssetOwnership),
-    };
-  }
-
-  if (auth.isPortfolioCustody) {
-    return {
-      type: AuthorizationType.PortfolioCustody,
-      value: meshPortfolioIdToPortfolio(auth.asPortfolioCustody, context),
-    };
-  }
-
-  if (auth.isJoinIdentity) {
-    return {
-      type: AuthorizationType.JoinIdentity,
-      value: rpcMeshPermissionsToPermissions(auth.asJoinIdentity, context),
-    };
-  }
-
-  if (auth.isAddRelayerPayingKey) {
-    const [userKey, payingKey, polyxLimit] = auth.asAddRelayerPayingKey;
-
-    return {
-      type: AuthorizationType.AddRelayerPayingKey,
-      value: {
-        beneficiary: new Account({ address: accountIdToString(userKey) }, context),
-        subsidizer: new Account({ address: accountIdToString(payingKey) }, context),
-        allowance: balanceToBigNumber(polyxLimit),
-      },
-    };
-  }
-
-  if (auth.isBecomeAgent) {
-    const [ticker, agentGroup] = auth.asBecomeAgent;
-
-    return {
-      type: AuthorizationType.BecomeAgent,
-      value: agentGroupToPermissionGroup(agentGroup, tickerToString(ticker), context),
-    };
-  }
-
-  if (auth.isRotatePrimaryKeyToSecondary) {
-    return {
-      type: AuthorizationType.RotatePrimaryKeyToSecondary,
-      value: rpcMeshPermissionsToPermissions(auth.asRotatePrimaryKeyToSecondary, context),
     };
   }
 
@@ -2189,16 +1978,6 @@ export function stringToScopeId(scopeId: string, context: Context): ScopeId {
 /**
  * @hidden
  */
-export function stringToPolymeshIdentity(
-  scopeId: string,
-  context: Context
-): PolymeshPrimitivesIdentity {
-  return context.createType('PolymeshPrimitivesIdentity', scopeId);
-}
-
-/**
- * @hidden
- */
 export function scopeIdToString(scopeId: ScopeId): string {
   return scopeId.toString();
 }
@@ -2439,7 +2218,7 @@ export function rpcMeshClaimTypeToClaimType(claimType: MeshClaimType): ClaimType
 /**
  * @hidden
  */
-export function primitivesClaimTypeToClaimType(
+export function claimTypeToClaimType(
   claimType: PolymeshPrimitivesIdentityClaimClaimType
 ): ClaimType {
   if (claimType.isJurisdiction) {
@@ -2495,7 +2274,7 @@ export function primitiveTrustedIssuerToTrustedClaimIssuer(
   let trustedFor: ClaimType[] | null = null;
 
   if (claimTypes.isSpecific) {
-    trustedFor = claimTypes.asSpecific.map(primitivesClaimTypeToClaimType);
+    trustedFor = claimTypes.asSpecific.map(claimTypeToClaimType);
   }
 
   return {

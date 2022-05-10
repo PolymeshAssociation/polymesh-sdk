@@ -468,6 +468,8 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
    *   Scope ID, then they will only be counted once for the purposes of this result
    *
    * @note can be subscribed to
+   *
+   * @note this method requires the issuer to have set statistics stat TODO this method should throw an error
    */
   public investorCount(): Promise<BigNumber>;
   public investorCount(callback: SubCallback<BigNumber>): Promise<UnsubCallback>;

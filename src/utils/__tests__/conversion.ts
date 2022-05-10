@@ -1,6 +1,7 @@
-import { bool, Bytes, u32, u64 } from '@polkadot/types';
+import { bool, Bytes, u32, u64, u128 } from '@polkadot/types';
 import { AccountId, Balance, Hash, Moment, Permill, Signature } from '@polkadot/types/interfaces';
 import {
+  PolymeshPrimitivesIdentity,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesStatisticsStat2ndKey,
   PolymeshPrimitivesStatisticsStatOpType,
@@ -67,7 +68,7 @@ import {
   ModuleIdEnum,
 } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { createMockU64, createMockU128 } from '~/testUtils/mocks/dataSources';
+import { createMockBytes, createMockU64, createMockU128 } from '~/testUtils/mocks/dataSources';
 import {
   AffirmationStatus,
   AssetDocument,
@@ -137,15 +138,18 @@ import {
   bigNumberToBalance,
   bigNumberToU32,
   bigNumberToU64,
+  bigNumberToU128,
   booleanToBool,
   boolToBoolean,
   bytesToString,
+  bytesToText,
   calendarPeriodToMeshCalendarPeriod,
   canTransferResultToTransferStatus,
   cddIdToString,
   cddStatusToBoolean,
   checkpointToRecordDateSpec,
   claimToMeshClaim,
+  claimTypeToClaimType,
   claimTypeToMeshClaimType,
   complianceRequirementResultToRequirementCompliance,
   complianceRequirementToRequirement,
@@ -237,6 +241,7 @@ import {
   stringToSignature,
   stringToText,
   stringToTicker,
+  stringToTickerKey,
   stringToVenueDetails,
   targetIdentitiesToCorporateActionTargets,
   targetsToTargetIdentities,
@@ -256,8 +261,10 @@ import {
   txTagToProtocolOp,
   u8ToBigNumber,
   u8ToTransferStatus,
+  u16ToBigNumber,
   u32ToBigNumber,
   u64ToBigNumber,
+  u128ToBigNumber,
   venueDetailsToString,
   venueTypeToMeshVenueType,
 } from '../conversion';
@@ -606,6 +613,33 @@ describe('stringToTicker and tickerToString', () => {
       expect(() => stringToTicker(value, context)).toThrow(
         'Ticker cannot contain lower case letters'
       );
+    });
+  });
+
+  describe('stringToTickerKey', () => {
+    beforeAll(() => {
+      dsMockUtils.initMocks();
+    });
+
+    afterEach(() => {
+      dsMockUtils.reset();
+    });
+
+    afterAll(() => {
+      dsMockUtils.cleanup();
+    });
+
+    it('should call stringToTicker and return the result as an object', () => {
+      const value = 'SOME_TICKER';
+      const fakeResult = 'convertedTicker' as unknown as Ticker;
+      const context = dsMockUtils.getContextInstance();
+
+      context.createType
+        .withArgs('PolymeshPrimitivesTicker', padString(value, 12))
+        .returns(fakeResult);
+
+      const result = stringToTickerKey(value, context);
+      expect(result).toEqual({ Ticker: fakeResult });
     });
   });
 
@@ -2013,6 +2047,80 @@ describe('bigNumberToU32 and u32ToBigNumber', () => {
       const num = dsMockUtils.createMockU32(fakeResult);
 
       const result = u32ToBigNumber(num);
+      expect(result).toEqual(new BigNumber(fakeResult));
+    });
+  });
+});
+
+describe('bigNumberToU128', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a number to a polkadot u128 object', () => {
+    const value = new BigNumber(100);
+    const fakeResult = '100' as unknown as u128;
+    const context = dsMockUtils.getContextInstance();
+
+    context.createType.withArgs('u128', value.toString()).returns(fakeResult);
+
+    const result = bigNumberToU128(value, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  it('should throw an error if the number is negative', () => {
+    const value = new BigNumber(-100);
+    const context = dsMockUtils.getContextInstance();
+
+    expect(() => bigNumberToU128(value, context)).toThrow();
+  });
+
+  it('should throw an error if the number is not an integer', () => {
+    const value = new BigNumber(1.5);
+    const context = dsMockUtils.getContextInstance();
+
+    expect(() => bigNumberToU128(value, context)).toThrow();
+  });
+});
+
+describe('u128ToBigNumber', () => {
+  it('should convert a polkadot u128 object to a BigNumber', () => {
+    const fakeResult = new BigNumber(100);
+    const num = dsMockUtils.createMockU128(fakeResult);
+
+    const result = u128ToBigNumber(num);
+    expect(result).toEqual(new BigNumber(fakeResult));
+  });
+});
+
+describe('u16ToBigNumber', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  describe('u16ToBigNumber', () => {
+    it('should convert a polkadot u32 object to a BigNumber', () => {
+      const fakeResult = new BigNumber(100);
+      const num = dsMockUtils.createMockU16(fakeResult);
+
+      const result = u16ToBigNumber(num);
       expect(result).toEqual(new BigNumber(fakeResult));
     });
   });
@@ -3601,72 +3709,172 @@ describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
     it('should convert a polkadot ClaimType object to a ClaimType', () => {
       let fakeResult: ClaimType = ClaimType.Accredited;
 
-      let claimType = dsMockUtils.createMockClaimType(fakeResult);
+      let claimType = dsMockUtils.createMockRpcClaimType(fakeResult);
 
       let result = rpcMeshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.Affiliate;
 
-      claimType = dsMockUtils.createMockClaimType(fakeResult);
+      claimType = dsMockUtils.createMockRpcClaimType(fakeResult);
 
       result = rpcMeshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.Blocked;
 
-      claimType = dsMockUtils.createMockClaimType(fakeResult);
+      claimType = dsMockUtils.createMockRpcClaimType(fakeResult);
 
       result = rpcMeshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.BuyLockup;
 
-      claimType = dsMockUtils.createMockClaimType(fakeResult);
+      claimType = dsMockUtils.createMockRpcClaimType(fakeResult);
 
       result = rpcMeshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.CustomerDueDiligence;
 
-      claimType = dsMockUtils.createMockClaimType(fakeResult);
+      claimType = dsMockUtils.createMockRpcClaimType(fakeResult);
 
       result = rpcMeshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.Exempted;
 
-      claimType = dsMockUtils.createMockClaimType(fakeResult);
+      claimType = dsMockUtils.createMockRpcClaimType(fakeResult);
 
       result = rpcMeshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.Jurisdiction;
 
-      claimType = dsMockUtils.createMockClaimType(fakeResult);
+      claimType = dsMockUtils.createMockRpcClaimType(fakeResult);
 
       result = rpcMeshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.KnowYourCustomer;
 
-      claimType = dsMockUtils.createMockClaimType(fakeResult);
+      claimType = dsMockUtils.createMockRpcClaimType(fakeResult);
 
       result = rpcMeshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.NoData;
 
-      claimType = dsMockUtils.createMockClaimType(fakeResult);
+      claimType = dsMockUtils.createMockRpcClaimType(fakeResult);
 
       result = rpcMeshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.SellLockup;
 
-      claimType = dsMockUtils.createMockClaimType(fakeResult);
+      claimType = dsMockUtils.createMockRpcClaimType(fakeResult);
 
       result = rpcMeshClaimTypeToClaimType(claimType);
+      expect(result).toEqual(fakeResult);
+    });
+  });
+
+  describe('claimTypeToMeshClaimType', () => {
+    it('should convert a ClaimType to a polkadot ClaimType object', () => {
+      const context = dsMockUtils.getContextInstance();
+      const fakeResult = 'meshClaim' as unknown as MeshClaim;
+
+      context.createType.returns(fakeResult);
+
+      const result = claimTypeToMeshClaimType(ClaimType.SellLockup, context);
+      expect(result).toEqual(fakeResult);
+    });
+  });
+});
+
+describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  describe('meshClaimTypeToClaimType', () => {
+    it('should convert a polkadot ClaimType object to a ClaimType', () => {
+      let fakeResult: ClaimType = ClaimType.Accredited;
+
+      let claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+      let result = claimTypeToClaimType(claimType);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = ClaimType.Affiliate;
+
+      claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+      result = claimTypeToClaimType(claimType);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = ClaimType.Blocked;
+
+      claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+      result = claimTypeToClaimType(claimType);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = ClaimType.BuyLockup;
+
+      claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+      result = claimTypeToClaimType(claimType);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = ClaimType.CustomerDueDiligence;
+
+      claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+      result = claimTypeToClaimType(claimType);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = ClaimType.Exempted;
+
+      claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+      result = claimTypeToClaimType(claimType);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = ClaimType.Jurisdiction;
+
+      claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+      result = claimTypeToClaimType(claimType);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = ClaimType.KnowYourCustomer;
+
+      claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+      result = claimTypeToClaimType(claimType);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = ClaimType.NoData;
+
+      // claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+      // result = claimTypeToClaimType(claimType);
+      // expect(result).toEqual(fakeResult);
+
+      fakeResult = ClaimType.SellLockup;
+
+      claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+      result = claimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
     });
   });
@@ -4237,6 +4445,34 @@ describe('stringToText and textToString', () => {
 
       const result = textToString(mockText);
       expect(result).toEqual(text);
+    });
+  });
+});
+
+describe('bytesToText', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  describe('bytesToText', () => {
+    it('should convert bytes to a polkadot Text object', () => {
+      const value = createMockBytes('value');
+      const fakeResult = 'convertedText' as unknown as Text;
+      const context = dsMockUtils.getContextInstance();
+
+      context.createType.withArgs('Text', value).returns(fakeResult);
+
+      const result = bytesToText(value, context);
+
+      expect(result).toEqual(fakeResult);
     });
   });
 });
@@ -5337,7 +5573,7 @@ describe('trustedClaimIssuerToTrustedIssuer and trustedIssuerToTrustedClaimIssue
       trustedIssuer = dsMockUtils.createMockTrustedIssuer({
         issuer: dsMockUtils.createMockIdentityId(did),
         trustedFor: dsMockUtils.createMockTrustedFor({
-          Specific: [dsMockUtils.createMockClaimType(ClaimType.SellLockup)],
+          Specific: [dsMockUtils.createMockRpcClaimType(ClaimType.SellLockup)],
         }),
       });
 
@@ -5876,6 +6112,7 @@ describe('fundraiserToOfferingDetails', () => {
       },
     ];
     const startDate = new Date();
+    startDate.setTime(startDate.getTime() - 10);
     const endDate = new Date(startDate.getTime() + 100000);
     const minInvestmentValue = new BigNumber(1);
 
@@ -5951,7 +6188,7 @@ describe('fundraiserToOfferingDetails', () => {
 
     let result = fundraiserToOfferingDetails(fundraiser, rawName, context);
 
-    // expect(result).toEqual(fakeResult); // TODO flaky when
+    expect(result).toEqual(fakeResult);
 
     const futureStart = new Date(startDate.getTime() + 50000);
 

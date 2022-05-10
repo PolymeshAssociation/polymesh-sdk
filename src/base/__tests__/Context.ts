@@ -710,9 +710,9 @@ describe('Context class', () => {
       sinon.restore();
     });
 
-    /* eslint-disable @typescript-eslint/naming-convention */
     it('should return which DIDs in the input array are invalid', async () => {
       const inputDids = ['someDid', 'otherDid', 'invalidDid', 'otherInvalidDid'];
+      /* eslint-disable @typescript-eslint/naming-convention */
       dsMockUtils.createQueryStub('identity', 'didRecords', {
         multi: [
           dsMockUtils.createMockDidRecord({
@@ -729,6 +729,7 @@ describe('Context class', () => {
           dsMockUtils.createMockDidRecord(),
         ],
       });
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -740,7 +741,6 @@ describe('Context class', () => {
 
       expect(invalidDids).toEqual(inputDids.slice(2, 4));
     });
-    /* eslint-enable @typescript-eslint/naming-convention */
   });
 
   describe('method: getProtocolFees', () => {
@@ -1166,7 +1166,7 @@ describe('Context class', () => {
       /* eslint-disable @typescript-eslint/naming-convention */
       const claim1stKey = dsMockUtils.createMockClaim1stKey({
         target: dsMockUtils.createMockIdentityId(targetDid),
-        claim_type: dsMockUtils.createMockClaimType(ClaimType.CustomerDueDiligence),
+        claim_type: dsMockUtils.createMockRpcClaimType(ClaimType.CustomerDueDiligence),
       });
       /* eslint-enable @typescript-eslint/naming-convention */
 

@@ -13,6 +13,7 @@ import {
   Text,
   u8,
   U8aFixed,
+  u16,
   u32,
   u64,
   u128,
@@ -92,7 +93,6 @@ import {
   AssetOwnershipRelation,
   AssetPermissions,
   AssetType,
-  Authorization,
   AuthorizationType as MeshAuthorizationType,
   CACheckpoint,
   CAKind,
@@ -1503,18 +1503,6 @@ const createMockStringCodec = (value?: string): Codec =>
 const createMockU8aCodec = (value?: string, hex?: boolean): Codec =>
   createMockCodec(hex ? hexToU8a(value) : stringToU8a(value), value === undefined);
 
-// TODO this is to give bytes eq method when mocked. Codec should have it
-// const createMockU8aCodec = (value?: string, hex?: boolean): Codec => {
-//   const v = hex ? hexToU8a(value) : stringToU8a(value);
-//   return createMockCodec(
-//     {
-//       toString: () => value,
-//       eq: (compareValue: Codec) => value === compareValue.toString(),
-//     },
-//     value === undefined
-//   );
-// };
-
 /**
  * @hidden
  */
@@ -1746,6 +1734,17 @@ export const createMockTickerRegistration = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockU8 = (value?: BigNumber): u8 => createMockNumberCodec(value) as u8;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockU16 = (value?: BigNumber | u16): u16 => {
+  if (isCodec<u16>(value)) {
+    return value;
+  }
+  return createMockNumberCodec(value) as u16;
+};
 
 /**
  * @hidden
@@ -2298,36 +2297,6 @@ export const createMockAuthorization = (authorization?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createRpcMockAuthorization = (authorization?: {
-  authorizationData:
-    | PolymeshPrimitivesAuthorizationAuthorizationData
-    | Parameters<typeof createMockAuthorizationData>[0];
-  authorizedBy: IdentityId | Parameters<typeof createMockIdentityId>[0];
-  expiry: Option<Moment>;
-  authId: u64 | Parameters<typeof createMockU64>[0];
-}): Authorization => {
-  const { authorizationData, authorizedBy, expiry, authId } = authorization || {
-    authorizationData: createMockAuthorizationData(),
-    authorizedBy: createMockIdentityId(),
-    expiry: createMockOption(),
-    authId: createMockU64(),
-  };
-
-  return createMockCodec(
-    {
-      authorization_data: createMockAuthorizationData(authorizationData),
-      authorized_by: createMockIdentityId(authorizedBy),
-      expiry: createMockOption(expiry),
-      auth_id: createMockU64(authId),
-    },
-    !authorization
-  ) as Authorization;
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
 export const createMockEventRecord = (data: unknown[]): EventRecord =>
   ({
     event: {
@@ -2483,8 +2452,17 @@ export const createMockRpcConditionType = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockClaimType = (claimType?: ClaimType): MeshClaimType =>
+export const createMockRpcClaimType = (claimType?: ClaimType): MeshClaimType =>
   createMockEnum(claimType) as MeshClaimType;
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockClaimType = (
+  claimType?: ClaimType
+): PolymeshPrimitivesIdentityClaimClaimType =>
+  createMockEnum(claimType) as PolymeshPrimitivesIdentityClaimClaimType;
 
 /**
  * @hidden
@@ -2496,7 +2474,7 @@ export const createMockClaim1stKey = (claim1stKey?: {
 }): Claim1stKey => {
   const claimTypeMock = claim1stKey || {
     target: createMockIdentityId(),
-    claim_type: createMockClaimType(),
+    claim_type: createMockRpcClaimType(),
   };
   return createMockCodec(
     {
@@ -2726,7 +2704,6 @@ export const createMockAssetComplianceResult = (assetComplianceResult?: {
 /**
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
- * TODO this should be removed. It doesn't implement DidRecord correctly even
  */
 export const createMockDidRecord = (didRecord?: {
   roles: IdentityRole[];
