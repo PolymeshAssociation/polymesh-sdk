@@ -54,7 +54,6 @@ import {
   meshStatToStatisticsOpType,
   middlewareEventToEventIdentifier,
   primitive2ndKey,
-  statisticsOpTypeToStatType,
   stringToTicker,
   tickerToDid,
   u128ToBigNumber,
@@ -510,7 +509,6 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
     const key = primitive2ndKey(context);
 
     if (callback) {
-      // await assertStatActive();
       return statistics.assetStats({ asset: { Ticker: rawTicker } }, key, count => {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(u128ToBigNumber(count));

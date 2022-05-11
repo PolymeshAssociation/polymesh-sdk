@@ -222,6 +222,8 @@ describe('setTransferRestrictions procedure', () => {
         },
       ],
     });
+
+    expect(result).toEqual(new BigNumber(1));
   });
 
   it('should add exempted identities if they were given', async () => {
