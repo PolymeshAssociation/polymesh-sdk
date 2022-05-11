@@ -528,6 +528,10 @@ describe('addTransferRestriction procedure', () => {
       );
       const boundFunc = prepareStorage.bind(proc);
 
+      const statStub = sinon
+        .stub(utilsConversionModule, 'meshStatToStatisticsOpType')
+        .returns(StatisticsOpType.Count);
+
       let result = await boundFunc({
         ticker: 'TICKER',
         type: TransferRestrictionType.Count,
@@ -558,6 +562,20 @@ describe('addTransferRestriction procedure', () => {
         currentRestrictions: [rawCountCondition],
         currentStats: [rawStatType],
         needStat: false,
+      });
+
+      statStub.returns(StatisticsOpType.Balance);
+
+      result = await boundFunc({
+        ticker: 'TICKER',
+        type: TransferRestrictionType.Count,
+        count: new BigNumber(1),
+      } as AddTransferRestrictionParams);
+
+      expect(result).toEqual({
+        currentRestrictions: [rawCountCondition],
+        currentStats: [rawStatType],
+        needStat: true,
       });
     });
   });

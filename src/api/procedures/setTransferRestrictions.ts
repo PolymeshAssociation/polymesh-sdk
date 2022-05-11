@@ -67,6 +67,28 @@ export interface Storage {
 /**
  * @hidden
  */
+function isSameCondition(
+  transferCondition: TransferCondition,
+  inputCondition: CountTransferRestrictionInput | PercentageTransferRestrictionInput,
+  type: TransferRestrictionType
+): boolean {
+  if (transferCondition.isMaxInvestorCount && type === TransferRestrictionType.Count) {
+    const currentCount = u64ToBigNumber(transferCondition.asMaxInvestorCount);
+    return currentCount.eq((inputCondition as CountTransferRestrictionInput).count);
+  } else if (
+    transferCondition.isMaxInvestorOwnership &&
+    type === TransferRestrictionType.Percentage
+  ) {
+    const currentOwnership = permillToBigNumber(transferCondition.asMaxInvestorOwnership);
+    return currentOwnership.eq((inputCondition as PercentageTransferRestrictionInput).percentage);
+  } else {
+    return false;
+  }
+}
+
+/**
+ * @hidden
+ */
 function transformRestrictions(
   restrictions: CountTransferRestrictionInput[] | PercentageTransferRestrictionInput[],
   currentRestrictions: TransferCondition[],
@@ -77,21 +99,10 @@ function transformRestrictions(
 
   let someDifference = restrictions.length !== currentRestrictions.length;
   const conditions = restrictions.map(r => {
+    const compareConditions = (transferCondition: TransferCondition) =>
+      isSameCondition(transferCondition, r, type);
     if (!someDifference) {
-      someDifference = !currentRestrictions.find(transferRestriction => {
-        if (transferRestriction.isMaxInvestorCount && type === TransferRestrictionType.Count) {
-          const currentCount = u64ToBigNumber(transferRestriction.asMaxInvestorCount);
-          return currentCount.eq((r as CountTransferRestrictionInput).count);
-        } else if (
-          transferRestriction.isMaxInvestorOwnership &&
-          type === TransferRestrictionType.Percentage
-        ) {
-          const currentOwnership = permillToBigNumber(transferRestriction.asMaxInvestorOwnership);
-          return currentOwnership.eq((r as PercentageTransferRestrictionInput).percentage);
-        } else {
-          return false;
-        }
-      });
+      someDifference = !currentRestrictions.find(compareConditions);
     }
     let condition: TransferRestriction;
     if (type === TransferRestrictionType.Count) {
