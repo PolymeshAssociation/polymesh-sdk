@@ -4,11 +4,12 @@ import BigNumber from 'bignumber.js';
 import { AssetIdentifier, SecurityToken as MeshSecurityToken } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Asset, Context, Entity, TransactionQueue } from '~/internal';
+import { Asset, Context, Entity, PolymeshError, TransactionQueue } from '~/internal';
 import { eventByIndexedArgs, tickerExternalAgentHistory } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { SecurityIdentifier, SecurityIdentifierType } from '~/types';
+import { ErrorCode, SecurityIdentifier, SecurityIdentifierType } from '~/types';
+import { StatisticsOpType } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -598,7 +599,8 @@ describe('Asset class', () => {
   });
 
   describe('method: investorCount', () => {
-    let investorCountPerAssetStub: sinon.SinonStub;
+    let statisticsAssetStatsStub: sinon.SinonStub;
+    let statisticsActiveAssetStatsStub: sinon.SinonStub;
     let investorCount: BigNumber;
     let rawInvestorCount: u64;
 
@@ -608,7 +610,15 @@ describe('Asset class', () => {
     });
 
     beforeEach(() => {
-      investorCountPerAssetStub = dsMockUtils.createQueryStub('statistics', 'assetStats');
+      statisticsAssetStatsStub = dsMockUtils.createQueryStub('statistics', 'assetStats');
+      statisticsActiveAssetStatsStub = dsMockUtils.createQueryStub(
+        'statistics',
+        'activeAssetStats'
+      );
+    });
+
+    afterEach(() => {
+      sinon.restore();
     });
 
     it('should return the amount of unique investors that hold the Asset', async () => {
@@ -616,8 +626,12 @@ describe('Asset class', () => {
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
 
-      investorCountPerAssetStub.resolves(rawInvestorCount);
+      statisticsAssetStatsStub.resolves(rawInvestorCount);
+      statisticsActiveAssetStatsStub.resolves(['fakeStat']);
 
+      sinon
+        .stub(utilsConversionModule, 'meshStatToStatisticsOpType')
+        .returns(StatisticsOpType.Count);
       const result = await asset.investorCount();
 
       expect(result).toEqual(investorCount);
@@ -628,8 +642,13 @@ describe('Asset class', () => {
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
       const unsubCallback = 'unsubCallBack';
+      statisticsActiveAssetStatsStub.resolves(['fakeStat']);
 
-      investorCountPerAssetStub.callsFake(async (_, _holder, cbFunc) => {
+      sinon
+        .stub(utilsConversionModule, 'meshStatToStatisticsOpType')
+        .returns(StatisticsOpType.Count);
+
+      statisticsAssetStatsStub.callsFake(async (_, _holder, cbFunc) => {
         cbFunc(rawInvestorCount);
         return unsubCallback;
       });
@@ -639,6 +658,21 @@ describe('Asset class', () => {
 
       expect(result).toEqual(unsubCallback);
       sinon.assert.calledWithExactly(callback, investorCount);
+    });
+
+    it('should throw an error if a Count statistic has not been enabled', () => {
+      const ticker = 'TICKER';
+      const context = dsMockUtils.getContextInstance();
+      const asset = new Asset({ ticker }, context);
+      statisticsActiveAssetStatsStub.resolves([]);
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message:
+          'The Issuer of the Asset must first enable the statistics for the Asset before this method can be used',
+      });
+
+      return expect(asset.investorCount()).rejects.toThrowError(expectedError);
     });
   });
 

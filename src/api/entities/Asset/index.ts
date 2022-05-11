@@ -19,6 +19,7 @@ import {
   ModifyAssetParams,
   modifyPrimaryIssuanceAgent,
   ModifyPrimaryIssuanceAgentParams,
+  PolymeshError,
   redeemTokens,
   RedeemTokensParams,
   removePrimaryIssuanceAgent,
@@ -29,6 +30,7 @@ import {
 import { eventByIndexedArgs, tickerExternalAgentHistory } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import {
+  ErrorCode,
   EventIdentifier,
   HistoricAgentOperation,
   NoArgsProcedureMethod,
@@ -49,8 +51,10 @@ import {
   bytesToString,
   hashToString,
   identityIdToString,
+  meshStatToStatisticsOpType,
   middlewareEventToEventIdentifier,
   primitive2ndKey,
+  statisticsOpTypeToStatType,
   stringToTicker,
   tickerToDid,
   u128ToBigNumber,
@@ -469,7 +473,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
    *
    * @note can be subscribed to
    *
-   * @note this method requires the issuer to have set statistics stat TODO this method should throw an error
+   * @throws if the Issuer hasn't enabled the Investor Count statistic
    */
   public investorCount(): Promise<BigNumber>;
   public investorCount(callback: SubCallback<BigNumber>): Promise<UnsubCallback>;
@@ -490,14 +494,31 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
 
     const rawTicker = stringToTicker(ticker, context);
 
+    const activeStats = await statistics.activeAssetStats({ Ticker: rawTicker });
+    const activeCountStatExists = !!activeStats.find(s => {
+      return meshStatToStatisticsOpType(s) === StatisticsOpType.Count;
+    });
+
+    if (!activeCountStatExists) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message:
+          'The Issuer of the Asset must first enable the statistics for the Asset before this method can be used',
+      });
+    }
+
+    const key = primitive2ndKey(context);
+
     if (callback) {
-      return statistics.assetStats(rawTicker, StatisticsOpType.Count, count => {
+      // await assertStatActive();
+      return statistics.assetStats({ asset: { Ticker: rawTicker } }, key, count => {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(u128ToBigNumber(count));
       });
     }
-    const key = primitive2ndKey(context);
-    const result = await statistics.assetStats({ asset: { Ticker: rawTicker } }, key);
+    const [result] = await Promise.all([
+      statistics.assetStats({ asset: { Ticker: rawTicker } }, key),
+    ]);
 
     return u128ToBigNumber(result);
   }
