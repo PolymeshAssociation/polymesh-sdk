@@ -34,10 +34,10 @@ import {
   assetComplianceResultToCompliance,
   boolToBoolean,
   complianceRequirementToRequirement,
-  primitiveTrustedIssuerToTrustedClaimIssuer,
   signerToString,
   stringToIdentityId,
   stringToTicker,
+  trustedIssuerToTrustedClaimIssuer,
 } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
@@ -144,7 +144,7 @@ export class Requirements extends Namespace<Asset> {
       );
 
       const defaultTrustedClaimIssuers = claimIssuers.map(issuer =>
-        primitiveTrustedIssuerToTrustedClaimIssuer(issuer, context)
+        trustedIssuerToTrustedClaimIssuer(issuer, context)
       );
 
       return { requirements, defaultTrustedClaimIssuers };

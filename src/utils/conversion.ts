@@ -2237,7 +2237,7 @@ export function claimTypeToClaimType(
 /**
  * @hidden
  */
-export function primitiveTrustedIssuerToTrustedClaimIssuer(
+export function trustedIssuerToTrustedClaimIssuer(
   trustedIssuer: PolymeshPrimitivesConditionTrustedIssuer,
   context: Context
 ): TrustedClaimIssuer {
@@ -2260,7 +2260,7 @@ export function primitiveTrustedIssuerToTrustedClaimIssuer(
 /**
  * @hidden
  */
-export function trustedIssuerToTrustedClaimIssuer(
+export function rpcTrustedIssuerToTrustedClaimIssuer(
   trustedIssuer: TrustedIssuer,
   context: Context
 ): TrustedClaimIssuer {
@@ -2434,7 +2434,7 @@ export function complianceRequirementResultToRequirementCompliance(
           ...meshConditionTypeToCondition(conditionType, context),
           target: ConditionTarget.Sender,
           trustedClaimIssuers: issuers.map(trustedIssuer =>
-            trustedIssuerToTrustedClaimIssuer(trustedIssuer, context)
+            rpcTrustedIssuerToTrustedClaimIssuer(trustedIssuer, context)
           ),
         },
         complies: boolToBoolean(result),
@@ -2457,7 +2457,7 @@ export function complianceRequirementResultToRequirementCompliance(
           ...meshConditionTypeToCondition(conditionType, context),
           target: ConditionTarget.Receiver,
           trustedClaimIssuers: issuers.map(trustedIssuer =>
-            trustedIssuerToTrustedClaimIssuer(trustedIssuer, context)
+            rpcTrustedIssuerToTrustedClaimIssuer(trustedIssuer, context)
           ),
         },
         complies: boolToBoolean(result),
@@ -2499,7 +2499,7 @@ export function complianceRequirementToRequirement(
 
     if (issuers.length) {
       newCondition.trustedClaimIssuers = issuers.map(trustedIssuer =>
-        primitiveTrustedIssuerToTrustedClaimIssuer(trustedIssuer, context)
+        trustedIssuerToTrustedClaimIssuer(trustedIssuer, context)
       );
     }
 
@@ -2520,7 +2520,7 @@ export function complianceRequirementToRequirement(
 
     if (issuers.length) {
       newCondition.trustedClaimIssuers = issuers.map(trustedIssuer =>
-        primitiveTrustedIssuerToTrustedClaimIssuer(trustedIssuer, context)
+        trustedIssuerToTrustedClaimIssuer(trustedIssuer, context)
       );
     }
 

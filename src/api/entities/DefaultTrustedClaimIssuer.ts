@@ -6,8 +6,8 @@ import { Ensured } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
   middlewareEventToEventIdentifier,
-  primitiveTrustedIssuerToTrustedClaimIssuer,
   stringToTicker,
+  trustedIssuerToTrustedClaimIssuer,
 } from '~/utils/conversion';
 import { optionize, padString } from '~/utils/internal';
 
@@ -91,7 +91,7 @@ export class DefaultTrustedClaimIssuer extends Identity {
     const claimIssuers = await complianceManager.trustedClaimIssuer(rawTicker);
 
     const claimIssuer = claimIssuers
-      .map(issuer => primitiveTrustedIssuerToTrustedClaimIssuer(issuer, context))
+      .map(issuer => trustedIssuerToTrustedClaimIssuer(issuer, context))
       .find(({ identity }) => this.isEqual(identity));
 
     if (!claimIssuer) {

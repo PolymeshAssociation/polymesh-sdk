@@ -183,10 +183,10 @@ describe('setTransferRestrictions procedure', () => {
   });
 
   it('should add a setTransferRestrictions transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
+    let proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
-        currentRestrictions: [],
+        currentRestrictions: [rawPercentageRestriction],
         occupiedSlots: new BigNumber(0),
         needStat: false,
         currentStats: [] as unknown as BTreeSetStatType,
@@ -205,6 +205,16 @@ describe('setTransferRestrictions procedure', () => {
     });
 
     expect(result).toEqual(new BigNumber(1));
+
+    proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
+      mockContext,
+      {
+        currentRestrictions: [rawCountRestriction],
+        occupiedSlots: new BigNumber(0),
+        needStat: false,
+        currentStats: [] as unknown as BTreeSetStatType,
+      }
+    );
 
     args = {
       ticker,
@@ -443,6 +453,27 @@ describe('setTransferRestrictions procedure', () => {
         },
       ],
     });
+
+    args = {
+      ticker,
+      restrictions: [{ percentage }],
+      type: TransferRestrictionType.Percentage,
+    };
+
+    await prepareSetTransferRestrictions.call(proc, args);
+
+    sinon.assert.calledWith(addBatchTransactionStub.secondCall, {
+      transactions: [
+        {
+          transaction: setActiveAssetStatsTransaction,
+          args: [{ Ticker: rawTicker }, [rawStatType, rawStatType]],
+        },
+        {
+          transaction: setAssetTransferComplianceTransaction,
+          args: [{ Ticker: rawTicker }, [rawPercentageRestriction]],
+        },
+      ],
+    });
   });
 
   describe('getAuthorization', () => {
@@ -607,8 +638,9 @@ describe('setTransferRestrictions procedure', () => {
 
     it('should detect when an asset stat does not need to be made', async () => {
       const mockCountStat = [{ type: StatisticsOpType.Count }];
+      const mockBalanceStat = [{ type: StatisticsOpType.Balance }];
       dsMockUtils.createQueryStub('statistics', 'activeAssetStats', {
-        returnValue: [mockCountStat],
+        returnValue: [mockCountStat, mockBalanceStat],
       });
 
       const proc = procedureMockUtils.getInstance<
@@ -618,17 +650,28 @@ describe('setTransferRestrictions procedure', () => {
       >(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
-      sinon
+      const statStub = sinon
         .stub(utilsConversionModule, 'meshStatToStatisticsOpType')
         .returns(StatisticsOpType.Count);
 
-      const result = await boundFunc(args);
+      let result = await boundFunc(args);
 
       expect(result).toEqual({
         currentRestrictions: [rawCountRestriction],
         occupiedSlots: new BigNumber(1),
         needStat: false,
-        currentStats: [mockCountStat],
+        currentStats: [mockCountStat, mockBalanceStat],
+      });
+
+      statStub.returns(StatisticsOpType.Balance);
+
+      result = await boundFunc(args);
+
+      expect(result).toEqual({
+        currentRestrictions: [rawCountRestriction],
+        occupiedSlots: new BigNumber(1),
+        needStat: true,
+        currentStats: [mockCountStat, mockBalanceStat],
       });
     });
   });

@@ -12,7 +12,7 @@ import {
 } from '~/internal';
 import { ProcedureMethod, SubCallback, TrustedClaimIssuer, UnsubCallback } from '~/types';
 import { TrustedClaimIssuerOperation } from '~/types/internal';
-import { primitiveTrustedIssuerToTrustedClaimIssuer, stringToTicker } from '~/utils/conversion';
+import { stringToTicker, trustedIssuerToTrustedClaimIssuer } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
 /**
@@ -116,7 +116,7 @@ export class TrustedClaimIssuers extends Namespace<Asset> {
         const {
           identity: { did },
           trustedFor,
-        } = primitiveTrustedIssuerToTrustedClaimIssuer(issuer, context);
+        } = trustedIssuerToTrustedClaimIssuer(issuer, context);
         return {
           identity: new DefaultTrustedClaimIssuer({ did, ticker }, context),
           trustedFor,

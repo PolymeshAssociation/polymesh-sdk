@@ -206,9 +206,9 @@ import {
   portfolioMovementToMovePortfolioItem,
   posRatioToBigNumber,
   primitive2ndKey,
-  primitiveTrustedIssuerToTrustedClaimIssuer,
   requirementToComplianceRequirement,
   rpcMeshClaimTypeToClaimType,
+  rpcTrustedIssuerToTrustedClaimIssuer,
   scheduleSpecToMeshScheduleSpec,
   scopeClaimProofToConfidentialIdentityClaimProof,
   scopeIdsToBtreeSetIdentityId,
@@ -261,6 +261,7 @@ import {
   transferConditionToTransferRestriction,
   transferRestrictionToPolymeshTransferCondition,
   trustedClaimIssuerToTrustedIssuer,
+  trustedIssuerToTrustedClaimIssuer,
   txGroupToTxTags,
   txTagToExtrinsicIdentifier,
   txTagToProtocolOp,
@@ -5528,7 +5529,7 @@ describe('trustedClaimIssuerToTrustedIssuer and trustedIssuerToTrustedClaimIssue
         trustedFor: dsMockUtils.createMockTrustedFor('Any'),
       });
 
-      let result = primitiveTrustedIssuerToTrustedClaimIssuer(trustedIssuer, context);
+      let result = trustedIssuerToTrustedClaimIssuer(trustedIssuer, context);
       expect(result).toEqual(fakeResult);
 
       fakeResult = {
@@ -5542,7 +5543,41 @@ describe('trustedClaimIssuerToTrustedIssuer and trustedIssuerToTrustedClaimIssue
         }),
       });
 
-      result = primitiveTrustedIssuerToTrustedClaimIssuer(trustedIssuer, context);
+      result = trustedIssuerToTrustedClaimIssuer(trustedIssuer, context);
+      expect(result).toEqual(fakeResult);
+    });
+  });
+
+  describe('rpcTrustedIssuerToTrustedClaimIssuer', () => {
+    it('should convert an IdentityId to an Identity object', () => {
+      const did = 'someDid';
+      const context = dsMockUtils.getContextInstance();
+      let fakeResult: TrustedClaimIssuer = {
+        identity: expect.objectContaining({ did }),
+        trustedFor: null,
+      };
+      let trustedIssuer = dsMockUtils.createMockRpcTrustedIssuer({
+        issuer: dsMockUtils.createMockIdentityId(did),
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        trusted_for: dsMockUtils.createMockRpcTrustedFor('Any'),
+      });
+
+      let result = rpcTrustedIssuerToTrustedClaimIssuer(trustedIssuer, context);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = {
+        identity: expect.objectContaining({ did }),
+        trustedFor: [ClaimType.SellLockup],
+      };
+      trustedIssuer = dsMockUtils.createMockRpcTrustedIssuer({
+        issuer: dsMockUtils.createMockIdentityId(did),
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        trusted_for: dsMockUtils.createMockRpcTrustedFor({
+          Specific: [dsMockUtils.createMockRpcClaimType(ClaimType.SellLockup)],
+        }),
+      });
+
+      result = rpcTrustedIssuerToTrustedClaimIssuer(trustedIssuer, context);
       expect(result).toEqual(fakeResult);
     });
   });

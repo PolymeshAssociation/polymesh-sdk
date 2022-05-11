@@ -78,7 +78,6 @@ function transformRestrictions(
   let someDifference = restrictions.length !== currentRestrictions.length;
   const conditions = restrictions.map(r => {
     if (!someDifference) {
-      // eslint-disable-next-line array-callback-return
       someDifference = !currentRestrictions.find(transferRestriction => {
         if (transferRestriction.isMaxInvestorCount && type === TransferRestrictionType.Count) {
           const currentCount = u64ToBigNumber(transferRestriction.asMaxInvestorCount);
@@ -89,6 +88,8 @@ function transformRestrictions(
         ) {
           const currentOwnership = permillToBigNumber(transferRestriction.asMaxInvestorOwnership);
           return currentOwnership.eq((r as PercentageTransferRestrictionInput).percentage);
+        } else {
+          return false;
         }
       });
     }

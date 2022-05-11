@@ -244,6 +244,16 @@ describe('Context class', () => {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect((context as any).signingManager).toEqual(signingManager);
+
+      signingManager.getAccounts.returns([]);
+
+      await context.setSigningManager(signingManager);
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.General,
+        message: 'There is no signing Account associated with the SDK instance',
+      });
+      expect(() => context.getSigningAccount()).toThrowError(expectedError);
     });
   });
 

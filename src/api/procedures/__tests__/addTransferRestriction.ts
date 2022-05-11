@@ -324,6 +324,28 @@ describe('addTransferRestriction procedure', () => {
         },
       ],
     });
+
+    args = {
+      type: TransferRestrictionType.Percentage,
+      exemptedIdentities: [],
+      percentage,
+      ticker,
+    };
+
+    await prepareAddTransferRestriction.call(proc, args);
+
+    sinon.assert.calledWith(addBatchTransactionStub.secondCall, {
+      transactions: [
+        {
+          transaction: setActiveAssetStats,
+          args: [{ Ticker: rawTicker }, [rawStatType, rawStatType]],
+        },
+        {
+          transaction: setAssetTransferCompliance,
+          args: [{ Ticker: rawTicker }, [rawPercentageCondition]],
+        },
+      ],
+    });
   });
 
   it('should throw an error if attempting to add a restriction that already exists', async () => {

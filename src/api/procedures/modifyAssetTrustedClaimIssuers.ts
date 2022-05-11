@@ -7,11 +7,11 @@ import { ErrorCode, InputTrustedClaimIssuer, TrustedClaimIssuer, TxTags } from '
 import { ProcedureAuthorization, TrustedClaimIssuerOperation } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
-  primitiveTrustedIssuerToTrustedClaimIssuer,
   signerToString,
   stringToIdentityId,
   stringToTicker,
   trustedClaimIssuerToTrustedIssuer,
+  trustedIssuerToTrustedClaimIssuer,
 } from '~/utils/conversion';
 import { asIdentity, assembleBatchTransactions, hasSameElements } from '~/utils/internal';
 
@@ -110,7 +110,7 @@ export async function prepareModifyAssetTrustedClaimIssuers(
   const rawCurrentClaimIssuers = await query.complianceManager.trustedClaimIssuer(rawTicker);
 
   const currentClaimIssuers = rawCurrentClaimIssuers.map(issuer =>
-    primitiveTrustedIssuerToTrustedClaimIssuer(issuer, context)
+    trustedIssuerToTrustedClaimIssuer(issuer, context)
   );
   const currentClaimIssuerDids = currentClaimIssuers.map(({ identity }) =>
     signerToString(identity)

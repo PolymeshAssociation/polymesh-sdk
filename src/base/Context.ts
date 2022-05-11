@@ -189,7 +189,6 @@ export class Context {
 
     // this could be undefined
     const [firstAccount] = await signingManager.getAccounts();
-
     if (!firstAccount) {
       this.signingAddress = undefined;
     } else {

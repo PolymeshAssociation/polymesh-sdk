@@ -204,7 +204,7 @@ describe('Requirements class', () => {
     let notDefaultClaimIssuer: TrustedClaimIssuer;
     let assetDid: string;
     let cddId: string;
-    let primitiveTrustedIssuerToTrustedClaimIssuer: sinon.SinonStub;
+    let trustedIssuerToTrustedClaimIssuer: sinon.SinonStub;
 
     let expected: ComplianceRequirements;
 
@@ -212,9 +212,9 @@ describe('Requirements class', () => {
     let queryMultiResult: [PolymeshPrimitivesComplianceManagerAssetCompliance, Vec<IdentityId>];
 
     beforeAll(() => {
-      primitiveTrustedIssuerToTrustedClaimIssuer = sinon.stub(
+      trustedIssuerToTrustedClaimIssuer = sinon.stub(
         utilsConversionModule,
-        'primitiveTrustedIssuerToTrustedClaimIssuer'
+        'trustedIssuerToTrustedClaimIssuer'
       );
     });
 
@@ -240,7 +240,7 @@ describe('Requirements class', () => {
 
       queryMultiStub = dsMockUtils.getQueryMultiStub();
 
-      primitiveTrustedIssuerToTrustedClaimIssuer.returns({
+      trustedIssuerToTrustedClaimIssuer.returns({
         identity: defaultClaimIssuers[0].identity,
         trustedFor: null,
       });
