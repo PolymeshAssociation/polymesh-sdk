@@ -115,26 +115,8 @@ export class Context {
 
     this._middlewareApi = middlewareApi;
     this._polymeshApi = polymeshApi;
-    this.polymeshApi = Context.createPolymeshApiProxy(this);
+    this.polymeshApi = polymeshApi;
     this.ss58Format = ss58Format;
-  }
-
-  /**
-   * @hidden
-   */
-  static createPolymeshApiProxy(ctx: Context): ApiPromise {
-    return new Proxy(ctx._polymeshApi, {
-      get: (target, prop: keyof ApiPromise): ApiPromise[keyof ApiPromise] => {
-        if (prop === 'tx' && !ctx.signingAddress) {
-          throw new PolymeshError({
-            code: ErrorCode.General,
-            message: 'Cannot perform transactions without an active Account',
-          });
-        }
-
-        return target[prop];
-      },
-    });
   }
 
   /**
@@ -1150,7 +1132,6 @@ export class Context {
    */
   public clone(): Context {
     const cloned = clone(this);
-    cloned.polymeshApi = Context.createPolymeshApiProxy(cloned);
 
     return cloned;
   }

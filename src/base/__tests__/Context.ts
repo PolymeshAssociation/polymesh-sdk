@@ -80,18 +80,6 @@ describe('Context class', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should throw an error if accessing the transaction submodule without an active Account', async () => {
-    const context = await Context.create({
-      polymeshApi: dsMockUtils.getApiInstance(),
-      middlewareApi: dsMockUtils.getMiddlewareApi(),
-      signingManager: dsMockUtils.getSigningManagerInstance({ getAccounts: [] }),
-    });
-
-    expect(() => context.polymeshApi.tx).toThrow(
-      'Cannot perform transactions without an active Account'
-    );
-  });
-
   it('should throw an error if accessing the middleware client without an active connection', async () => {
     const context = await Context.create({
       polymeshApi: dsMockUtils.getApiInstance(),
