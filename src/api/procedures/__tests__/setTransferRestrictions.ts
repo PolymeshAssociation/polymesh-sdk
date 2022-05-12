@@ -493,13 +493,12 @@ describe('setTransferRestrictions procedure', () => {
       expect(boundFunc(args)).toEqual({
         permissions: {
           assets: [expect.objectContaining({ ticker })],
-          transactions: [
-            TxTags.statistics.SetAssetTransferCompliance,
-            TxTags.statistics.SetEntitiesExempt,
-          ],
+          transactions: [TxTags.statistics.SetAssetTransferCompliance],
           portfolios: [],
         },
       });
+
+      args.restrictions = [{ count, exemptedIdentities: ['0x1000'] }];
 
       proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
         mockContext,

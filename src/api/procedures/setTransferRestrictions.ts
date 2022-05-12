@@ -244,14 +244,16 @@ export async function prepareSetTransferRestrictions(
  */
 export function getAuthorization(
   this: Procedure<SetTransferRestrictionsParams, BigNumber, Storage>,
-  { ticker }: SetTransferRestrictionsParams
+  { ticker, restrictions }: SetTransferRestrictionsParams
 ): ProcedureAuthorization {
   const { needStat } = this.storage;
 
-  const transactions: TxTag[] = [
-    TxTags.statistics.SetAssetTransferCompliance,
-    TxTags.statistics.SetEntitiesExempt,
-  ];
+  const transactions: TxTag[] = [TxTags.statistics.SetAssetTransferCompliance];
+
+  const needExemptionsPermission = restrictions.some(r => r.exemptedIdentities?.length);
+  if (needExemptionsPermission) {
+    transactions.push(TxTags.statistics.SetEntitiesExempt);
+  }
 
   if (needStat) {
     transactions.push(TxTags.statistics.SetActiveAssetStats);

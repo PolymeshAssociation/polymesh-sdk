@@ -601,6 +601,8 @@ describe('Asset class', () => {
   describe('method: investorCount', () => {
     let statisticsAssetStatsStub: sinon.SinonStub;
     let statisticsActiveAssetStatsStub: sinon.SinonStub;
+    let meshToStatisticsOpTypeStub: sinon.SinonStub;
+
     let investorCount: BigNumber;
     let rawInvestorCount: u64;
 
@@ -615,6 +617,7 @@ describe('Asset class', () => {
         'statistics',
         'activeAssetStats'
       );
+      meshToStatisticsOpTypeStub = sinon.stub(utilsConversionModule, 'meshStatToStatisticsOpType');
     });
 
     afterEach(() => {
@@ -629,9 +632,7 @@ describe('Asset class', () => {
       statisticsAssetStatsStub.resolves(rawInvestorCount);
       statisticsActiveAssetStatsStub.resolves(['fakeStat']);
 
-      sinon
-        .stub(utilsConversionModule, 'meshStatToStatisticsOpType')
-        .returns(StatisticsOpType.Count);
+      meshToStatisticsOpTypeStub.returns(StatisticsOpType.Count);
       const result = await asset.investorCount();
 
       expect(result).toEqual(investorCount);
@@ -644,9 +645,7 @@ describe('Asset class', () => {
       const unsubCallback = 'unsubCallBack';
       statisticsActiveAssetStatsStub.resolves(['fakeStat']);
 
-      sinon
-        .stub(utilsConversionModule, 'meshStatToStatisticsOpType')
-        .returns(StatisticsOpType.Count);
+      meshToStatisticsOpTypeStub.returns(StatisticsOpType.Count);
 
       statisticsAssetStatsStub.callsFake(async (_, _holder, cbFunc) => {
         cbFunc(rawInvestorCount);

@@ -8,7 +8,8 @@ import {
 } from '@polkadot/types/lookup';
 import {
   CallFunction,
-  InterfaceTypes,
+  Codec,
+  DetectCodec,
   Signer as PolkadotSigner,
   TypeDef,
   TypeDefInfo,
@@ -1139,8 +1140,10 @@ export class Context {
    *
    * Creates an instance of a type as registered in the polymeshApi instance
    */
-  public createType<K extends keyof InterfaceTypes>(type: K, params: unknown): any {
-    /* eslint-enable @typescript-eslint/no-explicit-any */
+  public createType<T extends Codec = Codec, K extends string = string>(
+    type: K,
+    params: unknown
+  ): DetectCodec<T, K> {
     try {
       return this.polymeshApi.createType(type, params);
     } catch (error) {

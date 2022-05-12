@@ -331,7 +331,7 @@ export function stringToInvestorZKProofData(proof: string, context: Context): In
  * @hidden
  */
 export function dateToMoment(date: Date, context: Context): Moment {
-  return context.createType('Moment', date.getTime());
+  return context.createType('Moment', date.getTime()) as Moment;
 }
 
 /**
