@@ -1,10 +1,9 @@
 import { Bytes } from '@polkadot/types';
-import { PalletStoFundraiser } from '@polkadot/types/lookup';
+import { PalletStoFundraiser, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Asset, Context, Namespace, Offering, TransactionQueue } from '~/internal';
-import { Ticker } from '~/polkadot/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   OfferingBalanceStatus,
@@ -120,10 +119,10 @@ describe('Offerings class', () => {
   });
 
   describe('method: get', () => {
-    let rawTicker: Ticker;
+    let rawTicker: PolymeshPrimitivesTicker;
     let rawName: Bytes;
 
-    let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
+    let stringToTickerStub: sinon.SinonStub<[string, Context], PolymeshPrimitivesTicker>;
     let fundraiserToOfferingDetailsStub: sinon.SinonStub<
       [PalletStoFundraiser, Bytes, Context],
       OfferingDetails

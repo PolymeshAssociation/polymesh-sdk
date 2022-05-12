@@ -1868,13 +1868,13 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         extrinsic: dsMockUtils.createMockExtrinsicPermissions({
           These: [
             dsMockUtils.createMockPalletPermissions({
-              palletName: dsMockUtils.createMockPalletName('Identity'),
+              palletName: 'Identity',
               dispatchableNames: dsMockUtils.createMockDispatchableNames({
                 These: [dsMockUtils.createMockBytes('add_claim')],
               }),
             }),
             dsMockUtils.createMockPalletPermissions({
-              palletName: dsMockUtils.createMockPalletName('Authorship'),
+              palletName: 'Authorship',
               dispatchableNames: dsMockUtils.createMockDispatchableNames('Whole'),
             }),
           ],
@@ -1931,7 +1931,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         extrinsic: dsMockUtils.createMockExtrinsicPermissions({
           Except: [
             dsMockUtils.createMockPalletPermissions({
-              palletName: dsMockUtils.createMockPalletName('Identity'),
+              palletName: 'Identity',
               dispatchableNames: dsMockUtils.createMockDispatchableNames({
                 Except: [dsMockUtils.createMockBytes('add_claim')],
               }),

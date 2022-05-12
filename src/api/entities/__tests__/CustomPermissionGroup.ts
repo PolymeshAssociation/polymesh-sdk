@@ -110,20 +110,19 @@ describe('CustomPermissionGroup class', () => {
   describe('method: getPermissions', () => {
     it('should return a list of permissions and transaction groups', async () => {
       const customPermissionGroup = new CustomPermissionGroup({ id, ticker }, context);
-      sinon.stub(utilsConversionModule, 'bigNumberToU32');
 
       dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockExtrinsicPermissions({
             These: [
               dsMockUtils.createMockPalletPermissions({
-                palletName: dsMockUtils.createMockPalletName('Sto'),
+                palletName: 'Sto',
                 dispatchableNames: dsMockUtils.createMockDispatchableNames({
                   These: [dsMockUtils.createMockBytes('invest')],
                 }),
               }),
               dsMockUtils.createMockPalletPermissions({
-                palletName: dsMockUtils.createMockPalletName('Identity'),
+                palletName: 'Identity',
                 dispatchableNames: dsMockUtils.createMockDispatchableNames({
                   These: [dsMockUtils.createMockBytes('addClaim')],
                 }),

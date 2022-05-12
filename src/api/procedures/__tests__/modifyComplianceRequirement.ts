@@ -1,9 +1,10 @@
 import {
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
   PolymeshPrimitivesCondition,
+  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { Ticker, TxTags } from 'polymesh-types/types';
+import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -25,14 +26,14 @@ jest.mock(
 
 describe('modifyComplianceRequirement procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
+  let stringToTickerStub: sinon.SinonStub<[string, Context], PolymeshPrimitivesTicker>;
   let requirementToComplianceRequirementStub: sinon.SinonStub<
     [InputRequirement, Context],
     PolymeshPrimitivesComplianceManagerComplianceRequirement
   >;
   let ticker: string;
   let conditions: Condition[];
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
   let args: Params;
 
   beforeAll(() => {
@@ -60,7 +61,7 @@ describe('modifyComplianceRequirement procedure', () => {
 
   let addTransactionStub: sinon.SinonStub;
 
-  let modifyComplianceRequirementTransaction: PolymeshTx<[Ticker]>;
+  let modifyComplianceRequirementTransaction: PolymeshTx<[PolymeshPrimitivesTicker]>;
 
   beforeEach(() => {
     dsMockUtils.setConstMock('complianceManager', 'maxConditionComplexity', {

@@ -1130,9 +1130,7 @@ export class Context {
    *   Context to Procedures with different signing Accounts
    */
   public clone(): Context {
-    const cloned = clone(this);
-
-    return cloned;
+    return clone(this);
   }
 
   /* eslint-disable @typescript-eslint/no-explicit-any */

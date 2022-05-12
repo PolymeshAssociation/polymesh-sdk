@@ -25,7 +25,7 @@ import {
 } from '~/types';
 import {
   scopeIdToString,
-  stringToTicker,
+  stringToTickerKey,
   transferConditionToTransferRestriction,
   u32ToBigNumber,
 } from '~/utils/conversion';
@@ -155,8 +155,8 @@ export abstract class TransferRestrictionBase<
       context,
       type,
     } = this;
-    const rawTicker = stringToTicker(ticker, context);
-    const complianceRules = await statistics.assetTransferCompliances({ Ticker: rawTicker });
+    const tickerKey = stringToTickerKey(ticker, context);
+    const complianceRules = await statistics.assetTransferCompliances(tickerKey);
     const filteredRequirements = complianceRules.requirements.filter(requirement => {
       if (type === TransferRestrictionType.Count) {
         return requirement.isMaxInvestorCount;
@@ -167,7 +167,7 @@ export abstract class TransferRestrictionBase<
 
     const rawExemptedLists = await Promise.all(
       filteredRequirements.map(() =>
-        statistics.transferConditionExemptEntities.entries({ asset: { Ticker: rawTicker } })
+        statistics.transferConditionExemptEntities.entries({ asset: tickerKey })
       )
     );
 

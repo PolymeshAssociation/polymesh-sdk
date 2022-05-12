@@ -130,7 +130,6 @@ import {
   InvestorZKProofData,
   Moment,
   MovePortfolioItem,
-  PalletName,
   Pip,
   PipId,
   PipsMetadata,
@@ -1979,18 +1978,6 @@ export const createMockDocument = (document?: {
 
 /**
  * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockPalletName = (name?: string | PalletName): PalletName => {
-  if (isCodec<PalletName>(name)) {
-    return name;
-  }
-
-  return createMockStringCodec(name) as PalletName;
-};
-
-/**
- * @hidden
  */
 export const createMockDispatchableNames = (
   dispatchableNames?: 'Whole' | { These: Bytes[] } | { Except: Bytes[] } | DispatchableNames
@@ -2007,17 +1994,17 @@ export const createMockDispatchableNames = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockPalletPermissions = (permissions?: {
-  palletName: PalletName | Parameters<typeof createMockPalletName>[0];
+  palletName: string | Parameters<typeof createMockBytes>[0];
   dispatchableNames: DispatchableNames | Parameters<typeof createMockDispatchableNames>[0];
 }): PolymeshPrimitivesSecondaryKeyPalletPermissions => {
   const { palletName, dispatchableNames } = permissions || {
-    palletName: createMockPalletName(),
+    palletName: undefined,
     dispatchableNames: createMockDispatchableNames(),
   };
 
   return createMockCodec(
     {
-      palletName: createMockPalletName(palletName),
+      palletName: createMockBytes(palletName),
       dispatchableNames: createMockDispatchableNames(dispatchableNames),
     },
     !permissions

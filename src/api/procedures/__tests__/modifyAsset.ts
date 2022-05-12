@@ -1,5 +1,5 @@
 import { Bytes } from '@polkadot/types';
-import { Ticker } from 'polymesh-types/types';
+import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import sinon from 'sinon';
 
 import { getAuthorization, Params, prepareModifyAsset } from '~/api/procedures/modifyAsset';
@@ -16,10 +16,10 @@ jest.mock(
 
 describe('modifyAsset procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
+  let stringToTickerStub: sinon.SinonStub<[string, Context], PolymeshPrimitivesTicker>;
   let stringToBytesStub: sinon.SinonStub<[string, Context], Bytes>;
   let ticker: string;
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
   let fundingRound: string;
   let identifiers: SecurityIdentifier[];
   let addBatchTransactionStub: sinon.SinonStub;

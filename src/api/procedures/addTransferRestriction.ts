@@ -22,7 +22,6 @@ import {
   statUpdate,
   statUpdatesToBtreeStatUpdate,
   stringToIdentityId,
-  stringToTicker,
   stringToTickerKey,
   transferRestrictionToPolymeshTransferCondition,
   u32ToBigNumber,
@@ -230,11 +229,11 @@ export async function prepareStorage(
   } = this;
   const { ticker, type } = args;
 
-  const rawTicker = stringToTicker(ticker, context);
+  const tickerKey = stringToTickerKey(ticker, context);
 
   const [{ requirements: currentRestrictions }, currentStats] = await Promise.all([
-    statistics.assetTransferCompliances({ Ticker: rawTicker }),
-    statistics.activeAssetStats({ Ticker: rawTicker }),
+    statistics.assetTransferCompliances(tickerKey),
+    statistics.activeAssetStats(tickerKey),
   ]);
 
   const needStat = !currentStats.find(s => {

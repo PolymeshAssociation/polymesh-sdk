@@ -1000,7 +1000,7 @@ export function extrinsicPermissionsToTransactionPermissions(
 
   if (pallets) {
     pallets.forEach(({ palletName, dispatchableNames }) => {
-      const moduleName = stringLowerFirst(palletName.toString());
+      const moduleName = stringLowerFirst(bytesToString(palletName));
       if (dispatchableNames.isExcept) {
         const dispatchables = dispatchableNames.asExcept;
         exceptions = [

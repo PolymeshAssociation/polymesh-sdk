@@ -37,7 +37,7 @@ describe('createGroup procedure', () => {
   const rawExtrinsicPermissions = dsMockUtils.createMockExtrinsicPermissions({
     These: [
       dsMockUtils.createMockPalletPermissions({
-        palletName: dsMockUtils.createMockPalletName('Sto'),
+        palletName: 'Sto',
         dispatchableNames: dsMockUtils.createMockDispatchableNames({
           These: [dsMockUtils.createMockBytes('invest')],
         }),

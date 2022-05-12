@@ -312,10 +312,6 @@ export async function prepareStorage(
       ? currentCountRestrictions.length
       : currentPercentageRestrictions.length;
 
-  /*
-   * we're using `defusePromise` here because we KNOW the exempted ID promises are being
-   * awaited later and errors WILL be caught
-   */
   if (type === TransferRestrictionType.Count) {
     currentCountRestrictions.forEach(({ count: value }) => {
       const restriction = { type: TransferRestrictionType.Count, value };
