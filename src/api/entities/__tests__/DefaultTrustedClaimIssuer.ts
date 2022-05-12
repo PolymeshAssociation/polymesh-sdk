@@ -1,6 +1,8 @@
-import { PolymeshPrimitivesConditionTrustedIssuer } from '@polkadot/types/lookup';
+import {
+  PolymeshPrimitivesConditionTrustedIssuer,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Context, DefaultTrustedClaimIssuer, Identity } from '~/internal';
@@ -99,7 +101,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
 
   describe('method: trustedFor', () => {
     let ticker: string;
-    let rawTicker: Ticker;
+    let rawTicker: PolymeshPrimitivesTicker;
     let stringToTickerStub: sinon.SinonStub;
     let claimIssuers: PolymeshPrimitivesConditionTrustedIssuer[];
     let trustedClaimIssuerStub: sinon.SinonStub;

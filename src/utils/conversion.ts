@@ -56,7 +56,6 @@ import {
   AgentGroup,
   AssetComplianceResult,
   AssetIdentifier,
-  AssetName,
   AssetType,
   AuthorizationType as MeshAuthorizationType,
   CAKind,
@@ -73,10 +72,8 @@ import {
   DocumentType,
   DocumentUri,
   EcdsaSignature,
-  FundingRoundName,
   FundraiserTier,
   GranularCanTransferResult,
-  IdentityId,
   InstructionStatus as MeshInstructionStatus,
   InvestorZKProofData,
   Memo,
@@ -104,7 +101,6 @@ import {
   TrustedIssuer,
   TxTag,
   TxTags,
-  VenueDetails,
   VenueType as MeshVenueType,
 } from 'polymesh-types/types';
 
@@ -255,20 +251,6 @@ export function tickerToDid(ticker: string): string {
 /**
  * @hidden
  */
-export function stringToAssetName(name: string, context: Context): AssetName {
-  return context.createType('AssetName', name);
-}
-
-/**
- * @hidden
- */
-export function assetNameToString(name: AssetName): string {
-  return name.toString();
-}
-
-/**
- * @hidden
- */
 export function booleanToBool(value: boolean, context: Context): bool {
   return context.createType('bool', value);
 }
@@ -392,14 +374,17 @@ export function stringToHash(hash: string, context: Context): Hash {
 /**
  * @hidden
  */
-export function stringToIdentityId(identityId: string, context: Context): IdentityId {
-  return context.createType('IdentityId', identityId);
+export function stringToIdentityId(
+  identityId: string,
+  context: Context
+): PolymeshPrimitivesIdentityId {
+  return context.createType('PolymeshPrimitivesIdentityId', identityId);
 }
 
 /**
  * @hidden
  */
-export function identityIdToString(identityId: IdentityId): string {
+export function identityIdToString(identityId: PolymeshPrimitivesIdentityId): string {
   return identityId.toString();
 }
 
@@ -1689,20 +1674,6 @@ export function assetIdentifierToSecurityIdentifier(
 /**
  * @hidden
  */
-export function stringToFundingRoundName(roundName: string, context: Context): FundingRoundName {
-  return context.createType('FundingRoundName', roundName);
-}
-
-/**
- * @hidden
- */
-export function fundingRoundNameToString(roundName: FundingRoundName): string {
-  return roundName.toString();
-}
-
-/**
- * @hidden
- */
 export function stringToDocumentName(docName: string, context: Context): DocumentName {
   return context.createType('DocumentName', docName);
 }
@@ -1902,7 +1873,7 @@ export function canTransferResultToTransferStatus(
 export function scopeToMeshScope(scope: Scope, context: Context): MeshScope {
   const { type, value } = scope;
 
-  let scopeValue: PolymeshPrimitivesTicker | IdentityId | string;
+  let scopeValue: PolymeshPrimitivesTicker | PolymeshPrimitivesIdentityId | string;
   switch (type) {
     case ScopeType.Ticker:
       scopeValue = stringToTicker(value, context);
@@ -2700,13 +2671,6 @@ export function meshVenueTypeToVenueType(type: MeshVenueType): VenueType {
  */
 export function venueTypeToMeshVenueType(type: VenueType, context: Context): MeshVenueType {
   return context.createType('VenueType', type);
-}
-
-/**
- * @hidden
- */
-export function venueDetailsToString(details: VenueDetails): string {
-  return details.toString();
 }
 
 /**

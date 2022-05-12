@@ -58,7 +58,6 @@ describe('createAsset procedure', () => {
     [SecurityIdentifier, Context],
     AssetIdentifier
   >;
-  let stringToFundingRoundNameStub: sinon.SinonStub<[string, Context], FundingRoundName>;
   let assetDocumentToDocumentStub: sinon.SinonStub<
     [AssetDocument, Context],
     PolymeshPrimitivesDocument
@@ -78,7 +77,7 @@ describe('createAsset procedure', () => {
   let rawIsDivisible: bool;
   let rawType: AssetType;
   let rawIdentifiers: AssetIdentifier[];
-  let rawFundingRound: FundingRoundName;
+  let rawFundingRound: Bytes;
   let rawDisableIu: bool;
   let rawDocuments: PolymeshPrimitivesDocument[];
   let args: Params;
@@ -108,7 +107,6 @@ describe('createAsset procedure', () => {
       utilsConversionModule,
       'securityIdentifierToAssetIdentifier'
     );
-    stringToFundingRoundNameStub = sinon.stub(utilsConversionModule, 'stringToFundingRoundName');
     assetDocumentToDocumentStub = sinon.stub(utilsConversionModule, 'assetDocumentToDocument');
     ticker = 'someTicker';
     name = 'someName';
@@ -155,7 +153,7 @@ describe('createAsset procedure', () => {
         ),
       })
     );
-    rawFundingRound = dsMockUtils.createMockFundingRoundName(fundingRound);
+    rawFundingRound = dsMockUtils.createMockBytes(fundingRound);
     rawDisableIu = dsMockUtils.createMockBool(!requireInvestorUniqueness);
     args = {
       ticker,
@@ -203,7 +201,7 @@ describe('createAsset procedure', () => {
     securityIdentifierToAssetIdentifierStub
       .withArgs(securityIdentifiers[0], mockContext)
       .returns(rawIdentifiers[0]);
-    stringToFundingRoundNameStub.withArgs(fundingRound, mockContext).returns(rawFundingRound);
+    stringToBytesStub.withArgs(fundingRound, mockContext).returns(rawFundingRound);
     assetDocumentToDocumentStub
       .withArgs(
         { uri: documents[0].uri, contentHash: documents[0].contentHash, name: documents[0].name },

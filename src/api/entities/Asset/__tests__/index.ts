@@ -287,7 +287,7 @@ describe('Asset class', () => {
 
     it('should return null if there is no funding round for an Asset', async () => {
       dsMockUtils.createQueryStub('asset', 'fundingRound', {
-        returnValue: dsMockUtils.createMockFundingRoundName(),
+        returnValue: dsMockUtils.createMockBytes(),
       });
 
       const result = await asset.currentFundingRound();

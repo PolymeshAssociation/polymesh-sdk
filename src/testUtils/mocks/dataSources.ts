@@ -67,6 +67,7 @@ import {
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesStatisticsStatUpdate,
   PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions,
+  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import {
   Codec,
@@ -89,7 +90,6 @@ import {
   AGId,
   AssetComplianceResult,
   AssetIdentifier,
-  AssetName,
   AssetOwnershipRelation,
   AssetPermissions,
   AssetType,
@@ -119,12 +119,10 @@ import {
   DocumentUri,
   EcdsaSignature,
   EthereumAddress,
-  FundingRoundName,
   FundraiserStatus,
   FundraiserTier,
   GranularCanTransferResult,
   IdentityClaim,
-  IdentityId,
   IdentityRole,
   InstructionStatus,
   InvestorZKProofData,
@@ -157,14 +155,12 @@ import {
   TargetIdentity,
   TargetTreatment,
   Tax,
-  Ticker,
   TickerRegistration,
   TickerRegistrationConfig,
   TransferCondition,
   TransferConditionResult,
   TrustedFor,
   TrustedIssuer,
-  VenueDetails,
   VenueType,
   ZkProofData,
 } from 'polymesh-types/types';
@@ -1518,12 +1514,14 @@ const createMockNumberCodec = (value?: BigNumber): Codec =>
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockIdentityId = (did?: string | IdentityId): IdentityId => {
-  if (isCodec<IdentityId>(did)) {
+export const createMockIdentityId = (
+  did?: string | PolymeshPrimitivesIdentityId
+): PolymeshPrimitivesIdentityId => {
+  if (isCodec<PolymeshPrimitivesIdentityId>(did)) {
     return did;
   }
 
-  return createMockStringCodec(did) as IdentityId;
+  return createMockStringCodec(did) as PolymeshPrimitivesIdentityId;
 };
 
 /**
@@ -1583,12 +1581,14 @@ export const createMockEthereumAddress = (address?: string | EthereumAddress): E
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockTicker = (ticker?: string | Ticker): Ticker => {
-  if (isCodec<Ticker>(ticker)) {
+export const createMockTicker = (
+  ticker?: string | PolymeshPrimitivesTicker
+): PolymeshPrimitivesTicker => {
+  if (isCodec<PolymeshPrimitivesTicker>(ticker)) {
     return ticker;
   }
 
-  return createMockU8aCodec(ticker) as Ticker;
+  return createMockU8aCodec(ticker) as PolymeshPrimitivesTicker;
 };
 
 /**
@@ -1710,7 +1710,7 @@ export const createMockTickerRegistration = (
   registration?:
     | TickerRegistration
     | {
-        owner: IdentityId | Parameters<typeof createMockIdentityId>[0];
+        owner: PolymeshPrimitivesIdentityId | Parameters<typeof createMockIdentityId>[0];
         expiry: Option<Moment> | Parameters<typeof createMockOption>[0];
       }
 ): TickerRegistration => {
@@ -1807,13 +1807,6 @@ export const createMockHash = (value?: string | Hash): Hash => {
 
 /**
  * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockAssetName = (name?: string): AssetName =>
-  createMockStringCodec(name) as AssetName;
-
-/**
- * @hidden
  */
 export const createMockPosRatio = (numerator: BigNumber, denominator: BigNumber): PosRatio =>
   [createMockU32(numerator), createMockU32(denominator)] as PosRatio;
@@ -1858,7 +1851,7 @@ export const createMockPortfolioId = (
   portfolioId?:
     | PortfolioId
     | {
-        did: IdentityId | Parameters<typeof createMockIdentityId>[0];
+        did: PolymeshPrimitivesIdentityId | Parameters<typeof createMockIdentityId>[0];
         kind: PortfolioKind | Parameters<typeof createMockPortfolioKind>[0];
       }
 ): PortfolioId => {
@@ -1880,7 +1873,7 @@ export const createMockPortfolioId = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockMovePortfolioItem = (movePortfolioItem?: {
-  ticker: Ticker;
+  ticker: PolymeshPrimitivesTicker;
   amount: Balance;
 }): MovePortfolioItem => {
   const item = movePortfolioItem || {
@@ -1937,7 +1930,7 @@ export const createMockTickerRegistrationConfig = (regConfig?: {
  */
 export const createMockSecurityToken = (token?: {
   totalSupply: Balance;
-  ownerDid: IdentityId;
+  ownerDid: PolymeshPrimitivesIdentityId;
   divisible: bool;
   assetType: AssetType;
 }): SecurityToken => {
@@ -2101,7 +2094,7 @@ export const createMockSubsidy = (subsidy?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockSignatory = (
-  signatory?: { Identity: IdentityId } | { Account: AccountId }
+  signatory?: { Identity: PolymeshPrimitivesIdentityId } | { Account: AccountId }
 ): Signatory => {
   return createMockEnum(signatory) as Signatory;
 };
@@ -2144,20 +2137,16 @@ export const createMockAssetIdentifier = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockFundingRoundName = (roundName?: string): FundingRoundName =>
-  createMockStringCodec(roundName) as FundingRoundName;
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
 export const createMockFundraiserName = (name?: string): Bytes => createMockBytes(name);
 
 /**
  * @hidden
  */
 export const createMockAssetPermissions = (
-  assetPermissions?: 'Whole' | { These: Ticker[] } | { Except: Ticker[] }
+  assetPermissions?:
+    | 'Whole'
+    | { These: PolymeshPrimitivesTicker[] }
+    | { Except: PolymeshPrimitivesTicker[] }
 ): AssetPermissions => {
   return createMockEnum(assetPermissions) as AssetPermissions;
 };
@@ -2214,16 +2203,16 @@ export const createMockPermissions = (permissions?: {
  */
 export const createMockAuthorizationData = (
   authorizationData?:
-    | { AttestPrimaryKeyRotation: IdentityId }
+    | { AttestPrimaryKeyRotation: PolymeshPrimitivesIdentityId }
     | 'RotatePrimaryKey'
     | { RotatePrimaryKeyToSecondary: PolymeshPrimitivesSecondaryKeyPermissions }
-    | { TransferTicker: Ticker }
+    | { TransferTicker: PolymeshPrimitivesTicker }
     | { AddMultiSigSigner: AccountId }
-    | { TransferAssetOwnership: Ticker }
+    | { TransferAssetOwnership: PolymeshPrimitivesTicker }
     | { JoinIdentity: PolymeshPrimitivesSecondaryKeyPermissions }
     | { PortfolioCustody: PortfolioId }
     | { AddRelayerPayingKey: [AccountId, AccountId, Balance] }
-    | { BecomeAgent: [Ticker, AgentGroup] }
+    | { BecomeAgent: [PolymeshPrimitivesTicker, AgentGroup] }
     | PolymeshPrimitivesAuthorizationAuthorizationData
 ): PolymeshPrimitivesAuthorizationAuthorizationData => {
   if (isCodec<PolymeshPrimitivesAuthorizationAuthorizationData>(authorizationData)) {
@@ -2241,7 +2230,7 @@ export const createMockAuthorization = (authorization?: {
   authorizationData:
     | PolymeshPrimitivesAuthorizationAuthorizationData
     | Parameters<typeof createMockAuthorizationData>[0];
-  authorizedBy: IdentityId | Parameters<typeof createMockIdentityId>[0];
+  authorizedBy: PolymeshPrimitivesIdentityId | Parameters<typeof createMockIdentityId>[0];
   expiry: Option<Moment>;
   authId: u64 | Parameters<typeof createMockU64>[0];
 }): PolymeshPrimitivesAuthorization => {
@@ -2286,8 +2275,9 @@ export const createMockIEvent = <T extends Codec[]>(data: unknown[]): IEvent<T> 
 /**
  * @hidden
  */
-export const createMockCddStatus = (cddStatus?: { Ok: IdentityId } | { Err: Bytes }): CddStatus =>
-  createMockEnum(cddStatus) as CddStatus;
+export const createMockCddStatus = (
+  cddStatus?: { Ok: PolymeshPrimitivesIdentityId } | { Err: Bytes }
+): CddStatus => createMockEnum(cddStatus) as CddStatus;
 
 /**
  * @hidden
@@ -2301,7 +2291,10 @@ export const createMockCountryCode = (name?: CountryCodeEnum): CountryCode =>
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockScope = (
-  scope?: { Identity: IdentityId } | { Ticker: Ticker } | { Custom: Bytes }
+  scope?:
+    | { Identity: PolymeshPrimitivesIdentityId }
+    | { Ticker: PolymeshPrimitivesTicker }
+    | { Custom: Bytes }
 ): Scope => createMockEnum(scope) as Scope;
 
 /**
@@ -2349,7 +2342,7 @@ export const createMockClaim = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockIdentityClaim = (identityClaim?: {
-  claim_issuer: IdentityId;
+  claim_issuer: PolymeshPrimitivesIdentityId;
   issuance_date: Moment;
   last_update_date: Moment;
   expiry: Option<Moment>;
@@ -2375,7 +2368,7 @@ export const createMockIdentityClaim = (identityClaim?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockTargetIdentity = (
-  targetIdentity?: { Specific: IdentityId } | 'ExternalAgent'
+  targetIdentity?: { Specific: PolymeshPrimitivesIdentityId } | 'ExternalAgent'
 ): TargetIdentity => createMockEnum(targetIdentity) as TargetIdentity;
 
 /**
@@ -2439,7 +2432,7 @@ export const createMockClaimType = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockClaim1stKey = (claim1stKey?: {
-  target: IdentityId;
+  target: PolymeshPrimitivesIdentityId;
   claim_type: MeshClaimType;
 }): Claim1stKey => {
   const claimTypeMock = claim1stKey || {
@@ -2476,7 +2469,7 @@ export const createMockRpcTrustedFor = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockTrustedIssuer = (issuer?: {
-  issuer: IdentityId;
+  issuer: PolymeshPrimitivesIdentityId;
   trustedFor: PolymeshPrimitivesConditionTrustedFor;
 }): PolymeshPrimitivesConditionTrustedIssuer => {
   const trustedIssuer = issuer || {
@@ -2497,7 +2490,7 @@ export const createMockTrustedIssuer = (issuer?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockRpcTrustedIssuer = (issuer?: {
-  issuer: IdentityId;
+  issuer: PolymeshPrimitivesIdentityId;
   trusted_for: TrustedFor;
 }): TrustedIssuer => {
   const trustedIssuer = issuer || {
@@ -2824,13 +2817,6 @@ export const createMockPipId = (id: BigNumber): PipId => createMockU32(new BigNu
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockVenueDetails = (details?: string): VenueDetails =>
-  createMockStringCodec(details) as VenueDetails;
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
 export const createMockVenueType = (
   venueType?: 'Other' | 'Distribution' | 'Sto' | 'Exchange'
 ): VenueType => {
@@ -2842,7 +2828,7 @@ export const createMockVenueType = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockVenue = (venue?: {
-  creator: IdentityId;
+  creator: PolymeshPrimitivesIdentityId;
   venueType: VenueType;
 }): PalletSettlementVenue => {
   const vn = venue || {
@@ -2970,11 +2956,11 @@ export const createMockFundraiserStatus = (
  * @hidden
  */
 export const createMockFundraiser = (fundraiser?: {
-  creator: IdentityId;
+  creator: PolymeshPrimitivesIdentityId;
   offeringPortfolio: PortfolioId;
-  offeringAsset: Ticker;
+  offeringAsset: PolymeshPrimitivesTicker;
   raisingPortfolio: PortfolioId;
-  raisingAsset: Ticker;
+  raisingAsset: PolymeshPrimitivesTicker;
   tiers: FundraiserTier[];
   venueId: u64;
   start: Moment;
@@ -3292,7 +3278,7 @@ export const createMockTargetIdentities = (
   targetIdentities?:
     | TargetIdentities
     | {
-        identities: (IdentityId | Parameters<typeof createMockIdentityId>[0])[];
+        identities: (PolymeshPrimitivesIdentityId | Parameters<typeof createMockIdentityId>[0])[];
         treatment: TargetTreatment | Parameters<typeof createMockTargetTreatment>[0];
       }
 ): TargetIdentities => {
@@ -3377,7 +3363,7 @@ export const createMockCorporateAction = (corporateAction?: {
   targets: TargetIdentities | Parameters<typeof createMockTargetIdentities>[0];
   default_withholding_tax: Tax | Parameters<typeof createMockPermill>[0];
   withholding_tax: [
-    IdentityId | Parameters<typeof createMockIdentityId>[0],
+    PolymeshPrimitivesIdentityId | Parameters<typeof createMockIdentityId>[0],
     Tax | Parameters<typeof createMockPermill>[0]
   ][];
 }): PalletCorporateActionsCorporateAction => {
@@ -3413,7 +3399,7 @@ export const createMockCAId = (
   caId?:
     | PalletCorporateActionsCaId
     | {
-        ticker: Ticker | Parameters<typeof createMockTicker>[0];
+        ticker: PolymeshPrimitivesTicker | Parameters<typeof createMockTicker>[0];
         localId: u32 | Parameters<typeof createMockU32>[0];
       }
 ): PalletCorporateActionsCaId => {
@@ -3436,7 +3422,7 @@ export const createMockCAId = (
  */
 export const createMockDistribution = (distribution?: {
   from: PortfolioId | Parameters<typeof createMockPortfolioId>[0];
-  currency: Ticker | Parameters<typeof createMockTicker>[0];
+  currency: PolymeshPrimitivesTicker | Parameters<typeof createMockTicker>[0];
   perShare: Balance | Parameters<typeof createMockBalance>[0];
   amount: Balance | Parameters<typeof createMockBalance>[0];
   remaining: Balance | Parameters<typeof createMockBalance>[0];

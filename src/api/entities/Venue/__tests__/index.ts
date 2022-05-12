@@ -124,7 +124,7 @@ describe('Venue class', () => {
       dsMockUtils
         .createQueryStub('settlement', 'details')
         .withArgs(rawId)
-        .resolves(dsMockUtils.createMockVenueDetails(description));
+        .resolves(dsMockUtils.createMockBytes(description));
 
       const result = await venue.details();
 

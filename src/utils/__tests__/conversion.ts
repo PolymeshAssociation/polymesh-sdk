@@ -33,7 +33,6 @@ import {
 } from 'polymesh-types/polymesh';
 import {
   AssetIdentifier,
-  AssetName,
   AssetType,
   AuthorizationData,
   AuthorizationType as MeshAuthorizationType,
@@ -43,8 +42,6 @@ import {
   DocumentName,
   DocumentType,
   DocumentUri,
-  FundingRoundName,
-  IdentityId,
   ModuleName,
   Permissions as MeshPermissions,
   ProtocolOp,
@@ -135,7 +132,6 @@ import {
   assetComplianceResultToCompliance,
   assetDocumentToDocument,
   assetIdentifierToSecurityIdentifier,
-  assetNameToString,
   assetTypeToKnownOrId,
   authorizationDataToAuthorization,
   authorizationToAuthorizationData,
@@ -169,7 +165,6 @@ import {
   documentUriToString,
   endConditionToSettlementType,
   extrinsicIdentifierToTxTag,
-  fundingRoundNameToString,
   fundraiserTierToTier,
   fundraiserToOfferingDetails,
   granularCanTransferResultToTransferBreakdown,
@@ -228,7 +223,6 @@ import {
   statUpdate,
   storedScheduleToCheckpointScheduleParams,
   stringToAccountId,
-  stringToAssetName,
   stringToBytes,
   stringToCddId,
   stringToDocumentHash,
@@ -236,7 +230,6 @@ import {
   stringToDocumentType,
   stringToDocumentUri,
   stringToEcdsaSignature,
-  stringToFundingRoundName,
   stringToHash,
   stringToIdentityId,
   stringToInvestorZKProofData,
@@ -271,7 +264,6 @@ import {
   u32ToBigNumber,
   u64ToBigNumber,
   u128ToBigNumber,
-  venueDetailsToString,
   venueTypeToMeshVenueType,
 } from '../conversion';
 
@@ -332,44 +324,6 @@ describe('tickerToDid', () => {
     result = tickerToDid(ticker);
 
     expect(result).toBe('0xa643b102d0c58adb3d13a28ab260644f2d0b010dc73aab99a3802b843868ab64');
-  });
-});
-
-describe('stringToAssetName and assetNameToString', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  describe('stringToAssetName', () => {
-    it('should convert a string to a polkadot AssetName object', () => {
-      const value = 'someName';
-      const fakeResult = 'convertedName' as unknown as AssetName;
-      const context = dsMockUtils.getContextInstance();
-
-      context.createType.withArgs('AssetName', value).returns(fakeResult);
-
-      const result = stringToAssetName(value, context);
-
-      expect(result).toEqual(fakeResult);
-    });
-  });
-
-  describe('assetNameToString', () => {
-    it('should convert a polkadot AssetName object to a string', () => {
-      const fakeResult = 'someAssetName';
-      const assetName = dsMockUtils.createMockAssetName(fakeResult);
-
-      const result = assetNameToString(assetName);
-      expect(result).toEqual(fakeResult);
-    });
   });
 });
 
@@ -799,10 +753,10 @@ describe('stringToIdentityId and identityIdToString', () => {
   describe('stringToIdentityId', () => {
     it('should convert a did string into an IdentityId', () => {
       const identity = 'IdentityObject';
-      const fakeResult = 'type' as unknown as IdentityId;
+      const fakeResult = 'type' as unknown as PolymeshPrimitivesIdentityId;
       const context = dsMockUtils.getContextInstance();
 
-      context.createType.withArgs('IdentityId', identity).returns(fakeResult);
+      context.createType.withArgs('PolymeshPrimitivesIdentityId', identity).returns(fakeResult);
 
       const result = stringToIdentityId(identity, context);
 
@@ -2715,44 +2669,6 @@ describe('securityIdentifierToAssetIdentifier and assetIdentifierToSecurityIdent
   });
 });
 
-describe('stringToFundingRoundName and fundingRoundNameToString', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  describe('stringToFundingRoundName', () => {
-    it('should convert a string to a polkadot FundingRoundName object', () => {
-      const value = 'someName';
-      const fakeResult = 'convertedName' as unknown as FundingRoundName;
-      const context = dsMockUtils.getContextInstance();
-
-      context.createType.withArgs('FundingRoundName', value).returns(fakeResult);
-
-      const result = stringToFundingRoundName(value, context);
-
-      expect(result).toEqual(fakeResult);
-    });
-  });
-
-  describe('fundingRoundNameToString', () => {
-    it('should convert a polkadot FundingRoundName object to a string', () => {
-      const fakeResult = 'someFundingRoundName';
-      const roundName = dsMockUtils.createMockFundingRoundName(fakeResult);
-
-      const result = fundingRoundNameToString(roundName);
-      expect(result).toEqual(fakeResult);
-    });
-  });
-});
-
 describe('stringToDocumentName and documentNameToString', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -3355,9 +3271,11 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
       };
       const fakeResult = 'ScopeEnum' as unknown as MeshScope;
       const fakeIdentityId =
-        '0x51a5fed99b9d305ef26e6af92dd3dcb181a30a07dc5f075e260b82a92d48913c' as unknown as IdentityId;
+        '0x51a5fed99b9d305ef26e6af92dd3dcb181a30a07dc5f075e260b82a92d48913c' as unknown as PolymeshPrimitivesIdentityId;
 
-      context.createType.withArgs('IdentityId', value.value).returns(fakeIdentityId);
+      context.createType
+        .withArgs('PolymeshPrimitivesIdentityId', value.value)
+        .returns(fakeIdentityId);
 
       context.createType.withArgs('Scope', { [value.type]: fakeIdentityId }).returns(fakeResult);
 
@@ -4480,7 +4398,9 @@ describe('portfolioIdToMeshPortfolioId', () => {
     const fakeResult = 'PortfolioId' as unknown as PortfolioId;
     const context = dsMockUtils.getContextInstance();
 
-    context.createType.withArgs('IdentityId', portfolioId.did).returns(rawIdentityId);
+    context.createType
+      .withArgs('PolymeshPrimitivesIdentityId', portfolioId.did)
+      .returns(rawIdentityId);
 
     context.createType
       .withArgs('PortfolioId', {
@@ -5131,30 +5051,6 @@ describe('venueTypeToMeshVenueType and meshVenueTypeToVenueType', () => {
 
       result = meshVenueTypeToVenueType(venueType);
       expect(result).toEqual(fakeResult);
-    });
-  });
-});
-
-describe('stringToVenueDetails and venueDetailsToString', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  describe('venueDetailsToString', () => {
-    it('should convert a polkadot VenueDetails object to a string', () => {
-      const fakeResult = 'details';
-      const venueDetails = dsMockUtils.createMockVenueDetails(fakeResult);
-
-      const result = venueDetailsToString(venueDetails);
-      expect(result).toBe(fakeResult);
     });
   });
 });
@@ -6902,7 +6798,7 @@ describe('targetsToTargetIdentities', () => {
     const rawDid = dsMockUtils.createMockIdentityId(did);
     const rawTreatment = dsMockUtils.createMockTargetTreatment();
 
-    createTypeStub.withArgs('IdentityId', did).returns(rawDid);
+    createTypeStub.withArgs('PolymeshPrimitivesIdentityId', did).returns(rawDid);
     createTypeStub.withArgs('TargetTreatment', treatment).returns(rawTreatment);
     createTypeStub
       .withArgs('TargetIdentities', {
