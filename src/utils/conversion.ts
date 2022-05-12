@@ -57,6 +57,7 @@ import {
   AssetComplianceResult,
   AssetIdentifier,
   AssetType,
+  AuthorizationData,
   AuthorizationType as MeshAuthorizationType,
   CAKind,
   CalendarPeriod as MeshCalendarPeriod,
@@ -67,11 +68,13 @@ import {
   ClaimType as MeshClaimType,
   ComplianceRequirementResult,
   ConditionType as MeshConditionType,
+  DispatchableName,
   DocumentHash,
   DocumentName,
   DocumentType,
   DocumentUri,
   EcdsaSignature,
+  ExtrinsicPermissions,
   FundraiserTier,
   GranularCanTransferResult,
   InstructionStatus as MeshInstructionStatus,
@@ -1019,6 +1022,56 @@ export function extrinsicPermissionsToTransactionPermissions(
 /**
  * @hidden
  */
+export function rpcExtrinsicPermissionsToTransactionPermissions(
+  permissions: ExtrinsicPermissions
+): TransactionPermissions | null {
+  let extrinsicType: PermissionType;
+  let pallets;
+  if (permissions.isThese) {
+    extrinsicType = PermissionType.Include;
+    pallets = permissions.asThese;
+  } else if (permissions.isExcept) {
+    extrinsicType = PermissionType.Exclude;
+    pallets = permissions.asExcept;
+  }
+
+  let txValues: (ModuleName | TxTag)[] = [];
+  let exceptions: TxTag[] = [];
+
+  const formatTxTag = (dispatchable: DispatchableName, moduleName: string): TxTag =>
+    `${moduleName}.${camelCase(textToString(dispatchable))}` as TxTag;
+
+  if (pallets) {
+    pallets.forEach(({ pallet_name: palletName, dispatchable_names: dispatchableNames }) => {
+      const moduleName = stringLowerFirst(textToString(palletName));
+
+      if (dispatchableNames.isExcept) {
+        const dispatchables = dispatchableNames.asExcept;
+        exceptions = [...exceptions, ...dispatchables.map(name => formatTxTag(name, moduleName))];
+        txValues = [...txValues, moduleName as ModuleName];
+      } else if (dispatchableNames.isThese) {
+        const dispatchables = dispatchableNames.asThese;
+        txValues = [...txValues, ...dispatchables.map(name => formatTxTag(name, moduleName))];
+      } else {
+        txValues = [...txValues, moduleName as ModuleName];
+      }
+    });
+
+    const result = {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      type: extrinsicType!,
+      values: txValues,
+    };
+
+    return exceptions.length ? { ...result, exceptions } : result;
+  }
+
+  return null;
+}
+
+/**
+ * @hidden
+ */
 export function meshPermissionsToPermissions(
   permissions: PolymeshPrimitivesSecondaryKeyPermissions,
   context: Context
@@ -1050,6 +1103,67 @@ export function meshPermissionsToPermissions(
   }
 
   transactions = extrinsicPermissionsToTransactionPermissions(extrinsic);
+
+  let portfoliosType: PermissionType;
+  let portfolioIds;
+  if (portfolio.isThese) {
+    portfoliosType = PermissionType.Include;
+    portfolioIds = portfolio.asThese;
+  } else if (portfolio.isExcept) {
+    portfoliosType = PermissionType.Exclude;
+    portfolioIds = portfolio.asExcept;
+  }
+
+  if (portfolioIds) {
+    portfolios = {
+      values: portfolioIds.map(portfolioId => meshPortfolioIdToPortfolio(portfolioId, context)),
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      type: portfoliosType!,
+    };
+  }
+
+  return {
+    assets,
+    transactions,
+    transactionGroups: transactions ? transactionPermissionsToTxGroups(transactions) : [],
+    portfolios,
+  };
+}
+
+/**
+ * @hidden
+ */
+export function rpcMeshPermissionsToPermissions(
+  permissions: MeshPermissions,
+  context: Context
+): Permissions {
+  const { asset, extrinsic, portfolio } = permissions;
+
+  let assets: SectionPermissions<Asset> | null = null;
+  let transactions: TransactionPermissions | null = null;
+  let portfolios: SectionPermissions<DefaultPortfolio | NumberedPortfolio> | null = null;
+
+  let assetsType: PermissionType;
+  let assetsPermissions;
+  if (asset.isThese) {
+    assetsType = PermissionType.Include;
+    assetsPermissions = asset.asThese;
+  } else if (asset.isExcept) {
+    assetsType = PermissionType.Exclude;
+    assetsPermissions = asset.asExcept;
+  }
+
+  if (assetsPermissions) {
+    assets = {
+      values: assetsPermissions.map(
+        ticker => new Asset({ ticker: tickerToString(ticker) }, context)
+      ),
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      type: assetsType!,
+    };
+  }
+
+  transactions = rpcExtrinsicPermissionsToTransactionPermissions(extrinsic);
 
   let portfoliosType: PermissionType;
   let portfolioIds;
@@ -1371,6 +1485,98 @@ export function stringToMemo(value: string, context: Context): Memo {
   }
 
   return context.createType('Memo', padString(value, MAX_MEMO_LENGTH));
+}
+/**
+ * @hidden
+ */
+export function rpcAuthorizationDataToAuthorization(
+  auth: AuthorizationData,
+  context: Context
+): Authorization {
+  if (auth.isAttestPrimaryKeyRotation) {
+    return {
+      type: AuthorizationType.AttestPrimaryKeyRotation,
+      value: identityIdToString(auth.asAttestPrimaryKeyRotation),
+    };
+  }
+
+  if (auth.isRotatePrimaryKey) {
+    return {
+      type: AuthorizationType.RotatePrimaryKey,
+    };
+  }
+
+  if (auth.isTransferTicker) {
+    return {
+      type: AuthorizationType.TransferTicker,
+      value: tickerToString(auth.asTransferTicker),
+    };
+  }
+
+  if (auth.isAddMultiSigSigner) {
+    return {
+      type: AuthorizationType.AddMultiSigSigner,
+      value: accountIdToString(auth.asAddMultiSigSigner),
+    };
+  }
+
+  if (auth.isTransferAssetOwnership) {
+    return {
+      type: AuthorizationType.TransferAssetOwnership,
+      value: tickerToString(auth.asTransferAssetOwnership),
+    };
+  }
+
+  if (auth.isPortfolioCustody) {
+    return {
+      type: AuthorizationType.PortfolioCustody,
+      value: meshPortfolioIdToPortfolio(auth.asPortfolioCustody, context),
+    };
+  }
+
+  if (auth.isJoinIdentity) {
+    return {
+      type: AuthorizationType.JoinIdentity,
+      value: rpcMeshPermissionsToPermissions(auth.asJoinIdentity, context),
+    };
+  }
+
+  if (auth.isAddRelayerPayingKey) {
+    const [userKey, payingKey, polyxLimit] = auth.asAddRelayerPayingKey;
+
+    return {
+      type: AuthorizationType.AddRelayerPayingKey,
+      value: {
+        beneficiary: new Account({ address: accountIdToString(userKey) }, context),
+        subsidizer: new Account({ address: accountIdToString(payingKey) }, context),
+        allowance: balanceToBigNumber(polyxLimit),
+      },
+    };
+  }
+
+  if (auth.isBecomeAgent) {
+    const [ticker, agentGroup] = auth.asBecomeAgent;
+
+    return {
+      type: AuthorizationType.BecomeAgent,
+      value: agentGroupToPermissionGroup(agentGroup, tickerToString(ticker), context),
+    };
+  }
+
+  if (auth.isRotatePrimaryKeyToSecondary) {
+    return {
+      type: AuthorizationType.RotatePrimaryKeyToSecondary,
+      value: rpcMeshPermissionsToPermissions(auth.asRotatePrimaryKeyToSecondary, context),
+    };
+  }
+
+  throw new PolymeshError({
+    code: ErrorCode.UnexpectedError,
+    message: 'Unsupported Authorization Type. Please contact the Polymath team',
+    data: {
+      auth: JSON.stringify(auth, null, 2),
+    },
+  });
 }
 
 /**

@@ -202,7 +202,9 @@ import {
   posRatioToBigNumber,
   primitive2ndKey,
   requirementToComplianceRequirement,
+  rpcAuthorizationDataToAuthorization,
   rpcMeshClaimTypeToClaimType,
+  rpcMeshPermissionsToPermissions,
   rpcTrustedIssuerToTrustedClaimIssuer,
   scheduleSpecToMeshScheduleSpec,
   scopeClaimProofToConfidentialIdentityClaimProof,
@@ -1387,6 +1389,188 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
   });
 });
 
+describe('authorizationDataToAuthorization', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+  it('should convert a polkadot AuthorizationData object to an Authorization', () => {
+    const context = dsMockUtils.getContextInstance();
+    let fakeResult: Authorization = {
+      type: AuthorizationType.AttestPrimaryKeyRotation,
+      value: 'someIdentity',
+    };
+    let authorizationData = dsMockUtils.createMockRpcAuthorizationData({
+      AttestPrimaryKeyRotation: dsMockUtils.createMockIdentityId(fakeResult.value),
+    });
+
+    let result = rpcAuthorizationDataToAuthorization(authorizationData, context);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: AuthorizationType.RotatePrimaryKey,
+    };
+    authorizationData = dsMockUtils.createMockRpcAuthorizationData('RotatePrimaryKey');
+
+    result = rpcAuthorizationDataToAuthorization(authorizationData, context);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: AuthorizationType.TransferTicker,
+      value: 'someTicker',
+    };
+    authorizationData = dsMockUtils.createMockRpcAuthorizationData({
+      TransferTicker: dsMockUtils.createMockTicker(fakeResult.value),
+    });
+
+    result = rpcAuthorizationDataToAuthorization(authorizationData, context);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: AuthorizationType.AddMultiSigSigner,
+      value: 'someAccount',
+    };
+    authorizationData = dsMockUtils.createMockRpcAuthorizationData({
+      AddMultiSigSigner: dsMockUtils.createMockAccountId(fakeResult.value),
+    });
+
+    result = rpcAuthorizationDataToAuthorization(authorizationData, context);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: AuthorizationType.PortfolioCustody,
+      value: expect.objectContaining({ owner: expect.objectContaining({ did: 'someDid' }) }),
+    };
+    authorizationData = dsMockUtils.createMockRpcAuthorizationData({
+      PortfolioCustody: dsMockUtils.createMockPortfolioId({
+        did: dsMockUtils.createMockIdentityId('someDid'),
+        kind: dsMockUtils.createMockPortfolioKind('Default'),
+      }),
+    });
+
+    result = rpcAuthorizationDataToAuthorization(authorizationData, context);
+    expect(result).toEqual(fakeResult);
+
+    const portfolioId = new BigNumber(1);
+    fakeResult = {
+      type: AuthorizationType.PortfolioCustody,
+      value: expect.objectContaining({
+        owner: expect.objectContaining({ did: 'someDid' }),
+        id: portfolioId,
+      }),
+    };
+    authorizationData = dsMockUtils.createMockRpcAuthorizationData({
+      PortfolioCustody: dsMockUtils.createMockPortfolioId({
+        did: dsMockUtils.createMockIdentityId('someDid'),
+        kind: dsMockUtils.createMockPortfolioKind({
+          User: dsMockUtils.createMockU64(portfolioId),
+        }),
+      }),
+    });
+
+    result = rpcAuthorizationDataToAuthorization(authorizationData, context);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: AuthorizationType.TransferAssetOwnership,
+      value: 'someTicker',
+    };
+    authorizationData = dsMockUtils.createMockRpcAuthorizationData({
+      TransferAssetOwnership: dsMockUtils.createMockTicker(fakeResult.value),
+    });
+
+    result = rpcAuthorizationDataToAuthorization(authorizationData, context);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: AuthorizationType.JoinIdentity,
+      value: { assets: null, portfolios: null, transactions: null, transactionGroups: [] },
+    };
+    authorizationData = dsMockUtils.createMockRpcAuthorizationData({
+      JoinIdentity: dsMockUtils.createMockPermissions({
+        asset: dsMockUtils.createMockAssetPermissions('Whole'),
+        portfolio: dsMockUtils.createMockPortfolioPermissions('Whole'),
+        extrinsic: dsMockUtils.createMockExtrinsicPermissions('Whole'),
+      }),
+    });
+
+    result = rpcAuthorizationDataToAuthorization(authorizationData, context);
+    expect(result).toEqual(fakeResult);
+
+    const beneficiaryAddress = 'beneficiaryAddress';
+    const relayerAddress = 'relayerAddress';
+    const allowance = new BigNumber(1000);
+    fakeResult = {
+      type: AuthorizationType.AddRelayerPayingKey,
+      value: {
+        beneficiary: expect.objectContaining({ address: beneficiaryAddress }),
+        subsidizer: expect.objectContaining({ address: relayerAddress }),
+        allowance,
+      },
+    };
+    authorizationData = dsMockUtils.createMockRpcAuthorizationData({
+      AddRelayerPayingKey: [
+        dsMockUtils.createMockAccountId(beneficiaryAddress),
+        dsMockUtils.createMockAccountId(relayerAddress),
+        dsMockUtils.createMockBalance(allowance.shiftedBy(6)),
+      ],
+    });
+
+    result = rpcAuthorizationDataToAuthorization(authorizationData, context);
+    expect(result).toEqual(fakeResult);
+
+    const ticker = 'SOME_TICKER';
+    const type = PermissionGroupType.Full;
+    fakeResult = {
+      type: AuthorizationType.BecomeAgent,
+      value: expect.objectContaining({
+        asset: expect.objectContaining({ ticker }),
+        type,
+      }),
+    };
+
+    authorizationData = dsMockUtils.createMockRpcAuthorizationData({
+      BecomeAgent: [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockAgentGroup(type)],
+    });
+
+    result = rpcAuthorizationDataToAuthorization(authorizationData, context);
+    expect(result).toEqual(fakeResult);
+
+    authorizationData = dsMockUtils.createMockRpcAuthorizationData({
+      RotatePrimaryKeyToSecondary: dsMockUtils.createMockPermissions({
+        asset: dsMockUtils.createMockAssetPermissions('Whole'),
+        portfolio: dsMockUtils.createMockPortfolioPermissions('Whole'),
+        extrinsic: dsMockUtils.createMockExtrinsicPermissions('Whole'),
+      }),
+    });
+    fakeResult = {
+      type: AuthorizationType.RotatePrimaryKeyToSecondary,
+      value: { assets: null, portfolios: null, transactions: null, transactionGroups: [] },
+    };
+
+    result = rpcAuthorizationDataToAuthorization(authorizationData, context);
+    expect(result).toEqual(fakeResult);
+  });
+
+  it('should throw an error if the authorization has an unsupported type', () => {
+    const context = dsMockUtils.getContextInstance();
+    const authorizationData = dsMockUtils.createMockRpcAuthorizationData(
+      'Whatever' as 'RotatePrimaryKey'
+    );
+
+    expect(() => rpcAuthorizationDataToAuthorization(authorizationData, context)).toThrow(
+      'Unsupported Authorization Type. Please contact the Polymath team'
+    );
+  });
+});
+
 describe('permissionGroupIdentifierToAgentGroup and agentGroupToPermissionGroupIdentifier', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -1905,6 +2089,119 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       result = meshPermissionsToPermissions(permissions, context);
       expect(result).toEqual(fakeResult);
     });
+  });
+});
+
+describe('rpcExtrinsicPermissionsToTransactionPermissions', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should make transaction tags', () => {
+    const ticker = 'TICKER';
+    const did = 'someDid';
+    const context = dsMockUtils.getContextInstance();
+    let permissions = dsMockUtils.createMockRpcPermissions({
+      asset: dsMockUtils.createMockAssetPermissions({
+        Except: [dsMockUtils.createMockTicker(ticker)],
+      }),
+      extrinsic: dsMockUtils.createMockRpcExtrinsicPermissions({
+        Except: [
+          dsMockUtils.createMockRpcPalletPermissions({
+            /* eslint-disable @typescript-eslint/naming-convention */
+            pallet_name: 'Identity',
+            dispatchable_names: dsMockUtils.createMockRpcDispatchableNames({
+              Except: [dsMockUtils.createMockDispatchableName('add_claim')],
+            }),
+            /* eslint-enable @typescript-eslint/naming-convention */
+          }),
+        ],
+      }),
+      portfolio: dsMockUtils.createMockPortfolioPermissions({
+        Except: [
+          dsMockUtils.createMockPortfolioId({
+            did: dsMockUtils.createMockIdentityId(did),
+            kind: dsMockUtils.createMockPortfolioKind('Default'),
+          }),
+        ],
+      }),
+    });
+    let expectedResult: Permissions = {
+      assets: {
+        values: [expect.objectContaining({ ticker })],
+        type: PermissionType.Exclude,
+      },
+      transactions: {
+        type: PermissionType.Exclude,
+        exceptions: [TxTags.identity.AddClaim],
+        values: [ModuleName.Identity],
+      },
+      transactionGroups: [],
+      portfolios: {
+        values: [expect.objectContaining({ owner: expect.objectContaining({ did }) })],
+        type: PermissionType.Exclude,
+      },
+    };
+
+    let result = rpcMeshPermissionsToPermissions(permissions, context);
+
+    expect(result).toEqual(expectedResult);
+
+    permissions = dsMockUtils.createMockRpcPermissions({
+      asset: dsMockUtils.createMockAssetPermissions({
+        These: [dsMockUtils.createMockTicker(ticker)],
+      }),
+      extrinsic: dsMockUtils.createMockRpcExtrinsicPermissions({
+        These: [
+          dsMockUtils.createMockRpcPalletPermissions({
+            /* eslint-disable @typescript-eslint/naming-convention */
+            pallet_name: 'Identity',
+            dispatchable_names: dsMockUtils.createMockRpcDispatchableNames({
+              These: [dsMockUtils.createMockDispatchableName('add_claim')],
+            }),
+            /* eslint-enable @typescript-eslint/naming-convention */
+          }),
+        ],
+      }),
+      portfolio: dsMockUtils.createMockPortfolioPermissions({
+        These: [
+          dsMockUtils.createMockPortfolioId({
+            did: dsMockUtils.createMockIdentityId(did),
+            kind: dsMockUtils.createMockPortfolioKind('Default'),
+          }),
+        ],
+      }),
+    });
+
+    expectedResult = {
+      assets: {
+        values: [expect.objectContaining({ ticker })],
+        type: PermissionType.Include,
+      },
+      transactions: {
+        type: PermissionType.Include,
+        values: [TxTags.identity.AddClaim],
+      },
+      transactionGroups: [],
+      portfolios: {
+        values: [expect.objectContaining({ owner: expect.objectContaining({ did }) })],
+        type: PermissionType.Include,
+      },
+    };
+
+    result = rpcMeshPermissionsToPermissions(permissions, context);
+
+    expect(result).toEqual(expectedResult);
   });
 });
 

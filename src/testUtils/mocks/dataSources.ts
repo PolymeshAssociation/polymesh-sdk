@@ -93,6 +93,8 @@ import {
   AssetOwnershipRelation,
   AssetPermissions,
   AssetType,
+  Authorization,
+  AuthorizationData,
   AuthorizationType as MeshAuthorizationType,
   CACheckpoint,
   CAKind,
@@ -112,6 +114,7 @@ import {
   CountryCode,
   CustomAssetTypeId,
   DidRecord,
+  DispatchableName,
   DispatchableNames,
   DocumentHash,
   DocumentName,
@@ -119,6 +122,7 @@ import {
   DocumentUri,
   EcdsaSignature,
   EthereumAddress,
+  ExtrinsicPermissions,
   FundraiserStatus,
   FundraiserTier,
   GranularCanTransferResult,
@@ -128,6 +132,8 @@ import {
   InvestorZKProofData,
   Moment,
   MovePortfolioItem,
+  PalletName,
+  Permissions,
   Pip,
   PipId,
   PipsMetadata,
@@ -266,7 +272,7 @@ export class MockWebSocket {
    * @hidden
    */
   send(_msg: string): void {
-    const response = { data: '{ "result": "4.1.1" }' };
+    const response = { data: '{ "result": "5.0.0" }' };
     this.onmessage(response);
   }
   /* eslint-enable @typescript-eslint/no-unused-vars */
@@ -1984,6 +1990,47 @@ export const createMockDispatchableNames = (
 
 /**
  * @hidden
+ */
+export const createMockRpcDispatchableNames = (
+  dispatchableNames?:
+    | 'Whole'
+    | { These: DispatchableName[] }
+    | { Except: DispatchableName[] }
+    | DispatchableNames
+): DispatchableNames => {
+  if (isCodec<DispatchableNames>(dispatchableNames)) {
+    return dispatchableNames;
+  }
+
+  return createMockEnum(dispatchableNames) as DispatchableNames;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockPalletName = (name?: string | PalletName): PalletName => {
+  if (isCodec<PalletName>(name)) {
+    return name;
+  }
+
+  return createMockStringCodec(name) as PalletName;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockDispatchableName = (name?: string | DispatchableName): DispatchableName => {
+  if (isCodec<DispatchableName>(name)) {
+    return name;
+  }
+
+  return createMockStringCodec(name) as DispatchableName;
+};
+
+/**
+ * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockPalletPermissions = (permissions?: {
@@ -2002,6 +2049,28 @@ export const createMockPalletPermissions = (permissions?: {
     },
     !permissions
   ) as PolymeshPrimitivesSecondaryKeyPalletPermissions;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockRpcPalletPermissions = (permissions?: {
+  pallet_name: PalletName | Parameters<typeof createMockPalletName>[0];
+  dispatchable_names: DispatchableNames | Parameters<typeof createMockDispatchableNames>[0];
+}): Permissions => {
+  const { pallet_name, dispatchable_names } = permissions || {
+    pallet_name: createMockPalletName(),
+    dispatchable_names: createMockDispatchableNames(),
+  };
+
+  return createMockCodec(
+    {
+      pallet_name: createMockPalletName(pallet_name),
+      dispatchable_names: createMockDispatchableNames(dispatchable_names),
+    },
+    !permissions
+  ) as Permissions;
 };
 
 /**
@@ -2168,6 +2237,15 @@ export const createMockExtrinsicPermissions = (
 /**
  * @hidden
  */
+export const createMockRpcExtrinsicPermissions = (
+  assetPermissions?: 'Whole' | { These: Permissions[] } | { Except: Permissions[] }
+): ExtrinsicPermissions => {
+  return createMockEnum(assetPermissions) as ExtrinsicPermissions;
+};
+
+/**
+ * @hidden
+ */
 export const createMockPortfolioPermissions = (
   assetPermissions?: 'Whole' | { These: PortfolioId[] } | { Except: PortfolioId[] }
 ): PortfolioPermissions => {
@@ -2201,6 +2279,29 @@ export const createMockPermissions = (permissions?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockRpcPermissions = (permissions?: {
+  asset: AssetPermissions;
+  extrinsic: ExtrinsicPermissions;
+  portfolio: PortfolioPermissions;
+}): Permissions => {
+  const perms = permissions || {
+    asset: createMockAssetPermissions(),
+    extrinsic: createMockExtrinsicPermissions(),
+    portfolio: createMockPortfolioPermissions(),
+  };
+
+  return createMockCodec(
+    {
+      ...perms,
+    },
+    !permissions
+  ) as Permissions;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockAuthorizationData = (
   authorizationData?:
     | { AttestPrimaryKeyRotation: PolymeshPrimitivesIdentityId }
@@ -2220,6 +2321,30 @@ export const createMockAuthorizationData = (
   }
 
   return createMockEnum(authorizationData) as PolymeshPrimitivesAuthorizationAuthorizationData;
+};
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockRpcAuthorizationData = (
+  authorizationData?:
+    | { AttestPrimaryKeyRotation: PolymeshPrimitivesIdentityId }
+    | 'RotatePrimaryKey'
+    | { RotatePrimaryKeyToSecondary: PolymeshPrimitivesSecondaryKeyPermissions }
+    | { TransferTicker: PolymeshPrimitivesTicker }
+    | { AddMultiSigSigner: AccountId }
+    | { TransferAssetOwnership: PolymeshPrimitivesTicker }
+    | { JoinIdentity: PolymeshPrimitivesSecondaryKeyPermissions }
+    | { PortfolioCustody: PortfolioId }
+    | { AddRelayerPayingKey: [AccountId, AccountId, Balance] }
+    | { BecomeAgent: [PolymeshPrimitivesTicker, AgentGroup] }
+    | AuthorizationData
+): AuthorizationData => {
+  if (isCodec<AuthorizationData>(authorizationData)) {
+    return authorizationData;
+  }
+
+  return createMockEnum(authorizationData) as AuthorizationData;
 };
 
 /**
@@ -2250,6 +2375,36 @@ export const createMockAuthorization = (authorization?: {
     },
     !authorization
   ) as PolymeshPrimitivesAuthorization;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockRpcAuthorization = (authorization?: {
+  authorizationData:
+    | PolymeshPrimitivesAuthorizationAuthorizationData
+    | Parameters<typeof createMockAuthorizationData>[0];
+  authorizedBy: PolymeshPrimitivesIdentityId | Parameters<typeof createMockIdentityId>[0];
+  expiry: Option<Moment>;
+  authId: u64 | Parameters<typeof createMockU64>[0];
+}): Authorization => {
+  const { authorizationData, authorizedBy, expiry, authId } = authorization || {
+    authorizationData: createMockAuthorizationData(),
+    authorizedBy: createMockIdentityId(),
+    expiry: createMockOption(),
+    authId: createMockU64(),
+  };
+
+  return createMockCodec(
+    {
+      authorization_data: createMockAuthorizationData(authorizationData),
+      authorized_by: createMockIdentityId(authorizedBy),
+      expiry: createMockOption(expiry),
+      auth_id: createMockU64(authId),
+    },
+    !authorization
+  ) as Authorization;
 };
 
 /**

@@ -87,8 +87,15 @@ describe('Authorizations class', () => {
         } as const,
       ];
 
-      const fakeAuthorizations = authParams.map(({ authId, expiry, issuer, data }) =>
-        dsMockUtils.createMockAuthorization({
+      signerValueToSignatoryStub.returns(rawSignatory);
+      booleanToBoolStub.withArgs(true, context).returns(dsMockUtils.createMockBool(true));
+      booleanToBoolStub.withArgs(false, context).returns(dsMockUtils.createMockBool(false));
+      authorizationTypeToMeshAuthorizationTypeStub
+        .withArgs(filter, context)
+        .returns(rawAuthorizationType);
+
+      const fakeRpcAuthorizations = authParams.map(({ authId, expiry, issuer, data }) =>
+        dsMockUtils.createMockRpcAuthorization({
           authId: dsMockUtils.createMockU64(authId),
           expiry: dsMockUtils.createMockOption(
             expiry ? dsMockUtils.createMockMoment(new BigNumber(expiry.getTime())) : expiry
@@ -100,16 +107,9 @@ describe('Authorizations class', () => {
         })
       );
 
-      signerValueToSignatoryStub.returns(rawSignatory);
-      booleanToBoolStub.withArgs(true, context).returns(dsMockUtils.createMockBool(true));
-      booleanToBoolStub.withArgs(false, context).returns(dsMockUtils.createMockBool(false));
-      authorizationTypeToMeshAuthorizationTypeStub
-        .withArgs(filter, context)
-        .returns(rawAuthorizationType);
-
       dsMockUtils
         .createRpcStub('identity', 'getFilteredAuthorizations')
-        .resolves(fakeAuthorizations);
+        .resolves(fakeRpcAuthorizations);
 
       const expectedAuthorizations = authParams.map(({ authId, target, issuer, expiry, data }) =>
         entityMockUtils.getAuthorizationRequestInstance({
