@@ -27,6 +27,7 @@ import {
 import { Account, Asset, DividendDistribution, Identity, PolymeshError, Subsidy } from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
+import { Query as QueryV2 } from '~/middleware/types-v2';
 import {
   AccountBalance,
   ArrayTransactionArgument,
@@ -76,6 +77,7 @@ import { assertAddressValid, calculateNextKey, createClaim } from '~/utils/inter
 interface ConstructorParams {
   polymeshApi: ApiPromise;
   middlewareApi: ApolloClient<NormalizedCacheObject> | null;
+  middlewareApiV2: ApolloClient<NormalizedCacheObject> | null;
   ss58Format: BigNumber;
   signingManager?: SigningManager;
 }
@@ -103,6 +105,8 @@ export class Context {
 
   private _middlewareApi: ApolloClient<NormalizedCacheObject> | null;
 
+  private _middlewareApiV2: ApolloClient<NormalizedCacheObject> | null;
+
   private _polymeshApi: ApiPromise;
 
   private _signingManager?: SigningManager;
@@ -113,9 +117,10 @@ export class Context {
    * @hidden
    */
   private constructor(params: ConstructorParams) {
-    const { polymeshApi, middlewareApi, ss58Format } = params;
+    const { polymeshApi, middlewareApi, middlewareApiV2, ss58Format } = params;
 
     this._middlewareApi = middlewareApi;
+    this._middlewareApiV2 = middlewareApiV2;
     this._polymeshApi = polymeshApi;
     this.polymeshApi = Context.createPolymeshApiProxy(this);
     this.ss58Format = ss58Format;
@@ -147,13 +152,20 @@ export class Context {
   static async create(params: {
     polymeshApi: ApiPromise;
     middlewareApi: ApolloClient<NormalizedCacheObject> | null;
+    middlewareApiV2: ApolloClient<NormalizedCacheObject> | null;
     signingManager?: SigningManager;
   }): Promise<Context> {
-    const { polymeshApi, middlewareApi, signingManager } = params;
+    const { polymeshApi, middlewareApi, middlewareApiV2, signingManager } = params;
 
     const ss58Format: BigNumber = u8ToBigNumber(polymeshApi.consts.system.ss58Prefix);
 
-    const context = new Context({ polymeshApi, middlewareApi, signingManager, ss58Format });
+    const context = new Context({
+      polymeshApi,
+      middlewareApi,
+      middlewareApiV2,
+      signingManager,
+      ss58Format,
+    });
 
     const isArchiveNodePromise = context.isCurrentNodeArchive();
 
@@ -1054,6 +1066,23 @@ export class Context {
   }
 
   /**
+   * Retrieve the middleware v2 client
+   *
+   * @throws if the middleware is not enabled
+   */
+  public get middlewareApiV2(): ApolloClient<NormalizedCacheObject> {
+    const { _middlewareApiV2: api } = this;
+
+    if (!api) {
+      throw new PolymeshError({
+        code: ErrorCode.MiddlewareError,
+        message: 'Cannot perform this action without an active middleware v2 connection',
+      });
+    }
+    return api;
+  }
+
+  /**
    * @hidden
    *
    * Make a query to the middleware server using the apollo client
@@ -1080,10 +1109,43 @@ export class Context {
   /**
    * @hidden
    *
+   * Make a query to the middleware server using the apollo client
+   */
+  public async queryMiddlewareV2<Result extends Partial<QueryV2>>(
+    query: GraphqlQuery<unknown>
+  ): Promise<ApolloQueryResult<Result>> {
+    let result: ApolloQueryResult<Result>;
+    try {
+      result = await this.middlewareApiV2.query(query);
+    } catch (err) {
+      const resultMessage = err.networkError?.result?.message;
+      const { message: errorMessage } = err;
+      const message = resultMessage ?? errorMessage;
+      throw new PolymeshError({
+        code: ErrorCode.MiddlewareError,
+        message: `Error in middleware V2 query: ${message}`,
+      });
+    }
+
+    return result;
+  }
+
+  /**
+   * @hidden
+   *
    * Return whether the middleware was enabled at startup
    */
   public isMiddlewareEnabled(): boolean {
     return !!this._middlewareApi;
+  }
+
+  /**
+   * @hidden
+   *
+   * Return whether the middleware was enabled at startup
+   */
+  public isMiddlewareV2Enabled(): boolean {
+    return !!this._middlewareApiV2;
   }
 
   /**
@@ -1133,14 +1195,20 @@ export class Context {
    */
   public disconnect(): Promise<void> {
     const { polymeshApi } = this;
-    let middlewareApi;
+    let middlewareApi, middlewareApiV2;
 
     if (this.isMiddlewareEnabled()) {
       ({ middlewareApi } = this);
     }
+
+    if (this.isMiddlewareV2Enabled()) {
+      ({ middlewareApiV2 } = this);
+    }
+
     this.isDisconnected = true;
 
     middlewareApi && middlewareApi.stop();
+    middlewareApiV2 && middlewareApiV2.stop();
 
     return polymeshApi.disconnect();
   }

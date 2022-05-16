@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { filter, isEqual, uniqBy, uniqWith } from 'lodash';
+import { filter, flatten, isEqual, uniqBy, uniqWith } from 'lodash';
 
 import {
   addInvestorUniquenessClaim,
@@ -10,7 +10,9 @@ import {
   ModifyClaimsParams,
 } from '~/internal';
 import { didsWithClaims, issuerDidsWithClaimsByTarget } from '~/middleware/queries';
+import { claims as claimsData, claimTargets } from '~/middleware/queriesV2';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
+import { Query as QueryV2 } from '~/middleware/types-v2';
 import {
   CddClaim,
   ClaimData,
@@ -26,10 +28,12 @@ import {
 } from '~/types';
 import { ClaimOperation } from '~/types/internal';
 import { Ensured } from '~/types/utils';
+import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 import {
   scopeToMiddlewareScope,
   signerToString,
   toIdentityWithClaimsArray,
+  toIdentityWithClaimsArrayV2,
 } from '~/utils/conversion';
 import { calculateNextKey, createProcedureMethod, getDid, removePadding } from '~/utils/internal';
 
@@ -221,6 +225,103 @@ export class Claims {
 
     const count = new BigNumber(totalCount);
     const data = toIdentityWithClaimsArray(didsWithClaimsList, context);
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
+  }
+
+  /**
+   * Retrieve a list of Identities with claims associated to them. Can be filtered using parameters
+   *
+   * @param opts.targets - Identities (or Identity IDs) for which to fetch claims (targets). Defaults to all targets
+   * @param opts.trustedClaimIssuers - Identity IDs of claim issuers. Defaults to all claim issuers
+   * @param opts.scope - scope of the claims to fetch. Defaults to any scope
+   * @param opts.claimTypes - types of the claims to fetch. Defaults to any type
+   * @param opts.includeExpired - whether to include expired claims. Defaults to true
+   * @param opts.size - page size
+   * @param opts.start - page offset
+   *
+   * @note supports pagination
+   * @note uses the middleware V2
+   */
+  public async getIdentitiesWithClaimsV2(
+    opts: {
+      targets?: (string | Identity)[];
+      trustedClaimIssuers?: (string | Identity)[];
+      scope?: Scope;
+      claimTypes?: Exclude<ClaimType, ClaimType.InvestorUniquenessV2>[];
+      includeExpired?: boolean;
+      size?: BigNumber;
+      start?: BigNumber;
+    } = {}
+  ): Promise<ResultSet<IdentityWithClaims>> {
+    const { context } = this;
+
+    const {
+      targets,
+      trustedClaimIssuers,
+      scope,
+      claimTypes,
+      includeExpired = true,
+      size = new BigNumber(DEFAULT_GQL_PAGE_SIZE),
+      start = new BigNumber(0),
+    } = opts;
+
+    let targetIssuers;
+
+    const filters = {
+      scope: scope ? scopeToMiddlewareScope(scope) : undefined,
+      trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
+        signerToString(trustedClaimIssuer)
+      ),
+      claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
+      includeExpired,
+    };
+
+    if (!targets) {
+      const targetResults = await context.queryMiddlewareV2<Ensured<QueryV2, 'claims'>>(
+        claimTargets({
+          ...filters,
+        })
+      );
+
+      const {
+        data: { claims },
+      } = targetResults;
+
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const groupedTargets = claims!.groupedAggregates!;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      targetIssuers = flatten(groupedTargets.map(groupedAggregate => groupedAggregate.keys!));
+    } else {
+      targetIssuers = targets.map(target => signerToString(target));
+    }
+
+    // note: pagination count is based on the target issuers and not the claims count
+    const count = new BigNumber(targetIssuers.length);
+
+    targetIssuers = targetIssuers.sort().slice(start.toNumber(), size.plus(start).toNumber());
+
+    const result = await context.queryMiddlewareV2<Ensured<QueryV2, 'claims'>>(
+      claimsData({
+        dids: targetIssuers,
+        ...filters,
+      })
+    );
+
+    const {
+      data: { claims },
+    } = result;
+
+    const data = toIdentityWithClaimsArrayV2(
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      claims!.nodes!.map(node => node!),
+      context
+    );
     const next = calculateNextKey(count, size, start);
 
     return {

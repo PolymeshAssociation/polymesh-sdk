@@ -17,6 +17,7 @@ import { computeWithoutCheck } from 'iso-7064';
 import {
   camelCase,
   flatten,
+  groupBy,
   includes,
   map,
   padEnd,
@@ -120,6 +121,7 @@ import {
   Portfolio as MiddlewarePortfolio,
   Scope as MiddlewareScope,
 } from '~/middleware/types';
+import { Claim as MiddlewareV2Claim } from '~/middleware/types-v2';
 import {
   AffirmationStatus,
   AssetDocument,
@@ -2691,6 +2693,28 @@ export function toIdentityWithClaimsArray(
   }));
 }
 
+/**
+ * @hidden
+ */
+export function toIdentityWithClaimsArrayV2(
+  data: MiddlewareV2Claim[],
+  context: Context
+): IdentityWithClaims[] {
+  const groupedData = groupBy(data, 'targetId');
+
+  return Object.keys(groupedData).map(key => ({
+    identity: new Identity({ did: key }, context),
+    claims: groupedData[key].map(
+      ({ targetId, issuerId, issuanceDate, expiry, type, jurisdiction, scope, cddId }) => ({
+        target: new Identity({ did: targetId }, context),
+        issuer: new Identity({ did: issuerId }, context),
+        issuedAt: new Date(parseFloat(issuanceDate)),
+        expiry: expiry ? new Date(expiry) : null,
+        claim: createClaim(type, jurisdiction, scope, cddId, undefined),
+      })
+    ),
+  }));
+}
 /**
  * @hidden
  */
