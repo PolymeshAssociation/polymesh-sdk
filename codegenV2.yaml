@@ -1,6 +1,6 @@
 overwrite: true
 schema: 'http://localhost:3001'
 generates:
-  ./src/middleware/types-v2.ts:
+  ./src/middleware/typesV2.ts:
     plugins:
       - 'typescript'

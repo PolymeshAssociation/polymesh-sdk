@@ -98,6 +98,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
+        middlewareApiV2: null,
         signingManager,
       });
     });
@@ -120,6 +121,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: null,
         signingManager: undefined,
       });
     });

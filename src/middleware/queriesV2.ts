@@ -1,17 +1,18 @@
 import gql from 'graphql-tag';
 
 import { QueryDidsWithClaimsArgs } from '~/middleware/types';
+import { ClaimsOrderBy } from '~/middleware/typesV2';
 import { GraphqlQuery } from '~/types/internal';
 
 /**
  *  @hidden
  */
 function createClaimsFilters(variables: QueryDidsWithClaimsArgs): {
-  args: string[];
-  filters: string[];
+  args: string;
+  filter: string;
 } {
   const args = [];
-  const filters = [];
+  const filters = ['revokeDate: { isNull: true }'];
   const { dids, claimTypes, trustedClaimIssuers, scope, includeExpired } = variables;
   if (dids) {
     args.push('$dids: [String!]');
@@ -34,33 +35,27 @@ function createClaimsFilters(variables: QueryDidsWithClaimsArgs): {
     filters.push('filterExpiry: { lessThan: $expiryTimestamp }');
   }
   return {
-    args,
-    filters,
+    args: args.length ? `(${args.join()})` : '',
+    filter: `filter: { ${filters.join()} },`,
   };
 }
 
 /**
  * @hidden
  *
- * Get all dids with at least one claim for a given scope and from one the given trustedClaimIssuers
+ * Get all dids with at least one claim for a given scope and from one of the given trusted claim issuers
  */
 export function claimTargets(
   variables: QueryDidsWithClaimsArgs
 ): GraphqlQuery<QueryDidsWithClaimsArgs> {
-  const { args, filters } = createClaimsFilters(variables);
-  const maybeArgs = args.length ? `${args.join()},` : '';
-  const maybeFilters = filters.length ? `filter : {${filters.join()}},` : '';
-  const query = `
-    query ClaimTargets(
-      ${maybeArgs}
-      $count: Int,
-      $skip: Int
-    ) {
+  const { args, filter } = createClaimsFilters(variables);
+  const query = gql`
+    query ClaimTargets
+      ${args}
+     {
       claims(
-        ${maybeFilters}
-        orderBy: [TARGET_ID_ASC],
-        first: $count,
-        offset: $skip
+        ${filter}
+        orderBy: [${ClaimsOrderBy.TargetIdAsc}]
       ) {
         groupedAggregates(groupBy: [TARGET_ID], having: {}) {
           keys
@@ -69,11 +64,8 @@ export function claimTargets(
     }
   `;
 
-  console.log(query);
   return {
-    query: gql`
-      ${query}
-    `,
+    query,
     variables,
   };
 }
@@ -81,19 +73,18 @@ export function claimTargets(
 /**
  * @hidden
  *
- * Get all dids with at least one claim for a given scope and from one the given trustedClaimIssuers
+ * Get all claims that a given target DID has, with a given scope and from one of the given trustedClaimIssuers
  */
 export function claims(variables: QueryDidsWithClaimsArgs): GraphqlQuery<QueryDidsWithClaimsArgs> {
-  const { args, filters } = createClaimsFilters(variables);
-  const maybeArgs = args.length ? `, ${args.join()}` : '';
-  const maybeFilters = filters.length ? `, filter : {${filters.join()}}` : '';
+  const { args, filter } = createClaimsFilters(variables);
+
   const query = gql`
-    query ClaimTargets(
-      ${maybeArgs}
-    ) {
+    query ClaimsData
+      ${args}
+     {
       claims(
-        orderBy: [BLOCK_ID_ASC, EVENT_IDX_ASC]
-        ${maybeFilters}
+        ${filter}
+        orderBy: [${ClaimsOrderBy.TargetIdAsc}, ${ClaimsOrderBy.BlockIdAsc}, ${ClaimsOrderBy.EventIdxAsc}]
       ) {
         nodes {
           targetId

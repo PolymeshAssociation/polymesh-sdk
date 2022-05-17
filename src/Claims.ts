@@ -12,7 +12,7 @@ import {
 import { didsWithClaims, issuerDidsWithClaimsByTarget } from '~/middleware/queries';
 import { claims as claimsData, claimTargets } from '~/middleware/queriesV2';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
-import { Query as QueryV2 } from '~/middleware/types-v2';
+import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   CddClaim,
   ClaimData,
@@ -169,7 +169,7 @@ export class Claims {
   /**
    * Retrieve a list of Identities with claims associated to them. Can be filtered using parameters
    *
-   * @param opts.targets - Identities (or Identity IDs) for which to fetch claims (targets). Defaults to all targets
+   * @param opts.targets - Identities (or Identity IDs) for which to fetch targeting claims. Defaults to all targets
    * @param opts.trustedClaimIssuers - Identity IDs of claim issuers. Defaults to all claim issuers
    * @param opts.scope - scope of the claims to fetch. Defaults to any scope
    * @param opts.claimTypes - types of the claims to fetch. Defaults to any type
@@ -237,7 +237,7 @@ export class Claims {
   /**
    * Retrieve a list of Identities with claims associated to them. Can be filtered using parameters
    *
-   * @param opts.targets - Identities (or Identity IDs) for which to fetch claims (targets). Defaults to all targets
+   * @param opts.targets - Identities (or Identity IDs) for which to fetch targeting claims. Defaults to all targets
    * @param opts.trustedClaimIssuers - Identity IDs of claim issuers. Defaults to all claim issuers
    * @param opts.scope - scope of the claims to fetch. Defaults to any scope
    * @param opts.claimTypes - types of the claims to fetch. Defaults to any type
@@ -304,6 +304,7 @@ export class Claims {
     // note: pagination count is based on the target issuers and not the claims count
     const count = new BigNumber(targetIssuers.length);
 
+    // tooling-gql does pagination based on sorted target issuers, hence the explicit `sort()` function (as graphql doesn't sort the final data)
     targetIssuers = targetIssuers.sort().slice(start.toNumber(), size.plus(start).toNumber());
 
     const result = await context.queryMiddlewareV2<Ensured<QueryV2, 'claims'>>(

@@ -121,7 +121,7 @@ import {
   Portfolio as MiddlewarePortfolio,
   Scope as MiddlewareScope,
 } from '~/middleware/types';
-import { Claim as MiddlewareV2Claim } from '~/middleware/types-v2';
+import { Claim as MiddlewareV2Claim } from '~/middleware/typesV2';
 import {
   AffirmationStatus,
   AssetDocument,
@@ -2702,14 +2702,14 @@ export function toIdentityWithClaimsArrayV2(
 ): IdentityWithClaims[] {
   const groupedData = groupBy(data, 'targetId');
 
-  return Object.keys(groupedData).map(key => ({
-    identity: new Identity({ did: key }, context),
-    claims: groupedData[key].map(
+  return map(groupedData, (claims, did) => ({
+    identity: new Identity({ did }, context),
+    claims: claims.map(
       ({ targetId, issuerId, issuanceDate, expiry, type, jurisdiction, scope, cddId }) => ({
         target: new Identity({ did: targetId }, context),
         issuer: new Identity({ did: issuerId }, context),
         issuedAt: new Date(parseFloat(issuanceDate)),
-        expiry: expiry ? new Date(expiry) : null,
+        expiry: expiry ? new Date(parseFloat(expiry)) : null,
         claim: createClaim(type, jurisdiction, scope, cddId, undefined),
       })
     ),

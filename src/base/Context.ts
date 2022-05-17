@@ -27,7 +27,7 @@ import {
 import { Account, Asset, DividendDistribution, Identity, PolymeshError, Subsidy } from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
-import { Query as QueryV2 } from '~/middleware/types-v2';
+import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   AccountBalance,
   ArrayTransactionArgument,

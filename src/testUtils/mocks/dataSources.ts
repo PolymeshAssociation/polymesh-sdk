@@ -301,6 +301,7 @@ const mockInstanceContainer = {
   apiInstance: createApi(),
   signingManagerInstance: {} as Mutable<SigningManager>,
   apolloInstance: createApolloClient(),
+  apolloInstanceV2: createApolloClient(),
   webSocketInstance: createWebSocket(),
 };
 
@@ -726,9 +727,13 @@ function configureContext(opts: ContextOptions): void {
     getExternalSigner: sinon.stub().returns(opts.getExternalSigner),
     polymeshApi: mockInstanceContainer.apiInstance,
     middlewareApi: mockInstanceContainer.apolloInstance,
+    middlewareApiV2: mockInstanceContainer.apolloInstanceV2,
     queryMiddleware: sinon
       .stub()
       .callsFake(query => mockInstanceContainer.apolloInstance.query(query)),
+    queryMiddlewareV2: sinon
+      .stub()
+      .callsFake(query => mockInstanceContainer.apolloInstanceV2.query(query)),
     getInvalidDids: sinon.stub().resolves(opts.invalidDids),
     getProtocolFees: sinon.stub().resolves(opts.transactionFee),
     getTransactionArguments: sinon.stub().returns([]),
@@ -1098,6 +1103,26 @@ export function createApolloQueryStub(query: GraphqlQuery<any>, returnData: unkn
 
 /**
  * @hidden
+ * Create and return an apollo query stub
+ *
+ * @param query - apollo document node
+ * @param returnValue
+ */
+export function createApolloV2QueryStub(query: GraphqlQuery<any>, returnData: unknown): SinonStub {
+  const instance = mockInstanceContainer.apolloInstanceV2;
+  const stub = sinon.stub();
+
+  stub.withArgs(query).resolves({
+    data: returnData,
+  });
+
+  instance.query = stub;
+
+  return stub;
+}
+
+/**
+ * @hidden
  * Create and return an apollo stub for multiple queries
  *
  * @param queries - query and returnData for each stubbed query
@@ -1331,6 +1356,20 @@ export function throwOnMiddlewareQuery(err?: unknown): void {
 
 /**
  * @hidden
+ * Make calls to `MiddlewareV2.query` throw an error
+ */
+export function throwOnMiddlewareV2Query(err?: unknown): void {
+  const instance = mockInstanceContainer.apolloInstanceV2;
+
+  if (err) {
+    errorStub.throws(err);
+  }
+
+  instance.query = errorStub;
+}
+
+/**
+ * @hidden
  * Make calls to `Context.create` throw an error
  */
 export function throwOnContextCreation(): void {
@@ -1380,6 +1419,16 @@ export function getWebSocketInstance(): MockWebSocket {
 export function getMiddlewareApi(): ApolloClient<NormalizedCacheObject> &
   SinonStubbedInstance<ApolloClient<NormalizedCacheObject>> {
   return mockInstanceContainer.apolloInstance as ApolloClient<NormalizedCacheObject> &
+    SinonStubbedInstance<ApolloClient<NormalizedCacheObject>>;
+}
+
+/**
+ * @hidden
+ * Retrieve an instance of the mocked v2 Apollo Client
+ */
+export function getMiddlewareApiV2(): ApolloClient<NormalizedCacheObject> &
+  SinonStubbedInstance<ApolloClient<NormalizedCacheObject>> {
+  return mockInstanceContainer.apolloInstanceV2 as ApolloClient<NormalizedCacheObject> &
     SinonStubbedInstance<ApolloClient<NormalizedCacheObject>>;
 }
 
