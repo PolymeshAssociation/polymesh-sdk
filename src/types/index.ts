@@ -1311,6 +1311,9 @@ export interface DistributionPayment {
   date: Date;
   target: Identity;
   amount: BigNumber;
+  /**
+   * percentage (0-100) of tax withholding for the `target` identity
+   */
   withheldTax: BigNumber;
 }
 
