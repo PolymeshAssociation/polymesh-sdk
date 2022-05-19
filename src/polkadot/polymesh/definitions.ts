@@ -522,8 +522,8 @@ export default {
       id: 'u32',
     },
     ComplianceRequirementResult: {
-      sender_conditions: 'Vec<ConditionResult>',
-      receiver_conditions: 'Vec<ConditionResult>',
+      senderConditions: 'Vec<ConditionResult>',
+      receiverConditions: 'Vec<ConditionResult>',
       id: 'u32',
       result: 'bool',
     },
@@ -544,11 +544,11 @@ export default {
     },
     TrustedIssuer: {
       issuer: 'IdentityId',
-      trusted_for: 'TrustedFor',
+      trustedFor: 'TrustedFor',
     },
     Condition: {
-      condition_type: 'ConditionType',
-      issuers: 'Vec<TrustedIssuer>',
+      conditionType: 'ConditionType',
+      issuers: 'Vec<PolymeshPrimitivesConditionTrustedIssuer>',
     },
     ConditionResult: {
       condition: 'Condition',

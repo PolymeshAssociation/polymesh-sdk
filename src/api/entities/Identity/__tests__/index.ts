@@ -3,11 +3,11 @@ import { AccountId, Balance } from '@polkadot/types/interfaces';
 import { PolymeshPrimitivesIdentity } from '@polkadot/types/lookup';
 import { bool } from '@polkadot/types/primitive';
 import BigNumber from 'bignumber.js';
-import { DidRecord, IdentityId, ScopeId, Signatory, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Asset, Context, Entity, Identity } from '~/internal';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
+import { DidRecord, IdentityId, ScopeId, Signatory, Ticker } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
 import {

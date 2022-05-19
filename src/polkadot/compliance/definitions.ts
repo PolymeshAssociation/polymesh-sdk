@@ -11,12 +11,12 @@ export default {
           isOptional: false,
         },
         {
-          name: 'from_did',
+          name: 'fromDid',
           type: 'Option<IdentityId>',
           isOptional: false,
         },
         {
-          name: 'to_did',
+          name: 'toDid',
           type: 'Option<IdentityId>',
           isOptional: false,
         },

@@ -4,7 +4,16 @@ const path = require('path');
 const fs = require('fs');
 const rimraf = require('rimraf');
 const util = require('util');
-const { upperFirst, toLower, forEach } = require('lodash');
+const {
+  upperFirst,
+  toLower,
+  forEach,
+  camelCase,
+  isArray,
+  isObject,
+  transform,
+  mapKeys,
+} = require('lodash');
 const { NODE_URL, SCHEMA_PORT } = require('./consts');
 
 const definitionsDir = path.resolve('src', 'polkadot');
@@ -16,6 +25,40 @@ fs.mkdirSync(typesDir);
 
 rimraf.sync(generatedDir);
 fs.mkdirSync(generatedDir);
+
+const camelize = obj =>
+  transform(obj, (acc, value, key, target) => {
+    const camelKey = isArray(target) ? key : camelCase(key);
+
+    acc[camelKey] = isObject(value) ? camelize(value) : value;
+  });
+
+function transformSchema(schemaObj) {
+  let {
+    types: { ComplianceRequirementResult, Condition, TrustedIssuer, TrustedFor },
+    rpc: { identity, compliance },
+  } = schemaObj;
+  identity.getFilteredAuthorizations.params = identity.getFilteredAuthorizations.params.map(p => ({
+    ...p,
+    name: camelCase(p.name),
+  }));
+  identity.getFilteredAuthorizations.type = 'Vec<PolymeshPrimitivesAuthorization>'; // will need to add import to augmented rpc
+
+  compliance.canTransfer.params = compliance.canTransfer.params.map(p => ({
+    ...p,
+    name: camelCase(p.name),
+  }));
+  const newCompliance = mapKeys(ComplianceRequirementResult, (v, k) => camelCase(k));
+  schemaObj.types.ComplianceRequirementResult = newCompliance;
+
+  const newCondition = mapKeys(Condition, (v, k) => camelCase(k));
+  newCondition.issuers = 'Vec<PolymeshPrimitivesConditionTrustedIssuer>';
+  schemaObj.types.Condition = newCondition;
+
+  const newTrustedIssuer = mapKeys(TrustedIssuer, (v, k) => camelCase(k));
+  // newTrustedIssuer.trustedFor = 'PolymeshPrimitivesConditionTrustedIssuer';
+  schemaObj.types.TrustedIssuer = newTrustedIssuer;
+}
 
 function writeDefinitions(schemaObj) {
   const { types, rpc: rpcModules } = schemaObj;
@@ -134,6 +177,7 @@ http.get(`http://${NODE_URL}:${SCHEMA_PORT}/polymesh_schema.json`, res => {
   res.on('end', () => {
     const schema = Buffer.concat(chunks);
     const schemaObj = JSON.parse(schema);
+    transformSchema(schemaObj);
 
     writeDefinitions(schemaObj);
     writeGenerated(schemaObj);

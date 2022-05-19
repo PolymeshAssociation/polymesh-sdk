@@ -1,6 +1,5 @@
 import { StorageKey, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import { IdentityId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -11,6 +10,7 @@ import {
   NumberedPortfolio,
   TransactionQueue,
 } from '~/internal';
+import { IdentityId } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { tuple } from '~/types/utils';

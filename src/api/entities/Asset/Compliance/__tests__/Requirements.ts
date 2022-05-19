@@ -1,11 +1,11 @@
 import { Vec } from '@polkadot/types/codec';
 import { PolymeshPrimitivesComplianceManagerAssetCompliance } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { AssetComplianceResult, IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Params } from '~/api/procedures/setAssetRequirements';
 import { Asset, Context, Namespace, TransactionQueue } from '~/internal';
+import { AssetComplianceResult, IdentityId, Ticker } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {

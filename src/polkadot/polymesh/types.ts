@@ -1,6 +1,7 @@
 // Auto-generated via `yarn polkadot-types-from-defs`, do not edit
 /* eslint-disable */
 
+import { PolymeshPrimitivesConditionTrustedIssuer } from '@polkadot/types/lookup';
 import type {
   Bytes,
   Enum,
@@ -525,8 +526,8 @@ export interface ComplianceRequirement extends Struct {
 
 /** @name ComplianceRequirementResult */
 export interface ComplianceRequirementResult extends Struct {
-  readonly sender_conditions: Vec<ConditionResult>;
-  readonly receiver_conditions: Vec<ConditionResult>;
+  readonly senderConditions: Vec<ConditionResult>;
+  readonly receiverConditions: Vec<ConditionResult>;
   readonly id: u32;
   readonly result: bool;
 }
@@ -536,8 +537,8 @@ export interface CompressedRistretto extends U8aFixed {}
 
 /** @name Condition */
 export interface Condition extends Struct {
-  readonly condition_type: ConditionType;
-  readonly issuers: Vec<TrustedIssuer>;
+  readonly conditionType: ConditionType;
+  readonly issuers: Vec<PolymeshPrimitivesConditionTrustedIssuer>;
 }
 
 /** @name ConditionResult */
@@ -1984,7 +1985,7 @@ export interface TrustedFor extends Enum {
 /** @name TrustedIssuer */
 export interface TrustedIssuer extends Struct {
   readonly issuer: IdentityId;
-  readonly trusted_for: TrustedFor;
+  readonly trustedFor: TrustedFor;
 }
 
 /** @name UniqueCall */

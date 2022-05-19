@@ -1,14 +1,14 @@
 import { AccountId, Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
+import sinon, { SinonStub } from 'sinon';
+
+import { Context, Namespace } from '~/internal';
 import {
   GranularCanTransferResult,
   IdentityId,
   PortfolioId as MeshPortfolioId,
   Ticker,
-} from 'polymesh-types/types';
-import sinon, { SinonStub } from 'sinon';
-
-import { Context, Namespace } from '~/internal';
+} from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {

@@ -4,7 +4,6 @@ import {
   PolymeshPrimitivesComplianceManagerAssetCompliance,
   PolymeshPrimitivesConditionTrustedIssuer,
 } from '@polkadot/types/lookup';
-import { AssetComplianceResult } from 'polymesh-types/types';
 
 import {
   addAssetRequirement,
@@ -21,6 +20,7 @@ import {
   SetAssetRequirementsParams,
   togglePauseRequirements,
 } from '~/internal';
+import { AssetComplianceResult } from '~/polkadot/polymesh';
 import {
   Compliance,
   ComplianceRequirements,

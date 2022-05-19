@@ -521,8 +521,8 @@ export default {
       id: 'u32',
     },
     ComplianceRequirementResult: {
-      sender_conditions: 'Vec<ConditionResult>',
-      receiver_conditions: 'Vec<ConditionResult>',
+      senderConditions: 'Vec<ConditionResult>',
+      receiverConditions: 'Vec<ConditionResult>',
       id: 'u32',
       result: 'bool',
     },
@@ -543,11 +543,11 @@ export default {
     },
     TrustedIssuer: {
       issuer: 'IdentityId',
-      trusted_for: 'TrustedFor',
+      trustedFor: 'TrustedFor',
     },
     Condition: {
-      condition_type: 'ConditionType',
-      issuers: 'Vec<TrustedIssuer>',
+      conditionType: 'ConditionType',
+      issuers: 'Vec<PolymeshPrimitivesConditionTrustedIssuer>',
     },
     ConditionResult: {
       condition: 'Condition',
@@ -1218,12 +1218,12 @@ export default {
             isOptional: false,
           },
           {
-            name: 'from_did',
+            name: 'fromDid',
             type: 'Option<IdentityId>',
             isOptional: false,
           },
           {
-            name: 'to_did',
+            name: 'toDid',
             type: 'Option<IdentityId>',
             isOptional: false,
           },
@@ -1316,12 +1316,12 @@ export default {
             isOptional: false,
           },
           {
-            name: 'allow_expired',
+            name: 'allowExpired',
             type: 'bool',
             isOptional: false,
           },
           {
-            name: 'auth_type',
+            name: 'authType',
             type: 'AuthorizationType',
             isOptional: true,
           },
@@ -1331,7 +1331,7 @@ export default {
             isOptional: true,
           },
         ],
-        type: 'Vec<Authorization>',
+        type: 'Vec<PolymeshPrimitivesAuthorization>',
       },
       getKeyIdentityData: {
         description: 'Query relation between a signing key and a DID',

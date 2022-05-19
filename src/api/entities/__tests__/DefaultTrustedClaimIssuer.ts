@@ -120,7 +120,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
           issuer: dsMockUtils.createMockIdentityId('otherDid'),
           // eslint-disable-next-line @typescript-eslint/naming-convention
           trustedFor: dsMockUtils.createMockTrustedFor({
-            Specific: [dsMockUtils.createMockRpcClaimType(ClaimType.Exempted)],
+            Specific: [dsMockUtils.createMockClaimType(ClaimType.Exempted)],
           }),
         }),
       ];

@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import { TransferCondition } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -12,6 +11,7 @@ import {
   SetPercentageTransferRestrictionsParams,
   TransactionQueue,
 } from '~/internal';
+import { TransferCondition } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   CountTransferRestriction,

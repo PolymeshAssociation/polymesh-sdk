@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
-import { Moment } from 'polymesh-types/types';
 
 import { Asset, Offering, PolymeshError, Procedure } from '~/internal';
+import { Moment } from '~/polkadot/polymesh';
 import { ErrorCode, OfferingSaleStatus, OfferingTimingStatus, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { bigNumberToU64, dateToMoment, stringToTicker } from '~/utils/conversion';

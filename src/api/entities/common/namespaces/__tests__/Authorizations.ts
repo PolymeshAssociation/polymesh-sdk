@@ -1,9 +1,9 @@
 import { bool } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import { AuthorizationType as MeshAuthorizationType, Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Context, Namespace } from '~/internal';
+import { AuthorizationType as MeshAuthorizationType, Signatory } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { AuthorizationType, Identity, SignerValue } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -95,7 +95,7 @@ describe('Authorizations class', () => {
         .returns(rawAuthorizationType);
 
       const fakeRpcAuthorizations = authParams.map(({ authId, expiry, issuer, data }) =>
-        dsMockUtils.createMockRpcAuthorization({
+        dsMockUtils.createMockAuthorization({
           authId: dsMockUtils.createMockU64(authId),
           expiry: dsMockUtils.createMockOption(
             expiry ? dsMockUtils.createMockMoment(new BigNumber(expiry.getTime())) : expiry

@@ -1,11 +1,11 @@
 import { StorageKey, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import { PortfolioId as MeshPortfolioId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Context, Entity, Instruction, TransactionQueue } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
+import { PortfolioId as MeshPortfolioId } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { AffirmationStatus, InstructionStatus, InstructionType } from '~/types';

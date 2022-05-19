@@ -1,5 +1,4 @@
 import { PolymeshPrimitivesConditionTrustedIssuer } from '@polkadot/types/lookup';
-import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -9,6 +8,7 @@ import {
   Namespace,
   TransactionQueue,
 } from '~/internal';
+import { Ticker } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { TrustedClaimIssuerOperation } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';

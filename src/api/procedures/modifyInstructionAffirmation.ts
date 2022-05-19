@@ -1,10 +1,10 @@
 import { u32, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
-import { PortfolioId } from 'polymesh-types/types';
 
 import { assertInstructionValid } from '~/api/procedures/utils';
 import { Instruction, PolymeshError, Procedure } from '~/internal';
+import { PortfolioId } from '~/polkadot/polymesh';
 import {
   AffirmationStatus,
   DefaultPortfolio,

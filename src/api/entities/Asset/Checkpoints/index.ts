@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
-import { CheckpointId, Ticker } from 'polymesh-types/types';
 
 import { Asset, Checkpoint, Context, createCheckpoint, Namespace, PolymeshError } from '~/internal';
+import { CheckpointId, Ticker } from '~/polkadot/polymesh';
 import {
   CheckpointWithData,
   ErrorCode,

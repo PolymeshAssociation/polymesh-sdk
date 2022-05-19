@@ -2,9 +2,9 @@ import { Bytes } from '@polkadot/types';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { values } from 'lodash';
-import { AssetType, CustomAssetTypeId } from 'polymesh-types/types';
 
 import { Asset, Context, PolymeshError, Procedure, TickerReservation } from '~/internal';
+import { AssetType, CustomAssetTypeId } from '~/polkadot/polymesh';
 import {
   AssetDocument,
   ErrorCode,

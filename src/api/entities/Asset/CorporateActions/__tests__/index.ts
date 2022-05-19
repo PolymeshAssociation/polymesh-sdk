@@ -1,8 +1,8 @@
 import BigNumber from 'bignumber.js';
-import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Asset, Context, Namespace, TransactionQueue } from '~/internal';
+import { Ticker } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { TargetTreatment } from '~/types';
 import { tuple } from '~/types/utils';

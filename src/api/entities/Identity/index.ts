@@ -3,7 +3,6 @@ import { PolymeshPrimitivesIdentity } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, flatten, uniqBy } from 'lodash';
-import { CddStatus } from 'polymesh-types/types';
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
@@ -18,6 +17,7 @@ import {
 } from '~/internal';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
+import { CddStatus } from '~/polkadot/polymesh';
 import {
   CheckRolesResult,
   DistributionWithDetails,

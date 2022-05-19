@@ -1,8 +1,8 @@
 import BigNumber from 'bignumber.js';
-import { Ticker } from 'polymesh-types/types';
 import sinon, { SinonStub } from 'sinon';
 
 import { CheckpointSchedule, Context, Namespace, TransactionQueue } from '~/internal';
+import { Ticker } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { CalendarUnit, ScheduleWithDetails } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
