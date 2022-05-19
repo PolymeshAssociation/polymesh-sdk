@@ -4,11 +4,13 @@ import {
   BTreeSetIdentityId,
   BTreeSetStatType,
   BTreeSetStatUpdate,
+  BTreeSetTransferCondition,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesStatisticsStat2ndKey,
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesStatisticsStatUpdate,
+  PolymeshPrimitivesTransferComplianceTransferCondition,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { ScopeId, Ticker, TransferCondition, TxTags } from 'polymesh-types/types';
@@ -66,6 +68,15 @@ describe('setTransferRestrictions procedure', () => {
     PolymeshPrimitivesStatisticsStatUpdate
   >;
 
+  let statUpdatesToBtreeStatUpdateStub: sinon.SinonStub<
+    [PolymeshPrimitivesStatisticsStatUpdate[], Context],
+    BTreeSetStatUpdate
+  >;
+  let complianceRequirementsToBtreeSetStub: sinon.SinonStub<
+    [PolymeshPrimitivesTransferComplianceTransferCondition[], Context],
+    BTreeSetTransferCondition
+  >;
+
   let createStat2ndKeyStub: sinon.SinonStub<[Context], PolymeshPrimitivesStatisticsStat2ndKey>;
   let ticker: string;
   let count: BigNumber;
@@ -105,6 +116,14 @@ describe('setTransferRestrictions procedure', () => {
     );
     statUpdateStub = sinon.stub(utilsConversionModule, 'statUpdate');
     createStat2ndKeyStub = sinon.stub(utilsConversionModule, 'createStat2ndKey');
+    statUpdatesToBtreeStatUpdateStub = sinon.stub(
+      utilsConversionModule,
+      'statUpdatesToBtreeStatUpdate'
+    );
+    complianceRequirementsToBtreeSetStub = sinon.stub(
+      utilsConversionModule,
+      'complianceRequirementsToBtreeSet'
+    );
     ticker = 'TICKER';
     count = new BigNumber(10);
     percentage = new BigNumber(49);
@@ -169,6 +188,15 @@ describe('setTransferRestrictions procedure', () => {
       .returns(rawPercentageRestriction);
     stringToTickerKeyStub.withArgs(ticker, mockContext).returns({ Ticker: rawTicker });
     stringToScopeIdStub.withArgs(exemptedDid, mockContext).returns(rawScopeId);
+    statUpdatesToBtreeStatUpdateStub
+      .withArgs([rawStatUpdate], mockContext)
+      .returns([rawStatUpdate] as BTreeSetStatUpdate);
+    complianceRequirementsToBtreeSetStub
+      .withArgs([rawCountRestriction], mockContext)
+      .returns([rawCountRestriction] as BTreeSetTransferCondition);
+    complianceRequirementsToBtreeSetStub
+      .withArgs([rawPercentageRestriction], mockContext)
+      .returns([rawPercentageRestriction] as BTreeSetTransferCondition);
   });
 
   afterEach(() => {
@@ -297,6 +325,9 @@ describe('setTransferRestrictions procedure', () => {
         currentStats: [] as unknown as BTreeSetStatType,
       }
     );
+    complianceRequirementsToBtreeSetStub
+      .withArgs([], mockContext)
+      .returns([] as unknown as BTreeSetTransferCondition);
 
     const result = await prepareSetTransferRestrictions.call(proc, args);
 
@@ -424,6 +455,9 @@ describe('setTransferRestrictions procedure', () => {
     createStat2ndKeyStub.withArgs(mockContext).returns(raw2ndKey);
     rawStatUpdate = dsMockUtils.createMockStatUpdate();
     statUpdateStub.returns(rawStatUpdate);
+    statUpdatesToBtreeStatUpdateStub
+      .withArgs([rawStatUpdate], mockContext)
+      .returns([rawStatUpdate] as BTreeSetStatUpdate);
 
     const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,

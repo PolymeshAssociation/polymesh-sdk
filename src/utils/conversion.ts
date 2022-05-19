@@ -334,7 +334,7 @@ export function stringToInvestorZKProofData(proof: string, context: Context): In
  * @hidden
  */
 export function dateToMoment(date: Date, context: Context): Moment {
-  return context.createType('Moment', date.getTime()) as Moment;
+  return context.createType('u64', date.getTime());
 }
 
 /**
@@ -3656,10 +3656,11 @@ export function statUpdate(
  * @hidden
  */
 export function statUpdatesToBtreeStatUpdate(
-  statUpdates: PolymeshPrimitivesStatisticsStatUpdate[]
+  statUpdates: PolymeshPrimitivesStatisticsStatUpdate[],
+  context: Context
 ): BTreeSetStatUpdate {
   const sorted = [...statUpdates];
-  return sorted as BTreeSetStatUpdate;
+  return context.createType('BTreeSetStatUpdate', sorted);
 }
 
 /**
@@ -3693,9 +3694,10 @@ export function createStat2ndKey(context: Context): PolymeshPrimitivesStatistics
  * @hidden
  */
 export function complianceRequirementsToBtreeSet(
-  conditions: PolymeshPrimitivesTransferComplianceTransferCondition[]
+  conditions: PolymeshPrimitivesTransferComplianceTransferCondition[],
+  context: Context
 ): BTreeSetTransferCondition {
   // The chain expects inputs to be sorted. Copy to avoid mutating input
   const sorted = [...conditions].sort();
-  return sorted as BTreeSetTransferCondition;
+  return context.createType('BTreeSetTransferCondition', sorted);
 }

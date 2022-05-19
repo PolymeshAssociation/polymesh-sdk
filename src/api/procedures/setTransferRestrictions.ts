@@ -208,7 +208,7 @@ export async function prepareSetTransferRestrictions(
       const holderCount = new BigNumber(holders.length);
       const secondKey = createStat2ndKey(context);
       const stat = statUpdate(secondKey, bigNumberToU128(holderCount, context), context);
-      const statValue = statUpdatesToBtreeStatUpdate([stat]);
+      const statValue = statUpdatesToBtreeStatUpdate([stat], context);
 
       transactions.push(
         checkTxType({
@@ -222,7 +222,7 @@ export async function prepareSetTransferRestrictions(
   transactions.push(
     checkTxType({
       transaction: statistics.setAssetTransferCompliance,
-      args: [tickerKey, complianceRequirementsToBtreeSet(conditions)],
+      args: [tickerKey, complianceRequirementsToBtreeSet(conditions, context)],
     })
   );
 

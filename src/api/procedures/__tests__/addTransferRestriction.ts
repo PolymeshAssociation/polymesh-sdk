@@ -56,6 +56,10 @@ describe('addTransferRestriction procedure', () => {
     [PolymeshPrimitivesStatisticsStat2ndKey, u128, Context],
     PolymeshPrimitivesStatisticsStatUpdate
   >;
+  let statUpdatesToBtreeStatUpdateStub: sinon.SinonStub<
+    [PolymeshPrimitivesStatisticsStatUpdate[], Context],
+    BTreeSetStatUpdate
+  >;
   let createStat2ndKeyStub: sinon.SinonStub<[Context], PolymeshPrimitivesStatisticsStat2ndKey>;
   let ticker: string;
   let count: BigNumber;
@@ -72,6 +76,16 @@ describe('addTransferRestriction procedure', () => {
   let rawStatType: PolymeshPrimitivesStatisticsStatType;
   let raw2ndKey: PolymeshPrimitivesStatisticsStat2ndKey;
   let rawStatUpdate: PolymeshPrimitivesStatisticsStatUpdate;
+
+  let addBatchTransactionStub: sinon.SinonStub;
+  let setAssetTransferCompliance: PolymeshTx<[PolymeshPrimitivesTicker, TransferCondition]>;
+  let setActiveAssetStats: PolymeshTx<[PolymeshPrimitivesTicker, BTreeSetStatType]>;
+  let addExemptedEntitiesTransaction: PolymeshTx<
+    [PolymeshPrimitivesTicker, TransferCondition, ScopeId[]]
+  >;
+  let batchUpdateAssetStatsTransaction: PolymeshTx<
+    [PolymeshPrimitivesTicker, PolymeshPrimitivesStatisticsStatType, BTreeSetStatUpdate[]]
+  >;
 
   const emptyStorage = {
     needStat: true,
@@ -91,17 +105,6 @@ describe('addTransferRestriction procedure', () => {
     countRestriction = { type: TransferRestrictionType.Count, value: count };
     percentageRestriction = { type: TransferRestrictionType.Percentage, value: percentage };
   });
-
-  let addBatchTransactionStub: sinon.SinonStub;
-
-  let setAssetTransferCompliance: PolymeshTx<[PolymeshPrimitivesTicker, TransferCondition]>;
-  let setActiveAssetStats: PolymeshTx<[PolymeshPrimitivesTicker, BTreeSetStatType]>;
-  let addExemptedEntitiesTransaction: PolymeshTx<
-    [PolymeshPrimitivesTicker, TransferCondition, ScopeId[]]
-  >;
-  let batchUpdateAssetStatsTransaction: PolymeshTx<
-    [PolymeshPrimitivesTicker, PolymeshPrimitivesStatisticsStatType, BTreeSetStatUpdate[]]
-  >;
 
   beforeEach(() => {
     addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
@@ -137,6 +140,10 @@ describe('addTransferRestriction procedure', () => {
       utilsConversionModule,
       'statisticsOpTypeToStatType'
     );
+    statUpdatesToBtreeStatUpdateStub = sinon.stub(
+      utilsConversionModule,
+      'statUpdatesToBtreeStatUpdate'
+    );
     statUpdateStub = sinon.stub(utilsConversionModule, 'statUpdate');
     createStat2ndKeyStub = sinon.stub(utilsConversionModule, 'createStat2ndKey');
     rawOp = dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count);
@@ -158,6 +165,9 @@ describe('addTransferRestriction procedure', () => {
       .withArgs(percentageRestriction, mockContext)
       .returns(rawPercentageCondition);
     stringToTickerKeyStub.withArgs(ticker, mockContext).returns({ Ticker: rawTicker });
+    statUpdatesToBtreeStatUpdateStub
+      .withArgs([rawStatUpdate], mockContext)
+      .returns([rawStatUpdate] as BTreeSetStatUpdate);
   });
 
   afterEach(() => {

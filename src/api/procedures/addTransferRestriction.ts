@@ -148,7 +148,7 @@ export async function prepareAddTransferRestriction(
       // These should happen near the assets inception, so for now query the chain directly
       const secondKey = createStat2ndKey(context);
       const stat = statUpdate(secondKey, bigNumberToU128(holderCount, context), context);
-      const statValue = statUpdatesToBtreeStatUpdate([stat]);
+      const statValue = statUpdatesToBtreeStatUpdate([stat], context);
 
       transactions.push(
         checkTxType({

@@ -635,7 +635,7 @@ describe('dateToMoment and momentToDate', () => {
       const fakeResult = 10000 as unknown as Moment;
       const context = dsMockUtils.getContextInstance();
 
-      context.createType.withArgs('Moment', Math.round(value.getTime())).returns(fakeResult);
+      context.createType.withArgs('u64', Math.round(value.getTime())).returns(fakeResult);
 
       const result = dateToMoment(value, context);
 
@@ -6684,7 +6684,7 @@ describe('scheduleSpecToMeshScheduleSpec', () => {
     createTypeStub.withArgs('u64', `${amount}`).returns(rawAmount);
     createTypeStub.withArgs('u64', '0').returns(rawZero);
     createTypeStub.withArgs('u64', `${repetitions}`).returns(rawRepetitions);
-    createTypeStub.withArgs('Moment', start.getTime()).returns(rawStart);
+    createTypeStub.withArgs('u64', start.getTime()).returns(rawStart);
     createTypeStub
       .withArgs('CalendarPeriod', { unit: 'Month', amount: rawAmount })
       .returns(rawPeriod);
@@ -7005,7 +7005,7 @@ describe('checkpointToRecordDateSpec', () => {
     const context = dsMockUtils.getContextInstance();
     const createTypeStub = context.createType;
 
-    createTypeStub.withArgs('Moment', value.getTime()).returns(rawDate);
+    createTypeStub.withArgs('u64', value.getTime()).returns(rawDate);
     createTypeStub.withArgs('RecordDateSpec', { Scheduled: rawDate }).returns(fakeResult);
 
     const result = checkpointToRecordDateSpec(value, context);
