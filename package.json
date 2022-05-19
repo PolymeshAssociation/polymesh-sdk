@@ -8,7 +8,7 @@
   "license": "ISC",
   "scripts": {
     "start": "cross-env node scripts/generateTsconfigDev.js && cross-env webpack-dev-server --config=webpack.config.dev.js",
-    "generate:polkadot-types": "yarn fetch-metadata && yarn fetch-definitions && yarn generate:defs && yarn generate:meta && yarn generate:tags && yarn generate:post-process && yarn format",
+    "generate:polkadot-types": "yarn fetch-metadata && yarn fetch-definitions && yarn generate:defs && yarn generate:meta && yarn generate:tags && yarn generate:post-process",
     "generate:middleware-types": "graphql-codegen -r dotenv/config",
     "fetch-definitions": "cross-env node scripts/fetchDefinitions.js",
     "fetch-metadata": "sh scripts/fetchMetadata.sh",
