@@ -11,7 +11,7 @@
     "generate:polkadot-types": "yarn fetch-metadata && yarn fetch-definitions && yarn generate:defs && yarn generate:meta && yarn generate:tags && yarn generate:post-process && yarn format",
     "generate:middleware-types": "graphql-codegen -r dotenv/config",
     "fetch-definitions": "cross-env node scripts/fetchDefinitions.js",
-    "fetch-metadata": "curl -H \"Content-Type: application/json\" -d '{\"id\":\"1\", \"jsonrpc\":\"2.0\", \"method\": \"state_getMetadata\", \"params\":[]}' http://localhost:9933 > metadata.json",
+    "fetch-metadata": "sh scripts/fetchMetadata.sh",
     "update-readme": "cross-env node scripts/updateReadme.js",
     "generate:defs": "ts-node --skip-project node_modules/.bin/polkadot-types-from-defs --endpoint metadata.json --package polymesh-types --input ./src/polkadot/",
     "generate:meta": "ts-node --skip-project node_modules/.bin/polkadot-types-from-chain --endpoint metadata.json --package polymesh-types --output ./src/polkadot --strict",

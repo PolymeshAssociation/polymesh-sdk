@@ -13,9 +13,9 @@ import {
 import { ProcedureAuthorization, StatisticsOpType } from '~/types/internal';
 import {
   bigNumberToU128,
+  createStat2ndKey,
   meshStatToStatisticsOpType,
   permillToBigNumber,
-  primitive2ndKey,
   scopeIdsToBtreeSetIdentityId,
   statisticsOpTypeToStatOpType,
   statisticsOpTypeToStatType,
@@ -146,7 +146,7 @@ export async function prepareAddTransferRestriction(
       const holderCount = new BigNumber(holders.length);
       // if an asset has many investors this could be slow and instead should be fetched from SubQuery
       // These should happen near the assets inception, so for now query the chain directly
-      const secondKey = primitive2ndKey(context);
+      const secondKey = createStat2ndKey(context);
       const stat = statUpdate(secondKey, bigNumberToU128(holderCount, context), context);
       const statValue = statUpdatesToBtreeStatUpdate([stat]);
 

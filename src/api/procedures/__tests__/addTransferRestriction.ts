@@ -56,7 +56,7 @@ describe('addTransferRestriction procedure', () => {
     [PolymeshPrimitivesStatisticsStat2ndKey, u128, Context],
     PolymeshPrimitivesStatisticsStatUpdate
   >;
-  let primitive2ndKeyStub: sinon.SinonStub<[Context], PolymeshPrimitivesStatisticsStat2ndKey>;
+  let createStat2ndKeyStub: sinon.SinonStub<[Context], PolymeshPrimitivesStatisticsStat2ndKey>;
   let ticker: string;
   let count: BigNumber;
   let percentage: BigNumber;
@@ -138,7 +138,7 @@ describe('addTransferRestriction procedure', () => {
       'statisticsOpTypeToStatType'
     );
     statUpdateStub = sinon.stub(utilsConversionModule, 'statUpdate');
-    primitive2ndKeyStub = sinon.stub(utilsConversionModule, 'primitive2ndKey');
+    createStat2ndKeyStub = sinon.stub(utilsConversionModule, 'createStat2ndKey');
     rawOp = dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count);
     rawStatType = dsMockUtils.createMockStatistics();
     rawTicker = dsMockUtils.createMockTicker(ticker);
@@ -303,7 +303,7 @@ describe('addTransferRestriction procedure', () => {
     );
 
     statisticsOpTypeToStatTypeStub.returns(rawStatType);
-    primitive2ndKeyStub.withArgs(mockContext).returns(raw2ndKey);
+    createStat2ndKeyStub.withArgs(mockContext).returns(raw2ndKey);
     statUpdateStub.returns(rawStatUpdate);
 
     await prepareAddTransferRestriction.call(proc, args);

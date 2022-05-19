@@ -3685,7 +3685,7 @@ export function statisticsOpTypeToStatOpType(
  * For now this is hard coded to return a NoClaimStat type. Once Claim scopes are added this should be extended
  * @hidden
  */
-export function primitive2ndKey(context: Context): PolymeshPrimitivesStatisticsStat2ndKey {
+export function createStat2ndKey(context: Context): PolymeshPrimitivesStatisticsStat2ndKey {
   return context.createType('PolymeshPrimitivesStatisticsStat2ndKey', 'NoClaimStat');
 }
 

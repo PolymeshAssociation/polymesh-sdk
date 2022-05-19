@@ -49,12 +49,13 @@ import {
   bigNumberToU32,
   boolToBoolean,
   bytesToString,
+  createStat2ndKey,
   hashToString,
   identityIdToString,
   meshStatToStatisticsOpType,
   middlewareEventToEventIdentifier,
-  primitive2ndKey,
   stringToTicker,
+  stringToTickerKey,
   tickerToDid,
   u128ToBigNumber,
 } from '~/utils/conversion';
@@ -491,9 +492,9 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       ticker,
     } = this;
 
-    const rawTicker = stringToTicker(ticker, context);
+    const tickerKey = stringToTickerKey(ticker, context);
 
-    const activeStats = await statistics.activeAssetStats({ Ticker: rawTicker });
+    const activeStats = await statistics.activeAssetStats(tickerKey);
     const activeCountStatExists = !!activeStats.find(s => {
       return meshStatToStatisticsOpType(s) === StatisticsOpType.Count;
     });
@@ -506,17 +507,15 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       });
     }
 
-    const key = primitive2ndKey(context);
+    const secondKey = createStat2ndKey(context);
 
     if (callback) {
-      return statistics.assetStats({ asset: { Ticker: rawTicker } }, key, count => {
+      return statistics.assetStats({ asset: tickerKey }, secondKey, count => {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(u128ToBigNumber(count));
       });
     }
-    const [result] = await Promise.all([
-      statistics.assetStats({ asset: { Ticker: rawTicker } }, key),
-    ]);
+    const result = await statistics.assetStats({ asset: tickerKey }, secondKey);
 
     return u128ToBigNumber(result);
   }

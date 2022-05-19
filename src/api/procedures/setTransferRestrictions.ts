@@ -17,9 +17,9 @@ import { ProcedureAuthorization, StatisticsOpType } from '~/types/internal';
 import {
   bigNumberToU128,
   complianceRequirementsToBtreeSet,
+  createStat2ndKey,
   meshStatToStatisticsOpType,
   permillToBigNumber,
-  primitive2ndKey,
   scopeIdsToBtreeSetIdentityId,
   statisticsOpTypeToStatOpType,
   statisticsOpTypeToStatType,
@@ -69,18 +69,18 @@ export interface Storage {
  */
 function isSameCondition(
   transferCondition: TransferCondition,
-  inputCondition: CountTransferRestrictionInput | PercentageTransferRestrictionInput,
+  inputValue: BigNumber,
   type: TransferRestrictionType
 ): boolean {
   if (transferCondition.isMaxInvestorCount && type === TransferRestrictionType.Count) {
     const currentCount = u64ToBigNumber(transferCondition.asMaxInvestorCount);
-    return currentCount.eq((inputCondition as CountTransferRestrictionInput).count);
+    return currentCount.eq(inputValue);
   } else if (
     transferCondition.isMaxInvestorOwnership &&
     type === TransferRestrictionType.Percentage
   ) {
     const currentOwnership = permillToBigNumber(transferCondition.asMaxInvestorOwnership);
-    return currentOwnership.eq((inputCondition as PercentageTransferRestrictionInput).percentage);
+    return currentOwnership.eq(inputValue);
   } else {
     return false;
   }
@@ -98,18 +98,21 @@ function transformRestrictions(
   const exemptions: (string | Identity)[] = [];
 
   let someDifference = restrictions.length !== currentRestrictions.length;
-  const conditions = restrictions.map(r => {
+  const conditions: PolymeshPrimitivesTransferComplianceTransferCondition[] = [];
+  restrictions.forEach(r => {
+    let value: BigNumber;
+    if (type === TransferRestrictionType.Count) {
+      value = (r as CountTransferRestrictionInput).count;
+    } else {
+      value = (r as PercentageTransferRestrictionInput).percentage;
+    }
+
     const compareConditions = (transferCondition: TransferCondition) =>
-      isSameCondition(transferCondition, r, type);
+      isSameCondition(transferCondition, value, type);
     if (!someDifference) {
       someDifference = !currentRestrictions.find(compareConditions);
     }
-    let condition: TransferRestriction;
-    if (type === TransferRestrictionType.Count) {
-      condition = { type, value: (r as CountTransferRestrictionInput).count };
-    } else {
-      condition = { type, value: (r as PercentageTransferRestrictionInput).percentage };
-    }
+    const condition = { type, value };
 
     const rawCondition = transferRestrictionToPolymeshTransferCondition(condition, context);
 
@@ -119,7 +122,7 @@ function transformRestrictions(
       });
     }
 
-    return rawCondition;
+    conditions.push(rawCondition);
   });
 
   if (!someDifference) {
@@ -203,7 +206,7 @@ export async function prepareSetTransferRestrictions(
       const { Ticker: rawTicker } = tickerKey;
       const holders = await query.asset.balanceOf.entries(rawTicker);
       const holderCount = new BigNumber(holders.length);
-      const secondKey = primitive2ndKey(context);
+      const secondKey = createStat2ndKey(context);
       const stat = statUpdate(secondKey, bigNumberToU128(holderCount, context), context);
       const statValue = statUpdatesToBtreeStatUpdate([stat]);
 

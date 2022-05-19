@@ -156,6 +156,7 @@ import {
   complianceRequirementToRequirement,
   corporateActionIdentifierToCaId,
   corporateActionKindToCaKind,
+  createStat2ndKey,
   dateToMoment,
   distributionToDividendDistributionParams,
   documentHashToString,
@@ -200,7 +201,6 @@ import {
   portfolioLikeToPortfolioId,
   portfolioMovementToMovePortfolioItem,
   posRatioToBigNumber,
-  primitive2ndKey,
   requirementToComplianceRequirement,
   rpcAuthorizationDataToAuthorization,
   rpcMeshClaimTypeToClaimType,
@@ -7490,7 +7490,7 @@ describe('agentGroupToPermissionGroup', () => {
     });
   });
 
-  describe('primitive2ndKey', () => {
+  describe('createStat2ndKey', () => {
     it('should return a NoClaimStat 2ndkey', () => {
       const context = dsMockUtils.getContextInstance();
 
@@ -7498,7 +7498,7 @@ describe('agentGroupToPermissionGroup', () => {
         .withArgs('PolymeshPrimitivesStatisticsStat2ndKey', 'NoClaimStat')
         .returns('2ndKey');
 
-      const result = primitive2ndKey(context);
+      const result = createStat2ndKey(context);
 
       expect(result).toEqual('2ndKey');
     });

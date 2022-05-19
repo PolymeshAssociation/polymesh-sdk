@@ -25,7 +25,7 @@ import {
   stringToBytes,
   stringToTicker,
 } from '~/utils/conversion';
-import { filterEventRecords } from '~/utils/internal';
+import { filterEventRecords, optionize } from '~/utils/internal';
 
 /**
  * @hidden
@@ -165,7 +165,7 @@ export async function prepareCreateAsset(
   const rawIdentifiers = securityIdentifiers.map(identifier =>
     securityIdentifierToAssetIdentifier(identifier, context)
   );
-  const rawFundingRound = fundingRound ? stringToBytes(fundingRound, context) : null;
+  const rawFundingRound = optionize(stringToBytes)(fundingRound, context);
   const rawDisableIu = booleanToBool(!requireInvestorUniqueness, context);
 
   let fee: undefined | BigNumber;
