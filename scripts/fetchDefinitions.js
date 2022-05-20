@@ -35,8 +35,8 @@ const camelize = obj =>
 
 function transformSchema(schemaObj) {
   let {
-    types: { ComplianceRequirementResult, Condition, TrustedIssuer, TrustedFor },
-    rpc: { identity, compliance },
+    types: { ComplianceRequirementResult, Condition, TrustedIssuer },
+    rpc: { identity, compliance, asset },
   } = schemaObj;
   identity.getFilteredAuthorizations.params = identity.getFilteredAuthorizations.params.map(p => ({
     ...p,
@@ -56,8 +56,23 @@ function transformSchema(schemaObj) {
   schemaObj.types.Condition = newCondition;
 
   const newTrustedIssuer = mapKeys(TrustedIssuer, (v, k) => camelCase(k));
-  // newTrustedIssuer.trustedFor = 'PolymeshPrimitivesConditionTrustedIssuer';
   schemaObj.types.TrustedIssuer = newTrustedIssuer;
+
+  asset.canTransferGranular.params = asset.canTransferGranular.params.map(p => ({
+    ...p,
+    name: camelCase(p.name),
+  }));
+
+  asset.canTransferGranular.params[0].type = 'Option<PolymeshPrimitivesIdentityId>';
+  asset.canTransferGranular.params[2].type = 'Option<PolymeshPrimitivesIdentityId>';
+
+  asset.canTransfer.params = asset.canTransfer.params.map(p => ({
+    ...p,
+    name: camelCase(p.name),
+  }));
+
+  asset.canTransfer.params[1].type = 'Option<PolymeshPrimitivesIdentityId>';
+  asset.canTransfer.params[3].type = 'Option<PolymeshPrimitivesIdentityId>';
 }
 
 function writeDefinitions(schemaObj) {

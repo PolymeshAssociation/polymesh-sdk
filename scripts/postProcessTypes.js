@@ -12,7 +12,9 @@ replace.sync({
 replace.sync({
   files: path.resolve(definitionsDir, 'augment-api-rpc.ts'),
   from: ['\n\n'], // there should be two new lines between the comment and import block to target
-  to: ["\n\nimport { PolymeshPrimitivesAuthorization } from '@polkadot/types/lookup';\n"],
+  to: [
+    "\n\nimport { PolymeshPrimitivesAuthorization, PolymeshPrimitivesIdentityId } from '@polkadot/types/lookup';\n",
+  ],
 });
 
 // Add in import for modified schema

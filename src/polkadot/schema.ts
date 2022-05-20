@@ -1441,22 +1441,22 @@ export default {
             isOptional: false,
           },
           {
-            name: 'from_custodian',
-            type: 'Option<IdentityId>',
+            name: 'fromCustodian',
+            type: 'Option<PolymeshPrimitivesIdentityId>',
             isOptional: false,
           },
           {
-            name: 'from_portfolio',
+            name: 'fromPortfolio',
             type: 'PortfolioId',
             isOptional: false,
           },
           {
-            name: 'to_custodian',
-            type: 'Option<IdentityId>',
+            name: 'toCustodian',
+            type: 'Option<PolymeshPrimitivesIdentityId>',
             isOptional: false,
           },
           {
-            name: 'to_portfolio',
+            name: 'toPortfolio',
             type: 'PortfolioId',
             isOptional: false,
           },
@@ -1483,22 +1483,22 @@ export default {
           'Checks whether a transaction with given parameters can take place or not. The result is granular meaning each check is run and returned regardless of outcome.',
         params: [
           {
-            name: 'from_custodian',
-            type: 'Option<IdentityId>',
+            name: 'fromCustodian',
+            type: 'Option<PolymeshPrimitivesIdentityId>',
             isOptional: false,
           },
           {
-            name: 'from_portfolio',
+            name: 'fromPortfolio',
             type: 'PortfolioId',
             isOptional: false,
           },
           {
-            name: 'to_custodian',
-            type: 'Option<IdentityId>',
+            name: 'toCustodian',
+            type: 'Option<PolymeshPrimitivesIdentityId>',
             isOptional: false,
           },
           {
-            name: 'to_portfolio',
+            name: 'toPortfolio',
             type: 'PortfolioId',
             isOptional: false,
           },

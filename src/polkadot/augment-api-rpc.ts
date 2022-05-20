@@ -1,7 +1,10 @@
 // Auto-generated via `yarn polkadot-types-from-chain`, do not edit
 /* eslint-disable */
 
-import { PolymeshPrimitivesAuthorization } from '@polkadot/types/lookup';
+import {
+  PolymeshPrimitivesAuthorization,
+  PolymeshPrimitivesIdentityId,
+} from '@polkadot/types/lookup';
 import type { AugmentedRpc } from '@polkadot/rpc-core/types';
 import type { Metadata, StorageKey } from '@polkadot/types';
 import type {
@@ -122,10 +125,10 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
       canTransfer: AugmentedRpc<
         (
           sender: AccountId | string | Uint8Array,
-          from_custodian: Option<IdentityId> | null | object | string | Uint8Array,
-          from_portfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
-          to_custodian: Option<IdentityId> | null | object | string | Uint8Array,
-          to_portfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
+          fromCustodian: Option<PolymeshPrimitivesIdentityId> | null | object | string | Uint8Array,
+          fromPortfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
+          toCustodian: Option<PolymeshPrimitivesIdentityId> | null | object | string | Uint8Array,
+          toPortfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
           ticker: Ticker | string | Uint8Array,
           value: Balance | AnyNumber | Uint8Array,
           blockHash?: Hash | string | Uint8Array
@@ -136,10 +139,10 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
        **/
       canTransferGranular: AugmentedRpc<
         (
-          from_custodian: Option<IdentityId> | null | object | string | Uint8Array,
-          from_portfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
-          to_custodian: Option<IdentityId> | null | object | string | Uint8Array,
-          to_portfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
+          fromCustodian: Option<PolymeshPrimitivesIdentityId> | null | object | string | Uint8Array,
+          fromPortfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
+          toCustodian: Option<PolymeshPrimitivesIdentityId> | null | object | string | Uint8Array,
+          toPortfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
           ticker: Ticker | string | Uint8Array,
           value: Balance | AnyNumber | Uint8Array,
           blockHash?: Hash | string | Uint8Array
