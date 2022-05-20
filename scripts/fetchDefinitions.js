@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const rimraf = require('rimraf');
 const util = require('util');
-const { upperFirst, toLower, forEach } = require('lodash');
+const { forEach } = require('lodash');
 const { NODE_URL, SCHEMA_PORT } = require('./consts');
 
 const definitionsDir = path.resolve('src', 'polkadot');
@@ -71,60 +71,6 @@ function writeDefinitions(schemaObj) {
   fs.writeFileSync(path.resolve(definitionsDir, 'definitions.ts'), defExports);
 }
 
-/**
- * Autogenerate types and conversion utils which are too large to write manually
- */
-function writeGenerated({ types }) {
-  const instanbulIgnore = '/* istanbul ignore file */';
-  let typesFile = `${instanbulIgnore}
-
-`;
-  let utilsFile = `${instanbulIgnore}
-
-import { CountryCode as MeshCountryCode } from 'polymesh-types/types';
-
-import { Context } from '~/internal';
-import { CountryCode } from '~/types';
-
-`;
-
-  let countryCodeEnum = 'export enum CountryCode {';
-  let countryCodeFunctions = `/**
- * @hidden
- */
-export function countryCodeToMeshCountryCode(countryCode: CountryCode, context: Context): MeshCountryCode {
-  return context.polymeshApi.createType('CountryCode', countryCode);
-}
-
-/**
- * @hidden
- */
-export function meshCountryCodeToCountryCode(meshCountryCode: MeshCountryCode): CountryCode {`;
-
-  const countryCodes = types.CountryCode._enum;
-  countryCodes.forEach((code, index) => {
-    const isLast = index === countryCodes.length - 1;
-    const pascalCaseCode = upperFirst(toLower(code));
-
-    countryCodeEnum = `${countryCodeEnum}\n  ${pascalCaseCode} = '${pascalCaseCode}',${
-      isLast ? '\n}' : ''
-    }`;
-
-    const returnStatement = `return CountryCode.${pascalCaseCode}`;
-    if (isLast) {
-      countryCodeFunctions = `${countryCodeFunctions}\n  ${returnStatement};\n}`;
-    } else {
-      countryCodeFunctions = `${countryCodeFunctions}\n  if (meshCountryCode.is${pascalCaseCode}) {\n    ${returnStatement};\n  }\n`;
-    }
-  });
-
-  typesFile = `${typesFile}${countryCodeEnum}\n`;
-  utilsFile = `${utilsFile}${countryCodeFunctions}\n`;
-
-  fs.writeFileSync(path.resolve(generatedDir, 'types.ts'), typesFile);
-  fs.writeFileSync(path.resolve(generatedDir, 'utils.ts'), utilsFile);
-}
-
 http.get(`http://${NODE_URL}:${SCHEMA_PORT}/polymesh_schema.json`, res => {
   const chunks = [];
   res.on('data', chunk => {
@@ -136,6 +82,5 @@ http.get(`http://${NODE_URL}:${SCHEMA_PORT}/polymesh_schema.json`, res => {
     const schemaObj = JSON.parse(schema);
 
     writeDefinitions(schemaObj);
-    writeGenerated(schemaObj);
   });
 });
