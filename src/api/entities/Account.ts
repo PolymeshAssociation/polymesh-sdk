@@ -331,13 +331,14 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       address,
     } = this;
 
-    const identityId = await identity.keyToIdentityIds(stringToAccountId(address, context));
+    const keyRecords = await identity.keyRecords(stringToAccountId(address, context));
 
-    if (identityId.isEmpty) {
+    if (keyRecords.isEmpty) {
       return null;
     }
 
-    const did = identityIdToString(identityId);
+    // TODO this needs to be checked for safety
+    const did = identityIdToString(keyRecords.unwrap().asPrimaryKey);
 
     return new Identity({ did }, context);
   }

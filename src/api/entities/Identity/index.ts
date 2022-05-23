@@ -1,5 +1,8 @@
 import { u64 } from '@polkadot/types';
-import { PolymeshPrimitivesIdentity } from '@polkadot/types/lookup';
+import {
+  PolymeshPrimitivesIdentityDidRecord,
+  PolymeshPrimitivesSecondaryKeyKeyRecord,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, flatten, uniqBy } from 'lodash';
@@ -279,9 +282,12 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const assembleResult = ({ primaryKey }: PolymeshPrimitivesIdentity): PermissionedAccount => {
+    const assembleResult = ({
+      primaryKey,
+    }: PolymeshPrimitivesIdentityDidRecord): PermissionedAccount => {
       return {
-        account: new Account({ address: accountIdToString(primaryKey) }, context),
+        // TODO Confirm unwrap is safe to call here
+        account: new Account({ address: accountIdToString(primaryKey.unwrap()) }, context),
         permissions: {
           assets: null,
           portfolios: null,
@@ -294,11 +300,11 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     const rawDid = stringToIdentityId(did, context);
 
     if (callback) {
-      return identity.didRecords(rawDid, records => callback(assembleResult(records)));
+      return identity.didRecords(rawDid, records => callback(assembleResult(records.unwrap())));
     }
 
     const didRecords = await identity.didRecords(rawDid);
-    return assembleResult(didRecords);
+    return assembleResult(didRecords.unwrap());
   }
 
   /**
@@ -691,9 +697,10 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       },
     } = this;
 
+    // TODO this needs to be converted over to secondary keys record
     const assembleResult = ({
       secondaryKeys: secondaryAccounts,
-    }: PolymeshPrimitivesIdentity): PermissionedAccount[] => {
+    }: PolymeshPrimitivesSecondaryKeyKeyRecord): PermissionedAccount[] => {
       return secondaryAccounts.map(({ signer: rawSigner, permissions }) => ({
         account: signatoryToAccount(rawSigner, context),
         permissions: meshPermissionsToPermissions(permissions, context),

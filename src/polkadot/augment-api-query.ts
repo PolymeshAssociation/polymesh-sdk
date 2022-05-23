@@ -34,6 +34,10 @@ import type {
   PalletBalancesBalanceLock,
   PalletBridgeBridgeTxDetail,
   PalletCommitteePolymeshVotes,
+  PalletContractsStorageDeletedContract,
+  PalletContractsStorageRawContractInfo,
+  PalletContractsWasmOwnerInfo,
+  PalletContractsWasmPrefabWasmModule,
   PalletCorporateActionsBallotBallotMeta,
   PalletCorporateActionsBallotBallotTimeRange,
   PalletCorporateActionsBallotBallotVote,
@@ -55,10 +59,10 @@ import type {
   PalletPipsSnapshottedPip,
   PalletPipsVote,
   PalletPipsVotingResult,
+  PalletPreimageRequestStatus,
   PalletRelayerSubsidy,
   PalletRewardsItnRewardStatus,
-  PalletSchedulerReleases,
-  PalletSchedulerScheduledV2,
+  PalletSchedulerScheduledV3,
   PalletSettlementAffirmationStatus,
   PalletSettlementInstruction,
   PalletSettlementLeg,
@@ -95,11 +99,12 @@ import type {
   PolymeshPrimitivesComplianceManagerAssetCompliance,
   PolymeshPrimitivesConditionTrustedIssuer,
   PolymeshPrimitivesDocument,
-  PolymeshPrimitivesIdentity,
   PolymeshPrimitivesIdentityClaim,
+  PolymeshPrimitivesIdentityDidRecord,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesPosRatio,
+  PolymeshPrimitivesSecondaryKeyKeyRecord,
   PolymeshPrimitivesSecondaryKeySignatory,
   PolymeshPrimitivesStatisticsAssetScope,
   PolymeshPrimitivesStatisticsStat1stKey,
@@ -114,6 +119,7 @@ import type {
   SpConsensusBabeBabeEpochConfiguration,
   SpConsensusBabeDigestsNextConfigDescriptor,
   SpCoreCryptoKeyTypeId,
+  SpNposElectionsElectionScore,
   SpRuntimeDigest,
   SpStakingOffenceOffenceDetails,
 } from '@polkadot/types/lookup';
@@ -554,7 +560,7 @@ declare module '@polkadot/api-base/types/storage' {
       /**
        * Randomness under construction.
        *
-       * We make a tradeoff between storage accesses and list length.
+       * We make a trade-off between storage accesses and list length.
        * We store the under-construction randomness in segments of up to
        * `UNDER_CONSTRUCTION_SEGMENT_LENGTH`.
        *
@@ -890,6 +896,82 @@ declare module '@polkadot/api-base/types/storage' {
           arg: PolymeshPrimitivesTicker | string | Uint8Array
         ) => Observable<Vec<PolymeshPrimitivesConditionTrustedIssuer>>,
         [PolymeshPrimitivesTicker]
+      >;
+    };
+    contracts: {
+      /**
+       * A mapping between an original code hash and instrumented wasm code, ready for execution.
+       **/
+      codeStorage: AugmentedQuery<
+        ApiType,
+        (
+          arg: H256 | string | Uint8Array
+        ) => Observable<Option<PalletContractsWasmPrefabWasmModule>>,
+        [H256]
+      >;
+      /**
+       * The code associated with a given account.
+       *
+       * TWOX-NOTE: SAFE since `AccountId` is a secure hash.
+       **/
+      contractInfoOf: AugmentedQuery<
+        ApiType,
+        (
+          arg: AccountId32 | string | Uint8Array
+        ) => Observable<Option<PalletContractsStorageRawContractInfo>>,
+        [AccountId32]
+      >;
+      /**
+       * Evicted contracts that await child trie deletion.
+       *
+       * Child trie deletion is a heavy operation depending on the amount of storage items
+       * stored in said trie. Therefore this operation is performed lazily in `on_initialize`.
+       **/
+      deletionQueue: AugmentedQuery<
+        ApiType,
+        () => Observable<Vec<PalletContractsStorageDeletedContract>>,
+        []
+      >;
+      /**
+       * This is a **monotonic** counter incremented on contract instantiation.
+       *
+       * This is used in order to generate unique trie ids for contracts.
+       * The trie id of a new contract is calculated from hash(account_id, nonce).
+       * The nonce is required because otherwise the following sequence would lead to
+       * a possible collision of storage:
+       *
+       * 1. Create a new contract.
+       * 2. Terminate the contract.
+       * 3. Immediately recreate the contract with the same account_id.
+       *
+       * This is bad because the contents of a trie are deleted lazily and there might be
+       * storage of the old instantiation still in it when the new contract is created. Please
+       * note that we can't replace the counter by the block number because the sequence above
+       * can happen in the same block. We also can't keep the account counter in memory only
+       * because storage is the only way to communicate across different extrinsics in the
+       * same block.
+       *
+       * # Note
+       *
+       * Do not use it to determine the number of contracts. It won't be decremented if
+       * a contract is destroyed.
+       **/
+      nonce: AugmentedQuery<ApiType, () => Observable<u64>, []>;
+      /**
+       * A mapping between an original code hash and its owner information.
+       **/
+      ownerInfoOf: AugmentedQuery<
+        ApiType,
+        (arg: H256 | string | Uint8Array) => Observable<Option<PalletContractsWasmOwnerInfo>>,
+        [H256]
+      >;
+      /**
+       * A mapping from an original code hash to the original code, untouched by instrumentation.
+       **/
+      pristineCode: AugmentedQuery<
+        ApiType,
+        (arg: H256 | string | Uint8Array) => Observable<Option<Bytes>>,
+        [H256]
       >;
     };
     corporateAction: {
@@ -1252,13 +1334,24 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       currentPayer: AugmentedQuery<ApiType, () => Observable<Option<AccountId32>>, []>;
       /**
+       * A reverse double map to allow finding all keys for an identity.
+       **/
+      didKeys: AugmentedQuery<
+        ApiType,
+        (
+          arg1: PolymeshPrimitivesIdentityId | string | Uint8Array,
+          arg2: AccountId32 | string | Uint8Array
+        ) => Observable<bool>,
+        [PolymeshPrimitivesIdentityId, AccountId32]
+      >;
+      /**
        * DID -> identity info
        **/
       didRecords: AugmentedQuery<
         ApiType,
         (
           arg: PolymeshPrimitivesIdentityId | string | Uint8Array
-        ) => Observable<PolymeshPrimitivesIdentity>,
+        ) => Observable<Option<PolymeshPrimitivesIdentityDidRecord>>,
         [PolymeshPrimitivesIdentityId]
       >;
       /**
@@ -1269,9 +1362,14 @@ declare module '@polkadot/api-base/types/storage' {
         (arg: PolymeshPrimitivesIdentityId | string | Uint8Array) => Observable<bool>,
         [PolymeshPrimitivesIdentityId]
       >;
-      keyToIdentityIds: AugmentedQuery<
+      /**
+       * Map from AccountId to `KeyRecord` that holds the key's identity and permissions.
+       **/
+      keyRecords: AugmentedQuery<
         ApiType,
-        (arg: AccountId32 | string | Uint8Array) => Observable<U8aFixed>,
+        (
+          arg: AccountId32 | string | Uint8Array
+        ) => Observable<Option<PolymeshPrimitivesSecondaryKeyKeyRecord>>,
         [AccountId32]
       >;
       /**
@@ -1352,14 +1450,6 @@ declare module '@polkadot/api-base/types/storage' {
       >;
     };
     multiSig: {
-      /**
-       * Maps a multisig signer key to a multisig address.
-       **/
-      keyToMultiSig: AugmentedQuery<
-        ApiType,
-        (arg: AccountId32 | string | Uint8Array) => Observable<AccountId32>,
-        [AccountId32]
-      >;
       /**
        * Nonce to ensure unique MultiSig addresses are generated; starts from 1.
        **/
@@ -1447,6 +1537,10 @@ declare module '@polkadot/api-base/types/storage' {
         ) => Observable<Option<Call>>,
         [ITuple<[AccountId32, u64]>]
       >;
+      /**
+       * Storage version.
+       **/
+      storageVersion: AugmentedQuery<ApiType, () => Observable<u8>, []>;
       /**
        * The last transaction version, used for `on_runtime_upgrade`.
        **/
@@ -1700,6 +1794,7 @@ declare module '@polkadot/api-base/types/storage' {
         [H256]
       >;
     };
+    polymeshContracts: {};
     portfolio: {
       /**
        * Inverse map of `Portfolios` used to ensure bijectivitiy,
@@ -1815,6 +1910,24 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       storageVersion: AugmentedQuery<ApiType, () => Observable<u8>, []>;
     };
+    preimage: {
+      /**
+       * The preimages stored by this pallet.
+       **/
+      preimageFor: AugmentedQuery<
+        ApiType,
+        (arg: H256 | string | Uint8Array) => Observable<Option<Bytes>>,
+        [H256]
+      >;
+      /**
+       * The request status of a given hash.
+       **/
+      statusFor: AugmentedQuery<
+        ApiType,
+        (arg: H256 | string | Uint8Array) => Observable<Option<PalletPreimageRequestStatus>>,
+        [H256]
+      >;
+    };
     protocolFee: {
       /**
        * The mapping of operation names to the base fees of those operations.
@@ -1888,7 +2001,7 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       agenda: AugmentedQuery<
         ApiType,
-        (arg: u32 | AnyNumber | Uint8Array) => Observable<Vec<Option<PalletSchedulerScheduledV2>>>,
+        (arg: u32 | AnyNumber | Uint8Array) => Observable<Vec<Option<PalletSchedulerScheduledV3>>>,
         [u32]
       >;
       /**
@@ -1899,12 +2012,6 @@ declare module '@polkadot/api-base/types/storage' {
         (arg: Bytes | string | Uint8Array) => Observable<Option<ITuple<[u32, u32]>>>,
         [Bytes]
       >;
-      /**
-       * Storage version of the pallet.
-       *
-       * New networks start with last version.
-       **/
-      storageVersion: AugmentedQuery<ApiType, () => Observable<PalletSchedulerReleases>, []>;
     };
     session: {
       /**
@@ -2350,7 +2457,11 @@ declare module '@polkadot/api-base/types/storage' {
       /**
        * The score of the current [`QueuedElected`].
        **/
-      queuedScore: AugmentedQuery<ApiType, () => Observable<Option<Vec<u128>>>, []>;
+      queuedScore: AugmentedQuery<
+        ApiType,
+        () => Observable<Option<SpNposElectionsElectionScore>>,
+        []
+      >;
       slashingAllowedFor: AugmentedQuery<
         ApiType,
         () => Observable<PalletStakingSlashingSwitch>,
@@ -2583,8 +2694,11 @@ declare module '@polkadot/api-base/types/storage' {
       /**
        * Events deposited for the current block.
        *
-       * NOTE: This storage item is explicitly unbounded since it is never intended to be read
-       * from within the runtime.
+       * NOTE: The item is unbound and should therefore never be read on chain.
+       * It could otherwise inflate the PoV size of a block.
+       *
+       * Events have a large in-memory size. Box the events to not go out-of-memory
+       * just in case someone still reads them from within the runtime.
        **/
       events: AugmentedQuery<ApiType, () => Observable<Vec<FrameSystemEventRecord>>, []>;
       /**

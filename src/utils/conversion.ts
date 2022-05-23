@@ -9,6 +9,7 @@ import {
   PalletCorporateActionsCorporateAction,
   PalletCorporateActionsDistribution,
   PalletStoFundraiser,
+  PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesAuthorizationAuthorizationData,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
   PolymeshPrimitivesCondition,
@@ -1601,7 +1602,7 @@ export function isLeiValid(lei: string): boolean {
 export function securityIdentifierToAssetIdentifier(
   identifier: SecurityIdentifier,
   context: Context
-): AssetIdentifier {
+): PolymeshPrimitivesAssetIdentifier {
   const { type, value } = identifier;
 
   let error = false;
@@ -1634,14 +1635,14 @@ export function securityIdentifierToAssetIdentifier(
     });
   }
 
-  return context.createType('AssetIdentifier', { [type]: value });
+  return context.createType('PolymeshPrimitivesAssetIdentifier', { [type]: value });
 }
 
 /**
  * @hidden
  */
 export function assetIdentifierToSecurityIdentifier(
-  identifier: AssetIdentifier
+  identifier: PolymeshPrimitivesAssetIdentifier
 ): SecurityIdentifier {
   if (identifier.isCusip) {
     return {
