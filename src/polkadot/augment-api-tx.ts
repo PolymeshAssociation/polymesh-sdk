@@ -30,6 +30,7 @@ import type {
   BTreeSetStatUpdate,
   BTreeSetTransferCondition,
   ConfidentialIdentityClaimProofsScopeClaimProof,
+  FrameSupportScheduleMaybeHashed,
   PalletAssetCheckpointScheduleSpec,
   PalletAssetClassicTickerImport,
   PalletAssetTickerRegistrationConfig,
@@ -60,6 +61,7 @@ import type {
   PalletUtilityUniqueCall,
   PolymeshCommonUtilitiesBalancesMemo,
   PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth,
+  PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuthV1,
   PolymeshCommonUtilitiesMaybeBlock,
   PolymeshCommonUtilitiesProtocolFeeProtocolOp,
   PolymeshPrimitivesAgentAgentGroup,
@@ -84,7 +86,6 @@ import type {
   PolymeshPrimitivesInvestorZkproofDataV1InvestorZKProofData,
   PolymeshPrimitivesPosRatio,
   PolymeshPrimitivesSecondaryKey,
-  PolymeshPrimitivesSecondaryKeyApiLegacyPermissions,
   PolymeshPrimitivesSecondaryKeyPermissions,
   PolymeshPrimitivesSecondaryKeySignatory,
   PolymeshPrimitivesStatisticsAssetScope,
@@ -95,8 +96,8 @@ import type {
   PolymeshRuntimeDevelopRuntimeSessionKeys,
   SpConsensusBabeDigestsNextConfigDescriptor,
   SpConsensusSlotsEquivocationProof,
-  SpCoreChangesTrieChangesTrieConfiguration,
   SpFinalityGrandpaEquivocationProof,
+  SpNposElectionsElectionScore,
   SpRuntimeHeader,
   SpRuntimeMultiSignature,
   SpSessionMembershipProof,
@@ -260,6 +261,7 @@ declare module '@polkadot/api-base/types/submittable' {
                 | { CINS: any }
                 | { ISIN: any }
                 | { LEI: any }
+                | { FIGI: any }
                 | string
                 | Uint8Array
               )[],
@@ -293,6 +295,7 @@ declare module '@polkadot/api-base/types/submittable' {
                 | { CINS: any }
                 | { ISIN: any }
                 | { LEI: any }
+                | { FIGI: any }
                 | string
                 | Uint8Array
               )[],
@@ -738,6 +741,7 @@ declare module '@polkadot/api-base/types/submittable' {
                 | { CINS: any }
                 | { ISIN: any }
                 | { LEI: any }
+                | { FIGI: any }
                 | string
                 | Uint8Array
               )[]
@@ -1286,7 +1290,6 @@ declare module '@polkadot/api-base/types/submittable' {
        *
        * # Errors
        * - `UnauthorizedAgent` if `origin` is not agent-permissioned for `ticker`.
-       * - `DistributingAsset` if `ca_id.ticker == currency`.
        * - `ExpiryBeforePayment` if `expires_at.unwrap() <= payment_at`.
        * - `NoSuchCA` if `ca_id` does not identify an existing CA.
        * - `NoRecordDate` if CA has no record date.
@@ -1295,6 +1298,8 @@ declare module '@polkadot/api-base/types/submittable' {
        * - `InsufficientPortfolioBalance` if `portfolio` has less than `amount` of `currency`.
        * - `InsufficientBalance` if the protocol fee couldn't be charged.
        * - `CANotBenefit` if the CA is not of kind PredictableBenefit/UnpredictableBenefit
+       * - `DistributionAmountIsZero` if the `amount` is zero.
+       * - `DistributionPerShareIsZero` if the `per_share` is zero.
        *
        * # Permissions
        * * Asset
@@ -2806,17 +2811,18 @@ declare module '@polkadot/api-base/types/submittable' {
         ]
       >;
       /**
-       * It adds secondary keys to target identity `id`.
+       * Adds secondary keys to target identity `id`.
+       *
        * Keys are directly added to identity because each of them has an authorization.
        *
-       * Arguments:
-       * - `origin` Primary key of `id` identity.
-       * - `id` Identity where new secondary keys will be added.
-       * - `additional_keys` New secondary items (and their authorization data) to add to target
-       * identity.
+       * # Arguments:
+       * - `origin` which must be the primary key of the identity `id`.
+       * - `id` to which new secondary keys will be added.
+       * - `additional_keys` which includes secondary keys,
+       * coupled with authorization data, to add to target identity.
        *
-       * Failure
-       * - It can only called by primary key owner.
+       * # Errors
+       * - Can only called by primary key owner.
        * - Keys should be able to linked to any identity.
        **/
       addSecondaryKeysWithAuthorization: AugmentedSubmittable<
@@ -2832,6 +2838,23 @@ declare module '@polkadot/api-base/types/submittable' {
           expiresAt: u64 | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [Vec<PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth>, u64]
+      >;
+      /**
+       * Deprecated. Use `add_secondary_keys_with_authorization` instead.
+       **/
+      addSecondaryKeysWithAuthorizationOld: AugmentedSubmittable<
+        (
+          additionalKeys:
+            | Vec<PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuthV1>
+            | (
+                | PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuthV1
+                | { secondaryKey?: any; authSignature?: any }
+                | string
+                | Uint8Array
+              )[],
+          expiresAt: u64 | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Vec<PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuthV1>, u64]
       >;
       /**
        * Register `target_account` with a new Identity.
@@ -2853,7 +2876,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | Vec<PolymeshPrimitivesSecondaryKey>
             | (
                 | PolymeshPrimitivesSecondaryKey
-                | { signer?: any; permissions?: any }
+                | { key?: any; permissions?: any }
                 | string
                 | Uint8Array
               )[]
@@ -2922,28 +2945,11 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       leaveIdentityAsKey: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>, []>;
       /**
-       * This function is a workaround for https://github.com/polkadot-js/apps/issues/3632
-       * It sets permissions for an specific `target_key` key.
-       * Only the primary key of an identity is able to set secondary key permissions.
+       * Placeholder for removed `legacy_set_permission_to_signer`.
        **/
-      legacySetPermissionToSigner: AugmentedSubmittable<
-        (
-          signer:
-            | PolymeshPrimitivesSecondaryKeySignatory
-            | { Identity: any }
-            | { Account: any }
-            | string
-            | Uint8Array,
-          permissions:
-            | PolymeshPrimitivesSecondaryKeyApiLegacyPermissions
-            | { asset?: any; extrinsic?: any; portfolio?: any }
-            | string
-            | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [
-          PolymeshPrimitivesSecondaryKeySignatory,
-          PolymeshPrimitivesSecondaryKeyApiLegacyPermissions
-        ]
+      placeholderLegacySetPermissionToSigner: AugmentedSubmittable<
+        () => SubmittableExtrinsic<ApiType>,
+        []
       >;
       /**
        * Removes an authorization.
@@ -2965,15 +2971,22 @@ declare module '@polkadot/api-base/types/submittable' {
       /**
        * Removes specified secondary keys of a DID if present.
        *
-       * # Failure
-       * It can only called by primary key owner.
+       * # Errors
        *
-       * # Weight
-       * `950_000_000 + 60_000 * signers_to_remove.len()`
+       * The extrinsic can only called by primary key owner.
        **/
       removeSecondaryKeys: AugmentedSubmittable<
         (
-          signersToRemove:
+          keysToRemove: Vec<AccountId32> | (AccountId32 | string | Uint8Array)[]
+        ) => SubmittableExtrinsic<ApiType>,
+        [Vec<AccountId32>]
+      >;
+      /**
+       * Deprecated. Use `remove_secondary_keys` instead.
+       **/
+      removeSecondaryKeysOld: AugmentedSubmittable<
+        (
+          keysToRemove:
             | Vec<PolymeshPrimitivesSecondaryKeySignatory>
             | (
                 | PolymeshPrimitivesSecondaryKeySignatory
@@ -3071,13 +3084,11 @@ declare module '@polkadot/api-base/types/submittable' {
         [u64, Option<u64>]
       >;
       /**
-       * Sets permissions for an specific `target_key` key.
-       *
-       * Only the primary key of an identity is able to set secondary key permissions.
+       * Deprecated. Use `set_secondary_key_permissions` instead.
        **/
       setPermissionToSigner: AugmentedSubmittable<
         (
-          signer:
+          key:
             | PolymeshPrimitivesSecondaryKeySignatory
             | { Identity: any }
             | { Account: any }
@@ -3090,6 +3101,22 @@ declare module '@polkadot/api-base/types/submittable' {
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [PolymeshPrimitivesSecondaryKeySignatory, PolymeshPrimitivesSecondaryKeyPermissions]
+      >;
+      /**
+       * Sets permissions for an specific `target_key` key.
+       *
+       * Only the primary key of an identity is able to set secondary key permissions.
+       **/
+      setSecondaryKeyPermissions: AugmentedSubmittable<
+        (
+          key: AccountId32 | string | Uint8Array,
+          perms:
+            | PolymeshPrimitivesSecondaryKeyPermissions
+            | { asset?: any; extrinsic?: any; portfolio?: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [AccountId32, PolymeshPrimitivesSecondaryKeyPermissions]
       >;
       /**
        * Re-enables all secondary keys of the caller's identity.
@@ -3913,6 +3940,239 @@ declare module '@polkadot/api-base/types/submittable' {
         [bool, Call]
       >;
     };
+    polymeshContracts: {
+      /**
+       * Calls the `contract` through its address with the given `data`.
+       *
+       * The contract is endowed with `value` POLYX,
+       * but note that this is distinct from gas fees which are limited with `gas_limit`.
+       *
+       * The contract may optionally call back into the runtime,
+       * executing extrinsics such as e.g., `create_asset`.
+       * During such runtime calls, the current identity will be the one that instantiate the `contract`.
+       * This restriction exists for security purposes.
+       *
+       * # Arguments
+       * - `contract` to call.
+       * - `value` in POLYX to transfer to the contract.
+       * - `gas_limit` that limits how much gas execution can consume, erroring above it.
+       * - `storage_deposit_limit` The maximum amount of balance that can be charged from the
+       * caller to pay for the storage consumed.
+       * - `data` The input data to pass to the contract.
+       *
+       * # Errors
+       * - All the errors in `pallet_contracts::Call::call` can also happen here.
+       * - `ContractNotFound` if `contract` doesn't exist or isn't a contract.
+       * - CDD/Permissions are checked, unlike in `pallet_contracts`.
+       **/
+      call: AugmentedSubmittable<
+        (
+          contract: AccountId32 | string | Uint8Array,
+          value: u128 | AnyNumber | Uint8Array,
+          gasLimit: u64 | AnyNumber | Uint8Array,
+          storageDepositLimit: Option<u128> | null | object | string | Uint8Array,
+          data: Bytes | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [AccountId32, u128, u64, Option<u128>, Bytes]
+      >;
+      /**
+       * Instantiates a smart contract defining using the given `code_hash` and `salt`.
+       *
+       * Unlike `instantiate_with_code`,
+       * this assumes that at least one contract with the same WASM code has already been uploaded.
+       *
+       * The contract will be attached as a secondary key,
+       * with empty permissions, to `origin`'s identity.
+       *
+       * The contract is transferred `endowment` amount of POLYX.
+       * This is distinct from the `gas_limit`,
+       * which controls how much gas the deployment code may at most consume.
+       *
+       * # Arguments
+       * - `endowment` amount of POLYX to transfer to the contract.
+       * - `gas_limit` for how much gas the `deploy` code in the contract may at most consume.
+       * - `storage_deposit_limit` The maximum amount of balance that can be charged/reserved
+       * from the caller to pay for the storage consumed.
+       * - `code_hash` of an already uploaded WASM binary.
+       * - `data` The input data to pass to the contract constructor.
+       * - `salt` used for contract address derivation.
+       * By varying this, the same `code` can be used under the same identity.
+       *
+       * # Errors
+       * - All the errors in `pallet_contracts::Call::instantiate` can also happen here.
+       * - CDD/Permissions are checked, unlike in `pallet_contracts`.
+       * - Errors that arise when adding a new secondary key can also occur here.
+       **/
+      instantiate: AugmentedSubmittable<
+        (
+          endowment: u128 | AnyNumber | Uint8Array,
+          gasLimit: u64 | AnyNumber | Uint8Array,
+          storageDepositLimit: Option<u128> | null | object | string | Uint8Array,
+          codeHash: H256 | string | Uint8Array,
+          data: Bytes | string | Uint8Array,
+          salt: Bytes | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [u128, u64, Option<u128>, H256, Bytes, Bytes]
+      >;
+      /**
+       * Instantiates a smart contract defining it with the given `code` and `salt`.
+       *
+       * The contract will be attached as a secondary key,
+       * with empty permissions, to `origin`'s identity.
+       *
+       * The contract is transferred `endowment` amount of POLYX.
+       * This is distinct from the `gas_limit`,
+       * which controls how much gas the deployment code may at most consume.
+       *
+       * # Arguments
+       * - `endowment` amount of POLYX to transfer to the contract.
+       * - `gas_limit` for how much gas the `deploy` code in the contract may at most consume.
+       * - `storage_deposit_limit` The maximum amount of balance that can be charged/reserved
+       * from the caller to pay for the storage consumed.
+       * - `code` with the WASM binary defining the smart contract.
+       * - `data` The input data to pass to the contract constructor.
+       * - `salt` used for contract address derivation.
+       * By varying this, the same `code` can be used under the same identity.
+       *
+       * # Errors
+       * - All the errors in `pallet_contracts::Call::instantiate_with_code` can also happen here.
+       * - CDD/Permissions are checked, unlike in `pallet_contracts`.
+       * - Errors that arise when adding a new secondary key can also occur here.
+       **/
+      instantiateWithCode: AugmentedSubmittable<
+        (
+          endowment: u128 | AnyNumber | Uint8Array,
+          gasLimit: u64 | AnyNumber | Uint8Array,
+          storageDepositLimit: Option<u128> | null | object | string | Uint8Array,
+          code: Bytes | string | Uint8Array,
+          data: Bytes | string | Uint8Array,
+          salt: Bytes | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [u128, u64, Option<u128>, Bytes, Bytes, Bytes]
+      >;
+      /**
+       * Instantiates a smart contract defining it with the given `code` and `salt`.
+       *
+       * The contract will be attached as a secondary key,
+       * with `perms` as its permissions, to `origin`'s identity.
+       *
+       * The contract is transferred `endowment` amount of POLYX.
+       * This is distinct from the `gas_limit`,
+       * which controls how much gas the deployment code may at most consume.
+       *
+       * # Arguments
+       * - `endowment` amount of POLYX to transfer to the contract.
+       * - `gas_limit` for how much gas the `deploy` code in the contract may at most consume.
+       * - `storage_deposit_limit` The maximum amount of balance that can be charged/reserved
+       * from the caller to pay for the storage consumed.
+       * - `code` with the WASM binary defining the smart contract.
+       * - `data` The input data to pass to the contract constructor.
+       * - `salt` used for contract address derivation.
+       * By varying this, the same `code` can be used under the same identity.
+       * - `perms` that the new secondary key will have.
+       *
+       * # Errors
+       * - All the errors in `pallet_contracts::Call::instantiate_with_code` can also happen here.
+       * - CDD/Permissions are checked, unlike in `pallet_contracts`.
+       * - Errors that arise when adding a new secondary key can also occur here.
+       **/
+      instantiateWithCodePerms: AugmentedSubmittable<
+        (
+          endowment: u128 | AnyNumber | Uint8Array,
+          gasLimit: u64 | AnyNumber | Uint8Array,
+          storageDepositLimit: Option<u128> | null | object | string | Uint8Array,
+          code: Bytes | string | Uint8Array,
+          data: Bytes | string | Uint8Array,
+          salt: Bytes | string | Uint8Array,
+          perms:
+            | PolymeshPrimitivesSecondaryKeyPermissions
+            | { asset?: any; extrinsic?: any; portfolio?: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [u128, u64, Option<u128>, Bytes, Bytes, Bytes, PolymeshPrimitivesSecondaryKeyPermissions]
+      >;
+      /**
+       * Instantiates a smart contract defining using the given `code_hash` and `salt`.
+       *
+       * Unlike `instantiate_with_code`,
+       * this assumes that at least one contract with the same WASM code has already been uploaded.
+       *
+       * The contract will be attached as a secondary key,
+       * with `perms` as its permissions, to `origin`'s identity.
+       *
+       * The contract is transferred `endowment` amount of POLYX.
+       * This is distinct from the `gas_limit`,
+       * which controls how much gas the deployment code may at most consume.
+       *
+       * # Arguments
+       * - `endowment` amount of POLYX to transfer to the contract.
+       * - `gas_limit` for how much gas the `deploy` code in the contract may at most consume.
+       * - `storage_deposit_limit` The maximum amount of balance that can be charged/reserved
+       * from the caller to pay for the storage consumed.
+       * - `code_hash` of an already uploaded WASM binary.
+       * - `data` The input data to pass to the contract constructor.
+       * - `salt` used for contract address derivation.
+       * By varying this, the same `code` can be used under the same identity.
+       * - `perms` that the new secondary key will have.
+       *
+       * # Errors
+       * - All the errors in `pallet_contracts::Call::instantiate` can also happen here.
+       * - CDD/Permissions are checked, unlike in `pallet_contracts`.
+       * - Errors that arise when adding a new secondary key can also occur here.
+       **/
+      instantiateWithHashPerms: AugmentedSubmittable<
+        (
+          endowment: u128 | AnyNumber | Uint8Array,
+          gasLimit: u64 | AnyNumber | Uint8Array,
+          storageDepositLimit: Option<u128> | null | object | string | Uint8Array,
+          codeHash: H256 | string | Uint8Array,
+          data: Bytes | string | Uint8Array,
+          salt: Bytes | string | Uint8Array,
+          perms:
+            | PolymeshPrimitivesSecondaryKeyPermissions
+            | { asset?: any; extrinsic?: any; portfolio?: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [u128, u64, Option<u128>, H256, Bytes, Bytes, PolymeshPrimitivesSecondaryKeyPermissions]
+      >;
+      /**
+       * Remove the code stored under `code_hash` and refund the deposit to its owner.
+       *
+       * A code can only be removed by its original uploader (its owner) and only if it is
+       * not used by any contract.
+       **/
+      removeCode: AugmentedSubmittable<
+        (codeHash: H256 | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        [H256]
+      >;
+      /**
+       * Upload new `code` without instantiating a contract from it.
+       *
+       * If the code does not already exist a deposit is reserved from the caller
+       * and unreserved only when [`Self::remove_code`] is called. The size of the reserve
+       * depends on the instrumented size of the the supplied `code`.
+       *
+       * If the code already exists in storage it will still return `Ok` and upgrades
+       * the in storage version to the current
+       * [`InstructionWeights::version`](InstructionWeights).
+       *
+       * # Note
+       *
+       * Anyone can instantiate a contract from any uploaded code and thus prevent its removal.
+       * To avoid this situation a constructor could employ access control so that it can
+       * only be instantiated by permissioned entities. The same is true when uploading
+       * through [`Self::instantiate_with_code`].
+       **/
+      uploadCode: AugmentedSubmittable<
+        (
+          code: Bytes | string | Uint8Array,
+          storageDepositLimit: Option<u128> | null | object | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Bytes, Option<u128>]
+      >;
+    };
     portfolio: {
       acceptPortfolioCustody: AugmentedSubmittable<
         (authId: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -4018,6 +4278,44 @@ declare module '@polkadot/api-base/types/submittable' {
           toName: Bytes | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [u64, Bytes]
+      >;
+    };
+    preimage: {
+      /**
+       * Register a preimage on-chain.
+       *
+       * If the preimage was previously requested, no fees or deposits are taken for providing
+       * the preimage. Otherwise, a deposit is taken proportional to the size of the preimage.
+       **/
+      notePreimage: AugmentedSubmittable<
+        (bytes: Bytes | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        [Bytes]
+      >;
+      /**
+       * Request a preimage be uploaded to the chain without paying any fees or deposits.
+       *
+       * If the preimage requests has already been provided on-chain, we unreserve any deposit
+       * a user may have paid, and take the control of the preimage out of their hands.
+       **/
+      requestPreimage: AugmentedSubmittable<
+        (hash: H256 | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        [H256]
+      >;
+      /**
+       * Clear an unrequested preimage from the runtime storage.
+       **/
+      unnotePreimage: AugmentedSubmittable<
+        (hash: H256 | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        [H256]
+      >;
+      /**
+       * Clear a previously made request for a preimage.
+       *
+       * NOTE: THIS MUST NOT BE CALLED ON `hash` MORE TIMES THAN `request_preimage`.
+       **/
+      unrequestPreimage: AugmentedSubmittable<
+        (hash: H256 | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        [H256]
       >;
     };
     protocolFee: {
@@ -4225,15 +4523,6 @@ declare module '@polkadot/api-base/types/submittable' {
     scheduler: {
       /**
        * Cancel an anonymously scheduled task.
-       *
-       * # <weight>
-       * - S = Number of already scheduled calls
-       * - Base Weight: 22.15 + 2.869 * S µs
-       * - DB Weight:
-       * - Read: Agenda
-       * - Write: Agenda, Lookup
-       * - Will use base weight of 100 which should be good for up to 30 scheduled calls
-       * # </weight>
        **/
       cancel: AugmentedSubmittable<
         (
@@ -4244,15 +4533,6 @@ declare module '@polkadot/api-base/types/submittable' {
       >;
       /**
        * Cancel a named scheduled task.
-       *
-       * # <weight>
-       * - S = Number of already scheduled calls
-       * - Base Weight: 24.91 + 2.907 * S µs
-       * - DB Weight:
-       * - Read: Agenda, Lookup
-       * - Write: Agenda, Lookup
-       * - Will use base weight of 100 which should be good for up to 30 scheduled calls
-       * # </weight>
        **/
       cancelNamed: AugmentedSubmittable<
         (id: Bytes | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -4260,24 +4540,20 @@ declare module '@polkadot/api-base/types/submittable' {
       >;
       /**
        * Anonymously schedule a task.
-       *
-       * # <weight>
-       * - S = Number of already scheduled calls
-       * - Base Weight: 22.29 + .126 * S µs
-       * - DB Weight:
-       * - Read: Agenda
-       * - Write: Agenda
-       * - Will use base weight of 25 which should be good for up to 30 scheduled calls
-       * # </weight>
        **/
       schedule: AugmentedSubmittable<
         (
           when: u32 | AnyNumber | Uint8Array,
           maybePeriodic: Option<ITuple<[u32, u32]>> | null | object | string | Uint8Array,
           priority: u8 | AnyNumber | Uint8Array,
-          call: Call | { callIndex?: any; args?: any } | string | Uint8Array
+          call:
+            | FrameSupportScheduleMaybeHashed
+            | { Value: any }
+            | { Hash: any }
+            | string
+            | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [u32, Option<ITuple<[u32, u32]>>, u8, Call]
+        [u32, Option<ITuple<[u32, u32]>>, u8, FrameSupportScheduleMaybeHashed]
       >;
       /**
        * Anonymously schedule a task after a delay.
@@ -4291,21 +4567,17 @@ declare module '@polkadot/api-base/types/submittable' {
           after: u32 | AnyNumber | Uint8Array,
           maybePeriodic: Option<ITuple<[u32, u32]>> | null | object | string | Uint8Array,
           priority: u8 | AnyNumber | Uint8Array,
-          call: Call | { callIndex?: any; args?: any } | string | Uint8Array
+          call:
+            | FrameSupportScheduleMaybeHashed
+            | { Value: any }
+            | { Hash: any }
+            | string
+            | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [u32, Option<ITuple<[u32, u32]>>, u8, Call]
+        [u32, Option<ITuple<[u32, u32]>>, u8, FrameSupportScheduleMaybeHashed]
       >;
       /**
        * Schedule a named task.
-       *
-       * # <weight>
-       * - S = Number of already scheduled calls
-       * - Base Weight: 29.6 + .159 * S µs
-       * - DB Weight:
-       * - Read: Agenda, Lookup
-       * - Write: Agenda, Lookup
-       * - Will use base weight of 35 which should be good for more than 30 scheduled calls
-       * # </weight>
        **/
       scheduleNamed: AugmentedSubmittable<
         (
@@ -4313,9 +4585,14 @@ declare module '@polkadot/api-base/types/submittable' {
           when: u32 | AnyNumber | Uint8Array,
           maybePeriodic: Option<ITuple<[u32, u32]>> | null | object | string | Uint8Array,
           priority: u8 | AnyNumber | Uint8Array,
-          call: Call | { callIndex?: any; args?: any } | string | Uint8Array
+          call:
+            | FrameSupportScheduleMaybeHashed
+            | { Value: any }
+            | { Hash: any }
+            | string
+            | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [Bytes, u32, Option<ITuple<[u32, u32]>>, u8, Call]
+        [Bytes, u32, Option<ITuple<[u32, u32]>>, u8, FrameSupportScheduleMaybeHashed]
       >;
       /**
        * Schedule a named task after a delay.
@@ -4330,9 +4607,14 @@ declare module '@polkadot/api-base/types/submittable' {
           after: u32 | AnyNumber | Uint8Array,
           maybePeriodic: Option<ITuple<[u32, u32]>> | null | object | string | Uint8Array,
           priority: u8 | AnyNumber | Uint8Array,
-          call: Call | { callIndex?: any; args?: any } | string | Uint8Array
+          call:
+            | FrameSupportScheduleMaybeHashed
+            | { Value: any }
+            | { Hash: any }
+            | string
+            | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [Bytes, u32, Option<ITuple<[u32, u32]>>, u8, Call]
+        [Bytes, u32, Option<ITuple<[u32, u32]>>, u8, FrameSupportScheduleMaybeHashed]
       >;
     };
     session: {
@@ -5371,7 +5653,11 @@ declare module '@polkadot/api-base/types/submittable' {
               }
             | string
             | Uint8Array,
-          score: Vec<u128>,
+          score:
+            | SpNposElectionsElectionScore
+            | { minimalStake?: any; sumStake?: any; sumStakeSquared?: any }
+            | string
+            | Uint8Array,
           era: u32 | AnyNumber | Uint8Array,
           size:
             | PalletStakingElectionSize
@@ -5379,7 +5665,13 @@ declare module '@polkadot/api-base/types/submittable' {
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [Vec<u16>, PalletStakingCompactAssignments, Vec<u128>, u32, PalletStakingElectionSize]
+        [
+          Vec<u16>,
+          PalletStakingCompactAssignments,
+          SpNposElectionsElectionScore,
+          u32,
+          PalletStakingElectionSize
+        ]
       >;
       /**
        * Unsigned version of `submit_election_solution`.
@@ -5417,7 +5709,11 @@ declare module '@polkadot/api-base/types/submittable' {
               }
             | string
             | Uint8Array,
-          score: Vec<u128>,
+          score:
+            | SpNposElectionsElectionScore
+            | { minimalStake?: any; sumStake?: any; sumStakeSquared?: any }
+            | string
+            | Uint8Array,
           era: u32 | AnyNumber | Uint8Array,
           size:
             | PalletStakingElectionSize
@@ -5425,7 +5721,13 @@ declare module '@polkadot/api-base/types/submittable' {
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [Vec<u16>, PalletStakingCompactAssignments, Vec<u128>, u32, PalletStakingElectionSize]
+        [
+          Vec<u16>,
+          PalletStakingCompactAssignments,
+          SpNposElectionsElectionScore,
+          u32,
+          PalletStakingElectionSize
+        ]
       >;
       /**
        * Schedule a portion of the stash to be unlocked ready for transfer out after the bond
@@ -5947,13 +6249,6 @@ declare module '@polkadot/api-base/types/submittable' {
        *
        * **NOTE:** We rely on the Root origin to provide us the number of subkeys under
        * the prefix we are removing to accurately calculate the weight of this function.
-       *
-       * # <weight>
-       * - `O(P)` where `P` amount of keys with prefix `prefix`
-       * - `P` storage deletions.
-       * - Base Weight: 0.834 * P µs
-       * - Writes: Number of subkeys + 1
-       * # </weight>
        **/
       killPrefix: AugmentedSubmittable<
         (
@@ -5964,13 +6259,6 @@ declare module '@polkadot/api-base/types/submittable' {
       >;
       /**
        * Kill some items from storage.
-       *
-       * # <weight>
-       * - `O(IK)` where `I` length of `keys` and `K` length of one key
-       * - `I` storage deletions.
-       * - Base Weight: .378 * i µs
-       * - Writes: Number of items
-       * # </weight>
        **/
       killStorage: AugmentedSubmittable<
         (keys: Vec<Bytes> | (Bytes | string | Uint8Array)[]) => SubmittableExtrinsic<ApiType>,
@@ -5989,38 +6277,10 @@ declare module '@polkadot/api-base/types/submittable' {
       >;
       /**
        * Make some on-chain remark and emit event.
-       *
-       * # <weight>
-       * - `O(b)` where b is the length of the remark.
-       * - 1 event.
-       * # </weight>
        **/
       remarkWithEvent: AugmentedSubmittable<
         (remark: Bytes | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
         [Bytes]
-      >;
-      /**
-       * Set the new changes trie configuration.
-       *
-       * # <weight>
-       * - `O(1)`
-       * - 1 storage write or delete (codec `O(1)`).
-       * - 1 call to `deposit_log`: Uses `append` API, so O(1)
-       * - Base Weight: 7.218 µs
-       * - DB Weight:
-       * - Writes: Changes Trie, System Digest
-       * # </weight>
-       **/
-      setChangesTrieConfig: AugmentedSubmittable<
-        (
-          changesTrieConfig:
-            | Option<SpCoreChangesTrieChangesTrieConfiguration>
-            | null
-            | object
-            | string
-            | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [Option<SpCoreChangesTrieChangesTrieConfiguration>]
       >;
       /**
        * Set the new runtime code.
@@ -6057,14 +6317,6 @@ declare module '@polkadot/api-base/types/submittable' {
       >;
       /**
        * Set the number of pages in the WebAssembly environment's heap.
-       *
-       * # <weight>
-       * - `O(1)`
-       * - 1 storage write.
-       * - Base Weight: 1.405 µs
-       * - 1 write to HEAP_PAGES
-       * - 1 digest item
-       * # </weight>
        **/
       setHeapPages: AugmentedSubmittable<
         (pages: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -6072,13 +6324,6 @@ declare module '@polkadot/api-base/types/submittable' {
       >;
       /**
        * Set some items of storage.
-       *
-       * # <weight>
-       * - `O(I)` where `I` length of `items`
-       * - `I` storage writes (`O(1)`).
-       * - Base Weight: 0.568 * i µs
-       * - Writes: Number of items
-       * # </weight>
        **/
       setStorage: AugmentedSubmittable<
         (
@@ -6342,7 +6587,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | Vec<PolymeshPrimitivesSecondaryKey>
             | (
                 | PolymeshPrimitivesSecondaryKey
-                | { signer?: any; permissions?: any }
+                | { key?: any; permissions?: any }
                 | string
                 | Uint8Array
               )[]
@@ -6382,6 +6627,7 @@ declare module '@polkadot/api-base/types/submittable' {
        * # Error
        * * `BadOrigin`: Only root can execute transaction.
        * * `InsufficientBalance`: If treasury balances is not enough to cover all beneficiaries.
+       * * `InvalidIdentity`: If one of the beneficiaries has an invalid identity.
        **/
       disbursement: AugmentedSubmittable<
         (

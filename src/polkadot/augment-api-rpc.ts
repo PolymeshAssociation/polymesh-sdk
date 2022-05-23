@@ -103,7 +103,6 @@ import type {
   CanTransferResult,
   CappedFee,
   CddStatus,
-  DidRecords,
   DidStatus,
   GranularCanTransferResult,
   IdentityId,
@@ -111,6 +110,7 @@ import type {
   PipId,
   PortfolioId,
   ProtocolOp,
+  RpcDidRecords,
   Signatory,
   Ticker,
   VoteCount,
@@ -783,7 +783,7 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
         (
           did: IdentityId | string | Uint8Array,
           blockHash?: Hash | string | Uint8Array
-        ) => Observable<DidRecords>
+        ) => Observable<RpcDidRecords>
       >;
       /**
        * Retrieve status of the DID

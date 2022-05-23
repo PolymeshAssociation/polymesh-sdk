@@ -1100,8 +1100,6 @@ import type {
   CustomAssetTypeId,
   DepositInfo,
   DidRecord,
-  DidRecords,
-  DidRecordsSuccess,
   DidStatus,
   DispatchableName,
   DispatchableNames,
@@ -1137,11 +1135,10 @@ import type {
   InvestorZKProofData,
   ItnRewardStatus,
   KeyIdentityData,
+  KeyRecord,
   Leg,
   LegId,
   LegStatus,
-  LegacyPalletPermissions,
-  LegacyPermissions,
   LocalCAId,
   MaybeBlock,
   Memo,
@@ -1185,6 +1182,8 @@ import type {
   RecordDateSpec,
   RestrictionResult,
   RistrettoPoint,
+  RpcDidRecords,
+  RpcDidRecordsSuccess,
   Scalar,
   ScheduleId,
   ScheduleSpec,
@@ -1539,8 +1538,6 @@ declare module '@polkadot/types/types/registry' {
     DepositInfo: DepositInfo;
     DestroyWitness: DestroyWitness;
     DidRecord: DidRecord;
-    DidRecords: DidRecords;
-    DidRecordsSuccess: DidRecordsSuccess;
     DidStatus: DidStatus;
     Digest: Digest;
     DigestItem: DigestItem;
@@ -1809,6 +1806,7 @@ declare module '@polkadot/types/types/registry' {
     Key: Key;
     KeyIdentityData: KeyIdentityData;
     KeyOwnerProof: KeyOwnerProof;
+    KeyRecord: KeyRecord;
     Keys: Keys;
     KeyTypeId: KeyTypeId;
     KeyValue: KeyValue;
@@ -1820,8 +1818,6 @@ declare module '@polkadot/types/types/registry' {
     LeasePeriod: LeasePeriod;
     LeasePeriodOf: LeasePeriodOf;
     Leg: Leg;
-    LegacyPalletPermissions: LegacyPalletPermissions;
-    LegacyPermissions: LegacyPermissions;
     LegacyTransaction: LegacyTransaction;
     LegId: LegId;
     LegStatus: LegStatus;
@@ -2096,6 +2092,8 @@ declare module '@polkadot/types/types/registry' {
     Retriable: Retriable;
     RistrettoPoint: RistrettoPoint;
     RoundState: RoundState;
+    RpcDidRecords: RpcDidRecords;
+    RpcDidRecordsSuccess: RpcDidRecordsSuccess;
     RpcMethods: RpcMethods;
     RuntimeDbWeight: RuntimeDbWeight;
     RuntimeDispatchInfo: RuntimeDispatchInfo;

@@ -4,7 +4,7 @@ import { find } from 'lodash';
 import { assertSecondaryAccounts } from '~/api/procedures/utils';
 import { PolymeshError, Procedure } from '~/internal';
 import { Account, ErrorCode, TxTags } from '~/types';
-import { signerToSignerValue, signerValueToSignatory } from '~/utils/conversion';
+import { signerToSignerValue, signerValueToSignatory, stringToAccountId } from '~/utils/conversion';
 
 export interface RemoveSecondaryAccountsParams {
   accounts: Account[];
@@ -47,7 +47,7 @@ export async function prepareRemoveSecondaryAccounts(
   this.addTransaction({
     transaction: tx.identity.removeSecondaryKeys,
     feeMultiplier: new BigNumber(accounts.length),
-    args: [accounts.map(account => signerValueToSignatory(signerToSignerValue(account), context))],
+    args: [accounts.map(({ address }) => stringToAccountId(address, context))],
   });
 }
 
