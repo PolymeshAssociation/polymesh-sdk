@@ -8,11 +8,13 @@
     "set_changes_trie_config": "set_changes_trie_config",
     "set_storage": "set_storage",
     "kill_storage": "kill_storage",
-    "kill_prefix": "kill_prefix"
+    "kill_prefix": "kill_prefix",
+    "remark_with_event": "remark_with_event"
   },
   "Babe": {
     "report_equivocation": "report_equivocation",
-    "report_equivocation_unsigned": "report_equivocation_unsigned"
+    "report_equivocation_unsigned": "report_equivocation_unsigned",
+    "plan_config_change": "plan_config_change"
   },
   "Timestamp": {
     "set": "set"
@@ -135,7 +137,8 @@
     "change_sigs_required": "change_sigs_required",
     "make_multisig_signer": "make_multisig_signer",
     "make_multisig_primary": "make_multisig_primary",
-    "execute_scheduled_proposal": "execute_scheduled_proposal"
+    "execute_scheduled_proposal": "execute_scheduled_proposal",
+    "make_multisig_secondary": "make_multisig_secondary"
   },
   "Bridge": {
     "change_controller": "change_controller",
@@ -226,7 +229,13 @@
     "claim_classic_ticker": "claim_classic_ticker",
     "reserve_classic_ticker": "reserve_classic_ticker",
     "controller_transfer": "controller_transfer",
-    "register_custom_asset_type": "register_custom_asset_type"
+    "register_custom_asset_type": "register_custom_asset_type",
+    "create_asset_with_custom_type": "create_asset_with_custom_type",
+    "set_asset_metadata": "set_asset_metadata",
+    "set_asset_metadata_details": "set_asset_metadata_details",
+    "register_and_set_local_asset_metadata": "register_and_set_local_asset_metadata",
+    "register_asset_metadata_local_type": "register_asset_metadata_local_type",
+    "register_asset_metadata_global_type": "register_asset_metadata_global_type"
   },
   "CapitalDistribution": {
     "distribute": "distribute",
@@ -260,7 +269,8 @@
     "initiate_corporate_action": "initiate_corporate_action",
     "link_ca_doc": "link_ca_doc",
     "remove_ca": "remove_ca",
-    "change_record_date": "change_record_date"
+    "change_record_date": "change_record_date",
+    "initiate_corporate_action_and_distribute": "initiate_corporate_action_and_distribute"
   },
   "CorporateBallot": {
     "attach_ballot": "attach_ballot",
@@ -362,7 +372,9 @@
     "remove_agent": "remove_agent",
     "abdicate": "abdicate",
     "change_group": "change_group",
-    "accept_become_agent": "accept_become_agent"
+    "accept_become_agent": "accept_become_agent",
+    "create_group_and_add_auth": "create_group_and_add_auth",
+    "create_and_change_custom_group": "create_and_change_custom_group"
   },
   "Relayer": {
     "set_paying_key": "set_paying_key",
@@ -381,5 +393,6 @@
     "mock_cdd_register_did": "mock_cdd_register_did",
     "get_my_did": "get_my_did",
     "get_cdd_of": "get_cdd_of"
-  }
+  },
+  "Base": {}
 }
