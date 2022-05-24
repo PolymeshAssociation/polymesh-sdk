@@ -393,6 +393,5 @@
     "mock_cdd_register_did": "mock_cdd_register_did",
     "get_my_did": "get_my_did",
     "get_cdd_of": "get_cdd_of"
-  },
-  "Base": {}
+  }
 }

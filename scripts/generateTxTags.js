@@ -31,14 +31,19 @@ modules.forEach(({ name, calls }) => {
   const moduleName = name.toString();
 
   if (allCalls) {
-    const moduleCalls = (transactionData[moduleName] = transactionData[moduleName] || {});
+    const moduleCalls = {};
 
     const items = lookup.getSiType(allCalls.type).def.asVariant.variants;
 
-    items.forEach(({ name: cName }) => {
-      const callName = cName.toString();
-      moduleCalls[callName] = callName;
-    });
+    // modules with no calls won't be included in transactions.json
+    if (items.length) {
+      items.forEach(({ name: cName }) => {
+        const callName = cName.toString();
+        moduleCalls[callName] = callName;
+      });
+
+      transactionData[moduleName] = { ...(transactionData[moduleName] || {}), ...moduleCalls };
+    }
   }
 });
 

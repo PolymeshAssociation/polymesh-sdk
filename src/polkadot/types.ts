@@ -444,8 +444,6 @@ export enum TestUtilsTx {
   GetCddOf = 'testUtils.getCddOf',
 }
 
-export enum BaseTx {}
-
 export enum ModuleName {
   System = 'system',
   Babe = 'babe',
@@ -487,7 +485,6 @@ export enum ModuleName {
   Relayer = 'relayer',
   Rewards = 'rewards',
   TestUtils = 'testUtils',
-  Base = 'base',
 }
 
 export type TxTag =
@@ -530,8 +527,7 @@ export type TxTag =
   | ExternalAgentsTx
   | RelayerTx
   | RewardsTx
-  | TestUtilsTx
-  | BaseTx;
+  | TestUtilsTx;
 
 export const TxTags = {
   system: SystemTx,
@@ -574,5 +570,4 @@ export const TxTags = {
   relayer: RelayerTx,
   rewards: RewardsTx,
   testUtils: TestUtilsTx,
-  base: BaseTx,
 };
