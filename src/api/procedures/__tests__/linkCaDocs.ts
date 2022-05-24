@@ -53,14 +53,12 @@ describe('linkCaDocs procedure', () => {
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawDocuments = documents.map(({ name, uri, contentHash, type, filedAt }) =>
       dsMockUtils.createMockDocument({
-        name: dsMockUtils.createMockDocumentName(name),
+        name: dsMockUtils.createMockBytes(name),
         uri: dsMockUtils.createMockDocumentUri(uri),
         contentHash: dsMockUtils.createMockDocumentHash({
           H128: dsMockUtils.createMockU8aFixed(contentHash, true),
         }),
-        docType: dsMockUtils.createMockOption(
-          type ? dsMockUtils.createMockDocumentType(type) : null
-        ),
+        docType: dsMockUtils.createMockOption(type ? dsMockUtils.createMockBytes(type) : null),
         filingDate: dsMockUtils.createMockOption(
           filedAt ? dsMockUtils.createMockMoment(new BigNumber(filedAt.getTime())) : null
         ),

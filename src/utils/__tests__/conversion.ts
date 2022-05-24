@@ -39,9 +39,6 @@ import {
   CAId,
   Claim as MeshClaim,
   DocumentHash,
-  DocumentName,
-  DocumentType,
-  DocumentUri,
   ModuleName,
   Permissions as MeshPermissions,
   ProtocolOp,
@@ -160,10 +157,7 @@ import {
   dateToMoment,
   distributionToDividendDistributionParams,
   documentHashToString,
-  documentNameToString,
   documentToAssetDocument,
-  documentTypeToString,
-  documentUriToString,
   endConditionToSettlementType,
   extrinsicIdentifierToTxTag,
   fundraiserTierToTier,
@@ -228,9 +222,6 @@ import {
   stringToBytes,
   stringToCddId,
   stringToDocumentHash,
-  stringToDocumentName,
-  stringToDocumentType,
-  stringToDocumentUri,
   stringToEcdsaSignature,
   stringToHash,
   stringToIdentityId,
@@ -2966,84 +2957,6 @@ describe('securityIdentifierToAssetIdentifier and assetIdentifierToSecurityIdent
   });
 });
 
-describe('stringToDocumentName and documentNameToString', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  describe('stringToDocumentName', () => {
-    it('should convert a string to a polkadot DocumentName object', () => {
-      const value = 'someName';
-      const fakeResult = 'convertedName' as unknown as DocumentName;
-      const context = dsMockUtils.getContextInstance();
-
-      context.createType.withArgs('DocumentName', value).returns(fakeResult);
-
-      const result = stringToDocumentName(value, context);
-
-      expect(result).toEqual(fakeResult);
-    });
-  });
-
-  describe('documentNameToString', () => {
-    it('should convert a polkadot DocumentName object to a string', () => {
-      const fakeResult = 'someDocumentName';
-      const docName = dsMockUtils.createMockBytes(fakeResult);
-      docName.toString = () => fakeResult;
-
-      const result = documentNameToString(docName);
-      expect(result).toEqual(fakeResult);
-    });
-  });
-});
-
-describe('stringToDocumentUri and documentUriToString', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  describe('stringToDocumentUri', () => {
-    it('should convert a string to a polkadot DocumentUri object', () => {
-      const value = 'someUri';
-      const fakeResult = 'convertedUri' as unknown as DocumentUri;
-      const context = dsMockUtils.getContextInstance();
-
-      context.createType.withArgs('DocumentUri', value).returns(fakeResult);
-
-      const result = stringToDocumentUri(value, context);
-
-      expect(result).toEqual(fakeResult);
-    });
-  });
-
-  describe('documentUriToString', () => {
-    it('documentUriToString should convert a polkadot DocumentUri object to a string', () => {
-      const fakeResult = 'someDocumentUri';
-      const docUri = dsMockUtils.createMockBytes(fakeResult);
-      docUri.toString = () => fakeResult;
-
-      const result = documentUriToString(docUri);
-      expect(result).toEqual(fakeResult);
-    });
-  });
-});
-
 describe('stringToDocumentHash and documentHashToString', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -3223,45 +3136,6 @@ describe('stringToDocumentHash and documentHashToString', () => {
   });
 });
 
-describe('stringToDocumentType and documentTypeToString', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  describe('stringToDocumentType', () => {
-    it('should convert a string to a polkadot DocumentType object', () => {
-      const value = 'someType';
-      const fakeResult = 'convertedType' as unknown as DocumentType;
-      const context = dsMockUtils.getContextInstance();
-
-      context.createType.withArgs('DocumentType', value).returns(fakeResult);
-
-      const result = stringToDocumentType(value, context);
-
-      expect(result).toEqual(fakeResult);
-    });
-  });
-
-  describe('documentTypeToString', () => {
-    it('should convert a polkadot DocumentType object to a string', () => {
-      const fakeResult = 'someDocumentType';
-      const docType = dsMockUtils.createMockBytes(fakeResult);
-      docType.toString = () => fakeResult;
-
-      const result = documentTypeToString(docType);
-      expect(result).toEqual(fakeResult);
-    });
-  });
-});
-
 describe('assetDocumentToDocument and documentToAssetDocument', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -3292,8 +3166,8 @@ describe('assetDocumentToDocument and documentToAssetDocument', () => {
 
       context.createType
         .withArgs('PolymeshPrimitivesDocument', {
-          uri: stringToDocumentUri(uri, context),
-          name: stringToDocumentName(name, context),
+          uri: stringToBytes(uri, context),
+          name: stringToBytes(name, context),
           contentHash: stringToDocumentHash(contentHash, context),
           docType: null,
           filingDate: null,
@@ -3305,10 +3179,10 @@ describe('assetDocumentToDocument and documentToAssetDocument', () => {
 
       context.createType
         .withArgs('PolymeshPrimitivesDocument', {
-          uri: stringToDocumentUri(uri, context),
-          name: stringToDocumentName(name, context),
+          uri: stringToBytes(uri, context),
+          name: stringToBytes(name, context),
           contentHash: stringToDocumentHash(contentHash, context),
-          docType: stringToDocumentType(type, context),
+          docType: stringToBytes(type, context),
           filingDate: dateToMoment(filedAt, context),
         })
         .returns(fakeResult);
@@ -3332,7 +3206,7 @@ describe('assetDocumentToDocument and documentToAssetDocument', () => {
 
       let doc = dsMockUtils.createMockDocument({
         uri: dsMockUtils.createMockDocumentUri(uri),
-        name: dsMockUtils.createMockDocumentName(name),
+        name: dsMockUtils.createMockBytes(name),
         contentHash: dsMockUtils.createMockDocumentHash('None'),
         docType: dsMockUtils.createMockOption(),
         filingDate: dsMockUtils.createMockOption(),
@@ -3350,11 +3224,11 @@ describe('assetDocumentToDocument and documentToAssetDocument', () => {
 
       doc = dsMockUtils.createMockDocument({
         uri: dsMockUtils.createMockDocumentUri(uri),
-        name: dsMockUtils.createMockDocumentName(name),
+        name: dsMockUtils.createMockBytes(name),
         contentHash: dsMockUtils.createMockDocumentHash({
           H128: dsMockUtils.createMockU8aFixed(contentHash, true),
         }),
-        docType: dsMockUtils.createMockOption(dsMockUtils.createMockDocumentType(type)),
+        docType: dsMockUtils.createMockOption(dsMockUtils.createMockBytes(type)),
         filingDate: dsMockUtils.createMockOption(
           dsMockUtils.createMockMoment(new BigNumber(filedAt.getTime()))
         ),
