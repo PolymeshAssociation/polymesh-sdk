@@ -4,16 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const rimraf = require('rimraf');
 const util = require('util');
-const {
-  upperFirst,
-  toLower,
-  forEach,
-  camelCase,
-  isArray,
-  isObject,
-  transform,
-  mapKeys,
-} = require('lodash');
+const { forEach, camelCase, mapKeys } = require('lodash');
 const { NODE_URL, SCHEMA_PORT } = require('./consts');
 
 const definitionsDir = path.resolve('src', 'polkadot');
@@ -26,13 +17,11 @@ fs.mkdirSync(typesDir);
 rimraf.sync(generatedDir);
 fs.mkdirSync(generatedDir);
 
-const camelize = obj =>
-  transform(obj, (acc, value, key, target) => {
-    const camelKey = isArray(target) ? key : camelCase(key);
-
-    acc[camelKey] = isObject(value) ? camelize(value) : value;
-  });
-
+/**
+ * @hidden
+ * transforms the schema so RPC types are compatible with other methods from the polkadot api.
+ * @note imports are added into the generated files in the postProcessTypes script
+ */
 function transformSchema(schemaObj) {
   let {
     types: { ComplianceRequirementResult, Condition, TrustedIssuer },
@@ -42,7 +31,7 @@ function transformSchema(schemaObj) {
     ...p,
     name: camelCase(p.name),
   }));
-  identity.getFilteredAuthorizations.type = 'Vec<PolymeshPrimitivesAuthorization>'; // will need to add import to augmented rpc
+  identity.getFilteredAuthorizations.type = 'Vec<PolymeshPrimitivesAuthorization>';
 
   compliance.canTransfer.params = compliance.canTransfer.params.map(p => ({
     ...p,
@@ -129,60 +118,6 @@ function writeDefinitions(schemaObj) {
   fs.writeFileSync(path.resolve(definitionsDir, 'definitions.ts'), defExports);
 }
 
-/**
- * Autogenerate types and conversion utils which are too large to write manually
- */
-function writeGenerated({ types }) {
-  const instanbulIgnore = '/* istanbul ignore file */';
-  let typesFile = `${instanbulIgnore}
-
-`;
-  let utilsFile = `${instanbulIgnore}
-
-import { CountryCode as MeshCountryCode } from 'polymesh-types/types';
-
-import { Context } from '~/internal';
-import { CountryCode } from '~/types';
-
-`;
-
-  let countryCodeEnum = 'export enum CountryCode {';
-  let countryCodeFunctions = `/**
- * @hidden
- */
-export function countryCodeToMeshCountryCode(countryCode: CountryCode, context: Context): MeshCountryCode {
-  return context.polymeshApi.createType('CountryCode', countryCode);
-}
-
-/**
- * @hidden
- */
-export function meshCountryCodeToCountryCode(meshCountryCode: MeshCountryCode): CountryCode {`;
-
-  const countryCodes = types.CountryCode._enum;
-  countryCodes.forEach((code, index) => {
-    const isLast = index === countryCodes.length - 1;
-    const pascalCaseCode = upperFirst(toLower(code));
-
-    countryCodeEnum = `${countryCodeEnum}\n  ${pascalCaseCode} = '${pascalCaseCode}',${
-      isLast ? '\n}' : ''
-    }`;
-
-    const returnStatement = `return CountryCode.${pascalCaseCode}`;
-    if (isLast) {
-      countryCodeFunctions = `${countryCodeFunctions}\n  ${returnStatement};\n}`;
-    } else {
-      countryCodeFunctions = `${countryCodeFunctions}\n  if (meshCountryCode.is${pascalCaseCode}) {\n    ${returnStatement};\n  }\n`;
-    }
-  });
-
-  typesFile = `${typesFile}${countryCodeEnum}\n`;
-  utilsFile = `${utilsFile}${countryCodeFunctions}\n`;
-
-  fs.writeFileSync(path.resolve(generatedDir, 'types.ts'), typesFile);
-  fs.writeFileSync(path.resolve(generatedDir, 'utils.ts'), utilsFile);
-}
-
 http.get(`http://${NODE_URL}:${SCHEMA_PORT}/polymesh_schema.json`, res => {
   const chunks = [];
   res.on('data', chunk => {
@@ -195,6 +130,5 @@ http.get(`http://${NODE_URL}:${SCHEMA_PORT}/polymesh_schema.json`, res => {
     transformSchema(schemaObj);
 
     writeDefinitions(schemaObj);
-    writeGenerated(schemaObj);
   });
 });
