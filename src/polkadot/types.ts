@@ -19,11 +19,13 @@ export enum SystemTx {
   SetStorage = 'system.setStorage',
   KillStorage = 'system.killStorage',
   KillPrefix = 'system.killPrefix',
+  RemarkWithEvent = 'system.remarkWithEvent',
 }
 
 export enum BabeTx {
   ReportEquivocation = 'babe.reportEquivocation',
   ReportEquivocationUnsigned = 'babe.reportEquivocationUnsigned',
+  PlanConfigChange = 'babe.planConfigChange',
 }
 
 export enum TimestampTx {
@@ -160,6 +162,7 @@ export enum MultiSigTx {
   MakeMultisigSigner = 'multiSig.makeMultisigSigner',
   MakeMultisigPrimary = 'multiSig.makeMultisigPrimary',
   ExecuteScheduledProposal = 'multiSig.executeScheduledProposal',
+  MakeMultisigSecondary = 'multiSig.makeMultisigSecondary',
 }
 
 export enum BridgeTx {
@@ -258,6 +261,12 @@ export enum AssetTx {
   ReserveClassicTicker = 'asset.reserveClassicTicker',
   ControllerTransfer = 'asset.controllerTransfer',
   RegisterCustomAssetType = 'asset.registerCustomAssetType',
+  CreateAssetWithCustomType = 'asset.createAssetWithCustomType',
+  SetAssetMetadata = 'asset.setAssetMetadata',
+  SetAssetMetadataDetails = 'asset.setAssetMetadataDetails',
+  RegisterAndSetLocalAssetMetadata = 'asset.registerAndSetLocalAssetMetadata',
+  RegisterAssetMetadataLocalType = 'asset.registerAssetMetadataLocalType',
+  RegisterAssetMetadataGlobalType = 'asset.registerAssetMetadataGlobalType',
 }
 
 export enum CapitalDistributionTx {
@@ -296,6 +305,7 @@ export enum CorporateActionTx {
   LinkCaDoc = 'corporateAction.linkCaDoc',
   RemoveCa = 'corporateAction.removeCa',
   ChangeRecordDate = 'corporateAction.changeRecordDate',
+  InitiateCorporateActionAndDistribute = 'corporateAction.initiateCorporateActionAndDistribute',
 }
 
 export enum CorporateBallotTx {
@@ -409,6 +419,8 @@ export enum ExternalAgentsTx {
   Abdicate = 'externalAgents.abdicate',
   ChangeGroup = 'externalAgents.changeGroup',
   AcceptBecomeAgent = 'externalAgents.acceptBecomeAgent',
+  CreateGroupAndAddAuth = 'externalAgents.createGroupAndAddAuth',
+  CreateAndChangeCustomGroup = 'externalAgents.createAndChangeCustomGroup',
 }
 
 export enum RelayerTx {

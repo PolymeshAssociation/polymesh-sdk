@@ -21,21 +21,29 @@ const transactionData = JSON.parse(fs.readFileSync(jsonPath));
 
 const registry = new TypeRegistry();
 
-const metadata = new Metadata(registry, JSON.parse(metadataFile).result);
-const modules = metadata.asLatest.pallets;
+const metadata = new Metadata(registry, JSON.parse(metadataFile).result).asLatest;
+const modules = metadata.pallets;
+const lookup = metadata.lookup;
 
 // add new calls to historic ones
 modules.forEach(({ name, calls }) => {
   const allCalls = calls.unwrapOr(null);
   const moduleName = name.toString();
 
-  if (allCalls && allCalls.length) {
-    const moduleCalls = (transactionData[moduleName] = transactionData[moduleName] || {});
+  if (allCalls) {
+    const moduleCalls = {};
 
-    allCalls.forEach(({ name: cName }) => {
-      const callName = cName.toString();
-      moduleCalls[callName] = callName;
-    });
+    const items = lookup.getSiType(allCalls.type).def.asVariant.variants;
+
+    // modules with no calls won't be included in transactions.json
+    if (items.length) {
+      items.forEach(({ name: cName }) => {
+        const callName = cName.toString();
+        moduleCalls[callName] = callName;
+      });
+
+      transactionData[moduleName] = { ...(transactionData[moduleName] || {}), ...moduleCalls };
+    }
   }
 });
 
