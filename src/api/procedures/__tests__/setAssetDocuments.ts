@@ -70,7 +70,7 @@ describe('setAssetDocuments procedure', () => {
     rawDocuments = documents.map(({ name, uri, contentHash, type, filedAt }) =>
       dsMockUtils.createMockDocument({
         name: dsMockUtils.createMockBytes(name),
-        uri: dsMockUtils.createMockDocumentUri(uri),
+        uri: dsMockUtils.createMockBytes(uri),
         contentHash: dsMockUtils.createMockDocumentHash({
           H128: dsMockUtils.createMockU8aFixed(contentHash, true),
         }),

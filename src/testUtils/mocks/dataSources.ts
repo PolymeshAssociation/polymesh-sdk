@@ -117,7 +117,6 @@ import {
   DispatchableName,
   DispatchableNames,
   DocumentHash,
-  DocumentUri,
   EcdsaSignature,
   EthereumAddress,
   ExtrinsicPermissions,
@@ -1619,13 +1618,6 @@ export const createMockBalance = (balance?: BigNumber | Balance): Balance => {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockDocumentUri = (uri?: string): DocumentUri =>
-  createMockStringCodec(uri) as DocumentUri;
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
 export const createMockDocumentHash = (
   hash?:
     | 'None'
@@ -1939,14 +1931,14 @@ export const createMockSecurityToken = (token?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockDocument = (document?: {
-  uri: DocumentUri;
+  uri: Bytes;
   contentHash: DocumentHash;
   name: Bytes;
   docType: Option<Bytes>;
   filingDate: Option<Moment>;
 }): PolymeshPrimitivesDocument => {
   const doc = document || {
-    uri: createMockDocumentUri(),
+    uri: createMockBytes(),
     content_hash: createMockDocumentHash(),
     name: createMockBytes(),
     docType: createMockOption(),

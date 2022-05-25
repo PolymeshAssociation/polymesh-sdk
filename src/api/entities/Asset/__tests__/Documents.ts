@@ -101,14 +101,12 @@ describe('Documents class', () => {
             ],
           } as unknown as StorageKey,
           dsMockUtils.createMockDocument({
-            uri: dsMockUtils.createMockDocumentUri(uri),
-            name: dsMockUtils.createMockDocumentName(name),
+            uri: dsMockUtils.createMockBytes(uri),
+            name: dsMockUtils.createMockBytes(name),
             contentHash: dsMockUtils.createMockDocumentHash({
               H128: dsMockUtils.createMockU8aFixed(contentHash, true),
             }),
-            docType: dsMockUtils.createMockOption(
-              type ? dsMockUtils.createMockDocumentType(type) : null
-            ),
+            docType: dsMockUtils.createMockOption(type ? dsMockUtils.createMockBytes(type) : null),
             filingDate: dsMockUtils.createMockOption(
               filedAt ? dsMockUtils.createMockMoment(new BigNumber(filedAt.getTime())) : null
             ),

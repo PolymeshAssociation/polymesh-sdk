@@ -2989,7 +2989,7 @@ describe('stringToDocumentHash and documentHashToString', () => {
 
       const createTypeStub = context.createType;
 
-      createTypeStub.withArgs('DocumentHash', 'None').returns(fakeResult);
+      createTypeStub.withArgs('PolymeshPrimitivesDocumentHash', 'None').returns(fakeResult);
 
       let result = stringToDocumentHash(undefined, context);
 
@@ -3205,7 +3205,7 @@ describe('assetDocumentToDocument and documentToAssetDocument', () => {
       };
 
       let doc = dsMockUtils.createMockDocument({
-        uri: dsMockUtils.createMockDocumentUri(uri),
+        uri: dsMockUtils.createMockBytes(uri),
         name: dsMockUtils.createMockBytes(name),
         contentHash: dsMockUtils.createMockDocumentHash('None'),
         docType: dsMockUtils.createMockOption(),
@@ -3223,7 +3223,7 @@ describe('assetDocumentToDocument and documentToAssetDocument', () => {
       };
 
       doc = dsMockUtils.createMockDocument({
-        uri: dsMockUtils.createMockDocumentUri(uri),
+        uri: dsMockUtils.createMockBytes(uri),
         name: dsMockUtils.createMockBytes(name),
         contentHash: dsMockUtils.createMockDocumentHash({
           H128: dsMockUtils.createMockU8aFixed(contentHash, true),
@@ -5052,7 +5052,7 @@ describe('transactionHexToTxTag', () => {
 
     const context = dsMockUtils.getContextInstance();
 
-    context.createType.withArgs('Proposal', hex).returns(mockResult);
+    context.createType.withArgs('Call', hex).returns(mockResult);
 
     const result = transactionHexToTxTag(hex, context);
     expect(result).toEqual(fakeResult);
