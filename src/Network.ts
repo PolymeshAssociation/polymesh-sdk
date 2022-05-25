@@ -8,6 +8,7 @@ import {
   ExtrinsicDataWithFees,
   NetworkProperties,
   ProcedureMethod,
+  ProtocolFees,
   SubCallback,
   TxTag,
   UnsubCallback,
@@ -87,11 +88,11 @@ export class Network {
   }
 
   /**
-   * Retrieve the protocol fees associated with running a specific transaction
+   * Retrieve the protocol fees associated with running specific transactions
    *
-   * @param args.tag - transaction tag (i.e. TxTags.asset.CreateAsset or "asset.createAsset")
+   * @param args.tags - list of transaction tags (i.e. [TxTags.asset.CreateAsset, TxTags.asset.RegisterTicker] or ["asset.createAsset", "asset.registerTicker"])
    */
-  public getProtocolFees(args: { tag: TxTag }): Promise<BigNumber> {
+  public getProtocolFees(args: { tags: TxTag[] }): Promise<ProtocolFees[]> {
     return this.context.getProtocolFees(args);
   }
 
@@ -283,9 +284,9 @@ export class Network {
         block: { extrinsics },
       } = await getBlock(rawBlockHash);
 
-      const [{ partialFee }, protocolFees] = await Promise.all([
+      const [{ partialFee }, [{ fees: protocolFees }]] = await Promise.all([
         queryInfo(extrinsics[extrinsicIdx].toHex(), rawBlockHash),
-        this.getProtocolFees({ tag: txTag }),
+        context.getProtocolFees({ tags: [txTag], blockHash }),
       ]);
 
       return {
@@ -300,8 +301,10 @@ export class Network {
         specVersionId: new BigNumber(specVersionId),
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         extrinsicHash: extrinsicHash!,
-        gasFees: balanceToBigNumber(partialFee),
-        protocolFees,
+        fee: {
+          gas: balanceToBigNumber(partialFee),
+          protocol: protocolFees,
+        },
       };
     }
 

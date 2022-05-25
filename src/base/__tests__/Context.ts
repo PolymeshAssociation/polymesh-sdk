@@ -1,6 +1,5 @@
 import { Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { ProtocolOp } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Account, Context, PolymeshError } from '~/internal';
@@ -765,24 +764,38 @@ describe('Context class', () => {
         middlewareApi: dsMockUtils.getMiddlewareApi(),
       });
 
+      const protocolOpEqStub = sinon.stub();
+
+      const rawProtocolOp = dsMockUtils.createMockProtocolOp('AssetCreateAsset', protocolOpEqStub);
+
       const txTagToProtocolOpStub = sinon.stub(utilsConversionModule, 'txTagToProtocolOp');
 
-      txTagToProtocolOpStub
-        .withArgs(TxTags.asset.CreateAsset, context)
-        .returns('someProtocolOp' as unknown as ProtocolOp);
+      txTagToProtocolOpStub.withArgs(TxTags.asset.CreateAsset, context).returns(rawProtocolOp);
       txTagToProtocolOpStub.withArgs(TxTags.asset.Freeze, context).throws(); // transaction without fees
 
+      protocolOpEqStub.withArgs(rawProtocolOp).returns(true);
+
       dsMockUtils.createQueryStub('protocolFee', 'baseFees', {
-        returnValue: dsMockUtils.createMockBalance(new BigNumber(500000000)),
+        entries: [tuple([rawProtocolOp], dsMockUtils.createMockBalance(new BigNumber(500000000)))],
       });
 
-      let result = await context.getProtocolFees({ tag: TxTags.asset.CreateAsset });
+      const mockResult = [
+        {
+          tag: TxTags.asset.CreateAsset,
+          fees: new BigNumber(250),
+        },
+        {
+          tag: TxTags.asset.Freeze,
+          fees: new BigNumber(0),
+        },
+      ];
+      const tags = [TxTags.asset.CreateAsset, TxTags.asset.Freeze];
+      let result = await context.getProtocolFees({ tags });
 
-      expect(result).toEqual(new BigNumber(250));
+      expect(result).toEqual(mockResult);
 
-      result = await context.getProtocolFees({ tag: TxTags.asset.Freeze });
-
-      expect(result).toEqual(new BigNumber(0));
+      result = await context.getProtocolFees({ tags, blockHash: '0x000' });
+      expect(result).toEqual(mockResult);
     });
   });
 

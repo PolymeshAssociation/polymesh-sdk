@@ -129,6 +129,7 @@ import {
   PosRatio,
   PriceTier,
   ProposalState,
+  ProtocolOp,
   RecordDate,
   RecordDateSpec,
   RistrettoPoint,
@@ -156,6 +157,7 @@ import {
   TransferManagerResult,
   TrustedFor,
   TrustedIssuer,
+  TxTags,
   Venue,
   VenueDetails,
   VenueType,
@@ -175,6 +177,7 @@ import {
   DistributionWithDetails,
   ExtrinsicData,
   PermissionedAccount,
+  ProtocolFees,
   ResultSet,
   SignerType,
   SubsidyWithAllowance,
@@ -373,7 +376,7 @@ interface ContextOptions {
   validCdd?: boolean;
   assetBalance?: BigNumber;
   invalidDids?: string[];
-  transactionFee?: BigNumber;
+  transactionFees?: ProtocolFees[];
   signingAddress?: string;
   issuedClaims?: ResultSet<ClaimData>;
   getIdentity?: Identity;
@@ -405,6 +408,7 @@ interface SigningManagerOptions {
 
 export interface StubQuery {
   entries: SinonStub;
+  entriesAt: SinonStub;
   entriesPaged: SinonStub;
   at: SinonStub;
   multi: SinonStub;
@@ -598,7 +602,12 @@ const defaultContextOptions: ContextOptions = {
   validCdd: true,
   assetBalance: new BigNumber(1000),
   invalidDids: [],
-  transactionFee: new BigNumber(200),
+  transactionFees: [
+    {
+      tag: TxTags.asset.CreateAsset,
+      fees: new BigNumber(200),
+    },
+  ],
   signingAddress: '0xdummy',
   issuedClaims: {
     data: [
@@ -745,7 +754,7 @@ function configureContext(opts: ContextOptions): void {
       .stub()
       .callsFake(query => mockInstanceContainer.apolloInstance.query(query)),
     getInvalidDids: sinon.stub().resolves(opts.invalidDids),
-    getProtocolFees: sinon.stub().resolves(opts.transactionFee),
+    getProtocolFees: sinon.stub().resolves(opts.transactionFees),
     getTransactionArguments: sinon.stub().returns([]),
     getSecondaryAccounts: sinon.stub().returns(opts.secondaryAccounts),
     issuedClaims: sinon.stub().resolves(opts.issuedClaims),
@@ -1168,6 +1177,7 @@ export function createQueryStub<
   if (!runtimeModule[query]) {
     stub = sinon.stub() as unknown as QueryStub;
     stub.entries = sinon.stub();
+    stub.entriesAt = sinon.stub();
     stub.entriesPaged = sinon.stub();
     stub.at = sinon.stub();
     stub.multi = sinon.stub();
@@ -1188,6 +1198,7 @@ export function createQueryStub<
   ]);
   stub.entries.resolves(entryResults);
   stub.entriesPaged.resolves(entryResults);
+  stub.entriesAt.resolves(entryResults);
 
   if (opts?.multi) {
     stub.multi.resolves(opts.multi);
@@ -1514,8 +1525,13 @@ export const createMockIdentityId = (did?: string | IdentityId): IdentityId => {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-const createMockEnum = (enumValue?: string | Record<string, Codec | Codec[]>): Enum => {
-  const codec: Record<string, unknown> = {};
+const createMockEnum = (
+  enumValue?: string | Record<string, Codec | Codec[]>,
+  eq?: sinon.SinonStub
+): Enum => {
+  const codec: Record<string, unknown> = {
+    eq,
+  };
 
   if (typeof enumValue === 'string') {
     codec[`is${upperFirst(enumValue)}`] = true;
@@ -3628,4 +3644,28 @@ export const createMockRuntimeDispatchInfo = (
     },
     !runtimeDispatchInfo
   ) as RuntimeDispatchInfo;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockProtocolOp = (
+  protocolOp?:
+    | 'AssetRegisterTicker'
+    | 'AssetIssue'
+    | 'AssetAddDocuments'
+    | 'AssetCreateAsset'
+    | 'CheckpointCreateSchedule'
+    | 'ComplianceManagerAddComplianceRequirement'
+    | 'IdentityCddRegisterDid'
+    | 'IdentityAddClaim'
+    | 'IdentityAddSecondaryKeysWithAuthorization'
+    | 'PipsPropose'
+    | 'ContractsPutCode'
+    | 'CorporateBallotAttachBallot'
+    | 'CapitalDistributionDistribute',
+  eq?: sinon.SinonStub
+): ProtocolOp => {
+  return createMockEnum(protocolOp, eq) as ProtocolOp;
 };

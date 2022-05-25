@@ -109,11 +109,20 @@ describe('Network Class', () => {
 
   describe('method: getProtocolFees', () => {
     it('should return the fees associated to the supplied transaction', async () => {
-      dsMockUtils.configureMocks({ contextOptions: { transactionFee: new BigNumber(500) } });
+      const mockResult = [
+        {
+          tag: TxTags.asset.CreateAsset,
+          fees: new BigNumber(500),
+        },
+      ];
+      dsMockUtils.configureMocks({
+        contextOptions: {
+          transactionFees: mockResult,
+        },
+      });
+      const result = await network.getProtocolFees({ tags: [TxTags.asset.CreateAsset] });
 
-      const fee = await network.getProtocolFees({ tag: TxTags.asset.CreateAsset });
-
-      expect(fee).toEqual(new BigNumber(500));
+      expect(result).toEqual(mockResult);
     });
   });
 
@@ -321,7 +330,17 @@ describe('Network Class', () => {
       const gasFees = new BigNumber(10);
       const protocolFees = new BigNumber(1000);
 
-      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
+      dsMockUtils.configureMocks({
+        contextOptions: {
+          withSigningManager: true,
+          transactionFees: [
+            {
+              tag: TxTags.asset.RegisterTicker,
+              fees: protocolFees,
+            },
+          ],
+        },
+      });
 
       dsMockUtils.createApolloQueryStub(transactionByHash({ transactionHash: variable.txHash }), {
         /* eslint-disable @typescript-eslint/naming-convention */
@@ -368,8 +387,6 @@ describe('Network Class', () => {
         })
       );
 
-      jest.spyOn(network, 'getProtocolFees').mockResolvedValue(protocolFees);
-
       let result = await network.getTransactionByHash(variable);
       expect(result).toEqual({
         blockNumber,
@@ -382,8 +399,10 @@ describe('Network Class', () => {
         success: false,
         specVersionId,
         extrinsicHash: undefined,
-        gasFees,
-        protocolFees,
+        fee: {
+          gas: gasFees,
+          protocol: protocolFees,
+        },
       });
 
       dsMockUtils.createApolloQueryStub(transactionByHash({ transactionHash: variable.txHash }), {
@@ -417,8 +436,10 @@ describe('Network Class', () => {
         success: false,
         specVersionId,
         extrinsicHash: undefined,
-        gasFees,
-        protocolFees,
+        fee: {
+          gas: gasFees,
+          protocol: protocolFees,
+        },
       });
     });
 

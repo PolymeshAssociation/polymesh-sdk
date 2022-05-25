@@ -455,10 +455,18 @@ describe('Polymesh Transaction Base class', () => {
     });
 
     beforeEach(() => {
-      context.getProtocolFees
-        .withArgs({ tag: TxTags.asset.RegisterTicker })
-        .resolves(protocolFees[0]);
-      context.getProtocolFees.withArgs({ tag: TxTags.asset.CreateAsset }).resolves(protocolFees[1]);
+      context.getProtocolFees.withArgs({ tags: [TxTags.asset.RegisterTicker] }).resolves([
+        {
+          tag: TxTags.asset.RegisterTicker,
+          fees: protocolFees[0],
+        },
+      ]);
+      context.getProtocolFees.withArgs({ tags: [TxTags.asset.CreateAsset] }).resolves([
+        {
+          tag: TxTags.asset.CreateAsset,
+          fees: protocolFees[1],
+        },
+      ]);
       rawGasFees.forEach((rawGasFee, index) =>
         balanceToBigNumberStub.withArgs(rawGasFee).returns(new BigNumber(gasFees[index]))
       );

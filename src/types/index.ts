@@ -331,8 +331,12 @@ export interface ExtrinsicData {
 }
 
 export interface ExtrinsicDataWithFees extends ExtrinsicData {
-  gasFees: BigNumber;
-  protocolFees: BigNumber;
+  fee: Fees;
+}
+
+export interface ProtocolFees {
+  tag: TxTag;
+  fees: BigNumber;
 }
 
 export interface ClaimScope {
