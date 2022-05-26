@@ -5,6 +5,7 @@ import {
   PolymeshPrimitivesStatisticsStat2ndKey,
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesStatisticsStatType,
+  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import { hexToU8a } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
@@ -22,9 +23,6 @@ import {
   Claim as MeshClaim,
   ComplianceRequirement,
   DocumentHash,
-  DocumentName,
-  DocumentType,
-  DocumentUri,
   EcdsaSignature,
   ExtrinsicPermissions,
   InvestorZKProofData,
@@ -43,7 +41,6 @@ import {
   SettlementType,
   Signatory,
   TargetIdentities,
-  Ticker,
   TransferCondition,
   TrustedIssuer,
   VenueType as MeshVenueType,
@@ -156,10 +153,7 @@ import {
   dateToMoment,
   distributionToDividendDistributionParams,
   documentHashToString,
-  documentNameToString,
   documentToAssetDocument,
-  documentTypeToString,
-  documentUriToString,
   endConditionToSettlementType,
   extrinsicIdentifierToTxTag,
   fundraiserTierToTier,
@@ -220,9 +214,6 @@ import {
   stringToBytes,
   stringToCddId,
   stringToDocumentHash,
-  stringToDocumentName,
-  stringToDocumentType,
-  stringToDocumentUri,
   stringToEcdsaSignature,
   stringToHash,
   stringToIdentityId,
@@ -520,7 +511,7 @@ describe('stringToTicker and tickerToString', () => {
   describe('stringToTicker', () => {
     it('should convert a string to a polkadot Ticker object', () => {
       const value = 'SOME_TICKER';
-      const fakeResult = 'convertedTicker' as unknown as Ticker;
+      const fakeResult = 'convertedTicker' as unknown as PolymeshPrimitivesTicker;
       const context = dsMockUtils.getContextInstance();
 
       context.createType
@@ -584,7 +575,7 @@ describe('stringToTicker and tickerToString', () => {
 
     it('should call stringToTicker and return the result as an object', () => {
       const value = 'SOME_TICKER';
-      const fakeResult = 'convertedTicker' as unknown as Ticker;
+      const fakeResult = 'convertedTicker' as unknown as PolymeshPrimitivesTicker;
       const context = dsMockUtils.getContextInstance();
 
       context.createType
@@ -1037,7 +1028,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
         .withArgs('PolymeshPrimitivesAuthorizationAuthorizationData', { [value.type]: value.value })
         .returns(fakeResult);
 
-      const fakeTicker = 'convertedTicker' as unknown as Ticker;
+      const fakeTicker = 'convertedTicker' as unknown as PolymeshPrimitivesTicker;
       createTypeStub
         .withArgs('PolymeshPrimitivesTicker', padString(ticker, 12))
         .returns(fakeTicker);
@@ -2662,84 +2653,6 @@ describe('securityIdentifierToAssetIdentifier and assetIdentifierToSecurityIdent
   });
 });
 
-describe('stringToDocumentName and documentNameToString', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  describe('stringToDocumentName', () => {
-    it('should convert a string to a polkadot DocumentName object', () => {
-      const value = 'someName';
-      const fakeResult = 'convertedName' as unknown as DocumentName;
-      const context = dsMockUtils.getContextInstance();
-
-      context.createType.withArgs('DocumentName', value).returns(fakeResult);
-
-      const result = stringToDocumentName(value, context);
-
-      expect(result).toEqual(fakeResult);
-    });
-  });
-
-  describe('documentNameToString', () => {
-    it('should convert a polkadot DocumentName object to a string', () => {
-      const fakeResult = 'someDocumentName';
-      const docName = dsMockUtils.createMockBytes(fakeResult);
-      docName.toString = () => fakeResult;
-
-      const result = documentNameToString(docName);
-      expect(result).toEqual(fakeResult);
-    });
-  });
-});
-
-describe('stringToDocumentUri and documentUriToString', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  describe('stringToDocumentUri', () => {
-    it('should convert a string to a polkadot DocumentUri object', () => {
-      const value = 'someUri';
-      const fakeResult = 'convertedUri' as unknown as DocumentUri;
-      const context = dsMockUtils.getContextInstance();
-
-      context.createType.withArgs('DocumentUri', value).returns(fakeResult);
-
-      const result = stringToDocumentUri(value, context);
-
-      expect(result).toEqual(fakeResult);
-    });
-  });
-
-  describe('documentUriToString', () => {
-    it('documentUriToString should convert a polkadot DocumentUri object to a string', () => {
-      const fakeResult = 'someDocumentUri';
-      const docUri = dsMockUtils.createMockBytes(fakeResult);
-      docUri.toString = () => fakeResult;
-
-      const result = documentUriToString(docUri);
-      expect(result).toEqual(fakeResult);
-    });
-  });
-});
-
 describe('stringToDocumentHash and documentHashToString', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -2772,7 +2685,7 @@ describe('stringToDocumentHash and documentHashToString', () => {
 
       const createTypeStub = context.createType;
 
-      createTypeStub.withArgs('DocumentHash', 'None').returns(fakeResult);
+      createTypeStub.withArgs('PolymeshPrimitivesDocumentHash', 'None').returns(fakeResult);
 
       let result = stringToDocumentHash(undefined, context);
 
@@ -2919,45 +2832,6 @@ describe('stringToDocumentHash and documentHashToString', () => {
   });
 });
 
-describe('stringToDocumentType and documentTypeToString', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  describe('stringToDocumentType', () => {
-    it('should convert a string to a polkadot DocumentType object', () => {
-      const value = 'someType';
-      const fakeResult = 'convertedType' as unknown as DocumentType;
-      const context = dsMockUtils.getContextInstance();
-
-      context.createType.withArgs('DocumentType', value).returns(fakeResult);
-
-      const result = stringToDocumentType(value, context);
-
-      expect(result).toEqual(fakeResult);
-    });
-  });
-
-  describe('documentTypeToString', () => {
-    it('should convert a polkadot DocumentType object to a string', () => {
-      const fakeResult = 'someDocumentType';
-      const docType = dsMockUtils.createMockBytes(fakeResult);
-      docType.toString = () => fakeResult;
-
-      const result = documentTypeToString(docType);
-      expect(result).toEqual(fakeResult);
-    });
-  });
-});
-
 describe('assetDocumentToDocument and documentToAssetDocument', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -2988,8 +2862,8 @@ describe('assetDocumentToDocument and documentToAssetDocument', () => {
 
       context.createType
         .withArgs('PolymeshPrimitivesDocument', {
-          uri: stringToDocumentUri(uri, context),
-          name: stringToDocumentName(name, context),
+          uri: stringToBytes(uri, context),
+          name: stringToBytes(name, context),
           contentHash: stringToDocumentHash(contentHash, context),
           docType: null,
           filingDate: null,
@@ -3001,10 +2875,10 @@ describe('assetDocumentToDocument and documentToAssetDocument', () => {
 
       context.createType
         .withArgs('PolymeshPrimitivesDocument', {
-          uri: stringToDocumentUri(uri, context),
-          name: stringToDocumentName(name, context),
+          uri: stringToBytes(uri, context),
+          name: stringToBytes(name, context),
           contentHash: stringToDocumentHash(contentHash, context),
-          docType: stringToDocumentType(type, context),
+          docType: stringToBytes(type, context),
           filingDate: dateToMoment(filedAt, context),
         })
         .returns(fakeResult);
@@ -3027,8 +2901,8 @@ describe('assetDocumentToDocument and documentToAssetDocument', () => {
       };
 
       let doc = dsMockUtils.createMockDocument({
-        uri: dsMockUtils.createMockDocumentUri(uri),
-        name: dsMockUtils.createMockDocumentName(name),
+        uri: dsMockUtils.createMockBytes(uri),
+        name: dsMockUtils.createMockBytes(name),
         contentHash: dsMockUtils.createMockDocumentHash('None'),
         docType: dsMockUtils.createMockOption(),
         filingDate: dsMockUtils.createMockOption(),
@@ -3045,12 +2919,12 @@ describe('assetDocumentToDocument and documentToAssetDocument', () => {
       };
 
       doc = dsMockUtils.createMockDocument({
-        uri: dsMockUtils.createMockDocumentUri(uri),
-        name: dsMockUtils.createMockDocumentName(name),
+        uri: dsMockUtils.createMockBytes(uri),
+        name: dsMockUtils.createMockBytes(name),
         contentHash: dsMockUtils.createMockDocumentHash({
           H128: dsMockUtils.createMockU8aFixed(contentHash, true),
         }),
-        docType: dsMockUtils.createMockOption(dsMockUtils.createMockDocumentType(type)),
+        docType: dsMockUtils.createMockOption(dsMockUtils.createMockBytes(type)),
         filingDate: dsMockUtils.createMockOption(
           dsMockUtils.createMockMoment(new BigNumber(filedAt.getTime()))
         ),
@@ -3284,7 +3158,7 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
         value: 'SOME_TICKER',
       };
       const fakeResult = 'ScopeEnum' as unknown as MeshScope;
-      const fakeTicker = 'SOME_TICKER' as unknown as Ticker;
+      const fakeTicker = 'SOME_TICKER' as unknown as PolymeshPrimitivesTicker;
 
       context.createType
         .withArgs('PolymeshPrimitivesTicker', padString(value.value, MAX_TICKER_LENGTH))
@@ -4774,7 +4648,7 @@ describe('transactionHexToTxTag', () => {
 
     const context = dsMockUtils.getContextInstance();
 
-    context.createType.withArgs('Proposal', hex).returns(mockResult);
+    context.createType.withArgs('Call', hex).returns(mockResult);
 
     const result = transactionHexToTxTag(hex, context);
     expect(result).toEqual(fakeResult);
