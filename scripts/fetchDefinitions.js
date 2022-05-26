@@ -24,44 +24,40 @@ fs.mkdirSync(generatedDir);
  */
 function transformSchema(schemaObj) {
   let {
-    types: { ComplianceRequirementResult, Condition, TrustedIssuer },
     rpc: { identity, compliance, asset },
   } = schemaObj;
-  identity.getFilteredAuthorizations.params = identity.getFilteredAuthorizations.params.map(p => ({
-    ...p,
-    name: camelCase(p.name),
-  }));
+
+  camelCaseParamNames(identity.getFilteredAuthorizations);
   identity.getFilteredAuthorizations.type = 'Vec<PolymeshPrimitivesAuthorization>';
 
-  compliance.canTransfer.params = compliance.canTransfer.params.map(p => ({
-    ...p,
-    name: camelCase(p.name),
-  }));
-  const newCompliance = mapKeys(ComplianceRequirementResult, (v, k) => camelCase(k));
-  schemaObj.types.ComplianceRequirementResult = newCompliance;
+  camelCaseParamNames(compliance.canTransfer);
 
-  const newCondition = mapKeys(Condition, (v, k) => camelCase(k));
-  newCondition.issuers = 'Vec<PolymeshPrimitivesConditionTrustedIssuer>';
-  schemaObj.types.Condition = newCondition;
+  camelCaseKeys(schemaObj, 'types', 'ComplianceRequirementResult');
 
-  const newTrustedIssuer = mapKeys(TrustedIssuer, (v, k) => camelCase(k));
-  schemaObj.types.TrustedIssuer = newTrustedIssuer;
+  camelCaseKeys(schemaObj, 'types', 'Condition');
+  schemaObj.types.Condition.issuers = 'Vec<PolymeshPrimitivesConditionTrustedIssuer>';
 
-  asset.canTransferGranular.params = asset.canTransferGranular.params.map(p => ({
-    ...p,
-    name: camelCase(p.name),
-  }));
+  camelCaseKeys(schemaObj, 'types', 'TrustedIssuer');
 
+  camelCaseParamNames(asset.canTransferGranular);
   asset.canTransferGranular.params[0].type = 'Option<PolymeshPrimitivesIdentityId>';
   asset.canTransferGranular.params[2].type = 'Option<PolymeshPrimitivesIdentityId>';
 
-  asset.canTransfer.params = asset.canTransfer.params.map(p => ({
+  camelCaseParamNames(asset.canTransfer);
+  asset.canTransfer.params[1].type = 'Option<PolymeshPrimitivesIdentityId>';
+  asset.canTransfer.params[3].type = 'Option<PolymeshPrimitivesIdentityId>';
+}
+
+function camelCaseKeys(schemaObj, section, field) {
+  const newField = mapKeys(schemaObj[section][field], (v, k) => camelCase(k));
+  schemaObj[section][field] = newField;
+}
+
+function camelCaseParamNames(field) {
+  field.params = field.params.map(p => ({
     ...p,
     name: camelCase(p.name),
   }));
-
-  asset.canTransfer.params[1].type = 'Option<PolymeshPrimitivesIdentityId>';
-  asset.canTransfer.params[3].type = 'Option<PolymeshPrimitivesIdentityId>';
 }
 
 function writeDefinitions(schemaObj) {

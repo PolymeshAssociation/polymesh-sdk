@@ -1,10 +1,11 @@
 import { Bytes } from '@polkadot/types';
+import { PolymeshPrimitivesAssetAssetType } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { values } from 'lodash';
 
 import { Asset, Context, PolymeshError, Procedure, TickerReservation } from '~/internal';
-import { AssetType, CustomAssetTypeId } from '~/polkadot/polymesh';
+import { CustomAssetTypeId } from '~/polkadot/polymesh';
 import {
   AssetDocument,
   ErrorCode,
@@ -32,7 +33,7 @@ import { filterEventRecords, optionize } from '~/utils/internal';
  */
 export const createRegisterCustomAssetTypeResolver =
   (context: Context) =>
-  (receipt: ISubmittableResult): AssetType => {
+  (receipt: ISubmittableResult): PolymeshPrimitivesAssetAssetType => {
     const [{ data }] = filterEventRecords(receipt, 'asset', 'CustomAssetTypeRegistered');
 
     return internalAssetTypeToAssetType({ Custom: data[1] }, context);
@@ -141,7 +142,7 @@ export async function prepareCreateAsset(
     });
   }
 
-  let rawType: MaybePostTransactionValue<AssetType>;
+  let rawType: MaybePostTransactionValue<PolymeshPrimitivesAssetAssetType>;
 
   if (customTypeData) {
     const { rawValue, id } = customTypeData;

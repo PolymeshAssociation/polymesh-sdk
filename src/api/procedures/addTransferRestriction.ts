@@ -1,8 +1,11 @@
-import { BTreeSetStatType, BTreeSetTransferCondition } from '@polkadot/types/lookup';
+import {
+  BTreeSetStatType,
+  BTreeSetTransferCondition,
+  PolymeshPrimitivesTransferComplianceTransferCondition,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
-import { TransferCondition } from '~/polkadot/types';
 import {
   CountTransferRestrictionInput,
   ErrorCode,
@@ -46,7 +49,7 @@ export type AddTransferRestrictionParams = { ticker: string } & (
 );
 
 export interface Storage {
-  currentRestrictions: TransferCondition[];
+  currentRestrictions: PolymeshPrimitivesTransferComplianceTransferCondition[];
   currentStats: BTreeSetStatType;
   needStat: boolean;
 }

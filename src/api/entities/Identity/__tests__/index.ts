@@ -2,7 +2,9 @@ import { u64 } from '@polkadot/types';
 import { AccountId, Balance } from '@polkadot/types/interfaces';
 import {
   PolymeshPrimitivesIdentityDidRecord,
+  PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesSecondaryKeyKeyRecord,
+  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import { bool } from '@polkadot/types/primitive';
 import BigNumber from 'bignumber.js';
@@ -10,7 +12,7 @@ import sinon from 'sinon';
 
 import { Asset, Context, Entity, Identity } from '~/internal';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
-import { IdentityId, ScopeId, Ticker } from '~/polkadot/polymesh';
+import { ScopeId } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
 import {
@@ -66,8 +68,8 @@ jest.mock(
 
 describe('Identity class', () => {
   let context: MockContext;
-  let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
-  let identityIdToStringStub: sinon.SinonStub<[IdentityId], string>;
+  let stringToIdentityIdStub: sinon.SinonStub<[string, Context], PolymeshPrimitivesIdentityId>;
+  let identityIdToStringStub: sinon.SinonStub<[PolymeshPrimitivesIdentityId], string>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -342,8 +344,8 @@ describe('Identity class', () => {
   describe('method: getAssetBalance', () => {
     let ticker: string;
     let did: string;
-    let rawTicker: Ticker;
-    let rawIdentityId: IdentityId;
+    let rawTicker: PolymeshPrimitivesTicker;
+    let rawIdentityId: PolymeshPrimitivesIdentityId;
     let fakeValue: BigNumber;
     let fakeBalance: Balance;
     let mockContext: Context;
@@ -628,7 +630,7 @@ describe('Identity class', () => {
     let did: string;
     let venueId: BigNumber;
 
-    let rawDid: IdentityId;
+    let rawDid: PolymeshPrimitivesIdentityId;
     let rawVenueId: u64;
 
     beforeAll(() => {
@@ -700,11 +702,11 @@ describe('Identity class', () => {
     let ticker: string;
     let scopeId: string;
 
-    let rawDid: IdentityId;
-    let rawTicker: Ticker;
+    let rawDid: PolymeshPrimitivesIdentityId;
+    let rawTicker: PolymeshPrimitivesTicker;
     let rawScopeId: ScopeId;
 
-    let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
+    let stringToTickerStub: sinon.SinonStub<[string, Context], PolymeshPrimitivesTicker>;
 
     beforeAll(() => {
       did = 'someDid';

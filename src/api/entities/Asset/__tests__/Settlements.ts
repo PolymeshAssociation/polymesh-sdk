@@ -1,14 +1,10 @@
 import { AccountId, Balance } from '@polkadot/types/interfaces';
+import { PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import sinon, { SinonStub } from 'sinon';
 
 import { Context, Namespace } from '~/internal';
-import {
-  GranularCanTransferResult,
-  IdentityId,
-  PortfolioId as MeshPortfolioId,
-  Ticker,
-} from '~/polkadot/polymesh';
+import { GranularCanTransferResult, PortfolioId as MeshPortfolioId } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -30,7 +26,7 @@ describe('Settlements class', () => {
   let mockAsset: Mocked<Asset>;
   let settlements: Settlements;
   let stringToAccountIdStub: SinonStub<[string, Context], AccountId>;
-  let stringToTickerStub: SinonStub<[string, Context], Ticker>;
+  let stringToTickerStub: SinonStub<[string, Context], PolymeshPrimitivesTicker>;
   let bigNumberToBalanceStub: sinon.SinonStub;
   let portfolioIdToMeshPortfolioIdStub: sinon.SinonStub<[PortfolioId, Context], MeshPortfolioId>;
   let portfolioLikeToPortfolioIdStub: sinon.SinonStub<[PortfolioLike], PortfolioId>;
@@ -38,10 +34,10 @@ describe('Settlements class', () => {
     [PortfolioId, Context],
     DefaultPortfolio | NumberedPortfolio
   >;
-  let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
+  let stringToIdentityIdStub: sinon.SinonStub<[string, Context], PolymeshPrimitivesIdentityId>;
   let rawAccountId: AccountId;
-  let rawTicker: Ticker;
-  let rawToDid: IdentityId;
+  let rawTicker: PolymeshPrimitivesTicker;
+  let rawToDid: PolymeshPrimitivesIdentityId;
   let rawAmount: Balance;
   let statusCode: BigNumber;
   let amount: BigNumber;
@@ -104,7 +100,7 @@ describe('Settlements class', () => {
     let toPortfolioId: PortfolioId;
     let rawFromPortfolio: MeshPortfolioId;
     let rawToPortfolio: MeshPortfolioId;
-    let rawFromDid: IdentityId;
+    let rawFromDid: PolymeshPrimitivesIdentityId;
     let fromPortfolio: entityMockUtils.MockDefaultPortfolio;
     let toPortfolio: entityMockUtils.MockDefaultPortfolio;
 
@@ -211,7 +207,7 @@ describe('Settlements class', () => {
     let toPortfolioId: PortfolioId;
     let rawFromPortfolio: MeshPortfolioId;
     let rawToPortfolio: MeshPortfolioId;
-    let rawFromDid: IdentityId;
+    let rawFromDid: PolymeshPrimitivesIdentityId;
     let fromPortfolio: entityMockUtils.MockDefaultPortfolio;
     let toPortfolio: entityMockUtils.MockDefaultPortfolio;
     let granularCanTransferResultToTransferBreakdownStub: sinon.SinonStub;

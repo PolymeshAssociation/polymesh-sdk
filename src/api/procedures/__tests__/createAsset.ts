@@ -143,14 +143,12 @@ describe('createAsset procedure', () => {
     );
     rawDocuments = documents.map(({ uri, contentHash, name: docName, type, filedAt }) =>
       dsMockUtils.createMockDocument({
-        name: dsMockUtils.createMockDocumentName(docName),
-        uri: dsMockUtils.createMockDocumentUri(uri),
+        name: dsMockUtils.createMockBytes(docName),
+        uri: dsMockUtils.createMockBytes(uri),
         contentHash: dsMockUtils.createMockDocumentHash({
           H128: dsMockUtils.createMockU8aFixed(contentHash),
         }),
-        docType: dsMockUtils.createMockOption(
-          type ? dsMockUtils.createMockDocumentType(type) : null
-        ),
+        docType: dsMockUtils.createMockOption(type ? dsMockUtils.createMockBytes(type) : null),
         filingDate: dsMockUtils.createMockOption(
           filedAt ? dsMockUtils.createMockMoment(new BigNumber(filedAt.getTime())) : null
         ),

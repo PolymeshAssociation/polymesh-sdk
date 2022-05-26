@@ -15,6 +15,7 @@ import {
   PolymeshPrimitivesCondition,
   PolymeshPrimitivesConditionTrustedIssuer,
   PolymeshPrimitivesDocument,
+  PolymeshPrimitivesDocumentHash,
   PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesSecondaryKeyPermissions,
@@ -95,9 +96,6 @@ import {
   ComplianceRequirementResult,
   ConditionType as MeshConditionType,
   DocumentHash,
-  DocumentName,
-  DocumentType,
-  DocumentUri,
   EcdsaSignature,
   FundraiserTier,
   GranularCanTransferResult,
@@ -1663,51 +1661,12 @@ export function assetIdentifierToSecurityIdentifier(
 /**
  * @hidden
  */
-export function stringToDocumentName(docName: string, context: Context): DocumentName {
-  return context.createType('DocumentName', docName);
-}
-
-/**
- * @hidden
- */
-export function documentNameToString(docName: Bytes): string {
-  return docName.toString();
-}
-
-/**
- * @hidden
- */
-export function stringToDocumentType(docType: string, context: Context): DocumentType {
-  return context.createType('DocumentType', docType);
-}
-
-/**
- * @hidden
- */
-export function documentTypeToString(docType: Bytes): string {
-  return docType.toString();
-}
-
-/**
- * @hidden
- */
-export function stringToDocumentUri(docUri: string, context: Context): DocumentUri {
-  return context.createType('DocumentUri', docUri);
-}
-
-/**
- * @hidden
- */
-export function documentUriToString(docUri: Bytes): string {
-  return docUri.toString();
-}
-
-/**
- * @hidden
- */
-export function stringToDocumentHash(docHash: string | undefined, context: Context): DocumentHash {
+export function stringToDocumentHash(
+  docHash: string | undefined,
+  context: Context
+): PolymeshPrimitivesDocumentHash {
   if (docHash === undefined) {
-    return context.createType('DocumentHash', 'None');
+    return context.createType('PolymeshPrimitivesDocumentHash', 'None');
   }
 
   if (!isHex(docHash, -1, true)) {
@@ -1788,10 +1747,10 @@ export function assetDocumentToDocument(
   context: Context
 ): PolymeshPrimitivesDocument {
   return context.createType('PolymeshPrimitivesDocument', {
-    uri: stringToDocumentUri(uri, context),
-    name: stringToDocumentName(name, context),
+    uri: stringToBytes(uri, context),
+    name: stringToBytes(name, context),
     contentHash: stringToDocumentHash(contentHash, context),
-    docType: optionize(stringToDocumentType)(type, context),
+    docType: optionize(stringToBytes)(type, context),
     filingDate: optionize(dateToMoment)(filedAt, context),
   });
 }
@@ -1811,8 +1770,8 @@ export function documentToAssetDocument({
   const contentHash = documentHashToString(hash);
 
   let doc: AssetDocument = {
-    uri: documentUriToString(uri),
-    name: documentNameToString(name),
+    uri: bytesToString(uri),
+    name: bytesToString(name),
   };
 
   if (contentHash) {
@@ -1824,7 +1783,7 @@ export function documentToAssetDocument({
   }
 
   if (type) {
-    doc = { ...doc, type: documentTypeToString(type) };
+    doc = { ...doc, type: bytesToString(type) };
   }
 
   return doc;
@@ -2256,14 +2215,17 @@ export function requirementToComplianceRequirement(
 
     const { target, trustedClaimIssuers = [] } = condition;
 
-    const meshCondition = context.createType('PolymeshPrimitivesCondition', {
-      conditionType: {
-        [type]: conditionContent,
-      },
-      issuers: trustedClaimIssuers.map(issuer =>
-        trustedClaimIssuerToTrustedIssuer(issuer, context)
-      ),
-    });
+    const meshCondition = context.createType<PolymeshPrimitivesCondition>(
+      'PolymeshPrimitivesCondition',
+      {
+        conditionType: {
+          [type]: conditionContent,
+        },
+        issuers: trustedClaimIssuers.map(issuer =>
+          trustedClaimIssuerToTrustedIssuer(issuer, context)
+        ),
+      }
+    );
 
     if ([ConditionTarget.Both, ConditionTarget.Receiver].includes(target)) {
       receiverConditions.push(meshCondition);
@@ -2568,7 +2530,7 @@ export function addressToKey(address: string, context: Context): string {
  * @hidden
  */
 export function transactionHexToTxTag(bytes: string, context: Context): TxTag {
-  const { section, method } = context.createType('Proposal', bytes);
+  const { section, method } = context.createType('Call', bytes);
 
   return extrinsicIdentifierToTxTag({
     moduleId: section.toLowerCase() as ModuleIdEnum,
