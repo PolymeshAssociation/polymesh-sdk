@@ -60,6 +60,7 @@ import {
   PolymeshPrimitivesIdentity,
   PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityId,
+  PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesSecondaryKeyPalletPermissions,
   PolymeshPrimitivesSecondaryKeyPermissions,
   PolymeshPrimitivesStatisticsStat2ndKey,
@@ -68,6 +69,7 @@ import {
   PolymeshPrimitivesStatisticsStatUpdate,
   PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions,
   PolymeshPrimitivesTicker,
+  PolymeshPrimitivesTransferComplianceTransferCondition,
 } from '@polkadot/types/lookup';
 import {
   Codec,
@@ -1849,12 +1851,12 @@ export const createMockPortfolioKind = (
  */
 export const createMockPortfolioId = (
   portfolioId?:
-    | PortfolioId
+    | PolymeshPrimitivesIdentityIdPortfolioId
     | {
         did: PolymeshPrimitivesIdentityId | Parameters<typeof createMockIdentityId>[0];
         kind: PortfolioKind | Parameters<typeof createMockPortfolioKind>[0];
       }
-): PortfolioId => {
+): PolymeshPrimitivesIdentityIdPortfolioId => {
   const { did, kind } = portfolioId || {
     did: createMockIdentityId(),
     kind: createMockPortfolioKind(),
@@ -1865,7 +1867,7 @@ export const createMockPortfolioId = (
       kind: createMockPortfolioKind(kind),
     },
     !portfolioId
-  ) as PortfolioId;
+  ) as PolymeshPrimitivesIdentityIdPortfolioId;
 };
 
 /**
@@ -2943,11 +2945,11 @@ export const createMockTransferCondition = (
     | { MaxInvestorCount: u64 }
     | { MaxInvestorOwnership: Permill }
     | TransferCondition
-): TransferCondition => {
-  if (isCodec<TransferCondition>(transferCondition)) {
+): PolymeshPrimitivesTransferComplianceTransferCondition => {
+  if (isCodec<PolymeshPrimitivesTransferComplianceTransferCondition>(transferCondition)) {
     return transferCondition;
   }
-  return createMockEnum(transferCondition) as TransferCondition;
+  return createMockEnum(transferCondition) as PolymeshPrimitivesTransferComplianceTransferCondition;
 };
 
 /**

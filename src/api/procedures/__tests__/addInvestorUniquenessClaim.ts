@@ -1,13 +1,15 @@
-import { ConfidentialIdentityClaimProofsScopeClaimProof } from '@polkadot/types/lookup';
+import {
+  ConfidentialIdentityClaimProofsScopeClaimProof,
+  PolymeshPrimitivesIdentityId,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import {
   Claim as MeshClaim,
-  IdentityId,
   InvestorZKProofData,
   Moment,
   Scope as MeshScope,
   ScopeId,
-  Ticker,
   TxTags,
 } from 'polymesh-types/types';
 import sinon from 'sinon';
@@ -39,7 +41,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
   let blindedScopeDidHash: string;
   let scopeClaimProof: ScopeClaimProof;
   let expiry: Date;
-  let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
+  let stringToIdentityIdStub: sinon.SinonStub<[string, Context], PolymeshPrimitivesIdentityId>;
   let claimToMeshClaimStub: sinon.SinonStub<[Claim, Context], MeshClaim>;
   let stringToInvestorZkProofDataStub: sinon.SinonStub<[string, Context], InvestorZKProofData>;
   let scopeClaimProofToMeshScopeClaimProofStub: sinon.SinonStub<
@@ -49,8 +51,8 @@ describe('addInvestorUniquenessClaim procedure', () => {
   let scopeToMeshScopeStub: sinon.SinonStub<[Scope, Context], MeshScope>;
   let stringToScopeIdStub: sinon.SinonStub<[string, Context], ScopeId>;
   let dateToMomentStub: sinon.SinonStub<[Date, Context], Moment>;
-  let rawDid: IdentityId;
-  let rawTicker: Ticker;
+  let rawDid: PolymeshPrimitivesIdentityId;
+  let rawTicker: PolymeshPrimitivesTicker;
   let rawScope: MeshScope;
   let rawScopeId: ScopeId;
   let rawClaim: MeshClaim;

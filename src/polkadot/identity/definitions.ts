@@ -52,7 +52,7 @@ export default {
           isOptional: true,
         },
       ],
-      type: 'DidRecords',
+      type: 'RpcDidRecords',
     },
     getDidStatus: {
       description: 'Retrieve status of the DID',

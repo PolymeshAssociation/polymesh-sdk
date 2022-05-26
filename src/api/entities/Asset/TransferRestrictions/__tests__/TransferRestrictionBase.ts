@@ -1,3 +1,4 @@
+import { PolymeshPrimitivesTransferComplianceTransferCondition } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
@@ -11,7 +12,6 @@ import {
   SetPercentageTransferRestrictionsParams,
   TransactionQueue,
 } from '~/internal';
-import { TransferCondition } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   CountTransferRestriction,
@@ -259,8 +259,8 @@ describe('TransferRestrictionBase class', () => {
     let scopeId: string;
     let countRestriction: CountTransferRestriction;
     let percentageRestriction: PercentageTransferRestriction;
-    let rawCountRestriction: TransferCondition;
-    let rawPercentageRestriction: TransferCondition;
+    let rawCountRestriction: PolymeshPrimitivesTransferComplianceTransferCondition;
+    let rawPercentageRestriction: PolymeshPrimitivesTransferComplianceTransferCondition;
 
     beforeAll(() => {
       scopeId = 'someScopeId';

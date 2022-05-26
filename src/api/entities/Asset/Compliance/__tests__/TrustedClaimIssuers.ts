@@ -1,4 +1,7 @@
-import { PolymeshPrimitivesConditionTrustedIssuer } from '@polkadot/types/lookup';
+import {
+  PolymeshPrimitivesConditionTrustedIssuer,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import sinon from 'sinon';
 
 import {
@@ -8,7 +11,6 @@ import {
   Namespace,
   TransactionQueue,
 } from '~/internal';
-import { Ticker } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { TrustedClaimIssuerOperation } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -162,7 +164,7 @@ describe('TrustedClaimIssuers class', () => {
 
   describe('method: get', () => {
     let ticker: string;
-    let rawTicker: Ticker;
+    let rawTicker: PolymeshPrimitivesTicker;
     let stringToTickerStub: sinon.SinonStub;
     let context: Context;
     let asset: Asset;

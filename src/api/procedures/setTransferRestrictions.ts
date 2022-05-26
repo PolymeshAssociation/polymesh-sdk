@@ -329,7 +329,9 @@ export async function prepareStorage(
     });
   }
 
-  const transformRestriction = (restriction: TransferRestriction): TransferCondition =>
+  const transformRestriction = (
+    restriction: TransferRestriction
+  ): PolymeshPrimitivesTransferComplianceTransferCondition =>
     transferRestrictionToPolymeshTransferCondition(restriction, context);
 
   return {

@@ -9,9 +9,10 @@ import {
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesStatisticsStatUpdate,
   PolymeshPrimitivesTicker,
+  PolymeshPrimitivesTransferComplianceTransferCondition,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { ScopeId, TransferCondition } from 'polymesh-types/types';
+import { ScopeId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -41,7 +42,7 @@ describe('addTransferRestriction procedure', () => {
   let mockContext: Mocked<Context>;
   let transferRestrictionToTransferRestrictionStub: sinon.SinonStub<
     [TransferRestriction, Context],
-    TransferCondition
+    PolymeshPrimitivesTransferComplianceTransferCondition
   >;
   let stringToTickerKeyStub: sinon.SinonStub<[string, Context], TickerKey>;
   let statisticsOpTypeToStatOpType: sinon.SinonStub<
@@ -69,8 +70,8 @@ describe('addTransferRestriction procedure', () => {
   let rawTicker: PolymeshPrimitivesTicker;
   let rawCount: u64;
   let rawPercentage: Permill;
-  let rawCountCondition: TransferCondition;
-  let rawPercentageCondition: TransferCondition;
+  let rawCountCondition: PolymeshPrimitivesTransferComplianceTransferCondition;
+  let rawPercentageCondition: PolymeshPrimitivesTransferComplianceTransferCondition;
   let args: AddTransferRestrictionParams;
   let rawOp: PolymeshPrimitivesStatisticsStatOpType;
   let rawStatType: PolymeshPrimitivesStatisticsStatType;
@@ -78,10 +79,12 @@ describe('addTransferRestriction procedure', () => {
   let rawStatUpdate: PolymeshPrimitivesStatisticsStatUpdate;
 
   let addBatchTransactionStub: sinon.SinonStub;
-  let setAssetTransferCompliance: PolymeshTx<[PolymeshPrimitivesTicker, TransferCondition]>;
+  let setAssetTransferCompliance: PolymeshTx<
+    [PolymeshPrimitivesTicker, PolymeshPrimitivesTransferComplianceTransferCondition]
+  >;
   let setActiveAssetStats: PolymeshTx<[PolymeshPrimitivesTicker, BTreeSetStatType]>;
   let addExemptedEntitiesTransaction: PolymeshTx<
-    [PolymeshPrimitivesTicker, TransferCondition, ScopeId[]]
+    [PolymeshPrimitivesTicker, PolymeshPrimitivesTransferComplianceTransferCondition, ScopeId[]]
   >;
   let batchUpdateAssetStatsTransaction: PolymeshTx<
     [PolymeshPrimitivesTicker, PolymeshPrimitivesStatisticsStatType, BTreeSetStatUpdate[]]

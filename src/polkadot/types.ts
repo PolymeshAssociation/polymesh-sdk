@@ -76,6 +76,10 @@ export enum IdentityTx {
   AddInvestorUniquenessClaimV2 = 'identity.addInvestorUniquenessClaimV2',
   RevokeClaimByIndex = 'identity.revokeClaimByIndex',
   RotatePrimaryKeyToSecondary = 'identity.rotatePrimaryKeyToSecondary',
+  RemoveSecondaryKeysOld = 'identity.removeSecondaryKeysOld',
+  PlaceholderLegacySetPermissionToSigner = 'identity.placeholderLegacySetPermissionToSigner',
+  AddSecondaryKeysWithAuthorizationOld = 'identity.addSecondaryKeysWithAuthorizationOld',
+  SetSecondaryKeyPermissions = 'identity.setSecondaryKeyPermissions',
 }
 
 export enum CddServiceProvidersTx {
@@ -444,6 +448,23 @@ export enum TestUtilsTx {
   GetCddOf = 'testUtils.getCddOf',
 }
 
+export enum PolymeshContractsTx {
+  Call = 'polymeshContracts.call',
+  InstantiateWithCode = 'polymeshContracts.instantiateWithCode',
+  Instantiate = 'polymeshContracts.instantiate',
+  UploadCode = 'polymeshContracts.uploadCode',
+  RemoveCode = 'polymeshContracts.removeCode',
+  InstantiateWithCodePerms = 'polymeshContracts.instantiateWithCodePerms',
+  InstantiateWithHashPerms = 'polymeshContracts.instantiateWithHashPerms',
+}
+
+export enum PreimageTx {
+  NotePreimage = 'preimage.notePreimage',
+  UnnotePreimage = 'preimage.unnotePreimage',
+  RequestPreimage = 'preimage.requestPreimage',
+  UnrequestPreimage = 'preimage.unrequestPreimage',
+}
+
 export enum ModuleName {
   System = 'system',
   Babe = 'babe',
@@ -485,6 +506,8 @@ export enum ModuleName {
   Relayer = 'relayer',
   Rewards = 'rewards',
   TestUtils = 'testUtils',
+  PolymeshContracts = 'polymeshContracts',
+  Preimage = 'preimage',
 }
 
 export type TxTag =
@@ -527,7 +550,9 @@ export type TxTag =
   | ExternalAgentsTx
   | RelayerTx
   | RewardsTx
-  | TestUtilsTx;
+  | TestUtilsTx
+  | PolymeshContractsTx
+  | PreimageTx;
 
 export const TxTags = {
   system: SystemTx,
@@ -570,4 +595,6 @@ export const TxTags = {
   relayer: RelayerTx,
   rewards: RewardsTx,
   testUtils: TestUtilsTx,
+  polymeshContracts: PolymeshContractsTx,
+  preimage: PreimageTx,
 };

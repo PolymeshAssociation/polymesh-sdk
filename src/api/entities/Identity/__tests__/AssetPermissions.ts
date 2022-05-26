@@ -1,10 +1,10 @@
+import { PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Context, Identity, KnownPermissionGroup, Namespace, TransactionQueue } from '~/internal';
 import { eventByIndexedArgs, tickerExternalAgentActions } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
-import { IdentityId, Ticker } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Asset, PermissionGroupType, PermissionType, TxTags } from '~/types';
@@ -390,8 +390,8 @@ describe('AssetPermissions class', () => {
   });
 
   describe('method: get', () => {
-    let rawDid: IdentityId;
-    let rawTicker: Ticker;
+    let rawDid: PolymeshPrimitivesIdentityId;
+    let rawTicker: PolymeshPrimitivesTicker;
     let stringToIdentityIdStub: sinon.SinonStub;
 
     beforeAll(() => {
