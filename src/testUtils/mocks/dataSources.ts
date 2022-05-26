@@ -117,9 +117,6 @@ import {
   DispatchableName,
   DispatchableNames,
   DocumentHash,
-  DocumentName,
-  DocumentType,
-  DocumentUri,
   EcdsaSignature,
   EthereumAddress,
   ExtrinsicPermissions,
@@ -446,6 +443,7 @@ const defaultReceipt: ISubmittableResult = {
   isWarning: false,
   events: [],
   txHash: '0x123' as unknown as Hash,
+  txIndex: 1,
   toHuman: () => ({}),
 };
 
@@ -1620,20 +1618,6 @@ export const createMockBalance = (balance?: BigNumber | Balance): Balance => {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockDocumentName = (name?: string): DocumentName =>
-  createMockStringCodec(name) as DocumentName;
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockDocumentUri = (uri?: string): DocumentUri =>
-  createMockStringCodec(uri) as DocumentUri;
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
 export const createMockDocumentHash = (
   hash?:
     | 'None'
@@ -1652,13 +1636,6 @@ export const createMockDocumentHash = (
   }
   return createMockEnum(hash) as DocumentHash;
 };
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockDocumentType = (name?: string): DocumentType =>
-  createMockStringCodec(name) as DocumentType;
 
 /**
  * @hidden
@@ -1954,16 +1931,16 @@ export const createMockSecurityToken = (token?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockDocument = (document?: {
-  uri: DocumentUri;
+  uri: Bytes;
   contentHash: DocumentHash;
-  name: DocumentName;
-  docType: Option<DocumentType>;
+  name: Bytes;
+  docType: Option<Bytes>;
   filingDate: Option<Moment>;
 }): PolymeshPrimitivesDocument => {
   const doc = document || {
-    uri: createMockDocumentUri(),
+    uri: createMockBytes(),
     content_hash: createMockDocumentHash(),
-    name: createMockDocumentName(),
+    name: createMockBytes(),
     docType: createMockOption(),
     filingDate: createMockOption(),
   };
