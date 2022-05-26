@@ -324,7 +324,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     const {
       context: {
         polymeshApi: {
-          query: { identity },
+          query: { identity, multiSig },
         },
       },
       context,
@@ -345,8 +345,9 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     } else if (keyRecord.isSecondaryKey) {
       did = identityIdToString(keyRecord.asSecondaryKey[0]);
     } else if (keyRecord.isMultiSigSignerKey) {
-      // TODO we probably need a second call for the multiSig identity now
-      did = identityIdToString(keyRecord.asMultiSigSignerKey);
+      const multiSigAddress = keyRecord.asMultiSigSignerKey;
+      const rawMultiSigDid = await multiSig.multiSigToIdentity(multiSigAddress);
+      did = identityIdToString(rawMultiSigDid);
     } else {
       throw new PolymeshError({
         code: ErrorCode.FatalError,
@@ -354,8 +355,6 @@ export class Account extends Entity<UniqueIdentifiers, string> {
           'Unrecognized `identity.keyRecords` result. Try upgrading the SDK to the latest version and contact the Polymath team if the problem persists',
       });
     }
-
-    // TODO this needs to be checked for safety
 
     return new Identity({ did }, context);
   }

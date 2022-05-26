@@ -727,23 +727,21 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       }, [] as PermissionedAccount[]);
     };
 
-    // if (callback) {
-    // TODO handle call back
-    // }
-
     // TODO should use pagination
     const keys = await identity.didKeys.entries(did);
 
     const identityKeys = keys.map(([key]) => {
-      const [, value] = key.args; // this will have the primary key
+      const [, value] = key.args;
       return value;
     });
 
-    const rawPermissions = await Promise.all(
-      identityKeys.map(k => {
-        return identity.keyRecords(k);
-      })
-    );
+    if (callback) {
+      return identity.keyRecords.multi(identityKeys, result =>
+        callback(assembleResult(result, identityKeys))
+      );
+    }
+
+    const rawPermissions = await identity.keyRecords.multi(identityKeys);
 
     return assembleResult(rawPermissions, identityKeys);
   }
