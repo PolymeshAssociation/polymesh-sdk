@@ -707,11 +707,11 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const assembleResult = (
       rawSecondaryKeyKeyRecord: Option<PolymeshPrimitivesSecondaryKeyKeyRecord>[],
-      identityKeys: AccountId32[]
+      accountIds: AccountId32[]
     ): PermissionedAccount[] => {
       return rawSecondaryKeyKeyRecord.reduce((answer, optKeyRecord, index) => {
         if (optKeyRecord.isSome) {
-          const account = accountIdToAccount(identityKeys[index], context);
+          const account = accountIdToAccount(accountIds[index], context);
           const keyRecord = optKeyRecord.unwrap();
 
           if (keyRecord.isSecondaryKey) {

@@ -11,7 +11,7 @@ import { bool } from '@polkadot/types/primitive';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Asset, Context, Entity, Identity } from '~/internal';
+import { Asset, Context, Entity, Identity, PolymeshError } from '~/internal';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import { ScopeId } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -24,6 +24,7 @@ import {
 import {
   Account,
   DistributionWithDetails,
+  ErrorCode,
   IdentityRole,
   Order,
   PermissionedAccount,
@@ -519,11 +520,9 @@ describe('Identity class', () => {
 
     beforeEach(() => {
       didRecordsStub = dsMockUtils.createQueryStub('identity', 'didRecords');
-      /* eslint-disable @typescript-eslint/naming-convention */
       rawDidRecord = dsMockUtils.createMockIdentityDidRecord({
         primaryKey: dsMockUtils.createMockOption(dsMockUtils.createMockAccountId(accountId)),
       });
-      /* eslint-enable @typescript-eslint/naming-convention */
 
       const account = expect.objectContaining({ address: accountId });
 
@@ -554,6 +553,26 @@ describe('Identity class', () => {
           transactionGroups: [],
         },
       });
+    });
+
+    it('should throw if there is no primary key', () => {
+      const mockContext = dsMockUtils.getContextInstance();
+      const identity = new Identity({ did }, mockContext);
+
+      didRecordsStub.returns(
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockIdentityDidRecord({
+            primaryKey: dsMockUtils.createMockOption(),
+          })
+        )
+      );
+      const expectedError = new PolymeshError({
+        code: ErrorCode.FatalError,
+        message:
+          'The primary key record was None when expecting Some. Please report the issue to the Polymath team',
+      });
+
+      return expect(identity.getPrimaryAccount()).rejects.toThrowError(expectedError);
     });
 
     it('should allow subscription', async () => {

@@ -433,12 +433,10 @@ export async function assertMultiSigSignerAuthorizationValid(
         });
       }
 
-      if (record.isMultiSigSignerKey) {
-        throw new PolymeshError({
-          code: ErrorCode.ValidationError,
-          message: 'The target Account is already associated to a multisig address',
-        });
-      }
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'The target Account is already associated to a multisig address',
+      });
     }
   }
 }
