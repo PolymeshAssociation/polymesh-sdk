@@ -62,8 +62,8 @@ import { HumanReadableType, ProcedureFunc, UnionOfProcedureFuncs } from '~/types
 import {
   DEFAULT_GQL_PAGE_SIZE,
   STATE_RUNTIME_VERSION_CALL,
+  SUPPORTED_NODE_VERSION_RANGE,
   SUPPORTED_SPEC_VERSION_RANGE,
-  SUPPORTED_SYSTEM_VERSION_RANGE,
   SYSTEM_VERSION_RPC_CALL,
 } from '~/utils/constants';
 import { middlewareScopeToScope, signerToString, u64ToBigNumber } from '~/utils/conversion';
@@ -994,6 +994,100 @@ export async function getExemptedIds(
 /**
  * @hidden
  *
+ * @returns true if the node version is within the accepted range
+ */
+function handleNodeVersionResponse(
+  data: { result: string },
+  reject: (reason?: unknown) => void
+): boolean {
+  const { result: version } = data;
+
+  if (!satisfies(version, SUPPORTED_NODE_VERSION_RANGE)) {
+    const error = new PolymeshError({
+      code: ErrorCode.FatalError,
+      message: 'Unsupported Polymesh RPC node version. Please upgrade the SDK',
+      data: {
+        rpcNodeVersion: version,
+        supportedVersionRange: SUPPORTED_NODE_VERSION_RANGE,
+      },
+    });
+
+    reject(error);
+
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * @hidden
+ *
+ * Add a dot to a number every three digits from right to left
+ */
+function addDotSeparator(value: number): string {
+  let result = '';
+
+  value
+    .toString()
+    .split('')
+    .reverse()
+    .forEach((char, index) => {
+      if ((index + 1) % 3 === 1 && index !== 0) {
+        result = `.${result}`;
+      }
+
+      result = `${char}${result}`;
+    });
+
+  return result;
+}
+
+/**
+ * @hidden
+ *
+ * @returns true if the spec version is within the accepted range
+ */
+function handleSpecVersionResponse(
+  data: { result: { specVersion: number } },
+  reject: (reason?: unknown) => void
+): boolean {
+  const {
+    result: { specVersion },
+  } = data;
+
+  /*
+   * the spec version number comes as a single number (i.e. 5000000). It should be parsed as xxx_yyy_zzz
+   * where xxx is the major version, yyy is the minor version, and zzz is the patch version. So for example, 5001023
+   * would be version 5.1.23
+   */
+  const specVersionAsSemver = addDotSeparator(specVersion)
+    .split('.')
+    // remove leading zeroes, for example 020 becomes 20, 000 becomes 0
+    .map((ver: string) => ver.replace(/^0+(?!$)/g, ''))
+    .join('.');
+
+  if (!satisfies(specVersionAsSemver, SUPPORTED_SPEC_VERSION_RANGE)) {
+    const error = new PolymeshError({
+      code: ErrorCode.FatalError,
+      message: 'Unsupported Polymesh chain spec version. Please upgrade the SDK',
+      data: {
+        specVersion: specVersionAsSemver,
+        supportedVersionRange: SUPPORTED_SPEC_VERSION_RANGE,
+      },
+    });
+
+    reject(error);
+
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * @hidden
+ *
  * Checks chain version. This function uses a websocket as it's intended to be called during initialization
  * @param nodeUrl - URL for the chain node
  * @returns A promise that resolves if the version is in the expected range, otherwise it will reject
@@ -1003,13 +1097,11 @@ export function assertExpectedChainVersion(nodeUrl: string): Promise<void> {
     const client = new W3CWebSocket(nodeUrl);
 
     client.onopen = () => {
-      const chainVersionMsg = SYSTEM_VERSION_RPC_CALL;
-      const runtimeVersionMsg = STATE_RUNTIME_VERSION_CALL;
-      client.send(JSON.stringify(chainVersionMsg));
-      client.send(JSON.stringify(runtimeVersionMsg));
+      client.send(JSON.stringify(SYSTEM_VERSION_RPC_CALL));
+      client.send(JSON.stringify(STATE_RUNTIME_VERSION_CALL));
     };
 
-    let systemVersionFetched: boolean;
+    let nodeVersionFetched: boolean;
     let specVersionFetched: boolean;
 
     client.onmessage = msg => {
@@ -1017,60 +1109,14 @@ export function assertExpectedChainVersion(nodeUrl: string): Promise<void> {
       const { id } = data;
 
       if (id === SYSTEM_VERSION_RPC_CALL.id) {
-        const { result: version } = data;
-
-        if (!satisfies(version, SUPPORTED_SYSTEM_VERSION_RANGE)) {
-          const error = new PolymeshError({
-            code: ErrorCode.FatalError,
-            message: 'Unsupported Polymesh RPC node version. Please upgrade the SDK',
-            data: {
-              rpcNodeVersion: version,
-              supportedVersionRange: SUPPORTED_SYSTEM_VERSION_RANGE,
-            },
-          });
-          reject(error);
-        } else {
-          systemVersionFetched = true;
-        }
+        nodeVersionFetched = handleNodeVersionResponse(data, reject);
+      } else {
+        specVersionFetched = handleSpecVersionResponse(data, reject);
       }
 
-      if (id === STATE_RUNTIME_VERSION_CALL.id) {
-        const {
-          result: { specVersion },
-        } = data;
-
-        /*
-         * the spec version number comes as a single number (i.e. 5000000). It should be parsed as xxx_yyy_zzz
-         * where xxx is the major version, yyy is the minor version, and zzz is the patch version. So for example, 5001023
-         * would be version 5.1.23
-         */
-        const specVersionAsSemver = specVersion
-          .toString()
-          // add dot separator every three digits
-          .replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.')
-          .split('.')
-          // remove leading zeroes, for example 020 becomes 20, 000 becomes 0
-          .map((ver: string) => ver.replace(/^0+(?!$)/g, ''))
-          .join('.');
-
-        if (!satisfies(specVersionAsSemver, SUPPORTED_SPEC_VERSION_RANGE)) {
-          const error = new PolymeshError({
-            code: ErrorCode.FatalError,
-            message: 'Unsupported Polymesh chain spec version. Please upgrade the SDK',
-            data: {
-              specVersion: specVersionAsSemver,
-              supportedVersionRange: SUPPORTED_SPEC_VERSION_RANGE,
-            },
-          });
-          reject(error);
-        } else {
-          specVersionFetched = true;
-        }
-
-        if (systemVersionFetched && specVersionFetched) {
-          client.close();
-          resolve();
-        }
+      if (nodeVersionFetched && specVersionFetched) {
+        client.close();
+        resolve();
       }
     };
 

@@ -8,7 +8,7 @@ import { heartbeat } from '~/middleware/queries';
 import { Polymesh } from '~/Polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { ErrorCode } from '~/types';
-import { SUPPORTED_SPEC_VERSION_RANGE, SUPPORTED_SYSTEM_VERSION_RANGE } from '~/utils/constants';
+import { SUPPORTED_NODE_VERSION_RANGE } from '~/utils/constants';
 import * as internalUtils from '~/utils/internal';
 
 jest.mock(
@@ -128,7 +128,7 @@ describe('Polymesh Class', () => {
       const error = new PolymeshError({
         code: ErrorCode.FatalError,
         message: 'Unsupported Polymesh RPC node version. Please upgrade the SDK',
-        data: { supportedVersionRange: SUPPORTED_SYSTEM_VERSION_RANGE },
+        data: { supportedVersionRange: SUPPORTED_NODE_VERSION_RANGE },
       });
       versionStub.rejects(error);
 

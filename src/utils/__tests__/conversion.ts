@@ -7365,7 +7365,7 @@ describe('agentGroupToPermissionGroup', () => {
   });
 
   describe('createStat2ndKey', () => {
-    it('should return a NoClaimStat 2ndkey', () => {
+    it('should return a NoClaimStat 2nd key', () => {
       const context = dsMockUtils.getContextInstance();
 
       context.createType
