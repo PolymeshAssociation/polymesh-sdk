@@ -3416,3 +3416,10 @@ export function complianceRequirementsToBtreeSet(
   const sorted = [...conditions].sort();
   return context.createType('BTreeSetTransferCondition', sorted);
 }
+
+/**
+ * @hidden
+ */
+export function toExemptKey(tickerKey: TickerKey, op: PolymeshPrimitivesStatisticsStatOpType) {
+  return { asset: tickerKey, op };
+}

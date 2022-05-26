@@ -26,6 +26,7 @@ import {
   statUpdatesToBtreeStatUpdate,
   stringToIdentityId,
   stringToTickerKey,
+  toExemptKey,
   transferRestrictionToPolymeshTransferCondition,
   u32ToBigNumber,
   u64ToBigNumber,
@@ -166,11 +167,12 @@ export async function prepareAddTransferRestriction(
     const exemptedIds = await getExemptedIds(exemptedIdentities, context, ticker);
     const exemptedScopeIds = exemptedIds.map(entityId => stringToIdentityId(entityId, context));
     const btreeIds = scopeIdsToBtreeSetIdentityId(exemptedScopeIds, context);
+    const exemptKey = toExemptKey(tickerKey, op);
     transactions.push(
       checkTxType({
         transaction: statistics.setEntitiesExempt,
         feeMultiplier: new BigNumber(exemptedIds.length),
-        args: [true, { asset: tickerKey, op }, btreeIds],
+        args: [true, exemptKey, btreeIds],
       })
     );
   }
