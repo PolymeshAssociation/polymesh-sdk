@@ -3,7 +3,7 @@ import {
   PolymeshPrimitivesTransferComplianceTransferCondition,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { TransferCondition, TxTag, TxTags } from 'polymesh-types/types';
+import { TransferCondition } from 'polymesh-types/types';
 
 import { Asset, Context, Identity, PolymeshError, Procedure } from '~/internal';
 import {
@@ -12,6 +12,8 @@ import {
   PercentageTransferRestrictionInput,
   TransferRestriction,
   TransferRestrictionType,
+  TxTag,
+  TxTags,
 } from '~/types';
 import { ProcedureAuthorization, StatisticsOpType } from '~/types/internal';
 import {
@@ -27,6 +29,7 @@ import {
   statUpdatesToBtreeStatUpdate,
   stringToIdentityId,
   stringToTickerKey,
+  toExemptKey,
   transferRestrictionToPolymeshTransferCondition,
   u32ToBigNumber,
   u64ToBigNumber,
@@ -101,10 +104,10 @@ function transformRestrictions(
   const conditions: PolymeshPrimitivesTransferComplianceTransferCondition[] = [];
   restrictions.forEach(r => {
     let value: BigNumber;
-    if (type === TransferRestrictionType.Count) {
-      value = (r as CountTransferRestrictionInput).count;
+    if ('count' in r) {
+      value = r.count;
     } else {
-      value = (r as PercentageTransferRestrictionInput).percentage;
+      value = r.percentage;
     }
 
     const compareConditions = (transferCondition: TransferCondition) =>
@@ -230,11 +233,12 @@ export async function prepareSetTransferRestrictions(
     const exemptedIds = await getExemptedIds(exemptions, context, ticker);
     const exemptedScopeIds = exemptedIds.map(entityId => stringToIdentityId(entityId, context));
     const btreeIds = scopeIdsToBtreeSetIdentityId(exemptedScopeIds, context);
+    const exemptKey = toExemptKey(tickerKey, op);
     transactions.push(
       checkTxType({
         transaction: statistics.setEntitiesExempt,
         feeMultiplier: new BigNumber(exemptions.length),
-        args: [true, { asset: tickerKey, op }, btreeIds],
+        args: [true, exemptKey, btreeIds],
       })
     );
   }
