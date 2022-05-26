@@ -1,4 +1,5 @@
-import { u64 } from '@polkadot/types';
+import { Option, u64 } from '@polkadot/types';
+import { AccountId32 } from '@polkadot/types/interfaces';
 import {
   PolymeshPrimitivesIdentityDidRecord,
   PolymeshPrimitivesSecondaryKeyKeyRecord,
@@ -43,6 +44,7 @@ import {
 } from '~/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
+  accountIdToAccount,
   accountIdToString,
   balanceToBigNumber,
   boolToBoolean,
@@ -54,7 +56,6 @@ import {
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
   scopeIdToString,
-  signatoryToAccount,
   stringToIdentityId,
   stringToTicker,
   transactionPermissionsToTxGroups,
@@ -285,8 +286,15 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     const assembleResult = ({
       primaryKey,
     }: PolymeshPrimitivesIdentityDidRecord): PermissionedAccount => {
+      if (primaryKey.isNone) {
+        throw new PolymeshError({
+          code: ErrorCode.FatalError,
+          message:
+            'The primary key record was None when expecting Some. Please report the issue to the Polymath team',
+        });
+      }
+
       return {
-        // TODO Confirm unwrap is safe to call here
         account: new Account({ address: accountIdToString(primaryKey.unwrap()) }, context),
         permissions: {
           assets: null,
@@ -697,22 +705,47 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       },
     } = this;
 
-    // TODO this needs to be converted over to secondary keys record
-    const assembleResult = ({
-      secondaryKeys: secondaryAccounts,
-    }: PolymeshPrimitivesSecondaryKeyKeyRecord): PermissionedAccount[] => {
-      return secondaryAccounts.map(({ signer: rawSigner, permissions }) => ({
-        account: signatoryToAccount(rawSigner, context),
-        permissions: meshPermissionsToPermissions(permissions, context),
-      }));
+    const assembleResult = (
+      rawSecondaryKeyKeyRecord: Option<PolymeshPrimitivesSecondaryKeyKeyRecord>[],
+      identityKeys: AccountId32[]
+    ): PermissionedAccount[] => {
+      return rawSecondaryKeyKeyRecord.reduce((answer, optKeyRecord, index) => {
+        if (optKeyRecord.isSome) {
+          const account = accountIdToAccount(identityKeys[index], context);
+          const keyRecord = optKeyRecord.unwrap();
+
+          if (keyRecord.isSecondaryKey) {
+            const [, permissions] = keyRecord.asSecondaryKey;
+            answer.push({
+              account,
+              permissions: meshPermissionsToPermissions(permissions, context),
+            });
+          }
+        }
+
+        return answer;
+      }, [] as PermissionedAccount[]);
     };
 
-    if (callback) {
-      return identity.didRecords(did, records => callback(assembleResult(records)));
-    }
+    // if (callback) {
+    // TODO handle call back
+    // }
 
-    const didRecords = await identity.didRecords(did);
-    return assembleResult(didRecords);
+    // TODO should use pagination
+    const keys = await identity.didKeys.entries(did);
+
+    const identityKeys = keys.map(([key]) => {
+      const [, value] = key.args; // this will have the primary key
+      return value;
+    });
+
+    const rawPermissions = await Promise.all(
+      identityKeys.map(k => {
+        return identity.keyRecords(k);
+      })
+    );
+
+    return assembleResult(rawPermissions, identityKeys);
   }
 
   /**

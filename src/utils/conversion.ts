@@ -83,7 +83,6 @@ import {
   AffirmationStatus as MeshAffirmationStatus,
   AgentGroup,
   AssetComplianceResult,
-  AssetIdentifier,
   AssetType,
   AuthorizationType as MeshAuthorizationType,
   CAKind,
@@ -396,16 +395,8 @@ export function stringToEcdsaSignature(signature: string, context: Context): Ecd
 /**
  * @hidden
  */
-export function signatoryToAccount(signatory: Signatory, context: Context): Account {
-  if (signatory.isAccount) {
-    return new Account({ address: accountIdToString(signatory.asAccount) }, context);
-  }
-
-  throw new PolymeshError({
-    code: ErrorCode.UnexpectedError,
-    message:
-      'Received an Identity where an Account was expected. Please report this issue to the Polymath team',
-  });
+export function accountIdToAccount(accountId: AccountId, context: Context): Account {
+  return new Account({ address: accountId.toString() }, context);
 }
 
 /**

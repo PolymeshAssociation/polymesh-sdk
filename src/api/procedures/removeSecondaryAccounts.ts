@@ -4,7 +4,7 @@ import { find } from 'lodash';
 import { assertSecondaryAccounts } from '~/api/procedures/utils';
 import { PolymeshError, Procedure } from '~/internal';
 import { Account, ErrorCode, TxTags } from '~/types';
-import { signerToSignerValue, signerValueToSignatory, stringToAccountId } from '~/utils/conversion';
+import { stringToAccountId } from '~/utils/conversion';
 
 export interface RemoveSecondaryAccountsParams {
   accounts: Account[];

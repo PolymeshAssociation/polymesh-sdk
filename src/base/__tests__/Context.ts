@@ -66,8 +66,10 @@ describe('Context class', () => {
     dsMockUtils.setConstMock('system', 'ss58Prefix', {
       returnValue: dsMockUtils.createMockU8(new BigNumber(42)),
     });
-    dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-      returnValue: dsMockUtils.createMockIdentityId('someDid'),
+    dsMockUtils.createQueryStub('identity', 'didRecords', {
+      returnValue: dsMockUtils.createMockIdentityDidRecord({
+        primaryKey: dsMockUtils.createMockOption(dsMockUtils.createMockAccountId('someDid')),
+      }),
     });
   });
 
@@ -500,8 +502,10 @@ describe('Context class', () => {
 
     it('should return the signing Identity', async () => {
       const did = 'someDid';
-      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockIdentityId(did),
+      dsMockUtils.createQueryStub('identity', 'didRecords', {
+        returnValue: dsMockUtils.createMockIdentityDidRecord({
+          primaryKey: dsMockUtils.createMockOption(createMockAccountId(did)),
+        }),
       });
 
       const context = await Context.create({

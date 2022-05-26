@@ -5,6 +5,7 @@ import { Account, Context, Entity } from '~/internal';
 import { heartbeat, transactions } from '~/middleware/queries';
 import { CallIdEnum, ExtrinsicResult, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { createMockIdentityId } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
@@ -164,8 +165,12 @@ describe('Account class', () => {
   describe('method: getIdentity', () => {
     it('should return the Identity associated to the Account', async () => {
       const did = 'someDid';
-      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockIdentityId(did),
+      dsMockUtils.createQueryStub('identity', 'keyRecords', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockKeyRecord({
+            PrimaryKey: createMockIdentityId(did),
+          })
+        ),
       });
 
       const result = await account.getIdentity();
@@ -173,8 +178,8 @@ describe('Account class', () => {
     });
 
     it('should return null if there is no Identity associated to the Account', async () => {
-      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockIdentityId(),
+      dsMockUtils.createQueryStub('identity', 'keyRecords', {
+        returnValue: dsMockUtils.createMockOption(null),
       });
 
       const result = await account.getIdentity();
@@ -345,27 +350,32 @@ describe('Account class', () => {
 
   describe('method: isFrozen', () => {
     it('should return if the Account is frozen or not', async () => {
-      const keyToIdentityIdsStub = dsMockUtils.createQueryStub('identity', 'keyToIdentityIds');
+      const didRecordsStub = dsMockUtils.createQueryStub('identity', 'didRecords');
 
-      dsMockUtils.createQueryStub('identity', 'didRecords').returns(
-        dsMockUtils.createMockPolymeshPrimitivesIdentity({
-          primaryKey: dsMockUtils.createMockAccountId(address),
-          secondaryKeys: [],
-        })
+      dsMockUtils.createQueryStub('identity', 'keyRecords').returns(
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockKeyRecord({
+            SecondaryKey: [
+              dsMockUtils.createMockIdentityId('someDid'),
+              dsMockUtils.createMockPermissions(),
+            ],
+          })
+        )
+      );
+
+      didRecordsStub.returns(
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockIdentityDidRecord({
+            primaryKey: dsMockUtils.createMockOption(dsMockUtils.createMockAccountId(address)),
+          })
+        )
       );
 
       const isDidFrozenStub = dsMockUtils.createQueryStub('identity', 'isDidFrozen', {
         returnValue: dsMockUtils.createMockBool(false),
       });
 
-      keyToIdentityIdsStub.returns(dsMockUtils.createMockIdentityId());
-
       let result = await account.isFrozen();
-      expect(result).toBe(false);
-
-      keyToIdentityIdsStub.returns(dsMockUtils.createMockIdentityId(address));
-
-      result = await account.isFrozen();
       expect(result).toBe(false);
 
       const otherAddress = 'otherAddress';

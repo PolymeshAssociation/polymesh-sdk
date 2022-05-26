@@ -50,7 +50,7 @@ describe('transferPolyx procedure', () => {
   });
 
   it('should throw an error if the user has insufficient balance to transfer', () => {
-    dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', { returnValue: {} });
+    dsMockUtils.createQueryStub('identity', 'didRecords', { returnValue: {} });
 
     const proc = procedureMockUtils.getInstance<TransferPolyxParams, void>(mockContext);
 
@@ -78,7 +78,7 @@ describe('transferPolyx procedure', () => {
 
   it("should throw an error if sender Identity doesn't have valid CDD", () => {
     dsMockUtils
-      .createQueryStub('identity', 'keyToIdentityIds')
+      .createQueryStub('identity', 'didRecords')
       .returns(dsMockUtils.createMockIdentityId('signingIdentityId'));
 
     mockContext = dsMockUtils.getContextInstance({
@@ -94,7 +94,7 @@ describe('transferPolyx procedure', () => {
 
   it("should throw an error if destination Account doesn't have valid CDD", () => {
     dsMockUtils
-      .createQueryStub('identity', 'keyToIdentityIds')
+      .createQueryStub('identity', 'didRecords')
       .returns(dsMockUtils.createMockIdentityId('signingIdentityId'));
 
     entityMockUtils.configureMocks({
@@ -121,7 +121,7 @@ describe('transferPolyx procedure', () => {
     const rawMemo = 'memo' as unknown as Memo;
 
     dsMockUtils
-      .createQueryStub('identity', 'keyToIdentityIds')
+      .createQueryStub('identity', 'didRecords')
       .returns(dsMockUtils.createMockIdentityId('signingIdentityId'));
 
     sinon.stub(utilsConversionModule, 'stringToAccountId').returns(rawAccount);

@@ -49,6 +49,7 @@ import {
   PalletSettlementInstruction,
   PalletSettlementVenue,
   PalletStoFundraiser,
+  PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesAuthorization,
   PolymeshPrimitivesAuthorizationAuthorizationData,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
@@ -57,9 +58,10 @@ import {
   PolymeshPrimitivesConditionTrustedFor,
   PolymeshPrimitivesConditionTrustedIssuer,
   PolymeshPrimitivesDocument,
-  PolymeshPrimitivesIdentity,
   PolymeshPrimitivesIdentityClaimClaimType,
+  PolymeshPrimitivesIdentityDidRecord,
   PolymeshPrimitivesIdentityId,
+  PolymeshPrimitivesSecondaryKeyKeyRecord,
   PolymeshPrimitivesSecondaryKeyPalletPermissions,
   PolymeshPrimitivesSecondaryKeyPermissions,
   PolymeshPrimitivesStatisticsStat2ndKey,
@@ -92,7 +94,6 @@ import {
   AgentGroup,
   AGId,
   AssetComplianceResult,
-  AssetIdentifier,
   AssetOwnershipRelation,
   AssetPermissions,
   AssetType,
@@ -2194,7 +2195,8 @@ export const createMockU8aFixed = (value?: string, hex?: boolean): U8aFixed =>
  */
 export const createMockAssetIdentifier = (
   identifier?: { Isin: U8aFixed } | { Cusip: U8aFixed } | { Cins: U8aFixed } | { Lei: U8aFixed }
-): AssetIdentifier => createMockEnum(identifier) as AssetIdentifier;
+): PolymeshPrimitivesAssetIdentifier =>
+  createMockEnum(identifier) as PolymeshPrimitivesAssetIdentifier;
 
 /**
  * @hidden
@@ -2721,13 +2723,11 @@ export const createMockDidRecord = (didRecord?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockPolymeshPrimitivesIdentity = (identity?: {
-  primaryKey: AccountId;
-  secondaryKeys: MeshSecondaryKey[];
-}): PolymeshPrimitivesIdentity => {
+export const createMockIdentityDidRecord = (identity?: {
+  primaryKey: Option<AccountId>;
+}): PolymeshPrimitivesIdentityDidRecord => {
   const record = identity || {
-    primaryKey: createMockAccountId(),
-    secondaryKeys: [],
+    primaryKey: createMockOption(createMockAccountId()),
   };
 
   return createMockCodec(
@@ -2735,7 +2735,28 @@ export const createMockPolymeshPrimitivesIdentity = (identity?: {
       ...record,
     },
     !identity
-  ) as PolymeshPrimitivesIdentity;
+  ) as PolymeshPrimitivesIdentityDidRecord;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockKeyRecord = (
+  value?:
+    | { PrimaryKey: PolymeshPrimitivesIdentityId }
+    | {
+        SecondaryKey: [PolymeshPrimitivesIdentityId, PolymeshPrimitivesSecondaryKeyPermissions];
+      }
+    | { MultiSigSignerKey: AccountId }
+): PolymeshPrimitivesSecondaryKeyKeyRecord => {
+  const record = value || {
+    PrimaryKey: createMockIdentityId(),
+  };
+
+  return createMockEnum({
+    ...record,
+  }) as PolymeshPrimitivesSecondaryKeyKeyRecord;
 };
 
 /**

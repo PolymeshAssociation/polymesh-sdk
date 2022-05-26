@@ -206,7 +206,6 @@ import {
   scopeToMiddlewareScope,
   secondaryAccountToMeshSecondaryKey,
   securityIdentifierToAssetIdentifier,
-  signatoryToAccount,
   signatoryToSignerValue,
   signerToSignerValue,
   signerToString,
@@ -912,54 +911,6 @@ describe('signerToSignerValue and signerValueToSigner', () => {
 
       expect((result as Identity).did).toBe(value);
     });
-  });
-});
-
-describe('signatoryToAccount', () => {
-  let context: Context;
-
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  beforeEach(() => {
-    context = dsMockUtils.getContextInstance();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-    sinon.restore();
-  });
-
-  it('should convert a polkadot Signatory Account object to an Account', () => {
-    const address = 'someAccountId';
-    const signatory = dsMockUtils.createMockSignatory({
-      Account: dsMockUtils.createMockAccountId(address),
-    });
-
-    const result = signatoryToAccount(signatory, context);
-    expect(result).toEqual(expect.objectContaining({ address }));
-  });
-
-  it('should throw an error while converting a polkadot Signatory Identity object', () => {
-    const signatory = dsMockUtils.createMockSignatory({
-      Identity: dsMockUtils.createMockIdentityId('someIdentity'),
-    });
-
-    let err;
-    try {
-      signatoryToAccount(signatory, context);
-    } catch (error) {
-      err = error;
-    }
-
-    expect(err.message).toBe(
-      'Received an Identity where an Account was expected. Please report this issue to the Polymath team'
-    );
   });
 });
 
@@ -2573,7 +2524,7 @@ describe('securityIdentifierToAssetIdentifier and assetIdentifierToSecurityIdent
       const context = dsMockUtils.getContextInstance();
 
       context.createType
-        .withArgs('AssetIdentifier', { [SecurityIdentifierType.Isin]: isinValue })
+        .withArgs('PolymeshPrimitivesAssetIdentifier', { [SecurityIdentifierType.Isin]: isinValue })
         .returns(fakeResult);
 
       let result = securityIdentifierToAssetIdentifier(value, context);
@@ -2583,7 +2534,7 @@ describe('securityIdentifierToAssetIdentifier and assetIdentifierToSecurityIdent
       value = { type: SecurityIdentifierType.Lei, value: leiValue };
 
       context.createType
-        .withArgs('AssetIdentifier', { [SecurityIdentifierType.Lei]: leiValue })
+        .withArgs('PolymeshPrimitivesAssetIdentifier', { [SecurityIdentifierType.Lei]: leiValue })
         .returns(fakeResult);
 
       result = securityIdentifierToAssetIdentifier(value, context);
@@ -2593,7 +2544,9 @@ describe('securityIdentifierToAssetIdentifier and assetIdentifierToSecurityIdent
       value = { type: SecurityIdentifierType.Cusip, value: cusipValue };
 
       context.createType
-        .withArgs('AssetIdentifier', { [SecurityIdentifierType.Cusip]: cusipValue })
+        .withArgs('PolymeshPrimitivesAssetIdentifier', {
+          [SecurityIdentifierType.Cusip]: cusipValue,
+        })
         .returns(fakeResult);
 
       result = securityIdentifierToAssetIdentifier(value, context);
