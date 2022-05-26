@@ -61,7 +61,9 @@ import {
 import { HumanReadableType, ProcedureFunc, UnionOfProcedureFuncs } from '~/types/utils';
 import {
   DEFAULT_GQL_PAGE_SIZE,
-  SUPPORTED_VERSION_RANGE,
+  STATE_RUNTIME_VERSION_CALL,
+  SUPPORTED_SPEC_VERSION_RANGE,
+  SUPPORTED_SYSTEM_VERSION_RANGE,
   SYSTEM_VERSION_RPC_CALL,
 } from '~/utils/constants';
 import { middlewareScopeToScope, signerToString, u64ToBigNumber } from '~/utils/conversion';
@@ -1001,25 +1003,74 @@ export function assertExpectedChainVersion(nodeUrl: string): Promise<void> {
     const client = new W3CWebSocket(nodeUrl);
 
     client.onopen = () => {
-      const msg = { ...SYSTEM_VERSION_RPC_CALL, id: 'assertExpectedChainVersion' };
-      client.send(JSON.stringify(msg));
+      const chainVersionMsg = SYSTEM_VERSION_RPC_CALL;
+      const runtimeVersionMsg = STATE_RUNTIME_VERSION_CALL;
+      client.send(JSON.stringify(chainVersionMsg));
+      client.send(JSON.stringify(runtimeVersionMsg));
     };
 
+    let systemVersionFetched: boolean;
+    let specVersionFetched: boolean;
+
     client.onmessage = msg => {
-      client.close();
-      const { result: version } = JSON.parse(msg.data.toString());
-      if (!satisfies(version, SUPPORTED_VERSION_RANGE)) {
-        const error = new PolymeshError({
-          code: ErrorCode.FatalError,
-          message: 'Unsupported Polymesh version. Please upgrade the SDK',
-          data: {
-            polymeshVersion: version,
-            supportedVersionRange: SUPPORTED_VERSION_RANGE,
-          },
-        });
-        reject(error);
-      } else {
-        resolve();
+      const data = JSON.parse(msg.data.toString());
+      const { id } = data;
+
+      if (id === SYSTEM_VERSION_RPC_CALL.id) {
+        const { result: version } = data;
+
+        if (!satisfies(version, SUPPORTED_SYSTEM_VERSION_RANGE)) {
+          const error = new PolymeshError({
+            code: ErrorCode.FatalError,
+            message: 'Unsupported Polymesh RPC node version. Please upgrade the SDK',
+            data: {
+              rpcNodeVersion: version,
+              supportedVersionRange: SUPPORTED_SYSTEM_VERSION_RANGE,
+            },
+          });
+          reject(error);
+        } else {
+          systemVersionFetched = true;
+        }
+      }
+
+      if (id === STATE_RUNTIME_VERSION_CALL.id) {
+        const {
+          result: { specVersion },
+        } = data;
+
+        /*
+         * the spec version number comes as a single number (i.e. 5000000). It should be parsed as xxx_yyy_zzz
+         * where xxx is the major version, yyy is the minor version, and zzz is the patch version. So for example, 5001023
+         * would be version 5.1.23
+         */
+        const specVersionAsSemver = specVersion
+          .toString()
+          // add dot separator every three digits
+          .replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.')
+          .split('.')
+          // remove leading zeroes, for example 020 becomes 20, 000 becomes 0
+          .map((ver: string) => ver.replace(/^0+(?!$)/g, ''))
+          .join('.');
+
+        if (!satisfies(specVersionAsSemver, SUPPORTED_SPEC_VERSION_RANGE)) {
+          const error = new PolymeshError({
+            code: ErrorCode.FatalError,
+            message: 'Unsupported Polymesh chain spec version. Please upgrade the SDK',
+            data: {
+              specVersion: specVersionAsSemver,
+              supportedVersionRange: SUPPORTED_SPEC_VERSION_RANGE,
+            },
+          });
+          reject(error);
+        } else {
+          specVersionFetched = true;
+        }
+
+        if (systemVersionFetched && specVersionFetched) {
+          client.close();
+          resolve();
+        }
       }
     };
 

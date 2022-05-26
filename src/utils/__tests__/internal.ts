@@ -925,19 +925,29 @@ describe('assertExpectedChainVersion', () => {
     dsMockUtils.reset();
   });
 
-  it('should resolve if it receives expected chain version', () => {
+  it('should resolve if it receives both expected RPC node and chain spec version', () => {
     const signal = assertExpectedChainVersion('ws://example.com');
     client.onopen();
 
     return expect(signal).resolves.not.toThrow();
   });
 
-  it('should throw an error given an unexpected version', () => {
+  it('should throw an error given an unexpected RPC node version', () => {
     const signal = assertExpectedChainVersion('ws://example.com');
-    client.sendVersion('3.0.0');
+    client.sendRpcVersion('3.0.0');
     const expectedError = new PolymeshError({
       code: ErrorCode.FatalError,
-      message: 'Unsupported Polymesh version. Please upgrade the SDK',
+      message: 'Unsupported Polymesh RPC node version. Please upgrade the SDK',
+    });
+    return expect(signal).rejects.toThrowError(expectedError);
+  });
+
+  it('should throw an error given an unexpected chain spec version', () => {
+    const signal = assertExpectedChainVersion('ws://example.com');
+    client.sendSpecVersion('3000000');
+    const expectedError = new PolymeshError({
+      code: ErrorCode.FatalError,
+      message: 'Unsupported Polymesh chain spec version. Please upgrade the SDK',
     });
     return expect(signal).rejects.toThrowError(expectedError);
   });
