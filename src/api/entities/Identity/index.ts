@@ -710,21 +710,21 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       rawSecondaryKeyKeyRecord: Option<PolymeshPrimitivesSecondaryKeyKeyRecord>[],
       accountIds: AccountId32[]
     ): PermissionedAccount[] => {
-      return rawSecondaryKeyKeyRecord.reduce((answer, optKeyRecord, index) => {
+      return rawSecondaryKeyKeyRecord.reduce((secondaryKeys, optKeyRecord, index) => {
         if (optKeyRecord.isSome) {
           const account = accountIdToAccount(accountIds[index], context);
           const keyRecord = optKeyRecord.unwrap();
 
           if (keyRecord.isSecondaryKey) {
             const [, permissions] = keyRecord.asSecondaryKey;
-            answer.push({
+            secondaryKeys.push({
               account,
               permissions: meshPermissionsToPermissions(permissions, context),
             });
           }
         }
 
-        return answer;
+        return secondaryKeys;
       }, [] as PermissionedAccount[]);
     };
 
