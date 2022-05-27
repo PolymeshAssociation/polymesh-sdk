@@ -16,9 +16,9 @@ import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/querie
 import { ScopeId } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
+  createMockAccountId,
   createMockIdentityId,
   createMockOption,
-  createMockPermissions,
   MockContext,
 } from '~/testUtils/mocks/dataSources';
 import {
@@ -1234,7 +1234,9 @@ describe('Identity class', () => {
     let account: Account;
     let fakeResult: PermissionedAccount[];
 
-    let rawKeyRecord: PolymeshPrimitivesSecondaryKeyKeyRecord;
+    let rawPrimaryKeyRecord: PolymeshPrimitivesSecondaryKeyKeyRecord;
+    let rawSecondaryKeyRecord: PolymeshPrimitivesSecondaryKeyKeyRecord;
+    let rawMultiSigKeyRecord: PolymeshPrimitivesSecondaryKeyKeyRecord;
     let rawDidRecord: { args: [PolymeshPrimitivesIdentityId, string] };
     let accountIdToAccountStub: sinon.SinonStub<[AccountId, Context], Account>;
     let meshPermissionsToPermissionsStub: sinon.SinonStub<
@@ -1267,18 +1269,20 @@ describe('Identity class', () => {
     });
 
     beforeEach(() => {
-      rawKeyRecord = dsMockUtils.createMockKeyRecord({
+      rawPrimaryKeyRecord = dsMockUtils.createMockKeyRecord({
+        PrimaryKey: dsMockUtils.createMockIdentityId('someDid'),
+      });
+      rawSecondaryKeyRecord = dsMockUtils.createMockKeyRecord({
         SecondaryKey: [dsMockUtils.createMockIdentityId(), dsMockUtils.createMockPermissions()],
+      });
+      rawMultiSigKeyRecord = dsMockUtils.createMockKeyRecord({
+        MultiSigSignerKey: createMockAccountId('someAddress'),
       });
       rawDidRecord = { args: [createMockIdentityId(), accountId] };
       const entriesStub = sinon.stub();
       entriesStub.resolves([[rawDidRecord]]);
       dsMockUtils.createQueryStub('identity', 'didKeys', {
         entries: [[rawDidRecord.args, true]],
-      });
-
-      rawKeyRecord = dsMockUtils.createMockKeyRecord({
-        SecondaryKey: [createMockIdentityId(), createMockPermissions()],
       });
 
       meshPermissionsToPermissionsStub.returns({
@@ -1292,7 +1296,12 @@ describe('Identity class', () => {
 
     it('should return a list of Accounts', async () => {
       dsMockUtils.createQueryStub('identity', 'keyRecords', {
-        multi: [dsMockUtils.createMockOption(rawKeyRecord)],
+        multi: [
+          dsMockUtils.createMockOption(rawPrimaryKeyRecord),
+          dsMockUtils.createMockOption(rawSecondaryKeyRecord),
+          dsMockUtils.createMockOption(rawMultiSigKeyRecord),
+          dsMockUtils.createMockOption(),
+        ],
       });
       const identity = new Identity({ did: 'someDid' }, context);
 
@@ -1305,11 +1314,11 @@ describe('Identity class', () => {
       const unsubCallback = 'unsubCallBack';
 
       const keyRecordsStub = dsMockUtils.createQueryStub('identity', 'keyRecords', {
-        multi: [createMockOption(rawKeyRecord)],
+        multi: [createMockOption(rawSecondaryKeyRecord)],
       });
 
       keyRecordsStub.multi.callsFake(async (_, cbFunc) => {
-        cbFunc([createMockOption(rawKeyRecord)]);
+        cbFunc([createMockOption(rawSecondaryKeyRecord)]);
         return unsubCallback;
       });
 

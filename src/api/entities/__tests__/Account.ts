@@ -5,7 +5,7 @@ import { Account, Context, Entity } from '~/internal';
 import { heartbeat, transactions } from '~/middleware/queries';
 import { CallIdEnum, ExtrinsicResult, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { createMockIdentityId } from '~/testUtils/mocks/dataSources';
+import { createMockAccountId, createMockIdentityId } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
@@ -173,8 +173,38 @@ describe('Account class', () => {
         ),
       });
 
-      const result = await account.getIdentity();
+      let result = await account.getIdentity();
       expect(result?.did).toBe(did);
+
+      const secondaryDid = 'secondaryDid';
+      dsMockUtils.createQueryStub('identity', 'keyRecords', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockKeyRecord({
+            SecondaryKey: [
+              dsMockUtils.createMockIdentityId(secondaryDid),
+              dsMockUtils.createMockPermissions(),
+            ],
+          })
+        ),
+      });
+      result = await account.getIdentity();
+      expect(result?.did).toBe(secondaryDid);
+
+      const multiDid = 'multiDid';
+      dsMockUtils.createQueryStub('identity', 'keyRecords', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockKeyRecord({
+            MultiSigSignerKey: createMockAccountId('someAddress'),
+          })
+        ),
+      });
+
+      dsMockUtils.createQueryStub('multiSig', 'multiSigToIdentity', {
+        returnValue: multiDid,
+      });
+
+      result = await account.getIdentity();
+      expect(result?.did).toBe(multiDid);
     });
 
     it('should return null if there is no Identity associated to the Account', async () => {
