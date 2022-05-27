@@ -1232,7 +1232,7 @@ describe('Identity class', () => {
     let rawPrimaryKeyRecord: PolymeshPrimitivesSecondaryKeyKeyRecord;
     let rawSecondaryKeyRecord: PolymeshPrimitivesSecondaryKeyKeyRecord;
     let rawMultiSigKeyRecord: PolymeshPrimitivesSecondaryKeyKeyRecord;
-    let rawDidRecord: StorageKey; // { args: [PolymeshPrimitivesIdentityId, string] };
+    let rawDidRecord: StorageKey;
     let accountIdToAccountStub: sinon.SinonStub<[AccountId, Context], Account>;
     let meshPermissionsToPermissionsStub: sinon.SinonStub<
       [PolymeshPrimitivesSecondaryKeyPermissions, Context],
