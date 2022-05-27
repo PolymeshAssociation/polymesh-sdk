@@ -302,7 +302,7 @@ describe('Requirements class', () => {
               /* eslint-enable @typescript-eslint/naming-convention */
             }),
           ],
-        } as AssetCompliance,
+        } as unknown as AssetCompliance,
         defaultClaimIssuers as unknown as Vec<IdentityId>,
       ];
 

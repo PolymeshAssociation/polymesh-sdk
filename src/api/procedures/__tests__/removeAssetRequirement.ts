@@ -84,7 +84,7 @@ describe('removeAssetRequirement procedure', () => {
           receiver_conditions: receiverConditions[index],
           /* eslint-enable @typescript-eslint/naming-convention */
           id: dsMockUtils.createMockU32(new BigNumber(index)),
-        } as ComplianceRequirement)
+        } as unknown as ComplianceRequirement)
     );
 
     dsMockUtils.createQueryStub('complianceManager', 'assetCompliances', {

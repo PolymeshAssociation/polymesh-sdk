@@ -764,16 +764,14 @@ describe('Context class', () => {
         middlewareApi: dsMockUtils.getMiddlewareApi(),
       });
 
-      const protocolOpEqStub = sinon.stub();
-
-      const rawProtocolOp = dsMockUtils.createMockProtocolOp('AssetCreateAsset', protocolOpEqStub);
+      const rawProtocolOp = dsMockUtils.createMockProtocolOp('AssetCreateAsset');
+      rawProtocolOp.eq = sinon.stub();
+      rawProtocolOp.eq.withArgs(rawProtocolOp).returns(true);
 
       const txTagToProtocolOpStub = sinon.stub(utilsConversionModule, 'txTagToProtocolOp');
 
       txTagToProtocolOpStub.withArgs(TxTags.asset.CreateAsset, context).returns(rawProtocolOp);
       txTagToProtocolOpStub.withArgs(TxTags.asset.Freeze, context).throws(); // transaction without fees
-
-      protocolOpEqStub.withArgs(rawProtocolOp).returns(true);
 
       dsMockUtils.createQueryStub('protocolFee', 'baseFees', {
         entries: [tuple([rawProtocolOp], dsMockUtils.createMockBalance(new BigNumber(500000000)))],

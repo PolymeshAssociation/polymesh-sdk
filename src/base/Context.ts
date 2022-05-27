@@ -533,7 +533,7 @@ export class Context {
   /**
    * @hidden
    *
-   * Retrieve the protocol fees associated with running specific transactions. If block
+   * Retrieve the protocol fees associated with running specific transactions
    *
    * @param tags - list of transaction tags (i.e. [TxTags.asset.CreateAsset, TxTags.asset.RegisterTicker] or ["asset.createAsset", "asset.registerTicker"])
    * @param blockHash - optional hash of the block to get the protocol fees at that block

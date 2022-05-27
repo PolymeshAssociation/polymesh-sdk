@@ -134,7 +134,7 @@ describe('CheckpointSchedule class', () => {
         returnValue: [
           dsMockUtils.createMockStoredSchedule({
             id: rawScheduleId,
-          } as StoredSchedule),
+          } as unknown as StoredSchedule),
         ],
       });
 
@@ -197,7 +197,7 @@ describe('CheckpointSchedule class', () => {
         returnValue: [
           dsMockUtils.createMockStoredSchedule({
             id: rawScheduleId,
-          } as StoredSchedule),
+          } as unknown as StoredSchedule),
         ],
       });
 
@@ -227,7 +227,7 @@ describe('CheckpointSchedule class', () => {
         returnValue: [
           dsMockUtils.createMockStoredSchedule({
             id: rawScheduleId,
-          } as StoredSchedule),
+          } as unknown as StoredSchedule),
         ],
       });
 
@@ -256,7 +256,7 @@ describe('CheckpointSchedule class', () => {
         returnValue: [
           dsMockUtils.createMockStoredSchedule({
             id: dsMockUtils.createMockU64(id),
-          } as StoredSchedule),
+          } as unknown as StoredSchedule),
         ],
       });
 
