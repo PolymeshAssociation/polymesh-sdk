@@ -60,6 +60,7 @@ import {
   PolymeshPrimitivesIdentity,
   PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityId,
+  PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesSecondaryKeyPalletPermissions,
   PolymeshPrimitivesSecondaryKeyPermissions,
   PolymeshPrimitivesStatisticsStat2ndKey,
@@ -68,6 +69,7 @@ import {
   PolymeshPrimitivesStatisticsStatUpdate,
   PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions,
   PolymeshPrimitivesTicker,
+  PolymeshPrimitivesTransferComplianceTransferCondition,
 } from '@polkadot/types/lookup';
 import {
   Codec,
@@ -84,6 +86,9 @@ import ApolloClient from 'apollo-client';
 import BigNumber from 'bignumber.js';
 import { EventEmitter } from 'events';
 import { cloneDeep, map, merge, upperFirst } from 'lodash';
+import sinon, { SinonStub, SinonStubbedInstance } from 'sinon';
+
+import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
 import {
   AffirmationStatus,
   AgentGroup,
@@ -93,8 +98,6 @@ import {
   AssetOwnershipRelation,
   AssetPermissions,
   AssetType,
-  Authorization,
-  AuthorizationData,
   AuthorizationType as MeshAuthorizationType,
   CACheckpoint,
   CAKind,
@@ -107,7 +110,6 @@ import {
   CheckpointSchedule,
   Claim,
   Claim1stKey,
-  ClaimType as MeshClaimType,
   ComplianceRequirementResult,
   ConditionResult,
   ConditionType,
@@ -162,14 +164,9 @@ import {
   TickerRegistrationConfig,
   TransferCondition,
   TransferConditionResult,
-  TrustedFor,
-  TrustedIssuer,
   VenueType,
   ZkProofData,
-} from 'polymesh-types/types';
-import sinon, { SinonStub, SinonStubbedInstance } from 'sinon';
-
-import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
+} from '~/polkadot/polymesh';
 import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
@@ -177,7 +174,6 @@ import {
   CheckRolesResult,
   ClaimData,
   ClaimType,
-  Condition,
   CountryCode as CountryCodeEnum,
   DistributionWithDetails,
   ExtrinsicData,
@@ -1832,12 +1828,12 @@ export const createMockPortfolioKind = (
  */
 export const createMockPortfolioId = (
   portfolioId?:
-    | PortfolioId
+    | PolymeshPrimitivesIdentityIdPortfolioId
     | {
         did: PolymeshPrimitivesIdentityId | Parameters<typeof createMockIdentityId>[0];
         kind: PortfolioKind | Parameters<typeof createMockPortfolioKind>[0];
       }
-): PortfolioId => {
+): PolymeshPrimitivesIdentityIdPortfolioId => {
   const { did, kind } = portfolioId || {
     did: createMockIdentityId(),
     kind: createMockPortfolioKind(),
@@ -1848,7 +1844,7 @@ export const createMockPortfolioId = (
       kind: createMockPortfolioKind(kind),
     },
     !portfolioId
-  ) as PortfolioId;
+  ) as PolymeshPrimitivesIdentityIdPortfolioId;
 };
 
 /**
@@ -2299,30 +2295,6 @@ export const createMockAuthorizationData = (
 
   return createMockEnum(authorizationData) as PolymeshPrimitivesAuthorizationAuthorizationData;
 };
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockRpcAuthorizationData = (
-  authorizationData?:
-    | { AttestPrimaryKeyRotation: PolymeshPrimitivesIdentityId }
-    | 'RotatePrimaryKey'
-    | { RotatePrimaryKeyToSecondary: PolymeshPrimitivesSecondaryKeyPermissions }
-    | { TransferTicker: PolymeshPrimitivesTicker }
-    | { AddMultiSigSigner: AccountId }
-    | { TransferAssetOwnership: PolymeshPrimitivesTicker }
-    | { JoinIdentity: PolymeshPrimitivesSecondaryKeyPermissions }
-    | { PortfolioCustody: PortfolioId }
-    | { AddRelayerPayingKey: [AccountId, AccountId, Balance] }
-    | { BecomeAgent: [PolymeshPrimitivesTicker, AgentGroup] }
-    | AuthorizationData
-): AuthorizationData => {
-  if (isCodec<AuthorizationData>(authorizationData)) {
-    return authorizationData;
-  }
-
-  return createMockEnum(authorizationData) as AuthorizationData;
-};
 
 /**
  * @hidden
@@ -2352,36 +2324,6 @@ export const createMockAuthorization = (authorization?: {
     },
     !authorization
   ) as PolymeshPrimitivesAuthorization;
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockRpcAuthorization = (authorization?: {
-  authorizationData:
-    | PolymeshPrimitivesAuthorizationAuthorizationData
-    | Parameters<typeof createMockAuthorizationData>[0];
-  authorizedBy: PolymeshPrimitivesIdentityId | Parameters<typeof createMockIdentityId>[0];
-  expiry: Option<Moment>;
-  authId: u64 | Parameters<typeof createMockU64>[0];
-}): Authorization => {
-  const { authorizationData, authorizedBy, expiry, authId } = authorization || {
-    authorizationData: createMockAuthorizationData(),
-    authorizedBy: createMockIdentityId(),
-    expiry: createMockOption(),
-    authId: createMockU64(),
-  };
-
-  return createMockCodec(
-    {
-      authorization_data: createMockAuthorizationData(authorizationData),
-      authorized_by: createMockIdentityId(authorizedBy),
-      expiry: createMockOption(expiry),
-      auth_id: createMockU64(authId),
-    },
-    !authorization
-  ) as Authorization;
 };
 
 /**
@@ -2547,13 +2489,6 @@ export const createMockRpcConditionType = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockRpcClaimType = (claimType?: ClaimType): MeshClaimType =>
-  createMockEnum(claimType) as MeshClaimType;
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
 export const createMockClaimType = (
   claimType?: ClaimType
 ): PolymeshPrimitivesIdentityClaimClaimType =>
@@ -2565,11 +2500,11 @@ export const createMockClaimType = (
  */
 export const createMockClaim1stKey = (claim1stKey?: {
   target: PolymeshPrimitivesIdentityId;
-  claim_type: MeshClaimType;
+  claimType: PolymeshPrimitivesIdentityClaimClaimType;
 }): Claim1stKey => {
   const claimTypeMock = claim1stKey || {
     target: createMockIdentityId(),
-    claim_type: createMockRpcClaimType(),
+    claimType: createMockClaimType(),
   };
   return createMockCodec(
     {
@@ -2584,17 +2519,9 @@ export const createMockClaim1stKey = (claim1stKey?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockTrustedFor = (
-  trustedFor?: 'Any' | { Specific: MeshClaimType[] }
+  trustedFor?: 'Any' | { Specific: PolymeshPrimitivesIdentityClaimClaimType[] }
 ): PolymeshPrimitivesConditionTrustedFor =>
   createMockEnum(trustedFor) as PolymeshPrimitivesConditionTrustedFor;
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockRpcTrustedFor = (
-  trustedFor?: 'Any' | { Specific: MeshClaimType[] }
-): TrustedFor => createMockEnum(trustedFor) as TrustedFor;
 
 /**
  * @hidden
@@ -2615,27 +2542,6 @@ export const createMockTrustedIssuer = (issuer?: {
     },
     !issuer
   ) as PolymeshPrimitivesConditionTrustedIssuer;
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockRpcTrustedIssuer = (issuer?: {
-  issuer: PolymeshPrimitivesIdentityId;
-  trusted_for: TrustedFor;
-}): TrustedIssuer => {
-  const trustedIssuer = issuer || {
-    issuer: createMockIdentityId(),
-    trusted_for: createMockRpcTrustedFor(),
-  };
-
-  return createMockCodec(
-    {
-      ...trustedIssuer,
-    },
-    !issuer
-  ) as TrustedIssuer;
 };
 
 /**
@@ -2667,40 +2573,18 @@ export const createMockCondition = (condition?: {
 /**
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
- * needed to support RPC calls
- */
-export const createMockRpcCondition = (condition?: {
-  condition_type: ConditionType | Parameters<typeof createMockRpcConditionType>[0];
-  issuers: (TrustedIssuer | Parameters<typeof createMockRpcTrustedIssuer>[0])[];
-}): Condition => {
-  const { condition_type, issuers } = condition || {
-    condition_type: createMockConditionType(),
-    issuers: [],
-  };
-  return createMockCodec(
-    {
-      condition_type: createMockRpcConditionType(condition_type),
-      issuers: issuers.map(issuer => createMockRpcTrustedIssuer(issuer)),
-    },
-    !condition
-  ) as unknown as Condition;
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockConditionResult = (conditionResult?: {
-  condition: Condition | Parameters<typeof createMockRpcCondition>[0];
+  condition: PolymeshPrimitivesCondition | Parameters<typeof createMockCondition>[0];
   result: bool | Parameters<typeof createMockBool>[0];
 }): ConditionResult => {
   const { condition, result } = conditionResult || {
-    condition: createMockRpcCondition(),
+    condition: createMockCondition(),
     result: createMockBool(),
   };
   return createMockCodec(
     {
-      condition: createMockRpcCondition(condition as any),
+      condition: createMockCondition(condition),
       result: createMockBool(result),
     },
     !conditionResult
@@ -2735,28 +2619,21 @@ export const createMockComplianceRequirement = (complianceRequirement?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockComplianceRequirementResult = (complianceRequirementResult?: {
-  sender_conditions: (ConditionResult | Parameters<typeof createMockConditionResult>[0])[];
-  receiver_conditions: (ConditionResult | Parameters<typeof createMockConditionResult>[0])[];
+  senderConditions: (ConditionResult | Parameters<typeof createMockConditionResult>[0])[];
+  receiverConditions: (ConditionResult | Parameters<typeof createMockConditionResult>[0])[];
   id: u32 | Parameters<typeof createMockU32>[0];
   result: bool | Parameters<typeof createMockBool>[0];
 }): ComplianceRequirementResult => {
-  const {
-    sender_conditions: senderConditions,
-    receiver_conditions: receiverConditions,
-    id,
-    result,
-  } = complianceRequirementResult || {
-    sender_conditions: [],
-    receiver_conditions: [],
+  const { senderConditions, receiverConditions, id, result } = complianceRequirementResult || {
+    senderConditions: [],
+    receiverConditions: [],
     id: createMockU32(),
     result: createMockBool(),
   };
   return createMockCodec(
     {
-      sender_conditions: senderConditions.map(condition => createMockConditionResult(condition)),
-      receiver_conditions: receiverConditions.map(condition =>
-        createMockConditionResult(condition)
-      ),
+      senderConditions: senderConditions.map(condition => createMockConditionResult(condition)),
+      receiverConditions: receiverConditions.map(condition => createMockConditionResult(condition)),
       id: createMockU32(id),
       result: createMockBool(result),
     },
@@ -2771,8 +2648,8 @@ export const createMockComplianceRequirementResult = (complianceRequirementResul
 export const createMockAssetComplianceResult = (assetComplianceResult?: {
   paused: bool | Parameters<typeof createMockBool>[0];
   requirements: {
-    sender_conditions: ConditionResult[];
-    receiver_conditions: ConditionResult[];
+    senderConditions: ConditionResult[];
+    receiverConditions: ConditionResult[];
     result: bool;
     id: u32 | Parameters<typeof createMockU32>[0];
   }[];
@@ -3045,11 +2922,11 @@ export const createMockTransferCondition = (
     | { MaxInvestorCount: u64 }
     | { MaxInvestorOwnership: Permill }
     | TransferCondition
-): TransferCondition => {
-  if (isCodec<TransferCondition>(transferCondition)) {
+): PolymeshPrimitivesTransferComplianceTransferCondition => {
+  if (isCodec<PolymeshPrimitivesTransferComplianceTransferCondition>(transferCondition)) {
     return transferCondition;
   }
-  return createMockEnum(transferCondition) as TransferCondition;
+  return createMockEnum(transferCondition) as PolymeshPrimitivesTransferComplianceTransferCondition;
 };
 
 /**

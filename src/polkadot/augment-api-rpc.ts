@@ -1,6 +1,10 @@
 // Auto-generated via `yarn polkadot-types-from-chain`, do not edit
 /* eslint-disable */
 
+import {
+  PolymeshPrimitivesAuthorization,
+  PolymeshPrimitivesIdentityId,
+} from '@polkadot/types/lookup';
 import type { AugmentedRpc } from '@polkadot/rpc-core/types';
 import type { Metadata, StorageKey } from '@polkadot/types';
 import type {
@@ -95,12 +99,10 @@ import type { IExtrinsic, Observable } from '@polkadot/types/types';
 import type {
   AssetComplianceResult,
   AssetDidResult,
-  Authorization,
   AuthorizationType,
   CanTransferResult,
   CappedFee,
   CddStatus,
-  DidRecords,
   DidStatus,
   GranularCanTransferResult,
   IdentityId,
@@ -108,6 +110,7 @@ import type {
   PipId,
   PortfolioId,
   ProtocolOp,
+  RpcDidRecords,
   Signatory,
   Ticker,
   VoteCount,
@@ -122,10 +125,10 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
       canTransfer: AugmentedRpc<
         (
           sender: AccountId | string | Uint8Array,
-          from_custodian: Option<IdentityId> | null | object | string | Uint8Array,
-          from_portfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
-          to_custodian: Option<IdentityId> | null | object | string | Uint8Array,
-          to_portfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
+          fromCustodian: Option<PolymeshPrimitivesIdentityId> | null | object | string | Uint8Array,
+          fromPortfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
+          toCustodian: Option<PolymeshPrimitivesIdentityId> | null | object | string | Uint8Array,
+          toPortfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
           ticker: Ticker | string | Uint8Array,
           value: Balance | AnyNumber | Uint8Array,
           blockHash?: Hash | string | Uint8Array
@@ -136,10 +139,10 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
        **/
       canTransferGranular: AugmentedRpc<
         (
-          from_custodian: Option<IdentityId> | null | object | string | Uint8Array,
-          from_portfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
-          to_custodian: Option<IdentityId> | null | object | string | Uint8Array,
-          to_portfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
+          fromCustodian: Option<PolymeshPrimitivesIdentityId> | null | object | string | Uint8Array,
+          fromPortfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
+          toCustodian: Option<PolymeshPrimitivesIdentityId> | null | object | string | Uint8Array,
+          toPortfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
           ticker: Ticker | string | Uint8Array,
           value: Balance | AnyNumber | Uint8Array,
           blockHash?: Hash | string | Uint8Array
@@ -313,8 +316,8 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
       canTransfer: AugmentedRpc<
         (
           ticker: Ticker | string | Uint8Array,
-          from_did: Option<IdentityId> | null | object | string | Uint8Array,
-          to_did: Option<IdentityId> | null | object | string | Uint8Array,
+          fromDid: Option<IdentityId> | null | object | string | Uint8Array,
+          toDid: Option<IdentityId> | null | object | string | Uint8Array,
           blockHash?: Hash | string | Uint8Array
         ) => Observable<AssetComplianceResult>
       >;
@@ -780,7 +783,7 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
         (
           did: IdentityId | string | Uint8Array,
           blockHash?: Hash | string | Uint8Array
-        ) => Observable<DidRecords>
+        ) => Observable<RpcDidRecords>
       >;
       /**
        * Retrieve status of the DID
@@ -797,8 +800,8 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
       getFilteredAuthorizations: AugmentedRpc<
         (
           signatory: Signatory | { Identity: any } | { Account: any } | string | Uint8Array,
-          allow_expired: bool | boolean | Uint8Array,
-          auth_type?:
+          allowExpired: bool | boolean | Uint8Array,
+          authType?:
             | AuthorizationType
             | 'AttestPrimaryKeyRotation'
             | 'RotatePrimaryKey'
@@ -813,7 +816,7 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
             | number
             | Uint8Array,
           blockHash?: Hash | string | Uint8Array
-        ) => Observable<Vec<Authorization>>
+        ) => Observable<Vec<PolymeshPrimitivesAuthorization>>
       >;
       /**
        * Query relation between a signing key and a DID

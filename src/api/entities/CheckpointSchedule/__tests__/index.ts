@@ -1,8 +1,8 @@
 import BigNumber from 'bignumber.js';
-import { StoredSchedule } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { CheckpointSchedule, Context, Entity } from '~/internal';
+import { StoredSchedule } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { CalendarPeriod, CalendarUnit } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';

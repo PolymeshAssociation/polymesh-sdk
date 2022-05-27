@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const rimraf = require('rimraf');
 const util = require('util');
-const { forEach } = require('lodash');
+const { forEach, camelCase, mapKeys } = require('lodash');
 const { NODE_URL, SCHEMA_PORT } = require('./consts');
 
 const definitionsDir = path.resolve('src', 'polkadot');
@@ -16,6 +16,49 @@ fs.mkdirSync(typesDir);
 
 rimraf.sync(generatedDir);
 fs.mkdirSync(generatedDir);
+
+/**
+ * @hidden
+ * transforms the schema so RPC types are compatible with other methods from the polkadot api.
+ * @note imports are added into the generated files in the postProcessTypes script
+ */
+function transformSchema(schemaObj) {
+  let {
+    rpc: { identity, compliance, asset },
+  } = schemaObj;
+
+  camelCaseParamNames(identity.getFilteredAuthorizations);
+  identity.getFilteredAuthorizations.type = 'Vec<PolymeshPrimitivesAuthorization>';
+
+  camelCaseParamNames(compliance.canTransfer);
+
+  camelCaseKeys(schemaObj, 'types', 'ComplianceRequirementResult');
+
+  camelCaseKeys(schemaObj, 'types', 'Condition');
+  schemaObj.types.Condition.issuers = 'Vec<PolymeshPrimitivesConditionTrustedIssuer>';
+
+  camelCaseKeys(schemaObj, 'types', 'TrustedIssuer');
+
+  camelCaseParamNames(asset.canTransferGranular);
+  asset.canTransferGranular.params[0].type = 'Option<PolymeshPrimitivesIdentityId>';
+  asset.canTransferGranular.params[2].type = 'Option<PolymeshPrimitivesIdentityId>';
+
+  camelCaseParamNames(asset.canTransfer);
+  asset.canTransfer.params[1].type = 'Option<PolymeshPrimitivesIdentityId>';
+  asset.canTransfer.params[3].type = 'Option<PolymeshPrimitivesIdentityId>';
+}
+
+function camelCaseKeys(schemaObj, section, field) {
+  const newField = mapKeys(schemaObj[section][field], (v, k) => camelCase(k));
+  schemaObj[section][field] = newField;
+}
+
+function camelCaseParamNames(field) {
+  field.params = field.params.map(p => ({
+    ...p,
+    name: camelCase(p.name),
+  }));
+}
 
 function writeDefinitions(schemaObj) {
   const { types, rpc: rpcModules } = schemaObj;
@@ -80,6 +123,7 @@ http.get(`http://${NODE_URL}:${SCHEMA_PORT}/polymesh_schema.json`, res => {
   res.on('end', () => {
     const schema = Buffer.concat(chunks);
     const schemaObj = JSON.parse(schema);
+    transformSchema(schemaObj);
 
     writeDefinitions(schemaObj);
   });

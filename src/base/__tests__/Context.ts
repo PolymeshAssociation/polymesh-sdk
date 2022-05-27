@@ -1,11 +1,11 @@
 import { Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { ProtocolOp } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Account, Context, PolymeshError } from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
+import { ProtocolOp } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId } from '~/testUtils/mocks/dataSources';
 import {
@@ -1164,7 +1164,7 @@ describe('Context class', () => {
       /* eslint-disable @typescript-eslint/naming-convention */
       const claim1stKey = dsMockUtils.createMockClaim1stKey({
         target: dsMockUtils.createMockIdentityId(targetDid),
-        claim_type: dsMockUtils.createMockRpcClaimType(ClaimType.CustomerDueDiligence),
+        claimType: dsMockUtils.createMockClaimType(ClaimType.CustomerDueDiligence),
       });
       /* eslint-enable @typescript-eslint/naming-convention */
 

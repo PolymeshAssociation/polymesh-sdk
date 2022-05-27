@@ -1,5 +1,7 @@
-import { PolymeshPrimitivesConditionTrustedIssuer } from '@polkadot/types/lookup';
-import { Ticker } from 'polymesh-types/types';
+import {
+  PolymeshPrimitivesConditionTrustedIssuer,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import sinon from 'sinon';
 
 import {
@@ -162,7 +164,7 @@ describe('TrustedClaimIssuers class', () => {
 
   describe('method: get', () => {
     let ticker: string;
-    let rawTicker: Ticker;
+    let rawTicker: PolymeshPrimitivesTicker;
     let stringToTickerStub: sinon.SinonStub;
     let context: Context;
     let asset: Asset;

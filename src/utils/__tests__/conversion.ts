@@ -5,50 +5,47 @@ import {
   PolymeshPrimitivesStatisticsStat2ndKey,
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesStatisticsStatType,
+  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import { hexToU8a } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 import {
   AgentGroup,
   AGId,
-  CAKind,
-  CalendarPeriod as MeshCalendarPeriod,
-  CddId,
-  ComplianceRequirement,
-  EcdsaSignature,
-  ExtrinsicPermissions,
-  InvestorZKProofData,
-  Memo,
-  MovePortfolioItem,
-  PortfolioId,
-  PriceTier,
-  RecordDateSpec,
-  RistrettoPoint,
-  Scalar,
-  ScheduleSpec,
-  ScopeId,
-  SettlementType,
-  TargetIdentities,
-  TrustedIssuer,
-} from 'polymesh-types/polymesh';
-import {
   AssetIdentifier,
   AssetType,
   AuthorizationData,
   AuthorizationType as MeshAuthorizationType,
   CAId,
+  CAKind,
+  CalendarPeriod as MeshCalendarPeriod,
+  CddId,
   Claim as MeshClaim,
+  ComplianceRequirement,
   DocumentHash,
-  ModuleName,
+  EcdsaSignature,
+  ExtrinsicPermissions,
+  InvestorZKProofData,
+  Memo,
+  MovePortfolioItem,
   Permissions as MeshPermissions,
+  PortfolioId,
+  PriceTier,
   ProtocolOp,
+  RecordDateSpec,
+  RistrettoPoint,
+  Scalar,
+  ScheduleSpec,
   Scope as MeshScope,
+  ScopeId,
+  SettlementType,
   Signatory,
-  Ticker,
+  TargetIdentities,
   TransferCondition,
-  TxTags,
+  TrustedIssuer,
   VenueType as MeshVenueType,
-} from 'polymesh-types/types';
+} from 'polymesh-types/polymesh';
+import { ModuleName, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -148,7 +145,6 @@ import {
   checkpointToRecordDateSpec,
   claimToMeshClaim,
   claimTypeToClaimType,
-  claimTypeToMeshClaimType,
   complianceRequirementResultToRequirementCompliance,
   complianceRequirementToRequirement,
   corporateActionIdentifierToCaId,
@@ -196,10 +192,6 @@ import {
   portfolioMovementToMovePortfolioItem,
   posRatioToBigNumber,
   requirementToComplianceRequirement,
-  rpcAuthorizationDataToAuthorization,
-  rpcMeshClaimTypeToClaimType,
-  rpcMeshPermissionsToPermissions,
-  rpcTrustedIssuerToTrustedClaimIssuer,
   scheduleSpecToMeshScheduleSpec,
   scopeClaimProofToConfidentialIdentityClaimProof,
   scopeIdsToBtreeSetIdentityId,
@@ -247,7 +239,6 @@ import {
   transferConditionToTransferRestriction,
   transferRestrictionToPolymeshTransferCondition,
   trustedClaimIssuerToTrustedIssuer,
-  trustedIssuerToTrustedClaimIssuer,
   txGroupToTxTags,
   txTagToExtrinsicIdentifier,
   txTagToProtocolOp,
@@ -520,7 +511,7 @@ describe('stringToTicker and tickerToString', () => {
   describe('stringToTicker', () => {
     it('should convert a string to a polkadot Ticker object', () => {
       const value = 'SOME_TICKER';
-      const fakeResult = 'convertedTicker' as unknown as Ticker;
+      const fakeResult = 'convertedTicker' as unknown as PolymeshPrimitivesTicker;
       const context = dsMockUtils.getContextInstance();
 
       context.createType
@@ -584,7 +575,7 @@ describe('stringToTicker and tickerToString', () => {
 
     it('should call stringToTicker and return the result as an object', () => {
       const value = 'SOME_TICKER';
-      const fakeResult = 'convertedTicker' as unknown as Ticker;
+      const fakeResult = 'convertedTicker' as unknown as PolymeshPrimitivesTicker;
       const context = dsMockUtils.getContextInstance();
 
       context.createType
@@ -1037,7 +1028,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
         .withArgs('PolymeshPrimitivesAuthorizationAuthorizationData', { [value.type]: value.value })
         .returns(fakeResult);
 
-      const fakeTicker = 'convertedTicker' as unknown as Ticker;
+      const fakeTicker = 'convertedTicker' as unknown as PolymeshPrimitivesTicker;
       createTypeStub
         .withArgs('PolymeshPrimitivesTicker', padString(ticker, 12))
         .returns(fakeTicker);
@@ -1377,188 +1368,6 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
         'Unsupported Authorization Type. Please contact the Polymath team'
       );
     });
-  });
-});
-
-describe('authorizationDataToAuthorization', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-  it('should convert a polkadot AuthorizationData object to an Authorization', () => {
-    const context = dsMockUtils.getContextInstance();
-    let fakeResult: Authorization = {
-      type: AuthorizationType.AttestPrimaryKeyRotation,
-      value: 'someIdentity',
-    };
-    let authorizationData = dsMockUtils.createMockRpcAuthorizationData({
-      AttestPrimaryKeyRotation: dsMockUtils.createMockIdentityId(fakeResult.value),
-    });
-
-    let result = rpcAuthorizationDataToAuthorization(authorizationData, context);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = {
-      type: AuthorizationType.RotatePrimaryKey,
-    };
-    authorizationData = dsMockUtils.createMockRpcAuthorizationData('RotatePrimaryKey');
-
-    result = rpcAuthorizationDataToAuthorization(authorizationData, context);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = {
-      type: AuthorizationType.TransferTicker,
-      value: 'someTicker',
-    };
-    authorizationData = dsMockUtils.createMockRpcAuthorizationData({
-      TransferTicker: dsMockUtils.createMockTicker(fakeResult.value),
-    });
-
-    result = rpcAuthorizationDataToAuthorization(authorizationData, context);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = {
-      type: AuthorizationType.AddMultiSigSigner,
-      value: 'someAccount',
-    };
-    authorizationData = dsMockUtils.createMockRpcAuthorizationData({
-      AddMultiSigSigner: dsMockUtils.createMockAccountId(fakeResult.value),
-    });
-
-    result = rpcAuthorizationDataToAuthorization(authorizationData, context);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = {
-      type: AuthorizationType.PortfolioCustody,
-      value: expect.objectContaining({ owner: expect.objectContaining({ did: 'someDid' }) }),
-    };
-    authorizationData = dsMockUtils.createMockRpcAuthorizationData({
-      PortfolioCustody: dsMockUtils.createMockPortfolioId({
-        did: dsMockUtils.createMockIdentityId('someDid'),
-        kind: dsMockUtils.createMockPortfolioKind('Default'),
-      }),
-    });
-
-    result = rpcAuthorizationDataToAuthorization(authorizationData, context);
-    expect(result).toEqual(fakeResult);
-
-    const portfolioId = new BigNumber(1);
-    fakeResult = {
-      type: AuthorizationType.PortfolioCustody,
-      value: expect.objectContaining({
-        owner: expect.objectContaining({ did: 'someDid' }),
-        id: portfolioId,
-      }),
-    };
-    authorizationData = dsMockUtils.createMockRpcAuthorizationData({
-      PortfolioCustody: dsMockUtils.createMockPortfolioId({
-        did: dsMockUtils.createMockIdentityId('someDid'),
-        kind: dsMockUtils.createMockPortfolioKind({
-          User: dsMockUtils.createMockU64(portfolioId),
-        }),
-      }),
-    });
-
-    result = rpcAuthorizationDataToAuthorization(authorizationData, context);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = {
-      type: AuthorizationType.TransferAssetOwnership,
-      value: 'someTicker',
-    };
-    authorizationData = dsMockUtils.createMockRpcAuthorizationData({
-      TransferAssetOwnership: dsMockUtils.createMockTicker(fakeResult.value),
-    });
-
-    result = rpcAuthorizationDataToAuthorization(authorizationData, context);
-    expect(result).toEqual(fakeResult);
-
-    fakeResult = {
-      type: AuthorizationType.JoinIdentity,
-      value: { assets: null, portfolios: null, transactions: null, transactionGroups: [] },
-    };
-    authorizationData = dsMockUtils.createMockRpcAuthorizationData({
-      JoinIdentity: dsMockUtils.createMockPermissions({
-        asset: dsMockUtils.createMockAssetPermissions('Whole'),
-        portfolio: dsMockUtils.createMockPortfolioPermissions('Whole'),
-        extrinsic: dsMockUtils.createMockExtrinsicPermissions('Whole'),
-      }),
-    });
-
-    result = rpcAuthorizationDataToAuthorization(authorizationData, context);
-    expect(result).toEqual(fakeResult);
-
-    const beneficiaryAddress = 'beneficiaryAddress';
-    const relayerAddress = 'relayerAddress';
-    const allowance = new BigNumber(1000);
-    fakeResult = {
-      type: AuthorizationType.AddRelayerPayingKey,
-      value: {
-        beneficiary: expect.objectContaining({ address: beneficiaryAddress }),
-        subsidizer: expect.objectContaining({ address: relayerAddress }),
-        allowance,
-      },
-    };
-    authorizationData = dsMockUtils.createMockRpcAuthorizationData({
-      AddRelayerPayingKey: [
-        dsMockUtils.createMockAccountId(beneficiaryAddress),
-        dsMockUtils.createMockAccountId(relayerAddress),
-        dsMockUtils.createMockBalance(allowance.shiftedBy(6)),
-      ],
-    });
-
-    result = rpcAuthorizationDataToAuthorization(authorizationData, context);
-    expect(result).toEqual(fakeResult);
-
-    const ticker = 'SOME_TICKER';
-    const type = PermissionGroupType.Full;
-    fakeResult = {
-      type: AuthorizationType.BecomeAgent,
-      value: expect.objectContaining({
-        asset: expect.objectContaining({ ticker }),
-        type,
-      }),
-    };
-
-    authorizationData = dsMockUtils.createMockRpcAuthorizationData({
-      BecomeAgent: [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockAgentGroup(type)],
-    });
-
-    result = rpcAuthorizationDataToAuthorization(authorizationData, context);
-    expect(result).toEqual(fakeResult);
-
-    authorizationData = dsMockUtils.createMockRpcAuthorizationData({
-      RotatePrimaryKeyToSecondary: dsMockUtils.createMockPermissions({
-        asset: dsMockUtils.createMockAssetPermissions('Whole'),
-        portfolio: dsMockUtils.createMockPortfolioPermissions('Whole'),
-        extrinsic: dsMockUtils.createMockExtrinsicPermissions('Whole'),
-      }),
-    });
-    fakeResult = {
-      type: AuthorizationType.RotatePrimaryKeyToSecondary,
-      value: { assets: null, portfolios: null, transactions: null, transactionGroups: [] },
-    };
-
-    result = rpcAuthorizationDataToAuthorization(authorizationData, context);
-    expect(result).toEqual(fakeResult);
-  });
-
-  it('should throw an error if the authorization has an unsupported type', () => {
-    const context = dsMockUtils.getContextInstance();
-    const authorizationData = dsMockUtils.createMockRpcAuthorizationData(
-      'Whatever' as 'RotatePrimaryKey'
-    );
-
-    expect(() => rpcAuthorizationDataToAuthorization(authorizationData, context)).toThrow(
-      'Unsupported Authorization Type. Please contact the Polymath team'
-    );
   });
 });
 
@@ -2080,119 +1889,6 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       result = meshPermissionsToPermissions(permissions, context);
       expect(result).toEqual(fakeResult);
     });
-  });
-});
-
-describe('rpcExtrinsicPermissionsToTransactionPermissions', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-    entityMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-    entityMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  it('should make transaction tags', () => {
-    const ticker = 'TICKER';
-    const did = 'someDid';
-    const context = dsMockUtils.getContextInstance();
-    let permissions = dsMockUtils.createMockRpcPermissions({
-      asset: dsMockUtils.createMockAssetPermissions({
-        Except: [dsMockUtils.createMockTicker(ticker)],
-      }),
-      extrinsic: dsMockUtils.createMockRpcExtrinsicPermissions({
-        Except: [
-          dsMockUtils.createMockRpcPalletPermissions({
-            /* eslint-disable @typescript-eslint/naming-convention */
-            pallet_name: 'Identity',
-            dispatchable_names: dsMockUtils.createMockRpcDispatchableNames({
-              Except: [dsMockUtils.createMockDispatchableName('add_claim')],
-            }),
-            /* eslint-enable @typescript-eslint/naming-convention */
-          }),
-        ],
-      }),
-      portfolio: dsMockUtils.createMockPortfolioPermissions({
-        Except: [
-          dsMockUtils.createMockPortfolioId({
-            did: dsMockUtils.createMockIdentityId(did),
-            kind: dsMockUtils.createMockPortfolioKind('Default'),
-          }),
-        ],
-      }),
-    });
-    let expectedResult: Permissions = {
-      assets: {
-        values: [expect.objectContaining({ ticker })],
-        type: PermissionType.Exclude,
-      },
-      transactions: {
-        type: PermissionType.Exclude,
-        exceptions: [TxTags.identity.AddClaim],
-        values: [ModuleName.Identity],
-      },
-      transactionGroups: [],
-      portfolios: {
-        values: [expect.objectContaining({ owner: expect.objectContaining({ did }) })],
-        type: PermissionType.Exclude,
-      },
-    };
-
-    let result = rpcMeshPermissionsToPermissions(permissions, context);
-
-    expect(result).toEqual(expectedResult);
-
-    permissions = dsMockUtils.createMockRpcPermissions({
-      asset: dsMockUtils.createMockAssetPermissions({
-        These: [dsMockUtils.createMockTicker(ticker)],
-      }),
-      extrinsic: dsMockUtils.createMockRpcExtrinsicPermissions({
-        These: [
-          dsMockUtils.createMockRpcPalletPermissions({
-            /* eslint-disable @typescript-eslint/naming-convention */
-            pallet_name: 'Identity',
-            dispatchable_names: dsMockUtils.createMockRpcDispatchableNames({
-              These: [dsMockUtils.createMockDispatchableName('add_claim')],
-            }),
-            /* eslint-enable @typescript-eslint/naming-convention */
-          }),
-        ],
-      }),
-      portfolio: dsMockUtils.createMockPortfolioPermissions({
-        These: [
-          dsMockUtils.createMockPortfolioId({
-            did: dsMockUtils.createMockIdentityId(did),
-            kind: dsMockUtils.createMockPortfolioKind('Default'),
-          }),
-        ],
-      }),
-    });
-
-    expectedResult = {
-      assets: {
-        values: [expect.objectContaining({ ticker })],
-        type: PermissionType.Include,
-      },
-      transactions: {
-        type: PermissionType.Include,
-        values: [TxTags.identity.AddClaim],
-      },
-      transactionGroups: [],
-      portfolios: {
-        values: [expect.objectContaining({ owner: expect.objectContaining({ did }) })],
-        type: PermissionType.Include,
-      },
-    };
-
-    result = rpcMeshPermissionsToPermissions(permissions, context);
-
-    expect(result).toEqual(expectedResult);
   });
 });
 
@@ -3462,7 +3158,7 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
         value: 'SOME_TICKER',
       };
       const fakeResult = 'ScopeEnum' as unknown as MeshScope;
-      const fakeTicker = 'SOME_TICKER' as unknown as Ticker;
+      const fakeTicker = 'SOME_TICKER' as unknown as PolymeshPrimitivesTicker;
 
       context.createType
         .withArgs('PolymeshPrimitivesTicker', padString(value.value, MAX_TICKER_LENGTH))
@@ -3796,106 +3492,6 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
       });
 
       result = meshClaimToClaim(claim);
-      expect(result).toEqual(fakeResult);
-    });
-  });
-});
-
-describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  describe('meshClaimTypeToClaimType', () => {
-    it('should convert a polkadot ClaimType object to a ClaimType', () => {
-      let fakeResult: ClaimType = ClaimType.Accredited;
-
-      let claimType = dsMockUtils.createMockRpcClaimType(fakeResult);
-
-      let result = rpcMeshClaimTypeToClaimType(claimType);
-      expect(result).toEqual(fakeResult);
-
-      fakeResult = ClaimType.Affiliate;
-
-      claimType = dsMockUtils.createMockRpcClaimType(fakeResult);
-
-      result = rpcMeshClaimTypeToClaimType(claimType);
-      expect(result).toEqual(fakeResult);
-
-      fakeResult = ClaimType.Blocked;
-
-      claimType = dsMockUtils.createMockRpcClaimType(fakeResult);
-
-      result = rpcMeshClaimTypeToClaimType(claimType);
-      expect(result).toEqual(fakeResult);
-
-      fakeResult = ClaimType.BuyLockup;
-
-      claimType = dsMockUtils.createMockRpcClaimType(fakeResult);
-
-      result = rpcMeshClaimTypeToClaimType(claimType);
-      expect(result).toEqual(fakeResult);
-
-      fakeResult = ClaimType.CustomerDueDiligence;
-
-      claimType = dsMockUtils.createMockRpcClaimType(fakeResult);
-
-      result = rpcMeshClaimTypeToClaimType(claimType);
-      expect(result).toEqual(fakeResult);
-
-      fakeResult = ClaimType.Exempted;
-
-      claimType = dsMockUtils.createMockRpcClaimType(fakeResult);
-
-      result = rpcMeshClaimTypeToClaimType(claimType);
-      expect(result).toEqual(fakeResult);
-
-      fakeResult = ClaimType.Jurisdiction;
-
-      claimType = dsMockUtils.createMockRpcClaimType(fakeResult);
-
-      result = rpcMeshClaimTypeToClaimType(claimType);
-      expect(result).toEqual(fakeResult);
-
-      fakeResult = ClaimType.KnowYourCustomer;
-
-      claimType = dsMockUtils.createMockRpcClaimType(fakeResult);
-
-      result = rpcMeshClaimTypeToClaimType(claimType);
-      expect(result).toEqual(fakeResult);
-
-      fakeResult = ClaimType.NoData;
-
-      claimType = dsMockUtils.createMockRpcClaimType(fakeResult);
-
-      result = rpcMeshClaimTypeToClaimType(claimType);
-      expect(result).toEqual(fakeResult);
-
-      fakeResult = ClaimType.SellLockup;
-
-      claimType = dsMockUtils.createMockRpcClaimType(fakeResult);
-
-      result = rpcMeshClaimTypeToClaimType(claimType);
-      expect(result).toEqual(fakeResult);
-    });
-  });
-
-  describe('claimTypeToMeshClaimType', () => {
-    it('should convert a ClaimType to a polkadot ClaimType object', () => {
-      const context = dsMockUtils.getContextInstance();
-      const fakeResult = 'meshClaim' as unknown as MeshClaim;
-
-      context.createType.returns(fakeResult);
-
-      const result = claimTypeToMeshClaimType(ClaimType.SellLockup, context);
       expect(result).toEqual(fakeResult);
     });
   });
@@ -4717,15 +4313,15 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
     });
     /* eslint-disable @typescript-eslint/naming-convention */
     const issuers = issuerDids.map(({ identity: { did } }) =>
-      dsMockUtils.createMockRpcTrustedIssuer({
+      dsMockUtils.createMockTrustedIssuer({
         issuer: dsMockUtils.createMockIdentityId(did),
-        trusted_for: dsMockUtils.createMockRpcTrustedFor(),
+        trustedFor: dsMockUtils.createMockTrustedFor(),
       })
     );
     const rawConditions = [
       dsMockUtils.createMockConditionResult({
-        condition: dsMockUtils.createMockRpcCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+        condition: dsMockUtils.createMockCondition({
+          conditionType: dsMockUtils.createMockConditionType({
             IsPresent: dsMockUtils.createMockClaim({ KnowYourCustomer: scope }),
           }),
           issuers,
@@ -4733,8 +4329,8 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
         result: dsMockUtils.createMockBool(true),
       }),
       dsMockUtils.createMockConditionResult({
-        condition: dsMockUtils.createMockRpcCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+        condition: dsMockUtils.createMockCondition({
+          conditionType: dsMockUtils.createMockConditionType({
             IsAbsent: dsMockUtils.createMockClaim({ BuyLockup: scope }),
           }),
           issuers,
@@ -4742,8 +4338,8 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
         result: dsMockUtils.createMockBool(false),
       }),
       dsMockUtils.createMockConditionResult({
-        condition: dsMockUtils.createMockRpcCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+        condition: dsMockUtils.createMockCondition({
+          conditionType: dsMockUtils.createMockConditionType({
             IsNoneOf: [
               dsMockUtils.createMockClaim({ Blocked: scope }),
               dsMockUtils.createMockClaim({ SellLockup: scope }),
@@ -4754,8 +4350,8 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
         result: dsMockUtils.createMockBool(true),
       }),
       dsMockUtils.createMockConditionResult({
-        condition: dsMockUtils.createMockRpcCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+        condition: dsMockUtils.createMockCondition({
+          conditionType: dsMockUtils.createMockConditionType({
             IsAnyOf: [
               dsMockUtils.createMockClaim({ Exempted: scope }),
               dsMockUtils.createMockClaim({
@@ -4768,8 +4364,8 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
         result: dsMockUtils.createMockBool(false),
       }),
       dsMockUtils.createMockConditionResult({
-        condition: dsMockUtils.createMockRpcCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+        condition: dsMockUtils.createMockCondition({
+          conditionType: dsMockUtils.createMockConditionType({
             IsIdentity: dsMockUtils.createMockTargetIdentity({
               Specific: dsMockUtils.createMockIdentityId(targetIdentityDid),
             }),
@@ -4779,8 +4375,8 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
         result: dsMockUtils.createMockBool(true),
       }),
       dsMockUtils.createMockConditionResult({
-        condition: dsMockUtils.createMockRpcCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+        condition: dsMockUtils.createMockCondition({
+          conditionType: dsMockUtils.createMockConditionType({
             IsIdentity: dsMockUtils.createMockTargetIdentity('ExternalAgent'),
           }),
           issuers,
@@ -4789,14 +4385,14 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
       }),
     ];
     const complianceRequirement = dsMockUtils.createMockComplianceRequirementResult({
-      sender_conditions: [
+      senderConditions: [
         rawConditions[0],
         rawConditions[2],
         rawConditions[2],
         rawConditions[3],
         rawConditions[4],
       ],
-      receiver_conditions: [
+      receiverConditions: [
         rawConditions[0],
         rawConditions[1],
         rawConditions[1],
@@ -4914,15 +4510,15 @@ describe('assetComplianceResultToCompliance', () => {
     });
     /* eslint-disable @typescript-eslint/naming-convention */
     const issuers = issuerDids.map(({ identity: { did } }) =>
-      dsMockUtils.createMockRpcTrustedIssuer({
+      dsMockUtils.createMockTrustedIssuer({
         issuer: dsMockUtils.createMockIdentityId(did),
-        trusted_for: dsMockUtils.createMockRpcTrustedFor(),
+        trustedFor: dsMockUtils.createMockTrustedFor(),
       })
     );
     const rawConditions = [
       dsMockUtils.createMockConditionResult({
-        condition: dsMockUtils.createMockRpcCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+        condition: dsMockUtils.createMockCondition({
+          conditionType: dsMockUtils.createMockConditionType({
             IsPresent: dsMockUtils.createMockClaim({ KnowYourCustomer: scope }),
           }),
           issuers,
@@ -4930,8 +4526,8 @@ describe('assetComplianceResultToCompliance', () => {
         result: dsMockUtils.createMockBool(true),
       }),
       dsMockUtils.createMockConditionResult({
-        condition: dsMockUtils.createMockRpcCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+        condition: dsMockUtils.createMockCondition({
+          conditionType: dsMockUtils.createMockConditionType({
             IsAbsent: dsMockUtils.createMockClaim({ BuyLockup: scope }),
           }),
           issuers,
@@ -4939,8 +4535,8 @@ describe('assetComplianceResultToCompliance', () => {
         result: dsMockUtils.createMockBool(false),
       }),
       dsMockUtils.createMockConditionResult({
-        condition: dsMockUtils.createMockRpcCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+        condition: dsMockUtils.createMockCondition({
+          conditionType: dsMockUtils.createMockConditionType({
             IsNoneOf: [
               dsMockUtils.createMockClaim({ Blocked: scope }),
               dsMockUtils.createMockClaim({ SellLockup: scope }),
@@ -4951,8 +4547,8 @@ describe('assetComplianceResultToCompliance', () => {
         result: dsMockUtils.createMockBool(true),
       }),
       dsMockUtils.createMockConditionResult({
-        condition: dsMockUtils.createMockRpcCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+        condition: dsMockUtils.createMockCondition({
+          conditionType: dsMockUtils.createMockConditionType({
             IsAnyOf: [
               dsMockUtils.createMockClaim({ Exempted: scope }),
               dsMockUtils.createMockClaim({
@@ -4967,8 +4563,8 @@ describe('assetComplianceResultToCompliance', () => {
     ];
 
     const rawRequirements = dsMockUtils.createMockComplianceRequirementResult({
-      sender_conditions: [rawConditions[0], rawConditions[2], rawConditions[3]],
-      receiver_conditions: [rawConditions[0], rawConditions[1], rawConditions[3]],
+      senderConditions: [rawConditions[0], rawConditions[2], rawConditions[3]],
+      receiverConditions: [rawConditions[0], rawConditions[1], rawConditions[3]],
       id: dsMockUtils.createMockU32(new BigNumber(1)),
       result: dsMockUtils.createMockBool(false),
     });
@@ -5580,72 +5176,6 @@ describe('trustedClaimIssuerToTrustedIssuer and trustedIssuerToTrustedClaimIssue
 
       result = trustedClaimIssuerToTrustedIssuer(issuer, context);
       expect(result).toBe(fakeResult);
-    });
-  });
-
-  describe('trustedIssuerToTrustedClaimIssuer', () => {
-    it('should convert an IdentityId to an Identity object', () => {
-      const did = 'someDid';
-      const context = dsMockUtils.getContextInstance();
-      let fakeResult: TrustedClaimIssuer = {
-        identity: expect.objectContaining({ did }),
-        trustedFor: null,
-      };
-      let trustedIssuer = dsMockUtils.createMockTrustedIssuer({
-        issuer: dsMockUtils.createMockIdentityId(did),
-        trustedFor: dsMockUtils.createMockTrustedFor('Any'),
-      });
-
-      let result = trustedIssuerToTrustedClaimIssuer(trustedIssuer, context);
-      expect(result).toEqual(fakeResult);
-
-      fakeResult = {
-        identity: expect.objectContaining({ did }),
-        trustedFor: [ClaimType.SellLockup],
-      };
-      trustedIssuer = dsMockUtils.createMockTrustedIssuer({
-        issuer: dsMockUtils.createMockIdentityId(did),
-        trustedFor: dsMockUtils.createMockTrustedFor({
-          Specific: [dsMockUtils.createMockRpcClaimType(ClaimType.SellLockup)],
-        }),
-      });
-
-      result = trustedIssuerToTrustedClaimIssuer(trustedIssuer, context);
-      expect(result).toEqual(fakeResult);
-    });
-  });
-
-  describe('rpcTrustedIssuerToTrustedClaimIssuer', () => {
-    it('should convert an IdentityId to an Identity object', () => {
-      const did = 'someDid';
-      const context = dsMockUtils.getContextInstance();
-      let fakeResult: TrustedClaimIssuer = {
-        identity: expect.objectContaining({ did }),
-        trustedFor: null,
-      };
-      let trustedIssuer = dsMockUtils.createMockRpcTrustedIssuer({
-        issuer: dsMockUtils.createMockIdentityId(did),
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        trusted_for: dsMockUtils.createMockRpcTrustedFor('Any'),
-      });
-
-      let result = rpcTrustedIssuerToTrustedClaimIssuer(trustedIssuer, context);
-      expect(result).toEqual(fakeResult);
-
-      fakeResult = {
-        identity: expect.objectContaining({ did }),
-        trustedFor: [ClaimType.SellLockup],
-      };
-      trustedIssuer = dsMockUtils.createMockRpcTrustedIssuer({
-        issuer: dsMockUtils.createMockIdentityId(did),
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        trusted_for: dsMockUtils.createMockRpcTrustedFor({
-          Specific: [dsMockUtils.createMockRpcClaimType(ClaimType.SellLockup)],
-        }),
-      });
-
-      result = rpcTrustedIssuerToTrustedClaimIssuer(trustedIssuer, context);
-      expect(result).toEqual(fakeResult);
     });
   });
 });

@@ -217,8 +217,8 @@ export enum ClaimType {
   Exempted = 'Exempted',
   Blocked = 'Blocked',
   InvestorUniqueness = 'InvestorUniqueness',
-  NoData = 'NoData',
   NoType = 'NoType',
+  NoData = 'NoData',
   InvestorUniquenessV2 = 'InvestorUniquenessV2',
 }
 
@@ -275,12 +275,12 @@ export interface InvestorUniquenessClaim {
   scopeId: string;
 }
 
-export interface NoDataClaim {
-  type: ClaimType.NoData;
-}
-
 export interface NoTypeClaim {
   type: ClaimType.NoType;
+}
+
+export interface NoDataClaim {
+  type: ClaimType.NoData;
 }
 
 export interface InvestorUniquenessV2Claim {

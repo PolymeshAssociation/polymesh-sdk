@@ -1,7 +1,7 @@
 import { u32, u64 } from '@polkadot/types';
+import { PolymeshPrimitivesIdentityIdPortfolioId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
-import { PortfolioId } from 'polymesh-types/types';
 
 import { assertInstructionValid } from '~/api/procedures/utils';
 import { Instruction, PolymeshError, Procedure } from '~/internal';
@@ -74,13 +74,13 @@ export async function prepareModifyInstructionAffirmation(
   }
 
   const rawInstructionId = bigNumberToU64(id, context);
-  const rawPortfolioIds: PortfolioId[] = portfolios.map(portfolio =>
+  const rawPortfolioIds: PolymeshPrimitivesIdentityIdPortfolioId[] = portfolios.map(portfolio =>
     portfolioIdToMeshPortfolioId(portfolioLikeToPortfolioId(portfolio), context)
   );
 
   const excludeCriteria: AffirmationStatus[] = [];
   let errorMessage: string;
-  let transaction: PolymeshTx<[u64, PortfolioId[], u32]> | null = null;
+  let transaction: PolymeshTx<[u64, PolymeshPrimitivesIdentityIdPortfolioId[], u32]> | null = null;
 
   switch (operation) {
     case InstructionAffirmationOperation.Affirm: {

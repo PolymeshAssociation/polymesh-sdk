@@ -1,6 +1,7 @@
 // Auto-generated via `yarn polkadot-types-from-defs`, do not edit
 /* eslint-disable */
 
+import { PolymeshPrimitivesConditionTrustedIssuer } from '@polkadot/types/lookup';
 import type {
   Bytes,
   Enum,
@@ -24,6 +25,7 @@ import type {
   BlockNumber,
   Call,
   H256,
+  H512,
   Hash,
   MultiAddress,
   Perbill,
@@ -525,8 +527,8 @@ export interface ComplianceRequirement extends Struct {
 
 /** @name ComplianceRequirementResult */
 export interface ComplianceRequirementResult extends Struct {
-  readonly sender_conditions: Vec<ConditionResult>;
-  readonly receiver_conditions: Vec<ConditionResult>;
+  readonly senderConditions: Vec<ConditionResult>;
+  readonly receiverConditions: Vec<ConditionResult>;
   readonly id: u32;
   readonly result: bool;
 }
@@ -536,8 +538,8 @@ export interface CompressedRistretto extends U8aFixed {}
 
 /** @name Condition */
 export interface Condition extends Struct {
-  readonly condition_type: ConditionType;
-  readonly issuers: Vec<TrustedIssuer>;
+  readonly conditionType: ConditionType;
+  readonly issuers: Vec<PolymeshPrimitivesConditionTrustedIssuer>;
 }
 
 /** @name ConditionResult */
@@ -1087,23 +1089,7 @@ export interface DepositInfo extends Struct {
 
 /** @name DidRecord */
 export interface DidRecord extends Struct {
-  readonly primary_key: AccountId;
-  readonly secondary_keys: Vec<SecondaryKey>;
-}
-
-/** @name DidRecords */
-export interface DidRecords extends Enum {
-  readonly isSuccess: boolean;
-  readonly asSuccess: DidRecordsSuccess;
-  readonly isIdNotFound: boolean;
-  readonly asIdNotFound: Bytes;
-  readonly type: 'Success' | 'IdNotFound';
-}
-
-/** @name DidRecordsSuccess */
-export interface DidRecordsSuccess extends Struct {
-  readonly primary_key: AccountId;
-  readonly secondary_keys: Vec<SecondaryKey>;
+  readonly primary_key: Option<AccountId>;
 }
 
 /** @name DidStatus */
@@ -1370,26 +1356,23 @@ export interface KeyIdentityData extends Struct {
   readonly permissions: Option<Permissions>;
 }
 
+/** @name KeyRecord */
+export interface KeyRecord extends Enum {
+  readonly isPrimaryKey: boolean;
+  readonly asPrimaryKey: IdentityId;
+  readonly isSecondaryKey: boolean;
+  readonly asSecondaryKey: ITuple<[IdentityId, Permissions]>;
+  readonly isMultiSigSignerKey: boolean;
+  readonly asMultiSigSignerKey: AccountId;
+  readonly type: 'PrimaryKey' | 'SecondaryKey' | 'MultiSigSignerKey';
+}
+
 /** @name Leg */
 export interface Leg extends Struct {
   readonly from: PortfolioId;
   readonly to: PortfolioId;
   readonly asset: Ticker;
   readonly amount: Balance;
-}
-
-/** @name LegacyPalletPermissions */
-export interface LegacyPalletPermissions extends Struct {
-  readonly pallet_name: PalletName;
-  readonly total: bool;
-  readonly dispatchable_names: Vec<DispatchableName>;
-}
-
-/** @name LegacyPermissions */
-export interface LegacyPermissions extends Struct {
-  readonly asset: Option<Vec<Ticker>>;
-  readonly extrinsic: Option<Vec<LegacyPalletPermissions>>;
-  readonly portfolio: Option<Vec<PortfolioId>>;
 }
 
 /** @name LegId */
@@ -1700,6 +1683,21 @@ export interface RestrictionResult extends Enum {
 /** @name RistrettoPoint */
 export interface RistrettoPoint extends U8aFixed {}
 
+/** @name RpcDidRecords */
+export interface RpcDidRecords extends Enum {
+  readonly isSuccess: boolean;
+  readonly asSuccess: RpcDidRecordsSuccess;
+  readonly isIdNotFound: boolean;
+  readonly asIdNotFound: Bytes;
+  readonly type: 'Success' | 'IdNotFound';
+}
+
+/** @name RpcDidRecordsSuccess */
+export interface RpcDidRecordsSuccess extends Struct {
+  readonly primary_key: AccountId;
+  readonly secondary_keys: Vec<SecondaryKey>;
+}
+
 /** @name Scalar */
 export interface Scalar extends U8aFixed {}
 
@@ -1736,14 +1734,14 @@ export interface ScopeId extends U8aFixed {}
 
 /** @name SecondaryKey */
 export interface SecondaryKey extends Struct {
-  readonly signer: Signatory;
+  readonly key: AccountId;
   readonly permissions: Permissions;
 }
 
 /** @name SecondaryKeyWithAuth */
 export interface SecondaryKeyWithAuth extends Struct {
   readonly secondary_key: SecondaryKey;
-  readonly auth_signature: Signature;
+  readonly auth_signature: H512;
 }
 
 /** @name SecurityToken */
@@ -1984,7 +1982,7 @@ export interface TrustedFor extends Enum {
 /** @name TrustedIssuer */
 export interface TrustedIssuer extends Struct {
   readonly issuer: IdentityId;
-  readonly trusted_for: TrustedFor;
+  readonly trustedFor: TrustedFor;
 }
 
 /** @name UniqueCall */

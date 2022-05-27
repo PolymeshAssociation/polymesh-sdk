@@ -1,11 +1,15 @@
 import { Vec } from '@polkadot/types/codec';
-import { PolymeshPrimitivesComplianceManagerAssetCompliance } from '@polkadot/types/lookup';
+import {
+  PolymeshPrimitivesComplianceManagerAssetCompliance,
+  PolymeshPrimitivesIdentityId,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { AssetComplianceResult, IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Params } from '~/api/procedures/setAssetRequirements';
 import { Asset, Context, Namespace, TransactionQueue } from '~/internal';
+import { AssetComplianceResult } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -209,7 +213,10 @@ describe('Requirements class', () => {
     let expected: ComplianceRequirements;
 
     let queryMultiStub: sinon.SinonStub;
-    let queryMultiResult: [PolymeshPrimitivesComplianceManagerAssetCompliance, Vec<IdentityId>];
+    let queryMultiResult: [
+      PolymeshPrimitivesComplianceManagerAssetCompliance,
+      Vec<PolymeshPrimitivesIdentityId>
+    ];
 
     beforeAll(() => {
       trustedIssuerToTrustedClaimIssuer = sinon.stub(
@@ -301,7 +308,7 @@ describe('Requirements class', () => {
             }),
           ],
         } as PolymeshPrimitivesComplianceManagerAssetCompliance,
-        defaultClaimIssuers as unknown as Vec<IdentityId>,
+        defaultClaimIssuers as unknown as Vec<PolymeshPrimitivesIdentityId>,
       ];
 
       expected = {
@@ -533,10 +540,10 @@ describe('Requirements class', () => {
     let signingDid: string;
     let fromDid: string;
     let toDid: string;
-    let rawFromDid: IdentityId;
-    let rawToDid: IdentityId;
-    let rawCurrentDid: IdentityId;
-    let rawTicker: Ticker;
+    let rawFromDid: PolymeshPrimitivesIdentityId;
+    let rawToDid: PolymeshPrimitivesIdentityId;
+    let rawCurrentDid: PolymeshPrimitivesIdentityId;
+    let rawTicker: PolymeshPrimitivesTicker;
 
     let stringToIdentityIdStub: sinon.SinonStub;
     let assetComplianceResultToRequirementComplianceStub: sinon.SinonStub;

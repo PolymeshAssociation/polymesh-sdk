@@ -1,8 +1,8 @@
 import BigNumber from 'bignumber.js';
-import { CanTransferResult, GranularCanTransferResult } from 'polymesh-types/types';
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import { Asset, Namespace } from '~/internal';
+import { CanTransferResult, GranularCanTransferResult } from '~/polkadot/polymesh';
 import { PortfolioLike, TransferBreakdown, TransferStatus } from '~/types';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 import {

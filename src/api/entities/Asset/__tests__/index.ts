@@ -1,12 +1,12 @@
 import { bool, Bytes, u64 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import { AssetIdentifier, SecurityToken as MeshSecurityToken } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Asset, Context, Entity, PolymeshError, TransactionQueue } from '~/internal';
 import { eventByIndexedArgs, tickerExternalAgentHistory } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
+import { AssetIdentifier, SecurityToken as MeshSecurityToken } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { ErrorCode, SecurityIdentifier, SecurityIdentifierType } from '~/types';
 import { StatisticsOpType } from '~/types/internal';

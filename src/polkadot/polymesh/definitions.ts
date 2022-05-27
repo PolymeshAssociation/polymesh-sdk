@@ -98,7 +98,7 @@ export default {
     },
     AssetMetadataValueDetail: {
       expire: 'Option<Moment>',
-      lock_status: 'AssetMetadataLockStatus<Moment>',
+      lock_status: 'AssetMetadataLockStatus',
     },
     AssetMetadataDescription: 'Text',
     AssetMetadataSpec: {
@@ -145,16 +145,6 @@ export default {
       extrinsic: 'ExtrinsicPermissions',
       portfolio: 'PortfolioPermissions',
     },
-    LegacyPalletPermissions: {
-      pallet_name: 'PalletName',
-      total: 'bool',
-      dispatchable_names: 'Vec<DispatchableName>',
-    },
-    LegacyPermissions: {
-      asset: 'Option<Vec<Ticker>>',
-      extrinsic: 'Option<Vec<LegacyPalletPermissions>>',
-      portfolio: 'Option<Vec<PortfolioId>>',
-    },
     Signatory: {
       _enum: {
         Identity: 'IdentityId',
@@ -162,12 +152,12 @@ export default {
       },
     },
     SecondaryKey: {
-      signer: 'Signatory',
+      key: 'AccountId',
       permissions: 'Permissions',
     },
     SecondaryKeyWithAuth: {
       secondary_key: 'SecondaryKey',
-      auth_signature: 'Signature',
+      auth_signature: 'H512',
     },
     Subsidy: {
       paying_key: 'AccountId',
@@ -192,8 +182,14 @@ export default {
       secondary_key: 'SecondaryKey',
     },
     DidRecord: {
-      primary_key: 'AccountId',
-      secondary_keys: 'Vec<SecondaryKey>',
+      primary_key: 'Option<AccountId>',
+    },
+    KeyRecord: {
+      _enum: {
+        PrimaryKey: 'IdentityId',
+        SecondaryKey: '(IdentityId, Permissions)',
+        MultiSigSignerKey: 'AccountId',
+      },
     },
     KeyIdentityData: {
       identity: 'IdentityId',
@@ -522,8 +518,8 @@ export default {
       id: 'u32',
     },
     ComplianceRequirementResult: {
-      sender_conditions: 'Vec<ConditionResult>',
-      receiver_conditions: 'Vec<ConditionResult>',
+      senderConditions: 'Vec<ConditionResult>',
+      receiverConditions: 'Vec<ConditionResult>',
       id: 'u32',
       result: 'bool',
     },
@@ -544,11 +540,11 @@ export default {
     },
     TrustedIssuer: {
       issuer: 'IdentityId',
-      trusted_for: 'TrustedFor',
+      trustedFor: 'TrustedFor',
     },
     Condition: {
-      condition_type: 'ConditionType',
-      issuers: 'Vec<TrustedIssuer>',
+      conditionType: 'ConditionType',
+      issuers: 'Vec<PolymeshPrimitivesConditionTrustedIssuer>',
     },
     ConditionResult: {
       condition: 'Condition',
@@ -847,13 +843,13 @@ export default {
         Err: 'Vec<u8>',
       },
     },
-    DidRecordsSuccess: {
+    RpcDidRecordsSuccess: {
       primary_key: 'AccountId',
       secondary_keys: 'Vec<SecondaryKey>',
     },
-    DidRecords: {
+    RpcDidRecords: {
       _enum: {
-        Success: 'DidRecordsSuccess',
+        Success: 'RpcDidRecordsSuccess',
         IdNotFound: 'Vec<u8>',
       },
     },

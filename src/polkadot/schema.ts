@@ -97,7 +97,7 @@ export default {
     },
     AssetMetadataValueDetail: {
       expire: 'Option<Moment>',
-      lock_status: 'AssetMetadataLockStatus<Moment>',
+      lock_status: 'AssetMetadataLockStatus',
     },
     AssetMetadataDescription: 'Text',
     AssetMetadataSpec: {
@@ -144,16 +144,6 @@ export default {
       extrinsic: 'ExtrinsicPermissions',
       portfolio: 'PortfolioPermissions',
     },
-    LegacyPalletPermissions: {
-      pallet_name: 'PalletName',
-      total: 'bool',
-      dispatchable_names: 'Vec<DispatchableName>',
-    },
-    LegacyPermissions: {
-      asset: 'Option<Vec<Ticker>>',
-      extrinsic: 'Option<Vec<LegacyPalletPermissions>>',
-      portfolio: 'Option<Vec<PortfolioId>>',
-    },
     Signatory: {
       _enum: {
         Identity: 'IdentityId',
@@ -161,12 +151,12 @@ export default {
       },
     },
     SecondaryKey: {
-      signer: 'Signatory',
+      key: 'AccountId',
       permissions: 'Permissions',
     },
     SecondaryKeyWithAuth: {
       secondary_key: 'SecondaryKey',
-      auth_signature: 'Signature',
+      auth_signature: 'H512',
     },
     Subsidy: {
       paying_key: 'AccountId',
@@ -191,8 +181,14 @@ export default {
       secondary_key: 'SecondaryKey',
     },
     DidRecord: {
-      primary_key: 'AccountId',
-      secondary_keys: 'Vec<SecondaryKey>',
+      primary_key: 'Option<AccountId>',
+    },
+    KeyRecord: {
+      _enum: {
+        PrimaryKey: 'IdentityId',
+        SecondaryKey: '(IdentityId, Permissions)',
+        MultiSigSignerKey: 'AccountId',
+      },
     },
     KeyIdentityData: {
       identity: 'IdentityId',
@@ -521,8 +517,8 @@ export default {
       id: 'u32',
     },
     ComplianceRequirementResult: {
-      sender_conditions: 'Vec<ConditionResult>',
-      receiver_conditions: 'Vec<ConditionResult>',
+      senderConditions: 'Vec<ConditionResult>',
+      receiverConditions: 'Vec<ConditionResult>',
       id: 'u32',
       result: 'bool',
     },
@@ -543,11 +539,11 @@ export default {
     },
     TrustedIssuer: {
       issuer: 'IdentityId',
-      trusted_for: 'TrustedFor',
+      trustedFor: 'TrustedFor',
     },
     Condition: {
-      condition_type: 'ConditionType',
-      issuers: 'Vec<TrustedIssuer>',
+      conditionType: 'ConditionType',
+      issuers: 'Vec<PolymeshPrimitivesConditionTrustedIssuer>',
     },
     ConditionResult: {
       condition: 'Condition',
@@ -846,13 +842,13 @@ export default {
         Err: 'Vec<u8>',
       },
     },
-    DidRecordsSuccess: {
+    RpcDidRecordsSuccess: {
       primary_key: 'AccountId',
       secondary_keys: 'Vec<SecondaryKey>',
     },
-    DidRecords: {
+    RpcDidRecords: {
       _enum: {
-        Success: 'DidRecordsSuccess',
+        Success: 'RpcDidRecordsSuccess',
         IdNotFound: 'Vec<u8>',
       },
     },
@@ -1218,12 +1214,12 @@ export default {
             isOptional: false,
           },
           {
-            name: 'from_did',
+            name: 'fromDid',
             type: 'Option<IdentityId>',
             isOptional: false,
           },
           {
-            name: 'to_did',
+            name: 'toDid',
             type: 'Option<IdentityId>',
             isOptional: false,
           },
@@ -1288,7 +1284,7 @@ export default {
             isOptional: true,
           },
         ],
-        type: 'DidRecords',
+        type: 'RpcDidRecords',
       },
       getDidStatus: {
         description: 'Retrieve status of the DID',
@@ -1316,12 +1312,12 @@ export default {
             isOptional: false,
           },
           {
-            name: 'allow_expired',
+            name: 'allowExpired',
             type: 'bool',
             isOptional: false,
           },
           {
-            name: 'auth_type',
+            name: 'authType',
             type: 'AuthorizationType',
             isOptional: true,
           },
@@ -1331,7 +1327,7 @@ export default {
             isOptional: true,
           },
         ],
-        type: 'Vec<Authorization>',
+        type: 'Vec<PolymeshPrimitivesAuthorization>',
       },
       getKeyIdentityData: {
         description: 'Query relation between a signing key and a DID',
@@ -1441,22 +1437,22 @@ export default {
             isOptional: false,
           },
           {
-            name: 'from_custodian',
-            type: 'Option<IdentityId>',
+            name: 'fromCustodian',
+            type: 'Option<PolymeshPrimitivesIdentityId>',
             isOptional: false,
           },
           {
-            name: 'from_portfolio',
+            name: 'fromPortfolio',
             type: 'PortfolioId',
             isOptional: false,
           },
           {
-            name: 'to_custodian',
-            type: 'Option<IdentityId>',
+            name: 'toCustodian',
+            type: 'Option<PolymeshPrimitivesIdentityId>',
             isOptional: false,
           },
           {
-            name: 'to_portfolio',
+            name: 'toPortfolio',
             type: 'PortfolioId',
             isOptional: false,
           },
@@ -1483,22 +1479,22 @@ export default {
           'Checks whether a transaction with given parameters can take place or not. The result is granular meaning each check is run and returned regardless of outcome.',
         params: [
           {
-            name: 'from_custodian',
-            type: 'Option<IdentityId>',
+            name: 'fromCustodian',
+            type: 'Option<PolymeshPrimitivesIdentityId>',
             isOptional: false,
           },
           {
-            name: 'from_portfolio',
+            name: 'fromPortfolio',
             type: 'PortfolioId',
             isOptional: false,
           },
           {
-            name: 'to_custodian',
-            type: 'Option<IdentityId>',
+            name: 'toCustodian',
+            type: 'Option<PolymeshPrimitivesIdentityId>',
             isOptional: false,
           },
           {
-            name: 'to_portfolio',
+            name: 'toPortfolio',
             type: 'PortfolioId',
             isOptional: false,
           },

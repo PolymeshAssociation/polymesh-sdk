@@ -1,5 +1,5 @@
+import { PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Context, Identity, KnownPermissionGroup, Namespace, TransactionQueue } from '~/internal';
@@ -390,8 +390,8 @@ describe('AssetPermissions class', () => {
   });
 
   describe('method: get', () => {
-    let rawDid: IdentityId;
-    let rawTicker: Ticker;
+    let rawDid: PolymeshPrimitivesIdentityId;
+    let rawTicker: PolymeshPrimitivesTicker;
     let stringToIdentityIdStub: sinon.SinonStub;
 
     beforeAll(() => {

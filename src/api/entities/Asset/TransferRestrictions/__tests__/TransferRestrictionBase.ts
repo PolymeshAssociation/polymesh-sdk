@@ -1,5 +1,5 @@
+import { PolymeshPrimitivesTransferComplianceTransferCondition } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { TransferCondition } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -259,8 +259,8 @@ describe('TransferRestrictionBase class', () => {
     let scopeId: string;
     let countRestriction: CountTransferRestriction;
     let percentageRestriction: PercentageTransferRestriction;
-    let rawCountRestriction: TransferCondition;
-    let rawPercentageRestriction: TransferCondition;
+    let rawCountRestriction: PolymeshPrimitivesTransferComplianceTransferCondition;
+    let rawPercentageRestriction: PolymeshPrimitivesTransferComplianceTransferCondition;
 
     beforeAll(() => {
       scopeId = 'someScopeId';
