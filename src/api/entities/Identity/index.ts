@@ -685,6 +685,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    * Get the list of secondary Accounts related to the Identity
    *
    * @note can be subscribed to
+   * @note This method currently lacks pagination and maybe slow for identities with many thousands of keys
    */
   public async getSecondaryAccounts(): Promise<PermissionedAccount[]>;
   public async getSecondaryAccounts(
@@ -727,7 +728,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       }, [] as PermissionedAccount[]);
     };
 
-    // TODO should use pagination
     const keys = await identity.didKeys.entries(did);
 
     const identityKeys = keys.map(([key]) => {

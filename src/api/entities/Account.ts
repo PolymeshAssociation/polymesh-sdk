@@ -344,16 +344,10 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       did = identityIdToString(keyRecord.asPrimaryKey);
     } else if (keyRecord.isSecondaryKey) {
       did = identityIdToString(keyRecord.asSecondaryKey[0]);
-    } else if (keyRecord.isMultiSigSignerKey) {
+    } else {
       const multiSigAddress = keyRecord.asMultiSigSignerKey;
       const rawMultiSigDid = await multiSig.multiSigToIdentity(multiSigAddress);
       did = identityIdToString(rawMultiSigDid);
-    } else {
-      throw new PolymeshError({
-        code: ErrorCode.FatalError,
-        message:
-          'Unrecognized `identity.keyRecords` result. Try upgrading the SDK to the latest version and contact the Polymath team if the problem persists',
-      });
     }
 
     return new Identity({ did }, context);
