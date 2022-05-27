@@ -1,4 +1,4 @@
-import { u64 } from '@polkadot/types';
+import { StorageKey, u64 } from '@polkadot/types';
 import { AccountId, Balance } from '@polkadot/types/interfaces';
 import {
   PolymeshPrimitivesIdentityDidRecord,
@@ -15,12 +15,7 @@ import { Asset, Context, Entity, Identity, PolymeshError } from '~/internal';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import { ScopeId } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import {
-  createMockAccountId,
-  createMockIdentityId,
-  createMockOption,
-  MockContext,
-} from '~/testUtils/mocks/dataSources';
+import { MockContext } from '~/testUtils/mocks/dataSources';
 import {
   Account,
   DistributionWithDetails,
@@ -1237,7 +1232,7 @@ describe('Identity class', () => {
     let rawPrimaryKeyRecord: PolymeshPrimitivesSecondaryKeyKeyRecord;
     let rawSecondaryKeyRecord: PolymeshPrimitivesSecondaryKeyKeyRecord;
     let rawMultiSigKeyRecord: PolymeshPrimitivesSecondaryKeyKeyRecord;
-    let rawDidRecord: { args: [PolymeshPrimitivesIdentityId, string] };
+    let rawDidRecord: StorageKey; // { args: [PolymeshPrimitivesIdentityId, string] };
     let accountIdToAccountStub: sinon.SinonStub<[AccountId, Context], Account>;
     let meshPermissionsToPermissionsStub: sinon.SinonStub<
       [PolymeshPrimitivesSecondaryKeyPermissions, Context],
@@ -1276,9 +1271,11 @@ describe('Identity class', () => {
         SecondaryKey: [dsMockUtils.createMockIdentityId(), dsMockUtils.createMockPermissions()],
       });
       rawMultiSigKeyRecord = dsMockUtils.createMockKeyRecord({
-        MultiSigSignerKey: createMockAccountId('someAddress'),
+        MultiSigSignerKey: dsMockUtils.createMockAccountId('someAddress'),
       });
-      rawDidRecord = { args: [createMockIdentityId(), accountId] };
+      rawDidRecord = {
+        args: [dsMockUtils.createMockIdentityId(), dsMockUtils.createMockAccountId(accountId)],
+      } as unknown as StorageKey;
       const entriesStub = sinon.stub();
       entriesStub.resolves([[rawDidRecord]]);
       dsMockUtils.createQueryStub('identity', 'didKeys', {
@@ -1314,11 +1311,11 @@ describe('Identity class', () => {
       const unsubCallback = 'unsubCallBack';
 
       const keyRecordsStub = dsMockUtils.createQueryStub('identity', 'keyRecords', {
-        multi: [createMockOption(rawSecondaryKeyRecord)],
+        multi: [dsMockUtils.createMockOption(rawSecondaryKeyRecord)],
       });
 
       keyRecordsStub.multi.callsFake(async (_, cbFunc) => {
-        cbFunc([createMockOption(rawSecondaryKeyRecord)]);
+        cbFunc([dsMockUtils.createMockOption(rawSecondaryKeyRecord)]);
         return unsubCallback;
       });
 
