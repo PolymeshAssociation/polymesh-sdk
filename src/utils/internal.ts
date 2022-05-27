@@ -15,7 +15,7 @@ import P from 'bluebird';
 import stringify from 'json-stable-stringify';
 import { differenceWith, flatMap, isEqual, mapValues, noop, padEnd, uniq } from 'lodash';
 import { IdentityId, ModuleName, TxTag } from 'polymesh-types/types';
-import { satisfies } from 'semver';
+import { major,satisfies } from 'semver';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 
 import {
@@ -1002,7 +1002,7 @@ function handleNodeVersionResponse(
 ): boolean {
   const { result: version } = data;
 
-  if (!satisfies(version, SUPPORTED_NODE_VERSION_RANGE)) {
+  if (!satisfies(version, major(SUPPORTED_NODE_VERSION_RANGE).toString())) {
     const error = new PolymeshError({
       code: ErrorCode.FatalError,
       message: 'Unsupported Polymesh RPC node version. Please upgrade the SDK',
@@ -1015,6 +1015,12 @@ function handleNodeVersionResponse(
     reject(error);
 
     return false;
+  }
+
+  if (!satisfies(version, SUPPORTED_NODE_VERSION_RANGE)) {
+    console.warn(
+      `This version of the SDK supports Polymesh RPC node version ${SUPPORTED_NODE_VERSION_RANGE}. The node is at version ${version}. Please upgrade the SDK`
+    );
   }
 
   return true;
@@ -1067,7 +1073,7 @@ function handleSpecVersionResponse(
     .map((ver: string) => ver.replace(/^0+(?!$)/g, ''))
     .join('.');
 
-  if (!satisfies(specVersionAsSemver, SUPPORTED_SPEC_VERSION_RANGE)) {
+  if (!satisfies(specVersionAsSemver, major(SUPPORTED_SPEC_VERSION_RANGE).toString())) {
     const error = new PolymeshError({
       code: ErrorCode.FatalError,
       message: 'Unsupported Polymesh chain spec version. Please upgrade the SDK',
@@ -1080,6 +1086,12 @@ function handleSpecVersionResponse(
     reject(error);
 
     return false;
+  }
+
+  if (!satisfies(specVersionAsSemver, SUPPORTED_SPEC_VERSION_RANGE)) {
+    console.warn(
+      `This version of the SDK supports Polymesh chain spec version ${SUPPORTED_SPEC_VERSION_RANGE}. The chain spec is at version ${specVersionAsSemver}. Please upgrade the SDK`
+    );
   }
 
   return true;

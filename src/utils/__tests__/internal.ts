@@ -913,8 +913,11 @@ describe('getExemptedIds', () => {
 
 describe('assertExpectedChainVersion', () => {
   let client: MockWebSocket;
+  let warnStub: sinon.SinonStub;
+
   beforeAll(() => {
     dsMockUtils.initMocks();
+    warnStub = sinon.stub(console, 'warn');
   });
 
   beforeEach(() => {
@@ -925,6 +928,10 @@ describe('assertExpectedChainVersion', () => {
     dsMockUtils.reset();
   });
 
+  afterAll(() => {
+    warnStub.restore();
+  });
+
   it('should resolve if it receives both expected RPC node and chain spec version', () => {
     const signal = assertExpectedChainVersion('ws://example.com');
     client.onopen();
@@ -932,7 +939,7 @@ describe('assertExpectedChainVersion', () => {
     return expect(signal).resolves.not.toThrow();
   });
 
-  it('should throw an error given an unexpected RPC node version', () => {
+  it('should throw an error given a major RPC node version mismatch', () => {
     const signal = assertExpectedChainVersion('ws://example.com');
     client.sendRpcVersion('3.0.0');
     const expectedError = new PolymeshError({
@@ -942,7 +949,18 @@ describe('assertExpectedChainVersion', () => {
     return expect(signal).rejects.toThrowError(expectedError);
   });
 
-  it('should throw an error given an unexpected chain spec version', () => {
+  it('should log a warning given a minor or patch RPC node version mismatch', async () => {
+    const signal = assertExpectedChainVersion('ws://example.com');
+    client.sendSpecVersion('5000000');
+    client.sendRpcVersion('5.1.0');
+    await signal;
+    sinon.assert.calledWith(
+      warnStub,
+      'This version of the SDK supports Polymesh RPC node version 5.0.0. The node is at version 5.1.0. Please upgrade the SDK'
+    );
+  });
+
+  it('should throw an error given a major chain spec version mismatch', () => {
     const signal = assertExpectedChainVersion('ws://example.com');
     client.sendSpecVersion('3000000');
     const expectedError = new PolymeshError({
@@ -950,6 +968,17 @@ describe('assertExpectedChainVersion', () => {
       message: 'Unsupported Polymesh chain spec version. Please upgrade the SDK',
     });
     return expect(signal).rejects.toThrowError(expectedError);
+  });
+
+  it('should log a warning given a minor or patch chain spec version mismatch', async () => {
+    const signal = assertExpectedChainVersion('ws://example.com');
+    client.sendSpecVersion('5001000');
+    client.sendRpcVersion('5.0.0');
+    await signal;
+    sinon.assert.calledWith(
+      warnStub,
+      'This version of the SDK supports Polymesh chain spec version 5.0.0. The chain spec is at version 5.1.0. Please upgrade the SDK'
+    );
   });
 
   it('should throw an error if the node cannot be reached', () => {
