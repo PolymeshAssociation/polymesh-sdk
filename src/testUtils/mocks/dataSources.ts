@@ -1663,7 +1663,7 @@ export const createMockOption = <T extends Codec>(
   wrapped: T | null | Option<T> = null
 ): Option<T> => {
   if (isOption<T>(wrapped)) {
-    return wrapped as Option<T>;
+    return wrapped;
   }
 
   return createMockCodec(
