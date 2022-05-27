@@ -1297,7 +1297,6 @@ describe('Identity class', () => {
           dsMockUtils.createMockOption(rawPrimaryKeyRecord),
           dsMockUtils.createMockOption(rawSecondaryKeyRecord),
           dsMockUtils.createMockOption(rawMultiSigKeyRecord),
-          dsMockUtils.createMockOption(),
         ],
       });
       const identity = new Identity({ did: 'someDid' }, context);

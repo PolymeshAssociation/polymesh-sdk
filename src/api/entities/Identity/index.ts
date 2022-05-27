@@ -685,7 +685,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    * Get the list of secondary Accounts related to the Identity
    *
    * @note can be subscribed to
-   * @note This method currently lacks pagination and maybe slow for identities with many thousands of keys
+   * @note This method currently lacks pagination and may be slow for identities with many thousands of keys
    */
   public async getSecondaryAccounts(): Promise<PermissionedAccount[]>;
   public async getSecondaryAccounts(
@@ -710,8 +710,8 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       rawSecondaryKeyKeyRecord: Option<PolymeshPrimitivesSecondaryKeyKeyRecord>[],
       accountIds: AccountId32[]
     ): PermissionedAccount[] => {
-      return rawSecondaryKeyKeyRecord.reduce((secondaryKeys, optKeyRecord, index) => {
-        if (optKeyRecord.isSome) {
+      return rawSecondaryKeyKeyRecord.reduce(
+        (secondaryKeys: PermissionedAccount[], optKeyRecord, index) => {
           const account = accountIdToAccount(accountIds[index], context);
           const keyRecord = optKeyRecord.unwrap();
 
@@ -722,10 +722,11 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
               permissions: meshPermissionsToPermissions(permissions, context),
             });
           }
-        }
 
-        return secondaryKeys;
-      }, [] as PermissionedAccount[]);
+          return secondaryKeys;
+        },
+        []
+      );
     };
 
     const keys = await identity.didKeys.entries(did);

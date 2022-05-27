@@ -333,7 +333,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
 
     const optKeyRecord = await identity.keyRecords(stringToAccountId(address, context));
 
-    if (optKeyRecord.isEmpty) {
+    if (optKeyRecord.isNone) {
       return null;
     }
 
