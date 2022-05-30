@@ -1987,23 +1987,6 @@ export const createMockDispatchableNames = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockRpcDispatchableNames = (
-  dispatchableNames?:
-    | 'Whole'
-    | { These: DispatchableName[] }
-    | { Except: DispatchableName[] }
-    | DispatchableNames
-): DispatchableNames => {
-  if (isCodec<DispatchableNames>(dispatchableNames)) {
-    return dispatchableNames;
-  }
-  return createMockEnum(dispatchableNames) as DispatchableNames;
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
 export const createMockPalletName = (name?: string | PalletName): PalletName => {
   if (isCodec<PalletName>(name)) {
     return name;
