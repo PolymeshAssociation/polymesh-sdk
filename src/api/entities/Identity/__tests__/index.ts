@@ -11,7 +11,7 @@ import { bool } from '@polkadot/types/primitive';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Asset, Context, Entity, Identity, PolymeshError } from '~/internal';
+import { Asset, Context, Entity, Identity } from '~/internal';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import { ScopeId } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -19,7 +19,6 @@ import { MockContext } from '~/testUtils/mocks/dataSources';
 import {
   Account,
   DistributionWithDetails,
-  ErrorCode,
   IdentityRole,
   Order,
   PermissionedAccount,
