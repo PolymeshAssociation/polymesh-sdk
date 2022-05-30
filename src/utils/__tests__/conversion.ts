@@ -6912,6 +6912,18 @@ describe('accountIdToAccount', () => {
 });
 
 describe('statUpdatesToBtreeStatUpdate', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
   it('should convert stat updates to a sorted BTreeSet', () => {
     const context = dsMockUtils.getContextInstance();
     const key2 = dsMockUtils.createMock2ndKey();
