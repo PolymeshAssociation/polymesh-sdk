@@ -145,6 +145,7 @@ import {
   checkpointToRecordDateSpec,
   claimToMeshClaim,
   claimTypeToClaimType,
+  complianceConditionsToBtreeSet,
   complianceRequirementResultToRequirementCompliance,
   complianceRequirementToRequirement,
   corporateActionIdentifierToCaId,
@@ -209,6 +210,7 @@ import {
   statisticsOpTypeToStatOpType,
   statisticsOpTypeToStatType,
   statUpdate,
+  statUpdatesToBtreeStatUpdate,
   storedScheduleToCheckpointScheduleParams,
   stringToAccountId,
   stringToBytes,
@@ -6931,5 +6933,58 @@ describe('statisticsOpTypeToStatOpType', () => {
 
     const result = statisticsOpTypeToStatOpType(StatisticsOpType.Count, context);
     expect(result).toEqual(fakeStat);
+  });
+});
+
+describe('statUpdatesToBtreeStatUpdate', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert stat updates to a sorted BTreeSet', () => {
+    const context = dsMockUtils.getContextInstance();
+    const key2 = dsMockUtils.createMock2ndKey();
+    const stat1 = dsMockUtils.createMockStatUpdate({ key2, value: new BigNumber(1) });
+    const stat2 = dsMockUtils.createMockStatUpdate({ key2, value: new BigNumber(2) });
+
+    context.createType.returns([stat1, stat2]);
+
+    const input = [stat1, stat2];
+    const result = statUpdatesToBtreeStatUpdate(input, context);
+    expect(result).toEqual([stat1, stat2]);
+  });
+});
+
+describe('complianceConditionsToBtreeSet', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert transfer conditions to a sorted BTreeSet', () => {
+    const context = dsMockUtils.getContextInstance();
+    const condition1 = dsMockUtils.createMockTransferCondition();
+    const condition2 = dsMockUtils.createMockTransferCondition();
+
+    context.createType.returns([condition1, condition2]);
+
+    const input = [condition2, condition1];
+    const result = complianceConditionsToBtreeSet(input, context);
+    expect(result).toEqual([condition1, condition2]);
   });
 });

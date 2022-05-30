@@ -18,7 +18,7 @@ import {
 import { ProcedureAuthorization, StatisticsOpType } from '~/types/internal';
 import {
   bigNumberToU128,
-  complianceRequirementsToBtreeSet,
+  complianceConditionsToBtreeSet,
   createStat2ndKey,
   meshStatToStatisticsOpType,
   permillToBigNumber,
@@ -225,7 +225,7 @@ export async function prepareSetTransferRestrictions(
   transactions.push(
     checkTxType({
       transaction: statistics.setAssetTransferCompliance,
-      args: [tickerKey, complianceRequirementsToBtreeSet(conditions, context)],
+      args: [tickerKey, complianceConditionsToBtreeSet(conditions, context)],
     })
   );
 
