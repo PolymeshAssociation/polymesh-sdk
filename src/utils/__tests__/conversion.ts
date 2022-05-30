@@ -146,6 +146,7 @@ import {
   checkpointToRecordDateSpec,
   claimToMeshClaim,
   claimTypeToClaimType,
+  complianceConditionsToBtreeSet,
   complianceRequirementResultToRequirementCompliance,
   complianceRequirementToRequirement,
   corporateActionIdentifierToCaId,
@@ -209,6 +210,7 @@ import {
   statisticsOpTypeToStatOpType,
   statisticsOpTypeToStatType,
   statUpdate,
+  statUpdatesToBtreeStatUpdate,
   storedScheduleToCheckpointScheduleParams,
   stringToAccountId,
   stringToBytes,
@@ -6849,7 +6851,7 @@ describe('agentGroupToPermissionGroup', () => {
   });
 
   describe('createStat2ndKey', () => {
-    it('should return a NoClaimStat 2ndkey', () => {
+    it('should return a NoClaimStat 2nd key', () => {
       const context = dsMockUtils.getContextInstance();
 
       context.createType
@@ -6888,7 +6890,7 @@ describe('statisticsOpTypeToStatOpType', () => {
   });
 });
 
-describe('acountIdToAccount', () => {
+describe('accountIdToAccount', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -6906,5 +6908,46 @@ describe('acountIdToAccount', () => {
     const mockAccountId = dsMockUtils.createMockAccountId('someAddress');
     const result = accountIdToAccount(mockAccountId, context);
     expect(result.address).toEqual('someAddress');
+  });
+});
+
+describe('statUpdatesToBtreeStatUpdate', () => {
+  it('should convert stat updates to a sorted BTreeSet', () => {
+    const context = dsMockUtils.getContextInstance();
+    const key2 = dsMockUtils.createMock2ndKey();
+    const stat1 = dsMockUtils.createMockStatUpdate({ key2, value: new BigNumber(1) });
+    const stat2 = dsMockUtils.createMockStatUpdate({ key2, value: new BigNumber(2) });
+
+    context.createType.returns([stat1, stat2]);
+
+    const input = [stat1, stat2];
+    const result = statUpdatesToBtreeStatUpdate(input, context);
+    expect(result).toEqual([stat1, stat2]);
+  });
+});
+
+describe('complianceConditionsToBtreeSet', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert transfer conditions to a sorted BTreeSet', () => {
+    const context = dsMockUtils.getContextInstance();
+    const condition1 = dsMockUtils.createMockTransferCondition();
+    const condition2 = dsMockUtils.createMockTransferCondition();
+
+    context.createType.returns([condition1, condition2]);
+
+    const input = [condition2, condition1];
+    const result = complianceConditionsToBtreeSet(input, context);
+    expect(result).toEqual([condition1, condition2]);
   });
 });

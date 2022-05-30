@@ -72,7 +72,7 @@ describe('setTransferRestrictions procedure', () => {
     [PolymeshPrimitivesStatisticsStatUpdate[], Context],
     BTreeSetStatUpdate
   >;
-  let complianceRequirementsToBtreeSetStub: sinon.SinonStub<
+  let complianceConditionsToBtreeSetStub: sinon.SinonStub<
     [PolymeshPrimitivesTransferComplianceTransferCondition[], Context],
     BTreeSetTransferCondition
   >;
@@ -120,9 +120,9 @@ describe('setTransferRestrictions procedure', () => {
       utilsConversionModule,
       'statUpdatesToBtreeStatUpdate'
     );
-    complianceRequirementsToBtreeSetStub = sinon.stub(
+    complianceConditionsToBtreeSetStub = sinon.stub(
       utilsConversionModule,
-      'complianceRequirementsToBtreeSet'
+      'complianceConditionsToBtreeSet'
     );
     ticker = 'TICKER';
     count = new BigNumber(10);
@@ -191,10 +191,10 @@ describe('setTransferRestrictions procedure', () => {
     statUpdatesToBtreeStatUpdateStub
       .withArgs([rawStatUpdate], mockContext)
       .returns([rawStatUpdate] as BTreeSetStatUpdate);
-    complianceRequirementsToBtreeSetStub
+    complianceConditionsToBtreeSetStub
       .withArgs([rawCountRestriction], mockContext)
       .returns([rawCountRestriction] as BTreeSetTransferCondition);
-    complianceRequirementsToBtreeSetStub
+    complianceConditionsToBtreeSetStub
       .withArgs([rawPercentageRestriction], mockContext)
       .returns([rawPercentageRestriction] as BTreeSetTransferCondition);
   });
@@ -325,7 +325,7 @@ describe('setTransferRestrictions procedure', () => {
         currentStats: [] as unknown as BTreeSetStatType,
       }
     );
-    complianceRequirementsToBtreeSetStub
+    complianceConditionsToBtreeSetStub
       .withArgs([], mockContext)
       .returns([] as unknown as BTreeSetTransferCondition);
 

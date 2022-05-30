@@ -3400,7 +3400,7 @@ export function createStat2ndKey(context: Context): PolymeshPrimitivesStatistics
 /**
  * @hidden
  */
-export function complianceRequirementsToBtreeSet(
+export function complianceConditionsToBtreeSet(
   conditions: PolymeshPrimitivesTransferComplianceTransferCondition[],
   context: Context
 ): BTreeSetTransferCondition {
