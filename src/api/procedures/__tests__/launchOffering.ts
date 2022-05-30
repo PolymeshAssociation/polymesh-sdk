@@ -1,4 +1,4 @@
-import { Text, u64 } from '@polkadot/types';
+import { Bytes, u64 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
@@ -55,7 +55,7 @@ describe('launchOffering procedure', () => {
   let dateToMomentStub: sinon.SinonStub<[Date, Context], Moment>;
   let bigNumberToBalanceStub: sinon.SinonStub<[BigNumber, Context, boolean?], Balance>;
   let offeringTierToPriceTierStub: sinon.SinonStub<[OfferingTier, Context], PriceTier>;
-  let stringToTextStub: sinon.SinonStub<[string, Context], Text>;
+  let stringToBytesStub: sinon.SinonStub<[string, Context], Bytes>;
   let portfolioIdToPortfolioStub: sinon.SinonStub;
   let ticker: string;
   let offeringPortfolio: PortfolioLike;
@@ -77,7 +77,7 @@ describe('launchOffering procedure', () => {
   let rawRaisingPortfolio: MeshPortfolioId;
   let rawRaisingCurrency: Ticker;
   let rawVenueId: u64;
-  let rawName: Text;
+  let rawName: Bytes;
   let rawStart: Moment;
   let rawEnd: Moment;
   let rawTiers: PriceTier[];
@@ -104,7 +104,7 @@ describe('launchOffering procedure', () => {
     bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
     dateToMomentStub = sinon.stub(utilsConversionModule, 'dateToMoment');
     bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
-    stringToTextStub = sinon.stub(utilsConversionModule, 'stringToText');
+    stringToBytesStub = sinon.stub(utilsConversionModule, 'stringToBytes');
     portfolioIdToPortfolioStub = sinon.stub(utilsConversionModule, 'portfolioIdToPortfolio');
     ticker = 'tickerFrozen';
     rawTicker = dsMockUtils.createMockTicker(ticker);
@@ -131,7 +131,7 @@ describe('launchOffering procedure', () => {
     });
     rawRaisingCurrency = dsMockUtils.createMockTicker(raisingCurrency);
     rawVenueId = dsMockUtils.createMockU64(venueId);
-    rawName = dsMockUtils.createMockText(name);
+    rawName = dsMockUtils.createMockBytes(name);
     rawStart = dsMockUtils.createMockMoment(new BigNumber(start.getTime()));
     rawEnd = dsMockUtils.createMockMoment(new BigNumber(end.getTime()));
     rawTiers = [
@@ -170,7 +170,7 @@ describe('launchOffering procedure', () => {
     bigNumberToU64Stub.withArgs(venue.id, mockContext).returns(rawVenueId);
     dateToMomentStub.withArgs(start, mockContext).returns(rawStart);
     dateToMomentStub.withArgs(end, mockContext).returns(rawEnd);
-    stringToTextStub.withArgs(name, mockContext).returns(rawName);
+    stringToBytesStub.withArgs(name, mockContext).returns(rawName);
     bigNumberToBalanceStub.withArgs(minInvestment, mockContext).returns(rawMinInvestment);
     portfolio = entityMockUtils.getDefaultPortfolioInstance(offeringPortfolioId);
     portfolioIdToPortfolioStub.withArgs(offeringPortfolioId, mockContext).returns(portfolio);

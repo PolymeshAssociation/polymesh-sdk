@@ -1,10 +1,11 @@
 import { Bytes } from '@polkadot/types';
+import { PolymeshPrimitivesAssetAssetType } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { values } from 'lodash';
-import { AssetType, CustomAssetTypeId } from 'polymesh-types/types';
 
 import { Asset, Context, PolymeshError, Procedure, TickerReservation } from '~/internal';
+import { CustomAssetTypeId } from '~/polkadot/polymesh';
 import {
   AssetDocument,
   ErrorCode,
@@ -22,19 +23,17 @@ import {
   boolToBoolean,
   internalAssetTypeToAssetType,
   securityIdentifierToAssetIdentifier,
-  stringToAssetName,
   stringToBytes,
-  stringToFundingRoundName,
   stringToTicker,
 } from '~/utils/conversion';
-import { filterEventRecords } from '~/utils/internal';
+import { filterEventRecords, optionize } from '~/utils/internal';
 
 /**
  * @hidden
  */
 export const createRegisterCustomAssetTypeResolver =
   (context: Context) =>
-  (receipt: ISubmittableResult): AssetType => {
+  (receipt: ISubmittableResult): PolymeshPrimitivesAssetAssetType => {
     const [{ data }] = filterEventRecords(receipt, 'asset', 'CustomAssetTypeRegistered');
 
     return internalAssetTypeToAssetType({ Custom: data[1] }, context);
@@ -143,7 +142,7 @@ export async function prepareCreateAsset(
     });
   }
 
-  let rawType: MaybePostTransactionValue<AssetType>;
+  let rawType: MaybePostTransactionValue<PolymeshPrimitivesAssetAssetType>;
 
   if (customTypeData) {
     const { rawValue, id } = customTypeData;
@@ -162,12 +161,12 @@ export async function prepareCreateAsset(
     rawType = internalAssetTypeToAssetType(assetType as KnownAssetType, context);
   }
 
-  const rawName = stringToAssetName(name, context);
+  const rawName = stringToBytes(name, context);
   const rawIsDivisible = booleanToBool(isDivisible, context);
   const rawIdentifiers = securityIdentifiers.map(identifier =>
     securityIdentifierToAssetIdentifier(identifier, context)
   );
-  const rawFundingRound = fundingRound ? stringToFundingRoundName(fundingRound, context) : null;
+  const rawFundingRound = optionize(stringToBytes)(fundingRound, context);
   const rawDisableIu = booleanToBool(!requireInvestorUniqueness, context);
 
   let fee: undefined | BigNumber;
@@ -178,7 +177,7 @@ export async function prepareCreateAsset(
 
   const classicTicker = await asset.classicTickers(rawTicker);
   const assetCreatedInEthereum =
-    classicTicker.isSome && boolToBoolean(classicTicker.unwrap().is_created);
+    classicTicker.isSome && boolToBoolean(classicTicker.unwrap().isCreated);
 
   if (assetCreatedInEthereum) {
     fee = new BigNumber(0);

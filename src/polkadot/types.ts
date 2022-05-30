@@ -19,11 +19,13 @@ export enum SystemTx {
   SetStorage = 'system.setStorage',
   KillStorage = 'system.killStorage',
   KillPrefix = 'system.killPrefix',
+  RemarkWithEvent = 'system.remarkWithEvent',
 }
 
 export enum BabeTx {
   ReportEquivocation = 'babe.reportEquivocation',
   ReportEquivocationUnsigned = 'babe.reportEquivocationUnsigned',
+  PlanConfigChange = 'babe.planConfigChange',
 }
 
 export enum TimestampTx {
@@ -74,6 +76,10 @@ export enum IdentityTx {
   AddInvestorUniquenessClaimV2 = 'identity.addInvestorUniquenessClaimV2',
   RevokeClaimByIndex = 'identity.revokeClaimByIndex',
   RotatePrimaryKeyToSecondary = 'identity.rotatePrimaryKeyToSecondary',
+  RemoveSecondaryKeysOld = 'identity.removeSecondaryKeysOld',
+  PlaceholderLegacySetPermissionToSigner = 'identity.placeholderLegacySetPermissionToSigner',
+  AddSecondaryKeysWithAuthorizationOld = 'identity.addSecondaryKeysWithAuthorizationOld',
+  SetSecondaryKeyPermissions = 'identity.setSecondaryKeyPermissions',
 }
 
 export enum CddServiceProvidersTx {
@@ -160,6 +166,7 @@ export enum MultiSigTx {
   MakeMultisigSigner = 'multiSig.makeMultisigSigner',
   MakeMultisigPrimary = 'multiSig.makeMultisigPrimary',
   ExecuteScheduledProposal = 'multiSig.executeScheduledProposal',
+  MakeMultisigSecondary = 'multiSig.makeMultisigSecondary',
 }
 
 export enum BridgeTx {
@@ -258,6 +265,12 @@ export enum AssetTx {
   ReserveClassicTicker = 'asset.reserveClassicTicker',
   ControllerTransfer = 'asset.controllerTransfer',
   RegisterCustomAssetType = 'asset.registerCustomAssetType',
+  CreateAssetWithCustomType = 'asset.createAssetWithCustomType',
+  SetAssetMetadata = 'asset.setAssetMetadata',
+  SetAssetMetadataDetails = 'asset.setAssetMetadataDetails',
+  RegisterAndSetLocalAssetMetadata = 'asset.registerAndSetLocalAssetMetadata',
+  RegisterAssetMetadataLocalType = 'asset.registerAssetMetadataLocalType',
+  RegisterAssetMetadataGlobalType = 'asset.registerAssetMetadataGlobalType',
 }
 
 export enum CapitalDistributionTx {
@@ -296,6 +309,7 @@ export enum CorporateActionTx {
   LinkCaDoc = 'corporateAction.linkCaDoc',
   RemoveCa = 'corporateAction.removeCa',
   ChangeRecordDate = 'corporateAction.changeRecordDate',
+  InitiateCorporateActionAndDistribute = 'corporateAction.initiateCorporateActionAndDistribute',
 }
 
 export enum CorporateBallotTx {
@@ -375,6 +389,10 @@ export enum StatisticsTx {
   RemoveTransferManager = 'statistics.removeTransferManager',
   AddExemptedEntities = 'statistics.addExemptedEntities',
   RemoveExemptedEntities = 'statistics.removeExemptedEntities',
+  SetAssetTransferCompliance = 'statistics.setAssetTransferCompliance',
+  SetEntitiesExempt = 'statistics.setEntitiesExempt',
+  SetActiveAssetStats = 'statistics.setActiveAssetStats',
+  BatchUpdateAssetStats = 'statistics.batchUpdateAssetStats',
 }
 
 export enum StoTx {
@@ -405,6 +423,8 @@ export enum ExternalAgentsTx {
   Abdicate = 'externalAgents.abdicate',
   ChangeGroup = 'externalAgents.changeGroup',
   AcceptBecomeAgent = 'externalAgents.acceptBecomeAgent',
+  CreateGroupAndAddAuth = 'externalAgents.createGroupAndAddAuth',
+  CreateAndChangeCustomGroup = 'externalAgents.createAndChangeCustomGroup',
 }
 
 export enum RelayerTx {
@@ -426,6 +446,23 @@ export enum TestUtilsTx {
   MockCddRegisterDid = 'testUtils.mockCddRegisterDid',
   GetMyDid = 'testUtils.getMyDid',
   GetCddOf = 'testUtils.getCddOf',
+}
+
+export enum PolymeshContractsTx {
+  Call = 'polymeshContracts.call',
+  InstantiateWithCode = 'polymeshContracts.instantiateWithCode',
+  Instantiate = 'polymeshContracts.instantiate',
+  UploadCode = 'polymeshContracts.uploadCode',
+  RemoveCode = 'polymeshContracts.removeCode',
+  InstantiateWithCodePerms = 'polymeshContracts.instantiateWithCodePerms',
+  InstantiateWithHashPerms = 'polymeshContracts.instantiateWithHashPerms',
+}
+
+export enum PreimageTx {
+  NotePreimage = 'preimage.notePreimage',
+  UnnotePreimage = 'preimage.unnotePreimage',
+  RequestPreimage = 'preimage.requestPreimage',
+  UnrequestPreimage = 'preimage.unrequestPreimage',
 }
 
 export enum ModuleName {
@@ -469,6 +506,8 @@ export enum ModuleName {
   Relayer = 'relayer',
   Rewards = 'rewards',
   TestUtils = 'testUtils',
+  PolymeshContracts = 'polymeshContracts',
+  Preimage = 'preimage',
 }
 
 export type TxTag =
@@ -511,7 +550,9 @@ export type TxTag =
   | ExternalAgentsTx
   | RelayerTx
   | RewardsTx
-  | TestUtilsTx;
+  | TestUtilsTx
+  | PolymeshContractsTx
+  | PreimageTx;
 
 export const TxTags = {
   system: SystemTx,
@@ -554,4 +595,6 @@ export const TxTags = {
   relayer: RelayerTx,
   rewards: RewardsTx,
   testUtils: TestUtilsTx,
+  polymeshContracts: PolymeshContractsTx,
+  preimage: PreimageTx,
 };

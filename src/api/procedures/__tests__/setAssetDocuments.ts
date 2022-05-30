@@ -1,4 +1,5 @@
 import { Vec } from '@polkadot/types';
+import { PolymeshPrimitivesDocument } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { Document, DocumentId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
@@ -26,12 +27,15 @@ jest.mock(
 describe('setAssetDocuments procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let assetDocumentToDocumentStub: sinon.SinonStub<[AssetDocument, Context], Document>;
+  let assetDocumentToDocumentStub: sinon.SinonStub<
+    [AssetDocument, Context],
+    PolymeshPrimitivesDocument
+  >;
   let ticker: string;
   let documents: AssetDocument[];
   let rawTicker: Ticker;
-  let rawDocuments: Document[];
-  let documentEntries: [[Ticker, DocumentId], Document][];
+  let rawDocuments: PolymeshPrimitivesDocument[];
+  let documentEntries: [[Ticker, DocumentId], PolymeshPrimitivesDocument][];
   let args: Params;
 
   beforeAll(() => {
@@ -65,19 +69,15 @@ describe('setAssetDocuments procedure', () => {
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawDocuments = documents.map(({ name, uri, contentHash, type, filedAt }) =>
       dsMockUtils.createMockDocument({
-        name: dsMockUtils.createMockDocumentName(name),
-        uri: dsMockUtils.createMockDocumentUri(uri),
-        /* eslint-disable @typescript-eslint/naming-convention */
-        content_hash: dsMockUtils.createMockDocumentHash({
+        name: dsMockUtils.createMockBytes(name),
+        uri: dsMockUtils.createMockBytes(uri),
+        contentHash: dsMockUtils.createMockDocumentHash({
           H128: dsMockUtils.createMockU8aFixed(contentHash, true),
         }),
-        doc_type: dsMockUtils.createMockOption(
-          type ? dsMockUtils.createMockDocumentType(type) : null
-        ),
-        filing_date: dsMockUtils.createMockOption(
+        docType: dsMockUtils.createMockOption(type ? dsMockUtils.createMockBytes(type) : null),
+        filingDate: dsMockUtils.createMockOption(
           filedAt ? dsMockUtils.createMockMoment(new BigNumber(filedAt.getTime())) : null
         ),
-        /* eslint-enable @typescript-eslint/naming-convention */
       })
     );
     documentEntries = rawDocuments.map((doc, index) =>

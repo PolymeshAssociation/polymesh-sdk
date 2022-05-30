@@ -2,8 +2,14 @@ import { ApiPromise } from '@polkadot/api';
 import { getTypeDef, Option } from '@polkadot/types';
 import { AccountInfo } from '@polkadot/types/interfaces';
 import {
+  PalletCorporateActionsCaId,
+  PalletCorporateActionsDistribution,
+  PalletRelayerSubsidy,
+} from '@polkadot/types/lookup';
+import {
   CallFunction,
-  InterfaceTypes,
+  Codec,
+  DetectCodec,
   Signer as PolkadotSigner,
   TypeDef,
   TypeDefInfo,
@@ -15,14 +21,7 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, clone, flatMap, flatten, flattenDeep } from 'lodash';
 import { polymesh } from 'polymesh-types/definitions';
-import {
-  CAId,
-  Distribution,
-  ModuleName,
-  ProtocolOp,
-  Subsidy as MeshSubsidy,
-  TxTag,
-} from 'polymesh-types/types';
+import { ModuleName, ProtocolOp, TxTag } from 'polymesh-types/types';
 
 import { Account, Asset, DividendDistribution, Identity, PolymeshError, Subsidy } from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
@@ -68,7 +67,7 @@ import {
   textToString,
   tickerToString,
   txTagToProtocolOp,
-  u8ToBigNumber,
+  u16ToBigNumber,
   u32ToBigNumber,
 } from '~/utils/conversion';
 import { assertAddressValid, calculateNextKey, createClaim } from '~/utils/internal';
@@ -117,26 +116,8 @@ export class Context {
 
     this._middlewareApi = middlewareApi;
     this._polymeshApi = polymeshApi;
-    this.polymeshApi = Context.createPolymeshApiProxy(this);
+    this.polymeshApi = polymeshApi;
     this.ss58Format = ss58Format;
-  }
-
-  /**
-   * @hidden
-   */
-  static createPolymeshApiProxy(ctx: Context): ApiPromise {
-    return new Proxy(ctx._polymeshApi, {
-      get: (target, prop: keyof ApiPromise): ApiPromise[keyof ApiPromise] => {
-        if (prop === 'tx' && !ctx.signingAddress) {
-          throw new PolymeshError({
-            code: ErrorCode.General,
-            message: 'Cannot perform transactions without an active Account',
-          });
-        }
-
-        return target[prop];
-      },
-    });
   }
 
   /**
@@ -151,7 +132,7 @@ export class Context {
   }): Promise<Context> {
     const { polymeshApi, middlewareApi, signingManager } = params;
 
-    const ss58Format: BigNumber = u8ToBigNumber(polymeshApi.consts.system.ss58Prefix);
+    const ss58Format: BigNumber = u16ToBigNumber(polymeshApi.consts.system.ss58Prefix);
 
     const context = new Context({ polymeshApi, middlewareApi, signingManager, ss58Format });
 
@@ -209,7 +190,6 @@ export class Context {
 
     // this could be undefined
     const [firstAccount] = await signingManager.getAccounts();
-
     if (!firstAccount) {
       this.signingAddress = undefined;
     } else {
@@ -371,11 +351,13 @@ export class Context {
 
     const rawAddress = stringToAccountId(address, this);
 
-    const assembleResult = (meshSubsidy: Option<MeshSubsidy>): SubsidyWithAllowance | null => {
+    const assembleResult = (
+      meshSubsidy: Option<PalletRelayerSubsidy>
+    ): SubsidyWithAllowance | null => {
       if (meshSubsidy.isNone) {
         return null;
       }
-      const { paying_key: payingKey, remaining } = meshSubsidy.unwrap();
+      const { payingKey, remaining } = meshSubsidy.unwrap();
       const allowance = balanceToBigNumber(remaining);
       const subsidy = new Subsidy(
         { beneficiary: address, subsidizer: accountIdToString(payingKey) },
@@ -742,7 +724,7 @@ export class Context {
       },
     } = this;
     const { assets } = args;
-    const distributionsMultiParams: CAId[] = [];
+    const distributionsMultiParams: PalletCorporateActionsCaId[] = [];
     const corporateActionParams: CorporateActionParams[] = [];
     const corporateActionIds: BigNumber[] = [];
     const tickers: string[] = [];
@@ -809,31 +791,33 @@ export class Context {
 
     const result: DistributionWithDetails[] = [];
 
-    flattenDeep<Option<Distribution>>(distributions).forEach((distribution, index) => {
-      if (distribution.isNone) {
-        return;
-      }
+    flattenDeep<Option<PalletCorporateActionsDistribution>>(distributions).forEach(
+      (distribution, index) => {
+        if (distribution.isNone) {
+          return;
+        }
 
-      const dist = distribution.unwrap();
+        const dist = distribution.unwrap();
 
-      const { reclaimed, remaining } = dist;
+        const { reclaimed, remaining } = dist;
 
-      result.push({
-        distribution: new DividendDistribution(
-          {
-            ticker: tickers[index],
-            id: corporateActionIds[index],
-            ...corporateActionParams[index],
-            ...distributionToDividendDistributionParams(dist, this),
+        result.push({
+          distribution: new DividendDistribution(
+            {
+              ticker: tickers[index],
+              id: corporateActionIds[index],
+              ...corporateActionParams[index],
+              ...distributionToDividendDistributionParams(dist, this),
+            },
+            this
+          ),
+          details: {
+            remainingFunds: balanceToBigNumber(remaining),
+            fundsReclaimed: boolToBoolean(reclaimed),
           },
-          this
-        ),
-        details: {
-          remainingFunds: balanceToBigNumber(remaining),
-          fundsReclaimed: boolToBoolean(reclaimed),
-        },
-      });
-    });
+        });
+      }
+    );
 
     return result;
   }
@@ -879,24 +863,19 @@ export class Context {
     const claimData = await P.map(claim1stKeys, async claim1stKey => {
       const entries = await identity.claims.entries(claim1stKey);
       const data: ClaimData[] = [];
-      entries.forEach(
-        ([
-          key,
-          { claim_issuer: claimIssuer, issuance_date: issuanceDate, expiry: rawExpiry, claim },
-        ]) => {
-          const { target } = key.args[0];
-          const expiry = !rawExpiry.isEmpty ? momentToDate(rawExpiry.unwrap()) : null;
-          if ((!includeExpired && (expiry === null || expiry > new Date())) || includeExpired) {
-            data.push({
-              target: new Identity({ did: identityIdToString(target) }, this),
-              issuer: new Identity({ did: identityIdToString(claimIssuer) }, this),
-              issuedAt: momentToDate(issuanceDate),
-              expiry,
-              claim: meshClaimToClaim(claim),
-            });
-          }
+      entries.forEach(([key, { claimIssuer, issuanceDate, expiry: rawExpiry, claim }]) => {
+        const { target } = key.args[0];
+        const expiry = !rawExpiry.isEmpty ? momentToDate(rawExpiry.unwrap()) : null;
+        if ((!includeExpired && (expiry === null || expiry > new Date())) || includeExpired) {
+          data.push({
+            target: new Identity({ did: identityIdToString(target) }, this),
+            issuer: new Identity({ did: identityIdToString(claimIssuer) }, this),
+            issuedAt: momentToDate(issuanceDate),
+            expiry,
+            claim: meshClaimToClaim(claim),
+          });
         }
-      );
+      });
       return data;
     });
 
@@ -1152,18 +1131,19 @@ export class Context {
    *   Context to Procedures with different signing Accounts
    */
   public clone(): Context {
-    const cloned = clone(this);
-    cloned.polymeshApi = Context.createPolymeshApiProxy(cloned);
-
-    return cloned;
+    return clone(this);
   }
 
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   /**
    *  @hidden
    *
    * Creates an instance of a type as registered in the polymeshApi instance
    */
-  public createType<K extends keyof InterfaceTypes>(type: K, params: unknown): InterfaceTypes[K] {
+  public createType<T extends Codec = Codec, K extends string = string>(
+    type: K,
+    params: unknown
+  ): DetectCodec<T, K> {
     try {
       return this.polymeshApi.createType(type, params);
     } catch (error) {

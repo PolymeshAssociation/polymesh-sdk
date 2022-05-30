@@ -1,10 +1,15 @@
 import { Vec } from '@polkadot/types/codec';
+import {
+  PolymeshPrimitivesComplianceManagerAssetCompliance,
+  PolymeshPrimitivesIdentityId,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { AssetCompliance, AssetComplianceResult, IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Params } from '~/api/procedures/setAssetRequirements';
 import { Asset, Context, Namespace, TransactionQueue } from '~/internal';
+import { AssetComplianceResult } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -203,15 +208,18 @@ describe('Requirements class', () => {
     let notDefaultClaimIssuer: TrustedClaimIssuer;
     let assetDid: string;
     let cddId: string;
-    let trustedIssuerToTrustedClaimIssuerStub: sinon.SinonStub;
+    let trustedIssuerToTrustedClaimIssuer: sinon.SinonStub;
 
     let expected: ComplianceRequirements;
 
     let queryMultiStub: sinon.SinonStub;
-    let queryMultiResult: [AssetCompliance, Vec<IdentityId>];
+    let queryMultiResult: [
+      PolymeshPrimitivesComplianceManagerAssetCompliance,
+      Vec<PolymeshPrimitivesIdentityId>
+    ];
 
     beforeAll(() => {
-      trustedIssuerToTrustedClaimIssuerStub = sinon.stub(
+      trustedIssuerToTrustedClaimIssuer = sinon.stub(
         utilsConversionModule,
         'trustedIssuerToTrustedClaimIssuer'
       );
@@ -239,7 +247,7 @@ describe('Requirements class', () => {
 
       queryMultiStub = dsMockUtils.getQueryMultiStub();
 
-      trustedIssuerToTrustedClaimIssuerStub.returns({
+      trustedIssuerToTrustedClaimIssuer.returns({
         identity: defaultClaimIssuers[0].identity,
         trustedFor: null,
       });
@@ -248,8 +256,7 @@ describe('Requirements class', () => {
         Identity: dsMockUtils.createMockIdentityId(assetDid),
       });
       const conditionForBoth = dsMockUtils.createMockCondition({
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        condition_type: dsMockUtils.createMockConditionType({
+        conditionType: dsMockUtils.createMockConditionType({
           IsAnyOf: [
             dsMockUtils.createMockClaim({
               KnowYourCustomer: scope,
@@ -266,10 +273,9 @@ describe('Requirements class', () => {
         {
           requirements: [
             dsMockUtils.createMockComplianceRequirement({
-              /* eslint-disable @typescript-eslint/naming-convention */
-              sender_conditions: [
+              senderConditions: [
                 dsMockUtils.createMockCondition({
-                  condition_type: dsMockUtils.createMockConditionType({
+                  conditionType: dsMockUtils.createMockConditionType({
                     IsPresent: dsMockUtils.createMockClaim({
                       Exempted: scope,
                     }),
@@ -277,20 +283,20 @@ describe('Requirements class', () => {
                   issuers: [
                     dsMockUtils.createMockTrustedIssuer({
                       issuer: dsMockUtils.createMockIdentityId(notDefaultClaimIssuer.identity.did),
-                      trusted_for: dsMockUtils.createMockTrustedFor('Any'),
+                      trustedFor: dsMockUtils.createMockTrustedFor('Any'),
                     }),
                   ],
                 }),
               ],
-              receiver_conditions: [],
+              receiverConditions: [],
               id: dsMockUtils.createMockU32(new BigNumber(1)),
             }),
             dsMockUtils.createMockComplianceRequirement({
-              sender_conditions: [conditionForBoth],
-              receiver_conditions: [
+              senderConditions: [conditionForBoth],
+              receiverConditions: [
                 conditionForBoth,
                 dsMockUtils.createMockCondition({
-                  condition_type: dsMockUtils.createMockConditionType({
+                  conditionType: dsMockUtils.createMockConditionType({
                     IsAbsent: dsMockUtils.createMockClaim({
                       Blocked: scope,
                     }),
@@ -299,11 +305,10 @@ describe('Requirements class', () => {
                 }),
               ],
               id: dsMockUtils.createMockU32(new BigNumber(2)),
-              /* eslint-enable @typescript-eslint/naming-convention */
             }),
           ],
-        } as AssetCompliance,
-        defaultClaimIssuers as unknown as Vec<IdentityId>,
+        } as PolymeshPrimitivesComplianceManagerAssetCompliance,
+        defaultClaimIssuers as unknown as Vec<PolymeshPrimitivesIdentityId>,
       ];
 
       expected = {
@@ -535,10 +540,10 @@ describe('Requirements class', () => {
     let signingDid: string;
     let fromDid: string;
     let toDid: string;
-    let rawFromDid: IdentityId;
-    let rawToDid: IdentityId;
-    let rawCurrentDid: IdentityId;
-    let rawTicker: Ticker;
+    let rawFromDid: PolymeshPrimitivesIdentityId;
+    let rawToDid: PolymeshPrimitivesIdentityId;
+    let rawCurrentDid: PolymeshPrimitivesIdentityId;
+    let rawTicker: PolymeshPrimitivesTicker;
 
     let stringToIdentityIdStub: sinon.SinonStub;
     let assetComplianceResultToRequirementComplianceStub: sinon.SinonStub;

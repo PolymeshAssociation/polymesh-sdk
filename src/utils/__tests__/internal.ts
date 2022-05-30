@@ -1,6 +1,7 @@
+import { Bytes } from '@polkadot/types';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { IdentityId, ModuleName, PortfolioName } from 'polymesh-types/types';
+import { IdentityId, ModuleName } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Asset, Context, PolymeshError, PostTransactionValue, Procedure } from '~/internal';
@@ -741,7 +742,7 @@ describe('getPortfolioIdByName', () => {
   let context: Context;
   let nameToNumberStub: sinon.SinonStub;
   let portfoliosStub: sinon.SinonStub;
-  let rawName: PortfolioName;
+  let rawName: Bytes;
   let identityId: IdentityId;
 
   beforeAll(() => {
@@ -751,7 +752,8 @@ describe('getPortfolioIdByName', () => {
 
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
-    rawName = dsMockUtils.createMockText('someName');
+    rawName = dsMockUtils.createMockBytes('someName');
+    rawName.eq = () => true;
     identityId = dsMockUtils.createMockIdentityId('someDid');
     nameToNumberStub = dsMockUtils.createQueryStub('portfolio', 'nameToNumber');
     portfoliosStub = dsMockUtils.createQueryStub('portfolio', 'portfolios');
@@ -769,6 +771,7 @@ describe('getPortfolioIdByName', () => {
   it('should return null if no portfolio with given name is found', async () => {
     nameToNumberStub.returns(dsMockUtils.createMockU64(new BigNumber(1)));
     portfoliosStub.returns(dsMockUtils.createMockText('randomName'));
+    rawName.eq = () => false;
 
     const result = await getPortfolioIdByName(identityId, rawName, context);
     expect(result).toBeNull();
@@ -910,8 +913,11 @@ describe('getExemptedIds', () => {
 
 describe('assertExpectedChainVersion', () => {
   let client: MockWebSocket;
+  let warnStub: sinon.SinonStub;
+
   beforeAll(() => {
     dsMockUtils.initMocks();
+    warnStub = sinon.stub(console, 'warn');
   });
 
   beforeEach(() => {
@@ -922,21 +928,57 @@ describe('assertExpectedChainVersion', () => {
     dsMockUtils.reset();
   });
 
-  it('should resolve if it receives expected chain version', () => {
+  afterAll(() => {
+    warnStub.restore();
+  });
+
+  it('should resolve if it receives both expected RPC node and chain spec version', () => {
     const signal = assertExpectedChainVersion('ws://example.com');
     client.onopen();
 
     return expect(signal).resolves.not.toThrow();
   });
 
-  it('should throw an error given an unexpected version', () => {
+  it('should throw an error given a major RPC node version mismatch', () => {
     const signal = assertExpectedChainVersion('ws://example.com');
-    client.sendVersion('3.0.0');
+    client.sendRpcVersion('3.0.0');
     const expectedError = new PolymeshError({
       code: ErrorCode.FatalError,
-      message: 'Unsupported Polymesh version. Please upgrade the SDK',
+      message: 'Unsupported Polymesh RPC node version. Please upgrade the SDK',
     });
     return expect(signal).rejects.toThrowError(expectedError);
+  });
+
+  it('should log a warning given a minor or patch RPC node version mismatch', async () => {
+    const signal = assertExpectedChainVersion('ws://example.com');
+    client.sendSpecVersion('5000000');
+    client.sendRpcVersion('5.1.0');
+    await signal;
+    sinon.assert.calledWith(
+      warnStub,
+      'This version of the SDK supports Polymesh RPC node version 5.0.0. The node is at version 5.1.0. Please upgrade the SDK'
+    );
+  });
+
+  it('should throw an error given a major chain spec version mismatch', () => {
+    const signal = assertExpectedChainVersion('ws://example.com');
+    client.sendSpecVersion('3000000');
+    const expectedError = new PolymeshError({
+      code: ErrorCode.FatalError,
+      message: 'Unsupported Polymesh chain spec version. Please upgrade the SDK',
+    });
+    return expect(signal).rejects.toThrowError(expectedError);
+  });
+
+  it('should log a warning given a minor or patch chain spec version mismatch', async () => {
+    const signal = assertExpectedChainVersion('ws://example.com');
+    client.sendSpecVersion('5001000');
+    client.sendRpcVersion('5.0.0');
+    await signal;
+    sinon.assert.calledWith(
+      warnStub,
+      'This version of the SDK supports Polymesh chain spec version 5.0.0. The chain spec is at version 5.1.0. Please upgrade the SDK'
+    );
   });
 
   it('should throw an error if the node cannot be reached', () => {

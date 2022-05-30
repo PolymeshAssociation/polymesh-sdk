@@ -87,16 +87,7 @@ export class Polymesh {
     const { nodeUrl, signingManager, middleware } = params;
     let context: Context;
 
-    await assertExpectedChainVersion(nodeUrl).catch(error => {
-      if (
-        error instanceof PolymeshError &&
-        error.message.includes('Unsupported Polymesh version')
-      ) {
-        console.warn(error.message);
-      } else {
-        throw error;
-      }
-    });
+    await assertExpectedChainVersion(nodeUrl);
 
     try {
       const { types, rpc } = schema;

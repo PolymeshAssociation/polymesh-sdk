@@ -1,8 +1,8 @@
 import { u64 } from '@polkadot/types';
+import { PolymeshPrimitivesIdentity } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, flatten, uniqBy } from 'lodash';
-import { CddStatus, DidRecord } from 'polymesh-types/types';
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
@@ -17,6 +17,7 @@ import {
 } from '~/internal';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
+import { CddStatus } from '~/polkadot/polymesh';
 import {
   CheckRolesResult,
   DistributionWithDetails,
@@ -185,7 +186,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const meshAsset = await asset.tokens(rawTicker);
 
-    if (meshAsset.owner_did.isEmpty) {
+    if (meshAsset.ownerDid.isEmpty) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
         message: `There is no Asset with ticker "${ticker}"`,
@@ -278,7 +279,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const assembleResult = ({ primary_key: primaryKey }: DidRecord): PermissionedAccount => {
+    const assembleResult = ({ primaryKey }: PolymeshPrimitivesIdentity): PermissionedAccount => {
       return {
         account: new Account({ address: accountIdToString(primaryKey) }, context),
         permissions: {
@@ -572,7 +573,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     return rawInstructions
       .filter(({ status }) => status.isPending)
-      .map(({ instruction_id: id }) => new Instruction({ id: u64ToBigNumber(id) }, context));
+      .map(({ instructionId: id }) => new Instruction({ id: u64ToBigNumber(id) }, context));
   }
 
   /**
@@ -691,8 +692,8 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     } = this;
 
     const assembleResult = ({
-      secondary_keys: secondaryAccounts,
-    }: DidRecord): PermissionedAccount[] => {
+      secondaryKeys: secondaryAccounts,
+    }: PolymeshPrimitivesIdentity): PermissionedAccount[] => {
       return secondaryAccounts.map(({ signer: rawSigner, permissions }) => ({
         account: signatoryToAccount(rawSigner, context),
         permissions: meshPermissionsToPermissions(permissions, context),

@@ -1,10 +1,10 @@
-import BigNumber from 'bignumber.js';
 import {
-  ComplianceRequirement,
-  Condition as MeshCondition,
-  Ticker,
-  TxTags,
-} from 'polymesh-types/types';
+  PolymeshPrimitivesComplianceManagerComplianceRequirement,
+  PolymeshPrimitivesCondition,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
+import BigNumber from 'bignumber.js';
+import { TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -26,14 +26,14 @@ jest.mock(
 
 describe('modifyComplianceRequirement procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
+  let stringToTickerStub: sinon.SinonStub<[string, Context], PolymeshPrimitivesTicker>;
   let requirementToComplianceRequirementStub: sinon.SinonStub<
     [InputRequirement, Context],
-    ComplianceRequirement
+    PolymeshPrimitivesComplianceManagerComplianceRequirement
   >;
   let ticker: string;
   let conditions: Condition[];
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
   let args: Params;
 
   beforeAll(() => {
@@ -61,7 +61,7 @@ describe('modifyComplianceRequirement procedure', () => {
 
   let addTransactionStub: sinon.SinonStub;
 
-  let modifyComplianceRequirementTransaction: PolymeshTx<[Ticker]>;
+  let modifyComplianceRequirementTransaction: PolymeshTx<[PolymeshPrimitivesTicker]>;
 
   beforeEach(() => {
     dsMockUtils.setConstMock('complianceManager', 'maxConditionComplexity', {
@@ -134,15 +134,13 @@ describe('modifyComplianceRequirement procedure', () => {
 
   it('should add a modify compliance requirement transaction to the queue', async () => {
     const fakeConditions = [{ claim: '' }] as unknown as Condition[];
-    const fakeSenderConditions = 'senderConditions' as unknown as MeshCondition[];
-    const fakeReceiverConditions = 'receiverConditions' as unknown as MeshCondition[];
+    const fakeSenderConditions = 'senderConditions' as unknown as PolymeshPrimitivesCondition[];
+    const fakeReceiverConditions = 'receiverConditions' as unknown as PolymeshPrimitivesCondition[];
 
     const rawComplianceRequirement = dsMockUtils.createMockComplianceRequirement({
-      /* eslint-disable @typescript-eslint/naming-convention */
-      sender_conditions: fakeSenderConditions,
-      receiver_conditions: fakeReceiverConditions,
+      senderConditions: fakeSenderConditions,
+      receiverConditions: fakeReceiverConditions,
       id: dsMockUtils.createMockU32(new BigNumber(1)),
-      /* eslint-enable @typescript-eslint/naming-convention */
     });
 
     requirementToComplianceRequirementStub

@@ -94,6 +94,7 @@ describe('Polymesh Transaction Base class', () => {
       expect(tx.blockHash).toBeDefined();
       expect(tx.blockNumber).toBeDefined();
       expect(tx.txHash).toBeDefined();
+      expect(tx.txIndex).toBeDefined();
       expect(tx.status).toBe(TransactionStatus.Succeeded);
     });
 

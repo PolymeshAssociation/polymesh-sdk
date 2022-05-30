@@ -2,7 +2,7 @@ import { ISubmittableResult } from '@polkadot/types/types';
 
 import { Context, PostTransactionValue, Procedure, Venue } from '~/internal';
 import { TxTags, VenueType } from '~/types';
-import { stringToVenueDetails, u64ToBigNumber, venueTypeToMeshVenueType } from '~/utils/conversion';
+import { stringToBytes, u64ToBigNumber, venueTypeToMeshVenueType } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
 
 export interface CreateVenueParams {
@@ -39,7 +39,7 @@ export async function prepareCreateVenue(
   } = this;
   const { description, type } = args;
 
-  const rawDetails = stringToVenueDetails(description, context);
+  const rawDetails = stringToBytes(description, context);
   const rawType = venueTypeToMeshVenueType(type, context);
 
   // NOTE @monitz87: we're sending an empty signer array for the moment

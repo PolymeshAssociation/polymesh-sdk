@@ -27,14 +27,12 @@ describe('setPermissionGroup procedure', () => {
   const rawIdentityId = dsMockUtils.createMockIdentityId(did);
   const rawExtrinsicPermissions = dsMockUtils.createMockExtrinsicPermissions({
     These: [
-      /* eslint-disable @typescript-eslint/naming-convention */
       dsMockUtils.createMockPalletPermissions({
-        pallet_name: dsMockUtils.createMockPalletName('Sto'),
-        dispatchable_names: dsMockUtils.createMockDispatchableNames({
-          These: [dsMockUtils.createMockDispatchableName('invest')],
+        palletName: 'Sto',
+        dispatchableNames: dsMockUtils.createMockDispatchableNames({
+          These: [dsMockUtils.createMockBytes('invest')],
         }),
       }),
-      /* eslint-enable @typescript-eslint/naming-convention */
     ],
   });
 

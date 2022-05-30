@@ -1,6 +1,5 @@
 import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import { PortfolioId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Asset, Context, Entity, NumberedPortfolio, Portfolio, TransactionQueue } from '~/internal';
@@ -10,6 +9,7 @@ import {
   SettlementResult,
   SettlementResultEnum,
 } from '~/middleware/types';
+import { PortfolioId, Ticker } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';

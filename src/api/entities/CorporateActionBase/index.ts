@@ -1,6 +1,6 @@
 import { Option } from '@polkadot/types';
+import { PalletCorporateActionsCorporateAction } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { CorporateAction as MeshCorporateAction } from 'polymesh-types/types';
 
 import {
   Asset,
@@ -193,7 +193,7 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
       });
     }
 
-    const { record_date: recordDate } = corporateAction.unwrap();
+    const { recordDate } = corporateAction.unwrap();
 
     if (recordDate.isNone) {
       return null;
@@ -234,7 +234,7 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
   /**
    * @hidden
    */
-  private fetchCorporateAction(): Promise<Option<MeshCorporateAction>> {
+  private fetchCorporateAction(): Promise<Option<PalletCorporateActionsCorporateAction>> {
     const {
       context: {
         polymeshApi: { query },

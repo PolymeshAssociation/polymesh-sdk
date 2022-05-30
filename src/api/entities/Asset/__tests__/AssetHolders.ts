@@ -1,7 +1,7 @@
 import { StorageKey } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
+import { PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Context, Namespace } from '~/internal';
@@ -26,9 +26,9 @@ jest.mock(
 describe('AssetHolder class', () => {
   let ticker: string;
   let mockContext: Mocked<Context>;
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
   let requestPaginatedStub: sinon.SinonStub;
-  let identityIdToStringStub: sinon.SinonStub<[IdentityId], string>;
+  let identityIdToStringStub: sinon.SinonStub<[PolymeshPrimitivesIdentityId], string>;
   let balanceToBigNumberStub: sinon.SinonStub<[Balance], BigNumber>;
   const fakeData = [
     {

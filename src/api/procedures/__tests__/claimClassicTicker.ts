@@ -61,10 +61,8 @@ describe('claimClassicTicker procedure', () => {
     dsMockUtils.createQueryStub('asset', 'classicTickers', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockClassicTickerRegistration({
-          /* eslint-disable @typescript-eslint/naming-convention */
-          eth_owner: ethereumAddress,
-          is_created: false,
-          /* eslint-enable @typescript-eslint/naming-convention */
+          ethOwner: ethereumAddress,
+          isCreated: false,
         })
       ),
     });
@@ -156,10 +154,8 @@ describe('claimClassicTicker procedure', () => {
     dsMockUtils.createQueryStub('asset', 'classicTickers', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockClassicTickerRegistration({
-          /* eslint-disable @typescript-eslint/naming-convention */
-          eth_owner: 'notYou',
-          is_created: false,
-          /* eslint-enable @typescript-eslint/naming-convention */
+          ethOwner: 'notYou',
+          isCreated: false,
         })
       ),
     });

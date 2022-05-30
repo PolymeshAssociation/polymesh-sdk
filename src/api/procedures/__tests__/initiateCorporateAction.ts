@@ -1,4 +1,5 @@
-import { Text } from '@polkadot/types';
+import { Bytes } from '@polkadot/types';
+import { PalletCorporateActionsCaId } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import {
@@ -48,7 +49,7 @@ describe('initiateCorporateAction procedure', () => {
   let rawKind: CAKind;
   let rawDeclDate: Moment;
   let rawRecordDate: RecordDateSpec;
-  let rawDetails: Text;
+  let rawDetails: Bytes;
   let rawTargets: TargetIdentities;
   let rawTax: Tax;
   let rawWithholdings: [IdentityId, Tax][];
@@ -65,7 +66,7 @@ describe('initiateCorporateAction procedure', () => {
   let corporateActionKindToCaKindStub: sinon.SinonStub;
   let dateToMomentStub: sinon.SinonStub;
   let checkpointToRecordDateSpecStub: sinon.SinonStub;
-  let stringToTextStub: sinon.SinonStub;
+  let stringToBytesStub: sinon.SinonStub;
   let targetsToTargetIdentitiesStub: sinon.SinonStub;
   let percentageToPermillStub: sinon.SinonStub;
   let stringToIdentityIdStub: sinon.SinonStub;
@@ -96,7 +97,7 @@ describe('initiateCorporateAction procedure', () => {
     rawRecordDate = dsMockUtils.createMockRecordDateSpec({
       Scheduled: dsMockUtils.createMockMoment(new BigNumber(checkpoint.getTime())),
     });
-    rawDetails = dsMockUtils.createMockText(description);
+    rawDetails = dsMockUtils.createMockBytes(description);
     rawTargets = dsMockUtils.createMockTargetIdentities({
       identities: targets.identities as string[],
       treatment: targets.treatment,
@@ -121,7 +122,7 @@ describe('initiateCorporateAction procedure', () => {
       utilsConversionModule,
       'checkpointToRecordDateSpec'
     );
-    stringToTextStub = sinon.stub(utilsConversionModule, 'stringToText');
+    stringToBytesStub = sinon.stub(utilsConversionModule, 'stringToBytes');
     targetsToTargetIdentitiesStub = sinon.stub(utilsConversionModule, 'targetsToTargetIdentities');
     percentageToPermillStub = sinon.stub(utilsConversionModule, 'percentageToPermill');
     stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
@@ -148,7 +149,7 @@ describe('initiateCorporateAction procedure', () => {
     corporateActionKindToCaKindStub.withArgs(kind, mockContext).returns(rawKind);
     dateToMomentStub.withArgs(declarationDate, mockContext).returns(rawDeclDate);
     checkpointToRecordDateSpecStub.withArgs(checkpoint, mockContext).returns(rawRecordDate);
-    stringToTextStub.withArgs(description, mockContext).returns(rawDetails);
+    stringToBytesStub.withArgs(description, mockContext).returns(rawDetails);
     targetsToTargetIdentitiesStub.withArgs(targets, mockContext).returns(rawTargets);
     percentageToPermillStub.withArgs(defaultTaxWithholding, mockContext).returns(rawTax);
     percentageToPermillStub
@@ -169,7 +170,7 @@ describe('initiateCorporateAction procedure', () => {
   });
 
   it('should throw an error if the declaration date is in the future', async () => {
-    const proc = procedureMockUtils.getInstance<Params, CAId>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, PalletCorporateActionsCaId>(mockContext);
 
     let err;
 
@@ -192,7 +193,7 @@ describe('initiateCorporateAction procedure', () => {
   });
 
   it('should throw an error if the description is too long', async () => {
-    const proc = procedureMockUtils.getInstance<Params, CAId>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, PalletCorporateActionsCaId>(mockContext);
 
     maxDetailsLengthQueryStub.returns(dsMockUtils.createMockU32(new BigNumber(1)));
 
@@ -216,7 +217,7 @@ describe('initiateCorporateAction procedure', () => {
   });
 
   it('should add a initiate corporate action transaction to the queue', async () => {
-    const proc = procedureMockUtils.getInstance<Params, CAId>(mockContext);
+    const proc = procedureMockUtils.getInstance<Params, PalletCorporateActionsCaId>(mockContext);
 
     const result = await prepareInitiateCorporateAction.call(proc, {
       ticker,
@@ -320,7 +321,7 @@ describe('initiateCorporateAction procedure', () => {
 
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, CAId>(mockContext);
+      const proc = procedureMockUtils.getInstance<Params, PalletCorporateActionsCaId>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args = {
         ticker,

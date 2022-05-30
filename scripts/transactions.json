@@ -8,11 +8,13 @@
     "set_changes_trie_config": "set_changes_trie_config",
     "set_storage": "set_storage",
     "kill_storage": "kill_storage",
-    "kill_prefix": "kill_prefix"
+    "kill_prefix": "kill_prefix",
+    "remark_with_event": "remark_with_event"
   },
   "Babe": {
     "report_equivocation": "report_equivocation",
-    "report_equivocation_unsigned": "report_equivocation_unsigned"
+    "report_equivocation_unsigned": "report_equivocation_unsigned",
+    "plan_config_change": "plan_config_change"
   },
   "Timestamp": {
     "set": "set"
@@ -57,7 +59,11 @@
     "gc_revoke_cdd_claim": "gc_revoke_cdd_claim",
     "add_investor_uniqueness_claim_v2": "add_investor_uniqueness_claim_v2",
     "revoke_claim_by_index": "revoke_claim_by_index",
-    "rotate_primary_key_to_secondary": "rotate_primary_key_to_secondary"
+    "rotate_primary_key_to_secondary": "rotate_primary_key_to_secondary",
+    "remove_secondary_keys_old": "remove_secondary_keys_old",
+    "placeholder_legacy_set_permission_to_signer": "placeholder_legacy_set_permission_to_signer",
+    "add_secondary_keys_with_authorization_old": "add_secondary_keys_with_authorization_old",
+    "set_secondary_key_permissions": "set_secondary_key_permissions"
   },
   "CddServiceProviders": {
     "set_active_members_limit": "set_active_members_limit",
@@ -135,7 +141,8 @@
     "change_sigs_required": "change_sigs_required",
     "make_multisig_signer": "make_multisig_signer",
     "make_multisig_primary": "make_multisig_primary",
-    "execute_scheduled_proposal": "execute_scheduled_proposal"
+    "execute_scheduled_proposal": "execute_scheduled_proposal",
+    "make_multisig_secondary": "make_multisig_secondary"
   },
   "Bridge": {
     "change_controller": "change_controller",
@@ -226,7 +233,13 @@
     "claim_classic_ticker": "claim_classic_ticker",
     "reserve_classic_ticker": "reserve_classic_ticker",
     "controller_transfer": "controller_transfer",
-    "register_custom_asset_type": "register_custom_asset_type"
+    "register_custom_asset_type": "register_custom_asset_type",
+    "create_asset_with_custom_type": "create_asset_with_custom_type",
+    "set_asset_metadata": "set_asset_metadata",
+    "set_asset_metadata_details": "set_asset_metadata_details",
+    "register_and_set_local_asset_metadata": "register_and_set_local_asset_metadata",
+    "register_asset_metadata_local_type": "register_asset_metadata_local_type",
+    "register_asset_metadata_global_type": "register_asset_metadata_global_type"
   },
   "CapitalDistribution": {
     "distribute": "distribute",
@@ -260,7 +273,8 @@
     "initiate_corporate_action": "initiate_corporate_action",
     "link_ca_doc": "link_ca_doc",
     "remove_ca": "remove_ca",
-    "change_record_date": "change_record_date"
+    "change_record_date": "change_record_date",
+    "initiate_corporate_action_and_distribute": "initiate_corporate_action_and_distribute"
   },
   "CorporateBallot": {
     "attach_ballot": "attach_ballot",
@@ -332,7 +346,11 @@
     "add_transfer_manager": "add_transfer_manager",
     "remove_transfer_manager": "remove_transfer_manager",
     "add_exempted_entities": "add_exempted_entities",
-    "remove_exempted_entities": "remove_exempted_entities"
+    "remove_exempted_entities": "remove_exempted_entities",
+    "set_asset_transfer_compliance": "set_asset_transfer_compliance",
+    "set_entities_exempt": "set_entities_exempt",
+    "set_active_asset_stats": "set_active_asset_stats",
+    "batch_update_asset_stats": "batch_update_asset_stats"
   },
   "Sto": {
     "create_fundraiser": "create_fundraiser",
@@ -358,7 +376,9 @@
     "remove_agent": "remove_agent",
     "abdicate": "abdicate",
     "change_group": "change_group",
-    "accept_become_agent": "accept_become_agent"
+    "accept_become_agent": "accept_become_agent",
+    "create_group_and_add_auth": "create_group_and_add_auth",
+    "create_and_change_custom_group": "create_and_change_custom_group"
   },
   "Relayer": {
     "set_paying_key": "set_paying_key",
@@ -377,5 +397,20 @@
     "mock_cdd_register_did": "mock_cdd_register_did",
     "get_my_did": "get_my_did",
     "get_cdd_of": "get_cdd_of"
+  },
+  "PolymeshContracts": {
+    "call": "call",
+    "instantiate_with_code": "instantiate_with_code",
+    "instantiate": "instantiate",
+    "upload_code": "upload_code",
+    "remove_code": "remove_code",
+    "instantiate_with_code_perms": "instantiate_with_code_perms",
+    "instantiate_with_hash_perms": "instantiate_with_hash_perms"
+  },
+  "Preimage": {
+    "note_preimage": "note_preimage",
+    "unnote_preimage": "unnote_preimage",
+    "request_preimage": "request_preimage",
+    "unrequest_preimage": "unrequest_preimage"
   }
 }

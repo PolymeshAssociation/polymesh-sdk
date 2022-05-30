@@ -178,7 +178,7 @@ export function assertDistributionOpen(paymentDate: Date, expiryDate: Date | nul
 export function assertCaTargetsValid(targets: InputTargets, context: Context): void {
   const { maxTargetIds } = context.polymeshApi.consts.corporateAction;
 
-  const maxTargets = u64ToBigNumber(maxTargetIds);
+  const maxTargets = u32ToBigNumber(maxTargetIds);
 
   if (maxTargets.lt(targets.identities.length)) {
     throw new PolymeshError({
@@ -200,7 +200,7 @@ export function assertCaTaxWithholdingsValid(
 ): void {
   const { maxDidWhts } = context.polymeshApi.consts.corporateAction;
 
-  const maxWithholdingEntries = u64ToBigNumber(maxDidWhts);
+  const maxWithholdingEntries = u32ToBigNumber(maxDidWhts);
 
   if (maxWithholdingEntries.lt(taxWithholdings.length)) {
     throw new PolymeshError({

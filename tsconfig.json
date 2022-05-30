@@ -7,7 +7,8 @@
       "~/*": ["src/*"],
       "polymesh-types/*": ["src/polkadot/*"],
       "@polkadot/api/augment": ["src/polkadot/augment-api.ts"],
-      "@polkadot/types/augment": ["src/polkadot/augment-types.ts"]
+      "@polkadot/types/augment": ["src/polkadot/augment-types.ts"],
+      "@polkadot/types/lookup": ["src/polkadot/types-lookup.ts"]
     },
     "plugins": [
       {

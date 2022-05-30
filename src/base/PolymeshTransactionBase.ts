@@ -42,6 +42,11 @@ export abstract class PolymeshTransactionBase<Values extends unknown[] = unknown
   public txHash?: string;
 
   /**
+   * transaction index within its block (status: `Succeeded`, `Failed`)
+   */
+  public txIndex?: BigNumber;
+
+  /**
    * hash of the block where this transaction resides (status: `Succeeded`, `Failed`)
    */
   public blockHash?: string;
@@ -200,6 +205,10 @@ export abstract class PolymeshTransactionBase<Values extends unknown[] = unknown
                 this.context.polymeshApi.rpc.chain.getBlock(blockHash).then(({ block }) => {
                   this.blockHash = hashToString(blockHash);
                   this.blockNumber = u32ToBigNumber(block.header.number.unwrap());
+
+                  // we know that the index has to be set by the time the transaction is included in a block
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                  this.txIndex = new BigNumber(receipt.txIndex!);
                 })
               );
 

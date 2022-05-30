@@ -58,12 +58,10 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
     dsMockUtils.createQueryStub('identity', 'authorizations', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockAuthorization({
-          /* eslint-disable @typescript-eslint/naming-convention */
-          authorization_data: dsMockUtils.createMockAuthorizationData('RotatePrimaryKey'),
-          auth_id: new BigNumber(1),
-          authorized_by: 'someDid',
+          authorizationData: dsMockUtils.createMockAuthorizationData('RotatePrimaryKey'),
+          authId: new BigNumber(1),
+          authorizedBy: 'someDid',
           expiry: dsMockUtils.createMockOption(),
-          /* eslint-enable @typescript-eslint/naming-convention */
         })
       ),
     });

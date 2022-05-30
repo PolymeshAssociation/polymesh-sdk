@@ -1,5 +1,5 @@
+import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Asset, Context, Namespace, TransactionQueue } from '~/internal';
@@ -26,7 +26,7 @@ jest.mock(
 describe('CorporateActions class', () => {
   let context: Context;
   let ticker: string;
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
   let asset: Asset;
   let corporateActions: CorporateActions;
 
@@ -160,11 +160,11 @@ describe('CorporateActions class', () => {
         entries: [
           tuple(
             [dsMockUtils.createMockTicker(fakeTicker), dsMockUtils.createMockIdentityId(did)],
-            dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('PolymeshV1Caa'))
+            dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('PolymeshV1CAA'))
           ),
           tuple(
             [dsMockUtils.createMockTicker(fakeTicker), dsMockUtils.createMockIdentityId(otherDid)],
-            dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('PolymeshV1Pia'))
+            dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('PolymeshV1PIA'))
           ),
         ],
       });

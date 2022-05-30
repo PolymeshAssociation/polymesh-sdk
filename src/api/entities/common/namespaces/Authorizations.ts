@@ -1,5 +1,5 @@
+import { PolymeshPrimitivesAuthorization } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { Authorization } from 'polymesh-types/types';
 
 import { AuthorizationRequest, Identity, Namespace, PolymeshError } from '~/internal';
 import { AuthorizationType, ErrorCode, Signer, SignerValue } from '~/types';
@@ -42,7 +42,7 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
     const signatory = signerValueToSignatory(signerValue, context);
     const rawBoolean = booleanToBool(opts?.includeExpired ?? true, context);
 
-    let result: Authorization[];
+    let result: PolymeshPrimitivesAuthorization[];
 
     if (opts?.type) {
       result = await rpc.identity.getFilteredAuthorizations(
@@ -94,14 +94,14 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
    * Create an array of AuthorizationRequests from an array of on-chain Authorizations
    */
   protected createAuthorizationRequests(
-    auths: { auth: Authorization; target: SignerValue }[]
+    auths: { auth: PolymeshPrimitivesAuthorization; target: SignerValue }[]
   ): AuthorizationRequest[] {
     const { context } = this;
 
     return auths
       .map(auth => {
         const {
-          auth: { expiry, auth_id: authId, authorization_data: data, authorized_by: issuer },
+          auth: { expiry, authId, authorizationData: data, authorizedBy: issuer },
           target: rawTarget,
         } = auth;
 

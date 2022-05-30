@@ -231,7 +231,7 @@ export class AssetPermissions extends Namespace<Identity> {
      *   - asset.controllerTransfer
      *   - sto (except for sto.invest)
      */
-    if (group.isPolymeshV1Pia) {
+    if (group.isPolymeshV1PIA) {
       missingPermissions = transactions.filter(tag => {
         const isSto = tag.split('.')[0] === ModuleName.Sto && tag !== TxTags.sto.Invest;
         const isAsset = (<TxTag[]>[
@@ -250,7 +250,7 @@ export class AssetPermissions extends Namespace<Identity> {
      *   - corporateBallot
      *   - capitalDistribution
      */
-    if (group.isPolymeshV1Caa) {
+    if (group.isPolymeshV1CAA) {
       missingPermissions = transactions.filter(
         tag =>
           ![

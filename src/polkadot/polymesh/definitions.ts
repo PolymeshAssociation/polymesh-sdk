@@ -79,6 +79,33 @@ export default {
       divisible: 'bool',
       asset_type: 'AssetType',
     },
+    AssetMetadataName: 'Text',
+    AssetMetadataValue: 'Vec<u8>',
+    AssetMetadataLocalKey: 'u64',
+    AssetMetadataGlobalKey: 'u64',
+    AssetMetadataKey: {
+      _enum: {
+        Global: 'u64',
+        Local: 'u64',
+      },
+    },
+    AssetMetadataLockStatus: {
+      _enum: {
+        Unlocked: '',
+        Locked: '',
+        LockedUntil: 'Moment',
+      },
+    },
+    AssetMetadataValueDetail: {
+      expire: 'Option<Moment>',
+      lock_status: 'AssetMetadataLockStatus',
+    },
+    AssetMetadataDescription: 'Text',
+    AssetMetadataSpec: {
+      url: 'Option<Url>',
+      description: 'Option<AssetMetadataDescription>',
+      type_def: 'Option<Vec<u8>>',
+    },
     PalletName: 'Text',
     DispatchableName: 'Text',
     AssetPermissions: {
@@ -118,16 +145,6 @@ export default {
       extrinsic: 'ExtrinsicPermissions',
       portfolio: 'PortfolioPermissions',
     },
-    LegacyPalletPermissions: {
-      pallet_name: 'PalletName',
-      total: 'bool',
-      dispatchable_names: 'Vec<DispatchableName>',
-    },
-    LegacyPermissions: {
-      asset: 'Option<Vec<Ticker>>',
-      extrinsic: 'Option<Vec<LegacyPalletPermissions>>',
-      portfolio: 'Option<Vec<PortfolioId>>',
-    },
     Signatory: {
       _enum: {
         Identity: 'IdentityId',
@@ -135,12 +152,12 @@ export default {
       },
     },
     SecondaryKey: {
-      signer: 'Signatory',
+      key: 'AccountId',
       permissions: 'Permissions',
     },
     SecondaryKeyWithAuth: {
       secondary_key: 'SecondaryKey',
-      auth_signature: 'Signature',
+      auth_signature: 'H512',
     },
     Subsidy: {
       paying_key: 'AccountId',
@@ -165,8 +182,14 @@ export default {
       secondary_key: 'SecondaryKey',
     },
     DidRecord: {
-      primary_key: 'AccountId',
-      secondary_keys: 'Vec<SecondaryKey>',
+      primary_key: 'Option<AccountId>',
+    },
+    KeyRecord: {
+      _enum: {
+        PrimaryKey: 'IdentityId',
+        SecondaryKey: '(IdentityId, Permissions)',
+        MultiSigSignerKey: 'AccountId',
+      },
     },
     KeyIdentityData: {
       identity: 'IdentityId',
@@ -433,7 +456,11 @@ export default {
         Custom: 'Vec<u8>',
       },
     },
-    InvestorZKProofData: 'Signature',
+    InvestorZKProofData: {
+      r: 'CompressedRistretto',
+      s: 'Scalar',
+    },
+    CompressedRistretto: '[u8; 32]',
     Scalar: '[u8; 32]',
     RistrettoPoint: '[u8; 32]',
     ZkProofData: {
@@ -491,8 +518,8 @@ export default {
       id: 'u32',
     },
     ComplianceRequirementResult: {
-      sender_conditions: 'Vec<ConditionResult>',
-      receiver_conditions: 'Vec<ConditionResult>',
+      senderConditions: 'Vec<ConditionResult>',
+      receiverConditions: 'Vec<ConditionResult>',
       id: 'u32',
       result: 'bool',
     },
@@ -513,11 +540,11 @@ export default {
     },
     TrustedIssuer: {
       issuer: 'IdentityId',
-      trusted_for: 'TrustedFor',
+      trustedFor: 'TrustedFor',
     },
     Condition: {
-      condition_type: 'ConditionType',
-      issuers: 'Vec<TrustedIssuer>',
+      conditionType: 'ConditionType',
+      issuers: 'Vec<PolymeshPrimitivesConditionTrustedIssuer>',
     },
     ConditionResult: {
       condition: 'Condition',
@@ -645,13 +672,7 @@ export default {
         Proposal: 'Vec<u8>',
       },
     },
-    OffChainSignature: {
-      _enum: {
-        Ed25519: 'H512',
-        Sr25519: 'H512',
-        Ecdsa: 'H512',
-      },
-    },
+    OffChainSignature: 'MultiSignature',
     Authorization: {
       authorization_data: 'AuthorizationData',
       authorized_by: 'IdentityId',
@@ -704,23 +725,66 @@ export default {
       frozen: 'bool',
     },
     AuthorizationNonce: 'u64',
-    Counter: 'u64',
     Percentage: 'Permill',
-    TransferManager: {
-      _enum: {
-        CountTransferManager: 'Counter',
-        PercentageTransferManager: 'Percentage',
-      },
-    },
     RestrictionResult: {
       _enum: ['Valid', 'Invalid', 'ForceValid'],
     },
-    Memo: '[u8;32]',
+    Memo: '[u8; 32]',
     BridgeTx: {
       nonce: 'u32',
       recipient: 'AccountId',
       amount: 'Balance',
       tx_hash: 'H256',
+    },
+    AssetScope: {
+      _enum: {
+        Ticker: 'Ticker',
+      },
+    },
+    StatOpType: {
+      _enum: ['Count', 'Balance'],
+    },
+    StatType: {
+      op: 'StatOpType',
+      claim_issuer: 'Option<(ClaimType, IdentityId)>',
+    },
+    StatClaim: {
+      _enum: {
+        Accredited: 'bool',
+        Affiliate: 'bool',
+        Jurisdiction: 'Option<CountryCode>',
+      },
+    },
+    Stat1stKey: {
+      asset: 'AssetScope',
+      stat_type: 'StatType',
+    },
+    Stat2ndKey: {
+      _enum: {
+        NoClaimStat: '',
+        Claim: 'StatClaim',
+      },
+    },
+    StatUpdate: {
+      key2: 'Stat2ndKey',
+      value: 'Option<u128>',
+    },
+    TransferCondition: {
+      _enum: {
+        MaxInvestorCount: 'u64',
+        MaxInvestorOwnership: 'Percentage',
+        ClaimCount: '(StatClaim, IdentityId, u64, Option<u64>)',
+        ClaimOwnership: '(StatClaim, IdentityId, Percentage, Percentage)',
+      },
+    },
+    AssetTransferCompliance: {
+      paused: 'bool',
+      requirements: 'Vec<TransferCondition>',
+    },
+    TransferConditionExemptKey: {
+      asset: 'AssetScope',
+      op: 'StatOpType',
+      claim_type: 'Option<ClaimType>',
     },
     AssetCompliance: {
       paused: 'bool',
@@ -779,13 +843,13 @@ export default {
         Err: 'Vec<u8>',
       },
     },
-    DidRecordsSuccess: {
+    RpcDidRecordsSuccess: {
       primary_key: 'AccountId',
       secondary_keys: 'Vec<SecondaryKey>',
     },
-    DidRecords: {
+    RpcDidRecords: {
       _enum: {
-        Success: 'DidRecordsSuccess',
+        Success: 'RpcDidRecordsSuccess',
         IdNotFound: 'Vec<u8>',
       },
     },
@@ -984,6 +1048,12 @@ export default {
       negative: 'bool',
       degree: 'u8',
     },
+    WeightPerClass: {
+      baseExtrinsic: 'Weight',
+      maxExtrinsic: 'Option<Weight>',
+      maxTotal: 'Option<Weight>',
+      reserved: 'Option<Weight>',
+    },
     TargetIdentity: {
       _enum: {
         ExternalAgent: '',
@@ -1101,7 +1171,7 @@ export default {
       sender_insufficient_balance: 'bool',
       portfolio_validity_result: 'PortfolioValidityResult',
       asset_frozen: 'bool',
-      statistics_result: 'Vec<TransferManagerResult>',
+      transfer_condition_result: 'Vec<TransferConditionResult>',
       compliance_result: 'AssetComplianceResult',
       result: 'bool',
     },
@@ -1112,8 +1182,8 @@ export default {
       sender_insufficient_balance: 'bool',
       result: 'bool',
     },
-    TransferManagerResult: {
-      tm: 'TransferManager',
+    TransferConditionResult: {
+      condition: 'TransferCondition',
       result: 'bool',
     },
     AGId: 'u32',

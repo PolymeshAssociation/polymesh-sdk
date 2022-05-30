@@ -1,12 +1,12 @@
-import { bool, Option, Vec } from '@polkadot/types';
+import { bool, Bytes, Option, Vec } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
+import { PolymeshPrimitivesDocument } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import {
   AssetIdentifier,
   AssetName,
   AssetType,
-  Document,
   FundingRoundName,
   Ticker,
   TxTags,
@@ -51,15 +51,17 @@ describe('createAsset procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let bigNumberToBalanceStub: sinon.SinonStub;
-  let stringToAssetNameStub: sinon.SinonStub<[string, Context], AssetName>;
+  let stringToBytesStub: sinon.SinonStub<[string, Context], Bytes>;
   let booleanToBoolStub: sinon.SinonStub<[boolean, Context], bool>;
   let internalAssetTypeToAssetTypeStub: sinon.SinonStub<[InternalAssetType, Context], AssetType>;
   let securityIdentifierToAssetIdentifierStub: sinon.SinonStub<
     [SecurityIdentifier, Context],
     AssetIdentifier
   >;
-  let stringToFundingRoundNameStub: sinon.SinonStub<[string, Context], FundingRoundName>;
-  let assetDocumentToDocumentStub: sinon.SinonStub<[AssetDocument, Context], Document>;
+  let assetDocumentToDocumentStub: sinon.SinonStub<
+    [AssetDocument, Context],
+    PolymeshPrimitivesDocument
+  >;
   let ticker: string;
   let name: string;
   let initialSupply: BigNumber;
@@ -70,14 +72,14 @@ describe('createAsset procedure', () => {
   let requireInvestorUniqueness: boolean;
   let documents: AssetDocument[];
   let rawTicker: Ticker;
-  let rawName: AssetName;
+  let rawName: Bytes;
   let rawInitialSupply: Balance;
   let rawIsDivisible: bool;
   let rawType: AssetType;
   let rawIdentifiers: AssetIdentifier[];
-  let rawFundingRound: FundingRoundName;
+  let rawFundingRound: Bytes;
   let rawDisableIu: bool;
-  let rawDocuments: Document[];
+  let rawDocuments: PolymeshPrimitivesDocument[];
   let args: Params;
   let protocolFees: BigNumber[];
 
@@ -95,7 +97,7 @@ describe('createAsset procedure', () => {
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
-    stringToAssetNameStub = sinon.stub(utilsConversionModule, 'stringToAssetName');
+    stringToBytesStub = sinon.stub(utilsConversionModule, 'stringToBytes');
     booleanToBoolStub = sinon.stub(utilsConversionModule, 'booleanToBool');
     internalAssetTypeToAssetTypeStub = sinon.stub(
       utilsConversionModule,
@@ -105,7 +107,6 @@ describe('createAsset procedure', () => {
       utilsConversionModule,
       'securityIdentifierToAssetIdentifier'
     );
-    stringToFundingRoundNameStub = sinon.stub(utilsConversionModule, 'stringToFundingRoundName');
     assetDocumentToDocumentStub = sinon.stub(utilsConversionModule, 'assetDocumentToDocument');
     ticker = 'someTicker';
     name = 'someName';
@@ -128,7 +129,7 @@ describe('createAsset procedure', () => {
       },
     ];
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    rawName = dsMockUtils.createMockAssetName(name);
+    rawName = dsMockUtils.createMockBytes(name);
     rawInitialSupply = dsMockUtils.createMockBalance(initialSupply);
     rawIsDivisible = dsMockUtils.createMockBool(isDivisible);
     rawType = dsMockUtils.createMockAssetType(assetType as KnownAssetType);
@@ -139,22 +140,18 @@ describe('createAsset procedure', () => {
     );
     rawDocuments = documents.map(({ uri, contentHash, name: docName, type, filedAt }) =>
       dsMockUtils.createMockDocument({
-        name: dsMockUtils.createMockDocumentName(docName),
-        uri: dsMockUtils.createMockDocumentUri(uri),
-        /* eslint-disable @typescript-eslint/naming-convention */
-        content_hash: dsMockUtils.createMockDocumentHash({
+        name: dsMockUtils.createMockBytes(docName),
+        uri: dsMockUtils.createMockBytes(uri),
+        contentHash: dsMockUtils.createMockDocumentHash({
           H128: dsMockUtils.createMockU8aFixed(contentHash),
         }),
-        doc_type: dsMockUtils.createMockOption(
-          type ? dsMockUtils.createMockDocumentType(type) : null
-        ),
-        filing_date: dsMockUtils.createMockOption(
+        docType: dsMockUtils.createMockOption(type ? dsMockUtils.createMockBytes(type) : null),
+        filingDate: dsMockUtils.createMockOption(
           filedAt ? dsMockUtils.createMockMoment(new BigNumber(filedAt.getTime())) : null
         ),
-        /* eslint-enable @typescript-eslint/naming-convention */
       })
     );
-    rawFundingRound = dsMockUtils.createMockFundingRoundName(fundingRound);
+    rawFundingRound = dsMockUtils.createMockBytes(fundingRound);
     rawDisableIu = dsMockUtils.createMockBool(!requireInvestorUniqueness);
     args = {
       ticker,
@@ -193,7 +190,7 @@ describe('createAsset procedure', () => {
     bigNumberToBalanceStub
       .withArgs(initialSupply, mockContext, isDivisible)
       .returns(rawInitialSupply);
-    stringToAssetNameStub.withArgs(name, mockContext).returns(rawName);
+    stringToBytesStub.withArgs(name, mockContext).returns(rawName);
     booleanToBoolStub.withArgs(isDivisible, mockContext).returns(rawIsDivisible);
     booleanToBoolStub.withArgs(!requireInvestorUniqueness, mockContext).returns(rawDisableIu);
     internalAssetTypeToAssetTypeStub
@@ -202,7 +199,7 @@ describe('createAsset procedure', () => {
     securityIdentifierToAssetIdentifierStub
       .withArgs(securityIdentifiers[0], mockContext)
       .returns(rawIdentifiers[0]);
-    stringToFundingRoundNameStub.withArgs(fundingRound, mockContext).returns(rawFundingRound);
+    stringToBytesStub.withArgs(fundingRound, mockContext).returns(rawFundingRound);
     assetDocumentToDocumentStub
       .withArgs(
         { uri: documents[0].uri, contentHash: documents[0].contentHash, name: documents[0].name },
@@ -354,10 +351,8 @@ describe('createAsset procedure', () => {
     dsMockUtils.createQueryStub('asset', 'classicTickers', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockClassicTickerRegistration({
-          /* eslint-disable @typescript-eslint/naming-convention */
-          eth_owner: 'someAddress',
-          is_created: true,
-          /* eslint-enable @typescript-eslint/naming-convention */
+          ethOwner: 'someAddress',
+          isCreated: true,
         })
       ),
     });
@@ -592,10 +587,7 @@ describe('createAsset procedure', () => {
       });
 
       const rawValue = dsMockUtils.createMockBytes('something');
-      sinon
-        .stub(utilsConversionModule, 'stringToBytes')
-        .withArgs('something', mockContext)
-        .returns(rawValue);
+      stringToBytesStub.withArgs('something', mockContext).returns(rawValue);
       let id = dsMockUtils.createMockU32();
 
       const customTypesStub = dsMockUtils.createQueryStub('asset', 'customTypesInverse', {

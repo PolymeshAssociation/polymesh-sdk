@@ -161,12 +161,10 @@ describe('TickerReservation class', () => {
           expiry: dsMockUtils.createMockOption(),
         }),
         dsMockUtils.createMockSecurityToken({
-          /* eslint-disable @typescript-eslint/naming-convention */
-          owner_did: dsMockUtils.createMockIdentityId(ownerDid),
-          asset_type: dsMockUtils.createMockAssetType('EquityCommon'),
+          ownerDid: dsMockUtils.createMockIdentityId(ownerDid),
+          assetType: dsMockUtils.createMockAssetType('EquityCommon'),
           divisible: dsMockUtils.createMockBool(true),
-          total_supply: dsMockUtils.createMockBalance(new BigNumber(1000)),
-          /* eslint-enable @typescript-eslint/naming-convention */
+          totalSupply: dsMockUtils.createMockBalance(new BigNumber(1000)),
         }),
       ]);
 

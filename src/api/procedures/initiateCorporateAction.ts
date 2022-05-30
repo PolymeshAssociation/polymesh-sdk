@@ -1,6 +1,6 @@
+import { PalletCorporateActionsCaId } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { CAId } from 'polymesh-types/types';
 
 import {
   assertCaCheckpointValid,
@@ -25,8 +25,8 @@ import {
   dateToMoment,
   percentageToPermill,
   signerToString,
+  stringToBytes,
   stringToIdentityId,
-  stringToText,
   stringToTicker,
   targetsToTargetIdentities,
   u32ToBigNumber,
@@ -38,7 +38,7 @@ import { filterEventRecords, getCheckpointValue, optionize } from '~/utils/inter
  */
 export const createCaIdResolver =
   () =>
-  (receipt: ISubmittableResult): CAId => {
+  (receipt: ISubmittableResult): PalletCorporateActionsCaId => {
     const [{ data }] = filterEventRecords(receipt, 'corporateAction', 'CAInitiated');
 
     return data[1];
@@ -92,9 +92,9 @@ export type Params = InitiateCorporateActionParams & {
  * @hidden
  */
 export async function prepareInitiateCorporateAction(
-  this: Procedure<Params, CAId>,
+  this: Procedure<Params, PalletCorporateActionsCaId>,
   args: Params
-): Promise<PostTransactionValue<CAId>> {
+): Promise<PostTransactionValue<PalletCorporateActionsCaId>> {
   const {
     context: {
       polymeshApi: { tx, query },
@@ -149,7 +149,7 @@ export async function prepareInitiateCorporateAction(
   const rawKind = corporateActionKindToCaKind(kind, context);
   const rawDeclDate = dateToMoment(declarationDate, context);
   const rawRecordDate = optionize(checkpointToRecordDateSpec)(checkpointValue, context);
-  const rawDetails = stringToText(description, context);
+  const rawDetails = stringToBytes(description, context);
   const rawTargets = optionize(targetsToTargetIdentities)(targets, context);
   const rawTax = optionize(percentageToPermill)(defaultTaxWithholding, context);
   const rawWithholdings =
@@ -183,7 +183,7 @@ export async function prepareInitiateCorporateAction(
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<Params, CAId>,
+  this: Procedure<Params, PalletCorporateActionsCaId>,
   { ticker }: Params
 ): ProcedureAuthorization {
   return {
@@ -198,5 +198,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export const initiateCorporateAction = (): Procedure<Params, CAId> =>
+export const initiateCorporateAction = (): Procedure<Params, PalletCorporateActionsCaId> =>
   new Procedure(prepareInitiateCorporateAction, getAuthorization);

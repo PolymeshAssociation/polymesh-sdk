@@ -6,6 +6,7 @@ import {
   SubmittableExtrinsic,
   SubmittableExtrinsics,
 } from '@polkadot/api/types';
+import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import { ISubmittableResult, Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { DocumentNode } from 'graphql';
@@ -373,4 +374,13 @@ export enum AllowanceOperation {
   Set = 'Set',
   Increase = 'Increase',
   Decrease = 'Decrease',
+}
+
+export enum StatisticsOpType {
+  Count = 'Count',
+  Balance = 'Balance',
+}
+
+export interface TickerKey {
+  Ticker: PolymeshPrimitivesTicker;
 }
