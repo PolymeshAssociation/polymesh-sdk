@@ -191,6 +191,7 @@ import {
   StatisticsOpType,
 } from '~/types/internal';
 import { ArgsType, Mutable, tuple } from '~/types/utils';
+import { STATE_RUNTIME_VERSION_CALL, SYSTEM_VERSION_RPC_CALL } from '~/utils/constants';
 
 let apiEmitter: EventEmitter;
 
@@ -264,8 +265,18 @@ export class MockWebSocket {
   /**
    * @hidden
    */
-  send(_msg: string): void {
-    const response = { data: '{ "result": "5.0.0" }' };
+  send(msg: string): void {
+    let response;
+    const nodeVersionId = SYSTEM_VERSION_RPC_CALL.id;
+
+    if (msg.indexOf(nodeVersionId) >= 0) {
+      response = { data: `{ "result": "5.0.0", "id": "${nodeVersionId}" }` };
+    } else {
+      response = {
+        data: `{ "result": { "specVersion": "5000000"}, "id": "${STATE_RUNTIME_VERSION_CALL.id}" }`,
+      };
+    }
+
     this.onmessage(response);
   }
   /* eslint-enable @typescript-eslint/no-unused-vars */
@@ -282,8 +293,19 @@ export class MockWebSocket {
    * @hidden
    * Calls onmessage with the given version
    */
-  sendVersion(version: string): void {
-    const response = { data: `{ "result": "${version}" }` };
+  sendRpcVersion(version: string): void {
+    const response = { data: `{ "result": "${version}", "id": "${SYSTEM_VERSION_RPC_CALL.id}" }` };
+    this.onmessage(response);
+  }
+
+  /**
+   * @hidden
+   * Calls onmessage with the given version
+   */
+  sendSpecVersion(version: string): void {
+    const response = {
+      data: `{ "result": { "specVersion": "${version}" }, "id": "${STATE_RUNTIME_VERSION_CALL.id}" }`,
+    };
     this.onmessage(response);
   }
 }
