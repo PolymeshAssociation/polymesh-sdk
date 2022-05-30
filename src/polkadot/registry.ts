@@ -22,6 +22,9 @@ import type {
   FinalityGrandpaEquivocationPrevote,
   FinalityGrandpaPrecommit,
   FinalityGrandpaPrevote,
+  FrameSupportDispatchRawOrigin,
+  FrameSupportScheduleLookupError,
+  FrameSupportScheduleMaybeHashed,
   FrameSupportTokensMiscBalanceStatus,
   FrameSupportWeightsDispatchClass,
   FrameSupportWeightsDispatchInfo,
@@ -46,7 +49,6 @@ import type {
   FrameSystemLimitsBlockWeights,
   FrameSystemLimitsWeightsPerClass,
   FrameSystemPhase,
-  FrameSystemRawOrigin,
   PalletAssetAssetOwnershipRelation,
   PalletAssetCall,
   PalletAssetCheckpointCall,
@@ -90,6 +92,17 @@ import type {
   PalletComplianceManagerCall,
   PalletComplianceManagerError,
   PalletComplianceManagerEvent,
+  PalletContractsCall,
+  PalletContractsError,
+  PalletContractsEvent,
+  PalletContractsSchedule,
+  PalletContractsScheduleHostFnWeights,
+  PalletContractsScheduleInstructionWeights,
+  PalletContractsScheduleLimits,
+  PalletContractsStorageDeletedContract,
+  PalletContractsStorageRawContractInfo,
+  PalletContractsWasmOwnerInfo,
+  PalletContractsWasmPrefabWasmModule,
   PalletCorporateActionsBallotBallotMeta,
   PalletCorporateActionsBallotBallotTimeRange,
   PalletCorporateActionsBallotBallotVote,
@@ -166,6 +179,10 @@ import type {
   PalletPortfolioCall,
   PalletPortfolioError,
   PalletPortfolioMovePortfolioItem,
+  PalletPreimageCall,
+  PalletPreimageError,
+  PalletPreimageEvent,
+  PalletPreimageRequestStatus,
   PalletProtocolFeeCall,
   PalletProtocolFeeError,
   PalletProtocolFeeRawEvent,
@@ -179,8 +196,7 @@ import type {
   PalletSchedulerCall,
   PalletSchedulerError,
   PalletSchedulerEvent,
-  PalletSchedulerReleases,
-  PalletSchedulerScheduledV2,
+  PalletSchedulerScheduledV3,
   PalletSessionCall,
   PalletSessionError,
   PalletSessionEvent,
@@ -261,11 +277,15 @@ import type {
   PolymeshCommonUtilitiesGroupRawEventInstance4,
   PolymeshCommonUtilitiesIdentityRawEvent,
   PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth,
+  PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuthV1,
   PolymeshCommonUtilitiesMaybeBlock,
   PolymeshCommonUtilitiesPortfolioEvent,
   PolymeshCommonUtilitiesProtocolFeeProtocolOp,
   PolymeshCommonUtilitiesRelayerRawEvent,
   PolymeshCommonUtilitiesStatisticsEvent,
+  PolymeshContractsCall,
+  PolymeshContractsError,
+  PolymeshContractsEvent,
   PolymeshExtensionsCheckWeight,
   PolymeshPrimitivesAgentAgentGroup,
   PolymeshPrimitivesAssetAssetType,
@@ -294,11 +314,11 @@ import type {
   PolymeshPrimitivesEthereumEcdsaSignature,
   PolymeshPrimitivesEthereumEthereumAddress,
   PolymeshPrimitivesEventOnly,
-  PolymeshPrimitivesIdentity,
   PolymeshPrimitivesIdentityClaim,
   PolymeshPrimitivesIdentityClaimClaim,
   PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityClaimScope,
+  PolymeshPrimitivesIdentityDidRecord,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesIdentityIdPortfolioKind,
@@ -306,13 +326,11 @@ import type {
   PolymeshPrimitivesJurisdictionCountryCode,
   PolymeshPrimitivesPosRatio,
   PolymeshPrimitivesSecondaryKey,
-  PolymeshPrimitivesSecondaryKeyApiLegacyExtrinsicPermissions,
-  PolymeshPrimitivesSecondaryKeyApiLegacyPalletPermissions,
-  PolymeshPrimitivesSecondaryKeyApiLegacyPermissions,
-  PolymeshPrimitivesSecondaryKeyApiSecondaryKey,
+  PolymeshPrimitivesSecondaryKeyKeyRecord,
   PolymeshPrimitivesSecondaryKeyPalletPermissions,
   PolymeshPrimitivesSecondaryKeyPermissions,
   PolymeshPrimitivesSecondaryKeySignatory,
+  PolymeshPrimitivesSecondaryKeyV1SecondaryKey,
   PolymeshPrimitivesStatisticsAssetScope,
   PolymeshPrimitivesStatisticsStat1stKey,
   PolymeshPrimitivesStatisticsStat2ndKey,
@@ -328,9 +346,9 @@ import type {
   PolymeshPrimitivesTransferComplianceAssetTransferCompliance,
   PolymeshPrimitivesTransferComplianceTransferCondition,
   PolymeshPrimitivesTransferComplianceTransferConditionExemptKey,
-  PolymeshRuntimeDevelopRuntime,
-  PolymeshRuntimeDevelopRuntimeOriginCaller,
-  PolymeshRuntimeDevelopRuntimeSessionKeys,
+  PolymeshRuntimeCiRuntime,
+  PolymeshRuntimeCiRuntimeOriginCaller,
+  PolymeshRuntimeCiRuntimeSessionKeys,
   SchnorrkelSignSignature,
   SpAuthorityDiscoveryAppPublic,
   SpConsensusBabeAllowedSlots,
@@ -338,7 +356,6 @@ import type {
   SpConsensusBabeBabeEpochConfiguration,
   SpConsensusBabeDigestsNextConfigDescriptor,
   SpConsensusSlotsEquivocationProof,
-  SpCoreChangesTrieChangesTrieConfiguration,
   SpCoreCryptoKeyTypeId,
   SpCoreEcdsaSignature,
   SpCoreEd25519Public,
@@ -351,15 +368,17 @@ import type {
   SpFinalityGrandpaAppSignature,
   SpFinalityGrandpaEquivocation,
   SpFinalityGrandpaEquivocationProof,
+  SpNposElectionsElectionScore,
   SpRuntimeArithmeticError,
   SpRuntimeBlakeTwo256,
   SpRuntimeDigest,
-  SpRuntimeDigestChangesTrieSignal,
   SpRuntimeDigestDigestItem,
   SpRuntimeDispatchError,
   SpRuntimeHeader,
+  SpRuntimeModuleError,
   SpRuntimeMultiSignature,
   SpRuntimeTokenError,
+  SpRuntimeTransactionalError,
   SpSessionMembershipProof,
   SpStakingOffenceOffenceDetails,
   SpVersionRuntimeVersion,
@@ -387,6 +406,9 @@ declare module '@polkadot/types/types/registry' {
     FinalityGrandpaEquivocationPrevote: FinalityGrandpaEquivocationPrevote;
     FinalityGrandpaPrecommit: FinalityGrandpaPrecommit;
     FinalityGrandpaPrevote: FinalityGrandpaPrevote;
+    FrameSupportDispatchRawOrigin: FrameSupportDispatchRawOrigin;
+    FrameSupportScheduleLookupError: FrameSupportScheduleLookupError;
+    FrameSupportScheduleMaybeHashed: FrameSupportScheduleMaybeHashed;
     FrameSupportTokensMiscBalanceStatus: FrameSupportTokensMiscBalanceStatus;
     FrameSupportWeightsDispatchClass: FrameSupportWeightsDispatchClass;
     FrameSupportWeightsDispatchInfo: FrameSupportWeightsDispatchInfo;
@@ -411,7 +433,6 @@ declare module '@polkadot/types/types/registry' {
     FrameSystemLimitsBlockWeights: FrameSystemLimitsBlockWeights;
     FrameSystemLimitsWeightsPerClass: FrameSystemLimitsWeightsPerClass;
     FrameSystemPhase: FrameSystemPhase;
-    FrameSystemRawOrigin: FrameSystemRawOrigin;
     PalletAssetAssetOwnershipRelation: PalletAssetAssetOwnershipRelation;
     PalletAssetCall: PalletAssetCall;
     PalletAssetCheckpointCall: PalletAssetCheckpointCall;
@@ -455,6 +476,17 @@ declare module '@polkadot/types/types/registry' {
     PalletComplianceManagerCall: PalletComplianceManagerCall;
     PalletComplianceManagerError: PalletComplianceManagerError;
     PalletComplianceManagerEvent: PalletComplianceManagerEvent;
+    PalletContractsCall: PalletContractsCall;
+    PalletContractsError: PalletContractsError;
+    PalletContractsEvent: PalletContractsEvent;
+    PalletContractsSchedule: PalletContractsSchedule;
+    PalletContractsScheduleHostFnWeights: PalletContractsScheduleHostFnWeights;
+    PalletContractsScheduleInstructionWeights: PalletContractsScheduleInstructionWeights;
+    PalletContractsScheduleLimits: PalletContractsScheduleLimits;
+    PalletContractsStorageDeletedContract: PalletContractsStorageDeletedContract;
+    PalletContractsStorageRawContractInfo: PalletContractsStorageRawContractInfo;
+    PalletContractsWasmOwnerInfo: PalletContractsWasmOwnerInfo;
+    PalletContractsWasmPrefabWasmModule: PalletContractsWasmPrefabWasmModule;
     PalletCorporateActionsBallotBallotMeta: PalletCorporateActionsBallotBallotMeta;
     PalletCorporateActionsBallotBallotTimeRange: PalletCorporateActionsBallotBallotTimeRange;
     PalletCorporateActionsBallotBallotVote: PalletCorporateActionsBallotBallotVote;
@@ -531,6 +563,10 @@ declare module '@polkadot/types/types/registry' {
     PalletPortfolioCall: PalletPortfolioCall;
     PalletPortfolioError: PalletPortfolioError;
     PalletPortfolioMovePortfolioItem: PalletPortfolioMovePortfolioItem;
+    PalletPreimageCall: PalletPreimageCall;
+    PalletPreimageError: PalletPreimageError;
+    PalletPreimageEvent: PalletPreimageEvent;
+    PalletPreimageRequestStatus: PalletPreimageRequestStatus;
     PalletProtocolFeeCall: PalletProtocolFeeCall;
     PalletProtocolFeeError: PalletProtocolFeeError;
     PalletProtocolFeeRawEvent: PalletProtocolFeeRawEvent;
@@ -544,8 +580,7 @@ declare module '@polkadot/types/types/registry' {
     PalletSchedulerCall: PalletSchedulerCall;
     PalletSchedulerError: PalletSchedulerError;
     PalletSchedulerEvent: PalletSchedulerEvent;
-    PalletSchedulerReleases: PalletSchedulerReleases;
-    PalletSchedulerScheduledV2: PalletSchedulerScheduledV2;
+    PalletSchedulerScheduledV3: PalletSchedulerScheduledV3;
     PalletSessionCall: PalletSessionCall;
     PalletSessionError: PalletSessionError;
     PalletSessionEvent: PalletSessionEvent;
@@ -626,11 +661,15 @@ declare module '@polkadot/types/types/registry' {
     PolymeshCommonUtilitiesGroupRawEventInstance4: PolymeshCommonUtilitiesGroupRawEventInstance4;
     PolymeshCommonUtilitiesIdentityRawEvent: PolymeshCommonUtilitiesIdentityRawEvent;
     PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth: PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth;
+    PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuthV1: PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuthV1;
     PolymeshCommonUtilitiesMaybeBlock: PolymeshCommonUtilitiesMaybeBlock;
     PolymeshCommonUtilitiesPortfolioEvent: PolymeshCommonUtilitiesPortfolioEvent;
     PolymeshCommonUtilitiesProtocolFeeProtocolOp: PolymeshCommonUtilitiesProtocolFeeProtocolOp;
     PolymeshCommonUtilitiesRelayerRawEvent: PolymeshCommonUtilitiesRelayerRawEvent;
     PolymeshCommonUtilitiesStatisticsEvent: PolymeshCommonUtilitiesStatisticsEvent;
+    PolymeshContractsCall: PolymeshContractsCall;
+    PolymeshContractsError: PolymeshContractsError;
+    PolymeshContractsEvent: PolymeshContractsEvent;
     PolymeshExtensionsCheckWeight: PolymeshExtensionsCheckWeight;
     PolymeshPrimitivesAgentAgentGroup: PolymeshPrimitivesAgentAgentGroup;
     PolymeshPrimitivesAssetAssetType: PolymeshPrimitivesAssetAssetType;
@@ -659,11 +698,11 @@ declare module '@polkadot/types/types/registry' {
     PolymeshPrimitivesEthereumEcdsaSignature: PolymeshPrimitivesEthereumEcdsaSignature;
     PolymeshPrimitivesEthereumEthereumAddress: PolymeshPrimitivesEthereumEthereumAddress;
     PolymeshPrimitivesEventOnly: PolymeshPrimitivesEventOnly;
-    PolymeshPrimitivesIdentity: PolymeshPrimitivesIdentity;
     PolymeshPrimitivesIdentityClaim: PolymeshPrimitivesIdentityClaim;
     PolymeshPrimitivesIdentityClaimClaim: PolymeshPrimitivesIdentityClaimClaim;
     PolymeshPrimitivesIdentityClaimClaimType: PolymeshPrimitivesIdentityClaimClaimType;
     PolymeshPrimitivesIdentityClaimScope: PolymeshPrimitivesIdentityClaimScope;
+    PolymeshPrimitivesIdentityDidRecord: PolymeshPrimitivesIdentityDidRecord;
     PolymeshPrimitivesIdentityId: PolymeshPrimitivesIdentityId;
     PolymeshPrimitivesIdentityIdPortfolioId: PolymeshPrimitivesIdentityIdPortfolioId;
     PolymeshPrimitivesIdentityIdPortfolioKind: PolymeshPrimitivesIdentityIdPortfolioKind;
@@ -671,13 +710,11 @@ declare module '@polkadot/types/types/registry' {
     PolymeshPrimitivesJurisdictionCountryCode: PolymeshPrimitivesJurisdictionCountryCode;
     PolymeshPrimitivesPosRatio: PolymeshPrimitivesPosRatio;
     PolymeshPrimitivesSecondaryKey: PolymeshPrimitivesSecondaryKey;
-    PolymeshPrimitivesSecondaryKeyApiLegacyExtrinsicPermissions: PolymeshPrimitivesSecondaryKeyApiLegacyExtrinsicPermissions;
-    PolymeshPrimitivesSecondaryKeyApiLegacyPalletPermissions: PolymeshPrimitivesSecondaryKeyApiLegacyPalletPermissions;
-    PolymeshPrimitivesSecondaryKeyApiLegacyPermissions: PolymeshPrimitivesSecondaryKeyApiLegacyPermissions;
-    PolymeshPrimitivesSecondaryKeyApiSecondaryKey: PolymeshPrimitivesSecondaryKeyApiSecondaryKey;
+    PolymeshPrimitivesSecondaryKeyKeyRecord: PolymeshPrimitivesSecondaryKeyKeyRecord;
     PolymeshPrimitivesSecondaryKeyPalletPermissions: PolymeshPrimitivesSecondaryKeyPalletPermissions;
     PolymeshPrimitivesSecondaryKeyPermissions: PolymeshPrimitivesSecondaryKeyPermissions;
     PolymeshPrimitivesSecondaryKeySignatory: PolymeshPrimitivesSecondaryKeySignatory;
+    PolymeshPrimitivesSecondaryKeyV1SecondaryKey: PolymeshPrimitivesSecondaryKeyV1SecondaryKey;
     PolymeshPrimitivesStatisticsAssetScope: PolymeshPrimitivesStatisticsAssetScope;
     PolymeshPrimitivesStatisticsStat1stKey: PolymeshPrimitivesStatisticsStat1stKey;
     PolymeshPrimitivesStatisticsStat2ndKey: PolymeshPrimitivesStatisticsStat2ndKey;
@@ -693,9 +730,9 @@ declare module '@polkadot/types/types/registry' {
     PolymeshPrimitivesTransferComplianceAssetTransferCompliance: PolymeshPrimitivesTransferComplianceAssetTransferCompliance;
     PolymeshPrimitivesTransferComplianceTransferCondition: PolymeshPrimitivesTransferComplianceTransferCondition;
     PolymeshPrimitivesTransferComplianceTransferConditionExemptKey: PolymeshPrimitivesTransferComplianceTransferConditionExemptKey;
-    PolymeshRuntimeDevelopRuntime: PolymeshRuntimeDevelopRuntime;
-    PolymeshRuntimeDevelopRuntimeOriginCaller: PolymeshRuntimeDevelopRuntimeOriginCaller;
-    PolymeshRuntimeDevelopRuntimeSessionKeys: PolymeshRuntimeDevelopRuntimeSessionKeys;
+    PolymeshRuntimeCiRuntime: PolymeshRuntimeCiRuntime;
+    PolymeshRuntimeCiRuntimeOriginCaller: PolymeshRuntimeCiRuntimeOriginCaller;
+    PolymeshRuntimeCiRuntimeSessionKeys: PolymeshRuntimeCiRuntimeSessionKeys;
     SchnorrkelSignSignature: SchnorrkelSignSignature;
     SpAuthorityDiscoveryAppPublic: SpAuthorityDiscoveryAppPublic;
     SpConsensusBabeAllowedSlots: SpConsensusBabeAllowedSlots;
@@ -703,7 +740,6 @@ declare module '@polkadot/types/types/registry' {
     SpConsensusBabeBabeEpochConfiguration: SpConsensusBabeBabeEpochConfiguration;
     SpConsensusBabeDigestsNextConfigDescriptor: SpConsensusBabeDigestsNextConfigDescriptor;
     SpConsensusSlotsEquivocationProof: SpConsensusSlotsEquivocationProof;
-    SpCoreChangesTrieChangesTrieConfiguration: SpCoreChangesTrieChangesTrieConfiguration;
     SpCoreCryptoKeyTypeId: SpCoreCryptoKeyTypeId;
     SpCoreEcdsaSignature: SpCoreEcdsaSignature;
     SpCoreEd25519Public: SpCoreEd25519Public;
@@ -716,15 +752,17 @@ declare module '@polkadot/types/types/registry' {
     SpFinalityGrandpaAppSignature: SpFinalityGrandpaAppSignature;
     SpFinalityGrandpaEquivocation: SpFinalityGrandpaEquivocation;
     SpFinalityGrandpaEquivocationProof: SpFinalityGrandpaEquivocationProof;
+    SpNposElectionsElectionScore: SpNposElectionsElectionScore;
     SpRuntimeArithmeticError: SpRuntimeArithmeticError;
     SpRuntimeBlakeTwo256: SpRuntimeBlakeTwo256;
     SpRuntimeDigest: SpRuntimeDigest;
-    SpRuntimeDigestChangesTrieSignal: SpRuntimeDigestChangesTrieSignal;
     SpRuntimeDigestDigestItem: SpRuntimeDigestDigestItem;
     SpRuntimeDispatchError: SpRuntimeDispatchError;
     SpRuntimeHeader: SpRuntimeHeader;
+    SpRuntimeModuleError: SpRuntimeModuleError;
     SpRuntimeMultiSignature: SpRuntimeMultiSignature;
     SpRuntimeTokenError: SpRuntimeTokenError;
+    SpRuntimeTransactionalError: SpRuntimeTransactionalError;
     SpSessionMembershipProof: SpSessionMembershipProof;
     SpStakingOffenceOffenceDetails: SpStakingOffenceOffenceDetails;
     SpVersionRuntimeVersion: SpVersionRuntimeVersion;

@@ -25,6 +25,7 @@ import {
   PostTransactionValue,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { createMockAccountId, createMockIdentityId } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import {
   Account,
@@ -1154,6 +1155,14 @@ describe('authorization request validations', () => {
   });
 
   describe('assertMultiSigSignerAuthorizationValid', () => {
+    beforeAll(() => {
+      dsMockUtils.initMocks();
+    });
+
+    afterAll(() => {
+      dsMockUtils.cleanup();
+    });
+
     it('should not throw with a valid request', () => {
       const auth = new AuthorizationRequest(
         {
@@ -1163,7 +1172,7 @@ describe('authorization request validations', () => {
           expiry,
           data: {
             type: AuthorizationType.AddMultiSigSigner,
-            value: 'multisigAddr',
+            value: 'multisigAddress',
           },
         },
         mockContext
@@ -1173,7 +1182,7 @@ describe('authorization request validations', () => {
     });
 
     it('should throw if the multisig is being added as its own signer', () => {
-      const address = 'multiSigAddr';
+      const address = 'multiSigAddress';
 
       const badTarget = entityMockUtils.getAccountInstance({
         address,
@@ -1212,11 +1221,19 @@ describe('authorization request validations', () => {
           expiry,
           data: {
             type: AuthorizationType.AddMultiSigSigner,
-            value: 'addr',
+            value: 'address',
           },
         },
         mockContext
       );
+
+      dsMockUtils
+        .createQueryStub('identity', 'keyRecords')
+        .resolves(
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockKeyRecord({ PrimaryKey: createMockIdentityId('someDid') })
+          )
+        );
 
       const expectedError = new PolymeshError({
         code: ErrorCode.ValidationError,
@@ -1237,15 +1254,19 @@ describe('authorization request validations', () => {
           expiry,
           data: {
             type: AuthorizationType.AddMultiSigSigner,
-            value: 'addr',
+            value: 'address',
           },
         },
         mockContext
       );
 
-      dsMockUtils.createQueryStub('multiSig', 'keyToMultiSig', {
-        returnValue: dsMockUtils.createMockAccountId('abc'),
-      });
+      dsMockUtils.createQueryStub('identity', 'keyRecords').returns(
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockKeyRecord({
+            MultiSigSignerKey: createMockAccountId('someAddress'),
+          })
+        )
+      );
 
       const expectedError = new PolymeshError({
         code: ErrorCode.ValidationError,
@@ -1259,6 +1280,14 @@ describe('authorization request validations', () => {
   });
 
   describe('assertRotatePrimaryKeyToSecondaryAuthorization', () => {
+    beforeAll(() => {
+      dsMockUtils.initMocks();
+    });
+
+    afterAll(() => {
+      dsMockUtils.cleanup();
+    });
+
     const permissions = {
       assets: null,
       transactions: null,
@@ -1269,6 +1298,7 @@ describe('authorization request validations', () => {
       type: AuthorizationType.RotatePrimaryKeyToSecondary,
       value: permissions,
     };
+
     it('should not throw with a valid request', () => {
       const validTarget = entityMockUtils.getAccountInstance({ getIdentity: null });
       const auth = new AuthorizationRequest(

@@ -1,5 +1,9 @@
-import { u64 } from '@polkadot/types';
-import { PolymeshPrimitivesIdentity } from '@polkadot/types/lookup';
+import { Option, u64 } from '@polkadot/types';
+import { AccountId32 } from '@polkadot/types/interfaces';
+import {
+  PolymeshPrimitivesIdentityDidRecord,
+  PolymeshPrimitivesSecondaryKeyKeyRecord,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, flatten, uniqBy } from 'lodash';
@@ -40,6 +44,7 @@ import {
 } from '~/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
+  accountIdToAccount,
   accountIdToString,
   balanceToBigNumber,
   boolToBoolean,
@@ -51,7 +56,6 @@ import {
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
   scopeIdToString,
-  signatoryToAccount,
   stringToIdentityId,
   stringToTicker,
   transactionPermissionsToTxGroups,
@@ -279,9 +283,15 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const assembleResult = ({ primaryKey }: PolymeshPrimitivesIdentity): PermissionedAccount => {
+    const assembleResult = (
+      record: Option<PolymeshPrimitivesIdentityDidRecord>
+    ): PermissionedAccount => {
+      // we know the record exists because otherwise the Identity couldn't have been fetched
+      const { primaryKey } = record.unwrap();
+
       return {
-        account: new Account({ address: accountIdToString(primaryKey) }, context),
+        // we know the primary key exists because Asset Identities aren't considered Identities by the SDK for now
+        account: new Account({ address: accountIdToString(primaryKey.unwrap()) }, context),
         permissions: {
           assets: null,
           portfolios: null,
@@ -671,6 +681,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    * Get the list of secondary Accounts related to the Identity
    *
    * @note can be subscribed to
+   * @note This method currently lacks pagination and may be slow for identities with many thousands of keys
    */
   public async getSecondaryAccounts(): Promise<PermissionedAccount[]>;
   public async getSecondaryAccounts(
@@ -691,34 +702,70 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       },
     } = this;
 
-    const assembleResult = ({
-      secondaryKeys: secondaryAccounts,
-    }: PolymeshPrimitivesIdentity): PermissionedAccount[] => {
-      return secondaryAccounts.map(({ signer: rawSigner, permissions }) => ({
-        account: signatoryToAccount(rawSigner, context),
-        permissions: meshPermissionsToPermissions(permissions, context),
-      }));
+    const assembleResult = (
+      rawSecondaryKeyKeyRecord: Option<PolymeshPrimitivesSecondaryKeyKeyRecord>[],
+      accountIds: AccountId32[]
+    ): PermissionedAccount[] => {
+      return rawSecondaryKeyKeyRecord.reduce(
+        (secondaryKeys: PermissionedAccount[], optKeyRecord, index) => {
+          const account = accountIdToAccount(accountIds[index], context);
+          const keyRecord = optKeyRecord.unwrap();
+
+          if (keyRecord.isSecondaryKey) {
+            const [, permissions] = keyRecord.asSecondaryKey;
+            secondaryKeys.push({
+              account,
+              permissions: meshPermissionsToPermissions(permissions, context),
+            });
+          }
+
+          return secondaryKeys;
+        },
+        []
+      );
     };
 
+    const keys = await identity.didKeys.entries(did);
+
+    const identityKeys = keys.map(([key]) => {
+      const [, value] = key.args;
+      return value;
+    });
+
     if (callback) {
-      return identity.didRecords(did, records => callback(assembleResult(records)));
+      return identity.keyRecords.multi(identityKeys, result =>
+        callback(assembleResult(result, identityKeys))
+      );
     }
 
-    const didRecords = await identity.didRecords(did);
-    return assembleResult(didRecords);
+    const rawPermissions = await identity.keyRecords.multi(identityKeys);
+
+    return assembleResult(rawPermissions, identityKeys);
   }
 
   /**
    * Determine whether this Identity exists on chain
+   *
+   * @note asset Identities aren't considered to exist for the
    */
   public async exists(): Promise<boolean> {
     const { did, context } = this;
 
-    const recordSize = await context.polymeshApi.query.identity.didRecords.size(
+    const didRecord = await context.polymeshApi.query.identity.didRecords(
       stringToIdentityId(did, context)
     );
 
-    return !recordSize.isZero();
+    if (didRecord.isNone) {
+      return false;
+    }
+
+    const record = didRecord.unwrap();
+
+    if (record.primaryKey.isNone) {
+      return false;
+    }
+
+    return true;
   }
 
   /**

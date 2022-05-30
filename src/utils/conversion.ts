@@ -9,6 +9,7 @@ import {
   PalletCorporateActionsCorporateAction,
   PalletCorporateActionsDistribution,
   PalletStoFundraiser,
+  PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesAuthorizationAuthorizationData,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
   PolymeshPrimitivesCondition,
@@ -83,7 +84,6 @@ import {
   AffirmationStatus as MeshAffirmationStatus,
   AgentGroup,
   AssetComplianceResult,
-  AssetIdentifier,
   AssetType,
   AuthorizationType as MeshAuthorizationType,
   CAKind,
@@ -393,16 +393,8 @@ export function stringToEcdsaSignature(signature: string, context: Context): Ecd
 /**
  * @hidden
  */
-export function signatoryToAccount(signatory: Signatory, context: Context): Account {
-  if (signatory.isAccount) {
-    return new Account({ address: accountIdToString(signatory.asAccount) }, context);
-  }
-
-  throw new PolymeshError({
-    code: ErrorCode.UnexpectedError,
-    message:
-      'Received an Identity where an Account was expected. Please report this issue to the Polymath team',
-  });
+export function accountIdToAccount(accountId: AccountId, context: Context): Account {
+  return new Account({ address: accountId.toString() }, context);
 }
 
 /**
@@ -1599,7 +1591,7 @@ export function isLeiValid(lei: string): boolean {
 export function securityIdentifierToAssetIdentifier(
   identifier: SecurityIdentifier,
   context: Context
-): AssetIdentifier {
+): PolymeshPrimitivesAssetIdentifier {
   const { type, value } = identifier;
 
   let error = false;
@@ -1632,14 +1624,14 @@ export function securityIdentifierToAssetIdentifier(
     });
   }
 
-  return context.createType('AssetIdentifier', { [type]: value });
+  return context.createType('PolymeshPrimitivesAssetIdentifier', { [type]: value });
 }
 
 /**
  * @hidden
  */
 export function assetIdentifierToSecurityIdentifier(
-  identifier: AssetIdentifier
+  identifier: PolymeshPrimitivesAssetIdentifier
 ): SecurityIdentifier {
   if (identifier.isCusip) {
     return {

@@ -324,20 +324,31 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     const {
       context: {
         polymeshApi: {
-          query: { identity },
+          query: { identity, multiSig },
         },
       },
       context,
       address,
     } = this;
 
-    const identityId = await identity.keyToIdentityIds(stringToAccountId(address, context));
+    const optKeyRecord = await identity.keyRecords(stringToAccountId(address, context));
 
-    if (identityId.isEmpty) {
+    if (optKeyRecord.isNone) {
       return null;
     }
 
-    const did = identityIdToString(identityId);
+    const keyRecord = optKeyRecord.unwrap();
+
+    let did: string;
+    if (keyRecord.isPrimaryKey) {
+      did = identityIdToString(keyRecord.asPrimaryKey);
+    } else if (keyRecord.isSecondaryKey) {
+      did = identityIdToString(keyRecord.asSecondaryKey[0]);
+    } else {
+      const multiSigAddress = keyRecord.asMultiSigSignerKey;
+      const rawMultiSigDid = await multiSig.multiSigToIdentity(multiSigAddress);
+      did = identityIdToString(rawMultiSigDid);
+    }
 
     return new Identity({ did }, context);
   }

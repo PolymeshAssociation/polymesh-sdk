@@ -478,7 +478,7 @@ export class Context {
     const invalidDids: string[] = [];
 
     records.forEach((record, index) => {
-      if (record.isEmpty) {
+      if (record.isNone) {
         invalidDids.push(dids[index]);
       }
     });
@@ -503,7 +503,8 @@ export class Context {
     if (!exists) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
-        message: 'The Identity does not exist',
+        message:
+          'The passed DID does not correspond to an on-chain user Identity. It may correspond to an Asset Identity',
       });
     }
 

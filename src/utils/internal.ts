@@ -15,7 +15,7 @@ import P from 'bluebird';
 import stringify from 'json-stable-stringify';
 import { differenceWith, flatMap, isEqual, mapValues, noop, padEnd, uniq } from 'lodash';
 import { IdentityId, ModuleName, TxTag } from 'polymesh-types/types';
-import { major,satisfies } from 'semver';
+import { major, satisfies } from 'semver';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 
 import {

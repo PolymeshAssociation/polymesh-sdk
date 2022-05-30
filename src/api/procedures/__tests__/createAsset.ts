@@ -1,6 +1,9 @@
 import { bool, Bytes, Option, Vec } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
-import { PolymeshPrimitivesDocument } from '@polkadot/types/lookup';
+import {
+  PolymeshPrimitivesAssetIdentifier,
+  PolymeshPrimitivesDocument,
+} from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import {
@@ -56,7 +59,7 @@ describe('createAsset procedure', () => {
   let internalAssetTypeToAssetTypeStub: sinon.SinonStub<[InternalAssetType, Context], AssetType>;
   let securityIdentifierToAssetIdentifierStub: sinon.SinonStub<
     [SecurityIdentifier, Context],
-    AssetIdentifier
+    PolymeshPrimitivesAssetIdentifier
   >;
   let assetDocumentToDocumentStub: sinon.SinonStub<
     [AssetDocument, Context],
@@ -76,7 +79,7 @@ describe('createAsset procedure', () => {
   let rawInitialSupply: Balance;
   let rawIsDivisible: bool;
   let rawType: AssetType;
-  let rawIdentifiers: AssetIdentifier[];
+  let rawIdentifiers: PolymeshPrimitivesAssetIdentifier[];
   let rawFundingRound: Bytes;
   let rawDisableIu: bool;
   let rawDocuments: PolymeshPrimitivesDocument[];

@@ -1,12 +1,13 @@
 import { bool, Bytes, u64 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
+import { PolymeshPrimitivesAssetIdentifier } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Asset, Context, Entity, PolymeshError, TransactionQueue } from '~/internal';
 import { eventByIndexedArgs, tickerExternalAgentHistory } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
-import { AssetIdentifier, SecurityToken as MeshSecurityToken } from '~/polkadot/polymesh';
+import { SecurityToken as MeshSecurityToken } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { ErrorCode, SecurityIdentifier, SecurityIdentifierType } from '~/types';
 import { StatisticsOpType } from '~/types/internal';
@@ -328,10 +329,10 @@ describe('Asset class', () => {
     let cusipValue: string;
     let cinsValue: string;
     let leiValue: string;
-    let isinMock: AssetIdentifier;
-    let cusipMock: AssetIdentifier;
-    let cinsMock: AssetIdentifier;
-    let leiMock: AssetIdentifier;
+    let isinMock: PolymeshPrimitivesAssetIdentifier;
+    let cusipMock: PolymeshPrimitivesAssetIdentifier;
+    let cinsMock: PolymeshPrimitivesAssetIdentifier;
+    let leiMock: PolymeshPrimitivesAssetIdentifier;
     let securityIdentifiers: SecurityIdentifier[];
 
     let context: Context;

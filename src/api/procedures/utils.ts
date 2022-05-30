@@ -422,16 +422,17 @@ export async function assertMultiSigSignerAuthorizationValid(
       });
     }
 
-    const exitingIdentity = await target.getIdentity();
-    if (exitingIdentity) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'The target Account is already part of an Identity',
-      });
-    }
+    const identityRecord = await context.polymeshApi.query.identity.keyRecords(address);
 
-    const multiSig = await context.polymeshApi.query.multiSig.keyToMultiSig(address);
-    if (!multiSig.isEmpty) {
+    if (identityRecord.isSome) {
+      const record = identityRecord.unwrap();
+      if (record.isPrimaryKey || record.isSecondaryKey) {
+        throw new PolymeshError({
+          code: ErrorCode.ValidationError,
+          message: 'The target Account is already part of an Identity',
+        });
+      }
+
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message: 'The target Account is already associated to a multisig address',
