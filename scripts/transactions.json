@@ -412,5 +412,12 @@
     "unnote_preimage": "unnote_preimage",
     "request_preimage": "request_preimage",
     "unrequest_preimage": "unrequest_preimage"
+  },
+  "Contracts": {
+    "call": "call",
+    "instantiate_with_code": "instantiate_with_code",
+    "instantiate": "instantiate",
+    "upload_code": "upload_code",
+    "remove_code": "remove_code"
   }
 }

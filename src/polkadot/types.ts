@@ -465,6 +465,14 @@ export enum PreimageTx {
   UnrequestPreimage = 'preimage.unrequestPreimage',
 }
 
+export enum ContractsTx {
+  Call = 'contracts.call',
+  InstantiateWithCode = 'contracts.instantiateWithCode',
+  Instantiate = 'contracts.instantiate',
+  UploadCode = 'contracts.uploadCode',
+  RemoveCode = 'contracts.removeCode',
+}
+
 export enum ModuleName {
   System = 'system',
   Babe = 'babe',
@@ -508,6 +516,7 @@ export enum ModuleName {
   TestUtils = 'testUtils',
   PolymeshContracts = 'polymeshContracts',
   Preimage = 'preimage',
+  Contracts = 'contracts',
 }
 
 export type TxTag =
@@ -552,7 +561,8 @@ export type TxTag =
   | RewardsTx
   | TestUtilsTx
   | PolymeshContractsTx
-  | PreimageTx;
+  | PreimageTx
+  | ContractsTx;
 
 export const TxTags = {
   system: SystemTx,
@@ -597,4 +607,5 @@ export const TxTags = {
   testUtils: TestUtilsTx,
   polymeshContracts: PolymeshContractsTx,
   preimage: PreimageTx,
+  contracts: ContractsTx,
 };
