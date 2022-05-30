@@ -2679,29 +2679,6 @@ export const createMockAssetComplianceResult = (assetComplianceResult?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockDidRecord = (didRecord?: {
-  roles: IdentityRole[];
-  primary_key: AccountId;
-  secondary_keys: MeshSecondaryKey[];
-}): DidRecord => {
-  const record = didRecord || {
-    roles: [],
-    primary_key: createMockAccountId(),
-    secondary_items: [],
-  };
-
-  return createMockCodec(
-    {
-      ...record,
-    },
-    !didRecord
-  ) as DidRecord;
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
 export const createMockIdentityDidRecord = (identity?: {
   primaryKey: Option<AccountId>;
 }): PolymeshPrimitivesIdentityDidRecord => {

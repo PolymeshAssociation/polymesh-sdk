@@ -283,18 +283,14 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const assembleResult = ({
-      primaryKey,
-    }: PolymeshPrimitivesIdentityDidRecord): PermissionedAccount => {
-      if (primaryKey.isNone) {
-        throw new PolymeshError({
-          code: ErrorCode.FatalError,
-          message:
-            'The primary key record was None when expecting Some. Please report the issue to the Polymath team',
-        });
-      }
+    const assembleResult = (
+      record: Option<PolymeshPrimitivesIdentityDidRecord>
+    ): PermissionedAccount => {
+      // we know the record exists because otherwise the Identity couldn't have been fetched
+      const { primaryKey } = record.unwrap();
 
       return {
+        // we know the primary key exists because Asset Identities aren't considered Identities by the SDK for now
         account: new Account({ address: accountIdToString(primaryKey.unwrap()) }, context),
         permissions: {
           assets: null,
@@ -308,11 +304,11 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     const rawDid = stringToIdentityId(did, context);
 
     if (callback) {
-      return identity.didRecords(rawDid, records => callback(assembleResult(records.unwrap())));
+      return identity.didRecords(rawDid, records => callback(assembleResult(records)));
     }
 
     const didRecords = await identity.didRecords(rawDid);
-    return assembleResult(didRecords.unwrap());
+    return assembleResult(didRecords);
   }
 
   /**
@@ -749,15 +745,27 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
   /**
    * Determine whether this Identity exists on chain
+   *
+   * @note asset Identities aren't considered to exist for the
    */
   public async exists(): Promise<boolean> {
     const { did, context } = this;
 
-    const recordSize = await context.polymeshApi.query.identity.didRecords.size(
+    const didRecord = await context.polymeshApi.query.identity.didRecords(
       stringToIdentityId(did, context)
     );
 
-    return !recordSize.isZero();
+    if (didRecord.isNone) {
+      return false;
+    }
+
+    const record = didRecord.unwrap();
+
+    if (record.primaryKey.isNone) {
+      return false;
+    }
+
+    return true;
   }
 
   /**

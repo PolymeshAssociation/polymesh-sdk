@@ -550,26 +550,6 @@ describe('Identity class', () => {
       });
     });
 
-    it('should throw if there is no primary key', () => {
-      const mockContext = dsMockUtils.getContextInstance();
-      const identity = new Identity({ did }, mockContext);
-
-      didRecordsStub.returns(
-        dsMockUtils.createMockOption(
-          dsMockUtils.createMockIdentityDidRecord({
-            primaryKey: dsMockUtils.createMockOption(),
-          })
-        )
-      );
-      const expectedError = new PolymeshError({
-        code: ErrorCode.FatalError,
-        message:
-          'The primary key record was None when expecting Some. Please report the issue to the Polymath team',
-      });
-
-      return expect(identity.getPrimaryAccount()).rejects.toThrowError(expectedError);
-    });
-
     it('should allow subscription', async () => {
       const mockContext = dsMockUtils.getContextInstance();
       const identity = new Identity({ did }, mockContext);
@@ -704,13 +684,27 @@ describe('Identity class', () => {
       const identity = new Identity({ did: 'someDid' }, context);
 
       dsMockUtils.createQueryStub('identity', 'didRecords', {
-        size: new BigNumber(10),
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockIdentityDidRecord({
+            primaryKey: dsMockUtils.createMockOption(dsMockUtils.createMockAccountId('someId')),
+          })
+        ),
       });
 
       await expect(identity.exists()).resolves.toBe(true);
 
       dsMockUtils.createQueryStub('identity', 'didRecords', {
-        size: new BigNumber(0),
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
+      await expect(identity.exists()).resolves.toBe(false);
+
+      dsMockUtils.createQueryStub('identity', 'didRecords', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockIdentityDidRecord({
+            primaryKey: dsMockUtils.createMockOption(),
+          })
+        ),
       });
 
       return expect(identity.exists()).resolves.toBe(false);
