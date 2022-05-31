@@ -5,11 +5,12 @@ import sinon from 'sinon';
 
 import { PolymeshError } from '~/internal';
 import { heartbeat } from '~/middleware/queries';
-import { Polymesh } from '~/Polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { ErrorCode } from '~/types';
 import { SUPPORTED_NODE_VERSION_RANGE } from '~/utils/constants';
 import * as internalUtils from '~/utils/internal';
+
+import { Polymesh } from '../Polymesh';
 
 jest.mock(
   '@polkadot/api',

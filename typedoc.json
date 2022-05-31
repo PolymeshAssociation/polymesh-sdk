@@ -1,21 +1,22 @@
 {
-  "mode": "file",
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src/api/client", "src/api/entities", "src/types/index.ts", "src/utils/index.ts"],
+  "entryPointStrategy": "Expand",
   "out": "docs",
-  "theme": "gitbook",
+  "theme": "markdown",
   "exclude": [
-    "**/{__tests__,polkadot,testUtils,middleware}/*",
+    "src/internal.ts",
+    "**/{__tests__,polkadot,testUtils,middleware,base,generated}/**/*",
     "**/sandbox.ts",
-    "src/index.ts",
+    "src/types/utils/index.ts",
+    "src/api/procedures/**",
     "src/api/entities/types.ts",
-    "src/api/entities/index.ts",
-    "src/api/procedures/index.ts",
-    "src/api/procedures/utils.ts",
     "src/types/internal.ts",
-    "src/utils/constants.ts",
-    "src/base/index.ts",
-    "src/base/types.ts",
-    "src/context/index.ts"
+    "src/utils/**",
+    "src/index.ts",
+    "src-temp/"
   ],
   "excludeExternals": true,
-  "excludePrivate": true
+  "excludePrivate": true,
+  "excludeProtected": true
 }

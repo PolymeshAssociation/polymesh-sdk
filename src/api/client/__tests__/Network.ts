@@ -9,10 +9,11 @@ import {
   transactionByHash,
 } from '~/middleware/queries';
 import { CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/types';
-import { Network } from '~/Network';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { AccountBalance, TxTags } from '~/types';
+
+import { Network } from '../Network';
 
 jest.mock(
   '~/api/entities/Account',
