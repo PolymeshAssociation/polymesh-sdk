@@ -1,6 +1,6 @@
 {
   "$schema": "https://typedoc.org/schema.json",
-  "entryPoints": ["src/api/client", "src/api/entities", "src/types/index.ts", "src/utils/index.ts"],
+  "entryPoints": ["src/api", "src/types/index.ts", "src/types/utils", "src/utils/index.ts"],
   "entryPointStrategy": "Expand",
   "out": "docs",
   "theme": "markdown",
@@ -8,8 +8,6 @@
     "src/internal.ts",
     "**/{__tests__,polkadot,testUtils,middleware,base,generated}/**/*",
     "**/sandbox.ts",
-    "src/types/utils/index.ts",
-    "src/api/procedures/**",
     "src/api/entities/types.ts",
     "src/types/internal.ts",
     "src/utils/**",
