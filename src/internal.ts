@@ -61,6 +61,7 @@ export {
 export {
   modifySignerPermissions,
   ModifySignerPermissionsParams,
+  Storage as modifySignerPermissionsStorage,
 } from '~/api/procedures/modifySignerPermissions';
 export { reserveTicker, ReserveTickerParams } from '~/api/procedures/reserveTicker';
 export { setAssetDocuments, SetAssetDocumentsParams } from '~/api/procedures/setAssetDocuments';

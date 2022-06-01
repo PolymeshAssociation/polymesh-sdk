@@ -7,6 +7,7 @@ import {
   leaveIdentity,
   modifySignerPermissions,
   ModifySignerPermissionsParams,
+  modifySignerPermissionsStorage,
   removeSecondaryAccounts,
   RemoveSecondaryAccountsParams,
   subsidizeAccount,
@@ -48,7 +49,8 @@ export class AccountManagement {
     this.revokePermissions = createProcedureMethod<
       { secondaryAccounts: Account[] },
       ModifySignerPermissionsParams,
-      void
+      void,
+      modifySignerPermissionsStorage
     >(
       {
         getProcedureAndArgs: args => {
@@ -108,11 +110,15 @@ export class AccountManagement {
 
   /**
    * Revoke all permissions of a list of secondary Accounts associated with the signing Identity
+   *
+   * @throws if signing Account is not the primary Account of the Identity whose secondary Accounts' permissions are being revoked
    */
   public revokePermissions: ProcedureMethod<{ secondaryAccounts: Account[] }, void>;
 
   /**
    * Modify all permissions of a list of secondary Accounts associated with the signing Identity
+   *
+   * @throws if signing Account is not the primary Account of the Identity whose secondary Accounts' permissions are being modified
    */
   public modifyPermissions: ProcedureMethod<ModifySignerPermissionsParams, void>;
 
