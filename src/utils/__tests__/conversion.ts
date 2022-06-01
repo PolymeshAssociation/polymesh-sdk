@@ -2535,6 +2535,7 @@ describe('securityIdentifierToAssetIdentifier and assetIdentifierToSecurityIdent
       // cSpell: disable-next-line
       const leiValue = '724500VKKSH9QOLTFR81';
       const cusipValue = '037833100';
+      const figiValue = 'BBG00H9NR574';
 
       let value = { type: SecurityIdentifierType.Isin, value: isinValue };
       const fakeResult = 'IsinEnum' as unknown as AssetIdentifier;
@@ -2569,6 +2570,18 @@ describe('securityIdentifierToAssetIdentifier and assetIdentifierToSecurityIdent
       result = securityIdentifierToAssetIdentifier(value, context);
 
       expect(result).toBe(fakeResult);
+
+      value = { type: SecurityIdentifierType.Figi, value: figiValue };
+
+      context.createType
+        .withArgs('PolymeshPrimitivesAssetIdentifier', {
+          [SecurityIdentifierType.Figi]: figiValue,
+        })
+        .returns(fakeResult);
+
+      result = securityIdentifierToAssetIdentifier(value, context);
+
+      expect(result).toBe(fakeResult);
     });
 
     it('should throw an error if some identifier is invalid', () => {
@@ -2591,6 +2604,12 @@ describe('securityIdentifierToAssetIdentifier and assetIdentifierToSecurityIdent
 
       expect(() => securityIdentifierToAssetIdentifier(identifier, context)).toThrow(
         `Invalid security identifier ${identifier.value} of type Cusip`
+      );
+
+      identifier = { type: SecurityIdentifierType.Figi, value: 'BBB00024DJF9' };
+
+      expect(() => securityIdentifierToAssetIdentifier(identifier, context)).toThrow(
+        `Invalid security identifier ${identifier.value} of type Figi`
       );
     });
   });
@@ -2624,6 +2643,14 @@ describe('securityIdentifierToAssetIdentifier and assetIdentifierToSecurityIdent
       fakeResult = { type: SecurityIdentifierType.Lei, value: 'someValue' };
       identifier = dsMockUtils.createMockAssetIdentifier({
         [SecurityIdentifierType.Lei]: dsMockUtils.createMockU8aFixed('someValue'),
+      });
+
+      result = assetIdentifierToSecurityIdentifier(identifier);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = { type: SecurityIdentifierType.Figi, value: 'someValue' };
+      identifier = dsMockUtils.createMockAssetIdentifier({
+        [SecurityIdentifierType.Figi]: dsMockUtils.createMockU8aFixed('someValue'),
       });
 
       result = assetIdentifierToSecurityIdentifier(identifier);
