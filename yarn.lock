@@ -3264,7 +3264,7 @@
     "@polkadot/util-crypto" "^9.0.1"
     rxjs "^7.5.5"
 
-"@polkadot/api@8.0.2", "@polkadot/api@^8.0.2":
+"@polkadot/api@8.0.2":
   version "8.0.2"
   resolved "https://registry.yarnpkg.com/@polkadot/api/-/api-8.0.2.tgz#3411ec0beea33160b71455da7f6cad0461819cae"
   integrity sha512-/cE6rCrLvSQ9EEfSULctDn/VzfgD/wB9yfd7T0pfqeAXbA2QKYykq2QI77tsi1kfF3+cWScoj7hCYsgAFhRVRw==
@@ -3347,7 +3347,7 @@
     mock-socket "^9.1.2"
     nock "^13.2.4"
 
-"@polkadot/typegen@^8.0.2":
+"@polkadot/typegen@8.0.2":
   version "8.0.2"
   resolved "https://registry.yarnpkg.com/@polkadot/typegen/-/typegen-8.0.2.tgz#7f9fe8c1adbd3a18e94f5c4124dcc99e3eba5bd5"
   integrity sha512-3ScODNXPjmGAsavoqXhWQo/20SwAMebfnMI0GC7H755F2FsWTU+AZQ28cZPzYmJeOJTbfzwW1oXjqtgGsyz6CQ==

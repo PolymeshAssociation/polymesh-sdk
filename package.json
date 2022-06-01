@@ -40,7 +40,7 @@
     "@graphql-codegen/typescript": "1.22.1",
     "@open-wc/webpack-import-meta-loader": "^0.4.7",
     "@ovos-media/ts-transform-paths": "^1.7.18-1",
-    "@polkadot/typegen": "^8.0.2",
+    "@polkadot/typegen": "8.0.2",
     "@polymathnetwork/signing-manager-types": "^1.0.3",
     "@polymathnetwork/local-signing-manager": "^1.0.3",
     "@semantic-release/changelog": "^6.0.1",
@@ -108,9 +108,9 @@
     "access": "public"
   },
   "dependencies": {
-    "@polkadot/api": "^8.0.2",
-    "@polkadot/util": "^9.0.1",
-    "@polkadot/util-crypto": "^9.0.1",
+    "@polkadot/api": "8.0.2",
+    "@polkadot/util": "9.0.1",
+    "@polkadot/util-crypto": "9.0.1",
     "apollo-cache-inmemory": "^1.6.6",
     "apollo-client": "^2.6.10",
     "apollo-link": "^1.2.14",
