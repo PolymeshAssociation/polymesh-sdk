@@ -1,6 +1,5 @@
 import { SigningManager } from '@polymathnetwork/signing-manager-types';
 import { ApolloLink, GraphQLRequest } from 'apollo-link';
-import * as apolloLinkContextModule from 'apollo-link-context';
 import sinon from 'sinon';
 
 import { PolymeshError } from '~/internal';
