@@ -146,6 +146,7 @@
     "@polkadot/types-known": "8.0.2",
     "@polkadot/util": "9.0.1",
     "@polkadot/util-crypto": "9.0.1",
-    "@polkadot/networks": "9.0.1"
+    "@polkadot/networks": "9.0.1",
+    "@polkadot/x-bigint": "9.0.1"
   }
 }
