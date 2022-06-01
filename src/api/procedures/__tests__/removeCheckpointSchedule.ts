@@ -73,7 +73,7 @@ describe('removeCheckpointSchedule procedure', () => {
       returnValue: [
         dsMockUtils.createMockStoredSchedule({
           id: dsMockUtils.createMockU64(new BigNumber(5)),
-        } as StoredSchedule),
+        } as unknown as StoredSchedule),
       ],
     });
 
@@ -94,7 +94,7 @@ describe('removeCheckpointSchedule procedure', () => {
       returnValue: [
         dsMockUtils.createMockStoredSchedule({
           id: dsMockUtils.createMockU64(id),
-        } as StoredSchedule),
+        } as unknown as StoredSchedule),
       ],
     });
 

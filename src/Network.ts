@@ -5,9 +5,10 @@ import { eventByIndexedArgs, eventsByIndexedArgs, transactionByHash } from '~/mi
 import { EventIdEnum as EventId, ModuleIdEnum as ModuleId, Query } from '~/middleware/types';
 import {
   EventIdentifier,
-  ExtrinsicData,
+  ExtrinsicDataWithFees,
   NetworkProperties,
   ProcedureMethod,
+  ProtocolFees,
   SubCallback,
   TxTag,
   UnsubCallback,
@@ -15,9 +16,11 @@ import {
 import { Ensured } from '~/types/utils';
 import { TREASURY_MODULE_ADDRESS } from '~/utils/constants';
 import {
+  balanceToBigNumber,
   extrinsicIdentifierToTxTag,
   middlewareEventToEventIdentifier,
   moduleAddressToString,
+  stringToBlockHash,
   textToString,
   u32ToBigNumber,
 } from '~/utils/conversion';
@@ -85,11 +88,11 @@ export class Network {
   }
 
   /**
-   * Retrieve the protocol fees associated with running a specific transaction
+   * Retrieve the protocol fees associated with running specific transactions
    *
-   * @param args.tag - transaction tag (i.e. TxTags.asset.CreateAsset or "asset.createAsset")
+   * @param args.tags - list of transaction tags (i.e. [TxTags.asset.CreateAsset, TxTags.asset.RegisterTicker] or ["asset.createAsset", "asset.registerTicker"])
    */
-  public getProtocolFees(args: { tag: TxTag }): Promise<BigNumber> {
+  public getProtocolFees(args: { tags: TxTag[] }): Promise<ProtocolFees[]> {
     return this.context.getProtocolFees(args);
   }
 
@@ -228,8 +231,20 @@ export class Network {
    *
    * @note uses the middleware
    */
-  public async getTransactionByHash(opts: { txHash: string }): Promise<ExtrinsicData | null> {
-    const { context } = this;
+  public async getTransactionByHash(opts: {
+    txHash: string;
+  }): Promise<ExtrinsicDataWithFees | null> {
+    const {
+      context: {
+        polymeshApi: {
+          rpc: {
+            chain: { getBlock },
+            payment: { queryInfo },
+          },
+        },
+      },
+      context,
+    } = this;
 
     const { txHash: transactionHash } = opts;
 
@@ -258,19 +273,38 @@ export class Network {
         block,
       } = transaction;
 
+      const txTag = extrinsicIdentifierToTxTag({ moduleId, callId });
+
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const blockHash = block!.hash!;
+
+      const rawBlockHash = stringToBlockHash(blockHash, context);
+
+      const {
+        block: { extrinsics },
+      } = await getBlock(rawBlockHash);
+
+      const [{ partialFee }, [{ fees: protocolFees }]] = await Promise.all([
+        queryInfo(extrinsics[extrinsicIdx].toHex(), rawBlockHash),
+        context.getProtocolFees({ tags: [txTag], blockHash }),
+      ]);
+
       return {
         blockNumber: new BigNumber(blockNumber),
-        /* eslint-disable @typescript-eslint/no-non-null-assertion */
-        blockHash: block!.hash!,
+        blockHash,
         extrinsicIdx: new BigNumber(extrinsicIdx),
         address: rawAddress ?? null,
         nonce: nonce ? new BigNumber(nonce) : null,
-        txTag: extrinsicIdentifierToTxTag({ moduleId, callId }),
+        txTag,
         params,
         success: !!txSuccess,
         specVersionId: new BigNumber(specVersionId),
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         extrinsicHash: extrinsicHash!,
-        /* eslint-enable @typescript-eslint/no-non-null-assertion */
+        fee: {
+          gas: balanceToBigNumber(partialFee),
+          protocol: protocolFees,
+        },
       };
     }
 
