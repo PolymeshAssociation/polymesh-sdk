@@ -11,6 +11,12 @@ import { ErrorCode } from '~/types';
 import { SUPPORTED_VERSION_RANGE } from '~/utils/constants';
 import * as internalUtils from '~/utils/internal';
 
+jest.mock('apollo-link-context', () => ({
+  ...jest.requireActual('apollo-link-context'),
+  setContext: sinon.stub().callsFake(cbFunc => {
+    return new ApolloLink(cbFunc({} as GraphQLRequest, {}));
+  }),
+}));
 jest.mock(
   '@polkadot/api',
   require('~/testUtils/mocks/dataSources').mockPolkadotModule('@polkadot/api')
@@ -70,13 +76,7 @@ describe('Polymesh Class', () => {
     procedureMockUtils.cleanup();
   });
 
-  describe('method: create', () => {
-    beforeAll(() => {
-      sinon.stub(apolloLinkContextModule, 'setContext').callsFake(cbFunc => {
-        return new ApolloLink(cbFunc({} as GraphQLRequest, {}));
-      });
-    });
-
+  describe('method: connect', () => {
     it('should instantiate Context and return a Polymesh instance', async () => {
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
