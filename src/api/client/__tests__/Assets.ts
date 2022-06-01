@@ -1,14 +1,13 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
+import { Assets } from '~/api/client/Assets';
 import { Asset, Context, TickerReservation, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { KnownAssetType, SecurityIdentifierType, TickerReservationStatus } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
-
-import { Assets } from '../Assets';
 
 jest.mock(
   '~/api/entities/TickerReservation',

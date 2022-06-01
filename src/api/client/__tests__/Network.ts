@@ -1,6 +1,7 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
+import { Network } from '~/api/client/Network';
 import { Context, TransactionQueue } from '~/internal';
 import {
   eventByIndexedArgs,
@@ -12,8 +13,6 @@ import { CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { AccountBalance, TxTags } from '~/types';
-
-import { Network } from '../Network';
 
 jest.mock(
   '~/api/entities/Account',

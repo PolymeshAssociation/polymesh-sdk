@@ -1,12 +1,11 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
+import { AccountManagement } from '~/api/client/AccountManagement';
 import { Account, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
 import { AccountBalance, PermissionType, SubCallback } from '~/types';
-
-import { AccountManagement } from '../AccountManagement';
 
 jest.mock(
   '~/base/Procedure',

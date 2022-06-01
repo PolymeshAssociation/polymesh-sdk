@@ -1,6 +1,7 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
+import { Claims } from '~/api/client/Claims';
 import { Context, TransactionQueue } from '~/internal';
 import { didsWithClaims, issuerDidsWithClaimsByTarget } from '~/middleware/queries';
 import { ClaimScopeTypeEnum, ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
@@ -18,8 +19,6 @@ import {
 import { ClaimOperation } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import { padString } from '~/utils/internal';
-
-import { Claims } from '../Claims';
 
 jest.mock(
   '~/api/entities/Identity',
