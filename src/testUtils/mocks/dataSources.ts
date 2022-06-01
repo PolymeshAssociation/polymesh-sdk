@@ -1468,7 +1468,7 @@ function isOption<T extends Codec>(codec: any): codec is Option<T> {
   return typeof codec?.unwrap === 'function';
 }
 
-type MockCodec<C extends Codec> = C & { eq: sinon.SinonStub };
+export type MockCodec<C extends Codec> = C & { eq: sinon.SinonStub };
 
 /**
  * @hidden
@@ -1477,6 +1477,7 @@ const createMockCodec = (codec: unknown, isEmpty: boolean): MockCodec<Codec> => 
   const clone = cloneDeep(codec) as MockCodec<Mutable<Codec>>;
   (clone as any)._isCodec = true;
   clone.isEmpty = isEmpty;
+  clone.eq = sinon.stub();
   return clone as MockCodec<Codec>;
 };
 
@@ -1487,7 +1488,6 @@ const createMockStringCodec = (value?: string): MockCodec<Codec> =>
   createMockCodec(
     {
       toString: () => value,
-      eq: (compareValue: Codec) => value === compareValue.toString(),
     },
     value === undefined
   );

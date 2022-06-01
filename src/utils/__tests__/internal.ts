@@ -6,7 +6,7 @@ import sinon from 'sinon';
 import { Asset, Context, PolymeshError, PostTransactionValue, Procedure } from '~/internal';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { getWebSocketInstance, MockWebSocket } from '~/testUtils/mocks/dataSources';
+import { getWebSocketInstance, MockCodec, MockWebSocket } from '~/testUtils/mocks/dataSources';
 import {
   CaCheckpointType,
   CalendarPeriod,
@@ -743,7 +743,7 @@ describe('getPortfolioIdByName', () => {
   let context: Context;
   let nameToNumberStub: sinon.SinonStub;
   let portfoliosStub: sinon.SinonStub;
-  let rawName: PortfolioName;
+  let rawName: MockCodec<PortfolioName>;
   let identityId: IdentityId;
 
   beforeAll(() => {
@@ -784,6 +784,7 @@ describe('getPortfolioIdByName', () => {
 
     nameToNumberStub.returns(dsMockUtils.createMockU64(new BigNumber(1)));
     portfoliosStub.returns(rawName);
+    rawName.eq.returns(true);
 
     result = await getPortfolioIdByName(identityId, rawName, context);
     expect(result).toEqual(new BigNumber(1));
