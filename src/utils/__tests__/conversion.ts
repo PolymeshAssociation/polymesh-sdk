@@ -165,6 +165,7 @@ import {
   identityIdToString,
   internalAssetTypeToAssetType,
   isCusipValid,
+  isFigiValid,
   isIsinValid,
   isLeiValid,
   keyToAddress,
@@ -2225,7 +2226,6 @@ describe('isIsinValid, isCusipValid and isLeiValid', () => {
 
   describe('isLeiValid', () => {
     it('should return if the Lei value identifier is valid or not', () => {
-      /* cSpell: disable */
       const correct = isLeiValid('724500VKKSH9QOLTFR81');
       let incorrect = isLeiValid('969500T3MBS4SQAMHJ45');
 
@@ -2234,7 +2234,30 @@ describe('isIsinValid, isCusipValid and isLeiValid', () => {
 
       incorrect = isLeiValid('969500T3MS4SQAMHJ4');
       expect(incorrect).toBeFalsy();
-      /* cSpell: enable */
+    });
+  });
+
+  describe('isFigiValid', () => {
+    it('should return if the Figi value identifier is valid or not', () => {
+      const validIdentifiers = [
+        'BBG000BLNQ16',
+        'NRG92C84SB39',
+        'BBG0013YWBF3',
+        'BBG00H9NR574',
+        'BBG00094DJF9',
+        'BBG016V71XT0',
+      ];
+
+      validIdentifiers.forEach(identifier => expect(isFigiValid(identifier)).toBeTruthy());
+
+      const invalidIdentifiers = [
+        'BBG00024DJF9', // Bad check digit
+        'BSG00024DJF9', // disallowed prefix
+        'BBB00024DJF9', // 3rd char not G
+        'BBG00024AEF9', // vowels not allowed
+      ];
+
+      invalidIdentifiers.forEach(identifier => expect(isFigiValid(identifier)).toBeFalsy());
     });
   });
 });

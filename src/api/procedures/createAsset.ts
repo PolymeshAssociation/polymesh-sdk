@@ -56,7 +56,7 @@ export interface CreateAssetParams {
    */
   assetType: string;
   /**
-   * array of domestic or international alphanumeric security identifiers for the Asset (ISIN, CUSIP, etc)
+   * array of domestic or international alphanumeric security identifiers for the Asset (ISIN, CUSIP, FIGI etc)
    */
   securityIdentifiers?: SecurityIdentifier[];
   /**
