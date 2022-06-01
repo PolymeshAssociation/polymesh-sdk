@@ -2292,7 +2292,7 @@
     "@polkadot/util-crypto" "^9.0.1"
     rxjs "^7.5.5"
 
-"@polkadot/api@8.0.2", "@polkadot/api@^8.0.2":
+"@polkadot/api@8.0.2":
   version "8.0.2"
   resolved "https://registry.yarnpkg.com/@polkadot/api/-/api-8.0.2.tgz#3411ec0beea33160b71455da7f6cad0461819cae"
   integrity sha512-/cE6rCrLvSQ9EEfSULctDn/VzfgD/wB9yfd7T0pfqeAXbA2QKYykq2QI77tsi1kfF3+cWScoj7hCYsgAFhRVRw==
