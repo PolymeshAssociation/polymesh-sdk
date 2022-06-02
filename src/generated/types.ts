@@ -808,6 +808,7 @@ export type TxTag =
   | PreimageTx
   | ContractsTx;
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export const TxTags = {
   system: SystemTx,
   babe: BabeTx,

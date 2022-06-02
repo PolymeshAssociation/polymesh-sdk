@@ -89,7 +89,13 @@ function assembleTxTags() {
   txTag = txTag.concat(';');
   txTags = txTags.concat('};');
 
-  return namespaces.concat(`${moduleNameEnum}\n\n${txTag}\n\n${txTags}\n`);
+  return namespaces.concat(`${moduleNameEnum}
+
+${txTag}
+
+// eslint-disable-next-line @typescript-eslint/naming-convention
+${txTags}
+`);
 }
 
 function assembleCountryCodes() {
