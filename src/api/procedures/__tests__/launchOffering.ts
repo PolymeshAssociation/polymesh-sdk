@@ -2,13 +2,7 @@ import { Bytes, u64 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import {
-  Moment,
-  PortfolioId as MeshPortfolioId,
-  PriceTier,
-  Ticker,
-  TxTags,
-} from 'polymesh-types/types';
+import { Moment, PortfolioId as MeshPortfolioId, PriceTier, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -22,7 +16,14 @@ import {
 import { Context, DefaultPortfolio, Offering, PostTransactionValue, Venue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { OfferingTier, PortfolioBalance, PortfolioLike, RoleType, VenueType } from '~/types';
+import {
+  OfferingTier,
+  PortfolioBalance,
+  PortfolioLike,
+  RoleType,
+  TxTags,
+  VenueType,
+} from '~/types';
 import { PortfolioId } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';

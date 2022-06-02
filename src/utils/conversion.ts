@@ -53,7 +53,6 @@ import {
   uniq,
   values,
 } from 'lodash';
-import { ModuleName, TxTag, TxTags } from 'polymesh-types/types';
 
 import { meshCountryCodeToCountryCode } from '~/generated/utils';
 import {
@@ -152,6 +151,7 @@ import {
   InputTrustedClaimIssuer,
   InstructionType,
   KnownAssetType,
+  ModuleName,
   MultiClaimCondition,
   OfferingBalanceStatus,
   OfferingDetails,
@@ -186,6 +186,8 @@ import {
   TransferStatus,
   TrustedClaimIssuer,
   TxGroup,
+  TxTag,
+  TxTags,
   VenueType,
 } from '~/types';
 import {

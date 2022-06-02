@@ -1,7 +1,5 @@
-import { TxTags } from 'polymesh-types/types';
-
 import { PolymeshError, Procedure } from '~/internal';
-import { ErrorCode } from '~/types';
+import { ErrorCode, TxTags } from '~/types';
 
 /**
  * @hidden

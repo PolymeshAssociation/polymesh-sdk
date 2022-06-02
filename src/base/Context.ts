@@ -21,7 +21,7 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, clone, flatMap, flatten, flattenDeep } from 'lodash';
 import { polymesh } from 'polymesh-types/definitions';
-import { ModuleName, ProtocolOp, TxTag } from 'polymesh-types/types';
+import { ProtocolOp } from 'polymesh-types/types';
 
 import { Account, Asset, DividendDistribution, Identity, PolymeshError, Subsidy } from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
@@ -35,6 +35,7 @@ import {
   CorporateActionParams,
   DistributionWithDetails,
   ErrorCode,
+  ModuleName,
   PlainTransactionArgument,
   ResultSet,
   SimpleEnumTransactionArgument,
@@ -42,6 +43,7 @@ import {
   SubsidyWithAllowance,
   TransactionArgument,
   TransactionArgumentType,
+  TxTag,
   UnsubCallback,
 } from '~/types';
 import { GraphqlQuery } from '~/types/internal';
