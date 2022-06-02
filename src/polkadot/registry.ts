@@ -92,7 +92,6 @@ import type {
   PalletComplianceManagerCall,
   PalletComplianceManagerError,
   PalletComplianceManagerEvent,
-  PalletContractsCall,
   PalletContractsError,
   PalletContractsEvent,
   PalletContractsSchedule,
@@ -346,9 +345,9 @@ import type {
   PolymeshPrimitivesTransferComplianceAssetTransferCompliance,
   PolymeshPrimitivesTransferComplianceTransferCondition,
   PolymeshPrimitivesTransferComplianceTransferConditionExemptKey,
-  PolymeshRuntimeCiRuntime,
-  PolymeshRuntimeCiRuntimeOriginCaller,
-  PolymeshRuntimeCiRuntimeSessionKeys,
+  PolymeshRuntimeDevelopRuntime,
+  PolymeshRuntimeDevelopRuntimeOriginCaller,
+  PolymeshRuntimeDevelopRuntimeSessionKeys,
   SchnorrkelSignSignature,
   SpAuthorityDiscoveryAppPublic,
   SpConsensusBabeAllowedSlots,
@@ -476,7 +475,6 @@ declare module '@polkadot/types/types/registry' {
     PalletComplianceManagerCall: PalletComplianceManagerCall;
     PalletComplianceManagerError: PalletComplianceManagerError;
     PalletComplianceManagerEvent: PalletComplianceManagerEvent;
-    PalletContractsCall: PalletContractsCall;
     PalletContractsError: PalletContractsError;
     PalletContractsEvent: PalletContractsEvent;
     PalletContractsSchedule: PalletContractsSchedule;
@@ -730,9 +728,9 @@ declare module '@polkadot/types/types/registry' {
     PolymeshPrimitivesTransferComplianceAssetTransferCompliance: PolymeshPrimitivesTransferComplianceAssetTransferCompliance;
     PolymeshPrimitivesTransferComplianceTransferCondition: PolymeshPrimitivesTransferComplianceTransferCondition;
     PolymeshPrimitivesTransferComplianceTransferConditionExemptKey: PolymeshPrimitivesTransferComplianceTransferConditionExemptKey;
-    PolymeshRuntimeCiRuntime: PolymeshRuntimeCiRuntime;
-    PolymeshRuntimeCiRuntimeOriginCaller: PolymeshRuntimeCiRuntimeOriginCaller;
-    PolymeshRuntimeCiRuntimeSessionKeys: PolymeshRuntimeCiRuntimeSessionKeys;
+    PolymeshRuntimeDevelopRuntime: PolymeshRuntimeDevelopRuntime;
+    PolymeshRuntimeDevelopRuntimeOriginCaller: PolymeshRuntimeDevelopRuntimeOriginCaller;
+    PolymeshRuntimeDevelopRuntimeSessionKeys: PolymeshRuntimeDevelopRuntimeSessionKeys;
     SchnorrkelSignSignature: SchnorrkelSignSignature;
     SpAuthorityDiscoveryAppPublic: SpAuthorityDiscoveryAppPublic;
     SpConsensusBabeAllowedSlots: SpConsensusBabeAllowedSlots;
