@@ -111,14 +111,14 @@ export class AccountManagement {
   /**
    * Revoke all permissions of a list of secondary Accounts associated with the signing Identity
    *
-   * @throws if signing Account is not the primary Account of the Identity whose secondary Accounts' permissions are being revoked
+   * @throws if the signing Account is not the primary Account of the Identity whose secondary Account permissions are being revoked
    */
   public revokePermissions: ProcedureMethod<{ secondaryAccounts: Account[] }, void>;
 
   /**
    * Modify all permissions of a list of secondary Accounts associated with the signing Identity
    *
-   * @throws if signing Account is not the primary Account of the Identity whose secondary Accounts' permissions are being modified
+   * @throws if the signing Account is not the primary Account of the Identity whose secondary Account permissions are being modified
    */
   public modifyPermissions: ProcedureMethod<ModifySignerPermissionsParams, void>;
 
