@@ -1534,16 +1534,8 @@ export function isIsinValid(isin: string): boolean {
 
 /**
  * @hidden
- *
- * @note CINS and CUSIP use the same validation
  */
-export function isCusipValid(cusip: string): boolean {
-  cusip = cusip.toUpperCase();
-
-  if (!/^[0-9A-Z@#*]{9}$/.test(cusip)) {
-    return false;
-  }
-
+function validateCusipChecksum(cusip: string): boolean {
   let sum = 0;
 
   // cSpell: disable-next-line
@@ -1576,6 +1568,21 @@ export function isCusipValid(cusip: string): boolean {
 
 /**
  * @hidden
+ *
+ * @note CINS and CUSIP use the same validation
+ */
+export function isCusipValid(cusip: string): boolean {
+  cusip = cusip.toUpperCase();
+
+  if (!/^[0-9A-Z@#*]{9}$/.test(cusip)) {
+    return false;
+  }
+
+  return validateCusipChecksum(cusip);
+}
+
+/**
+ * @hidden
  */
 export function isLeiValid(lei: string): boolean {
   lei = lei.toUpperCase();
@@ -1585,6 +1592,29 @@ export function isLeiValid(lei: string): boolean {
   }
 
   return computeWithoutCheck(lei) === 1;
+}
+
+/**
+ * Check if given string is a valid FIGI identifier
+ *
+ * A FIGI consists of three parts:
+ *   - a two-character prefix which is a combination of upper case consonants with the following exceptions: BS, BM, GG, GB, GH, KY, VG
+ *   - a 'G' as the third character;
+ *   - an eight-character combination of upper case consonants and the numerals 0 – 9
+ *   - a single check digit
+ * @hidden
+ */
+export function isFigiValid(figi: string): boolean {
+  figi = figi.toUpperCase();
+
+  if (
+    ['BS', 'BM', 'GG', 'GB', 'GH', 'KY', 'VG'].includes(figi.substring(0, 2)) ||
+    !/^[B-DF-HJ-NP-TV-Z]{2}G[B-DF-HJ-NP-TV-Z0-9]{8}\d$/.test(figi)
+  ) {
+    return false;
+  }
+
+  return validateCusipChecksum(figi);
 }
 
 /**
@@ -1607,6 +1637,12 @@ export function securityIdentifierToAssetIdentifier(
     }
     case SecurityIdentifierType.Lei: {
       if (!isLeiValid(value)) {
+        error = true;
+      }
+      break;
+    }
+    case SecurityIdentifierType.Figi: {
+      if (!isFigiValid(value)) {
         error = true;
       }
       break;
@@ -1651,6 +1687,13 @@ export function assetIdentifierToSecurityIdentifier(
     return {
       type: SecurityIdentifierType.Cins,
       value: u8aToString(identifier.asCins),
+    };
+  }
+
+  if (identifier.isFigi) {
+    return {
+      type: SecurityIdentifierType.Figi,
+      value: u8aToString(identifier.asFigi),
     };
   }
 

@@ -2176,7 +2176,12 @@ export const createMockU8aFixed = (value?: string, hex?: boolean): U8aFixed =>
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockAssetIdentifier = (
-  identifier?: { Isin: U8aFixed } | { Cusip: U8aFixed } | { Cins: U8aFixed } | { Lei: U8aFixed }
+  identifier?:
+    | { Isin: U8aFixed }
+    | { Cusip: U8aFixed }
+    | { Cins: U8aFixed }
+    | { Lei: U8aFixed }
+    | { Figi: U8aFixed }
 ): PolymeshPrimitivesAssetIdentifier =>
   createMockEnum(identifier) as PolymeshPrimitivesAssetIdentifier;
 

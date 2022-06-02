@@ -144,6 +144,7 @@ export enum SecurityIdentifierType {
   Cusip = 'Cusip',
   Cins = 'Cins',
   Lei = 'Lei',
+  Figi = 'Figi',
 }
 
 // NOTE: query.asset.identifiers doesn’t support custom identifier types properly for now
