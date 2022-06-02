@@ -1,7 +1,7 @@
 import { Bytes } from '@polkadot/types';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { IdentityId, ModuleName } from 'polymesh-types/types';
+import { IdentityId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Asset, Context, PolymeshError, PostTransactionValue, Procedure } from '~/internal';
@@ -15,6 +15,7 @@ import {
   ClaimType,
   CountryCode,
   ErrorCode,
+  ModuleName,
   ProcedureMethod,
   TxTags,
 } from '~/types';

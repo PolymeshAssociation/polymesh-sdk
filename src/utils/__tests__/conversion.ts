@@ -45,7 +45,6 @@ import {
   TrustedIssuer,
   VenueType as MeshVenueType,
 } from 'polymesh-types/polymesh';
-import { ModuleName, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -85,6 +84,7 @@ import {
   InputCondition,
   InstructionType,
   KnownAssetType,
+  ModuleName,
   OfferingBalanceStatus,
   OfferingSaleStatus,
   OfferingTier,
@@ -106,6 +106,7 @@ import {
   TransferStatus,
   TrustedClaimIssuer,
   TxGroup,
+  TxTags,
   VenueType,
 } from '~/types';
 import {

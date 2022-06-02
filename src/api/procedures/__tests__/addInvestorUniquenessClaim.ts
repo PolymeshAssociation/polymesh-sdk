@@ -10,7 +10,6 @@ import {
   Moment,
   Scope as MeshScope,
   ScopeId,
-  TxTags,
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
@@ -22,7 +21,7 @@ import {
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Claim, ClaimType, Scope, ScopeType } from '~/types';
+import { Claim, ClaimType, Scope, ScopeType, TxTags } from '~/types';
 import { ScopeClaimProof } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 

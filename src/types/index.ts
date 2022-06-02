@@ -1,6 +1,5 @@
 import { TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { ModuleName, TxTag, TxTags } from 'polymesh-types/types';
 
 import {
   DividendDistributionDetails,
@@ -8,7 +7,7 @@ import {
   ScheduleDetails,
   SubsidyData,
 } from '~/api/entities/types';
-import { CountryCode } from '~/generated/types';
+import { CountryCode, ModuleName, TxTag, TxTags } from '~/generated/types';
 import {
   Account,
   Asset,
