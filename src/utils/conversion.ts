@@ -2735,8 +2735,13 @@ export function portfolioMovementToMovePortfolioItem(
 /**
  * @hidden
  */
-export function claimTypeToMeshClaimType(claimType: ClaimType, context: Context): MeshClaimType {
-  return context.createType('ClaimType', claimType);
+export function claimTypeToMeshClaimType(
+  claimType: ClaimType,
+  context: Context
+): PolymeshPrimitivesIdentityClaimClaimType {
+  // NoData is the legacy name for NoType. Functionally they are the same, but createType only knows about one
+  const data = claimType === ClaimType.NoData ? ClaimType.NoType : claimType;
+  return context.createType('PolymeshPrimitivesIdentityClaimClaimType', data);
 }
 
 /**
