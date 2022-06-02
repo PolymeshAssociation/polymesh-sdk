@@ -4,14 +4,7 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { flatten, isEqual, union, unionWith } from 'lodash';
-import {
-  Moment,
-  PortfolioId,
-  SettlementTx,
-  SettlementType,
-  Ticker,
-  TxTags,
-} from 'polymesh-types/types';
+import { Moment, PortfolioId, SettlementType, Ticker } from 'polymesh-types/types';
 
 import { assertPortfolioExists, assertVenueExists } from '~/api/procedures/utils';
 import {
@@ -24,7 +17,7 @@ import {
   PostTransactionValue,
   Procedure,
 } from '~/internal';
-import { ErrorCode, InstructionType, PortfolioLike, RoleType } from '~/types';
+import { ErrorCode, InstructionType, PortfolioLike, RoleType, SettlementTx, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { MAX_LEGS_LENGTH } from '~/utils/constants';

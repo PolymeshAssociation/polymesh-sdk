@@ -14,7 +14,7 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import stringify from 'json-stable-stringify';
 import { differenceWith, flatMap, isEqual, mapValues, noop, padEnd, uniq } from 'lodash';
-import { IdentityId, ModuleName, TxTag } from 'polymesh-types/types';
+import { IdentityId } from 'polymesh-types/types';
 import { major, satisfies } from 'semver';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 
@@ -41,6 +41,7 @@ import {
   ErrorCode,
   InputCaCheckpoint,
   InputCondition,
+  ModuleName,
   NextKey,
   NoArgsProcedureMethod,
   PaginationOptions,
@@ -48,6 +49,7 @@ import {
   ProcedureMethod,
   ProcedureOpts,
   Scope,
+  TxTag,
 } from '~/types';
 import {
   Events,

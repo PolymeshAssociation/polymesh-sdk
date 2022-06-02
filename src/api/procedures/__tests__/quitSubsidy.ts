@@ -3,9 +3,9 @@ import sinon from 'sinon';
 
 import { getAuthorization, prepareQuitSubsidy } from '~/api/procedures/quitSubsidy';
 import { Account, Context, QuitSubsidyParams, Subsidy } from '~/internal';
-import { TxTags } from '~/polkadot';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
+import { TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(

@@ -4,7 +4,7 @@ import {
   PolymeshPrimitivesCondition,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { ComplianceRequirement, Ticker, TxTags } from 'polymesh-types/types';
+import { ComplianceRequirement, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -23,6 +23,7 @@ import {
   InputCondition,
   InputRequirement,
   Requirement,
+  TxTags,
 } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
