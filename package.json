@@ -40,7 +40,7 @@
     "@graphql-codegen/typescript": "1.22.1",
     "@open-wc/webpack-import-meta-loader": "^0.4.7",
     "@ovos-media/ts-transform-paths": "^1.7.18-1",
-    "@polkadot/typegen": "^8.0.2",
+    "@polkadot/typegen": "8.0.2",
     "@polymathnetwork/local-signing-manager": "^1.0.3",
     "@polymathnetwork/signing-manager-types": "^1.0.3",
     "@semantic-release/changelog": "^6.0.1",
@@ -108,9 +108,9 @@
     "access": "public"
   },
   "dependencies": {
-    "@polkadot/api": "^8.0.2",
-    "@polkadot/util": "^9.0.1",
-    "@polkadot/util-crypto": "^9.0.1",
+    "@polkadot/api": "8.0.2",
+    "@polkadot/util": "9.0.1",
+    "@polkadot/util-crypto": "9.0.1",
     "apollo-cache-inmemory": "^1.6.6",
     "apollo-client": "^2.6.10",
     "apollo-link": "^1.2.14",
@@ -130,5 +130,23 @@
     "lodash": "^4.17.15",
     "semver": "^7.3.5",
     "websocket": "^1.0.31"
+  },
+  "resolutions": {
+    "@polkadot/keyring": "9.0.1",
+    "@polkadot/api-augment": "8.0.2",
+    "@polkadot/api-base": "8.0.2",
+    "@polkadot/api-derive": "8.0.2",
+    "@polkadot/rpc-augment": "8.0.2",
+    "@polkadot/rpc-core": "8.0.2",
+    "@polkadot/rpc-provider": "8.0.2",
+    "@polkadot/types": "8.0.2",
+    "@polkadot/types-augment": "8.0.2",
+    "@polkadot/types-codec": "8.0.2",
+    "@polkadot/types-create": "8.0.2",
+    "@polkadot/types-known": "8.0.2",
+    "@polkadot/util": "9.0.1",
+    "@polkadot/networks": "9.0.1",
+    "@polkadot/util-crypto": "9.0.1",
+    "@polkadot/x-bigint": "9.0.1"
   }
 }
