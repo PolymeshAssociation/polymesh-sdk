@@ -1,4 +1,4 @@
-import { Identities } from '~/Identities';
+import { Identities } from '~/api/client/Identities';
 import { Context, Identity, NumberedPortfolio, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
