@@ -12,7 +12,6 @@ import {
   AssetType,
   FundingRoundName,
   Ticker,
-  TxTags,
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
@@ -34,6 +33,7 @@ import {
   SecurityIdentifier,
   SecurityIdentifierType,
   TickerReservationStatus,
+  TxTags,
 } from '~/types';
 import { InternalAssetType, PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
