@@ -165,6 +165,7 @@ import {
   identityIdToString,
   internalAssetTypeToAssetType,
   isCusipValid,
+  isFigiValid,
   isIsinValid,
   isLeiValid,
   keyToAddress,
@@ -2225,7 +2226,6 @@ describe('isIsinValid, isCusipValid and isLeiValid', () => {
 
   describe('isLeiValid', () => {
     it('should return if the Lei value identifier is valid or not', () => {
-      /* cSpell: disable */
       const correct = isLeiValid('724500VKKSH9QOLTFR81');
       let incorrect = isLeiValid('969500T3MBS4SQAMHJ45');
 
@@ -2234,7 +2234,30 @@ describe('isIsinValid, isCusipValid and isLeiValid', () => {
 
       incorrect = isLeiValid('969500T3MS4SQAMHJ4');
       expect(incorrect).toBeFalsy();
-      /* cSpell: enable */
+    });
+  });
+
+  describe('isFigiValid', () => {
+    it('should return if the Figi value identifier is valid or not', () => {
+      const validIdentifiers = [
+        'BBG000BLNQ16',
+        'NRG92C84SB39',
+        'BBG0013YWBF3',
+        'BBG00H9NR574',
+        'BBG00094DJF9',
+        'BBG016V71XT0',
+      ];
+
+      validIdentifiers.forEach(identifier => expect(isFigiValid(identifier)).toBeTruthy());
+
+      const invalidIdentifiers = [
+        'BBG00024DJF9', // Bad check digit
+        'BSG00024DJF9', // disallowed prefix
+        'BBB00024DJF9', // 3rd char not G
+        'BBG00024AEF9', // vowels not allowed
+      ];
+
+      invalidIdentifiers.forEach(identifier => expect(isFigiValid(identifier)).toBeFalsy());
     });
   });
 });
@@ -2512,6 +2535,7 @@ describe('securityIdentifierToAssetIdentifier and assetIdentifierToSecurityIdent
       // cSpell: disable-next-line
       const leiValue = '724500VKKSH9QOLTFR81';
       const cusipValue = '037833100';
+      const figiValue = 'BBG00H9NR574';
 
       let value = { type: SecurityIdentifierType.Isin, value: isinValue };
       const fakeResult = 'IsinEnum' as unknown as AssetIdentifier;
@@ -2546,6 +2570,18 @@ describe('securityIdentifierToAssetIdentifier and assetIdentifierToSecurityIdent
       result = securityIdentifierToAssetIdentifier(value, context);
 
       expect(result).toBe(fakeResult);
+
+      value = { type: SecurityIdentifierType.Figi, value: figiValue };
+
+      context.createType
+        .withArgs('PolymeshPrimitivesAssetIdentifier', {
+          [SecurityIdentifierType.Figi]: figiValue,
+        })
+        .returns(fakeResult);
+
+      result = securityIdentifierToAssetIdentifier(value, context);
+
+      expect(result).toBe(fakeResult);
     });
 
     it('should throw an error if some identifier is invalid', () => {
@@ -2568,6 +2604,12 @@ describe('securityIdentifierToAssetIdentifier and assetIdentifierToSecurityIdent
 
       expect(() => securityIdentifierToAssetIdentifier(identifier, context)).toThrow(
         `Invalid security identifier ${identifier.value} of type Cusip`
+      );
+
+      identifier = { type: SecurityIdentifierType.Figi, value: 'BBB00024DJF9' };
+
+      expect(() => securityIdentifierToAssetIdentifier(identifier, context)).toThrow(
+        `Invalid security identifier ${identifier.value} of type Figi`
       );
     });
   });
@@ -2601,6 +2643,14 @@ describe('securityIdentifierToAssetIdentifier and assetIdentifierToSecurityIdent
       fakeResult = { type: SecurityIdentifierType.Lei, value: 'someValue' };
       identifier = dsMockUtils.createMockAssetIdentifier({
         [SecurityIdentifierType.Lei]: dsMockUtils.createMockU8aFixed('someValue'),
+      });
+
+      result = assetIdentifierToSecurityIdentifier(identifier);
+      expect(result).toEqual(fakeResult);
+
+      fakeResult = { type: SecurityIdentifierType.Figi, value: 'someValue' };
+      identifier = dsMockUtils.createMockAssetIdentifier({
+        [SecurityIdentifierType.Figi]: dsMockUtils.createMockU8aFixed('someValue'),
       });
 
       result = assetIdentifierToSecurityIdentifier(identifier);
