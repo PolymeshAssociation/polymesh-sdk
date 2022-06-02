@@ -1,9 +1,12 @@
-import { Signatory } from 'polymesh-types/types';
+import { Signatory, TxTags } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
+  getAuthorization,
   ModifySignerPermissionsParams,
   prepareModifySignerPermissions,
+  prepareStorage,
+  Storage,
 } from '~/api/procedures/modifySignerPermissions';
 import { Account, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -39,7 +42,6 @@ describe('modifySignerPermissions procedure', () => {
 
   beforeEach(() => {
     addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
-    mockContext = dsMockUtils.getContextInstance();
     account = entityMockUtils.getAccountInstance({ address: 'someFakeAccount' });
     identity = entityMockUtils.getIdentityInstance({
       getSecondaryAccounts: [
@@ -62,6 +64,9 @@ describe('modifySignerPermissions procedure', () => {
           },
         },
       ],
+    });
+    mockContext = dsMockUtils.getContextInstance({
+      getIdentity: identity,
     });
   });
 
@@ -112,7 +117,12 @@ describe('modifySignerPermissions procedure', () => {
 
     signerValueToSignatoryStub.withArgs(signerValue, mockContext).returns(rawSignatory);
 
-    const proc = procedureMockUtils.getInstance<ModifySignerPermissionsParams, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<ModifySignerPermissionsParams, void, Storage>(
+      mockContext,
+      {
+        identity,
+      }
+    );
 
     const transaction = dsMockUtils.createTxStub('identity', 'setPermissionToSigner');
 
@@ -157,9 +167,10 @@ describe('modifySignerPermissions procedure', () => {
   });
 
   it('should throw an error if at least one of the Accounts for which to modify permissions is not a secondary Account for the Identity', () => {
+    const mockAccount = entityMockUtils.getAccountInstance({ address: 'mockAccount' });
     const secondaryAccounts = [
       {
-        account: entityMockUtils.getAccountInstance({ address: 'someFakeAccount' }),
+        account: mockAccount,
         permissions: {
           assets: null,
           transactions: null,
@@ -168,20 +179,68 @@ describe('modifySignerPermissions procedure', () => {
       },
     ];
 
-    const signerValue = {
-      type: SignerType.Account,
-      value: secondaryAccounts[0].account.address,
-    };
+    mockAccount.isEqual.withArgs(account).returns(false);
 
-    signerToSignerValueStub.withArgs(secondaryAccounts[0].account).returns(signerValue);
-
-    const proc = procedureMockUtils.getInstance<ModifySignerPermissionsParams, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<ModifySignerPermissionsParams, void, Storage>(
+      mockContext,
+      { identity }
+    );
 
     return expect(
       prepareModifySignerPermissions.call(proc, {
         secondaryAccounts,
-        identity: entityMockUtils.getIdentityInstance({ getSecondaryAccounts: [] }),
       })
     ).rejects.toThrow('One of the Accounts is not a secondary Account for the Identity');
+  });
+
+  describe('getAuthorization', () => {
+    it('should return the appropriate roles and permissions', async () => {
+      let proc = procedureMockUtils.getInstance<ModifySignerPermissionsParams, void, Storage>(
+        mockContext,
+        { identity }
+      );
+      let boundFunc = getAuthorization.bind(proc);
+
+      let result = await boundFunc();
+      expect(result).toEqual({
+        permissions: {
+          transactions: [TxTags.identity.SetPermissionToSigner],
+          assets: [],
+          portfolios: [],
+        },
+      });
+
+      proc = procedureMockUtils.getInstance<ModifySignerPermissionsParams, void, Storage>(
+        dsMockUtils.getContextInstance({
+          signingAccountIsEqual: false,
+        }),
+        { identity }
+      );
+
+      boundFunc = getAuthorization.bind(proc);
+
+      result = await boundFunc();
+      expect(result).toEqual({
+        signerPermissions:
+          "Secondary Account permissions can only be modified by the Identity's primary Account",
+      });
+    });
+  });
+
+  describe('prepareStorage', () => {
+    it('should return the signing Identity', async () => {
+      const proc = procedureMockUtils.getInstance<ModifySignerPermissionsParams, void, Storage>(
+        mockContext
+      );
+      const boundFunc = prepareStorage.bind(proc);
+
+      const result = await boundFunc();
+
+      expect(result).toEqual({
+        identity: expect.objectContaining({
+          did: 'someDid',
+        }),
+      });
+    });
   });
 });
