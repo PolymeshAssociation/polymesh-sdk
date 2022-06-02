@@ -329,10 +329,12 @@ describe('Asset class', () => {
     let cusipValue: string;
     let cinsValue: string;
     let leiValue: string;
+    let figiValue: string;
     let isinMock: PolymeshPrimitivesAssetIdentifier;
     let cusipMock: PolymeshPrimitivesAssetIdentifier;
     let cinsMock: PolymeshPrimitivesAssetIdentifier;
     let leiMock: PolymeshPrimitivesAssetIdentifier;
+    let figiMock: PolymeshPrimitivesAssetIdentifier;
     let securityIdentifiers: SecurityIdentifier[];
 
     let context: Context;
@@ -344,6 +346,7 @@ describe('Asset class', () => {
       cusipValue = 'FAKE CUSIP';
       cinsValue = 'FAKE CINS';
       leiValue = 'FAKE LEI';
+      figiValue = 'FAKE FIGI';
       isinMock = dsMockUtils.createMockAssetIdentifier({
         Isin: dsMockUtils.createMockU8aFixed(isinValue),
       });
@@ -355,6 +358,9 @@ describe('Asset class', () => {
       });
       leiMock = dsMockUtils.createMockAssetIdentifier({
         Lei: dsMockUtils.createMockU8aFixed(leiValue),
+      });
+      figiMock = dsMockUtils.createMockAssetIdentifier({
+        Figi: dsMockUtils.createMockU8aFixed(figiValue),
       });
       securityIdentifiers = [
         {
@@ -373,6 +379,10 @@ describe('Asset class', () => {
           type: SecurityIdentifierType.Lei,
           value: leiValue,
         },
+        {
+          type: SecurityIdentifierType.Figi,
+          value: figiValue,
+        },
       ];
     });
 
@@ -383,7 +393,7 @@ describe('Asset class', () => {
 
     it('should return the list of security identifiers for an Asset', async () => {
       dsMockUtils.createQueryStub('asset', 'identifiers', {
-        returnValue: [isinMock, cusipMock, cinsMock, leiMock],
+        returnValue: [isinMock, cusipMock, cinsMock, leiMock, figiMock],
       });
 
       const result = await asset.getIdentifiers();
@@ -392,13 +402,14 @@ describe('Asset class', () => {
       expect(result[1].value).toBe(cusipValue);
       expect(result[2].value).toBe(cinsValue);
       expect(result[3].value).toBe(leiValue);
+      expect(result[4].value).toBe(figiValue);
     });
 
     it('should allow subscription', async () => {
       const unsubCallback = 'unsubCallBack';
 
       dsMockUtils.createQueryStub('asset', 'identifiers').callsFake(async (_, cbFunc) => {
-        cbFunc([isinMock, cusipMock, cinsMock, leiMock]);
+        cbFunc([isinMock, cusipMock, cinsMock, leiMock, figiMock]);
 
         return unsubCallback;
       });
