@@ -54,7 +54,7 @@ export default {
     },
   },
   /**
-   * Lookup16: frame_system::EventRecord<polymesh_runtime_ci::runtime::Event, primitive_types::H256>
+   * Lookup16: frame_system::EventRecord<polymesh_runtime_develop::runtime::Event, primitive_types::H256>
    **/
   FrameSystemEventRecord: {
     phase: 'FrameSystemPhase',
@@ -662,7 +662,7 @@ export default {
     },
   },
   /**
-   * Lookup70: polymesh_common_utilities::traits::group::RawEvent<sp_core::crypto::AccountId32, polymesh_runtime_ci::runtime::Event, pallet_group::Instance2>
+   * Lookup70: polymesh_common_utilities::traits::group::RawEvent<sp_core::crypto::AccountId32, polymesh_runtime_develop::runtime::Event, pallet_group::Instance2>
    **/
   PolymeshCommonUtilitiesGroupRawEventInstance2: {
     _enum: {
@@ -713,7 +713,7 @@ export default {
     },
   },
   /**
-   * Lookup78: polymesh_common_utilities::traits::group::RawEvent<sp_core::crypto::AccountId32, polymesh_runtime_ci::runtime::Event, pallet_group::Instance1>
+   * Lookup78: polymesh_common_utilities::traits::group::RawEvent<sp_core::crypto::AccountId32, polymesh_runtime_develop::runtime::Event, pallet_group::Instance1>
    **/
   PolymeshCommonUtilitiesGroupRawEventInstance1: {
     _enum: {
@@ -755,7 +755,7 @@ export default {
    **/
   PalletCommitteeInstance3: 'Null',
   /**
-   * Lookup82: polymesh_common_utilities::traits::group::RawEvent<sp_core::crypto::AccountId32, polymesh_runtime_ci::runtime::Event, pallet_group::Instance3>
+   * Lookup82: polymesh_common_utilities::traits::group::RawEvent<sp_core::crypto::AccountId32, polymesh_runtime_develop::runtime::Event, pallet_group::Instance3>
    **/
   PolymeshCommonUtilitiesGroupRawEventInstance3: {
     _enum: {
@@ -797,7 +797,7 @@ export default {
    **/
   PalletCommitteeInstance4: 'Null',
   /**
-   * Lookup86: polymesh_common_utilities::traits::group::RawEvent<sp_core::crypto::AccountId32, polymesh_runtime_ci::runtime::Event, pallet_group::Instance4>
+   * Lookup86: polymesh_common_utilities::traits::group::RawEvent<sp_core::crypto::AccountId32, polymesh_runtime_develop::runtime::Event, pallet_group::Instance4>
    **/
   PolymeshCommonUtilitiesGroupRawEventInstance4: {
     _enum: {
@@ -2917,16 +2917,16 @@ export default {
         _alias: {
           keys_: 'keys',
         },
-        keys_: 'PolymeshRuntimeCiRuntimeSessionKeys',
+        keys_: 'PolymeshRuntimeDevelopRuntimeSessionKeys',
         proof: 'Bytes',
       },
       purge_keys: 'Null',
     },
   },
   /**
-   * Lookup452: polymesh_runtime_ci::runtime::SessionKeys
+   * Lookup452: polymesh_runtime_develop::runtime::SessionKeys
    **/
-  PolymeshRuntimeCiRuntimeSessionKeys: {
+  PolymeshRuntimeDevelopRuntimeSessionKeys: {
     grandpa: 'SpFinalityGrandpaAppPublic',
     babe: 'SpConsensusBabeAppPublic',
     imOnline: 'PalletImOnlineSr25519AppSr25519Public',
@@ -3600,7 +3600,7 @@ export default {
     },
   },
   /**
-   * Lookup505: frame_support::traits::schedule::MaybeHashed<polymesh_runtime_ci::runtime::Call, primitive_types::H256>
+   * Lookup505: frame_support::traits::schedule::MaybeHashed<polymesh_runtime_develop::runtime::Call, primitive_types::H256>
    **/
   FrameSupportScheduleMaybeHashed: {
     _enum: {
@@ -3855,7 +3855,7 @@ export default {
     },
   },
   /**
-   * Lookup525: pallet_utility::UniqueCall<polymesh_runtime_ci::runtime::Call>
+   * Lookup525: pallet_utility::UniqueCall<polymesh_runtime_develop::runtime::Call>
    **/
   PalletUtilityUniqueCall: {
     nonce: 'u64',
@@ -4602,7 +4602,7 @@ export default {
     amount: 'u128',
   },
   /**
-   * Lookup637: pallet_pips::Pip<polymesh_runtime_ci::runtime::Call, sp_core::crypto::AccountId32>
+   * Lookup637: pallet_pips::Pip<polymesh_runtime_develop::runtime::Call, sp_core::crypto::AccountId32>
    **/
   PalletPipsPip: {
     id: 'u32',
@@ -4679,19 +4679,19 @@ export default {
     _enum: ['InsufficientAccountBalance', 'UnHandledImbalances', 'InsufficientSubsidyBalance'],
   },
   /**
-   * Lookup652: pallet_scheduler::ScheduledV3<frame_support::traits::schedule::MaybeHashed<polymesh_runtime_ci::runtime::Call, primitive_types::H256>, BlockNumber, polymesh_runtime_ci::runtime::OriginCaller, sp_core::crypto::AccountId32>
+   * Lookup652: pallet_scheduler::ScheduledV3<frame_support::traits::schedule::MaybeHashed<polymesh_runtime_develop::runtime::Call, primitive_types::H256>, BlockNumber, polymesh_runtime_develop::runtime::OriginCaller, sp_core::crypto::AccountId32>
    **/
   PalletSchedulerScheduledV3: {
     maybeId: 'Option<Bytes>',
     priority: 'u8',
     call: 'FrameSupportScheduleMaybeHashed',
     maybePeriodic: 'Option<(u32,u32)>',
-    origin: 'PolymeshRuntimeCiRuntimeOriginCaller',
+    origin: 'PolymeshRuntimeDevelopRuntimeOriginCaller',
   },
   /**
-   * Lookup653: polymesh_runtime_ci::runtime::OriginCaller
+   * Lookup653: polymesh_runtime_develop::runtime::OriginCaller
    **/
-  PolymeshRuntimeCiRuntimeOriginCaller: {
+  PolymeshRuntimeDevelopRuntimeOriginCaller: {
     _enum: {
       system: 'FrameSupportDispatchRawOrigin',
       __Unused1: 'Null',
@@ -5205,7 +5205,7 @@ export default {
    **/
   PalletPermissionsStoreCallMetadata: 'Null',
   /**
-   * Lookup717: polymesh_runtime_ci::runtime::Runtime
+   * Lookup717: polymesh_runtime_develop::runtime::Runtime
    **/
-  PolymeshRuntimeCiRuntime: 'Null',
+  PolymeshRuntimeDevelopRuntime: 'Null',
 };

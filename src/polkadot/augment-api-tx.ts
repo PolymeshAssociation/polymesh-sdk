@@ -93,7 +93,7 @@ import type {
   PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions,
   PolymeshPrimitivesTicker,
   PolymeshPrimitivesTransferComplianceTransferConditionExemptKey,
-  PolymeshRuntimeCiRuntimeSessionKeys,
+  PolymeshRuntimeDevelopRuntimeSessionKeys,
   SpConsensusBabeDigestsNextConfigDescriptor,
   SpConsensusSlotsEquivocationProof,
   SpFinalityGrandpaEquivocationProof,
@@ -4642,13 +4642,13 @@ declare module '@polkadot/api-base/types/submittable' {
       setKeys: AugmentedSubmittable<
         (
           keys:
-            | PolymeshRuntimeCiRuntimeSessionKeys
+            | PolymeshRuntimeDevelopRuntimeSessionKeys
             | { grandpa?: any; babe?: any; imOnline?: any; authorityDiscovery?: any }
             | string
             | Uint8Array,
           proof: Bytes | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [PolymeshRuntimeCiRuntimeSessionKeys, Bytes]
+        [PolymeshRuntimeDevelopRuntimeSessionKeys, Bytes]
       >;
     };
     settlement: {
