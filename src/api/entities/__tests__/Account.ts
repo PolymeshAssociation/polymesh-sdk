@@ -382,7 +382,7 @@ describe('Account class', () => {
     it('should return if the Account is frozen or not', async () => {
       const didRecordsStub = dsMockUtils.createQueryStub('identity', 'didRecords');
 
-      dsMockUtils.createQueryStub('identity', 'keyRecords').returns(
+      const keyRecordsStub = dsMockUtils.createQueryStub('identity', 'keyRecords').returns(
         dsMockUtils.createMockOption(
           dsMockUtils.createMockKeyRecord({
             SecondaryKey: [
@@ -418,6 +418,11 @@ describe('Account class', () => {
 
       result = await account.isFrozen();
       expect(result).toBe(true);
+
+      keyRecordsStub.resolves(dsMockUtils.createMockOption());
+
+      result = await account.isFrozen();
+      expect(result).toBe(false);
     });
   });
 

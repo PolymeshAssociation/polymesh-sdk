@@ -462,7 +462,9 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Check whether this Account is frozen. If frozen, it cannot perform any action until the primary Account of the Identity unfreezes all secondary Accounts
+   * Check whether this Account is frozen. If frozen, it cannot perform any Identity related action until the primary Account of the Identity unfreezes all secondary Accounts
+   *
+   * @note returns false if the Account isn't associated to any Identity
    */
   public async isFrozen(): Promise<boolean> {
     const identity = await this.getIdentity();
