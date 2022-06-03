@@ -147,5 +147,43 @@
     "@polkadot/networks": "9.0.1",
     "@polkadot/util-crypto": "9.0.1",
     "@polkadot/x-bigint": "9.0.1"
+  },
+  "overrides": {
+    "@polkadot/keyring": "9.0.1",
+    "@polkadot/api-augment": "8.1.1",
+    "@polkadot/api-base": "8.1.1",
+    "@polkadot/api-derive": "8.1.1",
+    "@polkadot/rpc-augment": "8.1.1",
+    "@polkadot/rpc-core": "8.1.1",
+    "@polkadot/rpc-provider": "8.1.1",
+    "@polkadot/types": "8.1.1",
+    "@polkadot/types-augment": "8.1.1",
+    "@polkadot/types-codec": "8.1.1",
+    "@polkadot/types-create": "8.1.1",
+    "@polkadot/types-known": "8.1.1",
+    "@polkadot/util": "9.0.1",
+    "@polkadot/networks": "9.0.1",
+    "@polkadot/util-crypto": "9.0.1",
+    "@polkadot/x-bigint": "9.0.1"
+  },
+  "pnpm": {
+    "overrides": {
+      "@polkadot/keyring": "9.0.1",
+      "@polkadot/api-augment": "8.1.1",
+      "@polkadot/api-base": "8.1.1",
+      "@polkadot/api-derive": "8.1.1",
+      "@polkadot/rpc-augment": "8.1.1",
+      "@polkadot/rpc-core": "8.1.1",
+      "@polkadot/rpc-provider": "8.1.1",
+      "@polkadot/types": "8.1.1",
+      "@polkadot/types-augment": "8.1.1",
+      "@polkadot/types-codec": "8.1.1",
+      "@polkadot/types-create": "8.1.1",
+      "@polkadot/types-known": "8.1.1",
+      "@polkadot/util": "9.0.1",
+      "@polkadot/networks": "9.0.1",
+      "@polkadot/util-crypto": "9.0.1",
+      "@polkadot/x-bigint": "9.0.1"
+    }
   }
 }
