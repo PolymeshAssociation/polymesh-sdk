@@ -1836,7 +1836,7 @@ export const createMockPosRatio = (
   numerator: BigNumber,
   denominator: BigNumber
 ): MockCodec<PosRatio> =>
-  [createMockU32(numerator) as u32, createMockU32(denominator) as u32] as MockCodec<PosRatio>;
+  [createMockU32(numerator), createMockU32(denominator)] as MockCodec<PosRatio>;
 
 /**
  * @hidden
