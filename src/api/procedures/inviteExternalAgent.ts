@@ -135,7 +135,7 @@ export async function prepareInviteExternalAgent(
 
     await assertGroupDoesNotExist(asset, transactions);
 
-    const [auth] = this.addTransaction({
+    const [authRequest] = this.addTransaction({
       transaction: externalAgents.createGroupAndAddAuth,
       resolvers: [createGroupAndAuthorizationResolver(targetIdentity)],
       args: [
@@ -145,7 +145,7 @@ export async function prepareInviteExternalAgent(
       ],
     });
 
-    return auth;
+    return authRequest;
   }
 
   const rawExpiry = optionize(dateToMoment)(expiry, context);
