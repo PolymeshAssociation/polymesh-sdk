@@ -43,7 +43,7 @@ describe('TickerReservation class', () => {
 
   describe('method: isUniqueIdentifiers', () => {
     it('should return true if the object conforms to the interface', () => {
-      expect(TickerReservation.isUniqueIdentifiers({ ticker: 'someTicker' })).toBe(true);
+      expect(TickerReservation.isUniqueIdentifiers({ ticker: 'SOME_TICKER' })).toBe(true);
       expect(TickerReservation.isUniqueIdentifiers({})).toBe(false);
       expect(TickerReservation.isUniqueIdentifiers({ ticker: 3 })).toBe(false);
     });

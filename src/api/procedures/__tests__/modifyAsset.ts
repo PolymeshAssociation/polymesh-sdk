@@ -30,7 +30,7 @@ describe('modifyAsset procedure', () => {
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     stringToBytesStub = sinon.stub(utilsConversionModule, 'stringToBytes');
-    ticker = 'someTicker';
+    ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     fundingRound = 'Series A';
     identifiers = [

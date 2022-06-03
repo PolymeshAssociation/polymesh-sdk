@@ -52,7 +52,7 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
     );
     stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
     identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
-    ticker = 'someTicker';
+    ticker = 'SOME_TICKER';
     claimIssuerDids = ['aDid', 'otherDid', 'differentDid'];
     claimIssuers = claimIssuerDids.map(did => ({
       identity: entityMockUtils.getIdentityInstance({ did }),

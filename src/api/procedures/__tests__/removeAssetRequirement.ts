@@ -35,7 +35,7 @@ describe('removeAssetRequirement procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    ticker = 'someTicker';
+    ticker = 'SOME_TICKER';
     requirement = new BigNumber(2);
 
     args = {

@@ -40,7 +40,7 @@ describe('modifyCaDefaultConfig procedure', () => {
     targetsToTargetIdentitiesStub = sinon.stub(utilsConversionModule, 'targetsToTargetIdentities');
     percentageToPermillStub = sinon.stub(utilsConversionModule, 'percentageToPermill');
     stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
-    ticker = 'someTicker';
+    ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
 
     assertCaTargetsValidStub = sinon.stub(utilsProcedureModule, 'assertCaTargetsValid');
