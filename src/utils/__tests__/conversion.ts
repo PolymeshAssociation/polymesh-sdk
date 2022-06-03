@@ -3593,7 +3593,7 @@ describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
   });
 
   describe('claimTypeToMeshClaimType', () => {
-    it('should convert a ClaimType to a polkadot Claim', () => {
+    it('should convert a ClaimType to a polkadot ClaimType', () => {
       const context = dsMockUtils.getContextInstance();
       const mockClaim = dsMockUtils.createMockClaimType(ClaimType.Accredited);
       context.createType
