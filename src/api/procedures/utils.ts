@@ -595,6 +595,9 @@ export async function assertAuthorizationRequestValid(
   }
 }
 
+/**
+ * @hidden
+ */
 export const createAuthorizationResolver =
   (
     auth: MaybePostTransactionValue<Authorization>,

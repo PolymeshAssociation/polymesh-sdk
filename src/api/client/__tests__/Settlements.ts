@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
+import { Settlements } from '~/api/client/Settlements';
 import { addInstructionTransformer, Context, TransactionQueue, Venue } from '~/internal';
-import { Settlements } from '~/Settlements';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Instruction, VenueType } from '~/types';
