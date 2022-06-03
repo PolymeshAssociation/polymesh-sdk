@@ -1,16 +1,21 @@
 import { SigningManager } from '@polymathnetwork/signing-manager-types';
 import { ApolloLink, GraphQLRequest } from 'apollo-link';
-import * as apolloLinkContextModule from 'apollo-link-context';
 import sinon from 'sinon';
 
+import { Polymesh } from '~/api/client/Polymesh';
 import { PolymeshError } from '~/internal';
 import { heartbeat } from '~/middleware/queries';
-import { Polymesh } from '~/Polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { ErrorCode } from '~/types';
 import { SUPPORTED_NODE_VERSION_RANGE } from '~/utils/constants';
 import * as internalUtils from '~/utils/internal';
 
+jest.mock('apollo-link-context', () => ({
+  ...jest.requireActual('apollo-link-context'),
+  setContext: sinon.stub().callsFake(cbFunc => {
+    return new ApolloLink(cbFunc({} as GraphQLRequest, {}));
+  }),
+}));
 jest.mock(
   '@polkadot/api',
   require('~/testUtils/mocks/dataSources').mockPolkadotModule('@polkadot/api')
@@ -70,13 +75,7 @@ describe('Polymesh Class', () => {
     procedureMockUtils.cleanup();
   });
 
-  describe('method: create', () => {
-    beforeAll(() => {
-      sinon.stub(apolloLinkContextModule, 'setContext').callsFake(cbFunc => {
-        return new ApolloLink(cbFunc({} as GraphQLRequest, {}));
-      });
-    });
-
+  describe('method: connect', () => {
     it('should instantiate Context and return a Polymesh instance', async () => {
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
