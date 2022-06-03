@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Claims } from '~/Claims';
+import { Claims } from '~/api/client/Claims';
 import { Context, TransactionQueue } from '~/internal';
 import { didsWithClaims, issuerDidsWithClaimsByTarget } from '~/middleware/queries';
 import { ClaimScopeTypeEnum, ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
