@@ -17,7 +17,7 @@ import {
   stringToTicker,
   tickerToString,
   transactionPermissionsToExtrinsicPermissions,
-  u64ToBigNumber,
+  u32ToBigNumber,
 } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
 
@@ -54,7 +54,7 @@ export const createCreateGroupResolver =
     const [{ data }] = filterEventRecords(receipt, 'externalAgents', 'GroupCreated');
 
     return new CustomPermissionGroup(
-      { id: u64ToBigNumber(data[2]), ticker: tickerToString(data[1]) },
+      { id: u32ToBigNumber(data[2]), ticker: tickerToString(data[1]) },
       context
     );
   };

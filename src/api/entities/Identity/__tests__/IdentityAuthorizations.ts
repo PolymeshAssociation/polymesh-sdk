@@ -78,20 +78,19 @@ describe('IdentityAuthorizations class', () => {
       /* eslint-disable @typescript-eslint/naming-convention */
       const authorizations = authParams.map(({ authId, expiry, data }) =>
         dsMockUtils.createMockAuthorization({
-          auth_id: dsMockUtils.createMockU64(authId),
+          authId: dsMockUtils.createMockU64(authId),
           expiry: dsMockUtils.createMockOption(
             expiry ? dsMockUtils.createMockMoment(new BigNumber(expiry.getTime())) : expiry
           ),
-          authorization_data: dsMockUtils.createMockAuthorizationData({
+          authorizationData: dsMockUtils.createMockAuthorizationData({
             TransferAssetOwnership: dsMockUtils.createMockTicker(data.value),
           }),
-          authorized_by: dsMockUtils.createMockIdentityId(did),
+          authorizedBy: dsMockUtils.createMockIdentityId(did),
         })
       );
-      /* eslint-enable @typescript-eslint/naming-convention */
 
       const authorizationsGivenEntries = authorizations.map(
-        ({ authorized_by: issuer, auth_id: authId }, index) =>
+        ({ authorizedBy: issuer, authId }, index) =>
           tuple(
             { args: [issuer, authId] } as unknown as StorageKey,
             dsMockUtils.createMockSignatory({
@@ -175,12 +174,12 @@ describe('IdentityAuthorizations class', () => {
       dsMockUtils.createQueryStub('identity', 'authorizations', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockAuthorization({
-            auth_id: dsMockUtils.createMockU64(id),
-            authorization_data: dsMockUtils.createMockAuthorizationData({
+            authId: dsMockUtils.createMockU64(id),
+            authorizationData: dsMockUtils.createMockAuthorizationData({
               TransferAssetOwnership: dsMockUtils.createMockTicker(data.value),
             }),
             expiry: dsMockUtils.createMockOption(),
-            authorized_by: dsMockUtils.createMockIdentityId(did),
+            authorizedBy: dsMockUtils.createMockIdentityId(did),
           })
         ),
       });

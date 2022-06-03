@@ -1,12 +1,19 @@
-import { u64 } from '@polkadot/types';
+import { StorageKey, u64 } from '@polkadot/types';
 import { AccountId, Balance } from '@polkadot/types/interfaces';
+import {
+  PolymeshPrimitivesIdentityDidRecord,
+  PolymeshPrimitivesIdentityId,
+  PolymeshPrimitivesSecondaryKeyKeyRecord,
+  PolymeshPrimitivesSecondaryKeyPermissions,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import { bool } from '@polkadot/types/primitive';
 import BigNumber from 'bignumber.js';
-import { DidRecord, IdentityId, ScopeId, Signatory, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Asset, Context, Entity, Identity } from '~/internal';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
+import { ScopeId } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
 import {
@@ -15,6 +22,7 @@ import {
   IdentityRole,
   Order,
   PermissionedAccount,
+  Permissions,
   PortfolioCustodianRole,
   Role,
   RoleType,
@@ -62,8 +70,8 @@ jest.mock(
 
 describe('Identity class', () => {
   let context: MockContext;
-  let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
-  let identityIdToStringStub: sinon.SinonStub<[IdentityId], string>;
+  let stringToIdentityIdStub: sinon.SinonStub<[string, Context], PolymeshPrimitivesIdentityId>;
+  let identityIdToStringStub: sinon.SinonStub<[PolymeshPrimitivesIdentityId], string>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -338,8 +346,8 @@ describe('Identity class', () => {
   describe('method: getAssetBalance', () => {
     let ticker: string;
     let did: string;
-    let rawTicker: Ticker;
-    let rawIdentityId: IdentityId;
+    let rawTicker: PolymeshPrimitivesTicker;
+    let rawIdentityId: PolymeshPrimitivesIdentityId;
     let fakeValue: BigNumber;
     let fakeBalance: Balance;
     let mockContext: Context;
@@ -375,16 +383,14 @@ describe('Identity class', () => {
     });
 
     beforeEach(() => {
-      /* eslint-disable @typescript-eslint/naming-convention */
       assetStub.withArgs(rawTicker).resolves(
         dsMockUtils.createMockSecurityToken({
-          owner_did: dsMockUtils.createMockIdentityId('tokenOwner'),
-          total_supply: dsMockUtils.createMockBalance(new BigNumber(3000)),
+          ownerDid: dsMockUtils.createMockIdentityId('tokenOwner'),
+          totalSupply: dsMockUtils.createMockBalance(new BigNumber(3000)),
           divisible: dsMockUtils.createMockBool(true),
-          asset_type: dsMockUtils.createMockAssetType('EquityCommon'),
+          assetType: dsMockUtils.createMockAssetType('EquityCommon'),
         })
       );
-      /* eslint-enable @typescript-eslint/naming-convention */
     });
 
     it('should return the balance of a given Asset', async () => {
@@ -498,7 +504,7 @@ describe('Identity class', () => {
 
     let accountIdToStringStub: sinon.SinonStub<[AccountId], string>;
     let didRecordsStub: sinon.SinonStub;
-    let rawDidRecord: DidRecord;
+    let rawDidRecord: PolymeshPrimitivesIdentityDidRecord;
     let fakeResult: PermissionedAccount;
 
     beforeAll(() => {
@@ -508,13 +514,9 @@ describe('Identity class', () => {
 
     beforeEach(() => {
       didRecordsStub = dsMockUtils.createQueryStub('identity', 'didRecords');
-      /* eslint-disable @typescript-eslint/naming-convention */
-      rawDidRecord = dsMockUtils.createMockDidRecord({
-        roles: [],
-        primary_key: dsMockUtils.createMockAccountId(accountId),
-        secondary_keys: [],
+      rawDidRecord = dsMockUtils.createMockIdentityDidRecord({
+        primaryKey: dsMockUtils.createMockOption(dsMockUtils.createMockAccountId(accountId)),
       });
-      /* eslint-enable @typescript-eslint/naming-convention */
 
       const account = expect.objectContaining({ address: accountId });
 
@@ -533,7 +535,7 @@ describe('Identity class', () => {
       const mockContext = dsMockUtils.getContextInstance();
       const identity = new Identity({ did }, mockContext);
 
-      didRecordsStub.returns(rawDidRecord);
+      didRecordsStub.returns(dsMockUtils.createMockOption(rawDidRecord));
 
       const result = await identity.getPrimaryAccount();
       expect(result).toEqual({
@@ -554,7 +556,7 @@ describe('Identity class', () => {
       const unsubCallback = 'unsubCallBack';
 
       didRecordsStub.callsFake(async (_, cbFunc) => {
-        cbFunc(rawDidRecord);
+        cbFunc(dsMockUtils.createMockOption(rawDidRecord));
         return unsubCallback;
       });
 
@@ -628,7 +630,7 @@ describe('Identity class', () => {
     let did: string;
     let venueId: BigNumber;
 
-    let rawDid: IdentityId;
+    let rawDid: PolymeshPrimitivesIdentityId;
     let rawVenueId: u64;
 
     beforeAll(() => {
@@ -681,13 +683,27 @@ describe('Identity class', () => {
       const identity = new Identity({ did: 'someDid' }, context);
 
       dsMockUtils.createQueryStub('identity', 'didRecords', {
-        size: new BigNumber(10),
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockIdentityDidRecord({
+            primaryKey: dsMockUtils.createMockOption(dsMockUtils.createMockAccountId('someId')),
+          })
+        ),
       });
 
       await expect(identity.exists()).resolves.toBe(true);
 
       dsMockUtils.createQueryStub('identity', 'didRecords', {
-        size: new BigNumber(0),
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
+      await expect(identity.exists()).resolves.toBe(false);
+
+      dsMockUtils.createQueryStub('identity', 'didRecords', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockIdentityDidRecord({
+            primaryKey: dsMockUtils.createMockOption(),
+          })
+        ),
       });
 
       return expect(identity.exists()).resolves.toBe(false);
@@ -700,11 +716,11 @@ describe('Identity class', () => {
     let ticker: string;
     let scopeId: string;
 
-    let rawDid: IdentityId;
-    let rawTicker: Ticker;
+    let rawDid: PolymeshPrimitivesIdentityId;
+    let rawTicker: PolymeshPrimitivesTicker;
     let rawScopeId: ScopeId;
 
-    let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
+    let stringToTickerStub: sinon.SinonStub<[string, Context], PolymeshPrimitivesTicker>;
 
     beforeAll(() => {
       did = 'someDid';
@@ -860,55 +876,53 @@ describe('Identity class', () => {
 
       const multiStub = sinon.stub();
 
-      /* eslint-disable @typescript-eslint/naming-convention */
       multiStub.withArgs([rawId1, rawId2, rawId3, rawId4, rawId5]).resolves([
         dsMockUtils.createMockInstruction({
-          instruction_id: dsMockUtils.createMockU64(id1),
-          venue_id: dsMockUtils.createMockU64(),
+          instructionId: dsMockUtils.createMockU64(id1),
+          venueId: dsMockUtils.createMockU64(),
           status: dsMockUtils.createMockInstructionStatus('Pending'),
-          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
-          created_at: dsMockUtils.createMockOption(),
-          trade_date: dsMockUtils.createMockOption(),
-          value_date: dsMockUtils.createMockOption(),
+          settlementType: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
+          createdAt: dsMockUtils.createMockOption(),
+          tradeDate: dsMockUtils.createMockOption(),
+          valueDate: dsMockUtils.createMockOption(),
         }),
         dsMockUtils.createMockInstruction({
-          instruction_id: dsMockUtils.createMockU64(id2),
-          venue_id: dsMockUtils.createMockU64(),
+          instructionId: dsMockUtils.createMockU64(id2),
+          venueId: dsMockUtils.createMockU64(),
           status: dsMockUtils.createMockInstructionStatus('Pending'),
-          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
-          created_at: dsMockUtils.createMockOption(),
-          trade_date: dsMockUtils.createMockOption(),
-          value_date: dsMockUtils.createMockOption(),
+          settlementType: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
+          createdAt: dsMockUtils.createMockOption(),
+          tradeDate: dsMockUtils.createMockOption(),
+          valueDate: dsMockUtils.createMockOption(),
         }),
         dsMockUtils.createMockInstruction({
-          instruction_id: dsMockUtils.createMockU64(id3),
-          venue_id: dsMockUtils.createMockU64(),
+          instructionId: dsMockUtils.createMockU64(id3),
+          venueId: dsMockUtils.createMockU64(),
           status: dsMockUtils.createMockInstructionStatus('Unknown'),
-          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
-          created_at: dsMockUtils.createMockOption(),
-          trade_date: dsMockUtils.createMockOption(),
-          value_date: dsMockUtils.createMockOption(),
+          settlementType: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
+          createdAt: dsMockUtils.createMockOption(),
+          tradeDate: dsMockUtils.createMockOption(),
+          valueDate: dsMockUtils.createMockOption(),
         }),
         dsMockUtils.createMockInstruction({
-          instruction_id: dsMockUtils.createMockU64(id4),
-          venue_id: dsMockUtils.createMockU64(),
+          instructionId: dsMockUtils.createMockU64(id4),
+          venueId: dsMockUtils.createMockU64(),
           status: dsMockUtils.createMockInstructionStatus('Failed'),
-          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
-          created_at: dsMockUtils.createMockOption(),
-          trade_date: dsMockUtils.createMockOption(),
-          value_date: dsMockUtils.createMockOption(),
+          settlementType: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
+          createdAt: dsMockUtils.createMockOption(),
+          tradeDate: dsMockUtils.createMockOption(),
+          valueDate: dsMockUtils.createMockOption(),
         }),
         dsMockUtils.createMockInstruction({
-          instruction_id: dsMockUtils.createMockU64(id4),
-          venue_id: dsMockUtils.createMockU64(),
+          instructionId: dsMockUtils.createMockU64(id4),
+          venueId: dsMockUtils.createMockU64(),
           status: dsMockUtils.createMockInstructionStatus('Unknown'),
-          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
-          created_at: dsMockUtils.createMockOption(),
-          trade_date: dsMockUtils.createMockOption(),
-          value_date: dsMockUtils.createMockOption(),
+          settlementType: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
+          createdAt: dsMockUtils.createMockOption(),
+          tradeDate: dsMockUtils.createMockOption(),
+          valueDate: dsMockUtils.createMockOption(),
         }),
       ]);
-      /* eslint-enable @typescript-eslint/naming-convention */
 
       instructionDetailsStub.multi = multiStub;
 
@@ -1017,48 +1031,46 @@ describe('Identity class', () => {
 
       const multiStub = sinon.stub();
 
-      /* eslint-disable @typescript-eslint/naming-convention */
       multiStub.withArgs([rawId1, rawId2, rawId3]).resolves([
         dsMockUtils.createMockInstruction({
-          instruction_id: dsMockUtils.createMockU64(id1),
-          venue_id: dsMockUtils.createMockU64(),
+          instructionId: dsMockUtils.createMockU64(id1),
+          venueId: dsMockUtils.createMockU64(),
           status: dsMockUtils.createMockInstructionStatus('Pending'),
-          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
-          created_at: dsMockUtils.createMockOption(),
-          trade_date: dsMockUtils.createMockOption(),
-          value_date: dsMockUtils.createMockOption(),
+          settlementType: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
+          createdAt: dsMockUtils.createMockOption(),
+          tradeDate: dsMockUtils.createMockOption(),
+          valueDate: dsMockUtils.createMockOption(),
         }),
         dsMockUtils.createMockInstruction({
-          instruction_id: dsMockUtils.createMockU64(id2),
-          venue_id: dsMockUtils.createMockU64(),
+          instructionId: dsMockUtils.createMockU64(id2),
+          venueId: dsMockUtils.createMockU64(),
           status: dsMockUtils.createMockInstructionStatus('Pending'),
-          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
-          created_at: dsMockUtils.createMockOption(),
-          trade_date: dsMockUtils.createMockOption(),
-          value_date: dsMockUtils.createMockOption(),
+          settlementType: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
+          createdAt: dsMockUtils.createMockOption(),
+          tradeDate: dsMockUtils.createMockOption(),
+          valueDate: dsMockUtils.createMockOption(),
         }),
         dsMockUtils.createMockInstruction({
-          instruction_id: dsMockUtils.createMockU64(id3),
-          venue_id: dsMockUtils.createMockU64(),
+          instructionId: dsMockUtils.createMockU64(id3),
+          venueId: dsMockUtils.createMockU64(),
           status: dsMockUtils.createMockInstructionStatus('Unknown'),
-          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
-          created_at: dsMockUtils.createMockOption(),
-          trade_date: dsMockUtils.createMockOption(),
-          value_date: dsMockUtils.createMockOption(),
+          settlementType: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
+          createdAt: dsMockUtils.createMockOption(),
+          tradeDate: dsMockUtils.createMockOption(),
+          valueDate: dsMockUtils.createMockOption(),
         }),
         dsMockUtils.createMockInstruction({
-          instruction_id: dsMockUtils.createMockU64(id4),
-          venue_id: dsMockUtils.createMockU64(),
+          instructionId: dsMockUtils.createMockU64(id4),
+          venueId: dsMockUtils.createMockU64(),
           status: dsMockUtils.createMockInstructionStatus('Pending'),
-          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
-          created_at: dsMockUtils.createMockOption(),
-          trade_date: dsMockUtils.createMockOption(),
-          value_date: dsMockUtils.createMockOption(),
+          settlementType: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
+          createdAt: dsMockUtils.createMockOption(),
+          tradeDate: dsMockUtils.createMockOption(),
+          valueDate: dsMockUtils.createMockOption(),
         }),
       ]);
 
       instructionDetailsStub.multi = multiStub;
-      /* eslint-enable @typescript-eslint/naming-convention */
 
       const result = await identity.getPendingInstructions();
 
@@ -1176,8 +1188,7 @@ describe('Identity class', () => {
 
       const rawCaId = dsMockUtils.createMockCAId({
         ticker: 'HOLDER_PAID',
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        local_id: new BigNumber(5),
+        localId: new BigNumber(5),
       });
       const rawIdentityId = dsMockUtils.createMockIdentityId('someDid');
 
@@ -1207,23 +1218,27 @@ describe('Identity class', () => {
 
   describe('method: getSecondaryAccounts', () => {
     const accountId = 'someAccountId';
-    const signerAccountId = dsMockUtils.createMockSignatory({
-      Account: dsMockUtils.createMockAccountId(accountId),
-    });
 
     let account: Account;
     let fakeResult: PermissionedAccount[];
 
-    let signatoryToAccountStub: sinon.SinonStub<[Signatory, Context], Account>;
-    let didRecordsStub: sinon.SinonStub;
-    let rawDidRecord: DidRecord;
+    let rawPrimaryKeyRecord: PolymeshPrimitivesSecondaryKeyKeyRecord;
+    let rawSecondaryKeyRecord: PolymeshPrimitivesSecondaryKeyKeyRecord;
+    let rawMultiSigKeyRecord: PolymeshPrimitivesSecondaryKeyKeyRecord;
+    let rawDidRecord: StorageKey;
+    let accountIdToAccountStub: sinon.SinonStub<[AccountId, Context], Account>;
+    let meshPermissionsToPermissionsStub: sinon.SinonStub<
+      [PolymeshPrimitivesSecondaryKeyPermissions, Context],
+      Permissions
+    >;
 
     beforeAll(() => {
       account = entityMockUtils.getAccountInstance({ address: accountId });
-
-      signatoryToAccountStub = sinon.stub(utilsConversionModule, 'signatoryToAccount');
-      signatoryToAccountStub.withArgs(signerAccountId, sinon.match.object).returns(account);
-
+      accountIdToAccountStub = sinon.stub(utilsConversionModule, 'accountIdToAccount');
+      meshPermissionsToPermissionsStub = sinon.stub(
+        utilsConversionModule,
+        'meshPermissionsToPermissions'
+      );
       fakeResult = [
         {
           account,
@@ -1237,29 +1252,47 @@ describe('Identity class', () => {
       ];
     });
 
-    beforeEach(() => {
-      didRecordsStub = dsMockUtils.createQueryStub('identity', 'didRecords');
-      /* eslint-disable @typescript-eslint/naming-convention */
-      rawDidRecord = dsMockUtils.createMockDidRecord({
-        roles: [],
-        primary_key: dsMockUtils.createMockAccountId(),
-        secondary_keys: [
-          dsMockUtils.createMockSecondaryKey({
-            signer: signerAccountId,
-            permissions: dsMockUtils.createMockPermissions({
-              asset: dsMockUtils.createMockAssetPermissions('Whole'),
-              extrinsic: dsMockUtils.createMockExtrinsicPermissions('Whole'),
-              portfolio: dsMockUtils.createMockPortfolioPermissions('Whole'),
-            }),
-          }),
-        ],
-      });
-      /* eslint-enable @typescript-eslint/naming-convention */
+    afterAll(() => {
+      sinon.restore();
     });
 
-    it('should return a list of Signers', async () => {
+    beforeEach(() => {
+      rawPrimaryKeyRecord = dsMockUtils.createMockKeyRecord({
+        PrimaryKey: dsMockUtils.createMockIdentityId('someDid'),
+      });
+      rawSecondaryKeyRecord = dsMockUtils.createMockKeyRecord({
+        SecondaryKey: [dsMockUtils.createMockIdentityId(), dsMockUtils.createMockPermissions()],
+      });
+      rawMultiSigKeyRecord = dsMockUtils.createMockKeyRecord({
+        MultiSigSignerKey: dsMockUtils.createMockAccountId('someAddress'),
+      });
+      rawDidRecord = {
+        args: [dsMockUtils.createMockIdentityId(), dsMockUtils.createMockAccountId(accountId)],
+      } as unknown as StorageKey;
+      const entriesStub = sinon.stub();
+      entriesStub.resolves([[rawDidRecord]]);
+      dsMockUtils.createQueryStub('identity', 'didKeys', {
+        entries: [[rawDidRecord.args, true]],
+      });
+
+      meshPermissionsToPermissionsStub.returns({
+        assets: null,
+        portfolios: null,
+        transactions: null,
+        transactionGroups: [],
+      });
+      accountIdToAccountStub.returns(account);
+    });
+
+    it('should return a list of Accounts', async () => {
+      dsMockUtils.createQueryStub('identity', 'keyRecords', {
+        multi: [
+          dsMockUtils.createMockOption(rawPrimaryKeyRecord),
+          dsMockUtils.createMockOption(rawSecondaryKeyRecord),
+          dsMockUtils.createMockOption(rawMultiSigKeyRecord),
+        ],
+      });
       const identity = new Identity({ did: 'someDid' }, context);
-      didRecordsStub.resolves(rawDidRecord);
 
       const result = await identity.getSecondaryAccounts();
       expect(result).toEqual(fakeResult);
@@ -1269,8 +1302,12 @@ describe('Identity class', () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const unsubCallback = 'unsubCallBack';
 
-      didRecordsStub.callsFake(async (_, cbFunc) => {
-        cbFunc(rawDidRecord);
+      const keyRecordsStub = dsMockUtils.createQueryStub('identity', 'keyRecords', {
+        multi: [dsMockUtils.createMockOption(rawSecondaryKeyRecord)],
+      });
+
+      keyRecordsStub.multi.callsFake(async (_, cbFunc) => {
+        cbFunc([dsMockUtils.createMockOption(rawSecondaryKeyRecord)]);
         return unsubCallback;
       });
 

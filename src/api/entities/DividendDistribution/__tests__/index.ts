@@ -108,19 +108,17 @@ describe('DividendDistribution class', () => {
     dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockDistribution({
-          /* eslint-disable @typescript-eslint/naming-convention */
           from: {
             kind: 'Default',
             did: 'someDid',
           },
           currency: 'USD',
-          per_share: new BigNumber(20000000),
+          perShare: new BigNumber(20000000),
           amount: new BigNumber(50000000000),
           remaining: new BigNumber(40000000000),
-          payment_at: new BigNumber(new Date(new Date().getTime() + 60 * 60 * 1000).getTime()),
-          expires_at: null,
+          paymentAt: new BigNumber(new Date(new Date().getTime() + 60 * 60 * 1000).getTime()),
+          expiresAt: null,
           reclaimed: false,
-          /* eslint-enable @typescript-eslint/naming-convention */
         })
       ),
     });
@@ -433,11 +431,9 @@ describe('DividendDistribution class', () => {
         .stub(utilsConversionModule, 'stringToIdentityId')
         .returns(dsMockUtils.createMockIdentityId(did));
 
-      /* eslint-disable @typescript-eslint/naming-convention */
       sinon
         .stub(utilsConversionModule, 'corporateActionIdentifierToCaId')
-        .returns(dsMockUtils.createMockCAId({ ticker, local_id: id }));
-      /* eslint-enable @typescript-eslint/naming-convention */
+        .returns(dsMockUtils.createMockCAId({ ticker, localId: id }));
       sinon.stub(utilsConversionModule, 'boolToBoolean').returns(false);
 
       dsMockUtils.createQueryStub('capitalDistribution', 'holderPaid', {

@@ -1,6 +1,7 @@
 import { Vec } from '@polkadot/types';
+import { PalletCorporateActionsCaId, PolymeshPrimitivesDocument } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { CAId, Document, DocumentId, Ticker } from 'polymesh-types/types';
+import { Document, DocumentId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { getAuthorization, Params, prepareLinkCaDocs } from '~/api/procedures/linkCaDocs';
@@ -24,11 +25,11 @@ describe('linkCaDocs procedure', () => {
   let id: BigNumber;
   let documents: AssetDocument[];
   let rawTicker: Ticker;
-  let rawDocuments: Document[];
+  let rawDocuments: PolymeshPrimitivesDocument[];
   let rawDocumentIds: DocumentId[];
-  let documentEntries: [[Ticker, DocumentId], Document][];
+  let documentEntries: [[Ticker, DocumentId], PolymeshPrimitivesDocument][];
   let args: Params;
-  let rawCaId: CAId;
+  let rawCaId: PalletCorporateActionsCaId;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -52,19 +53,15 @@ describe('linkCaDocs procedure', () => {
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawDocuments = documents.map(({ name, uri, contentHash, type, filedAt }) =>
       dsMockUtils.createMockDocument({
-        name: dsMockUtils.createMockDocumentName(name),
-        uri: dsMockUtils.createMockDocumentUri(uri),
-        /* eslint-disable @typescript-eslint/naming-convention */
-        content_hash: dsMockUtils.createMockDocumentHash({
+        name: dsMockUtils.createMockBytes(name),
+        uri: dsMockUtils.createMockBytes(uri),
+        contentHash: dsMockUtils.createMockDocumentHash({
           H128: dsMockUtils.createMockU8aFixed(contentHash, true),
         }),
-        doc_type: dsMockUtils.createMockOption(
-          type ? dsMockUtils.createMockDocumentType(type) : null
-        ),
-        filing_date: dsMockUtils.createMockOption(
+        docType: dsMockUtils.createMockOption(type ? dsMockUtils.createMockBytes(type) : null),
+        filingDate: dsMockUtils.createMockOption(
           filedAt ? dsMockUtils.createMockMoment(new BigNumber(filedAt.getTime())) : null
         ),
-        /* eslint-enable @typescript-eslint/naming-convention */
       })
     );
     documentEntries = [];
@@ -79,8 +76,7 @@ describe('linkCaDocs procedure', () => {
       ticker,
       documents,
     };
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    rawCaId = dsMockUtils.createMockCAId({ ticker, local_id: id });
+    rawCaId = dsMockUtils.createMockCAId({ ticker, localId: id });
     sinon.stub(utilsConversionModule, 'corporateActionIdentifierToCaId').returns(rawCaId);
   });
 

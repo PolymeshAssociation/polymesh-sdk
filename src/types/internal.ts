@@ -6,13 +6,14 @@ import {
   SubmittableExtrinsic,
   SubmittableExtrinsics,
 } from '@polkadot/api/types';
+import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import { ISubmittableResult, Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { DocumentNode } from 'graphql';
 
 import { Identity, PostTransactionValue } from '~/internal';
 import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
-import { CustomAssetTypeId, TxTag } from '~/polkadot';
+import { CustomAssetTypeId } from '~/polkadot';
 import {
   CalendarPeriod,
   KnownAssetType,
@@ -20,6 +21,7 @@ import {
   Role,
   SignerValue,
   SimplePermissions,
+  TxTag,
 } from '~/types';
 
 /**
@@ -373,4 +375,13 @@ export enum AllowanceOperation {
   Set = 'Set',
   Increase = 'Increase',
   Decrease = 'Decrease',
+}
+
+export enum StatisticsOpType {
+  Count = 'Count',
+  Balance = 'Balance',
+}
+
+export interface TickerKey {
+  Ticker: PolymeshPrimitivesTicker;
 }

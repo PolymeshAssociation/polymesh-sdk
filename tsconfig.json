@@ -7,7 +7,8 @@
       "~/*": ["src/*"],
       "polymesh-types/*": ["src/polkadot/*"],
       "@polkadot/api/augment": ["src/polkadot/augment-api.ts"],
-      "@polkadot/types/augment": ["src/polkadot/augment-types.ts"]
+      "@polkadot/types/augment": ["src/polkadot/augment-types.ts"],
+      "@polkadot/types/lookup": ["src/polkadot/types-lookup.ts"]
     },
     "plugins": [
       {
@@ -29,5 +30,5 @@
     "lib": ["es2017", "dom"],
     "typeRoots": ["./node_modules/@types", "./src/typings"]
   },
-  "exclude": ["dist", "node_modules", "sandbox.ts", "test.ts"]
+  "exclude": ["dist", "node_modules", "sandbox.ts", "test.ts", "src-temp"]
 }

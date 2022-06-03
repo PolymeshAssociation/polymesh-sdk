@@ -1,3 +1,4 @@
+import { PolymeshPrimitivesAuthorizationAuthorizationData } from '@polkadot/types/lookup';
 import { AgentGroup, AuthorizationData, Signatory, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
@@ -35,7 +36,7 @@ describe('inviteExternalAgent procedure', () => {
   let mockContext: Mocked<Context>;
   let authorizationToAuthorizationDataStub: sinon.SinonStub<
     [Authorization, Context],
-    AuthorizationData
+    PolymeshPrimitivesAuthorizationAuthorizationData
   >;
   let signerToStringStub: sinon.SinonStub<[string | Identity | Account], string>;
   let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
@@ -46,7 +47,7 @@ describe('inviteExternalAgent procedure', () => {
   let target: string;
   let addTransactionStub: sinon.SinonStub;
   let rawSignatory: Signatory;
-  let rawAuthorizationData: AuthorizationData;
+  let rawAuthorizationData: PolymeshPrimitivesAuthorizationAuthorizationData;
 
   beforeAll(() => {
     dsMockUtils.initMocks();

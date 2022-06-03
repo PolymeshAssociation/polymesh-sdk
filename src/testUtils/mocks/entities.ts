@@ -150,6 +150,7 @@ interface AssetOptions extends EntityOptions {
   complianceRequirementsGet?: EntityGetter<ComplianceRequirements>;
   checkpointsGetOne?: EntityGetter<Checkpoint>;
   checkpointsSchedulesGetOne?: EntityGetter<ScheduleWithDetails>;
+  investorCount?: EntityGetter<BigNumber>;
 }
 
 interface AuthorizationRequestOptions extends EntityOptions {
@@ -739,6 +740,8 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
       getOne: sinon.SinonStub;
     };
 
+    investorCount!: sinon.SinonStub;
+
     /**
      * @hidden
      */
@@ -772,6 +775,7 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
       this.compliance.requirements.get = createEntityGetterStub(opts.complianceRequirementsGet);
       this.checkpoints.schedules.getOne = createEntityGetterStub(opts.checkpointsSchedulesGetOne);
       this.checkpoints.getOne = createEntityGetterStub(opts.checkpointsGetOne);
+      this.investorCount = createEntityGetterStub(opts.investorCount);
     }
   },
   () => ({
@@ -823,6 +827,8 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
       },
     },
     toHuman: 'SOME_TICKER',
+    investorCount: new BigNumber(0),
+    toJson: 'SOME_TICKER',
   }),
   ['Asset']
 );

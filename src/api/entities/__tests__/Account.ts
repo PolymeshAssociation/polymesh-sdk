@@ -5,6 +5,7 @@ import { Account, Context, Entity } from '~/internal';
 import { heartbeat, transactions } from '~/middleware/queries';
 import { CallIdEnum, ExtrinsicResult, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { createMockAccountId, createMockIdentityId } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
@@ -164,17 +165,51 @@ describe('Account class', () => {
   describe('method: getIdentity', () => {
     it('should return the Identity associated to the Account', async () => {
       const did = 'someDid';
-      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockIdentityId(did),
+      dsMockUtils.createQueryStub('identity', 'keyRecords', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockKeyRecord({
+            PrimaryKey: createMockIdentityId(did),
+          })
+        ),
       });
 
-      const result = await account.getIdentity();
+      let result = await account.getIdentity();
       expect(result?.did).toBe(did);
+
+      const secondaryDid = 'secondaryDid';
+      dsMockUtils.createQueryStub('identity', 'keyRecords', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockKeyRecord({
+            SecondaryKey: [
+              dsMockUtils.createMockIdentityId(secondaryDid),
+              dsMockUtils.createMockPermissions(),
+            ],
+          })
+        ),
+      });
+      result = await account.getIdentity();
+      expect(result?.did).toBe(secondaryDid);
+
+      const multiDid = 'multiDid';
+      dsMockUtils.createQueryStub('identity', 'keyRecords', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockKeyRecord({
+            MultiSigSignerKey: createMockAccountId('someAddress'),
+          })
+        ),
+      });
+
+      dsMockUtils.createQueryStub('multiSig', 'multiSigToIdentity', {
+        returnValue: multiDid,
+      });
+
+      result = await account.getIdentity();
+      expect(result?.did).toBe(multiDid);
     });
 
     it('should return null if there is no Identity associated to the Account', async () => {
-      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockIdentityId(),
+      dsMockUtils.createQueryStub('identity', 'keyRecords', {
+        returnValue: dsMockUtils.createMockOption(null),
       });
 
       const result = await account.getIdentity();
@@ -346,29 +381,32 @@ describe('Account class', () => {
 
   describe('method: isFrozen', () => {
     it('should return if the Account is frozen or not', async () => {
-      const keyToIdentityIdsStub = dsMockUtils.createQueryStub('identity', 'keyToIdentityIds');
+      const didRecordsStub = dsMockUtils.createQueryStub('identity', 'didRecords');
 
-      /* eslint-disable @typescript-eslint/naming-convention */
-      dsMockUtils.createQueryStub('identity', 'didRecords').returns(
-        dsMockUtils.createMockDidRecord({
-          primary_key: dsMockUtils.createMockAccountId(address),
-          roles: [],
-          secondary_keys: [],
-        })
+      const keyRecordsStub = dsMockUtils.createQueryStub('identity', 'keyRecords').returns(
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockKeyRecord({
+            SecondaryKey: [
+              dsMockUtils.createMockIdentityId('someDid'),
+              dsMockUtils.createMockPermissions(),
+            ],
+          })
+        )
       );
-      /* eslint-enable @typescript-eslint/naming-convention */
+
+      didRecordsStub.returns(
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockIdentityDidRecord({
+            primaryKey: dsMockUtils.createMockOption(dsMockUtils.createMockAccountId(address)),
+          })
+        )
+      );
+
       const isDidFrozenStub = dsMockUtils.createQueryStub('identity', 'isDidFrozen', {
         returnValue: dsMockUtils.createMockBool(false),
       });
 
-      keyToIdentityIdsStub.returns(dsMockUtils.createMockIdentityId());
-
       let result = await account.isFrozen();
-      expect(result).toBe(false);
-
-      keyToIdentityIdsStub.returns(dsMockUtils.createMockIdentityId(address));
-
-      result = await account.isFrozen();
       expect(result).toBe(false);
 
       const otherAddress = 'otherAddress';
@@ -381,6 +419,11 @@ describe('Account class', () => {
 
       result = await account.isFrozen();
       expect(result).toBe(true);
+
+      keyRecordsStub.resolves(dsMockUtils.createMockOption());
+
+      result = await account.isFrozen();
+      expect(result).toBe(false);
     });
   });
 

@@ -1,11 +1,10 @@
 import { Vec } from '@polkadot/types';
-import BigNumber from 'bignumber.js';
 import {
-  ComplianceRequirement,
-  Condition as MeshCondition,
-  Ticker,
-  TxTags,
-} from 'polymesh-types/types';
+  PolymeshPrimitivesComplianceManagerComplianceRequirement,
+  PolymeshPrimitivesCondition,
+} from '@polkadot/types/lookup';
+import BigNumber from 'bignumber.js';
+import { ComplianceRequirement, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -24,6 +23,7 @@ import {
   InputCondition,
   InputRequirement,
   Requirement,
+  TxTags,
 } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -38,15 +38,15 @@ describe('setAssetRequirements procedure', () => {
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let requirementToComplianceRequirementStub: sinon.SinonStub<
     [InputRequirement, Context],
-    ComplianceRequirement
+    PolymeshPrimitivesComplianceManagerComplianceRequirement
   >;
   let ticker: string;
   let requirements: Condition[][];
   let currentRequirements: Requirement[];
   let rawTicker: Ticker;
-  let senderConditions: MeshCondition[][];
-  let receiverConditions: MeshCondition[][];
-  let rawComplianceRequirements: ComplianceRequirement[];
+  let senderConditions: PolymeshPrimitivesCondition[][];
+  let receiverConditions: PolymeshPrimitivesCondition[][];
+  let rawComplianceRequirements: PolymeshPrimitivesComplianceManagerComplianceRequirement[];
   let args: Params;
 
   beforeAll(() => {
@@ -102,17 +102,16 @@ describe('setAssetRequirements procedure', () => {
       id: new BigNumber(index),
     }));
     senderConditions = [
-      'senderConditions0' as unknown as MeshCondition[],
-      'senderConditions1' as unknown as MeshCondition[],
-      'senderConditions2' as unknown as MeshCondition[],
+      'senderConditions0' as unknown as PolymeshPrimitivesCondition[],
+      'senderConditions1' as unknown as PolymeshPrimitivesCondition[],
+      'senderConditions2' as unknown as PolymeshPrimitivesCondition[],
     ];
     receiverConditions = [
-      'receiverConditions0' as unknown as MeshCondition[],
-      'receiverConditions1' as unknown as MeshCondition[],
-      'receiverConditions2' as unknown as MeshCondition[],
+      'receiverConditions0' as unknown as PolymeshPrimitivesCondition[],
+      'receiverConditions1' as unknown as PolymeshPrimitivesCondition[],
+      'receiverConditions2' as unknown as PolymeshPrimitivesCondition[],
     ];
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    /* eslint-enable @typescript-eslint/naming-convention */
     args = {
       ticker,
       requirements,
@@ -154,11 +153,9 @@ describe('setAssetRequirements procedure', () => {
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
     requirements.forEach((conditions, index) => {
       const complianceRequirement = dsMockUtils.createMockComplianceRequirement({
-        /* eslint-disable @typescript-eslint/naming-convention */
-        sender_conditions: senderConditions[index],
-        receiver_conditions: receiverConditions[index],
+        senderConditions: senderConditions[index],
+        receiverConditions: receiverConditions[index],
         id: dsMockUtils.createMockU32(new BigNumber(index)),
-        /* eslint-enable @typescript-eslint/naming-convention */
       });
       rawComplianceRequirements.push(complianceRequirement);
       requirementToComplianceRequirementStub

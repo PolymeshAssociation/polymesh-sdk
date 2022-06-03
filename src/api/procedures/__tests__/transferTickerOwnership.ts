@@ -1,5 +1,6 @@
 import { Option } from '@polkadot/types';
 import { Moment } from '@polkadot/types/interfaces';
+import { PolymeshPrimitivesAuthorizationAuthorizationData } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { AuthorizationData, Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
@@ -36,14 +37,14 @@ describe('transferTickerOwnership procedure', () => {
   let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
   let authorizationToAuthorizationDataStub: sinon.SinonStub<
     [Authorization, Context],
-    AuthorizationData
+    PolymeshPrimitivesAuthorizationAuthorizationData
   >;
   let dateToMomentStub: sinon.SinonStub<[Date, Context], Moment>;
   let ticker: string;
   let did: string;
   let expiry: Date;
   let rawSignatory: Signatory;
-  let rawAuthorizationData: AuthorizationData;
+  let rawAuthorizationData: PolymeshPrimitivesAuthorizationAuthorizationData;
   let rawMoment: Moment;
   let args: Params;
 

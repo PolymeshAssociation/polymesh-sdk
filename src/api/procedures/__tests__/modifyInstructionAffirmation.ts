@@ -3,7 +3,6 @@ import BigNumber from 'bignumber.js';
 import {
   AffirmationStatus as MeshAffirmationStatus,
   PortfolioId as MeshPortfolioId,
-  TxTags,
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
@@ -18,7 +17,7 @@ import * as procedureUtilsModule from '~/api/procedures/utils';
 import { Context, DefaultPortfolio, Instruction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { AffirmationStatus, PortfolioLike } from '~/types';
+import { AffirmationStatus, PortfolioLike, TxTags } from '~/types';
 import { InstructionAffirmationOperation, PortfolioId } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 

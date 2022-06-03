@@ -1,5 +1,5 @@
+import { PolymeshPrimitivesTransferComplianceTransferCondition } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { TransferManager } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -18,6 +18,7 @@ import {
   PercentageTransferRestriction,
   TransferRestrictionType,
 } from '~/types';
+import * as utilsConversionModule from '~/utils/conversion';
 
 import { Count } from '../Count';
 import { Percentage } from '../Percentage';
@@ -258,8 +259,8 @@ describe('TransferRestrictionBase class', () => {
     let scopeId: string;
     let countRestriction: CountTransferRestriction;
     let percentageRestriction: PercentageTransferRestriction;
-    let rawCountRestriction: TransferManager;
-    let rawPercentageRestriction: TransferManager;
+    let rawCountRestriction: PolymeshPrimitivesTransferComplianceTransferCondition;
+    let rawPercentageRestriction: PolymeshPrimitivesTransferComplianceTransferCondition;
 
     beforeAll(() => {
       scopeId = 'someScopeId';
@@ -271,28 +272,30 @@ describe('TransferRestrictionBase class', () => {
         exemptedIds: [scopeId],
         percentage: new BigNumber(49),
       };
-      rawCountRestriction = dsMockUtils.createMockTransferManager({
-        CountTransferManager: dsMockUtils.createMockU64(countRestriction.count),
+      rawCountRestriction = dsMockUtils.createMockTransferCondition({
+        MaxInvestorCount: dsMockUtils.createMockU64(countRestriction.count),
       });
-      rawPercentageRestriction = dsMockUtils.createMockTransferManager({
-        PercentageTransferManager: dsMockUtils.createMockPermill(
+      rawPercentageRestriction = dsMockUtils.createMockTransferCondition({
+        MaxInvestorOwnership: dsMockUtils.createMockPermill(
           percentageRestriction.percentage.multipliedBy(10000)
         ),
       });
     });
 
     beforeEach(() => {
+      const maxStats = new BigNumber(2);
       context = dsMockUtils.getContextInstance();
       asset = entityMockUtils.getAssetInstance();
-      dsMockUtils.setConstMock('statistics', 'maxTransferManagersPerAsset', {
-        returnValue: dsMockUtils.createMockU32(new BigNumber(3)),
+      dsMockUtils.setConstMock('statistics', 'maxStatsPerAsset', {
+        returnValue: dsMockUtils.createMockU32(maxStats),
       });
-      dsMockUtils.createQueryStub('statistics', 'activeTransferManagers', {
-        returnValue: [rawCountRestriction, rawPercentageRestriction],
+      dsMockUtils.createQueryStub('statistics', 'assetTransferCompliances', {
+        returnValue: { requirements: [rawCountRestriction, rawPercentageRestriction] },
       });
-      dsMockUtils.createQueryStub('statistics', 'exemptEntities', {
+      dsMockUtils.createQueryStub('statistics', 'transferConditionExemptEntities', {
         entries: [[[null, dsMockUtils.createMockScopeId(scopeId)], true]],
       });
+      sinon.stub(utilsConversionModule, 'u32ToBigNumber').returns(maxStats);
     });
 
     afterEach(() => {
@@ -301,7 +304,6 @@ describe('TransferRestrictionBase class', () => {
 
     it('should return all count transfer restrictions', async () => {
       const count = new Count(asset, context);
-
       const result = await count.get();
 
       expect(result).toEqual({
@@ -320,7 +322,7 @@ describe('TransferRestrictionBase class', () => {
         availableSlots: new BigNumber(1),
       });
 
-      dsMockUtils.createQueryStub('statistics', 'exemptEntities', {
+      dsMockUtils.createQueryStub('statistics', 'transferConditionExemptEntities', {
         entries: [],
       });
 

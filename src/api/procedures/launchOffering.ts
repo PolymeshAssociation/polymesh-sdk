@@ -23,7 +23,7 @@ import {
   portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
-  stringToText,
+  stringToBytes,
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
@@ -183,7 +183,7 @@ export async function prepareLaunchOffering(
       optionize(dateToMoment)(start, context),
       optionize(dateToMoment)(end, context),
       bigNumberToBalance(minInvestment, context),
-      stringToText(name, context),
+      stringToBytes(name, context),
     ],
   });
 

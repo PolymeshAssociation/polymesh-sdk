@@ -7,10 +7,16 @@ import {
   getAuthorization,
   prepareConsumeAddMultiSigSignerAuthorization,
 } from '~/api/procedures/consumeAddMultiSigSignerAuthorization';
-import { AuthorizationRequest, Context } from '~/internal';
+import { AuthorizationRequest, Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import {
+  createMockIdentityDidRecord,
+  createMockIdentityId,
+  createMockKeyRecord,
+  createMockOption,
+} from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
-import { Authorization, AuthorizationType, Signer, TxTags } from '~/types';
+import { Authorization, AuthorizationType, ErrorCode, Signer, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -58,12 +64,10 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
     dsMockUtils.createQueryStub('identity', 'authorizations', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockAuthorization({
-          /* eslint-disable @typescript-eslint/naming-convention */
-          authorization_data: dsMockUtils.createMockAuthorizationData('RotatePrimaryKey'),
-          auth_id: new BigNumber(1),
-          authorized_by: 'someDid',
+          authorizationData: dsMockUtils.createMockAuthorizationData('RotatePrimaryKey'),
+          authId: new BigNumber(1),
+          authorizedBy: 'someDid',
           expiry: dsMockUtils.createMockOption(),
-          /* eslint-enable @typescript-eslint/naming-convention */
         })
       ),
     });
@@ -113,6 +117,13 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
     );
 
     dsMockUtils.createTxStub('multiSig', 'acceptMultisigSignerAsKey');
+    dsMockUtils.createQueryStub('identity', 'keyRecords').returns(createMockIdentityDidRecord());
+
+    dsMockUtils
+      .createQueryStub('identity', 'keyRecords')
+      .returns(
+        createMockOption(createMockKeyRecord({ PrimaryKey: createMockIdentityId('someId') }))
+      );
 
     const identity = entityMockUtils.getIdentityInstance();
     const target = entityMockUtils.getAccountInstance({
@@ -120,10 +131,13 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
       getIdentity: identity,
     });
 
-    let error;
+    const expectedError = new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The target Account is already part of an Identity',
+    });
 
-    try {
-      await prepareConsumeAddMultiSigSignerAuthorization.call(proc, {
+    return expect(
+      prepareConsumeAddMultiSigSignerAuthorization.call(proc, {
         authRequest: new AuthorizationRequest(
           {
             target,
@@ -138,19 +152,15 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
           mockContext
         ),
         accept: true,
-      });
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe('The target Account is already part of an Identity');
+      })
+    ).rejects.toThrowError(expectedError);
   });
 
   it('should add a acceptMultisigSignerAsKey transaction to the queue if the target is an Account', async () => {
     const proc = procedureMockUtils.getInstance<ConsumeAddMultiSigSignerAuthorizationParams, void>(
       mockContext
     );
-    dsMockUtils.createQueryStub('multiSig', 'keyToMultiSig', {
+    dsMockUtils.createQueryStub('identity', 'keyRecords', {
       returnValue: dsMockUtils.createMockAccountId(),
     });
 

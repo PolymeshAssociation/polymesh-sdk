@@ -1,14 +1,15 @@
+import {
+  ConfidentialIdentityClaimProofsScopeClaimProof,
+  PolymeshPrimitivesIdentityId,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import {
   Claim as MeshClaim,
-  IdentityId,
   InvestorZKProofData,
   Moment,
   Scope as MeshScope,
-  ScopeClaimProof as MeshScopeClaimProof,
   ScopeId,
-  Ticker,
-  TxTags,
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
@@ -20,7 +21,7 @@ import {
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Claim, ClaimType, Scope, ScopeType } from '~/types';
+import { Claim, ClaimType, Scope, ScopeType, TxTags } from '~/types';
 import { ScopeClaimProof } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -39,24 +40,24 @@ describe('addInvestorUniquenessClaim procedure', () => {
   let blindedScopeDidHash: string;
   let scopeClaimProof: ScopeClaimProof;
   let expiry: Date;
-  let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
+  let stringToIdentityIdStub: sinon.SinonStub<[string, Context], PolymeshPrimitivesIdentityId>;
   let claimToMeshClaimStub: sinon.SinonStub<[Claim, Context], MeshClaim>;
   let stringToInvestorZkProofDataStub: sinon.SinonStub<[string, Context], InvestorZKProofData>;
   let scopeClaimProofToMeshScopeClaimProofStub: sinon.SinonStub<
     [ScopeClaimProof, string, Context],
-    MeshScopeClaimProof
+    ConfidentialIdentityClaimProofsScopeClaimProof
   >;
   let scopeToMeshScopeStub: sinon.SinonStub<[Scope, Context], MeshScope>;
   let stringToScopeIdStub: sinon.SinonStub<[string, Context], ScopeId>;
   let dateToMomentStub: sinon.SinonStub<[Date, Context], Moment>;
-  let rawDid: IdentityId;
-  let rawTicker: Ticker;
+  let rawDid: PolymeshPrimitivesIdentityId;
+  let rawTicker: PolymeshPrimitivesTicker;
   let rawScope: MeshScope;
   let rawScopeId: ScopeId;
   let rawClaim: MeshClaim;
   let rawClaimV2: MeshClaim;
   let rawProof: InvestorZKProofData;
-  let rawScopeClaimProof: MeshScopeClaimProof;
+  let rawScopeClaimProof: ConfidentialIdentityClaimProofsScopeClaimProof;
   let rawExpiry: Moment;
   let addTransactionStub: sinon.SinonStub;
 
@@ -94,7 +95,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
     );
     scopeClaimProofToMeshScopeClaimProofStub = sinon.stub(
       utilsConversionModule,
-      'scopeClaimProofToMeshScopeClaimProof'
+      'scopeClaimProofToConfidentialIdentityClaimProof'
     );
     dateToMomentStub = sinon.stub(utilsConversionModule, 'dateToMoment');
     stringToScopeIdStub = sinon.stub(utilsConversionModule, 'stringToScopeId');
@@ -116,13 +117,13 @@ describe('addInvestorUniquenessClaim procedure', () => {
     rawScopeId = dsMockUtils.createMockScopeId(scopeId);
     rawProof = dsMockUtils.createMockInvestorZKProofData(proof);
     rawScopeClaimProof = dsMockUtils.createMockScopeClaimProof({
-      proof_scope_id_wellformed: proofScopeIdWellFormed,
-      proof_scope_id_cdd_id_match: {
-        subtract_expressions_res: subtractExpressionsRes,
-        challenge_responses: [firstChallengeResponse, secondChallengeResponse],
-        blinded_scope_did_hash: blindedScopeDidHash,
+      proofScopeIdWellformed: proofScopeIdWellFormed,
+      proofScopeIdCddIdMatch: {
+        subtractExpressionsRes,
+        challengeResponses: [firstChallengeResponse, secondChallengeResponse],
+        blindedScopeDidHash,
       },
-      scope_id: scopeId,
+      scopeId,
     });
     /* eslint-enable @typescript-eslint/naming-convention */
     rawExpiry = dsMockUtils.createMockMoment(new BigNumber(expiry.getTime()));

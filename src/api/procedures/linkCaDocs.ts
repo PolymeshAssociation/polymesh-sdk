@@ -1,8 +1,8 @@
 import BigNumber from 'bignumber.js';
 import { isEqual, remove } from 'lodash';
-import { DocumentId } from 'polymesh-types/types';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
+import { DocumentId } from '~/polkadot/polymesh';
 import { AssetDocument, ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
