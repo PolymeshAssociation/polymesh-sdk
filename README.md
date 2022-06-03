@@ -52,6 +52,12 @@ Or, if you're using yarn
 
 `yarn add @polymathnetwork/polymesh-sdk`
 
+Or, if using pnpm
+
+`pnpm add @polymathnetwork/polymesh-sdk`
+
+**NOTE** it is _highly_ recommended that you use one of these three package managers. This project uses package resolutions/overrides to pin certain problematic dependencies, and these are only supported by the aforementioned package managers. Using a different package manager may result in unexpected behavior
+
 **NOTE** if using TypeScript the compiler option "skipLibCheck" should be set to true in your tsconfig.json file
 
 #### Initializing the client
