@@ -289,7 +289,7 @@ export async function prepareCreateAsset(
 
     /*
      * if we're using custom fees because we're creating the Asset without registering first, we have to manually add
-     *   the fees for issuing
+     *   the fees for adding documents
      */
     fee = await addManualFees(fee, [{ tag: TxTags.asset.AddDocuments, feeMultiplier }], context);
 
