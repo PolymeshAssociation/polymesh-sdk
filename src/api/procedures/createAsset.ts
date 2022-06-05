@@ -115,9 +115,10 @@ async function addManualFees(
 
     return fees.times(feeMultiplier);
   });
-  const fees = await Promise.all(feePromises);
 
-  return fees.reduce((prev, curr) => prev.plus(curr), currentFee);
+  const allFees = await Promise.all(feePromises);
+
+  return allFees.reduce((prev, curr) => prev.plus(curr), currentFee);
 }
 
 /**
