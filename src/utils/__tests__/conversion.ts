@@ -3236,7 +3236,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
       let value: Claim = {
         type: ClaimType.Jurisdiction,
         code: CountryCode.Cl,
-        scope: { type: ScopeType.Identity, value: 'SOME_TICKERDid' },
+        scope: { type: ScopeType.Identity, value: 'SOME_TICKER_DID' },
       };
       const fakeResult = 'meshClaim' as unknown as MeshClaim;
       const fakeScope = 'scope' as unknown as MeshScope;
