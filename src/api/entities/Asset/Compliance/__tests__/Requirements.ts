@@ -74,7 +74,7 @@ describe('Requirements class', () => {
               type: ConditionType.IsPresent,
               claim: {
                 type: ClaimType.Exempted,
-                scope: { type: ScopeType.Ticker, value: 'someTicker' },
+                scope: { type: ScopeType.Ticker, value: 'SOME_TICKER' },
               },
               target: ConditionTarget.Both,
             },
@@ -82,7 +82,7 @@ describe('Requirements class', () => {
               type: ConditionType.IsAbsent,
               claim: {
                 type: ClaimType.Blocked,
-                scope: { type: ScopeType.Ticker, value: 'someTicker' },
+                scope: { type: ScopeType.Ticker, value: 'SOME_TICKER' },
               },
               target: ConditionTarget.Both,
             },
@@ -119,7 +119,7 @@ describe('Requirements class', () => {
             type: ConditionType.IsPresent,
             claim: {
               type: ClaimType.Exempted,
-              scope: { type: ScopeType.Ticker, value: 'someTicker' },
+              scope: { type: ScopeType.Ticker, value: 'SOME_TICKER' },
             },
             target: ConditionTarget.Both,
           },
@@ -127,7 +127,7 @@ describe('Requirements class', () => {
             type: ConditionType.IsAbsent,
             claim: {
               type: ClaimType.Blocked,
-              scope: { type: ScopeType.Ticker, value: 'someTicker' },
+              scope: { type: ScopeType.Ticker, value: 'SOME_TICKER' },
             },
             target: ConditionTarget.Both,
           },

@@ -58,7 +58,7 @@ describe('setAssetRequirements procedure', () => {
       utilsConversionModule,
       'requirementToComplianceRequirement'
     );
-    ticker = 'someTicker';
+    ticker = 'SOME_TICKER';
     requirements = [
       [
         {

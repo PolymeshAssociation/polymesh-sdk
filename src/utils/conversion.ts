@@ -98,7 +98,6 @@ import {
   CddId,
   CddStatus,
   Claim as MeshClaim,
-  ClaimType as MeshClaimType,
   ComplianceRequirementResult,
   ConditionType as MeshConditionType,
   DocumentHash,
@@ -2147,11 +2146,9 @@ export function stringToTargetIdentity(did: string | null, context: Context): Ta
 
 /**
  * @hidden
- *
- * @note helper to reduce code duplication
  */
-function claimConversion(
-  claimType: MeshClaimType | PolymeshPrimitivesIdentityClaimClaimType
+export function meshClaimTypeToClaimType(
+  claimType: PolymeshPrimitivesIdentityClaimClaimType
 ): ClaimType {
   if (claimType.isJurisdiction) {
     return ClaimType.Jurisdiction;
@@ -2185,20 +2182,11 @@ function claimConversion(
     return ClaimType.Exempted;
   }
 
-  return ClaimType.Blocked;
-}
-
-/**
- * @hidden
- */
-export function claimTypeToClaimType(
-  claimType: PolymeshPrimitivesIdentityClaimClaimType
-): ClaimType {
   if (claimType.isNoType) {
     return ClaimType.NoType;
   }
 
-  return claimConversion(claimType);
+  return ClaimType.Blocked;
 }
 /**
  * @hidden
@@ -2214,7 +2202,7 @@ export function trustedIssuerToTrustedClaimIssuer(
   let trustedFor: ClaimType[] | null = null;
 
   if (claimTypes.isSpecific) {
-    trustedFor = claimTypes.asSpecific.map(claimTypeToClaimType);
+    trustedFor = claimTypes.asSpecific.map(meshClaimTypeToClaimType);
   }
 
   return {
@@ -2752,8 +2740,13 @@ export function portfolioMovementToMovePortfolioItem(
 /**
  * @hidden
  */
-export function claimTypeToMeshClaimType(claimType: ClaimType, context: Context): MeshClaimType {
-  return context.createType('ClaimType', claimType);
+export function claimTypeToMeshClaimType(
+  claimType: ClaimType,
+  context: Context
+): PolymeshPrimitivesIdentityClaimClaimType {
+  // NoData is the legacy name for NoType. Functionally they are the same, but createType only knows about one
+  const data = claimType === ClaimType.NoData ? ClaimType.NoType : claimType;
+  return context.createType('PolymeshPrimitivesIdentityClaimClaimType', data);
 }
 
 /**

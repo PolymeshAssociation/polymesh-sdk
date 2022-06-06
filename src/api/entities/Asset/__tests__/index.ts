@@ -61,7 +61,7 @@ describe('Asset class', () => {
 
   describe('method: isUniqueIdentifiers', () => {
     it('should return true if the object conforms to the interface', () => {
-      expect(Asset.isUniqueIdentifiers({ ticker: 'someTicker' })).toBe(true);
+      expect(Asset.isUniqueIdentifiers({ ticker: 'SOME_TICKER' })).toBe(true);
       expect(Asset.isUniqueIdentifiers({})).toBe(false);
       expect(Asset.isUniqueIdentifiers({ ticker: 3 })).toBe(false);
     });
@@ -201,7 +201,6 @@ describe('Asset class', () => {
 
       const callback = sinon.stub();
       const result = await asset.details(callback);
-      console.log('calls', callback.getCalls());
       expect(result).toBe(unsubCallback);
       sinon.assert.calledWithExactly(
         callback,

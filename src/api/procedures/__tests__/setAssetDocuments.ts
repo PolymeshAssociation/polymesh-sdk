@@ -53,7 +53,7 @@ describe('setAssetDocuments procedure', () => {
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     sinon.stub(utilsConversionModule, 'signerValueToSignatory');
     assetDocumentToDocumentStub = sinon.stub(utilsConversionModule, 'assetDocumentToDocument');
-    ticker = 'someTicker';
+    ticker = 'SOME_TICKER';
     documents = [
       {
         name: 'someDocument',

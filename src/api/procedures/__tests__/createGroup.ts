@@ -10,10 +10,11 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/createGroup';
+import * as procedureUtilsModule from '~/api/procedures/utils';
 import { Context, CustomPermissionGroup } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { PermissionGroupType, PermissionType, TxTags } from '~/types';
+import { PermissionType, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
@@ -33,6 +34,7 @@ describe('createGroup procedure', () => {
     type: PermissionType.Include,
     values: [TxTags.sto.Invest, TxTags.asset.CreateAsset],
   };
+  let target: string;
   const rawTicker = dsMockUtils.createMockTicker(ticker);
   const rawExtrinsicPermissions = dsMockUtils.createMockExtrinsicPermissions({
     These: [
@@ -64,6 +66,7 @@ describe('createGroup procedure', () => {
       utilsConversionModule,
       'permissionsLikeToPermissions'
     );
+    target = 'someDid';
   });
 
   beforeEach(() => {
@@ -102,85 +105,36 @@ describe('createGroup procedure', () => {
   });
 
   it('should throw an error if there already exists a group with exactly the same permissions', async () => {
-    const customId = new BigNumber(1);
+    const errorMsg = 'ERROR';
+    const assertGroupDoesNotExistStub = sinon.stub(procedureUtilsModule, 'assertGroupDoesNotExist');
+    assertGroupDoesNotExistStub.rejects(new Error(errorMsg));
 
-    let proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(mockContext, {
-      asset: entityMockUtils.getAssetInstance({
-        ticker,
-        permissionsGetGroups: {
-          custom: [
-            entityMockUtils.getCustomPermissionGroupInstance({
-              ticker,
-              id: customId,
-              getPermissions: {
-                transactions,
-                transactionGroups: [],
-              },
-            }),
+    const args = {
+      ticker,
+      permissions: { transactions },
+    };
+
+    permissionsLikeToPermissionsStub
+      .withArgs({ transactions }, mockContext)
+      .returns({ transactions });
+
+    const proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(
+      mockContext,
+      {
+        asset: entityMockUtils.getAssetInstance({
+          permissionsGetAgents: [
+            {
+              agent: entityMockUtils.getIdentityInstance({ did: target }),
+              group: entityMockUtils.getKnownPermissionGroupInstance(),
+            },
           ],
-          known: [],
-        },
-      }),
-    });
+        }),
+      }
+    );
 
-    permissionsLikeToPermissionsStub.returns({ transactions });
+    await expect(prepareCreateGroup.call(proc, args)).rejects.toThrow(errorMsg);
 
-    let error;
-
-    try {
-      await prepareCreateGroup.call(proc, {
-        ticker,
-        permissions: { transactions },
-      });
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe('There already exists a group with the exact same permissions');
-    expect(error.data.groupId).toEqual(customId);
-
-    proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(mockContext, {
-      asset: entityMockUtils.getAssetInstance({
-        ticker,
-        permissionsGetGroups: {
-          custom: [],
-          known: [
-            entityMockUtils.getKnownPermissionGroupInstance({
-              ticker,
-              type: PermissionGroupType.Full,
-              getPermissions: {
-                transactions: null,
-                transactionGroups: [],
-              },
-            }),
-          ],
-        },
-      }),
-    });
-
-    permissionsLikeToPermissionsStub.returns({
-      assets: null,
-      portfolios: null,
-      transactionGroups: [],
-      transactions: null,
-    });
-
-    try {
-      await prepareCreateGroup.call(proc, {
-        ticker,
-        permissions: {
-          transactions: {
-            type: PermissionType.Include,
-            values: [],
-          },
-        },
-      });
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe('There already exists a group with the exact same permissions');
-    expect(error.data.groupId).toEqual(PermissionGroupType.Full);
+    assertGroupDoesNotExistStub.restore();
   });
 
   it('should add a create group transaction to the queue', async () => {

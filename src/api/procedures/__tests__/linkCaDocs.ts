@@ -36,7 +36,7 @@ describe('linkCaDocs procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    ticker = 'someTicker';
+    ticker = 'SOME_TICKER';
     id = new BigNumber(1);
     documents = [
       {

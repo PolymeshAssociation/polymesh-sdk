@@ -154,7 +154,7 @@ import {
   cddStatusToBoolean,
   checkpointToRecordDateSpec,
   claimToMeshClaim,
-  claimTypeToClaimType,
+  claimTypeToMeshClaimType,
   complianceConditionsToBtreeSet,
   complianceRequirementResultToRequirementCompliance,
   complianceRequirementToRequirement,
@@ -181,6 +181,7 @@ import {
   meshAffirmationStatusToAffirmationStatus,
   meshCalendarPeriodToCalendarPeriod,
   meshClaimToClaim,
+  meshClaimTypeToClaimType,
   meshCorporateActionToCorporateActionParams,
   meshInstructionStatusToInstructionStatus,
   meshPermissionsToPermissions,
@@ -307,20 +308,20 @@ jest.mock(
 
 describe('tickerToDid', () => {
   it('should generate the ticker did', () => {
-    let ticker = 'someTicker';
+    let ticker = 'SOME_TICKER';
     let result = tickerToDid(ticker);
 
-    expect(result).toBe('0x51a5fed99b9d305ef26e6af92dd3dcb181a30a07dc5f075e260b82a92d48913c');
+    expect(result).toBe('0x3a2c35c06ab681afb326a1a1110467c0a6d9138b76fc0e1e42d0d5b06dae8e3d');
 
-    ticker = 'otherTicker';
+    ticker = 'OTHER_TICKER';
     result = tickerToDid(ticker);
 
-    expect(result).toBe('0xae37fa10f763fa5d302c5999ac06897f1fcf383dcc9787f1ede189ba161d06a5');
+    expect(result).toBe('0xc8870af7d813b13964b99580b394649088275d2393a3cfdbb1f1689dfb6f3981');
 
-    ticker = 'lastTicker';
+    ticker = 'LAST_TICKER';
     result = tickerToDid(ticker);
 
-    expect(result).toBe('0xa643b102d0c58adb3d13a28ab260644f2d0b010dc73aab99a3802b843868ab64');
+    expect(result).toBe('0x8c2d4fa74d62ff136c267a80ec3738a0eea6d804386c8238a11d8f3cc465fa79');
   });
 });
 
@@ -566,7 +567,7 @@ describe('stringToTicker and tickerToString', () => {
 
   describe('tickerToString', () => {
     it('should convert a polkadot Ticker object to a string', () => {
-      const fakeResult = 'someTicker';
+      const fakeResult = 'SOME_TICKER';
       const ticker = dsMockUtils.createMockTicker(fakeResult);
 
       const result = tickerToString(ticker);
@@ -1178,7 +1179,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
       fakeResult = {
         type: AuthorizationType.TransferTicker,
-        value: 'someTicker',
+        value: 'SOME_TICKER',
       };
       authorizationData = dsMockUtils.createMockAuthorizationData({
         TransferTicker: dsMockUtils.createMockTicker(fakeResult.value),
@@ -1234,7 +1235,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
       fakeResult = {
         type: AuthorizationType.TransferAssetOwnership,
-        value: 'someTicker',
+        value: 'SOME_TICKER',
       };
       authorizationData = dsMockUtils.createMockAuthorizationData({
         TransferAssetOwnership: dsMockUtils.createMockTicker(fakeResult.value),
@@ -1737,7 +1738,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
   describe('meshPermissionsToPermissions', () => {
     it('should convert a polkadot Permissions object to a Permissions', () => {
       const context = dsMockUtils.getContextInstance();
-      const ticker = 'someTicker';
+      const ticker = 'SOME_TICKER';
       const did = 'someDid';
       let fakeResult: Permissions = {
         assets: {
@@ -3193,7 +3194,7 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
 
       fakeResult = {
         type: ScopeType.Ticker,
-        value: 'someTicker',
+        value: 'SOME_TICKER',
       };
       scope = dsMockUtils.createMockScope({
         Ticker: dsMockUtils.createMockTicker(fakeResult.value),
@@ -3235,7 +3236,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
       let value: Claim = {
         type: ClaimType.Jurisdiction,
         code: CountryCode.Cl,
-        scope: { type: ScopeType.Identity, value: 'someTickerDid' },
+        scope: { type: ScopeType.Identity, value: 'SOME_TICKER_DID' },
       };
       const fakeResult = 'meshClaim' as unknown as MeshClaim;
       const fakeScope = 'scope' as unknown as MeshScope;
@@ -3253,7 +3254,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
 
       value = {
         type: ClaimType.Exempted,
-        scope: { type: ScopeType.Identity, value: 'someTickerDid' },
+        scope: { type: ScopeType.Identity, value: 'SOME_TICKERDid' },
       };
 
       createTypeStub
@@ -3341,7 +3342,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
 
   describe('meshClaimToClaim', () => {
     it('should convert a polkadot Claim object to a Claim', () => {
-      let scope = { type: ScopeType.Ticker, value: 'someTicker' };
+      let scope = { type: ScopeType.Ticker, value: 'SOME_TICKER' };
 
       let fakeResult: Claim = {
         type: ClaimType.Accredited,
@@ -3522,71 +3523,95 @@ describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
 
       let claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      let result = claimTypeToClaimType(claimType);
+      let result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.Affiliate;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = claimTypeToClaimType(claimType);
+      result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.Blocked;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = claimTypeToClaimType(claimType);
+      result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.BuyLockup;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = claimTypeToClaimType(claimType);
+      result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.CustomerDueDiligence;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = claimTypeToClaimType(claimType);
+      result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.Exempted;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = claimTypeToClaimType(claimType);
+      result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.Jurisdiction;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = claimTypeToClaimType(claimType);
+      result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.KnowYourCustomer;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = claimTypeToClaimType(claimType);
+      result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.NoType;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = claimTypeToClaimType(claimType);
+      result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.SellLockup;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = claimTypeToClaimType(claimType);
+      result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
+    });
+  });
+
+  describe('claimTypeToMeshClaimType', () => {
+    it('should convert a ClaimType to a polkadot ClaimType', () => {
+      const context = dsMockUtils.getContextInstance();
+      const mockClaim = dsMockUtils.createMockClaimType(ClaimType.Accredited);
+      context.createType
+        .withArgs('PolymeshPrimitivesIdentityClaimClaimType', ClaimType.Accredited)
+        .returns(mockClaim);
+
+      const result = claimTypeToMeshClaimType(ClaimType.Accredited, context);
+      expect(result).toEqual(mockClaim);
+    });
+
+    it('should treat NoData as NoType', () => {
+      const context = dsMockUtils.getContextInstance();
+      const mockClaim = dsMockUtils.createMockClaimType(ClaimType.NoType);
+      context.createType
+        .withArgs('PolymeshPrimitivesIdentityClaimClaimType', ClaimType.NoType)
+        .returns(mockClaim);
+
+      const result = claimTypeToMeshClaimType(ClaimType.NoData, context);
+      expect(result).toEqual(mockClaim);
     });
   });
 });
@@ -3617,9 +3642,9 @@ describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
       let result = scopeToMiddlewareScope(scope);
       expect(result).toEqual({ type: ClaimScopeTypeEnum.Identity, value: scope.value });
 
-      scope = { type: ScopeType.Ticker, value: 'someTicker' };
+      scope = { type: ScopeType.Ticker, value: 'SOME_TICKER' };
       result = scopeToMiddlewareScope(scope);
-      expect(result).toEqual({ type: ClaimScopeTypeEnum.Ticker, value: 'someTicker\0\0' });
+      expect(result).toEqual({ type: ClaimScopeTypeEnum.Ticker, value: 'SOME_TICKER\0' });
 
       scope = { type: ScopeType.Custom, value: 'customValue' };
       result = scopeToMiddlewareScope(scope);
@@ -3749,7 +3774,7 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
           target: ConditionTarget.Both,
           claim: {
             type: ClaimType.Exempted,
-            scope: { type: ScopeType.Identity, value: 'someTickerDid' },
+            scope: { type: ScopeType.Identity, value: 'SOME_TICKERDid' },
           },
           trustedClaimIssuers: [
             { identity: new Identity({ did }, context), trustedFor: null },
@@ -3762,11 +3787,11 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
           claims: [
             {
               type: ClaimType.Blocked,
-              scope: { type: ScopeType.Identity, value: 'someTickerDid' },
+              scope: { type: ScopeType.Identity, value: 'SOME_TICKERDid' },
             },
             {
               type: ClaimType.SellLockup,
-              scope: { type: ScopeType.Identity, value: 'someTickerDid' },
+              scope: { type: ScopeType.Identity, value: 'SOME_TICKERDid' },
             },
           ],
         },
@@ -3775,7 +3800,7 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
           target: ConditionTarget.Receiver,
           claim: {
             type: ClaimType.Jurisdiction as const,
-            scope: { type: ScopeType.Identity, value: 'someTickerDid' },
+            scope: { type: ScopeType.Identity, value: 'SOME_TICKERDid' },
             code: CountryCode.Cl,
           },
         },
