@@ -1,5 +1,4 @@
 import { bool, Option, StorageKey } from '@polkadot/types';
-import { Balance } from '@polkadot/types/interfaces';
 import { BlockNumber, Hash } from '@polkadot/types/interfaces/runtime';
 import BigNumber from 'bignumber.js';
 import { flatten } from 'lodash';
@@ -54,6 +53,7 @@ import {
   hashToString,
   identityIdToString,
   middlewareEventToEventIdentifier,
+  scopeIdToString,
   stringToTicker,
   textToString,
   tickerToDid,
@@ -488,17 +488,14 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
 
     const iuDisabled = await disableInvestorUniqueness(rawTicker);
 
-    const assembleResult = (balanceEntries: [StorageKey, Balance][]): BigNumber => {
+    if (boolToBoolean(iuDisabled)) {
+      const balanceEntries = await balanceOf.entries(rawTicker);
+
       const assetBalances = balanceEntries.filter(([, balance]) =>
         balanceToBigNumber(balance).gt(new BigNumber(0))
       );
 
       return new BigNumber(assetBalances.length);
-    };
-
-    if (boolToBoolean(iuDisabled)) {
-      const balanceEntries = await balanceOf.entries(rawTicker);
-      return assembleResult(balanceEntries);
     }
 
     const scopeIdEntries = await scopeIdOf.entries(rawTicker);
@@ -507,7 +504,23 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       scopeIdEntries.map(([, scopeId]) => balanceOfAtScope.entries(scopeId))
     );
 
-    return assembleResult(flatten(balanceEntries));
+    const assetHolders = new Set<string>();
+    flatten(balanceEntries).forEach(
+      ([
+        {
+          args: [scopeId],
+        },
+        balance,
+      ]) => {
+        if (balanceToBigNumber(balance).gt(new BigNumber(0))) {
+          assetHolders.add(scopeIdToString(scopeId));
+        }
+      }
+    );
+
+    assetHolders.forEach(x => console.log(x.toString()));
+
+    return new BigNumber(assetHolders.size);
   }
 
   /**

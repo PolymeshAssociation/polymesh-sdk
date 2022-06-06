@@ -1,4 +1,4 @@
-import { bool, u64 } from '@polkadot/types';
+import { bool } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import {
@@ -6,6 +6,7 @@ import {
   AssetName,
   FundingRoundName,
   SecurityToken as MeshSecurityToken,
+  Ticker,
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
@@ -603,50 +604,102 @@ describe('Asset class', () => {
   });
 
   describe('method: investorCount', () => {
-    let investorCountPerAssetStub: sinon.SinonStub;
-    let investorCount: BigNumber;
-    let rawInvestorCount: u64;
+    let ticker: string;
+    let rawTicker: Ticker;
+    let stringToTickerStub: sinon.SinonStub;
+    let boolToBooleanStub: sinon.SinonStub<[bool], boolean>;
 
     beforeAll(() => {
-      investorCount = new BigNumber(10);
-      rawInvestorCount = dsMockUtils.createMockU64(investorCount);
+      ticker = 'TICKER';
+      rawTicker = dsMockUtils.createMockTicker(ticker);
+      stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
+      boolToBooleanStub = sinon.stub(utilsConversionModule, 'boolToBoolean');
     });
 
     beforeEach(() => {
-      investorCountPerAssetStub = dsMockUtils.createQueryStub(
-        'statistics',
-        'investorCountPerAsset'
-      );
+      stringToTickerStub.withArgs(ticker).returns(rawTicker);
     });
 
-    it('should return the amount of unique investors that hold the Asset', async () => {
-      const ticker = 'TICKER';
+    it('should return the amount of unique investors that hold the Asset when PUIS is disabled', async () => {
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
 
-      investorCountPerAssetStub.resolves(rawInvestorCount);
+      dsMockUtils.createQueryStub('asset', 'disableInvestorUniqueness', {
+        returnValue: dsMockUtils.createMockBool(true),
+      });
+
+      boolToBooleanStub.returns(true);
+
+      dsMockUtils.createQueryStub('asset', 'balanceOf', {
+        entries: [
+          tuple(
+            [rawTicker, dsMockUtils.createMockIdentityId('0x600')],
+            dsMockUtils.createMockBalance(new BigNumber(100))
+          ),
+          tuple(
+            [rawTicker, dsMockUtils.createMockIdentityId('0x500')],
+            dsMockUtils.createMockBalance(new BigNumber(100))
+          ),
+          tuple(
+            [rawTicker, dsMockUtils.createMockIdentityId('0x400')],
+            dsMockUtils.createMockBalance(new BigNumber(0))
+          ),
+        ],
+      });
 
       const result = await asset.investorCount();
 
-      expect(result).toEqual(investorCount);
+      expect(result).toEqual(new BigNumber(2));
     });
 
-    it('should allow subscription', async () => {
-      const ticker = 'TICKER';
+    it('should return the amount of unique investors that hold the Asset when PUIS is enabled', async () => {
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
-      const unsubCallback = 'unsubCallBack';
 
-      investorCountPerAssetStub.callsFake(async (_, cbFunc) => {
-        cbFunc(rawInvestorCount);
-        return unsubCallback;
+      dsMockUtils.createQueryStub('asset', 'disableInvestorUniqueness', {
+        returnValue: dsMockUtils.createMockBool(false),
       });
 
-      const callback = sinon.stub();
-      const result = await asset.investorCount(callback);
+      boolToBooleanStub.returns(false);
 
-      expect(result).toEqual(unsubCallback);
-      sinon.assert.calledWithExactly(callback, investorCount);
+      const identityScopes = [
+        {
+          scopeId: dsMockUtils.createMockScopeId('someScopeId'),
+          identityId: dsMockUtils.createMockIdentityId('someDid'),
+          balance: dsMockUtils.createMockBalance(new BigNumber(100)),
+        },
+        {
+          scopeId: dsMockUtils.createMockScopeId('someScopeId'),
+          identityId: dsMockUtils.createMockIdentityId('someOtherDid'),
+          balance: dsMockUtils.createMockBalance(new BigNumber(50)),
+        },
+        {
+          scopeId: dsMockUtils.createMockScopeId('randomScopeId'),
+          identityId: dsMockUtils.createMockIdentityId('randomDid'),
+          balance: dsMockUtils.createMockBalance(new BigNumber(10)),
+        },
+        {
+          scopeId: dsMockUtils.createMockScopeId('excludedScopeId'),
+          identityId: dsMockUtils.createMockIdentityId('zeroCountDid'),
+          balance: dsMockUtils.createMockBalance(new BigNumber(0)),
+        },
+      ];
+
+      dsMockUtils.createQueryStub('asset', 'scopeIdOf', {
+        entries: identityScopes.map(({ identityId, scopeId }) =>
+          tuple([rawTicker, identityId], scopeId)
+        ),
+      });
+
+      dsMockUtils.createQueryStub('asset', 'balanceOfAtScope', {
+        entries: identityScopes.map(({ identityId, scopeId, balance }) =>
+          tuple([scopeId, identityId], balance)
+        ),
+      });
+
+      const result = await asset.investorCount();
+
+      expect(result).toEqual(new BigNumber(2));
     });
   });
 
