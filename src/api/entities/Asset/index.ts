@@ -491,8 +491,8 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
     if (boolToBoolean(iuDisabled)) {
       const balanceEntries = await balanceOf.entries(rawTicker);
 
-      const assetBalances = balanceEntries.filter(([, balance]) =>
-        balanceToBigNumber(balance).gt(new BigNumber(0))
+      const assetBalances = balanceEntries.filter(
+        ([, balance]) => !balanceToBigNumber(balance).isZero()
       );
 
       return new BigNumber(assetBalances.length);
@@ -512,13 +512,11 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
         },
         balance,
       ]) => {
-        if (balanceToBigNumber(balance).gt(new BigNumber(0))) {
+        if (!balanceToBigNumber(balance).isZero()) {
           assetHolders.add(scopeIdToString(scopeId));
         }
       }
     );
-
-    assetHolders.forEach(x => console.log(x.toString()));
 
     return new BigNumber(assetHolders.size);
   }
