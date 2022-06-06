@@ -146,7 +146,7 @@ import {
   cddStatusToBoolean,
   checkpointToRecordDateSpec,
   claimToMeshClaim,
-  claimTypeToClaimType,
+  claimTypeToMeshClaimType,
   complianceConditionsToBtreeSet,
   complianceRequirementResultToRequirementCompliance,
   complianceRequirementToRequirement,
@@ -173,6 +173,7 @@ import {
   meshAffirmationStatusToAffirmationStatus,
   meshCalendarPeriodToCalendarPeriod,
   meshClaimToClaim,
+  meshClaimTypeToClaimType,
   meshCorporateActionToCorporateActionParams,
   meshInstructionStatusToInstructionStatus,
   meshPermissionsToPermissions,
@@ -3523,71 +3524,95 @@ describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
 
       let claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      let result = claimTypeToClaimType(claimType);
+      let result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.Affiliate;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = claimTypeToClaimType(claimType);
+      result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.Blocked;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = claimTypeToClaimType(claimType);
+      result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.BuyLockup;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = claimTypeToClaimType(claimType);
+      result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.CustomerDueDiligence;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = claimTypeToClaimType(claimType);
+      result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.Exempted;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = claimTypeToClaimType(claimType);
+      result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.Jurisdiction;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = claimTypeToClaimType(claimType);
+      result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.KnowYourCustomer;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = claimTypeToClaimType(claimType);
+      result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.NoType;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = claimTypeToClaimType(claimType);
+      result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.SellLockup;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
-      result = claimTypeToClaimType(claimType);
+      result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
+    });
+  });
+
+  describe('claimTypeToMeshClaimType', () => {
+    it('should convert a ClaimType to a polkadot ClaimType', () => {
+      const context = dsMockUtils.getContextInstance();
+      const mockClaim = dsMockUtils.createMockClaimType(ClaimType.Accredited);
+      context.createType
+        .withArgs('PolymeshPrimitivesIdentityClaimClaimType', ClaimType.Accredited)
+        .returns(mockClaim);
+
+      const result = claimTypeToMeshClaimType(ClaimType.Accredited, context);
+      expect(result).toEqual(mockClaim);
+    });
+
+    it('should treat NoData as NoType', () => {
+      const context = dsMockUtils.getContextInstance();
+      const mockClaim = dsMockUtils.createMockClaimType(ClaimType.NoType);
+      context.createType
+        .withArgs('PolymeshPrimitivesIdentityClaimClaimType', ClaimType.NoType)
+        .returns(mockClaim);
+
+      const result = claimTypeToMeshClaimType(ClaimType.NoData, context);
+      expect(result).toEqual(mockClaim);
     });
   });
 });
