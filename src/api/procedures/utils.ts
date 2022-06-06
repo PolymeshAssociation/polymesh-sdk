@@ -600,11 +600,14 @@ export async function assertAuthorizationRequestValid(
 
 /**
  * @hidden
+ *
+ * Retrieve the Permission Group that has the same permissions as the ones passed as input, or undefined if
+ *   there is no matching group
  */
-export async function assertGroupDoesNotExist(
+export async function getGroupFromPermissions(
   asset: Asset,
   permissions: TransactionPermissions | null
-): Promise<void> {
+): Promise<(CustomPermissionGroup | KnownPermissionGroup) | undefined> {
   const { custom, known } = await asset.permissions.getGroups();
   const allGroups = [...custom, ...known];
 
@@ -614,13 +617,26 @@ export async function assertGroupDoesNotExist(
     ({ transactions: transactionPermissions }) => isEqual(transactionPermissions, permissions)
   );
 
-  if (duplicatedGroupIndex > -1) {
-    const group = allGroups[duplicatedGroupIndex];
+  return allGroups[duplicatedGroupIndex];
+}
 
+/**
+ * @hidden
+ */
+export async function assertGroupDoesNotExist(
+  asset: Asset,
+  permissions: TransactionPermissions | null
+): Promise<void> {
+  const matchingGroup = await getGroupFromPermissions(asset, permissions);
+
+  if (matchingGroup) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
       message: 'There already exists a group with the exact same permissions',
-      data: { groupId: group instanceof CustomPermissionGroup ? group.id : group.type },
+      data: {
+        groupId:
+          matchingGroup instanceof CustomPermissionGroup ? matchingGroup.id : matchingGroup.type,
+      },
     });
   }
 }

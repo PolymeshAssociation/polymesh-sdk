@@ -14,12 +14,15 @@ import {
   assertRequirementsNotTooComplex,
   assertSecondaryAccounts,
   createAuthorizationResolver,
+  getGroupFromPermissions,
   UnreachableCaseError,
 } from '~/api/procedures/utils';
 import {
+  Asset,
   AuthorizationRequest,
   CheckpointSchedule,
   Context,
+  CustomPermissionGroup,
   Identity,
   Instruction,
   PolymeshError,
@@ -1555,5 +1558,56 @@ describe('assertGroupNotExists', () => {
     }
 
     expect(error).toBeUndefined();
+  });
+});
+
+describe('getGroupFromPermissions', () => {
+  const ticker = 'SOME_TICKER';
+
+  const transactions = {
+    type: PermissionType.Include,
+    values: [TxTags.sto.Invest, TxTags.asset.CreateAsset],
+  };
+  const customId = new BigNumber(1);
+
+  let asset: Asset;
+
+  beforeAll(() => {
+    entityMockUtils.initMocks();
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    asset = entityMockUtils.getAssetInstance({
+      ticker,
+      permissionsGetGroups: {
+        custom: [
+          entityMockUtils.getCustomPermissionGroupInstance({
+            ticker,
+            id: customId,
+            getPermissions: {
+              transactions,
+              transactionGroups: [],
+            },
+          }),
+        ],
+        known: [],
+      },
+    });
+  });
+
+  it('should return a Permission Group if there is one with the same permissions', async () => {
+    const result = (await getGroupFromPermissions(asset, transactions)) as CustomPermissionGroup;
+
+    expect(result.id).toEqual(customId);
+  });
+
+  it('should return undefined if there is no group with the passed permissions', async () => {
+    const result = await getGroupFromPermissions(asset, {
+      type: PermissionType.Exclude,
+      values: [TxTags.authorship.SetUncles],
+    });
+
+    expect(result).toBeUndefined();
   });
 });

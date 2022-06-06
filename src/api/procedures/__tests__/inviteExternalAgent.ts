@@ -167,11 +167,49 @@ describe('inviteExternalAgent procedure', () => {
     );
   });
 
-  it('should throw an error if the passed permissions already correspond to an existing group', async () => {
-    const errorMsg = 'ERROR';
-    const assertGroupDoesNotExistStub = sinon
-      .stub(procedureUtilsModule, 'assertGroupDoesNotExist')
-      .rejects(new Error(errorMsg));
+  it('should add an add authorization transaction to the queue if an existing group is passed', async () => {
+    const transaction = dsMockUtils.createTxStub('identity', 'addAuthorization');
+    const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest, Storage>(
+      mockContext,
+      {
+        asset: entityMockUtils.getAssetInstance({
+          permissionsGetAgents: [
+            {
+              agent: entityMockUtils.getIdentityInstance({ isEqual: false }),
+              group: entityMockUtils.getCustomPermissionGroupInstance(),
+            },
+          ],
+        }),
+      }
+    );
+
+    await prepareInviteExternalAgent.call(proc, {
+      target,
+      ticker,
+      permissions: entityMockUtils.getKnownPermissionGroupInstance(),
+    });
+
+    sinon.assert.calledWith(
+      addTransactionStub,
+      sinon.match({
+        transaction,
+        resolvers: sinon.match.array,
+        args: [rawSignatory, rawAuthorizationData, null],
+      })
+    );
+  });
+
+  it('should use the existing group ID if there is a group with the same permissions as the ones passed', async () => {
+    const groupId = new BigNumber(10);
+    const transaction = dsMockUtils.createTxStub('identity', 'addAuthorization');
+    const getGroupFromPermissionsStub = sinon
+      .stub(procedureUtilsModule, 'getGroupFromPermissions')
+      .resolves(
+        entityMockUtils.getCustomPermissionGroupInstance({
+          ticker,
+          id: groupId,
+        })
+      );
 
     const args = {
       target,
@@ -193,43 +231,7 @@ describe('inviteExternalAgent procedure', () => {
       }
     );
 
-    await expect(prepareInviteExternalAgent.call(proc, args)).rejects.toThrow(errorMsg);
-
-    assertGroupDoesNotExistStub.restore();
-  });
-
-  it('should add an add authorization transaction to the queue if the group already exists', async () => {
-    const transaction = dsMockUtils.createTxStub('identity', 'addAuthorization');
-    const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest, Storage>(
-      mockContext,
-      {
-        asset: entityMockUtils.getAssetInstance({
-          permissionsGetAgents: [
-            {
-              agent: entityMockUtils.getIdentityInstance({ isEqual: false }),
-              group: entityMockUtils.getCustomPermissionGroupInstance(),
-            },
-          ],
-        }),
-      }
-    );
-
-    type AuthCallback = () => AuthorizationData;
-    procedureMockUtils.getAddProcedureStub().resolves({
-      transform: (cb: AuthCallback & { transform: { cb: AuthCallback } }) => {
-        const res = cb();
-        return {
-          ...res,
-          transform: (ocb: AuthCallback) => ocb(),
-        };
-      },
-    });
-
-    await prepareInviteExternalAgent.call(proc, {
-      target,
-      ticker,
-      permissions: entityMockUtils.getKnownPermissionGroupInstance(),
-    });
+    await prepareInviteExternalAgent.call(proc, args);
 
     sinon.assert.calledWith(
       addTransactionStub,
@@ -239,6 +241,8 @@ describe('inviteExternalAgent procedure', () => {
         args: [rawSignatory, rawAuthorizationData, null],
       })
     );
+
+    getGroupFromPermissionsStub.restore();
   });
 
   it('should add a create group and add authorization transaction to the queue if the group does not exist', async () => {
