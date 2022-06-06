@@ -1,7 +1,7 @@
 import { PolymeshPrimitivesAuthorizationAuthorizationData } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { AgentGroup, AuthorizationData, Signatory, Ticker } from 'polymesh-types/types';
+import { AgentGroup, Signatory, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
