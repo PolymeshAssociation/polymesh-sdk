@@ -500,12 +500,12 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
 
     const scopeIdEntries = await scopeIdOf.entries(rawTicker);
 
-    const balanceEntries = await Promise.all(
+    const scopeBalanceEntries = await Promise.all(
       scopeIdEntries.map(([, scopeId]) => balanceOfAtScope.entries(scopeId))
     );
 
     const assetHolders = new Set<string>();
-    flatten(balanceEntries).forEach(
+    flatten(scopeBalanceEntries).forEach(
       ([
         {
           args: [scopeId],
