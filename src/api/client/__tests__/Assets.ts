@@ -150,7 +150,7 @@ describe('Assets Class', () => {
         },
       });
 
-      const isTickerAvailable = await assets.isTickerAvailable({ ticker: 'someTicker' });
+      const isTickerAvailable = await assets.isTickerAvailable({ ticker: 'SOME_TICKER' });
 
       expect(isTickerAvailable).toBeFalsy();
     });
@@ -173,7 +173,7 @@ describe('Assets Class', () => {
       });
 
       const callback = sinon.stub();
-      const result = await assets.isTickerAvailable({ ticker: 'someTicker' }, callback);
+      const result = await assets.isTickerAvailable({ ticker: 'SOME_TICKER' }, callback);
 
       expect(result).toBe(unsubCallback);
       sinon.assert.calledWithExactly(callback, true);
@@ -245,7 +245,7 @@ describe('Assets Class', () => {
             dsMockUtils.createMockAssetOwnershipRelation('TickerOwned')
           ),
           tuple(
-            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker('someTicker')],
+            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker('SOME_TICKER')],
             dsMockUtils.createMockAssetOwnershipRelation('AssetOwned')
           ),
           tuple(
@@ -394,7 +394,7 @@ describe('Assets Class', () => {
             dsMockUtils.createMockAssetOwnershipRelation('AssetOwned')
           ),
           tuple(
-            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker('someTicker')],
+            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker('SOME_TICKER')],
             dsMockUtils.createMockAssetOwnershipRelation('TickerOwned')
           ),
           tuple(

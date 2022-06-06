@@ -262,7 +262,7 @@ describe('createClaim', () => {
     });
 
     type = 'InvestorUniqueness';
-    scope = { type: ClaimScopeTypeEnum.Ticker, value: 'someTicker' };
+    scope = { type: ClaimScopeTypeEnum.Ticker, value: 'SOME_TICKER' };
 
     result = createClaim(type, null, scope, id, undefined);
     expect(result).toEqual({

@@ -48,7 +48,7 @@ describe('transferAssetOwnership procedure', () => {
       'authorizationToAuthorizationData'
     );
     dateToMomentStub = sinon.stub(utilsConversionModule, 'dateToMoment');
-    ticker = 'someTicker';
+    ticker = 'SOME_TICKER';
     did = 'someOtherDid';
     expiry = new Date('10/14/3040');
     rawSignatory = dsMockUtils.createMockSignatory({

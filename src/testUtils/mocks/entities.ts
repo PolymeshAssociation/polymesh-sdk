@@ -115,6 +115,7 @@ interface IdentityOptions extends EntityOptions {
   getPrimaryAccount?: EntityGetter<PermissionedAccount>;
   authorizationsGetReceived?: EntityGetter<AuthorizationRequest[]>;
   authorizationsGetSent?: EntityGetter<ResultSet<AuthorizationRequest>>;
+  authorizationsGetOne?: EntityGetter<AuthorizationRequest>;
   getVenues?: EntityGetter<Venue[]>;
   getScopeId?: EntityGetter<string | null>;
   getAssetBalance?: EntityGetter<BigNumber>;
@@ -476,6 +477,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     authorizations = {} as {
       getReceived: sinon.SinonStub;
       getSent: sinon.SinonStub;
+      getOne: sinon.SinonStub;
     };
 
     assetPermissions = {} as {
@@ -512,6 +514,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
       this.getPrimaryAccount = createEntityGetterStub(opts.getPrimaryAccount);
       this.authorizations.getReceived = createEntityGetterStub(opts.authorizationsGetReceived);
       this.authorizations.getSent = createEntityGetterStub(opts.authorizationsGetSent);
+      this.authorizations.getOne = createEntityGetterStub(opts.authorizationsGetOne);
       this.assetPermissions.get = createEntityGetterStub(opts.assetPermissionsGet);
       this.assetPermissions.getGroup = createEntityGetterStub(opts.assetPermissionsGetGroup);
       this.assetPermissions.hasPermissions = createEntityGetterStub(
@@ -534,6 +537,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     isCddProvider: false,
     authorizationsGetReceived: [],
     authorizationsGetSent: { data: [], next: null, count: new BigNumber(0) },
+    authorizationsGetOne: getAuthorizationRequestInstance(),
     getVenues: [],
     getScopeId: 'someScopeId',
     getAssetBalance: new BigNumber(100),
