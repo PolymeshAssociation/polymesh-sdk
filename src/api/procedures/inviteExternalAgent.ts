@@ -49,7 +49,7 @@ export interface InviteExternalAgentParams {
     | KnownPermissionGroup
     | CustomPermissionGroup
     | {
-        transactions: TransactionPermissions;
+        transactions: TransactionPermissions | null;
       }
     | {
         transactionGroups: TxGroup[];
