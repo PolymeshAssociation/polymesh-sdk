@@ -61,7 +61,7 @@ describe('Asset class', () => {
 
   describe('method: isUniqueIdentifiers', () => {
     it('should return true if the object conforms to the interface', () => {
-      expect(Asset.isUniqueIdentifiers({ ticker: 'someTicker' })).toBe(true);
+      expect(Asset.isUniqueIdentifiers({ ticker: 'SOME_TICKER' })).toBe(true);
       expect(Asset.isUniqueIdentifiers({})).toBe(false);
       expect(Asset.isUniqueIdentifiers({ ticker: 3 })).toBe(false);
     });
@@ -188,8 +188,8 @@ describe('Asset class', () => {
 
     it('should allow subscription', async () => {
       const unsubCallback = 'unsubCallBack';
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/naming-convention
-      (rawToken as any).primary_issuance_agent = dsMockUtils.createMockOption();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (rawToken as any).primaryIssuanceAgent = dsMockUtils.createMockOption();
 
       dsMockUtils.createQueryStub('asset', 'tokens').callsFake(async (_, cbFunc) => {
         cbFunc(rawToken);
@@ -197,9 +197,10 @@ describe('Asset class', () => {
         return unsubCallback;
       });
 
+      bytesToStringStub.withArgs(rawName).returns(name);
+
       const callback = sinon.stub();
       const result = await asset.details(callback);
-
       expect(result).toBe(unsubCallback);
       sinon.assert.calledWithExactly(
         callback,
@@ -314,6 +315,7 @@ describe('Asset class', () => {
 
         return unsubCallback;
       });
+      bytesToStringStub.withArgs(rawFundingRound).returns(fundingRound);
 
       const callback = sinon.stub();
       const result = await asset.currentFundingRound(callback);
@@ -803,12 +805,12 @@ describe('Asset class', () => {
     });
   });
 
-  describe('method: toJson', () => {
+  describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker: 'SOME_TICKER' }, context);
 
-      expect(asset.toJson()).toBe('SOME_TICKER');
+      expect(asset.toHuman()).toBe('SOME_TICKER');
     });
   });
 });

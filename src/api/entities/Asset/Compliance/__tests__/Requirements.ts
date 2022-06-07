@@ -11,6 +11,7 @@ import { Params } from '~/api/procedures/setAssetRequirements';
 import { Asset, Context, Namespace, TransactionQueue } from '~/internal';
 import { AssetComplianceResult } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { MockCodec } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import {
   ClaimType,
@@ -73,7 +74,7 @@ describe('Requirements class', () => {
               type: ConditionType.IsPresent,
               claim: {
                 type: ClaimType.Exempted,
-                scope: { type: ScopeType.Ticker, value: 'someTicker' },
+                scope: { type: ScopeType.Ticker, value: 'SOME_TICKER' },
               },
               target: ConditionTarget.Both,
             },
@@ -81,7 +82,7 @@ describe('Requirements class', () => {
               type: ConditionType.IsAbsent,
               claim: {
                 type: ClaimType.Blocked,
-                scope: { type: ScopeType.Ticker, value: 'someTicker' },
+                scope: { type: ScopeType.Ticker, value: 'SOME_TICKER' },
               },
               target: ConditionTarget.Both,
             },
@@ -118,7 +119,7 @@ describe('Requirements class', () => {
             type: ConditionType.IsPresent,
             claim: {
               type: ClaimType.Exempted,
-              scope: { type: ScopeType.Ticker, value: 'someTicker' },
+              scope: { type: ScopeType.Ticker, value: 'SOME_TICKER' },
             },
             target: ConditionTarget.Both,
           },
@@ -126,7 +127,7 @@ describe('Requirements class', () => {
             type: ConditionType.IsAbsent,
             claim: {
               type: ClaimType.Blocked,
-              scope: { type: ScopeType.Ticker, value: 'someTicker' },
+              scope: { type: ScopeType.Ticker, value: 'SOME_TICKER' },
             },
             target: ConditionTarget.Both,
           },
@@ -214,7 +215,7 @@ describe('Requirements class', () => {
 
     let queryMultiStub: sinon.SinonStub;
     let queryMultiResult: [
-      PolymeshPrimitivesComplianceManagerAssetCompliance,
+      MockCodec<PolymeshPrimitivesComplianceManagerAssetCompliance>,
       Vec<PolymeshPrimitivesIdentityId>
     ];
 
@@ -307,7 +308,7 @@ describe('Requirements class', () => {
               id: dsMockUtils.createMockU32(new BigNumber(2)),
             }),
           ],
-        } as PolymeshPrimitivesComplianceManagerAssetCompliance,
+        } as unknown as MockCodec<PolymeshPrimitivesComplianceManagerAssetCompliance>,
         defaultClaimIssuers as unknown as Vec<PolymeshPrimitivesIdentityId>,
       ];
 

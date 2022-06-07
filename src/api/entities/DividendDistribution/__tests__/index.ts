@@ -17,6 +17,7 @@ import {
   TargetTreatment,
   TaxWithholding,
 } from '~/types';
+import { MAX_DECIMALS } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -63,15 +64,24 @@ describe('DividendDistribution class', () => {
     ticker = 'SOME_TICKER';
     declarationDate = new Date('10/14/1987 UTC');
     description = 'something';
+    const targetIdentity = entityMockUtils.getIdentityInstance({
+      did: 'targetDid',
+      toHuman: 'targetDid',
+    });
     targets = {
-      identities: [entityMockUtils.getIdentityInstance()],
+      identities: [entityMockUtils.getIdentityInstance(), targetIdentity],
       treatment: TargetTreatment.Include,
     };
-    defaultTaxWithholding = new BigNumber(10);
-    taxWithholdings = [];
+    defaultTaxWithholding = new BigNumber(0.123456);
+    taxWithholdings = [
+      {
+        identity: targetIdentity,
+        percentage: new BigNumber(5),
+      },
+    ];
     origin = entityMockUtils.getDefaultPortfolioInstance();
     currency = 'USD';
-    perShare = new BigNumber(10);
+    perShare = new BigNumber(0.234567);
     maxAmount = new BigNumber(10000);
     expiryDate = null;
     paymentDate = new Date(new Date().getTime() + 60 * 60 * 24 * 365);
@@ -311,7 +321,7 @@ describe('DividendDistribution class', () => {
       const balances = [
         {
           identity: entityMockUtils.getIdentityInstance({ did: 'someDid', isEqual: false }),
-          balance: new BigNumber(10000),
+          balance: new BigNumber(10),
         },
         {
           identity: entityMockUtils.getIdentityInstance({ did: 'otherDid', isEqual: false }),
@@ -319,7 +329,7 @@ describe('DividendDistribution class', () => {
         },
         {
           identity: excluded,
-          balance: new BigNumber(20000),
+          balance: new BigNumber(20),
         },
       ];
 
@@ -348,27 +358,46 @@ describe('DividendDistribution class', () => {
 
       let result = await dividendDistribution.getParticipants();
 
+      const amount = balances[0].balance.multipliedBy(dividendDistribution.perShare);
+      const amountAfterTax = amount
+        .minus(
+          amount.multipliedBy(defaultTaxWithholding).dividedBy(100).decimalPlaces(MAX_DECIMALS)
+        )
+        .decimalPlaces(MAX_DECIMALS);
+
       expect(result).toEqual([
         {
           identity: balances[0].identity,
-          amount: balances[0].balance.multipliedBy(dividendDistribution.perShare),
+          amount,
+          taxWithholdingPercentage: defaultTaxWithholding,
+          amountAfterTax,
           paid: true,
         },
       ]);
 
+      expect(result[0].amountAfterTax.decimalPlaces()).toBeLessThanOrEqual(MAX_DECIMALS);
+
       dividendDistribution.paymentDate = new Date('10/14/1987');
+
+      balances[0].identity = entityMockUtils.getIdentityInstance({
+        did: 'targetDid',
+        isEqual: false,
+      });
+      balances[0].identity.isEqual.onSecondCall().returns(true);
 
       allBalancesStub.onThirdCall().resolves({ data: balances, next: null });
 
       result = await dividendDistribution.getParticipants();
 
       expect(result).toEqual([
-        {
+        expect.objectContaining({
           identity: balances[0].identity,
-          amount: balances[0].balance.multipliedBy(dividendDistribution.perShare),
+          amount,
+          taxWithholdingPercentage: new BigNumber(5),
           paid: false,
-        },
+        }),
       ]);
+      expect(result[0].amountAfterTax.decimalPlaces()).toBeLessThanOrEqual(MAX_DECIMALS);
     });
 
     it("should return an empty array if the distribution checkpoint hasn't been created yet", async () => {
@@ -418,16 +447,26 @@ describe('DividendDistribution class', () => {
       expect(result?.identity.did).toBe(did);
       expect(result?.amount).toEqual(balance.multipliedBy(dividendDistribution.perShare));
       expect(result?.paid).toBe(false);
+      expect(result?.taxWithholdingPercentage).toEqual(defaultTaxWithholding);
+      expect(result?.amountAfterTax.decimalPlaces()).toBeLessThanOrEqual(MAX_DECIMALS);
 
       dividendDistribution.paymentDate = new Date('10/14/1987');
 
+      const targetIdentity = entityMockUtils.getIdentityInstance({
+        isEqual: false,
+        did: 'targetDid',
+      });
+      targetIdentity.isEqual.onSecondCall().returns(true);
+
       result = await dividendDistribution.getParticipant({
-        identity: entityMockUtils.getIdentityInstance({ isEqual: false, did }),
+        identity: targetIdentity,
       });
 
-      expect(result?.identity.did).toBe(did);
+      expect(result?.identity.did).toBe('targetDid');
       expect(result?.amount).toEqual(balance.multipliedBy(dividendDistribution.perShare));
       expect(result?.paid).toBe(false);
+      expect(result?.taxWithholdingPercentage).toEqual(new BigNumber(5));
+      expect(result?.amountAfterTax.decimalPlaces()).toBeLessThanOrEqual(MAX_DECIMALS);
 
       (context.getSigningIdentity as SinonStub).resolves(
         entityMockUtils.getIdentityInstance({ did, isEqual: false })
@@ -438,6 +477,8 @@ describe('DividendDistribution class', () => {
       expect(result?.identity.did).toBe(did);
       expect(result?.amount).toEqual(balance.multipliedBy(dividendDistribution.perShare));
       expect(result?.paid).toBe(false);
+      expect(result?.taxWithholdingPercentage).toEqual(defaultTaxWithholding);
+      expect(result?.amountAfterTax.decimalPlaces()).toBeLessThanOrEqual(MAX_DECIMALS);
     });
 
     it("should return null if the distribution checkpoint hasn't been created yet", async () => {
@@ -537,8 +578,8 @@ describe('DividendDistribution class', () => {
       expect(result.blockHash).toEqual(blockHash);
       expect(result.date).toEqual(new Date(`${datetime}Z`));
       expect(result.target.did).toBe(eventDid);
-      expect(result.amount).toEqual(balance);
-      expect(result.withheldTax).toEqual(tax);
+      expect(result.amount).toEqual(balance.shiftedBy(-6));
+      expect(result.withheldTax).toEqual(tax.shiftedBy(-4));
     });
 
     it('should return null if the query result is empty', async () => {
@@ -589,29 +630,34 @@ describe('DividendDistribution class', () => {
     });
   });
 
-  describe('method: toJson', () => {
+  describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
       dividendDistribution.targets = {
         treatment: TargetTreatment.Exclude,
         identities: [],
       };
-      expect(dividendDistribution.toJson()).toEqual({
+      expect(dividendDistribution.toHuman()).toEqual({
         id: '1',
         ticker: 'SOME_TICKER',
         declarationDate: '1987-10-14T00:00:00.000Z',
-        defaultTaxWithholding: '10',
+        defaultTaxWithholding: '0.123456',
         description: 'something',
         targets: {
           identities: [],
           treatment: TargetTreatment.Exclude,
         },
-        taxWithholdings: [],
+        taxWithholdings: [
+          {
+            identity: 'targetDid',
+            percentage: '5',
+          },
+        ],
         currency: 'USD',
         expiryDate: null,
         paymentDate: dividendDistribution.paymentDate.toISOString(),
         maxAmount: '10000',
         origin: { did: 'someDid' },
-        perShare: '10',
+        perShare: '0.234567',
       });
     });
   });

@@ -1,16 +1,8 @@
 import { ISubmittableResult } from '@polkadot/types/types';
-import P from 'bluebird';
-import { isEqual } from 'lodash';
 
-import {
-  Asset,
-  Context,
-  CustomPermissionGroup,
-  PolymeshError,
-  PostTransactionValue,
-  Procedure,
-} from '~/internal';
-import { ErrorCode, TransactionPermissions, TxGroup, TxTags } from '~/types';
+import { assertGroupDoesNotExist } from '~/api/procedures/utils';
+import { Asset, Context, CustomPermissionGroup, PostTransactionValue, Procedure } from '~/internal';
+import { TransactionPermissions, TxGroup, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   permissionsLikeToPermissions,
@@ -80,24 +72,7 @@ export async function prepareCreateGroup(
   const rawTicker = stringToTicker(ticker, context);
   const { transactions } = permissionsLikeToPermissions(permissions, context);
 
-  const { custom, known } = await asset.permissions.getGroups();
-  const allGroups = [...custom, ...known];
-
-  const currentGroupPermissions = await P.map(allGroups, group => group.getPermissions());
-
-  const duplicatedGroupIndex = currentGroupPermissions.findIndex(
-    ({ transactions: transactionPermissions }) => isEqual(transactionPermissions, transactions)
-  );
-
-  if (duplicatedGroupIndex > -1) {
-    const group = allGroups[duplicatedGroupIndex];
-
-    throw new PolymeshError({
-      code: ErrorCode.NoDataChange,
-      message: 'There already exists a group with the exact same permissions',
-      data: { groupId: group instanceof CustomPermissionGroup ? group.id : group.type },
-    });
-  }
+  await assertGroupDoesNotExist(asset, transactions);
 
   const rawExtrinsicPermissions = transactionPermissionsToExtrinsicPermissions(
     transactions,

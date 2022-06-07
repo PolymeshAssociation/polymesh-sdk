@@ -1,4 +1,6 @@
 /* istanbul ignore file */
+
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-use-before-define */
@@ -98,7 +100,7 @@ export type MockKnownPermissionGroup = Mocked<KnownPermissionGroup>;
 interface EntityOptions {
   exists?: boolean;
   isEqual?: boolean;
-  toJson?: any;
+  toHuman?: any;
 }
 
 type EntityGetter<Result> = Partial<Result> | ((...args: any) => any) | sinon.SinonStub;
@@ -115,6 +117,7 @@ interface IdentityOptions extends EntityOptions {
   getPrimaryAccount?: EntityGetter<PermissionedAccount>;
   authorizationsGetReceived?: EntityGetter<AuthorizationRequest[]>;
   authorizationsGetSent?: EntityGetter<ResultSet<AuthorizationRequest>>;
+  authorizationsGetOne?: EntityGetter<AuthorizationRequest>;
   getVenues?: EntityGetter<Venue[]>;
   getScopeId?: EntityGetter<string | null>;
   getAssetBalance?: EntityGetter<BigNumber>;
@@ -332,14 +335,14 @@ function createMockEntityClass<Options extends EntityOptions>(
     ({
       isEqual: true,
       exists: true,
-      toJson: 'DEFAULT_JSON_STRING_PLEASE_OVERRIDE',
+      toHuman: 'DEFAULT_JSON_STRING_PLEASE_OVERRIDE',
       ...defaultOptions(),
       ...options,
     } as Required<Options>);
   return class MockClass extends Class {
     isEqual = sinon.stub();
     exists = sinon.stub();
-    toJson = sinon.stub();
+    toHuman = sinon.stub();
 
     private static constructorStub = sinon.stub();
 
@@ -420,7 +423,7 @@ function createMockEntityClass<Options extends EntityOptions>(
 
       this.exists.returns(fullOpts.exists);
       this.isEqual.returns(fullOpts.isEqual);
-      this.toJson.returns(fullOpts.toJson);
+      this.toHuman.returns(fullOpts.toHuman);
     }
 
     /**
@@ -476,6 +479,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     authorizations = {} as {
       getReceived: sinon.SinonStub;
       getSent: sinon.SinonStub;
+      getOne: sinon.SinonStub;
     };
 
     assetPermissions = {} as {
@@ -512,6 +516,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
       this.getPrimaryAccount = createEntityGetterStub(opts.getPrimaryAccount);
       this.authorizations.getReceived = createEntityGetterStub(opts.authorizationsGetReceived);
       this.authorizations.getSent = createEntityGetterStub(opts.authorizationsGetSent);
+      this.authorizations.getOne = createEntityGetterStub(opts.authorizationsGetOne);
       this.assetPermissions.get = createEntityGetterStub(opts.assetPermissionsGet);
       this.assetPermissions.getGroup = createEntityGetterStub(opts.assetPermissionsGetGroup);
       this.assetPermissions.hasPermissions = createEntityGetterStub(
@@ -534,6 +539,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     isCddProvider: false,
     authorizationsGetReceived: [],
     authorizationsGetSent: { data: [], next: null, count: new BigNumber(0) },
+    authorizationsGetOne: getAuthorizationRequestInstance(),
     getVenues: [],
     getScopeId: 'someScopeId',
     getAssetBalance: new BigNumber(100),
@@ -559,7 +565,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     checkRoles: {
       result: true,
     },
-    toJson: 'someDid',
+    toHuman: 'someDid',
   }),
   ['Identity']
 );
@@ -645,7 +651,7 @@ const MockSubsidyClass = createMockEntityClass<SubsidyOptions>(
     beneficiary: 'beneficiary',
     subsidizer: 'subsidizer',
     getAllowance: new BigNumber(100),
-    toJson: {
+    toHuman: {
       beneficiary: 'beneficiary',
       subsidizer: 'subsidizer',
     },
@@ -824,6 +830,7 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
         nextCheckpointDate: new Date(new Date().getTime() + 1000 * 60 * 60),
       },
     },
+    toHuman: 'SOME_TICKER',
     investorCount: new BigNumber(0),
     toJson: 'SOME_TICKER',
   }),
@@ -1000,7 +1007,7 @@ const MockNumberedPortfolioClass = createMockEntityClass<NumberedPortfolioOption
     did: 'someDid',
     getCustodian: getIdentityInstance(),
     isCustodiedBy: true,
-    toJson: {
+    toHuman: {
       did: 'someDid',
       id: '1',
     },
@@ -1049,7 +1056,7 @@ const MockDefaultPortfolioClass = createMockEntityClass<DefaultPortfolioOptions>
     did: 'someDid',
     getCustodian: getIdentityInstance(),
     isCustodiedBy: true,
-    toJson: {
+    toHuman: {
       did: 'someDid',
     },
   }),

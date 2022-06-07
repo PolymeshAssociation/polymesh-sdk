@@ -126,7 +126,7 @@ describe('Identity class', () => {
     it('should return whether the Identity possesses all roles', async () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const roles: TickerOwnerRole[] = [
-        { type: RoleType.TickerOwner, ticker: 'someTicker' },
+        { type: RoleType.TickerOwner, ticker: 'SOME_TICKER' },
         { type: RoleType.TickerOwner, ticker: 'otherTicker' },
       ];
       const spy = jest.spyOn(identity, 'isEqual').mockReturnValue(true);
@@ -174,7 +174,7 @@ describe('Identity class', () => {
 
     it('should check whether the Identity has the Ticker Owner role', async () => {
       const identity = new Identity({ did: 'someDid' }, context);
-      const role: TickerOwnerRole = { type: RoleType.TickerOwner, ticker: 'someTicker' };
+      const role: TickerOwnerRole = { type: RoleType.TickerOwner, ticker: 'SOME_TICKER' };
       const spy = jest.spyOn(identity, 'isEqual').mockReturnValue(true);
 
       let hasRole = await identity.hasRole(role);
@@ -284,7 +284,7 @@ describe('Identity class', () => {
     it('should throw an error if the role is not recognized', () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const type = 'Fake' as RoleType;
-      const role = { type, ticker: 'someTicker' } as TickerOwnerRole;
+      const role = { type, ticker: 'SOME_TICKER' } as TickerOwnerRole;
 
       const hasRole = identity.hasRole(role);
 
@@ -304,7 +304,7 @@ describe('Identity class', () => {
     it('should return true if the Identity possesses all roles', async () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const roles: TickerOwnerRole[] = [
-        { type: RoleType.TickerOwner, ticker: 'someTicker' },
+        { type: RoleType.TickerOwner, ticker: 'SOME_TICKER' },
         { type: RoleType.TickerOwner, ticker: 'otherTicker' },
       ];
       const spy = jest.spyOn(identity, 'isEqual').mockReturnValue(true);
@@ -318,7 +318,7 @@ describe('Identity class', () => {
     it("should return false if at least one role isn't possessed by the Identity", async () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const roles: TickerOwnerRole[] = [
-        { type: RoleType.TickerOwner, ticker: 'someTicker' },
+        { type: RoleType.TickerOwner, ticker: 'SOME_TICKER' },
         { type: RoleType.TickerOwner, ticker: 'otherTicker' },
       ];
 
@@ -1319,10 +1319,10 @@ describe('Identity class', () => {
     });
   });
 
-  describe('method: toJson', () => {
+  describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
       const identity = new Identity({ did: 'someDid' }, context);
-      expect(identity.toJson()).toBe('someDid');
+      expect(identity.toHuman()).toBe('someDid');
     });
   });
 });

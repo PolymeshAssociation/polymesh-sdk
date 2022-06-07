@@ -35,7 +35,7 @@ describe('removeAssetRequirement procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    ticker = 'someTicker';
+    ticker = 'SOME_TICKER';
     requirement = new BigNumber(2);
 
     args = {
@@ -80,7 +80,7 @@ describe('removeAssetRequirement procedure', () => {
           receiver_conditions: receiverConditions[index],
           /* eslint-enable @typescript-eslint/naming-convention */
           id: dsMockUtils.createMockU32(new BigNumber(index)),
-        } as ComplianceRequirement)
+        } as unknown as ComplianceRequirement)
     );
 
     dsMockUtils.createQueryStub('complianceManager', 'assetCompliances', {

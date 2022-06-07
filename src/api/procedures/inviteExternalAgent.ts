@@ -1,8 +1,9 @@
-import { createAuthorizationResolver } from '~/api/procedures/utils';
+import { ISubmittableResult } from '@polkadot/types/types';
+
+import { assertGroupDoesNotExist, createAuthorizationResolver } from '~/api/procedures/utils';
 import {
   Asset,
   AuthorizationRequest,
-  createGroup,
   CustomPermissionGroup,
   Identity,
   KnownPermissionGroup,
@@ -23,10 +24,24 @@ import { MaybePostTransactionValue, ProcedureAuthorization } from '~/types/inter
 import {
   authorizationToAuthorizationData,
   dateToMoment,
+  permissionsLikeToPermissions,
   signerToString,
   signerValueToSignatory,
+  stringToTicker,
+  transactionPermissionsToExtrinsicPermissions,
+  u64ToBigNumber,
 } from '~/utils/conversion';
-import { optionize } from '~/utils/internal';
+import { filterEventRecords, optionize } from '~/utils/internal';
+
+export const createGroupAndAuthorizationResolver =
+  (target: Identity) =>
+  (receipt: ISubmittableResult): Promise<AuthorizationRequest> => {
+    const [{ data }] = filterEventRecords(receipt, 'identity', 'AuthorizationAdded');
+
+    const id = u64ToBigNumber(data[3]);
+
+    return target.authorizations.getOne({ id });
+  };
 
 export interface InviteExternalAgentParams {
   target: string | Identity;
@@ -43,6 +58,7 @@ export interface InviteExternalAgentParams {
    * date at which the authorization request for invitation expires (optional)
    *
    * @note if expiry date is not set, the invitation will never expire
+   * @note due to chain limitations, the expiry will be ignored if the passed `permissions` don't correspond to an existing Permission Group
    */
   expiry?: Date;
 }
@@ -71,7 +87,7 @@ export async function prepareInviteExternalAgent(
   const {
     context: {
       polymeshApi: {
-        tx: { identity },
+        tx: { identity, externalAgents },
       },
     },
     context,
@@ -114,16 +130,22 @@ export async function prepareInviteExternalAgent(
     postTransactionAuthorization = createBecomeAgentData(permissions);
     rawAuthorizationData = authorizationToAuthorizationData(postTransactionAuthorization, context);
   } else {
-    // We know this procedure returns a PostTransactionValue, so this assertion is necessary
-    const createGroupResult = (await this.addProcedure(createGroup(), {
-      ticker,
-      permissions,
-    })) as PostTransactionValue<CustomPermissionGroup>;
-    postTransactionAuthorization = createGroupResult.transform(createBecomeAgentData);
+    const rawTicker = stringToTicker(ticker, context);
+    const { transactions } = permissionsLikeToPermissions(permissions, context);
 
-    rawAuthorizationData = postTransactionAuthorization.transform(authorization =>
-      authorizationToAuthorizationData(authorization, context)
-    );
+    await assertGroupDoesNotExist(asset, transactions);
+
+    const [authRequest] = this.addTransaction({
+      transaction: externalAgents.createGroupAndAddAuth,
+      resolvers: [createGroupAndAuthorizationResolver(targetIdentity)],
+      args: [
+        rawTicker,
+        transactionPermissionsToExtrinsicPermissions(transactions, context),
+        rawSignatory,
+      ],
+    });
+
+    return authRequest;
   }
 
   const rawExpiry = optionize(dateToMoment)(expiry, context);

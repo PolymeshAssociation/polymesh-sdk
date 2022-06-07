@@ -7,7 +7,7 @@ import sinon from 'sinon';
 import { Asset, Context, PolymeshError, PostTransactionValue, Procedure } from '~/internal';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { getWebSocketInstance, MockWebSocket } from '~/testUtils/mocks/dataSources';
+import { getWebSocketInstance, MockCodec, MockWebSocket } from '~/testUtils/mocks/dataSources';
 import {
   CaCheckpointType,
   CalendarPeriod,
@@ -20,12 +20,14 @@ import {
   TxTags,
 } from '~/types';
 import { tuple } from '~/types/utils';
+import { MAX_TICKER_LENGTH } from '~/utils/constants';
 
 import {
   assertAddressValid,
   assertExpectedChainVersion,
   assertIsInteger,
   assertIsPositive,
+  assertTickerValid,
   asTicker,
   calculateNextKey,
   createClaim,
@@ -262,7 +264,7 @@ describe('createClaim', () => {
     });
 
     type = 'InvestorUniqueness';
-    scope = { type: ClaimScopeTypeEnum.Ticker, value: 'someTicker' };
+    scope = { type: ClaimScopeTypeEnum.Ticker, value: 'SOME_TICKER' };
 
     result = createClaim(type, null, scope, id, undefined);
     expect(result).toEqual({
@@ -743,7 +745,7 @@ describe('getPortfolioIdByName', () => {
   let context: Context;
   let nameToNumberStub: sinon.SinonStub;
   let portfoliosStub: sinon.SinonStub;
-  let rawName: Bytes;
+  let rawName: MockCodec<Bytes>;
   let identityId: IdentityId;
 
   beforeAll(() => {
@@ -754,7 +756,7 @@ describe('getPortfolioIdByName', () => {
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
     rawName = dsMockUtils.createMockBytes('someName');
-    rawName.eq = () => true;
+    rawName.eq.returns(true);
     identityId = dsMockUtils.createMockIdentityId('someDid');
     nameToNumberStub = dsMockUtils.createQueryStub('portfolio', 'nameToNumber');
     portfoliosStub = dsMockUtils.createQueryStub('portfolio', 'portfolios');
@@ -772,7 +774,7 @@ describe('getPortfolioIdByName', () => {
   it('should return null if no portfolio with given name is found', async () => {
     nameToNumberStub.returns(dsMockUtils.createMockU64(new BigNumber(1)));
     portfoliosStub.returns(dsMockUtils.createMockText('randomName'));
-    rawName.eq = () => false;
+    rawName.eq.returns(false);
 
     const result = await getPortfolioIdByName(identityId, rawName, context);
     expect(result).toBeNull();
@@ -786,6 +788,7 @@ describe('getPortfolioIdByName', () => {
 
     nameToNumberStub.returns(dsMockUtils.createMockU64(new BigNumber(1)));
     portfoliosStub.returns(rawName);
+    rawName.eq.returns(true);
 
     result = await getPortfolioIdByName(identityId, rawName, context);
     expect(result).toEqual(new BigNumber(1));
@@ -990,5 +993,43 @@ describe('assertExpectedChainVersion', () => {
     });
     client.triggerError(new Error('could not connect'));
     return expect(signal).rejects.toThrowError(expectedError);
+  });
+});
+
+describe('assertTickerValid', () => {
+  it('should throw an error if the string is empty', () => {
+    const ticker = '';
+
+    expect(() => assertTickerValid(ticker)).toThrow(
+      `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} character`
+    );
+  });
+
+  it('should throw an error if the string length exceeds the max ticker length', () => {
+    const ticker = 'VERY_LONG_TICKER';
+
+    expect(() => assertTickerValid(ticker)).toThrow(
+      `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} character`
+    );
+  });
+
+  it('should throw an error if the string contains unreadable characters', () => {
+    const ticker = `ILLEGAL_${String.fromCharCode(65533)}`;
+
+    expect(() => assertTickerValid(ticker)).toThrow(
+      'Only printable ASCII is allowed as ticker name'
+    );
+  });
+
+  it('should throw an error if the string is not in upper case', () => {
+    const ticker = 'FakeTicker';
+
+    expect(() => assertTickerValid(ticker)).toThrow('Ticker cannot contain lower case letters');
+  });
+
+  it('should not throw an error', () => {
+    const ticker = 'FAKE_TICKER';
+
+    assertTickerValid(ticker);
   });
 });

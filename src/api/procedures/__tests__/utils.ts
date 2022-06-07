@@ -8,6 +8,7 @@ import {
   assertCaTargetsValid,
   assertCaTaxWithholdingsValid,
   assertDistributionDatesValid,
+  assertGroupDoesNotExist,
   assertInstructionValid,
   assertPortfolioExists,
   assertRequirementsNotTooComplex,
@@ -38,12 +39,15 @@ import {
   InstructionDetails,
   InstructionStatus,
   InstructionType,
+  PermissionGroupType,
+  PermissionType,
   Signer,
   SignerType,
   SignerValue,
   TargetTreatment,
   TickerReservationStatus,
   TrustedClaimIssuer,
+  TxTags,
 } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -1042,7 +1046,7 @@ describe('authorization request validations', () => {
       // getIdentityInstance modifies the prototype, which prevents two mocks from returning different values
       const subsidizer = {
         getIdentity: () => {
-          return { hasValidCdd: () => false };
+          return { hasValidCdd: (): boolean => false };
         },
       } as unknown as Account;
 
@@ -1419,7 +1423,7 @@ describe('createAuthorizationResolver', () => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
   });
-  const filterRecords = () => [
+  const filterRecords = (): unknown => [
     { event: { data: [undefined, undefined, undefined, '3', undefined] } },
   ];
 
@@ -1438,7 +1442,7 @@ describe('createAuthorizationResolver', () => {
       mockContext
     );
     const authRequest = resolver({
-      filterRecords: filterRecords,
+      filterRecords,
     } as unknown as ISubmittableResult);
     expect(authRequest.authId).toEqual(new BigNumber(3));
   });
@@ -1465,5 +1469,91 @@ describe('createAuthorizationResolver', () => {
       filterRecords: filterRecords,
     } as unknown as ISubmittableResult);
     expect(authRequest.authId).toEqual(new BigNumber(3));
+  });
+});
+
+describe('assertGroupNotExists', () => {
+  beforeAll(() => {
+    entityMockUtils.initMocks();
+    dsMockUtils.initMocks();
+  });
+
+  it('should throw an error if there already exists a group for the asset with exactly the same permissions as the ones passed', async () => {
+    const ticker = 'SOME_TICKER';
+
+    const transactions = {
+      type: PermissionType.Include,
+      values: [TxTags.sto.Invest, TxTags.asset.CreateAsset],
+    };
+    const customId = new BigNumber(1);
+
+    let asset = entityMockUtils.getAssetInstance({
+      ticker,
+      permissionsGetGroups: {
+        custom: [
+          entityMockUtils.getCustomPermissionGroupInstance({
+            ticker,
+            id: customId,
+            getPermissions: {
+              transactions,
+              transactionGroups: [],
+            },
+          }),
+        ],
+        known: [],
+      },
+    });
+
+    let error;
+
+    try {
+      await assertGroupDoesNotExist(asset, transactions);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('There already exists a group with the exact same permissions');
+    expect(error.data.groupId).toEqual(customId);
+
+    asset = entityMockUtils.getAssetInstance({
+      ticker,
+      permissionsGetGroups: {
+        custom: [],
+        known: [
+          entityMockUtils.getKnownPermissionGroupInstance({
+            ticker,
+            type: PermissionGroupType.Full,
+            getPermissions: {
+              transactions: null,
+              transactionGroups: [],
+            },
+          }),
+        ],
+      },
+    });
+
+    error = undefined;
+
+    try {
+      await assertGroupDoesNotExist(asset, null);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('There already exists a group with the exact same permissions');
+    expect(error.data.groupId).toEqual(PermissionGroupType.Full);
+
+    error = undefined;
+
+    try {
+      await assertGroupDoesNotExist(asset, {
+        type: PermissionType.Include,
+        values: [TxTags.asset.AcceptAssetOwnershipTransfer],
+      });
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error).toBeUndefined();
   });
 });

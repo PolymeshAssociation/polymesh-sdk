@@ -108,7 +108,7 @@ describe('createAsset procedure', () => {
       'securityIdentifierToAssetIdentifier'
     );
     assetDocumentToDocumentStub = sinon.stub(utilsConversionModule, 'assetDocumentToDocument');
-    ticker = 'someTicker';
+    ticker = 'SOME_TICKER';
     name = 'someName';
     initialSupply = new BigNumber(100);
     isDivisible = true;

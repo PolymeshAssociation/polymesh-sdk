@@ -1,5 +1,12 @@
 import { bool, Bytes, Text, u8, u16, u32, u64, u128 } from '@polkadot/types';
-import { AccountId, Balance, Hash, Permill, Signature } from '@polkadot/types/interfaces';
+import {
+  AccountId,
+  Balance,
+  BlockHash,
+  Hash,
+  Permill,
+  Signature,
+} from '@polkadot/types/interfaces';
 import {
   BTreeSetIdentityId,
   BTreeSetStatUpdate,
@@ -91,7 +98,6 @@ import {
   CddId,
   CddStatus,
   Claim as MeshClaim,
-  ClaimType as MeshClaimType,
   ComplianceRequirementResult,
   ConditionType as MeshConditionType,
   DocumentHash,
@@ -144,6 +150,7 @@ import {
   DividendDistributionParams,
   ErrorCode,
   EventIdentifier,
+  ExemptKey,
   ExternalAgentCondition,
   IdentityCondition,
   IdentityWithClaims,
@@ -366,6 +373,13 @@ export function hashToString(hash: Hash): string {
  */
 export function stringToHash(hash: string, context: Context): Hash {
   return context.createType('Hash', hash);
+}
+
+/**
+ * @hidden
+ */
+export function stringToBlockHash(blockHash: string, context: Context): BlockHash {
+  return context.createType('BlockHash', blockHash);
 }
 
 /**
@@ -761,7 +775,7 @@ export function transactionPermissionsToTxGroups(
 /**
  * @hidden
  */
-function splitTag(tag: TxTag) {
+function splitTag(tag: TxTag): { palletName: string; dispatchableName: string } {
   const [modName, txName] = tag.split('.');
   const palletName = stringUpperFirst(modName);
   const dispatchableName = snakeCase(txName);
@@ -2132,10 +2146,10 @@ export function stringToTargetIdentity(did: string | null, context: Context): Ta
 
 /**
  * @hidden
- *
- * @note helper to reduce code duplication
  */
-function claimConversion(claimType: MeshClaimType | PolymeshPrimitivesIdentityClaimClaimType) {
+export function meshClaimTypeToClaimType(
+  claimType: PolymeshPrimitivesIdentityClaimClaimType
+): ClaimType {
   if (claimType.isJurisdiction) {
     return ClaimType.Jurisdiction;
   }
@@ -2168,20 +2182,11 @@ function claimConversion(claimType: MeshClaimType | PolymeshPrimitivesIdentityCl
     return ClaimType.Exempted;
   }
 
-  return ClaimType.Blocked;
-}
-
-/**
- * @hidden
- */
-export function claimTypeToClaimType(
-  claimType: PolymeshPrimitivesIdentityClaimClaimType
-): ClaimType {
   if (claimType.isNoType) {
     return ClaimType.NoType;
   }
 
-  return claimConversion(claimType);
+  return ClaimType.Blocked;
 }
 /**
  * @hidden
@@ -2197,7 +2202,7 @@ export function trustedIssuerToTrustedClaimIssuer(
   let trustedFor: ClaimType[] | null = null;
 
   if (claimTypes.isSpecific) {
-    trustedFor = claimTypes.asSpecific.map(claimTypeToClaimType);
+    trustedFor = claimTypes.asSpecific.map(meshClaimTypeToClaimType);
   }
 
   return {
@@ -2735,8 +2740,13 @@ export function portfolioMovementToMovePortfolioItem(
 /**
  * @hidden
  */
-export function claimTypeToMeshClaimType(claimType: ClaimType, context: Context): MeshClaimType {
-  return context.createType('ClaimType', claimType);
+export function claimTypeToMeshClaimType(
+  claimType: ClaimType,
+  context: Context
+): PolymeshPrimitivesIdentityClaimClaimType {
+  // NoData is the legacy name for NoType. Functionally they are the same, but createType only knows about one
+  const data = claimType === ClaimType.NoData ? ClaimType.NoType : claimType;
+  return context.createType('PolymeshPrimitivesIdentityClaimClaimType', data);
 }
 
 /**
@@ -3457,6 +3467,9 @@ export function complianceConditionsToBtreeSet(
 /**
  * @hidden
  */
-export function toExemptKey(tickerKey: TickerKey, op: PolymeshPrimitivesStatisticsStatOpType) {
+export function toExemptKey(
+  tickerKey: TickerKey,
+  op: PolymeshPrimitivesStatisticsStatOpType
+): ExemptKey {
   return { asset: tickerKey, op };
 }

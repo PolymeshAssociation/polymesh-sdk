@@ -44,7 +44,7 @@ describe('modifyComplianceRequirement procedure', () => {
       utilsConversionModule,
       'requirementToComplianceRequirement'
     );
-    ticker = 'someTicker';
+    ticker = 'SOME_TICKER';
     conditions = [
       {
         type: ConditionType.IsIdentity,

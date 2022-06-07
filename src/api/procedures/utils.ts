@@ -1,5 +1,7 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
+import P from 'bluebird';
+import { isEqual } from 'lodash';
 
 import {
   Account,
@@ -36,6 +38,7 @@ import {
   PermissionGroupType,
   Signer,
   TickerReservationStatus,
+  TransactionPermissions,
 } from '~/types';
 import { MaybePostTransactionValue, PortfolioId } from '~/types/internal';
 import { u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
@@ -62,7 +65,7 @@ export async function assertInstructionValid(
     const latestBlock = await context.getLatestBlock();
     const { endBlock } = details;
 
-    if (latestBlock >= endBlock) {
+    if (latestBlock.gte(endBlock)) {
       throw new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message: 'The Instruction cannot be modified; it has already reached its end block',
@@ -598,6 +601,30 @@ export async function assertAuthorizationRequestValid(
 /**
  * @hidden
  */
+export async function assertGroupDoesNotExist(
+  asset: Asset,
+  permissions: TransactionPermissions | null
+): Promise<void> {
+  const { custom, known } = await asset.permissions.getGroups();
+  const allGroups = [...custom, ...known];
+
+  const currentGroupPermissions = await P.map(allGroups, group => group.getPermissions());
+
+  const duplicatedGroupIndex = currentGroupPermissions.findIndex(
+    ({ transactions: transactionPermissions }) => isEqual(transactionPermissions, permissions)
+  );
+
+  if (duplicatedGroupIndex > -1) {
+    const group = allGroups[duplicatedGroupIndex];
+
+    throw new PolymeshError({
+      code: ErrorCode.NoDataChange,
+      message: 'There already exists a group with the exact same permissions',
+      data: { groupId: group instanceof CustomPermissionGroup ? group.id : group.type },
+    });
+  }
+}
+
 export const createAuthorizationResolver =
   (
     auth: MaybePostTransactionValue<Authorization>,

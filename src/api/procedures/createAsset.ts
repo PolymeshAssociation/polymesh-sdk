@@ -100,25 +100,20 @@ async function addManualFees(
     return undefined;
   }
 
-  const feePromises = tags.map(async tagData => {
-    let tag: TxTag;
-    let feeMultiplier: BigNumber;
-
-    if (typeof tagData !== 'string') {
-      ({ tag, feeMultiplier } = tagData);
-    } else {
-      tag = tagData;
-      feeMultiplier = new BigNumber(1);
-    }
-
-    const fees = await context.getProtocolFees({ tag });
-
-    return fees.times(feeMultiplier);
+  const fees = await context.getProtocolFees({
+    tags: tags.map(tagData => (typeof tagData !== 'string' ? tagData.tag : tagData)),
   });
 
-  const allFees = await Promise.all(feePromises);
+  return fees.reduce((prev, { fees: nextFees }, index) => {
+    const tagData = tags[index];
+    let feeMultiplier = new BigNumber(1);
 
-  return allFees.reduce((prev, curr) => prev.plus(curr), currentFee);
+    if (typeof tagData !== 'string') {
+      ({ feeMultiplier } = tagData);
+    }
+
+    return prev.plus(nextFees.times(feeMultiplier));
+  }, new BigNumber(0));
 }
 
 /**

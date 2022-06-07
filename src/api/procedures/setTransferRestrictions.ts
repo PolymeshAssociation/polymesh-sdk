@@ -110,7 +110,7 @@ function transformRestrictions(
       value = r.percentage;
     }
 
-    const compareConditions = (transferCondition: TransferCondition) =>
+    const compareConditions = (transferCondition: TransferCondition): boolean =>
       isSameCondition(transferCondition, value, type);
     if (!someDifference) {
       someDifference = !currentRestrictions.find(compareConditions);
