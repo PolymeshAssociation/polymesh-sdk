@@ -148,7 +148,7 @@ function getMissingTransactionPermissions(
      *   since `exemptedTransactions` contains `TxTags.identity.LeaveIdentityAsKey`, we would be
      *   removing the entire Identity module from the result, which doesn't make sense
      */
-    const txComparator = (tx: TxTag | ModuleName, exemptedTx: TxTag | ModuleName) => {
+    const txComparator = (tx: TxTag | ModuleName, exemptedTx: TxTag | ModuleName): boolean => {
       if (!tx.includes('.')) {
         return tx === exemptedTx;
       }
@@ -197,7 +197,7 @@ function getMissingPortfolioPermissions(
       const portfolioComparator = (
         a: DefaultPortfolio | NumberedPortfolio,
         b: DefaultPortfolio | NumberedPortfolio
-      ) => {
+      ): boolean => {
         const aId = portfolioToPortfolioId(a);
         const bId = portfolioToPortfolioId(b);
 
@@ -601,7 +601,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   /**
    * Return the Account's address
    */
-  public toJson(): string {
+  public toHuman(): string {
     return this.address;
   }
 }

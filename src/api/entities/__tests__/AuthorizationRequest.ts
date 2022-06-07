@@ -397,7 +397,7 @@ describe('AuthorizationRequest class', () => {
     });
   });
 
-  describe('method: toJson', () => {
+  describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
       const authorizationRequest = new AuthorizationRequest(
         {
@@ -409,7 +409,7 @@ describe('AuthorizationRequest class', () => {
         },
         context
       );
-      expect(authorizationRequest.toJson()).toEqual({
+      expect(authorizationRequest.toHuman()).toEqual({
         id: '1',
         expiry: '1987-10-14T00:00:00.000Z',
         target: {

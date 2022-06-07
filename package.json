@@ -25,7 +25,7 @@
     "semantic-release": "semantic-release",
     "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
     "format": "cross-env prettier-eslint $PWD\"/src/**/*.{ts,tsx,js,jsx}\" --write",
-    "ts-node": "npx ts-node@10.8.0 -r tsconfig-paths/register -r dotenv/config",
+    "ts-node": "yarn build:ts && ts-node --",
     "prepare": "is-ci || husky install"
   },
   "devDependencies": {
@@ -39,8 +39,8 @@
     "@graphql-codegen/typescript": "1.22.1",
     "@open-wc/webpack-import-meta-loader": "^0.4.7",
     "@ovos-media/ts-transform-paths": "^1.7.18-1",
+    "@polymathnetwork/local-signing-manager": "1.0.5",
     "@polkadot/typegen": "8.1.1",
-    "@polymathnetwork/local-signing-manager": "^1.0.3",
     "@polymathnetwork/signing-manager-types": "^1.0.3",
     "@semantic-release/changelog": "^6.0.1",
     "@types/bluebird": "^3.5.30",

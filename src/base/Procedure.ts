@@ -31,7 +31,7 @@ import { signerToString } from '~/utils/conversion';
 /**
  * @hidden
  */
-function assertOnlyOneAsset(assets: Asset[]) {
+function assertOnlyOneAsset(assets: Asset[]): void {
   if (assets.length > 1) {
     throw new PolymeshError({
       code: ErrorCode.FatalError,

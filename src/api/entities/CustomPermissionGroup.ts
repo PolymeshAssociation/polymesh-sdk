@@ -114,7 +114,7 @@ export class CustomPermissionGroup extends PermissionGroup {
   /**
    * Return the Group's static data
    */
-  public toJson(): HumanReadable {
+  public toHuman(): HumanReadable {
     const { id, asset } = this;
 
     return toHumanReadable({

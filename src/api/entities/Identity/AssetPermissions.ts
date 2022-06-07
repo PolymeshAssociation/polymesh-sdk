@@ -66,7 +66,7 @@ function isPresent(
   values: (TxTag | ModuleName)[],
   exceptions: TxTag[] | undefined,
   flipResult: boolean
-) {
+): boolean {
   const isInValues = values.some(value => isModuleOrTagMatch(value, tag));
   const isInExceptions = !!exceptions?.includes(tag);
 

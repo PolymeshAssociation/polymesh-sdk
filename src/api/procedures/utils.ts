@@ -65,7 +65,7 @@ export async function assertInstructionValid(
     const latestBlock = await context.getLatestBlock();
     const { endBlock } = details;
 
-    if (latestBlock >= endBlock) {
+    if (latestBlock.gte(endBlock)) {
       throw new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message: 'The Instruction cannot be modified; it has already reached its end block',

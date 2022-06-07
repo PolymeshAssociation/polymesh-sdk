@@ -1,5 +1,13 @@
 import { bool, Bytes, u32, u64, u128 } from '@polkadot/types';
-import { AccountId, Balance, Hash, Moment, Permill, Signature } from '@polkadot/types/interfaces';
+import {
+  AccountId,
+  Balance,
+  BlockHash,
+  Hash,
+  Moment,
+  Permill,
+  Signature,
+} from '@polkadot/types/interfaces';
 import {
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesStatisticsStat2ndKey,
@@ -216,6 +224,7 @@ import {
   statUpdatesToBtreeStatUpdate,
   storedScheduleToCheckpointScheduleParams,
   stringToAccountId,
+  stringToBlockHash,
   stringToBytes,
   stringToCddId,
   stringToDocumentHash,
@@ -527,42 +536,6 @@ describe('stringToTicker and tickerToString', () => {
 
       expect(result).toBe(fakeResult);
     });
-
-    it('should throw an error if the string is empty', () => {
-      const value = '';
-      const context = dsMockUtils.getContextInstance();
-
-      expect(() => stringToTicker(value, context)).toThrow(
-        `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} character`
-      );
-    });
-
-    it('should throw an error if the string length exceeds the max ticker length', () => {
-      const value = 'veryLongTicker';
-      const context = dsMockUtils.getContextInstance();
-
-      expect(() => stringToTicker(value, context)).toThrow(
-        `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} character`
-      );
-    });
-
-    it('should throw an error if the string contains unreadable characters', () => {
-      const value = `Illegal ${String.fromCharCode(65533)}`;
-      const context = dsMockUtils.getContextInstance();
-
-      expect(() => stringToTicker(value, context)).toThrow(
-        'Only printable ASCII is allowed as ticker name'
-      );
-    });
-
-    it('should throw an error if the string is not in upper case', () => {
-      const value = 'FakeTicker';
-      const context = dsMockUtils.getContextInstance();
-
-      expect(() => stringToTicker(value, context)).toThrow(
-        'Ticker cannot contain lower case letters'
-      );
-    });
   });
 
   describe('stringToTickerKey', () => {
@@ -723,6 +696,32 @@ describe('stringToHash and hashToString', () => {
       const result = hashToString(accountId);
       expect(result).toEqual(fakeResult);
     });
+  });
+});
+
+describe('stringToBlockHash', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a block hash string into an BlockHash', () => {
+    const blockHash = 'BlockHash';
+    const fakeResult = 'type' as unknown as BlockHash;
+    const context = dsMockUtils.getContextInstance();
+
+    context.createType.withArgs('BlockHash', blockHash).returns(fakeResult);
+
+    const result = stringToBlockHash(blockHash, context);
+
+    expect(result).toBe(fakeResult);
   });
 });
 

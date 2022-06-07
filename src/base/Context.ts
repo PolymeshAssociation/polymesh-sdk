@@ -37,6 +37,7 @@ import {
   ErrorCode,
   ModuleName,
   PlainTransactionArgument,
+  ProtocolFees,
   ResultSet,
   SimpleEnumTransactionArgument,
   SubCallback,
@@ -64,6 +65,7 @@ import {
   posRatioToBigNumber,
   signerToString,
   stringToAccountId,
+  stringToHash,
   stringToIdentityId,
   stringToTicker,
   textToString,
@@ -516,30 +518,70 @@ export class Context {
   /**
    * @hidden
    *
-   * Retrieve the protocol fees associated with running a specific transaction
+   * Retrieve the protocol fees associated with running specific transactions
    *
-   * @param tag - transaction tag (i.e. TxTags.asset.CreateAsset or "asset.createAsset")
+   * @param tags - list of transaction tags (i.e. [TxTags.asset.CreateAsset, TxTags.asset.RegisterTicker] or ["asset.createAsset", "asset.registerTicker"])
+   * @param blockHash - optional hash of the block to get the protocol fees at that block
    */
-  public async getProtocolFees({ tag }: { tag: TxTag }): Promise<BigNumber> {
+  public async getProtocolFees({
+    tags,
+    blockHash,
+  }: {
+    tags: TxTag[];
+    blockHash?: string;
+  }): Promise<ProtocolFees[]> {
     const {
       polymeshApi: {
-        query: { protocolFee },
+        query: {
+          protocolFee: { baseFees, coefficient },
+        },
       },
     } = this;
 
-    let protocolOp: ProtocolOp;
-    try {
-      protocolOp = txTagToProtocolOp(tag, this);
-    } catch (err) {
-      return new BigNumber(0);
-    }
+    const tagsMap = new Map<TxTag, ProtocolOp | undefined>();
 
-    const [baseFee, coefficient] = await Promise.all([
-      protocolFee.baseFees(protocolOp),
-      protocolFee.coefficient(),
+    tags.forEach(tag => {
+      try {
+        tagsMap.set(tag, txTagToProtocolOp(tag, this));
+      } catch (err) {
+        tagsMap.set(tag, undefined);
+      }
+    });
+
+    const [baseFeesEntries, coefficientValue] = await Promise.all([
+      blockHash ? baseFees.entriesAt(stringToHash(blockHash, this)) : baseFees.entries(),
+      coefficient(),
     ]);
 
-    return balanceToBigNumber(baseFee).multipliedBy(posRatioToBigNumber(coefficient));
+    const assembleResult = (rawProtocolOp: ProtocolOp | undefined): BigNumber => {
+      const baseFeeEntry = baseFeesEntries.find(
+        ([
+          {
+            args: [protocolOp],
+          },
+        ]) => protocolOp.eq(rawProtocolOp)
+      );
+
+      let fee = new BigNumber(0);
+
+      if (baseFeeEntry) {
+        const [, balance] = baseFeeEntry;
+        fee = balanceToBigNumber(balance).multipliedBy(posRatioToBigNumber(coefficientValue));
+      }
+
+      return fee;
+    };
+
+    const protocolFees: ProtocolFees[] = [];
+
+    tagsMap.forEach((rawProtocolOp, txTag) => {
+      protocolFees.push({
+        tag: txTag,
+        fees: assembleResult(rawProtocolOp),
+      });
+    });
+
+    return protocolFees;
   }
 
   /**
