@@ -2,10 +2,12 @@ import { TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
 import {
+  CorporateActionTargets,
   DividendDistributionDetails,
   OfferingDetails,
   ScheduleDetails,
   SubsidyData,
+  TaxWithholding,
 } from '~/api/entities/types';
 import { CountryCode, ModuleName, TxTag, TxTags } from '~/generated/types';
 import {
@@ -1397,6 +1399,26 @@ export type PrivateKey =
   | {
       seed: string;
     };
+
+/**
+ * targets of a corporate action in a flexible structure for input purposes
+ */
+export type InputCorporateActionTargets = Modify<
+  CorporateActionTargets,
+  {
+    identities: (string | Identity)[];
+  }
+>;
+
+/**
+ * per-Identity tax withholdings of a corporate action in a flexible structure for input purposes
+ */
+export type InputCorporateActionTaxWithholdings = Modify<
+  TaxWithholding,
+  {
+    identity: string | Identity;
+  }
+>[];
 
 export { TxTags, TxTag, ModuleName };
 export { EventRecord } from '@polkadot/types/interfaces';

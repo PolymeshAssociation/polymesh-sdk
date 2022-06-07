@@ -10,15 +10,14 @@ import {
 import { Asset, PolymeshError, PostTransactionValue, Procedure } from '~/internal';
 import {
   CorporateActionKind,
-  CorporateActionTargets,
   ErrorCode,
-  Identity,
   InputCaCheckpoint,
-  TaxWithholding,
+  InputCorporateActionTargets,
+  InputCorporateActionTaxWithholdings,
   TxTags,
 } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { Modify, tuple } from '~/types/utils';
+import { tuple } from '~/types/utils';
 import {
   checkpointToRecordDateSpec,
   corporateActionKindToCaKind,
@@ -62,12 +61,7 @@ export interface InitiateCorporateActionParams {
    * Asset Holder Identities to be included (or excluded) from the Corporate Action. Inclusion/exclusion is controlled by the `treatment`
    *   property. When the value is `Include`, all Asset Holders not present in the array are excluded, and vice-versa
    */
-  targets?: Modify<
-    CorporateActionTargets,
-    {
-      identities: (string | Identity)[];
-    }
-  >;
+  targets?: InputCorporateActionTargets;
   /**
    * default percentage (0-100) of the Benefits to be held for tax purposes
    */
@@ -76,12 +70,7 @@ export interface InitiateCorporateActionParams {
    * percentage (0-100) of the Benefits to be held for tax purposes from individual Asset Holder Identities.
    *   This overrides the value of `defaultTaxWithholding`
    */
-  taxWithholdings?: Modify<
-    TaxWithholding,
-    {
-      identity: string | Identity;
-    }
-  >[];
+  taxWithholdings?: InputCorporateActionTaxWithholdings;
 }
 
 export type Params = InitiateCorporateActionParams & {

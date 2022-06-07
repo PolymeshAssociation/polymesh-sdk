@@ -8,7 +8,6 @@ import {
   Context,
   DefaultPortfolio,
   DividendDistribution,
-  initiateCorporateAction,
   InitiateCorporateActionParams,
   NumberedPortfolio,
   PolymeshError,
@@ -20,6 +19,7 @@ import { ProcedureAuthorization } from '~/types/internal';
 import {
   bigNumberToBalance,
   bigNumberToU64,
+  corporateActionParamsToMeshCorporateActionParams,
   dateToMoment,
   distributionToDividendDistributionParams,
   meshCorporateActionToCorporateActionParams,
@@ -130,7 +130,11 @@ export async function prepareConfigureDividendDistribution(
     paymentDate,
     expiryDate = null,
     checkpoint,
-    ...corporateActionArgs
+    targets = null,
+    description,
+    declarationDate = new Date(),
+    defaultTaxWithholding = null,
+    taxWithholdings = null,
   } = args;
 
   if (currency === ticker) {
@@ -183,13 +187,6 @@ export async function prepareConfigureDividendDistribution(
     });
   }
 
-  const caId = await this.addProcedure(initiateCorporateAction(), {
-    ticker,
-    kind: CorporateActionKind.UnpredictableBenefit,
-    checkpoint: checkpointValue,
-    ...corporateActionArgs,
-  });
-
   const rawPortfolioNumber =
     originPortfolio &&
     optionize(bigNumberToU64)(
@@ -203,10 +200,20 @@ export async function prepareConfigureDividendDistribution(
   const rawExpiresAt = optionize(dateToMoment)(expiryDate, context);
 
   const [dividendDistribution] = this.addTransaction({
-    transaction: tx.capitalDistribution.distribute,
+    transaction: tx.corporateAction.initiateCorporateActionAndDistribute,
     resolvers: [createDividendDistributionResolver(context)],
     args: [
-      caId,
+      corporateActionParamsToMeshCorporateActionParams(
+        ticker,
+        CorporateActionKind.UnpredictableBenefit,
+        declarationDate,
+        checkpointValue,
+        description,
+        targets,
+        defaultTaxWithholding,
+        taxWithholdings,
+        context
+      ),
       rawPortfolioNumber,
       rawCurrency,
       rawPerShare,

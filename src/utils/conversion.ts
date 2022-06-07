@@ -8,6 +8,7 @@ import {
   PalletCorporateActionsCaId,
   PalletCorporateActionsCorporateAction,
   PalletCorporateActionsDistribution,
+  PalletCorporateActionsInitiateCorporateActionArgs,
   PalletStoFundraiser,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesAuthorizationAuthorizationData,
@@ -146,6 +147,8 @@ import {
   ExternalAgentCondition,
   IdentityCondition,
   IdentityWithClaims,
+  InputCorporateActionTargets,
+  InputCorporateActionTaxWithholdings,
   InputRequirement,
   InputTrustedClaimIssuer,
   InstructionType,
@@ -3375,6 +3378,48 @@ export function corporateActionIdentifierToCaId(
   return context.createType('PalletCorporateActionsCaId', {
     ticker: stringToTicker(ticker, context),
     localId: bigNumberToU32(localId, context),
+  });
+}
+
+/**
+ * @hidden
+ */
+export function corporateActionParamsToMeshCorporateActionParams(
+  ticker: string,
+  kind: CorporateActionKind,
+  declarationDate: Date,
+  checkpoint: Date | Checkpoint | CheckpointSchedule,
+  description: string,
+  targets: InputCorporateActionTargets | null,
+  defaultTaxWithholding: BigNumber | null,
+  taxWithholdings: InputCorporateActionTaxWithholdings | null,
+  context: Context
+): PalletCorporateActionsInitiateCorporateActionArgs {
+  const rawTicker = stringToTicker(ticker, context);
+  const rawKind = corporateActionKindToCaKind(kind, context);
+  const rawDeclDate = dateToMoment(declarationDate, context);
+  const rawRecordDate = optionize(checkpointToRecordDateSpec)(checkpoint, context);
+  const rawDetails = stringToBytes(description, context);
+  const rawTargets = optionize(targetsToTargetIdentities)(targets, context);
+  const rawTax = optionize(percentageToPermill)(defaultTaxWithholding, context);
+  const rawWithholdings =
+    taxWithholdings &&
+    taxWithholdings.map(({ identity, percentage }) =>
+      tuple(
+        stringToIdentityId(signerToString(identity), context),
+        percentageToPermill(percentage, context)
+      )
+    );
+
+  return context.createType('PalletCorporateActionsInitiateCorporateActionArgs', {
+    ticker: rawTicker,
+    kind: rawKind,
+    declDate: rawDeclDate,
+    recordDate: rawRecordDate,
+    details: rawDetails,
+    targets: rawTargets,
+    defaultWithholdingTax: rawTax,
+    withholdingTax: rawWithholdings,
   });
 }
 
