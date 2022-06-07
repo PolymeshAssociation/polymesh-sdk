@@ -59,7 +59,8 @@ export interface InitiateCorporateActionParams {
   description: string;
   /**
    * Asset Holder Identities to be included (or excluded) from the Corporate Action. Inclusion/exclusion is controlled by the `treatment`
-   *   property. When the value is `Include`, all Asset Holders not present in the array are excluded, and vice-versa
+   *   property. When the value is `Include`, all Asset Holders not present in the array are excluded, and vice-versa. If no value is passed,
+   *   the default value for the Asset is used. If there is no default value, all Asset Holders will be part of the Corporate Action
    */
   targets?: InputCorporateActionTargets;
   /**
