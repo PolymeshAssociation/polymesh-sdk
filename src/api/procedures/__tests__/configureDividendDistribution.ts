@@ -175,27 +175,31 @@ describe('configureDividendDistribution procedure', () => {
     bigNumberToBalanceStub.withArgs(maxAmount, mockContext).returns(rawAmount);
     corporateActionParamsToMeshCorporateActionArgsStub
       .withArgs(
-        ticker,
-        CorporateActionKind.UnpredictableBenefit,
-        declarationDate,
-        checkpoint,
-        description,
-        targets,
-        defaultTaxWithholding,
-        taxWithholdings,
+        {
+          ticker,
+          kind: CorporateActionKind.UnpredictableBenefit,
+          declarationDate,
+          checkpoint,
+          description,
+          targets,
+          defaultTaxWithholding,
+          taxWithholdings,
+        },
         mockContext
       )
       .returns(rawCorporateActionArgs);
     corporateActionParamsToMeshCorporateActionArgsStub
       .withArgs(
-        ticker,
-        CorporateActionKind.UnpredictableBenefit,
-        sinon.match.date,
-        checkpoint,
-        description,
-        null,
-        null,
-        null,
+        {
+          ticker,
+          kind: CorporateActionKind.UnpredictableBenefit,
+          declarationDate: sinon.match.date,
+          checkpoint,
+          description,
+          targets: null,
+          defaultTaxWithholding: null,
+          taxWithholdings: null,
+        },
         mockContext
       )
       .returns(rawCorporateActionArgs);

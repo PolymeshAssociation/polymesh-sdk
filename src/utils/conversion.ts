@@ -3431,16 +3431,28 @@ export function corporateActionIdentifierToCaId(
  * @hidden
  */
 export function corporateActionParamsToMeshCorporateActionArgs(
-  ticker: string,
-  kind: CorporateActionKind,
-  declarationDate: Date,
-  checkpoint: Date | Checkpoint | CheckpointSchedule,
-  description: string,
-  targets: InputCorporateActionTargets | null,
-  defaultTaxWithholding: BigNumber | null,
-  taxWithholdings: InputCorporateActionTaxWithholdings | null,
+  params: {
+    ticker: string;
+    kind: CorporateActionKind;
+    declarationDate: Date;
+    checkpoint: Date | Checkpoint | CheckpointSchedule;
+    description: string;
+    targets: InputCorporateActionTargets | null;
+    defaultTaxWithholding: BigNumber | null;
+    taxWithholdings: InputCorporateActionTaxWithholdings | null;
+  },
   context: Context
 ): PalletCorporateActionsInitiateCorporateActionArgs {
+  const {
+    ticker,
+    kind,
+    declarationDate,
+    checkpoint,
+    description,
+    targets,
+    defaultTaxWithholding,
+    taxWithholdings,
+  } = params;
   const rawTicker = stringToTicker(ticker, context);
   const rawKind = corporateActionKindToCaKind(kind, context);
   const rawDeclDate = dateToMoment(declarationDate, context);

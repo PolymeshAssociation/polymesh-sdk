@@ -2226,18 +2226,6 @@ export const createMockExtrinsicPermissions = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockRpcExtrinsicPermissions = (
-  assetPermissions?: 'Whole' | { These: Permissions[] } | { Except: Permissions[] }
-): MockCodec<PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions> => {
-  return createMockEnum(
-    assetPermissions
-  ) as MockCodec<PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions>;
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
 export const createMockPortfolioPermissions = (
   assetPermissions?: 'Whole' | { These: PortfolioId[] } | { Except: PortfolioId[] }
 ): MockCodec<PortfolioPermissions> => {

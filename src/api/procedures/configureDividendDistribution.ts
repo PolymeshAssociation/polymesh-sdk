@@ -248,14 +248,16 @@ export async function prepareConfigureDividendDistribution(
     resolvers: [createDividendDistributionResolver(context)],
     args: [
       corporateActionParamsToMeshCorporateActionArgs(
-        ticker,
-        CorporateActionKind.UnpredictableBenefit,
-        declarationDate,
-        checkpointValue,
-        description,
-        targets,
-        defaultTaxWithholding,
-        taxWithholdings,
+        {
+          ticker,
+          kind: CorporateActionKind.UnpredictableBenefit,
+          declarationDate,
+          checkpoint: checkpointValue,
+          description,
+          targets,
+          defaultTaxWithholding,
+          taxWithholdings,
+        },
         context
       ),
       rawPortfolioNumber,

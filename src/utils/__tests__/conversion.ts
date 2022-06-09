@@ -3642,14 +3642,16 @@ describe('corporateActionParamsToMeshCorporateActionArgs', () => {
 
     expect(
       corporateActionParamsToMeshCorporateActionArgs(
-        ticker,
-        kind,
-        declarationDate,
-        checkpoint,
-        description,
-        targets,
-        defaultTaxWithholding,
-        taxWithholdings,
+        {
+          ticker,
+          kind,
+          declarationDate,
+          checkpoint,
+          description,
+          targets,
+          defaultTaxWithholding,
+          taxWithholdings,
+        },
         context
       )
     ).toEqual(fakeResult);
