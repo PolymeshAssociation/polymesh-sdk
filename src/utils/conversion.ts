@@ -55,6 +55,7 @@ import {
   values,
 } from 'lodash';
 
+import { assertCaTaxWithholdingsValid } from '~/api/procedures/utils';
 import { meshCountryCodeToCountryCode } from '~/generated/utils';
 import {
   Account,
@@ -3334,11 +3335,41 @@ export function targetsToTargetIdentities(
   context: Context
 ): TargetIdentities {
   const { treatment, identities } = targets;
+  const { maxTargetIds } = context.polymeshApi.consts.corporateAction;
+
+  const maxTargets = u32ToBigNumber(maxTargetIds);
+
+  if (maxTargets.lt(targets.identities.length)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Too many target Identities',
+      data: {
+        maxTargets,
+      },
+    });
+  }
 
   return context.createType('TargetIdentities', {
     identities: identities.map(identity => stringToIdentityId(signerToString(identity), context)),
     treatment: context.createType('TargetTreatment', treatment),
   });
+}
+
+/**
+ * @hidden
+ */
+export function caTaxWithholdingsToMeshTaxWithholdings(
+  taxWithholdings: InputCorporateActionTaxWithholdings,
+  context: Context
+): [PolymeshPrimitivesIdentityId, Permill][] {
+  assertCaTaxWithholdingsValid(taxWithholdings, context);
+
+  return taxWithholdings.map(({ identity, percentage }) =>
+    tuple(
+      stringToIdentityId(signerToString(identity), context),
+      percentageToPermill(percentage, context)
+    )
+  );
 }
 
 /**
@@ -3384,7 +3415,7 @@ export function corporateActionIdentifierToCaId(
 /**
  * @hidden
  */
-export function corporateActionParamsToMeshCorporateActionParams(
+export function corporateActionParamsToMeshCorporateActionArgs(
   ticker: string,
   kind: CorporateActionKind,
   declarationDate: Date,
@@ -3402,14 +3433,10 @@ export function corporateActionParamsToMeshCorporateActionParams(
   const rawDetails = stringToBytes(description, context);
   const rawTargets = optionize(targetsToTargetIdentities)(targets, context);
   const rawTax = optionize(percentageToPermill)(defaultTaxWithholding, context);
-  const rawWithholdings =
-    taxWithholdings &&
-    taxWithholdings.map(({ identity, percentage }) =>
-      tuple(
-        stringToIdentityId(signerToString(identity), context),
-        percentageToPermill(percentage, context)
-      )
-    );
+  const rawWithholdings = optionize(caTaxWithholdingsToMeshTaxWithholdings)(
+    taxWithholdings,
+    context
+  );
 
   return context.createType('PalletCorporateActionsInitiateCorporateActionArgs', {
     ticker: rawTicker,

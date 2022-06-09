@@ -64,6 +64,7 @@ import {
 } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { createMockU64, createMockU128 } from '~/testUtils/mocks/dataSources';
+import { Mocked } from '~/testUtils/types';
 import {
   AffirmationStatus,
   AssetDocument,
@@ -142,6 +143,7 @@ import {
   bytesToString,
   calendarPeriodToMeshCalendarPeriod,
   canTransferResultToTransferStatus,
+  caTaxWithholdingsToMeshTaxWithholdings,
   cddIdToString,
   cddStatusToBoolean,
   checkpointToRecordDateSpec,
@@ -152,6 +154,7 @@ import {
   complianceRequirementToRequirement,
   corporateActionIdentifierToCaId,
   corporateActionKindToCaKind,
+  corporateActionParamsToMeshCorporateActionArgs,
   createStat2ndKey,
   dateToMoment,
   distributionToDividendDistributionParams,
@@ -3505,6 +3508,129 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
   });
 });
 
+describe('corporateActionParamsToMeshCorporateActionArgs', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    dsMockUtils.setConstMock('corporateAction', 'maxTargetIds', {
+      returnValue: dsMockUtils.createMockU32(new BigNumber(10)),
+    });
+    dsMockUtils.setConstMock('corporateAction', 'maxDidWhts', {
+      returnValue: dsMockUtils.createMockU32(new BigNumber(10)),
+    });
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a list of corporate action parameters to a polkadot PalletCorporateActionsInitiateCorporateActionArgs object', () => {
+    const ticker = 'SOME_TICKER';
+    const kind = CorporateActionKind.UnpredictableBenefit;
+    const declarationDate = new Date();
+    const checkpoint = new Date(new Date().getTime() + 10000);
+    const description = 'someDescription';
+    const targets = {
+      identities: ['someDid'],
+      treatment: TargetTreatment.Exclude,
+    };
+    const defaultTaxWithholding = new BigNumber(10);
+    const taxWithholdings = [
+      {
+        identity: 'someDid',
+        percentage: new BigNumber(20),
+      },
+    ];
+
+    const rawCheckpointDate = dsMockUtils.createMockMoment(new BigNumber(checkpoint.getTime()));
+    const recordDateValue = {
+      Scheduled: rawCheckpointDate,
+    };
+    const declarationDateValue = new BigNumber(declarationDate.getTime());
+
+    const context = dsMockUtils.getContextInstance();
+    const createTypeStub = context.createType;
+
+    const rawTicker = dsMockUtils.createMockTicker(ticker);
+    const rawKind = dsMockUtils.createMockCAKind(kind);
+    const rawDeclDate = dsMockUtils.createMockMoment(declarationDateValue);
+    const rawRecordDate = dsMockUtils.createMockRecordDateSpec(recordDateValue);
+    const rawDetails = dsMockUtils.createMockBytes(description);
+    const rawTargetTreatment = dsMockUtils.createMockTargetTreatment(targets.treatment);
+    const rawTargets = dsMockUtils.createMockTargetIdentities(targets);
+    const rawTax = dsMockUtils.createMockPermill(defaultTaxWithholding);
+
+    const { identity, percentage } = taxWithholdings[0];
+    const rawIdentityId = dsMockUtils.createMockIdentityId(identity);
+    const rawPermill = dsMockUtils.createMockPermill(percentage);
+
+    const fakeResult = dsMockUtils.createMockInitiateCorporateActionArgs({
+      ticker,
+      kind,
+      declDate: declarationDateValue,
+      recordDate: dsMockUtils.createMockOption(rawRecordDate),
+      details: description,
+      targets: dsMockUtils.createMockOption(rawTargets),
+      defaultWithholdingTax: dsMockUtils.createMockOption(rawTax),
+      withholdingTax: [[rawIdentityId, rawPermill]],
+    });
+
+    createTypeStub
+      .withArgs('PolymeshPrimitivesTicker', padString(ticker, MAX_TICKER_LENGTH))
+      .returns(rawTicker);
+    createTypeStub.withArgs('CAKind', kind).returns(rawKind);
+    createTypeStub.withArgs('u64', declarationDate.getTime()).returns(rawDeclDate);
+    createTypeStub.withArgs('u64', checkpoint.getTime()).returns(rawCheckpointDate);
+    createTypeStub.withArgs('RecordDateSpec', recordDateValue).returns(rawRecordDate);
+    createTypeStub.withArgs('Bytes', description).returns(rawDetails);
+    createTypeStub.withArgs('TargetTreatment', targets.treatment).returns(rawTargetTreatment);
+    createTypeStub
+      .withArgs('TargetIdentities', {
+        identities: [rawIdentityId],
+        treatment: rawTargetTreatment,
+      })
+      .returns(rawTargets);
+    createTypeStub.withArgs('PolymeshPrimitivesIdentityId', identity).returns(rawIdentityId);
+    createTypeStub.withArgs('Permill', percentage.shiftedBy(4).toString()).returns(rawPermill);
+    createTypeStub
+      .withArgs('Permill', defaultTaxWithholding.shiftedBy(4).toString())
+      .returns(rawTax);
+
+    createTypeStub
+      .withArgs('PalletCorporateActionsInitiateCorporateActionArgs', {
+        ticker: rawTicker,
+        kind: rawKind,
+        declDate: rawDeclDate,
+        recordDate: rawRecordDate,
+        details: rawDetails,
+        targets: rawTargets,
+        defaultWithholdingTax: rawTax,
+        withholdingTax: [[rawIdentityId, rawPermill]],
+      })
+      .returns(fakeResult);
+
+    expect(
+      corporateActionParamsToMeshCorporateActionArgs(
+        ticker,
+        kind,
+        declarationDate,
+        checkpoint,
+        description,
+        targets,
+        defaultTaxWithholding,
+        taxWithholdings,
+        context
+      )
+    ).toEqual(fakeResult);
+  });
+});
+
 describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -6508,8 +6634,21 @@ describe('targetIdentitiesToCorporateActionTargets', () => {
 });
 
 describe('targetsToTargetIdentities', () => {
+  const did = 'someDid';
+  const treatment = TargetTreatment.Include;
+  const value = { identities: [entityMockUtils.getIdentityInstance({ did })], treatment };
+
+  let context: Mocked<Context>;
+
   beforeAll(() => {
     dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+    dsMockUtils.setConstMock('corporateAction', 'maxTargetIds', {
+      returnValue: dsMockUtils.createMockU32(new BigNumber(1)),
+    });
   });
 
   afterEach(() => {
@@ -6521,11 +6660,7 @@ describe('targetsToTargetIdentities', () => {
   });
 
   it('should convert a CorporateActionTargets object to a polkadot TargetIdentities object', () => {
-    const did = 'someDid';
-    const treatment = TargetTreatment.Include;
-    const value = { identities: [entityMockUtils.getIdentityInstance({ did })], treatment };
     const fakeResult = 'targetIdentities' as unknown as TargetIdentities;
-    const context = dsMockUtils.getContextInstance();
     const createTypeStub = context.createType;
 
     const rawDid = dsMockUtils.createMockIdentityId(did);
@@ -6543,6 +6678,71 @@ describe('targetsToTargetIdentities', () => {
     const result = targetsToTargetIdentities(value, context);
 
     expect(result).toEqual(fakeResult);
+  });
+
+  it('should throw an error if there are more targets than the max allowed amount', () => {
+    expect(() =>
+      targetsToTargetIdentities(
+        { identities: ['someDid', 'otherDid'], treatment: TargetTreatment.Exclude },
+        context
+      )
+    ).toThrow('Too many target Identities');
+  });
+
+  it('should not throw an error if there are less or equal targets than the max allowed amount', () => {
+    expect(() => targetsToTargetIdentities(value, context)).not.toThrow();
+  });
+});
+
+describe('caTaxWithholdingsToMeshTaxWithholdings', () => {
+  let context: Mocked<Context>;
+
+  const withholdings = [
+    {
+      identity: 'someDid',
+      percentage: new BigNumber(50),
+    },
+    {
+      identity: 'otherDid',
+      percentage: new BigNumber(10),
+    },
+  ];
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+    dsMockUtils.setConstMock('corporateAction', 'maxDidWhts', {
+      returnValue: dsMockUtils.createMockU32(new BigNumber(1)),
+    });
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should throw an error if the tax withholding entries are more than the max allowed', () => {
+    expect(() => caTaxWithholdingsToMeshTaxWithholdings(withholdings, context)).toThrow();
+  });
+
+  it('should convert a set of tax withholding entries to a set of polkadot tax withholding entry', () => {
+    const createTypeStub = context.createType;
+
+    const { identity, percentage } = withholdings[0];
+    const rawIdentityId = dsMockUtils.createMockIdentityId(identity);
+    const rawPermill = dsMockUtils.createMockPermill(percentage);
+    createTypeStub.withArgs('PolymeshPrimitivesIdentityId', identity).returns(rawIdentityId);
+    createTypeStub.withArgs('Permill', percentage.shiftedBy(4).toString()).returns(rawPermill);
+
+    expect(caTaxWithholdingsToMeshTaxWithholdings([withholdings[0]], context)).toEqual([
+      [rawIdentityId, rawPermill],
+    ]);
   });
 });
 

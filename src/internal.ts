@@ -166,10 +166,6 @@ export {
   ModifyCorporateActionsAgentParams,
 } from '~/api/procedures/modifyCorporateActionsAgent';
 export {
-  initiateCorporateAction,
-  InitiateCorporateActionParams,
-} from '~/api/procedures/initiateCorporateAction';
-export {
   configureDividendDistribution,
   ConfigureDividendDistributionParams,
 } from '~/api/procedures/configureDividendDistribution';

@@ -26,7 +26,6 @@ describe('modifyCaDefaultConfig procedure', () => {
   let percentageToPermillStub: sinon.SinonStub;
   let stringToIdentityIdStub: sinon.SinonStub;
 
-  let assertCaTargetsValidStub: sinon.SinonStub;
   let assertCaTaxWithholdingsValidStub: sinon.SinonStub;
 
   let ticker: string;
@@ -42,8 +41,6 @@ describe('modifyCaDefaultConfig procedure', () => {
     stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
-
-    assertCaTargetsValidStub = sinon.stub(utilsProcedureModule, 'assertCaTargetsValid');
     assertCaTaxWithholdingsValidStub = sinon.stub(
       utilsProcedureModule,
       'assertCaTaxWithholdingsValid'
@@ -133,6 +130,29 @@ describe('modifyCaDefaultConfig procedure', () => {
     ).rejects.toThrow('New per-Identity tax withholding percentages are the same as current ones');
   });
 
+  it('should throw an error if the new tax withholding entries exceed the maximum amount', () => {
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+
+    const taxWithholdings = [
+      {
+        identity: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
+        percentage: new BigNumber(15),
+      },
+    ];
+    entityMockUtils.configureMocks({
+      assetOptions: { corporateActionsGetDefaultConfig: { taxWithholdings } },
+    });
+
+    assertCaTaxWithholdingsValidStub.withArgs(taxWithholdings, mockContext).throws();
+
+    return expect(
+      prepareModifyCaDefaultConfig.call(proc, {
+        ticker,
+        taxWithholdings,
+      })
+    ).rejects.toThrow();
+  });
+
   it('should add a set default targets transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
@@ -165,7 +185,6 @@ describe('modifyCaDefaultConfig procedure', () => {
       targets,
     });
 
-    sinon.assert.calledWith(assertCaTargetsValidStub, targets, mockContext);
     sinon.assert.calledWith(
       addTransactionStub,
       sinon.match({ transaction, args: [rawTicker, rawTargets] })
@@ -187,7 +206,6 @@ describe('modifyCaDefaultConfig procedure', () => {
       targets,
     });
 
-    sinon.assert.calledWith(assertCaTargetsValidStub, targets, mockContext);
     sinon.assert.calledWith(
       addTransactionStub,
       sinon.match({ transaction, args: [rawTicker, rawTargets] })

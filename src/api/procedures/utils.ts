@@ -30,7 +30,6 @@ import {
   ErrorCode,
   GenericAuthorizationData,
   InputCondition,
-  InputTargets,
   InputTaxWithholding,
   InstructionStatus,
   InstructionType,
@@ -178,25 +177,6 @@ export function assertDistributionOpen(paymentDate: Date, expiryDate: Date | nul
 /**
  * @hidden
  */
-export function assertCaTargetsValid(targets: InputTargets, context: Context): void {
-  const { maxTargetIds } = context.polymeshApi.consts.corporateAction;
-
-  const maxTargets = u32ToBigNumber(maxTargetIds);
-
-  if (maxTargets.lt(targets.identities.length)) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Too many target Identities',
-      data: {
-        maxTargets,
-      },
-    });
-  }
-}
-
-/**
- * @hidden
- */
 export function assertCaTaxWithholdingsValid(
   taxWithholdings: InputTaxWithholding[],
   context: Context
@@ -253,6 +233,8 @@ export async function assertDistributionDatesValid(
   expiryDate: Date | null
 ): Promise<void> {
   let checkpointDate: Date;
+
+  await assertCaCheckpointValid(checkpoint);
 
   if (checkpoint instanceof Date) {
     checkpointDate = checkpoint;
