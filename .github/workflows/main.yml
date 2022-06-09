@@ -59,7 +59,15 @@ jobs:
       - name: release
         env:
           GITHUB_TOKEN: ${{ secrets.JERE_RELEASE_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.ASSOCIATION_NPM_TOKEN }}
         run: |
           cd dist
           yarn semantic-release
+      # Publish to the old npm repository for now
+      - name: legacy-release
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          jq '.name = $newVal' --arg newVal '@polymathnetwork/polymesh-sdk' < package.json > tmp.json && mv tmp.json package.json
+          yarn --frozen-lockfile
+          yarn publish
