@@ -1003,7 +1003,7 @@ describe('authorization request validations', () => {
       // getIdentityInstance modifies the prototype, which prevents two mocks from returning different values
       const subsidizer = {
         getIdentity: () => {
-          return { hasValidCdd: () => false };
+          return { hasValidCdd: (): boolean => false };
         },
       } as unknown as Account;
 
@@ -1380,7 +1380,7 @@ describe('createAuthorizationResolver', () => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
   });
-  const filterRecords = () => [
+  const filterRecords = (): unknown => [
     { event: { data: [undefined, undefined, undefined, '3', undefined] } },
   ];
 
@@ -1399,7 +1399,7 @@ describe('createAuthorizationResolver', () => {
       mockContext
     );
     const authRequest = resolver({
-      filterRecords: filterRecords,
+      filterRecords,
     } as unknown as ISubmittableResult);
     expect(authRequest.authId).toEqual(new BigNumber(3));
   });

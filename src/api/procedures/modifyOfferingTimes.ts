@@ -16,7 +16,7 @@ function validateInput(
   newEnd: Date | null | undefined,
   end: Date | null,
   timing: OfferingTimingStatus
-) {
+): void {
   if ([OfferingSaleStatus.Closed, OfferingSaleStatus.ClosedEarly].includes(sale)) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,

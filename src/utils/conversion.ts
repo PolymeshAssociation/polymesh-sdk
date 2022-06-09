@@ -1,5 +1,12 @@
 import { bool, Bytes, Text, u8, u16, u32, u64, u128 } from '@polkadot/types';
-import { AccountId, Balance, Hash, Permill, Signature } from '@polkadot/types/interfaces';
+import {
+  AccountId,
+  Balance,
+  BlockHash,
+  Hash,
+  Permill,
+  Signature,
+} from '@polkadot/types/interfaces';
 import {
   BTreeSetIdentityId,
   BTreeSetStatUpdate,
@@ -145,6 +152,7 @@ import {
   DividendDistributionParams,
   ErrorCode,
   EventIdentifier,
+  ExemptKey,
   ExternalAgentCondition,
   IdentityCondition,
   IdentityWithClaims,
@@ -369,6 +377,13 @@ export function hashToString(hash: Hash): string {
  */
 export function stringToHash(hash: string, context: Context): Hash {
   return context.createType('Hash', hash);
+}
+
+/**
+ * @hidden
+ */
+export function stringToBlockHash(blockHash: string, context: Context): BlockHash {
+  return context.createType('BlockHash', blockHash);
 }
 
 /**
@@ -764,7 +779,7 @@ export function transactionPermissionsToTxGroups(
 /**
  * @hidden
  */
-function splitTag(tag: TxTag) {
+function splitTag(tag: TxTag): { palletName: string; dispatchableName: string } {
   const [modName, txName] = tag.split('.');
   const palletName = stringUpperFirst(modName);
   const dispatchableName = snakeCase(txName);
@@ -3524,6 +3539,9 @@ export function complianceConditionsToBtreeSet(
 /**
  * @hidden
  */
-export function toExemptKey(tickerKey: TickerKey, op: PolymeshPrimitivesStatisticsStatOpType) {
+export function toExemptKey(
+  tickerKey: TickerKey,
+  op: PolymeshPrimitivesStatisticsStatOpType
+): ExemptKey {
   return { asset: tickerKey, op };
 }

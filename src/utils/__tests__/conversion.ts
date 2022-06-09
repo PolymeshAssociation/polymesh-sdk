@@ -1,5 +1,13 @@
 import { bool, Bytes, u32, u64, u128 } from '@polkadot/types';
-import { AccountId, Balance, Hash, Moment, Permill, Signature } from '@polkadot/types/interfaces';
+import {
+  AccountId,
+  Balance,
+  BlockHash,
+  Hash,
+  Moment,
+  Permill,
+  Signature,
+} from '@polkadot/types/interfaces';
 import {
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesStatisticsStat2ndKey,
@@ -219,6 +227,7 @@ import {
   statUpdatesToBtreeStatUpdate,
   storedScheduleToCheckpointScheduleParams,
   stringToAccountId,
+  stringToBlockHash,
   stringToBytes,
   stringToCddId,
   stringToDocumentHash,
@@ -517,10 +526,15 @@ describe('stringToTicker and tickerToString', () => {
   });
 
   describe('stringToTicker', () => {
+    let context: Mocked<Context>;
+
+    beforeEach(() => {
+      context = dsMockUtils.getContextInstance();
+    });
+
     it('should convert a string to a polkadot Ticker object', () => {
       const value = 'SOME_TICKER';
       const fakeResult = 'convertedTicker' as unknown as PolymeshPrimitivesTicker;
-      const context = dsMockUtils.getContextInstance();
 
       context.createType
         .withArgs('PolymeshPrimitivesTicker', padString(value, 12))
@@ -531,38 +545,23 @@ describe('stringToTicker and tickerToString', () => {
       expect(result).toBe(fakeResult);
     });
 
-    it('should throw an error if the string is empty', () => {
-      const value = '';
-      const context = dsMockUtils.getContextInstance();
-
-      expect(() => stringToTicker(value, context)).toThrow(
-        `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} character`
+    it('should throw an error if the ticker does not have a length between 1 and 12 characters', () => {
+      expect(() => stringToTicker('SOME_LONG_TICKER', context)).toThrow(
+        'Ticker length must be between 1 and 12 characters'
+      );
+      expect(() => stringToTicker('', context)).toThrow(
+        'Ticker length must be between 1 and 12 characters'
       );
     });
 
-    it('should throw an error if the string length exceeds the max ticker length', () => {
-      const value = 'veryLongTicker';
-      const context = dsMockUtils.getContextInstance();
-
-      expect(() => stringToTicker(value, context)).toThrow(
-        `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} character`
-      );
-    });
-
-    it('should throw an error if the string contains unreadable characters', () => {
-      const value = `Illegal ${String.fromCharCode(65533)}`;
-      const context = dsMockUtils.getContextInstance();
-
-      expect(() => stringToTicker(value, context)).toThrow(
+    it('should throw an error if the ticker is not printable ASCII', () => {
+      expect(() => stringToTicker('TICKER\x80', context)).toThrow(
         'Only printable ASCII is allowed as ticker name'
       );
     });
 
-    it('should throw an error if the string is not in upper case', () => {
-      const value = 'FakeTicker';
-      const context = dsMockUtils.getContextInstance();
-
-      expect(() => stringToTicker(value, context)).toThrow(
+    it('should throw an error if the ticker contains lowercase letters', () => {
+      expect(() => stringToTicker('ticker', context)).toThrow(
         'Ticker cannot contain lower case letters'
       );
     });
@@ -726,6 +725,32 @@ describe('stringToHash and hashToString', () => {
       const result = hashToString(accountId);
       expect(result).toEqual(fakeResult);
     });
+  });
+});
+
+describe('stringToBlockHash', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a block hash string into an BlockHash', () => {
+    const blockHash = 'BlockHash';
+    const fakeResult = 'type' as unknown as BlockHash;
+    const context = dsMockUtils.getContextInstance();
+
+    context.createType.withArgs('BlockHash', blockHash).returns(fakeResult);
+
+    const result = stringToBlockHash(blockHash, context);
+
+    expect(result).toBe(fakeResult);
   });
 });
 

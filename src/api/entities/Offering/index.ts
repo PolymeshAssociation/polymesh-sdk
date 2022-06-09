@@ -266,7 +266,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
   /**
    * Return the Offering's ID and Asset ticker
    */
-  public toJson(): HumanReadable {
+  public toHuman(): HumanReadable {
     const { asset, id } = this;
 
     return toHumanReadable({

@@ -11,6 +11,7 @@ import { Params } from '~/api/procedures/setAssetRequirements';
 import { Asset, Context, Namespace, TransactionQueue } from '~/internal';
 import { AssetComplianceResult } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { MockCodec } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import {
   ClaimType,
@@ -214,7 +215,7 @@ describe('Requirements class', () => {
 
     let queryMultiStub: sinon.SinonStub;
     let queryMultiResult: [
-      PolymeshPrimitivesComplianceManagerAssetCompliance,
+      MockCodec<PolymeshPrimitivesComplianceManagerAssetCompliance>,
       Vec<PolymeshPrimitivesIdentityId>
     ];
 
@@ -307,7 +308,7 @@ describe('Requirements class', () => {
               id: dsMockUtils.createMockU32(new BigNumber(2)),
             }),
           ],
-        } as PolymeshPrimitivesComplianceManagerAssetCompliance,
+        } as unknown as MockCodec<PolymeshPrimitivesComplianceManagerAssetCompliance>,
         defaultClaimIssuers as unknown as Vec<PolymeshPrimitivesIdentityId>,
       ];
 

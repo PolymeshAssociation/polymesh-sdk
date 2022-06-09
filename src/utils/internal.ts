@@ -63,6 +63,7 @@ import {
 import { HumanReadableType, ProcedureFunc, UnionOfProcedureFuncs } from '~/types/utils';
 import {
   DEFAULT_GQL_PAGE_SIZE,
+  MAX_TICKER_LENGTH,
   STATE_RUNTIME_VERSION_CALL,
   SUPPORTED_NODE_VERSION_RANGE,
   SUPPORTED_SPEC_VERSION_RANGE,
@@ -714,13 +715,13 @@ export function isModuleOrTagMatch(a: TxTag | ModuleName, b: TxTag | ModuleName)
  * @hidden
  *
  * Recursively convert a value into a human readable (JSON compliant) version:
- *   - Entities are converted via their `.toJson` method
+ *   - Entities are converted via their `.toHuman` method
  *   - Dates are converted to ISO strings
  *   - BigNumbers are converted to numerical strings
  */
 export function toHumanReadable<T>(obj: T): HumanReadableType<T> {
   if (isEntity<unknown, HumanReadableType<T>>(obj)) {
-    return obj.toJson();
+    return obj.toHuman();
   }
 
   if (obj instanceof BigNumber) {
@@ -1110,7 +1111,7 @@ export function assertExpectedChainVersion(nodeUrl: string): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     const client = new W3CWebSocket(nodeUrl);
 
-    client.onopen = () => {
+    client.onopen = (): void => {
       client.send(JSON.stringify(SYSTEM_VERSION_RPC_CALL));
       client.send(JSON.stringify(STATE_RUNTIME_VERSION_CALL));
     };
@@ -1118,7 +1119,7 @@ export function assertExpectedChainVersion(nodeUrl: string): Promise<void> {
     let nodeVersionFetched: boolean;
     let specVersionFetched: boolean;
 
-    client.onmessage = msg => {
+    client.onmessage = (msg): void => {
       const data = JSON.parse(msg.data.toString());
       const { id } = data;
 
@@ -1134,7 +1135,7 @@ export function assertExpectedChainVersion(nodeUrl: string): Promise<void> {
       }
     };
 
-    client.onerror = (error: Error) => {
+    client.onerror = (error: Error): void => {
       client.close();
       const err = new PolymeshError({
         code: ErrorCode.FatalError,
@@ -1144,4 +1145,32 @@ export function assertExpectedChainVersion(nodeUrl: string): Promise<void> {
       reject(err);
     };
   });
+}
+
+/**
+ * @hidden
+ *
+ * Validates a ticker value
+ */
+export function assertTickerValid(ticker: string): void {
+  if (!ticker.length || ticker.length > MAX_TICKER_LENGTH) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} characters`,
+    });
+  }
+
+  if (!isPrintableAscii(ticker)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Only printable ASCII is allowed as ticker name',
+    });
+  }
+
+  if (ticker !== ticker.toUpperCase()) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Ticker cannot contain lower case letters',
+    });
+  }
 }

@@ -838,9 +838,9 @@ describe('Instruction class', () => {
     });
   });
 
-  describe('method: toJson', () => {
+  describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
-      expect(instruction.toJson()).toBe('1');
+      expect(instruction.toHuman()).toBe('1');
     });
   });
 });

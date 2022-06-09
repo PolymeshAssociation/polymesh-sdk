@@ -438,11 +438,11 @@ describe('Offering class', () => {
     });
   });
 
-  describe('method: toJson', () => {
+  describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
       const offering = new Offering({ ticker: 'SOME_TICKER', id: new BigNumber(1) }, context);
 
-      expect(offering.toJson()).toEqual({
+      expect(offering.toHuman()).toEqual({
         id: '1',
         ticker: 'SOME_TICKER',
       });

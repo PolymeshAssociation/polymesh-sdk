@@ -18,7 +18,7 @@ import {
   TickerReservationStatus,
   UnsubCallback,
 } from '~/types';
-import { stringToIdentityId, stringToTicker, tickerToString } from '~/utils/conversion';
+import { stringToIdentityId, tickerToString } from '~/utils/conversion';
 import { createProcedureMethod, getDid, isPrintableAscii } from '~/utils/internal';
 
 /**
@@ -147,34 +147,11 @@ export class Assets {
    *
    * @param args.ticker - Asset ticker
    */
-  public async getTickerReservation(args: { ticker: string }): Promise<TickerReservation> {
+  public getTickerReservation(args: { ticker: string }): TickerReservation {
     const { ticker } = args;
-    const {
-      context: {
-        polymeshApi: {
-          query: { asset },
-        },
-      },
-      context,
-    } = this;
+    const { context } = this;
 
-    const { owner, expiry } = await asset.tickers(stringToTicker(ticker, context));
-
-    if (!owner.isEmpty) {
-      if (!expiry.isNone) {
-        return new TickerReservation({ ticker }, context);
-      }
-
-      throw new PolymeshError({
-        code: ErrorCode.UnmetPrerequisite,
-        message: `${ticker} Asset has been created`,
-      });
-    }
-
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: `There is no reservation for ${ticker} ticker`,
-    });
+    return new TickerReservation({ ticker }, context);
   }
 
   /**
