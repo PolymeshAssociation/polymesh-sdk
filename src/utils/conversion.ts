@@ -226,6 +226,7 @@ import {
   assertAddressValid,
   assertIsInteger,
   assertIsPositive,
+  assertTickerValid,
   asTicker,
   conditionsAreEqual,
   createClaim,
@@ -284,26 +285,7 @@ export function bytesToString(bytes: Bytes): string {
  * @hidden
  */
 export function stringToTicker(ticker: string, context: Context): PolymeshPrimitivesTicker {
-  if (!ticker.length || ticker.length > MAX_TICKER_LENGTH) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} characters`,
-    });
-  }
-
-  if (!isPrintableAscii(ticker)) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Only printable ASCII is allowed as ticker name',
-    });
-  }
-
-  if (ticker !== ticker.toUpperCase()) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Ticker cannot contain lower case letters',
-    });
-  }
+  assertTickerValid(ticker);
 
   return context.createType('PolymeshPrimitivesTicker', padString(ticker, MAX_TICKER_LENGTH));
 }

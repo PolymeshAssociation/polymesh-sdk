@@ -113,7 +113,7 @@ async function addManualFees(
     }
 
     return prev.plus(nextFees.times(feeMultiplier));
-  }, new BigNumber(0));
+  }, currentFee);
 }
 
 /**

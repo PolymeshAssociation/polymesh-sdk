@@ -223,18 +223,20 @@ describe('createAsset procedure', () => {
       .returns(rawDocuments[0]);
 
     mockContext.getProtocolFees
-      .withArgs({ tag: TxTags.asset.RegisterTicker })
-      .resolves(protocolFees[0]);
+      .withArgs({ tags: [TxTags.asset.RegisterTicker, TxTags.asset.CreateAsset] })
+      .resolves([
+        { tag: TxTags.asset.RegisterTicker, fees: protocolFees[0] },
+        { tag: TxTags.asset.CreateAsset, fees: protocolFees[1] },
+      ]);
     mockContext.getProtocolFees
-      .withArgs({ tag: TxTags.asset.CreateAsset })
-      .resolves(protocolFees[1]);
-    mockContext.getProtocolFees.withArgs({ tag: TxTags.asset.Issue }).resolves(protocolFees[2]);
+      .withArgs({ tags: [TxTags.asset.Issue] })
+      .resolves([{ tag: TxTags.asset.Issue, fees: protocolFees[2] }]);
     mockContext.getProtocolFees
-      .withArgs({ tag: TxTags.asset.AddDocuments })
-      .resolves(protocolFees[3]);
+      .withArgs({ tags: [TxTags.asset.AddDocuments] })
+      .resolves([{ tag: TxTags.asset.AddDocuments, fees: protocolFees[3] }]);
     mockContext.getProtocolFees
-      .withArgs({ tag: TxTags.asset.RegisterCustomAssetType })
-      .resolves(protocolFees[4]);
+      .withArgs({ tags: [TxTags.asset.RegisterCustomAssetType] })
+      .resolves([{ tag: TxTags.asset.RegisterCustomAssetType, fees: protocolFees[4] }]);
   });
 
   afterEach(() => {
