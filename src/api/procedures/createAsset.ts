@@ -182,10 +182,9 @@ export async function prepareCreateAsset(
   if (assetCreatedInEthereum) {
     fee = new BigNumber(0);
   } else if (status === TickerReservationStatus.Free) {
-    const [registerTickerFee, createAssetFee] = await Promise.all([
-      context.getProtocolFees({ tag: TxTags.asset.RegisterTicker }),
-      context.getProtocolFees({ tag: TxTags.asset.CreateAsset }),
-    ]);
+    const [{ fees: registerTickerFee }, { fees: createAssetFee }] = await context.getProtocolFees({
+      tags: [TxTags.asset.RegisterTicker, TxTags.asset.CreateAsset],
+    });
     fee = registerTickerFee.plus(createAssetFee);
   }
 

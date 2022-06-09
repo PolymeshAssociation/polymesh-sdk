@@ -1319,10 +1319,10 @@ describe('Identity class', () => {
     });
   });
 
-  describe('method: toJson', () => {
+  describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
       const identity = new Identity({ did: 'someDid' }, context);
-      expect(identity.toJson()).toBe('someDid');
+      expect(identity.toHuman()).toBe('someDid');
     });
   });
 });

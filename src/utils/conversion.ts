@@ -1,5 +1,12 @@
 import { bool, Bytes, Text, u8, u16, u32, u64, u128 } from '@polkadot/types';
-import { AccountId, Balance, Hash, Permill, Signature } from '@polkadot/types/interfaces';
+import {
+  AccountId,
+  Balance,
+  BlockHash,
+  Hash,
+  Permill,
+  Signature,
+} from '@polkadot/types/interfaces';
 import {
   BTreeSetIdentityId,
   BTreeSetStatUpdate,
@@ -143,6 +150,7 @@ import {
   DividendDistributionParams,
   ErrorCode,
   EventIdentifier,
+  ExemptKey,
   ExternalAgentCondition,
   IdentityCondition,
   IdentityWithClaims,
@@ -218,11 +226,11 @@ import {
   assertAddressValid,
   assertIsInteger,
   assertIsPositive,
+  assertTickerValid,
   asTicker,
   conditionsAreEqual,
   createClaim,
   isModuleOrTagMatch,
-  isPrintableAscii,
   optionize,
   padString,
   removePadding,
@@ -276,26 +284,7 @@ export function bytesToString(bytes: Bytes): string {
  * @hidden
  */
 export function stringToTicker(ticker: string, context: Context): PolymeshPrimitivesTicker {
-  if (!ticker.length || ticker.length > MAX_TICKER_LENGTH) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} characters`,
-    });
-  }
-
-  if (!isPrintableAscii(ticker)) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Only printable ASCII is allowed as ticker name',
-    });
-  }
-
-  if (ticker !== ticker.toUpperCase()) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Ticker cannot contain lower case letters',
-    });
-  }
+  assertTickerValid(ticker);
 
   return context.createType('PolymeshPrimitivesTicker', padString(ticker, MAX_TICKER_LENGTH));
 }
@@ -365,6 +354,13 @@ export function hashToString(hash: Hash): string {
  */
 export function stringToHash(hash: string, context: Context): Hash {
   return context.createType('Hash', hash);
+}
+
+/**
+ * @hidden
+ */
+export function stringToBlockHash(blockHash: string, context: Context): BlockHash {
+  return context.createType('BlockHash', blockHash);
 }
 
 /**
@@ -760,7 +756,7 @@ export function transactionPermissionsToTxGroups(
 /**
  * @hidden
  */
-function splitTag(tag: TxTag) {
+function splitTag(tag: TxTag): { palletName: string; dispatchableName: string } {
   const [modName, txName] = tag.split('.');
   const palletName = stringUpperFirst(modName);
   const dispatchableName = snakeCase(txName);
@@ -3452,6 +3448,9 @@ export function complianceConditionsToBtreeSet(
 /**
  * @hidden
  */
-export function toExemptKey(tickerKey: TickerKey, op: PolymeshPrimitivesStatisticsStatOpType) {
+export function toExemptKey(
+  tickerKey: TickerKey,
+  op: PolymeshPrimitivesStatisticsStatOpType
+): ExemptKey {
   return { asset: tickerKey, op };
 }

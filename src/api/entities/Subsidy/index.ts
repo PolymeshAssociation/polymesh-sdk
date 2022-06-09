@@ -199,7 +199,7 @@ export class Subsidy extends Entity<UniqueIdentifiers, HumanReadable> {
   /**
    * Return the Subsidy's static data
    */
-  public toJson(): HumanReadable {
+  public toHuman(): HumanReadable {
     const { beneficiary, subsidizer } = this;
 
     return toHumanReadable({

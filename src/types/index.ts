@@ -1,3 +1,4 @@
+import { PolymeshPrimitivesStatisticsStatOpType } from '@polkadot/types/lookup';
 import { TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
@@ -24,7 +25,7 @@ import {
   Offering,
   TransactionQueue,
 } from '~/internal';
-import { PortfolioId } from '~/types/internal';
+import { PortfolioId, TickerKey } from '~/types/internal';
 import { Modify } from '~/types/utils';
 
 export * from '~/generated/types';
@@ -333,6 +334,15 @@ export interface ExtrinsicData {
   success: boolean;
   specVersionId: BigNumber;
   extrinsicHash: string;
+}
+
+export interface ExtrinsicDataWithFees extends ExtrinsicData {
+  fee: Fees;
+}
+
+export interface ProtocolFees {
+  tag: TxTag;
+  fees: BigNumber;
 }
 
 export interface ClaimScope {
@@ -1316,6 +1326,9 @@ export interface DistributionPayment {
   date: Date;
   target: Identity;
   amount: BigNumber;
+  /**
+   * percentage (0-100) of tax withholding for the `target` identity
+   */
   withheldTax: BigNumber;
 }
 
@@ -1397,6 +1410,11 @@ export type PrivateKey =
   | {
       seed: string;
     };
+
+export interface ExemptKey {
+  asset: TickerKey;
+  op: PolymeshPrimitivesStatisticsStatOpType;
+}
 
 export { TxTags, TxTag, ModuleName };
 export { EventRecord } from '@polkadot/types/interfaces';
