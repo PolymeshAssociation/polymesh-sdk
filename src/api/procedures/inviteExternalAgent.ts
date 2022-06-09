@@ -1,6 +1,6 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 
-import { assertGroupDoesNotExist, createAuthorizationResolver } from '~/api/procedures/utils';
+import { createAuthorizationResolver, getGroupFromPermissions } from '~/api/procedures/utils';
 import {
   Asset,
   AuthorizationRequest,
@@ -20,7 +20,7 @@ import {
   TxGroup,
   TxTags,
 } from '~/types';
-import { MaybePostTransactionValue, ProcedureAuthorization } from '~/types/internal';
+import { ProcedureAuthorization } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
   dateToMoment,
@@ -49,7 +49,7 @@ export interface InviteExternalAgentParams {
     | KnownPermissionGroup
     | CustomPermissionGroup
     | {
-        transactions: TransactionPermissions;
+        transactions: TransactionPermissions | null;
       }
     | {
         transactionGroups: TxGroup[];
@@ -115,7 +115,7 @@ export async function prepareInviteExternalAgent(
     context
   );
 
-  let postTransactionAuthorization: MaybePostTransactionValue<Authorization>;
+  let newAuthorizationData: Authorization;
   let rawAuthorizationData;
 
   // helper to transform permissions into the relevant Authorization
@@ -127,25 +127,34 @@ export async function prepareInviteExternalAgent(
   });
 
   if (permissions instanceof KnownPermissionGroup || permissions instanceof CustomPermissionGroup) {
-    postTransactionAuthorization = createBecomeAgentData(permissions);
-    rawAuthorizationData = authorizationToAuthorizationData(postTransactionAuthorization, context);
+    newAuthorizationData = createBecomeAgentData(permissions);
+    rawAuthorizationData = authorizationToAuthorizationData(newAuthorizationData, context);
   } else {
     const rawTicker = stringToTicker(ticker, context);
     const { transactions } = permissionsLikeToPermissions(permissions, context);
 
-    await assertGroupDoesNotExist(asset, transactions);
+    const matchingGroup = await getGroupFromPermissions(asset, transactions);
 
-    const [authRequest] = this.addTransaction({
-      transaction: externalAgents.createGroupAndAddAuth,
-      resolvers: [createGroupAndAuthorizationResolver(targetIdentity)],
-      args: [
-        rawTicker,
-        transactionPermissionsToExtrinsicPermissions(transactions, context),
-        rawSignatory,
-      ],
-    });
+    /*
+     * if there is no existing group with the passed permissions, we create it together with the Authorization Request.
+     *   Otherwise, we use the existing group's ID to create the Authorization request
+     */
+    if (!matchingGroup) {
+      const [authRequest] = this.addTransaction({
+        transaction: externalAgents.createGroupAndAddAuth,
+        resolvers: [createGroupAndAuthorizationResolver(targetIdentity)],
+        args: [
+          rawTicker,
+          transactionPermissionsToExtrinsicPermissions(transactions, context),
+          rawSignatory,
+        ],
+      });
 
-    return authRequest;
+      return authRequest;
+    }
+
+    newAuthorizationData = createBecomeAgentData(matchingGroup);
+    rawAuthorizationData = authorizationToAuthorizationData(newAuthorizationData, context);
   }
 
   const rawExpiry = optionize(dateToMoment)(expiry, context);
@@ -153,13 +162,7 @@ export async function prepareInviteExternalAgent(
   const [auth] = this.addTransaction({
     transaction: identity.addAuthorization,
     resolvers: [
-      createAuthorizationResolver(
-        postTransactionAuthorization,
-        issuer,
-        targetIdentity,
-        expiry,
-        context
-      ),
+      createAuthorizationResolver(newAuthorizationData, issuer, targetIdentity, expiry, context),
     ],
     args: [rawSignatory, rawAuthorizationData, rawExpiry],
   });
