@@ -41,7 +41,7 @@ import {
   TransactionPermissions,
 } from '~/types';
 import { MaybePostTransactionValue, PortfolioId } from '~/types/internal';
-import { u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
+import { tickerToString, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
 
 /**
@@ -641,6 +641,9 @@ export async function assertGroupDoesNotExist(
   }
 }
 
+/**
+ * @hidden
+ */
 export const createAuthorizationResolver =
   (
     auth: MaybePostTransactionValue<Authorization>,
@@ -660,4 +663,18 @@ export const createAuthorizationResolver =
 
     const authId = u64ToBigNumber(data[3]);
     return new AuthorizationRequest({ authId, expiry, issuer, target, data: rawAuth }, context);
+  };
+
+/**
+ * @hidden
+ */
+export const createCreateGroupResolver =
+  (context: Context) =>
+  (receipt: ISubmittableResult): CustomPermissionGroup => {
+    const [{ data }] = filterEventRecords(receipt, 'externalAgents', 'GroupCreated');
+
+    return new CustomPermissionGroup(
+      { id: u32ToBigNumber(data[2]), ticker: tickerToString(data[1]) },
+      context
+    );
   };
