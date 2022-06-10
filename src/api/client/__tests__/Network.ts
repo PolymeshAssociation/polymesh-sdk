@@ -1,6 +1,7 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
+import { Network } from '~/api/client/Network';
 import { Context, TransactionQueue } from '~/internal';
 import {
   eventByIndexedArgs,
@@ -9,7 +10,6 @@ import {
   transactionByHash,
 } from '~/middleware/queries';
 import { CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/types';
-import { Network } from '~/Network';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { AccountBalance, TxTags } from '~/types';

@@ -15,6 +15,7 @@ const createReplacementVersion = newVersion => (text, prevVersion) => {
   return text.replace(prevVersion, newVersion);
 };
 
+// eslint-disable-next-line @typescript-eslint/no-floating-promises
 (async () => {
   const wsp = new WebSocketAsPromised(`ws://${NODE_URL}:${WS_PORT}`, {
     createWebSocket: url => new W3CWebSocket(url),

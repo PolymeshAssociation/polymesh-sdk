@@ -1,6 +1,6 @@
 import { StorageKey, u64 } from '@polkadot/types';
+import { PolymeshPrimitivesIdentityId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { IdentityId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -36,7 +36,7 @@ describe('Portfolios class', () => {
   const numberedPortfolioId = new BigNumber(1);
   const rawNumberedPortfolioId = dsMockUtils.createMockU64(numberedPortfolioId);
   let mockContext: Mocked<Context>;
-  let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
+  let stringToIdentityIdStub: sinon.SinonStub<[string, Context], PolymeshPrimitivesIdentityId>;
   let u64ToBigNumberStub: sinon.SinonStub<[u64], BigNumber>;
   let portfolios: Portfolios;
   let identity: Identity;

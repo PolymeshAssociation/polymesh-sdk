@@ -1,6 +1,9 @@
 import { QueryableStorageEntry } from '@polkadot/api/types';
 import { Vec } from '@polkadot/types/codec';
-import { AssetCompliance, AssetComplianceResult, TrustedIssuer } from 'polymesh-types/types';
+import {
+  PolymeshPrimitivesComplianceManagerAssetCompliance,
+  PolymeshPrimitivesConditionTrustedIssuer,
+} from '@polkadot/types/lookup';
 
 import {
   addAssetRequirement,
@@ -17,6 +20,7 @@ import {
   SetAssetRequirementsParams,
   togglePauseRequirements,
 } from '~/internal';
+import { AssetComplianceResult } from '~/polkadot/polymesh';
 import {
   Compliance,
   ComplianceRequirements,
@@ -132,8 +136,8 @@ export class Requirements extends Namespace<Asset> {
     const rawTicker = stringToTicker(ticker, context);
 
     const assembleResult = ([assetCompliance, claimIssuers]: [
-      AssetCompliance,
-      Vec<TrustedIssuer>
+      PolymeshPrimitivesComplianceManagerAssetCompliance,
+      Vec<PolymeshPrimitivesConditionTrustedIssuer>
     ]): ComplianceRequirements => {
       const requirements = assetCompliance.requirements.map(complianceRequirement =>
         complianceRequirementToRequirement(complianceRequirement, context)

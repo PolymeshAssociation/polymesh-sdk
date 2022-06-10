@@ -223,7 +223,7 @@ describe('reserveTicker procedure', () => {
 
 describe('tickerReservationResolver', () => {
   const filterEventRecordsStub = sinon.stub(utilsInternalModule, 'filterEventRecords');
-  const tickerString = 'someTicker';
+  const tickerString = 'SOME_TICKER';
   const ticker = dsMockUtils.createMockTicker(tickerString);
 
   beforeAll(() => {
@@ -249,7 +249,7 @@ describe('tickerReservationResolver', () => {
 
 describe('getAuthorization', () => {
   it('should return the appropriate roles and permissions', () => {
-    const ticker = 'someTicker';
+    const ticker = 'SOME_TICKER';
     const args = {
       ticker,
       extendPeriod: true,

@@ -13,9 +13,9 @@ import { ErrorCode, EventIdentifier, ProcedureMethod } from '~/types';
 import { Ensured } from '~/types/utils';
 import {
   bigNumberToU64,
+  bytesToString,
   middlewareEventToEventIdentifier,
   stringToIdentityId,
-  textToString,
 } from '~/utils/conversion';
 import { createProcedureMethod, optionize } from '~/utils/internal';
 
@@ -92,7 +92,8 @@ export class NumberedPortfolio extends Portfolio {
         message: "The Portfolio doesn't exist",
       });
     }
-    return textToString(rawPortfolioName);
+
+    return bytesToString(rawPortfolioName);
   }
 
   /**

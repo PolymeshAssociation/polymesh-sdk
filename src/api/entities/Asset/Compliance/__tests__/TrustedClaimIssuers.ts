@@ -1,4 +1,7 @@
-import { Ticker, TrustedIssuer } from 'polymesh-types/types';
+import {
+  PolymeshPrimitivesConditionTrustedIssuer,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import sinon from 'sinon';
 
 import {
@@ -161,12 +164,12 @@ describe('TrustedClaimIssuers class', () => {
 
   describe('method: get', () => {
     let ticker: string;
-    let rawTicker: Ticker;
+    let rawTicker: PolymeshPrimitivesTicker;
     let stringToTickerStub: sinon.SinonStub;
     let context: Context;
     let asset: Asset;
     let expectedDids: string[];
-    let claimIssuers: TrustedIssuer[];
+    let claimIssuers: PolymeshPrimitivesConditionTrustedIssuer[];
 
     let trustedClaimIssuerStub: sinon.SinonStub;
 
@@ -187,8 +190,7 @@ describe('TrustedClaimIssuers class', () => {
         claimIssuers.push(
           dsMockUtils.createMockTrustedIssuer({
             issuer: dsMockUtils.createMockIdentityId(did),
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            trusted_for: dsMockUtils.createMockTrustedFor('Any'),
+            trustedFor: dsMockUtils.createMockTrustedFor('Any'),
           })
         );
       });

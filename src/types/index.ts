@@ -1,6 +1,6 @@
+import { PolymeshPrimitivesStatisticsStatOpType } from '@polkadot/types/lookup';
 import { TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { ModuleName, TxTag, TxTags } from 'polymesh-types/types';
 
 import {
   DividendDistributionDetails,
@@ -8,7 +8,7 @@ import {
   ScheduleDetails,
   SubsidyData,
 } from '~/api/entities/types';
-import { CountryCode } from '~/generated/types';
+import { CountryCode, ModuleName, TxTag, TxTags } from '~/generated/types';
 import {
   Account,
   Asset,
@@ -25,7 +25,7 @@ import {
   Offering,
   TransactionQueue,
 } from '~/internal';
-import { PortfolioId } from '~/types/internal';
+import { PortfolioId, TickerKey } from '~/types/internal';
 import { Modify } from '~/types/utils';
 
 export * from '~/generated/types';
@@ -145,6 +145,7 @@ export enum SecurityIdentifierType {
   Cusip = 'Cusip',
   Cins = 'Cins',
   Lei = 'Lei',
+  Figi = 'Figi',
 }
 
 // NOTE: query.asset.identifiers doesn’t support custom identifier types properly for now
@@ -217,6 +218,7 @@ export enum ClaimType {
   Exempted = 'Exempted',
   Blocked = 'Blocked',
   InvestorUniqueness = 'InvestorUniqueness',
+  NoType = 'NoType',
   NoData = 'NoData',
   InvestorUniquenessV2 = 'InvestorUniquenessV2',
 }
@@ -274,6 +276,10 @@ export interface InvestorUniquenessClaim {
   scopeId: string;
 }
 
+export interface NoTypeClaim {
+  type: ClaimType.NoType;
+}
+
 export interface NoDataClaim {
   type: ClaimType.NoData;
 }
@@ -294,7 +300,7 @@ export type ScopedClaim =
   | ExemptedClaim
   | BlockedClaim;
 
-export type UnscopedClaim = NoDataClaim | CddClaim | InvestorUniquenessV2Claim;
+export type UnscopedClaim = NoDataClaim | NoTypeClaim | CddClaim | InvestorUniquenessV2Claim;
 
 export type Claim = ScopedClaim | UnscopedClaim;
 
@@ -1404,6 +1410,11 @@ export type PrivateKey =
   | {
       seed: string;
     };
+
+export interface ExemptKey {
+  asset: TickerKey;
+  op: PolymeshPrimitivesStatisticsStatOpType;
+}
 
 export { TxTags, TxTag, ModuleName };
 export { EventRecord } from '@polkadot/types/interfaces';

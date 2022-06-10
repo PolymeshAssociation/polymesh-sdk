@@ -1,4 +1,4 @@
-import { Signatory, TxTags } from 'polymesh-types/types';
+import { Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -11,7 +11,14 @@ import {
 import { Account, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { PermissionedAccount, PermissionType, Signer, SignerType, SignerValue } from '~/types';
+import {
+  PermissionedAccount,
+  PermissionType,
+  Signer,
+  SignerType,
+  SignerValue,
+  TxTags,
+} from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('modifySignerPermissions procedure', () => {

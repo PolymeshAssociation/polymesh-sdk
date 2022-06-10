@@ -1,11 +1,12 @@
 import { Moment } from '@polkadot/types/interfaces';
+import { PolymeshPrimitivesIdentityId } from '@polkadot/types/lookup';
 import P from 'bluebird';
 import { cloneDeep, isEqual, uniq } from 'lodash';
-import { Claim as MeshClaim, IdentityId } from 'polymesh-types/types';
 
 import { Context, Identity, PolymeshError, Procedure } from '~/internal';
 import { didsWithClaims } from '~/middleware/queries';
 import { Claim as MiddlewareClaim, Query } from '~/middleware/types';
+import { Claim as MeshClaim } from '~/polkadot/polymesh';
 import { CddClaim, Claim, ClaimTarget, ClaimType, ErrorCode, RoleType, TxTags } from '~/types';
 import { ClaimOperation, ProcedureAuthorization } from '~/types/internal';
 import { Ensured, tuple } from '~/types/utils';
@@ -164,7 +165,7 @@ export async function prepareModifyClaims(
     context,
   } = this;
 
-  const modifyClaimArgs: [IdentityId, MeshClaim, Moment | null][] = [];
+  const modifyClaimArgs: [PolymeshPrimitivesIdentityId, MeshClaim, Moment | null][] = [];
   let allTargets: string[] = [];
 
   claims.forEach(({ target, expiry, claim }: ClaimTarget) => {

@@ -1,4 +1,4 @@
-import { TrustedIssuer } from 'polymesh-types/types';
+import { PolymeshPrimitivesConditionTrustedIssuer } from '@polkadot/types/lookup';
 
 import {
   Asset,
@@ -109,7 +109,9 @@ export class TrustedClaimIssuers extends Namespace<Asset> {
 
     const rawTicker = stringToTicker(ticker, context);
 
-    const assembleResult = (issuers: TrustedIssuer[]): TrustedClaimIssuer<true>[] =>
+    const assembleResult = (
+      issuers: PolymeshPrimitivesConditionTrustedIssuer[]
+    ): TrustedClaimIssuer<true>[] =>
       issuers.map(issuer => {
         const {
           identity: { did },

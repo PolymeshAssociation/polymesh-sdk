@@ -16,8 +16,7 @@ describe('claimDividends procedure', () => {
   const paymentDate = new Date('10/14/1987');
   const expiryDate = new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 365);
 
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  const rawCaId = dsMockUtils.createMockCAId({ ticker, local_id: id });
+  const rawCaId = dsMockUtils.createMockCAId({ ticker, localId: id });
   const rawDid = dsMockUtils.createMockIdentityId(did);
 
   let distribution: DividendDistribution;

@@ -92,7 +92,7 @@ export async function prepareClaimClassicTicker(
     });
   }
 
-  const { eth_owner: ethOwner } = classicReservation.unwrap();
+  const { ethOwner } = classicReservation.unwrap();
 
   let signerAddress: string;
 

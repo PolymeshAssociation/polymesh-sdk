@@ -1,5 +1,7 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
+import P from 'bluebird';
+import { isEqual } from 'lodash';
 
 import {
   Account,
@@ -36,6 +38,7 @@ import {
   PermissionGroupType,
   Signer,
   TickerReservationStatus,
+  TransactionPermissions,
 } from '~/types';
 import { MaybePostTransactionValue, PortfolioId } from '~/types/internal';
 import { u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
@@ -178,7 +181,7 @@ export function assertDistributionOpen(paymentDate: Date, expiryDate: Date | nul
 export function assertCaTargetsValid(targets: InputTargets, context: Context): void {
   const { maxTargetIds } = context.polymeshApi.consts.corporateAction;
 
-  const maxTargets = u64ToBigNumber(maxTargetIds);
+  const maxTargets = u32ToBigNumber(maxTargetIds);
 
   if (maxTargets.lt(targets.identities.length)) {
     throw new PolymeshError({
@@ -200,7 +203,7 @@ export function assertCaTaxWithholdingsValid(
 ): void {
   const { maxDidWhts } = context.polymeshApi.consts.corporateAction;
 
-  const maxWithholdingEntries = u64ToBigNumber(maxDidWhts);
+  const maxWithholdingEntries = u32ToBigNumber(maxDidWhts);
 
   if (maxWithholdingEntries.lt(taxWithholdings.length)) {
     throw new PolymeshError({
@@ -422,16 +425,17 @@ export async function assertMultiSigSignerAuthorizationValid(
       });
     }
 
-    const exitingIdentity = await target.getIdentity();
-    if (exitingIdentity) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'The target Account is already part of an Identity',
-      });
-    }
+    const identityRecord = await context.polymeshApi.query.identity.keyRecords(address);
 
-    const multiSig = await context.polymeshApi.query.multiSig.keyToMultiSig(address);
-    if (!multiSig.isEmpty) {
+    if (identityRecord.isSome) {
+      const record = identityRecord.unwrap();
+      if (record.isPrimaryKey || record.isSecondaryKey) {
+        throw new PolymeshError({
+          code: ErrorCode.ValidationError,
+          message: 'The target Account is already part of an Identity',
+        });
+      }
+
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message: 'The target Account is already associated to a multisig address',
@@ -591,6 +595,49 @@ export async function assertAuthorizationRequestValid(
       return assertJoinOrRotateAuthorizationValid(authRequest);
     default:
       throw new UnreachableCaseError(data); // ensures switch statement covers all values
+  }
+}
+
+/**
+ * @hidden
+ *
+ * Retrieve the Permission Group that has the same permissions as the ones passed as input, or undefined if
+ *   there is no matching group
+ */
+export async function getGroupFromPermissions(
+  asset: Asset,
+  permissions: TransactionPermissions | null
+): Promise<(CustomPermissionGroup | KnownPermissionGroup) | undefined> {
+  const { custom, known } = await asset.permissions.getGroups();
+  const allGroups = [...custom, ...known];
+
+  const currentGroupPermissions = await P.map(allGroups, group => group.getPermissions());
+
+  const duplicatedGroupIndex = currentGroupPermissions.findIndex(
+    ({ transactions: transactionPermissions }) => isEqual(transactionPermissions, permissions)
+  );
+
+  return allGroups[duplicatedGroupIndex];
+}
+
+/**
+ * @hidden
+ */
+export async function assertGroupDoesNotExist(
+  asset: Asset,
+  permissions: TransactionPermissions | null
+): Promise<void> {
+  const matchingGroup = await getGroupFromPermissions(asset, permissions);
+
+  if (matchingGroup) {
+    throw new PolymeshError({
+      code: ErrorCode.NoDataChange,
+      message: 'There already exists a group with the exact same permissions',
+      data: {
+        groupId:
+          matchingGroup instanceof CustomPermissionGroup ? matchingGroup.id : matchingGroup.type,
+      },
+    });
   }
 }
 

@@ -65,8 +65,10 @@ describe('Context class', () => {
     dsMockUtils.setConstMock('system', 'ss58Prefix', {
       returnValue: dsMockUtils.createMockU8(new BigNumber(42)),
     });
-    dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-      returnValue: dsMockUtils.createMockIdentityId('someDid'),
+    dsMockUtils.createQueryStub('identity', 'didRecords', {
+      returnValue: dsMockUtils.createMockIdentityDidRecord({
+        primaryKey: dsMockUtils.createMockOption(dsMockUtils.createMockAccountId('someDid')),
+      }),
     });
   });
 
@@ -77,18 +79,6 @@ describe('Context class', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-  });
-
-  it('should throw an error if accessing the transaction submodule without an active Account', async () => {
-    const context = await Context.create({
-      polymeshApi: dsMockUtils.getApiInstance(),
-      middlewareApi: dsMockUtils.getMiddlewareApi(),
-      signingManager: dsMockUtils.getSigningManagerInstance({ getAccounts: [] }),
-    });
-
-    expect(() => context.polymeshApi.tx).toThrow(
-      'Cannot perform transactions without an active Account'
-    );
   });
 
   it('should throw an error if accessing the middleware client without an active connection', async () => {
@@ -255,6 +245,16 @@ describe('Context class', () => {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect((context as any).signingManager).toEqual(signingManager);
+
+      signingManager.getAccounts.returns([]);
+
+      await context.setSigningManager(signingManager);
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.General,
+        message: 'There is no signing Account associated with the SDK instance',
+      });
+      expect(() => context.getSigningAccount()).toThrowError(expectedError);
     });
   });
 
@@ -387,8 +387,7 @@ describe('Context class', () => {
       const allowance = dsMockUtils.createMockBalance(new BigNumber(100));
       const returnValue = dsMockUtils.createMockOption(
         dsMockUtils.createMockSubsidy({
-          // eslint-disable-next-line @typescript-eslint/naming-convention
-          paying_key: dsMockUtils.createMockAccountId('payingKey'),
+          payingKey: dsMockUtils.createMockAccountId('payingKey'),
           remaining: allowance,
         })
       );
@@ -417,8 +416,7 @@ describe('Context class', () => {
       const allowance = dsMockUtils.createMockBalance(new BigNumber(100));
       const returnValue = dsMockUtils.createMockOption(
         dsMockUtils.createMockSubsidy({
-          // eslint-disable-next-line @typescript-eslint/naming-convention
-          paying_key: dsMockUtils.createMockAccountId('payingKey'),
+          payingKey: dsMockUtils.createMockAccountId('payingKey'),
           remaining: allowance,
         })
       );
@@ -460,8 +458,7 @@ describe('Context class', () => {
       const allowance = dsMockUtils.createMockBalance(new BigNumber(100));
       const returnValue = dsMockUtils.createMockOption(
         dsMockUtils.createMockSubsidy({
-          // eslint-disable-next-line @typescript-eslint/naming-convention
-          paying_key: dsMockUtils.createMockAccountId('payingKey'),
+          payingKey: dsMockUtils.createMockAccountId('payingKey'),
           remaining: allowance,
         })
       );
@@ -504,8 +501,10 @@ describe('Context class', () => {
 
     it('should return the signing Identity', async () => {
       const did = 'someDid';
-      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockIdentityId(did),
+      dsMockUtils.createQueryStub('identity', 'didRecords', {
+        returnValue: dsMockUtils.createMockIdentityDidRecord({
+          primaryKey: dsMockUtils.createMockOption(createMockAccountId(did)),
+        }),
       });
 
       const context = await Context.create({
@@ -637,7 +636,8 @@ describe('Context class', () => {
       }
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
-        message: 'The Identity does not exist',
+        message:
+          'The passed DID does not correspond to an on-chain user Identity. It may correspond to an Asset Identity',
       });
       expect(error).toEqual(expectedError);
     });
@@ -712,25 +712,26 @@ describe('Context class', () => {
       sinon.restore();
     });
 
-    /* eslint-disable @typescript-eslint/naming-convention */
     it('should return which DIDs in the input array are invalid', async () => {
       const inputDids = ['someDid', 'otherDid', 'invalidDid', 'otherInvalidDid'];
+      /* eslint-disable @typescript-eslint/naming-convention */
       dsMockUtils.createQueryStub('identity', 'didRecords', {
         multi: [
-          dsMockUtils.createMockDidRecord({
-            roles: [],
-            primary_key: createMockAccountId('someId'),
-            secondary_keys: [],
-          }),
-          dsMockUtils.createMockDidRecord({
-            roles: [],
-            primary_key: createMockAccountId('otherId'),
-            secondary_keys: [],
-          }),
-          dsMockUtils.createMockDidRecord(),
-          dsMockUtils.createMockDidRecord(),
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockIdentityDidRecord({
+              primaryKey: dsMockUtils.createMockOption(dsMockUtils.createMockAccountId('someId')),
+            })
+          ),
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockIdentityDidRecord({
+              primaryKey: dsMockUtils.createMockOption(dsMockUtils.createMockAccountId('otherId')),
+            })
+          ),
+          dsMockUtils.createMockOption(),
+          dsMockUtils.createMockOption(),
         ],
       });
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -742,7 +743,6 @@ describe('Context class', () => {
 
       expect(invalidDids).toEqual(inputDids.slice(2, 4));
     });
-    /* eslint-enable @typescript-eslint/naming-convention */
   });
 
   describe('method: getProtocolFees', () => {
@@ -1094,6 +1094,7 @@ describe('Context class', () => {
         last_update_date: date,
         cdd_id: cddId,
       };
+      /* eslint-enable @typescript-eslint/naming-convention */
       const didsWithClaimsQueryResponse: IdentityWithClaimsResult = {
         totalCount: 25,
         items: [
@@ -1114,7 +1115,6 @@ describe('Context class', () => {
           },
         ],
       };
-      /* eslint-enable @typescript-eslint/naming-convention */
 
       dsMockUtils.createApolloQueryStub(
         didsWithClaims({
@@ -1180,18 +1180,18 @@ describe('Context class', () => {
       /* eslint-disable @typescript-eslint/naming-convention */
       const claim1stKey = dsMockUtils.createMockClaim1stKey({
         target: dsMockUtils.createMockIdentityId(targetDid),
-        claim_type: dsMockUtils.createMockClaimType(ClaimType.CustomerDueDiligence),
+        claimType: dsMockUtils.createMockClaimType(ClaimType.CustomerDueDiligence),
       });
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       const identityClaim = {
-        claim_issuer: dsMockUtils.createMockIdentityId(issuerDid),
-        issuance_date: dsMockUtils.createMockMoment(new BigNumber(issuedAt.getTime())),
-        last_update_date: dsMockUtils.createMockMoment(),
+        claimIssuer: dsMockUtils.createMockIdentityId(issuerDid),
+        issuanceDate: dsMockUtils.createMockMoment(new BigNumber(issuedAt.getTime())),
+        lastUpdateDate: dsMockUtils.createMockMoment(),
         claim: dsMockUtils.createMockClaim({
           CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
         }),
       };
-      /* eslint-enable @typescript-eslint/naming-convention */
 
       const fakeClaims = [
         {
@@ -1603,30 +1603,31 @@ describe('Context class', () => {
           })
         ),
       ];
+      /* eslint-enable @typescript-eslint/naming-convention */
 
       const distributions = [
         dsMockUtils.createMockOption(
           dsMockUtils.createMockDistribution({
             from: { kind: 'Default', did: 'someDid' },
             currency: 'USD',
-            per_share: new BigNumber(10000000),
+            perShare: new BigNumber(10000000),
             amount: new BigNumber(500000000000),
             remaining: new BigNumber(400000000000),
             reclaimed: false,
-            payment_at: new BigNumber(new Date('10/14/1987').getTime()),
-            expires_at: null,
+            paymentAt: new BigNumber(new Date('10/14/1987').getTime()),
+            expiresAt: null,
           })
         ),
         dsMockUtils.createMockOption(
           dsMockUtils.createMockDistribution({
             from: { kind: { User: dsMockUtils.createMockU64(new BigNumber(2)) }, did: 'someDid' },
             currency: 'CAD',
-            per_share: new BigNumber(20000000),
+            perShare: new BigNumber(20000000),
             amount: new BigNumber(300000000000),
             remaining: new BigNumber(200000000000),
             reclaimed: false,
-            payment_at: new BigNumber(new Date('11/26/1989').getTime()),
-            expires_at: null,
+            paymentAt: new BigNumber(new Date('11/26/1989').getTime()),
+            expiresAt: null,
           })
         ),
         dsMockUtils.createMockOption(),
@@ -1634,11 +1635,10 @@ describe('Context class', () => {
 
       const localIds = [new BigNumber(1), new BigNumber(2), new BigNumber(3)];
       const caIds = [
-        dsMockUtils.createMockCAId({ ticker: rawTickers[0], local_id: localIds[0] }),
-        dsMockUtils.createMockCAId({ ticker: rawTickers[1], local_id: localIds[1] }),
-        dsMockUtils.createMockCAId({ ticker: rawTickers[1], local_id: localIds[2] }),
+        dsMockUtils.createMockCAId({ ticker: rawTickers[0], localId: localIds[0] }),
+        dsMockUtils.createMockCAId({ ticker: rawTickers[1], localId: localIds[1] }),
+        dsMockUtils.createMockCAId({ ticker: rawTickers[1], localId: localIds[2] }),
       ];
-      /* eslint-enable @typescript-eslint/naming-convention */
 
       dsMockUtils.createQueryStub('corporateAction', 'corporateActions', {
         entries: [

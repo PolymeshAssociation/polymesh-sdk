@@ -1,14 +1,11 @@
 import { Balance } from '@polkadot/types/interfaces';
+import {
+  PalletCorporateActionsCorporateAction,
+  PalletCorporateActionsDistribution,
+} from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import {
-  CAId,
-  CorporateAction,
-  Distribution,
-  Moment,
-  PortfolioNumber,
-  Ticker,
-} from 'polymesh-types/types';
+import { CAId, Moment, PortfolioNumber, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -511,8 +508,8 @@ describe('configureDividendDistribution procedure', () => {
     const portfolioNumber = new BigNumber(3);
     const did = 'someDid';
 
-    let rawCorporateAction: CorporateAction;
-    let rawDistribution: Distribution;
+    let rawCorporateAction: PalletCorporateActionsCorporateAction;
+    let rawDistribution: PalletCorporateActionsDistribution;
 
     beforeAll(() => {
       entityMockUtils.initMocks();
@@ -539,12 +536,12 @@ describe('configureDividendDistribution procedure', () => {
       rawDistribution = dsMockUtils.createMockDistribution({
         from: { did, kind: { User: dsMockUtils.createMockU64(portfolioNumber) } },
         currency,
-        per_share: perShare.shiftedBy(6),
+        perShare: perShare.shiftedBy(6),
         amount: maxAmount.shiftedBy(6),
         remaining: new BigNumber(10000),
         reclaimed: false,
-        payment_at: new BigNumber(paymentDate.getTime()),
-        expires_at: dsMockUtils.createMockOption(
+        paymentAt: new BigNumber(paymentDate.getTime()),
+        expiresAt: dsMockUtils.createMockOption(
           dsMockUtils.createMockMoment(new BigNumber(expiryDate?.getTime()))
         ),
       });
@@ -554,23 +551,21 @@ describe('configureDividendDistribution procedure', () => {
         returnValue: dsMockUtils.createMockOption(rawCorporateAction),
       });
       dsMockUtils.createQueryStub('corporateAction', 'details', {
-        returnValue: dsMockUtils.createMockText(description),
+        returnValue: dsMockUtils.createMockBytes(description),
       });
     });
 
     beforeEach(() => {
-      /* eslint-disable @typescript-eslint/naming-convention */
       filterEventRecordsStub.returns([
         dsMockUtils.createMockIEvent([
           'data',
           dsMockUtils.createMockCAId({
             ticker,
-            local_id: id,
+            localId: id,
           }),
           rawDistribution,
         ]),
       ]);
-      /* eslint-enable @typescript-eslint/naming-convention */
     });
 
     afterEach(() => {

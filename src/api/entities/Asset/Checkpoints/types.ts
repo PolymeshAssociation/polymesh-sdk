@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { Checkpoint, CheckpointSchedule } from '~/types';
+import { Checkpoint, CheckpointSchedule } from '~/internal';
 
 export enum CaCheckpointType {
   Existing = 'Existing',

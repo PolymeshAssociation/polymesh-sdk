@@ -1,5 +1,5 @@
 import { QueryableStorageEntry } from '@polkadot/api/types';
-import { SecurityToken as MeshToken, TickerRegistration } from 'polymesh-types/types';
+import { PalletAssetSecurityToken, PalletAssetTickerRegistration } from '@polkadot/types/lookup';
 
 import {
   Asset,
@@ -107,8 +107,8 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
     const rawTicker = stringToTicker(ticker, context);
 
     const assembleResult = (
-      { owner: tickerOwner, expiry }: TickerRegistration,
-      { owner_did: assetOwner }: MeshToken
+      { owner: tickerOwner, expiry }: PalletAssetTickerRegistration,
+      { ownerDid: assetOwner }: PalletAssetSecurityToken
     ): TickerReservationDetails => {
       const tickerOwned = !tickerOwner.isEmpty;
       const assetOwned = !assetOwner.isEmpty;

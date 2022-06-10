@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const rimraf = require('rimraf');
 const util = require('util');
-const { upperFirst, toLower, forEach } = require('lodash');
+const { forEach, camelCase, mapKeys } = require('lodash');
 const { NODE_URL, SCHEMA_PORT } = require('./consts');
 
 const definitionsDir = path.resolve('src', 'polkadot');
@@ -16,6 +16,49 @@ fs.mkdirSync(typesDir);
 
 rimraf.sync(generatedDir);
 fs.mkdirSync(generatedDir);
+
+/**
+ * @hidden
+ * transforms the schema so RPC types are compatible with other methods from the polkadot api.
+ * @note imports are added into the generated files in the postProcessTypes script
+ */
+function transformSchema(schemaObj) {
+  let {
+    rpc: { identity, compliance, asset },
+  } = schemaObj;
+
+  camelCaseParamNames(identity.getFilteredAuthorizations);
+  identity.getFilteredAuthorizations.type = 'Vec<PolymeshPrimitivesAuthorization>';
+
+  camelCaseParamNames(compliance.canTransfer);
+
+  camelCaseKeys(schemaObj, 'types', 'ComplianceRequirementResult');
+
+  camelCaseKeys(schemaObj, 'types', 'Condition');
+  schemaObj.types.Condition.issuers = 'Vec<PolymeshPrimitivesConditionTrustedIssuer>';
+
+  camelCaseKeys(schemaObj, 'types', 'TrustedIssuer');
+
+  camelCaseParamNames(asset.canTransferGranular);
+  asset.canTransferGranular.params[0].type = 'Option<PolymeshPrimitivesIdentityId>';
+  asset.canTransferGranular.params[2].type = 'Option<PolymeshPrimitivesIdentityId>';
+
+  camelCaseParamNames(asset.canTransfer);
+  asset.canTransfer.params[1].type = 'Option<PolymeshPrimitivesIdentityId>';
+  asset.canTransfer.params[3].type = 'Option<PolymeshPrimitivesIdentityId>';
+}
+
+function camelCaseKeys(schemaObj, section, field) {
+  const newField = mapKeys(schemaObj[section][field], (v, k) => camelCase(k));
+  schemaObj[section][field] = newField;
+}
+
+function camelCaseParamNames(field) {
+  field.params = field.params.map(p => ({
+    ...p,
+    name: camelCase(p.name),
+  }));
+}
 
 function writeDefinitions(schemaObj) {
   const { types, rpc: rpcModules } = schemaObj;
@@ -71,60 +114,6 @@ function writeDefinitions(schemaObj) {
   fs.writeFileSync(path.resolve(definitionsDir, 'definitions.ts'), defExports);
 }
 
-/**
- * Autogenerate types and conversion utils which are too large to write manually
- */
-function writeGenerated({ types }) {
-  const instanbulIgnore = '/* istanbul ignore file */';
-  let typesFile = `${instanbulIgnore}
-
-`;
-  let utilsFile = `${instanbulIgnore}
-
-import { CountryCode as MeshCountryCode } from 'polymesh-types/types';
-
-import { Context } from '~/internal';
-import { CountryCode } from '~/types';
-
-`;
-
-  let countryCodeEnum = 'export enum CountryCode {';
-  let countryCodeFunctions = `/**
- * @hidden
- */
-export function countryCodeToMeshCountryCode(countryCode: CountryCode, context: Context): MeshCountryCode {
-  return context.polymeshApi.createType('CountryCode', countryCode);
-}
-
-/**
- * @hidden
- */
-export function meshCountryCodeToCountryCode(meshCountryCode: MeshCountryCode): CountryCode {`;
-
-  const countryCodes = types.CountryCode._enum;
-  countryCodes.forEach((code, index) => {
-    const isLast = index === countryCodes.length - 1;
-    const pascalCaseCode = upperFirst(toLower(code));
-
-    countryCodeEnum = `${countryCodeEnum}\n  ${pascalCaseCode} = '${pascalCaseCode}',${
-      isLast ? '\n}' : ''
-    }`;
-
-    const returnStatement = `return CountryCode.${pascalCaseCode}`;
-    if (isLast) {
-      countryCodeFunctions = `${countryCodeFunctions}\n  ${returnStatement};\n}`;
-    } else {
-      countryCodeFunctions = `${countryCodeFunctions}\n  if (meshCountryCode.is${pascalCaseCode}) {\n    ${returnStatement};\n  }\n`;
-    }
-  });
-
-  typesFile = `${typesFile}${countryCodeEnum}\n`;
-  utilsFile = `${utilsFile}${countryCodeFunctions}\n`;
-
-  fs.writeFileSync(path.resolve(generatedDir, 'types.ts'), typesFile);
-  fs.writeFileSync(path.resolve(generatedDir, 'utils.ts'), utilsFile);
-}
-
 http.get(`http://${NODE_URL}:${SCHEMA_PORT}/polymesh_schema.json`, res => {
   const chunks = [];
   res.on('data', chunk => {
@@ -134,8 +123,8 @@ http.get(`http://${NODE_URL}:${SCHEMA_PORT}/polymesh_schema.json`, res => {
   res.on('end', () => {
     const schema = Buffer.concat(chunks);
     const schemaObj = JSON.parse(schema);
+    transformSchema(schemaObj);
 
     writeDefinitions(schemaObj);
-    writeGenerated(schemaObj);
   });
 });

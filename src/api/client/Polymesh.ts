@@ -8,18 +8,18 @@ import { HttpLink } from 'apollo-link-http';
 import fetch from 'cross-fetch';
 import schema from 'polymesh-types/schema';
 
-import { AccountManagement } from '~/AccountManagement';
-import { Assets } from '~/Assets';
-import { Identities } from '~/Identities';
 import { Account, Context, Identity, PolymeshError } from '~/internal';
 import { heartbeat } from '~/middleware/queries';
-import { Settlements } from '~/Settlements';
 import { ErrorCode, MiddlewareConfig } from '~/types';
 import { signerToString } from '~/utils/conversion';
 import { assertExpectedChainVersion } from '~/utils/internal';
 
+import { AccountManagement } from './AccountManagement';
+import { Assets } from './Assets';
 import { Claims } from './Claims';
+import { Identities } from './Identities';
 import { Network } from './Network';
+import { Settlements } from './Settlements';
 
 interface ConnectParams {
   nodeUrl: string;
@@ -87,16 +87,7 @@ export class Polymesh {
     const { nodeUrl, signingManager, middleware } = params;
     let context: Context;
 
-    await assertExpectedChainVersion(nodeUrl).catch(error => {
-      if (
-        error instanceof PolymeshError &&
-        error.message.includes('Unsupported Polymesh version')
-      ) {
-        console.warn(error.message);
-      } else {
-        throw error;
-      }
-    });
+    await assertExpectedChainVersion(nodeUrl);
 
     try {
       const { types, rpc } = schema;

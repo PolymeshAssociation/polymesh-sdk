@@ -101,19 +101,15 @@ describe('Documents class', () => {
             ],
           } as unknown as StorageKey,
           dsMockUtils.createMockDocument({
-            uri: dsMockUtils.createMockDocumentUri(uri),
-            name: dsMockUtils.createMockDocumentName(name),
-            /* eslint-disable @typescript-eslint/naming-convention */
-            content_hash: dsMockUtils.createMockDocumentHash({
+            uri: dsMockUtils.createMockBytes(uri),
+            name: dsMockUtils.createMockBytes(name),
+            contentHash: dsMockUtils.createMockDocumentHash({
               H128: dsMockUtils.createMockU8aFixed(contentHash, true),
             }),
-            doc_type: dsMockUtils.createMockOption(
-              type ? dsMockUtils.createMockDocumentType(type) : null
-            ),
-            filing_date: dsMockUtils.createMockOption(
+            docType: dsMockUtils.createMockOption(type ? dsMockUtils.createMockBytes(type) : null),
+            filingDate: dsMockUtils.createMockOption(
               filedAt ? dsMockUtils.createMockMoment(new BigNumber(filedAt.getTime())) : null
             ),
-            /* eslint-enable @typescript-eslint/naming-convention */
           })
         )
       );

@@ -4,7 +4,7 @@ import { ProcedureAuthorization, ScopeClaimProof } from '~/types/internal';
 import {
   claimToMeshClaim,
   dateToMoment,
-  scopeClaimProofToMeshScopeClaimProof,
+  scopeClaimProofToConfidentialIdentityClaimProof,
   scopeToMeshScope,
   stringToIdentityId,
   stringToInvestorZKProofData,
@@ -61,7 +61,7 @@ export async function prepareAddInvestorUniquenessClaim(
         meshIdentityId,
         scopeToMeshScope(scope, context),
         meshClaim,
-        scopeClaimProofToMeshScopeClaimProof(proof, scopeId, context),
+        scopeClaimProofToConfidentialIdentityClaimProof(proof, scopeId, context),
         meshExpiry,
       ],
     });

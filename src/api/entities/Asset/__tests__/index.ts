@@ -1,18 +1,16 @@
-import { bool } from '@polkadot/types';
+import { bool, Bytes, u64 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
-import BigNumber from 'bignumber.js';
 import {
-  AssetIdentifier,
-  AssetName,
-  FundingRoundName,
-  SecurityToken as MeshSecurityToken,
-  Ticker,
-} from 'polymesh-types/types';
+  PolymeshPrimitivesAssetIdentifier,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
+import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Asset, Context, Entity, TransactionQueue } from '~/internal';
 import { eventByIndexedArgs, tickerExternalAgentHistory } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
+import { SecurityToken as MeshSecurityToken } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { SecurityIdentifier, SecurityIdentifierType } from '~/types';
 import { tuple } from '~/types/utils';
@@ -30,6 +28,7 @@ jest.mock(
 );
 
 describe('Asset class', () => {
+  let bytesToStringStub: sinon.SinonStub;
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
@@ -64,7 +63,7 @@ describe('Asset class', () => {
 
   describe('method: isUniqueIdentifiers', () => {
     it('should return true if the object conforms to the interface', () => {
-      expect(Asset.isUniqueIdentifiers({ ticker: 'someTicker' })).toBe(true);
+      expect(Asset.isUniqueIdentifiers({ ticker: 'SOME_TICKER' })).toBe(true);
       expect(Asset.isUniqueIdentifiers({})).toBe(false);
       expect(Asset.isUniqueIdentifiers({ ticker: 3 })).toBe(false);
     });
@@ -81,7 +80,7 @@ describe('Asset class', () => {
     let did: string;
 
     let rawToken: MeshSecurityToken;
-    let rawName: AssetName;
+    let rawName: Bytes;
     let rawIuDisabled: bool;
 
     let context: Context;
@@ -96,19 +95,18 @@ describe('Asset class', () => {
       assetType = 'EquityCommon';
       iuDisabled = false;
       did = 'someDid';
+      bytesToStringStub = sinon.stub(utilsConversionModule, 'bytesToString');
     });
 
     beforeEach(() => {
       rawToken = dsMockUtils.createMockSecurityToken({
-        /* eslint-disable @typescript-eslint/naming-convention */
-        owner_did: dsMockUtils.createMockIdentityId(owner),
-        asset_type: dsMockUtils.createMockAssetType(assetType),
+        ownerDid: dsMockUtils.createMockIdentityId(owner),
+        assetType: dsMockUtils.createMockAssetType(assetType),
         divisible: dsMockUtils.createMockBool(isDivisible),
-        total_supply: dsMockUtils.createMockBalance(totalSupply),
-        /* eslint-enable @typescript-eslint/naming-convention */
+        totalSupply: dsMockUtils.createMockBalance(totalSupply),
       });
       rawIuDisabled = dsMockUtils.createMockBool(iuDisabled);
-      rawName = dsMockUtils.createMockAssetName(name);
+      rawName = dsMockUtils.createMockBytes(name);
       context = dsMockUtils.getContextInstance();
       asset = new Asset({ ticker }, context);
 
@@ -116,7 +114,7 @@ describe('Asset class', () => {
         entries: [
           tuple(
             [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(did)],
-            dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('PolymeshV1Pia'))
+            dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('PolymeshV1PIA'))
           ),
           tuple(
             [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(owner)],
@@ -141,6 +139,7 @@ describe('Asset class', () => {
         returnValue: rawToken,
       });
 
+      bytesToStringStub.withArgs(rawName).returns(name);
       let details = await asset.details();
 
       expect(details.name).toBe(name);
@@ -169,22 +168,21 @@ describe('Asset class', () => {
 
       tokensStub.resolves(
         dsMockUtils.createMockSecurityToken({
-          /* eslint-disable @typescript-eslint/naming-convention */
-          owner_did: dsMockUtils.createMockIdentityId(owner),
-          asset_type: dsMockUtils.createMockAssetType({
+          ownerDid: dsMockUtils.createMockIdentityId(owner),
+          assetType: dsMockUtils.createMockAssetType({
             Custom: dsMockUtils.createMockU32(new BigNumber(10)),
           }),
           divisible: dsMockUtils.createMockBool(isDivisible),
-          total_supply: dsMockUtils.createMockBalance(totalSupply),
-          /* eslint-enable @typescript-eslint/naming-convention */
+          totalSupply: dsMockUtils.createMockBalance(totalSupply),
         })
       );
 
       const customType = 'something';
-
+      const rawCustomType = dsMockUtils.createMockBytes(customType);
       dsMockUtils.createQueryStub('asset', 'customTypes', {
-        returnValue: dsMockUtils.createMockBytes(customType),
+        returnValue: rawCustomType,
       });
+      bytesToStringStub.withArgs(rawCustomType).returns(customType);
 
       details = await asset.details();
       expect(details.assetType).toEqual(customType);
@@ -192,8 +190,8 @@ describe('Asset class', () => {
 
     it('should allow subscription', async () => {
       const unsubCallback = 'unsubCallBack';
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/naming-convention
-      (rawToken as any).primary_issuance_agent = dsMockUtils.createMockOption();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (rawToken as any).primaryIssuanceAgent = dsMockUtils.createMockOption();
 
       dsMockUtils.createQueryStub('asset', 'tokens').callsFake(async (_, cbFunc) => {
         cbFunc(rawToken);
@@ -201,9 +199,10 @@ describe('Asset class', () => {
         return unsubCallback;
       });
 
+      bytesToStringStub.withArgs(rawName).returns(name);
+
       const callback = sinon.stub();
       const result = await asset.details(callback);
-
       expect(result).toBe(unsubCallback);
       sinon.assert.calledWithExactly(
         callback,
@@ -274,7 +273,7 @@ describe('Asset class', () => {
   describe('method: currentFundingRound', () => {
     let ticker: string;
     let fundingRound: string;
-    let rawFundingRound: FundingRoundName;
+    let rawFundingRound: Bytes;
 
     let context: Context;
     let asset: Asset;
@@ -285,14 +284,14 @@ describe('Asset class', () => {
     });
 
     beforeEach(() => {
-      rawFundingRound = dsMockUtils.createMockFundingRoundName(fundingRound);
+      rawFundingRound = dsMockUtils.createMockBytes(fundingRound);
       context = dsMockUtils.getContextInstance();
       asset = new Asset({ ticker }, context);
     });
 
     it('should return null if there is no funding round for an Asset', async () => {
       dsMockUtils.createQueryStub('asset', 'fundingRound', {
-        returnValue: dsMockUtils.createMockFundingRoundName(),
+        returnValue: dsMockUtils.createMockBytes(),
       });
 
       const result = await asset.currentFundingRound();
@@ -304,7 +303,7 @@ describe('Asset class', () => {
       dsMockUtils.createQueryStub('asset', 'fundingRound', {
         returnValue: rawFundingRound,
       });
-
+      bytesToStringStub.withArgs(rawFundingRound).returns(fundingRound);
       const result = await asset.currentFundingRound();
 
       expect(result).toBe(fundingRound);
@@ -318,6 +317,7 @@ describe('Asset class', () => {
 
         return unsubCallback;
       });
+      bytesToStringStub.withArgs(rawFundingRound).returns(fundingRound);
 
       const callback = sinon.stub();
       const result = await asset.currentFundingRound(callback);
@@ -333,10 +333,12 @@ describe('Asset class', () => {
     let cusipValue: string;
     let cinsValue: string;
     let leiValue: string;
-    let isinMock: AssetIdentifier;
-    let cusipMock: AssetIdentifier;
-    let cinsMock: AssetIdentifier;
-    let leiMock: AssetIdentifier;
+    let figiValue: string;
+    let isinMock: PolymeshPrimitivesAssetIdentifier;
+    let cusipMock: PolymeshPrimitivesAssetIdentifier;
+    let cinsMock: PolymeshPrimitivesAssetIdentifier;
+    let leiMock: PolymeshPrimitivesAssetIdentifier;
+    let figiMock: PolymeshPrimitivesAssetIdentifier;
     let securityIdentifiers: SecurityIdentifier[];
 
     let context: Context;
@@ -348,6 +350,7 @@ describe('Asset class', () => {
       cusipValue = 'FAKE CUSIP';
       cinsValue = 'FAKE CINS';
       leiValue = 'FAKE LEI';
+      figiValue = 'FAKE FIGI';
       isinMock = dsMockUtils.createMockAssetIdentifier({
         Isin: dsMockUtils.createMockU8aFixed(isinValue),
       });
@@ -359,6 +362,9 @@ describe('Asset class', () => {
       });
       leiMock = dsMockUtils.createMockAssetIdentifier({
         Lei: dsMockUtils.createMockU8aFixed(leiValue),
+      });
+      figiMock = dsMockUtils.createMockAssetIdentifier({
+        Figi: dsMockUtils.createMockU8aFixed(figiValue),
       });
       securityIdentifiers = [
         {
@@ -377,6 +383,10 @@ describe('Asset class', () => {
           type: SecurityIdentifierType.Lei,
           value: leiValue,
         },
+        {
+          type: SecurityIdentifierType.Figi,
+          value: figiValue,
+        },
       ];
     });
 
@@ -387,7 +397,7 @@ describe('Asset class', () => {
 
     it('should return the list of security identifiers for an Asset', async () => {
       dsMockUtils.createQueryStub('asset', 'identifiers', {
-        returnValue: [isinMock, cusipMock, cinsMock, leiMock],
+        returnValue: [isinMock, cusipMock, cinsMock, leiMock, figiMock],
       });
 
       const result = await asset.getIdentifiers();
@@ -396,13 +406,14 @@ describe('Asset class', () => {
       expect(result[1].value).toBe(cusipValue);
       expect(result[2].value).toBe(cinsValue);
       expect(result[3].value).toBe(leiValue);
+      expect(result[4].value).toBe(figiValue);
     });
 
     it('should allow subscription', async () => {
       const unsubCallback = 'unsubCallBack';
 
       dsMockUtils.createQueryStub('asset', 'identifiers').callsFake(async (_, cbFunc) => {
-        cbFunc([isinMock, cusipMock, cinsMock, leiMock]);
+        cbFunc([isinMock, cusipMock, cinsMock, leiMock, figiMock]);
 
         return unsubCallback;
       });
@@ -605,7 +616,7 @@ describe('Asset class', () => {
 
   describe('method: investorCount', () => {
     let ticker: string;
-    let rawTicker: Ticker;
+    let rawTicker: PolymeshPrimitivesTicker;
     let stringToTickerStub: sinon.SinonStub;
     let boolToBooleanStub: sinon.SinonStub<[bool], boolean>;
 

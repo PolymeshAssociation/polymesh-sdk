@@ -117,6 +117,7 @@ interface IdentityOptions extends EntityOptions {
   getPrimaryAccount?: EntityGetter<PermissionedAccount>;
   authorizationsGetReceived?: EntityGetter<AuthorizationRequest[]>;
   authorizationsGetSent?: EntityGetter<ResultSet<AuthorizationRequest>>;
+  authorizationsGetOne?: EntityGetter<AuthorizationRequest>;
   getVenues?: EntityGetter<Venue[]>;
   getScopeId?: EntityGetter<string | null>;
   getAssetBalance?: EntityGetter<BigNumber>;
@@ -150,6 +151,7 @@ interface AssetOptions extends EntityOptions {
   complianceRequirementsGet?: EntityGetter<ComplianceRequirements>;
   checkpointsGetOne?: EntityGetter<Checkpoint>;
   checkpointsSchedulesGetOne?: EntityGetter<ScheduleWithDetails>;
+  investorCount?: EntityGetter<BigNumber>;
 }
 
 interface AuthorizationRequestOptions extends EntityOptions {
@@ -477,6 +479,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     authorizations = {} as {
       getReceived: sinon.SinonStub;
       getSent: sinon.SinonStub;
+      getOne: sinon.SinonStub;
     };
 
     assetPermissions = {} as {
@@ -513,6 +516,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
       this.getPrimaryAccount = createEntityGetterStub(opts.getPrimaryAccount);
       this.authorizations.getReceived = createEntityGetterStub(opts.authorizationsGetReceived);
       this.authorizations.getSent = createEntityGetterStub(opts.authorizationsGetSent);
+      this.authorizations.getOne = createEntityGetterStub(opts.authorizationsGetOne);
       this.assetPermissions.get = createEntityGetterStub(opts.assetPermissionsGet);
       this.assetPermissions.getGroup = createEntityGetterStub(opts.assetPermissionsGetGroup);
       this.assetPermissions.hasPermissions = createEntityGetterStub(
@@ -535,6 +539,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     isCddProvider: false,
     authorizationsGetReceived: [],
     authorizationsGetSent: { data: [], next: null, count: new BigNumber(0) },
+    authorizationsGetOne: getAuthorizationRequestInstance(),
     getVenues: [],
     getScopeId: 'someScopeId',
     getAssetBalance: new BigNumber(100),
@@ -739,6 +744,8 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
       getOne: sinon.SinonStub;
     };
 
+    investorCount!: sinon.SinonStub;
+
     /**
      * @hidden
      */
@@ -772,6 +779,7 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
       this.compliance.requirements.get = createEntityGetterStub(opts.complianceRequirementsGet);
       this.checkpoints.schedules.getOne = createEntityGetterStub(opts.checkpointsSchedulesGetOne);
       this.checkpoints.getOne = createEntityGetterStub(opts.checkpointsGetOne);
+      this.investorCount = createEntityGetterStub(opts.investorCount);
     }
   },
   () => ({
@@ -823,6 +831,8 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
       },
     },
     toHuman: 'SOME_TICKER',
+    investorCount: new BigNumber(0),
+    toJson: 'SOME_TICKER',
   }),
   ['Asset']
 );
