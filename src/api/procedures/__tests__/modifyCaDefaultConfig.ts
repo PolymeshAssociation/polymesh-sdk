@@ -50,10 +50,10 @@ describe('modifyCaDefaultConfig procedure', () => {
     );
   });
 
-  let addTransactionStub: sinon.SinonStub;
+  let addBatchTransactionStub: sinon.SinonStub;
 
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
+    addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
   });
@@ -133,7 +133,7 @@ describe('modifyCaDefaultConfig procedure', () => {
     ).rejects.toThrow('New per-Identity tax withholding percentages are the same as current ones');
   });
 
-  it('should add a set default targets transaction to the queue', async () => {
+  it('should add a set default targets transaction to the batch', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('corporateAction', 'setDefaultTargets');
@@ -167,8 +167,8 @@ describe('modifyCaDefaultConfig procedure', () => {
 
     sinon.assert.calledWith(assertCaTargetsValidStub, targets, mockContext);
     sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({ transaction, args: [rawTicker, rawTargets] })
+      addBatchTransactionStub,
+      sinon.match({ transactions: [{ transaction, args: [rawTicker, rawTargets] }] })
     );
 
     rawTargets = dsMockUtils.createMockTargetIdentities({
@@ -189,8 +189,8 @@ describe('modifyCaDefaultConfig procedure', () => {
 
     sinon.assert.calledWith(assertCaTargetsValidStub, targets, mockContext);
     sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({ transaction, args: [rawTicker, rawTargets] })
+      addBatchTransactionStub,
+      sinon.match({ transactions: [{ transaction, args: [rawTicker, rawTargets] }] })
     );
   });
 
@@ -216,8 +216,8 @@ describe('modifyCaDefaultConfig procedure', () => {
     });
 
     sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({ transaction, args: [rawTicker, rawPercentage] })
+      addBatchTransactionStub,
+      sinon.match({ transactions: [{ transaction, args: [rawTicker, rawPercentage] }] })
     );
   });
 
