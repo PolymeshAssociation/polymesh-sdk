@@ -1,6 +1,4 @@
 import { Bytes } from '@polkadot/types';
-import { PolymeshPrimitivesAssetAssetType } from '@polkadot/types/lookup';
-import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { values } from 'lodash';
 
@@ -13,9 +11,10 @@ import {
   RoleType,
   SecurityIdentifier,
   TickerReservationStatus,
+  TxTag,
   TxTags,
 } from '~/types';
-import { MaybePostTransactionValue, ProcedureAuthorization } from '~/types/internal';
+import { ProcedureAuthorization } from '~/types/internal';
 import {
   assetDocumentToDocument,
   bigNumberToBalance,
@@ -26,18 +25,7 @@ import {
   stringToBytes,
   stringToTicker,
 } from '~/utils/conversion';
-import { filterEventRecords, optionize } from '~/utils/internal';
-
-/**
- * @hidden
- */
-export const createRegisterCustomAssetTypeResolver =
-  (context: Context) =>
-  (receipt: ISubmittableResult): PolymeshPrimitivesAssetAssetType => {
-    const [{ data }] = filterEventRecords(receipt, 'asset', 'CustomAssetTypeRegistered');
-
-    return internalAssetTypeToAssetType({ Custom: data[1] }, context);
-  };
+import { checkTxType, optionize } from '~/utils/internal';
 
 export interface CreateAssetParams {
   name: string;
@@ -99,6 +87,36 @@ export interface Storage {
 }
 
 /**
+ * Add protocol fees for specific tags to the current accumulated total
+ *
+ * @returns undefined if fees aren't being calculated manually
+ */
+async function addManualFees(
+  currentFee: BigNumber | undefined,
+  tags: { tag: TxTag; feeMultiplier: BigNumber }[] | TxTag[],
+  context: Context
+): Promise<BigNumber | undefined> {
+  if (!currentFee) {
+    return undefined;
+  }
+
+  const fees = await context.getProtocolFees({
+    tags: tags.map(tagData => (typeof tagData !== 'string' ? tagData.tag : tagData)),
+  });
+
+  return fees.reduce((prev, { fees: nextFees }, index) => {
+    const tagData = tags[index];
+    let feeMultiplier = new BigNumber(1);
+
+    if (typeof tagData !== 'string') {
+      ({ feeMultiplier } = tagData);
+    }
+
+    return prev.plus(nextFees.times(feeMultiplier));
+  }, currentFee);
+}
+
+/**
  * @hidden
  */
 export async function prepareCreateAsset(
@@ -142,25 +160,7 @@ export async function prepareCreateAsset(
     });
   }
 
-  let rawType: MaybePostTransactionValue<PolymeshPrimitivesAssetAssetType>;
-
-  if (customTypeData) {
-    const { rawValue, id } = customTypeData;
-
-    if (id.isEmpty) {
-      // if the custom asset type doesn't exist, we create it
-      [rawType] = this.addTransaction({
-        transaction: tx.asset.registerCustomAssetType,
-        resolvers: [createRegisterCustomAssetTypeResolver(context)],
-        args: [rawValue],
-      });
-    } else {
-      rawType = internalAssetTypeToAssetType({ Custom: id }, context);
-    }
-  } else {
-    rawType = internalAssetTypeToAssetType(assetType as KnownAssetType, context);
-  }
-
+  const rawTicker = stringToTicker(ticker, context);
   const rawName = stringToBytes(name, context);
   const rawIsDivisible = booleanToBool(isDivisible, context);
   const rawIdentifiers = securityIdentifiers.map(identifier =>
@@ -169,12 +169,14 @@ export async function prepareCreateAsset(
   const rawFundingRound = optionize(stringToBytes)(fundingRound, context);
   const rawDisableIu = booleanToBool(!requireInvestorUniqueness, context);
 
+  const newAsset = new Asset({ ticker }, context);
+
   let fee: undefined | BigNumber;
 
-  const rawTicker = stringToTicker(ticker, context);
-
-  // we waive any protocol fees if the Asset is created in Ethereum. If not created and ticker is not yet reserved, we set the fee to the sum of protocol fees for ticker registration and Asset creation.
-
+  /*
+   * we waive any protocol fees if the Asset is created in Ethereum. If not created and ticker is not yet reserved,
+   *   we set the fee to the sum of protocol fees for ticker registration and Asset creation.
+   */
   const classicTicker = await asset.classicTickers(rawTicker);
   const assetCreatedInEthereum =
     classicTicker.isSome && boolToBoolean(classicTicker.unwrap().isCreated);
@@ -182,46 +184,127 @@ export async function prepareCreateAsset(
   if (assetCreatedInEthereum) {
     fee = new BigNumber(0);
   } else if (status === TickerReservationStatus.Free) {
-    const [{ fees: registerTickerFee }, { fees: createAssetFee }] = await context.getProtocolFees({
-      tags: [TxTags.asset.RegisterTicker, TxTags.asset.CreateAsset],
-    });
-    fee = registerTickerFee.plus(createAssetFee);
+    fee = await addManualFees(
+      new BigNumber(0),
+      [TxTags.asset.RegisterTicker, TxTags.asset.CreateAsset],
+      context
+    );
   }
 
-  this.addTransaction({
-    transaction: tx.asset.createAsset,
-    fee,
-    args: [
-      rawName,
-      rawTicker,
-      rawIsDivisible,
-      rawType,
-      rawIdentifiers,
-      rawFundingRound,
-      rawDisableIu,
-    ],
-  });
+  const transactions = [];
+
+  /*
+   * - if the passed Asset type isn't one of the fixed ones (custom), we check if there is already
+   *   an on-chain custom Asset type with that name:
+   *   - if not, we create it together with the Asset
+   *   - otherwise, we create the asset with the id of the existing custom asset type
+   * - if the passed Asset type is a fixed one, we create the asset using that Asset type
+   */
+  if (customTypeData) {
+    const { rawValue, id } = customTypeData;
+
+    if (id.isEmpty) {
+      /*
+       * if we're using custom fees because we're creating the Asset without registering first, we have to manually add
+       *   the fees for registering a custom Asset type
+       */
+      fee = await addManualFees(fee, [TxTags.asset.RegisterCustomAssetType], context);
+
+      transactions.push(
+        checkTxType({
+          transaction: tx.asset.createAssetWithCustomType,
+          args: [
+            rawName,
+            rawTicker,
+            rawIsDivisible,
+            rawValue,
+            rawIdentifiers,
+            rawFundingRound,
+            rawDisableIu,
+          ],
+        })
+      );
+    } else {
+      const rawType = internalAssetTypeToAssetType({ Custom: id }, context);
+
+      transactions.push(
+        checkTxType({
+          transaction: tx.asset.createAsset,
+          args: [
+            rawName,
+            rawTicker,
+            rawIsDivisible,
+            rawType,
+            rawIdentifiers,
+            rawFundingRound,
+            rawDisableIu,
+          ],
+        })
+      );
+    }
+  } else {
+    const rawType = internalAssetTypeToAssetType(assetType as KnownAssetType, context);
+
+    transactions.push(
+      checkTxType({
+        transaction: tx.asset.createAsset,
+        args: [
+          rawName,
+          rawTicker,
+          rawIsDivisible,
+          rawType,
+          rawIdentifiers,
+          rawFundingRound,
+          rawDisableIu,
+        ],
+      })
+    );
+  }
 
   if (initialSupply && initialSupply.gt(0)) {
     const rawInitialSupply = bigNumberToBalance(initialSupply, context, isDivisible);
 
-    this.addTransaction({
-      transaction: tx.asset.issue,
-      args: [rawTicker, rawInitialSupply],
-    });
+    /*
+     * if we're using custom fees because we're creating the Asset without registering first, we have to manually add
+     *   the fees for issuing
+     */
+    fee = await addManualFees(fee, [TxTags.asset.Issue], context);
+
+    transactions.push(
+      checkTxType({
+        transaction: tx.asset.issue,
+        args: [rawTicker, rawInitialSupply],
+      })
+    );
   }
 
   if (documents?.length) {
     const rawDocuments = documents.map(doc => assetDocumentToDocument(doc, context));
-    this.addTransaction({
-      transaction: tx.asset.addDocuments,
-      isCritical: false,
-      feeMultiplier: new BigNumber(rawDocuments.length),
-      args: [rawDocuments, rawTicker],
-    });
+
+    const feeMultiplier = new BigNumber(rawDocuments.length);
+
+    /*
+     * if we're using custom fees because we're creating the Asset without registering first, we have to manually add
+     *   the fees for adding documents
+     */
+    fee = await addManualFees(fee, [{ tag: TxTags.asset.AddDocuments, feeMultiplier }], context);
+
+    transactions.push(
+      checkTxType({
+        transaction: tx.asset.addDocuments,
+        // this will be ignored if manual fees are passed
+        feeMultiplier,
+        args: [rawDocuments, rawTicker],
+      })
+    );
   }
 
-  return new Asset({ ticker }, context);
+  this.addBatchTransaction({
+    transactions,
+    fee,
+  });
+
+  return newAsset;
 }
 
 /**
