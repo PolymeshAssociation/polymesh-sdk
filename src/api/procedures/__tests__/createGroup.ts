@@ -1,9 +1,7 @@
-import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import {
-  createCreateGroupResolver,
   getAuthorization,
   Params,
   prepareCreateGroup,
@@ -17,7 +15,6 @@ import { Mocked } from '~/testUtils/types';
 import { PermissionType, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
-import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Offering',
@@ -87,21 +84,6 @@ describe('createGroup procedure', () => {
   afterAll(() => {
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
-  });
-
-  describe('createCreateGroupResolver', () => {
-    const agId = new BigNumber(1);
-    const rawAgId = dsMockUtils.createMockU64(agId);
-    sinon
-      .stub(utilsInternalModule, 'filterEventRecords')
-      .returns([dsMockUtils.createMockIEvent(['someDid', rawTicker, rawAgId])]);
-
-    it('should return the new CustomPermissionGroup', () => {
-      const result = createCreateGroupResolver(mockContext)({} as ISubmittableResult);
-
-      expect(result.id).toEqual(agId);
-      expect(result.asset.ticker).toEqual(ticker);
-    });
   });
 
   it('should throw an error if there already exists a group with exactly the same permissions', async () => {
