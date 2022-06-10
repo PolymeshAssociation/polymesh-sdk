@@ -1,17 +1,12 @@
-import { ISubmittableResult } from '@polkadot/types/types';
-
-import { assertGroupDoesNotExist } from '~/api/procedures/utils';
-import { Asset, Context, CustomPermissionGroup, PostTransactionValue, Procedure } from '~/internal';
+import { assertGroupDoesNotExist, createCreateGroupResolver } from '~/api/procedures/utils';
+import { Asset, CustomPermissionGroup, PostTransactionValue, Procedure } from '~/internal';
 import { TransactionPermissions, TxGroup, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   permissionsLikeToPermissions,
   stringToTicker,
-  tickerToString,
   transactionPermissionsToExtrinsicPermissions,
-  u32ToBigNumber,
 } from '~/utils/conversion';
-import { filterEventRecords } from '~/utils/internal';
 
 export interface CreateGroupParams {
   permissions:
@@ -36,20 +31,6 @@ export type Params = CreateGroupParams & {
 export interface Storage {
   asset: Asset;
 }
-
-/**
- * @hidden
- */
-export const createCreateGroupResolver =
-  (context: Context) =>
-  (receipt: ISubmittableResult): CustomPermissionGroup => {
-    const [{ data }] = filterEventRecords(receipt, 'externalAgents', 'GroupCreated');
-
-    return new CustomPermissionGroup(
-      { id: u32ToBigNumber(data[2]), ticker: tickerToString(data[1]) },
-      context
-    );
-  };
 
 /**
  * @hidden

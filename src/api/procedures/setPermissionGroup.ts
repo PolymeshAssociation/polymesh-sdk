@@ -1,14 +1,13 @@
-import { AgentGroup } from 'polymesh-types/types';
-
-import { isFullGroupType } from '~/api/procedures/utils';
+import {
+  createCreateGroupResolver,
+  getGroupFromPermissions,
+  isFullGroupType,
+} from '~/api/procedures/utils';
 import {
   Asset,
-  Context,
-  createGroup,
   CustomPermissionGroup,
   KnownPermissionGroup,
   PolymeshError,
-  PostTransactionValue,
   Procedure,
 } from '~/internal';
 import { ErrorCode, Identity, TransactionPermissions, TxGroup, TxTags } from '~/types';
@@ -16,8 +15,10 @@ import { MaybePostTransactionValue, ProcedureAuthorization } from '~/types/inter
 import { isEntity } from '~/utils';
 import {
   permissionGroupIdentifierToAgentGroup,
+  permissionsLikeToPermissions,
   stringToIdentityId,
   stringToTicker,
+  transactionPermissionsToExtrinsicPermissions,
 } from '~/utils/conversion';
 import { asAsset } from '~/utils/internal';
 
@@ -29,7 +30,10 @@ interface AssetBase {
 }
 
 interface TransactionsParams extends AssetBase {
-  transactions: TransactionPermissions;
+  /**
+   * a null value means full permissions
+   */
+  transactions: TransactionPermissions | null;
 }
 
 interface TxGroupParams extends AssetBase {
@@ -40,10 +44,10 @@ interface TxGroupParams extends AssetBase {
  * This procedure can be called with:
  *   - An Asset's existing Custom Permission Group. The Identity will be assigned as an Agent of that Group for that Asset
  *   - A Known Permission Group and an Asset. The Identity will be assigned as an Agent of that Group for that Asset
- *   - A set of Transaction Permissions and an Asset. A Custom Permission Group will be created for that Asset with those permissions, and
- *     the Identity will be assigned as an Agent of that Group for that Asset
- *   - An array of {@link TxGroup | Transaction Groups} that represent a set of permissions. A Custom Permission Group will be created with those permissions, and
- *     the Identity will be assigned as an Agent of that Group for that Asset
+ *   - A set of Transaction Permissions and an Asset. If there is no Custom Permission Group with those permissions, a Custom Permission Group will be created for that Asset with those permissions, and
+ *     the Identity will be assigned as an Agent of that Group for that Asset. Otherwise, the existing Group will be used
+ *   - An array of {@link TxGroup | Transaction Groups} that represent a set of permissions. If there is no Custom Permission Group with those permissions, a Custom Permission Group will be created with those permissions, and
+ *     the Identity will be assigned as an Agent of that Group for that Asset. Otherwise, the existing Group will be used
  */
 export interface SetPermissionGroupParams {
   group: KnownPermissionGroup | CustomPermissionGroup | TransactionsParams | TxGroupParams;
@@ -62,18 +66,6 @@ export type Params = SetPermissionGroupParams & {
 export interface Storage {
   asset: Asset;
 }
-
-/**
- * @hidden
- */
-const agentGroupResolver = (
-  group: CustomPermissionGroup | KnownPermissionGroup,
-  context: Context
-): AgentGroup =>
-  permissionGroupIdentifierToAgentGroup(
-    group instanceof CustomPermissionGroup ? { custom: group.id } : group.type,
-    context
-  );
 
 /**
  * @hidden
@@ -120,38 +112,64 @@ export async function prepareSetPermissionGroup(
     });
   }
 
-  let returnValue: MaybePostTransactionValue<CustomPermissionGroup | KnownPermissionGroup>;
-  let rawAgentGroup;
-
-  if (!isEntity(group)) {
-    returnValue = await this.addProcedure(createGroup(), {
-      ticker,
-      permissions: group,
-    });
-    rawAgentGroup = (returnValue as PostTransactionValue<CustomPermissionGroup>).transform(
-      customPermissionGroup => agentGroupResolver(customPermissionGroup, context)
-    );
-  } else {
-    if (group.isEqual(currentGroup)) {
-      throw new PolymeshError({
-        code: ErrorCode.NoDataChange,
-        message: 'The Agent is already part of this permission group',
-      });
-    }
-
-    returnValue = group;
-    rawAgentGroup = agentGroupResolver(group, context);
-  }
-
   const rawTicker = stringToTicker(ticker, context);
   const rawIdentityId = stringToIdentityId(identity.did, context);
 
+  let existingGroup: KnownPermissionGroup | CustomPermissionGroup | undefined;
+
+  /*
+   * we check if the passed permissions correspond to an existing Permission Group. If they don't,
+   *   we create the Group and assign the Agent to it. If they do, we just assign the Agent to the existing Group
+   */
+  if (!isEntity(group)) {
+    let transactions: TransactionPermissions | null;
+    if ('transactions' in group) {
+      ({ transactions } = group);
+    } else {
+      ({ transactions } = permissionsLikeToPermissions(group, context));
+    }
+
+    existingGroup = await getGroupFromPermissions(asset, transactions);
+
+    if (!existingGroup) {
+      const [newGroup] = this.addTransaction({
+        transaction: externalAgents.createAndChangeCustomGroup,
+        resolvers: [createCreateGroupResolver(context)],
+        args: [
+          rawTicker,
+          transactionPermissionsToExtrinsicPermissions(transactions, context),
+          rawIdentityId,
+        ],
+      });
+
+      return newGroup;
+    }
+  } else {
+    existingGroup = group;
+  }
+
+  if (existingGroup.isEqual(currentGroup)) {
+    throw new PolymeshError({
+      code: ErrorCode.NoDataChange,
+      message: 'The Agent is already part of this permission group',
+    });
+  }
+
   this.addTransaction({
     transaction: externalAgents.changeGroup,
-    args: [rawTicker, rawIdentityId, rawAgentGroup],
+    args: [
+      rawTicker,
+      rawIdentityId,
+      permissionGroupIdentifierToAgentGroup(
+        existingGroup instanceof CustomPermissionGroup
+          ? { custom: existingGroup.id }
+          : existingGroup.type,
+        context
+      ),
+    ],
   });
 
-  return returnValue;
+  return existingGroup;
 }
 
 /**
