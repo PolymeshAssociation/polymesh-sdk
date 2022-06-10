@@ -231,7 +231,6 @@ import {
   conditionsAreEqual,
   createClaim,
   isModuleOrTagMatch,
-  isPrintableAscii,
   optionize,
   padString,
   removePadding,
