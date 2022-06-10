@@ -1,4 +1,4 @@
-import { bool, Bytes, u64 } from '@polkadot/types';
+import { bool, Bytes } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import {
   PolymeshPrimitivesAssetIdentifier,
