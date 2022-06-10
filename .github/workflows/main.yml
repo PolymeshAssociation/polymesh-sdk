@@ -59,7 +59,8 @@ jobs:
       - name: release
         env:
           GITHUB_TOKEN: ${{ secrets.JERE_RELEASE_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.ASSOCIATION_NPM_TOKEN }}
         run: |
           cd dist
+          yarn --frozen-lockfile
           yarn semantic-release
