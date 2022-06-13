@@ -40,7 +40,7 @@ import {
   TransactionPermissions,
 } from '~/types';
 import { MaybePostTransactionValue, PortfolioId } from '~/types/internal';
-import { u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
+import { tickerToString, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
 
 /**
@@ -582,11 +582,14 @@ export async function assertAuthorizationRequestValid(
 
 /**
  * @hidden
+ *
+ * Retrieve the Permission Group that has the same permissions as the ones passed as input, or undefined if
+ *   there is no matching group
  */
-export async function assertGroupDoesNotExist(
+export async function getGroupFromPermissions(
   asset: Asset,
   permissions: TransactionPermissions | null
-): Promise<void> {
+): Promise<(CustomPermissionGroup | KnownPermissionGroup) | undefined> {
   const { custom, known } = await asset.permissions.getGroups();
   const allGroups = [...custom, ...known];
 
@@ -596,17 +599,33 @@ export async function assertGroupDoesNotExist(
     ({ transactions: transactionPermissions }) => isEqual(transactionPermissions, permissions)
   );
 
-  if (duplicatedGroupIndex > -1) {
-    const group = allGroups[duplicatedGroupIndex];
+  return allGroups[duplicatedGroupIndex];
+}
 
+/**
+ * @hidden
+ */
+export async function assertGroupDoesNotExist(
+  asset: Asset,
+  permissions: TransactionPermissions | null
+): Promise<void> {
+  const matchingGroup = await getGroupFromPermissions(asset, permissions);
+
+  if (matchingGroup) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
       message: 'There already exists a group with the exact same permissions',
-      data: { groupId: group instanceof CustomPermissionGroup ? group.id : group.type },
+      data: {
+        groupId:
+          matchingGroup instanceof CustomPermissionGroup ? matchingGroup.id : matchingGroup.type,
+      },
     });
   }
 }
 
+/**
+ * @hidden
+ */
 export const createAuthorizationResolver =
   (
     auth: MaybePostTransactionValue<Authorization>,
@@ -626,4 +645,18 @@ export const createAuthorizationResolver =
 
     const authId = u64ToBigNumber(data[3]);
     return new AuthorizationRequest({ authId, expiry, issuer, target, data: rawAuth }, context);
+  };
+
+/**
+ * @hidden
+ */
+export const createCreateGroupResolver =
+  (context: Context) =>
+  (receipt: ISubmittableResult): CustomPermissionGroup => {
+    const [{ data }] = filterEventRecords(receipt, 'externalAgents', 'GroupCreated');
+
+    return new CustomPermissionGroup(
+      { id: u32ToBigNumber(data[2]), ticker: tickerToString(data[1]) },
+      context
+    );
   };

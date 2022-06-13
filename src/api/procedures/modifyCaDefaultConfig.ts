@@ -18,7 +18,7 @@ import {
   stringToTicker,
   targetsToTargetIdentities,
 } from '~/utils/conversion';
-import { assembleBatchTransactions, hasSameElements } from '~/utils/internal';
+import { assembleBatchTransactions, checkTxType, hasSameElements } from '~/utils/internal';
 
 export type ModifyCaDefaultConfigParams =
   | {
@@ -98,6 +98,8 @@ export async function prepareModifyCaDefaultConfig(
   const { targets, defaultTaxWithholding, taxWithholdings } =
     await asset.corporateActions.getDefaultConfig();
 
+  const transactions = [];
+
   if (newTargets) {
     if (areSameTargets(targets, newTargets)) {
       throw new PolymeshError({
@@ -106,10 +108,12 @@ export async function prepareModifyCaDefaultConfig(
       });
     }
 
-    this.addTransaction({
-      transaction: tx.corporateAction.setDefaultTargets,
-      args: [rawTicker, targetsToTargetIdentities(newTargets, context)],
-    });
+    transactions.push(
+      checkTxType({
+        transaction: tx.corporateAction.setDefaultTargets,
+        args: [rawTicker, targetsToTargetIdentities(newTargets, context)],
+      })
+    );
   }
 
   if (newDefaultTaxWithholding) {
@@ -120,10 +124,12 @@ export async function prepareModifyCaDefaultConfig(
       });
     }
 
-    this.addTransaction({
-      transaction: tx.corporateAction.setDefaultWithholdingTax,
-      args: [rawTicker, percentageToPermill(newDefaultTaxWithholding, context)],
-    });
+    transactions.push(
+      checkTxType({
+        transaction: tx.corporateAction.setDefaultWithholdingTax,
+        args: [rawTicker, percentageToPermill(newDefaultTaxWithholding, context)],
+      })
+    );
   }
 
   if (newTaxWithholdings) {
@@ -143,21 +149,23 @@ export async function prepareModifyCaDefaultConfig(
 
     const transaction = tx.corporateAction.setDidWithholdingTax;
 
-    const transactions = assembleBatchTransactions(
-      tuple({
-        transaction,
-        argsArray: newTaxWithholdings.map(({ identity, percentage }) =>
-          tuple(
-            rawTicker,
-            stringToIdentityId(signerToString(identity), context),
-            percentageToPermill(percentage, context)
-          )
-        ),
-      })
+    transactions.push(
+      ...assembleBatchTransactions(
+        tuple({
+          transaction,
+          argsArray: newTaxWithholdings.map(({ identity, percentage }) =>
+            tuple(
+              rawTicker,
+              stringToIdentityId(signerToString(identity), context),
+              percentageToPermill(percentage, context)
+            )
+          ),
+        })
+      )
     );
-
-    this.addBatchTransaction({ transactions });
   }
+
+  this.addBatchTransaction({ transactions });
 }
 
 /**

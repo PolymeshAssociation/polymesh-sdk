@@ -7,6 +7,7 @@ import {
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
+import { flatten } from 'lodash';
 
 import {
   AuthorizationRequest,
@@ -19,7 +20,6 @@ import {
   ModifyAssetParams,
   modifyPrimaryIssuanceAgent,
   ModifyPrimaryIssuanceAgentParams,
-  PolymeshError,
   redeemTokens,
   RedeemTokensParams,
   removePrimaryIssuanceAgent,
@@ -30,7 +30,6 @@ import {
 import { eventByIndexedArgs, tickerExternalAgentHistory } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import {
-  ErrorCode,
   EventIdentifier,
   HistoricAgentOperation,
   NoArgsProcedureMethod,
@@ -39,7 +38,6 @@ import {
   SubCallback,
   UnsubCallback,
 } from '~/types';
-import { StatisticsOpType } from '~/types/internal';
 import { Ensured, Modify, QueryReturnType } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
@@ -49,15 +47,12 @@ import {
   bigNumberToU32,
   boolToBoolean,
   bytesToString,
-  createStat2ndKey,
   hashToString,
   identityIdToString,
-  meshStatToStatisticsOpType,
   middlewareEventToEventIdentifier,
+  scopeIdToString,
   stringToTicker,
-  stringToTickerKey,
   tickerToDid,
-  u128ToBigNumber,
 } from '~/utils/conversion';
 import { createProcedureMethod, optionize, padString } from '~/utils/internal';
 
@@ -470,54 +465,55 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
    * @note this takes into account the Scope ID of Investor Uniqueness Claims. If an investor holds balances
    *   of this Asset in two or more different Identities, but they all have Investor Uniqueness Claims with the same
    *   Scope ID, then they will only be counted once for the purposes of this result
-   *
-   * @note can be subscribed to
-   *
-   * @throws if the Issuer hasn't enabled the Investor Count statistic
    */
-  public investorCount(): Promise<BigNumber>;
-  public investorCount(callback: SubCallback<BigNumber>): Promise<UnsubCallback>;
-
-  // eslint-disable-next-line require-jsdoc
-  public async investorCount(
-    callback?: SubCallback<BigNumber>
-  ): Promise<BigNumber | UnsubCallback> {
+  public async investorCount(): Promise<BigNumber> {
     const {
       context: {
         polymeshApi: {
-          query: { statistics },
+          query: {
+            asset: { disableInvestorUniqueness, scopeIdOf, balanceOfAtScope, balanceOf },
+          },
         },
       },
       context,
       ticker,
     } = this;
 
-    const tickerKey = stringToTickerKey(ticker, context);
+    const rawTicker = stringToTicker(ticker, context);
 
-    const activeStats = await statistics.activeAssetStats(tickerKey);
-    const activeCountStatExists = !!activeStats.find(s => {
-      return meshStatToStatisticsOpType(s) === StatisticsOpType.Count;
-    });
+    const iuDisabled = await disableInvestorUniqueness(rawTicker);
 
-    if (!activeCountStatExists) {
-      throw new PolymeshError({
-        code: ErrorCode.DataUnavailable,
-        message:
-          'The Issuer of the Asset must first enable the statistics for the Asset before this method can be used',
-      });
+    if (boolToBoolean(iuDisabled)) {
+      const balanceEntries = await balanceOf.entries(rawTicker);
+
+      const assetBalances = balanceEntries.filter(
+        ([, balance]) => !balanceToBigNumber(balance).isZero()
+      );
+
+      return new BigNumber(assetBalances.length);
     }
 
-    const secondKey = createStat2ndKey(context);
+    const scopeIdEntries = await scopeIdOf.entries(rawTicker);
 
-    if (callback) {
-      return statistics.assetStats({ asset: tickerKey }, secondKey, count => {
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
-        callback(u128ToBigNumber(count));
-      });
-    }
-    const result = await statistics.assetStats({ asset: tickerKey }, secondKey);
+    const scopeBalanceEntries = await Promise.all(
+      scopeIdEntries.map(([, scopeId]) => balanceOfAtScope.entries(scopeId))
+    );
 
-    return u128ToBigNumber(result);
+    const assetHolders = new Set<string>();
+    flatten(scopeBalanceEntries).forEach(
+      ([
+        {
+          args: [scopeId],
+        },
+        balance,
+      ]) => {
+        if (!balanceToBigNumber(balance).isZero()) {
+          assetHolders.add(scopeIdToString(scopeId));
+        }
+      }
+    );
+
+    return new BigNumber(assetHolders.size);
   }
 
   /**
