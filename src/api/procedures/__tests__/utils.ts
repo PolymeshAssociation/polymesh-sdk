@@ -1,3 +1,5 @@
+import { u64 } from '@polkadot/types';
+import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
@@ -14,12 +16,16 @@ import {
   assertRequirementsNotTooComplex,
   assertSecondaryAccounts,
   createAuthorizationResolver,
+  createCreateGroupResolver,
+  getGroupFromPermissions,
   UnreachableCaseError,
 } from '~/api/procedures/utils';
 import {
+  Asset,
   AuthorizationRequest,
   CheckpointSchedule,
   Context,
+  CustomPermissionGroup,
   Identity,
   Instruction,
   PolymeshError,
@@ -1419,17 +1425,31 @@ describe('Unreachable error case', () => {
 });
 
 describe('createAuthorizationResolver', () => {
+  let mockContext: Mocked<Context>;
+
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
   });
+
+  beforeEach(() => {
+    mockContext = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
   const filterRecords = (): unknown => [
     { event: { data: [undefined, undefined, undefined, '3', undefined] } },
   ];
 
   it('should return a function that creates an AuthorizationRequest', () => {
-    const mockContext = dsMockUtils.getContextInstance();
-
     const authData: Authorization = {
       type: AuthorizationType.RotatePrimaryKey,
     };
@@ -1448,8 +1468,6 @@ describe('createAuthorizationResolver', () => {
   });
 
   it('should return a function that creates an AuthorizationRequest with a PostTransaction Authorization', async () => {
-    const mockContext = dsMockUtils.getContextInstance();
-
     const authData: Authorization = {
       type: AuthorizationType.RotatePrimaryKey,
     };
@@ -1469,6 +1487,49 @@ describe('createAuthorizationResolver', () => {
       filterRecords: filterRecords,
     } as unknown as ISubmittableResult);
     expect(authRequest.authId).toEqual(new BigNumber(3));
+  });
+});
+
+describe('createCreateGroupResolver', () => {
+  const agId = new BigNumber(1);
+  const ticker = 'SOME_TICKER';
+
+  let rawAgId: u64;
+  let rawTicker: PolymeshPrimitivesTicker;
+
+  let mockContext: Mocked<Context>;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockContext = dsMockUtils.getContextInstance();
+
+    rawAgId = dsMockUtils.createMockU64(agId);
+    rawTicker = dsMockUtils.createMockTicker(ticker);
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return the new CustomPermissionGroup', () => {
+    const filterRecords = (): unknown => [{ event: { data: ['someDid', rawTicker, rawAgId] } }];
+
+    const resolver = createCreateGroupResolver(mockContext);
+    const result = resolver({
+      filterRecords: filterRecords,
+    } as unknown as ISubmittableResult);
+
+    expect(result.id).toEqual(agId);
+    expect(result.asset.ticker).toEqual(ticker);
   });
 });
 
@@ -1555,5 +1616,56 @@ describe('assertGroupNotExists', () => {
     }
 
     expect(error).toBeUndefined();
+  });
+});
+
+describe('getGroupFromPermissions', () => {
+  const ticker = 'SOME_TICKER';
+
+  const transactions = {
+    type: PermissionType.Include,
+    values: [TxTags.sto.Invest, TxTags.asset.CreateAsset],
+  };
+  const customId = new BigNumber(1);
+
+  let asset: Asset;
+
+  beforeAll(() => {
+    entityMockUtils.initMocks();
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    asset = entityMockUtils.getAssetInstance({
+      ticker,
+      permissionsGetGroups: {
+        custom: [
+          entityMockUtils.getCustomPermissionGroupInstance({
+            ticker,
+            id: customId,
+            getPermissions: {
+              transactions,
+              transactionGroups: [],
+            },
+          }),
+        ],
+        known: [],
+      },
+    });
+  });
+
+  it('should return a Permission Group if there is one with the same permissions', async () => {
+    const result = (await getGroupFromPermissions(asset, transactions)) as CustomPermissionGroup;
+
+    expect(result.id).toEqual(customId);
+  });
+
+  it('should return undefined if there is no group with the passed permissions', async () => {
+    const result = await getGroupFromPermissions(asset, {
+      type: PermissionType.Exclude,
+      values: [TxTags.authorship.SetUncles],
+    });
+
+    expect(result).toBeUndefined();
   });
 });
