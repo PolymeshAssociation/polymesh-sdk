@@ -1,5 +1,6 @@
 import BigNumber from 'bignumber.js';
 
+import { AddAssetStatParams, AddPercentStatParams } from '~/api/procedures/addAssetStat';
 import {
   AddPercentageTransferRestrictionParams,
   SetPercentageTransferRestrictionsParams,
@@ -45,6 +46,11 @@ export class Percentage extends TransferRestrictionBase<TransferRestrictionType.
    * @note the result is the total amount of restrictions after the procedure has run
    */
   public declare removeRestrictions: NoArgsProcedureMethod<BigNumber>;
+
+  /**
+   * Enables investor ownership percentage statistic for the Asset, which is required before creating restrictions
+   */
+  public declare enableStat: ProcedureMethod<Omit<AddPercentStatParams, 'type'>, void>;
 
   /**
    * Retrieve all active Percentage Transfer Restrictions

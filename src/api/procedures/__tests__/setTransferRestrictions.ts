@@ -1,12 +1,9 @@
-import { u64, u128 } from '@polkadot/types';
+import { u64 } from '@polkadot/types';
 import { Permill } from '@polkadot/types/interfaces';
 import {
   BTreeSetIdentityId,
-  BTreeSetStatType,
-  BTreeSetStatUpdate,
   BTreeSetTransferCondition,
   PolymeshPrimitivesIdentityId,
-  PolymeshPrimitivesStatisticsStat2ndKey,
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesStatisticsStatUpdate,
@@ -55,29 +52,13 @@ describe('setTransferRestrictions procedure', () => {
     [StatisticsOpType, Context],
     PolymeshPrimitivesStatisticsStatOpType
   >;
-  let batchUpdateAssetStatsTransaction: PolymeshTx<
-    [Ticker, PolymeshPrimitivesStatisticsStatType, BTreeSetStatUpdate[]]
-  >;
-  let statisticsOpTypeToStatTypeStub: sinon.SinonStub<
-    [PolymeshPrimitivesStatisticsStatOpType, Context],
-    PolymeshPrimitivesStatisticsStatType
-  >;
 
-  let statUpdateStub: sinon.SinonStub<
-    [PolymeshPrimitivesStatisticsStat2ndKey, u128, Context],
-    PolymeshPrimitivesStatisticsStatUpdate
-  >;
-
-  let statUpdatesToBtreeStatUpdateStub: sinon.SinonStub<
-    [PolymeshPrimitivesStatisticsStatUpdate[], Context],
-    BTreeSetStatUpdate
-  >;
   let complianceConditionsToBtreeSetStub: sinon.SinonStub<
     [PolymeshPrimitivesTransferComplianceTransferCondition[], Context],
     BTreeSetTransferCondition
   >;
+  let statStub: sinon.SinonStub;
 
-  let createStat2ndKeyStub: sinon.SinonStub<[Context], PolymeshPrimitivesStatisticsStat2ndKey>;
   let ticker: string;
   let count: BigNumber;
   let percentage: BigNumber;
@@ -90,10 +71,9 @@ describe('setTransferRestrictions procedure', () => {
   let rawCountRestriction: TransferCondition;
   let rawPercentageRestriction: TransferCondition;
   let rawScopeId: ScopeId;
-  let rawStatType: PolymeshPrimitivesStatisticsStatType;
   let rawStatUpdate: PolymeshPrimitivesStatisticsStatUpdate;
+  let rawStatType: PolymeshPrimitivesStatisticsStatType;
   let args: SetTransferRestrictionsParams;
-  let raw2ndKey: PolymeshPrimitivesStatisticsStat2ndKey;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -110,16 +90,7 @@ describe('setTransferRestrictions procedure', () => {
       utilsConversionModule,
       'statisticsOpTypeToStatOpType'
     );
-    statisticsOpTypeToStatTypeStub = sinon.stub(
-      utilsConversionModule,
-      'statisticsOpTypeToStatType'
-    );
-    statUpdateStub = sinon.stub(utilsConversionModule, 'statUpdate');
-    createStat2ndKeyStub = sinon.stub(utilsConversionModule, 'createStat2ndKey');
-    statUpdatesToBtreeStatUpdateStub = sinon.stub(
-      utilsConversionModule,
-      'statUpdatesToBtreeStatUpdate'
-    );
+    statStub = sinon.stub(utilsConversionModule, 'meshStatToStatisticsOpType');
     complianceConditionsToBtreeSetStub = sinon.stub(
       utilsConversionModule,
       'complianceConditionsToBtreeSet'
@@ -142,7 +113,6 @@ describe('setTransferRestrictions procedure', () => {
       BTreeSetIdentityId
     ]
   >;
-  let setActiveAssetStatsTransaction: PolymeshTx<[Ticker, BTreeSetStatType]>;
 
   beforeEach(() => {
     args = {
@@ -161,11 +131,6 @@ describe('setTransferRestrictions procedure', () => {
       'setAssetTransferCompliance'
     );
     setEntitiesExemptTransaction = dsMockUtils.createTxStub('statistics', 'setEntitiesExempt');
-    setActiveAssetStatsTransaction = dsMockUtils.createTxStub('statistics', 'setActiveAssetStats');
-    batchUpdateAssetStatsTransaction = dsMockUtils.createTxStub(
-      'statistics',
-      'batchUpdateAssetStats'
-    );
 
     mockContext = dsMockUtils.getContextInstance();
 
@@ -178,7 +143,6 @@ describe('setTransferRestrictions procedure', () => {
     });
     rawScopeId = dsMockUtils.createMockScopeId(exemptedDid);
     rawStatType = dsMockUtils.createMockStatistics();
-    raw2ndKey = dsMockUtils.createMock2ndKey();
 
     transferRestrictionToTransferManagerStub
       .withArgs(maxInvestorRestriction, mockContext)
@@ -188,15 +152,13 @@ describe('setTransferRestrictions procedure', () => {
       .returns(rawPercentageRestriction);
     stringToTickerKeyStub.withArgs(ticker, mockContext).returns({ Ticker: rawTicker });
     stringToScopeIdStub.withArgs(exemptedDid, mockContext).returns(rawScopeId);
-    statUpdatesToBtreeStatUpdateStub
-      .withArgs([rawStatUpdate], mockContext)
-      .returns([rawStatUpdate] as BTreeSetStatUpdate);
     complianceConditionsToBtreeSetStub
       .withArgs([rawCountRestriction], mockContext)
       .returns([rawCountRestriction] as BTreeSetTransferCondition);
     complianceConditionsToBtreeSetStub
       .withArgs([rawPercentageRestriction], mockContext)
       .returns([rawPercentageRestriction] as BTreeSetTransferCondition);
+    statStub.returns(StatisticsOpType.Count);
   });
 
   afterEach(() => {
@@ -216,8 +178,6 @@ describe('setTransferRestrictions procedure', () => {
       {
         currentRestrictions: [rawPercentageRestriction],
         occupiedSlots: new BigNumber(0),
-        needStat: false,
-        currentStats: [] as unknown as BTreeSetStatType,
       }
     );
 
@@ -239,8 +199,6 @@ describe('setTransferRestrictions procedure', () => {
       {
         currentRestrictions: [rawCountRestriction],
         occupiedSlots: new BigNumber(0),
-        needStat: false,
-        currentStats: [] as unknown as BTreeSetStatType,
       }
     );
 
@@ -270,8 +228,6 @@ describe('setTransferRestrictions procedure', () => {
       {
         currentRestrictions: [],
         occupiedSlots: new BigNumber(0),
-        needStat: false,
-        currentStats: [] as unknown as BTreeSetStatType,
       }
     );
 
@@ -321,8 +277,6 @@ describe('setTransferRestrictions procedure', () => {
       {
         currentRestrictions: [rawCountRestriction],
         occupiedSlots: new BigNumber(0),
-        needStat: false,
-        currentStats: [] as unknown as BTreeSetStatType,
       }
     );
     complianceConditionsToBtreeSetStub
@@ -349,8 +303,6 @@ describe('setTransferRestrictions procedure', () => {
       {
         currentRestrictions: [rawCountRestriction],
         occupiedSlots: new BigNumber(0),
-        needStat: false,
-        currentStats: [] as unknown as BTreeSetStatType,
       }
     );
 
@@ -373,8 +325,6 @@ describe('setTransferRestrictions procedure', () => {
       {
         currentRestrictions: [rawPercentageRestriction],
         occupiedSlots: new BigNumber(0),
-        needStat: false,
-        currentStats: [] as unknown as BTreeSetStatType,
       }
     );
 
@@ -402,8 +352,6 @@ describe('setTransferRestrictions procedure', () => {
       {
         currentRestrictions: [],
         occupiedSlots: new BigNumber(0),
-        needStat: false,
-        currentStats: [] as unknown as BTreeSetStatType,
       }
     );
     let err;
@@ -427,8 +375,6 @@ describe('setTransferRestrictions procedure', () => {
       {
         currentRestrictions: [rawCountRestriction],
         occupiedSlots: new BigNumber(3),
-        needStat: false,
-        currentStats: [] as unknown as BTreeSetStatType,
       }
     );
 
@@ -446,70 +392,6 @@ describe('setTransferRestrictions procedure', () => {
     expect(err.data).toEqual({ availableSlots: new BigNumber(0) });
   });
 
-  it("should add a setActiveAssetStats transaction if a needed stat isn't set", async () => {
-    dsMockUtils.createQueryStub('asset', 'balanceOf', {
-      returnValue: ['one', 'two', 'three'],
-    });
-
-    statisticsOpTypeToStatTypeStub.returns(rawStatType);
-    createStat2ndKeyStub.withArgs(mockContext).returns(raw2ndKey);
-    rawStatUpdate = dsMockUtils.createMockStatUpdate();
-    statUpdateStub.returns(rawStatUpdate);
-    statUpdatesToBtreeStatUpdateStub
-      .withArgs([rawStatUpdate], mockContext)
-      .returns([rawStatUpdate] as BTreeSetStatUpdate);
-
-    const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
-      mockContext,
-      {
-        currentRestrictions: [],
-        occupiedSlots: new BigNumber(0),
-        needStat: true,
-        currentStats: [] as unknown as BTreeSetStatType,
-      }
-    );
-
-    await prepareSetTransferRestrictions.call(proc, args);
-
-    sinon.assert.calledWith(addBatchTransactionStub, {
-      transactions: [
-        {
-          transaction: setActiveAssetStatsTransaction,
-          args: [{ Ticker: rawTicker }, [rawStatType]],
-        },
-        {
-          transaction: batchUpdateAssetStatsTransaction,
-          args: [{ Ticker: rawTicker }, rawStatType, [rawStatUpdate]],
-        },
-        {
-          transaction: setAssetTransferComplianceTransaction,
-          args: [{ Ticker: rawTicker }, [rawCountRestriction]],
-        },
-      ],
-    });
-
-    args = {
-      ticker,
-      restrictions: [{ percentage }],
-      type: TransferRestrictionType.Percentage,
-    };
-
-    await prepareSetTransferRestrictions.call(proc, args);
-
-    sinon.assert.calledWith(addBatchTransactionStub.secondCall, {
-      transactions: [
-        {
-          transaction: setActiveAssetStatsTransaction,
-          args: [{ Ticker: rawTicker }, [rawStatType, rawStatType]],
-        },
-        {
-          transaction: setAssetTransferComplianceTransaction,
-          args: [{ Ticker: rawTicker }, [rawPercentageRestriction]],
-        },
-      ],
-    });
-  });
-
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
       let proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
@@ -517,8 +399,6 @@ describe('setTransferRestrictions procedure', () => {
         {
           currentRestrictions: [],
           occupiedSlots: new BigNumber(0),
-          needStat: false,
-          currentStats: [] as unknown as BTreeSetStatType,
         }
       );
 
@@ -539,8 +419,6 @@ describe('setTransferRestrictions procedure', () => {
         {
           currentRestrictions: [],
           occupiedSlots: new BigNumber(0),
-          needStat: true,
-          currentStats: [] as unknown as BTreeSetStatType,
         }
       );
 
@@ -552,7 +430,6 @@ describe('setTransferRestrictions procedure', () => {
           transactions: [
             TxTags.statistics.SetAssetTransferCompliance,
             TxTags.statistics.SetEntitiesExempt,
-            TxTags.statistics.SetActiveAssetStats,
           ],
           portfolios: [],
         },
@@ -596,7 +473,7 @@ describe('setTransferRestrictions procedure', () => {
       });
 
       dsMockUtils.createQueryStub('statistics', 'activeAssetStats', {
-        returnValue: [],
+        returnValue: [rawStatType],
       });
     });
 
@@ -623,12 +500,9 @@ describe('setTransferRestrictions procedure', () => {
       };
 
       let result = await boundFunc(args);
-
       expect(result).toEqual({
         currentRestrictions: [rawCountRestriction],
         occupiedSlots: new BigNumber(1),
-        currentStats: [],
-        needStat: true,
       });
 
       args = {
@@ -641,13 +515,13 @@ describe('setTransferRestrictions procedure', () => {
         ],
       };
 
+      statStub.returns(StatisticsOpType.Balance);
+
       result = await boundFunc(args);
 
       expect(result).toEqual({
         currentRestrictions: [rawPercentageRestriction],
         occupiedSlots: new BigNumber(1),
-        currentStats: [],
-        needStat: true,
       });
 
       args.restrictions = [];
@@ -664,8 +538,6 @@ describe('setTransferRestrictions procedure', () => {
       expect(result).toEqual({
         currentRestrictions: [rawPercentageRestriction],
         occupiedSlots: new BigNumber(1),
-        needStat: true,
-        currentStats: [],
       });
     });
 
@@ -683,28 +555,26 @@ describe('setTransferRestrictions procedure', () => {
       >(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
-      const statStub = sinon
-        .stub(utilsConversionModule, 'meshStatToStatisticsOpType')
-        .returns(StatisticsOpType.Count);
+      statStub.returns(StatisticsOpType.Count);
 
       let result = await boundFunc(args);
 
       expect(result).toEqual({
         currentRestrictions: [rawCountRestriction],
         occupiedSlots: new BigNumber(1),
-        needStat: false,
-        currentStats: [mockCountStat, mockBalanceStat],
       });
 
       statStub.returns(StatisticsOpType.Balance);
 
-      result = await boundFunc(args);
+      result = await boundFunc({
+        ticker,
+        type: TransferRestrictionType.Percentage,
+        restrictions: [{ percentage: new BigNumber(10) }],
+      });
 
       expect(result).toEqual({
-        currentRestrictions: [rawCountRestriction],
+        currentRestrictions: [rawPercentageRestriction],
         occupiedSlots: new BigNumber(1),
-        needStat: true,
-        currentStats: [mockCountStat, mockBalanceStat],
       });
     });
   });

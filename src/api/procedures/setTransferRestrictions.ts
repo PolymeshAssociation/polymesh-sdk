@@ -1,7 +1,4 @@
-import {
-  BTreeSetStatType,
-  PolymeshPrimitivesTransferComplianceTransferCondition,
-} from '@polkadot/types/lookup';
+import { PolymeshPrimitivesTransferComplianceTransferCondition } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { TransferCondition } from 'polymesh-types/types';
 
@@ -17,16 +14,11 @@ import {
 } from '~/types';
 import { ProcedureAuthorization, StatisticsOpType } from '~/types/internal';
 import {
-  bigNumberToU128,
   complianceConditionsToBtreeSet,
-  createStat2ndKey,
   meshStatToStatisticsOpType,
   permillToBigNumber,
   scopeIdsToBtreeSetIdentityId,
   statisticsOpTypeToStatOpType,
-  statisticsOpTypeToStatType,
-  statUpdate,
-  statUpdatesToBtreeStatUpdate,
   stringToIdentityId,
   stringToTickerKey,
   toExemptKey,
@@ -63,8 +55,6 @@ export type SetTransferRestrictionsParams = { ticker: string } & (
 export interface Storage {
   currentRestrictions: TransferCondition[];
   occupiedSlots: BigNumber;
-  needStat: boolean;
-  currentStats: BTreeSetStatType;
 }
 
 /**
@@ -151,11 +141,10 @@ export async function prepareSetTransferRestrictions(
     context: {
       polymeshApi: {
         tx: { statistics },
-        query,
         consts,
       },
     },
-    storage: { currentRestrictions, occupiedSlots, needStat, currentStats },
+    storage: { currentRestrictions, occupiedSlots },
     context,
   } = this;
   const {
@@ -192,36 +181,6 @@ export async function prepareSetTransferRestrictions(
       ? statisticsOpTypeToStatOpType(StatisticsOpType.Count, context)
       : statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
 
-  if (needStat) {
-    const newStat = statisticsOpTypeToStatType(op, context);
-    currentStats.push(newStat);
-    currentStats.sort().reverse();
-
-    transactions.push(
-      checkTxType({
-        transaction: statistics.setActiveAssetStats,
-        args: [tickerKey, currentStats],
-      })
-    );
-
-    // Count stats need to be initialized manually
-    if (type === TransferRestrictionType.Count) {
-      const { Ticker: rawTicker } = tickerKey;
-      const holders = await query.asset.balanceOf.entries(rawTicker);
-      const holderCount = new BigNumber(holders.length);
-      const secondKey = createStat2ndKey(context);
-      const stat = statUpdate(secondKey, bigNumberToU128(holderCount, context), context);
-      const statValue = statUpdatesToBtreeStatUpdate([stat], context);
-
-      transactions.push(
-        checkTxType({
-          transaction: statistics.batchUpdateAssetStats,
-          args: [tickerKey, newStat, statValue],
-        })
-      );
-    }
-  }
-
   transactions.push(
     checkTxType({
       transaction: statistics.setAssetTransferCompliance,
@@ -253,17 +212,11 @@ export function getAuthorization(
   this: Procedure<SetTransferRestrictionsParams, BigNumber, Storage>,
   { ticker, restrictions }: SetTransferRestrictionsParams
 ): ProcedureAuthorization {
-  const { needStat } = this.storage;
-
   const transactions: TxTag[] = [TxTags.statistics.SetAssetTransferCompliance];
 
   const needExemptionsPermission = restrictions.some(r => r.exemptedIdentities?.length);
   if (needExemptionsPermission) {
     transactions.push(TxTags.statistics.SetEntitiesExempt);
-  }
-
-  if (needStat) {
-    transactions.push(TxTags.statistics.SetActiveAssetStats);
   }
 
   return {
@@ -304,6 +257,13 @@ export async function prepareStorage(
     return cmpStat === type;
   });
 
+  if (needStat) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The appropriate statistic must be enabled',
+    });
+  }
+
   const {
     transferRestrictions: { count, percentage },
   } = new Asset({ ticker }, context);
@@ -341,8 +301,6 @@ export async function prepareStorage(
   return {
     occupiedSlots: new BigNumber(occupiedSlots),
     currentRestrictions: currentRestrictions.map(transformRestriction),
-    needStat,
-    currentStats,
   };
 }
 

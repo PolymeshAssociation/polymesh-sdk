@@ -1,6 +1,13 @@
 import BigNumber from 'bignumber.js';
 
 import {
+  AddAssetStatParams,
+  AddCountStatParams,
+  AddPercentStatParams,
+} from '~/api/procedures/addAssetStat';
+import {
+  addAssetStat,
+  AddAssetStatStorage,
   AddCountTransferRestrictionParams,
   AddPercentageTransferRestrictionParams,
   addTransferRestriction,
@@ -42,6 +49,11 @@ type SetRestrictionsParams<T> = Omit<
   T extends TransferRestrictionType.Count
     ? SetCountTransferRestrictionsParams
     : SetPercentageTransferRestrictionsParams,
+  'type'
+>;
+
+type SetStatParams<T> = Omit<
+  T extends TransferRestrictionType.Count ? AddCountStatParams : AddPercentStatParams,
   'type'
 >;
 
@@ -113,6 +125,25 @@ export abstract class TransferRestrictionBase<
       },
       context
     );
+
+    this.enableStat = createProcedureMethod<
+      SetStatParams<T>,
+      AddAssetStatParams,
+      void,
+      AddAssetStatStorage
+    >(
+      {
+        getProcedureAndArgs: args => [
+          addAssetStat,
+          {
+            ...args,
+            type: this.type,
+            ticker,
+          } as unknown as AddAssetStatParams,
+        ],
+      },
+      context
+    );
   }
 
   /**
@@ -135,6 +166,20 @@ export abstract class TransferRestrictionBase<
    * @note the result is the total amount of restrictions after the procedure has run
    */
   public removeRestrictions: NoArgsProcedureMethod<BigNumber>;
+
+  /**
+   * Enables statistic of the corresponding type for this Asset
+   *
+   * @note restrictions require the relevant statistic to be enabled
+   */
+  public enableStat: ProcedureMethod<SetStatParams<T>, void>;
+
+  /**
+   * Removes an Asset stat of the corresponding type for this Asset
+   *
+   * @note no restrictions can be enabled for this stat
+   */
+  // public disableStat: ProcedureMethod<void, void>;
 
   /**
    * Retrieve all active Transfer Restrictions of the corresponding type

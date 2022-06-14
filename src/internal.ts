@@ -223,3 +223,8 @@ export {
   DecreaseAllowanceParams,
   IncreaseAllowanceParams,
 } from '~/api/procedures/modifyAllowance';
+export {
+  addAssetStat,
+  AddAssetStatParams,
+  Storage as AddAssetStatStorage,
+} from '~/api/procedures/addAssetStat';

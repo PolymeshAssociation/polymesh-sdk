@@ -1292,6 +1292,18 @@ export interface TransferRestriction {
   value: BigNumber;
 }
 
+export enum StatType {
+  Count = 'Count',
+  Balance = 'Balance',
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface StatisticsInputBase {}
+
+export interface AddCountStatInput extends StatisticsInputBase {
+  count: BigNumber;
+}
+
 export enum CalendarUnit {
   Second = 'second',
   Minute = 'minute',

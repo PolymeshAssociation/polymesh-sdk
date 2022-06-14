@@ -1,5 +1,4 @@
 import {
-  BTreeSetStatType,
   BTreeSetTransferCondition,
   PolymeshPrimitivesTransferComplianceTransferCondition,
 } from '@polkadot/types/lookup';
@@ -15,15 +14,10 @@ import {
 } from '~/types';
 import { ProcedureAuthorization, StatisticsOpType } from '~/types/internal';
 import {
-  bigNumberToU128,
-  createStat2ndKey,
   meshStatToStatisticsOpType,
   permillToBigNumber,
   scopeIdsToBtreeSetIdentityId,
   statisticsOpTypeToStatOpType,
-  statisticsOpTypeToStatType,
-  statUpdate,
-  statUpdatesToBtreeStatUpdate,
   stringToIdentityId,
   stringToTickerKey,
   toExemptKey,
@@ -51,8 +45,6 @@ export type AddTransferRestrictionParams = { ticker: string } & (
 
 export interface Storage {
   currentRestrictions: PolymeshPrimitivesTransferComplianceTransferCondition[];
-  currentStats: BTreeSetStatType;
-  needStat: boolean;
 }
 
 /**
@@ -66,11 +58,10 @@ export async function prepareAddTransferRestriction(
     context: {
       polymeshApi: {
         tx: { statistics },
-        query,
         consts,
       },
     },
-    storage: { needStat, currentStats, currentRestrictions },
+    storage: { currentRestrictions },
     context,
   } = this;
   const { ticker, exemptedIdentities = [], type } = args;
@@ -133,36 +124,6 @@ export async function prepareAddTransferRestriction(
       ? statisticsOpTypeToStatOpType(StatisticsOpType.Count, context)
       : statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
 
-  if (needStat) {
-    const newStat = statisticsOpTypeToStatType(op, context);
-    currentStats.push(newStat);
-    currentStats.sort().reverse(); // sort needed as it is a BTreeSet
-    transactions.push(
-      checkTxType({
-        transaction: statistics.setActiveAssetStats,
-        args: [tickerKey, currentStats],
-      })
-    );
-
-    // If the stat restriction is a Count the actual value needs to be set. This is due to the potentially slow operation of counting all holders for the chain
-    if (type === TransferRestrictionType.Count) {
-      const holders = await query.asset.balanceOf.entries(tickerKey.Ticker);
-      const holderCount = new BigNumber(holders.length);
-      // if an asset has many investors this could be slow and instead should be fetched from SubQuery
-      // These should happen near the assets inception, so for now query the chain directly
-      const secondKey = createStat2ndKey(context);
-      const stat = statUpdate(secondKey, bigNumberToU128(holderCount, context), context);
-      const statValue = statUpdatesToBtreeStatUpdate([stat], context);
-
-      transactions.push(
-        checkTxType({
-          transaction: statistics.batchUpdateAssetStats,
-          args: [tickerKey, newStat, statValue],
-        })
-      );
-    }
-  }
-
   if (exemptedIdentities.length) {
     const exemptedIds = await getExemptedIds(exemptedIdentities, context, ticker);
     const exemptedScopeIds = exemptedIds.map(entityId => stringToIdentityId(entityId, context));
@@ -194,18 +155,10 @@ export function getAuthorization(
   this: Procedure<AddTransferRestrictionParams, BigNumber, Storage>,
   { ticker, exemptedIdentities = [] }: AddTransferRestrictionParams
 ): ProcedureAuthorization {
-  const {
-    storage: { needStat },
-  } = this;
-
   const transactions = [TxTags.statistics.SetAssetTransferCompliance];
 
   if (exemptedIdentities.length) {
     transactions.push(TxTags.statistics.SetEntitiesExempt);
-  }
-
-  if (needStat) {
-    transactions.push(TxTags.statistics.SetActiveAssetStats);
   }
 
   return {
@@ -250,10 +203,15 @@ export async function prepareStorage(
     return cmpStat === type;
   });
 
+  if (needStat) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The appropriate statistic must be enabled',
+    });
+  }
+
   return {
     currentRestrictions,
-    needStat,
-    currentStats,
   };
 }
 

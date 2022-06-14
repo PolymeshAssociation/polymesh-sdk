@@ -1,5 +1,6 @@
 import BigNumber from 'bignumber.js';
 
+import { AddCountStatParams } from '~/api/procedures/addAssetStat';
 import {
   AddCountTransferRestrictionParams,
   SetCountTransferRestrictionsParams,
@@ -45,6 +46,11 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
    * @note the result is the total amount of restrictions after the procedure has run
    */
   public declare removeRestrictions: NoArgsProcedureMethod<BigNumber>;
+
+  /**
+   * Enables investor count statistic for the Asset, which is required before creating restrictions
+   */
+  public declare enableStat: ProcedureMethod<Pick<AddCountStatParams, 'count'>, void>;
 
   /**
    * Retrieve all active Count Transfer Restrictions
