@@ -85,7 +85,7 @@ export class PolymeshTransaction<
   // eslint-disable-next-line require-jsdoc
   protected async getProtocolFees(): Promise<BigNumber> {
     const { tag } = this;
-    const fees = await this.context.getProtocolFees({ tag });
+    const [{ fees }] = await this.context.getProtocolFees({ tags: [tag] });
 
     return fees.multipliedBy(this.feeMultiplier);
   }

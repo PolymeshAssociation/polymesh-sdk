@@ -1,6 +1,7 @@
 import { bool, Option, StorageKey } from '@polkadot/types';
 import { BlockNumber, Hash } from '@polkadot/types/interfaces/runtime';
 import BigNumber from 'bignumber.js';
+import { flatten } from 'lodash';
 import {
   AgentGroup,
   AssetName,
@@ -52,10 +53,10 @@ import {
   hashToString,
   identityIdToString,
   middlewareEventToEventIdentifier,
+  scopeIdToString,
   stringToTicker,
   textToString,
   tickerToDid,
-  u64ToBigNumber,
 } from '~/utils/conversion';
 import { createProcedureMethod, optionize, padString } from '~/utils/internal';
 
@@ -469,20 +470,14 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
    * @note this takes into account the Scope ID of Investor Uniqueness Claims. If an investor holds balances
    *   of this Asset in two or more different Identities, but they all have Investor Uniqueness Claims with the same
    *   Scope ID, then they will only be counted once for the purposes of this result
-   *
-   * @note can be subscribed to
    */
-  public investorCount(): Promise<BigNumber>;
-  public investorCount(callback: SubCallback<BigNumber>): Promise<UnsubCallback>;
-
-  // eslint-disable-next-line require-jsdoc
-  public async investorCount(
-    callback?: SubCallback<BigNumber>
-  ): Promise<BigNumber | UnsubCallback> {
+  public async investorCount(): Promise<BigNumber> {
     const {
       context: {
         polymeshApi: {
-          query: { statistics },
+          query: {
+            asset: { disableInvestorUniqueness, scopeIdOf, balanceOfAtScope, balanceOf },
+          },
         },
       },
       context,
@@ -491,16 +486,39 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
 
     const rawTicker = stringToTicker(ticker, context);
 
-    if (callback) {
-      return statistics.investorCountPerAsset(rawTicker, count => {
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
-        callback(u64ToBigNumber(count));
-      });
+    const iuDisabled = await disableInvestorUniqueness(rawTicker);
+
+    if (boolToBoolean(iuDisabled)) {
+      const balanceEntries = await balanceOf.entries(rawTicker);
+
+      const assetBalances = balanceEntries.filter(
+        ([, balance]) => !balanceToBigNumber(balance).isZero()
+      );
+
+      return new BigNumber(assetBalances.length);
     }
 
-    const result = await statistics.investorCountPerAsset(stringToTicker(ticker, context));
+    const scopeIdEntries = await scopeIdOf.entries(rawTicker);
 
-    return u64ToBigNumber(result);
+    const scopeBalanceEntries = await Promise.all(
+      scopeIdEntries.map(([, scopeId]) => balanceOfAtScope.entries(scopeId))
+    );
+
+    const assetHolders = new Set<string>();
+    flatten(scopeBalanceEntries).forEach(
+      ([
+        {
+          args: [scopeId],
+        },
+        balance,
+      ]) => {
+        if (!balanceToBigNumber(balance).isZero()) {
+          assetHolders.add(scopeIdToString(scopeId));
+        }
+      }
+    );
+
+    return new BigNumber(assetHolders.size);
   }
 
   /**

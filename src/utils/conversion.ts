@@ -1,5 +1,13 @@
 import { bool, Bytes, Text, u8, u32, u64 } from '@polkadot/types';
-import { AccountId, Balance, Hash, Moment, Permill, Signature } from '@polkadot/types/interfaces';
+import {
+  AccountId,
+  Balance,
+  BlockHash,
+  Hash,
+  Moment,
+  Permill,
+  Signature,
+} from '@polkadot/types/interfaces';
 import {
   hexToU8a,
   isHex,
@@ -348,6 +356,13 @@ export function hashToString(hash: Hash): string {
  */
 export function stringToHash(hash: string, context: Context): Hash {
   return context.createType('Hash', hash);
+}
+
+/**
+ * @hidden
+ */
+export function stringToBlockHash(blockHash: string, context: Context): BlockHash {
+  return context.createType('BlockHash', blockHash);
 }
 
 /**
