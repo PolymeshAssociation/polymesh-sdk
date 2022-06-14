@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { AddAssetStatParams, AddPercentStatParams } from '~/api/procedures/addAssetStat';
+import { AddPercentStatParams } from '~/api/procedures/addAssetStat';
 import {
   AddPercentageTransferRestrictionParams,
   SetPercentageTransferRestrictionsParams,

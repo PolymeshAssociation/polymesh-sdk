@@ -6,7 +6,6 @@ import {
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesStatisticsStatType,
-  PolymeshPrimitivesStatisticsStatUpdate,
   PolymeshPrimitivesTransferComplianceTransferCondition,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
@@ -71,7 +70,6 @@ describe('setTransferRestrictions procedure', () => {
   let rawCountRestriction: TransferCondition;
   let rawPercentageRestriction: TransferCondition;
   let rawScopeId: ScopeId;
-  let rawStatUpdate: PolymeshPrimitivesStatisticsStatUpdate;
   let rawStatType: PolymeshPrimitivesStatisticsStatType;
   let args: SetTransferRestrictionsParams;
 

@@ -1,4 +1,4 @@
-import { u128, Vec } from '@polkadot/types';
+import { Vec } from '@polkadot/types';
 import {
   BTreeSetStatUpdate,
   PolymeshPrimitivesStatisticsStat2ndKey,
@@ -17,7 +17,7 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/addAssetStat';
-import { AddAssetStatParams, Asset, Context, PolymeshError } from '~/internal';
+import { AddAssetStatParams, Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { ErrorCode, StatType, TxTags } from '~/types';
@@ -38,20 +38,14 @@ describe('addAssetStat procedure', () => {
   let stringToTickerKeyStub: sinon.SinonStub<[string, Context], TickerKey>;
   let ticker: string;
   let count: BigNumber;
-  let asset: Asset;
   let rawTicker: PolymeshPrimitivesTicker;
-  let rawCount: u128;
   let args: AddAssetStatParams;
-  let rawOp: PolymeshPrimitivesStatisticsStatOpType;
   let rawStatType: PolymeshPrimitivesStatisticsStatType;
   let rawStatUpdate: PolymeshPrimitivesStatisticsStatUpdate;
   let raw2ndKey: PolymeshPrimitivesStatisticsStat2ndKey;
 
   let addBatchTransactionStub: sinon.SinonStub;
   let setActiveAssetStats: PolymeshTx<
-    [PolymeshPrimitivesTicker, PolymeshPrimitivesTransferComplianceTransferCondition]
-  >;
-  let batchUpdateAssetStats: PolymeshTx<
     [PolymeshPrimitivesTicker, PolymeshPrimitivesTransferComplianceTransferCondition]
   >;
   let statisticsOpTypeToStatOpTypeStub: sinon.SinonStub<
@@ -74,7 +68,6 @@ describe('addAssetStat procedure', () => {
     entityMockUtils.initMocks();
     mockContext = dsMockUtils.getContextInstance();
     ticker = 'TICKER';
-    asset = new Asset({ ticker }, mockContext);
     emptyStorage = {
       currentStats: [] as unknown as Vec<PolymeshPrimitivesStatisticsStatType>,
     };
@@ -101,11 +94,8 @@ describe('addAssetStat procedure', () => {
     addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
     setActiveAssetStats = dsMockUtils.createTxStub('statistics', 'setActiveAssetStats');
 
-    rawOp = dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count);
     rawStatType = dsMockUtils.createMockStatistics();
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    rawCount = dsMockUtils.createMockU128(count);
-    batchUpdateAssetStats = dsMockUtils.createTxStub('statistics', 'batchUpdateAssetStats');
     rawStatUpdate = dsMockUtils.createMockStatUpdate();
 
     createStat2ndKeyStub.withArgs(mockContext).returns(raw2ndKey);
