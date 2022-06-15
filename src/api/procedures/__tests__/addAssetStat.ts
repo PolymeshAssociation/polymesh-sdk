@@ -225,7 +225,7 @@ describe('addAssetStat procedure', () => {
 
       activeAssetStatsStub.returns([rawStatType]);
 
-      statStub.returns(StatisticsOpType.Count);
+      statStub.returns(StatisticsOpType.Balance);
 
       const expectedError = new PolymeshError({
         code: ErrorCode.NoDataChange,
