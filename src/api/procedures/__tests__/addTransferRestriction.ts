@@ -484,7 +484,8 @@ describe('addTransferRestriction procedure', () => {
 
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
-        message: 'The appropriate statistic must be enabled',
+        message:
+          'The appropriate statistic must be enabled. Try calling the enableStat method first',
       });
 
       return expect(
