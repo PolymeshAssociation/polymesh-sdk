@@ -19,10 +19,10 @@ import {
   SetTransferRestrictionsParams,
   Storage,
 } from '~/api/procedures/setTransferRestrictions';
-import { Context } from '~/internal';
+import { Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { TransferRestriction, TransferRestrictionType, TxTags } from '~/types';
+import { ErrorCode, TransferRestriction, TransferRestrictionType, TxTags } from '~/types';
 import { PolymeshTx, StatisticsOpType, TickerKey } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -539,11 +539,9 @@ describe('setTransferRestrictions procedure', () => {
       });
     });
 
-    it('should detect when an asset stat does not need to be made', async () => {
-      const mockCountStat = [{ type: StatisticsOpType.Count }];
-      const mockBalanceStat = [{ type: StatisticsOpType.Balance }];
+    it('should throw an error if the appropriate stat is not set', async () => {
       dsMockUtils.createQueryStub('statistics', 'activeAssetStats', {
-        returnValue: [mockCountStat, mockBalanceStat],
+        returnValue: [],
       });
 
       const proc = procedureMockUtils.getInstance<
@@ -553,27 +551,15 @@ describe('setTransferRestrictions procedure', () => {
       >(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
-      statStub.returns(StatisticsOpType.Count);
-
-      let result = await boundFunc(args);
-
-      expect(result).toEqual({
-        currentRestrictions: [rawCountRestriction],
-        occupiedSlots: new BigNumber(1),
-      });
-
       statStub.returns(StatisticsOpType.Balance);
 
-      result = await boundFunc({
-        ticker,
-        type: TransferRestrictionType.Percentage,
-        restrictions: [{ percentage: new BigNumber(10) }],
+      const expectedError = new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message:
+          'The appropriate statistic must be enabled. Try calling the enableStat method first',
       });
 
-      expect(result).toEqual({
-        currentRestrictions: [rawPercentageRestriction],
-        occupiedSlots: new BigNumber(1),
-      });
+      return expect(boundFunc(args)).rejects.toThrowError(expectedError);
     });
   });
 });
