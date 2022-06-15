@@ -175,13 +175,6 @@ export abstract class TransferRestrictionBase<
   public enableStat: ProcedureMethod<SetStatParams<T>, void>;
 
   /**
-   * Removes an Asset stat of the corresponding type for this Asset
-   *
-   * @note no restrictions can be enabled for this stat
-   */
-  // public disableStat: ProcedureMethod<void, void>;
-
-  /**
    * Retrieve all active Transfer Restrictions of the corresponding type
    *
    * @note there is a maximum number of restrictions allowed across all types.

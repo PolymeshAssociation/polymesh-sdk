@@ -1297,10 +1297,7 @@ export enum StatType {
   Balance = 'Balance',
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface StatisticsInputBase {}
-
-export interface AddCountStatInput extends StatisticsInputBase {
+export interface AddCountStatInput {
   count: BigNumber;
 }
 

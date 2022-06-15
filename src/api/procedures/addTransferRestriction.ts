@@ -206,7 +206,7 @@ export async function prepareStorage(
   if (needStat) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'The appropriate statistic must be enabled',
+      message: 'The appropriate statistic must be enabled. Try calling the enableStat method first',
     });
   }
 

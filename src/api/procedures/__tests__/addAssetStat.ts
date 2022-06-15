@@ -28,10 +28,6 @@ jest.mock(
   '~/api/entities/Asset',
   require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
-jest.mock(
-  '~/api/entities/Identity',
-  require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
-);
 
 describe('addAssetStat procedure', () => {
   let mockContext: Mocked<Context>;
@@ -58,9 +54,9 @@ describe('addAssetStat procedure', () => {
   >;
   let createStat2ndKeyStub: sinon.SinonStub<[Context], PolymeshPrimitivesStatisticsStat2ndKey>;
   let activeAssetStatsStub: sinon.SinonStub;
+  let statStub: sinon.SinonStub;
 
   let emptyStorage: Storage;
-  let statStub: sinon.SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -229,7 +225,7 @@ describe('addAssetStat procedure', () => {
 
       const expectedError = new PolymeshError({
         code: ErrorCode.NoDataChange,
-        message: 'Stat is already enabled',
+        message: 'Stat of type: "Balance" is already enabled for Asset: "TICKER"',
       });
 
       return expect(

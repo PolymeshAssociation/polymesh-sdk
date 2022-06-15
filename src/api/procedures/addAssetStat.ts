@@ -2,7 +2,7 @@ import { BTreeSetStatType } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
-import { AddCountStatInput, ErrorCode, StatisticsInputBase, StatType, TxTags } from '~/types';
+import { AddCountStatInput, ErrorCode, StatType, TxTags } from '~/types';
 import { ProcedureAuthorization, StatisticsOpType } from '~/types/internal';
 import {
   bigNumberToU128,
@@ -21,7 +21,7 @@ export type AddCountStatParams = AddCountStatInput & {
   count: BigNumber;
 };
 
-export type AddPercentStatParams = StatisticsInputBase & {
+export type AddPercentStatParams = {
   type: StatType.Balance;
 };
 
@@ -136,7 +136,7 @@ export async function prepareStorage(
   if (!needStat) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
-      message: 'Stat is already enabled',
+      message: `Stat of type: "${type}" is already enabled for Asset: "${ticker}"`,
     });
   }
 

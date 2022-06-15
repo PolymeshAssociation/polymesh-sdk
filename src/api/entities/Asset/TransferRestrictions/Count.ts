@@ -49,6 +49,14 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
 
   /**
    * Enables investor count statistic for the Asset, which is required before creating restrictions
+   *
+   * @note this method requires the current number of holders to be passed in. Currently there is a potential
+   * race condition when passing in count.
+   *
+   * If a restriction such as limiting the number of investors is needed, then it is recommended to call this method
+   * during the initial configuration of the Asset, before people are trading it. Other options include checking after
+   * setting and retrying if that check isn't right, freezing the Asset, or to wait for a future version of the chain
+   * that will prevent this race condition
    */
   public declare enableStat: ProcedureMethod<Pick<AddCountStatParams, 'count'>, void>;
 
