@@ -16,6 +16,7 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import {
   CountTransferRestriction,
   PercentageTransferRestriction,
+  StatType,
   TransferRestrictionType,
 } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -388,7 +389,7 @@ describe('TransferRestrictionBase class', () => {
           {
             args: {
               ticker: asset.ticker,
-              type: TransferRestrictionType.Percentage,
+              type: StatType.Balance,
             },
             transformer: undefined,
           },
@@ -397,6 +398,68 @@ describe('TransferRestrictionBase class', () => {
         .resolves(expectedQueue);
 
       const queue = await percentage.enableStat();
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: disableStat', () => {
+    let context: Context;
+    let asset: Asset;
+
+    beforeEach(() => {
+      context = dsMockUtils.getContextInstance();
+      asset = entityMockUtils.getAssetInstance();
+    });
+
+    afterEach(() => {
+      sinon.restore();
+    });
+
+    it('should prepare the procedure (count) with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const count = new Count(asset, context);
+
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs(
+          {
+            args: {
+              ticker: asset.ticker,
+              type: StatType.Count,
+            },
+            transformer: undefined,
+          },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await count.disableStat();
+
+      expect(queue).toBe(expectedQueue);
+    });
+
+    it('should prepare the procedure (percentage) with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const percentage = new Percentage(asset, context);
+
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs(
+          {
+            args: {
+              ticker: asset.ticker,
+              type: StatType.Balance,
+            },
+            transformer: undefined,
+          },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await percentage.disableStat();
 
       expect(queue).toBe(expectedQueue);
     });

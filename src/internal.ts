@@ -229,3 +229,8 @@ export {
   AddAssetStatParams,
   Storage as AddAssetStatStorage,
 } from '~/api/procedures/addAssetStat';
+export {
+  removeAssetStat,
+  RemoveAssetStatParams,
+  Storage as RemoveAssetStatStorage,
+} from '~/api/procedures/removeAssetStat';

@@ -5,6 +5,7 @@ import {
   AddCountStatParams,
   AddPercentStatParams,
 } from '~/api/procedures/addAssetStat';
+import { removeAssetStat, RemoveAssetStatParams } from '~/api/procedures/removeAssetStat';
 import {
   addAssetStat,
   AddAssetStatStorage,
@@ -16,6 +17,7 @@ import {
   Asset,
   Context,
   Namespace,
+  RemoveAssetStatStorage,
   SetCountTransferRestrictionsParams,
   SetPercentageTransferRestrictionsParams,
   setTransferRestrictions,
@@ -28,6 +30,7 @@ import {
   NoArgsProcedureMethod,
   PercentageTransferRestriction,
   ProcedureMethod,
+  StatType,
   TransferRestrictionType,
 } from '~/types';
 import {
@@ -52,7 +55,7 @@ type SetRestrictionsParams<T> = Omit<
   'type'
 >;
 
-type SetStatParams<T> = Omit<
+type SetAssetStatParams<T> = Omit<
   T extends TransferRestrictionType.Count ? AddCountStatParams : AddPercentStatParams,
   'type'
 >;
@@ -127,7 +130,7 @@ export abstract class TransferRestrictionBase<
     );
 
     this.enableStat = createProcedureMethod<
-      SetStatParams<T>,
+      SetAssetStatParams<T>,
       AddAssetStatParams,
       void,
       AddAssetStatStorage
@@ -137,10 +140,24 @@ export abstract class TransferRestrictionBase<
           addAssetStat,
           {
             ...args,
-            type: this.type,
+            type: this.type === TransferRestrictionType.Count ? StatType.Count : StatType.Balance,
             ticker,
-          } as unknown as AddAssetStatParams,
+          } as AddAssetStatParams,
         ],
+      },
+      context
+    );
+
+    this.disableStat = createProcedureMethod<RemoveAssetStatParams, void, RemoveAssetStatStorage>(
+      {
+        getProcedureAndArgs: () => [
+          removeAssetStat,
+          {
+            type: this.type === TransferRestrictionType.Count ? StatType.Count : StatType.Balance,
+            ticker,
+          },
+        ],
+        voidArgs: true,
       },
       context
     );
@@ -172,7 +189,14 @@ export abstract class TransferRestrictionBase<
    *
    * @note restrictions require the relevant statistic to be enabled
    */
-  public enableStat: ProcedureMethod<SetStatParams<T>, void>;
+  public enableStat: ProcedureMethod<SetAssetStatParams<T>, void>;
+
+  /**
+   * Removes an Asset Stat
+   *
+   * @throws if the Stat is being used
+   */
+  public disableStat: NoArgsProcedureMethod<void>;
 
   /**
    * Retrieve all active Transfer Restrictions of the corresponding type

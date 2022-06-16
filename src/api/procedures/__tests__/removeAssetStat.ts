@@ -13,11 +13,11 @@ import sinon from 'sinon';
 
 import {
   getAuthorization,
-  prepareAddAssetStat,
+  prepareRemoveAssetStat,
   prepareStorage,
   Storage,
-} from '~/api/procedures/addAssetStat';
-import { AddAssetStatParams, Context, PolymeshError } from '~/internal';
+} from '~/api/procedures/removeAssetStat';
+import { Context, PolymeshError, RemoveAssetStatParams } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { ErrorCode, StatType, TxTags } from '~/types';
@@ -29,18 +29,18 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
-describe('addAssetStat procedure', () => {
+describe('removeAssetStat procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerKeyStub: sinon.SinonStub<[string, Context], TickerKey>;
   let ticker: string;
-  let count: BigNumber;
   let rawTicker: PolymeshPrimitivesTicker;
-  let args: AddAssetStatParams;
-  let rawStatType: PolymeshPrimitivesStatisticsStatType;
+  let args: RemoveAssetStatParams;
+  let rawCountStatType: PolymeshPrimitivesStatisticsStatType;
+  let rawBalanceStatType: PolymeshPrimitivesStatisticsStatType;
   let rawStatUpdate: PolymeshPrimitivesStatisticsStatUpdate;
   let raw2ndKey: PolymeshPrimitivesStatisticsStat2ndKey;
 
-  let addBatchTransactionStub: sinon.SinonStub;
+  let addTransactionStub: sinon.SinonStub;
   let setActiveAssetStats: PolymeshTx<
     [PolymeshPrimitivesTicker, PolymeshPrimitivesTransferComplianceTransferCondition]
   >;
@@ -54,6 +54,7 @@ describe('addAssetStat procedure', () => {
   >;
   let createStat2ndKeyStub: sinon.SinonStub<[Context], PolymeshPrimitivesStatisticsStat2ndKey>;
   let activeAssetStatsStub: sinon.SinonStub;
+  let assetTransferCompliancesStub: sinon.SinonStub;
   let statStub: sinon.SinonStub;
 
   let emptyStorage: Storage;
@@ -67,7 +68,6 @@ describe('addAssetStat procedure', () => {
     emptyStorage = {
       currentStats: [] as unknown as Vec<PolymeshPrimitivesStatisticsStatType>,
     };
-    count = new BigNumber(10);
     stringToTickerKeyStub = sinon.stub(utilsConversionModule, 'stringToTickerKey');
     createStat2ndKeyStub = sinon.stub(utilsConversionModule, 'createStat2ndKey');
     statisticsOpTypeToStatOpTypeStub = sinon.stub(
@@ -83,14 +83,19 @@ describe('addAssetStat procedure', () => {
     });
     statStub = sinon.stub(utilsConversionModule, 'meshStatToStatisticsOpType');
     activeAssetStatsStub = dsMockUtils.createQueryStub('statistics', 'activeAssetStats');
+    assetTransferCompliancesStub = dsMockUtils.createQueryStub(
+      'statistics',
+      'assetTransferCompliances'
+    );
   });
 
   beforeEach(() => {
     statStub.returns(StatisticsOpType.Balance);
-    addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
+    addTransactionStub = procedureMockUtils.getAddTransactionStub();
     setActiveAssetStats = dsMockUtils.createTxStub('statistics', 'setActiveAssetStats');
 
-    rawStatType = dsMockUtils.createMockStatistics();
+    rawCountStatType = dsMockUtils.createMockStatistics();
+    rawBalanceStatType = dsMockUtils.createMockStatistics();
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawStatUpdate = dsMockUtils.createMockStatUpdate();
 
@@ -119,56 +124,35 @@ describe('addAssetStat procedure', () => {
       type: StatType.Balance,
       ticker,
     };
-    const proc = procedureMockUtils.getInstance<AddAssetStatParams, void, Storage>(mockContext, {
-      ...emptyStorage,
+
+    const currentStats = { toArray: () => [], indexOf: () => 0 } as any;
+    const proc = procedureMockUtils.getInstance<RemoveAssetStatParams, void, Storage>(mockContext, {
+      currentStats,
     });
-    statisticsOpTypeToStatOpTypeStub.returns(rawStatType);
+    statisticsOpTypeToStatOpTypeStub.returns(rawCountStatType);
 
-    await prepareAddAssetStat.call(proc, args);
+    await prepareRemoveAssetStat.call(proc, args);
 
-    sinon.assert.calledWith(addBatchTransactionStub.firstCall, {
-      transactions: [
-        {
-          transaction: setActiveAssetStats,
-          args: [{ Ticker: rawTicker }, [rawStatType]],
-        },
-      ],
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: setActiveAssetStats,
+      args: [{ Ticker: rawTicker }, []],
     });
-
-    args = {
-      type: StatType.Count,
-      ticker,
-      count: new BigNumber(3),
-    };
-
-    // await prepareAddAssetStat.call(proc, args);
   });
 
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
       args = {
         ticker,
-        count,
         type: StatType.Count,
       };
 
-      const proc = procedureMockUtils.getInstance<AddAssetStatParams, void, Storage>(
+      const proc = procedureMockUtils.getInstance<RemoveAssetStatParams, void, Storage>(
         mockContext,
         emptyStorage
       );
       const boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc(args)).toEqual({
-        permissions: {
-          assets: [expect.objectContaining({ ticker })],
-          transactions: [
-            TxTags.statistics.SetActiveAssetStats,
-            TxTags.statistics.BatchUpdateAssetStats,
-          ],
-          portfolios: [],
-        },
-      });
-      expect(boundFunc({ ticker, type: StatType.Balance })).toEqual({
         permissions: {
           assets: [expect.objectContaining({ ticker })],
           transactions: [TxTags.statistics.SetActiveAssetStats],
@@ -189,43 +173,89 @@ describe('addAssetStat procedure', () => {
     });
 
     it('should fetch, process and return shared data', async () => {
-      const proc = procedureMockUtils.getInstance<AddAssetStatParams, void, Storage>(mockContext);
+      const proc = procedureMockUtils.getInstance<RemoveAssetStatParams, void, Storage>(
+        mockContext
+      );
+      assetTransferCompliancesStub.returns({
+        requirements: [],
+      });
       const boundFunc = prepareStorage.bind(proc);
-      activeAssetStatsStub.returns([rawStatType]);
+      activeAssetStatsStub.returns([rawCountStatType, rawBalanceStatType]);
       let result = await boundFunc({
         ticker: 'TICKER',
-        type: StatType.Count,
-        count: new BigNumber(1),
-      } as AddAssetStatParams);
-
-      expect(result).toEqual({
-        currentStats: [rawStatType],
+        type: StatType.Balance,
       });
 
-      statStub.returns(StatisticsOpType.Count);
+      expect(result).toEqual({
+        currentStats: [rawCountStatType, rawBalanceStatType],
+      });
+
+      statStub.returns(StatisticsOpType.Balance);
 
       result = await boundFunc({
         ticker: 'TICKER',
         type: StatType.Balance,
-        count: new BigNumber(1),
-      } as AddAssetStatParams);
+      });
 
       expect(result).toEqual({
-        currentStats: [rawStatType],
+        currentStats: [rawCountStatType, rawBalanceStatType],
       });
     });
 
-    it('should throw an error if the stat is already set', () => {
-      const proc = procedureMockUtils.getInstance<AddAssetStatParams, void, Storage>(mockContext);
+    it('should throw an error if the stat is being used', async () => {
+      const proc = procedureMockUtils.getInstance<RemoveAssetStatParams, void, Storage>(
+        mockContext
+      );
       const boundFunc = prepareStorage.bind(proc);
 
-      activeAssetStatsStub.returns([rawStatType]);
+      activeAssetStatsStub.returns([rawCountStatType]);
+      assetTransferCompliancesStub.returns({
+        requirements: [
+          dsMockUtils.createMockTransferCondition({
+            MaxInvestorOwnership: dsMockUtils.createMockU64(new BigNumber(10)),
+          }),
+          dsMockUtils.createMockTransferCondition({
+            MaxInvestorCount: dsMockUtils.createMockU64(new BigNumber(20)),
+          }),
+        ],
+      });
 
       statStub.returns(StatisticsOpType.Balance);
 
       const expectedError = new PolymeshError({
         code: ErrorCode.NoDataChange,
-        message: 'Stat of type: "Balance" is already enabled for Asset: "TICKER"',
+        message:
+          'This statistics cannot be removed as a TransferRequirement is currently using using it',
+      });
+
+      await expect(
+        boundFunc({
+          ticker: 'TICKER',
+          type: StatType.Balance,
+        })
+      ).rejects.toThrowError(expectedError);
+
+      statStub.returns(StatisticsOpType.Count);
+      await expect(
+        boundFunc({
+          ticker: 'TICKER',
+          type: StatType.Count,
+        })
+      ).rejects.toThrowError(expectedError);
+    });
+
+    it('should throw if the stat is not set', () => {
+      const proc = procedureMockUtils.getInstance<RemoveAssetStatParams, void, Storage>(
+        mockContext
+      );
+      const boundFunc = prepareStorage.bind(proc);
+
+      activeAssetStatsStub.returns([rawCountStatType]);
+      statStub.returns(StatisticsOpType.Count);
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'Stat of type: "Balance" is not enabled for Asset: "TICKER"',
       });
 
       return expect(
