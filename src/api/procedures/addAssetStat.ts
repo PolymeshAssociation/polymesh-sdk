@@ -75,7 +75,6 @@ export async function prepareAddAssetStat(
     const secondKey = createStat2ndKey(context);
     const stat = statUpdate(secondKey, bigNumberToU128(holderCount, context), context);
     const statValue = statUpdatesToBtreeStatUpdate([stat], context);
-
     transactions.push(
       checkTxType({
         transaction: statistics.batchUpdateAssetStats,

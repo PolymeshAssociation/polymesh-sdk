@@ -41,7 +41,7 @@ describe('addAssetStat procedure', () => {
   let raw2ndKey: PolymeshPrimitivesStatisticsStat2ndKey;
 
   let addBatchTransactionStub: sinon.SinonStub;
-  let setActiveAssetStats: PolymeshTx<
+  let setActiveAssetStatsTxStub: PolymeshTx<
     [PolymeshPrimitivesTicker, PolymeshPrimitivesTransferComplianceTransferCondition]
   >;
   let statisticsOpTypeToStatOpTypeStub: sinon.SinonStub<
@@ -88,7 +88,7 @@ describe('addAssetStat procedure', () => {
   beforeEach(() => {
     statStub.returns(StatisticsOpType.Balance);
     addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
-    setActiveAssetStats = dsMockUtils.createTxStub('statistics', 'setActiveAssetStats');
+    setActiveAssetStatsTxStub = dsMockUtils.createTxStub('statistics', 'setActiveAssetStats');
 
     rawStatType = dsMockUtils.createMockStatistics();
     rawTicker = dsMockUtils.createMockTicker(ticker);
@@ -129,11 +129,19 @@ describe('addAssetStat procedure', () => {
     sinon.assert.calledWith(addBatchTransactionStub.firstCall, {
       transactions: [
         {
-          transaction: setActiveAssetStats,
+          transaction: setActiveAssetStatsTxStub,
           args: [{ Ticker: rawTicker }, [rawStatType]],
         },
       ],
     });
+
+    args = {
+      type: StatType.Count,
+      ticker,
+      count,
+    };
+
+    await prepareAddAssetStat.call(proc, args);
   });
 
   describe('getAuthorization', () => {

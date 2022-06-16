@@ -125,6 +125,7 @@ describe('removeAssetStat procedure', () => {
       ticker,
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const currentStats = { toArray: () => [], indexOf: () => 0 } as any;
     const proc = procedureMockUtils.getInstance<RemoveAssetStatParams, void, Storage>(mockContext, {
       currentStats,
@@ -133,7 +134,19 @@ describe('removeAssetStat procedure', () => {
 
     await prepareRemoveAssetStat.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, {
+    sinon.assert.calledWith(addTransactionStub.firstCall, {
+      transaction: setActiveAssetStats,
+      args: [{ Ticker: rawTicker }, []],
+    });
+
+    args = {
+      type: StatType.Count,
+      ticker,
+    };
+
+    await prepareRemoveAssetStat.call(proc, args);
+
+    sinon.assert.calledWith(addTransactionStub.secondCall, {
       transaction: setActiveAssetStats,
       args: [{ Ticker: rawTicker }, []],
     });
@@ -224,7 +237,8 @@ describe('removeAssetStat procedure', () => {
 
       const expectedError = new PolymeshError({
         code: ErrorCode.NoDataChange,
-        message: 'This statistics cannot be removed as a TransferRequirement is currently using it',
+        message:
+          'This statistics cannot be removed because a TransferRequirement is currently using it',
       });
 
       await expect(
@@ -235,6 +249,7 @@ describe('removeAssetStat procedure', () => {
       ).rejects.toThrowError(expectedError);
 
       statStub.returns(StatisticsOpType.Count);
+
       await expect(
         boundFunc({
           ticker: 'TICKER',
