@@ -2,7 +2,15 @@ import BigNumber from 'bignumber.js';
 
 import { Account, Context, transferPolyx, TransferPolyxParams } from '~/internal';
 import { eventByIndexedArgs, eventsByIndexedArgs, transactionByHash } from '~/middleware/queries';
-import { EventIdEnum as EventId, ModuleIdEnum as ModuleId, Query } from '~/middleware/types';
+import { eventsByArgs, extrinsicByHash } from '~/middleware/queriesV2';
+import {
+  CallIdEnum,
+  EventIdEnum as EventId,
+  ModuleIdEnum as ModuleId,
+  ModuleIdEnum,
+  Query,
+} from '~/middleware/types';
+import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   EventIdentifier,
   ExtrinsicDataWithFees,
@@ -19,6 +27,7 @@ import {
   balanceToBigNumber,
   extrinsicIdentifierToTxTag,
   middlewareEventToEventIdentifier,
+  middlewareV2EventDetailsToEventIdentifier,
   moduleAddressToString,
   stringToBlockHash,
   textToString,
@@ -175,6 +184,54 @@ export class Network {
   }
 
   /**
+   * Retrieve a single event by any of its indexed arguments. Can be filtered using parameters
+   *
+   * @param opts.moduleId - type of the module to fetch
+   * @param opts.eventId - type of the event to fetch
+   * @param opts.eventArg0 - event parameter value to filter by in position 0
+   * @param opts.eventArg1 - event parameter value to filter by in position 1
+   * @param opts.eventArg2 - event parameter value to filter by in position 2
+   *
+   * @note uses the middleware
+   */
+  public async getEventByIndexedArgsV2(opts: {
+    moduleId: ModuleId;
+    eventId: EventId;
+    eventArg0?: string;
+    eventArg1?: string;
+    eventArg2?: string;
+  }): Promise<EventIdentifier | null> {
+    const { context } = this;
+
+    const { moduleId, eventId, eventArg0, eventArg1, eventArg2 } = opts;
+
+    const {
+      data: { events },
+    } = await context.queryMiddlewareV2<Ensured<QueryV2, 'events'>>(
+      eventsByArgs(
+        {
+          moduleId,
+          eventId,
+          eventArg0,
+          eventArg1,
+          eventArg2,
+        },
+        new BigNumber(1)
+      )
+    );
+
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
+    const {
+      nodes: [event],
+    } = events!;
+
+    const { block, eventIdx } = event!;
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
+
+    return optionize(middlewareV2EventDetailsToEventIdentifier)(block, eventIdx);
+  }
+
+  /**
    * Retrieve a list of events. Can be filtered using parameters
    *
    * @param opts.moduleId - type of the module to fetch
@@ -220,6 +277,62 @@ export class Network {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       return events.map(event => middlewareEventToEventIdentifier(event!));
     }
+
+    return null;
+  }
+
+  /**
+   * Retrieve a list of events. Can be filtered using parameters
+   *
+   * @param opts.moduleId - type of the module to fetch
+   * @param opts.eventId - type of the event to fetch
+   * @param opts.eventArg0 - event parameter value to filter by in position 0
+   * @param opts.eventArg1 - event parameter value to filter by in position 1
+   * @param opts.eventArg2 - event parameter value to filter by in position 2
+   * @param opts.size - page size
+   * @param opts.start - page offset
+   *
+   * @note uses the middleware
+   */
+  public async getEventsByIndexedArgsV2(opts: {
+    moduleId: ModuleId;
+    eventId: EventId;
+    eventArg0?: string;
+    eventArg1?: string;
+    eventArg2?: string;
+    size?: BigNumber;
+    start?: BigNumber;
+  }): Promise<EventIdentifier[] | null> {
+    const { context } = this;
+
+    const { moduleId, eventId, eventArg0, eventArg1, eventArg2, size, start } = opts;
+
+    const {
+      data: { events },
+    } = await context.queryMiddlewareV2<Ensured<QueryV2, 'events'>>(
+      eventsByArgs(
+        {
+          moduleId,
+          eventId,
+          eventArg0,
+          eventArg1,
+          eventArg2,
+        },
+        size,
+        start
+      )
+    );
+
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
+    const { nodes } = events!;
+
+    if (nodes) {
+      return nodes.map(event => {
+        const { block, eventIdx } = event!;
+        return middlewareV2EventDetailsToEventIdentifier(block!, eventIdx);
+      });
+    }
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
     return null;
   }
@@ -297,6 +410,97 @@ export class Network {
         nonce: nonce ? new BigNumber(nonce) : null,
         txTag,
         params,
+        success: !!txSuccess,
+        specVersionId: new BigNumber(specVersionId),
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        extrinsicHash: extrinsicHash!,
+        fee: {
+          gas: balanceToBigNumber(partialFee),
+          protocol: protocolFees,
+        },
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * Retrieve a transaction by hash
+   *
+   * @param opts.txHash - hash of the transaction
+   *
+   * @note uses the middlewareV2
+   */
+  public async getTransactionByHashV2(opts: {
+    txHash: string;
+  }): Promise<ExtrinsicDataWithFees | null> {
+    const {
+      context: {
+        polymeshApi: {
+          rpc: {
+            chain: { getBlock },
+            payment: { queryInfo },
+          },
+        },
+      },
+      context,
+    } = this;
+
+    const {
+      data: { extrinsics },
+    } = await context.queryMiddlewareV2<Ensured<QueryV2, 'extrinsics'>>(
+      extrinsicByHash({
+        extrinsicHash: opts.txHash,
+      })
+    );
+
+    const {
+      nodes: [transaction],
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    } = extrinsics!;
+
+    if (transaction) {
+      const {
+        blockId: blockNumber,
+        extrinsicIdx,
+        address: rawAddress,
+        nonce,
+        moduleId,
+        callId,
+        paramsTxt: params,
+        success: txSuccess,
+        specVersionId,
+        extrinsicHash,
+        block,
+      } = transaction;
+
+      const txTag = extrinsicIdentifierToTxTag({
+        moduleId: moduleId as ModuleIdEnum,
+        callId: callId as CallIdEnum,
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const blockHash = block!.hash!;
+
+      const rawBlockHash = stringToBlockHash(blockHash, context);
+
+      const {
+        block: { extrinsics: blockExtrinsics },
+      } = await getBlock(rawBlockHash);
+
+      const [{ partialFee }, [{ fees: protocolFees }]] = await Promise.all([
+        queryInfo(blockExtrinsics[extrinsicIdx].toHex(), rawBlockHash),
+        context.getProtocolFees({ tags: [txTag], blockHash }),
+      ]);
+
+      return {
+        blockNumber: new BigNumber(blockNumber),
+        blockHash,
+        extrinsicIdx: new BigNumber(extrinsicIdx),
+        address: rawAddress ?? null,
+        nonce: nonce ? new BigNumber(nonce) : null,
+        txTag,
+        params: JSON.parse(params),
         success: !!txSuccess,
         specVersionId: new BigNumber(specVersionId),
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

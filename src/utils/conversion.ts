@@ -129,7 +129,7 @@ import {
   Portfolio as MiddlewarePortfolio,
   Scope as MiddlewareScope,
 } from '~/middleware/types';
-import { Claim as MiddlewareV2Claim } from '~/middleware/typesV2';
+import { Block as MiddlewareV2Block, Claim as MiddlewareV2Claim } from '~/middleware/typesV2';
 import {
   AffirmationStatus,
   AssetDocument,
@@ -2009,6 +2009,25 @@ export function middlewareEventToEventIdentifier(event: MiddlewareEvent): EventI
     blockHash: block!.hash!,
     /* eslint-enable @typescript-eslint/no-non-null-assertion */
     eventIndex: new BigNumber(eventIndex),
+  };
+}
+
+/**
+ * @hidden
+ */
+export function middlewareV2EventDetailsToEventIdentifier(
+  block: MiddlewareV2Block,
+  eventIdx: number
+): EventIdentifier {
+  const { blockId, datetime, hash } = block;
+
+  return {
+    blockNumber: new BigNumber(blockId),
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
+    blockDate: new Date(datetime),
+    blockHash: hash,
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
+    eventIndex: new BigNumber(eventIdx),
   };
 }
 

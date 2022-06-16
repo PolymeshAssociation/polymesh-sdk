@@ -26,7 +26,9 @@ import {
   reclaimDividendDistributionFunds,
 } from '~/internal';
 import { getHistoryOfPaymentEventsForCa, getWithholdingTaxesOfCa } from '~/middleware/queries';
+import { distributionPaymentsQuery, distributionQuery } from '~/middleware/queriesV2';
 import { Query } from '~/middleware/types';
+import { Query as QueryV2 } from '~/middleware/typesV2';
 import { Distribution } from '~/polkadot';
 import {
   CorporateActionKind,
@@ -465,6 +467,44 @@ export class DividendDistribution extends CorporateActionBase {
   }
 
   /**
+   * Retrieve the amount of taxes that have been withheld up to this point in this Distribution
+   *
+   * @note uses the middlewareV2
+   */
+  public async getWithheldTaxV2(): Promise<BigNumber> {
+    const {
+      id,
+      asset: { ticker },
+      context,
+    } = this;
+
+    const taxPromise = context.queryMiddlewareV2<Ensured<QueryV2, 'distributions'>>(
+      distributionQuery({
+        id: `${ticker}/${id.toString()}`,
+      })
+    );
+
+    const [exists, result] = await Promise.all([this.exists(), taxPromise]);
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: notExistsMessage,
+      });
+    }
+
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
+    const {
+      nodes: [node],
+    } = result.data.distributions!;
+
+    const { taxes } = node!;
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
+
+    return new BigNumber(taxes);
+  }
+
+  /**
    * Retrieve the payment history for this Distribution
    *
    * @note uses the middleware
@@ -545,6 +585,78 @@ export class DividendDistribution extends CorporateActionBase {
         ...payment,
         blockHash: hashToString(hashes[index]),
       })),
+      next,
+      count,
+    };
+  }
+
+  /**
+   * Retrieve the payment history for this Distribution
+   *
+   * @note uses the middleware V2
+   * @note supports pagination
+   */
+  public async getPaymentHistoryV2(
+    opts: { size?: BigNumber; start?: BigNumber } = {}
+  ): Promise<ResultSet<DistributionPayment>> {
+    const {
+      id,
+      asset: { ticker },
+      context,
+    } = this;
+    const { size, start } = opts;
+
+    const paymentsPromise = context.queryMiddlewareV2<Ensured<QueryV2, 'distributionPayments'>>(
+      distributionPaymentsQuery(
+        {
+          distributionId: `${ticker}/${id.toString()}`,
+        },
+        size,
+        start
+      )
+    );
+
+    const [exists, result] = await Promise.all([this.exists(), paymentsPromise]);
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: notExistsMessage,
+      });
+    }
+
+    const {
+      data: { distributionPayments },
+    } = result;
+
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
+    const { nodes, totalCount } = distributionPayments!;
+
+    const count = new BigNumber(totalCount);
+    const data: DistributionPayment[] = [];
+    const multiParams: BlockNumber[] = [];
+
+    nodes!.forEach(node => {
+      const { createdBlock, datetime, targetId: did, amount, tax } = node!;
+
+      const { blockId, hash } = createdBlock!;
+      const blockNumber = new BigNumber(blockId);
+      multiParams.push(bigNumberToU32(blockNumber, context));
+      data.push({
+        blockNumber,
+        blockHash: hash,
+        date: new Date(datetime),
+        target: new Identity({ did }, context),
+        amount: new BigNumber(amount).shiftedBy(-6),
+        withheldTax: new BigNumber(tax).shiftedBy(-4),
+      });
+    });
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
+
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
       next,
       count,
     };

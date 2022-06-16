@@ -15,7 +15,9 @@ import {
   toggleFreezeOffering,
 } from '~/internal';
 import { investments } from '~/middleware/queries';
+import { investments as investmentsV2 } from '~/middleware/queriesV2';
 import { Query } from '~/middleware/types';
+import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   NoArgsProcedureMethod,
   ProcedureMethod,
@@ -227,6 +229,69 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
 
     items!.forEach(item => {
       const { investor: did, offeringTokenAmount, raiseTokenAmount } = item!;
+
+      data.push({
+        investor: new Identity({ did }, context),
+        soldAmount: new BigNumber(offeringTokenAmount).shiftedBy(-6),
+        investedAmount: new BigNumber(raiseTokenAmount).shiftedBy(-6),
+      });
+    });
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
+
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
+  }
+
+  /**
+   * Retrieve all investments made on this Offering
+   *
+   * @param opts.size - page size
+   * @param opts.start - page offset
+   *
+   * @note supports pagination
+   * @note uses the middleware V2
+   */
+  public async getInvestmentsV2(
+    opts: {
+      size?: BigNumber;
+      start?: BigNumber;
+    } = {}
+  ): Promise<ResultSet<Investment>> {
+    const {
+      context,
+      id,
+      asset: { ticker },
+    } = this;
+
+    const { size, start } = opts;
+
+    const result = await context.queryMiddlewareV2<Ensured<QueryV2, 'investments'>>(
+      investmentsV2({
+        stoId: id.toNumber(),
+        ticker: ticker,
+        count: size?.toNumber(),
+        skip: start?.toNumber(),
+      })
+    );
+
+    const {
+      data: { investments: investmentsResult },
+    } = result;
+
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
+    const { nodes, totalCount } = investmentsResult!;
+
+    const count = new BigNumber(totalCount);
+
+    const data: Investment[] = [];
+
+    nodes!.forEach(item => {
+      const { investorId: did, offeringTokenAmount, raiseTokenAmount } = item!;
 
       data.push({
         investor: new Identity({ did }, context),

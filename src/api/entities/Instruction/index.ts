@@ -11,7 +11,9 @@ import {
   Venue,
 } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
+import { instruction } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
+import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   ErrorCode,
   EventIdentifier,
@@ -32,6 +34,7 @@ import {
   meshInstructionStatusToInstructionStatus,
   meshPortfolioIdToPortfolio,
   middlewareEventToEventIdentifier,
+  middlewareV2EventDetailsToEventIdentifier,
   momentToDate,
   tickerToString,
   u32ToBigNumber,
@@ -383,6 +386,44 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
+   * Retrieve current status of this Instruction
+   *
+   * @note uses the middlewareV2
+   */
+  public async getStatusV2(): Promise<InstructionStatusResult> {
+    const isPending = await this.isPending();
+
+    if (isPending) {
+      return {
+        status: InstructionStatus.Pending,
+      };
+    }
+
+    let eventIdentifier = await this.getInstructionEventFromMiddlewareV2(
+      EventIdEnum.InstructionExecuted
+    );
+    if (eventIdentifier) {
+      return {
+        status: InstructionStatus.Executed,
+        eventIdentifier,
+      };
+    }
+
+    eventIdentifier = await this.getInstructionEventFromMiddlewareV2(EventIdEnum.InstructionFailed);
+    if (eventIdentifier) {
+      return {
+        status: InstructionStatus.Failed,
+        eventIdentifier,
+      };
+    }
+
+    throw new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: "It isn't possible to determine the current status of this Instruction",
+    });
+  }
+
+  /**
    * Reject this instruction
    *
    * @note reject on `SettleOnAffirmation` will execute the settlement and it will fail immediately.
@@ -429,6 +470,34 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     );
 
     return optionize(middlewareEventToEventIdentifier)(event);
+  }
+
+  /**
+   * @hidden
+   * Retrieve Instruction status event from middleware
+   */
+  private async getInstructionEventFromMiddlewareV2(
+    eventId: EventIdEnum
+  ): Promise<EventIdentifier | null> {
+    const { id, context } = this;
+
+    const {
+      data: { instructions },
+    } = await context.queryMiddlewareV2<Ensured<QueryV2, 'instructions'>>(
+      instruction({
+        eventId,
+        venueId: id.toString(),
+      })
+    );
+
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
+    const {
+      nodes: [details],
+    } = instructions!;
+    const { createdBlock, eventIdx } = details!;
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
+
+    return optionize(middlewareV2EventDetailsToEventIdentifier)(createdBlock, eventIdx);
   }
 
   /**

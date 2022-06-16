@@ -16,7 +16,9 @@ import {
   WaivePermissionsParams,
 } from '~/internal';
 import { eventByIndexedArgs, tickerExternalAgentActions } from '~/middleware/queries';
+import { tickerExternalAgentActionsQuery, tickerExternalAgentsQuery } from '~/middleware/queriesV2';
 import { EventIdEnum as EventId, ModuleIdEnum as ModuleId, Query } from '~/middleware/types';
+import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   AssetWithGroup,
   CheckPermissionsResult,
@@ -38,6 +40,7 @@ import {
   extrinsicPermissionsToTransactionPermissions,
   hashToString,
   middlewareEventToEventIdentifier,
+  middlewareV2EventDetailsToEventIdentifier,
   stringToIdentityId,
   stringToTicker,
   tickerToString,
@@ -351,6 +354,36 @@ export class AssetPermissions extends Namespace<Identity> {
   }
 
   /**
+   * Retrieve the identifier data (block number, date and event index) of the event that was emitted when this Identity was enabled/added as
+   *   an Agent with permissions over a specific Asset
+   *
+   * @note uses the middlewareV2
+   * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
+   */
+  public async enabledAtV2({ asset }: { asset: string | Asset }): Promise<EventIdentifier | null> {
+    const { context } = this;
+    const ticker = asTicker(asset);
+
+    const {
+      data: { tickerExternalAgents },
+    } = await context.queryMiddlewareV2<Ensured<QueryV2, 'tickerExternalAgents'>>(
+      tickerExternalAgentsQuery({
+        assetId: ticker,
+      })
+    );
+
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
+    const {
+      nodes: [node],
+    } = tickerExternalAgents!;
+
+    const { createdBlock, eventIdx } = node!;
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
+
+    return optionize(middlewareV2EventDetailsToEventIdentifier)(createdBlock, eventIdx);
+  }
+
+  /**
    * Abdicate from the current Permissions Group for a given Asset. This means that this Identity will no longer have any permissions over said Asset
    */
   public waive: ProcedureMethod<WaivePermissionsParams, void>;
@@ -443,6 +476,78 @@ export class AssetPermissions extends Namespace<Identity> {
         ...event,
         blockHash: hashToString(hashes[index]),
       })),
+      next,
+      count,
+    };
+  }
+
+  /**
+   * Retrieve all Events triggered by Operations this Identity has performed on a specific Asset
+   *
+   * @param opts.moduleId - filters results by module
+   * @param opts.eventId - filters results by event
+   * @param opts.size - page size
+   * @param opts.start - page offset
+   *
+   * @note uses the middlewareV2
+   * @note supports pagination
+   */
+  public async getOperationHistoryV2(opts: {
+    asset: string | Asset;
+    moduleId?: ModuleId;
+    eventId?: EventId;
+    size?: BigNumber;
+    start?: BigNumber;
+  }): Promise<ResultSet<EventIdentifier>> {
+    const {
+      context,
+      parent: { did },
+    } = this;
+
+    const { asset, moduleId: palletName, eventId, size, start } = opts;
+
+    const ticker = asTicker(asset);
+
+    const result = await context.queryMiddlewareV2<Ensured<QueryV2, 'tickerExternalAgentActions'>>(
+      tickerExternalAgentActionsQuery(
+        {
+          assetId: ticker,
+          callerId: did,
+          palletName,
+          eventId,
+        },
+        size,
+        start
+      )
+    );
+
+    const {
+      data: { tickerExternalAgentActions: tickerExternalAgentActionsResult },
+    } = result;
+
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
+    const { nodes, totalCount } = tickerExternalAgentActionsResult!;
+
+    const data: EventIdentifier[] = [];
+
+    nodes!.forEach(node => {
+      const { createdBlock, eventIdx } = node!;
+      const { blockId, datetime, hash } = createdBlock!;
+
+      data.push({
+        blockNumber: new BigNumber(blockId),
+        blockHash: hash,
+        blockDate: new Date(`${datetime}`),
+        eventIndex: new BigNumber(eventIdx),
+      });
+    });
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
+
+    const count = new BigNumber(totalCount);
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
       next,
       count,
     };

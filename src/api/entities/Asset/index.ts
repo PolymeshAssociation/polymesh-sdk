@@ -30,7 +30,9 @@ import {
   TransferAssetOwnershipParams,
 } from '~/internal';
 import { eventByIndexedArgs, tickerExternalAgentHistory } from '~/middleware/queries';
+import { assetQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
+import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   EventIdentifier,
   HistoricAgentOperation,
@@ -53,6 +55,7 @@ import {
   hashToString,
   identityIdToString,
   middlewareEventToEventIdentifier,
+  middlewareV2EventDetailsToEventIdentifier,
   scopeIdToString,
   stringToTicker,
   textToString,
@@ -391,6 +394,34 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
     );
 
     return optionize(middlewareEventToEventIdentifier)(event);
+  }
+
+  /**
+   * Retrieve the identifier data (block number, date and event index) of the event that was emitted when the token was created
+   *
+   * @note uses the middleware
+   * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
+   */
+  public async createdAtV2(): Promise<EventIdentifier | null> {
+    const { ticker, context } = this;
+
+    const {
+      data: { assets },
+    } = await context.queryMiddlewareV2<Ensured<QueryV2, 'assets'>>(
+      assetQuery({
+        ticker,
+      })
+    );
+
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
+    const {
+      nodes: [node],
+    } = assets!;
+
+    const { createdBlock, eventIdx } = node!;
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
+
+    return optionize(middlewareV2EventDetailsToEventIdentifier)(createdBlock, eventIdx);
   }
 
   /**

@@ -16,7 +16,9 @@ import {
   Venue,
 } from '~/internal';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
+import { assetHoldersQuery, trustingAssetsQuery } from '~/middleware/queriesV2';
 import { Query } from '~/middleware/types';
+import { AssetHoldersOrderBy, Query as QueryV2 } from '~/middleware/typesV2';
 import {
   CheckRolesResult,
   DistributionWithDetails,
@@ -346,6 +348,55 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
+   * Retrieve a list of all Assets which were held at one point by this Identity
+   *
+   * @note uses the middleware
+   * @note supports pagination
+   */
+  public async getHeldAssetsV2(
+    opts: {
+      order?: AssetHoldersOrderBy;
+      size?: BigNumber;
+      start?: BigNumber;
+    } = {}
+  ): Promise<ResultSet<Asset>> {
+    const { context, did } = this;
+
+    const { size, start, order } = opts;
+
+    const result = await context.queryMiddlewareV2<Ensured<QueryV2, 'assetHolders'>>(
+      assetHoldersQuery(
+        {
+          identityId: did,
+        },
+        size,
+        start,
+        order
+      )
+    );
+
+    const {
+      data: { assetHolders },
+    } = result;
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const { nodes, totalCount } = assetHolders!;
+
+    const count = new BigNumber(totalCount);
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const data = nodes.map(node => new Asset({ ticker: node!.assetId }, context));
+
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
+  }
+
+  /**
    * Check whether this Identity possesses all specified roles
    */
   public async checkRoles(roles: Role[]): Promise<CheckRolesResult> {
@@ -393,6 +444,24 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     );
 
     return tickers.map(ticker => new Asset({ ticker: removePadding(ticker) }, context));
+  }
+
+  /**
+   * Get the list of Assets for which this Identity is a trusted claim issuer
+   *
+   * @note uses the middlewareV2
+   */
+  public async getTrustingAssetsV2(): Promise<Asset[]> {
+    const { context, did } = this;
+
+    const {
+      data: { trustedClaimIssuers: tickers },
+    } = await context.queryMiddlewareV2<Ensured<QueryV2, 'trustedClaimIssuers'>>(
+      trustingAssetsQuery({ issuer: did })
+    );
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return tickers!.nodes.map(node => new Asset({ ticker: removePadding(node!.assetId) }, context));
   }
 
   /**
