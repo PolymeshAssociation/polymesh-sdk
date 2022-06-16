@@ -224,8 +224,7 @@ describe('removeAssetStat procedure', () => {
 
       const expectedError = new PolymeshError({
         code: ErrorCode.NoDataChange,
-        message:
-          'This statistics cannot be removed as a TransferRequirement is currently using using it',
+        message: 'This statistics cannot be removed as a TransferRequirement is currently using it',
       });
 
       await expect(

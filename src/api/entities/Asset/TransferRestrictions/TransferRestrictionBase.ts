@@ -185,9 +185,7 @@ export abstract class TransferRestrictionBase<
   public removeRestrictions: NoArgsProcedureMethod<BigNumber>;
 
   /**
-   * Enables statistic of the corresponding type for this Asset
-   *
-   * @note restrictions require the relevant statistic to be enabled
+   * Enables statistic of the corresponding type for this Asset, which are required for restrictions to be created
    */
   public enableStat: ProcedureMethod<SetAssetStatParams<T>, void>;
 

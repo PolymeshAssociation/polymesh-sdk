@@ -134,14 +134,6 @@ describe('addAssetStat procedure', () => {
         },
       ],
     });
-
-    args = {
-      type: StatType.Count,
-      ticker,
-      count: new BigNumber(3),
-    };
-
-    // await prepareAddAssetStat.call(proc, args);
   });
 
   describe('getAuthorization', () => {

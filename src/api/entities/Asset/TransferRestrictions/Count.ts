@@ -23,7 +23,7 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
   /**
    * Add a Count Transfer Restriction to this Asset. This limits to total number of individual
    * investors that may hold a particular Asset. In some jurisdictions once a threshold of investors is
-   * passed, different regulation may apply. This can be used to ensure such limits are not crossed
+   * passed, different regulations may apply, and this can ensure the limits are not exceeded
    *
    * @note the result is the total amount of restrictions after the procedure has run
    *
@@ -64,7 +64,7 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
 
   /**
    * Disables investor count statistic for the Asset. Since statistics introduce slight overhead to each transaction
-   * involving the Asset, disabling stats will reduce gas fees for people transacting with it
+   * involving the Asset, disabling unused stats will reduce gas fees for investors
    *
    * @throws if the stat is being used by a restriction
    */

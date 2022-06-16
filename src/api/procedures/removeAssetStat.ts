@@ -120,18 +120,14 @@ export async function prepareStorage(
   }
 
   requirements.forEach(r => {
-    let matchedRequirement = '';
-    if (type === StatType.Count && r.isMaxInvestorCount) {
-      matchedRequirement = StatType.Count;
-    } else if (type === StatType.Balance && r.isMaxInvestorOwnership) {
-      matchedRequirement = StatType.Balance;
-    }
-
-    if (matchedRequirement !== '') {
+    if (
+      (type === StatType.Count && r.isMaxInvestorCount) ||
+      (type === StatType.Balance && r.isMaxInvestorOwnership)
+    ) {
       throw new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message:
-          'This statistics cannot be removed as a TransferRequirement is currently using using it',
+          'This statistics cannot be removed because a TransferRequirement is currently using it',
       });
     }
   });
