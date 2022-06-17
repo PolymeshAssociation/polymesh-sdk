@@ -6,6 +6,7 @@ import {
   Asset,
   AssetHolder,
   AssetHoldersOrderBy,
+  ClaimsGroupBy,
   ClaimsOrderBy,
   Distribution,
   DistributionPayment,
@@ -16,7 +17,11 @@ import {
   Instruction,
   InstructionsOrderBy,
   InvestmentsOrderBy,
+  Leg,
+  LegsOrderBy,
   Portfolio,
+  PortfolioMovement,
+  PortfolioMovementsOrderBy,
   TickerExternalAgent,
   TickerExternalAgentAction,
   TickerExternalAgentActionsOrderBy,
@@ -68,19 +73,21 @@ function createClaimsFilters(variables: QueryDidsWithClaimsArgs): {
  *
  * Get all dids with at least one claim for a given scope and from one of the given trusted claim issuers
  */
-export function claimTargets(
-  variables: QueryDidsWithClaimsArgs
+export function claimsGroupingQuery(
+  variables: QueryDidsWithClaimsArgs,
+  orderBy = ClaimsOrderBy.TargetIdAsc,
+  groupBy = ClaimsGroupBy.TargetId
 ): GraphqlQuery<QueryDidsWithClaimsArgs> {
   const { args, filter } = createClaimsFilters(variables);
   const query = gql`
-    query ClaimTargets
+    query claimsGroupingQuery
       ${args}
      {
       claims(
         ${filter}
-        orderBy: [${ClaimsOrderBy.TargetIdAsc}]
+        orderBy: [${orderBy}]
       ) {
-        groupedAggregates(groupBy: [TARGET_ID], having: {}) {
+        groupedAggregates(groupBy: [${groupBy}], having: {}) {
           keys
         }
       }
@@ -98,17 +105,20 @@ export function claimTargets(
  *
  * Get all claims that a given target DID has, with a given scope and from one of the given trustedClaimIssuers
  */
-export function claims(variables: QueryDidsWithClaimsArgs): GraphqlQuery<QueryDidsWithClaimsArgs> {
+export function claimsQuery(
+  variables: QueryDidsWithClaimsArgs
+): GraphqlQuery<QueryDidsWithClaimsArgs> {
   const { args, filter } = createClaimsFilters(variables);
 
   const query = gql`
-    query ClaimsData
+    query ClaimsQuery
       ${args}
      {
       claims(
         ${filter}
         orderBy: [${ClaimsOrderBy.TargetIdAsc}, ${ClaimsOrderBy.CreatedBlockIdAsc}, ${ClaimsOrderBy.EventIdxAsc}]
       ) {
+        totalCount
         nodes {
           targetId
           type
@@ -711,5 +721,184 @@ export function assetHoldersQuery(
   return {
     query,
     variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
+  };
+}
+
+export interface QuerySettlementFilters {
+  identityId: string;
+  portfolioId?: BigNumber;
+  ticker?: string;
+  address?: string;
+}
+
+/**
+ *  @hidden
+ */
+function createLegFilters({ identityId, portfolioId, ticker, address }: QuerySettlementFilters): {
+  args: string;
+  filter: string;
+  variables: QueryArgs<Leg, 'fromId' | 'toId' | 'assetId' | 'addresses'>;
+} {
+  const args: string[] = ['$fromId: String!, $toId: String!'];
+  const fromIdFilters = ['fromId: { equalTo: $fromId }'];
+  const toIdFilters = ['toId: { equalTo: $toId }'];
+  const portfolioNumber = portfolioId ? portfolioId.toNumber() : 0;
+  const variables: QueryArgs<Leg, 'fromId' | 'toId' | 'assetId' | 'addresses'> = {
+    fromId: `${identityId}/${portfolioNumber}`,
+    toId: `${identityId}/${portfolioNumber}`,
+  };
+
+  if (ticker) {
+    variables.assetId = ticker;
+    args.push('$assetId: String!');
+    const assetIdFilter = 'assetId: { equalTo: $assetId }';
+    toIdFilters.push(assetIdFilter);
+    fromIdFilters.push(assetIdFilter);
+  }
+
+  if (address) {
+    variables.addresses = [address];
+    args.push('$addresses: [String!]!');
+    const addressFilter = 'addresses: { in: $addresses }';
+    toIdFilters.push(addressFilter);
+    fromIdFilters.push(addressFilter);
+  }
+
+  return {
+    args: `(${args.join()})`,
+    filter: `filter: { or: [${fromIdFilters.join()}, ${toIdFilters.join()} ] }`,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get Settlements where a Portfolio is involved
+ */
+export function settlementsQuery(
+  filters: QuerySettlementFilters
+): GraphqlQuery<QueryArgs<Leg, 'fromId' | 'toId' | 'assetId' | 'addresses'>> {
+  const { args, filter, variables } = createLegFilters(filters);
+  const query = gql`
+    query SettlementsQuery
+      ${args}
+     {
+      legs(
+        ${filter}
+        orderBy: [${LegsOrderBy.InstructionIdAsc}]
+      ) {
+        nodes {
+          settlement {
+            id
+            createdBlock {
+              blockId
+              hash
+            }
+            result
+            legs {
+              nodes {
+                from {
+                  identityId
+                  number
+                }
+                to {
+                  identityId
+                  number
+                }
+                ticker
+                amount
+                addresses
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+/**
+ *  @hidden
+ */
+function createPortfolioMovementFilters({
+  identityId,
+  portfolioId,
+  ticker,
+  address,
+}: QuerySettlementFilters): {
+  args: string;
+  filter: string;
+  variables: QueryArgs<PortfolioMovement, 'fromId' | 'toId' | 'assetId' | 'address'>;
+} {
+  const args: string[] = ['$fromId: String!, $toId: String!'];
+  const fromIdFilters = ['fromId: { equalTo: $fromId }'];
+  const toIdFilters = ['toId: { equalTo: $toId }'];
+  const portfolioNumber = portfolioId ? portfolioId.toNumber() : 0;
+  const variables: QueryArgs<PortfolioMovement, 'fromId' | 'toId' | 'assetId' | 'address'> = {
+    fromId: `${identityId}/${portfolioNumber}`,
+    toId: `${identityId}/${portfolioNumber}`,
+  };
+
+  if (ticker) {
+    variables.assetId = ticker;
+    args.push('$assetId: String!');
+    const assetIdFilter = 'assetId: { equalTo: $assetId }';
+    toIdFilters.push(assetIdFilter);
+    fromIdFilters.push(assetIdFilter);
+  }
+
+  if (address) {
+    variables.address = address;
+    args.push('$address: String!');
+    const addressFilter = 'address: { in: $address }';
+    toIdFilters.push(addressFilter);
+    fromIdFilters.push(addressFilter);
+  }
+
+  return {
+    args: `(${args.join()})`,
+    filter: `filter: { or: [${fromIdFilters.join()}, ${toIdFilters.join()} ] }`,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get Settlements where a Portfolio is involved
+ */
+export function portfolioMovementsQuery(
+  filters: QuerySettlementFilters
+): GraphqlQuery<QueryArgs<PortfolioMovement, 'fromId' | 'toId' | 'assetId' | 'address'>> {
+  const { args, filter, variables } = createPortfolioMovementFilters(filters);
+  const query = gql`
+    query PortfolioMovementsQuery
+      ${args}
+     {
+      portfolioMovements(
+        ${filter}
+        orderBy: [${PortfolioMovementsOrderBy.IdAsc}]
+      ) {
+        nodes {
+          id
+          fromId
+          toId
+          assetId
+          amount
+          address
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
   };
 }

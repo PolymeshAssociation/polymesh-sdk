@@ -129,7 +129,11 @@ import {
   Portfolio as MiddlewarePortfolio,
   Scope as MiddlewareScope,
 } from '~/middleware/types';
-import { Block as MiddlewareV2Block, Claim as MiddlewareV2Claim } from '~/middleware/typesV2';
+import {
+  Block as MiddlewareV2Block,
+  Claim as MiddlewareV2Claim,
+  Portfolio as MiddlewareV2Portfolio,
+} from '~/middleware/typesV2';
 import {
   AffirmationStatus,
   AssetDocument,
@@ -139,6 +143,7 @@ import {
   CalendarUnit,
   CheckpointScheduleParams,
   Claim,
+  ClaimData,
   ClaimType,
   Compliance,
   Condition,
@@ -2730,6 +2735,23 @@ export function toIdentityWithClaimsArray(
 /**
  * @hidden
  */
+export function middlewareV2ClaimToClaimData(
+  claim: MiddlewareV2Claim,
+  context: Context
+): ClaimData {
+  const { targetId, issuerId, issuanceDate, expiry, type, jurisdiction, scope, cddId } = claim;
+  return {
+    target: new Identity({ did: targetId }, context),
+    issuer: new Identity({ did: issuerId }, context),
+    issuedAt: new Date(parseFloat(issuanceDate)),
+    expiry: expiry ? new Date(parseFloat(expiry)) : null,
+    claim: createClaim(type, jurisdiction, scope, cddId, undefined),
+  };
+}
+
+/**
+ * @hidden
+ */
 export function toIdentityWithClaimsArrayV2(
   data: MiddlewareV2Claim[],
   context: Context
@@ -2738,15 +2760,7 @@ export function toIdentityWithClaimsArrayV2(
 
   return map(groupedData, (claims, did) => ({
     identity: new Identity({ did }, context),
-    claims: claims.map(
-      ({ targetId, issuerId, issuanceDate, expiry, type, jurisdiction, scope, cddId }) => ({
-        target: new Identity({ did: targetId }, context),
-        issuer: new Identity({ did: issuerId }, context),
-        issuedAt: new Date(parseFloat(issuanceDate)),
-        expiry: expiry ? new Date(parseFloat(expiry)) : null,
-        claim: createClaim(type, jurisdiction, scope, cddId, undefined),
-      })
-    ),
+    claims: claims.map(claim => middlewareV2ClaimToClaimData(claim, context)),
   }));
 }
 /**
@@ -2994,6 +3008,22 @@ export function middlewarePortfolioToPortfolio(
     return new DefaultPortfolio({ did }, context);
   }
   return new NumberedPortfolio({ did, id: new BigNumber(kind) }, context);
+}
+
+/**
+ * @hidden
+ */
+export function middlewareV2PortfolioToPortfolio(
+  portfolio: MiddlewareV2Portfolio,
+  context: Context
+): DefaultPortfolio | NumberedPortfolio {
+  const { identityId: did, number } = portfolio;
+
+  if (number) {
+    return new NumberedPortfolio({ did, id: new BigNumber(number) }, context);
+  }
+
+  return new DefaultPortfolio({ did }, context);
 }
 
 /**

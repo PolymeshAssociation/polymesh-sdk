@@ -26,6 +26,7 @@ import {
 
 import { Account, Asset, DividendDistribution, Identity, PolymeshError, Subsidy } from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
+import { claimsQuery } from '~/middleware/queriesV2';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
 import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
@@ -61,6 +62,7 @@ import {
   identityIdToString,
   meshClaimToClaim,
   meshCorporateActionToCorporateActionParams,
+  middlewareV2ClaimToClaimData,
   momentToDate,
   posRatioToBigNumber,
   signerToString,
@@ -1017,6 +1019,49 @@ export class Context {
         }
       );
     });
+
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
+  }
+
+  /**
+   * @hidden
+   */
+  public async getIdentityClaimsFromMiddlewareV2(args: {
+    targets?: (string | Identity)[];
+    trustedClaimIssuers?: (string | Identity)[];
+    claimTypes?: Exclude<ClaimType, ClaimType.InvestorUniquenessV2>[];
+    includeExpired?: boolean;
+    size?: BigNumber;
+    start?: BigNumber;
+  }): Promise<ResultSet<ClaimData>> {
+    const { targets, claimTypes, trustedClaimIssuers, includeExpired, size, start } = args;
+
+    const result = await this.queryMiddlewareV2<Ensured<QueryV2, 'claims'>>(
+      claimsQuery({
+        dids: targets?.map(target => signerToString(target)),
+        trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
+          signerToString(trustedClaimIssuer)
+        ),
+        claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
+        includeExpired,
+        count: size?.toNumber(),
+        skip: start?.toNumber(),
+      })
+    );
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const { nodes: claimsList, totalCount } = result.data.claims!;
+
+    const count = new BigNumber(totalCount);
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const data = claimsList.map(claim => middlewareV2ClaimToClaimData(claim!, this));
 
     const next = calculateNextKey(count, size, start);
 

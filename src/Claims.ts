@@ -10,9 +10,9 @@ import {
   ModifyClaimsParams,
 } from '~/internal';
 import { didsWithClaims, issuerDidsWithClaimsByTarget } from '~/middleware/queries';
-import { claims as claimsData, claimTargets } from '~/middleware/queriesV2';
+import { claimsGroupingQuery, claimsQuery } from '~/middleware/queriesV2';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
-import { Query as QueryV2 } from '~/middleware/typesV2';
+import { ClaimsGroupBy, ClaimsOrderBy, Query as QueryV2 } from '~/middleware/typesV2';
 import {
   CddClaim,
   ClaimData,
@@ -284,7 +284,7 @@ export class Claims {
 
     if (!targets) {
       const targetResults = await context.queryMiddlewareV2<Ensured<QueryV2, 'claims'>>(
-        claimTargets({
+        claimsGroupingQuery({
           ...filters,
         })
       );
@@ -308,19 +308,15 @@ export class Claims {
     targetIssuers = targetIssuers.sort().slice(start.toNumber(), size.plus(start).toNumber());
 
     const result = await context.queryMiddlewareV2<Ensured<QueryV2, 'claims'>>(
-      claimsData({
+      claimsQuery({
         dids: targetIssuers,
         ...filters,
       })
     );
 
-    const {
-      data: { claims },
-    } = result;
-
     const data = toIdentityWithClaimsArrayV2(
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      claims!.nodes!.map(node => node!),
+      result.data.claims!.nodes!.map(node => node!),
       context
     );
     const next = calculateNextKey(count, size, start);
@@ -479,6 +475,114 @@ export class Claims {
 
       const count = new BigNumber(totalCount);
       const data = toIdentityWithClaimsArray(issuerDidsWithClaimsByTargetList, context);
+      const next = calculateNextKey(count, size, start);
+
+      return {
+        data,
+        next,
+        count,
+      };
+    }
+
+    const identityClaimsFromChain = await context.getIdentityClaimsFromChain({
+      targets: [did],
+      trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
+        signerToString(trustedClaimIssuer)
+      ),
+      includeExpired,
+    });
+
+    const issuers = uniqBy(
+      identityClaimsFromChain.map(i => i.issuer),
+      identity => identity.did
+    );
+
+    const identitiesWithClaims = issuers.map(identity => {
+      return {
+        identity,
+        claims: filter(identityClaimsFromChain, ({ issuer }) => issuer.isEqual(identity)),
+      };
+    });
+
+    return {
+      data: identitiesWithClaims,
+      next: null,
+      count: new BigNumber(identitiesWithClaims.length),
+    };
+  }
+
+  /**
+   * Retrieve all claims issued about an Identity, grouped by claim issuer
+   *
+   * @param opts.target - Identity for which to fetch targeting claims (optional, defaults to the signing Identity)
+   * @param opts.includeExpired - whether to include expired claims. Defaults to true
+   *
+   * @note supports pagination
+   * @note uses the middleware (optional)
+   */
+  public async getTargetingClaimsV2(
+    opts: {
+      target?: string | Identity;
+      scope?: Scope;
+      trustedClaimIssuers?: (string | Identity)[];
+      includeExpired?: boolean;
+      size?: BigNumber;
+      start?: BigNumber;
+    } = {}
+  ): Promise<ResultSet<IdentityWithClaims>> {
+    const { context } = this;
+
+    const {
+      target,
+      trustedClaimIssuers,
+      scope,
+      includeExpired = true,
+      size = new BigNumber(DEFAULT_GQL_PAGE_SIZE),
+      start = new BigNumber(0),
+    } = opts;
+
+    const did = await getDid(target, context);
+
+    const isMiddlewareAvailable = await context.isMiddlewareAvailable();
+
+    if (isMiddlewareAvailable) {
+      const filters = {
+        dids: [did],
+        scope: scope ? scopeToMiddlewareScope(scope) : undefined,
+        includeExpired,
+      };
+
+      let claimIssuers;
+      if (!trustedClaimIssuers) {
+        const issuerResults = await context.queryMiddlewareV2<Ensured<QueryV2, 'claims'>>(
+          claimsGroupingQuery(filters, ClaimsOrderBy.IssuerIdAsc, ClaimsGroupBy.IssuerId)
+        );
+
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const groupedIssuers = issuerResults.data.claims!.groupedAggregates!;
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        claimIssuers = flatten(groupedIssuers.map(groupedAggregate => groupedAggregate.keys!));
+      } else {
+        claimIssuers = trustedClaimIssuers.map(issuer => signerToString(issuer));
+      }
+
+      // note: pagination count is based on the claim issuers and not the claims count
+      const count = new BigNumber(claimIssuers.length);
+
+      claimIssuers = claimIssuers.sort().slice(start.toNumber(), size.plus(start).toNumber());
+
+      const result = await context.queryMiddlewareV2<Ensured<QueryV2, 'claims'>>(
+        claimsQuery({
+          trustedClaimIssuers: claimIssuers,
+          ...filters,
+        })
+      );
+
+      const data = toIdentityWithClaimsArrayV2(
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        result.data.claims!.nodes!.map(node => node!),
+        context
+      );
       const next = calculateNextKey(count, size, start);
 
       return {

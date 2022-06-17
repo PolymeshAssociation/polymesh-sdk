@@ -556,6 +556,8 @@ export type Asset = Node & {
   tickerExternalAgentHistories: TickerExternalAgentHistoriesConnection;
   /** Reads and enables pagination through a set of `PortfolioMovement`. */
   portfolioMovements: PortfolioMovementsConnection;
+  /** Reads and enables pagination through a set of `Leg`. */
+  legs: LegsConnection;
   /** Reads and enables pagination through a set of `Distribution`. */
   distributions: DistributionsConnection;
   /** Reads and enables pagination through a set of `TrustedClaimIssuer`. */
@@ -606,6 +608,18 @@ export type Asset = Node & {
   blocksByPortfolioMovementAssetIdAndCreatedBlockId: AssetBlocksByPortfolioMovementAssetIdAndCreatedBlockIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Block`. */
   blocksByPortfolioMovementAssetIdAndUpdatedBlockId: AssetBlocksByPortfolioMovementAssetIdAndUpdatedBlockIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Portfolio`. */
+  portfoliosByLegAssetIdAndFromId: AssetPortfoliosByLegAssetIdAndFromIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Portfolio`. */
+  portfoliosByLegAssetIdAndToId: AssetPortfoliosByLegAssetIdAndToIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Instruction`. */
+  instructionsByLegAssetIdAndInstructionId: AssetInstructionsByLegAssetIdAndInstructionIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Settlement`. */
+  settlementsByLegAssetIdAndSettlementId: AssetSettlementsByLegAssetIdAndSettlementIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Block`. */
+  blocksByLegAssetIdAndCreatedBlockId: AssetBlocksByLegAssetIdAndCreatedBlockIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Block`. */
+  blocksByLegAssetIdAndUpdatedBlockId: AssetBlocksByLegAssetIdAndUpdatedBlockIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Identity`. */
   identitiesByDistributionAssetIdAndIdentityId: AssetIdentitiesByDistributionAssetIdAndIdentityIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Portfolio`. */
@@ -708,6 +722,16 @@ export type AssetPortfolioMovementsArgs = {
   after?: Maybe<Scalars['Cursor']>;
   orderBy?: Maybe<Array<PortfolioMovementsOrderBy>>;
   filter?: Maybe<PortfolioMovementFilter>;
+};
+
+export type AssetLegsArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<LegsOrderBy>>;
+  filter?: Maybe<LegFilter>;
 };
 
 export type AssetDistributionsArgs = {
@@ -951,6 +975,66 @@ export type AssetBlocksByPortfolioMovementAssetIdAndCreatedBlockIdArgs = {
 };
 
 export type AssetBlocksByPortfolioMovementAssetIdAndUpdatedBlockIdArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<BlocksOrderBy>>;
+  filter?: Maybe<BlockFilter>;
+};
+
+export type AssetPortfoliosByLegAssetIdAndFromIdArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<PortfoliosOrderBy>>;
+  filter?: Maybe<PortfolioFilter>;
+};
+
+export type AssetPortfoliosByLegAssetIdAndToIdArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<PortfoliosOrderBy>>;
+  filter?: Maybe<PortfolioFilter>;
+};
+
+export type AssetInstructionsByLegAssetIdAndInstructionIdArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<InstructionsOrderBy>>;
+  filter?: Maybe<InstructionFilter>;
+};
+
+export type AssetSettlementsByLegAssetIdAndSettlementIdArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<SettlementsOrderBy>>;
+  filter?: Maybe<SettlementFilter>;
+};
+
+export type AssetBlocksByLegAssetIdAndCreatedBlockIdArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<BlocksOrderBy>>;
+  filter?: Maybe<BlockFilter>;
+};
+
+export type AssetBlocksByLegAssetIdAndUpdatedBlockIdArgs = {
   first?: Maybe<Scalars['Int']>;
   last?: Maybe<Scalars['Int']>;
   offset?: Maybe<Scalars['Int']>;
@@ -1694,6 +1778,96 @@ export type AssetBlocksByFundingAssetIdAndUpdatedBlockIdManyToManyEdgeFundingsBy
     orderBy?: Maybe<Array<FundingsOrderBy>>;
     filter?: Maybe<FundingFilter>;
   };
+
+/** A connection to a list of `Block` values, with data from `Leg`. */
+export type AssetBlocksByLegAssetIdAndCreatedBlockIdManyToManyConnection = {
+  __typename?: 'AssetBlocksByLegAssetIdAndCreatedBlockIdManyToManyConnection';
+  /** A list of `Block` objects. */
+  nodes: Array<Maybe<Block>>;
+  /** A list of edges which contains the `Block`, info from the `Leg`, and the cursor to aid in pagination. */
+  edges: Array<AssetBlocksByLegAssetIdAndCreatedBlockIdManyToManyEdge>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Block` you could get from the connection. */
+  totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<BlockAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<BlockAggregates>>;
+};
+
+/** A connection to a list of `Block` values, with data from `Leg`. */
+export type AssetBlocksByLegAssetIdAndCreatedBlockIdManyToManyConnectionGroupedAggregatesArgs = {
+  groupBy: Array<BlocksGroupBy>;
+  having?: Maybe<BlocksHavingInput>;
+};
+
+/** A `Block` edge in the connection, with data from `Leg`. */
+export type AssetBlocksByLegAssetIdAndCreatedBlockIdManyToManyEdge = {
+  __typename?: 'AssetBlocksByLegAssetIdAndCreatedBlockIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Block` at the end of the edge. */
+  node?: Maybe<Block>;
+  /** Reads and enables pagination through a set of `Leg`. */
+  legsByCreatedBlockId: LegsConnection;
+};
+
+/** A `Block` edge in the connection, with data from `Leg`. */
+export type AssetBlocksByLegAssetIdAndCreatedBlockIdManyToManyEdgeLegsByCreatedBlockIdArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<LegsOrderBy>>;
+  filter?: Maybe<LegFilter>;
+};
+
+/** A connection to a list of `Block` values, with data from `Leg`. */
+export type AssetBlocksByLegAssetIdAndUpdatedBlockIdManyToManyConnection = {
+  __typename?: 'AssetBlocksByLegAssetIdAndUpdatedBlockIdManyToManyConnection';
+  /** A list of `Block` objects. */
+  nodes: Array<Maybe<Block>>;
+  /** A list of edges which contains the `Block`, info from the `Leg`, and the cursor to aid in pagination. */
+  edges: Array<AssetBlocksByLegAssetIdAndUpdatedBlockIdManyToManyEdge>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Block` you could get from the connection. */
+  totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<BlockAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<BlockAggregates>>;
+};
+
+/** A connection to a list of `Block` values, with data from `Leg`. */
+export type AssetBlocksByLegAssetIdAndUpdatedBlockIdManyToManyConnectionGroupedAggregatesArgs = {
+  groupBy: Array<BlocksGroupBy>;
+  having?: Maybe<BlocksHavingInput>;
+};
+
+/** A `Block` edge in the connection, with data from `Leg`. */
+export type AssetBlocksByLegAssetIdAndUpdatedBlockIdManyToManyEdge = {
+  __typename?: 'AssetBlocksByLegAssetIdAndUpdatedBlockIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Block` at the end of the edge. */
+  node?: Maybe<Block>;
+  /** Reads and enables pagination through a set of `Leg`. */
+  legsByUpdatedBlockId: LegsConnection;
+};
+
+/** A `Block` edge in the connection, with data from `Leg`. */
+export type AssetBlocksByLegAssetIdAndUpdatedBlockIdManyToManyEdgeLegsByUpdatedBlockIdArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<LegsOrderBy>>;
+  filter?: Maybe<LegFilter>;
+};
 
 /** A connection to a list of `Block` values, with data from `PortfolioMovement`. */
 export type AssetBlocksByPortfolioMovementAssetIdAndCreatedBlockIdManyToManyConnection = {
@@ -3280,6 +3454,52 @@ export type AssetIdentitiesByTransferComplianceAssetIdAndClaimIssuerIdManyToMany
     filter?: Maybe<TransferComplianceFilter>;
   };
 
+/** A connection to a list of `Instruction` values, with data from `Leg`. */
+export type AssetInstructionsByLegAssetIdAndInstructionIdManyToManyConnection = {
+  __typename?: 'AssetInstructionsByLegAssetIdAndInstructionIdManyToManyConnection';
+  /** A list of `Instruction` objects. */
+  nodes: Array<Maybe<Instruction>>;
+  /** A list of edges which contains the `Instruction`, info from the `Leg`, and the cursor to aid in pagination. */
+  edges: Array<AssetInstructionsByLegAssetIdAndInstructionIdManyToManyEdge>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Instruction` you could get from the connection. */
+  totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<InstructionAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<InstructionAggregates>>;
+};
+
+/** A connection to a list of `Instruction` values, with data from `Leg`. */
+export type AssetInstructionsByLegAssetIdAndInstructionIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<InstructionsGroupBy>;
+    having?: Maybe<InstructionsHavingInput>;
+  };
+
+/** A `Instruction` edge in the connection, with data from `Leg`. */
+export type AssetInstructionsByLegAssetIdAndInstructionIdManyToManyEdge = {
+  __typename?: 'AssetInstructionsByLegAssetIdAndInstructionIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Instruction` at the end of the edge. */
+  node?: Maybe<Instruction>;
+  /** Reads and enables pagination through a set of `Leg`. */
+  legs: LegsConnection;
+};
+
+/** A `Instruction` edge in the connection, with data from `Leg`. */
+export type AssetInstructionsByLegAssetIdAndInstructionIdManyToManyEdgeLegsArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<LegsOrderBy>>;
+  filter?: Maybe<LegFilter>;
+};
+
 export type AssetPendingOwnershipTransfer = Node & {
   __typename?: 'AssetPendingOwnershipTransfer';
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
@@ -3459,6 +3679,96 @@ export type AssetPortfoliosByDistributionAssetIdAndPortfolioIdManyToManyEdgeDist
   filter?: Maybe<DistributionFilter>;
 };
 
+/** A connection to a list of `Portfolio` values, with data from `Leg`. */
+export type AssetPortfoliosByLegAssetIdAndFromIdManyToManyConnection = {
+  __typename?: 'AssetPortfoliosByLegAssetIdAndFromIdManyToManyConnection';
+  /** A list of `Portfolio` objects. */
+  nodes: Array<Maybe<Portfolio>>;
+  /** A list of edges which contains the `Portfolio`, info from the `Leg`, and the cursor to aid in pagination. */
+  edges: Array<AssetPortfoliosByLegAssetIdAndFromIdManyToManyEdge>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Portfolio` you could get from the connection. */
+  totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<PortfolioAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<PortfolioAggregates>>;
+};
+
+/** A connection to a list of `Portfolio` values, with data from `Leg`. */
+export type AssetPortfoliosByLegAssetIdAndFromIdManyToManyConnectionGroupedAggregatesArgs = {
+  groupBy: Array<PortfoliosGroupBy>;
+  having?: Maybe<PortfoliosHavingInput>;
+};
+
+/** A `Portfolio` edge in the connection, with data from `Leg`. */
+export type AssetPortfoliosByLegAssetIdAndFromIdManyToManyEdge = {
+  __typename?: 'AssetPortfoliosByLegAssetIdAndFromIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Portfolio` at the end of the edge. */
+  node?: Maybe<Portfolio>;
+  /** Reads and enables pagination through a set of `Leg`. */
+  legsByFromId: LegsConnection;
+};
+
+/** A `Portfolio` edge in the connection, with data from `Leg`. */
+export type AssetPortfoliosByLegAssetIdAndFromIdManyToManyEdgeLegsByFromIdArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<LegsOrderBy>>;
+  filter?: Maybe<LegFilter>;
+};
+
+/** A connection to a list of `Portfolio` values, with data from `Leg`. */
+export type AssetPortfoliosByLegAssetIdAndToIdManyToManyConnection = {
+  __typename?: 'AssetPortfoliosByLegAssetIdAndToIdManyToManyConnection';
+  /** A list of `Portfolio` objects. */
+  nodes: Array<Maybe<Portfolio>>;
+  /** A list of edges which contains the `Portfolio`, info from the `Leg`, and the cursor to aid in pagination. */
+  edges: Array<AssetPortfoliosByLegAssetIdAndToIdManyToManyEdge>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Portfolio` you could get from the connection. */
+  totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<PortfolioAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<PortfolioAggregates>>;
+};
+
+/** A connection to a list of `Portfolio` values, with data from `Leg`. */
+export type AssetPortfoliosByLegAssetIdAndToIdManyToManyConnectionGroupedAggregatesArgs = {
+  groupBy: Array<PortfoliosGroupBy>;
+  having?: Maybe<PortfoliosHavingInput>;
+};
+
+/** A `Portfolio` edge in the connection, with data from `Leg`. */
+export type AssetPortfoliosByLegAssetIdAndToIdManyToManyEdge = {
+  __typename?: 'AssetPortfoliosByLegAssetIdAndToIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Portfolio` at the end of the edge. */
+  node?: Maybe<Portfolio>;
+  /** Reads and enables pagination through a set of `Leg`. */
+  legsByToId: LegsConnection;
+};
+
+/** A `Portfolio` edge in the connection, with data from `Leg`. */
+export type AssetPortfoliosByLegAssetIdAndToIdManyToManyEdgeLegsByToIdArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<LegsOrderBy>>;
+  filter?: Maybe<LegFilter>;
+};
+
 /** A connection to a list of `Portfolio` values, with data from `PortfolioMovement`. */
 export type AssetPortfoliosByPortfolioMovementAssetIdAndFromIdManyToManyConnection = {
   __typename?: 'AssetPortfoliosByPortfolioMovementAssetIdAndFromIdManyToManyConnection';
@@ -3552,6 +3862,51 @@ export type AssetPortfoliosByPortfolioMovementAssetIdAndToIdManyToManyEdgePortfo
     orderBy?: Maybe<Array<PortfolioMovementsOrderBy>>;
     filter?: Maybe<PortfolioMovementFilter>;
   };
+
+/** A connection to a list of `Settlement` values, with data from `Leg`. */
+export type AssetSettlementsByLegAssetIdAndSettlementIdManyToManyConnection = {
+  __typename?: 'AssetSettlementsByLegAssetIdAndSettlementIdManyToManyConnection';
+  /** A list of `Settlement` objects. */
+  nodes: Array<Maybe<Settlement>>;
+  /** A list of edges which contains the `Settlement`, info from the `Leg`, and the cursor to aid in pagination. */
+  edges: Array<AssetSettlementsByLegAssetIdAndSettlementIdManyToManyEdge>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Settlement` you could get from the connection. */
+  totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<SettlementAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<SettlementAggregates>>;
+};
+
+/** A connection to a list of `Settlement` values, with data from `Leg`. */
+export type AssetSettlementsByLegAssetIdAndSettlementIdManyToManyConnectionGroupedAggregatesArgs = {
+  groupBy: Array<SettlementsGroupBy>;
+  having?: Maybe<SettlementsHavingInput>;
+};
+
+/** A `Settlement` edge in the connection, with data from `Leg`. */
+export type AssetSettlementsByLegAssetIdAndSettlementIdManyToManyEdge = {
+  __typename?: 'AssetSettlementsByLegAssetIdAndSettlementIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Settlement` at the end of the edge. */
+  node?: Maybe<Settlement>;
+  /** Reads and enables pagination through a set of `Leg`. */
+  legs: LegsConnection;
+};
+
+/** A `Settlement` edge in the connection, with data from `Leg`. */
+export type AssetSettlementsByLegAssetIdAndSettlementIdManyToManyEdgeLegsArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<LegsOrderBy>>;
+  filter?: Maybe<LegFilter>;
+};
 
 /** A connection to a list of `StatType` values, with data from `TransferCompliance`. */
 export type AssetStatTypesByTransferComplianceAssetIdAndStatTypeIdManyToManyConnection = {
@@ -3709,6 +4064,8 @@ export enum AssetsOrderBy {
   TickerExternalAgentHistoriesCountDesc = 'TICKER_EXTERNAL_AGENT_HISTORIES_COUNT_DESC',
   PortfolioMovementsCountAsc = 'PORTFOLIO_MOVEMENTS_COUNT_ASC',
   PortfolioMovementsCountDesc = 'PORTFOLIO_MOVEMENTS_COUNT_DESC',
+  LegsCountAsc = 'LEGS_COUNT_ASC',
+  LegsCountDesc = 'LEGS_COUNT_DESC',
   DistributionsCountAsc = 'DISTRIBUTIONS_COUNT_ASC',
   DistributionsCountDesc = 'DISTRIBUTIONS_COUNT_DESC',
   TrustedClaimIssuersCountAsc = 'TRUSTED_CLAIM_ISSUERS_COUNT_ASC',
@@ -4243,6 +4600,8 @@ export type Block = Node & {
   blocksBySettlementCreatedBlockIdAndUpdatedBlockId: BlockBlocksBySettlementCreatedBlockIdAndUpdatedBlockIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Block`. */
   blocksBySettlementUpdatedBlockIdAndCreatedBlockId: BlockBlocksBySettlementUpdatedBlockIdAndCreatedBlockIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Asset`. */
+  assetsByLegCreatedBlockIdAndAssetId: BlockAssetsByLegCreatedBlockIdAndAssetIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Portfolio`. */
   portfoliosByLegCreatedBlockIdAndFromId: BlockPortfoliosByLegCreatedBlockIdAndFromIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Portfolio`. */
@@ -4253,6 +4612,8 @@ export type Block = Node & {
   settlementsByLegCreatedBlockIdAndSettlementId: BlockSettlementsByLegCreatedBlockIdAndSettlementIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Block`. */
   blocksByLegCreatedBlockIdAndUpdatedBlockId: BlockBlocksByLegCreatedBlockIdAndUpdatedBlockIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Asset`. */
+  assetsByLegUpdatedBlockIdAndAssetId: BlockAssetsByLegUpdatedBlockIdAndAssetIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Portfolio`. */
   portfoliosByLegUpdatedBlockIdAndFromId: BlockPortfoliosByLegUpdatedBlockIdAndFromIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Portfolio`. */
@@ -5997,6 +6358,16 @@ export type BlockBlocksBySettlementUpdatedBlockIdAndCreatedBlockIdArgs = {
   filter?: Maybe<BlockFilter>;
 };
 
+export type BlockAssetsByLegCreatedBlockIdAndAssetIdArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<AssetsOrderBy>>;
+  filter?: Maybe<AssetFilter>;
+};
+
 export type BlockPortfoliosByLegCreatedBlockIdAndFromIdArgs = {
   first?: Maybe<Scalars['Int']>;
   last?: Maybe<Scalars['Int']>;
@@ -6045,6 +6416,16 @@ export type BlockBlocksByLegCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: Maybe<Scalars['Cursor']>;
   orderBy?: Maybe<Array<BlocksOrderBy>>;
   filter?: Maybe<BlockFilter>;
+};
+
+export type BlockAssetsByLegUpdatedBlockIdAndAssetIdArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<AssetsOrderBy>>;
+  filter?: Maybe<AssetFilter>;
 };
 
 export type BlockPortfoliosByLegUpdatedBlockIdAndFromIdArgs = {
@@ -7414,6 +7795,96 @@ export type BlockAssetsByFundingUpdatedBlockIdAndAssetIdManyToManyEdgeFundingsAr
   after?: Maybe<Scalars['Cursor']>;
   orderBy?: Maybe<Array<FundingsOrderBy>>;
   filter?: Maybe<FundingFilter>;
+};
+
+/** A connection to a list of `Asset` values, with data from `Leg`. */
+export type BlockAssetsByLegCreatedBlockIdAndAssetIdManyToManyConnection = {
+  __typename?: 'BlockAssetsByLegCreatedBlockIdAndAssetIdManyToManyConnection';
+  /** A list of `Asset` objects. */
+  nodes: Array<Maybe<Asset>>;
+  /** A list of edges which contains the `Asset`, info from the `Leg`, and the cursor to aid in pagination. */
+  edges: Array<BlockAssetsByLegCreatedBlockIdAndAssetIdManyToManyEdge>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Asset` you could get from the connection. */
+  totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<AssetAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<AssetAggregates>>;
+};
+
+/** A connection to a list of `Asset` values, with data from `Leg`. */
+export type BlockAssetsByLegCreatedBlockIdAndAssetIdManyToManyConnectionGroupedAggregatesArgs = {
+  groupBy: Array<AssetsGroupBy>;
+  having?: Maybe<AssetsHavingInput>;
+};
+
+/** A `Asset` edge in the connection, with data from `Leg`. */
+export type BlockAssetsByLegCreatedBlockIdAndAssetIdManyToManyEdge = {
+  __typename?: 'BlockAssetsByLegCreatedBlockIdAndAssetIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Asset` at the end of the edge. */
+  node?: Maybe<Asset>;
+  /** Reads and enables pagination through a set of `Leg`. */
+  legs: LegsConnection;
+};
+
+/** A `Asset` edge in the connection, with data from `Leg`. */
+export type BlockAssetsByLegCreatedBlockIdAndAssetIdManyToManyEdgeLegsArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<LegsOrderBy>>;
+  filter?: Maybe<LegFilter>;
+};
+
+/** A connection to a list of `Asset` values, with data from `Leg`. */
+export type BlockAssetsByLegUpdatedBlockIdAndAssetIdManyToManyConnection = {
+  __typename?: 'BlockAssetsByLegUpdatedBlockIdAndAssetIdManyToManyConnection';
+  /** A list of `Asset` objects. */
+  nodes: Array<Maybe<Asset>>;
+  /** A list of edges which contains the `Asset`, info from the `Leg`, and the cursor to aid in pagination. */
+  edges: Array<BlockAssetsByLegUpdatedBlockIdAndAssetIdManyToManyEdge>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Asset` you could get from the connection. */
+  totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<AssetAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<AssetAggregates>>;
+};
+
+/** A connection to a list of `Asset` values, with data from `Leg`. */
+export type BlockAssetsByLegUpdatedBlockIdAndAssetIdManyToManyConnectionGroupedAggregatesArgs = {
+  groupBy: Array<AssetsGroupBy>;
+  having?: Maybe<AssetsHavingInput>;
+};
+
+/** A `Asset` edge in the connection, with data from `Leg`. */
+export type BlockAssetsByLegUpdatedBlockIdAndAssetIdManyToManyEdge = {
+  __typename?: 'BlockAssetsByLegUpdatedBlockIdAndAssetIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Asset` at the end of the edge. */
+  node?: Maybe<Asset>;
+  /** Reads and enables pagination through a set of `Leg`. */
+  legs: LegsConnection;
+};
+
+/** A `Asset` edge in the connection, with data from `Leg`. */
+export type BlockAssetsByLegUpdatedBlockIdAndAssetIdManyToManyEdgeLegsArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<LegsOrderBy>>;
+  filter?: Maybe<LegFilter>;
 };
 
 /** A connection to a list of `Asset` values, with data from `PortfolioMovement`. */
@@ -20860,7 +21331,6 @@ export type Instruction = Node & {
   endBlock?: Maybe<Scalars['Int']>;
   tradeDate?: Maybe<Scalars['Datetime']>;
   valueDate?: Maybe<Scalars['Datetime']>;
-  addresses: Scalars['JSON'];
   createdBlockId: Scalars['String'];
   updatedBlockId: Scalars['String'];
   createdAt: Scalars['Datetime'];
@@ -20873,6 +21343,8 @@ export type Instruction = Node & {
   updatedBlock?: Maybe<Block>;
   /** Reads and enables pagination through a set of `Leg`. */
   legs: LegsConnection;
+  /** Reads and enables pagination through a set of `Asset`. */
+  assetsByLegInstructionIdAndAssetId: InstructionAssetsByLegInstructionIdAndAssetIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Portfolio`. */
   portfoliosByLegInstructionIdAndFromId: InstructionPortfoliosByLegInstructionIdAndFromIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Portfolio`. */
@@ -20893,6 +21365,16 @@ export type InstructionLegsArgs = {
   after?: Maybe<Scalars['Cursor']>;
   orderBy?: Maybe<Array<LegsOrderBy>>;
   filter?: Maybe<LegFilter>;
+};
+
+export type InstructionAssetsByLegInstructionIdAndAssetIdArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<AssetsOrderBy>>;
+  filter?: Maybe<AssetFilter>;
 };
 
 export type InstructionPortfoliosByLegInstructionIdAndFromIdArgs = {
@@ -20948,6 +21430,52 @@ export type InstructionBlocksByLegInstructionIdAndUpdatedBlockIdArgs = {
 export type InstructionAggregates = {
   __typename?: 'InstructionAggregates';
   keys?: Maybe<Array<Scalars['String']>>;
+};
+
+/** A connection to a list of `Asset` values, with data from `Leg`. */
+export type InstructionAssetsByLegInstructionIdAndAssetIdManyToManyConnection = {
+  __typename?: 'InstructionAssetsByLegInstructionIdAndAssetIdManyToManyConnection';
+  /** A list of `Asset` objects. */
+  nodes: Array<Maybe<Asset>>;
+  /** A list of edges which contains the `Asset`, info from the `Leg`, and the cursor to aid in pagination. */
+  edges: Array<InstructionAssetsByLegInstructionIdAndAssetIdManyToManyEdge>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Asset` you could get from the connection. */
+  totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<AssetAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<AssetAggregates>>;
+};
+
+/** A connection to a list of `Asset` values, with data from `Leg`. */
+export type InstructionAssetsByLegInstructionIdAndAssetIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<AssetsGroupBy>;
+    having?: Maybe<AssetsHavingInput>;
+  };
+
+/** A `Asset` edge in the connection, with data from `Leg`. */
+export type InstructionAssetsByLegInstructionIdAndAssetIdManyToManyEdge = {
+  __typename?: 'InstructionAssetsByLegInstructionIdAndAssetIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Asset` at the end of the edge. */
+  node?: Maybe<Asset>;
+  /** Reads and enables pagination through a set of `Leg`. */
+  legs: LegsConnection;
+};
+
+/** A `Asset` edge in the connection, with data from `Leg`. */
+export type InstructionAssetsByLegInstructionIdAndAssetIdManyToManyEdgeLegsArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<LegsOrderBy>>;
+  filter?: Maybe<LegFilter>;
 };
 
 /** A connection to a list of `Block` values, with data from `Leg`. */
@@ -21064,8 +21592,6 @@ export type InstructionFilter = {
   tradeDate?: Maybe<DatetimeFilter>;
   /** Filter by the object’s `valueDate` field. */
   valueDate?: Maybe<DatetimeFilter>;
-  /** Filter by the object’s `addresses` field. */
-  addresses?: Maybe<JsonFilter>;
   /** Filter by the object’s `createdBlockId` field. */
   createdBlockId?: Maybe<StringFilter>;
   /** Filter by the object’s `updatedBlockId` field. */
@@ -21262,7 +21788,6 @@ export enum InstructionsGroupBy {
   EndBlock = 'END_BLOCK',
   TradeDate = 'TRADE_DATE',
   ValueDate = 'VALUE_DATE',
-  Addresses = 'ADDRESSES',
   CreatedBlockId = 'CREATED_BLOCK_ID',
   UpdatedBlockId = 'UPDATED_BLOCK_ID',
   CreatedAt = 'CREATED_AT',
@@ -21296,8 +21821,6 @@ export enum InstructionsOrderBy {
   TradeDateDesc = 'TRADE_DATE_DESC',
   ValueDateAsc = 'VALUE_DATE_ASC',
   ValueDateDesc = 'VALUE_DATE_DESC',
-  AddressesAsc = 'ADDRESSES_ASC',
-  AddressesDesc = 'ADDRESSES_DESC',
   CreatedBlockIdAsc = 'CREATED_BLOCK_ID_ASC',
   CreatedBlockIdDesc = 'CREATED_BLOCK_ID_DESC',
   UpdatedBlockIdAsc = 'UPDATED_BLOCK_ID_ASC',
@@ -21526,16 +22049,19 @@ export type Leg = Node & {
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
   nodeId: Scalars['ID'];
   id: Scalars['String'];
-  ticker: Scalars['String'];
+  assetId: Scalars['String'];
   amount: Scalars['BigFloat'];
   fromId: Scalars['String'];
   toId: Scalars['String'];
   instructionId?: Maybe<Scalars['String']>;
   settlementId?: Maybe<Scalars['String']>;
+  addresses: Scalars['JSON'];
   createdBlockId: Scalars['String'];
   updatedBlockId: Scalars['String'];
   createdAt: Scalars['Datetime'];
   updatedAt: Scalars['Datetime'];
+  /** Reads a single `Asset` that is related to this `Leg`. */
+  asset?: Maybe<Asset>;
   /** Reads a single `Portfolio` that is related to this `Leg`. */
   from?: Maybe<Portfolio>;
   /** Reads a single `Portfolio` that is related to this `Leg`. */
@@ -21559,8 +22085,8 @@ export type LegAggregates = {
 export type LegFilter = {
   /** Filter by the object’s `id` field. */
   id?: Maybe<StringFilter>;
-  /** Filter by the object’s `ticker` field. */
-  ticker?: Maybe<StringFilter>;
+  /** Filter by the object’s `assetId` field. */
+  assetId?: Maybe<StringFilter>;
   /** Filter by the object’s `amount` field. */
   amount?: Maybe<BigFloatFilter>;
   /** Filter by the object’s `fromId` field. */
@@ -21571,6 +22097,8 @@ export type LegFilter = {
   instructionId?: Maybe<StringFilter>;
   /** Filter by the object’s `settlementId` field. */
   settlementId?: Maybe<StringFilter>;
+  /** Filter by the object’s `addresses` field. */
+  addresses?: Maybe<JsonFilter>;
   /** Filter by the object’s `createdBlockId` field. */
   createdBlockId?: Maybe<StringFilter>;
   /** Filter by the object’s `updatedBlockId` field. */
@@ -21621,12 +22149,13 @@ export type LegsEdge = {
 
 /** Grouping methods for `Leg` for usage during aggregation. */
 export enum LegsGroupBy {
-  Ticker = 'TICKER',
+  AssetId = 'ASSET_ID',
   Amount = 'AMOUNT',
   FromId = 'FROM_ID',
   ToId = 'TO_ID',
   InstructionId = 'INSTRUCTION_ID',
   SettlementId = 'SETTLEMENT_ID',
+  Addresses = 'ADDRESSES',
   CreatedBlockId = 'CREATED_BLOCK_ID',
   UpdatedBlockId = 'UPDATED_BLOCK_ID',
   CreatedAt = 'CREATED_AT',
@@ -21644,8 +22173,8 @@ export enum LegsOrderBy {
   Natural = 'NATURAL',
   IdAsc = 'ID_ASC',
   IdDesc = 'ID_DESC',
-  TickerAsc = 'TICKER_ASC',
-  TickerDesc = 'TICKER_DESC',
+  AssetIdAsc = 'ASSET_ID_ASC',
+  AssetIdDesc = 'ASSET_ID_DESC',
   AmountAsc = 'AMOUNT_ASC',
   AmountDesc = 'AMOUNT_DESC',
   FromIdAsc = 'FROM_ID_ASC',
@@ -21656,6 +22185,8 @@ export enum LegsOrderBy {
   InstructionIdDesc = 'INSTRUCTION_ID_DESC',
   SettlementIdAsc = 'SETTLEMENT_ID_ASC',
   SettlementIdDesc = 'SETTLEMENT_ID_DESC',
+  AddressesAsc = 'ADDRESSES_ASC',
+  AddressesDesc = 'ADDRESSES_DESC',
   CreatedBlockIdAsc = 'CREATED_BLOCK_ID_ASC',
   CreatedBlockIdDesc = 'CREATED_BLOCK_ID_DESC',
   UpdatedBlockIdAsc = 'UPDATED_BLOCK_ID_ASC',
@@ -22059,6 +22590,8 @@ export type Portfolio = Node & {
   blocksByPortfolioMovementToIdAndCreatedBlockId: PortfolioBlocksByPortfolioMovementToIdAndCreatedBlockIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Block`. */
   blocksByPortfolioMovementToIdAndUpdatedBlockId: PortfolioBlocksByPortfolioMovementToIdAndUpdatedBlockIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Asset`. */
+  assetsByLegFromIdAndAssetId: PortfolioAssetsByLegFromIdAndAssetIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Portfolio`. */
   portfoliosByLegFromIdAndToId: PortfolioPortfoliosByLegFromIdAndToIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Instruction`. */
@@ -22069,6 +22602,8 @@ export type Portfolio = Node & {
   blocksByLegFromIdAndCreatedBlockId: PortfolioBlocksByLegFromIdAndCreatedBlockIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Block`. */
   blocksByLegFromIdAndUpdatedBlockId: PortfolioBlocksByLegFromIdAndUpdatedBlockIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Asset`. */
+  assetsByLegToIdAndAssetId: PortfolioAssetsByLegToIdAndAssetIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Portfolio`. */
   portfoliosByLegToIdAndFromId: PortfolioPortfoliosByLegToIdAndFromIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Instruction`. */
@@ -22219,6 +22754,16 @@ export type PortfolioBlocksByPortfolioMovementToIdAndUpdatedBlockIdArgs = {
   filter?: Maybe<BlockFilter>;
 };
 
+export type PortfolioAssetsByLegFromIdAndAssetIdArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<AssetsOrderBy>>;
+  filter?: Maybe<AssetFilter>;
+};
+
 export type PortfolioPortfoliosByLegFromIdAndToIdArgs = {
   first?: Maybe<Scalars['Int']>;
   last?: Maybe<Scalars['Int']>;
@@ -22267,6 +22812,16 @@ export type PortfolioBlocksByLegFromIdAndUpdatedBlockIdArgs = {
   after?: Maybe<Scalars['Cursor']>;
   orderBy?: Maybe<Array<BlocksOrderBy>>;
   filter?: Maybe<BlockFilter>;
+};
+
+export type PortfolioAssetsByLegToIdAndAssetIdArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<AssetsOrderBy>>;
+  filter?: Maybe<AssetFilter>;
 };
 
 export type PortfolioPortfoliosByLegToIdAndFromIdArgs = {
@@ -22408,6 +22963,96 @@ export type PortfolioAssetsByDistributionPortfolioIdAndAssetIdManyToManyEdgeDist
   after?: Maybe<Scalars['Cursor']>;
   orderBy?: Maybe<Array<DistributionsOrderBy>>;
   filter?: Maybe<DistributionFilter>;
+};
+
+/** A connection to a list of `Asset` values, with data from `Leg`. */
+export type PortfolioAssetsByLegFromIdAndAssetIdManyToManyConnection = {
+  __typename?: 'PortfolioAssetsByLegFromIdAndAssetIdManyToManyConnection';
+  /** A list of `Asset` objects. */
+  nodes: Array<Maybe<Asset>>;
+  /** A list of edges which contains the `Asset`, info from the `Leg`, and the cursor to aid in pagination. */
+  edges: Array<PortfolioAssetsByLegFromIdAndAssetIdManyToManyEdge>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Asset` you could get from the connection. */
+  totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<AssetAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<AssetAggregates>>;
+};
+
+/** A connection to a list of `Asset` values, with data from `Leg`. */
+export type PortfolioAssetsByLegFromIdAndAssetIdManyToManyConnectionGroupedAggregatesArgs = {
+  groupBy: Array<AssetsGroupBy>;
+  having?: Maybe<AssetsHavingInput>;
+};
+
+/** A `Asset` edge in the connection, with data from `Leg`. */
+export type PortfolioAssetsByLegFromIdAndAssetIdManyToManyEdge = {
+  __typename?: 'PortfolioAssetsByLegFromIdAndAssetIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Asset` at the end of the edge. */
+  node?: Maybe<Asset>;
+  /** Reads and enables pagination through a set of `Leg`. */
+  legs: LegsConnection;
+};
+
+/** A `Asset` edge in the connection, with data from `Leg`. */
+export type PortfolioAssetsByLegFromIdAndAssetIdManyToManyEdgeLegsArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<LegsOrderBy>>;
+  filter?: Maybe<LegFilter>;
+};
+
+/** A connection to a list of `Asset` values, with data from `Leg`. */
+export type PortfolioAssetsByLegToIdAndAssetIdManyToManyConnection = {
+  __typename?: 'PortfolioAssetsByLegToIdAndAssetIdManyToManyConnection';
+  /** A list of `Asset` objects. */
+  nodes: Array<Maybe<Asset>>;
+  /** A list of edges which contains the `Asset`, info from the `Leg`, and the cursor to aid in pagination. */
+  edges: Array<PortfolioAssetsByLegToIdAndAssetIdManyToManyEdge>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Asset` you could get from the connection. */
+  totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<AssetAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<AssetAggregates>>;
+};
+
+/** A connection to a list of `Asset` values, with data from `Leg`. */
+export type PortfolioAssetsByLegToIdAndAssetIdManyToManyConnectionGroupedAggregatesArgs = {
+  groupBy: Array<AssetsGroupBy>;
+  having?: Maybe<AssetsHavingInput>;
+};
+
+/** A `Asset` edge in the connection, with data from `Leg`. */
+export type PortfolioAssetsByLegToIdAndAssetIdManyToManyEdge = {
+  __typename?: 'PortfolioAssetsByLegToIdAndAssetIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Asset` at the end of the edge. */
+  node?: Maybe<Asset>;
+  /** Reads and enables pagination through a set of `Leg`. */
+  legs: LegsConnection;
+};
+
+/** A `Asset` edge in the connection, with data from `Leg`. */
+export type PortfolioAssetsByLegToIdAndAssetIdManyToManyEdgeLegsArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<LegsOrderBy>>;
+  filter?: Maybe<LegFilter>;
 };
 
 /** A connection to a list of `Asset` values, with data from `PortfolioMovement`. */
@@ -25180,7 +25825,6 @@ export type Settlement = Node & {
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
   nodeId: Scalars['ID'];
   id: Scalars['String'];
-  addresses: Scalars['JSON'];
   result: Scalars['String'];
   createdBlockId: Scalars['String'];
   updatedBlockId: Scalars['String'];
@@ -25192,6 +25836,8 @@ export type Settlement = Node & {
   updatedBlock?: Maybe<Block>;
   /** Reads and enables pagination through a set of `Leg`. */
   legs: LegsConnection;
+  /** Reads and enables pagination through a set of `Asset`. */
+  assetsByLegSettlementIdAndAssetId: SettlementAssetsByLegSettlementIdAndAssetIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Portfolio`. */
   portfoliosByLegSettlementIdAndFromId: SettlementPortfoliosByLegSettlementIdAndFromIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Portfolio`. */
@@ -25212,6 +25858,16 @@ export type SettlementLegsArgs = {
   after?: Maybe<Scalars['Cursor']>;
   orderBy?: Maybe<Array<LegsOrderBy>>;
   filter?: Maybe<LegFilter>;
+};
+
+export type SettlementAssetsByLegSettlementIdAndAssetIdArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<AssetsOrderBy>>;
+  filter?: Maybe<AssetFilter>;
 };
 
 export type SettlementPortfoliosByLegSettlementIdAndFromIdArgs = {
@@ -25267,6 +25923,51 @@ export type SettlementBlocksByLegSettlementIdAndUpdatedBlockIdArgs = {
 export type SettlementAggregates = {
   __typename?: 'SettlementAggregates';
   keys?: Maybe<Array<Scalars['String']>>;
+};
+
+/** A connection to a list of `Asset` values, with data from `Leg`. */
+export type SettlementAssetsByLegSettlementIdAndAssetIdManyToManyConnection = {
+  __typename?: 'SettlementAssetsByLegSettlementIdAndAssetIdManyToManyConnection';
+  /** A list of `Asset` objects. */
+  nodes: Array<Maybe<Asset>>;
+  /** A list of edges which contains the `Asset`, info from the `Leg`, and the cursor to aid in pagination. */
+  edges: Array<SettlementAssetsByLegSettlementIdAndAssetIdManyToManyEdge>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Asset` you could get from the connection. */
+  totalCount: Scalars['Int'];
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<AssetAggregates>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<AssetAggregates>>;
+};
+
+/** A connection to a list of `Asset` values, with data from `Leg`. */
+export type SettlementAssetsByLegSettlementIdAndAssetIdManyToManyConnectionGroupedAggregatesArgs = {
+  groupBy: Array<AssetsGroupBy>;
+  having?: Maybe<AssetsHavingInput>;
+};
+
+/** A `Asset` edge in the connection, with data from `Leg`. */
+export type SettlementAssetsByLegSettlementIdAndAssetIdManyToManyEdge = {
+  __typename?: 'SettlementAssetsByLegSettlementIdAndAssetIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Asset` at the end of the edge. */
+  node?: Maybe<Asset>;
+  /** Reads and enables pagination through a set of `Leg`. */
+  legs: LegsConnection;
+};
+
+/** A `Asset` edge in the connection, with data from `Leg`. */
+export type SettlementAssetsByLegSettlementIdAndAssetIdManyToManyEdgeLegsArgs = {
+  first?: Maybe<Scalars['Int']>;
+  last?: Maybe<Scalars['Int']>;
+  offset?: Maybe<Scalars['Int']>;
+  before?: Maybe<Scalars['Cursor']>;
+  after?: Maybe<Scalars['Cursor']>;
+  orderBy?: Maybe<Array<LegsOrderBy>>;
+  filter?: Maybe<LegFilter>;
 };
 
 /** A connection to a list of `Block` values, with data from `Leg`. */
@@ -25367,8 +26068,6 @@ export type SettlementBlocksByLegSettlementIdAndUpdatedBlockIdManyToManyEdgeLegs
 export type SettlementFilter = {
   /** Filter by the object’s `id` field. */
   id?: Maybe<StringFilter>;
-  /** Filter by the object’s `addresses` field. */
-  addresses?: Maybe<JsonFilter>;
   /** Filter by the object’s `result` field. */
   result?: Maybe<StringFilter>;
   /** Filter by the object’s `createdBlockId` field. */
@@ -25559,7 +26258,6 @@ export type SettlementsEdge = {
 
 /** Grouping methods for `Settlement` for usage during aggregation. */
 export enum SettlementsGroupBy {
-  Addresses = 'ADDRESSES',
   Result = 'RESULT',
   CreatedBlockId = 'CREATED_BLOCK_ID',
   UpdatedBlockId = 'UPDATED_BLOCK_ID',
@@ -25578,8 +26276,6 @@ export enum SettlementsOrderBy {
   Natural = 'NATURAL',
   IdAsc = 'ID_ASC',
   IdDesc = 'ID_DESC',
-  AddressesAsc = 'ADDRESSES_ASC',
-  AddressesDesc = 'ADDRESSES_DESC',
   ResultAsc = 'RESULT_ASC',
   ResultDesc = 'RESULT_DESC',
   CreatedBlockIdAsc = 'CREATED_BLOCK_ID_ASC',
@@ -26480,7 +27176,6 @@ export type TickerExternalAgentAction = Node & {
   palletName: Scalars['String'];
   eventId: Scalars['String'];
   eventIdx: Scalars['Int'];
-  datetime: Scalars['Datetime'];
   createdBlockId: Scalars['String'];
   updatedBlockId: Scalars['String'];
   createdAt: Scalars['Datetime'];
@@ -26514,8 +27209,6 @@ export type TickerExternalAgentActionFilter = {
   eventId?: Maybe<StringFilter>;
   /** Filter by the object’s `eventIdx` field. */
   eventIdx?: Maybe<IntFilter>;
-  /** Filter by the object’s `datetime` field. */
-  datetime?: Maybe<DatetimeFilter>;
   /** Filter by the object’s `createdBlockId` field. */
   createdBlockId?: Maybe<StringFilter>;
   /** Filter by the object’s `updatedBlockId` field. */
@@ -26571,7 +27264,6 @@ export enum TickerExternalAgentActionsGroupBy {
   PalletName = 'PALLET_NAME',
   EventId = 'EVENT_ID',
   EventIdx = 'EVENT_IDX',
-  Datetime = 'DATETIME',
   CreatedBlockId = 'CREATED_BLOCK_ID',
   UpdatedBlockId = 'UPDATED_BLOCK_ID',
   CreatedAt = 'CREATED_AT',
@@ -26599,8 +27291,6 @@ export enum TickerExternalAgentActionsOrderBy {
   EventIdDesc = 'EVENT_ID_DESC',
   EventIdxAsc = 'EVENT_IDX_ASC',
   EventIdxDesc = 'EVENT_IDX_DESC',
-  DatetimeAsc = 'DATETIME_ASC',
-  DatetimeDesc = 'DATETIME_DESC',
   CreatedBlockIdAsc = 'CREATED_BLOCK_ID_ASC',
   CreatedBlockIdDesc = 'CREATED_BLOCK_ID_DESC',
   UpdatedBlockIdAsc = 'UPDATED_BLOCK_ID_ASC',
