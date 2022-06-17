@@ -312,6 +312,23 @@ export interface ClaimData<ClaimType = Claim> {
   claim: ClaimType;
 }
 
+export interface StatJurisdictionClaim {
+  type: ClaimType.Jurisdiction;
+  code?: CountryCode;
+}
+
+export interface StatAccreditedClaim {
+  type: ClaimType.Accredited;
+  accredited?: boolean;
+}
+
+export interface StatAffiliateClaim {
+  type: ClaimType.Affiliate;
+  affiliate?: boolean;
+}
+
+export type StatClaim = StatJurisdictionClaim | StatAccreditedClaim | StatAffiliateClaim;
+
 export interface IdentityWithClaims {
   identity: Identity;
   claims: ClaimData[];
@@ -436,6 +453,10 @@ export type InputCondition = (
 ) &
   InputConditionBase;
 
+export interface ClaimIssuer {
+  issuer: Identity;
+  claimType: ClaimType;
+}
 export interface Requirement {
   id: BigNumber;
   conditions: Condition[];
@@ -1257,6 +1278,34 @@ export interface PercentageTransferRestriction extends TransferRestrictionBase {
    */
   percentage: BigNumber;
 }
+export interface ClaimCountTransferRestriction extends TransferRestrictionBase {
+  /**
+   * The type of investors this restriction applies to. e.g. non-accredited
+   */
+  claim: StatClaim;
+  /**
+   * The minimum amount of investors the must meet the Claim criteria
+   */
+  min: BigNumber;
+  /**
+   * The maximum amount of investors that must meet the Claim criteria
+   */
+  max?: BigNumber;
+}
+export interface ClaimOwnershipTransferRestriction extends TransferRestrictionBase {
+  /**
+   * The type of investors this restriction applies to. e.g. Canadian investor
+   */
+  claim: StatClaim;
+  /**
+   * The minimum percentage of investors that must meet the Claim criteria
+   */
+  min: BigNumber;
+  /**
+   * The maximum percentage of investors that must meet the Claim criteria
+   */
+  max: BigNumber;
+}
 
 export interface CountTransferRestrictionInput extends TransferRestrictionInputBase {
   /**
@@ -1272,8 +1321,23 @@ export interface PercentageTransferRestrictionInput extends TransferRestrictionI
   percentage: BigNumber;
 }
 
+export interface ClaimCountTransferRestrictionInput extends TransferRestrictionInputBase {
+  min: BigNumber;
+  max: BigNumber;
+  claim: StatClaim;
+}
+export interface ClaimOwnershipTransferRestrictionInput extends TransferRestrictionInputBase {
+  min: BigNumber;
+  max: BigNumber;
+  claim: StatClaim;
+}
+
 export interface ActiveTransferRestrictions<
-  Restriction extends CountTransferRestriction | PercentageTransferRestriction
+  Restriction extends
+    | CountTransferRestriction
+    | PercentageTransferRestriction
+    | ClaimCountTransferRestriction
+    | ClaimOwnershipTransferRestriction
 > {
   restrictions: Restriction[];
   /**

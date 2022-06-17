@@ -1,31 +1,37 @@
 import { BTreeSetStatType } from '@polkadot/types/lookup';
-import BigNumber from 'bignumber.js';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
-import { AddCountStatInput, ErrorCode, StatType, TxTags } from '~/types';
+import { AddCountStatInput, ClaimType, ErrorCode, Identity, StatType, TxTags } from '~/types';
 import { ProcedureAuthorization, StatisticsOpType } from '~/types/internal';
 import {
   bigNumberToU128,
+  claimIssuerToMeshClaimIssuer,
   createStat2ndKey,
-  meshStatToStatisticsOpType,
   statisticsOpTypeToStatOpType,
   statisticsOpTypeToStatType,
   statUpdate,
   statUpdatesToBtreeStatUpdate,
   stringToTickerKey,
 } from '~/utils/conversion';
-import { checkTxType } from '~/utils/internal';
+import { checkTxType, compareStatsToInput } from '~/utils/internal';
 
-export type AddCountStatParams = AddCountStatInput & {
-  type: StatType.Count;
-  count: BigNumber;
+export type AddStatParamsBase = {
+  claimIssuer?: {
+    claimType: ClaimType;
+    issuer: Identity;
+  };
 };
 
-export type AddPercentStatParams = {
+export type AddCountStatParams = AddCountStatInput &
+  AddStatParamsBase & {
+    type: StatType.Count;
+  };
+
+export type AddBalanceStatParams = AddStatParamsBase & {
   type: StatType.Balance;
 };
 
-export type AddAssetStatParams = { ticker: string } & (AddCountStatParams | AddPercentStatParams);
+export type AddAssetStatParams = { ticker: string } & (AddCountStatParams | AddBalanceStatParams);
 
 export interface Storage {
   currentStats: BTreeSetStatType;
@@ -47,7 +53,7 @@ export async function prepareAddAssetStat(
     storage: { currentStats },
     context,
   } = this;
-  const { ticker, type } = args;
+  const { ticker, type, claimIssuer } = args;
 
   const tickerKey = stringToTickerKey(ticker, context);
 
@@ -58,7 +64,11 @@ export async function prepareAddAssetStat(
 
   const transactions = [];
 
-  const newStat = statisticsOpTypeToStatType(op, context);
+  const rawClaimIssuer = claimIssuer
+    ? claimIssuerToMeshClaimIssuer(claimIssuer, context)
+    : undefined;
+  // need to pass claim issuer as well
+  const newStat = statisticsOpTypeToStatType({ op, claimIssuer: rawClaimIssuer }, context);
   currentStats.push(newStat);
   currentStats.sort().reverse();
 
@@ -70,18 +80,18 @@ export async function prepareAddAssetStat(
   );
 
   // Count stats need the user to provide the initial value for the counter
-  if (args.type === StatType.Count) {
-    const holderCount = args.count;
-    const secondKey = createStat2ndKey(context);
-    const stat = statUpdate(secondKey, bigNumberToU128(holderCount, context), context);
-    const statValue = statUpdatesToBtreeStatUpdate([stat], context);
-    transactions.push(
-      checkTxType({
-        transaction: statistics.batchUpdateAssetStats,
-        args: [tickerKey, newStat, statValue],
-      })
-    );
-  }
+  // if (args.type === StatType.Count) {
+  //   const holderCount = args.count;
+  //   const secondKey = createStat2ndKey(context); // this wont work for something like claimIssuer or accredited
+  //   const stat = statUpdate(secondKey, bigNumberToU128(holderCount, context), context);
+  //   const statValue = statUpdatesToBtreeStatUpdate([stat], context);
+  //   transactions.push(
+  //     checkTxType({
+  //       transaction: statistics.batchUpdateAssetStats,
+  //       args: [tickerKey, newStat, statValue],
+  //     })
+  //   );
+  // }
 
   this.addBatchTransaction({ transactions });
 }
@@ -122,20 +132,16 @@ export async function prepareStorage(
       },
     },
   } = this;
-  const { ticker, type } = args;
+  const { ticker } = args;
 
   const tickerKey = stringToTickerKey(ticker, context);
   const currentStats = await statistics.activeAssetStats(tickerKey);
-  const needStat = !currentStats.find(s => {
-    const stat = meshStatToStatisticsOpType(s);
-    const cmpStat = stat === StatisticsOpType.Balance ? StatType.Balance : StatType.Count;
-    return cmpStat === type;
-  });
+  const needStat = !currentStats.find(s => compareStatsToInput(s, args));
 
   if (!needStat) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
-      message: `Stat of type: "${type}" is already enabled for Asset: "${ticker}"`,
+      message: 'Stat is already enabled',
     });
   }
 

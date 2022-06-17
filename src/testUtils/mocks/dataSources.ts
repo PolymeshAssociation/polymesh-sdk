@@ -43,6 +43,8 @@ import {
   SignedBlock,
 } from '@polkadot/types/interfaces';
 import {
+  BTreeSetStatType,
+  BTreeSetStatUpdate,
   ConfidentialIdentityClaimProofsScopeClaimProof,
   ConfidentialIdentityClaimProofsZkProofData,
   PalletAssetClassicTickerRegistration,
@@ -3821,21 +3823,22 @@ export const createMockStatistics = (
     | PolymeshPrimitivesStatisticsStatType
     | {
         op: PolymeshPrimitivesStatisticsStatType;
-        claimIssuers?: [PolymeshPrimitivesIdentityClaimClaimType, PolymeshPrimitivesIdentityId];
+        claimIssuer?: [PolymeshPrimitivesIdentityClaimClaimType, PolymeshPrimitivesIdentityId];
       }
 ): MockCodec<PolymeshPrimitivesStatisticsStatType> => {
   if (isCodec<PolymeshPrimitivesStatisticsStatType>(stat)) {
     return stat as MockCodec<PolymeshPrimitivesStatisticsStatType>;
   }
 
-  const { op, claimIssuers } = stat || {
-    op: '',
+  const { op, claimIssuer } = stat || {
+    op: createMockStatisticsOpType(),
+    claimIssuer: [createMockClaimType(), createMockIdentityId()],
   };
 
   return createMockCodec(
     {
       op,
-      claimIssuers,
+      claimIssuer,
     },
     !op
   ) as MockCodec<PolymeshPrimitivesStatisticsStatType>;
@@ -3879,4 +3882,12 @@ export const createMockStatUpdate = (
     },
     !update
   ) as MockCodec<PolymeshPrimitivesStatisticsStatUpdate>;
+};
+
+export const createMockBTreeStatUpdates = (
+  updates?: BTreeSetStatUpdate | Array<PolymeshPrimitivesStatisticsStatUpdate>
+): MockCodec<BTreeSetStatType> => {
+  const mock = createMockCodec(updates, !updates) as MockCodec<BTreeSetStatType>;
+  // mock.toArray = () => updates;
+  return mock;
 };

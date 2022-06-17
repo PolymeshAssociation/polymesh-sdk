@@ -27,6 +27,7 @@ import {
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesSecondaryKeyPermissions,
   PolymeshPrimitivesStatisticsStat2ndKey,
+  PolymeshPrimitivesStatisticsStatClaim,
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesStatisticsStatUpdate,
@@ -138,6 +139,7 @@ import {
   CalendarUnit,
   CheckpointScheduleParams,
   Claim,
+  ClaimIssuer,
   ClaimType,
   Compliance,
   Condition,
@@ -183,6 +185,7 @@ import {
   SignerType,
   SignerValue,
   SingleClaimCondition,
+  StatClaim,
   TargetTreatment,
   Tier,
   TransactionPermissions,
@@ -2117,6 +2120,23 @@ export function meshClaimToClaim(claim: MeshClaim): Claim {
 /**
  * @hidden
  */
+export function statsClaimToClaim(claim: PolymeshPrimitivesStatisticsStatClaim): StatClaim {
+  if (claim.isJurisdiction) {
+    const code = claim.asJurisdiction;
+    return {
+      type: ClaimType.Jurisdiction,
+      code: code.isSome ? meshCountryCodeToCountryCode(code.unwrap()) : undefined,
+    };
+  } else if (claim.isAccredited) {
+    return { type: ClaimType.Accredited };
+  } else {
+    return { type: ClaimType.Affiliate };
+  }
+}
+
+/**
+ * @hidden
+ */
 export function stringToTargetIdentity(did: string | null, context: Context): TargetIdentity {
   return context.createType(
     'TargetIdentity',
@@ -2728,6 +2748,18 @@ export function claimTypeToMeshClaimType(
   // NoData is the legacy name for NoType. Functionally they are the same, but createType only knows about one
   const data = claimType === ClaimType.NoData ? ClaimType.NoType : claimType;
   return context.createType('PolymeshPrimitivesIdentityClaimClaimType', data);
+}
+
+/**
+ * @hidden
+ */
+export function claimIssuerToMeshClaimIssuer(
+  claimIssuer: ClaimIssuer,
+  context: Context
+): [PolymeshPrimitivesIdentityClaimClaimType, PolymeshPrimitivesIdentityId] {
+  const claimType = claimTypeToMeshClaimType(claimIssuer.claimType, context);
+  const identityId = stringToIdentityId(claimIssuer.issuer.did, context);
+  return [claimType, identityId];
 }
 
 /**
@@ -3378,10 +3410,14 @@ export function corporateActionIdentifierToCaId(
  * @hidden
  */
 export function statisticsOpTypeToStatType(
-  op: PolymeshPrimitivesStatisticsStatOpType,
+  args: {
+    op: PolymeshPrimitivesStatisticsStatOpType;
+    claimIssuer?: [PolymeshPrimitivesIdentityClaimClaimType, PolymeshPrimitivesIdentityId];
+  },
   context: Context
 ): PolymeshPrimitivesStatisticsStatType {
-  return context.createType('PolymeshPrimitivesStatisticsStatType', { op });
+  const { op, claimIssuer } = args;
+  return context.createType('PolymeshPrimitivesStatisticsStatType', { op, claimIssuer });
 }
 
 /**

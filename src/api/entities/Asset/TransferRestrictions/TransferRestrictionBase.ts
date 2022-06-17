@@ -2,8 +2,8 @@ import BigNumber from 'bignumber.js';
 
 import {
   AddAssetStatParams,
+  AddBalanceStatParams,
   AddCountStatParams,
-  AddPercentStatParams,
 } from '~/api/procedures/addAssetStat';
 import { removeAssetStat, RemoveAssetStatParams } from '~/api/procedures/removeAssetStat';
 import {
@@ -56,7 +56,7 @@ type SetRestrictionsParams<T> = Omit<
 >;
 
 type SetAssetStatParams<T> = Omit<
-  T extends TransferRestrictionType.Count ? AddCountStatParams : AddPercentStatParams,
+  T extends TransferRestrictionType.Count ? AddCountStatParams : AddBalanceStatParams,
   'type'
 >;
 
@@ -148,16 +148,21 @@ export abstract class TransferRestrictionBase<
       context
     );
 
-    this.disableStat = createProcedureMethod<RemoveAssetStatParams, void, RemoveAssetStatStorage>(
+    this.disableStat = createProcedureMethod<
+      RemoveAssetStatParams,
+      RemoveAssetStatParams,
+      void,
+      RemoveAssetStatStorage
+    >(
       {
-        getProcedureAndArgs: () => [
+        getProcedureAndArgs: args => [
           removeAssetStat,
           {
+            ...args,
             type: this.type === TransferRestrictionType.Count ? StatType.Count : StatType.Balance,
             ticker,
           },
         ],
-        voidArgs: true,
       },
       context
     );
@@ -194,7 +199,7 @@ export abstract class TransferRestrictionBase<
    *
    * @throws if the Stat is being used
    */
-  public disableStat: NoArgsProcedureMethod<void>;
+  public disableStat: ProcedureMethod<RemoveAssetStatParams, void>;
 
   /**
    * Retrieve all active Transfer Restrictions of the corresponding type

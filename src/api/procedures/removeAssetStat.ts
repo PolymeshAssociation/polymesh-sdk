@@ -1,23 +1,31 @@
 import { BTreeSetStatType } from '@polkadot/types/lookup';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, StatType, TxTags } from '~/types';
+import { ClaimIssuer, ErrorCode, StatType, TxTags } from '~/types';
 import { ProcedureAuthorization, StatisticsOpType } from '~/types/internal';
 import {
-  meshStatToStatisticsOpType,
+  claimIssuerToMeshClaimIssuer,
   statisticsOpTypeToStatOpType,
   statisticsOpTypeToStatType,
   stringToTickerKey,
 } from '~/utils/conversion';
-import { checkTxType } from '~/utils/internal';
+import {
+  checkTxType,
+  compareStatsToInput,
+  compareTransferRestrictionToStat,
+} from '~/utils/internal';
 
-export interface RemoveCountStatParams {
+export interface RemoveAssetStatParamsBase {
+  claimIssuer?: ClaimIssuer;
+}
+
+export type RemoveCountStatParams = RemoveAssetStatParamsBase & {
   type: StatType.Count;
-}
+};
 
-export interface RemoveBalanceStatParams {
+export type RemoveBalanceStatParams = RemoveAssetStatParamsBase & {
   type: StatType.Balance;
-}
+};
 
 export type RemoveAssetStatParams = { ticker: string } & (
   | RemoveCountStatParams
@@ -44,7 +52,7 @@ export async function prepareRemoveAssetStat(
     storage: { currentStats },
     context,
   } = this;
-  const { ticker, type } = args;
+  const { ticker, type, claimIssuer } = args;
 
   const tickerKey = stringToTickerKey(ticker, context);
 
@@ -53,8 +61,13 @@ export async function prepareRemoveAssetStat(
       ? statisticsOpTypeToStatOpType(StatisticsOpType.Count, context)
       : statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
 
-  const newStat = statisticsOpTypeToStatType(op, context);
+  const rawClaimIssuer = claimIssuer
+    ? claimIssuerToMeshClaimIssuer(claimIssuer, context)
+    : undefined;
+
+  const newStat = statisticsOpTypeToStatType({ op, claimIssuer: rawClaimIssuer }, context);
   const removeIndex = currentStats.indexOf(newStat);
+  console.log('removing index of: ', removeIndex);
   const statsArr = currentStats.toArray();
   statsArr.splice(removeIndex, 1);
 
@@ -99,7 +112,7 @@ export async function prepareStorage(
       },
     },
   } = this;
-  const { ticker, type } = args;
+  const { ticker, type, claimIssuer } = args;
 
   const tickerKey = stringToTickerKey(ticker, context);
   const [currentStats, { requirements }] = await Promise.all([
@@ -107,23 +120,25 @@ export async function prepareStorage(
     statistics.assetTransferCompliances(tickerKey),
   ]);
   const missingStat = !currentStats.find(s => {
-    const stat = meshStatToStatisticsOpType(s);
-    const cmpStat = stat === StatisticsOpType.Balance ? StatType.Balance : StatType.Count;
-    return cmpStat === type;
+    return compareStatsToInput(s, args);
   });
 
   if (missingStat) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: `Stat of type: "${type}" is not enabled for Asset: "${ticker}"`,
+      message: 'Cannot remove a stat that is not enabled for this Asset',
     });
   }
 
   requirements.forEach(r => {
-    if (
-      (type === StatType.Count && r.isMaxInvestorCount) ||
-      (type === StatType.Balance && r.isMaxInvestorOwnership)
-    ) {
+    const used = compareTransferRestrictionToStat(
+      r,
+      type,
+      claimIssuer?.issuer.did,
+      claimIssuer?.claimType
+    );
+
+    if (used) {
       throw new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message:

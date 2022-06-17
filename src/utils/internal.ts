@@ -7,6 +7,10 @@ import {
 } from '@polkadot/api/types';
 import { Bytes, StorageKey } from '@polkadot/types';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
+import {
+  PolymeshPrimitivesStatisticsStatType,
+  PolymeshPrimitivesTransferComplianceTransferCondition,
+} from '@polkadot/types/lookup';
 import { AnyFunction, AnyTuple, IEvent, ISubmittableResult } from '@polkadot/types/types';
 import { stringUpperFirst } from '@polkadot/util';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
@@ -49,6 +53,7 @@ import {
   ProcedureMethod,
   ProcedureOpts,
   Scope,
+  StatType,
   TxTag,
 } from '~/types';
 import {
@@ -58,6 +63,7 @@ import {
   MapTxWithArgs,
   MaybePostTransactionValue,
   PolymeshTx,
+  StatisticsOpType,
   TxWithArgs,
 } from '~/types/internal';
 import { HumanReadableType, ProcedureFunc, UnionOfProcedureFuncs } from '~/types/utils';
@@ -69,7 +75,15 @@ import {
   SUPPORTED_SPEC_VERSION_RANGE,
   SYSTEM_VERSION_RPC_CALL,
 } from '~/utils/constants';
-import { middlewareScopeToScope, signerToString, u64ToBigNumber } from '~/utils/conversion';
+import {
+  identityIdToString,
+  meshClaimTypeToClaimType,
+  meshStatToStatisticsOpType,
+  middlewareScopeToScope,
+  signerToString,
+  statsClaimToClaim,
+  u64ToBigNumber,
+} from '~/utils/conversion';
 import { isEntity, isMultiClaimCondition, isSingleClaimCondition } from '~/utils/typeguards';
 
 export * from '~/generated/utils';
@@ -1173,4 +1187,88 @@ export function assertTickerValid(ticker: string): void {
       message: 'Ticker cannot contain lower case letters',
     });
   }
+}
+
+/**
+ * some comment
+ */
+export function compareStatsToInput(
+  s: PolymeshPrimitivesStatisticsStatType,
+  args: { type: StatType; claimIssuer?: { claimType: ClaimType; issuer: Identity } }
+): boolean {
+  console.log('comparing asset stats', s, args);
+  const { type, claimIssuer } = args;
+  let issuer, claimType;
+  if (claimIssuer) {
+    issuer = claimIssuer.issuer;
+    claimType = claimIssuer.claimType;
+  }
+
+  if (s.claimIssuer.isSome) {
+    console.log('stat had claim issuer');
+    // if (type === StatType.Count || type === StatType.Balance) {
+    //   console.log('early return type');
+    //   return false;
+    // }
+
+    const [meshType, meshIssuer] = s.claimIssuer.unwrap();
+    const issuerDid = identityIdToString(meshIssuer);
+    const statType = meshClaimTypeToClaimType(meshType);
+    console.log('comparing issuer did stuff: ', issuerDid, issuer?.did, statType, claimType);
+    if (issuerDid !== issuer?.did || statType !== claimType) {
+      console.log('siffereing did stugg');
+      return false;
+    }
+  }
+
+  const stat = meshStatToStatisticsOpType(s);
+  let cmpStat;
+  switch (stat) {
+    case StatisticsOpType.Balance:
+      cmpStat = StatType.Balance;
+      break;
+    case StatisticsOpType.Count:
+      cmpStat = StatType.Count;
+      break;
+  }
+
+  console.log('comparing type', cmpStat, type);
+  return cmpStat === type;
+}
+
+/**
+ * @hidden
+ */
+export function compareTransferRestrictionToStat(
+  r: PolymeshPrimitivesTransferComplianceTransferCondition,
+  type: StatType,
+  issuerDid?: string,
+  claimType?: ClaimType
+): boolean {
+  if (
+    (type === StatType.Count && r.isMaxInvestorCount) ||
+    (type === StatType.Balance && r.isMaxInvestorOwnership)
+  ) {
+    return true;
+  }
+
+  if (type === StatType.Count && r.isClaimCount) {
+    const [rawClaim, issuer] = r.asClaimCount;
+    const restrictionIssuerDid = identityIdToString(issuer);
+    const claim = statsClaimToClaim(rawClaim);
+    if (restrictionIssuerDid === issuerDid && claim.type === claimType) {
+      return true;
+    }
+  }
+
+  if (type === StatType.Balance && r.isClaimOwnership) {
+    const [rawClaim, issuer] = r.asClaimOwnership;
+    const restrictionIssuerDid = identityIdToString(issuer);
+    const claim = statsClaimToClaim(rawClaim);
+    if (restrictionIssuerDid === issuerDid && claim.type === claimType) {
+      return true;
+    }
+  }
+
+  return false;
 }

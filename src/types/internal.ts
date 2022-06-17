@@ -380,6 +380,7 @@ export enum AllowanceOperation {
 export enum StatisticsOpType {
   Count = 'Count',
   Balance = 'Balance',
+  Claim = 'Claim',
 }
 
 export interface TickerKey {

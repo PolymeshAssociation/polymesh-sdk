@@ -17,10 +17,10 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/addAssetStat';
-import { AddAssetStatParams, Context, PolymeshError } from '~/internal';
+import { AddAssetStatParams, Context, Identity, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ErrorCode, StatType, TxTags } from '~/types';
+import { ClaimType, ErrorCode, StatType, TxTags } from '~/types';
 import { PolymeshTx, StatisticsOpType, TickerKey } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -45,7 +45,7 @@ describe('addAssetStat procedure', () => {
     [PolymeshPrimitivesTicker, PolymeshPrimitivesTransferComplianceTransferCondition]
   >;
   let statisticsOpTypeToStatOpTypeStub: sinon.SinonStub<
-    [PolymeshPrimitivesStatisticsStatOpType, Context],
+    [{ op: PolymeshPrimitivesStatisticsStatOpType }, Context],
     PolymeshPrimitivesStatisticsStatType
   >;
   let statUpdatesToBtreeStatUpdateStub: sinon.SinonStub<
@@ -135,10 +135,12 @@ describe('addAssetStat procedure', () => {
       ],
     });
 
+    const issuer = new Identity({ did: '0x123' }, mockContext);
     args = {
       type: StatType.Count,
       ticker,
       count,
+      claimIssuer: { issuer, claimType: ClaimType.Jurisdiction },
     };
 
     await prepareAddAssetStat.call(proc, args);
@@ -225,7 +227,7 @@ describe('addAssetStat procedure', () => {
 
       const expectedError = new PolymeshError({
         code: ErrorCode.NoDataChange,
-        message: 'Stat of type: "Balance" is already enabled for Asset: "TICKER"',
+        message: 'Stat is already enabled',
       });
 
       return expect(

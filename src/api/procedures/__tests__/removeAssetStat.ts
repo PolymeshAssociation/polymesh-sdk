@@ -17,10 +17,11 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/removeAssetStat';
-import { Context, PolymeshError, RemoveAssetStatParams } from '~/internal';
+import { Context, Identity, PolymeshError, RemoveAssetStatParams } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { createMockBTreeStatUpdates } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
-import { ErrorCode, StatType, TxTags } from '~/types';
+import { ClaimType, ErrorCode, StatType, TxTags } from '~/types';
 import { PolymeshTx, StatisticsOpType, TickerKey } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -45,7 +46,7 @@ describe('removeAssetStat procedure', () => {
     [PolymeshPrimitivesTicker, PolymeshPrimitivesTransferComplianceTransferCondition]
   >;
   let statisticsOpTypeToStatOpTypeStub: sinon.SinonStub<
-    [PolymeshPrimitivesStatisticsStatOpType, Context],
+    [{ op: PolymeshPrimitivesStatisticsStatOpType }, Context],
     PolymeshPrimitivesStatisticsStatType
   >;
   let statUpdatesToBtreeStatUpdateStub: sinon.SinonStub<
@@ -125,8 +126,9 @@ describe('removeAssetStat procedure', () => {
       ticker,
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const currentStats = { toArray: () => [], indexOf: () => 0 } as any;
+    const currentStats = createMockBTreeStatUpdates([]);
+    // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+    currentStats.toArray = () => [];
     const proc = procedureMockUtils.getInstance<RemoveAssetStatParams, void, Storage>(mockContext, {
       currentStats,
     });
@@ -139,9 +141,11 @@ describe('removeAssetStat procedure', () => {
       args: [{ Ticker: rawTicker }, []],
     });
 
+    const issuer = new Identity({ did: '0x123' }, mockContext);
     args = {
       type: StatType.Count,
       ticker,
+      claimIssuer: { issuer, claimType: ClaimType.Jurisdiction },
     };
 
     await prepareRemoveAssetStat.call(proc, args);

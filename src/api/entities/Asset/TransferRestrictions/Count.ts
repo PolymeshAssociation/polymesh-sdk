@@ -1,6 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { AddCountStatParams } from '~/api/procedures/addAssetStat';
+import { RemoveAssetStatParams } from '~/api/procedures/removeAssetStat';
 import {
   AddCountTransferRestrictionParams,
   SetCountTransferRestrictionsParams,
@@ -60,7 +61,10 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
    * Other options include checking after setting and retrying if that check isn't right, freezing the Asset, or to
    * wait for a future version of the chain that will prevent this race condition
    */
-  public declare enableStat: ProcedureMethod<Pick<AddCountStatParams, 'count'>, void>;
+  public declare enableStat: ProcedureMethod<
+    Pick<AddCountStatParams, 'count' | 'claimIssuer'>,
+    void
+  >;
 
   /**
    * Disables investor count statistic for the Asset. Since statistics introduce slight overhead to each transaction
@@ -68,7 +72,7 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
    *
    * @throws if the stat is being used by a restriction
    */
-  public declare disableStat: NoArgsProcedureMethod<void>;
+  public declare disableStat: ProcedureMethod<Pick<RemoveAssetStatParams, 'claimIssuer'>, void>;
 
   /**
    * Retrieve all active Count Transfer Restrictions

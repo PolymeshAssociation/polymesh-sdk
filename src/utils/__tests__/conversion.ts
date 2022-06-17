@@ -6890,10 +6890,10 @@ describe('agentGroupToPermissionGroup', () => {
       const op = 'MaxInvestorCount' as unknown as PolymeshPrimitivesStatisticsStatOpType;
       const context = dsMockUtils.getContextInstance();
       context.createType
-        .withArgs('PolymeshPrimitivesStatisticsStatType', { op })
+        .withArgs('PolymeshPrimitivesStatisticsStatType', { op, claimIssuer: undefined })
         .returns('statType');
 
-      const result = statisticsOpTypeToStatType(op, context);
+      const result = statisticsOpTypeToStatType({ op }, context);
 
       expect(result).toEqual('statType');
     });
