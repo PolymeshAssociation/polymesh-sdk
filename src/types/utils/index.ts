@@ -64,7 +64,7 @@ export type WithRequired<T, K extends keyof T> = T & { [P in K]-?: T[P] };
  */
 export type Ensured<T, K extends keyof T> = Required<Pick<T, K>>;
 
-export type PaginatedQueryArgs<T, K extends keyof T> = QueryArgs<T, K> & {
+export type PaginatedQueryArgs<T> = T & {
   size?: number;
   start?: number;
 };

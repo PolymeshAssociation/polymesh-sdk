@@ -486,7 +486,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     } = await context.queryMiddlewareV2<Ensured<QueryV2, 'instructions'>>(
       instruction({
         eventId,
-        venueId: id.toString(),
+        id: id.toString(),
       })
     );
 
@@ -494,10 +494,15 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     const {
       nodes: [details],
     } = instructions!;
-    const { createdBlock, eventIdx } = details!;
+
+    if (!details) {
+      return null;
+    }
+
+    const { updatedBlock, eventIdx } = details;
     /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
-    return optionize(middlewareV2EventDetailsToEventIdentifier)(createdBlock, eventIdx);
+    return optionize(middlewareV2EventDetailsToEventIdentifier)(updatedBlock, eventIdx);
   }
 
   /**

@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
-import { QueryDidsWithClaimsArgs, QueryInvestmentsArgs } from '~/middleware/types';
+import { ClaimTypeEnum, QueryInvestmentsArgs } from '~/middleware/types';
 import {
   Asset,
   AssetHolder,
@@ -27,6 +27,7 @@ import {
   TickerExternalAgentActionsOrderBy,
   TickerExternalAgentHistoriesOrderBy,
   TickerExternalAgentHistory,
+  TickerExternalAgentsOrderBy,
   TrustedClaimIssuer,
 } from '~/middleware/typesV2';
 import { GraphqlQuery } from '~/types/internal';
@@ -35,11 +36,11 @@ import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
 /**
  *  @hidden
  */
-function createClaimsFilters(variables: QueryDidsWithClaimsArgs): {
+function createClaimsFilters(variables: ClaimsQueryFilter): {
   args: string;
   filter: string;
 } {
-  const args = [];
+  const args = ['$size: Int, $start: Int'];
   const filters = ['revokeDate: { isNull: true }'];
   const { dids, claimTypes, trustedClaimIssuers, scope, includeExpired } = variables;
   if (dids) {
@@ -68,16 +69,24 @@ function createClaimsFilters(variables: QueryDidsWithClaimsArgs): {
   };
 }
 
+export interface ClaimsQueryFilter {
+  dids?: string[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  scope?: any;
+  trustedClaimIssuers?: string[];
+  claimTypes?: ClaimTypeEnum[];
+  includeExpired?: boolean;
+}
 /**
  * @hidden
  *
  * Get all dids with at least one claim for a given scope and from one of the given trusted claim issuers
  */
 export function claimsGroupingQuery(
-  variables: QueryDidsWithClaimsArgs,
+  variables: ClaimsQueryFilter,
   orderBy = ClaimsOrderBy.TargetIdAsc,
   groupBy = ClaimsGroupBy.TargetId
-): GraphqlQuery<QueryDidsWithClaimsArgs> {
+): GraphqlQuery<PaginatedQueryArgs<ClaimsQueryFilter>> {
   const { args, filter } = createClaimsFilters(variables);
   const query = gql`
     query claimsGroupingQuery
@@ -106,9 +115,11 @@ export function claimsGroupingQuery(
  * Get all claims that a given target DID has, with a given scope and from one of the given trustedClaimIssuers
  */
 export function claimsQuery(
-  variables: QueryDidsWithClaimsArgs
-): GraphqlQuery<QueryDidsWithClaimsArgs> {
-  const { args, filter } = createClaimsFilters(variables);
+  filters: ClaimsQueryFilter,
+  size?: BigNumber,
+  start?: BigNumber
+): GraphqlQuery<PaginatedQueryArgs<ClaimsQueryFilter>> {
+  const { args, filter } = createClaimsFilters(filters);
 
   const query = gql`
     query ClaimsQuery
@@ -117,6 +128,8 @@ export function claimsQuery(
       claims(
         ${filter}
         orderBy: [${ClaimsOrderBy.TargetIdAsc}, ${ClaimsOrderBy.CreatedBlockIdAsc}, ${ClaimsOrderBy.EventIdxAsc}]
+        first: $size
+        offset: $start
       ) {
         totalCount
         nodes {
@@ -136,7 +149,7 @@ export function claimsQuery(
 
   return {
     query,
-    variables,
+    variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
   };
 }
 
@@ -176,12 +189,12 @@ export function investments(variables: QueryInvestmentsArgs): GraphqlQuery<Query
  * Get a specific instruction within a venue for a specific event
  */
 export function instruction(
-  variables: Pick<Instruction, 'eventId' | 'venueId'>
-): GraphqlQuery<Pick<Instruction, 'eventId' | 'venueId'>> {
+  variables: Pick<Instruction, 'eventId' | 'id'>
+): GraphqlQuery<Pick<Instruction, 'eventId' | 'id'>> {
   const query = gql`
-    query InstructionsQuery($eventId: String!, $venueId: String!) {
-      investments(
-        filter: { eventId: { equalTo: $eventId }, venueId: { equalTo: $venueId } }
+    query InstructionsQuery($eventId: String!, $id: String!) {
+      instructions(
+        filter: { eventId: { equalTo: $eventId }, id: { equalTo: $id } }
         first: 1
         orderBy: [${InstructionsOrderBy.IdDesc}]
       ) {
@@ -190,7 +203,7 @@ export function instruction(
           eventId
           status
           settlementType
-          createdBlock {
+          updatedBlock {
             blockId
             hash
             datetime
@@ -215,20 +228,19 @@ function createEventFilters(
   args: string;
   filter: string;
 } {
-  const allowedFilters = ['moduleId', 'eventId', 'eventArg0', 'eventArg1', 'eventArg2'];
-
-  const args: string[] = ['start: Int', 'size: Int'];
+  const args: string[] = ['$start: Int', '$size: Int'];
   const filters: string[] = [];
 
   Object.keys(attributes).forEach(attribute => {
-    if (allowedFilters.includes(attribute)) {
+    if (attributes[attribute as keyof typeof attributes]) {
       args.push(`$${attribute}: String!`);
       filters.push(`${attribute}: { equalTo: $${attribute} }`);
     }
   });
+
   return {
     args: args.length ? `(${args.join()})` : '',
-    filter: filters.length ? `filter: { ${filters.join()} },` : '',
+    filter: filters.length ? `filter: { ${filters.join()} }` : '',
   };
 }
 
@@ -242,7 +254,9 @@ export function eventsByArgs(
   size?: BigNumber,
   start?: BigNumber
 ): GraphqlQuery<
-  PaginatedQueryArgs<Event, 'moduleId' | 'eventId' | 'eventArg0' | 'eventArg1' | 'eventArg2'>
+  PaginatedQueryArgs<
+    QueryArgs<Event, 'moduleId' | 'eventId' | 'eventArg0' | 'eventArg1' | 'eventArg2'>
+  >
 > {
   const { args, filter } = createEventFilters(filters);
   const query = gql`
@@ -251,7 +265,7 @@ export function eventsByArgs(
      {
       events(
         ${filter}
-        orderBy: [${EventsOrderBy.BlockIdDesc}]
+        orderBy: [${EventsOrderBy.BlockIdAsc}]
         first: $size
         offset: $start
       ) {
@@ -318,16 +332,18 @@ function createExtrinsicFilters(
   args: string;
   filter: string;
 } {
-  const args: string[] = ['start: Int', 'size: Int'];
+  const args: string[] = ['$start: Int', '$size: Int'];
   const filters: string[] = [];
 
   Object.keys(attributes).forEach(key => {
-    if (key === 'success') {
-      args.push(`$${key}: Int!`);
-    } else {
-      args.push(`$${key}: String!`);
+    if (attributes[key as keyof typeof attributes]) {
+      if (key === 'success') {
+        args.push(`$${key}: Int!`);
+      } else {
+        args.push(`$${key}: String!`);
+      }
+      filters.push(`${key}: { equalTo: $${key} }`);
     }
-    filters.push(`${key}: { equalTo: $${key} }`);
   });
   return {
     args: args.length ? `(${args.join()})` : '',
@@ -344,9 +360,11 @@ export function extrinsicsByArgs(
   filters: QueryArgs<Extrinsic, 'blockId' | 'address' | 'moduleId' | 'callId' | 'success'>,
   size?: BigNumber,
   start?: BigNumber,
-  orderBy: ExtrinsicsOrderBy = ExtrinsicsOrderBy.BlockIdDesc
+  orderBy: ExtrinsicsOrderBy = ExtrinsicsOrderBy.BlockIdAsc
 ): GraphqlQuery<
-  PaginatedQueryArgs<Extrinsic, 'blockId' | 'address' | 'moduleId' | 'callId' | 'success'>
+  PaginatedQueryArgs<
+    QueryArgs<Extrinsic, 'blockId' | 'address' | 'moduleId' | 'callId' | 'success'>
+  >
 > {
   const { args, filter } = createExtrinsicFilters(filters);
   const query = gql`
@@ -507,17 +525,19 @@ export function tickerExternalAgentsQuery(
   variables: QueryArgs<TickerExternalAgent, 'assetId'>
 ): GraphqlQuery<QueryArgs<TickerExternalAgent, 'assetId'>> {
   const query = gql`
-    query tickerExternalAgentQuery($ticker: String!) {
-      tickerExternalAgents(filter: {
-        ticker: {
-          equalTo: $ticker
-        }
-      }, orderBy: [${TickerExternalAgentHistoriesOrderBy.CreatedBlockIdAsc}], first: 1) {
-        eventIdx
-        createdBlock {
-          blockId
-          datetime
-          hash
+    query TickerExternalAgentQuery($assetId: String!) {
+      tickerExternalAgents(
+        filter: { assetId: { equalTo: $assetId } }
+        orderBy: [${TickerExternalAgentsOrderBy.CreatedBlockIdDesc}]
+        first: 1
+      ) {
+        nodes {
+          eventIdx
+          createdBlock {
+            blockId
+            datetime
+            hash
+          }
         }
       }
     }
@@ -538,17 +558,20 @@ export function tickerExternalAgentHistoryQuery(
   variables: QueryArgs<TickerExternalAgentHistory, 'assetId'>
 ): GraphqlQuery<QueryArgs<TickerExternalAgentHistory, 'assetId'>> {
   const query = gql`
-    query TickerExternalAgentHistoryQuery($ticker: String!) {
-      tickerExternalAgentHistories(filter: {
-        ticker: {
-          equalTo: $ticker
-        }
-      }, orderBy: [${TickerExternalAgentHistoriesOrderBy.CreatedBlockIdAsc}]) {
-        did
-        history {
-          datetime
-          block_id
-          event_idx
+    query TickerExternalAgentHistoryQuery($assetId: String!) {
+      tickerExternalAgentHistories(
+        filter: { assetId: { equalTo: $assetId } }
+        orderBy: [${TickerExternalAgentHistoriesOrderBy.CreatedBlockIdAsc}]
+      ) {
+        nodes {
+          identityId
+          assetId
+          eventIdx
+          createdBlock {
+            blockId
+            hash
+            datetime
+          }
         }
       }
     }
@@ -572,12 +595,14 @@ function createTickerExternalAgentActionFilters(
   args: string;
   filter: string;
 } {
-  const args: string[] = ['start: Int', 'size: Int'];
+  const args: string[] = ['$start: Int', '$size: Int'];
   const filters: string[] = [];
 
   Object.keys(attributes).forEach(key => {
-    args.push(`$${key}: String!`);
-    filters.push(`${key}: { equalTo: $${key} }`);
+    if (attributes[key as keyof typeof attributes]) {
+      args.push(`$${key}: String!`);
+      filters.push(`${key}: { equalTo: $${key} }`);
+    }
   });
   return {
     args: args.length ? `(${args.join()})` : '',
@@ -595,7 +620,9 @@ export function tickerExternalAgentActionsQuery(
   size?: BigNumber,
   start?: BigNumber
 ): GraphqlQuery<
-  PaginatedQueryArgs<TickerExternalAgentAction, 'assetId' | 'callerId' | 'palletName' | 'eventId'>
+  PaginatedQueryArgs<
+    QueryArgs<TickerExternalAgentAction, 'assetId' | 'callerId' | 'palletName' | 'eventId'>
+  >
 > {
   const { args, filter } = createTickerExternalAgentActionFilters(filters);
   const query = gql`
@@ -604,12 +631,12 @@ export function tickerExternalAgentActionsQuery(
      {
       tickerExternalAgentActions(
         ${filter}
-        first: ${size}
-        offset: ${start}
+        first: $size
+        offset: $start
         orderBy: [${TickerExternalAgentActionsOrderBy.CreatedBlockIdDesc}]
       ) {
         totalCount
-        items {
+        nodes {
           eventIdx
           palletName
           eventId
@@ -640,7 +667,7 @@ export function distributionQuery(
 ): GraphqlQuery<QueryArgs<Distribution, 'id'>> {
   const query = gql`
     query DistributionQuery($id: String!) {
-      distributions(id: { equalTo: $id }) {
+      distribution(id: $id) {
         taxes
       }
     }
@@ -661,13 +688,13 @@ export function distributionPaymentsQuery(
   filters: QueryArgs<DistributionPayment, 'distributionId'>,
   size?: BigNumber,
   start?: BigNumber
-): GraphqlQuery<PaginatedQueryArgs<DistributionPayment, 'distributionId'>> {
+): GraphqlQuery<PaginatedQueryArgs<QueryArgs<DistributionPayment, 'distributionId'>>> {
   const query = gql`
     query DistributionPaymentQuery($distributionId: String!, $size: Int, $start: Int) {
       distributionPayments(
         filter: { distributionId: { equalTo: $distributionId } }
-        first: $count
-        offset: $skip
+        first: $size
+        offset: $start
       ) {
         totalCount
         nodes {
@@ -701,13 +728,13 @@ export function assetHoldersQuery(
   size?: BigNumber,
   start?: BigNumber,
   orderBy = AssetHoldersOrderBy.CreatedBlockIdAsc
-): GraphqlQuery<PaginatedQueryArgs<DistributionPayment, 'distributionId'>> {
+): GraphqlQuery<PaginatedQueryArgs<QueryArgs<DistributionPayment, 'distributionId'>>> {
   const query = gql`
     query AssetHoldersQuery($identityId: String!, $size: Int, $start: Int) {
-      distributionPayments(
+      assetHolders(
         filter: { identityId: { equalTo: $identityId } }
-        first: $count
-        offset: $skip
+        first: $size
+        offset: $start
         orderBy: [${orderBy}]
       ) {
         totalCount
@@ -766,7 +793,7 @@ function createLegFilters({ identityId, portfolioId, ticker, address }: QuerySet
 
   return {
     args: `(${args.join()})`,
-    filter: `filter: { or: [${fromIdFilters.join()}, ${toIdFilters.join()} ] }`,
+    filter: `filter: { or: [{ ${fromIdFilters.join()} }, { ${toIdFilters.join()} } ] }`,
     variables,
   };
 }
@@ -793,20 +820,23 @@ export function settlementsQuery(
             id
             createdBlock {
               blockId
+              datetime
               hash
             }
             result
             legs {
               nodes {
+                fromId
                 from {
                   identityId
                   number
                 }
+                toId
                 to {
                   identityId
                   number
                 }
-                ticker
+                assetId
                 amount
                 addresses
               }
@@ -863,7 +893,7 @@ function createPortfolioMovementFilters({
 
   return {
     args: `(${args.join()})`,
-    filter: `filter: { or: [${fromIdFilters.join()}, ${toIdFilters.join()} ] }`,
+    filter: `filter: { or: [ { ${fromIdFilters.join()} }, { ${toIdFilters.join()} } ] }`,
     variables,
   };
 }
@@ -888,10 +918,23 @@ export function portfolioMovementsQuery(
         nodes {
           id
           fromId
+          from {
+            identityId
+            number
+          }
           toId
+          to {
+            identityId
+            number
+          }
           assetId
           amount
           address
+          createdBlock {
+            blockId
+            datetime
+            hash
+          }
         }
       }
     }

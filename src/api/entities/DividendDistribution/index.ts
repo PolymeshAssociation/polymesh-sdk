@@ -478,7 +478,7 @@ export class DividendDistribution extends CorporateActionBase {
       context,
     } = this;
 
-    const taxPromise = context.queryMiddlewareV2<Ensured<QueryV2, 'distributions'>>(
+    const taxPromise = context.queryMiddlewareV2<Ensured<QueryV2, 'distribution'>>(
       distributionQuery({
         id: `${ticker}/${id.toString()}`,
       })
@@ -493,15 +493,10 @@ export class DividendDistribution extends CorporateActionBase {
       });
     }
 
-    /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    const {
-      nodes: [node],
-    } = result.data.distributions!;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const { taxes } = result.data.distribution!;
 
-    const { taxes } = node!;
-    /* eslint-enable @typescript-eslint/no-non-null-assertion */
-
-    return new BigNumber(taxes);
+    return new BigNumber(taxes).shiftedBy(-6);
   }
 
   /**

@@ -1,3 +1,4 @@
+import { hexAddPrefix, hexStripPrefix } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 import {
   difference,
@@ -41,6 +42,7 @@ import {
   addressToKey,
   extrinsicIdentifierToTxTag,
   identityIdToString,
+  keyToAddress,
   portfolioToPortfolioId,
   stringToAccountId,
   stringToHash,
@@ -500,7 +502,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       extrinsicsByArgs(
         {
           blockId: blockNumber ? blockNumber.toString() : undefined,
-          address: addressToKey(address, context),
+          address: hexStripPrefix(addressToKey(address, context)),
           moduleId,
           callId,
           success: success !== undefined ? (success ? 1 : 0) : undefined,
@@ -539,7 +541,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
         blockNumber: new BigNumber(blockId),
         blockHash: block!.hash!,
         extrinsicIdx: new BigNumber(extrinsicIdx),
-        address: rawAddress ?? null,
+        address: rawAddress ? keyToAddress(hexAddPrefix(rawAddress), context) : null,
         nonce: nonce ? new BigNumber(nonce) : null,
         txTag: extrinsicIdentifierToTxTag({
           moduleId: extrinsicModuleId as ModuleIdEnum,

@@ -167,6 +167,36 @@ export class Claims {
   }
 
   /**
+   * Retrieve all claims issued by an Identity
+   *
+   * @param opts.target - Identity (optional, defaults to the signing Identity)
+   * @param opts.includeExpired - whether to include expired claims. Defaults to true
+   *
+   * @note supports pagination
+   * @note uses the middlewareV2
+   */
+  public async getIssuedClaimsV2(
+    opts: {
+      target?: string | Identity;
+      includeExpired?: boolean;
+      size?: BigNumber;
+      start?: BigNumber;
+    } = {}
+  ): Promise<ResultSet<ClaimData>> {
+    const { context } = this;
+    const { target, includeExpired = true, size, start } = opts;
+
+    const did = await getDid(target, context);
+
+    return context.getIdentityClaimsFromMiddlewareV2({
+      trustedClaimIssuers: [did],
+      includeExpired,
+      size,
+      start,
+    });
+  }
+
+  /**
    * Retrieve a list of Identities with claims associated to them. Can be filtered using parameters
    *
    * @param opts.targets - Identities (or Identity IDs) for which to fetch targeting claims. Defaults to all targets
@@ -317,7 +347,8 @@ export class Claims {
     const data = toIdentityWithClaimsArrayV2(
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       result.data.claims!.nodes!.map(node => node!),
-      context
+      context,
+      'targetId'
     );
     const next = calculateNextKey(count, size, start);
 
@@ -581,7 +612,8 @@ export class Claims {
       const data = toIdentityWithClaimsArrayV2(
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         result.data.claims!.nodes!.map(node => node!),
-        context
+        context,
+        'issuerId'
       );
       const next = calculateNextKey(count, size, start);
 

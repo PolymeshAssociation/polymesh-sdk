@@ -50,7 +50,12 @@ import {
 } from '~/types';
 import { GraphqlQuery } from '~/types/internal';
 import { Ensured, QueryReturnType } from '~/types/utils';
-import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE, ROOT_TYPES } from '~/utils/constants';
+import {
+  DEFAULT_GQL_PAGE_SIZE,
+  MAX_CONCURRENT_REQUESTS,
+  MAX_PAGE_SIZE,
+  ROOT_TYPES,
+} from '~/utils/constants';
 import {
   accountIdToString,
   balanceToBigNumber,
@@ -1040,19 +1045,28 @@ export class Context {
     size?: BigNumber;
     start?: BigNumber;
   }): Promise<ResultSet<ClaimData>> {
-    const { targets, claimTypes, trustedClaimIssuers, includeExpired, size, start } = args;
+    const {
+      targets,
+      claimTypes,
+      trustedClaimIssuers,
+      includeExpired,
+      size = new BigNumber(DEFAULT_GQL_PAGE_SIZE),
+      start = new BigNumber(0),
+    } = args;
 
     const result = await this.queryMiddlewareV2<Ensured<QueryV2, 'claims'>>(
-      claimsQuery({
-        dids: targets?.map(target => signerToString(target)),
-        trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
-          signerToString(trustedClaimIssuer)
-        ),
-        claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
-        includeExpired,
-        count: size?.toNumber(),
-        skip: start?.toNumber(),
-      })
+      claimsQuery(
+        {
+          dids: targets?.map(target => signerToString(target)),
+          trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
+            signerToString(trustedClaimIssuer)
+          ),
+          claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
+          includeExpired,
+        },
+        size,
+        start
+      )
     );
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

@@ -1,7 +1,7 @@
 import { bool, Option, StorageKey } from '@polkadot/types';
 import { BlockNumber, Hash } from '@polkadot/types/interfaces/runtime';
 import BigNumber from 'bignumber.js';
-import { flatten } from 'lodash';
+import { flatten, groupBy, map } from 'lodash';
 import {
   AgentGroup,
   AssetName,
@@ -30,7 +30,7 @@ import {
   TransferAssetOwnershipParams,
 } from '~/internal';
 import { eventByIndexedArgs, tickerExternalAgentHistory } from '~/middleware/queries';
-import { assetQuery } from '~/middleware/queriesV2';
+import { assetQuery, tickerExternalAgentHistoryQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
@@ -640,6 +640,37 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
     });
 
     return finalResults;
+  }
+
+  /**
+   * Retrieve this Asset's Operation History
+   *
+   * @note Operations are grouped by the agent Identity who performed them
+   *
+   * @note uses the middlewareV2
+   */
+  public async getOperationHistoryV2(): Promise<HistoricAgentOperation[]> {
+    const { context, ticker: assetId } = this;
+
+    const {
+      data: { tickerExternalAgentHistories },
+    } = await context.queryMiddlewareV2<Ensured<QueryV2, 'tickerExternalAgentHistories'>>(
+      tickerExternalAgentHistoryQuery({
+        assetId,
+      })
+    );
+
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
+    const groupedData = groupBy(tickerExternalAgentHistories!.nodes!, 'identityId');
+
+    return map(groupedData, (history, did) => ({
+      identity: new Identity({ did }, context),
+      history: history.map(node => {
+        const { createdBlock, eventIdx } = node!;
+        return middlewareV2EventDetailsToEventIdentifier(createdBlock!, eventIdx);
+      }),
+    }));
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
   }
 
   /**

@@ -2029,7 +2029,7 @@ export function middlewareV2EventDetailsToEventIdentifier(
   return {
     blockNumber: new BigNumber(blockId),
     /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    blockDate: new Date(datetime),
+    blockDate: new Date(`${datetime}Z`),
     blockHash: hash,
     /* eslint-enable @typescript-eslint/no-non-null-assertion */
     eventIndex: new BigNumber(eventIdx),
@@ -2754,15 +2754,17 @@ export function middlewareV2ClaimToClaimData(
  */
 export function toIdentityWithClaimsArrayV2(
   data: MiddlewareV2Claim[],
-  context: Context
+  context: Context,
+  groupByAttribute: string
 ): IdentityWithClaims[] {
-  const groupedData = groupBy(data, 'targetId');
+  const groupedData = groupBy(data, groupByAttribute);
 
   return map(groupedData, (claims, did) => ({
     identity: new Identity({ did }, context),
     claims: claims.map(claim => middlewareV2ClaimToClaimData(claim, context)),
   }));
 }
+
 /**
  * @hidden
  */

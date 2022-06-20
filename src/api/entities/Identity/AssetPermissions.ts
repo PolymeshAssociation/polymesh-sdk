@@ -457,7 +457,7 @@ export class AssetPermissions extends Namespace<Identity> {
       multiParams.push(bigNumberToU32(blockNumber, context));
       data.push({
         blockNumber,
-        blockDate: new Date(`${datetime}Z`),
+        blockDate: new Date(`${datetime}`),
         eventIndex: new BigNumber(eventIndex),
       });
     });
@@ -537,7 +537,7 @@ export class AssetPermissions extends Namespace<Identity> {
       data.push({
         blockNumber: new BigNumber(blockId),
         blockHash: hash,
-        blockDate: new Date(`${datetime}`),
+        blockDate: new Date(`${datetime}Z`),
         eventIndex: new BigNumber(eventIdx),
       });
     });
