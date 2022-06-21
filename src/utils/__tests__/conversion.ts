@@ -68,6 +68,11 @@ import {
   Event as MiddlewareEvent,
   ModuleIdEnum,
 } from '~/middleware/types';
+import {
+  Block as MiddlewareV2Block,
+  Claim as MiddlewareV2Claim,
+  Portfolio as MiddlewareV2Portfolio,
+} from '~/middleware/typesV2';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   AffirmationStatus,
@@ -114,6 +119,7 @@ import {
 import { InstructionStatus, PermissionGroupIdentifier, ScopeClaimProof } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { DUMMY_ACCOUNT_ID, MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '~/utils/constants';
+import * as internalUtils from '~/utils/internal';
 import { padString } from '~/utils/internal';
 
 import {
@@ -179,6 +185,9 @@ import {
   middlewareEventToEventIdentifier,
   middlewarePortfolioToPortfolio,
   middlewareScopeToScope,
+  middlewareV2ClaimToClaimData,
+  middlewareV2EventDetailsToEventIdentifier,
+  middlewareV2PortfolioToPortfolio,
   moduleAddressToString,
   momentToDate,
   offeringTierToPriceTier,
@@ -235,6 +244,7 @@ import {
   tickerToDid,
   tickerToString,
   toIdentityWithClaimsArray,
+  toIdentityWithClaimsArrayV2,
   transactionHexToTxTag,
   transactionPermissionsToExtrinsicPermissions,
   transactionPermissionsToTxGroups,
@@ -3704,6 +3714,159 @@ describe('middlewareEventToEventIdentifier', () => {
   });
 });
 
+describe('middlewareV2EventDetailsToEventIdentifier', () => {
+  it('should convert Event details to an EventIdentifier', () => {
+    const eventIdx = 3;
+    const block = {
+      blockId: 3000,
+      hash: 'someHash',
+      datetime: new Date('10/14/1987').toISOString(),
+    } as MiddlewareV2Block;
+
+    expect(middlewareV2EventDetailsToEventIdentifier(block, eventIdx)).toEqual({
+      blockNumber: new BigNumber(3000),
+      blockDate: new Date('10/14/1987'),
+      eventIndex: new BigNumber(3),
+      blockHash: 'someHash',
+    });
+  });
+});
+
+describe('middlewareV2ClaimToClaimData', () => {
+  let createClaimStub: sinon.SinonStub;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+    createClaimStub = sinon.stub(internalUtils, 'createClaim');
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert middleware V2 Claim to ClaimData', () => {
+    const context = dsMockUtils.getContextInstance();
+    const issuanceDate = new Date('10/14/1987');
+    const expiry = new Date('10/10/1988');
+    const middlewareV2Claim = {
+      targetId: 'targetId',
+      issuerId: 'issuerId',
+      issuanceDate: issuanceDate.getTime(),
+      expiry: null,
+      cddId: 'someCddId',
+      type: 'CustomerDueDiligence',
+    } as MiddlewareV2Claim;
+    const claim = {
+      type: ClaimType.CustomerDueDiligence,
+      id: 'someCddId',
+    };
+    createClaimStub.returns(claim);
+
+    const fakeResult = {
+      target: expect.objectContaining({ did: 'targetId' }),
+      issuer: expect.objectContaining({ did: 'issuerId' }),
+      issuedAt: issuanceDate,
+      expiry: null,
+      claim,
+    };
+
+    expect(middlewareV2ClaimToClaimData(middlewareV2Claim, context)).toEqual(fakeResult);
+
+    expect(
+      middlewareV2ClaimToClaimData(
+        {
+          ...middlewareV2Claim,
+          expiry: expiry.getTime(),
+        },
+        context
+      )
+    ).toEqual({
+      ...fakeResult,
+      expiry,
+    });
+  });
+});
+
+describe('toIdentityWithClaimsArrayV2', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return an IdentityWithClaims array object', () => {
+    const context = dsMockUtils.getContextInstance();
+    const targetDid = 'someTargetDid';
+    const issuerDid = 'someIssuerDid';
+    const cddId = 'someCddId';
+    const date = 1589816265000;
+    const customerDueDiligenceType = ClaimTypeEnum.CustomerDueDiligence;
+    const claim = {
+      target: expect.objectContaining({ did: targetDid }),
+      issuer: expect.objectContaining({ did: issuerDid }),
+      issuedAt: new Date(date),
+    };
+    const fakeResult = [
+      {
+        identity: expect.objectContaining({ did: targetDid }),
+        claims: [
+          {
+            ...claim,
+            expiry: new Date(date),
+            claim: {
+              type: customerDueDiligenceType,
+              id: cddId,
+            },
+          },
+          {
+            ...claim,
+            expiry: null,
+            claim: {
+              type: customerDueDiligenceType,
+              id: cddId,
+            },
+          },
+        ],
+      },
+    ];
+    const commonClaimData = {
+      targetId: targetDid,
+      issuerId: issuerDid,
+      issuanceDate: date,
+      cddId: cddId,
+    };
+    const fakeMiddlewareV2Claims = [
+      {
+        ...commonClaimData,
+        expiry: date,
+        type: customerDueDiligenceType,
+      },
+      {
+        ...commonClaimData,
+        expiry: null,
+        type: customerDueDiligenceType,
+      },
+    ] as MiddlewareV2Claim[];
+    /* eslint-enable @typescript-eslint/naming-convention */
+
+    const result = toIdentityWithClaimsArrayV2(fakeMiddlewareV2Claims, context, 'targetId');
+
+    expect(result).toEqual(fakeResult);
+  });
+});
+
 describe('stringToCddId and cddIdToString', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -5478,6 +5641,27 @@ describe('middlewarePortfolioToPortfolio', () => {
     };
 
     result = await middlewarePortfolioToPortfolio(middlewarePortfolio, context);
+    expect(result instanceof NumberedPortfolio).toBe(true);
+  });
+});
+
+describe('middlewareV2PortfolioToPortfolio', () => {
+  it('should convert a MiddlewarePortfolio into a Portfolio', async () => {
+    const context = dsMockUtils.getContextInstance();
+    let middlewareV2Portfolio = {
+      identityId: 'someDid',
+      number: 0,
+    } as MiddlewareV2Portfolio;
+
+    let result = await middlewareV2PortfolioToPortfolio(middlewareV2Portfolio, context);
+    expect(result instanceof DefaultPortfolio).toBe(true);
+
+    middlewareV2Portfolio = {
+      identityId: 'someDid',
+      number: 10,
+    } as MiddlewareV2Portfolio;
+
+    result = await middlewareV2PortfolioToPortfolio(middlewareV2Portfolio, context);
     expect(result instanceof NumberedPortfolio).toBe(true);
   });
 });

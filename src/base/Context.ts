@@ -26,7 +26,7 @@ import {
 
 import { Account, Asset, DividendDistribution, Identity, PolymeshError, Subsidy } from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
-import { claimsQuery } from '~/middleware/queriesV2';
+import { claimsQuery, heartbeatQuery } from '~/middleware/queriesV2';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
 import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
@@ -49,7 +49,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import { GraphqlQuery } from '~/types/internal';
-import { Ensured, QueryReturnType } from '~/types/utils';
+import { Ensured, EnsuredV2, QueryReturnType } from '~/types/utils';
 import {
   DEFAULT_GQL_PAGE_SIZE,
   MAX_CONCURRENT_REQUESTS,
@@ -1054,7 +1054,11 @@ export class Context {
       start = new BigNumber(0),
     } = args;
 
-    const result = await this.queryMiddlewareV2<Ensured<QueryV2, 'claims'>>(
+    const {
+      data: {
+        claims: { nodes: claimsList, totalCount },
+      },
+    } = await this.queryMiddlewareV2<EnsuredV2<QueryV2, 'claims'>>(
       claimsQuery(
         {
           dids: targets?.map(target => signerToString(target)),
@@ -1068,9 +1072,6 @@ export class Context {
         start
       )
     );
-
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const { nodes: claimsList, totalCount } = result.data.claims!;
 
     const count = new BigNumber(totalCount);
 
@@ -1129,6 +1130,66 @@ export class Context {
       throw new PolymeshError({
         code: ErrorCode.MiddlewareError,
         message: 'Cannot perform this action without an active middleware connection',
+      });
+    }
+
+    const identityClaimsFromChain = await this.getIdentityClaimsFromChain({
+      targets,
+      claimTypes,
+      trustedClaimIssuers,
+      includeExpired,
+    });
+
+    return {
+      data: identityClaimsFromChain,
+      next: null,
+      count: undefined,
+    };
+  }
+
+  /**
+   * @hidden
+   *
+   * Retrieve a list of claims. Can be filtered using parameters
+   *
+   * @param opts.targets - Identities (or Identity IDs) for which to fetch claims (targets). Defaults to all targets
+   * @param opts.trustedClaimIssuers - Identity IDs of claim issuers. Defaults to all claim issuers
+   * @param opts.claimTypes - types of the claims to fetch. Defaults to any type
+   * @param opts.includeExpired - whether to include expired claims. Defaults to true
+   * @param opts.size - page size
+   * @param opts.start - page offset
+   *
+   * @note uses the middleware V2 (optional)
+   */
+  public async issuedClaimsV2(
+    opts: {
+      targets?: (string | Identity)[];
+      trustedClaimIssuers?: (string | Identity)[];
+      claimTypes?: Exclude<ClaimType, ClaimType.InvestorUniquenessV2>[];
+      includeExpired?: boolean;
+      size?: BigNumber;
+      start?: BigNumber;
+    } = {}
+  ): Promise<ResultSet<ClaimData>> {
+    const { targets, trustedClaimIssuers, claimTypes, includeExpired = true, size, start } = opts;
+
+    const isMiddlewareV2Available = await this.isMiddlewareV2Available();
+
+    if (isMiddlewareV2Available) {
+      return this.getIdentityClaimsFromMiddlewareV2({
+        targets,
+        trustedClaimIssuers,
+        claimTypes,
+        includeExpired,
+        size,
+        start,
+      });
+    }
+
+    if (!targets) {
+      throw new PolymeshError({
+        code: ErrorCode.MiddlewareError,
+        message: 'Cannot perform this action without an active middleware V2 connection',
       });
     }
 
@@ -1257,6 +1318,21 @@ export class Context {
   public async isMiddlewareAvailable(): Promise<boolean> {
     try {
       await this.middlewareApi.query(heartbeat());
+    } catch (err) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * @hidden
+   *
+   * Return whether the middleware V2 is enabled and online
+   */
+  public async isMiddlewareV2Available(): Promise<boolean> {
+    try {
+      await this.middlewareApiV2.query(heartbeatQuery());
     } catch (err) {
       return false;
     }

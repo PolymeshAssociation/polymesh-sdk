@@ -42,7 +42,14 @@ import {
   ResultSet,
   TargetTreatment,
 } from '~/types';
-import { Ensured, HumanReadableType, Modify, QueryReturnType, tuple } from '~/types/utils';
+import {
+  Ensured,
+  EnsuredV2,
+  HumanReadableType,
+  Modify,
+  QueryReturnType,
+  tuple,
+} from '~/types/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_DECIMALS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   balanceToBigNumber,
@@ -478,7 +485,7 @@ export class DividendDistribution extends CorporateActionBase {
       context,
     } = this;
 
-    const taxPromise = context.queryMiddlewareV2<Ensured<QueryV2, 'distribution'>>(
+    const taxPromise = context.queryMiddlewareV2<EnsuredV2<QueryV2, 'distribution'>>(
       distributionQuery({
         id: `${ticker}/${id.toString()}`,
       })
@@ -601,7 +608,7 @@ export class DividendDistribution extends CorporateActionBase {
     } = this;
     const { size, start } = opts;
 
-    const paymentsPromise = context.queryMiddlewareV2<Ensured<QueryV2, 'distributionPayments'>>(
+    const paymentsPromise = context.queryMiddlewareV2<EnsuredV2<QueryV2, 'distributionPayments'>>(
       distributionPaymentsQuery(
         {
           distributionId: `${ticker}/${id.toString()}`,
@@ -621,19 +628,20 @@ export class DividendDistribution extends CorporateActionBase {
     }
 
     const {
-      data: { distributionPayments },
+      data: {
+        distributionPayments: { nodes, totalCount },
+      },
     } = result;
-
-    /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    const { nodes, totalCount } = distributionPayments!;
 
     const count = new BigNumber(totalCount);
     const data: DistributionPayment[] = [];
     const multiParams: BlockNumber[] = [];
 
-    nodes!.forEach(node => {
+    nodes.forEach(node => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const { createdBlock, datetime, targetId: did, amount, tax } = node!;
 
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const { blockId, hash } = createdBlock!;
       const blockNumber = new BigNumber(blockId);
       multiParams.push(bigNumberToU32(blockNumber, context));
@@ -646,7 +654,6 @@ export class DividendDistribution extends CorporateActionBase {
         withheldTax: new BigNumber(tax).shiftedBy(-4),
       });
     });
-    /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
     const next = calculateNextKey(count, size, start);
 

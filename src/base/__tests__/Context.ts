@@ -4,6 +4,7 @@ import sinon from 'sinon';
 
 import { Account, Context, PolymeshError } from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
+import { claimsQuery, heartbeatQuery } from '~/middleware/queriesV2';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId } from '~/testUtils/mocks/dataSources';
@@ -1349,6 +1350,270 @@ describe('Context class', () => {
     });
   });
 
+  describe('method: issuedClaimsV2', () => {
+    beforeAll(() => {
+      sinon.stub(utilsInternalModule, 'assertAddressValid');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    it('should return a result set of claims', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
+      });
+
+      const targetDid = 'someTargetDid';
+      const issuerDid = 'someIssuerDid';
+      const cddId = 'someCddId';
+      const date = 1589816265000;
+      const customerDueDiligenceType = ClaimTypeEnum.CustomerDueDiligence;
+      const claim = {
+        target: expect.objectContaining({ did: targetDid }),
+        issuer: expect.objectContaining({ did: issuerDid }),
+        issuedAt: new Date(date),
+      };
+      const fakeClaims = [
+        {
+          ...claim,
+          expiry: new Date(date),
+          claim: {
+            type: customerDueDiligenceType,
+            id: cddId,
+          },
+        },
+        {
+          ...claim,
+          expiry: null,
+          claim: {
+            type: customerDueDiligenceType,
+            id: cddId,
+          },
+        },
+      ];
+      const commonClaimData = {
+        targetId: targetDid,
+        issuerId: issuerDid,
+        issuanceDate: date,
+        cddId: cddId,
+      };
+      const claimsQueryResponse = {
+        totalCount: 25,
+        nodes: [
+          {
+            ...commonClaimData,
+            expiry: date,
+            type: customerDueDiligenceType,
+          },
+          {
+            ...commonClaimData,
+            expiry: null,
+            type: customerDueDiligenceType,
+          },
+        ],
+      };
+
+      dsMockUtils.createApolloV2QueryStub(
+        claimsQuery(
+          {
+            dids: [targetDid],
+            trustedClaimIssuers: [targetDid],
+            claimTypes: [ClaimTypeEnum.Accredited],
+            includeExpired: true,
+          },
+          new BigNumber(2),
+          new BigNumber(0)
+        ),
+        {
+          claims: claimsQueryResponse,
+        }
+      );
+
+      let result = await context.issuedClaimsV2({
+        targets: [targetDid],
+        trustedClaimIssuers: [targetDid],
+        claimTypes: [ClaimType.Accredited],
+        includeExpired: true,
+        size: new BigNumber(2),
+        start: new BigNumber(0),
+      });
+
+      expect(result.data).toEqual(fakeClaims);
+      expect(result.count).toEqual(new BigNumber(25));
+      expect(result.next).toEqual(new BigNumber(2));
+
+      dsMockUtils.createApolloV2QueryStub(
+        claimsQuery(
+          {
+            dids: undefined,
+            trustedClaimIssuers: undefined,
+            claimTypes: undefined,
+            includeExpired: true,
+          },
+          new BigNumber(25),
+          new BigNumber(0)
+        ),
+        {
+          claims: { nodes: [], totalCount: 0 },
+        }
+      );
+
+      result = await context.issuedClaimsV2();
+
+      expect(result.data).toEqual([]);
+      expect(result.count).toEqual(new BigNumber(0));
+      expect(result.next).toBeNull();
+    });
+
+    it('should return a result set of claims from chain', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
+      });
+
+      dsMockUtils.throwOnMiddlewareV2Query();
+
+      const targetDid = 'someTargetDid';
+      const issuerDid = 'someIssuerDid';
+      const cddId = 'someCddId';
+      const issuedAt = new Date('10/14/2019');
+      const expiryOne = new Date('10/14/2020');
+      const expiryTwo = new Date('10/14/2060');
+
+      /* eslint-disable @typescript-eslint/naming-convention */
+      const claim1stKey = dsMockUtils.createMockClaim1stKey({
+        target: dsMockUtils.createMockIdentityId(targetDid),
+        claim_type: dsMockUtils.createMockClaimType(ClaimType.CustomerDueDiligence),
+      });
+
+      const identityClaim = {
+        claim_issuer: dsMockUtils.createMockIdentityId(issuerDid),
+        issuance_date: dsMockUtils.createMockMoment(new BigNumber(issuedAt.getTime())),
+        last_update_date: dsMockUtils.createMockMoment(),
+        claim: dsMockUtils.createMockClaim({
+          CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
+        }),
+      };
+      /* eslint-enable @typescript-eslint/naming-convention */
+
+      const fakeClaims = [
+        {
+          target: expect.objectContaining({ did: targetDid }),
+          issuer: expect.objectContaining({ did: issuerDid }),
+          issuedAt,
+          expiry: expiryOne,
+          claim: {
+            type: ClaimType.CustomerDueDiligence,
+            id: cddId,
+          },
+        },
+        {
+          target: expect.objectContaining({ did: targetDid }),
+          issuer: expect.objectContaining({ did: issuerDid }),
+          issuedAt,
+          expiry: null,
+          claim: {
+            type: ClaimType.CustomerDueDiligence,
+            id: cddId,
+          },
+        },
+        {
+          target: expect.objectContaining({ did: targetDid }),
+          issuer: expect.objectContaining({ did: issuerDid }),
+          issuedAt,
+          expiry: expiryTwo,
+          claim: {
+            type: ClaimType.CustomerDueDiligence,
+            id: cddId,
+          },
+        },
+      ];
+
+      const entriesStub = sinon.stub();
+      entriesStub.resolves([
+        tuple(
+          { args: [claim1stKey] },
+          {
+            ...identityClaim,
+            expiry: dsMockUtils.createMockOption(
+              dsMockUtils.createMockMoment(new BigNumber(expiryOne.getTime()))
+            ),
+          }
+        ),
+        tuple(
+          { args: [claim1stKey] },
+          {
+            ...identityClaim,
+            expiry: dsMockUtils.createMockOption(),
+          }
+        ),
+        tuple(
+          { args: [claim1stKey] },
+          {
+            ...identityClaim,
+            expiry: dsMockUtils.createMockOption(
+              dsMockUtils.createMockMoment(new BigNumber(expiryTwo.getTime()))
+            ),
+          }
+        ),
+      ]);
+
+      dsMockUtils.createQueryStub('identity', 'claims').entries = entriesStub;
+
+      let result = await context.issuedClaimsV2({
+        targets: [targetDid],
+        claimTypes: [ClaimType.CustomerDueDiligence],
+      });
+
+      expect(result.data).toEqual(fakeClaims);
+
+      const { data } = await context.issuedClaimsV2({
+        targets: [targetDid],
+        claimTypes: [ClaimType.CustomerDueDiligence],
+        includeExpired: false,
+      });
+
+      expect(data.length).toEqual(2);
+      expect(data[0]).toEqual(fakeClaims[1]);
+      expect(data[1]).toEqual(fakeClaims[2]);
+
+      sinon.stub(utilsConversionModule, 'signerToString').returns(targetDid);
+
+      result = await context.issuedClaimsV2({
+        targets: [targetDid],
+        claimTypes: [ClaimType.CustomerDueDiligence],
+        trustedClaimIssuers: [targetDid],
+      });
+
+      expect(result.data.length).toEqual(0);
+
+      result = await context.issuedClaimsV2({
+        targets: [targetDid],
+        trustedClaimIssuers: [targetDid],
+      });
+
+      expect(result.data.length).toEqual(0);
+    });
+
+    it('should throw if the middleware V2 is not available and targets or claimTypes are not set', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
+      });
+
+      dsMockUtils.throwOnMiddlewareV2Query();
+
+      return expect(context.issuedClaimsV2()).rejects.toThrow(
+        'Cannot perform this action without an active middleware V2 connection'
+      );
+    });
+  });
+
   describe('method: queryMiddleware', () => {
     beforeAll(() => {
       sinon.stub(utilsInternalModule, 'assertAddressValid');
@@ -1614,6 +1879,44 @@ describe('Context class', () => {
       dsMockUtils.throwOnMiddlewareQuery();
 
       const result = await context.isMiddlewareAvailable();
+
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('method: isMiddlewareV2Available', () => {
+    beforeAll(() => {
+      sinon.stub(utilsInternalModule, 'assertAddressValid');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    it('should return true if the middleware V2 is available', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
+      });
+
+      dsMockUtils.createApolloV2QueryStub(heartbeatQuery(), true);
+
+      const result = await context.isMiddlewareV2Available();
+
+      expect(result).toBe(true);
+    });
+
+    it('should return false if the middleware V2 is not enabled', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: null,
+        middlewareApiV2: null,
+      });
+
+      dsMockUtils.throwOnMiddlewareV2Query();
+
+      const result = await context.isMiddlewareV2Available();
 
       expect(result).toBe(false);
     });

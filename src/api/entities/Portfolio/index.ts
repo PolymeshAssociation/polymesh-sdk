@@ -21,7 +21,7 @@ import { portfolioMovementsQuery, settlementsQuery } from '~/middleware/queriesV
 import { Query, SettlementDirectionEnum, SettlementResultEnum } from '~/middleware/types';
 import { Query as QueryV2 } from '~/middleware/typesV2';
 import { ErrorCode, NoArgsProcedureMethod, ProcedureMethod, ResultSet } from '~/types';
-import { Ensured, QueryReturnType } from '~/types/utils';
+import { Ensured, EnsuredV2, QueryReturnType } from '~/types/utils';
 import {
   addressToKey,
   balanceToBigNumber,
@@ -417,7 +417,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
 
     const address = account ? addressToKey(account, context) : undefined;
 
-    const settlementsPromise = context.queryMiddlewareV2<Ensured<QueryV2, 'legs'>>(
+    const settlementsPromise = context.queryMiddlewareV2<EnsuredV2<QueryV2, 'legs'>>(
       settlementsQuery({
         identityId,
         portfolioId,
@@ -427,7 +427,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     );
 
     const portfolioMovementsPromise = context.queryMiddlewareV2<
-      Ensured<QueryV2, 'portfolioMovements'>
+      EnsuredV2<QueryV2, 'portfolioMovements'>
     >(
       portfolioMovementsQuery({
         identityId,
@@ -465,9 +465,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     };
 
     /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    const { nodes: legNodes } = settlementsResult.data.legs!;
-
-    legNodes!.forEach(node => {
+    settlementsResult.data.legs.nodes.forEach(node => {
       const { createdBlock, result: settlementResult, legs: settlementLegs } = node!.settlement!;
 
       const { blockId, hash } = createdBlock!;
@@ -495,9 +493,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       });
     });
 
-    const { nodes: portfolioMovementNodes } = portfolioMovementsResult.data.portfolioMovements!;
-
-    portfolioMovementNodes!.forEach(node => {
+    portfolioMovementsResult.data.portfolioMovements.nodes.forEach(node => {
       const {
         createdBlock,
         from,
@@ -527,6 +523,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
         ],
       });
     });
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
     return data;
   }

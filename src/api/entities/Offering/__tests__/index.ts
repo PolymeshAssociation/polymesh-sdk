@@ -3,6 +3,7 @@ import sinon from 'sinon';
 
 import { Context, Entity, Offering, TransactionQueue } from '~/internal';
 import { heartbeat, investments } from '~/middleware/queries';
+import { investmentsQuery } from '~/middleware/queriesV2';
 import { InvestmentResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
@@ -341,6 +342,76 @@ describe('Offering class', () => {
       );
 
       result = await offering.getInvestments();
+      expect(result.data).toEqual([]);
+      expect(result.next).toBeNull();
+    });
+  });
+
+  describe('method: getInvestmentsV2', () => {
+    it('should return a list of investors', async () => {
+      const ticker = 'SOME_TICKER';
+      const id = new BigNumber(1);
+      const offering = new Offering({ id, ticker }, context);
+      const did = 'someDid';
+      const offeringToken = 'TICKER';
+      const raiseToken = 'USD';
+      const offeringTokenAmount = new BigNumber(10000);
+      const raiseTokenAmount = new BigNumber(1000);
+
+      const nodes = [
+        {
+          investorId: did,
+          offeringToken,
+          raiseToken,
+          offeringTokenAmount: offeringTokenAmount.toNumber(),
+          raiseTokenAmount: raiseTokenAmount.toNumber(),
+        },
+      ];
+
+      const investmentQueryResponse = {
+        totalCount: 1,
+        nodes,
+      };
+
+      dsMockUtils.createApolloV2QueryStub(
+        investmentsQuery(
+          {
+            stoId: id.toNumber(),
+            offeringToken: ticker,
+          },
+          new BigNumber(5),
+          new BigNumber(0)
+        ),
+        {
+          investments: investmentQueryResponse,
+        }
+      );
+
+      let result = await offering.getInvestmentsV2({
+        size: new BigNumber(5),
+        start: new BigNumber(0),
+      });
+
+      const { data } = result;
+
+      expect(data[0].investor.did).toBe(did);
+      expect(data[0].soldAmount).toEqual(offeringTokenAmount.div(Math.pow(10, 6)));
+      expect(data[0].investedAmount).toEqual(raiseTokenAmount.div(Math.pow(10, 6)));
+
+      dsMockUtils.createApolloV2QueryStub(
+        investmentsQuery({
+          stoId: id.toNumber(),
+          offeringToken: ticker,
+        }),
+        {
+          investments: {
+            totalCount: 0,
+            nodes: [],
+          },
+        }
+      );
+
+      result = await offering.getInvestmentsV2();
       expect(result.data).toEqual([]);
       expect(result.next).toBeNull();
     });

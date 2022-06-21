@@ -37,7 +37,7 @@ import {
   TxTags,
   UnsubCallback,
 } from '~/types';
-import { Ensured } from '~/types/utils';
+import { Ensured, EnsuredV2 } from '~/types/utils';
 import {
   addressToKey,
   extrinsicIdentifierToTxTag,
@@ -498,7 +498,11 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       ({ moduleId, callId } = txTagToExtrinsicIdentifier(tag));
     }
 
-    const result = await context.queryMiddlewareV2<Ensured<QueryV2, 'extrinsics'>>(
+    const {
+      data: {
+        extrinsics: { nodes: transactionList, totalCount },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'extrinsics'>>(
       extrinsicsByArgs(
         {
           blockId: blockNumber ? blockNumber.toString() : undefined,
@@ -513,15 +517,9 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       )
     );
 
-    const {
-      data: { extrinsics },
-    } = result;
-
-    /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    const { nodes: transactionList, totalCount } = extrinsics!;
-
     const count = new BigNumber(totalCount);
 
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
     const data = transactionList.map(transaction => {
       const {
         blockId,

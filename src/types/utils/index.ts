@@ -3,6 +3,7 @@ import type { Observable } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
 import { Entity, Procedure } from '~/internal';
+import { Exact } from '~/middleware/typesV2';
 
 export type Mutable<Immutable> = {
   -readonly [K in keyof Immutable]: Immutable[K];
@@ -63,6 +64,10 @@ export type WithRequired<T, K extends keyof T> = T & { [P in K]-?: T[P] };
  * Pick a single property from T and ensure it is defined
  */
 export type Ensured<T, K extends keyof T> = Required<Pick<T, K>>;
+
+export type EnsuredV2<T, K extends keyof T> = Required<Pick<T, K>> & {
+  [SubKey in K]: NonNullable<T[SubKey]>;
+};
 
 export type PaginatedQueryArgs<T> = T & {
   size?: number;

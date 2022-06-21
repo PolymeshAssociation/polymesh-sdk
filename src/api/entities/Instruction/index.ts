@@ -11,7 +11,7 @@ import {
   Venue,
 } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
-import { instruction } from '~/middleware/queriesV2';
+import { instructionsQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
@@ -25,7 +25,7 @@ import {
   InstructionAffirmationOperation,
   InstructionStatus as InternalInstructionStatus,
 } from '~/types/internal';
-import { Ensured } from '~/types/utils';
+import { Ensured, EnsuredV2 } from '~/types/utils';
 import {
   balanceToBigNumber,
   bigNumberToU64,
@@ -474,7 +474,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
   /**
    * @hidden
-   * Retrieve Instruction status event from middleware
+   * Retrieve Instruction status event from middleware V2
    */
   private async getInstructionEventFromMiddlewareV2(
     eventId: EventIdEnum
@@ -482,27 +482,22 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     const { id, context } = this;
 
     const {
-      data: { instructions },
-    } = await context.queryMiddlewareV2<Ensured<QueryV2, 'instructions'>>(
-      instruction({
+      data: {
+        instructions: {
+          nodes: [details],
+        },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'instructions'>>(
+      instructionsQuery({
         eventId,
         id: id.toString(),
       })
     );
 
-    /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    const {
-      nodes: [details],
-    } = instructions!;
-
-    if (!details) {
-      return null;
-    }
-
-    const { updatedBlock, eventIdx } = details;
-    /* eslint-enable @typescript-eslint/no-non-null-assertion */
-
-    return optionize(middlewareV2EventDetailsToEventIdentifier)(updatedBlock, eventIdx);
+    return optionize(middlewareV2EventDetailsToEventIdentifier)(
+      details?.updatedBlock,
+      details?.eventIdx
+    );
   }
 
   /**

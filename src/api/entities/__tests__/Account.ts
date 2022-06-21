@@ -3,6 +3,7 @@ import sinon from 'sinon';
 
 import { Account, Context, Entity } from '~/internal';
 import { heartbeat, transactions } from '~/middleware/queries';
+import { extrinsicsByArgs } from '~/middleware/queriesV2';
 import { CallIdEnum, ExtrinsicResult, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -31,6 +32,8 @@ describe('Account class', () => {
   let account: Account;
   let assertAddressValidStub: sinon.SinonStub;
   let addressToKeyStub: sinon.SinonStub;
+  let keyToAddressStub: sinon.SinonStub;
+  let txTagToExtrinsicIdentifierStub: sinon.SinonStub;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
@@ -38,6 +41,11 @@ describe('Account class', () => {
     procedureMockUtils.initMocks();
     assertAddressValidStub = sinon.stub(utilsInternalModule, 'assertAddressValid');
     addressToKeyStub = sinon.stub(utilsConversionModule, 'addressToKey');
+    keyToAddressStub = sinon.stub(utilsConversionModule, 'keyToAddress');
+    txTagToExtrinsicIdentifierStub = sinon.stub(
+      utilsConversionModule,
+      'txTagToExtrinsicIdentifier'
+    );
 
     address = 'someAddress';
     key = 'someKey';
@@ -195,7 +203,7 @@ describe('Account class', () => {
 
       addressToKeyStub.returns(key);
 
-      sinon.stub(utilsConversionModule, 'txTagToExtrinsicIdentifier').withArgs(tag).returns({
+      txTagToExtrinsicIdentifierStub.withArgs(tag).returns({
         moduleId,
         callId,
       });
@@ -335,6 +343,173 @@ describe('Account class', () => {
       /* eslint-enable @typescript-eslint/naming-convention */
 
       result = await account.getTransactionHistory();
+
+      expect(result.data[0].blockNumber).toEqual(blockNumber1);
+      expect(result.data[0].address).toEqual(address);
+      expect(result.data[0].success).toBeFalsy();
+      expect(result.count).toEqual(new BigNumber(20));
+      expect(result.next).toBeNull();
+    });
+  });
+
+  describe('method: getTransactionHistoryV2', () => {
+    it('should return a list of transactions', async () => {
+      const tag = TxTags.identity.CddRegisterDid;
+      const moduleId = ModuleIdEnum.Identity;
+      const callId = CallIdEnum.CddRegisterDid;
+      const blockNumber1 = new BigNumber(1);
+      const blockNumber2 = new BigNumber(2);
+      const blockHash1 = 'someHash';
+      const blockHash2 = 'otherHash';
+      const addressKey = 'd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d';
+
+      addressToKeyStub.returns(addressKey);
+      keyToAddressStub.returns(address);
+
+      txTagToExtrinsicIdentifierStub.withArgs(tag).returns({
+        moduleId,
+        callId,
+      });
+
+      const extrinsicsQueryResponse = {
+        totalCount: 20,
+        nodes: [
+          {
+            moduleId: ModuleIdEnum.Asset,
+            callId: CallIdEnum.RegisterTicker,
+            extrinsicIdx: 2,
+            specVersionId: 2006,
+            paramsTxt: '[]',
+            blockId: blockNumber1.toNumber(),
+            address,
+            nonce: 1,
+            success: 0,
+            signedbyAddress: 1,
+            block: {
+              hash: blockHash1,
+            },
+          },
+          {
+            moduleId: ModuleIdEnum.Asset,
+            callId: CallIdEnum.RegisterTicker,
+            extrinsicIdx: 2,
+            specVersionId: 2006,
+            paramsTxt: '[]',
+            blockId: blockNumber2.toNumber(),
+            success: 1,
+            signedbyAddress: 1,
+            block: {
+              hash: blockHash2,
+              id: blockNumber2.toNumber(),
+              datetime: '',
+            },
+          },
+        ],
+      };
+
+      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
+
+      dsMockUtils.createApolloV2QueryStub(
+        extrinsicsByArgs(
+          {
+            blockId: blockNumber1.toString(),
+            address: addressKey,
+            moduleId,
+            callId,
+            success: undefined,
+          },
+          new BigNumber(2),
+          new BigNumber(1)
+        ),
+        {
+          extrinsics: extrinsicsQueryResponse,
+        }
+      );
+
+      dsMockUtils.createRpcStub('chain', 'getBlock', {
+        returnValue: dsMockUtils.createMockSignedBlock({
+          block: {
+            header: {
+              parentHash: 'hash',
+              number: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(blockNumber1)),
+              extrinsicsRoot: 'hash',
+              stateRoot: 'hash',
+            },
+            extrinsics: undefined,
+          },
+        }),
+      });
+
+      let result = await account.getTransactionHistoryV2({
+        blockNumber: blockNumber1,
+        tag,
+        size: new BigNumber(2),
+        start: new BigNumber(1),
+      });
+
+      expect(result.data[0].blockNumber).toEqual(blockNumber1);
+      expect(result.data[1].blockNumber).toEqual(blockNumber2);
+      expect(result.data[0].blockHash).toEqual(blockHash1);
+      expect(result.data[1].blockHash).toEqual(blockHash2);
+      expect(result.data[0].address).toEqual(address);
+      expect(result.data[1].address).toBeNull();
+      expect(result.data[0].nonce).toEqual(new BigNumber(1));
+      expect(result.data[1].nonce).toBeNull();
+      expect(result.data[0].success).toBeFalsy();
+      expect(result.data[1].success).toBeTruthy();
+      expect(result.count).toEqual(new BigNumber(20));
+      expect(result.next).toEqual(new BigNumber(3));
+
+      dsMockUtils.createApolloV2QueryStub(
+        extrinsicsByArgs(
+          {
+            blockId: blockNumber1.toString(),
+            address: addressKey,
+            moduleId,
+            callId,
+            success: 0,
+          },
+          new BigNumber(2),
+          new BigNumber(1)
+        ),
+        {
+          extrinsics: extrinsicsQueryResponse,
+        }
+      );
+
+      result = await account.getTransactionHistoryV2({
+        blockHash: blockHash1,
+        tag,
+        success: false,
+        size: new BigNumber(2),
+        start: new BigNumber(1),
+      });
+
+      expect(result.data[0].blockNumber).toEqual(blockNumber1);
+      expect(result.data[1].blockNumber).toEqual(blockNumber2);
+      expect(result.data[0].blockHash).toEqual(blockHash1);
+      expect(result.data[1].blockHash).toEqual(blockHash2);
+      expect(result.data[0].address).toEqual(address);
+      expect(result.data[1].address).toBeNull();
+      expect(result.data[0].success).toBeFalsy();
+      expect(result.data[1].success).toBeTruthy();
+      expect(result.count).toEqual(new BigNumber(20));
+      expect(result.next).toEqual(new BigNumber(3));
+
+      dsMockUtils.createApolloV2QueryStub(
+        extrinsicsByArgs({
+          blockId: undefined,
+          address: addressKey,
+          moduleId: undefined,
+          callId: undefined,
+          success: 1,
+        }),
+        {
+          extrinsics: extrinsicsQueryResponse,
+        }
+      );
+
+      result = await account.getTransactionHistoryV2({ success: true });
 
       expect(result.data[0].blockNumber).toEqual(blockNumber1);
       expect(result.data[0].address).toEqual(address);

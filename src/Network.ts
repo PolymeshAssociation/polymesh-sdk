@@ -21,7 +21,7 @@ import {
   TxTag,
   UnsubCallback,
 } from '~/types';
-import { Ensured } from '~/types/utils';
+import { Ensured, EnsuredV2 } from '~/types/utils';
 import { TREASURY_MODULE_ADDRESS } from '~/utils/constants';
 import {
   balanceToBigNumber,
@@ -206,8 +206,12 @@ export class Network {
     const { moduleId, eventId, eventArg0, eventArg1, eventArg2 } = opts;
 
     const {
-      data: { events },
-    } = await context.queryMiddlewareV2<Ensured<QueryV2, 'events'>>(
+      data: {
+        events: {
+          nodes: [event],
+        },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'events'>>(
       eventsByArgs(
         {
           moduleId,
@@ -220,15 +224,7 @@ export class Network {
       )
     );
 
-    /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    const {
-      nodes: [event],
-    } = events!;
-
-    const { block, eventIdx } = event!;
-    /* eslint-enable @typescript-eslint/no-non-null-assertion */
-
-    return optionize(middlewareV2EventDetailsToEventIdentifier)(block, eventIdx);
+    return optionize(middlewareV2EventDetailsToEventIdentifier)(event?.block, event?.eventIdx);
   }
 
   /**
@@ -308,8 +304,10 @@ export class Network {
     const { moduleId, eventId, eventArg0, eventArg1, eventArg2, size, start } = opts;
 
     const {
-      data: { events },
-    } = await context.queryMiddlewareV2<Ensured<QueryV2, 'events'>>(
+      data: {
+        events: { nodes: events },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'events'>>(
       eventsByArgs(
         {
           moduleId,
@@ -323,16 +321,14 @@ export class Network {
       )
     );
 
-    /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    const { nodes } = events!;
-
-    if (nodes) {
-      return nodes.map(event => {
+    if (events.length) {
+      return events.map(event => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const { block, eventIdx } = event!;
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         return middlewareV2EventDetailsToEventIdentifier(block!, eventIdx);
       });
     }
-    /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
     return null;
   }
@@ -447,27 +443,25 @@ export class Network {
     } = this;
 
     const {
-      data: { extrinsics },
-    } = await context.queryMiddlewareV2<Ensured<QueryV2, 'extrinsics'>>(
+      data: {
+        extrinsics: {
+          nodes: [transaction],
+        },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'extrinsics'>>(
       extrinsicByHash({
         extrinsicHash: opts.txHash,
       })
     );
 
-    const {
-      nodes: [transaction],
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    } = extrinsics!;
-
     if (transaction) {
       const {
-        blockId: blockNumber,
         extrinsicIdx,
         address: rawAddress,
         nonce,
         moduleId,
         callId,
-        paramsTxt: params,
+        paramsTxt,
         success: txSuccess,
         specVersionId,
         extrinsicHash,
@@ -480,7 +474,7 @@ export class Network {
       });
 
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const blockHash = block!.hash!;
+      const { hash: blockHash, blockId: blockNumber } = block!;
 
       const rawBlockHash = stringToBlockHash(blockHash, context);
 
@@ -500,7 +494,7 @@ export class Network {
         address: rawAddress ?? null,
         nonce: nonce ? new BigNumber(nonce) : null,
         txTag,
-        params: JSON.parse(params),
+        params: JSON.parse(paramsTxt),
         success: !!txSuccess,
         specVersionId: new BigNumber(specVersionId),
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

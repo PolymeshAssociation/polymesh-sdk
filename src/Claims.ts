@@ -27,7 +27,7 @@ import {
   ScopeType,
 } from '~/types';
 import { ClaimOperation } from '~/types/internal';
-import { Ensured } from '~/types/utils';
+import { Ensured, EnsuredV2 } from '~/types/utils';
 import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 import {
   scopeToMiddlewareScope,
@@ -313,20 +313,18 @@ export class Claims {
     };
 
     if (!targets) {
-      const targetResults = await context.queryMiddlewareV2<Ensured<QueryV2, 'claims'>>(
+      const {
+        data: {
+          claims: { groupedAggregates: groupedTargets },
+        },
+      } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'claims'>>(
         claimsGroupingQuery({
           ...filters,
         })
       );
 
-      const {
-        data: { claims },
-      } = targetResults;
-
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const groupedTargets = claims!.groupedAggregates!;
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      targetIssuers = flatten(groupedTargets.map(groupedAggregate => groupedAggregate.keys!));
+      targetIssuers = flatten(groupedTargets!.map(groupedTarget => groupedTarget.keys!));
     } else {
       targetIssuers = targets.map(target => signerToString(target));
     }
@@ -337,7 +335,11 @@ export class Claims {
     // tooling-gql does pagination based on sorted target issuers, hence the explicit `sort()` function (as graphql doesn't sort the final data)
     targetIssuers = targetIssuers.sort().slice(start.toNumber(), size.plus(start).toNumber());
 
-    const result = await context.queryMiddlewareV2<Ensured<QueryV2, 'claims'>>(
+    const {
+      data: {
+        claims: { nodes },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'claims'>>(
       claimsQuery({
         dids: targetIssuers,
         ...filters,
@@ -346,7 +348,7 @@ export class Claims {
 
     const data = toIdentityWithClaimsArrayV2(
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      result.data.claims!.nodes!.map(node => node!),
+      nodes.map(node => node!),
       context,
       'targetId'
     );
@@ -515,6 +517,18 @@ export class Claims {
       };
     }
 
+    return await this.getClaimsFromChain(context, did, trustedClaimIssuers, includeExpired);
+  }
+
+  /**
+   * @hidden
+   */
+  private async getClaimsFromChain(
+    context: Context,
+    did: string,
+    trustedClaimIssuers: (string | Identity)[] | undefined,
+    includeExpired: boolean
+  ): Promise<ResultSet<IdentityWithClaims>> {
     const identityClaimsFromChain = await context.getIdentityClaimsFromChain({
       targets: [did],
       trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
@@ -574,9 +588,9 @@ export class Claims {
 
     const did = await getDid(target, context);
 
-    const isMiddlewareAvailable = await context.isMiddlewareAvailable();
+    const isMiddlewareV2Available = await context.isMiddlewareV2Available();
 
-    if (isMiddlewareAvailable) {
+    if (isMiddlewareV2Available) {
       const filters = {
         dids: [did],
         scope: scope ? scopeToMiddlewareScope(scope) : undefined,
@@ -585,14 +599,16 @@ export class Claims {
 
       let claimIssuers;
       if (!trustedClaimIssuers) {
-        const issuerResults = await context.queryMiddlewareV2<Ensured<QueryV2, 'claims'>>(
+        const {
+          data: {
+            claims: { groupedAggregates: groupedIssuers },
+          },
+        } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'claims'>>(
           claimsGroupingQuery(filters, ClaimsOrderBy.IssuerIdAsc, ClaimsGroupBy.IssuerId)
         );
 
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const groupedIssuers = issuerResults.data.claims!.groupedAggregates!;
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        claimIssuers = flatten(groupedIssuers.map(groupedAggregate => groupedAggregate.keys!));
+        claimIssuers = flatten(groupedIssuers!.map(groupedAggregate => groupedAggregate.keys!));
       } else {
         claimIssuers = trustedClaimIssuers.map(issuer => signerToString(issuer));
       }
@@ -602,7 +618,11 @@ export class Claims {
 
       claimIssuers = claimIssuers.sort().slice(start.toNumber(), size.plus(start).toNumber());
 
-      const result = await context.queryMiddlewareV2<Ensured<QueryV2, 'claims'>>(
+      const {
+        data: {
+          claims: { nodes },
+        },
+      } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'claims'>>(
         claimsQuery({
           trustedClaimIssuers: claimIssuers,
           ...filters,
@@ -611,7 +631,7 @@ export class Claims {
 
       const data = toIdentityWithClaimsArrayV2(
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        result.data.claims!.nodes!.map(node => node!),
+        nodes.map(node => node!),
         context,
         'issuerId'
       );
@@ -624,30 +644,6 @@ export class Claims {
       };
     }
 
-    const identityClaimsFromChain = await context.getIdentityClaimsFromChain({
-      targets: [did],
-      trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
-        signerToString(trustedClaimIssuer)
-      ),
-      includeExpired,
-    });
-
-    const issuers = uniqBy(
-      identityClaimsFromChain.map(i => i.issuer),
-      identity => identity.did
-    );
-
-    const identitiesWithClaims = issuers.map(identity => {
-      return {
-        identity,
-        claims: filter(identityClaimsFromChain, ({ issuer }) => issuer.isEqual(identity)),
-      };
-    });
-
-    return {
-      data: identitiesWithClaims,
-      next: null,
-      count: new BigNumber(identitiesWithClaims.length),
-    };
+    return await this.getClaimsFromChain(context, did, trustedClaimIssuers, includeExpired);
   }
 }

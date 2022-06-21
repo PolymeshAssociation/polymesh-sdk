@@ -383,6 +383,7 @@ interface ContextOptions {
   getIdentity?: Identity;
   getIdentityClaimsFromChain?: ClaimData[];
   getIdentityClaimsFromMiddleware?: ResultSet<ClaimData>;
+  getIdentityClaimsFromMiddlewareV2?: ResultSet<ClaimData>;
   getExternalSigner?: PolkadotSigner;
   primaryAccount?: string;
   secondaryAccounts?: PermissionedAccount[];
@@ -390,6 +391,7 @@ interface ContextOptions {
   latestBlock?: BigNumber;
   middlewareEnabled?: boolean;
   middlewareAvailable?: boolean;
+  middlewareV2Available?: boolean;
   sentAuthorizations?: ResultSet<AuthorizationRequest>;
   isArchiveNode?: boolean;
   ss58Format?: BigNumber;
@@ -646,6 +648,19 @@ const defaultContextOptions: ContextOptions = {
     next: new BigNumber(1),
     count: new BigNumber(1),
   },
+  getIdentityClaimsFromMiddlewareV2: {
+    data: [
+      {
+        target: 'targetIdentity' as unknown as Identity,
+        issuer: 'issuerIdentity' as unknown as Identity,
+        issuedAt: new Date(),
+        expiry: null,
+        claim: { type: ClaimType.NoData },
+      },
+    ],
+    next: new BigNumber(1),
+    count: new BigNumber(1),
+  },
   primaryAccount: 'primaryAccount',
   secondaryAccounts: [],
   transactionHistory: {
@@ -656,6 +671,7 @@ const defaultContextOptions: ContextOptions = {
   latestBlock: new BigNumber(100),
   middlewareEnabled: true,
   middlewareAvailable: true,
+  middlewareV2Available: true,
   sentAuthorizations: {
     data: [{} as AuthorizationRequest],
     next: new BigNumber(1),
@@ -769,9 +785,13 @@ function configureContext(opts: ContextOptions): void {
     getIdentity: sinon.stub().resolves(opts.getIdentity),
     getIdentityClaimsFromChain: sinon.stub().resolves(opts.getIdentityClaimsFromChain),
     getIdentityClaimsFromMiddleware: sinon.stub().resolves(opts.getIdentityClaimsFromMiddleware),
+    getIdentityClaimsFromMiddlewareV2: sinon
+      .stub()
+      .resolves(opts.getIdentityClaimsFromMiddlewareV2),
     getLatestBlock: sinon.stub().resolves(opts.latestBlock),
     isMiddlewareEnabled: sinon.stub().returns(opts.middlewareEnabled),
     isMiddlewareAvailable: sinon.stub().resolves(opts.middlewareAvailable),
+    isMiddlewareV2Available: sinon.stub().resolves(opts.middlewareV2Available),
     isArchiveNode: opts.isArchiveNode,
     ss58Format: opts.ss58Format,
     disconnect: sinon.stub(),
@@ -1158,6 +1178,29 @@ export function createApolloMultipleQueriesStub(
   queries: { query: GraphqlQuery<any>; returnData: unknown }[]
 ): SinonStub {
   const instance = mockInstanceContainer.apolloInstance;
+  const stub = sinon.stub();
+
+  queries.forEach(q => {
+    stub.withArgs(q.query).resolves({
+      data: q.returnData,
+    });
+  });
+
+  instance.query = stub;
+
+  return stub;
+}
+
+/**
+ * @hidden
+ * Create and return an apollo stub for multiple V2 queries
+ *
+ * @param queries - query and returnData for each stubbed query
+ */
+export function createApolloMultipleV2QueriesStub(
+  queries: { query: GraphqlQuery<any>; returnData: unknown }[]
+): SinonStub {
+  const instance = mockInstanceContainer.apolloInstanceV2;
   const stub = sinon.stub();
 
   queries.forEach(q => {

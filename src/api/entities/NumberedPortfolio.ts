@@ -12,7 +12,7 @@ import { portfolioQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Query as QueryV2 } from '~/middleware/typesV2';
 import { ErrorCode, EventIdentifier, ProcedureMethod } from '~/types';
-import { Ensured } from '~/types/utils';
+import { Ensured, EnsuredV2 } from '~/types/utils';
 import {
   bigNumberToU64,
   middlewareEventToEventIdentifier,
@@ -139,23 +139,19 @@ export class NumberedPortfolio extends Portfolio {
     } = this;
 
     const {
-      data: { portfolios },
-    } = await context.queryMiddlewareV2<Ensured<QueryV2, 'portfolios'>>(
+      data: {
+        portfolios: {
+          nodes: [node],
+        },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'portfolios'>>(
       portfolioQuery({
         identityId: did,
         number: id.toNumber(),
       })
     );
 
-    /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    const {
-      nodes: [node],
-    } = portfolios!;
-
-    const { createdBlock, eventIdx } = node!;
-    /* eslint-enable @typescript-eslint/no-non-null-assertion */
-
-    return optionize(middlewareV2EventDetailsToEventIdentifier)(createdBlock, eventIdx);
+    return optionize(middlewareV2EventDetailsToEventIdentifier)(node?.createdBlock, node?.eventIdx);
   }
 
   /**

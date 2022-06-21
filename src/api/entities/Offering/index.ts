@@ -15,7 +15,7 @@ import {
   toggleFreezeOffering,
 } from '~/internal';
 import { investments } from '~/middleware/queries';
-import { investments as investmentsV2 } from '~/middleware/queriesV2';
+import { investmentsQuery } from '~/middleware/queriesV2';
 import { Query } from '~/middleware/types';
 import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
@@ -25,7 +25,7 @@ import {
   SubCallback,
   UnsubCallback,
 } from '~/types';
-import { Ensured } from '~/types/utils';
+import { Ensured, EnsuredV2 } from '~/types/utils';
 import { bigNumberToU64, fundraiserToOfferingDetails, stringToTicker } from '~/utils/conversion';
 import { calculateNextKey, createProcedureMethod, toHumanReadable } from '~/utils/internal';
 
@@ -270,27 +270,27 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
 
     const { size, start } = opts;
 
-    const result = await context.queryMiddlewareV2<Ensured<QueryV2, 'investments'>>(
-      investmentsV2({
-        stoId: id.toNumber(),
-        ticker: ticker,
-        count: size?.toNumber(),
-        skip: start?.toNumber(),
-      })
-    );
-
     const {
-      data: { investments: investmentsResult },
-    } = result;
-
-    /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    const { nodes, totalCount } = investmentsResult!;
+      data: {
+        investments: { nodes, totalCount },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'investments'>>(
+      investmentsQuery(
+        {
+          stoId: id.toNumber(),
+          offeringToken: ticker,
+        },
+        size,
+        start
+      )
+    );
 
     const count = new BigNumber(totalCount);
 
     const data: Investment[] = [];
 
-    nodes!.forEach(item => {
+    nodes.forEach(item => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const { investorId: did, offeringTokenAmount, raiseTokenAmount } = item!;
 
       data.push({
@@ -299,7 +299,6 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
         investedAmount: new BigNumber(raiseTokenAmount).shiftedBy(-6),
       });
     });
-    /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
     const next = calculateNextKey(count, size, start);
 

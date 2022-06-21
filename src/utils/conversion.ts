@@ -2022,16 +2022,14 @@ export function middlewareEventToEventIdentifier(event: MiddlewareEvent): EventI
  */
 export function middlewareV2EventDetailsToEventIdentifier(
   block: MiddlewareV2Block,
-  eventIdx: number
+  eventIdx = 0
 ): EventIdentifier {
   const { blockId, datetime, hash } = block;
 
   return {
     blockNumber: new BigNumber(blockId),
-    /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    blockDate: new Date(`${datetime}Z`),
     blockHash: hash,
-    /* eslint-enable @typescript-eslint/no-non-null-assertion */
+    blockDate: new Date(`${datetime}`),
     eventIndex: new BigNumber(eventIdx),
   };
 }

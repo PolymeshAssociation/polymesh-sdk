@@ -32,7 +32,7 @@ import {
   TxTag,
   TxTags,
 } from '~/types';
-import { Ensured, QueryReturnType } from '~/types/utils';
+import { Ensured, EnsuredV2, QueryReturnType } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
   agentGroupToPermissionGroup,
@@ -365,22 +365,18 @@ export class AssetPermissions extends Namespace<Identity> {
     const ticker = asTicker(asset);
 
     const {
-      data: { tickerExternalAgents },
-    } = await context.queryMiddlewareV2<Ensured<QueryV2, 'tickerExternalAgents'>>(
+      data: {
+        tickerExternalAgents: {
+          nodes: [node],
+        },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'tickerExternalAgents'>>(
       tickerExternalAgentsQuery({
         assetId: ticker,
       })
     );
 
-    /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    const {
-      nodes: [node],
-    } = tickerExternalAgents!;
-
-    const { createdBlock, eventIdx } = node!;
-    /* eslint-enable @typescript-eslint/no-non-null-assertion */
-
-    return optionize(middlewareV2EventDetailsToEventIdentifier)(createdBlock, eventIdx);
+    return optionize(middlewareV2EventDetailsToEventIdentifier)(node?.createdBlock, node?.eventIdx);
   }
 
   /**
@@ -508,7 +504,11 @@ export class AssetPermissions extends Namespace<Identity> {
 
     const ticker = asTicker(asset);
 
-    const result = await context.queryMiddlewareV2<Ensured<QueryV2, 'tickerExternalAgentActions'>>(
+    const {
+      data: {
+        tickerExternalAgentActions: { nodes, totalCount },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'tickerExternalAgentActions'>>(
       tickerExternalAgentActionsQuery(
         {
           assetId: ticker,
@@ -521,18 +521,13 @@ export class AssetPermissions extends Namespace<Identity> {
       )
     );
 
-    const {
-      data: { tickerExternalAgentActions: tickerExternalAgentActionsResult },
-    } = result;
-
-    /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    const { nodes, totalCount } = tickerExternalAgentActionsResult!;
-
     const data: EventIdentifier[] = [];
 
-    nodes!.forEach(node => {
+    nodes.forEach(node => {
+      /* eslint-disable @typescript-eslint/no-non-null-assertion */
       const { createdBlock, eventIdx } = node!;
       const { blockId, datetime, hash } = createdBlock!;
+      /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
       data.push({
         blockNumber: new BigNumber(blockId),
@@ -541,7 +536,6 @@ export class AssetPermissions extends Namespace<Identity> {
         eventIndex: new BigNumber(eventIdx),
       });
     });
-    /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
     const count = new BigNumber(totalCount);
     const next = calculateNextKey(count, size, start);

@@ -42,7 +42,7 @@ import {
   SubCallback,
   UnsubCallback,
 } from '~/types';
-import { Ensured, Modify, QueryReturnType } from '~/types/utils';
+import { Ensured, EnsuredV2, Modify, QueryReturnType } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
   assetIdentifierToSecurityIdentifier,
@@ -406,22 +406,21 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
     const { ticker, context } = this;
 
     const {
-      data: { assets },
-    } = await context.queryMiddlewareV2<Ensured<QueryV2, 'assets'>>(
+      data: {
+        assets: {
+          nodes: [asset],
+        },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'assets'>>(
       assetQuery({
         ticker,
       })
     );
 
-    /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    const {
-      nodes: [node],
-    } = assets!;
-
-    const { createdBlock, eventIdx } = node!;
-    /* eslint-enable @typescript-eslint/no-non-null-assertion */
-
-    return optionize(middlewareV2EventDetailsToEventIdentifier)(createdBlock, eventIdx);
+    return optionize(middlewareV2EventDetailsToEventIdentifier)(
+      asset?.createdBlock,
+      asset?.eventIdx
+    );
   }
 
   /**
@@ -653,24 +652,26 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
     const { context, ticker: assetId } = this;
 
     const {
-      data: { tickerExternalAgentHistories },
-    } = await context.queryMiddlewareV2<Ensured<QueryV2, 'tickerExternalAgentHistories'>>(
+      data: {
+        tickerExternalAgentHistories: { nodes },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'tickerExternalAgentHistories'>>(
       tickerExternalAgentHistoryQuery({
         assetId,
       })
     );
 
-    /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    const groupedData = groupBy(tickerExternalAgentHistories!.nodes!, 'identityId');
+    const groupedData = groupBy(nodes, 'identityId');
 
     return map(groupedData, (history, did) => ({
       identity: new Identity({ did }, context),
       history: history.map(node => {
+        /* eslint-disable @typescript-eslint/no-non-null-assertion */
         const { createdBlock, eventIdx } = node!;
         return middlewareV2EventDetailsToEventIdentifier(createdBlock!, eventIdx);
+        /* eslint-enable @typescript-eslint/no-non-null-assertion */
       }),
     }));
-    /* eslint-enable @typescript-eslint/no-non-null-assertion */
   }
 
   /**

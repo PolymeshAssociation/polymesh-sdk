@@ -31,7 +31,7 @@ import {
   SubCallback,
   UnsubCallback,
 } from '~/types';
-import { Ensured, QueryReturnType, tuple } from '~/types/utils';
+import { Ensured, EnsuredV2, QueryReturnType, tuple } from '~/types/utils';
 import {
   isCddProviderRole,
   isIdentityRole,
@@ -364,7 +364,11 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const { size, start, order } = opts;
 
-    const result = await context.queryMiddlewareV2<Ensured<QueryV2, 'assetHolders'>>(
+    const {
+      data: {
+        assetHolders: { nodes, totalCount },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'assetHolders'>>(
       assetHoldersQuery(
         {
           identityId: did,
@@ -374,13 +378,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
         order
       )
     );
-
-    const {
-      data: { assetHolders },
-    } = result;
-
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const { nodes, totalCount } = assetHolders!;
 
     const count = new BigNumber(totalCount);
 
@@ -455,13 +452,15 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     const { context, did } = this;
 
     const {
-      data: { trustedClaimIssuers: tickers },
-    } = await context.queryMiddlewareV2<Ensured<QueryV2, 'trustedClaimIssuers'>>(
+      data: {
+        trustedClaimIssuers: { nodes },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'trustedClaimIssuers'>>(
       trustingAssetsQuery({ issuer: did })
     );
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return tickers!.nodes.map(node => new Asset({ ticker: removePadding(node!.assetId) }, context));
+    return nodes.map(node => new Asset({ ticker: removePadding(node!.assetId) }, context));
   }
 
   /**

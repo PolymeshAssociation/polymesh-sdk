@@ -4,7 +4,7 @@ import { trustedClaimIssuerQuery } from '~/middleware/queriesV2';
 import { Query } from '~/middleware/types';
 import { Query as QueryV2 } from '~/middleware/typesV2';
 import { ClaimType, ErrorCode, EventIdentifier } from '~/types';
-import { Ensured } from '~/types/utils';
+import { Ensured, EnsuredV2 } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
   middlewareEventToEventIdentifier,
@@ -88,23 +88,19 @@ export class DefaultTrustedClaimIssuer extends Identity {
     } = this;
 
     const {
-      data: { trustedClaimIssuers },
-    } = await context.queryMiddlewareV2<Ensured<QueryV2, 'trustedClaimIssuers'>>(
+      data: {
+        trustedClaimIssuers: {
+          nodes: [node],
+        },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'trustedClaimIssuers'>>(
       trustedClaimIssuerQuery({
         assetId,
         issuer,
       })
     );
 
-    /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    const {
-      nodes: [node],
-    } = trustedClaimIssuers!;
-
-    const { createdBlock, eventIdx } = node!;
-    /* eslint-enable @typescript-eslint/no-non-null-assertion */
-
-    return optionize(middlewareV2EventDetailsToEventIdentifier)(createdBlock, eventIdx);
+    return optionize(middlewareV2EventDetailsToEventIdentifier)(node?.createdBlock, node?.eventIdx);
   }
 
   /**

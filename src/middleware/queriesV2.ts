@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
-import { ClaimTypeEnum, QueryInvestmentsArgs } from '~/middleware/types';
+import { ClaimTypeEnum } from '~/middleware/types';
 import {
   Asset,
   AssetHolder,
@@ -16,6 +16,7 @@ import {
   ExtrinsicsOrderBy,
   Instruction,
   InstructionsOrderBy,
+  Investment,
   InvestmentsOrderBy,
   Leg,
   LegsOrderBy,
@@ -32,6 +33,26 @@ import {
 } from '~/middleware/typesV2';
 import { GraphqlQuery } from '~/types/internal';
 import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
+
+/**
+ * @hidden
+ *
+ * Middleware V2 heartbeat
+ */
+export function heartbeatQuery(): GraphqlQuery {
+  const query = gql`
+    query {
+      block(id: "1") {
+        id
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: undefined,
+  };
+}
 
 /**
  *  @hidden
@@ -158,18 +179,24 @@ export function claimsQuery(
  *
  * Get all investments for a given offering
  */
-export function investments(variables: QueryInvestmentsArgs): GraphqlQuery<QueryInvestmentsArgs> {
+export function investmentsQuery(
+  filters: QueryArgs<Investment, 'stoId' | 'offeringToken'>,
+  size?: BigNumber,
+  start?: BigNumber
+): GraphqlQuery<PaginatedQueryArgs<QueryArgs<Investment, 'stoId' | 'offeringToken'>>> {
   const query = gql`
-    query InvestmentsQuery($stoId: Int!, $ticker: String!, $count: Int, $skip: Int) {
+    query InvestmentsQuery($stoId: Int!, $offeringToken: String!, $size: Int, $start: Int) {
       investments(
-        filter: { stoId: { equalTo: $stoId }, offeringToken: { equalTo: $ticker } }
-        first: $count
-        offset: $skip
+        filter: { stoId: { equalTo: $stoId }, offeringToken: { equalTo: $offeringToken } }
+        first: $size
+        offset: $start
         orderBy: [${InvestmentsOrderBy.CreatedBlockIdAsc}]
       ) {
         totalCount
         nodes {
           investorId
+          offeringToken
+          raiseToken
           offeringTokenAmount
           raiseTokenAmount
         }
@@ -179,7 +206,7 @@ export function investments(variables: QueryInvestmentsArgs): GraphqlQuery<Query
 
   return {
     query,
-    variables,
+    variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
   };
 }
 
@@ -188,7 +215,7 @@ export function investments(variables: QueryInvestmentsArgs): GraphqlQuery<Query
  *
  * Get a specific instruction within a venue for a specific event
  */
-export function instruction(
+export function instructionsQuery(
   variables: Pick<Instruction, 'eventId' | 'id'>
 ): GraphqlQuery<Pick<Instruction, 'eventId' | 'id'>> {
   const query = gql`
@@ -296,8 +323,8 @@ export function extrinsicByHash(
   variables: QueryArgs<Extrinsic, 'extrinsicHash'>
 ): GraphqlQuery<QueryArgs<Extrinsic, 'extrinsicHash'>> {
   const query = gql`
-    query TransactionByHashQuery($transactionHash: String!) {
-      extrinsics(filter: { extrinsicHash: { equalTo: $transactionHash } }) {
+    query TransactionByHashQuery($extrinsicHash: String!) {
+      extrinsics(filter: { extrinsicHash: { equalTo: $extrinsicHash } }) {
         nodes {
           extrinsicIdx
           address
@@ -311,6 +338,7 @@ export function extrinsicByHash(
           block {
             blockId
             hash
+            datetime
           }
         }
       }
