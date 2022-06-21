@@ -47,8 +47,12 @@ import {
   ConfidentialIdentityClaimProofsZkProofData,
   PalletAssetClassicTickerRegistration,
   PalletCorporateActionsCaId,
+  PalletCorporateActionsCaKind,
   PalletCorporateActionsCorporateAction,
   PalletCorporateActionsDistribution,
+  PalletCorporateActionsInitiateCorporateActionArgs,
+  PalletCorporateActionsRecordDateSpec,
+  PalletCorporateActionsTargetIdentities,
   PalletRelayerSubsidy,
   PalletSettlementInstruction,
   PalletSettlementVenue,
@@ -1522,6 +1526,7 @@ const createMockCodec = (codec: unknown, isEmpty: boolean): MockCodec<Codec> => 
 
 /**
  * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
  */
 const createMockStringCodec = (value?: string): MockCodec<Codec> =>
   createMockCodec(
@@ -1533,12 +1538,14 @@ const createMockStringCodec = (value?: string): MockCodec<Codec> =>
 
 /**
  * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
  */
 const createMockU8aCodec = (value?: string, hex?: boolean): MockCodec<Codec> =>
   createMockCodec(hex ? hexToU8a(value) : stringToU8a(value), value === undefined);
 
 /**
  * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
  */
 const createMockNumberCodec = (value?: BigNumber): MockCodec<Codec> =>
   createMockCodec(
@@ -1823,6 +1830,7 @@ export const createMockBytes = (value?: string): MockCodec<Bytes> =>
 
 /**
  * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockHash = (value?: string | Hash): MockCodec<Hash> => {
   if (isCodec<Hash>(value)) {
@@ -2001,6 +2009,7 @@ export const createMockDocument = (document?: {
 
 /**
  * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockDispatchableNames = (
   dispatchableNames?: 'Whole' | { These: Bytes[] } | { Except: Bytes[] } | DispatchableNames
@@ -2190,6 +2199,7 @@ export const createMockFundraiserName = (name?: string): Bytes => createMockByte
 
 /**
  * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockAssetPermissions = (
   assetPermissions?:
@@ -2202,6 +2212,7 @@ export const createMockAssetPermissions = (
 
 /**
  * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockExtrinsicPermissions = (
   assetPermissions?:
@@ -2216,6 +2227,7 @@ export const createMockExtrinsicPermissions = (
 
 /**
  * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockPortfolioPermissions = (
   assetPermissions?: 'Whole' | { These: PortfolioId[] } | { Except: PortfolioId[] }
@@ -2348,6 +2360,7 @@ export const createMockIEvent = <T extends Codec[]>(data: unknown[]): IEvent<T> 
 
 /**
  * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockCddStatus = (
   cddStatus?: { Ok: PolymeshPrimitivesIdentityId } | { Err: Bytes }
@@ -2746,6 +2759,7 @@ export const createMockAssetOwnershipRelation = (
 
 /**
  * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockProposalState = (
   proposalState?: 'Pending' | 'Cancelled' | 'Killed' | 'Rejected' | 'Referendum' | { Custom: Bytes }
@@ -2937,6 +2951,7 @@ export const createMockTransferCondition = (
 
 /**
  * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockFundraiserTier = (fundraiserTier?: {
   total: Balance;
@@ -2969,6 +2984,7 @@ export const createMockFundraiserStatus = (
 
 /**
  * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockFundraiser = (fundraiser?: {
   creator: PolymeshPrimitivesIdentityId;
@@ -3006,6 +3022,7 @@ export const createMockFundraiser = (fundraiser?: {
 };
 
 /**
+ * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockPriceTier = (priceTier?: {
@@ -3040,6 +3057,7 @@ export const createMockCalendarUnit = (
 };
 
 /**
+ * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockCalendarPeriod = (
@@ -3065,6 +3083,7 @@ export const createMockCalendarPeriod = (
 };
 
 /**
+ * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockCheckpointSchedule = (
@@ -3090,6 +3109,7 @@ export const createMockCheckpointSchedule = (
 };
 
 /**
+ * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockStoredSchedule = (
@@ -3121,6 +3141,7 @@ export const createMockStoredSchedule = (
 };
 
 /**
+ * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockScheduleSpec = (
@@ -3207,6 +3228,7 @@ export const createMockCACheckpoint = (
 };
 
 /**
+ * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockRecordDate = (
@@ -3290,6 +3312,7 @@ export const createMockTargetTreatment = (
 };
 
 /**
+ * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockTargetIdentities = (
@@ -3372,6 +3395,7 @@ export const createMockCAKind = (
 };
 
 /**
+ * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockCorporateAction = (corporateAction?: {
@@ -3411,6 +3435,7 @@ export const createMockCorporateAction = (corporateAction?: {
 };
 
 /**
+ * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockCAId = (
@@ -3436,6 +3461,7 @@ export const createMockCAId = (
 };
 
 /**
+ * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockDistribution = (distribution?: {
@@ -3608,6 +3634,7 @@ export const createMockGranularCanTransferResult = (granularCanTransferResult?: 
 };
 
 /**
+ * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockClassicTickerRegistration = (
@@ -3633,6 +3660,7 @@ export const createMockClassicTickerRegistration = (
 };
 
 /**
+ * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockHeader = (
@@ -3689,6 +3717,7 @@ export const createMockExtrinsics = (
 };
 
 /**
+ * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockBlock = (
@@ -3714,6 +3743,7 @@ export const createMockBlock = (
 };
 
 /**
+ * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockSignedBlock = (
@@ -3879,4 +3909,62 @@ export const createMockStatUpdate = (
     },
     !update
   ) as MockCodec<PolymeshPrimitivesStatisticsStatUpdate>;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockInitiateCorporateActionArgs = (
+  caArgs?:
+    | PalletCorporateActionsInitiateCorporateActionArgs
+    | {
+        ticker: PolymeshPrimitivesTicker | Parameters<typeof createMockTicker>[0];
+        kind: PalletCorporateActionsCaKind | Parameters<typeof createMockCAKind>[0];
+        declDate: u64 | Parameters<typeof createMockU64>[0];
+        recordDate: Option<PalletCorporateActionsRecordDateSpec>;
+        details: Bytes | Parameters<typeof createMockBytes>[0];
+        targets: Option<PalletCorporateActionsTargetIdentities>;
+        defaultWithholdingTax: Option<Permill>;
+        withholdingTax:
+          | [
+              PolymeshPrimitivesIdentityId | Parameters<typeof createMockIdentityId>[0],
+              Tax | Parameters<typeof createMockPermill>[0]
+            ][]
+          | null;
+      }
+): MockCodec<PalletCorporateActionsInitiateCorporateActionArgs> => {
+  const {
+    ticker,
+    kind,
+    declDate,
+    recordDate,
+    details,
+    targets,
+    defaultWithholdingTax,
+    withholdingTax,
+  } = caArgs || {
+    ticker: createMockTicker(),
+    kind: createMockCAKind(),
+    declDate: createMockU64(),
+    recordDate: createMockOption(),
+    details: createMockBytes(),
+    targets: createMockOption(),
+    defaultWithholdingTax: createMockOption(),
+    withholdingTax: createMockOption(),
+  };
+
+  return createMockCodec(
+    {
+      ticker,
+      kind,
+      declDate,
+      recordDate,
+      details,
+      targets,
+      defaultWithholdingTax,
+      withholdingTax,
+    },
+    !caArgs
+  ) as MockCodec<PalletCorporateActionsInitiateCorporateActionArgs>;
 };

@@ -8,18 +8,25 @@ import {
   Context,
   DefaultPortfolio,
   DividendDistribution,
-  initiateCorporateAction,
-  InitiateCorporateActionParams,
   NumberedPortfolio,
   PolymeshError,
   PostTransactionValue,
   Procedure,
 } from '~/internal';
-import { CorporateActionKind, ErrorCode, InputCaCheckpoint, RoleType, TxTags } from '~/types';
+import {
+  CorporateActionKind,
+  ErrorCode,
+  InputCaCheckpoint,
+  InputCorporateActionTargets,
+  InputCorporateActionTaxWithholdings,
+  RoleType,
+  TxTags,
+} from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   bigNumberToBalance,
   bigNumberToU64,
+  corporateActionParamsToMeshCorporateActionArgs,
   dateToMoment,
   distributionToDividendDistributionParams,
   meshCorporateActionToCorporateActionParams,
@@ -58,17 +65,34 @@ export const createDividendDistributionResolver =
     );
   };
 
-export type ConfigureDividendDistributionParams = Omit<
-  InitiateCorporateActionParams,
-  'kind' | 'checkpoint'
-> & {
+export interface ConfigureDividendDistributionParams {
+  /**
+   * date at which the issuer publicly declared the Dividend Distribution. Optional, defaults to the current date
+   */
+  declarationDate?: Date;
+  description: string;
+  /**
+   * Asset Holder Identities to be included (or excluded) from the Dividend Distribution. Inclusion/exclusion is controlled by the `treatment`
+   *   property. When the value is `Include`, all Asset Holders not present in the array are excluded, and vice-versa. If no value is passed,
+   *   the default value for the Asset is used. If there is no default value, all Asset Holders will be part of the Dividend Distribution
+   */
+  targets?: InputCorporateActionTargets;
+  /**
+   * default percentage (0-100) of the Benefits to be held for tax purposes
+   */
+  defaultTaxWithholding?: BigNumber;
+  /**
+   * percentage (0-100) of the Benefits to be held for tax purposes from individual Asset Holder Identities.
+   *   This overrides the value of `defaultTaxWithholding`
+   */
+  taxWithholdings?: InputCorporateActionTaxWithholdings;
   /**
    * checkpoint to be used to calculate Dividends. If a Schedule is passed, the next Checkpoint it creates will be used.
    *   If a Date is passed, a Checkpoint will be created at that date and used
    */
   checkpoint: InputCaCheckpoint;
   /**
-   * portfolio from which the Dividends will be distributed. Optional, defaults to the Corporate Actions Agent's Default Portfolio
+   * portfolio from which the Dividends will be distributed. Optional, defaults to the Dividend Distributions Agent's Default Portfolio
    */
   originPortfolio?: NumberedPortfolio | BigNumber;
   /**
@@ -88,10 +112,10 @@ export type ConfigureDividendDistributionParams = Omit<
    */
   paymentDate: Date;
   /**
-   * Optional, defaults to never expiring
+   * optional, defaults to never expiring
    */
   expiryDate?: Date;
-};
+}
 
 /**
  * @hidden
@@ -116,7 +140,7 @@ export async function prepareConfigureDividendDistribution(
 ): Promise<PostTransactionValue<DividendDistribution>> {
   const {
     context: {
-      polymeshApi: { tx },
+      polymeshApi: { tx, query },
     },
     context,
     storage: { portfolio },
@@ -130,7 +154,11 @@ export async function prepareConfigureDividendDistribution(
     paymentDate,
     expiryDate = null,
     checkpoint,
-    ...corporateActionArgs
+    targets = null,
+    description,
+    declarationDate = new Date(),
+    defaultTaxWithholding = null,
+    taxWithholdings = null,
   } = args;
 
   if (currency === ticker) {
@@ -151,6 +179,26 @@ export async function prepareConfigureDividendDistribution(
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Expiry date must be after payment date',
+    });
+  }
+
+  if (declarationDate > new Date()) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Declaration date must be in the past',
+    });
+  }
+
+  const rawMaxDetailsLength = await query.corporateAction.maxDetailsLength();
+  const maxDetailsLength = u32ToBigNumber(rawMaxDetailsLength);
+
+  if (maxDetailsLength.lt(description.length)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Description too long',
+      data: {
+        maxLength: maxDetailsLength.toNumber(),
+      },
     });
   }
 
@@ -183,13 +231,6 @@ export async function prepareConfigureDividendDistribution(
     });
   }
 
-  const caId = await this.addProcedure(initiateCorporateAction(), {
-    ticker,
-    kind: CorporateActionKind.UnpredictableBenefit,
-    checkpoint: checkpointValue,
-    ...corporateActionArgs,
-  });
-
   const rawPortfolioNumber =
     originPortfolio &&
     optionize(bigNumberToU64)(
@@ -203,10 +244,22 @@ export async function prepareConfigureDividendDistribution(
   const rawExpiresAt = optionize(dateToMoment)(expiryDate, context);
 
   const [dividendDistribution] = this.addTransaction({
-    transaction: tx.capitalDistribution.distribute,
+    transaction: tx.corporateAction.initiateCorporateActionAndDistribute,
     resolvers: [createDividendDistributionResolver(context)],
     args: [
-      caId,
+      corporateActionParamsToMeshCorporateActionArgs(
+        {
+          ticker,
+          kind: CorporateActionKind.UnpredictableBenefit,
+          declarationDate,
+          checkpoint: checkpointValue,
+          description,
+          targets,
+          defaultTaxWithholding,
+          taxWithholdings,
+        },
+        context
+      ),
       rawPortfolioNumber,
       rawCurrency,
       rawPerShare,

@@ -15,6 +15,7 @@ import {
   PalletCorporateActionsCaId,
   PalletCorporateActionsCorporateAction,
   PalletCorporateActionsDistribution,
+  PalletCorporateActionsInitiateCorporateActionArgs,
   PalletStoFundraiser,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesAuthorizationAuthorizationData,
@@ -61,6 +62,7 @@ import {
   values,
 } from 'lodash';
 
+import { assertCaTaxWithholdingsValid } from '~/api/procedures/utils';
 import { meshCountryCodeToCountryCode } from '~/generated/utils';
 import {
   Account,
@@ -154,6 +156,8 @@ import {
   ExternalAgentCondition,
   IdentityCondition,
   IdentityWithClaims,
+  InputCorporateActionTargets,
+  InputCorporateActionTaxWithholdings,
   InputRequirement,
   InputTrustedClaimIssuer,
   InstructionType,
@@ -3327,11 +3331,41 @@ export function targetsToTargetIdentities(
   context: Context
 ): TargetIdentities {
   const { treatment, identities } = targets;
+  const { maxTargetIds } = context.polymeshApi.consts.corporateAction;
+
+  const maxTargets = u32ToBigNumber(maxTargetIds);
+
+  if (maxTargets.lt(targets.identities.length)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Too many target Identities',
+      data: {
+        maxTargets,
+      },
+    });
+  }
 
   return context.createType('TargetIdentities', {
     identities: identities.map(identity => stringToIdentityId(signerToString(identity), context)),
     treatment: context.createType('TargetTreatment', treatment),
   });
+}
+
+/**
+ * @hidden
+ */
+export function caTaxWithholdingsToMeshTaxWithholdings(
+  taxWithholdings: InputCorporateActionTaxWithholdings,
+  context: Context
+): [PolymeshPrimitivesIdentityId, Permill][] {
+  assertCaTaxWithholdingsValid(taxWithholdings, context);
+
+  return taxWithholdings.map(({ identity, percentage }) =>
+    tuple(
+      stringToIdentityId(signerToString(identity), context),
+      percentageToPermill(percentage, context)
+    )
+  );
 }
 
 /**
@@ -3371,6 +3405,56 @@ export function corporateActionIdentifierToCaId(
   return context.createType('PalletCorporateActionsCaId', {
     ticker: stringToTicker(ticker, context),
     localId: bigNumberToU32(localId, context),
+  });
+}
+
+/**
+ * @hidden
+ */
+export function corporateActionParamsToMeshCorporateActionArgs(
+  params: {
+    ticker: string;
+    kind: CorporateActionKind;
+    declarationDate: Date;
+    checkpoint: Date | Checkpoint | CheckpointSchedule;
+    description: string;
+    targets: InputCorporateActionTargets | null;
+    defaultTaxWithholding: BigNumber | null;
+    taxWithholdings: InputCorporateActionTaxWithholdings | null;
+  },
+  context: Context
+): PalletCorporateActionsInitiateCorporateActionArgs {
+  const {
+    ticker,
+    kind,
+    declarationDate,
+    checkpoint,
+    description,
+    targets,
+    defaultTaxWithholding,
+    taxWithholdings,
+  } = params;
+  const rawTicker = stringToTicker(ticker, context);
+  const rawKind = corporateActionKindToCaKind(kind, context);
+  const rawDeclDate = dateToMoment(declarationDate, context);
+  const rawRecordDate = optionize(checkpointToRecordDateSpec)(checkpoint, context);
+  const rawDetails = stringToBytes(description, context);
+  const rawTargets = optionize(targetsToTargetIdentities)(targets, context);
+  const rawTax = optionize(percentageToPermill)(defaultTaxWithholding, context);
+  const rawWithholdings = optionize(caTaxWithholdingsToMeshTaxWithholdings)(
+    taxWithholdings,
+    context
+  );
+
+  return context.createType('PalletCorporateActionsInitiateCorporateActionArgs', {
+    ticker: rawTicker,
+    kind: rawKind,
+    declDate: rawDeclDate,
+    recordDate: rawRecordDate,
+    details: rawDetails,
+    targets: rawTargets,
+    defaultWithholdingTax: rawTax,
+    withholdingTax: rawWithholdings,
   });
 }
 

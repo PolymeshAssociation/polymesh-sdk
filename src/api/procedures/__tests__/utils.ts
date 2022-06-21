@@ -7,7 +7,6 @@ import sinon from 'sinon';
 import {
   assertAuthorizationRequestValid,
   assertCaCheckpointValid,
-  assertCaTargetsValid,
   assertCaTaxWithholdingsValid,
   assertDistributionDatesValid,
   assertGroupDoesNotExist,
@@ -50,7 +49,6 @@ import {
   Signer,
   SignerType,
   SignerValue,
-  TargetTreatment,
   TickerReservationStatus,
   TrustedClaimIssuer,
   TxTags,
@@ -292,47 +290,6 @@ describe('assertSecondaryAccounts', () => {
   });
 });
 
-describe('assertCaTargetsValid', () => {
-  let mockContext: Mocked<Context>;
-
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  beforeEach(() => {
-    mockContext = dsMockUtils.getContextInstance();
-    dsMockUtils.setConstMock('corporateAction', 'maxTargetIds', {
-      returnValue: dsMockUtils.createMockU32(new BigNumber(1)),
-    });
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  it('should throw an error if there are more target Identities than the maximum', async () => {
-    expect(() =>
-      assertCaTargetsValid(
-        { identities: ['someDid', 'otherDid'], treatment: TargetTreatment.Include },
-        mockContext
-      )
-    ).toThrow('Too many target Identities');
-  });
-
-  it('should not throw an error if the number of target Identities is appropriate', async () => {
-    expect(() =>
-      assertCaTargetsValid(
-        { identities: ['someDid'], treatment: TargetTreatment.Include },
-        mockContext
-      )
-    ).not.toThrow();
-  });
-});
-
 describe('assertCaTaxWithholdingsValid', () => {
   let mockContext: Mocked<Context>;
 
@@ -458,7 +415,7 @@ describe('assertCaCheckpointValid', () => {
   });
 
   it('should throw an error if the payment date is earlier than the Checkpoint date', async () => {
-    const date = new Date(new Date().getTime());
+    const date = new Date(new Date().getTime() + 10000);
 
     let checkpoint: CheckpointSchedule | Date = date;
     const paymentDate = new Date(new Date().getTime() - 100000);
@@ -488,10 +445,10 @@ describe('assertCaCheckpointValid', () => {
   });
 
   it('should throw an error if the expiry date is earlier than the Checkpoint date', async () => {
-    const date = new Date(new Date().getTime() - 100000);
+    const date = new Date(new Date().getTime() + 10000);
 
     let checkpoint: CheckpointSchedule | Date = date;
-    const paymentDate = new Date(new Date().getTime());
+    const paymentDate = new Date(new Date().getTime() + 20000);
     const expiryDate = new Date(new Date().getTime() - 200000);
 
     let error;
