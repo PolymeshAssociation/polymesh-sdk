@@ -3723,12 +3723,19 @@ describe('middlewareV2EventDetailsToEventIdentifier', () => {
       datetime: new Date('10/14/1987').toISOString(),
     } as MiddlewareV2Block;
 
-    expect(middlewareV2EventDetailsToEventIdentifier(block, eventIdx)).toEqual({
+    const fakeResult = {
       blockNumber: new BigNumber(3000),
       blockDate: new Date('10/14/1987'),
-      eventIndex: new BigNumber(3),
       blockHash: 'someHash',
+      eventIndex: new BigNumber(3),
+    };
+
+    expect(middlewareV2EventDetailsToEventIdentifier(block)).toEqual({
+      ...fakeResult,
+      eventIndex: new BigNumber(0),
     });
+
+    expect(middlewareV2EventDetailsToEventIdentifier(block, eventIdx)).toEqual(fakeResult);
   });
 });
 

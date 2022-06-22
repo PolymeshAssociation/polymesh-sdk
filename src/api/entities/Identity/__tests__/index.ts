@@ -653,12 +653,9 @@ describe('Identity class', () => {
     it('should return a list of Assets', async () => {
       const identity = new Identity({ did }, context);
 
-      dsMockUtils.createApolloV2QueryStub(
-        assetHoldersQuery({ identityId: did }, undefined, undefined),
-        {
-          assetHolders: { nodes: tickers.map(ticker => ({ assetId: ticker })), totalCount: 2 },
-        }
-      );
+      dsMockUtils.createApolloV2QueryStub(assetHoldersQuery({ identityId: did }), {
+        assetHolders: { nodes: tickers.map(ticker => ({ assetId: ticker })), totalCount: 2 },
+      });
 
       let result = await identity.getHeldAssetsV2();
 

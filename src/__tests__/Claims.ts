@@ -405,7 +405,7 @@ describe('Claims Class', () => {
           dids: [targetDid],
           scope: undefined,
           trustedClaimIssuers: [issuerDid],
-          claimTypes: [ClaimTypeEnum.Accredited],
+          claimTypes: [ClaimTypeEnum.CustomerDueDiligence],
           includeExpired: false,
         }),
         {
@@ -416,7 +416,7 @@ describe('Claims Class', () => {
       let result = await claims.getIdentitiesWithClaimsV2({
         targets: [targetDid],
         trustedClaimIssuers: [issuerDid],
-        claimTypes: [ClaimType.Accredited],
+        claimTypes: [ClaimType.CustomerDueDiligence],
         includeExpired: false,
         size: new BigNumber(1),
         start: new BigNumber(0),
@@ -463,6 +463,91 @@ describe('Claims Class', () => {
       expect(JSON.stringify(result.data)).toBe(JSON.stringify(fakeClaims));
       expect(result.count).toEqual(new BigNumber(1));
       expect(result.next).toEqual(null);
+    });
+
+    it('should return a list of Identities with claims associated to them filtered by scope', async () => {
+      const targetDid = 'someTargetDid';
+      const issuerDid = 'someIssuerDid';
+      const scope: Scope = { type: ScopeType.Ticker, value: 'someValue' };
+      const date = 1589816265000;
+      const accreditedType = ClaimTypeEnum.Accredited;
+      const claimData = {
+        type: ClaimTypeEnum.Accredited,
+        scope,
+      };
+      const claim = {
+        target: entityMockUtils.getIdentityInstance({ did: targetDid }),
+        issuer: entityMockUtils.getIdentityInstance({ did: issuerDid }),
+        issuedAt: new Date(date),
+      };
+
+      const fakeClaims = [
+        {
+          identity: entityMockUtils.getIdentityInstance({ did: targetDid }),
+          claims: [
+            {
+              ...claim,
+              expiry: new Date(date),
+              claim: claimData,
+            },
+            {
+              ...claim,
+              expiry: null,
+              claim: claimData,
+            },
+          ],
+        },
+      ];
+      const commonClaimData = {
+        targetId: targetDid,
+        issuerId: issuerDid,
+        issuanceDate: date,
+      };
+      const claimsQueryResponse = {
+        nodes: [
+          {
+            ...commonClaimData,
+            expiry: date,
+            type: accreditedType,
+            scope: { type: 'Ticker', value: 'someValue' },
+          },
+          {
+            ...commonClaimData,
+            expiry: null,
+            type: accreditedType,
+            scope: { type: 'Ticker', value: 'someValue' },
+          },
+        ],
+      };
+
+      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
+
+      dsMockUtils.createApolloV2QueryStub(
+        claimsQuery({
+          dids: [targetDid],
+          scope: { type: 'Ticker', value: padString('someValue', 12) },
+          trustedClaimIssuers: [issuerDid],
+          claimTypes: [ClaimTypeEnum.Accredited],
+          includeExpired: false,
+        }),
+        {
+          claims: claimsQueryResponse,
+        }
+      );
+
+      const result = await claims.getIdentitiesWithClaimsV2({
+        targets: [targetDid],
+        trustedClaimIssuers: [issuerDid],
+        scope,
+        claimTypes: [ClaimType.Accredited],
+        includeExpired: false,
+        size: new BigNumber(1),
+        start: new BigNumber(0),
+      });
+
+      expect(JSON.stringify(result.data)).toBe(JSON.stringify(fakeClaims));
+      expect(result.count).toEqual(new BigNumber(1));
+      expect(result.next).toBeNull();
     });
   });
 
@@ -886,6 +971,7 @@ describe('Claims Class', () => {
       const did = 'someDid';
       const issuerDid = 'someIssuerDid';
       const date = 1589816265000;
+      const scope = { type: ScopeType.Custom, value: 'someValue' };
       const claim = {
         target: entityMockUtils.getIdentityInstance({ did }),
         issuer: entityMockUtils.getIdentityInstance({ did: issuerDid }),
@@ -929,7 +1015,7 @@ describe('Claims Class', () => {
       dsMockUtils.createApolloV2QueryStub(
         claimsQuery({
           dids: [did],
-          scope: undefined,
+          scope,
           trustedClaimIssuers: [issuerDid],
           includeExpired: false,
         }),
@@ -941,6 +1027,7 @@ describe('Claims Class', () => {
       let result = await claims.getTargetingClaimsV2({
         target: did,
         trustedClaimIssuers: [issuerDid],
+        scope,
         includeExpired: false,
         size: new BigNumber(1),
         start: new BigNumber(0),

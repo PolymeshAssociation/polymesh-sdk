@@ -85,15 +85,14 @@ function createClaimsFilters(variables: ClaimsQueryFilter): {
     filters.push('filterExpiry: { lessThan: $expiryTimestamp }');
   }
   return {
-    args: args.length ? `(${args.join()})` : '',
+    args: `(${args.join()})`,
     filter: `filter: { ${filters.join()} },`,
   };
 }
 
 export interface ClaimsQueryFilter {
   dids?: string[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  scope?: any;
+  scope?: Record<string, unknown>;
   trustedClaimIssuers?: string[];
   claimTypes?: ClaimTypeEnum[];
   includeExpired?: boolean;
@@ -266,7 +265,7 @@ function createEventFilters(attributes: QueryArgs<Event, EventArgs>): {
   });
 
   return {
-    args: args.length ? `(${args.join()})` : '',
+    args: `(${args.join()})`,
     filter: filters.length ? `filter: { ${filters.join()} }` : '',
   };
 }
@@ -370,7 +369,7 @@ function createExtrinsicFilters(attributes: QueryArgs<Extrinsic, ExtrinsicArgs>)
     }
   });
   return {
-    args: args.length ? `(${args.join()})` : '',
+    args: `(${args.join()})`,
     filter: filters.length ? `filter: { ${filters.join()} },` : '',
   };
 }
@@ -624,7 +623,7 @@ function createTickerExternalAgentActionFilters(
     }
   });
   return {
-    args: args.length ? `(${args.join()})` : '',
+    args: `(${args.join()})`,
     filter: filters.length ? `filter: { ${filters.join()} },` : '',
   };
 }

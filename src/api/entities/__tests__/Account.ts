@@ -516,6 +516,23 @@ describe('Account class', () => {
       expect(result.data[0].success).toBeFalsy();
       expect(result.count).toEqual(new BigNumber(20));
       expect(result.next).toBeNull();
+
+      dsMockUtils.createApolloV2QueryStub(
+        extrinsicsByArgs({
+          blockId: undefined,
+          address: addressKey,
+          moduleId: undefined,
+          callId: undefined,
+          success: undefined,
+        }),
+        {
+          extrinsics: { nodes: [] },
+        }
+      );
+
+      result = await account.getTransactionHistoryV2();
+      expect(result.data).toEqual([]);
+      expect(result.next).toBeNull();
     });
   });
 

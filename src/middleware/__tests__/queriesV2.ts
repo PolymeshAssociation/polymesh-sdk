@@ -117,13 +117,18 @@ describe('instructionsQuery', () => {
 
 describe('eventsByArgs', () => {
   it('should pass the variables to the grapqhl query', () => {
+    let result = eventsByArgs({});
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({});
+
     const variables = {
       moduleId: ModuleIdEnum.Asset,
       eventId: EventIdEnum.AssetCreated,
       eventArg0: 'TICKER',
     };
 
-    let result = eventsByArgs(variables);
+    result = eventsByArgs(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
@@ -154,6 +159,11 @@ describe('extrinsicByHash', () => {
 
 describe('extrinsicsByArgs', () => {
   it('should pass the variables to the grapqhl query', () => {
+    let result = extrinsicsByArgs({});
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({});
+
     const variables = {
       blockId: '123',
       address: 'someAddress',
@@ -162,7 +172,7 @@ describe('extrinsicsByArgs', () => {
       success: 1,
     };
 
-    const result = extrinsicsByArgs(variables);
+    result = extrinsicsByArgs(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
@@ -251,6 +261,11 @@ describe('tickerExternalAgentHistoryQuery', () => {
 
 describe('tickerExternalAgentActionsQuery', () => {
   it('should pass the variables to the grapqhl query', () => {
+    let result = tickerExternalAgentActionsQuery({});
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({});
+
     const variables = {
       assetId: 'SOME_TICKER',
       callerId: 'someDid',
@@ -258,7 +273,7 @@ describe('tickerExternalAgentActionsQuery', () => {
       eventId: 'controllerTransfer',
     };
 
-    let result = tickerExternalAgentActionsQuery(variables);
+    result = tickerExternalAgentActionsQuery(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
