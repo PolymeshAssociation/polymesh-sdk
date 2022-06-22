@@ -1,11 +1,22 @@
+import { PolymeshPrimitivesTransferComplianceTransferCondition } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import {
   AddAssetStatParams,
   AddBalanceStatParams,
+  AddClaimCountStatParams,
+  AddClaimOwnershipStatParams,
   AddCountStatParams,
 } from '~/api/procedures/addAssetStat';
+import {
+  AddClaimCountTransferRestrictionParams,
+  AddClaimOwnershipTransferRestrictionParams,
+} from '~/api/procedures/addTransferRestriction';
 import { removeAssetStat, RemoveAssetStatParams } from '~/api/procedures/removeAssetStat';
+import {
+  SetClaimCountTransferRestrictionsParams,
+  SetClaimOwnershipTransferRestrictionsParams,
+} from '~/api/procedures/setTransferRestrictions';
 import {
   addAssetStat,
   AddAssetStatStorage,
@@ -26,6 +37,9 @@ import {
 } from '~/internal';
 import {
   ActiveTransferRestrictions,
+  ClaimCountTransferRestriction,
+  ClaimOwnershipTransferRestriction,
+  ClaimRestrictionValue,
   CountTransferRestriction,
   NoArgsProcedureMethod,
   PercentageTransferRestriction,
@@ -44,24 +58,44 @@ import { createProcedureMethod } from '~/utils/internal';
 type AddRestrictionParams<T> = Omit<
   T extends TransferRestrictionType.Count
     ? AddCountTransferRestrictionParams
-    : AddPercentageTransferRestrictionParams,
+    : T extends TransferRestrictionType.Percentage
+    ? AddPercentageTransferRestrictionParams
+    : T extends TransferRestrictionType.ClaimCount
+    ? AddClaimCountTransferRestrictionParams
+    : AddClaimOwnershipTransferRestrictionParams,
   'type'
 >;
 
 type SetRestrictionsParams<T> = Omit<
   T extends TransferRestrictionType.Count
     ? SetCountTransferRestrictionsParams
-    : SetPercentageTransferRestrictionsParams,
+    : T extends TransferRestrictionType.Percentage
+    ? SetPercentageTransferRestrictionsParams
+    : T extends TransferRestrictionType.ClaimCount
+    ? SetClaimCountTransferRestrictionsParams
+    : SetClaimOwnershipTransferRestrictionsParams,
   'type'
 >;
 
 type SetAssetStatParams<T> = Omit<
-  T extends TransferRestrictionType.Count ? AddCountStatParams : AddBalanceStatParams,
+  T extends TransferRestrictionType.Count
+    ? AddCountStatParams
+    : T extends TransferRestrictionType.Percentage
+    ? AddBalanceStatParams
+    : T extends TransferRestrictionType.ClaimCount
+    ? AddClaimCountStatParams
+    : AddClaimOwnershipStatParams,
   'type'
 >;
 
 type GetReturnType<T> = ActiveTransferRestrictions<
-  T extends TransferRestrictionType.Count ? CountTransferRestriction : PercentageTransferRestriction
+  T extends TransferRestrictionType.Count
+    ? CountTransferRestriction
+    : T extends TransferRestrictionType.Percentage
+    ? PercentageTransferRestriction
+    : T extends TransferRestrictionType.ClaimCount
+    ? ClaimCountTransferRestriction
+    : ClaimOwnershipTransferRestriction
 >;
 
 /**
@@ -104,7 +138,7 @@ export abstract class TransferRestrictionBase<
       {
         getProcedureAndArgs: args => [
           setTransferRestrictions,
-          { ...args, type: this.type, ticker } as unknown as SetTransferRestrictionsParams,
+          { ...args, type: this.type, ticker } as SetTransferRestrictionsParams,
         ],
       },
       context
@@ -122,7 +156,7 @@ export abstract class TransferRestrictionBase<
             restrictions: [],
             type: this.type,
             ticker,
-          } as unknown as SetTransferRestrictionsParams,
+          } as SetTransferRestrictionsParams,
         ],
         voidArgs: true,
       },
@@ -140,7 +174,7 @@ export abstract class TransferRestrictionBase<
           addAssetStat,
           {
             ...args,
-            type: this.type === TransferRestrictionType.Count ? StatType.Count : StatType.Balance,
+            type: this.statType(),
             ticker,
           } as AddAssetStatParams,
         ],
@@ -159,7 +193,7 @@ export abstract class TransferRestrictionBase<
           removeAssetStat,
           {
             ...args,
-            type: this.type === TransferRestrictionType.Count ? StatType.Count : StatType.Balance,
+            type: this.type === TransferRestrictionType.Count ? StatType.Count : StatType.Balance, // need better type lookup
             ticker,
           },
         ],
@@ -222,12 +256,19 @@ export abstract class TransferRestrictionBase<
     } = this;
     const tickerKey = stringToTickerKey(ticker, context);
     const complianceRules = await statistics.assetTransferCompliances(tickerKey);
-    const filteredRequirements = complianceRules.requirements.filter(requirement => {
+    complianceRules.requirements.forEach(a => console.log(a.toHuman()));
+    const filteredRequirements = (
+      complianceRules.requirements as unknown as Array<PolymeshPrimitivesTransferComplianceTransferCondition>
+    ).filter(requirement => {
       if (type === TransferRestrictionType.Count) {
         return requirement.isMaxInvestorCount;
+      } else if (type === TransferRestrictionType.Percentage) {
+        return requirement.isMaxInvestorOwnership;
+      } else if (type === TransferRestrictionType.ClaimCount) {
+        return requirement.isMaxInvestorOwnership;
+      } else {
+        return requirement.isClaimOwnership;
       }
-
-      return requirement.isMaxInvestorOwnership;
     });
 
     const rawExemptedLists = await Promise.all(
@@ -244,17 +285,31 @@ export abstract class TransferRestrictionBase<
           },
         ]) => scopeIdToString(scopeId) // `ScopeId` and `IdentityId` are the same type, so this is fine
       );
-      const { value } = transferConditionToTransferRestriction(filteredRequirements[index]);
+      const { value } = transferConditionToTransferRestriction(
+        filteredRequirements[index],
+        context
+      );
       let restriction;
 
       if (type === TransferRestrictionType.Count) {
         restriction = {
           count: value,
         };
-      } else {
+      } else if (type === TransferRestrictionType.Percentage) {
         restriction = {
           percentage: value,
         };
+      } else if (type === TransferRestrictionType.ClaimCount) {
+        const { min, max, claim, issuer } = value as ClaimRestrictionValue;
+        restriction = {
+          min,
+          max,
+          claim,
+          issuer,
+        };
+      } else {
+        const { min, max, claim, issuer } = value as ClaimRestrictionValue;
+        restriction = { min, max, claim, issuer };
       }
 
       if (exemptedIds.length) {
@@ -272,5 +327,21 @@ export abstract class TransferRestrictionBase<
       restrictions: restrictions,
       availableSlots: maxTransferConditions.minus(restrictions.length),
     } as GetReturnType<T>;
+  }
+
+  /**
+   * @hidden
+   */
+  private statType(): StatType {
+    const { type } = this;
+    if (type === TransferRestrictionType.Count) {
+      return StatType.Count;
+    } else if (type === TransferRestrictionType.Percentage) {
+      return StatType.Balance;
+    } else if (type === TransferRestrictionType.ClaimCount) {
+      return StatType.ScopedCount;
+    } else {
+      return StatType.ScopedBalance;
+    }
   }
 }

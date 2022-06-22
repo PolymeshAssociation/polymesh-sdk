@@ -3,6 +3,7 @@
 
 import type { ApiTypes } from '@polkadot/api-base/types';
 import type {
+  BTreeSet,
   Bytes,
   Null,
   Option,
@@ -2558,7 +2559,7 @@ declare module '@polkadot/api-base/types/storage' {
         ApiType,
         (
           arg: PolymeshPrimitivesStatisticsAssetScope | { Ticker: any } | string | Uint8Array
-        ) => Observable<Vec<PolymeshPrimitivesStatisticsStatType>>,
+        ) => Observable<BTreeSet<PolymeshPrimitivesStatisticsStatType>>,
         [PolymeshPrimitivesStatisticsAssetScope]
       >;
       /**

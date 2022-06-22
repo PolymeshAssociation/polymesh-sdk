@@ -1,37 +1,47 @@
-import { BTreeSetStatType } from '@polkadot/types/lookup';
+import { BTreeSetStatType, PolymeshPrimitivesStatisticsStatType } from '@polkadot/types/lookup';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
-import { AddCountStatInput, ClaimType, ErrorCode, Identity, StatType, TxTags } from '~/types';
+import {
+  AddCountStatInput,
+  ClaimCountStatInput,
+  ClaimOwnershipStatInput,
+  ErrorCode,
+  StatType,
+  TxTags,
+} from '~/types';
 import { ProcedureAuthorization, StatisticsOpType } from '~/types/internal';
 import {
-  bigNumberToU128,
+  claimCountStatInputToStatUpdates,
   claimIssuerToMeshClaimIssuer,
-  createStat2ndKey,
+  countStatInputToStatUpdates,
   statisticsOpTypeToStatOpType,
   statisticsOpTypeToStatType,
-  statUpdate,
-  statUpdatesToBtreeStatUpdate,
   stringToTickerKey,
 } from '~/utils/conversion';
 import { checkTxType, compareStatsToInput } from '~/utils/internal';
 
-export type AddStatParamsBase = {
-  claimIssuer?: {
-    claimType: ClaimType;
-    issuer: Identity;
-  };
+export type AddCountStatParams = AddCountStatInput & {
+  type: StatType.Count;
 };
 
-export type AddCountStatParams = AddCountStatInput &
-  AddStatParamsBase & {
-    type: StatType.Count;
-  };
-
-export type AddBalanceStatParams = AddStatParamsBase & {
+export type AddBalanceStatParams = {
   type: StatType.Balance;
 };
 
-export type AddAssetStatParams = { ticker: string } & (AddCountStatParams | AddBalanceStatParams);
+export type AddClaimCountStatParams = ClaimCountStatInput & {
+  type: StatType.ScopedCount;
+};
+
+export type AddClaimOwnershipStatParams = ClaimOwnershipStatInput & {
+  type: StatType.ScopedBalance;
+};
+
+export type AddAssetStatParams = { ticker: string } & (
+  | AddCountStatParams
+  | AddBalanceStatParams
+  | AddClaimCountStatParams
+  | AddClaimOwnershipStatParams
+);
 
 export interface Storage {
   currentStats: BTreeSetStatType;
@@ -53,25 +63,26 @@ export async function prepareAddAssetStat(
     storage: { currentStats },
     context,
   } = this;
-  const { ticker, type, claimIssuer } = args;
+  const { ticker, type } = args;
 
   const tickerKey = stringToTickerKey(ticker, context);
 
   const op =
-    type === StatType.Count
+    type === StatType.Count || type === StatType.ScopedCount
       ? statisticsOpTypeToStatOpType(StatisticsOpType.Count, context)
       : statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
 
   const transactions = [];
 
-  const rawClaimIssuer = claimIssuer
-    ? claimIssuerToMeshClaimIssuer(claimIssuer, context)
-    : undefined;
-  // need to pass claim issuer as well
-  const newStat = statisticsOpTypeToStatType({ op, claimIssuer: rawClaimIssuer }, context);
-  currentStats.push(newStat);
-  currentStats.sort().reverse();
+  let rawClaimIssuer;
+  if (args.type === StatType.ScopedCount || args.type === StatType.ScopedBalance) {
+    rawClaimIssuer = claimIssuerToMeshClaimIssuer(args.claimIssuer, context);
+  }
 
+  const newStat = statisticsOpTypeToStatType({ op, claimIssuer: rawClaimIssuer }, context);
+  console.log(currentStats.toHuman());
+  // currentStats.set(newStat);
+  // currentStats.sort().reverse();
   transactions.push(
     checkTxType({
       transaction: statistics.setActiveAssetStats,
@@ -79,19 +90,30 @@ export async function prepareAddAssetStat(
     })
   );
 
-  // Count stats need the user to provide the initial value for the counter
-  // if (args.type === StatType.Count) {
-  //   const holderCount = args.count;
-  //   const secondKey = createStat2ndKey(context); // this wont work for something like claimIssuer or accredited
-  //   const stat = statUpdate(secondKey, bigNumberToU128(holderCount, context), context);
-  //   const statValue = statUpdatesToBtreeStatUpdate([stat], context);
-  //   transactions.push(
-  //     checkTxType({
-  //       transaction: statistics.batchUpdateAssetStats,
-  //       args: [tickerKey, newStat, statValue],
-  //     })
-  //   );
-  // }
+  // Count stats need the user to provide the initial value for the counter as computing them present a DOS attack vector on chain
+  // We require users to provide initial stats so they won't miss setting initial values
+  if (args.type === StatType.Count) {
+    const statValue = countStatInputToStatUpdates(args, context);
+    transactions.push(
+      checkTxType({
+        transaction: statistics.batchUpdateAssetStats,
+        args: [tickerKey, newStat, statValue],
+      })
+    );
+  } else if (args.type === StatType.ScopedCount) {
+    if (args.type === StatType.ScopedCount) {
+      const {
+        claimIssuer: { value },
+      } = args;
+      const statValue = claimCountStatInputToStatUpdates(value, context);
+      transactions.push(
+        checkTxType({
+          transaction: statistics.batchUpdateAssetStats,
+          args: [tickerKey, newStat, statValue],
+        })
+      );
+    }
+  }
 
   this.addBatchTransaction({ transactions });
 }
@@ -136,7 +158,9 @@ export async function prepareStorage(
 
   const tickerKey = stringToTickerKey(ticker, context);
   const currentStats = await statistics.activeAssetStats(tickerKey);
-  const needStat = !currentStats.find(s => compareStatsToInput(s, args));
+  const needStat = !(currentStats as unknown as Array<PolymeshPrimitivesStatisticsStatType>).find(
+    s => compareStatsToInput(s, args)
+  );
 
   if (!needStat) {
     throw new PolymeshError({

@@ -1,4 +1,4 @@
-import { BTreeSetStatType } from '@polkadot/types/lookup';
+import { BTreeSetStatType, PolymeshPrimitivesStatisticsStatType } from '@polkadot/types/lookup';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import { ClaimIssuer, ErrorCode, StatType, TxTags } from '~/types';
@@ -15,21 +15,40 @@ import {
   compareTransferRestrictionToStat,
 } from '~/utils/internal';
 
-export interface RemoveAssetStatParamsBase {
-  claimIssuer?: ClaimIssuer;
-}
-
-export type RemoveCountStatParams = RemoveAssetStatParamsBase & {
+export type RemoveCountStatParams = {
   type: StatType.Count;
 };
 
-export type RemoveBalanceStatParams = RemoveAssetStatParamsBase & {
+export type RemoveBalanceStatParams = {
   type: StatType.Balance;
 };
+
+export type RemoveScopedCountStatParams = {
+  type: StatType.ScopedCount;
+  claimIssuer: ClaimIssuer;
+};
+
+export type RemoveScopedBalanceStatParams = {
+  type: StatType.ScopedBalance;
+  claimIssuer: ClaimIssuer;
+};
+
+export type RemoveAssetStatInput<T> = Omit<
+  T extends StatType.Count
+    ? RemoveCountStatParams
+    : T extends StatType.Balance
+    ? RemoveBalanceStatParams
+    : T extends StatType.ScopedCount
+    ? RemoveScopedCountStatParams
+    : RemoveScopedBalanceStatParams,
+  'type'
+>;
 
 export type RemoveAssetStatParams = { ticker: string } & (
   | RemoveCountStatParams
   | RemoveBalanceStatParams
+  | RemoveScopedCountStatParams
+  | RemoveScopedBalanceStatParams
 );
 
 export interface Storage {
@@ -52,7 +71,7 @@ export async function prepareRemoveAssetStat(
     storage: { currentStats },
     context,
   } = this;
-  const { ticker, type, claimIssuer } = args;
+  const { ticker, type } = args;
 
   const tickerKey = stringToTickerKey(ticker, context);
 
@@ -61,20 +80,21 @@ export async function prepareRemoveAssetStat(
       ? statisticsOpTypeToStatOpType(StatisticsOpType.Count, context)
       : statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
 
-  const rawClaimIssuer = claimIssuer
-    ? claimIssuerToMeshClaimIssuer(claimIssuer, context)
-    : undefined;
+  let rawClaimIssuer;
+  if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
+    rawClaimIssuer = claimIssuerToMeshClaimIssuer(args.claimIssuer, context);
+  }
 
   const newStat = statisticsOpTypeToStatType({ op, claimIssuer: rawClaimIssuer }, context);
-  const removeIndex = currentStats.indexOf(newStat);
-  console.log('removing index of: ', removeIndex);
-  const statsArr = currentStats.toArray();
-  statsArr.splice(removeIndex, 1);
+  const removed = currentStats.delete(newStat);
+  console.log('removed? ', removed);
+  // const statsArr = currentStats.toArray();
+  // statsArr.splice(removeIndex, 1);
 
   this.addTransaction(
     checkTxType({
       transaction: statistics.setActiveAssetStats,
-      args: [tickerKey, statsArr as BTreeSetStatType],
+      args: [tickerKey, currentStats as BTreeSetStatType],
     })
   );
 }
@@ -112,14 +132,16 @@ export async function prepareStorage(
       },
     },
   } = this;
-  const { ticker, type, claimIssuer } = args;
+  const { ticker, type } = args;
 
   const tickerKey = stringToTickerKey(ticker, context);
   const [currentStats, { requirements }] = await Promise.all([
     statistics.activeAssetStats(tickerKey),
     statistics.assetTransferCompliances(tickerKey),
   ]);
-  const missingStat = !currentStats.find(s => {
+  const missingStat = !(
+    currentStats as unknown as Array<PolymeshPrimitivesStatisticsStatType>
+  ).find(s => {
     return compareStatsToInput(s, args);
   });
 
@@ -130,13 +152,13 @@ export async function prepareStorage(
     });
   }
 
+  let claimIssuer: ClaimIssuer;
+  if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
+    claimIssuer = args.claimIssuer;
+  }
+
   requirements.forEach(r => {
-    const used = compareTransferRestrictionToStat(
-      r,
-      type,
-      claimIssuer?.issuer.did,
-      claimIssuer?.claimType
-    );
+    const used = compareTransferRestrictionToStat(r, type, claimIssuer);
 
     if (used) {
       throw new PolymeshError({
@@ -148,7 +170,7 @@ export async function prepareStorage(
   });
 
   return {
-    currentStats,
+    currentStats: currentStats as unknown as BTreeSetStatType,
   };
 }
 

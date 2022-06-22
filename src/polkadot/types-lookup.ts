@@ -4,6 +4,7 @@
 declare module '@polkadot/types/lookup' {
   import type {
     BTreeMap,
+    BTreeSet,
     Bytes,
     Compact,
     Enum,
@@ -5384,14 +5385,14 @@ declare module '@polkadot/types/lookup' {
   }
 
   /** @name BTreeSetStatType (512) */
-  export interface BTreeSetStatType extends Vec<PolymeshPrimitivesStatisticsStatType> {}
+  export interface BTreeSetStatType extends BTreeSet<PolymeshPrimitivesStatisticsStatType> {}
 
   /** @name BTreeSetStatUpdate (513) */
   export interface BTreeSetStatUpdate extends Vec<PolymeshPrimitivesStatisticsStatUpdate> {}
 
   /** @name BTreeSetTransferCondition (514) */
   export interface BTreeSetTransferCondition
-    extends Vec<PolymeshPrimitivesTransferComplianceTransferCondition> {}
+    extends BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition> {}
 
   /** @name BTreeSetIdentityId (515) */
   export interface BTreeSetIdentityId extends Vec<PolymeshPrimitivesIdentityId> {}

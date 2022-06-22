@@ -1,15 +1,14 @@
 import BigNumber from 'bignumber.js';
 
+import { AddClaimOwnershipTransferRestrictionParams } from '~/api/procedures/addTransferRestriction';
 import { RemoveAssetStatParams } from '~/api/procedures/removeAssetStat';
-import {
-  AddPercentageTransferRestrictionParams,
-  SetPercentageTransferRestrictionsParams,
-  TransferRestrictionBase,
-} from '~/internal';
+import { SetClaimOwnershipTransferRestrictionsParams } from '~/api/procedures/setTransferRestrictions';
+import { TransferRestrictionBase } from '~/internal';
 import {
   ActiveTransferRestrictions,
+  ClaimOwnershipStatInput,
+  ClaimOwnershipTransferRestriction,
   NoArgsProcedureMethod,
-  PercentageTransferRestriction,
   ProcedureMethod,
   TransferRestrictionType,
 } from '~/types';
@@ -17,8 +16,8 @@ import {
 /**
  * Handles all Percentage Transfer Restriction related functionality
  */
-export class Percentage extends TransferRestrictionBase<TransferRestrictionType.Percentage> {
-  protected type = TransferRestrictionType.Percentage as const;
+export class ClaimOwnership extends TransferRestrictionBase<TransferRestrictionType.ClaimOwnership> {
+  protected type = TransferRestrictionType.ClaimOwnership as const;
 
   /**
    * Add a Percentage Transfer Restriction to this Asset. This limits the total percentage of the float
@@ -29,7 +28,7 @@ export class Percentage extends TransferRestrictionBase<TransferRestrictionType.
    * @throws if the Balance statistic is not enabled for this Asset. enableStat should be called before this method
    */
   public declare addRestriction: ProcedureMethod<
-    Omit<AddPercentageTransferRestrictionParams, 'type'>,
+    Omit<AddClaimOwnershipTransferRestrictionParams, 'type'>,
     BigNumber
   >;
 
@@ -39,12 +38,12 @@ export class Percentage extends TransferRestrictionBase<TransferRestrictionType.
    * @note the result is the total amount of restrictions after the procedure has run
    */
   public declare setRestrictions: ProcedureMethod<
-    Omit<SetPercentageTransferRestrictionsParams, 'type'>,
+    Omit<SetClaimOwnershipTransferRestrictionsParams, 'type'>,
     BigNumber
   >;
 
   /**
-   * Removes all Percentage Transfer Restrictions from this Asset
+   * Removes all Claim Ownership Transfer Restrictions from this Asset
    *
    * @note the result is the total amount of restrictions after the procedure has run
    */
@@ -54,7 +53,7 @@ export class Percentage extends TransferRestrictionBase<TransferRestrictionType.
    * Enables investor balance statistic for the Asset, which is required before creating restrictions
    * that limit the total ownership of a company
    */
-  public declare enableStat: NoArgsProcedureMethod<void>;
+  public declare enableStat: ProcedureMethod<Omit<ClaimOwnershipStatInput, 'type'>, void>;
 
   /**
    * Disables investor balance statistic for the Asset. Since statistics introduce slight overhead to each transaction
@@ -65,11 +64,11 @@ export class Percentage extends TransferRestrictionBase<TransferRestrictionType.
   public declare disableStat: ProcedureMethod<Omit<RemoveAssetStatParams, 'type'>, void>;
 
   /**
-   * Retrieve all active Percentage Transfer Restrictions
+   * Retrieve all active ClaimOwnership Transfer Restrictions
    *
    * @note there is a maximum number of restrictions allowed across all types.
    *   The `availableSlots` property of the result represents how many more restrictions can be added
    *   before reaching that limit
    */
-  public declare get: () => Promise<ActiveTransferRestrictions<PercentageTransferRestriction>>;
+  public declare get: () => Promise<ActiveTransferRestrictions<ClaimOwnershipTransferRestriction>>;
 }

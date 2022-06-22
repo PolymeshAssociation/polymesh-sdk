@@ -1,4 +1,4 @@
-import { bool, Bytes, Text, u8, u16, u32, u64, u128 } from '@polkadot/types';
+import { bool, Bytes, Option, Text, u8, u16, u32, u64, u128 } from '@polkadot/types';
 import {
   AccountId,
   Balance,
@@ -35,6 +35,7 @@ import {
   PolymeshPrimitivesTicker,
   PolymeshPrimitivesTransferComplianceTransferCondition,
 } from '@polkadot/types/lookup';
+import { ITuple } from '@polkadot/types/types';
 import {
   hexToU8a,
   isHex,
@@ -62,7 +63,7 @@ import {
   values,
 } from 'lodash';
 
-import { meshCountryCodeToCountryCode } from '~/generated/utils';
+import { countryCodeToMeshCountryCode, meshCountryCodeToCountryCode } from '~/generated/utils';
 import {
   Account,
   Asset,
@@ -105,11 +106,13 @@ import {
   EcdsaSignature,
   FundraiserTier,
   GranularCanTransferResult,
+  IdentityId,
   InstructionStatus as MeshInstructionStatus,
   InvestorZKProofData,
   Memo,
   Moment,
   MovePortfolioItem,
+  Percentage,
   Permissions as MeshPermissions,
   PortfolioId as MeshPortfolioId,
   PosRatio,
@@ -124,6 +127,7 @@ import {
   SecondaryKey as MeshSecondaryKey,
   SettlementType,
   Signatory,
+  StatClaim,
   StoredSchedule,
   TargetIdentities,
   TargetIdentity,
@@ -139,7 +143,9 @@ import {
   CalendarUnit,
   CheckpointScheduleParams,
   Claim,
+  ClaimCountInitialStatInput,
   ClaimIssuer,
+  ClaimRestrictionValue,
   ClaimType,
   Compliance,
   Condition,
@@ -149,6 +155,8 @@ import {
   CorporateActionKind,
   CorporateActionParams,
   CorporateActionTargets,
+  CountryCode,
+  CountTransferRestrictionInput,
   DividendDistributionParams,
   ErrorCode,
   EventIdentifier,
@@ -185,7 +193,8 @@ import {
   SignerType,
   SignerValue,
   SingleClaimCondition,
-  StatClaim,
+  StatClaimType,
+  StatClaimUser,
   TargetTreatment,
   Tier,
   TransactionPermissions,
@@ -516,6 +525,66 @@ export function percentageToPermill(value: BigNumber, context: Context): Permill
  */
 export function permillToBigNumber(value: Permill): BigNumber {
   return new BigNumber(value.toString()).shiftedBy(-4); // (value : 10^6) * 100
+}
+
+/**
+ *  @hidden
+ */
+export function meshClaimToStatClaimUser(claim: StatClaim): StatClaimUser {
+  if (claim.isAccredited) {
+    return {
+      type: ClaimType.Accredited,
+      accredited: boolToBoolean(claim.asAccredited),
+    };
+  } else if (claim.isAffiliate) {
+    return {
+      type: ClaimType.Affiliate,
+      affiliate: boolToBoolean(claim.asAffiliate),
+    };
+  } else if (claim.isJurisdiction) {
+    return {
+      type: ClaimType.Jurisdiction,
+      countryCode: claim.asJurisdiction.isSome
+        ? meshCountryCodeToCountryCode(claim.asJurisdiction.unwrap())
+        : undefined,
+    };
+  }
+
+  throw new PolymeshError({
+    code: ErrorCode.UnexpectedError,
+    message: 'Unexpected claim type. Please report to the Polymath team',
+  });
+}
+
+/**
+ * @hidden
+ */
+export function claimCountToClaimRestrictionValue(
+  value: ITuple<[StatClaim, IdentityId, u64, Option<u64>]>,
+  context: Context
+): ClaimRestrictionValue {
+  const [claim, issuer, min, max] = value;
+  return {
+    claim: meshClaimToStatClaimUser(claim),
+    issuer: new Identity({ did: identityIdToString(issuer) }, context),
+    min: u64ToBigNumber(min),
+    max: max.isSome ? u64ToBigNumber(max.unwrap()) : undefined,
+  };
+}
+/**
+ * @hidden
+ */
+export function claimOwnershipToClaimRestrictionValue(
+  value: ITuple<[StatClaim, IdentityId, Percentage, Percentage]>,
+  context: Context
+): ClaimRestrictionValue {
+  const [claim, issuer, min, max] = value;
+  return {
+    claim: meshClaimToStatClaimUser(claim),
+    issuer: new Identity({ did: identityIdToString(issuer) }, context),
+    min: permillToBigNumber(min),
+    max: permillToBigNumber(max),
+  };
 }
 
 /**
@@ -2120,12 +2189,12 @@ export function meshClaimToClaim(claim: MeshClaim): Claim {
 /**
  * @hidden
  */
-export function statsClaimToClaim(claim: PolymeshPrimitivesStatisticsStatClaim): StatClaim {
+export function statsClaimToClaim(claim: PolymeshPrimitivesStatisticsStatClaim): StatClaimUser {
   if (claim.isJurisdiction) {
     const code = claim.asJurisdiction;
     return {
       type: ClaimType.Jurisdiction,
-      code: code.isSome ? meshCountryCodeToCountryCode(code.unwrap()) : undefined,
+      countryCode: code.isSome ? meshCountryCodeToCountryCode(code.unwrap()) : undefined,
     };
   } else if (claim.isAccredited) {
     return { type: ClaimType.Accredited };
@@ -2188,6 +2257,15 @@ export function meshClaimTypeToClaimType(
   }
 
   return ClaimType.Blocked;
+}
+
+/**
+ * @hidden
+ */
+export function meshClaimTypeToStatClaimType(
+  claimType: PolymeshPrimitivesIdentityClaimClaimType
+): StatClaimType {
+  return meshClaimTypeToClaimType(claimType) as StatClaimType;
 }
 /**
  * @hidden
@@ -2775,12 +2853,40 @@ export function transferRestrictionToPolymeshTransferCondition(
 
   if (type === TransferRestrictionType.Count) {
     restrictionType = 'MaxInvestorCount';
-    restrictionValue = bigNumberToU64(value, context);
-  } else {
+    restrictionValue = bigNumberToU64(value as BigNumber, context);
+  } else if (type === TransferRestrictionType.Percentage) {
     restrictionType = 'MaxInvestorOwnership';
-    restrictionValue = percentageToPermill(value, context);
+    console.log('value is:', value);
+    restrictionValue = percentageToPermill(value as BigNumber, context);
+  } else if (type === TransferRestrictionType.ClaimCount) {
+    restrictionType = 'ClaimCount';
+    restrictionValue = value;
+    const castedValue = value as ClaimRestrictionValue;
+    const { type: claimType } = castedValue.claim;
+    let val;
+    if (castedValue.claim.type === ClaimType.Accredited) {
+      val = booleanToBool(castedValue.claim.accredited!, context);
+    } else if (castedValue.claim.type === ClaimType.Affiliate) {
+      val = booleanToBool(castedValue.claim.affiliate!, context);
+    } else {
+      val = countryCodeToMeshCountryCode(castedValue.claim.countryCode!, context);
+    }
+    const claimValue = {
+      [claimType]: val,
+    };
+    console.log('claim Value: ', claimValue);
+    const rawIdentityId = stringToIdentityId(castedValue.issuer.did, context);
+    const rawMin = bigNumberToU64(castedValue.min, context);
+    const rawMax = optionize(bigNumberToU64)(castedValue.max, context);
+    restrictionType = 'ClaimCount';
+    restrictionValue = [claimValue, rawIdentityId, rawMin, rawMax];
+  } else {
+    restrictionType = 'ClaimOwnership';
+    restrictionValue = value;
+    // const castedValue = value as ClaimRestrictionValue;
   }
 
+  console.log('conversion: ', restrictionType, restrictionValue);
   return context.createType('PolymeshPrimitivesTransferComplianceTransferCondition', {
     [restrictionType]: restrictionValue,
   });
@@ -2802,7 +2908,8 @@ export function scopeIdsToBtreeSetIdentityId(
  * @hidden
  */
 export function transferConditionToTransferRestriction(
-  transferCondition: TransferCondition
+  transferCondition: TransferCondition,
+  context: Context
 ): TransferRestriction {
   if (transferCondition.isMaxInvestorCount) {
     return {
@@ -2813,6 +2920,16 @@ export function transferConditionToTransferRestriction(
     return {
       type: TransferRestrictionType.Percentage,
       value: permillToBigNumber(transferCondition.asMaxInvestorOwnership),
+    };
+  } else if (transferCondition.isClaimCount) {
+    return {
+      type: TransferRestrictionType.ClaimCount,
+      value: claimCountToClaimRestrictionValue(transferCondition.asClaimCount, context),
+    };
+  } else if (transferCondition.isClaimOwnership) {
+    return {
+      type: TransferRestrictionType.ClaimOwnership,
+      value: claimOwnershipToClaimRestrictionValue(transferCondition.asClaimOwnership, context),
     };
   } else {
     throw new PolymeshError({
@@ -2891,7 +3008,7 @@ export function granularCanTransferResultToTransferBreakdown(
 
   const restrictions = transferConditionResult.map(({ condition, result: tmResult }) => {
     return {
-      restriction: transferConditionToTransferRestriction(condition),
+      restriction: transferConditionToTransferRestriction(condition, context),
       result: boolToBoolean(tmResult),
     };
   });
@@ -3448,7 +3565,15 @@ export function statUpdatesToBtreeStatUpdate(
 export function meshStatToStatisticsOpType(
   rawStat: PolymeshPrimitivesStatisticsStatType
 ): keyof typeof StatisticsOpType {
-  return rawStat.op.type;
+  if (rawStat.claimIssuer.isNone) {
+    return rawStat.op.type;
+  } else {
+    if (rawStat.op.type === 'Count') {
+      return StatisticsOpType.ClaimCount;
+    } else {
+      return StatisticsOpType.ClaimOwnership;
+    }
+  }
 }
 
 /**
@@ -3465,8 +3590,18 @@ export function statisticsOpTypeToStatOpType(
  * For now this is hard coded to return a NoClaimStat type. Once Claim scopes are added this should be extended
  * @hidden
  */
-export function createStat2ndKey(context: Context): PolymeshPrimitivesStatisticsStat2ndKey {
-  return context.createType('PolymeshPrimitivesStatisticsStat2ndKey', 'NoClaimStat');
+export function createStat2ndKey(
+  type: 'NoClaimStat' | StatClaimType,
+  context: Context,
+  claimStat?: 'yes' | 'no' | CountryCode
+): PolymeshPrimitivesStatisticsStat2ndKey {
+  if (type === 'NoClaimStat') {
+    return context.createType('PolymeshPrimitivesStatisticsStat2ndKey', type);
+  } else {
+    return context.createType('PolymeshPrimitivesStatisticsStat2ndKey', {
+      claim: { [type]: claimStat },
+    });
+  }
 }
 
 /**
@@ -3489,4 +3624,48 @@ export function toExemptKey(
   op: PolymeshPrimitivesStatisticsStatOpType
 ): ExemptKey {
   return { asset: tickerKey, op };
+}
+
+/**
+ * @hidden
+ */
+export function claimCountStatInputToStatUpdates(
+  value: ClaimCountInitialStatInput,
+  context: Context
+): BTreeSetStatUpdate {
+  let updateArgs;
+
+  if ('yes' in value) {
+    const { yes, no } = value;
+    const yes2ndKey = createStat2ndKey(ClaimType.Accredited, context, 'yes');
+    const yesCount = bigNumberToU128(yes, context);
+    const no2ndKey = createStat2ndKey(ClaimType.Accredited, context, 'no');
+    const noCount = bigNumberToU128(no, context);
+    updateArgs = [
+      statUpdate(yes2ndKey, yesCount, context),
+      statUpdate(no2ndKey, noCount, context),
+    ].sort();
+  } else {
+    updateArgs = value
+      .map(({ countryCode, count }) => {
+        const rawSecondKey = createStat2ndKey(ClaimType.Jurisdiction, context, countryCode);
+        return statUpdate(rawSecondKey, bigNumberToU128(count, context), context);
+      })
+      .sort();
+  }
+
+  return statUpdatesToBtreeStatUpdate(updateArgs, context);
+}
+
+/**
+ * @hidden
+ */
+export function countStatInputToStatUpdates(
+  args: CountTransferRestrictionInput,
+  context: Context
+): BTreeSetStatUpdate {
+  const holderCount = args.count;
+  const secondKey = createStat2ndKey('NoClaimStat', context);
+  const stat = statUpdate(secondKey, bigNumberToU128(holderCount, context), context);
+  return statUpdatesToBtreeStatUpdate([stat], context);
 }

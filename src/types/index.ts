@@ -312,9 +312,14 @@ export interface ClaimData<ClaimType = Claim> {
   claim: ClaimType;
 }
 
+export type StatClaimType = Extract<
+  ClaimType,
+  ClaimType.Accredited | ClaimType.Affiliate | ClaimType.Jurisdiction
+>;
+
 export interface StatJurisdictionClaim {
   type: ClaimType.Jurisdiction;
-  code?: CountryCode;
+  countryCode?: CountryCode;
 }
 
 export interface StatAccreditedClaim {
@@ -327,7 +332,7 @@ export interface StatAffiliateClaim {
   affiliate?: boolean;
 }
 
-export type StatClaim = StatJurisdictionClaim | StatAccreditedClaim | StatAffiliateClaim;
+export type StatClaimUser = StatJurisdictionClaim | StatAccreditedClaim | StatAffiliateClaim;
 
 export interface IdentityWithClaims {
   identity: Identity;
@@ -455,7 +460,7 @@ export type InputCondition = (
 
 export interface ClaimIssuer {
   issuer: Identity;
-  claimType: ClaimType;
+  claimType: StatClaimType;
 }
 export interface Requirement {
   id: BigNumber;
@@ -1282,7 +1287,7 @@ export interface ClaimCountTransferRestriction extends TransferRestrictionBase {
   /**
    * The type of investors this restriction applies to. e.g. non-accredited
    */
-  claim: StatClaim;
+  claim: StatClaimUser;
   /**
    * The minimum amount of investors the must meet the Claim criteria
    */
@@ -1291,12 +1296,14 @@ export interface ClaimCountTransferRestriction extends TransferRestrictionBase {
    * The maximum amount of investors that must meet the Claim criteria
    */
   max?: BigNumber;
+
+  issuer: Identity;
 }
 export interface ClaimOwnershipTransferRestriction extends TransferRestrictionBase {
   /**
    * The type of investors this restriction applies to. e.g. Canadian investor
    */
-  claim: StatClaim;
+  claim: StatClaimUser;
   /**
    * The minimum percentage of investors that must meet the Claim criteria
    */
@@ -1305,6 +1312,8 @@ export interface ClaimOwnershipTransferRestriction extends TransferRestrictionBa
    * The maximum percentage of investors that must meet the Claim criteria
    */
   max: BigNumber;
+
+  issuer: Identity;
 }
 
 export interface CountTransferRestrictionInput extends TransferRestrictionInputBase {
@@ -1323,13 +1332,15 @@ export interface PercentageTransferRestrictionInput extends TransferRestrictionI
 
 export interface ClaimCountTransferRestrictionInput extends TransferRestrictionInputBase {
   min: BigNumber;
-  max: BigNumber;
-  claim: StatClaim;
+  max?: BigNumber;
+  issuer: Identity;
+  claim: StatClaimUser;
 }
 export interface ClaimOwnershipTransferRestrictionInput extends TransferRestrictionInputBase {
   min: BigNumber;
-  max: BigNumber;
-  claim: StatClaim;
+  max?: BigNumber;
+  issuer: Identity;
+  claim: StatClaimUser;
 }
 
 export interface ActiveTransferRestrictions<
@@ -1349,20 +1360,54 @@ export interface ActiveTransferRestrictions<
 export enum TransferRestrictionType {
   Count = 'Count',
   Percentage = 'Percentage',
+  ClaimCount = 'ClaimCount',
+  ClaimOwnership = 'ClaimOwnership',
 }
 
 export interface TransferRestriction {
   type: TransferRestrictionType;
-  value: BigNumber;
+  value: BigNumber | ClaimRestrictionValue;
+}
+
+export interface ClaimRestrictionValue {
+  min: BigNumber;
+  max?: BigNumber; // not optional for claim ownership / percentage
+  issuer: Identity;
+  claim: StatClaimUser;
 }
 
 export enum StatType {
   Count = 'Count',
   Balance = 'Balance',
+  ScopedCount = 'ScopedCount',
+  ScopedBalance = 'ScopedBalance',
 }
 
 export interface AddCountStatInput {
   count: BigNumber;
+}
+
+// export type ClaimCountInitialStatInput =
+//   | { accredited: { yes: BigNumber; no: BigNumber } }
+//   | { affiliate: { yes: BigNumber; no: BigNumber } }
+//   | { jurisdiction: { countryCode: CountryCode; count: BigNumber }[] };
+
+export type ClaimCountInitialStatInput =
+  | { yes: BigNumber; no: BigNumber }
+  | { countryCode: CountryCode; count: BigNumber }[];
+export interface ClaimCountStatInput {
+  claimIssuer: {
+    issuer: Identity;
+    claimType: StatClaimType;
+    value: ClaimCountInitialStatInput;
+  };
+}
+
+export interface ClaimOwnershipStatInput {
+  claimIssuer: {
+    issuer: Identity;
+    claimType: StatClaimType;
+  };
 }
 
 export enum CalendarUnit {

@@ -38,6 +38,8 @@ import {
   CalendarPeriod,
   CalendarUnit,
   Claim,
+  ClaimIssuer,
+  ClaimRestrictionValue,
   ClaimType,
   Condition,
   ConditionType,
@@ -53,7 +55,9 @@ import {
   ProcedureMethod,
   ProcedureOpts,
   Scope,
+  StatClaimType,
   StatType,
+  TransferRestrictionType,
   TxTag,
 } from '~/types';
 import {
@@ -80,6 +84,7 @@ import {
   meshClaimTypeToClaimType,
   meshStatToStatisticsOpType,
   middlewareScopeToScope,
+  permillToBigNumber,
   signerToString,
   statsClaimToClaim,
   u64ToBigNumber,
@@ -1194,7 +1199,7 @@ export function assertTickerValid(ticker: string): void {
  */
 export function compareStatsToInput(
   s: PolymeshPrimitivesStatisticsStatType,
-  args: { type: StatType; claimIssuer?: { claimType: ClaimType; issuer: Identity } }
+  args: { type: StatType; claimIssuer?: { claimType: StatClaimType; issuer: Identity } }
 ): boolean {
   console.log('comparing asset stats', s, args);
   const { type, claimIssuer } = args;
@@ -1216,7 +1221,7 @@ export function compareStatsToInput(
     const statType = meshClaimTypeToClaimType(meshType);
     console.log('comparing issuer did stuff: ', issuerDid, issuer?.did, statType, claimType);
     if (issuerDid !== issuer?.did || statType !== claimType) {
-      console.log('siffereing did stugg');
+      console.log('differeing did stuff');
       return false;
     }
   }
@@ -1242,8 +1247,7 @@ export function compareStatsToInput(
 export function compareTransferRestrictionToStat(
   r: PolymeshPrimitivesTransferComplianceTransferCondition,
   type: StatType,
-  issuerDid?: string,
-  claimType?: ClaimType
+  claimIssuer?: ClaimIssuer
 ): boolean {
   if (
     (type === StatType.Count && r.isMaxInvestorCount) ||
@@ -1252,23 +1256,103 @@ export function compareTransferRestrictionToStat(
     return true;
   }
 
-  if (type === StatType.Count && r.isClaimCount) {
-    const [rawClaim, issuer] = r.asClaimCount;
-    const restrictionIssuerDid = identityIdToString(issuer);
-    const claim = statsClaimToClaim(rawClaim);
-    if (restrictionIssuerDid === issuerDid && claim.type === claimType) {
-      return true;
+  if (r.isClaimCount || r.isClaimOwnership) {
+    if (!claimIssuer) {
+      return false;
+    }
+    const {
+      issuer: { did: issuerDid },
+      claimType,
+    } = claimIssuer;
+    if (type === StatType.Count && r.isClaimCount) {
+      const [rawClaim, issuer] = r.asClaimCount;
+      const restrictionIssuerDid = identityIdToString(issuer);
+      const claim = statsClaimToClaim(rawClaim);
+      if (restrictionIssuerDid === issuerDid && claim.type === claimType) {
+        return true;
+      }
+    }
+
+    if (type === StatType.Balance && r.isClaimOwnership) {
+      const [rawClaim, issuer] = r.asClaimOwnership;
+      const restrictionIssuerDid = identityIdToString(issuer);
+      const claim = statsClaimToClaim(rawClaim);
+      if (restrictionIssuerDid === issuerDid && claim.type === claimType) {
+        return true;
+      }
     }
   }
+  return false;
+}
 
-  if (type === StatType.Balance && r.isClaimOwnership) {
-    const [rawClaim, issuer] = r.asClaimOwnership;
-    const restrictionIssuerDid = identityIdToString(issuer);
-    const claim = statsClaimToClaim(rawClaim);
-    if (restrictionIssuerDid === issuerDid && claim.type === claimType) {
-      return true;
-    }
+/**
+ * @hidden
+ */
+export function compareTransferRestrictionToInput(
+  transferRestriction: PolymeshPrimitivesTransferComplianceTransferCondition,
+  value: BigNumber | ClaimRestrictionValue,
+  type: TransferRestrictionType
+): boolean {
+  if (transferRestriction.isMaxInvestorCount && type === TransferRestrictionType.Count) {
+    const currentCount = u64ToBigNumber(transferRestriction.asMaxInvestorCount);
+    return currentCount.eq(value as BigNumber);
+  } else if (
+    transferRestriction.isMaxInvestorOwnership &&
+    type === TransferRestrictionType.Percentage
+  ) {
+    const currentOwnership = permillToBigNumber(transferRestriction.asMaxInvestorOwnership);
+    return currentOwnership.eq(value as BigNumber);
+  } else if (transferRestriction.isClaimCount && type === TransferRestrictionType.ClaimCount) {
+    const [statClaim, rawIssuerId, rawMin, maybeMax] = transferRestriction.asClaimCount;
+    const issuerDid = identityIdToString(rawIssuerId);
+    const min = u64ToBigNumber(rawMin);
+    const max = maybeMax.isSome ? u64ToBigNumber(maybeMax.unwrap()) : undefined;
+    const castedValue = value as ClaimRestrictionValue;
+    return !!(
+      castedValue.min.eq(min) &&
+      max &&
+      castedValue.max?.eq(max) &&
+      castedValue.claim === statClaim &&
+      issuerDid === castedValue.issuer.did
+    );
+  } else if (
+    transferRestriction.isClaimOwnership &&
+    type === TransferRestrictionType.ClaimOwnership
+  ) {
+    const castedValue = value as ClaimRestrictionValue;
+    const [statClaim, rawIssuerId, rawMin, maybeMax] = transferRestriction.asClaimCount;
+    const issuerDid = identityIdToString(rawIssuerId);
+
+    const min = u64ToBigNumber(rawMin);
+    const max = maybeMax.isSome ? u64ToBigNumber(maybeMax.unwrap()) : undefined;
+    return !!(
+      castedValue.min.eq(min) &&
+      max &&
+      castedValue.max?.eq(max) &&
+      castedValue.claim === statClaim &&
+      issuerDid === castedValue.issuer.did
+    );
   }
 
   return false;
+}
+
+/**
+ * @hidden
+ */
+export function compareStatTypeToTransferRestrictionType(
+  statType: PolymeshPrimitivesStatisticsStatType,
+  transferRestrictionType: TransferRestrictionType
+): boolean {
+  const stat = meshStatToStatisticsOpType(statType);
+  console.log('comparing', stat, transferRestrictionType);
+  if (stat === StatisticsOpType.Count) {
+    return transferRestrictionType === TransferRestrictionType.Count;
+  } else if (stat === StatisticsOpType.Balance) {
+    return transferRestrictionType === TransferRestrictionType.Percentage;
+  } else if (stat === StatisticsOpType.ClaimCount) {
+    return transferRestrictionType === TransferRestrictionType.ClaimCount;
+  } else {
+    return transferRestrictionType === TransferRestrictionType.ClaimOwnership;
+  }
 }

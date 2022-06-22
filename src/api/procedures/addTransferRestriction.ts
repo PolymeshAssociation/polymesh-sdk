@@ -1,11 +1,15 @@
 import {
   BTreeSetTransferCondition,
+  PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesTransferComplianceTransferCondition,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import {
+  ClaimCountTransferRestrictionInput,
+  ClaimOwnershipTransferRestrictionInput,
+  ClaimRestrictionValue,
   CountTransferRestrictionInput,
   ErrorCode,
   PercentageTransferRestrictionInput,
@@ -15,7 +19,6 @@ import {
 import { ProcedureAuthorization, StatisticsOpType } from '~/types/internal';
 import {
   meshStatToStatisticsOpType,
-  permillToBigNumber,
   scopeIdsToBtreeSetIdentityId,
   statisticsOpTypeToStatOpType,
   stringToIdentityId,
@@ -23,9 +26,13 @@ import {
   toExemptKey,
   transferRestrictionToPolymeshTransferCondition,
   u32ToBigNumber,
-  u64ToBigNumber,
 } from '~/utils/conversion';
-import { checkTxType, getExemptedIds } from '~/utils/internal';
+import {
+  checkTxType,
+  compareStatTypeToTransferRestrictionType,
+  compareTransferRestrictionToInput,
+  getExemptedIds,
+} from '~/utils/internal';
 
 export type AddCountTransferRestrictionParams = CountTransferRestrictionInput & {
   type: TransferRestrictionType.Count;
@@ -35,16 +42,27 @@ export type AddPercentageTransferRestrictionParams = PercentageTransferRestricti
   type: TransferRestrictionType.Percentage;
 };
 
+export type AddClaimCountTransferRestrictionParams = ClaimCountTransferRestrictionInput & {
+  type: TransferRestrictionType.ClaimCount;
+};
+
+export type AddClaimOwnershipTransferRestrictionParams = ClaimOwnershipTransferRestrictionInput & {
+  type: TransferRestrictionType.ClaimOwnership;
+};
+
 /**
  * @hidden
  */
 export type AddTransferRestrictionParams = { ticker: string } & (
   | AddCountTransferRestrictionParams
   | AddPercentageTransferRestrictionParams
+  | AddClaimCountTransferRestrictionParams
+  | AddClaimOwnershipTransferRestrictionParams
 );
 
 export interface Storage {
-  currentRestrictions: PolymeshPrimitivesTransferComplianceTransferCondition[];
+  // currentRestrictions: PolymeshPrimitivesTransferComplianceTransferCondition[];
+  currentRestrictions: BTreeSetTransferCondition;
 }
 
 /**
@@ -69,7 +87,8 @@ export async function prepareAddTransferRestriction(
 
   const maxConditions = u32ToBigNumber(consts.statistics.maxTransferConditionsPerAsset);
 
-  const restrictionAmount = new BigNumber(currentRestrictions.length);
+  const restrictionAmount = new BigNumber(currentRestrictions.size);
+  console.log('restriction amount: ', currentRestrictions.size);
   if (restrictionAmount.gte(maxConditions)) {
     throw new PolymeshError({
       code: ErrorCode.LimitExceeded,
@@ -78,29 +97,27 @@ export async function prepareAddTransferRestriction(
     });
   }
 
-  let value: BigNumber;
+  let value: BigNumber | ClaimRestrictionValue;
   let chainType: TransferRestrictionType;
   if (type === TransferRestrictionType.Count) {
     value = args.count;
     chainType = TransferRestrictionType.Count;
-  } else {
+  } else if (type === TransferRestrictionType.Percentage) {
     value = args.percentage;
     chainType = TransferRestrictionType.Percentage;
+  } else if (type === TransferRestrictionType.ClaimCount) {
+    value = { claim: args.claim, issuer: args.issuer, min: args.min, max: args.max }; // TODO use conversion
+    chainType = TransferRestrictionType.ClaimCount;
+  } else {
+    value = { claim: args.claim, issuer: args.issuer, min: args.min, max: args.max };
+    chainType = TransferRestrictionType.ClaimOwnership;
   }
 
-  const exists = !!currentRestrictions.find(transferRestriction => {
-    if (transferRestriction.isMaxInvestorCount && type === TransferRestrictionType.Count) {
-      const currentCount = u64ToBigNumber(transferRestriction.asMaxInvestorCount);
-      return currentCount.eq(value);
-    } else if (
-      transferRestriction.isMaxInvestorOwnership &&
-      type === TransferRestrictionType.Percentage
-    ) {
-      const currentOwnership = permillToBigNumber(transferRestriction.asMaxInvestorOwnership);
-      return currentOwnership.eq(value);
-    }
-    return false;
-  });
+  const exists = !!(
+    currentRestrictions as unknown as Array<PolymeshPrimitivesTransferComplianceTransferCondition>
+  ).find(transferRestriction =>
+    compareTransferRestrictionToInput(transferRestriction, value, type)
+  );
 
   if (exists) {
     throw new PolymeshError({
@@ -115,34 +132,35 @@ export async function prepareAddTransferRestriction(
   );
 
   // The chain requires BTreeSets to be sorted or else it will reject the transaction
-  const conditions = [...currentRestrictions, rawTransferCondition].sort();
+  // const conditions = currentRestrictions.add(rawTransferCondition);
+  const conditions = [rawTransferCondition] as any;
+  console.log('conditions: ', conditions);
 
   const transactions = [];
-
-  const op =
-    type === TransferRestrictionType.Count
-      ? statisticsOpTypeToStatOpType(StatisticsOpType.Count, context)
-      : statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
-
-  if (exemptedIdentities.length) {
-    const exemptedIds = await getExemptedIds(exemptedIdentities, context, ticker);
-    const exemptedScopeIds = exemptedIds.map(entityId => stringToIdentityId(entityId, context));
-    const btreeIds = scopeIdsToBtreeSetIdentityId(exemptedScopeIds, context);
-    const exemptKey = toExemptKey(tickerKey, op);
-    transactions.push(
-      checkTxType({
-        transaction: statistics.setEntitiesExempt,
-        feeMultiplier: new BigNumber(exemptedIds.length),
-        args: [true, exemptKey, btreeIds],
-      })
-    );
-  }
   transactions.push(
     checkTxType({
       transaction: statistics.setAssetTransferCompliance,
-      args: [tickerKey, conditions as BTreeSetTransferCondition],
+      args: [tickerKey, conditions],
     })
   );
+
+  // if (exemptedIdentities.length) {
+  //   const op =
+  //     type === TransferRestrictionType.Count
+  //       ? statisticsOpTypeToStatOpType(StatisticsOpType.Count, context)
+  //       : statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
+  //   const exemptedIds = await getExemptedIds(exemptedIdentities, context, ticker);
+  //   const exemptedScopeIds = exemptedIds.map(entityId => stringToIdentityId(entityId, context));
+  //   const btreeIds = scopeIdsToBtreeSetIdentityId(exemptedScopeIds, context);
+  //   const exemptKey = toExemptKey(tickerKey, op);
+  //   transactions.push(
+  //     checkTxType({
+  //       transaction: statistics.setEntitiesExempt,
+  //       feeMultiplier: new BigNumber(exemptedIds.length),
+  //       args: [true, exemptKey, btreeIds],
+  //     })
+  //   );
+  // }
 
   this.addBatchTransaction({ transactions });
   return restrictionAmount.plus(1);
@@ -194,16 +212,13 @@ export async function prepareStorage(
     statistics.activeAssetStats(tickerKey),
   ]);
 
-  const needStat = !currentStats.find(s => {
-    const stat = meshStatToStatisticsOpType(s);
-    const cmpStat =
-      stat === StatisticsOpType.Balance
-        ? TransferRestrictionType.Percentage
-        : TransferRestrictionType.Count;
-    return cmpStat === type;
-  });
+  console.log('need stat?', currentStats.toJSON());
+  const needStat = !(currentStats as unknown as Array<PolymeshPrimitivesStatisticsStatType>).find(
+    s => compareStatTypeToTransferRestrictionType(s, type)
+  );
 
-  if (needStat) {
+  if (!needStat) {
+    console.log('yes');
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'The appropriate statistic must be enabled. Try calling the enableStat method first',

@@ -1,9 +1,15 @@
-import { PolymeshPrimitivesTransferComplianceTransferCondition } from '@polkadot/types/lookup';
+import {
+  PolymeshPrimitivesStatisticsStatType,
+  PolymeshPrimitivesTransferComplianceTransferCondition,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { TransferCondition } from 'polymesh-types/types';
 
 import { Asset, Context, Identity, PolymeshError, Procedure } from '~/internal';
 import {
+  ClaimCountTransferRestrictionInput,
+  ClaimOwnershipTransferRestrictionInput,
+  ClaimRestrictionValue,
   CountTransferRestrictionInput,
   ErrorCode,
   PercentageTransferRestrictionInput,
@@ -16,7 +22,6 @@ import { ProcedureAuthorization, StatisticsOpType } from '~/types/internal';
 import {
   complianceConditionsToBtreeSet,
   meshStatToStatisticsOpType,
-  permillToBigNumber,
   scopeIdsToBtreeSetIdentityId,
   statisticsOpTypeToStatOpType,
   stringToIdentityId,
@@ -24,9 +29,8 @@ import {
   toExemptKey,
   transferRestrictionToPolymeshTransferCondition,
   u32ToBigNumber,
-  u64ToBigNumber,
 } from '~/utils/conversion';
-import { checkTxType, getExemptedIds } from '~/utils/internal';
+import { checkTxType, compareTransferRestrictionToInput, getExemptedIds } from '~/utils/internal';
 
 export interface SetCountTransferRestrictionsParams {
   /**
@@ -44,9 +48,21 @@ export interface SetPercentageTransferRestrictionsParams {
   type: TransferRestrictionType.Percentage;
 }
 
+export interface SetClaimCountTransferRestrictionsParams {
+  restrictions: ClaimCountTransferRestrictionInput[];
+  type: TransferRestrictionType.ClaimCount;
+}
+
+export interface SetClaimOwnershipTransferRestrictionsParams {
+  restrictions: ClaimOwnershipTransferRestrictionInput[];
+  type: TransferRestrictionType.ClaimOwnership;
+}
+
 export type SetTransferRestrictionsParams = { ticker: string } & (
   | SetCountTransferRestrictionsParams
   | SetPercentageTransferRestrictionsParams
+  | SetClaimCountTransferRestrictionsParams
+  | SetClaimOwnershipTransferRestrictionsParams
 );
 
 /**
@@ -60,30 +76,12 @@ export interface Storage {
 /**
  * @hidden
  */
-function isSameCondition(
-  transferCondition: TransferCondition,
-  inputValue: BigNumber,
-  type: TransferRestrictionType
-): boolean {
-  if (transferCondition.isMaxInvestorCount && type === TransferRestrictionType.Count) {
-    const currentCount = u64ToBigNumber(transferCondition.asMaxInvestorCount);
-    return currentCount.eq(inputValue);
-  } else if (
-    transferCondition.isMaxInvestorOwnership &&
-    type === TransferRestrictionType.Percentage
-  ) {
-    const currentOwnership = permillToBigNumber(transferCondition.asMaxInvestorOwnership);
-    return currentOwnership.eq(inputValue);
-  } else {
-    return false;
-  }
-}
-
-/**
- * @hidden
- */
 function transformRestrictions(
-  restrictions: CountTransferRestrictionInput[] | PercentageTransferRestrictionInput[],
+  restrictions:
+    | CountTransferRestrictionInput[]
+    | PercentageTransferRestrictionInput[]
+    | ClaimCountTransferRestrictionInput[]
+    | ClaimOwnershipTransferRestrictionInput[],
   currentRestrictions: TransferCondition[],
   type: TransferRestrictionType,
   context: Context
@@ -93,15 +91,17 @@ function transformRestrictions(
   let someDifference = restrictions.length !== currentRestrictions.length;
   const conditions: PolymeshPrimitivesTransferComplianceTransferCondition[] = [];
   restrictions.forEach(r => {
-    let value: BigNumber;
+    let value: BigNumber | ClaimRestrictionValue;
     if ('count' in r) {
       value = r.count;
-    } else {
+    } else if ('percentage' in r) {
       value = r.percentage;
+    } else {
+      value = r;
     }
 
     const compareConditions = (transferCondition: TransferCondition): boolean =>
-      isSameCondition(transferCondition, value, type);
+      compareTransferRestrictionToInput(transferCondition, value, type);
     if (!someDifference) {
       someDifference = !currentRestrictions.find(compareConditions);
     }
@@ -248,14 +248,16 @@ export async function prepareStorage(
   const tickerKey = stringToTickerKey(ticker, context);
 
   const currentStats = await statistics.activeAssetStats(tickerKey);
-  const needStat = !currentStats.find(s => {
-    const stat = meshStatToStatisticsOpType(s);
-    const cmpStat =
-      stat === StatisticsOpType.Balance
-        ? TransferRestrictionType.Percentage
-        : TransferRestrictionType.Count;
-    return cmpStat === type;
-  });
+  const needStat = !(currentStats as unknown as Array<PolymeshPrimitivesStatisticsStatType>).find(
+    s => {
+      const stat = meshStatToStatisticsOpType(s);
+      const cmpStat =
+        stat === StatisticsOpType.Balance
+          ? TransferRestrictionType.Percentage
+          : TransferRestrictionType.Count;
+      return cmpStat === type;
+    }
+  );
 
   if (needStat) {
     throw new PolymeshError({
@@ -265,13 +267,15 @@ export async function prepareStorage(
   }
 
   const {
-    transferRestrictions: { count, percentage },
+    transferRestrictions: { count, percentage, claimCount, claimOwnership },
   } = new Asset({ ticker }, context);
 
   const [
     { restrictions: currentCountRestrictions },
     { restrictions: currentPercentageRestrictions },
-  ] = await Promise.all([count.get(), percentage.get()]);
+    { restrictions: currentClaimCountRestrictions },
+    { restrictions: currentClaimOwnershipRestrictions },
+  ] = await Promise.all([count.get(), percentage.get(), claimCount.get(), claimOwnership.get()]);
 
   const currentRestrictions: TransferRestriction[] = [];
 
@@ -286,9 +290,25 @@ export async function prepareStorage(
       const restriction = { type: TransferRestrictionType.Count, value };
       currentRestrictions.push(restriction);
     });
-  } else {
+  } else if (type === TransferRestrictionType.Percentage) {
     currentPercentageRestrictions.forEach(({ percentage: value }) => {
       const restriction = { type: TransferRestrictionType.Percentage, value };
+      currentRestrictions.push(restriction);
+    });
+  } else if (type === TransferRestrictionType.ClaimCount) {
+    currentClaimCountRestrictions.forEach(({ claim, min, max, issuer }) => {
+      const restriction = {
+        type: TransferRestrictionType.ClaimCount,
+        value: { claim, min, max, issuer },
+      };
+      currentRestrictions.push(restriction);
+    });
+  } else {
+    currentClaimOwnershipRestrictions.forEach(({ claim, min, max, issuer }) => {
+      const restriction = {
+        type: TransferRestrictionType.ClaimCount,
+        value: { claim, min, max, issuer },
+      };
       currentRestrictions.push(restriction);
     });
   }

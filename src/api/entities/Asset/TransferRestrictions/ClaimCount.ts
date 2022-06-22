@@ -1,15 +1,13 @@
 import BigNumber from 'bignumber.js';
 
-import { AddCountStatParams } from '~/api/procedures/addAssetStat';
+import { AddClaimCountStatParams } from '~/api/procedures/addAssetStat';
+import { AddClaimCountTransferRestrictionParams } from '~/api/procedures/addTransferRestriction';
 import { RemoveAssetStatParams } from '~/api/procedures/removeAssetStat';
-import {
-  AddCountTransferRestrictionParams,
-  SetCountTransferRestrictionsParams,
-  TransferRestrictionBase,
-} from '~/internal';
+import { SetClaimCountTransferRestrictionsParams } from '~/api/procedures/setTransferRestrictions';
+import { TransferRestrictionBase } from '~/internal';
 import {
   ActiveTransferRestrictions,
-  CountTransferRestriction,
+  ClaimCountTransferRestriction,
   NoArgsProcedureMethod,
   ProcedureMethod,
   TransferRestrictionType,
@@ -18,8 +16,8 @@ import {
 /**
  * Handles all Count Transfer Restriction related functionality
  */
-export class Count extends TransferRestrictionBase<TransferRestrictionType.Count> {
-  protected type = TransferRestrictionType.Count as const;
+export class ClaimCount extends TransferRestrictionBase<TransferRestrictionType.ClaimCount> {
+  protected type = TransferRestrictionType.ClaimCount as const;
 
   /**
    * Add a Count Transfer Restriction to this Asset. This limits to total number of individual
@@ -31,29 +29,29 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
    * @throws if a count statistic is not enabled for the Asset. enableStat should be called before this method
    */
   public declare addRestriction: ProcedureMethod<
-    Omit<AddCountTransferRestrictionParams, 'type'>,
+    Omit<AddClaimCountTransferRestrictionParams, 'type'>,
     BigNumber
   >;
 
   /**
-   * Sets all Count Transfer Restrictions on this Asset
+   * Sets all Claim Count Transfer Restrictions on this Asset
    *
    * @note the result is the total amount of restrictions after the procedure has run
    */
   public declare setRestrictions: ProcedureMethod<
-    Omit<SetCountTransferRestrictionsParams, 'type'>,
+    Omit<SetClaimCountTransferRestrictionsParams, 'type'>,
     BigNumber
   >;
 
   /**
-   * Removes all Count Transfer Restrictions from this Asset
+   * Removes all Claim Count Transfer Restrictions from this Asset
    *
    * @note the result is the total amount of restrictions after the procedure has run
    */
   public declare removeRestrictions: NoArgsProcedureMethod<BigNumber>;
 
   /**
-   * Enables investor count statistic for the Asset, which is required before creating restrictions
+   * Enables investor count statistic for the Asset scope by a claim, which is required before creating restrictions
    *
    * @note this method requires the current number of holders to be passed in. Currently there is a potential
    * race condition when passing in count. If a restriction such as limiting the number of investors is needed, then
@@ -61,10 +59,7 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
    * Other options include checking after setting and retrying if that check isn't right, freezing the Asset, or to
    * wait for a future version of the chain that will prevent this race condition
    */
-  public declare enableStat: ProcedureMethod<
-    Pick<AddCountStatParams, 'count'>, // <- claim issuer wont work with plain "count" being set
-    void
-  >;
+  public declare enableStat: ProcedureMethod<Omit<AddClaimCountStatParams, 'type'>, void>;
 
   /**
    * Disables investor count statistic for the Asset. Since statistics introduce slight overhead to each transaction
@@ -75,11 +70,11 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
   public declare disableStat: ProcedureMethod<Omit<RemoveAssetStatParams, 'type'>, void>;
 
   /**
-   * Retrieve all active Count Transfer Restrictions
+   * Retrieve all active ClaimCount Transfer Restrictions
    *
    * @note there is a maximum number of restrictions allowed across all types.
    *   The `availableSlots` property of the result represents how many more restrictions can be added
    *   before reaching that limit
    */
-  public declare get: () => Promise<ActiveTransferRestrictions<CountTransferRestriction>>;
+  public declare get: () => Promise<ActiveTransferRestrictions<ClaimCountTransferRestriction>>;
 }
