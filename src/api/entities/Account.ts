@@ -480,6 +480,18 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     const { context, address } = this;
 
     const { tag, success, size, start, orderBy, blockHash } = filters;
+
+    let moduleId;
+    let callId;
+    if (tag) {
+      ({ moduleId, callId } = txTagToExtrinsicIdentifier(tag));
+    }
+
+    let successFilter;
+    if (success !== undefined) {
+      successFilter = success ? 1 : 0;
+    }
+
     let { blockNumber } = filters;
 
     if (!blockNumber && blockHash) {
@@ -490,12 +502,6 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       } = await context.polymeshApi.rpc.chain.getBlock(stringToHash(blockHash, context));
 
       blockNumber = u32ToBigNumber(number.unwrap());
-    }
-
-    let moduleId;
-    let callId;
-    if (tag) {
-      ({ moduleId, callId } = txTagToExtrinsicIdentifier(tag));
     }
 
     const {
@@ -509,7 +515,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
           address: hexStripPrefix(addressToKey(address, context)),
           moduleId,
           callId,
-          success: success !== undefined ? (success ? 1 : 0) : undefined,
+          success: successFilter,
         },
         size,
         start,
@@ -534,10 +540,10 @@ export class Account extends Entity<UniqueIdentifiers, string> {
         extrinsicHash,
         block,
       } = transaction!;
-      // TODO remove null check once types fixed
+
       return {
         blockNumber: new BigNumber(blockId),
-        blockHash: block!.hash!,
+        blockHash: block!.hash,
         extrinsicIdx: new BigNumber(extrinsicIdx),
         address: rawAddress ? keyToAddress(hexAddPrefix(rawAddress), context) : null,
         nonce: nonce ? new BigNumber(nonce) : null,

@@ -654,7 +654,7 @@ describe('Identity class', () => {
       const identity = new Identity({ did }, context);
 
       dsMockUtils.createApolloV2QueryStub(
-        assetHoldersQuery({ identityId: did }, undefined, undefined, undefined),
+        assetHoldersQuery({ identityId: did }, undefined, undefined),
         {
           assetHolders: { nodes: tickers.map(ticker => ({ assetId: ticker })), totalCount: 2 },
         }
@@ -666,7 +666,12 @@ describe('Identity class', () => {
       expect(result.data[1].ticker).toBe(tickers[1]);
 
       dsMockUtils.createApolloV2QueryStub(
-        assetHoldersQuery({ identityId: did }, new BigNumber(1), new BigNumber(0)),
+        assetHoldersQuery(
+          { identityId: did },
+          new BigNumber(1),
+          new BigNumber(0),
+          AssetHoldersOrderBy.CreatedBlockIdAsc
+        ),
         {
           assetHolders: { nodes: tickers.map(ticker => ({ assetId: ticker })), totalCount: 2 },
         }

@@ -466,21 +466,23 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
 
     /* eslint-disable @typescript-eslint/no-non-null-assertion */
     settlementsResult.data.legs.nodes.forEach(node => {
-      const { createdBlock, result: settlementResult, legs: settlementLegs } = node!.settlement!;
+      const {
+        createdBlock,
+        result: settlementResult,
+        legs: { nodes: legs },
+      } = node!.settlement!;
 
       const { blockId, hash } = createdBlock!;
-
-      const { nodes: legs } = settlementLegs!;
 
       data.push({
         blockNumber: new BigNumber(blockId),
         blockHash: hash,
         status: settlementResult as SettlementResultEnum,
-        accounts: legs![0]!.addresses!.map(
+        accounts: legs[0]!.addresses.map(
           (accountAddress: string) =>
             new Account({ address: keyToAddress('0x' + accountAddress, context) }, context)
         ),
-        legs: legs!.map(leg => {
+        legs: legs.map(leg => {
           const { from, to, fromId, toId, assetId, amount } = leg!;
           return {
             asset: new Asset({ ticker: assetId }, context),

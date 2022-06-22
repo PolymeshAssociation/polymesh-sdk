@@ -491,7 +491,14 @@ export class DividendDistribution extends CorporateActionBase {
       })
     );
 
-    const [exists, result] = await Promise.all([this.exists(), taxPromise]);
+    const [
+      exists,
+      {
+        data: {
+          distribution: { taxes },
+        },
+      },
+    ] = await Promise.all([this.exists(), taxPromise]);
 
     if (!exists) {
       throw new PolymeshError({
@@ -499,9 +506,6 @@ export class DividendDistribution extends CorporateActionBase {
         message: notExistsMessage,
       });
     }
-
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const { taxes } = result.data.distribution!;
 
     return new BigNumber(taxes).shiftedBy(-6);
   }
@@ -635,7 +639,6 @@ export class DividendDistribution extends CorporateActionBase {
 
     const count = new BigNumber(totalCount);
     const data: DistributionPayment[] = [];
-    const multiParams: BlockNumber[] = [];
 
     nodes.forEach(node => {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -643,10 +646,9 @@ export class DividendDistribution extends CorporateActionBase {
 
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const { blockId, hash } = createdBlock!;
-      const blockNumber = new BigNumber(blockId);
-      multiParams.push(bigNumberToU32(blockNumber, context));
+
       data.push({
-        blockNumber,
+        blockNumber: new BigNumber(blockId),
         blockHash: hash,
         date: new Date(datetime),
         target: new Identity({ did }, context),

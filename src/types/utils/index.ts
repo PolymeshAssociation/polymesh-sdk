@@ -3,7 +3,6 @@ import type { Observable } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
 import { Entity, Procedure } from '~/internal';
-import { Exact } from '~/middleware/typesV2';
 
 export type Mutable<Immutable> = {
   -readonly [K in keyof Immutable]: Immutable[K];

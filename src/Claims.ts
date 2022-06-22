@@ -333,7 +333,8 @@ export class Claims {
     const count = new BigNumber(targetIssuers.length);
 
     // tooling-gql does pagination based on sorted target issuers, hence the explicit `sort()` function (as graphql doesn't sort the final data)
-    targetIssuers = targetIssuers.sort().slice(start.toNumber(), size.plus(start).toNumber());
+    targetIssuers.sort();
+    targetIssuers = targetIssuers.slice(start.toNumber(), size.plus(start).toNumber());
 
     const {
       data: {
@@ -517,7 +518,7 @@ export class Claims {
       };
     }
 
-    return await this.getClaimsFromChain(context, did, trustedClaimIssuers, includeExpired);
+    return this.getClaimsFromChain(context, did, trustedClaimIssuers, includeExpired);
   }
 
   /**
@@ -616,7 +617,8 @@ export class Claims {
       // note: pagination count is based on the claim issuers and not the claims count
       const count = new BigNumber(claimIssuers.length);
 
-      claimIssuers = claimIssuers.sort().slice(start.toNumber(), size.plus(start).toNumber());
+      claimIssuers.sort();
+      claimIssuers = claimIssuers.slice(start.toNumber(), size.plus(start).toNumber());
 
       const {
         data: {
@@ -644,6 +646,6 @@ export class Claims {
       };
     }
 
-    return await this.getClaimsFromChain(context, did, trustedClaimIssuers, includeExpired);
+    return this.getClaimsFromChain(context, did, trustedClaimIssuers, includeExpired);
   }
 }

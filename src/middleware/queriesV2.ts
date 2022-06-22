@@ -246,12 +246,12 @@ export function instructionsQuery(
   };
 }
 
+type EventArgs = 'moduleId' | 'eventId' | 'eventArg0' | 'eventArg1' | 'eventArg2';
+
 /**
  *  @hidden
  */
-function createEventFilters(
-  attributes: QueryArgs<Event, 'moduleId' | 'eventId' | 'eventArg0' | 'eventArg1' | 'eventArg2'>
-): {
+function createEventFilters(attributes: QueryArgs<Event, EventArgs>): {
   args: string;
   filter: string;
 } {
@@ -277,14 +277,10 @@ function createEventFilters(
  * Get a single event by any of its indexed arguments
  */
 export function eventsByArgs(
-  filters: QueryArgs<Event, 'moduleId' | 'eventId' | 'eventArg0' | 'eventArg1' | 'eventArg2'>,
+  filters: QueryArgs<Event, EventArgs>,
   size?: BigNumber,
   start?: BigNumber
-): GraphqlQuery<
-  PaginatedQueryArgs<
-    QueryArgs<Event, 'moduleId' | 'eventId' | 'eventArg0' | 'eventArg1' | 'eventArg2'>
-  >
-> {
+): GraphqlQuery<PaginatedQueryArgs<QueryArgs<Event, EventArgs>>> {
   const { args, filter } = createEventFilters(filters);
   const query = gql`
     query EventsQuery
@@ -351,12 +347,12 @@ export function extrinsicByHash(
   };
 }
 
+type ExtrinsicArgs = 'blockId' | 'address' | 'moduleId' | 'callId' | 'success';
+
 /**
  *  @hidden
  */
-function createExtrinsicFilters(
-  attributes: QueryArgs<Extrinsic, 'blockId' | 'address' | 'moduleId' | 'callId' | 'success'>
-): {
+function createExtrinsicFilters(attributes: QueryArgs<Extrinsic, ExtrinsicArgs>): {
   args: string;
   filter: string;
 } {
@@ -385,15 +381,11 @@ function createExtrinsicFilters(
  * Get transactions
  */
 export function extrinsicsByArgs(
-  filters: QueryArgs<Extrinsic, 'blockId' | 'address' | 'moduleId' | 'callId' | 'success'>,
+  filters: QueryArgs<Extrinsic, ExtrinsicArgs>,
   size?: BigNumber,
   start?: BigNumber,
   orderBy: ExtrinsicsOrderBy = ExtrinsicsOrderBy.BlockIdAsc
-): GraphqlQuery<
-  PaginatedQueryArgs<
-    QueryArgs<Extrinsic, 'blockId' | 'address' | 'moduleId' | 'callId' | 'success'>
-  >
-> {
+): GraphqlQuery<PaginatedQueryArgs<QueryArgs<Extrinsic, ExtrinsicArgs>>> {
   const { args, filter } = createExtrinsicFilters(filters);
   const query = gql`
     query TransactionsQuery
@@ -611,14 +603,13 @@ export function tickerExternalAgentHistoryQuery(
   };
 }
 
+type TickerExternalAgentActionArgs = 'assetId' | 'callerId' | 'palletName' | 'eventId';
+
 /**
  *  @hidden
  */
 function createTickerExternalAgentActionFilters(
-  attributes: QueryArgs<
-    TickerExternalAgentAction,
-    'assetId' | 'callerId' | 'palletName' | 'eventId'
-  >
+  attributes: QueryArgs<TickerExternalAgentAction, TickerExternalAgentActionArgs>
 ): {
   args: string;
   filter: string;
@@ -644,13 +635,11 @@ function createTickerExternalAgentActionFilters(
  * Get list of Events triggered by actions (from the set of actions that can only be performed by external agents) that have been performed on a specific Asset
  */
 export function tickerExternalAgentActionsQuery(
-  filters: QueryArgs<TickerExternalAgentAction, 'assetId' | 'callerId' | 'palletName' | 'eventId'>,
+  filters: QueryArgs<TickerExternalAgentAction, TickerExternalAgentActionArgs>,
   size?: BigNumber,
   start?: BigNumber
 ): GraphqlQuery<
-  PaginatedQueryArgs<
-    QueryArgs<TickerExternalAgentAction, 'assetId' | 'callerId' | 'palletName' | 'eventId'>
-  >
+  PaginatedQueryArgs<QueryArgs<TickerExternalAgentAction, TickerExternalAgentActionArgs>>
 > {
   const { args, filter } = createTickerExternalAgentActionFilters(filters);
   const query = gql`
@@ -786,19 +775,21 @@ export interface QuerySettlementFilters {
   address?: string;
 }
 
+type LegArgs = 'fromId' | 'toId' | 'assetId' | 'addresses';
+
 /**
  *  @hidden
  */
 function createLegFilters({ identityId, portfolioId, ticker, address }: QuerySettlementFilters): {
   args: string;
   filter: string;
-  variables: QueryArgs<Leg, 'fromId' | 'toId' | 'assetId' | 'addresses'>;
+  variables: QueryArgs<Leg, LegArgs>;
 } {
   const args: string[] = ['$fromId: String!, $toId: String!'];
   const fromIdFilters = ['fromId: { equalTo: $fromId }'];
   const toIdFilters = ['toId: { equalTo: $toId }'];
   const portfolioNumber = portfolioId ? portfolioId.toNumber() : 0;
-  const variables: QueryArgs<Leg, 'fromId' | 'toId' | 'assetId' | 'addresses'> = {
+  const variables: QueryArgs<Leg, LegArgs> = {
     fromId: `${identityId}/${portfolioNumber}`,
     toId: `${identityId}/${portfolioNumber}`,
   };
@@ -881,6 +872,8 @@ export function settlementsQuery(
   };
 }
 
+type PortfolioMovementArgs = 'fromId' | 'toId' | 'assetId' | 'address';
+
 /**
  *  @hidden
  */
@@ -892,13 +885,13 @@ function createPortfolioMovementFilters({
 }: QuerySettlementFilters): {
   args: string;
   filter: string;
-  variables: QueryArgs<PortfolioMovement, 'fromId' | 'toId' | 'assetId' | 'address'>;
+  variables: QueryArgs<PortfolioMovement, PortfolioMovementArgs>;
 } {
   const args: string[] = ['$fromId: String!, $toId: String!'];
   const fromIdFilters = ['fromId: { equalTo: $fromId }'];
   const toIdFilters = ['toId: { equalTo: $toId }'];
   const portfolioNumber = portfolioId ? portfolioId.toNumber() : 0;
-  const variables: QueryArgs<PortfolioMovement, 'fromId' | 'toId' | 'assetId' | 'address'> = {
+  const variables: QueryArgs<PortfolioMovement, PortfolioMovementArgs> = {
     fromId: `${identityId}/${portfolioNumber}`,
     toId: `${identityId}/${portfolioNumber}`,
   };
