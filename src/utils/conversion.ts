@@ -2560,6 +2560,9 @@ export function moduleAddressToString(moduleAddress: string, context: Context): 
  * @hidden
  */
 export function keyToAddress(key: string, context: Context): string {
+  if (!key.startsWith('0x')) {
+    key = `0x${key}`;
+  }
   return encodeAddress(key, context.ss58Format.toNumber());
 }
 

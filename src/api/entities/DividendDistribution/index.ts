@@ -46,6 +46,7 @@ import {
   Ensured,
   EnsuredV2,
   HumanReadableType,
+  isNotNull,
   Modify,
   QueryReturnType,
   tuple,
@@ -640,10 +641,7 @@ export class DividendDistribution extends CorporateActionBase {
     const count = new BigNumber(totalCount);
     const data: DistributionPayment[] = [];
 
-    nodes.forEach(node => {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const { createdBlock, datetime, targetId: did, amount, tax } = node!;
-
+    nodes.filter(isNotNull).forEach(({ createdBlock, datetime, targetId: did, amount, tax }) => {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const { blockId, hash } = createdBlock!;
 
@@ -653,6 +651,10 @@ export class DividendDistribution extends CorporateActionBase {
         date: new Date(datetime),
         target: new Identity({ did }, context),
         amount: new BigNumber(amount).shiftedBy(-6),
+        /**
+         * Since we want to depict the `withheldTax` as percentage value between 0-100,
+         *   we multiply the tax(`Permill`) by 100, hence shifted by -4
+         */
         withheldTax: new BigNumber(tax).shiftedBy(-4),
       });
     });

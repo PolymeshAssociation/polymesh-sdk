@@ -936,9 +936,23 @@ describe('Instruction class', () => {
         .withArgs(rawId)
         .resolves(queryResult);
 
-      dsMockUtils.createApolloV2QueryStub(instructionsQuery(queryVariables), {
-        instructions: { nodes: [fakeQueryResult] },
-      });
+      dsMockUtils.createApolloMultipleV2QueriesStub([
+        {
+          query: instructionsQuery(queryVariables),
+          returnData: {
+            instructions: { nodes: [fakeQueryResult] },
+          },
+        },
+        {
+          query: instructionsQuery({
+            ...queryVariables,
+            eventId: EventIdEnum.InstructionFailed,
+          }),
+          returnData: {
+            instructions: { nodes: [] },
+          },
+        },
+      ]);
 
       const result = await instruction.getStatusV2();
       expect(result).toMatchObject({

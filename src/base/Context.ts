@@ -49,7 +49,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import { GraphqlQuery } from '~/types/internal';
-import { Ensured, EnsuredV2, QueryReturnType } from '~/types/utils';
+import { Ensured, EnsuredV2, isNotNull, QueryReturnType } from '~/types/utils';
 import {
   DEFAULT_GQL_PAGE_SIZE,
   MAX_CONCURRENT_REQUESTS,
@@ -1075,8 +1075,9 @@ export class Context {
 
     const count = new BigNumber(totalCount);
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const data = claimsList.map(claim => middlewareV2ClaimToClaimData(claim!, this));
+    const data = claimsList
+      .filter(isNotNull)
+      .map(claim => middlewareV2ClaimToClaimData(claim, this));
 
     const next = calculateNextKey(count, size, start);
 

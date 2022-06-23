@@ -31,7 +31,7 @@ import {
   SubCallback,
   UnsubCallback,
 } from '~/types';
-import { Ensured, EnsuredV2, QueryReturnType, tuple } from '~/types/utils';
+import { Ensured, EnsuredV2, isNotNull, QueryReturnType, tuple } from '~/types/utils';
 import {
   isCddProviderRole,
   isIdentityRole,
@@ -381,8 +381,9 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const count = new BigNumber(totalCount);
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const data = nodes.map(node => new Asset({ ticker: node!.assetId }, context));
+    const data = nodes
+      .filter(isNotNull)
+      .map(({ assetId: ticker }) => new Asset({ ticker }, context));
 
     const next = calculateNextKey(count, size, start);
 
@@ -459,8 +460,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       trustingAssetsQuery({ issuer: did })
     );
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return nodes.map(node => new Asset({ ticker: removePadding(node!.assetId) }, context));
+    return nodes.filter(isNotNull).map(({ assetId: ticker }) => new Asset({ ticker }, context));
   }
 
   /**

@@ -32,7 +32,7 @@ import {
   TxTag,
   TxTags,
 } from '~/types';
-import { Ensured, EnsuredV2, QueryReturnType } from '~/types/utils';
+import { Ensured, EnsuredV2, isNotNull, QueryReturnType } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
   agentGroupToPermissionGroup,
@@ -521,21 +521,10 @@ export class AssetPermissions extends Namespace<Identity> {
       )
     );
 
-    const data: EventIdentifier[] = [];
-
-    nodes.forEach(node => {
-      /* eslint-disable @typescript-eslint/no-non-null-assertion */
-      const { createdBlock, eventIdx } = node!;
-      const { blockId, datetime, hash } = createdBlock!;
-      /* eslint-enable @typescript-eslint/no-non-null-assertion */
-
-      data.push({
-        blockNumber: new BigNumber(blockId),
-        blockHash: hash,
-        blockDate: new Date(`${datetime}Z`),
-        eventIndex: new BigNumber(eventIdx),
-      });
-    });
+    const data = nodes.filter(isNotNull).map(({ createdBlock, eventIdx }) =>
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      middlewareV2EventDetailsToEventIdentifier(createdBlock!, eventIdx)
+    );
 
     const count = new BigNumber(totalCount);
     const next = calculateNextKey(count, size, start);

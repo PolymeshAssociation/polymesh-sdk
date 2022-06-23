@@ -399,21 +399,22 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       };
     }
 
-    let eventIdentifier = await this.getInstructionEventFromMiddlewareV2(
-      EventIdEnum.InstructionExecuted
-    );
-    if (eventIdentifier) {
+    const [executedEventIdentifier, failedEventIdentifier] = await Promise.all([
+      this.getInstructionEventFromMiddlewareV2(EventIdEnum.InstructionExecuted),
+      this.getInstructionEventFromMiddlewareV2(EventIdEnum.InstructionFailed),
+    ]);
+
+    if (executedEventIdentifier) {
       return {
         status: InstructionStatus.Executed,
-        eventIdentifier,
+        eventIdentifier: executedEventIdentifier,
       };
     }
 
-    eventIdentifier = await this.getInstructionEventFromMiddlewareV2(EventIdEnum.InstructionFailed);
-    if (eventIdentifier) {
+    if (failedEventIdentifier) {
       return {
         status: InstructionStatus.Failed,
-        eventIdentifier,
+        eventIdentifier: failedEventIdentifier,
       };
     }
 

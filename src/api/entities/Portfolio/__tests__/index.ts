@@ -506,7 +506,6 @@ describe('Portfolio class', () => {
         start: new BigNumber(0),
       });
 
-      /* eslint-disable @typescript-eslint/no-non-null-assertion */
       expect(result.data[0].blockNumber).toEqual(blockNumber1);
       expect(result.data[1].blockNumber).toEqual(blockNumber2);
       expect(result.data[0].blockHash).toBe(blockHash1);
@@ -523,7 +522,6 @@ describe('Portfolio class', () => {
       expect(result.data[1].legs[0].to.owner.did).toEqual(portfolioDid1);
       expect(result.count).toEqual(new BigNumber(20));
       expect(result.next).toEqual(new BigNumber(5));
-      /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
       dsMockUtils.createApolloQueryStub(
         settlements({

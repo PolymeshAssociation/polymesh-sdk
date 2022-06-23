@@ -27,7 +27,7 @@ import {
   ScopeType,
 } from '~/types';
 import { ClaimOperation } from '~/types/internal';
-import { Ensured, EnsuredV2 } from '~/types/utils';
+import { Ensured, EnsuredV2, isNotNull } from '~/types/utils';
 import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 import {
   scopeToMiddlewareScope,
@@ -347,12 +347,7 @@ export class Claims {
       })
     );
 
-    const data = toIdentityWithClaimsArrayV2(
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      nodes.map(node => node!),
-      context,
-      'targetId'
-    );
+    const data = toIdentityWithClaimsArrayV2(nodes.filter(isNotNull), context, 'targetId');
     const next = calculateNextKey(count, size, start);
 
     return {
@@ -492,9 +487,7 @@ export class Claims {
         issuerDidsWithClaimsByTarget({
           target: did,
           scope: scope ? scopeToMiddlewareScope(scope) : undefined,
-          trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
-            signerToString(trustedClaimIssuer)
-          ),
+          trustedClaimIssuers: trustedClaimIssuers?.map(signerToString),
           includeExpired,
           count: size?.toNumber(),
           skip: start?.toNumber(),
@@ -532,9 +525,7 @@ export class Claims {
   ): Promise<ResultSet<IdentityWithClaims>> {
     const identityClaimsFromChain = await context.getIdentityClaimsFromChain({
       targets: [did],
-      trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
-        signerToString(trustedClaimIssuer)
-      ),
+      trustedClaimIssuers: trustedClaimIssuers?.map(signerToString),
       includeExpired,
     });
 
@@ -611,7 +602,7 @@ export class Claims {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         claimIssuers = flatten(groupedIssuers!.map(groupedAggregate => groupedAggregate.keys!));
       } else {
-        claimIssuers = trustedClaimIssuers.map(issuer => signerToString(issuer));
+        claimIssuers = trustedClaimIssuers.map(signerToString);
       }
 
       // note: pagination count is based on the claim issuers and not the claims count
@@ -631,12 +622,7 @@ export class Claims {
         })
       );
 
-      const data = toIdentityWithClaimsArrayV2(
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        nodes.map(node => node!),
-        context,
-        'issuerId'
-      );
+      const data = toIdentityWithClaimsArrayV2(nodes.filter(isNotNull), context, 'issuerId');
       const next = calculateNextKey(count, size, start);
 
       return {

@@ -4853,8 +4853,11 @@ describe('keyToAddress and addressToKey', () => {
 
   describe('keyToAddress', () => {
     it('should encode a public key into an address', () => {
-      const result = keyToAddress(publicKey, context);
+      let result = keyToAddress(publicKey, context);
 
+      expect(result).toBe(address);
+
+      result = keyToAddress(publicKey.substring(2), context);
       expect(result).toBe(address);
     });
   });

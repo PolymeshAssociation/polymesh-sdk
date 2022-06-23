@@ -42,7 +42,7 @@ import {
   SubCallback,
   UnsubCallback,
 } from '~/types';
-import { Ensured, EnsuredV2, Modify, QueryReturnType } from '~/types/utils';
+import { Ensured, EnsuredV2, isNotNull, Modify, QueryReturnType } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
   assetIdentifierToSecurityIdentifier,
@@ -665,12 +665,10 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
 
     return map(groupedData, (history, did) => ({
       identity: new Identity({ did }, context),
-      history: history.map(node => {
-        /* eslint-disable @typescript-eslint/no-non-null-assertion */
-        const { createdBlock, eventIdx } = node!;
-        return middlewareV2EventDetailsToEventIdentifier(createdBlock!, eventIdx);
-        /* eslint-enable @typescript-eslint/no-non-null-assertion */
-      }),
+      history: history.filter(isNotNull).map(({ createdBlock, eventIdx }) =>
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        middlewareV2EventDetailsToEventIdentifier(createdBlock!, eventIdx)
+      ),
     }));
   }
 

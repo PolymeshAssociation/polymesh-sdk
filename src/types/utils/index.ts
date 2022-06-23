@@ -3,6 +3,7 @@ import type { Observable } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
 import { Entity, Procedure } from '~/internal';
+import { Maybe } from '~/middleware/typesV2';
 
 export type Mutable<Immutable> = {
   -readonly [K in keyof Immutable]: Immutable[K];
@@ -83,3 +84,7 @@ export type QueryArgs<T, K extends keyof T> = {
  * @param args - values to turn into a tuple
  */
 export const tuple = <T extends unknown[]>(...args: T): T => args;
+
+export const isNotNull = <T>(value: Maybe<T>): value is T => {
+  return value !== null;
+};
