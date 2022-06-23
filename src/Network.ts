@@ -192,7 +192,7 @@ export class Network {
    * @param opts.eventArg1 - event parameter value to filter by in position 1
    * @param opts.eventArg2 - event parameter value to filter by in position 2
    *
-   * @note uses the middleware
+   * @note uses the middlewareV2
    */
   public async getEventByIndexedArgsV2(opts: {
     moduleId: ModuleId;
@@ -288,7 +288,7 @@ export class Network {
    * @param opts.size - page size
    * @param opts.start - page offset
    *
-   * @note uses the middleware
+   * @note uses the middlewareV2
    */
   public async getEventsByIndexedArgsV2(opts: {
     moduleId: ModuleId;

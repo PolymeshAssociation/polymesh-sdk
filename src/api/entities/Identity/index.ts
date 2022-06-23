@@ -350,7 +350,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   /**
    * Retrieve a list of all Assets which were held at one point by this Identity
    *
-   * @note uses the middleware
+   * @note uses the middlewareV2
    * @note supports pagination
    */
   public async getHeldAssetsV2(

@@ -399,7 +399,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
   /**
    * Retrieve the identifier data (block number, date and event index) of the event that was emitted when the token was created
    *
-   * @note uses the middleware
+   * @note uses the middlewareV2
    * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
    */
   public async createdAtV2(): Promise<EventIdentifier | null> {

@@ -77,7 +77,7 @@ export class DefaultTrustedClaimIssuer extends Identity {
   /**
    * Retrieve the identifier data (block number, date and event index) of the event that was emitted when the trusted claim issuer was added
    *
-   * @note uses the middleware
+   * @note uses the middlewareV2
    * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
    */
   public async addedAtV2(): Promise<EventIdentifier | null> {

@@ -98,6 +98,7 @@ interface ConstructorParams {
  *
  * - Holds the polkadot API instance
  * - Holds the middleware API instance (if any)
+ * - Holds the middleware V2 API instance (if any)
  * - Holds the Signing Manager (if any)
  */
 export class Context {
@@ -1231,7 +1232,7 @@ export class Context {
   /**
    * Retrieve the middleware v2 client
    *
-   * @throws if the middleware is not enabled
+   * @throws if the middleware V2 is not enabled
    */
   public get middlewareApiV2(): ApolloClient<NormalizedCacheObject> {
     const { _middlewareApiV2: api } = this;
@@ -1272,7 +1273,7 @@ export class Context {
   /**
    * @hidden
    *
-   * Make a query to the middleware server using the apollo client
+   * Make a query to the middleware V2 server using the apollo client
    */
   public async queryMiddlewareV2<Result extends Partial<QueryV2>>(
     query: GraphqlQuery<unknown>
@@ -1305,7 +1306,7 @@ export class Context {
   /**
    * @hidden
    *
-   * Return whether the middleware was enabled at startup
+   * Return whether the middleware V2 was enabled at startup
    */
   public isMiddlewareV2Enabled(): boolean {
     return !!this._middlewareApiV2;
