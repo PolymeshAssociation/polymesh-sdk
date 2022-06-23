@@ -1989,12 +1989,15 @@ export function middlewareScopeToScope(scope: MiddlewareScope): Scope {
 /**
  * @hidden
  */
-export function scopeToMiddlewareScope(scope: Scope): MiddlewareScope {
+export function scopeToMiddlewareScope(scope: Scope, padTicker = true): MiddlewareScope {
   const { type, value } = scope;
 
   switch (type) {
     case ScopeType.Ticker:
-      return { type: ClaimScopeTypeEnum.Ticker, value: padEnd(value, 12, '\0') };
+      return {
+        type: ClaimScopeTypeEnum.Ticker,
+        value: padTicker ? padEnd(value, 12, '\0') : value,
+      };
     case ScopeType.Identity:
     case ScopeType.Custom:
       return { type: ClaimScopeTypeEnum[scope.type], value };

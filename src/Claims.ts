@@ -304,7 +304,7 @@ export class Claims {
     let targetIssuers;
 
     const filters = {
-      scope: scope ? scopeToMiddlewareScope(scope) : undefined,
+      scope: scope ? scopeToMiddlewareScope(scope, false) : undefined,
       trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
         signerToString(trustedClaimIssuer)
       ),
@@ -585,7 +585,7 @@ export class Claims {
     if (isMiddlewareV2Available) {
       const filters = {
         dids: [did],
-        scope: scope ? scopeToMiddlewareScope(scope) : undefined,
+        scope: scope ? scopeToMiddlewareScope(scope, false) : undefined,
         includeExpired,
       };
 

@@ -78,7 +78,7 @@ function createClaimsFilters(variables: ClaimsQueryFilter): {
   }
   if (scope !== undefined) {
     args.push('$scope: JSON!');
-    filters.push('scope: { equalTo: $scope }');
+    filters.push('scope: { contains: $scope }');
   }
   if (!includeExpired) {
     args.push('$expiryTimestamp: BigFloat');
@@ -108,6 +108,7 @@ export function claimsGroupingQuery(
   groupBy = ClaimsGroupBy.TargetId
 ): GraphqlQuery<PaginatedQueryArgs<ClaimsQueryFilter>> {
   const { args, filter } = createClaimsFilters(variables);
+
   const query = gql`
     query claimsGroupingQuery
       ${args}
@@ -115,6 +116,8 @@ export function claimsGroupingQuery(
       claims(
         ${filter}
         orderBy: [${orderBy}]
+        first: $size
+        offset: $start
       ) {
         groupedAggregates(groupBy: [${groupBy}], having: {}) {
           keys

@@ -3687,6 +3687,9 @@ describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
       result = scopeToMiddlewareScope(scope);
       expect(result).toEqual({ type: ClaimScopeTypeEnum.Ticker, value: 'someTicker\0\0' });
 
+      result = scopeToMiddlewareScope(scope, false);
+      expect(result).toEqual({ type: ClaimScopeTypeEnum.Ticker, value: 'someTicker' });
+
       scope = { type: ScopeType.Custom, value: 'customValue' };
       result = scopeToMiddlewareScope(scope);
       expect(result).toEqual({ type: ClaimScopeTypeEnum.Custom, value: scope.value });

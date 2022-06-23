@@ -525,7 +525,7 @@ describe('Claims Class', () => {
       dsMockUtils.createApolloV2QueryStub(
         claimsQuery({
           dids: [targetDid],
-          scope: { type: 'Ticker', value: padString('someValue', 12) },
+          scope: { type: 'Ticker', value: 'someValue' },
           trustedClaimIssuers: [issuerDid],
           claimTypes: [ClaimTypeEnum.Accredited],
           includeExpired: false,
