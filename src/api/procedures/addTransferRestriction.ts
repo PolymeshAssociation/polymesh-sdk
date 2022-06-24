@@ -110,17 +110,16 @@ export async function prepareAddTransferRestriction(
     });
   }
 
-  const transactions = [];
-
   const op =
     type === TransferRestrictionType.Count
       ? statisticsOpTypeToStatOpType(StatisticsOpType.Count, context)
       : statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
 
+  const transactions = [];
+
   if (needStat) {
     const newStat = statisticsOpTypeToStatType(op, context);
-    const newStats = [...currentStats, newStat];
-    const rawNewStats = statisticStatTypesToBtreeStatType(newStats, context);
+    const rawNewStats = statisticStatTypesToBtreeStatType([...currentStats, newStat], context);
     transactions.push(
       checkTxType({
         transaction: statistics.setActiveAssetStats,
