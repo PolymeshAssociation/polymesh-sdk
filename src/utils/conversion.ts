@@ -8,9 +8,6 @@ import {
   Signature,
 } from '@polkadot/types/interfaces';
 import {
-  BTreeSetIdentityId,
-  BTreeSetStatUpdate,
-  BTreeSetTransferCondition,
   ConfidentialIdentityClaimProofsScopeClaimProof,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCorporateAction,
@@ -35,6 +32,7 @@ import {
   PolymeshPrimitivesTicker,
   PolymeshPrimitivesTransferComplianceTransferCondition,
 } from '@polkadot/types/lookup';
+import { BTreeSet } from '@polkadot/types-codec';
 import {
   hexToU8a,
   isHex,
@@ -975,14 +973,14 @@ export function extrinsicPermissionsToTransactionPermissions(
     pallets.forEach(({ palletName, dispatchableNames }) => {
       const moduleName = stringLowerFirst(bytesToString(palletName));
       if (dispatchableNames.isExcept) {
-        const dispatchables = dispatchableNames.asExcept;
+        const dispatchables = [...dispatchableNames.asExcept];
         exceptions = [
           ...exceptions,
           ...dispatchables.map(name => formatTxTag(bytesToString(name), moduleName)),
         ];
         txValues = [...txValues, moduleName as ModuleName];
       } else if (dispatchableNames.isThese) {
-        const dispatchables = dispatchableNames.asThese;
+        const dispatchables = [...dispatchableNames.asThese];
         txValues = [
           ...txValues,
           ...dispatchables.map(name => formatTxTag(bytesToString(name), moduleName)),
@@ -1029,7 +1027,7 @@ export function meshPermissionsToPermissions(
 
   if (assetsPermissions) {
     assets = {
-      values: assetsPermissions.map(
+      values: [...assetsPermissions].map(
         ticker => new Asset({ ticker: tickerToString(ticker) }, context)
       ),
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -1051,7 +1049,9 @@ export function meshPermissionsToPermissions(
 
   if (portfolioIds) {
     portfolios = {
-      values: portfolioIds.map(portfolioId => meshPortfolioIdToPortfolio(portfolioId, context)),
+      values: [...portfolioIds].map(portfolioId =>
+        meshPortfolioIdToPortfolio(portfolioId, context)
+      ),
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       type: portfoliosType!,
     };
@@ -2764,10 +2764,8 @@ export function transferRestrictionToPolymeshTransferCondition(
 export function scopeIdsToBtreeSetIdentityId(
   scopeIds: PolymeshPrimitivesIdentityId[],
   context: Context
-): BTreeSetIdentityId {
-  // The chain expects inputs to be sorted. Copy to avoid mutating input
-  const sortedScopes = [...scopeIds].sort();
-  return context.createType('BTreeSetIdentityId', sortedScopes);
+): BTreeSet<PolymeshPrimitivesIdentityId> {
+  return context.createType('BTreeSet<PolymeshPrimitivesIdentityId>', scopeIds);
 }
 
 /**
@@ -3471,6 +3469,29 @@ export function statisticsOpTypeToStatType(
 /**
  * @hidden
  */
+export function statisticStatTypesToBtreeStatType(
+  stats: PolymeshPrimitivesStatisticsStatType[],
+  context: Context
+): BTreeSet<PolymeshPrimitivesStatisticsStatType> {
+  return context.createType('BTreeSet<PolymeshPrimitivesStatisticsStatType>', stats);
+}
+
+/**
+ * @hidden
+ */
+export function transferConditionsToBtreeTransferConditions(
+  conditions: PolymeshPrimitivesTransferComplianceTransferCondition[],
+  context: Context
+): BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition> {
+  return context.createType(
+    'BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>',
+    conditions
+  );
+}
+
+/**
+ * @hidden
+ */
 export function statUpdate(
   key2: PolymeshPrimitivesStatisticsStat2ndKey,
   value: u128,
@@ -3485,9 +3506,8 @@ export function statUpdate(
 export function statUpdatesToBtreeStatUpdate(
   statUpdates: PolymeshPrimitivesStatisticsStatUpdate[],
   context: Context
-): BTreeSetStatUpdate {
-  const sorted = [...statUpdates];
-  return context.createType('BTreeSetStatUpdate', sorted);
+): BTreeSet<PolymeshPrimitivesStatisticsStatUpdate> {
+  return context.createType('BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>', statUpdates);
 }
 
 /**
@@ -3523,10 +3543,11 @@ export function createStat2ndKey(context: Context): PolymeshPrimitivesStatistics
 export function complianceConditionsToBtreeSet(
   conditions: PolymeshPrimitivesTransferComplianceTransferCondition[],
   context: Context
-): BTreeSetTransferCondition {
-  // The chain expects inputs to be sorted. Copy to avoid mutating input
-  const sorted = [...conditions].sort();
-  return context.createType('BTreeSetTransferCondition', sorted);
+): BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition> {
+  return context.createType(
+    'BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition> ',
+    conditions
+  );
 }
 
 /**

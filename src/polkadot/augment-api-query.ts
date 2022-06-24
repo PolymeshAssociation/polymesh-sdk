@@ -3,6 +3,7 @@
 
 import type { ApiTypes } from '@polkadot/api-base/types';
 import type {
+  BTreeSet,
   Bytes,
   Null,
   Option,
@@ -16,10 +17,9 @@ import type {
   u64,
   u8,
 } from '@polkadot/types-codec';
-import type { AnyNumber, ITuple } from '@polkadot/types-codec/types';
+import type { AnyNumber, IMethod, ITuple } from '@polkadot/types-codec/types';
 import type { AccountId32, Call, H256, Perbill, Permill } from '@polkadot/types/interfaces/runtime';
 import type {
-  BTreeSetStatType,
   FrameSupportWeightsPerDispatchClassU64,
   FrameSystemAccountInfo,
   FrameSystemEventRecord,
@@ -1521,7 +1521,7 @@ declare module '@polkadot/api-base/types/storage' {
         ApiType,
         (
           arg1: AccountId32 | string | Uint8Array,
-          arg2: Call | { callIndex?: any; args?: any } | string | Uint8Array
+          arg2: Call | IMethod | string | Uint8Array
         ) => Observable<Option<u64>>,
         [AccountId32, Call]
       >;
@@ -2558,7 +2558,7 @@ declare module '@polkadot/api-base/types/storage' {
         ApiType,
         (
           arg: PolymeshPrimitivesStatisticsAssetScope | { Ticker: any } | string | Uint8Array
-        ) => Observable<Vec<PolymeshPrimitivesStatisticsStatType>>,
+        ) => Observable<BTreeSet<PolymeshPrimitivesStatisticsStatType>>,
         [PolymeshPrimitivesStatisticsAssetScope]
       >;
       /**

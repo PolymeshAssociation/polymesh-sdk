@@ -7106,7 +7106,9 @@ describe('agentGroupToPermissionGroup', () => {
     it('should convert scopeIds to a BTreeSetIdentityID', () => {
       const context = dsMockUtils.getContextInstance();
       const ids = ['b', 'a', 'c'] as unknown as PolymeshPrimitivesIdentityId[];
-      context.createType.withArgs('BTreeSetIdentityId', ['a', 'b', 'c']).returns(['a', 'b', 'c']);
+      context.createType
+        .withArgs('BTreeSet<PolymeshPrimitivesIdentityId>', ['b', 'a', 'c'])
+        .returns(['a', 'b', 'c']);
 
       const result = scopeIdsToBtreeSetIdentityId(ids, context);
       expect(result).toEqual(['a', 'b', 'c']);
