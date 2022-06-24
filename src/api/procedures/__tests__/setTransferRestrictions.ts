@@ -21,7 +21,6 @@ import {
 } from '~/api/procedures/setTransferRestrictions';
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { createMockBTreeSet } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import { TransferRestriction, TransferRestrictionType, TxTags } from '~/types';
 import { PolymeshTx, StatisticsOpType, TickerKey } from '~/types/internal';
@@ -231,7 +230,7 @@ describe('setTransferRestrictions procedure', () => {
         currentRestrictions: [rawPercentageRestriction],
         occupiedSlots: new BigNumber(0),
         needStat: false,
-        currentStats: createMockBTreeSet([]),
+        currentStats: dsMockUtils.createMockBTreeSet([]),
       }
     );
 
@@ -254,7 +253,7 @@ describe('setTransferRestrictions procedure', () => {
         currentRestrictions: [rawCountRestriction],
         occupiedSlots: new BigNumber(0),
         needStat: false,
-        currentStats: createMockBTreeSet([]),
+        currentStats: dsMockUtils.createMockBTreeSet([]),
       }
     );
 
@@ -285,12 +284,13 @@ describe('setTransferRestrictions procedure', () => {
         currentRestrictions: [],
         occupiedSlots: new BigNumber(0),
         needStat: false,
-        currentStats: createMockBTreeSet([]),
+        currentStats: dsMockUtils.createMockBTreeSet([]),
       }
     );
 
     const exemptedDids = ['0x1000', '0x2000', '0x3000'];
-    const exemptedDidsBtreeSet = createMockBTreeSet<PolymeshPrimitivesIdentityId>(exemptedDids);
+    const exemptedDidsBtreeSet =
+      dsMockUtils.createMockBTreeSet<PolymeshPrimitivesIdentityId>(exemptedDids);
     const op = 'Count';
 
     scopeIdsToBtreeSetStub.returns(exemptedDidsBtreeSet);
@@ -337,7 +337,7 @@ describe('setTransferRestrictions procedure', () => {
         currentRestrictions: [rawCountRestriction],
         occupiedSlots: new BigNumber(0),
         needStat: false,
-        currentStats: createMockBTreeSet([]),
+        currentStats: dsMockUtils.createMockBTreeSet([]),
       }
     );
     const emptyConditionsBtreeSet =
@@ -365,7 +365,7 @@ describe('setTransferRestrictions procedure', () => {
         currentRestrictions: [rawCountRestriction],
         occupiedSlots: new BigNumber(0),
         needStat: false,
-        currentStats: createMockBTreeSet([]),
+        currentStats: dsMockUtils.createMockBTreeSet([]),
       }
     );
 
@@ -389,7 +389,7 @@ describe('setTransferRestrictions procedure', () => {
         currentRestrictions: [rawPercentageRestriction],
         occupiedSlots: new BigNumber(0),
         needStat: false,
-        currentStats: createMockBTreeSet([]),
+        currentStats: dsMockUtils.createMockBTreeSet([]),
       }
     );
 
@@ -418,7 +418,7 @@ describe('setTransferRestrictions procedure', () => {
         currentRestrictions: [],
         occupiedSlots: new BigNumber(0),
         needStat: false,
-        currentStats: createMockBTreeSet([]),
+        currentStats: dsMockUtils.createMockBTreeSet([]),
       }
     );
     let err;
@@ -443,7 +443,7 @@ describe('setTransferRestrictions procedure', () => {
         currentRestrictions: [rawCountRestriction],
         occupiedSlots: new BigNumber(3),
         needStat: false,
-        currentStats: createMockBTreeSet([]),
+        currentStats: dsMockUtils.createMockBTreeSet([]),
       }
     );
 
@@ -470,9 +470,8 @@ describe('setTransferRestrictions procedure', () => {
     createStat2ndKeyStub.withArgs(mockContext).returns(raw2ndKey);
     rawStatUpdate = dsMockUtils.createMockStatUpdate();
     const mockStatsBtree = dsMockUtils.createMockBTreeSet([rawStatType]);
-    const mockStatUpdateBtree = createMockBTreeSet<PolymeshPrimitivesStatisticsStatUpdate>([
-      rawStatUpdate,
-    ]);
+    const mockStatUpdateBtree =
+      dsMockUtils.createMockBTreeSet<PolymeshPrimitivesStatisticsStatUpdate>([rawStatUpdate]);
     const hasStub = mockStatUpdateBtree.has as sinon.SinonStub;
     hasStub.returns(false);
     statUpdateStub.returns(rawStatUpdate);
@@ -488,7 +487,7 @@ describe('setTransferRestrictions procedure', () => {
         currentRestrictions: [],
         occupiedSlots: new BigNumber(0),
         needStat: true,
-        currentStats: createMockBTreeSet([]),
+        currentStats: dsMockUtils.createMockBTreeSet([]),
       }
     );
 
@@ -541,7 +540,7 @@ describe('setTransferRestrictions procedure', () => {
           currentRestrictions: [],
           occupiedSlots: new BigNumber(0),
           needStat: false,
-          currentStats: createMockBTreeSet([]),
+          currentStats: dsMockUtils.createMockBTreeSet([]),
         }
       );
 
@@ -563,7 +562,7 @@ describe('setTransferRestrictions procedure', () => {
           currentRestrictions: [],
           occupiedSlots: new BigNumber(0),
           needStat: true,
-          currentStats: createMockBTreeSet([]),
+          currentStats: dsMockUtils.createMockBTreeSet([]),
         }
       );
 
@@ -628,7 +627,7 @@ describe('setTransferRestrictions procedure', () => {
     });
 
     it('should fetch, process and return shared data', async () => {
-      const emptyBtreeStats = createMockBTreeSet([]);
+      const emptyBtreeStats = dsMockUtils.createMockBTreeSet([]);
       dsMockUtils.createQueryStub('statistics', 'activeAssetStats', {
         returnValue: emptyBtreeStats,
       });
@@ -699,7 +698,7 @@ describe('setTransferRestrictions procedure', () => {
     it('should detect when an asset stat does not need to be made', async () => {
       const mockCountStat = [{ type: StatisticsOpType.Count }];
       const mockBalanceStat = [{ type: StatisticsOpType.Balance }];
-      const mockStatsBtree = createMockBTreeSet([mockCountStat, mockBalanceStat]);
+      const mockStatsBtree = dsMockUtils.createMockBTreeSet([mockCountStat, mockBalanceStat]);
       const hasStub = mockStatsBtree.has as sinon.SinonStub;
       hasStub.returns(true);
       statisticsOpTypeToStatTypeStub.returns(
