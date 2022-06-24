@@ -3888,7 +3888,7 @@ export const createMockStatisticsOpTypeToStatType = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockStatistics = (
+export const createMockStatisticsStatType = (
   stat?:
     | PolymeshPrimitivesStatisticsStatType
     | {

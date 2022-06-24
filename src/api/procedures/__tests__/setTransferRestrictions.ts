@@ -190,7 +190,7 @@ describe('setTransferRestrictions procedure', () => {
       MaxInvestorOwnership: rawPercentage,
     });
     rawScopeId = dsMockUtils.createMockScopeId(exemptedDid);
-    rawStatType = dsMockUtils.createMockStatistics();
+    rawStatType = dsMockUtils.createMockStatisticsStatType();
     raw2ndKey = dsMockUtils.createMock2ndKey();
 
     transferRestrictionToTransferManagerStub

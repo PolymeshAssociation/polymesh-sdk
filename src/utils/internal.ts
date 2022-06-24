@@ -1185,7 +1185,6 @@ export function assertTickerValid(ticker: string): void {
 }
 
 /**
- * TODO rethink the need here
  * @hidden
  *
  * @param type TransferRestriction type that was given

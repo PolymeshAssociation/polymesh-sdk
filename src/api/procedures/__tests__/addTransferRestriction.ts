@@ -179,7 +179,7 @@ describe('addTransferRestriction procedure', () => {
       'scopeIdsToBtreeSetIdentityId'
     );
     rawOp = dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count);
-    rawStatType = dsMockUtils.createMockStatistics();
+    rawStatType = dsMockUtils.createMockStatisticsStatType();
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawCount = dsMockUtils.createMockU64(count);
     rawPercentage = dsMockUtils.createMockPermill(percentage.multipliedBy(10000));
