@@ -1,8 +1,5 @@
-import {
-  BTreeSetTransferCondition,
-  PolymeshPrimitivesStatisticsStatType,
-  PolymeshPrimitivesTransferComplianceTransferCondition,
-} from '@polkadot/types/lookup';
+import { PolymeshPrimitivesTransferComplianceTransferCondition } from '@polkadot/types/lookup';
+import { BTreeSet } from '@polkadot/types-codec';
 import BigNumber from 'bignumber.js';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
@@ -18,7 +15,6 @@ import {
 } from '~/types';
 import { ProcedureAuthorization, StatisticsOpType } from '~/types/internal';
 import {
-  meshStatToStatisticsOpType,
   scopeIdsToBtreeSetIdentityId,
   statisticsOpTypeToStatOpType,
   stringToIdentityId,
@@ -27,12 +23,7 @@ import {
   transferRestrictionToPolymeshTransferCondition,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import {
-  checkTxType,
-  compareStatTypeToTransferRestrictionType,
-  compareTransferRestrictionToInput,
-  getExemptedIds,
-} from '~/utils/internal';
+import { checkTxType, getExemptedIds, neededStatTypeForRestrictionInput } from '~/utils/internal';
 
 export type AddCountTransferRestrictionParams = CountTransferRestrictionInput & {
   type: TransferRestrictionType.Count;
@@ -61,8 +52,7 @@ export type AddTransferRestrictionParams = { ticker: string } & (
 );
 
 export interface Storage {
-  // currentRestrictions: PolymeshPrimitivesTransferComplianceTransferCondition[];
-  currentRestrictions: BTreeSetTransferCondition;
+  currentRestrictions: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
 }
 
 /**
@@ -88,7 +78,6 @@ export async function prepareAddTransferRestriction(
   const maxConditions = u32ToBigNumber(consts.statistics.maxTransferConditionsPerAsset);
 
   const restrictionAmount = new BigNumber(currentRestrictions.size);
-  console.log('restriction amount: ', currentRestrictions.size);
   if (restrictionAmount.gte(maxConditions)) {
     throw new PolymeshError({
       code: ErrorCode.LimitExceeded,
@@ -113,23 +102,17 @@ export async function prepareAddTransferRestriction(
     chainType = TransferRestrictionType.ClaimOwnership;
   }
 
-  const exists = !!(
-    currentRestrictions as unknown as Array<PolymeshPrimitivesTransferComplianceTransferCondition>
-  ).find(transferRestriction =>
-    compareTransferRestrictionToInput(transferRestriction, value, type)
+  const rawTransferCondition = transferRestrictionToPolymeshTransferCondition(
+    { type: chainType, value },
+    context
   );
 
-  if (exists) {
+  if (currentRestrictions.has(rawTransferCondition)) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
       message: 'Cannot add the same restriction more than once',
     });
   }
-
-  const rawTransferCondition = transferRestrictionToPolymeshTransferCondition(
-    { type: chainType, value },
-    context
-  );
 
   // The chain requires BTreeSets to be sorted or else it will reject the transaction
   // const conditions = currentRestrictions.add(rawTransferCondition);
@@ -144,23 +127,23 @@ export async function prepareAddTransferRestriction(
     })
   );
 
-  // if (exemptedIdentities.length) {
-  //   const op =
-  //     type === TransferRestrictionType.Count
-  //       ? statisticsOpTypeToStatOpType(StatisticsOpType.Count, context)
-  //       : statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
-  //   const exemptedIds = await getExemptedIds(exemptedIdentities, context, ticker);
-  //   const exemptedScopeIds = exemptedIds.map(entityId => stringToIdentityId(entityId, context));
-  //   const btreeIds = scopeIdsToBtreeSetIdentityId(exemptedScopeIds, context);
-  //   const exemptKey = toExemptKey(tickerKey, op);
-  //   transactions.push(
-  //     checkTxType({
-  //       transaction: statistics.setEntitiesExempt,
-  //       feeMultiplier: new BigNumber(exemptedIds.length),
-  //       args: [true, exemptKey, btreeIds],
-  //     })
-  //   );
-  // }
+  if (exemptedIdentities.length) {
+    const op =
+      type === TransferRestrictionType.Count
+        ? statisticsOpTypeToStatOpType(StatisticsOpType.Count, context)
+        : statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
+    const exemptedIds = await getExemptedIds(exemptedIdentities, context, ticker);
+    const exemptedScopeIds = exemptedIds.map(entityId => stringToIdentityId(entityId, context));
+    const btreeIds = scopeIdsToBtreeSetIdentityId(exemptedScopeIds, context);
+    const exemptKey = toExemptKey(tickerKey, op);
+    transactions.push(
+      checkTxType({
+        transaction: statistics.setEntitiesExempt,
+        feeMultiplier: new BigNumber(exemptedIds.length),
+        args: [true, exemptKey, btreeIds],
+      })
+    );
+  }
 
   this.addBatchTransaction({ transactions });
   return restrictionAmount.plus(1);
@@ -212,16 +195,14 @@ export async function prepareStorage(
     statistics.activeAssetStats(tickerKey),
   ]);
 
-  console.log('need stat?', currentStats.toJSON());
-  const needStat = !(currentStats as unknown as Array<PolymeshPrimitivesStatisticsStatType>).find(
-    s => compareStatTypeToTransferRestrictionType(s, type)
-  );
+  const neededStat = neededStatTypeForRestrictionInput(type, context);
+  const needStat = !currentStats.has(neededStat);
 
-  if (!needStat) {
-    console.log('yes');
+  if (needStat) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'The appropriate statistic must be enabled. Try calling the enableStat method first',
+      message:
+        'The appropriate stat type for this restriction is not set for the Asset. Try calling enableStat in the namespace first',
     });
   }
 

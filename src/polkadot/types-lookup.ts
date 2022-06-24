@@ -381,25 +381,22 @@ declare module '@polkadot/types/lookup' {
   export interface PolymeshPrimitivesSubsetSubsetRestrictionTicker extends Enum {
     readonly isWhole: boolean;
     readonly isThese: boolean;
-    readonly asThese: BTreeSetTicker;
+    readonly asThese: BTreeSet<PolymeshPrimitivesTicker>;
     readonly isExcept: boolean;
-    readonly asExcept: BTreeSetTicker;
+    readonly asExcept: BTreeSet<PolymeshPrimitivesTicker>;
     readonly type: 'Whole' | 'These' | 'Except';
   }
 
   /** @name PolymeshPrimitivesTicker (39) */
   export interface PolymeshPrimitivesTicker extends U8aFixed {}
 
-  /** @name BTreeSetTicker (41) */
-  export interface BTreeSetTicker extends Vec<PolymeshPrimitivesTicker> {}
-
   /** @name PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions (43) */
   export interface PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions extends Enum {
     readonly isWhole: boolean;
     readonly isThese: boolean;
-    readonly asThese: BTreeSetPalletPermissions;
+    readonly asThese: BTreeSet<PolymeshPrimitivesSecondaryKeyPalletPermissions>;
     readonly isExcept: boolean;
-    readonly asExcept: BTreeSetPalletPermissions;
+    readonly asExcept: BTreeSet<PolymeshPrimitivesSecondaryKeyPalletPermissions>;
     readonly type: 'Whole' | 'These' | 'Except';
   }
 
@@ -413,26 +410,19 @@ declare module '@polkadot/types/lookup' {
   export interface PolymeshPrimitivesSubsetSubsetRestrictionDispatchableName extends Enum {
     readonly isWhole: boolean;
     readonly isThese: boolean;
-    readonly asThese: BTreeSetDispatchableName;
+    readonly asThese: BTreeSet<Bytes>;
     readonly isExcept: boolean;
-    readonly asExcept: BTreeSetDispatchableName;
+    readonly asExcept: BTreeSet<Bytes>;
     readonly type: 'Whole' | 'These' | 'Except';
   }
-
-  /** @name BTreeSetDispatchableName (48) */
-  export interface BTreeSetDispatchableName extends Vec<Bytes> {}
-
-  /** @name BTreeSetPalletPermissions (50) */
-  export interface BTreeSetPalletPermissions
-    extends Vec<PolymeshPrimitivesSecondaryKeyPalletPermissions> {}
 
   /** @name PolymeshPrimitivesSubsetSubsetRestrictionPortfolioId (52) */
   export interface PolymeshPrimitivesSubsetSubsetRestrictionPortfolioId extends Enum {
     readonly isWhole: boolean;
     readonly isThese: boolean;
-    readonly asThese: BTreeSetPortfolioId;
+    readonly asThese: BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>;
     readonly isExcept: boolean;
-    readonly asExcept: BTreeSetPortfolioId;
+    readonly asExcept: BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>;
     readonly type: 'Whole' | 'These' | 'Except';
   }
 
@@ -449,9 +439,6 @@ declare module '@polkadot/types/lookup' {
     readonly asUser: u64;
     readonly type: 'Default' | 'User';
   }
-
-  /** @name BTreeSetPortfolioId (56) */
-  export interface BTreeSetPortfolioId extends Vec<PolymeshPrimitivesIdentityIdPortfolioId> {}
 
   /** @name PolymeshPrimitivesIdentityClaim (59) */
   export interface PolymeshPrimitivesIdentityClaim extends Struct {
@@ -5358,24 +5345,24 @@ declare module '@polkadot/types/lookup' {
     readonly isSetActiveAssetStats: boolean;
     readonly asSetActiveAssetStats: {
       readonly asset: PolymeshPrimitivesStatisticsAssetScope;
-      readonly statTypes: BTreeSetStatType;
+      readonly statTypes: BTreeSet<PolymeshPrimitivesStatisticsStatType>;
     } & Struct;
     readonly isBatchUpdateAssetStats: boolean;
     readonly asBatchUpdateAssetStats: {
       readonly asset: PolymeshPrimitivesStatisticsAssetScope;
       readonly statType: PolymeshPrimitivesStatisticsStatType;
-      readonly values: BTreeSetStatUpdate;
+      readonly values: BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>;
     } & Struct;
     readonly isSetAssetTransferCompliance: boolean;
     readonly asSetAssetTransferCompliance: {
       readonly asset: PolymeshPrimitivesStatisticsAssetScope;
-      readonly transferConditions: BTreeSetTransferCondition;
+      readonly transferConditions: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
     } & Struct;
     readonly isSetEntitiesExempt: boolean;
     readonly asSetEntitiesExempt: {
       readonly isExempt: bool;
       readonly exemptKey: PolymeshPrimitivesTransferComplianceTransferConditionExemptKey;
-      readonly entities: BTreeSetIdentityId;
+      readonly entities: BTreeSet<PolymeshPrimitivesIdentityId>;
     } & Struct;
     readonly type:
       | 'SetActiveAssetStats'
@@ -5383,19 +5370,6 @@ declare module '@polkadot/types/lookup' {
       | 'SetAssetTransferCompliance'
       | 'SetEntitiesExempt';
   }
-
-  /** @name BTreeSetStatType (512) */
-  export interface BTreeSetStatType extends BTreeSet<PolymeshPrimitivesStatisticsStatType> {}
-
-  /** @name BTreeSetStatUpdate (513) */
-  export interface BTreeSetStatUpdate extends Vec<PolymeshPrimitivesStatisticsStatUpdate> {}
-
-  /** @name BTreeSetTransferCondition (514) */
-  export interface BTreeSetTransferCondition
-    extends BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition> {}
-
-  /** @name BTreeSetIdentityId (515) */
-  export interface BTreeSetIdentityId extends Vec<PolymeshPrimitivesIdentityId> {}
 
   /** @name PalletStoCall (516) */
   export interface PalletStoCall extends Enum {
@@ -6716,7 +6690,7 @@ declare module '@polkadot/types/lookup' {
   /** @name PolymeshPrimitivesTransferComplianceAssetTransferCompliance (673) */
   export interface PolymeshPrimitivesTransferComplianceAssetTransferCompliance extends Struct {
     readonly paused: bool;
-    readonly requirements: BTreeSetTransferCondition;
+    readonly requirements: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
   }
 
   /** @name PalletStatisticsError (676) */

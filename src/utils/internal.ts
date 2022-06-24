@@ -86,6 +86,8 @@ import {
   middlewareScopeToScope,
   permillToBigNumber,
   signerToString,
+  statisticsOpTypeToStatOpType,
+  statisticsOpTypeToStatType,
   statsClaimToClaim,
   u64ToBigNumber,
 } from '~/utils/conversion';
@@ -1355,4 +1357,21 @@ export function compareStatTypeToTransferRestrictionType(
   } else {
     return transferRestrictionType === TransferRestrictionType.ClaimOwnership;
   }
+}
+
+//  * @hidden
+//  *
+//  * @param type TransferRestriction type that was given
+//  * @param context
+//  * @returns encoded StatType needed for the TransferRestriction to be enabled
+//  */
+export function neededStatTypeForRestrictionInput(
+  type: TransferRestrictionType,
+  context: Context
+): PolymeshPrimitivesStatisticsStatType {
+  const neededOp =
+    type === TransferRestrictionType.Count ? StatisticsOpType.Count : StatisticsOpType.Balance;
+  const rawOp = statisticsOpTypeToStatOpType(neededOp, context);
+
+  return statisticsOpTypeToStatType({ op: rawOp }, context);
 }

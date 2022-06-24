@@ -8,13 +8,11 @@ import {
   Signature,
 } from '@polkadot/types/interfaces';
 import {
-  BTreeSetIdentityId,
-  BTreeSetStatUpdate,
-  BTreeSetTransferCondition,
   ConfidentialIdentityClaimProofsScopeClaimProof,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCorporateAction,
   PalletCorporateActionsDistribution,
+  PalletCorporateActionsInitiateCorporateActionArgs,
   PalletStoFundraiser,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesAuthorizationAuthorizationData,
@@ -36,6 +34,7 @@ import {
   PolymeshPrimitivesTransferComplianceTransferCondition,
 } from '@polkadot/types/lookup';
 import { ITuple } from '@polkadot/types/types';
+import { BTreeSet } from '@polkadot/types-codec';
 import {
   hexToU8a,
   isHex,
@@ -63,6 +62,7 @@ import {
   values,
 } from 'lodash';
 
+import { assertCaTaxWithholdingsValid } from '~/api/procedures/utils';
 import { countryCodeToMeshCountryCode, meshCountryCodeToCountryCode } from '~/generated/utils';
 import {
   Account,
@@ -164,6 +164,8 @@ import {
   ExternalAgentCondition,
   IdentityCondition,
   IdentityWithClaims,
+  InputCorporateActionTargets,
+  InputCorporateActionTaxWithholdings,
   InputRequirement,
   InputTrustedClaimIssuer,
   InstructionType,
@@ -1043,14 +1045,14 @@ export function extrinsicPermissionsToTransactionPermissions(
     pallets.forEach(({ palletName, dispatchableNames }) => {
       const moduleName = stringLowerFirst(bytesToString(palletName));
       if (dispatchableNames.isExcept) {
-        const dispatchables = dispatchableNames.asExcept;
+        const dispatchables = [...dispatchableNames.asExcept];
         exceptions = [
           ...exceptions,
           ...dispatchables.map(name => formatTxTag(bytesToString(name), moduleName)),
         ];
         txValues = [...txValues, moduleName as ModuleName];
       } else if (dispatchableNames.isThese) {
-        const dispatchables = dispatchableNames.asThese;
+        const dispatchables = [...dispatchableNames.asThese];
         txValues = [
           ...txValues,
           ...dispatchables.map(name => formatTxTag(bytesToString(name), moduleName)),
@@ -1097,7 +1099,7 @@ export function meshPermissionsToPermissions(
 
   if (assetsPermissions) {
     assets = {
-      values: assetsPermissions.map(
+      values: [...assetsPermissions].map(
         ticker => new Asset({ ticker: tickerToString(ticker) }, context)
       ),
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -1119,7 +1121,9 @@ export function meshPermissionsToPermissions(
 
   if (portfolioIds) {
     portfolios = {
-      values: portfolioIds.map(portfolioId => meshPortfolioIdToPortfolio(portfolioId, context)),
+      values: [...portfolioIds].map(portfolioId =>
+        meshPortfolioIdToPortfolio(portfolioId, context)
+      ),
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       type: portfoliosType!,
     };
@@ -2898,10 +2902,8 @@ export function transferRestrictionToPolymeshTransferCondition(
 export function scopeIdsToBtreeSetIdentityId(
   scopeIds: PolymeshPrimitivesIdentityId[],
   context: Context
-): BTreeSetIdentityId {
-  // The chain expects inputs to be sorted. Copy to avoid mutating input
-  const sortedScopes = [...scopeIds].sort();
-  return context.createType('BTreeSetIdentityId', sortedScopes);
+): BTreeSet<PolymeshPrimitivesIdentityId> {
+  return context.createType('BTreeSet<PolymeshPrimitivesIdentityId>', scopeIds);
 }
 
 /**
@@ -3476,11 +3478,41 @@ export function targetsToTargetIdentities(
   context: Context
 ): TargetIdentities {
   const { treatment, identities } = targets;
+  const { maxTargetIds } = context.polymeshApi.consts.corporateAction;
+
+  const maxTargets = u32ToBigNumber(maxTargetIds);
+
+  if (maxTargets.lt(targets.identities.length)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Too many target Identities',
+      data: {
+        maxTargets,
+      },
+    });
+  }
 
   return context.createType('TargetIdentities', {
     identities: identities.map(identity => stringToIdentityId(signerToString(identity), context)),
     treatment: context.createType('TargetTreatment', treatment),
   });
+}
+
+/**
+ * @hidden
+ */
+export function caTaxWithholdingsToMeshTaxWithholdings(
+  taxWithholdings: InputCorporateActionTaxWithholdings,
+  context: Context
+): [PolymeshPrimitivesIdentityId, Permill][] {
+  assertCaTaxWithholdingsValid(taxWithholdings, context);
+
+  return taxWithholdings.map(({ identity, percentage }) =>
+    tuple(
+      stringToIdentityId(signerToString(identity), context),
+      percentageToPermill(percentage, context)
+    )
+  );
 }
 
 /**
@@ -3526,6 +3558,56 @@ export function corporateActionIdentifierToCaId(
 /**
  * @hidden
  */
+export function corporateActionParamsToMeshCorporateActionArgs(
+  params: {
+    ticker: string;
+    kind: CorporateActionKind;
+    declarationDate: Date;
+    checkpoint: Date | Checkpoint | CheckpointSchedule;
+    description: string;
+    targets: InputCorporateActionTargets | null;
+    defaultTaxWithholding: BigNumber | null;
+    taxWithholdings: InputCorporateActionTaxWithholdings | null;
+  },
+  context: Context
+): PalletCorporateActionsInitiateCorporateActionArgs {
+  const {
+    ticker,
+    kind,
+    declarationDate,
+    checkpoint,
+    description,
+    targets,
+    defaultTaxWithholding,
+    taxWithholdings,
+  } = params;
+  const rawTicker = stringToTicker(ticker, context);
+  const rawKind = corporateActionKindToCaKind(kind, context);
+  const rawDeclDate = dateToMoment(declarationDate, context);
+  const rawRecordDate = optionize(checkpointToRecordDateSpec)(checkpoint, context);
+  const rawDetails = stringToBytes(description, context);
+  const rawTargets = optionize(targetsToTargetIdentities)(targets, context);
+  const rawTax = optionize(percentageToPermill)(defaultTaxWithholding, context);
+  const rawWithholdings = optionize(caTaxWithholdingsToMeshTaxWithholdings)(
+    taxWithholdings,
+    context
+  );
+
+  return context.createType('PalletCorporateActionsInitiateCorporateActionArgs', {
+    ticker: rawTicker,
+    kind: rawKind,
+    declDate: rawDeclDate,
+    recordDate: rawRecordDate,
+    details: rawDetails,
+    targets: rawTargets,
+    defaultWithholdingTax: rawTax,
+    withholdingTax: rawWithholdings,
+  });
+}
+
+/**
+ * @hidden
+ */
 export function statisticsOpTypeToStatType(
   args: {
     op: PolymeshPrimitivesStatisticsStatOpType;
@@ -3535,6 +3617,29 @@ export function statisticsOpTypeToStatType(
 ): PolymeshPrimitivesStatisticsStatType {
   const { op, claimIssuer } = args;
   return context.createType('PolymeshPrimitivesStatisticsStatType', { op, claimIssuer });
+}
+
+/**
+ * @hidden
+ */
+export function statisticStatTypesToBtreeStatType(
+  stats: PolymeshPrimitivesStatisticsStatType[],
+  context: Context
+): BTreeSet<PolymeshPrimitivesStatisticsStatType> {
+  return context.createType('BTreeSet<PolymeshPrimitivesStatisticsStatType>', stats);
+}
+
+/**
+ * @hidden
+ */
+export function transferConditionsToBtreeTransferConditions(
+  conditions: PolymeshPrimitivesTransferComplianceTransferCondition[],
+  context: Context
+): BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition> {
+  return context.createType(
+    'BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>',
+    conditions
+  );
 }
 
 /**
@@ -3554,9 +3659,8 @@ export function statUpdate(
 export function statUpdatesToBtreeStatUpdate(
   statUpdates: PolymeshPrimitivesStatisticsStatUpdate[],
   context: Context
-): BTreeSetStatUpdate {
-  const sorted = [...statUpdates];
-  return context.createType('BTreeSetStatUpdate', sorted);
+): BTreeSet<PolymeshPrimitivesStatisticsStatUpdate> {
+  return context.createType('BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>', statUpdates);
 }
 
 /**
@@ -3610,10 +3714,11 @@ export function createStat2ndKey(
 export function complianceConditionsToBtreeSet(
   conditions: PolymeshPrimitivesTransferComplianceTransferCondition[],
   context: Context
-): BTreeSetTransferCondition {
-  // The chain expects inputs to be sorted. Copy to avoid mutating input
-  const sorted = [...conditions].sort();
-  return context.createType('BTreeSetTransferCondition', sorted);
+): BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition> {
+  return context.createType(
+    'BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition> ',
+    conditions
+  );
 }
 
 /**
@@ -3632,7 +3737,7 @@ export function toExemptKey(
 export function claimCountStatInputToStatUpdates(
   value: ClaimCountInitialStatInput,
   context: Context
-): BTreeSetStatUpdate {
+): BTreeSet<PolymeshPrimitivesStatisticsStatUpdate> {
   let updateArgs;
 
   if ('yes' in value) {
@@ -3663,7 +3768,7 @@ export function claimCountStatInputToStatUpdates(
 export function countStatInputToStatUpdates(
   args: CountTransferRestrictionInput,
   context: Context
-): BTreeSetStatUpdate {
+): BTreeSet<PolymeshPrimitivesStatisticsStatUpdate> {
   const holderCount = args.count;
   const secondKey = createStat2ndKey('NoClaimStat', context);
   const stat = statUpdate(secondKey, bigNumberToU128(holderCount, context), context);

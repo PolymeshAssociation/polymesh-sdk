@@ -255,11 +255,8 @@ export abstract class TransferRestrictionBase<
       type,
     } = this;
     const tickerKey = stringToTickerKey(ticker, context);
-    const complianceRules = await statistics.assetTransferCompliances(tickerKey);
-    complianceRules.requirements.forEach(a => console.log(a.toHuman()));
-    const filteredRequirements = (
-      complianceRules.requirements as unknown as Array<PolymeshPrimitivesTransferComplianceTransferCondition>
-    ).filter(requirement => {
+    const { requirements } = await statistics.assetTransferCompliances(tickerKey);
+    const filteredRequirements = [...requirements].filter(requirement => {
       if (type === TransferRestrictionType.Count) {
         return requirement.isMaxInvestorCount;
       } else if (type === TransferRestrictionType.Percentage) {

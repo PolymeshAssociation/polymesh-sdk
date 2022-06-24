@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { assertCaTargetsValid, assertCaTaxWithholdingsValid } from '~/api/procedures/utils';
+import { assertCaTaxWithholdingsValid } from '~/api/procedures/utils';
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import {
   CorporateActionTargets,
@@ -87,9 +87,6 @@ export async function prepareModifyCaDefaultConfig(
     });
   }
 
-  if (newTargets) {
-    assertCaTargetsValid(newTargets, context);
-  }
   if (newTaxWithholdings) {
     assertCaTaxWithholdingsValid(newTaxWithholdings, context);
   }

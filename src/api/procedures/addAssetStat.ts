@@ -1,4 +1,5 @@
-import { BTreeSetStatType, PolymeshPrimitivesStatisticsStatType } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesStatisticsStatType } from '@polkadot/types/lookup';
+import { BTreeSet } from '@polkadot/types-codec';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import {
@@ -44,7 +45,7 @@ export type AddAssetStatParams = { ticker: string } & (
 );
 
 export interface Storage {
-  currentStats: BTreeSetStatType;
+  currentStats: BTreeSet<PolymeshPrimitivesStatisticsStatType>;
 }
 
 /**

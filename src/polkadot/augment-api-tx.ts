@@ -3,6 +3,7 @@
 
 import type { ApiTypes } from '@polkadot/api-base/types';
 import type {
+  BTreeSet,
   Bytes,
   Compact,
   Option,
@@ -14,7 +15,7 @@ import type {
   u64,
   u8,
 } from '@polkadot/types-codec';
-import type { AnyNumber, ITuple } from '@polkadot/types-codec/types';
+import type { AnyNumber, IMethod, ITuple } from '@polkadot/types-codec/types';
 import type {
   AccountId32,
   Call,
@@ -25,10 +26,6 @@ import type {
   Permill,
 } from '@polkadot/types/interfaces/runtime';
 import type {
-  BTreeSetIdentityId,
-  BTreeSetStatType,
-  BTreeSetStatUpdate,
-  BTreeSetTransferCondition,
   ConfidentialIdentityClaimProofsScopeClaimProof,
   FrameSupportScheduleMaybeHashed,
   PalletAssetCheckpointScheduleSpec,
@@ -90,8 +87,10 @@ import type {
   PolymeshPrimitivesSecondaryKeySignatory,
   PolymeshPrimitivesStatisticsAssetScope,
   PolymeshPrimitivesStatisticsStatType,
+  PolymeshPrimitivesStatisticsStatUpdate,
   PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions,
   PolymeshPrimitivesTicker,
+  PolymeshPrimitivesTransferComplianceTransferCondition,
   PolymeshPrimitivesTransferComplianceTransferConditionExemptKey,
   PolymeshRuntimeDevelopRuntimeSessionKeys,
   SpConsensusBabeDigestsNextConfigDescriptor,
@@ -3427,7 +3426,7 @@ declare module '@polkadot/api-base/types/submittable' {
       createOrApproveProposalAsIdentity: AugmentedSubmittable<
         (
           multisig: AccountId32 | string | Uint8Array,
-          proposal: Call | { callIndex?: any; args?: any } | string | Uint8Array,
+          proposal: Call | IMethod | string | Uint8Array,
           expiry: Option<u64> | null | object | string | Uint8Array,
           autoClose: bool | boolean | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
@@ -3446,7 +3445,7 @@ declare module '@polkadot/api-base/types/submittable' {
       createOrApproveProposalAsKey: AugmentedSubmittable<
         (
           multisig: AccountId32 | string | Uint8Array,
-          proposal: Call | { callIndex?: any; args?: any } | string | Uint8Array,
+          proposal: Call | IMethod | string | Uint8Array,
           expiry: Option<u64> | null | object | string | Uint8Array,
           autoClose: bool | boolean | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
@@ -3465,7 +3464,7 @@ declare module '@polkadot/api-base/types/submittable' {
       createProposalAsIdentity: AugmentedSubmittable<
         (
           multisig: AccountId32 | string | Uint8Array,
-          proposal: Call | { callIndex?: any; args?: any } | string | Uint8Array,
+          proposal: Call | IMethod | string | Uint8Array,
           expiry: Option<u64> | null | object | string | Uint8Array,
           autoClose: bool | boolean | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
@@ -3484,7 +3483,7 @@ declare module '@polkadot/api-base/types/submittable' {
       createProposalAsKey: AugmentedSubmittable<
         (
           multisig: AccountId32 | string | Uint8Array,
-          proposal: Call | { callIndex?: any; args?: any } | string | Uint8Array,
+          proposal: Call | IMethod | string | Uint8Array,
           expiry: Option<u64> | null | object | string | Uint8Array,
           autoClose: bool | boolean | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
@@ -3682,7 +3681,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       propose: AugmentedSubmittable<
         (
-          proposal: Call | { callIndex?: any; args?: any } | string | Uint8Array,
+          proposal: Call | IMethod | string | Uint8Array,
           deposit: u128 | AnyNumber | Uint8Array,
           url: Option<Bytes> | null | object | string | Uint8Array,
           description: Option<Bytes> | null | object | string | Uint8Array
@@ -3935,7 +3934,7 @@ declare module '@polkadot/api-base/types/submittable' {
       voteOrPropose: AugmentedSubmittable<
         (
           approve: bool | boolean | Uint8Array,
-          call: Call | { callIndex?: any; args?: any } | string | Uint8Array
+          call: Call | IMethod | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [bool, Call]
       >;
@@ -5893,12 +5892,12 @@ declare module '@polkadot/api-base/types/submittable' {
             | { op?: any; claimIssuer?: any }
             | string
             | Uint8Array,
-          values: BTreeSetStatUpdate
+          values: BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>
         ) => SubmittableExtrinsic<ApiType>,
         [
           PolymeshPrimitivesStatisticsAssetScope,
           PolymeshPrimitivesStatisticsStatType,
-          BTreeSetStatUpdate
+          BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>
         ]
       >;
       /**
@@ -5921,9 +5920,9 @@ declare module '@polkadot/api-base/types/submittable' {
       setActiveAssetStats: AugmentedSubmittable<
         (
           asset: PolymeshPrimitivesStatisticsAssetScope | { Ticker: any } | string | Uint8Array,
-          statTypes: BTreeSetStatType
+          statTypes: BTreeSet<PolymeshPrimitivesStatisticsStatType>
         ) => SubmittableExtrinsic<ApiType>,
-        [PolymeshPrimitivesStatisticsAssetScope, BTreeSetStatType]
+        [PolymeshPrimitivesStatisticsAssetScope, BTreeSet<PolymeshPrimitivesStatisticsStatType>]
       >;
       /**
        * Set asset transfer compliance rules.
@@ -5945,9 +5944,12 @@ declare module '@polkadot/api-base/types/submittable' {
       setAssetTransferCompliance: AugmentedSubmittable<
         (
           asset: PolymeshPrimitivesStatisticsAssetScope | { Ticker: any } | string | Uint8Array,
-          transferConditions: BTreeSetTransferCondition
+          transferConditions: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>
         ) => SubmittableExtrinsic<ApiType>,
-        [PolymeshPrimitivesStatisticsAssetScope, BTreeSetTransferCondition]
+        [
+          PolymeshPrimitivesStatisticsAssetScope,
+          BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>
+        ]
       >;
       /**
        * Set/unset entities exempt from an asset's transfer compliance rules.
@@ -5973,9 +5975,13 @@ declare module '@polkadot/api-base/types/submittable' {
             | { asset?: any; op?: any; claimType?: any }
             | string
             | Uint8Array,
-          entities: BTreeSetIdentityId
+          entities: BTreeSet<PolymeshPrimitivesIdentityId>
         ) => SubmittableExtrinsic<ApiType>,
-        [bool, PolymeshPrimitivesTransferComplianceTransferConditionExemptKey, BTreeSetIdentityId]
+        [
+          bool,
+          PolymeshPrimitivesTransferComplianceTransferConditionExemptKey,
+          BTreeSet<PolymeshPrimitivesIdentityId>
+        ]
       >;
     };
     sto: {
@@ -6183,9 +6189,7 @@ declare module '@polkadot/api-base/types/submittable' {
        * # </weight>
        **/
       sudo: AugmentedSubmittable<
-        (
-          call: Call | { callIndex?: any; args?: any } | string | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
+        (call: Call | IMethod | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
         [Call]
       >;
       /**
@@ -6212,7 +6216,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | { Address20: any }
             | string
             | Uint8Array,
-          call: Call | { callIndex?: any; args?: any } | string | Uint8Array
+          call: Call | IMethod | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [MultiAddress, Call]
       >;
@@ -6230,7 +6234,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       sudoUncheckedWeight: AugmentedSubmittable<
         (
-          call: Call | { callIndex?: any; args?: any } | string | Uint8Array,
+          call: Call | IMethod | string | Uint8Array,
           weight: u64 | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [Call, u64]
@@ -6422,7 +6426,7 @@ declare module '@polkadot/api-base/types/submittable' {
       voteOrPropose: AugmentedSubmittable<
         (
           approve: bool | boolean | Uint8Array,
-          call: Call | { callIndex?: any; args?: any } | string | Uint8Array
+          call: Call | IMethod | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [bool, Call]
       >;
@@ -6735,7 +6739,7 @@ declare module '@polkadot/api-base/types/submittable' {
       voteOrPropose: AugmentedSubmittable<
         (
           approve: bool | boolean | Uint8Array,
-          call: Call | { callIndex?: any; args?: any } | string | Uint8Array
+          call: Call | IMethod | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [bool, Call]
       >;
@@ -6874,7 +6878,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       batch: AugmentedSubmittable<
         (
-          calls: Vec<Call> | (Call | { callIndex?: any; args?: any } | string | Uint8Array)[]
+          calls: Vec<Call> | (Call | IMethod | string | Uint8Array)[]
         ) => SubmittableExtrinsic<ApiType>,
         [Vec<Call>]
       >;
@@ -6901,7 +6905,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       batchAtomic: AugmentedSubmittable<
         (
-          calls: Vec<Call> | (Call | { callIndex?: any; args?: any } | string | Uint8Array)[]
+          calls: Vec<Call> | (Call | IMethod | string | Uint8Array)[]
         ) => SubmittableExtrinsic<ApiType>,
         [Vec<Call>]
       >;
@@ -6930,7 +6934,7 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       batchOptimistic: AugmentedSubmittable<
         (
-          calls: Vec<Call> | (Call | { callIndex?: any; args?: any } | string | Uint8Array)[]
+          calls: Vec<Call> | (Call | IMethod | string | Uint8Array)[]
         ) => SubmittableExtrinsic<ApiType>,
         [Vec<Call>]
       >;

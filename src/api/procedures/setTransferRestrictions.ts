@@ -1,7 +1,4 @@
-import {
-  PolymeshPrimitivesStatisticsStatType,
-  PolymeshPrimitivesTransferComplianceTransferCondition,
-} from '@polkadot/types/lookup';
+import { PolymeshPrimitivesTransferComplianceTransferCondition } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { TransferCondition } from 'polymesh-types/types';
 
@@ -21,9 +18,9 @@ import {
 import { ProcedureAuthorization, StatisticsOpType } from '~/types/internal';
 import {
   complianceConditionsToBtreeSet,
-  meshStatToStatisticsOpType,
   scopeIdsToBtreeSetIdentityId,
   statisticsOpTypeToStatOpType,
+  statisticsOpTypeToStatType,
   stringToIdentityId,
   stringToTickerKey,
   toExemptKey,
@@ -248,16 +245,13 @@ export async function prepareStorage(
   const tickerKey = stringToTickerKey(ticker, context);
 
   const currentStats = await statistics.activeAssetStats(tickerKey);
-  const needStat = !(currentStats as unknown as Array<PolymeshPrimitivesStatisticsStatType>).find(
-    s => {
-      const stat = meshStatToStatisticsOpType(s);
-      const cmpStat =
-        stat === StatisticsOpType.Balance
-          ? TransferRestrictionType.Percentage
-          : TransferRestrictionType.Count;
-      return cmpStat === type;
-    }
-  );
+
+  const neededOp =
+    type === TransferRestrictionType.Count ? StatisticsOpType.Count : StatisticsOpType.Balance;
+  const rawOp = statisticsOpTypeToStatOpType(neededOp, context);
+
+  const neededStat = statisticsOpTypeToStatType({ op: rawOp }, context);
+  const needStat = !currentStats.has(neededStat);
 
   if (needStat) {
     throw new PolymeshError({

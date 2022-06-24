@@ -1,4 +1,5 @@
-import { BTreeSetStatType, PolymeshPrimitivesStatisticsStatType } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesStatisticsStatType } from '@polkadot/types/lookup';
+import { BTreeSet } from '@polkadot/types-codec';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import { ClaimIssuer, ErrorCode, StatType, TxTags } from '~/types';
@@ -52,7 +53,7 @@ export type RemoveAssetStatParams = { ticker: string } & (
 );
 
 export interface Storage {
-  currentStats: BTreeSetStatType;
+  currentStats: BTreeSet<PolymeshPrimitivesStatisticsStatType>;
 }
 
 /**
@@ -94,7 +95,7 @@ export async function prepareRemoveAssetStat(
   this.addTransaction(
     checkTxType({
       transaction: statistics.setActiveAssetStats,
-      args: [tickerKey, currentStats as BTreeSetStatType],
+      args: [tickerKey, currentStats],
     })
   );
 }
@@ -170,7 +171,7 @@ export async function prepareStorage(
   });
 
   return {
-    currentStats: currentStats as unknown as BTreeSetStatType,
+    currentStats: currentStats,
   };
 }
 
