@@ -1211,16 +1211,9 @@ export function compareStatsToInput(
   }
 
   if (s.claimIssuer.isSome) {
-    console.log('stat had claim issuer');
-    // if (type === StatType.Count || type === StatType.Balance) {
-    //   console.log('early return type');
-    //   return false;
-    // }
-
     const [meshType, meshIssuer] = s.claimIssuer.unwrap();
     const issuerDid = identityIdToString(meshIssuer);
     const statType = meshClaimTypeToClaimType(meshType);
-    console.log('comparing issuer did stuff: ', issuerDid, issuer?.did, statType, claimType);
     if (issuerDid !== issuer?.did || statType !== claimType) {
       return false;
     }
@@ -1344,7 +1337,6 @@ export function compareStatTypeToTransferRestrictionType(
   transferRestrictionType: TransferRestrictionType
 ): boolean {
   const stat = meshStatToStatisticsOpType(statType);
-  console.log('comparing', stat, transferRestrictionType);
   if (stat === StatisticsOpType.Count) {
     return transferRestrictionType === TransferRestrictionType.Count;
   } else if (stat === StatisticsOpType.Balance) {
@@ -1356,12 +1348,12 @@ export function compareStatTypeToTransferRestrictionType(
   }
 }
 
-//  * @hidden
-//  *
-//  * @param type TransferRestriction type that was given
-//  * @param context
-//  * @returns encoded StatType needed for the TransferRestriction to be enabled
-//  */
+/** @hidden
+ *
+ * @param type TransferRestriction type that was given
+ * @param context
+ * @returns encoded StatType needed for the TransferRestriction to be enabled
+ */
 export function neededStatTypeForRestrictionInput(
   type: TransferRestrictionType,
   context: Context
@@ -1369,6 +1361,5 @@ export function neededStatTypeForRestrictionInput(
   const neededOp =
     type === TransferRestrictionType.Count ? StatisticsOpType.Count : StatisticsOpType.Balance;
   const rawOp = statisticsOpTypeToStatOpType(neededOp, context);
-
   return statisticsOpTypeToStatType({ op: rawOp }, context);
 }

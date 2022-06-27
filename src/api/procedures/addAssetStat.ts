@@ -92,28 +92,28 @@ export async function prepareAddAssetStat(
 
   // Count stats need the user to provide the initial value for the counter as computing them present a DOS attack vector on chain
   // We require users to provide initial stats so they won't miss setting initial values
-  // if (args.type === StatType.Count) {
-  //   const statValue = countStatInputToStatUpdates(args, context);
-  //   transactions.push(
-  //     checkTxType({
-  //       transaction: statistics.batchUpdateAssetStats,
-  //       args: [tickerKey, newStat, statValue],
-  //     })
-  //   );
-  // } else if (args.type === StatType.ScopedCount) {
-  //   if (args.type === StatType.ScopedCount) {
-  //     const {
-  //       claimIssuer: { value },
-  //     } = args;
-  //     const statValue = claimCountStatInputToStatUpdates(value, context);
-  //     transactions.push(
-  //       checkTxType({
-  //         transaction: statistics.batchUpdateAssetStats,
-  //         args: [tickerKey, newStat, statValue],
-  //       })
-  //     );
-  //   }
-  // }
+  if (args.type === StatType.Count) {
+    const statValue = countStatInputToStatUpdates(args, context);
+    transactions.push(
+      checkTxType({
+        transaction: statistics.batchUpdateAssetStats,
+        args: [tickerKey, newStat, statValue],
+      })
+    );
+  } else if (args.type === StatType.ScopedCount) {
+    if (args.type === StatType.ScopedCount) {
+      const {
+        claimIssuer: { value },
+      } = args;
+      const statValue = claimCountStatInputToStatUpdates(value, context);
+      transactions.push(
+        checkTxType({
+          transaction: statistics.batchUpdateAssetStats,
+          args: [tickerKey, newStat, statValue],
+        })
+      );
+    }
+  }
 
   this.addBatchTransaction({ transactions });
 }

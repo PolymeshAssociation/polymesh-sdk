@@ -459,7 +459,7 @@ describe('TransferRestrictionBase class', () => {
         )
         .resolves(expectedQueue);
 
-      const queue = await percentage.disableStat();
+      const queue = await percentage.disableStat({});
 
       expect(queue).toBe(expectedQueue);
     });

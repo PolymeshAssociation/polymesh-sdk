@@ -1627,8 +1627,8 @@ export const createMockBTreeSet = <T extends Codec>(
   const res = createMockCodec(items, !items) as unknown as BTreeSet;
   res.has = sinon.stub().returns(false);
   (res as any).size = items.length;
-  items.forEach(i => {
-    (res.has as sinon.SinonStub).withArgs(i).returns(true);
+  items.forEach(item => {
+    (res.has as sinon.SinonStub).withArgs(item).returns(true);
   });
   return res as MockCodec<BTreeSet<T>>;
 };

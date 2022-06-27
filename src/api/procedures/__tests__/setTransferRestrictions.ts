@@ -35,7 +35,7 @@ jest.mock(
 
 describe('setTransferRestrictions procedure', () => {
   let mockContext: Mocked<Context>;
-  let transferRestrictionToTransferManagerStub: sinon.SinonStub<
+  let transferRestrictionToPolymeshTransferRestrictionStub: sinon.SinonStub<
     [TransferRestriction, Context],
     TransferCondition
   >;
@@ -68,6 +68,8 @@ describe('setTransferRestrictions procedure', () => {
   let rawPercentageRestriction: TransferCondition;
   let rawScopeId: ScopeId;
   let rawStatType: PolymeshPrimitivesStatisticsStatType;
+  let rawStatTypeBtree: BTreeSet<PolymeshPrimitivesStatisticsStatType>;
+  let rawStatTypeHasStub: sinon.SinonStub;
   let args: SetTransferRestrictionsParams;
   let rawCountRestrictionBtreeSet: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
   let rawPercentageRestrictionBtreeSet: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
@@ -76,7 +78,7 @@ describe('setTransferRestrictions procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    transferRestrictionToTransferManagerStub = sinon.stub(
+    transferRestrictionToPolymeshTransferRestrictionStub = sinon.stub(
       utilsConversionModule,
       'transferRestrictionToPolymeshTransferCondition'
     );
@@ -142,11 +144,13 @@ describe('setTransferRestrictions procedure', () => {
     });
     rawScopeId = dsMockUtils.createMockScopeId(exemptedDid);
     rawStatType = dsMockUtils.createMockStatisticsStatType();
+    rawStatTypeBtree = dsMockUtils.createMockBTreeSet([rawStatType]);
+    rawStatTypeHasStub = rawStatTypeBtree.has as sinon.SinonStub;
 
-    transferRestrictionToTransferManagerStub
+    transferRestrictionToPolymeshTransferRestrictionStub
       .withArgs(maxInvestorRestriction, mockContext)
       .returns(rawCountRestriction);
-    transferRestrictionToTransferManagerStub
+    transferRestrictionToPolymeshTransferRestrictionStub
       .withArgs(maxOwnershipRestriction, mockContext)
       .returns(rawPercentageRestriction);
     stringToTickerKeyStub.withArgs(ticker, mockContext).returns({ Ticker: rawTicker });
@@ -444,6 +448,8 @@ describe('setTransferRestrictions procedure', () => {
 
     const getCountStub = sinon.stub();
     const getPercentageStub = sinon.stub();
+    const getClaimCountStub = sinon.stub();
+    const getClaimOwnershipStub = sinon.stub();
 
     beforeAll(() => {
       identityScopeId = 'someScopeId';
@@ -462,6 +468,14 @@ describe('setTransferRestrictions procedure', () => {
         restrictions: [{ percentage }],
         availableSlots: new BigNumber(1),
       });
+      getClaimCountStub.resolves({
+        restrictions: [],
+        availableSlots: new BigNumber(1),
+      });
+      getClaimOwnershipStub.resolves({
+        restrictions: [],
+        availableSlots: new BigNumber(1),
+      });
       entityMockUtils.configureMocks({
         identityOptions: {
           getScopeId: identityScopeId,
@@ -473,7 +487,7 @@ describe('setTransferRestrictions procedure', () => {
       });
 
       dsMockUtils.createQueryStub('statistics', 'activeAssetStats', {
-        returnValue: [rawStatType],
+        returnValue: rawStatTypeBtree,
       });
     });
 
@@ -482,10 +496,7 @@ describe('setTransferRestrictions procedure', () => {
     });
 
     it('should fetch, process and return shared data', async () => {
-      const emptyBtreeStats = dsMockUtils.createMockBTreeSet([]);
-      dsMockUtils.createQueryStub('statistics', 'activeAssetStats', {
-        returnValue: emptyBtreeStats,
-      });
+      rawStatTypeHasStub.returns(true);
       const proc = procedureMockUtils.getInstance<
         SetTransferRestrictionsParams,
         BigNumber,
@@ -506,6 +517,7 @@ describe('setTransferRestrictions procedure', () => {
       let result = await boundFunc(args);
       expect(result).toEqual({
         occupiedSlots: new BigNumber(1),
+        currentRestrictions: [rawCountRestriction],
       });
 
       args = {
@@ -546,7 +558,7 @@ describe('setTransferRestrictions procedure', () => {
 
     it('should throw an error if the appropriate stat is not set', async () => {
       dsMockUtils.createQueryStub('statistics', 'activeAssetStats', {
-        returnValue: [],
+        returnValue: rawStatTypeBtree,
       });
 
       const proc = procedureMockUtils.getInstance<
@@ -556,25 +568,10 @@ describe('setTransferRestrictions procedure', () => {
       >(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
-      let result = await boundFunc(args);
-
-      expect(result).toEqual({
-        currentRestrictions: [rawCountRestriction],
-        occupiedSlots: new BigNumber(1),
-        needStat: false,
-      });
-
-      result = await boundFunc(args);
-
-      expect(result).toEqual({
-        currentRestrictions: [rawCountRestriction],
-        occupiedSlots: new BigNumber(1),
-        needStat: true,
-      });
-
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
-        message: 'some message',
+        message:
+          'The appropriate statistic must be enabled. Try calling the enableStat method first',
       });
 
       return expect(boundFunc(args)).rejects.toThrowError(expectedError);

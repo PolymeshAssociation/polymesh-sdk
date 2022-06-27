@@ -1,4 +1,3 @@
-import { PolymeshPrimitivesTransferComplianceTransferCondition } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import {
@@ -12,11 +11,12 @@ import {
   AddClaimCountTransferRestrictionParams,
   AddClaimOwnershipTransferRestrictionParams,
 } from '~/api/procedures/addTransferRestriction';
-import { removeAssetStat, RemoveAssetStatParams } from '~/api/procedures/removeAssetStat';
 import {
-  SetClaimCountTransferRestrictionsParams,
-  SetClaimOwnershipTransferRestrictionsParams,
-} from '~/api/procedures/setTransferRestrictions';
+  removeAssetStat,
+  RemoveAssetStatParams,
+  RemoveBalanceStatParams,
+  RemoveCountStatParams,
+} from '~/api/procedures/removeAssetStat';
 import {
   addAssetStat,
   AddAssetStatStorage,
@@ -29,6 +29,8 @@ import {
   Context,
   Namespace,
   RemoveAssetStatStorage,
+  SetClaimCountTransferRestrictionsParams,
+  SetClaimOwnershipTransferRestrictionsParams,
   SetCountTransferRestrictionsParams,
   SetPercentageTransferRestrictionsParams,
   setTransferRestrictions,
@@ -87,6 +89,10 @@ type SetAssetStatParams<T> = Omit<
     : AddClaimOwnershipStatParams,
   'type'
 >;
+
+export type RemoveAssetStatParamsBase<T> = T extends TransferRestrictionType.Count
+  ? RemoveCountStatParams
+  : RemoveBalanceStatParams;
 
 type GetReturnType<T> = ActiveTransferRestrictions<
   T extends TransferRestrictionType.Count
@@ -183,7 +189,7 @@ export abstract class TransferRestrictionBase<
     );
 
     this.disableStat = createProcedureMethod<
-      RemoveAssetStatParams,
+      RemoveAssetStatParamsBase<T>,
       RemoveAssetStatParams,
       void,
       RemoveAssetStatStorage
@@ -193,7 +199,7 @@ export abstract class TransferRestrictionBase<
           removeAssetStat,
           {
             ...args,
-            type: this.type === TransferRestrictionType.Count ? StatType.Count : StatType.Balance, // need better type lookup
+            type: this.type === TransferRestrictionType.Count ? StatType.Count : StatType.Balance,
             ticker,
           },
         ],
@@ -233,7 +239,7 @@ export abstract class TransferRestrictionBase<
    *
    * @throws if the Stat is being used
    */
-  public disableStat: ProcedureMethod<RemoveAssetStatParams, void>;
+  public disableStat: ProcedureMethod<RemoveAssetStatParamsBase<T>, void>;
 
   /**
    * Retrieve all active Transfer Restrictions of the corresponding type

@@ -8,6 +8,7 @@ import {
   claimIssuerToMeshClaimIssuer,
   statisticsOpTypeToStatOpType,
   statisticsOpTypeToStatType,
+  statisticStatTypesToBtreeStatType,
   stringToTickerKey,
 } from '~/utils/conversion';
 import {
@@ -18,38 +19,17 @@ import {
 
 export type RemoveCountStatParams = {
   type: StatType.Count;
+  claimIssuer?: ClaimIssuer;
 };
 
 export type RemoveBalanceStatParams = {
   type: StatType.Balance;
+  claimIssuer?: ClaimIssuer;
 };
-
-export type RemoveScopedCountStatParams = {
-  type: StatType.ScopedCount;
-  claimIssuer: ClaimIssuer;
-};
-
-export type RemoveScopedBalanceStatParams = {
-  type: StatType.ScopedBalance;
-  claimIssuer: ClaimIssuer;
-};
-
-export type RemoveAssetStatInput<T> = Omit<
-  T extends StatType.Count
-    ? RemoveCountStatParams
-    : T extends StatType.Balance
-    ? RemoveBalanceStatParams
-    : T extends StatType.ScopedCount
-    ? RemoveScopedCountStatParams
-    : RemoveScopedBalanceStatParams,
-  'type'
->;
 
 export type RemoveAssetStatParams = { ticker: string } & (
   | RemoveCountStatParams
   | RemoveBalanceStatParams
-  | RemoveScopedCountStatParams
-  | RemoveScopedBalanceStatParams
 );
 
 export interface Storage {
@@ -82,20 +62,20 @@ export async function prepareRemoveAssetStat(
       : statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
 
   let rawClaimIssuer;
-  if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
+  if (args.claimIssuer) {
     rawClaimIssuer = claimIssuerToMeshClaimIssuer(args.claimIssuer, context);
   }
 
   const newStat = statisticsOpTypeToStatType({ op, claimIssuer: rawClaimIssuer }, context);
-  const removed = currentStats.delete(newStat);
-  console.log('removed? ', removed);
-  // const statsArr = currentStats.toArray();
-  // statsArr.splice(removeIndex, 1);
+  const statsArr = [...currentStats];
+  const removeIndex = statsArr.findIndex(s => s.eq(newStat));
+  if (removeIndex >= 0) statsArr.splice(removeIndex, 1);
+  const newStats = statisticStatTypesToBtreeStatType(statsArr, context);
 
   this.addTransaction(
     checkTxType({
       transaction: statistics.setActiveAssetStats,
-      args: [tickerKey, currentStats],
+      args: [tickerKey, newStats],
     })
   );
 }
@@ -154,7 +134,7 @@ export async function prepareStorage(
   }
 
   let claimIssuer: ClaimIssuer;
-  if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
+  if (args.claimIssuer) {
     claimIssuer = args.claimIssuer;
   }
 

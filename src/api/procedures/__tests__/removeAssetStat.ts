@@ -63,7 +63,12 @@ describe('removeAssetStat procedure', () => {
   let activeAssetStatsStub: sinon.SinonStub;
   let assetTransferCompliancesStub: sinon.SinonStub;
   let rawStatUpdateBtree: BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>;
+  let statisticStatTypesToBtreeStatTypeStub: sinon.SinonStub<
+    [PolymeshPrimitivesStatisticsStatType[], Context],
+    BTreeSet<PolymeshPrimitivesStatisticsStatType>
+  >;
   let statStub: sinon.SinonStub;
+  let emptyStatTypeBtreeSet: BTreeSet<PolymeshPrimitivesStatisticsStatType>;
 
   let emptyStorage: Storage;
 
@@ -95,10 +100,15 @@ describe('removeAssetStat procedure', () => {
       'statistics',
       'assetTransferCompliances'
     );
+    statisticStatTypesToBtreeStatTypeStub = sinon.stub(
+      utilsConversionModule,
+      'statisticStatTypesToBtreeStatType'
+    );
   });
 
   beforeEach(() => {
     statStub.returns(StatisticsOpType.Balance);
+    emptyStatTypeBtreeSet = dsMockUtils.createMockBTreeSet([]);
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
     setActiveAssetStats = dsMockUtils.createTxStub('statistics', 'setActiveAssetStats');
 
@@ -115,6 +125,7 @@ describe('removeAssetStat procedure', () => {
       .returns(rawStatUpdateBtree);
 
     stringToTickerKeyStub.withArgs(ticker, mockContext).returns({ Ticker: rawTicker });
+    statisticStatTypesToBtreeStatTypeStub.returns(emptyStatTypeBtreeSet);
   });
 
   afterEach(() => {
@@ -145,7 +156,7 @@ describe('removeAssetStat procedure', () => {
 
     sinon.assert.calledWith(addTransactionStub.firstCall, {
       transaction: setActiveAssetStats,
-      args: [{ Ticker: rawTicker }, []],
+      args: [{ Ticker: rawTicker }, emptyStatTypeBtreeSet],
     });
 
     args = {
@@ -157,7 +168,7 @@ describe('removeAssetStat procedure', () => {
 
     sinon.assert.calledWith(addTransactionStub.secondCall, {
       transaction: setActiveAssetStats,
-      args: [{ Ticker: rawTicker }, []],
+      args: [{ Ticker: rawTicker }, emptyStatTypeBtreeSet],
     });
   });
 

@@ -311,7 +311,6 @@ export async function prepareStorage(
     restriction: TransferRestriction
   ): PolymeshPrimitivesTransferComplianceTransferCondition =>
     transferRestrictionToPolymeshTransferCondition(restriction, context);
-
   return {
     occupiedSlots: new BigNumber(occupiedSlots),
     currentRestrictions: currentRestrictions.map(transformRestriction),

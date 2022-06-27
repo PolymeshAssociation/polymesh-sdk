@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { AddCountStatParams } from '~/api/procedures/addAssetStat';
-import { RemoveAssetStatParams } from '~/api/procedures/removeAssetStat';
+import { RemoveCountStatParams } from '~/api/procedures/removeAssetStat';
 import {
   AddCountTransferRestrictionParams,
   SetCountTransferRestrictionsParams,
@@ -69,7 +69,9 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
    *
    * @throws if the stat is being used by a restriction
    */
-  public declare disableStat: ProcedureMethod<Omit<RemoveAssetStatParams, 'type'>, void>;
+  public declare disableStat: ProcedureMethod<Omit<RemoveCountStatParams, 'type'>, void>;
+
+  /**
 
   /**
    * Retrieve all active Count Transfer Restrictions

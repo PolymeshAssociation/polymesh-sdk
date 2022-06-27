@@ -319,22 +319,27 @@ export type StatClaimType = Extract<
   ClaimType.Accredited | ClaimType.Affiliate | ClaimType.Jurisdiction
 >;
 
-export interface StatJurisdictionClaim {
+export interface StatJurisdictionClaimInput {
   type: ClaimType.Jurisdiction;
   countryCode?: CountryCode;
 }
 
-export interface StatAccreditedClaim {
+export interface StatAccreditedClaimInput {
   type: ClaimType.Accredited;
-  accredited?: boolean;
+  accredited: boolean;
 }
 
-export interface StatAffiliateClaim {
+export interface StatAffiliateClaimInput {
   type: ClaimType.Affiliate;
-  affiliate?: boolean;
+  affiliate: boolean;
 }
 
-export type StatClaimUser = StatJurisdictionClaim | StatAccreditedClaim | StatAffiliateClaim;
+export type StatClaimUserInput =
+  | StatJurisdictionClaimInput
+  | StatAccreditedClaimInput
+  | StatAffiliateClaimInput;
+
+export type StatClaimUserType = Omit<StatClaimUserInput, 'affiliate' | 'accredited'>;
 
 export interface IdentityWithClaims {
   identity: Identity;
@@ -1289,7 +1294,7 @@ export interface ClaimCountTransferRestriction extends TransferRestrictionBase {
   /**
    * The type of investors this restriction applies to. e.g. non-accredited
    */
-  claim: StatClaimUser;
+  claim: StatClaimUserInput;
   /**
    * The minimum amount of investors the must meet the Claim criteria
    */
@@ -1305,7 +1310,7 @@ export interface ClaimOwnershipTransferRestriction extends TransferRestrictionBa
   /**
    * The type of investors this restriction applies to. e.g. Canadian investor
    */
-  claim: StatClaimUser;
+  claim: StatClaimUserInput;
   /**
    * The minimum percentage of investors that must meet the Claim criteria
    */
@@ -1336,13 +1341,13 @@ export interface ClaimCountTransferRestrictionInput extends TransferRestrictionI
   min: BigNumber;
   max?: BigNumber;
   issuer: Identity;
-  claim: StatClaimUser;
+  claim: StatClaimUserInput;
 }
 export interface ClaimOwnershipTransferRestrictionInput extends TransferRestrictionInputBase {
   min: BigNumber;
   max?: BigNumber;
   issuer: Identity;
-  claim: StatClaimUser;
+  claim: StatClaimUserInput;
 }
 
 export interface ActiveTransferRestrictions<
@@ -1375,7 +1380,7 @@ export interface ClaimRestrictionValue {
   min: BigNumber;
   max?: BigNumber; // not optional for claim ownership / percentage
   issuer: Identity;
-  claim: StatClaimUser;
+  claim: StatClaimUserInput;
 }
 
 export enum StatType {

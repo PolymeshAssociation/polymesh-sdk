@@ -144,6 +144,12 @@ interface AssetOptions extends EntityOptions {
   transferRestrictionsPercentageGet?: EntityGetter<
     ActiveTransferRestrictions<PercentageTransferRestriction>
   >;
+  transferRestrictionsClaimCountGet?: EntityGetter<
+    ActiveTransferRestrictions<CountTransferRestriction>
+  >;
+  transferRestrictionsClaimOwnershipGet?: EntityGetter<
+    ActiveTransferRestrictions<PercentageTransferRestriction>
+  >;
   corporateActionsGetAgents?: EntityGetter<Identity[]>;
   corporateActionsGetDefaultConfig?: EntityGetter<CorporateActionDefaultConfig>;
   permissionsGetAgents?: EntityGetter<AgentWithGroup[]>;
@@ -708,11 +714,19 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
     transferRestrictions = {
       count: {},
       percentage: {},
+      claimCount: {},
+      claimOwnership: {},
     } as {
       count: {
         get: sinon.SinonStub;
       };
       percentage: {
+        get: sinon.SinonStub;
+      };
+      claimCount: {
+        get: sinon.SinonStub;
+      };
+      claimOwnership: {
         get: sinon.SinonStub;
       };
     };
@@ -770,6 +784,12 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
       this.transferRestrictions.percentage.get = createEntityGetterStub(
         opts.transferRestrictionsPercentageGet
       );
+      this.transferRestrictions.claimCount.get = createEntityGetterStub(
+        opts.transferRestrictionsClaimCountGet
+      );
+      this.transferRestrictions.claimOwnership.get = createEntityGetterStub(
+        opts.transferRestrictionsClaimOwnershipGet
+      );
       this.corporateActions.getAgents = createEntityGetterStub(opts.corporateActionsGetAgents);
       this.corporateActions.getDefaultConfig = createEntityGetterStub(
         opts.corporateActionsGetDefaultConfig
@@ -804,6 +824,14 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
       availableSlots: new BigNumber(3),
     },
     transferRestrictionsPercentageGet: {
+      restrictions: [],
+      availableSlots: new BigNumber(3),
+    },
+    transferRestrictionsClaimCountGet: {
+      restrictions: [],
+      availableSlots: new BigNumber(3),
+    },
+    transferRestrictionsClaimOwnershipGet: {
       restrictions: [],
       availableSlots: new BigNumber(3),
     },

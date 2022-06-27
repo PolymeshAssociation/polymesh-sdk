@@ -61,6 +61,7 @@ import {
   uniq,
   values,
 } from 'lodash';
+import { CountryCode as MeshCountryCode } from 'polymesh-types/types';
 
 import { assertCaTaxWithholdingsValid } from '~/api/procedures/utils';
 import { countryCodeToMeshCountryCode, meshCountryCodeToCountryCode } from '~/generated/utils';
@@ -196,7 +197,8 @@ import {
   SignerValue,
   SingleClaimCondition,
   StatClaimType,
-  StatClaimUser,
+  StatClaimUserInput,
+  StatClaimUserType,
   TargetTreatment,
   Tier,
   TransactionPermissions,
@@ -532,7 +534,7 @@ export function permillToBigNumber(value: Permill): BigNumber {
 /**
  *  @hidden
  */
-export function meshClaimToStatClaimUser(claim: StatClaim): StatClaimUser {
+export function meshClaimToStatClaimUser(claim: StatClaim): StatClaimUserInput {
   if (claim.isAccredited) {
     return {
       type: ClaimType.Accredited,
@@ -2193,12 +2195,10 @@ export function meshClaimToClaim(claim: MeshClaim): Claim {
 /**
  * @hidden
  */
-export function statsClaimToClaim(claim: PolymeshPrimitivesStatisticsStatClaim): StatClaimUser {
+export function statsClaimToClaim(claim: PolymeshPrimitivesStatisticsStatClaim): StatClaimUserType {
   if (claim.isJurisdiction) {
-    const code = claim.asJurisdiction;
     return {
       type: ClaimType.Jurisdiction,
-      countryCode: code.isSome ? meshCountryCodeToCountryCode(code.unwrap()) : undefined,
     };
   } else if (claim.isAccredited) {
     return { type: ClaimType.Accredited };
@@ -2855,40 +2855,41 @@ export function transferRestrictionToPolymeshTransferCondition(
   let restrictionType;
   let restrictionValue;
 
+  const extractClaimValue = (claim: StatClaimUserInput): bool | MeshCountryCode => {
+    if (claim.type === ClaimType.Accredited) {
+      return booleanToBool(claim.accredited, context);
+    } else if (claim.type === ClaimType.Affiliate) {
+      return booleanToBool(claim.affiliate, context);
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      return countryCodeToMeshCountryCode(claim.countryCode!, context);
+    }
+  };
+
   if (type === TransferRestrictionType.Count) {
     restrictionType = 'MaxInvestorCount';
     restrictionValue = bigNumberToU64(value as BigNumber, context);
   } else if (type === TransferRestrictionType.Percentage) {
     restrictionType = 'MaxInvestorOwnership';
     restrictionValue = percentageToPermill(value as BigNumber, context);
-  } else if (type === TransferRestrictionType.ClaimCount) {
-    restrictionType = 'ClaimCount';
-    restrictionValue = value;
-    const castedValue = value as ClaimRestrictionValue;
-    const { type: claimType } = castedValue.claim;
-    let val;
-    if (castedValue.claim.type === ClaimType.Accredited) {
-      val = booleanToBool(castedValue.claim.accredited!, context);
-    } else if (castedValue.claim.type === ClaimType.Affiliate) {
-      val = booleanToBool(castedValue.claim.affiliate!, context);
+  } else {
+    if (type === TransferRestrictionType.ClaimCount) {
+      restrictionType = 'ClaimCount';
     } else {
-      val = countryCodeToMeshCountryCode(castedValue.claim.countryCode!, context);
+      restrictionType = 'ClaimOwnership';
     }
+    const castedValue = value as ClaimRestrictionValue;
+    const val = extractClaimValue(castedValue.claim);
     const claimValue = {
-      [claimType]: val,
+      [castedValue.claim.type]: val,
     };
     const rawIdentityId = stringToIdentityId(castedValue.issuer.did, context);
     const rawMin = bigNumberToU64(castedValue.min, context);
     const rawMax = optionize(bigNumberToU64)(castedValue.max, context);
     restrictionType = 'ClaimCount';
     restrictionValue = [claimValue, rawIdentityId, rawMin, rawMax];
-  } else {
-    restrictionType = 'ClaimOwnership';
-    restrictionValue = value;
-    // const castedValue = value as ClaimRestrictionValue;
   }
 
-  console.log('conversion: ', restrictionType, restrictionValue);
   return context.createType('PolymeshPrimitivesTransferComplianceTransferCondition', {
     [restrictionType]: restrictionValue,
   });

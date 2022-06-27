@@ -1061,10 +1061,10 @@ describe('neededStatTypeForRestrictionInput', () => {
       .returns('Balance');
 
     context.createType
-      .withArgs('PolymeshPrimitivesStatisticsStatType', { op: 'Count' })
+      .withArgs('PolymeshPrimitivesStatisticsStatType', { op: 'Count', claimIssuer: undefined })
       .returns('CountStat');
     context.createType
-      .withArgs('PolymeshPrimitivesStatisticsStatType', { op: 'Balance' })
+      .withArgs('PolymeshPrimitivesStatisticsStatType', { op: 'Balance', claimIssuer: undefined })
       .returns('BalanceStat');
 
     let result = neededStatTypeForRestrictionInput(TransferRestrictionType.Count, context);

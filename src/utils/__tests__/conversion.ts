@@ -71,7 +71,7 @@ import {
   ModuleIdEnum,
 } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { createMockU64, createMockU128 } from '~/testUtils/mocks/dataSources';
+import { createMockOption, createMockU64, createMockU128 } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import {
   AffirmationStatus,
@@ -7150,7 +7150,10 @@ describe('agentGroupToPermissionGroup', () => {
 
   describe('meshStatToStat', () => {
     it('should return the type', () => {
-      const rawStat = { op: { type: 'Count' } } as unknown as PolymeshPrimitivesStatisticsStatType;
+      const rawStat = {
+        op: { type: 'Count' },
+        claimIssuer: createMockOption(),
+      } as unknown as PolymeshPrimitivesStatisticsStatType;
 
       const result = meshStatToStatisticsOpType(rawStat);
 

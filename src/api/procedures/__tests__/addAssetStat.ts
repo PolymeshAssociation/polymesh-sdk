@@ -1,4 +1,6 @@
 import {
+  PolymeshPrimitivesIdentityClaimClaimType,
+  PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesStatisticsStat2ndKey,
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesStatisticsStatType,
@@ -36,6 +38,10 @@ describe('addAssetStat procedure', () => {
   let rawTicker: PolymeshPrimitivesTicker;
   let args: AddAssetStatParams;
   let rawStatType: PolymeshPrimitivesStatisticsStatType;
+  let rawStatBtreeSet: BTreeSet<PolymeshPrimitivesStatisticsStatType>;
+  let rawOp: PolymeshPrimitivesStatisticsStatOpType;
+  let rawClaimIssuer: PolymeshPrimitivesIdentityId;
+  let rawClaimType: PolymeshPrimitivesIdentityClaimClaimType;
   let rawStatUpdate: PolymeshPrimitivesStatisticsStatUpdate;
   let raw2ndKey: PolymeshPrimitivesStatisticsStat2ndKey;
 
@@ -44,8 +50,18 @@ describe('addAssetStat procedure', () => {
     [PolymeshPrimitivesTicker, PolymeshPrimitivesTransferComplianceTransferCondition]
   >;
   let statisticsOpTypeToStatOpTypeStub: sinon.SinonStub<
-    [{ op: PolymeshPrimitivesStatisticsStatOpType }, Context],
+    [
+      {
+        op: PolymeshPrimitivesStatisticsStatOpType;
+        claimIssuer?: [PolymeshPrimitivesIdentityClaimClaimType, PolymeshPrimitivesIdentityId];
+      },
+      Context
+    ],
     PolymeshPrimitivesStatisticsStatType
+  >;
+  let statisticStatTypesToBtreeStatTypeStub: sinon.SinonStub<
+    [PolymeshPrimitivesStatisticsStatType[], Context],
+    BTreeSet<PolymeshPrimitivesStatisticsStatType>
   >;
   let statUpdatesToBtreeStatUpdateStub: sinon.SinonStub<
     [PolymeshPrimitivesStatisticsStatUpdate[], Context],
@@ -90,6 +106,10 @@ describe('addAssetStat procedure', () => {
     });
     statStub = sinon.stub(utilsConversionModule, 'meshStatToStatisticsOpType');
     activeAssetStatsStub = dsMockUtils.createQueryStub('statistics', 'activeAssetStats');
+    statisticStatTypesToBtreeStatTypeStub = sinon.stub(
+      utilsConversionModule,
+      'statisticStatTypesToBtreeStatType'
+    );
   });
 
   beforeEach(() => {
@@ -98,16 +118,24 @@ describe('addAssetStat procedure', () => {
     setActiveAssetStatsTxStub = dsMockUtils.createTxStub('statistics', 'setActiveAssetStats');
 
     rawStatType = dsMockUtils.createMockStatisticsStatType();
+    rawStatBtreeSet = dsMockUtils.createMockBTreeSet([rawStatType]);
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawStatUpdate = dsMockUtils.createMockStatUpdate();
     statUpdateBtreeSet = dsMockUtils.createMockBTreeSet([rawStatUpdate]);
+    rawOp = dsMockUtils.createMockStatisticsOpType();
+    rawClaimIssuer = dsMockUtils.createMockIdentityId();
+    rawClaimType = dsMockUtils.createMockClaimType();
 
     createStat2ndKeyStub.withArgs('NoClaimStat', mockContext, undefined).returns(raw2ndKey);
     statUpdatesToBtreeStatUpdateStub
       .withArgs([rawStatUpdate], mockContext)
       .returns(statUpdateBtreeSet);
+    statisticsOpTypeToStatOpTypeStub
+      .withArgs({ op: rawOp, claimIssuer: [rawClaimType, rawClaimIssuer] }, mockContext)
+      .returns(rawStatType);
 
     stringToTickerKeyStub.withArgs(ticker, mockContext).returns({ Ticker: rawTicker });
+    statisticStatTypesToBtreeStatTypeStub.returns(rawStatBtreeSet);
   });
 
   afterEach(() => {
@@ -130,7 +158,6 @@ describe('addAssetStat procedure', () => {
     const proc = procedureMockUtils.getInstance<AddAssetStatParams, void, Storage>(mockContext, {
       ...emptyStorage,
     });
-    statisticsOpTypeToStatOpTypeStub.returns(rawStatType);
 
     await prepareAddAssetStat.call(proc, args);
 
@@ -138,7 +165,7 @@ describe('addAssetStat procedure', () => {
       transactions: [
         {
           transaction: setActiveAssetStatsTxStub,
-          args: [{ Ticker: rawTicker }, [rawStatType]],
+          args: [{ Ticker: rawTicker }, rawStatBtreeSet],
         },
       ],
     });

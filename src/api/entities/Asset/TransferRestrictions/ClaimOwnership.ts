@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { AddClaimOwnershipTransferRestrictionParams } from '~/api/procedures/addTransferRestriction';
-import { RemoveAssetStatParams } from '~/api/procedures/removeAssetStat';
+import { RemoveBalanceStatParams } from '~/api/procedures/removeAssetStat';
 import { SetClaimOwnershipTransferRestrictionsParams } from '~/api/procedures/setTransferRestrictions';
 import { TransferRestrictionBase } from '~/internal';
 import {
@@ -61,7 +61,7 @@ export class ClaimOwnership extends TransferRestrictionBase<TransferRestrictionT
    *
    * @throws if the stat is being used by a restriction
    */
-  public declare disableStat: ProcedureMethod<Omit<RemoveAssetStatParams, 'type'>, void>;
+  public declare disableStat: ProcedureMethod<Omit<RemoveBalanceStatParams, 'type'>, void>;
 
   /**
    * Retrieve all active ClaimOwnership Transfer Restrictions
