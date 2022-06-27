@@ -1186,10 +1186,6 @@ export function assertTickerValid(ticker: string): void {
 
 /**
  * @hidden
- *
- * @param type TransferRestriction type that was given
- * @param context
- * @returns encoded StatType needed for the TransferRestriction to be enabled
  */
 export function neededStatTypeForRestrictionInput(
   type: TransferRestrictionType,

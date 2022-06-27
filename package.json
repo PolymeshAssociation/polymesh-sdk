@@ -1,5 +1,5 @@
 {
-  "name": "@polymathnetwork/polymesh-sdk",
+  "name": "@polymeshassociation/polymesh-sdk",
   "version": "0.0.0",
   "description": "High-level API to interact with the Polymesh blockchain",
   "main": "dist/index.js",
