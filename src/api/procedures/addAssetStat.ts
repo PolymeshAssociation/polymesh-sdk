@@ -17,6 +17,7 @@ import {
   countStatInputToStatUpdates,
   statisticsOpTypeToStatOpType,
   statisticsOpTypeToStatType,
+  statisticStatTypesToBtreeStatType,
   stringToTickerKey,
 } from '~/utils/conversion';
 import { checkTxType, compareStatsToInput } from '~/utils/internal';
@@ -81,40 +82,38 @@ export async function prepareAddAssetStat(
   }
 
   const newStat = statisticsOpTypeToStatType({ op, claimIssuer: rawClaimIssuer }, context);
-  console.log(currentStats.toHuman());
-  // currentStats.set(newStat);
-  // currentStats.sort().reverse();
+  const newStats = statisticStatTypesToBtreeStatType([...currentStats, newStat], context);
   transactions.push(
     checkTxType({
       transaction: statistics.setActiveAssetStats,
-      args: [tickerKey, currentStats],
+      args: [tickerKey, newStats],
     })
   );
 
   // Count stats need the user to provide the initial value for the counter as computing them present a DOS attack vector on chain
   // We require users to provide initial stats so they won't miss setting initial values
-  if (args.type === StatType.Count) {
-    const statValue = countStatInputToStatUpdates(args, context);
-    transactions.push(
-      checkTxType({
-        transaction: statistics.batchUpdateAssetStats,
-        args: [tickerKey, newStat, statValue],
-      })
-    );
-  } else if (args.type === StatType.ScopedCount) {
-    if (args.type === StatType.ScopedCount) {
-      const {
-        claimIssuer: { value },
-      } = args;
-      const statValue = claimCountStatInputToStatUpdates(value, context);
-      transactions.push(
-        checkTxType({
-          transaction: statistics.batchUpdateAssetStats,
-          args: [tickerKey, newStat, statValue],
-        })
-      );
-    }
-  }
+  // if (args.type === StatType.Count) {
+  //   const statValue = countStatInputToStatUpdates(args, context);
+  //   transactions.push(
+  //     checkTxType({
+  //       transaction: statistics.batchUpdateAssetStats,
+  //       args: [tickerKey, newStat, statValue],
+  //     })
+  //   );
+  // } else if (args.type === StatType.ScopedCount) {
+  //   if (args.type === StatType.ScopedCount) {
+  //     const {
+  //       claimIssuer: { value },
+  //     } = args;
+  //     const statValue = claimCountStatInputToStatUpdates(value, context);
+  //     transactions.push(
+  //       checkTxType({
+  //         transaction: statistics.batchUpdateAssetStats,
+  //         args: [tickerKey, newStat, statValue],
+  //       })
+  //     );
+  //   }
+  // }
 
   this.addBatchTransaction({ transactions });
 }
@@ -159,9 +158,7 @@ export async function prepareStorage(
 
   const tickerKey = stringToTickerKey(ticker, context);
   const currentStats = await statistics.activeAssetStats(tickerKey);
-  const needStat = !(currentStats as unknown as Array<PolymeshPrimitivesStatisticsStatType>).find(
-    s => compareStatsToInput(s, args)
-  );
+  const needStat = ![...currentStats].find(s => compareStatsToInput(s, args));
 
   if (!needStat) {
     throw new PolymeshError({

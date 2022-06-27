@@ -2860,7 +2860,6 @@ export function transferRestrictionToPolymeshTransferCondition(
     restrictionValue = bigNumberToU64(value as BigNumber, context);
   } else if (type === TransferRestrictionType.Percentage) {
     restrictionType = 'MaxInvestorOwnership';
-    console.log('value is:', value);
     restrictionValue = percentageToPermill(value as BigNumber, context);
   } else if (type === TransferRestrictionType.ClaimCount) {
     restrictionType = 'ClaimCount';
@@ -2878,7 +2877,6 @@ export function transferRestrictionToPolymeshTransferCondition(
     const claimValue = {
       [claimType]: val,
     };
-    console.log('claim Value: ', claimValue);
     const rawIdentityId = stringToIdentityId(castedValue.issuer.did, context);
     const rawMin = bigNumberToU64(castedValue.min, context);
     const rawMax = optionize(bigNumberToU64)(castedValue.max, context);

@@ -1203,7 +1203,6 @@ export function compareStatsToInput(
   s: PolymeshPrimitivesStatisticsStatType,
   args: { type: StatType; claimIssuer?: { claimType: StatClaimType; issuer: Identity } }
 ): boolean {
-  console.log('comparing asset stats', s, args);
   const { type, claimIssuer } = args;
   let issuer, claimType;
   if (claimIssuer) {
@@ -1223,7 +1222,6 @@ export function compareStatsToInput(
     const statType = meshClaimTypeToClaimType(meshType);
     console.log('comparing issuer did stuff: ', issuerDid, issuer?.did, statType, claimType);
     if (issuerDid !== issuer?.did || statType !== claimType) {
-      console.log('differeing did stuff');
       return false;
     }
   }
@@ -1239,7 +1237,6 @@ export function compareStatsToInput(
       break;
   }
 
-  console.log('comparing type', cmpStat, type);
   return cmpStat === type;
 }
 

@@ -1,6 +1,4 @@
-import { Vec } from '@polkadot/types';
 import {
-  BTreeSetStatUpdate,
   PolymeshPrimitivesStatisticsStat2ndKey,
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesStatisticsStatType,
@@ -8,6 +6,7 @@ import {
   PolymeshPrimitivesTicker,
   PolymeshPrimitivesTransferComplianceTransferCondition,
 } from '@polkadot/types/lookup';
+import { BTreeSet } from '@polkadot/types-codec';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
@@ -17,10 +16,10 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/addAssetStat';
-import { AddAssetStatParams, Context, Identity, PolymeshError } from '~/internal';
+import { AddAssetStatParams, Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ClaimType, ErrorCode, StatType, TxTags } from '~/types';
+import { CountryCode, ErrorCode, StatClaimType, StatType, TxTags } from '~/types';
 import { PolymeshTx, StatisticsOpType, TickerKey } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -50,9 +49,17 @@ describe('addAssetStat procedure', () => {
   >;
   let statUpdatesToBtreeStatUpdateStub: sinon.SinonStub<
     [PolymeshPrimitivesStatisticsStatUpdate[], Context],
-    BTreeSetStatUpdate
+    BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>
   >;
-  let createStat2ndKeyStub: sinon.SinonStub<[Context], PolymeshPrimitivesStatisticsStat2ndKey>;
+  let createStat2ndKeyStub: sinon.SinonStub<
+    [
+      type: 'NoClaimStat' | StatClaimType,
+      context: Context,
+      claimStat?: CountryCode | 'yes' | 'no' | undefined
+    ],
+    PolymeshPrimitivesStatisticsStat2ndKey
+  >;
+  let statUpdateBtreeSet: BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>;
   let activeAssetStatsStub: sinon.SinonStub;
   let statStub: sinon.SinonStub;
 
@@ -65,7 +72,7 @@ describe('addAssetStat procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
     ticker = 'TICKER';
     emptyStorage = {
-      currentStats: [] as unknown as Vec<PolymeshPrimitivesStatisticsStatType>,
+      currentStats: dsMockUtils.createMockBTreeSet([]),
     };
     count = new BigNumber(10);
     stringToTickerKeyStub = sinon.stub(utilsConversionModule, 'stringToTickerKey');
@@ -90,14 +97,15 @@ describe('addAssetStat procedure', () => {
     addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
     setActiveAssetStatsTxStub = dsMockUtils.createTxStub('statistics', 'setActiveAssetStats');
 
-    rawStatType = dsMockUtils.createMockStatistics();
+    rawStatType = dsMockUtils.createMockStatisticsStatType();
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawStatUpdate = dsMockUtils.createMockStatUpdate();
+    statUpdateBtreeSet = dsMockUtils.createMockBTreeSet([rawStatUpdate]);
 
-    createStat2ndKeyStub.withArgs(mockContext).returns(raw2ndKey);
+    createStat2ndKeyStub.withArgs('NoClaimStat', mockContext, undefined).returns(raw2ndKey);
     statUpdatesToBtreeStatUpdateStub
       .withArgs([rawStatUpdate], mockContext)
-      .returns([rawStatUpdate] as BTreeSetStatUpdate);
+      .returns(statUpdateBtreeSet);
 
     stringToTickerKeyStub.withArgs(ticker, mockContext).returns({ Ticker: rawTicker });
   });
@@ -135,12 +143,10 @@ describe('addAssetStat procedure', () => {
       ],
     });
 
-    const issuer = new Identity({ did: '0x123' }, mockContext);
     args = {
       type: StatType.Count,
       ticker,
       count,
-      claimIssuer: { issuer, claimType: ClaimType.Jurisdiction },
     };
 
     await prepareAddAssetStat.call(proc, args);

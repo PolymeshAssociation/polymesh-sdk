@@ -474,10 +474,6 @@ describe('addTransferRestriction procedure', () => {
       );
       const boundFunc = prepareStorage.bind(proc);
 
-      const statStub = sinon
-        .stub(utilsConversionModule, 'meshStatToStatisticsOpType')
-        .returns(StatisticsOpType.Count);
-
       let result = await boundFunc({
         ticker: 'TICKER',
         type: TransferRestrictionType.Count,
@@ -489,6 +485,8 @@ describe('addTransferRestriction procedure', () => {
       });
 
       const mockCountBtree = dsMockUtils.createMockBTreeSet([rawCountCondition]);
+      const hasStub = mockCountBtree.has as sinon.SinonStub;
+      hasStub.returns(true);
       dsMockUtils.createQueryStub('statistics', 'assetTransferCompliances', {
         returnValue: { requirements: mockCountBtree },
       });
@@ -502,8 +500,6 @@ describe('addTransferRestriction procedure', () => {
       expect(result).toEqual({
         currentRestrictions: [rawCountCondition],
       });
-
-      statStub.returns(StatisticsOpType.Balance);
 
       hasStub.returns(false);
       result = await boundFunc({

@@ -5591,6 +5591,7 @@ describe('transferRestrictionToTransferManager', () => {
   });
 
   it('should convert a TransferRestriction to a TransferCondition', () => {
+    const mockContext = dsMockUtils.getContextInstance();
     const count = new BigNumber(10);
     let fakeResult = {
       type: TransferRestrictionType.Count,
@@ -5600,7 +5601,7 @@ describe('transferRestrictionToTransferManager', () => {
       MaxInvestorCount: dsMockUtils.createMockU64(count),
     });
 
-    let result = transferConditionToTransferRestriction(transferCondition);
+    let result = transferConditionToTransferRestriction(transferCondition, mockContext);
     expect(result).toEqual(fakeResult);
 
     const percentage = new BigNumber(49);
@@ -5612,7 +5613,7 @@ describe('transferRestrictionToTransferManager', () => {
       MaxInvestorOwnership: dsMockUtils.createMockPermill(percentage.multipliedBy(10000)),
     });
 
-    result = transferConditionToTransferRestriction(transferCondition);
+    result = transferConditionToTransferRestriction(transferCondition, mockContext);
     expect(result).toEqual(fakeResult);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -5622,9 +5623,9 @@ describe('transferRestrictionToTransferManager', () => {
       message: 'Unexpected transfer condition type',
     });
 
-    expect(() => transferConditionToTransferRestriction(transferCondition)).toThrowError(
-      expectedError
-    );
+    expect(() =>
+      transferConditionToTransferRestriction(transferCondition, mockContext)
+    ).toThrowError(expectedError);
   });
 });
 
@@ -7165,7 +7166,7 @@ describe('agentGroupToPermissionGroup', () => {
         .withArgs('PolymeshPrimitivesStatisticsStat2ndKey', 'NoClaimStat')
         .returns('2ndKey');
 
-      const result = createStat2ndKey(context);
+      const result = createStat2ndKey('NoClaimStat', context);
 
       expect(result).toEqual('2ndKey');
     });

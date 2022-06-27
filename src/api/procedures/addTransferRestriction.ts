@@ -15,6 +15,7 @@ import {
 } from '~/types';
 import { ProcedureAuthorization, StatisticsOpType } from '~/types/internal';
 import {
+  complianceConditionsToBtreeSet,
   scopeIdsToBtreeSetIdentityId,
   statisticsOpTypeToStatOpType,
   stringToIdentityId,
@@ -116,8 +117,10 @@ export async function prepareAddTransferRestriction(
 
   // The chain requires BTreeSets to be sorted or else it will reject the transaction
   // const conditions = currentRestrictions.add(rawTransferCondition);
-  const conditions = [rawTransferCondition] as any;
-  console.log('conditions: ', conditions);
+  const conditions = complianceConditionsToBtreeSet(
+    [...currentRestrictions, rawTransferCondition],
+    context
+  );
 
   const transactions = [];
   transactions.push(

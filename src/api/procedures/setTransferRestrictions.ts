@@ -100,7 +100,7 @@ function transformRestrictions(
     const compareConditions = (transferCondition: TransferCondition): boolean =>
       compareTransferRestrictionToInput(transferCondition, value, type);
     if (!someDifference) {
-      someDifference = !currentRestrictions.find(compareConditions);
+      someDifference = ![...currentRestrictions].find(compareConditions);
     }
     const condition = { type, value };
 

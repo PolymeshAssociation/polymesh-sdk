@@ -1,6 +1,4 @@
-import { Vec } from '@polkadot/types';
 import {
-  BTreeSetStatUpdate,
   PolymeshPrimitivesStatisticsStat2ndKey,
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesStatisticsStatType,
@@ -8,6 +6,7 @@ import {
   PolymeshPrimitivesTicker,
   PolymeshPrimitivesTransferComplianceTransferCondition,
 } from '@polkadot/types/lookup';
+import { BTreeSet } from '@polkadot/types-codec';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
@@ -17,11 +16,11 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/removeAssetStat';
-import { Context, Identity, PolymeshError, RemoveAssetStatParams } from '~/internal';
+import { Context, PolymeshError, RemoveAssetStatParams } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { createMockBTreeStatUpdates } from '~/testUtils/mocks/dataSources';
+import { createMockBTreeSet } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
-import { ClaimType, ErrorCode, StatType, TxTags } from '~/types';
+import { CountryCode, ErrorCode, StatClaimType, StatType, TxTags } from '~/types';
 import { PolymeshTx, StatisticsOpType, TickerKey } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -51,11 +50,19 @@ describe('removeAssetStat procedure', () => {
   >;
   let statUpdatesToBtreeStatUpdateStub: sinon.SinonStub<
     [PolymeshPrimitivesStatisticsStatUpdate[], Context],
-    BTreeSetStatUpdate
+    BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>
   >;
-  let createStat2ndKeyStub: sinon.SinonStub<[Context], PolymeshPrimitivesStatisticsStat2ndKey>;
+  let createStat2ndKeyStub: sinon.SinonStub<
+    [
+      type: 'NoClaimStat' | StatClaimType,
+      context: Context,
+      claimStat?: CountryCode | 'yes' | 'no' | undefined
+    ],
+    PolymeshPrimitivesStatisticsStat2ndKey
+  >;
   let activeAssetStatsStub: sinon.SinonStub;
   let assetTransferCompliancesStub: sinon.SinonStub;
+  let rawStatUpdateBtree: BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>;
   let statStub: sinon.SinonStub;
 
   let emptyStorage: Storage;
@@ -67,7 +74,7 @@ describe('removeAssetStat procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
     ticker = 'TICKER';
     emptyStorage = {
-      currentStats: [] as unknown as Vec<PolymeshPrimitivesStatisticsStatType>,
+      currentStats: dsMockUtils.createMockBTreeSet([]),
     };
     stringToTickerKeyStub = sinon.stub(utilsConversionModule, 'stringToTickerKey');
     createStat2ndKeyStub = sinon.stub(utilsConversionModule, 'createStat2ndKey');
@@ -95,15 +102,17 @@ describe('removeAssetStat procedure', () => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
     setActiveAssetStats = dsMockUtils.createTxStub('statistics', 'setActiveAssetStats');
 
-    rawCountStatType = dsMockUtils.createMockStatistics();
-    rawBalanceStatType = dsMockUtils.createMockStatistics();
+    rawCountStatType = dsMockUtils.createMockStatisticsStatType();
+    rawBalanceStatType = dsMockUtils.createMockStatisticsStatType();
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawStatUpdate = dsMockUtils.createMockStatUpdate();
+    rawStatUpdateBtree = dsMockUtils.createMockBTreeSet([rawStatUpdate]);
 
-    createStat2ndKeyStub.withArgs(mockContext).returns(raw2ndKey);
+    createStat2ndKeyStub.withArgs('NoClaimStat', mockContext, undefined).returns(raw2ndKey);
+
     statUpdatesToBtreeStatUpdateStub
       .withArgs([rawStatUpdate], mockContext)
-      .returns([rawStatUpdate] as BTreeSetStatUpdate);
+      .returns(rawStatUpdateBtree);
 
     stringToTickerKeyStub.withArgs(ticker, mockContext).returns({ Ticker: rawTicker });
   });
@@ -126,9 +135,7 @@ describe('removeAssetStat procedure', () => {
       ticker,
     };
 
-    const currentStats = createMockBTreeStatUpdates([]);
-    // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-    currentStats.toArray = () => [];
+    const currentStats = createMockBTreeSet<PolymeshPrimitivesStatisticsStatType>([]);
     const proc = procedureMockUtils.getInstance<RemoveAssetStatParams, void, Storage>(mockContext, {
       currentStats,
     });
@@ -141,11 +148,9 @@ describe('removeAssetStat procedure', () => {
       args: [{ Ticker: rawTicker }, []],
     });
 
-    const issuer = new Identity({ did: '0x123' }, mockContext);
     args = {
       type: StatType.Count,
       ticker,
-      claimIssuer: { issuer, claimType: ClaimType.Jurisdiction },
     };
 
     await prepareRemoveAssetStat.call(proc, args);
@@ -273,7 +278,7 @@ describe('removeAssetStat procedure', () => {
 
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
-        message: 'Stat of type: "Balance" is not enabled for Asset: "TICKER"',
+        message: 'Cannot remove a stat that is not enabled for this Asset',
       });
 
       return expect(

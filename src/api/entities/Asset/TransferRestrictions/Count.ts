@@ -61,10 +61,7 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
    * Other options include checking after setting and retrying if that check isn't right, freezing the Asset, or to
    * wait for a future version of the chain that will prevent this race condition
    */
-  public declare enableStat: ProcedureMethod<
-    Pick<AddCountStatParams, 'count'>, // <- claim issuer wont work with plain "count" being set
-    void
-  >;
+  public declare enableStat: ProcedureMethod<Pick<AddCountStatParams, 'count'>, void>;
 
   /**
    * Disables investor count statistic for the Asset. Since statistics introduce slight overhead to each transaction

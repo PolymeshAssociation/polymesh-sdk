@@ -44,8 +44,6 @@ import {
   SignedBlock,
 } from '@polkadot/types/interfaces';
 import {
-  BTreeSetStatType,
-  BTreeSetStatUpdate,
   ConfidentialIdentityClaimProofsScopeClaimProof,
   ConfidentialIdentityClaimProofsZkProofData,
   PalletAssetClassicTickerRegistration,
@@ -3954,13 +3952,6 @@ export const createMockStatUpdate = (
     },
     !update
   ) as MockCodec<PolymeshPrimitivesStatisticsStatUpdate>;
-};
-
-export const createMockBTreeStatUpdates = (
-  updates?: BTreeSetStatUpdate | Array<PolymeshPrimitivesStatisticsStatUpdate>
-): MockCodec<BTreeSetStatType> => {
-  const mock = createMockCodec(updates, !updates) as MockCodec<BTreeSetStatType>;
-  return mock;
 };
 
 /**
