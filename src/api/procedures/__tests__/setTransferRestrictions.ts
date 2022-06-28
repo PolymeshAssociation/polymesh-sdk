@@ -178,7 +178,7 @@ describe('setTransferRestrictions procedure', () => {
     });
     rawClaimCountRestriction = dsMockUtils.createMockTransferCondition({
       ClaimCount: [
-        dsMockUtils.createMockStatisticsStatClaim({ accredited: dsMockUtils.createMockBool() }),
+        dsMockUtils.createMockStatisticsStatClaim({ Accredited: dsMockUtils.createMockBool() }),
         dsMockUtils.createMockIdentityId(),
         rawCount,
         dsMockUtils.createMockOption(),
@@ -186,7 +186,7 @@ describe('setTransferRestrictions procedure', () => {
     });
     rawClaimOwnershipRestriction = dsMockUtils.createMockTransferCondition({
       ClaimOwnership: [
-        dsMockUtils.createMockStatisticsStatClaim({ accredited: dsMockUtils.createMockBool() }),
+        dsMockUtils.createMockStatisticsStatClaim({ Accredited: dsMockUtils.createMockBool() }),
         dsMockUtils.createMockIdentityId(),
         rawPercentage,
         rawPercentage,

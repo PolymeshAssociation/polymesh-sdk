@@ -1,7 +1,6 @@
 import { Bytes } from '@polkadot/types';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { buildExecutionContext } from 'graphql/execution/execute';
 import { IdentityId } from 'polymesh-types/types';
 import sinon from 'sinon';
 

@@ -292,7 +292,7 @@ describe('TransferRestrictionBase class', () => {
       rawClaimCountRestriction = dsMockUtils.createMockTransferCondition({
         ClaimCount: [
           dsMockUtils.createMockStatisticsStatClaim({
-            accredited: dsMockUtils.createMockBool(true),
+            Accredited: dsMockUtils.createMockBool(true),
           }),
           dsMockUtils.createMockIdentityId('someDid'),
           dsMockUtils.createMockU64(min),
@@ -302,7 +302,7 @@ describe('TransferRestrictionBase class', () => {
       rawClaimOwnershipRestriction = dsMockUtils.createMockTransferCondition({
         ClaimOwnership: [
           dsMockUtils.createMockStatisticsStatClaim({
-            accredited: dsMockUtils.createMockBool(true),
+            Accredited: dsMockUtils.createMockBool(true),
           }),
           dsMockUtils.createMockIdentityId('someDid'),
           dsMockUtils.createMockU64(min),
