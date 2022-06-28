@@ -4032,9 +4032,9 @@ export const createMockInitiateCorporateActionArgs = (
 export const createMockStatisticsStatClaim = (
   statClaim:
     | PolymeshPrimitivesStatisticsStatClaim
-    | { accredited: bool }
-    | { affiliate: bool }
-    | { jurisdiction: Option<CountryCode> }
+    | { Accredited: bool }
+    | { Affiliate: bool }
+    | { Jurisdiction: Option<CountryCode> }
 ): MockCodec<PolymeshPrimitivesStatisticsStatClaim> => {
   if (statClaim)
     if (isCodec<PolymeshPrimitivesStatisticsStatClaim>(statClaim)) {

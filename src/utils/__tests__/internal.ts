@@ -1,6 +1,7 @@
 import { Bytes } from '@polkadot/types';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
+import { buildExecutionContext } from 'graphql/execution/execute';
 import { IdentityId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
@@ -32,6 +33,7 @@ import {
   assertTickerValid,
   asTicker,
   calculateNextKey,
+  compareTransferRestrictionToInput,
   createClaim,
   createProcedureMethod,
   delay,
@@ -1073,5 +1075,85 @@ describe('neededStatTypeForRestrictionInput', () => {
 
     result = neededStatTypeForRestrictionInput(TransferRestrictionType.Percentage, context);
     expect(result).toEqual('BalanceStat');
+  });
+});
+
+describe('compareTransferRestrictionToInput', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return true when the input matches the TransferRestriction type', () => {
+    const countTransferRestriction = dsMockUtils.createMockTransferCondition({
+      MaxInvestorCount: dsMockUtils.createMockU64(new BigNumber(10)),
+    });
+    let result = compareTransferRestrictionToInput(
+      countTransferRestriction,
+      new BigNumber(10),
+      TransferRestrictionType.Count
+    );
+    expect(result).toEqual(true);
+
+    const percentTransferRestriction = dsMockUtils.createMockTransferCondition({
+      MaxInvestorOwnership: dsMockUtils.createMockPermill(new BigNumber(100000)),
+    });
+
+    result = compareTransferRestrictionToInput(
+      percentTransferRestriction,
+      new BigNumber(10),
+      TransferRestrictionType.Percentage
+    );
+    expect(result).toEqual(true);
+
+    const claimCountTransferRestriction = dsMockUtils.createMockTransferCondition({
+      ClaimCount: [
+        dsMockUtils.createMockStatisticsStatClaim({ Accredited: dsMockUtils.createMockBool(true) }),
+        dsMockUtils.createMockIdentityId('someDid'),
+        dsMockUtils.createMockU64(new BigNumber(10)),
+        dsMockUtils.createMockOption(),
+      ],
+    });
+
+    result = compareTransferRestrictionToInput(
+      claimCountTransferRestriction,
+      {
+        min: new BigNumber(10),
+        claim: { type: ClaimType.Accredited, accredited: true },
+        issuer: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
+      },
+      TransferRestrictionType.ClaimCount
+    );
+
+    expect(result).toEqual(true);
+
+    const claimOwnershipTransferRestriction = dsMockUtils.createMockTransferCondition({
+      ClaimOwnership: [
+        dsMockUtils.createMockStatisticsStatClaim({ Accredited: dsMockUtils.createMockBool(true) }),
+        dsMockUtils.createMockIdentityId('someDid'),
+        dsMockUtils.createMockPermill(new BigNumber(100000)),
+        dsMockUtils.createMockPermill(new BigNumber(200000)),
+      ],
+    });
+
+    result = compareTransferRestrictionToInput(
+      claimOwnershipTransferRestriction,
+      {
+        min: new BigNumber(10),
+        max: new BigNumber(20),
+        claim: { type: ClaimType.Accredited, accredited: true },
+        issuer: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
+      },
+      TransferRestrictionType.ClaimOwnership
+    );
+
+    expect(result).toEqual(true);
   });
 });

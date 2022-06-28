@@ -8,6 +8,7 @@ import {
 import { Bytes, StorageKey } from '@polkadot/types';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
 import {
+  PolymeshPrimitivesStatisticsStatClaim,
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesTransferComplianceTransferCondition,
 } from '@polkadot/types/lookup';
@@ -16,6 +17,7 @@ import { stringUpperFirst } from '@polkadot/util';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
+import { stat } from 'fs';
 import stringify from 'json-stable-stringify';
 import { differenceWith, flatMap, isEqual, mapValues, noop, padEnd, uniq } from 'lodash';
 import { IdentityId } from 'polymesh-types/types';
@@ -1284,6 +1286,12 @@ export function compareTransferRestrictionToInput(
   value: BigNumber | ClaimRestrictionValue,
   type: TransferRestrictionType
 ): boolean {
+  const getClaimType = (statClaim: PolymeshPrimitivesStatisticsStatClaim): ClaimType =>
+    statClaim.isAccredited
+      ? ClaimType.Accredited
+      : statClaim.isAffiliate
+      ? ClaimType.Affiliate
+      : ClaimType.Jurisdiction;
   if (transferRestriction.isMaxInvestorCount && type === TransferRestrictionType.Count) {
     const currentCount = u64ToBigNumber(transferRestriction.asMaxInvestorCount);
     return currentCount.eq(value as BigNumber);
@@ -1301,9 +1309,8 @@ export function compareTransferRestrictionToInput(
     const castedValue = value as ClaimRestrictionValue;
     return !!(
       castedValue.min.eq(min) &&
-      max &&
-      castedValue.max?.eq(max) &&
-      castedValue.claim === statClaim &&
+      (max ? castedValue.max?.eq(max) : true) &&
+      castedValue.claim.type === getClaimType(statClaim) &&
       issuerDid === castedValue.issuer.did
     );
   } else if (
@@ -1311,16 +1318,16 @@ export function compareTransferRestrictionToInput(
     type === TransferRestrictionType.ClaimOwnership
   ) {
     const castedValue = value as ClaimRestrictionValue;
-    const [statClaim, rawIssuerId, rawMin, maybeMax] = transferRestriction.asClaimCount;
+    const [statClaim, rawIssuerId, rawMin, rawMax] = transferRestriction.asClaimOwnership;
     const issuerDid = identityIdToString(rawIssuerId);
 
-    const min = u64ToBigNumber(rawMin);
-    const max = maybeMax.isSome ? u64ToBigNumber(maybeMax.unwrap()) : undefined;
+    const min = permillToBigNumber(rawMin);
+    const max = permillToBigNumber(rawMax);
+
     return !!(
       castedValue.min.eq(min) &&
-      max &&
       castedValue.max?.eq(max) &&
-      castedValue.claim === statClaim &&
+      castedValue.claim.type === getClaimType(statClaim) &&
       issuerDid === castedValue.issuer.did
     );
   }
@@ -1335,12 +1342,12 @@ export function compareStatTypeToTransferRestrictionType(
   statType: PolymeshPrimitivesStatisticsStatType,
   transferRestrictionType: TransferRestrictionType
 ): boolean {
-  const stat = meshStatToStatisticsOpType(statType);
-  if (stat === StatisticsOpType.Count) {
+  const opType = meshStatToStatisticsOpType(statType);
+  if (opType === StatisticsOpType.Count) {
     return transferRestrictionType === TransferRestrictionType.Count;
-  } else if (stat === StatisticsOpType.Balance) {
+  } else if (opType === StatisticsOpType.Balance) {
     return transferRestrictionType === TransferRestrictionType.Percentage;
-  } else if (stat === StatisticsOpType.ClaimCount) {
+  } else if (opType === StatisticsOpType.ClaimCount) {
     return transferRestrictionType === TransferRestrictionType.ClaimCount;
   } else {
     return transferRestrictionType === TransferRestrictionType.ClaimOwnership;
