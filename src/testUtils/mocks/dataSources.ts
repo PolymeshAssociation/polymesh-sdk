@@ -75,6 +75,7 @@ import {
   PolymeshPrimitivesSecondaryKeyPalletPermissions,
   PolymeshPrimitivesSecondaryKeyPermissions,
   PolymeshPrimitivesStatisticsStat2ndKey,
+  PolymeshPrimitivesStatisticsStatClaim,
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesStatisticsStatUpdate,
@@ -2958,6 +2959,22 @@ export const createMockTransferCondition = (
   transferCondition?:
     | { MaxInvestorCount: u64 }
     | { MaxInvestorOwnership: Permill }
+    | {
+        ClaimCount: [
+          PolymeshPrimitivesStatisticsStatClaim,
+          PolymeshPrimitivesIdentityId,
+          u64,
+          Option<u64>
+        ];
+      }
+    | {
+        ClaimOwnership: [
+          PolymeshPrimitivesStatisticsStatClaim,
+          PolymeshPrimitivesIdentityId,
+          Permill,
+          Permill
+        ];
+      }
     | TransferCondition
 ): MockCodec<PolymeshPrimitivesTransferComplianceTransferCondition> => {
   if (isCodec<PolymeshPrimitivesTransferComplianceTransferCondition>(transferCondition)) {
@@ -4010,4 +4027,18 @@ export const createMockInitiateCorporateActionArgs = (
     },
     !caArgs
   ) as MockCodec<PalletCorporateActionsInitiateCorporateActionArgs>;
+};
+
+export const createMockStatisticsStatClaim = (
+  statClaim:
+    | PolymeshPrimitivesStatisticsStatClaim
+    | { accredited: bool }
+    | { affiliate: bool }
+    | { jurisdiction: Option<CountryCode> }
+): MockCodec<PolymeshPrimitivesStatisticsStatClaim> => {
+  if (statClaim)
+    if (isCodec<PolymeshPrimitivesStatisticsStatClaim>(statClaim)) {
+      return statClaim as MockCodec<PolymeshPrimitivesStatisticsStatClaim>;
+    }
+  return createMockEnum(statClaim) as MockCodec<PolymeshPrimitivesStatisticsStatClaim>;
 };

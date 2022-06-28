@@ -101,20 +101,17 @@ export async function prepareAddAssetStat(
       })
     );
   } else if (args.type === StatType.ScopedCount) {
-    if (args.type === StatType.ScopedCount) {
-      const {
-        claimIssuer: { value },
-      } = args;
-      const statValue = claimCountStatInputToStatUpdates(value, context);
-      transactions.push(
-        checkTxType({
-          transaction: statistics.batchUpdateAssetStats,
-          args: [tickerKey, newStat, statValue],
-        })
-      );
-    }
+    const {
+      claimIssuer: { value },
+    } = args;
+    const statValue = claimCountStatInputToStatUpdates(value, context);
+    transactions.push(
+      checkTxType({
+        transaction: statistics.batchUpdateAssetStats,
+        args: [tickerKey, newStat, statValue],
+      })
+    );
   }
-
   this.addBatchTransaction({ transactions });
 }
 

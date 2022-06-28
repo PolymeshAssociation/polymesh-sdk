@@ -268,12 +268,11 @@ export abstract class TransferRestrictionBase<
       } else if (type === TransferRestrictionType.Percentage) {
         return requirement.isMaxInvestorOwnership;
       } else if (type === TransferRestrictionType.ClaimCount) {
-        return requirement.isMaxInvestorOwnership;
+        return requirement.isClaimCount;
       } else {
         return requirement.isClaimOwnership;
       }
     });
-
     const rawExemptedLists = await Promise.all(
       filteredRequirements.map(() =>
         statistics.transferConditionExemptEntities.entries({ asset: tickerKey })
@@ -302,7 +301,7 @@ export abstract class TransferRestrictionBase<
         restriction = {
           percentage: value,
         };
-      } else if (type === TransferRestrictionType.ClaimCount) {
+      } else {
         const { min, max, claim, issuer } = value as ClaimRestrictionValue;
         restriction = {
           min,
@@ -310,9 +309,6 @@ export abstract class TransferRestrictionBase<
           claim,
           issuer,
         };
-      } else {
-        const { min, max, claim, issuer } = value as ClaimRestrictionValue;
-        restriction = { min, max, claim, issuer };
       }
 
       if (exemptedIds.length) {
@@ -327,7 +323,7 @@ export abstract class TransferRestrictionBase<
     const maxTransferConditions = u32ToBigNumber(consts.statistics.maxTransferConditionsPerAsset);
 
     return {
-      restrictions: restrictions,
+      restrictions,
       availableSlots: maxTransferConditions.minus(restrictions.length),
     } as GetReturnType<T>;
   }

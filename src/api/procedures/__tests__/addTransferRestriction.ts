@@ -22,7 +22,13 @@ import { Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { createMockBTreeSet } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
-import { ErrorCode, TransferRestriction, TransferRestrictionType, TxTags } from '~/types';
+import {
+  ClaimType,
+  ErrorCode,
+  TransferRestriction,
+  TransferRestrictionType,
+  TxTags,
+} from '~/types';
 import { PolymeshTx, StatisticsOpType, TickerKey } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -47,6 +53,8 @@ describe('addTransferRestriction procedure', () => {
   let rawPercentage: Permill;
   let rawCountCondition: PolymeshPrimitivesTransferComplianceTransferCondition;
   let rawPercentageCondition: PolymeshPrimitivesTransferComplianceTransferCondition;
+  let rawClaimCountCondition: PolymeshPrimitivesTransferComplianceTransferCondition;
+  let rawClaimOwnershipCondition: PolymeshPrimitivesTransferComplianceTransferCondition;
   let args: AddTransferRestrictionParams;
   let rawCountOp: PolymeshPrimitivesStatisticsStatOpType;
   let rawBalanceOp: PolymeshPrimitivesStatisticsStatOpType;
@@ -86,6 +94,8 @@ describe('addTransferRestriction procedure', () => {
   let mockStatTypeBtreeHasStub: sinon.SinonStub;
   let mockCountBtreeSet: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
   let mockPercentBtree: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
+  let mockClaimCountBtree: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
+  let mockClaimOwnershipBtree: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
   const emptyStatsBtreeSet = createMockBTreeSet<PolymeshPrimitivesStatisticsStatType>([]);
   const emptyRestrictionsBtreeSet =
     createMockBTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>([]);
@@ -94,6 +104,7 @@ describe('addTransferRestriction procedure', () => {
     currentRestrictions: emptyRestrictionsBtreeSet,
     currentStats: emptyStatsBtreeSet,
   };
+  const issuer = entityMockUtils.getIdentityInstance();
 
   let stringToScopeIdStub: sinon.SinonStub;
   const did = 'someDid';
@@ -145,7 +156,6 @@ describe('addTransferRestriction procedure', () => {
     );
     stringToScopeIdStub = sinon.stub(utilsConversionModule, 'stringToScopeId');
 
-    mockCountBtreeSet = dsMockUtils.createMockBTreeSet([rawCountCondition]);
     mockStatTypeBtree = dsMockUtils.createMockBTreeSet([rawStatType]);
     mockStatTypeBtreeHasStub = mockStatTypeBtree.has as sinon.SinonStub;
     rawCountOp = dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count);
@@ -159,10 +169,31 @@ describe('addTransferRestriction procedure', () => {
     rawPercentageCondition = dsMockUtils.createMockTransferCondition({
       MaxInvestorOwnership: rawPercentage,
     });
+    rawClaimCountCondition = dsMockUtils.createMockTransferCondition({
+      ClaimCount: [
+        dsMockUtils.createMockStatisticsStatClaim({ accredited: dsMockUtils.createMockBool() }),
+        dsMockUtils.createMockIdentityId(),
+        dsMockUtils.createMockU64(),
+        dsMockUtils.createMockOption(),
+      ],
+    });
+    rawClaimOwnershipCondition = dsMockUtils.createMockTransferCondition({
+      ClaimCount: [
+        dsMockUtils.createMockStatisticsStatClaim({ accredited: dsMockUtils.createMockBool() }),
+        dsMockUtils.createMockIdentityId(),
+        dsMockUtils.createMockU64(),
+        dsMockUtils.createMockOption(),
+      ],
+    });
+
+    mockCountBtreeSet = dsMockUtils.createMockBTreeSet([rawCountCondition]);
     mockPercentBtree =
       dsMockUtils.createMockBTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>([
         rawPercentageCondition,
       ]);
+
+    mockClaimCountBtree = dsMockUtils.createMockBTreeSet([rawClaimCountCondition]);
+    mockClaimOwnershipBtree = dsMockUtils.createMockBTreeSet([rawClaimOwnershipCondition]);
 
     stringToScopeIdStub.withArgs(did, mockContext).returns(rawScopeId);
 
@@ -179,6 +210,12 @@ describe('addTransferRestriction procedure', () => {
     complianceConditionsToBtreeSetSub
       .withArgs([rawPercentageCondition], mockContext)
       .returns(mockPercentBtree);
+    complianceConditionsToBtreeSetSub
+      .withArgs([rawClaimCountCondition], mockContext)
+      .returns(mockClaimCountBtree);
+    complianceConditionsToBtreeSetSub
+      .withArgs([rawClaimOwnershipCondition], mockContext)
+      .returns(mockClaimOwnershipBtree);
     statisticsOpTypeToStatOpTypeStub
       .withArgs(StatisticsOpType.Count, mockContext)
       .returns(rawCountOp);
@@ -200,17 +237,17 @@ describe('addTransferRestriction procedure', () => {
   });
 
   it('should add an add asset transfer compliance transaction to the queue', async () => {
+    const proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, BigNumber, Storage>(
+      mockContext,
+      { ...emptyStorage }
+    );
+
     args = {
       type: TransferRestrictionType.Count,
       exemptedIdentities: [],
       count,
       ticker,
     };
-    const proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, BigNumber, Storage>(
-      mockContext,
-      { ...emptyStorage }
-    );
-
     transferConditionsToBtreeTransferConditionsStub.returns(mockCountBtreeSet);
 
     let result = await prepareAddTransferRestriction.call(proc, args);
@@ -242,6 +279,31 @@ describe('addTransferRestriction procedure', () => {
         {
           transaction: setAssetTransferCompliance,
           args: [{ Ticker: rawTicker }, mockPercentBtree],
+        },
+      ],
+    });
+
+    expect(result).toEqual(new BigNumber(1));
+
+    args = {
+      type: TransferRestrictionType.ClaimCount,
+      exemptedIdentities: [],
+      claim: { type: ClaimType.Accredited, accredited: true },
+      min: new BigNumber(10),
+      max: new BigNumber(20),
+      ticker,
+      issuer,
+    };
+
+    transferRestrictionToTransferRestrictionStub.returns(rawClaimCountCondition);
+    transferConditionsToBtreeTransferConditionsStub.returns(mockClaimCountBtree);
+    result = await prepareAddTransferRestriction.call(proc, args);
+
+    sinon.assert.calledWith(addBatchTransactionStub.thirdCall, {
+      transactions: [
+        {
+          transaction: setAssetTransferCompliance,
+          args: [{ Ticker: rawTicker }, mockClaimCountBtree],
         },
       ],
     });

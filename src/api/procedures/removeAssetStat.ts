@@ -11,11 +11,7 @@ import {
   statisticStatTypesToBtreeStatType,
   stringToTickerKey,
 } from '~/utils/conversion';
-import {
-  checkTxType,
-  compareStatsToInput,
-  compareTransferRestrictionToStat,
-} from '~/utils/internal';
+import { checkTxType, compareTransferRestrictionToStat } from '~/utils/internal';
 
 export type RemoveCountStatParams = {
   type: StatType.Count;
@@ -69,7 +65,14 @@ export async function prepareRemoveAssetStat(
   const newStat = statisticsOpTypeToStatType({ op, claimIssuer: rawClaimIssuer }, context);
   const statsArr = [...currentStats];
   const removeIndex = statsArr.findIndex(s => s.eq(newStat));
-  if (removeIndex >= 0) statsArr.splice(removeIndex, 1);
+  if (removeIndex >= 0) {
+    statsArr.splice(removeIndex, 1);
+  } else {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Cannot remove a stat that is not enabled for this Asset',
+    });
+  }
   const newStats = statisticStatTypesToBtreeStatType(statsArr, context);
 
   this.addTransaction(
@@ -120,26 +123,9 @@ export async function prepareStorage(
     statistics.activeAssetStats(tickerKey),
     statistics.assetTransferCompliances(tickerKey),
   ]);
-  const missingStat = !(
-    currentStats as unknown as Array<PolymeshPrimitivesStatisticsStatType>
-  ).find(s => {
-    return compareStatsToInput(s, args);
-  });
-
-  if (missingStat) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'Cannot remove a stat that is not enabled for this Asset',
-    });
-  }
-
-  let claimIssuer: ClaimIssuer;
-  if (args.claimIssuer) {
-    claimIssuer = args.claimIssuer;
-  }
 
   requirements.forEach(r => {
-    const used = compareTransferRestrictionToStat(r, type, claimIssuer);
+    const used = compareTransferRestrictionToStat(r, type, args.claimIssuer);
 
     if (used) {
       throw new PolymeshError({
@@ -151,7 +137,7 @@ export async function prepareStorage(
   });
 
   return {
-    currentStats: currentStats,
+    currentStats,
   };
 }
 

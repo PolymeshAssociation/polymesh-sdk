@@ -20,7 +20,7 @@ import { Context, PolymeshError, RemoveAssetStatParams } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { createMockBTreeSet } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
-import { CountryCode, ErrorCode, StatClaimType, StatType, TxTags } from '~/types';
+import { ClaimType, CountryCode, ErrorCode, StatClaimType, StatType, TxTags } from '~/types';
 import { PolymeshTx, StatisticsOpType, TickerKey } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -69,6 +69,7 @@ describe('removeAssetStat procedure', () => {
   >;
   let statStub: sinon.SinonStub;
   let emptyStatTypeBtreeSet: BTreeSet<PolymeshPrimitivesStatisticsStatType>;
+  let statBtreeSet: BTreeSet<PolymeshPrimitivesStatisticsStatType>;
 
   let emptyStorage: Storage;
 
@@ -108,12 +109,13 @@ describe('removeAssetStat procedure', () => {
 
   beforeEach(() => {
     statStub.returns(StatisticsOpType.Balance);
-    emptyStatTypeBtreeSet = dsMockUtils.createMockBTreeSet([]);
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
     setActiveAssetStats = dsMockUtils.createTxStub('statistics', 'setActiveAssetStats');
 
     rawCountStatType = dsMockUtils.createMockStatisticsStatType();
     rawBalanceStatType = dsMockUtils.createMockStatisticsStatType();
+    emptyStatTypeBtreeSet = dsMockUtils.createMockBTreeSet([]);
+    statBtreeSet = dsMockUtils.createMockBTreeSet([rawCountStatType, rawBalanceStatType]);
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawStatUpdate = dsMockUtils.createMockStatUpdate();
     rawStatUpdateBtree = dsMockUtils.createMockBTreeSet([rawStatUpdate]);
@@ -126,6 +128,10 @@ describe('removeAssetStat procedure', () => {
 
     stringToTickerKeyStub.withArgs(ticker, mockContext).returns({ Ticker: rawTicker });
     statisticStatTypesToBtreeStatTypeStub.returns(emptyStatTypeBtreeSet);
+    args = {
+      type: StatType.Balance,
+      ticker,
+    };
   });
 
   afterEach(() => {
@@ -141,16 +147,11 @@ describe('removeAssetStat procedure', () => {
   });
 
   it('should add an setAssetStats transaction to the queue', async () => {
-    args = {
-      type: StatType.Balance,
-      ticker,
-    };
-
-    const currentStats = createMockBTreeSet<PolymeshPrimitivesStatisticsStatType>([]);
     const proc = procedureMockUtils.getInstance<RemoveAssetStatParams, void, Storage>(mockContext, {
-      currentStats,
+      currentStats: statBtreeSet,
     });
     statisticsOpTypeToStatOpTypeStub.returns(rawCountStatType);
+    (rawCountStatType.eq as sinon.SinonStub).returns(true);
 
     await prepareRemoveAssetStat.call(proc, args);
 
@@ -162,6 +163,10 @@ describe('removeAssetStat procedure', () => {
     args = {
       type: StatType.Count,
       ticker,
+      claimIssuer: {
+        issuer: entityMockUtils.getIdentityInstance(),
+        claimType: ClaimType.Affiliate,
+      },
     };
 
     await prepareRemoveAssetStat.call(proc, args);
@@ -170,6 +175,23 @@ describe('removeAssetStat procedure', () => {
       transaction: setActiveAssetStats,
       args: [{ Ticker: rawTicker }, emptyStatTypeBtreeSet],
     });
+  });
+
+  it('should throw if the stat is not set', () => {
+    const currentStats = createMockBTreeSet<PolymeshPrimitivesStatisticsStatType>([]);
+    const proc = procedureMockUtils.getInstance<RemoveAssetStatParams, void, Storage>(mockContext, {
+      currentStats,
+    });
+
+    activeAssetStatsStub.returns([rawCountStatType]);
+    statStub.returns(StatisticsOpType.Count);
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Cannot remove a stat that is not enabled for this Asset',
+    });
+
+    return expect(prepareRemoveAssetStat.call(proc, args)).rejects.toThrowError(expectedError);
   });
 
   describe('getAuthorization', () => {
@@ -274,28 +296,6 @@ describe('removeAssetStat procedure', () => {
         boundFunc({
           ticker: 'TICKER',
           type: StatType.Count,
-        })
-      ).rejects.toThrowError(expectedError);
-    });
-
-    it('should throw if the stat is not set', () => {
-      const proc = procedureMockUtils.getInstance<RemoveAssetStatParams, void, Storage>(
-        mockContext
-      );
-      const boundFunc = prepareStorage.bind(proc);
-
-      activeAssetStatsStub.returns([rawCountStatType]);
-      statStub.returns(StatisticsOpType.Count);
-
-      const expectedError = new PolymeshError({
-        code: ErrorCode.UnmetPrerequisite,
-        message: 'Cannot remove a stat that is not enabled for this Asset',
-      });
-
-      return expect(
-        boundFunc({
-          ticker: 'TICKER',
-          type: StatType.Balance,
         })
       ).rejects.toThrowError(expectedError);
     });

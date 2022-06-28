@@ -87,14 +87,19 @@ export async function prepareAddTransferRestriction(
     });
   }
 
-  const argsToClaimRestrictionValue = (
-    scopedArgs: AddClaimCountTransferRestrictionParams | AddClaimOwnershipTransferRestrictionParams
-  ): ClaimRestrictionValue => {
+  const argsToClaimRestrictionValue = ({
+    claim,
+    issuer,
+    min,
+    max,
+  }:
+    | AddClaimCountTransferRestrictionParams
+    | AddClaimOwnershipTransferRestrictionParams): ClaimRestrictionValue => {
     return {
-      claim: scopedArgs.claim,
-      issuer: scopedArgs.issuer,
-      min: scopedArgs.min,
-      max: scopedArgs.max,
+      claim,
+      issuer,
+      min,
+      max,
     };
   };
 
@@ -125,9 +130,6 @@ export async function prepareAddTransferRestriction(
       message: 'Cannot add the same restriction more than once',
     });
   }
-
-  // The chain requires BTreeSets to be sorted or else it will reject the transaction
-  // const conditions = currentRestrictions.add(rawTransferCondition);
   const conditions = complianceConditionsToBtreeSet(
     [...currentRestrictions, rawTransferCondition],
     context
@@ -158,7 +160,6 @@ export async function prepareAddTransferRestriction(
       })
     );
   }
-
   this.addBatchTransaction({ transactions });
   return restrictionAmount.plus(1);
 }

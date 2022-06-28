@@ -21,7 +21,7 @@ import {
 import { AddAssetStatParams, Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { CountryCode, ErrorCode, StatClaimType, StatType, TxTags } from '~/types';
+import { ClaimType, CountryCode, ErrorCode, StatClaimType, StatType, TxTags } from '~/types';
 import { PolymeshTx, StatisticsOpType, TickerKey } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -39,15 +39,19 @@ describe('addAssetStat procedure', () => {
   let args: AddAssetStatParams;
   let rawStatType: PolymeshPrimitivesStatisticsStatType;
   let rawStatBtreeSet: BTreeSet<PolymeshPrimitivesStatisticsStatType>;
-  let rawOp: PolymeshPrimitivesStatisticsStatOpType;
-  let rawClaimIssuer: PolymeshPrimitivesIdentityId;
-  let rawClaimType: PolymeshPrimitivesIdentityClaimClaimType;
   let rawStatUpdate: PolymeshPrimitivesStatisticsStatUpdate;
   let raw2ndKey: PolymeshPrimitivesStatisticsStat2ndKey;
 
   let addBatchTransactionStub: sinon.SinonStub;
   let setActiveAssetStatsTxStub: PolymeshTx<
     [PolymeshPrimitivesTicker, PolymeshPrimitivesTransferComplianceTransferCondition]
+  >;
+  let batchUpdateAssetStatsTxStub: PolymeshTx<
+    [
+      PolymeshPrimitivesTicker,
+      PolymeshPrimitivesStatisticsStatType,
+      BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>
+    ]
   >;
   let statisticsOpTypeToStatOpTypeStub: sinon.SinonStub<
     [
@@ -116,23 +120,19 @@ describe('addAssetStat procedure', () => {
     statStub.returns(StatisticsOpType.Balance);
     addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
     setActiveAssetStatsTxStub = dsMockUtils.createTxStub('statistics', 'setActiveAssetStats');
+    batchUpdateAssetStatsTxStub = dsMockUtils.createTxStub('statistics', 'batchUpdateAssetStats');
 
     rawStatType = dsMockUtils.createMockStatisticsStatType();
     rawStatBtreeSet = dsMockUtils.createMockBTreeSet([rawStatType]);
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawStatUpdate = dsMockUtils.createMockStatUpdate();
     statUpdateBtreeSet = dsMockUtils.createMockBTreeSet([rawStatUpdate]);
-    rawOp = dsMockUtils.createMockStatisticsOpType();
-    rawClaimIssuer = dsMockUtils.createMockIdentityId();
-    rawClaimType = dsMockUtils.createMockClaimType();
 
     createStat2ndKeyStub.withArgs('NoClaimStat', mockContext, undefined).returns(raw2ndKey);
     statUpdatesToBtreeStatUpdateStub
       .withArgs([rawStatUpdate], mockContext)
       .returns(statUpdateBtreeSet);
-    statisticsOpTypeToStatOpTypeStub
-      .withArgs({ op: rawOp, claimIssuer: [rawClaimType, rawClaimIssuer] }, mockContext)
-      .returns(rawStatType);
+    statisticsOpTypeToStatOpTypeStub.returns(rawStatType);
 
     stringToTickerKeyStub.withArgs(ticker, mockContext).returns({ Ticker: rawTicker });
     statisticStatTypesToBtreeStatTypeStub.returns(rawStatBtreeSet);
@@ -176,7 +176,51 @@ describe('addAssetStat procedure', () => {
       count,
     };
 
+    sinon.stub(utilsConversionModule, 'countStatInputToStatUpdates').returns(statUpdateBtreeSet);
     await prepareAddAssetStat.call(proc, args);
+
+    sinon.assert.calledWith(addBatchTransactionStub.secondCall, {
+      transactions: [
+        {
+          transaction: setActiveAssetStatsTxStub,
+          args: [{ Ticker: rawTicker }, rawStatBtreeSet],
+        },
+        {
+          transaction: batchUpdateAssetStatsTxStub,
+          args: [{ Ticker: rawTicker }, rawStatType, statUpdateBtreeSet],
+        },
+      ],
+    });
+
+    args = {
+      type: StatType.ScopedCount,
+      ticker,
+      claimIssuer: {
+        issuer: entityMockUtils.getIdentityInstance(),
+        claimType: ClaimType.Accredited,
+        value: {
+          yes: new BigNumber(1),
+          no: new BigNumber(2),
+        },
+      },
+    };
+
+    sinon
+      .stub(utilsConversionModule, 'claimCountStatInputToStatUpdates')
+      .returns(statUpdateBtreeSet);
+    await prepareAddAssetStat.call(proc, args);
+    sinon.assert.calledWith(addBatchTransactionStub.thirdCall, {
+      transactions: [
+        {
+          transaction: setActiveAssetStatsTxStub,
+          args: [{ Ticker: rawTicker }, rawStatBtreeSet],
+        },
+        {
+          transaction: batchUpdateAssetStatsTxStub,
+          args: [{ Ticker: rawTicker }, rawStatType, statUpdateBtreeSet],
+        },
+      ],
+    });
   });
 
   describe('getAuthorization', () => {

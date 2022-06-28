@@ -2,6 +2,8 @@ import { PolymeshPrimitivesTransferComplianceTransferCondition } from '@polkadot
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
+import { ClaimCount } from '~/api/entities/Asset/TransferRestrictions/ClaimCount';
+import { ClaimOwnership } from '~/api/entities/Asset/TransferRestrictions/ClaimOwnership';
 import {
   AddCountTransferRestrictionParams,
   AddPercentageTransferRestrictionParams,
@@ -14,6 +16,7 @@ import {
 } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
+  ClaimType,
   CountTransferRestriction,
   PercentageTransferRestriction,
   StatType,
@@ -262,6 +265,11 @@ describe('TransferRestrictionBase class', () => {
     let percentageRestriction: PercentageTransferRestriction;
     let rawCountRestriction: PolymeshPrimitivesTransferComplianceTransferCondition;
     let rawPercentageRestriction: PolymeshPrimitivesTransferComplianceTransferCondition;
+    let rawClaimCountRestriction: PolymeshPrimitivesTransferComplianceTransferCondition;
+    let rawClaimOwnershipRestriction: PolymeshPrimitivesTransferComplianceTransferCondition;
+    const issuer = entityMockUtils.getIdentityInstance({ did: 'someDid' });
+    const min = new BigNumber(10);
+    const max = new BigNumber(20);
 
     beforeAll(() => {
       scopeId = 'someScopeId';
@@ -281,6 +289,26 @@ describe('TransferRestrictionBase class', () => {
           percentageRestriction.percentage.multipliedBy(10000)
         ),
       });
+      rawClaimCountRestriction = dsMockUtils.createMockTransferCondition({
+        ClaimCount: [
+          dsMockUtils.createMockStatisticsStatClaim({
+            accredited: dsMockUtils.createMockBool(true),
+          }),
+          dsMockUtils.createMockIdentityId('someDid'),
+          dsMockUtils.createMockU64(min),
+          dsMockUtils.createMockOption(dsMockUtils.createMockU64(max)),
+        ],
+      });
+      rawClaimOwnershipRestriction = dsMockUtils.createMockTransferCondition({
+        ClaimOwnership: [
+          dsMockUtils.createMockStatisticsStatClaim({
+            accredited: dsMockUtils.createMockBool(true),
+          }),
+          dsMockUtils.createMockIdentityId('someDid'),
+          dsMockUtils.createMockU64(min),
+          dsMockUtils.createMockU64(max),
+        ],
+      });
     });
 
     beforeEach(() => {
@@ -291,7 +319,14 @@ describe('TransferRestrictionBase class', () => {
         returnValue: dsMockUtils.createMockU32(maxStats),
       });
       dsMockUtils.createQueryStub('statistics', 'assetTransferCompliances', {
-        returnValue: { requirements: [rawCountRestriction, rawPercentageRestriction] },
+        returnValue: {
+          requirements: [
+            rawCountRestriction,
+            rawPercentageRestriction,
+            rawClaimCountRestriction,
+            rawClaimOwnershipRestriction,
+          ],
+        },
       });
       dsMockUtils.createQueryStub('statistics', 'transferConditionExemptEntities', {
         entries: [[[null, dsMockUtils.createMockScopeId(scopeId)], true]],
@@ -337,6 +372,48 @@ describe('TransferRestrictionBase class', () => {
         ],
         availableSlots: new BigNumber(1),
       });
+    });
+
+    it('should return all claimCount transfer restrictions', async () => {
+      const claimCount = new ClaimCount(asset, context);
+
+      const result = await claimCount.get();
+
+      expect(JSON.stringify(result)).toEqual(
+        JSON.stringify({
+          restrictions: [
+            {
+              min: new BigNumber(10),
+              max: new BigNumber(20),
+              claim: { type: ClaimType.Accredited, accredited: true },
+              issuer,
+              exemptedIds: ['someScopeId'],
+            },
+          ],
+          availableSlots: new BigNumber(1),
+        })
+      );
+    });
+
+    it('should return all claimOwnership transfer restrictions', async () => {
+      const claimOwnership = new ClaimOwnership(asset, context);
+
+      const result = await claimOwnership.get();
+
+      expect(JSON.stringify(result)).toEqual(
+        JSON.stringify({
+          restrictions: [
+            {
+              min: '0.001',
+              max: '0.002',
+              claim: { type: ClaimType.Accredited, accredited: true },
+              issuer,
+              exemptedIds: ['someScopeId'],
+            },
+          ],
+          availableSlots: new BigNumber(1),
+        })
+      );
     });
   });
 
