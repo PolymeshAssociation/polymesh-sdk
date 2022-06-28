@@ -2876,6 +2876,7 @@ export function transferRestrictionToPolymeshTransferCondition(
     if (type === TransferRestrictionType.ClaimCount) {
       restrictionType = 'ClaimCount';
     } else {
+      // i.e. TransferRestrictionType.ClaimOwnership
       restrictionType = 'ClaimOwnership';
     }
     const castedValue = value as ClaimRestrictionValue;
@@ -2886,7 +2887,6 @@ export function transferRestrictionToPolymeshTransferCondition(
     const rawIdentityId = stringToIdentityId(castedValue.issuer.did, context);
     const rawMin = bigNumberToU64(castedValue.min, context);
     const rawMax = optionize(bigNumberToU64)(castedValue.max, context);
-    restrictionType = 'ClaimCount';
     restrictionValue = [claimValue, rawIdentityId, rawMin, rawMax];
   }
 

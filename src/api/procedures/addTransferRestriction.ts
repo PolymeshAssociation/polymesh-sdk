@@ -87,6 +87,17 @@ export async function prepareAddTransferRestriction(
     });
   }
 
+  const argsToClaimRestrictionValue = (
+    scopedArgs: AddClaimCountTransferRestrictionParams | AddClaimOwnershipTransferRestrictionParams
+  ): ClaimRestrictionValue => {
+    return {
+      claim: scopedArgs.claim,
+      issuer: scopedArgs.issuer,
+      min: scopedArgs.min,
+      max: scopedArgs.max,
+    };
+  };
+
   let value: BigNumber | ClaimRestrictionValue;
   let chainType: TransferRestrictionType;
   if (type === TransferRestrictionType.Count) {
@@ -96,10 +107,10 @@ export async function prepareAddTransferRestriction(
     value = args.percentage;
     chainType = TransferRestrictionType.Percentage;
   } else if (type === TransferRestrictionType.ClaimCount) {
-    value = { claim: args.claim, issuer: args.issuer, min: args.min, max: args.max }; // TODO use conversion
+    value = argsToClaimRestrictionValue(args);
     chainType = TransferRestrictionType.ClaimCount;
   } else {
-    value = { claim: args.claim, issuer: args.issuer, min: args.min, max: args.max };
+    value = argsToClaimRestrictionValue(args);
     chainType = TransferRestrictionType.ClaimOwnership;
   }
 

@@ -4,7 +4,9 @@ import { TransferCondition } from 'polymesh-types/types';
 
 import { Asset, Context, Identity, PolymeshError, Procedure } from '~/internal';
 import {
+  ClaimCountTransferRestriction,
   ClaimCountTransferRestrictionInput,
+  ClaimOwnershipTransferRestriction,
   ClaimOwnershipTransferRestrictionInput,
   ClaimRestrictionValue,
   CountTransferRestrictionInput,
@@ -273,6 +275,16 @@ export async function prepareStorage(
 
   const currentRestrictions: TransferRestriction[] = [];
 
+  const transformScopedRestriction = ({
+    claim,
+    min,
+    max,
+    issuer,
+  }: ClaimCountTransferRestriction | ClaimOwnershipTransferRestriction): TransferRestriction => ({
+    type: TransferRestrictionType.ClaimCount,
+    value: { claim, min, max, issuer },
+  });
+
   // take the count of the type of restrictions not being changed
   const occupiedSlots =
     type === TransferRestrictionType.Percentage
@@ -290,27 +302,16 @@ export async function prepareStorage(
       currentRestrictions.push(restriction);
     });
   } else if (type === TransferRestrictionType.ClaimCount) {
-    currentClaimCountRestrictions.forEach(({ claim, min, max, issuer }) => {
-      const restriction = {
-        type: TransferRestrictionType.ClaimCount,
-        value: { claim, min, max, issuer },
-      };
-      currentRestrictions.push(restriction);
-    });
+    currentRestrictions.push(...currentClaimCountRestrictions.map(transformScopedRestriction));
   } else {
-    currentClaimOwnershipRestrictions.forEach(({ claim, min, max, issuer }) => {
-      const restriction = {
-        type: TransferRestrictionType.ClaimCount,
-        value: { claim, min, max, issuer },
-      };
-      currentRestrictions.push(restriction);
-    });
+    currentRestrictions.push(...currentClaimOwnershipRestrictions.map(transformScopedRestriction));
   }
 
   const transformRestriction = (
     restriction: TransferRestriction
   ): PolymeshPrimitivesTransferComplianceTransferCondition =>
     transferRestrictionToPolymeshTransferCondition(restriction, context);
+
   return {
     occupiedSlots: new BigNumber(occupiedSlots),
     currentRestrictions: currentRestrictions.map(transformRestriction),

@@ -1248,32 +1248,31 @@ export function compareTransferRestrictionToStat(
     return true;
   }
 
-  if (r.isClaimCount || r.isClaimOwnership) {
-    if (!claimIssuer) {
-      return false;
-    }
-    const {
-      issuer: { did: issuerDid },
-      claimType,
-    } = claimIssuer;
-    if (type === StatType.Count && r.isClaimCount) {
-      const [rawClaim, issuer] = r.asClaimCount;
-      const restrictionIssuerDid = identityIdToString(issuer);
-      const claim = statsClaimToClaim(rawClaim);
-      if (restrictionIssuerDid === issuerDid && claim.type === claimType) {
-        return true;
-      }
-    }
-
-    if (type === StatType.Balance && r.isClaimOwnership) {
-      const [rawClaim, issuer] = r.asClaimOwnership;
-      const restrictionIssuerDid = identityIdToString(issuer);
-      const claim = statsClaimToClaim(rawClaim);
-      if (restrictionIssuerDid === issuerDid && claim.type === claimType) {
-        return true;
-      }
+  if (!claimIssuer) {
+    return false;
+  }
+  const {
+    issuer: { did: issuerDid },
+    claimType,
+  } = claimIssuer;
+  if (type === StatType.Count && r.isClaimCount) {
+    const [rawClaim, issuer] = r.asClaimCount;
+    const restrictionIssuerDid = identityIdToString(issuer);
+    const claim = statsClaimToClaim(rawClaim);
+    if (restrictionIssuerDid === issuerDid && claim.type === claimType) {
+      return true;
     }
   }
+
+  if (type === StatType.Balance && r.isClaimOwnership) {
+    const [rawClaim, issuer] = r.asClaimOwnership;
+    const restrictionIssuerDid = identityIdToString(issuer);
+    const claim = statsClaimToClaim(rawClaim);
+    if (restrictionIssuerDid === issuerDid && claim.type === claimType) {
+      return true;
+    }
+  }
+
   return false;
 }
 

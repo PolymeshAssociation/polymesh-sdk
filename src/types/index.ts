@@ -1394,11 +1394,6 @@ export interface AddCountStatInput {
   count: BigNumber;
 }
 
-// export type ClaimCountInitialStatInput =
-//   | { accredited: { yes: BigNumber; no: BigNumber } }
-//   | { affiliate: { yes: BigNumber; no: BigNumber } }
-//   | { jurisdiction: { countryCode: CountryCode; count: BigNumber }[] };
-
 export type ClaimCountInitialStatInput =
   | { yes: BigNumber; no: BigNumber }
   | { countryCode: CountryCode; count: BigNumber }[];
