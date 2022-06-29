@@ -570,6 +570,7 @@ export function claimCountToClaimRestrictionValue(
     max: max.isSome ? u64ToBigNumber(max.unwrap()) : undefined,
   };
 }
+
 /**
  * @hidden
  */
@@ -2190,7 +2191,9 @@ export function meshClaimToClaim(claim: MeshClaim): Claim {
 /**
  * @hidden
  */
-export function statsClaimToClaim(claim: PolymeshPrimitivesStatisticsStatClaim): StatClaimUserType {
+export function statsClaimToStatClaimUserType(
+  claim: PolymeshPrimitivesStatisticsStatClaim
+): StatClaimUserType {
   if (claim.isJurisdiction) {
     return {
       type: ClaimType.Jurisdiction,
@@ -3639,11 +3642,12 @@ export function transferConditionsToBtreeTransferConditions(
 /**
  * @hidden
  */
-export function statUpdate(
+export function keyAndValueToStatUpdate(
   key2: PolymeshPrimitivesStatisticsStat2ndKey,
   value: u128,
   context: Context
 ): PolymeshPrimitivesStatisticsStatUpdate {
+  console.log('statUpdate', key2, value);
   return context.createType('PolymeshPrimitivesStatisticsStatUpdate', { key2, value });
 }
 
@@ -3654,6 +3658,7 @@ export function statUpdatesToBtreeStatUpdate(
   statUpdates: PolymeshPrimitivesStatisticsStatUpdate[],
   context: Context
 ): BTreeSet<PolymeshPrimitivesStatisticsStatUpdate> {
+  console.log('stat updates: ', statUpdates);
   return context.createType('BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>', statUpdates);
 }
 
@@ -3685,7 +3690,7 @@ export function statisticsOpTypeToStatOpType(
 }
 
 /**
- * For now this is hard coded to return a NoClaimStat type. Once Claim scopes are added this should be extended
+ * Scoped stats are a map of maps, e.g. Jurisdiction has a counter for each CountryCode. a 2ndKey specifies what Country count to use
  * @hidden
  */
 export function createStat2ndKey(
@@ -3693,11 +3698,20 @@ export function createStat2ndKey(
   context: Context,
   claimStat?: 'yes' | 'no' | CountryCode
 ): PolymeshPrimitivesStatisticsStat2ndKey {
+  console.log('making 2nd key with: ', type, claimStat);
   if (type === 'NoClaimStat') {
     return context.createType('PolymeshPrimitivesStatisticsStat2ndKey', type);
   } else {
+    let value;
+    if (claimStat === 'yes') {
+      value = true;
+    } else if (claimStat === 'no') {
+      value = false;
+    } else {
+      value = claimStat;
+    }
     return context.createType('PolymeshPrimitivesStatisticsStat2ndKey', {
-      claim: { [type]: claimStat },
+      claim: { [type]: value },
     });
   }
 }
@@ -3735,22 +3749,21 @@ export function claimCountStatInputToStatUpdates(
   let updateArgs;
 
   if ('yes' in value) {
-    const { yes, no } = value;
-    const yes2ndKey = createStat2ndKey(ClaimType.Accredited, context, 'yes');
+    const { yes, no, type } = value;
+    const yes2ndKey = createStat2ndKey(type, context, 'yes');
     const yesCount = bigNumberToU128(yes, context);
-    const no2ndKey = createStat2ndKey(ClaimType.Accredited, context, 'no');
+    const no2ndKey = createStat2ndKey(type, context, 'no');
     const noCount = bigNumberToU128(no, context);
+    // console.log('yes, key, count', yes2ndKey, yesCount, 'no key count', no2ndKey, noCount);
     updateArgs = [
-      statUpdate(yes2ndKey, yesCount, context),
-      statUpdate(no2ndKey, noCount, context),
-    ].sort();
+      keyAndValueToStatUpdate(yes2ndKey, yesCount, context),
+      keyAndValueToStatUpdate(no2ndKey, noCount, context),
+    ];
   } else {
-    updateArgs = value
-      .map(({ countryCode, count }) => {
-        const rawSecondKey = createStat2ndKey(ClaimType.Jurisdiction, context, countryCode);
-        return statUpdate(rawSecondKey, bigNumberToU128(count, context), context);
-      })
-      .sort();
+    updateArgs = value.map(({ countryCode, count, type }) => {
+      const rawSecondKey = createStat2ndKey(type, context, countryCode);
+      return keyAndValueToStatUpdate(rawSecondKey, bigNumberToU128(count, context), context);
+    });
   }
 
   return statUpdatesToBtreeStatUpdate(updateArgs, context);
@@ -3765,6 +3778,6 @@ export function countStatInputToStatUpdates(
 ): BTreeSet<PolymeshPrimitivesStatisticsStatUpdate> {
   const holderCount = args.count;
   const secondKey = createStat2ndKey('NoClaimStat', context);
-  const stat = statUpdate(secondKey, bigNumberToU128(holderCount, context), context);
+  const stat = keyAndValueToStatUpdate(secondKey, bigNumberToU128(holderCount, context), context);
   return statUpdatesToBtreeStatUpdate([stat], context);
 }

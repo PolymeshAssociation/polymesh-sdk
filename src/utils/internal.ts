@@ -89,7 +89,7 @@ import {
   signerToString,
   statisticsOpTypeToStatOpType,
   statisticsOpTypeToStatType,
-  statsClaimToClaim,
+  statsClaimToStatClaimUserType,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { isEntity, isMultiClaimCondition, isSingleClaimCondition } from '~/utils/typeguards';
@@ -1260,7 +1260,7 @@ export function compareTransferRestrictionToStat(
   if (type === StatType.ScopedCount && transferCondition.isClaimCount) {
     const [rawClaim, issuer] = transferCondition.asClaimCount;
     const restrictionIssuerDid = identityIdToString(issuer);
-    const claim = statsClaimToClaim(rawClaim);
+    const claim = statsClaimToStatClaimUserType(rawClaim);
     if (restrictionIssuerDid === issuerDid && claim.type === claimType) {
       return true;
     }
@@ -1269,7 +1269,7 @@ export function compareTransferRestrictionToStat(
   if (type === StatType.ScopedBalance && transferCondition.isClaimOwnership) {
     const [rawClaim, issuer] = transferCondition.asClaimOwnership;
     const restrictionIssuerDid = identityIdToString(issuer);
-    const claim = statsClaimToClaim(rawClaim);
+    const claim = statsClaimToStatClaimUserType(rawClaim);
     if (restrictionIssuerDid === issuerDid && claim.type === claimType) {
       return true;
     }
