@@ -1180,7 +1180,7 @@ describe('Context class', () => {
       /* eslint-disable @typescript-eslint/naming-convention */
       const claim1stKey = dsMockUtils.createMockClaim1stKey({
         target: dsMockUtils.createMockIdentityId(targetDid),
-        claimType: dsMockUtils.createMockClaimType(ClaimType.CustomerDueDiligence),
+        claimType: dsMockUtils.createMockIdentitiesClaimClaimType(ClaimType.CustomerDueDiligence),
       });
       /* eslint-enable @typescript-eslint/naming-convention */
 

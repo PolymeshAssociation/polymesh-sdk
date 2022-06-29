@@ -2523,7 +2523,7 @@ export const createMockRpcConditionType = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockClaimType = (
+export const createMockIdentitiesClaimClaimType = (
   claimType?: ClaimType
 ): MockCodec<PolymeshPrimitivesIdentityClaimClaimType> =>
   createMockEnum(claimType) as MockCodec<PolymeshPrimitivesIdentityClaimClaimType>;
@@ -2538,7 +2538,7 @@ export const createMockClaim1stKey = (claim1stKey?: {
 }): MockCodec<Claim1stKey> => {
   const claimTypeMock = claim1stKey || {
     target: createMockIdentityId(),
-    claimType: createMockClaimType(),
+    claimType: createMockIdentitiesClaimClaimType(),
   };
   return createMockCodec(
     {
@@ -3919,13 +3919,13 @@ export const createMockStatisticsStatType = (
 
   const { op, claimIssuer } = stat || {
     op: createMockStatisticsOpType(),
-    claimIssuer: [createMockClaimType(), createMockIdentityId()],
+    claimIssuer: undefined,
   };
 
   return createMockCodec(
     {
       op,
-      claimIssuer,
+      claimIssuer: createMockOption(claimIssuer as any),
     },
     !op
   ) as MockCodec<PolymeshPrimitivesStatisticsStatType>;

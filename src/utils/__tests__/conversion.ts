@@ -53,7 +53,6 @@ import {
   TrustedIssuer,
   VenueType as MeshVenueType,
 } from 'polymesh-types/polymesh';
-import { rawListeners } from 'process';
 import sinon from 'sinon';
 
 import {
@@ -72,12 +71,7 @@ import {
   ModuleIdEnum,
 } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import {
-  createMockBool,
-  createMockOption,
-  createMockU64,
-  createMockU128,
-} from '~/testUtils/mocks/dataSources';
+import { createMockOption, createMockU64, createMockU128 } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import {
   AffirmationStatus,
@@ -3684,70 +3678,70 @@ describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
     it('should convert a polkadot ClaimType object to a ClaimType', () => {
       let fakeResult: ClaimType = ClaimType.Accredited;
 
-      let claimType = dsMockUtils.createMockClaimType(fakeResult);
+      let claimType = dsMockUtils.createMockIdentitiesClaimClaimType(fakeResult);
 
       let result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.Affiliate;
 
-      claimType = dsMockUtils.createMockClaimType(fakeResult);
+      claimType = dsMockUtils.createMockIdentitiesClaimClaimType(fakeResult);
 
       result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.Blocked;
 
-      claimType = dsMockUtils.createMockClaimType(fakeResult);
+      claimType = dsMockUtils.createMockIdentitiesClaimClaimType(fakeResult);
 
       result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.BuyLockup;
 
-      claimType = dsMockUtils.createMockClaimType(fakeResult);
+      claimType = dsMockUtils.createMockIdentitiesClaimClaimType(fakeResult);
 
       result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.CustomerDueDiligence;
 
-      claimType = dsMockUtils.createMockClaimType(fakeResult);
+      claimType = dsMockUtils.createMockIdentitiesClaimClaimType(fakeResult);
 
       result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.Exempted;
 
-      claimType = dsMockUtils.createMockClaimType(fakeResult);
+      claimType = dsMockUtils.createMockIdentitiesClaimClaimType(fakeResult);
 
       result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.Jurisdiction;
 
-      claimType = dsMockUtils.createMockClaimType(fakeResult);
+      claimType = dsMockUtils.createMockIdentitiesClaimClaimType(fakeResult);
 
       result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.KnowYourCustomer;
 
-      claimType = dsMockUtils.createMockClaimType(fakeResult);
+      claimType = dsMockUtils.createMockIdentitiesClaimClaimType(fakeResult);
 
       result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.NoType;
 
-      claimType = dsMockUtils.createMockClaimType(fakeResult);
+      claimType = dsMockUtils.createMockIdentitiesClaimClaimType(fakeResult);
 
       result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
       fakeResult = ClaimType.SellLockup;
 
-      claimType = dsMockUtils.createMockClaimType(fakeResult);
+      claimType = dsMockUtils.createMockIdentitiesClaimClaimType(fakeResult);
 
       result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
@@ -3757,7 +3751,7 @@ describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
   describe('claimTypeToMeshClaimType', () => {
     it('should convert a ClaimType to a polkadot ClaimType', () => {
       const context = dsMockUtils.getContextInstance();
-      const mockClaim = dsMockUtils.createMockClaimType(ClaimType.Accredited);
+      const mockClaim = dsMockUtils.createMockIdentitiesClaimClaimType(ClaimType.Accredited);
       context.createType
         .withArgs('PolymeshPrimitivesIdentityClaimClaimType', ClaimType.Accredited)
         .returns(mockClaim);
@@ -3768,7 +3762,7 @@ describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
 
     it('should treat NoData as NoType', () => {
       const context = dsMockUtils.getContextInstance();
-      const mockClaim = dsMockUtils.createMockClaimType(ClaimType.NoType);
+      const mockClaim = dsMockUtils.createMockIdentitiesClaimClaimType(ClaimType.NoType);
       context.createType
         .withArgs('PolymeshPrimitivesIdentityClaimClaimType', ClaimType.NoType)
         .returns(mockClaim);
@@ -3794,19 +3788,19 @@ describe('meshClaimTypeToClaimType', () => {
 
   it('should convert a statistics enabled ClaimType to a claimType', () => {
     let fakeResult = ClaimType.Accredited;
-    let claimType = dsMockUtils.createMockClaimType(fakeResult);
+    let claimType = dsMockUtils.createMockIdentitiesClaimClaimType(fakeResult);
 
     let result = meshClaimTypeToClaimType(claimType);
     expect(result).toEqual(fakeResult);
 
     fakeResult = ClaimType.Affiliate;
-    claimType = dsMockUtils.createMockClaimType(fakeResult);
+    claimType = dsMockUtils.createMockIdentitiesClaimClaimType(fakeResult);
 
     result = meshClaimTypeToClaimType(claimType);
     expect(result).toEqual(fakeResult);
 
     fakeResult = ClaimType.Jurisdiction;
-    claimType = dsMockUtils.createMockClaimType(fakeResult);
+    claimType = dsMockUtils.createMockIdentitiesClaimClaimType(fakeResult);
 
     result = meshClaimTypeToClaimType(claimType);
     expect(result).toEqual(fakeResult);

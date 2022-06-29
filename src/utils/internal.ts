@@ -1198,21 +1198,25 @@ export function assertTickerValid(ticker: string): void {
 }
 
 /**
- * some comment
+ * @hidden
+ * @returns true is the given stat is able to track the data for the given args
  */
 export function compareStatsToInput(
-  s: PolymeshPrimitivesStatisticsStatType,
+  rawStatType: PolymeshPrimitivesStatisticsStatType,
   args: { type: StatType; claimIssuer?: { claimType: StatClaimType; issuer: Identity } }
 ): boolean {
   const { type, claimIssuer } = args;
-  let issuer, claimType;
-  if (claimIssuer) {
-    issuer = claimIssuer.issuer;
-    claimType = claimIssuer.claimType;
+
+  if (rawStatType.claimIssuer.isNone && !!claimIssuer) {
+    return false;
   }
 
-  if (s.claimIssuer.isSome) {
-    const [meshType, meshIssuer] = s.claimIssuer.unwrap();
+  if (rawStatType.claimIssuer.isSome) {
+    if (!claimIssuer) {
+      return false;
+    }
+    const { issuer, claimType } = claimIssuer;
+    const [meshType, meshIssuer] = rawStatType.claimIssuer.unwrap();
     const issuerDid = identityIdToString(meshIssuer);
     const statType = meshClaimTypeToClaimType(meshType);
     if (issuerDid !== issuer?.did || statType !== claimType) {
@@ -1220,31 +1224,28 @@ export function compareStatsToInput(
     }
   }
 
-  const stat = meshStatToStatisticsOpType(s);
+  const stat = meshStatToStatisticsOpType(rawStatType);
   let cmpStat;
-  switch (stat) {
-    case StatisticsOpType.Balance:
-      cmpStat = StatType.Balance;
-      break;
-    case StatisticsOpType.Count:
-      cmpStat = StatType.Count;
-      break;
+  if (stat === StatisticsOpType.Count || stat === StatisticsOpType.ClaimCount) {
+    cmpStat = StatType.Count;
+  } else if (stat === StatisticsOpType.Balance || stat === StatisticsOpType.ClaimOwnership) {
+    cmpStat = StatType.Balance;
   }
-
   return cmpStat === type;
 }
 
 /**
  * @hidden
+ * @returns true if the given StatType is able to track the data for the given transfer condition
  */
 export function compareTransferRestrictionToStat(
-  r: PolymeshPrimitivesTransferComplianceTransferCondition,
+  transferCondition: PolymeshPrimitivesTransferComplianceTransferCondition,
   type: StatType,
   claimIssuer?: ClaimIssuer
 ): boolean {
   if (
-    (type === StatType.Count && r.isMaxInvestorCount) ||
-    (type === StatType.Balance && r.isMaxInvestorOwnership)
+    (type === StatType.Count && transferCondition.isMaxInvestorCount) ||
+    (type === StatType.Balance && transferCondition.isMaxInvestorOwnership)
   ) {
     return true;
   }
@@ -1256,8 +1257,8 @@ export function compareTransferRestrictionToStat(
     issuer: { did: issuerDid },
     claimType,
   } = claimIssuer;
-  if (type === StatType.Count && r.isClaimCount) {
-    const [rawClaim, issuer] = r.asClaimCount;
+  if (type === StatType.ScopedCount && transferCondition.isClaimCount) {
+    const [rawClaim, issuer] = transferCondition.asClaimCount;
     const restrictionIssuerDid = identityIdToString(issuer);
     const claim = statsClaimToClaim(rawClaim);
     if (restrictionIssuerDid === issuerDid && claim.type === claimType) {
@@ -1265,8 +1266,8 @@ export function compareTransferRestrictionToStat(
     }
   }
 
-  if (type === StatType.Balance && r.isClaimOwnership) {
-    const [rawClaim, issuer] = r.asClaimOwnership;
+  if (type === StatType.ScopedBalance && transferCondition.isClaimOwnership) {
+    const [rawClaim, issuer] = transferCondition.asClaimOwnership;
     const restrictionIssuerDid = identityIdToString(issuer);
     const claim = statsClaimToClaim(rawClaim);
     if (restrictionIssuerDid === issuerDid && claim.type === claimType) {
