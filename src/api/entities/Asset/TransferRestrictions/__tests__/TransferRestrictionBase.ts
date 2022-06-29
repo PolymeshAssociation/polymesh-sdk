@@ -10,6 +10,8 @@ import {
   Asset,
   Context,
   Namespace,
+  SetClaimCountTransferRestrictionsParams,
+  SetClaimOwnershipTransferRestrictionsParams,
   SetCountTransferRestrictionsParams,
   SetPercentageTransferRestrictionsParams,
   TransactionQueue,
@@ -142,6 +144,9 @@ describe('TransferRestrictionBase class', () => {
       sinon.restore();
     });
 
+    const did = 'someDid';
+    const issuer = entityMockUtils.getIdentityInstance({ did });
+
     it('should prepare the procedure (count) with the correct arguments and context, and return the resulting transaction queue', async () => {
       const count = new Count(asset, context);
 
@@ -190,6 +195,67 @@ describe('TransferRestrictionBase class', () => {
         .resolves(expectedQueue);
 
       const queue = await percentage.setRestrictions({
+        ...args,
+      });
+
+      expect(queue).toBe(expectedQueue);
+    });
+
+    it('should prepare the procedure (ClaimCount) with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const count = new ClaimCount(asset, context);
+
+      const args: Omit<SetClaimCountTransferRestrictionsParams, 'type'> = {
+        restrictions: [
+          {
+            min: new BigNumber(10),
+            issuer,
+            claim: { type: ClaimType.Accredited, accredited: true },
+            exemptedIdentities: ['someScopeId'],
+          },
+        ],
+      };
+
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs(
+          {
+            args: { ticker: asset.ticker, ...args, type: TransferRestrictionType.ClaimCount },
+            transformer: undefined,
+          },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await count.setRestrictions({
+        ...args,
+      });
+
+      expect(queue).toBe(expectedQueue);
+    });
+
+    it('should prepare the procedure (ClaimOwnership) with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const claimOwnership = new ClaimOwnership(asset, context);
+
+      const args: Omit<SetClaimOwnershipTransferRestrictionsParams, 'type'> = {
+        restrictions: [],
+      };
+
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs(
+          {
+            args: { ticker: asset.ticker, ...args, type: TransferRestrictionType.ClaimOwnership },
+            transformer: undefined,
+          },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await claimOwnership.setRestrictions({
         ...args,
       });
 

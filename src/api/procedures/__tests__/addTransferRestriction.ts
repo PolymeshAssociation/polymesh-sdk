@@ -311,6 +311,31 @@ describe('addTransferRestriction procedure', () => {
     });
 
     expect(result).toEqual(new BigNumber(1));
+
+    args = {
+      type: TransferRestrictionType.ClaimOwnership,
+      exemptedIdentities: [],
+      claim: { type: ClaimType.Accredited, accredited: true },
+      min: new BigNumber(10),
+      max: new BigNumber(20),
+      ticker,
+      issuer,
+    };
+
+    transferRestrictionToTransferRestrictionStub.returns(rawClaimOwnershipCondition);
+    transferConditionsToBtreeTransferConditionsStub.returns(mockClaimOwnershipBtree);
+    result = await prepareAddTransferRestriction.call(proc, args);
+
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: [
+        {
+          transaction: setAssetTransferCompliance,
+          args: [{ Ticker: rawTicker }, mockClaimOwnershipBtree],
+        },
+      ],
+    });
+
+    expect(result).toEqual(new BigNumber(1));
   });
 
   it('should add an add exempted entities transaction to the queue', async () => {
@@ -353,6 +378,12 @@ describe('addTransferRestriction procedure', () => {
 
     expect(result).toEqual(new BigNumber(1));
 
+    args = {
+      type: TransferRestrictionType.Percentage,
+      exemptedIdentities: [did],
+      percentage,
+      ticker,
+    };
     result = await prepareAddTransferRestriction.call(proc, {
       ...args,
       exemptedIdentities: [entityMockUtils.getIdentityInstance()],
@@ -362,12 +393,12 @@ describe('addTransferRestriction procedure', () => {
       transactions: [
         {
           transaction: setAssetTransferCompliance,
-          args: [{ Ticker: rawTicker }, mockCountBtreeSet],
+          args: [{ Ticker: rawTicker }, mockPercentBtree],
         },
         {
           transaction: setExemptedEntitiesTransaction,
           feeMultiplier: new BigNumber(1),
-          args: [true, { asset: { Ticker: rawTicker }, op: rawCountOp }, rawIdentityBtree],
+          args: [true, { asset: { Ticker: rawTicker }, op: rawBalanceOp }, rawIdentityBtree],
         },
       ],
     });

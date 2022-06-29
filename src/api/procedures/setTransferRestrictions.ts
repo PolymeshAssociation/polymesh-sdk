@@ -105,7 +105,6 @@ function transformRestrictions(
       someDifference = ![...currentRestrictions].find(compareConditions);
     }
     const condition = { type, value };
-
     const rawCondition = transferRestrictionToPolymeshTransferCondition(condition, context);
 
     if (r.exemptedIdentities) {
@@ -179,7 +178,6 @@ export async function prepareSetTransferRestrictions(
     type === TransferRestrictionType.Count
       ? statisticsOpTypeToStatOpType(StatisticsOpType.Count, context)
       : statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
-
   transactions.push(
     checkTxType({
       transaction: statistics.setAssetTransferCompliance,
