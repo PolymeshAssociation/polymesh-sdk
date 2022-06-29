@@ -302,7 +302,7 @@ describe('TransferRestrictionBase class', () => {
       rawClaimOwnershipRestriction = dsMockUtils.createMockTransferCondition({
         ClaimOwnership: [
           dsMockUtils.createMockStatisticsStatClaim({
-            Accredited: dsMockUtils.createMockBool(true),
+            Affiliate: dsMockUtils.createMockBool(true),
           }),
           dsMockUtils.createMockIdentityId('someDid'),
           dsMockUtils.createMockU64(min),
@@ -406,7 +406,7 @@ describe('TransferRestrictionBase class', () => {
             {
               min: '0.001',
               max: '0.002',
-              claim: { type: ClaimType.Accredited, accredited: true },
+              claim: { type: ClaimType.Affiliate, affiliate: true },
               issuer,
               exemptedIds: ['someScopeId'],
             },

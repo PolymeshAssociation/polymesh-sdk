@@ -53,6 +53,7 @@ import {
   TrustedIssuer,
   VenueType as MeshVenueType,
 } from 'polymesh-types/polymesh';
+import { rawListeners } from 'process';
 import sinon from 'sinon';
 
 import {
@@ -71,7 +72,12 @@ import {
   ModuleIdEnum,
 } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { createMockOption, createMockU64, createMockU128 } from '~/testUtils/mocks/dataSources';
+import {
+  createMockBool,
+  createMockOption,
+  createMockU64,
+  createMockU128,
+} from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import {
   AffirmationStatus,
@@ -80,6 +86,7 @@ import {
   AuthorizationType,
   CalendarUnit,
   Claim,
+  ClaimRestrictionValue,
   ClaimType,
   Condition,
   ConditionCompliance,
@@ -3772,6 +3779,40 @@ describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
   });
 });
 
+describe('meshClaimTypeToClaimType', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a statistics enabled ClaimType to a claimType', () => {
+    let fakeResult = ClaimType.Accredited;
+    let claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+    let result = meshClaimTypeToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ClaimType.Affiliate;
+    claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+    result = meshClaimTypeToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ClaimType.Jurisdiction;
+    claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+    result = meshClaimTypeToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
 describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
   describe('middlewareScopeToScope', () => {
     it('should convert a MiddlewareScope object to a Scope', () => {
@@ -5546,7 +5587,7 @@ describe('transferRestrictionToTransferManager', () => {
 
   it('should convert a Transfer Restriction to a PolymeshTransferCondition object', () => {
     const count = new BigNumber(10);
-    let value = {
+    let value: { type: TransferRestrictionType; value: BigNumber | ClaimRestrictionValue } = {
       type: TransferRestrictionType.Count,
       value: count,
     };
@@ -5584,6 +5625,69 @@ describe('transferRestrictionToTransferManager', () => {
     createTypeStub
       .withArgs('Permill', percentage.multipliedBy(10000).toString())
       .returns(rawPercentage);
+
+    result = transferRestrictionToPolymeshTransferCondition(value, context);
+
+    expect(result).toBe(fakeResult);
+
+    const did = 'someDid';
+    const min = new BigNumber(10);
+    const max = new BigNumber(20);
+    const issuer = entityMockUtils.getIdentityInstance({ did });
+    const countryCode = CountryCode.Ca;
+    const rawCountryCode = dsMockUtils.createMockCountryCode(CountryCode.Ca);
+    const rawMin = dsMockUtils.createMockU64(min);
+    const rawMax = dsMockUtils.createMockOption(dsMockUtils.createMockU64(max));
+    const rawIssuerId = dsMockUtils.createMockIdentityId(did);
+    const rawClaimValue = { Jurisdiction: rawCountryCode };
+
+    const claimCount = {
+      min,
+      max,
+      issuer,
+      claim: { type: ClaimType.Jurisdiction as const, countryCode },
+    };
+    value = {
+      type: TransferRestrictionType.ClaimCount,
+      value: claimCount,
+    };
+
+    createTypeStub.withArgs('u64', min.toString()).returns(rawMin);
+    createTypeStub.withArgs('u64', max.toString()).returns(rawMax);
+    createTypeStub.withArgs('CountryCode', CountryCode.Ca).returns(rawCountryCode);
+    createTypeStub.withArgs('PolymeshPrimitivesIdentityId', did).returns(rawIssuerId);
+    createTypeStub
+      .withArgs('PolymeshPrimitivesTransferComplianceTransferCondition', {
+        ClaimCount: [rawClaimValue, rawIssuerId, rawMin, rawMax],
+      })
+      .returns(fakeResult);
+
+    result = transferRestrictionToPolymeshTransferCondition(value, context);
+
+    expect(result).toBe(fakeResult);
+
+    const claimOwnership = {
+      min,
+      max,
+      issuer,
+      claim: {
+        type: ClaimType.Affiliate as const,
+        affiliate: true,
+      },
+    };
+    value = {
+      type: TransferRestrictionType.ClaimOwnership,
+      value: claimOwnership,
+    };
+    const rawTrue = dsMockUtils.createMockBool(true);
+    const rawOwnershipClaim = { Affiliate: rawTrue };
+
+    createTypeStub.withArgs('bool', true).returns(rawTrue);
+    createTypeStub
+      .withArgs('PolymeshPrimitivesTransferComplianceTransferCondition', {
+        ClaimOwnership: [rawOwnershipClaim, rawIssuerId, rawMin, rawMax],
+      })
+      .returns(fakeResult);
 
     result = transferRestrictionToPolymeshTransferCondition(value, context);
 

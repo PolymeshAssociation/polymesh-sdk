@@ -171,7 +171,9 @@ describe('addTransferRestriction procedure', () => {
     });
     rawClaimCountCondition = dsMockUtils.createMockTransferCondition({
       ClaimCount: [
-        dsMockUtils.createMockStatisticsStatClaim({ Accredited: dsMockUtils.createMockBool() }),
+        dsMockUtils.createMockStatisticsStatClaim({
+          Jurisdiction: dsMockUtils.createMockOption(dsMockUtils.createMockCountryCode()),
+        }),
         dsMockUtils.createMockIdentityId(),
         dsMockUtils.createMockU64(),
         dsMockUtils.createMockOption(),

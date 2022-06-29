@@ -1,4 +1,8 @@
-import { Bytes } from '@polkadot/types';
+import { Bytes, Option } from '@polkadot/types';
+import {
+  PolymeshPrimitivesIdentityClaimClaimType,
+  PolymeshPrimitivesIdentityId,
+} from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { IdentityId } from 'polymesh-types/types';
@@ -32,6 +36,7 @@ import {
   assertTickerValid,
   asTicker,
   calculateNextKey,
+  compareStatTypeToTransferRestrictionType,
   compareTransferRestrictionToInput,
   createClaim,
   createProcedureMethod,
@@ -1154,5 +1159,88 @@ describe('compareTransferRestrictionToInput', () => {
     );
 
     expect(result).toEqual(true);
+  });
+});
+
+describe('compareStatTypeToTransferRestrictionTyp', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+  const countStatType = dsMockUtils.createMockStatisticsStatType({
+    op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count),
+    claimIssuer: dsMockUtils.createMockOption() as any,
+  });
+  const percentStatType = dsMockUtils.createMockStatisticsStatType({
+    op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Balance),
+    claimIssuer: dsMockUtils.createMockOption() as any,
+  });
+
+  const claimCountStat = dsMockUtils.createMockStatisticsStatType({
+    op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count),
+    claimIssuer: dsMockUtils.createMockOption(dsMockUtils.createMockIdentityId()) as any,
+  });
+  const claimOwnershipStat = dsMockUtils.createMockStatisticsStatType({
+    op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Balance),
+    claimIssuer: dsMockUtils.createMockOption(dsMockUtils.createMockIdentityId()) as any,
+  });
+
+  it('should return true if the PolymeshPrimitivesStatisticsStatType matches the given TransferRestriction', () => {
+    let result = compareStatTypeToTransferRestrictionType(
+      countStatType,
+      TransferRestrictionType.Count
+    );
+    expect(result).toEqual(true);
+
+    result = compareStatTypeToTransferRestrictionType(
+      percentStatType,
+      TransferRestrictionType.Percentage
+    );
+    expect(result).toEqual(true);
+
+    result = compareStatTypeToTransferRestrictionType(
+      claimCountStat,
+      TransferRestrictionType.ClaimCount
+    );
+    expect(result).toEqual(true);
+
+    result = compareStatTypeToTransferRestrictionType(
+      claimOwnershipStat,
+      TransferRestrictionType.ClaimOwnership
+    );
+    expect(result).toEqual(true);
+  });
+
+  it('should return false if the PolymeshPrimitivesStatisticsStatType does not match the given TransferRestriction', () => {
+    let result = compareStatTypeToTransferRestrictionType(
+      countStatType,
+      TransferRestrictionType.Percentage
+    );
+    expect(result).toEqual(false);
+
+    result = compareStatTypeToTransferRestrictionType(
+      percentStatType,
+      TransferRestrictionType.Count
+    );
+    expect(result).toEqual(false);
+
+    result = compareStatTypeToTransferRestrictionType(
+      claimCountStat,
+      TransferRestrictionType.ClaimOwnership
+    );
+    expect(result).toEqual(false);
+
+    result = compareStatTypeToTransferRestrictionType(
+      claimOwnershipStat,
+      TransferRestrictionType.ClaimCount
+    );
+    expect(result).toEqual(false);
   });
 });

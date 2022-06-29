@@ -1285,12 +1285,11 @@ export function compareTransferRestrictionToInput(
   value: BigNumber | ClaimRestrictionValue,
   type: TransferRestrictionType
 ): boolean {
-  const getClaimType = (statClaim: PolymeshPrimitivesStatisticsStatClaim): ClaimType =>
-    statClaim.isAccredited
-      ? ClaimType.Accredited
-      : statClaim.isAffiliate
-      ? ClaimType.Affiliate
-      : ClaimType.Jurisdiction;
+  const getClaimType = (statClaim: PolymeshPrimitivesStatisticsStatClaim): ClaimType => {
+    if (statClaim.isAccredited) return ClaimType.Accredited;
+    else if (statClaim.isAffiliate) return ClaimType.Accredited;
+    else return ClaimType.Jurisdiction;
+  };
   if (transferRestriction.isMaxInvestorCount && type === TransferRestrictionType.Count) {
     const currentCount = u64ToBigNumber(transferRestriction.asMaxInvestorCount);
     return currentCount.eq(value as BigNumber);
@@ -1306,9 +1305,10 @@ export function compareTransferRestrictionToInput(
     const min = u64ToBigNumber(rawMin);
     const max = maybeMax.isSome ? u64ToBigNumber(maybeMax.unwrap()) : undefined;
     const castedValue = value as ClaimRestrictionValue;
+    const matchesMax = max ? castedValue.max?.eq(max) : true;
     return !!(
       castedValue.min.eq(min) &&
-      (max ? castedValue.max?.eq(max) : true) &&
+      matchesMax &&
       castedValue.claim.type === getClaimType(statClaim) &&
       issuerDid === castedValue.issuer.did
     );

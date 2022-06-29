@@ -545,7 +545,7 @@ export function meshClaimToStatClaimUser(claim: StatClaim): StatClaimUserInput {
       type: ClaimType.Affiliate,
       affiliate: boolToBoolean(claim.asAffiliate),
     };
-  } else if (claim.isJurisdiction) {
+  } else {
     return {
       type: ClaimType.Jurisdiction,
       countryCode: claim.asJurisdiction.isSome
@@ -553,11 +553,6 @@ export function meshClaimToStatClaimUser(claim: StatClaim): StatClaimUserInput {
         : undefined,
     };
   }
-
-  throw new PolymeshError({
-    code: ErrorCode.UnexpectedError,
-    message: 'Unexpected claim type. Please report to the Polymath team',
-  });
 }
 
 /**
@@ -2265,6 +2260,7 @@ export function meshClaimTypeToClaimType(
 
 /**
  * @hidden
+ * NOTE: A narrowed type wrapper over the wider claim type conversion function
  */
 export function meshClaimTypeToStatClaimType(
   claimType: PolymeshPrimitivesIdentityClaimClaimType
@@ -2862,7 +2858,7 @@ export function transferRestrictionToPolymeshTransferCondition(
       return booleanToBool(claim.affiliate, context);
     } else {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      return countryCodeToMeshCountryCode(claim.countryCode!, context);
+      return countryCodeToMeshCountryCode(claim.countryCode!, context); // TODO fix this null assertion
     }
   };
 
@@ -2889,7 +2885,6 @@ export function transferRestrictionToPolymeshTransferCondition(
     const rawMax = optionize(bigNumberToU64)(castedValue.max, context);
     restrictionValue = [claimValue, rawIdentityId, rawMin, rawMax];
   }
-
   return context.createType('PolymeshPrimitivesTransferComplianceTransferCondition', {
     [restrictionType]: restrictionValue,
   });

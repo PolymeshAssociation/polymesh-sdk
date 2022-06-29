@@ -3909,7 +3909,7 @@ export const createMockStatisticsStatType = (
   stat?:
     | PolymeshPrimitivesStatisticsStatType
     | {
-        op: PolymeshPrimitivesStatisticsStatType;
+        op: PolymeshPrimitivesStatisticsStatOpType;
         claimIssuer?: [PolymeshPrimitivesIdentityClaimClaimType, PolymeshPrimitivesIdentityId];
       }
 ): MockCodec<PolymeshPrimitivesStatisticsStatType> => {
