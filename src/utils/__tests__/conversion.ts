@@ -169,6 +169,7 @@ import {
   corporateActionIdentifierToCaId,
   corporateActionKindToCaKind,
   corporateActionParamsToMeshCorporateActionArgs,
+  countStatInputToStatUpdates,
   createStat2ndKey,
   dateToMoment,
   distributionToDividendDistributionParams,
@@ -7760,5 +7761,39 @@ describe('claimCountStatInputToStatUpdates', () => {
     ];
     result = claimCountStatInputToStatUpdates(countryValue, ClaimType.Jurisdiction, context);
     expect(result).toEqual('jurisdictionBtreeSet');
+  });
+});
+
+describe('countStatInputToStatUpdates', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert input parameters into an StatUpdate', () => {
+    const context = dsMockUtils.getContextInstance();
+    const count = new BigNumber(3);
+    const rawCount = dsMockUtils.createMockU128(count);
+
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStat2ndKey', 'NoClaimStat')
+      .returns('2ndKey');
+    context.createType.withArgs('u128', count.toString()).returns(rawCount);
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStatUpdate', { key2: '2ndKey', value: rawCount })
+      .returns('statUpdate');
+    context.createType
+      .withArgs('BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>', ['statUpdate'])
+      .returns('fakeResult');
+
+    const result = countStatInputToStatUpdates({ count }, context);
+    expect(result).toEqual('fakeResult');
   });
 });

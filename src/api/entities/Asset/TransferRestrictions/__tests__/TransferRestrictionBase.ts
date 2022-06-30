@@ -606,5 +606,53 @@ describe('TransferRestrictionBase class', () => {
 
       expect(queue).toBe(expectedQueue);
     });
+
+    it('should prepare the procedure (ClaimCount) with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const claimCount = new ClaimCount(asset, context);
+
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs(
+          {
+            args: {
+              ticker: asset.ticker,
+              type: StatType.ScopedCount,
+            },
+            transformer: undefined,
+          },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await claimCount.disableStat({});
+
+      expect(queue).toBe(expectedQueue);
+    });
+
+    it('should prepare the procedure (ClaimOwnership) with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const claimOwnership = new ClaimOwnership(asset, context);
+
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs(
+          {
+            args: {
+              ticker: asset.ticker,
+              type: StatType.ScopedBalance,
+            },
+            transformer: undefined,
+          },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await claimOwnership.disableStat({});
+
+      expect(queue).toBe(expectedQueue);
+    });
   });
 });

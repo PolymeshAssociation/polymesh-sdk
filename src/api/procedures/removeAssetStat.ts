@@ -2,7 +2,7 @@ import { PolymeshPrimitivesStatisticsStatType } from '@polkadot/types/lookup';
 import { BTreeSet } from '@polkadot/types-codec';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
-import { ClaimIssuer, ErrorCode, StatType, TxTags } from '~/types';
+import { ClaimOwnershipStatInput, ErrorCode, StatType, TxTags } from '~/types';
 import { ProcedureAuthorization, StatisticsOpType } from '~/types/internal';
 import {
   claimIssuerToMeshClaimIssuer,
@@ -15,17 +15,25 @@ import { checkTxType, compareTransferRestrictionToStat } from '~/utils/internal'
 
 export type RemoveCountStatParams = {
   type: StatType.Count;
-  claimIssuer?: ClaimIssuer;
 };
 
 export type RemoveBalanceStatParams = {
   type: StatType.Balance;
-  claimIssuer?: ClaimIssuer;
+};
+
+export type RemoveScopedCountParams = ClaimOwnershipStatInput & {
+  type: StatType.ScopedCount;
+};
+
+export type RemoveScopedBalanceParams = ClaimOwnershipStatInput & {
+  type: StatType.ScopedBalance;
 };
 
 export type RemoveAssetStatParams = { ticker: string } & (
   | RemoveCountStatParams
   | RemoveBalanceStatParams
+  | RemoveScopedCountParams
+  | RemoveScopedBalanceParams
 );
 
 export interface Storage {
@@ -58,7 +66,7 @@ export async function prepareRemoveAssetStat(
       : statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
 
   let rawClaimIssuer;
-  if (args.claimIssuer) {
+  if (type === StatType.ScopedBalance || type === StatType.ScopedCount) {
     rawClaimIssuer = claimIssuerToMeshClaimIssuer(args.claimIssuer, context);
   }
 
@@ -125,7 +133,12 @@ export async function prepareStorage(
   ]);
 
   requirements.forEach(r => {
-    const used = compareTransferRestrictionToStat(r, type, args.claimIssuer);
+    let claimIssuer;
+    if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
+      claimIssuer = args.claimIssuer;
+    }
+
+    const used = compareTransferRestrictionToStat(r, type, claimIssuer);
 
     if (used) {
       throw new PolymeshError({

@@ -31,6 +31,7 @@ import {
   Identity,
   PolymeshError,
   PostTransactionValue,
+  RemoveAssetStatParams,
   TransactionQueue,
 } from '~/internal';
 import { Scope as MiddlewareScope } from '~/middleware/types';
@@ -56,7 +57,6 @@ import {
   ProcedureMethod,
   ProcedureOpts,
   Scope,
-  StatClaimType,
   StatType,
   TransferRestrictionType,
   TxTag,
@@ -1203,9 +1203,14 @@ export function assertTickerValid(ticker: string): void {
  */
 export function compareStatsToInput(
   rawStatType: PolymeshPrimitivesStatisticsStatType,
-  args: { type: StatType; claimIssuer?: { claimType: StatClaimType; issuer: Identity } }
+  // args: { type: StatType; claimIssuer?: { claimType: StatClaimType; issuer: Identity } }
+  args: RemoveAssetStatParams
 ): boolean {
-  const { type, claimIssuer } = args;
+  let claimIssuer;
+  const { type } = args;
+  if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
+    ({ claimIssuer } = args);
+  }
 
   if (rawStatType.claimIssuer.isNone && !!claimIssuer) {
     return false;
@@ -1226,11 +1231,16 @@ export function compareStatsToInput(
 
   const stat = meshStatToStatisticsOpType(rawStatType);
   let cmpStat;
-  if (stat === StatisticsOpType.Count || stat === StatisticsOpType.ClaimCount) {
+  if (stat === StatisticsOpType.Count) {
     cmpStat = StatType.Count;
-  } else if (stat === StatisticsOpType.Balance || stat === StatisticsOpType.ClaimOwnership) {
+  } else if (stat === StatisticsOpType.Balance) {
     cmpStat = StatType.Balance;
+  } else if (stat === StatisticsOpType.ClaimCount) {
+    cmpStat = StatType.ScopedCount;
+  } else {
+    cmpStat = StatType.ScopedBalance;
   }
+
   return cmpStat === type;
 }
 
@@ -1281,16 +1291,24 @@ export function compareTransferRestrictionToStat(
 /**
  * @hidden
  */
+function getClaimType(statClaim: PolymeshPrimitivesStatisticsStatClaim): ClaimType {
+  if (statClaim.isAccredited) {
+    return ClaimType.Accredited;
+  } else if (statClaim.isAffiliate) {
+    return ClaimType.Affiliate;
+  } else {
+    return ClaimType.Jurisdiction;
+  }
+}
+
+/**
+ * @hidden
+ */
 export function compareTransferRestrictionToInput(
   transferRestriction: PolymeshPrimitivesTransferComplianceTransferCondition,
   value: BigNumber | ClaimRestrictionValue,
   type: TransferRestrictionType
 ): boolean {
-  const getClaimType = (statClaim: PolymeshPrimitivesStatisticsStatClaim): ClaimType => {
-    if (statClaim.isAccredited) return ClaimType.Accredited;
-    else if (statClaim.isAffiliate) return ClaimType.Accredited;
-    else return ClaimType.Jurisdiction;
-  };
   if (transferRestriction.isMaxInvestorCount && type === TransferRestrictionType.Count) {
     const currentCount = u64ToBigNumber(transferRestriction.asMaxInvestorCount);
     return currentCount.eq(value as BigNumber);

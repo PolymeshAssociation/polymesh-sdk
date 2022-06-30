@@ -1398,18 +1398,16 @@ export type ClaimCountInitialStatInput =
   | { yes: BigNumber; no: BigNumber }
   | { countryCode: CountryCode; count: BigNumber }[];
 export interface ClaimCountStatInput {
-  claimIssuer: {
-    issuer: Identity;
-    claimType: StatClaimType;
-    value: ClaimCountInitialStatInput;
-  };
+  claimIssuer: StatClaimIssuer & { value: ClaimCountInitialStatInput };
+}
+
+export interface StatClaimIssuer {
+  issuer: Identity;
+  claimType: StatClaimType;
 }
 
 export interface ClaimOwnershipStatInput {
-  claimIssuer: {
-    issuer: Identity;
-    claimType: StatClaimType;
-  };
+  claimIssuer: StatClaimIssuer;
 }
 
 export enum CalendarUnit {

@@ -3768,13 +3768,14 @@ export function claimCountStatInputToStatUpdates(
 
 /**
  * @hidden
+ * transforms a non scoped count stat to a StatUpdate type
  */
 export function countStatInputToStatUpdates(
   args: CountTransferRestrictionInput,
   context: Context
 ): BTreeSet<PolymeshPrimitivesStatisticsStatUpdate> {
-  const holderCount = args.count;
+  const { count } = args;
   const secondKey = createStat2ndKey('NoClaimStat', context);
-  const stat = keyAndValueToStatUpdate(secondKey, bigNumberToU128(holderCount, context), context);
+  const stat = keyAndValueToStatUpdate(secondKey, bigNumberToU128(count, context), context);
   return statUpdatesToBtreeStatUpdate([stat], context);
 }

@@ -16,6 +16,8 @@ import {
   RemoveAssetStatParams,
   RemoveBalanceStatParams,
   RemoveCountStatParams,
+  RemoveScopedBalanceParams,
+  RemoveScopedCountParams,
 } from '~/api/procedures/removeAssetStat';
 import {
   addAssetStat,
@@ -90,9 +92,16 @@ type SetAssetStatParams<T> = Omit<
   'type'
 >;
 
-export type RemoveAssetStatParamsBase<T> = T extends TransferRestrictionType.Count
-  ? RemoveCountStatParams
-  : RemoveBalanceStatParams;
+export type RemoveAssetStatParamsBase<T> = Omit<
+  T extends TransferRestrictionType.Count
+    ? RemoveCountStatParams
+    : T extends TransferRestrictionType.Percentage
+    ? RemoveBalanceStatParams
+    : T extends TransferRestrictionType.ClaimCount
+    ? RemoveScopedCountParams
+    : RemoveScopedBalanceParams,
+  'type'
+>;
 
 type GetReturnType<T> = ActiveTransferRestrictions<
   T extends TransferRestrictionType.Count
@@ -180,7 +189,7 @@ export abstract class TransferRestrictionBase<
           addAssetStat,
           {
             ...args,
-            type: this.statType(),
+            type: this.statType,
             ticker,
           } as AddAssetStatParams,
         ],
@@ -199,9 +208,9 @@ export abstract class TransferRestrictionBase<
           removeAssetStat,
           {
             ...args,
-            type: this.type === TransferRestrictionType.Count ? StatType.Count : StatType.Balance,
+            type: this.statType,
             ticker,
-          },
+          } as RemoveAssetStatParams,
         ],
       },
       context
@@ -331,7 +340,7 @@ export abstract class TransferRestrictionBase<
   /**
    * @hidden
    */
-  private statType(): StatType {
+  private get statType(): StatType {
     const { type } = this;
     if (type === TransferRestrictionType.Count) {
       return StatType.Count;

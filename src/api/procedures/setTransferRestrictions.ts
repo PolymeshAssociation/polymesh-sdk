@@ -250,7 +250,7 @@ export async function prepareStorage(
     type === TransferRestrictionType.Count ? StatisticsOpType.Count : StatisticsOpType.Balance;
   const rawOp = statisticsOpTypeToStatOpType(neededOp, context);
 
-  const neededStat = statisticsOpTypeToStatType({ op: rawOp }, context);
+  const neededStat = statisticsOpTypeToStatType({ op: rawOp }, context); // claim issuer?
   const needStat = !currentStats.has(neededStat);
 
   if (needStat) {
@@ -278,16 +278,35 @@ export async function prepareStorage(
     min,
     max,
     issuer,
-  }: ClaimCountTransferRestriction | ClaimOwnershipTransferRestriction): TransferRestriction => ({
-    type: TransferRestrictionType.ClaimCount,
-    value: { claim, min, max, issuer },
-  });
+  }: ClaimCountTransferRestriction | ClaimOwnershipTransferRestriction): TransferRestriction => {
+    return {
+      type,
+      value: { claim, min, max, issuer },
+    };
+  };
 
-  // take the count of the type of restrictions not being changed
-  const occupiedSlots =
-    type === TransferRestrictionType.Percentage
-      ? currentCountRestrictions.length
-      : currentPercentageRestrictions.length;
+  let occupiedSlots;
+  if (type === TransferRestrictionType.Count) {
+    occupiedSlots =
+      currentPercentageRestrictions.length +
+      currentClaimCountRestrictions.length +
+      currentClaimOwnershipRestrictions.length;
+  } else if (type === TransferRestrictionType.Percentage) {
+    occupiedSlots =
+      currentCountRestrictions.length +
+      currentClaimCountRestrictions.length +
+      currentClaimOwnershipRestrictions.length;
+  } else if (type === TransferRestrictionType.ClaimCount) {
+    occupiedSlots =
+      currentCountRestrictions.length +
+      currentPercentageRestrictions.length +
+      currentClaimOwnershipRestrictions.length;
+  } else {
+    occupiedSlots =
+      currentCountRestrictions.length +
+      currentPercentageRestrictions.length +
+      currentClaimCountRestrictions.length;
+  }
 
   if (type === TransferRestrictionType.Count) {
     currentCountRestrictions.forEach(({ count: value }) => {
@@ -307,9 +326,9 @@ export async function prepareStorage(
 
   const transformRestriction = (
     restriction: TransferRestriction
-  ): PolymeshPrimitivesTransferComplianceTransferCondition =>
-    transferRestrictionToPolymeshTransferCondition(restriction, context);
-
+  ): PolymeshPrimitivesTransferComplianceTransferCondition => {
+    return transferRestrictionToPolymeshTransferCondition(restriction, context);
+  };
   return {
     occupiedSlots: new BigNumber(occupiedSlots),
     currentRestrictions: currentRestrictions.map(transformRestriction),

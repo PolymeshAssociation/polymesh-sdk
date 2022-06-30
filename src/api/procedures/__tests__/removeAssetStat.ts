@@ -161,7 +161,7 @@ describe('removeAssetStat procedure', () => {
     });
 
     args = {
-      type: StatType.Count,
+      type: StatType.ScopedCount,
       ticker,
       claimIssuer: {
         issuer: entityMockUtils.getIdentityInstance(),
