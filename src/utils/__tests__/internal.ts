@@ -1158,7 +1158,7 @@ describe('compareTransferRestrictionToInput', () => {
       ],
     });
 
-    let result = compareTransferRestrictionToInput(
+    result = compareTransferRestrictionToInput(
       claimCountTransferRestrictionWithMax,
       {
         min: new BigNumber(10),
