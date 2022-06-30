@@ -669,6 +669,10 @@ describe('setTransferRestrictions procedure', () => {
       getCountStub.resolves({ restrictions: [{ count }], availableSlots: 1 });
 
       result = await boundFunc(args);
+      expect(result).toEqual({
+        currentRestrictions: [rawPercentageRestriction],
+        occupiedSlots: new BigNumber(3),
+      });
 
       getCountStub.resolves({
         restrictions: [{ count, exemptedIds: [exemptedDid] }],

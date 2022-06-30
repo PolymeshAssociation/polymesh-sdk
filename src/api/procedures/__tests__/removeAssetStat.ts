@@ -37,6 +37,7 @@ describe('removeAssetStat procedure', () => {
   let args: RemoveAssetStatParams;
   let rawCountStatType: PolymeshPrimitivesStatisticsStatType;
   let rawBalanceStatType: PolymeshPrimitivesStatisticsStatType;
+  let rawClaimCountStatType: PolymeshPrimitivesStatisticsStatType;
   let rawStatUpdate: PolymeshPrimitivesStatisticsStatUpdate;
   let raw2ndKey: PolymeshPrimitivesStatisticsStat2ndKey;
 
@@ -113,9 +114,22 @@ describe('removeAssetStat procedure', () => {
     setActiveAssetStats = dsMockUtils.createTxStub('statistics', 'setActiveAssetStats');
 
     rawCountStatType = dsMockUtils.createMockStatisticsStatType();
-    rawBalanceStatType = dsMockUtils.createMockStatisticsStatType();
+    rawBalanceStatType = dsMockUtils.createMockStatisticsStatType({
+      op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Balance),
+    });
+    rawClaimCountStatType = dsMockUtils.createMockStatisticsStatType({
+      op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.ClaimCount),
+      claimIssuer: [
+        dsMockUtils.createMockIdentitiesClaimClaimType(),
+        dsMockUtils.createMockIdentityId(),
+      ],
+    });
     emptyStatTypeBtreeSet = dsMockUtils.createMockBTreeSet([]);
-    statBtreeSet = dsMockUtils.createMockBTreeSet([rawCountStatType, rawBalanceStatType]);
+    statBtreeSet = dsMockUtils.createMockBTreeSet([
+      rawCountStatType,
+      rawBalanceStatType,
+      rawClaimCountStatType,
+    ]);
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawStatUpdate = dsMockUtils.createMockStatUpdate();
     rawStatUpdateBtree = dsMockUtils.createMockBTreeSet([rawStatUpdate]);
@@ -235,14 +249,14 @@ describe('removeAssetStat procedure', () => {
         requirements: [],
       });
       const boundFunc = prepareStorage.bind(proc);
-      activeAssetStatsStub.returns([rawCountStatType, rawBalanceStatType]);
+      activeAssetStatsStub.returns([rawCountStatType, rawBalanceStatType, rawClaimCountStatType]);
       let result = await boundFunc({
         ticker: 'TICKER',
         type: StatType.Balance,
       });
 
       expect(result).toEqual({
-        currentStats: [rawCountStatType, rawBalanceStatType],
+        currentStats: [rawCountStatType, rawBalanceStatType, rawClaimCountStatType],
       });
 
       statStub.returns(StatisticsOpType.Balance);
@@ -253,7 +267,7 @@ describe('removeAssetStat procedure', () => {
       });
 
       expect(result).toEqual({
-        currentStats: [rawCountStatType, rawBalanceStatType],
+        currentStats: [rawCountStatType, rawBalanceStatType, rawClaimCountStatType],
       });
     });
 
@@ -271,6 +285,16 @@ describe('removeAssetStat procedure', () => {
           }),
           dsMockUtils.createMockTransferCondition({
             MaxInvestorCount: dsMockUtils.createMockU64(new BigNumber(20)),
+          }),
+          dsMockUtils.createMockTransferCondition({
+            ClaimCount: [
+              dsMockUtils.createMockStatisticsStatClaim({
+                Accredited: dsMockUtils.createMockBool(true),
+              }),
+              dsMockUtils.createMockIdentityId(),
+              dsMockUtils.createMockU64(new BigNumber(20)),
+              dsMockUtils.createMockOption(),
+            ],
           }),
         ],
       });
@@ -296,6 +320,19 @@ describe('removeAssetStat procedure', () => {
         boundFunc({
           ticker: 'TICKER',
           type: StatType.Count,
+        })
+      ).rejects.toThrowError(expectedError);
+
+      statStub.returns(StatisticsOpType.ClaimCount);
+
+      await expect(
+        boundFunc({
+          ticker: 'TICKER',
+          type: StatType.ScopedCount,
+          claimIssuer: {
+            issuer: entityMockUtils.getIdentityInstance(),
+            claimType: ClaimType.Accredited,
+          },
         })
       ).rejects.toThrowError(expectedError);
     });
