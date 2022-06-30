@@ -102,9 +102,9 @@ export async function prepareAddAssetStat(
     );
   } else if (args.type === StatType.ScopedCount) {
     const {
-      claimIssuer: { value },
+      claimIssuer: { value, claimType },
     } = args;
-    const statValue = claimCountStatInputToStatUpdates(value, context);
+    const statValue = claimCountStatInputToStatUpdates(value, claimType, context);
     transactions.push(
       checkTxType({
         transaction: statistics.batchUpdateAssetStats,

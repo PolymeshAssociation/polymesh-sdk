@@ -3647,7 +3647,6 @@ export function keyAndValueToStatUpdate(
   value: u128,
   context: Context
 ): PolymeshPrimitivesStatisticsStatUpdate {
-  console.log('statUpdate', key2, value);
   return context.createType('PolymeshPrimitivesStatisticsStatUpdate', { key2, value });
 }
 
@@ -3658,7 +3657,6 @@ export function statUpdatesToBtreeStatUpdate(
   statUpdates: PolymeshPrimitivesStatisticsStatUpdate[],
   context: Context
 ): BTreeSet<PolymeshPrimitivesStatisticsStatUpdate> {
-  console.log('stat updates: ', statUpdates);
   return context.createType('BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>', statUpdates);
 }
 
@@ -3698,7 +3696,6 @@ export function createStat2ndKey(
   context: Context,
   claimStat?: 'yes' | 'no' | CountryCode
 ): PolymeshPrimitivesStatisticsStat2ndKey {
-  console.log('making 2nd key with: ', type, claimStat);
   if (type === 'NoClaimStat') {
     return context.createType('PolymeshPrimitivesStatisticsStat2ndKey', type);
   } else {
@@ -3744,23 +3741,23 @@ export function toExemptKey(
  */
 export function claimCountStatInputToStatUpdates(
   value: ClaimCountInitialStatInput,
+  type: StatClaimType,
   context: Context
 ): BTreeSet<PolymeshPrimitivesStatisticsStatUpdate> {
   let updateArgs;
 
   if ('yes' in value) {
-    const { yes, no, type } = value;
+    const { yes, no } = value;
     const yes2ndKey = createStat2ndKey(type, context, 'yes');
     const yesCount = bigNumberToU128(yes, context);
     const no2ndKey = createStat2ndKey(type, context, 'no');
     const noCount = bigNumberToU128(no, context);
-    // console.log('yes, key, count', yes2ndKey, yesCount, 'no key count', no2ndKey, noCount);
     updateArgs = [
       keyAndValueToStatUpdate(yes2ndKey, yesCount, context),
       keyAndValueToStatUpdate(no2ndKey, noCount, context),
     ];
   } else {
-    updateArgs = value.map(({ countryCode, count, type }) => {
+    updateArgs = value.map(({ countryCode, count }) => {
       const rawSecondKey = createStat2ndKey(type, context, countryCode);
       return keyAndValueToStatUpdate(rawSecondKey, bigNumberToU128(count, context), context);
     });

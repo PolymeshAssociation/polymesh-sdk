@@ -1395,8 +1395,8 @@ export interface AddCountStatInput {
 }
 
 export type ClaimCountInitialStatInput =
-  | { yes: BigNumber; no: BigNumber; type: StatClaimType }
-  | { countryCode: CountryCode; count: BigNumber; type: StatClaimType }[];
+  | { yes: BigNumber; no: BigNumber }
+  | { countryCode: CountryCode; count: BigNumber }[];
 export interface ClaimCountStatInput {
   claimIssuer: {
     issuer: Identity;

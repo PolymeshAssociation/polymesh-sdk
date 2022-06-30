@@ -7744,23 +7744,21 @@ describe('claimCountStatInputToStatUpdates', () => {
       ])
       .returns('jurisdictionBtreeSet');
 
-    const yesNoValue = { yes, no, type: ClaimType.Affiliate as const };
-    let result = claimCountStatInputToStatUpdates(yesNoValue, context);
+    const yesNoValue = { yes, no };
+    let result = claimCountStatInputToStatUpdates(yesNoValue, ClaimType.Affiliate, context);
     expect(result).toEqual('yesNoBtreeSet');
 
     const countryValue = [
       {
         countryCode: CountryCode.Ca,
         count: canadaCount,
-        type: ClaimType.Jurisdiction as const,
       },
       {
         countryCode: CountryCode.Us,
         count: usCount,
-        type: ClaimType.Jurisdiction as const,
       },
     ];
-    result = claimCountStatInputToStatUpdates(countryValue, context);
+    result = claimCountStatInputToStatUpdates(countryValue, ClaimType.Jurisdiction, context);
     expect(result).toEqual('jurisdictionBtreeSet');
   });
 });
