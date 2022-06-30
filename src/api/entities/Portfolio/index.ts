@@ -10,15 +10,20 @@ import {
   Entity,
   Identity,
   moveFunds,
-  MoveFundsParams,
   PolymeshError,
   quitCustody,
   setCustodian,
-  SetCustodianParams,
 } from '~/internal';
 import { settlements } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
-import { ErrorCode, NoArgsProcedureMethod, ProcedureMethod, ResultSet } from '~/types';
+import {
+  ErrorCode,
+  MoveFundsParams,
+  NoArgsProcedureMethod,
+  ProcedureMethod,
+  ResultSet,
+  SetCustodianParams,
+} from '~/types';
 import { Ensured, QueryReturnType } from '~/types/utils';
 import {
   addressToKey,
@@ -46,7 +51,7 @@ export interface UniqueIdentifiers {
   id?: BigNumber;
 }
 
-interface HumanReadable {
+export interface HumanReadable {
   did: string;
   id?: string;
 }

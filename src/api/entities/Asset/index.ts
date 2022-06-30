@@ -13,29 +13,29 @@ import {
   AuthorizationRequest,
   Context,
   controllerTransfer,
-  ControllerTransferParams,
   Entity,
   Identity,
   modifyAsset,
-  ModifyAssetParams,
   modifyPrimaryIssuanceAgent,
-  ModifyPrimaryIssuanceAgentParams,
   redeemTokens,
-  RedeemTokensParams,
   removePrimaryIssuanceAgent,
   toggleFreezeTransfers,
   transferAssetOwnership,
-  TransferAssetOwnershipParams,
 } from '~/internal';
 import { eventByIndexedArgs, tickerExternalAgentHistory } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import {
+  ControllerTransferParams,
   EventIdentifier,
   HistoricAgentOperation,
+  ModifyAssetParams,
+  ModifyPrimaryIssuanceAgentParams,
   NoArgsProcedureMethod,
   ProcedureMethod,
+  RedeemTokensParams,
   SecurityIdentifier,
   SubCallback,
+  TransferAssetOwnershipParams,
   UnsubCallback,
 } from '~/types';
 import { Ensured, Modify, QueryReturnType } from '~/types/utils';

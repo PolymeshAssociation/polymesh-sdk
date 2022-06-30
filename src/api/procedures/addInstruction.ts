@@ -8,7 +8,6 @@ import { Moment, PortfolioId, SettlementType, Ticker } from 'polymesh-types/type
 
 import { assertPortfolioExists, assertVenueExists } from '~/api/procedures/utils';
 import {
-  Asset,
   Context,
   DefaultPortfolio,
   Instruction,
@@ -17,7 +16,15 @@ import {
   PostTransactionValue,
   Procedure,
 } from '~/internal';
-import { ErrorCode, InstructionType, PortfolioLike, RoleType, SettlementTx, TxTags } from '~/types';
+import {
+  AddInstructionParams,
+  AddInstructionsParams,
+  ErrorCode,
+  InstructionType,
+  RoleType,
+  SettlementTx,
+  TxTags,
+} from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { MAX_LEGS_LENGTH } from '~/utils/constants';
@@ -38,41 +45,6 @@ import {
   filterEventRecords,
   optionize,
 } from '~/utils/internal';
-
-export interface AddInstructionParams {
-  /**
-   * array of Asset movements (amount, from, to, asset)
-   */
-  legs: {
-    amount: BigNumber;
-    from: PortfolioLike;
-    to: PortfolioLike;
-    asset: string | Asset;
-  }[];
-  /**
-   * date at which the trade was agreed upon (optional, for off chain trades)
-   */
-  tradeDate?: Date;
-  /**
-   * date at which the trade was executed (optional, for off chain trades)
-   */
-  valueDate?: Date;
-  /**
-   * block at which the Instruction will be executed automatically (optional, the Instruction will be executed when all participants have authorized it if not supplied)
-   */
-  endBlock?: BigNumber;
-}
-
-export interface AddInstructionsParams {
-  /**
-   * array of Instructions to be added in the Venue
-   */
-  instructions: AddInstructionParams[];
-}
-
-export interface AddInstructionWithVenueIdParams extends AddInstructionParams {
-  venueId: BigNumber;
-}
 
 /**
  * @hidden

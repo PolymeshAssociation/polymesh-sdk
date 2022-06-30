@@ -1,13 +1,9 @@
 import { isFullGroupType } from '~/api/procedures/utils';
-import { Asset, Identity, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, TxTags } from '~/types';
+import { Asset, PolymeshError, Procedure } from '~/internal';
+import { ErrorCode, RemoveExternalAgentParams, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { stringToIdentityId, stringToTicker } from '~/utils/conversion';
 import { getIdentity } from '~/utils/internal';
-
-export interface RemoveExternalAgentParams {
-  target: string | Identity;
-}
 
 /**
  * @hidden

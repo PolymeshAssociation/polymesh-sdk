@@ -10,11 +10,11 @@ import { Mocked } from '~/testUtils/types';
 import {
   DefaultPortfolio,
   NumberedPortfolio,
+  PortfolioId,
   PortfolioLike,
   TransferBreakdown,
   TransferStatus,
 } from '~/types';
-import { PortfolioId } from '~/types/internal';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 

@@ -26,7 +26,7 @@ export interface UniqueIdentifiers {
   authId: BigNumber;
 }
 
-interface HumanReadable {
+export interface HumanReadable {
   issuer: HumanReadableType<Identity>;
   expiry: string | null;
   target: SignerValue;

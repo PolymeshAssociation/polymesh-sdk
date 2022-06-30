@@ -3,23 +3,23 @@ import {
   AuthorizationRequest,
   Context,
   inviteAccount,
-  InviteAccountParams,
   leaveIdentity,
   modifySignerPermissions,
-  ModifySignerPermissionsParams,
   modifySignerPermissionsStorage,
   removeSecondaryAccounts,
-  RemoveSecondaryAccountsParams,
   subsidizeAccount,
-  SubsidizeAccountParams,
   toggleFreezeSecondaryAccounts,
 } from '~/internal';
 import {
   AccountBalance,
+  InviteAccountParams,
+  ModifySignerPermissionsParams,
   NoArgsProcedureMethod,
   PermissionType,
   ProcedureMethod,
+  RemoveSecondaryAccountsParams,
   SubCallback,
+  SubsidizeAccountParams,
   UnsubCallback,
 } from '~/types';
 import { createProcedureMethod } from '~/utils/internal';

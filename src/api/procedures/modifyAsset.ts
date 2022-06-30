@@ -1,5 +1,5 @@
 import { Asset, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, SecurityIdentifier, TxTags } from '~/types';
+import { ErrorCode, ModifyAssetParams, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   securityIdentifierToAssetIdentifier,
@@ -7,35 +7,6 @@ import {
   stringToTicker,
 } from '~/utils/conversion';
 import { checkTxType, hasSameElements } from '~/utils/internal';
-
-export type ModifyAssetParams =
-  | {
-      /**
-       * makes an indivisible Asset divisible
-       */
-      makeDivisible?: true;
-      name: string;
-      fundingRound?: string;
-      identifiers?: SecurityIdentifier[];
-    }
-  | {
-      makeDivisible: true;
-      name?: string;
-      fundingRound?: string;
-      identifiers?: SecurityIdentifier[];
-    }
-  | {
-      makeDivisible?: true;
-      name?: string;
-      fundingRound: string;
-      identifiers?: SecurityIdentifier[];
-    }
-  | {
-      makeDivisible?: true;
-      name?: string;
-      fundingRound?: string;
-      identifiers: SecurityIdentifier[];
-    };
 
 /**
  * @hidden

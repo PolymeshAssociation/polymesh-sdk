@@ -5,23 +5,23 @@ import {
   AuthorizationRequest,
   Context,
   createGroup,
-  CreateGroupParams,
   CustomPermissionGroup,
   Identity,
   inviteExternalAgent,
-  InviteExternalAgentParams,
   KnownPermissionGroup,
   Namespace,
   PolymeshError,
   removeExternalAgent,
-  RemoveExternalAgentParams,
 } from '~/internal';
 import {
   AgentWithGroup,
+  CreateGroupParams,
   ErrorCode,
+  InviteExternalAgentParams,
   PermissionGroups,
   PermissionGroupType,
   ProcedureMethod,
+  RemoveExternalAgentParams,
 } from '~/types';
 import {
   agentGroupToPermissionGroup,

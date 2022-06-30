@@ -6,14 +6,19 @@ import {
   AuthorizationRequest,
   Context,
   createAsset,
-  CreateAssetParams,
   Entity,
   Identity,
   reserveTicker,
   transferTickerOwnership,
-  TransferTickerOwnershipParams,
 } from '~/internal';
-import { NoArgsProcedureMethod, ProcedureMethod, SubCallback, UnsubCallback } from '~/types';
+import {
+  CreateAssetParams,
+  NoArgsProcedureMethod,
+  ProcedureMethod,
+  SubCallback,
+  TransferTickerOwnershipParams,
+  UnsubCallback,
+} from '~/types';
 import { QueryReturnType } from '~/types/utils';
 import { identityIdToString, momentToDate, stringToTicker } from '~/utils/conversion';
 import { assertTickerValid, createProcedureMethod } from '~/utils/internal';

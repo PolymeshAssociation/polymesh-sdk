@@ -1,26 +1,22 @@
 import BigNumber from 'bignumber.js';
 
 import {
-  AddCountTransferRestrictionParams,
-  AddPercentageTransferRestrictionParams,
   addTransferRestriction,
   AddTransferRestrictionParams,
   AddTransferRestrictionStorage,
   Asset,
   Context,
   Namespace,
-  SetCountTransferRestrictionsParams,
-  SetPercentageTransferRestrictionsParams,
   setTransferRestrictions,
   SetTransferRestrictionsParams,
   SetTransferRestrictionsStorage,
 } from '~/internal';
 import {
-  ActiveTransferRestrictions,
-  CountTransferRestriction,
+  AddRestrictionParams,
+  GetReturnType,
   NoArgsProcedureMethod,
-  PercentageTransferRestriction,
   ProcedureMethod,
+  SetRestrictionsParams,
   TransferRestrictionType,
 } from '~/types';
 import {
@@ -30,24 +26,6 @@ import {
   u32ToBigNumber,
 } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
-
-type AddRestrictionParams<T> = Omit<
-  T extends TransferRestrictionType.Count
-    ? AddCountTransferRestrictionParams
-    : AddPercentageTransferRestrictionParams,
-  'type'
->;
-
-type SetRestrictionsParams<T> = Omit<
-  T extends TransferRestrictionType.Count
-    ? SetCountTransferRestrictionsParams
-    : SetPercentageTransferRestrictionsParams,
-  'type'
->;
-
-type GetReturnType<T> = ActiveTransferRestrictions<
-  T extends TransferRestrictionType.Count ? CountTransferRestriction : PercentageTransferRestriction
->;
 
 /**
  * Base class for managing Transfer Restrictions

@@ -1,12 +1,10 @@
-import BigNumber from 'bignumber.js';
-
 import { assertCaTaxWithholdingsValid } from '~/api/procedures/utils';
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import {
   CorporateActionTargets,
   ErrorCode,
   InputTargets,
-  InputTaxWithholding,
+  ModifyCaDefaultConfigParams,
   TxTags,
 } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
@@ -19,23 +17,6 @@ import {
   targetsToTargetIdentities,
 } from '~/utils/conversion';
 import { assembleBatchTransactions, checkTxType, hasSameElements } from '~/utils/internal';
-
-export type ModifyCaDefaultConfigParams =
-  | {
-      targets?: InputTargets;
-      defaultTaxWithholding: BigNumber;
-      taxWithholdings?: InputTaxWithholding[];
-    }
-  | {
-      targets: InputTargets;
-      defaultTaxWithholding?: BigNumber;
-      taxWithholdings?: InputTaxWithholding[];
-    }
-  | {
-      targets?: InputTargets;
-      defaultTaxWithholding?: BigNumber;
-      taxWithholdings: InputTaxWithholding[];
-    };
 
 /**
  * @hidden

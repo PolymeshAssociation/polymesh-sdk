@@ -21,7 +21,7 @@ import { Identities } from './Identities';
 import { Network } from './Network';
 import { Settlements } from './Settlements';
 
-interface ConnectParams {
+export interface ConnectParams {
   nodeUrl: string;
   signingManager?: SigningManager;
   middleware?: MiddlewareConfig;

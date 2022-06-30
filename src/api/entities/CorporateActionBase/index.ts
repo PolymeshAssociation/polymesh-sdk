@@ -9,11 +9,15 @@ import {
   Context,
   Entity,
   linkCaDocs,
-  LinkCaDocsParams,
-  ModifyCaCheckpointParams,
   PolymeshError,
 } from '~/internal';
-import { ErrorCode, InputCaCheckpoint, ProcedureMethod } from '~/types';
+import {
+  ErrorCode,
+  InputCaCheckpoint,
+  LinkCaDocsParams,
+  ModifyCaCheckpointParams,
+  ProcedureMethod,
+} from '~/types';
 import { HumanReadableType, Modify } from '~/types/utils';
 import {
   bigNumberToU32,

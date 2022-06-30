@@ -1,7 +1,5 @@
-import BigNumber from 'bignumber.js';
-
 import { Account, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, TxTags } from '~/types';
+import { ErrorCode, TransferPolyxParams, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   bigNumberToBalance,
@@ -9,21 +7,6 @@ import {
   stringToAccountId,
   stringToMemo,
 } from '~/utils/conversion';
-
-export interface TransferPolyxParams {
-  /**
-   * Account that will receive the POLYX
-   */
-  to: string | Account;
-  /**
-   * amount of POLYX to be transferred
-   */
-  amount: BigNumber;
-  /**
-   * identifier string to help differentiate transfers
-   */
-  memo?: string;
-}
 
 /**
  * @hidden

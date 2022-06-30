@@ -1,6 +1,6 @@
 import { PolymeshError, Procedure } from '~/internal';
-import { ClaimType, ErrorCode, Scope, TxTag, TxTags } from '~/types';
-import { ProcedureAuthorization, ScopeClaimProof } from '~/types/internal';
+import { AddInvestorUniquenessClaimParams, ClaimType, ErrorCode, TxTag, TxTags } from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
 import {
   claimToMeshClaim,
   dateToMoment,
@@ -9,14 +9,6 @@ import {
   stringToIdentityId,
   stringToInvestorZKProofData,
 } from '~/utils/conversion';
-
-export interface AddInvestorUniquenessClaimParams {
-  scope: Scope;
-  cddId: string;
-  proof: string | ScopeClaimProof;
-  scopeId: string;
-  expiry?: Date;
-}
 
 /**
  * @hidden

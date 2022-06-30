@@ -4,9 +4,8 @@ import {
   Identity,
   NumberedPortfolio,
   registerIdentity,
-  RegisterIdentityParams,
 } from '~/internal';
-import { ProcedureMethod } from '~/types';
+import { ProcedureMethod, RegisterIdentityParams } from '~/types';
 import { asIdentity, createProcedureMethod } from '~/utils/internal';
 
 /**

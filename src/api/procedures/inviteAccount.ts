@@ -10,8 +10,8 @@ import {
   Authorization,
   AuthorizationType,
   ErrorCode,
+  InviteAccountParams,
   Permissions,
-  PermissionsLike,
   PermissionType,
   SignerType,
   TxTags,
@@ -24,12 +24,6 @@ import {
   signerValueToSignatory,
 } from '~/utils/conversion';
 import { optionize } from '~/utils/internal';
-
-export interface InviteAccountParams {
-  targetAccount: string | Account;
-  permissions?: PermissionsLike;
-  expiry?: Date;
-}
 
 /**
  * @hidden

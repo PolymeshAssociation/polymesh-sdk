@@ -1,18 +1,15 @@
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
+import { addInstruction, Context, Entity, Identity, Instruction, modifyVenue } from '~/internal';
 import {
-  addInstruction,
   AddInstructionParams,
   AddInstructionsParams,
-  Context,
-  Entity,
-  Identity,
-  Instruction,
-  modifyVenue,
+  GroupedInstructions,
+  InstructionStatus,
   ModifyVenueParams,
-} from '~/internal';
-import { GroupedInstructions, InstructionStatus, ProcedureMethod } from '~/types';
+  ProcedureMethod,
+} from '~/types';
 import {
   bigNumberToU64,
   bytesToString,

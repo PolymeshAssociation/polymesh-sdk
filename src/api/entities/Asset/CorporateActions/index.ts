@@ -5,15 +5,18 @@ import {
   Context,
   Identity,
   modifyCaDefaultConfig,
-  ModifyCaDefaultConfigParams,
   modifyCorporateActionsAgent,
-  ModifyCorporateActionsAgentParams,
   Namespace,
   removeCorporateAction,
-  RemoveCorporateActionParams,
   removeCorporateActionsAgent,
 } from '~/internal';
-import { NoArgsProcedureMethod, ProcedureMethod } from '~/types';
+import {
+  ModifyCaDefaultConfigParams,
+  ModifyCorporateActionsAgentParams,
+  NoArgsProcedureMethod,
+  ProcedureMethod,
+  RemoveCorporateActionParams,
+} from '~/types';
 import { QueryReturnType } from '~/types/utils';
 import {
   identityIdToString,

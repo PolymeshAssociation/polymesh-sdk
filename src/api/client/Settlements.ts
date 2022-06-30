@@ -1,19 +1,23 @@
 import BigNumber from 'bignumber.js';
 
-import { addInstruction, AddInstructionWithVenueIdParams } from '~/api/procedures/addInstruction';
-import { AffirmInstructionParams } from '~/api/procedures/modifyInstructionAffirmation';
+import { addInstruction } from '~/api/procedures/addInstruction';
 import {
   addInstructionTransformer,
   Context,
   createVenue,
-  CreateVenueParams,
   Instruction,
   modifyInstructionAffirmation,
   PolymeshError,
   Venue,
 } from '~/internal';
-import { ErrorCode, ProcedureMethod } from '~/types';
-import { InstructionAffirmationOperation } from '~/types/internal';
+import {
+  AddInstructionWithVenueIdParams,
+  AffirmInstructionParams,
+  CreateVenueParams,
+  ErrorCode,
+  InstructionAffirmationOperation,
+  ProcedureMethod,
+} from '~/types';
 import { createProcedureMethod } from '~/utils/internal';
 
 /**

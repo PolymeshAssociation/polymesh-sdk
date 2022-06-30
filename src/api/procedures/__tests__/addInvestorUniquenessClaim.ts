@@ -14,15 +14,21 @@ import {
 import sinon from 'sinon';
 
 import {
-  AddInvestorUniquenessClaimParams,
   getAuthorization,
   prepareAddInvestorUniquenessClaim,
 } from '~/api/procedures/addInvestorUniquenessClaim';
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Claim, ClaimType, Scope, ScopeType, TxTags } from '~/types';
-import { ScopeClaimProof } from '~/types/internal';
+import {
+  AddInvestorUniquenessClaimParams,
+  Claim,
+  ClaimType,
+  Scope,
+  ScopeClaimProof,
+  ScopeType,
+  TxTags,
+} from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('addInvestorUniquenessClaim procedure', () => {

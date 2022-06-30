@@ -3,20 +3,13 @@ import { isEqual, remove } from 'lodash';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import { DocumentId } from '~/polkadot/polymesh';
-import { AssetDocument, ErrorCode, TxTags } from '~/types';
+import { ErrorCode, LinkCaDocsParams, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   corporateActionIdentifierToCaId,
   documentToAssetDocument,
   stringToTicker,
 } from '~/utils/conversion';
-
-export interface LinkCaDocsParams {
-  /**
-   * list of documents
-   */
-  documents: AssetDocument[];
-}
 
 /**
  * @hidden
