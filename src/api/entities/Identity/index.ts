@@ -100,6 +100,8 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
   /**
    * Create an Identity entity
+   *
+   * @hidden
    */
   constructor(identifiers: UniqueIdentifiers, context: Context) {
     super(identifiers, context);

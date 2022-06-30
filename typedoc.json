@@ -1,12 +1,12 @@
 {
   "$schema": "https://typedoc.org/schema.json",
   "entryPoints": [
-    "src/api/procedures/types.ts",
     "src/api/client",
     "src/api/entities",
+    "src/api/procedures/types.ts",
+    "src/generated/types.ts",
     "src/types/index.ts",
     "src/types/utils",
-    "src/generated/types.ts",
     "src/utils/index.ts"
   ],
   "entryPointStrategy": "Expand",
@@ -17,6 +17,7 @@
     "**/{__tests__,polkadot,testUtils,base}/**/*",
     "**/sandbox.ts",
     "src/api/entities/types.ts",
+    "src/api/entities/Namespace.ts",
     "src/types/internal.ts",
     "src/utils/**",
     "src/index.ts",

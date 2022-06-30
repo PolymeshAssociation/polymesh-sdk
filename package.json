@@ -20,7 +20,7 @@
     "test": "jest --detectOpenHandles --coverage",
     "test:no-cov": "jest --detectOpenHandles",
     "build:ts": "ttsc -b tsconfig.lib.json",
-    "build:docs": "cross-env cp -R src src-temp && cross-env node scripts/prepareCodeForDocs.js && typedoc && rimraf src && mv src-temp src",
+    "build:docs": "cross-env cp -R src src-temp && cross-env node scripts/prepareCodeForDocs.js && typedoc && rimraf src && mv src-temp src && cross-env node scripts/processDocs.js",
     "commit": "npx git-cz",
     "semantic-release": "semantic-release",
     "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
