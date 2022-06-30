@@ -12519,6 +12519,11 @@ typedarray-to-buffer@^3.1.5:
   dependencies:
     is-typedarray "^1.0.0"
 
+typedoc-github-wiki-theme@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/typedoc-github-wiki-theme/-/typedoc-github-wiki-theme-1.0.1.tgz#412b9c9aeaa15f1360e79296c9dd186caf711e2c"
+  integrity sha512-FaO7fENGK6IJLpkddbNXxJfNbooF9KBC7xfk7Lj4uqG5SCC7YQFPTLDyNmbpJKO93QEenRYgqBwI5E5d/bKrHw==
+
 typedoc-plugin-markdown@3.12.1:
   version "3.12.1"
   resolved "https://registry.yarnpkg.com/typedoc-plugin-markdown/-/typedoc-plugin-markdown-3.12.1.tgz#2a33ca0018bdd7ed512e29960d3eb344ecb65f4a"

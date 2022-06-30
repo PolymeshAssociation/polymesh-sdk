@@ -3,7 +3,7 @@
   "entryPoints": ["src/api", "src/types/index.ts", "src/types/utils", "src/utils/index.ts"],
   "entryPointStrategy": "Expand",
   "out": "docs",
-  "theme": "markdown",
+  "theme": "github-wiki",
   "exclude": [
     "src/internal.ts",
     "**/{__tests__,polkadot,testUtils,middleware,base,generated}/**/*",
