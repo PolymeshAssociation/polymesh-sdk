@@ -39,6 +39,38 @@ const convertModulesToHierarchy = function (modules) {
 };
 
 /**
+ * Returns a single markdown formatted link shifted by depth * 2 spaces
+ * For example - `  - [Asset](../wiki/api.entities.Asset)`
+ */
+const getLink = function (label, link, depth) {
+  const spaces = ' '.repeat(depth * 2);
+  return `${spaces}- [${label}](${link})\n`;
+};
+
+/**
+ * Returns a dropdown formatted markdown string with a specific heading and description
+ * For example -
+ * <details>
+ *   <summary>
+ *     <b>Client</b>
+ *   </summary>
+ *
+ *   ....Nested links....
+ * </details>
+ *
+ * Note that the blank line after the </summary> tag is must for correct formatting of dropdown content
+ */
+const getDropdown = function (heading, description) {
+  return `<details>
+  <summary>
+    <b>${heading}</b>
+  </summary>
+
+${description}
+</details>`;
+};
+
+/**
  * Converts the generated hierarchy structure into markdown format
  */
 const getMarkdownLinks = function (hierarchies, depth) {
@@ -46,23 +78,22 @@ const getMarkdownLinks = function (hierarchies, depth) {
   let line = '';
   subModules.forEach(function (name) {
     const subModule = hierarchies[name];
-    const spaces = ' '.repeat(depth * 2);
     const modifiedName = startCase(camelCase(name));
     const subModulePath = subModule.__value;
 
-    if (depth === 0 && name === 'types') {
-      line += '\n#### Types\n\n';
-    }
-
     if (subModulePath) {
-      line += `${spaces}- [${modifiedName}](${subModulePath})\n`;
+      const link = getLink(modifiedName, subModulePath, depth);
       delete subModule.__value;
-      line += getMarkdownLinks(subModule, depth + 1);
-    } else if (!['api', 'common', 'namespaces'].includes(name)) {
-      line += `\n#### ${modifiedName}\n\n`;
-      line += getMarkdownLinks(subModule, depth + 1);
-    } else {
+      if (depth === 0 && name === 'types') {
+        line += getDropdown('Types', `  ${link}${getMarkdownLinks(subModule, depth + 2)}`);
+      } else {
+        line += link + getMarkdownLinks(subModule, depth + 1);
+      }
+    } else if (['api', 'common', 'namespaces'].includes(name)) {
+      // This skips extra nesting for these folders
       line += getMarkdownLinks(subModule, depth);
+    } else {
+      line += getDropdown(modifiedName, getMarkdownLinks(subModule, depth + 1));
     }
   });
   return line;
