@@ -272,6 +272,7 @@ describe('removeAssetStat procedure', () => {
     });
 
     it('should throw an error if the stat is being used', async () => {
+      const did = 'someDid';
       const proc = procedureMockUtils.getInstance<RemoveAssetStatParams, void, Storage>(
         mockContext
       );
@@ -291,7 +292,7 @@ describe('removeAssetStat procedure', () => {
               dsMockUtils.createMockStatisticsStatClaim({
                 Accredited: dsMockUtils.createMockBool(true),
               }),
-              dsMockUtils.createMockIdentityId(),
+              dsMockUtils.createMockIdentityId(did),
               dsMockUtils.createMockU64(new BigNumber(20)),
               dsMockUtils.createMockOption(),
             ],
@@ -330,7 +331,7 @@ describe('removeAssetStat procedure', () => {
           ticker: 'TICKER',
           type: StatType.ScopedCount,
           claimIssuer: {
-            issuer: entityMockUtils.getIdentityInstance(),
+            issuer: entityMockUtils.getIdentityInstance({ did }),
             claimType: ClaimType.Accredited,
           },
         })

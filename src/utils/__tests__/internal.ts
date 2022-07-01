@@ -1197,6 +1197,56 @@ describe('compareTransferRestrictionToInput', () => {
 
     expect(result).toEqual(true);
   });
+
+  it('should return false if things do not match', () => {
+    const claimCountTransferRestrictionWithMax = dsMockUtils.createMockTransferCondition({
+      ClaimCount: [
+        dsMockUtils.createMockStatisticsStatClaim({ Affiliate: dsMockUtils.createMockBool(true) }),
+        dsMockUtils.createMockIdentityId('someDid'),
+        dsMockUtils.createMockU64(new BigNumber(10)),
+        dsMockUtils.createMockOption(dsMockUtils.createMockU64(new BigNumber(20))),
+      ],
+    });
+
+    let result = compareTransferRestrictionToInput(
+      claimCountTransferRestrictionWithMax,
+      {
+        min: new BigNumber(10),
+        max: new BigNumber(21),
+        claim: { type: ClaimType.Affiliate, affiliate: true },
+        issuer: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
+      },
+      TransferRestrictionType.ClaimCount
+    );
+
+    expect(result).toEqual(false);
+
+    const claimOwnershipTransferRestriction = dsMockUtils.createMockTransferCondition({
+      ClaimOwnership: [
+        dsMockUtils.createMockStatisticsStatClaim({
+          Jurisdiction: dsMockUtils.createMockOption(
+            dsMockUtils.createMockCountryCode(CountryCode.Ca)
+          ),
+        }),
+        dsMockUtils.createMockIdentityId('someDid'),
+        dsMockUtils.createMockPermill(new BigNumber(100000)),
+        dsMockUtils.createMockPermill(new BigNumber(200000)),
+      ],
+    });
+
+    result = compareTransferRestrictionToInput(
+      claimOwnershipTransferRestriction,
+      {
+        min: new BigNumber(10),
+        max: new BigNumber(21),
+        claim: { type: ClaimType.Jurisdiction, countryCode: CountryCode.Ca },
+        issuer: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
+      },
+      TransferRestrictionType.ClaimOwnership
+    );
+
+    expect(result).toEqual(false);
+  });
 });
 
 describe('compareStatTypeToTransferRestrictionTyp', () => {
@@ -1379,6 +1429,17 @@ describe('compareStatsToInput', () => {
     args = {
       type: StatType.ScopedCount,
       claimIssuer: { issuer, claimType: ClaimType.Affiliate },
+      ticker,
+    };
+    result = compareStatsToInput(claimCountStat, args);
+    expect(result).toEqual(false);
+
+    args = {
+      type: StatType.ScopedCount,
+      claimIssuer: {
+        issuer: entityMockUtils.getIdentityInstance({ did: 'differentDid' }),
+        claimType: ClaimType.Jurisdiction,
+      },
       ticker,
     };
     result = compareStatsToInput(claimCountStat, args);

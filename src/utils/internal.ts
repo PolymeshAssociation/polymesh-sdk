@@ -1203,7 +1203,6 @@ export function assertTickerValid(ticker: string): void {
  */
 export function compareStatsToInput(
   rawStatType: PolymeshPrimitivesStatisticsStatType,
-  // args: { type: StatType; claimIssuer?: { claimType: StatClaimType; issuer: Identity } }
   args: RemoveAssetStatParams
 ): boolean {
   let claimIssuer;
@@ -1224,7 +1223,11 @@ export function compareStatsToInput(
     const [meshType, meshIssuer] = rawStatType.claimIssuer.unwrap();
     const issuerDid = identityIdToString(meshIssuer);
     const statType = meshClaimTypeToClaimType(meshType);
-    if (issuerDid !== issuer?.did || statType !== claimType) {
+    if (issuerDid !== issuer?.did) {
+      return false;
+    }
+
+    if (statType !== claimType) {
       return false;
     }
   }
