@@ -3617,12 +3617,70 @@ export function statisticsOpTypeToStatType(
 
 /**
  * @hidden
+ *
+ * The chain requires BTreeSets to be sorted, Polkadot.js will shallow sort elements when calling `createType`,
+ * however it will not look deeper at claimType. This function works around this short fall by sorting based on `claimType`
+ * `createType` built in sorting is relied on otherwise.
+ */
+function sortByClaimType(
+  stats: PolymeshPrimitivesStatisticsStatType[]
+): PolymeshPrimitivesStatisticsStatType[] {
+  const copy = [...stats];
+  copy.sort((a, b) => {
+    if (a.claimIssuer.isNone && b.claimIssuer.isNone) {
+      return 0;
+    }
+    if (a.claimIssuer.isNone) {
+      return 1;
+    }
+    if (b.claimIssuer.isNone) {
+      return -1;
+    }
+
+    const [aClaim] = a.claimIssuer.unwrap();
+    const [bClaim] = b.claimIssuer.unwrap();
+
+    const typeOrdering = {
+      Accredited: 1,
+      Affiliate: 2,
+      Jurisdiction: 3,
+    };
+
+    let aScore, bScore;
+    for (const [key, value] of Object.entries(typeOrdering)) {
+      if (aClaim.type === key) {
+        aScore = value;
+      }
+      if (bClaim.type === key) {
+        bScore = value;
+      }
+    }
+
+    if (!aScore && !bScore) {
+      return 0;
+    }
+    if (!aScore) {
+      return 1;
+    }
+    if (!bScore) {
+      return -1;
+    }
+
+    return aScore - bScore;
+  });
+
+  return copy;
+}
+
+/**
+ * @hidden
  */
 export function statisticStatTypesToBtreeStatType(
   stats: PolymeshPrimitivesStatisticsStatType[],
   context: Context
 ): BTreeSet<PolymeshPrimitivesStatisticsStatType> {
-  return context.createType('BTreeSet<PolymeshPrimitivesStatisticsStatType>', stats);
+  const sortedStats = sortByClaimType(stats);
+  return context.createType('BTreeSet<PolymeshPrimitivesStatisticsStatType>', sortedStats);
 }
 
 /**

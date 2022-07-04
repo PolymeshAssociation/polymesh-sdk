@@ -60,7 +60,8 @@ export class ClaimCount extends TransferRestrictionBase<TransferRestrictionType.
    *
    * @note Currently there is a potential race condition when passing in count when the Asset is being traded.
    * It is recommended to call this method during the initial configuration of the Asset, before people are trading it.
-   * Otherwise the Asset should be frozen, or the stat checked after being set to ensure the correct value is used
+   * Otherwise the Asset should be frozen, or the stat checked after being set to ensure the correct value is used. Future
+   * versions of the chain may expose a new extrinsic to avoid this issue
    */
   public declare enableStat: ProcedureMethod<Omit<AddClaimCountStatParams, 'type'>, void>;
 
