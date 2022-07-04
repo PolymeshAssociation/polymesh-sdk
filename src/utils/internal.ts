@@ -1327,15 +1327,14 @@ export function compareTransferRestrictionToInput(
     const min = u64ToBigNumber(rawMin);
     const max = maybeMax.isSome ? u64ToBigNumber(maybeMax.unwrap()) : undefined;
     const castedValue = value as ClaimRestrictionValue;
+
     let matchesMax;
-    if (max) {
-      if (castedValue.max === undefined) {
-        matchesMax = false;
-      } else {
-        matchesMax = castedValue.max.eq(max);
-      }
+    if (!max && !castedValue.max) {
+      matchesMax = true;
+    } else if (max && castedValue.max?.eq(max)) {
+      matchesMax = true;
     } else {
-      matchesMax = castedValue.max === undefined;
+      matchesMax = false;
     }
 
     return !!(
