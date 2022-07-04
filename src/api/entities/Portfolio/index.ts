@@ -478,53 +478,40 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
         blockNumber: new BigNumber(blockId),
         blockHash: hash,
         status: settlementResult as SettlementResultEnum,
-        accounts: legs[0]!.addresses.map(
+        accounts: legs[0].addresses.map(
           (accountAddress: string) =>
             new Account({ address: keyToAddress(accountAddress, context) }, context)
         ),
-        legs: legs.map(leg => {
-          const { from, to, fromId, toId, assetId, amount } = leg!;
-          return {
-            asset: new Asset({ ticker: assetId }, context),
-            amount: new BigNumber(amount).shiftedBy(-6),
-            direction: getDirection(fromId, toId),
-            from: middlewareV2PortfolioToPortfolio(from!, context),
-            to: middlewareV2PortfolioToPortfolio(to!, context),
-          };
-        }),
+        legs: legs.map(({ from, to, fromId, toId, assetId, amount }) => ({
+          asset: new Asset({ ticker: assetId }, context),
+          amount: new BigNumber(amount).shiftedBy(-6),
+          direction: getDirection(fromId, toId),
+          from: middlewareV2PortfolioToPortfolio(from!, context),
+          to: middlewareV2PortfolioToPortfolio(to!, context),
+        })),
       });
     });
 
-    portfolioMovementsResult.data.portfolioMovements.nodes.forEach(node => {
-      const {
-        createdBlock,
-        from,
-        to,
-        fromId,
-        toId,
-        assetId,
-        amount,
-        address: accountAddress,
-      } = node!;
-
-      const { blockId, hash } = createdBlock!;
-
-      data.push({
-        blockNumber: new BigNumber(blockId),
-        blockHash: hash,
-        status: SettlementResultEnum.Executed,
-        accounts: [new Account({ address: keyToAddress(accountAddress, context) }, context)],
-        legs: [
-          {
-            asset: new Asset({ ticker: assetId }, context),
-            amount: new BigNumber(amount).shiftedBy(-6),
-            direction: getDirection(fromId, toId),
-            from: middlewareV2PortfolioToPortfolio(from!, context),
-            to: middlewareV2PortfolioToPortfolio(to!, context),
-          },
-        ],
-      });
-    });
+    portfolioMovementsResult.data.portfolioMovements.nodes.forEach(
+      ({ createdBlock, from, to, fromId, toId, assetId, amount, address: accountAddress }) => {
+        const { blockId, hash } = createdBlock!;
+        data.push({
+          blockNumber: new BigNumber(blockId),
+          blockHash: hash,
+          status: SettlementResultEnum.Executed,
+          accounts: [new Account({ address: keyToAddress(accountAddress, context) }, context)],
+          legs: [
+            {
+              asset: new Asset({ ticker: assetId }, context),
+              amount: new BigNumber(amount).shiftedBy(-6),
+              direction: getDirection(fromId, toId),
+              from: middlewareV2PortfolioToPortfolio(from!, context),
+              to: middlewareV2PortfolioToPortfolio(to!, context),
+            },
+          ],
+        });
+      }
+    );
     /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
     return data;
