@@ -11,7 +11,7 @@ import {
   Procedure,
 } from '~/internal';
 import { ErrorCode, Identity, TransactionPermissions, TxGroup, TxTags } from '~/types';
-import { MaybePostTransactionValue, ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { isEntity } from '~/utils';
 import {
   permissionGroupIdentifierToAgentGroup,
@@ -73,7 +73,16 @@ export interface Storage {
 export async function prepareSetPermissionGroup(
   this: Procedure<Params, CustomPermissionGroup | KnownPermissionGroup, Storage>,
   args: Params
-): Promise<MaybePostTransactionValue<CustomPermissionGroup | KnownPermissionGroup>> {
+): Promise<
+  | TransactionSpec<
+      CustomPermissionGroup | KnownPermissionGroup,
+      ExtrinsicParams<'externalAgents', 'createAndChangeCustomGroup'>
+    >
+  | TransactionSpec<
+      KnownPermissionGroup | CustomPermissionGroup,
+      ExtrinsicParams<'externalAgents', 'changeGroup'>
+    >
+> {
   const {
     context: {
       polymeshApi: {
@@ -132,17 +141,15 @@ export async function prepareSetPermissionGroup(
     existingGroup = await getGroupFromPermissions(asset, transactions);
 
     if (!existingGroup) {
-      const [newGroup] = this.addTransaction({
+      return {
         transaction: externalAgents.createAndChangeCustomGroup,
-        resolvers: [createCreateGroupResolver(context)],
         args: [
           rawTicker,
           transactionPermissionsToExtrinsicPermissions(transactions, context),
           rawIdentityId,
         ],
-      });
-
-      return newGroup;
+        resolver: createCreateGroupResolver(context),
+      };
     }
   } else {
     existingGroup = group;
@@ -155,7 +162,7 @@ export async function prepareSetPermissionGroup(
     });
   }
 
-  this.addTransaction({
+  return {
     transaction: externalAgents.changeGroup,
     args: [
       rawTicker,
@@ -167,9 +174,8 @@ export async function prepareSetPermissionGroup(
         context
       ),
     ],
-  });
-
-  return existingGroup;
+    resolver: existingGroup,
+  };
 }
 
 /**

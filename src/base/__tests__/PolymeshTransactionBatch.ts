@@ -18,7 +18,13 @@ describe('Polymesh Transaction Batch class', () => {
   });
 
   beforeEach(() => {
-    context = dsMockUtils.getContextInstance();
+    context = dsMockUtils.getContextInstance({
+      balance: {
+        free: new BigNumber(100000),
+        locked: new BigNumber(0),
+        total: new BigNumber(100000),
+      },
+    });
   });
 
   const txSpec = {
@@ -33,7 +39,7 @@ describe('Polymesh Transaction Batch class', () => {
   });
 
   describe('get: transactions', () => {
-    it('should return unwrapped transactions', () => {
+    it('should return transactions and their arguments', () => {
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
       const args = tuple('A_TICKER');
 
@@ -48,6 +54,7 @@ describe('Polymesh Transaction Batch class', () => {
         {
           ...txSpec,
           transactions,
+          resolver: undefined,
         },
         context
       );
@@ -60,7 +67,6 @@ describe('Polymesh Transaction Batch class', () => {
       ];
 
       expect(tx.transactions).toEqual(expectedResult);
-      expect(tx.transactions).toEqual(expectedResult); // this second call is to cover the case where the internal value is already set
     });
   });
 
@@ -94,11 +100,14 @@ describe('Polymesh Transaction Batch class', () => {
               args,
             },
           ],
+          resolver: undefined,
         },
         context
       );
 
       tx.run().catch(noop);
+
+      await fakePromise(1);
 
       dsMockUtils.updateTxStatus(batchStub, dsMockUtils.MockTxStatus.InBlock);
 
@@ -109,7 +118,6 @@ describe('Polymesh Transaction Batch class', () => {
       await fakePromise();
 
       sinon.assert.calledWith(transaction, ...args);
-      sinon.assert.calledOnce(batchStub);
       expect(tx.blockHash).toBeDefined();
       expect(tx.blockNumber).toBeDefined();
       expect(tx.txHash).toBeDefined();
@@ -130,10 +138,13 @@ describe('Polymesh Transaction Batch class', () => {
               args,
             },
           ],
+          resolver: undefined,
         },
         context
       );
       const runPromise = tx.run();
+
+      await fakePromise(1);
 
       dsMockUtils.updateTxStatus(batchStub, dsMockUtils.MockTxStatus.BatchFailed);
 
@@ -158,6 +169,7 @@ describe('Polymesh Transaction Batch class', () => {
         {
           ...txSpec,
           transactions,
+          resolver: undefined,
         },
         context
       );

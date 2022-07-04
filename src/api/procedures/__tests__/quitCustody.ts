@@ -89,7 +89,7 @@ describe('quitCustody procedure', () => {
     expect(error.message).toBe('The Portfolio owner cannot quit custody');
   });
 
-  it('should add a quit portfolio custody transaction to the queue', async () => {
+  it('should return a quit portfolio custody transaction spec', async () => {
     const portfolio = entityMockUtils.getNumberedPortfolioInstance({
       id,
       did,
@@ -113,13 +113,11 @@ describe('quitCustody procedure', () => {
 
     const transaction = dsMockUtils.createTxStub('portfolio', 'quitPortfolioCustody');
 
-    await prepareQuitCustody.call(proc, {
+    const result = await prepareQuitCustody.call(proc, {
       portfolio,
     });
 
-    const addTransactionStub = procedureMockUtils.getAddTransactionStub();
-
-    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawMeshPortfolioId] });
+    expect(result).toEqual({ transaction, args: [rawMeshPortfolioId], resolver: undefined });
   });
 
   describe('getAuthorization', () => {

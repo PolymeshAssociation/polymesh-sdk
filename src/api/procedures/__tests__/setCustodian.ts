@@ -44,7 +44,6 @@ jest.mock(
 
 describe('setCustodian procedure', () => {
   let mockContext: Mocked<Context>;
-  let addTransactionStub: sinon.SinonStub;
   let authorizationToAuthorizationDataStub: sinon.SinonStub<
     [Authorization, Context],
     PolymeshPrimitivesAuthorizationAuthorizationData
@@ -68,7 +67,6 @@ describe('setCustodian procedure', () => {
   });
 
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
   });
 
@@ -117,7 +115,7 @@ describe('setCustodian procedure', () => {
     );
   });
 
-  it('should add an add authorization transaction to the queue', async () => {
+  it('should return an add authorization transaction spec', async () => {
     const did = 'someDid';
     const id = new BigNumber(1);
     const expiry = new Date('1/1/2040');
@@ -171,27 +169,21 @@ describe('setCustodian procedure', () => {
 
     const transaction = dsMockUtils.createTxStub('identity', 'addAuthorization');
 
-    await prepareSetCustodian.call(proc, args);
+    let result = await prepareSetCustodian.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction,
-        resolvers: sinon.match.array,
-        args: [rawSignatory, rawAuthorizationData, null],
-      })
-    );
+    expect(result).toEqual({
+      transaction,
+      args: [rawSignatory, rawAuthorizationData, null],
+      resolver: expect.any(Function),
+    });
 
-    await prepareSetCustodian.call(proc, { ...args, id, expiry });
+    result = await prepareSetCustodian.call(proc, { ...args, id, expiry });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction,
-        resolvers: sinon.match.array,
-        args: [rawSignatory, rawAuthorizationData, rawExpiry],
-      })
-    );
+    expect(result).toEqual({
+      transaction,
+      args: [rawSignatory, rawAuthorizationData, rawExpiry],
+      resolver: expect.any(Function),
+    });
   });
 
   describe('getAuthorization', () => {

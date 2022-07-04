@@ -10,66 +10,50 @@ import {
   BatchTransactionSpec,
   MapTxData,
   MapTxDataWithFees,
-  MapTxWithArgs,
+  TransactionSigningData,
 } from '~/types/internal';
 import { transactionToTxTag, u32ToBigNumber } from '~/utils/conversion';
-import { unwrapValues } from '~/utils/internal';
 
 /**
  * Wrapper class for a batch of Polymesh Transactions
  */
 export class PolymeshTransactionBatch<
-  Args extends unknown[][] = unknown[][],
-  Values extends unknown[] = unknown[]
-> extends PolymeshTransactionBase<Values> {
+  ReturnValue,
+  TransformedReturnValue = ReturnValue,
+  Args extends unknown[][] = unknown[][]
+> extends PolymeshTransactionBase<ReturnValue, TransformedReturnValue> {
   /**
    * @hidden
    *
-   * unwrapped transaction data (available right before execution)
+   * underlying transactions to be batched, together with their arguments and other relevant data
    */
-  private unwrappedTransactions?: MapTxDataWithFees<Args>;
-
-  /**
-   * @hidden
-   *
-   * underlying transactions to be batched, together with their respective arguments
-   */
-  private inputTransactions: MapTxWithArgs<Args>;
+  private transactionData: MapTxDataWithFees<Args>;
 
   /**
    * @hidden
    */
-  constructor(transactionSpec: BatchTransactionSpec<Args, Values>, context: Context) {
+  constructor(
+    transactionSpec: BatchTransactionSpec<ReturnValue, Args, TransformedReturnValue> &
+      TransactionSigningData,
+    context: Context
+  ) {
     const { transactions, ...rest } = transactionSpec;
 
     super(rest, context);
 
-    this.inputTransactions = transactions;
-  }
-
-  /**
-   * @hidden
-   */
-  private getUnwrappedTransactions(): MapTxDataWithFees<Args> {
-    if (!this.unwrappedTransactions) {
-      this.unwrappedTransactions = this.inputTransactions.map(
-        ({ transaction, args, feeMultiplier }) => ({
-          tag: transactionToTxTag(transaction),
-          args: unwrapValues(args),
-          feeMultiplier,
-          transaction,
-        })
-      ) as MapTxDataWithFees<Args>;
-    }
-
-    return this.unwrappedTransactions;
+    this.transactionData = transactions.map(({ transaction, args, feeMultiplier }) => ({
+      tag: transactionToTxTag(transaction),
+      args,
+      feeMultiplier,
+      transaction,
+    })) as MapTxDataWithFees<Args>;
   }
 
   /**
    * transactions in the batch with their respective arguments
    */
   get transactions(): MapTxData<Args> {
-    return this.getUnwrappedTransactions().map(({ tag, args }) => ({
+    return this.transactionData.map(({ tag, args }) => ({
       tag,
       args,
     })) as MapTxData<Args>;
@@ -88,7 +72,7 @@ export class PolymeshTransactionBatch<
     } = this;
 
     return utility.batchAtomic(
-      this.getUnwrappedTransactions().map(({ transaction, args }) => transaction(...args))
+      this.transactionData.map(({ transaction, args }) => transaction(...args))
     );
   }
 
@@ -97,7 +81,7 @@ export class PolymeshTransactionBatch<
    */
   protected getProtocolFees(): Promise<BigNumber> {
     return P.reduce(
-      this.getUnwrappedTransactions(),
+      this.transactionData,
       async (total, { tag, feeMultiplier = new BigNumber(1) }) => {
         const [{ fees }] = await this.context.getProtocolFees({ tags: [tag] });
 

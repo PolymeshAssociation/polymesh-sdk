@@ -1,13 +1,8 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 
-import {
-  Context,
-  NumberedPortfolio,
-  PolymeshError,
-  PostTransactionValue,
-  Procedure,
-} from '~/internal';
+import { Context, NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TxTags } from '~/types';
+import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
 import {
   identityIdToString,
   stringToBytes,
@@ -42,7 +37,7 @@ export const createPortfolioResolver =
 export async function prepareCreatePortfolio(
   this: Procedure<Params, NumberedPortfolio>,
   args: Params
-): Promise<PostTransactionValue<NumberedPortfolio>> {
+): Promise<TransactionSpec<NumberedPortfolio, ExtrinsicParams<'portfolio', 'createPortfolio'>>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -66,13 +61,11 @@ export async function prepareCreatePortfolio(
     });
   }
 
-  const [newNumberedPortfolio] = this.addTransaction({
+  return {
     transaction: tx.portfolio.createPortfolio,
-    resolvers: [createPortfolioResolver(context)],
     args: [rawName],
-  });
-
-  return newNumberedPortfolio;
+    resolver: createPortfolioResolver(context),
+  };
 }
 
 /**

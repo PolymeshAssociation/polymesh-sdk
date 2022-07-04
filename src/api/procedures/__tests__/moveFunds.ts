@@ -170,7 +170,7 @@ describe('moveFunds procedure', () => {
     expect(error.data.balanceExceeded).toMatchObject(items);
   });
 
-  it('should add a move portfolio funds transaction to the queue', async () => {
+  it('should return a move portfolio funds transaction spec', async () => {
     const fromId = new BigNumber(1);
     const toId = new BigNumber(2);
     const did = 'someDid';
@@ -237,17 +237,16 @@ describe('moveFunds procedure', () => {
 
     const transaction = dsMockUtils.createTxStub('portfolio', 'movePortfolioFunds');
 
-    await prepareMoveFunds.call(proc, {
+    let result = await prepareMoveFunds.call(proc, {
       from,
       to: toId,
       items,
     });
 
-    let addTransactionStub = procedureMockUtils.getAddTransactionStub();
-
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction,
       args: [rawFromMeshPortfolioId, rawToMeshPortfolioId, [rawMovePortfolioItem]],
+      resolver: undefined,
     });
 
     toPortfolioId = { did };
@@ -264,16 +263,15 @@ describe('moveFunds procedure', () => {
       .withArgs(toPortfolioId, mockContext)
       .returns(rawToMeshPortfolioId);
 
-    await prepareMoveFunds.call(proc, {
+    result = await prepareMoveFunds.call(proc, {
       from,
       items,
     });
 
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
-
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction,
       args: [rawFromMeshPortfolioId, rawToMeshPortfolioId, [rawMovePortfolioItem]],
+      resolver: undefined,
     });
 
     const defaultFrom = entityMockUtils.getDefaultPortfolioInstance({ did });
@@ -302,17 +300,16 @@ describe('moveFunds procedure', () => {
       .withArgs(toPortfolioId, mockContext)
       .returns(rawToMeshPortfolioId);
 
-    await prepareMoveFunds.call(proc, {
+    result = await prepareMoveFunds.call(proc, {
       from: defaultFrom,
       to,
       items,
     });
 
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
-
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction,
       args: [rawFromMeshPortfolioId, rawToMeshPortfolioId, [rawMovePortfolioItem]],
+      resolver: undefined,
     });
   });
 

@@ -44,16 +44,12 @@ describe('removeAssetRequirement procedure', () => {
     };
   });
 
-  let addTransactionStub: sinon.SinonStub;
-
   let removeComplianceRequirementTransaction: PolymeshTx<[Ticker]>;
 
   beforeEach(() => {
     dsMockUtils.setConstMock('complianceManager', 'maxConditionComplexity', {
       returnValue: dsMockUtils.createMockU32(new BigNumber(50)),
     });
-
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
     removeComplianceRequirementTransaction = dsMockUtils.createTxStub(
       'complianceManager',
@@ -113,7 +109,7 @@ describe('removeAssetRequirement procedure', () => {
     ).rejects.toThrow(`There is no compliance requirement with id "${complianceRequirementId}"`);
   });
 
-  it('should add a remove compliance requirement transaction to the queue', async () => {
+  it('should return a remove compliance requirement transaction spec', async () => {
     const rawId = dsMockUtils.createMockU32(requirement);
     sinon.stub(utilsConversionModule, 'bigNumberToU32').returns(rawId);
 
@@ -121,12 +117,11 @@ describe('removeAssetRequirement procedure', () => {
 
     const result = await prepareRemoveAssetRequirement.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction: removeComplianceRequirementTransaction,
       args: [rawTicker, rawId],
+      resolver: expect.objectContaining({ ticker }),
     });
-
-    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   describe('getAuthorization', () => {

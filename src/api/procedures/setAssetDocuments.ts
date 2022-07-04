@@ -3,7 +3,7 @@ import { DocumentId } from 'polymesh-types/types';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import { AssetDocument, ErrorCode, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import {
   assetDocumentToDocument,
   documentToAssetDocument,
@@ -36,7 +36,12 @@ export type Params = SetAssetDocumentsParams & {
 export async function prepareSetAssetDocuments(
   this: Procedure<Params, Asset, Storage>,
   args: Params
-): Promise<Asset> {
+  /*
+   * we use `unknown[][]` here because it's impossible to type this without knowing
+   * how many transactions will be in the batch beforehand. Type safety is ensured via
+   * the `checkTxType` method
+   */
+): Promise<BatchTransactionSpec<Asset, unknown[][]>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -79,9 +84,7 @@ export async function prepareSetAssetDocuments(
     );
   }
 
-  this.addBatchTransaction({ transactions });
-
-  return new Asset({ ticker }, context);
+  return { transactions, resolver: new Asset({ ticker }, context) };
 }
 
 /**

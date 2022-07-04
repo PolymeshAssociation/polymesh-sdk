@@ -1,10 +1,13 @@
 import { PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TxTags } from '~/types';
+import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
 
 /**
  * @hidden
  */
-export async function prepareLeaveIdentity(this: Procedure<void, void>): Promise<void> {
+export async function prepareLeaveIdentity(
+  this: Procedure<void, void>
+): Promise<TransactionSpec<void, ExtrinsicParams<'identity', 'leaveIdentityAsKey'>>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -34,7 +37,7 @@ export async function prepareLeaveIdentity(this: Procedure<void, void>): Promise
     });
   }
 
-  this.addTransaction({ transaction: tx.identity.leaveIdentityAsKey });
+  return { transaction: tx.identity.leaveIdentityAsKey, resolver: undefined };
 }
 
 /**

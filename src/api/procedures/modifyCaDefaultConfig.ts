@@ -9,7 +9,7 @@ import {
   InputTaxWithholding,
   TxTags,
 } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
   percentageToPermill,
@@ -61,7 +61,12 @@ const areSameTargets = (targets: CorporateActionTargets, newTargets: InputTarget
 export async function prepareModifyCaDefaultConfig(
   this: Procedure<Params, void>,
   args: Params
-): Promise<void> {
+  /*
+   * we use `unknown[][]` here because it's impossible to type this without knowing
+   * how many transactions will be in the batch beforehand. Type safety is ensured via
+   * the `assembleBatchTransactions` and `checkTxType` methods
+   */
+): Promise<BatchTransactionSpec<void, unknown[][]>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -165,7 +170,7 @@ export async function prepareModifyCaDefaultConfig(
     );
   }
 
-  this.addBatchTransaction({ transactions });
+  return { transactions, resolver: undefined };
 }
 
 /**

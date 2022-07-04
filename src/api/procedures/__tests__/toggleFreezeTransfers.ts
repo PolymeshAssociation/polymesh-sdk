@@ -32,10 +32,7 @@ describe('toggleFreezeTransfers procedure', () => {
     rawTicker = dsMockUtils.createMockTicker(ticker);
   });
 
-  let addTransactionStub: sinon.SinonStub;
-
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
   });
@@ -79,7 +76,7 @@ describe('toggleFreezeTransfers procedure', () => {
     ).rejects.toThrow('The Asset is already unfrozen');
   });
 
-  it('should add a freeze transaction to the queue', async () => {
+  it('should return a freeze transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('asset', 'freeze');
@@ -89,12 +86,14 @@ describe('toggleFreezeTransfers procedure', () => {
       freeze: true,
     });
 
-    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker] });
-
-    expect(ticker).toBe(result.ticker);
+    expect(result).toEqual({
+      transaction,
+      args: [rawTicker],
+      resolver: expect.objectContaining({ ticker }),
+    });
   });
 
-  it('should add a unfreeze transaction to the queue', async () => {
+  it('should add an unfreeze transaction spec', async () => {
     entityMockUtils.configureMocks({
       assetOptions: {
         isFrozen: true,
@@ -110,9 +109,11 @@ describe('toggleFreezeTransfers procedure', () => {
       freeze: false,
     });
 
-    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker] });
-
-    expect(ticker).toBe(result.ticker);
+    expect(result).toEqual({
+      transaction,
+      args: [rawTicker],
+      resolver: expect.objectContaining({ ticker }),
+    });
   });
 
   describe('getAuthorization', () => {

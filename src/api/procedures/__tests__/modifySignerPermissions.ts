@@ -23,7 +23,6 @@ import * as utilsConversionModule from '~/utils/conversion';
 
 describe('modifySignerPermissions procedure', () => {
   let mockContext: Mocked<Context>;
-  let addBatchTransactionStub: sinon.SinonStub;
   let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
   let signerToSignerValueStub: sinon.SinonStub<[Signer], SignerValue>;
   let permissionsToMeshPermissionsStub: sinon.SinonStub;
@@ -48,7 +47,6 @@ describe('modifySignerPermissions procedure', () => {
   });
 
   beforeEach(() => {
-    addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
     account = entityMockUtils.getAccountInstance({ address: 'someFakeAccount' });
     identity = entityMockUtils.getIdentityInstance({
       getSecondaryAccounts: [
@@ -88,7 +86,7 @@ describe('modifySignerPermissions procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should add a batch of Set Permission To Signer transactions to the queue', async () => {
+  it('should return a batch of Set Permission To Signer transactions spec', async () => {
     let secondaryAccounts: PermissionedAccount[] = [
       {
         account,
@@ -137,10 +135,11 @@ describe('modifySignerPermissions procedure', () => {
 
     let signersList = [[rawSignatory, fakeMeshPermissions]];
 
-    await prepareModifySignerPermissions.call(proc, { secondaryAccounts });
+    let result = await prepareModifySignerPermissions.call(proc, { secondaryAccounts });
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: signersList.map(signers => ({ transaction, args: signers })),
+      resolver: undefined,
     });
 
     secondaryAccounts = [
@@ -166,10 +165,11 @@ describe('modifySignerPermissions procedure', () => {
 
     permissionsLikeToPermissionsStub.resolves(secondaryAccounts[0].permissions);
 
-    await prepareModifySignerPermissions.call(proc, { secondaryAccounts, identity });
+    result = await prepareModifySignerPermissions.call(proc, { secondaryAccounts, identity });
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: signersList.map(signers => ({ transaction, args: signers })),
+      resolver: undefined,
     });
   });
 

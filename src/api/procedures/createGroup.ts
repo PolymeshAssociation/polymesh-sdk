@@ -1,7 +1,7 @@
 import { assertGroupDoesNotExist, createCreateGroupResolver } from '~/api/procedures/utils';
-import { Asset, CustomPermissionGroup, PostTransactionValue, Procedure } from '~/internal';
+import { Asset, CustomPermissionGroup, Procedure } from '~/internal';
 import { TransactionPermissions, TxGroup, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   permissionsLikeToPermissions,
   stringToTicker,
@@ -38,7 +38,9 @@ export interface Storage {
 export async function prepareCreateGroup(
   this: Procedure<Params, CustomPermissionGroup, Storage>,
   args: Params
-): Promise<PostTransactionValue<CustomPermissionGroup>> {
+): Promise<
+  TransactionSpec<CustomPermissionGroup, ExtrinsicParams<'externalAgents', 'createGroup'>>
+> {
   const {
     context: {
       polymeshApi: {
@@ -60,13 +62,11 @@ export async function prepareCreateGroup(
     context
   );
 
-  const [customPermissionGroup] = this.addTransaction({
+  return {
     transaction: externalAgents.createGroup,
-    resolvers: [createCreateGroupResolver(context)],
     args: [rawTicker, rawExtrinsicPermissions],
-  });
-
-  return customPermissionGroup;
+    resolver: createCreateGroupResolver(context),
+  };
 }
 
 /**

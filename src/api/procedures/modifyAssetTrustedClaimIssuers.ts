@@ -7,7 +7,11 @@ import { difference, intersection, isEqual, sortBy } from 'lodash';
 
 import { Asset, Context, Identity, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, InputTrustedClaimIssuer, TrustedClaimIssuer, TxTags } from '~/types';
-import { ProcedureAuthorization, TrustedClaimIssuerOperation } from '~/types/internal';
+import {
+  BatchTransactionSpec,
+  ProcedureAuthorization,
+  TrustedClaimIssuerOperation,
+} from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
   signerToString,
@@ -95,7 +99,12 @@ const areSameClaimIssuers = (
 export async function prepareModifyAssetTrustedClaimIssuers(
   this: Procedure<Params, Asset>,
   args: Params
-): Promise<Asset> {
+  /*
+   * we use `unknown[][]` here because it's impossible to type this without knowing
+   * how many transactions will be in the batch beforehand. Type safety is ensured via
+   * the `assembleBatchTransactions` method
+   */
+): Promise<BatchTransactionSpec<Asset, unknown[][]>> {
   const {
     context: {
       polymeshApi: { query, tx },
@@ -195,9 +204,7 @@ export async function prepareModifyAssetTrustedClaimIssuers(
     )
   );
 
-  this.addBatchTransaction({ transactions });
-
-  return new Asset({ ticker }, context);
+  return { transactions, resolver: new Asset({ ticker }, context) };
 }
 
 /**

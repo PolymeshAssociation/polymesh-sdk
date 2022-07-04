@@ -9,7 +9,7 @@ import {
   prepareReserveTicker,
   ReserveTickerParams,
 } from '~/api/procedures/reserveTicker';
-import { Context, PostTransactionValue, TickerReservation } from '~/internal';
+import { Context, TickerReservation } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { RoleType, TickerReservationStatus, TxTags } from '~/types';
@@ -30,7 +30,6 @@ describe('reserveTicker procedure', () => {
   let ticker: string;
   let rawTicker: Ticker;
   let args: ReserveTickerParams;
-  let reservation: PostTransactionValue<TickerReservation>;
 
   beforeAll(() => {
     dsMockUtils.initMocks({
@@ -50,16 +49,11 @@ describe('reserveTicker procedure', () => {
     args = {
       ticker,
     };
-    reservation = 'reservation' as unknown as PostTransactionValue<TickerReservation>;
   });
-
-  let addTransactionStub: sinon.SinonStub;
 
   let transaction: PolymeshTx<[Ticker]>;
 
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub().returns([reservation]);
-
     entityMockUtils.configureMocks({
       tickerReservationOptions: {
         details: {
@@ -184,22 +178,18 @@ describe('reserveTicker procedure', () => {
     );
   });
 
-  it('should add a register ticker transaction to the queue', async () => {
+  it('should return a register ticker transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>(
       mockContext
     );
 
     let result = await prepareReserveTicker.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction,
-        resolvers: sinon.match.array,
-        args: [rawTicker],
-      })
-    );
-    expect(result).toBe(reservation);
+    expect(result).toEqual({
+      transaction,
+      args: [rawTicker],
+      resolver: expect.any(Function),
+    });
 
     entityMockUtils.configureMocks({
       tickerReservationOptions: {
@@ -213,11 +203,7 @@ describe('reserveTicker procedure', () => {
 
     result = await prepareReserveTicker.call(proc, { ...args, extendPeriod: true });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({ transaction, resolvers: sinon.match.array, args: [rawTicker] })
-    );
-    expect(result).toBe(reservation);
+    expect(result).toEqual({ transaction, resolver: expect.any(Function), args: [rawTicker] });
   });
 });
 

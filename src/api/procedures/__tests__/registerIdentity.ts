@@ -7,7 +7,7 @@ import {
   createRegisterIdentityResolver,
   prepareRegisterIdentity,
 } from '~/api/procedures/registerIdentity';
-import { Context, Identity, PostTransactionValue, RegisterIdentityParams } from '~/internal';
+import { Context, Identity, RegisterIdentityParams } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { PermissionedAccount } from '~/types';
@@ -22,9 +22,7 @@ describe('registerIdentity procedure', () => {
     [PermissionedAccount, Context],
     MeshSecondaryKey
   >;
-  let addTransactionStub: sinon.SinonStub;
   let registerIdentityTransaction: PolymeshTx<unknown[]>;
-  let identity: PostTransactionValue<Identity>;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
@@ -35,12 +33,10 @@ describe('registerIdentity procedure', () => {
       utilsConversionModule,
       'secondaryAccountToMeshSecondaryKey'
     );
-    identity = 'identity' as unknown as PostTransactionValue<Identity>;
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    addTransactionStub = procedureMockUtils.getAddTransactionStub().returns([identity]);
     registerIdentityTransaction = dsMockUtils.createTxStub('identity', 'cddRegisterDid');
   });
 
@@ -55,7 +51,7 @@ describe('registerIdentity procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should add a cddRegisterIdentity transaction to the queue', async () => {
+  it('should return a cddRegisterIdentity transaction spec', async () => {
     const targetAccount = 'someAccount';
     const secondaryAccounts = [
       {
@@ -89,27 +85,19 @@ describe('registerIdentity procedure', () => {
 
     let result = await prepareRegisterIdentity.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction: registerIdentityTransaction,
-        resolvers: sinon.match.array,
-        args: [rawAccountId, [rawSecondaryAccount]],
-      })
-    );
-    expect(result).toBe(identity);
+    expect(result).toEqual({
+      transaction: registerIdentityTransaction,
+      args: [rawAccountId, [rawSecondaryAccount]],
+      resolver: expect.any(Function),
+    });
 
     result = await prepareRegisterIdentity.call(proc, { targetAccount });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction: registerIdentityTransaction,
-        resolvers: sinon.match.array,
-        args: [rawAccountId, []],
-      })
-    );
-    expect(result).toBe(identity);
+    expect(result).toEqual({
+      transaction: registerIdentityTransaction,
+      args: [rawAccountId, []],
+      resolver: expect.any(Function),
+    });
   });
 });
 

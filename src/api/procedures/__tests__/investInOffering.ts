@@ -44,7 +44,6 @@ describe('investInOffering procedure', () => {
   let portfolioLikeToPortfolioIdStub: sinon.SinonStub<[PortfolioLike], PortfolioId>;
   let bigNumberToU64Stub: sinon.SinonStub<[BigNumber, Context], u64>;
   let bigNumberToBalanceStub: sinon.SinonStub<[BigNumber, Context, boolean?], Balance>;
-  let addTransactionStub: sinon.SinonStub;
 
   let id: BigNumber;
   let ticker: string;
@@ -100,7 +99,6 @@ describe('investInOffering procedure', () => {
   });
 
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
     portfolioLikeToPortfolioIdStub.withArgs(purchasePortfolio).returns(purchasePortfolioId);
@@ -288,7 +286,7 @@ describe('investInOffering procedure', () => {
     );
   });
 
-  it('should add an invest transaction to the queue', async () => {
+  it('should return an invest transaction spec', async () => {
     entityMockUtils.configureMocks({
       offeringOptions: {
         details: {
@@ -330,9 +328,9 @@ describe('investInOffering procedure', () => {
 
     const transaction = dsMockUtils.createTxStub('sto', 'invest');
 
-    await prepareInvestInSto.call(proc, args);
+    let result = await prepareInvestInSto.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction,
       args: [
         rawPurchasePortfolio,
@@ -343,14 +341,15 @@ describe('investInOffering procedure', () => {
         null,
         null,
       ],
+      resolver: undefined,
     });
 
-    await prepareInvestInSto.call(proc, {
+    result = await prepareInvestInSto.call(proc, {
       ...args,
       maxPrice,
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction,
       args: [
         rawPurchasePortfolio,
@@ -361,6 +360,7 @@ describe('investInOffering procedure', () => {
         rawMaxPrice,
         null,
       ],
+      resolver: undefined,
     });
   });
 

@@ -1226,11 +1226,7 @@ describe('Context class', () => {
         },
       ];
 
-      dsMockUtils.configureMocks({
-        contextOptions: {
-          middlewareAvailable: false,
-        },
-      });
+      dsMockUtils.throwOnMiddlewareQuery('No Middleware');
 
       const entriesStub = sinon.stub();
       entriesStub.resolves([
@@ -1304,11 +1300,7 @@ describe('Context class', () => {
         middlewareApi: dsMockUtils.getMiddlewareApi(),
       });
 
-      dsMockUtils.configureMocks({
-        contextOptions: {
-          middlewareAvailable: false,
-        },
-      });
+      dsMockUtils.throwOnMiddlewareQuery('No Middleware');
 
       return expect(context.issuedClaims()).rejects.toThrow(
         'Cannot perform this action without an active middleware connection'
@@ -1331,7 +1323,7 @@ describe('Context class', () => {
         middlewareApi: dsMockUtils.getMiddlewareApi(),
       });
 
-      dsMockUtils.throwOnMiddlewareQuery();
+      dsMockUtils.throwOnMiddlewareQuery({ message: 'Error' });
 
       await expect(
         context.queryMiddleware('query' as unknown as GraphqlQuery<unknown>)

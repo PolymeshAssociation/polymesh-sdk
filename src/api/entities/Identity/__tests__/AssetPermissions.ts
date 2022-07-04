@@ -2,7 +2,13 @@ import { PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker } from '@polkado
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Context, Identity, KnownPermissionGroup, Namespace, TransactionQueue } from '~/internal';
+import {
+  Context,
+  Identity,
+  KnownPermissionGroup,
+  Namespace,
+  PolymeshTransaction,
+} from '~/internal';
 import { eventByIndexedArgs, tickerExternalAgentActions } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -127,7 +133,7 @@ describe('AssetPermissions class', () => {
   });
 
   describe('method: setGroup', () => {
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
       const group = {
         transactions: {
           type: PermissionType.Include,
@@ -135,16 +141,16 @@ describe('AssetPermissions class', () => {
         },
         asset,
       };
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args: { identity, group }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await assetPermissions.setGroup({ group });
+      const tx = await assetPermissions.setGroup({ group });
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -370,22 +376,22 @@ describe('AssetPermissions class', () => {
   });
 
   describe('method: waive', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = {
         asset,
         identity,
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await assetPermissions.waive(args);
+      const tx = await assetPermissions.waive(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 

@@ -13,7 +13,7 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/launchOffering';
-import { Context, DefaultPortfolio, Offering, PostTransactionValue, Venue } from '~/internal';
+import { Context, DefaultPortfolio, Offering, Venue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -84,8 +84,6 @@ describe('launchOffering procedure', () => {
   let rawTiers: PriceTier[];
   let rawMinInvestment: Balance;
 
-  let offering: PostTransactionValue<Offering>;
-
   let args: Params;
 
   beforeAll(() => {
@@ -142,11 +140,7 @@ describe('launchOffering procedure', () => {
       }),
     ];
     rawMinInvestment = dsMockUtils.createMockBalance(minInvestment);
-
-    offering = 'offering' as unknown as PostTransactionValue<Offering>;
   });
-
-  let addTransactionStub: sinon.SinonStub;
 
   beforeEach(() => {
     venue = entityMockUtils.getVenueInstance({
@@ -155,7 +149,6 @@ describe('launchOffering procedure', () => {
         type: VenueType.Sto,
       },
     });
-    addTransactionStub = procedureMockUtils.getAddTransactionStub().returns([offering]);
     mockContext = dsMockUtils.getContextInstance();
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
     stringToTickerStub.withArgs(raisingCurrency, mockContext).returns(rawRaisingCurrency);
@@ -256,7 +249,7 @@ describe('launchOffering procedure', () => {
     expect(err?.message).toBe("There isn't enough free balance in the offering Portfolio");
   });
 
-  it('should add a create fundraiser transaction to the queue', async () => {
+  it('should return a create fundraiser transaction spec', async () => {
     portfolio.getAssetBalances.resolves([{ free: new BigNumber(1000) }]);
 
     const proc = procedureMockUtils.getInstance<Params, Offering, Storage>(mockContext, {
@@ -268,27 +261,22 @@ describe('launchOffering procedure', () => {
 
     let result = await prepareLaunchOffering.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction,
-        resolvers: sinon.match.array,
-        args: [
-          rawOfferingPortfolio,
-          rawTicker,
-          rawRaisingPortfolio,
-          rawRaisingCurrency,
-          rawTiers,
-          rawVenueId,
-          rawStart,
-          rawEnd,
-          rawMinInvestment,
-          rawName,
-        ],
-      })
-    );
-
-    expect(result).toBe(offering);
+    expect(result).toEqual({
+      transaction,
+      args: [
+        rawOfferingPortfolio,
+        rawTicker,
+        rawRaisingPortfolio,
+        rawRaisingCurrency,
+        rawTiers,
+        rawVenueId,
+        rawStart,
+        rawEnd,
+        rawMinInvestment,
+        rawName,
+      ],
+      resolver: expect.any(Function),
+    });
 
     entityMockUtils.configureMocks({
       venueOptions: {
@@ -311,27 +299,22 @@ describe('launchOffering procedure', () => {
       end: undefined,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction,
-        resolvers: sinon.match.array,
-        args: [
-          rawOfferingPortfolio,
-          rawTicker,
-          rawRaisingPortfolio,
-          rawRaisingCurrency,
-          rawTiers,
-          rawVenueId,
-          null,
-          null,
-          rawMinInvestment,
-          rawName,
-        ],
-      })
-    );
-
-    expect(result).toEqual(offering);
+    expect(result).toEqual({
+      transaction,
+      args: [
+        rawOfferingPortfolio,
+        rawTicker,
+        rawRaisingPortfolio,
+        rawRaisingCurrency,
+        rawTiers,
+        rawVenueId,
+        null,
+        null,
+        rawMinInvestment,
+        rawName,
+      ],
+      resolver: expect.any(Function),
+    });
   });
 
   describe('stoResolver', () => {

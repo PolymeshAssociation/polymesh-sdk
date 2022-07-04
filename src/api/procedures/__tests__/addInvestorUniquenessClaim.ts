@@ -59,7 +59,6 @@ describe('addInvestorUniquenessClaim procedure', () => {
   let rawProof: InvestorZKProofData;
   let rawScopeClaimProof: ConfidentialIdentityClaimProofsScopeClaimProof;
   let rawExpiry: Moment;
-  let addTransactionStub: sinon.SinonStub;
 
   beforeAll(() => {
     did = 'someDid';
@@ -131,7 +130,6 @@ describe('addInvestorUniquenessClaim procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
     stringToIdentityIdStub.withArgs(did, mockContext).returns(rawDid);
     claimToMeshClaimStub
@@ -174,7 +172,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should add an add investor uniqueness claim transaction to the queue', async () => {
+  it('should return an add investor uniqueness claim transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<AddInvestorUniquenessClaimParams, void>(
       mockContext
     );
@@ -183,7 +181,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
       'addInvestorUniquenessClaim'
     );
 
-    await prepareAddInvestorUniquenessClaim.call(proc, {
+    let result = await prepareAddInvestorUniquenessClaim.call(proc, {
       scope,
       proof,
       cddId,
@@ -191,25 +189,27 @@ describe('addInvestorUniquenessClaim procedure', () => {
       expiry,
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction: addInvestorUniquenessClaimTransaction,
       args: [rawDid, rawClaim, rawProof, rawExpiry],
+      resolver: undefined,
     });
 
-    await prepareAddInvestorUniquenessClaim.call(proc, {
+    result = await prepareAddInvestorUniquenessClaim.call(proc, {
       scope,
       proof,
       cddId,
       scopeId,
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction: addInvestorUniquenessClaimTransaction,
       args: [rawDid, rawClaim, rawProof, null],
+      resolver: undefined,
     });
   });
 
-  it('should add an add investor uniqueness claim v2 transaction to the queue', async () => {
+  it('should return an add investor uniqueness claim v2 transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<AddInvestorUniquenessClaimParams, void>(
       mockContext
     );
@@ -218,7 +218,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
       'addInvestorUniquenessClaimV2'
     );
 
-    await prepareAddInvestorUniquenessClaim.call(proc, {
+    let result = await prepareAddInvestorUniquenessClaim.call(proc, {
       scope,
       proof: scopeClaimProof,
       cddId,
@@ -226,21 +226,23 @@ describe('addInvestorUniquenessClaim procedure', () => {
       expiry,
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction: addInvestorUniquenessClaimV2Transaction,
       args: [rawDid, rawScope, rawClaimV2, rawScopeClaimProof, rawExpiry],
+      resolver: undefined,
     });
 
-    await prepareAddInvestorUniquenessClaim.call(proc, {
+    result = await prepareAddInvestorUniquenessClaim.call(proc, {
       scope,
       proof: scopeClaimProof,
       cddId,
       scopeId,
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction: addInvestorUniquenessClaimV2Transaction,
       args: [rawDid, rawScope, rawClaimV2, rawScopeClaimProof, null],
+      resolver: undefined,
     });
   });
 

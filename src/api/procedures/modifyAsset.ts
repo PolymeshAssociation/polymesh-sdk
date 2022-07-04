@@ -1,6 +1,6 @@
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, SecurityIdentifier, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import {
   securityIdentifierToAssetIdentifier,
   stringToBytes,
@@ -48,7 +48,12 @@ export type Params = { ticker: string } & ModifyAssetParams;
 export async function prepareModifyAsset(
   this: Procedure<Params, Asset>,
   args: Params
-): Promise<Asset> {
+  /*
+   * we use `unknown[][]` here because it's impossible to type this without knowing
+   * how many transactions will be in the batch beforehand. Type safety is ensured via
+   * the `checkTxType` method
+   */
+): Promise<BatchTransactionSpec<Asset, unknown[][]>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -160,9 +165,7 @@ export async function prepareModifyAsset(
     );
   }
 
-  this.addBatchTransaction({ transactions });
-
-  return asset;
+  return { transactions, resolver: asset };
 }
 
 /**

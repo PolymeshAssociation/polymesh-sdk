@@ -17,6 +17,25 @@ describe('Post Transaction Value class', () => {
     });
   });
 
+  describe('getter: value', () => {
+    it('should return the wrapped value', async () => {
+      const receipt = {} as unknown as ISubmittableResult;
+      const p = new PostTransactionValue<number>(async () => 1);
+
+      await p.run(receipt);
+
+      expect(p.value).toBe(1);
+    });
+
+    it('should throw an error if called before the value is resolved', () => {
+      const p = new PostTransactionValue<number>(async () => 1);
+
+      expect(() => p.value).toThrow(
+        'Post Transaction Value accessed before the corresponding transaction was executed'
+      );
+    });
+  });
+
   describe('method: transform', () => {
     it('should return a new PTV that runs its value through the callback', async () => {
       const receipt = 1 as unknown as ISubmittableResult;

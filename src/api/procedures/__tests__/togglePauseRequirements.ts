@@ -36,10 +36,7 @@ describe('togglePauseRequirements procedure', () => {
     rawTicker = dsMockUtils.createMockTicker(ticker);
   });
 
-  let addTransactionStub: sinon.SinonStub;
-
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
     assetCompliancesStub = dsMockUtils.createQueryStub('complianceManager', 'assetCompliances', {
@@ -90,7 +87,7 @@ describe('togglePauseRequirements procedure', () => {
     ).rejects.toThrow('Requirements are already unpaused');
   });
 
-  it('should add a pause asset compliance transaction to the queue', async () => {
+  it('should return a pause asset compliance transaction spec', async () => {
     assetCompliancesStub.withArgs(rawTicker).returns({
       paused: false,
     });
@@ -106,12 +103,14 @@ describe('togglePauseRequirements procedure', () => {
       pause: true,
     });
 
-    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker] });
-
-    expect(ticker).toBe(result.ticker);
+    expect(result).toEqual({
+      transaction,
+      args: [rawTicker],
+      resolver: expect.objectContaining({ ticker }),
+    });
   });
 
-  it('should add a resume asset compliance transaction to the queue', async () => {
+  it('should return a resume asset compliance transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('complianceManager', 'resumeAssetCompliance');
@@ -121,9 +120,11 @@ describe('togglePauseRequirements procedure', () => {
       pause: false,
     });
 
-    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker] });
-
-    expect(ticker).toBe(result.ticker);
+    expect(result).toEqual({
+      transaction,
+      args: [rawTicker],
+      resolver: expect.objectContaining({ ticker }),
+    });
   });
 
   describe('getAuthorization', () => {

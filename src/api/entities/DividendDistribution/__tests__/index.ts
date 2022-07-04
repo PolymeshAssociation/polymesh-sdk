@@ -7,7 +7,7 @@ import {
   CorporateActionBase,
   DefaultPortfolio,
   DividendDistribution,
-  TransactionQueue,
+  PolymeshTransaction,
 } from '~/internal';
 import { getHistoryOfPaymentEventsForCa, getWithholdingTaxesOfCa } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -189,23 +189,23 @@ describe('DividendDistribution class', () => {
   });
 
   describe('method: claim', () => {
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args: { distribution: dividendDistribution }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await dividendDistribution.claim();
+      const tx = await dividendDistribution.claim();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: pay', () => {
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
       const identityTargets = ['identityDid'];
 
       procedureMockUtils
@@ -217,11 +217,11 @@ describe('DividendDistribution class', () => {
           },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await dividendDistribution.pay({ targets: identityTargets });
+      const tx = await dividendDistribution.pay({ targets: identityTargets });
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -252,8 +252,8 @@ describe('DividendDistribution class', () => {
   });
 
   describe('method: modifyCheckpoint', () => {
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
       const args = {
         checkpoint: new Date(),
       };
@@ -261,14 +261,14 @@ describe('DividendDistribution class', () => {
       procedureMockUtils
         .getPrepareStub()
         .withArgs(
-          { args: { distribution: dividendDistribution, ...args }, transformer: undefined },
+          { args: { corporateAction: dividendDistribution, ...args }, transformer: undefined },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await dividendDistribution.modifyCheckpoint(args);
+      const tx = await dividendDistribution.modifyCheckpoint(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -515,17 +515,17 @@ describe('DividendDistribution class', () => {
   });
 
   describe('method: reclaimFunds', () => {
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args: { distribution: dividendDistribution }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await dividendDistribution.reclaimFunds();
+      const tx = await dividendDistribution.reclaimFunds();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 

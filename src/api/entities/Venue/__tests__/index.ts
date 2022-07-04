@@ -7,7 +7,7 @@ import {
   Context,
   Entity,
   Instruction,
-  TransactionQueue,
+  PolymeshTransaction,
   Venue,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -236,7 +236,7 @@ describe('Venue class', () => {
       sinon.restore();
     });
 
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
       const legs = [
         {
           from: 'someDid',
@@ -255,7 +255,7 @@ describe('Venue class', () => {
       const tradeDate = new Date(new Date().getTime() + 24 * 60 * 60 * 1000);
       const endBlock = new BigNumber(10000);
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Instruction>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Instruction>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -266,11 +266,11 @@ describe('Venue class', () => {
           },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await venue.addInstruction({ legs, tradeDate, endBlock });
+      const tx = await venue.addInstruction({ legs, tradeDate, endBlock });
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -279,7 +279,7 @@ describe('Venue class', () => {
       sinon.restore();
     });
 
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
       const legs = [
         {
           from: 'someDid',
@@ -306,7 +306,7 @@ describe('Venue class', () => {
         },
       ];
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Instruction>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Instruction>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -317,11 +317,11 @@ describe('Venue class', () => {
           },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await venue.addInstructions({ instructions });
+      const tx = await venue.addInstructions({ instructions });
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -330,8 +330,8 @@ describe('Venue class', () => {
       sinon.restore();
     });
 
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Instruction>;
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Instruction>;
       const description = 'someDetails';
       const type = VenueType.Other;
 
@@ -344,11 +344,11 @@ describe('Venue class', () => {
           },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await venue.modify({ description, type });
+      const tx = await venue.modify({ description, type });
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 

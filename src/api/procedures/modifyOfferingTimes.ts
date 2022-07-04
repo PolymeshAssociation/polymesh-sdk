@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import { Asset, Offering, PolymeshError, Procedure } from '~/internal';
 import { Moment } from '~/polkadot/polymesh';
 import { ErrorCode, OfferingSaleStatus, OfferingTimingStatus, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { bigNumberToU64, dateToMoment, stringToTicker } from '~/utils/conversion';
 
 /**
@@ -91,7 +91,7 @@ export type Params = ModifyOfferingTimesParams & {
 export async function prepareModifyOfferingTimes(
   this: Procedure<Params, void>,
   args: Params
-): Promise<void> {
+): Promise<TransactionSpec<void, ExtrinsicParams<'sto', 'modifyFundraiserWindow'>>> {
   const {
     context: {
       polymeshApi: {
@@ -125,10 +125,11 @@ export async function prepareModifyOfferingTimes(
     rawEnd = dateToMoment(newEnd, context);
   }
 
-  this.addTransaction({
+  return {
     transaction: txSto.modifyFundraiserWindow,
     args: [rawTicker, rawId, rawStart, rawEnd],
-  });
+    resolver: undefined,
+  };
 }
 
 /**

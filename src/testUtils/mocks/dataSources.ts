@@ -223,10 +223,11 @@ function createApi(): Mutable<ApiPromise> & EventEmitter {
 /**
  * Create a mock instance of the Apollo client
  */
-function createApolloClient(): Mutable<ApolloClient<NormalizedCacheObject>> {
+function createApolloClient(): Mocked<Mutable<ApolloClient<NormalizedCacheObject>>> {
   return {
     stop: sinon.stub(),
-  } as unknown as Mutable<ApolloClient<NormalizedCacheObject>>;
+    query: sinon.stub(),
+  } as unknown as Mocked<Mutable<ApolloClient<NormalizedCacheObject>>>;
 }
 
 let apolloConstructorStub: SinonStub;
@@ -778,6 +779,7 @@ function configureContext(opts: ContextOptions): void {
         new Error('There is no Account associated with the current SDK instance')
       );
 
+  const queryStub = mockInstanceContainer.apolloInstance.query;
   const contextInstance = {
     signingAddress,
     getSigningIdentity,
@@ -793,9 +795,7 @@ function configureContext(opts: ContextOptions): void {
     getExternalSigner: sinon.stub().returns(opts.getExternalSigner),
     polymeshApi: mockInstanceContainer.apiInstance,
     middlewareApi: mockInstanceContainer.apolloInstance,
-    queryMiddleware: sinon
-      .stub()
-      .callsFake(query => mockInstanceContainer.apolloInstance.query(query)),
+    queryMiddleware: sinon.stub().callsFake(query => queryStub(query)),
     getInvalidDids: sinon.stub().resolves(opts.invalidDids),
     getProtocolFees: sinon.stub().resolves(opts.transactionFees),
     getTransactionArguments: sinon.stub().returns([]),
@@ -1062,7 +1062,7 @@ export function cleanup(): void {
 export function reset(): void {
   cleanup();
 
-  initMocks({ contextOptions });
+  initMocks({ contextOptions, signingManagerOptions });
 }
 
 /**
@@ -1121,7 +1121,7 @@ export function createTxStub<
         process.nextTick(() => cb(statusToReceipt(autoResolve)));
       }
 
-      return Promise.resolve(unsubCallback);
+      return new Promise(resolve => setImmediate(() => resolve(unsubCallback)));
     }),
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
     paymentInfo: sinon.stub().resolves({ partialFee: gas }),
@@ -1152,15 +1152,12 @@ export function createTxStub<
  */
 export function createApolloQueryStub(query: GraphqlQuery<any>, returnData: unknown): SinonStub {
   const instance = mockInstanceContainer.apolloInstance;
-  const stub = sinon.stub();
 
-  stub.withArgs(query).resolves({
+  instance.query.withArgs(query).resolves({
     data: returnData,
   });
 
-  instance.query = stub;
-
-  return stub;
+  return instance.query;
 }
 
 /**
@@ -1173,17 +1170,14 @@ export function createApolloMultipleQueriesStub(
   queries: { query: GraphqlQuery<any>; returnData: unknown }[]
 ): SinonStub {
   const instance = mockInstanceContainer.apolloInstance;
-  const stub = sinon.stub();
 
   queries.forEach(q => {
-    stub.withArgs(q.query).resolves({
+    instance.query.withArgs(q.query).resolves({
       data: q.returnData,
     });
   });
 
-  instance.query = stub;
-
-  return stub;
+  return instance.query;
 }
 
 /**
@@ -1392,10 +1386,8 @@ export function throwOnMiddlewareQuery(err?: unknown): void {
   const instance = mockInstanceContainer.apolloInstance;
 
   if (err) {
-    errorStub.throws(err);
+    instance.query.throws(err);
   }
-
-  instance.query = errorStub;
 }
 
 /**

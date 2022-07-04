@@ -11,7 +11,13 @@ import { ISubmittableResult, Signer as PolkadotSigner } from '@polkadot/types/ty
 import BigNumber from 'bignumber.js';
 import { DocumentNode } from 'graphql';
 
-import { Identity, PostTransactionValue } from '~/internal';
+import {
+  Identity,
+  PolymeshTransaction,
+  PolymeshTransactionBatch,
+  PostTransactionValue,
+  Procedure,
+} from '~/internal';
 import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { CustomAssetTypeId } from '~/polkadot';
 import {
@@ -28,6 +34,17 @@ import {
  * Polkadot's `tx` submodule
  */
 export type Extrinsics = SubmittableExtrinsics<'promise'>;
+
+/**
+ * Parameter list for a specific extrinsic
+ *
+ * @param ModuleName - pallet name (i.e. 'asset')
+ * @param TransactionName - extrinsic name (i.e. 'registerTicker')
+ */
+export type ExtrinsicParams<
+  ModuleName extends keyof Extrinsics,
+  TransactionName extends keyof Extrinsics[ModuleName]
+> = Parameters<Extrinsics[ModuleName][TransactionName]>;
 
 /**
  * Polkadot's events
@@ -96,9 +113,9 @@ export type TxWithArgs<Args extends unknown[] = unknown[]> = BaseTx<Args> &
       }
     : {
         /**
-         * arguments that the transaction will receive (some of them can be {@link PostTransactionValue} from an earlier transaction)
+         * arguments that the transaction will receive
          */
-        args: MapMaybePostTransactionValue<Args>;
+        args: Args;
       });
 
 /**
@@ -154,28 +171,30 @@ export type ResolverFunctionArray<Values extends unknown[]> = {
 };
 
 /**
- * Base Transaction Schema
- *
- * @param Args - arguments of the transaction
- * @param Values - values that will be returned wrapped in {@link PostTransactionValue} after the transaction runs
+ * Function that yields a value from a transaction receipt
  */
-export interface BaseTransactionSpec<Values extends unknown[] = unknown[]> {
-  /**
-   * wrapped values that will be returned after this transaction is run
-   */
-  postTransactionValues?: PostTransactionValueArray<Values>;
-  /**
-   * Account that will sign the transaction
-   */
-  signingAddress: string;
-  /**
-   * object that handles the payload signing logic
-   */
-  signer: PolkadotSigner;
-  /**
-   * whether this tx failing makes the entire tx queue fail or not
-   */
-  isCritical: boolean;
+export type ResolverFunction<ReturnValue> = (
+  receipt: ISubmittableResult
+) => Promise<ReturnValue> | ReturnValue;
+
+/**
+ * Either a resolver function that returns a value (or a value wrapped in a promise), or a plain value
+ */
+export type MaybeResolverFunction<ReturnValue> = ResolverFunction<ReturnValue> | ReturnValue;
+
+/**
+ * @hidden
+ */
+export function isResolverFunction<ReturnValue>(
+  value: MaybeResolverFunction<ReturnValue>
+): value is ResolverFunction<ReturnValue> {
+  return typeof value === 'function';
+}
+
+/**
+ * Base Transaction Schema
+ */
+export interface BaseTransactionSpec<ReturnValue, TransformedReturnValue = ReturnValue> {
   /**
    * any protocol fees associated with running the transaction (not gas)
    */
@@ -186,18 +205,26 @@ export interface BaseTransactionSpec<Values extends unknown[] = unknown[]> {
    *   they try to execute a transaction with `paidForBy` set, the fees will be paid for by the `paidForBy` Identity
    */
   paidForBy?: Identity;
+  /**
+   * value that the transaction will yield once it has run, or a function that yields that value
+   */
+  resolver: MaybeResolverFunction<ReturnValue>;
+  /**
+   * function that transforms the transaction's return value before returning it after it is run
+   */
+  transformer?: (result: ReturnValue) => Promise<TransformedReturnValue> | TransformedReturnValue;
 }
 
 /**
  * Schema of a transaction batch
  *
  * @param Args - arguments of the transaction
- * @param Values - values that will be returned wrapped in {@link PostTransactionValue} after the transaction runs
  */
 export interface BatchTransactionSpec<
+  ReturnValue,
   ArgsArray extends unknown[][],
-  Values extends unknown[] = unknown[]
-> extends BaseTransactionSpec<Values> {
+  TransformedReturnValue = ReturnValue
+> extends BaseTransactionSpec<ReturnValue, TransformedReturnValue> {
   /**
    * transactions in the batch with their respective arguments
    */
@@ -208,12 +235,30 @@ export interface BatchTransactionSpec<
  * Schema of a specific transaction
  *
  * @param Args - arguments of the transaction
- * @param Values - values that will be returned wrapped in {@link PostTransactionValue} after the transaction runs
  */
 export type TransactionSpec<
+  ReturnValue,
   Args extends unknown[],
-  Values extends unknown[] = unknown[]
-> = BaseTransactionSpec<Values> & TxWithArgs<Args>;
+  TransformedReturnValue = ReturnValue
+> = BaseTransactionSpec<ReturnValue, TransformedReturnValue> & TxWithArgs<Args>;
+
+/**
+ * Helper type that represents either type of transaction spec
+ */
+export type GenericTransactionSpec<ReturnValue> =
+  | BatchTransactionSpec<ReturnValue, unknown[][]>
+  | TransactionSpec<ReturnValue, unknown[]>;
+
+export interface TransactionSigningData {
+  /**
+   * Account that will sign the transaction
+   */
+  signingAddress: string;
+  /**
+   * object that handles the payload signing logic
+   */
+  signer: PolkadotSigner;
+}
 
 /**
  * Common args for `addTransaction` and `addBatchTransaction`
@@ -385,3 +430,13 @@ export enum StatisticsOpType {
 export interface TickerKey {
   Ticker: PolymeshPrimitivesTicker;
 }
+
+export type GenericPolymeshTransaction<ProcedureReturnValue, ReturnValue> =
+  | PolymeshTransaction<ProcedureReturnValue, ReturnValue>
+  | PolymeshTransactionBatch<ProcedureReturnValue, ReturnValue>;
+
+/**
+ * Infer Procedure parameters parameters from a Procedure function
+ */
+export type ProcedureParams<ProcedureFunction extends (...args: unknown[]) => unknown> =
+  ReturnType<ProcedureFunction> extends Procedure<infer Params> ? Params : never;

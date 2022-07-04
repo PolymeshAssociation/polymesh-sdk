@@ -84,14 +84,11 @@ describe('modifyInstructionAffirmation procedure', () => {
     sinon.stub(procedureUtilsModule, 'assertInstructionValid');
   });
 
-  let addTransactionStub: sinon.SinonStub;
-
   beforeEach(() => {
     rawLegAmount = dsMockUtils.createMockU32(new BigNumber(2));
     dsMockUtils.createTxStub('settlement', 'affirmInstruction');
     dsMockUtils.createTxStub('settlement', 'withdrawAffirmation');
     dsMockUtils.createTxStub('settlement', 'rejectInstruction');
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
     bigNumberToU64Stub.returns(rawInstructionId);
     bigNumberToU32Stub.returns(rawLegAmount);
@@ -164,7 +161,7 @@ describe('modifyInstructionAffirmation procedure', () => {
     ).rejects.toThrow('The Instruction is already affirmed');
   });
 
-  it('should add an affirm instruction transaction to the queue', async () => {
+  it('should return an affirm instruction transaction spec', async () => {
     const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Pending');
     dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
@@ -190,13 +187,12 @@ describe('modifyInstructionAffirmation procedure', () => {
       operation: InstructionAffirmationOperation.Affirm,
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction,
       feeMultiplier: new BigNumber(2),
       args: [rawInstructionId, [rawPortfolioId, rawPortfolioId], rawLegAmount],
+      resolver: expect.objectContaining({ id }),
     });
-
-    expect(result.id).toEqual(id);
   });
 
   it('should throw an error if operation is Withdraw and the current status of the instruction is pending', () => {
@@ -226,7 +222,7 @@ describe('modifyInstructionAffirmation procedure', () => {
     ).rejects.toThrow('The instruction is not affirmed');
   });
 
-  it('should add a withdraw instruction transaction to the queue', async () => {
+  it('should return a withdraw instruction transaction spec', async () => {
     const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Affirmed');
     dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
@@ -252,16 +248,15 @@ describe('modifyInstructionAffirmation procedure', () => {
       operation: InstructionAffirmationOperation.Withdraw,
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction,
       feeMultiplier: new BigNumber(2),
       args: [rawInstructionId, [rawPortfolioId, rawPortfolioId], rawLegAmount],
+      resolver: expect.objectContaining({ id }),
     });
-
-    expect(result.id).toEqual(id);
   });
 
-  it('should add a reject instruction transaction to the queue', async () => {
+  it('should return a reject instruction transaction spec', async () => {
     const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Pending');
     dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
@@ -299,13 +294,12 @@ describe('modifyInstructionAffirmation procedure', () => {
       operation: InstructionAffirmationOperation.Reject,
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction,
       feeMultiplier: new BigNumber(2),
       args: [rawInstructionId, rawPortfolioId, rawLegAmount],
+      resolver: expect.objectContaining({ id }),
     });
-
-    expect(result.id).toEqual(id);
   });
 
   describe('getAuthorization', () => {

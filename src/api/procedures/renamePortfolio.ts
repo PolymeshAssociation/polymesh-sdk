@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RoleType, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { bigNumberToU64, stringToBytes, stringToIdentityId } from '~/utils/conversion';
 import { getPortfolioIdByName } from '~/utils/internal';
 
@@ -21,7 +21,7 @@ export type Params = { did: string; id: BigNumber } & RenamePortfolioParams;
 export async function prepareRenamePortfolio(
   this: Procedure<Params, NumberedPortfolio>,
   args: Params
-): Promise<NumberedPortfolio> {
+): Promise<TransactionSpec<NumberedPortfolio, ExtrinsicParams<'portfolio', 'renamePortfolio'>>> {
   const {
     context: {
       polymeshApi: {
@@ -52,12 +52,11 @@ export async function prepareRenamePortfolio(
       });
     }
   }
-  this.addTransaction({
+  return {
     transaction: portfolio.renamePortfolio,
     args: [bigNumberToU64(id, context), rawNewName],
-  });
-
-  return new NumberedPortfolio({ did, id }, context);
+    resolver: new NumberedPortfolio({ did, id }, context),
+  };
 }
 
 /**

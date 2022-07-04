@@ -2,6 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { Instruction, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, InstructionStatus, TxTags } from '~/types';
+import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
 import { bigNumberToU64 } from '~/utils/conversion';
 
 /**
@@ -17,7 +18,7 @@ export interface Params {
 export async function prepareRescheduleInstruction(
   this: Procedure<Params, Instruction>,
   args: Params
-): Promise<Instruction> {
+): Promise<TransactionSpec<Instruction, ExtrinsicParams<'settlement', 'rescheduleInstruction'>>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -41,12 +42,11 @@ export async function prepareRescheduleInstruction(
 
   const rawId = bigNumberToU64(id, context);
 
-  this.addTransaction({
+  return {
     transaction: tx.settlement.rescheduleInstruction,
     args: [rawId],
-  });
-
-  return instruction;
+    resolver: instruction,
+  };
 }
 
 /**

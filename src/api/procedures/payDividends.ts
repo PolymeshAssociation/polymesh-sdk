@@ -1,7 +1,7 @@
 import { assertDistributionOpen } from '~/api/procedures/utils';
 import { DividendDistribution, Identity, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TargetTreatment, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { BatchTransactionSpec, ExtrinsicParams, ProcedureAuthorization } from '~/types/internal';
 import { QueryReturnType, tuple } from '~/types/utils';
 import {
   boolToBoolean,
@@ -26,7 +26,7 @@ export type Params = { distribution: DividendDistribution } & PayDividendsParams
 export async function preparePayDividends(
   this: Procedure<Params, void>,
   args: Params
-): Promise<void> {
+): Promise<BatchTransactionSpec<void, ExtrinsicParams<'capitalDistribution', 'pushBenefit'>[]>> {
   const {
     context: {
       polymeshApi: {
@@ -96,12 +96,13 @@ export async function preparePayDividends(
 
   const transaction = tx.capitalDistribution.pushBenefit;
 
-  this.addBatchTransaction({
+  return {
     transactions: rawArgs.map(txArgs => ({
       transaction,
       args: txArgs,
     })),
-  });
+    resolver: undefined,
+  };
 }
 
 /**

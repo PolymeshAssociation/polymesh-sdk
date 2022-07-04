@@ -14,7 +14,7 @@ import {
   TxTag,
   TxTags,
 } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import {
   assetDocumentToDocument,
   bigNumberToBalance,
@@ -122,7 +122,12 @@ async function addManualFees(
 export async function prepareCreateAsset(
   this: Procedure<Params, Asset, Storage>,
   args: Params
-): Promise<Asset> {
+  /*
+   * we use `unknown[][]` here because it's near impossible to type this without knowing
+   * how many transactions will be in the batch beforehand. Type safety is ensured via
+   * the `checkTx` method
+   */
+): Promise<BatchTransactionSpec<Asset, unknown[][]>> {
   const {
     context: {
       polymeshApi: {
@@ -299,12 +304,11 @@ export async function prepareCreateAsset(
     );
   }
 
-  this.addBatchTransaction({
+  return {
     transactions,
     fee,
-  });
-
-  return newAsset;
+    resolver: newAsset,
+  };
 }
 
 /**

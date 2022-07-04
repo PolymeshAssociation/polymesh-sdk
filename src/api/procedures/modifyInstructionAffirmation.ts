@@ -15,9 +15,11 @@ import {
   TxTags,
 } from '~/types';
 import {
+  ExtrinsicParams,
   InstructionAffirmationOperation,
   PolymeshTx,
   ProcedureAuthorization,
+  TransactionSpec,
 } from '~/types/internal';
 import { QueryReturnType, tuple } from '~/types/utils';
 import {
@@ -48,7 +50,11 @@ export interface Storage {
 export async function prepareModifyInstructionAffirmation(
   this: Procedure<ModifyInstructionAffirmationParams, Instruction, Storage>,
   args: ModifyInstructionAffirmationParams
-): Promise<Instruction> {
+): Promise<
+  | TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'affirmInstruction'>>
+  | TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'withdrawAffirmation'>>
+  | TransactionSpec<Instruction, ExtrinsicParams<'settlementTx', 'rejectInstruction'>>
+> {
   const {
     context: {
       polymeshApi: {
@@ -123,20 +129,19 @@ export async function prepareModifyInstructionAffirmation(
 
   // rejection works a bit different
   if (transaction) {
-    this.addTransaction({
+    return {
       transaction,
+      resolver: instruction,
       feeMultiplier: senderLegAmount,
       args: [rawInstructionId, validPortfolioIds, bigNumberToU32(senderLegAmount, context)],
-    });
-  } else {
-    this.addTransaction({
-      transaction: settlementTx.rejectInstruction,
-      feeMultiplier: totalLegAmount,
-      args: [rawInstructionId, validPortfolioIds[0], bigNumberToU32(totalLegAmount, context)],
-    });
+    };
   }
-
-  return instruction;
+  return {
+    transaction: settlementTx.rejectInstruction,
+    resolver: instruction,
+    feeMultiplier: totalLegAmount,
+    args: [rawInstructionId, validPortfolioIds[0], bigNumberToU32(totalLegAmount, context)],
+  };
 }
 
 /**

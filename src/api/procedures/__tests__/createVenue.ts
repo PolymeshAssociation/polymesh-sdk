@@ -5,7 +5,7 @@ import { VenueType as MeshVenueType } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { createCreateVenueResolver, prepareCreateVenue } from '~/api/procedures/createVenue';
-import { Context, CreateVenueParams, PostTransactionValue, Venue } from '~/internal';
+import { Context, CreateVenueParams, Venue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { VenueType } from '~/types';
@@ -17,9 +17,7 @@ describe('createVenue procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToBytes: sinon.SinonStub<[string, Context], Bytes>;
   let venueTypeToMeshVenueTypeStub: sinon.SinonStub<[VenueType, Context], MeshVenueType>;
-  let addTransactionStub: sinon.SinonStub;
   let createVenueTransaction: PolymeshTx<unknown[]>;
-  let venue: PostTransactionValue<Venue>;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
@@ -27,12 +25,10 @@ describe('createVenue procedure', () => {
     dsMockUtils.initMocks();
     stringToBytes = sinon.stub(utilsConversionModule, 'stringToBytes');
     venueTypeToMeshVenueTypeStub = sinon.stub(utilsConversionModule, 'venueTypeToMeshVenueType');
-    venue = 'venue' as unknown as PostTransactionValue<Venue>;
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    addTransactionStub = procedureMockUtils.getAddTransactionStub().returns([venue]);
     createVenueTransaction = dsMockUtils.createTxStub('settlement', 'createVenue');
   });
 
@@ -47,7 +43,7 @@ describe('createVenue procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should add a createVenue transaction to the queue', async () => {
+  it('should return a createVenue transaction spec', async () => {
     const description = 'description';
     const type = VenueType.Distribution;
     const args = {
@@ -64,15 +60,11 @@ describe('createVenue procedure', () => {
 
     const result = await prepareCreateVenue.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction: createVenueTransaction,
-        resolvers: sinon.match.array,
-        args: [rawDetails, [], rawType],
-      })
-    );
-    expect(result).toBe(venue);
+    expect(result).toEqual({
+      transaction: createVenueTransaction,
+      args: [rawDetails, [], rawType],
+      resolver: expect.any(Function),
+    });
   });
 });
 

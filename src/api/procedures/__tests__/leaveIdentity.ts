@@ -1,5 +1,3 @@
-import sinon from 'sinon';
-
 import { prepareLeaveIdentity } from '~/api/procedures/leaveIdentity';
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -69,9 +67,8 @@ describe('leaveIdentity procedure', () => {
     expect(error.message).toBe('Only secondary Accounts are allowed to leave an Identity');
   });
 
-  it('should add a leave Identity as Account transaction to the queue', async () => {
+  it('should return a leave Identity as Account transaction spec', async () => {
     const address = 'someAddress';
-    const addTransactionStub = procedureMockUtils.getAddTransactionStub();
     const leaveIdentityAsKeyTransaction = dsMockUtils.createTxStub(
       'identity',
       'leaveIdentityAsKey'
@@ -91,8 +88,8 @@ describe('leaveIdentity procedure', () => {
 
     const proc = procedureMockUtils.getInstance<void, void>(mockContext);
 
-    await prepareLeaveIdentity.call(proc);
+    const result = await prepareLeaveIdentity.call(proc);
 
-    sinon.assert.calledWith(addTransactionStub, { transaction: leaveIdentityAsKeyTransaction });
+    expect(result).toEqual({ transaction: leaveIdentityAsKeyTransaction, resolver: undefined });
   });
 });

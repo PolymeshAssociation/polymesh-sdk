@@ -9,7 +9,7 @@ import {
   Params,
   prepareCreateCheckpoint,
 } from '~/api/procedures/createCheckpoint';
-import { Checkpoint, Context, PostTransactionValue } from '~/internal';
+import { Checkpoint, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { TxTags } from '~/types';
@@ -30,7 +30,6 @@ describe('createCheckpoint procedure', () => {
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let ticker: string;
   let rawTicker: Ticker;
-  let checkpoint: PostTransactionValue<Checkpoint>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -39,13 +38,9 @@ describe('createCheckpoint procedure', () => {
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    checkpoint = 'checkpoint' as unknown as PostTransactionValue<Checkpoint>;
   });
 
-  let addTransactionStub: sinon.SinonStub;
-
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub().returns([checkpoint]);
     mockContext = dsMockUtils.getContextInstance();
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
   });
@@ -61,7 +56,7 @@ describe('createCheckpoint procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should add a create checkpoint transaction to the queue', async () => {
+  it('should return a create checkpoint transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, Checkpoint>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('checkpoint', 'createCheckpoint');
@@ -70,12 +65,7 @@ describe('createCheckpoint procedure', () => {
       ticker,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({ transaction, resolvers: sinon.match.array, args: [rawTicker] })
-    );
-
-    expect(result).toBe(checkpoint);
+    expect(result).toEqual({ transaction, resolver: expect.any(Function), args: [rawTicker] });
   });
 
   describe('createCheckpointResolver', () => {

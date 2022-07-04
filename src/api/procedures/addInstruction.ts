@@ -18,7 +18,7 @@ import {
   Procedure,
 } from '~/internal';
 import { ErrorCode, InstructionType, PortfolioLike, RoleType, SettlementTx, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { MAX_LEGS_LENGTH } from '~/utils/constants';
 import {
@@ -275,7 +275,12 @@ async function getTxArgsAndErrors(
 export async function prepareAddInstruction(
   this: Procedure<Params, Instruction[], Storage>,
   args: Params
-): Promise<PostTransactionValue<Instruction[]>> {
+  /*
+   * we use `unknown[][]` here because it's impossible to type this without knowing
+   * how many transactions will be in the batch beforehand. Type safety is ensured via
+   * the `assembleBatchTransactions` method
+   */
+): Promise<BatchTransactionSpec<Instruction[], unknown[][]>> {
   const {
     context: {
       polymeshApi: {
@@ -362,12 +367,10 @@ export async function prepareAddInstruction(
     )
   );
 
-  const [resultInstructions] = this.addBatchTransaction({
+  return {
     transactions,
-    resolvers: [createAddInstructionResolver(context)],
-  });
-
-  return resultInstructions;
+    resolver: createAddInstructionResolver(context),
+  };
 }
 
 /**

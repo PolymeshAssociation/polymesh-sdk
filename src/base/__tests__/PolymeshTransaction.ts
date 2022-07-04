@@ -38,6 +38,7 @@ describe('Polymesh Transaction class', () => {
           ...txSpec,
           transaction,
           args,
+          resolver: undefined,
         },
         context
       );
@@ -53,10 +54,11 @@ describe('Polymesh Transaction class', () => {
 
       const transaction = dsMockUtils.createTxStub('identity', 'leaveIdentityAsKey');
 
-      const tx = new PolymeshTransaction<[]>(
+      const tx = new PolymeshTransaction<void, void, []>(
         {
           ...txSpec,
           transaction,
+          resolver: undefined,
         },
         context
       );

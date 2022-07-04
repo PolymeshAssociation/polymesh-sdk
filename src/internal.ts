@@ -144,7 +144,6 @@ export { Instruction } from '~/api/entities/Instruction';
 export { Portfolio } from '~/api/entities/Portfolio';
 export { DefaultPortfolio } from '~/api/entities/DefaultPortfolio';
 export { NumberedPortfolio } from '~/api/entities/NumberedPortfolio';
-export { TransactionQueue } from '~/base/TransactionQueue';
 export { Checkpoint } from '~/api/entities/Checkpoint';
 export { CheckpointSchedule } from '~/api/entities/CheckpointSchedule';
 export { PermissionGroup } from '~/api/entities/PermissionGroup';
@@ -182,10 +181,6 @@ export {
   removeCorporateAction,
   RemoveCorporateActionParams,
 } from '~/api/procedures/removeCorporateAction';
-export {
-  modifyDistributionCheckpoint,
-  ModifyDistributionCheckpointParams,
-} from '~/api/procedures/modifyDistributionCheckpoint';
 export { reclaimDividendDistributionFunds } from '~/api/procedures/reclaimDividendDistributionFunds';
 export {
   transferTickerOwnership,

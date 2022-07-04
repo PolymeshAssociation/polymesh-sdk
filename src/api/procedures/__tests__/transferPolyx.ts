@@ -112,7 +112,7 @@ describe('transferPolyx procedure', () => {
     ).rejects.toThrow('The receiver Identity has an invalid CDD claim');
   });
 
-  it('should add a balance transfer transaction to the queue', async () => {
+  it('should return a balance transfer transaction spec', async () => {
     const to = entityMockUtils.getAccountInstance({ address: 'someAccount' });
     const amount = new BigNumber(99);
     const memo = 'someMessage';
@@ -131,27 +131,29 @@ describe('transferPolyx procedure', () => {
     let tx = dsMockUtils.createTxStub('balances', 'transfer');
     const proc = procedureMockUtils.getInstance<TransferPolyxParams, void>(mockContext);
 
-    await prepareTransferPolyx.call(proc, {
+    let result = await prepareTransferPolyx.call(proc, {
       to,
       amount,
     });
 
-    sinon.assert.calledWith(procedureMockUtils.getAddTransactionStub(), {
+    expect(result).toEqual({
       transaction: tx,
       args: [rawAccount, rawAmount],
+      resolver: undefined,
     });
 
     tx = dsMockUtils.createTxStub('balances', 'transferWithMemo');
 
-    await prepareTransferPolyx.call(proc, {
+    result = await prepareTransferPolyx.call(proc, {
       to,
       amount,
       memo,
     });
 
-    sinon.assert.calledWith(procedureMockUtils.getAddTransactionStub(), {
+    expect(result).toEqual({
       transaction: tx,
       args: [rawAccount, rawAmount, rawMemo],
+      resolver: undefined,
     });
   });
 

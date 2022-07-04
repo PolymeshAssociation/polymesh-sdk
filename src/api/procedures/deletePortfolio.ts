@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RoleType, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { bigNumberToU64, portfolioLikeToPortfolio } from '~/utils/conversion';
 
 export interface DeletePortfolioParams {
@@ -16,7 +16,7 @@ export interface DeletePortfolioParams {
 export async function prepareDeletePortfolio(
   this: Procedure<DeletePortfolioParams>,
   args: DeletePortfolioParams
-): Promise<void> {
+): Promise<TransactionSpec<void, ExtrinsicParams<'portfolio', 'deletePortfolio'>>> {
   const {
     context: {
       polymeshApi: {
@@ -50,10 +50,11 @@ export async function prepareDeletePortfolio(
     });
   }
 
-  this.addTransaction({
+  return {
     transaction: portfolio.deletePortfolio,
     args: [rawPortfolioNumber],
-  });
+    resolver: undefined,
+  };
 }
 
 /**

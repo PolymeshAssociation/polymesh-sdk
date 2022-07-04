@@ -172,8 +172,6 @@ describe('createAsset procedure', () => {
     ];
   });
 
-  let addBatchTransactionStub: sinon.SinonStub;
-
   let createAssetTransaction: PolymeshTx<
     [
       AssetName,
@@ -188,8 +186,6 @@ describe('createAsset procedure', () => {
   >;
 
   beforeEach(() => {
-    addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
-
     dsMockUtils.createQueryStub('asset', 'tickerConfig', {
       returnValue: dsMockUtils.createMockTickerRegistrationConfig(),
     });
@@ -272,15 +268,15 @@ describe('createAsset procedure', () => {
     );
   });
 
-  it('should add an Asset creation transaction to the queue', async () => {
+  it('should add an Asset creation transaction to the batch', async () => {
     const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
       customTypeData: null,
       status: TickerReservationStatus.Reserved,
     });
 
-    const result = await prepareCreateAsset.call(proc, args);
+    let result = await prepareCreateAsset.call(proc, args);
 
-    sinon.assert.calledWith(addBatchTransactionStub.firstCall, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: createAssetTransaction,
@@ -296,10 +292,10 @@ describe('createAsset procedure', () => {
         },
       ],
       fee: undefined,
+      resolver: expect.objectContaining({ ticker }),
     });
-    expect(result).toMatchObject(expect.objectContaining({ ticker }));
 
-    await prepareCreateAsset.call(proc, {
+    result = await prepareCreateAsset.call(proc, {
       ...args,
       initialSupply: new BigNumber(0),
       securityIdentifiers: undefined,
@@ -307,7 +303,7 @@ describe('createAsset procedure', () => {
       requireInvestorUniqueness: false,
     });
 
-    sinon.assert.calledWith(addBatchTransactionStub.secondCall, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: createAssetTransaction,
@@ -315,13 +311,14 @@ describe('createAsset procedure', () => {
         },
       ],
       fee: undefined,
+      resolver: expect.objectContaining({ ticker }),
     });
 
     const issueTransaction = dsMockUtils.createTxStub('asset', 'issue');
 
-    await prepareCreateAsset.call(proc, { ...args, initialSupply });
+    result = await prepareCreateAsset.call(proc, { ...args, initialSupply });
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: createAssetTransaction,
@@ -341,10 +338,11 @@ describe('createAsset procedure', () => {
         },
       ],
       fee: undefined,
+      resolver: expect.objectContaining({ ticker }),
     });
   });
 
-  it('should add an Asset creation transaction to the queue when reservationRequired is false', async () => {
+  it('should add an Asset creation transaction to the batch when reservationRequired is false', async () => {
     let proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
       customTypeData: null,
       status: TickerReservationStatus.Reserved,
@@ -355,7 +353,7 @@ describe('createAsset procedure', () => {
       reservationRequired: false,
     });
 
-    sinon.assert.calledWith(addBatchTransactionStub.firstCall, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: createAssetTransaction,
@@ -371,8 +369,8 @@ describe('createAsset procedure', () => {
         },
       ],
       fee: undefined,
+      resolver: expect.objectContaining({ ticker }),
     });
-    expect(result).toEqual(expect.objectContaining({ ticker }));
 
     proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
       customTypeData: null,
@@ -384,7 +382,7 @@ describe('createAsset procedure', () => {
       reservationRequired: false,
     });
 
-    sinon.assert.calledWith(addBatchTransactionStub.secondCall, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: createAssetTransaction,
@@ -400,8 +398,8 @@ describe('createAsset procedure', () => {
         },
       ],
       fee: protocolFees[0].plus(protocolFees[1]),
+      resolver: expect.objectContaining({ ticker }),
     });
-    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   it('should waive protocol fees if the token was created in Ethereum', async () => {
@@ -420,7 +418,7 @@ describe('createAsset procedure', () => {
 
     const result = await prepareCreateAsset.call(proc, args);
 
-    sinon.assert.calledWith(addBatchTransactionStub.firstCall, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: createAssetTransaction,
@@ -436,11 +434,11 @@ describe('createAsset procedure', () => {
         },
       ],
       fee: new BigNumber(0),
+      resolver: expect.objectContaining({ ticker }),
     });
-    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
-  it('should add a document add transaction to the queue', async () => {
+  it('should add a document add transaction to the batch', async () => {
     const rawValue = dsMockUtils.createMockBytes('something');
     const rawTypeId = dsMockUtils.createMockU32(new BigNumber(10));
     const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
@@ -460,7 +458,7 @@ describe('createAsset procedure', () => {
       reservationRequired: false,
     });
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: createAssetTx,
@@ -481,12 +479,11 @@ describe('createAsset procedure', () => {
         },
       ],
       fee: protocolFees[0].plus(protocolFees[1]).plus(protocolFees[3]),
+      resolver: expect.objectContaining({ ticker }),
     });
-
-    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
-  it('should add a create asset with custom type transaction to the queue', async () => {
+  it('should add a create asset with custom type transaction to the batch', async () => {
     const rawValue = dsMockUtils.createMockBytes('something');
     const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
       customTypeData: {
@@ -502,27 +499,23 @@ describe('createAsset procedure', () => {
 
     const result = await prepareCreateAsset.call(proc, args);
 
-    sinon.assert.calledWith(
-      addBatchTransactionStub,
-      sinon.match({
-        transactions: [
-          {
-            transaction: createAssetWithCustomTypeTx,
-            args: [
-              rawName,
-              rawTicker,
-              rawIsDivisible,
-              rawValue,
-              rawIdentifiers,
-              rawFundingRound,
-              rawDisableIu,
-            ],
-          },
-        ],
-      })
-    );
-
-    expect(result).toEqual(expect.objectContaining({ ticker }));
+    expect(result).toEqual({
+      transactions: [
+        {
+          transaction: createAssetWithCustomTypeTx,
+          args: [
+            rawName,
+            rawTicker,
+            rawIsDivisible,
+            rawValue,
+            rawIdentifiers,
+            rawFundingRound,
+            rawDisableIu,
+          ],
+        },
+      ],
+      resolver: expect.objectContaining({ ticker }),
+    });
   });
 
   describe('getAuthorization', () => {

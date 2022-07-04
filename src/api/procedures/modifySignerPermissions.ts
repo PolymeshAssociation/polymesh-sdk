@@ -1,7 +1,7 @@
 import { assertSecondaryAccounts } from '~/api/procedures/utils';
 import { Identity, Procedure } from '~/internal';
 import { PermissionedAccount, PermissionsLike, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { BatchTransactionSpec, ExtrinsicParams, ProcedureAuthorization } from '~/types/internal';
 import { Modify, tuple } from '~/types/utils';
 import {
   permissionsLikeToPermissions,
@@ -30,7 +30,7 @@ export interface Storage {
 export async function prepareModifySignerPermissions(
   this: Procedure<ModifySignerPermissionsParams, void, Storage>,
   args: ModifySignerPermissionsParams
-): Promise<void> {
+): Promise<BatchTransactionSpec<void, ExtrinsicParams<'identity', 'setPermissionToSigner'>[]>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -58,12 +58,13 @@ export async function prepareModifySignerPermissions(
 
   const transaction = tx.identity.setPermissionToSigner;
 
-  this.addBatchTransaction({
+  return {
     transactions: signersList.map(params => ({
       transaction,
       args: params,
     })),
-  });
+    resolver: undefined,
+  };
 }
 
 /**

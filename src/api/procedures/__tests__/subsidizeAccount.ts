@@ -16,7 +16,6 @@ jest.mock(
 
 describe('subsidizeAccount procedure', () => {
   let mockContext: Mocked<Context>;
-  let addTransactionStub: sinon.SinonStub;
 
   let signerToStringStub: sinon.SinonStub<[string | Identity | Account], string>;
   let stringToAccountIdStub: sinon.SinonStub<[string, Context], AccountId>;
@@ -41,7 +40,6 @@ describe('subsidizeAccount procedure', () => {
   });
 
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
     args = { beneficiary: address, allowance };
     beneficiary = entityMockUtils.getAccountInstance({ address });
@@ -100,7 +98,7 @@ describe('subsidizeAccount procedure', () => {
     );
   });
 
-  it('should add an add authorization transaction to the queue', async () => {
+  it('should return an add authorization transaction spec', async () => {
     const mockBeneficiary = entityMockUtils.getAccountInstance({ address: 'mockAddress' });
     const issuer = entityMockUtils.getIdentityInstance();
     const subsidizer = entityMockUtils.getAccountInstance();
@@ -166,15 +164,12 @@ describe('subsidizeAccount procedure', () => {
 
     const transaction = dsMockUtils.createTxStub('relayer', 'setPayingKey');
 
-    await prepareSubsidizeAccount.call(proc, { ...args, beneficiary });
+    const result = await prepareSubsidizeAccount.call(proc, { ...args, beneficiary });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction,
-        resolvers: sinon.match.array,
-        args: [rawBeneficiaryAccount, rawAllowance],
-      })
-    );
+    expect(result).toEqual({
+      transaction,
+      args: [rawBeneficiaryAccount, rawAllowance],
+      resolver: expect.any(Function),
+    });
   });
 });

@@ -1,11 +1,5 @@
 import { createAuthorizationResolver } from '~/api/procedures/utils';
-import {
-  Account,
-  AuthorizationRequest,
-  PolymeshError,
-  PostTransactionValue,
-  Procedure,
-} from '~/internal';
+import { Account, AuthorizationRequest, PolymeshError, Procedure } from '~/internal';
 import {
   Authorization,
   AuthorizationType,
@@ -16,6 +10,7 @@ import {
   SignerType,
   TxTags,
 } from '~/types';
+import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
   dateToMoment,
@@ -37,7 +32,7 @@ export interface InviteAccountParams {
 export async function prepareInviteAccount(
   this: Procedure<InviteAccountParams, AuthorizationRequest>,
   args: InviteAccountParams
-): Promise<PostTransactionValue<AuthorizationRequest>> {
+): Promise<TransactionSpec<AuthorizationRequest, ExtrinsicParams<'identity', 'addAuthorization'>>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -113,13 +108,11 @@ export async function prepareInviteAccount(
   const rawAuthorizationData = authorizationToAuthorizationData(authRequest, context);
   const rawExpiry = optionize(dateToMoment)(expiry, context);
 
-  const [auth] = this.addTransaction({
+  return {
     transaction: tx.identity.addAuthorization,
-    resolvers: [createAuthorizationResolver(authRequest, identity, account, expiry, context)],
     args: [rawSignatory, rawAuthorizationData, rawExpiry],
-  });
-
-  return auth;
+    resolver: createAuthorizationResolver(authRequest, identity, account, expiry, context),
+  };
 }
 
 /**

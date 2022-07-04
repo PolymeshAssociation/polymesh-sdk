@@ -289,6 +289,8 @@ export class Network {
         context.getProtocolFees({ tags: [txTag], blockHash }),
       ]);
 
+      const gas = balanceToBigNumber(partialFee);
+
       return {
         blockNumber: new BigNumber(blockNumber),
         blockHash,
@@ -302,8 +304,9 @@ export class Network {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         extrinsicHash: extrinsicHash!,
         fee: {
-          gas: balanceToBigNumber(partialFee),
+          gas,
           protocol: protocolFees,
+          total: gas.plus(protocolFees),
         },
       };
     }

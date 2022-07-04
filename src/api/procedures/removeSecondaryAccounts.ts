@@ -4,6 +4,7 @@ import { find } from 'lodash';
 import { assertSecondaryAccounts } from '~/api/procedures/utils';
 import { PolymeshError, Procedure } from '~/internal';
 import { Account, ErrorCode, TxTags } from '~/types';
+import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
 import { stringToAccountId } from '~/utils/conversion';
 
 export interface RemoveSecondaryAccountsParams {
@@ -16,7 +17,7 @@ export interface RemoveSecondaryAccountsParams {
 export async function prepareRemoveSecondaryAccounts(
   this: Procedure<RemoveSecondaryAccountsParams>,
   args: RemoveSecondaryAccountsParams
-): Promise<void> {
+): Promise<TransactionSpec<void, ExtrinsicParams<'identity', 'removeSecondaryKeys'>>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -44,11 +45,12 @@ export async function prepareRemoveSecondaryAccounts(
 
   assertSecondaryAccounts(accounts, secondaryAccounts);
 
-  this.addTransaction({
+  return {
     transaction: tx.identity.removeSecondaryKeys,
     feeMultiplier: new BigNumber(accounts.length),
     args: [accounts.map(({ address }) => stringToAccountId(address, context))],
-  });
+    resolver: undefined,
+  };
 }
 
 /**

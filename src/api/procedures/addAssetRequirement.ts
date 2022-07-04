@@ -4,7 +4,7 @@ import { flatten, map } from 'lodash';
 import { assertRequirementsNotTooComplex } from '~/api/procedures/utils';
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, InputCondition, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { requirementToComplianceRequirement, stringToTicker } from '~/utils/conversion';
 import { conditionsAreEqual, hasSameElements } from '~/utils/internal';
 
@@ -30,7 +30,9 @@ export type Params = AddAssetRequirementParams & {
 export async function prepareAddAssetRequirement(
   this: Procedure<Params, Asset>,
   args: Params
-): Promise<Asset> {
+): Promise<
+  TransactionSpec<Asset, ExtrinsicParams<'complianceManager', 'addComplianceRequirement'>>
+> {
   const {
     context: {
       polymeshApi: { tx },
@@ -72,12 +74,11 @@ export async function prepareAddAssetRequirement(
     context
   );
 
-  this.addTransaction({
+  return {
     transaction: tx.complianceManager.addComplianceRequirement,
     args: [rawTicker, senderConditions, receiverConditions],
-  });
-
-  return asset;
+    resolver: asset,
+  };
 }
 
 /**

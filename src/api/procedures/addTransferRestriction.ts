@@ -13,7 +13,7 @@ import {
   TransferRestrictionType,
   TxTags,
 } from '~/types';
-import { ProcedureAuthorization, StatisticsOpType } from '~/types/internal';
+import { BatchTransactionSpec, ProcedureAuthorization, StatisticsOpType } from '~/types/internal';
 import {
   bigNumberToU128,
   createStat2ndKey,
@@ -61,7 +61,12 @@ export interface Storage {
 export async function prepareAddTransferRestriction(
   this: Procedure<AddTransferRestrictionParams, BigNumber, Storage>,
   args: AddTransferRestrictionParams
-): Promise<BigNumber> {
+  /*
+   * we use `unknown[][]` here because it's very complex to type this without knowing
+   * how many transactions will be in the batch beforehand. Type safety is ensured via
+   * the `checkTxType` method
+   */
+): Promise<BatchTransactionSpec<BigNumber, unknown[][]>> {
   const {
     context: {
       polymeshApi: {
@@ -183,8 +188,7 @@ export async function prepareAddTransferRestriction(
     })
   );
 
-  this.addBatchTransaction({ transactions });
-  return restrictionAmount.plus(1);
+  return { transactions, resolver: restrictionAmount.plus(1) };
 }
 
 /**

@@ -3,7 +3,6 @@ import {
   AuthorizationRequest,
   Identity,
   PolymeshError,
-  PostTransactionValue,
   Procedure,
   TickerReservation,
 } from '~/internal';
@@ -16,7 +15,7 @@ import {
   TickerReservationStatus,
   TxTags,
 } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
   dateToMoment,
@@ -44,7 +43,7 @@ export type Params = { ticker: string } & TransferTickerOwnershipParams;
 export async function prepareTransferTickerOwnership(
   this: Procedure<Params, AuthorizationRequest>,
   args: Params
-): Promise<PostTransactionValue<AuthorizationRequest>> {
+): Promise<TransactionSpec<AuthorizationRequest, ExtrinsicParams<'identity', 'addAuthorization'>>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -77,13 +76,11 @@ export async function prepareTransferTickerOwnership(
   const rawAuthorizationData = authorizationToAuthorizationData(authReq, context);
   const rawExpiry = optionize(dateToMoment)(expiry, context);
 
-  const [auth] = this.addTransaction({
+  return {
     transaction: tx.identity.addAuthorization,
-    resolvers: [createAuthorizationResolver(authReq, issuer, targetIdentity, expiry, context)],
     args: [rawSignatory, rawAuthorizationData, rawExpiry],
-  });
-
-  return auth;
+    resolver: createAuthorizationResolver(authReq, issuer, targetIdentity, expiry, context),
+  };
 }
 
 /**

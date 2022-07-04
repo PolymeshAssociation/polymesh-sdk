@@ -89,14 +89,10 @@ describe('setAssetDocuments procedure', () => {
     };
   });
 
-  let addBatchTransactionStub: sinon.SinonStub;
-
   let removeDocumentsTransaction: PolymeshTx<[Vec<DocumentId>, Ticker]>;
   let addDocumentsTransaction: PolymeshTx<[Vec<Document>, Ticker]>;
 
   beforeEach(() => {
-    addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
-
     dsMockUtils.createQueryStub('asset', 'assetDocuments', {
       entries: [documentEntries[0]],
     });
@@ -134,7 +130,7 @@ describe('setAssetDocuments procedure', () => {
     );
   });
 
-  it('should add a remove documents transaction and an add documents transaction to the queue', async () => {
+  it('should add a remove documents transaction and an add documents transaction to the batch', async () => {
     const docIds = [documentEntries[0][0][1]];
     const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
       currentDocIds: docIds,
@@ -143,7 +139,7 @@ describe('setAssetDocuments procedure', () => {
 
     const result = await prepareSetAssetDocuments.call(proc, args);
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: removeDocumentsTransaction,
@@ -156,8 +152,8 @@ describe('setAssetDocuments procedure', () => {
           args: [rawDocuments, rawTicker],
         },
       ],
+      resolver: expect.objectContaining({ ticker }),
     });
-    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   it('should not add a remove documents transaction if there are no documents linked to the Asset', async () => {
@@ -168,7 +164,7 @@ describe('setAssetDocuments procedure', () => {
 
     const result = await prepareSetAssetDocuments.call(proc, args);
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: addDocumentsTransaction,
@@ -176,8 +172,8 @@ describe('setAssetDocuments procedure', () => {
           args: [rawDocuments, rawTicker],
         },
       ],
+      resolver: expect.objectContaining({ ticker }),
     });
-    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   it('should not add an add documents transaction if there are no documents passed as arguments', async () => {
@@ -189,7 +185,7 @@ describe('setAssetDocuments procedure', () => {
 
     const result = await prepareSetAssetDocuments.call(proc, { ...args, documents: [] });
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: removeDocumentsTransaction,
@@ -197,8 +193,8 @@ describe('setAssetDocuments procedure', () => {
           args: [docIds, rawTicker],
         },
       ],
+      resolver: expect.objectContaining({ ticker }),
     });
-    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   describe('getAuthorization', () => {

@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { Asset, DefaultPortfolio, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, PortfolioLike, RoleType, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   bigNumberToBalance,
   portfolioIdToMeshPortfolioId,
@@ -37,7 +37,7 @@ export type Params = { ticker: string } & ControllerTransferParams;
 export async function prepareControllerTransfer(
   this: Procedure<Params, void, Storage>,
   args: Params
-): Promise<void> {
+): Promise<TransactionSpec<void, ExtrinsicParams<'asset', 'controllerTransfer'>>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -72,14 +72,15 @@ export async function prepareControllerTransfer(
     });
   }
 
-  this.addTransaction({
+  return {
     transaction: tx.asset.controllerTransfer,
     args: [
       stringToTicker(ticker, context),
       bigNumberToBalance(amount, context),
       portfolioIdToMeshPortfolioId(originPortfolioId, context),
     ],
-  });
+    resolver: undefined,
+  };
 }
 
 /**

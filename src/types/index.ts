@@ -25,9 +25,8 @@ import {
   KnownPermissionGroup,
   NumberedPortfolio,
   Offering,
-  TransactionQueue,
 } from '~/internal';
-import { PortfolioId, TickerKey } from '~/types/internal';
+import { GenericPolymeshTransaction, PortfolioId, TickerKey } from '~/types/internal';
 import { Modify } from '~/types/utils';
 
 export * from '~/generated/types';
@@ -54,7 +53,7 @@ export enum TransactionStatus {
    */
   Succeeded = 'Succeeded',
   /**
-   * the transaction's execution failed due to a revert
+   * the transaction's execution failed due to a revert, insufficient balance for fees, or other, unknown reasons
    */
   Failed = 'Failed',
   /**
@@ -62,28 +61,6 @@ export enum TransactionStatus {
    * see https://github.com/paritytech/substrate/blob/master/primitives/transaction-pool/src/pool.rs#L58-L110
    */
   Aborted = 'Aborted',
-}
-
-export enum TransactionQueueStatus {
-  /**
-   * the queue is prepped to run
-   */
-  Idle = 'Idle',
-  /**
-   * transactions in the queue are being executed
-   */
-  Running = 'Running',
-  /**
-   * a critical transaction's execution failed.
-   * This might mean the transaction was rejected,
-   * failed due to a revert or never entered a block
-   */
-  Failed = 'Failed',
-  /**
-   * the queue finished running all of its transactions. Non-critical transactions
-   * might still have failed
-   */
-  Succeeded = 'Succeeded',
 }
 
 // Roles
@@ -708,6 +685,10 @@ export interface Fees {
    * regular network fee
    */
   gas: BigNumber;
+  /**
+   * sum of the protocol and gas fees
+   */
+  total: BigNumber;
 }
 
 /**
@@ -724,59 +705,50 @@ export enum PayingAccountType {
    *   and cannot have any funds to pay for it by definition)
    */
   Other = 'Other',
+  /**
+   * the caller Account is responsible of paying the fees
+   */
+  Caller = 'Caller',
 }
 
 /**
- * Represents a relationship in which a third party Account
- *   is paying for a transaction on behalf of the caller
+ * Data representing the Account responsible for paying fees for a transaction
  */
-export interface PayingAccount {
-  type: PayingAccountType;
-  /**
-   * Account that pays for the transaction
-   */
-  account: Account;
-  /**
-   * total amount that will be paid for
-   */
-  allowance: BigNumber | null;
-}
+export type PayingAccount =
+  | {
+      type: PayingAccountType.Subsidy;
+      /**
+       * Account that pays for the transaction
+       */
+      account: Account;
+      /**
+       * total amount that can be paid for
+       */
+      allowance: BigNumber;
+    }
+  | {
+      type: PayingAccountType.Caller | PayingAccountType.Other;
+      account: Account;
+    };
 
 /**
- * Breakdown of the fees that will be paid by a specific third party in a Transaction Queue
+ * Breakdown of the fees that will be paid by a specific Account for a transaction, along
+ *   with data associated to the Paying account
  */
-export interface ThirdPartyFees extends PayingAccount {
+export interface PayingAccountFees {
   /**
-   * fees that will be paid by the third party Account
+   * fees that will be paid by the Account
    */
   fees: Fees;
   /**
-   * free balance of the third party Account
+   * data related to the Account responsible of paying for the transaction
    */
-  balance: BigNumber;
-}
-
-/**
- * Breakdown of transaction fees for a Transaction Queue. In most cases, the entirety of the Queue's fees
- *   will be paid by either the signing Account or a third party. In some rare cases,
- *   fees can be split between them (for example, if the signing Account is being subsidized, but one of the
- *   transactions in the queue terminates the subsidy, leaving the signing Account with the responsibility of
- *   paying for the rest of the transactions)
- */
-export interface FeesBreakdown {
-  /**
-   * fees that will be paid by third parties. Each element in the array represents
-   *   a different third party Account, their corresponding fees, allowances and balance
-   */
-  thirdPartyFees: ThirdPartyFees[];
-  /**
-   * fees that must be paid by the caller Account
-   */
-  accountFees: Fees;
-  /**
-   * free balance of the caller Account
-   */
-  accountBalance: BigNumber;
+  payingAccountData: PayingAccount & {
+    /**
+     * free balance of the Account
+     */
+    balance: BigNumber;
+  };
 }
 
 export enum SignerType {
@@ -1347,7 +1319,7 @@ export interface ProcedureMethod<
   ReturnValue = ProcedureReturnValue
 > {
   (args: MethodArgs, opts?: ProcedureOpts): Promise<
-    TransactionQueue<ProcedureReturnValue, ReturnValue>
+    GenericPolymeshTransaction<ProcedureReturnValue, ReturnValue>
   >;
   checkAuthorization: (
     args: MethodArgs,
@@ -1356,7 +1328,9 @@ export interface ProcedureMethod<
 }
 
 export interface NoArgsProcedureMethod<ProcedureReturnValue, ReturnValue = ProcedureReturnValue> {
-  (opts?: ProcedureOpts): Promise<TransactionQueue<ProcedureReturnValue, ReturnValue>>;
+  (opts?: ProcedureOpts): Promise<
+    Promise<GenericPolymeshTransaction<ProcedureReturnValue, ReturnValue>>
+  >;
   checkAuthorization: (opts?: ProcedureOpts) => Promise<ProcedureAuthorizationStatus>;
 }
 

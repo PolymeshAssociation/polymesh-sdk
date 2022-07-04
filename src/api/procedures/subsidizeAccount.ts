@@ -1,19 +1,14 @@
 import BigNumber from 'bignumber.js';
 
 import { createAuthorizationResolver } from '~/api/procedures/utils';
-import {
-  Account,
-  AuthorizationRequest,
-  PolymeshError,
-  PostTransactionValue,
-  Procedure,
-} from '~/internal';
+import { Account, AuthorizationRequest, PolymeshError, Procedure } from '~/internal';
 import {
   AddRelayerPayingKeyAuthorizationData,
   AuthorizationType,
   ErrorCode,
   TxTags,
 } from '~/types';
+import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
 import { bigNumberToBalance, signerToString, stringToAccountId } from '~/utils/conversion';
 
 export interface SubsidizeAccountParams {
@@ -33,7 +28,7 @@ export interface SubsidizeAccountParams {
 export async function prepareSubsidizeAccount(
   this: Procedure<SubsidizeAccountParams, AuthorizationRequest>,
   args: SubsidizeAccountParams
-): Promise<PostTransactionValue<AuthorizationRequest>> {
+): Promise<TransactionSpec<AuthorizationRequest, ExtrinsicParams<'relayer', 'setPayingKey'>>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -89,13 +84,11 @@ export async function prepareSubsidizeAccount(
     },
   };
 
-  const [auth] = this.addTransaction({
+  return {
     transaction: tx.relayer.setPayingKey,
-    resolvers: [createAuthorizationResolver(authRequest, identity, account, null, context)],
+    resolver: createAuthorizationResolver(authRequest, identity, account, null, context),
     args: [rawBeneficiary, rawAllowance],
-  });
-
-  return auth;
+  };
 }
 
 /**

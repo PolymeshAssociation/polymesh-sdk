@@ -32,7 +32,6 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
   let ticker: string;
   let rawTicker: Ticker;
   let target: string;
-  let addTransactionStub: sinon.SinonStub;
   let rawSignatory: Signatory;
   let rawAuthorizationData: PolymeshPrimitivesAuthorizationAuthorizationData;
 
@@ -63,7 +62,6 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
     authorizationToAuthorizationDataStub.returns(rawAuthorizationData);
     signerToStringStub.returns(target);
     signerValueToSignatoryStub.returns(rawSignatory);
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
   });
 
   afterEach(() => {
@@ -136,7 +134,7 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
     );
   });
 
-  it('should add a add authorization transaction to the queue', async () => {
+  it('should return a add authorization transaction spec', async () => {
     const args = {
       target,
       ticker,
@@ -157,11 +155,12 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
     const transaction = dsMockUtils.createTxStub('identity', 'addAuthorization');
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await prepareModifyPrimaryIssuanceAgent.call(proc, args);
+    let result = await prepareModifyPrimaryIssuanceAgent.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction,
       args: [rawSignatory, rawAuthorizationData, null],
+      resolver: undefined,
     });
 
     entityMockUtils.configureMocks({
@@ -172,21 +171,23 @@ describe('modifyPrimaryIssuanceAgent procedure', () => {
       },
     });
 
-    await prepareModifyPrimaryIssuanceAgent.call(proc, args);
+    result = await prepareModifyPrimaryIssuanceAgent.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction,
       args: [rawSignatory, rawAuthorizationData, null],
+      resolver: undefined,
     });
 
-    await prepareModifyPrimaryIssuanceAgent.call(proc, {
+    result = await prepareModifyPrimaryIssuanceAgent.call(proc, {
       ...args,
       requestExpiry,
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction,
       args: [rawSignatory, rawAuthorizationData, rawExpiry],
+      resolver: undefined,
     });
   });
 

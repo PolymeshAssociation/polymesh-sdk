@@ -5,7 +5,7 @@ import {
   ConfigureDividendDistributionParams,
   DividendDistribution,
   Namespace,
-  TransactionQueue,
+  PolymeshTransaction,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -62,23 +62,24 @@ describe('Distributions class', () => {
       sinon.restore();
     });
 
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const context = dsMockUtils.getContextInstance();
       const asset = entityMockUtils.getAssetInstance();
       const distributions = new Distributions(asset, context);
 
       const args = { foo: 'bar' } as unknown as ConfigureDividendDistributionParams;
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<DividendDistribution>;
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<DividendDistribution>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args: { ticker: asset.ticker, ...args }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await distributions.configureDividendDistribution(args);
+      const tx = await distributions.configureDividendDistribution(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 

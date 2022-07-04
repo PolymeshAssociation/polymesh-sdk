@@ -3,7 +3,12 @@ import BigNumber from 'bignumber.js';
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import { DefaultPortfolio, NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, PortfolioMovement, RoleType, TxTags } from '~/types';
-import { PortfolioId, ProcedureAuthorization } from '~/types/internal';
+import {
+  ExtrinsicParams,
+  PortfolioId,
+  ProcedureAuthorization,
+  TransactionSpec,
+} from '~/types/internal';
 import {
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolioId,
@@ -32,7 +37,10 @@ export type Params = MoveFundsParams & {
 /**
  * @hidden
  */
-export async function prepareMoveFunds(this: Procedure<Params, void>, args: Params): Promise<void> {
+export async function prepareMoveFunds(
+  this: Procedure<Params, void>,
+  args: Params
+): Promise<TransactionSpec<void, ExtrinsicParams<'portfolio', 'movePortfolioFunds'>>> {
   const {
     context: {
       polymeshApi: {
@@ -114,10 +122,11 @@ export async function prepareMoveFunds(this: Procedure<Params, void>, args: Para
     portfolioMovementToMovePortfolioItem(item, context)
   );
 
-  this.addTransaction({
+  return {
     transaction: portfolio.movePortfolioFunds,
     args: [rawFrom, rawTo, rawMovePortfolioItems],
-  });
+    resolver: undefined,
+  };
 }
 
 /**

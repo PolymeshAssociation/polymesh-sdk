@@ -102,19 +102,17 @@ describe('deletePortfolio procedure', () => {
     ).rejects.toThrow("The Portfolio doesn't exist");
   });
 
-  it('should add a delete portfolio transaction to the queue', async () => {
+  it('should return a delete portfolio transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<DeletePortfolioParams, void>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('portfolio', 'deletePortfolio');
 
-    await prepareDeletePortfolio.call(proc, {
+    let result = await prepareDeletePortfolio.call(proc, {
       id,
       did,
     });
 
-    let addTransactionStub = procedureMockUtils.getAddTransactionStub();
-
-    sinon.assert.calledWith(addTransactionStub, { transaction, args: [portfolioNumber] });
+    expect(result).toEqual({ transaction, args: [portfolioNumber] });
 
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
@@ -122,14 +120,12 @@ describe('deletePortfolio procedure', () => {
       },
     });
 
-    await prepareDeletePortfolio.call(proc, {
+    result = await prepareDeletePortfolio.call(proc, {
       id,
       did,
     });
 
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
-
-    sinon.assert.calledWith(addTransactionStub, { transaction, args: [portfolioNumber] });
+    expect(result).toEqual({ transaction, args: [portfolioNumber] });
   });
 
   describe('getAuthorization', () => {

@@ -8,7 +8,7 @@ import { didsWithClaims } from '~/middleware/queries';
 import { Claim as MiddlewareClaim, Query } from '~/middleware/types';
 import { Claim as MeshClaim } from '~/polkadot/polymesh';
 import { CddClaim, Claim, ClaimTarget, ClaimType, ErrorCode, RoleType, TxTags } from '~/types';
-import { ClaimOperation, ProcedureAuthorization } from '~/types/internal';
+import { BatchTransactionSpec, ClaimOperation, ProcedureAuthorization } from '~/types/internal';
 import { Ensured, tuple } from '~/types/utils';
 import { DEFAULT_CDD_ID } from '~/utils/constants';
 import {
@@ -153,7 +153,12 @@ const findInvalidCddClaims = async (
 export async function prepareModifyClaims(
   this: Procedure<ModifyClaimsParams, void>,
   args: ModifyClaimsParams
-): Promise<void> {
+  /*
+   * we use `unknown[][]` here because it's impossible to type this without knowing
+   * how many transactions will be in the batch beforehand. Type safety is ensured via
+   * the `assembleBatchTransactions` method
+   */
+): Promise<BatchTransactionSpec<void, unknown[][]>> {
   const { claims, operation } = args;
 
   const {
@@ -259,9 +264,7 @@ export async function prepareModifyClaims(
       })
     );
 
-    this.addBatchTransaction({ transactions });
-
-    return;
+    return { transactions, resolver: undefined };
   }
 
   if (operation === ClaimOperation.Add) {
@@ -285,7 +288,7 @@ export async function prepareModifyClaims(
     })
   );
 
-  this.addBatchTransaction({ transactions: txs });
+  return { transactions: txs, resolver: undefined };
 }
 
 /**

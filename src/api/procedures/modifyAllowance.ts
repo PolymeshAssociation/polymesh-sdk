@@ -2,7 +2,12 @@ import BigNumber from 'bignumber.js';
 
 import { PolymeshError, Procedure, Subsidy } from '~/internal';
 import { ErrorCode, TxTags } from '~/types';
-import { AllowanceOperation, ProcedureAuthorization } from '~/types/internal';
+import {
+  AllowanceOperation,
+  ExtrinsicParams,
+  ProcedureAuthorization,
+  TransactionSpec,
+} from '~/types/internal';
 import { bigNumberToBalance, stringToAccountId } from '~/utils/conversion';
 
 export interface IncreaseAllowanceParams {
@@ -43,7 +48,10 @@ export type ModifyAllowanceParams = (
 export async function prepareModifyAllowance(
   this: Procedure<ModifyAllowanceParams, void>,
   args: ModifyAllowanceParams
-): Promise<void> {
+): Promise<
+  | TransactionSpec<void, ExtrinsicParams<'relayer', 'updatePolyxLimit'>>
+  | TransactionSpec<void, ExtrinsicParams<'relayer', 'decreasePolyxLimit'>>
+> {
   const {
     context: {
       polymeshApi: { tx },
@@ -97,10 +105,11 @@ export async function prepareModifyAllowance(
     transaction = tx.relayer.decreasePolyxLimit;
   }
 
-  this.addTransaction({
+  return {
     transaction,
     args: [rawBeneficiaryAccount, rawAllowance],
-  });
+    resolver: undefined,
+  };
 }
 
 /**

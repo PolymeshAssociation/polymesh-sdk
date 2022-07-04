@@ -26,7 +26,6 @@ import {
   Identity,
   PolymeshError,
   PostTransactionValue,
-  TransactionQueue,
 } from '~/internal';
 import { Scope as MiddlewareScope } from '~/middleware/types';
 import {
@@ -54,6 +53,7 @@ import {
 import {
   Events,
   Falsyable,
+  GenericPolymeshTransaction,
   MapMaybePostTransactionValue,
   MapTxWithArgs,
   MaybePostTransactionValue,
@@ -515,7 +515,7 @@ export function createProcedureMethod<
   if (voidArgs) {
     const voidMethod = (
       opts: ProcedureOpts = {}
-    ): Promise<TransactionQueue<ProcedureReturnValue, ReturnValue>> => {
+    ): Promise<GenericPolymeshTransaction<ProcedureReturnValue, ReturnValue>> => {
       const [proc, procArgs] = getProcedureAndArgs();
       return proc().prepare({ args: procArgs, transformer }, context, opts);
     };
@@ -534,7 +534,7 @@ export function createProcedureMethod<
   const method = (
     methodArgs: MethodArgs,
     opts: ProcedureOpts = {}
-  ): Promise<TransactionQueue<ProcedureReturnValue, ReturnValue>> => {
+  ): Promise<GenericPolymeshTransaction<ProcedureReturnValue, ReturnValue>> => {
     const [proc, procArgs] = getProcedureAndArgs(methodArgs);
     return proc().prepare({ args: procArgs, transformer }, context, opts);
   };
@@ -838,7 +838,6 @@ type MapTxAndArgsArray<Args extends unknown[][]> = {
   [K in keyof Args]: Args[K] extends unknown[] ? TxAndArgsArray<Args[K]> : never;
 };
 
-// * TODO @monitz87: delete this function when we eliminate `addBatchTransaction`
 /**
  * @hidden
  */
@@ -852,10 +851,11 @@ function mapArgs<Args extends unknown[] | []>({
   })) as unknown as MapTxWithArgs<Args[]>;
 }
 
-// * TODO @monitz87: delete this function when we eliminate `addBatchTransaction`
 /**
  * Assemble the `transactions` array that has to be passed to `addBatchTransaction` from a set of parameter arrays with their
  *   respective transaction
+ *
+ * @note This method ensures type safety for batches with a variable amount of transactions
  */
 export function assembleBatchTransactions<ArgsArray extends unknown[][]>(
   txsAndArgs: MapTxAndArgsArray<ArgsArray>

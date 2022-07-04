@@ -3,18 +3,14 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
-import {
-  Asset,
-  Context,
-  Identity,
-  Offering,
-  PolymeshError,
-  PostTransactionValue,
-  Procedure,
-  Venue,
-} from '~/internal';
+import { Asset, Context, Identity, Offering, PolymeshError, Procedure, Venue } from '~/internal';
 import { ErrorCode, OfferingTier, PortfolioLike, RoleType, TxTags, VenueType } from '~/types';
-import { PortfolioId, ProcedureAuthorization } from '~/types/internal';
+import {
+  ExtrinsicParams,
+  PortfolioId,
+  ProcedureAuthorization,
+  TransactionSpec,
+} from '~/types/internal';
 import {
   bigNumberToBalance,
   bigNumberToU64,
@@ -105,7 +101,7 @@ export const createOfferingResolver =
 export async function prepareLaunchOffering(
   this: Procedure<Params, Offering, Storage>,
   args: Params
-): Promise<PostTransactionValue<Offering>> {
+): Promise<TransactionSpec<Offering, ExtrinsicParams<'sto', 'createFundraiser'>>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -170,9 +166,8 @@ export async function prepareLaunchOffering(
     });
   }
 
-  const [offering] = this.addTransaction({
+  return {
     transaction: tx.sto.createFundraiser,
-    resolvers: [createOfferingResolver(ticker, context)],
     args: [
       portfolioIdToMeshPortfolioId(offeringPortfolioId, context),
       stringToTicker(ticker, context),
@@ -185,9 +180,8 @@ export async function prepareLaunchOffering(
       bigNumberToBalance(minInvestment, context),
       stringToBytes(name, context),
     ],
-  });
-
-  return offering;
+    resolver: createOfferingResolver(ticker, context),
+  };
 }
 
 /**

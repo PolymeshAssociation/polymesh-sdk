@@ -357,13 +357,19 @@ export function isIdentityRole(role: Role): role is IdentityRole {
 /**
  * Return whether value is a PolymeshTransaction
  */
-export function isPolymeshTransaction(value: unknown): value is PolymeshTransaction {
+export function isPolymeshTransaction<ReturnValue, TransformedReturnValue, Args extends unknown[]>(
+  value: unknown
+): value is PolymeshTransaction<ReturnValue, TransformedReturnValue, Args> {
   return value instanceof PolymeshTransaction;
 }
 
 /**
  * Return whether value is a PolymeshTransactionBatch
  */
-export function isPolymeshTransactionBatch(value: unknown): value is PolymeshTransactionBatch {
+export function isPolymeshTransactionBatch<
+  ReturnValue,
+  TransformedReturnValue,
+  Args extends unknown[][]
+>(value: unknown): value is PolymeshTransactionBatch<ReturnValue, TransformedReturnValue, Args> {
   return value instanceof PolymeshTransactionBatch;
 }

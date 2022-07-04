@@ -2,25 +2,45 @@ import { SubmittableExtrinsic } from '@polkadot/api/types';
 import { DispatchError, EventRecord } from '@polkadot/types/interfaces';
 import { ISubmittableResult, RegistryError, Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
+import P from 'bluebird';
 import { EventEmitter } from 'events';
+import { range } from 'lodash';
 
-import { Context, Identity, PolymeshError } from '~/internal';
-import { ErrorCode, Fees, PayingAccount, PayingAccountType, TransactionStatus } from '~/types';
-import { BaseTransactionSpec, PostTransactionValueArray } from '~/types/internal';
+import { Context, Identity, PolymeshError, PostTransactionValue } from '~/internal';
+import { latestProcessedBlock } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
+import {
+  ErrorCode,
+  PayingAccount,
+  PayingAccountFees,
+  PayingAccountType,
+  TransactionStatus,
+} from '~/types';
+import {
+  BaseTransactionSpec,
+  isResolverFunction,
+  MaybePostTransactionValue,
+  TransactionSigningData,
+} from '~/types/internal';
+import { Ensured } from '~/types/utils';
 import { balanceToBigNumber, hashToString, u32ToBigNumber } from '~/utils/conversion';
-import { defusePromise } from '~/utils/internal';
+import { defusePromise, delay } from '~/utils/internal';
 
 /**
  * @hidden
  */
 enum Event {
   StatusChange = 'StatusChange',
+  ProcessedByMiddleware = 'ProcessedByMiddleware',
 }
 
 /**
  * Wrapper class for a Polymesh Transaction
  */
-export abstract class PolymeshTransactionBase<Values extends unknown[] = unknown[]> {
+export abstract class PolymeshTransactionBase<
+  ReturnValue = void,
+  TransformedReturnValue = ReturnValue
+> {
   /**
    * current status of the transaction
    */
@@ -57,11 +77,6 @@ export abstract class PolymeshTransactionBase<Values extends unknown[] = unknown
   public blockNumber?: BigNumber;
 
   /**
-   * whether this transaction failing makes the entire transaction queue fail or not
-   */
-  public isCritical: boolean;
-
-  /**
    * @hidden
    *
    * Identity that will pay for this transaction's fees. This value overrides any subsidy,
@@ -72,17 +87,16 @@ export abstract class PolymeshTransactionBase<Values extends unknown[] = unknown
   /**
    * @hidden
    *
-   * wrappers for values that will exist after this transaction has executed
+   * wrapper for a value that will exist after this transaction has executed
    */
-  protected postValues: PostTransactionValueArray<Values> =
-    [] as unknown as PostTransactionValueArray<Values>;
+  protected returnValue: MaybePostTransactionValue<ReturnValue>;
 
   /**
    * @hidden
    *
    * internal event emitter to handle status changes
    */
-  protected emitter: EventEmitter;
+  protected emitter = new EventEmitter();
 
   /**
    * @hidden
@@ -107,39 +121,91 @@ export abstract class PolymeshTransactionBase<Values extends unknown[] = unknown
    */
   protected protocolFee?: BigNumber;
 
+  /**
+   * @hidden
+   *
+   * function that transforms the return value to another type. Useful when using the same
+   *   Procedure for different endpoints which are supposed to return different values
+   */
+  protected transformer: (
+    result: ReturnValue
+  ) => Promise<TransformedReturnValue> | TransformedReturnValue;
+
   protected context: Context;
 
   /**
    * @hidden
+   * whether the queue has run or not (prevents re-running)
    */
-  constructor(transactionSpec: BaseTransactionSpec<Values>, context: Context) {
-    const { postTransactionValues, signingAddress, signer, isCritical, fee, paidForBy } =
-      transactionSpec;
+  private hasRun = false;
 
-    if (postTransactionValues) {
-      this.postValues = postTransactionValues;
+  /**
+   * @hidden
+   */
+  constructor(
+    transactionSpec: BaseTransactionSpec<ReturnValue, TransformedReturnValue> &
+      TransactionSigningData,
+    context: Context
+  ) {
+    const {
+      resolver,
+      transformer = async (val): Promise<TransformedReturnValue> =>
+        val as unknown as TransformedReturnValue,
+      signingAddress,
+      signer,
+      fee,
+      paidForBy,
+    } = transactionSpec;
+
+    if (isResolverFunction(resolver)) {
+      this.returnValue = new PostTransactionValue(resolver);
+    } else {
+      this.returnValue = resolver;
     }
 
-    this.emitter = new EventEmitter();
     this.signingAddress = signingAddress;
     this.signer = signer;
-    this.isCritical = isCritical;
     this.protocolFee = fee;
     this.context = context;
     this.paidForBy = paidForBy;
+    this.transformer = transformer;
   }
 
   /**
-   * Run the transaction and update its status
+   * Run the transaction, update its status and return a result if applicable.
+   *   Certain transactions create Entities on the blockchain, and those Entities are returned
+   *   for convenience. For example, when running a transaction that creates an Asset, the Asset itself
+   *   is returned
    */
-  public async run(): Promise<void> {
+  public async run(): Promise<TransformedReturnValue> {
+    if (this.hasRun) {
+      throw new PolymeshError({
+        code: ErrorCode.General,
+        message: 'Cannot re-run a Transaction',
+      });
+    }
+
     try {
+      await this.assertFeesCovered();
+
       const receipt = await this.internalRun();
       this.receipt = receipt;
 
-      await Promise.all(this.postValues.map(postValue => postValue.run(receipt)));
+      const { returnValue } = this;
+
+      let value: ReturnValue;
+
+      if (returnValue instanceof PostTransactionValue) {
+        await returnValue.run(receipt);
+
+        value = returnValue.value;
+      } else {
+        value = returnValue;
+      }
 
       this.updateStatus(TransactionStatus.Succeeded);
+
+      return this.transformer(value);
     } catch (err) {
       const error: PolymeshError = err;
 
@@ -163,6 +229,9 @@ export abstract class PolymeshTransactionBase<Values extends unknown[] = unknown
       }
 
       throw error;
+    } finally {
+      this.hasRun = true;
+      await this.emitWhenMiddlewareIsSynced();
     }
   }
 
@@ -284,7 +353,7 @@ export abstract class PolymeshTransactionBase<Values extends unknown[] = unknown
    *
    * @returns unsubscribe function
    */
-  public onStatusChange(listener: (transaction: this) => void): () => void {
+  public onStatusChange(listener: (transaction: PolymeshTransactionBase) => void): () => void {
     this.emitter.on(Event.StatusChange, listener);
 
     return (): void => {
@@ -293,67 +362,16 @@ export abstract class PolymeshTransactionBase<Values extends unknown[] = unknown
   }
 
   /**
-   * Retrieve the Account that would pay fees for the transaction if it was run at this moment, as well as the total amount that can be
-   *   charged to it (allowance). A null allowance means that there is no limit to that amount
+   * Retrieve a breakdown of the fees required to run this transaction, as well as the Account responsible for paying them
    *
-   * A null return value signifies that the caller Account would pay the fees
-   *
-   * @note this value might change if, before running the transaction, the caller Account enters (or leaves)
-   *   a subsidizer relationship
+   * @note these values might change if the transaction is run at a later time. This can be due to a governance vote or other
+   *   chain related factors (like modifications to a specific subsidizer relationship or a chain upgrade)
    */
-  public async getPayingAccount(): Promise<PayingAccount | null> {
-    const { paidForBy, context } = this;
-
-    if (this.ignoresSubsidy()) {
-      return null;
-    }
-
-    if (paidForBy) {
-      const { account: primaryAccount } = await paidForBy.getPrimaryAccount();
-
-      return {
-        type: PayingAccountType.Other,
-        account: primaryAccount,
-        allowance: null,
-      };
-    }
-
-    const subsidyWithAllowance = await context.accountSubsidy();
-
-    if (!subsidyWithAllowance) {
-      return null;
-    }
-
-    const {
-      subsidy: { subsidizer: account },
-      allowance,
-    } = subsidyWithAllowance;
-
-    return {
-      type: PayingAccountType.Subsidy,
-      account,
-      allowance,
-    };
-  }
-
-  /**
-   * Get all (protocol and gas) fees associated with this transaction. Returns null
-   * if the transaction is not ready yet (this can happen if it depends on the execution of a
-   * previous transaction in the queue)
-   *
-   * @note this value might change if the transaction is run at a later time. This can be due to a governance vote
-   */
-  public async getFees(): Promise<Fees | null> {
+  public async getFees(): Promise<PayingAccountFees> {
     const { signingAddress } = this;
     let { protocolFee: protocol } = this;
 
-    let composedTx;
-
-    try {
-      composedTx = this.composeTx();
-    } catch (err) {
-      return null;
-    }
+    const composedTx = this.composeTx();
 
     const paymentInfoPromise = composedTx.paymentInfo(signingAddress);
 
@@ -361,12 +379,115 @@ export abstract class PolymeshTransactionBase<Values extends unknown[] = unknown
       protocol = await this.getProtocolFees();
     }
 
-    const { partialFee } = await paymentInfoPromise;
+    const [payingAccount, { partialFee }] = await Promise.all([
+      this.getPayingAccount(),
+      paymentInfoPromise,
+    ]);
+
+    const { free: balance } = await payingAccount.account.getBalance();
+    const gas = balanceToBigNumber(partialFee);
 
     return {
-      protocol,
-      gas: balanceToBigNumber(partialFee),
+      fees: {
+        protocol,
+        gas,
+        total: protocol.plus(gas),
+      },
+      payingAccountData: {
+        ...payingAccount,
+        balance,
+      },
     };
+  }
+
+  /**
+   * Subscribe to the results of this transaction being processed by the indexing service (and as such, available to the middleware)
+   *
+   * @param listener - callback function that will be called whenever the middleware is updated with the latest data.
+   *   If there is an error (timeout or middleware offline) it will be passed to this callback
+   *
+   * @note this event will be fired even if the queue fails
+   * @returns unsubscribe function
+   * @throws if the middleware wasn't enabled when instantiating the SDK client
+   */
+  public onProcessedByMiddleware(listener: (err?: PolymeshError) => void): () => void {
+    if (!this.context.isMiddlewareEnabled()) {
+      throw new PolymeshError({
+        code: ErrorCode.General,
+        message: 'Cannot subscribe without an enabled middleware connection',
+      });
+    }
+
+    this.emitter.on(Event.ProcessedByMiddleware, listener);
+
+    return (): void => {
+      this.emitter.removeListener(Event.ProcessedByMiddleware, listener);
+    };
+  }
+
+  /**
+   * Poll the middleware every 2 seconds to see if it has already processed the
+   *   block that reflects the changes brought on by this transaction being run. If so,
+   *   emit the corresponding event. After 5 retries (or if the middleware can't be reached),
+   *   the event is emitted with an error
+   *
+   * @note uses the middleware
+   */
+  private async emitWhenMiddlewareIsSynced(): Promise<void> {
+    const { context } = this;
+
+    if (!context.isMiddlewareEnabled()) {
+      return;
+    }
+
+    const blockNumber = await context.getLatestBlock();
+
+    let done = false;
+
+    /*
+     * We do not await this promise because it is supposed to run in the background, and
+     * any errors encountered are emitted. If the user isn't listening, they shouldn't
+     * care about middleware (or other) errors anyway
+     */
+    P.each(range(6), async i => {
+      if (done) {
+        return;
+      }
+
+      try {
+        const {
+          data: {
+            latestBlock: { id: processedBlock },
+          },
+        } = await context.queryMiddleware<Ensured<Query, 'latestBlock'>>(latestProcessedBlock());
+
+        if (blockNumber.lte(processedBlock)) {
+          done = true;
+          this.emitter.emit(Event.ProcessedByMiddleware);
+          return;
+        }
+      } catch (err) {}
+
+      if (i === 5) {
+        this.emitter.emit(
+          Event.ProcessedByMiddleware,
+          new PolymeshError({ code: ErrorCode.MiddlewareError, message: 'Timed out' })
+        );
+      }
+
+      return delay(2000);
+    }).catch(
+      /* istanbul ignore next: very hard to test, extreme edge case */
+      err => {
+        this.emitter.emit(
+          Event.ProcessedByMiddleware,
+          new PolymeshError({
+            code: ErrorCode.UnexpectedError,
+            message: err.message || 'Unexpected error',
+          })
+        );
+      }
+    );
   }
 
   /**
@@ -408,6 +529,7 @@ export abstract class PolymeshTransactionBase<Values extends unknown[] = unknown
    */
   protected abstract composeTx(): SubmittableExtrinsic<'promise', ISubmittableResult>;
 
+  /* istanbul ignore next: there is no way of reaching this path currently */
   /**
    * @hidden
    *
@@ -467,5 +589,104 @@ export abstract class PolymeshTransactionBase<Values extends unknown[] = unknown
     receipt: ISubmittableResult
   ): void {
     resolve(receipt);
+  }
+
+  /**
+   * @hidden
+   *
+   * Check if balances and allowances (both third party and signing Account)
+   *   are sufficient to cover this transaction's fees
+   */
+  private async assertFeesCovered(): Promise<void> {
+    const {
+      fees: { total },
+      payingAccountData,
+    } = await this.getFees();
+
+    const { type, balance } = payingAccountData;
+
+    if (type === PayingAccountType.Subsidy) {
+      const { allowance } = payingAccountData;
+      if (!this.supportsSubsidy()) {
+        throw new PolymeshError({
+          code: ErrorCode.UnmetPrerequisite,
+          message: 'This transaction cannot be run by a subsidized Account',
+        });
+      }
+
+      if (allowance.lt(total)) {
+        throw new PolymeshError({
+          code: ErrorCode.UnmetPrerequisite,
+          message:
+            "The subsidizer Account has not granted the caller Account enough allowance to pay this transaction's fees",
+          data: {
+            allowance,
+            fees: total,
+          },
+        });
+      }
+    }
+
+    const accountDescriptions = {
+      [PayingAccountType.Caller]: 'caller',
+      [PayingAccountType.Other]: 'paying third party',
+      [PayingAccountType.Subsidy]: 'subsidizer',
+    };
+
+    if (balance.lt(total)) {
+      throw new PolymeshError({
+        code: ErrorCode.InsufficientBalance,
+        message: `The ${accountDescriptions[type]} Account does not have enough POLYX balance to pay this transaction's fees`,
+        data: {
+          balance,
+          fees: total,
+        },
+      });
+    }
+  }
+
+  /**
+   * @hidden
+   *
+   * Retrieve the Account that would pay fees for the transaction if it was run at this moment, as well as the total amount that can be
+   *   charged to it (allowance) in case of a subsidy
+   *
+   * @note this value might change if, before running the transaction, the caller Account enters (or leaves)
+   *   a subsidizer relationship. A governance vote or chain upgrade could also cause the value to change between the time
+   *   this method is called and the time the transaction is run
+   */
+  private async getPayingAccount(): Promise<PayingAccount> {
+    const { paidForBy, context } = this;
+
+    if (paidForBy) {
+      const { account: primaryAccount } = await paidForBy.getPrimaryAccount();
+
+      return {
+        type: PayingAccountType.Other,
+        account: primaryAccount,
+      };
+    }
+
+    const subsidyWithAllowance = await context.accountSubsidy();
+
+    if (!subsidyWithAllowance || this.ignoresSubsidy()) {
+      const caller = context.getSigningAccount();
+
+      return {
+        account: caller,
+        type: PayingAccountType.Caller,
+      };
+    }
+
+    const {
+      subsidy: { subsidizer: account },
+      allowance,
+    } = subsidyWithAllowance;
+
+    return {
+      type: PayingAccountType.Subsidy,
+      account,
+      allowance,
+    };
   }
 }

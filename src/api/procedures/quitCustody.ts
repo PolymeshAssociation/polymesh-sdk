@@ -1,7 +1,12 @@
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import { DefaultPortfolio, NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RoleType, TxTags } from '~/types';
-import { PortfolioId, ProcedureAuthorization } from '~/types/internal';
+import {
+  ExtrinsicParams,
+  PortfolioId,
+  ProcedureAuthorization,
+  TransactionSpec,
+} from '~/types/internal';
 import { portfolioIdToMeshPortfolioId, portfolioLikeToPortfolioId } from '~/utils/conversion';
 
 /**
@@ -21,7 +26,7 @@ export interface Storage {
 export async function prepareQuitCustody(
   this: Procedure<Params, void, Storage>,
   args: Params
-): Promise<void> {
+): Promise<TransactionSpec<void, ExtrinsicParams<'portfolio', 'quitPortfolioCustody'>>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -45,10 +50,11 @@ export async function prepareQuitCustody(
 
   const rawPortfolioId = portfolioIdToMeshPortfolioId(portfolioId, context);
 
-  this.addTransaction({
+  return {
     transaction: tx.portfolio.quitPortfolioCustody,
     args: [rawPortfolioId],
-  });
+    resolver: undefined,
+  };
 }
 
 /**

@@ -3,6 +3,7 @@ import { recoverPersonalSignature } from 'eth-sig-util';
 
 import { PolymeshError, Procedure, TickerReservation } from '~/internal';
 import { ErrorCode, TxTags } from '~/types';
+import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
 import { CLASSIC_CLAIM_SIGNATURE_PREFIX, CLASSIC_TICKER_OWNER_DID } from '~/utils/constants';
 import {
   identityIdToString,
@@ -44,7 +45,7 @@ function generateClassicSignableMessage(did: string): string {
 export async function prepareClaimClassicTicker(
   this: Procedure<ClaimClassicTickerParams, TickerReservation>,
   args: ClaimClassicTickerParams
-): Promise<TickerReservation> {
+): Promise<TransactionSpec<TickerReservation, ExtrinsicParams<'asset', 'claimClassicTicker'>>> {
   const {
     context: {
       polymeshApi: {
@@ -121,12 +122,11 @@ export async function prepareClaimClassicTicker(
     });
   }
 
-  this.addTransaction({
+  return {
     transaction: tx.asset.claimClassicTicker,
     args: [rawTicker, stringToEcdsaSignature(ethereumSignature, context)],
-  });
-
-  return new TickerReservation({ ticker }, context);
+    resolver: new TickerReservation({ ticker }, context),
+  };
 }
 
 /**

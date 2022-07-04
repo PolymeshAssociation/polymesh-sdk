@@ -1,7 +1,8 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 
-import { Account, Context, Identity, PostTransactionValue, Procedure } from '~/internal';
+import { Account, Context, Identity, Procedure } from '~/internal';
 import { PermissionedAccount, PermissionsLike, RoleType, TxTags } from '~/types';
+import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
 import { Modify } from '~/types/utils';
 import {
   identityIdToString,
@@ -35,7 +36,7 @@ export const createRegisterIdentityResolver =
 export async function prepareRegisterIdentity(
   this: Procedure<RegisterIdentityParams, Identity>,
   args: RegisterIdentityParams
-): Promise<PostTransactionValue<Identity>> {
+): Promise<TransactionSpec<Identity, ExtrinsicParams<'identity', 'cddRegisterDid'>>> {
   const {
     context: {
       polymeshApi: {
@@ -54,13 +55,11 @@ export async function prepareRegisterIdentity(
     )
   );
 
-  const [newIdentity] = this.addTransaction({
+  return {
     transaction: identity.cddRegisterDid,
-    resolvers: [createRegisterIdentityResolver(context)],
     args: [rawTargetAccount, rawSecondaryKeys],
-  });
-
-  return newIdentity;
+    resolver: createRegisterIdentityResolver(context),
+  };
 }
 
 /**

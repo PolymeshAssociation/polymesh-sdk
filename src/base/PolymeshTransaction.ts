@@ -4,23 +4,26 @@ import BigNumber from 'bignumber.js';
 
 import { Context, PolymeshTransactionBase } from '~/internal';
 import { TxTag, TxTags } from '~/types';
-import { MapMaybePostTransactionValue, PolymeshTx, TransactionSpec } from '~/types/internal';
+import { PolymeshTx, TransactionSigningData, TransactionSpec } from '~/types/internal';
 import { transactionToTxTag } from '~/utils/conversion';
-import { unwrapValues } from '~/utils/internal';
 
 /**
  * Wrapper class for a Polymesh Transaction
  */
 export class PolymeshTransaction<
-  Args extends unknown[] | [] = unknown[],
-  Values extends unknown[] = unknown[]
-> extends PolymeshTransactionBase<Values> {
+  ReturnValue,
+  TransformedReturnValue = ReturnValue,
+  Args extends unknown[] | [] = unknown[]
+> extends PolymeshTransactionBase<ReturnValue, TransformedReturnValue> {
   /**
-   * @hidden
-   *
-   * unwrapped arguments (available right before execution)
+   * arguments for the transaction in polkadot.js Codec format (SCALE)
    */
-  private unwrappedArgs?: Args;
+  public args: Args;
+
+  /**
+   * type of transaction represented by this instance (mostly for display purposes)
+   */
+  public tag: TxTag;
 
   /**
    * @hidden
@@ -40,39 +43,21 @@ export class PolymeshTransaction<
   protected feeMultiplier;
 
   /**
-   * arguments for the transaction. Available after the transaction starts running
-   * (may be Post Transaction Values from a previous transaction in the queue that haven't resolved yet)
-   */
-  public inputArgs: MapMaybePostTransactionValue<Args>;
-
-  /**
-   * type of transaction represented by this instance (mostly for display purposes)
-   */
-  public tag: TxTag;
-
-  /**
    * @hidden
    */
-  constructor(transactionSpec: TransactionSpec<Args, Values>, context: Context) {
+  constructor(
+    transactionSpec: TransactionSpec<ReturnValue, Args, TransformedReturnValue> &
+      TransactionSigningData,
+    context: Context
+  ) {
     const { args = [], feeMultiplier = new BigNumber(1), transaction, ...rest } = transactionSpec;
 
     super(rest, context);
 
-    this.inputArgs = args as unknown as MapMaybePostTransactionValue<Args>;
+    this.args = args as Args;
     this.transaction = transaction;
     this.tag = transactionToTxTag(transaction);
     this.feeMultiplier = feeMultiplier;
-  }
-
-  /**
-   * arguments for the transaction
-   */
-  public get args(): Args {
-    if (!this.unwrappedArgs) {
-      this.unwrappedArgs = unwrapValues(this.inputArgs);
-    }
-
-    return this.unwrappedArgs;
   }
 
   // eslint-disable-next-line require-jsdoc

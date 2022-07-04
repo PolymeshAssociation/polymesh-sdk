@@ -1,6 +1,6 @@
 import { PolymeshError, Procedure, Venue } from '~/internal';
 import { ErrorCode, RoleType, TxTags, VenueType } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import { bigNumberToU64, stringToBytes, venueTypeToMeshVenueType } from '~/utils/conversion';
 import { checkTxType } from '~/utils/internal';
 
@@ -29,7 +29,12 @@ export type Params = { venue: Venue } & ModifyVenueParams;
 export async function prepareModifyVenue(
   this: Procedure<Params, void>,
   args: Params
-): Promise<void> {
+  /*
+   * we use `unknown[][]` here because it's impossible to type this without knowing
+   * how many transactions will be in the batch beforehand. Type safety is ensured via
+   * the `checkTxType` method
+   */
+): Promise<BatchTransactionSpec<void, unknown[][]>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -77,7 +82,7 @@ export async function prepareModifyVenue(
     );
   }
 
-  this.addBatchTransaction({ transactions });
+  return { transactions, resolver: undefined };
 }
 
 /**

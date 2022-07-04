@@ -18,8 +18,8 @@ import {
   CorporateActionBase,
   DefaultPortfolio,
   Identity,
+  modifyCaCheckpoint,
   ModifyCaCheckpointParams,
-  modifyDistributionCheckpoint,
   NumberedPortfolio,
   payDividends,
   PayDividendsParams,
@@ -40,6 +40,7 @@ import {
   ResultSet,
   TargetTreatment,
 } from '~/types';
+import { ProcedureParams } from '~/types/internal';
 import { Ensured, HumanReadableType, Modify, QueryReturnType, tuple } from '~/types/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_DECIMALS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
@@ -163,11 +164,20 @@ export class DividendDistribution extends CorporateActionBase {
       context
     );
 
-    this.modifyCheckpoint = createProcedureMethod(
+    this.modifyCheckpoint = createProcedureMethod<
+      Modify<
+        ModifyCaCheckpointParams,
+        {
+          checkpoint: InputCaCheckpoint;
+        }
+      >,
+      ProcedureParams<typeof modifyCaCheckpoint>,
+      void
+    >(
       {
         getProcedureAndArgs: modifyCheckpointArgs => [
-          modifyDistributionCheckpoint,
-          { distribution: this, ...modifyCheckpointArgs },
+          modifyCaCheckpoint,
+          { corporateAction: this, ...modifyCheckpointArgs },
         ],
       },
       context

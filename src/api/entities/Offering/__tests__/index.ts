@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Context, Entity, Offering, TransactionQueue } from '~/internal';
+import { Context, Entity, Offering, PolymeshTransaction } from '~/internal';
 import { heartbeat, investments } from '~/middleware/queries';
 import { InvestmentResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -91,7 +91,7 @@ describe('Offering class', () => {
   });
 
   describe('method: details', () => {
-    const ticker = 'FAKETICKER';
+    const ticker = 'FAKE_TICKER';
     const id = new BigNumber(1);
     const someDid = 'someDid';
     const name = 'someSto';
@@ -213,7 +213,7 @@ describe('Offering class', () => {
   });
 
   describe('method: close', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
       const offering = new Offering({ id, ticker }, context);
@@ -223,21 +223,21 @@ describe('Offering class', () => {
         id,
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await offering.close();
+      const tx = await offering.close();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: modifyTimes', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
       const offering = new Offering({ id, ticker }, context);
@@ -253,19 +253,19 @@ describe('Offering class', () => {
         end,
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await offering.modifyTimes({
+      const tx = await offering.modifyTimes({
         start,
         end,
       });
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -345,45 +345,45 @@ describe('Offering class', () => {
   });
 
   describe('method: freeze', () => {
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
       const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
       const offering = new Offering({ id, ticker }, context);
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Offering>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Offering>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args: { ticker, id, freeze: true }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await offering.freeze();
+      const tx = await offering.freeze();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: unfreeze', () => {
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
       const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
       const offering = new Offering({ id, ticker }, context);
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Offering>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Offering>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args: { ticker, id, freeze: false }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await offering.unfreeze();
+      const tx = await offering.unfreeze();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: invest', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
       const offering = new Offering({ id, ticker }, context);
@@ -401,20 +401,20 @@ describe('Offering class', () => {
         purchaseAmount,
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await offering.invest({
+      const tx = await offering.invest({
         purchasePortfolio,
         fundingPortfolio,
         purchaseAmount,
       });
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 

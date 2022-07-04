@@ -9,7 +9,7 @@ import {
   Identity,
   Namespace,
   NumberedPortfolio,
-  TransactionQueue,
+  PolymeshTransaction,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -170,24 +170,24 @@ describe('Portfolios class', () => {
   });
 
   describe('method: delete', () => {
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
       const portfolioId = new BigNumber(5);
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args: { id: portfolioId, did }, transformer: undefined }, mockContext)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      let queue = await portfolios.delete({ portfolio: portfolioId });
+      let tx = await portfolios.delete({ portfolio: portfolioId });
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
 
-      queue = await portfolios.delete({
+      tx = await portfolios.delete({
         portfolio: new NumberedPortfolio({ id: portfolioId, did }, mockContext),
       });
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 });
