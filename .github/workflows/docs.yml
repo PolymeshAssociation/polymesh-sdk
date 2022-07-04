@@ -2,9 +2,7 @@ name: Docs
 
 on:
   push:
-    branches: [master, alpha]
-  pull_request:
-    types: [synchronize]
+    branches: [master]
   release:
     types: [released]
 
