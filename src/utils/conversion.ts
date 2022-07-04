@@ -2854,14 +2854,13 @@ export function transferRestrictionToPolymeshTransferCondition(
   let restrictionType;
   let restrictionValue;
 
-  const extractClaimValue = (claim: StatClaimUserInput): bool | MeshCountryCode => {
+  const extractClaimValue = (claim: StatClaimUserInput): bool | MeshCountryCode | null => {
     if (claim.type === ClaimType.Accredited) {
       return booleanToBool(claim.accredited, context);
     } else if (claim.type === ClaimType.Affiliate) {
       return booleanToBool(claim.affiliate, context);
     } else {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      return countryCodeToMeshCountryCode(claim.countryCode!, context); // TODO fix this null assertion
+      return optionize(countryCodeToMeshCountryCode)(claim.countryCode, context);
     }
   };
 

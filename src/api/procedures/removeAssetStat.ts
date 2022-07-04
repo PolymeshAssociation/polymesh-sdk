@@ -61,7 +61,7 @@ export async function prepareRemoveAssetStat(
   const tickerKey = stringToTickerKey(ticker, context);
 
   let op;
-  if (type === StatType.Count || StatType.ScopedCount) {
+  if (type === StatType.Count || type === StatType.ScopedCount) {
     op = statisticsOpTypeToStatOpType(StatisticsOpType.Count, context);
   } else {
     op = statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
