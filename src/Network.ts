@@ -21,7 +21,7 @@ import {
   TxTag,
   UnsubCallback,
 } from '~/types';
-import { Ensured, EnsuredV2, isNotNull } from '~/types/utils';
+import { Ensured, EnsuredV2 } from '~/types/utils';
 import { TREASURY_MODULE_ADDRESS } from '~/utils/constants';
 import {
   balanceToBigNumber,
@@ -322,7 +322,7 @@ export class Network {
     );
 
     if (events.length) {
-      return events.filter(isNotNull).map(({ block, eventIdx }) =>
+      return events.map(({ block, eventIdx }) =>
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         middlewareV2EventDetailsToEventIdentifier(block!, eventIdx)
       );

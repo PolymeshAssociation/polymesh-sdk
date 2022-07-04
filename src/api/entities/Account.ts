@@ -37,7 +37,7 @@ import {
   TxTags,
   UnsubCallback,
 } from '~/types';
-import { Ensured, EnsuredV2, isNotNull } from '~/types/utils';
+import { Ensured, EnsuredV2 } from '~/types/utils';
 import {
   addressToKey,
   extrinsicIdentifierToTxTag,
@@ -526,37 +526,35 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     const count = new BigNumber(totalCount);
 
     /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    const data = transactionList
-      .filter(isNotNull)
-      .map(
-        ({
-          blockId,
-          extrinsicIdx,
-          address: rawAddress,
-          nonce,
-          moduleId: extrinsicModuleId,
-          callId: extrinsicCallId,
-          paramsTxt,
-          success: txSuccess,
-          specVersionId,
-          extrinsicHash,
-          block,
-        }) => ({
-          blockNumber: new BigNumber(blockId),
-          blockHash: block!.hash,
-          extrinsicIdx: new BigNumber(extrinsicIdx),
-          address: rawAddress ? keyToAddress(rawAddress, context) : null,
-          nonce: nonce ? new BigNumber(nonce) : null,
-          txTag: extrinsicIdentifierToTxTag({
-            moduleId: extrinsicModuleId as ModuleIdEnum,
-            callId: extrinsicCallId as CallIdEnum,
-          }),
-          params: JSON.parse(paramsTxt),
-          success: !!txSuccess,
-          specVersionId: new BigNumber(specVersionId),
-          extrinsicHash: extrinsicHash!,
-        })
-      );
+    const data = transactionList.map(
+      ({
+        blockId,
+        extrinsicIdx,
+        address: rawAddress,
+        nonce,
+        moduleId: extrinsicModuleId,
+        callId: extrinsicCallId,
+        paramsTxt,
+        success: txSuccess,
+        specVersionId,
+        extrinsicHash,
+        block,
+      }) => ({
+        blockNumber: new BigNumber(blockId),
+        blockHash: block!.hash,
+        extrinsicIdx: new BigNumber(extrinsicIdx),
+        address: rawAddress ? keyToAddress(rawAddress, context) : null,
+        nonce: nonce ? new BigNumber(nonce) : null,
+        txTag: extrinsicIdentifierToTxTag({
+          moduleId: extrinsicModuleId as ModuleIdEnum,
+          callId: extrinsicCallId as CallIdEnum,
+        }),
+        params: JSON.parse(paramsTxt),
+        success: !!txSuccess,
+        specVersionId: new BigNumber(specVersionId),
+        extrinsicHash: extrinsicHash!,
+      })
+    );
     /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
     const next = calculateNextKey(count, size, start);

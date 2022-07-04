@@ -32,7 +32,7 @@ import {
   TxTag,
   TxTags,
 } from '~/types';
-import { Ensured, EnsuredV2, isNotNull, QueryReturnType } from '~/types/utils';
+import { Ensured, EnsuredV2, QueryReturnType } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
   agentGroupToPermissionGroup,
@@ -521,7 +521,7 @@ export class AssetPermissions extends Namespace<Identity> {
       )
     );
 
-    const data = nodes.filter(isNotNull).map(({ createdBlock, eventIdx }) =>
+    const data = nodes.map(({ createdBlock, eventIdx }) =>
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       middlewareV2EventDetailsToEventIdentifier(createdBlock!, eventIdx)
     );

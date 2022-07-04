@@ -25,7 +25,7 @@ import {
   SubCallback,
   UnsubCallback,
 } from '~/types';
-import { Ensured, EnsuredV2, isNotNull } from '~/types/utils';
+import { Ensured, EnsuredV2 } from '~/types/utils';
 import { bigNumberToU64, fundraiserToOfferingDetails, stringToTicker } from '~/utils/conversion';
 import { calculateNextKey, createProcedureMethod, toHumanReadable } from '~/utils/internal';
 
@@ -287,13 +287,11 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
 
     const count = new BigNumber(totalCount);
 
-    const data = nodes
-      .filter(isNotNull)
-      .map(({ investorId: did, offeringTokenAmount, raiseTokenAmount }) => ({
-        investor: new Identity({ did }, context),
-        soldAmount: new BigNumber(offeringTokenAmount).shiftedBy(-6),
-        investedAmount: new BigNumber(raiseTokenAmount).shiftedBy(-6),
-      }));
+    const data = nodes.map(({ investorId: did, offeringTokenAmount, raiseTokenAmount }) => ({
+      investor: new Identity({ did }, context),
+      soldAmount: new BigNumber(offeringTokenAmount).shiftedBy(-6),
+      investedAmount: new BigNumber(raiseTokenAmount).shiftedBy(-6),
+    }));
 
     const next = calculateNextKey(count, size, start);
 

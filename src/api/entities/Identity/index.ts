@@ -31,7 +31,7 @@ import {
   SubCallback,
   UnsubCallback,
 } from '~/types';
-import { Ensured, EnsuredV2, isNotNull, QueryReturnType, tuple } from '~/types/utils';
+import { Ensured, EnsuredV2, QueryReturnType, tuple } from '~/types/utils';
 import {
   isCddProviderRole,
   isIdentityRole,
@@ -381,9 +381,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const count = new BigNumber(totalCount);
 
-    const data = nodes
-      .filter(isNotNull)
-      .map(({ assetId: ticker }) => new Asset({ ticker }, context));
+    const data = nodes.map(({ assetId: ticker }) => new Asset({ ticker }, context));
 
     const next = calculateNextKey(count, size, start);
 
@@ -460,7 +458,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       trustingAssetsQuery({ issuer: did })
     );
 
-    return nodes.filter(isNotNull).map(({ assetId: ticker }) => new Asset({ ticker }, context));
+    return nodes.map(({ assetId: ticker }) => new Asset({ ticker }, context));
   }
 
   /**

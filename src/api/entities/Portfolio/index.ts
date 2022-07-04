@@ -21,7 +21,7 @@ import { portfolioMovementsQuery, settlementsQuery } from '~/middleware/queriesV
 import { Query, SettlementDirectionEnum, SettlementResultEnum } from '~/middleware/types';
 import { Query as QueryV2 } from '~/middleware/typesV2';
 import { ErrorCode, NoArgsProcedureMethod, ProcedureMethod, ResultSet } from '~/types';
-import { Ensured, EnsuredV2, isNotNull, QueryReturnType } from '~/types/utils';
+import { Ensured, EnsuredV2, QueryReturnType } from '~/types/utils';
 import {
   addressToKey,
   balanceToBigNumber,
@@ -465,7 +465,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     };
 
     /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    settlementsResult.data.legs.nodes.filter(isNotNull).forEach(({ settlement }) => {
+    settlementsResult.data.legs.nodes.forEach(({ settlement }) => {
       const {
         createdBlock,
         result: settlementResult,

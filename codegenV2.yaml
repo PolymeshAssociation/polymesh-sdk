@@ -4,3 +4,5 @@ generates:
   ./src/middleware/typesV2.ts:
     plugins:
       - 'typescript'
+    config:
+      maybeValue: T

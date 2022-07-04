@@ -27,7 +27,7 @@ import {
   ScopeType,
 } from '~/types';
 import { ClaimOperation } from '~/types/internal';
-import { Ensured, EnsuredV2, isNotNull } from '~/types/utils';
+import { Ensured, EnsuredV2 } from '~/types/utils';
 import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 import {
   scopeToMiddlewareScope,
@@ -347,7 +347,7 @@ export class Claims {
       })
     );
 
-    const data = toIdentityWithClaimsArrayV2(nodes.filter(isNotNull), context, 'targetId');
+    const data = toIdentityWithClaimsArrayV2(nodes, context, 'targetId');
     const next = calculateNextKey(count, size, start);
 
     return {
@@ -622,7 +622,7 @@ export class Claims {
         })
       );
 
-      const data = toIdentityWithClaimsArrayV2(nodes.filter(isNotNull), context, 'issuerId');
+      const data = toIdentityWithClaimsArrayV2(nodes, context, 'issuerId');
       const next = calculateNextKey(count, size, start);
 
       return {
