@@ -1221,6 +1221,18 @@ describe('compareTransferRestrictionToInput', () => {
 
     expect(result).toEqual(false);
 
+    result = compareTransferRestrictionToInput(
+      claimCountTransferRestrictionWithMax,
+      {
+        min: new BigNumber(10),
+        claim: { type: ClaimType.Affiliate, affiliate: true },
+        issuer: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
+      },
+      TransferRestrictionType.ClaimCount
+    );
+
+    expect(result).toEqual(false);
+
     const claimOwnershipTransferRestriction = dsMockUtils.createMockTransferCondition({
       ClaimOwnership: [
         dsMockUtils.createMockStatisticsStatClaim({
@@ -1249,7 +1261,7 @@ describe('compareTransferRestrictionToInput', () => {
   });
 });
 
-describe('compareStatTypeToTransferRestrictionTyp', () => {
+describe('compareStatTypeToTransferRestrictionType', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });

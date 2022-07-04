@@ -1223,7 +1223,7 @@ export function compareStatsToInput(
     const [meshType, meshIssuer] = rawStatType.claimIssuer.unwrap();
     const issuerDid = identityIdToString(meshIssuer);
     const statType = meshClaimTypeToClaimType(meshType);
-    if (issuerDid !== issuer?.did) {
+    if (issuerDid !== issuer.did) {
       return false;
     }
 
@@ -1327,7 +1327,17 @@ export function compareTransferRestrictionToInput(
     const min = u64ToBigNumber(rawMin);
     const max = maybeMax.isSome ? u64ToBigNumber(maybeMax.unwrap()) : undefined;
     const castedValue = value as ClaimRestrictionValue;
-    const matchesMax = max ? castedValue.max?.eq(max) : true;
+    let matchesMax;
+    if (max) {
+      if (castedValue.max === undefined) {
+        matchesMax = false;
+      } else {
+        matchesMax = castedValue.max.eq(max);
+      }
+    } else {
+      matchesMax = castedValue.max === undefined;
+    }
+
     return !!(
       castedValue.min.eq(min) &&
       matchesMax &&
