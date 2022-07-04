@@ -1307,6 +1307,19 @@ function getClaimType(statClaim: PolymeshPrimitivesStatisticsStatClaim): ClaimTy
 /**
  * @hidden
  */
+function compareOptionalBigNumbers(a: BigNumber | undefined, b: BigNumber | undefined): boolean {
+  if (a === undefined && b === undefined) {
+    return true;
+  }
+  if (a === undefined || b === undefined) {
+    return false;
+  }
+  return a.eq(b);
+}
+
+/**
+ * @hidden
+ */
 export function compareTransferRestrictionToInput(
   transferRestriction: PolymeshPrimitivesTransferComplianceTransferCondition,
   value: BigNumber | ClaimRestrictionValue,
@@ -1328,18 +1341,9 @@ export function compareTransferRestrictionToInput(
     const max = maybeMax.isSome ? u64ToBigNumber(maybeMax.unwrap()) : undefined;
     const castedValue = value as ClaimRestrictionValue;
 
-    let matchesMax;
-    if (!max && !castedValue.max) {
-      matchesMax = true;
-    } else if (max && castedValue.max?.eq(max)) {
-      matchesMax = true;
-    } else {
-      matchesMax = false;
-    }
-
     return !!(
       castedValue.min.eq(min) &&
-      matchesMax &&
+      compareOptionalBigNumbers(max, castedValue.max) &&
       castedValue.claim.type === getClaimType(statClaim) &&
       issuerDid === castedValue.issuer.did
     );
@@ -1356,7 +1360,7 @@ export function compareTransferRestrictionToInput(
 
     return !!(
       castedValue.min.eq(min) &&
-      castedValue.max?.eq(max) &&
+      compareOptionalBigNumbers(castedValue.max, max) &&
       castedValue.claim.type === getClaimType(statClaim) &&
       issuerDid === castedValue.issuer.did
     );

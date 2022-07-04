@@ -53,11 +53,14 @@ export class ClaimCount extends TransferRestrictionBase<TransferRestrictionType.
   /**
    * Enables investor count statistic for the Asset scope by a claim, which is required before creating restrictions
    *
-   * @note this method requires the current number of holders to be passed in. Currently there is a potential
-   * race condition when passing in count. If a restriction such as limiting the number of investors is needed, then
-   * it is recommended to call this method during the initial configuration of the Asset, before people are trading it.
-   * Other options include checking after setting and retrying if that check isn't right, freezing the Asset, or to
-   * wait for a future version of the chain that will prevent this race condition
+   * The number of investors need to be passed in, as the chain will not calculate the initial value for that stat,
+   * it only increments / decrements the counters as transactions happen.
+   * For `Affiliate` and `Accredited` scoped stats the number of investor who are and are not
+   * need to be given. For `Jurisdiction` the amount of holders for each CountryCode need to be given.
+   *
+   * @note Currently there is a potential race condition when passing in count when the Asset is being traded.
+   * It is recommended to call this method during the initial configuration of the Asset, before people are trading it.
+   * Otherwise the Asset should be frozen, or the stat checked after being set to ensure the correct value is used
    */
   public declare enableStat: ProcedureMethod<Omit<AddClaimCountStatParams, 'type'>, void>;
 
