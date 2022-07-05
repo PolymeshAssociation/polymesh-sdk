@@ -1,7 +1,6 @@
 import BigNumber from 'bignumber.js';
 
 import { AddCountStatParams } from '~/api/procedures/addAssetStat';
-import { RemoveCountStatParams } from '~/api/procedures/removeAssetStat';
 import {
   AddCountTransferRestrictionParams,
   SetCountTransferRestrictionsParams,
@@ -65,11 +64,11 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
 
   /**
    * Disables investor count statistic for the Asset. Since statistics introduce slight overhead to each transaction
-   * involving the Asset, disabling unused stats will reduce gas fees for investors
+   * involving the Asset, disabling unused stats will reduce gas fees for investors when they transaction with the Asset
    *
    * @throws if the stat is being used by a restriction
    */
-  public declare disableStat: ProcedureMethod<Omit<RemoveCountStatParams, 'type'>, void>;
+  public declare disableStat: NoArgsProcedureMethod<void>;
 
   /**
 

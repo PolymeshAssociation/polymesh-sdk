@@ -1,6 +1,5 @@
 import BigNumber from 'bignumber.js';
 
-import { RemoveBalanceStatParams } from '~/api/procedures/removeAssetStat';
 import {
   AddPercentageTransferRestrictionParams,
   SetPercentageTransferRestrictionsParams,
@@ -58,11 +57,11 @@ export class Percentage extends TransferRestrictionBase<TransferRestrictionType.
 
   /**
    * Disables investor balance statistic for the Asset. Since statistics introduce slight overhead to each transaction
-   * involving the Asset, disabling unused stats will reduce gas fees for investors
+   * involving the Asset, disabling unused stats will reduce gas fees for investors when they transact with the Asset
    *
    * @throws if the stat is being used by a restriction
    */
-  public declare disableStat: ProcedureMethod<Omit<RemoveBalanceStatParams, 'type'>, void>;
+  public declare disableStat: NoArgsProcedureMethod<void>;
 
   /**
    * Retrieve all active Percentage Transfer Restrictions

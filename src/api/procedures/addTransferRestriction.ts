@@ -212,7 +212,7 @@ export async function prepareStorage(
   ]);
 
   const neededStat = neededStatTypeForRestrictionInput(type, context);
-  const needStat = !currentStats.has(neededStat);
+  const needStat = ![...currentStats].find(s => neededStat.eq(s));
 
   if (needStat) {
     throw new PolymeshError({

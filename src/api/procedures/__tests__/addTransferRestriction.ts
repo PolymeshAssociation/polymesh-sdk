@@ -89,9 +89,10 @@ describe('addTransferRestriction procedure', () => {
     [StatisticsOpType, Context],
     PolymeshPrimitivesStatisticsStatOpType
   >;
-
+  let statisticsOpTypeToStatTypeStub: sinon.SinonStub;
   let mockStatTypeBtree: BTreeSet<PolymeshPrimitivesStatisticsStatType>;
-  let mockStatTypeBtreeHasStub: sinon.SinonStub;
+  let mockNeededStat: PolymeshPrimitivesStatisticsStatType;
+  let neededStatEqStub: sinon.SinonStub;
   let mockCountBtreeSet: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
   let mockPercentBtree: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
   let mockClaimCountBtree: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
@@ -154,10 +155,15 @@ describe('addTransferRestriction procedure', () => {
       utilsConversionModule,
       'statisticsOpTypeToStatOpType'
     );
+    statisticsOpTypeToStatTypeStub = sinon.stub(
+      utilsConversionModule,
+      'statisticsOpTypeToStatType'
+    );
     stringToScopeIdStub = sinon.stub(utilsConversionModule, 'stringToScopeId');
 
     mockStatTypeBtree = dsMockUtils.createMockBTreeSet([rawStatType]);
-    mockStatTypeBtreeHasStub = mockStatTypeBtree.has as sinon.SinonStub;
+    mockNeededStat = dsMockUtils.createMockStatisticsStatType();
+    neededStatEqStub = mockNeededStat.eq as sinon.SinonStub;
     rawCountOp = dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count);
     rawBalanceOp = dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Balance);
     rawStatType = dsMockUtils.createMockStatisticsStatType();
@@ -224,6 +230,8 @@ describe('addTransferRestriction procedure', () => {
     statisticsOpTypeToStatOpTypeStub
       .withArgs(StatisticsOpType.Balance, mockContext)
       .returns(rawBalanceOp);
+    statisticsOpTypeToStatTypeStub.withArgs({ op: rawCountOp }).returns(mockNeededStat);
+    statisticsOpTypeToStatTypeStub.withArgs({ op: rawBalanceOp }).returns(mockNeededStat);
   });
 
   afterEach(() => {
@@ -590,7 +598,7 @@ describe('addTransferRestriction procedure', () => {
       const proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, BigNumber, Storage>(
         mockContext
       );
-      mockStatTypeBtreeHasStub.returns(true);
+      neededStatEqStub.returns(true);
 
       const boundFunc = prepareStorage.bind(proc);
 
@@ -634,6 +642,7 @@ describe('addTransferRestriction procedure', () => {
         mockContext
       );
       const boundFunc = prepareStorage.bind(proc);
+      neededStatEqStub.returns(false);
 
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
