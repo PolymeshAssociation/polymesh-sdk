@@ -7851,6 +7851,8 @@ describe('sortByClaimType', () => {
       jurisdictionStat,
       nonStat,
       countStat,
+      nonStat,
+      jurisdictionStat,
       countStat,
       affiliateStat,
       countStat,
@@ -7859,6 +7861,8 @@ describe('sortByClaimType', () => {
     expect(result).toEqual([
       affiliateStat,
       jurisdictionStat,
+      jurisdictionStat,
+      nonStat,
       nonStat,
       nonStat,
       countStat,
