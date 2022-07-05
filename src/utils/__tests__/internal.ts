@@ -1,4 +1,8 @@
 import { Bytes } from '@polkadot/types';
+import {
+  PolymeshPrimitivesIdentityClaimClaimType,
+  PolymeshPrimitivesIdentityId,
+} from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { IdentityId } from 'polymesh-types/types';
@@ -36,6 +40,7 @@ import {
 import { StatisticsOpType } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
+import * as utilsConversionModule from '~/utils/conversion';
 
 import {
   assertAddressValid,
@@ -1069,6 +1074,12 @@ describe('neededStatTypeForRestrictionInput', () => {
 
   it('should return a raw StatType based on the given TransferRestrictionType', () => {
     const context = dsMockUtils.getContextInstance();
+    const mockClaimIssuer: [
+      PolymeshPrimitivesIdentityClaimClaimType,
+      PolymeshPrimitivesIdentityId
+    ] = [dsMockUtils.createMockIdentitiesClaimClaimType(), dsMockUtils.createMockIdentityId()];
+
+    sinon.stub(utilsConversionModule, 'claimIssuerToMeshClaimIssuer').returns(mockClaimIssuer);
 
     context.createType
       .withArgs('PolymeshPrimitivesStatisticsStatOpType', StatisticsOpType.Count)
@@ -1083,13 +1094,37 @@ describe('neededStatTypeForRestrictionInput', () => {
     context.createType
       .withArgs('PolymeshPrimitivesStatisticsStatType', { op: 'Balance', claimIssuer: undefined })
       .returns('BalanceStat');
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStatType', {
+        op: 'Balance',
+        claimIssuer: mockClaimIssuer,
+      })
+      .returns('ScopedBalanceStat');
 
-    let result = neededStatTypeForRestrictionInput(TransferRestrictionType.Count, context);
+    let result = neededStatTypeForRestrictionInput(
+      { type: TransferRestrictionType.Count },
+      context
+    );
 
     expect(result).toEqual('CountStat');
 
-    result = neededStatTypeForRestrictionInput(TransferRestrictionType.Percentage, context);
+    result = neededStatTypeForRestrictionInput(
+      { type: TransferRestrictionType.Percentage },
+      context
+    );
     expect(result).toEqual('BalanceStat');
+
+    result = neededStatTypeForRestrictionInput(
+      {
+        type: TransferRestrictionType.ClaimPercentage,
+        claimIssuer: {
+          claimType: ClaimType.Jurisdiction,
+          issuer: entityMockUtils.getIdentityInstance(),
+        },
+      },
+      context
+    );
+    expect(result).toEqual('ScopedBalanceStat');
   });
 });
 

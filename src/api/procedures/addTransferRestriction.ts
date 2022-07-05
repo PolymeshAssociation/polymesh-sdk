@@ -203,6 +203,14 @@ export async function prepareStorage(
     },
   } = this;
   const { ticker, type } = args;
+  let claimIssuer;
+  if (
+    type === TransferRestrictionType.ClaimCount ||
+    type === TransferRestrictionType.ClaimPercentage
+  ) {
+    const { claim, issuer } = args;
+    claimIssuer = { claimType: claim.type, issuer };
+  }
 
   const tickerKey = stringToTickerKey(ticker, context);
 
@@ -211,7 +219,7 @@ export async function prepareStorage(
     statistics.activeAssetStats(tickerKey),
   ]);
 
-  const neededStat = neededStatTypeForRestrictionInput(type, context);
+  const neededStat = neededStatTypeForRestrictionInput({ type, claimIssuer }, context);
   const needStat = ![...currentStats].find(s => neededStat.eq(s));
 
   if (needStat) {

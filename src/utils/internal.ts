@@ -81,6 +81,7 @@ import {
   SYSTEM_VERSION_RPC_CALL,
 } from '~/utils/constants';
 import {
+  claimIssuerToMeshClaimIssuer,
   identityIdToString,
   meshClaimTypeToClaimType,
   meshStatToStatisticsOpType,
@@ -1388,18 +1389,25 @@ export function compareStatTypeToTransferRestrictionType(
   }
 }
 
-/** @hidden
- *
+/**
+ *@ hidden
  * @param type TransferRestriction type that was given
  * @param context
  * @returns encoded StatType needed for the TransferRestriction to be enabled
  */
 export function neededStatTypeForRestrictionInput(
-  type: TransferRestrictionType,
+  args: { type: TransferRestrictionType; claimIssuer?: ClaimIssuer },
   context: Context
 ): PolymeshPrimitivesStatisticsStatType {
-  const neededOp =
-    type === TransferRestrictionType.Count ? StatisticsOpType.Count : StatisticsOpType.Balance;
-  const rawOp = statisticsOpTypeToStatOpType(neededOp, context);
-  return statisticsOpTypeToStatType({ op: rawOp }, context);
+  const { type, claimIssuer } = args;
+
+  let rawOp;
+  if (type === TransferRestrictionType.Count || type === TransferRestrictionType.ClaimCount) {
+    rawOp = statisticsOpTypeToStatOpType(StatisticsOpType.Count, context);
+  } else {
+    rawOp = statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
+  }
+
+  const rawIssuer = claimIssuer ? claimIssuerToMeshClaimIssuer(claimIssuer, context) : undefined;
+  return statisticsOpTypeToStatType({ op: rawOp, claimIssuer: rawIssuer }, context);
 }

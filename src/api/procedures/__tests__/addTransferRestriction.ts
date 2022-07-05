@@ -230,8 +230,7 @@ describe('addTransferRestriction procedure', () => {
     statisticsOpTypeToStatOpTypeStub
       .withArgs(StatisticsOpType.Balance, mockContext)
       .returns(rawBalanceOp);
-    statisticsOpTypeToStatTypeStub.withArgs({ op: rawCountOp }).returns(mockNeededStat);
-    statisticsOpTypeToStatTypeStub.withArgs({ op: rawBalanceOp }).returns(mockNeededStat);
+    statisticsOpTypeToStatTypeStub.returns(mockNeededStat);
   });
 
   afterEach(() => {
