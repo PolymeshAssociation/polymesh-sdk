@@ -125,9 +125,9 @@ export class AccountManagement {
   /**
    * Send an invitation to an Account to join the signing Identity as a secondary Account
    *
-   * @note this will create an {@link AuthorizationRequest | Authorization Request} which has to be accepted by the `targetAccount`.
-   *   An {@link Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived | authorizations.getReceived}.
-   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link Authorizations.getOne | authorizations.getOne}
+   * @note this will create an {@link api/entities/AuthorizationRequest!AuthorizationRequest | Authorization Request} which has to be accepted by the `targetAccount`.
+   *   An {@link api/entities/Account!Account} or {@link api/entities/Identity!Identity} can fetch its pending Authorization Requests by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getReceived | authorizations.getReceived}.
+   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getOne | authorizations.getOne}
    */
   public inviteAccount: ProcedureMethod<InviteAccountParams, AuthorizationRequest>;
 
@@ -144,9 +144,9 @@ export class AccountManagement {
   /**
    * Send an Authorization Request to an Account to subsidize its transaction fees
    *
-   * @note this will create an {@link AuthorizationRequest | Authorization Request} which has to be accepted by the `beneficiary` Account.
-   *   An {@link Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived | authorizations.getReceived}.
-   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link Authorizations.getOne | authorizations.getOne}
+   * @note this will create an {@link api/entities/AuthorizationRequest!AuthorizationRequest | Authorization Request} which has to be accepted by the `beneficiary` Account.
+   *   An {@link api/entities/Account!Account} or {@link api/entities/Identity!Identity} can fetch its pending Authorization Requests by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getReceived | authorizations.getReceived}.
+   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getOne | authorizations.getOne}
    */
   public subsidizeAccount: ProcedureMethod<SubsidizeAccountParams, AuthorizationRequest>;
 

@@ -1239,8 +1239,8 @@ interface TransferRestrictionBase {
    * array of Scope/Identity IDs that are exempted from the Restriction
    *
    * @note if the Asset requires investor uniqueness, Scope IDs are used. Otherwise, we use Identity IDs. More on Scope IDs and investor uniqueness
-   *   {@link https://developers.polymesh.network/introduction/identity#polymesh-unique-identity-system-puis | here} and
-   *   {@link https://developers.polymesh.network/polymesh-docs/primitives/confidential-identity | here}
+   *   [here](https://developers.polymesh.network/introduction/identity#polymesh-unique-identity-system-puis) and
+   *   [here](https://developers.polymesh.network/polymesh-docs/primitives/confidential-identity)
    */
   exemptedIds?: string[];
 }
