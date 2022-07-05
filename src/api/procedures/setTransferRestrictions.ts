@@ -6,8 +6,8 @@ import { Asset, Context, Identity, PolymeshError, Procedure } from '~/internal';
 import {
   ClaimCountTransferRestriction,
   ClaimCountTransferRestrictionInput,
-  ClaimOwnershipTransferRestriction,
-  ClaimOwnershipTransferRestrictionInput,
+  ClaimPercentageTransferRestriction,
+  ClaimPercentageTransferRestrictionInput,
   ClaimRestrictionValue,
   CountTransferRestrictionInput,
   ErrorCode,
@@ -52,16 +52,16 @@ export interface SetClaimCountTransferRestrictionsParams {
   type: TransferRestrictionType.ClaimCount;
 }
 
-export interface SetClaimOwnershipTransferRestrictionsParams {
-  restrictions: ClaimOwnershipTransferRestrictionInput[];
-  type: TransferRestrictionType.ClaimOwnership;
+export interface SetClaimPercentageTransferRestrictionsParams {
+  restrictions: ClaimPercentageTransferRestrictionInput[];
+  type: TransferRestrictionType.ClaimPercentage;
 }
 
 export type SetTransferRestrictionsParams = { ticker: string } & (
   | SetCountTransferRestrictionsParams
   | SetPercentageTransferRestrictionsParams
   | SetClaimCountTransferRestrictionsParams
-  | SetClaimOwnershipTransferRestrictionsParams
+  | SetClaimPercentageTransferRestrictionsParams
 );
 
 /**
@@ -80,7 +80,7 @@ function transformRestrictions(
     | CountTransferRestrictionInput[]
     | PercentageTransferRestrictionInput[]
     | ClaimCountTransferRestrictionInput[]
-    | ClaimOwnershipTransferRestrictionInput[],
+    | ClaimPercentageTransferRestrictionInput[],
   currentRestrictions: TransferCondition[],
   type: TransferRestrictionType,
   context: Context
@@ -261,15 +261,15 @@ export async function prepareStorage(
   }
 
   const {
-    transferRestrictions: { count, percentage, claimCount, claimOwnership },
+    transferRestrictions: { count, percentage, claimCount, claimPercentage },
   } = new Asset({ ticker }, context);
 
   const [
     { restrictions: currentCountRestrictions },
     { restrictions: currentPercentageRestrictions },
     { restrictions: currentClaimCountRestrictions },
-    { restrictions: currentClaimOwnershipRestrictions },
-  ] = await Promise.all([count.get(), percentage.get(), claimCount.get(), claimOwnership.get()]);
+    { restrictions: currentClaimPercentageRestrictions },
+  ] = await Promise.all([count.get(), percentage.get(), claimCount.get(), claimPercentage.get()]);
 
   const currentRestrictions: TransferRestriction[] = [];
 
@@ -278,7 +278,7 @@ export async function prepareStorage(
     min,
     max,
     issuer,
-  }: ClaimCountTransferRestriction | ClaimOwnershipTransferRestriction): TransferRestriction => {
+  }: ClaimCountTransferRestriction | ClaimPercentageTransferRestriction): TransferRestriction => {
     return {
       type,
       value: { claim, min, max, issuer },
@@ -290,17 +290,17 @@ export async function prepareStorage(
     occupiedSlots =
       currentPercentageRestrictions.length +
       currentClaimCountRestrictions.length +
-      currentClaimOwnershipRestrictions.length;
+      currentClaimPercentageRestrictions.length;
   } else if (type === TransferRestrictionType.Percentage) {
     occupiedSlots =
       currentCountRestrictions.length +
       currentClaimCountRestrictions.length +
-      currentClaimOwnershipRestrictions.length;
+      currentClaimPercentageRestrictions.length;
   } else if (type === TransferRestrictionType.ClaimCount) {
     occupiedSlots =
       currentCountRestrictions.length +
       currentPercentageRestrictions.length +
-      currentClaimOwnershipRestrictions.length;
+      currentClaimPercentageRestrictions.length;
   } else {
     occupiedSlots =
       currentCountRestrictions.length +
@@ -321,7 +321,7 @@ export async function prepareStorage(
   } else if (type === TransferRestrictionType.ClaimCount) {
     currentRestrictions.push(...currentClaimCountRestrictions.map(transformScopedRestriction));
   } else {
-    currentRestrictions.push(...currentClaimOwnershipRestrictions.map(transformScopedRestriction));
+    currentRestrictions.push(...currentClaimPercentageRestrictions.map(transformScopedRestriction));
   }
 
   const transformRestriction = (

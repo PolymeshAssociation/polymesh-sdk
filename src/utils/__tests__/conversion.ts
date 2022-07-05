@@ -5671,7 +5671,7 @@ describe('transferRestrictionToTransferManager', () => {
 
     expect(result).toBe(fakeResult);
 
-    const claimOwnership = {
+    const claimPercentage = {
       min,
       max,
       issuer,
@@ -5681,8 +5681,8 @@ describe('transferRestrictionToTransferManager', () => {
       },
     };
     value = {
-      type: TransferRestrictionType.ClaimOwnership,
-      value: claimOwnership,
+      type: TransferRestrictionType.ClaimPercentage,
+      value: claimPercentage,
     };
     const rawTrue = dsMockUtils.createMockBool(true);
     const rawOwnershipClaim = { Affiliate: rawTrue };
@@ -5698,7 +5698,7 @@ describe('transferRestrictionToTransferManager', () => {
 
     expect(result).toBe(fakeResult);
 
-    const claimOwnershipAccredited = {
+    const claimPercentageAccredited = {
       min,
       max,
       issuer,
@@ -5708,8 +5708,8 @@ describe('transferRestrictionToTransferManager', () => {
       },
     };
     value = {
-      type: TransferRestrictionType.ClaimOwnership,
-      value: claimOwnershipAccredited,
+      type: TransferRestrictionType.ClaimPercentage,
+      value: claimPercentageAccredited,
     };
     const rawOwnershipClaimAccredited = { Accredited: rawTrue };
 
@@ -7816,6 +7816,10 @@ describe('sortByClaimType', () => {
       dsMockUtils.createMockIdentitiesClaimClaimType(ClaimType.Jurisdiction),
       issuer,
     ];
+    const nonStatIssuer: ClaimTypeTuple = [
+      dsMockUtils.createMockIdentitiesClaimClaimType(ClaimType.Blocked),
+      issuer,
+    ];
     const op = dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count);
     const accreditedStat = dsMockUtils.createMockStatisticsStatType({
       op,
@@ -7832,10 +7836,34 @@ describe('sortByClaimType', () => {
       claimIssuer: jurisdictionIssuer,
     });
 
+    const nonStat = dsMockUtils.createMockStatisticsStatType({
+      op,
+      claimIssuer: nonStatIssuer,
+    });
+
     const countStat = dsMockUtils.createMockStatisticsStatType({ op });
 
-    const result = sortByClaimType([jurisdictionStat, accreditedStat, affiliateStat, countStat]);
-
+    let result = sortByClaimType([jurisdictionStat, accreditedStat, affiliateStat, countStat]);
     expect(result).toEqual([accreditedStat, affiliateStat, jurisdictionStat, countStat]);
+
+    result = sortByClaimType([
+      nonStat,
+      jurisdictionStat,
+      nonStat,
+      countStat,
+      countStat,
+      affiliateStat,
+      countStat,
+    ]);
+
+    expect(result).toEqual([
+      affiliateStat,
+      jurisdictionStat,
+      nonStat,
+      nonStat,
+      countStat,
+      countStat,
+      countStat,
+    ]);
   });
 });

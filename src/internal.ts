@@ -118,7 +118,7 @@ export {
   SetCountTransferRestrictionsParams,
   SetPercentageTransferRestrictionsParams,
   SetClaimCountTransferRestrictionsParams,
-  SetClaimOwnershipTransferRestrictionsParams,
+  SetClaimPercentageTransferRestrictionsParams,
   Storage as SetTransferRestrictionsStorage,
 } from '~/api/procedures/setTransferRestrictions';
 export {

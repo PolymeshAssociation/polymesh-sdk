@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { ClaimCount } from '~/api/entities/Asset/TransferRestrictions/ClaimCount';
-import { ClaimOwnership } from '~/api/entities/Asset/TransferRestrictions/ClaimOwnership';
+import { ClaimPercentage } from '~/api/entities/Asset/TransferRestrictions/ClaimPercentage';
 import {
   AddCountTransferRestrictionParams,
   AddPercentageTransferRestrictionParams,
@@ -11,7 +11,7 @@ import {
   Context,
   Namespace,
   SetClaimCountTransferRestrictionsParams,
-  SetClaimOwnershipTransferRestrictionsParams,
+  SetClaimPercentageTransferRestrictionsParams,
   SetCountTransferRestrictionsParams,
   SetPercentageTransferRestrictionsParams,
   TransactionQueue,
@@ -235,10 +235,10 @@ describe('TransferRestrictionBase class', () => {
       expect(queue).toBe(expectedQueue);
     });
 
-    it('should prepare the procedure (ClaimOwnership) with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const claimOwnership = new ClaimOwnership(asset, context);
+    it('should prepare the procedure (ClaimPercentage) with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const claimPercentage = new ClaimPercentage(asset, context);
 
-      const args: Omit<SetClaimOwnershipTransferRestrictionsParams, 'type'> = {
+      const args: Omit<SetClaimPercentageTransferRestrictionsParams, 'type'> = {
         restrictions: [],
       };
 
@@ -248,14 +248,14 @@ describe('TransferRestrictionBase class', () => {
         .getPrepareStub()
         .withArgs(
           {
-            args: { ticker: asset.ticker, ...args, type: TransferRestrictionType.ClaimOwnership },
+            args: { ticker: asset.ticker, ...args, type: TransferRestrictionType.ClaimPercentage },
             transformer: undefined,
           },
           context
         )
         .resolves(expectedQueue);
 
-      const queue = await claimOwnership.setRestrictions({
+      const queue = await claimPercentage.setRestrictions({
         ...args,
       });
 
@@ -332,7 +332,7 @@ describe('TransferRestrictionBase class', () => {
     let rawCountRestriction: PolymeshPrimitivesTransferComplianceTransferCondition;
     let rawPercentageRestriction: PolymeshPrimitivesTransferComplianceTransferCondition;
     let rawClaimCountRestriction: PolymeshPrimitivesTransferComplianceTransferCondition;
-    let rawClaimOwnershipRestriction: PolymeshPrimitivesTransferComplianceTransferCondition;
+    let rawClaimPercentageRestriction: PolymeshPrimitivesTransferComplianceTransferCondition;
     const issuer = entityMockUtils.getIdentityInstance({ did: 'someDid' });
     const min = new BigNumber(10);
     const max = new BigNumber(20);
@@ -365,7 +365,7 @@ describe('TransferRestrictionBase class', () => {
           dsMockUtils.createMockOption(dsMockUtils.createMockU64(max)),
         ],
       });
-      rawClaimOwnershipRestriction = dsMockUtils.createMockTransferCondition({
+      rawClaimPercentageRestriction = dsMockUtils.createMockTransferCondition({
         ClaimOwnership: [
           dsMockUtils.createMockStatisticsStatClaim({
             Affiliate: dsMockUtils.createMockBool(true),
@@ -390,7 +390,7 @@ describe('TransferRestrictionBase class', () => {
             rawCountRestriction,
             rawPercentageRestriction,
             rawClaimCountRestriction,
-            rawClaimOwnershipRestriction,
+            rawClaimPercentageRestriction,
           ],
         },
       });
@@ -461,10 +461,10 @@ describe('TransferRestrictionBase class', () => {
       );
     });
 
-    it('should return all claimOwnership transfer restrictions', async () => {
-      const claimOwnership = new ClaimOwnership(asset, context);
+    it('should return all claimPercentage transfer restrictions', async () => {
+      const claimPercentage = new ClaimPercentage(asset, context);
 
-      const result = await claimOwnership.get();
+      const result = await claimPercentage.get();
 
       expect(JSON.stringify(result)).toEqual(
         JSON.stringify({
@@ -631,8 +631,8 @@ describe('TransferRestrictionBase class', () => {
       expect(queue).toBe(expectedQueue);
     });
 
-    it('should prepare the procedure (ClaimOwnership) with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const claimOwnership = new ClaimOwnership(asset, context);
+    it('should prepare the procedure (ClaimPercentage) with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const claimPercentage = new ClaimPercentage(asset, context);
 
       const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
 
@@ -650,7 +650,7 @@ describe('TransferRestrictionBase class', () => {
         )
         .resolves(expectedQueue);
 
-      const queue = await claimOwnership.disableStat({});
+      const queue = await claimPercentage.disableStat({});
 
       expect(queue).toBe(expectedQueue);
     });

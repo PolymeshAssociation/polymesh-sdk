@@ -5,7 +5,7 @@ import { Asset, PolymeshError, Procedure } from '~/internal';
 import {
   AddCountStatInput,
   ClaimCountStatInput,
-  ClaimOwnershipStatInput,
+  ClaimPercentageStatInput,
   ErrorCode,
   StatType,
   TxTags,
@@ -34,7 +34,7 @@ export type AddClaimCountStatParams = ClaimCountStatInput & {
   type: StatType.ScopedCount;
 };
 
-export type AddClaimOwnershipStatParams = ClaimOwnershipStatInput & {
+export type AddClaimPercentageStatParams = ClaimPercentageStatInput & {
   type: StatType.ScopedBalance;
 };
 
@@ -42,7 +42,7 @@ export type AddAssetStatParams = { ticker: string } & (
   | AddCountStatParams
   | AddBalanceStatParams
   | AddClaimCountStatParams
-  | AddClaimOwnershipStatParams
+  | AddClaimPercentageStatParams
 );
 
 export interface Storage {

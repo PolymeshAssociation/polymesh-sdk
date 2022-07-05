@@ -574,7 +574,7 @@ export function claimCountToClaimRestrictionValue(
 /**
  * @hidden
  */
-export function claimOwnershipToClaimRestrictionValue(
+export function claimPercentageToClaimRestrictionValue(
   value: ITuple<[StatClaim, IdentityId, Percentage, Percentage]>,
   context: Context
 ): ClaimRestrictionValue {
@@ -2874,7 +2874,7 @@ export function transferRestrictionToPolymeshTransferCondition(
     if (type === TransferRestrictionType.ClaimCount) {
       restrictionType = 'ClaimCount';
     } else {
-      // i.e. TransferRestrictionType.ClaimOwnership
+      // i.e. TransferRestrictionType.ClaimPercentage
       restrictionType = 'ClaimOwnership';
     }
     const castedValue = value as ClaimRestrictionValue;
@@ -2926,8 +2926,8 @@ export function transferConditionToTransferRestriction(
     };
   } else if (transferCondition.isClaimOwnership) {
     return {
-      type: TransferRestrictionType.ClaimOwnership,
-      value: claimOwnershipToClaimRestrictionValue(transferCondition.asClaimOwnership, context),
+      type: TransferRestrictionType.ClaimPercentage,
+      value: claimPercentageToClaimRestrictionValue(transferCondition.asClaimOwnership, context),
     };
   } else {
     throw new PolymeshError({
@@ -3726,7 +3726,7 @@ export function meshStatToStatisticsOpType(
     if (rawStat.op.type === 'Count') {
       return StatisticsOpType.ClaimCount;
     } else {
-      return StatisticsOpType.ClaimOwnership;
+      return StatisticsOpType.ClaimPercentage;
     }
   }
 }

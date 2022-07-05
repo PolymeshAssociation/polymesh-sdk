@@ -4,12 +4,12 @@ import {
   AddAssetStatParams,
   AddBalanceStatParams,
   AddClaimCountStatParams,
-  AddClaimOwnershipStatParams,
+  AddClaimPercentageStatParams,
   AddCountStatParams,
 } from '~/api/procedures/addAssetStat';
 import {
   AddClaimCountTransferRestrictionParams,
-  AddClaimOwnershipTransferRestrictionParams,
+  AddClaimPercentageTransferRestrictionParams,
 } from '~/api/procedures/addTransferRestriction';
 import {
   removeAssetStat,
@@ -32,7 +32,7 @@ import {
   Namespace,
   RemoveAssetStatStorage,
   SetClaimCountTransferRestrictionsParams,
-  SetClaimOwnershipTransferRestrictionsParams,
+  SetClaimPercentageTransferRestrictionsParams,
   SetCountTransferRestrictionsParams,
   SetPercentageTransferRestrictionsParams,
   setTransferRestrictions,
@@ -42,7 +42,7 @@ import {
 import {
   ActiveTransferRestrictions,
   ClaimCountTransferRestriction,
-  ClaimOwnershipTransferRestriction,
+  ClaimPercentageTransferRestriction,
   ClaimRestrictionValue,
   CountTransferRestriction,
   NoArgsProcedureMethod,
@@ -66,7 +66,7 @@ type AddRestrictionParams<T> = Omit<
     ? AddPercentageTransferRestrictionParams
     : T extends TransferRestrictionType.ClaimCount
     ? AddClaimCountTransferRestrictionParams
-    : AddClaimOwnershipTransferRestrictionParams,
+    : AddClaimPercentageTransferRestrictionParams,
   'type'
 >;
 
@@ -77,7 +77,7 @@ type SetRestrictionsParams<T> = Omit<
     ? SetPercentageTransferRestrictionsParams
     : T extends TransferRestrictionType.ClaimCount
     ? SetClaimCountTransferRestrictionsParams
-    : SetClaimOwnershipTransferRestrictionsParams,
+    : SetClaimPercentageTransferRestrictionsParams,
   'type'
 >;
 
@@ -88,7 +88,7 @@ type SetAssetStatParams<T> = Omit<
     ? AddBalanceStatParams
     : T extends TransferRestrictionType.ClaimCount
     ? AddClaimCountStatParams
-    : AddClaimOwnershipStatParams,
+    : AddClaimPercentageStatParams,
   'type'
 >;
 
@@ -110,7 +110,7 @@ type GetReturnType<T> = ActiveTransferRestrictions<
     ? PercentageTransferRestriction
     : T extends TransferRestrictionType.ClaimCount
     ? ClaimCountTransferRestriction
-    : ClaimOwnershipTransferRestriction
+    : ClaimPercentageTransferRestriction
 >;
 
 /**

@@ -381,7 +381,7 @@ export enum StatisticsOpType {
   Count = 'Count',
   Balance = 'Balance',
   ClaimCount = 'ClaimCount',
-  ClaimOwnership = 'ClaimOwnership',
+  ClaimPercentage = 'ClaimPercentage',
 }
 
 export interface TickerKey {

@@ -54,7 +54,7 @@ describe('addTransferRestriction procedure', () => {
   let rawCountCondition: PolymeshPrimitivesTransferComplianceTransferCondition;
   let rawPercentageCondition: PolymeshPrimitivesTransferComplianceTransferCondition;
   let rawClaimCountCondition: PolymeshPrimitivesTransferComplianceTransferCondition;
-  let rawClaimOwnershipCondition: PolymeshPrimitivesTransferComplianceTransferCondition;
+  let rawClaimPercentageCondition: PolymeshPrimitivesTransferComplianceTransferCondition;
   let args: AddTransferRestrictionParams;
   let rawCountOp: PolymeshPrimitivesStatisticsStatOpType;
   let rawBalanceOp: PolymeshPrimitivesStatisticsStatOpType;
@@ -95,7 +95,7 @@ describe('addTransferRestriction procedure', () => {
   let mockCountBtreeSet: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
   let mockPercentBtree: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
   let mockClaimCountBtree: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
-  let mockClaimOwnershipBtree: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
+  let mockClaimPercentageBtree: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
   const emptyStatsBtreeSet = createMockBTreeSet<PolymeshPrimitivesStatisticsStatType>([]);
   const emptyRestrictionsBtreeSet =
     createMockBTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>([]);
@@ -179,7 +179,7 @@ describe('addTransferRestriction procedure', () => {
         dsMockUtils.createMockOption(),
       ],
     });
-    rawClaimOwnershipCondition = dsMockUtils.createMockTransferCondition({
+    rawClaimPercentageCondition = dsMockUtils.createMockTransferCondition({
       ClaimCount: [
         dsMockUtils.createMockStatisticsStatClaim({ Accredited: dsMockUtils.createMockBool() }),
         dsMockUtils.createMockIdentityId(),
@@ -195,7 +195,7 @@ describe('addTransferRestriction procedure', () => {
       ]);
 
     mockClaimCountBtree = dsMockUtils.createMockBTreeSet([rawClaimCountCondition]);
-    mockClaimOwnershipBtree = dsMockUtils.createMockBTreeSet([rawClaimOwnershipCondition]);
+    mockClaimPercentageBtree = dsMockUtils.createMockBTreeSet([rawClaimPercentageCondition]);
 
     stringToScopeIdStub.withArgs(did, mockContext).returns(rawScopeId);
 
@@ -216,8 +216,8 @@ describe('addTransferRestriction procedure', () => {
       .withArgs([rawClaimCountCondition], mockContext)
       .returns(mockClaimCountBtree);
     complianceConditionsToBtreeSetSub
-      .withArgs([rawClaimOwnershipCondition], mockContext)
-      .returns(mockClaimOwnershipBtree);
+      .withArgs([rawClaimPercentageCondition], mockContext)
+      .returns(mockClaimPercentageBtree);
     statisticsOpTypeToStatOpTypeStub
       .withArgs(StatisticsOpType.Count, mockContext)
       .returns(rawCountOp);
@@ -313,7 +313,7 @@ describe('addTransferRestriction procedure', () => {
     expect(result).toEqual(new BigNumber(1));
 
     args = {
-      type: TransferRestrictionType.ClaimOwnership,
+      type: TransferRestrictionType.ClaimPercentage,
       exemptedIdentities: [],
       claim: { type: ClaimType.Accredited, accredited: true },
       min: new BigNumber(10),
@@ -322,15 +322,15 @@ describe('addTransferRestriction procedure', () => {
       issuer,
     };
 
-    transferRestrictionToTransferRestrictionStub.returns(rawClaimOwnershipCondition);
-    transferConditionsToBtreeTransferConditionsStub.returns(mockClaimOwnershipBtree);
+    transferRestrictionToTransferRestrictionStub.returns(rawClaimPercentageCondition);
+    transferConditionsToBtreeTransferConditionsStub.returns(mockClaimPercentageBtree);
     result = await prepareAddTransferRestriction.call(proc, args);
 
     sinon.assert.calledWith(addBatchTransactionStub, {
       transactions: [
         {
           transaction: setAssetTransferCompliance,
-          args: [{ Ticker: rawTicker }, mockClaimOwnershipBtree],
+          args: [{ Ticker: rawTicker }, mockClaimPercentageBtree],
         },
       ],
     });

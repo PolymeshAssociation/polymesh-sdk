@@ -1306,7 +1306,7 @@ export interface ClaimCountTransferRestriction extends TransferRestrictionBase {
 
   issuer: Identity;
 }
-export interface ClaimOwnershipTransferRestriction extends TransferRestrictionBase {
+export interface ClaimPercentageTransferRestriction extends TransferRestrictionBase {
   /**
    * The type of investors this restriction applies to. e.g. Canadian investor
    */
@@ -1343,7 +1343,7 @@ export interface ClaimCountTransferRestrictionInput extends TransferRestrictionI
   issuer: Identity;
   claim: StatClaimUserInput;
 }
-export interface ClaimOwnershipTransferRestrictionInput extends TransferRestrictionInputBase {
+export interface ClaimPercentageTransferRestrictionInput extends TransferRestrictionInputBase {
   min: BigNumber;
   max?: BigNumber;
   issuer: Identity;
@@ -1355,7 +1355,7 @@ export interface ActiveTransferRestrictions<
     | CountTransferRestriction
     | PercentageTransferRestriction
     | ClaimCountTransferRestriction
-    | ClaimOwnershipTransferRestriction
+    | ClaimPercentageTransferRestriction
 > {
   restrictions: Restriction[];
   /**
@@ -1368,7 +1368,7 @@ export enum TransferRestrictionType {
   Count = 'Count',
   Percentage = 'Percentage',
   ClaimCount = 'ClaimCount',
-  ClaimOwnership = 'ClaimOwnership',
+  ClaimPercentage = 'ClaimPercentage',
 }
 
 export interface TransferRestriction {
@@ -1406,7 +1406,7 @@ export interface StatClaimIssuer {
   claimType: StatClaimType;
 }
 
-export interface ClaimOwnershipStatInput {
+export interface ClaimPercentageStatInput {
   claimIssuer: StatClaimIssuer;
 }
 

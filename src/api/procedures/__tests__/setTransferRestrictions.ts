@@ -68,16 +68,16 @@ describe('setTransferRestrictions procedure', () => {
   let maxInvestorRestriction: TransferRestriction;
   let maxOwnershipRestriction: TransferRestriction;
   let claimCountRestriction: TransferRestriction;
-  let claimOwnershipRestriction: TransferRestriction;
+  let claimPercentageRestriction: TransferRestriction;
   let claimCountRestrictionValue: ClaimRestrictionValue;
-  let claimOwnershipRestrictionValue: ClaimRestrictionValue;
+  let claimPercentageRestrictionValue: ClaimRestrictionValue;
   let rawTicker: Ticker;
   let rawCount: u64;
   let rawPercentage: Permill;
   let rawCountRestriction: TransferCondition;
   let rawPercentageRestriction: TransferCondition;
   let rawClaimCountRestriction: TransferCondition;
-  let rawClaimOwnershipRestriction: TransferCondition;
+  let rawClaimPercentageRestriction: TransferCondition;
   let rawScopeId: ScopeId;
   let rawStatType: PolymeshPrimitivesStatisticsStatType;
   let rawStatTypeBtree: BTreeSet<PolymeshPrimitivesStatisticsStatType>;
@@ -86,7 +86,7 @@ describe('setTransferRestrictions procedure', () => {
   let rawCountRestrictionBtreeSet: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
   let rawPercentageRestrictionBtreeSet: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
   let rawClaimCountRestrictionBtreeSet: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
-  let rawClaimOwnershipRestrictionBtreeSet: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
+  let rawClaimPercentageRestrictionBtreeSet: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
 
   const min = new BigNumber(10);
   const max = new BigNumber(20);
@@ -132,7 +132,7 @@ describe('setTransferRestrictions procedure', () => {
       type: TransferRestrictionType.ClaimCount,
       value: claimCountRestrictionValue,
     };
-    claimOwnershipRestrictionValue = {
+    claimPercentageRestrictionValue = {
       min,
       max,
       issuer,
@@ -141,9 +141,9 @@ describe('setTransferRestrictions procedure', () => {
         accredited: true,
       },
     };
-    claimOwnershipRestriction = {
-      type: TransferRestrictionType.ClaimOwnership,
-      value: claimOwnershipRestrictionValue,
+    claimPercentageRestriction = {
+      type: TransferRestrictionType.ClaimPercentage,
+      value: claimPercentageRestrictionValue,
     };
   });
 
@@ -193,7 +193,7 @@ describe('setTransferRestrictions procedure', () => {
         dsMockUtils.createMockOption(),
       ],
     });
-    rawClaimOwnershipRestriction = dsMockUtils.createMockTransferCondition({
+    rawClaimPercentageRestriction = dsMockUtils.createMockTransferCondition({
       ClaimOwnership: [
         dsMockUtils.createMockStatisticsStatClaim({ Accredited: dsMockUtils.createMockBool(true) }),
         dsMockUtils.createMockIdentityId(),
@@ -204,8 +204,8 @@ describe('setTransferRestrictions procedure', () => {
     rawCountRestrictionBtreeSet = dsMockUtils.createMockBTreeSet([rawCountRestriction]);
     rawPercentageRestrictionBtreeSet = dsMockUtils.createMockBTreeSet([rawPercentageRestriction]);
     rawClaimCountRestrictionBtreeSet = dsMockUtils.createMockBTreeSet([rawClaimCountRestriction]);
-    rawClaimOwnershipRestrictionBtreeSet = dsMockUtils.createMockBTreeSet([
-      rawClaimOwnershipRestriction,
+    rawClaimPercentageRestrictionBtreeSet = dsMockUtils.createMockBTreeSet([
+      rawClaimPercentageRestriction,
     ]);
     rawScopeId = dsMockUtils.createMockScopeId(exemptedDid);
     rawStatType = dsMockUtils.createMockStatisticsStatType();
@@ -222,8 +222,8 @@ describe('setTransferRestrictions procedure', () => {
       .withArgs(claimCountRestriction, mockContext)
       .returns(rawClaimCountRestriction);
     transferRestrictionToPolymeshTransferConditionStub
-      .withArgs(claimOwnershipRestriction, mockContext)
-      .returns(rawClaimOwnershipRestriction);
+      .withArgs(claimPercentageRestriction, mockContext)
+      .returns(rawClaimPercentageRestriction);
     stringToTickerKeyStub.withArgs(ticker, mockContext).returns({ Ticker: rawTicker });
     stringToScopeIdStub.withArgs(exemptedDid, mockContext).returns(rawScopeId);
     complianceConditionsToBtreeSetStub
@@ -236,8 +236,8 @@ describe('setTransferRestrictions procedure', () => {
       .withArgs([rawClaimCountRestriction], mockContext)
       .returns(rawClaimCountRestrictionBtreeSet);
     complianceConditionsToBtreeSetStub
-      .withArgs([rawClaimOwnershipRestriction], mockContext)
-      .returns(rawClaimOwnershipRestrictionBtreeSet);
+      .withArgs([rawClaimPercentageRestriction], mockContext)
+      .returns(rawClaimPercentageRestrictionBtreeSet);
   });
 
   afterEach(() => {
@@ -329,8 +329,8 @@ describe('setTransferRestrictions procedure', () => {
 
     args = {
       ticker,
-      restrictions: [claimOwnershipRestrictionValue],
-      type: TransferRestrictionType.ClaimOwnership,
+      restrictions: [claimPercentageRestrictionValue],
+      type: TransferRestrictionType.ClaimPercentage,
     };
 
     result = await prepareSetTransferRestrictions.call(proc, args);
@@ -339,7 +339,7 @@ describe('setTransferRestrictions procedure', () => {
       transactions: [
         {
           transaction: setAssetTransferComplianceTransaction,
-          args: [{ Ticker: rawTicker }, rawClaimOwnershipRestrictionBtreeSet],
+          args: [{ Ticker: rawTicker }, rawClaimPercentageRestrictionBtreeSet],
         },
       ],
     });
@@ -572,7 +572,7 @@ describe('setTransferRestrictions procedure', () => {
     const getCountStub = sinon.stub();
     const getPercentageStub = sinon.stub();
     const getClaimCountStub = sinon.stub();
-    const getClaimOwnershipStub = sinon.stub();
+    const getClaimPercentageStub = sinon.stub();
 
     beforeAll(() => {
       identityScopeId = 'someScopeId';
@@ -595,8 +595,8 @@ describe('setTransferRestrictions procedure', () => {
         restrictions: [claimCountRestrictionValue],
         availableSlots: new BigNumber(1),
       });
-      getClaimOwnershipStub.resolves({
-        restrictions: [claimOwnershipRestrictionValue],
+      getClaimPercentageStub.resolves({
+        restrictions: [claimPercentageRestrictionValue],
         availableSlots: new BigNumber(1),
       });
       entityMockUtils.configureMocks({
@@ -607,7 +607,7 @@ describe('setTransferRestrictions procedure', () => {
           transferRestrictionsCountGet: getCountStub,
           transferRestrictionsPercentageGet: getPercentageStub,
           transferRestrictionsClaimCountGet: getClaimCountStub,
-          transferRestrictionsClaimOwnershipGet: getClaimOwnershipStub,
+          transferRestrictionsClaimPercentageGet: getClaimPercentageStub,
         },
       });
 
@@ -699,12 +699,12 @@ describe('setTransferRestrictions procedure', () => {
 
       args = {
         ticker,
-        type: TransferRestrictionType.ClaimOwnership,
-        restrictions: [claimOwnershipRestrictionValue],
+        type: TransferRestrictionType.ClaimPercentage,
+        restrictions: [claimPercentageRestrictionValue],
       };
       result = await boundFunc(args);
       expect(result).toEqual({
-        currentRestrictions: [rawClaimOwnershipRestriction],
+        currentRestrictions: [rawClaimPercentageRestriction],
         occupiedSlots: new BigNumber(3),
       });
     });

@@ -1349,7 +1349,7 @@ export function compareTransferRestrictionToInput(
     );
   } else if (
     transferRestriction.isClaimOwnership &&
-    type === TransferRestrictionType.ClaimOwnership
+    type === TransferRestrictionType.ClaimPercentage
   ) {
     const castedValue = value as ClaimRestrictionValue;
     const [statClaim, rawIssuerId, rawMin, rawMax] = transferRestriction.asClaimOwnership;
@@ -1384,7 +1384,7 @@ export function compareStatTypeToTransferRestrictionType(
   } else if (opType === StatisticsOpType.ClaimCount) {
     return transferRestrictionType === TransferRestrictionType.ClaimCount;
   } else {
-    return transferRestrictionType === TransferRestrictionType.ClaimOwnership;
+    return transferRestrictionType === TransferRestrictionType.ClaimPercentage;
   }
 }
 

@@ -2,7 +2,7 @@ import { PolymeshPrimitivesStatisticsStatType } from '@polkadot/types/lookup';
 import { BTreeSet } from '@polkadot/types-codec';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
-import { ClaimOwnershipStatInput, ErrorCode, StatType, TxTags } from '~/types';
+import { ClaimPercentageStatInput, ErrorCode, StatType, TxTags } from '~/types';
 import { ProcedureAuthorization, StatisticsOpType } from '~/types/internal';
 import {
   claimIssuerToMeshClaimIssuer,
@@ -21,11 +21,11 @@ export type RemoveBalanceStatParams = {
   type: StatType.Balance;
 };
 
-export type RemoveScopedCountParams = ClaimOwnershipStatInput & {
+export type RemoveScopedCountParams = ClaimPercentageStatInput & {
   type: StatType.ScopedCount;
 };
 
-export type RemoveScopedBalanceParams = ClaimOwnershipStatInput & {
+export type RemoveScopedBalanceParams = ClaimPercentageStatInput & {
   type: StatType.ScopedBalance;
 };
 

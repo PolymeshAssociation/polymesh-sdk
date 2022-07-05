@@ -1,7 +1,7 @@
 import { Asset, Context, Namespace } from '~/internal';
 
 import { ClaimCount } from './ClaimCount';
-import { ClaimOwnership } from './ClaimOwnership';
+import { ClaimPercentage } from './ClaimPercentage';
 import { Count } from './Count';
 import { Percentage } from './Percentage';
 
@@ -12,7 +12,7 @@ export class TransferRestrictions extends Namespace<Asset> {
   public count: Count;
   public percentage: Percentage;
   public claimCount: ClaimCount;
-  public claimOwnership: ClaimOwnership;
+  public claimPercentage: ClaimPercentage;
 
   /**
    * @hidden
@@ -23,6 +23,6 @@ export class TransferRestrictions extends Namespace<Asset> {
     this.count = new Count(parent, context);
     this.percentage = new Percentage(parent, context);
     this.claimCount = new ClaimCount(parent, context);
-    this.claimOwnership = new ClaimOwnership(parent, context);
+    this.claimPercentage = new ClaimPercentage(parent, context);
   }
 }

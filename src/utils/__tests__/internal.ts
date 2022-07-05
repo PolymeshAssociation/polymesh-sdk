@@ -1171,7 +1171,7 @@ describe('compareTransferRestrictionToInput', () => {
 
     expect(result).toEqual(true);
 
-    const claimOwnershipTransferRestriction = dsMockUtils.createMockTransferCondition({
+    const claimPercentageTransferRestriction = dsMockUtils.createMockTransferCondition({
       ClaimOwnership: [
         dsMockUtils.createMockStatisticsStatClaim({
           Jurisdiction: dsMockUtils.createMockOption(
@@ -1185,14 +1185,14 @@ describe('compareTransferRestrictionToInput', () => {
     });
 
     result = compareTransferRestrictionToInput(
-      claimOwnershipTransferRestriction,
+      claimPercentageTransferRestriction,
       {
         min: new BigNumber(10),
         max: new BigNumber(20),
         claim: { type: ClaimType.Jurisdiction, countryCode: CountryCode.Ca },
         issuer: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
       },
-      TransferRestrictionType.ClaimOwnership
+      TransferRestrictionType.ClaimPercentage
     );
 
     expect(result).toEqual(true);
@@ -1221,7 +1221,7 @@ describe('compareTransferRestrictionToInput', () => {
 
     expect(result).toEqual(false);
 
-    const claimOwnershipTransferRestrictionNoMax = dsMockUtils.createMockTransferCondition({
+    const claimPercentageTransferRestrictionNoMax = dsMockUtils.createMockTransferCondition({
       ClaimCount: [
         dsMockUtils.createMockStatisticsStatClaim({
           Accredited: dsMockUtils.createMockBool(true),
@@ -1233,7 +1233,7 @@ describe('compareTransferRestrictionToInput', () => {
     });
 
     result = compareTransferRestrictionToInput(
-      claimOwnershipTransferRestrictionNoMax,
+      claimPercentageTransferRestrictionNoMax,
       {
         min: new BigNumber(10),
         max: new BigNumber(20),
@@ -1245,7 +1245,7 @@ describe('compareTransferRestrictionToInput', () => {
 
     expect(result).toEqual(false);
 
-    const claimOwnershipTransferRestriction = dsMockUtils.createMockTransferCondition({
+    const claimPercentageTransferRestriction = dsMockUtils.createMockTransferCondition({
       ClaimOwnership: [
         dsMockUtils.createMockStatisticsStatClaim({
           Jurisdiction: dsMockUtils.createMockOption(
@@ -1259,26 +1259,26 @@ describe('compareTransferRestrictionToInput', () => {
     });
 
     result = compareTransferRestrictionToInput(
-      claimOwnershipTransferRestriction,
+      claimPercentageTransferRestriction,
       {
         min: new BigNumber(10),
         max: new BigNumber(21),
         claim: { type: ClaimType.Jurisdiction, countryCode: CountryCode.Ca },
         issuer: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
       },
-      TransferRestrictionType.ClaimOwnership
+      TransferRestrictionType.ClaimPercentage
     );
 
     expect(result).toEqual(false);
 
     result = compareTransferRestrictionToInput(
-      claimOwnershipTransferRestriction,
+      claimPercentageTransferRestriction,
       {
         min: new BigNumber(10),
         claim: { type: ClaimType.Jurisdiction, countryCode: CountryCode.Ca },
         issuer: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
       },
-      TransferRestrictionType.ClaimOwnership
+      TransferRestrictionType.ClaimPercentage
     );
 
     expect(result).toEqual(false);
@@ -1311,7 +1311,7 @@ describe('compareStatTypeToTransferRestrictionType', () => {
     op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count),
     claimIssuer: [dsMockUtils.createMockIdentitiesClaimClaimType(ClaimType.Affiliate), issuerId],
   });
-  const claimOwnershipStat = dsMockUtils.createMockStatisticsStatType({
+  const claimPercentageStat = dsMockUtils.createMockStatisticsStatType({
     op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Balance),
     claimIssuer: [dsMockUtils.createMockIdentitiesClaimClaimType(ClaimType.Affiliate), issuerId],
   });
@@ -1336,8 +1336,8 @@ describe('compareStatTypeToTransferRestrictionType', () => {
     expect(result).toEqual(true);
 
     result = compareStatTypeToTransferRestrictionType(
-      claimOwnershipStat,
-      TransferRestrictionType.ClaimOwnership
+      claimPercentageStat,
+      TransferRestrictionType.ClaimPercentage
     );
     expect(result).toEqual(true);
   });
@@ -1357,12 +1357,12 @@ describe('compareStatTypeToTransferRestrictionType', () => {
 
     result = compareStatTypeToTransferRestrictionType(
       claimCountStat,
-      TransferRestrictionType.ClaimOwnership
+      TransferRestrictionType.ClaimPercentage
     );
     expect(result).toEqual(false);
 
     result = compareStatTypeToTransferRestrictionType(
-      claimOwnershipStat,
+      claimPercentageStat,
       TransferRestrictionType.ClaimCount
     );
     expect(result).toEqual(false);
@@ -1419,7 +1419,7 @@ describe('compareStatsToInput', () => {
     result = compareStatsToInput(claimCountStat, args);
     expect(result).toEqual(true);
 
-    const claimOwnershipStat = dsMockUtils.createMockStatisticsStatType({
+    const claimPercentageStat = dsMockUtils.createMockStatisticsStatType({
       op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Balance),
       claimIssuer: [dsMockUtils.createMockIdentitiesClaimClaimType(ClaimType.Affiliate), issuerId],
     });
@@ -1428,7 +1428,7 @@ describe('compareStatsToInput', () => {
       claimIssuer: { issuer, claimType: ClaimType.Affiliate },
       ticker,
     };
-    result = compareStatsToInput(claimOwnershipStat, args);
+    result = compareStatsToInput(claimPercentageStat, args);
     expect(result).toEqual(true);
   });
 
@@ -1536,10 +1536,10 @@ describe('compareTransferRestrictionToStat', () => {
     });
     expect(result).toEqual(true);
 
-    const claimOwnershipCondition = dsMockUtils.createMockTransferCondition({
+    const claimPercentageCondition = dsMockUtils.createMockTransferCondition({
       ClaimOwnership: [rawClaim, rawIssuerId, rawMin, rawMax],
     });
-    result = compareTransferRestrictionToStat(claimOwnershipCondition, StatType.ScopedBalance, {
+    result = compareTransferRestrictionToStat(claimPercentageCondition, StatType.ScopedBalance, {
       claimType: ClaimType.Accredited,
       issuer,
     });
@@ -1566,10 +1566,10 @@ describe('compareTransferRestrictionToStat', () => {
     });
     expect(result).toEqual(false);
 
-    const claimOwnershipCondition = dsMockUtils.createMockTransferCondition({
+    const claimPercentageCondition = dsMockUtils.createMockTransferCondition({
       ClaimOwnership: [rawClaim, rawIssuerId, rawMin, rawMax],
     });
-    result = compareTransferRestrictionToStat(claimOwnershipCondition, StatType.ScopedBalance, {
+    result = compareTransferRestrictionToStat(claimPercentageCondition, StatType.ScopedBalance, {
       claimType: ClaimType.Accredited,
       issuer: entityMockUtils.getIdentityInstance({ did: 'otherDid' }),
     });

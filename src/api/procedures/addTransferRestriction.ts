@@ -5,7 +5,7 @@ import BigNumber from 'bignumber.js';
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import {
   ClaimCountTransferRestrictionInput,
-  ClaimOwnershipTransferRestrictionInput,
+  ClaimPercentageTransferRestrictionInput,
   ClaimRestrictionValue,
   CountTransferRestrictionInput,
   ErrorCode,
@@ -38,9 +38,10 @@ export type AddClaimCountTransferRestrictionParams = ClaimCountTransferRestricti
   type: TransferRestrictionType.ClaimCount;
 };
 
-export type AddClaimOwnershipTransferRestrictionParams = ClaimOwnershipTransferRestrictionInput & {
-  type: TransferRestrictionType.ClaimOwnership;
-};
+export type AddClaimPercentageTransferRestrictionParams =
+  ClaimPercentageTransferRestrictionInput & {
+    type: TransferRestrictionType.ClaimPercentage;
+  };
 
 /**
  * @hidden
@@ -49,7 +50,7 @@ export type AddTransferRestrictionParams = { ticker: string } & (
   | AddCountTransferRestrictionParams
   | AddPercentageTransferRestrictionParams
   | AddClaimCountTransferRestrictionParams
-  | AddClaimOwnershipTransferRestrictionParams
+  | AddClaimPercentageTransferRestrictionParams
 );
 
 export interface Storage {
@@ -94,7 +95,7 @@ export async function prepareAddTransferRestriction(
     max,
   }:
     | AddClaimCountTransferRestrictionParams
-    | AddClaimOwnershipTransferRestrictionParams): ClaimRestrictionValue => {
+    | AddClaimPercentageTransferRestrictionParams): ClaimRestrictionValue => {
     return {
       claim,
       issuer,
@@ -116,7 +117,7 @@ export async function prepareAddTransferRestriction(
     chainType = TransferRestrictionType.ClaimCount;
   } else {
     value = argsToClaimRestrictionValue(args);
-    chainType = TransferRestrictionType.ClaimOwnership;
+    chainType = TransferRestrictionType.ClaimPercentage;
   }
 
   const rawTransferCondition = transferRestrictionToPolymeshTransferCondition(

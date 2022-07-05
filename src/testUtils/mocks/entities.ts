@@ -147,7 +147,7 @@ interface AssetOptions extends EntityOptions {
   transferRestrictionsClaimCountGet?: EntityGetter<
     ActiveTransferRestrictions<CountTransferRestriction>
   >;
-  transferRestrictionsClaimOwnershipGet?: EntityGetter<
+  transferRestrictionsClaimPercentageGet?: EntityGetter<
     ActiveTransferRestrictions<PercentageTransferRestriction>
   >;
   corporateActionsGetAgents?: EntityGetter<Identity[]>;
@@ -715,7 +715,7 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
       count: {},
       percentage: {},
       claimCount: {},
-      claimOwnership: {},
+      claimPercentage: {},
     } as {
       count: {
         get: sinon.SinonStub;
@@ -726,7 +726,7 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
       claimCount: {
         get: sinon.SinonStub;
       };
-      claimOwnership: {
+      claimPercentage: {
         get: sinon.SinonStub;
       };
     };
@@ -787,8 +787,8 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
       this.transferRestrictions.claimCount.get = createEntityGetterStub(
         opts.transferRestrictionsClaimCountGet
       );
-      this.transferRestrictions.claimOwnership.get = createEntityGetterStub(
-        opts.transferRestrictionsClaimOwnershipGet
+      this.transferRestrictions.claimPercentage.get = createEntityGetterStub(
+        opts.transferRestrictionsClaimPercentageGet
       );
       this.corporateActions.getAgents = createEntityGetterStub(opts.corporateActionsGetAgents);
       this.corporateActions.getDefaultConfig = createEntityGetterStub(
@@ -831,7 +831,7 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
       restrictions: [],
       availableSlots: new BigNumber(3),
     },
-    transferRestrictionsClaimOwnershipGet: {
+    transferRestrictionsClaimPercentageGet: {
       restrictions: [],
       availableSlots: new BigNumber(3),
     },
