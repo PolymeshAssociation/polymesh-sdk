@@ -54,7 +54,7 @@ export type SetRestrictionsParams<T> = Omit<
   'type'
 >;
 
-export type GetReturnType<T> = ActiveTransferRestrictions<
+export type GetTransferRestrictionReturnType<T> = ActiveTransferRestrictions<
   T extends TransferRestrictionType.Count ? CountTransferRestriction : PercentageTransferRestriction
 >;
 

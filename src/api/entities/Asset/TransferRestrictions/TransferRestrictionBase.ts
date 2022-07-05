@@ -13,7 +13,7 @@ import {
 } from '~/internal';
 import {
   AddRestrictionParams,
-  GetReturnType,
+  GetTransferRestrictionReturnType,
   NoArgsProcedureMethod,
   ProcedureMethod,
   SetRestrictionsParams,
@@ -121,7 +121,7 @@ export abstract class TransferRestrictionBase<
    *   The `availableSlots` property of the result represents how many more restrictions can be added
    *   before reaching that limit
    */
-  public async get(): Promise<GetReturnType<T>> {
+  public async get(): Promise<GetTransferRestrictionReturnType<T>> {
     const {
       parent: { ticker },
       context: {
@@ -184,6 +184,6 @@ export abstract class TransferRestrictionBase<
     return {
       restrictions: restrictions,
       availableSlots: maxTransferConditions.minus(restrictions.length),
-    } as GetReturnType<T>;
+    } as GetTransferRestrictionReturnType<T>;
   }
 }
