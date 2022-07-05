@@ -634,6 +634,18 @@ describe('addTransferRestriction procedure', () => {
       expect(result).toEqual({
         currentRestrictions: mockCountBtreeSet,
       });
+
+      result = await boundFunc({
+        ticker: 'TICKER',
+        type: TransferRestrictionType.ClaimCount,
+        min: new BigNumber(1),
+        issuer: issuer,
+        claim: { type: ClaimType.Accredited, accredited: true },
+      } as AddTransferRestrictionParams);
+
+      expect(result).toEqual({
+        currentRestrictions: mockCountBtreeSet,
+      });
     });
 
     it('should throw an error if the appropriate stat is not set', () => {

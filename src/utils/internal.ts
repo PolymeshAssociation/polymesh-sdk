@@ -5,7 +5,7 @@ import {
   DropLast,
   ObsInnerType,
 } from '@polkadot/api/types';
-import { Bytes, StorageKey } from '@polkadot/types';
+import { BTreeSet, Bytes, StorageKey } from '@polkadot/types';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
 import {
   PolymeshPrimitivesStatisticsStatClaim,
@@ -1391,7 +1391,8 @@ export function compareStatTypeToTransferRestrictionType(
 
 /**
  *@ hidden
- * @param type TransferRestriction type that was given
+ * @param args.type TransferRestriction type that was given
+ * @param args.claimIssuer optional Issuer and ClaimType for the scope of the Stat
  * @param context
  * @returns encoded StatType needed for the TransferRestriction to be enabled
  */
@@ -1410,4 +1411,23 @@ export function neededStatTypeForRestrictionInput(
 
   const rawIssuer = claimIssuer ? claimIssuerToMeshClaimIssuer(claimIssuer, context) : undefined;
   return statisticsOpTypeToStatType({ op: rawOp, claimIssuer: rawIssuer }, context);
+}
+
+/**
+ * @hidden
+ * @throws if stat is not found in the given set
+ */
+export function assertStatIsSet(
+  currentStats: BTreeSet<PolymeshPrimitivesStatisticsStatType>,
+  neededStat: PolymeshPrimitivesStatisticsStatType
+): void {
+  const needStat = ![...currentStats].find(s => neededStat.eq(s));
+
+  if (needStat) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message:
+        'The appropriate stat type for this restriction is not set for the Asset. Try calling enableStat in the namespace first',
+    });
+  }
 }

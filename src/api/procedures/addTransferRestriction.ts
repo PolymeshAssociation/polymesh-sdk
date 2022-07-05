@@ -24,7 +24,12 @@ import {
   transferRestrictionToPolymeshTransferCondition,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { checkTxType, getExemptedIds, neededStatTypeForRestrictionInput } from '~/utils/internal';
+import {
+  assertStatIsSet,
+  checkTxType,
+  getExemptedIds,
+  neededStatTypeForRestrictionInput,
+} from '~/utils/internal';
 
 export type AddCountTransferRestrictionParams = CountTransferRestrictionInput & {
   type: TransferRestrictionType.Count;
@@ -208,8 +213,11 @@ export async function prepareStorage(
     type === TransferRestrictionType.ClaimCount ||
     type === TransferRestrictionType.ClaimPercentage
   ) {
-    const { claim, issuer } = args;
-    claimIssuer = { claimType: claim.type, issuer };
+    const {
+      claim: { type: claimType },
+      issuer,
+    } = args;
+    claimIssuer = { claimType, issuer };
   }
 
   const tickerKey = stringToTickerKey(ticker, context);
@@ -220,15 +228,7 @@ export async function prepareStorage(
   ]);
 
   const neededStat = neededStatTypeForRestrictionInput({ type, claimIssuer }, context);
-  const needStat = ![...currentStats].find(s => neededStat.eq(s));
-
-  if (needStat) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message:
-        'The appropriate stat type for this restriction is not set for the Asset. Try calling enableStat in the namespace first',
-    });
-  }
+  assertStatIsSet(currentStats, neededStat);
 
   return {
     currentRestrictions,
