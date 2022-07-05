@@ -84,7 +84,7 @@ import {
   AuthorizationType,
   CalendarUnit,
   Claim,
-  ClaimRestrictionValue,
+  ClaimCountRestrictionValue,
   ClaimType,
   Condition,
   ConditionCompliance,
@@ -5576,7 +5576,7 @@ describe('middlewarePortfolioToPortfolio', () => {
   });
 });
 
-describe('transferRestrictionToTransferManager', () => {
+describe('transferRestrictionToPolymeshTransferCondition', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -5592,7 +5592,7 @@ describe('transferRestrictionToTransferManager', () => {
 
   it('should convert a Transfer Restriction to a PolymeshTransferCondition object', () => {
     const count = new BigNumber(10);
-    let value: { type: TransferRestrictionType; value: BigNumber | ClaimRestrictionValue } = {
+    let value: { type: TransferRestrictionType; value: BigNumber | ClaimCountRestrictionValue } = {
       type: TransferRestrictionType.Count,
       value: count,
     };
@@ -5641,8 +5641,10 @@ describe('transferRestrictionToTransferManager', () => {
     const issuer = entityMockUtils.getIdentityInstance({ did });
     const countryCode = CountryCode.Ca;
     const rawCountryCode = dsMockUtils.createMockCountryCode(CountryCode.Ca);
-    const rawMin = dsMockUtils.createMockU64(min);
-    const rawMax = dsMockUtils.createMockOption(dsMockUtils.createMockU64(max));
+    const rawMinCount = dsMockUtils.createMockU64(min);
+    const rawMaxCount = dsMockUtils.createMockOption(dsMockUtils.createMockU64(max));
+    const rawMinPercent = dsMockUtils.createMockPermill(min);
+    const rawMaxPercent = dsMockUtils.createMockPermill(max);
     const rawIssuerId = dsMockUtils.createMockIdentityId(did);
     const rawClaimValue = { Jurisdiction: rawCountryCode };
 
@@ -5657,13 +5659,15 @@ describe('transferRestrictionToTransferManager', () => {
       value: claimCount,
     };
 
-    createTypeStub.withArgs('u64', min.toString()).returns(rawMin);
-    createTypeStub.withArgs('u64', max.toString()).returns(rawMax);
+    createTypeStub.withArgs('u64', min.toString()).returns(rawMinCount);
+    createTypeStub.withArgs('u64', max.toString()).returns(rawMaxCount);
+    createTypeStub.withArgs('Permill', min.shiftedBy(4).toString()).returns(rawMinPercent);
+    createTypeStub.withArgs('Permill', max.shiftedBy(4).toString()).returns(rawMaxPercent);
     createTypeStub.withArgs('CountryCode', CountryCode.Ca).returns(rawCountryCode);
     createTypeStub.withArgs('PolymeshPrimitivesIdentityId', did).returns(rawIssuerId);
     createTypeStub
       .withArgs('PolymeshPrimitivesTransferComplianceTransferCondition', {
-        ClaimCount: [rawClaimValue, rawIssuerId, rawMin, rawMax],
+        ClaimCount: [rawClaimValue, rawIssuerId, rawMinCount, rawMaxCount],
       })
       .returns(fakeResult);
 
@@ -5690,7 +5694,7 @@ describe('transferRestrictionToTransferManager', () => {
     createTypeStub.withArgs('bool', true).returns(rawTrue);
     createTypeStub
       .withArgs('PolymeshPrimitivesTransferComplianceTransferCondition', {
-        ClaimOwnership: [rawOwnershipClaim, rawIssuerId, rawMin, rawMax],
+        ClaimOwnership: [rawOwnershipClaim, rawIssuerId, rawMinPercent, rawMaxPercent],
       })
       .returns(fakeResult);
 
@@ -5716,7 +5720,7 @@ describe('transferRestrictionToTransferManager', () => {
     createTypeStub.withArgs('bool', true).returns(rawTrue);
     createTypeStub
       .withArgs('PolymeshPrimitivesTransferComplianceTransferCondition', {
-        ClaimOwnership: [rawOwnershipClaimAccredited, rawIssuerId, rawMin, rawMax],
+        ClaimOwnership: [rawOwnershipClaimAccredited, rawIssuerId, rawMinPercent, rawMaxPercent],
       })
       .returns(fakeResult);
 

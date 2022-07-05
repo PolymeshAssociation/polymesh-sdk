@@ -41,9 +41,9 @@ import {
 } from '~/internal';
 import {
   ActiveTransferRestrictions,
+  ClaimCountRestrictionValue,
   ClaimCountTransferRestriction,
   ClaimPercentageTransferRestriction,
-  ClaimRestrictionValue,
   CountTransferRestriction,
   NoArgsProcedureMethod,
   PercentageTransferRestriction,
@@ -311,7 +311,7 @@ export abstract class TransferRestrictionBase<
           percentage: value,
         };
       } else {
-        const { min, max, claim, issuer } = value as ClaimRestrictionValue;
+        const { min, max, claim, issuer } = value as ClaimCountRestrictionValue;
         restriction = {
           min,
           max,

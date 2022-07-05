@@ -4,9 +4,9 @@ import BigNumber from 'bignumber.js';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import {
+  ClaimCountRestrictionValue,
   ClaimCountTransferRestrictionInput,
   ClaimPercentageTransferRestrictionInput,
-  ClaimRestrictionValue,
   CountTransferRestrictionInput,
   ErrorCode,
   PercentageTransferRestrictionInput,
@@ -100,7 +100,7 @@ export async function prepareAddTransferRestriction(
     max,
   }:
     | AddClaimCountTransferRestrictionParams
-    | AddClaimPercentageTransferRestrictionParams): ClaimRestrictionValue => {
+    | AddClaimPercentageTransferRestrictionParams): ClaimCountRestrictionValue => {
     return {
       claim,
       issuer,
@@ -109,7 +109,7 @@ export async function prepareAddTransferRestriction(
     };
   };
 
-  let value: BigNumber | ClaimRestrictionValue;
+  let value: BigNumber | ClaimCountRestrictionValue;
   let chainType: TransferRestrictionType;
   if (type === TransferRestrictionType.Count) {
     value = args.count;

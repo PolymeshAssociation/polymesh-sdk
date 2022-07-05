@@ -4,11 +4,11 @@ import { TransferCondition } from 'polymesh-types/types';
 
 import { Asset, Context, Identity, PolymeshError, Procedure } from '~/internal';
 import {
+  ClaimCountRestrictionValue,
   ClaimCountTransferRestriction,
   ClaimCountTransferRestrictionInput,
   ClaimPercentageTransferRestriction,
   ClaimPercentageTransferRestrictionInput,
-  ClaimRestrictionValue,
   CountTransferRestrictionInput,
   ErrorCode,
   PercentageTransferRestrictionInput,
@@ -22,14 +22,19 @@ import {
   complianceConditionsToBtreeSet,
   scopeIdsToBtreeSetIdentityId,
   statisticsOpTypeToStatOpType,
-  statisticsOpTypeToStatType,
   stringToIdentityId,
   stringToTickerKey,
   toExemptKey,
   transferRestrictionToPolymeshTransferCondition,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { checkTxType, compareTransferRestrictionToInput, getExemptedIds } from '~/utils/internal';
+import {
+  assertStatIsSet,
+  checkTxType,
+  compareTransferRestrictionToInput,
+  getExemptedIds,
+  neededStatTypeForRestrictionInput,
+} from '~/utils/internal';
 
 export interface SetCountTransferRestrictionsParams {
   /**
@@ -90,7 +95,7 @@ function transformRestrictions(
   let someDifference = restrictions.length !== currentRestrictions.length;
   const conditions: PolymeshPrimitivesTransferComplianceTransferCondition[] = [];
   restrictions.forEach(r => {
-    let value: BigNumber | ClaimRestrictionValue;
+    let value: BigNumber | ClaimCountRestrictionValue;
     if ('count' in r) {
       value = r.count;
     } else if ('percentage' in r) {
@@ -246,19 +251,21 @@ export async function prepareStorage(
 
   const currentStats = await statistics.activeAssetStats(tickerKey);
 
-  const neededOp =
-    type === TransferRestrictionType.Count ? StatisticsOpType.Count : StatisticsOpType.Balance;
-  const rawOp = statisticsOpTypeToStatOpType(neededOp, context);
-
-  const neededStat = statisticsOpTypeToStatType({ op: rawOp }, context); // claim issuer?
-  const needStat = !currentStats.has(neededStat);
-
-  if (needStat) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'The appropriate statistic must be enabled. Try calling the enableStat method first',
-    });
-  }
+  args.restrictions.forEach(restriction => {
+    let claimIssuer;
+    if (
+      type === TransferRestrictionType.ClaimCount ||
+      type === TransferRestrictionType.ClaimPercentage
+    ) {
+      const {
+        claim: { type: claimType },
+        issuer,
+      } = restriction as ClaimCountTransferRestriction | ClaimPercentageTransferRestriction;
+      claimIssuer = { claimType, issuer };
+    }
+    const neededStat = neededStatTypeForRestrictionInput({ type, claimIssuer }, context);
+    assertStatIsSet(currentStats, neededStat);
+  });
 
   const {
     transferRestrictions: { count, percentage, claimCount, claimPercentage },

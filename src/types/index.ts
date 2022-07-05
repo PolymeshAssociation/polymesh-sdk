@@ -1345,7 +1345,7 @@ export interface ClaimCountTransferRestrictionInput extends TransferRestrictionI
 }
 export interface ClaimPercentageTransferRestrictionInput extends TransferRestrictionInputBase {
   min: BigNumber;
-  max?: BigNumber;
+  max: BigNumber;
   issuer: Identity;
   claim: StatClaimUserInput;
 }
@@ -1373,12 +1373,19 @@ export enum TransferRestrictionType {
 
 export interface TransferRestriction {
   type: TransferRestrictionType;
-  value: BigNumber | ClaimRestrictionValue;
+  value: BigNumber | ClaimCountRestrictionValue | ClaimPercentageRestrictionValue;
 }
 
-export interface ClaimRestrictionValue {
+export interface ClaimCountRestrictionValue {
   min: BigNumber;
-  max?: BigNumber; // not optional for claim ownership / percentage
+  max?: BigNumber;
+  issuer: Identity;
+  claim: StatClaimUserInput;
+}
+
+export interface ClaimPercentageRestrictionValue {
+  min: BigNumber;
+  max: BigNumber;
   issuer: Identity;
   claim: StatClaimUserInput;
 }

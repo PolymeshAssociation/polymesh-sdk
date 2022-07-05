@@ -40,8 +40,8 @@ import {
   CalendarPeriod,
   CalendarUnit,
   Claim,
+  ClaimCountRestrictionValue,
   ClaimIssuer,
-  ClaimRestrictionValue,
   ClaimType,
   Condition,
   ConditionType,
@@ -1323,7 +1323,7 @@ function compareOptionalBigNumbers(a: BigNumber | undefined, b: BigNumber | unde
  */
 export function compareTransferRestrictionToInput(
   transferRestriction: PolymeshPrimitivesTransferComplianceTransferCondition,
-  value: BigNumber | ClaimRestrictionValue,
+  value: BigNumber | ClaimCountRestrictionValue,
   type: TransferRestrictionType
 ): boolean {
   if (transferRestriction.isMaxInvestorCount && type === TransferRestrictionType.Count) {
@@ -1340,7 +1340,7 @@ export function compareTransferRestrictionToInput(
     const issuerDid = identityIdToString(rawIssuerId);
     const min = u64ToBigNumber(rawMin);
     const max = maybeMax.isSome ? u64ToBigNumber(maybeMax.unwrap()) : undefined;
-    const castedValue = value as ClaimRestrictionValue;
+    const castedValue = value as ClaimCountRestrictionValue;
 
     return !!(
       castedValue.min.eq(min) &&
@@ -1352,7 +1352,7 @@ export function compareTransferRestrictionToInput(
     transferRestriction.isClaimOwnership &&
     type === TransferRestrictionType.ClaimPercentage
   ) {
-    const castedValue = value as ClaimRestrictionValue;
+    const castedValue = value as ClaimCountRestrictionValue;
     const [statClaim, rawIssuerId, rawMin, rawMax] = transferRestriction.asClaimOwnership;
     const issuerDid = identityIdToString(rawIssuerId);
 

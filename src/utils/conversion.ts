@@ -145,8 +145,8 @@ import {
   CheckpointScheduleParams,
   Claim,
   ClaimCountInitialStatInput,
+  ClaimCountRestrictionValue,
   ClaimIssuer,
-  ClaimRestrictionValue,
   ClaimType,
   Compliance,
   Condition,
@@ -561,7 +561,7 @@ export function meshClaimToStatClaimUser(claim: StatClaim): StatClaimUserInput {
 export function claimCountToClaimRestrictionValue(
   value: ITuple<[StatClaim, IdentityId, u64, Option<u64>]>,
   context: Context
-): ClaimRestrictionValue {
+): ClaimCountRestrictionValue {
   const [claim, issuer, min, max] = value;
   return {
     claim: meshClaimToStatClaimUser(claim),
@@ -577,7 +577,7 @@ export function claimCountToClaimRestrictionValue(
 export function claimPercentageToClaimRestrictionValue(
   value: ITuple<[StatClaim, IdentityId, Percentage, Percentage]>,
   context: Context
-): ClaimRestrictionValue {
+): ClaimCountRestrictionValue {
   const [claim, issuer, min, max] = value;
   return {
     claim: meshClaimToStatClaimUser(claim),
@@ -2871,20 +2871,24 @@ export function transferRestrictionToPolymeshTransferCondition(
     restrictionType = 'MaxInvestorOwnership';
     restrictionValue = percentageToPermill(value as BigNumber, context);
   } else {
+    const castedValue = value as ClaimCountRestrictionValue;
+    let rawMin;
+    let rawMax;
     if (type === TransferRestrictionType.ClaimCount) {
       restrictionType = 'ClaimCount';
+      rawMin = bigNumberToU64(castedValue.min, context);
+      rawMax = optionize(bigNumberToU64)(castedValue.max, context);
     } else {
       // i.e. TransferRestrictionType.ClaimPercentage
       restrictionType = 'ClaimOwnership';
+      rawMin = percentageToPermill(castedValue.min, context);
+      rawMax = optionize(percentageToPermill)(castedValue.max, context);
     }
-    const castedValue = value as ClaimRestrictionValue;
     const val = extractClaimValue(castedValue.claim);
     const claimValue = {
       [castedValue.claim.type]: val,
     };
     const rawIdentityId = stringToIdentityId(castedValue.issuer.did, context);
-    const rawMin = bigNumberToU64(castedValue.min, context);
-    const rawMax = optionize(bigNumberToU64)(castedValue.max, context);
     restrictionValue = [claimValue, rawIdentityId, rawMin, rawMax];
   }
   return context.createType('PolymeshPrimitivesTransferComplianceTransferCondition', {
