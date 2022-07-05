@@ -3622,11 +3622,16 @@ export function statisticsOpTypeToStatType(
  * however it will not look deeper at claimType. This function works around this short fall by sorting based on `claimType`
  * `createType` built in sorting is relied on otherwise.
  */
-function sortByClaimType(
+export function sortByClaimType(
   stats: PolymeshPrimitivesStatisticsStatType[]
 ): PolymeshPrimitivesStatisticsStatType[] {
-  const copy = [...stats];
-  copy.sort((a, b) => {
+  const typeOrdering = {
+    Accredited: 1,
+    Affiliate: 2,
+    Jurisdiction: 3,
+  };
+
+  return [...stats].sort((a, b) => {
     if (a.claimIssuer.isNone && b.claimIssuer.isNone) {
       return 0;
     }
@@ -3639,12 +3644,6 @@ function sortByClaimType(
 
     const [aClaim] = a.claimIssuer.unwrap();
     const [bClaim] = b.claimIssuer.unwrap();
-
-    const typeOrdering = {
-      Accredited: 1,
-      Affiliate: 2,
-      Jurisdiction: 3,
-    };
 
     let aScore, bScore;
     for (const [key, value] of Object.entries(typeOrdering)) {
@@ -3668,8 +3667,6 @@ function sortByClaimType(
 
     return aScore - bScore;
   });
-
-  return copy;
 }
 
 /**

@@ -1582,11 +1582,13 @@ const createMockEnum = (enumValue?: string | Record<string, Codec | Codec[]>): M
 
   if (typeof enumValue === 'string') {
     codec[`is${upperFirst(enumValue)}`] = true;
+    codec.type = enumValue;
   } else if (typeof enumValue === 'object') {
     const key = Object.keys(enumValue)[0];
 
     codec[`is${upperFirst(key)}`] = true;
     codec[`as${upperFirst(key)}`] = enumValue[key];
+    codec.type = key;
   }
 
   return createMockCodec(codec, !enumValue) as MockCodec<Enum>;

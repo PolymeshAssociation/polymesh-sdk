@@ -9,6 +9,7 @@ import {
   Signature,
 } from '@polkadot/types/interfaces';
 import {
+  PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesStatisticsStat2ndKey,
   PolymeshPrimitivesStatisticsStatOpType,
@@ -231,6 +232,7 @@ import {
   signerToString,
   signerValueToSignatory,
   signerValueToSigner,
+  sortByClaimType,
   statisticsOpTypeToStatOpType,
   statisticsOpTypeToStatType,
   statisticStatTypesToBtreeStatType,
@@ -7795,5 +7797,45 @@ describe('countStatInputToStatUpdates', () => {
 
     const result = countStatInputToStatUpdates({ count }, context);
     expect(result).toEqual('fakeResult');
+  });
+});
+
+describe('sortByClaimType', () => {
+  it('should sort by claim type', () => {
+    const issuer = dsMockUtils.createMockIdentityId('did');
+    type ClaimTypeTuple = [PolymeshPrimitivesIdentityClaimClaimType, PolymeshPrimitivesIdentityId];
+    const accreditedIssuer: ClaimTypeTuple = [
+      dsMockUtils.createMockIdentitiesClaimClaimType(ClaimType.Accredited),
+      issuer,
+    ];
+    const affiliateIssuer: ClaimTypeTuple = [
+      dsMockUtils.createMockIdentitiesClaimClaimType(ClaimType.Affiliate),
+      issuer,
+    ];
+    const jurisdictionIssuer: ClaimTypeTuple = [
+      dsMockUtils.createMockIdentitiesClaimClaimType(ClaimType.Jurisdiction),
+      issuer,
+    ];
+    const op = dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count);
+    const accreditedStat = dsMockUtils.createMockStatisticsStatType({
+      op,
+      claimIssuer: accreditedIssuer,
+    });
+
+    const affiliateStat = dsMockUtils.createMockStatisticsStatType({
+      op,
+      claimIssuer: affiliateIssuer,
+    });
+
+    const jurisdictionStat = dsMockUtils.createMockStatisticsStatType({
+      op,
+      claimIssuer: jurisdictionIssuer,
+    });
+
+    const countStat = dsMockUtils.createMockStatisticsStatType({ op });
+
+    const result = sortByClaimType([jurisdictionStat, accreditedStat, affiliateStat, countStat]);
+
+    expect(result).toEqual([accreditedStat, affiliateStat, jurisdictionStat, countStat]);
   });
 });
