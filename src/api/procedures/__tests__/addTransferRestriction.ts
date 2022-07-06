@@ -668,7 +668,7 @@ describe('addTransferRestriction procedure', () => {
       const expectedError = new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message:
-          'The appropriate stat type for this restriction is not set for the Asset. Try calling enableStat in the namespace first',
+          'The appropriate stat type for this restriction is not set. Try calling enableStat in the namespace first',
       });
 
       return expect(

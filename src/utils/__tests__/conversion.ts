@@ -131,7 +131,7 @@ import {
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { DUMMY_ACCOUNT_ID, MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '~/utils/constants';
-import { padString } from '~/utils/internal';
+import { assertExpectedChainVersion, padString } from '~/utils/internal';
 
 import {
   accountIdToAccount,
@@ -232,7 +232,8 @@ import {
   signerToString,
   signerValueToSignatory,
   signerValueToSigner,
-  sortByClaimType,
+  sortStatsByClaimType,
+  sortTransferRestrictionByClaimValue,
   statisticsOpTypeToStatOpType,
   statisticsOpTypeToStatType,
   statisticStatTypesToBtreeStatType,
@@ -7847,10 +7848,10 @@ describe('sortByClaimType', () => {
 
     const countStat = dsMockUtils.createMockStatisticsStatType({ op });
 
-    let result = sortByClaimType([jurisdictionStat, accreditedStat, affiliateStat, countStat]);
+    let result = sortStatsByClaimType([jurisdictionStat, accreditedStat, affiliateStat, countStat]);
     expect(result).toEqual([accreditedStat, affiliateStat, jurisdictionStat, countStat]);
 
-    result = sortByClaimType([
+    result = sortStatsByClaimType([
       nonStat,
       jurisdictionStat,
       nonStat,
@@ -7872,6 +7873,117 @@ describe('sortByClaimType', () => {
       countStat,
       countStat,
       countStat,
+    ]);
+  });
+});
+
+describe('sortTransferRestrictionByClaimValue', () => {
+  it('should sort conditions', () => {
+    const countRestriction = dsMockUtils.createMockTransferCondition({
+      MaxInvestorCount: dsMockUtils.createMockU64(new BigNumber(10)),
+    });
+    const percentRestriction = dsMockUtils.createMockTransferCondition({
+      MaxInvestorOwnership: dsMockUtils.createMockU64(new BigNumber(10)),
+    });
+    const accreditedRestriction = dsMockUtils.createMockTransferCondition({
+      ClaimCount: [
+        dsMockUtils.createMockStatisticsStatClaim({ Accredited: dsMockUtils.createMockBool(true) }),
+        dsMockUtils.createMockIdentityId(),
+        dsMockUtils.createMockU64(new BigNumber(10)),
+        dsMockUtils.createMockOption(),
+      ],
+    });
+    const affiliatedRestriction = dsMockUtils.createMockTransferCondition({
+      ClaimCount: [
+        dsMockUtils.createMockStatisticsStatClaim({ Affiliate: dsMockUtils.createMockBool(true) }),
+        dsMockUtils.createMockIdentityId(),
+        dsMockUtils.createMockU64(new BigNumber(10)),
+        dsMockUtils.createMockOption(),
+      ],
+    });
+    const canadaRestriction = dsMockUtils.createMockTransferCondition({
+      ClaimCount: [
+        dsMockUtils.createMockStatisticsStatClaim({
+          Jurisdiction: dsMockUtils.createMockOption(
+            dsMockUtils.createMockCountryCode(CountryCode.Ca)
+          ),
+        }),
+        dsMockUtils.createMockIdentityId(),
+        dsMockUtils.createMockU64(new BigNumber(10)),
+        dsMockUtils.createMockOption(),
+      ],
+    });
+    const usRestriction = dsMockUtils.createMockTransferCondition({
+      ClaimCount: [
+        dsMockUtils.createMockStatisticsStatClaim({
+          Jurisdiction: dsMockUtils.createMockOption(
+            dsMockUtils.createMockCountryCode(CountryCode.Us)
+          ),
+        }),
+        dsMockUtils.createMockIdentityId(),
+        dsMockUtils.createMockU64(new BigNumber(10)),
+        dsMockUtils.createMockOption(),
+      ],
+    });
+    const jurisdictionRestriction = dsMockUtils.createMockTransferCondition({
+      ClaimOwnership: [
+        dsMockUtils.createMockStatisticsStatClaim({
+          Jurisdiction: dsMockUtils.createMockOption(),
+        }),
+        dsMockUtils.createMockIdentityId(),
+        dsMockUtils.createMockPermill(new BigNumber(10)),
+        dsMockUtils.createMockPermill(new BigNumber(20)),
+      ],
+    });
+    const ownershipAffiliateRestriction = dsMockUtils.createMockTransferCondition({
+      ClaimOwnership: [
+        dsMockUtils.createMockStatisticsStatClaim({
+          Affiliate: dsMockUtils.createMockBool(true),
+        }),
+        dsMockUtils.createMockIdentityId(),
+        dsMockUtils.createMockPermill(new BigNumber(10)),
+        dsMockUtils.createMockPermill(new BigNumber(20)),
+      ],
+    });
+
+    let result = sortTransferRestrictionByClaimValue([
+      countRestriction,
+      percentRestriction,
+      accreditedRestriction,
+      affiliatedRestriction,
+      ownershipAffiliateRestriction,
+      canadaRestriction,
+      usRestriction,
+      jurisdictionRestriction,
+    ]);
+    expect(result).toEqual([
+      jurisdictionRestriction,
+      canadaRestriction,
+      usRestriction,
+      countRestriction,
+      percentRestriction,
+      accreditedRestriction,
+      affiliatedRestriction,
+      ownershipAffiliateRestriction,
+    ]);
+
+    result = sortTransferRestrictionByClaimValue([
+      canadaRestriction,
+      jurisdictionRestriction,
+      accreditedRestriction,
+      affiliatedRestriction,
+      usRestriction,
+      jurisdictionRestriction,
+      canadaRestriction,
+    ]);
+    expect(result).toEqual([
+      jurisdictionRestriction,
+      jurisdictionRestriction,
+      canadaRestriction,
+      canadaRestriction,
+      usRestriction,
+      accreditedRestriction,
+      affiliatedRestriction,
     ]);
   });
 });

@@ -3626,7 +3626,7 @@ export function statisticsOpTypeToStatType(
  * however it will not look deeper at claimType. This function works around this short fall by sorting based on `claimType`
  * `createType` built in sorting is relied on otherwise.
  */
-export function sortByClaimType(
+export function sortStatsByClaimType(
   stats: PolymeshPrimitivesStatisticsStatType[]
 ): PolymeshPrimitivesStatisticsStatType[] {
   const typeOrdering = {
@@ -3680,7 +3680,7 @@ export function statisticStatTypesToBtreeStatType(
   stats: PolymeshPrimitivesStatisticsStatType[],
   context: Context
 ): BTreeSet<PolymeshPrimitivesStatisticsStatType> {
-  const sortedStats = sortByClaimType(stats);
+  const sortedStats = sortStatsByClaimType(stats);
   return context.createType('BTreeSet<PolymeshPrimitivesStatisticsStatType>', sortedStats);
 }
 
@@ -3773,14 +3773,70 @@ export function createStat2ndKey(
 
 /**
  * @hidden
+ * The chain requires BTreeSets to be sorted. While polkadot.js createType will provide shallow sorting
+ * it fails to consider the nested CountryCode values. This works around the shortfall, but relies on `createType`
+ * sorting for otherwise
+ */
+export function sortTransferRestrictionByClaimValue(
+  conditions: PolymeshPrimitivesTransferComplianceTransferCondition[]
+): PolymeshPrimitivesTransferComplianceTransferCondition[] {
+  const getJurisdictionValue = (
+    condition: PolymeshPrimitivesTransferComplianceTransferCondition
+  ): Option<MeshCountryCode> | undefined => {
+    if (condition.isClaimCount) {
+      if (!condition.asClaimCount[0].isJurisdiction) {
+        return undefined;
+      } else {
+        return condition.asClaimCount[0].asJurisdiction;
+      }
+    } else if (condition.isClaimOwnership) {
+      if (!condition.asClaimOwnership[0].isJurisdiction) {
+        return undefined;
+      }
+      return condition.asClaimOwnership[0].asJurisdiction;
+    } else {
+      return undefined;
+    }
+  };
+
+  return [...conditions].sort((a, b) => {
+    const aClaim = getJurisdictionValue(a);
+    if (!aClaim) {
+      return 1;
+    }
+    const bClaim = getJurisdictionValue(b);
+    if (!bClaim) {
+      return -1;
+    }
+
+    if (aClaim.isNone && bClaim.isNone) {
+      return 0;
+    }
+    if (aClaim.isNone) {
+      return -1;
+    }
+    if (bClaim.isNone) {
+      return 1;
+    }
+    const aCode = meshCountryCodeToCountryCode(aClaim.unwrap());
+    const bCode = meshCountryCodeToCountryCode(bClaim.unwrap());
+
+    const countryOrder = Object.values(CountryCode);
+    return countryOrder.indexOf(aCode) - countryOrder.indexOf(bCode);
+  });
+}
+
+/**
+ * @hidden
  */
 export function complianceConditionsToBtreeSet(
   conditions: PolymeshPrimitivesTransferComplianceTransferCondition[],
   context: Context
 ): BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition> {
+  const sortedConditions = sortTransferRestrictionByClaimValue(conditions);
   return context.createType(
     'BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition> ',
-    conditions
+    sortedConditions
   );
 }
 
