@@ -1,14 +1,10 @@
 import BigNumber from 'bignumber.js';
 
 import { NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, RoleType, TxTags } from '~/types';
+import { ErrorCode, RenamePortfolioParams, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { bigNumberToU64, stringToBytes, stringToIdentityId } from '~/utils/conversion';
 import { getPortfolioIdByName } from '~/utils/internal';
-
-export interface RenamePortfolioParams {
-  name: string;
-}
 
 /**
  * @hidden

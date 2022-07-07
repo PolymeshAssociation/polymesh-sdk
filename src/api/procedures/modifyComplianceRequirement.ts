@@ -3,23 +3,10 @@ import { flatMap, remove } from 'lodash';
 
 import { assertRequirementsNotTooComplex } from '~/api/procedures/utils';
 import { Asset, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, InputCondition, TxTags } from '~/types';
+import { ErrorCode, ModifyComplianceRequirementParams, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { requirementToComplianceRequirement, stringToTicker } from '~/utils/conversion';
 import { conditionsAreEqual, hasSameElements } from '~/utils/internal';
-
-export type ModifyComplianceRequirementParams = {
-  /**
-   * ID of the Compliance Requirement
-   */
-  id: BigNumber;
-  /**
-   * array of conditions to replace the existing array of conditions for the requirement (identified by `id`).
-   *   Conditions within a requirement are *AND* between them. This means that in order
-   *   for a transfer to comply with this requirement, it must fulfill *ALL* conditions
-   */
-  conditions: InputCondition[];
-};
 
 /**
  * @hidden

@@ -4,14 +4,9 @@ import {
 } from '@polkadot/types/lookup';
 import sinon from 'sinon';
 
-import {
-  Asset,
-  Context,
-  ModifyAssetTrustedClaimIssuersAddSetParams,
-  Namespace,
-  TransactionQueue,
-} from '~/internal';
+import { Asset, Context, Namespace, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { ModifyAssetTrustedClaimIssuersAddSetParams } from '~/types';
 import { TrustedClaimIssuerOperation } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 

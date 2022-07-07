@@ -17,12 +17,12 @@ export interface UniqueIdentifiers {
   ticker: string;
 }
 
-interface CalendarPeriodHumanReadable {
+export interface CalendarPeriodHumanReadable {
   unit: CalendarUnit;
   amount: string;
 }
 
-interface HumanReadable {
+export interface HumanReadable {
   id: string;
   ticker: string;
   period: CalendarPeriodHumanReadable | null;

@@ -7,25 +7,25 @@ import {
 
 import {
   addAssetRequirement,
-  AddAssetRequirementParams,
   Asset,
   Context,
   Identity,
   modifyComplianceRequirement,
-  ModifyComplianceRequirementParams,
   Namespace,
   removeAssetRequirement,
-  RemoveAssetRequirementParams,
   setAssetRequirements,
-  SetAssetRequirementsParams,
   togglePauseRequirements,
 } from '~/internal';
 import { AssetComplianceResult } from '~/polkadot/polymesh';
 import {
+  AddAssetRequirementParams,
   Compliance,
   ComplianceRequirements,
+  ModifyComplianceRequirementParams,
   NoArgsProcedureMethod,
   ProcedureMethod,
+  RemoveAssetRequirementParams,
+  SetAssetRequirementsParams,
   SubCallback,
   UnsubCallback,
 } from '~/types';

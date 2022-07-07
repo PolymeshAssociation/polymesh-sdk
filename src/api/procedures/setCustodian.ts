@@ -10,8 +10,16 @@ import {
   PostTransactionValue,
   Procedure,
 } from '~/internal';
-import { Authorization, AuthorizationType, ErrorCode, RoleType, TxTags } from '~/types';
-import { PortfolioId, ProcedureAuthorization } from '~/types/internal';
+import {
+  Authorization,
+  AuthorizationType,
+  ErrorCode,
+  PortfolioId,
+  RoleType,
+  SetCustodianParams,
+  TxTags,
+} from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
   dateToMoment,
@@ -21,11 +29,6 @@ import {
   signerValueToSignatory,
 } from '~/utils/conversion';
 import { optionize } from '~/utils/internal';
-
-export interface SetCustodianParams {
-  targetIdentity: string | Identity;
-  expiry?: Date;
-}
 
 /**
  * @hidden

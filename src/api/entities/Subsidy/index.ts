@@ -3,17 +3,21 @@ import BigNumber from 'bignumber.js';
 import {
   Account,
   Context,
-  DecreaseAllowanceParams,
   Entity,
-  IncreaseAllowanceParams,
   modifyAllowance,
   ModifyAllowanceParams,
   PolymeshError,
   quitSubsidy,
-  SetAllowanceParams,
 } from '~/internal';
-import { ErrorCode, NoArgsProcedureMethod, ProcedureMethod } from '~/types';
-import { AllowanceOperation } from '~/types/internal';
+import {
+  AllowanceOperation,
+  DecreaseAllowanceParams,
+  ErrorCode,
+  IncreaseAllowanceParams,
+  NoArgsProcedureMethod,
+  ProcedureMethod,
+  SetAllowanceParams,
+} from '~/types';
 import { createProcedureMethod, toHumanReadable } from '~/utils/internal';
 
 export interface UniqueIdentifiers {

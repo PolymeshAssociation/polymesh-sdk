@@ -15,9 +15,8 @@ import {
   Authorization,
   AuthorizationType,
   ErrorCode,
+  InviteExternalAgentParams,
   SignerType,
-  TransactionPermissions,
-  TxGroup,
   TxTags,
 } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
@@ -42,26 +41,6 @@ export const createGroupAndAuthorizationResolver =
 
     return target.authorizations.getOne({ id });
   };
-
-export interface InviteExternalAgentParams {
-  target: string | Identity;
-  permissions:
-    | KnownPermissionGroup
-    | CustomPermissionGroup
-    | {
-        transactions: TransactionPermissions | null;
-      }
-    | {
-        transactionGroups: TxGroup[];
-      };
-  /**
-   * date at which the authorization request for invitation expires (optional)
-   *
-   * @note if expiry date is not set, the invitation will never expire
-   * @note due to chain limitations, the expiry will be ignored if the passed `permissions` don't correspond to an existing Permission Group
-   */
-  expiry?: Date;
-}
 
 /**
  * @hidden

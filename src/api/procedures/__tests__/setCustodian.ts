@@ -11,12 +11,12 @@ import { Mocked } from '~/testUtils/types';
 import {
   Authorization,
   AuthorizationType,
+  PortfolioId,
   RoleType,
   SignerType,
   SignerValue,
   TxTags,
 } from '~/types';
-import { PortfolioId } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(

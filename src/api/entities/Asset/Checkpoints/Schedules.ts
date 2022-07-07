@@ -6,13 +6,18 @@ import {
   CheckpointSchedule,
   Context,
   createCheckpointSchedule,
-  CreateCheckpointScheduleParams,
   Namespace,
   PolymeshError,
   removeCheckpointSchedule,
-  RemoveCheckpointScheduleParams,
 } from '~/internal';
-import { CalendarPeriod, ErrorCode, ProcedureMethod, ScheduleWithDetails } from '~/types';
+import {
+  CalendarPeriod,
+  CreateCheckpointScheduleParams,
+  ErrorCode,
+  ProcedureMethod,
+  RemoveCheckpointScheduleParams,
+  ScheduleWithDetails,
+} from '~/types';
 import {
   storedScheduleToCheckpointScheduleParams,
   stringToTicker,

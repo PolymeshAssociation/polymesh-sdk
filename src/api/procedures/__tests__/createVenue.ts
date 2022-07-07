@@ -5,10 +5,10 @@ import { VenueType as MeshVenueType } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { createCreateVenueResolver, prepareCreateVenue } from '~/api/procedures/createVenue';
-import { Context, CreateVenueParams, PostTransactionValue, Venue } from '~/internal';
+import { Context, PostTransactionValue, Venue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { VenueType } from '~/types';
+import { CreateVenueParams, VenueType } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';

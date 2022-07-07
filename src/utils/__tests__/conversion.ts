@@ -104,6 +104,7 @@ import {
   PermissionType,
   PortfolioMovement,
   Scope,
+  ScopeClaimProof,
   ScopeType,
   SecurityIdentifierType,
   Signer,
@@ -118,12 +119,7 @@ import {
   TxTags,
   VenueType,
 } from '~/types';
-import {
-  InstructionStatus,
-  PermissionGroupIdentifier,
-  ScopeClaimProof,
-  StatisticsOpType,
-} from '~/types/internal';
+import { InstructionStatus, PermissionGroupIdentifier, StatisticsOpType } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { DUMMY_ACCOUNT_ID, MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '~/utils/constants';
 import { padString } from '~/utils/internal';

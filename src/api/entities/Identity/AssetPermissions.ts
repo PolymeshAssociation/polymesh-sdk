@@ -11,9 +11,7 @@ import {
   Namespace,
   PolymeshError,
   setPermissionGroup,
-  SetPermissionGroupParams,
   waivePermissions,
-  WaivePermissionsParams,
 } from '~/internal';
 import { eventByIndexedArgs, tickerExternalAgentActions } from '~/middleware/queries';
 import { EventIdEnum as EventId, ModuleIdEnum as ModuleId, Query } from '~/middleware/types';
@@ -26,9 +24,11 @@ import {
   PermissionType,
   ProcedureMethod,
   ResultSet,
+  SetPermissionGroupParams,
   SignerType,
   TxTag,
   TxTags,
+  WaivePermissionsParams,
 } from '~/types';
 import { Ensured, QueryReturnType } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
