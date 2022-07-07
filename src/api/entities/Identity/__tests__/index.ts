@@ -7,6 +7,8 @@ import sinon from 'sinon';
 
 import { Asset, Context, Entity, Identity } from '~/internal';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
+import { assetHoldersQuery, trustingAssetsQuery } from '~/middleware/queriesV2';
+import { AssetHoldersOrderBy } from '~/middleware/typesV2';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
 import {
@@ -587,6 +589,26 @@ describe('Identity class', () => {
     });
   });
 
+  describe('method: getTrustingAssetsV2', () => {
+    const did = 'someDid';
+    const tickers = ['ASSET1', 'ASSET2'];
+
+    it('should return a list of Assets', async () => {
+      const identity = new Identity({ did }, context);
+
+      dsMockUtils.createApolloV2QueryStub(trustingAssetsQuery({ issuer: did }), {
+        trustedClaimIssuers: {
+          nodes: tickers.map(ticker => ({ assetId: ticker })),
+        },
+      });
+
+      const result = await identity.getTrustingAssetsV2();
+
+      expect(result[0].ticker).toBe('ASSET1');
+      expect(result[1].ticker).toBe('ASSET2');
+    });
+  });
+
   describe('method: getHeldAssets', () => {
     const did = 'someDid';
     const tickers = ['ASSET1', 'ASSET2'];
@@ -617,6 +639,45 @@ describe('Identity class', () => {
         start: new BigNumber(0),
         size: new BigNumber(1),
         order: Order.Asc,
+      });
+
+      expect(result.data[0].ticker).toBe(tickers[0]);
+      expect(result.data[1].ticker).toBe(tickers[1]);
+    });
+  });
+
+  describe('method: getHeldAssetsV2', () => {
+    const did = 'someDid';
+    const tickers = ['ASSET1', 'ASSET2'];
+
+    it('should return a list of Assets', async () => {
+      const identity = new Identity({ did }, context);
+
+      dsMockUtils.createApolloV2QueryStub(assetHoldersQuery({ identityId: did }), {
+        assetHolders: { nodes: tickers.map(ticker => ({ assetId: ticker })), totalCount: 2 },
+      });
+
+      let result = await identity.getHeldAssetsV2();
+
+      expect(result.data[0].ticker).toBe(tickers[0]);
+      expect(result.data[1].ticker).toBe(tickers[1]);
+
+      dsMockUtils.createApolloV2QueryStub(
+        assetHoldersQuery(
+          { identityId: did },
+          new BigNumber(1),
+          new BigNumber(0),
+          AssetHoldersOrderBy.CreatedBlockIdAsc
+        ),
+        {
+          assetHolders: { nodes: tickers.map(ticker => ({ assetId: ticker })), totalCount: 2 },
+        }
+      );
+
+      result = await identity.getHeldAssetsV2({
+        start: new BigNumber(0),
+        size: new BigNumber(1),
+        order: AssetHoldersOrderBy.CreatedBlockIdAsc,
       });
 
       expect(result.data[0].ticker).toBe(tickers[0]);

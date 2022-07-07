@@ -1,3 +1,4 @@
+import { hexStripPrefix } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 import {
   difference,
@@ -12,7 +13,9 @@ import {
 
 import { Asset, Authorizations, Context, Entity, Identity, PolymeshError } from '~/internal';
 import { transactions as transactionsQuery } from '~/middleware/queries';
-import { Query, TransactionOrderByInput } from '~/middleware/types';
+import { extrinsicsByArgs } from '~/middleware/queriesV2';
+import { CallIdEnum, ModuleIdEnum, Query, TransactionOrderByInput } from '~/middleware/types';
+import { ExtrinsicsOrderBy, Query as QueryV2 } from '~/middleware/typesV2';
 import {
   AccountBalance,
   CheckPermissionsResult,
@@ -34,11 +37,12 @@ import {
   TxTags,
   UnsubCallback,
 } from '~/types';
-import { Ensured } from '~/types/utils';
+import { Ensured, EnsuredV2 } from '~/types/utils';
 import {
   addressToKey,
   extrinsicIdentifierToTxTag,
   identityIdToString,
+  keyToAddress,
   portfolioToPortfolioId,
   stringToAccountId,
   stringToHash,
@@ -440,6 +444,118 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       }
     );
     /* eslint-enable @typescript-eslint/naming-convention */
+
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
+  }
+
+  /**
+   * Retrieve a list of transactions signed by this Account. Can be filtered using parameters
+   *
+   * @note if both `blockNumber` and `blockHash` are passed, only `blockNumber` is taken into account
+   *
+   * @param filters.tag - tag associated with the transaction
+   * @param filters.success - whether the transaction was successful or not
+   * @param filters.size - page size
+   * @param filters.start - page offset
+   *
+   * @note uses the middlewareV2
+   */
+  public async getTransactionHistoryV2(
+    filters: {
+      blockNumber?: BigNumber;
+      blockHash?: string;
+      tag?: TxTag;
+      success?: boolean;
+      size?: BigNumber;
+      start?: BigNumber;
+      orderBy?: ExtrinsicsOrderBy;
+    } = {}
+  ): Promise<ResultSet<ExtrinsicData>> {
+    const { context, address } = this;
+
+    const { tag, success, size, start, orderBy, blockHash } = filters;
+
+    let moduleId;
+    let callId;
+    if (tag) {
+      ({ moduleId, callId } = txTagToExtrinsicIdentifier(tag));
+    }
+
+    let successFilter;
+    if (success !== undefined) {
+      successFilter = success ? 1 : 0;
+    }
+
+    let { blockNumber } = filters;
+
+    if (!blockNumber && blockHash) {
+      const {
+        block: {
+          header: { number },
+        },
+      } = await context.polymeshApi.rpc.chain.getBlock(stringToHash(blockHash, context));
+
+      blockNumber = u32ToBigNumber(number.unwrap());
+    }
+
+    const {
+      data: {
+        extrinsics: { nodes: transactionList, totalCount },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'extrinsics'>>(
+      extrinsicsByArgs(
+        {
+          blockId: blockNumber ? blockNumber.toString() : undefined,
+          address: hexStripPrefix(addressToKey(address, context)),
+          moduleId,
+          callId,
+          success: successFilter,
+        },
+        size,
+        start,
+        orderBy
+      )
+    );
+
+    const count = new BigNumber(totalCount);
+
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
+    const data = transactionList.map(
+      ({
+        blockId,
+        extrinsicIdx,
+        address: rawAddress,
+        nonce,
+        moduleId: extrinsicModuleId,
+        callId: extrinsicCallId,
+        paramsTxt,
+        success: txSuccess,
+        specVersionId,
+        extrinsicHash,
+        block,
+      }) => ({
+        blockNumber: new BigNumber(blockId),
+        blockHash: block!.hash,
+        extrinsicIdx: new BigNumber(extrinsicIdx),
+        address: rawAddress ? keyToAddress(rawAddress, context) : null,
+        nonce: nonce ? new BigNumber(nonce) : null,
+        txTag: extrinsicIdentifierToTxTag({
+          moduleId: extrinsicModuleId as ModuleIdEnum,
+          callId: extrinsicCallId as CallIdEnum,
+        }),
+        params: JSON.parse(paramsTxt),
+        success: !!txSuccess,
+        specVersionId: new BigNumber(specVersionId),
+        extrinsicHash: extrinsicHash!,
+      })
+    );
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
     const next = calculateNextKey(count, size, start);
 

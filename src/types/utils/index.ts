@@ -64,6 +64,19 @@ export type WithRequired<T, K extends keyof T> = T & { [P in K]-?: T[P] };
  */
 export type Ensured<T, K extends keyof T> = Required<Pick<T, K>>;
 
+export type EnsuredV2<T, K extends keyof T> = Required<Pick<T, K>> & {
+  [SubKey in K]: NonNullable<T[SubKey]>;
+};
+
+export type PaginatedQueryArgs<T> = T & {
+  size?: number;
+  start?: number;
+};
+
+export type QueryArgs<T, K extends keyof T> = {
+  [P in K]?: T[P];
+};
+
 /**
  * Create a literal tuple type from a list of arguments
  *

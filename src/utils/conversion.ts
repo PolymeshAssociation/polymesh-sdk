@@ -25,6 +25,7 @@ import { computeWithoutCheck } from 'iso-7064';
 import {
   camelCase,
   flatten,
+  groupBy,
   includes,
   map,
   padEnd,
@@ -129,6 +130,11 @@ import {
   Scope as MiddlewareScope,
 } from '~/middleware/types';
 import {
+  Block as MiddlewareV2Block,
+  Claim as MiddlewareV2Claim,
+  Portfolio as MiddlewareV2Portfolio,
+} from '~/middleware/typesV2';
+import {
   AffirmationStatus,
   AssetDocument,
   Authorization,
@@ -137,6 +143,7 @@ import {
   CalendarUnit,
   CheckpointScheduleParams,
   Claim,
+  ClaimData,
   ClaimType,
   Compliance,
   Condition,
@@ -1982,12 +1989,15 @@ export function middlewareScopeToScope(scope: MiddlewareScope): Scope {
 /**
  * @hidden
  */
-export function scopeToMiddlewareScope(scope: Scope): MiddlewareScope {
+export function scopeToMiddlewareScope(scope: Scope, padTicker = true): MiddlewareScope {
   const { type, value } = scope;
 
   switch (type) {
     case ScopeType.Ticker:
-      return { type: ClaimScopeTypeEnum.Ticker, value: padEnd(value, 12, '\0') };
+      return {
+        type: ClaimScopeTypeEnum.Ticker,
+        value: padTicker ? padEnd(value, 12, '\0') : value,
+      };
     case ScopeType.Identity:
     case ScopeType.Custom:
       return { type: ClaimScopeTypeEnum[scope.type], value };
@@ -2007,6 +2017,23 @@ export function middlewareEventToEventIdentifier(event: MiddlewareEvent): EventI
     blockHash: block!.hash!,
     /* eslint-enable @typescript-eslint/no-non-null-assertion */
     eventIndex: new BigNumber(eventIndex),
+  };
+}
+
+/**
+ * @hidden
+ */
+export function middlewareV2EventDetailsToEventIdentifier(
+  block: MiddlewareV2Block,
+  eventIdx = 0
+): EventIdentifier {
+  const { blockId, datetime, hash } = block;
+
+  return {
+    blockNumber: new BigNumber(blockId),
+    blockHash: hash,
+    blockDate: new Date(`${datetime}`),
+    eventIndex: new BigNumber(eventIdx),
   };
 }
 
@@ -2536,6 +2563,9 @@ export function moduleAddressToString(moduleAddress: string, context: Context): 
  * @hidden
  */
 export function keyToAddress(key: string, context: Context): string {
+  if (!key.startsWith('0x')) {
+    key = `0x${key}`;
+  }
   return encodeAddress(key, context.ss58Format.toNumber());
 }
 
@@ -2703,6 +2733,39 @@ export function toIdentityWithClaimsArray(
         claim: createClaim(type, jurisdiction, claimScope, cddId, undefined),
       })
     ),
+  }));
+}
+
+/**
+ * @hidden
+ */
+export function middlewareV2ClaimToClaimData(
+  claim: MiddlewareV2Claim,
+  context: Context
+): ClaimData {
+  const { targetId, issuerId, issuanceDate, expiry, type, jurisdiction, scope, cddId } = claim;
+  return {
+    target: new Identity({ did: targetId }, context),
+    issuer: new Identity({ did: issuerId }, context),
+    issuedAt: new Date(parseFloat(issuanceDate)),
+    expiry: expiry ? new Date(parseFloat(expiry)) : null,
+    claim: createClaim(type, jurisdiction, scope, cddId, undefined),
+  };
+}
+
+/**
+ * @hidden
+ */
+export function toIdentityWithClaimsArrayV2(
+  data: MiddlewareV2Claim[],
+  context: Context,
+  groupByAttribute: string
+): IdentityWithClaims[] {
+  const groupedData = groupBy(data, groupByAttribute);
+
+  return map(groupedData, (claims, did) => ({
+    identity: new Identity({ did }, context),
+    claims: claims.map(claim => middlewareV2ClaimToClaimData(claim, context)),
   }));
 }
 
@@ -2951,6 +3014,22 @@ export function middlewarePortfolioToPortfolio(
     return new DefaultPortfolio({ did }, context);
   }
   return new NumberedPortfolio({ did, id: new BigNumber(kind) }, context);
+}
+
+/**
+ * @hidden
+ */
+export function middlewareV2PortfolioToPortfolio(
+  portfolio: MiddlewareV2Portfolio,
+  context: Context
+): DefaultPortfolio | NumberedPortfolio {
+  const { identityId: did, number } = portfolio;
+
+  if (number) {
+    return new NumberedPortfolio({ did, id: new BigNumber(number) }, context);
+  }
+
+  return new DefaultPortfolio({ did }, context);
 }
 
 /**

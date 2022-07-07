@@ -215,8 +215,8 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
     const createdCheckpointIndex = u64ToBigNumber(amount).toNumber();
     if (createdCheckpointIndex >= schedulePoints.length) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const schedule = schedules.find(({ id: schedId }) =>
-        u64ToBigNumber(schedId).eq(u64ToBigNumber(scheduleId))
+      const schedule = schedules.find(({ id }) =>
+        u64ToBigNumber(id).eq(u64ToBigNumber(scheduleId))
       )!;
 
       return new CheckpointSchedule(

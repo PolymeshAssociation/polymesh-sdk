@@ -10,6 +10,7 @@ import {
   TransactionQueue,
 } from '~/internal';
 import { getHistoryOfPaymentEventsForCa, getWithholdingTaxesOfCa } from '~/middleware/queries';
+import { distributionPaymentsQuery, distributionQuery } from '~/middleware/queriesV2';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   CorporateActionKind,
@@ -311,6 +312,48 @@ describe('DividendDistribution class', () => {
       );
 
       return expect(dividendDistribution.getWithheldTax()).rejects.toThrow(
+        'The Dividend Distribution no longer exists'
+      );
+    });
+  });
+
+  describe('method: getWithheldTaxV2', () => {
+    it('should return the amount of the withheld tax', async () => {
+      const fakeTax = new BigNumber(1000000);
+
+      dsMockUtils.createApolloV2QueryStub(
+        distributionQuery({
+          id: `${ticker}/${id.toString()}`,
+        }),
+        {
+          distribution: {
+            taxes: fakeTax.toNumber(),
+          },
+        }
+      );
+
+      const result = await dividendDistribution.getWithheldTaxV2();
+
+      expect(result).toEqual(new BigNumber(1));
+    });
+
+    it('should throw an error if the Dividend Distribution does not exist', () => {
+      dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
+      dsMockUtils.createApolloV2QueryStub(
+        distributionQuery({
+          id: `${ticker}/${id.toString()}`,
+        }),
+        {
+          distribution: {
+            taxes: 0,
+          },
+        }
+      );
+
+      return expect(dividendDistribution.getWithheldTaxV2()).rejects.toThrow(
         'The Dividend Distribution no longer exists'
       );
     });
@@ -629,6 +672,102 @@ describe('DividendDistribution class', () => {
       );
 
       return expect(dividendDistribution.getPaymentHistory()).rejects.toThrow(
+        'The Dividend Distribution no longer exists'
+      );
+    });
+  });
+
+  describe('method: getPaymentHistoryV2', () => {
+    it('should return the amount of the withheld tax', async () => {
+      const blockId = new BigNumber(1);
+      const blockHash = 'someHash';
+      const eventId = 'eventId';
+      const datetime = '2020-10-10';
+      const eventDid = 'eventDid';
+      const balance = new BigNumber(100);
+      const tax = new BigNumber(10);
+      const size = new BigNumber(1);
+      const start = new BigNumber(0);
+
+      dsMockUtils.createApolloV2QueryStub(
+        distributionPaymentsQuery(
+          {
+            distributionId: `${ticker}/${id.toString()}`,
+          },
+          size,
+          start
+        ),
+        {
+          distributionPayments: {
+            totalCount: 1,
+            nodes: [
+              {
+                eventId,
+                targetId: eventDid,
+                datetime,
+                amount: balance.toNumber(),
+                tax: tax.toNumber(),
+
+                createdBlock: {
+                  blockId: blockId.toNumber(),
+                  hash: blockHash,
+                },
+              },
+            ],
+          },
+        }
+      );
+
+      const {
+        data: [result],
+      } = await dividendDistribution.getPaymentHistoryV2({
+        size,
+        start,
+      });
+
+      expect(result.blockNumber).toEqual(blockId);
+      expect(result.blockHash).toEqual(blockHash);
+      expect(result.date).toEqual(new Date(`${datetime}Z`));
+      expect(result.target.did).toBe(eventDid);
+      expect(result.amount).toEqual(balance.shiftedBy(-6));
+      expect(result.withheldTax).toEqual(tax.shiftedBy(-4));
+    });
+
+    it('should return null if the query result is empty', async () => {
+      dsMockUtils.createApolloV2QueryStub(
+        distributionPaymentsQuery({
+          distributionId: `${ticker}/${id.toString()}`,
+        }),
+        {
+          distributionPayments: {
+            totalCount: 0,
+            nodes: [],
+          },
+        }
+      );
+      const result = await dividendDistribution.getPaymentHistoryV2();
+      expect(result.data).toEqual([]);
+      expect(result.next).toBeNull();
+    });
+
+    it('should throw an error if the Dividend Distribution does not exist', () => {
+      dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
+      dsMockUtils.createApolloV2QueryStub(
+        distributionPaymentsQuery({
+          distributionId: `${ticker}/${id.toString()}`,
+        }),
+        {
+          distributionPayments: {
+            totalCount: 0,
+            nodes: [],
+          },
+        }
+      );
+
+      return expect(dividendDistribution.getPaymentHistoryV2()).rejects.toThrow(
         'The Dividend Distribution no longer exists'
       );
     });

@@ -8,12 +8,15 @@ import {
   RenamePortfolioParams,
 } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
+import { portfolioQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
+import { Query as QueryV2 } from '~/middleware/typesV2';
 import { ErrorCode, EventIdentifier, ProcedureMethod } from '~/types';
-import { Ensured } from '~/types/utils';
+import { Ensured, EnsuredV2 } from '~/types/utils';
 import {
   bigNumberToU64,
   middlewareEventToEventIdentifier,
+  middlewareV2EventDetailsToEventIdentifier,
   stringToIdentityId,
   textToString,
 } from '~/utils/conversion';
@@ -120,6 +123,35 @@ export class NumberedPortfolio extends Portfolio {
     );
 
     return optionize(middlewareEventToEventIdentifier)(event);
+  }
+
+  /**
+   * Retrieve the identifier data (block number, date and event index) of the event that was emitted when this Portfolio was created
+   *
+   * @note uses the middlewareV2
+   * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
+   */
+  public async createdAtV2(): Promise<EventIdentifier | null> {
+    const {
+      owner: { did },
+      id,
+      context,
+    } = this;
+
+    const {
+      data: {
+        portfolios: {
+          nodes: [node],
+        },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'portfolios'>>(
+      portfolioQuery({
+        identityId: did,
+        number: id.toNumber(),
+      })
+    );
+
+    return optionize(middlewareV2EventDetailsToEventIdentifier)(node?.createdBlock, node?.eventIdx);
   }
 
   /**
