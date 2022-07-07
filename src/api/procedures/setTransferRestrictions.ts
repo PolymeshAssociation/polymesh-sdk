@@ -2,6 +2,7 @@ import { PolymeshPrimitivesTransferComplianceTransferCondition } from '@polkadot
 import BigNumber from 'bignumber.js';
 import { TransferCondition } from 'polymesh-types/types';
 
+import { SetTransferRestrictionsParams } from '~/api/entities/Asset/TransferRestrictions/TransferRestrictionBase';
 import { Asset, Context, Identity, PolymeshError, Procedure } from '~/internal';
 import {
   ClaimCountRestrictionValue,
@@ -35,39 +36,6 @@ import {
   getExemptedIds,
   neededStatTypeForRestrictionInput,
 } from '~/utils/internal';
-
-export interface SetCountTransferRestrictionsParams {
-  /**
-   * array of Count Transfer Restrictions with their corresponding exemptions (if applicable)
-   */
-  restrictions: CountTransferRestrictionInput[];
-  type: TransferRestrictionType.Count;
-}
-
-export interface SetPercentageTransferRestrictionsParams {
-  /**
-   * array of Percentage Transfer Restrictions with their corresponding exemptions (if applicable)
-   */
-  restrictions: PercentageTransferRestrictionInput[];
-  type: TransferRestrictionType.Percentage;
-}
-
-export interface SetClaimCountTransferRestrictionsParams {
-  restrictions: ClaimCountTransferRestrictionInput[];
-  type: TransferRestrictionType.ClaimCount;
-}
-
-export interface SetClaimPercentageTransferRestrictionsParams {
-  restrictions: ClaimPercentageTransferRestrictionInput[];
-  type: TransferRestrictionType.ClaimPercentage;
-}
-
-export type SetTransferRestrictionsParams = { ticker: string } & (
-  | SetCountTransferRestrictionsParams
-  | SetPercentageTransferRestrictionsParams
-  | SetClaimCountTransferRestrictionsParams
-  | SetClaimPercentageTransferRestrictionsParams
-);
 
 /**
  * @hidden

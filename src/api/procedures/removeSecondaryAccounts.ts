@@ -3,12 +3,8 @@ import { find } from 'lodash';
 
 import { assertSecondaryAccounts } from '~/api/procedures/utils';
 import { PolymeshError, Procedure } from '~/internal';
-import { Account, ErrorCode, TxTags } from '~/types';
+import { ErrorCode, RemoveSecondaryAccountsParams, TxTags } from '~/types';
 import { stringToAccountId } from '~/utils/conversion';
-
-export interface RemoveSecondaryAccountsParams {
-  accounts: Account[];
-}
 
 /**
  * @hidden

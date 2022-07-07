@@ -1,7 +1,7 @@
 import { isEqual } from 'lodash';
 
 import { CustomPermissionGroup, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, TransactionPermissions, TxGroup, TxTags } from '~/types';
+import { ErrorCode, SetGroupPermissionsParams, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   bigNumberToU32,
@@ -9,16 +9,6 @@ import {
   stringToTicker,
   transactionPermissionsToExtrinsicPermissions,
 } from '~/utils/conversion';
-
-export interface SetGroupPermissionsParams {
-  permissions:
-    | {
-        transactions: TransactionPermissions;
-      }
-    | {
-        transactionGroups: TxGroup[];
-      };
-}
 
 /**
  * @hidden

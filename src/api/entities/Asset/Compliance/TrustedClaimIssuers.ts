@@ -5,12 +5,17 @@ import {
   Context,
   DefaultTrustedClaimIssuer,
   modifyAssetTrustedClaimIssuers,
-  ModifyAssetTrustedClaimIssuersAddSetParams,
   ModifyAssetTrustedClaimIssuersParams,
-  ModifyAssetTrustedClaimIssuersRemoveParams,
   Namespace,
 } from '~/internal';
-import { ProcedureMethod, SubCallback, TrustedClaimIssuer, UnsubCallback } from '~/types';
+import {
+  ModifyAssetTrustedClaimIssuersAddSetParams,
+  ModifyAssetTrustedClaimIssuersRemoveParams,
+  ProcedureMethod,
+  SubCallback,
+  TrustedClaimIssuer,
+  UnsubCallback,
+} from '~/types';
 import { TrustedClaimIssuerOperation } from '~/types/internal';
 import { stringToTicker, trustedIssuerToTrustedClaimIssuer } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';

@@ -1,15 +1,9 @@
 import BigNumber from 'bignumber.js';
 
-import {
-  Context,
-  PolymeshError,
-  Portfolio,
-  renamePortfolio,
-  RenamePortfolioParams,
-} from '~/internal';
+import { Context, PolymeshError, Portfolio, renamePortfolio } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
-import { ErrorCode, EventIdentifier, ProcedureMethod } from '~/types';
+import { ErrorCode, EventIdentifier, ProcedureMethod, RenamePortfolioParams } from '~/types';
 import { Ensured } from '~/types/utils';
 import {
   bigNumberToU64,

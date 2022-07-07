@@ -15,14 +15,12 @@ import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import {
   ErrorCode,
   EventIdentifier,
+  InstructionAffirmationOperation,
   NoArgsProcedureMethod,
   PaginationOptions,
   ResultSet,
 } from '~/types';
-import {
-  InstructionAffirmationOperation,
-  InstructionStatus as InternalInstructionStatus,
-} from '~/types/internal';
+import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
 import { Ensured } from '~/types/utils';
 import {
   balanceToBigNumber,

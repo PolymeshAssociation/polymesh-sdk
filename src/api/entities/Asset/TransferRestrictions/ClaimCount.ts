@@ -1,15 +1,15 @@
 import BigNumber from 'bignumber.js';
 
 import { AddClaimCountStatParams } from '~/api/procedures/addAssetStat';
-import { AddClaimCountTransferRestrictionParams } from '~/api/procedures/addTransferRestriction';
 import { RemoveCountStatParams } from '~/api/procedures/removeAssetStat';
-import { SetClaimCountTransferRestrictionsParams } from '~/api/procedures/setTransferRestrictions';
 import { TransferRestrictionBase } from '~/internal';
 import {
   ActiveTransferRestrictions,
+  AddClaimCountTransferRestrictionParams,
   ClaimCountTransferRestriction,
   NoArgsProcedureMethod,
   ProcedureMethod,
+  SetClaimCountTransferRestrictionsParams,
   TransferRestrictionType,
 } from '~/types';
 

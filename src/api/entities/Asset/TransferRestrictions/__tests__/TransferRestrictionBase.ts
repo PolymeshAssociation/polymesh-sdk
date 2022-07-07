@@ -4,23 +4,18 @@ import sinon from 'sinon';
 
 import { ClaimCount } from '~/api/entities/Asset/TransferRestrictions/ClaimCount';
 import { ClaimPercentage } from '~/api/entities/Asset/TransferRestrictions/ClaimPercentage';
+import { Asset, Context, Namespace, TransactionQueue } from '~/internal';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   AddCountTransferRestrictionParams,
   AddPercentageTransferRestrictionParams,
-  Asset,
-  Context,
-  Namespace,
+  ClaimType,
+  CountTransferRestriction,
+  PercentageTransferRestriction,
   SetClaimCountTransferRestrictionsParams,
   SetClaimPercentageTransferRestrictionsParams,
   SetCountTransferRestrictionsParams,
   SetPercentageTransferRestrictionsParams,
-  TransactionQueue,
-} from '~/internal';
-import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import {
-  ClaimType,
-  CountTransferRestriction,
-  PercentageTransferRestriction,
   StatType,
   TransferRestrictionType,
 } from '~/types';

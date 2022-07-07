@@ -1,19 +1,12 @@
 import BigNumber from 'bignumber.js';
 
 import {
-  AddAssetStatParams,
   AddBalanceStatParams,
   AddClaimCountStatParams,
   AddClaimPercentageStatParams,
   AddCountStatParams,
 } from '~/api/procedures/addAssetStat';
 import {
-  AddClaimCountTransferRestrictionParams,
-  AddClaimPercentageTransferRestrictionParams,
-} from '~/api/procedures/addTransferRestriction';
-import {
-  removeAssetStat,
-  RemoveAssetStatParams,
   RemoveBalanceStatParams,
   RemoveCountStatParams,
   RemoveScopedBalanceParams,
@@ -21,33 +14,31 @@ import {
 } from '~/api/procedures/removeAssetStat';
 import {
   addAssetStat,
+  AddAssetStatParams,
   AddAssetStatStorage,
-  AddCountTransferRestrictionParams,
-  AddPercentageTransferRestrictionParams,
   addTransferRestriction,
   AddTransferRestrictionParams,
   AddTransferRestrictionStorage,
   Asset,
   Context,
   Namespace,
+  removeAssetStat,
+  RemoveAssetStatParams,
   RemoveAssetStatStorage,
+  setTransferRestrictions,
+  SetTransferRestrictionsStorage,
+} from '~/internal';
+import {
+  AddRestrictionParams,
+  ClaimCountRestrictionValue,
+  GetTransferRestrictionReturnType,
+  NoArgsProcedureMethod,
+  ProcedureMethod,
   SetClaimCountTransferRestrictionsParams,
   SetClaimPercentageTransferRestrictionsParams,
   SetCountTransferRestrictionsParams,
   SetPercentageTransferRestrictionsParams,
-  setTransferRestrictions,
-  SetTransferRestrictionsParams,
-  SetTransferRestrictionsStorage,
-} from '~/internal';
-import {
-  ActiveTransferRestrictions,
-  ClaimCountRestrictionValue,
-  ClaimCountTransferRestriction,
-  ClaimPercentageTransferRestriction,
-  CountTransferRestriction,
-  NoArgsProcedureMethod,
-  PercentageTransferRestriction,
-  ProcedureMethod,
+  SetRestrictionsParams,
   StatType,
   TransferRestrictionType,
 } from '~/types';
@@ -59,27 +50,12 @@ import {
 } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
-type AddRestrictionParams<T> = Omit<
-  T extends TransferRestrictionType.Count
-    ? AddCountTransferRestrictionParams
-    : T extends TransferRestrictionType.Percentage
-    ? AddPercentageTransferRestrictionParams
-    : T extends TransferRestrictionType.ClaimCount
-    ? AddClaimCountTransferRestrictionParams
-    : AddClaimPercentageTransferRestrictionParams,
-  'type'
->;
-
-type SetRestrictionsParams<T> = Omit<
-  T extends TransferRestrictionType.Count
-    ? SetCountTransferRestrictionsParams
-    : T extends TransferRestrictionType.Percentage
-    ? SetPercentageTransferRestrictionsParams
-    : T extends TransferRestrictionType.ClaimCount
-    ? SetClaimCountTransferRestrictionsParams
-    : SetClaimPercentageTransferRestrictionsParams,
-  'type'
->;
+export type SetTransferRestrictionsParams = { ticker: string } & (
+  | SetCountTransferRestrictionsParams
+  | SetPercentageTransferRestrictionsParams
+  | SetClaimCountTransferRestrictionsParams
+  | SetClaimPercentageTransferRestrictionsParams
+);
 
 type SetAssetStatParams<T> = Omit<
   T extends TransferRestrictionType.Count
@@ -101,16 +77,6 @@ export type RemoveAssetStatParamsBase<T> = Omit<
     ? RemoveScopedCountParams
     : RemoveScopedBalanceParams,
   'type'
->;
-
-type GetReturnType<T> = ActiveTransferRestrictions<
-  T extends TransferRestrictionType.Count
-    ? CountTransferRestriction
-    : T extends TransferRestrictionType.Percentage
-    ? PercentageTransferRestriction
-    : T extends TransferRestrictionType.ClaimCount
-    ? ClaimCountTransferRestriction
-    : ClaimPercentageTransferRestriction
 >;
 
 /**
@@ -257,7 +223,7 @@ export abstract class TransferRestrictionBase<
    *   The `availableSlots` property of the result represents how many more restrictions can be added
    *   before reaching that limit
    */
-  public async get(): Promise<GetReturnType<T>> {
+  public async get(): Promise<GetTransferRestrictionReturnType<T>> {
     const {
       parent: { ticker },
       context: {
@@ -334,7 +300,7 @@ export abstract class TransferRestrictionBase<
     return {
       restrictions,
       availableSlots: maxTransferConditions.minus(restrictions.length),
-    } as GetReturnType<T>;
+    } as GetTransferRestrictionReturnType<T>;
   }
 
   /**

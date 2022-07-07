@@ -10,7 +10,13 @@ import {
   PolymeshError,
   Procedure,
 } from '~/internal';
-import { ErrorCode, Identity, TransactionPermissions, TxGroup, TxTags } from '~/types';
+import {
+  ErrorCode,
+  Identity,
+  SetPermissionGroupParams,
+  TransactionPermissions,
+  TxTags,
+} from '~/types';
 import { MaybePostTransactionValue, ProcedureAuthorization } from '~/types/internal';
 import { isEntity } from '~/utils';
 import {
@@ -21,37 +27,6 @@ import {
   transactionPermissionsToExtrinsicPermissions,
 } from '~/utils/conversion';
 import { asAsset } from '~/utils/internal';
-
-interface AssetBase {
-  /**
-   * Asset over which the Identity will be granted permissions
-   */
-  asset: string | Asset;
-}
-
-interface TransactionsParams extends AssetBase {
-  /**
-   * a null value means full permissions
-   */
-  transactions: TransactionPermissions | null;
-}
-
-interface TxGroupParams extends AssetBase {
-  transactionGroups: TxGroup[];
-}
-
-/**
- * This procedure can be called with:
- *   - An Asset's existing Custom Permission Group. The Identity will be assigned as an Agent of that Group for that Asset
- *   - A Known Permission Group and an Asset. The Identity will be assigned as an Agent of that Group for that Asset
- *   - A set of Transaction Permissions and an Asset. If there is no Custom Permission Group with those permissions, a Custom Permission Group will be created for that Asset with those permissions, and
- *     the Identity will be assigned as an Agent of that Group for that Asset. Otherwise, the existing Group will be used
- *   - An array of {@link TxGroup | Transaction Groups} that represent a set of permissions. If there is no Custom Permission Group with those permissions, a Custom Permission Group will be created with those permissions, and
- *     the Identity will be assigned as an Agent of that Group for that Asset. Otherwise, the existing Group will be used
- */
-export interface SetPermissionGroupParams {
-  group: KnownPermissionGroup | CustomPermissionGroup | TransactionsParams | TxGroupParams;
-}
 
 /**
  * @hidden

@@ -1,5 +1,12 @@
-import { Asset, Identity, KnownPermissionGroup, PolymeshError, Procedure } from '~/internal';
-import { AuthorizationType, ErrorCode, PermissionGroupType, SignerType, TxTags } from '~/types';
+import { Asset, KnownPermissionGroup, PolymeshError, Procedure } from '~/internal';
+import {
+  AuthorizationType,
+  ErrorCode,
+  ModifyCorporateActionsAgentParams,
+  PermissionGroupType,
+  SignerType,
+  TxTags,
+} from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
@@ -7,17 +14,6 @@ import {
   signerToString,
   signerValueToSignatory,
 } from '~/utils/conversion';
-
-export interface ModifyCorporateActionsAgentParams {
-  /**
-   * Identity to be set as Corporate Actions Agent
-   */
-  target: string | Identity;
-  /**
-   * date at which the authorization request to modify the Corporate Actions Agent expires (optional, never expires if a date is not provided)
-   */
-  requestExpiry?: Date;
-}
 
 /**
  * @hidden

@@ -1,21 +1,14 @@
 import { assertSecondaryAccounts } from '~/api/procedures/utils';
 import { Identity, Procedure } from '~/internal';
-import { PermissionedAccount, PermissionsLike, TxTags } from '~/types';
+import { ModifySignerPermissionsParams, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { Modify, tuple } from '~/types/utils';
+import { tuple } from '~/types/utils';
 import {
   permissionsLikeToPermissions,
   permissionsToMeshPermissions,
   signerToSignerValue,
   signerValueToSignatory,
 } from '~/utils/conversion';
-
-export interface ModifySignerPermissionsParams {
-  /**
-   * list of secondary Accounts
-   */
-  secondaryAccounts: Modify<PermissionedAccount, { permissions: PermissionsLike }>[];
-}
 
 /**
  * @hidden

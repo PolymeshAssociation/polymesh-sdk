@@ -3,19 +3,10 @@ import { flatten, map } from 'lodash';
 
 import { assertRequirementsNotTooComplex } from '~/api/procedures/utils';
 import { Asset, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, InputCondition, TxTags } from '~/types';
+import { AddAssetRequirementParams, ErrorCode, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { requirementToComplianceRequirement, stringToTicker } from '~/utils/conversion';
 import { conditionsAreEqual, hasSameElements } from '~/utils/internal';
-
-export interface AddAssetRequirementParams {
-  /**
-   * array of conditions that form the requirement that must be added.
-   *   Conditions within a requirement are *AND* between them. This means that in order
-   *   for a transfer to comply with this requirement, it must fulfill *ALL* conditions
-   */
-  conditions: InputCondition[];
-}
 
 /**
  * @hidden

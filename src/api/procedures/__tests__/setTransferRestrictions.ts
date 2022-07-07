@@ -11,11 +11,11 @@ import BigNumber from 'bignumber.js';
 import { ScopeId, Ticker, TransferCondition } from 'polymesh-types/types';
 import sinon from 'sinon';
 
+import { SetTransferRestrictionsParams } from '~/api/entities/Asset/TransferRestrictions/TransferRestrictionBase';
 import {
   getAuthorization,
   prepareSetTransferRestrictions,
   prepareStorage,
-  SetTransferRestrictionsParams,
   Storage,
 } from '~/api/procedures/setTransferRestrictions';
 import { Context, PolymeshError } from '~/internal';

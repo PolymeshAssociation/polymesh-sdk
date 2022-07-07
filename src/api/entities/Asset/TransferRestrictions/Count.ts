@@ -1,16 +1,14 @@
 import BigNumber from 'bignumber.js';
 
 import { AddCountStatParams } from '~/api/procedures/addAssetStat';
-import {
-  AddCountTransferRestrictionParams,
-  SetCountTransferRestrictionsParams,
-  TransferRestrictionBase,
-} from '~/internal';
+import { TransferRestrictionBase } from '~/internal';
 import {
   ActiveTransferRestrictions,
+  AddCountTransferRestrictionParams,
   CountTransferRestriction,
   NoArgsProcedureMethod,
   ProcedureMethod,
+  SetCountTransferRestrictionsParams,
   TransferRestrictionType,
 } from '~/types';
 

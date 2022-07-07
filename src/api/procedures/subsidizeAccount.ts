@@ -1,5 +1,3 @@
-import BigNumber from 'bignumber.js';
-
 import { createAuthorizationResolver } from '~/api/procedures/utils';
 import {
   Account,
@@ -12,20 +10,10 @@ import {
   AddRelayerPayingKeyAuthorizationData,
   AuthorizationType,
   ErrorCode,
+  SubsidizeAccountParams,
   TxTags,
 } from '~/types';
 import { bigNumberToBalance, signerToString, stringToAccountId } from '~/utils/conversion';
-
-export interface SubsidizeAccountParams {
-  /**
-   * Account to subsidize
-   */
-  beneficiary: string | Account;
-  /**
-   * amount of POLYX to be subsidized. This can be increased/decreased later on
-   */
-  allowance: BigNumber;
-}
 
 /**
  * @hidden

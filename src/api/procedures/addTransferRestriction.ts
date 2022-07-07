@@ -4,12 +4,12 @@ import BigNumber from 'bignumber.js';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import {
+  AddClaimCountTransferRestrictionParams,
+  AddClaimPercentageTransferRestrictionParams,
+  AddCountTransferRestrictionParams,
+  AddPercentageTransferRestrictionParams,
   ClaimCountRestrictionValue,
-  ClaimCountTransferRestrictionInput,
-  ClaimPercentageTransferRestrictionInput,
-  CountTransferRestrictionInput,
   ErrorCode,
-  PercentageTransferRestrictionInput,
   TransferRestrictionType,
   TxTags,
 } from '~/types';
@@ -30,23 +30,6 @@ import {
   getExemptedIds,
   neededStatTypeForRestrictionInput,
 } from '~/utils/internal';
-
-export type AddCountTransferRestrictionParams = CountTransferRestrictionInput & {
-  type: TransferRestrictionType.Count;
-};
-
-export type AddPercentageTransferRestrictionParams = PercentageTransferRestrictionInput & {
-  type: TransferRestrictionType.Percentage;
-};
-
-export type AddClaimCountTransferRestrictionParams = ClaimCountTransferRestrictionInput & {
-  type: TransferRestrictionType.ClaimCount;
-};
-
-export type AddClaimPercentageTransferRestrictionParams =
-  ClaimPercentageTransferRestrictionInput & {
-    type: TransferRestrictionType.ClaimPercentage;
-  };
 
 /**
  * @hidden
