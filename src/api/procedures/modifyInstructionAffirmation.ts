@@ -9,16 +9,14 @@ import {
   AffirmationStatus,
   DefaultPortfolio,
   ErrorCode,
+  InstructionAffirmationOperation,
   Leg,
+  ModifyInstructionAffirmationParams,
   NumberedPortfolio,
   TxTag,
   TxTags,
 } from '~/types';
-import {
-  InstructionAffirmationOperation,
-  PolymeshTx,
-  ProcedureAuthorization,
-} from '~/types/internal';
+import { PolymeshTx, ProcedureAuthorization } from '~/types/internal';
 import { QueryReturnType, tuple } from '~/types/utils';
 import {
   bigNumberToU32,
@@ -27,14 +25,6 @@ import {
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolioId,
 } from '~/utils/conversion';
-
-export interface AffirmInstructionParams {
-  id: BigNumber;
-}
-export interface ModifyInstructionAffirmationParams {
-  id: BigNumber;
-  operation: InstructionAffirmationOperation;
-}
 
 export interface Storage {
   portfolios: (DefaultPortfolio | NumberedPortfolio)[];

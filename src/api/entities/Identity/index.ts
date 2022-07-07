@@ -100,6 +100,8 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
   /**
    * Create an Identity entity
+   *
+   * @hidden
    */
   constructor(identifiers: UniqueIdentifiers, context: Context) {
     super(identifiers, context);
@@ -444,8 +446,8 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    * Retrieve the Scope ID associated to this Identity's Investor Uniqueness Claim for a specific Asset, or null
    *   if there is none
    *
-   * @note more on Investor Uniqueness {@link https://developers.polymesh.network/introduction/identity#polymesh-unique-identity-system-puis | here} and
-   *   {@link https://developers.polymesh.network/polymesh-docs/primitives/confidential-identity | here}
+   * @note more on Investor Uniqueness [here](https://developers.polymesh.network/introduction/identity#polymesh-unique-identity-system-puis) and
+   *   [here](https://developers.polymesh.network/polymesh-docs/primitives/confidential-identity)
    */
   public async getScopeId(args: { asset: Asset | string }): Promise<string | null> {
     const { context, did } = this;

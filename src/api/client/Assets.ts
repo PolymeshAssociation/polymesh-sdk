@@ -1,19 +1,19 @@
 import {
   Asset,
   claimClassicTicker,
-  ClaimClassicTickerParams,
   Context,
   createAsset,
-  CreateAssetWithTickerParams,
   Identity,
   PolymeshError,
   reserveTicker,
-  ReserveTickerParams,
   TickerReservation,
 } from '~/internal';
 import {
+  ClaimClassicTickerParams,
+  CreateAssetWithTickerParams,
   ErrorCode,
   ProcedureMethod,
+  ReserveTickerParams,
   SubCallback,
   TickerReservationStatus,
   UnsubCallback,

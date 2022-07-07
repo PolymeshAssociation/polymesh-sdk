@@ -1,13 +1,9 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import {
-  ConfigureDividendDistributionParams,
-  DividendDistribution,
-  Namespace,
-  TransactionQueue,
-} from '~/internal';
+import { DividendDistribution, Namespace, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { ConfigureDividendDistributionParams } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 import { Distributions } from '../Distributions';

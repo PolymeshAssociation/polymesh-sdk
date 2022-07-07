@@ -9,14 +9,14 @@ import {
   Entity,
   Identity,
   investInOffering,
-  InvestInOfferingParams,
-  modifyStoTimes,
-  ModifyStoTimesParams,
+  modifyOfferingTimes,
   toggleFreezeOffering,
 } from '~/internal';
 import { investments } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
+  InvestInOfferingParams,
+  ModifyOfferingTimesParams,
   NoArgsProcedureMethod,
   ProcedureMethod,
   ResultSet,
@@ -34,7 +34,7 @@ export interface UniqueIdentifiers {
   ticker: string;
 }
 
-interface HumanReadable {
+export interface HumanReadable {
   id: string;
   ticker: string;
 }
@@ -93,7 +93,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
       context
     );
     this.modifyTimes = createProcedureMethod(
-      { getProcedureAndArgs: args => [modifyStoTimes, { ticker, id, ...args }] },
+      { getProcedureAndArgs: args => [modifyOfferingTimes, { ticker, id, ...args }] },
       context
     );
     this.invest = createProcedureMethod(
@@ -171,7 +171,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
    *   - Trying to modify anything on an Offering that already ended
    *   - Trying to change start or end time to a past date
    */
-  public modifyTimes: ProcedureMethod<ModifyStoTimesParams, void>;
+  public modifyTimes: ProcedureMethod<ModifyOfferingTimesParams, void>;
 
   /**
    * Invest in the Offering

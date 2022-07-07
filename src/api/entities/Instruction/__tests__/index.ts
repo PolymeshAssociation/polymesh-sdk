@@ -8,11 +8,13 @@ import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { PortfolioId as MeshPortfolioId } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { AffirmationStatus, InstructionStatus, InstructionType } from '~/types';
 import {
+  AffirmationStatus,
   InstructionAffirmationOperation,
-  InstructionStatus as InternalInstructionStatus,
-} from '~/types/internal';
+  InstructionStatus,
+  InstructionType,
+} from '~/types';
+import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
@@ -791,7 +793,7 @@ describe('Instruction class', () => {
       });
     });
 
-    it("should throw an error if Instruction status couldn't be determied", async () => {
+    it("should throw an error if Instruction status couldn't be determined", async () => {
       const queryVariables = {
         moduleId: ModuleIdEnum.Settlement,
         eventId: EventIdEnum.InstructionExecuted,

@@ -1,7 +1,6 @@
 import { createAuthorizationResolver } from '~/api/procedures/utils';
 import {
   AuthorizationRequest,
-  Identity,
   PolymeshError,
   PostTransactionValue,
   Procedure,
@@ -14,6 +13,7 @@ import {
   RoleType,
   SignerType,
   TickerReservationStatus,
+  TransferTickerOwnershipParams,
   TxTags,
 } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
@@ -24,14 +24,6 @@ import {
   signerValueToSignatory,
 } from '~/utils/conversion';
 import { optionize } from '~/utils/internal';
-
-export interface TransferTickerOwnershipParams {
-  target: string | Identity;
-  /**
-   * date at which the authorization request for transfer expires (optional)
-   */
-  expiry?: Date;
-}
 
 /**
  * @hidden

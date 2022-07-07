@@ -2,14 +2,11 @@ import { AccountId } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import {
-  prepareRemoveSecondaryAccounts,
-  RemoveSecondaryAccountsParams,
-} from '~/api/procedures/removeSecondaryAccounts';
+import { prepareRemoveSecondaryAccounts } from '~/api/procedures/removeSecondaryAccounts';
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Signer, SignerType, SignerValue } from '~/types';
+import { RemoveSecondaryAccountsParams, Signer, SignerType, SignerValue } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('removeSecondaryAccounts procedure', () => {

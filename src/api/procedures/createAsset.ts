@@ -5,11 +5,10 @@ import { values } from 'lodash';
 import { Asset, Context, PolymeshError, Procedure, TickerReservation } from '~/internal';
 import { CustomAssetTypeId } from '~/polkadot/polymesh';
 import {
-  AssetDocument,
+  CreateAssetWithTickerParams,
   ErrorCode,
   KnownAssetType,
   RoleType,
-  SecurityIdentifier,
   TickerReservationStatus,
   TxTag,
   TxTags,
@@ -26,42 +25,6 @@ import {
   stringToTicker,
 } from '~/utils/conversion';
 import { checkTxType, optionize } from '~/utils/internal';
-
-export interface CreateAssetParams {
-  name: string;
-  /**
-   * amount of Asset tokens that will be minted on creation (optional, default doesn't mint)
-   */
-  initialSupply?: BigNumber;
-  /**
-   * whether a single Asset token can be divided into decimal parts
-   */
-  isDivisible: boolean;
-  /**
-   * type of security that the Asset represents (i.e. Equity, Debt, Commodity, etc). Common values are included in the
-   *   {@link KnownAssetType} enum, but custom values can be used as well. Custom values must be registered on-chain the first time
-   *   they're used, requiring an additional transaction. They aren't tied to a specific Asset
-   */
-  assetType: string;
-  /**
-   * array of domestic or international alphanumeric security identifiers for the Asset (ISIN, CUSIP, FIGI, etc)
-   */
-  securityIdentifiers?: SecurityIdentifier[];
-  /**
-   * (optional) funding round in which the Asset currently is (Series A, Series B, etc)
-   */
-  fundingRound?: string;
-  documents?: AssetDocument[];
-  /**
-   * whether this asset requires investors to have a Investor Uniqueness Claim in order
-   *   to hold it. More information about Investor Uniqueness and PUIS [here](https://developers.polymesh.live/introduction/identity#polymesh-unique-identity-system-puis)
-   */
-  requireInvestorUniqueness: boolean;
-}
-
-export interface CreateAssetWithTickerParams extends CreateAssetParams {
-  ticker: string;
-}
 
 /**
  * @hidden

@@ -10,7 +10,7 @@ import {
   PolymeshError,
   Procedure,
 } from '~/internal';
-import { ErrorCode, TxTags } from '~/types';
+import { ErrorCode, RemoveCorporateActionParams, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   bigNumberToU32,
@@ -18,10 +18,6 @@ import {
   momentToDate,
   stringToTicker,
 } from '~/utils/conversion';
-
-export interface RemoveCorporateActionParams {
-  corporateAction: CorporateActionBase | BigNumber;
-}
 
 /**
  * @hidden

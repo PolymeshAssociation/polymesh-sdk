@@ -14,11 +14,9 @@ import {
   Procedure,
 } from '~/internal';
 import {
+  ConfigureDividendDistributionParams,
   CorporateActionKind,
   ErrorCode,
-  InputCaCheckpoint,
-  InputCorporateActionTargets,
-  InputCorporateActionTaxWithholdings,
   RoleType,
   TxTags,
 } from '~/types';
@@ -64,58 +62,6 @@ export const createDividendDistributionResolver =
       context
     );
   };
-
-export interface ConfigureDividendDistributionParams {
-  /**
-   * date at which the issuer publicly declared the Dividend Distribution. Optional, defaults to the current date
-   */
-  declarationDate?: Date;
-  description: string;
-  /**
-   * Asset Holder Identities to be included (or excluded) from the Dividend Distribution. Inclusion/exclusion is controlled by the `treatment`
-   *   property. When the value is `Include`, all Asset Holders not present in the array are excluded, and vice-versa. If no value is passed,
-   *   the default value for the Asset is used. If there is no default value, all Asset Holders will be part of the Dividend Distribution
-   */
-  targets?: InputCorporateActionTargets;
-  /**
-   * default percentage (0-100) of the Benefits to be held for tax purposes
-   */
-  defaultTaxWithholding?: BigNumber;
-  /**
-   * percentage (0-100) of the Benefits to be held for tax purposes from individual Asset Holder Identities.
-   *   This overrides the value of `defaultTaxWithholding`
-   */
-  taxWithholdings?: InputCorporateActionTaxWithholdings;
-  /**
-   * checkpoint to be used to calculate Dividends. If a Schedule is passed, the next Checkpoint it creates will be used.
-   *   If a Date is passed, a Checkpoint will be created at that date and used
-   */
-  checkpoint: InputCaCheckpoint;
-  /**
-   * portfolio from which the Dividends will be distributed. Optional, defaults to the Dividend Distributions Agent's Default Portfolio
-   */
-  originPortfolio?: NumberedPortfolio | BigNumber;
-  /**
-   * ticker of the currency in which Dividends will be distributed
-   */
-  currency: string;
-  /**
-   * amount of `currency` to distribute per each share of the Asset that a target holds
-   */
-  perShare: BigNumber;
-  /**
-   * maximum amount of `currency` to distribute in total
-   */
-  maxAmount: BigNumber;
-  /**
-   * date from which Asset Holders can claim their Dividends
-   */
-  paymentDate: Date;
-  /**
-   * optional, defaults to never expiring
-   */
-  expiryDate?: Date;
-}
 
 /**
  * @hidden

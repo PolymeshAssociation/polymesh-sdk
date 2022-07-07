@@ -3,18 +3,10 @@ import { flatten, map } from 'lodash';
 
 import { assertRequirementsNotTooComplex } from '~/api/procedures/utils';
 import { Asset, PolymeshError, Procedure } from '~/internal';
-import { Condition, ErrorCode, InputCondition, TxTags } from '~/types';
+import { Condition, ErrorCode, InputCondition, SetAssetRequirementsParams, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { requirementToComplianceRequirement, stringToTicker } from '~/utils/conversion';
 import { conditionsAreEqual, hasSameElements } from '~/utils/internal';
-
-export interface SetAssetRequirementsParams {
-  /**
-   * array of array of conditions. For a transfer to be successful, it must comply with all the conditions of at least one of the arrays.
-   *   In other words, higher level arrays are *OR* between them, while conditions inside each array are *AND* between them
-   */
-  requirements: InputCondition[][];
-}
 
 /**
  * @hidden

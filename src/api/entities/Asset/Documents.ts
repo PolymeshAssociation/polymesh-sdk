@@ -1,5 +1,11 @@
-import { Asset, Context, Namespace, setAssetDocuments, SetAssetDocumentsParams } from '~/internal';
-import { AssetDocument, PaginationOptions, ProcedureMethod, ResultSet } from '~/types';
+import { Asset, Context, Namespace, setAssetDocuments } from '~/internal';
+import {
+  AssetDocument,
+  PaginationOptions,
+  ProcedureMethod,
+  ResultSet,
+  SetAssetDocumentsParams,
+} from '~/types';
 import { documentToAssetDocument, stringToTicker } from '~/utils/conversion';
 import { createProcedureMethod, requestPaginated } from '~/utils/internal';
 

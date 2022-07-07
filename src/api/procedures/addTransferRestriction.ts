@@ -7,9 +7,9 @@ import BigNumber from 'bignumber.js';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import {
-  CountTransferRestrictionInput,
+  AddCountTransferRestrictionParams,
+  AddPercentageTransferRestrictionParams,
   ErrorCode,
-  PercentageTransferRestrictionInput,
   TransferRestrictionType,
   TxTags,
 } from '~/types';
@@ -31,14 +31,6 @@ import {
   u32ToBigNumber,
 } from '~/utils/conversion';
 import { checkTxType, getExemptedIds, neededStatTypeForRestrictionInput } from '~/utils/internal';
-
-export type AddCountTransferRestrictionParams = CountTransferRestrictionInput & {
-  type: TransferRestrictionType.Count;
-};
-
-export type AddPercentageTransferRestrictionParams = PercentageTransferRestrictionInput & {
-  type: TransferRestrictionType.Percentage;
-};
 
 /**
  * @hidden

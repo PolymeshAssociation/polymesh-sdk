@@ -1,14 +1,9 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 
 import { Context, PostTransactionValue, Procedure, Venue } from '~/internal';
-import { TxTags, VenueType } from '~/types';
+import { CreateVenueParams, TxTags } from '~/types';
 import { stringToBytes, u64ToBigNumber, venueTypeToMeshVenueType } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
-
-export interface CreateVenueParams {
-  description: string;
-  type: VenueType;
-}
 
 /**
  * @hidden
