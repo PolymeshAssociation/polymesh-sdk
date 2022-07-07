@@ -131,7 +131,6 @@ import {
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { DUMMY_ACCOUNT_ID, MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '~/utils/constants';
-import { assertExpectedChainVersion, padString } from '~/utils/internal';
 
 import {
   accountIdToAccount,
