@@ -68,7 +68,7 @@ export async function prepareRemoveAssetStat(
       tickerKey,
     ],
   ]);
-  console.log('reqs: ', requirements);
+
   requirements.forEach(r => {
     let claimIssuer;
     if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {

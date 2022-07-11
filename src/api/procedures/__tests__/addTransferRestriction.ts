@@ -20,7 +20,6 @@ import {
 } from '~/api/procedures/addTransferRestriction';
 import { Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { createMockBTreeSet } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import {
   ClaimType,
@@ -58,7 +57,6 @@ describe('addTransferRestriction procedure', () => {
   let args: AddTransferRestrictionParams;
   let rawCountOp: PolymeshPrimitivesStatisticsStatOpType;
   let rawBalanceOp: PolymeshPrimitivesStatisticsStatOpType;
-  let rawStatType: PolymeshPrimitivesStatisticsStatType;
   let rawScopeId: PolymeshPrimitivesIdentityId;
   let rawCountStatType: PolymeshPrimitivesStatisticsStatType;
   let rawBalanceStatType: PolymeshPrimitivesStatisticsStatType;
@@ -104,14 +102,10 @@ describe('addTransferRestriction procedure', () => {
   >;
   let mockStatTypeBtree: BTreeSet<PolymeshPrimitivesStatisticsStatType>;
   let mockNeededStat: PolymeshPrimitivesStatisticsStatType;
-  let neededStatEqStub: sinon.SinonStub;
   let mockCountBtreeSet: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
   let mockPercentBtree: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
   let mockClaimCountBtree: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
   let mockClaimPercentageBtree: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
-  const emptyStatsBtreeSet = createMockBTreeSet<PolymeshPrimitivesStatisticsStatType>([]);
-  const emptyRestrictionsBtreeSet =
-    createMockBTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>([]);
   const issuer = entityMockUtils.getIdentityInstance();
   let queryMultiStub: sinon.SinonStub;
   let queryMultiResult: [
@@ -194,7 +188,6 @@ describe('addTransferRestriction procedure', () => {
     statCompareEqStub.returns(true);
     rawCountOp = dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count);
     rawBalanceOp = dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Balance);
-    rawStatType = dsMockUtils.createMockStatisticsStatType();
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawCount = dsMockUtils.createMockU64(count);
     rawScopeId = dsMockUtils.createMockIdentityId(did);

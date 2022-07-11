@@ -7851,9 +7851,8 @@ describe('sortStatsByClaimType', () => {
     const countStat = dsMockUtils.createMockStatisticsStatType({ op });
 
     let result = sortStatsByClaimType([jurisdictionStat, accreditedStat, affiliateStat, countStat]);
-    console.log(JSON.stringify(result));
+
     expect(result).toEqual([accreditedStat, affiliateStat, jurisdictionStat, countStat]);
-    // expect(result).toEqual([jurisdictionStat, accreditedStat, affiliateStat, countStat]);
 
     result = sortStatsByClaimType([
       nonStat,

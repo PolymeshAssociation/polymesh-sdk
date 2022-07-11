@@ -1257,7 +1257,6 @@ export function compareTransferRestrictionToStat(
   type: StatType,
   claimIssuer?: StatClaimIssuer
 ): boolean {
-  console.log('comparing internally', type, transferCondition);
   if (
     (type === StatType.Count && transferCondition.isMaxInvestorCount) ||
     (type === StatType.Balance && transferCondition.isMaxInvestorOwnership)

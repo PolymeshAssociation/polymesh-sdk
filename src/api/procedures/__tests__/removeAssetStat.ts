@@ -1,6 +1,5 @@
 import {
   PolymeshPrimitivesStatisticsStat2ndKey,
-  PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesStatisticsStatUpdate,
   PolymeshPrimitivesTicker,
@@ -17,7 +16,6 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import { ClaimType, CountryCode, ErrorCode, StatClaimType, TxTags } from '~/types';
 import { PolymeshTx, StatisticsOpType, StatType, TickerKey } from '~/types/internal';
-import { Mutable } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -42,7 +40,6 @@ describe('removeAssetStat procedure', () => {
   let rawClaimCountCondition: PolymeshPrimitivesTransferComplianceTransferCondition;
   let mockRemoveTarget: PolymeshPrimitivesStatisticsStatType;
   let mockRemoveTargetEqSub: sinon.SinonStub;
-  let countStatTypeEqStub: sinon.SinonStub;
   let queryMultiStub: sinon.SinonStub;
   let queryMultiResult: [
     BTreeSet<PolymeshPrimitivesStatisticsStatType>,
@@ -126,6 +123,7 @@ describe('removeAssetStat procedure', () => {
     );
     // queryMulti is mocked for the results, but query still needs to be stubbed to avoid dereference on undefined
     dsMockUtils.createQueryStub('statistics', 'activeAssetStats');
+    queryMultiStub = dsMockUtils.getQueryMultiStub();
   });
 
   beforeEach(() => {
@@ -152,7 +150,6 @@ describe('removeAssetStat procedure', () => {
       rawClaimCountStatType,
     ]);
     emptyStatTypeBtreeSet = dsMockUtils.createMockBTreeSet([]);
-    countStatTypeEqStub = rawCountStatType.eq as sinon.SinonStub;
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawStatUpdate = dsMockUtils.createMockStatUpdate();
     rawStatUpdateBtree = dsMockUtils.createMockBTreeSet([rawStatUpdate]);
@@ -180,7 +177,6 @@ describe('removeAssetStat procedure', () => {
     statUpdatesToBtreeStatUpdateStub
       .withArgs([rawStatUpdate], mockContext)
       .returns(rawStatUpdateBtree);
-    queryMultiStub = dsMockUtils.getQueryMultiStub();
     queryMultiResult = [dsMockUtils.createMockBTreeSet([]), fakeCurrentRequirements];
     queryMultiStub.returns(queryMultiResult);
 
@@ -206,7 +202,7 @@ describe('removeAssetStat procedure', () => {
 
   it('should add a setAssetStats transaction to the queue', async () => {
     mockRemoveTargetEqSub.returns(true);
-    queryMultiStub.returns([statBtreeSet, { requirements: [] }]);
+    queryMultiStub.resolves([statBtreeSet, { requirements: [] }]);
     const proc = procedureMockUtils.getInstance<RemoveAssetStatParams, void>(mockContext);
 
     await prepareRemoveAssetStat.call(proc, args);
@@ -234,7 +230,7 @@ describe('removeAssetStat procedure', () => {
   });
 
   it('should throw if the stat is not set', async () => {
-    queryMultiStub.returns([emptyStatTypeBtreeSet, { requirements: [] }]);
+    queryMultiStub.resolves([statBtreeSet, { requirements: [] }]);
     const proc = procedureMockUtils.getInstance<RemoveAssetStatParams, void>(mockContext);
 
     const expectedError = new PolymeshError({
@@ -247,7 +243,7 @@ describe('removeAssetStat procedure', () => {
 
   it('should throw an error if the stat is being used', async () => {
     const proc = procedureMockUtils.getInstance<RemoveAssetStatParams, void>(mockContext);
-    queryMultiStub.returns([
+    queryMultiStub.resolves([
       statBtreeSet,
       {
         requirements: dsMockUtils.createMockBTreeSet([
@@ -283,7 +279,6 @@ describe('removeAssetStat procedure', () => {
       },
     };
     await expect(prepareRemoveAssetStat.call(proc, args)).rejects.toThrowError(expectedError);
-    console.log('being used done');
   });
 
   describe('getAuthorization', () => {
