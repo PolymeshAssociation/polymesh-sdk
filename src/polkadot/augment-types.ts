@@ -14,6 +14,7 @@ import type {
   I8,
   Json,
   Null,
+  OptionBool,
   Raw,
   Text,
   Type,
@@ -151,8 +152,6 @@ import type {
   ContractCallFlags,
   ContractCallRequest,
   ContractExecResult,
-  ContractExecResultErr,
-  ContractExecResultErrModule,
   ContractExecResultOk,
   ContractExecResultResult,
   ContractExecResultSuccessTo255,
@@ -525,7 +524,7 @@ import type {
   StorageMetadataV13,
   StorageMetadataV9,
 } from '@polkadot/types/interfaces/metadata';
-import type { MmrLeafProof } from '@polkadot/types/interfaces/mmr';
+import type { MmrLeafBatchProof, MmrLeafProof } from '@polkadot/types/interfaces/mmr';
 import type { StorageKind } from '@polkadot/types/interfaces/offchain';
 import type {
   DeferredOffenceOf,
@@ -883,6 +882,7 @@ import type {
   DispatchClass,
   DispatchError,
   DispatchErrorModule,
+  DispatchErrorModuleU8,
   DispatchErrorModuleU8a,
   DispatchErrorTo198,
   DispatchInfo,
@@ -921,6 +921,7 @@ import type {
   SystemOrigin,
   TokenError,
   TransactionValidityError,
+  TransactionalError,
   UnknownTransaction,
   WeightPerClass,
 } from '@polkadot/types/interfaces/system';
@@ -1472,8 +1473,6 @@ declare module '@polkadot/types/types/registry' {
     ContractEventSpecV1: ContractEventSpecV1;
     ContractEventSpecV2: ContractEventSpecV2;
     ContractExecResult: ContractExecResult;
-    ContractExecResultErr: ContractExecResultErr;
-    ContractExecResultErrModule: ContractExecResultErrModule;
     ContractExecResultOk: ContractExecResultOk;
     ContractExecResultResult: ContractExecResultResult;
     ContractExecResultSuccessTo255: ContractExecResultSuccessTo255;
@@ -1547,6 +1546,7 @@ declare module '@polkadot/types/types/registry' {
     DispatchClass: DispatchClass;
     DispatchError: DispatchError;
     DispatchErrorModule: DispatchErrorModule;
+    DispatchErrorModuleU8: DispatchErrorModuleU8;
     DispatchErrorModuleU8a: DispatchErrorModuleU8a;
     DispatchErrorTo198: DispatchErrorTo198;
     DispatchFeePayment: DispatchFeePayment;
@@ -1857,6 +1857,7 @@ declare module '@polkadot/types/types/registry' {
     MetaUrl: MetaUrl;
     MetaVersion: MetaVersion;
     MigrationStatusResult: MigrationStatusResult;
+    MmrLeafBatchProof: MmrLeafBatchProof;
     MmrLeafProof: MmrLeafProof;
     MmrRootHash: MmrRootHash;
     ModuleConstantMetadataV10: ModuleConstantMetadataV10;
@@ -1921,6 +1922,7 @@ declare module '@polkadot/types/types/registry' {
     OpenTipTip: OpenTipTip;
     OpenTipTo225: OpenTipTo225;
     OperatingMode: OperatingMode;
+    OptionBool: OptionBool;
     Origin: Origin;
     OriginCaller: OriginCaller;
     OriginKindV0: OriginKindV0;
@@ -2293,6 +2295,7 @@ declare module '@polkadot/types/types/registry' {
     TombstoneContractInfo: TombstoneContractInfo;
     TraceBlockResponse: TraceBlockResponse;
     TraceError: TraceError;
+    TransactionalError: TransactionalError;
     TransactionInfo: TransactionInfo;
     TransactionPriority: TransactionPriority;
     TransactionStorageProof: TransactionStorageProof;

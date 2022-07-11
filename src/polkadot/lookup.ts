@@ -253,8 +253,8 @@ export default {
   PolymeshPrimitivesSubsetSubsetRestrictionTicker: {
     _enum: {
       Whole: 'Null',
-      These: 'BTreeSetTicker',
-      Except: 'BTreeSetTicker',
+      These: 'BTreeSet<PolymeshPrimitivesTicker>',
+      Except: 'BTreeSet<PolymeshPrimitivesTicker>',
     },
   },
   /**
@@ -262,17 +262,13 @@ export default {
    **/
   PolymeshPrimitivesTicker: '[u8;12]',
   /**
-   * Lookup41: BTreeSet<polymesh_primitives::ticker::Ticker>
-   **/
-  BTreeSetTicker: 'Vec<PolymeshPrimitivesTicker>',
-  /**
    * Lookup43: polymesh_primitives::subset::SubsetRestriction<polymesh_primitives::secondary_key::PalletPermissions>
    **/
   PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions: {
     _enum: {
       Whole: 'Null',
-      These: 'BTreeSetPalletPermissions',
-      Except: 'BTreeSetPalletPermissions',
+      These: 'BTreeSet<PolymeshPrimitivesSecondaryKeyPalletPermissions>',
+      Except: 'BTreeSet<PolymeshPrimitivesSecondaryKeyPalletPermissions>',
     },
   },
   /**
@@ -288,26 +284,18 @@ export default {
   PolymeshPrimitivesSubsetSubsetRestrictionDispatchableName: {
     _enum: {
       Whole: 'Null',
-      These: 'BTreeSetDispatchableName',
-      Except: 'BTreeSetDispatchableName',
+      These: 'BTreeSet<Bytes>',
+      Except: 'BTreeSet<Bytes>',
     },
   },
-  /**
-   * Lookup48: BTreeSet<polymesh_primitives::DispatchableName>
-   **/
-  BTreeSetDispatchableName: 'Vec<Bytes>',
-  /**
-   * Lookup50: BTreeSet<polymesh_primitives::secondary_key::PalletPermissions>
-   **/
-  BTreeSetPalletPermissions: 'Vec<PolymeshPrimitivesSecondaryKeyPalletPermissions>',
   /**
    * Lookup52: polymesh_primitives::subset::SubsetRestriction<polymesh_primitives::identity_id::PortfolioId>
    **/
   PolymeshPrimitivesSubsetSubsetRestrictionPortfolioId: {
     _enum: {
       Whole: 'Null',
-      These: 'BTreeSetPortfolioId',
-      Except: 'BTreeSetPortfolioId',
+      These: 'BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>',
+      Except: 'BTreeSet<PolymeshPrimitivesIdentityIdPortfolioId>',
     },
   },
   /**
@@ -326,10 +314,6 @@ export default {
       User: 'u64',
     },
   },
-  /**
-   * Lookup56: BTreeSet<polymesh_primitives::identity_id::PortfolioId>
-   **/
-  BTreeSetPortfolioId: 'Vec<PolymeshPrimitivesIdentityIdPortfolioId>',
   /**
    * Lookup59: polymesh_primitives::identity_claim::IdentityClaim
    **/
@@ -3726,40 +3710,24 @@ export default {
     _enum: {
       set_active_asset_stats: {
         asset: 'PolymeshPrimitivesStatisticsAssetScope',
-        statTypes: 'BTreeSetStatType',
+        statTypes: 'BTreeSet<PolymeshPrimitivesStatisticsStatType>',
       },
       batch_update_asset_stats: {
         asset: 'PolymeshPrimitivesStatisticsAssetScope',
         statType: 'PolymeshPrimitivesStatisticsStatType',
-        values: 'BTreeSetStatUpdate',
+        values: 'BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>',
       },
       set_asset_transfer_compliance: {
         asset: 'PolymeshPrimitivesStatisticsAssetScope',
-        transferConditions: 'BTreeSetTransferCondition',
+        transferConditions: 'BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>',
       },
       set_entities_exempt: {
         isExempt: 'bool',
         exemptKey: 'PolymeshPrimitivesTransferComplianceTransferConditionExemptKey',
-        entities: 'BTreeSetIdentityId',
+        entities: 'BTreeSet<PolymeshPrimitivesIdentityId>',
       },
     },
   },
-  /**
-   * Lookup512: BTreeSet<polymesh_primitives::statistics::StatType>
-   **/
-  BTreeSetStatType: 'Vec<PolymeshPrimitivesStatisticsStatType>',
-  /**
-   * Lookup513: BTreeSet<polymesh_primitives::statistics::StatUpdate>
-   **/
-  BTreeSetStatUpdate: 'Vec<PolymeshPrimitivesStatisticsStatUpdate>',
-  /**
-   * Lookup514: BTreeSet<polymesh_primitives::transfer_compliance::TransferCondition>
-   **/
-  BTreeSetTransferCondition: 'Vec<PolymeshPrimitivesTransferComplianceTransferCondition>',
-  /**
-   * Lookup515: BTreeSet<polymesh_primitives::identity_id::IdentityId>
-   **/
-  BTreeSetIdentityId: 'Vec<PolymeshPrimitivesIdentityId>',
   /**
    * Lookup516: pallet_sto::Call<T>
    **/
@@ -4825,7 +4793,7 @@ export default {
    **/
   PolymeshPrimitivesTransferComplianceAssetTransferCompliance: {
     paused: 'bool',
-    requirements: 'BTreeSetTransferCondition',
+    requirements: 'BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>',
   },
   /**
    * Lookup676: pallet_statistics::Error<T>

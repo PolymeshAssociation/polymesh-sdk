@@ -6,6 +6,7 @@ import { ApiPromise } from '@polkadot/api';
 import { DecoratedRpc } from '@polkadot/api/types';
 import {
   bool,
+  BTreeSet,
   Bytes,
   Compact,
   Enum,
@@ -1612,6 +1613,28 @@ export const createMockEcdsaSignature = (
   }
 
   return createMockStringCodec(signature) as MockCodec<EcdsaSignature>;
+};
+
+/**
+ * @hidden
+ */
+export const createMockBTreeSet = <T extends Codec>(
+  items: BTreeSet<T> | unknown[]
+): MockCodec<BTreeSet<T>> => {
+  if (isCodec<BTreeSet>(items)) {
+    return items as MockCodec<BTreeSet<T>>;
+  }
+  const res = createMockCodec(items, !items) as unknown as Mutable<BTreeSet>;
+  const hasStub: sinon.SinonStub<[unknown], boolean> = sinon.stub();
+  hasStub.returns(false);
+
+  res.size = items.length;
+  res.has = hasStub;
+  items.forEach(i => {
+    hasStub.withArgs(i).returns(true);
+  });
+
+  return res as MockCodec<BTreeSet<T>>;
 };
 
 /**
@@ -3846,7 +3869,30 @@ export const createMockStatisticsOpType = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockStatistics = (
+export const createMockStatisticsOpTypeToStatType = (
+  op?: PolymeshPrimitivesStatisticsStatType | StatisticsOpType
+): MockCodec<PolymeshPrimitivesStatisticsStatType> => {
+  if (isCodec<PolymeshPrimitivesStatisticsStatType>(op)) {
+    return op as MockCodec<PolymeshPrimitivesStatisticsStatType>;
+  }
+
+  return createMockCodec(
+    {
+      op: {
+        type: op,
+        isCount: op === StatisticsOpType.Count,
+        isBalance: op === StatisticsOpType.Balance,
+      },
+    },
+    !op
+  ) as MockCodec<PolymeshPrimitivesStatisticsStatType>;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockStatisticsStatType = (
   stat?:
     | PolymeshPrimitivesStatisticsStatType
     | {

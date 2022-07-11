@@ -109,7 +109,7 @@ describe('Distributions class', () => {
         ),
       });
       dsMockUtils.createQueryStub('corporateAction', 'details', {
-        returnValue: dsMockUtils.createMockText('something'),
+        returnValue: dsMockUtils.createMockBytes('something'),
       });
       dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
         returnValue: dsMockUtils.createMockOption(

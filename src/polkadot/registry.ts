@@ -2,14 +2,6 @@
 /* eslint-disable */
 
 import type {
-  BTreeSetDispatchableName,
-  BTreeSetIdentityId,
-  BTreeSetPalletPermissions,
-  BTreeSetPortfolioId,
-  BTreeSetStatType,
-  BTreeSetStatUpdate,
-  BTreeSetTicker,
-  BTreeSetTransferCondition,
   ConfidentialIdentityClaimProofsScopeClaimProof,
   ConfidentialIdentityClaimProofsZkProofData,
   ConfidentialIdentitySignSignature,
@@ -385,14 +377,6 @@ import type {
 
 declare module '@polkadot/types/types/registry' {
   export interface InterfaceTypes {
-    BTreeSetDispatchableName: BTreeSetDispatchableName;
-    BTreeSetIdentityId: BTreeSetIdentityId;
-    BTreeSetPalletPermissions: BTreeSetPalletPermissions;
-    BTreeSetPortfolioId: BTreeSetPortfolioId;
-    BTreeSetStatType: BTreeSetStatType;
-    BTreeSetStatUpdate: BTreeSetStatUpdate;
-    BTreeSetTicker: BTreeSetTicker;
-    BTreeSetTransferCondition: BTreeSetTransferCondition;
     ConfidentialIdentityClaimProofsScopeClaimProof: ConfidentialIdentityClaimProofsScopeClaimProof;
     ConfidentialIdentityClaimProofsZkProofData: ConfidentialIdentityClaimProofsZkProofData;
     ConfidentialIdentitySignSignature: ConfidentialIdentitySignSignature;

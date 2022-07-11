@@ -7,6 +7,7 @@ import {
 } from '@polkadot/api/types';
 import { Bytes, StorageKey } from '@polkadot/types';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
+import { PolymeshPrimitivesStatisticsStatType } from '@polkadot/types/lookup';
 import { AnyFunction, AnyTuple, IEvent, ISubmittableResult } from '@polkadot/types/types';
 import { stringUpperFirst } from '@polkadot/util';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
@@ -49,6 +50,7 @@ import {
   ProcedureMethod,
   ProcedureOpts,
   Scope,
+  TransferRestrictionType,
   TxTag,
 } from '~/types';
 import {
@@ -58,6 +60,7 @@ import {
   MapTxWithArgs,
   MaybePostTransactionValue,
   PolymeshTx,
+  StatisticsOpType,
   TxWithArgs,
 } from '~/types/internal';
 import { HumanReadableType, ProcedureFunc, UnionOfProcedureFuncs } from '~/types/utils';
@@ -69,7 +72,13 @@ import {
   SUPPORTED_SPEC_VERSION_RANGE,
   SYSTEM_VERSION_RPC_CALL,
 } from '~/utils/constants';
-import { middlewareScopeToScope, signerToString, u64ToBigNumber } from '~/utils/conversion';
+import {
+  middlewareScopeToScope,
+  signerToString,
+  statisticsOpTypeToStatOpType,
+  statisticsOpTypeToStatType,
+  u64ToBigNumber,
+} from '~/utils/conversion';
 import { isEntity, isMultiClaimCondition, isSingleClaimCondition } from '~/utils/typeguards';
 
 export * from '~/generated/utils';
@@ -1173,4 +1182,18 @@ export function assertTickerValid(ticker: string): void {
       message: 'Ticker cannot contain lower case letters',
     });
   }
+}
+
+/**
+ * @hidden
+ */
+export function neededStatTypeForRestrictionInput(
+  type: TransferRestrictionType,
+  context: Context
+): PolymeshPrimitivesStatisticsStatType {
+  const neededOp =
+    type === TransferRestrictionType.Count ? StatisticsOpType.Count : StatisticsOpType.Balance;
+  const rawOp = statisticsOpTypeToStatOpType(neededOp, context);
+
+  return statisticsOpTypeToStatType(rawOp, context);
 }

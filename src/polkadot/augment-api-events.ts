@@ -754,23 +754,35 @@ declare module '@polkadot/api-base/types/events' {
       /**
        * A code with the specified hash was removed.
        **/
-      CodeRemoved: AugmentedEvent<ApiType, [H256]>;
+      CodeRemoved: AugmentedEvent<ApiType, [codeHash: H256], { codeHash: H256 }>;
       /**
        * Code with the specified hash has been stored.
        **/
-      CodeStored: AugmentedEvent<ApiType, [H256]>;
+      CodeStored: AugmentedEvent<ApiType, [codeHash: H256], { codeHash: H256 }>;
       /**
        * A contract's code was updated.
        **/
-      ContractCodeUpdated: AugmentedEvent<ApiType, [AccountId32, H256, H256]>;
+      ContractCodeUpdated: AugmentedEvent<
+        ApiType,
+        [contract: AccountId32, newCodeHash: H256, oldCodeHash: H256],
+        { contract: AccountId32; newCodeHash: H256; oldCodeHash: H256 }
+      >;
       /**
        * A custom event emitted by the contract.
        **/
-      ContractEmitted: AugmentedEvent<ApiType, [AccountId32, Bytes]>;
+      ContractEmitted: AugmentedEvent<
+        ApiType,
+        [contract: AccountId32, data: Bytes],
+        { contract: AccountId32; data: Bytes }
+      >;
       /**
        * Contract deployed by address at the specified address.
        **/
-      Instantiated: AugmentedEvent<ApiType, [AccountId32, AccountId32]>;
+      Instantiated: AugmentedEvent<
+        ApiType,
+        [deployer: AccountId32, contract: AccountId32],
+        { deployer: AccountId32; contract: AccountId32 }
+      >;
       /**
        * Contract has been removed.
        *
@@ -779,7 +791,11 @@ declare module '@polkadot/api-base/types/events' {
        * The only way for a contract to be removed and emitting this event is by calling
        * `seal_terminate`.
        **/
-      Terminated: AugmentedEvent<ApiType, [AccountId32, AccountId32]>;
+      Terminated: AugmentedEvent<
+        ApiType,
+        [contract: AccountId32, beneficiary: AccountId32],
+        { contract: AccountId32; beneficiary: AccountId32 }
+      >;
     };
     corporateAction: {
       /**
@@ -1003,7 +1019,11 @@ declare module '@polkadot/api-base/types/events' {
       /**
        * New authority set has been applied.
        **/
-      NewAuthorities: AugmentedEvent<ApiType, [Vec<ITuple<[SpFinalityGrandpaAppPublic, u64]>>]>;
+      NewAuthorities: AugmentedEvent<
+        ApiType,
+        [authoritySet: Vec<ITuple<[SpFinalityGrandpaAppPublic, u64]>>],
+        { authoritySet: Vec<ITuple<[SpFinalityGrandpaAppPublic, u64]>> }
+      >;
       /**
        * Current authority set has been paused.
        **/
@@ -1177,25 +1197,41 @@ declare module '@polkadot/api-base/types/events' {
       /**
        * A new heartbeat was received from `AuthorityId`.
        **/
-      HeartbeatReceived: AugmentedEvent<ApiType, [PalletImOnlineSr25519AppSr25519Public]>;
+      HeartbeatReceived: AugmentedEvent<
+        ApiType,
+        [authorityId: PalletImOnlineSr25519AppSr25519Public],
+        { authorityId: PalletImOnlineSr25519AppSr25519Public }
+      >;
       /**
        * At the end of the session, at least one validator was found to be offline.
        **/
-      SomeOffline: AugmentedEvent<ApiType, [Vec<ITuple<[AccountId32, PalletStakingExposure]>>]>;
+      SomeOffline: AugmentedEvent<
+        ApiType,
+        [offline: Vec<ITuple<[AccountId32, PalletStakingExposure]>>],
+        { offline: Vec<ITuple<[AccountId32, PalletStakingExposure]>> }
+      >;
     };
     indices: {
       /**
        * A account index was assigned.
        **/
-      IndexAssigned: AugmentedEvent<ApiType, [AccountId32, u32]>;
+      IndexAssigned: AugmentedEvent<
+        ApiType,
+        [who: AccountId32, index: u32],
+        { who: AccountId32; index: u32 }
+      >;
       /**
        * A account index has been freed up (unassigned).
        **/
-      IndexFreed: AugmentedEvent<ApiType, [u32]>;
+      IndexFreed: AugmentedEvent<ApiType, [index: u32], { index: u32 }>;
       /**
        * A account index has been frozen to its current account ID.
        **/
-      IndexFrozen: AugmentedEvent<ApiType, [u32, AccountId32]>;
+      IndexFrozen: AugmentedEvent<
+        ApiType,
+        [index: u32, who: AccountId32],
+        { index: u32; who: AccountId32 }
+      >;
     };
     multiSig: {
       /**
@@ -1293,7 +1329,11 @@ declare module '@polkadot/api-base/types/events' {
        * (kind-specific) time slot. This event is not deposited for duplicate slashes.
        * \[kind, timeslot\].
        **/
-      Offence: AugmentedEvent<ApiType, [U8aFixed, Bytes]>;
+      Offence: AugmentedEvent<
+        ApiType,
+        [kind: U8aFixed, timeslot: Bytes],
+        { kind: U8aFixed; timeslot: Bytes }
+      >;
     };
     pips: {
       /**
@@ -1580,15 +1620,15 @@ declare module '@polkadot/api-base/types/events' {
       /**
        * A preimage has ben cleared.
        **/
-      Cleared: AugmentedEvent<ApiType, [H256]>;
+      Cleared: AugmentedEvent<ApiType, [hash_: H256], { hash_: H256 }>;
       /**
        * A preimage has been noted.
        **/
-      Noted: AugmentedEvent<ApiType, [H256]>;
+      Noted: AugmentedEvent<ApiType, [hash_: H256], { hash_: H256 }>;
       /**
        * A preimage has been requested.
        **/
-      Requested: AugmentedEvent<ApiType, [H256]>;
+      Requested: AugmentedEvent<ApiType, [hash_: H256], { hash_: H256 }>;
     };
     protocolFee: {
       /**
@@ -1657,30 +1697,36 @@ declare module '@polkadot/api-base/types/events' {
        **/
       CallLookupFailed: AugmentedEvent<
         ApiType,
-        [ITuple<[u32, u32]>, Option<Bytes>, FrameSupportScheduleLookupError]
+        [task: ITuple<[u32, u32]>, id: Option<Bytes>, error: FrameSupportScheduleLookupError],
+        { task: ITuple<[u32, u32]>; id: Option<Bytes>; error: FrameSupportScheduleLookupError }
       >;
       /**
        * Canceled some task.
        **/
-      Canceled: AugmentedEvent<ApiType, [u32, u32]>;
+      Canceled: AugmentedEvent<ApiType, [when: u32, index: u32], { when: u32; index: u32 }>;
       /**
        * Dispatched some task.
        **/
       Dispatched: AugmentedEvent<
         ApiType,
-        [ITuple<[u32, u32]>, Option<Bytes>, Result<Null, SpRuntimeDispatchError>]
+        [task: ITuple<[u32, u32]>, id: Option<Bytes>, result: Result<Null, SpRuntimeDispatchError>],
+        {
+          task: ITuple<[u32, u32]>;
+          id: Option<Bytes>;
+          result: Result<Null, SpRuntimeDispatchError>;
+        }
       >;
       /**
        * Scheduled some task.
        **/
-      Scheduled: AugmentedEvent<ApiType, [u32, u32]>;
+      Scheduled: AugmentedEvent<ApiType, [when: u32, index: u32], { when: u32; index: u32 }>;
     };
     session: {
       /**
        * New session has happened. Note that the argument is the session index, not the
        * block number as the type might suggest.
        **/
-      NewSession: AugmentedEvent<ApiType, [u32]>;
+      NewSession: AugmentedEvent<ApiType, [sessionIndex: u32], { sessionIndex: u32 }>;
     };
     settlement: {
       /**
@@ -2062,24 +2108,33 @@ declare module '@polkadot/api-base/types/events' {
        **/
       ExtrinsicFailed: AugmentedEvent<
         ApiType,
-        [SpRuntimeDispatchError, FrameSupportWeightsDispatchInfo]
+        [dispatchError: SpRuntimeDispatchError, dispatchInfo: FrameSupportWeightsDispatchInfo],
+        { dispatchError: SpRuntimeDispatchError; dispatchInfo: FrameSupportWeightsDispatchInfo }
       >;
       /**
        * An extrinsic completed successfully.
        **/
-      ExtrinsicSuccess: AugmentedEvent<ApiType, [FrameSupportWeightsDispatchInfo]>;
+      ExtrinsicSuccess: AugmentedEvent<
+        ApiType,
+        [dispatchInfo: FrameSupportWeightsDispatchInfo],
+        { dispatchInfo: FrameSupportWeightsDispatchInfo }
+      >;
       /**
        * An account was reaped.
        **/
-      KilledAccount: AugmentedEvent<ApiType, [AccountId32]>;
+      KilledAccount: AugmentedEvent<ApiType, [account: AccountId32], { account: AccountId32 }>;
       /**
        * A new account was created.
        **/
-      NewAccount: AugmentedEvent<ApiType, [AccountId32]>;
+      NewAccount: AugmentedEvent<ApiType, [account: AccountId32], { account: AccountId32 }>;
       /**
        * On on-chain remark happened.
        **/
-      Remarked: AugmentedEvent<ApiType, [AccountId32, H256]>;
+      Remarked: AugmentedEvent<
+        ApiType,
+        [sender: AccountId32, hash_: H256],
+        { sender: AccountId32; hash_: H256 }
+      >;
     };
     technicalCommittee: {
       /**
