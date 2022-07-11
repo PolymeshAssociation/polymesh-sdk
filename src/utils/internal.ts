@@ -1267,24 +1267,27 @@ export function compareTransferRestrictionToStat(
   if (!claimIssuer) {
     return false;
   }
+
+  if (type === StatType.Count || type === StatType.Balance) {
+    return false;
+  }
+
   const {
     issuer: { did: issuerDid },
     claimType,
   } = claimIssuer;
 
-  if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
-    let rawClaim, issuer;
-    if (transferCondition.isClaimCount) {
-      [rawClaim, issuer] = transferCondition.asClaimCount;
-    } else if (transferCondition.isClaimOwnership) {
-      [rawClaim, issuer] = transferCondition.asClaimOwnership;
-    }
-    if (rawClaim && issuer) {
-      const restrictionIssuerDid = identityIdToString(issuer);
-      const claim = statsClaimToStatClaimInputType(rawClaim);
-      if (restrictionIssuerDid === issuerDid && claim.type === claimType) {
-        return true;
-      }
+  let rawClaim, issuer;
+  if (transferCondition.isClaimCount) {
+    [rawClaim, issuer] = transferCondition.asClaimCount;
+  } else if (transferCondition.isClaimOwnership) {
+    [rawClaim, issuer] = transferCondition.asClaimOwnership;
+  }
+  if (rawClaim && issuer) {
+    const restrictionIssuerDid = identityIdToString(issuer);
+    const claim = statsClaimToStatClaimInputType(rawClaim);
+    if (restrictionIssuerDid === issuerDid && claim.type === claimType) {
+      return true;
     }
   }
 

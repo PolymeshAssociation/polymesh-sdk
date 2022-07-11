@@ -191,7 +191,6 @@ import {
   meshClaimToClaim,
   meshClaimToStatClaimInput,
   meshClaimTypeToClaimType,
-  meshClaimTypeToStatClaimType,
   meshCorporateActionToCorporateActionParams,
   meshInstructionStatusToInstructionStatus,
   meshPermissionsToPermissions,
@@ -7631,38 +7630,6 @@ describe('statsClaimToStatClaimUserType', () => {
     });
     result = statsClaimToStatClaimInputType(jurisdictionClaim);
     expect(result).toEqual({ type: ClaimType.Jurisdiction });
-  });
-});
-
-describe('meshClaimTypeToStatClaimType', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  it('should return the StatClaimType from a raw Claim', () => {
-    const accreditedClaimType = dsMockUtils.createMockIdentitiesClaimClaimType(
-      ClaimType.Accredited
-    );
-    let result = meshClaimTypeToStatClaimType(accreditedClaimType);
-    expect(result).toEqual(ClaimType.Accredited);
-
-    const affiliatedClaim = dsMockUtils.createMockIdentitiesClaimClaimType(ClaimType.Affiliate);
-    result = meshClaimTypeToStatClaimType(affiliatedClaim);
-    expect(result).toEqual(ClaimType.Affiliate);
-
-    const jurisdictionClaim = dsMockUtils.createMockIdentitiesClaimClaimType(
-      ClaimType.Jurisdiction
-    );
-    result = meshClaimTypeToStatClaimType(jurisdictionClaim);
-    expect(result).toEqual(ClaimType.Jurisdiction);
   });
 });
 

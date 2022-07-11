@@ -2265,16 +2265,6 @@ export function meshClaimTypeToClaimType(
 
 /**
  * @hidden
- * NOTE: A narrowed type wrapper over the wider claim type conversion function
- * TODO make this safer
- */
-export function meshClaimTypeToStatClaimType(
-  claimType: PolymeshPrimitivesIdentityClaimClaimType
-): StatClaimType {
-  return meshClaimTypeToClaimType(claimType) as StatClaimType;
-}
-/**
- * @hidden
  */
 export function trustedIssuerToTrustedClaimIssuer(
   trustedIssuer: PolymeshPrimitivesConditionTrustedIssuer,
@@ -2869,10 +2859,10 @@ export function transferRestrictionToPolymeshTransferCondition(
 
   if (type === TransferRestrictionType.Count) {
     restrictionType = 'MaxInvestorCount';
-    restrictionValue = bigNumberToU64(value as BigNumber, context);
+    restrictionValue = bigNumberToU64(value, context);
   } else if (type === TransferRestrictionType.Percentage) {
     restrictionType = 'MaxInvestorOwnership';
-    restrictionValue = percentageToPermill(value as BigNumber, context);
+    restrictionValue = percentageToPermill(value, context);
   } else if (
     type === TransferRestrictionType.ClaimCount ||
     type === TransferRestrictionType.ClaimPercentage
