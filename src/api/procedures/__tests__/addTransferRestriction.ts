@@ -452,14 +452,14 @@ describe('addTransferRestriction procedure', () => {
     expect(result).toEqual(new BigNumber(1));
   });
 
-  it('should throw an error if attempting to add a restriction that already exists', async () => {
+  it('should throw an error if attempting to add a restriction that already exists', () => {
     args = {
       type: TransferRestrictionType.Count,
       exemptedIdentities: [],
       count,
       ticker,
     };
-    let proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, BigNumber>(
+    const proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, BigNumber>(
       mockContext,
       {
         currentRestrictions:
@@ -469,38 +469,29 @@ describe('addTransferRestriction procedure', () => {
       }
     );
 
-    let err;
+    (rawCountCondition.eq as sinon.SinonStub).returns(true);
 
-    try {
-      await prepareAddTransferRestriction.call(proc, args);
-    } catch (error) {
-      err = error;
-    }
+    const existingRequirements =
+      dsMockUtils.createMockBTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>([
+        rawCountCondition,
+        rawPercentageCondition,
+      ]);
+    queryMultiStub.resolves([
+      mockStatTypeBtree,
+      dsMockUtils.createMockAssetTransferCompliance({
+        paused: dsMockUtils.createMockBool(false),
+        requirements: existingRequirements,
+      }),
+    ]);
 
-    expect(err.message).toBe('Cannot add the same restriction more than once');
-
-    args = {
-      type: TransferRestrictionType.Percentage,
-      exemptedIdentities: [],
-      percentage,
-      ticker,
-    };
-
-    proc = procedureMockUtils.getInstance<AddTransferRestrictionParams, BigNumber>(mockContext, {
-      currentRestrictions:
-        dsMockUtils.createMockBTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>([
-          rawCountCondition,
-          rawPercentageCondition,
-        ]),
+    const expectedError = new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Cannot add the same restriction more than once',
     });
 
-    try {
-      await prepareAddTransferRestriction.call(proc, args);
-    } catch (error) {
-      err = error;
-    }
-
-    expect(err.message).toBe('Cannot add the same restriction more than once');
+    return expect(prepareAddTransferRestriction.call(proc, args)).rejects.toThrowError(
+      expectedError
+    );
   });
 
   it('should throw an error if attempting to add a restriction when the restriction limit has been reached', () => {
@@ -509,15 +500,17 @@ describe('addTransferRestriction procedure', () => {
       count,
       ticker,
     };
+    const maxedRequirements =
+      dsMockUtils.createMockBTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>([
+        rawPercentageCondition,
+        rawPercentageCondition,
+        rawPercentageCondition,
+      ]);
     queryMultiStub.resolves([
       mockStatTypeBtree,
       dsMockUtils.createMockAssetTransferCompliance({
         paused: dsMockUtils.createMockBool(false),
-        requirements: dsMockUtils.createMockBTreeSet([
-          rawPercentageCondition,
-          rawPercentageCondition,
-          rawPercentageCondition,
-        ]),
+        requirements: maxedRequirements,
       }),
     ]);
 
@@ -528,6 +521,7 @@ describe('addTransferRestriction procedure', () => {
     const expectedError = new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'Transfer Restriction limit reached',
+      data: { limit: 3 },
     });
 
     return expect(prepareAddTransferRestriction.call(proc, args)).rejects.toThrowError(

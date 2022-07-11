@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { conditionalExpression } from '@babel/types';
 import { ApiPromise } from '@polkadot/api';
 import { DecoratedRpc } from '@polkadot/api/types';
 import {
@@ -1579,7 +1580,10 @@ export const createMockIdentityId = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-const createMockEnum = (enumValue?: string | Record<string, Codec | Codec[]>): MockCodec<Enum> => {
+const createMockEnum = (
+  enumValue?: string | Record<string, Codec | Codec[]>,
+  index?: number
+): MockCodec<Enum> => {
   const codec: Record<string, unknown> = {};
 
   if (typeof enumValue === 'string') {
@@ -1592,6 +1596,7 @@ const createMockEnum = (enumValue?: string | Record<string, Codec | Codec[]>): M
     codec[`as${upperFirst(key)}`] = enumValue[key];
     codec.type = key;
   }
+  codec.index = index;
 
   return createMockCodec(codec, !enumValue) as MockCodec<Enum>;
 };
@@ -2533,8 +2538,27 @@ export const createMockRpcConditionType = (
  */
 export const createMockIdentitiesClaimClaimType = (
   claimType?: ClaimType
-): MockCodec<PolymeshPrimitivesIdentityClaimClaimType> =>
-  createMockEnum(claimType) as MockCodec<PolymeshPrimitivesIdentityClaimClaimType>;
+): MockCodec<PolymeshPrimitivesIdentityClaimClaimType> => {
+  const claimIndexes = {
+    Accredited: 1,
+    Affiliate: 2,
+    BuyLockup: 3,
+    SellLockup: 4,
+    CustomerDueDiligence: 5,
+    KnowYourCustomer: 6,
+    Jurisdiction: 7,
+    Exempted: 8,
+    Blocked: 9,
+    InvestorUniqueness: 10,
+    NoType: 11,
+    NoData: 11,
+    InvestorUniquenessV2: 12,
+  };
+  return createMockEnum(
+    claimType,
+    claimType ? claimIndexes[claimType] : 0
+  ) as MockCodec<PolymeshPrimitivesIdentityClaimClaimType>;
+};
 
 /**
  * @hidden
@@ -4062,13 +4086,13 @@ export const createMockAssetTransferCompliance = (
       }
     | PolymeshPrimitivesTransferComplianceAssetTransferCompliance
 ): MockCodec<PolymeshPrimitivesTransferComplianceAssetTransferCompliance> => {
+  if (isCodec<PolymeshPrimitivesTransferComplianceAssetTransferCompliance>(transferCompliance)) {
+    return transferCompliance as MockCodec<PolymeshPrimitivesTransferComplianceAssetTransferCompliance>;
+  }
   const { paused, requirements } = transferCompliance || {
     paused: dsMockUtils.createMockBool(false),
     requirements: dsMockUtils.createMockBTreeSet([]),
   };
-  if (isCodec<PolymeshPrimitivesTransferComplianceAssetTransferCompliance>(transferCompliance)) {
-    return transferCompliance as MockCodec<PolymeshPrimitivesTransferComplianceAssetTransferCompliance>;
-  }
   return createMockCodec(
     { paused, requirements },
     !transferCompliance

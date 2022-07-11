@@ -90,14 +90,8 @@ export async function prepareAddTransferRestriction(
   const neededStat = neededStatTypeForRestrictionInput({ type, claimIssuer }, context);
   assertStatIsSet(currentStats, neededStat);
   const maxConditions = u32ToBigNumber(consts.statistics.maxTransferConditionsPerAsset);
-  console.log(
-    'restrictions size',
-    currentRestrictions,
-    currentRestrictions.size,
-    [...currentRestrictions].length
-  );
 
-  const restrictionAmount = new BigNumber(currentRestrictions.size);
+  const restrictionAmount = new BigNumber([...currentRestrictions].length);
   if (restrictionAmount.gte(maxConditions)) {
     throw new PolymeshError({
       code: ErrorCode.LimitExceeded,

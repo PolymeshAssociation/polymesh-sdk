@@ -84,7 +84,6 @@ import {
   AuthorizationType,
   CalendarUnit,
   Claim,
-  ClaimCountRestrictionValue,
   ClaimType,
   Condition,
   ConditionCompliance,
@@ -7808,7 +7807,7 @@ describe('countStatInputToStatUpdates', () => {
   });
 });
 
-describe('sortByClaimType', () => {
+describe('sortStatsByClaimType', () => {
   it('should sort by claim type', () => {
     const issuer = dsMockUtils.createMockIdentityId('did');
     type ClaimTypeTuple = [PolymeshPrimitivesIdentityClaimClaimType, PolymeshPrimitivesIdentityId];
@@ -7852,7 +7851,9 @@ describe('sortByClaimType', () => {
     const countStat = dsMockUtils.createMockStatisticsStatType({ op });
 
     let result = sortStatsByClaimType([jurisdictionStat, accreditedStat, affiliateStat, countStat]);
+    console.log(JSON.stringify(result));
     expect(result).toEqual([accreditedStat, affiliateStat, jurisdictionStat, countStat]);
+    // expect(result).toEqual([jurisdictionStat, accreditedStat, affiliateStat, countStat]);
 
     result = sortStatsByClaimType([
       nonStat,

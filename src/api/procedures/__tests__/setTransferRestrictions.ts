@@ -93,7 +93,7 @@ describe('setTransferRestrictions procedure', () => {
   let rawStatType: PolymeshPrimitivesStatisticsStatType;
   let rawStatTypeBtree: BTreeSet<PolymeshPrimitivesStatisticsStatType>;
   let mockNeededStat: PolymeshPrimitivesStatisticsStatType;
-  let neededStatEqStub: sinon.SinonStub;
+  let rawStatStatTypeEqStub: sinon.SinonStub;
   let args: SetTransferRestrictionsParams;
   let rawCountRestrictionBtreeSet: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
   let rawPercentageRestrictionBtreeSet: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
@@ -226,7 +226,7 @@ describe('setTransferRestrictions procedure', () => {
     rawScopeId = dsMockUtils.createMockScopeId(exemptedDid);
     rawStatType = dsMockUtils.createMockStatisticsStatType();
     mockNeededStat = dsMockUtils.createMockStatisticsStatType();
-    neededStatEqStub = mockNeededStat.eq as sinon.SinonStub;
+    rawStatStatTypeEqStub = rawStatType.eq as sinon.SinonStub;
     rawStatTypeBtree = dsMockUtils.createMockBTreeSet([rawStatType]);
 
     transferRestrictionToPolymeshTransferConditionStub
@@ -639,7 +639,7 @@ describe('setTransferRestrictions procedure', () => {
     });
 
     it('should fetch, process and return shared data', async () => {
-      neededStatEqStub.returns(true);
+      rawStatStatTypeEqStub.returns(true);
       const proc = procedureMockUtils.getInstance<
         SetTransferRestrictionsParams,
         BigNumber,
@@ -731,7 +731,7 @@ describe('setTransferRestrictions procedure', () => {
       dsMockUtils.createQueryStub('statistics', 'activeAssetStats', {
         returnValue: rawStatTypeBtree,
       });
-      neededStatEqStub.returns(false);
+      rawStatStatTypeEqStub.returns(false);
 
       const proc = procedureMockUtils.getInstance<
         SetTransferRestrictionsParams,

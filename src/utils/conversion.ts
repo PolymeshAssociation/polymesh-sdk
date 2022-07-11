@@ -3655,7 +3655,6 @@ export function sortStatsByClaimType(
 
     const [aClaim] = a.claimIssuer.unwrap();
     const [bClaim] = b.claimIssuer.unwrap();
-
     return aClaim.index - bClaim.index;
   });
 }

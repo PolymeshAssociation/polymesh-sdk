@@ -68,6 +68,7 @@ export async function prepareRemoveAssetStat(
       tickerKey,
     ],
   ]);
+  console.log('reqs: ', requirements);
   requirements.forEach(r => {
     let claimIssuer;
     if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
@@ -92,7 +93,7 @@ export async function prepareRemoveAssetStat(
 
   const removeTarget = statisticsOpTypeToStatType({ op, claimIssuer: rawClaimIssuer }, context);
   const statsArr = [...currentStats];
-  const removeIndex = statsArr.findIndex(s => s.eq(removeTarget));
+  const removeIndex = statsArr.findIndex(s => removeTarget.eq(s));
   if (removeIndex >= 0) {
     statsArr.splice(removeIndex, 1);
   } else {

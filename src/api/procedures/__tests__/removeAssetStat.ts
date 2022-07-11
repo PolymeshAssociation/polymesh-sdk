@@ -40,6 +40,9 @@ describe('removeAssetStat procedure', () => {
   let rawCountCondition: PolymeshPrimitivesTransferComplianceTransferCondition;
   let rawPercentageCondition: PolymeshPrimitivesTransferComplianceTransferCondition;
   let rawClaimCountCondition: PolymeshPrimitivesTransferComplianceTransferCondition;
+  let mockRemoveTarget: PolymeshPrimitivesStatisticsStatType;
+  let mockRemoveTargetEqSub: sinon.SinonStub;
+  let countStatTypeEqStub: sinon.SinonStub;
   let queryMultiStub: sinon.SinonStub;
   let queryMultiResult: [
     BTreeSet<PolymeshPrimitivesStatisticsStatType>,
@@ -54,6 +57,7 @@ describe('removeAssetStat procedure', () => {
     [PolymeshPrimitivesStatisticsStatUpdate[], Context],
     BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>
   >;
+  let statisticsOpTypeToStatTypeStub: sinon.SinonStub;
   let createStat2ndKeyStub: sinon.SinonStub<
     [
       type: 'NoClaimStat' | StatClaimType,
@@ -110,6 +114,11 @@ describe('removeAssetStat procedure', () => {
     dsMockUtils.setConstMock('statistics', 'maxTransferConditionsPerAsset', {
       returnValue: dsMockUtils.createMockU32(new BigNumber(3)),
     });
+
+    statisticsOpTypeToStatTypeStub = sinon.stub(
+      utilsConversionModule,
+      'statisticsOpTypeToStatType'
+    );
     statStub = sinon.stub(utilsConversionModule, 'meshStatToStatisticsOpType');
     statisticStatTypesToBtreeStatTypeStub = sinon.stub(
       utilsConversionModule,
@@ -121,6 +130,8 @@ describe('removeAssetStat procedure', () => {
 
   beforeEach(() => {
     statStub.returns(StatisticsOpType.Balance);
+    mockRemoveTarget = dsMockUtils.createMockStatisticsStatType();
+    mockRemoveTargetEqSub = mockRemoveTarget.eq as sinon.SinonStub;
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
     setActiveAssetStats = dsMockUtils.createTxStub('statistics', 'setActiveAssetStats');
 
@@ -135,12 +146,13 @@ describe('removeAssetStat procedure', () => {
         dsMockUtils.createMockIdentityId(),
       ],
     });
-    emptyStatTypeBtreeSet = dsMockUtils.createMockBTreeSet([]);
     statBtreeSet = dsMockUtils.createMockBTreeSet([
       rawCountStatType,
       rawBalanceStatType,
       rawClaimCountStatType,
     ]);
+    emptyStatTypeBtreeSet = dsMockUtils.createMockBTreeSet([]);
+    countStatTypeEqStub = rawCountStatType.eq as sinon.SinonStub;
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawStatUpdate = dsMockUtils.createMockStatUpdate();
     rawStatUpdateBtree = dsMockUtils.createMockBTreeSet([rawStatUpdate]);
@@ -163,6 +175,7 @@ describe('removeAssetStat procedure', () => {
     });
 
     createStat2ndKeyStub.withArgs('NoClaimStat', mockContext, undefined).returns(raw2ndKey);
+    statisticsOpTypeToStatTypeStub.returns(mockRemoveTarget);
 
     statUpdatesToBtreeStatUpdateStub
       .withArgs([rawStatUpdate], mockContext)
@@ -192,8 +205,8 @@ describe('removeAssetStat procedure', () => {
   });
 
   it('should add a setAssetStats transaction to the queue', async () => {
-    (rawCountStatType.eq as sinon.SinonStub).returns(true);
-    queryMultiStub.returns([statBtreeSet, fakeCurrentRequirements]);
+    mockRemoveTargetEqSub.returns(true);
+    queryMultiStub.returns([statBtreeSet, { requirements: [] }]);
     const proc = procedureMockUtils.getInstance<RemoveAssetStatParams, void>(mockContext);
 
     await prepareRemoveAssetStat.call(proc, args);
@@ -220,8 +233,7 @@ describe('removeAssetStat procedure', () => {
     });
   });
 
-  it('should throw if the stat is not set', () => {
-    // queryMultiResult = [emptyStatTypeBtreeSet, fakeCurrentRequirements];
+  it('should throw if the stat is not set', async () => {
     queryMultiStub.returns([emptyStatTypeBtreeSet, { requirements: [] }]);
     const proc = procedureMockUtils.getInstance<RemoveAssetStatParams, void>(mockContext);
 
@@ -230,23 +242,21 @@ describe('removeAssetStat procedure', () => {
       message: 'Cannot remove a stat that is not enabled for this Asset',
     });
 
-    return expect(prepareRemoveAssetStat.call(proc, args)).rejects.toThrowError(expectedError);
+    await expect(prepareRemoveAssetStat.call(proc, args)).rejects.toThrowError(expectedError);
   });
 
   it('should throw an error if the stat is being used', async () => {
     const proc = procedureMockUtils.getInstance<RemoveAssetStatParams, void>(mockContext);
-
-    (queryMultiResult[1].requirements as Mutable<
-      BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>
-    >) = dsMockUtils.createMockBTreeSet([
-      rawCountCondition,
-      rawPercentageCondition,
-      rawClaimCountCondition,
+    queryMultiStub.returns([
+      statBtreeSet,
+      {
+        requirements: dsMockUtils.createMockBTreeSet([
+          rawCountCondition,
+          rawPercentageCondition,
+          rawClaimCountCondition,
+        ]),
+      },
     ]);
-
-    queryMultiStub.returns(queryMultiResult);
-
-    statStub.returns(StatisticsOpType.Balance);
 
     const expectedError = new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
@@ -264,7 +274,6 @@ describe('removeAssetStat procedure', () => {
     };
     await expect(prepareRemoveAssetStat.call(proc, args)).rejects.toThrowError(expectedError);
 
-    statStub.returns(StatisticsOpType.ClaimCount);
     args = {
       ticker: 'TICKER',
       type: StatType.ScopedCount,
@@ -274,6 +283,7 @@ describe('removeAssetStat procedure', () => {
       },
     };
     await expect(prepareRemoveAssetStat.call(proc, args)).rejects.toThrowError(expectedError);
+    console.log('being used done');
   });
 
   describe('getAuthorization', () => {
