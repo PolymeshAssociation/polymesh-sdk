@@ -4,6 +4,10 @@ import BigNumber from 'bignumber.js';
 
 import { Entity, Procedure } from '~/internal';
 
+/**
+ * A helper type that will strip `readonly` from the properties of an object. Use with caution
+ * @hidden
+ */
 export type Mutable<Immutable> = {
   -readonly [K in keyof Immutable]: Immutable[K];
 };

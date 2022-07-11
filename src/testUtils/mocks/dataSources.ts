@@ -1629,12 +1629,16 @@ export const createMockBTreeSet = <T extends Codec>(
   if (isCodec<BTreeSet<T>>(items)) {
     return items as MockCodec<BTreeSet<T>>;
   }
-  const res = createMockCodec(items, !items) as unknown as BTreeSet;
-  res.has = sinon.stub().returns(false);
-  (res as any).size = items.length;
-  items.forEach(item => {
-    (res.has as sinon.SinonStub).withArgs(item).returns(true);
+  const res = createMockCodec(items, !items) as unknown as Mutable<BTreeSet>;
+  const hasStub: sinon.SinonStub<[unknown], boolean> = sinon.stub();
+  hasStub.returns(false);
+
+  res.size = items.length;
+  res.has = hasStub;
+  items.forEach(i => {
+    hasStub.withArgs(i).returns(true);
   });
+
   return res as MockCodec<BTreeSet<T>>;
 };
 
