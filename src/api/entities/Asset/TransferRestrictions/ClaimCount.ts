@@ -14,7 +14,7 @@ import {
 } from '~/types';
 
 /**
- * Handles all Count Transfer Restriction related functionality
+ * Handles all Claim Count Transfer Restriction related functionality
  */
 export class ClaimCount extends TransferRestrictionBase<TransferRestrictionType.ClaimCount> {
   protected type = TransferRestrictionType.ClaimCount as const;

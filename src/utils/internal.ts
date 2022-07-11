@@ -1341,7 +1341,7 @@ export function compareTransferRestrictionToInput(
     const max = maybeMax.isSome ? u64ToBigNumber(maybeMax.unwrap()) : undefined;
     const castedValue = value as ClaimCountRestrictionValue;
 
-    return !!(
+    return (
       castedValue.min.eq(min) &&
       compareOptionalBigNumbers(max, castedValue.max) &&
       castedValue.claim.type === getClaimType(statClaim) &&
@@ -1358,7 +1358,7 @@ export function compareTransferRestrictionToInput(
     const min = permillToBigNumber(rawMin);
     const max = permillToBigNumber(rawMax);
 
-    return !!(
+    return (
       castedValue.min.eq(min) &&
       compareOptionalBigNumbers(castedValue.max, max) &&
       castedValue.claim.type === getClaimType(statClaim) &&
@@ -1389,7 +1389,7 @@ export function compareStatTypeToTransferRestrictionType(
 }
 
 /**
- *@ hidden
+ * @hidden
  * @param args.type TransferRestriction type that was given
  * @param args.claimIssuer optional Issuer and ClaimType for the scope of the Stat
  * @param context
