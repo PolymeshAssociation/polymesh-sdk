@@ -26,6 +26,7 @@ import {
   Offering,
   TransactionQueue,
 } from '~/internal';
+import { StatClaimIssuer } from '~/types/internal';
 import { Modify } from '~/types/utils';
 
 export * from '~/generated/types';
@@ -317,10 +318,7 @@ export interface ClaimData<ClaimType = Claim> {
   claim: ClaimType;
 }
 
-export type StatClaimType = Extract<
-  ClaimType,
-  ClaimType.Accredited | ClaimType.Affiliate | ClaimType.Jurisdiction
->;
+export type StatClaimType = ClaimType.Accredited | ClaimType.Affiliate | ClaimType.Jurisdiction;
 
 export interface StatJurisdictionClaimInput {
   type: ClaimType.Jurisdiction;
@@ -337,12 +335,10 @@ export interface StatAffiliateClaimInput {
   affiliate: boolean;
 }
 
-export type StatClaimUserInput =
+export type StatClaimInput =
   | StatJurisdictionClaimInput
   | StatAccreditedClaimInput
   | StatAffiliateClaimInput;
-
-export type StatClaimUserType = Omit<StatClaimUserInput, 'affiliate' | 'accredited'>;
 
 export interface IdentityWithClaims {
   identity: Identity;
@@ -468,10 +464,6 @@ export type InputCondition = (
 ) &
   InputConditionBase;
 
-export interface ClaimIssuer {
-  issuer: Identity;
-  claimType: StatClaimType;
-}
 export interface Requirement {
   id: BigNumber;
   conditions: Condition[];
@@ -1290,7 +1282,7 @@ export interface ClaimCountTransferRestriction extends TransferRestrictionBase {
   /**
    * The type of investors this restriction applies to. e.g. non-accredited
    */
-  claim: StatClaimUserInput;
+  claim: StatClaimInput;
   /**
    * The minimum amount of investors the must meet the Claim criteria
    */
@@ -1306,13 +1298,13 @@ export interface ClaimPercentageTransferRestriction extends TransferRestrictionB
   /**
    * The type of investors this restriction applies to. e.g. Canadian investor
    */
-  claim: StatClaimUserInput;
+  claim: StatClaimInput;
   /**
-   * The minimum percentage of investors that must meet the Claim criteria
+   * The minimum percentage of the total supply that investors meeting the Claim criteria must hold
    */
   min: BigNumber;
   /**
-   * The maximum percentage of investors that must meet the Claim criteria
+   * The maximum percentage of the total supply that investors meeting the Claim criteria must hold
    */
   max: BigNumber;
 
@@ -1340,30 +1332,33 @@ export enum TransferRestrictionType {
   ClaimPercentage = 'ClaimPercentage',
 }
 
-export interface TransferRestriction {
-  type: TransferRestrictionType;
-  value: BigNumber | ClaimCountRestrictionValue | ClaimPercentageRestrictionValue;
-}
+export type TransferRestriction =
+  | {
+      type: TransferRestrictionType.Count;
+      value: BigNumber;
+    }
+  | { type: TransferRestrictionType.Percentage; value: BigNumber }
+  | {
+      type: TransferRestrictionType.ClaimCount;
+      value: ClaimCountRestrictionValue;
+    }
+  | {
+      type: TransferRestrictionType.ClaimPercentage;
+      value: ClaimPercentageRestrictionValue;
+    };
 
 export interface ClaimCountRestrictionValue {
   min: BigNumber;
   max?: BigNumber;
   issuer: Identity;
-  claim: StatClaimUserInput;
+  claim: StatClaimInput;
 }
 
 export interface ClaimPercentageRestrictionValue {
   min: BigNumber;
   max: BigNumber;
   issuer: Identity;
-  claim: StatClaimUserInput;
-}
-
-export enum StatType {
-  Count = 'Count',
-  Balance = 'Balance',
-  ScopedCount = 'ScopedCount',
-  ScopedBalance = 'ScopedBalance',
+  claim: StatClaimInput;
 }
 
 export interface AddCountStatInput {
@@ -1374,12 +1369,8 @@ export type ClaimCountInitialStatInput =
   | { yes: BigNumber; no: BigNumber }
   | { countryCode: CountryCode; count: BigNumber }[];
 export interface ClaimCountStatInput {
+  // TODO figure out a good shape for this
   claimIssuer: StatClaimIssuer & { value: ClaimCountInitialStatInput };
-}
-
-export interface StatClaimIssuer {
-  issuer: Identity;
-  claimType: StatClaimType;
 }
 
 export interface ClaimPercentageStatInput {

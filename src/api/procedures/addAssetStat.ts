@@ -1,16 +1,12 @@
-import { PolymeshPrimitivesStatisticsStatType } from '@polkadot/types/lookup';
-import { BTreeSet } from '@polkadot/types-codec';
-
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import {
   AddCountStatInput,
   ClaimCountStatInput,
   ClaimPercentageStatInput,
   ErrorCode,
-  StatType,
   TxTags,
 } from '~/types';
-import { ProcedureAuthorization, StatisticsOpType } from '~/types/internal';
+import { ProcedureAuthorization, StatisticsOpType, StatType } from '~/types/internal';
 import {
   claimCountStatInputToStatUpdates,
   claimIssuerToMeshClaimIssuer,
@@ -45,29 +41,34 @@ export type AddAssetStatParams = { ticker: string } & (
   | AddClaimPercentageStatParams
 );
 
-export interface Storage {
-  currentStats: BTreeSet<PolymeshPrimitivesStatisticsStatType>;
-}
-
 /**
  * @hidden
  */
 export async function prepareAddAssetStat(
-  this: Procedure<AddAssetStatParams, void, Storage>,
+  this: Procedure<AddAssetStatParams, void>,
   args: AddAssetStatParams
 ): Promise<void> {
   const {
     context: {
       polymeshApi: {
+        query: { statistics: statisticsQuery },
         tx: { statistics },
       },
     },
-    storage: { currentStats },
     context,
   } = this;
   const { ticker, type } = args;
 
   const tickerKey = stringToTickerKey(ticker, context);
+  const currentStats = await statisticsQuery.activeAssetStats(tickerKey);
+  const needStat = ![...currentStats].find(s => compareStatsToInput(s, args));
+
+  if (!needStat) {
+    throw new PolymeshError({
+      code: ErrorCode.NoDataChange,
+      message: 'Stat is already enabled',
+    });
+  }
 
   const op =
     type === StatType.Count || type === StatType.ScopedCount
@@ -77,7 +78,7 @@ export async function prepareAddAssetStat(
   const transactions = [];
 
   let rawClaimIssuer;
-  if (args.type === StatType.ScopedCount || args.type === StatType.ScopedBalance) {
+  if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
     rawClaimIssuer = claimIssuerToMeshClaimIssuer(args.claimIssuer, context);
   }
 
@@ -91,7 +92,7 @@ export async function prepareAddAssetStat(
   );
 
   // Count stats need the user to provide the initial value for the counter as computing them present a DOS attack vector on chain
-  // We require users to provide initial stats so they won't miss setting initial values
+  // We require users to provide initial stats in this method so they won't miss setting initial values. It could be its own step
   if (args.type === StatType.Count) {
     const statValue = countStatInputToStatUpdates(args, context);
     transactions.push(
@@ -104,7 +105,7 @@ export async function prepareAddAssetStat(
     const {
       claimIssuer: { value, claimType },
     } = args;
-    const statValue = claimCountStatInputToStatUpdates(value, claimType, context);
+    const statValue = claimCountStatInputToStatUpdates({ value, type: claimType }, context);
     transactions.push(
       checkTxType({
         transaction: statistics.batchUpdateAssetStats,
@@ -119,11 +120,11 @@ export async function prepareAddAssetStat(
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<AddAssetStatParams, void, Storage>,
+  this: Procedure<AddAssetStatParams, void>,
   { type, ticker }: AddAssetStatParams
 ): ProcedureAuthorization {
   const transactions = [TxTags.statistics.SetActiveAssetStats];
-  if (type === StatType.Count) {
+  if (type === StatType.Count || type === StatType.ScopedCount) {
     transactions.push(TxTags.statistics.BatchUpdateAssetStats);
   }
   const asset = new Asset({ ticker }, this.context);
@@ -139,38 +140,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export async function prepareStorage(
-  this: Procedure<AddAssetStatParams, void, Storage>,
-  args: AddAssetStatParams
-): Promise<Storage> {
-  const {
-    context,
-    context: {
-      polymeshApi: {
-        query: { statistics },
-      },
-    },
-  } = this;
-  const { ticker } = args;
-
-  const tickerKey = stringToTickerKey(ticker, context);
-  const currentStats = await statistics.activeAssetStats(tickerKey);
-  const needStat = ![...currentStats].find(s => compareStatsToInput(s, args));
-
-  if (!needStat) {
-    throw new PolymeshError({
-      code: ErrorCode.NoDataChange,
-      message: 'Stat is already enabled',
-    });
-  }
-
-  return {
-    currentStats,
-  };
-}
-
-/**
- * @hidden
- */
-export const addAssetStat = (): Procedure<AddAssetStatParams, void, Storage> =>
-  new Procedure(prepareAddAssetStat, getAuthorization, prepareStorage);
+export const addAssetStat = (): Procedure<AddAssetStatParams, void> =>
+  new Procedure(prepareAddAssetStat, getAuthorization);

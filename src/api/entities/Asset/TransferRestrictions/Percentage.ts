@@ -18,12 +18,12 @@ export class Percentage extends TransferRestrictionBase<TransferRestrictionType.
   protected type = TransferRestrictionType.Percentage as const;
 
   /**
-   * Add a Percentage Transfer Restriction to this Asset. This limits the total percentage of the float
+   * Add a Percentage Transfer Restriction to this Asset. This limits the total percentage of the supply
    * a single investor can acquire without an exemption
    *
-   * @note the result is the total amount of restrictions after the procedure has run
+   * @returns the total amount of restrictions after the procedure has run
    *
-   * @throws if the Balance statistic is not enabled for this Asset. enableStat should be called before this method
+   * @throws if the Balance statistic is not enabled for this Asset. {@link Percentage.enableStat} should be called before this method
    */
   public declare addRestriction: ProcedureMethod<
     Omit<AddPercentageTransferRestrictionParams, 'type'>,
@@ -49,15 +49,15 @@ export class Percentage extends TransferRestrictionBase<TransferRestrictionType.
 
   /**
    * Enables investor balance statistic for the Asset, which is required before creating restrictions
-   * that limit the total ownership of a company
+   * that limit the total ownership of the Assets' supply
    */
   public declare enableStat: NoArgsProcedureMethod<void>;
 
   /**
-   * Disables investor balance statistic for the Asset. Since statistics introduce slight overhead to each transaction
+   * Disables the investor balance statistic for the Asset. Since statistics introduce slight overhead to each transaction
    * involving the Asset, disabling unused stats will reduce gas fees for investors when they transact with the Asset
    *
-   * @throws if the stat is being used by a restriction
+   * @throws if the stat is being used by a restriction or is not set
    */
   public declare disableStat: NoArgsProcedureMethod<void>;
 

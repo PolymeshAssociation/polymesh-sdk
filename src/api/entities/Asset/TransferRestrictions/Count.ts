@@ -20,12 +20,12 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
 
   /**
    * Add a Count Transfer Restriction to this Asset. This limits to total number of individual
-   * investors that may hold a particular Asset. In some jurisdictions once a threshold of investors is
-   * passed, different regulations may apply, and this can ensure the limits are not exceeded
+   * investors that may hold the Asset. In some jurisdictions once a threshold of investors is
+   * passed, different regulations may apply. Count Transfer Restriction can ensure such limits are not exceeded
    *
-   * @note the result is the total amount of restrictions after the procedure has run
+   * @returns the total amount of restrictions after the procedure has run
    *
-   * @throws if a count statistic is not enabled for the Asset. enableStat should be called before this method
+   * @throws if a count statistic is not enabled for the Asset. {@link Count.enableStat } should be called before this method
    */
   public declare addRestriction: ProcedureMethod<
     Omit<AddCountTransferRestrictionParams, 'type'>,
@@ -50,21 +50,23 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
   public declare removeRestrictions: NoArgsProcedureMethod<BigNumber>;
 
   /**
-   * Enables investor count statistic for the Asset, which is required before creating restrictions
+   * Enables an investor count statistic for the Asset, which is required before creating restrictions
    *
-   * @note this method requires the current number of holders to be passed in. Currently there is a potential
-   * race condition when passing in count. If a restriction such as limiting the number of investors is needed, then
-   * it is recommended to call this method during the initial configuration of the Asset, before people are trading it.
-   * Other options include checking after setting and retrying if that check isn't right, freezing the Asset, or to
-   * wait for a future version of the chain that will prevent this race condition
+   * The counter is only updated automatically with each transfer of tokens after the stat has been enabled.
+   * As such the initial value for the stat should be passed in
+   *
+   * @note Currently there is a potential race condition if passing in counts values when the Asset is being traded.
+   * It is recommended to call this method during the initial configuration of the Asset, before people are trading it.
+   * Otherwise the Asset should be frozen, or the stat checked after being set to ensure the correct value is used. Future
+   * versions of the chain may expose a new extrinsic to avoid this issue
    */
   public declare enableStat: ProcedureMethod<Pick<AddCountStatParams, 'count'>, void>;
 
   /**
-   * Disables investor count statistic for the Asset. Since statistics introduce slight overhead to each transaction
-   * involving the Asset, disabling unused stats will reduce gas fees for investors when they transaction with the Asset
+   * Disables the investor count statistic for the Asset. Since statistics introduce slight overhead to each transaction
+   * involving the Asset, disabling unused stats will reduce gas fees for investors when they transact with the Asset
    *
-   * @throws if the stat is being used by a restriction
+   * @throws if the stat is being used by a restriction or is not set
    */
   public declare disableStat: NoArgsProcedureMethod<void>;
 

@@ -81,6 +81,7 @@ import {
   PolymeshPrimitivesStatisticsStatUpdate,
   PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions,
   PolymeshPrimitivesTicker,
+  PolymeshPrimitivesTransferComplianceAssetTransferCompliance,
   PolymeshPrimitivesTransferComplianceTransferCondition,
 } from '@polkadot/types/lookup';
 import {
@@ -176,6 +177,7 @@ import {
   VenueType,
   ZkProofData,
 } from '~/polkadot/polymesh';
+import { dsMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
@@ -1624,7 +1626,7 @@ export const createMockEcdsaSignature = (
 export const createMockBTreeSet = <T extends Codec>(
   items: BTreeSet<T> | unknown[]
 ): MockCodec<BTreeSet<T>> => {
-  if (isCodec<BTreeSet>(items)) {
+  if (isCodec<BTreeSet<T>>(items)) {
     return items as MockCodec<BTreeSet<T>>;
   }
   const res = createMockCodec(items, !items) as unknown as BTreeSet;
@@ -4043,4 +4045,28 @@ export const createMockStatisticsStatClaim = (
       return statClaim as MockCodec<PolymeshPrimitivesStatisticsStatClaim>;
     }
   return createMockEnum(statClaim) as MockCodec<PolymeshPrimitivesStatisticsStatClaim>;
+};
+
+/**
+ * @hidden
+ */
+export const createMockAssetTransferCompliance = (
+  transferCompliance?:
+    | {
+        paused: bool;
+        requirements: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
+      }
+    | PolymeshPrimitivesTransferComplianceAssetTransferCompliance
+): MockCodec<PolymeshPrimitivesTransferComplianceAssetTransferCompliance> => {
+  const { paused, requirements } = transferCompliance || {
+    paused: dsMockUtils.createMockBool(false),
+    requirements: dsMockUtils.createMockBTreeSet([]),
+  };
+  if (isCodec<PolymeshPrimitivesTransferComplianceAssetTransferCompliance>(transferCompliance)) {
+    return transferCompliance as MockCodec<PolymeshPrimitivesTransferComplianceAssetTransferCompliance>;
+  }
+  return createMockCodec(
+    { paused, requirements },
+    !transferCompliance
+  ) as MockCodec<PolymeshPrimitivesTransferComplianceAssetTransferCompliance>;
 };

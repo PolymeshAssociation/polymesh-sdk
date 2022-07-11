@@ -77,7 +77,7 @@ function transformRestrictions(
     if (!someDifference) {
       someDifference = ![...currentRestrictions].find(compareConditions);
     }
-    const condition = { type, value };
+    const condition = { type, value } as TransferRestriction;
     const rawCondition = transferRestrictionToPolymeshTransferCondition(condition, context);
 
     if (r.exemptedIdentities) {
@@ -248,55 +248,41 @@ export async function prepareStorage(
 
   const currentRestrictions: TransferRestriction[] = [];
 
-  const transformScopedRestriction = ({
-    claim,
-    min,
-    max,
-    issuer,
-  }: ClaimCountTransferRestriction | ClaimPercentageTransferRestriction): TransferRestriction => {
-    return {
-      type,
-      value: { claim, min, max, issuer },
-    };
-  };
-
-  let occupiedSlots;
+  let occupiedSlots =
+    currentCountRestrictions.length +
+    currentPercentageRestrictions.length +
+    currentClaimCountRestrictions.length +
+    currentClaimPercentageRestrictions.length;
   if (type === TransferRestrictionType.Count) {
-    occupiedSlots =
-      currentPercentageRestrictions.length +
-      currentClaimCountRestrictions.length +
-      currentClaimPercentageRestrictions.length;
+    occupiedSlots -= currentCountRestrictions.length;
   } else if (type === TransferRestrictionType.Percentage) {
-    occupiedSlots =
-      currentCountRestrictions.length +
-      currentClaimCountRestrictions.length +
-      currentClaimPercentageRestrictions.length;
+    occupiedSlots -= currentPercentageRestrictions.length;
   } else if (type === TransferRestrictionType.ClaimCount) {
-    occupiedSlots =
-      currentCountRestrictions.length +
-      currentPercentageRestrictions.length +
-      currentClaimPercentageRestrictions.length;
+    occupiedSlots -= currentClaimCountRestrictions.length;
   } else {
-    occupiedSlots =
-      currentCountRestrictions.length +
-      currentPercentageRestrictions.length +
-      currentClaimCountRestrictions.length;
+    occupiedSlots -= currentClaimPercentageRestrictions.length;
   }
 
   if (type === TransferRestrictionType.Count) {
     currentCountRestrictions.forEach(({ count: value }) => {
-      const restriction = { type: TransferRestrictionType.Count, value };
+      const restriction = { type: TransferRestrictionType.Count, value } as const;
       currentRestrictions.push(restriction);
     });
   } else if (type === TransferRestrictionType.Percentage) {
     currentPercentageRestrictions.forEach(({ percentage: value }) => {
-      const restriction = { type: TransferRestrictionType.Percentage, value };
+      const restriction = { type: TransferRestrictionType.Percentage, value } as const;
       currentRestrictions.push(restriction);
     });
   } else if (type === TransferRestrictionType.ClaimCount) {
-    currentRestrictions.push(...currentClaimCountRestrictions.map(transformScopedRestriction));
+    currentClaimCountRestrictions.forEach(({ claim, min, max, issuer }) => {
+      const restriction = { type, value: { claim, min, max, issuer } };
+      currentRestrictions.push(restriction);
+    });
   } else {
-    currentRestrictions.push(...currentClaimPercentageRestrictions.map(transformScopedRestriction));
+    currentClaimPercentageRestrictions.forEach(({ claim, min, max, issuer }) => {
+      const restriction = { type, value: { claim, min, max, issuer } };
+      currentRestrictions.push(restriction);
+    });
   }
 
   const transformRestriction = (

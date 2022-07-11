@@ -36,7 +36,7 @@ import {
   Requirement,
   Scope,
   SecurityIdentifier,
-  StatClaimUserInput,
+  StatClaimInput,
   TransactionPermissions,
   TxGroup,
   VenueType,
@@ -112,13 +112,13 @@ export interface ClaimCountTransferRestrictionInput extends TransferRestrictionI
   min: BigNumber;
   max?: BigNumber;
   issuer: Identity;
-  claim: StatClaimUserInput;
+  claim: StatClaimInput;
 }
 export interface ClaimPercentageTransferRestrictionInput extends TransferRestrictionInputBase {
   min: BigNumber;
   max: BigNumber;
   issuer: Identity;
-  claim: StatClaimUserInput;
+  claim: StatClaimInput;
 }
 
 export type AddCountTransferRestrictionParams = CountTransferRestrictionInput & {

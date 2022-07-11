@@ -12,17 +12,12 @@ import { BTreeSet } from '@polkadot/types-codec';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import {
-  getAuthorization,
-  prepareAddAssetStat,
-  prepareStorage,
-  Storage,
-} from '~/api/procedures/addAssetStat';
+import { getAuthorization, prepareAddAssetStat } from '~/api/procedures/addAssetStat';
 import { AddAssetStatParams, Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ClaimType, CountryCode, ErrorCode, StatClaimType, StatType, TxTags } from '~/types';
-import { PolymeshTx, StatisticsOpType, TickerKey } from '~/types/internal';
+import { ClaimType, CountryCode, ErrorCode, StatClaimType, TxTags } from '~/types';
+import { PolymeshTx, StatisticsOpType, StatType, TickerKey } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -83,17 +78,12 @@ describe('addAssetStat procedure', () => {
   let activeAssetStatsStub: sinon.SinonStub;
   let statStub: sinon.SinonStub;
 
-  let emptyStorage: Storage;
-
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     mockContext = dsMockUtils.getContextInstance();
     ticker = 'TICKER';
-    emptyStorage = {
-      currentStats: dsMockUtils.createMockBTreeSet([]),
-    };
     count = new BigNumber(10);
     stringToTickerKeyStub = sinon.stub(utilsConversionModule, 'stringToTickerKey');
     createStat2ndKeyStub = sinon.stub(utilsConversionModule, 'createStat2ndKey');
@@ -110,6 +100,7 @@ describe('addAssetStat procedure', () => {
     });
     statStub = sinon.stub(utilsConversionModule, 'meshStatToStatisticsOpType');
     activeAssetStatsStub = dsMockUtils.createQueryStub('statistics', 'activeAssetStats');
+    activeAssetStatsStub.returns(dsMockUtils.createMockBTreeSet([]));
     statisticStatTypesToBtreeStatTypeStub = sinon.stub(
       utilsConversionModule,
       'statisticStatTypesToBtreeStatType'
@@ -155,9 +146,7 @@ describe('addAssetStat procedure', () => {
       type: StatType.Balance,
       ticker,
     };
-    const proc = procedureMockUtils.getInstance<AddAssetStatParams, void, Storage>(mockContext, {
-      ...emptyStorage,
-    });
+    const proc = procedureMockUtils.getInstance<AddAssetStatParams, void>(mockContext, {});
 
     await prepareAddAssetStat.call(proc, args);
 
@@ -223,6 +212,25 @@ describe('addAssetStat procedure', () => {
     });
   });
 
+  it('should throw an error if the appropriate stat is not set', () => {
+    const proc = procedureMockUtils.getInstance<AddAssetStatParams, void>(mockContext, {});
+    args = {
+      type: StatType.Balance,
+      ticker,
+    };
+
+    activeAssetStatsStub.returns([rawStatType]);
+
+    statStub.returns(StatisticsOpType.Balance);
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.NoDataChange,
+      message: 'Stat is already enabled',
+    });
+
+    return expect(prepareAddAssetStat.call(proc, args)).rejects.toThrowError(expectedError);
+  });
+
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', () => {
       args = {
@@ -231,10 +239,7 @@ describe('addAssetStat procedure', () => {
         type: StatType.Count,
       };
 
-      const proc = procedureMockUtils.getInstance<AddAssetStatParams, void, Storage>(
-        mockContext,
-        emptyStorage
-      );
+      const proc = procedureMockUtils.getInstance<AddAssetStatParams, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
       expect(boundFunc(args)).toEqual({
@@ -254,65 +259,6 @@ describe('addAssetStat procedure', () => {
           portfolios: [],
         },
       });
-    });
-  });
-
-  describe('prepareStorage', () => {
-    beforeEach(() => {
-      const did = 'someDid';
-      dsMockUtils.configureMocks({
-        contextOptions: {
-          did,
-        },
-      });
-    });
-
-    it('should fetch, process and return shared data', async () => {
-      const proc = procedureMockUtils.getInstance<AddAssetStatParams, void, Storage>(mockContext);
-      const boundFunc = prepareStorage.bind(proc);
-      activeAssetStatsStub.returns([rawStatType]);
-      let result = await boundFunc({
-        ticker: 'TICKER',
-        type: StatType.Count,
-        count: new BigNumber(1),
-      } as AddAssetStatParams);
-
-      expect(result).toEqual({
-        currentStats: [rawStatType],
-      });
-
-      statStub.returns(StatisticsOpType.Count);
-
-      result = await boundFunc({
-        ticker: 'TICKER',
-        type: StatType.Balance,
-        count: new BigNumber(1),
-      } as AddAssetStatParams);
-
-      expect(result).toEqual({
-        currentStats: [rawStatType],
-      });
-    });
-
-    it('should throw an error if the stat is already set', () => {
-      const proc = procedureMockUtils.getInstance<AddAssetStatParams, void, Storage>(mockContext);
-      const boundFunc = prepareStorage.bind(proc);
-
-      activeAssetStatsStub.returns([rawStatType]);
-
-      statStub.returns(StatisticsOpType.Balance);
-
-      const expectedError = new PolymeshError({
-        code: ErrorCode.NoDataChange,
-        message: 'Stat is already enabled',
-      });
-
-      return expect(
-        boundFunc({
-          ticker: 'TICKER',
-          type: StatType.Balance,
-        })
-      ).rejects.toThrowError(expectedError);
     });
   });
 });

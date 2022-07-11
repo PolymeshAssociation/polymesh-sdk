@@ -15,16 +15,13 @@ import {
 import {
   addAssetStat,
   AddAssetStatParams,
-  AddAssetStatStorage,
   addTransferRestriction,
   AddTransferRestrictionParams,
-  AddTransferRestrictionStorage,
   Asset,
   Context,
   Namespace,
   removeAssetStat,
   RemoveAssetStatParams,
-  RemoveAssetStatStorage,
   setTransferRestrictions,
   SetTransferRestrictionsStorage,
 } from '~/internal';
@@ -39,9 +36,9 @@ import {
   SetCountTransferRestrictionsParams,
   SetPercentageTransferRestrictionsParams,
   SetRestrictionsParams,
-  StatType,
   TransferRestrictionType,
 } from '~/types';
+import { StatType } from '~/types/internal';
 import {
   scopeIdToString,
   stringToTickerKey,
@@ -79,6 +76,13 @@ export type RemoveAssetStatParamsBase<T> = Omit<
   'type'
 >;
 
+const restrictionTypeToStatType = {
+  [TransferRestrictionType.Count]: StatType.Count,
+  [TransferRestrictionType.Percentage]: StatType.Balance,
+  [TransferRestrictionType.ClaimCount]: StatType.ScopedCount,
+  [TransferRestrictionType.ClaimPercentage]: StatType.ScopedBalance,
+};
+
 /**
  * Base class for managing Transfer Restrictions
  */
@@ -98,8 +102,7 @@ export abstract class TransferRestrictionBase<
     this.addRestriction = createProcedureMethod<
       AddRestrictionParams<T>,
       AddTransferRestrictionParams,
-      BigNumber,
-      AddTransferRestrictionStorage
+      BigNumber
     >(
       {
         getProcedureAndArgs: args => [
@@ -144,18 +147,13 @@ export abstract class TransferRestrictionBase<
       context
     );
 
-    this.enableStat = createProcedureMethod<
-      SetAssetStatParams<T>,
-      AddAssetStatParams,
-      void,
-      AddAssetStatStorage
-    >(
+    this.enableStat = createProcedureMethod<SetAssetStatParams<T>, AddAssetStatParams, void>(
       {
         getProcedureAndArgs: args => [
           addAssetStat,
           {
             ...args,
-            type: this.statType,
+            type: restrictionTypeToStatType[this.type],
             ticker,
           } as AddAssetStatParams,
         ],
@@ -166,15 +164,14 @@ export abstract class TransferRestrictionBase<
     this.disableStat = createProcedureMethod<
       RemoveAssetStatParamsBase<T>,
       RemoveAssetStatParams,
-      void,
-      RemoveAssetStatStorage
+      void
     >(
       {
         getProcedureAndArgs: args => [
           removeAssetStat,
           {
             ...args,
-            type: this.statType,
+            type: restrictionTypeToStatType[this.type],
             ticker,
           } as RemoveAssetStatParams,
         ],
@@ -210,9 +207,9 @@ export abstract class TransferRestrictionBase<
   public enableStat: ProcedureMethod<SetAssetStatParams<T>, void>;
 
   /**
-   * Removes an Asset Stat
+   * Removes an Asset statistic
    *
-   * @throws if the Stat is being used
+   * @throws if the statistic is being used or is not set
    */
   public disableStat: ProcedureMethod<RemoveAssetStatParamsBase<T>, void>;
 
@@ -301,21 +298,5 @@ export abstract class TransferRestrictionBase<
       restrictions,
       availableSlots: maxTransferConditions.minus(restrictions.length),
     } as GetTransferRestrictionReturnType<T>;
-  }
-
-  /**
-   * @hidden
-   */
-  private get statType(): StatType {
-    const { type } = this;
-    if (type === TransferRestrictionType.Count) {
-      return StatType.Count;
-    } else if (type === TransferRestrictionType.Percentage) {
-      return StatType.Balance;
-    } else if (type === TransferRestrictionType.ClaimCount) {
-      return StatType.ScopedCount;
-    } else {
-      return StatType.ScopedBalance;
-    }
   }
 }

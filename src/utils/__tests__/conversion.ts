@@ -117,6 +117,7 @@ import {
   SignerValue,
   TargetTreatment,
   TransferError,
+  TransferRestriction,
   TransferRestrictionType,
   TransferStatus,
   TrustedClaimIssuer,
@@ -157,7 +158,7 @@ import {
   cddStatusToBoolean,
   checkpointToRecordDateSpec,
   claimCountStatInputToStatUpdates,
-  claimCountToClaimRestrictionValue,
+  claimCountToClaimCountRestrictionValue,
   claimToMeshClaim,
   claimTypeToMeshClaimType,
   complianceConditionsToBtreeSet,
@@ -189,7 +190,7 @@ import {
   meshAffirmationStatusToAffirmationStatus,
   meshCalendarPeriodToCalendarPeriod,
   meshClaimToClaim,
-  meshClaimToStatClaimUser,
+  meshClaimToStatClaimInput,
   meshClaimTypeToClaimType,
   meshClaimTypeToStatClaimType,
   meshCorporateActionToCorporateActionParams,
@@ -233,7 +234,7 @@ import {
   statisticsOpTypeToStatOpType,
   statisticsOpTypeToStatType,
   statisticStatTypesToBtreeStatType,
-  statsClaimToStatClaimUserType,
+  statsClaimToStatClaimInputType,
   statUpdatesToBtreeStatUpdate,
   storedScheduleToCheckpointScheduleParams,
   stringToAccountId,
@@ -5589,7 +5590,7 @@ describe('transferRestrictionToPolymeshTransferCondition', () => {
 
   it('should convert a Transfer Restriction to a PolymeshTransferCondition object', () => {
     const count = new BigNumber(10);
-    let value: { type: TransferRestrictionType; value: BigNumber | ClaimCountRestrictionValue } = {
+    let value: TransferRestriction = {
       type: TransferRestrictionType.Count,
       value: count,
     };
@@ -7500,7 +7501,7 @@ describe('meshClaimToStatClaimUser', () => {
     let args = dsMockUtils.createMockStatisticsStatClaim({
       Accredited: dsMockUtils.createMockBool(true),
     });
-    let result = meshClaimToStatClaimUser(args);
+    let result = meshClaimToStatClaimInput(args);
     expect(result).toEqual({
       accredited: true,
       type: ClaimType.Accredited,
@@ -7509,7 +7510,7 @@ describe('meshClaimToStatClaimUser', () => {
     args = dsMockUtils.createMockStatisticsStatClaim({
       Affiliate: dsMockUtils.createMockBool(true),
     });
-    result = meshClaimToStatClaimUser(args);
+    result = meshClaimToStatClaimInput(args);
     expect(result).toEqual({
       affiliate: true,
       type: ClaimType.Affiliate,
@@ -7518,7 +7519,7 @@ describe('meshClaimToStatClaimUser', () => {
     args = dsMockUtils.createMockStatisticsStatClaim({
       Jurisdiction: dsMockUtils.createMockOption(),
     });
-    result = meshClaimToStatClaimUser(args);
+    result = meshClaimToStatClaimInput(args);
     expect(result).toEqual({
       countryCode: undefined,
       type: ClaimType.Jurisdiction,
@@ -7527,7 +7528,7 @@ describe('meshClaimToStatClaimUser', () => {
     args = dsMockUtils.createMockStatisticsStatClaim({
       Jurisdiction: dsMockUtils.createMockOption(dsMockUtils.createMockCountryCode(CountryCode.Ca)),
     });
-    result = meshClaimToStatClaimUser(args);
+    result = meshClaimToStatClaimInput(args);
     expect(result).toEqual({
       countryCode: CountryCode.Ca,
       type: ClaimType.Jurisdiction,
@@ -7535,7 +7536,7 @@ describe('meshClaimToStatClaimUser', () => {
   });
 });
 
-describe('claimCountToClaimRestrictionValue', () => {
+describe('claimCountToClaimCountRestrictionValue', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -7562,7 +7563,7 @@ describe('claimCountToClaimRestrictionValue', () => {
     const rawClaim = dsMockUtils.createMockStatisticsStatClaim({
       Accredited: dsMockUtils.createMockBool(true),
     });
-    let result = claimCountToClaimRestrictionValue(
+    let result = claimCountToClaimCountRestrictionValue(
       [rawClaim, rawIssuerId, rawMin, maxOption] as unknown as ITuple<
         [StatClaim, IdentityId, u64, Option<u64>]
       >,
@@ -7580,7 +7581,7 @@ describe('claimCountToClaimRestrictionValue', () => {
       })
     );
 
-    result = claimCountToClaimRestrictionValue(
+    result = claimCountToClaimCountRestrictionValue(
       [rawClaim, rawIssuerId, rawMin, dsMockUtils.createMockOption()] as unknown as ITuple<
         [StatClaim, IdentityId, u64, Option<u64>]
       >,
@@ -7617,19 +7618,19 @@ describe('statsClaimToStatClaimUserType', () => {
     const accreditedClaim = dsMockUtils.createMockStatisticsStatClaim({
       Accredited: dsMockUtils.createMockBool(true),
     });
-    let result = statsClaimToStatClaimUserType(accreditedClaim);
+    let result = statsClaimToStatClaimInputType(accreditedClaim);
     expect(result).toEqual({ type: ClaimType.Accredited });
 
     const affiliateClaim = dsMockUtils.createMockStatisticsStatClaim({
       Affiliate: dsMockUtils.createMockBool(false),
     });
-    result = statsClaimToStatClaimUserType(affiliateClaim);
+    result = statsClaimToStatClaimInputType(affiliateClaim);
     expect(result).toEqual({ type: ClaimType.Affiliate });
 
     const jurisdictionClaim = dsMockUtils.createMockStatisticsStatClaim({
       Jurisdiction: dsMockUtils.createMockOption(dsMockUtils.createMockCountryCode(CountryCode.Ca)),
     });
-    result = statsClaimToStatClaimUserType(jurisdictionClaim);
+    result = statsClaimToStatClaimInputType(jurisdictionClaim);
     expect(result).toEqual({ type: ClaimType.Jurisdiction });
   });
 });
@@ -7749,7 +7750,10 @@ describe('claimCountStatInputToStatUpdates', () => {
       .returns('jurisdictionBtreeSet');
 
     const yesNoValue = { yes, no };
-    let result = claimCountStatInputToStatUpdates(yesNoValue, ClaimType.Affiliate, context);
+    let result = claimCountStatInputToStatUpdates(
+      { type: ClaimType.Affiliate, value: yesNoValue },
+      context
+    );
     expect(result).toEqual('yesNoBtreeSet');
 
     const countryValue = [
@@ -7762,7 +7766,10 @@ describe('claimCountStatInputToStatUpdates', () => {
         count: usCount,
       },
     ];
-    result = claimCountStatInputToStatUpdates(countryValue, ClaimType.Jurisdiction, context);
+    result = claimCountStatInputToStatUpdates(
+      { type: ClaimType.Jurisdiction, value: countryValue },
+      context
+    );
     expect(result).toEqual('jurisdictionBtreeSet');
   });
 });

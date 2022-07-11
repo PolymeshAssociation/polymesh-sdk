@@ -69,7 +69,6 @@ export { redeemTokens } from '~/api/procedures/redeemTokens';
 export {
   addTransferRestriction,
   AddTransferRestrictionParams,
-  Storage as AddTransferRestrictionStorage,
 } from '~/api/procedures/addTransferRestriction';
 export { launchOffering } from '~/api/procedures/launchOffering';
 export {
@@ -147,13 +146,5 @@ export {
   SetClaimCountTransferRestrictionsParams,
   SetClaimPercentageTransferRestrictionsParams,
 } from '~/api/procedures/types';
-export {
-  addAssetStat,
-  AddAssetStatParams,
-  Storage as AddAssetStatStorage,
-} from '~/api/procedures/addAssetStat';
-export {
-  removeAssetStat,
-  RemoveAssetStatParams,
-  Storage as RemoveAssetStatStorage,
-} from '~/api/procedures/removeAssetStat';
+export { addAssetStat, AddAssetStatParams } from '~/api/procedures/addAssetStat';
+export { removeAssetStat, RemoveAssetStatParams } from '~/api/procedures/removeAssetStat';

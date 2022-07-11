@@ -1,14 +1,14 @@
-import { PolymeshPrimitivesStatisticsStatType } from '@polkadot/types/lookup';
-import { BTreeSet } from '@polkadot/types-codec';
+import { QueryableStorageEntry } from '@polkadot/api/types';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
-import { ClaimPercentageStatInput, ErrorCode, StatType, TxTags } from '~/types';
-import { ProcedureAuthorization, StatisticsOpType } from '~/types/internal';
+import { ClaimPercentageStatInput, ErrorCode, TxTags } from '~/types';
+import { ProcedureAuthorization, StatType } from '~/types/internal';
+import { QueryReturnType } from '~/types/utils';
 import {
   claimIssuerToMeshClaimIssuer,
-  statisticsOpTypeToStatOpType,
   statisticsOpTypeToStatType,
   statisticStatTypesToBtreeStatType,
+  statTypeToStatOpType,
   stringToTickerKey,
 } from '~/utils/conversion';
 import { checkTxType, compareTransferRestrictionToStat } from '~/utils/internal';
@@ -36,45 +36,63 @@ export type RemoveAssetStatParams = { ticker: string } & (
   | RemoveScopedBalanceParams
 );
 
-export interface Storage {
-  currentStats: BTreeSet<PolymeshPrimitivesStatisticsStatType>;
-}
-
 /**
  * @hidden
  */
 export async function prepareRemoveAssetStat(
-  this: Procedure<RemoveAssetStatParams, void, Storage>,
+  this: Procedure<RemoveAssetStatParams, void>,
   args: RemoveAssetStatParams
 ): Promise<void> {
   const {
     context: {
       polymeshApi: {
         tx: { statistics },
+        query: { statistics: statisticsQuery },
+        queryMulti,
       },
     },
-    storage: { currentStats },
     context,
   } = this;
   const { ticker, type } = args;
-
   const tickerKey = stringToTickerKey(ticker, context);
 
-  let op;
-  if (type === StatType.Count || type === StatType.ScopedCount) {
-    op = statisticsOpTypeToStatOpType(StatisticsOpType.Count, context);
-  } else {
-    op = statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
-  }
+  const [currentStats, { requirements }] = await queryMulti<
+    [
+      QueryReturnType<typeof statisticsQuery.activeAssetStats>,
+      QueryReturnType<typeof statisticsQuery.assetTransferCompliances>
+    ]
+  >([
+    [statisticsQuery.activeAssetStats as unknown as QueryableStorageEntry<'promise'>, tickerKey],
+    [
+      statisticsQuery.assetTransferCompliances as unknown as QueryableStorageEntry<'promise'>,
+      tickerKey,
+    ],
+  ]);
+  requirements.forEach(r => {
+    let claimIssuer;
+    if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
+      claimIssuer = args.claimIssuer;
+    }
 
+    const used = compareTransferRestrictionToStat(r, type, claimIssuer);
+    if (used) {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message:
+          'The statistic cannot be removed because a TransferRestriction is currently using it',
+      });
+    }
+  });
+
+  const op = statTypeToStatOpType(type, context);
   let rawClaimIssuer;
   if (type === StatType.ScopedBalance || type === StatType.ScopedCount) {
     rawClaimIssuer = claimIssuerToMeshClaimIssuer(args.claimIssuer, context);
   }
 
-  const newStat = statisticsOpTypeToStatType({ op, claimIssuer: rawClaimIssuer }, context);
+  const removeTarget = statisticsOpTypeToStatType({ op, claimIssuer: rawClaimIssuer }, context);
   const statsArr = [...currentStats];
-  const removeIndex = statsArr.findIndex(s => s.eq(newStat));
+  const removeIndex = statsArr.findIndex(s => s.eq(removeTarget));
   if (removeIndex >= 0) {
     statsArr.splice(removeIndex, 1);
   } else {
@@ -97,7 +115,7 @@ export async function prepareRemoveAssetStat(
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<RemoveAssetStatParams, void, Storage>,
+  this: Procedure<RemoveAssetStatParams, void>,
   { ticker }: RemoveAssetStatParams
 ): ProcedureAuthorization {
   const transactions = [TxTags.statistics.SetActiveAssetStats];
@@ -114,50 +132,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export async function prepareStorage(
-  this: Procedure<RemoveAssetStatParams, void, Storage>,
-  args: RemoveAssetStatParams
-): Promise<Storage> {
-  const {
-    context,
-    context: {
-      polymeshApi: {
-        query: { statistics },
-      },
-    },
-  } = this;
-  const { ticker, type } = args;
-
-  const tickerKey = stringToTickerKey(ticker, context);
-  const [currentStats, { requirements }] = await Promise.all([
-    statistics.activeAssetStats(tickerKey),
-    statistics.assetTransferCompliances(tickerKey),
-  ]);
-
-  requirements.forEach(r => {
-    let claimIssuer;
-    if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
-      claimIssuer = args.claimIssuer;
-    }
-
-    const used = compareTransferRestrictionToStat(r, type, claimIssuer);
-
-    if (used) {
-      throw new PolymeshError({
-        code: ErrorCode.UnmetPrerequisite,
-        message:
-          'This statistics cannot be removed because a TransferRequirement is currently using it',
-      });
-    }
-  });
-
-  return {
-    currentStats,
-  };
-}
-
-/**
- * @hidden
- */
-export const removeAssetStat = (): Procedure<RemoveAssetStatParams, void, Storage> =>
-  new Procedure(prepareRemoveAssetStat, getAuthorization, prepareStorage);
+export const removeAssetStat = (): Procedure<RemoveAssetStatParams, void> =>
+  new Procedure(prepareRemoveAssetStat, getAuthorization);

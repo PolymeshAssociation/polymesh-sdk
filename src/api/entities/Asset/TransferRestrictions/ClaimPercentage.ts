@@ -14,18 +14,19 @@ import {
 } from '~/types';
 
 /**
- * Handles all Percentage Transfer Restriction related functionality
+ * Handles all Claim Percentage Transfer Restriction related functionality
  */
 export class ClaimPercentage extends TransferRestrictionBase<TransferRestrictionType.ClaimPercentage> {
   protected type = TransferRestrictionType.ClaimPercentage as const;
 
   /**
-   * Add a Percentage Transfer Restriction to this Asset. This limits the total percentage of the float
-   * a single investor can acquire without an exemption
+   * Add a Percentage Transfer Restriction to this Asset. This can be used to limit the total amount of supply
+   * investors who share a ClaimType may hold. For example a restriction can be made so Canadian investors must hold
+   * at least 50% of the supply.
    *
-   * @note the result is the total amount of restrictions after the procedure has run
+   * @returns the total amount of restrictions after the procedure has run
    *
-   * @throws if the Balance statistic is not enabled for this Asset. enableStat should be called before this method
+   * @throws if the appropriately scoped Balance statistic (by ClaimType and issuer) is not enabled for this Asset. {@link ClaimPercentage.enableStat} with appropriate arguments should be called before this method
    */
   public declare addRestriction: ProcedureMethod<
     Omit<AddClaimPercentageTransferRestrictionParams, 'type'>,
@@ -33,7 +34,7 @@ export class ClaimPercentage extends TransferRestrictionBase<TransferRestriction
   >;
 
   /**
-   * Sets all Percentage Transfer Restrictions on this Asset
+   * Sets all Claim Percentage Transfer Restrictions on this Asset
    *
    * @note the result is the total amount of restrictions after the procedure has run
    */
@@ -43,7 +44,7 @@ export class ClaimPercentage extends TransferRestrictionBase<TransferRestriction
   >;
 
   /**
-   * Removes all Claim Ownership Transfer Restrictions from this Asset
+   * Removes all Claim Percentage Transfer Restrictions from this Asset
    *
    * @note the result is the total amount of restrictions after the procedure has run
    */
@@ -51,20 +52,20 @@ export class ClaimPercentage extends TransferRestrictionBase<TransferRestriction
 
   /**
    * Enables investor balance statistic for the Asset, which is required before creating restrictions
-   * that limit the total ownership of a company
+   * that limit the total ownership the Asset's supply
    */
   public declare enableStat: ProcedureMethod<Omit<ClaimPercentageStatInput, 'type'>, void>;
 
   /**
-   * Disables investor balance statistic for the Asset. Since statistics introduce slight overhead to each transaction
+   * Disables an investor balance statistic for the Asset. Since statistics introduce slight overhead to each transaction
    * involving the Asset, disabling unused stats will reduce gas fees for investors
    *
-   * @throws if the stat is being used by a restriction
+   * @throws if the stat is being used by a restriction or is not set
    */
   public declare disableStat: ProcedureMethod<Omit<RemoveBalanceStatParams, 'type'>, void>;
 
   /**
-   * Retrieve all active ClaimPercentage Transfer Restrictions
+   * Retrieve all active Claim Percentage Transfer Restrictions
    *
    * @note there is a maximum number of restrictions allowed across all types.
    *   The `availableSlots` property of the result represents how many more restrictions can be added

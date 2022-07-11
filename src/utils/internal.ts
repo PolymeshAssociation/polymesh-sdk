@@ -41,7 +41,6 @@ import {
   CalendarUnit,
   Claim,
   ClaimCountRestrictionValue,
-  ClaimIssuer,
   ClaimType,
   Condition,
   ConditionType,
@@ -57,7 +56,6 @@ import {
   ProcedureMethod,
   ProcedureOpts,
   Scope,
-  StatType,
   TransferRestrictionType,
   TxTag,
 } from '~/types';
@@ -68,7 +66,9 @@ import {
   MapTxWithArgs,
   MaybePostTransactionValue,
   PolymeshTx,
+  StatClaimIssuer,
   StatisticsOpType,
+  StatType,
   TxWithArgs,
 } from '~/types/internal';
 import { HumanReadableType, ProcedureFunc, UnionOfProcedureFuncs } from '~/types/utils';
@@ -90,7 +90,7 @@ import {
   signerToString,
   statisticsOpTypeToStatOpType,
   statisticsOpTypeToStatType,
-  statsClaimToStatClaimUserType,
+  statsClaimToStatClaimInputType,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { isEntity, isMultiClaimCondition, isSingleClaimCondition } from '~/utils/typeguards';
@@ -1255,7 +1255,7 @@ export function compareStatsToInput(
 export function compareTransferRestrictionToStat(
   transferCondition: PolymeshPrimitivesTransferComplianceTransferCondition,
   type: StatType,
-  claimIssuer?: ClaimIssuer
+  claimIssuer?: StatClaimIssuer
 ): boolean {
   if (
     (type === StatType.Count && transferCondition.isMaxInvestorCount) ||
@@ -1271,21 +1271,20 @@ export function compareTransferRestrictionToStat(
     issuer: { did: issuerDid },
     claimType,
   } = claimIssuer;
-  if (type === StatType.ScopedCount && transferCondition.isClaimCount) {
-    const [rawClaim, issuer] = transferCondition.asClaimCount;
-    const restrictionIssuerDid = identityIdToString(issuer);
-    const claim = statsClaimToStatClaimUserType(rawClaim);
-    if (restrictionIssuerDid === issuerDid && claim.type === claimType) {
-      return true;
-    }
-  }
 
-  if (type === StatType.ScopedBalance && transferCondition.isClaimOwnership) {
-    const [rawClaim, issuer] = transferCondition.asClaimOwnership;
-    const restrictionIssuerDid = identityIdToString(issuer);
-    const claim = statsClaimToStatClaimUserType(rawClaim);
-    if (restrictionIssuerDid === issuerDid && claim.type === claimType) {
-      return true;
+  if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
+    let rawClaim, issuer;
+    if (transferCondition.isClaimCount) {
+      [rawClaim, issuer] = transferCondition.asClaimCount;
+    } else if (transferCondition.isClaimOwnership) {
+      [rawClaim, issuer] = transferCondition.asClaimOwnership;
+    }
+    if (rawClaim && issuer) {
+      const restrictionIssuerDid = identityIdToString(issuer);
+      const claim = statsClaimToStatClaimInputType(rawClaim);
+      if (restrictionIssuerDid === issuerDid && claim.type === claimType) {
+        return true;
+      }
     }
   }
 
@@ -1397,7 +1396,7 @@ export function compareStatTypeToTransferRestrictionType(
  * @returns encoded StatType needed for the TransferRestriction to be enabled
  */
 export function neededStatTypeForRestrictionInput(
-  args: { type: TransferRestrictionType; claimIssuer?: ClaimIssuer },
+  args: { type: TransferRestrictionType; claimIssuer?: StatClaimIssuer },
   context: Context
 ): PolymeshPrimitivesStatisticsStatType {
   const { type, claimIssuer } = args;
@@ -1421,7 +1420,7 @@ export function assertStatIsSet(
   currentStats: BTreeSet<PolymeshPrimitivesStatisticsStatType>,
   neededStat: PolymeshPrimitivesStatisticsStatType
 ): void {
-  const needStat = ![...currentStats].find(s => neededStat.eq(s));
+  const needStat = ![...currentStats].find(s => s.eq(neededStat));
 
   if (needStat) {
     throw new PolymeshError({
