@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { AddCountStatParams } from '~/api/procedures/addAssetStat';
-import { TransferRestrictionBase } from '~/internal';
+import { Asset, Context, TransferRestrictionBase } from '~/internal';
 import {
   ActiveTransferRestrictions,
   AddCountTransferRestrictionParams,
@@ -16,6 +16,14 @@ import {
  * Handles all Count Transfer Restriction related functionality
  */
 export class Count extends TransferRestrictionBase<TransferRestrictionType.Count> {
+  /**
+   * @hidden
+   */
+  constructor(parent: Asset, context: Context) {
+    super(parent, context);
+    this.investorCount = parent.investorCount.bind(parent);
+  }
+
   protected type = TransferRestrictionType.Count as const;
 
   /**
@@ -80,4 +88,13 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
    *   before reaching that limit
    */
   public declare get: () => Promise<ActiveTransferRestrictions<CountTransferRestriction>>;
+
+  /**
+   * Returns the count of individual holders of the Asset
+   *
+   * @note This value can be used to initialize enableStat. If used for this purpose there is a potential race condition
+   * if Asset transfers happen between the time of check and time of use. Either pause Asset transfers, or check after stat
+   * creation and try again if a race occurred. Future versions of the chain should introduce an extrinsic to avoid this issue
+   */
+  public investorCount: () => Promise<BigNumber>;
 }
