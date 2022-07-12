@@ -1,52 +1,31 @@
 import BigNumber from 'bignumber.js';
 
 import {
-  AddCountTransferRestrictionParams,
-  AddPercentageTransferRestrictionParams,
   addTransferRestriction,
   AddTransferRestrictionParams,
+  AddTransferRestrictionStorage,
   Asset,
   Context,
   Namespace,
-  SetCountTransferRestrictionsParams,
-  SetPercentageTransferRestrictionsParams,
   setTransferRestrictions,
   SetTransferRestrictionsParams,
   SetTransferRestrictionsStorage,
 } from '~/internal';
 import {
-  ActiveTransferRestrictions,
-  CountTransferRestriction,
+  AddRestrictionParams,
+  GetTransferRestrictionReturnType,
   NoArgsProcedureMethod,
-  PercentageTransferRestriction,
   ProcedureMethod,
+  SetRestrictionsParams,
   TransferRestrictionType,
 } from '~/types';
 import {
   scopeIdToString,
-  stringToTicker,
-  transferManagerToTransferRestriction,
+  stringToTickerKey,
+  transferConditionToTransferRestriction,
   u32ToBigNumber,
 } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
-
-type AddRestrictionParams<T> = Omit<
-  T extends TransferRestrictionType.Count
-    ? AddCountTransferRestrictionParams
-    : AddPercentageTransferRestrictionParams,
-  'type'
->;
-
-type SetRestrictionsParams<T> = Omit<
-  T extends TransferRestrictionType.Count
-    ? SetCountTransferRestrictionsParams
-    : SetPercentageTransferRestrictionsParams,
-  'type'
->;
-
-type GetReturnType<T> = ActiveTransferRestrictions<
-  T extends TransferRestrictionType.Count ? CountTransferRestriction : PercentageTransferRestriction
->;
 
 /**
  * Base class for managing Transfer Restrictions
@@ -67,7 +46,8 @@ export abstract class TransferRestrictionBase<
     this.addRestriction = createProcedureMethod<
       AddRestrictionParams<T>,
       AddTransferRestrictionParams,
-      BigNumber
+      BigNumber,
+      AddTransferRestrictionStorage
     >(
       {
         getProcedureAndArgs: args => [
@@ -141,7 +121,7 @@ export abstract class TransferRestrictionBase<
    *   The `availableSlots` property of the result represents how many more restrictions can be added
    *   before reaching that limit
    */
-  public async get(): Promise<GetReturnType<T>> {
+  public async get(): Promise<GetTransferRestrictionReturnType<T>> {
     const {
       parent: { ticker },
       context: {
@@ -153,19 +133,20 @@ export abstract class TransferRestrictionBase<
       context,
       type,
     } = this;
-
-    const rawTicker = stringToTicker(ticker, context);
-    const activeTms = await statistics.activeTransferManagers(rawTicker);
-    const filteredTms = activeTms.filter(tm => {
+    const tickerKey = stringToTickerKey(ticker, context);
+    const { requirements } = await statistics.assetTransferCompliances(tickerKey);
+    const filteredRequirements = [...requirements].filter(requirement => {
       if (type === TransferRestrictionType.Count) {
-        return tm.isCountTransferManager;
+        return requirement.isMaxInvestorCount;
       }
 
-      return tm.isPercentageTransferManager;
+      return requirement.isMaxInvestorOwnership;
     });
 
     const rawExemptedLists = await Promise.all(
-      filteredTms.map(tm => statistics.exemptEntities.entries([rawTicker, tm]))
+      filteredRequirements.map(() =>
+        statistics.transferConditionExemptEntities.entries({ asset: tickerKey })
+      )
     );
 
     const restrictions = rawExemptedLists.map((list, index) => {
@@ -176,7 +157,7 @@ export abstract class TransferRestrictionBase<
           },
         ]) => scopeIdToString(scopeId) // `ScopeId` and `IdentityId` are the same type, so this is fine
       );
-      const { value } = transferManagerToTransferRestriction(filteredTms[index]);
+      const { value } = transferConditionToTransferRestriction(filteredRequirements[index]);
       let restriction;
 
       if (type === TransferRestrictionType.Count) {
@@ -198,11 +179,11 @@ export abstract class TransferRestrictionBase<
       return restriction;
     });
 
-    const maxTransferManagers = u32ToBigNumber(consts.statistics.maxTransferManagersPerAsset);
+    const maxTransferConditions = u32ToBigNumber(consts.statistics.maxTransferConditionsPerAsset);
 
     return {
-      restrictions,
-      availableSlots: maxTransferManagers.minus(activeTms.length),
-    } as GetReturnType<T>;
+      restrictions: restrictions,
+      availableSlots: maxTransferConditions.minus(restrictions.length),
+    } as GetTransferRestrictionReturnType<T>;
   }
 }

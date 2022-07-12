@@ -17,14 +17,12 @@ import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   ErrorCode,
   EventIdentifier,
+  InstructionAffirmationOperation,
   NoArgsProcedureMethod,
   PaginationOptions,
   ResultSet,
 } from '~/types';
-import {
-  InstructionAffirmationOperation,
-  InstructionStatus as InternalInstructionStatus,
-} from '~/types/internal';
+import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
 import { Ensured, EnsuredV2 } from '~/types/utils';
 import {
   balanceToBigNumber,
@@ -209,11 +207,11 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     const {
       status: rawStatus,
-      created_at: createdAt,
-      trade_date: tradeDate,
-      value_date: valueDate,
-      settlement_type: type,
-      venue_id: venueId,
+      createdAt,
+      tradeDate,
+      valueDate,
+      settlementType: type,
+      venueId,
     } = await settlement.instructionDetails(bigNumberToU64(id, context));
 
     const status = meshInstructionStatusToInstructionStatus(rawStatus);

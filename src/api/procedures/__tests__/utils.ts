@@ -1,3 +1,5 @@
+import { u64 } from '@polkadot/types';
+import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
@@ -5,26 +7,31 @@ import sinon from 'sinon';
 import {
   assertAuthorizationRequestValid,
   assertCaCheckpointValid,
-  assertCaTargetsValid,
   assertCaTaxWithholdingsValid,
   assertDistributionDatesValid,
+  assertGroupDoesNotExist,
   assertInstructionValid,
   assertPortfolioExists,
   assertRequirementsNotTooComplex,
   assertSecondaryAccounts,
   createAuthorizationResolver,
+  createCreateGroupResolver,
+  getGroupFromPermissions,
   UnreachableCaseError,
 } from '~/api/procedures/utils';
 import {
+  Asset,
   AuthorizationRequest,
   CheckpointSchedule,
   Context,
+  CustomPermissionGroup,
   Identity,
   Instruction,
   PolymeshError,
   PostTransactionValue,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { createMockAccountId, createMockIdentityId } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import {
   Account,
@@ -37,12 +44,14 @@ import {
   InstructionDetails,
   InstructionStatus,
   InstructionType,
+  PermissionGroupType,
+  PermissionType,
   Signer,
   SignerType,
   SignerValue,
-  TargetTreatment,
   TickerReservationStatus,
   TrustedClaimIssuer,
+  TxTags,
 } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -281,47 +290,6 @@ describe('assertSecondaryAccounts', () => {
   });
 });
 
-describe('assertCaTargetsValid', () => {
-  let mockContext: Mocked<Context>;
-
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  beforeEach(() => {
-    mockContext = dsMockUtils.getContextInstance();
-    dsMockUtils.setConstMock('corporateAction', 'maxTargetIds', {
-      returnValue: dsMockUtils.createMockU32(new BigNumber(1)),
-    });
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  it('should throw an error if there are more target Identities than the maximum', async () => {
-    expect(() =>
-      assertCaTargetsValid(
-        { identities: ['someDid', 'otherDid'], treatment: TargetTreatment.Include },
-        mockContext
-      )
-    ).toThrow('Too many target Identities');
-  });
-
-  it('should not throw an error if the number of target Identities is appropriate', async () => {
-    expect(() =>
-      assertCaTargetsValid(
-        { identities: ['someDid'], treatment: TargetTreatment.Include },
-        mockContext
-      )
-    ).not.toThrow();
-  });
-});
-
 describe('assertCaTaxWithholdingsValid', () => {
   let mockContext: Mocked<Context>;
 
@@ -447,7 +415,7 @@ describe('assertCaCheckpointValid', () => {
   });
 
   it('should throw an error if the payment date is earlier than the Checkpoint date', async () => {
-    const date = new Date(new Date().getTime());
+    const date = new Date(new Date().getTime() + 10000);
 
     let checkpoint: CheckpointSchedule | Date = date;
     const paymentDate = new Date(new Date().getTime() - 100000);
@@ -477,10 +445,10 @@ describe('assertCaCheckpointValid', () => {
   });
 
   it('should throw an error if the expiry date is earlier than the Checkpoint date', async () => {
-    const date = new Date(new Date().getTime() - 100000);
+    const date = new Date(new Date().getTime() + 10000);
 
     let checkpoint: CheckpointSchedule | Date = date;
-    const paymentDate = new Date(new Date().getTime());
+    const paymentDate = new Date(new Date().getTime() + 20000);
     const expiryDate = new Date(new Date().getTime() - 200000);
 
     let error;
@@ -588,12 +556,10 @@ describe('authorization request validations', () => {
     dsMockUtils.createQueryStub('identity', 'authorizations', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockAuthorization({
-          /* eslint-disable @typescript-eslint/naming-convention */
-          authorization_data: dsMockUtils.createMockAuthorizationData('RotatePrimaryKey'),
-          auth_id: new BigNumber(1),
-          authorized_by: 'someDid',
+          authorizationData: dsMockUtils.createMockAuthorizationData('RotatePrimaryKey'),
+          authId: new BigNumber(1),
+          authorizedBy: 'someDid',
           expiry: dsMockUtils.createMockOption(),
-          /* eslint-enable @typescript-eslint/naming-convention */
         })
       ),
     });
@@ -1156,6 +1122,14 @@ describe('authorization request validations', () => {
   });
 
   describe('assertMultiSigSignerAuthorizationValid', () => {
+    beforeAll(() => {
+      dsMockUtils.initMocks();
+    });
+
+    afterAll(() => {
+      dsMockUtils.cleanup();
+    });
+
     it('should not throw with a valid request', () => {
       const auth = new AuthorizationRequest(
         {
@@ -1165,7 +1139,7 @@ describe('authorization request validations', () => {
           expiry,
           data: {
             type: AuthorizationType.AddMultiSigSigner,
-            value: 'multisigAddr',
+            value: 'multisigAddress',
           },
         },
         mockContext
@@ -1175,7 +1149,7 @@ describe('authorization request validations', () => {
     });
 
     it('should throw if the multisig is being added as its own signer', () => {
-      const address = 'multiSigAddr';
+      const address = 'multiSigAddress';
 
       const badTarget = entityMockUtils.getAccountInstance({
         address,
@@ -1214,11 +1188,19 @@ describe('authorization request validations', () => {
           expiry,
           data: {
             type: AuthorizationType.AddMultiSigSigner,
-            value: 'addr',
+            value: 'address',
           },
         },
         mockContext
       );
+
+      dsMockUtils
+        .createQueryStub('identity', 'keyRecords')
+        .resolves(
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockKeyRecord({ PrimaryKey: createMockIdentityId('someDid') })
+          )
+        );
 
       const expectedError = new PolymeshError({
         code: ErrorCode.ValidationError,
@@ -1239,15 +1221,19 @@ describe('authorization request validations', () => {
           expiry,
           data: {
             type: AuthorizationType.AddMultiSigSigner,
-            value: 'addr',
+            value: 'address',
           },
         },
         mockContext
       );
 
-      dsMockUtils.createQueryStub('multiSig', 'keyToMultiSig', {
-        returnValue: dsMockUtils.createMockAccountId('abc'),
-      });
+      dsMockUtils.createQueryStub('identity', 'keyRecords').returns(
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockKeyRecord({
+            MultiSigSignerKey: createMockAccountId('someAddress'),
+          })
+        )
+      );
 
       const expectedError = new PolymeshError({
         code: ErrorCode.ValidationError,
@@ -1261,6 +1247,14 @@ describe('authorization request validations', () => {
   });
 
   describe('assertRotatePrimaryKeyToSecondaryAuthorization', () => {
+    beforeAll(() => {
+      dsMockUtils.initMocks();
+    });
+
+    afterAll(() => {
+      dsMockUtils.cleanup();
+    });
+
     const permissions = {
       assets: null,
       transactions: null,
@@ -1271,6 +1265,7 @@ describe('authorization request validations', () => {
       type: AuthorizationType.RotatePrimaryKeyToSecondary,
       value: permissions,
     };
+
     it('should not throw with a valid request', () => {
       const validTarget = entityMockUtils.getAccountInstance({ getIdentity: null });
       const auth = new AuthorizationRequest(
@@ -1387,17 +1382,31 @@ describe('Unreachable error case', () => {
 });
 
 describe('createAuthorizationResolver', () => {
+  let mockContext: Mocked<Context>;
+
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
   });
+
+  beforeEach(() => {
+    mockContext = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
   const filterRecords = (): unknown => [
     { event: { data: [undefined, undefined, undefined, '3', undefined] } },
   ];
 
   it('should return a function that creates an AuthorizationRequest', () => {
-    const mockContext = dsMockUtils.getContextInstance();
-
     const authData: Authorization = {
       type: AuthorizationType.RotatePrimaryKey,
     };
@@ -1416,8 +1425,6 @@ describe('createAuthorizationResolver', () => {
   });
 
   it('should return a function that creates an AuthorizationRequest with a PostTransaction Authorization', async () => {
-    const mockContext = dsMockUtils.getContextInstance();
-
     const authData: Authorization = {
       type: AuthorizationType.RotatePrimaryKey,
     };
@@ -1437,5 +1444,185 @@ describe('createAuthorizationResolver', () => {
       filterRecords: filterRecords,
     } as unknown as ISubmittableResult);
     expect(authRequest.authId).toEqual(new BigNumber(3));
+  });
+});
+
+describe('createCreateGroupResolver', () => {
+  const agId = new BigNumber(1);
+  const ticker = 'SOME_TICKER';
+
+  let rawAgId: u64;
+  let rawTicker: PolymeshPrimitivesTicker;
+
+  let mockContext: Mocked<Context>;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockContext = dsMockUtils.getContextInstance();
+
+    rawAgId = dsMockUtils.createMockU64(agId);
+    rawTicker = dsMockUtils.createMockTicker(ticker);
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return the new CustomPermissionGroup', () => {
+    const filterRecords = (): unknown => [{ event: { data: ['someDid', rawTicker, rawAgId] } }];
+
+    const resolver = createCreateGroupResolver(mockContext);
+    const result = resolver({
+      filterRecords: filterRecords,
+    } as unknown as ISubmittableResult);
+
+    expect(result.id).toEqual(agId);
+    expect(result.asset.ticker).toEqual(ticker);
+  });
+});
+
+describe('assertGroupNotExists', () => {
+  beforeAll(() => {
+    entityMockUtils.initMocks();
+    dsMockUtils.initMocks();
+  });
+
+  it('should throw an error if there already exists a group for the asset with exactly the same permissions as the ones passed', async () => {
+    const ticker = 'SOME_TICKER';
+
+    const transactions = {
+      type: PermissionType.Include,
+      values: [TxTags.sto.Invest, TxTags.asset.CreateAsset],
+    };
+    const customId = new BigNumber(1);
+
+    let asset = entityMockUtils.getAssetInstance({
+      ticker,
+      permissionsGetGroups: {
+        custom: [
+          entityMockUtils.getCustomPermissionGroupInstance({
+            ticker,
+            id: customId,
+            getPermissions: {
+              transactions,
+              transactionGroups: [],
+            },
+          }),
+        ],
+        known: [],
+      },
+    });
+
+    let error;
+
+    try {
+      await assertGroupDoesNotExist(asset, transactions);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('There already exists a group with the exact same permissions');
+    expect(error.data.groupId).toEqual(customId);
+
+    asset = entityMockUtils.getAssetInstance({
+      ticker,
+      permissionsGetGroups: {
+        custom: [],
+        known: [
+          entityMockUtils.getKnownPermissionGroupInstance({
+            ticker,
+            type: PermissionGroupType.Full,
+            getPermissions: {
+              transactions: null,
+              transactionGroups: [],
+            },
+          }),
+        ],
+      },
+    });
+
+    error = undefined;
+
+    try {
+      await assertGroupDoesNotExist(asset, null);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('There already exists a group with the exact same permissions');
+    expect(error.data.groupId).toEqual(PermissionGroupType.Full);
+
+    error = undefined;
+
+    try {
+      await assertGroupDoesNotExist(asset, {
+        type: PermissionType.Include,
+        values: [TxTags.asset.AcceptAssetOwnershipTransfer],
+      });
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error).toBeUndefined();
+  });
+});
+
+describe('getGroupFromPermissions', () => {
+  const ticker = 'SOME_TICKER';
+
+  const transactions = {
+    type: PermissionType.Include,
+    values: [TxTags.sto.Invest, TxTags.asset.CreateAsset],
+  };
+  const customId = new BigNumber(1);
+
+  let asset: Asset;
+
+  beforeAll(() => {
+    entityMockUtils.initMocks();
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    asset = entityMockUtils.getAssetInstance({
+      ticker,
+      permissionsGetGroups: {
+        custom: [
+          entityMockUtils.getCustomPermissionGroupInstance({
+            ticker,
+            id: customId,
+            getPermissions: {
+              transactions,
+              transactionGroups: [],
+            },
+          }),
+        ],
+        known: [],
+      },
+    });
+  });
+
+  it('should return a Permission Group if there is one with the same permissions', async () => {
+    const result = (await getGroupFromPermissions(asset, transactions)) as CustomPermissionGroup;
+
+    expect(result.id).toEqual(customId);
+  });
+
+  it('should return undefined if there is no group with the passed permissions', async () => {
+    const result = await getGroupFromPermissions(asset, {
+      type: PermissionType.Exclude,
+      values: [TxTags.authorship.SetUncles],
+    });
+
+    expect(result).toBeUndefined();
   });
 });

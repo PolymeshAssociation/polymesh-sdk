@@ -1,22 +1,19 @@
+import { AccountId } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import { Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import {
-  prepareRemoveSecondaryAccounts,
-  RemoveSecondaryAccountsParams,
-} from '~/api/procedures/removeSecondaryAccounts';
+import { prepareRemoveSecondaryAccounts } from '~/api/procedures/removeSecondaryAccounts';
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Signer, SignerType, SignerValue } from '~/types';
+import { RemoveSecondaryAccountsParams, Signer, SignerType, SignerValue } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 describe('removeSecondaryAccounts procedure', () => {
   let mockContext: Mocked<Context>;
   let addTransactionStub: sinon.SinonStub;
-  let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
   let signerToSignerValueStub: sinon.SinonStub<[Signer], SignerValue>;
+  let stringToAccountIdStub: sinon.SinonStub<[string, Context], AccountId>;
 
   let args: RemoveSecondaryAccountsParams;
 
@@ -24,15 +21,17 @@ describe('removeSecondaryAccounts procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    signerValueToSignatoryStub = sinon.stub(utilsConversionModule, 'signerValueToSignatory');
     signerToSignerValueStub = sinon.stub(utilsConversionModule, 'signerToSignerValue');
+    stringToAccountIdStub = sinon.stub(utilsConversionModule, 'stringToAccountId');
   });
 
   beforeEach(() => {
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
 
-    const secondaryAccount = entityMockUtils.getAccountInstance({ address: 'fake' });
+    const secondaryAccount = entityMockUtils.getAccountInstance({
+      address: '',
+    });
     secondaryAccount.isEqual.onFirstCall().returns(false).onSecondCall().returns(true);
 
     const accounts = [secondaryAccount];
@@ -56,11 +55,8 @@ describe('removeSecondaryAccounts procedure', () => {
 
   it('should add a remove secondary items transaction to the queue', async () => {
     const { accounts } = args;
-    const signerValue = { type: SignerType.Account, value: accounts[0].address };
 
-    const rawSignatory = dsMockUtils.createMockSignatory({
-      Account: dsMockUtils.createMockAccountId(accounts[0].address),
-    });
+    const rawAccountId = dsMockUtils.createMockAccountId(accounts[0].address);
 
     dsMockUtils.configureMocks({
       contextOptions: {
@@ -76,8 +72,7 @@ describe('removeSecondaryAccounts procedure', () => {
       },
     });
 
-    signerToSignerValueStub.withArgs(accounts[0]).returns(signerValue);
-    signerValueToSignatoryStub.withArgs(signerValue, mockContext).returns(rawSignatory);
+    stringToAccountIdStub.withArgs(accounts[0].address, mockContext).returns(rawAccountId);
 
     const proc = procedureMockUtils.getInstance<RemoveSecondaryAccountsParams, void>(mockContext);
 
@@ -88,7 +83,7 @@ describe('removeSecondaryAccounts procedure', () => {
     sinon.assert.calledWith(addTransactionStub, {
       transaction,
       feeMultiplier: new BigNumber(1),
-      args: [[rawSignatory]],
+      args: [[rawAccountId]],
     });
   });
 

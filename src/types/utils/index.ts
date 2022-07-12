@@ -4,12 +4,22 @@ import BigNumber from 'bignumber.js';
 
 import { Entity, Procedure } from '~/internal';
 
+/**
+ * A helper type that will strip `readonly` from the properties of an object. Use with caution
+ * @hidden
+ */
 export type Mutable<Immutable> = {
   -readonly [K in keyof Immutable]: Immutable[K];
 };
 
+/**
+ * @hidden
+ */
 export type ProcedureFunc<Args, ReturnValue, Storage> = () => Procedure<Args, ReturnValue, Storage>;
 
+/**
+ * @hidden
+ */
 export type UnionOfProcedureFuncs<Args, ReturnValue, Storage> = Args extends unknown
   ? ProcedureFunc<Args, ReturnValue, Storage>
   : never;
@@ -39,6 +49,8 @@ export type HumanReadableType<T> = T extends Entity<unknown, infer H>
   : T;
 
 /**
+ * @hidden
+ *
  * Extract the return type of a polkadot.js query function
  *
  * @example `QueryReturnType<typeof identity.authorizations>` returns `Option<Authorization>`
@@ -55,6 +67,7 @@ export type QueryReturnType<T> = T extends AugmentedQuery<'promise', infer Fun>
 export type Modify<T, R> = Omit<T, keyof R> & R;
 
 /**
+ *
  * Ensure a specific property of T is defined
  */
 export type WithRequired<T, K extends keyof T> = T & { [P in K]-?: T[P] };
@@ -78,6 +91,8 @@ export type QueryArgs<T, K extends keyof T> = {
 };
 
 /**
+ * @hidden
+ *
  * Create a literal tuple type from a list of arguments
  *
  * @param args - values to turn into a tuple

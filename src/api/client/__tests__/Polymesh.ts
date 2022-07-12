@@ -2,12 +2,12 @@ import { SigningManager } from '@polymathnetwork/signing-manager-types';
 import { ApolloLink, GraphQLRequest } from 'apollo-link';
 import sinon from 'sinon';
 
+import { Polymesh } from '~/api/client/Polymesh';
 import { PolymeshError } from '~/internal';
 import { heartbeat } from '~/middleware/queries';
-import { Polymesh } from '~/Polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { ErrorCode } from '~/types';
-import { SUPPORTED_VERSION_RANGE } from '~/utils/constants';
+import { SUPPORTED_NODE_VERSION_RANGE } from '~/utils/constants';
 import * as internalUtils from '~/utils/internal';
 
 jest.mock('apollo-link-context', () => ({
@@ -125,24 +125,19 @@ describe('Polymesh Class', () => {
       });
     });
 
-    it('should warn if the Polymesh version does not satisfy the supported version range', async () => {
+    it('should throw if the Polymesh version does not satisfy the supported version range', async () => {
       const error = new PolymeshError({
         code: ErrorCode.FatalError,
-        message: 'Unsupported Polymesh version. Please upgrade the SDK',
-        data: { supportedVersionRange: SUPPORTED_VERSION_RANGE },
+        message: 'Unsupported Polymesh RPC node version. Please upgrade the SDK',
+        data: { supportedVersionRange: SUPPORTED_NODE_VERSION_RANGE },
       });
       versionStub.rejects(error);
-      const warn = jest.spyOn(console, 'warn').mockImplementation(() => {
-        // no-op
-      });
 
       await expect(
         Polymesh.connect({
           nodeUrl: 'wss://some.url',
         })
-      ).resolves.not.toThrow();
-      expect(warn).toBeCalled();
-      warn.mockRestore();
+      ).rejects.toThrow(error);
     });
 
     it('should throw an error if the Polymesh version check could not connect to the node', async () => {

@@ -1,6 +1,6 @@
 import { Option } from '@polkadot/types';
+import { PalletCorporateActionsCorporateAction } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { CorporateAction as MeshCorporateAction } from 'polymesh-types/types';
 
 import {
   Asset,
@@ -9,11 +9,15 @@ import {
   Context,
   Entity,
   linkCaDocs,
-  LinkCaDocsParams,
-  ModifyCaCheckpointParams,
   PolymeshError,
 } from '~/internal';
-import { ErrorCode, InputCaCheckpoint, ProcedureMethod } from '~/types';
+import {
+  ErrorCode,
+  InputCaCheckpoint,
+  LinkCaDocsParams,
+  ModifyCaCheckpointParams,
+  ProcedureMethod,
+} from '~/types';
 import { HumanReadableType, Modify } from '~/types/utils';
 import {
   bigNumberToU32,
@@ -193,7 +197,7 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
       });
     }
 
-    const { record_date: recordDate } = corporateAction.unwrap();
+    const { recordDate } = corporateAction.unwrap();
 
     if (recordDate.isNone) {
       return null;
@@ -234,7 +238,7 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
   /**
    * @hidden
    */
-  private fetchCorporateAction(): Promise<Option<MeshCorporateAction>> {
+  private fetchCorporateAction(): Promise<Option<PalletCorporateActionsCorporateAction>> {
     const {
       context: {
         polymeshApi: { query },

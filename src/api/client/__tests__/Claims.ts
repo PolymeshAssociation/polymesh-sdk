@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Claims } from '~/Claims';
+import { Claims } from '~/api/client/Claims';
 import { Context, TransactionQueue } from '~/internal';
 import { didsWithClaims, issuerDidsWithClaimsByTarget } from '~/middleware/queries';
 import { claimsGroupingQuery, claimsQuery } from '~/middleware/queriesV2';
@@ -11,6 +11,7 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import {
   ClaimData,
+  ClaimOperation,
   ClaimTarget,
   ClaimType,
   IdentityWithClaims,
@@ -18,7 +19,6 @@ import {
   Scope,
   ScopeType,
 } from '~/types';
-import { ClaimOperation } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import { padString } from '~/utils/internal';
 

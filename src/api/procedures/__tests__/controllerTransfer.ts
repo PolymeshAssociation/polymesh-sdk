@@ -13,8 +13,7 @@ import {
 import { Context, DefaultPortfolio, NumberedPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { PortfolioBalance, RoleType, TxTags } from '~/types';
-import { PortfolioId } from '~/types/internal';
+import { PortfolioBalance, PortfolioId, RoleType, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(

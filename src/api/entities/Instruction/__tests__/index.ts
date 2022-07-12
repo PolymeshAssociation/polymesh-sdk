@@ -1,19 +1,21 @@
 import { StorageKey, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import { PortfolioId as MeshPortfolioId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Context, Entity, Instruction, TransactionQueue } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { instructionsQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
+import { PortfolioId as MeshPortfolioId } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { AffirmationStatus, InstructionStatus, InstructionType } from '~/types';
 import {
+  AffirmationStatus,
   InstructionAffirmationOperation,
-  InstructionStatus as InternalInstructionStatus,
-} from '~/types/internal';
+  InstructionStatus,
+  InstructionType,
+} from '~/types';
+import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
@@ -109,21 +111,19 @@ describe('Instruction class', () => {
       entityMockUtils.configureMocks({ identityOptions: { did: owner } });
 
       const queryResult = dsMockUtils.createMockInstruction({
-        /* eslint-disable @typescript-eslint/naming-convention */
-        instruction_id: dsMockUtils.createMockU64(new BigNumber(1)),
+        instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
         status: dsMockUtils.createMockInstructionStatus(status),
-        venue_id: dsMockUtils.createMockU64(venueId),
-        created_at: dsMockUtils.createMockOption(
+        venueId: dsMockUtils.createMockU64(venueId),
+        createdAt: dsMockUtils.createMockOption(
           dsMockUtils.createMockMoment(new BigNumber(createdAt.getTime()))
         ),
-        trade_date: dsMockUtils.createMockOption(
+        tradeDate: dsMockUtils.createMockOption(
           dsMockUtils.createMockMoment(new BigNumber(tradeDate.getTime()))
         ),
-        value_date: dsMockUtils.createMockOption(
+        valueDate: dsMockUtils.createMockOption(
           dsMockUtils.createMockMoment(new BigNumber(valueDate.getTime()))
         ),
-        settlement_type: dsMockUtils.createMockSettlementType(type),
-        /* eslint-enable @typescript-eslint/naming-convention */
+        settlementType: dsMockUtils.createMockSettlementType(type),
       });
 
       const instructionDetailsStub = dsMockUtils
@@ -181,21 +181,19 @@ describe('Instruction class', () => {
       entityMockUtils.configureMocks({ identityOptions: { did: owner } });
 
       const queryResult = dsMockUtils.createMockInstruction({
-        /* eslint-disable @typescript-eslint/naming-convention */
-        instruction_id: dsMockUtils.createMockU64(new BigNumber(1)),
+        instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
         status: dsMockUtils.createMockInstructionStatus(status),
-        venue_id: dsMockUtils.createMockU64(venueId),
-        created_at: dsMockUtils.createMockOption(
+        venueId: dsMockUtils.createMockU64(venueId),
+        createdAt: dsMockUtils.createMockOption(
           dsMockUtils.createMockMoment(new BigNumber(createdAt.getTime()))
         ),
-        trade_date: dsMockUtils.createMockOption(
+        tradeDate: dsMockUtils.createMockOption(
           dsMockUtils.createMockMoment(new BigNumber(tradeDate.getTime()))
         ),
-        value_date: dsMockUtils.createMockOption(
+        valueDate: dsMockUtils.createMockOption(
           dsMockUtils.createMockMoment(new BigNumber(valueDate.getTime()))
         ),
-        settlement_type: dsMockUtils.createMockSettlementType(type),
-        /* eslint-enable @typescript-eslint/naming-convention */
+        settlementType: dsMockUtils.createMockSettlementType(type),
       });
 
       const instructionDetailsStub = dsMockUtils
@@ -283,21 +281,19 @@ describe('Instruction class', () => {
       entityMockUtils.configureMocks({ identityOptions: { did: owner } });
 
       const queryResult = dsMockUtils.createMockInstruction({
-        /* eslint-disable @typescript-eslint/naming-convention */
-        instruction_id: dsMockUtils.createMockU64(new BigNumber(1)),
+        instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
         status: dsMockUtils.createMockInstructionStatus(status),
-        venue_id: dsMockUtils.createMockU64(venueId),
-        created_at: dsMockUtils.createMockOption(
+        venueId: dsMockUtils.createMockU64(venueId),
+        createdAt: dsMockUtils.createMockOption(
           dsMockUtils.createMockMoment(new BigNumber(createdAt.getTime()))
         ),
-        trade_date: dsMockUtils.createMockOption(
+        tradeDate: dsMockUtils.createMockOption(
           dsMockUtils.createMockMoment(new BigNumber(tradeDate.getTime()))
         ),
-        value_date: dsMockUtils.createMockOption(
+        valueDate: dsMockUtils.createMockOption(
           dsMockUtils.createMockMoment(new BigNumber(valueDate.getTime()))
         ),
-        settlement_type: dsMockUtils.createMockSettlementType(type),
-        /* eslint-enable @typescript-eslint/naming-convention */
+        settlementType: dsMockUtils.createMockSettlementType(type),
       });
 
       const instructionDetailsStub = dsMockUtils
@@ -322,13 +318,11 @@ describe('Instruction class', () => {
       instructionDetailsStub.resolves(
         dsMockUtils.createMockInstruction({
           ...queryResult,
-          /* eslint-disable @typescript-eslint/naming-convention */
-          trade_date: dsMockUtils.createMockOption(),
-          value_date: dsMockUtils.createMockOption(),
-          settlement_type: dsMockUtils.createMockSettlementType({
+          tradeDate: dsMockUtils.createMockOption(),
+          valueDate: dsMockUtils.createMockOption(),
+          settlementType: dsMockUtils.createMockSettlementType({
             SettleOnBlock: dsMockUtils.createMockU32(endBlock),
           }),
-          /* eslint-enable @typescript-eslint/naming-convention */
         })
       );
 
@@ -372,15 +366,13 @@ describe('Instruction class', () => {
         .withArgs(rawId)
         .resolves(
           dsMockUtils.createMockInstruction({
-            /* eslint-disable @typescript-eslint/naming-convention */
-            instruction_id: dsMockUtils.createMockU64(new BigNumber(1)),
+            instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
             status: dsMockUtils.createMockInstructionStatus('Unknown'),
-            venue_id: dsMockUtils.createMockU64(new BigNumber(1)),
-            created_at: dsMockUtils.createMockOption(),
-            trade_date: dsMockUtils.createMockOption(),
-            value_date: dsMockUtils.createMockOption(),
-            settlement_type: dsMockUtils.createMockSettlementType(),
-            /* eslint-enable @typescript-eslint/naming-convention */
+            venueId: dsMockUtils.createMockU64(new BigNumber(1)),
+            createdAt: dsMockUtils.createMockOption(),
+            tradeDate: dsMockUtils.createMockOption(),
+            valueDate: dsMockUtils.createMockOption(),
+            settlementType: dsMockUtils.createMockSettlementType(),
           })
         );
 
@@ -433,17 +425,15 @@ describe('Instruction class', () => {
       });
       instructionDetailsStub = dsMockUtils.createQueryStub('settlement', 'instructionDetails', {
         returnValue: dsMockUtils.createMockInstruction({
-          /* eslint-disable @typescript-eslint/naming-convention */
-          instruction_id: dsMockUtils.createMockU64(new BigNumber(1)),
-          venue_id: dsMockUtils.createMockU64(new BigNumber(1)),
+          instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
+          venueId: dsMockUtils.createMockU64(new BigNumber(1)),
           status: dsMockUtils.createMockInstructionStatus('Pending'),
-          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
-          created_at: dsMockUtils.createMockOption(
+          settlementType: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
+          createdAt: dsMockUtils.createMockOption(
             dsMockUtils.createMockMoment(new BigNumber(new Date('10/14/1987').getTime()))
           ),
-          trade_date: dsMockUtils.createMockOption(),
-          value_date: dsMockUtils.createMockOption(),
-          /* eslint-enable @typescript-eslint/naming-convention */
+          tradeDate: dsMockUtils.createMockOption(),
+          valueDate: dsMockUtils.createMockOption(),
         }),
       });
       dsMockUtils.createQueryStub('settlement', 'affirmsReceived');
@@ -453,13 +443,13 @@ describe('Instruction class', () => {
       instructionDetailsStub.resolves(
         dsMockUtils.createMockInstruction({
           /* eslint-disable @typescript-eslint/naming-convention */
-          instruction_id: dsMockUtils.createMockU64(new BigNumber(1)),
-          venue_id: dsMockUtils.createMockU64(),
+          instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
+          venueId: dsMockUtils.createMockU64(),
           status: dsMockUtils.createMockInstructionStatus('Unknown'),
-          settlement_type: dsMockUtils.createMockSettlementType(),
-          created_at: dsMockUtils.createMockOption(),
-          trade_date: dsMockUtils.createMockOption(),
-          value_date: dsMockUtils.createMockOption(),
+          settlementType: dsMockUtils.createMockSettlementType(),
+          createdAt: dsMockUtils.createMockOption(),
+          tradeDate: dsMockUtils.createMockOption(),
+          valueDate: dsMockUtils.createMockOption(),
           /* eslint-enable @typescript-eslint/naming-convention */
         })
       );
@@ -498,17 +488,15 @@ describe('Instruction class', () => {
       dsMockUtils.createQueryStub('settlement', 'instructionLegs');
       instructionDetailsStub = dsMockUtils.createQueryStub('settlement', 'instructionDetails', {
         returnValue: dsMockUtils.createMockInstruction({
-          /* eslint-disable @typescript-eslint/naming-convention */
-          instruction_id: dsMockUtils.createMockU64(new BigNumber(1)),
-          venue_id: dsMockUtils.createMockU64(new BigNumber(1)),
+          instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
+          venueId: dsMockUtils.createMockU64(new BigNumber(1)),
           status: dsMockUtils.createMockInstructionStatus('Pending'),
-          settlement_type: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
-          created_at: dsMockUtils.createMockOption(
+          settlementType: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
+          createdAt: dsMockUtils.createMockOption(
             dsMockUtils.createMockMoment(new BigNumber(new Date('10/14/1987').getTime()))
           ),
-          trade_date: dsMockUtils.createMockOption(),
-          value_date: dsMockUtils.createMockOption(),
-          /* eslint-enable @typescript-eslint/naming-convention */
+          tradeDate: dsMockUtils.createMockOption(),
+          valueDate: dsMockUtils.createMockOption(),
         }),
       });
     });
@@ -549,15 +537,13 @@ describe('Instruction class', () => {
     it('should throw an error if the instruction is not pending', () => {
       instructionDetailsStub.resolves(
         dsMockUtils.createMockInstruction({
-          /* eslint-disable @typescript-eslint/naming-convention */
-          instruction_id: dsMockUtils.createMockU64(new BigNumber(1)),
-          venue_id: dsMockUtils.createMockU64(),
+          instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
+          venueId: dsMockUtils.createMockU64(),
           status: dsMockUtils.createMockInstructionStatus('Unknown'),
-          settlement_type: dsMockUtils.createMockSettlementType(),
-          created_at: dsMockUtils.createMockOption(),
-          trade_date: dsMockUtils.createMockOption(),
-          value_date: dsMockUtils.createMockOption(),
-          /* eslint-enable @typescript-eslint/naming-convention */
+          settlementType: dsMockUtils.createMockSettlementType(),
+          createdAt: dsMockUtils.createMockOption(),
+          tradeDate: dsMockUtils.createMockOption(),
+          valueDate: dsMockUtils.createMockOption(),
         })
       );
       return expect(instruction.getLegs()).rejects.toThrow(
@@ -682,15 +668,13 @@ describe('Instruction class', () => {
 
     it('should return Pending Instruction status', async () => {
       const queryResult = dsMockUtils.createMockInstruction({
-        /* eslint-disable @typescript-eslint/naming-convention */
-        instruction_id: dsMockUtils.createMockU64(new BigNumber(1)),
+        instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
         status: dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Pending),
-        venue_id: dsMockUtils.createMockU64(),
-        created_at: dsMockUtils.createMockOption(),
-        trade_date: dsMockUtils.createMockOption(),
-        value_date: dsMockUtils.createMockOption(),
-        settlement_type: dsMockUtils.createMockSettlementType(),
-        /* eslint-enable @typescript-eslint/naming-convention */
+        venueId: dsMockUtils.createMockU64(),
+        createdAt: dsMockUtils.createMockOption(),
+        tradeDate: dsMockUtils.createMockOption(),
+        valueDate: dsMockUtils.createMockOption(),
+        settlementType: dsMockUtils.createMockSettlementType(),
       });
 
       dsMockUtils
@@ -725,15 +709,13 @@ describe('Instruction class', () => {
 
       // Should return Pending status
       const queryResult = dsMockUtils.createMockInstruction({
-        /* eslint-disable @typescript-eslint/naming-convention */
-        instruction_id: dsMockUtils.createMockU64(new BigNumber(1)),
+        instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
         status: dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Unknown),
-        venue_id: dsMockUtils.createMockU64(),
-        created_at: dsMockUtils.createMockOption(),
-        trade_date: dsMockUtils.createMockOption(),
-        value_date: dsMockUtils.createMockOption(),
-        settlement_type: dsMockUtils.createMockSettlementType(),
-        /* eslint-enable @typescript-eslint/naming-convention */
+        venueId: dsMockUtils.createMockU64(),
+        createdAt: dsMockUtils.createMockOption(),
+        tradeDate: dsMockUtils.createMockOption(),
+        valueDate: dsMockUtils.createMockOption(),
+        settlementType: dsMockUtils.createMockSettlementType(),
       });
 
       dsMockUtils
@@ -773,15 +755,13 @@ describe('Instruction class', () => {
 
       // Should return Pending status
       const queryResult = dsMockUtils.createMockInstruction({
-        /* eslint-disable @typescript-eslint/naming-convention */
-        instruction_id: dsMockUtils.createMockU64(new BigNumber(1)),
+        instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
         status: dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Unknown),
-        venue_id: dsMockUtils.createMockU64(),
-        created_at: dsMockUtils.createMockOption(),
-        trade_date: dsMockUtils.createMockOption(),
-        value_date: dsMockUtils.createMockOption(),
-        settlement_type: dsMockUtils.createMockSettlementType(),
-        /* eslint-enable @typescript-eslint/naming-convention */
+        venueId: dsMockUtils.createMockU64(),
+        createdAt: dsMockUtils.createMockOption(),
+        tradeDate: dsMockUtils.createMockOption(),
+        valueDate: dsMockUtils.createMockOption(),
+        settlementType: dsMockUtils.createMockSettlementType(),
       });
 
       dsMockUtils
@@ -823,15 +803,13 @@ describe('Instruction class', () => {
 
       // Should return Pending status
       const queryResult = dsMockUtils.createMockInstruction({
-        /* eslint-disable @typescript-eslint/naming-convention */
-        instruction_id: dsMockUtils.createMockU64(new BigNumber(1)),
+        instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
         status: dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Unknown),
-        venue_id: dsMockUtils.createMockU64(),
-        created_at: dsMockUtils.createMockOption(),
-        trade_date: dsMockUtils.createMockOption(),
-        value_date: dsMockUtils.createMockOption(),
-        settlement_type: dsMockUtils.createMockSettlementType(),
-        /* eslint-enable @typescript-eslint/naming-convention */
+        venueId: dsMockUtils.createMockU64(),
+        createdAt: dsMockUtils.createMockOption(),
+        tradeDate: dsMockUtils.createMockOption(),
+        valueDate: dsMockUtils.createMockOption(),
+        settlementType: dsMockUtils.createMockSettlementType(),
       });
 
       dsMockUtils
@@ -880,15 +858,13 @@ describe('Instruction class', () => {
 
     it('should return Pending Instruction status', async () => {
       const queryResult = dsMockUtils.createMockInstruction({
-        /* eslint-disable @typescript-eslint/naming-convention */
-        instruction_id: dsMockUtils.createMockU64(new BigNumber(1)),
+        instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
         status: dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Pending),
-        venue_id: dsMockUtils.createMockU64(),
-        created_at: dsMockUtils.createMockOption(),
-        trade_date: dsMockUtils.createMockOption(),
-        value_date: dsMockUtils.createMockOption(),
-        settlement_type: dsMockUtils.createMockSettlementType(),
-        /* eslint-enable @typescript-eslint/naming-convention */
+        venueId: dsMockUtils.createMockU64(),
+        createdAt: dsMockUtils.createMockOption(),
+        tradeDate: dsMockUtils.createMockOption(),
+        valueDate: dsMockUtils.createMockOption(),
+        settlementType: dsMockUtils.createMockSettlementType(),
       });
 
       dsMockUtils
@@ -920,15 +896,13 @@ describe('Instruction class', () => {
 
       // Should return Pending status
       const queryResult = dsMockUtils.createMockInstruction({
-        /* eslint-disable @typescript-eslint/naming-convention */
-        instruction_id: dsMockUtils.createMockU64(new BigNumber(1)),
+        instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
         status: dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Unknown),
-        venue_id: dsMockUtils.createMockU64(),
-        created_at: dsMockUtils.createMockOption(),
-        trade_date: dsMockUtils.createMockOption(),
-        value_date: dsMockUtils.createMockOption(),
-        settlement_type: dsMockUtils.createMockSettlementType(),
-        /* eslint-enable @typescript-eslint/naming-convention */
+        venueId: dsMockUtils.createMockU64(),
+        createdAt: dsMockUtils.createMockOption(),
+        tradeDate: dsMockUtils.createMockOption(),
+        valueDate: dsMockUtils.createMockOption(),
+        settlementType: dsMockUtils.createMockSettlementType(),
       });
 
       dsMockUtils
@@ -979,15 +953,13 @@ describe('Instruction class', () => {
 
       // Should return Pending status
       const queryResult = dsMockUtils.createMockInstruction({
-        /* eslint-disable @typescript-eslint/naming-convention */
-        instruction_id: dsMockUtils.createMockU64(new BigNumber(1)),
+        instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
         status: dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Unknown),
-        venue_id: dsMockUtils.createMockU64(),
-        created_at: dsMockUtils.createMockOption(),
-        trade_date: dsMockUtils.createMockOption(),
-        value_date: dsMockUtils.createMockOption(),
-        settlement_type: dsMockUtils.createMockSettlementType(),
-        /* eslint-enable @typescript-eslint/naming-convention */
+        venueId: dsMockUtils.createMockU64(),
+        createdAt: dsMockUtils.createMockOption(),
+        tradeDate: dsMockUtils.createMockOption(),
+        valueDate: dsMockUtils.createMockOption(),
+        settlementType: dsMockUtils.createMockSettlementType(),
       });
 
       dsMockUtils
@@ -1032,15 +1004,13 @@ describe('Instruction class', () => {
 
       // Should return Pending status
       const queryResult = dsMockUtils.createMockInstruction({
-        /* eslint-disable @typescript-eslint/naming-convention */
-        instruction_id: dsMockUtils.createMockU64(new BigNumber(1)),
+        instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
         status: dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Unknown),
-        venue_id: dsMockUtils.createMockU64(),
-        created_at: dsMockUtils.createMockOption(),
-        trade_date: dsMockUtils.createMockOption(),
-        value_date: dsMockUtils.createMockOption(),
-        settlement_type: dsMockUtils.createMockSettlementType(),
-        /* eslint-enable @typescript-eslint/naming-convention */
+        venueId: dsMockUtils.createMockU64(),
+        createdAt: dsMockUtils.createMockOption(),
+        tradeDate: dsMockUtils.createMockOption(),
+        valueDate: dsMockUtils.createMockOption(),
+        settlementType: dsMockUtils.createMockSettlementType(),
       });
 
       dsMockUtils

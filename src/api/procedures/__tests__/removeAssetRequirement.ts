@@ -1,10 +1,5 @@
 import BigNumber from 'bignumber.js';
-import {
-  ComplianceRequirement,
-  Condition as MeshCondition,
-  Ticker,
-  TxTags,
-} from 'polymesh-types/types';
+import { ComplianceRequirement, Condition as MeshCondition, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -15,6 +10,7 @@ import {
 import { Asset, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
+import { TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -39,7 +35,7 @@ describe('removeAssetRequirement procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    ticker = 'someTicker';
+    ticker = 'SOME_TICKER';
     requirement = new BigNumber(2);
 
     args = {

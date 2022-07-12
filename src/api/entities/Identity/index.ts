@@ -1,8 +1,12 @@
-import { u64 } from '@polkadot/types';
+import { Option, u64 } from '@polkadot/types';
+import { AccountId32 } from '@polkadot/types/interfaces';
+import {
+  PolymeshPrimitivesIdentityDidRecord,
+  PolymeshPrimitivesSecondaryKeyKeyRecord,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, flatten, uniqBy } from 'lodash';
-import { CddStatus, DidRecord } from 'polymesh-types/types';
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
@@ -19,6 +23,7 @@ import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/querie
 import { assetHoldersQuery, trustingAssetsQuery } from '~/middleware/queriesV2';
 import { Query } from '~/middleware/types';
 import { AssetHoldersOrderBy, Query as QueryV2 } from '~/middleware/typesV2';
+import { CddStatus } from '~/polkadot/polymesh';
 import {
   CheckRolesResult,
   DistributionWithDetails,
@@ -41,6 +46,7 @@ import {
 } from '~/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
+  accountIdToAccount,
   accountIdToString,
   balanceToBigNumber,
   boolToBoolean,
@@ -52,7 +58,6 @@ import {
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
   scopeIdToString,
-  signatoryToAccount,
   stringToIdentityId,
   stringToTicker,
   transactionPermissionsToTxGroups,
@@ -97,6 +102,8 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
   /**
    * Create an Identity entity
+   *
+   * @hidden
    */
   constructor(identifiers: UniqueIdentifiers, context: Context) {
     super(identifiers, context);
@@ -187,7 +194,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const meshAsset = await asset.tokens(rawTicker);
 
-    if (meshAsset.owner_did.isEmpty) {
+    if (meshAsset.ownerDid.isEmpty) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
         message: `There is no Asset with ticker "${ticker}"`,
@@ -280,9 +287,15 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const assembleResult = ({ primary_key: primaryKey }: DidRecord): PermissionedAccount => {
+    const assembleResult = (
+      record: Option<PolymeshPrimitivesIdentityDidRecord>
+    ): PermissionedAccount => {
+      // we know the record exists because otherwise the Identity couldn't have been fetched
+      const { primaryKey } = record.unwrap();
+
       return {
-        account: new Account({ address: accountIdToString(primaryKey) }, context),
+        // we know the primary key exists because Asset Identities aren't considered Identities by the SDK for now
+        account: new Account({ address: accountIdToString(primaryKey.unwrap()) }, context),
         permissions: {
           assets: null,
           portfolios: null,
@@ -499,8 +512,8 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    * Retrieve the Scope ID associated to this Identity's Investor Uniqueness Claim for a specific Asset, or null
    *   if there is none
    *
-   * @note more on Investor Uniqueness {@link https://developers.polymesh.network/introduction/identity#polymesh-unique-identity-system-puis | here} and
-   *   {@link https://developers.polymesh.network/polymesh-docs/primitives/confidential-identity | here}
+   * @note more on Investor Uniqueness [here](https://developers.polymesh.network/introduction/identity#polymesh-unique-identity-system-puis) and
+   *   [here](https://developers.polymesh.network/polymesh-docs/primitives/confidential-identity)
    */
   public async getScopeId(args: { asset: Asset | string }): Promise<string | null> {
     const { context, did } = this;
@@ -638,7 +651,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     return rawInstructions
       .filter(({ status }) => status.isPending)
-      .map(({ instruction_id: id }) => new Instruction({ id: u64ToBigNumber(id) }, context));
+      .map(({ instructionId: id }) => new Instruction({ id: u64ToBigNumber(id) }, context));
   }
 
   /**
@@ -736,6 +749,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    * Get the list of secondary Accounts related to the Identity
    *
    * @note can be subscribed to
+   * @note This method currently lacks pagination and may be slow for identities with many thousands of keys
    */
   public async getSecondaryAccounts(): Promise<PermissionedAccount[]>;
   public async getSecondaryAccounts(
@@ -756,34 +770,70 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       },
     } = this;
 
-    const assembleResult = ({
-      secondary_keys: secondaryAccounts,
-    }: DidRecord): PermissionedAccount[] => {
-      return secondaryAccounts.map(({ signer: rawSigner, permissions }) => ({
-        account: signatoryToAccount(rawSigner, context),
-        permissions: meshPermissionsToPermissions(permissions, context),
-      }));
+    const assembleResult = (
+      rawSecondaryKeyKeyRecord: Option<PolymeshPrimitivesSecondaryKeyKeyRecord>[],
+      accountIds: AccountId32[]
+    ): PermissionedAccount[] => {
+      return rawSecondaryKeyKeyRecord.reduce(
+        (secondaryKeys: PermissionedAccount[], optKeyRecord, index) => {
+          const account = accountIdToAccount(accountIds[index], context);
+          const keyRecord = optKeyRecord.unwrap();
+
+          if (keyRecord.isSecondaryKey) {
+            const [, permissions] = keyRecord.asSecondaryKey;
+            secondaryKeys.push({
+              account,
+              permissions: meshPermissionsToPermissions(permissions, context),
+            });
+          }
+
+          return secondaryKeys;
+        },
+        []
+      );
     };
 
+    const keys = await identity.didKeys.entries(did);
+
+    const identityKeys = keys.map(([key]) => {
+      const [, value] = key.args;
+      return value;
+    });
+
     if (callback) {
-      return identity.didRecords(did, records => callback(assembleResult(records)));
+      return identity.keyRecords.multi(identityKeys, result =>
+        callback(assembleResult(result, identityKeys))
+      );
     }
 
-    const didRecords = await identity.didRecords(did);
-    return assembleResult(didRecords);
+    const rawPermissions = await identity.keyRecords.multi(identityKeys);
+
+    return assembleResult(rawPermissions, identityKeys);
   }
 
   /**
    * Determine whether this Identity exists on chain
+   *
+   * @note asset Identities aren't considered to exist for the
    */
   public async exists(): Promise<boolean> {
     const { did, context } = this;
 
-    const recordSize = await context.polymeshApi.query.identity.didRecords.size(
+    const didRecord = await context.polymeshApi.query.identity.didRecords(
       stringToIdentityId(did, context)
     );
 
-    return !recordSize.isZero();
+    if (didRecord.isNone) {
+      return false;
+    }
+
+    const record = didRecord.unwrap();
+
+    if (record.primaryKey.isNone) {
+      return false;
+    }
+
+    return true;
   }
 
   /**

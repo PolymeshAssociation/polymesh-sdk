@@ -386,12 +386,10 @@ describe('AuthorizationRequest class', () => {
       dsMockUtils.createQueryStub('identity', 'authorizations', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockAuthorization({
-            /* eslint-disable @typescript-eslint/naming-convention */
-            auth_id: new BigNumber(1),
-            authorization_data: dsMockUtils.createMockAuthorizationData('RotatePrimaryKey'),
-            authorized_by: 'someDid',
+            authId: new BigNumber(1),
+            authorizationData: dsMockUtils.createMockAuthorizationData('RotatePrimaryKey'),
+            authorizedBy: 'someDid',
             expiry: dsMockUtils.createMockOption(),
-            /* eslint-enable @typescript-eslint/naming-convention */
           })
         ),
       });

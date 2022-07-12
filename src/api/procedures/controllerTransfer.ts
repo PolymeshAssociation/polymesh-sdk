@@ -1,7 +1,5 @@
-import BigNumber from 'bignumber.js';
-
 import { Asset, DefaultPortfolio, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, PortfolioLike, RoleType, TxTags } from '~/types';
+import { ControllerTransferParams, ErrorCode, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   bigNumberToBalance,
@@ -10,17 +8,6 @@ import {
   portfolioLikeToPortfolioId,
   stringToTicker,
 } from '~/utils/conversion';
-
-export interface ControllerTransferParams {
-  /**
-   * portfolio (or portfolio ID) from which Assets will be transferred
-   */
-  originPortfolio: PortfolioLike;
-  /**
-   * amount of Asset tokens to transfer
-   */
-  amount: BigNumber;
-}
 
 export interface Storage {
   did: string;

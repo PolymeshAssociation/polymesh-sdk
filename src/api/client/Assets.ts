@@ -1,17 +1,23 @@
 import {
   Asset,
   claimClassicTicker,
-  ClaimClassicTickerParams,
   Context,
   createAsset,
-  CreateAssetWithTickerParams,
   Identity,
   PolymeshError,
   reserveTicker,
-  ReserveTickerParams,
   TickerReservation,
 } from '~/internal';
-import { ErrorCode, ProcedureMethod } from '~/types';
+import {
+  ClaimClassicTickerParams,
+  CreateAssetWithTickerParams,
+  ErrorCode,
+  ProcedureMethod,
+  ReserveTickerParams,
+  SubCallback,
+  TickerReservationStatus,
+  UnsubCallback,
+} from '~/types';
 import { stringToIdentityId, tickerToString } from '~/utils/conversion';
 import { createProcedureMethod, getDid, isPrintableAscii } from '~/utils/internal';
 
@@ -69,6 +75,35 @@ export class Assets {
    *   - Ticker Owner
    */
   public createAsset: ProcedureMethod<CreateAssetWithTickerParams, Asset>;
+
+  /**
+   * Check if a ticker hasn't been reserved
+   *
+   * @note can be subscribed to
+   */
+  public isTickerAvailable(args: { ticker: string }): Promise<boolean>;
+  public isTickerAvailable(
+    args: { ticker: string },
+    callback: SubCallback<boolean>
+  ): Promise<UnsubCallback>;
+
+  // eslint-disable-next-line require-jsdoc
+  public async isTickerAvailable(
+    args: { ticker: string },
+    callback?: SubCallback<boolean>
+  ): Promise<boolean | UnsubCallback> {
+    const reservation = new TickerReservation(args, this.context);
+
+    if (callback) {
+      return reservation.details(({ status: reservationStatus }) => {
+        // eslint-disable-next-line node/no-callback-literal, @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
+        callback(reservationStatus === TickerReservationStatus.Free);
+      });
+    }
+    const { status } = await reservation.details();
+
+    return status === TickerReservationStatus.Free;
+  }
 
   /**
    * Retrieve all the ticker reservations currently owned by an Identity. This doesn't include Assets that

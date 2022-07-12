@@ -1,45 +1,43 @@
-import { bool, Option, StorageKey } from '@polkadot/types';
+import { bool, Bytes, Option, StorageKey } from '@polkadot/types';
 import { BlockNumber, Hash } from '@polkadot/types/interfaces/runtime';
+import {
+  PalletAssetSecurityToken,
+  PolymeshPrimitivesAgentAgentGroup,
+  PolymeshPrimitivesIdentityId,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { flatten, groupBy, map } from 'lodash';
-import {
-  AgentGroup,
-  AssetName,
-  FundingRoundName,
-  IdentityId,
-  SecurityToken as MeshSecurityToken,
-  Ticker,
-} from 'polymesh-types/types';
 
 import {
   AuthorizationRequest,
   Context,
   controllerTransfer,
-  ControllerTransferParams,
   Entity,
   Identity,
   modifyAsset,
-  ModifyAssetParams,
   modifyPrimaryIssuanceAgent,
-  ModifyPrimaryIssuanceAgentParams,
   redeemTokens,
-  RedeemTokensParams,
   removePrimaryIssuanceAgent,
   toggleFreezeTransfers,
   transferAssetOwnership,
-  TransferAssetOwnershipParams,
 } from '~/internal';
 import { eventByIndexedArgs, tickerExternalAgentHistory } from '~/middleware/queries';
 import { assetQuery, tickerExternalAgentHistoryQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
+  ControllerTransferParams,
   EventIdentifier,
   HistoricAgentOperation,
+  ModifyAssetParams,
+  ModifyPrimaryIssuanceAgentParams,
   NoArgsProcedureMethod,
   ProcedureMethod,
+  RedeemTokensParams,
   SecurityIdentifier,
   SubCallback,
+  TransferAssetOwnershipParams,
   UnsubCallback,
 } from '~/types';
 import { Ensured, EnsuredV2, Modify, QueryReturnType } from '~/types/utils';
@@ -51,14 +49,12 @@ import {
   bigNumberToU32,
   boolToBoolean,
   bytesToString,
-  fundingRoundNameToString,
   hashToString,
   identityIdToString,
   middlewareEventToEventIdentifier,
   middlewareV2EventDetailsToEventIdentifier,
   scopeIdToString,
   stringToTicker,
-  textToString,
   tickerToDid,
 } from '~/utils/conversion';
 import { createProcedureMethod, optionize, padString } from '~/utils/internal';
@@ -187,9 +183,9 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
    * Transfer ownership of the Asset to another Identity. This generates an authorization request that must be accepted
    *   by the recipient
    *
-   * @note this will create {@link AuthorizationRequest | Authorization Request} which has to be accepted by the `target` Identity.
-   *   An {@link Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived | authorizations.getReceived}.
-   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link Authorizations.getOne | authorizations.getOne}
+   * @note this will create {@link api/entities/AuthorizationRequest!AuthorizationRequest | Authorization Request} which has to be accepted by the `target` Identity.
+   *   An {@link api/entities/Account!Account} or {@link api/entities/Identity!Identity} can fetch its pending Authorization Requests by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getReceived | authorizations.getReceived}.
+   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getOne | authorizations.getOne}
    */
   public transferOwnership: ProcedureMethod<TransferAssetOwnershipParams, AuthorizationRequest>;
   /**
@@ -221,11 +217,13 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    /* eslint-disable @typescript-eslint/naming-convention */
     const assembleResult = async (
-      { total_supply, divisible, owner_did, asset_type }: MeshSecurityToken,
-      agentGroups: [StorageKey<[Ticker, IdentityId]>, Option<AgentGroup>][],
-      assetName: AssetName,
+      { totalSupply, divisible, ownerDid, assetType: rawAssetType }: PalletAssetSecurityToken,
+      agentGroups: [
+        StorageKey<[PolymeshPrimitivesTicker, PolymeshPrimitivesIdentityId]>,
+        Option<PolymeshPrimitivesAgentAgentGroup>
+      ][],
+      assetName: Bytes,
       iuDisabled: bool
     ): Promise<AssetDetails> => {
       const primaryIssuanceAgents: Identity[] = [];
@@ -233,7 +231,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
 
       agentGroups.forEach(([storageKey, agentGroup]) => {
         const rawAgentGroup = agentGroup.unwrap();
-        if (rawAgentGroup.isPolymeshV1Pia) {
+        if (rawAgentGroup.isPolymeshV1PIA) {
           primaryIssuanceAgents.push(
             new Identity({ did: identityIdToString(storageKey.args[1]) }, context)
           );
@@ -242,8 +240,8 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
         }
       });
 
-      const owner = new Identity({ did: identityIdToString(owner_did) }, context);
-      const type = assetTypeToKnownOrId(asset_type);
+      const owner = new Identity({ did: identityIdToString(ownerDid) }, context);
+      const type = assetTypeToKnownOrId(rawAssetType);
 
       let assetType: string;
       if (typeof type === 'string') {
@@ -256,15 +254,14 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       return {
         assetType,
         isDivisible: boolToBoolean(divisible),
-        name: textToString(assetName),
+        name: bytesToString(assetName),
         owner,
-        totalSupply: balanceToBigNumber(total_supply),
+        totalSupply: balanceToBigNumber(totalSupply),
         primaryIssuanceAgents,
         fullAgents,
         requiresInvestorUniqueness: !boolToBoolean(iuDisabled),
       };
     };
-    /* eslint-enable @typescript-eslint/naming-convention */
 
     const rawTicker = stringToTicker(ticker, context);
 
@@ -296,7 +293,6 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       namePromise,
       disabledIuPromise,
     ]);
-
     return assembleResult(token, groups, name, disabledIu);
   }
 
@@ -324,8 +320,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
 
     const rawTicker = stringToTicker(ticker, context);
 
-    const assembleResult = (roundName: FundingRoundName): string | null =>
-      fundingRoundNameToString(roundName) || null;
+    const assembleResult = (roundName: Bytes): string | null => bytesToString(roundName) || null;
 
     if (callback) {
       return asset.fundingRound(rawTicker, round => {
@@ -470,9 +465,9 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
   /**
    * Assign a new primary issuance agent for the Asset
    *
-   * @note this will create an {@link AuthorizationRequest | Authorization Request} which has to be accepted by the `target` Identity.
-   *   An {@link Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived | authorizations.getReceived}.
-   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link Authorizations.getOne | authorizations.getOne}
+   * @note this will create an {@link api/entities/AuthorizationRequest!AuthorizationRequest | Authorization Request} which has to be accepted by the `target` Identity.
+   *   An {@link api/entities/Account!Account} or {@link api/entities/Identity!Identity} can fetch its pending Authorization Requests by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getReceived | authorizations.getReceived}.
+   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getOne | authorizations.getOne}
    *
    * @deprecated in favor of `inviteAgent`
    */

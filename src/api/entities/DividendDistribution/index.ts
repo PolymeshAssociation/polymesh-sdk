@@ -1,5 +1,6 @@
 import { Option } from '@polkadot/types';
 import { BlockNumber, Hash } from '@polkadot/types/interfaces/runtime';
+import { PalletCorporateActionsDistribution } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, flatten, remove } from 'lodash';
@@ -17,11 +18,9 @@ import {
   CorporateActionBase,
   DefaultPortfolio,
   Identity,
-  ModifyCaCheckpointParams,
   modifyDistributionCheckpoint,
   NumberedPortfolio,
   payDividends,
-  PayDividendsParams,
   PolymeshError,
   reclaimDividendDistributionFunds,
 } from '~/internal';
@@ -29,7 +28,6 @@ import { getHistoryOfPaymentEventsForCa, getWithholdingTaxesOfCa } from '~/middl
 import { distributionPaymentsQuery, distributionQuery } from '~/middleware/queriesV2';
 import { Query } from '~/middleware/types';
 import { Query as QueryV2 } from '~/middleware/typesV2';
-import { Distribution } from '~/polkadot';
 import {
   CorporateActionKind,
   DistributionPayment,
@@ -37,7 +35,9 @@ import {
   ErrorCode,
   IdentityBalance,
   InputCaCheckpoint,
+  ModifyCaCheckpointParams,
   NoArgsProcedureMethod,
+  PayDividendsParams,
   ProcedureMethod,
   ResultSet,
   TargetTreatment,
@@ -69,7 +69,7 @@ import {
 
 import { DistributionParticipant } from './types';
 
-interface HumanReadable extends CorporateActionHumanReadable {
+export interface HumanReadable extends CorporateActionHumanReadable {
   origin: HumanReadableType<DefaultPortfolio | NumberedPortfolio>;
   currency: string;
   perShare: string;
@@ -427,7 +427,7 @@ export class DividendDistribution extends CorporateActionBase {
   /**
    * @hidden
    */
-  private fetchDistribution(): Promise<Option<Distribution>> {
+  private fetchDistribution(): Promise<Option<PalletCorporateActionsDistribution>> {
     const {
       asset: { ticker },
       id,

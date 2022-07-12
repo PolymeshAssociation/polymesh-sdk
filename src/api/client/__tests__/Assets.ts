@@ -1,11 +1,11 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Assets } from '~/Assets';
+import { Assets } from '~/api/client/Assets';
 import { Asset, Context, TickerReservation, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { KnownAssetType, SecurityIdentifierType } from '~/types';
+import { KnownAssetType, SecurityIdentifierType, TickerReservationStatus } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -118,6 +118,68 @@ describe('Assets Class', () => {
     });
   });
 
+  describe('method: isTickerAvailable', () => {
+    afterEach(() => {
+      entityMockUtils.reset();
+    });
+
+    it('should return true if ticker is available to reserve it', async () => {
+      entityMockUtils.configureMocks({
+        tickerReservationOptions: {
+          details: {
+            owner: entityMockUtils.getIdentityInstance(),
+            expiryDate: new Date(),
+            status: TickerReservationStatus.Free,
+          },
+        },
+      });
+
+      const isTickerAvailable = await assets.isTickerAvailable({ ticker: 'SOME_TICKER' });
+
+      expect(isTickerAvailable).toBeTruthy();
+    });
+
+    it('should return false if ticker is not available to reserve it', async () => {
+      entityMockUtils.configureMocks({
+        tickerReservationOptions: {
+          details: {
+            owner: entityMockUtils.getIdentityInstance(),
+            expiryDate: new Date(),
+            status: TickerReservationStatus.Reserved,
+          },
+        },
+      });
+
+      const isTickerAvailable = await assets.isTickerAvailable({ ticker: 'SOME_TICKER' });
+
+      expect(isTickerAvailable).toBeFalsy();
+    });
+
+    it('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallBack';
+
+      entityMockUtils.configureMocks({
+        tickerReservationOptions: {
+          details: async cbFunc => {
+            cbFunc({
+              owner: entityMockUtils.getIdentityInstance(),
+              expiryDate: new Date(),
+              status: TickerReservationStatus.Free,
+            });
+
+            return unsubCallback;
+          },
+        },
+      });
+
+      const callback = sinon.stub();
+      const result = await assets.isTickerAvailable({ ticker: 'SOME_TICKER' }, callback);
+
+      expect(result).toBe(unsubCallback);
+      sinon.assert.calledWithExactly(callback, true);
+    });
+  });
+
   describe('method: getTickerReservations', () => {
     beforeAll(() => {
       sinon.stub(utilsConversionModule, 'signerValueToSignatory');
@@ -183,7 +245,7 @@ describe('Assets Class', () => {
             dsMockUtils.createMockAssetOwnershipRelation('TickerOwned')
           ),
           tuple(
-            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker('someTicker')],
+            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker('SOME_TICKER')],
             dsMockUtils.createMockAssetOwnershipRelation('AssetOwned')
           ),
           tuple(
@@ -291,7 +353,7 @@ describe('Assets Class', () => {
             dsMockUtils.createMockAssetOwnershipRelation('AssetOwned')
           ),
           tuple(
-            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker('someTicker')],
+            [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker('SOME_TICKER')],
             dsMockUtils.createMockAssetOwnershipRelation('TickerOwned')
           ),
           tuple(

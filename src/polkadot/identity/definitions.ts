@@ -52,7 +52,7 @@ export default {
           isOptional: true,
         },
       ],
-      type: 'DidRecords',
+      type: 'RpcDidRecords',
     },
     getDidStatus: {
       description: 'Retrieve status of the DID',
@@ -80,12 +80,12 @@ export default {
           isOptional: false,
         },
         {
-          name: 'allow_expired',
+          name: 'allowExpired',
           type: 'bool',
           isOptional: false,
         },
         {
-          name: 'auth_type',
+          name: 'authType',
           type: 'AuthorizationType',
           isOptional: true,
         },
@@ -95,7 +95,7 @@ export default {
           isOptional: true,
         },
       ],
-      type: 'Vec<Authorization>',
+      type: 'Vec<PolymeshPrimitivesAuthorization>',
     },
     getKeyIdentityData: {
       description: 'Query relation between a signing key and a DID',

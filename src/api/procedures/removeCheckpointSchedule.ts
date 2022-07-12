@@ -1,16 +1,9 @@
 import BigNumber from 'bignumber.js';
 
-import { Asset, CheckpointSchedule, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, TxTags } from '~/types';
+import { Asset, PolymeshError, Procedure } from '~/internal';
+import { ErrorCode, RemoveCheckpointScheduleParams, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { bigNumberToU64, stringToTicker, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
-
-export interface RemoveCheckpointScheduleParams {
-  /**
-   * schedule (or ID) of the schedule to be removed
-   */
-  schedule: CheckpointSchedule | BigNumber;
-}
 
 /**
  * @hidden

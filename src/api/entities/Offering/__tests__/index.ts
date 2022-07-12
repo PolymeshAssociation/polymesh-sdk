@@ -106,20 +106,19 @@ describe('Offering class', () => {
 
     const rawFundraiser = dsMockUtils.createMockOption(
       dsMockUtils.createMockFundraiser({
-        /* eslint-disable @typescript-eslint/naming-convention */
         creator: dsMockUtils.createMockIdentityId(someDid),
-        offering_portfolio: dsMockUtils.createMockPortfolioId({
+        offeringPortfolio: dsMockUtils.createMockPortfolioId({
           did: dsMockUtils.createMockIdentityId(someDid),
           kind: dsMockUtils.createMockPortfolioKind('Default'),
         }),
-        offering_asset: dsMockUtils.createMockTicker(ticker),
-        raising_portfolio: dsMockUtils.createMockPortfolioId({
+        offeringAsset: dsMockUtils.createMockTicker(ticker),
+        raisingPortfolio: dsMockUtils.createMockPortfolioId({
           did: dsMockUtils.createMockIdentityId(otherDid),
           kind: dsMockUtils.createMockPortfolioKind({
             User: dsMockUtils.createMockU64(new BigNumber(1)),
           }),
         }),
-        raising_asset: dsMockUtils.createMockTicker(raisingCurrency),
+        raisingAsset: dsMockUtils.createMockTicker(raisingCurrency),
         tiers: [
           dsMockUtils.createMockFundraiserTier({
             total: dsMockUtils.createMockBalance(amount),
@@ -127,18 +126,17 @@ describe('Offering class', () => {
             remaining: dsMockUtils.createMockBalance(remaining),
           }),
         ],
-        venue_id: dsMockUtils.createMockU64(new BigNumber(1)),
+        venueId: dsMockUtils.createMockU64(new BigNumber(1)),
         start: dsMockUtils.createMockMoment(new BigNumber(date.getTime())),
         end: dsMockUtils.createMockOption(
           dsMockUtils.createMockMoment(new BigNumber(date.getTime()))
         ),
         status: dsMockUtils.createMockFundraiserStatus('Live'),
-        minimum_investment: dsMockUtils.createMockBalance(minInvestmentValue),
-        /* eslint-enable @typescript-eslint/naming-convention */
+        minimumInvestment: dsMockUtils.createMockBalance(minInvestmentValue),
       })
     );
 
-    const rawName = dsMockUtils.createMockFundraiserName(name);
+    const rawName = dsMockUtils.createMockBytes(name);
 
     let offering: Offering;
 

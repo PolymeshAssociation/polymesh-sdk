@@ -1,24 +1,18 @@
 import BigNumber from 'bignumber.js';
 
-import {
-  Context,
-  PolymeshError,
-  Portfolio,
-  renamePortfolio,
-  RenamePortfolioParams,
-} from '~/internal';
+import { Context, PolymeshError, Portfolio, renamePortfolio } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { portfolioQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Query as QueryV2 } from '~/middleware/typesV2';
-import { ErrorCode, EventIdentifier, ProcedureMethod } from '~/types';
+import { ErrorCode, EventIdentifier, ProcedureMethod, RenamePortfolioParams } from '~/types';
 import { Ensured, EnsuredV2 } from '~/types/utils';
 import {
   bigNumberToU64,
+  bytesToString,
   middlewareEventToEventIdentifier,
   middlewareV2EventDetailsToEventIdentifier,
   stringToIdentityId,
-  textToString,
 } from '~/utils/conversion';
 import { createProcedureMethod, optionize } from '~/utils/internal';
 
@@ -95,7 +89,8 @@ export class NumberedPortfolio extends Portfolio {
         message: "The Portfolio doesn't exist",
       });
     }
-    return textToString(rawPortfolioName);
+
+    return bytesToString(rawPortfolioName);
   }
 
   /**

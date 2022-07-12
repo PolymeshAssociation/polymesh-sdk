@@ -5,23 +5,23 @@ import {
   AuthorizationRequest,
   Context,
   createGroup,
-  CreateGroupParams,
   CustomPermissionGroup,
   Identity,
   inviteExternalAgent,
-  InviteExternalAgentParams,
   KnownPermissionGroup,
   Namespace,
   PolymeshError,
   removeExternalAgent,
-  RemoveExternalAgentParams,
 } from '~/internal';
 import {
   AgentWithGroup,
+  CreateGroupParams,
   ErrorCode,
+  InviteExternalAgentParams,
   PermissionGroups,
   PermissionGroupType,
   ProcedureMethod,
+  RemoveExternalAgentParams,
 } from '~/types';
 import {
   agentGroupToPermissionGroup,
@@ -67,9 +67,9 @@ export class Permissions extends Namespace<Asset> {
   /**
    * Invite an Identity to be an agent with permissions over this Asset
    *
-   * @note this will create an {@link AuthorizationRequest | Authorization Request} which has to be accepted by the `target` Identity.
-   *   An {@link Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived | authorizations.getReceived}.
-   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link Authorizations.getOne | authorizations.getOne}
+   * @note this will create an {@link api/entities/AuthorizationRequest!AuthorizationRequest | Authorization Request} which has to be accepted by the `target` Identity.
+   *   An {@link api/entities/Account!Account} or {@link api/entities/Identity!Identity} can fetch its pending Authorization Requests by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getReceived | authorizations.getReceived}.
+   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getOne | authorizations.getOne}
    */
   public inviteAgent: ProcedureMethod<InviteExternalAgentParams, AuthorizationRequest>;
 

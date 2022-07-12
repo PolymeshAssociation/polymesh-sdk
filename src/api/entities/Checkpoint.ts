@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
-import { CheckpointId, IdentityId, Ticker } from 'polymesh-types/types';
 
 import { Asset, Context, Entity, Identity } from '~/internal';
+import { CheckpointId, IdentityId, Ticker } from '~/polkadot/polymesh';
 import { IdentityBalance, PaginationOptions, ResultSet } from '~/types';
 import { QueryReturnType, tuple } from '~/types/utils';
 import {
@@ -20,7 +20,7 @@ export interface UniqueIdentifiers {
   ticker: string;
 }
 
-interface HumanReadable {
+export interface HumanReadable {
   id: string;
   ticker: string;
 }

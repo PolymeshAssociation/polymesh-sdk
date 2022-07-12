@@ -1,8 +1,14 @@
 import BigNumber from 'bignumber.js';
-import { Moment } from 'polymesh-types/types';
 
 import { Asset, Offering, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, OfferingSaleStatus, OfferingTimingStatus, TxTags } from '~/types';
+import { Moment } from '~/polkadot/polymesh';
+import {
+  ErrorCode,
+  ModifyOfferingTimesParams,
+  OfferingSaleStatus,
+  OfferingTimingStatus,
+  TxTags,
+} from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { bigNumberToU64, dateToMoment, stringToTicker } from '~/utils/conversion';
 
@@ -59,23 +65,6 @@ function validateInput(
     });
   }
 }
-
-export type ModifyOfferingTimesParams =
-  | {
-      /**
-       * new start time (optional, will be left the same if not passed)
-       */
-      start?: Date;
-      /**
-       * new end time (optional, will be left th same if not passed). A null value means the Offering doesn't end
-       */
-      end: Date | null;
-    }
-  | {
-      start: Date;
-      end?: Date | null;
-    }
-  | { start: Date; end: Date | null };
 
 /**
  * @hidden

@@ -89,7 +89,7 @@ describe('modifyVenue procedure', () => {
     const description = 'someDetails';
     const type = VenueType.Exchange;
 
-    const rawDetails = dsMockUtils.createMockVenueDetails(description);
+    const rawDetails = dsMockUtils.createMockBytes(description);
     const rawType = dsMockUtils.createMockVenueType(type);
     const rawId = dsMockUtils.createMockU64(venueId);
 
@@ -100,7 +100,7 @@ describe('modifyVenue procedure', () => {
     };
 
     sinon.stub(utilsConversionModule, 'bigNumberToU64').returns(rawId);
-    sinon.stub(utilsConversionModule, 'stringToVenueDetails').returns(rawDetails);
+    sinon.stub(utilsConversionModule, 'stringToBytes').returns(rawDetails);
     sinon.stub(utilsConversionModule, 'venueTypeToMeshVenueType').returns(rawType);
 
     const updateVenueDetailsTransaction = dsMockUtils.createTxStub(

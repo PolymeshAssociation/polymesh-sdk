@@ -1,12 +1,7 @@
 import BigNumber from 'bignumber.js';
 
-import {
-  Context,
-  PermissionGroup,
-  setGroupPermissions,
-  SetGroupPermissionsParams,
-} from '~/internal';
-import { GroupPermissions, ProcedureMethod } from '~/types';
+import { Context, PermissionGroup, setGroupPermissions } from '~/internal';
+import { GroupPermissions, ProcedureMethod, SetGroupPermissionsParams } from '~/types';
 import {
   bigNumberToU32,
   extrinsicPermissionsToTransactionPermissions,

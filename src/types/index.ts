@@ -1,14 +1,15 @@
 import { TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { ModuleName, TxTag, TxTags } from 'polymesh-types/types';
 
 import {
+  CorporateActionTargets,
   DividendDistributionDetails,
   OfferingDetails,
   ScheduleDetails,
   SubsidyData,
+  TaxWithholding,
 } from '~/api/entities/types';
-import { CountryCode } from '~/generated/types';
+import { CountryCode, ModuleName, TxTag, TxTags } from '~/generated/types';
 import {
   Account,
   Asset,
@@ -25,7 +26,6 @@ import {
   Offering,
   TransactionQueue,
 } from '~/internal';
-import { PortfolioId } from '~/types/internal';
 import { Modify } from '~/types/utils';
 
 export * from '~/generated/types';
@@ -110,6 +110,11 @@ export interface VenueOwnerRole {
   venueId: BigNumber;
 }
 
+export interface PortfolioId {
+  did: string;
+  number?: BigNumber;
+}
+
 export interface PortfolioCustodianRole {
   type: RoleType.PortfolioCustodian;
   portfolioId: PortfolioId;
@@ -145,6 +150,7 @@ export enum SecurityIdentifierType {
   Cusip = 'Cusip',
   Cins = 'Cins',
   Lei = 'Lei',
+  Figi = 'Figi',
 }
 
 // NOTE: query.asset.identifiers doesn’t support custom identifier types properly for now
@@ -217,6 +223,7 @@ export enum ClaimType {
   Exempted = 'Exempted',
   Blocked = 'Blocked',
   InvestorUniqueness = 'InvestorUniqueness',
+  NoType = 'NoType',
   NoData = 'NoData',
   InvestorUniquenessV2 = 'InvestorUniquenessV2',
 }
@@ -274,6 +281,10 @@ export interface InvestorUniquenessClaim {
   scopeId: string;
 }
 
+export interface NoTypeClaim {
+  type: ClaimType.NoType;
+}
+
 export interface NoDataClaim {
   type: ClaimType.NoData;
 }
@@ -294,7 +305,7 @@ export type ScopedClaim =
   | ExemptedClaim
   | BlockedClaim;
 
-export type UnscopedClaim = NoDataClaim | CddClaim | InvestorUniquenessV2Claim;
+export type UnscopedClaim = NoDataClaim | NoTypeClaim | CddClaim | InvestorUniquenessV2Claim;
 
 export type Claim = ScopedClaim | UnscopedClaim;
 
@@ -1228,17 +1239,10 @@ interface TransferRestrictionBase {
    * array of Scope/Identity IDs that are exempted from the Restriction
    *
    * @note if the Asset requires investor uniqueness, Scope IDs are used. Otherwise, we use Identity IDs. More on Scope IDs and investor uniqueness
-   *   {@link https://developers.polymesh.network/introduction/identity#polymesh-unique-identity-system-puis | here} and
-   *   {@link https://developers.polymesh.network/polymesh-docs/primitives/confidential-identity | here}
+   *   [here](https://developers.polymesh.network/introduction/identity#polymesh-unique-identity-system-puis) and
+   *   [here](https://developers.polymesh.network/polymesh-docs/primitives/confidential-identity)
    */
   exemptedIds?: string[];
-}
-
-interface TransferRestrictionInputBase {
-  /**
-   * array of Identities (or DIDs) that are exempted from the Restriction
-   */
-  exemptedIdentities?: (Identity | string)[];
 }
 
 export interface CountTransferRestriction extends TransferRestrictionBase {
@@ -1246,20 +1250,6 @@ export interface CountTransferRestriction extends TransferRestrictionBase {
 }
 
 export interface PercentageTransferRestriction extends TransferRestrictionBase {
-  /**
-   * maximum percentage (0-100) of the total supply of the Asset that can be held by a single investor at once
-   */
-  percentage: BigNumber;
-}
-
-export interface CountTransferRestrictionInput extends TransferRestrictionInputBase {
-  /**
-   * limit on the amount of different (unique) investors that can hold the Asset at once
-   */
-  count: BigNumber;
-}
-
-export interface PercentageTransferRestrictionInput extends TransferRestrictionInputBase {
   /**
    * maximum percentage (0-100) of the total supply of the Asset that can be held by a single investor at once
    */
@@ -1274,16 +1264,6 @@ export interface ActiveTransferRestrictions<
    * amount of restrictions that can be added before reaching the shared limit
    */
   availableSlots: BigNumber;
-}
-
-export enum TransferRestrictionType {
-  Count = 'Count',
-  Percentage = 'Percentage',
-}
-
-export interface TransferRestriction {
-  type: TransferRestrictionType;
-  value: BigNumber;
 }
 
 export enum CalendarUnit {
@@ -1405,8 +1385,38 @@ export type PrivateKey =
       seed: string;
     };
 
-export { TxTags, TxTag, ModuleName };
+/**
+ * Targets of a corporate action in a flexible structure for input purposes
+ */
+export type InputCorporateActionTargets = Modify<
+  CorporateActionTargets,
+  {
+    identities: (string | Identity)[];
+  }
+>;
+
+/**
+ * Per-Identity tax withholdings of a corporate action in a flexible structure for input purposes
+ */
+export type InputCorporateActionTaxWithholdings = Modify<
+  TaxWithholding,
+  {
+    identity: string | Identity;
+  }
+>[];
+
+export { TxTags, TxTag, ModuleName, CountryCode };
 export { EventRecord } from '@polkadot/types/interfaces';
+export { ConnectParams } from '~/api/client/Polymesh';
 export * from '~/api/entities/types';
 export * from '~/base/types';
-export { Order } from '~/middleware/types';
+export {
+  Order,
+  EventIdEnum,
+  ModuleIdEnum,
+  TransactionOrderByInput,
+  TransactionOrderFields,
+  SettlementResultEnum,
+  SettlementDirectionEnum,
+} from '~/middleware/types';
+export * from '~/api/procedures/types';

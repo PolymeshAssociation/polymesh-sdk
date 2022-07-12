@@ -108,6 +108,7 @@ describe('Venue class', () => {
 
       entityMockUtils.configureMocks({ identityOptions: { did: owner } });
       sinon.stub(utilsConversionModule, 'bigNumberToU64').withArgs(id, context).returns(rawId);
+      sinon.stub(utilsConversionModule, 'bytesToString').returns(description);
 
       dsMockUtils
         .createQueryStub('settlement', 'venueInfo')
@@ -116,15 +117,14 @@ describe('Venue class', () => {
           dsMockUtils.createMockOption(
             dsMockUtils.createMockVenue({
               creator: dsMockUtils.createMockIdentityId(owner),
-              // eslint-disable-next-line @typescript-eslint/naming-convention
-              venue_type: dsMockUtils.createMockVenueType(type),
+              venueType: dsMockUtils.createMockVenueType(type),
             })
           )
         );
       dsMockUtils
         .createQueryStub('settlement', 'details')
         .withArgs(rawId)
-        .resolves(dsMockUtils.createMockVenueDetails(description));
+        .resolves(dsMockUtils.createMockBytes(description));
 
       const result = await venue.details();
 

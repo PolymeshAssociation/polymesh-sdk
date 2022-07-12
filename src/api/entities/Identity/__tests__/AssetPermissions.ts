@@ -1,5 +1,5 @@
+import { PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { IdentityId, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Context, Identity, KnownPermissionGroup, Namespace, TransactionQueue } from '~/internal';
@@ -249,7 +249,7 @@ describe('AssetPermissions class', () => {
 
       dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
         returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockAgentGroup('PolymeshV1Pia')
+          dsMockUtils.createMockAgentGroup('PolymeshV1PIA')
         ),
       });
 
@@ -284,7 +284,7 @@ describe('AssetPermissions class', () => {
 
       dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
         returnValue: dsMockUtils.createMockOption(
-          dsMockUtils.createMockAgentGroup('PolymeshV1Caa')
+          dsMockUtils.createMockAgentGroup('PolymeshV1CAA')
         ),
       });
 
@@ -333,9 +333,9 @@ describe('AssetPermissions class', () => {
           dsMockUtils.createMockExtrinsicPermissions({
             These: [
               dsMockUtils.createMockPalletPermissions({
-                pallet_name: 'asset',
-                dispatchable_names: {
-                  Except: [dsMockUtils.createMockDispatchableName('createAsset')],
+                palletName: 'asset',
+                dispatchableNames: {
+                  Except: [dsMockUtils.createMockBytes('createAsset')],
                 },
               }),
             ],
@@ -368,8 +368,8 @@ describe('AssetPermissions class', () => {
           dsMockUtils.createMockExtrinsicPermissions({
             Except: [
               dsMockUtils.createMockPalletPermissions({
-                pallet_name: 'asset',
-                dispatchable_names: 'Whole',
+                palletName: 'asset',
+                dispatchableNames: 'Whole',
               }),
             ],
           })
@@ -435,8 +435,8 @@ describe('AssetPermissions class', () => {
   });
 
   describe('method: get', () => {
-    let rawDid: IdentityId;
-    let rawTicker: Ticker;
+    let rawDid: PolymeshPrimitivesIdentityId;
+    let rawTicker: PolymeshPrimitivesTicker;
     let stringToIdentityIdStub: sinon.SinonStub;
 
     beforeAll(() => {

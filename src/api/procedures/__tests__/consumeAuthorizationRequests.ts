@@ -60,14 +60,12 @@ describe('consumeAuthorizationRequests procedure', () => {
     dsMockUtils.createQueryStub('identity', 'authorizations', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockAuthorization({
-          /* eslint-disable @typescript-eslint/naming-convention */
-          authorization_data: dsMockUtils.createMockAuthorizationData({
+          authorizationData: dsMockUtils.createMockAuthorizationData({
             TransferTicker: dsMockUtils.createMockTicker('TICKER'),
           }),
-          auth_id: new BigNumber(1),
-          authorized_by: 'someDid',
+          authId: new BigNumber(1),
+          authorizedBy: 'someDid',
           expiry: dsMockUtils.createMockOption(),
-          /* eslint-enable @typescript-eslint/naming-convention */
         })
       ),
     });
