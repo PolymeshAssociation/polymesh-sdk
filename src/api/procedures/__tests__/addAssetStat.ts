@@ -188,8 +188,8 @@ describe('addAssetStat procedure', () => {
         issuer: entityMockUtils.getIdentityInstance(),
         claimType: ClaimType.Accredited,
         value: {
-          yes: new BigNumber(1),
-          no: new BigNumber(2),
+          accredited: new BigNumber(1),
+          nonAccredited: new BigNumber(2),
         },
       },
     };

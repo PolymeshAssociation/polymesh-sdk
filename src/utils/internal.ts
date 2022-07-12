@@ -1268,10 +1268,6 @@ export function compareTransferRestrictionToStat(
     return false;
   }
 
-  if (type === StatType.Count || type === StatType.Balance) {
-    return false;
-  }
-
   const {
     issuer: { did: issuerDid },
     claimType,

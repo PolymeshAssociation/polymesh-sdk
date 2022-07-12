@@ -91,7 +91,7 @@ export async function prepareAddAssetStat(
     })
   );
 
-  // Count stats need the user to provide the initial value for the counter as computing them present a DOS attack vector on chain
+  // Count stats need the user to provide the initial value for the counter as computing may cause prohibitive gas charges on the chain
   // We require users to provide initial stats in this method so they won't miss setting initial values. It could be its own step
   if (args.type === StatType.Count) {
     const statValue = countStatInputToStatUpdates(args, context);
@@ -102,10 +102,7 @@ export async function prepareAddAssetStat(
       })
     );
   } else if (args.type === StatType.ScopedCount) {
-    const {
-      claimIssuer: { value, claimType },
-    } = args;
-    const statValue = claimCountStatInputToStatUpdates({ value, type: claimType }, context);
+    const statValue = claimCountStatInputToStatUpdates(args, context);
     transactions.push(
       checkTxType({
         transaction: statistics.batchUpdateAssetStats,

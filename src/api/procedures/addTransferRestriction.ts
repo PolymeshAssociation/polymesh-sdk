@@ -109,12 +109,10 @@ export async function prepareAddTransferRestriction(
     restriction = { type, value };
   } else if (type === TransferRestrictionType.ClaimCount) {
     const { min, max, issuer, claim } = args;
-    const value = { min, max, issuer, claim };
-    restriction = { type, value };
+    restriction = { type, value: { min, max, issuer, claim } };
   } else {
     const { min, max, issuer, claim } = args;
-    const value = { min, max, issuer, claim };
-    restriction = { type, value };
+    restriction = { type, value: { min, max, issuer, claim } };
   }
 
   const rawTransferCondition = transferRestrictionToPolymeshTransferCondition(restriction, context);

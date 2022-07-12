@@ -26,7 +26,6 @@ import {
   Offering,
   TransactionQueue,
 } from '~/internal';
-import { StatClaimIssuer } from '~/types/internal';
 import { Modify } from '~/types/utils';
 
 export * from '~/generated/types';
@@ -1365,12 +1364,27 @@ export interface AddCountStatInput {
   count: BigNumber;
 }
 
-export type ClaimCountInitialStatInput =
-  | { yes: BigNumber; no: BigNumber }
-  | { countryCode: CountryCode; count: BigNumber }[];
+export interface StatClaimIssuer {
+  issuer: Identity;
+  claimType: StatClaimType;
+}
 export interface ClaimCountStatInput {
-  // TODO figure out a good shape for this
-  claimIssuer: StatClaimIssuer & { value: ClaimCountInitialStatInput };
+  claimIssuer:
+    | {
+        issuer: Identity;
+        claimType: ClaimType.Accredited;
+        value: { accredited: BigNumber; nonAccredited: BigNumber };
+      }
+    | {
+        issuer: Identity;
+        claimType: ClaimType.Affiliate;
+        value: { affiliate: BigNumber; nonAffiliate: BigNumber };
+      }
+    | {
+        issuer: Identity;
+        claimType: ClaimType.Jurisdiction;
+        value: { countryCode: CountryCode; count: BigNumber }[];
+      };
 }
 
 export interface ClaimPercentageStatInput {

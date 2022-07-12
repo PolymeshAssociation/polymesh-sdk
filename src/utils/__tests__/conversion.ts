@@ -5725,6 +5725,26 @@ describe('transferRestrictionToPolymeshTransferCondition', () => {
     expect(result).toBe(fakeResult);
   });
 
+  it('should throw if there is an unknown transfer type', () => {
+    const context = dsMockUtils.getContextInstance();
+    const value = {
+      type: 'Unknown',
+      value: new BigNumber(3),
+    } as unknown as TransferRestriction;
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.UnexpectedError,
+      message:
+        'Unexpected transfer restriction type: "Unknown". Please report this to the Polymath team',
+    });
+
+    return expect(() =>
+      transferRestrictionToPolymeshTransferCondition(value, context)
+    ).toThrowError(expectedError);
+  });
+});
+
+describe('transferConditionToTransferRestriction', () => {
   it('should convert a TransferRestriction to a TransferCondition', () => {
     const mockContext = dsMockUtils.getContextInstance();
     const count = new BigNumber(10);
@@ -7662,6 +7682,7 @@ describe('claimCountStatInputToStatUpdates', () => {
     const fakeYesUpdate = 'fakeYes';
     const fakeNoUpdate = 'fakeNo';
     const fakeJurisdictionUpdate = 'fakeJurisdiction';
+    const issuer = entityMockUtils.getIdentityInstance();
 
     context.createType.withArgs('u128', yes.toString()).returns(rawYes);
     context.createType.withArgs('u128', no.toString()).returns(rawNo);
@@ -7675,6 +7696,16 @@ describe('claimCountStatInputToStatUpdates', () => {
     context.createType
       .withArgs('PolymeshPrimitivesStatisticsStat2ndKey', {
         claim: { [ClaimType.Affiliate]: false },
+      })
+      .returns(rawNoKey);
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStat2ndKey', {
+        claim: { [ClaimType.Accredited]: true },
+      })
+      .returns(rawYesKey);
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStat2ndKey', {
+        claim: { [ClaimType.Accredited]: false },
       })
       .returns(rawNoKey);
     context.createType
@@ -7715,9 +7746,26 @@ describe('claimCountStatInputToStatUpdates', () => {
       ])
       .returns('jurisdictionBtreeSet');
 
-    const yesNoValue = { yes, no };
     let result = claimCountStatInputToStatUpdates(
-      { type: ClaimType.Affiliate, value: yesNoValue },
+      {
+        claimIssuer: {
+          issuer,
+          claimType: ClaimType.Affiliate,
+          value: { affiliate: yes, nonAffiliate: no },
+        },
+      },
+      context
+    );
+    expect(result).toEqual('yesNoBtreeSet');
+
+    result = claimCountStatInputToStatUpdates(
+      {
+        claimIssuer: {
+          issuer,
+          claimType: ClaimType.Accredited,
+          value: { accredited: yes, nonAccredited: no },
+        },
+      },
       context
     );
     expect(result).toEqual('yesNoBtreeSet');
@@ -7733,7 +7781,9 @@ describe('claimCountStatInputToStatUpdates', () => {
       },
     ];
     result = claimCountStatInputToStatUpdates(
-      { type: ClaimType.Jurisdiction, value: countryValue },
+      {
+        claimIssuer: { issuer, claimType: ClaimType.Jurisdiction, value: countryValue },
+      },
       context
     );
     expect(result).toEqual('jurisdictionBtreeSet');

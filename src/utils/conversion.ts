@@ -144,8 +144,8 @@ import {
   CalendarUnit,
   CheckpointScheduleParams,
   Claim,
-  ClaimCountInitialStatInput,
   ClaimCountRestrictionValue,
+  ClaimCountStatInput,
   ClaimPercentageRestrictionValue,
   ClaimType,
   Compliance,
@@ -2888,7 +2888,7 @@ export function transferRestrictionToPolymeshTransferCondition(
   } else {
     throw new PolymeshError({
       code: ErrorCode.UnexpectedError,
-      message: `Unexpected transfer restriction type: ${type}. Please report this to the Polymath team`,
+      message: `Unexpected transfer restriction type: "${type}". Please report this to the Polymath team`,
     });
   }
   return context.createType('PolymeshPrimitivesTransferComplianceTransferCondition', {
@@ -3845,14 +3845,26 @@ export function toExemptKey(
  * @hidden
  */
 export function claimCountStatInputToStatUpdates(
-  args: { value: ClaimCountInitialStatInput; type: StatClaimType },
+  args: ClaimCountStatInput,
   context: Context
 ): BTreeSet<PolymeshPrimitivesStatisticsStatUpdate> {
-  const { value, type } = args;
+  const {
+    claimIssuer: { value, claimType: type },
+  } = args;
   let updateArgs;
 
-  if ('yes' in value) {
-    const { yes, no } = value;
+  if (value instanceof Array) {
+    updateArgs = value.map(({ countryCode, count }) => {
+      const rawSecondKey = createStat2ndKey(type, context, countryCode);
+      return keyAndValueToStatUpdate(rawSecondKey, bigNumberToU128(count, context), context);
+    });
+  } else {
+    let yes, no;
+    if ('accredited' in value) {
+      ({ accredited: yes, nonAccredited: no } = value);
+    } else {
+      ({ affiliate: yes, nonAffiliate: no } = value);
+    }
     const yes2ndKey = createStat2ndKey(type, context, 'yes');
     const yesCount = bigNumberToU128(yes, context);
     const no2ndKey = createStat2ndKey(type, context, 'no');
@@ -3861,13 +3873,7 @@ export function claimCountStatInputToStatUpdates(
       keyAndValueToStatUpdate(yes2ndKey, yesCount, context),
       keyAndValueToStatUpdate(no2ndKey, noCount, context),
     ];
-  } else {
-    updateArgs = value.map(({ countryCode, count }) => {
-      const rawSecondKey = createStat2ndKey(type, context, countryCode);
-      return keyAndValueToStatUpdate(rawSecondKey, bigNumberToU128(count, context), context);
-    });
   }
-
   return statUpdatesToBtreeStatUpdate(updateArgs, context);
 }
 
