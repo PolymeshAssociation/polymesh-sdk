@@ -7,7 +7,7 @@ import {
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { flatten } from 'lodash';
+import { flatten, groupBy, map } from 'lodash';
 
 import {
   AuthorizationRequest,
@@ -23,7 +23,9 @@ import {
   transferAssetOwnership,
 } from '~/internal';
 import { eventByIndexedArgs, tickerExternalAgentHistory } from '~/middleware/queries';
+import { assetQuery, tickerExternalAgentHistoryQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
+import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   ControllerTransferParams,
   EventIdentifier,
@@ -38,7 +40,7 @@ import {
   TransferAssetOwnershipParams,
   UnsubCallback,
 } from '~/types';
-import { Ensured, Modify, QueryReturnType } from '~/types/utils';
+import { Ensured, EnsuredV2, Modify, QueryReturnType } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
   assetIdentifierToSecurityIdentifier,
@@ -50,6 +52,7 @@ import {
   hashToString,
   identityIdToString,
   middlewareEventToEventIdentifier,
+  middlewareV2EventDetailsToEventIdentifier,
   scopeIdToString,
   stringToTicker,
   tickerToDid,
@@ -389,6 +392,33 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
+   * Retrieve the identifier data (block number, date and event index) of the event that was emitted when the token was created
+   *
+   * @note uses the middlewareV2
+   * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
+   */
+  public async createdAtV2(): Promise<EventIdentifier | null> {
+    const { ticker, context } = this;
+
+    const {
+      data: {
+        assets: {
+          nodes: [asset],
+        },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'assets'>>(
+      assetQuery({
+        ticker,
+      })
+    );
+
+    return optionize(middlewareV2EventDetailsToEventIdentifier)(
+      asset?.createdBlock,
+      asset?.eventIdx
+    );
+  }
+
+  /**
    * Freeze transfers of the Asset
    */
   public freeze: NoArgsProcedureMethod<Asset>;
@@ -604,6 +634,37 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
     });
 
     return finalResults;
+  }
+
+  /**
+   * Retrieve this Asset's Operation History
+   *
+   * @note Operations are grouped by the agent Identity who performed them
+   *
+   * @note uses the middlewareV2
+   */
+  public async getOperationHistoryV2(): Promise<HistoricAgentOperation[]> {
+    const { context, ticker: assetId } = this;
+
+    const {
+      data: {
+        tickerExternalAgentHistories: { nodes },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'tickerExternalAgentHistories'>>(
+      tickerExternalAgentHistoryQuery({
+        assetId,
+      })
+    );
+
+    const groupedData = groupBy(nodes, 'identityId');
+
+    return map(groupedData, (history, did) => ({
+      identity: new Identity({ did }, context),
+      history: history.map(({ createdBlock, eventIdx }) =>
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        middlewareV2EventDetailsToEventIdentifier(createdBlock!, eventIdx)
+      ),
+    }));
   }
 
   /**
