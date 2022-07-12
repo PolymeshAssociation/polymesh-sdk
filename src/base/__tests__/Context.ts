@@ -82,19 +82,6 @@ describe('Context class', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should throw an error if accessing the transaction submodule without an active Account', async () => {
-    const context = await Context.create({
-      polymeshApi: dsMockUtils.getApiInstance(),
-      middlewareApi: dsMockUtils.getMiddlewareApi(),
-      middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
-      signingManager: dsMockUtils.getSigningManagerInstance({ getAccounts: [] }),
-    });
-
-    expect(() => context.polymeshApi.tx).toThrow(
-      'Cannot perform transactions without an active Account'
-    );
-  });
-
   it('should throw an error if accessing the middleware client without an active connection', async () => {
     const context = await Context.create({
       polymeshApi: dsMockUtils.getApiInstance(),
@@ -1496,16 +1483,15 @@ describe('Context class', () => {
       const expiryOne = new Date('10/14/2020');
       const expiryTwo = new Date('10/14/2060');
 
-      /* eslint-disable @typescript-eslint/naming-convention */
       const claim1stKey = dsMockUtils.createMockClaim1stKey({
         target: dsMockUtils.createMockIdentityId(targetDid),
-        claim_type: dsMockUtils.createMockClaimType(ClaimType.CustomerDueDiligence),
+        claimType: dsMockUtils.createMockClaimType(ClaimType.CustomerDueDiligence),
       });
 
       const identityClaim = {
-        claim_issuer: dsMockUtils.createMockIdentityId(issuerDid),
-        issuance_date: dsMockUtils.createMockMoment(new BigNumber(issuedAt.getTime())),
-        last_update_date: dsMockUtils.createMockMoment(),
+        claimIssuer: dsMockUtils.createMockIdentityId(issuerDid),
+        issuanceDate: dsMockUtils.createMockMoment(new BigNumber(issuedAt.getTime())),
+        lastUpdateDate: dsMockUtils.createMockMoment(),
         claim: dsMockUtils.createMockClaim({
           CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
         }),
