@@ -108,8 +108,8 @@ export async function prepareAddTransferRestriction(
     const value = args.percentage;
     restriction = { type, value };
   } else if (type === TransferRestrictionType.ClaimCount) {
-    const { min, max, issuer, claim } = args;
-    restriction = { type, value: { min, max, issuer, claim } };
+    const { min, max: maybeMax, issuer, claim } = args;
+    restriction = { type, value: { min, max: maybeMax, issuer, claim } };
   } else {
     const { min, max, issuer, claim } = args;
     restriction = { type, value: { min, max, issuer, claim } };
