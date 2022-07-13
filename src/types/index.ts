@@ -1,5 +1,6 @@
 import { TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
+import { type } from 'os';
 
 import {
   CorporateActionTargets,
@@ -26,7 +27,9 @@ import {
   Offering,
   TransactionQueue,
 } from '~/internal';
+import { StatType } from '~/types/internal';
 import { Modify } from '~/types/utils';
+import { statsClaimToStatClaimInputType } from '~/utils/conversion';
 
 export * from '~/generated/types';
 
@@ -339,6 +342,21 @@ export type StatClaimInput =
   | StatAccreditedClaimInput
   | StatAffiliateClaimInput;
 
+export type StatTypeInput =
+  | {
+      type: StatType.Count;
+    }
+  | {
+      type: StatType.Balance;
+    }
+  | {
+      type: StatType.ScopedCount;
+      claimIssuer: StatClaimIssuer;
+    }
+  | {
+      type: StatType.ScopedBalance;
+      claimIssuer: StatClaimIssuer;
+    };
 export interface IdentityWithClaims {
   identity: Identity;
   claims: ClaimData[];

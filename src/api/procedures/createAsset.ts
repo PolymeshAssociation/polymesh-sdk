@@ -21,8 +21,11 @@ import {
   boolToBoolean,
   internalAssetTypeToAssetType,
   securityIdentifierToAssetIdentifier,
+  statisticStatTypesToBtreeStatType,
+  statTypeInputToRawStatType,
   stringToBytes,
   stringToTicker,
+  stringToTickerKey,
 } from '~/utils/conversion';
 import { checkTxType, optionize } from '~/utils/internal';
 
@@ -107,6 +110,7 @@ export async function prepareCreateAsset(
     documents,
     requireInvestorUniqueness,
     reservationRequired,
+    initialStatistics,
   } = args;
 
   if (status === TickerReservationStatus.AssetCreated) {
@@ -237,6 +241,20 @@ export async function prepareCreateAsset(
       checkTxType({
         transaction: tx.asset.issue,
         args: [rawTicker, rawInitialSupply],
+      })
+    );
+  }
+
+  if (initialStatistics) {
+    const tickerKey = stringToTickerKey(ticker, context);
+    const rawStats = initialStatistics.map(i => statTypeInputToRawStatType(i, context));
+
+    const bTreeStats = statisticStatTypesToBtreeStatType(rawStats, context);
+
+    transactions.push(
+      checkTxType({
+        transaction: tx.statistics.setActiveAssetStats,
+        args: [tickerKey, bTreeStats],
       })
     );
   }

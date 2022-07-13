@@ -206,6 +206,7 @@ import {
   SingleClaimCondition,
   StatClaimInput,
   StatClaimType,
+  StatTypeInput,
   TargetTreatment,
   Tier,
   TransactionPermissions,
@@ -3968,4 +3969,20 @@ export function countStatInputToStatUpdates(
   const secondKey = createStat2ndKey('NoClaimStat', context);
   const stat = keyAndValueToStatUpdate(secondKey, bigNumberToU128(count, context), context);
   return statUpdatesToBtreeStatUpdate([stat], context);
+}
+
+/**
+ * @hidden
+ */
+export function statTypeInputToRawStatType(
+  input: StatTypeInput,
+  context: Context
+): PolymeshPrimitivesStatisticsStatType {
+  const { type } = input;
+  const op = statTypeToStatOpType(type, context);
+  let claimIssuer;
+  if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
+    claimIssuer = claimIssuerToMeshClaimIssuer(input.claimIssuer, context);
+  }
+  return statisticsOpTypeToStatType({ op, claimIssuer }, context);
 }

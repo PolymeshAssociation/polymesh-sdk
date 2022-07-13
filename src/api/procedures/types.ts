@@ -38,6 +38,7 @@ import {
   Scope,
   SecurityIdentifier,
   StatClaimInput,
+  StatTypeInput,
   TransactionPermissions,
   TxGroup,
   VenueType,
@@ -236,6 +237,18 @@ export interface CreateAssetParams {
    *   to hold it. More information about Investor Uniqueness and PUIS [here](https://developers.polymesh.live/introduction/identity#polymesh-unique-identity-system-puis)
    */
   requireInvestorUniqueness: boolean;
+
+  /**
+   * (optional) type of statistics that should be enabled for the Asset
+   *
+   * Enabling statistics allows for TransferRestrictions to be made. For example the SEC requires registration for a company that
+   * has either more than 2000 investors, or more than 500 non accredited investors. To prevent crossing this limit two restrictions are
+   * needed, a `Count` of 2000, and a `ScopedCount` of non accredited with a maximum of 500. [source](https://www.sec.gov/info/smallbus/secg/jobs-act-section-12g-small-business-compliance-guide.htm)
+   *
+   * These restrictions require a `Count` and `ScopedCount` statistic to be created. Although they an be created after the Asset is made, it is recommended to create statistics
+   * before the Asset is circulated. Count statistics made after Asset creation need their initial value set, so it is simpler to create them before investors hold the Asset.
+   */
+  initialStatistics?: StatTypeInput[];
 }
 
 export interface CreateAssetWithTickerParams extends CreateAssetParams {
