@@ -12,7 +12,6 @@ import {
   NumberedPortfolio,
   Venue,
 } from '~/internal';
-import { StatType } from '~/polkadot';
 import {
   ActiveTransferRestrictions,
   AssetDocument,

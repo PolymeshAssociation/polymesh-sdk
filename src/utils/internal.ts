@@ -55,6 +55,7 @@ import {
   ProcedureMethod,
   ProcedureOpts,
   Scope,
+  StatType,
   TransferRestriction,
   TransferRestrictionType,
   TxTag,
@@ -68,7 +69,6 @@ import {
   PolymeshTx,
   StatClaimIssuer,
   StatisticsOpType,
-  StatType,
   TxWithArgs,
 } from '~/types/internal';
 import { HumanReadableType, ProcedureFunc, UnionOfProcedureFuncs } from '~/types/utils';

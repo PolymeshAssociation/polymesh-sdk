@@ -1,6 +1,5 @@
 import { TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { type } from 'os';
 
 import {
   CorporateActionTargets,
@@ -27,9 +26,7 @@ import {
   Offering,
   TransactionQueue,
 } from '~/internal';
-import { StatType } from '~/types/internal';
 import { Modify } from '~/types/utils';
-import { statsClaimToStatClaimInputType } from '~/utils/conversion';
 
 export * from '~/generated/types';
 
@@ -362,6 +359,27 @@ export interface IdentityWithClaims {
   claims: ClaimData[];
 }
 
+/**
+ * Represents the different type of statistics that can be enabled for an Asset
+ */
+export enum StatType {
+  /**
+   * Keeps a count of the total number of investors
+   */
+  Count = 'Count',
+  /**
+   * Keeps track of the amount of supply investors hold
+   */
+  Balance = 'Balance',
+  /**
+   * Keeps a count of the total number of investors who have a certain claim
+   */
+  ScopedCount = 'ScopedCount',
+  /**
+   * Keeps track of the amount of supply investors hold who have a certain claim
+   */
+  ScopedBalance = 'ScopedBalance',
+}
 export interface ExtrinsicData {
   blockHash: string;
   blockNumber: BigNumber;

@@ -33,10 +33,11 @@ import {
   ErrorCode,
   ModuleName,
   ProcedureMethod,
+  StatType,
   TransferRestrictionType,
   TxTags,
 } from '~/types';
-import { StatisticsOpType, StatType } from '~/types/internal';
+import { StatisticsOpType } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';

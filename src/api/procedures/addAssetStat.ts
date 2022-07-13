@@ -4,9 +4,10 @@ import {
   ClaimCountStatInput,
   ClaimPercentageStatInput,
   ErrorCode,
+  StatType,
   TxTags,
 } from '~/types';
-import { ProcedureAuthorization, StatisticsOpType, StatType } from '~/types/internal';
+import { ProcedureAuthorization, StatisticsOpType } from '~/types/internal';
 import {
   claimCountStatInputToStatUpdates,
   claimIssuerToMeshClaimIssuer,

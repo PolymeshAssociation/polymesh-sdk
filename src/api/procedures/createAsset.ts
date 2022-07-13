@@ -5,10 +5,12 @@ import { values } from 'lodash';
 import { Asset, Context, PolymeshError, Procedure, TickerReservation } from '~/internal';
 import { CustomAssetTypeId } from '~/polkadot/polymesh';
 import {
+  AssetTx,
   CreateAssetWithTickerParams,
   ErrorCode,
   KnownAssetType,
   RoleType,
+  StatisticsTx,
   TickerReservationStatus,
   TxTag,
   TxTags,
@@ -245,20 +247,6 @@ export async function prepareCreateAsset(
     );
   }
 
-  if (initialStatistics) {
-    const tickerKey = stringToTickerKey(ticker, context);
-    const rawStats = initialStatistics.map(i => statTypeInputToRawStatType(i, context));
-
-    const bTreeStats = statisticStatTypesToBtreeStatType(rawStats, context);
-
-    transactions.push(
-      checkTxType({
-        transaction: tx.statistics.setActiveAssetStats,
-        args: [tickerKey, bTreeStats],
-      })
-    );
-  }
-
   if (documents?.length) {
     const rawDocuments = documents.map(doc => assetDocumentToDocument(doc, context));
 
@@ -280,6 +268,18 @@ export async function prepareCreateAsset(
     );
   }
 
+  if (initialStatistics?.length) {
+    const tickerKey = stringToTickerKey(ticker, context);
+    const rawStats = initialStatistics.map(i => statTypeInputToRawStatType(i, context));
+    const bTreeStats = statisticStatTypesToBtreeStatType(rawStats, context);
+    transactions.push(
+      checkTxType({
+        transaction: tx.statistics.setActiveAssetStats,
+        args: [tickerKey, bTreeStats],
+      })
+    );
+  }
+
   this.addBatchTransaction({
     transactions,
     fee,
@@ -293,13 +293,13 @@ export async function prepareCreateAsset(
  */
 export async function getAuthorization(
   this: Procedure<Params, Asset, Storage>,
-  { ticker, documents }: Params
+  { ticker, documents, initialStatistics }: Params
 ): Promise<ProcedureAuthorization> {
   const {
     storage: { customTypeData, status },
   } = this;
 
-  const transactions = [TxTags.asset.CreateAsset];
+  const transactions: (AssetTx | StatisticsTx)[] = [TxTags.asset.CreateAsset];
 
   if (documents?.length) {
     transactions.push(TxTags.asset.AddDocuments);
@@ -307,6 +307,10 @@ export async function getAuthorization(
 
   if (customTypeData?.id.isEmpty) {
     transactions.push(TxTags.asset.RegisterCustomAssetType);
+  }
+
+  if (initialStatistics?.length) {
+    transactions.push(TxTags.statistics.SetActiveAssetStats);
   }
 
   const auth: ProcedureAuthorization = {

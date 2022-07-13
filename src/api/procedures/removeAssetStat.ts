@@ -1,8 +1,8 @@
 import { QueryableStorageEntry } from '@polkadot/api/types';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
-import { ClaimPercentageStatInput, ErrorCode, TxTags } from '~/types';
-import { ProcedureAuthorization, StatType } from '~/types/internal';
+import { ClaimPercentageStatInput, ErrorCode, StatType, TxTags } from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
 import { QueryReturnType } from '~/types/utils';
 import {
   claimIssuerToMeshClaimIssuer,
