@@ -655,6 +655,9 @@ describe('Polymesh Transaction Base class', () => {
 
       expect(fees.protocol).toEqual(new BigNumber(500));
       expect(fees.gas).toEqual(new BigNumber(5));
+      expect(payingAccountData.type).toBe(PayingAccountType.Caller);
+      expect(payingAccountData.account.address).toBe('0xdummy');
+      expect(payingAccountData.balance).toEqual(new BigNumber(100000));
 
       tx = new PolymeshTransaction<void>(
         {

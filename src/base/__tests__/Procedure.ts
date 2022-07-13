@@ -404,39 +404,6 @@ describe('Procedure class', () => {
         signingAddress: 'something',
       });
       sinon.assert.calledWith(context.setSigningAddress, 'something');
-
-      // const func2 = async function (
-      //   this: Procedure<typeof procArgs, string>,
-      //   args: typeof procArgs
-      // ): Promise<MaybePostTransactionValue<string>> {
-      //   return this.addProcedure(proc1, args);
-      // };
-
-      // dsMockUtils.reset();
-
-      // const proc2 = new Procedure(func2);
-
-      // context = dsMockUtils.getContextInstance();
-
-      // queue = await proc2.prepare({ args: procArgs }, context);
-      // expect(queue).toMatchObject({
-      //   transactions: [
-      //     { transaction: tx1, args: [ticker] },
-      //     { transaction: tx2, args: [secondaryAccounts] },
-      //   ],
-      //   procedureResult: returnValue,
-      // });
-      // sinon.assert.calledWith(
-      //   constructorStub,
-      //   sinon.match({
-      //     transactions: sinon.match([
-      //       sinon.match({ transaction: tx1, args: [ticker] }),
-      //       sinon.match({ transaction: tx2, args: [secondaryAccounts] }),
-      //     ]),
-      //     procedureResult: returnValue,
-      //   }),
-      //   context
-      // );
     });
 
     it('should throw any errors encountered during preparation', () => {
