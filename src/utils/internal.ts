@@ -1326,10 +1326,10 @@ export function compareTransferRestrictionToInput(
   const { type, value } = inputRestriction;
   if (rawRestriction.isMaxInvestorCount && type === TransferRestrictionType.Count) {
     const currentCount = u64ToBigNumber(rawRestriction.asMaxInvestorCount);
-    return currentCount.eq(value as BigNumber);
+    return currentCount.eq(value);
   } else if (rawRestriction.isMaxInvestorOwnership && type === TransferRestrictionType.Percentage) {
     const currentOwnership = permillToBigNumber(rawRestriction.asMaxInvestorOwnership);
-    return currentOwnership.eq(value as BigNumber);
+    return currentOwnership.eq(value);
   } else if (rawRestriction.isClaimCount && type === TransferRestrictionType.ClaimCount) {
     const [statClaim, rawIssuerId, rawMin, maybeMax] = rawRestriction.asClaimCount;
     const issuerDid = identityIdToString(rawIssuerId);
