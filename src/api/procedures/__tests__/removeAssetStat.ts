@@ -139,10 +139,7 @@ describe('removeAssetStat procedure', () => {
     });
     rawClaimCountStatType = dsMockUtils.createMockStatisticsStatType({
       op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.ClaimCount),
-      claimIssuer: [
-        dsMockUtils.createMockIdentitiesClaimClaimType(),
-        dsMockUtils.createMockIdentityId(),
-      ],
+      claimIssuer: [dsMockUtils.createMockClaimType(), dsMockUtils.createMockIdentityId()],
     });
     statBtreeSet = dsMockUtils.createMockBTreeSet([
       rawCountStatType,

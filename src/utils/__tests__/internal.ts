@@ -1076,7 +1076,7 @@ describe('neededStatTypeForRestrictionInput', () => {
     const mockClaimIssuer: [
       PolymeshPrimitivesIdentityClaimClaimType,
       PolymeshPrimitivesIdentityId
-    ] = [dsMockUtils.createMockIdentitiesClaimClaimType(), dsMockUtils.createMockIdentityId()];
+    ] = [dsMockUtils.createMockClaimType(), dsMockUtils.createMockIdentityId()];
 
     sinon.stub(utilsConversionModule, 'claimIssuerToMeshClaimIssuer').returns(mockClaimIssuer);
 
@@ -1343,11 +1343,11 @@ describe('compareStatTypeToTransferRestrictionType', () => {
 
   const claimCountStat = dsMockUtils.createMockStatisticsStatType({
     op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count),
-    claimIssuer: [dsMockUtils.createMockIdentitiesClaimClaimType(ClaimType.Affiliate), issuerId],
+    claimIssuer: [dsMockUtils.createMockClaimType(ClaimType.Affiliate), issuerId],
   });
   const claimPercentageStat = dsMockUtils.createMockStatisticsStatType({
     op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Balance),
-    claimIssuer: [dsMockUtils.createMockIdentitiesClaimClaimType(ClaimType.Affiliate), issuerId],
+    claimIssuer: [dsMockUtils.createMockClaimType(ClaimType.Affiliate), issuerId],
   });
 
   it('should return true if the PolymeshPrimitivesStatisticsStatType matches the given TransferRestriction', () => {
@@ -1443,7 +1443,7 @@ describe('compareStatsToInput', () => {
 
     const claimCountStat = dsMockUtils.createMockStatisticsStatType({
       op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count),
-      claimIssuer: [dsMockUtils.createMockIdentitiesClaimClaimType(ClaimType.Affiliate), issuerId],
+      claimIssuer: [dsMockUtils.createMockClaimType(ClaimType.Affiliate), issuerId],
     });
     args = {
       type: StatType.ScopedCount,
@@ -1455,7 +1455,7 @@ describe('compareStatsToInput', () => {
 
     const claimPercentageStat = dsMockUtils.createMockStatisticsStatType({
       op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Balance),
-      claimIssuer: [dsMockUtils.createMockIdentitiesClaimClaimType(ClaimType.Affiliate), issuerId],
+      claimIssuer: [dsMockUtils.createMockClaimType(ClaimType.Affiliate), issuerId],
     });
     args = {
       type: StatType.ScopedBalance,
@@ -1491,10 +1491,7 @@ describe('compareStatsToInput', () => {
 
     const claimCountStat = dsMockUtils.createMockStatisticsStatType({
       op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count),
-      claimIssuer: [
-        dsMockUtils.createMockIdentitiesClaimClaimType(ClaimType.Jurisdiction),
-        issuerId,
-      ],
+      claimIssuer: [dsMockUtils.createMockClaimType(ClaimType.Jurisdiction), issuerId],
     });
     args = {
       type: StatType.ScopedCount,

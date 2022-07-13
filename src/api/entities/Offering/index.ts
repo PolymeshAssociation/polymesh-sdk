@@ -13,7 +13,9 @@ import {
   toggleFreezeOffering,
 } from '~/internal';
 import { investments } from '~/middleware/queries';
+import { investmentsQuery } from '~/middleware/queriesV2';
 import { Query } from '~/middleware/types';
+import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   InvestInOfferingParams,
   ModifyOfferingTimesParams,
@@ -23,7 +25,7 @@ import {
   SubCallback,
   UnsubCallback,
 } from '~/types';
-import { Ensured } from '~/types/utils';
+import { Ensured, EnsuredV2 } from '~/types/utils';
 import { bigNumberToU64, fundraiserToOfferingDetails, stringToTicker } from '~/utils/conversion';
 import { calculateNextKey, createProcedureMethod, toHumanReadable } from '~/utils/internal';
 
@@ -235,6 +237,61 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
       });
     });
     /* eslint-enable @typescript-eslint/no-non-null-assertion */
+
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
+  }
+
+  /**
+   * Retrieve all investments made on this Offering
+   *
+   * @param opts.size - page size
+   * @param opts.start - page offset
+   *
+   * @note supports pagination
+   * @note uses the middleware V2
+   */
+  public async getInvestmentsV2(
+    opts: {
+      size?: BigNumber;
+      start?: BigNumber;
+    } = {}
+  ): Promise<ResultSet<Investment>> {
+    const {
+      context,
+      id,
+      asset: { ticker },
+    } = this;
+
+    const { size, start } = opts;
+
+    const {
+      data: {
+        investments: { nodes, totalCount },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'investments'>>(
+      investmentsQuery(
+        {
+          stoId: id.toNumber(),
+          offeringToken: ticker,
+        },
+        size,
+        start
+      )
+    );
+
+    const count = new BigNumber(totalCount);
+
+    const data = nodes.map(({ investorId: did, offeringTokenAmount, raiseTokenAmount }) => ({
+      investor: new Identity({ did }, context),
+      soldAmount: new BigNumber(offeringTokenAmount).shiftedBy(-6),
+      investedAmount: new BigNumber(raiseTokenAmount).shiftedBy(-6),
+    }));
 
     const next = calculateNextKey(count, size, start);
 
