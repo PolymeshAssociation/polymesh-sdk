@@ -40,7 +40,6 @@ import {
   CalendarPeriod,
   CalendarUnit,
   Claim,
-  ClaimCountRestrictionValue,
   ClaimType,
   Condition,
   ConditionType,
@@ -56,6 +55,7 @@ import {
   ProcedureMethod,
   ProcedureOpts,
   Scope,
+  TransferRestriction,
   TransferRestrictionType,
   TxTag,
 } from '~/types';
@@ -1320,48 +1320,42 @@ function compareOptionalBigNumbers(a: BigNumber | undefined, b: BigNumber | unde
  * @hidden
  */
 export function compareTransferRestrictionToInput(
-  transferRestriction: PolymeshPrimitivesTransferComplianceTransferCondition,
-  value: BigNumber | ClaimCountRestrictionValue,
-  type: TransferRestrictionType
+  rawRestriction: PolymeshPrimitivesTransferComplianceTransferCondition,
+  inputRestriction: TransferRestriction
 ): boolean {
-  if (transferRestriction.isMaxInvestorCount && type === TransferRestrictionType.Count) {
-    const currentCount = u64ToBigNumber(transferRestriction.asMaxInvestorCount);
+  const { type, value } = inputRestriction;
+  if (rawRestriction.isMaxInvestorCount && type === TransferRestrictionType.Count) {
+    const currentCount = u64ToBigNumber(rawRestriction.asMaxInvestorCount);
     return currentCount.eq(value as BigNumber);
-  } else if (
-    transferRestriction.isMaxInvestorOwnership &&
-    type === TransferRestrictionType.Percentage
-  ) {
-    const currentOwnership = permillToBigNumber(transferRestriction.asMaxInvestorOwnership);
+  } else if (rawRestriction.isMaxInvestorOwnership && type === TransferRestrictionType.Percentage) {
+    const currentOwnership = permillToBigNumber(rawRestriction.asMaxInvestorOwnership);
     return currentOwnership.eq(value as BigNumber);
-  } else if (transferRestriction.isClaimCount && type === TransferRestrictionType.ClaimCount) {
-    const [statClaim, rawIssuerId, rawMin, maybeMax] = transferRestriction.asClaimCount;
+  } else if (rawRestriction.isClaimCount && type === TransferRestrictionType.ClaimCount) {
+    const [statClaim, rawIssuerId, rawMin, maybeMax] = rawRestriction.asClaimCount;
     const issuerDid = identityIdToString(rawIssuerId);
     const min = u64ToBigNumber(rawMin);
     const max = maybeMax.isSome ? u64ToBigNumber(maybeMax.unwrap()) : undefined;
-    const castedValue = value as ClaimCountRestrictionValue;
+    const { min: valueMin, max: valueMax, claim: valueClaim, issuer: valueIssuer } = value;
 
     return (
-      castedValue.min.eq(min) &&
-      compareOptionalBigNumbers(max, castedValue.max) &&
-      castedValue.claim.type === getClaimType(statClaim) &&
-      issuerDid === castedValue.issuer.did
+      valueMin.eq(min) &&
+      compareOptionalBigNumbers(max, valueMax) &&
+      valueClaim.type === getClaimType(statClaim) &&
+      issuerDid === valueIssuer.did
     );
-  } else if (
-    transferRestriction.isClaimOwnership &&
-    type === TransferRestrictionType.ClaimPercentage
-  ) {
-    const castedValue = value as ClaimCountRestrictionValue;
-    const [statClaim, rawIssuerId, rawMin, rawMax] = transferRestriction.asClaimOwnership;
+  } else if (rawRestriction.isClaimOwnership && type === TransferRestrictionType.ClaimPercentage) {
+    const { min: valueMin, max: valueMax, claim: valueClaim, issuer: valueIssuer } = value;
+    const [statClaim, rawIssuerId, rawMin, rawMax] = rawRestriction.asClaimOwnership;
     const issuerDid = identityIdToString(rawIssuerId);
 
     const min = permillToBigNumber(rawMin);
     const max = permillToBigNumber(rawMax);
 
     return (
-      castedValue.min.eq(min) &&
-      compareOptionalBigNumbers(castedValue.max, max) &&
-      castedValue.claim.type === getClaimType(statClaim) &&
-      issuerDid === castedValue.issuer.did
+      valueMin.eq(min) &&
+      valueMax.eq(max) &&
+      valueClaim.type === getClaimType(statClaim) &&
+      issuerDid === valueIssuer.did
     );
   }
 

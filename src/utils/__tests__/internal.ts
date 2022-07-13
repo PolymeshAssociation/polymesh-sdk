@@ -1144,22 +1144,20 @@ describe('compareTransferRestrictionToInput', () => {
     const countTransferRestriction = dsMockUtils.createMockTransferCondition({
       MaxInvestorCount: dsMockUtils.createMockU64(new BigNumber(10)),
     });
-    let result = compareTransferRestrictionToInput(
-      countTransferRestriction,
-      new BigNumber(10),
-      TransferRestrictionType.Count
-    );
+    let result = compareTransferRestrictionToInput(countTransferRestriction, {
+      type: TransferRestrictionType.Count,
+      value: new BigNumber(10),
+    });
     expect(result).toEqual(true);
 
     const percentTransferRestriction = dsMockUtils.createMockTransferCondition({
       MaxInvestorOwnership: dsMockUtils.createMockPermill(new BigNumber(100000)),
     });
 
-    result = compareTransferRestrictionToInput(
-      percentTransferRestriction,
-      new BigNumber(10),
-      TransferRestrictionType.Percentage
-    );
+    result = compareTransferRestrictionToInput(percentTransferRestriction, {
+      type: TransferRestrictionType.Percentage,
+      value: new BigNumber(10),
+    });
     expect(result).toEqual(true);
 
     const claimCountTransferRestriction = dsMockUtils.createMockTransferCondition({
@@ -1171,15 +1169,14 @@ describe('compareTransferRestrictionToInput', () => {
       ],
     });
 
-    result = compareTransferRestrictionToInput(
-      claimCountTransferRestriction,
-      {
+    result = compareTransferRestrictionToInput(claimCountTransferRestriction, {
+      value: {
         min: new BigNumber(10),
         claim: { type: ClaimType.Accredited, accredited: true },
         issuer: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
       },
-      TransferRestrictionType.ClaimCount
-    );
+      type: TransferRestrictionType.ClaimCount,
+    });
 
     expect(result).toEqual(true);
 
@@ -1192,16 +1189,15 @@ describe('compareTransferRestrictionToInput', () => {
       ],
     });
 
-    result = compareTransferRestrictionToInput(
-      claimCountTransferRestrictionWithMax,
-      {
+    result = compareTransferRestrictionToInput(claimCountTransferRestrictionWithMax, {
+      value: {
         min: new BigNumber(10),
         max: new BigNumber(20),
         claim: { type: ClaimType.Affiliate, affiliate: true },
         issuer: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
       },
-      TransferRestrictionType.ClaimCount
-    );
+      type: TransferRestrictionType.ClaimCount,
+    });
 
     expect(result).toEqual(true);
 
@@ -1218,16 +1214,15 @@ describe('compareTransferRestrictionToInput', () => {
       ],
     });
 
-    result = compareTransferRestrictionToInput(
-      claimPercentageTransferRestriction,
-      {
+    result = compareTransferRestrictionToInput(claimPercentageTransferRestriction, {
+      value: {
         min: new BigNumber(10),
         max: new BigNumber(20),
         claim: { type: ClaimType.Jurisdiction, countryCode: CountryCode.Ca },
         issuer: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
       },
-      TransferRestrictionType.ClaimPercentage
-    );
+      type: TransferRestrictionType.ClaimPercentage,
+    });
 
     expect(result).toEqual(true);
   });
@@ -1242,16 +1237,15 @@ describe('compareTransferRestrictionToInput', () => {
       ],
     });
 
-    let result = compareTransferRestrictionToInput(
-      claimCountTransferRestrictionWithMax,
-      {
+    let result = compareTransferRestrictionToInput(claimCountTransferRestrictionWithMax, {
+      value: {
         min: new BigNumber(10),
         max: new BigNumber(21),
         claim: { type: ClaimType.Affiliate, affiliate: true },
         issuer: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
       },
-      TransferRestrictionType.ClaimCount
-    );
+      type: TransferRestrictionType.ClaimCount,
+    });
 
     expect(result).toEqual(false);
 
@@ -1266,16 +1260,15 @@ describe('compareTransferRestrictionToInput', () => {
       ],
     });
 
-    result = compareTransferRestrictionToInput(
-      claimPercentageTransferRestrictionNoMax,
-      {
+    result = compareTransferRestrictionToInput(claimPercentageTransferRestrictionNoMax, {
+      value: {
         min: new BigNumber(10),
         max: new BigNumber(20),
         claim: { type: ClaimType.Affiliate, affiliate: true },
         issuer: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
       },
-      TransferRestrictionType.ClaimCount
-    );
+      type: TransferRestrictionType.ClaimCount,
+    });
 
     expect(result).toEqual(false);
 
@@ -1292,28 +1285,27 @@ describe('compareTransferRestrictionToInput', () => {
       ],
     });
 
-    result = compareTransferRestrictionToInput(
-      claimPercentageTransferRestriction,
-      {
+    result = compareTransferRestrictionToInput(claimPercentageTransferRestriction, {
+      value: {
         min: new BigNumber(10),
         max: new BigNumber(21),
         claim: { type: ClaimType.Jurisdiction, countryCode: CountryCode.Ca },
         issuer: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
       },
-      TransferRestrictionType.ClaimPercentage
-    );
+      type: TransferRestrictionType.ClaimPercentage,
+    });
 
     expect(result).toEqual(false);
 
-    result = compareTransferRestrictionToInput(
-      claimPercentageTransferRestriction,
-      {
+    result = compareTransferRestrictionToInput(claimPercentageTransferRestriction, {
+      value: {
         min: new BigNumber(10),
+        max: new BigNumber(21),
         claim: { type: ClaimType.Jurisdiction, countryCode: CountryCode.Ca },
         issuer: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
       },
-      TransferRestrictionType.ClaimPercentage
-    );
+      type: TransferRestrictionType.ClaimPercentage,
+    });
 
     expect(result).toEqual(false);
   });
