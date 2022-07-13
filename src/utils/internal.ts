@@ -1347,7 +1347,6 @@ export function compareTransferRestrictionToInput(
     const { min: valueMin, max: valueMax, claim: valueClaim, issuer: valueIssuer } = value;
     const [statClaim, rawIssuerId, rawMin, rawMax] = rawRestriction.asClaimOwnership;
     const issuerDid = identityIdToString(rawIssuerId);
-
     const min = permillToBigNumber(rawMin);
     const max = permillToBigNumber(rawMax);
 
