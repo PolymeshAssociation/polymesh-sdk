@@ -14,8 +14,8 @@ import { getAuthorization, prepareRemoveAssetStat } from '~/api/procedures/remov
 import { Context, PolymeshError, RemoveAssetStatParams } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ClaimType, CountryCode, ErrorCode, StatClaimType, TxTags } from '~/types';
-import { PolymeshTx, StatisticsOpType, StatType, TickerKey } from '~/types/internal';
+import { ClaimType, CountryCode, ErrorCode, StatClaimType, StatType, TxTags } from '~/types';
+import { PolymeshTx, StatisticsOpType, TickerKey } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(

@@ -230,6 +230,18 @@ export async function prepareCreateAsset(
     );
   }
 
+  if (initialStatistics?.length) {
+    const tickerKey = stringToTickerKey(ticker, context);
+    const rawStats = initialStatistics.map(i => statTypeInputToRawStatType(i, context));
+    const bTreeStats = statisticStatTypesToBtreeStatType(rawStats, context);
+    transactions.push(
+      checkTxType({
+        transaction: tx.statistics.setActiveAssetStats,
+        args: [tickerKey, bTreeStats],
+      })
+    );
+  }
+
   if (initialSupply && initialSupply.gt(0)) {
     const rawInitialSupply = bigNumberToBalance(initialSupply, context, isDivisible);
 
@@ -264,18 +276,6 @@ export async function prepareCreateAsset(
         // this will be ignored if manual fees are passed
         feeMultiplier,
         args: [rawDocuments, rawTicker],
-      })
-    );
-  }
-
-  if (initialStatistics?.length) {
-    const tickerKey = stringToTickerKey(ticker, context);
-    const rawStats = initialStatistics.map(i => statTypeInputToRawStatType(i, context));
-    const bTreeStats = statisticStatTypesToBtreeStatType(rawStats, context);
-    transactions.push(
-      checkTxType({
-        transaction: tx.statistics.setActiveAssetStats,
-        args: [tickerKey, bTreeStats],
       })
     );
   }
