@@ -43,7 +43,7 @@ export class Schedules extends Namespace<Asset> {
   }
 
   /**
-   * Create a schedule for Checkpoint creation (i.e. "Create a checkpoint every week for 5 weeks, starting next tuesday")
+   * Create a schedule for Checkpoint creation (e.g. "Create a checkpoint every week for 5 weeks, starting next tuesday")
    *
    * @note due to chain limitations, schedules are advanced and (if appropriate) executed whenever the Asset is
    *   redeemed, issued or transferred between portfolios. This means that on an Asset without much movement, there may be disparities between intended Checkpoint creation dates

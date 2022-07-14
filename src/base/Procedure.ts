@@ -56,7 +56,8 @@ async function getAgentPermissionsResult(
  * @hidden
  *
  * Represents an operation performed on the Polymesh blockchain.
- * A Procedure can be prepared to yield a {@link PolymeshTransaction} that can be run
+ * A Procedure can be prepared to return a promise that resolves
+ * to a {@link PolymeshTransaction} (or {@link PolymeshTransactionBatch}) that can be run
  */
 export class Procedure<Args = void, ReturnValue = void, Storage = Record<string, unknown>> {
   private prepareTransactions: (

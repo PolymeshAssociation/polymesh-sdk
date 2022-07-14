@@ -32,11 +32,6 @@ export type ConsumeAuthorizationRequestsParams = ConsumeParams & {
 export async function prepareConsumeAuthorizationRequests(
   this: Procedure<ConsumeAuthorizationRequestsParams>,
   args: ConsumeAuthorizationRequestsParams
-  /*
-   * we use `unknown[][]` here because it's impossible to type this without knowing
-   * how many transactions will be in the batch beforehand. Type safety is ensured via
-   * the `assembleBatchTransactions` method
-   */
 ): Promise<BatchTransactionSpec<void, unknown[][]>> {
   const {
     context: {

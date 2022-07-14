@@ -153,11 +153,6 @@ const findInvalidCddClaims = async (
 export async function prepareModifyClaims(
   this: Procedure<ModifyClaimsParams, void>,
   args: ModifyClaimsParams
-  /*
-   * we use `unknown[][]` here because it's impossible to type this without knowing
-   * how many transactions will be in the batch beforehand. Type safety is ensured via
-   * the `assembleBatchTransactions` method
-   */
 ): Promise<BatchTransactionSpec<void, unknown[][]>> {
   const { claims, operation } = args;
 

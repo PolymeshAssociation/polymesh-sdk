@@ -166,14 +166,15 @@ describe('Polymesh Transaction Base class', () => {
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
       const args = tuple('YET_ANOTHER_TICKER');
       const resolverStub = sinon.stub().resolves(1);
+      const balance = {
+        free: new BigNumber(1000000),
+        locked: new BigNumber(0),
+        total: new BigNumber(1000000),
+      };
 
       const subsidy = entityMockUtils.getSubsidyInstance();
       subsidy.subsidizer = entityMockUtils.getAccountInstance({
-        getBalance: {
-          free: new BigNumber(1000000),
-          locked: new BigNumber(0),
-          total: new BigNumber(1000000),
-        },
+        getBalance: balance,
       });
 
       context = dsMockUtils.getContextInstance({
@@ -181,11 +182,7 @@ describe('Polymesh Transaction Base class', () => {
           subsidy,
           allowance: new BigNumber(10000),
         },
-        balance: {
-          free: new BigNumber(1000000),
-          locked: new BigNumber(0),
-          total: new BigNumber(1000000),
-        },
+        balance,
       });
 
       const tx = new PolymeshTransaction(
@@ -488,7 +485,7 @@ describe('Polymesh Transaction Base class', () => {
       );
 
       await expect(tx.run()).rejects.toThrow(
-        "The subsidizer Account has not granted the caller Account enough allowance to pay this transaction's fees"
+        "Insufficient subsidy allowance to pay this transaction's fees"
       );
       expect(tx.status).toBe(TransactionStatus.Failed);
     });
@@ -800,7 +797,9 @@ describe('Polymesh Transaction Base class', () => {
 
       await fakePromises();
 
-      expect(listenerStub.getCall(0).args[0].message).toBe('Timed out');
+      expect(listenerStub.getCall(0).args[0].message).toBe(
+        'Middleware has not synced after 5 attempts'
+      );
     });
 
     it('should throw an error if the middleware is not enabled', async () => {

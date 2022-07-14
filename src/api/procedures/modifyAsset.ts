@@ -48,11 +48,6 @@ export type Params = { ticker: string } & ModifyAssetParams;
 export async function prepareModifyAsset(
   this: Procedure<Params, Asset>,
   args: Params
-  /*
-   * we use `unknown[][]` here because it's impossible to type this without knowing
-   * how many transactions will be in the batch beforehand. Type safety is ensured via
-   * the `checkTxType` method
-   */
 ): Promise<BatchTransactionSpec<Asset, unknown[][]>> {
   const {
     context: {

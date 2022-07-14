@@ -49,8 +49,10 @@ export async function prepareModifyAllowance(
   this: Procedure<ModifyAllowanceParams, void>,
   args: ModifyAllowanceParams
 ): Promise<
-  | TransactionSpec<void, ExtrinsicParams<'relayer', 'updatePolyxLimit'>>
-  | TransactionSpec<void, ExtrinsicParams<'relayer', 'decreasePolyxLimit'>>
+  TransactionSpec<
+    void,
+    ExtrinsicParams<'relayer', 'updatePolyxLimit' | 'decreasePolyxLimit' | 'increasePolyxLimit'>
+  >
 > {
   const {
     context: {

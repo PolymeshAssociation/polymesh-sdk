@@ -38,8 +38,8 @@ export type Extrinsics = SubmittableExtrinsics<'promise'>;
 /**
  * Parameter list for a specific extrinsic
  *
- * @param ModuleName - pallet name (i.e. 'asset')
- * @param TransactionName - extrinsic name (i.e. 'registerTicker')
+ * @param ModuleName - pallet name (e.g. 'asset')
+ * @param TransactionName - extrinsic name (e.g. 'registerTicker')
  */
 export type ExtrinsicParams<
   ModuleName extends keyof Extrinsics,
@@ -112,9 +112,6 @@ export type TxWithArgs<Args extends unknown[] = unknown[]> = BaseTx<Args> &
         args?: undefined; // this ugly hack is so that tx args don't have to be passed for transactions that don't take args
       }
     : {
-        /**
-         * arguments that the transaction will receive
-         */
         args: Args;
       });
 
@@ -171,14 +168,18 @@ export type ResolverFunctionArray<Values extends unknown[]> = {
 };
 
 /**
- * Function that yields a value from a transaction receipt
+ * Function that returns a value (or promise that resolves to a value) from a transaction receipt
  */
 export type ResolverFunction<ReturnValue> = (
   receipt: ISubmittableResult
 ) => Promise<ReturnValue> | ReturnValue;
 
 /**
- * Either a resolver function that returns a value (or a value wrapped in a promise), or a plain value
+ * Representation of the value that will be returned by a Procedure after it is run
+ *
+ * It can be:
+ *   - a plain value
+ *   - a resolver function that returns either a value or a promise that resolves to a value
  */
 export type MaybeResolverFunction<ReturnValue> = ResolverFunction<ReturnValue> | ReturnValue;
 
@@ -206,7 +207,7 @@ export interface BaseTransactionSpec<ReturnValue, TransformedReturnValue = Retur
    */
   paidForBy?: Identity;
   /**
-   * value that the transaction will yield once it has run, or a function that yields that value
+   * value that the transaction will return once it has run, or a function that returns that value
    */
   resolver: MaybeResolverFunction<ReturnValue>;
   /**
@@ -218,7 +219,11 @@ export interface BaseTransactionSpec<ReturnValue, TransformedReturnValue = Retur
 /**
  * Schema of a transaction batch
  *
- * @param Args - arguments of the transaction
+ * @param Args - tuple where each value represents the type of the arguments of one of the transactions
+ *   in the batch. There are cases where it is impossible to know this type beforehand. For example, if
+ *   the amount (or type) of transactions in the batch depends on an argument or the chain state. For those cases,
+ *   `unknown[][]` should be used, and extra care must be taken to ensure the correct transactions (and arguments)
+ *   are being returned
  */
 export interface BatchTransactionSpec<
   ReturnValue,

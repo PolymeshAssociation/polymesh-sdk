@@ -1268,8 +1268,11 @@ export function createRpcStub(
     returnValue?: unknown;
   }
 ): SinonStub {
-  const runtimeModule = {} as any;
-  rpcModule[mod] = runtimeModule;
+  let runtimeModule: any = rpcModule[mod];
+
+  if (!runtimeModule) {
+    runtimeModule = rpcModule[mod] = {};
+  }
 
   const stub: SinonStub = sinon.stub();
   runtimeModule[rpc] = stub;

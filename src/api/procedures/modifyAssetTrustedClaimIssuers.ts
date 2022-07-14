@@ -99,11 +99,6 @@ const areSameClaimIssuers = (
 export async function prepareModifyAssetTrustedClaimIssuers(
   this: Procedure<Params, Asset>,
   args: Params
-  /*
-   * we use `unknown[][]` here because it's impossible to type this without knowing
-   * how many transactions will be in the batch beforehand. Type safety is ensured via
-   * the `assembleBatchTransactions` method
-   */
 ): Promise<BatchTransactionSpec<Asset, unknown[][]>> {
   const {
     context: {

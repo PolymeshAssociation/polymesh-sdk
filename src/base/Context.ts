@@ -520,7 +520,7 @@ export class Context {
    *
    * Retrieve the protocol fees associated with running specific transactions
    *
-   * @param tags - list of transaction tags (i.e. [TxTags.asset.CreateAsset, TxTags.asset.RegisterTicker] or ["asset.createAsset", "asset.registerTicker"])
+   * @param tags - list of transaction tags (e.g. [TxTags.asset.CreateAsset, TxTags.asset.RegisterTicker] or ["asset.createAsset", "asset.registerTicker"])
    * @param blockHash - optional hash of the block to get the protocol fees at that block
    */
   public async getProtocolFees({
@@ -1128,10 +1128,13 @@ export class Context {
   /**
    * @hidden
    *
-   * Retrieve the latest block number
+   * Retrieve the number of the latest finalized block
    */
   public async getLatestBlock(): Promise<BigNumber> {
-    const { number } = await this.polymeshApi.rpc.chain.getHeader();
+    const { chain } = this.polymeshApi.rpc;
+
+    const hash = await chain.getFinalizedHead();
+    const { number } = await chain.getHeader(hash);
 
     return u32ToBigNumber(number.unwrap());
   }

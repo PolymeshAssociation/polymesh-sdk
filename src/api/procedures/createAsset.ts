@@ -38,7 +38,7 @@ export interface CreateAssetParams {
    */
   isDivisible: boolean;
   /**
-   * type of security that the Asset represents (i.e. Equity, Debt, Commodity, etc). Common values are included in the
+   * type of security that the Asset represents (e.g. Equity, Debt, Commodity). Common values are included in the
    *   {@link KnownAssetType} enum, but custom values can be used as well. Custom values must be registered on-chain the first time
    *   they're used, requiring an additional transaction. They aren't tied to a specific Asset
    */
@@ -48,7 +48,7 @@ export interface CreateAssetParams {
    */
   securityIdentifiers?: SecurityIdentifier[];
   /**
-   * (optional) funding round in which the Asset currently is (Series A, Series B, etc)
+   * (optional) funding round in which the Asset currently is (e.g. Series A, Series B)
    */
   fundingRound?: string;
   documents?: AssetDocument[];
@@ -122,11 +122,6 @@ async function addManualFees(
 export async function prepareCreateAsset(
   this: Procedure<Params, Asset, Storage>,
   args: Params
-  /*
-   * we use `unknown[][]` here because it's near impossible to type this without knowing
-   * how many transactions will be in the batch beforehand. Type safety is ensured via
-   * the `checkTx` method
-   */
 ): Promise<BatchTransactionSpec<Asset, unknown[][]>> {
   const {
     context: {

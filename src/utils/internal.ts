@@ -1066,7 +1066,7 @@ function handleSpecVersionResponse(
   } = data;
 
   /*
-   * the spec version number comes as a single number (i.e. 5000000). It should be parsed as xxx_yyy_zzz
+   * the spec version number comes as a single number (e.g. 5000000). It should be parsed as xxx_yyy_zzz
    * where xxx is the major version, yyy is the minor version, and zzz is the patch version. So for example, 5001023
    * would be version 5.1.23
    */

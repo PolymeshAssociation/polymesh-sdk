@@ -45,14 +45,14 @@ export class Network {
   }
 
   /**
-   * Retrieve the number of the latest block in the chain
+   * Retrieve the number of the latest finalized block in the chain
    */
   public getLatestBlock(): Promise<BigNumber> {
     return this.context.getLatestBlock();
   }
 
   /**
-   * Fetch the current network version (i.e. 3.1.0)
+   * Fetch the current network version (e.g. 3.1.0)
    */
   public async getVersion(): Promise<string> {
     return this.context.getNetworkVersion();
@@ -90,7 +90,7 @@ export class Network {
   /**
    * Retrieve the protocol fees associated with running specific transactions
    *
-   * @param args.tags - list of transaction tags (i.e. [TxTags.asset.CreateAsset, TxTags.asset.RegisterTicker] or ["asset.createAsset", "asset.registerTicker"])
+   * @param args.tags - list of transaction tags (e.g. [TxTags.asset.CreateAsset, TxTags.asset.RegisterTicker] or ["asset.createAsset", "asset.registerTicker"])
    */
   public getProtocolFees(args: { tags: TxTag[] }): Promise<ProtocolFees[]> {
     return this.context.getProtocolFees(args);

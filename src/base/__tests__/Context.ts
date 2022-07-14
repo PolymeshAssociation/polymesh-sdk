@@ -1371,6 +1371,9 @@ describe('Context class', () => {
     it('should return the latest block', async () => {
       const blockNumber = new BigNumber(100);
 
+      dsMockUtils.createRpcStub('chain', 'getFinalizedHead', {
+        returnValue: dsMockUtils.createMockBlockHash('0x01'),
+      });
       dsMockUtils.createRpcStub('chain', 'getHeader', {
         returnValue: {
           number: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(blockNumber)),

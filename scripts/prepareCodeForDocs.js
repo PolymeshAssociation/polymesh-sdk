@@ -25,10 +25,10 @@ const importRegex = /(import .+? from '.+?';\n)\n/s;
 /**
  * Get type arguments from a `ProcedureMethod` or `NoArgsProcedureMethod`  type declaration
  *
- * - calling the function with `ProcedureMethod<Foo, Bar, Baz>` will yield `{ methodArgs: 'Foo', procedureReturnValue: 'Bar', returnValue: 'Baz', kind: 'ProcedureMethod' }`
- * - calling the function with `ProcedureMethod<Foo, Bar>` will yield `{ methodArgs: 'Foo', procedureReturnValue: 'Bar', returnValue: undefined, kind: 'ProcedureMethod' }`
- * - calling the function with `NoArgsProcedureMethod<Foo, Bar>` will yield `{ procedureReturnValue: 'Foo', returnValue: 'Bar', kind: 'NoArgsProcedureMethod' }`
- * - calling the function with `NoArgsProcedureMethod<Foo>` will yield `{ procedureReturnValue: 'Foo', returnValue: undefined, kind: 'NoArgsProcedureMethod' }`
+ * - calling the function with `ProcedureMethod<Foo, Bar, Baz>` will return `{ methodArgs: 'Foo', procedureReturnValue: 'Bar', returnValue: 'Baz', kind: 'ProcedureMethod' }`
+ * - calling the function with `ProcedureMethod<Foo, Bar>` will return `{ methodArgs: 'Foo', procedureReturnValue: 'Bar', returnValue: undefined, kind: 'ProcedureMethod' }`
+ * - calling the function with `NoArgsProcedureMethod<Foo, Bar>` will return `{ procedureReturnValue: 'Foo', returnValue: 'Bar', kind: 'NoArgsProcedureMethod' }`
+ * - calling the function with `NoArgsProcedureMethod<Foo>` will returns `{ procedureReturnValue: 'Foo', returnValue: undefined, kind: 'NoArgsProcedureMethod' }`
  */
 const getTypeArgumentsFromProcedureMethod = typeString => {
   const source = ts.createSourceFile('temp', typeString);

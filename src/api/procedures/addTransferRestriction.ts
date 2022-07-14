@@ -61,11 +61,6 @@ export interface Storage {
 export async function prepareAddTransferRestriction(
   this: Procedure<AddTransferRestrictionParams, BigNumber, Storage>,
   args: AddTransferRestrictionParams
-  /*
-   * we use `unknown[][]` here because it's very complex to type this without knowing
-   * how many transactions will be in the batch beforehand. Type safety is ensured via
-   * the `checkTxType` method
-   */
 ): Promise<BatchTransactionSpec<BigNumber, unknown[][]>> {
   const {
     context: {

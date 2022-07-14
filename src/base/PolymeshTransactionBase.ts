@@ -231,7 +231,13 @@ export abstract class PolymeshTransactionBase<
       throw error;
     } finally {
       this.hasRun = true;
-      await this.emitWhenMiddlewareIsSynced();
+      /*
+       * We do not await this promise because it is supposed to run in the background, and
+       * any errors encountered are emitted. If the user isn't listening, they shouldn't
+       * care about middleware (or other) errors anyway
+       */
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      this.emitWhenMiddlewareIsSynced();
     }
   }
 
@@ -354,10 +360,12 @@ export abstract class PolymeshTransactionBase<
    * @returns unsubscribe function
    */
   public onStatusChange(listener: (transaction: PolymeshTransactionBase) => void): () => void {
-    this.emitter.on(Event.StatusChange, listener);
+    const { emitter } = this;
+
+    emitter.on(Event.StatusChange, listener);
 
     return (): void => {
-      this.emitter.removeListener(Event.StatusChange, listener);
+      emitter.removeListener(Event.StatusChange, listener);
     };
   }
 
@@ -411,17 +419,19 @@ export abstract class PolymeshTransactionBase<
    * @throws if the middleware wasn't enabled when instantiating the SDK client
    */
   public onProcessedByMiddleware(listener: (err?: PolymeshError) => void): () => void {
-    if (!this.context.isMiddlewareEnabled()) {
+    const { context, emitter } = this;
+
+    if (!context.isMiddlewareEnabled()) {
       throw new PolymeshError({
         code: ErrorCode.General,
         message: 'Cannot subscribe without an enabled middleware connection',
       });
     }
 
-    this.emitter.on(Event.ProcessedByMiddleware, listener);
+    emitter.on(Event.ProcessedByMiddleware, listener);
 
     return (): void => {
-      this.emitter.removeListener(Event.ProcessedByMiddleware, listener);
+      emitter.removeListener(Event.ProcessedByMiddleware, listener);
     };
   }
 
@@ -434,66 +444,70 @@ export abstract class PolymeshTransactionBase<
    * @note uses the middleware
    */
   private async emitWhenMiddlewareIsSynced(): Promise<void> {
-    const { context } = this;
+    const { context, emitter } = this;
 
-    if (!context.isMiddlewareEnabled()) {
-      return;
-    }
-
-    const blockNumber = await context.getLatestBlock();
-
-    let done = false;
-
-    /*
-     * We do not await this promise because it is supposed to run in the background, and
-     * any errors encountered are emitted. If the user isn't listening, they shouldn't
-     * care about middleware (or other) errors anyway
-     */
-    P.each(range(6), async i => {
-      if (done) {
+    try {
+      if (!context.isMiddlewareEnabled()) {
         return;
       }
 
-      try {
-        const {
-          data: {
-            latestBlock: { id: processedBlock },
-          },
-        } = await context.queryMiddleware<Ensured<Query, 'latestBlock'>>(latestProcessedBlock());
+      const blockNumber = await context.getLatestBlock();
 
-        if (blockNumber.lte(processedBlock)) {
-          done = true;
-          this.emitter.emit(Event.ProcessedByMiddleware);
+      let done = false;
+
+      await P.each(range(6), async i => {
+        if (done) {
           return;
         }
-      } catch (err) {}
 
-      if (i === 5) {
-        this.emitter.emit(
-          Event.ProcessedByMiddleware,
-          new PolymeshError({ code: ErrorCode.MiddlewareError, message: 'Timed out' })
-        );
-      }
+        try {
+          const {
+            data: {
+              latestBlock: { id: processedBlock },
+            },
+          } = await context.queryMiddleware<Ensured<Query, 'latestBlock'>>(latestProcessedBlock());
 
-      return delay(2000);
-    }).catch(
-      /* istanbul ignore next: very hard to test, extreme edge case */
-      err => {
-        this.emitter.emit(
-          Event.ProcessedByMiddleware,
-          new PolymeshError({
-            code: ErrorCode.UnexpectedError,
-            message: err.message || 'Unexpected error',
-          })
-        );
-      }
-    );
+          if (blockNumber.lte(processedBlock)) {
+            done = true;
+            emitter.emit(Event.ProcessedByMiddleware);
+            return;
+          }
+        } catch (err) {
+          /*
+           * query errors are swallowed because we wish to query again if we haven't reached the
+           * maximum amount of retries
+           */
+        }
+
+        if (i === 5) {
+          emitter.emit(
+            Event.ProcessedByMiddleware,
+            new PolymeshError({
+              code: ErrorCode.MiddlewareError,
+              message: `Middleware has not synced after ${i} attempts`,
+            })
+          );
+        }
+
+        return delay(2000);
+      });
+    } catch (err) {
+      /* istanbul ignore next: extreme edge case */
+      emitter.emit(
+        Event.ProcessedByMiddleware,
+        new PolymeshError({
+          code: ErrorCode.UnexpectedError,
+          message: err.message || 'Unexpected error',
+        })
+      );
+    }
   }
 
   /**
    * @hidden
    */
   protected updateStatus(status: TransactionStatus): void {
+    const { emitter } = this;
     this.status = status;
 
     /* eslint-disable default-case */
@@ -501,13 +515,13 @@ export abstract class PolymeshTransactionBase<
       case TransactionStatus.Unapproved:
       case TransactionStatus.Running:
       case TransactionStatus.Succeeded: {
-        this.emitter.emit(Event.StatusChange, this);
+        emitter.emit(Event.StatusChange, this);
         return;
       }
       case TransactionStatus.Rejected:
       case TransactionStatus.Aborted:
       case TransactionStatus.Failed: {
-        this.emitter.emit(Event.StatusChange, this, this.error);
+        emitter.emit(Event.StatusChange, this, this.error);
       }
     }
     /* eslint-enable default-case */
@@ -518,7 +532,7 @@ export abstract class PolymeshTransactionBase<
    *   AND the caller is being subsidized by a third party, the transaction can't be executed and trying
    *   to do so will result in an error
    *
-   * @note this depends on the type of transaction itself (i.e. `staking.bond` can't be subsidized, but `asset.createAsset` can)
+   * @note this depends on the type of transaction itself (e.g. `staking.bond` can't be subsidized, but `asset.createAsset` can)
    */
   public abstract supportsSubsidy(): boolean;
 
@@ -617,8 +631,7 @@ export abstract class PolymeshTransactionBase<
       if (allowance.lt(total)) {
         throw new PolymeshError({
           code: ErrorCode.UnmetPrerequisite,
-          message:
-            "The subsidizer Account has not granted the caller Account enough allowance to pay this transaction's fees",
+          message: "Insufficient subsidy allowance to pay this transaction's fees",
           data: {
             allowance,
             fees: total,
@@ -651,7 +664,7 @@ export abstract class PolymeshTransactionBase<
    * Retrieve the Account that would pay fees for the transaction if it was run at this moment, as well as the total amount that can be
    *   charged to it (allowance) in case of a subsidy
    *
-   * @note this value might change if, before running the transaction, the caller Account enters (or leaves)
+   * @note the paying Account might change if, before running the transaction, the caller Account enters (or leaves)
    *   a subsidizer relationship. A governance vote or chain upgrade could also cause the value to change between the time
    *   this method is called and the time the transaction is run
    */

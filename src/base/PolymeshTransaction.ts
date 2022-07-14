@@ -16,7 +16,7 @@ export class PolymeshTransaction<
   Args extends unknown[] | [] = unknown[]
 > extends PolymeshTransactionBase<ReturnValue, TransformedReturnValue> {
   /**
-   * arguments for the transaction in polkadot.js Codec format (SCALE)
+   * arguments for the transaction in SCALE format (polkadot.js Codec)
    */
   public args: Args;
 

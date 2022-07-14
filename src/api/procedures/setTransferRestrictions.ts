@@ -146,11 +146,6 @@ function transformRestrictions(
 export async function prepareSetTransferRestrictions(
   this: Procedure<SetTransferRestrictionsParams, BigNumber, Storage>,
   args: SetTransferRestrictionsParams
-  /*
-   * we use `unknown[][]` here because it's impossible to type this without knowing
-   * how many transactions will be in the batch beforehand. Type safety is ensured via
-   * the `checkTxType` method
-   */
 ): Promise<BatchTransactionSpec<BigNumber, unknown[][]>> {
   const {
     context: {

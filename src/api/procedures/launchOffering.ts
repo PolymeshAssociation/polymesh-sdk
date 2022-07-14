@@ -38,7 +38,7 @@ export interface LaunchOfferingParams {
    */
   raisingPortfolio: PortfolioLike;
   /**
-   * ticker symbol of the currency in which the funds are being raised (i.e. 'USD' or 'CAD').
+   * ticker symbol of the currency in which the funds are being raised (e.g. 'USD' or 'CAD').
    *   Other Assets can be used as currency as well
    */
   raisingCurrency: string;

@@ -275,11 +275,6 @@ async function getTxArgsAndErrors(
 export async function prepareAddInstruction(
   this: Procedure<Params, Instruction[], Storage>,
   args: Params
-  /*
-   * we use `unknown[][]` here because it's impossible to type this without knowing
-   * how many transactions will be in the batch beforehand. Type safety is ensured via
-   * the `assembleBatchTransactions` method
-   */
 ): Promise<BatchTransactionSpec<Instruction[], unknown[][]>> {
   const {
     context: {

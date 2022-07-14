@@ -53,7 +53,7 @@ export enum TransactionStatus {
    */
   Succeeded = 'Succeeded',
   /**
-   * the transaction's execution failed due to a revert, insufficient balance for fees, or other, unknown reasons
+   * the transaction's execution failed due to a an on-chain validation error, insufficient balance for fees, or other such reasons
    */
   Failed = 'Failed',
   /**
@@ -701,7 +701,7 @@ export enum PayingAccountType {
   Subsidy = 'Subsidy',
   /**
    * the paying Account is paying for a specific transaction because of
-   *   chain-specific constraints (i.e. the caller is accepting an invitation to an Identity
+   *   chain-specific constraints (e.g. the caller is accepting an invitation to an Identity
    *   and cannot have any funds to pay for it by definition)
    */
   Other = 'Other',
@@ -887,7 +887,7 @@ export interface TransactionPermissions extends SectionPermissions<TxTag | Modul
 
 /**
  * Permissions a Secondary Key has over the Identity. A null value means the key has
- *   all permissions of that type (i.e. if `assets` is null, the key has permissions over all
+ *   all permissions of that type (e.g. if `assets` is null, the key has permissions over all
  *   of the Identity's Assets)
  */
 export interface Permissions {
@@ -1277,7 +1277,7 @@ export enum CalendarUnit {
 }
 
 /**
- * Represents a period of time measured in a specific unit (i.e. 20 days)
+ * Represents a period of time measured in a specific unit (e.g. 20 days)
  */
 export interface CalendarPeriod {
   unit: CalendarUnit;

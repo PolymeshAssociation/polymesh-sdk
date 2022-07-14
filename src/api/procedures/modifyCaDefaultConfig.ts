@@ -61,11 +61,6 @@ const areSameTargets = (targets: CorporateActionTargets, newTargets: InputTarget
 export async function prepareModifyCaDefaultConfig(
   this: Procedure<Params, void>,
   args: Params
-  /*
-   * we use `unknown[][]` here because it's impossible to type this without knowing
-   * how many transactions will be in the batch beforehand. Type safety is ensured via
-   * the `assembleBatchTransactions` and `checkTxType` methods
-   */
 ): Promise<BatchTransactionSpec<void, unknown[][]>> {
   const {
     context: {
