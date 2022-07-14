@@ -9,13 +9,16 @@ import {
   PolymeshError,
   Procedure,
 } from '~/internal';
-import { Authorization, AuthorizationType, ErrorCode, RoleType, TxTags } from '~/types';
 import {
-  ExtrinsicParams,
+  Authorization,
+  AuthorizationType,
+  ErrorCode,
   PortfolioId,
-  ProcedureAuthorization,
-  TransactionSpec,
-} from '~/types/internal';
+  RoleType,
+  SetCustodianParams,
+  TxTags,
+} from '~/types';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
   dateToMoment,
@@ -25,11 +28,6 @@ import {
   signerValueToSignatory,
 } from '~/utils/conversion';
 import { optionize } from '~/utils/internal';
-
-export interface SetCustodianParams {
-  targetIdentity: string | Identity;
-  expiry?: Date;
-}
 
 /**
  * @hidden

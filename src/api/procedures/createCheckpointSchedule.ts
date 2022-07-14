@@ -1,8 +1,7 @@
 import { ISubmittableResult } from '@polkadot/types/types';
-import BigNumber from 'bignumber.js';
 
 import { Asset, CheckpointSchedule, Context, PolymeshError, Procedure } from '~/internal';
-import { CalendarPeriod, ErrorCode, TxTags } from '~/types';
+import { CreateCheckpointScheduleParams, ErrorCode, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   scheduleSpecToMeshScheduleSpec,
@@ -10,22 +9,6 @@ import {
   stringToTicker,
 } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
-
-export interface CreateCheckpointScheduleParams {
-  /**
-   * The date from which to begin creating snapshots. A null value indicates immediately
-   */
-  start: Date | null;
-  /**
-   * The cadence with which to make Checkpoints.
-   * @note A null value indicates to create only one Checkpoint, regardless of repetitions specified. This can be used to schedule the creation of a Checkpoint in the future
-   */
-  period: CalendarPeriod | null;
-  /**
-   * The number of snapshots to take. A null value indicates snapshots should be made indefinitely
-   */
-  repetitions: BigNumber | null;
-}
 
 /**
  * @hidden

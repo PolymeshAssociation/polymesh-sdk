@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { Account, Context, transferPolyx, TransferPolyxParams } from '~/internal';
+import { Account, Context, transferPolyx } from '~/internal';
 import { eventByIndexedArgs, eventsByIndexedArgs, transactionByHash } from '~/middleware/queries';
 import { EventIdEnum as EventId, ModuleIdEnum as ModuleId, Query } from '~/middleware/types';
 import {
@@ -10,6 +10,7 @@ import {
   ProcedureMethod,
   ProtocolFees,
   SubCallback,
+  TransferPolyxParams,
   TxTag,
   UnsubCallback,
 } from '~/types';

@@ -3,19 +3,15 @@ import BigNumber from 'bignumber.js';
 import { Offering, PolymeshError, Procedure } from '~/internal';
 import {
   ErrorCode,
+  InvestInOfferingParams,
   OfferingSaleStatus,
   OfferingTimingStatus,
-  PortfolioLike,
+  PortfolioId,
   RoleType,
   Tier,
   TxTags,
 } from '~/types';
-import {
-  ExtrinsicParams,
-  PortfolioId,
-  ProcedureAuthorization,
-  TransactionSpec,
-} from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   bigNumberToBalance,
   bigNumberToU64,
@@ -25,25 +21,6 @@ import {
   stringToTicker,
 } from '~/utils/conversion';
 import { optionize } from '~/utils/internal';
-
-export interface InvestInOfferingParams {
-  /**
-   * portfolio in which the purchased Asset tokens will be stored
-   */
-  purchasePortfolio: PortfolioLike;
-  /**
-   * portfolio from which funds will be withdrawn to pay for the Asset tokens
-   */
-  fundingPortfolio: PortfolioLike;
-  /**
-   * amount of Asset tokens to purchase
-   */
-  purchaseAmount: BigNumber;
-  /**
-   * maximum average price to pay per Asset token (optional)
-   */
-  maxPrice?: BigNumber;
-}
 
 /**
  * @hidden

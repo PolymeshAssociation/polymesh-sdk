@@ -2,11 +2,11 @@ import { AccountId, Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { prepareSubsidizeAccount, SubsidizeAccountParams } from '~/api/procedures/subsidizeAccount';
+import { prepareSubsidizeAccount } from '~/api/procedures/subsidizeAccount';
 import { Account, AuthorizationRequest, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { AuthorizationType, Identity, ResultSet } from '~/types';
+import { AuthorizationType, Identity, ResultSet, SubsidizeAccountParams } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(

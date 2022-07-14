@@ -9,14 +9,15 @@ import {
   AffirmationStatus,
   DefaultPortfolio,
   ErrorCode,
+  InstructionAffirmationOperation,
   Leg,
+  ModifyInstructionAffirmationParams,
   NumberedPortfolio,
   TxTag,
   TxTags,
 } from '~/types';
 import {
   ExtrinsicParams,
-  InstructionAffirmationOperation,
   PolymeshTx,
   ProcedureAuthorization,
   TransactionSpec,
@@ -29,14 +30,6 @@ import {
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolioId,
 } from '~/utils/conversion';
-
-export interface AffirmInstructionParams {
-  id: BigNumber;
-}
-export interface ModifyInstructionAffirmationParams {
-  id: BigNumber;
-  operation: InstructionAffirmationOperation;
-}
 
 export interface Storage {
   portfolios: (DefaultPortfolio | NumberedPortfolio)[];

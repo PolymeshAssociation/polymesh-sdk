@@ -20,7 +20,7 @@ export interface UniqueIdentifiers {
   ticker: string;
 }
 
-interface HumanReadable {
+export interface HumanReadable {
   id: string;
   ticker: string;
 }

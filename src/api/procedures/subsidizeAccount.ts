@@ -1,26 +1,14 @@
-import BigNumber from 'bignumber.js';
-
 import { createAuthorizationResolver } from '~/api/procedures/utils';
 import { Account, AuthorizationRequest, PolymeshError, Procedure } from '~/internal';
 import {
   AddRelayerPayingKeyAuthorizationData,
   AuthorizationType,
   ErrorCode,
+  SubsidizeAccountParams,
   TxTags,
 } from '~/types';
 import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
 import { bigNumberToBalance, signerToString, stringToAccountId } from '~/utils/conversion';
-
-export interface SubsidizeAccountParams {
-  /**
-   * Account to subsidize
-   */
-  beneficiary: string | Account;
-  /**
-   * amount of POLYX to be subsidized. This can be increased/decreased later on
-   */
-  allowance: BigNumber;
-}
 
 /**
  * @hidden

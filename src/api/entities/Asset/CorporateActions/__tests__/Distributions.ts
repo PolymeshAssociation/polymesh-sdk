@@ -1,13 +1,9 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import {
-  ConfigureDividendDistributionParams,
-  DividendDistribution,
-  Namespace,
-  PolymeshTransaction,
-} from '~/internal';
+import { DividendDistribution, Namespace, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { ConfigureDividendDistributionParams } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 import { Distributions } from '../Distributions';
@@ -114,7 +110,7 @@ describe('Distributions class', () => {
         ),
       });
       dsMockUtils.createQueryStub('corporateAction', 'details', {
-        returnValue: dsMockUtils.createMockText('something'),
+        returnValue: dsMockUtils.createMockBytes('something'),
       });
       dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
         returnValue: dsMockUtils.createMockOption(

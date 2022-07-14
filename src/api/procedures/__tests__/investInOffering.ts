@@ -19,11 +19,11 @@ import {
   OfferingSaleStatus,
   OfferingTimingStatus,
   PortfolioBalance,
+  PortfolioId,
   PortfolioLike,
   RoleType,
   TxTags,
 } from '~/types';
-import { PortfolioId } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(

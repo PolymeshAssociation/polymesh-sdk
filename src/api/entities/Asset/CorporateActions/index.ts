@@ -5,15 +5,18 @@ import {
   Context,
   Identity,
   modifyCaDefaultConfig,
-  ModifyCaDefaultConfigParams,
   modifyCorporateActionsAgent,
-  ModifyCorporateActionsAgentParams,
   Namespace,
   removeCorporateAction,
-  RemoveCorporateActionParams,
   removeCorporateActionsAgent,
 } from '~/internal';
-import { NoArgsProcedureMethod, ProcedureMethod } from '~/types';
+import {
+  ModifyCaDefaultConfigParams,
+  ModifyCorporateActionsAgentParams,
+  NoArgsProcedureMethod,
+  ProcedureMethod,
+  RemoveCorporateActionParams,
+} from '~/types';
 import { QueryReturnType } from '~/types/utils';
 import {
   identityIdToString,
@@ -75,9 +78,9 @@ export class CorporateActions extends Namespace<Asset> {
   /**
    * Assign a new Corporate Actions Agent for the Asset
    *
-   * @note this may create {@link AuthorizationRequest | Authorization Requests} which have to be accepted by the `target` Identity.
-   *   An {@link Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived | authorizations.getReceived}.
-   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link Authorizations.getOne | authorizations.getOne}
+   * @note this may create {@link api/entities/AuthorizationRequest!AuthorizationRequest | Authorization Requests} which have to be accepted by the `target` Identity.
+   *   An {@link api/entities/Account!Account} or {@link api/entities/Identity!Identity} can fetch its pending Authorization Requests by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getReceived | authorizations.getReceived}.
+   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getOne | authorizations.getOne}
    *
    * @deprecated in favor of `inviteAgent`
    */

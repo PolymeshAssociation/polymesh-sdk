@@ -8,7 +8,6 @@ import sinon from 'sinon';
 
 import {
   getAuthorization,
-  ModifyInstructionAffirmationParams,
   prepareModifyInstructionAffirmation,
   prepareStorage,
   Storage,
@@ -17,8 +16,14 @@ import * as procedureUtilsModule from '~/api/procedures/utils';
 import { Context, DefaultPortfolio, Instruction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { AffirmationStatus, PortfolioLike, TxTags } from '~/types';
-import { InstructionAffirmationOperation, PortfolioId } from '~/types/internal';
+import {
+  AffirmationStatus,
+  InstructionAffirmationOperation,
+  ModifyInstructionAffirmationParams,
+  PortfolioId,
+  PortfolioLike,
+  TxTags,
+} from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(

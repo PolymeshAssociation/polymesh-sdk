@@ -1,14 +1,10 @@
 import BigNumber from 'bignumber.js';
 
-import {
-  Context,
-  CorporateActionBase,
-  modifyCaCheckpoint,
-  ModifyCaCheckpointParams,
-} from '~/internal';
+import { Context, CorporateActionBase, modifyCaCheckpoint } from '~/internal';
 import {
   CorporateActionKind,
   CorporateActionTargets,
+  ModifyCaCheckpointParams,
   ProcedureMethod,
   TaxWithholding,
 } from '~/types';

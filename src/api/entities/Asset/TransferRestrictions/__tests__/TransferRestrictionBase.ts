@@ -2,20 +2,15 @@ import { PolymeshPrimitivesTransferComplianceTransferCondition } from '@polkadot
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
+import { Asset, Context, Namespace, PolymeshTransaction } from '~/internal';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   AddCountTransferRestrictionParams,
   AddPercentageTransferRestrictionParams,
-  Asset,
-  Context,
-  Namespace,
-  PolymeshTransaction,
-  SetCountTransferRestrictionsParams,
-  SetPercentageTransferRestrictionsParams,
-} from '~/internal';
-import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import {
   CountTransferRestriction,
   PercentageTransferRestriction,
+  SetCountTransferRestrictionsParams,
+  SetPercentageTransferRestrictionsParams,
   TransferRestrictionType,
 } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';

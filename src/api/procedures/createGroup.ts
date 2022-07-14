@@ -1,22 +1,12 @@
 import { assertGroupDoesNotExist, createCreateGroupResolver } from '~/api/procedures/utils';
 import { Asset, CustomPermissionGroup, Procedure } from '~/internal';
-import { TransactionPermissions, TxGroup, TxTags } from '~/types';
+import { CreateGroupParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   permissionsLikeToPermissions,
   stringToTicker,
   transactionPermissionsToExtrinsicPermissions,
 } from '~/utils/conversion';
-
-export interface CreateGroupParams {
-  permissions:
-    | {
-        transactions: TransactionPermissions;
-      }
-    | {
-        transactionGroups: TxGroup[];
-      };
-}
 
 /**
  * @hidden

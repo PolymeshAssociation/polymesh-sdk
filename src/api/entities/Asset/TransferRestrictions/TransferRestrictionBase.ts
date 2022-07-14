@@ -1,26 +1,22 @@
 import BigNumber from 'bignumber.js';
 
 import {
-  AddCountTransferRestrictionParams,
-  AddPercentageTransferRestrictionParams,
   addTransferRestriction,
   AddTransferRestrictionParams,
   AddTransferRestrictionStorage,
   Asset,
   Context,
   Namespace,
-  SetCountTransferRestrictionsParams,
-  SetPercentageTransferRestrictionsParams,
   setTransferRestrictions,
   SetTransferRestrictionsParams,
   SetTransferRestrictionsStorage,
 } from '~/internal';
 import {
-  ActiveTransferRestrictions,
-  CountTransferRestriction,
+  AddRestrictionParams,
+  GetTransferRestrictionReturnType,
   NoArgsProcedureMethod,
-  PercentageTransferRestriction,
   ProcedureMethod,
+  SetRestrictionsParams,
   TransferRestrictionType,
 } from '~/types';
 import {
@@ -30,24 +26,6 @@ import {
   u32ToBigNumber,
 } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
-
-type AddRestrictionParams<T> = Omit<
-  T extends TransferRestrictionType.Count
-    ? AddCountTransferRestrictionParams
-    : AddPercentageTransferRestrictionParams,
-  'type'
->;
-
-type SetRestrictionsParams<T> = Omit<
-  T extends TransferRestrictionType.Count
-    ? SetCountTransferRestrictionsParams
-    : SetPercentageTransferRestrictionsParams,
-  'type'
->;
-
-type GetReturnType<T> = ActiveTransferRestrictions<
-  T extends TransferRestrictionType.Count ? CountTransferRestriction : PercentageTransferRestriction
->;
 
 /**
  * Base class for managing Transfer Restrictions
@@ -143,7 +121,7 @@ export abstract class TransferRestrictionBase<
    *   The `availableSlots` property of the result represents how many more restrictions can be added
    *   before reaching that limit
    */
-  public async get(): Promise<GetReturnType<T>> {
+  public async get(): Promise<GetTransferRestrictionReturnType<T>> {
     const {
       parent: { ticker },
       context: {
@@ -156,8 +134,8 @@ export abstract class TransferRestrictionBase<
       type,
     } = this;
     const tickerKey = stringToTickerKey(ticker, context);
-    const complianceRules = await statistics.assetTransferCompliances(tickerKey);
-    const filteredRequirements = complianceRules.requirements.filter(requirement => {
+    const { requirements } = await statistics.assetTransferCompliances(tickerKey);
+    const filteredRequirements = [...requirements].filter(requirement => {
       if (type === TransferRestrictionType.Count) {
         return requirement.isMaxInvestorCount;
       }
@@ -206,6 +184,6 @@ export abstract class TransferRestrictionBase<
     return {
       restrictions: restrictions,
       availableSlots: maxTransferConditions.minus(restrictions.length),
-    } as GetReturnType<T>;
+    } as GetTransferRestrictionReturnType<T>;
   }
 }

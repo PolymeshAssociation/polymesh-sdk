@@ -1,30 +1,25 @@
 import BigNumber from 'bignumber.js';
 import { filter, isEqual, uniqBy, uniqWith } from 'lodash';
 
-import {
-  addInvestorUniquenessClaim,
-  AddInvestorUniquenessClaimParams,
-  Context,
-  Identity,
-  modifyClaims,
-  ModifyClaimsParams,
-} from '~/internal';
+import { addInvestorUniquenessClaim, Context, Identity, modifyClaims } from '~/internal';
 import { didsWithClaims, issuerDidsWithClaimsByTarget } from '~/middleware/queries';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
 import {
+  AddInvestorUniquenessClaimParams,
   CddClaim,
   ClaimData,
+  ClaimOperation,
   ClaimScope,
   ClaimType,
   IdentityWithClaims,
   InvestorUniquenessClaim,
+  ModifyClaimsParams,
   ProcedureMethod,
   ResultSet,
   Scope,
   ScopedClaim,
   ScopeType,
 } from '~/types';
-import { ClaimOperation } from '~/types/internal';
 import { Ensured } from '~/types/utils';
 import {
   scopeToMiddlewareScope,

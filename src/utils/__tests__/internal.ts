@@ -17,8 +17,10 @@ import {
   ErrorCode,
   ModuleName,
   ProcedureMethod,
+  TransferRestrictionType,
   TxTags,
 } from '~/types';
+import { StatisticsOpType } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 
@@ -42,6 +44,7 @@ import {
   hasSameElements,
   isModuleOrTagMatch,
   isPrintableAscii,
+  neededStatTypeForRestrictionInput,
   optionize,
   padString,
   periodComplexity,
@@ -1031,5 +1034,44 @@ describe('assertTickerValid', () => {
     const ticker = 'FAKE_TICKER';
 
     assertTickerValid(ticker);
+  });
+});
+
+describe('neededStatTypeForRestrictionInput', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return a raw StatType based on the given TransferRestrictionType', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStatOpType', StatisticsOpType.Count)
+      .returns('Count');
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStatOpType', StatisticsOpType.Balance)
+      .returns('Balance');
+
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStatType', { op: 'Count' })
+      .returns('CountStat');
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStatType', { op: 'Balance' })
+      .returns('BalanceStat');
+
+    let result = neededStatTypeForRestrictionInput(TransferRestrictionType.Count, context);
+
+    expect(result).toEqual('CountStat');
+
+    result = neededStatTypeForRestrictionInput(TransferRestrictionType.Percentage, context);
+    expect(result).toEqual('BalanceStat');
   });
 });

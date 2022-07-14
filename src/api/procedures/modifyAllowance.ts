@@ -1,38 +1,14 @@
-import BigNumber from 'bignumber.js';
-
 import { PolymeshError, Procedure, Subsidy } from '~/internal';
-import { ErrorCode, TxTags } from '~/types';
 import {
   AllowanceOperation,
-  ExtrinsicParams,
-  ProcedureAuthorization,
-  TransactionSpec,
-} from '~/types/internal';
+  DecreaseAllowanceParams,
+  ErrorCode,
+  IncreaseAllowanceParams,
+  SetAllowanceParams,
+  TxTags,
+} from '~/types';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { bigNumberToBalance, stringToAccountId } from '~/utils/conversion';
-
-export interface IncreaseAllowanceParams {
-  /**
-   * amount of POLYX to increase the allowance by
-   */
-  allowance: BigNumber;
-  operation: AllowanceOperation.Increase;
-}
-
-export interface DecreaseAllowanceParams {
-  /**
-   * amount of POLYX to decrease the allowance by
-   */
-  allowance: BigNumber;
-  operation: AllowanceOperation.Decrease;
-}
-
-export interface SetAllowanceParams {
-  /**
-   * amount of POLYX to set the allowance to
-   */
-  allowance: BigNumber;
-  operation: AllowanceOperation.Set;
-}
 
 export type ModifyAllowanceParams = (
   | IncreaseAllowanceParams

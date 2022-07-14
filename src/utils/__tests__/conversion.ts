@@ -104,6 +104,7 @@ import {
   PermissionType,
   PortfolioMovement,
   Scope,
+  ScopeClaimProof,
   ScopeType,
   SecurityIdentifierType,
   Signer,
@@ -118,12 +119,7 @@ import {
   TxTags,
   VenueType,
 } from '~/types';
-import {
-  InstructionStatus,
-  PermissionGroupIdentifier,
-  ScopeClaimProof,
-  StatisticsOpType,
-} from '~/types/internal';
+import { InstructionStatus, PermissionGroupIdentifier, StatisticsOpType } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { DUMMY_ACCOUNT_ID, MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '~/utils/constants';
 import { padString } from '~/utils/internal';
@@ -223,6 +219,7 @@ import {
   signerValueToSigner,
   statisticsOpTypeToStatOpType,
   statisticsOpTypeToStatType,
+  statisticStatTypesToBtreeStatType,
   statUpdate,
   statUpdatesToBtreeStatUpdate,
   storedScheduleToCheckpointScheduleParams,
@@ -253,6 +250,7 @@ import {
   transactionPermissionsToExtrinsicPermissions,
   transactionPermissionsToTxGroups,
   transactionToTxTag,
+  transferConditionsToBtreeTransferConditions,
   transferConditionToTransferRestriction,
   transferRestrictionToPolymeshTransferCondition,
   trustedClaimIssuerToTrustedIssuer,
@@ -7106,7 +7104,9 @@ describe('agentGroupToPermissionGroup', () => {
     it('should convert scopeIds to a BTreeSetIdentityID', () => {
       const context = dsMockUtils.getContextInstance();
       const ids = ['b', 'a', 'c'] as unknown as PolymeshPrimitivesIdentityId[];
-      context.createType.withArgs('BTreeSetIdentityId', ['a', 'b', 'c']).returns(['a', 'b', 'c']);
+      context.createType
+        .withArgs('BTreeSet<PolymeshPrimitivesIdentityId>', ['b', 'a', 'c'])
+        .returns(['a', 'b', 'c']);
 
       const result = scopeIdsToBtreeSetIdentityId(ids, context);
       expect(result).toEqual(['a', 'b', 'c']);
@@ -7264,5 +7264,63 @@ describe('complianceConditionsToBtreeSet', () => {
     const input = [condition2, condition1];
     const result = complianceConditionsToBtreeSet(input, context);
     expect(result).toEqual([condition1, condition2]);
+  });
+});
+
+describe('statisticStatTypesToBtreeStatType', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert an array of PolymeshPrimitivesStatisticsStatType to a BTreeSet', () => {
+    const context = dsMockUtils.getContextInstance();
+    const stat = dsMockUtils.createMockStatisticsStatType();
+
+    const btreeSet = dsMockUtils.createMockBTreeSet([stat]);
+
+    context.createType
+      .withArgs('BTreeSet<PolymeshPrimitivesStatisticsStatType>', [stat])
+      .returns(btreeSet);
+
+    const result = statisticStatTypesToBtreeStatType([stat], context);
+
+    expect(result).toEqual(btreeSet);
+  });
+});
+
+describe('transferConditionsToBtreeTransferConditions', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert an array of PolymeshPrimitivesStatisticsStatType to a BTreeSet', () => {
+    const context = dsMockUtils.getContextInstance();
+    const condition = dsMockUtils.createMockTransferCondition();
+
+    const btreeSet = dsMockUtils.createMockBTreeSet([condition]);
+
+    context.createType
+      .withArgs('BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>', [condition])
+      .returns(btreeSet);
+
+    const result = transferConditionsToBtreeTransferConditions([condition], context);
+
+    expect(result).toEqual(btreeSet);
   });
 });

@@ -7,17 +7,10 @@ import {
   PolymeshError,
   Procedure,
 } from '~/internal';
-import { ErrorCode, InputCaCheckpoint, TxTags } from '~/types';
+import { ErrorCode, ModifyCaCheckpointParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { checkpointToRecordDateSpec, corporateActionIdentifierToCaId } from '~/utils/conversion';
 import { getCheckpointValue, optionize } from '~/utils/internal';
-
-/**
- * @hidden
- */
-export interface ModifyCaCheckpointParams {
-  checkpoint: InputCaCheckpoint | null;
-}
 
 export type Params = ModifyCaCheckpointParams & {
   corporateAction: CorporateActionBase;

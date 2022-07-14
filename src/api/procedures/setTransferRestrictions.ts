@@ -1,7 +1,8 @@
 import {
-  BTreeSetStatType,
+  PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesTransferComplianceTransferCondition,
 } from '@polkadot/types/lookup';
+import { BTreeSet } from '@polkadot/types-codec';
 import BigNumber from 'bignumber.js';
 import { TransferCondition } from 'polymesh-types/types';
 
@@ -10,6 +11,8 @@ import {
   CountTransferRestrictionInput,
   ErrorCode,
   PercentageTransferRestrictionInput,
+  SetCountTransferRestrictionsParams,
+  SetPercentageTransferRestrictionsParams,
   TransferRestriction,
   TransferRestrictionType,
   TxTag,
@@ -20,11 +23,11 @@ import {
   bigNumberToU128,
   complianceConditionsToBtreeSet,
   createStat2ndKey,
-  meshStatToStatisticsOpType,
   permillToBigNumber,
   scopeIdsToBtreeSetIdentityId,
   statisticsOpTypeToStatOpType,
   statisticsOpTypeToStatType,
+  statisticStatTypesToBtreeStatType,
   statUpdate,
   statUpdatesToBtreeStatUpdate,
   stringToIdentityId,
@@ -35,22 +38,6 @@ import {
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { checkTxType, getExemptedIds } from '~/utils/internal';
-
-export interface SetCountTransferRestrictionsParams {
-  /**
-   * array of Count Transfer Restrictions with their corresponding exemptions (if applicable)
-   */
-  restrictions: CountTransferRestrictionInput[];
-  type: TransferRestrictionType.Count;
-}
-
-export interface SetPercentageTransferRestrictionsParams {
-  /**
-   * array of Percentage Transfer Restrictions with their corresponding exemptions (if applicable)
-   */
-  restrictions: PercentageTransferRestrictionInput[];
-  type: TransferRestrictionType.Percentage;
-}
 
 export type SetTransferRestrictionsParams = { ticker: string } & (
   | SetCountTransferRestrictionsParams
@@ -64,7 +51,7 @@ export interface Storage {
   currentRestrictions: TransferCondition[];
   occupiedSlots: BigNumber;
   needStat: boolean;
-  currentStats: BTreeSetStatType;
+  currentStats: BTreeSet<PolymeshPrimitivesStatisticsStatType>;
 }
 
 /**
@@ -112,6 +99,7 @@ function transformRestrictions(
 
     const compareConditions = (transferCondition: TransferCondition): boolean =>
       isSameCondition(transferCondition, value, type);
+
     if (!someDifference) {
       someDifference = !currentRestrictions.find(compareConditions);
     }
@@ -194,13 +182,13 @@ export async function prepareSetTransferRestrictions(
 
   if (needStat) {
     const newStat = statisticsOpTypeToStatType(op, context);
-    currentStats.push(newStat);
-    currentStats.sort().reverse();
+    const newStats = [...currentStats, newStat];
+    const rawNewStats = statisticStatTypesToBtreeStatType(newStats, context);
 
     transactions.push(
       checkTxType({
         transaction: statistics.setActiveAssetStats,
-        args: [tickerKey, currentStats],
+        args: [tickerKey, rawNewStats],
       })
     );
 
@@ -294,14 +282,13 @@ export async function prepareStorage(
   const tickerKey = stringToTickerKey(ticker, context);
 
   const currentStats = await statistics.activeAssetStats(tickerKey);
-  const needStat = !currentStats.find(s => {
-    const stat = meshStatToStatisticsOpType(s);
-    const cmpStat =
-      stat === StatisticsOpType.Balance
-        ? TransferRestrictionType.Percentage
-        : TransferRestrictionType.Count;
-    return cmpStat === type;
-  });
+
+  const neededOp =
+    type === TransferRestrictionType.Count ? StatisticsOpType.Count : StatisticsOpType.Balance;
+  const rawOp = statisticsOpTypeToStatOpType(neededOp, context);
+
+  const neededStat = statisticsOpTypeToStatType(rawOp, context);
+  const needStat = !currentStats.has(neededStat);
 
   const {
     transferRestrictions: { count, percentage },

@@ -1,6 +1,6 @@
 import { assertDistributionOpen } from '~/api/procedures/utils';
 import { DividendDistribution, Identity, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, TargetTreatment, TxTags } from '~/types';
+import { ErrorCode, PayDividendsParams, TargetTreatment, TxTags } from '~/types';
 import { BatchTransactionSpec, ExtrinsicParams, ProcedureAuthorization } from '~/types/internal';
 import { QueryReturnType, tuple } from '~/types/utils';
 import {
@@ -10,10 +10,6 @@ import {
   stringToIdentityId,
 } from '~/utils/conversion';
 import { asIdentity, xor } from '~/utils/internal';
-
-export interface PayDividendsParams {
-  targets: (string | Identity)[];
-}
 
 /**
  * @hidden

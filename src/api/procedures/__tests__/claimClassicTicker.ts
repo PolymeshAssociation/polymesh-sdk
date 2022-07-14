@@ -2,14 +2,11 @@ import BigNumber from 'bignumber.js';
 import { EcdsaSignature, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import {
-  ClaimClassicTickerParams,
-  prepareClaimClassicTicker,
-} from '~/api/procedures/claimClassicTicker';
+import { prepareClaimClassicTicker } from '~/api/procedures/claimClassicTicker';
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { TickerReservation } from '~/types';
+import { ClaimClassicTickerParams, TickerReservation } from '~/types';
 import { CLASSIC_TICKER_OWNER_DID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 

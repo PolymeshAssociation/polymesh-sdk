@@ -7,10 +7,10 @@ import {
   createRegisterIdentityResolver,
   prepareRegisterIdentity,
 } from '~/api/procedures/registerIdentity';
-import { Context, Identity, RegisterIdentityParams } from '~/internal';
+import { Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { PermissionedAccount } from '~/types';
+import { PermissionedAccount, RegisterIdentityParams } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';

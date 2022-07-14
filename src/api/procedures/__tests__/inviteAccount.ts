@@ -4,7 +4,7 @@ import BigNumber from 'bignumber.js';
 import { Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { InviteAccountParams, prepareInviteAccount } from '~/api/procedures/inviteAccount';
+import { prepareInviteAccount } from '~/api/procedures/inviteAccount';
 import { Account, AuthorizationRequest, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -12,6 +12,7 @@ import {
   Authorization,
   AuthorizationType,
   Identity,
+  InviteAccountParams,
   ResultSet,
   SignerType,
   SignerValue,

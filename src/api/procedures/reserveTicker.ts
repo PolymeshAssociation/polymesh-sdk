@@ -1,18 +1,10 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 
 import { Context, PolymeshError, Procedure, TickerReservation } from '~/internal';
-import { ErrorCode, RoleType, TickerReservationStatus, TxTags } from '~/types';
+import { ErrorCode, ReserveTickerParams, RoleType, TickerReservationStatus, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { stringToTicker, tickerToString } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
-
-export interface ReserveTickerParams {
-  /**
-   * ticker symbol to reserve
-   */
-  ticker: string;
-  extendPeriod?: boolean;
-}
 
 /**
  * @hidden

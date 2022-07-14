@@ -1643,9 +1643,9 @@ describe('Context class', () => {
         ],
       });
       const details = [
-        dsMockUtils.createMockText('details1'),
-        dsMockUtils.createMockText('details2'),
-        dsMockUtils.createMockText('details3'),
+        dsMockUtils.createMockBytes('details1'),
+        dsMockUtils.createMockBytes('details2'),
+        dsMockUtils.createMockBytes('details3'),
       ];
       const corporateActionIdentifierToCaIdStub = sinon.stub(
         utilsConversionModule,

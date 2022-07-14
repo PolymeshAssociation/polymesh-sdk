@@ -5,8 +5,14 @@ import {
 } from '@polkadot/types/lookup';
 import { difference, intersection, isEqual, sortBy } from 'lodash';
 
-import { Asset, Context, Identity, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, InputTrustedClaimIssuer, TrustedClaimIssuer, TxTags } from '~/types';
+import { Asset, Context, PolymeshError, Procedure } from '~/internal';
+import {
+  ErrorCode,
+  ModifyAssetTrustedClaimIssuersAddSetParams,
+  ModifyAssetTrustedClaimIssuersRemoveParams,
+  TrustedClaimIssuer,
+  TxTags,
+} from '~/types';
 import {
   BatchTransactionSpec,
   ProcedureAuthorization,
@@ -21,17 +27,6 @@ import {
   trustedIssuerToTrustedClaimIssuer,
 } from '~/utils/conversion';
 import { asIdentity, assembleBatchTransactions, hasSameElements } from '~/utils/internal';
-
-export interface ModifyAssetTrustedClaimIssuersAddSetParams {
-  claimIssuers: InputTrustedClaimIssuer[];
-}
-
-export interface ModifyAssetTrustedClaimIssuersRemoveParams {
-  /**
-   * array of Identities (or DIDs) of the default claim issuers
-   */
-  claimIssuers: (string | Identity)[];
-}
 
 /**
  * @hidden

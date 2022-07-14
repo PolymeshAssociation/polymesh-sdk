@@ -1,4 +1,3 @@
-import { PolymeshPrimitivesStatisticsStatOpType } from '@polkadot/types/lookup';
 import { TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
@@ -26,7 +25,7 @@ import {
   NumberedPortfolio,
   Offering,
 } from '~/internal';
-import { GenericPolymeshTransaction, PortfolioId, TickerKey } from '~/types/internal';
+import { GenericPolymeshTransaction } from '~/types/internal';
 import { Modify } from '~/types/utils';
 
 export * from '~/generated/types';
@@ -87,6 +86,11 @@ export interface CddProviderRole {
 export interface VenueOwnerRole {
   type: RoleType.VenueOwner;
   venueId: BigNumber;
+}
+
+export interface PortfolioId {
+  did: string;
+  number?: BigNumber;
 }
 
 export interface PortfolioCustodianRole {
@@ -1208,17 +1212,10 @@ interface TransferRestrictionBase {
    * array of Scope/Identity IDs that are exempted from the Restriction
    *
    * @note if the Asset requires investor uniqueness, Scope IDs are used. Otherwise, we use Identity IDs. More on Scope IDs and investor uniqueness
-   *   {@link https://developers.polymesh.network/introduction/identity#polymesh-unique-identity-system-puis | here} and
-   *   {@link https://developers.polymesh.network/polymesh-docs/primitives/confidential-identity | here}
+   *   [here](https://developers.polymesh.network/introduction/identity#polymesh-unique-identity-system-puis) and
+   *   [here](https://developers.polymesh.network/polymesh-docs/primitives/confidential-identity)
    */
   exemptedIds?: string[];
-}
-
-interface TransferRestrictionInputBase {
-  /**
-   * array of Identities (or DIDs) that are exempted from the Restriction
-   */
-  exemptedIdentities?: (Identity | string)[];
 }
 
 export interface CountTransferRestriction extends TransferRestrictionBase {
@@ -1226,20 +1223,6 @@ export interface CountTransferRestriction extends TransferRestrictionBase {
 }
 
 export interface PercentageTransferRestriction extends TransferRestrictionBase {
-  /**
-   * maximum percentage (0-100) of the total supply of the Asset that can be held by a single investor at once
-   */
-  percentage: BigNumber;
-}
-
-export interface CountTransferRestrictionInput extends TransferRestrictionInputBase {
-  /**
-   * limit on the amount of different (unique) investors that can hold the Asset at once
-   */
-  count: BigNumber;
-}
-
-export interface PercentageTransferRestrictionInput extends TransferRestrictionInputBase {
   /**
    * maximum percentage (0-100) of the total supply of the Asset that can be held by a single investor at once
    */
@@ -1254,16 +1237,6 @@ export interface ActiveTransferRestrictions<
    * amount of restrictions that can be added before reaching the shared limit
    */
   availableSlots: BigNumber;
-}
-
-export enum TransferRestrictionType {
-  Count = 'Count',
-  Percentage = 'Percentage',
-}
-
-export interface TransferRestriction {
-  type: TransferRestrictionType;
-  value: BigNumber;
 }
 
 export enum CalendarUnit {
@@ -1407,13 +1380,18 @@ export type InputCorporateActionTaxWithholdings = Modify<
   }
 >[];
 
-export interface ExemptKey {
-  asset: TickerKey;
-  op: PolymeshPrimitivesStatisticsStatOpType;
-}
-
-export { TxTags, TxTag, ModuleName };
+export { TxTags, TxTag, ModuleName, CountryCode };
 export { EventRecord } from '@polkadot/types/interfaces';
+export { ConnectParams } from '~/api/client/Polymesh';
 export * from '~/api/entities/types';
 export * from '~/base/types';
-export { Order } from '~/middleware/types';
+export {
+  Order,
+  EventIdEnum,
+  ModuleIdEnum,
+  TransactionOrderByInput,
+  TransactionOrderFields,
+  SettlementResultEnum,
+  SettlementDirectionEnum,
+} from '~/middleware/types';
+export * from '~/api/procedures/types';

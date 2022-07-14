@@ -6,8 +6,7 @@ import { getAuthorization, prepareModifyAllowance } from '~/api/procedures/modif
 import { Context, ModifyAllowanceParams, Procedure, Subsidy } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { TxTags } from '~/types';
-import { AllowanceOperation } from '~/types/internal';
+import { AllowanceOperation, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(

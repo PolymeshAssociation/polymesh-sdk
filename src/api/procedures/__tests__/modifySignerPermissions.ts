@@ -3,7 +3,6 @@ import sinon from 'sinon';
 
 import {
   getAuthorization,
-  ModifySignerPermissionsParams,
   prepareModifySignerPermissions,
   prepareStorage,
   Storage,
@@ -12,6 +11,7 @@ import { Account, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
+  ModifySignerPermissionsParams,
   PermissionedAccount,
   PermissionType,
   Signer,

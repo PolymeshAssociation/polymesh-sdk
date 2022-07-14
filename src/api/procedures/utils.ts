@@ -35,11 +35,12 @@ import {
   InstructionType,
   PermissionedAccount,
   PermissionGroupType,
+  PortfolioId,
   Signer,
   TickerReservationStatus,
   TransactionPermissions,
 } from '~/types';
-import { MaybePostTransactionValue, PortfolioId } from '~/types/internal';
+import { MaybePostTransactionValue } from '~/types/internal';
 import { tickerToString, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
 

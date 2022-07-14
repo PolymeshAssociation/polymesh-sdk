@@ -1,15 +1,13 @@
 import BigNumber from 'bignumber.js';
 
-import {
-  AddCountTransferRestrictionParams,
-  SetCountTransferRestrictionsParams,
-  TransferRestrictionBase,
-} from '~/internal';
+import { TransferRestrictionBase } from '~/internal';
 import {
   ActiveTransferRestrictions,
+  AddCountTransferRestrictionParams,
   CountTransferRestriction,
   NoArgsProcedureMethod,
   ProcedureMethod,
+  SetCountTransferRestrictionsParams,
   TransferRestrictionType,
 } from '~/types';
 

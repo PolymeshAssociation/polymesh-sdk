@@ -4,7 +4,7 @@ import sinon from 'sinon';
 import { Context, Entity, PolymeshTransaction, Subsidy } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { AllowanceOperation } from '~/types/internal';
+import { AllowanceOperation } from '~/types';
 
 jest.mock(
   '~/base/Procedure',

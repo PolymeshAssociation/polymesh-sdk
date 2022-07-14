@@ -9,6 +9,7 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import {
   ClaimData,
+  ClaimOperation,
   ClaimTarget,
   ClaimType,
   IdentityWithClaims,
@@ -16,7 +17,6 @@ import {
   Scope,
   ScopeType,
 } from '~/types';
-import { ClaimOperation } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import { padString } from '~/utils/internal';
 

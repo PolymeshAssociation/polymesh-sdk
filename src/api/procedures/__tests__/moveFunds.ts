@@ -7,8 +7,7 @@ import * as procedureUtilsModule from '~/api/procedures/utils';
 import { Context, DefaultPortfolio, NumberedPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { PortfolioBalance, PortfolioMovement, RoleType, TxTags } from '~/types';
-import { PortfolioId } from '~/types/internal';
+import { PortfolioBalance, PortfolioId, PortfolioMovement, RoleType, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(

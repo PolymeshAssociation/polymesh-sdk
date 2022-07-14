@@ -19,12 +19,12 @@ import { Mocked } from '~/testUtils/types';
 import {
   OfferingTier,
   PortfolioBalance,
+  PortfolioId,
   PortfolioLike,
   RoleType,
   TxTags,
   VenueType,
 } from '~/types';
-import { PortfolioId } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 

@@ -19,10 +19,8 @@ import {
   DefaultPortfolio,
   Identity,
   modifyCaCheckpoint,
-  ModifyCaCheckpointParams,
   NumberedPortfolio,
   payDividends,
-  PayDividendsParams,
   PolymeshError,
   reclaimDividendDistributionFunds,
 } from '~/internal';
@@ -35,7 +33,9 @@ import {
   ErrorCode,
   IdentityBalance,
   InputCaCheckpoint,
+  ModifyCaCheckpointParams,
   NoArgsProcedureMethod,
+  PayDividendsParams,
   ProcedureMethod,
   ResultSet,
   TargetTreatment,
@@ -61,7 +61,7 @@ import {
 
 import { DistributionParticipant } from './types';
 
-interface HumanReadable extends CorporateActionHumanReadable {
+export interface HumanReadable extends CorporateActionHumanReadable {
   origin: HumanReadableType<DefaultPortfolio | NumberedPortfolio>;
   currency: string;
   perShare: string;

@@ -1,14 +1,23 @@
 {
   "$schema": "https://typedoc.org/schema.json",
-  "entryPoints": ["src/api", "src/types/index.ts", "src/types/utils", "src/utils/index.ts"],
+  "entryPoints": [
+    "src/api/client",
+    "src/api/entities",
+    "src/api/procedures/types.ts",
+    "src/generated/types.ts",
+    "src/types/index.ts",
+    "src/types/utils",
+    "src/utils/index.ts"
+  ],
   "entryPointStrategy": "Expand",
   "out": "docs",
-  "theme": "markdown",
+  "theme": "github-wiki",
   "exclude": [
     "src/internal.ts",
-    "**/{__tests__,polkadot,testUtils,middleware,base,generated}/**/*",
+    "**/{__tests__,polkadot,testUtils,base}/**/*",
     "**/sandbox.ts",
     "src/api/entities/types.ts",
+    "src/api/entities/Namespace.ts",
     "src/types/internal.ts",
     "src/utils/**",
     "src/index.ts",
