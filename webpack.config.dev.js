@@ -31,27 +31,6 @@ const devConfig = {
         },
       },
       {
-        test: /\.m?js$/,
-        include: /node_modules/,
-        use: {
-          loader: 'babel-loader',
-          options: {
-            presets: [
-              [
-                '@babel/preset-env',
-                {
-                  exclude: ['transform-exponentiation-operator'],
-                },
-              ],
-            ],
-            plugins: [
-              '@babel/plugin-transform-modules-commonjs',
-              '@babel/plugin-transform-runtime',
-            ],
-          },
-        },
-      },
-      {
         test: /\.js$/,
         loader: require.resolve('@open-wc/webpack-import-meta-loader'),
       },

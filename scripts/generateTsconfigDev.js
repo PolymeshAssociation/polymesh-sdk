@@ -12,9 +12,11 @@ let rawdata = fs.readFileSync(configFile);
 let tsConfigJson = JSON.parse(rawdata);
 
 tsConfigJson.compilerOptions.rootDir = '.';
+tsConfigJson.compilerOptions.skipLibCheck = true;
 
 let tsConfigDev = JSON.stringify({
   compilerOptions: tsConfigJson.compilerOptions,
+  exclude: tsConfigJson.exclude,
 });
 
 fs.writeFileSync(configDevFile, tsConfigDev);
