@@ -4,6 +4,7 @@ import sinon from 'sinon';
 
 import { Context, Identity, KnownPermissionGroup, Namespace, TransactionQueue } from '~/internal';
 import { eventByIndexedArgs, tickerExternalAgentActions } from '~/middleware/queries';
+import { tickerExternalAgentActionsQuery, tickerExternalAgentsQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -122,6 +123,50 @@ describe('AssetPermissions class', () => {
 
       dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {});
       const result = await assetPermissions.enabledAt({ asset });
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('method: enabledAtV2', () => {
+    it('should return the event identifier object of the agent added', async () => {
+      const blockNumber = new BigNumber(1234);
+      const blockDate = new Date('4/14/2020');
+      const blockHash = 'someHash';
+      const eventIdx = new BigNumber(1);
+      const variables = {
+        assetId: ticker,
+      };
+      const fakeResult = { blockNumber, blockHash, blockDate, eventIndex: eventIdx };
+
+      dsMockUtils.createApolloV2QueryStub(tickerExternalAgentsQuery(variables), {
+        tickerExternalAgents: {
+          nodes: [
+            {
+              createdBlock: {
+                blockId: blockNumber.toNumber(),
+                datetime: blockDate,
+                hash: blockHash,
+              },
+              eventIdx: eventIdx.toNumber(),
+            },
+          ],
+        },
+      });
+
+      const result = await assetPermissions.enabledAtV2({ asset });
+
+      expect(result).toEqual(fakeResult);
+    });
+
+    it('should return null if the query result is empty', async () => {
+      const variables = {
+        assetId: ticker,
+      };
+
+      dsMockUtils.createApolloV2QueryStub(tickerExternalAgentsQuery(variables), {
+        tickerExternalAgents: { nodes: [] },
+      });
+      const result = await assetPermissions.enabledAtV2({ asset });
       expect(result).toBeNull();
     });
   });
@@ -509,6 +554,83 @@ describe('AssetPermissions class', () => {
       /* eslint-enable @typescript-eslint/naming-convention */
 
       result = await assetPermissions.getOperationHistory({
+        asset: ticker,
+      });
+
+      expect(result.next).toEqual(null);
+      expect(result.count).toEqual(new BigNumber(0));
+      expect(result.data).toEqual([]);
+    });
+  });
+
+  describe('method: getOperationHistoryV2', () => {
+    it('should return the Events triggered by Operations the Identity has performed on a specific Asset', async () => {
+      const blockId = new BigNumber(1);
+      const blockHash = 'someHash';
+      const eventIndex = new BigNumber(1);
+      const datetime = '2020-10-10';
+
+      dsMockUtils.createApolloV2QueryStub(
+        tickerExternalAgentActionsQuery(
+          {
+            assetId: ticker,
+            callerId: did,
+            palletName: undefined,
+            eventId: undefined,
+          },
+          new BigNumber(1),
+          new BigNumber(0)
+        ),
+        {
+          tickerExternalAgentActions: {
+            totalCount: 1,
+            nodes: [
+              {
+                createdBlock: {
+                  blockId: blockId.toNumber(),
+                  datetime,
+                  hash: blockHash,
+                },
+                eventIdx: eventIndex.toNumber(),
+              },
+            ],
+          },
+        }
+      );
+
+      let result = await assetPermissions.getOperationHistoryV2({
+        asset: ticker,
+        start: new BigNumber(0),
+        size: new BigNumber(1),
+      });
+
+      expect(result.next).toEqual(null);
+      expect(result.count).toEqual(new BigNumber(1));
+      expect(result.data).toEqual([
+        {
+          blockNumber: blockId,
+          blockHash,
+          blockDate: new Date(`${datetime}Z`),
+          eventIndex,
+        },
+      ]);
+
+      dsMockUtils.createApolloV2QueryStub(
+        tickerExternalAgentActionsQuery({
+          assetId: ticker,
+          callerId: did,
+          palletName: undefined,
+          eventId: undefined,
+        }),
+        {
+          tickerExternalAgentActions: {
+            totalCount: 0,
+            nodes: [],
+          },
+        }
+      );
+
+      result = await assetPermissions.getOperationHistoryV2({
         asset: ticker,
       });
 

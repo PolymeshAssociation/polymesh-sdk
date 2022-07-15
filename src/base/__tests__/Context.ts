@@ -4,6 +4,7 @@ import sinon from 'sinon';
 
 import { Account, Context, PolymeshError } from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
+import { claimsQuery, heartbeatQuery } from '~/middleware/queriesV2';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId } from '~/testUtils/mocks/dataSources';
@@ -85,6 +86,7 @@ describe('Context class', () => {
     const context = await Context.create({
       polymeshApi: dsMockUtils.getApiInstance(),
       middlewareApi: null,
+      middlewareApiV2: null,
     });
 
     expect(() => context.middlewareApi).toThrow(
@@ -98,6 +100,7 @@ describe('Context class', () => {
     const context = await Context.create({
       polymeshApi: dsMockUtils.getApiInstance(),
       middlewareApi,
+      middlewareApiV2: null,
     });
 
     expect(context.middlewareApi).toEqual(middlewareApi);
@@ -127,6 +130,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
         signingManager: dsMockUtils.getSigningManagerInstance({
           getAccounts: [address],
         }),
@@ -139,6 +143,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
       expect(() => context.getSigningAddress()).toThrow(
@@ -165,6 +170,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
         signingManager: dsMockUtils.getSigningManagerInstance({
           getAccounts: addresses,
         }),
@@ -191,6 +197,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
         signingManager: dsMockUtils.getSigningManagerInstance({
           getAccounts: ['someAddress'],
         }),
@@ -205,6 +212,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
         signingManager: dsMockUtils.getSigningManagerInstance({
           getAccounts: ['someAddress', 'otherAddress'],
         }),
@@ -231,6 +239,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -276,6 +285,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
       return expect(context.accountBalance()).rejects.toThrow(
@@ -300,6 +310,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
         signingManager: dsMockUtils.getSigningManagerInstance(),
       });
 
@@ -328,6 +339,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
       const result = await context.accountBalance('someAddress');
@@ -360,6 +372,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
       const callback = sinon.stub();
@@ -397,6 +410,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
         signingManager: dsMockUtils.getSigningManagerInstance({
           getAccounts: ['beneficiary'],
         }),
@@ -426,6 +440,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
       const result = await context.accountSubsidy('someAddress');
@@ -446,6 +461,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
         signingManager: dsMockUtils.getSigningManagerInstance(),
       });
 
@@ -471,6 +487,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
       const callback = sinon.stub();
@@ -510,6 +527,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
         signingManager: dsMockUtils.getSigningManagerInstance(),
       });
 
@@ -527,6 +545,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
         signingManager: dsMockUtils.getSigningManagerInstance(),
       });
 
@@ -551,6 +570,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
         signingManager: dsMockUtils.getSigningManagerInstance({
           getAccounts: [address],
         }),
@@ -564,6 +584,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
       expect(() => context.getSigningAccount()).toThrow(
@@ -592,6 +613,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
       const identity = entityMockUtils.getIdentityInstance();
@@ -609,6 +631,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
       const result = await context.getIdentity(did);
@@ -619,6 +642,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
       entityMockUtils.configureMocks({
@@ -650,6 +674,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi,
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
       expect(context.getPolymeshApi()).toBe(polymeshApi);
@@ -671,6 +696,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
         signingManager: dsMockUtils.getSigningManagerInstance({
           getAccounts: [address, 'somethingElse'],
         }),
@@ -694,6 +720,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
         signingManager: dsMockUtils.getSigningManagerInstance({
           getExternalSigner: signer,
         }),
@@ -736,6 +763,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
         signingManager: dsMockUtils.getSigningManagerInstance(),
       });
 
@@ -762,6 +790,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
       const rawProtocolOp = dsMockUtils.createMockProtocolOp('AssetCreateAsset');
@@ -814,6 +843,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
       dsMockUtils.createTxStub('asset', 'registerTicker', {
@@ -1056,6 +1086,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
       const targetDid = 'someTargetDid';
@@ -1168,6 +1199,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
       const targetDid = 'someTargetDid';
@@ -1302,6 +1334,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
       dsMockUtils.configureMocks({
@@ -1312,6 +1345,269 @@ describe('Context class', () => {
 
       return expect(context.issuedClaims()).rejects.toThrow(
         'Cannot perform this action without an active middleware connection'
+      );
+    });
+  });
+
+  describe('method: issuedClaimsV2', () => {
+    beforeAll(() => {
+      sinon.stub(utilsInternalModule, 'assertAddressValid');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    it('should return a result set of claims', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
+      });
+
+      const targetDid = 'someTargetDid';
+      const issuerDid = 'someIssuerDid';
+      const cddId = 'someCddId';
+      const date = 1589816265000;
+      const customerDueDiligenceType = ClaimTypeEnum.CustomerDueDiligence;
+      const claim = {
+        target: expect.objectContaining({ did: targetDid }),
+        issuer: expect.objectContaining({ did: issuerDid }),
+        issuedAt: new Date(date),
+      };
+      const fakeClaims = [
+        {
+          ...claim,
+          expiry: new Date(date),
+          claim: {
+            type: customerDueDiligenceType,
+            id: cddId,
+          },
+        },
+        {
+          ...claim,
+          expiry: null,
+          claim: {
+            type: customerDueDiligenceType,
+            id: cddId,
+          },
+        },
+      ];
+      const commonClaimData = {
+        targetId: targetDid,
+        issuerId: issuerDid,
+        issuanceDate: date,
+        cddId: cddId,
+      };
+      const claimsQueryResponse = {
+        totalCount: 25,
+        nodes: [
+          {
+            ...commonClaimData,
+            expiry: date,
+            type: customerDueDiligenceType,
+          },
+          {
+            ...commonClaimData,
+            expiry: null,
+            type: customerDueDiligenceType,
+          },
+        ],
+      };
+
+      dsMockUtils.createApolloV2QueryStub(
+        claimsQuery(
+          {
+            dids: [targetDid],
+            trustedClaimIssuers: [targetDid],
+            claimTypes: [ClaimTypeEnum.Accredited],
+            includeExpired: true,
+          },
+          new BigNumber(2),
+          new BigNumber(0)
+        ),
+        {
+          claims: claimsQueryResponse,
+        }
+      );
+
+      let result = await context.issuedClaimsV2({
+        targets: [targetDid],
+        trustedClaimIssuers: [targetDid],
+        claimTypes: [ClaimType.Accredited],
+        includeExpired: true,
+        size: new BigNumber(2),
+        start: new BigNumber(0),
+      });
+
+      expect(result.data).toEqual(fakeClaims);
+      expect(result.count).toEqual(new BigNumber(25));
+      expect(result.next).toEqual(new BigNumber(2));
+
+      dsMockUtils.createApolloV2QueryStub(
+        claimsQuery(
+          {
+            dids: undefined,
+            trustedClaimIssuers: undefined,
+            claimTypes: undefined,
+            includeExpired: true,
+          },
+          new BigNumber(25),
+          new BigNumber(0)
+        ),
+        {
+          claims: { nodes: [], totalCount: 0 },
+        }
+      );
+
+      result = await context.issuedClaimsV2();
+
+      expect(result.data).toEqual([]);
+      expect(result.count).toEqual(new BigNumber(0));
+      expect(result.next).toBeNull();
+    });
+
+    it('should return a result set of claims from chain', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
+      });
+
+      dsMockUtils.throwOnMiddlewareV2Query();
+
+      const targetDid = 'someTargetDid';
+      const issuerDid = 'someIssuerDid';
+      const cddId = 'someCddId';
+      const issuedAt = new Date('10/14/2019');
+      const expiryOne = new Date('10/14/2020');
+      const expiryTwo = new Date('10/14/2060');
+
+      const claim1stKey = dsMockUtils.createMockClaim1stKey({
+        target: dsMockUtils.createMockIdentityId(targetDid),
+        claimType: dsMockUtils.createMockClaimType(ClaimType.CustomerDueDiligence),
+      });
+
+      const identityClaim = {
+        claimIssuer: dsMockUtils.createMockIdentityId(issuerDid),
+        issuanceDate: dsMockUtils.createMockMoment(new BigNumber(issuedAt.getTime())),
+        lastUpdateDate: dsMockUtils.createMockMoment(),
+        claim: dsMockUtils.createMockClaim({
+          CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
+        }),
+      };
+      /* eslint-enable @typescript-eslint/naming-convention */
+
+      const fakeClaims = [
+        {
+          target: expect.objectContaining({ did: targetDid }),
+          issuer: expect.objectContaining({ did: issuerDid }),
+          issuedAt,
+          expiry: expiryOne,
+          claim: {
+            type: ClaimType.CustomerDueDiligence,
+            id: cddId,
+          },
+        },
+        {
+          target: expect.objectContaining({ did: targetDid }),
+          issuer: expect.objectContaining({ did: issuerDid }),
+          issuedAt,
+          expiry: null,
+          claim: {
+            type: ClaimType.CustomerDueDiligence,
+            id: cddId,
+          },
+        },
+        {
+          target: expect.objectContaining({ did: targetDid }),
+          issuer: expect.objectContaining({ did: issuerDid }),
+          issuedAt,
+          expiry: expiryTwo,
+          claim: {
+            type: ClaimType.CustomerDueDiligence,
+            id: cddId,
+          },
+        },
+      ];
+
+      const entriesStub = sinon.stub();
+      entriesStub.resolves([
+        tuple(
+          { args: [claim1stKey] },
+          {
+            ...identityClaim,
+            expiry: dsMockUtils.createMockOption(
+              dsMockUtils.createMockMoment(new BigNumber(expiryOne.getTime()))
+            ),
+          }
+        ),
+        tuple(
+          { args: [claim1stKey] },
+          {
+            ...identityClaim,
+            expiry: dsMockUtils.createMockOption(),
+          }
+        ),
+        tuple(
+          { args: [claim1stKey] },
+          {
+            ...identityClaim,
+            expiry: dsMockUtils.createMockOption(
+              dsMockUtils.createMockMoment(new BigNumber(expiryTwo.getTime()))
+            ),
+          }
+        ),
+      ]);
+
+      dsMockUtils.createQueryStub('identity', 'claims').entries = entriesStub;
+
+      let result = await context.issuedClaimsV2({
+        targets: [targetDid],
+        claimTypes: [ClaimType.CustomerDueDiligence],
+      });
+
+      expect(result.data).toEqual(fakeClaims);
+
+      const { data } = await context.issuedClaimsV2({
+        targets: [targetDid],
+        claimTypes: [ClaimType.CustomerDueDiligence],
+        includeExpired: false,
+      });
+
+      expect(data.length).toEqual(2);
+      expect(data[0]).toEqual(fakeClaims[1]);
+      expect(data[1]).toEqual(fakeClaims[2]);
+
+      sinon.stub(utilsConversionModule, 'signerToString').returns(targetDid);
+
+      result = await context.issuedClaimsV2({
+        targets: [targetDid],
+        claimTypes: [ClaimType.CustomerDueDiligence],
+        trustedClaimIssuers: [targetDid],
+      });
+
+      expect(result.data.length).toEqual(0);
+
+      result = await context.issuedClaimsV2({
+        targets: [targetDid],
+        trustedClaimIssuers: [targetDid],
+      });
+
+      expect(result.data.length).toEqual(0);
+    });
+
+    it('should throw if the middleware V2 is not available and targets or claimTypes are not set', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
+      });
+
+      dsMockUtils.throwOnMiddlewareV2Query();
+
+      return expect(context.issuedClaimsV2()).rejects.toThrow(
+        'Cannot perform this action without an active middleware V2 connection'
       );
     });
   });
@@ -1329,6 +1625,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
       dsMockUtils.throwOnMiddlewareQuery();
@@ -1357,11 +1654,65 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
       dsMockUtils.createApolloQueryStub(fakeQuery, fakeResult);
 
       const res = await context.queryMiddleware(fakeQuery);
+
+      expect(res.data).toBe(fakeResult);
+    });
+  });
+
+  describe('method: queryMiddlewareV2', () => {
+    beforeAll(() => {
+      sinon.stub(utilsInternalModule, 'assertAddressValid');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    it('should throw if the middleware V2 query fails', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
+      });
+
+      dsMockUtils.throwOnMiddlewareV2Query();
+
+      await expect(
+        context.queryMiddlewareV2('query' as unknown as GraphqlQuery<unknown>)
+      ).rejects.toThrow('Error in middleware V2 query: Error');
+
+      dsMockUtils.throwOnMiddlewareQuery({ networkError: {}, message: 'Error' });
+
+      await expect(
+        context.queryMiddlewareV2('query' as unknown as GraphqlQuery<unknown>)
+      ).rejects.toThrow('Error in middleware V2 query: Error');
+
+      dsMockUtils.throwOnMiddlewareQuery({ networkError: { result: { message: 'Some Message' } } });
+
+      return expect(
+        context.queryMiddlewareV2('query' as unknown as GraphqlQuery<unknown>)
+      ).rejects.toThrow('Error in middleware V2 query: Some Message');
+    });
+
+    it('should perform a middleware V2 query and return the results', async () => {
+      const fakeResult = 'res';
+      const fakeQuery = 'fakeQuery' as unknown as GraphqlQuery<unknown>;
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
+      });
+
+      dsMockUtils.createApolloV2QueryStub(fakeQuery, fakeResult);
+
+      const res = await context.queryMiddlewareV2(fakeQuery);
 
       expect(res.data).toBe(fakeResult);
     });
@@ -1388,6 +1739,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
       const result = await context.getLatestBlock();
@@ -1415,6 +1767,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
       const result = await context.getNetworkVersion();
@@ -1436,6 +1789,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: null,
       });
 
       const result = context.isMiddlewareEnabled();
@@ -1447,9 +1801,44 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
+        middlewareApiV2: null,
       });
 
       const result = context.isMiddlewareEnabled();
+
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('method: isMiddlewareV2Enabled', () => {
+    beforeAll(() => {
+      sinon.stub(utilsInternalModule, 'assertAddressValid');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    it('should return true if the middleware V2 is enabled', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: null,
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
+      });
+
+      const result = context.isMiddlewareV2Enabled();
+
+      expect(result).toBe(true);
+    });
+
+    it('should return false if the middleware V2 is not enabled', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: null,
+        middlewareApiV2: null,
+      });
+
+      const result = context.isMiddlewareV2Enabled();
 
       expect(result).toBe(false);
     });
@@ -1468,6 +1857,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
       dsMockUtils.createApolloQueryStub(heartbeat(), true);
@@ -1481,11 +1871,50 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
+        middlewareApiV2: null,
       });
 
       dsMockUtils.throwOnMiddlewareQuery();
 
       const result = await context.isMiddlewareAvailable();
+
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('method: isMiddlewareV2Available', () => {
+    beforeAll(() => {
+      sinon.stub(utilsInternalModule, 'assertAddressValid');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    it('should return true if the middleware V2 is available', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
+      });
+
+      dsMockUtils.createApolloV2QueryStub(heartbeatQuery(), true);
+
+      const result = await context.isMiddlewareV2Available();
+
+      expect(result).toBe(true);
+    });
+
+    it('should return false if the middleware V2 is not enabled', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: null,
+        middlewareApiV2: null,
+      });
+
+      dsMockUtils.throwOnMiddlewareV2Query();
+
+      const result = await context.isMiddlewareV2Available();
 
       expect(result).toBe(false);
     });
@@ -1503,9 +1932,11 @@ describe('Context class', () => {
     it('should disconnect everything and leave the instance unusable', async () => {
       const polymeshApi = dsMockUtils.getApiInstance();
       const middlewareApi = dsMockUtils.getMiddlewareApi();
+      const middlewareApiV2 = dsMockUtils.getMiddlewareApiV2();
       let context = await Context.create({
         polymeshApi,
         middlewareApi,
+        middlewareApiV2,
       });
 
       await context.disconnect();
@@ -1513,6 +1944,7 @@ describe('Context class', () => {
 
       sinon.assert.calledOnce(polymeshApi.disconnect);
       sinon.assert.calledOnce(middlewareApi.stop);
+      sinon.assert.calledOnce(middlewareApiV2.stop);
 
       expect(() => context.getSigningAccounts()).toThrow(
         'Client disconnected. Please create a new instance via "Polymesh.connect()"'
@@ -1521,6 +1953,7 @@ describe('Context class', () => {
       context = await Context.create({
         polymeshApi,
         middlewareApi: null,
+        middlewareApiV2: null,
       });
 
       await context.disconnect();
@@ -1528,6 +1961,7 @@ describe('Context class', () => {
 
       sinon.assert.calledTwice(polymeshApi.disconnect);
       sinon.assert.calledOnce(middlewareApi.stop);
+      sinon.assert.calledOnce(middlewareApiV2.stop);
 
       expect(() => context.getSigningAccounts()).toThrow(
         'Client disconnected. Please create a new instance via "Polymesh.connect()"'
@@ -1550,9 +1984,12 @@ describe('Context class', () => {
 
       const polymeshApi = dsMockUtils.getApiInstance();
       const middlewareApi = dsMockUtils.getMiddlewareApi();
+      const middlewareApiV2 = dsMockUtils.getMiddlewareApiV2();
+
       const context = await Context.create({
         polymeshApi,
         middlewareApi,
+        middlewareApiV2,
       });
 
       /* eslint-disable @typescript-eslint/naming-convention */
@@ -1726,6 +2163,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
         signingManager: dsMockUtils.getSigningManagerInstance(),
       });
 
@@ -1748,6 +2186,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
       expect(context.supportsSubsidy({ tag: TxTags.system.FillBlock })).toBe(false);
@@ -1760,6 +2199,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
       dsMockUtils.getCreateTypeStub().withArgs('Bytes', 'abc').returns('abc');
@@ -1772,6 +2212,7 @@ describe('Context class', () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
       dsMockUtils.getCreateTypeStub().throws('Could not create Polymesh type');
