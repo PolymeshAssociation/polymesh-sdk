@@ -8,8 +8,8 @@ const configDevFile = path.resolve(__dirname, '../tsconfig.dev.json');
 
 rimraf.sync(configDevFile);
 
-let rawdata = fs.readFileSync(configFile);
-let tsConfigJson = JSON.parse(rawdata);
+let rawData = fs.readFileSync(configFile);
+let tsConfigJson = JSON.parse(rawData);
 
 tsConfigJson.compilerOptions.rootDir = '.';
 tsConfigJson.compilerOptions.skipLibCheck = true;

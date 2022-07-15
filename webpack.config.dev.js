@@ -30,10 +30,6 @@ const devConfig = {
           configFile: 'tsconfig.dev.json',
         },
       },
-      {
-        test: /\.js$/,
-        loader: require.resolve('@open-wc/webpack-import-meta-loader'),
-      },
     ],
   },
 
