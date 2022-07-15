@@ -11,7 +11,9 @@ import {
   Venue,
 } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
+import { instructionsQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
+import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   ErrorCode,
   EventIdentifier,
@@ -21,7 +23,7 @@ import {
   ResultSet,
 } from '~/types';
 import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
-import { Ensured } from '~/types/utils';
+import { Ensured, EnsuredV2 } from '~/types/utils';
 import {
   balanceToBigNumber,
   bigNumberToU64,
@@ -30,6 +32,7 @@ import {
   meshInstructionStatusToInstructionStatus,
   meshPortfolioIdToPortfolio,
   middlewareEventToEventIdentifier,
+  middlewareV2EventDetailsToEventIdentifier,
   momentToDate,
   tickerToString,
   u32ToBigNumber,
@@ -381,6 +384,45 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
+   * Retrieve current status of this Instruction
+   *
+   * @note uses the middlewareV2
+   */
+  public async getStatusV2(): Promise<InstructionStatusResult> {
+    const isPending = await this.isPending();
+
+    if (isPending) {
+      return {
+        status: InstructionStatus.Pending,
+      };
+    }
+
+    const [executedEventIdentifier, failedEventIdentifier] = await Promise.all([
+      this.getInstructionEventFromMiddlewareV2(EventIdEnum.InstructionExecuted),
+      this.getInstructionEventFromMiddlewareV2(EventIdEnum.InstructionFailed),
+    ]);
+
+    if (executedEventIdentifier) {
+      return {
+        status: InstructionStatus.Executed,
+        eventIdentifier: executedEventIdentifier,
+      };
+    }
+
+    if (failedEventIdentifier) {
+      return {
+        status: InstructionStatus.Failed,
+        eventIdentifier: failedEventIdentifier,
+      };
+    }
+
+    throw new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: "It isn't possible to determine the current status of this Instruction",
+    });
+  }
+
+  /**
    * Reject this instruction
    *
    * @note reject on `SettleOnAffirmation` will execute the settlement and it will fail immediately.
@@ -427,6 +469,34 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     );
 
     return optionize(middlewareEventToEventIdentifier)(event);
+  }
+
+  /**
+   * @hidden
+   * Retrieve Instruction status event from middleware V2
+   */
+  private async getInstructionEventFromMiddlewareV2(
+    eventId: EventIdEnum
+  ): Promise<EventIdentifier | null> {
+    const { id, context } = this;
+
+    const {
+      data: {
+        instructions: {
+          nodes: [details],
+        },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'instructions'>>(
+      instructionsQuery({
+        eventId,
+        id: id.toString(),
+      })
+    );
+
+    return optionize(middlewareV2EventDetailsToEventIdentifier)(
+      details?.updatedBlock,
+      details?.eventIdx
+    );
   }
 
   /**
