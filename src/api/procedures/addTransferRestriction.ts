@@ -80,11 +80,11 @@ export async function prepareAddTransferRestriction(
       QueryReturnType<typeof statisticsQuery.assetTransferCompliances>
     ]
   >([
+    [statisticsQuery.activeAssetStats as unknown as QueryableStorageEntry<'promise'>, tickerKey],
     [
       statisticsQuery.assetTransferCompliances as unknown as QueryableStorageEntry<'promise'>,
       tickerKey,
     ],
-    [statisticsQuery.activeAssetStats as unknown as QueryableStorageEntry<'promise'>, tickerKey],
   ]);
 
   const neededStat = neededStatTypeForRestrictionInput({ type, claimIssuer }, context);

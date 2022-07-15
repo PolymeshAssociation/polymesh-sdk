@@ -212,10 +212,8 @@ describe('removeAssetStat procedure', () => {
     args = {
       type: StatType.ScopedCount,
       ticker,
-      claimIssuer: {
-        issuer: entityMockUtils.getIdentityInstance(),
-        claimType: ClaimType.Affiliate,
-      },
+      issuer: entityMockUtils.getIdentityInstance(),
+      claimType: ClaimType.Affiliate,
     };
 
     await prepareRemoveAssetStat.call(proc, args);
@@ -254,7 +252,7 @@ describe('removeAssetStat procedure', () => {
     const expectedError = new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message:
-        'The statistic cannot be removed because a TransferRestriction is currently using it',
+        'The statistic cannot be removed because a Transfer Restriction is currently using it',
     });
 
     await expect(prepareRemoveAssetStat.call(proc, args)).rejects.toThrowError(expectedError);
@@ -270,11 +268,10 @@ describe('removeAssetStat procedure', () => {
     args = {
       ticker: 'TICKER',
       type: StatType.ScopedCount,
-      claimIssuer: {
-        issuer: entityMockUtils.getIdentityInstance({ did }),
-        claimType: ClaimType.Accredited,
-      },
+      issuer: entityMockUtils.getIdentityInstance({ did }),
+      claimType: ClaimType.Accredited,
     };
+
     await expect(prepareRemoveAssetStat.call(proc, args)).rejects.toThrowError(expectedError);
   });
 

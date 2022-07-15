@@ -390,7 +390,7 @@ export enum StatType {
    */
   ScopedCount = 'ScopedCount',
   /**
-   * Keeps track of the amount of supply investors hold who have a certain claim
+   * Keeps track of the percentage of total supply held by investors hold who have a certain claim
    */
   ScopedBalance = 'ScopedBalance',
 }

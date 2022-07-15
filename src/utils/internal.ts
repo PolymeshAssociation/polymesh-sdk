@@ -24,6 +24,7 @@ import { major, satisfies } from 'semver';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 
 import {
+  AddAssetStatParams,
   Asset,
   Checkpoint,
   CheckpointSchedule,
@@ -31,7 +32,6 @@ import {
   Identity,
   PolymeshError,
   PostTransactionValue,
-  RemoveAssetStatParams,
   TransactionQueue,
 } from '~/internal';
 import { Scope as MiddlewareScope } from '~/middleware/types';
@@ -1204,12 +1204,13 @@ export function assertTickerValid(ticker: string): void {
  */
 export function compareStatsToInput(
   rawStatType: PolymeshPrimitivesStatisticsStatType,
-  args: RemoveAssetStatParams
+  args: AddAssetStatParams
 ): boolean {
   let claimIssuer;
   const { type } = args;
+
   if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
-    ({ claimIssuer } = args);
+    claimIssuer = { issuer: args.issuer, claimType: args.claimType };
   }
 
   if (rawStatType.claimIssuer.isNone && !!claimIssuer) {
@@ -1220,6 +1221,7 @@ export function compareStatsToInput(
     if (!claimIssuer) {
       return false;
     }
+
     const { issuer, claimType } = claimIssuer;
     const [meshType, meshIssuer] = rawStatType.claimIssuer.unwrap();
     const issuerDid = identityIdToString(meshIssuer);

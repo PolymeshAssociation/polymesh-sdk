@@ -1439,7 +1439,8 @@ describe('compareStatsToInput', () => {
     });
     args = {
       type: StatType.ScopedCount,
-      claimIssuer: { issuer, claimType: ClaimType.Affiliate },
+      issuer,
+      claimType: ClaimType.Affiliate,
       ticker,
     };
     result = compareStatsToInput(claimCountStat, args);
@@ -1451,7 +1452,8 @@ describe('compareStatsToInput', () => {
     });
     args = {
       type: StatType.ScopedBalance,
-      claimIssuer: { issuer, claimType: ClaimType.Affiliate },
+      issuer,
+      claimType: ClaimType.Affiliate,
       ticker,
     };
     result = compareStatsToInput(claimPercentageStat, args);
@@ -1475,7 +1477,8 @@ describe('compareStatsToInput', () => {
     });
     args = {
       type: StatType.ScopedBalance,
-      claimIssuer: { issuer, claimType: ClaimType.Accredited },
+      issuer,
+      claimType: ClaimType.Accredited,
       ticker,
     };
     result = compareStatsToInput(percentStat, args);
@@ -1487,7 +1490,8 @@ describe('compareStatsToInput', () => {
     });
     args = {
       type: StatType.ScopedCount,
-      claimIssuer: { issuer, claimType: ClaimType.Affiliate },
+      issuer,
+      claimType: ClaimType.Affiliate,
       ticker,
     };
     result = compareStatsToInput(claimCountStat, args);
@@ -1495,10 +1499,8 @@ describe('compareStatsToInput', () => {
 
     args = {
       type: StatType.ScopedCount,
-      claimIssuer: {
-        issuer: entityMockUtils.getIdentityInstance({ did: 'differentDid' }),
-        claimType: ClaimType.Jurisdiction,
-      },
+      issuer: entityMockUtils.getIdentityInstance({ did: 'differentDid' }),
+      claimType: ClaimType.Jurisdiction,
       ticker,
     };
     result = compareStatsToInput(claimCountStat, args);

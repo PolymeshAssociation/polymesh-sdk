@@ -1,7 +1,11 @@
 import { QueryableStorageEntry } from '@polkadot/api/types';
+import {
+  PolymeshPrimitivesIdentityClaimClaimType,
+  PolymeshPrimitivesIdentityId,
+} from '@polkadot/types/lookup';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
-import { ClaimPercentageStatInput, ErrorCode, TxTags } from '~/types';
+import { ErrorCode, StatClaimIssuer, TxTags } from '~/types';
 import { ProcedureAuthorization, StatType } from '~/types/internal';
 import { QueryReturnType } from '~/types/utils';
 import {
@@ -21,11 +25,11 @@ export type RemoveBalanceStatParams = {
   type: StatType.Balance;
 };
 
-export type RemoveScopedCountParams = ClaimPercentageStatInput & {
+export type RemoveScopedCountParams = StatClaimIssuer & {
   type: StatType.ScopedCount;
 };
 
-export type RemoveScopedBalanceParams = ClaimPercentageStatInput & {
+export type RemoveScopedBalanceParams = StatClaimIssuer & {
   type: StatType.ScopedBalance;
 };
 
@@ -69,27 +73,27 @@ export async function prepareRemoveAssetStat(
     ],
   ]);
 
-  requirements.forEach(r => {
-    let claimIssuer;
-    if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
-      claimIssuer = args.claimIssuer;
-    }
+  let claimIssuer: StatClaimIssuer;
+  let rawClaimIssuer:
+    | [PolymeshPrimitivesIdentityClaimClaimType, PolymeshPrimitivesIdentityId]
+    | undefined;
+  if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
+    claimIssuer = { issuer: args.issuer, claimType: args.claimType };
+    rawClaimIssuer = claimIssuerToMeshClaimIssuer(claimIssuer, context);
+  }
 
+  requirements.forEach(r => {
     const used = compareTransferRestrictionToStat(r, type, claimIssuer);
     if (used) {
       throw new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message:
-          'The statistic cannot be removed because a TransferRestriction is currently using it',
+          'The statistic cannot be removed because a Transfer Restriction is currently using it',
       });
     }
   });
 
   const op = statTypeToStatOpType(type, context);
-  let rawClaimIssuer;
-  if (type === StatType.ScopedBalance || type === StatType.ScopedCount) {
-    rawClaimIssuer = claimIssuerToMeshClaimIssuer(args.claimIssuer, context);
-  }
 
   const removeTarget = statisticsOpTypeToStatType({ op, claimIssuer: rawClaimIssuer }, context);
   const statsArr = [...currentStats];

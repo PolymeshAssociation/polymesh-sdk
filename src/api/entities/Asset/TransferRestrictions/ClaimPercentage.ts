@@ -1,11 +1,11 @@
 import BigNumber from 'bignumber.js';
 
+import { AddClaimPercentageStatParams } from '~/api/procedures/addAssetStat';
 import { RemoveBalanceStatParams } from '~/api/procedures/removeAssetStat';
 import { TransferRestrictionBase } from '~/internal';
 import {
   ActiveTransferRestrictions,
   AddClaimPercentageTransferRestrictionParams,
-  ClaimPercentageStatInput,
   ClaimPercentageTransferRestriction,
   NoArgsProcedureMethod,
   ProcedureMethod,
@@ -54,7 +54,7 @@ export class ClaimPercentage extends TransferRestrictionBase<TransferRestriction
    * Enables investor balance statistic for the Asset, which is required before creating restrictions
    * that limit the total ownership the Asset's supply
    */
-  public declare enableStat: ProcedureMethod<Omit<ClaimPercentageStatInput, 'type'>, void>;
+  public declare enableStat: ProcedureMethod<Omit<AddClaimPercentageStatParams, 'type'>, void>;
 
   /**
    * Disables an investor balance statistic for the Asset. Since statistics introduce slight overhead to each transaction

@@ -7945,11 +7945,9 @@ describe('claimCountStatInputToStatUpdates', () => {
 
     let result = claimCountStatInputToStatUpdates(
       {
-        claimIssuer: {
-          issuer,
-          claimType: ClaimType.Affiliate,
-          value: { affiliate: yes, nonAffiliate: no },
-        },
+        issuer,
+        claimType: ClaimType.Affiliate,
+        value: { affiliate: yes, nonAffiliate: no },
       },
       context
     );
@@ -7957,11 +7955,9 @@ describe('claimCountStatInputToStatUpdates', () => {
 
     result = claimCountStatInputToStatUpdates(
       {
-        claimIssuer: {
-          issuer,
-          claimType: ClaimType.Accredited,
-          value: { accredited: yes, nonAccredited: no },
-        },
+        issuer,
+        claimType: ClaimType.Accredited,
+        value: { accredited: yes, nonAccredited: no },
       },
       context
     );
@@ -7979,7 +7975,9 @@ describe('claimCountStatInputToStatUpdates', () => {
     ];
     result = claimCountStatInputToStatUpdates(
       {
-        claimIssuer: { issuer, claimType: ClaimType.Jurisdiction, value: countryValue },
+        issuer,
+        claimType: ClaimType.Jurisdiction,
+        value: countryValue,
       },
       context
     );

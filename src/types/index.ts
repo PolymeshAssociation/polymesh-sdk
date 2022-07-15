@@ -1368,28 +1368,23 @@ export interface StatClaimIssuer {
   issuer: Identity;
   claimType: StatClaimType;
 }
-export interface ClaimCountStatInput {
-  claimIssuer:
-    | {
-        issuer: Identity;
-        claimType: ClaimType.Accredited;
-        value: { accredited: BigNumber; nonAccredited: BigNumber };
-      }
-    | {
-        issuer: Identity;
-        claimType: ClaimType.Affiliate;
-        value: { affiliate: BigNumber; nonAffiliate: BigNumber };
-      }
-    | {
-        issuer: Identity;
-        claimType: ClaimType.Jurisdiction;
-        value: { countryCode: CountryCode; count: BigNumber }[];
-      };
-}
 
-export interface ClaimPercentageStatInput {
-  claimIssuer: StatClaimIssuer;
-}
+export type ClaimCountStatInput =
+  | {
+      issuer: Identity;
+      claimType: ClaimType.Accredited;
+      value: { accredited: BigNumber; nonAccredited: BigNumber };
+    }
+  | {
+      issuer: Identity;
+      claimType: ClaimType.Affiliate;
+      value: { affiliate: BigNumber; nonAffiliate: BigNumber };
+    }
+  | {
+      issuer: Identity;
+      claimType: ClaimType.Jurisdiction;
+      value: { countryCode: CountryCode; count: BigNumber }[];
+    };
 
 export enum CalendarUnit {
   Second = 'second',
