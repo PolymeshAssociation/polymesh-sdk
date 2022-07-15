@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { AddClaimCountStatParams } from '~/api/procedures/addAssetStat';
-import { RemoveCountStatParams } from '~/api/procedures/removeAssetStat';
+import { RemoveScopedCountParams } from '~/api/procedures/removeAssetStat';
 import { TransferRestrictionBase } from '~/internal';
 import {
   ActiveTransferRestrictions,
@@ -71,7 +71,7 @@ export class ClaimCount extends TransferRestrictionBase<TransferRestrictionType.
    *
    * @throws if the stat is being used by a restriction or is not set
    */
-  public declare disableStat: ProcedureMethod<Omit<RemoveCountStatParams, 'type'>, void>;
+  public declare disableStat: ProcedureMethod<Omit<RemoveScopedCountParams, 'type'>, void>;
 
   /**
    * Retrieve all active Claim Count Transfer Restrictions

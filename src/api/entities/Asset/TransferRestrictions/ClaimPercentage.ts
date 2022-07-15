@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { AddClaimPercentageStatParams } from '~/api/procedures/addAssetStat';
-import { RemoveBalanceStatParams } from '~/api/procedures/removeAssetStat';
+import { RemoveScopedBalanceParams } from '~/api/procedures/removeAssetStat';
 import { TransferRestrictionBase } from '~/internal';
 import {
   ActiveTransferRestrictions,
@@ -62,7 +62,7 @@ export class ClaimPercentage extends TransferRestrictionBase<TransferRestriction
    *
    * @throws if the stat is being used by a restriction or is not set
    */
-  public declare disableStat: ProcedureMethod<Omit<RemoveBalanceStatParams, 'type'>, void>;
+  public declare disableStat: ProcedureMethod<Omit<RemoveScopedBalanceParams, 'type'>, void>;
 
   /**
    * Retrieve all active Claim Percentage Transfer Restrictions

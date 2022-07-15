@@ -24,7 +24,6 @@ import { major, satisfies } from 'semver';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 
 import {
-  AddAssetStatParams,
   Asset,
   Checkpoint,
   CheckpointSchedule,
@@ -32,6 +31,7 @@ import {
   Identity,
   PolymeshError,
   PostTransactionValue,
+  RemoveAssetStatParams,
   TransactionQueue,
 } from '~/internal';
 import { Scope as MiddlewareScope } from '~/middleware/types';
@@ -1204,7 +1204,7 @@ export function assertTickerValid(ticker: string): void {
  */
 export function compareStatsToInput(
   rawStatType: PolymeshPrimitivesStatisticsStatType,
-  args: AddAssetStatParams
+  args: RemoveAssetStatParams
 ): boolean {
   let claimIssuer;
   const { type } = args;

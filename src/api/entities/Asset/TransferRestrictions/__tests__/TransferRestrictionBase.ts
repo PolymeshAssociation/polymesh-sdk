@@ -604,6 +604,7 @@ describe('TransferRestrictionBase class', () => {
 
     it('should prepare the procedure (ClaimCount) with the correct arguments and context, and return the resulting transaction queue', async () => {
       const claimCount = new ClaimCount(asset, context);
+      const issuer = entityMockUtils.getIdentityInstance();
 
       const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
 
@@ -614,6 +615,8 @@ describe('TransferRestrictionBase class', () => {
             args: {
               ticker: asset.ticker,
               type: StatType.ScopedCount,
+              issuer,
+              claimType: ClaimType.Jurisdiction,
             },
             transformer: undefined,
           },
@@ -621,13 +624,14 @@ describe('TransferRestrictionBase class', () => {
         )
         .resolves(expectedQueue);
 
-      const queue = await claimCount.disableStat({});
+      const queue = await claimCount.disableStat({ issuer, claimType: ClaimType.Jurisdiction });
 
       expect(queue).toBe(expectedQueue);
     });
 
     it('should prepare the procedure (ClaimPercentage) with the correct arguments and context, and return the resulting transaction queue', async () => {
       const claimPercentage = new ClaimPercentage(asset, context);
+      const issuer = entityMockUtils.getIdentityInstance();
 
       const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
 
@@ -638,6 +642,8 @@ describe('TransferRestrictionBase class', () => {
             args: {
               ticker: asset.ticker,
               type: StatType.ScopedBalance,
+              issuer,
+              claimType: ClaimType.Jurisdiction,
             },
             transformer: undefined,
           },
@@ -645,7 +651,10 @@ describe('TransferRestrictionBase class', () => {
         )
         .resolves(expectedQueue);
 
-      const queue = await claimPercentage.disableStat({});
+      const queue = await claimPercentage.disableStat({
+        issuer,
+        claimType: ClaimType.Jurisdiction,
+      });
 
       expect(queue).toBe(expectedQueue);
     });
