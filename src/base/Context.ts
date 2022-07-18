@@ -1,6 +1,6 @@
 import { ApiPromise } from '@polkadot/api';
 import { getTypeDef, Option } from '@polkadot/types';
-import { AccountInfo } from '@polkadot/types/interfaces';
+import { AccountInfo, Header } from '@polkadot/types/interfaces';
 import {
   PalletCorporateActionsCaId,
   PalletCorporateActionsDistribution,
@@ -74,7 +74,7 @@ import {
   u16ToBigNumber,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { assertAddressValid, calculateNextKey, createClaim } from '~/utils/internal';
+import { assertAddressValid, calculateNextKey, createClaim, defusePromise } from '~/utils/internal';
 
 interface ConstructorParams {
   polymeshApi: ApiPromise;
@@ -1133,8 +1133,25 @@ export class Context {
   public async getLatestBlock(): Promise<BigNumber> {
     const { chain } = this.polymeshApi.rpc;
 
-    const hash = await chain.getFinalizedHead();
-    const { number } = await chain.getHeader(hash);
+    /*
+     * This is faster than calling `getFinalizedHead` and then `getHeader`.
+     * We're promisifying a callback subscription to the latest finalized block
+     * and unsubscribing as soon as we get the first result
+     */
+    const gettingHeader = new Promise<Header>((resolve, reject) => {
+      const gettingUnsub = defusePromise(
+        chain.subscribeFinalizedHeads(header => {
+          gettingUnsub
+            .then(unsub => {
+              unsub();
+              resolve(header);
+            })
+            .catch(err => reject(err));
+        })
+      );
+    });
+
+    const { number } = await gettingHeader;
 
     return u32ToBigNumber(number.unwrap());
   }

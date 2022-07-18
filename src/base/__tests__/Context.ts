@@ -1,5 +1,6 @@
 import { Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
+import P from 'bluebird';
 import sinon from 'sinon';
 
 import { Account, Context, PolymeshError } from '~/internal';
@@ -1371,13 +1372,15 @@ describe('Context class', () => {
     it('should return the latest block', async () => {
       const blockNumber = new BigNumber(100);
 
-      dsMockUtils.createRpcStub('chain', 'getFinalizedHead', {
-        returnValue: dsMockUtils.createMockBlockHash('0x01'),
-      });
-      dsMockUtils.createRpcStub('chain', 'getHeader', {
-        returnValue: {
-          number: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(blockNumber)),
-        },
+      const stub = dsMockUtils.createRpcStub('chain', 'subscribeFinalizedHeads');
+      stub.callsFake(async callback => {
+        setImmediate(() =>
+          // eslint-disable-next-line node/no-callback-literal
+          callback({
+            number: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(blockNumber)),
+          })
+        );
+        return (): void => undefined;
       });
 
       const context = await Context.create({
@@ -1388,6 +1391,25 @@ describe('Context class', () => {
       const result = await context.getLatestBlock();
 
       expect(result).toEqual(blockNumber);
+    });
+
+    it('should throw any errors encountered while fetching', async () => {
+      const stub = dsMockUtils.createRpcStub('chain', 'subscribeFinalizedHeads');
+      const err = new Error('Foo');
+      stub.callsFake(callback => {
+        setImmediate(() =>
+          // eslint-disable-next-line node/no-callback-literal
+          callback({})
+        );
+        return P.delay(0).throw(err);
+      });
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+      });
+
+      return expect(context.getLatestBlock()).rejects.toThrow(err);
     });
   });
 
