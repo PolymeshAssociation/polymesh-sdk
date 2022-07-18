@@ -74,7 +74,7 @@ import {
   u16ToBigNumber,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { assertAddressValid, calculateNextKey, createClaim, defusePromise } from '~/utils/internal';
+import { assertAddressValid, calculateNextKey, createClaim } from '~/utils/internal';
 
 interface ConstructorParams {
   polymeshApi: ApiPromise;
@@ -1139,16 +1139,14 @@ export class Context {
      * and unsubscribing as soon as we get the first result
      */
     const gettingHeader = new Promise<Header>((resolve, reject) => {
-      const gettingUnsub = defusePromise(
-        chain.subscribeFinalizedHeads(header => {
-          gettingUnsub
-            .then(unsub => {
-              unsub();
-              resolve(header);
-            })
-            .catch(err => reject(err));
-        })
-      );
+      const gettingUnsub = chain.subscribeFinalizedHeads(header => {
+        gettingUnsub
+          .then(unsub => {
+            unsub();
+            resolve(header);
+          })
+          .catch(err => reject(err));
+      });
     });
 
     const { number } = await gettingHeader;
