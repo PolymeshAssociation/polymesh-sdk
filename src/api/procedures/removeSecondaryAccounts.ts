@@ -24,7 +24,7 @@ export async function prepareRemoveSecondaryAccounts(
 
   const identity = await context.getSigningIdentity();
 
-  const [{ account: primaryAccount }, secondaryAccounts] = await Promise.all([
+  const [{ account: primaryAccount }, { data: secondaryAccounts }] = await Promise.all([
     identity.getPrimaryAccount(),
     identity.getSecondaryAccounts(),
   ]);

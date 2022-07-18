@@ -504,7 +504,10 @@ export class Account extends Entity<UniqueIdentifiers, string> {
         account: { address: primaryAccountAddress },
       },
       secondaryAccounts,
-    ] = await Promise.all([identity.getPrimaryAccount(), identity.getSecondaryAccounts()]);
+    ] = await Promise.all([
+      identity.getPrimaryAccount(),
+      identity.getSecondaryAccounts({ fetchAll: true }), // TODO there should be a more efficient lookup for this
+    ]);
 
     if (address === primaryAccountAddress) {
       return {
@@ -516,7 +519,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const account = secondaryAccounts.find(
+    const account = secondaryAccounts.data.find(
       ({ account: { address: secondaryAccountAddress } }) => address === secondaryAccountAddress
     )!;
 

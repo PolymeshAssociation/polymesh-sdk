@@ -489,21 +489,23 @@ describe('Account class', () => {
       };
 
       const identity = entityMockUtils.getIdentityInstance({
-        getSecondaryAccounts: [
-          {
-            account: entityMockUtils.getAccountInstance({ address }),
-            permissions: {
-              assets: null,
-              transactions: null,
-              transactionGroups: [],
-              portfolios: null,
+        getSecondaryAccounts: {
+          data: [
+            {
+              account: entityMockUtils.getAccountInstance({ address }),
+              permissions: {
+                assets: null,
+                transactions: null,
+                transactionGroups: [],
+                portfolios: null,
+              },
             },
-          },
-          {
-            account: entityMockUtils.getAccountInstance({ address: 'otherAddress' }),
-            permissions,
-          },
-        ],
+            {
+              account: entityMockUtils.getAccountInstance({ address: 'otherAddress' }),
+              permissions,
+            },
+          ],
+        },
       });
 
       account = new Account({ address: 'otherAddress' }, context);

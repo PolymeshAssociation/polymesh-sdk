@@ -80,11 +80,14 @@ describe('leaveIdentity procedure', () => {
       entityMockUtils.getAccountInstance({
         address,
         getIdentity: entityMockUtils.getIdentityInstance({
-          getSecondaryAccounts: [
-            {
-              account: entityMockUtils.getAccountInstance({ address }),
-            } as unknown as PermissionedAccount,
-          ],
+          getSecondaryAccounts: {
+            data: [
+              {
+                account: entityMockUtils.getAccountInstance({ address }),
+              } as unknown as PermissionedAccount,
+            ],
+            next: null,
+          },
         }),
       })
     );

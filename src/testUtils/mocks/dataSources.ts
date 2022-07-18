@@ -423,7 +423,7 @@ interface ContextOptions {
   getIdentityClaimsFromMiddleware?: ResultSet<ClaimData>;
   getExternalSigner?: PolkadotSigner;
   primaryAccount?: string;
-  secondaryAccounts?: PermissionedAccount[];
+  secondaryAccounts?: ResultSet<PermissionedAccount>;
   transactionHistory?: ResultSet<ExtrinsicData>;
   latestBlock?: BigNumber;
   middlewareEnabled?: boolean;
@@ -687,7 +687,7 @@ const defaultContextOptions: ContextOptions = {
     count: new BigNumber(1),
   },
   primaryAccount: 'primaryAccount',
-  secondaryAccounts: [],
+  secondaryAccounts: { data: [], next: null },
   transactionHistory: {
     data: [],
     next: null,
@@ -800,7 +800,7 @@ function configureContext(opts: ContextOptions): void {
     getInvalidDids: sinon.stub().resolves(opts.invalidDids),
     getProtocolFees: sinon.stub().resolves(opts.transactionFees),
     getTransactionArguments: sinon.stub().returns([]),
-    getSecondaryAccounts: sinon.stub().returns(opts.secondaryAccounts),
+    getSecondaryAccounts: sinon.stub().returns({ data: opts.secondaryAccounts, next: null }),
     issuedClaims: sinon.stub().resolves(opts.issuedClaims),
     getIdentity: sinon.stub().resolves(opts.getIdentity),
     getIdentityClaimsFromChain: sinon.stub().resolves(opts.getIdentityClaimsFromChain),

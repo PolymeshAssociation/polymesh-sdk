@@ -1295,7 +1295,7 @@ describe('Identity class', () => {
       const identity = new Identity({ did: 'someDid' }, context);
 
       const result = await identity.getSecondaryAccounts();
-      expect(result).toEqual(fakeResult);
+      expect(result).toEqual({ data: fakeResult, next: null });
     });
 
     it('should allow subscription', async () => {
@@ -1312,7 +1312,7 @@ describe('Identity class', () => {
       });
 
       const callback = sinon.stub();
-      const result = await identity.getSecondaryAccounts(callback);
+      const result = await identity.getSecondaryAccounts({ callback });
 
       expect(result).toBe(unsubCallback);
       sinon.assert.calledWithExactly(callback, fakeResult);

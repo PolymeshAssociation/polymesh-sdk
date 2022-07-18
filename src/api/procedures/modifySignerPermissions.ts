@@ -34,7 +34,9 @@ export async function prepareModifySignerPermissions(
 
   const { secondaryAccounts } = args;
 
-  const existingSecondaryAccounts = await identity.getSecondaryAccounts();
+  const { data: existingSecondaryAccounts } = await identity.getSecondaryAccounts({
+    fetchAll: true,
+  });
 
   assertSecondaryAccounts(
     secondaryAccounts.map(({ account }) => account),

@@ -28,6 +28,7 @@ import {
   ErrorCode,
   GroupedInstructions,
   Order,
+  PaginationOptions,
   PermissionedAccount,
   ResultSet,
   Role,
@@ -61,7 +62,7 @@ import {
   transactionPermissionsToTxGroups,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { asTicker, calculateNextKey, removePadding } from '~/utils/internal';
+import { asTicker, calculateNextKey, removePadding, requestPaginated } from '~/utils/internal';
 
 import { AssetPermissions } from './AssetPermissions';
 import { IdentityAuthorizations } from './IdentityAuthorizations';
@@ -683,17 +684,28 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    * Get the list of secondary Accounts related to the Identity
    *
    * @note can be subscribed to
-   * @note This method currently lacks pagination and may be slow for identities with many thousands of keys
+   * @note This method currently can be slow when given a callback or requesting all accounts to be fetched if the Identity has a large number of Accounts
    */
-  public async getSecondaryAccounts(): Promise<PermissionedAccount[]>;
   public async getSecondaryAccounts(
-    callback: SubCallback<PermissionedAccount[]>
-  ): Promise<UnsubCallback>;
+    args?:
+      | {
+          opts?: PaginationOptions;
+        }
+      | {
+          fetchAll?: boolean;
+        }
+  ): Promise<ResultSet<PermissionedAccount>>;
+
+  public async getSecondaryAccounts(args: {
+    callback: SubCallback<PermissionedAccount[]>;
+  }): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
-  public async getSecondaryAccounts(
-    callback?: SubCallback<PermissionedAccount[]>
-  ): Promise<PermissionedAccount[] | UnsubCallback> {
+  public async getSecondaryAccounts(args: {
+    callback?: SubCallback<PermissionedAccount[]>;
+    opts?: PaginationOptions;
+    fetchAll?: boolean;
+  }): Promise<ResultSet<PermissionedAccount> | UnsubCallback> {
     const {
       did,
       context,
@@ -703,6 +715,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
         },
       },
     } = this;
+    const { callback, opts, fetchAll } = args || {};
 
     const assembleResult = (
       rawSecondaryKeyKeyRecord: Option<PolymeshPrimitivesSecondaryKeyKeyRecord>[],
@@ -727,7 +740,16 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       );
     };
 
-    const keys = await identity.didKeys.entries(did);
+    let keys, next;
+    if (!fetchAll && !callback) {
+      ({ entries: keys, lastKey: next } = await requestPaginated(identity.didKeys, {
+        arg: did,
+        paginationOpts: opts,
+      }));
+    } else {
+      keys = await identity.didKeys.entries(did);
+      next = null;
+    }
 
     const identityKeys = keys.map(([key]) => {
       const [, value] = key.args;
@@ -742,7 +764,10 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const rawPermissions = await identity.keyRecords.multi(identityKeys);
 
-    return assembleResult(rawPermissions, identityKeys);
+    return {
+      data: assembleResult(rawPermissions, identityKeys),
+      next,
+    };
   }
 
   /**

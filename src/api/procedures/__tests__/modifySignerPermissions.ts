@@ -51,26 +51,28 @@ describe('modifySignerPermissions procedure', () => {
     addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
     account = entityMockUtils.getAccountInstance({ address: 'someFakeAccount' });
     identity = entityMockUtils.getIdentityInstance({
-      getSecondaryAccounts: [
-        {
-          account,
-          permissions: {
-            assets: {
-              type: PermissionType.Include,
-              values: [],
+      getSecondaryAccounts: {
+        data: [
+          {
+            account,
+            permissions: {
+              assets: {
+                type: PermissionType.Include,
+                values: [],
+              },
+              portfolios: {
+                type: PermissionType.Include,
+                values: [],
+              },
+              transactions: {
+                type: PermissionType.Include,
+                values: [],
+              },
+              transactionGroups: [],
             },
-            portfolios: {
-              type: PermissionType.Include,
-              values: [],
-            },
-            transactions: {
-              type: PermissionType.Include,
-              values: [],
-            },
-            transactionGroups: [],
           },
-        },
-      ],
+        ],
+      },
     });
     mockContext = dsMockUtils.getContextInstance({
       getIdentity: identity,
@@ -116,7 +118,7 @@ describe('modifySignerPermissions procedure', () => {
 
     dsMockUtils.configureMocks({
       contextOptions: {
-        secondaryAccounts,
+        secondaryAccounts: { data: secondaryAccounts, next: null },
       },
     });
 
