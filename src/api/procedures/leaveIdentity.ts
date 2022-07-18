@@ -22,10 +22,11 @@ export async function prepareLeaveIdentity(this: Procedure<void, void>): Promise
     });
   }
 
-  const secondaryAccounts = await signingIdentity.getSecondaryAccounts({ fetchAll: true }); // TODO there should be a more efficient way to do this
-  const isSecondaryAccount = secondaryAccounts.data.find(({ account }) =>
-    account.isEqual(signingAccount)
-  );
+  const accountPermission = await signingIdentity.getSecondaryAccountPermissions({
+    accounts: [signingAccount],
+  });
+  const isSecondaryAccount =
+    accountPermission.length && signingAccount.isEqual(accountPermission[0].account);
 
   if (!isSecondaryAccount) {
     throw new PolymeshError({

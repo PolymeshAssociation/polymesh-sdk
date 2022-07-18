@@ -11,7 +11,7 @@ import { bool } from '@polkadot/types/primitive';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Asset, Context, Entity, Identity } from '~/internal';
+import { Asset, Context, Entity, Identity, PolymeshError } from '~/internal';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import { ScopeId } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -19,6 +19,7 @@ import { MockContext } from '~/testUtils/mocks/dataSources';
 import {
   Account,
   DistributionWithDetails,
+  ErrorCode,
   IdentityRole,
   Order,
   PermissionedAccount,
@@ -1316,6 +1317,117 @@ describe('Identity class', () => {
 
       expect(result).toBe(unsubCallback);
       sinon.assert.calledWithExactly(callback, fakeResult);
+    });
+  });
+
+  describe('method: getSecondaryAccountPermissions', () => {
+    const accountId = 'someAccountId';
+    const did = 'someDid';
+
+    let account: Account;
+    let fakeResult: PermissionedAccount[];
+
+    let rawPrimaryKeyRecord: PolymeshPrimitivesSecondaryKeyKeyRecord;
+    let rawSecondaryKeyRecord: PolymeshPrimitivesSecondaryKeyKeyRecord;
+    let rawMultiSigKeyRecord: PolymeshPrimitivesSecondaryKeyKeyRecord;
+    let stringToAccountIdStub: sinon.SinonStub<[string, Context], AccountId>;
+    let meshPermissionsToPermissionsStub: sinon.SinonStub<
+      [PolymeshPrimitivesSecondaryKeyPermissions, Context],
+      Permissions
+    >;
+
+    beforeAll(() => {
+      account = entityMockUtils.getAccountInstance({ address: accountId });
+      meshPermissionsToPermissionsStub = sinon.stub(
+        utilsConversionModule,
+        'meshPermissionsToPermissions'
+      );
+      stringToAccountIdStub = sinon.stub(utilsConversionModule, 'stringToAccountId');
+      account = entityMockUtils.getAccountInstance();
+      fakeResult = [
+        {
+          account,
+          permissions: {
+            assets: null,
+            portfolios: null,
+            transactions: null,
+            transactionGroups: [],
+          },
+        },
+      ];
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    beforeEach(() => {
+      rawPrimaryKeyRecord = dsMockUtils.createMockKeyRecord({
+        PrimaryKey: dsMockUtils.createMockIdentityId(did),
+      });
+      rawSecondaryKeyRecord = dsMockUtils.createMockKeyRecord({
+        SecondaryKey: [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockPermissions()],
+      });
+      rawMultiSigKeyRecord = dsMockUtils.createMockKeyRecord({
+        MultiSigSignerKey: dsMockUtils.createMockAccountId('someAddress'),
+      });
+
+      meshPermissionsToPermissionsStub.returns({
+        assets: null,
+        portfolios: null,
+        transactions: null,
+        transactionGroups: [],
+      });
+      stringToAccountIdStub.returns(dsMockUtils.createMockAccountId(accountId));
+    });
+
+    it('should return a list of Accounts', async () => {
+      dsMockUtils.createQueryStub('identity', 'keyRecords', {
+        multi: [
+          dsMockUtils.createMockOption(rawPrimaryKeyRecord),
+          dsMockUtils.createMockOption(rawSecondaryKeyRecord),
+          dsMockUtils.createMockOption(rawMultiSigKeyRecord),
+        ],
+      });
+      identityIdToStringStub.returns('someDid');
+      const identity = new Identity({ did: 'someDid' }, context);
+
+      const result = await identity.getSecondaryAccountPermissions({
+        accounts: [
+          entityMockUtils.getAccountInstance(),
+          account,
+          entityMockUtils.getAccountInstance(),
+        ],
+      });
+
+      expect(result).toEqual(fakeResult);
+    });
+
+    it('should error if given an Account that does not belong to the identity', () => {
+      dsMockUtils.createQueryStub('identity', 'keyRecords', {
+        multi: [
+          dsMockUtils.createMockOption(rawPrimaryKeyRecord),
+          dsMockUtils.createMockOption(rawSecondaryKeyRecord),
+          dsMockUtils.createMockOption(rawMultiSigKeyRecord),
+        ],
+      });
+      identityIdToStringStub.returns('someDid');
+      const identity = new Identity({ did: 'otherDid' }, context);
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.UnexpectedError,
+        message: 'Given an account that belongs to another Identity',
+      });
+
+      return expect(
+        identity.getSecondaryAccountPermissions({
+          accounts: [
+            entityMockUtils.getAccountInstance(),
+            account,
+            entityMockUtils.getAccountInstance(),
+          ],
+        })
+      ).rejects.toThrowError(expectedError);
     });
   });
 

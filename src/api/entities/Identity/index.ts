@@ -57,6 +57,7 @@ import {
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
   scopeIdToString,
+  stringToAccountId,
   stringToIdentityId,
   stringToTicker,
   transactionPermissionsToTxGroups,
@@ -686,15 +687,9 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    * @note can be subscribed to
    * @note This method currently can be slow when given a callback or requesting all accounts to be fetched if the Identity has a large number of Accounts
    */
-  public async getSecondaryAccounts(
-    args?:
-      | {
-          opts?: PaginationOptions;
-        }
-      | {
-          fetchAll?: boolean;
-        }
-  ): Promise<ResultSet<PermissionedAccount>>;
+  public async getSecondaryAccounts(args?: {
+    opts?: PaginationOptions;
+  }): Promise<ResultSet<PermissionedAccount>>;
 
   public async getSecondaryAccounts(args: {
     callback: SubCallback<PermissionedAccount[]>;
@@ -771,9 +766,54 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
+   * Fetches account permissions for the given secondary Accounts
+   *
+   * @throws if given an Account that belongs to a different Identity. Unlinked Accounts are ignored
+   */
+  public async getSecondaryAccountPermissions(args: {
+    accounts: Account[];
+  }): Promise<PermissionedAccount[]> {
+    const {
+      did,
+      context,
+      context: {
+        polymeshApi: {
+          query: { identity },
+        },
+      },
+    } = this;
+
+    const { accounts } = args;
+
+    const identityKeys = accounts.map(a => stringToAccountId(a.address, context));
+    const results = await identity.keyRecords.multi(identityKeys);
+    return results.reduce((result: PermissionedAccount[], optKeyRecord, index) => {
+      const account = accounts[index];
+      const record = optKeyRecord.unwrap();
+      if (record.isSecondaryKey) {
+        const [rawIdentityId, rawPermissions] = record.asSecondaryKey;
+
+        if (identityIdToString(rawIdentityId) !== did) {
+          throw new PolymeshError({
+            code: ErrorCode.General,
+            message: 'Given an account that belongs to another Identity',
+          });
+        }
+
+        result.push({
+          account,
+          permissions: meshPermissionsToPermissions(rawPermissions, context),
+        });
+      }
+
+      return result;
+    }, []);
+  }
+
+  /**
    * Determine whether this Identity exists on chain
    *
-   * @note asset Identities aren't considered to exist for the
+   * @note asset Identities aren't considered to exist for this check
    */
   public async exists(): Promise<boolean> {
     const { did, context } = this;

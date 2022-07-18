@@ -60,18 +60,15 @@ describe('removeSecondaryAccounts procedure', () => {
 
     dsMockUtils.configureMocks({
       contextOptions: {
-        secondaryAccounts: {
-          data: accounts.map(secondaryAccount => ({
-            account: secondaryAccount,
-            permissions: {
-              assets: null,
-              transactions: null,
-              transactionGroups: [],
-              portfolios: null,
-            },
-          })),
-          next: null,
-        },
+        secondaryAccountsPermissions: accounts.map(secondaryAccount => ({
+          account: secondaryAccount,
+          permissions: {
+            assets: null,
+            transactions: null,
+            transactionGroups: [],
+            portfolios: null,
+          },
+        })),
       },
     });
 

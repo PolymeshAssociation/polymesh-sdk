@@ -424,6 +424,7 @@ interface ContextOptions {
   getExternalSigner?: PolkadotSigner;
   primaryAccount?: string;
   secondaryAccounts?: ResultSet<PermissionedAccount>;
+  secondaryAccountsPermissions?: PermissionedAccount[];
   transactionHistory?: ResultSet<ExtrinsicData>;
   latestBlock?: BigNumber;
   middlewareEnabled?: boolean;
@@ -688,6 +689,7 @@ const defaultContextOptions: ContextOptions = {
   },
   primaryAccount: 'primaryAccount',
   secondaryAccounts: { data: [], next: null },
+  secondaryAccountsPermissions: [],
   transactionHistory: {
     data: [],
     next: null,
@@ -742,6 +744,7 @@ function configureContext(opts: ContextOptions): void {
       },
     }),
     getSecondaryAccounts: sinon.stub().resolves(opts.secondaryAccounts),
+    getSecondaryAccountPermissions: sinon.stub().resolves(opts.secondaryAccountsPermissions),
     authorizations: {
       getSent: sinon.stub().resolves(opts.sentAuthorizations),
     },

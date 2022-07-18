@@ -122,6 +122,7 @@ interface IdentityOptions extends EntityOptions {
   getScopeId?: EntityGetter<string | null>;
   getAssetBalance?: EntityGetter<BigNumber>;
   getSecondaryAccounts?: EntityGetter<ResultSet<PermissionedAccount>>;
+  getSecondaryAccountPermissions?: EntityGetter<PermissionedAccount[]>;
   areSecondaryAccountsFrozen?: EntityGetter<boolean>;
   assetPermissionsGetGroup?: EntityGetter<CustomPermissionGroup | KnownPermissionGroup>;
   assetPermissionsGet?: EntityGetter<AssetWithGroup[]>;
@@ -493,6 +494,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     getScopeId!: sinon.SinonStub;
     getAssetBalance!: sinon.SinonStub;
     getSecondaryAccounts!: sinon.SinonStub;
+    getSecondaryAccountPermissions!: sinon.SinonStub;
     areSecondaryAccountsFrozen!: sinon.SinonStub;
     isCddProvider!: sinon.SinonStub;
 
@@ -529,6 +531,9 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
       this.getScopeId = createEntityGetterStub(opts.getScopeId);
       this.getAssetBalance = createEntityGetterStub(opts.getAssetBalance);
       this.getSecondaryAccounts = createEntityGetterStub(opts.getSecondaryAccounts);
+      this.getSecondaryAccountPermissions = createEntityGetterStub(
+        opts.getSecondaryAccountPermissions
+      );
       this.areSecondaryAccountsFrozen = createEntityGetterStub(opts.areSecondaryAccountsFrozen);
       this.isCddProvider = createEntityGetterStub(opts.isCddProvider);
     }
@@ -544,6 +549,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     getScopeId: 'someScopeId',
     getAssetBalance: new BigNumber(100),
     getSecondaryAccounts: { data: [], next: null },
+    getSecondaryAccountPermissions: [] as PermissionedAccount[],
     areSecondaryAccountsFrozen: false,
     getPrimaryAccount: {
       account: getAccountInstance(),
