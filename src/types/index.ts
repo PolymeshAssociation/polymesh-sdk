@@ -334,24 +334,17 @@ export interface StatAffiliateClaimInput {
   affiliate: boolean;
 }
 
-export type StatClaimInput =
+export type InputStatClaim =
   | StatJurisdictionClaimInput
   | StatAccreditedClaimInput
   | StatAffiliateClaimInput;
 
-export type StatTypeInput =
+export type InputStatType =
   | {
-      type: StatType.Count;
+      type: StatType.Count | StatType.Balance;
     }
   | {
-      type: StatType.Balance;
-    }
-  | {
-      type: StatType.ScopedCount;
-      claimIssuer: StatClaimIssuer;
-    }
-  | {
-      type: StatType.ScopedBalance;
+      type: StatType.ScopedCount | StatType.ScopedBalance;
       claimIssuer: StatClaimIssuer;
     };
 export interface IdentityWithClaims {
@@ -376,7 +369,7 @@ export enum StatType {
    */
   ScopedCount = 'ScopedCount',
   /**
-   * Keeps track of the amount of supply investors hold who have a certain claim
+   * Keeps track of the amount of supply held between investors who have a certain claim
    */
   ScopedBalance = 'ScopedBalance',
 }
@@ -1317,7 +1310,7 @@ export interface ClaimCountTransferRestriction extends TransferRestrictionBase {
   /**
    * The type of investors this restriction applies to. e.g. non-accredited
    */
-  claim: StatClaimInput;
+  claim: InputStatClaim;
   /**
    * The minimum amount of investors the must meet the Claim criteria
    */
@@ -1333,7 +1326,7 @@ export interface ClaimPercentageTransferRestriction extends TransferRestrictionB
   /**
    * The type of investors this restriction applies to. e.g. Canadian investor
    */
-  claim: StatClaimInput;
+  claim: InputStatClaim;
   /**
    * The minimum percentage of the total supply that investors meeting the Claim criteria must hold
    */
@@ -1386,14 +1379,14 @@ export interface ClaimCountRestrictionValue {
   min: BigNumber;
   max?: BigNumber;
   issuer: Identity;
-  claim: StatClaimInput;
+  claim: InputStatClaim;
 }
 
 export interface ClaimPercentageRestrictionValue {
   min: BigNumber;
   max: BigNumber;
   issuer: Identity;
-  claim: StatClaimInput;
+  claim: InputStatClaim;
 }
 
 export interface AddCountStatInput {

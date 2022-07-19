@@ -21,10 +21,10 @@ import {
   bigNumberToBalance,
   booleanToBool,
   boolToBoolean,
+  inputStatTypeToMeshStatType,
   internalAssetTypeToAssetType,
   securityIdentifierToAssetIdentifier,
   statisticStatTypesToBtreeStatType,
-  statTypeInputToRawStatType,
   stringToBytes,
   stringToTicker,
   stringToTickerKey,
@@ -232,7 +232,7 @@ export async function prepareCreateAsset(
 
   if (initialStatistics?.length) {
     const tickerKey = stringToTickerKey(ticker, context);
-    const rawStats = initialStatistics.map(i => statTypeInputToRawStatType(i, context));
+    const rawStats = initialStatistics.map(i => inputStatTypeToMeshStatType(i, context));
     const bTreeStats = statisticStatTypesToBtreeStatType(rawStats, context);
     transactions.push(
       checkTxType({

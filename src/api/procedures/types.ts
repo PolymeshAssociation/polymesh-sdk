@@ -24,6 +24,8 @@ import {
   InputCondition,
   InputCorporateActionTargets,
   InputCorporateActionTaxWithholdings,
+  InputStatClaim,
+  InputStatType,
   InputTargets,
   InputTaxWithholding,
   InputTrustedClaimIssuer,
@@ -36,8 +38,6 @@ import {
   Requirement,
   Scope,
   SecurityIdentifier,
-  StatClaimInput,
-  StatTypeInput,
   TransactionPermissions,
   TxGroup,
   VenueType,
@@ -113,13 +113,13 @@ export interface ClaimCountTransferRestrictionInput extends TransferRestrictionI
   min: BigNumber;
   max?: BigNumber;
   issuer: Identity;
-  claim: StatClaimInput;
+  claim: InputStatClaim;
 }
 export interface ClaimPercentageTransferRestrictionInput extends TransferRestrictionInputBase {
   min: BigNumber;
   max: BigNumber;
   issuer: Identity;
-  claim: StatClaimInput;
+  claim: InputStatClaim;
 }
 
 export type AddCountTransferRestrictionParams = CountTransferRestrictionInput & {
@@ -246,8 +246,9 @@ export interface CreateAssetParams {
    *
    * These restrictions require a `Count` and `ScopedCount` statistic to be created. Although they an be created after the Asset is made, it is recommended to create statistics
    * before the Asset is circulated. Count statistics made after Asset creation need their initial value set, so it is simpler to create them before investors hold the Asset.
+   * If you do need to create a stat for an Asset after creation, you can use the { @link TransferRestrictionBase.enableStat } method
    */
-  initialStatistics?: StatTypeInput[];
+  initialStatistics?: InputStatType[];
 }
 
 export interface CreateAssetWithTickerParams extends CreateAssetParams {

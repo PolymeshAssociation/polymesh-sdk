@@ -119,6 +119,7 @@ import {
   Signer,
   SignerType,
   SignerValue,
+  StatType,
   TargetTreatment,
   TransferError,
   TransferRestriction,
@@ -185,6 +186,7 @@ import {
   granularCanTransferResultToTransferBreakdown,
   hashToString,
   identityIdToString,
+  inputStatTypeToMeshStatType,
   internalAssetTypeToAssetType,
   isCusipValid,
   isFigiValid,
@@ -8202,5 +8204,68 @@ describe('sortTransferRestrictionByClaimValue', () => {
       accreditedRestriction,
       affiliatedRestriction,
     ]);
+  });
+});
+
+describe('inputStatTypeToMeshStatType', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert InputStatType to PolymeshPrimitivesStatisticsStatType', () => {
+    const mockContext = dsMockUtils.getContextInstance();
+    const createTypeStub = mockContext.createType;
+    const fakeOp = 'fakeOp';
+    const fakeIssuer = 'fakeIssuer';
+    const fakeClaimType = 'fakeClaimType';
+    const fakeStatistic = 'fakeStatistic';
+    const did = 'did';
+
+    createTypeStub
+      .withArgs('PolymeshPrimitivesStatisticsStatOpType', StatType.Count)
+      .returns(fakeOp);
+
+    createTypeStub
+      .withArgs('PolymeshPrimitivesStatisticsStatOpType', StatType.Balance)
+      .returns(fakeOp);
+
+    createTypeStub
+      .withArgs('PolymeshPrimitivesStatisticsStatType', { op: fakeOp, claimIssuer: undefined })
+      .returns(fakeStatistic);
+
+    createTypeStub
+      .withArgs('PolymeshPrimitivesIdentityClaimClaimType', ClaimType.Accredited)
+      .returns(fakeClaimType);
+
+    createTypeStub.withArgs('PolymeshPrimitivesIdentityId', did).returns(fakeIssuer);
+
+    createTypeStub
+      .withArgs('PolymeshPrimitivesStatisticsStatType', {
+        op: fakeOp,
+        claimIssuer: [fakeClaimType, fakeIssuer],
+      })
+      .returns(fakeStatistic);
+
+    const unscopedInput = { type: StatType.Count } as const;
+    let result = inputStatTypeToMeshStatType(unscopedInput, mockContext);
+    expect(result).toEqual(fakeStatistic);
+
+    const scopedInput = {
+      type: StatType.ScopedBalance,
+      claimIssuer: {
+        issuer: entityMockUtils.getIdentityInstance({ did }),
+        claimType: ClaimType.Accredited,
+      },
+    } as const;
+    result = inputStatTypeToMeshStatType(scopedInput, mockContext);
+    expect(result).toEqual(fakeStatistic);
   });
 });

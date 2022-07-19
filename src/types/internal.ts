@@ -19,12 +19,12 @@ import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { CustomAssetTypeId } from '~/polkadot';
 import {
   CalendarPeriod,
+  InputStatClaim,
   KnownAssetType,
   PermissionGroupType,
   Role,
   SignerValue,
   SimplePermissions,
-  StatClaimInput,
   StatClaimType,
   TxTag,
 } from '~/types';
@@ -366,7 +366,7 @@ export interface ExemptKey {
   op: PolymeshPrimitivesStatisticsStatOpType;
 }
 
-export type StatClaimInputType = Omit<StatClaimInput, 'affiliate' | 'accredited'>;
+export type StatClaimInputType = Omit<InputStatClaim, 'affiliate' | 'accredited'>;
 
 export interface StatClaimIssuer {
   issuer: Identity;

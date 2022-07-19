@@ -174,6 +174,8 @@ import {
   InputCorporateActionTargets,
   InputCorporateActionTaxWithholdings,
   InputRequirement,
+  InputStatClaim,
+  InputStatType,
   InputTrustedClaimIssuer,
   InstructionType,
   KnownAssetType,
@@ -204,10 +206,8 @@ import {
   SignerType,
   SignerValue,
   SingleClaimCondition,
-  StatClaimInput,
   StatClaimType,
   StatType,
-  StatTypeInput,
   TargetTreatment,
   Tier,
   TransactionPermissions,
@@ -544,7 +544,7 @@ export function permillToBigNumber(value: Permill): BigNumber {
 /**
  *  @hidden
  */
-export function meshClaimToStatClaimInput(claim: StatClaim): StatClaimInput {
+export function meshClaimToStatClaimInput(claim: StatClaim): InputStatClaim {
   if (claim.isAccredited) {
     return {
       type: ClaimType.Accredited,
@@ -2911,7 +2911,7 @@ export function transferRestrictionToPolymeshTransferCondition(
   let restrictionType: string;
   let restrictionValue;
 
-  const extractClaimValue = (claim: StatClaimInput): bool | MeshCountryCode | null => {
+  const extractClaimValue = (claim: InputStatClaim): bool | MeshCountryCode | null => {
     if (claim.type === ClaimType.Accredited) {
       return booleanToBool(claim.accredited, context);
     } else if (claim.type === ClaimType.Affiliate) {
@@ -3974,8 +3974,8 @@ export function countStatInputToStatUpdates(
 /**
  * @hidden
  */
-export function statTypeInputToRawStatType(
-  input: StatTypeInput,
+export function inputStatTypeToMeshStatType(
+  input: InputStatType,
   context: Context
 ): PolymeshPrimitivesStatisticsStatType {
   const { type } = input;
