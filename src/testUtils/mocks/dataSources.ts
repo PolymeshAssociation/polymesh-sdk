@@ -4189,8 +4189,14 @@ export const createMockAssetTransferCompliance = (
     paused: dsMockUtils.createMockBool(false),
     requirements: dsMockUtils.createMockBTreeSet([]),
   };
-  return createMockCodec(
+  const result = createMockCodec(
     { paused, requirements },
     !transferCompliance
   ) as MockCodec<PolymeshPrimitivesTransferComplianceAssetTransferCompliance>;
+
+  // The Codec conversion wipes out the needed size property on requirements
+  (
+    result.requirements as Mutable<BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>>
+  ).size = requirements.size;
+  return result;
 };

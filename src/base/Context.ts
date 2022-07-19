@@ -1397,7 +1397,7 @@ export class Context {
     } catch (error) {
       throw new PolymeshError({
         code: ErrorCode.UnexpectedError,
-        message: `Could not create internal Polymesh type: "${type}". Please report this error to the Polymath team`,
+        message: `Could not create internal Polymesh type: "${type}". Please report this error to the Polymesh team`,
         data: { type, params, error },
       });
     }

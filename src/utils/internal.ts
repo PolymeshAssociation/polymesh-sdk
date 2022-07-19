@@ -295,7 +295,7 @@ export function filterEventRecords<
       code: ErrorCode.UnexpectedError,
       message: `Event "${mod}.${String(
         eventName
-      )}" wasn't fired even though the corresponding transaction was completed. Please report this to the Polymath team`,
+      )}" wasn't fired even though the corresponding transaction was completed. Please report this to the Polymesh team`,
     });
   }
 
@@ -1208,8 +1208,9 @@ export function compareStatsToInput(
 ): boolean {
   let claimIssuer;
   const { type } = args;
+
   if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
-    ({ claimIssuer } = args);
+    claimIssuer = { issuer: args.issuer, claimType: args.claimType };
   }
 
   if (rawStatType.claimIssuer.isNone && !!claimIssuer) {
@@ -1220,6 +1221,7 @@ export function compareStatsToInput(
     if (!claimIssuer) {
       return false;
     }
+
     const { issuer, claimType } = claimIssuer;
     const [meshType, meshIssuer] = rawStatType.claimIssuer.unwrap();
     const issuerDid = identityIdToString(meshIssuer);

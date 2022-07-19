@@ -1417,7 +1417,7 @@ export function authorizationDataToAuthorization(
 
   throw new PolymeshError({
     code: ErrorCode.UnexpectedError,
-    message: 'Unsupported Authorization Type. Please contact the Polymath team',
+    message: 'Unsupported Authorization Type. Please contact the Polymesh team',
     data: {
       auth: JSON.stringify(auth, null, 2),
     },
@@ -1514,7 +1514,7 @@ export function u8ToTransferStatus(status: u8): TransferStatus {
     default: {
       throw new PolymeshError({
         code: ErrorCode.UnexpectedError,
-        message: `Unsupported status code "${status.toString()}". Please report this issue to the Polymath team`,
+        message: `Unsupported status code "${status.toString()}". Please report this issue to the Polymesh team`,
       });
     }
   }
@@ -2933,26 +2933,27 @@ export function transferRestrictionToPolymeshTransferCondition(
   ) {
     let rawMin;
     let rawMax;
+    const { min, max, claim, issuer } = value;
     if (type === TransferRestrictionType.ClaimCount) {
       restrictionType = 'ClaimCount';
-      rawMin = bigNumberToU64(value.min, context);
-      rawMax = optionize(bigNumberToU64)(value.max, context);
+      rawMin = bigNumberToU64(min, context);
+      rawMax = optionize(bigNumberToU64)(max, context);
     } else {
       // i.e. TransferRestrictionType.ClaimPercentage
       restrictionType = 'ClaimOwnership';
-      rawMin = percentageToPermill(value.min, context);
+      rawMin = percentageToPermill(min, context);
       rawMax = percentageToPermill(value.max, context);
     }
-    const val = extractClaimValue(value.claim);
+    const val = extractClaimValue(claim);
     const claimValue = {
-      [value.claim.type]: val,
+      [claim.type]: val,
     };
-    const rawIdentityId = stringToIdentityId(value.issuer.did, context);
+    const rawIdentityId = stringToIdentityId(issuer.did, context);
     restrictionValue = [claimValue, rawIdentityId, rawMin, rawMax];
   } else {
     throw new PolymeshError({
       code: ErrorCode.UnexpectedError,
-      message: `Unexpected transfer restriction type: "${type}". Please report this to the Polymath team`,
+      message: `Unexpected transfer restriction type: "${type}". Please report this to the Polymesh team`,
     });
   }
   return context.createType('PolymeshPrimitivesTransferComplianceTransferCondition', {
@@ -3853,18 +3854,18 @@ export function sortTransferRestrictionByClaimValue(
   const getJurisdictionValue = (
     condition: PolymeshPrimitivesTransferComplianceTransferCondition
   ): Option<MeshCountryCode> | undefined => {
-    const { isClaimCount, asClaimCount, isClaimOwnership, asClaimOwnership } = condition;
+    const { isClaimCount, isClaimOwnership } = condition;
     if (isClaimCount) {
-      if (!asClaimCount[0].isJurisdiction) {
+      if (!condition.asClaimCount[0].isJurisdiction) {
         return undefined;
       } else {
-        return asClaimCount[0].asJurisdiction;
+        return condition.asClaimCount[0].asJurisdiction;
       }
     } else if (isClaimOwnership) {
-      if (!asClaimOwnership[0].isJurisdiction) {
+      if (!condition.asClaimOwnership[0].isJurisdiction) {
         return undefined;
       }
-      return asClaimOwnership[0].asJurisdiction;
+      return condition.asClaimOwnership[0].asJurisdiction;
     } else {
       return undefined;
     }
@@ -3928,19 +3929,17 @@ export function claimCountStatInputToStatUpdates(
   args: ClaimCountStatInput,
   context: Context
 ): BTreeSet<PolymeshPrimitivesStatisticsStatUpdate> {
-  const {
-    claimIssuer: { value, claimType: type },
-  } = args;
+  const { value, claimType: type } = args;
   let updateArgs;
 
-  if (value instanceof Array) {
+  if (type === ClaimType.Jurisdiction) {
     updateArgs = value.map(({ countryCode, count }) => {
       const rawSecondKey = createStat2ndKey(type, context, countryCode);
       return keyAndValueToStatUpdate(rawSecondKey, bigNumberToU128(count, context), context);
     });
   } else {
     let yes, no;
-    if ('accredited' in value) {
+    if (type === ClaimType.Accredited) {
       ({ accredited: yes, nonAccredited: no } = value);
     } else {
       ({ affiliate: yes, nonAffiliate: no } = value);

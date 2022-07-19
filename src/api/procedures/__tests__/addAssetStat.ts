@@ -184,13 +184,11 @@ describe('addAssetStat procedure', () => {
     args = {
       type: StatType.ScopedCount,
       ticker,
-      claimIssuer: {
-        issuer: entityMockUtils.getIdentityInstance(),
-        claimType: ClaimType.Accredited,
-        value: {
-          accredited: new BigNumber(1),
-          nonAccredited: new BigNumber(2),
-        },
+      issuer: entityMockUtils.getIdentityInstance(),
+      claimType: ClaimType.Accredited,
+      value: {
+        accredited: new BigNumber(1),
+        nonAccredited: new BigNumber(2),
       },
     };
 

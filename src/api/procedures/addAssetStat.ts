@@ -2,8 +2,8 @@ import { Asset, PolymeshError, Procedure } from '~/internal';
 import {
   AddCountStatInput,
   ClaimCountStatInput,
-  ClaimPercentageStatInput,
   ErrorCode,
+  StatClaimIssuer,
   StatType,
   TxTags,
 } from '~/types';
@@ -31,7 +31,7 @@ export type AddClaimCountStatParams = ClaimCountStatInput & {
   type: StatType.ScopedCount;
 };
 
-export type AddClaimPercentageStatParams = ClaimPercentageStatInput & {
+export type AddClaimPercentageStatParams = StatClaimIssuer & {
   type: StatType.ScopedBalance;
 };
 
@@ -80,7 +80,7 @@ export async function prepareAddAssetStat(
 
   let rawClaimIssuer;
   if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
-    rawClaimIssuer = claimIssuerToMeshClaimIssuer(args.claimIssuer, context);
+    rawClaimIssuer = claimIssuerToMeshClaimIssuer(args, context);
   }
 
   const newStat = statisticsOpTypeToStatType({ op, claimIssuer: rawClaimIssuer }, context);

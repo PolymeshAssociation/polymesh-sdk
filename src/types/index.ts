@@ -538,7 +538,7 @@ export enum ErrorCode {
   /**
    * transaction failed due to an on-chain error. This is a business logic error,
    *   and it should be caught by the SDK before being sent to the chain.
-   *   Please report it to the Polymath team
+   *   Please report it to the Polymesh team
    */
   TransactionReverted = 'TransactionReverted',
   /**
@@ -591,7 +591,7 @@ export enum ErrorCode {
   InsufficientBalance = 'InsufficientBalance',
   /**
    * errors that are the result of something unforeseen.
-   *   These should generally be reported to the Polymath team
+   *   These should generally be reported to the Polymesh team
    */
   UnexpectedError = 'UnexpectedError',
   /**
@@ -1397,28 +1397,23 @@ export interface StatClaimIssuer {
   issuer: Identity;
   claimType: StatClaimType;
 }
-export interface ClaimCountStatInput {
-  claimIssuer:
-    | {
-        issuer: Identity;
-        claimType: ClaimType.Accredited;
-        value: { accredited: BigNumber; nonAccredited: BigNumber };
-      }
-    | {
-        issuer: Identity;
-        claimType: ClaimType.Affiliate;
-        value: { affiliate: BigNumber; nonAffiliate: BigNumber };
-      }
-    | {
-        issuer: Identity;
-        claimType: ClaimType.Jurisdiction;
-        value: { countryCode: CountryCode; count: BigNumber }[];
-      };
-}
 
-export interface ClaimPercentageStatInput {
-  claimIssuer: StatClaimIssuer;
-}
+export type ClaimCountStatInput =
+  | {
+      issuer: Identity;
+      claimType: ClaimType.Accredited;
+      value: { accredited: BigNumber; nonAccredited: BigNumber };
+    }
+  | {
+      issuer: Identity;
+      claimType: ClaimType.Affiliate;
+      value: { affiliate: BigNumber; nonAffiliate: BigNumber };
+    }
+  | {
+      issuer: Identity;
+      claimType: ClaimType.Jurisdiction;
+      value: { countryCode: CountryCode; count: BigNumber }[];
+    };
 
 export enum CalendarUnit {
   Second = 'second',

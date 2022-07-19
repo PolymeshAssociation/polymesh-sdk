@@ -1372,7 +1372,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       );
 
       expect(() => authorizationDataToAuthorization(authorizationData, context)).toThrow(
-        'Unsupported Authorization Type. Please contact the Polymath team'
+        'Unsupported Authorization Type. Please contact the Polymesh team'
       );
     });
   });
@@ -2435,7 +2435,7 @@ describe('u8ToTransferStatus', () => {
 
     const fakeStatusCode = new BigNumber(1);
     expect(() => u8ToTransferStatus(dsMockUtils.createMockU8(fakeStatusCode))).toThrow(
-      `Unsupported status code "${fakeStatusCode}". Please report this issue to the Polymath team`
+      `Unsupported status code "${fakeStatusCode}". Please report this issue to the Polymesh team`
     );
   });
 });
@@ -5934,7 +5934,7 @@ describe('transferRestrictionToPolymeshTransferCondition', () => {
     const expectedError = new PolymeshError({
       code: ErrorCode.UnexpectedError,
       message:
-        'Unexpected transfer restriction type: "Unknown". Please report this to the Polymath team',
+        'Unexpected transfer restriction type: "Unknown". Please report this to the Polymesh team',
     });
 
     return expect(() =>
@@ -7947,11 +7947,9 @@ describe('claimCountStatInputToStatUpdates', () => {
 
     let result = claimCountStatInputToStatUpdates(
       {
-        claimIssuer: {
-          issuer,
-          claimType: ClaimType.Affiliate,
-          value: { affiliate: yes, nonAffiliate: no },
-        },
+        issuer,
+        claimType: ClaimType.Affiliate,
+        value: { affiliate: yes, nonAffiliate: no },
       },
       context
     );
@@ -7959,11 +7957,9 @@ describe('claimCountStatInputToStatUpdates', () => {
 
     result = claimCountStatInputToStatUpdates(
       {
-        claimIssuer: {
-          issuer,
-          claimType: ClaimType.Accredited,
-          value: { accredited: yes, nonAccredited: no },
-        },
+        issuer,
+        claimType: ClaimType.Accredited,
+        value: { accredited: yes, nonAccredited: no },
       },
       context
     );
@@ -7981,7 +7977,9 @@ describe('claimCountStatInputToStatUpdates', () => {
     ];
     result = claimCountStatInputToStatUpdates(
       {
-        claimIssuer: { issuer, claimType: ClaimType.Jurisdiction, value: countryValue },
+        issuer,
+        claimType: ClaimType.Jurisdiction,
+        value: countryValue,
       },
       context
     );

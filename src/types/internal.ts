@@ -372,3 +372,25 @@ export interface StatClaimIssuer {
   issuer: Identity;
   claimType: StatClaimType;
 }
+
+/**
+ * Represents the different type of statistics that can be enabled for an Asset
+ */
+export enum StatType {
+  /**
+   * Keeps a count of the total number of investors
+   */
+  Count = 'Count',
+  /**
+   * Keeps track of the amount of supply investors hold
+   */
+  Balance = 'Balance',
+  /**
+   * Keeps a count of the total number of investors who have a certain claim
+   */
+  ScopedCount = 'ScopedCount',
+  /**
+   * Keeps track of the percentage of total supply held by investors who have a certain claim
+   */
+  ScopedBalance = 'ScopedBalance',
+}
