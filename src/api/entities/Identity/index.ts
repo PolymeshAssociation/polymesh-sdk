@@ -699,7 +699,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   public async getSecondaryAccounts(args: {
     callback?: SubCallback<PermissionedAccount[]>;
     opts?: PaginationOptions;
-    fetchAll?: boolean;
   }): Promise<ResultSet<PermissionedAccount> | UnsubCallback> {
     const {
       did,
@@ -710,7 +709,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
         },
       },
     } = this;
-    const { callback, opts, fetchAll } = args || {};
+    const { callback, opts } = args || {};
 
     const assembleResult = (
       rawSecondaryKeyKeyRecord: Option<PolymeshPrimitivesSecondaryKeyKeyRecord>[],
@@ -736,14 +735,15 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     };
 
     let keys, next;
-    if (!fetchAll && !callback) {
+    if (callback) {
+      // when given a callback fetch all entries
+      keys = await identity.didKeys.entries(did);
+      next = null;
+    } else {
       ({ entries: keys, lastKey: next } = await requestPaginated(identity.didKeys, {
         arg: did,
         paginationOpts: opts,
       }));
-    } else {
-      keys = await identity.didKeys.entries(did);
-      next = null;
     }
 
     const identityKeys = keys.map(([key]) => {
