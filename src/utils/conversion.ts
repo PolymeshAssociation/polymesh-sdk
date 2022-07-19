@@ -3980,7 +3980,7 @@ export function inputStatTypeToMeshStatType(
   const { type } = input;
   const op = statTypeToStatOpType(type, context);
   let claimIssuer;
-  if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
+  if (type === StatType.ScopedCount || type === StatType.ScopedPercentage) {
     claimIssuer = claimIssuerToMeshClaimIssuer(input.claimIssuer, context);
   }
   return statisticsOpTypeToStatType({ op, claimIssuer }, context);

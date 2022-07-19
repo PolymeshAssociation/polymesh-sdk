@@ -515,7 +515,7 @@ describe('createAsset procedure', () => {
     const result = await prepareCreateAsset.call(proc, {
       ...args,
       initialStatistics: [
-        { type: StatType.Balance },
+        { type: StatType.Percentage },
         { type: StatType.ScopedCount, claimIssuer: { claimType: ClaimType.Accredited, issuer } },
       ],
     });

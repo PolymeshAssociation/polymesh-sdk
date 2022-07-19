@@ -341,10 +341,10 @@ export type InputStatClaim =
 
 export type InputStatType =
   | {
-      type: StatType.Count | StatType.Balance;
+      type: StatType.Count | StatType.Percentage;
     }
   | {
-      type: StatType.ScopedCount | StatType.ScopedBalance;
+      type: StatType.ScopedCount | StatType.ScopedPercentage;
       claimIssuer: StatClaimIssuer;
     };
 export interface IdentityWithClaims {
@@ -363,7 +363,7 @@ export enum StatType {
   /**
    * Keeps track of the amount of supply investors hold
    */
-  Balance = 'Balance',
+  Percentage = 'Percentage',
   /**
    * Keeps a count of the total number of investors who have a certain claim
    */
@@ -371,7 +371,7 @@ export enum StatType {
   /**
    * Keeps track of the amount of supply held between investors who have a certain claim
    */
-  ScopedBalance = 'ScopedBalance',
+  ScopedPercentage = 'ScopedBalance',
 }
 export interface ExtrinsicData {
   blockHash: string;

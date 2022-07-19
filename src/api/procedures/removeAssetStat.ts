@@ -22,7 +22,7 @@ export type RemoveCountStatParams = {
 };
 
 export type RemoveBalanceStatParams = {
-  type: StatType.Balance;
+  type: StatType.Percentage;
 };
 
 export type RemoveScopedCountParams = StatClaimIssuer & {
@@ -30,7 +30,7 @@ export type RemoveScopedCountParams = StatClaimIssuer & {
 };
 
 export type RemoveScopedBalanceParams = StatClaimIssuer & {
-  type: StatType.ScopedBalance;
+  type: StatType.ScopedPercentage;
 };
 
 export type RemoveAssetStatParams = { ticker: string } & (
@@ -77,7 +77,7 @@ export async function prepareRemoveAssetStat(
   let rawClaimIssuer:
     | [PolymeshPrimitivesIdentityClaimClaimType, PolymeshPrimitivesIdentityId]
     | undefined;
-  if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
+  if (type === StatType.ScopedCount || type === StatType.ScopedPercentage) {
     claimIssuer = { issuer: args.issuer, claimType: args.claimType };
     rawClaimIssuer = claimIssuerToMeshClaimIssuer(claimIssuer, context);
   }

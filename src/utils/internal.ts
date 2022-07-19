@@ -1209,7 +1209,7 @@ export function compareStatsToInput(
   let claimIssuer;
   const { type } = args;
 
-  if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
+  if (type === StatType.ScopedCount || type === StatType.ScopedPercentage) {
     claimIssuer = { issuer: args.issuer, claimType: args.claimType };
   }
 
@@ -1240,11 +1240,11 @@ export function compareStatsToInput(
   if (stat === StatisticsOpType.Count) {
     cmpStat = StatType.Count;
   } else if (stat === StatisticsOpType.Balance) {
-    cmpStat = StatType.Balance;
+    cmpStat = StatType.Percentage;
   } else if (stat === StatisticsOpType.ClaimCount) {
     cmpStat = StatType.ScopedCount;
   } else {
-    cmpStat = StatType.ScopedBalance;
+    cmpStat = StatType.ScopedPercentage;
   }
 
   return cmpStat === type;
@@ -1261,7 +1261,7 @@ export function compareTransferRestrictionToStat(
 ): boolean {
   if (
     (type === StatType.Count && transferCondition.isMaxInvestorCount) ||
-    (type === StatType.Balance && transferCondition.isMaxInvestorOwnership)
+    (type === StatType.Percentage && transferCondition.isMaxInvestorOwnership)
   ) {
     return true;
   }

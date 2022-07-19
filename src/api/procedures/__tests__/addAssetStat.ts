@@ -143,7 +143,7 @@ describe('addAssetStat procedure', () => {
 
   it('should add an setAssetStats transaction to the queue', async () => {
     args = {
-      type: StatType.Balance,
+      type: StatType.Percentage,
       ticker,
     };
     const proc = procedureMockUtils.getInstance<AddAssetStatParams, void>(mockContext, {});
@@ -213,7 +213,7 @@ describe('addAssetStat procedure', () => {
   it('should throw an error if the appropriate stat is not set', () => {
     const proc = procedureMockUtils.getInstance<AddAssetStatParams, void>(mockContext, {});
     args = {
-      type: StatType.Balance,
+      type: StatType.Percentage,
       ticker,
     };
 
@@ -250,7 +250,7 @@ describe('addAssetStat procedure', () => {
           portfolios: [],
         },
       });
-      expect(boundFunc({ ticker, type: StatType.Balance })).toEqual({
+      expect(boundFunc({ ticker, type: StatType.Percentage })).toEqual({
         permissions: {
           assets: [expect.objectContaining({ ticker })],
           transactions: [TxTags.statistics.SetActiveAssetStats],

@@ -8228,11 +8228,11 @@ describe('inputStatTypeToMeshStatType', () => {
     const did = 'did';
 
     createTypeStub
-      .withArgs('PolymeshPrimitivesStatisticsStatOpType', StatType.Count)
+      .withArgs('PolymeshPrimitivesStatisticsStatOpType', StatisticsOpType.Count)
       .returns(fakeOp);
 
     createTypeStub
-      .withArgs('PolymeshPrimitivesStatisticsStatOpType', StatType.Balance)
+      .withArgs('PolymeshPrimitivesStatisticsStatOpType', StatisticsOpType.Balance)
       .returns(fakeOp);
 
     createTypeStub
@@ -8257,7 +8257,7 @@ describe('inputStatTypeToMeshStatType', () => {
     expect(result).toEqual(fakeStatistic);
 
     const scopedInput = {
-      type: StatType.ScopedBalance,
+      type: StatType.ScopedPercentage,
       claimIssuer: {
         issuer: entityMockUtils.getIdentityInstance({ did }),
         claimType: ClaimType.Accredited,

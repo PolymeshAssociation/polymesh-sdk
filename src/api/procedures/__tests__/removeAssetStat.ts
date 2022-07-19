@@ -180,7 +180,7 @@ describe('removeAssetStat procedure', () => {
     stringToTickerKeyStub.withArgs(ticker, mockContext).returns({ Ticker: rawTicker });
     statisticStatTypesToBtreeStatTypeStub.returns(emptyStatTypeBtreeSet);
     args = {
-      type: StatType.Balance,
+      type: StatType.Percentage,
       ticker,
     };
   });

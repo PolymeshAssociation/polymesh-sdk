@@ -24,7 +24,7 @@ export type AddCountStatParams = AddCountStatInput & {
 };
 
 export type AddBalanceStatParams = {
-  type: StatType.Balance;
+  type: StatType.Percentage;
 };
 
 export type AddClaimCountStatParams = ClaimCountStatInput & {
@@ -32,7 +32,7 @@ export type AddClaimCountStatParams = ClaimCountStatInput & {
 };
 
 export type AddClaimPercentageStatParams = StatClaimIssuer & {
-  type: StatType.ScopedBalance;
+  type: StatType.ScopedPercentage;
 };
 
 export type AddAssetStatParams = { ticker: string } & (
@@ -79,7 +79,7 @@ export async function prepareAddAssetStat(
   const transactions = [];
 
   let rawClaimIssuer;
-  if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
+  if (type === StatType.ScopedCount || type === StatType.ScopedPercentage) {
     rawClaimIssuer = claimIssuerToMeshClaimIssuer(args, context);
   }
 
