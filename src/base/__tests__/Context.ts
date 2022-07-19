@@ -2220,7 +2220,7 @@ describe('Context class', () => {
       const expectedError = new PolymeshError({
         code: ErrorCode.UnexpectedError,
         message:
-          'Could not create internal Polymesh type: "Bytes". Please report this error to the Polymath team',
+          'Could not create internal Polymesh type: "Bytes". Please report this error to the Polymesh team',
       });
 
       expect(() => context.createType('Bytes', 'abc')).toThrowError(expectedError);

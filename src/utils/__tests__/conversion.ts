@@ -1370,7 +1370,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       );
 
       expect(() => authorizationDataToAuthorization(authorizationData, context)).toThrow(
-        'Unsupported Authorization Type. Please contact the Polymath team'
+        'Unsupported Authorization Type. Please contact the Polymesh team'
       );
     });
   });
@@ -2433,7 +2433,7 @@ describe('u8ToTransferStatus', () => {
 
     const fakeStatusCode = new BigNumber(1);
     expect(() => u8ToTransferStatus(dsMockUtils.createMockU8(fakeStatusCode))).toThrow(
-      `Unsupported status code "${fakeStatusCode}". Please report this issue to the Polymath team`
+      `Unsupported status code "${fakeStatusCode}". Please report this issue to the Polymesh team`
     );
   });
 });
@@ -5932,7 +5932,7 @@ describe('transferRestrictionToPolymeshTransferCondition', () => {
     const expectedError = new PolymeshError({
       code: ErrorCode.UnexpectedError,
       message:
-        'Unexpected transfer restriction type: "Unknown". Please report this to the Polymath team',
+        'Unexpected transfer restriction type: "Unknown". Please report this to the Polymesh team',
     });
 
     return expect(() =>

@@ -1416,7 +1416,7 @@ export function authorizationDataToAuthorization(
 
   throw new PolymeshError({
     code: ErrorCode.UnexpectedError,
-    message: 'Unsupported Authorization Type. Please contact the Polymath team',
+    message: 'Unsupported Authorization Type. Please contact the Polymesh team',
     data: {
       auth: JSON.stringify(auth, null, 2),
     },
@@ -1513,7 +1513,7 @@ export function u8ToTransferStatus(status: u8): TransferStatus {
     default: {
       throw new PolymeshError({
         code: ErrorCode.UnexpectedError,
-        message: `Unsupported status code "${status.toString()}". Please report this issue to the Polymath team`,
+        message: `Unsupported status code "${status.toString()}". Please report this issue to the Polymesh team`,
       });
     }
   }
@@ -2952,7 +2952,7 @@ export function transferRestrictionToPolymeshTransferCondition(
   } else {
     throw new PolymeshError({
       code: ErrorCode.UnexpectedError,
-      message: `Unexpected transfer restriction type: "${type}". Please report this to the Polymath team`,
+      message: `Unexpected transfer restriction type: "${type}". Please report this to the Polymesh team`,
     });
   }
   return context.createType('PolymeshPrimitivesTransferComplianceTransferCondition', {

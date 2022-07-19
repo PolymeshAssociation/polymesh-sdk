@@ -295,7 +295,7 @@ export function filterEventRecords<
       code: ErrorCode.UnexpectedError,
       message: `Event "${mod}.${String(
         eventName
-      )}" wasn't fired even though the corresponding transaction was completed. Please report this to the Polymath team`,
+      )}" wasn't fired even though the corresponding transaction was completed. Please report this to the Polymesh team`,
     });
   }
 
