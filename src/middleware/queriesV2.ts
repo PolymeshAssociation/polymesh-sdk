@@ -1,13 +1,13 @@
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
-import { ClaimTypeEnum } from '~/middleware/types';
 import {
   Asset,
   AssetHolder,
   AssetHoldersOrderBy,
   ClaimsGroupBy,
   ClaimsOrderBy,
+  ClaimTypeEnum,
   Distribution,
   DistributionPayment,
   Event,
@@ -69,7 +69,7 @@ function createClaimsFilters(variables: ClaimsQueryFilter): {
     filters.push('targetId: { in: $dids }');
   }
   if (claimTypes) {
-    args.push('$claimTypes: [String!]!');
+    args.push('$claimTypes: [ClaimTypeEnum!]!');
     filters.push('type: { in: $claimTypes }');
   }
   if (trustedClaimIssuers) {
@@ -259,10 +259,12 @@ function createEventFilters(attributes: QueryArgs<Event, EventArgs>): {
 } {
   const args: string[] = ['$start: Int', '$size: Int'];
   const filters: string[] = [];
+  const typeMap: Record<string, string> = { moduleId: 'ModuleIdEnum', eventId: 'EventIdEnum' };
 
   Object.keys(attributes).forEach(attribute => {
     if (attributes[attribute as keyof typeof attributes]) {
-      args.push(`$${attribute}: String!`);
+      const type = typeMap[attribute] || 'String';
+      args.push(`$${attribute}: ${type}!`);
       filters.push(`${attribute}: { equalTo: $${attribute} }`);
     }
   });
@@ -360,15 +362,17 @@ function createExtrinsicFilters(attributes: QueryArgs<Extrinsic, ExtrinsicArgs>)
 } {
   const args: string[] = ['$start: Int', '$size: Int'];
   const filters: string[] = [];
+  const typeMap: Record<string, string> = {
+    moduleId: 'ModuleIdEnum',
+    callId: 'CallIdEnum',
+    success: 'Int',
+  };
 
-  Object.keys(attributes).forEach(key => {
-    if (attributes[key as keyof typeof attributes]) {
-      if (key === 'success') {
-        args.push(`$${key}: Int!`);
-      } else {
-        args.push(`$${key}: String!`);
-      }
-      filters.push(`${key}: { equalTo: $${key} }`);
+  Object.keys(attributes).forEach(attribute => {
+    if (attributes[attribute as keyof typeof attributes]) {
+      const type = typeMap[attribute] || 'String';
+      args.push(`$${attribute}: ${type}!`);
+      filters.push(`${attribute}: { equalTo: $${attribute} }`);
     }
   });
   return {
@@ -618,11 +622,13 @@ function createTickerExternalAgentActionFilters(
 } {
   const args: string[] = ['$start: Int', '$size: Int'];
   const filters: string[] = [];
+  const typeMap: Record<string, string> = { eventId: 'EventIdEnum' };
 
-  Object.keys(attributes).forEach(key => {
-    if (attributes[key as keyof typeof attributes]) {
-      args.push(`$${key}: String!`);
-      filters.push(`${key}: { equalTo: $${key} }`);
+  Object.keys(attributes).forEach(attribute => {
+    if (attributes[attribute as keyof typeof attributes]) {
+      const type = typeMap[attribute] || 'String';
+      args.push(`$${attribute}: ${type}!`);
+      filters.push(`${attribute}: { equalTo: $${attribute} }`);
     }
   });
   return {

@@ -16,7 +16,11 @@ import {
 import { eventByIndexedArgs, tickerExternalAgentActions } from '~/middleware/queries';
 import { tickerExternalAgentActionsQuery, tickerExternalAgentsQuery } from '~/middleware/queriesV2';
 import { EventIdEnum as EventId, ModuleIdEnum as ModuleId, Query } from '~/middleware/types';
-import { Query as QueryV2 } from '~/middleware/typesV2';
+import {
+  EventIdEnum as MiddlewareV2EventId,
+  ModuleIdEnum as MiddlewareV2ModuleId,
+  Query as QueryV2,
+} from '~/middleware/typesV2';
 import {
   AssetWithGroup,
   CheckPermissionsResult,
@@ -490,8 +494,8 @@ export class AssetPermissions extends Namespace<Identity> {
    */
   public async getOperationHistoryV2(opts: {
     asset: string | Asset;
-    moduleId?: ModuleId;
-    eventId?: EventId;
+    moduleId?: MiddlewareV2ModuleId;
+    eventId?: MiddlewareV2EventId;
     size?: BigNumber;
     start?: BigNumber;
   }): Promise<ResultSet<EventIdentifier>> {

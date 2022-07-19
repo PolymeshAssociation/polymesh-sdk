@@ -3,14 +3,12 @@ import BigNumber from 'bignumber.js';
 import { Account, Context, transferPolyx } from '~/internal';
 import { eventByIndexedArgs, eventsByIndexedArgs, transactionByHash } from '~/middleware/queries';
 import { eventsByArgs, extrinsicByHash } from '~/middleware/queriesV2';
+import { EventIdEnum as EventId, ModuleIdEnum as ModuleId, Query } from '~/middleware/types';
 import {
-  CallIdEnum,
-  EventIdEnum as EventId,
-  ModuleIdEnum as ModuleId,
-  ModuleIdEnum,
-  Query,
-} from '~/middleware/types';
-import { Query as QueryV2 } from '~/middleware/typesV2';
+  EventIdEnum as MiddlewareV2EventId,
+  ModuleIdEnum as MiddlewareV2ModuleId,
+  Query as QueryV2,
+} from '~/middleware/typesV2';
 import {
   EventIdentifier,
   ExtrinsicDataWithFees,
@@ -27,6 +25,7 @@ import { TREASURY_MODULE_ADDRESS } from '~/utils/constants';
 import {
   balanceToBigNumber,
   extrinsicIdentifierToTxTag,
+  extrinsicIdentifierV2ToTxTag,
   middlewareEventToEventIdentifier,
   middlewareV2EventDetailsToEventIdentifier,
   moduleAddressToString,
@@ -196,8 +195,8 @@ export class Network {
    * @note uses the middlewareV2
    */
   public async getEventByIndexedArgsV2(opts: {
-    moduleId: ModuleId;
-    eventId: EventId;
+    moduleId: MiddlewareV2ModuleId;
+    eventId: MiddlewareV2EventId;
     eventArg0?: string;
     eventArg1?: string;
     eventArg2?: string;
@@ -292,8 +291,8 @@ export class Network {
    * @note uses the middlewareV2
    */
   public async getEventsByIndexedArgsV2(opts: {
-    moduleId: ModuleId;
-    eventId: EventId;
+    moduleId: MiddlewareV2ModuleId;
+    eventId: MiddlewareV2EventId;
     eventArg0?: string;
     eventArg1?: string;
     eventArg2?: string;
@@ -467,9 +466,9 @@ export class Network {
         block,
       } = transaction;
 
-      const txTag = extrinsicIdentifierToTxTag({
-        moduleId: moduleId as ModuleIdEnum,
-        callId: callId as CallIdEnum,
+      const txTag = extrinsicIdentifierV2ToTxTag({
+        moduleId,
+        callId,
       });
 
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

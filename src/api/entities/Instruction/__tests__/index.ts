@@ -6,6 +6,7 @@ import { Context, Entity, Instruction, TransactionQueue } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { instructionsQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
+import { EventIdEnum as MiddlewareV2EventId } from '~/middleware/typesV2';
 import { PortfolioId as MeshPortfolioId } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -890,7 +891,7 @@ describe('Instruction class', () => {
       const fakeEventIdentifierResult = { blockNumber, blockDate, blockHash, eventIndex: eventIdx };
 
       const queryVariables = {
-        eventId: EventIdEnum.InstructionExecuted,
+        eventId: MiddlewareV2EventId.InstructionExecuted,
         id: id.toString(),
       };
 
@@ -920,7 +921,7 @@ describe('Instruction class', () => {
         {
           query: instructionsQuery({
             ...queryVariables,
-            eventId: EventIdEnum.InstructionFailed,
+            eventId: MiddlewareV2EventId.InstructionFailed,
           }),
           returnData: {
             instructions: { nodes: [] },
@@ -947,7 +948,7 @@ describe('Instruction class', () => {
       const fakeEventIdentifierResult = { blockNumber, blockDate, blockHash, eventIndex: eventIdx };
 
       const queryVariables = {
-        eventId: EventIdEnum.InstructionExecuted,
+        eventId: MiddlewareV2EventId.InstructionExecuted,
         id: id.toString(),
       };
 
@@ -979,7 +980,7 @@ describe('Instruction class', () => {
         {
           query: instructionsQuery({
             ...queryVariables,
-            eventId: EventIdEnum.InstructionFailed,
+            eventId: MiddlewareV2EventId.InstructionFailed,
           }),
           returnData: {
             instructions: {
@@ -998,7 +999,7 @@ describe('Instruction class', () => {
 
     it("should throw an error if Instruction status couldn't be determined", async () => {
       const queryVariables = {
-        eventId: EventIdEnum.InstructionExecuted,
+        eventId: MiddlewareV2EventId.InstructionExecuted,
         id: id.toString(),
       };
 
@@ -1028,7 +1029,7 @@ describe('Instruction class', () => {
         {
           query: instructionsQuery({
             ...queryVariables,
-            eventId: EventIdEnum.InstructionFailed,
+            eventId: MiddlewareV2EventId.InstructionFailed,
           }),
           returnData: {
             instructions: { nodes: [] },
