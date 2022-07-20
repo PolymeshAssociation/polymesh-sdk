@@ -22,7 +22,6 @@ describe('Polymesh Transaction class', () => {
     isCritical: false,
     signer: 'signer' as PolkadotSigner,
     fee: new BigNumber(100),
-    nonce: new BigNumber(10),
   };
 
   afterEach(() => {
