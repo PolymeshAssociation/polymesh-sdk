@@ -5,8 +5,8 @@ import {
 } from '@polkadot/types/lookup';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, StatClaimIssuer, TxTags } from '~/types';
-import { ProcedureAuthorization, StatType } from '~/types/internal';
+import { ErrorCode, RemoveAssetStatParams, StatClaimIssuer, StatType, TxTags } from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
 import { QueryReturnType } from '~/types/utils';
 import {
   claimIssuerToMeshClaimIssuer,
@@ -16,29 +16,6 @@ import {
   stringToTickerKey,
 } from '~/utils/conversion';
 import { checkTxType, compareTransferRestrictionToStat } from '~/utils/internal';
-
-export type RemoveCountStatParams = {
-  type: StatType.Count;
-};
-
-export type RemoveBalanceStatParams = {
-  type: StatType.Balance;
-};
-
-export type RemoveScopedCountParams = StatClaimIssuer & {
-  type: StatType.ScopedCount;
-};
-
-export type RemoveScopedBalanceParams = StatClaimIssuer & {
-  type: StatType.ScopedBalance;
-};
-
-export type RemoveAssetStatParams = { ticker: string } & (
-  | RemoveCountStatParams
-  | RemoveBalanceStatParams
-  | RemoveScopedCountParams
-  | RemoveScopedBalanceParams
-);
 
 /**
  * @hidden

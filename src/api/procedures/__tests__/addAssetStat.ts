@@ -13,11 +13,19 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { getAuthorization, prepareAddAssetStat } from '~/api/procedures/addAssetStat';
-import { AddAssetStatParams, Context, PolymeshError } from '~/internal';
+import { Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ClaimType, CountryCode, ErrorCode, StatClaimType, TxTags } from '~/types';
-import { PolymeshTx, StatisticsOpType, StatType, TickerKey } from '~/types/internal';
+import {
+  AddAssetStatParams,
+  ClaimType,
+  CountryCode,
+  ErrorCode,
+  StatClaimType,
+  StatType,
+  TxTags,
+} from '~/types';
+import { PolymeshTx, StatisticsOpType, TickerKey } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(

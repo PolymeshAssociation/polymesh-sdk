@@ -1,44 +1,37 @@
 import BigNumber from 'bignumber.js';
 
 import {
-  AddBalanceStatParams,
-  AddClaimCountStatParams,
-  AddClaimPercentageStatParams,
-  AddCountStatParams,
-} from '~/api/procedures/addAssetStat';
-import {
-  RemoveBalanceStatParams,
-  RemoveCountStatParams,
-  RemoveScopedBalanceParams,
-  RemoveScopedCountParams,
-} from '~/api/procedures/removeAssetStat';
-import {
   addAssetStat,
-  AddAssetStatParams,
   addTransferRestriction,
   AddTransferRestrictionParams,
   Asset,
   Context,
   Namespace,
   removeAssetStat,
-  RemoveAssetStatParams,
   setTransferRestrictions,
   SetTransferRestrictionsStorage,
 } from '~/internal';
 import {
+  AddAssetStatParams,
   AddRestrictionParams,
   ClaimCountRestrictionValue,
   GetTransferRestrictionReturnType,
   NoArgsProcedureMethod,
   ProcedureMethod,
+  RemoveAssetStatParams,
+  RemoveBalanceStatParams,
+  RemoveCountStatParams,
+  RemoveScopedBalanceParams,
+  RemoveScopedCountParams,
+  SetAssetStatParams,
   SetClaimCountTransferRestrictionsParams,
   SetClaimPercentageTransferRestrictionsParams,
   SetCountTransferRestrictionsParams,
   SetPercentageTransferRestrictionsParams,
   SetRestrictionsParams,
+  StatType,
   TransferRestrictionType,
 } from '~/types';
-import { StatType } from '~/types/internal';
 import {
   scopeIdToString,
   stringToTickerKey,
@@ -53,17 +46,6 @@ export type SetTransferRestrictionsParams = { ticker: string } & (
   | SetClaimCountTransferRestrictionsParams
   | SetClaimPercentageTransferRestrictionsParams
 );
-
-type SetAssetStatParams<T> = Omit<
-  T extends TransferRestrictionType.Count
-    ? AddCountStatParams
-    : T extends TransferRestrictionType.Percentage
-    ? AddBalanceStatParams
-    : T extends TransferRestrictionType.ClaimCount
-    ? AddClaimCountStatParams
-    : AddClaimPercentageStatParams,
-  'type'
->;
 
 export type RemoveAssetStatParamsBase<T> = Omit<
   T extends TransferRestrictionType.Count

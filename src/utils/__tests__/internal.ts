@@ -8,14 +8,7 @@ import BigNumber from 'bignumber.js';
 import { IdentityId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import {
-  Asset,
-  Context,
-  PolymeshError,
-  PostTransactionValue,
-  Procedure,
-  RemoveAssetStatParams,
-} from '~/internal';
+import { Asset, Context, PolymeshError, PostTransactionValue, Procedure } from '~/internal';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
@@ -33,10 +26,12 @@ import {
   ErrorCode,
   ModuleName,
   ProcedureMethod,
+  RemoveAssetStatParams,
+  StatType,
   TransferRestrictionType,
   TxTags,
 } from '~/types';
-import { StatisticsOpType, StatType } from '~/types/internal';
+import { StatisticsOpType } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';

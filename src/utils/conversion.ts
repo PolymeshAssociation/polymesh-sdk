@@ -206,6 +206,7 @@ import {
   SingleClaimCondition,
   StatClaimInput,
   StatClaimType,
+  StatType,
   TargetTreatment,
   Tier,
   TransactionPermissions,
@@ -234,7 +235,6 @@ import {
   StatClaimInputType,
   StatClaimIssuer,
   StatisticsOpType,
-  StatType,
   TickerKey,
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
