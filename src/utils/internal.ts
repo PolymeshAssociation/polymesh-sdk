@@ -6,6 +6,7 @@ import {
   ObsInnerType,
 } from '@polkadot/api/types';
 import { Bytes, StorageKey } from '@polkadot/types';
+import { EventRecord } from '@polkadot/types/interfaces';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
 import { PolymeshPrimitivesStatisticsStatType } from '@polkadot/types/lookup';
 import { AnyFunction, AnyTuple, IEvent, ISubmittableResult } from '@polkadot/types/types';
@@ -77,6 +78,7 @@ import {
   signerToString,
   statisticsOpTypeToStatOpType,
   statisticsOpTypeToStatType,
+  u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { isEntity, isMultiClaimCondition, isSingleClaimCondition } from '~/utils/typeguards';
@@ -288,6 +290,80 @@ export function filterEventRecords<
   return eventRecords.map(
     eventRecord => eventRecord.event as unknown as IEvent<EventData<Events[ModuleName][EventName]>>
   );
+}
+
+/**
+ * @hidden
+ *
+ * Return a clone of a batch transaction receipt that only contains events for a subset of the
+ *   extrinsics in the batch. This is useful when a batch has several extrinsics that emit
+ *   the same events and we want `filterEventRecords` to only search among the events emitted by
+ *   some of them.
+ *
+ * A good example of this is when merging similar batches together. If we wish to preserve the return
+ *   value of each batch, this is a good way of ensuring that the resolver function of a batch has
+ *   access to the events that correspond only to the extrinsics in said batch
+ *
+ * @param from - index of the first transaction in the subset
+ * @param to - end index of the subset (not included)
+ *
+ * @note this function does not mutate the original receipt
+ */
+export function sliceBatchReceipt(
+  receipt: ISubmittableResult,
+  from: number,
+  to: number
+): ISubmittableResult {
+  const [
+    {
+      data: [rawEventsPerExtrinsic],
+    },
+  ] = filterEventRecords(receipt, 'utility', 'BatchCompleted');
+
+  if (rawEventsPerExtrinsic.length < to || from < 0) {
+    throw new PolymeshError({
+      code: ErrorCode.UnexpectedError,
+      message: 'Transaction index range out of bounds. Please report this to the Polymesh team',
+      data: {
+        to,
+        from,
+      },
+    });
+  }
+
+  const { events, filterRecords, findRecord, toHuman } = receipt;
+
+  const eventsPerExtrinsic = rawEventsPerExtrinsic.map(u32ToBigNumber);
+  const clonedEvents = [...events];
+
+  const slicedEvents: EventRecord[] = [];
+
+  /*
+   * For each extrinsic, we remove the first N events from the original receipt, where N is the amount
+   * of events emitted for that extrinsic according to the `BatchCompleted` event's data. If the extrinsic is the desired range,
+   * we add the removed events to the cloned receipt. Otherwise we ignore them
+   *
+   * The order of events in the receipt is such that the events of all extrinsics in the batch come first (in the same order
+   * in which the extrinsics were added to the batch), and then come the events related to the batch itself
+   */
+  eventsPerExtrinsic.forEach((n, index) => {
+    const removedEvents = clonedEvents.splice(0, n.toNumber());
+
+    if (index >= from && index < to) {
+      slicedEvents.push(...removedEvents);
+    }
+  });
+
+  const clone: ISubmittableResult = {
+    ...receipt,
+    events: slicedEvents,
+  };
+
+  clone.filterRecords = filterRecords.bind(clone);
+  clone.findRecord = findRecord.bind(clone);
+  clone.toHuman = toHuman.bind(clone);
+
+  return clone;
 }
 
 /**
