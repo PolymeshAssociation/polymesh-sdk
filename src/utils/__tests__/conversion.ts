@@ -197,7 +197,7 @@ import {
   meshAffirmationStatusToAffirmationStatus,
   meshCalendarPeriodToCalendarPeriod,
   meshClaimToClaim,
-  meshClaimToStatClaimInput,
+  meshClaimToInputStatClaim,
   meshClaimTypeToClaimType,
   meshCorporateActionToCorporateActionParams,
   meshInstructionStatusToInstructionStatus,
@@ -7701,7 +7701,7 @@ describe('transferConditionsToBtreeTransferConditions', () => {
   });
 });
 
-describe('meshClaimToStatClaimUser', () => {
+describe('meshClaimToInputStatClaim', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -7718,7 +7718,7 @@ describe('meshClaimToStatClaimUser', () => {
     let args = dsMockUtils.createMockStatisticsStatClaim({
       Accredited: dsMockUtils.createMockBool(true),
     });
-    let result = meshClaimToStatClaimInput(args);
+    let result = meshClaimToInputStatClaim(args);
     expect(result).toEqual({
       accredited: true,
       type: ClaimType.Accredited,
@@ -7727,7 +7727,7 @@ describe('meshClaimToStatClaimUser', () => {
     args = dsMockUtils.createMockStatisticsStatClaim({
       Affiliate: dsMockUtils.createMockBool(true),
     });
-    result = meshClaimToStatClaimInput(args);
+    result = meshClaimToInputStatClaim(args);
     expect(result).toEqual({
       affiliate: true,
       type: ClaimType.Affiliate,
@@ -7736,7 +7736,7 @@ describe('meshClaimToStatClaimUser', () => {
     args = dsMockUtils.createMockStatisticsStatClaim({
       Jurisdiction: dsMockUtils.createMockOption(),
     });
-    result = meshClaimToStatClaimInput(args);
+    result = meshClaimToInputStatClaim(args);
     expect(result).toEqual({
       countryCode: undefined,
       type: ClaimType.Jurisdiction,
@@ -7745,7 +7745,7 @@ describe('meshClaimToStatClaimUser', () => {
     args = dsMockUtils.createMockStatisticsStatClaim({
       Jurisdiction: dsMockUtils.createMockOption(dsMockUtils.createMockCountryCode(CountryCode.Ca)),
     });
-    result = meshClaimToStatClaimInput(args);
+    result = meshClaimToInputStatClaim(args);
     expect(result).toEqual({
       countryCode: CountryCode.Ca,
       type: ClaimType.Jurisdiction,

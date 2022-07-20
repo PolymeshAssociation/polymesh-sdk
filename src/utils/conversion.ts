@@ -544,7 +544,7 @@ export function permillToBigNumber(value: Permill): BigNumber {
 /**
  *  @hidden
  */
-export function meshClaimToStatClaimInput(claim: StatClaim): InputStatClaim {
+export function meshClaimToInputStatClaim(claim: StatClaim): InputStatClaim {
   if (claim.isAccredited) {
     return {
       type: ClaimType.Accredited,
@@ -574,7 +574,7 @@ export function claimCountToClaimCountRestrictionValue(
 ): ClaimCountRestrictionValue {
   const [claim, issuer, min, max] = value;
   return {
-    claim: meshClaimToStatClaimInput(claim),
+    claim: meshClaimToInputStatClaim(claim),
     issuer: new Identity({ did: identityIdToString(issuer) }, context),
     min: u64ToBigNumber(min),
     max: max.isSome ? u64ToBigNumber(max.unwrap()) : undefined,
@@ -590,7 +590,7 @@ export function claimPercentageToClaimPercentageRestrictionValue(
 ): ClaimPercentageRestrictionValue {
   const [claim, issuer, min, max] = value;
   return {
-    claim: meshClaimToStatClaimInput(claim),
+    claim: meshClaimToInputStatClaim(claim),
     issuer: new Identity({ did: identityIdToString(issuer) }, context),
     min: permillToBigNumber(min),
     max: permillToBigNumber(max),
