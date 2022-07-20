@@ -31,7 +31,6 @@ import {
   Identity,
   PolymeshError,
   PostTransactionValue,
-  RemoveAssetStatParams,
   TransactionQueue,
 } from '~/internal';
 import { Scope as MiddlewareScope } from '~/middleware/types';
@@ -54,6 +53,7 @@ import {
   ProcedureAuthorizationStatus,
   ProcedureMethod,
   ProcedureOpts,
+  RemoveAssetStatParams,
   Scope,
   StatType,
   TransferRestriction,

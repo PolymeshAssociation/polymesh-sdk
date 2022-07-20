@@ -9,6 +9,7 @@ import {
   SubsidyData,
   TaxWithholding,
 } from '~/api/entities/types';
+import { StatType } from '~/api/procedures/types';
 import { CountryCode, ModuleName, TxTag, TxTags } from '~/generated/types';
 import {
   Account,
@@ -352,27 +353,6 @@ export interface IdentityWithClaims {
   claims: ClaimData[];
 }
 
-/**
- * Represents the different type of statistics that can be enabled for an Asset
- */
-export enum StatType {
-  /**
-   * Keeps a count of the total number of investors
-   */
-  Count = 'Count',
-  /**
-   * Keeps track of the amount of supply investors hold
-   */
-  Percentage = 'Percentage',
-  /**
-   * Keeps a count of the total number of investors who have a certain claim
-   */
-  ScopedCount = 'ScopedCount',
-  /**
-   * Keeps track of the amount of supply held between investors who have a certain claim
-   */
-  ScopedPercentage = 'ScopedBalance',
-}
 export interface ExtrinsicData {
   blockHash: string;
   blockNumber: BigNumber;

@@ -14,8 +14,10 @@ import {
 } from '~/internal';
 import {
   ActiveTransferRestrictions,
+  AddCountStatInput,
   AssetDocument,
   CalendarPeriod,
+  ClaimCountStatInput,
   ClaimCountTransferRestriction,
   ClaimPercentageTransferRestriction,
   ClaimTarget,
@@ -38,6 +40,7 @@ import {
   Requirement,
   Scope,
   SecurityIdentifier,
+  StatClaimIssuer,
   TransactionPermissions,
   TxGroup,
   VenueType,
@@ -75,6 +78,85 @@ export type GetTransferRestrictionReturnType<T> = ActiveTransferRestrictions<
     ? ClaimCountTransferRestriction
     : ClaimPercentageTransferRestriction
 >;
+
+export type RemoveAssetStatParams = { ticker: string } & (
+  | RemoveCountStatParams
+  | RemoveBalanceStatParams
+  | RemoveScopedCountParams
+  | RemoveScopedBalanceParams
+);
+
+export type AddCountStatParams = AddCountStatInput & {
+  type: StatType.Count;
+};
+
+export type AddBalanceStatParams = {
+  type: StatType.Percentage;
+};
+
+export type AddClaimCountStatParams = ClaimCountStatInput & {
+  type: StatType.ScopedCount;
+};
+
+export type AddClaimPercentageStatParams = StatClaimIssuer & {
+  type: StatType.ScopedPercentage;
+};
+
+export type AddAssetStatParams = { ticker: string } & (
+  | AddCountStatParams
+  | AddBalanceStatParams
+  | AddClaimCountStatParams
+  | AddClaimPercentageStatParams
+);
+
+export type RemoveCountStatParams = {
+  type: StatType.Count;
+};
+
+export type RemoveBalanceStatParams = {
+  type: StatType.Percentage;
+};
+
+export type RemoveScopedCountParams = StatClaimIssuer & {
+  type: StatType.ScopedCount;
+};
+
+export type RemoveScopedBalanceParams = StatClaimIssuer & {
+  type: StatType.ScopedPercentage;
+};
+
+export type SetAssetStatParams<T> = Omit<
+  T extends TransferRestrictionType.Count
+    ? AddCountStatParams
+    : T extends TransferRestrictionType.Percentage
+    ? AddBalanceStatParams
+    : T extends TransferRestrictionType.ClaimCount
+    ? AddClaimCountStatParams
+    : AddClaimPercentageStatParams,
+  'type'
+>;
+
+/**
+ * Represents the different type of statistics that can be enabled for an Asset
+ */
+export enum StatType {
+  /**
+   * Keeps a count of the total number of investors
+   */
+  Count = 'Count',
+  /**
+   * Keeps track of the amount of supply investors hold
+   */
+  Percentage = 'Percentage',
+  /**
+   * Keeps a count of the total number of investors who have a certain claim
+   */
+  ScopedCount = 'ScopedCount',
+  /**
+   * Keeps track of the amount of supply held between investors who have a certain claim
+   */
+  ScopedPercentage = 'ScopedPercentage',
+}
 
 export enum TransferRestrictionType {
   Count = 'Count',

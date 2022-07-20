@@ -11,10 +11,18 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { getAuthorization, prepareRemoveAssetStat } from '~/api/procedures/removeAssetStat';
-import { Context, PolymeshError, RemoveAssetStatParams } from '~/internal';
+import { Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ClaimType, CountryCode, ErrorCode, StatClaimType, StatType, TxTags } from '~/types';
+import {
+  ClaimType,
+  CountryCode,
+  ErrorCode,
+  RemoveAssetStatParams,
+  StatClaimType,
+  StatType,
+  TxTags,
+} from '~/types';
 import { PolymeshTx, StatisticsOpType, TickerKey } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 

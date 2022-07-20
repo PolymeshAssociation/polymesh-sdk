@@ -1,12 +1,5 @@
 import { Asset, PolymeshError, Procedure } from '~/internal';
-import {
-  AddCountStatInput,
-  ClaimCountStatInput,
-  ErrorCode,
-  StatClaimIssuer,
-  StatType,
-  TxTags,
-} from '~/types';
+import { AddAssetStatParams, ErrorCode, StatType, TxTags } from '~/types';
 import { ProcedureAuthorization, StatisticsOpType } from '~/types/internal';
 import {
   claimCountStatInputToStatUpdates,
@@ -18,29 +11,6 @@ import {
   stringToTickerKey,
 } from '~/utils/conversion';
 import { checkTxType, compareStatsToInput } from '~/utils/internal';
-
-export type AddCountStatParams = AddCountStatInput & {
-  type: StatType.Count;
-};
-
-export type AddBalanceStatParams = {
-  type: StatType.Percentage;
-};
-
-export type AddClaimCountStatParams = ClaimCountStatInput & {
-  type: StatType.ScopedCount;
-};
-
-export type AddClaimPercentageStatParams = StatClaimIssuer & {
-  type: StatType.ScopedPercentage;
-};
-
-export type AddAssetStatParams = { ticker: string } & (
-  | AddCountStatParams
-  | AddBalanceStatParams
-  | AddClaimCountStatParams
-  | AddClaimPercentageStatParams
-);
 
 /**
  * @hidden
