@@ -15,7 +15,9 @@ import {
   setCustodian,
 } from '~/internal';
 import { settlements } from '~/middleware/queries';
-import { Query } from '~/middleware/types';
+import { portfolioMovementsQuery, settlementsQuery } from '~/middleware/queriesV2';
+import { Query, SettlementDirectionEnum, SettlementResultEnum } from '~/middleware/types';
+import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   ErrorCode,
   MoveFundsParams,
@@ -24,7 +26,7 @@ import {
   ResultSet,
   SetCustodianParams,
 } from '~/types';
-import { Ensured, QueryReturnType } from '~/types/utils';
+import { Ensured, EnsuredV2, QueryReturnType } from '~/types/utils';
 import {
   addressToKey,
   balanceToBigNumber,
@@ -33,6 +35,7 @@ import {
   identityIdToString,
   keyToAddress,
   middlewarePortfolioToPortfolio,
+  middlewareV2PortfolioToPortfolio,
   portfolioIdToMeshPortfolioId,
   tickerToString,
 } from '~/utils/conversion';
@@ -361,7 +364,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
         blockNumber,
         status,
         accounts: addresses!.map(
-          address => new Account({ address: keyToAddress('0x' + address, context) }, context)
+          address => new Account({ address: keyToAddress(address, context) }, context)
         ),
         legs: settlementLegs.map(leg => {
           return {
@@ -393,6 +396,130 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       next,
       count,
     };
+  }
+
+  /**
+   * Retrieve a list of transactions where this portfolio was involved. Can be filtered using parameters
+   *
+   * @param filters.account - Account involved in the settlement
+   * @param filters.ticker - ticker involved in the transaction
+   *
+   * @note uses the middlewareV2
+   */
+  public async getTransactionHistoryV2(
+    filters: {
+      account?: string;
+      ticker?: string;
+    } = {}
+  ): Promise<HistoricSettlement[]> {
+    const {
+      context,
+      owner: { did: identityId },
+      _id: portfolioId,
+    } = this;
+
+    const { account, ticker } = filters;
+
+    const address = account ? addressToKey(account, context) : undefined;
+
+    const settlementsPromise = context.queryMiddlewareV2<EnsuredV2<QueryV2, 'legs'>>(
+      settlementsQuery({
+        identityId,
+        portfolioId,
+        address,
+        ticker,
+      })
+    );
+
+    const portfolioMovementsPromise = context.queryMiddlewareV2<
+      EnsuredV2<QueryV2, 'portfolioMovements'>
+    >(
+      portfolioMovementsQuery({
+        identityId,
+        portfolioId,
+        address,
+        ticker,
+      })
+    );
+
+    const [settlementsResult, portfolioMovementsResult, exists] = await Promise.all([
+      settlementsPromise,
+      portfolioMovementsPromise,
+      this.exists(),
+    ]);
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: notExistsMessage,
+      });
+    }
+
+    const data: HistoricSettlement[] = [];
+
+    const portfolioFilter = `${identityId}/${new BigNumber(portfolioId || 0).toString()}`;
+
+    const getDirection = (fromId: string, toId: string): SettlementDirectionEnum => {
+      if (fromId === portfolioFilter) {
+        return SettlementDirectionEnum.Outgoing;
+      }
+      if (toId === portfolioFilter) {
+        return SettlementDirectionEnum.Incoming;
+      }
+      return SettlementDirectionEnum.None;
+    };
+
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
+    settlementsResult.data.legs.nodes.forEach(({ settlement }) => {
+      const {
+        createdBlock,
+        result: settlementResult,
+        legs: { nodes: legs },
+      } = settlement!;
+
+      const { blockId, hash } = createdBlock!;
+
+      data.push({
+        blockNumber: new BigNumber(blockId),
+        blockHash: hash,
+        status: settlementResult as SettlementResultEnum,
+        accounts: legs[0].addresses.map(
+          (accountAddress: string) =>
+            new Account({ address: keyToAddress(accountAddress, context) }, context)
+        ),
+        legs: legs.map(({ from, to, fromId, toId, assetId, amount }) => ({
+          asset: new Asset({ ticker: assetId }, context),
+          amount: new BigNumber(amount).shiftedBy(-6),
+          direction: getDirection(fromId, toId),
+          from: middlewareV2PortfolioToPortfolio(from!, context),
+          to: middlewareV2PortfolioToPortfolio(to!, context),
+        })),
+      });
+    });
+
+    portfolioMovementsResult.data.portfolioMovements.nodes.forEach(
+      ({ createdBlock, from, to, fromId, toId, assetId, amount, address: accountAddress }) => {
+        const { blockId, hash } = createdBlock!;
+        data.push({
+          blockNumber: new BigNumber(blockId),
+          blockHash: hash,
+          status: SettlementResultEnum.Executed,
+          accounts: [new Account({ address: keyToAddress(accountAddress, context) }, context)],
+          legs: [
+            {
+              asset: new Asset({ ticker: assetId }, context),
+              amount: new BigNumber(amount).shiftedBy(-6),
+              direction: getDirection(fromId, toId),
+              from: middlewareV2PortfolioToPortfolio(from!, context),
+              to: middlewareV2PortfolioToPortfolio(to!, context),
+            },
+          ],
+        });
+      }
+    );
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
+
+    return data;
   }
 
   /**

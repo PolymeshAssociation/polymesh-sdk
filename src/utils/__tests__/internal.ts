@@ -8,14 +8,7 @@ import BigNumber from 'bignumber.js';
 import { IdentityId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import {
-  Asset,
-  Context,
-  PolymeshError,
-  PostTransactionValue,
-  Procedure,
-  RemoveAssetStatParams,
-} from '~/internal';
+import { Asset, Context, PolymeshError, PostTransactionValue, Procedure } from '~/internal';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
@@ -33,10 +26,12 @@ import {
   ErrorCode,
   ModuleName,
   ProcedureMethod,
+  RemoveAssetStatParams,
+  StatType,
   TransferRestrictionType,
   TxTags,
 } from '~/types';
-import { StatisticsOpType, StatType } from '~/types/internal';
+import { StatisticsOpType } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -244,7 +239,7 @@ describe('filterEventRecords', () => {
     filterRecordsStub.withArgs(mod, eventName).returns([]);
 
     expect(() => filterEventRecords(mockReceipt, mod, eventName)).toThrow(
-      `Event "${mod}.${eventName}" wasn't fired even though the corresponding transaction was completed. Please report this to the Polymath team`
+      `Event "${mod}.${eventName}" wasn't fired even though the corresponding transaction was completed. Please report this to the Polymesh team`
     );
   });
 });
@@ -1076,7 +1071,7 @@ describe('neededStatTypeForRestrictionInput', () => {
     const mockClaimIssuer: [
       PolymeshPrimitivesIdentityClaimClaimType,
       PolymeshPrimitivesIdentityId
-    ] = [dsMockUtils.createMockIdentitiesClaimClaimType(), dsMockUtils.createMockIdentityId()];
+    ] = [dsMockUtils.createMockClaimType(), dsMockUtils.createMockIdentityId()];
 
     sinon.stub(utilsConversionModule, 'claimIssuerToMeshClaimIssuer').returns(mockClaimIssuer);
 
@@ -1144,22 +1139,20 @@ describe('compareTransferRestrictionToInput', () => {
     const countTransferRestriction = dsMockUtils.createMockTransferCondition({
       MaxInvestorCount: dsMockUtils.createMockU64(new BigNumber(10)),
     });
-    let result = compareTransferRestrictionToInput(
-      countTransferRestriction,
-      new BigNumber(10),
-      TransferRestrictionType.Count
-    );
+    let result = compareTransferRestrictionToInput(countTransferRestriction, {
+      type: TransferRestrictionType.Count,
+      value: new BigNumber(10),
+    });
     expect(result).toEqual(true);
 
     const percentTransferRestriction = dsMockUtils.createMockTransferCondition({
       MaxInvestorOwnership: dsMockUtils.createMockPermill(new BigNumber(100000)),
     });
 
-    result = compareTransferRestrictionToInput(
-      percentTransferRestriction,
-      new BigNumber(10),
-      TransferRestrictionType.Percentage
-    );
+    result = compareTransferRestrictionToInput(percentTransferRestriction, {
+      type: TransferRestrictionType.Percentage,
+      value: new BigNumber(10),
+    });
     expect(result).toEqual(true);
 
     const claimCountTransferRestriction = dsMockUtils.createMockTransferCondition({
@@ -1171,15 +1164,14 @@ describe('compareTransferRestrictionToInput', () => {
       ],
     });
 
-    result = compareTransferRestrictionToInput(
-      claimCountTransferRestriction,
-      {
+    result = compareTransferRestrictionToInput(claimCountTransferRestriction, {
+      value: {
         min: new BigNumber(10),
         claim: { type: ClaimType.Accredited, accredited: true },
         issuer: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
       },
-      TransferRestrictionType.ClaimCount
-    );
+      type: TransferRestrictionType.ClaimCount,
+    });
 
     expect(result).toEqual(true);
 
@@ -1192,16 +1184,15 @@ describe('compareTransferRestrictionToInput', () => {
       ],
     });
 
-    result = compareTransferRestrictionToInput(
-      claimCountTransferRestrictionWithMax,
-      {
+    result = compareTransferRestrictionToInput(claimCountTransferRestrictionWithMax, {
+      value: {
         min: new BigNumber(10),
         max: new BigNumber(20),
         claim: { type: ClaimType.Affiliate, affiliate: true },
         issuer: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
       },
-      TransferRestrictionType.ClaimCount
-    );
+      type: TransferRestrictionType.ClaimCount,
+    });
 
     expect(result).toEqual(true);
 
@@ -1218,16 +1209,15 @@ describe('compareTransferRestrictionToInput', () => {
       ],
     });
 
-    result = compareTransferRestrictionToInput(
-      claimPercentageTransferRestriction,
-      {
+    result = compareTransferRestrictionToInput(claimPercentageTransferRestriction, {
+      value: {
         min: new BigNumber(10),
         max: new BigNumber(20),
         claim: { type: ClaimType.Jurisdiction, countryCode: CountryCode.Ca },
         issuer: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
       },
-      TransferRestrictionType.ClaimPercentage
-    );
+      type: TransferRestrictionType.ClaimPercentage,
+    });
 
     expect(result).toEqual(true);
   });
@@ -1242,16 +1232,15 @@ describe('compareTransferRestrictionToInput', () => {
       ],
     });
 
-    let result = compareTransferRestrictionToInput(
-      claimCountTransferRestrictionWithMax,
-      {
+    let result = compareTransferRestrictionToInput(claimCountTransferRestrictionWithMax, {
+      value: {
         min: new BigNumber(10),
         max: new BigNumber(21),
         claim: { type: ClaimType.Affiliate, affiliate: true },
         issuer: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
       },
-      TransferRestrictionType.ClaimCount
-    );
+      type: TransferRestrictionType.ClaimCount,
+    });
 
     expect(result).toEqual(false);
 
@@ -1266,16 +1255,15 @@ describe('compareTransferRestrictionToInput', () => {
       ],
     });
 
-    result = compareTransferRestrictionToInput(
-      claimPercentageTransferRestrictionNoMax,
-      {
+    result = compareTransferRestrictionToInput(claimPercentageTransferRestrictionNoMax, {
+      value: {
         min: new BigNumber(10),
         max: new BigNumber(20),
         claim: { type: ClaimType.Affiliate, affiliate: true },
         issuer: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
       },
-      TransferRestrictionType.ClaimCount
-    );
+      type: TransferRestrictionType.ClaimCount,
+    });
 
     expect(result).toEqual(false);
 
@@ -1292,28 +1280,27 @@ describe('compareTransferRestrictionToInput', () => {
       ],
     });
 
-    result = compareTransferRestrictionToInput(
-      claimPercentageTransferRestriction,
-      {
+    result = compareTransferRestrictionToInput(claimPercentageTransferRestriction, {
+      value: {
         min: new BigNumber(10),
         max: new BigNumber(21),
         claim: { type: ClaimType.Jurisdiction, countryCode: CountryCode.Ca },
         issuer: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
       },
-      TransferRestrictionType.ClaimPercentage
-    );
+      type: TransferRestrictionType.ClaimPercentage,
+    });
 
     expect(result).toEqual(false);
 
-    result = compareTransferRestrictionToInput(
-      claimPercentageTransferRestriction,
-      {
+    result = compareTransferRestrictionToInput(claimPercentageTransferRestriction, {
+      value: {
         min: new BigNumber(10),
+        max: new BigNumber(21),
         claim: { type: ClaimType.Jurisdiction, countryCode: CountryCode.Ca },
         issuer: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
       },
-      TransferRestrictionType.ClaimPercentage
-    );
+      type: TransferRestrictionType.ClaimPercentage,
+    });
 
     expect(result).toEqual(false);
   });
@@ -1343,11 +1330,11 @@ describe('compareStatTypeToTransferRestrictionType', () => {
 
   const claimCountStat = dsMockUtils.createMockStatisticsStatType({
     op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count),
-    claimIssuer: [dsMockUtils.createMockIdentitiesClaimClaimType(ClaimType.Affiliate), issuerId],
+    claimIssuer: [dsMockUtils.createMockClaimType(ClaimType.Affiliate), issuerId],
   });
   const claimPercentageStat = dsMockUtils.createMockStatisticsStatType({
     op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Balance),
-    claimIssuer: [dsMockUtils.createMockIdentitiesClaimClaimType(ClaimType.Affiliate), issuerId],
+    claimIssuer: [dsMockUtils.createMockClaimType(ClaimType.Affiliate), issuerId],
   });
 
   it('should return true if the PolymeshPrimitivesStatisticsStatType matches the given TransferRestriction', () => {
@@ -1443,11 +1430,12 @@ describe('compareStatsToInput', () => {
 
     const claimCountStat = dsMockUtils.createMockStatisticsStatType({
       op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count),
-      claimIssuer: [dsMockUtils.createMockIdentitiesClaimClaimType(ClaimType.Affiliate), issuerId],
+      claimIssuer: [dsMockUtils.createMockClaimType(ClaimType.Affiliate), issuerId],
     });
     args = {
       type: StatType.ScopedCount,
-      claimIssuer: { issuer, claimType: ClaimType.Affiliate },
+      issuer,
+      claimType: ClaimType.Affiliate,
       ticker,
     };
     result = compareStatsToInput(claimCountStat, args);
@@ -1455,11 +1443,12 @@ describe('compareStatsToInput', () => {
 
     const claimPercentageStat = dsMockUtils.createMockStatisticsStatType({
       op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Balance),
-      claimIssuer: [dsMockUtils.createMockIdentitiesClaimClaimType(ClaimType.Affiliate), issuerId],
+      claimIssuer: [dsMockUtils.createMockClaimType(ClaimType.Affiliate), issuerId],
     });
     args = {
       type: StatType.ScopedBalance,
-      claimIssuer: { issuer, claimType: ClaimType.Affiliate },
+      issuer,
+      claimType: ClaimType.Affiliate,
       ticker,
     };
     result = compareStatsToInput(claimPercentageStat, args);
@@ -1483,7 +1472,8 @@ describe('compareStatsToInput', () => {
     });
     args = {
       type: StatType.ScopedBalance,
-      claimIssuer: { issuer, claimType: ClaimType.Accredited },
+      issuer,
+      claimType: ClaimType.Accredited,
       ticker,
     };
     result = compareStatsToInput(percentStat, args);
@@ -1491,14 +1481,12 @@ describe('compareStatsToInput', () => {
 
     const claimCountStat = dsMockUtils.createMockStatisticsStatType({
       op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count),
-      claimIssuer: [
-        dsMockUtils.createMockIdentitiesClaimClaimType(ClaimType.Jurisdiction),
-        issuerId,
-      ],
+      claimIssuer: [dsMockUtils.createMockClaimType(ClaimType.Jurisdiction), issuerId],
     });
     args = {
       type: StatType.ScopedCount,
-      claimIssuer: { issuer, claimType: ClaimType.Affiliate },
+      issuer,
+      claimType: ClaimType.Affiliate,
       ticker,
     };
     result = compareStatsToInput(claimCountStat, args);
@@ -1506,10 +1494,8 @@ describe('compareStatsToInput', () => {
 
     args = {
       type: StatType.ScopedCount,
-      claimIssuer: {
-        issuer: entityMockUtils.getIdentityInstance({ did: 'differentDid' }),
-        claimType: ClaimType.Jurisdiction,
-      },
+      issuer: entityMockUtils.getIdentityInstance({ did: 'differentDid' }),
+      claimType: ClaimType.Jurisdiction,
       ticker,
     };
     result = compareStatsToInput(claimCountStat, args);

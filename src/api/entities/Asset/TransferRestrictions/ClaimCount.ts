@@ -1,14 +1,14 @@
 import BigNumber from 'bignumber.js';
 
-import { AddClaimCountStatParams } from '~/api/procedures/addAssetStat';
-import { RemoveCountStatParams } from '~/api/procedures/removeAssetStat';
 import { TransferRestrictionBase } from '~/internal';
 import {
   ActiveTransferRestrictions,
+  AddClaimCountStatParams,
   AddClaimCountTransferRestrictionParams,
   ClaimCountTransferRestriction,
   NoArgsProcedureMethod,
   ProcedureMethod,
+  RemoveScopedCountParams,
   SetClaimCountTransferRestrictionsParams,
   TransferRestrictionType,
 } from '~/types';
@@ -51,7 +51,7 @@ export class ClaimCount extends TransferRestrictionBase<TransferRestrictionType.
   public declare removeRestrictions: NoArgsProcedureMethod<BigNumber>;
 
   /**
-   * Enables a scoped investor count statistic for the Asset scoped by a claim, which is required before creating restrictions
+   * Enables an investor count statistic for the Asset to be scoped by a claim, which is required before creating restrictions
    *
    * The counter is only updated automatically with each transfer of tokens after the stat has been enabled.
    * As such the initial values for the stat should be passed in.
@@ -66,12 +66,12 @@ export class ClaimCount extends TransferRestrictionBase<TransferRestrictionType.
   public declare enableStat: ProcedureMethod<Omit<AddClaimCountStatParams, 'type'>, void>;
 
   /**
-   * Disables a claim count statistics for the Asset. Since statistics introduce slight overhead to each transaction
+   * Disables a claim count statistic for the Asset. Since statistics introduce slight overhead to each transaction
    * involving the Asset, disabling unused stats will reduce gas fees for investors
    *
    * @throws if the stat is being used by a restriction or is not set
    */
-  public declare disableStat: ProcedureMethod<Omit<RemoveCountStatParams, 'type'>, void>;
+  public declare disableStat: ProcedureMethod<Omit<RemoveScopedCountParams, 'type'>, void>;
 
   /**
    * Retrieve all active Claim Count Transfer Restrictions

@@ -146,5 +146,5 @@ export {
   SetClaimCountTransferRestrictionsParams,
   SetClaimPercentageTransferRestrictionsParams,
 } from '~/api/procedures/types';
-export { addAssetStat, AddAssetStatParams } from '~/api/procedures/addAssetStat';
-export { removeAssetStat, RemoveAssetStatParams } from '~/api/procedures/removeAssetStat';
+export { addAssetStat } from '~/api/procedures/addAssetStat';
+export { removeAssetStat } from '~/api/procedures/removeAssetStat';

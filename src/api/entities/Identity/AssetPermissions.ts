@@ -14,7 +14,9 @@ import {
   waivePermissions,
 } from '~/internal';
 import { eventByIndexedArgs, tickerExternalAgentActions } from '~/middleware/queries';
+import { tickerExternalAgentActionsQuery, tickerExternalAgentsQuery } from '~/middleware/queriesV2';
 import { EventIdEnum as EventId, ModuleIdEnum as ModuleId, Query } from '~/middleware/types';
+import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   AssetWithGroup,
   CheckPermissionsResult,
@@ -30,7 +32,7 @@ import {
   TxTags,
   WaivePermissionsParams,
 } from '~/types';
-import { Ensured, QueryReturnType } from '~/types/utils';
+import { Ensured, EnsuredV2, QueryReturnType } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
   agentGroupToPermissionGroup,
@@ -38,6 +40,7 @@ import {
   extrinsicPermissionsToTransactionPermissions,
   hashToString,
   middlewareEventToEventIdentifier,
+  middlewareV2EventDetailsToEventIdentifier,
   stringToIdentityId,
   stringToTicker,
   tickerToString,
@@ -351,6 +354,32 @@ export class AssetPermissions extends Namespace<Identity> {
   }
 
   /**
+   * Retrieve the identifier data (block number, date and event index) of the event that was emitted when this Identity was enabled/added as
+   *   an Agent with permissions over a specific Asset
+   *
+   * @note uses the middlewareV2
+   * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
+   */
+  public async enabledAtV2({ asset }: { asset: string | Asset }): Promise<EventIdentifier | null> {
+    const { context } = this;
+    const ticker = asTicker(asset);
+
+    const {
+      data: {
+        tickerExternalAgents: {
+          nodes: [node],
+        },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'tickerExternalAgents'>>(
+      tickerExternalAgentsQuery({
+        assetId: ticker,
+      })
+    );
+
+    return optionize(middlewareV2EventDetailsToEventIdentifier)(node?.createdBlock, node?.eventIdx);
+  }
+
+  /**
    * Abdicate from the current Permissions Group for a given Asset. This means that this Identity will no longer have any permissions over said Asset
    */
   public waive: ProcedureMethod<WaivePermissionsParams, void>;
@@ -424,7 +453,7 @@ export class AssetPermissions extends Namespace<Identity> {
       multiParams.push(bigNumberToU32(blockNumber, context));
       data.push({
         blockNumber,
-        blockDate: new Date(`${datetime}Z`),
+        blockDate: new Date(`${datetime}`),
         eventIndex: new BigNumber(eventIndex),
       });
     });
@@ -443,6 +472,65 @@ export class AssetPermissions extends Namespace<Identity> {
         ...event,
         blockHash: hashToString(hashes[index]),
       })),
+      next,
+      count,
+    };
+  }
+
+  /**
+   * Retrieve all Events triggered by Operations this Identity has performed on a specific Asset
+   *
+   * @param opts.moduleId - filters results by module
+   * @param opts.eventId - filters results by event
+   * @param opts.size - page size
+   * @param opts.start - page offset
+   *
+   * @note uses the middlewareV2
+   * @note supports pagination
+   */
+  public async getOperationHistoryV2(opts: {
+    asset: string | Asset;
+    moduleId?: ModuleId;
+    eventId?: EventId;
+    size?: BigNumber;
+    start?: BigNumber;
+  }): Promise<ResultSet<EventIdentifier>> {
+    const {
+      context,
+      parent: { did },
+    } = this;
+
+    const { asset, moduleId: palletName, eventId, size, start } = opts;
+
+    const ticker = asTicker(asset);
+
+    const {
+      data: {
+        tickerExternalAgentActions: { nodes, totalCount },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'tickerExternalAgentActions'>>(
+      tickerExternalAgentActionsQuery(
+        {
+          assetId: ticker,
+          callerId: did,
+          palletName,
+          eventId,
+        },
+        size,
+        start
+      )
+    );
+
+    const data = nodes.map(({ createdBlock, eventIdx }) =>
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      middlewareV2EventDetailsToEventIdentifier(createdBlock!, eventIdx)
+    );
+
+    const count = new BigNumber(totalCount);
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
       next,
       count,
     };

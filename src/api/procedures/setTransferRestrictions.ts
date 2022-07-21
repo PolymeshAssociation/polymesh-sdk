@@ -63,7 +63,7 @@ function transformRestrictions(
   let someDifference = restrictions.length !== currentRestrictions.length;
   const conditions: PolymeshPrimitivesTransferComplianceTransferCondition[] = [];
   restrictions.forEach(r => {
-    let value: BigNumber | ClaimCountRestrictionValue;
+    let value: BigNumber | ClaimCountRestrictionValue | ClaimPercentageTransferRestriction;
     if ('count' in r) {
       value = r.count;
     } else if ('percentage' in r) {
@@ -72,12 +72,13 @@ function transformRestrictions(
       value = r;
     }
 
+    const condition = { type, value } as TransferRestriction;
+
     const compareConditions = (transferCondition: TransferCondition): boolean =>
-      compareTransferRestrictionToInput(transferCondition, value, type);
+      compareTransferRestrictionToInput(transferCondition, condition);
     if (!someDifference) {
       someDifference = ![...currentRestrictions].find(compareConditions);
     }
-    const condition = { type, value } as TransferRestriction;
     const rawCondition = transferRestrictionToPolymeshTransferCondition(condition, context);
 
     if (r.exemptedIdentities) {

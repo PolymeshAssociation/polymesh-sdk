@@ -11,11 +11,19 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { getAuthorization, prepareRemoveAssetStat } from '~/api/procedures/removeAssetStat';
-import { Context, PolymeshError, RemoveAssetStatParams } from '~/internal';
+import { Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ClaimType, CountryCode, ErrorCode, StatClaimType, TxTags } from '~/types';
-import { PolymeshTx, StatisticsOpType, StatType, TickerKey } from '~/types/internal';
+import {
+  ClaimType,
+  CountryCode,
+  ErrorCode,
+  RemoveAssetStatParams,
+  StatClaimType,
+  StatType,
+  TxTags,
+} from '~/types';
+import { PolymeshTx, StatisticsOpType, TickerKey } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -139,10 +147,7 @@ describe('removeAssetStat procedure', () => {
     });
     rawClaimCountStatType = dsMockUtils.createMockStatisticsStatType({
       op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.ClaimCount),
-      claimIssuer: [
-        dsMockUtils.createMockIdentitiesClaimClaimType(),
-        dsMockUtils.createMockIdentityId(),
-      ],
+      claimIssuer: [dsMockUtils.createMockClaimType(), dsMockUtils.createMockIdentityId()],
     });
     statBtreeSet = dsMockUtils.createMockBTreeSet([
       rawCountStatType,
@@ -215,10 +220,8 @@ describe('removeAssetStat procedure', () => {
     args = {
       type: StatType.ScopedCount,
       ticker,
-      claimIssuer: {
-        issuer: entityMockUtils.getIdentityInstance(),
-        claimType: ClaimType.Affiliate,
-      },
+      issuer: entityMockUtils.getIdentityInstance(),
+      claimType: ClaimType.Affiliate,
     };
 
     await prepareRemoveAssetStat.call(proc, args);
@@ -257,7 +260,7 @@ describe('removeAssetStat procedure', () => {
     const expectedError = new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message:
-        'The statistic cannot be removed because a TransferRestriction is currently using it',
+        'The statistic cannot be removed because a Transfer Restriction is currently using it',
     });
 
     await expect(prepareRemoveAssetStat.call(proc, args)).rejects.toThrowError(expectedError);
@@ -273,11 +276,10 @@ describe('removeAssetStat procedure', () => {
     args = {
       ticker: 'TICKER',
       type: StatType.ScopedCount,
-      claimIssuer: {
-        issuer: entityMockUtils.getIdentityInstance({ did }),
-        claimType: ClaimType.Accredited,
-      },
+      issuer: entityMockUtils.getIdentityInstance({ did }),
+      claimType: ClaimType.Accredited,
     };
+
     await expect(prepareRemoveAssetStat.call(proc, args)).rejects.toThrowError(expectedError);
   });
 

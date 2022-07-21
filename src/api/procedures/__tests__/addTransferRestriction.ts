@@ -173,10 +173,7 @@ describe('addTransferRestriction procedure', () => {
     });
     rawClaimCountStatType = dsMockUtils.createMockStatisticsStatType({
       op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.ClaimCount),
-      claimIssuer: [
-        dsMockUtils.createMockIdentitiesClaimClaimType(),
-        dsMockUtils.createMockIdentityId(),
-      ],
+      claimIssuer: [dsMockUtils.createMockClaimType(), dsMockUtils.createMockIdentityId()],
     });
     mockStatTypeBtree = dsMockUtils.createMockBTreeSet([
       rawCountStatType,

@@ -80,18 +80,18 @@ export async function prepareAddTransferRestriction(
       QueryReturnType<typeof statisticsQuery.assetTransferCompliances>
     ]
   >([
+    [statisticsQuery.activeAssetStats as unknown as QueryableStorageEntry<'promise'>, tickerKey],
     [
       statisticsQuery.assetTransferCompliances as unknown as QueryableStorageEntry<'promise'>,
       tickerKey,
     ],
-    [statisticsQuery.activeAssetStats as unknown as QueryableStorageEntry<'promise'>, tickerKey],
   ]);
 
   const neededStat = neededStatTypeForRestrictionInput({ type, claimIssuer }, context);
   assertStatIsSet(currentStats, neededStat);
   const maxConditions = u32ToBigNumber(consts.statistics.maxTransferConditionsPerAsset);
 
-  const restrictionAmount = new BigNumber([...currentRestrictions].length);
+  const restrictionAmount = new BigNumber(currentRestrictions.size);
   if (restrictionAmount.gte(maxConditions)) {
     throw new PolymeshError({
       code: ErrorCode.LimitExceeded,
