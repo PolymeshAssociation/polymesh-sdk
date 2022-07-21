@@ -751,20 +751,20 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       const keys = await identity.didKeys.entries(did);
       const accounts = keys.map(([key]) => keyToAccount(key));
       return getSecondaryAccountPermissions({ accounts }, context, cb);
+    } else {
+      const { entries: keys, lastKey: next } = await requestPaginated(identity.didKeys, {
+        arg: did,
+        paginationOpts: opts,
+      });
+
+      const accounts = keys.map(([key]) => keyToAccount(key));
+      const permissionedAccounts = await getSecondaryAccountPermissions({ accounts }, context);
+
+      return {
+        data: permissionedAccounts,
+        next,
+      };
     }
-
-    const { entries: keys, lastKey: next } = await requestPaginated(identity.didKeys, {
-      arg: did,
-      paginationOpts: opts,
-    });
-
-    const accounts = keys.map(([key]) => keyToAccount(key));
-    const permissionedAccounts = await getSecondaryAccountPermissions({ accounts }, context);
-
-    return {
-      data: permissionedAccounts,
-      next,
-    };
   }
 
   /**

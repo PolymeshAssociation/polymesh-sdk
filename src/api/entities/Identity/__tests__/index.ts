@@ -1311,7 +1311,7 @@ describe('Identity class', () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const unsubCallback = 'unsubCallBack';
 
-      const callback: SubCallback<PermissionedAccount[]> = sinon.stub();
+      const callback = sinon.stub();
 
       getSecondaryAccountPermissionsStub.yields([
         {
@@ -1326,10 +1326,10 @@ describe('Identity class', () => {
       ]);
       getSecondaryAccountPermissionsStub.returns(unsubCallback);
 
-      const result = await identity.getSecondaryAccounts({}, callback);
+      const result = await identity.getSecondaryAccounts(callback);
 
       expect(result).toBe(unsubCallback);
-      sinon.assert.calledWithExactly(callback as sinon.SinonStub, fakeResult);
+      sinon.assert.calledWithExactly(callback, fakeResult);
     });
   });
 

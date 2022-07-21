@@ -31,6 +31,7 @@ import {
   ModuleName,
   PermissionedAccount,
   ProcedureMethod,
+  SubCallback,
   TransferRestrictionType,
   TxTags,
 } from '~/types';
@@ -1212,5 +1213,37 @@ describe('method: getSecondaryAccountPermissions', () => {
         mockContext
       )
     ).resolves.toEqual([]);
+  });
+
+  it('should allow for subscription', async () => {
+    const mockContext = dsMockUtils.getContextInstance();
+    const callback: SubCallback<PermissionedAccount[]> = sinon.stub();
+    const unsubCallback = 'unsubCallBack';
+
+    const keyRecordsStub = dsMockUtils.createQueryStub('identity', 'keyRecords');
+    keyRecordsStub.multi.yields([
+      dsMockUtils.createMockOption(rawPrimaryKeyRecord),
+      dsMockUtils.createMockOption(rawSecondaryKeyRecord),
+      dsMockUtils.createMockOption(rawMultiSigKeyRecord),
+    ]);
+    keyRecordsStub.multi.returns(unsubCallback);
+
+    identityIdToStringStub.returns('someDid');
+    const identity = new Identity({ did: 'otherDid' }, mockContext);
+
+    const result = await getSecondaryAccountPermissions(
+      {
+        accounts: [
+          entityMockUtils.getAccountInstance(),
+          account,
+          entityMockUtils.getAccountInstance(),
+        ],
+        identity,
+      },
+      mockContext,
+      callback
+    );
+    // sinon.assert.calledWithExactly(callback as sinon.SinonStub, fakeResult);
+    expect(result).toEqual(unsubCallback);
   });
 });
