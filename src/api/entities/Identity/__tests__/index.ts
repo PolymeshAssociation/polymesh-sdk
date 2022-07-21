@@ -28,7 +28,6 @@ import {
   PortfolioCustodianRole,
   Role,
   RoleType,
-  SubCallback,
   TickerOwnerRole,
   VenueOwnerRole,
   VenueType,
@@ -1364,7 +1363,10 @@ describe('Identity class', () => {
       getSecondaryAccountPermissionsStub.returns(fakeResult);
       const identity = new Identity({ did: 'someDid' }, context);
 
-      const result = await identity.getSecondaryAccounts();
+      let result = await identity.getSecondaryAccounts();
+      expect(result).toEqual({ data: fakeResult, next: null });
+
+      result = await identity.getSecondaryAccounts({ opts: { size: new BigNumber(20) } });
       expect(result).toEqual({ data: fakeResult, next: null });
     });
 
