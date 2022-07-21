@@ -433,6 +433,6 @@ describe('modifyInstructionAffirmation procedure', () => {
         senderLegAmount: new BigNumber(0),
         totalLegAmount: new BigNumber(1),
       });
-    });
+    }, 10000); // extend timeout, this case tends to exceed 5 seconds in CI
   });
 });
