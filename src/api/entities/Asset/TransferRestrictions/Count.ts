@@ -92,7 +92,7 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
   /**
    * Returns the count of individual holders of the Asset
    *
-   * @note This value can be used to initialize enableStat. If used for this purpose there is a potential race condition
+   * @note This value can be used to initialize `enableStat`. If used for this purpose there is a potential race condition
    * if Asset transfers happen between the time of check and time of use. Either pause Asset transfers, or check after stat
    * creation and try again if a race occurred. Future versions of the chain should introduce an extrinsic to avoid this issue
    */
