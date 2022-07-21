@@ -20,6 +20,7 @@ import {
   TxTags,
 } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 describe('modifySignerPermissions procedure', () => {
   let mockContext: Mocked<Context>;
@@ -28,6 +29,7 @@ describe('modifySignerPermissions procedure', () => {
   let signerToSignerValueStub: sinon.SinonStub<[Signer], SignerValue>;
   let permissionsToMeshPermissionsStub: sinon.SinonStub;
   let permissionsLikeToPermissionsStub: sinon.SinonStub;
+  let getSecondaryAccountPermissionsStub: sinon.SinonStub;
   let identity: Identity;
   let account: Account;
 
@@ -45,33 +47,36 @@ describe('modifySignerPermissions procedure', () => {
       utilsConversionModule,
       'permissionsLikeToPermissions'
     );
+    getSecondaryAccountPermissionsStub = sinon.stub(
+      utilsInternalModule,
+      'getSecondaryAccountPermissions'
+    );
   });
 
   beforeEach(() => {
     addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
     account = entityMockUtils.getAccountInstance({ address: 'someFakeAccount' });
-    identity = entityMockUtils.getIdentityInstance({
-      getSecondaryAccountPermissions: [
-        {
-          account,
-          permissions: {
-            assets: {
-              type: PermissionType.Include,
-              values: [],
-            },
-            portfolios: {
-              type: PermissionType.Include,
-              values: [],
-            },
-            transactions: {
-              type: PermissionType.Include,
-              values: [],
-            },
-            transactionGroups: [],
+    getSecondaryAccountPermissionsStub.returns([
+      {
+        account,
+        permissions: {
+          assets: {
+            type: PermissionType.Include,
+            values: [],
           },
+          portfolios: {
+            type: PermissionType.Include,
+            values: [],
+          },
+          transactions: {
+            type: PermissionType.Include,
+            values: [],
+          },
+          transactionGroups: [],
         },
-      ],
-    });
+      },
+    ]);
+    identity = entityMockUtils.getIdentityInstance();
     mockContext = dsMockUtils.getContextInstance({
       getIdentity: identity,
     });

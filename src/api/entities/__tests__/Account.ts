@@ -32,6 +32,7 @@ describe('Account class', () => {
   let account: Account;
   let assertAddressValidStub: sinon.SinonStub;
   let addressToKeyStub: sinon.SinonStub;
+  let getSecondaryAccountPermissionsStub: sinon.SinonStub;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
@@ -39,6 +40,10 @@ describe('Account class', () => {
     procedureMockUtils.initMocks();
     assertAddressValidStub = sinon.stub(utilsInternalModule, 'assertAddressValid');
     addressToKeyStub = sinon.stub(utilsConversionModule, 'addressToKey');
+    getSecondaryAccountPermissionsStub = sinon.stub(
+      utilsInternalModule,
+      'getSecondaryAccountPermissions'
+    );
 
     address = 'someAddress';
     key = 'someKey';
@@ -455,6 +460,7 @@ describe('Account class', () => {
     });
 
     it('should return full permissions if the Account is the primary Account', async () => {
+      getSecondaryAccountPermissionsStub.returns([]);
       const identity = entityMockUtils.getIdentityInstance({
         getPrimaryAccount: {
           account: entityMockUtils.getAccountInstance({ address }),
@@ -488,14 +494,14 @@ describe('Account class', () => {
         portfolios: null,
       };
 
-      const identity = entityMockUtils.getIdentityInstance({
-        getSecondaryAccountPermissions: [
-          {
-            account: entityMockUtils.getAccountInstance({ address: 'otherAddress' }),
-            permissions,
-          },
-        ],
-      });
+      getSecondaryAccountPermissionsStub.returns([
+        {
+          account: entityMockUtils.getAccountInstance({ address: 'otherAddress' }),
+          permissions,
+        },
+      ]);
+
+      const identity = entityMockUtils.getIdentityInstance({});
 
       account = new Account({ address: 'otherAddress' }, context);
 

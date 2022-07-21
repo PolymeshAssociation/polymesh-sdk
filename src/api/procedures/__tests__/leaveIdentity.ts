@@ -5,6 +5,7 @@ import { Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { ErrorCode } from '~/types';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Asset',
@@ -13,11 +14,17 @@ jest.mock(
 
 describe('leaveIdentity procedure', () => {
   let mockContext: Mocked<Context>;
+  let getSecondaryAccountPermissionsStub: sinon.SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
+
+    getSecondaryAccountPermissionsStub = sinon.stub(
+      utilsInternalModule,
+      'getSecondaryAccountPermissions'
+    );
   });
 
   beforeEach(() => {
@@ -42,6 +49,7 @@ describe('leaveIdentity procedure', () => {
         getIdentity: null,
       })
     );
+    getSecondaryAccountPermissionsStub.returns([]);
 
     const expectedError = new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
@@ -70,24 +78,18 @@ describe('leaveIdentity procedure', () => {
       'identity',
       'leaveIdentityAsKey'
     );
-    mockContext.getSigningAccount.returns(
-      entityMockUtils.getAccountInstance({
-        address,
-        getIdentity: entityMockUtils.getIdentityInstance({
-          getSecondaryAccountPermissions: [
-            {
-              account: entityMockUtils.getAccountInstance({ address }),
-              permissions: {
-                assets: null,
-                portfolios: null,
-                transactionGroups: [],
-                transactions: null,
-              },
-            },
-          ],
-        }),
-      })
-    );
+
+    getSecondaryAccountPermissionsStub.returns([
+      {
+        account: entityMockUtils.getAccountInstance({ address }),
+        permissions: {
+          assets: null,
+          portfolios: null,
+          transactionGroups: [],
+          transactions: null,
+        },
+      },
+    ]);
 
     const proc = procedureMockUtils.getInstance<void, void>(mockContext);
 

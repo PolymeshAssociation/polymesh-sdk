@@ -57,7 +57,6 @@ import {
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
   scopeIdToString,
-  stringToAccountId,
   stringToIdentityId,
   stringToTicker,
   transactionPermissionsToTxGroups,
@@ -763,51 +762,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       data: assembleResult(rawPermissions, identityKeys),
       next,
     };
-  }
-
-  /**
-   * Fetches account permissions for the given secondary Accounts
-   *
-   * @throws if given an Account that belongs to a different Identity. Unlinked Accounts are ignored
-   */
-  public async getSecondaryAccountPermissions(args: {
-    accounts: Account[];
-  }): Promise<PermissionedAccount[]> {
-    const {
-      did,
-      context,
-      context: {
-        polymeshApi: {
-          query: { identity },
-        },
-      },
-    } = this;
-
-    const { accounts } = args;
-
-    const identityKeys = accounts.map(a => stringToAccountId(a.address, context));
-    const results = await identity.keyRecords.multi(identityKeys);
-    return results.reduce((result: PermissionedAccount[], optKeyRecord, index) => {
-      const account = accounts[index];
-      const record = optKeyRecord.unwrap();
-      if (record.isSecondaryKey) {
-        const [rawIdentityId, rawPermissions] = record.asSecondaryKey;
-
-        if (identityIdToString(rawIdentityId) !== did) {
-          throw new PolymeshError({
-            code: ErrorCode.General,
-            message: 'Given an account that belongs to another Identity',
-          });
-        }
-
-        result.push({
-          account,
-          permissions: meshPermissionsToPermissions(rawPermissions, context),
-        });
-      }
-
-      return result;
-    }, []);
   }
 
   /**

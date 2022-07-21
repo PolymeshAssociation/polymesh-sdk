@@ -31,6 +31,7 @@ import {
 } from '~/internal';
 import { Scope as MiddlewareScope } from '~/middleware/types';
 import {
+  Account,
   CaCheckpointType,
   CalendarPeriod,
   CalendarUnit,
@@ -46,6 +47,7 @@ import {
   NextKey,
   NoArgsProcedureMethod,
   PaginationOptions,
+  PermissionedAccount,
   ProcedureAuthorizationStatus,
   ProcedureMethod,
   ProcedureOpts,
@@ -73,10 +75,13 @@ import {
   SYSTEM_VERSION_RPC_CALL,
 } from '~/utils/constants';
 import {
+  identityIdToString,
+  meshPermissionsToPermissions,
   middlewareScopeToScope,
   signerToString,
   statisticsOpTypeToStatOpType,
   statisticsOpTypeToStatType,
+  stringToAccountId,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { isEntity, isMultiClaimCondition, isSingleClaimCondition } from '~/utils/typeguards';
@@ -1196,4 +1201,51 @@ export function neededStatTypeForRestrictionInput(
   const rawOp = statisticsOpTypeToStatOpType(neededOp, context);
 
   return statisticsOpTypeToStatType(rawOp, context);
+}
+
+/**
+ * @hidden
+ *
+ * Fetches Account permissions for the given secondary Accounts
+ *
+ * @note non secondary Accounts will be skipped, so there maybe less PermissionedAccounts returned than Accounts given
+ *
+ * @param args.accounts a list of accounts to fetch permissions for
+ * @param args.did an optional did to filter out keys that do not belong to an Identity
+ */
+export async function getSecondaryAccountPermissions(
+  args: {
+    accounts: Account[];
+    identity?: Identity;
+  },
+  context: Context
+): Promise<PermissionedAccount[]> {
+  const {
+    polymeshApi: {
+      query: { identity: identityQuery },
+    },
+  } = context;
+
+  const { accounts, identity } = args;
+
+  const identityKeys = accounts.map(({ address }) => stringToAccountId(address, context));
+  const results = await identityQuery.keyRecords.multi(identityKeys);
+
+  return results.reduce((result: PermissionedAccount[], optKeyRecord, index) => {
+    const account = accounts[index];
+    const record = optKeyRecord.unwrap();
+    if (record.isSecondaryKey) {
+      const [rawIdentityId, rawPermissions] = record.asSecondaryKey;
+      if (identity && identityIdToString(rawIdentityId) !== identity.did) {
+        return result;
+      }
+
+      result.push({
+        account,
+        permissions: meshPermissionsToPermissions(rawPermissions, context),
+      });
+    }
+
+    return result;
+  }, []);
 }

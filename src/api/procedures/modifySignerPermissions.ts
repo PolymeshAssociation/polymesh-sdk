@@ -9,6 +9,7 @@ import {
   signerToSignerValue,
   signerValueToSignatory,
 } from '~/utils/conversion';
+import { getSecondaryAccountPermissions } from '~/utils/internal';
 
 /**
  * @hidden
@@ -34,7 +35,10 @@ export async function prepareModifySignerPermissions(
 
   const { secondaryAccounts } = args;
   const accounts = secondaryAccounts.map(({ account }) => account);
-  const existingSecondaryAccounts = await identity.getSecondaryAccountPermissions({ accounts });
+  const existingSecondaryAccounts = await getSecondaryAccountPermissions(
+    { accounts, identity },
+    context
+  );
   assertSecondaryAccounts(accounts, existingSecondaryAccounts);
 
   const signersList = secondaryAccounts.map(({ account, permissions: permissionsLike }) => {

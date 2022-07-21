@@ -45,7 +45,12 @@ import {
   txTagToExtrinsicIdentifier,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { assertAddressValid, calculateNextKey, isModuleOrTagMatch } from '~/utils/internal';
+import {
+  assertAddressValid,
+  calculateNextKey,
+  getSecondaryAccountPermissions,
+  isModuleOrTagMatch,
+} from '~/utils/internal';
 
 /**
  * @hidden
@@ -488,7 +493,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
    * @throws if there is no Identity associated with the Account
    */
   public async getPermissions(): Promise<Permissions> {
-    const { address } = this;
+    const { address, context } = this;
 
     const identity = await this.getIdentity();
 
@@ -506,7 +511,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       [permissionedAccount],
     ] = await Promise.all([
       identity.getPrimaryAccount(),
-      identity.getSecondaryAccountPermissions({ accounts: [this] }),
+      getSecondaryAccountPermissions({ accounts: [this], identity }, context),
     ]);
 
     if (address === primaryAccountAddress) {
