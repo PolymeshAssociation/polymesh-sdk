@@ -1,8 +1,8 @@
-import { Option, u64 } from '@polkadot/types';
+import { Option, StorageKey, u64 } from '@polkadot/types';
 import { AccountId32 } from '@polkadot/types/interfaces';
 import {
   PolymeshPrimitivesIdentityDidRecord,
-  PolymeshPrimitivesSecondaryKeyKeyRecord,
+  PolymeshPrimitivesIdentityId,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
@@ -45,14 +45,12 @@ import {
 } from '~/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
-  accountIdToAccount,
   accountIdToString,
   balanceToBigNumber,
   boolToBoolean,
   cddStatusToBoolean,
   corporateActionIdentifierToCaId,
   identityIdToString,
-  meshPermissionsToPermissions,
   portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
@@ -62,7 +60,13 @@ import {
   transactionPermissionsToTxGroups,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { asTicker, calculateNextKey, removePadding, requestPaginated } from '~/utils/internal';
+import {
+  asTicker,
+  calculateNextKey,
+  getSecondaryAccountPermissions,
+  removePadding,
+  requestPaginated,
+} from '~/utils/internal';
 
 import { AssetPermissions } from './AssetPermissions';
 import { IdentityAuthorizations } from './IdentityAuthorizations';
@@ -690,15 +694,24 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     opts?: PaginationOptions;
   }): Promise<ResultSet<PermissionedAccount>>;
 
-  public async getSecondaryAccounts(args: {
-    callback: SubCallback<PermissionedAccount[]>;
-  }): Promise<UnsubCallback>;
+  public async getSecondaryAccounts(
+    callback: SubCallback<PermissionedAccount[]>
+  ): Promise<UnsubCallback>;
+
+  public getSecondaryAccounts(
+    args: { opts?: PaginationOptions },
+    callback: SubCallback<PermissionedAccount[]>
+  ): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
-  public async getSecondaryAccounts(args: {
-    callback?: SubCallback<PermissionedAccount[]>;
-    opts?: PaginationOptions;
-  }): Promise<ResultSet<PermissionedAccount> | UnsubCallback> {
+  public async getSecondaryAccounts(
+    args?:
+      | {
+          opts?: PaginationOptions;
+        }
+      | SubCallback<PermissionedAccount[]>,
+    callback?: SubCallback<PermissionedAccount[]>
+  ): Promise<ResultSet<PermissionedAccount> | UnsubCallback> {
     const {
       did,
       context,
@@ -708,58 +721,48 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
         },
       },
     } = this;
-    const { callback, opts } = args || {};
 
-    const assembleResult = (
-      rawSecondaryKeyKeyRecord: Option<PolymeshPrimitivesSecondaryKeyKeyRecord>[],
-      accountIds: AccountId32[]
-    ): PermissionedAccount[] => {
-      return rawSecondaryKeyKeyRecord.reduce(
-        (secondaryKeys: PermissionedAccount[], optKeyRecord, index) => {
-          const account = accountIdToAccount(accountIds[index], context);
-          const keyRecord = optKeyRecord.unwrap();
+    let opts;
+    let cb: SubCallback<PermissionedAccount[]> | undefined = callback;
+    switch (typeof args) {
+      case 'undefined': {
+        break;
+      }
+      case 'function': {
+        cb = args;
+        break;
+      }
+      default: {
+        ({ opts } = args);
+        break;
+      }
+    }
 
-          if (keyRecord.isSecondaryKey) {
-            const [, permissions] = keyRecord.asSecondaryKey;
-            secondaryKeys.push({
-              account,
-              permissions: meshPermissionsToPermissions(permissions, context),
-            });
-          }
-
-          return secondaryKeys;
-        },
-        []
-      );
+    const keyToAccount = (
+      key: StorageKey<[PolymeshPrimitivesIdentityId, AccountId32]>
+    ): Account => {
+      const [, value] = key.args;
+      const address = accountIdToString(value);
+      return new Account({ address }, context);
     };
 
-    let keys, next;
-    if (callback) {
+    if (cb) {
       // when given a callback fetch all entries
-      keys = await identity.didKeys.entries(did);
-      next = null;
-    } else {
-      ({ entries: keys, lastKey: next } = await requestPaginated(identity.didKeys, {
-        arg: did,
-        paginationOpts: opts,
-      }));
+      const keys = await identity.didKeys.entries(did);
+      const accounts = keys.map(([key]) => keyToAccount(key));
+      return getSecondaryAccountPermissions({ accounts }, context, cb);
     }
 
-    const identityKeys = keys.map(([key]) => {
-      const [, value] = key.args;
-      return value;
+    const { entries: keys, lastKey: next } = await requestPaginated(identity.didKeys, {
+      arg: did,
+      paginationOpts: opts,
     });
 
-    if (callback) {
-      return identity.keyRecords.multi(identityKeys, result =>
-        callback(assembleResult(result, identityKeys))
-      );
-    }
-
-    const rawPermissions = await identity.keyRecords.multi(identityKeys);
+    const accounts = keys.map(([key]) => keyToAccount(key));
+    const permissionedAccounts = await getSecondaryAccountPermissions({ accounts }, context);
 
     return {
-      data: assembleResult(rawPermissions, identityKeys),
+      data: permissionedAccounts,
       next,
     };
   }

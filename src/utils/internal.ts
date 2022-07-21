@@ -5,9 +5,12 @@ import {
   DropLast,
   ObsInnerType,
 } from '@polkadot/api/types';
-import { Bytes, StorageKey } from '@polkadot/types';
+import { Bytes, Option, StorageKey } from '@polkadot/types';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
-import { PolymeshPrimitivesStatisticsStatType } from '@polkadot/types/lookup';
+import {
+  PolymeshPrimitivesSecondaryKeyKeyRecord,
+  PolymeshPrimitivesStatisticsStatType,
+} from '@polkadot/types/lookup';
 import { AnyFunction, AnyTuple, IEvent, ISubmittableResult } from '@polkadot/types/types';
 import { stringUpperFirst } from '@polkadot/util';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
@@ -52,8 +55,10 @@ import {
   ProcedureMethod,
   ProcedureOpts,
   Scope,
+  SubCallback,
   TransferRestrictionType,
   TxTag,
+  UnsubCallback,
 } from '~/types';
 import {
   Events,
@@ -1214,12 +1219,24 @@ export function neededStatTypeForRestrictionInput(
  * @param args.did an optional did to filter out keys that do not belong to an Identity
  */
 export async function getSecondaryAccountPermissions(
+  args: { accounts: Account[]; identity?: Identity },
+  context: Context,
+  callback: SubCallback<PermissionedAccount[]>
+): Promise<UnsubCallback>;
+
+export async function getSecondaryAccountPermissions(
+  args: { accounts: Account[]; identity?: Identity },
+  context: Context
+): Promise<PermissionedAccount[]>;
+// eslint-disable-next-line require-jsdoc
+export async function getSecondaryAccountPermissions(
   args: {
     accounts: Account[];
     identity?: Identity;
   },
-  context: Context
-): Promise<PermissionedAccount[]> {
+  context: Context,
+  callback?: SubCallback<PermissionedAccount[]>
+): Promise<PermissionedAccount[] | UnsubCallback> {
   const {
     polymeshApi: {
       query: { identity: identityQuery },
@@ -1228,24 +1245,35 @@ export async function getSecondaryAccountPermissions(
 
   const { accounts, identity } = args;
 
-  const identityKeys = accounts.map(({ address }) => stringToAccountId(address, context));
-  const results = await identityQuery.keyRecords.multi(identityKeys);
+  const assembleResult = (
+    optKeyRecords: Option<PolymeshPrimitivesSecondaryKeyKeyRecord>[]
+  ): PermissionedAccount[] => {
+    return optKeyRecords.reduce((result: PermissionedAccount[], optKeyRecord, index) => {
+      const account = accounts[index];
+      const record = optKeyRecord.unwrap();
+      if (record.isSecondaryKey) {
+        const [rawIdentityId, rawPermissions] = record.asSecondaryKey;
+        if (identity && identityIdToString(rawIdentityId) !== identity.did) {
+          return result;
+        }
 
-  return results.reduce((result: PermissionedAccount[], optKeyRecord, index) => {
-    const account = accounts[index];
-    const record = optKeyRecord.unwrap();
-    if (record.isSecondaryKey) {
-      const [rawIdentityId, rawPermissions] = record.asSecondaryKey;
-      if (identity && identityIdToString(rawIdentityId) !== identity.did) {
-        return result;
+        result.push({
+          account,
+          permissions: meshPermissionsToPermissions(rawPermissions, context),
+        });
       }
 
-      result.push({
-        account,
-        permissions: meshPermissionsToPermissions(rawPermissions, context),
-      });
-    }
+      return result;
+    }, []);
+  };
+  const identityKeys = accounts.map(({ address }) => stringToAccountId(address, context));
 
-    return result;
-  }, []);
+  if (callback) {
+    return identityQuery.keyRecords.multi(identityKeys, result => {
+      return callback(assembleResult(result));
+    });
+  }
+
+  const rawResults = await identityQuery.keyRecords.multi(identityKeys);
+  return assembleResult(rawResults);
 }
