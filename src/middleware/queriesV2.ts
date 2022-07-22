@@ -253,9 +253,8 @@ type EventArgs = 'moduleId' | 'eventId' | 'eventArg0' | 'eventArg1' | 'eventArg2
 /**
  * Create args and filters to be supplied to GQL query
  *
- * @param filters filters to be applied
- * @param typeMap Map defining the types corresponding to each attribute.
- * All missing attributes whose types are not defined are considered to be String
+ * @param filters - filters to be applied
+ * @param typeMap - Map defining the types corresponding to each attribute. All missing attributes whose types are not defined are considered to be `String`
  *
  * @hidden
  */
