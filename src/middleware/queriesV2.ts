@@ -251,27 +251,35 @@ export function instructionsQuery(
 type EventArgs = 'moduleId' | 'eventId' | 'eventArg0' | 'eventArg1' | 'eventArg2';
 
 /**
- *  @hidden
+ * Create args and filters to be supplied to GQL query
+ *
+ * @param filters filters to be applied
+ * @param typeMap Map defining the types corresponding to each attribute.
+ * All missing attributes whose types are not defined are considered to be String
+ *
+ * @hidden
  */
-function createEventFilters(attributes: QueryArgs<Event, EventArgs>): {
+function createArgsAndFilters(
+  filters: Record<string, unknown>,
+  typeMap: Record<string, string>
+): {
   args: string;
   filter: string;
 } {
   const args: string[] = ['$start: Int', '$size: Int'];
-  const filters: string[] = [];
-  const typeMap: Record<string, string> = { moduleId: 'ModuleIdEnum', eventId: 'EventIdEnum' };
+  const gqlFilters: string[] = [];
 
-  Object.keys(attributes).forEach(attribute => {
-    if (attributes[attribute as keyof typeof attributes]) {
+  Object.keys(filters).forEach(attribute => {
+    if (filters[attribute as keyof typeof filters]) {
       const type = typeMap[attribute] || 'String';
       args.push(`$${attribute}: ${type}!`);
-      filters.push(`${attribute}: { equalTo: $${attribute} }`);
+      gqlFilters.push(`${attribute}: { equalTo: $${attribute} }`);
     }
   });
 
   return {
     args: `(${args.join()})`,
-    filter: filters.length ? `filter: { ${filters.join()} }` : '',
+    filter: gqlFilters.length ? `filter: { ${gqlFilters.join()} }` : '',
   };
 }
 
@@ -285,7 +293,10 @@ export function eventsByArgs(
   size?: BigNumber,
   start?: BigNumber
 ): GraphqlQuery<PaginatedQueryArgs<QueryArgs<Event, EventArgs>>> {
-  const { args, filter } = createEventFilters(filters);
+  const { args, filter } = createArgsAndFilters(filters, {
+    moduleId: 'ModuleIdEnum',
+    eventId: 'EventIdEnum',
+  });
   const query = gql`
     query EventsQuery
       ${args}
@@ -354,34 +365,6 @@ export function extrinsicByHash(
 type ExtrinsicArgs = 'blockId' | 'address' | 'moduleId' | 'callId' | 'success';
 
 /**
- *  @hidden
- */
-function createExtrinsicFilters(attributes: QueryArgs<Extrinsic, ExtrinsicArgs>): {
-  args: string;
-  filter: string;
-} {
-  const args: string[] = ['$start: Int', '$size: Int'];
-  const filters: string[] = [];
-  const typeMap: Record<string, string> = {
-    moduleId: 'ModuleIdEnum',
-    callId: 'CallIdEnum',
-    success: 'Int',
-  };
-
-  Object.keys(attributes).forEach(attribute => {
-    if (attributes[attribute as keyof typeof attributes]) {
-      const type = typeMap[attribute] || 'String';
-      args.push(`$${attribute}: ${type}!`);
-      filters.push(`${attribute}: { equalTo: $${attribute} }`);
-    }
-  });
-  return {
-    args: `(${args.join()})`,
-    filter: filters.length ? `filter: { ${filters.join()} },` : '',
-  };
-}
-
-/**
  * @hidden
  *
  * Get transactions
@@ -392,7 +375,11 @@ export function extrinsicsByArgs(
   start?: BigNumber,
   orderBy: ExtrinsicsOrderBy = ExtrinsicsOrderBy.BlockIdAsc
 ): GraphqlQuery<PaginatedQueryArgs<QueryArgs<Extrinsic, ExtrinsicArgs>>> {
-  const { args, filter } = createExtrinsicFilters(filters);
+  const { args, filter } = createArgsAndFilters(filters, {
+    moduleId: 'ModuleIdEnum',
+    callId: 'CallIdEnum',
+    success: 'Int',
+  });
   const query = gql`
     query TransactionsQuery
       ${args}
@@ -612,32 +599,6 @@ export function tickerExternalAgentHistoryQuery(
 type TickerExternalAgentActionArgs = 'assetId' | 'callerId' | 'palletName' | 'eventId';
 
 /**
- *  @hidden
- */
-function createTickerExternalAgentActionFilters(
-  attributes: QueryArgs<TickerExternalAgentAction, TickerExternalAgentActionArgs>
-): {
-  args: string;
-  filter: string;
-} {
-  const args: string[] = ['$start: Int', '$size: Int'];
-  const filters: string[] = [];
-  const typeMap: Record<string, string> = { eventId: 'EventIdEnum' };
-
-  Object.keys(attributes).forEach(attribute => {
-    if (attributes[attribute as keyof typeof attributes]) {
-      const type = typeMap[attribute] || 'String';
-      args.push(`$${attribute}: ${type}!`);
-      filters.push(`${attribute}: { equalTo: $${attribute} }`);
-    }
-  });
-  return {
-    args: `(${args.join()})`,
-    filter: filters.length ? `filter: { ${filters.join()} },` : '',
-  };
-}
-
-/**
  * @hidden
  *
  * Get list of Events triggered by actions (from the set of actions that can only be performed by external agents) that have been performed on a specific Asset
@@ -649,7 +610,7 @@ export function tickerExternalAgentActionsQuery(
 ): GraphqlQuery<
   PaginatedQueryArgs<QueryArgs<TickerExternalAgentAction, TickerExternalAgentActionArgs>>
 > {
-  const { args, filter } = createTickerExternalAgentActionFilters(filters);
+  const { args, filter } = createArgsAndFilters(filters, { eventId: 'EventIdEnum' });
   const query = gql`
     query TickerExternalAgentActionsQuery
       ${args}
