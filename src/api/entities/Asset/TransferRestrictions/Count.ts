@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { TransferRestrictionBase } from '~/internal';
+import { Asset, Context, TransferRestrictionBase } from '~/internal';
 import {
   ActiveTransferRestrictions,
   AddCountStatParams,
@@ -16,6 +16,14 @@ import {
  * Handles all Count Transfer Restriction related functionality
  */
 export class Count extends TransferRestrictionBase<TransferRestrictionType.Count> {
+  /**
+   * @hidden
+   */
+  constructor(parent: Asset, context: Context) {
+    super(parent, context);
+    this.investorCount = parent.investorCount.bind(parent);
+  }
+
   protected type = TransferRestrictionType.Count as const;
 
   /**
@@ -25,7 +33,7 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
    *
    * @returns the total amount of restrictions after the procedure has run
    *
-   * @throws if a count statistic is not enabled for the Asset. {@link Count.enableStat } should be called before this method
+   * @throws if a count statistic is not enabled for the Asset. {@link api/entities/Asset/TransferRestrictions/Count!Count.enableStat | Count.enableStat } should be called before this method
    */
   public declare addRestriction: ProcedureMethod<
     Omit<AddCountTransferRestrictionParams, 'type'>,
@@ -53,7 +61,7 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
    * Enables an investor count statistic for the Asset, which is required before creating restrictions
    *
    * The counter is only updated automatically with each transfer of tokens after the stat has been enabled.
-   * As such the initial value for the stat should be passed in
+   * As such the initial value for the stat should be passed in, which can be fetched with {@link api/entities/Asset/TransferRestrictions/Count!Count.investorCount | Count.investorCount }
    *
    * @note Currently there is a potential race condition if passing in counts values when the Asset is being traded.
    * It is recommended to call this method during the initial configuration of the Asset, before people are trading it.
@@ -80,4 +88,13 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
    *   before reaching that limit
    */
   public declare get: () => Promise<ActiveTransferRestrictions<CountTransferRestriction>>;
+
+  /**
+   * Returns the count of individual holders of the Asset
+   *
+   * @note This value can be used to initialize `enableStat`. If used for this purpose there is a potential race condition
+   * if Asset transfers happen between the time of check and time of use. Either pause Asset transfers, or check after stat
+   * creation and try again if a race occurred. Future versions of the chain should introduce an extrinsic to avoid this issue
+   */
+  public investorCount: () => Promise<BigNumber>;
 }
