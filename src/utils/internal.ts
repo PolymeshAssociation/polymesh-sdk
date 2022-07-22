@@ -1216,7 +1216,7 @@ export function neededStatTypeForRestrictionInput(
  * @note non secondary Accounts will be skipped, so there maybe less PermissionedAccounts returned than Accounts given
  *
  * @param args.accounts a list of accounts to fetch permissions for
- * @param args.did an optional did to filter out keys that do not belong to an Identity
+ * @param args.identity optional. If passed, Accounts that are not part of the given Identity will be filtered out
  */
 export async function getSecondaryAccountPermissions(
   args: { accounts: Account[]; identity?: Identity },
@@ -1251,29 +1251,29 @@ export async function getSecondaryAccountPermissions(
     return optKeyRecords.reduce((result: PermissionedAccount[], optKeyRecord, index) => {
       const account = accounts[index];
       const record = optKeyRecord.unwrap();
+
       if (record.isSecondaryKey) {
         const [rawIdentityId, rawPermissions] = record.asSecondaryKey;
+
         if (identity && identityIdToString(rawIdentityId) !== identity.did) {
           return result;
         }
-
         result.push({
           account,
           permissions: meshPermissionsToPermissions(rawPermissions, context),
         });
       }
-
       return result;
     }, []);
   };
-  const identityKeys = accounts.map(({ address }) => stringToAccountId(address, context));
 
+  const identityKeys = accounts.map(({ address }) => stringToAccountId(address, context));
   if (callback) {
     return identityQuery.keyRecords.multi(identityKeys, result => {
       return callback(assembleResult(result));
     });
   }
-
   const rawResults = await identityQuery.keyRecords.multi(identityKeys);
+
   return assembleResult(rawResults);
 }
