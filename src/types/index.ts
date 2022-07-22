@@ -348,6 +348,7 @@ export type InputStatType =
       type: StatType.ScopedCount | StatType.ScopedPercentage;
       claimIssuer: StatClaimIssuer;
     };
+
 export interface IdentityWithClaims {
   identity: Identity;
   claims: ClaimData[];
