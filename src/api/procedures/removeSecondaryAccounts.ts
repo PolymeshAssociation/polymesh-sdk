@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import { find } from 'lodash';
 
 import { assertSecondaryAccounts } from '~/api/procedures/utils';
 import { PolymeshError, Procedure } from '~/internal';
@@ -30,9 +29,7 @@ export async function prepareRemoveSecondaryAccounts(
     getSecondaryAccountPermissions({ accounts, identity }, context),
   ]);
 
-  const isPrimaryAccountPresent = find(accounts, account => {
-    return account.isEqual(primaryAccount);
-  });
+  const isPrimaryAccountPresent = accounts.find(account => account.isEqual(primaryAccount));
 
   if (isPrimaryAccountPresent) {
     throw new PolymeshError({

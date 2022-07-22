@@ -1229,7 +1229,7 @@ describe('method: getSecondaryAccountPermissions', () => {
     keyRecordsStub.multi.returns(unsubCallback);
 
     identityIdToStringStub.returns('someDid');
-    const identity = new Identity({ did: 'otherDid' }, mockContext);
+    const identity = new Identity({ did }, mockContext);
 
     const result = await getSecondaryAccountPermissions(
       {
@@ -1243,7 +1243,8 @@ describe('method: getSecondaryAccountPermissions', () => {
       mockContext,
       callback
     );
-    // sinon.assert.calledWithExactly(callback as sinon.SinonStub, fakeResult);
+
+    sinon.assert.calledWithExactly(callback as sinon.SinonStub, fakeResult);
     expect(result).toEqual(unsubCallback);
   });
 });
