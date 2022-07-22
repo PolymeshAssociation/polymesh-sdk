@@ -753,29 +753,25 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   /**
    * Get the list of secondary Accounts related to the Identity
    *
+   * @note supports pagination
    * @note can be subscribed to
-   * @note This method currently can be slow when given a callback or requesting all accounts to be fetched if the Identity has a large number of Accounts
    */
-  public async getSecondaryAccounts(args?: {
-    opts?: PaginationOptions;
-  }): Promise<ResultSet<PermissionedAccount>>;
+  public async getSecondaryAccounts(
+    paginationOpts?: PaginationOptions
+  ): Promise<ResultSet<PermissionedAccount>>;
 
   public async getSecondaryAccounts(
     callback: SubCallback<PermissionedAccount[]>
   ): Promise<UnsubCallback>;
 
   public getSecondaryAccounts(
-    args: { opts?: PaginationOptions },
+    paginationOpts: PaginationOptions,
     callback: SubCallback<PermissionedAccount[]>
   ): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
   public async getSecondaryAccounts(
-    args?:
-      | {
-          opts?: PaginationOptions;
-        }
-      | SubCallback<PermissionedAccount[]>,
+    args?: PaginationOptions | SubCallback<PermissionedAccount[]>,
     callback?: SubCallback<PermissionedAccount[]>
   ): Promise<ResultSet<PermissionedAccount> | UnsubCallback> {
     const {
@@ -799,7 +795,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
         break;
       }
       default: {
-        ({ opts } = args);
+        opts = args;
         break;
       }
     }
@@ -812,25 +808,21 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       return new Account({ address }, context);
     };
 
+    const { entries: keys, lastKey: next } = await requestPaginated(identity.didKeys, {
+      arg: did,
+      paginationOpts: opts,
+    });
+    const accounts = keys.map(([key]) => keyToAccount(key));
+
     if (cb) {
-      // when given a callback fetch all entries
-      const keys = await identity.didKeys.entries(did);
-      const accounts = keys.map(([key]) => keyToAccount(key));
       return getSecondaryAccountPermissions({ accounts }, context, cb);
-    } else {
-      const { entries: keys, lastKey: next } = await requestPaginated(identity.didKeys, {
-        arg: did,
-        paginationOpts: opts,
-      });
-
-      const accounts = keys.map(([key]) => keyToAccount(key));
-      const permissionedAccounts = await getSecondaryAccountPermissions({ accounts }, context);
-
-      return {
-        data: permissionedAccounts,
-        next,
-      };
     }
+
+    const data = await getSecondaryAccountPermissions({ accounts }, context);
+    return {
+      data,
+      next,
+    };
   }
 
   /**

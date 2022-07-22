@@ -1269,9 +1269,7 @@ export async function getSecondaryAccountPermissions(
   const identityKeys = accounts.map(({ address }) => stringToAccountId(address, context));
 
   if (callback) {
-    console.log('callback');
     return identityQuery.keyRecords.multi(identityKeys, result => {
-      console.log('yielded: ', result);
       return callback(assembleResult(result));
     });
   }
