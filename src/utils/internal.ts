@@ -877,6 +877,7 @@ export async function getPortfolioIdsByName(
   rawNames: PortfolioName[],
   context: Context
 ): Promise<(BigNumber | null)[]> {
+  console.log('CALL');
   const {
     polymeshApi: {
       query: { portfolio },
@@ -896,14 +897,19 @@ export async function getPortfolioIdsByName(
    */
   let firstPortfolioName: PortfolioName;
 
+  /*
+   * even though we make this call without knowing if we will need
+   *  the result, we only await for it if necessary, so it's still
+   *  performant
+   */
+  const gettingFirstPortfolioName = portfolio.portfolios(
+    rawIdentityId,
+    bigNumberToU64(new BigNumber(1), context)
+  );
+
   return P.map(portfolioIds, async (id, index) => {
     if (id.eq(1)) {
-      if (!firstPortfolioName) {
-        firstPortfolioName = await portfolio.portfolios(
-          rawIdentityId,
-          bigNumberToU64(new BigNumber(1), context)
-        );
-      }
+      firstPortfolioName = await gettingFirstPortfolioName;
 
       if (!firstPortfolioName.eq(rawNames[index])) {
         return null;
