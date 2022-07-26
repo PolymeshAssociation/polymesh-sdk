@@ -269,7 +269,7 @@ function createArgsAndFilters(
   const gqlFilters: string[] = [];
 
   Object.keys(filters).forEach(attribute => {
-    if (filters[attribute as keyof typeof filters]) {
+    if (filters[attribute]) {
       const type = typeMap[attribute] || 'String';
       args.push(`$${attribute}: ${type}!`);
       gqlFilters.push(`${attribute}: { equalTo: $${attribute} }`);

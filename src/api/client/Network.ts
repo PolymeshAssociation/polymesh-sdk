@@ -25,7 +25,6 @@ import { TREASURY_MODULE_ADDRESS } from '~/utils/constants';
 import {
   balanceToBigNumber,
   extrinsicIdentifierToTxTag,
-  extrinsicIdentifierV2ToTxTag,
   middlewareEventToEventIdentifier,
   middlewareV2EventDetailsToEventIdentifier,
   moduleAddressToString,
@@ -466,7 +465,7 @@ export class Network {
         block,
       } = transaction;
 
-      const txTag = extrinsicIdentifierV2ToTxTag({
+      const txTag = extrinsicIdentifierToTxTag({
         moduleId,
         callId,
       });

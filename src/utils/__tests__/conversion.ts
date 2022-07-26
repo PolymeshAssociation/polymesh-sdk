@@ -174,7 +174,6 @@ import {
   documentToAssetDocument,
   endConditionToSettlementType,
   extrinsicIdentifierToTxTag,
-  extrinsicIdentifierV2ToTxTag,
   fundraiserTierToTier,
   fundraiserToOfferingDetails,
   granularCanTransferResultToTransferBreakdown,
@@ -4462,42 +4461,38 @@ describe('txTagToExtrinsicIdentifier and extrinsicIdentifierToTxTag', () => {
       expect(result).toEqual(TxTags.babe.ReportEquivocation);
     });
   });
+
+  it('should convert a ExtrinsicIdentifierV2 object to a TxTag', () => {
+    let result = extrinsicIdentifierToTxTag({
+      moduleId: MiddlewareV2ModuleId.Identity,
+      callId: MiddlewareV2CallId.CddRegisterDid,
+    });
+
+    expect(result).toEqual(TxTags.identity.CddRegisterDid);
+
+    result = extrinsicIdentifierToTxTag({
+      moduleId: MiddlewareV2ModuleId.Babe,
+      callId: MiddlewareV2CallId.ReportEquivocation,
+    });
+
+    expect(result).toEqual(TxTags.babe.ReportEquivocation);
+  });
 });
 
-describe('txTagToExtrinsicIdentifierV2 and extrinsicIdentifierV2ToTxTag', () => {
-  describe('txTagToExtrinsicIdentifierV2', () => {
-    it('should convert a TxTag enum to a ExtrinsicIdentifierV2 object', () => {
-      let result = txTagToExtrinsicIdentifierV2(TxTags.identity.CddRegisterDid);
+describe('txTagToExtrinsicIdentifierV2', () => {
+  it('should convert a TxTag enum to a ExtrinsicIdentifierV2 object', () => {
+    let result = txTagToExtrinsicIdentifierV2(TxTags.identity.CddRegisterDid);
 
-      expect(result).toEqual({
-        moduleId: MiddlewareV2ModuleId.Identity,
-        callId: MiddlewareV2CallId.CddRegisterDid,
-      });
-
-      result = txTagToExtrinsicIdentifierV2(TxTags.babe.ReportEquivocation);
-
-      expect(result).toEqual({
-        moduleId: MiddlewareV2ModuleId.Babe,
-        callId: MiddlewareV2CallId.ReportEquivocation,
-      });
+    expect(result).toEqual({
+      moduleId: MiddlewareV2ModuleId.Identity,
+      callId: MiddlewareV2CallId.CddRegisterDid,
     });
-  });
 
-  describe('extrinsicIdentifierV2ToTxTag', () => {
-    it('should convert a ExtrinsicIdentifierV2 object to a TxTag', () => {
-      let result = extrinsicIdentifierV2ToTxTag({
-        moduleId: MiddlewareV2ModuleId.Identity,
-        callId: MiddlewareV2CallId.CddRegisterDid,
-      });
+    result = txTagToExtrinsicIdentifierV2(TxTags.babe.ReportEquivocation);
 
-      expect(result).toEqual(TxTags.identity.CddRegisterDid);
-
-      result = extrinsicIdentifierV2ToTxTag({
-        moduleId: MiddlewareV2ModuleId.Babe,
-        callId: MiddlewareV2CallId.ReportEquivocation,
-      });
-
-      expect(result).toEqual(TxTags.babe.ReportEquivocation);
+    expect(result).toEqual({
+      moduleId: MiddlewareV2ModuleId.Babe,
+      callId: MiddlewareV2CallId.ReportEquivocation,
     });
   });
 });

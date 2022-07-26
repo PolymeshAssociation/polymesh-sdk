@@ -41,7 +41,6 @@ import { Ensured, EnsuredV2 } from '~/types/utils';
 import {
   addressToKey,
   extrinsicIdentifierToTxTag,
-  extrinsicIdentifierV2ToTxTag,
   identityIdToString,
   keyToAddress,
   portfolioToPortfolioId,
@@ -558,7 +557,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
         extrinsicIdx: new BigNumber(extrinsicIdx),
         address: rawAddress ? keyToAddress(rawAddress, context) : null,
         nonce: nonce ? new BigNumber(nonce) : null,
-        txTag: extrinsicIdentifierV2ToTxTag({
+        txTag: extrinsicIdentifierToTxTag({
           moduleId: extrinsicModuleId,
           callId: extrinsicCallId,
         }),

@@ -2537,7 +2537,9 @@ export function txTagToExtrinsicIdentifier(tag: TxTag): ExtrinsicIdentifier {
 /**
  * @hidden
  */
-export function extrinsicIdentifierToTxTag(extrinsicIdentifier: ExtrinsicIdentifier): TxTag {
+export function extrinsicIdentifierToTxTag(
+  extrinsicIdentifier: ExtrinsicIdentifier | ExtrinsicIdentifierV2
+): TxTag {
   const { moduleId, callId } = extrinsicIdentifier;
   let moduleName;
   for (const txTagItem in TxTags) {
@@ -2558,21 +2560,6 @@ export function txTagToExtrinsicIdentifierV2(tag: TxTag): ExtrinsicIdentifierV2 
     moduleId: moduleName.toLowerCase() as MiddlewareV2ModuleId,
     callId: snakeCase(extrinsicName) as MiddlewareV2CallId,
   };
-}
-
-/**
- * @hidden
- */
-export function extrinsicIdentifierV2ToTxTag(extrinsicIdentifier: ExtrinsicIdentifierV2): TxTag {
-  const { moduleId, callId } = extrinsicIdentifier;
-  let moduleName;
-  for (const txTagItem in TxTags) {
-    if (txTagItem.toLowerCase() === moduleId) {
-      moduleName = txTagItem;
-    }
-  }
-
-  return `${moduleName}.${camelCase(callId)}` as TxTag;
 }
 
 /**
