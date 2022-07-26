@@ -11,6 +11,7 @@ import {
   Instruction,
   modifyVenue,
   ModifyVenueParams,
+  NumberedPortfolio,
 } from '~/internal';
 import { GroupedInstructions, InstructionStatus, ProcedureMethod } from '~/types';
 import {
@@ -33,6 +34,13 @@ export interface UniqueIdentifiers {
  */
 export function addInstructionTransformer([instruction]: Instruction[]): Instruction {
   return instruction;
+}
+
+/**
+ * @hidden
+ */
+export function createPortfolioTransformer([portfolio]: NumberedPortfolio[]): NumberedPortfolio {
+  return portfolio;
 }
 
 /**

@@ -27,7 +27,7 @@ export {
   ConsumeAuthorizationRequestsParams,
   ConsumeParams,
 } from '~/api/procedures/consumeAuthorizationRequests';
-export { createPortfolio } from '~/api/procedures/createPortfolio';
+export { createPortfolios } from '~/api/procedures/createPortfolios';
 export {
   createAsset,
   CreateAssetParams,

@@ -813,7 +813,7 @@ describe('Instruction class', () => {
       });
     });
 
-    it("should throw an error if Instruction status couldn't be determied", async () => {
+    it("should throw an error if Instruction status couldn't be determined", async () => {
       const queryVariables = {
         moduleId: ModuleIdEnum.Settlement,
         eventId: EventIdEnum.InstructionExecuted,
