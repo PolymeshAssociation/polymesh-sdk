@@ -122,7 +122,12 @@ export class Procedure<Args = void, ReturnValue = void, Storage = Record<string,
       const ctx = context.clone();
       const { signingAccount, nonce } = opts;
 
-      ctx.setNonce(nonce);
+      if (typeof nonce === 'function') {
+        ctx.setNonce(nonce());
+      } else {
+        ctx.setNonce(nonce);
+      }
+
       if (signingAccount) {
         await ctx.setSigningAddress(signerToString(signingAccount));
       }

@@ -604,4 +604,25 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   public toHuman(): string {
     return this.address;
   }
+
+  /**
+   * Retrieve the current nonce for this Account
+   */
+  public async getCurrentNonce(): Promise<BigNumber> {
+    const {
+      context: {
+        polymeshApi: {
+          rpc: {
+            system: { accountNextIndex },
+          },
+        },
+      },
+      address,
+      context,
+    } = this;
+
+    const index = await accountNextIndex(stringToAccountId(address, context));
+
+    return u32ToBigNumber(index);
+  }
 }

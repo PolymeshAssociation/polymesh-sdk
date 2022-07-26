@@ -397,6 +397,7 @@ describe('Procedure class', () => {
 
       const transaction3 = await proc3.prepare({ args: procArgs }, context, {
         signingAccount: 'something',
+        nonce: () => new BigNumber(10),
       });
 
       expect(transaction3).toMatchObject({
@@ -406,9 +407,10 @@ describe('Procedure class', () => {
       sinon.assert.calledWith(constructorStub, sinon.match({ transaction: tx1, args: [ticker] }), {
         ...context,
         signingAddress: 'something',
-        nonce: new BigNumber(-1),
+        nonce: new BigNumber(10),
       });
       sinon.assert.calledWith(context.setSigningAddress, 'something');
+      sinon.assert.calledWith(context.setNonce, new BigNumber(10));
     });
 
     it('should throw any errors encountered during preparation', () => {

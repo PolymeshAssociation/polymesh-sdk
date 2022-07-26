@@ -1288,9 +1288,9 @@ export interface ProcedureOpts {
   /**
    * nonce value for signing the transaction
    *
-   * More information can be found at: https://polkadot.js.org/docs/api/cookbook/tx/#how-do-i-take-the-pending-tx-pool-into-account-in-my-nonce
+   * An {@link api/entities/Account!Account} can directly fetch its current nonce by calling {@link api/entities/Account!Account.getCurrentNonce | account.getCurrentNonce}. More information can be found at: https://polkadot.js.org/docs/api/cookbook/tx/#how-do-i-take-the-pending-tx-pool-into-account-in-my-nonce
    */
-  nonce?: BigNumber;
+  nonce?: BigNumber | (() => BigNumber);
 }
 
 export interface ProcedureMethod<

@@ -730,4 +730,17 @@ describe('Account class', () => {
       checkPermissionsSpy.mockRestore();
     });
   });
+
+  describe('method: getCurrentNonce', () => {
+    it('should return the current nonce of the Account', async () => {
+      const nonce = new BigNumber(123);
+      sinon.stub(utilsConversionModule, 'stringToAccountId');
+      dsMockUtils
+        .createRpcStub('system', 'accountNextIndex')
+        .resolves(dsMockUtils.createMockU32(nonce));
+
+      const result = await account.getCurrentNonce();
+      expect(result).toEqual(nonce);
+    });
+  });
 });
