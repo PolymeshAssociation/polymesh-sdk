@@ -174,6 +174,8 @@ import {
   InputCorporateActionTargets,
   InputCorporateActionTaxWithholdings,
   InputRequirement,
+  InputStatClaim,
+  InputStatType,
   InputTrustedClaimIssuer,
   InstructionType,
   KnownAssetType,
@@ -204,7 +206,6 @@ import {
   SignerType,
   SignerValue,
   SingleClaimCondition,
-  StatClaimInput,
   StatClaimType,
   StatType,
   TargetTreatment,
@@ -543,7 +544,7 @@ export function permillToBigNumber(value: Permill): BigNumber {
 /**
  *  @hidden
  */
-export function meshClaimToStatClaimInput(claim: StatClaim): StatClaimInput {
+export function meshClaimToInputStatClaim(claim: StatClaim): InputStatClaim {
   if (claim.isAccredited) {
     return {
       type: ClaimType.Accredited,
@@ -573,7 +574,7 @@ export function claimCountToClaimCountRestrictionValue(
 ): ClaimCountRestrictionValue {
   const [claim, issuer, min, max] = value;
   return {
-    claim: meshClaimToStatClaimInput(claim),
+    claim: meshClaimToInputStatClaim(claim),
     issuer: new Identity({ did: identityIdToString(issuer) }, context),
     min: u64ToBigNumber(min),
     max: max.isSome ? u64ToBigNumber(max.unwrap()) : undefined,
@@ -589,7 +590,7 @@ export function claimPercentageToClaimPercentageRestrictionValue(
 ): ClaimPercentageRestrictionValue {
   const [claim, issuer, min, max] = value;
   return {
-    claim: meshClaimToStatClaimInput(claim),
+    claim: meshClaimToInputStatClaim(claim),
     issuer: new Identity({ did: identityIdToString(issuer) }, context),
     min: permillToBigNumber(min),
     max: permillToBigNumber(max),
@@ -2910,7 +2911,7 @@ export function transferRestrictionToPolymeshTransferCondition(
   let restrictionType: string;
   let restrictionValue;
 
-  const extractClaimValue = (claim: StatClaimInput): bool | MeshCountryCode | null => {
+  const extractClaimValue = (claim: InputStatClaim): bool | MeshCountryCode | null => {
     if (claim.type === ClaimType.Accredited) {
       return booleanToBool(claim.accredited, context);
     } else if (claim.type === ClaimType.Affiliate) {
@@ -3967,4 +3968,20 @@ export function countStatInputToStatUpdates(
   const secondKey = createStat2ndKey('NoClaimStat', context);
   const stat = keyAndValueToStatUpdate(secondKey, bigNumberToU128(count, context), context);
   return statUpdatesToBtreeStatUpdate([stat], context);
+}
+
+/**
+ * @hidden
+ */
+export function inputStatTypeToMeshStatType(
+  input: InputStatType,
+  context: Context
+): PolymeshPrimitivesStatisticsStatType {
+  const { type } = input;
+  const op = statTypeToStatOpType(type, context);
+  let claimIssuer;
+  if (type === StatType.ScopedCount || type === StatType.ScopedPercentage) {
+    claimIssuer = claimIssuerToMeshClaimIssuer(input.claimIssuer, context);
+  }
+  return statisticsOpTypeToStatType({ op, claimIssuer }, context);
 }

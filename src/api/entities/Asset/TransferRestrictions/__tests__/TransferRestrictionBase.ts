@@ -527,7 +527,7 @@ describe('TransferRestrictionBase class', () => {
           {
             args: {
               ticker: asset.ticker,
-              type: StatType.Balance,
+              type: StatType.Percentage,
             },
             transformer: undefined,
           },
@@ -589,7 +589,7 @@ describe('TransferRestrictionBase class', () => {
           {
             args: {
               ticker: asset.ticker,
-              type: StatType.Balance,
+              type: StatType.Percentage,
             },
             transformer: undefined,
           },
@@ -641,7 +641,7 @@ describe('TransferRestrictionBase class', () => {
           {
             args: {
               ticker: asset.ticker,
-              type: StatType.ScopedBalance,
+              type: StatType.ScopedPercentage,
               issuer,
               claimType: ClaimType.Jurisdiction,
             },

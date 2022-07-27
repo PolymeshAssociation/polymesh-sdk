@@ -26,6 +26,8 @@ import {
   InputCondition,
   InputCorporateActionTargets,
   InputCorporateActionTaxWithholdings,
+  InputStatClaim,
+  InputStatType,
   InputTargets,
   InputTaxWithholding,
   InputTrustedClaimIssuer,
@@ -38,7 +40,6 @@ import {
   Requirement,
   Scope,
   SecurityIdentifier,
-  StatClaimInput,
   StatClaimIssuer,
   TransactionPermissions,
   TxGroup,
@@ -90,7 +91,7 @@ export type AddCountStatParams = AddCountStatInput & {
 };
 
 export type AddBalanceStatParams = {
-  type: StatType.Balance;
+  type: StatType.Percentage;
 };
 
 export type AddClaimCountStatParams = ClaimCountStatInput & {
@@ -98,7 +99,7 @@ export type AddClaimCountStatParams = ClaimCountStatInput & {
 };
 
 export type AddClaimPercentageStatParams = StatClaimIssuer & {
-  type: StatType.ScopedBalance;
+  type: StatType.ScopedPercentage;
 };
 
 export type AddAssetStatParams = { ticker: string } & (
@@ -113,7 +114,7 @@ export type RemoveCountStatParams = {
 };
 
 export type RemoveBalanceStatParams = {
-  type: StatType.Balance;
+  type: StatType.Percentage;
 };
 
 export type RemoveScopedCountParams = StatClaimIssuer & {
@@ -121,7 +122,7 @@ export type RemoveScopedCountParams = StatClaimIssuer & {
 };
 
 export type RemoveScopedBalanceParams = StatClaimIssuer & {
-  type: StatType.ScopedBalance;
+  type: StatType.ScopedPercentage;
 };
 
 export type SetAssetStatParams<T> = Omit<
@@ -146,15 +147,15 @@ export enum StatType {
   /**
    * Keeps track of the amount of supply investors hold
    */
-  Balance = 'Balance',
+  Percentage = 'Percentage',
   /**
    * Keeps a count of the total number of investors who have a certain claim
    */
   ScopedCount = 'ScopedCount',
   /**
-   * Keeps track of the percentage of total supply held by investors who have a certain claim
+   * Keeps track of the amount of supply held between investors who have a certain claim
    */
-  ScopedBalance = 'ScopedBalance',
+  ScopedPercentage = 'ScopedPercentage',
 }
 
 export enum TransferRestrictionType {
@@ -194,13 +195,13 @@ export interface ClaimCountTransferRestrictionInput extends TransferRestrictionI
   min: BigNumber;
   max?: BigNumber;
   issuer: Identity;
-  claim: StatClaimInput;
+  claim: InputStatClaim;
 }
 export interface ClaimPercentageTransferRestrictionInput extends TransferRestrictionInputBase {
   min: BigNumber;
   max: BigNumber;
   issuer: Identity;
-  claim: StatClaimInput;
+  claim: InputStatClaim;
 }
 
 export type AddCountTransferRestrictionParams = CountTransferRestrictionInput & {
@@ -317,6 +318,20 @@ export interface CreateAssetParams {
    *   to hold it. More information about Investor Uniqueness and PUIS [here](https://developers.polymesh.live/introduction/identity#polymesh-unique-identity-system-puis)
    */
   requireInvestorUniqueness: boolean;
+
+  /**
+   * (optional) type of statistics that should be enabled for the Asset
+   *
+   * Enabling statistics allows for TransferRestrictions to be made. For example the SEC requires registration for a company that
+   * has either more than 2000 investors, or more than 500 non accredited investors. To prevent crossing this limit two restrictions are
+   * needed, a `Count` of 2000, and a `ScopedCount` of non accredited with a maximum of 500. [source](https://www.sec.gov/info/smallbus/secg/jobs-act-section-12g-small-business-compliance-guide.htm)
+   *
+   * These restrictions require a `Count` and `ScopedCount` statistic to be created. Although they an be created after the Asset is made, it is recommended to create statistics
+   * before the Asset is circulated. Count statistics made after Asset creation need their initial value set, so it is simpler to create them before investors hold the Asset.
+   * If you do need to create a stat for an Asset after creation, you can use the { @link api/entities/Asset/TransferRestrictions/TransferRestrictionBase!TransferRestrictionBase.enableStat | enableStat } method in
+   * the appropriate namespace
+   */
+  initialStatistics?: InputStatType[];
 }
 
 export interface CreateAssetWithTickerParams extends CreateAssetParams {

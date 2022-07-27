@@ -1424,7 +1424,7 @@ describe('compareStatsToInput', () => {
     const percentStat = dsMockUtils.createMockStatisticsStatType({
       op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Balance),
     });
-    args = { type: StatType.Balance, ticker };
+    args = { type: StatType.Percentage, ticker };
     result = compareStatsToInput(percentStat, args);
     expect(result).toEqual(true);
 
@@ -1446,7 +1446,7 @@ describe('compareStatsToInput', () => {
       claimIssuer: [dsMockUtils.createMockClaimType(ClaimType.Affiliate), issuerId],
     });
     args = {
-      type: StatType.ScopedBalance,
+      type: StatType.ScopedPercentage,
       issuer,
       claimType: ClaimType.Affiliate,
       ticker,
@@ -1461,7 +1461,7 @@ describe('compareStatsToInput', () => {
     });
 
     let args: RemoveAssetStatParams = {
-      type: StatType.Balance,
+      type: StatType.Percentage,
       ticker,
     };
     let result = compareStatsToInput(countStat, args);
@@ -1471,7 +1471,7 @@ describe('compareStatsToInput', () => {
       op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Balance),
     });
     args = {
-      type: StatType.ScopedBalance,
+      type: StatType.ScopedPercentage,
       issuer,
       claimType: ClaimType.Accredited,
       ticker,
@@ -1544,7 +1544,7 @@ describe('compareTransferRestrictionToStat', () => {
     const percentCondition = dsMockUtils.createMockTransferCondition({
       MaxInvestorOwnership: rawMax,
     });
-    result = compareTransferRestrictionToStat(percentCondition, StatType.Balance);
+    result = compareTransferRestrictionToStat(percentCondition, StatType.Percentage);
     expect(result).toEqual(true);
 
     const claimCountCondition = dsMockUtils.createMockTransferCondition({
@@ -1559,7 +1559,7 @@ describe('compareTransferRestrictionToStat', () => {
     const claimPercentageCondition = dsMockUtils.createMockTransferCondition({
       ClaimOwnership: [rawClaim, rawIssuerId, rawMin, rawMax],
     });
-    result = compareTransferRestrictionToStat(claimPercentageCondition, StatType.ScopedBalance, {
+    result = compareTransferRestrictionToStat(claimPercentageCondition, StatType.ScopedPercentage, {
       claimType: ClaimType.Accredited,
       issuer,
     });
@@ -1568,7 +1568,7 @@ describe('compareTransferRestrictionToStat', () => {
 
   it('should return false when a transfer restriction does not match the given stat', () => {
     const countCondition = dsMockUtils.createMockTransferCondition({ MaxInvestorCount: rawMax });
-    let result = compareTransferRestrictionToStat(countCondition, StatType.Balance);
+    let result = compareTransferRestrictionToStat(countCondition, StatType.Percentage);
     expect(result).toEqual(false);
 
     const percentCondition = dsMockUtils.createMockTransferCondition({
@@ -1589,7 +1589,7 @@ describe('compareTransferRestrictionToStat', () => {
     const claimPercentageCondition = dsMockUtils.createMockTransferCondition({
       ClaimOwnership: [rawClaim, rawIssuerId, rawMin, rawMax],
     });
-    result = compareTransferRestrictionToStat(claimPercentageCondition, StatType.ScopedBalance, {
+    result = compareTransferRestrictionToStat(claimPercentageCondition, StatType.ScopedPercentage, {
       claimType: ClaimType.Accredited,
       issuer: entityMockUtils.getIdentityInstance({ did: 'otherDid' }),
     });

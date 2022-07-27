@@ -60,9 +60,9 @@ export type RemoveAssetStatParamsBase<T> = Omit<
 
 const restrictionTypeToStatType = {
   [TransferRestrictionType.Count]: StatType.Count,
-  [TransferRestrictionType.Percentage]: StatType.Balance,
+  [TransferRestrictionType.Percentage]: StatType.Percentage,
   [TransferRestrictionType.ClaimCount]: StatType.ScopedCount,
-  [TransferRestrictionType.ClaimPercentage]: StatType.ScopedBalance,
+  [TransferRestrictionType.ClaimPercentage]: StatType.ScopedPercentage,
 };
 
 /**

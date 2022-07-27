@@ -9,6 +9,7 @@ import {
   SubsidyData,
   TaxWithholding,
 } from '~/api/entities/types';
+import { StatType } from '~/api/procedures/types';
 import { CountryCode, ModuleName, TxTag, TxTags } from '~/generated/types';
 import {
   Account,
@@ -334,10 +335,19 @@ export interface StatAffiliateClaimInput {
   affiliate: boolean;
 }
 
-export type StatClaimInput =
+export type InputStatClaim =
   | StatJurisdictionClaimInput
   | StatAccreditedClaimInput
   | StatAffiliateClaimInput;
+
+export type InputStatType =
+  | {
+      type: StatType.Count | StatType.Percentage;
+    }
+  | {
+      type: StatType.ScopedCount | StatType.ScopedPercentage;
+      claimIssuer: StatClaimIssuer;
+    };
 
 export interface IdentityWithClaims {
   identity: Identity;
@@ -1281,7 +1291,7 @@ export interface ClaimCountTransferRestriction extends TransferRestrictionBase {
   /**
    * The type of investors this restriction applies to. e.g. non-accredited
    */
-  claim: StatClaimInput;
+  claim: InputStatClaim;
   /**
    * The minimum amount of investors the must meet the Claim criteria
    */
@@ -1297,7 +1307,7 @@ export interface ClaimPercentageTransferRestriction extends TransferRestrictionB
   /**
    * The type of investors this restriction applies to. e.g. Canadian investor
    */
-  claim: StatClaimInput;
+  claim: InputStatClaim;
   /**
    * The minimum percentage of the total supply that investors meeting the Claim criteria must hold
    */
@@ -1350,14 +1360,14 @@ export interface ClaimCountRestrictionValue {
   min: BigNumber;
   max?: BigNumber;
   issuer: Identity;
-  claim: StatClaimInput;
+  claim: InputStatClaim;
 }
 
 export interface ClaimPercentageRestrictionValue {
   min: BigNumber;
   max: BigNumber;
   issuer: Identity;
-  claim: StatClaimInput;
+  claim: InputStatClaim;
 }
 
 export interface AddCountStatInput {

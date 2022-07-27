@@ -49,7 +49,7 @@ export async function prepareAddAssetStat(
   const transactions = [];
 
   let rawClaimIssuer;
-  if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
+  if (type === StatType.ScopedCount || type === StatType.ScopedPercentage) {
     rawClaimIssuer = claimIssuerToMeshClaimIssuer(args, context);
   }
 
