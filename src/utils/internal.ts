@@ -5,7 +5,7 @@ import {
   DropLast,
   ObsInnerType,
 } from '@polkadot/api/types';
-import { StorageKey } from '@polkadot/types';
+import { Bytes, StorageKey } from '@polkadot/types';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
 import { PolymeshPrimitivesStatisticsStatType } from '@polkadot/types/lookup';
 import { AnyFunction, AnyTuple, IEvent, ISubmittableResult } from '@polkadot/types/types';
@@ -15,7 +15,7 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import stringify from 'json-stable-stringify';
 import { differenceWith, flatMap, isEqual, mapValues, noop, padEnd, uniq } from 'lodash';
-import { IdentityId, PortfolioName, PortfolioNumber } from 'polymesh-types/types';
+import { IdentityId, PortfolioNumber } from 'polymesh-types/types';
 import { major, satisfies } from 'semver';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 
@@ -880,7 +880,7 @@ export function assembleBatchTransactions<ArgsArray extends unknown[][]>(
  */
 export async function getPortfolioIdsByName(
   rawIdentityId: IdentityId,
-  rawNames: PortfolioName[],
+  rawNames: Bytes[],
   context: Context
 ): Promise<(BigNumber | null)[]> {
   const {
@@ -890,7 +890,7 @@ export async function getPortfolioIdsByName(
   } = context;
 
   const rawPortfolioNumbers = await portfolio.nameToNumber.multi<PortfolioNumber>(
-    rawNames.map<[IdentityId, PortfolioName]>(name => [rawIdentityId, name])
+    rawNames.map<[IdentityId, Bytes]>(name => [rawIdentityId, name])
   );
 
   const portfolioIds = rawPortfolioNumbers.map(number => u64ToBigNumber(number));
@@ -900,7 +900,7 @@ export async function getPortfolioIdsByName(
    * since nameToNumber returns 1 for non-existing portfolios, if a name maps to number 1,
    *  we need to check if the given name actually matches the first portfolio
    */
-  let firstPortfolioName: PortfolioName;
+  let firstPortfolioName: Bytes;
 
   /*
    * even though we make this call without knowing if we will need

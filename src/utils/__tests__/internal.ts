@@ -7,7 +7,7 @@ import sinon from 'sinon';
 import { Asset, Context, PolymeshError, PostTransactionValue, Procedure } from '~/internal';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { getWebSocketInstance, MockCodec, MockWebSocket } from '~/testUtils/mocks/dataSources';
+import { getWebSocketInstance, MockWebSocket } from '~/testUtils/mocks/dataSources';
 import {
   CaCheckpointType,
   CalendarPeriod,
@@ -747,7 +747,7 @@ describe('hasSameElements', () => {
 describe('getPortfolioIdsByName', () => {
   let context: Context;
   let portfoliosStub: sinon.SinonStub;
-  let rawNames: PortfolioName[];
+  let rawNames: Bytes[];
   let identityId: IdentityId;
 
   beforeAll(() => {
@@ -757,7 +757,7 @@ describe('getPortfolioIdsByName', () => {
 
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
-    rawNames = [dsMockUtils.createMockText('someName'), dsMockUtils.createMockText('otherName')];
+    rawNames = [dsMockUtils.createMockBytes('someName'), dsMockUtils.createMockBytes('otherName')];
     identityId = dsMockUtils.createMockIdentityId('someDid');
     dsMockUtils.createQueryStub('portfolio', 'nameToNumber', {
       multi: [
@@ -785,8 +785,8 @@ describe('getPortfolioIdsByName', () => {
       identityId,
       [
         ...rawNames,
-        dsMockUtils.createMockText('anotherName'),
-        dsMockUtils.createMockText('yetAnotherName'),
+        dsMockUtils.createMockBytes('anotherName'),
+        dsMockUtils.createMockBytes('yetAnotherName'),
       ],
       context
     );
