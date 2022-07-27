@@ -1,4 +1,4 @@
-import { Bytes, u64 } from '@polkadot/types';
+import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { IdentityId } from 'polymesh-types/types';
 import sinon from 'sinon';
@@ -28,8 +28,8 @@ describe('renamePortfolio procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
   let bigNumberToU64Stub: sinon.SinonStub<[BigNumber, Context], u64>;
-  let stringToBytesStub: sinon.SinonStub<[string, Context], Bytes>;
-  let getPortfolioIdByNameStub: sinon.SinonStub;
+  let stringToTextStub: sinon.SinonStub<[string, Context], Text>;
+  let getPortfolioIdsByNameStub: sinon.SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -37,8 +37,8 @@ describe('renamePortfolio procedure', () => {
     entityMockUtils.initMocks();
     stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
     bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
-    stringToBytesStub = sinon.stub(utilsConversionModule, 'stringToBytes');
-    getPortfolioIdByNameStub = sinon.stub(utilsInternalModule, 'getPortfolioIdByName');
+    stringToTextStub = sinon.stub(utilsConversionModule, 'stringToText');
+    getPortfolioIdsByNameStub = sinon.stub(utilsInternalModule, 'getPortfolioIdsByName');
   });
 
   beforeEach(() => {
@@ -65,7 +65,7 @@ describe('renamePortfolio procedure', () => {
   });
 
   it('should throw an error if the new name is the same as the current one', () => {
-    getPortfolioIdByNameStub.returns(id);
+    getPortfolioIdsByNameStub.returns([id]);
 
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
 
@@ -79,7 +79,7 @@ describe('renamePortfolio procedure', () => {
   });
 
   it('should throw an error if there already is a portfolio with the new name', () => {
-    getPortfolioIdByNameStub.returns(new BigNumber(2));
+    getPortfolioIdsByNameStub.returns([new BigNumber(2)]);
 
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
 
@@ -93,7 +93,7 @@ describe('renamePortfolio procedure', () => {
   });
 
   it('should add a rename portfolio transaction to the queue', async () => {
-    getPortfolioIdByNameStub.returns(undefined);
+    getPortfolioIdsByNameStub.returns([null]);
 
     const transaction = dsMockUtils.createTxStub('portfolio', 'renamePortfolio');
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);

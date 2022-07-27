@@ -8,6 +8,7 @@ import {
   GroupedInstructions,
   InstructionStatus,
   ModifyVenueParams,
+  NumberedPortfolio,
   ProcedureMethod,
 } from '~/types';
 import {
@@ -30,6 +31,13 @@ export interface UniqueIdentifiers {
  */
 export function addInstructionTransformer([instruction]: Instruction[]): Instruction {
   return instruction;
+}
+
+/**
+ * @hidden
+ */
+export function createPortfolioTransformer([portfolio]: NumberedPortfolio[]): NumberedPortfolio {
+  return portfolio;
 }
 
 /**
