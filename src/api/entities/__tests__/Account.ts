@@ -5,6 +5,10 @@ import { Account, Context, Entity } from '~/internal';
 import { heartbeat, transactions } from '~/middleware/queries';
 import { extrinsicsByArgs } from '~/middleware/queriesV2';
 import { CallIdEnum, ExtrinsicResult, ModuleIdEnum } from '~/middleware/types';
+import {
+  CallIdEnum as MiddlewareV2CallId,
+  ModuleIdEnum as MiddlewareV2ModuleId,
+} from '~/middleware/typesV2';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId, createMockIdentityId } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
@@ -390,8 +394,8 @@ describe('Account class', () => {
   describe('method: getTransactionHistoryV2', () => {
     it('should return a list of transactions', async () => {
       const tag = TxTags.identity.CddRegisterDid;
-      const moduleId = ModuleIdEnum.Identity;
-      const callId = CallIdEnum.CddRegisterDid;
+      const moduleId = MiddlewareV2ModuleId.Identity;
+      const callId = MiddlewareV2CallId.CddRegisterDid;
       const blockNumber1 = new BigNumber(1);
       const blockNumber2 = new BigNumber(2);
       const blockHash1 = 'someHash';
@@ -410,8 +414,8 @@ describe('Account class', () => {
         totalCount: 20,
         nodes: [
           {
-            moduleId: ModuleIdEnum.Asset,
-            callId: CallIdEnum.RegisterTicker,
+            moduleId: MiddlewareV2ModuleId.Asset,
+            callId: MiddlewareV2CallId.RegisterTicker,
             extrinsicIdx: 2,
             specVersionId: 2006,
             paramsTxt: '[]',
@@ -425,8 +429,8 @@ describe('Account class', () => {
             },
           },
           {
-            moduleId: ModuleIdEnum.Asset,
-            callId: CallIdEnum.RegisterTicker,
+            moduleId: MiddlewareV2ModuleId.Asset,
+            callId: MiddlewareV2CallId.RegisterTicker,
             extrinsicIdx: 2,
             specVersionId: 2006,
             paramsTxt: '[]',

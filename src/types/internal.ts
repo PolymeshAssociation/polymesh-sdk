@@ -16,6 +16,10 @@ import { DocumentNode } from 'graphql';
 
 import { Identity, PostTransactionValue } from '~/internal';
 import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
+import {
+  CallIdEnum as MiddlewareV2CallId,
+  ModuleIdEnum as MiddlewareV2ModuleId,
+} from '~/middleware/typesV2';
 import { CustomAssetTypeId } from '~/polkadot';
 import {
   CalendarPeriod,
@@ -281,6 +285,11 @@ export enum TrustedClaimIssuerOperation {
 export interface ExtrinsicIdentifier {
   moduleId: ModuleIdEnum;
   callId: CallIdEnum;
+}
+
+export interface ExtrinsicIdentifierV2 {
+  moduleId: MiddlewareV2ModuleId;
+  callId: MiddlewareV2CallId;
 }
 
 export interface ScheduleSpec {
