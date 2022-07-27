@@ -12,14 +12,21 @@ import {
   ClaimClassicTickerParams,
   CreateAssetWithTickerParams,
   ErrorCode,
+  PaginationOptions,
   ProcedureMethod,
   ReserveTickerParams,
+  ResultSet,
   SubCallback,
   TickerReservationStatus,
   UnsubCallback,
 } from '~/types';
 import { stringToIdentityId, tickerToString } from '~/utils/conversion';
-import { createProcedureMethod, getDid, isPrintableAscii } from '~/utils/internal';
+import {
+  createProcedureMethod,
+  getDid,
+  isPrintableAscii,
+  requestPaginated,
+} from '~/utils/internal';
 
 /**
  * Handles all Asset related functionality
@@ -207,5 +214,40 @@ export class Assets {
     }
 
     return asset;
+  }
+
+  /**
+   * Retrieve all the Assets on chain
+   *
+   * @note supports pagination
+   */
+  public async get(paginationOpts?: PaginationOptions): Promise<ResultSet<Asset>> {
+    const {
+      context: {
+        polymeshApi: {
+          query: {
+            asset: { assetNames },
+          },
+        },
+      },
+      context,
+    } = this;
+
+    const { entries, lastKey: next } = await requestPaginated(assetNames, {
+      paginationOpts,
+    });
+
+    const data: Asset[] = entries.map(
+      ([
+        {
+          args: [rawTicker],
+        },
+      ]) => new Asset({ ticker: tickerToString(rawTicker) }, context)
+    );
+
+    return {
+      data,
+      next,
+    };
   }
 }

@@ -16,9 +16,9 @@ import {
 import { eventByIndexedArgs, tickerExternalAgentActions } from '~/middleware/queries';
 import { tickerExternalAgentActionsQuery, tickerExternalAgentsQuery } from '~/middleware/queriesV2';
 import { EventIdEnum as EventId, ModuleIdEnum as ModuleId, Query } from '~/middleware/types';
-import {
-  EventIdEnum as MiddlewareV2EventId,
+import {   EventIdEnum as MiddlewareV2EventId,
   ModuleIdEnum as MiddlewareV2ModuleId,
+Query as QueryV2 ,
   Query as QueryV2,
 } from '~/middleware/typesV2';
 import {
