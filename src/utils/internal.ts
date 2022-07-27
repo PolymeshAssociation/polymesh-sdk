@@ -877,7 +877,6 @@ export async function getPortfolioIdsByName(
   rawNames: PortfolioName[],
   context: Context
 ): Promise<(BigNumber | null)[]> {
-  console.log('CALL');
   const {
     polymeshApi: {
       query: { portfolio },
