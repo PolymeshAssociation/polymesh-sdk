@@ -37,7 +37,7 @@ export async function prepareRemoveAssetRequirement(
 
   const { requirements } = await query.complianceManager.assetCompliances(rawTicker);
 
-  if (requirements.filter(({ id: rawId }) => u32ToBigNumber(rawId).eq(reqId)).length) {
+  if (!requirements.filter(({ id: rawId }) => u32ToBigNumber(rawId).eq(reqId)).length) {
     throw new PolymeshError({
       code: ErrorCode.DataUnavailable,
       message: `There is no compliance requirement with id "${reqId}"`,
