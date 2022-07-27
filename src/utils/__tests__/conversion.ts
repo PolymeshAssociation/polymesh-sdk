@@ -76,7 +76,9 @@ import {
 } from '~/middleware/types';
 import {
   Block as MiddlewareV2Block,
+  CallIdEnum as MiddlewareV2CallId,
   Claim as MiddlewareV2Claim,
+  ModuleIdEnum as MiddlewareV2ModuleId,
   Portfolio as MiddlewareV2Portfolio,
 } from '~/middleware/typesV2';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -280,6 +282,7 @@ import {
   trustedClaimIssuerToTrustedIssuer,
   txGroupToTxTags,
   txTagToExtrinsicIdentifier,
+  txTagToExtrinsicIdentifierV2,
   txTagToProtocolOp,
   u8ToBigNumber,
   u8ToTransferStatus,
@@ -4504,6 +4507,40 @@ describe('txTagToExtrinsicIdentifier and extrinsicIdentifierToTxTag', () => {
       });
 
       expect(result).toEqual(TxTags.babe.ReportEquivocation);
+    });
+  });
+
+  it('should convert a ExtrinsicIdentifierV2 object to a TxTag', () => {
+    let result = extrinsicIdentifierToTxTag({
+      moduleId: MiddlewareV2ModuleId.Identity,
+      callId: MiddlewareV2CallId.CddRegisterDid,
+    });
+
+    expect(result).toEqual(TxTags.identity.CddRegisterDid);
+
+    result = extrinsicIdentifierToTxTag({
+      moduleId: MiddlewareV2ModuleId.Babe,
+      callId: MiddlewareV2CallId.ReportEquivocation,
+    });
+
+    expect(result).toEqual(TxTags.babe.ReportEquivocation);
+  });
+});
+
+describe('txTagToExtrinsicIdentifierV2', () => {
+  it('should convert a TxTag enum to a ExtrinsicIdentifierV2 object', () => {
+    let result = txTagToExtrinsicIdentifierV2(TxTags.identity.CddRegisterDid);
+
+    expect(result).toEqual({
+      moduleId: MiddlewareV2ModuleId.Identity,
+      callId: MiddlewareV2CallId.CddRegisterDid,
+    });
+
+    result = txTagToExtrinsicIdentifierV2(TxTags.babe.ReportEquivocation);
+
+    expect(result).toEqual({
+      moduleId: MiddlewareV2ModuleId.Babe,
+      callId: MiddlewareV2CallId.ReportEquivocation,
     });
   });
 });

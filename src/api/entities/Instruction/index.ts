@@ -13,7 +13,7 @@ import {
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { instructionsQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
-import { Query as QueryV2 } from '~/middleware/typesV2';
+import { EventIdEnum as MiddlewareV2Event, Query as QueryV2 } from '~/middleware/typesV2';
 import {
   ErrorCode,
   EventIdentifier,
@@ -398,8 +398,8 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     }
 
     const [executedEventIdentifier, failedEventIdentifier] = await Promise.all([
-      this.getInstructionEventFromMiddlewareV2(EventIdEnum.InstructionExecuted),
-      this.getInstructionEventFromMiddlewareV2(EventIdEnum.InstructionFailed),
+      this.getInstructionEventFromMiddlewareV2(MiddlewareV2Event.InstructionExecuted),
+      this.getInstructionEventFromMiddlewareV2(MiddlewareV2Event.InstructionFailed),
     ]);
 
     if (executedEventIdentifier) {
@@ -476,7 +476,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    * Retrieve Instruction status event from middleware V2
    */
   private async getInstructionEventFromMiddlewareV2(
-    eventId: EventIdEnum
+    eventId: MiddlewareV2Event
   ): Promise<EventIdentifier | null> {
     const { id, context } = this;
 

@@ -92,7 +92,9 @@ import {
 } from '~/middleware/types';
 import {
   Block as MiddlewareV2Block,
+  CallIdEnum as MiddlewareV2CallId,
   Claim as MiddlewareV2Claim,
+  ModuleIdEnum as MiddlewareV2ModuleId,
   Portfolio as MiddlewareV2Portfolio,
 } from '~/middleware/typesV2';
 import {
@@ -226,6 +228,7 @@ import {
   CorporateActionIdentifier,
   ExemptKey,
   ExtrinsicIdentifier,
+  ExtrinsicIdentifierV2,
   InstructionStatus,
   InternalAssetType,
   PalletPermissions,
@@ -2625,7 +2628,9 @@ export function txTagToExtrinsicIdentifier(tag: TxTag): ExtrinsicIdentifier {
 /**
  * @hidden
  */
-export function extrinsicIdentifierToTxTag(extrinsicIdentifier: ExtrinsicIdentifier): TxTag {
+export function extrinsicIdentifierToTxTag(
+  extrinsicIdentifier: ExtrinsicIdentifier | ExtrinsicIdentifierV2
+): TxTag {
   const { moduleId, callId } = extrinsicIdentifier;
   let moduleName;
   for (const txTagItem in TxTags) {
@@ -2635,6 +2640,17 @@ export function extrinsicIdentifierToTxTag(extrinsicIdentifier: ExtrinsicIdentif
   }
 
   return `${moduleName}.${camelCase(callId)}` as TxTag;
+}
+
+/**
+ * @hidden
+ */
+export function txTagToExtrinsicIdentifierV2(tag: TxTag): ExtrinsicIdentifierV2 {
+  const [moduleName, extrinsicName] = tag.split('.');
+  return {
+    moduleId: moduleName.toLowerCase() as MiddlewareV2ModuleId,
+    callId: snakeCase(extrinsicName) as MiddlewareV2CallId,
+  };
 }
 
 /**
