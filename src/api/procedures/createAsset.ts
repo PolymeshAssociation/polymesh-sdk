@@ -152,14 +152,12 @@ export async function prepareCreateAsset(
   const assetCreatedInEthereum =
     classicTicker.isSome && boolToBoolean(classicTicker.unwrap().isCreated);
 
-  let manualFees: boolean;
+  let manualFees = false;
   if (assetCreatedInEthereum) {
     manualFees = true;
   } else if (status === TickerReservationStatus.Free) {
     manualFees = true;
     txTags.push(TxTags.asset.RegisterTicker, TxTags.asset.CreateAsset);
-  } else {
-    manualFees = false;
   }
 
   /*
