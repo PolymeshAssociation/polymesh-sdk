@@ -23,7 +23,7 @@ export {
   ConsumeAuthorizationRequestsParams,
   ConsumeParams,
 } from '~/api/procedures/consumeAuthorizationRequests';
-export { createPortfolio } from '~/api/procedures/createPortfolio';
+export { createPortfolios } from '~/api/procedures/createPortfolios';
 export { createAsset } from '~/api/procedures/createAsset';
 export { createVenue } from '~/api/procedures/createVenue';
 export { inviteAccount } from '~/api/procedures/inviteAccount';

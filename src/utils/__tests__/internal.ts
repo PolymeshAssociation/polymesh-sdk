@@ -56,7 +56,7 @@ import {
   getDid,
   getExemptedIds,
   getIdentity,
-  getPortfolioIdByName,
+  getPortfolioIdsByName,
   hasSameElements,
   isModuleOrTagMatch,
   isPrintableAscii,
@@ -760,11 +760,11 @@ describe('hasSameElements', () => {
   });
 });
 
-describe('getPortfolioIdByName', () => {
+describe('getPortfolioIdsByName', () => {
   let context: Context;
-  let nameToNumberStub: sinon.SinonStub;
   let portfoliosStub: sinon.SinonStub;
-  let rawName: MockCodec<Bytes>;
+  let firstPortfolioName: MockCodec<Bytes>;
+  let rawNames: Bytes[];
   let identityId: IdentityId;
 
   beforeAll(() => {
@@ -774,10 +774,17 @@ describe('getPortfolioIdByName', () => {
 
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
-    rawName = dsMockUtils.createMockBytes('someName');
-    rawName.eq.returns(true);
+    firstPortfolioName = dsMockUtils.createMockBytes('someName');
+    rawNames = [firstPortfolioName, dsMockUtils.createMockBytes('otherName')];
     identityId = dsMockUtils.createMockIdentityId('someDid');
-    nameToNumberStub = dsMockUtils.createQueryStub('portfolio', 'nameToNumber');
+    dsMockUtils.createQueryStub('portfolio', 'nameToNumber', {
+      multi: [
+        dsMockUtils.createMockU64(new BigNumber(1)),
+        dsMockUtils.createMockU64(new BigNumber(2)),
+        dsMockUtils.createMockU64(new BigNumber(1)),
+        dsMockUtils.createMockU64(new BigNumber(1)),
+      ],
+    });
     portfoliosStub = dsMockUtils.createQueryStub('portfolio', 'portfolios');
   });
 
@@ -790,27 +797,21 @@ describe('getPortfolioIdByName', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should return null if no portfolio with given name is found', async () => {
-    nameToNumberStub.returns(dsMockUtils.createMockU64(new BigNumber(1)));
-    portfoliosStub.returns(dsMockUtils.createMockText('randomName'));
-    rawName.eq.returns(false);
+  it('should return portfolio numbers for given portfolio name, and null for names that do not exist', async () => {
+    portfoliosStub.resolves(firstPortfolioName);
+    firstPortfolioName.eq = sinon.stub();
+    firstPortfolioName.eq.withArgs(rawNames[0]).returns(true);
+    const result = await getPortfolioIdsByName(
+      identityId,
+      [
+        ...rawNames,
+        dsMockUtils.createMockBytes('anotherName'),
+        dsMockUtils.createMockBytes('yetAnotherName'),
+      ],
+      context
+    );
 
-    const result = await getPortfolioIdByName(identityId, rawName, context);
-    expect(result).toBeNull();
-  });
-
-  it('should return portfolio number for given portfolio name', async () => {
-    nameToNumberStub.returns(dsMockUtils.createMockU64(new BigNumber(2)));
-
-    let result = await getPortfolioIdByName(identityId, rawName, context);
-    expect(result).toEqual(new BigNumber(2));
-
-    nameToNumberStub.returns(dsMockUtils.createMockU64(new BigNumber(1)));
-    portfoliosStub.returns(rawName);
-    rawName.eq.returns(true);
-
-    result = await getPortfolioIdByName(identityId, rawName, context);
-    expect(result).toEqual(new BigNumber(1));
+    expect(result).toEqual([new BigNumber(1), new BigNumber(2), null, null]);
   });
 });
 
