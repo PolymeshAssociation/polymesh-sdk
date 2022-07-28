@@ -4,7 +4,7 @@ import { NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RenamePortfolioParams, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { bigNumberToU64, stringToBytes, stringToIdentityId } from '~/utils/conversion';
-import { getPortfolioIdByName } from '~/utils/internal';
+import { getPortfolioIdsByName } from '~/utils/internal';
 
 /**
  * @hidden
@@ -33,7 +33,7 @@ export async function prepareRenamePortfolio(
 
   const rawNewName = stringToBytes(newName, context);
 
-  const existingPortfolioNumber = await getPortfolioIdByName(identityId, rawNewName, context);
+  const [existingPortfolioNumber] = await getPortfolioIdsByName(identityId, [rawNewName], context);
 
   if (existingPortfolioNumber) {
     if (id.eq(existingPortfolioNumber)) {

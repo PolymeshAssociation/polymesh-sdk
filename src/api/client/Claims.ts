@@ -5,7 +5,12 @@ import { addInvestorUniquenessClaim, Context, Identity, modifyClaims } from '~/i
 import { didsWithClaims, issuerDidsWithClaimsByTarget } from '~/middleware/queries';
 import { claimsGroupingQuery, claimsQuery } from '~/middleware/queriesV2';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
-import { ClaimsGroupBy, ClaimsOrderBy, Query as QueryV2 } from '~/middleware/typesV2';
+import {
+  ClaimsGroupBy,
+  ClaimsOrderBy,
+  ClaimTypeEnum as MiddlewareV2ClaimType,
+  Query as QueryV2,
+} from '~/middleware/typesV2';
 import {
   AddInvestorUniquenessClaimParams,
   CddClaim,
@@ -303,7 +308,7 @@ export class Claims {
       trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
         signerToString(trustedClaimIssuer)
       ),
-      claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
+      claimTypes: claimTypes?.map(ct => MiddlewareV2ClaimType[ct]),
       includeExpired,
     };
 

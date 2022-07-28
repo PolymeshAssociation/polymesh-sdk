@@ -14,7 +14,7 @@ import {
 import { Asset, Authorizations, Context, Entity, Identity, PolymeshError } from '~/internal';
 import { transactions as transactionsQuery } from '~/middleware/queries';
 import { extrinsicsByArgs } from '~/middleware/queriesV2';
-import { CallIdEnum, ModuleIdEnum, Query, TransactionOrderByInput } from '~/middleware/types';
+import { Query, TransactionOrderByInput } from '~/middleware/types';
 import { ExtrinsicsOrderBy, Query as QueryV2 } from '~/middleware/typesV2';
 import {
   AccountBalance,
@@ -47,6 +47,7 @@ import {
   stringToAccountId,
   stringToHash,
   txTagToExtrinsicIdentifier,
+  txTagToExtrinsicIdentifierV2,
   u32ToBigNumber,
 } from '~/utils/conversion';
 import {
@@ -500,7 +501,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     let moduleId;
     let callId;
     if (tag) {
-      ({ moduleId, callId } = txTagToExtrinsicIdentifier(tag));
+      ({ moduleId, callId } = txTagToExtrinsicIdentifierV2(tag));
     }
 
     let successFilter;
@@ -562,8 +563,8 @@ export class Account extends Entity<UniqueIdentifiers, string> {
         address: rawAddress ? keyToAddress(rawAddress, context) : null,
         nonce: nonce ? new BigNumber(nonce) : null,
         txTag: extrinsicIdentifierToTxTag({
-          moduleId: extrinsicModuleId as ModuleIdEnum,
-          callId: extrinsicCallId as CallIdEnum,
+          moduleId: extrinsicModuleId,
+          callId: extrinsicCallId,
         }),
         params: JSON.parse(paramsTxt),
         success: !!txSuccess,

@@ -1,6 +1,7 @@
+import { createPortfolioTransformer } from '~/api/entities/Venue';
 import {
   Context,
-  createPortfolio,
+  createPortfolios,
   Identity,
   NumberedPortfolio,
   registerIdentity,
@@ -25,8 +26,28 @@ export class Identities {
       context
     );
 
-    this.createPortfolio = createProcedureMethod(
-      { getProcedureAndArgs: args => [createPortfolio, args] },
+    this.createPortfolio = createProcedureMethod<
+      { name: string },
+      { names: string[] },
+      NumberedPortfolio[],
+      NumberedPortfolio
+    >(
+      {
+        getProcedureAndArgs: args => [
+          createPortfolios,
+          {
+            names: [args.name],
+          },
+        ],
+        transformer: createPortfolioTransformer,
+      },
+      context
+    );
+
+    this.createPortfolios = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [createPortfolios, args],
+      },
       context
     );
   }
@@ -47,7 +68,12 @@ export class Identities {
   /**
    * Create a new Portfolio under the ownership of the signing Identity
    */
-  public createPortfolio: ProcedureMethod<{ name: string }, NumberedPortfolio>;
+  public createPortfolio: ProcedureMethod<{ name: string }, NumberedPortfolio[], NumberedPortfolio>;
+
+  /**
+   * Creates a set of new Portfolios under the ownership of the signing Identity
+   */
+  public createPortfolios: ProcedureMethod<{ names: string[] }, NumberedPortfolio[]>;
 
   /**
    * Create an Identity instance from a DID
