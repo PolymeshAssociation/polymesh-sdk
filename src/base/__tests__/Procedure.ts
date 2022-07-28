@@ -395,7 +395,7 @@ describe('Procedure class', () => {
 
       constructorStub.resetHistory();
 
-      const transaction3 = await proc3.prepare({ args: procArgs }, context, {
+      let transaction3 = await proc3.prepare({ args: procArgs }, context, {
         signingAccount: 'something',
         nonce: () => new BigNumber(10),
       });
@@ -411,6 +411,38 @@ describe('Procedure class', () => {
       });
       sinon.assert.calledWith(context.setSigningAddress, 'something');
       sinon.assert.calledWith(context.setNonce, new BigNumber(10));
+
+      constructorStub.resetHistory();
+
+      const nonce = (): Promise<BigNumber> => Promise.resolve(new BigNumber(15));
+
+      transaction3 = await proc3.prepare({ args: procArgs }, context, {
+        signingAccount: 'something',
+        nonce,
+      });
+
+      sinon.assert.calledWith(constructorStub, sinon.match({ transaction: tx1, args: [ticker] }), {
+        ...context,
+        signingAddress: 'something',
+        nonce: new BigNumber(15),
+      });
+
+      sinon.assert.calledWith(context.setNonce, new BigNumber(15));
+
+      constructorStub.resetHistory();
+
+      transaction3 = await proc3.prepare({ args: procArgs }, context, {
+        signingAccount: 'something',
+        nonce: Promise.resolve(new BigNumber(12)),
+      });
+
+      sinon.assert.calledWith(constructorStub, sinon.match({ transaction: tx1, args: [ticker] }), {
+        ...context,
+        signingAddress: 'something',
+        nonce: new BigNumber(12),
+      });
+
+      sinon.assert.calledWith(context.setNonce, new BigNumber(12));
     });
 
     it('should throw any errors encountered during preparation', () => {

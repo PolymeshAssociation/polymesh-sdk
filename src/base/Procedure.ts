@@ -123,9 +123,9 @@ export class Procedure<Args = void, ReturnValue = void, Storage = Record<string,
       const { signingAccount, nonce } = opts;
 
       if (typeof nonce === 'function') {
-        ctx.setNonce(nonce());
+        ctx.setNonce(await nonce());
       } else {
-        ctx.setNonce(nonce);
+        ctx.setNonce(await nonce);
       }
 
       if (signingAccount) {
