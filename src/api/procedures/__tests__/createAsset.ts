@@ -251,6 +251,15 @@ describe('createAsset procedure', () => {
     mockContext.getProtocolFees
       .withArgs({ tags: [TxTags.asset.RegisterCustomAssetType] })
       .resolves([{ tag: TxTags.asset.RegisterCustomAssetType, fees: protocolFees[4] }]);
+    mockContext.getProtocolFees
+      .withArgs({
+        tags: [TxTags.asset.RegisterTicker, TxTags.asset.CreateAsset, TxTags.asset.AddDocuments],
+      })
+      .resolves([
+        { tag: TxTags.asset.RegisterTicker, fees: protocolFees[0] },
+        { tag: TxTags.asset.CreateAsset, fees: protocolFees[1] },
+        { tag: TxTags.asset.AddDocuments, fees: protocolFees[3] },
+      ]);
   });
 
   afterEach(() => {

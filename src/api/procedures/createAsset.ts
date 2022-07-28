@@ -59,15 +59,13 @@ export interface Storage {
  *
  * @returns undefined if fees aren't being calculated manually
  */
-async function addManualFees(
-  currentFee: BigNumber | undefined,
-  tags: { tag: TxTag; feeMultiplier: BigNumber }[] | TxTag[],
+async function calculateManualFees(
+  tags: ({ tag: TxTag; feeMultiplier: BigNumber } | TxTag)[],
   context: Context
-): Promise<BigNumber | undefined> {
-  if (!currentFee) {
-    return undefined;
+): Promise<BigNumber> {
+  if (tags.length === 0) {
+    return new BigNumber(0);
   }
-
   const fees = await context.getProtocolFees({
     tags: tags.map(tagData => (typeof tagData !== 'string' ? tagData.tag : tagData)),
   });
@@ -81,7 +79,7 @@ async function addManualFees(
     }
 
     return prev.plus(nextFees.times(feeMultiplier));
-  }, currentFee);
+  }, new BigNumber(0));
 }
 
 /**
@@ -140,27 +138,29 @@ export async function prepareCreateAsset(
 
   const newAsset = new Asset({ ticker }, context);
 
-  let fee: undefined | BigNumber;
+  const transactions = [];
+  const txTags = [];
 
   /*
    * we waive any protocol fees if the Asset is created in Ethereum. If not created and ticker is not yet reserved,
    *   we set the fee to the sum of protocol fees for ticker registration and Asset creation.
+   *
+   * To do this, we keep track of transaction tags, and if manual fee calculations are needed, perform the fee calculation
+   * before adding the batch transaction.
    */
   const classicTicker = await asset.classicTickers(rawTicker);
   const assetCreatedInEthereum =
     classicTicker.isSome && boolToBoolean(classicTicker.unwrap().isCreated);
 
+  let manualFees: boolean;
   if (assetCreatedInEthereum) {
-    fee = new BigNumber(0);
+    manualFees = true;
   } else if (status === TickerReservationStatus.Free) {
-    fee = await addManualFees(
-      new BigNumber(0),
-      [TxTags.asset.RegisterTicker, TxTags.asset.CreateAsset],
-      context
-    );
+    manualFees = true;
+    txTags.push(TxTags.asset.RegisterTicker, TxTags.asset.CreateAsset);
+  } else {
+    manualFees = false;
   }
-
-  const transactions = [];
 
   /*
    * - if the passed Asset type isn't one of the fixed ones (custom), we check if there is already
@@ -174,10 +174,9 @@ export async function prepareCreateAsset(
 
     if (id.isEmpty) {
       /*
-       * if we're using custom fees because we're creating the Asset without registering first, we have to manually add
-       *   the fees for registering a custom Asset type
+       * store RegisterCustomAssetType fees txTag in case manual fees are being used
        */
-      fee = await addManualFees(fee, [TxTags.asset.RegisterCustomAssetType], context);
+      txTags.push(TxTags.asset.RegisterCustomAssetType);
 
       transactions.push(
         checkTxType({
@@ -234,6 +233,10 @@ export async function prepareCreateAsset(
     const tickerKey = stringToTickerKey(ticker, context);
     const rawStats = initialStatistics.map(i => inputStatTypeToMeshStatType(i, context));
     const bTreeStats = statisticStatTypesToBtreeStatType(rawStats, context);
+    /*
+     * store set asset stat fees in case manual fees are being used
+     */
+    txTags.push(TxTags.statistics.SetActiveAssetStats);
     transactions.push(
       checkTxType({
         transaction: tx.statistics.setActiveAssetStats,
@@ -246,10 +249,9 @@ export async function prepareCreateAsset(
     const rawInitialSupply = bigNumberToBalance(initialSupply, context, isDivisible);
 
     /*
-     * if we're using custom fees because we're creating the Asset without registering first, we have to manually add
-     *   the fees for issuing
+     * store issuing fees txTags in case manual fees are being used
      */
-    fee = await addManualFees(fee, [TxTags.asset.Issue], context);
+    txTags.push(TxTags.asset.Issue);
 
     transactions.push(
       checkTxType({
@@ -265,10 +267,9 @@ export async function prepareCreateAsset(
     const feeMultiplier = new BigNumber(rawDocuments.length);
 
     /*
-     * if we're using custom fees because we're creating the Asset without registering first, we have to manually add
-     *   the fees for adding documents
+     * store addDocuments txTag in case manual fees are being used
      */
-    fee = await addManualFees(fee, [{ tag: TxTags.asset.AddDocuments, feeMultiplier }], context);
+    txTags.push({ tag: TxTags.asset.AddDocuments, feeMultiplier });
 
     transactions.push(
       checkTxType({
@@ -279,6 +280,8 @@ export async function prepareCreateAsset(
       })
     );
   }
+
+  const fee = manualFees ? await calculateManualFees(txTags, context) : undefined;
 
   this.addBatchTransaction({
     transactions,
