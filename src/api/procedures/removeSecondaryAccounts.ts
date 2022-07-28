@@ -1,10 +1,10 @@
 import BigNumber from 'bignumber.js';
-import { find } from 'lodash';
 
 import { assertSecondaryAccounts } from '~/api/procedures/utils';
 import { PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RemoveSecondaryAccountsParams, TxTags } from '~/types';
 import { stringToAccountId } from '~/utils/conversion';
+import { getSecondaryAccountPermissions } from '~/utils/internal';
 
 /**
  * @hidden
@@ -26,10 +26,10 @@ export async function prepareRemoveSecondaryAccounts(
 
   const [{ account: primaryAccount }, secondaryAccounts] = await Promise.all([
     identity.getPrimaryAccount(),
-    identity.getSecondaryAccounts(),
+    getSecondaryAccountPermissions({ accounts, identity }, context),
   ]);
 
-  const isPrimaryAccountPresent = find(accounts, account => account.isEqual(primaryAccount));
+  const isPrimaryAccountPresent = accounts.find(account => account.isEqual(primaryAccount));
 
   if (isPrimaryAccountPresent) {
     throw new PolymeshError({

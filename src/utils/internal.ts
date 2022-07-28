@@ -5,9 +5,12 @@ import {
   DropLast,
   ObsInnerType,
 } from '@polkadot/api/types';
-import { Bytes, StorageKey } from '@polkadot/types';
+import { Bytes, Option, StorageKey } from '@polkadot/types';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
-import { PolymeshPrimitivesStatisticsStatType } from '@polkadot/types/lookup';
+import {
+  PolymeshPrimitivesSecondaryKeyKeyRecord,
+  PolymeshPrimitivesStatisticsStatType,
+} from '@polkadot/types/lookup';
 import { AnyFunction, AnyTuple, IEvent, ISubmittableResult } from '@polkadot/types/types';
 import { stringUpperFirst } from '@polkadot/util';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
@@ -31,6 +34,7 @@ import {
 } from '~/internal';
 import { Scope as MiddlewareScope } from '~/middleware/types';
 import {
+  Account,
   CaCheckpointType,
   CalendarPeriod,
   CalendarUnit,
@@ -46,12 +50,15 @@ import {
   NextKey,
   NoArgsProcedureMethod,
   PaginationOptions,
+  PermissionedAccount,
   ProcedureAuthorizationStatus,
   ProcedureMethod,
   ProcedureOpts,
   Scope,
+  SubCallback,
   TransferRestrictionType,
   TxTag,
+  UnsubCallback,
 } from '~/types';
 import {
   Events,
@@ -74,10 +81,13 @@ import {
 } from '~/utils/constants';
 import {
   bigNumberToU64,
+  identityIdToString,
+  meshPermissionsToPermissions,
   middlewareScopeToScope,
   signerToString,
   statisticsOpTypeToStatOpType,
   statisticsOpTypeToStatType,
+  stringToAccountId,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { isEntity, isMultiClaimCondition, isSingleClaimCondition } from '~/utils/typeguards';
@@ -1214,4 +1224,74 @@ export function neededStatTypeForRestrictionInput(
   const rawOp = statisticsOpTypeToStatOpType(neededOp, context);
 
   return statisticsOpTypeToStatType(rawOp, context);
+}
+
+/**
+ * @hidden
+ *
+ * Fetches Account permissions for the given secondary Accounts
+ *
+ * @note non secondary Accounts will be skipped, so there maybe less PermissionedAccounts returned than Accounts given
+ *
+ * @param args.accounts a list of accounts to fetch permissions for
+ * @param args.identity optional. If passed, Accounts that are not part of the given Identity will be filtered out
+ */
+export async function getSecondaryAccountPermissions(
+  args: { accounts: Account[]; identity?: Identity },
+  context: Context,
+  callback: SubCallback<PermissionedAccount[]>
+): Promise<UnsubCallback>;
+
+export async function getSecondaryAccountPermissions(
+  args: { accounts: Account[]; identity?: Identity },
+  context: Context
+): Promise<PermissionedAccount[]>;
+// eslint-disable-next-line require-jsdoc
+export async function getSecondaryAccountPermissions(
+  args: {
+    accounts: Account[];
+    identity?: Identity;
+  },
+  context: Context,
+  callback?: SubCallback<PermissionedAccount[]>
+): Promise<PermissionedAccount[] | UnsubCallback> {
+  const {
+    polymeshApi: {
+      query: { identity: identityQuery },
+    },
+  } = context;
+
+  const { accounts, identity } = args;
+
+  const assembleResult = (
+    optKeyRecords: Option<PolymeshPrimitivesSecondaryKeyKeyRecord>[]
+  ): PermissionedAccount[] => {
+    return optKeyRecords.reduce((result: PermissionedAccount[], optKeyRecord, index) => {
+      const account = accounts[index];
+      const record = optKeyRecord.unwrap();
+
+      if (record.isSecondaryKey) {
+        const [rawIdentityId, rawPermissions] = record.asSecondaryKey;
+
+        if (identity && identityIdToString(rawIdentityId) !== identity.did) {
+          return result;
+        }
+        result.push({
+          account,
+          permissions: meshPermissionsToPermissions(rawPermissions, context),
+        });
+      }
+      return result;
+    }, []);
+  };
+
+  const identityKeys = accounts.map(({ address }) => stringToAccountId(address, context));
+  if (callback) {
+    return identityQuery.keyRecords.multi(identityKeys, result => {
+      return callback(assembleResult(result));
+    });
+  }
+  const rawResults = await identityQuery.keyRecords.multi(identityKeys);
+
+  return assembleResult(rawResults);
 }

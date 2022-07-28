@@ -121,7 +121,7 @@ interface IdentityOptions extends EntityOptions {
   getVenues?: EntityGetter<Venue[]>;
   getScopeId?: EntityGetter<string | null>;
   getAssetBalance?: EntityGetter<BigNumber>;
-  getSecondaryAccounts?: EntityGetter<PermissionedAccount[]>;
+  getSecondaryAccounts?: EntityGetter<ResultSet<PermissionedAccount>>;
   areSecondaryAccountsFrozen?: EntityGetter<boolean>;
   assetPermissionsGetGroup?: EntityGetter<CustomPermissionGroup | KnownPermissionGroup>;
   assetPermissionsGet?: EntityGetter<AssetWithGroup[]>;
@@ -543,7 +543,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     getVenues: [],
     getScopeId: 'someScopeId',
     getAssetBalance: new BigNumber(100),
-    getSecondaryAccounts: [],
+    getSecondaryAccounts: { data: [], next: null },
     areSecondaryAccountsFrozen: false,
     getPrimaryAccount: {
       account: getAccountInstance(),
