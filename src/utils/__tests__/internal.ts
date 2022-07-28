@@ -7,7 +7,7 @@ import sinon from 'sinon';
 import { Asset, Context, PolymeshError, PostTransactionValue, Procedure } from '~/internal';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { getWebSocketInstance, MockWebSocket } from '~/testUtils/mocks/dataSources';
+import { getWebSocketInstance, MockCodec, MockWebSocket } from '~/testUtils/mocks/dataSources';
 import {
   CaCheckpointType,
   CalendarPeriod,
@@ -747,6 +747,7 @@ describe('hasSameElements', () => {
 describe('getPortfolioIdsByName', () => {
   let context: Context;
   let portfoliosStub: sinon.SinonStub;
+  let firstPortfolioName: MockCodec<Bytes>;
   let rawNames: Bytes[];
   let identityId: IdentityId;
 
@@ -757,7 +758,8 @@ describe('getPortfolioIdsByName', () => {
 
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
-    rawNames = [dsMockUtils.createMockBytes('someName'), dsMockUtils.createMockBytes('otherName')];
+    firstPortfolioName = dsMockUtils.createMockBytes('someName');
+    rawNames = [firstPortfolioName, dsMockUtils.createMockBytes('otherName')];
     identityId = dsMockUtils.createMockIdentityId('someDid');
     dsMockUtils.createQueryStub('portfolio', 'nameToNumber', {
       multi: [
@@ -780,7 +782,9 @@ describe('getPortfolioIdsByName', () => {
   });
 
   it('should return portfolio numbers for given portfolio name, and null for names that do not exist', async () => {
-    portfoliosStub.resolves(rawNames[0]);
+    portfoliosStub.resolves(firstPortfolioName);
+    firstPortfolioName.eq = sinon.stub();
+    firstPortfolioName.eq.withArgs(rawNames[0]).returns(true);
     const result = await getPortfolioIdsByName(
       identityId,
       [
