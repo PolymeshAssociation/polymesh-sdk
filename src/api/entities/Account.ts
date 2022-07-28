@@ -50,7 +50,12 @@ import {
   txTagToExtrinsicIdentifierV2,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { assertAddressValid, calculateNextKey, isModuleOrTagMatch } from '~/utils/internal';
+import {
+  assertAddressValid,
+  calculateNextKey,
+  getSecondaryAccountPermissions,
+  isModuleOrTagMatch,
+} from '~/utils/internal';
 
 /**
  * @hidden
@@ -605,7 +610,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
    * @throws if there is no Identity associated with the Account
    */
   public async getPermissions(): Promise<Permissions> {
-    const { address } = this;
+    const { address, context } = this;
 
     const identity = await this.getIdentity();
 
@@ -620,8 +625,11 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       {
         account: { address: primaryAccountAddress },
       },
-      secondaryAccounts,
-    ] = await Promise.all([identity.getPrimaryAccount(), identity.getSecondaryAccounts()]);
+      [permissionedAccount],
+    ] = await Promise.all([
+      identity.getPrimaryAccount(),
+      getSecondaryAccountPermissions({ accounts: [this], identity }, context),
+    ]);
 
     if (address === primaryAccountAddress) {
       return {
@@ -632,12 +640,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       };
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const account = secondaryAccounts.find(
-      ({ account: { address: secondaryAccountAddress } }) => address === secondaryAccountAddress
-    )!;
-
-    return account.permissions;
+    return permissionedAccount.permissions;
   }
 
   /**

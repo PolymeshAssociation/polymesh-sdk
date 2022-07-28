@@ -37,6 +37,7 @@ describe('Account class', () => {
   let account: Account;
   let assertAddressValidStub: sinon.SinonStub;
   let addressToKeyStub: sinon.SinonStub;
+  let getSecondaryAccountPermissionsStub: sinon.SinonStub;
   let keyToAddressStub: sinon.SinonStub;
   let txTagToExtrinsicIdentifierStub: sinon.SinonStub;
 
@@ -46,6 +47,10 @@ describe('Account class', () => {
     procedureMockUtils.initMocks();
     assertAddressValidStub = sinon.stub(utilsInternalModule, 'assertAddressValid');
     addressToKeyStub = sinon.stub(utilsConversionModule, 'addressToKey');
+    getSecondaryAccountPermissionsStub = sinon.stub(
+      utilsInternalModule,
+      'getSecondaryAccountPermissions'
+    );
     keyToAddressStub = sinon.stub(utilsConversionModule, 'keyToAddress');
     txTagToExtrinsicIdentifierStub = sinon.stub(
       utilsConversionModule,
@@ -651,6 +656,7 @@ describe('Account class', () => {
     });
 
     it('should return full permissions if the Account is the primary Account', async () => {
+      getSecondaryAccountPermissionsStub.returns([]);
       const identity = entityMockUtils.getIdentityInstance({
         getPrimaryAccount: {
           account: entityMockUtils.getAccountInstance({ address }),
@@ -684,23 +690,14 @@ describe('Account class', () => {
         portfolios: null,
       };
 
-      const identity = entityMockUtils.getIdentityInstance({
-        getSecondaryAccounts: [
-          {
-            account: entityMockUtils.getAccountInstance({ address }),
-            permissions: {
-              assets: null,
-              transactions: null,
-              transactionGroups: [],
-              portfolios: null,
-            },
-          },
-          {
-            account: entityMockUtils.getAccountInstance({ address: 'otherAddress' }),
-            permissions,
-          },
-        ],
-      });
+      getSecondaryAccountPermissionsStub.returns([
+        {
+          account: entityMockUtils.getAccountInstance({ address: 'otherAddress' }),
+          permissions,
+        },
+      ]);
+
+      const identity = entityMockUtils.getIdentityInstance({});
 
       account = new Account({ address: 'otherAddress' }, context);
 

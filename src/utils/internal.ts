@@ -5,9 +5,10 @@ import {
   DropLast,
   ObsInnerType,
 } from '@polkadot/api/types';
-import { BTreeSet, Bytes, StorageKey } from '@polkadot/types';
+import { BTreeSet, Bytes, Option, StorageKey } from '@polkadot/types';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
 import {
+  PolymeshPrimitivesSecondaryKeyKeyRecord,
   PolymeshPrimitivesStatisticsStatClaim,
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesTransferComplianceTransferCondition,
@@ -35,6 +36,7 @@ import {
 } from '~/internal';
 import { Scope as MiddlewareScope } from '~/middleware/types';
 import {
+  Account,
   CaCheckpointType,
   CalendarPeriod,
   CalendarUnit,
@@ -50,15 +52,18 @@ import {
   NextKey,
   NoArgsProcedureMethod,
   PaginationOptions,
+  PermissionedAccount,
   ProcedureAuthorizationStatus,
   ProcedureMethod,
   ProcedureOpts,
   RemoveAssetStatParams,
   Scope,
   StatType,
+  SubCallback,
   TransferRestriction,
   TransferRestrictionType,
   TxTag,
+  UnsubCallback,
 } from '~/types';
 import {
   Events,
@@ -85,6 +90,7 @@ import {
   claimIssuerToMeshClaimIssuer,
   identityIdToString,
   meshClaimTypeToClaimType,
+  meshPermissionsToPermissions,
   meshStatToStatisticsOpType,
   middlewareScopeToScope,
   permillToBigNumber,
@@ -92,6 +98,7 @@ import {
   statisticsOpTypeToStatOpType,
   statisticsOpTypeToStatType,
   statsClaimToStatClaimInputType,
+  stringToAccountId,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { isEntity, isMultiClaimCondition, isSingleClaimCondition } from '~/utils/typeguards';
@@ -1441,4 +1448,74 @@ export function assertStatIsSet(
         'The appropriate stat type for this restriction is not set. Try calling enableStat in the namespace first',
     });
   }
+}
+
+/**
+ * @hidden
+ *
+ * Fetches Account permissions for the given secondary Accounts
+ *
+ * @note non secondary Accounts will be skipped, so there maybe less PermissionedAccounts returned than Accounts given
+ *
+ * @param args.accounts a list of accounts to fetch permissions for
+ * @param args.identity optional. If passed, Accounts that are not part of the given Identity will be filtered out
+ */
+export async function getSecondaryAccountPermissions(
+  args: { accounts: Account[]; identity?: Identity },
+  context: Context,
+  callback: SubCallback<PermissionedAccount[]>
+): Promise<UnsubCallback>;
+
+export async function getSecondaryAccountPermissions(
+  args: { accounts: Account[]; identity?: Identity },
+  context: Context
+): Promise<PermissionedAccount[]>;
+// eslint-disable-next-line require-jsdoc
+export async function getSecondaryAccountPermissions(
+  args: {
+    accounts: Account[];
+    identity?: Identity;
+  },
+  context: Context,
+  callback?: SubCallback<PermissionedAccount[]>
+): Promise<PermissionedAccount[] | UnsubCallback> {
+  const {
+    polymeshApi: {
+      query: { identity: identityQuery },
+    },
+  } = context;
+
+  const { accounts, identity } = args;
+
+  const assembleResult = (
+    optKeyRecords: Option<PolymeshPrimitivesSecondaryKeyKeyRecord>[]
+  ): PermissionedAccount[] => {
+    return optKeyRecords.reduce((result: PermissionedAccount[], optKeyRecord, index) => {
+      const account = accounts[index];
+      const record = optKeyRecord.unwrap();
+
+      if (record.isSecondaryKey) {
+        const [rawIdentityId, rawPermissions] = record.asSecondaryKey;
+
+        if (identity && identityIdToString(rawIdentityId) !== identity.did) {
+          return result;
+        }
+        result.push({
+          account,
+          permissions: meshPermissionsToPermissions(rawPermissions, context),
+        });
+      }
+      return result;
+    }, []);
+  };
+
+  const identityKeys = accounts.map(({ address }) => stringToAccountId(address, context));
+  if (callback) {
+    return identityQuery.keyRecords.multi(identityKeys, result => {
+      return callback(assembleResult(result));
+    });
+  }
+  const rawResults = await identityQuery.keyRecords.multi(identityKeys);
+
+  return assembleResult(rawResults);
 }
