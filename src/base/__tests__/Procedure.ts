@@ -395,7 +395,7 @@ describe('Procedure class', () => {
 
       constructorStub.resetHistory();
 
-      let transaction3 = await proc3.prepare({ args: procArgs }, context, {
+      const transaction3 = await proc3.prepare({ args: procArgs }, context, {
         signingAccount: 'something',
         nonce: () => new BigNumber(10),
       });
@@ -416,7 +416,7 @@ describe('Procedure class', () => {
 
       const nonce = (): Promise<BigNumber> => Promise.resolve(new BigNumber(15));
 
-      transaction3 = await proc3.prepare({ args: procArgs }, context, {
+      await proc3.prepare({ args: procArgs }, context, {
         signingAccount: 'something',
         nonce,
       });
@@ -431,7 +431,7 @@ describe('Procedure class', () => {
 
       constructorStub.resetHistory();
 
-      transaction3 = await proc3.prepare({ args: procArgs }, context, {
+      await proc3.prepare({ args: procArgs }, context, {
         signingAccount: 'something',
         nonce: Promise.resolve(new BigNumber(12)),
       });
