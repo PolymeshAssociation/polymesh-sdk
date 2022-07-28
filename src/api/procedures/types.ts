@@ -90,7 +90,7 @@ export type AddCountStatParams = AddCountStatInput & {
   type: StatType.Count;
 };
 
-export type AddBalanceStatParams = {
+export type AddPercentageStatParams = {
   type: StatType.Percentage;
 };
 
@@ -104,7 +104,7 @@ export type AddClaimPercentageStatParams = StatClaimIssuer & {
 
 export type AddAssetStatParams = { ticker: string } & (
   | AddCountStatParams
-  | AddBalanceStatParams
+  | AddPercentageStatParams
   | AddClaimCountStatParams
   | AddClaimPercentageStatParams
 );
@@ -129,7 +129,7 @@ export type SetAssetStatParams<T> = Omit<
   T extends TransferRestrictionType.Count
     ? AddCountStatParams
     : T extends TransferRestrictionType.Percentage
-    ? AddBalanceStatParams
+    ? AddPercentageStatParams
     : T extends TransferRestrictionType.ClaimCount
     ? AddClaimCountStatParams
     : AddClaimPercentageStatParams,
