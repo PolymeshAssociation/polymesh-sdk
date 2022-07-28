@@ -112,6 +112,8 @@ export class Context {
 
   private signingAddress?: string;
 
+  private nonce?: BigNumber;
+
   /**
    * @hidden
    */
@@ -1216,5 +1218,25 @@ export class Context {
         data: { type, params, error },
       });
     }
+  }
+
+  /**
+   * @hidden
+   *
+   * Set the nonce value
+   */
+  public setNonce(nonce?: BigNumber): void {
+    this.nonce = nonce;
+  }
+
+  /**
+   * @hidden
+   *
+   * Retrieve the nonce value
+   */
+  public getNonce(): BigNumber {
+    // nonce: -1 takes pending transactions into consideration.
+    // More information can be found at: https://polkadot.js.org/docs/api/cookbook/tx/#how-do-i-take-the-pending-tx-pool-into-account-in-my-nonce
+    return new BigNumber(this.nonce || -1);
   }
 }

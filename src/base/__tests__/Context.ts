@@ -1802,4 +1802,59 @@ describe('Context class', () => {
       expect(() => context.createType('Bytes', 'abc')).toThrowError(expectedError);
     });
   });
+
+  describe('method: setNonce', () => {
+    beforeAll(() => {
+      sinon.stub(utilsInternalModule, 'assertAddressValid');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    it('should set the passed value as nonce', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        signingManager: dsMockUtils.getSigningManagerInstance({
+          getAccounts: ['someAddress', 'otherAddress'],
+        }),
+      });
+
+      context.setNonce(new BigNumber(10));
+
+      expect(context.getNonce()).toEqual(new BigNumber(10));
+    });
+  });
+
+  describe('method: getNonce', () => {
+    let context: Context;
+
+    beforeAll(() => {
+      sinon.stub(utilsInternalModule, 'assertAddressValid');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    beforeEach(async () => {
+      context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        signingManager: dsMockUtils.getSigningManagerInstance({
+          getAccounts: ['someAddress', 'otherAddress'],
+        }),
+      });
+    });
+
+    it('should return -1 if no nonce is set', () => {
+      expect(context.getNonce()).toEqual(new BigNumber(-1));
+    });
+
+    it('should return the nonce value', async () => {
+      context.setNonce(new BigNumber(10));
+      expect(context.getNonce()).toEqual(new BigNumber(10));
+    });
+  });
 });

@@ -418,6 +418,7 @@ interface ContextOptions {
   invalidDids?: string[];
   transactionFees?: ProtocolFees[];
   signingAddress?: string;
+  nonce?: BigNumber;
   issuedClaims?: ResultSet<ClaimData>;
   getIdentity?: Identity;
   getIdentityClaimsFromChain?: ClaimData[];
@@ -779,10 +780,14 @@ function configureContext(opts: ContextOptions): void {
     : getSigningAddress.throws(
         new Error('There is no Account associated with the current SDK instance')
       );
+  const nonce = new BigNumber(opts.nonce || -1);
+  const getNonce = sinon.stub();
+  getNonce.returns(nonce);
 
   const queryStub = mockInstanceContainer.apolloInstance.query;
   const contextInstance = {
     signingAddress,
+    nonce,
     getSigningIdentity,
     getSigningAccount,
     getSigningAddress,
@@ -792,6 +797,10 @@ function configureContext(opts: ContextOptions): void {
     setSigningAddress: sinon.stub().callsFake(address => {
       (contextInstance as any).signingAddress = address;
     }),
+    setNonce: sinon.stub().callsFake(txNonce => {
+      (contextInstance as any).nonce = new BigNumber(txNonce || -1);
+    }),
+    getNonce,
     setSigningManager: sinon.stub(),
     getExternalSigner: sinon.stub().returns(opts.getExternalSigner),
     polymeshApi: mockInstanceContainer.apiInstance,

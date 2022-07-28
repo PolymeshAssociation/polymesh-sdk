@@ -120,7 +120,13 @@ export class Procedure<Args = void, ReturnValue = void, Storage = Record<string,
   private async setup(args: Args, context: Context, opts: ProcedureOpts = {}): Promise<Context> {
     if (!this._context) {
       const ctx = context.clone();
-      const { signingAccount } = opts;
+      const { signingAccount, nonce } = opts;
+
+      if (typeof nonce === 'function') {
+        ctx.setNonce(await nonce());
+      } else {
+        ctx.setNonce(await nonce);
+      }
 
       if (signingAccount) {
         await ctx.setSigningAddress(signerToString(signingAccount));
