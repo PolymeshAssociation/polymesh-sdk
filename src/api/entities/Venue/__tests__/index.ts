@@ -2,6 +2,7 @@ import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
+import { createPortfolioTransformer } from '~/api/entities/Venue';
 import {
   addInstructionTransformer,
   Context,
@@ -368,5 +369,19 @@ describe('addInstructionTransformer', () => {
     const result = addInstructionTransformer([entityMockUtils.getInstructionInstance({ id })]);
 
     expect(result.id).toEqual(id);
+  });
+});
+
+describe('createPortfolioTransformer', () => {
+  it('should return a single Portfolio', () => {
+    const id = new BigNumber(1);
+    const did = 'someDid';
+
+    const result = createPortfolioTransformer([
+      entityMockUtils.getNumberedPortfolioInstance({ id, did }),
+    ]);
+
+    expect(result.id).toEqual(id);
+    expect(result.owner.did).toBe(did);
   });
 });

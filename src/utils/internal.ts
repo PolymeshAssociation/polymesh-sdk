@@ -15,7 +15,7 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import stringify from 'json-stable-stringify';
 import { differenceWith, flatMap, isEqual, mapValues, noop, padEnd, uniq } from 'lodash';
-import { IdentityId } from 'polymesh-types/types';
+import { IdentityId, PortfolioNumber } from 'polymesh-types/types';
 import { major, satisfies } from 'semver';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 
@@ -73,6 +73,7 @@ import {
   SYSTEM_VERSION_RPC_CALL,
 } from '~/utils/constants';
 import {
+  bigNumberToU64,
   middlewareScopeToScope,
   signerToString,
   statisticsOpTypeToStatOpType,
@@ -875,36 +876,53 @@ export function assembleBatchTransactions<ArgsArray extends unknown[][]>(
 /**
  * @hidden
  *
- * Returns portfolio number for a given portfolio name
+ * Returns portfolio numbers for a set of portfolio names
  */
-export async function getPortfolioIdByName(
+export async function getPortfolioIdsByName(
   rawIdentityId: IdentityId,
-  rawName: Bytes,
+  rawNames: Bytes[],
   context: Context
-): Promise<BigNumber | null> {
+): Promise<(BigNumber | null)[]> {
   const {
     polymeshApi: {
       query: { portfolio },
     },
   } = context;
 
-  const rawPortfolioNumber = await portfolio.nameToNumber(rawIdentityId, rawName);
+  const rawPortfolioNumbers = await portfolio.nameToNumber.multi<PortfolioNumber>(
+    rawNames.map<[IdentityId, Bytes]>(name => [rawIdentityId, name])
+  );
 
-  const portfolioId = u64ToBigNumber(rawPortfolioNumber);
+  const portfolioIds = rawPortfolioNumbers.map(number => u64ToBigNumber(number));
 
   // TODO @prashantasdeveloper remove this logic once nameToNumber returns Option<PortfolioNumber>
-  if (portfolioId.eq(1)) {
-    /**
-     * since nameToNumber returns 1 for non-existing portfolios,
-     * we need to check if the name matches against the portfolio number 1
-     */
-    const rawExistingPortfolioName = await portfolio.portfolios(rawIdentityId, rawPortfolioNumber);
-    if (!rawName.eq(rawExistingPortfolioName)) {
-      return null;
-    }
-  }
+  /**
+   * since nameToNumber returns 1 for non-existing portfolios, if a name maps to number 1,
+   *  we need to check if the given name actually matches the first portfolio
+   */
+  let firstPortfolioName: Bytes;
 
-  return portfolioId;
+  /*
+   * even though we make this call without knowing if we will need
+   *  the result, we only await for it if necessary, so it's still
+   *  performant
+   */
+  const gettingFirstPortfolioName = portfolio.portfolios(
+    rawIdentityId,
+    bigNumberToU64(new BigNumber(1), context)
+  );
+
+  return P.map(portfolioIds, async (id, index) => {
+    if (id.eq(1)) {
+      firstPortfolioName = await gettingFirstPortfolioName;
+
+      if (!firstPortfolioName.eq(rawNames[index])) {
+        return null;
+      }
+    }
+
+    return id;
+  });
 }
 
 /**
