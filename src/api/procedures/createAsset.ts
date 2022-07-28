@@ -83,6 +83,29 @@ async function calculateManualFees(
 }
 
 /**
+ * @throws if the Ticker is not available
+ */
+function assertTickerAvailable(
+  ticker: string,
+  status: TickerReservationStatus,
+  reservationRequired: boolean
+): void {
+  if (status === TickerReservationStatus.AssetCreated) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: `An Asset with ticker "${ticker}" already exists`,
+    });
+  }
+
+  if (status === TickerReservationStatus.Free && reservationRequired) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: `You must first reserve ticker "${ticker}" in order to create an Asset with it`,
+    });
+  }
+}
+
+/**
  * @hidden
  */
 export async function prepareCreateAsset(
@@ -113,19 +136,7 @@ export async function prepareCreateAsset(
     initialStatistics,
   } = args;
 
-  if (status === TickerReservationStatus.AssetCreated) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: `An Asset with ticker "${ticker}" already exists`,
-    });
-  }
-
-  if (status === TickerReservationStatus.Free && reservationRequired) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: `You must first reserve ticker "${ticker}" in order to create an Asset with it`,
-    });
-  }
+  assertTickerAvailable(ticker, status, reservationRequired);
 
   const rawTicker = stringToTicker(ticker, context);
   const rawName = stringToBytes(name, context);
