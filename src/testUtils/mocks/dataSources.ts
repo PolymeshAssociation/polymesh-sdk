@@ -75,11 +75,13 @@ import {
   PolymeshPrimitivesSecondaryKeyPalletPermissions,
   PolymeshPrimitivesSecondaryKeyPermissions,
   PolymeshPrimitivesStatisticsStat2ndKey,
+  PolymeshPrimitivesStatisticsStatClaim,
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesStatisticsStatUpdate,
   PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions,
   PolymeshPrimitivesTicker,
+  PolymeshPrimitivesTransferComplianceAssetTransferCompliance,
   PolymeshPrimitivesTransferComplianceTransferCondition,
 } from '@polkadot/types/lookup';
 import {
@@ -175,6 +177,7 @@ import {
   VenueType,
   ZkProofData,
 } from '~/polkadot/polymesh';
+import { dsMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
@@ -1673,17 +1676,23 @@ export const createMockIdentityId = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-const createMockEnum = (enumValue?: string | Record<string, Codec | Codec[]>): MockCodec<Enum> => {
+const createMockEnum = (
+  enumValue?: string | Record<string, Codec | Codec[]>,
+  index?: number
+): MockCodec<Enum> => {
   const codec: Record<string, unknown> = {};
 
   if (typeof enumValue === 'string') {
     codec[`is${upperFirst(enumValue)}`] = true;
+    codec.type = enumValue;
   } else if (typeof enumValue === 'object') {
     const key = Object.keys(enumValue)[0];
 
     codec[`is${upperFirst(key)}`] = true;
     codec[`as${upperFirst(key)}`] = enumValue[key];
+    codec.type = key;
   }
+  codec.index = index;
 
   return createMockCodec(codec, !enumValue) as MockCodec<Enum>;
 };
@@ -1718,7 +1727,7 @@ export const createMockEcdsaSignature = (
 export const createMockBTreeSet = <T extends Codec>(
   items: BTreeSet<T> | unknown[]
 ): MockCodec<BTreeSet<T>> => {
-  if (isCodec<BTreeSet>(items)) {
+  if (isCodec<BTreeSet<T>>(items)) {
     return items as MockCodec<BTreeSet<T>>;
   }
   const res = createMockCodec(items, !items) as unknown as Mutable<BTreeSet>;
@@ -2625,8 +2634,27 @@ export const createMockRpcConditionType = (
  */
 export const createMockClaimType = (
   claimType?: ClaimType
-): MockCodec<PolymeshPrimitivesIdentityClaimClaimType> =>
-  createMockEnum(claimType) as MockCodec<PolymeshPrimitivesIdentityClaimClaimType>;
+): MockCodec<PolymeshPrimitivesIdentityClaimClaimType> => {
+  const claimIndexes = {
+    Accredited: 1,
+    Affiliate: 2,
+    BuyLockup: 3,
+    SellLockup: 4,
+    CustomerDueDiligence: 5,
+    KnowYourCustomer: 6,
+    Jurisdiction: 7,
+    Exempted: 8,
+    Blocked: 9,
+    InvestorUniqueness: 10,
+    NoType: 11,
+    NoData: 11,
+    InvestorUniquenessV2: 12,
+  };
+  return createMockEnum(
+    claimType,
+    claimType ? claimIndexes[claimType] : 0
+  ) as MockCodec<PolymeshPrimitivesIdentityClaimClaimType>;
+};
 
 /**
  * @hidden
@@ -3059,6 +3087,22 @@ export const createMockTransferCondition = (
   transferCondition?:
     | { MaxInvestorCount: u64 }
     | { MaxInvestorOwnership: Permill }
+    | {
+        ClaimCount: [
+          PolymeshPrimitivesStatisticsStatClaim,
+          PolymeshPrimitivesIdentityId,
+          u64,
+          Option<u64>
+        ];
+      }
+    | {
+        ClaimOwnership: [
+          PolymeshPrimitivesStatisticsStatClaim,
+          PolymeshPrimitivesIdentityId,
+          Permill,
+          Permill
+        ];
+      }
     | TransferCondition
 ): MockCodec<PolymeshPrimitivesTransferComplianceTransferCondition> => {
   if (isCodec<PolymeshPrimitivesTransferComplianceTransferCondition>(transferCondition)) {
@@ -3993,22 +4037,23 @@ export const createMockStatisticsStatType = (
   stat?:
     | PolymeshPrimitivesStatisticsStatType
     | {
-        op: PolymeshPrimitivesStatisticsStatType;
-        claimIssuers?: [PolymeshPrimitivesIdentityClaimClaimType, PolymeshPrimitivesIdentityId];
+        op: PolymeshPrimitivesStatisticsStatOpType;
+        claimIssuer?: [PolymeshPrimitivesIdentityClaimClaimType, PolymeshPrimitivesIdentityId];
       }
 ): MockCodec<PolymeshPrimitivesStatisticsStatType> => {
   if (isCodec<PolymeshPrimitivesStatisticsStatType>(stat)) {
     return stat as MockCodec<PolymeshPrimitivesStatisticsStatType>;
   }
 
-  const { op, claimIssuers } = stat || {
-    op: '',
+  const { op, claimIssuer } = stat || {
+    op: createMockStatisticsOpType(),
+    claimIssuer: undefined,
   };
 
   return createMockCodec(
     {
       op,
-      claimIssuers,
+      claimIssuer: createMockOption(claimIssuer as any),
     },
     !op
   ) as MockCodec<PolymeshPrimitivesStatisticsStatType>;
@@ -4110,4 +4155,48 @@ export const createMockInitiateCorporateActionArgs = (
     },
     !caArgs
   ) as MockCodec<PalletCorporateActionsInitiateCorporateActionArgs>;
+};
+
+export const createMockStatisticsStatClaim = (
+  statClaim:
+    | PolymeshPrimitivesStatisticsStatClaim
+    | { Accredited: bool }
+    | { Affiliate: bool }
+    | { Jurisdiction: Option<CountryCode> }
+): MockCodec<PolymeshPrimitivesStatisticsStatClaim> => {
+  if (statClaim)
+    if (isCodec<PolymeshPrimitivesStatisticsStatClaim>(statClaim)) {
+      return statClaim as MockCodec<PolymeshPrimitivesStatisticsStatClaim>;
+    }
+  return createMockEnum(statClaim) as MockCodec<PolymeshPrimitivesStatisticsStatClaim>;
+};
+
+/**
+ * @hidden
+ */
+export const createMockAssetTransferCompliance = (
+  transferCompliance?:
+    | {
+        paused: bool;
+        requirements: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
+      }
+    | PolymeshPrimitivesTransferComplianceAssetTransferCompliance
+): MockCodec<PolymeshPrimitivesTransferComplianceAssetTransferCompliance> => {
+  if (isCodec<PolymeshPrimitivesTransferComplianceAssetTransferCompliance>(transferCompliance)) {
+    return transferCompliance as MockCodec<PolymeshPrimitivesTransferComplianceAssetTransferCompliance>;
+  }
+  const { paused, requirements } = transferCompliance || {
+    paused: dsMockUtils.createMockBool(false),
+    requirements: dsMockUtils.createMockBTreeSet([]),
+  };
+  const result = createMockCodec(
+    { paused, requirements },
+    !transferCompliance
+  ) as MockCodec<PolymeshPrimitivesTransferComplianceAssetTransferCompliance>;
+
+  // The Codec conversion wipes out the needed size property on requirements
+  (
+    result.requirements as Mutable<BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>>
+  ).size = requirements.size;
+  return result;
 };

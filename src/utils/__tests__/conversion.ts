@@ -1,4 +1,4 @@
-import { bool, Bytes, u32, u64, u128 } from '@polkadot/types';
+import { bool, Bytes, Option, u32, u64, u128 } from '@polkadot/types';
 import {
   AccountId,
   Balance,
@@ -9,12 +9,14 @@ import {
   Signature,
 } from '@polkadot/types/interfaces';
 import {
+  PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesStatisticsStat2ndKey,
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
+import type { ITuple } from '@polkadot/types-codec/types';
 import { hexToU8a } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 import {
@@ -33,6 +35,7 @@ import {
   DocumentHash,
   EcdsaSignature,
   ExtrinsicPermissions,
+  IdentityId,
   InvestorZKProofData,
   Memo,
   MovePortfolioItem,
@@ -48,6 +51,7 @@ import {
   ScopeId,
   SettlementType,
   Signatory,
+  StatClaim,
   TargetIdentities,
   TransferCondition,
   TrustedIssuer,
@@ -78,7 +82,7 @@ import {
   Portfolio as MiddlewareV2Portfolio,
 } from '~/middleware/typesV2';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { createMockU64, createMockU128 } from '~/testUtils/mocks/dataSources';
+import { createMockOption, createMockU64, createMockU128 } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import {
   AffirmationStatus,
@@ -117,8 +121,10 @@ import {
   Signer,
   SignerType,
   SignerValue,
+  StatType,
   TargetTreatment,
   TransferError,
+  TransferRestriction,
   TransferRestrictionType,
   TransferStatus,
   TrustedClaimIssuer,
@@ -159,6 +165,8 @@ import {
   cddIdToString,
   cddStatusToBoolean,
   checkpointToRecordDateSpec,
+  claimCountStatInputToStatUpdates,
+  claimCountToClaimCountRestrictionValue,
   claimToMeshClaim,
   claimTypeToMeshClaimType,
   complianceConditionsToBtreeSet,
@@ -167,6 +175,7 @@ import {
   corporateActionIdentifierToCaId,
   corporateActionKindToCaKind,
   corporateActionParamsToMeshCorporateActionArgs,
+  countStatInputToStatUpdates,
   createStat2ndKey,
   dateToMoment,
   distributionToDividendDistributionParams,
@@ -179,15 +188,18 @@ import {
   granularCanTransferResultToTransferBreakdown,
   hashToString,
   identityIdToString,
+  inputStatTypeToMeshStatType,
   internalAssetTypeToAssetType,
   isCusipValid,
   isFigiValid,
   isIsinValid,
   isLeiValid,
+  keyAndValueToStatUpdate,
   keyToAddress,
   meshAffirmationStatusToAffirmationStatus,
   meshCalendarPeriodToCalendarPeriod,
   meshClaimToClaim,
+  meshClaimToInputStatClaim,
   meshClaimTypeToClaimType,
   meshCorporateActionToCorporateActionParams,
   meshInstructionStatusToInstructionStatus,
@@ -228,10 +240,12 @@ import {
   signerToString,
   signerValueToSignatory,
   signerValueToSigner,
+  sortStatsByClaimType,
+  sortTransferRestrictionByClaimValue,
   statisticsOpTypeToStatOpType,
   statisticsOpTypeToStatType,
   statisticStatTypesToBtreeStatType,
-  statUpdate,
+  statsClaimToStatClaimInputType,
   statUpdatesToBtreeStatUpdate,
   storedScheduleToCheckpointScheduleParams,
   stringToAccountId,
@@ -1361,7 +1375,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       );
 
       expect(() => authorizationDataToAuthorization(authorizationData, context)).toThrow(
-        'Unsupported Authorization Type. Please contact the Polymath team'
+        'Unsupported Authorization Type. Please contact the Polymesh team'
       );
     });
   });
@@ -2424,7 +2438,7 @@ describe('u8ToTransferStatus', () => {
 
     const fakeStatusCode = new BigNumber(1);
     expect(() => u8ToTransferStatus(dsMockUtils.createMockU8(fakeStatusCode))).toThrow(
-      `Unsupported status code "${fakeStatusCode}". Please report this issue to the Polymath team`
+      `Unsupported status code "${fakeStatusCode}". Please report this issue to the Polymesh team`
     );
   });
 });
@@ -3778,6 +3792,40 @@ describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
       const result = claimTypeToMeshClaimType(ClaimType.NoData, context);
       expect(result).toEqual(mockClaim);
     });
+  });
+});
+
+describe('meshClaimTypeToClaimType', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a statistics enabled ClaimType to a claimType', () => {
+    let fakeResult = ClaimType.Accredited;
+    let claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+    let result = meshClaimTypeToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ClaimType.Affiliate;
+    claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+    result = meshClaimTypeToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ClaimType.Jurisdiction;
+    claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+    result = meshClaimTypeToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
   });
 });
 
@@ -5760,7 +5808,7 @@ describe('middlewareV2PortfolioToPortfolio', () => {
   });
 });
 
-describe('transferRestrictionToTransferManager', () => {
+describe('transferRestrictionToPolymeshTransferCondition', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -5776,7 +5824,7 @@ describe('transferRestrictionToTransferManager', () => {
 
   it('should convert a Transfer Restriction to a PolymeshTransferCondition object', () => {
     const count = new BigNumber(10);
-    let value = {
+    let value: TransferRestriction = {
       type: TransferRestrictionType.Count,
       value: count,
     };
@@ -5818,9 +5866,123 @@ describe('transferRestrictionToTransferManager', () => {
     result = transferRestrictionToPolymeshTransferCondition(value, context);
 
     expect(result).toBe(fakeResult);
+
+    const did = 'someDid';
+    const min = new BigNumber(10);
+    const max = new BigNumber(20);
+    const issuer = entityMockUtils.getIdentityInstance({ did });
+    const countryCode = CountryCode.Ca;
+    const rawCountryCode = dsMockUtils.createMockCountryCode(CountryCode.Ca);
+    const rawMinCount = dsMockUtils.createMockU64(min);
+    const rawMaxCount = dsMockUtils.createMockOption(dsMockUtils.createMockU64(max));
+    const rawMinPercent = dsMockUtils.createMockPermill(min);
+    const rawMaxPercent = dsMockUtils.createMockPermill(max);
+    const rawIssuerId = dsMockUtils.createMockIdentityId(did);
+    const rawClaimValue = { Jurisdiction: rawCountryCode };
+
+    const claimCount = {
+      min,
+      max,
+      issuer,
+      claim: { type: ClaimType.Jurisdiction as const, countryCode },
+    };
+    value = {
+      type: TransferRestrictionType.ClaimCount,
+      value: claimCount,
+    };
+
+    createTypeStub.withArgs('u64', min.toString()).returns(rawMinCount);
+    createTypeStub.withArgs('u64', max.toString()).returns(rawMaxCount);
+    createTypeStub.withArgs('Permill', min.shiftedBy(4).toString()).returns(rawMinPercent);
+    createTypeStub.withArgs('Permill', max.shiftedBy(4).toString()).returns(rawMaxPercent);
+    createTypeStub.withArgs('CountryCode', CountryCode.Ca).returns(rawCountryCode);
+    createTypeStub.withArgs('PolymeshPrimitivesIdentityId', did).returns(rawIssuerId);
+    createTypeStub
+      .withArgs('PolymeshPrimitivesTransferComplianceTransferCondition', {
+        ClaimCount: [rawClaimValue, rawIssuerId, rawMinCount, rawMaxCount],
+      })
+      .returns(fakeResult);
+
+    result = transferRestrictionToPolymeshTransferCondition(value, context);
+
+    expect(result).toBe(fakeResult);
+
+    const claimPercentage = {
+      min,
+      max,
+      issuer,
+      claim: {
+        type: ClaimType.Affiliate as const,
+        affiliate: true,
+      },
+    };
+    value = {
+      type: TransferRestrictionType.ClaimPercentage,
+      value: claimPercentage,
+    };
+    const rawTrue = dsMockUtils.createMockBool(true);
+    const rawOwnershipClaim = { Affiliate: rawTrue };
+
+    createTypeStub.withArgs('bool', true).returns(rawTrue);
+    createTypeStub
+      .withArgs('PolymeshPrimitivesTransferComplianceTransferCondition', {
+        ClaimOwnership: [rawOwnershipClaim, rawIssuerId, rawMinPercent, rawMaxPercent],
+      })
+      .returns(fakeResult);
+
+    result = transferRestrictionToPolymeshTransferCondition(value, context);
+
+    expect(result).toBe(fakeResult);
+
+    const claimPercentageAccredited = {
+      min,
+      max,
+      issuer,
+      claim: {
+        type: ClaimType.Accredited as const,
+        accredited: true,
+      },
+    };
+    value = {
+      type: TransferRestrictionType.ClaimPercentage,
+      value: claimPercentageAccredited,
+    };
+    const rawOwnershipClaimAccredited = { Accredited: rawTrue };
+
+    createTypeStub.withArgs('bool', true).returns(rawTrue);
+    createTypeStub
+      .withArgs('PolymeshPrimitivesTransferComplianceTransferCondition', {
+        ClaimOwnership: [rawOwnershipClaimAccredited, rawIssuerId, rawMinPercent, rawMaxPercent],
+      })
+      .returns(fakeResult);
+
+    result = transferRestrictionToPolymeshTransferCondition(value, context);
+
+    expect(result).toBe(fakeResult);
   });
 
+  it('should throw if there is an unknown transfer type', () => {
+    const context = dsMockUtils.getContextInstance();
+    const value = {
+      type: 'Unknown',
+      value: new BigNumber(3),
+    } as unknown as TransferRestriction;
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.UnexpectedError,
+      message:
+        'Unexpected transfer restriction type: "Unknown". Please report this to the Polymesh team',
+    });
+
+    return expect(() =>
+      transferRestrictionToPolymeshTransferCondition(value, context)
+    ).toThrowError(expectedError);
+  });
+});
+
+describe('transferConditionToTransferRestriction', () => {
   it('should convert a TransferRestriction to a TransferCondition', () => {
+    const mockContext = dsMockUtils.getContextInstance();
     const count = new BigNumber(10);
     let fakeResult = {
       type: TransferRestrictionType.Count,
@@ -5830,7 +5992,7 @@ describe('transferRestrictionToTransferManager', () => {
       MaxInvestorCount: dsMockUtils.createMockU64(count),
     });
 
-    let result = transferConditionToTransferRestriction(transferCondition);
+    let result = transferConditionToTransferRestriction(transferCondition, mockContext);
     expect(result).toEqual(fakeResult);
 
     const percentage = new BigNumber(49);
@@ -5842,7 +6004,7 @@ describe('transferRestrictionToTransferManager', () => {
       MaxInvestorOwnership: dsMockUtils.createMockPermill(percentage.multipliedBy(10000)),
     });
 
-    result = transferConditionToTransferRestriction(transferCondition);
+    result = transferConditionToTransferRestriction(transferCondition, mockContext);
     expect(result).toEqual(fakeResult);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -5852,9 +6014,9 @@ describe('transferRestrictionToTransferManager', () => {
       message: 'Unexpected transfer condition type',
     });
 
-    expect(() => transferConditionToTransferRestriction(transferCondition)).toThrowError(
-      expectedError
-    );
+    expect(() =>
+      transferConditionToTransferRestriction(transferCondition, mockContext)
+    ).toThrowError(expectedError);
   });
 });
 
@@ -7352,10 +7514,10 @@ describe('agentGroupToPermissionGroup', () => {
       const op = 'MaxInvestorCount' as unknown as PolymeshPrimitivesStatisticsStatOpType;
       const context = dsMockUtils.getContextInstance();
       context.createType
-        .withArgs('PolymeshPrimitivesStatisticsStatType', { op })
+        .withArgs('PolymeshPrimitivesStatisticsStatType', { op, claimIssuer: undefined })
         .returns('statType');
 
-      const result = statisticsOpTypeToStatType(op, context);
+      const result = statisticsOpTypeToStatType({ op }, context);
 
       expect(result).toEqual('statType');
     });
@@ -7371,7 +7533,7 @@ describe('agentGroupToPermissionGroup', () => {
         .withArgs('PolymeshPrimitivesStatisticsStatUpdate', { key2, value })
         .returns('statUpdate');
 
-      const result = statUpdate(key2, value, context);
+      const result = keyAndValueToStatUpdate(key2, value, context);
 
       expect(result).toEqual('statUpdate');
     });
@@ -7379,7 +7541,10 @@ describe('agentGroupToPermissionGroup', () => {
 
   describe('meshStatToStat', () => {
     it('should return the type', () => {
-      const rawStat = { op: { type: 'Count' } } as unknown as PolymeshPrimitivesStatisticsStatType;
+      const rawStat = {
+        op: { type: 'Count' },
+        claimIssuer: createMockOption(),
+      } as unknown as PolymeshPrimitivesStatisticsStatType;
 
       const result = meshStatToStatisticsOpType(rawStat);
 
@@ -7395,9 +7560,23 @@ describe('agentGroupToPermissionGroup', () => {
         .withArgs('PolymeshPrimitivesStatisticsStat2ndKey', 'NoClaimStat')
         .returns('2ndKey');
 
-      const result = createStat2ndKey(context);
+      const result = createStat2ndKey('NoClaimStat', context);
 
       expect(result).toEqual('2ndKey');
+    });
+
+    it('should return a scoped second key', () => {
+      const context = dsMockUtils.getContextInstance();
+
+      context.createType
+        .withArgs('PolymeshPrimitivesStatisticsStat2ndKey', {
+          claim: { [ClaimType.Jurisdiction]: CountryCode.Ca },
+        })
+        .returns('Scoped2ndKey');
+
+      const result = createStat2ndKey(ClaimType.Jurisdiction, context, CountryCode.Ca);
+
+      expect(result).toEqual('Scoped2ndKey');
     });
   });
 });
@@ -7556,5 +7735,572 @@ describe('transferConditionsToBtreeTransferConditions', () => {
     const result = transferConditionsToBtreeTransferConditions([condition], context);
 
     expect(result).toEqual(btreeSet);
+  });
+});
+
+describe('meshClaimToInputStatClaim', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a meshClaimStat to StatClaimUserInput', () => {
+    let args = dsMockUtils.createMockStatisticsStatClaim({
+      Accredited: dsMockUtils.createMockBool(true),
+    });
+    let result = meshClaimToInputStatClaim(args);
+    expect(result).toEqual({
+      accredited: true,
+      type: ClaimType.Accredited,
+    });
+
+    args = dsMockUtils.createMockStatisticsStatClaim({
+      Affiliate: dsMockUtils.createMockBool(true),
+    });
+    result = meshClaimToInputStatClaim(args);
+    expect(result).toEqual({
+      affiliate: true,
+      type: ClaimType.Affiliate,
+    });
+
+    args = dsMockUtils.createMockStatisticsStatClaim({
+      Jurisdiction: dsMockUtils.createMockOption(),
+    });
+    result = meshClaimToInputStatClaim(args);
+    expect(result).toEqual({
+      countryCode: undefined,
+      type: ClaimType.Jurisdiction,
+    });
+
+    args = dsMockUtils.createMockStatisticsStatClaim({
+      Jurisdiction: dsMockUtils.createMockOption(dsMockUtils.createMockCountryCode(CountryCode.Ca)),
+    });
+    result = meshClaimToInputStatClaim(args);
+    expect(result).toEqual({
+      countryCode: CountryCode.Ca,
+      type: ClaimType.Jurisdiction,
+    });
+  });
+});
+
+describe('claimCountToClaimCountRestrictionValue', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  const did = 'someDid';
+
+  it('should return a ClaimRestrictionValue', () => {
+    const context = dsMockUtils.getContextInstance();
+    const min = new BigNumber(10);
+    const max = new BigNumber(20);
+    const rawMin = dsMockUtils.createMockU64(min);
+    const rawMax = dsMockUtils.createMockU64(max);
+    const maxOption = dsMockUtils.createMockOption(rawMax);
+    const issuer = entityMockUtils.getIdentityInstance({ did });
+    const rawIssuerId = dsMockUtils.createMockIdentityId(did);
+    const rawClaim = dsMockUtils.createMockStatisticsStatClaim({
+      Accredited: dsMockUtils.createMockBool(true),
+    });
+    let result = claimCountToClaimCountRestrictionValue(
+      [rawClaim, rawIssuerId, rawMin, maxOption] as unknown as ITuple<
+        [StatClaim, IdentityId, u64, Option<u64>]
+      >,
+      context
+    );
+    expect(JSON.stringify(result)).toEqual(
+      JSON.stringify({
+        claim: {
+          type: ClaimType.Accredited,
+          accredited: true,
+        },
+        issuer,
+        min,
+        max,
+      })
+    );
+
+    result = claimCountToClaimCountRestrictionValue(
+      [rawClaim, rawIssuerId, rawMin, dsMockUtils.createMockOption()] as unknown as ITuple<
+        [StatClaim, IdentityId, u64, Option<u64>]
+      >,
+      context
+    );
+    expect(JSON.stringify(result)).toEqual(
+      JSON.stringify({
+        claim: {
+          type: ClaimType.Accredited,
+          accredited: true,
+        },
+        issuer,
+        min,
+        max: undefined,
+      })
+    );
+  });
+});
+
+describe('statsClaimToStatClaimUserType', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a stats claim to a Claim', () => {
+    const accreditedClaim = dsMockUtils.createMockStatisticsStatClaim({
+      Accredited: dsMockUtils.createMockBool(true),
+    });
+    let result = statsClaimToStatClaimInputType(accreditedClaim);
+    expect(result).toEqual({ type: ClaimType.Accredited });
+
+    const affiliateClaim = dsMockUtils.createMockStatisticsStatClaim({
+      Affiliate: dsMockUtils.createMockBool(false),
+    });
+    result = statsClaimToStatClaimInputType(affiliateClaim);
+    expect(result).toEqual({ type: ClaimType.Affiliate });
+
+    const jurisdictionClaim = dsMockUtils.createMockStatisticsStatClaim({
+      Jurisdiction: dsMockUtils.createMockOption(dsMockUtils.createMockCountryCode(CountryCode.Ca)),
+    });
+    result = statsClaimToStatClaimInputType(jurisdictionClaim);
+    expect(result).toEqual({ type: ClaimType.Jurisdiction });
+  });
+});
+
+describe('claimCountStatInputToStatUpdates', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return stat update values', () => {
+    const context = dsMockUtils.getContextInstance();
+    const yes = new BigNumber(12);
+    const no = new BigNumber(14);
+    const canadaCount = new BigNumber(7);
+    const usCount = new BigNumber(10);
+    const rawYes = dsMockUtils.createMockU64(yes);
+    const rawNo = dsMockUtils.createMockU64(no);
+    const rawCanadaCount = dsMockUtils.createMockU64(canadaCount);
+    const rawUsCount = dsMockUtils.createMockU64(usCount);
+    const rawYesKey = dsMockUtils.createMock2ndKey();
+    const rawNoKey = dsMockUtils.createMock2ndKey();
+    const rawCountryKey = dsMockUtils.createMockCountryCode(CountryCode.Ca);
+    const fakeYesUpdate = 'fakeYes';
+    const fakeNoUpdate = 'fakeNo';
+    const fakeJurisdictionUpdate = 'fakeJurisdiction';
+    const issuer = entityMockUtils.getIdentityInstance();
+
+    context.createType.withArgs('u128', yes.toString()).returns(rawYes);
+    context.createType.withArgs('u128', no.toString()).returns(rawNo);
+    context.createType.withArgs('u128', canadaCount.toString()).returns(rawCanadaCount);
+    context.createType.withArgs('u128', usCount.toString()).returns(rawUsCount);
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStat2ndKey', {
+        claim: { [ClaimType.Affiliate]: true },
+      })
+      .returns(rawYesKey);
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStat2ndKey', {
+        claim: { [ClaimType.Affiliate]: false },
+      })
+      .returns(rawNoKey);
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStat2ndKey', {
+        claim: { [ClaimType.Accredited]: true },
+      })
+      .returns(rawYesKey);
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStat2ndKey', {
+        claim: { [ClaimType.Accredited]: false },
+      })
+      .returns(rawNoKey);
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStat2ndKey', {
+        claim: { [ClaimType.Jurisdiction]: CountryCode.Ca },
+      })
+      .returns(rawCountryKey);
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStat2ndKey', {
+        claim: { [ClaimType.Jurisdiction]: CountryCode.Us },
+      })
+      .returns(rawCountryKey);
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStatUpdate', { key2: rawYesKey, value: rawYes })
+      .returns(fakeYesUpdate);
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStatUpdate', { key2: rawNoKey, value: rawNo })
+      .returns(fakeNoUpdate);
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStatUpdate', {
+        key2: rawCountryKey,
+        value: rawCanadaCount,
+      })
+      .returns(fakeJurisdictionUpdate);
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStatUpdate', {
+        key2: rawCountryKey,
+        value: rawUsCount,
+      })
+      .returns(fakeJurisdictionUpdate);
+    context.createType
+      .withArgs('BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>', [fakeYesUpdate, fakeNoUpdate])
+      .returns('yesNoBtreeSet');
+    context.createType
+      .withArgs('BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>', [
+        fakeJurisdictionUpdate,
+        fakeJurisdictionUpdate,
+      ])
+      .returns('jurisdictionBtreeSet');
+
+    let result = claimCountStatInputToStatUpdates(
+      {
+        issuer,
+        claimType: ClaimType.Affiliate,
+        value: { affiliate: yes, nonAffiliate: no },
+      },
+      context
+    );
+    expect(result).toEqual('yesNoBtreeSet');
+
+    result = claimCountStatInputToStatUpdates(
+      {
+        issuer,
+        claimType: ClaimType.Accredited,
+        value: { accredited: yes, nonAccredited: no },
+      },
+      context
+    );
+    expect(result).toEqual('yesNoBtreeSet');
+
+    const countryValue = [
+      {
+        countryCode: CountryCode.Ca,
+        count: canadaCount,
+      },
+      {
+        countryCode: CountryCode.Us,
+        count: usCount,
+      },
+    ];
+    result = claimCountStatInputToStatUpdates(
+      {
+        issuer,
+        claimType: ClaimType.Jurisdiction,
+        value: countryValue,
+      },
+      context
+    );
+    expect(result).toEqual('jurisdictionBtreeSet');
+  });
+});
+
+describe('countStatInputToStatUpdates', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert input parameters into an StatUpdate', () => {
+    const context = dsMockUtils.getContextInstance();
+    const count = new BigNumber(3);
+    const rawCount = dsMockUtils.createMockU128(count);
+
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStat2ndKey', 'NoClaimStat')
+      .returns('2ndKey');
+    context.createType.withArgs('u128', count.toString()).returns(rawCount);
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStatUpdate', { key2: '2ndKey', value: rawCount })
+      .returns('statUpdate');
+    context.createType
+      .withArgs('BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>', ['statUpdate'])
+      .returns('fakeResult');
+
+    const result = countStatInputToStatUpdates({ count }, context);
+    expect(result).toEqual('fakeResult');
+  });
+});
+
+describe('sortStatsByClaimType', () => {
+  it('should sort by claim type', () => {
+    const issuer = dsMockUtils.createMockIdentityId('did');
+    type ClaimTypeTuple = [PolymeshPrimitivesIdentityClaimClaimType, PolymeshPrimitivesIdentityId];
+    const accreditedIssuer: ClaimTypeTuple = [
+      dsMockUtils.createMockClaimType(ClaimType.Accredited),
+      issuer,
+    ];
+    const affiliateIssuer: ClaimTypeTuple = [
+      dsMockUtils.createMockClaimType(ClaimType.Affiliate),
+      issuer,
+    ];
+    const jurisdictionIssuer: ClaimTypeTuple = [
+      dsMockUtils.createMockClaimType(ClaimType.Jurisdiction),
+      issuer,
+    ];
+    const nonStatIssuer: ClaimTypeTuple = [
+      dsMockUtils.createMockClaimType(ClaimType.Blocked),
+      issuer,
+    ];
+    const op = dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count);
+    const accreditedStat = dsMockUtils.createMockStatisticsStatType({
+      op,
+      claimIssuer: accreditedIssuer,
+    });
+
+    const affiliateStat = dsMockUtils.createMockStatisticsStatType({
+      op,
+      claimIssuer: affiliateIssuer,
+    });
+
+    const jurisdictionStat = dsMockUtils.createMockStatisticsStatType({
+      op,
+      claimIssuer: jurisdictionIssuer,
+    });
+
+    const nonStat = dsMockUtils.createMockStatisticsStatType({
+      op,
+      claimIssuer: nonStatIssuer,
+    });
+
+    const countStat = dsMockUtils.createMockStatisticsStatType({ op });
+
+    let result = sortStatsByClaimType([jurisdictionStat, accreditedStat, affiliateStat, countStat]);
+
+    expect(result).toEqual([accreditedStat, affiliateStat, jurisdictionStat, countStat]);
+
+    result = sortStatsByClaimType([
+      nonStat,
+      jurisdictionStat,
+      nonStat,
+      countStat,
+      nonStat,
+      jurisdictionStat,
+      countStat,
+      affiliateStat,
+      countStat,
+    ]);
+
+    expect(result).toEqual([
+      affiliateStat,
+      jurisdictionStat,
+      jurisdictionStat,
+      nonStat,
+      nonStat,
+      nonStat,
+      countStat,
+      countStat,
+      countStat,
+    ]);
+  });
+});
+
+describe('sortTransferRestrictionByClaimValue', () => {
+  it('should sort conditions', () => {
+    const countRestriction = dsMockUtils.createMockTransferCondition({
+      MaxInvestorCount: dsMockUtils.createMockU64(new BigNumber(10)),
+    });
+    const percentRestriction = dsMockUtils.createMockTransferCondition({
+      MaxInvestorOwnership: dsMockUtils.createMockU64(new BigNumber(10)),
+    });
+    const accreditedRestriction = dsMockUtils.createMockTransferCondition({
+      ClaimCount: [
+        dsMockUtils.createMockStatisticsStatClaim({ Accredited: dsMockUtils.createMockBool(true) }),
+        dsMockUtils.createMockIdentityId(),
+        dsMockUtils.createMockU64(new BigNumber(10)),
+        dsMockUtils.createMockOption(),
+      ],
+    });
+    const affiliatedRestriction = dsMockUtils.createMockTransferCondition({
+      ClaimCount: [
+        dsMockUtils.createMockStatisticsStatClaim({ Affiliate: dsMockUtils.createMockBool(true) }),
+        dsMockUtils.createMockIdentityId(),
+        dsMockUtils.createMockU64(new BigNumber(10)),
+        dsMockUtils.createMockOption(),
+      ],
+    });
+    const canadaRestriction = dsMockUtils.createMockTransferCondition({
+      ClaimCount: [
+        dsMockUtils.createMockStatisticsStatClaim({
+          Jurisdiction: dsMockUtils.createMockOption(
+            dsMockUtils.createMockCountryCode(CountryCode.Ca)
+          ),
+        }),
+        dsMockUtils.createMockIdentityId(),
+        dsMockUtils.createMockU64(new BigNumber(10)),
+        dsMockUtils.createMockOption(),
+      ],
+    });
+    const usRestriction = dsMockUtils.createMockTransferCondition({
+      ClaimCount: [
+        dsMockUtils.createMockStatisticsStatClaim({
+          Jurisdiction: dsMockUtils.createMockOption(
+            dsMockUtils.createMockCountryCode(CountryCode.Us)
+          ),
+        }),
+        dsMockUtils.createMockIdentityId(),
+        dsMockUtils.createMockU64(new BigNumber(10)),
+        dsMockUtils.createMockOption(),
+      ],
+    });
+    const jurisdictionRestriction = dsMockUtils.createMockTransferCondition({
+      ClaimOwnership: [
+        dsMockUtils.createMockStatisticsStatClaim({
+          Jurisdiction: dsMockUtils.createMockOption(),
+        }),
+        dsMockUtils.createMockIdentityId(),
+        dsMockUtils.createMockPermill(new BigNumber(10)),
+        dsMockUtils.createMockPermill(new BigNumber(20)),
+      ],
+    });
+    const ownershipAffiliateRestriction = dsMockUtils.createMockTransferCondition({
+      ClaimOwnership: [
+        dsMockUtils.createMockStatisticsStatClaim({
+          Affiliate: dsMockUtils.createMockBool(true),
+        }),
+        dsMockUtils.createMockIdentityId(),
+        dsMockUtils.createMockPermill(new BigNumber(10)),
+        dsMockUtils.createMockPermill(new BigNumber(20)),
+      ],
+    });
+
+    let result = sortTransferRestrictionByClaimValue([
+      countRestriction,
+      percentRestriction,
+      accreditedRestriction,
+      affiliatedRestriction,
+      ownershipAffiliateRestriction,
+      canadaRestriction,
+      usRestriction,
+      jurisdictionRestriction,
+    ]);
+    expect(result).toEqual([
+      jurisdictionRestriction,
+      canadaRestriction,
+      usRestriction,
+      countRestriction,
+      percentRestriction,
+      accreditedRestriction,
+      affiliatedRestriction,
+      ownershipAffiliateRestriction,
+    ]);
+
+    result = sortTransferRestrictionByClaimValue([
+      canadaRestriction,
+      jurisdictionRestriction,
+      accreditedRestriction,
+      affiliatedRestriction,
+      usRestriction,
+      jurisdictionRestriction,
+      canadaRestriction,
+    ]);
+    expect(result).toEqual([
+      jurisdictionRestriction,
+      jurisdictionRestriction,
+      canadaRestriction,
+      canadaRestriction,
+      usRestriction,
+      accreditedRestriction,
+      affiliatedRestriction,
+    ]);
+  });
+});
+
+describe('inputStatTypeToMeshStatType', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert InputStatType to PolymeshPrimitivesStatisticsStatType', () => {
+    const mockContext = dsMockUtils.getContextInstance();
+    const createTypeStub = mockContext.createType;
+    const fakeOp = 'fakeOp';
+    const fakeIssuer = 'fakeIssuer';
+    const fakeClaimType = 'fakeClaimType';
+    const fakeStatistic = 'fakeStatistic';
+    const did = 'did';
+
+    createTypeStub
+      .withArgs('PolymeshPrimitivesStatisticsStatOpType', StatisticsOpType.Count)
+      .returns(fakeOp);
+
+    createTypeStub
+      .withArgs('PolymeshPrimitivesStatisticsStatOpType', StatisticsOpType.Balance)
+      .returns(fakeOp);
+
+    createTypeStub
+      .withArgs('PolymeshPrimitivesStatisticsStatType', { op: fakeOp, claimIssuer: undefined })
+      .returns(fakeStatistic);
+
+    createTypeStub
+      .withArgs('PolymeshPrimitivesIdentityClaimClaimType', ClaimType.Accredited)
+      .returns(fakeClaimType);
+
+    createTypeStub.withArgs('PolymeshPrimitivesIdentityId', did).returns(fakeIssuer);
+
+    createTypeStub
+      .withArgs('PolymeshPrimitivesStatisticsStatType', {
+        op: fakeOp,
+        claimIssuer: [fakeClaimType, fakeIssuer],
+      })
+      .returns(fakeStatistic);
+
+    const unscopedInput = { type: StatType.Count } as const;
+    let result = inputStatTypeToMeshStatType(unscopedInput, mockContext);
+    expect(result).toEqual(fakeStatistic);
+
+    const scopedInput = {
+      type: StatType.ScopedPercentage,
+      claimIssuer: {
+        issuer: entityMockUtils.getIdentityInstance({ did }),
+        claimType: ClaimType.Accredited,
+      },
+    } as const;
+    result = inputStatTypeToMeshStatType(scopedInput, mockContext);
+    expect(result).toEqual(fakeStatistic);
   });
 });

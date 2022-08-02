@@ -23,11 +23,13 @@ import {
 import { CustomAssetTypeId } from '~/polkadot';
 import {
   CalendarPeriod,
+  InputStatClaim,
   KnownAssetType,
   PermissionGroupType,
   Role,
   SignerValue,
   SimplePermissions,
+  StatClaimType,
   TxTag,
 } from '~/types';
 
@@ -360,6 +362,8 @@ export type InternalAssetType = KnownAssetType | { Custom: CustomAssetTypeId };
 export enum StatisticsOpType {
   Count = 'Count',
   Balance = 'Balance',
+  ClaimCount = 'ClaimCount',
+  ClaimPercentage = 'ClaimPercentage',
 }
 
 export interface TickerKey {
@@ -369,4 +373,11 @@ export interface TickerKey {
 export interface ExemptKey {
   asset: TickerKey;
   op: PolymeshPrimitivesStatisticsStatOpType;
+}
+
+export type StatClaimInputType = Omit<InputStatClaim, 'affiliate' | 'accredited'>;
+
+export interface StatClaimIssuer {
+  issuer: Identity;
+  claimType: StatClaimType;
 }

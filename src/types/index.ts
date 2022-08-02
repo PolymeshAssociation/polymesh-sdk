@@ -9,6 +9,7 @@ import {
   SubsidyData,
   TaxWithholding,
 } from '~/api/entities/types';
+import { StatType } from '~/api/procedures/types';
 import { CountryCode, ModuleName, TxTag, TxTags } from '~/generated/types';
 import {
   Account,
@@ -317,6 +318,37 @@ export interface ClaimData<ClaimType = Claim> {
   claim: ClaimType;
 }
 
+export type StatClaimType = ClaimType.Accredited | ClaimType.Affiliate | ClaimType.Jurisdiction;
+
+export interface StatJurisdictionClaimInput {
+  type: ClaimType.Jurisdiction;
+  countryCode?: CountryCode;
+}
+
+export interface StatAccreditedClaimInput {
+  type: ClaimType.Accredited;
+  accredited: boolean;
+}
+
+export interface StatAffiliateClaimInput {
+  type: ClaimType.Affiliate;
+  affiliate: boolean;
+}
+
+export type InputStatClaim =
+  | StatJurisdictionClaimInput
+  | StatAccreditedClaimInput
+  | StatAffiliateClaimInput;
+
+export type InputStatType =
+  | {
+      type: StatType.Count | StatType.Percentage;
+    }
+  | {
+      type: StatType.ScopedCount | StatType.ScopedPercentage;
+      claimIssuer: StatClaimIssuer;
+    };
+
 export interface IdentityWithClaims {
   identity: Identity;
   claims: ClaimData[];
@@ -487,7 +519,7 @@ export enum ErrorCode {
   /**
    * transaction failed due to an on-chain error. This is a business logic error,
    *   and it should be caught by the SDK before being sent to the chain.
-   *   Please report it to the Polymath team
+   *   Please report it to the Polymesh team
    */
   TransactionReverted = 'TransactionReverted',
   /**
@@ -540,7 +572,7 @@ export enum ErrorCode {
   InsufficientBalance = 'InsufficientBalance',
   /**
    * errors that are the result of something unforeseen.
-   *   These should generally be reported to the Polymath team
+   *   These should generally be reported to the Polymesh team
    */
   UnexpectedError = 'UnexpectedError',
   /**
@@ -1255,9 +1287,45 @@ export interface PercentageTransferRestriction extends TransferRestrictionBase {
    */
   percentage: BigNumber;
 }
+export interface ClaimCountTransferRestriction extends TransferRestrictionBase {
+  /**
+   * The type of investors this restriction applies to. e.g. non-accredited
+   */
+  claim: InputStatClaim;
+  /**
+   * The minimum amount of investors the must meet the Claim criteria
+   */
+  min: BigNumber;
+  /**
+   * The maximum amount of investors that must meet the Claim criteria
+   */
+  max?: BigNumber;
+
+  issuer: Identity;
+}
+export interface ClaimPercentageTransferRestriction extends TransferRestrictionBase {
+  /**
+   * The type of investors this restriction applies to. e.g. Canadian investor
+   */
+  claim: InputStatClaim;
+  /**
+   * The minimum percentage of the total supply that investors meeting the Claim criteria must hold
+   */
+  min: BigNumber;
+  /**
+   * The maximum percentage of the total supply that investors meeting the Claim criteria must hold
+   */
+  max: BigNumber;
+
+  issuer: Identity;
+}
 
 export interface ActiveTransferRestrictions<
-  Restriction extends CountTransferRestriction | PercentageTransferRestriction
+  Restriction extends
+    | CountTransferRestriction
+    | PercentageTransferRestriction
+    | ClaimCountTransferRestriction
+    | ClaimPercentageTransferRestriction
 > {
   restrictions: Restriction[];
   /**
@@ -1265,6 +1333,68 @@ export interface ActiveTransferRestrictions<
    */
   availableSlots: BigNumber;
 }
+
+export enum TransferRestrictionType {
+  Count = 'Count',
+  Percentage = 'Percentage',
+  ClaimCount = 'ClaimCount',
+  ClaimPercentage = 'ClaimPercentage',
+}
+
+export type TransferRestriction =
+  | {
+      type: TransferRestrictionType.Count;
+      value: BigNumber;
+    }
+  | { type: TransferRestrictionType.Percentage; value: BigNumber }
+  | {
+      type: TransferRestrictionType.ClaimCount;
+      value: ClaimCountRestrictionValue;
+    }
+  | {
+      type: TransferRestrictionType.ClaimPercentage;
+      value: ClaimPercentageRestrictionValue;
+    };
+
+export interface ClaimCountRestrictionValue {
+  min: BigNumber;
+  max?: BigNumber;
+  issuer: Identity;
+  claim: InputStatClaim;
+}
+
+export interface ClaimPercentageRestrictionValue {
+  min: BigNumber;
+  max: BigNumber;
+  issuer: Identity;
+  claim: InputStatClaim;
+}
+
+export interface AddCountStatInput {
+  count: BigNumber;
+}
+
+export interface StatClaimIssuer {
+  issuer: Identity;
+  claimType: StatClaimType;
+}
+
+export type ClaimCountStatInput =
+  | {
+      issuer: Identity;
+      claimType: ClaimType.Accredited;
+      value: { accredited: BigNumber; nonAccredited: BigNumber };
+    }
+  | {
+      issuer: Identity;
+      claimType: ClaimType.Affiliate;
+      value: { affiliate: BigNumber; nonAffiliate: BigNumber };
+    }
+  | {
+      issuer: Identity;
+      claimType: ClaimType.Jurisdiction;
+      value: { countryCode: CountryCode; count: BigNumber }[];
+    };
 
 export enum CalendarUnit {
   Second = 'second',

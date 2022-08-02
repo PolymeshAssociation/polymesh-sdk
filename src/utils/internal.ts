@@ -5,11 +5,13 @@ import {
   DropLast,
   ObsInnerType,
 } from '@polkadot/api/types';
-import { Bytes, Option, StorageKey } from '@polkadot/types';
+import { BTreeSet, Bytes, Option, StorageKey } from '@polkadot/types';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
 import {
   PolymeshPrimitivesSecondaryKeyKeyRecord,
+  PolymeshPrimitivesStatisticsStatClaim,
   PolymeshPrimitivesStatisticsStatType,
+  PolymeshPrimitivesTransferComplianceTransferCondition,
 } from '@polkadot/types/lookup';
 import { AnyFunction, AnyTuple, IEvent, ISubmittableResult } from '@polkadot/types/types';
 import { stringUpperFirst } from '@polkadot/util';
@@ -54,8 +56,11 @@ import {
   ProcedureAuthorizationStatus,
   ProcedureMethod,
   ProcedureOpts,
+  RemoveAssetStatParams,
   Scope,
+  StatType,
   SubCallback,
+  TransferRestriction,
   TransferRestrictionType,
   TxTag,
   UnsubCallback,
@@ -67,6 +72,7 @@ import {
   MapTxWithArgs,
   MaybePostTransactionValue,
   PolymeshTx,
+  StatClaimIssuer,
   StatisticsOpType,
   TxWithArgs,
 } from '~/types/internal';
@@ -81,12 +87,17 @@ import {
 } from '~/utils/constants';
 import {
   bigNumberToU64,
+  claimIssuerToMeshClaimIssuer,
   identityIdToString,
+  meshClaimTypeToClaimType,
   meshPermissionsToPermissions,
+  meshStatToStatisticsOpType,
   middlewareScopeToScope,
+  permillToBigNumber,
   signerToString,
   statisticsOpTypeToStatOpType,
   statisticsOpTypeToStatType,
+  statsClaimToStatClaimInputType,
   stringToAccountId,
   u64ToBigNumber,
 } from '~/utils/conversion';
@@ -292,7 +303,7 @@ export function filterEventRecords<
       code: ErrorCode.UnexpectedError,
       message: `Event "${mod}.${String(
         eventName
-      )}" wasn't fired even though the corresponding transaction was completed. Please report this to the Polymath team`,
+      )}" wasn't fired even though the corresponding transaction was completed. Please report this to the Polymesh team`,
     });
   }
 
@@ -1214,16 +1225,229 @@ export function assertTickerValid(ticker: string): void {
 
 /**
  * @hidden
+ * @returns true is the given stat is able to track the data for the given args
+ */
+export function compareStatsToInput(
+  rawStatType: PolymeshPrimitivesStatisticsStatType,
+  args: RemoveAssetStatParams
+): boolean {
+  let claimIssuer;
+  const { type } = args;
+
+  if (type === StatType.ScopedCount || type === StatType.ScopedPercentage) {
+    claimIssuer = { issuer: args.issuer, claimType: args.claimType };
+  }
+
+  if (rawStatType.claimIssuer.isNone && !!claimIssuer) {
+    return false;
+  }
+
+  if (rawStatType.claimIssuer.isSome) {
+    if (!claimIssuer) {
+      return false;
+    }
+
+    const { issuer, claimType } = claimIssuer;
+    const [meshType, meshIssuer] = rawStatType.claimIssuer.unwrap();
+    const issuerDid = identityIdToString(meshIssuer);
+    const statType = meshClaimTypeToClaimType(meshType);
+    if (issuerDid !== issuer.did) {
+      return false;
+    }
+
+    if (statType !== claimType) {
+      return false;
+    }
+  }
+
+  const stat = meshStatToStatisticsOpType(rawStatType);
+  let cmpStat;
+  if (stat === StatisticsOpType.Count) {
+    cmpStat = StatType.Count;
+  } else if (stat === StatisticsOpType.Balance) {
+    cmpStat = StatType.Percentage;
+  } else if (stat === StatisticsOpType.ClaimCount) {
+    cmpStat = StatType.ScopedCount;
+  } else {
+    cmpStat = StatType.ScopedPercentage;
+  }
+
+  return cmpStat === type;
+}
+
+/**
+ * @hidden
+ * @returns true if the given StatType is able to track the data for the given transfer condition
+ */
+export function compareTransferRestrictionToStat(
+  transferCondition: PolymeshPrimitivesTransferComplianceTransferCondition,
+  type: StatType,
+  claimIssuer?: StatClaimIssuer
+): boolean {
+  if (
+    (type === StatType.Count && transferCondition.isMaxInvestorCount) ||
+    (type === StatType.Percentage && transferCondition.isMaxInvestorOwnership)
+  ) {
+    return true;
+  }
+
+  if (!claimIssuer) {
+    return false;
+  }
+
+  const {
+    issuer: { did: issuerDid },
+    claimType,
+  } = claimIssuer;
+
+  let rawClaim, issuer;
+  if (transferCondition.isClaimCount) {
+    [rawClaim, issuer] = transferCondition.asClaimCount;
+  } else if (transferCondition.isClaimOwnership) {
+    [rawClaim, issuer] = transferCondition.asClaimOwnership;
+  }
+  if (rawClaim && issuer) {
+    const restrictionIssuerDid = identityIdToString(issuer);
+    const claim = statsClaimToStatClaimInputType(rawClaim);
+    if (restrictionIssuerDid === issuerDid && claim.type === claimType) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * @hidden
+ */
+function getClaimType(statClaim: PolymeshPrimitivesStatisticsStatClaim): ClaimType {
+  if (statClaim.isAccredited) {
+    return ClaimType.Accredited;
+  } else if (statClaim.isAffiliate) {
+    return ClaimType.Affiliate;
+  } else {
+    return ClaimType.Jurisdiction;
+  }
+}
+
+/**
+ * @hidden
+ */
+function compareOptionalBigNumbers(a: BigNumber | undefined, b: BigNumber | undefined): boolean {
+  if (a === undefined && b === undefined) {
+    return true;
+  }
+  if (a === undefined || b === undefined) {
+    return false;
+  }
+  return a.eq(b);
+}
+
+/**
+ * @hidden
+ */
+export function compareTransferRestrictionToInput(
+  rawRestriction: PolymeshPrimitivesTransferComplianceTransferCondition,
+  inputRestriction: TransferRestriction
+): boolean {
+  const { type, value } = inputRestriction;
+  if (rawRestriction.isMaxInvestorCount && type === TransferRestrictionType.Count) {
+    const currentCount = u64ToBigNumber(rawRestriction.asMaxInvestorCount);
+    return currentCount.eq(value);
+  } else if (rawRestriction.isMaxInvestorOwnership && type === TransferRestrictionType.Percentage) {
+    const currentOwnership = permillToBigNumber(rawRestriction.asMaxInvestorOwnership);
+    return currentOwnership.eq(value);
+  } else if (rawRestriction.isClaimCount && type === TransferRestrictionType.ClaimCount) {
+    const [statClaim, rawIssuerId, rawMin, maybeMax] = rawRestriction.asClaimCount;
+    const issuerDid = identityIdToString(rawIssuerId);
+    const min = u64ToBigNumber(rawMin);
+    const max = maybeMax.isSome ? u64ToBigNumber(maybeMax.unwrap()) : undefined;
+    const { min: valueMin, max: valueMax, claim: valueClaim, issuer: valueIssuer } = value;
+
+    return (
+      valueMin.eq(min) &&
+      compareOptionalBigNumbers(max, valueMax) &&
+      valueClaim.type === getClaimType(statClaim) &&
+      issuerDid === valueIssuer.did
+    );
+  } else if (rawRestriction.isClaimOwnership && type === TransferRestrictionType.ClaimPercentage) {
+    const { min: valueMin, max: valueMax, claim: valueClaim, issuer: valueIssuer } = value;
+    const [statClaim, rawIssuerId, rawMin, rawMax] = rawRestriction.asClaimOwnership;
+    const issuerDid = identityIdToString(rawIssuerId);
+    const min = permillToBigNumber(rawMin);
+    const max = permillToBigNumber(rawMax);
+
+    return (
+      valueMin.eq(min) &&
+      valueMax.eq(max) &&
+      valueClaim.type === getClaimType(statClaim) &&
+      issuerDid === valueIssuer.did
+    );
+  }
+
+  return false;
+}
+
+/**
+ * @hidden
+ */
+export function compareStatTypeToTransferRestrictionType(
+  statType: PolymeshPrimitivesStatisticsStatType,
+  transferRestrictionType: TransferRestrictionType
+): boolean {
+  const opType = meshStatToStatisticsOpType(statType);
+  if (opType === StatisticsOpType.Count) {
+    return transferRestrictionType === TransferRestrictionType.Count;
+  } else if (opType === StatisticsOpType.Balance) {
+    return transferRestrictionType === TransferRestrictionType.Percentage;
+  } else if (opType === StatisticsOpType.ClaimCount) {
+    return transferRestrictionType === TransferRestrictionType.ClaimCount;
+  } else {
+    return transferRestrictionType === TransferRestrictionType.ClaimPercentage;
+  }
+}
+
+/**
+ * @hidden
+ * @param args.type TransferRestriction type that was given
+ * @param args.claimIssuer optional Issuer and ClaimType for the scope of the Stat
+ * @param context
+ * @returns encoded StatType needed for the TransferRestriction to be enabled
  */
 export function neededStatTypeForRestrictionInput(
-  type: TransferRestrictionType,
+  args: { type: TransferRestrictionType; claimIssuer?: StatClaimIssuer },
   context: Context
 ): PolymeshPrimitivesStatisticsStatType {
-  const neededOp =
-    type === TransferRestrictionType.Count ? StatisticsOpType.Count : StatisticsOpType.Balance;
-  const rawOp = statisticsOpTypeToStatOpType(neededOp, context);
+  const { type, claimIssuer } = args;
 
-  return statisticsOpTypeToStatType(rawOp, context);
+  let rawOp;
+  if (type === TransferRestrictionType.Count || type === TransferRestrictionType.ClaimCount) {
+    rawOp = statisticsOpTypeToStatOpType(StatisticsOpType.Count, context);
+  } else {
+    rawOp = statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
+  }
+
+  const rawIssuer = claimIssuer ? claimIssuerToMeshClaimIssuer(claimIssuer, context) : undefined;
+  return statisticsOpTypeToStatType({ op: rawOp, claimIssuer: rawIssuer }, context);
+}
+
+/**
+ * @hidden
+ * @throws if stat is not found in the given set
+ */
+export function assertStatIsSet(
+  currentStats: BTreeSet<PolymeshPrimitivesStatisticsStatType>,
+  neededStat: PolymeshPrimitivesStatisticsStatType
+): void {
+  const needStat = ![...currentStats].find(s => s.eq(neededStat));
+
+  if (needStat) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message:
+        'The appropriate stat type for this restriction is not set. Try calling enableStat in the namespace first',
+    });
+  }
 }
 
 /**
