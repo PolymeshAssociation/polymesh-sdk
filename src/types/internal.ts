@@ -26,7 +26,7 @@ import {
   Role,
   SignerValue,
   SimplePermissions,
-  TxTag,
+  TxData,
 } from '~/types';
 
 /**
@@ -97,20 +97,6 @@ export type TxWithArgs<Args extends unknown[] = unknown[]> = BaseTx<Args> &
         args: Args;
       });
 
-/**
- * Transaction data for display purposes
- */
-export interface TxData<Args extends unknown[] = unknown[]> {
-  /**
-   * transaction string identifier
-   */
-  tag: TxTag;
-  /**
-   * arguments with which the transaction will be called
-   */
-  args: Args;
-}
-
 export type TxDataWithFees<Args extends unknown[] = unknown[]> = TxData<Args> &
   Omit<TxWithArgs<Args>, 'args'>;
 
@@ -126,13 +112,6 @@ export type MapPolymeshTx<ArgsArray extends unknown[][]> = {
  */
 export type MapTxWithArgs<ArgsArray extends unknown[][]> = {
   [K in keyof ArgsArray]: ArgsArray[K] extends unknown[] ? TxWithArgs<ArgsArray[K]> : never;
-};
-
-/**
- * Apply the {@link TxData} type to all args in an array
- */
-export type MapTxData<ArgsArray extends unknown[][]> = {
-  [K in keyof ArgsArray]: ArgsArray[K] extends unknown[] ? TxData<ArgsArray[K]> : never;
 };
 
 /**

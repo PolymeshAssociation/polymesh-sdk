@@ -6,9 +6,9 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
 import { Context, PolymeshTransactionBase } from '~/internal';
+import { MapTxData } from '~/types';
 import {
   BatchTransactionSpec,
-  MapTxData,
   MapTxDataWithFees,
   MapTxWithArgs,
   TransactionSigningData,

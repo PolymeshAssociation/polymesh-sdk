@@ -1401,6 +1401,27 @@ export type TransactionArray<ReturnValues extends readonly [...unknown[]]> = {
   [K in keyof ReturnValues]: GenericPolymeshTransaction<ReturnValues[K], ReturnValues[K]>;
 };
 
+/**
+ * Transaction data for display purposes
+ */
+export interface TxData<Args extends unknown[] = unknown[]> {
+  /**
+   * transaction string identifier
+   */
+  tag: TxTag;
+  /**
+   * arguments with which the transaction will be called
+   */
+  args: Args;
+}
+
+/**
+ * Apply the {@link TxData} type to all args in an array
+ */
+export type MapTxData<ArgsArray extends unknown[][]> = {
+  [K in keyof ArgsArray]: ArgsArray[K] extends unknown[] ? TxData<ArgsArray[K]> : never;
+};
+
 export { TxTags, TxTag, ModuleName, CountryCode };
 export { EventRecord } from '@polkadot/types/interfaces';
 export { ConnectParams } from '~/api/client/Polymesh';
