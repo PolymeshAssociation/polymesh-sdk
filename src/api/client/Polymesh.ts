@@ -8,11 +8,11 @@ import { HttpLink } from 'apollo-link-http';
 import fetch from 'cross-fetch';
 import schema from 'polymesh-types/schema';
 
-import { Account, Context, Identity, PolymeshError } from '~/internal';
+import { Account, Context, createTransactionBatch, Identity, PolymeshError } from '~/internal';
 import { heartbeat } from '~/middleware/queries';
-import { ErrorCode, MiddlewareConfig } from '~/types';
+import { CreateTransactionBatchProcedureMethod, ErrorCode, MiddlewareConfig } from '~/types';
 import { signerToString } from '~/utils/conversion';
-import { assertExpectedChainVersion } from '~/utils/internal';
+import { assertExpectedChainVersion, createProcedureMethod } from '~/utils/internal';
 
 import { AccountManagement } from './AccountManagement';
 import { Assets } from './Assets';
@@ -72,6 +72,13 @@ export class Polymesh {
     this.accountManagement = new AccountManagement(context);
     this.identities = new Identities(context);
     this.assets = new Assets(context);
+
+    this.createTransactionBatch = createProcedureMethod(
+      {
+        getProcedureAndArgs: args => [createTransactionBatch, { ...args }],
+      },
+      context
+    ) as CreateTransactionBatchProcedureMethod;
   }
 
   /**
@@ -223,7 +230,7 @@ export class Polymesh {
    *
    * @throws if the passed Account is not present in the Signing Manager (or there is no Signing Manager)
    */
-  public async setSigningAccount(signer: string | Account): Promise<void> {
+  public setSigningAccount(signer: string | Account): Promise<void> {
     return this.context.setSigningAddress(signerToString(signer));
   }
 
@@ -233,6 +240,37 @@ export class Polymesh {
   public setSigningManager(signingManager: SigningManager): Promise<void> {
     return this.context.setSigningManager(signingManager);
   }
+
+  /**
+   * Create a batch transaction from a list of separate transactions. The list can contain batch transactions as well.
+   *   The result of running this transaction will be an array of the results of each transaction in the list, in the same order.
+   *   Transactions with no return value will produce `undefined` in the resulting array
+   *
+   * @param args.transactions - list of {@link base/PolymeshTransaction!PolymeshTransaction} or {@link base/PolymeshTransactionBatch!PolymeshTransactionBatch}
+   *
+   * @example
+   * // Batching 3 ticker reservation transactions
+   * const tx1 = await sdk.assets.reserveTicker({ ticker: 'FOO' });
+   * const tx2 = await sdk.assets.reserveTicker({ ticker: 'BAR' });
+   * const tx3 = await sdk.assets.reserveTicker({ ticker: 'BAZ' });
+   *
+   * const batch = sdk.createTransactionBatch({ transactions: [tx1, tx2, tx3] as const });
+   *
+   * const [res1, res2, res3] = await batch.run();
+   *
+   * @example
+   * // Specifying the signer account for the whole batch
+   * const batch = sdk.createTransactionBatch({ transactions: [tx1, tx2, tx3] as const }, { signingAccount: 'someAddress' });
+   *
+   * const [res1, res2, res3] = await batch.run();
+   *
+   * @note it is mandatory to use the `as const` type assertion when passing in the transaction array to the method in order to get the correct types
+   *   for the results of running the batch
+   * @note if a signing Account is not specified, the default one will be used (the one returned by `sdk.accountManagement.getSigningAccount()`)
+   * @note all fees in the resulting batch must be paid by the calling Account, regardless of any exceptions that would normally be made for
+   *   the individual transactions (such as subsidies or accepting invitations to join an Identity)
+   */
+  public createTransactionBatch: CreateTransactionBatchProcedureMethod;
 
   /* eslint-disable @typescript-eslint/naming-convention */
   /* istanbul ignore next: not part of the official public API */

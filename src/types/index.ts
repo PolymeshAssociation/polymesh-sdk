@@ -1,3 +1,5 @@
+/* istanbul ignore file */
+
 import { TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
@@ -9,6 +11,7 @@ import {
   SubsidyData,
   TaxWithholding,
 } from '~/api/entities/types';
+import { CreateTransactionBatchParams } from '~/api/procedures/types';
 import { CountryCode, ModuleName, TxTag, TxTags } from '~/generated/types';
 import {
   Account,
@@ -24,8 +27,9 @@ import {
   KnownPermissionGroup,
   NumberedPortfolio,
   Offering,
+  PolymeshTransaction,
+  PolymeshTransactionBatch,
 } from '~/internal';
-import { GenericPolymeshTransaction } from '~/types/internal';
 import { Modify } from '~/types/utils';
 
 export * from '~/generated/types';
@@ -1286,6 +1290,17 @@ export interface ProcedureOpts {
   signingAccount?: string | Account;
 }
 
+export interface CreateTransactionBatchProcedureMethod {
+  <ReturnValues extends readonly [...unknown[]]>(
+    args: CreateTransactionBatchParams<ReturnValues>,
+    opts?: ProcedureOpts
+  ): Promise<PolymeshTransactionBatch<ReturnValues, ReturnValues>>;
+  checkAuthorization: <ReturnValues extends [...unknown[]]>(
+    args: CreateTransactionBatchParams<ReturnValues>,
+    opts?: ProcedureOpts
+  ) => Promise<ProcedureAuthorizationStatus>;
+}
+
 export interface ProcedureMethod<
   MethodArgs,
   ProcedureReturnValue,
@@ -1301,9 +1316,7 @@ export interface ProcedureMethod<
 }
 
 export interface NoArgsProcedureMethod<ProcedureReturnValue, ReturnValue = ProcedureReturnValue> {
-  (opts?: ProcedureOpts): Promise<
-    Promise<GenericPolymeshTransaction<ProcedureReturnValue, ReturnValue>>
-  >;
+  (opts?: ProcedureOpts): Promise<GenericPolymeshTransaction<ProcedureReturnValue, ReturnValue>>;
   checkAuthorization: (opts?: ProcedureOpts) => Promise<ProcedureAuthorizationStatus>;
 }
 
@@ -1379,6 +1392,14 @@ export type InputCorporateActionTaxWithholdings = Modify<
     identity: string | Identity;
   }
 >[];
+
+export type GenericPolymeshTransaction<ProcedureReturnValue, ReturnValue> =
+  | PolymeshTransaction<ProcedureReturnValue, ReturnValue>
+  | PolymeshTransactionBatch<ProcedureReturnValue, ReturnValue>;
+
+export type TransactionArray<ReturnValues extends readonly [...unknown[]]> = {
+  [K in keyof ReturnValues]: GenericPolymeshTransaction<ReturnValues[K], ReturnValues[K]>;
+};
 
 export { TxTags, TxTag, ModuleName, CountryCode };
 export { EventRecord } from '@polkadot/types/interfaces';

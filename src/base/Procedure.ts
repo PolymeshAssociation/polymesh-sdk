@@ -9,6 +9,7 @@ import {
   CheckPermissionsResult,
   CheckRolesResult,
   ErrorCode,
+  GenericPolymeshTransaction,
   Identity,
   ProcedureAuthorizationStatus,
   ProcedureOpts,
@@ -17,7 +18,6 @@ import {
 } from '~/types';
 import {
   BaseTransactionSpec,
-  GenericPolymeshTransaction,
   GenericTransactionSpec,
   ProcedureAuthorization,
 } from '~/types/internal';

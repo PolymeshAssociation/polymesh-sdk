@@ -386,6 +386,7 @@ describe('createAsset procedure', () => {
       transactions: [
         {
           transaction: createAssetTransaction,
+          fee: protocolFees[0].plus(protocolFees[1]),
           args: [
             rawName,
             rawTicker,
@@ -397,7 +398,6 @@ describe('createAsset procedure', () => {
           ],
         },
       ],
-      fee: protocolFees[0].plus(protocolFees[1]),
       resolver: expect.objectContaining({ ticker }),
     });
   });
@@ -431,9 +431,9 @@ describe('createAsset procedure', () => {
             rawFundingRound,
             rawDisableIu,
           ],
+          fee: new BigNumber(0),
         },
       ],
-      fee: new BigNumber(0),
       resolver: expect.objectContaining({ ticker }),
     });
   });
@@ -471,6 +471,7 @@ describe('createAsset procedure', () => {
             rawFundingRound,
             rawDisableIu,
           ],
+          fee: protocolFees[0].plus(protocolFees[1]),
         },
         {
           transaction: addDocumentsTx,
@@ -478,7 +479,6 @@ describe('createAsset procedure', () => {
           args: [rawDocuments, rawTicker],
         },
       ],
-      fee: protocolFees[0].plus(protocolFees[1]).plus(protocolFees[3]),
       resolver: expect.objectContaining({ ticker }),
     });
   });

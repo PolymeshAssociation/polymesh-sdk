@@ -5,7 +5,7 @@ import sinon from 'sinon';
 
 import { Context, PolymeshTransactionBatch } from '~/internal';
 import { fakePromise } from '~/testUtils';
-import { dsMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { TransactionStatus, TxTags } from '~/types';
 import { tuple } from '~/types/utils';
@@ -15,6 +15,7 @@ describe('Polymesh Transaction Batch class', () => {
 
   beforeAll(() => {
     dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
   });
 
   beforeEach(() => {
@@ -31,11 +32,48 @@ describe('Polymesh Transaction Batch class', () => {
     signingAddress: 'signingAddress',
     signer: 'signer' as PolkadotSigner,
     isCritical: false,
-    fee: new BigNumber(100),
   };
 
   afterEach(() => {
     dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  describe('method: toTransactionSpec', () => {
+    it('should return the tx spec of a transaction', () => {
+      const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
+      const args = tuple('FOO');
+      const resolver = (): number => 1;
+      const transformer = (): number => 2;
+      const paidForBy = entityMockUtils.getIdentityInstance();
+
+      const tx = new PolymeshTransactionBatch(
+        {
+          ...txSpec,
+          transactions: [
+            { transaction, args, fee: new BigNumber(100), feeMultiplier: new BigNumber(10) },
+          ],
+          resolver,
+          transformer,
+          paidForBy,
+        },
+        context
+      );
+
+      expect(PolymeshTransactionBatch.toTransactionSpec(tx)).toEqual({
+        resolver,
+        transformer,
+        paidForBy,
+        transactions: [
+          {
+            transaction,
+            args,
+            feeMultiplier: new BigNumber(10),
+            fee: new BigNumber(100),
+          },
+        ],
+      });
+    });
   });
 
   describe('get: transactions', () => {
@@ -107,7 +145,7 @@ describe('Polymesh Transaction Batch class', () => {
 
       tx.run().catch(noop);
 
-      await fakePromise(1);
+      await fakePromise(2);
 
       dsMockUtils.updateTxStatus(batchStub, dsMockUtils.MockTxStatus.InBlock);
 
@@ -144,7 +182,7 @@ describe('Polymesh Transaction Batch class', () => {
       );
       const runPromise = tx.run();
 
-      await fakePromise(1);
+      await fakePromise(2);
 
       dsMockUtils.updateTxStatus(batchStub, dsMockUtils.MockTxStatus.BatchFailed);
 

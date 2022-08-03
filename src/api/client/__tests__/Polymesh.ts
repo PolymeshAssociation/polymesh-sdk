@@ -3,10 +3,10 @@ import { ApolloLink, GraphQLRequest } from 'apollo-link';
 import sinon from 'sinon';
 
 import { Polymesh } from '~/api/client/Polymesh';
-import { PolymeshError } from '~/internal';
+import { PolymeshError, PolymeshTransactionBatch } from '~/internal';
 import { heartbeat } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { ErrorCode } from '~/types';
+import { ErrorCode, TransactionArray } from '~/types';
 import { SUPPORTED_NODE_VERSION_RANGE } from '~/utils/constants';
 import * as internalUtils from '~/utils/internal';
 
@@ -351,6 +351,36 @@ describe('Polymesh Class', () => {
 
       await polymesh.setSigningManager(signingManager);
       sinon.assert.calledWith(dsMockUtils.getContextInstance().setSigningManager, signingManager);
+    });
+  });
+
+  describe('method: createTransactionBatch', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const polymesh = await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        signingManager: 'signingManager' as unknown as SigningManager,
+        middleware: {
+          link: 'someLink',
+          key: 'someKey',
+        },
+      });
+      const context = dsMockUtils.getContextInstance();
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransactionBatch<
+        [void, void]
+      >;
+      const transactions = ['foo', 'bar', 'baz'] as unknown as TransactionArray<[void, void]>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { transactions }, transformer: undefined }, context)
+        .resolves(expectedTransaction);
+
+      const tx = await polymesh.createTransactionBatch({
+        transactions,
+      });
+
+      expect(tx).toBe(expectedTransaction);
     });
   });
 });

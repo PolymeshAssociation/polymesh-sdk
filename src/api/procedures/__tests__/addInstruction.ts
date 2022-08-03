@@ -13,13 +13,7 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/addInstruction';
-import {
-  Context,
-  DefaultPortfolio,
-  Instruction,
-  NumberedPortfolio,
-  PostTransactionValue,
-} from '~/internal';
+import { Context, DefaultPortfolio, Instruction, NumberedPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -597,23 +591,5 @@ describe('createAddInstructionResolver', () => {
     const result = createAddInstructionResolver(fakeContext)({} as ISubmittableResult);
 
     expect(result[0].id).toEqual(id);
-  });
-
-  it('should return a list of new Instructions', () => {
-    const fakeContext = {} as Context;
-    const previousInstructionId = new BigNumber(2);
-
-    const previousInstructions = {
-      value: [new Instruction({ id: previousInstructionId }, fakeContext)],
-    } as unknown as PostTransactionValue<Instruction[]>;
-
-    const result = createAddInstructionResolver(
-      fakeContext,
-      previousInstructions
-    )({} as ISubmittableResult);
-
-    expect(result.length).toEqual(2);
-    expect(result[0].id).toEqual(previousInstructionId);
-    expect(result[1].id).toEqual(id);
   });
 });

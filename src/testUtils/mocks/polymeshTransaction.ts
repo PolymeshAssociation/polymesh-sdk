@@ -141,7 +141,7 @@ export function setupNextTransactions(specs: MockTransactionSpec[]): MockTransac
     }) as unknown as MockTransaction['onStatusChange'];
 
     instance.status = autoResolve || TransactionStatus.Idle;
-    instance.getFees = sinon.stub().resolves(fees) as MockTransaction['getFees'];
+    instance.getTotalFees = sinon.stub().resolves(fees) as MockTransaction['getTotalFees'];
     instance.supportsSubsidy = sinon
       .stub()
       .returns(supportsSubsidy) as MockTransaction['supportsSubsidy'];

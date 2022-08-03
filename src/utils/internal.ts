@@ -27,7 +27,6 @@ import {
   Context,
   Identity,
   PolymeshError,
-  PostTransactionValue,
 } from '~/internal';
 import { Scope as MiddlewareScope } from '~/middleware/types';
 import {
@@ -40,6 +39,7 @@ import {
   ConditionType,
   CountryCode,
   ErrorCode,
+  GenericPolymeshTransaction,
   InputCaCheckpoint,
   InputCondition,
   ModuleName,
@@ -56,10 +56,7 @@ import {
 import {
   Events,
   Falsyable,
-  GenericPolymeshTransaction,
-  MapMaybePostTransactionValue,
   MapTxWithArgs,
-  MaybePostTransactionValue,
   PolymeshTx,
   StatisticsOpType,
   TxWithArgs,
@@ -238,28 +235,6 @@ export function createClaim(
 
 /**
  * @hidden
- *
- * Unwrap a Post Transaction Value
- */
-export function unwrapValue<T>(value: MaybePostTransactionValue<T>): T {
-  if (value instanceof PostTransactionValue) {
-    return value.value;
-  }
-
-  return value;
-}
-
-/**
- * @hidden
- *
- * Unwrap all Post Transaction Values present in a tuple
- */
-export function unwrapValues<T extends unknown[]>(values: MapMaybePostTransactionValue<T>): T {
-  return values.map(unwrapValue) as T;
-}
-
-/**
- * @hidden
  */
 type EventData<Event> = Event extends AugmentedEvent<'promise', infer Data> ? Data : never;
 
@@ -340,7 +315,7 @@ export function sliceBatchReceipt(
 
   /*
    * For each extrinsic, we remove the first N events from the original receipt, where N is the amount
-   * of events emitted for that extrinsic according to the `BatchCompleted` event's data. If the extrinsic is the desired range,
+   * of events emitted for that extrinsic according to the `BatchCompleted` event's data. If the extrinsic is in the desired range,
    * we add the removed events to the cloned receipt. Otherwise we ignore them
    *
    * The order of events in the receipt is such that the events of all extrinsics in the batch come first (in the same order

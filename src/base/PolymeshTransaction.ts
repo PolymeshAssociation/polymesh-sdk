@@ -16,6 +16,24 @@ export class PolymeshTransaction<
   Args extends unknown[] | [] = unknown[]
 > extends PolymeshTransactionBase<ReturnValue, TransformedReturnValue> {
   /**
+   * @hidden
+   */
+  public static override toTransactionSpec<R, T, A extends unknown[] | [] = unknown[]>(
+    inputTransaction: PolymeshTransaction<R, T, A>
+  ): TransactionSpec<R, A, T> {
+    const spec = PolymeshTransactionBase.toTransactionSpec(inputTransaction);
+    const { transaction, args, protocolFee: fee, feeMultiplier } = inputTransaction;
+
+    return {
+      ...spec,
+      transaction,
+      args,
+      fee,
+      feeMultiplier,
+    } as unknown as TransactionSpec<R, A, T>;
+  }
+
+  /**
    * arguments for the transaction in SCALE format (polkadot.js Codec)
    */
   public args: Args;
@@ -40,7 +58,16 @@ export class PolymeshTransaction<
    *
    * @note defaults to 1
    */
-  protected feeMultiplier;
+  protected feeMultiplier?: BigNumber;
+
+  /**
+   * @hidden
+   *
+   * used by procedures to set the protocol fee manually in case the protocol op can't be
+   *   dynamically generated from the transaction name, or a specific procedure has
+   *   special rules for calculating them
+   */
+  private protocolFee?: BigNumber;
 
   /**
    * @hidden
@@ -50,7 +77,7 @@ export class PolymeshTransaction<
       TransactionSigningData,
     context: Context
   ) {
-    const { args = [], feeMultiplier = new BigNumber(1), transaction, ...rest } = transactionSpec;
+    const { args = [], feeMultiplier, transaction, fee, paidForBy, ...rest } = transactionSpec;
 
     super(rest, context);
 
@@ -58,6 +85,8 @@ export class PolymeshTransaction<
     this.transaction = transaction;
     this.tag = transactionToTxTag(transaction);
     this.feeMultiplier = feeMultiplier;
+    this.protocolFee = fee;
+    this.paidForBy = paidForBy;
   }
 
   // eslint-disable-next-line require-jsdoc
@@ -68,11 +97,17 @@ export class PolymeshTransaction<
   }
 
   // eslint-disable-next-line require-jsdoc
-  protected async getProtocolFees(): Promise<BigNumber> {
-    const { tag } = this;
-    const [{ fees }] = await this.context.getProtocolFees({ tags: [tag] });
+  public async getProtocolFees(): Promise<BigNumber> {
+    const { protocolFee, feeMultiplier = new BigNumber(1) } = this;
 
-    return fees.multipliedBy(this.feeMultiplier);
+    let fees = protocolFee;
+
+    if (!fees) {
+      const { tag } = this;
+      [{ fees }] = await this.context.getProtocolFees({ tags: [tag] });
+    }
+
+    return fees.multipliedBy(feeMultiplier);
   }
 
   // eslint-disable-next-line require-jsdoc
