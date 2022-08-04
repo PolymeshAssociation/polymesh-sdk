@@ -15,6 +15,7 @@ import {
   PayingAccountFees,
   PayingAccountType,
   TransactionStatus,
+  UnsubCallback,
 } from '~/types';
 import {
   BaseTransactionSpec,
@@ -353,7 +354,7 @@ export abstract class PolymeshTransactionBase<
    *
    * @returns unsubscribe function
    */
-  public onStatusChange(listener: (transaction: PolymeshTransactionBase) => void): () => void {
+  public onStatusChange(listener: (transaction: PolymeshTransactionBase) => void): UnsubCallback {
     const { emitter } = this;
 
     emitter.on(Event.StatusChange, listener);
@@ -409,7 +410,7 @@ export abstract class PolymeshTransactionBase<
    * @returns unsubscribe function
    * @throws if the middleware wasn't enabled when instantiating the SDK client
    */
-  public onProcessedByMiddleware(listener: (err?: PolymeshError) => void): () => void {
+  public onProcessedByMiddleware(listener: (err?: PolymeshError) => void): UnsubCallback {
     const { context, emitter } = this;
 
     if (!context.isMiddlewareEnabled()) {

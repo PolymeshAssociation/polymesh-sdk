@@ -10,7 +10,12 @@ import schema from 'polymesh-types/schema';
 
 import { Account, Context, createTransactionBatch, Identity, PolymeshError } from '~/internal';
 import { heartbeat } from '~/middleware/queries';
-import { CreateTransactionBatchProcedureMethod, ErrorCode, MiddlewareConfig } from '~/types';
+import {
+  CreateTransactionBatchProcedureMethod,
+  ErrorCode,
+  MiddlewareConfig,
+  UnsubCallback,
+} from '~/types';
 import { signerToString } from '~/utils/conversion';
 import { assertExpectedChainVersion, createProcedureMethod } from '~/utils/internal';
 
@@ -185,7 +190,7 @@ export class Polymesh {
    *
    * @returns an unsubscribe callback
    */
-  public onConnectionError(callback: (...args: unknown[]) => unknown): () => void {
+  public onConnectionError(callback: (...args: unknown[]) => unknown): UnsubCallback {
     const {
       context: { polymeshApi },
     } = this;
@@ -202,7 +207,7 @@ export class Polymesh {
    *
    * @returns an unsubscribe callback
    */
-  public onDisconnect(callback: (...args: unknown[]) => unknown): () => void {
+  public onDisconnect(callback: (...args: unknown[]) => unknown): UnsubCallback {
     const {
       context: { polymeshApi },
     } = this;
@@ -248,8 +253,9 @@ export class Polymesh {
    *
    * @param args.transactions - list of {@link base/PolymeshTransaction!PolymeshTransaction} or {@link base/PolymeshTransactionBatch!PolymeshTransactionBatch}
    *
-   * @example
-   * // Batching 3 ticker reservation transactions
+   * @example Batching 3 ticker reservation transactions
+   *
+   * ```typescript
    * const tx1 = await sdk.assets.reserveTicker({ ticker: 'FOO' });
    * const tx2 = await sdk.assets.reserveTicker({ ticker: 'BAR' });
    * const tx3 = await sdk.assets.reserveTicker({ ticker: 'BAZ' });
@@ -257,12 +263,15 @@ export class Polymesh {
    * const batch = sdk.createTransactionBatch({ transactions: [tx1, tx2, tx3] as const });
    *
    * const [res1, res2, res3] = await batch.run();
+   * ```
    *
-   * @example
-   * // Specifying the signer account for the whole batch
+   * @example Specifying the signer account for the whole batch
+   *
+   * ```typescript
    * const batch = sdk.createTransactionBatch({ transactions: [tx1, tx2, tx3] as const }, { signingAccount: 'someAddress' });
    *
    * const [res1, res2, res3] = await batch.run();
+   * ```
    *
    * @note it is mandatory to use the `as const` type assertion when passing in the transaction array to the method in order to get the correct types
    *   for the results of running the batch

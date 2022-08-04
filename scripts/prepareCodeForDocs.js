@@ -19,7 +19,7 @@ const replace = require('replace-in-file');
 const path = require('path');
 
 const methodRegex =
-  /\*\/\n\s+?public ((?:abstract )?\w+?)!?: ((?:(:?NoArgs)|(?:CreateTransactionBatch))?ProcedureMethod(?:<[\w\W]+?>));/gs;
+  /\*\/\n\s+?public ((?:abstract )?\w+?)!?: ((?:(:?NoArgs)|(?:CreateTransactionBatch))?ProcedureMethod(?:<[\w\W]+?>)?);/gs;
 const importRegex = /(import .+? from '.+?';\n)\n/s;
 
 /**
@@ -36,7 +36,12 @@ const getTypeArgumentsFromProcedureMethod = typeString => {
 
   // NOTE @monitz87: this is very ugly but it's the quickest way I found of getting the type arguments
   const signature = source.getChildren(source)[0].getChildren(source)[0].getChildren(source)[0];
-  const kind = signature.getChildren(source)[0].getText(source);
+  let kind = signature.getText(source);
+
+  // this is the case where the type has generic arguments (e.g. `ProcedureMethod<Foo, Bar>`, as opposed to `CreateTransactionMethodProcedureArgs`)
+  if (signature.getChildren(source).length > 0) {
+    kind = signature.getChildren(source)[0].getText(source);
+  }
 
   if (kind === 'CreateTransactionBatchProcedureMethod') {
     return {
@@ -96,7 +101,7 @@ const createReplacementSignature = (_, funcName, type) => {
    * @note this method is of type {@link types!${kind} | ${kind}}, which means you can call {@link types!${kind}.checkAuthorization | ${name}.checkAuthorization}
    *   on it to see whether the signing Account and Identity have the required roles and permissions to run it
    */
-  public ${genericParams}${funcName}${funcArgs}: ${returnType}${isAbstract ? ';' : implementation}`;
+  public ${funcName}${genericParams}${funcArgs}: ${returnType}${isAbstract ? ';' : implementation}`;
 };
 
 const createReplacementImport = (_, importStatement) =>
