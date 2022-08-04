@@ -82,10 +82,6 @@ describe('addTransferRestriction procedure', () => {
   let setExemptedEntitiesTransaction: PolymeshTx<
     [PolymeshPrimitivesTicker, PolymeshPrimitivesTransferComplianceTransferCondition, ScopeId[]]
   >;
-  let scopeIdsToBtreeSetIdentityIdStub: sinon.SinonStub<
-    [PolymeshPrimitivesIdentityId[], Context],
-    BTreeSet<PolymeshPrimitivesIdentityId>
-  >;
   let statisticsOpTypeToStatOpTypeStub: sinon.SinonStub<
     [StatisticsOpType, Context],
     PolymeshPrimitivesStatisticsStatOpType
@@ -145,10 +141,6 @@ describe('addTransferRestriction procedure', () => {
       'transferRestrictionToPolymeshTransferCondition'
     );
     stringToTickerKeyStub = sinon.stub(utilsConversionModule, 'stringToTickerKey');
-    scopeIdsToBtreeSetIdentityIdStub = sinon.stub(
-      utilsConversionModule,
-      'scopeIdsToBtreeSetIdentityId'
-    );
     transferConditionsToBtreeTransferConditionsStub = sinon.stub(
       utilsConversionModule,
       'transferConditionsToBtreeTransferConditions'
@@ -381,7 +373,10 @@ describe('addTransferRestriction procedure', () => {
     const rawIdentityBtree = dsMockUtils.createMockBTreeSet<PolymeshPrimitivesIdentityId>([
       rawIdentityScopeId,
     ]);
-    scopeIdsToBtreeSetIdentityIdStub.returns(rawIdentityBtree);
+
+    mockContext.createType
+      .withArgs('BTreeSet<PolymeshPrimitivesIdentityId>', [undefined])
+      .returns(rawIdentityBtree);
 
     entityMockUtils.configureMocks({
       identityOptions: { getScopeId: identityScopeId },
@@ -407,7 +402,11 @@ describe('addTransferRestriction procedure', () => {
         {
           transaction: setExemptedEntitiesTransaction,
           feeMultiplier: new BigNumber(1),
-          args: [true, { asset: { Ticker: rawTicker }, op: rawCountOp }, rawIdentityBtree],
+          args: [
+            true,
+            { asset: { Ticker: rawTicker }, op: undefined, claimType: undefined },
+            rawIdentityBtree,
+          ],
         },
       ],
     });
@@ -434,7 +433,11 @@ describe('addTransferRestriction procedure', () => {
         {
           transaction: setExemptedEntitiesTransaction,
           feeMultiplier: new BigNumber(1),
-          args: [true, { asset: { Ticker: rawTicker }, op: rawBalanceOp }, rawIdentityBtree],
+          args: [
+            true,
+            { asset: { Ticker: rawTicker }, op: undefined, claimType: undefined },
+            rawIdentityBtree,
+          ],
         },
       ],
     });
@@ -519,7 +522,7 @@ describe('addTransferRestriction procedure', () => {
     );
   });
 
-  it('should throw an error if exempted entities are repeated', async () => {
+  it('should throw an error if exempted entities are repeated', () => {
     args = {
       type: TransferRestrictionType.Count,
       exemptedIdentities: ['someScopeId', 'someScopeId'],
@@ -530,16 +533,14 @@ describe('addTransferRestriction procedure', () => {
       mockContext
     );
 
-    let err;
+    const expectedError = new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message:
+        'One or more of the passed exempted Identities are repeated or have the same Scope ID',
+    });
 
-    try {
-      await prepareAddTransferRestriction.call(proc, args);
-    } catch (error) {
-      err = error;
-    }
-
-    expect(err.message).toBe(
-      'One or more of the passed exempted Identities are repeated or have the same Scope ID'
+    return expect(prepareAddTransferRestriction.call(proc, args)).rejects.toThrowError(
+      expectedError
     );
   });
 

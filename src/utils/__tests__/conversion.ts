@@ -187,6 +187,7 @@ import {
   fundraiserToOfferingDetails,
   granularCanTransferResultToTransferBreakdown,
   hashToString,
+  identitiesToBtreeSet,
   identityIdToString,
   inputStatTypeToMeshStatType,
   internalAssetTypeToAssetType,
@@ -229,7 +230,6 @@ import {
   requirementToComplianceRequirement,
   scheduleSpecToMeshScheduleSpec,
   scopeClaimProofToConfidentialIdentityClaimProof,
-  scopeIdsToBtreeSetIdentityId,
   scopeIdToString,
   scopeToMeshScope,
   scopeToMiddlewareScope,
@@ -7496,15 +7496,19 @@ describe('agentGroupToPermissionGroup', () => {
     );
   });
 
-  describe('scopeIdsToBtreeSetIdentityId', () => {
-    it('should convert scopeIds to a BTreeSetIdentityID', () => {
+  describe('identitiesToBtreeSet', () => {
+    it('should convert Identities to a BTreeSetIdentityID', () => {
       const context = dsMockUtils.getContextInstance();
-      const ids = ['b', 'a', 'c'] as unknown as PolymeshPrimitivesIdentityId[];
+      const ids = [{ did: 'b' }, { did: 'a' }, { did: 'c' }] as unknown as Identity[];
+      ids.forEach(({ did }) =>
+        context.createType.withArgs('PolymeshPrimitivesIdentityId', did).returns(did)
+      );
+
       context.createType
         .withArgs('BTreeSet<PolymeshPrimitivesIdentityId>', ['b', 'a', 'c'])
         .returns(['a', 'b', 'c']);
 
-      const result = scopeIdsToBtreeSetIdentityId(ids, context);
+      const result = identitiesToBtreeSet(ids, context);
       expect(result).toEqual(['a', 'b', 'c']);
     });
   });

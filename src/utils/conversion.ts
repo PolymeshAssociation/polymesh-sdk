@@ -259,6 +259,7 @@ import {
   asTicker,
   conditionsAreEqual,
   createClaim,
+  getExemptedIds,
   isModuleOrTagMatch,
   optionize,
   padString,
@@ -2980,11 +2981,26 @@ export function transferRestrictionToPolymeshTransferCondition(
 /**
  * @hidden
  */
-export function scopeIdsToBtreeSetIdentityId(
-  scopeIds: PolymeshPrimitivesIdentityId[],
+export function identitiesToBtreeSet(
+  identities: Identity[],
   context: Context
 ): BTreeSet<PolymeshPrimitivesIdentityId> {
-  return context.createType('BTreeSet<PolymeshPrimitivesIdentityId>', scopeIds);
+  const rawIds = identities.map(({ did }) => stringToIdentityId(did, context));
+  return context.createType('BTreeSet<PolymeshPrimitivesIdentityId>', rawIds);
+}
+
+/**
+ * @hidden
+ */
+export async function getExemptedBtreeSet(
+  identities: (string | Identity)[],
+  ticker: string,
+  context: Context
+): Promise<BTreeSet<PolymeshPrimitivesIdentityId>> {
+  const exemptedIds = await getExemptedIds(identities, context, ticker);
+  const toIdentity = (did: string): Identity => new Identity({ did }, context);
+  const mapped = exemptedIds.map(toIdentity);
+  return identitiesToBtreeSet(mapped, context);
 }
 
 /**
@@ -3833,6 +3849,20 @@ export function statTypeToStatOpType(
 }
 
 /**
+ * @hidden
+ */
+export function transferRestrictionTypeToStatOpType(
+  type: TransferRestrictionType,
+  context: Context
+): PolymeshPrimitivesStatisticsStatOpType {
+  if (type === TransferRestrictionType.Count || type === TransferRestrictionType.ClaimCount) {
+    return statisticsOpTypeToStatOpType(StatisticsOpType.Count, context);
+  } else {
+    return statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
+  }
+}
+
+/**
  * Scoped stats are a map of maps, e.g. Jurisdiction has a counter for each CountryCode. a 2ndKey specifies what Country count to use
  * @hidden
  */
@@ -3933,9 +3963,10 @@ export function complianceConditionsToBtreeSet(
  */
 export function toExemptKey(
   tickerKey: TickerKey,
-  op: PolymeshPrimitivesStatisticsStatOpType
+  op: PolymeshPrimitivesStatisticsStatOpType,
+  claimType?: ClaimType
 ): ExemptKey {
-  return { asset: tickerKey, op };
+  return { asset: tickerKey, op, claimType };
 }
 
 /**

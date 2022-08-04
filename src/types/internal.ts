@@ -23,6 +23,7 @@ import {
 import { CustomAssetTypeId } from '~/polkadot';
 import {
   CalendarPeriod,
+  ClaimType,
   InputStatClaim,
   KnownAssetType,
   PermissionGroupType,
@@ -373,6 +374,7 @@ export interface TickerKey {
 export interface ExemptKey {
   asset: TickerKey;
   op: PolymeshPrimitivesStatisticsStatOpType;
+  claimType?: ClaimType;
 }
 
 export type StatClaimInputType = Omit<InputStatClaim, 'affiliate' | 'accredited'>;
