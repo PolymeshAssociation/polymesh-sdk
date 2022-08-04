@@ -93,7 +93,7 @@ describe('createTransactionBatch procedure', () => {
       resolver: expect.any(Function),
     });
 
-    expect(await (result.resolver as () => unknown)()).toEqual([1, 2]);
+    expect(await (result.resolver as () => Promise<unknown>)()).toEqual([1, 2]);
   });
 
   describe('getAuthorization', () => {
