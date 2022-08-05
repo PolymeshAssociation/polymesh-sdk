@@ -55,8 +55,8 @@ describe('setTransferRestrictions procedure', () => {
     [Identity[], Context],
     BTreeSet<PolymeshPrimitivesIdentityId>
   >;
-  let statisticsOpTypeToStatOpTypeStub: sinon.SinonStub<
-    [StatisticsOpType, Context],
+  let transferRestrictionTypeToStatOpTypeStub: sinon.SinonStub<
+    [TransferRestrictionType, Context],
     PolymeshPrimitivesStatisticsStatOpType
   >;
   let complianceConditionsToBtreeSetStub: sinon.SinonStub<
@@ -119,9 +119,9 @@ describe('setTransferRestrictions procedure', () => {
     stringToTickerKeyStub = sinon.stub(utilsConversionModule, 'stringToTickerKey');
     stringToScopeIdStub = sinon.stub(utilsConversionModule, 'stringToScopeId');
     identitiesToBtreeSetStub = sinon.stub(utilsConversionModule, 'identitiesToBtreeSet');
-    statisticsOpTypeToStatOpTypeStub = sinon.stub(
+    transferRestrictionTypeToStatOpTypeStub = sinon.stub(
       utilsConversionModule,
-      'statisticsOpTypeToStatOpType'
+      'transferRestrictionTypeToStatOpType'
     );
     statStub = sinon.stub(utilsConversionModule, 'meshStatToStatisticsOpType');
     complianceConditionsToBtreeSetStub = sinon.stub(
@@ -391,8 +391,12 @@ describe('setTransferRestrictions procedure', () => {
 
     identitiesToBtreeSetStub.returns(exemptedDidsBtreeSet);
 
-    statisticsOpTypeToStatOpTypeStub
-      .withArgs(StatisticsOpType.Count, mockContext)
+    transferRestrictionTypeToStatOpTypeStub
+      .withArgs(TransferRestrictionType.Count, mockContext)
+      .returns(op as unknown as PolymeshPrimitivesStatisticsStatOpType);
+
+    transferRestrictionTypeToStatOpTypeStub
+      .withArgs(TransferRestrictionType.ClaimCount, mockContext)
       .returns(op as unknown as PolymeshPrimitivesStatisticsStatOpType);
 
     args = {
@@ -414,7 +418,7 @@ describe('setTransferRestrictions procedure', () => {
           feeMultiplier: new BigNumber(3),
           args: [
             true,
-            { asset: { Ticker: rawTicker }, op: undefined, claimType: undefined },
+            { asset: { Ticker: rawTicker }, op, claimType: undefined },
             exemptedDidsBtreeSet,
           ],
         },
@@ -423,13 +427,12 @@ describe('setTransferRestrictions procedure', () => {
 
     expect(result).toEqual(new BigNumber(1));
 
+    complianceConditionsToBtreeSetStub.returns(rawClaimCountRestrictionBtreeSet);
     args = {
       ticker,
       restrictions: [
         {
-          min: new BigNumber(10),
-          issuer,
-          claim: { type: ClaimType.Accredited, accredited: true },
+          ...claimCountRestrictionValue,
           exemptedIdentities: exemptedDids,
         },
       ],
@@ -442,14 +445,14 @@ describe('setTransferRestrictions procedure', () => {
       transactions: [
         {
           transaction: setAssetTransferComplianceTransaction,
-          args: [{ Ticker: rawTicker }, rawCountRestrictionBtreeSet],
+          args: [{ Ticker: rawTicker }, rawClaimCountRestrictionBtreeSet],
         },
         {
           transaction: setEntitiesExemptTransaction,
           feeMultiplier: new BigNumber(3),
           args: [
             true,
-            { asset: { Ticker: rawTicker }, op: undefined, claimType: undefined },
+            { asset: { Ticker: rawTicker }, op, claimType: ClaimType.Accredited },
             exemptedDidsBtreeSet,
           ],
         },
@@ -481,17 +484,13 @@ describe('setTransferRestrictions procedure', () => {
 
     identitiesToBtreeSetStub.returns(exemptedDidsBtreeSet);
 
-    statisticsOpTypeToStatOpTypeStub
-      .withArgs(StatisticsOpType.Count, mockContext)
+    transferRestrictionTypeToStatOpTypeStub
+      .withArgs(TransferRestrictionType.Count, mockContext)
       .returns(op as unknown as PolymeshPrimitivesStatisticsStatOpType);
 
     args = {
       ticker,
-      restrictions: [
-        {
-          count: new BigNumber(3),
-        },
-      ],
+      restrictions: [{ count }],
       type: TransferRestrictionType.Count,
     };
 
@@ -500,14 +499,14 @@ describe('setTransferRestrictions procedure', () => {
       transactions: [
         {
           transaction: setAssetTransferComplianceTransaction,
-          args: [{ Ticker: rawTicker }, undefined],
+          args: [{ Ticker: rawTicker }, rawCountRestrictionBtreeSet],
         },
         {
           transaction: setEntitiesExemptTransaction,
           feeMultiplier: new BigNumber(2),
           args: [
             false,
-            { asset: { Ticker: rawTicker }, op: undefined, claimType: undefined },
+            { asset: { Ticker: rawTicker }, op, claimType: undefined },
             exemptedDidsBtreeSet,
           ],
         },
@@ -530,16 +529,13 @@ describe('setTransferRestrictions procedure', () => {
       }
     );
 
+    transferRestrictionTypeToStatOpTypeStub
+      .withArgs(TransferRestrictionType.ClaimCount, mockContext)
+      .returns(op as unknown as PolymeshPrimitivesStatisticsStatOpType);
+
     args = {
       ticker,
-      restrictions: [
-        {
-          min: new BigNumber(10),
-          exemptedIdentities: [],
-          issuer,
-          claim: { type: ClaimType.Accredited, accredited: true },
-        },
-      ],
+      restrictions: [claimCountRestrictionValue],
       type: TransferRestrictionType.ClaimCount,
     };
 
@@ -549,14 +545,14 @@ describe('setTransferRestrictions procedure', () => {
       transactions: [
         {
           transaction: setAssetTransferComplianceTransaction,
-          args: [{ Ticker: rawTicker }, undefined],
+          args: [{ Ticker: rawTicker }, rawClaimCountRestrictionBtreeSet],
         },
         {
           transaction: setEntitiesExemptTransaction,
           feeMultiplier: new BigNumber(2),
           args: [
             false,
-            { asset: { Ticker: rawTicker }, op: undefined, claimType: ClaimType.Accredited },
+            { asset: { Ticker: rawTicker }, op, claimType: ClaimType.Accredited },
             exemptedDidsBtreeSet,
           ],
         },
