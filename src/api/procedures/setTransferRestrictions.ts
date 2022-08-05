@@ -51,17 +51,22 @@ import {
 type ClaimKey = keyof typeof ClaimType | 'None';
 type ExemptionRecords = Partial<Record<ClaimKey, Identity[]>>;
 
-/**
- * @hidden
- */
-function addExemptionRecord(record: ExemptionRecords, key: ClaimKey, value: Identity): void {
-  const entry = record[key];
-  if (entry) {
-    entry.push(value);
-  } else {
-    record[key] = [value];
+const addExemptionIfNotPresent = (
+  toInsertId: Identity,
+  filterSet: Identity[],
+  claimType: ClaimKey,
+  exemptionRecords: ExemptionRecords
+): void => {
+  const found = filterSet.find(currentId => currentId.did === toInsertId.did);
+  if (!found) {
+    const entry = exemptionRecords[claimType];
+    if (entry) {
+      entry.push(toInsertId);
+    } else {
+      exemptionRecords[claimType] = [toInsertId];
+    }
   }
-}
+};
 
 export interface Storage {
   currentRestrictions: TransferCondition[];
@@ -114,27 +119,21 @@ function transformInput(
     r.exemptedIdentities?.forEach(e => {
       const key = claimType || 'None';
       const id = typeof e === 'string' ? new Identity({ did: e }, context) : e;
-      addExemptionRecord(givenExemptions, key, id);
+      addExemptionIfNotPresent(id, [], key, givenExemptions);
     });
   });
 
   Object.entries(givenExemptions).forEach(([cType, toAddIds]) => {
-    const currentIds = currentExemptions[cType as ClaimKey];
+    const currentIds = currentExemptions[cType as ClaimKey] || [];
     toAddIds.forEach(id => {
-      const found = currentIds?.find(currentId => currentId.did === id.did);
-      if (!found) {
-        addExemptionRecord(toSet, cType as ClaimKey, id);
-      }
+      addExemptionIfNotPresent(id, currentIds, cType as ClaimKey, toSet);
     });
   });
 
   Object.entries(currentExemptions).forEach(([cType, currentIds]) => {
-    const given = givenExemptions[cType as ClaimKey];
+    const given = givenExemptions[cType as ClaimKey] || [];
     currentIds.forEach(id => {
-      const found = given?.find(g => g.did === id.did);
-      if (!found) {
-        addExemptionRecord(toRemove, cType as ClaimKey, id);
-      }
+      addExemptionIfNotPresent(id, given, cType as ClaimKey, toRemove);
     });
   });
 
@@ -376,7 +375,7 @@ export async function prepareStorage(
     }
     const did = identityIdToString(key.args[1]);
     const identity = new Identity({ did }, context);
-    addExemptionRecord(currentExemptions, claimType, identity);
+    addExemptionIfNotPresent(identity, [], claimType, currentExemptions);
   });
 
   const transformRestriction = (

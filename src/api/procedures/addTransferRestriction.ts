@@ -62,10 +62,10 @@ export async function prepareAddTransferRestriction(
     type === TransferRestrictionType.ClaimPercentage
   ) {
     const {
-      claim: { type: claimType },
+      claim: { type: cType },
       issuer,
     } = args;
-    claimIssuer = { claimType, issuer };
+    claimIssuer = { claimType: cType, issuer };
   }
 
   const [currentStats, { requirements: currentRestrictions }] = await queryMulti<
