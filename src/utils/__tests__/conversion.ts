@@ -279,6 +279,7 @@ import {
   transferConditionsToBtreeTransferConditions,
   transferConditionToTransferRestriction,
   transferRestrictionToPolymeshTransferCondition,
+  transferRestrictionTypeToStatOpType,
   trustedClaimIssuerToTrustedIssuer,
   txGroupToTxTags,
   txTagToExtrinsicIdentifier,
@@ -7524,6 +7525,35 @@ describe('agentGroupToPermissionGroup', () => {
       const result = statisticsOpTypeToStatType({ op }, context);
 
       expect(result).toEqual('statType');
+    });
+  });
+
+  describe('transferRestrictionTypeToStatOpType', () => {
+    it('should return the appropriate StatType for the TransferRestriction', () => {
+      const context = dsMockUtils.getContextInstance();
+
+      context.createType
+        .withArgs('PolymeshPrimitivesStatisticsStatOpType', StatisticsOpType.Count)
+        .returns('countType');
+
+      context.createType
+        .withArgs('PolymeshPrimitivesStatisticsStatOpType', StatisticsOpType.Balance)
+        .returns('percentType');
+
+      let result = transferRestrictionTypeToStatOpType(TransferRestrictionType.Count, context);
+      expect(result).toEqual('countType');
+
+      result = transferRestrictionTypeToStatOpType(TransferRestrictionType.ClaimCount, context);
+      expect(result).toEqual('countType');
+
+      result = transferRestrictionTypeToStatOpType(TransferRestrictionType.Percentage, context);
+      expect(result).toEqual('percentType');
+
+      result = transferRestrictionTypeToStatOpType(
+        TransferRestrictionType.ClaimPercentage,
+        context
+      );
+      expect(result).toEqual('percentType');
     });
   });
 
