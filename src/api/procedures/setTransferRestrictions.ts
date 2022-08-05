@@ -53,9 +53,9 @@ type ExemptionRecords = Partial<Record<ClaimKey, Identity[]>>;
 
 const addExemptionIfNotPresent = (
   toInsertId: Identity,
-  filterSet: Identity[],
+  exemptionRecords: ExemptionRecords,
   claimType: ClaimKey,
-  exemptionRecords: ExemptionRecords
+  filterSet: Identity[] = []
 ): void => {
   const found = filterSet.find(currentId => currentId.did === toInsertId.did);
   if (!found) {
@@ -119,21 +119,21 @@ function transformInput(
     r.exemptedIdentities?.forEach(e => {
       const key = claimType || 'None';
       const id = typeof e === 'string' ? new Identity({ did: e }, context) : e;
-      addExemptionIfNotPresent(id, [], key, givenExemptions);
+      addExemptionIfNotPresent(id, givenExemptions, key);
     });
   });
 
   Object.entries(givenExemptions).forEach(([cType, toAddIds]) => {
     const currentIds = currentExemptions[cType as ClaimKey] || [];
     toAddIds.forEach(id => {
-      addExemptionIfNotPresent(id, currentIds, cType as ClaimKey, toSet);
+      addExemptionIfNotPresent(id, toSet, cType as ClaimKey, currentIds);
     });
   });
 
   Object.entries(currentExemptions).forEach(([cType, currentIds]) => {
     const given = givenExemptions[cType as ClaimKey] || [];
     currentIds.forEach(id => {
-      addExemptionIfNotPresent(id, given, cType as ClaimKey, toRemove);
+      addExemptionIfNotPresent(id, toRemove, cType as ClaimKey, given);
     });
   });
 
@@ -217,6 +217,7 @@ export async function prepareSetTransferRestrictions(
   });
 
   Object.entries(toRemoveExemptions).forEach(([claimType, unExempted]) => {
+    console.log('pushing remove exemptions', claimType, unExempted);
     const rawClaimType = claimType === 'None' ? undefined : (claimType as ClaimType);
     const exemptKey = toExemptKey(tickerKey, op, rawClaimType);
     const unExemptedIds = identitiesToBtreeSet(unExempted, context);
@@ -344,7 +345,11 @@ export async function prepareStorage(
   }
 
   const op = transferRestrictionTypeToStatOpType(type, context);
-  const claimTypes = [ClaimType.Accredited, ClaimType.Affiliate, ClaimType.Jurisdiction, undefined];
+
+  const claimTypes =
+    type === TransferRestrictionType.Count || type === TransferRestrictionType.Percentage
+      ? [undefined]
+      : [ClaimType.Accredited, ClaimType.Affiliate, ClaimType.Jurisdiction];
   const exemptionFetchers: Promise<
     [
       StorageKey<
@@ -369,13 +374,13 @@ export async function prepareStorage(
   const currentExemptions: ExemptionRecords = {};
   rawCurrentExemptions.forEach(([key]) => {
     const { claimType: rawClaimType } = key.args[0];
+    const did = identityIdToString(key.args[1]);
     let claimType: ClaimKey = 'None';
     if (rawClaimType.isSome) {
       claimType = meshClaimTypeToClaimType(rawClaimType.unwrap());
     }
-    const did = identityIdToString(key.args[1]);
     const identity = new Identity({ did }, context);
-    addExemptionIfNotPresent(identity, [], claimType, currentExemptions);
+    addExemptionIfNotPresent(identity, currentExemptions, claimType);
   });
 
   const transformRestriction = (

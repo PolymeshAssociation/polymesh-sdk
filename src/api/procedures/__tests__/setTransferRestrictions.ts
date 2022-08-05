@@ -380,7 +380,11 @@ describe('setTransferRestrictions procedure', () => {
         occupiedSlots: new BigNumber(0),
       }
     );
-    const exemptedDids = ['0x1000', '0x2000', '0x3000'];
+    const exemptedDids = [
+      '0x1000',
+      '0x2000',
+      entityMockUtils.getIdentityInstance({ did: '0x3000' }),
+    ];
     const exemptedDidsBtreeSet =
       dsMockUtils.createMockBTreeSet<PolymeshPrimitivesIdentityId>(exemptedDids);
     const op = 'Count';
@@ -397,7 +401,42 @@ describe('setTransferRestrictions procedure', () => {
       type: TransferRestrictionType.Count,
     };
 
-    const result = await prepareSetTransferRestrictions.call(proc, args);
+    let result = await prepareSetTransferRestrictions.call(proc, args);
+
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: [
+        {
+          transaction: setAssetTransferComplianceTransaction,
+          args: [{ Ticker: rawTicker }, rawCountRestrictionBtreeSet],
+        },
+        {
+          transaction: setEntitiesExemptTransaction,
+          feeMultiplier: new BigNumber(3),
+          args: [
+            true,
+            { asset: { Ticker: rawTicker }, op: undefined, claimType: undefined },
+            exemptedDidsBtreeSet,
+          ],
+        },
+      ],
+    });
+
+    expect(result).toEqual(new BigNumber(1));
+
+    args = {
+      ticker,
+      restrictions: [
+        {
+          min: new BigNumber(10),
+          issuer,
+          claim: { type: ClaimType.Accredited, accredited: true },
+          exemptedIdentities: exemptedDids,
+        },
+      ],
+      type: TransferRestrictionType.ClaimCount,
+    };
+
+    result = await prepareSetTransferRestrictions.call(proc, args);
 
     sinon.assert.calledWith(addBatchTransactionStub, {
       transactions: [
@@ -421,12 +460,12 @@ describe('setTransferRestrictions procedure', () => {
   });
 
   it('should remove exempted identities if they were not given', async () => {
-    const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
+    let proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
         currentRestrictions: [],
         currentExemptions: {
-          Accredited: [
+          None: [
             entityMockUtils.getIdentityInstance({ did: '0x1000' }),
             entityMockUtils.getIdentityInstance({ did: '0x2000' }),
           ],
@@ -450,6 +489,51 @@ describe('setTransferRestrictions procedure', () => {
       ticker,
       restrictions: [
         {
+          count: new BigNumber(3),
+        },
+      ],
+      type: TransferRestrictionType.Count,
+    };
+
+    let result = await prepareSetTransferRestrictions.call(proc, args);
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: [
+        {
+          transaction: setAssetTransferComplianceTransaction,
+          args: [{ Ticker: rawTicker }, undefined],
+        },
+        {
+          transaction: setEntitiesExemptTransaction,
+          feeMultiplier: new BigNumber(2),
+          args: [
+            false,
+            { asset: { Ticker: rawTicker }, op: undefined, claimType: undefined },
+            exemptedDidsBtreeSet,
+          ],
+        },
+      ],
+    });
+
+    expect(result).toEqual(new BigNumber(1));
+
+    proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
+      mockContext,
+      {
+        currentRestrictions: [],
+        currentExemptions: {
+          Accredited: [
+            entityMockUtils.getIdentityInstance({ did: '0x1000' }),
+            entityMockUtils.getIdentityInstance({ did: '0x2000' }),
+          ],
+        },
+        occupiedSlots: new BigNumber(0),
+      }
+    );
+
+    args = {
+      ticker,
+      restrictions: [
+        {
           min: new BigNumber(10),
           exemptedIdentities: [],
           issuer,
@@ -459,7 +543,7 @@ describe('setTransferRestrictions procedure', () => {
       type: TransferRestrictionType.ClaimCount,
     };
 
-    const result = await prepareSetTransferRestrictions.call(proc, args);
+    result = await prepareSetTransferRestrictions.call(proc, args);
 
     sinon.assert.calledWith(addBatchTransactionStub, {
       transactions: [
@@ -843,7 +927,7 @@ describe('setTransferRestrictions procedure', () => {
           occupiedSlots: new BigNumber(3),
           currentRestrictions: [rawCountRestriction],
           currentExemptions: {
-            Accredited: [mockIdentity, mockIdentity, mockIdentity, mockIdentity],
+            Accredited: [mockIdentity],
           },
         })
       );
