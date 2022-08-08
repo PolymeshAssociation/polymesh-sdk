@@ -1,20 +1,21 @@
-import { bool, Option, Vec } from '@polkadot/types';
+import { bool, BTreeSet, Bytes, Option, Vec } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
-import { ISubmittableResult } from '@polkadot/types/types';
+import {
+  PolymeshPrimitivesAssetIdentifier,
+  PolymeshPrimitivesDocument,
+  PolymeshPrimitivesStatisticsStatType,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import {
   AssetIdentifier,
   AssetName,
   AssetType,
-  Document,
   FundingRoundName,
   Ticker,
-  TxTags,
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
-  createRegisterCustomAssetTypeResolver,
   getAuthorization,
   Params,
   prepareCreateAsset,
@@ -26,15 +27,17 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import {
   AssetDocument,
+  ClaimType,
   KnownAssetType,
   RoleType,
   SecurityIdentifier,
   SecurityIdentifierType,
+  StatType,
   TickerReservationStatus,
+  TxTags,
 } from '~/types';
-import { InternalAssetType, PolymeshTx } from '~/types/internal';
+import { InternalAssetType, PolymeshTx, TickerKey } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
-import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/TickerReservation',
@@ -51,15 +54,22 @@ describe('createAsset procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let bigNumberToBalanceStub: sinon.SinonStub;
-  let stringToAssetNameStub: sinon.SinonStub<[string, Context], AssetName>;
+  let stringToBytesStub: sinon.SinonStub<[string, Context], Bytes>;
   let booleanToBoolStub: sinon.SinonStub<[boolean, Context], bool>;
+  let stringToTickerKeyStub: sinon.SinonStub<[string, Context], TickerKey>;
+  let statisticStatTypesToBtreeStatTypeStub: sinon.SinonStub<
+    [PolymeshPrimitivesStatisticsStatType[], Context],
+    BTreeSet<PolymeshPrimitivesStatisticsStatType>
+  >;
   let internalAssetTypeToAssetTypeStub: sinon.SinonStub<[InternalAssetType, Context], AssetType>;
   let securityIdentifierToAssetIdentifierStub: sinon.SinonStub<
     [SecurityIdentifier, Context],
-    AssetIdentifier
+    PolymeshPrimitivesAssetIdentifier
   >;
-  let stringToFundingRoundNameStub: sinon.SinonStub<[string, Context], FundingRoundName>;
-  let assetDocumentToDocumentStub: sinon.SinonStub<[AssetDocument, Context], Document>;
+  let assetDocumentToDocumentStub: sinon.SinonStub<
+    [AssetDocument, Context],
+    PolymeshPrimitivesDocument
+  >;
   let ticker: string;
   let name: string;
   let initialSupply: BigNumber;
@@ -70,14 +80,14 @@ describe('createAsset procedure', () => {
   let requireInvestorUniqueness: boolean;
   let documents: AssetDocument[];
   let rawTicker: Ticker;
-  let rawName: AssetName;
+  let rawName: Bytes;
   let rawInitialSupply: Balance;
   let rawIsDivisible: bool;
   let rawType: AssetType;
-  let rawIdentifiers: AssetIdentifier[];
-  let rawFundingRound: FundingRoundName;
+  let rawIdentifiers: PolymeshPrimitivesAssetIdentifier[];
+  let rawFundingRound: Bytes;
   let rawDisableIu: bool;
-  let rawDocuments: Document[];
+  let rawDocuments: PolymeshPrimitivesDocument[];
   let args: Params;
   let protocolFees: BigNumber[];
 
@@ -95,8 +105,13 @@ describe('createAsset procedure', () => {
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
-    stringToAssetNameStub = sinon.stub(utilsConversionModule, 'stringToAssetName');
+    stringToBytesStub = sinon.stub(utilsConversionModule, 'stringToBytes');
     booleanToBoolStub = sinon.stub(utilsConversionModule, 'booleanToBool');
+    stringToTickerKeyStub = sinon.stub(utilsConversionModule, 'stringToTickerKey');
+    statisticStatTypesToBtreeStatTypeStub = sinon.stub(
+      utilsConversionModule,
+      'statisticStatTypesToBtreeStatType'
+    );
     internalAssetTypeToAssetTypeStub = sinon.stub(
       utilsConversionModule,
       'internalAssetTypeToAssetType'
@@ -105,9 +120,8 @@ describe('createAsset procedure', () => {
       utilsConversionModule,
       'securityIdentifierToAssetIdentifier'
     );
-    stringToFundingRoundNameStub = sinon.stub(utilsConversionModule, 'stringToFundingRoundName');
     assetDocumentToDocumentStub = sinon.stub(utilsConversionModule, 'assetDocumentToDocument');
-    ticker = 'someTicker';
+    ticker = 'SOME_TICKER';
     name = 'someName';
     initialSupply = new BigNumber(100);
     isDivisible = true;
@@ -128,7 +142,7 @@ describe('createAsset procedure', () => {
       },
     ];
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    rawName = dsMockUtils.createMockAssetName(name);
+    rawName = dsMockUtils.createMockBytes(name);
     rawInitialSupply = dsMockUtils.createMockBalance(initialSupply);
     rawIsDivisible = dsMockUtils.createMockBool(isDivisible);
     rawType = dsMockUtils.createMockAssetType(assetType as KnownAssetType);
@@ -139,44 +153,55 @@ describe('createAsset procedure', () => {
     );
     rawDocuments = documents.map(({ uri, contentHash, name: docName, type, filedAt }) =>
       dsMockUtils.createMockDocument({
-        name: dsMockUtils.createMockDocumentName(docName),
-        uri: dsMockUtils.createMockDocumentUri(uri),
-        /* eslint-disable @typescript-eslint/naming-convention */
-        content_hash: dsMockUtils.createMockDocumentHash({
+        name: dsMockUtils.createMockBytes(docName),
+        uri: dsMockUtils.createMockBytes(uri),
+        contentHash: dsMockUtils.createMockDocumentHash({
           H128: dsMockUtils.createMockU8aFixed(contentHash),
         }),
-        doc_type: dsMockUtils.createMockOption(
-          type ? dsMockUtils.createMockDocumentType(type) : null
-        ),
-        filing_date: dsMockUtils.createMockOption(
+        docType: dsMockUtils.createMockOption(type ? dsMockUtils.createMockBytes(type) : null),
+        filingDate: dsMockUtils.createMockOption(
           filedAt ? dsMockUtils.createMockMoment(new BigNumber(filedAt.getTime())) : null
         ),
-        /* eslint-enable @typescript-eslint/naming-convention */
       })
     );
-    rawFundingRound = dsMockUtils.createMockFundingRoundName(fundingRound);
+    rawFundingRound = dsMockUtils.createMockBytes(fundingRound);
     rawDisableIu = dsMockUtils.createMockBool(!requireInvestorUniqueness);
     args = {
       ticker,
       name,
       isDivisible,
-      assetType: assetType,
-      securityIdentifiers: securityIdentifiers,
+      assetType,
+      securityIdentifiers,
       fundingRound,
       requireInvestorUniqueness,
       reservationRequired: true,
     };
-    protocolFees = [new BigNumber(250), new BigNumber(150)];
+    protocolFees = [
+      new BigNumber(250),
+      new BigNumber(150),
+      new BigNumber(100),
+      new BigNumber(50),
+      new BigNumber(25),
+    ];
   });
 
-  let addTransactionStub: sinon.SinonStub;
+  let addBatchTransactionStub: sinon.SinonStub;
 
   let createAssetTransaction: PolymeshTx<
-    [AssetName, Ticker, Balance, bool, AssetType, Vec<AssetIdentifier>, Option<FundingRoundName>]
+    [
+      AssetName,
+      Ticker,
+      Balance,
+      bool,
+      AssetType,
+      Vec<AssetIdentifier>,
+      Option<FundingRoundName>,
+      bool
+    ]
   >;
 
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
+    addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
 
     dsMockUtils.createQueryStub('asset', 'tickerConfig', {
       returnValue: dsMockUtils.createMockTickerRegistrationConfig(),
@@ -193,16 +218,17 @@ describe('createAsset procedure', () => {
     bigNumberToBalanceStub
       .withArgs(initialSupply, mockContext, isDivisible)
       .returns(rawInitialSupply);
-    stringToAssetNameStub.withArgs(name, mockContext).returns(rawName);
+    stringToBytesStub.withArgs(name, mockContext).returns(rawName);
     booleanToBoolStub.withArgs(isDivisible, mockContext).returns(rawIsDivisible);
     booleanToBoolStub.withArgs(!requireInvestorUniqueness, mockContext).returns(rawDisableIu);
+    stringToTickerKeyStub.withArgs(ticker, mockContext).returns({ Ticker: rawTicker });
     internalAssetTypeToAssetTypeStub
       .withArgs(assetType as KnownAssetType, mockContext)
       .returns(rawType);
     securityIdentifierToAssetIdentifierStub
       .withArgs(securityIdentifiers[0], mockContext)
       .returns(rawIdentifiers[0]);
-    stringToFundingRoundNameStub.withArgs(fundingRound, mockContext).returns(rawFundingRound);
+    stringToBytesStub.withArgs(fundingRound, mockContext).returns(rawFundingRound);
     assetDocumentToDocumentStub
       .withArgs(
         { uri: documents[0].uri, contentHash: documents[0].contentHash, name: documents[0].name },
@@ -211,11 +237,29 @@ describe('createAsset procedure', () => {
       .returns(rawDocuments[0]);
 
     mockContext.getProtocolFees
-      .withArgs({ tag: TxTags.asset.RegisterTicker })
-      .resolves(protocolFees[0]);
+      .withArgs({ tags: [TxTags.asset.RegisterTicker, TxTags.asset.CreateAsset] })
+      .resolves([
+        { tag: TxTags.asset.RegisterTicker, fees: protocolFees[0] },
+        { tag: TxTags.asset.CreateAsset, fees: protocolFees[1] },
+      ]);
     mockContext.getProtocolFees
-      .withArgs({ tag: TxTags.asset.CreateAsset })
-      .resolves(protocolFees[1]);
+      .withArgs({ tags: [TxTags.asset.Issue] })
+      .resolves([{ tag: TxTags.asset.Issue, fees: protocolFees[2] }]);
+    mockContext.getProtocolFees
+      .withArgs({ tags: [TxTags.asset.AddDocuments] })
+      .resolves([{ tag: TxTags.asset.AddDocuments, fees: protocolFees[3] }]);
+    mockContext.getProtocolFees
+      .withArgs({ tags: [TxTags.asset.RegisterCustomAssetType] })
+      .resolves([{ tag: TxTags.asset.RegisterCustomAssetType, fees: protocolFees[4] }]);
+    mockContext.getProtocolFees
+      .withArgs({
+        tags: [TxTags.asset.RegisterTicker, TxTags.asset.CreateAsset, TxTags.asset.AddDocuments],
+      })
+      .resolves([
+        { tag: TxTags.asset.RegisterTicker, fees: protocolFees[0] },
+        { tag: TxTags.asset.CreateAsset, fees: protocolFees[1] },
+        { tag: TxTags.asset.AddDocuments, fees: protocolFees[3] },
+      ]);
   });
 
   afterEach(() => {
@@ -259,18 +303,22 @@ describe('createAsset procedure', () => {
 
     const result = await prepareCreateAsset.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub.firstCall, {
-      transaction: createAssetTransaction,
-      fee: undefined,
-      args: [
-        rawName,
-        rawTicker,
-        rawIsDivisible,
-        rawType,
-        rawIdentifiers,
-        rawFundingRound,
-        rawDisableIu,
+    sinon.assert.calledWith(addBatchTransactionStub.firstCall, {
+      transactions: [
+        {
+          transaction: createAssetTransaction,
+          args: [
+            rawName,
+            rawTicker,
+            rawIsDivisible,
+            rawType,
+            rawIdentifiers,
+            rawFundingRound,
+            rawDisableIu,
+          ],
+        },
       ],
+      fee: undefined,
     });
     expect(result).toMatchObject(expect.objectContaining({ ticker }));
 
@@ -282,19 +330,40 @@ describe('createAsset procedure', () => {
       requireInvestorUniqueness: false,
     });
 
-    sinon.assert.calledWith(addTransactionStub.secondCall, {
-      transaction: createAssetTransaction,
+    sinon.assert.calledWith(addBatchTransactionStub.secondCall, {
+      transactions: [
+        {
+          transaction: createAssetTransaction,
+          args: [rawName, rawTicker, rawIsDivisible, rawType, [], null, rawIsDivisible], // disable IU = true
+        },
+      ],
       fee: undefined,
-      args: [rawName, rawTicker, rawIsDivisible, rawType, [], null, rawIsDivisible], // disable IU = true
     });
 
     const issueTransaction = dsMockUtils.createTxStub('asset', 'issue');
 
     await prepareCreateAsset.call(proc, { ...args, initialSupply });
 
-    sinon.assert.calledWith(addTransactionStub, {
-      transaction: issueTransaction,
-      args: [rawTicker, rawInitialSupply],
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: [
+        {
+          transaction: createAssetTransaction,
+          args: [
+            rawName,
+            rawTicker,
+            rawIsDivisible,
+            rawType,
+            rawIdentifiers,
+            rawFundingRound,
+            rawDisableIu,
+          ], // disable IU = true
+        },
+        {
+          transaction: issueTransaction,
+          args: [rawTicker, rawInitialSupply],
+        },
+      ],
+      fee: undefined,
     });
   });
 
@@ -309,18 +378,22 @@ describe('createAsset procedure', () => {
       reservationRequired: false,
     });
 
-    sinon.assert.calledWith(addTransactionStub.firstCall, {
-      transaction: createAssetTransaction,
-      fee: undefined,
-      args: [
-        rawName,
-        rawTicker,
-        rawIsDivisible,
-        rawType,
-        rawIdentifiers,
-        rawFundingRound,
-        rawDisableIu,
+    sinon.assert.calledWith(addBatchTransactionStub.firstCall, {
+      transactions: [
+        {
+          transaction: createAssetTransaction,
+          args: [
+            rawName,
+            rawTicker,
+            rawIsDivisible,
+            rawType,
+            rawIdentifiers,
+            rawFundingRound,
+            rawDisableIu,
+          ],
+        },
       ],
+      fee: undefined,
     });
     expect(result).toEqual(expect.objectContaining({ ticker }));
 
@@ -334,18 +407,22 @@ describe('createAsset procedure', () => {
       reservationRequired: false,
     });
 
-    sinon.assert.calledWith(addTransactionStub.secondCall, {
-      transaction: createAssetTransaction,
-      fee: protocolFees[0].plus(protocolFees[1]),
-      args: [
-        rawName,
-        rawTicker,
-        rawIsDivisible,
-        rawType,
-        rawIdentifiers,
-        rawFundingRound,
-        rawDisableIu,
+    sinon.assert.calledWith(addBatchTransactionStub.secondCall, {
+      transactions: [
+        {
+          transaction: createAssetTransaction,
+          args: [
+            rawName,
+            rawTicker,
+            rawIsDivisible,
+            rawType,
+            rawIdentifiers,
+            rawFundingRound,
+            rawDisableIu,
+          ],
+        },
       ],
+      fee: protocolFees[0].plus(protocolFees[1]),
     });
     expect(result).toEqual(expect.objectContaining({ ticker }));
   });
@@ -354,10 +431,8 @@ describe('createAsset procedure', () => {
     dsMockUtils.createQueryStub('asset', 'classicTickers', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockClassicTickerRegistration({
-          /* eslint-disable @typescript-eslint/naming-convention */
-          eth_owner: 'someAddress',
-          is_created: true,
-          /* eslint-enable @typescript-eslint/naming-convention */
+          ethOwner: 'someAddress',
+          isCreated: true,
         })
       ),
     });
@@ -368,46 +443,118 @@ describe('createAsset procedure', () => {
 
     const result = await prepareCreateAsset.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub.firstCall, {
-      transaction: createAssetTransaction,
-      fee: new BigNumber(0),
-      args: [
-        rawName,
-        rawTicker,
-        rawIsDivisible,
-        rawType,
-        rawIdentifiers,
-        rawFundingRound,
-        rawDisableIu,
+    sinon.assert.calledWith(addBatchTransactionStub.firstCall, {
+      transactions: [
+        {
+          transaction: createAssetTransaction,
+          args: [
+            rawName,
+            rawTicker,
+            rawIsDivisible,
+            rawType,
+            rawIdentifiers,
+            rawFundingRound,
+            rawDisableIu,
+          ],
+        },
       ],
+      fee: new BigNumber(0),
     });
     expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   it('should add a document add transaction to the queue', async () => {
     const rawValue = dsMockUtils.createMockBytes('something');
+    const rawTypeId = dsMockUtils.createMockU32(new BigNumber(10));
     const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
       customTypeData: {
         rawValue,
-        id: dsMockUtils.createMockU32(new BigNumber(10)),
+        id: rawTypeId,
       },
-      status: TickerReservationStatus.Reserved,
+      status: TickerReservationStatus.Free,
     });
-    const tx = dsMockUtils.createTxStub('asset', 'addDocuments');
+    const createAssetTx = dsMockUtils.createTxStub('asset', 'createAsset');
+    const addDocumentsTx = dsMockUtils.createTxStub('asset', 'addDocuments');
 
-    const result = await prepareCreateAsset.call(proc, { ...args, documents });
+    internalAssetTypeToAssetTypeStub.withArgs({ Custom: rawTypeId }, mockContext).returns(rawType);
+    const result = await prepareCreateAsset.call(proc, {
+      ...args,
+      documents,
+      reservationRequired: false,
+    });
 
-    sinon.assert.calledWith(addTransactionStub, {
-      transaction: tx,
-      isCritical: false,
-      feeMultiplier: new BigNumber(rawDocuments.length),
-      args: [rawDocuments, rawTicker],
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: [
+        {
+          transaction: createAssetTx,
+          args: [
+            rawName,
+            rawTicker,
+            rawIsDivisible,
+            rawType,
+            rawIdentifiers,
+            rawFundingRound,
+            rawDisableIu,
+          ],
+        },
+        {
+          transaction: addDocumentsTx,
+          feeMultiplier: new BigNumber(rawDocuments.length),
+          args: [rawDocuments, rawTicker],
+        },
+      ],
+      fee: protocolFees[0].plus(protocolFees[1]).plus(protocolFees[3]),
     });
 
     expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
-  it('should add a register custom asset type transaction to the queue and use the id for asset creation', async () => {
+  it('should add a set statistics transaction to the queue', async () => {
+    const mockStatsBtree = dsMockUtils.createMockBTreeSet<PolymeshPrimitivesStatisticsStatType>([]);
+
+    const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
+      customTypeData: null,
+      status: TickerReservationStatus.Reserved,
+    });
+    const createAssetTx = dsMockUtils.createTxStub('asset', 'createAsset');
+    const addStatsTx = dsMockUtils.createTxStub('statistics', 'setActiveAssetStats');
+    const issuer = entityMockUtils.getIdentityInstance();
+    statisticStatTypesToBtreeStatTypeStub.returns(mockStatsBtree);
+
+    const result = await prepareCreateAsset.call(proc, {
+      ...args,
+      initialStatistics: [
+        { type: StatType.Percentage },
+        { type: StatType.ScopedCount, claimIssuer: { claimType: ClaimType.Accredited, issuer } },
+      ],
+    });
+
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: [
+        {
+          transaction: createAssetTx,
+          args: [
+            rawName,
+            rawTicker,
+            rawIsDivisible,
+            rawType,
+            rawIdentifiers,
+            rawFundingRound,
+            rawDisableIu,
+          ],
+        },
+        {
+          transaction: addStatsTx,
+          args: [{ Ticker: rawTicker }, mockStatsBtree],
+        },
+      ],
+      fee: undefined,
+    });
+
+    expect(result).toEqual(expect.objectContaining({ ticker }));
+  });
+
+  it('should add a create asset with custom type transaction to the queue', async () => {
     const rawValue = dsMockUtils.createMockBytes('something');
     const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
       customTypeData: {
@@ -416,69 +563,34 @@ describe('createAsset procedure', () => {
       },
       status: TickerReservationStatus.Reserved,
     });
-    const registerAssetTypeTx = dsMockUtils.createTxStub('asset', 'registerCustomAssetType');
-    const createAssetTx = dsMockUtils.createTxStub('asset', 'createAsset');
-
-    const newCustomType = dsMockUtils.createMockAssetType({
-      Custom: dsMockUtils.createMockU32(new BigNumber(10)),
-    });
-    addTransactionStub
-      .withArgs(sinon.match({ transaction: registerAssetTypeTx, args: [rawValue] }))
-      .returns([newCustomType]);
+    const createAssetWithCustomTypeTx = dsMockUtils.createTxStub(
+      'asset',
+      'createAssetWithCustomType'
+    );
 
     const result = await prepareCreateAsset.call(proc, args);
 
     sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({ transaction: registerAssetTypeTx, args: [rawValue] })
-    );
-
-    sinon.assert.calledWith(
-      addTransactionStub,
+      addBatchTransactionStub,
       sinon.match({
-        transaction: createAssetTx,
-        args: [
-          sinon.match.any,
-          sinon.match.any,
-          sinon.match.any,
-          newCustomType,
-          sinon.match.any,
-          sinon.match.any,
-          sinon.match.any,
+        transactions: [
+          {
+            transaction: createAssetWithCustomTypeTx,
+            args: [
+              rawName,
+              rawTicker,
+              rawIsDivisible,
+              rawValue,
+              rawIdentifiers,
+              rawFundingRound,
+              rawDisableIu,
+            ],
+          },
         ],
       })
     );
 
     expect(result).toEqual(expect.objectContaining({ ticker }));
-  });
-
-  describe('createRegisterCustomAssetTypeResolver', () => {
-    const filterEventRecordsStub = sinon.stub(utilsInternalModule, 'filterEventRecords');
-    const id = new BigNumber(1);
-    const rawId = dsMockUtils.createMockU32(id);
-    const rawValue = dsMockUtils.createMockBytes('something');
-
-    beforeEach(() => {
-      filterEventRecordsStub.returns([
-        dsMockUtils.createMockIEvent([
-          dsMockUtils.createMockIdentityId('someDid'),
-          rawId,
-          rawValue,
-        ]),
-      ]);
-    });
-
-    afterEach(() => {
-      filterEventRecordsStub.reset();
-    });
-
-    it('should return the new custom AssetType', () => {
-      const fakeResult = 'assetType' as unknown as AssetType;
-      internalAssetTypeToAssetTypeStub.withArgs({ Custom: rawId }, mockContext).returns(fakeResult);
-      const result = createRegisterCustomAssetTypeResolver(mockContext)({} as ISubmittableResult);
-
-      expect(result).toBe(fakeResult);
-    });
   });
 
   describe('getAuthorization', () => {
@@ -511,7 +623,11 @@ describe('createAsset procedure', () => {
 
       boundFunc = getAuthorization.bind(proc);
 
-      result = await boundFunc({ ...args, documents: [{ uri: 'www.doc.com', name: 'myDoc' }] });
+      result = await boundFunc({
+        ...args,
+        documents: [{ uri: 'www.doc.com', name: 'myDoc' }],
+        initialStatistics: [{ type: StatType.Count }],
+      });
 
       expect(result).toEqual({
         roles: [{ type: RoleType.TickerOwner, ticker }],
@@ -522,6 +638,7 @@ describe('createAsset procedure', () => {
             TxTags.asset.CreateAsset,
             TxTags.asset.AddDocuments,
             TxTags.asset.RegisterCustomAssetType,
+            TxTags.statistics.SetActiveAssetStats,
           ],
         },
       });
@@ -592,10 +709,7 @@ describe('createAsset procedure', () => {
       });
 
       const rawValue = dsMockUtils.createMockBytes('something');
-      sinon
-        .stub(utilsConversionModule, 'stringToBytes')
-        .withArgs('something', mockContext)
-        .returns(rawValue);
+      stringToBytesStub.withArgs('something', mockContext).returns(rawValue);
       let id = dsMockUtils.createMockU32();
 
       const customTypesStub = dsMockUtils.createQueryStub('asset', 'customTypesInverse', {

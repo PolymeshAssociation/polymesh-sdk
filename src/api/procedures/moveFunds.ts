@@ -2,25 +2,21 @@ import BigNumber from 'bignumber.js';
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import { DefaultPortfolio, NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, PortfolioMovement, RoleType, TxTags } from '~/types';
-import { PortfolioId, ProcedureAuthorization } from '~/types/internal';
+import {
+  ErrorCode,
+  MoveFundsParams,
+  PortfolioId,
+  PortfolioMovement,
+  RoleType,
+  TxTags,
+} from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
 import {
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolioId,
   portfolioMovementToMovePortfolioItem,
 } from '~/utils/conversion';
 import { asTicker } from '~/utils/internal';
-
-export interface MoveFundsParams {
-  /**
-   * portfolio (or portfolio ID) that will receive the funds. Optional, if no value is passed, the funds will be moved to the default Portfolio of this Portfolio's owner
-   */
-  to?: BigNumber | DefaultPortfolio | NumberedPortfolio;
-  /**
-   * list of Assets (and the corresponding token amounts) that will be moved
-   */
-  items: PortfolioMovement[];
-}
 
 /**
  * @hidden

@@ -33,7 +33,7 @@ describe('removePrimaryIssuanceAgent procedure', () => {
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
-    ticker = 'someTicker';
+    ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     did = 'someDid';
     rawIdentityId = dsMockUtils.createMockIdentityId(did);

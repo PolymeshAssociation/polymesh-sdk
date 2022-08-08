@@ -1,13 +1,9 @@
 import BigNumber from 'bignumber.js';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, Requirement, TxTags } from '~/types';
+import { ErrorCode, RemoveAssetRequirementParams, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { bigNumberToU32, stringToTicker, u32ToBigNumber } from '~/utils/conversion';
-
-export interface RemoveAssetRequirementParams {
-  requirement: BigNumber | Requirement;
-}
 
 /**
  * @hidden
@@ -37,7 +33,7 @@ export async function prepareRemoveAssetRequirement(
 
   const { requirements } = await query.complianceManager.assetCompliances(rawTicker);
 
-  if (requirements.filter(({ id: rawId }) => u32ToBigNumber(rawId).eq(reqId)).length) {
+  if (!requirements.some(({ id: rawId }) => u32ToBigNumber(rawId).eq(reqId))) {
     throw new PolymeshError({
       code: ErrorCode.DataUnavailable,
       message: `There is no compliance requirement with id "${reqId}"`,

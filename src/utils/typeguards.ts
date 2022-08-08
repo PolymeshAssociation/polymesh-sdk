@@ -197,6 +197,7 @@ export function isPolymeshError(value: unknown): value is PolymeshError {
 export function isUnscopedClaim(claim: Claim): claim is UnscopedClaim {
   return [
     ClaimType.NoData,
+    ClaimType.NoType,
     ClaimType.CustomerDueDiligence,
     ClaimType.InvestorUniquenessV2,
   ].includes(claim.type);

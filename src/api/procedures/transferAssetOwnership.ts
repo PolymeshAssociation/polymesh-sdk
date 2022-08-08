@@ -1,6 +1,12 @@
 import { createAuthorizationResolver } from '~/api/procedures/utils';
-import { Asset, AuthorizationRequest, Identity, PostTransactionValue, Procedure } from '~/internal';
-import { Authorization, AuthorizationType, SignerType, TxTags } from '~/types';
+import { Asset, AuthorizationRequest, PostTransactionValue, Procedure } from '~/internal';
+import {
+  Authorization,
+  AuthorizationType,
+  SignerType,
+  TransferAssetOwnershipParams,
+  TxTags,
+} from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
@@ -9,14 +15,6 @@ import {
   signerValueToSignatory,
 } from '~/utils/conversion';
 import { optionize } from '~/utils/internal';
-
-export interface TransferAssetOwnershipParams {
-  target: string | Identity;
-  /**
-   * date at which the authorization request for transfer expires (optional)
-   */
-  expiry?: Date;
-}
 
 /**
  * @hidden

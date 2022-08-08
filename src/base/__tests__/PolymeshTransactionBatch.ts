@@ -75,6 +75,7 @@ describe('Polymesh Transaction Batch class', () => {
               stateRoot: 'hash',
               extrinsicsRoot: 'hash',
             },
+            extrinsics: undefined,
           },
         }),
       });

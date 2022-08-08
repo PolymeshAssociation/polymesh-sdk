@@ -8,10 +8,12 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/setPermissionGroup';
+import * as utilsProcedureModule from '~/api/procedures/utils';
 import { Context, CustomPermissionGroup, KnownPermissionGroup } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { MockCustomPermissionGroup, MockKnownPermissionGroup } from '~/testUtils/mocks/entities';
 import { Mocked } from '~/testUtils/types';
-import { PermissionGroupType, PermissionType, TxTags } from '~/types';
+import { PermissionGroupType, PermissionType, TxGroup, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -27,32 +29,34 @@ describe('setPermissionGroup procedure', () => {
   const rawIdentityId = dsMockUtils.createMockIdentityId(did);
   const rawExtrinsicPermissions = dsMockUtils.createMockExtrinsicPermissions({
     These: [
-      /* eslint-disable @typescript-eslint/naming-convention */
       dsMockUtils.createMockPalletPermissions({
-        pallet_name: dsMockUtils.createMockPalletName('Sto'),
-        dispatchable_names: dsMockUtils.createMockDispatchableNames({
-          These: [dsMockUtils.createMockDispatchableName('invest')],
+        palletName: 'Sto',
+        dispatchableNames: dsMockUtils.createMockDispatchableNames({
+          These: [dsMockUtils.createMockBytes('invest')],
         }),
       }),
-      /* eslint-enable @typescript-eslint/naming-convention */
     ],
   });
 
   let mockContext: Mocked<Context>;
   let addTransactionStub: sinon.SinonStub;
   let externalAgentsChangeGroupTransaction: PolymeshTx<unknown[]>;
+  let externalAgentsCreateAndChangeGroupTransaction: PolymeshTx<unknown[]>;
   let permissionGroupIdentifierToAgentGroupStub: sinon.SinonStub;
+  let transactionPermissionsToExtrinsicPermissionsStub: sinon.SinonStub;
   let stringToTickerStub: sinon.SinonStub;
   let stringToIdentityIdStub: sinon.SinonStub;
+  let getGroupFromPermissionsStub: sinon.SinonStub;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
 
-    sinon
-      .stub(utilsConversionModule, 'transactionPermissionsToExtrinsicPermissions')
-      .returns(rawExtrinsicPermissions);
+    transactionPermissionsToExtrinsicPermissionsStub = sinon.stub(
+      utilsConversionModule,
+      'transactionPermissionsToExtrinsicPermissions'
+    );
 
     permissionGroupIdentifierToAgentGroupStub = sinon.stub(
       utilsConversionModule,
@@ -60,6 +64,7 @@ describe('setPermissionGroup procedure', () => {
     );
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
+    getGroupFromPermissionsStub = sinon.stub(utilsProcedureModule, 'getGroupFromPermissions');
   });
 
   beforeEach(() => {
@@ -68,9 +73,14 @@ describe('setPermissionGroup procedure', () => {
       'externalAgents',
       'changeGroup'
     );
+    externalAgentsCreateAndChangeGroupTransaction = dsMockUtils.createTxStub(
+      'externalAgents',
+      'createAndChangeCustomGroup'
+    );
     mockContext = dsMockUtils.getContextInstance();
     stringToTickerStub.returns(rawTicker);
     stringToIdentityIdStub.returns(rawIdentityId);
+    transactionPermissionsToExtrinsicPermissionsStub.returns(rawExtrinsicPermissions);
   });
 
   afterEach(() => {
@@ -225,7 +235,91 @@ describe('setPermissionGroup procedure', () => {
     expect(error.message).toBe('The Agent is already part of this permission group');
   });
 
-  it('should add a change group transaction to the queue', async () => {
+  it('should add a change group transaction to the queue if the passed group exists', async () => {
+    const identity = entityMockUtils.getIdentityInstance({
+      assetPermissionsGetGroup: entityMockUtils.getKnownPermissionGroupInstance({
+        ticker,
+        type: PermissionGroupType.Full,
+      }),
+    });
+
+    const existingGroupId = new BigNumber(3);
+
+    let expectedGroup: MockKnownPermissionGroup | MockCustomPermissionGroup =
+      entityMockUtils.getCustomPermissionGroupInstance({
+        id: existingGroupId,
+        isEqual: false,
+      });
+
+    getGroupFromPermissionsStub.resolves(expectedGroup);
+
+    const proc = procedureMockUtils.getInstance<
+      Params,
+      CustomPermissionGroup | KnownPermissionGroup,
+      Storage
+    >(mockContext, {
+      asset: entityMockUtils.getAssetInstance({
+        ticker,
+        permissionsGetAgents: [
+          {
+            agent: identity,
+            group: entityMockUtils.getCustomPermissionGroupInstance(),
+          },
+        ],
+      }),
+    });
+
+    const rawAgentGroup = dsMockUtils.createMockAgentGroup({
+      Custom: dsMockUtils.createMockU32(existingGroupId),
+    });
+
+    permissionGroupIdentifierToAgentGroupStub
+      .withArgs({ custom: existingGroupId }, mockContext)
+      .returns(rawAgentGroup);
+
+    let result = await prepareSetPermissionGroup.call(proc, {
+      identity,
+      group: {
+        asset: ticker,
+        transactions: {
+          type: PermissionType.Include,
+          values: [],
+        },
+      },
+    });
+
+    expect(result).toEqual(expectedGroup);
+
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: externalAgentsChangeGroupTransaction,
+      args: [rawTicker, rawIdentityId, rawAgentGroup],
+    });
+
+    expectedGroup = entityMockUtils.getKnownPermissionGroupInstance({
+      isEqual: false,
+    });
+    getGroupFromPermissionsStub.resolves(expectedGroup);
+
+    result = await prepareSetPermissionGroup.call(proc, {
+      identity,
+      group: {
+        asset: ticker,
+        transactions: {
+          type: PermissionType.Include,
+          values: [],
+        },
+      },
+    });
+
+    expect(result).toEqual(expectedGroup);
+
+    sinon.assert.calledWith(addTransactionStub, {
+      transaction: externalAgentsChangeGroupTransaction,
+      args: [rawTicker, rawIdentityId, rawAgentGroup],
+    });
+  });
+
+  it('should add an add and change group transaction to the queue if the passed permissions do not correspond to an existing group', async () => {
     const id = new BigNumber(1);
     const identity = entityMockUtils.getIdentityInstance({
       assetPermissionsGetGroup: entityMockUtils.getKnownPermissionGroupInstance({
@@ -250,6 +344,8 @@ describe('setPermissionGroup procedure', () => {
       }),
     });
 
+    getGroupFromPermissionsStub.resolves(undefined);
+
     const rawAgentGroup = dsMockUtils.createMockAgentGroup({
       Custom: dsMockUtils.createMockU32(id),
     });
@@ -264,7 +360,14 @@ describe('setPermissionGroup procedure', () => {
         .callsFake(cb => cb(entityMockUtils.getCustomPermissionGroupInstance({ ticker, id }))),
     });
 
-    await prepareSetPermissionGroup.call(proc, {
+    const newGroupId = new BigNumber(5);
+    const newGroup = entityMockUtils.getCustomPermissionGroupInstance({
+      id: newGroupId,
+    });
+
+    addTransactionStub.returns([newGroup]);
+
+    const result = await prepareSetPermissionGroup.call(proc, {
       identity,
       group: {
         asset: ticker,
@@ -275,10 +378,16 @@ describe('setPermissionGroup procedure', () => {
       },
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
-      transaction: externalAgentsChangeGroupTransaction,
-      args: [rawTicker, rawIdentityId, rawAgentGroup],
-    });
+    sinon.assert.calledWith(
+      addTransactionStub,
+      sinon.match({
+        transaction: externalAgentsCreateAndChangeGroupTransaction,
+        resolvers: sinon.match.array,
+        args: [rawTicker, rawExtrinsicPermissions, rawIdentityId],
+      })
+    );
+
+    expect(result).toEqual(newGroup);
 
     await prepareSetPermissionGroup.call(proc, {
       identity: entityMockUtils.getIdentityInstance({
@@ -289,62 +398,18 @@ describe('setPermissionGroup procedure', () => {
       }),
       group: {
         asset: ticker,
-        transactions: {
-          type: PermissionType.Include,
-          values: [],
-        },
+        transactionGroups: [TxGroup.AdvancedAssetManagement],
       },
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
-      transaction: externalAgentsChangeGroupTransaction,
-      args: [rawTicker, rawIdentityId, rawAgentGroup],
-    });
-
-    await prepareSetPermissionGroup.call(proc, {
-      identity: entityMockUtils.getIdentityInstance({
-        assetPermissionsGetGroup: entityMockUtils.getKnownPermissionGroupInstance({
-          ticker,
-          type: PermissionGroupType.PolymeshV1Caa,
-        }),
-      }),
-      asset: ticker,
-      group: entityMockUtils.getKnownPermissionGroupInstance({
-        ticker,
-        type: PermissionGroupType.PolymeshV1Pia,
-        isEqual: false,
-      }),
-    });
-
-    sinon.assert.calledWith(addTransactionStub, {
-      transaction: externalAgentsChangeGroupTransaction,
-      args: [rawTicker, rawIdentityId, rawAgentGroup],
-    });
-
-    const fakeCustomPermissionGroup = entityMockUtils.getCustomPermissionGroupInstance({
-      ticker,
-      id: new BigNumber(2),
-      isEqual: false,
-    });
-
-    const result = await prepareSetPermissionGroup.call(proc, {
-      identity: entityMockUtils.getIdentityInstance({
-        assetPermissionsGetGroup: entityMockUtils.getCustomPermissionGroupInstance({
-          ticker,
-          id,
-          isEqual: false,
-        }),
-      }),
-      asset: ticker,
-      group: fakeCustomPermissionGroup,
-    });
-
-    sinon.assert.calledWith(addTransactionStub, {
-      transaction: externalAgentsChangeGroupTransaction,
-      args: [rawTicker, rawIdentityId, rawAgentGroup],
-    });
-
-    expect(result).toEqual(fakeCustomPermissionGroup);
+    sinon.assert.calledWith(
+      addTransactionStub,
+      sinon.match({
+        transaction: externalAgentsCreateAndChangeGroupTransaction,
+        resolvers: sinon.match.array,
+        args: [rawTicker, rawExtrinsicPermissions, rawIdentityId],
+      })
+    );
   });
 
   describe('prepareStorage', () => {

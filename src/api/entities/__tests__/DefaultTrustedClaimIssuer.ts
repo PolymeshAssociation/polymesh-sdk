@@ -1,9 +1,13 @@
+import {
+  PolymeshPrimitivesConditionTrustedIssuer,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { Ticker, TrustedIssuer } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Context, DefaultTrustedClaimIssuer, Identity } from '~/internal';
 import { eventByAddedTrustedClaimIssuer } from '~/middleware/queries';
+import { trustedClaimIssuerQuery } from '~/middleware/queriesV2';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { ClaimType } from '~/types';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
@@ -96,11 +100,60 @@ describe('DefaultTrustedClaimIssuer class', () => {
     });
   });
 
+  describe('method: addedAtV2', () => {
+    const did = 'someDid';
+    const ticker = 'SOME_TICKER';
+    const variables = {
+      assetId: ticker,
+      issuer: did,
+    };
+
+    it('should return the event identifier object of the trusted claim issuer creation', async () => {
+      const blockNumber = new BigNumber(1234);
+      const blockDate = new Date('4/14/2020');
+      const eventIdx = new BigNumber(1);
+      const blockHash = 'someHash';
+      const fakeResult = { blockNumber, blockHash, blockDate, eventIndex: eventIdx };
+      const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, ticker }, context);
+
+      dsMockUtils.createApolloV2QueryStub(trustedClaimIssuerQuery(variables), {
+        trustedClaimIssuers: {
+          nodes: [
+            {
+              createdBlock: {
+                datetime: blockDate,
+                hash: blockHash,
+                blockId: blockNumber.toNumber(),
+              },
+              eventIdx: eventIdx.toNumber(),
+            },
+          ],
+        },
+      });
+
+      const result = await trustedClaimIssuer.addedAtV2();
+
+      expect(result).toEqual(fakeResult);
+    });
+
+    it('should return null if the query result is empty', async () => {
+      const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, ticker }, context);
+
+      dsMockUtils.createApolloV2QueryStub(trustedClaimIssuerQuery(variables), {
+        trustedClaimIssuers: {
+          nodes: [],
+        },
+      });
+      const result = await trustedClaimIssuer.addedAtV2();
+      expect(result).toBeNull();
+    });
+  });
+
   describe('method: trustedFor', () => {
     let ticker: string;
-    let rawTicker: Ticker;
+    let rawTicker: PolymeshPrimitivesTicker;
     let stringToTickerStub: sinon.SinonStub;
-    let claimIssuers: TrustedIssuer[];
+    let claimIssuers: PolymeshPrimitivesConditionTrustedIssuer[];
     let trustedClaimIssuerStub: sinon.SinonStub;
 
     beforeAll(() => {
@@ -111,12 +164,12 @@ describe('DefaultTrustedClaimIssuer class', () => {
         dsMockUtils.createMockTrustedIssuer({
           issuer: dsMockUtils.createMockIdentityId('someDid'),
           // eslint-disable-next-line @typescript-eslint/naming-convention
-          trusted_for: dsMockUtils.createMockTrustedFor('Any'),
+          trustedFor: dsMockUtils.createMockTrustedFor('Any'),
         }),
         dsMockUtils.createMockTrustedIssuer({
           issuer: dsMockUtils.createMockIdentityId('otherDid'),
           // eslint-disable-next-line @typescript-eslint/naming-convention
-          trusted_for: dsMockUtils.createMockTrustedFor({
+          trustedFor: dsMockUtils.createMockTrustedFor({
             Specific: [dsMockUtils.createMockClaimType(ClaimType.Exempted)],
           }),
         }),

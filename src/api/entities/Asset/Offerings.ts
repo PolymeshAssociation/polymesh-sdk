@@ -1,16 +1,14 @@
 import BigNumber from 'bignumber.js';
 import { remove } from 'lodash';
 
+import { Asset, Context, launchOffering, Namespace, Offering, PolymeshError } from '~/internal';
 import {
-  Asset,
-  Context,
-  launchOffering,
+  ErrorCode,
   LaunchOfferingParams,
-  Namespace,
-  Offering,
-  PolymeshError,
-} from '~/internal';
-import { ErrorCode, OfferingStatus, OfferingWithDetails, ProcedureMethod } from '~/types';
+  OfferingStatus,
+  OfferingWithDetails,
+  ProcedureMethod,
+} from '~/types';
 import { fundraiserToOfferingDetails, stringToTicker, u64ToBigNumber } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 

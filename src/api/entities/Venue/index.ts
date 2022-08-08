@@ -1,24 +1,22 @@
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
+import { addInstruction, Context, Entity, Identity, Instruction, modifyVenue } from '~/internal';
 import {
-  addInstruction,
   AddInstructionParams,
   AddInstructionsParams,
-  Context,
-  Entity,
-  Identity,
-  Instruction,
-  modifyVenue,
+  GroupedInstructions,
+  InstructionStatus,
   ModifyVenueParams,
-} from '~/internal';
-import { GroupedInstructions, InstructionStatus, ProcedureMethod } from '~/types';
+  NumberedPortfolio,
+  ProcedureMethod,
+} from '~/types';
 import {
   bigNumberToU64,
+  bytesToString,
   identityIdToString,
   meshVenueTypeToVenueType,
   u64ToBigNumber,
-  venueDetailsToString,
 } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
@@ -33,6 +31,13 @@ export interface UniqueIdentifiers {
  */
 export function addInstructionTransformer([instruction]: Instruction[]): Instruction {
   return instruction;
+}
+
+/**
+ * @hidden
+ */
+export function createPortfolioTransformer([portfolio]: NumberedPortfolio[]): NumberedPortfolio {
+  return portfolio;
 }
 
 /**
@@ -122,11 +127,11 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
       settlement.details(venueId),
     ]);
 
-    const { creator, venue_type: type } = venueInfo.unwrap();
+    const { creator, venueType: type } = venueInfo.unwrap();
 
     return {
       owner: new Identity({ did: identityIdToString(creator) }, context),
-      description: venueDetailsToString(details),
+      description: bytesToString(details),
       type: meshVenueTypeToVenueType(type),
     };
   }
@@ -227,7 +232,7 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
   /**
    * Return the Venue's ID
    */
-  public toJson(): string {
+  public toHuman(): string {
     return this.id.toString();
   }
 }

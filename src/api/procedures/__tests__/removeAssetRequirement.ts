@@ -1,10 +1,5 @@
 import BigNumber from 'bignumber.js';
-import {
-  ComplianceRequirement,
-  Condition as MeshCondition,
-  Ticker,
-  TxTags,
-} from 'polymesh-types/types';
+import { ComplianceRequirement, Condition as MeshCondition, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -15,6 +10,7 @@ import {
 import { Asset, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
+import { TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -39,8 +35,8 @@ describe('removeAssetRequirement procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    ticker = 'someTicker';
-    requirement = new BigNumber(2);
+    ticker = 'SOME_TICKER';
+    requirement = new BigNumber(1);
 
     args = {
       ticker,
@@ -84,7 +80,7 @@ describe('removeAssetRequirement procedure', () => {
           receiver_conditions: receiverConditions[index],
           /* eslint-enable @typescript-eslint/naming-convention */
           id: dsMockUtils.createMockU32(new BigNumber(index)),
-        } as ComplianceRequirement)
+        } as unknown as ComplianceRequirement)
     );
 
     dsMockUtils.createQueryStub('complianceManager', 'assetCompliances', {
@@ -107,7 +103,7 @@ describe('removeAssetRequirement procedure', () => {
 
   it('should throw an error if the supplied id is not present in the current requirements', () => {
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
-    const complianceRequirementId = new BigNumber(1);
+    const complianceRequirementId = new BigNumber(10);
 
     return expect(
       prepareRemoveAssetRequirement.call(proc, {

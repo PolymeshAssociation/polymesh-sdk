@@ -1,22 +1,8 @@
 import { PolymeshError, Procedure, Venue } from '~/internal';
-import { ErrorCode, RoleType, TxTags, VenueType } from '~/types';
+import { ErrorCode, ModifyVenueParams, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { bigNumberToU64, stringToVenueDetails, venueTypeToMeshVenueType } from '~/utils/conversion';
+import { bigNumberToU64, stringToBytes, venueTypeToMeshVenueType } from '~/utils/conversion';
 import { checkTxType } from '~/utils/internal';
-
-export type ModifyVenueParams =
-  | {
-      description?: string;
-      type: VenueType;
-    }
-  | {
-      description: string;
-      type?: VenueType;
-    }
-  | {
-      description: string;
-      type: VenueType;
-    };
 
 /**
  * @hidden
@@ -63,7 +49,7 @@ export async function prepareModifyVenue(
     transactions.push(
       checkTxType({
         transaction: tx.settlement.updateVenueDetails,
-        args: [bigNumberToU64(venueId, context), stringToVenueDetails(description, context)],
+        args: [bigNumberToU64(venueId, context), stringToBytes(description, context)],
       })
     );
   }

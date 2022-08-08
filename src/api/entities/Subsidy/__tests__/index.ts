@@ -4,7 +4,7 @@ import sinon from 'sinon';
 import { Context, Entity, Subsidy, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { AllowanceOperation } from '~/types/internal';
+import { AllowanceOperation } from '~/types';
 
 jest.mock(
   '~/base/Procedure',
@@ -239,11 +239,11 @@ describe('Subsidy class', () => {
     });
   });
 
-  describe('method: toJson', () => {
+  describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
-      subsidy.beneficiary.toJson = sinon.stub().returns(beneficiary);
-      subsidy.subsidizer.toJson = sinon.stub().returns(subsidizer);
-      expect(subsidy.toJson()).toEqual({ beneficiary, subsidizer });
+      subsidy.beneficiary.toHuman = sinon.stub().returns(beneficiary);
+      subsidy.subsidizer.toHuman = sinon.stub().returns(subsidizer);
+      expect(subsidy.toHuman()).toEqual({ beneficiary, subsidizer });
     });
   });
 });

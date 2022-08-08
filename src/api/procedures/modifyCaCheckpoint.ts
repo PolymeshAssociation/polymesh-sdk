@@ -1,16 +1,9 @@
 import { assertCaCheckpointValid } from '~/api/procedures/utils';
 import { Asset, CorporateActionBase, Procedure } from '~/internal';
-import { InputCaCheckpoint, TxTags } from '~/types';
+import { ModifyCaCheckpointParams, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { checkpointToRecordDateSpec, corporateActionIdentifierToCaId } from '~/utils/conversion';
 import { getCheckpointValue, optionize } from '~/utils/internal';
-
-/**
- * @hidden
- */
-export interface ModifyCaCheckpointParams {
-  checkpoint: InputCaCheckpoint | null;
-}
 
 export type Params = ModifyCaCheckpointParams & {
   corporateAction: CorporateActionBase;

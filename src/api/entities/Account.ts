@@ -1,3 +1,4 @@
+import { hexStripPrefix } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 import {
   difference,
@@ -10,13 +11,24 @@ import {
   union,
 } from 'lodash';
 
-import { Asset, Authorizations, Context, Entity, Identity, MultiSig } from '~/internal';
+import {
+  Asset,
+  Authorizations,
+  Context,
+  Entity,
+  Identity,
+  MultiSig,
+  PolymeshError,
+} from '~/internal';
 import { transactions as transactionsQuery } from '~/middleware/queries';
+import { extrinsicsByArgs } from '~/middleware/queriesV2';
 import { Query, TransactionOrderByInput } from '~/middleware/types';
+import { ExtrinsicsOrderBy, Query as QueryV2 } from '~/middleware/typesV2';
 import {
   AccountBalance,
   CheckPermissionsResult,
   DefaultPortfolio,
+  ErrorCode,
   ExtrinsicData,
   ModuleName,
   NumberedPortfolio,
@@ -33,19 +45,26 @@ import {
   TxTags,
   UnsubCallback,
 } from '~/types';
-import { Ensured } from '~/types/utils';
+import { Ensured, EnsuredV2 } from '~/types/utils';
 import {
   accountIdToString,
   addressToKey,
   extrinsicIdentifierToTxTag,
   identityIdToString,
+  keyToAddress,
   portfolioToPortfolioId,
   stringToAccountId,
   stringToHash,
   txTagToExtrinsicIdentifier,
+  txTagToExtrinsicIdentifierV2,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { assertAddressValid, calculateNextKey, isModuleOrTagMatch } from '~/utils/internal';
+import {
+  assertAddressValid,
+  calculateNextKey,
+  getSecondaryAccountPermissions,
+  isModuleOrTagMatch,
+} from '~/utils/internal';
 
 /**
  * @hidden
@@ -148,7 +167,7 @@ function getMissingTransactionPermissions(
      *   since `exemptedTransactions` contains `TxTags.identity.LeaveIdentityAsKey`, we would be
      *   removing the entire Identity module from the result, which doesn't make sense
      */
-    const txComparator = (tx: TxTag | ModuleName, exemptedTx: TxTag | ModuleName) => {
+    const txComparator = (tx: TxTag | ModuleName, exemptedTx: TxTag | ModuleName): boolean => {
       if (!tx.includes('.')) {
         return tx === exemptedTx;
       }
@@ -197,7 +216,7 @@ function getMissingPortfolioPermissions(
       const portfolioComparator = (
         a: DefaultPortfolio | NumberedPortfolio,
         b: DefaultPortfolio | NumberedPortfolio
-      ) => {
+      ): boolean => {
         const aId = portfolioToPortfolioId(a);
         const bId = portfolioToPortfolioId(b);
 
@@ -324,20 +343,31 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     const {
       context: {
         polymeshApi: {
-          query: { identity },
+          query: { identity, multiSig },
         },
       },
       context,
       address,
     } = this;
 
-    const identityId = await identity.keyToIdentityIds(stringToAccountId(address, context));
+    const optKeyRecord = await identity.keyRecords(stringToAccountId(address, context));
 
-    if (identityId.isEmpty) {
+    if (optKeyRecord.isNone) {
       return null;
     }
 
-    const did = identityIdToString(identityId);
+    const keyRecord = optKeyRecord.unwrap();
+
+    let did: string;
+    if (keyRecord.isPrimaryKey) {
+      did = identityIdToString(keyRecord.asPrimaryKey);
+    } else if (keyRecord.isSecondaryKey) {
+      did = identityIdToString(keyRecord.asSecondaryKey[0]);
+    } else {
+      const multiSigAddress = keyRecord.asMultiSigSignerKey;
+      const rawMultiSigDid = await multiSig.multiSigToIdentity(multiSigAddress);
+      did = identityIdToString(rawMultiSigDid);
+    }
 
     return new Identity({ did }, context);
   }
@@ -451,7 +481,121 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Check whether this Account is frozen. If frozen, it cannot perform any action until the primary Account of the Identity unfreezes all secondary Accounts
+   * Retrieve a list of transactions signed by this Account. Can be filtered using parameters
+   *
+   * @note if both `blockNumber` and `blockHash` are passed, only `blockNumber` is taken into account
+   *
+   * @param filters.tag - tag associated with the transaction
+   * @param filters.success - whether the transaction was successful or not
+   * @param filters.size - page size
+   * @param filters.start - page offset
+   *
+   * @note uses the middlewareV2
+   */
+  public async getTransactionHistoryV2(
+    filters: {
+      blockNumber?: BigNumber;
+      blockHash?: string;
+      tag?: TxTag;
+      success?: boolean;
+      size?: BigNumber;
+      start?: BigNumber;
+      orderBy?: ExtrinsicsOrderBy;
+    } = {}
+  ): Promise<ResultSet<ExtrinsicData>> {
+    const { context, address } = this;
+
+    const { tag, success, size, start, orderBy, blockHash } = filters;
+
+    let moduleId;
+    let callId;
+    if (tag) {
+      ({ moduleId, callId } = txTagToExtrinsicIdentifierV2(tag));
+    }
+
+    let successFilter;
+    if (success !== undefined) {
+      successFilter = success ? 1 : 0;
+    }
+
+    let { blockNumber } = filters;
+
+    if (!blockNumber && blockHash) {
+      const {
+        block: {
+          header: { number },
+        },
+      } = await context.polymeshApi.rpc.chain.getBlock(stringToHash(blockHash, context));
+
+      blockNumber = u32ToBigNumber(number.unwrap());
+    }
+
+    const {
+      data: {
+        extrinsics: { nodes: transactionList, totalCount },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'extrinsics'>>(
+      extrinsicsByArgs(
+        {
+          blockId: blockNumber ? blockNumber.toString() : undefined,
+          address: hexStripPrefix(addressToKey(address, context)),
+          moduleId,
+          callId,
+          success: successFilter,
+        },
+        size,
+        start,
+        orderBy
+      )
+    );
+
+    const count = new BigNumber(totalCount);
+
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
+    const data = transactionList.map(
+      ({
+        blockId,
+        extrinsicIdx,
+        address: rawAddress,
+        nonce,
+        moduleId: extrinsicModuleId,
+        callId: extrinsicCallId,
+        paramsTxt,
+        success: txSuccess,
+        specVersionId,
+        extrinsicHash,
+        block,
+      }) => ({
+        blockNumber: new BigNumber(blockId),
+        blockHash: block!.hash,
+        extrinsicIdx: new BigNumber(extrinsicIdx),
+        address: rawAddress ? keyToAddress(rawAddress, context) : null,
+        nonce: nonce ? new BigNumber(nonce) : null,
+        txTag: extrinsicIdentifierToTxTag({
+          moduleId: extrinsicModuleId,
+          callId: extrinsicCallId,
+        }),
+        params: JSON.parse(paramsTxt),
+        success: !!txSuccess,
+        specVersionId: new BigNumber(specVersionId),
+        extrinsicHash: extrinsicHash!,
+      })
+    );
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
+
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
+  }
+
+  /**
+   * Check whether this Account is frozen. If frozen, it cannot perform any Identity related action until the primary Account of the Identity unfreezes all secondary Accounts
+   *
+   * @note returns false if the Account isn't associated to any Identity
    */
   public async isFrozen(): Promise<boolean> {
     const identity = await this.getIdentity();
@@ -471,20 +615,29 @@ export class Account extends Entity<UniqueIdentifiers, string> {
 
   /**
    * Retrieve the Permissions this Account has as a Permissioned Account for its corresponding Identity
+   *
+   * @throws if there is no Identity associated with the Account
    */
   public async getPermissions(): Promise<Permissions> {
-    const { context, address } = this;
+    const { address, context } = this;
 
-    const signingIdentity = await context.getSigningIdentity();
+    const identity = await this.getIdentity();
+
+    if (identity === null) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'There is no Identity associated with this Account',
+      });
+    }
 
     const [
       {
         account: { address: primaryAccountAddress },
       },
-      secondaryAccounts,
+      [permissionedAccount],
     ] = await Promise.all([
-      signingIdentity.getPrimaryAccount(),
-      signingIdentity.getSecondaryAccounts(),
+      identity.getPrimaryAccount(),
+      getSecondaryAccountPermissions({ accounts: [this], identity }, context),
     ]);
 
     if (address === primaryAccountAddress) {
@@ -496,12 +649,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       };
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const account = secondaryAccounts.find(
-      ({ account: { address: secondaryAccountAddress } }) => address === secondaryAccountAddress
-    )!;
-
-    return account.permissions;
+    return permissionedAccount.permissions;
   }
 
   /**
@@ -573,23 +721,30 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Returns the multiSig this account is a signer for. If this Account is not a multiSig signer returns null
+   * Fetch the MultiSig this Account is part of. If this Account is not a signer on any MultiSig, return null
    */
   public async getMultiSig(): Promise<MultiSig | null> {
     const {
       context: {
         polymeshApi: {
-          query: { multiSig },
+          query: { identity },
         },
       },
       context,
     } = this;
+    const { address } = this;
 
-    const rawAddress = await multiSig.keyToMultiSig(this.address);
-    if (rawAddress.isEmpty) {
+    const rawAddress = stringToAccountId(address, context);
+
+    const rawOptKeyRecord = await identity.keyRecords(rawAddress);
+    if (rawOptKeyRecord.isEmpty) {
       return null;
     }
-    const address = accountIdToString(rawAddress);
+    const rawKeyRecord = rawOptKeyRecord.unwrap();
+    if (!rawKeyRecord.isMultiSigSignerKey) {
+      return null;
+    }
+
     return new MultiSig({ address }, context);
   }
 
@@ -603,7 +758,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   /**
    * Return the Account's address
    */
-  public toJson(): string {
+  public toHuman(): string {
     return this.address;
   }
 }

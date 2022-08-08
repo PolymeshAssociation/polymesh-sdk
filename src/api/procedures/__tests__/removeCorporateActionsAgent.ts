@@ -27,7 +27,7 @@ describe('removeCorporateActionsAgent procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    ticker = 'someTicker';
+    ticker = 'SOME_TICKER';
   });
 
   beforeEach(() => {

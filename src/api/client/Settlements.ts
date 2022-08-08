@@ -1,19 +1,23 @@
 import BigNumber from 'bignumber.js';
 
-import { addInstruction, AddInstructionWithVenueIdParams } from '~/api/procedures/addInstruction';
-import { AffirmInstructionParams } from '~/api/procedures/modifyInstructionAffirmation';
+import { addInstruction } from '~/api/procedures/addInstruction';
 import {
   addInstructionTransformer,
   Context,
   createVenue,
-  CreateVenueParams,
   Instruction,
   modifyInstructionAffirmation,
   PolymeshError,
   Venue,
 } from '~/internal';
-import { ErrorCode, ProcedureMethod } from '~/types';
-import { InstructionAffirmationOperation } from '~/types/internal';
+import {
+  AddInstructionWithVenueIdParams,
+  AffirmInstructionParams,
+  CreateVenueParams,
+  ErrorCode,
+  InstructionAffirmationOperation,
+  ProcedureMethod,
+} from '~/types';
 import { createProcedureMethod } from '~/utils/internal';
 
 /**
@@ -58,7 +62,7 @@ export class Settlements {
   /**
    * Retrieve a Venue by its ID
    *
-   * @param id - identifier number of the Venue
+   * @param args.id - identifier number of the Venue
    */
   public async getVenue(args: { id: BigNumber }): Promise<Venue> {
     const { context } = this;
@@ -79,7 +83,7 @@ export class Settlements {
   /**
    * Retrieve an Instruction by its ID
    *
-   * @param id - identifier number of the Instruction
+   * @param args.id - identifier number of the Instruction
    */
   public async getInstruction(args: { id: BigNumber }): Promise<Instruction> {
     const { context } = this;

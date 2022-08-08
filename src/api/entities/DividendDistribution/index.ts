@@ -1,5 +1,6 @@
 import { Option } from '@polkadot/types';
 import { BlockNumber, Hash } from '@polkadot/types/interfaces/runtime';
+import { PalletCorporateActionsDistribution } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, flatten, remove } from 'lodash';
@@ -17,17 +18,16 @@ import {
   CorporateActionBase,
   DefaultPortfolio,
   Identity,
-  ModifyCaCheckpointParams,
   modifyDistributionCheckpoint,
   NumberedPortfolio,
   payDividends,
-  PayDividendsParams,
   PolymeshError,
   reclaimDividendDistributionFunds,
 } from '~/internal';
 import { getHistoryOfPaymentEventsForCa, getWithholdingTaxesOfCa } from '~/middleware/queries';
+import { distributionPaymentsQuery, distributionQuery } from '~/middleware/queriesV2';
 import { Query } from '~/middleware/types';
-import { Distribution } from '~/polkadot';
+import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   CorporateActionKind,
   DistributionPayment,
@@ -35,13 +35,22 @@ import {
   ErrorCode,
   IdentityBalance,
   InputCaCheckpoint,
+  ModifyCaCheckpointParams,
   NoArgsProcedureMethod,
+  PayDividendsParams,
   ProcedureMethod,
   ResultSet,
   TargetTreatment,
 } from '~/types';
-import { Ensured, HumanReadableType, Modify, QueryReturnType, tuple } from '~/types/utils';
-import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
+import {
+  Ensured,
+  EnsuredV2,
+  HumanReadableType,
+  Modify,
+  QueryReturnType,
+  tuple,
+} from '~/types/utils';
+import { MAX_CONCURRENT_REQUESTS, MAX_DECIMALS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   balanceToBigNumber,
   bigNumberToU32,
@@ -60,7 +69,7 @@ import {
 
 import { DistributionParticipant } from './types';
 
-interface HumanReadable extends CorporateActionHumanReadable {
+export interface HumanReadable extends CorporateActionHumanReadable {
   origin: HumanReadableType<DefaultPortfolio | NumberedPortfolio>;
   currency: string;
   perShare: string;
@@ -282,7 +291,6 @@ export class DividendDistribution extends CorporateActionBase {
     const {
       targets: { identities: targetIdentities, treatment },
       paymentDate,
-      perShare,
     } = this;
 
     let balances: IdentityBalance[] = [];
@@ -311,11 +319,7 @@ export class DividendDistribution extends CorporateActionBase {
     balances.forEach(({ identity, balance }) => {
       const isTarget = !!remove(clonedTargets, target => identity.isEqual(target)).length;
       if (balance.gt(0) && xor(isTarget, isExclusion)) {
-        participants.push({
-          identity,
-          amount: balance.multipliedBy(perShare),
-          paid: false,
-        });
+        participants.push(this.assembleParticipant(identity, balance));
       }
     });
 
@@ -346,7 +350,6 @@ export class DividendDistribution extends CorporateActionBase {
       asset: { ticker },
       targets: { identities: targetIdentities, treatment },
       paymentDate,
-      perShare,
       context,
       context: {
         polymeshApi: { query },
@@ -371,11 +374,7 @@ export class DividendDistribution extends CorporateActionBase {
     const isExclusion = treatment === TargetTreatment.Exclude;
 
     if (balance.gt(0) && xor(isTarget, isExclusion)) {
-      participant = {
-        identity,
-        amount: balance.multipliedBy(perShare),
-        paid: false,
-      };
+      participant = this.assembleParticipant(identity, balance);
     } else {
       return null;
     }
@@ -396,7 +395,39 @@ export class DividendDistribution extends CorporateActionBase {
   /**
    * @hidden
    */
-  private fetchDistribution(): Promise<Option<Distribution>> {
+  private assembleParticipant(identity: Identity, balance: BigNumber): DistributionParticipant {
+    const { defaultTaxWithholding, taxWithholdings, perShare } = this;
+
+    let taxWithholdingPercentage = defaultTaxWithholding;
+
+    const taxWithholding = taxWithholdings.find(({ identity: taxIdentity }) =>
+      identity.isEqual(taxIdentity)
+    );
+    if (taxWithholding) {
+      taxWithholdingPercentage = taxWithholding.percentage;
+    }
+
+    const amount = balance.multipliedBy(perShare);
+
+    const amountAfterTax = amount
+      .minus(
+        amount.multipliedBy(taxWithholdingPercentage).dividedBy(100).decimalPlaces(MAX_DECIMALS)
+      )
+      .decimalPlaces(MAX_DECIMALS);
+
+    return {
+      identity,
+      amount,
+      taxWithholdingPercentage,
+      amountAfterTax,
+      paid: false,
+    };
+  }
+
+  /**
+   * @hidden
+   */
+  private fetchDistribution(): Promise<Option<PalletCorporateActionsDistribution>> {
     const {
       asset: { ticker },
       id,
@@ -440,6 +471,43 @@ export class DividendDistribution extends CorporateActionBase {
     const { taxes } = result.data.getWithholdingTaxesOfCA!;
 
     return new BigNumber(taxes);
+  }
+
+  /**
+   * Retrieve the amount of taxes that have been withheld up to this point in this Distribution
+   *
+   * @note uses the middlewareV2
+   */
+  public async getWithheldTaxV2(): Promise<BigNumber> {
+    const {
+      id,
+      asset: { ticker },
+      context,
+    } = this;
+
+    const taxPromise = context.queryMiddlewareV2<EnsuredV2<QueryV2, 'distribution'>>(
+      distributionQuery({
+        id: `${ticker}/${id.toString()}`,
+      })
+    );
+
+    const [
+      exists,
+      {
+        data: {
+          distribution: { taxes },
+        },
+      },
+    ] = await Promise.all([this.exists(), taxPromise]);
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: notExistsMessage,
+      });
+    }
+
+    return new BigNumber(taxes).shiftedBy(-6);
   }
 
   /**
@@ -504,8 +572,8 @@ export class DividendDistribution extends CorporateActionBase {
         blockNumber,
         date: new Date(datetime),
         target: new Identity({ did }, context),
-        amount: new BigNumber(balance),
-        withheldTax: new BigNumber(tax),
+        amount: new BigNumber(balance).shiftedBy(-6),
+        withheldTax: new BigNumber(tax).shiftedBy(-4),
       });
     });
     /* eslint-enable @typescript-eslint/no-non-null-assertion */
@@ -523,6 +591,77 @@ export class DividendDistribution extends CorporateActionBase {
         ...payment,
         blockHash: hashToString(hashes[index]),
       })),
+      next,
+      count,
+    };
+  }
+
+  /**
+   * Retrieve the payment history for this Distribution
+   *
+   * @note uses the middleware V2
+   * @note supports pagination
+   */
+  public async getPaymentHistoryV2(
+    opts: { size?: BigNumber; start?: BigNumber } = {}
+  ): Promise<ResultSet<DistributionPayment>> {
+    const {
+      id,
+      asset: { ticker },
+      context,
+    } = this;
+    const { size, start } = opts;
+
+    const paymentsPromise = context.queryMiddlewareV2<EnsuredV2<QueryV2, 'distributionPayments'>>(
+      distributionPaymentsQuery(
+        {
+          distributionId: `${ticker}/${id.toString()}`,
+        },
+        size,
+        start
+      )
+    );
+
+    const [exists, result] = await Promise.all([this.exists(), paymentsPromise]);
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: notExistsMessage,
+      });
+    }
+
+    const {
+      data: {
+        distributionPayments: { nodes, totalCount },
+      },
+    } = result;
+
+    const count = new BigNumber(totalCount);
+    const data: DistributionPayment[] = [];
+
+    nodes.forEach(({ createdBlock, datetime, targetId: did, amount, tax }) => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const { blockId, hash } = createdBlock!;
+
+      data.push({
+        blockNumber: new BigNumber(blockId),
+        blockHash: hash,
+        date: new Date(datetime),
+        target: new Identity({ did }, context),
+        amount: new BigNumber(amount).shiftedBy(-6),
+        /**
+         * Since we want to depict the `withheldTax` as percentage value between 0-100,
+         *   we multiply the tax(`Permill`) by 100, hence shifted by -4
+         */
+        withheldTax: new BigNumber(tax).shiftedBy(-4),
+      });
+    });
+
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
       next,
       count,
     };
@@ -578,10 +717,10 @@ export class DividendDistribution extends CorporateActionBase {
   /**
    * Return the Dividend Distribution's static data
    */
-  public override toJson(): HumanReadable {
+  public override toHuman(): HumanReadable {
     const { origin, currency, perShare, maxAmount, expiryDate, paymentDate } = this;
 
-    const parentReadable = super.toJson();
+    const parentReadable = super.toHuman();
 
     return {
       ...toHumanReadable({ origin, currency, perShare, maxAmount, expiryDate, paymentDate }),

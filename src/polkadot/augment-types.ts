@@ -1,12 +1,11 @@
 // Auto-generated via `yarn polkadot-types-from-defs`, do not edit
 /* eslint-disable */
 
+import type { Data, StorageKey } from '@polkadot/types';
 import type {
   BitVec,
   Bool,
   Bytes,
-  Compact,
-  Data,
   I128,
   I16,
   I256,
@@ -15,9 +14,8 @@ import type {
   I8,
   Json,
   Null,
-  Option,
+  OptionBool,
   Raw,
-  StorageKey,
   Text,
   Type,
   U128,
@@ -27,7 +25,6 @@ import type {
   U64,
   U8,
   USize,
-  Vec,
   bool,
   i128,
   i16,
@@ -42,7 +39,7 @@ import type {
   u64,
   u8,
   usize,
-} from '@polkadot/types';
+} from '@polkadot/types-codec';
 import type {
   AssetApproval,
   AssetApprovalKey,
@@ -108,14 +105,35 @@ import type {
   ValidatorSetId,
 } from '@polkadot/types/interfaces/beefy';
 import type {
+  BridgeMessageId,
   BridgedBlockHash,
   BridgedBlockNumber,
   BridgedHeader,
+  CallOrigin,
+  ChainId,
+  DeliveredMessages,
+  DispatchFeePayment,
+  InboundLaneData,
+  InboundRelayer,
   InitializationData,
+  LaneId,
+  MessageData,
+  MessageKey,
+  MessageNonce,
+  MessagesDeliveryProofOf,
+  MessagesProofOf,
+  OperatingMode,
+  OutboundLaneData,
+  OutboundMessageFee,
+  OutboundPayload,
+  Parameter,
+  RelayerId,
+  UnrewardedRelayer,
+  UnrewardedRelayersState,
 } from '@polkadot/types/interfaces/bridges';
 import type { BlockHash } from '@polkadot/types/interfaces/chain';
 import type { PrefixedStorageKey } from '@polkadot/types/interfaces/childstate';
-import type { EthereumAddress, StatementKind } from '@polkadot/types/interfaces/claims';
+import type { StatementKind } from '@polkadot/types/interfaces/claims';
 import type {
   CollectiveOrigin,
   MemberCount,
@@ -127,10 +145,13 @@ import type { AuthorityId, RawVRFOutput } from '@polkadot/types/interfaces/conse
 import type {
   AliveContractInfo,
   CodeHash,
+  CodeSource,
+  CodeUploadRequest,
+  CodeUploadResult,
+  CodeUploadResultValue,
+  ContractCallFlags,
   ContractCallRequest,
   ContractExecResult,
-  ContractExecResultErr,
-  ContractExecResultErrModule,
   ContractExecResultOk,
   ContractExecResultResult,
   ContractExecResultSuccessTo255,
@@ -140,6 +161,9 @@ import type {
   ContractExecResultTo267,
   ContractInfo,
   ContractInstantiateResult,
+  ContractInstantiateResultTo267,
+  ContractInstantiateResultTo299,
+  ContractReturnFlags,
   ContractStorageKey,
   DeletedContract,
   ExecReturnValue,
@@ -147,7 +171,11 @@ import type {
   HostFnWeights,
   HostFnWeightsTo264,
   InstantiateRequest,
+  InstantiateRequestV1,
+  InstantiateRequestV2,
   InstantiateReturnValue,
+  InstantiateReturnValueOk,
+  InstantiateReturnValueTo267,
   InstructionWeights,
   Limits,
   LimitsTo264,
@@ -158,17 +186,30 @@ import type {
   ScheduleTo258,
   ScheduleTo264,
   SeedOf,
+  StorageDeposit,
   TombstoneContractInfo,
   TrieId,
 } from '@polkadot/types/interfaces/contracts';
 import type {
-  ContractConstructorSpec,
-  ContractContractSpec,
+  ContractConstructorSpecLatest,
+  ContractConstructorSpecV0,
+  ContractConstructorSpecV1,
+  ContractConstructorSpecV2,
+  ContractConstructorSpecV3,
+  ContractContractSpecV0,
+  ContractContractSpecV1,
+  ContractContractSpecV2,
+  ContractContractSpecV3,
   ContractCryptoHasher,
   ContractDiscriminant,
   ContractDisplayName,
-  ContractEventParamSpec,
-  ContractEventSpec,
+  ContractEventParamSpecLatest,
+  ContractEventParamSpecV0,
+  ContractEventParamSpecV2,
+  ContractEventSpecLatest,
+  ContractEventSpecV0,
+  ContractEventSpecV1,
+  ContractEventSpecV2,
   ContractLayoutArray,
   ContractLayoutCell,
   ContractLayoutEnum,
@@ -177,11 +218,24 @@ import type {
   ContractLayoutKey,
   ContractLayoutStruct,
   ContractLayoutStructField,
-  ContractMessageParamSpec,
-  ContractMessageSpec,
+  ContractMessageParamSpecLatest,
+  ContractMessageParamSpecV0,
+  ContractMessageParamSpecV2,
+  ContractMessageSpecLatest,
+  ContractMessageSpecV0,
+  ContractMessageSpecV1,
+  ContractMessageSpecV2,
+  ContractMetadata,
+  ContractMetadataLatest,
+  ContractMetadataV0,
+  ContractMetadataV1,
+  ContractMetadataV2,
+  ContractMetadataV3,
   ContractProject,
   ContractProjectContract,
+  ContractProjectInfo,
   ContractProjectSource,
+  ContractProjectV0,
   ContractSelector,
   ContractStorageLayout,
   ContractTypeSpec,
@@ -222,6 +276,7 @@ import type {
   VotingDirect,
   VotingDirectVote,
 } from '@polkadot/types/interfaces/democracy';
+import type { BlockStats } from '@polkadot/types/interfaces/dev';
 import type {
   ApprovalFlag,
   DefunctVoter,
@@ -234,7 +289,15 @@ import type {
 } from '@polkadot/types/interfaces/elections';
 import type { CreatedBlock, ImportedAux } from '@polkadot/types/interfaces/engine';
 import type {
+  BlockV0,
+  BlockV1,
+  BlockV2,
+  EIP1559Transaction,
+  EIP2930Transaction,
+  EthAccessList,
+  EthAccessListItem,
   EthAccount,
+  EthAddress,
   EthBlock,
   EthBloom,
   EthCallRequest,
@@ -263,8 +326,13 @@ import type {
   EthTransactionStatus,
   EthWork,
   EthereumAccountId,
+  EthereumAddress,
   EthereumLookupSource,
   EthereumSignature,
+  LegacyTransaction,
+  TransactionV0,
+  TransactionV1,
+  TransactionV2,
 } from '@polkadot/types/interfaces/eth';
 import type {
   EvmAccount,
@@ -280,6 +348,7 @@ import type {
   AnySignature,
   EcdsaSignature,
   Ed25519Signature,
+  Era,
   Extrinsic,
   ExtrinsicEra,
   ExtrinsicPayload,
@@ -359,12 +428,14 @@ import type {
   ErrorMetadataV11,
   ErrorMetadataV12,
   ErrorMetadataV13,
+  ErrorMetadataV14,
   ErrorMetadataV9,
   EventMetadataLatest,
   EventMetadataV10,
   EventMetadataV11,
   EventMetadataV12,
   EventMetadataV13,
+  EventMetadataV14,
   EventMetadataV9,
   ExtrinsicMetadataLatest,
   ExtrinsicMetadataV11,
@@ -376,12 +447,14 @@ import type {
   FunctionArgumentMetadataV11,
   FunctionArgumentMetadataV12,
   FunctionArgumentMetadataV13,
+  FunctionArgumentMetadataV14,
   FunctionArgumentMetadataV9,
   FunctionMetadataLatest,
   FunctionMetadataV10,
   FunctionMetadataV11,
   FunctionMetadataV12,
   FunctionMetadataV13,
+  FunctionMetadataV14,
   FunctionMetadataV9,
   MetadataAll,
   MetadataLatest,
@@ -391,13 +464,11 @@ import type {
   MetadataV13,
   MetadataV14,
   MetadataV9,
-  ModuleConstantMetadataLatest,
   ModuleConstantMetadataV10,
   ModuleConstantMetadataV11,
   ModuleConstantMetadataV12,
   ModuleConstantMetadataV13,
   ModuleConstantMetadataV9,
-  ModuleMetadataLatest,
   ModuleMetadataV10,
   ModuleMetadataV11,
   ModuleMetadataV12,
@@ -415,8 +486,8 @@ import type {
   PalletMetadataV14,
   PalletStorageMetadataLatest,
   PalletStorageMetadataV14,
-  PortableRegistry,
   PortableType,
+  PortableTypeV14,
   SignedExtensionMetadataLatest,
   SignedExtensionMetadataV14,
   StorageEntryMetadataLatest,
@@ -447,14 +518,13 @@ import type {
   StorageHasherV13,
   StorageHasherV14,
   StorageHasherV9,
-  StorageMetadataLatest,
   StorageMetadataV10,
   StorageMetadataV11,
   StorageMetadataV12,
   StorageMetadataV13,
   StorageMetadataV9,
 } from '@polkadot/types/interfaces/metadata';
-import type { MmrLeafProof } from '@polkadot/types/interfaces/mmr';
+import type { MmrLeafBatchProof, MmrLeafProof } from '@polkadot/types/interfaces/mmr';
 import type { StorageKind } from '@polkadot/types/interfaces/offchain';
 import type {
   DeferredOffenceOf,
@@ -491,6 +561,9 @@ import type {
   CoreAssignment,
   CoreIndex,
   CoreOccupied,
+  DisputeLocation,
+  DisputeResult,
+  DisputeState,
   DisputeStatement,
   DisputeStatementSet,
   DoubleVoteReport,
@@ -553,10 +626,13 @@ import type {
   SignedAvailabilityBitfields,
   SigningContext,
   SlotRange,
+  SlotRange10,
   Statement,
   SubId,
   SystemInherentData,
   TransientValidationData,
+  UpgradeGoAhead,
+  UpgradeRestriction,
   UpwardMessage,
   ValidDisputeStatementKind,
   ValidationCode,
@@ -568,8 +644,11 @@ import type {
   ValidityAttestation,
   VecInboundHrmpMessage,
   WinnersData,
+  WinnersData10,
   WinnersDataTuple,
+  WinnersDataTuple10,
   WinningData,
+  WinningData10,
   WinningDataEntry,
 } from '@polkadot/types/interfaces/parachains';
 import type {
@@ -608,6 +687,7 @@ import type {
   CodecHash,
   Consensus,
   ConsensusEngineId,
+  CrateVersion,
   Digest,
   DigestItem,
   EncodedJustification,
@@ -694,6 +774,21 @@ import type {
   Si0TypeDefVariant,
   Si0TypeParameter,
   Si0Variant,
+  Si1Field,
+  Si1LookupTypeId,
+  Si1Path,
+  Si1Type,
+  Si1TypeDef,
+  Si1TypeDefArray,
+  Si1TypeDefBitSequence,
+  Si1TypeDefCompact,
+  Si1TypeDefComposite,
+  Si1TypeDefPrimitive,
+  Si1TypeDefSequence,
+  Si1TypeDefTuple,
+  Si1TypeDefVariant,
+  Si1TypeParameter,
+  Si1Variant,
   SiField,
   SiLookupTypeId,
   SiPath,
@@ -758,10 +853,12 @@ import type {
   BlockTraceEventData,
   BlockTraceSpan,
   KeyValueOption,
+  MigrationStatusResult,
   ReadProof,
   RuntimeVersion,
   RuntimeVersionApi,
   RuntimeVersionPartial,
+  SpecVersion,
   StorageChangeSet,
   TraceBlockResponse,
   TraceError,
@@ -785,6 +882,8 @@ import type {
   DispatchClass,
   DispatchError,
   DispatchErrorModule,
+  DispatchErrorModuleU8,
+  DispatchErrorModuleU8a,
   DispatchErrorTo198,
   DispatchInfo,
   DispatchInfoTo190,
@@ -822,6 +921,7 @@ import type {
   SystemOrigin,
   TokenError,
   TransactionValidityError,
+  TransactionalError,
   UnknownTransaction,
   WeightPerClass,
 } from '@polkadot/types/interfaces/system';
@@ -853,57 +953,86 @@ import type {
 import type { Multisig, Timepoint } from '@polkadot/types/interfaces/utility';
 import type { VestingInfo } from '@polkadot/types/interfaces/vesting';
 import type {
-  AccountId32Junction,
-  AccountIndex64Junction,
-  AccountKey20Junction,
   AssetInstance,
+  AssetInstanceV0,
+  AssetInstanceV1,
+  AssetInstanceV2,
   BodyId,
   BodyPart,
-  BodyPartAtLeastProportion,
-  BodyPartFraction,
-  BodyPartMoreThanProportion,
   DoubleEncodedCall,
+  Fungibility,
+  FungibilityV0,
+  FungibilityV1,
+  FungibilityV2,
   InboundStatus,
+  InstructionV2,
+  InteriorMultiLocation,
   Junction,
+  JunctionV0,
+  JunctionV1,
+  JunctionV2,
+  Junctions,
+  JunctionsV1,
+  JunctionsV2,
   MultiAsset,
-  MultiAssetAbstractFungible,
-  MultiAssetAbstractNonFungible,
-  MultiAssetConcreteFungible,
-  MultiAssetConcreteNonFungible,
+  MultiAssetFilter,
+  MultiAssetFilterV1,
+  MultiAssetFilterV2,
+  MultiAssetV0,
+  MultiAssetV1,
+  MultiAssetV2,
+  MultiAssets,
+  MultiAssetsV1,
+  MultiAssetsV2,
   MultiLocation,
+  MultiLocationV0,
+  MultiLocationV1,
+  MultiLocationV2,
   NetworkId,
+  OriginKindV0,
+  OriginKindV1,
+  OriginKindV2,
   OutboundStatus,
   Outcome,
-  PluralityJunction,
+  QueryId,
+  QueryStatus,
   QueueConfigData,
+  Response,
+  ResponseV0,
+  ResponseV1,
+  ResponseV2,
+  ResponseV2Error,
+  ResponseV2Result,
+  VersionMigrationStage,
   VersionedMultiAsset,
+  VersionedMultiAssets,
   VersionedMultiLocation,
+  VersionedResponse,
   VersionedXcm,
+  WeightLimitV2,
+  WildFungibility,
+  WildFungibilityV0,
+  WildFungibilityV1,
+  WildFungibilityV2,
+  WildMultiAsset,
+  WildMultiAssetV1,
+  WildMultiAssetV2,
   Xcm,
-  XcmAssetEffects,
+  XcmAssetId,
   XcmError,
-  XcmHrmpChannelAccepted,
-  XcmHrmpChannelClosing,
-  XcmHrmpNewChannelOpenRequest,
+  XcmErrorV0,
+  XcmErrorV1,
+  XcmErrorV2,
   XcmOrder,
-  XcmOrderBuyExecution,
-  XcmOrderDepositAsset,
-  XcmOrderDepositReserveAsset,
-  XcmOrderExchangeAsset,
-  XcmOrderInitiateReserveWithdraw,
-  XcmOrderInitiateTeleport,
-  XcmOrderQueryHolding,
+  XcmOrderV0,
+  XcmOrderV1,
+  XcmOrderV2,
   XcmOrigin,
   XcmOriginKind,
-  XcmQueryResponse,
-  XcmRelayedFrom,
-  XcmReserveAssetDeposit,
-  XcmResponse,
-  XcmTeleportAsset,
-  XcmTransact,
-  XcmTransferAsset,
-  XcmTransferReserveAsset,
-  XcmWithdrawAsset,
+  XcmV0,
+  XcmV1,
+  XcmV2,
+  XcmVersion,
   XcmpMessageFormat,
 } from '@polkadot/types/interfaces/xcm';
 import type {
@@ -914,9 +1043,20 @@ import type {
   AssetComplianceResult,
   AssetDidResult,
   AssetIdentifier,
+  AssetMetadataDescription,
+  AssetMetadataGlobalKey,
+  AssetMetadataKey,
+  AssetMetadataLocalKey,
+  AssetMetadataLockStatus,
+  AssetMetadataName,
+  AssetMetadataSpec,
+  AssetMetadataValue,
+  AssetMetadataValueDetail,
   AssetName,
   AssetOwnershipRelation,
   AssetPermissions,
+  AssetScope,
+  AssetTransferCompliance,
   AssetType,
   Authorization,
   AuthorizationData,
@@ -952,17 +1092,15 @@ import type {
   Committee,
   ComplianceRequirement,
   ComplianceRequirementResult,
+  CompressedRistretto,
   Condition,
   ConditionResult,
   ConditionType,
   CorporateAction,
-  Counter,
   CountryCode,
   CustomAssetTypeId,
   DepositInfo,
   DidRecord,
-  DidRecords,
-  DidRecordsSuccess,
   DidStatus,
   DispatchableName,
   DispatchableNames,
@@ -998,11 +1136,10 @@ import type {
   InvestorZKProofData,
   ItnRewardStatus,
   KeyIdentityData,
+  KeyRecord,
   Leg,
   LegId,
   LegStatus,
-  LegacyPalletPermissions,
-  LegacyPermissions,
   LocalCAId,
   MaybeBlock,
   Memo,
@@ -1046,6 +1183,8 @@ import type {
   RecordDateSpec,
   RestrictionResult,
   RistrettoPoint,
+  RpcDidRecords,
+  RpcDidRecordsSuccess,
   Scalar,
   ScheduleId,
   ScheduleSpec,
@@ -1066,6 +1205,12 @@ import type {
   SnapshotMetadata,
   SnapshotResult,
   SnapshottedPip,
+  Stat1stKey,
+  Stat2ndKey,
+  StatClaim,
+  StatOpType,
+  StatType,
+  StatUpdate,
   StoredSchedule,
   Subsidy,
   TargetIdAuthorization,
@@ -1078,8 +1223,9 @@ import type {
   Ticker,
   TickerRegistration,
   TickerRegistrationConfig,
-  TransferManager,
-  TransferManagerResult,
+  TransferCondition,
+  TransferConditionExemptKey,
+  TransferConditionResult,
   TrustedFor,
   TrustedIssuer,
   UniqueCall,
@@ -1098,2163 +1244,6 @@ import type {
 
 declare module '@polkadot/types/types/registry' {
   export interface InterfaceTypes {
-    'Compact<AccountIndex>': Compact<AccountIndex>;
-    'Compact<ActiveIndex>': Compact<ActiveIndex>;
-    'Compact<AGId>': Compact<AGId>;
-    'Compact<ApprovalFlag>': Compact<ApprovalFlag>;
-    'Compact<AssetId>': Compact<AssetId>;
-    'Compact<AuctionIndex>': Compact<AuctionIndex>;
-    'Compact<AuthIndex>': Compact<AuthIndex>;
-    'Compact<AuthorityIndex>': Compact<AuthorityIndex>;
-    'Compact<AuthorityWeight>': Compact<AuthorityWeight>;
-    'Compact<AuthorizationNonce>': Compact<AuthorizationNonce>;
-    'Compact<BabeAuthorityWeight>': Compact<BabeAuthorityWeight>;
-    'Compact<BabeBlockWeight>': Compact<BabeBlockWeight>;
-    'Compact<BabeWeight>': Compact<BabeWeight>;
-    'Compact<Balance>': Compact<Balance>;
-    'Compact<BalanceOf>': Compact<BalanceOf>;
-    'Compact<BlockNumber>': Compact<BlockNumber>;
-    'Compact<BlockNumberFor>': Compact<BlockNumberFor>;
-    'Compact<BlockNumberOf>': Compact<BlockNumberOf>;
-    'Compact<BountyIndex>': Compact<BountyIndex>;
-    'Compact<BridgedBlockNumber>': Compact<BridgedBlockNumber>;
-    'Compact<CappedFee>': Compact<CappedFee>;
-    'Compact<CheckpointId>': Compact<CheckpointId>;
-    'Compact<ClassId>': Compact<ClassId>;
-    'Compact<ContractDiscriminant>': Compact<ContractDiscriminant>;
-    'Compact<CoreIndex>': Compact<CoreIndex>;
-    'Compact<Counter>': Compact<Counter>;
-    'Compact<CustomAssetTypeId>': Compact<CustomAssetTypeId>;
-    'Compact<DepositBalance>': Compact<DepositBalance>;
-    'Compact<DepositBalanceOf>': Compact<DepositBalanceOf>;
-    'Compact<DocumentId>': Compact<DocumentId>;
-    'Compact<EventIndex>': Compact<EventIndex>;
-    'Compact<ExtVersion>': Compact<ExtVersion>;
-    'Compact<FixedU128>': Compact<FixedU128>;
-    'Compact<FixedU64>': Compact<FixedU64>;
-    'Compact<FundIndex>': Compact<FundIndex>;
-    'Compact<FundraiserId>': Compact<FundraiserId>;
-    'Compact<Gas>': Compact<Gas>;
-    'Compact<GroupIndex>': Compact<GroupIndex>;
-    'Compact<Index>': Compact<Index>;
-    'Compact<InstanceId>': Compact<InstanceId>;
-    'Compact<InstructionId>': Compact<InstructionId>;
-    'Compact<KeyTypeId>': Compact<KeyTypeId>;
-    'Compact<LeasePeriod>': Compact<LeasePeriod>;
-    'Compact<LeasePeriodOf>': Compact<LeasePeriodOf>;
-    'Compact<LegId>': Compact<LegId>;
-    'Compact<LocalCAId>': Compact<LocalCAId>;
-    'Compact<MemberCount>': Compact<MemberCount>;
-    'Compact<MetaVersion>': Compact<MetaVersion>;
-    'Compact<Moment>': Compact<Moment>;
-    'Compact<OverweightIndex>': Compact<OverweightIndex>;
-    'Compact<PageCounter>': Compact<PageCounter>;
-    'Compact<ParaId>': Compact<ParaId>;
-    'Compact<ParaValidatorIndex>': Compact<ParaValidatorIndex>;
-    'Compact<Perbill>': Compact<Perbill>;
-    'Compact<Percent>': Compact<Percent>;
-    'Compact<Percentage>': Compact<Percentage>;
-    'Compact<Permill>': Compact<Permill>;
-    'Compact<Perquintill>': Compact<Perquintill>;
-    'Compact<PerU16>': Compact<PerU16>;
-    'Compact<PipId>': Compact<PipId>;
-    'Compact<PortfolioNumber>': Compact<PortfolioNumber>;
-    'Compact<Priority>': Compact<Priority>;
-    'Compact<PropIndex>': Compact<PropIndex>;
-    'Compact<ProposalIndex>': Compact<ProposalIndex>;
-    'Compact<RefCount>': Compact<RefCount>;
-    'Compact<RefCountTo259>': Compact<RefCountTo259>;
-    'Compact<ReferendumIndex>': Compact<ReferendumIndex>;
-    'Compact<RelayBlockNumber>': Compact<RelayBlockNumber>;
-    'Compact<RelayChainBlockNumber>': Compact<RelayChainBlockNumber>;
-    'Compact<ScheduleId>': Compact<ScheduleId>;
-    'Compact<SchedulePriority>': Compact<SchedulePriority>;
-    'Compact<SessionIndex>': Compact<SessionIndex>;
-    'Compact<SetId>': Compact<SetId>;
-    'Compact<SetIndex>': Compact<SetIndex>;
-    'Compact<Si0LookupTypeId>': Compact<Si0LookupTypeId>;
-    'Compact<SkippedCount>': Compact<SkippedCount>;
-    'Compact<Slot>': Compact<Slot>;
-    'Compact<SlotNumber>': Compact<SlotNumber>;
-    'Compact<SnapshotId>': Compact<SnapshotId>;
-    'Compact<StrikeCount>': Compact<StrikeCount>;
-    'Compact<SubId>': Compact<SubId>;
-    'Compact<TAssetBalance>': Compact<TAssetBalance>;
-    'Compact<TAssetDepositBalance>': Compact<TAssetDepositBalance>;
-    'Compact<Tax>': Compact<Tax>;
-    'Compact<TransactionPriority>': Compact<TransactionPriority>;
-    'Compact<TrieIndex>': Compact<TrieIndex>;
-    'Compact<u128>': Compact<u128>;
-    'Compact<U128>': Compact<U128>;
-    'Compact<u16>': Compact<u16>;
-    'Compact<U16>': Compact<U16>;
-    'Compact<u256>': Compact<u256>;
-    'Compact<U256>': Compact<U256>;
-    'Compact<u32>': Compact<u32>;
-    'Compact<U32>': Compact<U32>;
-    'Compact<U32F32>': Compact<U32F32>;
-    'Compact<u64>': Compact<u64>;
-    'Compact<U64>': Compact<U64>;
-    'Compact<u8>': Compact<u8>;
-    'Compact<U8>': Compact<U8>;
-    'Compact<usize>': Compact<usize>;
-    'Compact<USize>': Compact<USize>;
-    'Compact<ValidatorCount>': Compact<ValidatorCount>;
-    'Compact<ValidatorSetId>': Compact<ValidatorSetId>;
-    'Compact<VenueId>': Compact<VenueId>;
-    'Compact<Version>': Compact<Version>;
-    'Compact<VoteIndex>': Compact<VoteIndex>;
-    'Compact<Weight>': Compact<Weight>;
-    'Option<AbridgedCandidateReceipt>': Option<AbridgedCandidateReceipt>;
-    'Option<AbridgedHostConfiguration>': Option<AbridgedHostConfiguration>;
-    'Option<AbridgedHrmpChannel>': Option<AbridgedHrmpChannel>;
-    'Option<AccountData>': Option<AccountData>;
-    'Option<AccountId>': Option<AccountId>;
-    'Option<AccountId20>': Option<AccountId20>;
-    'Option<AccountId32>': Option<AccountId32>;
-    'Option<AccountId32Junction>': Option<AccountId32Junction>;
-    'Option<AccountIdOf>': Option<AccountIdOf>;
-    'Option<AccountIndex>': Option<AccountIndex>;
-    'Option<AccountIndex64Junction>': Option<AccountIndex64Junction>;
-    'Option<AccountInfo>': Option<AccountInfo>;
-    'Option<AccountInfoWithDualRefCount>': Option<AccountInfoWithDualRefCount>;
-    'Option<AccountInfoWithProviders>': Option<AccountInfoWithProviders>;
-    'Option<AccountInfoWithRefCount>': Option<AccountInfoWithRefCount>;
-    'Option<AccountInfoWithRefCountU8>': Option<AccountInfoWithRefCountU8>;
-    'Option<AccountInfoWithTripleRefCount>': Option<AccountInfoWithTripleRefCount>;
-    'Option<AccountKey20Junction>': Option<AccountKey20Junction>;
-    'Option<AccountStatus>': Option<AccountStatus>;
-    'Option<AccountValidity>': Option<AccountValidity>;
-    'Option<AccountVote>': Option<AccountVote>;
-    'Option<AccountVoteSplit>': Option<AccountVoteSplit>;
-    'Option<AccountVoteStandard>': Option<AccountVoteStandard>;
-    'Option<ActiveGilt>': Option<ActiveGilt>;
-    'Option<ActiveGiltsTotal>': Option<ActiveGiltsTotal>;
-    'Option<ActiveIndex>': Option<ActiveIndex>;
-    'Option<ActiveRecovery>': Option<ActiveRecovery>;
-    'Option<Address>': Option<Address>;
-    'Option<AffirmationStatus>': Option<AffirmationStatus>;
-    'Option<AgentGroup>': Option<AgentGroup>;
-    'Option<AGId>': Option<AGId>;
-    'Option<AliveContractInfo>': Option<AliveContractInfo>;
-    'Option<AllowedSlots>': Option<AllowedSlots>;
-    'Option<AnySignature>': Option<AnySignature>;
-    'Option<ApiId>': Option<ApiId>;
-    'Option<ApplyExtrinsicResult>': Option<ApplyExtrinsicResult>;
-    'Option<ApprovalFlag>': Option<ApprovalFlag>;
-    'Option<Approvals>': Option<Approvals>;
-    'Option<ArithmeticError>': Option<ArithmeticError>;
-    'Option<AssetApproval>': Option<AssetApproval>;
-    'Option<AssetApprovalKey>': Option<AssetApprovalKey>;
-    'Option<AssetBalance>': Option<AssetBalance>;
-    'Option<AssetCompliance>': Option<AssetCompliance>;
-    'Option<AssetComplianceResult>': Option<AssetComplianceResult>;
-    'Option<AssetDestroyWitness>': Option<AssetDestroyWitness>;
-    'Option<AssetDetails>': Option<AssetDetails>;
-    'Option<AssetDidResult>': Option<AssetDidResult>;
-    'Option<AssetId>': Option<AssetId>;
-    'Option<AssetIdentifier>': Option<AssetIdentifier>;
-    'Option<AssetInstance>': Option<AssetInstance>;
-    'Option<AssetMetadata>': Option<AssetMetadata>;
-    'Option<AssetName>': Option<AssetName>;
-    'Option<AssetOptions>': Option<AssetOptions>;
-    'Option<AssetOwnershipRelation>': Option<AssetOwnershipRelation>;
-    'Option<AssetPermissions>': Option<AssetPermissions>;
-    'Option<AssetType>': Option<AssetType>;
-    'Option<AssignmentId>': Option<AssignmentId>;
-    'Option<AssignmentKind>': Option<AssignmentKind>;
-    'Option<AttestedCandidate>': Option<AttestedCandidate>;
-    'Option<AuctionIndex>': Option<AuctionIndex>;
-    'Option<AuthIndex>': Option<AuthIndex>;
-    'Option<AuthorityDiscoveryId>': Option<AuthorityDiscoveryId>;
-    'Option<AuthorityId>': Option<AuthorityId>;
-    'Option<AuthorityIndex>': Option<AuthorityIndex>;
-    'Option<AuthorityList>': Option<AuthorityList>;
-    'Option<AuthoritySet>': Option<AuthoritySet>;
-    'Option<AuthoritySetChange>': Option<AuthoritySetChange>;
-    'Option<AuthoritySetChanges>': Option<AuthoritySetChanges>;
-    'Option<AuthoritySignature>': Option<AuthoritySignature>;
-    'Option<AuthorityWeight>': Option<AuthorityWeight>;
-    'Option<Authorization>': Option<Authorization>;
-    'Option<AuthorizationData>': Option<AuthorizationData>;
-    'Option<AuthorizationNonce>': Option<AuthorizationNonce>;
-    'Option<AuthorizationType>': Option<AuthorizationType>;
-    'Option<AvailabilityBitfield>': Option<AvailabilityBitfield>;
-    'Option<AvailabilityBitfieldRecord>': Option<AvailabilityBitfieldRecord>;
-    'Option<BabeAuthorityWeight>': Option<BabeAuthorityWeight>;
-    'Option<BabeBlockWeight>': Option<BabeBlockWeight>;
-    'Option<BabeEpochConfiguration>': Option<BabeEpochConfiguration>;
-    'Option<BabeEquivocationProof>': Option<BabeEquivocationProof>;
-    'Option<BabeWeight>': Option<BabeWeight>;
-    'Option<BackedCandidate>': Option<BackedCandidate>;
-    'Option<Balance>': Option<Balance>;
-    'Option<BalanceLock>': Option<BalanceLock>;
-    'Option<BalanceLockTo212>': Option<BalanceLockTo212>;
-    'Option<BalanceOf>': Option<BalanceOf>;
-    'Option<BalanceStatus>': Option<BalanceStatus>;
-    'Option<BallotMeta>': Option<BallotMeta>;
-    'Option<BallotTimeRange>': Option<BallotTimeRange>;
-    'Option<BallotTitle>': Option<BallotTitle>;
-    'Option<BallotVote>': Option<BallotVote>;
-    'Option<BeefyCommitment>': Option<BeefyCommitment>;
-    'Option<BeefyId>': Option<BeefyId>;
-    'Option<BeefyKey>': Option<BeefyKey>;
-    'Option<BeefyNextAuthoritySet>': Option<BeefyNextAuthoritySet>;
-    'Option<BeefyPayload>': Option<BeefyPayload>;
-    'Option<BeefySignedCommitment>': Option<BeefySignedCommitment>;
-    'Option<Beneficiary>': Option<Beneficiary>;
-    'Option<Bid>': Option<Bid>;
-    'Option<Bidder>': Option<Bidder>;
-    'Option<BidKind>': Option<BidKind>;
-    'Option<BitVec>': Option<BitVec>;
-    'Option<Block>': Option<Block>;
-    'Option<BlockAttestations>': Option<BlockAttestations>;
-    'Option<BlockHash>': Option<BlockHash>;
-    'Option<BlockLength>': Option<BlockLength>;
-    'Option<BlockNumber>': Option<BlockNumber>;
-    'Option<BlockNumberFor>': Option<BlockNumberFor>;
-    'Option<BlockNumberOf>': Option<BlockNumberOf>;
-    'Option<BlockTrace>': Option<BlockTrace>;
-    'Option<BlockTraceEvent>': Option<BlockTraceEvent>;
-    'Option<BlockTraceEventData>': Option<BlockTraceEventData>;
-    'Option<BlockTraceSpan>': Option<BlockTraceSpan>;
-    'Option<BlockWeights>': Option<BlockWeights>;
-    'Option<BodyId>': Option<BodyId>;
-    'Option<BodyPart>': Option<BodyPart>;
-    'Option<BodyPartAtLeastProportion>': Option<BodyPartAtLeastProportion>;
-    'Option<BodyPartFraction>': Option<BodyPartFraction>;
-    'Option<BodyPartMoreThanProportion>': Option<BodyPartMoreThanProportion>;
-    'Option<bool>': Option<bool>;
-    'Option<Bool>': Option<Bool>;
-    'Option<Bounty>': Option<Bounty>;
-    'Option<BountyIndex>': Option<BountyIndex>;
-    'Option<BountyStatus>': Option<BountyStatus>;
-    'Option<BountyStatusActive>': Option<BountyStatusActive>;
-    'Option<BountyStatusCuratorProposed>': Option<BountyStatusCuratorProposed>;
-    'Option<BountyStatusPendingPayout>': Option<BountyStatusPendingPayout>;
-    'Option<BridgedBlockHash>': Option<BridgedBlockHash>;
-    'Option<BridgedBlockNumber>': Option<BridgedBlockNumber>;
-    'Option<BridgedHeader>': Option<BridgedHeader>;
-    'Option<BridgeTx>': Option<BridgeTx>;
-    'Option<BridgeTxDetail>': Option<BridgeTxDetail>;
-    'Option<BridgeTxStatus>': Option<BridgeTxStatus>;
-    'Option<BufferedSessionChange>': Option<BufferedSessionChange>;
-    'Option<Bytes>': Option<Bytes>;
-    'Option<CACheckpoint>': Option<CACheckpoint>;
-    'Option<CADetails>': Option<CADetails>;
-    'Option<CAId>': Option<CAId>;
-    'Option<CAKind>': Option<CAKind>;
-    'Option<CalendarPeriod>': Option<CalendarPeriod>;
-    'Option<CalendarUnit>': Option<CalendarUnit>;
-    'Option<Call>': Option<Call>;
-    'Option<CallHash>': Option<CallHash>;
-    'Option<CallHashOf>': Option<CallHashOf>;
-    'Option<CallIndex>': Option<CallIndex>;
-    'Option<CandidateCommitments>': Option<CandidateCommitments>;
-    'Option<CandidateDescriptor>': Option<CandidateDescriptor>;
-    'Option<CandidateHash>': Option<CandidateHash>;
-    'Option<CandidateInfo>': Option<CandidateInfo>;
-    'Option<CandidatePendingAvailability>': Option<CandidatePendingAvailability>;
-    'Option<CandidateReceipt>': Option<CandidateReceipt>;
-    'Option<CanTransferResult>': Option<CanTransferResult>;
-    'Option<CappedFee>': Option<CappedFee>;
-    'Option<CddId>': Option<CddId>;
-    'Option<CddStatus>': Option<CddStatus>;
-    'Option<ChainProperties>': Option<ChainProperties>;
-    'Option<ChainType>': Option<ChainType>;
-    'Option<ChangesTrieConfiguration>': Option<ChangesTrieConfiguration>;
-    'Option<ChangesTrieSignal>': Option<ChangesTrieSignal>;
-    'Option<CheckpointId>': Option<CheckpointId>;
-    'Option<CheckpointSchedule>': Option<CheckpointSchedule>;
-    'Option<ChoiceTitle>': Option<ChoiceTitle>;
-    'Option<Claim>': Option<Claim>;
-    'Option<Claim1stKey>': Option<Claim1stKey>;
-    'Option<Claim2ndKey>': Option<Claim2ndKey>;
-    'Option<ClaimType>': Option<ClaimType>;
-    'Option<ClassDetails>': Option<ClassDetails>;
-    'Option<ClassicTickerImport>': Option<ClassicTickerImport>;
-    'Option<ClassicTickerRegistration>': Option<ClassicTickerRegistration>;
-    'Option<ClassId>': Option<ClassId>;
-    'Option<ClassMetadata>': Option<ClassMetadata>;
-    'Option<CodecHash>': Option<CodecHash>;
-    'Option<CodeHash>': Option<CodeHash>;
-    'Option<CollatorId>': Option<CollatorId>;
-    'Option<CollatorSignature>': Option<CollatorSignature>;
-    'Option<CollectiveOrigin>': Option<CollectiveOrigin>;
-    'Option<CommittedCandidateReceipt>': Option<CommittedCandidateReceipt>;
-    'Option<Committee>': Option<Committee>;
-    'Option<ComplianceRequirement>': Option<ComplianceRequirement>;
-    'Option<ComplianceRequirementResult>': Option<ComplianceRequirementResult>;
-    'Option<Condition>': Option<Condition>;
-    'Option<ConditionResult>': Option<ConditionResult>;
-    'Option<ConditionType>': Option<ConditionType>;
-    'Option<ConfigData>': Option<ConfigData>;
-    'Option<Consensus>': Option<Consensus>;
-    'Option<ConsensusEngineId>': Option<ConsensusEngineId>;
-    'Option<ConsumedWeight>': Option<ConsumedWeight>;
-    'Option<ContractCallRequest>': Option<ContractCallRequest>;
-    'Option<ContractConstructorSpec>': Option<ContractConstructorSpec>;
-    'Option<ContractContractSpec>': Option<ContractContractSpec>;
-    'Option<ContractCryptoHasher>': Option<ContractCryptoHasher>;
-    'Option<ContractDiscriminant>': Option<ContractDiscriminant>;
-    'Option<ContractDisplayName>': Option<ContractDisplayName>;
-    'Option<ContractEventParamSpec>': Option<ContractEventParamSpec>;
-    'Option<ContractEventSpec>': Option<ContractEventSpec>;
-    'Option<ContractExecResult>': Option<ContractExecResult>;
-    'Option<ContractExecResultErr>': Option<ContractExecResultErr>;
-    'Option<ContractExecResultErrModule>': Option<ContractExecResultErrModule>;
-    'Option<ContractExecResultOk>': Option<ContractExecResultOk>;
-    'Option<ContractExecResultResult>': Option<ContractExecResultResult>;
-    'Option<ContractExecResultSuccessTo255>': Option<ContractExecResultSuccessTo255>;
-    'Option<ContractExecResultSuccessTo260>': Option<ContractExecResultSuccessTo260>;
-    'Option<ContractExecResultTo255>': Option<ContractExecResultTo255>;
-    'Option<ContractExecResultTo260>': Option<ContractExecResultTo260>;
-    'Option<ContractExecResultTo267>': Option<ContractExecResultTo267>;
-    'Option<ContractInfo>': Option<ContractInfo>;
-    'Option<ContractInstantiateResult>': Option<ContractInstantiateResult>;
-    'Option<ContractLayoutArray>': Option<ContractLayoutArray>;
-    'Option<ContractLayoutCell>': Option<ContractLayoutCell>;
-    'Option<ContractLayoutEnum>': Option<ContractLayoutEnum>;
-    'Option<ContractLayoutHash>': Option<ContractLayoutHash>;
-    'Option<ContractLayoutHashingStrategy>': Option<ContractLayoutHashingStrategy>;
-    'Option<ContractLayoutKey>': Option<ContractLayoutKey>;
-    'Option<ContractLayoutStruct>': Option<ContractLayoutStruct>;
-    'Option<ContractLayoutStructField>': Option<ContractLayoutStructField>;
-    'Option<ContractMessageParamSpec>': Option<ContractMessageParamSpec>;
-    'Option<ContractMessageSpec>': Option<ContractMessageSpec>;
-    'Option<ContractProject>': Option<ContractProject>;
-    'Option<ContractProjectContract>': Option<ContractProjectContract>;
-    'Option<ContractProjectSource>': Option<ContractProjectSource>;
-    'Option<ContractSelector>': Option<ContractSelector>;
-    'Option<ContractStorageKey>': Option<ContractStorageKey>;
-    'Option<ContractStorageLayout>': Option<ContractStorageLayout>;
-    'Option<ContractTypeSpec>': Option<ContractTypeSpec>;
-    'Option<Conviction>': Option<Conviction>;
-    'Option<CoreAssignment>': Option<CoreAssignment>;
-    'Option<CoreIndex>': Option<CoreIndex>;
-    'Option<CoreOccupied>': Option<CoreOccupied>;
-    'Option<CorporateAction>': Option<CorporateAction>;
-    'Option<Counter>': Option<Counter>;
-    'Option<CountryCode>': Option<CountryCode>;
-    'Option<CreatedBlock>': Option<CreatedBlock>;
-    'Option<CustomAssetTypeId>': Option<CustomAssetTypeId>;
-    'Option<Data>': Option<Data>;
-    'Option<DeferredOffenceOf>': Option<DeferredOffenceOf>;
-    'Option<DefunctVoter>': Option<DefunctVoter>;
-    'Option<DelayKind>': Option<DelayKind>;
-    'Option<DelayKindBest>': Option<DelayKindBest>;
-    'Option<Delegations>': Option<Delegations>;
-    'Option<DeletedContract>': Option<DeletedContract>;
-    'Option<DepositBalance>': Option<DepositBalance>;
-    'Option<DepositBalanceOf>': Option<DepositBalanceOf>;
-    'Option<DepositInfo>': Option<DepositInfo>;
-    'Option<DestroyWitness>': Option<DestroyWitness>;
-    'Option<DidRecord>': Option<DidRecord>;
-    'Option<DidRecords>': Option<DidRecords>;
-    'Option<DidRecordsSuccess>': Option<DidRecordsSuccess>;
-    'Option<DidStatus>': Option<DidStatus>;
-    'Option<Digest>': Option<Digest>;
-    'Option<DigestItem>': Option<DigestItem>;
-    'Option<DigestOf>': Option<DigestOf>;
-    'Option<DispatchableName>': Option<DispatchableName>;
-    'Option<DispatchableNames>': Option<DispatchableNames>;
-    'Option<DispatchClass>': Option<DispatchClass>;
-    'Option<DispatchError>': Option<DispatchError>;
-    'Option<DispatchErrorModule>': Option<DispatchErrorModule>;
-    'Option<DispatchErrorTo198>': Option<DispatchErrorTo198>;
-    'Option<DispatchInfo>': Option<DispatchInfo>;
-    'Option<DispatchInfoTo190>': Option<DispatchInfoTo190>;
-    'Option<DispatchInfoTo244>': Option<DispatchInfoTo244>;
-    'Option<DispatchOutcome>': Option<DispatchOutcome>;
-    'Option<DispatchResult>': Option<DispatchResult>;
-    'Option<DispatchResultOf>': Option<DispatchResultOf>;
-    'Option<DispatchResultTo198>': Option<DispatchResultTo198>;
-    'Option<DisputeStatement>': Option<DisputeStatement>;
-    'Option<DisputeStatementSet>': Option<DisputeStatementSet>;
-    'Option<Distribution>': Option<Distribution>;
-    'Option<Document>': Option<Document>;
-    'Option<DocumentHash>': Option<DocumentHash>;
-    'Option<DocumentId>': Option<DocumentId>;
-    'Option<DocumentName>': Option<DocumentName>;
-    'Option<DocumentType>': Option<DocumentType>;
-    'Option<DocumentUri>': Option<DocumentUri>;
-    'Option<DoubleEncodedCall>': Option<DoubleEncodedCall>;
-    'Option<DoubleVoteReport>': Option<DoubleVoteReport>;
-    'Option<DownwardMessage>': Option<DownwardMessage>;
-    'Option<EcdsaSignature>': Option<EcdsaSignature>;
-    'Option<Ed25519Signature>': Option<Ed25519Signature>;
-    'Option<EncodedFinalityProofs>': Option<EncodedFinalityProofs>;
-    'Option<EncodedJustification>': Option<EncodedJustification>;
-    'Option<EpochAuthorship>': Option<EpochAuthorship>;
-    'Option<ErrorAt>': Option<ErrorAt>;
-    'Option<ErrorMetadataLatest>': Option<ErrorMetadataLatest>;
-    'Option<ErrorMetadataV10>': Option<ErrorMetadataV10>;
-    'Option<ErrorMetadataV11>': Option<ErrorMetadataV11>;
-    'Option<ErrorMetadataV12>': Option<ErrorMetadataV12>;
-    'Option<ErrorMetadataV13>': Option<ErrorMetadataV13>;
-    'Option<ErrorMetadataV9>': Option<ErrorMetadataV9>;
-    'Option<EthAccount>': Option<EthAccount>;
-    'Option<EthBlock>': Option<EthBlock>;
-    'Option<EthBloom>': Option<EthBloom>;
-    'Option<EthCallRequest>': Option<EthCallRequest>;
-    'Option<EthereumAccountId>': Option<EthereumAccountId>;
-    'Option<EthereumAddress>': Option<EthereumAddress>;
-    'Option<EthereumLookupSource>': Option<EthereumLookupSource>;
-    'Option<EthereumSignature>': Option<EthereumSignature>;
-    'Option<EthFilter>': Option<EthFilter>;
-    'Option<EthFilterAddress>': Option<EthFilterAddress>;
-    'Option<EthFilterChanges>': Option<EthFilterChanges>;
-    'Option<EthFilterTopic>': Option<EthFilterTopic>;
-    'Option<EthFilterTopicEntry>': Option<EthFilterTopicEntry>;
-    'Option<EthFilterTopicInner>': Option<EthFilterTopicInner>;
-    'Option<EthHeader>': Option<EthHeader>;
-    'Option<EthLog>': Option<EthLog>;
-    'Option<EthReceipt>': Option<EthReceipt>;
-    'Option<EthRichBlock>': Option<EthRichBlock>;
-    'Option<EthRichHeader>': Option<EthRichHeader>;
-    'Option<EthStorageProof>': Option<EthStorageProof>;
-    'Option<EthSubKind>': Option<EthSubKind>;
-    'Option<EthSubParams>': Option<EthSubParams>;
-    'Option<EthSubResult>': Option<EthSubResult>;
-    'Option<EthSyncInfo>': Option<EthSyncInfo>;
-    'Option<EthSyncStatus>': Option<EthSyncStatus>;
-    'Option<EthTransaction>': Option<EthTransaction>;
-    'Option<EthTransactionAction>': Option<EthTransactionAction>;
-    'Option<EthTransactionCondition>': Option<EthTransactionCondition>;
-    'Option<EthTransactionRequest>': Option<EthTransactionRequest>;
-    'Option<EthTransactionSignature>': Option<EthTransactionSignature>;
-    'Option<EthTransactionStatus>': Option<EthTransactionStatus>;
-    'Option<EthWork>': Option<EthWork>;
-    'Option<Event>': Option<Event>;
-    'Option<EventCounts>': Option<EventCounts>;
-    'Option<EventDid>': Option<EventDid>;
-    'Option<EventId>': Option<EventId>;
-    'Option<EventIndex>': Option<EventIndex>;
-    'Option<EventMetadataLatest>': Option<EventMetadataLatest>;
-    'Option<EventMetadataV10>': Option<EventMetadataV10>;
-    'Option<EventMetadataV11>': Option<EventMetadataV11>;
-    'Option<EventMetadataV12>': Option<EventMetadataV12>;
-    'Option<EventMetadataV13>': Option<EventMetadataV13>;
-    'Option<EventMetadataV9>': Option<EventMetadataV9>;
-    'Option<EventRecord>': Option<EventRecord>;
-    'Option<EvmAccount>': Option<EvmAccount>;
-    'Option<EvmLog>': Option<EvmLog>;
-    'Option<EvmVicinity>': Option<EvmVicinity>;
-    'Option<ExecReturnValue>': Option<ExecReturnValue>;
-    'Option<ExitError>': Option<ExitError>;
-    'Option<ExitFatal>': Option<ExitFatal>;
-    'Option<ExitReason>': Option<ExitReason>;
-    'Option<ExitRevert>': Option<ExitRevert>;
-    'Option<ExitSucceed>': Option<ExitSucceed>;
-    'Option<ExplicitDisputeStatement>': Option<ExplicitDisputeStatement>;
-    'Option<ExtensionAttributes>': Option<ExtensionAttributes>;
-    'Option<Extrinsic>': Option<Extrinsic>;
-    'Option<ExtrinsicEra>': Option<ExtrinsicEra>;
-    'Option<ExtrinsicMetadataLatest>': Option<ExtrinsicMetadataLatest>;
-    'Option<ExtrinsicMetadataV11>': Option<ExtrinsicMetadataV11>;
-    'Option<ExtrinsicMetadataV12>': Option<ExtrinsicMetadataV12>;
-    'Option<ExtrinsicMetadataV13>': Option<ExtrinsicMetadataV13>;
-    'Option<ExtrinsicMetadataV14>': Option<ExtrinsicMetadataV14>;
-    'Option<ExtrinsicOrHash>': Option<ExtrinsicOrHash>;
-    'Option<ExtrinsicPayload>': Option<ExtrinsicPayload>;
-    'Option<ExtrinsicPayloadUnknown>': Option<ExtrinsicPayloadUnknown>;
-    'Option<ExtrinsicPayloadV4>': Option<ExtrinsicPayloadV4>;
-    'Option<ExtrinsicPermissions>': Option<ExtrinsicPermissions>;
-    'Option<ExtrinsicSignature>': Option<ExtrinsicSignature>;
-    'Option<ExtrinsicSignatureV4>': Option<ExtrinsicSignatureV4>;
-    'Option<ExtrinsicStatus>': Option<ExtrinsicStatus>;
-    'Option<ExtrinsicsWeight>': Option<ExtrinsicsWeight>;
-    'Option<ExtrinsicUnknown>': Option<ExtrinsicUnknown>;
-    'Option<ExtrinsicV4>': Option<ExtrinsicV4>;
-    'Option<ExtVersion>': Option<ExtVersion>;
-    'Option<FeeDetails>': Option<FeeDetails>;
-    'Option<Fixed128>': Option<Fixed128>;
-    'Option<Fixed64>': Option<Fixed64>;
-    'Option<FixedI128>': Option<FixedI128>;
-    'Option<FixedI64>': Option<FixedI64>;
-    'Option<FixedU128>': Option<FixedU128>;
-    'Option<FixedU64>': Option<FixedU64>;
-    'Option<ForkTreePendingChange>': Option<ForkTreePendingChange>;
-    'Option<ForkTreePendingChangeNode>': Option<ForkTreePendingChangeNode>;
-    'Option<FullIdentification>': Option<FullIdentification>;
-    'Option<FunctionArgumentMetadataLatest>': Option<FunctionArgumentMetadataLatest>;
-    'Option<FunctionArgumentMetadataV10>': Option<FunctionArgumentMetadataV10>;
-    'Option<FunctionArgumentMetadataV11>': Option<FunctionArgumentMetadataV11>;
-    'Option<FunctionArgumentMetadataV12>': Option<FunctionArgumentMetadataV12>;
-    'Option<FunctionArgumentMetadataV13>': Option<FunctionArgumentMetadataV13>;
-    'Option<FunctionArgumentMetadataV9>': Option<FunctionArgumentMetadataV9>;
-    'Option<FunctionMetadataLatest>': Option<FunctionMetadataLatest>;
-    'Option<FunctionMetadataV10>': Option<FunctionMetadataV10>;
-    'Option<FunctionMetadataV11>': Option<FunctionMetadataV11>;
-    'Option<FunctionMetadataV12>': Option<FunctionMetadataV12>;
-    'Option<FunctionMetadataV13>': Option<FunctionMetadataV13>;
-    'Option<FunctionMetadataV9>': Option<FunctionMetadataV9>;
-    'Option<FundIndex>': Option<FundIndex>;
-    'Option<FundInfo>': Option<FundInfo>;
-    'Option<FundingRoundName>': Option<FundingRoundName>;
-    'Option<Fundraiser>': Option<Fundraiser>;
-    'Option<FundraiserId>': Option<FundraiserId>;
-    'Option<FundraiserName>': Option<FundraiserName>;
-    'Option<FundraiserStatus>': Option<FundraiserStatus>;
-    'Option<FundraiserTier>': Option<FundraiserTier>;
-    'Option<Gas>': Option<Gas>;
-    'Option<GiltBid>': Option<GiltBid>;
-    'Option<GlobalValidationData>': Option<GlobalValidationData>;
-    'Option<GlobalValidationSchedule>': Option<GlobalValidationSchedule>;
-    'Option<GrandpaCommit>': Option<GrandpaCommit>;
-    'Option<GrandpaEquivocation>': Option<GrandpaEquivocation>;
-    'Option<GrandpaEquivocationProof>': Option<GrandpaEquivocationProof>;
-    'Option<GrandpaEquivocationValue>': Option<GrandpaEquivocationValue>;
-    'Option<GrandpaJustification>': Option<GrandpaJustification>;
-    'Option<GrandpaPrecommit>': Option<GrandpaPrecommit>;
-    'Option<GrandpaPrevote>': Option<GrandpaPrevote>;
-    'Option<GrandpaSignedPrecommit>': Option<GrandpaSignedPrecommit>;
-    'Option<GranularCanTransferResult>': Option<GranularCanTransferResult>;
-    'Option<GroupIndex>': Option<GroupIndex>;
-    'Option<H1024>': Option<H1024>;
-    'Option<H128>': Option<H128>;
-    'Option<H160>': Option<H160>;
-    'Option<H2048>': Option<H2048>;
-    'Option<H256>': Option<H256>;
-    'Option<H32>': Option<H32>;
-    'Option<H512>': Option<H512>;
-    'Option<H64>': Option<H64>;
-    'Option<HandledTxStatus>': Option<HandledTxStatus>;
-    'Option<Hash>': Option<Hash>;
-    'Option<HeadData>': Option<HeadData>;
-    'Option<Header>': Option<Header>;
-    'Option<HeaderPartial>': Option<HeaderPartial>;
-    'Option<Health>': Option<Health>;
-    'Option<Heartbeat>': Option<Heartbeat>;
-    'Option<HeartbeatTo244>': Option<HeartbeatTo244>;
-    'Option<HostConfiguration>': Option<HostConfiguration>;
-    'Option<HostFnWeights>': Option<HostFnWeights>;
-    'Option<HostFnWeightsTo264>': Option<HostFnWeightsTo264>;
-    'Option<HrmpChannel>': Option<HrmpChannel>;
-    'Option<HrmpChannelId>': Option<HrmpChannelId>;
-    'Option<HrmpOpenChannelRequest>': Option<HrmpOpenChannelRequest>;
-    'Option<i128>': Option<i128>;
-    'Option<I128>': Option<I128>;
-    'Option<i16>': Option<i16>;
-    'Option<I16>': Option<I16>;
-    'Option<i256>': Option<i256>;
-    'Option<I256>': Option<I256>;
-    'Option<i32>': Option<i32>;
-    'Option<I32>': Option<I32>;
-    'Option<I32F32>': Option<I32F32>;
-    'Option<i64>': Option<i64>;
-    'Option<I64>': Option<I64>;
-    'Option<i8>': Option<i8>;
-    'Option<I8>': Option<I8>;
-    'Option<IdentificationTuple>': Option<IdentificationTuple>;
-    'Option<IdentityClaim>': Option<IdentityClaim>;
-    'Option<IdentityId>': Option<IdentityId>;
-    'Option<IdentityRole>': Option<IdentityRole>;
-    'Option<ImmortalEra>': Option<ImmortalEra>;
-    'Option<ImportedAux>': Option<ImportedAux>;
-    'Option<InactiveMember>': Option<InactiveMember>;
-    'Option<InboundDownwardMessage>': Option<InboundDownwardMessage>;
-    'Option<InboundHrmpMessage>': Option<InboundHrmpMessage>;
-    'Option<InboundHrmpMessages>': Option<InboundHrmpMessages>;
-    'Option<InboundStatus>': Option<InboundStatus>;
-    'Option<IncludedBlocks>': Option<IncludedBlocks>;
-    'Option<InclusionFee>': Option<InclusionFee>;
-    'Option<IncomingParachain>': Option<IncomingParachain>;
-    'Option<IncomingParachainDeploy>': Option<IncomingParachainDeploy>;
-    'Option<IncomingParachainFixed>': Option<IncomingParachainFixed>;
-    'Option<Index>': Option<Index>;
-    'Option<IndicesLookupSource>': Option<IndicesLookupSource>;
-    'Option<InitializationData>': Option<InitializationData>;
-    'Option<InstanceDetails>': Option<InstanceDetails>;
-    'Option<InstanceId>': Option<InstanceId>;
-    'Option<InstanceMetadata>': Option<InstanceMetadata>;
-    'Option<InstantiateRequest>': Option<InstantiateRequest>;
-    'Option<InstantiateReturnValue>': Option<InstantiateReturnValue>;
-    'Option<Instruction>': Option<Instruction>;
-    'Option<InstructionId>': Option<InstructionId>;
-    'Option<InstructionStatus>': Option<InstructionStatus>;
-    'Option<InstructionWeights>': Option<InstructionWeights>;
-    'Option<InvalidDisputeStatementKind>': Option<InvalidDisputeStatementKind>;
-    'Option<InvalidTransaction>': Option<InvalidTransaction>;
-    'Option<InvestorUid>': Option<InvestorUid>;
-    'Option<InvestorZKProofData>': Option<InvestorZKProofData>;
-    'Option<ItnRewardStatus>': Option<ItnRewardStatus>;
-    'Option<Json>': Option<Json>;
-    'Option<Junction>': Option<Junction>;
-    'Option<Justification>': Option<Justification>;
-    'Option<JustificationNotification>': Option<JustificationNotification>;
-    'Option<Justifications>': Option<Justifications>;
-    'Option<Key>': Option<Key>;
-    'Option<KeyIdentityData>': Option<KeyIdentityData>;
-    'Option<KeyOwnerProof>': Option<KeyOwnerProof>;
-    'Option<Keys>': Option<Keys>;
-    'Option<KeyTypeId>': Option<KeyTypeId>;
-    'Option<KeyValue>': Option<KeyValue>;
-    'Option<KeyValueOption>': Option<KeyValueOption>;
-    'Option<Kind>': Option<Kind>;
-    'Option<LastContribution>': Option<LastContribution>;
-    'Option<LastRuntimeUpgradeInfo>': Option<LastRuntimeUpgradeInfo>;
-    'Option<LeasePeriod>': Option<LeasePeriod>;
-    'Option<LeasePeriodOf>': Option<LeasePeriodOf>;
-    'Option<Leg>': Option<Leg>;
-    'Option<LegacyPalletPermissions>': Option<LegacyPalletPermissions>;
-    'Option<LegacyPermissions>': Option<LegacyPermissions>;
-    'Option<LegId>': Option<LegId>;
-    'Option<LegStatus>': Option<LegStatus>;
-    'Option<Limits>': Option<Limits>;
-    'Option<LimitsTo264>': Option<LimitsTo264>;
-    'Option<LocalCAId>': Option<LocalCAId>;
-    'Option<LocalValidationData>': Option<LocalValidationData>;
-    'Option<LockIdentifier>': Option<LockIdentifier>;
-    'Option<LookupSource>': Option<LookupSource>;
-    'Option<LookupTarget>': Option<LookupTarget>;
-    'Option<LotteryConfig>': Option<LotteryConfig>;
-    'Option<MaybeBlock>': Option<MaybeBlock>;
-    'Option<MaybeRandomness>': Option<MaybeRandomness>;
-    'Option<MaybeVrf>': Option<MaybeVrf>;
-    'Option<MemberCount>': Option<MemberCount>;
-    'Option<MembershipProof>': Option<MembershipProof>;
-    'Option<Memo>': Option<Memo>;
-    'Option<MessageId>': Option<MessageId>;
-    'Option<MessageIngestionType>': Option<MessageIngestionType>;
-    'Option<MessageQueueChain>': Option<MessageQueueChain>;
-    'Option<MessagingStateSnapshot>': Option<MessagingStateSnapshot>;
-    'Option<MessagingStateSnapshotEgressEntry>': Option<MessagingStateSnapshotEgressEntry>;
-    'Option<MetadataAll>': Option<MetadataAll>;
-    'Option<MetadataLatest>': Option<MetadataLatest>;
-    'Option<MetadataV10>': Option<MetadataV10>;
-    'Option<MetadataV11>': Option<MetadataV11>;
-    'Option<MetadataV12>': Option<MetadataV12>;
-    'Option<MetadataV13>': Option<MetadataV13>;
-    'Option<MetadataV14>': Option<MetadataV14>;
-    'Option<MetadataV9>': Option<MetadataV9>;
-    'Option<MetaDescription>': Option<MetaDescription>;
-    'Option<MetaUrl>': Option<MetaUrl>;
-    'Option<MetaVersion>': Option<MetaVersion>;
-    'Option<MmrLeafProof>': Option<MmrLeafProof>;
-    'Option<MmrRootHash>': Option<MmrRootHash>;
-    'Option<ModuleConstantMetadataLatest>': Option<ModuleConstantMetadataLatest>;
-    'Option<ModuleConstantMetadataV10>': Option<ModuleConstantMetadataV10>;
-    'Option<ModuleConstantMetadataV11>': Option<ModuleConstantMetadataV11>;
-    'Option<ModuleConstantMetadataV12>': Option<ModuleConstantMetadataV12>;
-    'Option<ModuleConstantMetadataV13>': Option<ModuleConstantMetadataV13>;
-    'Option<ModuleConstantMetadataV9>': Option<ModuleConstantMetadataV9>;
-    'Option<ModuleId>': Option<ModuleId>;
-    'Option<ModuleMetadataLatest>': Option<ModuleMetadataLatest>;
-    'Option<ModuleMetadataV10>': Option<ModuleMetadataV10>;
-    'Option<ModuleMetadataV11>': Option<ModuleMetadataV11>;
-    'Option<ModuleMetadataV12>': Option<ModuleMetadataV12>;
-    'Option<ModuleMetadataV13>': Option<ModuleMetadataV13>;
-    'Option<ModuleMetadataV9>': Option<ModuleMetadataV9>;
-    'Option<Moment>': Option<Moment>;
-    'Option<MoreAttestations>': Option<MoreAttestations>;
-    'Option<MortalEra>': Option<MortalEra>;
-    'Option<Motion>': Option<Motion>;
-    'Option<MotionInfoLink>': Option<MotionInfoLink>;
-    'Option<MotionTitle>': Option<MotionTitle>;
-    'Option<MovePortfolioItem>': Option<MovePortfolioItem>;
-    'Option<MultiAddress>': Option<MultiAddress>;
-    'Option<MultiAsset>': Option<MultiAsset>;
-    'Option<MultiAssetAbstractFungible>': Option<MultiAssetAbstractFungible>;
-    'Option<MultiAssetAbstractNonFungible>': Option<MultiAssetAbstractNonFungible>;
-    'Option<MultiAssetConcreteFungible>': Option<MultiAssetConcreteFungible>;
-    'Option<MultiAssetConcreteNonFungible>': Option<MultiAssetConcreteNonFungible>;
-    'Option<MultiDisputeStatementSet>': Option<MultiDisputeStatementSet>;
-    'Option<MultiLocation>': Option<MultiLocation>;
-    'Option<Multiplier>': Option<Multiplier>;
-    'Option<Multisig>': Option<Multisig>;
-    'Option<MultiSignature>': Option<MultiSignature>;
-    'Option<MultiSigner>': Option<MultiSigner>;
-    'Option<NetworkId>': Option<NetworkId>;
-    'Option<NetworkState>': Option<NetworkState>;
-    'Option<NetworkStatePeerset>': Option<NetworkStatePeerset>;
-    'Option<NetworkStatePeersetInfo>': Option<NetworkStatePeersetInfo>;
-    'Option<NewBidder>': Option<NewBidder>;
-    'Option<NextAuthority>': Option<NextAuthority>;
-    'Option<NextConfigDescriptor>': Option<NextConfigDescriptor>;
-    'Option<NextConfigDescriptorV1>': Option<NextConfigDescriptorV1>;
-    'Option<NodeRole>': Option<NodeRole>;
-    'Option<NotConnectedPeer>': Option<NotConnectedPeer>;
-    'Option<Null>': Option<Null>;
-    'Option<OffChainSignature>': Option<OffChainSignature>;
-    'Option<OffenceDetails>': Option<OffenceDetails>;
-    'Option<Offender>': Option<Offender>;
-    'Option<OpaqueCall>': Option<OpaqueCall>;
-    'Option<OpaqueMultiaddr>': Option<OpaqueMultiaddr>;
-    'Option<OpaqueNetworkState>': Option<OpaqueNetworkState>;
-    'Option<OpaquePeerId>': Option<OpaquePeerId>;
-    'Option<OpaqueTimeSlot>': Option<OpaqueTimeSlot>;
-    'Option<OpenTip>': Option<OpenTip>;
-    'Option<OpenTipFinderTo225>': Option<OpenTipFinderTo225>;
-    'Option<OpenTipTip>': Option<OpenTipTip>;
-    'Option<OpenTipTo225>': Option<OpenTipTo225>;
-    'Option<Origin>': Option<Origin>;
-    'Option<OriginCaller>': Option<OriginCaller>;
-    'Option<OutboundHrmpMessage>': Option<OutboundHrmpMessage>;
-    'Option<OutboundStatus>': Option<OutboundStatus>;
-    'Option<Outcome>': Option<Outcome>;
-    'Option<OverweightIndex>': Option<OverweightIndex>;
-    'Option<Owner>': Option<Owner>;
-    'Option<PageCounter>': Option<PageCounter>;
-    'Option<PageIndexData>': Option<PageIndexData>;
-    'Option<PalletCallMetadataLatest>': Option<PalletCallMetadataLatest>;
-    'Option<PalletCallMetadataV14>': Option<PalletCallMetadataV14>;
-    'Option<PalletConstantMetadataLatest>': Option<PalletConstantMetadataLatest>;
-    'Option<PalletConstantMetadataV14>': Option<PalletConstantMetadataV14>;
-    'Option<PalletErrorMetadataLatest>': Option<PalletErrorMetadataLatest>;
-    'Option<PalletErrorMetadataV14>': Option<PalletErrorMetadataV14>;
-    'Option<PalletEventMetadataLatest>': Option<PalletEventMetadataLatest>;
-    'Option<PalletEventMetadataV14>': Option<PalletEventMetadataV14>;
-    'Option<PalletId>': Option<PalletId>;
-    'Option<PalletMetadataLatest>': Option<PalletMetadataLatest>;
-    'Option<PalletMetadataV14>': Option<PalletMetadataV14>;
-    'Option<PalletName>': Option<PalletName>;
-    'Option<PalletPermissions>': Option<PalletPermissions>;
-    'Option<PalletsOrigin>': Option<PalletsOrigin>;
-    'Option<PalletStorageMetadataLatest>': Option<PalletStorageMetadataLatest>;
-    'Option<PalletStorageMetadataV14>': Option<PalletStorageMetadataV14>;
-    'Option<PalletVersion>': Option<PalletVersion>;
-    'Option<ParachainDispatchOrigin>': Option<ParachainDispatchOrigin>;
-    'Option<ParachainInherentData>': Option<ParachainInherentData>;
-    'Option<ParachainProposal>': Option<ParachainProposal>;
-    'Option<ParachainsInherentData>': Option<ParachainsInherentData>;
-    'Option<ParaGenesisArgs>': Option<ParaGenesisArgs>;
-    'Option<ParaId>': Option<ParaId>;
-    'Option<ParaInfo>': Option<ParaInfo>;
-    'Option<ParaLifecycle>': Option<ParaLifecycle>;
-    'Option<ParaPastCodeMeta>': Option<ParaPastCodeMeta>;
-    'Option<ParaScheduling>': Option<ParaScheduling>;
-    'Option<ParathreadClaim>': Option<ParathreadClaim>;
-    'Option<ParathreadClaimQueue>': Option<ParathreadClaimQueue>;
-    'Option<ParathreadEntry>': Option<ParathreadEntry>;
-    'Option<ParaValidatorIndex>': Option<ParaValidatorIndex>;
-    'Option<Pays>': Option<Pays>;
-    'Option<Peer>': Option<Peer>;
-    'Option<PeerEndpoint>': Option<PeerEndpoint>;
-    'Option<PeerEndpointAddr>': Option<PeerEndpointAddr>;
-    'Option<PeerInfo>': Option<PeerInfo>;
-    'Option<PeerPing>': Option<PeerPing>;
-    'Option<PendingChange>': Option<PendingChange>;
-    'Option<PendingPause>': Option<PendingPause>;
-    'Option<PendingResume>': Option<PendingResume>;
-    'Option<Perbill>': Option<Perbill>;
-    'Option<Percent>': Option<Percent>;
-    'Option<Percentage>': Option<Percentage>;
-    'Option<PerDispatchClassU32>': Option<PerDispatchClassU32>;
-    'Option<PerDispatchClassWeight>': Option<PerDispatchClassWeight>;
-    'Option<PerDispatchClassWeightsPerClass>': Option<PerDispatchClassWeightsPerClass>;
-    'Option<Period>': Option<Period>;
-    'Option<Permill>': Option<Permill>;
-    'Option<PermissionedIdentityPrefs>': Option<PermissionedIdentityPrefs>;
-    'Option<PermissionLatest>': Option<PermissionLatest>;
-    'Option<Permissions>': Option<Permissions>;
-    'Option<PermissionsV1>': Option<PermissionsV1>;
-    'Option<PermissionVersions>': Option<PermissionVersions>;
-    'Option<Perquintill>': Option<Perquintill>;
-    'Option<PersistedValidationData>': Option<PersistedValidationData>;
-    'Option<PerU16>': Option<PerU16>;
-    'Option<Phantom>': Option<Phantom>;
-    'Option<PhantomData>': Option<PhantomData>;
-    'Option<Phase>': Option<Phase>;
-    'Option<Pip>': Option<Pip>;
-    'Option<PipDescription>': Option<PipDescription>;
-    'Option<PipId>': Option<PipId>;
-    'Option<PipsMetadata>': Option<PipsMetadata>;
-    'Option<PluralityJunction>': Option<PluralityJunction>;
-    'Option<PolymeshVotes>': Option<PolymeshVotes>;
-    'Option<PortableRegistry>': Option<PortableRegistry>;
-    'Option<PortableType>': Option<PortableType>;
-    'Option<PortfolioId>': Option<PortfolioId>;
-    'Option<PortfolioKind>': Option<PortfolioKind>;
-    'Option<PortfolioName>': Option<PortfolioName>;
-    'Option<PortfolioNumber>': Option<PortfolioNumber>;
-    'Option<PortfolioPermissions>': Option<PortfolioPermissions>;
-    'Option<PortfolioValidityResult>': Option<PortfolioValidityResult>;
-    'Option<PosRatio>': Option<PosRatio>;
-    'Option<PreAuthorizedKeyInfo>': Option<PreAuthorizedKeyInfo>;
-    'Option<Precommits>': Option<Precommits>;
-    'Option<PrefabWasmModule>': Option<PrefabWasmModule>;
-    'Option<PrefixedStorageKey>': Option<PrefixedStorageKey>;
-    'Option<PreimageStatus>': Option<PreimageStatus>;
-    'Option<PreimageStatusAvailable>': Option<PreimageStatusAvailable>;
-    'Option<PreRuntime>': Option<PreRuntime>;
-    'Option<Prevotes>': Option<Prevotes>;
-    'Option<PriceTier>': Option<PriceTier>;
-    'Option<Priority>': Option<Priority>;
-    'Option<PriorLock>': Option<PriorLock>;
-    'Option<PropIndex>': Option<PropIndex>;
-    'Option<Proposal>': Option<Proposal>;
-    'Option<ProposalData>': Option<ProposalData>;
-    'Option<ProposalDetails>': Option<ProposalDetails>;
-    'Option<ProposalIndex>': Option<ProposalIndex>;
-    'Option<ProposalState>': Option<ProposalState>;
-    'Option<ProposalStatus>': Option<ProposalStatus>;
-    'Option<Proposer>': Option<Proposer>;
-    'Option<ProtocolOp>': Option<ProtocolOp>;
-    'Option<ProxyAnnouncement>': Option<ProxyAnnouncement>;
-    'Option<ProxyDefinition>': Option<ProxyDefinition>;
-    'Option<ProxyState>': Option<ProxyState>;
-    'Option<ProxyType>': Option<ProxyType>;
-    'Option<QueueConfigData>': Option<QueueConfigData>;
-    'Option<QueuedParathread>': Option<QueuedParathread>;
-    'Option<Randomness>': Option<Randomness>;
-    'Option<Raw>': Option<Raw>;
-    'Option<RawAuraPreDigest>': Option<RawAuraPreDigest>;
-    'Option<RawBabePreDigest>': Option<RawBabePreDigest>;
-    'Option<RawBabePreDigestCompat>': Option<RawBabePreDigestCompat>;
-    'Option<RawBabePreDigestPrimary>': Option<RawBabePreDigestPrimary>;
-    'Option<RawBabePreDigestPrimaryTo159>': Option<RawBabePreDigestPrimaryTo159>;
-    'Option<RawBabePreDigestSecondaryPlain>': Option<RawBabePreDigestSecondaryPlain>;
-    'Option<RawBabePreDigestSecondaryTo159>': Option<RawBabePreDigestSecondaryTo159>;
-    'Option<RawBabePreDigestSecondaryVRF>': Option<RawBabePreDigestSecondaryVRF>;
-    'Option<RawBabePreDigestTo159>': Option<RawBabePreDigestTo159>;
-    'Option<RawOrigin>': Option<RawOrigin>;
-    'Option<RawVRFOutput>': Option<RawVRFOutput>;
-    'Option<ReadProof>': Option<ReadProof>;
-    'Option<Reasons>': Option<Reasons>;
-    'Option<Receipt>': Option<Receipt>;
-    'Option<ReceiptDetails>': Option<ReceiptDetails>;
-    'Option<ReceiptMetadata>': Option<ReceiptMetadata>;
-    'Option<RecordDate>': Option<RecordDate>;
-    'Option<RecordDateSpec>': Option<RecordDateSpec>;
-    'Option<RecoveryConfig>': Option<RecoveryConfig>;
-    'Option<RefCount>': Option<RefCount>;
-    'Option<RefCountTo259>': Option<RefCountTo259>;
-    'Option<ReferendumIndex>': Option<ReferendumIndex>;
-    'Option<ReferendumInfo>': Option<ReferendumInfo>;
-    'Option<ReferendumInfoFinished>': Option<ReferendumInfoFinished>;
-    'Option<ReferendumInfoTo239>': Option<ReferendumInfoTo239>;
-    'Option<ReferendumStatus>': Option<ReferendumStatus>;
-    'Option<RegisteredParachainInfo>': Option<RegisteredParachainInfo>;
-    'Option<RelayBlockNumber>': Option<RelayBlockNumber>;
-    'Option<RelayChainBlockNumber>': Option<RelayChainBlockNumber>;
-    'Option<RelayChainHash>': Option<RelayChainHash>;
-    'Option<RelayHash>': Option<RelayHash>;
-    'Option<Releases>': Option<Releases>;
-    'Option<Remark>': Option<Remark>;
-    'Option<Renouncing>': Option<Renouncing>;
-    'Option<RentProjection>': Option<RentProjection>;
-    'Option<ReplacementTimes>': Option<ReplacementTimes>;
-    'Option<ReportedRoundStates>': Option<ReportedRoundStates>;
-    'Option<Reporter>': Option<Reporter>;
-    'Option<ReportIdOf>': Option<ReportIdOf>;
-    'Option<ReserveData>': Option<ReserveData>;
-    'Option<ReserveIdentifier>': Option<ReserveIdentifier>;
-    'Option<RestrictionResult>': Option<RestrictionResult>;
-    'Option<Retriable>': Option<Retriable>;
-    'Option<RistrettoPoint>': Option<RistrettoPoint>;
-    'Option<RoundState>': Option<RoundState>;
-    'Option<RpcMethods>': Option<RpcMethods>;
-    'Option<RuntimeDbWeight>': Option<RuntimeDbWeight>;
-    'Option<RuntimeDispatchInfo>': Option<RuntimeDispatchInfo>;
-    'Option<RuntimeVersion>': Option<RuntimeVersion>;
-    'Option<RuntimeVersionApi>': Option<RuntimeVersionApi>;
-    'Option<RuntimeVersionPartial>': Option<RuntimeVersionPartial>;
-    'Option<Scalar>': Option<Scalar>;
-    'Option<Schedule>': Option<Schedule>;
-    'Option<Scheduled>': Option<Scheduled>;
-    'Option<ScheduledTo254>': Option<ScheduledTo254>;
-    'Option<ScheduleId>': Option<ScheduleId>;
-    'Option<SchedulePeriod>': Option<SchedulePeriod>;
-    'Option<SchedulePriority>': Option<SchedulePriority>;
-    'Option<ScheduleSpec>': Option<ScheduleSpec>;
-    'Option<ScheduleTo212>': Option<ScheduleTo212>;
-    'Option<ScheduleTo258>': Option<ScheduleTo258>;
-    'Option<ScheduleTo264>': Option<ScheduleTo264>;
-    'Option<Scheduling>': Option<Scheduling>;
-    'Option<Scope>': Option<Scope>;
-    'Option<ScopeClaimProof>': Option<ScopeClaimProof>;
-    'Option<ScopeId>': Option<ScopeId>;
-    'Option<Seal>': Option<Seal>;
-    'Option<SealV0>': Option<SealV0>;
-    'Option<SecondaryKey>': Option<SecondaryKey>;
-    'Option<SecondaryKeyWithAuth>': Option<SecondaryKeyWithAuth>;
-    'Option<SecurityToken>': Option<SecurityToken>;
-    'Option<SeedOf>': Option<SeedOf>;
-    'Option<ServiceQuality>': Option<ServiceQuality>;
-    'Option<SessionIndex>': Option<SessionIndex>;
-    'Option<SessionInfo>': Option<SessionInfo>;
-    'Option<SessionInfoValidatorGroup>': Option<SessionInfoValidatorGroup>;
-    'Option<SessionKeys1>': Option<SessionKeys1>;
-    'Option<SessionKeys10>': Option<SessionKeys10>;
-    'Option<SessionKeys10B>': Option<SessionKeys10B>;
-    'Option<SessionKeys2>': Option<SessionKeys2>;
-    'Option<SessionKeys3>': Option<SessionKeys3>;
-    'Option<SessionKeys4>': Option<SessionKeys4>;
-    'Option<SessionKeys5>': Option<SessionKeys5>;
-    'Option<SessionKeys6>': Option<SessionKeys6>;
-    'Option<SessionKeys6B>': Option<SessionKeys6B>;
-    'Option<SessionKeys7>': Option<SessionKeys7>;
-    'Option<SessionKeys7B>': Option<SessionKeys7B>;
-    'Option<SessionKeys8>': Option<SessionKeys8>;
-    'Option<SessionKeys8B>': Option<SessionKeys8B>;
-    'Option<SessionKeys9>': Option<SessionKeys9>;
-    'Option<SessionKeys9B>': Option<SessionKeys9B>;
-    'Option<SetId>': Option<SetId>;
-    'Option<SetIndex>': Option<SetIndex>;
-    'Option<SettlementType>': Option<SettlementType>;
-    'Option<Si0Field>': Option<Si0Field>;
-    'Option<Si0LookupTypeId>': Option<Si0LookupTypeId>;
-    'Option<Si0Path>': Option<Si0Path>;
-    'Option<Si0Type>': Option<Si0Type>;
-    'Option<Si0TypeDef>': Option<Si0TypeDef>;
-    'Option<Si0TypeDefArray>': Option<Si0TypeDefArray>;
-    'Option<Si0TypeDefBitSequence>': Option<Si0TypeDefBitSequence>;
-    'Option<Si0TypeDefCompact>': Option<Si0TypeDefCompact>;
-    'Option<Si0TypeDefComposite>': Option<Si0TypeDefComposite>;
-    'Option<Si0TypeDefPhantom>': Option<Si0TypeDefPhantom>;
-    'Option<Si0TypeDefPrimitive>': Option<Si0TypeDefPrimitive>;
-    'Option<Si0TypeDefSequence>': Option<Si0TypeDefSequence>;
-    'Option<Si0TypeDefTuple>': Option<Si0TypeDefTuple>;
-    'Option<Si0TypeDefVariant>': Option<Si0TypeDefVariant>;
-    'Option<Si0TypeParameter>': Option<Si0TypeParameter>;
-    'Option<Si0Variant>': Option<Si0Variant>;
-    'Option<SiField>': Option<SiField>;
-    'Option<Signatory>': Option<Signatory>;
-    'Option<Signature>': Option<Signature>;
-    'Option<SignedAvailabilityBitfield>': Option<SignedAvailabilityBitfield>;
-    'Option<SignedAvailabilityBitfields>': Option<SignedAvailabilityBitfields>;
-    'Option<SignedBlock>': Option<SignedBlock>;
-    'Option<SignedBlockWithJustification>': Option<SignedBlockWithJustification>;
-    'Option<SignedBlockWithJustifications>': Option<SignedBlockWithJustifications>;
-    'Option<SignedExtensionMetadataLatest>': Option<SignedExtensionMetadataLatest>;
-    'Option<SignedExtensionMetadataV14>': Option<SignedExtensionMetadataV14>;
-    'Option<SignerPayload>': Option<SignerPayload>;
-    'Option<SigningContext>': Option<SigningContext>;
-    'Option<SiLookupTypeId>': Option<SiLookupTypeId>;
-    'Option<SiPath>': Option<SiPath>;
-    'Option<SiType>': Option<SiType>;
-    'Option<SiTypeDef>': Option<SiTypeDef>;
-    'Option<SiTypeDefArray>': Option<SiTypeDefArray>;
-    'Option<SiTypeDefBitSequence>': Option<SiTypeDefBitSequence>;
-    'Option<SiTypeDefCompact>': Option<SiTypeDefCompact>;
-    'Option<SiTypeDefComposite>': Option<SiTypeDefComposite>;
-    'Option<SiTypeDefPrimitive>': Option<SiTypeDefPrimitive>;
-    'Option<SiTypeDefSequence>': Option<SiTypeDefSequence>;
-    'Option<SiTypeDefTuple>': Option<SiTypeDefTuple>;
-    'Option<SiTypeDefVariant>': Option<SiTypeDefVariant>;
-    'Option<SiTypeParameter>': Option<SiTypeParameter>;
-    'Option<SiVariant>': Option<SiVariant>;
-    'Option<SkippedCount>': Option<SkippedCount>;
-    'Option<SlashingSwitch>': Option<SlashingSwitch>;
-    'Option<Slot>': Option<Slot>;
-    'Option<SlotNumber>': Option<SlotNumber>;
-    'Option<SlotRange>': Option<SlotRange>;
-    'Option<SmartExtension>': Option<SmartExtension>;
-    'Option<SmartExtensionName>': Option<SmartExtensionName>;
-    'Option<SmartExtensionType>': Option<SmartExtensionType>;
-    'Option<SnapshotId>': Option<SnapshotId>;
-    'Option<SnapshotMetadata>': Option<SnapshotMetadata>;
-    'Option<SnapshotResult>': Option<SnapshotResult>;
-    'Option<SnapshottedPip>': Option<SnapshottedPip>;
-    'Option<SocietyJudgement>': Option<SocietyJudgement>;
-    'Option<SocietyVote>': Option<SocietyVote>;
-    'Option<Sr25519Signature>': Option<Sr25519Signature>;
-    'Option<Statement>': Option<Statement>;
-    'Option<StatementKind>': Option<StatementKind>;
-    'Option<StorageChangeSet>': Option<StorageChangeSet>;
-    'Option<StorageData>': Option<StorageData>;
-    'Option<StorageEntryMetadataLatest>': Option<StorageEntryMetadataLatest>;
-    'Option<StorageEntryMetadataV10>': Option<StorageEntryMetadataV10>;
-    'Option<StorageEntryMetadataV11>': Option<StorageEntryMetadataV11>;
-    'Option<StorageEntryMetadataV12>': Option<StorageEntryMetadataV12>;
-    'Option<StorageEntryMetadataV13>': Option<StorageEntryMetadataV13>;
-    'Option<StorageEntryMetadataV14>': Option<StorageEntryMetadataV14>;
-    'Option<StorageEntryMetadataV9>': Option<StorageEntryMetadataV9>;
-    'Option<StorageEntryModifierLatest>': Option<StorageEntryModifierLatest>;
-    'Option<StorageEntryModifierV10>': Option<StorageEntryModifierV10>;
-    'Option<StorageEntryModifierV11>': Option<StorageEntryModifierV11>;
-    'Option<StorageEntryModifierV12>': Option<StorageEntryModifierV12>;
-    'Option<StorageEntryModifierV13>': Option<StorageEntryModifierV13>;
-    'Option<StorageEntryModifierV14>': Option<StorageEntryModifierV14>;
-    'Option<StorageEntryModifierV9>': Option<StorageEntryModifierV9>;
-    'Option<StorageEntryTypeLatest>': Option<StorageEntryTypeLatest>;
-    'Option<StorageEntryTypeV10>': Option<StorageEntryTypeV10>;
-    'Option<StorageEntryTypeV11>': Option<StorageEntryTypeV11>;
-    'Option<StorageEntryTypeV12>': Option<StorageEntryTypeV12>;
-    'Option<StorageEntryTypeV13>': Option<StorageEntryTypeV13>;
-    'Option<StorageEntryTypeV14>': Option<StorageEntryTypeV14>;
-    'Option<StorageEntryTypeV9>': Option<StorageEntryTypeV9>;
-    'Option<StorageHasher>': Option<StorageHasher>;
-    'Option<StorageHasherV10>': Option<StorageHasherV10>;
-    'Option<StorageHasherV11>': Option<StorageHasherV11>;
-    'Option<StorageHasherV12>': Option<StorageHasherV12>;
-    'Option<StorageHasherV13>': Option<StorageHasherV13>;
-    'Option<StorageHasherV14>': Option<StorageHasherV14>;
-    'Option<StorageHasherV9>': Option<StorageHasherV9>;
-    'Option<StorageKey>': Option<StorageKey>;
-    'Option<StorageKind>': Option<StorageKind>;
-    'Option<StorageMetadataLatest>': Option<StorageMetadataLatest>;
-    'Option<StorageMetadataV10>': Option<StorageMetadataV10>;
-    'Option<StorageMetadataV11>': Option<StorageMetadataV11>;
-    'Option<StorageMetadataV12>': Option<StorageMetadataV12>;
-    'Option<StorageMetadataV13>': Option<StorageMetadataV13>;
-    'Option<StorageMetadataV9>': Option<StorageMetadataV9>;
-    'Option<StorageProof>': Option<StorageProof>;
-    'Option<StoredPendingChange>': Option<StoredPendingChange>;
-    'Option<StoredSchedule>': Option<StoredSchedule>;
-    'Option<StoredState>': Option<StoredState>;
-    'Option<StrikeCount>': Option<StrikeCount>;
-    'Option<SubId>': Option<SubId>;
-    'Option<Subsidy>': Option<Subsidy>;
-    'Option<SyncState>': Option<SyncState>;
-    'Option<SystemInherentData>': Option<SystemInherentData>;
-    'Option<SystemOrigin>': Option<SystemOrigin>;
-    'Option<Tally>': Option<Tally>;
-    'Option<TargetIdAuthorization>': Option<TargetIdAuthorization>;
-    'Option<TargetIdentities>': Option<TargetIdentities>;
-    'Option<TargetIdentity>': Option<TargetIdentity>;
-    'Option<TargetTreatment>': Option<TargetTreatment>;
-    'Option<TaskAddress>': Option<TaskAddress>;
-    'Option<TAssetBalance>': Option<TAssetBalance>;
-    'Option<TAssetDepositBalance>': Option<TAssetDepositBalance>;
-    'Option<Tax>': Option<Tax>;
-    'Option<TemplateDetails>': Option<TemplateDetails>;
-    'Option<TemplateMetadata>': Option<TemplateMetadata>;
-    'Option<Text>': Option<Text>;
-    'Option<Ticker>': Option<Ticker>;
-    'Option<TickerRegistration>': Option<TickerRegistration>;
-    'Option<TickerRegistrationConfig>': Option<TickerRegistrationConfig>;
-    'Option<Timepoint>': Option<Timepoint>;
-    'Option<TokenError>': Option<TokenError>;
-    'Option<TombstoneContractInfo>': Option<TombstoneContractInfo>;
-    'Option<TraceBlockResponse>': Option<TraceBlockResponse>;
-    'Option<TraceError>': Option<TraceError>;
-    'Option<TransactionInfo>': Option<TransactionInfo>;
-    'Option<TransactionPriority>': Option<TransactionPriority>;
-    'Option<TransactionStorageProof>': Option<TransactionStorageProof>;
-    'Option<TransactionValidityError>': Option<TransactionValidityError>;
-    'Option<TransferManager>': Option<TransferManager>;
-    'Option<TransferManagerResult>': Option<TransferManagerResult>;
-    'Option<TransientValidationData>': Option<TransientValidationData>;
-    'Option<TreasuryProposal>': Option<TreasuryProposal>;
-    'Option<TrieId>': Option<TrieId>;
-    'Option<TrieIndex>': Option<TrieIndex>;
-    'Option<TrustedFor>': Option<TrustedFor>;
-    'Option<TrustedIssuer>': Option<TrustedIssuer>;
-    'Option<Type>': Option<Type>;
-    'Option<u128>': Option<u128>;
-    'Option<U128>': Option<U128>;
-    'Option<u16>': Option<u16>;
-    'Option<U16>': Option<U16>;
-    'Option<u256>': Option<u256>;
-    'Option<U256>': Option<U256>;
-    'Option<u32>': Option<u32>;
-    'Option<U32>': Option<U32>;
-    'Option<U32F32>': Option<U32F32>;
-    'Option<u64>': Option<u64>;
-    'Option<U64>': Option<U64>;
-    'Option<u8>': Option<u8>;
-    'Option<U8>': Option<U8>;
-    'Option<UncleEntryItem>': Option<UncleEntryItem>;
-    'Option<UniqueCall>': Option<UniqueCall>;
-    'Option<UnknownTransaction>': Option<UnknownTransaction>;
-    'Option<UpwardMessage>': Option<UpwardMessage>;
-    'Option<Url>': Option<Url>;
-    'Option<usize>': Option<usize>;
-    'Option<USize>': Option<USize>;
-    'Option<ValidationCode>': Option<ValidationCode>;
-    'Option<ValidationCodeHash>': Option<ValidationCodeHash>;
-    'Option<ValidationData>': Option<ValidationData>;
-    'Option<ValidationDataType>': Option<ValidationDataType>;
-    'Option<ValidationFunctionParams>': Option<ValidationFunctionParams>;
-    'Option<ValidatorCount>': Option<ValidatorCount>;
-    'Option<ValidatorId>': Option<ValidatorId>;
-    'Option<ValidatorIdOf>': Option<ValidatorIdOf>;
-    'Option<ValidatorSetId>': Option<ValidatorSetId>;
-    'Option<ValidatorSignature>': Option<ValidatorSignature>;
-    'Option<ValidDisputeStatementKind>': Option<ValidDisputeStatementKind>;
-    'Option<ValidityAttestation>': Option<ValidityAttestation>;
-    'Option<VecInboundHrmpMessage>': Option<VecInboundHrmpMessage>;
-    'Option<Venue>': Option<Venue>;
-    'Option<VenueDetails>': Option<VenueDetails>;
-    'Option<VenueId>': Option<VenueId>;
-    'Option<VenueType>': Option<VenueType>;
-    'Option<Version>': Option<Version>;
-    'Option<VersionedMultiAsset>': Option<VersionedMultiAsset>;
-    'Option<VersionedMultiLocation>': Option<VersionedMultiLocation>;
-    'Option<VersionedXcm>': Option<VersionedXcm>;
-    'Option<VestingInfo>': Option<VestingInfo>;
-    'Option<VestingSchedule>': Option<VestingSchedule>;
-    'Option<Vote>': Option<Vote>;
-    'Option<VoteByPip>': Option<VoteByPip>;
-    'Option<VoteCount>': Option<VoteCount>;
-    'Option<VoteCountProposalFound>': Option<VoteCountProposalFound>;
-    'Option<VoteIndex>': Option<VoteIndex>;
-    'Option<VoterInfo>': Option<VoterInfo>;
-    'Option<Votes>': Option<Votes>;
-    'Option<VotesTo230>': Option<VotesTo230>;
-    'Option<VoteThreshold>': Option<VoteThreshold>;
-    'Option<Voting>': Option<Voting>;
-    'Option<VotingDelegating>': Option<VotingDelegating>;
-    'Option<VotingDirect>': Option<VotingDirect>;
-    'Option<VotingDirectVote>': Option<VotingDirectVote>;
-    'Option<VotingResult>': Option<VotingResult>;
-    'Option<VouchingStatus>': Option<VouchingStatus>;
-    'Option<VrfData>': Option<VrfData>;
-    'Option<VrfOutput>': Option<VrfOutput>;
-    'Option<VrfProof>': Option<VrfProof>;
-    'Option<Weight>': Option<Weight>;
-    'Option<WeightMultiplier>': Option<WeightMultiplier>;
-    'Option<WeightPerClass>': Option<WeightPerClass>;
-    'Option<WeightToFeeCoefficient>': Option<WeightToFeeCoefficient>;
-    'Option<WinnersData>': Option<WinnersData>;
-    'Option<WinnersDataTuple>': Option<WinnersDataTuple>;
-    'Option<WinningData>': Option<WinningData>;
-    'Option<WinningDataEntry>': Option<WinningDataEntry>;
-    'Option<WithdrawReasons>': Option<WithdrawReasons>;
-    'Option<Xcm>': Option<Xcm>;
-    'Option<XcmAssetEffects>': Option<XcmAssetEffects>;
-    'Option<XcmError>': Option<XcmError>;
-    'Option<XcmHrmpChannelAccepted>': Option<XcmHrmpChannelAccepted>;
-    'Option<XcmHrmpChannelClosing>': Option<XcmHrmpChannelClosing>;
-    'Option<XcmHrmpNewChannelOpenRequest>': Option<XcmHrmpNewChannelOpenRequest>;
-    'Option<XcmOrder>': Option<XcmOrder>;
-    'Option<XcmOrderBuyExecution>': Option<XcmOrderBuyExecution>;
-    'Option<XcmOrderDepositAsset>': Option<XcmOrderDepositAsset>;
-    'Option<XcmOrderDepositReserveAsset>': Option<XcmOrderDepositReserveAsset>;
-    'Option<XcmOrderExchangeAsset>': Option<XcmOrderExchangeAsset>;
-    'Option<XcmOrderInitiateReserveWithdraw>': Option<XcmOrderInitiateReserveWithdraw>;
-    'Option<XcmOrderInitiateTeleport>': Option<XcmOrderInitiateTeleport>;
-    'Option<XcmOrderQueryHolding>': Option<XcmOrderQueryHolding>;
-    'Option<XcmOrigin>': Option<XcmOrigin>;
-    'Option<XcmOriginKind>': Option<XcmOriginKind>;
-    'Option<XcmpMessageFormat>': Option<XcmpMessageFormat>;
-    'Option<XcmQueryResponse>': Option<XcmQueryResponse>;
-    'Option<XcmRelayedFrom>': Option<XcmRelayedFrom>;
-    'Option<XcmReserveAssetDeposit>': Option<XcmReserveAssetDeposit>;
-    'Option<XcmResponse>': Option<XcmResponse>;
-    'Option<XcmTeleportAsset>': Option<XcmTeleportAsset>;
-    'Option<XcmTransact>': Option<XcmTransact>;
-    'Option<XcmTransferAsset>': Option<XcmTransferAsset>;
-    'Option<XcmTransferReserveAsset>': Option<XcmTransferReserveAsset>;
-    'Option<XcmWithdrawAsset>': Option<XcmWithdrawAsset>;
-    'Option<ZkProofData>': Option<ZkProofData>;
-    'Vec<AbridgedCandidateReceipt>': Vec<AbridgedCandidateReceipt>;
-    'Vec<AbridgedHostConfiguration>': Vec<AbridgedHostConfiguration>;
-    'Vec<AbridgedHrmpChannel>': Vec<AbridgedHrmpChannel>;
-    'Vec<AccountData>': Vec<AccountData>;
-    'Vec<AccountId>': Vec<AccountId>;
-    'Vec<AccountId20>': Vec<AccountId20>;
-    'Vec<AccountId32>': Vec<AccountId32>;
-    'Vec<AccountId32Junction>': Vec<AccountId32Junction>;
-    'Vec<AccountIdOf>': Vec<AccountIdOf>;
-    'Vec<AccountIndex>': Vec<AccountIndex>;
-    'Vec<AccountIndex64Junction>': Vec<AccountIndex64Junction>;
-    'Vec<AccountInfo>': Vec<AccountInfo>;
-    'Vec<AccountInfoWithDualRefCount>': Vec<AccountInfoWithDualRefCount>;
-    'Vec<AccountInfoWithProviders>': Vec<AccountInfoWithProviders>;
-    'Vec<AccountInfoWithRefCount>': Vec<AccountInfoWithRefCount>;
-    'Vec<AccountInfoWithRefCountU8>': Vec<AccountInfoWithRefCountU8>;
-    'Vec<AccountInfoWithTripleRefCount>': Vec<AccountInfoWithTripleRefCount>;
-    'Vec<AccountKey20Junction>': Vec<AccountKey20Junction>;
-    'Vec<AccountStatus>': Vec<AccountStatus>;
-    'Vec<AccountValidity>': Vec<AccountValidity>;
-    'Vec<AccountVote>': Vec<AccountVote>;
-    'Vec<AccountVoteSplit>': Vec<AccountVoteSplit>;
-    'Vec<AccountVoteStandard>': Vec<AccountVoteStandard>;
-    'Vec<ActiveGilt>': Vec<ActiveGilt>;
-    'Vec<ActiveGiltsTotal>': Vec<ActiveGiltsTotal>;
-    'Vec<ActiveIndex>': Vec<ActiveIndex>;
-    'Vec<ActiveRecovery>': Vec<ActiveRecovery>;
-    'Vec<Address>': Vec<Address>;
-    'Vec<AffirmationStatus>': Vec<AffirmationStatus>;
-    'Vec<AgentGroup>': Vec<AgentGroup>;
-    'Vec<AGId>': Vec<AGId>;
-    'Vec<AliveContractInfo>': Vec<AliveContractInfo>;
-    'Vec<AllowedSlots>': Vec<AllowedSlots>;
-    'Vec<AnySignature>': Vec<AnySignature>;
-    'Vec<ApiId>': Vec<ApiId>;
-    'Vec<ApplyExtrinsicResult>': Vec<ApplyExtrinsicResult>;
-    'Vec<ApprovalFlag>': Vec<ApprovalFlag>;
-    'Vec<Approvals>': Vec<Approvals>;
-    'Vec<ArithmeticError>': Vec<ArithmeticError>;
-    'Vec<AssetApproval>': Vec<AssetApproval>;
-    'Vec<AssetApprovalKey>': Vec<AssetApprovalKey>;
-    'Vec<AssetBalance>': Vec<AssetBalance>;
-    'Vec<AssetCompliance>': Vec<AssetCompliance>;
-    'Vec<AssetComplianceResult>': Vec<AssetComplianceResult>;
-    'Vec<AssetDestroyWitness>': Vec<AssetDestroyWitness>;
-    'Vec<AssetDetails>': Vec<AssetDetails>;
-    'Vec<AssetDidResult>': Vec<AssetDidResult>;
-    'Vec<AssetId>': Vec<AssetId>;
-    'Vec<AssetIdentifier>': Vec<AssetIdentifier>;
-    'Vec<AssetInstance>': Vec<AssetInstance>;
-    'Vec<AssetMetadata>': Vec<AssetMetadata>;
-    'Vec<AssetName>': Vec<AssetName>;
-    'Vec<AssetOptions>': Vec<AssetOptions>;
-    'Vec<AssetOwnershipRelation>': Vec<AssetOwnershipRelation>;
-    'Vec<AssetPermissions>': Vec<AssetPermissions>;
-    'Vec<AssetType>': Vec<AssetType>;
-    'Vec<AssignmentId>': Vec<AssignmentId>;
-    'Vec<AssignmentKind>': Vec<AssignmentKind>;
-    'Vec<AttestedCandidate>': Vec<AttestedCandidate>;
-    'Vec<AuctionIndex>': Vec<AuctionIndex>;
-    'Vec<AuthIndex>': Vec<AuthIndex>;
-    'Vec<AuthorityDiscoveryId>': Vec<AuthorityDiscoveryId>;
-    'Vec<AuthorityId>': Vec<AuthorityId>;
-    'Vec<AuthorityIndex>': Vec<AuthorityIndex>;
-    'Vec<AuthorityList>': Vec<AuthorityList>;
-    'Vec<AuthoritySet>': Vec<AuthoritySet>;
-    'Vec<AuthoritySetChange>': Vec<AuthoritySetChange>;
-    'Vec<AuthoritySetChanges>': Vec<AuthoritySetChanges>;
-    'Vec<AuthoritySignature>': Vec<AuthoritySignature>;
-    'Vec<AuthorityWeight>': Vec<AuthorityWeight>;
-    'Vec<Authorization>': Vec<Authorization>;
-    'Vec<AuthorizationData>': Vec<AuthorizationData>;
-    'Vec<AuthorizationNonce>': Vec<AuthorizationNonce>;
-    'Vec<AuthorizationType>': Vec<AuthorizationType>;
-    'Vec<AvailabilityBitfield>': Vec<AvailabilityBitfield>;
-    'Vec<AvailabilityBitfieldRecord>': Vec<AvailabilityBitfieldRecord>;
-    'Vec<BabeAuthorityWeight>': Vec<BabeAuthorityWeight>;
-    'Vec<BabeBlockWeight>': Vec<BabeBlockWeight>;
-    'Vec<BabeEpochConfiguration>': Vec<BabeEpochConfiguration>;
-    'Vec<BabeEquivocationProof>': Vec<BabeEquivocationProof>;
-    'Vec<BabeWeight>': Vec<BabeWeight>;
-    'Vec<BackedCandidate>': Vec<BackedCandidate>;
-    'Vec<Balance>': Vec<Balance>;
-    'Vec<BalanceLock>': Vec<BalanceLock>;
-    'Vec<BalanceLockTo212>': Vec<BalanceLockTo212>;
-    'Vec<BalanceOf>': Vec<BalanceOf>;
-    'Vec<BalanceStatus>': Vec<BalanceStatus>;
-    'Vec<BallotMeta>': Vec<BallotMeta>;
-    'Vec<BallotTimeRange>': Vec<BallotTimeRange>;
-    'Vec<BallotTitle>': Vec<BallotTitle>;
-    'Vec<BallotVote>': Vec<BallotVote>;
-    'Vec<BeefyCommitment>': Vec<BeefyCommitment>;
-    'Vec<BeefyId>': Vec<BeefyId>;
-    'Vec<BeefyKey>': Vec<BeefyKey>;
-    'Vec<BeefyNextAuthoritySet>': Vec<BeefyNextAuthoritySet>;
-    'Vec<BeefyPayload>': Vec<BeefyPayload>;
-    'Vec<BeefySignedCommitment>': Vec<BeefySignedCommitment>;
-    'Vec<Beneficiary>': Vec<Beneficiary>;
-    'Vec<Bid>': Vec<Bid>;
-    'Vec<Bidder>': Vec<Bidder>;
-    'Vec<BidKind>': Vec<BidKind>;
-    'Vec<BitVec>': Vec<BitVec>;
-    'Vec<Block>': Vec<Block>;
-    'Vec<BlockAttestations>': Vec<BlockAttestations>;
-    'Vec<BlockHash>': Vec<BlockHash>;
-    'Vec<BlockLength>': Vec<BlockLength>;
-    'Vec<BlockNumber>': Vec<BlockNumber>;
-    'Vec<BlockNumberFor>': Vec<BlockNumberFor>;
-    'Vec<BlockNumberOf>': Vec<BlockNumberOf>;
-    'Vec<BlockTrace>': Vec<BlockTrace>;
-    'Vec<BlockTraceEvent>': Vec<BlockTraceEvent>;
-    'Vec<BlockTraceEventData>': Vec<BlockTraceEventData>;
-    'Vec<BlockTraceSpan>': Vec<BlockTraceSpan>;
-    'Vec<BlockWeights>': Vec<BlockWeights>;
-    'Vec<BodyId>': Vec<BodyId>;
-    'Vec<BodyPart>': Vec<BodyPart>;
-    'Vec<BodyPartAtLeastProportion>': Vec<BodyPartAtLeastProportion>;
-    'Vec<BodyPartFraction>': Vec<BodyPartFraction>;
-    'Vec<BodyPartMoreThanProportion>': Vec<BodyPartMoreThanProportion>;
-    'Vec<bool>': Vec<bool>;
-    'Vec<Bool>': Vec<Bool>;
-    'Vec<Bounty>': Vec<Bounty>;
-    'Vec<BountyIndex>': Vec<BountyIndex>;
-    'Vec<BountyStatus>': Vec<BountyStatus>;
-    'Vec<BountyStatusActive>': Vec<BountyStatusActive>;
-    'Vec<BountyStatusCuratorProposed>': Vec<BountyStatusCuratorProposed>;
-    'Vec<BountyStatusPendingPayout>': Vec<BountyStatusPendingPayout>;
-    'Vec<BridgedBlockHash>': Vec<BridgedBlockHash>;
-    'Vec<BridgedBlockNumber>': Vec<BridgedBlockNumber>;
-    'Vec<BridgedHeader>': Vec<BridgedHeader>;
-    'Vec<BridgeTx>': Vec<BridgeTx>;
-    'Vec<BridgeTxDetail>': Vec<BridgeTxDetail>;
-    'Vec<BridgeTxStatus>': Vec<BridgeTxStatus>;
-    'Vec<BufferedSessionChange>': Vec<BufferedSessionChange>;
-    'Vec<Bytes>': Vec<Bytes>;
-    'Vec<CACheckpoint>': Vec<CACheckpoint>;
-    'Vec<CADetails>': Vec<CADetails>;
-    'Vec<CAId>': Vec<CAId>;
-    'Vec<CAKind>': Vec<CAKind>;
-    'Vec<CalendarPeriod>': Vec<CalendarPeriod>;
-    'Vec<CalendarUnit>': Vec<CalendarUnit>;
-    'Vec<Call>': Vec<Call>;
-    'Vec<CallHash>': Vec<CallHash>;
-    'Vec<CallHashOf>': Vec<CallHashOf>;
-    'Vec<CallIndex>': Vec<CallIndex>;
-    'Vec<CandidateCommitments>': Vec<CandidateCommitments>;
-    'Vec<CandidateDescriptor>': Vec<CandidateDescriptor>;
-    'Vec<CandidateHash>': Vec<CandidateHash>;
-    'Vec<CandidateInfo>': Vec<CandidateInfo>;
-    'Vec<CandidatePendingAvailability>': Vec<CandidatePendingAvailability>;
-    'Vec<CandidateReceipt>': Vec<CandidateReceipt>;
-    'Vec<CanTransferResult>': Vec<CanTransferResult>;
-    'Vec<CappedFee>': Vec<CappedFee>;
-    'Vec<CddId>': Vec<CddId>;
-    'Vec<CddStatus>': Vec<CddStatus>;
-    'Vec<ChainProperties>': Vec<ChainProperties>;
-    'Vec<ChainType>': Vec<ChainType>;
-    'Vec<ChangesTrieConfiguration>': Vec<ChangesTrieConfiguration>;
-    'Vec<ChangesTrieSignal>': Vec<ChangesTrieSignal>;
-    'Vec<CheckpointId>': Vec<CheckpointId>;
-    'Vec<CheckpointSchedule>': Vec<CheckpointSchedule>;
-    'Vec<ChoiceTitle>': Vec<ChoiceTitle>;
-    'Vec<Claim>': Vec<Claim>;
-    'Vec<Claim1stKey>': Vec<Claim1stKey>;
-    'Vec<Claim2ndKey>': Vec<Claim2ndKey>;
-    'Vec<ClaimType>': Vec<ClaimType>;
-    'Vec<ClassDetails>': Vec<ClassDetails>;
-    'Vec<ClassicTickerImport>': Vec<ClassicTickerImport>;
-    'Vec<ClassicTickerRegistration>': Vec<ClassicTickerRegistration>;
-    'Vec<ClassId>': Vec<ClassId>;
-    'Vec<ClassMetadata>': Vec<ClassMetadata>;
-    'Vec<CodecHash>': Vec<CodecHash>;
-    'Vec<CodeHash>': Vec<CodeHash>;
-    'Vec<CollatorId>': Vec<CollatorId>;
-    'Vec<CollatorSignature>': Vec<CollatorSignature>;
-    'Vec<CollectiveOrigin>': Vec<CollectiveOrigin>;
-    'Vec<CommittedCandidateReceipt>': Vec<CommittedCandidateReceipt>;
-    'Vec<Committee>': Vec<Committee>;
-    'Vec<ComplianceRequirement>': Vec<ComplianceRequirement>;
-    'Vec<ComplianceRequirementResult>': Vec<ComplianceRequirementResult>;
-    'Vec<Condition>': Vec<Condition>;
-    'Vec<ConditionResult>': Vec<ConditionResult>;
-    'Vec<ConditionType>': Vec<ConditionType>;
-    'Vec<ConfigData>': Vec<ConfigData>;
-    'Vec<Consensus>': Vec<Consensus>;
-    'Vec<ConsensusEngineId>': Vec<ConsensusEngineId>;
-    'Vec<ConsumedWeight>': Vec<ConsumedWeight>;
-    'Vec<ContractCallRequest>': Vec<ContractCallRequest>;
-    'Vec<ContractConstructorSpec>': Vec<ContractConstructorSpec>;
-    'Vec<ContractContractSpec>': Vec<ContractContractSpec>;
-    'Vec<ContractCryptoHasher>': Vec<ContractCryptoHasher>;
-    'Vec<ContractDiscriminant>': Vec<ContractDiscriminant>;
-    'Vec<ContractDisplayName>': Vec<ContractDisplayName>;
-    'Vec<ContractEventParamSpec>': Vec<ContractEventParamSpec>;
-    'Vec<ContractEventSpec>': Vec<ContractEventSpec>;
-    'Vec<ContractExecResult>': Vec<ContractExecResult>;
-    'Vec<ContractExecResultErr>': Vec<ContractExecResultErr>;
-    'Vec<ContractExecResultErrModule>': Vec<ContractExecResultErrModule>;
-    'Vec<ContractExecResultOk>': Vec<ContractExecResultOk>;
-    'Vec<ContractExecResultResult>': Vec<ContractExecResultResult>;
-    'Vec<ContractExecResultSuccessTo255>': Vec<ContractExecResultSuccessTo255>;
-    'Vec<ContractExecResultSuccessTo260>': Vec<ContractExecResultSuccessTo260>;
-    'Vec<ContractExecResultTo255>': Vec<ContractExecResultTo255>;
-    'Vec<ContractExecResultTo260>': Vec<ContractExecResultTo260>;
-    'Vec<ContractExecResultTo267>': Vec<ContractExecResultTo267>;
-    'Vec<ContractInfo>': Vec<ContractInfo>;
-    'Vec<ContractInstantiateResult>': Vec<ContractInstantiateResult>;
-    'Vec<ContractLayoutArray>': Vec<ContractLayoutArray>;
-    'Vec<ContractLayoutCell>': Vec<ContractLayoutCell>;
-    'Vec<ContractLayoutEnum>': Vec<ContractLayoutEnum>;
-    'Vec<ContractLayoutHash>': Vec<ContractLayoutHash>;
-    'Vec<ContractLayoutHashingStrategy>': Vec<ContractLayoutHashingStrategy>;
-    'Vec<ContractLayoutKey>': Vec<ContractLayoutKey>;
-    'Vec<ContractLayoutStruct>': Vec<ContractLayoutStruct>;
-    'Vec<ContractLayoutStructField>': Vec<ContractLayoutStructField>;
-    'Vec<ContractMessageParamSpec>': Vec<ContractMessageParamSpec>;
-    'Vec<ContractMessageSpec>': Vec<ContractMessageSpec>;
-    'Vec<ContractProject>': Vec<ContractProject>;
-    'Vec<ContractProjectContract>': Vec<ContractProjectContract>;
-    'Vec<ContractProjectSource>': Vec<ContractProjectSource>;
-    'Vec<ContractSelector>': Vec<ContractSelector>;
-    'Vec<ContractStorageKey>': Vec<ContractStorageKey>;
-    'Vec<ContractStorageLayout>': Vec<ContractStorageLayout>;
-    'Vec<ContractTypeSpec>': Vec<ContractTypeSpec>;
-    'Vec<Conviction>': Vec<Conviction>;
-    'Vec<CoreAssignment>': Vec<CoreAssignment>;
-    'Vec<CoreIndex>': Vec<CoreIndex>;
-    'Vec<CoreOccupied>': Vec<CoreOccupied>;
-    'Vec<CorporateAction>': Vec<CorporateAction>;
-    'Vec<Counter>': Vec<Counter>;
-    'Vec<CountryCode>': Vec<CountryCode>;
-    'Vec<CreatedBlock>': Vec<CreatedBlock>;
-    'Vec<CustomAssetTypeId>': Vec<CustomAssetTypeId>;
-    'Vec<Data>': Vec<Data>;
-    'Vec<DeferredOffenceOf>': Vec<DeferredOffenceOf>;
-    'Vec<DefunctVoter>': Vec<DefunctVoter>;
-    'Vec<DelayKind>': Vec<DelayKind>;
-    'Vec<DelayKindBest>': Vec<DelayKindBest>;
-    'Vec<Delegations>': Vec<Delegations>;
-    'Vec<DeletedContract>': Vec<DeletedContract>;
-    'Vec<DepositBalance>': Vec<DepositBalance>;
-    'Vec<DepositBalanceOf>': Vec<DepositBalanceOf>;
-    'Vec<DepositInfo>': Vec<DepositInfo>;
-    'Vec<DestroyWitness>': Vec<DestroyWitness>;
-    'Vec<DidRecord>': Vec<DidRecord>;
-    'Vec<DidRecords>': Vec<DidRecords>;
-    'Vec<DidRecordsSuccess>': Vec<DidRecordsSuccess>;
-    'Vec<DidStatus>': Vec<DidStatus>;
-    'Vec<Digest>': Vec<Digest>;
-    'Vec<DigestItem>': Vec<DigestItem>;
-    'Vec<DigestOf>': Vec<DigestOf>;
-    'Vec<DispatchableName>': Vec<DispatchableName>;
-    'Vec<DispatchableNames>': Vec<DispatchableNames>;
-    'Vec<DispatchClass>': Vec<DispatchClass>;
-    'Vec<DispatchError>': Vec<DispatchError>;
-    'Vec<DispatchErrorModule>': Vec<DispatchErrorModule>;
-    'Vec<DispatchErrorTo198>': Vec<DispatchErrorTo198>;
-    'Vec<DispatchInfo>': Vec<DispatchInfo>;
-    'Vec<DispatchInfoTo190>': Vec<DispatchInfoTo190>;
-    'Vec<DispatchInfoTo244>': Vec<DispatchInfoTo244>;
-    'Vec<DispatchOutcome>': Vec<DispatchOutcome>;
-    'Vec<DispatchResult>': Vec<DispatchResult>;
-    'Vec<DispatchResultOf>': Vec<DispatchResultOf>;
-    'Vec<DispatchResultTo198>': Vec<DispatchResultTo198>;
-    'Vec<DisputeStatement>': Vec<DisputeStatement>;
-    'Vec<DisputeStatementSet>': Vec<DisputeStatementSet>;
-    'Vec<Distribution>': Vec<Distribution>;
-    'Vec<Document>': Vec<Document>;
-    'Vec<DocumentHash>': Vec<DocumentHash>;
-    'Vec<DocumentId>': Vec<DocumentId>;
-    'Vec<DocumentName>': Vec<DocumentName>;
-    'Vec<DocumentType>': Vec<DocumentType>;
-    'Vec<DocumentUri>': Vec<DocumentUri>;
-    'Vec<DoubleEncodedCall>': Vec<DoubleEncodedCall>;
-    'Vec<DoubleVoteReport>': Vec<DoubleVoteReport>;
-    'Vec<DownwardMessage>': Vec<DownwardMessage>;
-    'Vec<EcdsaSignature>': Vec<EcdsaSignature>;
-    'Vec<Ed25519Signature>': Vec<Ed25519Signature>;
-    'Vec<EncodedFinalityProofs>': Vec<EncodedFinalityProofs>;
-    'Vec<EncodedJustification>': Vec<EncodedJustification>;
-    'Vec<EpochAuthorship>': Vec<EpochAuthorship>;
-    'Vec<ErrorAt>': Vec<ErrorAt>;
-    'Vec<ErrorMetadataLatest>': Vec<ErrorMetadataLatest>;
-    'Vec<ErrorMetadataV10>': Vec<ErrorMetadataV10>;
-    'Vec<ErrorMetadataV11>': Vec<ErrorMetadataV11>;
-    'Vec<ErrorMetadataV12>': Vec<ErrorMetadataV12>;
-    'Vec<ErrorMetadataV13>': Vec<ErrorMetadataV13>;
-    'Vec<ErrorMetadataV9>': Vec<ErrorMetadataV9>;
-    'Vec<EthAccount>': Vec<EthAccount>;
-    'Vec<EthBlock>': Vec<EthBlock>;
-    'Vec<EthBloom>': Vec<EthBloom>;
-    'Vec<EthCallRequest>': Vec<EthCallRequest>;
-    'Vec<EthereumAccountId>': Vec<EthereumAccountId>;
-    'Vec<EthereumAddress>': Vec<EthereumAddress>;
-    'Vec<EthereumLookupSource>': Vec<EthereumLookupSource>;
-    'Vec<EthereumSignature>': Vec<EthereumSignature>;
-    'Vec<EthFilter>': Vec<EthFilter>;
-    'Vec<EthFilterAddress>': Vec<EthFilterAddress>;
-    'Vec<EthFilterChanges>': Vec<EthFilterChanges>;
-    'Vec<EthFilterTopic>': Vec<EthFilterTopic>;
-    'Vec<EthFilterTopicEntry>': Vec<EthFilterTopicEntry>;
-    'Vec<EthFilterTopicInner>': Vec<EthFilterTopicInner>;
-    'Vec<EthHeader>': Vec<EthHeader>;
-    'Vec<EthLog>': Vec<EthLog>;
-    'Vec<EthReceipt>': Vec<EthReceipt>;
-    'Vec<EthRichBlock>': Vec<EthRichBlock>;
-    'Vec<EthRichHeader>': Vec<EthRichHeader>;
-    'Vec<EthStorageProof>': Vec<EthStorageProof>;
-    'Vec<EthSubKind>': Vec<EthSubKind>;
-    'Vec<EthSubParams>': Vec<EthSubParams>;
-    'Vec<EthSubResult>': Vec<EthSubResult>;
-    'Vec<EthSyncInfo>': Vec<EthSyncInfo>;
-    'Vec<EthSyncStatus>': Vec<EthSyncStatus>;
-    'Vec<EthTransaction>': Vec<EthTransaction>;
-    'Vec<EthTransactionAction>': Vec<EthTransactionAction>;
-    'Vec<EthTransactionCondition>': Vec<EthTransactionCondition>;
-    'Vec<EthTransactionRequest>': Vec<EthTransactionRequest>;
-    'Vec<EthTransactionSignature>': Vec<EthTransactionSignature>;
-    'Vec<EthTransactionStatus>': Vec<EthTransactionStatus>;
-    'Vec<EthWork>': Vec<EthWork>;
-    'Vec<Event>': Vec<Event>;
-    'Vec<EventCounts>': Vec<EventCounts>;
-    'Vec<EventDid>': Vec<EventDid>;
-    'Vec<EventId>': Vec<EventId>;
-    'Vec<EventIndex>': Vec<EventIndex>;
-    'Vec<EventMetadataLatest>': Vec<EventMetadataLatest>;
-    'Vec<EventMetadataV10>': Vec<EventMetadataV10>;
-    'Vec<EventMetadataV11>': Vec<EventMetadataV11>;
-    'Vec<EventMetadataV12>': Vec<EventMetadataV12>;
-    'Vec<EventMetadataV13>': Vec<EventMetadataV13>;
-    'Vec<EventMetadataV9>': Vec<EventMetadataV9>;
-    'Vec<EventRecord>': Vec<EventRecord>;
-    'Vec<EvmAccount>': Vec<EvmAccount>;
-    'Vec<EvmLog>': Vec<EvmLog>;
-    'Vec<EvmVicinity>': Vec<EvmVicinity>;
-    'Vec<ExecReturnValue>': Vec<ExecReturnValue>;
-    'Vec<ExitError>': Vec<ExitError>;
-    'Vec<ExitFatal>': Vec<ExitFatal>;
-    'Vec<ExitReason>': Vec<ExitReason>;
-    'Vec<ExitRevert>': Vec<ExitRevert>;
-    'Vec<ExitSucceed>': Vec<ExitSucceed>;
-    'Vec<ExplicitDisputeStatement>': Vec<ExplicitDisputeStatement>;
-    'Vec<ExtensionAttributes>': Vec<ExtensionAttributes>;
-    'Vec<Extrinsic>': Vec<Extrinsic>;
-    'Vec<ExtrinsicEra>': Vec<ExtrinsicEra>;
-    'Vec<ExtrinsicMetadataLatest>': Vec<ExtrinsicMetadataLatest>;
-    'Vec<ExtrinsicMetadataV11>': Vec<ExtrinsicMetadataV11>;
-    'Vec<ExtrinsicMetadataV12>': Vec<ExtrinsicMetadataV12>;
-    'Vec<ExtrinsicMetadataV13>': Vec<ExtrinsicMetadataV13>;
-    'Vec<ExtrinsicMetadataV14>': Vec<ExtrinsicMetadataV14>;
-    'Vec<ExtrinsicOrHash>': Vec<ExtrinsicOrHash>;
-    'Vec<ExtrinsicPayload>': Vec<ExtrinsicPayload>;
-    'Vec<ExtrinsicPayloadUnknown>': Vec<ExtrinsicPayloadUnknown>;
-    'Vec<ExtrinsicPayloadV4>': Vec<ExtrinsicPayloadV4>;
-    'Vec<ExtrinsicPermissions>': Vec<ExtrinsicPermissions>;
-    'Vec<ExtrinsicSignature>': Vec<ExtrinsicSignature>;
-    'Vec<ExtrinsicSignatureV4>': Vec<ExtrinsicSignatureV4>;
-    'Vec<ExtrinsicStatus>': Vec<ExtrinsicStatus>;
-    'Vec<ExtrinsicsWeight>': Vec<ExtrinsicsWeight>;
-    'Vec<ExtrinsicUnknown>': Vec<ExtrinsicUnknown>;
-    'Vec<ExtrinsicV4>': Vec<ExtrinsicV4>;
-    'Vec<ExtVersion>': Vec<ExtVersion>;
-    'Vec<FeeDetails>': Vec<FeeDetails>;
-    'Vec<Fixed128>': Vec<Fixed128>;
-    'Vec<Fixed64>': Vec<Fixed64>;
-    'Vec<FixedI128>': Vec<FixedI128>;
-    'Vec<FixedI64>': Vec<FixedI64>;
-    'Vec<FixedU128>': Vec<FixedU128>;
-    'Vec<FixedU64>': Vec<FixedU64>;
-    'Vec<ForkTreePendingChange>': Vec<ForkTreePendingChange>;
-    'Vec<ForkTreePendingChangeNode>': Vec<ForkTreePendingChangeNode>;
-    'Vec<FullIdentification>': Vec<FullIdentification>;
-    'Vec<FunctionArgumentMetadataLatest>': Vec<FunctionArgumentMetadataLatest>;
-    'Vec<FunctionArgumentMetadataV10>': Vec<FunctionArgumentMetadataV10>;
-    'Vec<FunctionArgumentMetadataV11>': Vec<FunctionArgumentMetadataV11>;
-    'Vec<FunctionArgumentMetadataV12>': Vec<FunctionArgumentMetadataV12>;
-    'Vec<FunctionArgumentMetadataV13>': Vec<FunctionArgumentMetadataV13>;
-    'Vec<FunctionArgumentMetadataV9>': Vec<FunctionArgumentMetadataV9>;
-    'Vec<FunctionMetadataLatest>': Vec<FunctionMetadataLatest>;
-    'Vec<FunctionMetadataV10>': Vec<FunctionMetadataV10>;
-    'Vec<FunctionMetadataV11>': Vec<FunctionMetadataV11>;
-    'Vec<FunctionMetadataV12>': Vec<FunctionMetadataV12>;
-    'Vec<FunctionMetadataV13>': Vec<FunctionMetadataV13>;
-    'Vec<FunctionMetadataV9>': Vec<FunctionMetadataV9>;
-    'Vec<FundIndex>': Vec<FundIndex>;
-    'Vec<FundInfo>': Vec<FundInfo>;
-    'Vec<FundingRoundName>': Vec<FundingRoundName>;
-    'Vec<Fundraiser>': Vec<Fundraiser>;
-    'Vec<FundraiserId>': Vec<FundraiserId>;
-    'Vec<FundraiserName>': Vec<FundraiserName>;
-    'Vec<FundraiserStatus>': Vec<FundraiserStatus>;
-    'Vec<FundraiserTier>': Vec<FundraiserTier>;
-    'Vec<Gas>': Vec<Gas>;
-    'Vec<GiltBid>': Vec<GiltBid>;
-    'Vec<GlobalValidationData>': Vec<GlobalValidationData>;
-    'Vec<GlobalValidationSchedule>': Vec<GlobalValidationSchedule>;
-    'Vec<GrandpaCommit>': Vec<GrandpaCommit>;
-    'Vec<GrandpaEquivocation>': Vec<GrandpaEquivocation>;
-    'Vec<GrandpaEquivocationProof>': Vec<GrandpaEquivocationProof>;
-    'Vec<GrandpaEquivocationValue>': Vec<GrandpaEquivocationValue>;
-    'Vec<GrandpaJustification>': Vec<GrandpaJustification>;
-    'Vec<GrandpaPrecommit>': Vec<GrandpaPrecommit>;
-    'Vec<GrandpaPrevote>': Vec<GrandpaPrevote>;
-    'Vec<GrandpaSignedPrecommit>': Vec<GrandpaSignedPrecommit>;
-    'Vec<GranularCanTransferResult>': Vec<GranularCanTransferResult>;
-    'Vec<GroupIndex>': Vec<GroupIndex>;
-    'Vec<H1024>': Vec<H1024>;
-    'Vec<H128>': Vec<H128>;
-    'Vec<H160>': Vec<H160>;
-    'Vec<H2048>': Vec<H2048>;
-    'Vec<H256>': Vec<H256>;
-    'Vec<H32>': Vec<H32>;
-    'Vec<H512>': Vec<H512>;
-    'Vec<H64>': Vec<H64>;
-    'Vec<HandledTxStatus>': Vec<HandledTxStatus>;
-    'Vec<Hash>': Vec<Hash>;
-    'Vec<HeadData>': Vec<HeadData>;
-    'Vec<Header>': Vec<Header>;
-    'Vec<HeaderPartial>': Vec<HeaderPartial>;
-    'Vec<Health>': Vec<Health>;
-    'Vec<Heartbeat>': Vec<Heartbeat>;
-    'Vec<HeartbeatTo244>': Vec<HeartbeatTo244>;
-    'Vec<HostConfiguration>': Vec<HostConfiguration>;
-    'Vec<HostFnWeights>': Vec<HostFnWeights>;
-    'Vec<HostFnWeightsTo264>': Vec<HostFnWeightsTo264>;
-    'Vec<HrmpChannel>': Vec<HrmpChannel>;
-    'Vec<HrmpChannelId>': Vec<HrmpChannelId>;
-    'Vec<HrmpOpenChannelRequest>': Vec<HrmpOpenChannelRequest>;
-    'Vec<i128>': Vec<i128>;
-    'Vec<I128>': Vec<I128>;
-    'Vec<i16>': Vec<i16>;
-    'Vec<I16>': Vec<I16>;
-    'Vec<i256>': Vec<i256>;
-    'Vec<I256>': Vec<I256>;
-    'Vec<i32>': Vec<i32>;
-    'Vec<I32>': Vec<I32>;
-    'Vec<I32F32>': Vec<I32F32>;
-    'Vec<i64>': Vec<i64>;
-    'Vec<I64>': Vec<I64>;
-    'Vec<i8>': Vec<i8>;
-    'Vec<I8>': Vec<I8>;
-    'Vec<IdentificationTuple>': Vec<IdentificationTuple>;
-    'Vec<IdentityClaim>': Vec<IdentityClaim>;
-    'Vec<IdentityId>': Vec<IdentityId>;
-    'Vec<IdentityRole>': Vec<IdentityRole>;
-    'Vec<ImmortalEra>': Vec<ImmortalEra>;
-    'Vec<ImportedAux>': Vec<ImportedAux>;
-    'Vec<InactiveMember>': Vec<InactiveMember>;
-    'Vec<InboundDownwardMessage>': Vec<InboundDownwardMessage>;
-    'Vec<InboundHrmpMessage>': Vec<InboundHrmpMessage>;
-    'Vec<InboundHrmpMessages>': Vec<InboundHrmpMessages>;
-    'Vec<InboundStatus>': Vec<InboundStatus>;
-    'Vec<IncludedBlocks>': Vec<IncludedBlocks>;
-    'Vec<InclusionFee>': Vec<InclusionFee>;
-    'Vec<IncomingParachain>': Vec<IncomingParachain>;
-    'Vec<IncomingParachainDeploy>': Vec<IncomingParachainDeploy>;
-    'Vec<IncomingParachainFixed>': Vec<IncomingParachainFixed>;
-    'Vec<Index>': Vec<Index>;
-    'Vec<IndicesLookupSource>': Vec<IndicesLookupSource>;
-    'Vec<InitializationData>': Vec<InitializationData>;
-    'Vec<InstanceDetails>': Vec<InstanceDetails>;
-    'Vec<InstanceId>': Vec<InstanceId>;
-    'Vec<InstanceMetadata>': Vec<InstanceMetadata>;
-    'Vec<InstantiateRequest>': Vec<InstantiateRequest>;
-    'Vec<InstantiateReturnValue>': Vec<InstantiateReturnValue>;
-    'Vec<Instruction>': Vec<Instruction>;
-    'Vec<InstructionId>': Vec<InstructionId>;
-    'Vec<InstructionStatus>': Vec<InstructionStatus>;
-    'Vec<InstructionWeights>': Vec<InstructionWeights>;
-    'Vec<InvalidDisputeStatementKind>': Vec<InvalidDisputeStatementKind>;
-    'Vec<InvalidTransaction>': Vec<InvalidTransaction>;
-    'Vec<InvestorUid>': Vec<InvestorUid>;
-    'Vec<InvestorZKProofData>': Vec<InvestorZKProofData>;
-    'Vec<ItnRewardStatus>': Vec<ItnRewardStatus>;
-    'Vec<Json>': Vec<Json>;
-    'Vec<Junction>': Vec<Junction>;
-    'Vec<Justification>': Vec<Justification>;
-    'Vec<JustificationNotification>': Vec<JustificationNotification>;
-    'Vec<Justifications>': Vec<Justifications>;
-    'Vec<Key>': Vec<Key>;
-    'Vec<KeyIdentityData>': Vec<KeyIdentityData>;
-    'Vec<KeyOwnerProof>': Vec<KeyOwnerProof>;
-    'Vec<Keys>': Vec<Keys>;
-    'Vec<KeyTypeId>': Vec<KeyTypeId>;
-    'Vec<KeyValue>': Vec<KeyValue>;
-    'Vec<KeyValueOption>': Vec<KeyValueOption>;
-    'Vec<Kind>': Vec<Kind>;
-    'Vec<LastContribution>': Vec<LastContribution>;
-    'Vec<LastRuntimeUpgradeInfo>': Vec<LastRuntimeUpgradeInfo>;
-    'Vec<LeasePeriod>': Vec<LeasePeriod>;
-    'Vec<LeasePeriodOf>': Vec<LeasePeriodOf>;
-    'Vec<Leg>': Vec<Leg>;
-    'Vec<LegacyPalletPermissions>': Vec<LegacyPalletPermissions>;
-    'Vec<LegacyPermissions>': Vec<LegacyPermissions>;
-    'Vec<LegId>': Vec<LegId>;
-    'Vec<LegStatus>': Vec<LegStatus>;
-    'Vec<Limits>': Vec<Limits>;
-    'Vec<LimitsTo264>': Vec<LimitsTo264>;
-    'Vec<LocalCAId>': Vec<LocalCAId>;
-    'Vec<LocalValidationData>': Vec<LocalValidationData>;
-    'Vec<LockIdentifier>': Vec<LockIdentifier>;
-    'Vec<LookupSource>': Vec<LookupSource>;
-    'Vec<LookupTarget>': Vec<LookupTarget>;
-    'Vec<LotteryConfig>': Vec<LotteryConfig>;
-    'Vec<MaybeBlock>': Vec<MaybeBlock>;
-    'Vec<MaybeRandomness>': Vec<MaybeRandomness>;
-    'Vec<MaybeVrf>': Vec<MaybeVrf>;
-    'Vec<MemberCount>': Vec<MemberCount>;
-    'Vec<MembershipProof>': Vec<MembershipProof>;
-    'Vec<Memo>': Vec<Memo>;
-    'Vec<MessageId>': Vec<MessageId>;
-    'Vec<MessageIngestionType>': Vec<MessageIngestionType>;
-    'Vec<MessageQueueChain>': Vec<MessageQueueChain>;
-    'Vec<MessagingStateSnapshot>': Vec<MessagingStateSnapshot>;
-    'Vec<MessagingStateSnapshotEgressEntry>': Vec<MessagingStateSnapshotEgressEntry>;
-    'Vec<MetadataAll>': Vec<MetadataAll>;
-    'Vec<MetadataLatest>': Vec<MetadataLatest>;
-    'Vec<MetadataV10>': Vec<MetadataV10>;
-    'Vec<MetadataV11>': Vec<MetadataV11>;
-    'Vec<MetadataV12>': Vec<MetadataV12>;
-    'Vec<MetadataV13>': Vec<MetadataV13>;
-    'Vec<MetadataV14>': Vec<MetadataV14>;
-    'Vec<MetadataV9>': Vec<MetadataV9>;
-    'Vec<MetaDescription>': Vec<MetaDescription>;
-    'Vec<MetaUrl>': Vec<MetaUrl>;
-    'Vec<MetaVersion>': Vec<MetaVersion>;
-    'Vec<MmrLeafProof>': Vec<MmrLeafProof>;
-    'Vec<MmrRootHash>': Vec<MmrRootHash>;
-    'Vec<ModuleConstantMetadataLatest>': Vec<ModuleConstantMetadataLatest>;
-    'Vec<ModuleConstantMetadataV10>': Vec<ModuleConstantMetadataV10>;
-    'Vec<ModuleConstantMetadataV11>': Vec<ModuleConstantMetadataV11>;
-    'Vec<ModuleConstantMetadataV12>': Vec<ModuleConstantMetadataV12>;
-    'Vec<ModuleConstantMetadataV13>': Vec<ModuleConstantMetadataV13>;
-    'Vec<ModuleConstantMetadataV9>': Vec<ModuleConstantMetadataV9>;
-    'Vec<ModuleId>': Vec<ModuleId>;
-    'Vec<ModuleMetadataLatest>': Vec<ModuleMetadataLatest>;
-    'Vec<ModuleMetadataV10>': Vec<ModuleMetadataV10>;
-    'Vec<ModuleMetadataV11>': Vec<ModuleMetadataV11>;
-    'Vec<ModuleMetadataV12>': Vec<ModuleMetadataV12>;
-    'Vec<ModuleMetadataV13>': Vec<ModuleMetadataV13>;
-    'Vec<ModuleMetadataV9>': Vec<ModuleMetadataV9>;
-    'Vec<Moment>': Vec<Moment>;
-    'Vec<MoreAttestations>': Vec<MoreAttestations>;
-    'Vec<MortalEra>': Vec<MortalEra>;
-    'Vec<Motion>': Vec<Motion>;
-    'Vec<MotionInfoLink>': Vec<MotionInfoLink>;
-    'Vec<MotionTitle>': Vec<MotionTitle>;
-    'Vec<MovePortfolioItem>': Vec<MovePortfolioItem>;
-    'Vec<MultiAddress>': Vec<MultiAddress>;
-    'Vec<MultiAsset>': Vec<MultiAsset>;
-    'Vec<MultiAssetAbstractFungible>': Vec<MultiAssetAbstractFungible>;
-    'Vec<MultiAssetAbstractNonFungible>': Vec<MultiAssetAbstractNonFungible>;
-    'Vec<MultiAssetConcreteFungible>': Vec<MultiAssetConcreteFungible>;
-    'Vec<MultiAssetConcreteNonFungible>': Vec<MultiAssetConcreteNonFungible>;
-    'Vec<MultiDisputeStatementSet>': Vec<MultiDisputeStatementSet>;
-    'Vec<MultiLocation>': Vec<MultiLocation>;
-    'Vec<Multiplier>': Vec<Multiplier>;
-    'Vec<Multisig>': Vec<Multisig>;
-    'Vec<MultiSignature>': Vec<MultiSignature>;
-    'Vec<MultiSigner>': Vec<MultiSigner>;
-    'Vec<NetworkId>': Vec<NetworkId>;
-    'Vec<NetworkState>': Vec<NetworkState>;
-    'Vec<NetworkStatePeerset>': Vec<NetworkStatePeerset>;
-    'Vec<NetworkStatePeersetInfo>': Vec<NetworkStatePeersetInfo>;
-    'Vec<NewBidder>': Vec<NewBidder>;
-    'Vec<NextAuthority>': Vec<NextAuthority>;
-    'Vec<NextConfigDescriptor>': Vec<NextConfigDescriptor>;
-    'Vec<NextConfigDescriptorV1>': Vec<NextConfigDescriptorV1>;
-    'Vec<NodeRole>': Vec<NodeRole>;
-    'Vec<NotConnectedPeer>': Vec<NotConnectedPeer>;
-    'Vec<Null>': Vec<Null>;
-    'Vec<OffChainSignature>': Vec<OffChainSignature>;
-    'Vec<OffenceDetails>': Vec<OffenceDetails>;
-    'Vec<Offender>': Vec<Offender>;
-    'Vec<OpaqueCall>': Vec<OpaqueCall>;
-    'Vec<OpaqueMultiaddr>': Vec<OpaqueMultiaddr>;
-    'Vec<OpaqueNetworkState>': Vec<OpaqueNetworkState>;
-    'Vec<OpaquePeerId>': Vec<OpaquePeerId>;
-    'Vec<OpaqueTimeSlot>': Vec<OpaqueTimeSlot>;
-    'Vec<OpenTip>': Vec<OpenTip>;
-    'Vec<OpenTipFinderTo225>': Vec<OpenTipFinderTo225>;
-    'Vec<OpenTipTip>': Vec<OpenTipTip>;
-    'Vec<OpenTipTo225>': Vec<OpenTipTo225>;
-    'Vec<Origin>': Vec<Origin>;
-    'Vec<OriginCaller>': Vec<OriginCaller>;
-    'Vec<OutboundHrmpMessage>': Vec<OutboundHrmpMessage>;
-    'Vec<OutboundStatus>': Vec<OutboundStatus>;
-    'Vec<Outcome>': Vec<Outcome>;
-    'Vec<OverweightIndex>': Vec<OverweightIndex>;
-    'Vec<Owner>': Vec<Owner>;
-    'Vec<PageCounter>': Vec<PageCounter>;
-    'Vec<PageIndexData>': Vec<PageIndexData>;
-    'Vec<PalletCallMetadataLatest>': Vec<PalletCallMetadataLatest>;
-    'Vec<PalletCallMetadataV14>': Vec<PalletCallMetadataV14>;
-    'Vec<PalletConstantMetadataLatest>': Vec<PalletConstantMetadataLatest>;
-    'Vec<PalletConstantMetadataV14>': Vec<PalletConstantMetadataV14>;
-    'Vec<PalletErrorMetadataLatest>': Vec<PalletErrorMetadataLatest>;
-    'Vec<PalletErrorMetadataV14>': Vec<PalletErrorMetadataV14>;
-    'Vec<PalletEventMetadataLatest>': Vec<PalletEventMetadataLatest>;
-    'Vec<PalletEventMetadataV14>': Vec<PalletEventMetadataV14>;
-    'Vec<PalletId>': Vec<PalletId>;
-    'Vec<PalletMetadataLatest>': Vec<PalletMetadataLatest>;
-    'Vec<PalletMetadataV14>': Vec<PalletMetadataV14>;
-    'Vec<PalletName>': Vec<PalletName>;
-    'Vec<PalletPermissions>': Vec<PalletPermissions>;
-    'Vec<PalletsOrigin>': Vec<PalletsOrigin>;
-    'Vec<PalletStorageMetadataLatest>': Vec<PalletStorageMetadataLatest>;
-    'Vec<PalletStorageMetadataV14>': Vec<PalletStorageMetadataV14>;
-    'Vec<PalletVersion>': Vec<PalletVersion>;
-    'Vec<ParachainDispatchOrigin>': Vec<ParachainDispatchOrigin>;
-    'Vec<ParachainInherentData>': Vec<ParachainInherentData>;
-    'Vec<ParachainProposal>': Vec<ParachainProposal>;
-    'Vec<ParachainsInherentData>': Vec<ParachainsInherentData>;
-    'Vec<ParaGenesisArgs>': Vec<ParaGenesisArgs>;
-    'Vec<ParaId>': Vec<ParaId>;
-    'Vec<ParaInfo>': Vec<ParaInfo>;
-    'Vec<ParaLifecycle>': Vec<ParaLifecycle>;
-    'Vec<ParaPastCodeMeta>': Vec<ParaPastCodeMeta>;
-    'Vec<ParaScheduling>': Vec<ParaScheduling>;
-    'Vec<ParathreadClaim>': Vec<ParathreadClaim>;
-    'Vec<ParathreadClaimQueue>': Vec<ParathreadClaimQueue>;
-    'Vec<ParathreadEntry>': Vec<ParathreadEntry>;
-    'Vec<ParaValidatorIndex>': Vec<ParaValidatorIndex>;
-    'Vec<Pays>': Vec<Pays>;
-    'Vec<Peer>': Vec<Peer>;
-    'Vec<PeerEndpoint>': Vec<PeerEndpoint>;
-    'Vec<PeerEndpointAddr>': Vec<PeerEndpointAddr>;
-    'Vec<PeerInfo>': Vec<PeerInfo>;
-    'Vec<PeerPing>': Vec<PeerPing>;
-    'Vec<PendingChange>': Vec<PendingChange>;
-    'Vec<PendingPause>': Vec<PendingPause>;
-    'Vec<PendingResume>': Vec<PendingResume>;
-    'Vec<Perbill>': Vec<Perbill>;
-    'Vec<Percent>': Vec<Percent>;
-    'Vec<Percentage>': Vec<Percentage>;
-    'Vec<PerDispatchClassU32>': Vec<PerDispatchClassU32>;
-    'Vec<PerDispatchClassWeight>': Vec<PerDispatchClassWeight>;
-    'Vec<PerDispatchClassWeightsPerClass>': Vec<PerDispatchClassWeightsPerClass>;
-    'Vec<Period>': Vec<Period>;
-    'Vec<Permill>': Vec<Permill>;
-    'Vec<PermissionedIdentityPrefs>': Vec<PermissionedIdentityPrefs>;
-    'Vec<PermissionLatest>': Vec<PermissionLatest>;
-    'Vec<Permissions>': Vec<Permissions>;
-    'Vec<PermissionsV1>': Vec<PermissionsV1>;
-    'Vec<PermissionVersions>': Vec<PermissionVersions>;
-    'Vec<Perquintill>': Vec<Perquintill>;
-    'Vec<PersistedValidationData>': Vec<PersistedValidationData>;
-    'Vec<PerU16>': Vec<PerU16>;
-    'Vec<Phantom>': Vec<Phantom>;
-    'Vec<PhantomData>': Vec<PhantomData>;
-    'Vec<Phase>': Vec<Phase>;
-    'Vec<Pip>': Vec<Pip>;
-    'Vec<PipDescription>': Vec<PipDescription>;
-    'Vec<PipId>': Vec<PipId>;
-    'Vec<PipsMetadata>': Vec<PipsMetadata>;
-    'Vec<PluralityJunction>': Vec<PluralityJunction>;
-    'Vec<PolymeshVotes>': Vec<PolymeshVotes>;
-    'Vec<PortableRegistry>': Vec<PortableRegistry>;
-    'Vec<PortableType>': Vec<PortableType>;
-    'Vec<PortfolioId>': Vec<PortfolioId>;
-    'Vec<PortfolioKind>': Vec<PortfolioKind>;
-    'Vec<PortfolioName>': Vec<PortfolioName>;
-    'Vec<PortfolioNumber>': Vec<PortfolioNumber>;
-    'Vec<PortfolioPermissions>': Vec<PortfolioPermissions>;
-    'Vec<PortfolioValidityResult>': Vec<PortfolioValidityResult>;
-    'Vec<PosRatio>': Vec<PosRatio>;
-    'Vec<PreAuthorizedKeyInfo>': Vec<PreAuthorizedKeyInfo>;
-    'Vec<Precommits>': Vec<Precommits>;
-    'Vec<PrefabWasmModule>': Vec<PrefabWasmModule>;
-    'Vec<PrefixedStorageKey>': Vec<PrefixedStorageKey>;
-    'Vec<PreimageStatus>': Vec<PreimageStatus>;
-    'Vec<PreimageStatusAvailable>': Vec<PreimageStatusAvailable>;
-    'Vec<PreRuntime>': Vec<PreRuntime>;
-    'Vec<Prevotes>': Vec<Prevotes>;
-    'Vec<PriceTier>': Vec<PriceTier>;
-    'Vec<Priority>': Vec<Priority>;
-    'Vec<PriorLock>': Vec<PriorLock>;
-    'Vec<PropIndex>': Vec<PropIndex>;
-    'Vec<Proposal>': Vec<Proposal>;
-    'Vec<ProposalData>': Vec<ProposalData>;
-    'Vec<ProposalDetails>': Vec<ProposalDetails>;
-    'Vec<ProposalIndex>': Vec<ProposalIndex>;
-    'Vec<ProposalState>': Vec<ProposalState>;
-    'Vec<ProposalStatus>': Vec<ProposalStatus>;
-    'Vec<Proposer>': Vec<Proposer>;
-    'Vec<ProtocolOp>': Vec<ProtocolOp>;
-    'Vec<ProxyAnnouncement>': Vec<ProxyAnnouncement>;
-    'Vec<ProxyDefinition>': Vec<ProxyDefinition>;
-    'Vec<ProxyState>': Vec<ProxyState>;
-    'Vec<ProxyType>': Vec<ProxyType>;
-    'Vec<QueueConfigData>': Vec<QueueConfigData>;
-    'Vec<QueuedParathread>': Vec<QueuedParathread>;
-    'Vec<Randomness>': Vec<Randomness>;
-    'Vec<Raw>': Vec<Raw>;
-    'Vec<RawAuraPreDigest>': Vec<RawAuraPreDigest>;
-    'Vec<RawBabePreDigest>': Vec<RawBabePreDigest>;
-    'Vec<RawBabePreDigestCompat>': Vec<RawBabePreDigestCompat>;
-    'Vec<RawBabePreDigestPrimary>': Vec<RawBabePreDigestPrimary>;
-    'Vec<RawBabePreDigestPrimaryTo159>': Vec<RawBabePreDigestPrimaryTo159>;
-    'Vec<RawBabePreDigestSecondaryPlain>': Vec<RawBabePreDigestSecondaryPlain>;
-    'Vec<RawBabePreDigestSecondaryTo159>': Vec<RawBabePreDigestSecondaryTo159>;
-    'Vec<RawBabePreDigestSecondaryVRF>': Vec<RawBabePreDigestSecondaryVRF>;
-    'Vec<RawBabePreDigestTo159>': Vec<RawBabePreDigestTo159>;
-    'Vec<RawOrigin>': Vec<RawOrigin>;
-    'Vec<RawVRFOutput>': Vec<RawVRFOutput>;
-    'Vec<ReadProof>': Vec<ReadProof>;
-    'Vec<Reasons>': Vec<Reasons>;
-    'Vec<Receipt>': Vec<Receipt>;
-    'Vec<ReceiptDetails>': Vec<ReceiptDetails>;
-    'Vec<ReceiptMetadata>': Vec<ReceiptMetadata>;
-    'Vec<RecordDate>': Vec<RecordDate>;
-    'Vec<RecordDateSpec>': Vec<RecordDateSpec>;
-    'Vec<RecoveryConfig>': Vec<RecoveryConfig>;
-    'Vec<RefCount>': Vec<RefCount>;
-    'Vec<RefCountTo259>': Vec<RefCountTo259>;
-    'Vec<ReferendumIndex>': Vec<ReferendumIndex>;
-    'Vec<ReferendumInfo>': Vec<ReferendumInfo>;
-    'Vec<ReferendumInfoFinished>': Vec<ReferendumInfoFinished>;
-    'Vec<ReferendumInfoTo239>': Vec<ReferendumInfoTo239>;
-    'Vec<ReferendumStatus>': Vec<ReferendumStatus>;
-    'Vec<RegisteredParachainInfo>': Vec<RegisteredParachainInfo>;
-    'Vec<RelayBlockNumber>': Vec<RelayBlockNumber>;
-    'Vec<RelayChainBlockNumber>': Vec<RelayChainBlockNumber>;
-    'Vec<RelayChainHash>': Vec<RelayChainHash>;
-    'Vec<RelayHash>': Vec<RelayHash>;
-    'Vec<Releases>': Vec<Releases>;
-    'Vec<Remark>': Vec<Remark>;
-    'Vec<Renouncing>': Vec<Renouncing>;
-    'Vec<RentProjection>': Vec<RentProjection>;
-    'Vec<ReplacementTimes>': Vec<ReplacementTimes>;
-    'Vec<ReportedRoundStates>': Vec<ReportedRoundStates>;
-    'Vec<Reporter>': Vec<Reporter>;
-    'Vec<ReportIdOf>': Vec<ReportIdOf>;
-    'Vec<ReserveData>': Vec<ReserveData>;
-    'Vec<ReserveIdentifier>': Vec<ReserveIdentifier>;
-    'Vec<RestrictionResult>': Vec<RestrictionResult>;
-    'Vec<Retriable>': Vec<Retriable>;
-    'Vec<RistrettoPoint>': Vec<RistrettoPoint>;
-    'Vec<RoundState>': Vec<RoundState>;
-    'Vec<RpcMethods>': Vec<RpcMethods>;
-    'Vec<RuntimeDbWeight>': Vec<RuntimeDbWeight>;
-    'Vec<RuntimeDispatchInfo>': Vec<RuntimeDispatchInfo>;
-    'Vec<RuntimeVersion>': Vec<RuntimeVersion>;
-    'Vec<RuntimeVersionApi>': Vec<RuntimeVersionApi>;
-    'Vec<RuntimeVersionPartial>': Vec<RuntimeVersionPartial>;
-    'Vec<Scalar>': Vec<Scalar>;
-    'Vec<Schedule>': Vec<Schedule>;
-    'Vec<Scheduled>': Vec<Scheduled>;
-    'Vec<ScheduledTo254>': Vec<ScheduledTo254>;
-    'Vec<ScheduleId>': Vec<ScheduleId>;
-    'Vec<SchedulePeriod>': Vec<SchedulePeriod>;
-    'Vec<SchedulePriority>': Vec<SchedulePriority>;
-    'Vec<ScheduleSpec>': Vec<ScheduleSpec>;
-    'Vec<ScheduleTo212>': Vec<ScheduleTo212>;
-    'Vec<ScheduleTo258>': Vec<ScheduleTo258>;
-    'Vec<ScheduleTo264>': Vec<ScheduleTo264>;
-    'Vec<Scheduling>': Vec<Scheduling>;
-    'Vec<Scope>': Vec<Scope>;
-    'Vec<ScopeClaimProof>': Vec<ScopeClaimProof>;
-    'Vec<ScopeId>': Vec<ScopeId>;
-    'Vec<Seal>': Vec<Seal>;
-    'Vec<SealV0>': Vec<SealV0>;
-    'Vec<SecondaryKey>': Vec<SecondaryKey>;
-    'Vec<SecondaryKeyWithAuth>': Vec<SecondaryKeyWithAuth>;
-    'Vec<SecurityToken>': Vec<SecurityToken>;
-    'Vec<SeedOf>': Vec<SeedOf>;
-    'Vec<ServiceQuality>': Vec<ServiceQuality>;
-    'Vec<SessionIndex>': Vec<SessionIndex>;
-    'Vec<SessionInfo>': Vec<SessionInfo>;
-    'Vec<SessionInfoValidatorGroup>': Vec<SessionInfoValidatorGroup>;
-    'Vec<SessionKeys1>': Vec<SessionKeys1>;
-    'Vec<SessionKeys10>': Vec<SessionKeys10>;
-    'Vec<SessionKeys10B>': Vec<SessionKeys10B>;
-    'Vec<SessionKeys2>': Vec<SessionKeys2>;
-    'Vec<SessionKeys3>': Vec<SessionKeys3>;
-    'Vec<SessionKeys4>': Vec<SessionKeys4>;
-    'Vec<SessionKeys5>': Vec<SessionKeys5>;
-    'Vec<SessionKeys6>': Vec<SessionKeys6>;
-    'Vec<SessionKeys6B>': Vec<SessionKeys6B>;
-    'Vec<SessionKeys7>': Vec<SessionKeys7>;
-    'Vec<SessionKeys7B>': Vec<SessionKeys7B>;
-    'Vec<SessionKeys8>': Vec<SessionKeys8>;
-    'Vec<SessionKeys8B>': Vec<SessionKeys8B>;
-    'Vec<SessionKeys9>': Vec<SessionKeys9>;
-    'Vec<SessionKeys9B>': Vec<SessionKeys9B>;
-    'Vec<SetId>': Vec<SetId>;
-    'Vec<SetIndex>': Vec<SetIndex>;
-    'Vec<SettlementType>': Vec<SettlementType>;
-    'Vec<Si0Field>': Vec<Si0Field>;
-    'Vec<Si0LookupTypeId>': Vec<Si0LookupTypeId>;
-    'Vec<Si0Path>': Vec<Si0Path>;
-    'Vec<Si0Type>': Vec<Si0Type>;
-    'Vec<Si0TypeDef>': Vec<Si0TypeDef>;
-    'Vec<Si0TypeDefArray>': Vec<Si0TypeDefArray>;
-    'Vec<Si0TypeDefBitSequence>': Vec<Si0TypeDefBitSequence>;
-    'Vec<Si0TypeDefCompact>': Vec<Si0TypeDefCompact>;
-    'Vec<Si0TypeDefComposite>': Vec<Si0TypeDefComposite>;
-    'Vec<Si0TypeDefPhantom>': Vec<Si0TypeDefPhantom>;
-    'Vec<Si0TypeDefPrimitive>': Vec<Si0TypeDefPrimitive>;
-    'Vec<Si0TypeDefSequence>': Vec<Si0TypeDefSequence>;
-    'Vec<Si0TypeDefTuple>': Vec<Si0TypeDefTuple>;
-    'Vec<Si0TypeDefVariant>': Vec<Si0TypeDefVariant>;
-    'Vec<Si0TypeParameter>': Vec<Si0TypeParameter>;
-    'Vec<Si0Variant>': Vec<Si0Variant>;
-    'Vec<SiField>': Vec<SiField>;
-    'Vec<Signatory>': Vec<Signatory>;
-    'Vec<Signature>': Vec<Signature>;
-    'Vec<SignedAvailabilityBitfield>': Vec<SignedAvailabilityBitfield>;
-    'Vec<SignedAvailabilityBitfields>': Vec<SignedAvailabilityBitfields>;
-    'Vec<SignedBlock>': Vec<SignedBlock>;
-    'Vec<SignedBlockWithJustification>': Vec<SignedBlockWithJustification>;
-    'Vec<SignedBlockWithJustifications>': Vec<SignedBlockWithJustifications>;
-    'Vec<SignedExtensionMetadataLatest>': Vec<SignedExtensionMetadataLatest>;
-    'Vec<SignedExtensionMetadataV14>': Vec<SignedExtensionMetadataV14>;
-    'Vec<SignerPayload>': Vec<SignerPayload>;
-    'Vec<SigningContext>': Vec<SigningContext>;
-    'Vec<SiLookupTypeId>': Vec<SiLookupTypeId>;
-    'Vec<SiPath>': Vec<SiPath>;
-    'Vec<SiType>': Vec<SiType>;
-    'Vec<SiTypeDef>': Vec<SiTypeDef>;
-    'Vec<SiTypeDefArray>': Vec<SiTypeDefArray>;
-    'Vec<SiTypeDefBitSequence>': Vec<SiTypeDefBitSequence>;
-    'Vec<SiTypeDefCompact>': Vec<SiTypeDefCompact>;
-    'Vec<SiTypeDefComposite>': Vec<SiTypeDefComposite>;
-    'Vec<SiTypeDefPrimitive>': Vec<SiTypeDefPrimitive>;
-    'Vec<SiTypeDefSequence>': Vec<SiTypeDefSequence>;
-    'Vec<SiTypeDefTuple>': Vec<SiTypeDefTuple>;
-    'Vec<SiTypeDefVariant>': Vec<SiTypeDefVariant>;
-    'Vec<SiTypeParameter>': Vec<SiTypeParameter>;
-    'Vec<SiVariant>': Vec<SiVariant>;
-    'Vec<SkippedCount>': Vec<SkippedCount>;
-    'Vec<SlashingSwitch>': Vec<SlashingSwitch>;
-    'Vec<Slot>': Vec<Slot>;
-    'Vec<SlotNumber>': Vec<SlotNumber>;
-    'Vec<SlotRange>': Vec<SlotRange>;
-    'Vec<SmartExtension>': Vec<SmartExtension>;
-    'Vec<SmartExtensionName>': Vec<SmartExtensionName>;
-    'Vec<SmartExtensionType>': Vec<SmartExtensionType>;
-    'Vec<SnapshotId>': Vec<SnapshotId>;
-    'Vec<SnapshotMetadata>': Vec<SnapshotMetadata>;
-    'Vec<SnapshotResult>': Vec<SnapshotResult>;
-    'Vec<SnapshottedPip>': Vec<SnapshottedPip>;
-    'Vec<SocietyJudgement>': Vec<SocietyJudgement>;
-    'Vec<SocietyVote>': Vec<SocietyVote>;
-    'Vec<Sr25519Signature>': Vec<Sr25519Signature>;
-    'Vec<Statement>': Vec<Statement>;
-    'Vec<StatementKind>': Vec<StatementKind>;
-    'Vec<StorageChangeSet>': Vec<StorageChangeSet>;
-    'Vec<StorageData>': Vec<StorageData>;
-    'Vec<StorageEntryMetadataLatest>': Vec<StorageEntryMetadataLatest>;
-    'Vec<StorageEntryMetadataV10>': Vec<StorageEntryMetadataV10>;
-    'Vec<StorageEntryMetadataV11>': Vec<StorageEntryMetadataV11>;
-    'Vec<StorageEntryMetadataV12>': Vec<StorageEntryMetadataV12>;
-    'Vec<StorageEntryMetadataV13>': Vec<StorageEntryMetadataV13>;
-    'Vec<StorageEntryMetadataV14>': Vec<StorageEntryMetadataV14>;
-    'Vec<StorageEntryMetadataV9>': Vec<StorageEntryMetadataV9>;
-    'Vec<StorageEntryModifierLatest>': Vec<StorageEntryModifierLatest>;
-    'Vec<StorageEntryModifierV10>': Vec<StorageEntryModifierV10>;
-    'Vec<StorageEntryModifierV11>': Vec<StorageEntryModifierV11>;
-    'Vec<StorageEntryModifierV12>': Vec<StorageEntryModifierV12>;
-    'Vec<StorageEntryModifierV13>': Vec<StorageEntryModifierV13>;
-    'Vec<StorageEntryModifierV14>': Vec<StorageEntryModifierV14>;
-    'Vec<StorageEntryModifierV9>': Vec<StorageEntryModifierV9>;
-    'Vec<StorageEntryTypeLatest>': Vec<StorageEntryTypeLatest>;
-    'Vec<StorageEntryTypeV10>': Vec<StorageEntryTypeV10>;
-    'Vec<StorageEntryTypeV11>': Vec<StorageEntryTypeV11>;
-    'Vec<StorageEntryTypeV12>': Vec<StorageEntryTypeV12>;
-    'Vec<StorageEntryTypeV13>': Vec<StorageEntryTypeV13>;
-    'Vec<StorageEntryTypeV14>': Vec<StorageEntryTypeV14>;
-    'Vec<StorageEntryTypeV9>': Vec<StorageEntryTypeV9>;
-    'Vec<StorageHasher>': Vec<StorageHasher>;
-    'Vec<StorageHasherV10>': Vec<StorageHasherV10>;
-    'Vec<StorageHasherV11>': Vec<StorageHasherV11>;
-    'Vec<StorageHasherV12>': Vec<StorageHasherV12>;
-    'Vec<StorageHasherV13>': Vec<StorageHasherV13>;
-    'Vec<StorageHasherV14>': Vec<StorageHasherV14>;
-    'Vec<StorageHasherV9>': Vec<StorageHasherV9>;
-    'Vec<StorageKey>': Vec<StorageKey>;
-    'Vec<StorageKind>': Vec<StorageKind>;
-    'Vec<StorageMetadataLatest>': Vec<StorageMetadataLatest>;
-    'Vec<StorageMetadataV10>': Vec<StorageMetadataV10>;
-    'Vec<StorageMetadataV11>': Vec<StorageMetadataV11>;
-    'Vec<StorageMetadataV12>': Vec<StorageMetadataV12>;
-    'Vec<StorageMetadataV13>': Vec<StorageMetadataV13>;
-    'Vec<StorageMetadataV9>': Vec<StorageMetadataV9>;
-    'Vec<StorageProof>': Vec<StorageProof>;
-    'Vec<StoredPendingChange>': Vec<StoredPendingChange>;
-    'Vec<StoredSchedule>': Vec<StoredSchedule>;
-    'Vec<StoredState>': Vec<StoredState>;
-    'Vec<StrikeCount>': Vec<StrikeCount>;
-    'Vec<SubId>': Vec<SubId>;
-    'Vec<Subsidy>': Vec<Subsidy>;
-    'Vec<SyncState>': Vec<SyncState>;
-    'Vec<SystemInherentData>': Vec<SystemInherentData>;
-    'Vec<SystemOrigin>': Vec<SystemOrigin>;
-    'Vec<Tally>': Vec<Tally>;
-    'Vec<TargetIdAuthorization>': Vec<TargetIdAuthorization>;
-    'Vec<TargetIdentities>': Vec<TargetIdentities>;
-    'Vec<TargetIdentity>': Vec<TargetIdentity>;
-    'Vec<TargetTreatment>': Vec<TargetTreatment>;
-    'Vec<TaskAddress>': Vec<TaskAddress>;
-    'Vec<TAssetBalance>': Vec<TAssetBalance>;
-    'Vec<TAssetDepositBalance>': Vec<TAssetDepositBalance>;
-    'Vec<Tax>': Vec<Tax>;
-    'Vec<TemplateDetails>': Vec<TemplateDetails>;
-    'Vec<TemplateMetadata>': Vec<TemplateMetadata>;
-    'Vec<Text>': Vec<Text>;
-    'Vec<Ticker>': Vec<Ticker>;
-    'Vec<TickerRegistration>': Vec<TickerRegistration>;
-    'Vec<TickerRegistrationConfig>': Vec<TickerRegistrationConfig>;
-    'Vec<Timepoint>': Vec<Timepoint>;
-    'Vec<TokenError>': Vec<TokenError>;
-    'Vec<TombstoneContractInfo>': Vec<TombstoneContractInfo>;
-    'Vec<TraceBlockResponse>': Vec<TraceBlockResponse>;
-    'Vec<TraceError>': Vec<TraceError>;
-    'Vec<TransactionInfo>': Vec<TransactionInfo>;
-    'Vec<TransactionPriority>': Vec<TransactionPriority>;
-    'Vec<TransactionStorageProof>': Vec<TransactionStorageProof>;
-    'Vec<TransactionValidityError>': Vec<TransactionValidityError>;
-    'Vec<TransferManager>': Vec<TransferManager>;
-    'Vec<TransferManagerResult>': Vec<TransferManagerResult>;
-    'Vec<TransientValidationData>': Vec<TransientValidationData>;
-    'Vec<TreasuryProposal>': Vec<TreasuryProposal>;
-    'Vec<TrieId>': Vec<TrieId>;
-    'Vec<TrieIndex>': Vec<TrieIndex>;
-    'Vec<TrustedFor>': Vec<TrustedFor>;
-    'Vec<TrustedIssuer>': Vec<TrustedIssuer>;
-    'Vec<Type>': Vec<Type>;
-    'Vec<u128>': Vec<u128>;
-    'Vec<U128>': Vec<U128>;
-    'Vec<u16>': Vec<u16>;
-    'Vec<U16>': Vec<U16>;
-    'Vec<u256>': Vec<u256>;
-    'Vec<U256>': Vec<U256>;
-    'Vec<u32>': Vec<u32>;
-    'Vec<U32>': Vec<U32>;
-    'Vec<U32F32>': Vec<U32F32>;
-    'Vec<u64>': Vec<u64>;
-    'Vec<U64>': Vec<U64>;
-    'Vec<u8>': Vec<u8>;
-    'Vec<U8>': Vec<U8>;
-    'Vec<UncleEntryItem>': Vec<UncleEntryItem>;
-    'Vec<UniqueCall>': Vec<UniqueCall>;
-    'Vec<UnknownTransaction>': Vec<UnknownTransaction>;
-    'Vec<UpwardMessage>': Vec<UpwardMessage>;
-    'Vec<Url>': Vec<Url>;
-    'Vec<usize>': Vec<usize>;
-    'Vec<USize>': Vec<USize>;
-    'Vec<ValidationCode>': Vec<ValidationCode>;
-    'Vec<ValidationCodeHash>': Vec<ValidationCodeHash>;
-    'Vec<ValidationData>': Vec<ValidationData>;
-    'Vec<ValidationDataType>': Vec<ValidationDataType>;
-    'Vec<ValidationFunctionParams>': Vec<ValidationFunctionParams>;
-    'Vec<ValidatorCount>': Vec<ValidatorCount>;
-    'Vec<ValidatorId>': Vec<ValidatorId>;
-    'Vec<ValidatorIdOf>': Vec<ValidatorIdOf>;
-    'Vec<ValidatorSetId>': Vec<ValidatorSetId>;
-    'Vec<ValidatorSignature>': Vec<ValidatorSignature>;
-    'Vec<ValidDisputeStatementKind>': Vec<ValidDisputeStatementKind>;
-    'Vec<ValidityAttestation>': Vec<ValidityAttestation>;
-    'Vec<VecInboundHrmpMessage>': Vec<VecInboundHrmpMessage>;
-    'Vec<Venue>': Vec<Venue>;
-    'Vec<VenueDetails>': Vec<VenueDetails>;
-    'Vec<VenueId>': Vec<VenueId>;
-    'Vec<VenueType>': Vec<VenueType>;
-    'Vec<Version>': Vec<Version>;
-    'Vec<VersionedMultiAsset>': Vec<VersionedMultiAsset>;
-    'Vec<VersionedMultiLocation>': Vec<VersionedMultiLocation>;
-    'Vec<VersionedXcm>': Vec<VersionedXcm>;
-    'Vec<VestingInfo>': Vec<VestingInfo>;
-    'Vec<VestingSchedule>': Vec<VestingSchedule>;
-    'Vec<Vote>': Vec<Vote>;
-    'Vec<VoteByPip>': Vec<VoteByPip>;
-    'Vec<VoteCount>': Vec<VoteCount>;
-    'Vec<VoteCountProposalFound>': Vec<VoteCountProposalFound>;
-    'Vec<VoteIndex>': Vec<VoteIndex>;
-    'Vec<VoterInfo>': Vec<VoterInfo>;
-    'Vec<Votes>': Vec<Votes>;
-    'Vec<VotesTo230>': Vec<VotesTo230>;
-    'Vec<VoteThreshold>': Vec<VoteThreshold>;
-    'Vec<Voting>': Vec<Voting>;
-    'Vec<VotingDelegating>': Vec<VotingDelegating>;
-    'Vec<VotingDirect>': Vec<VotingDirect>;
-    'Vec<VotingDirectVote>': Vec<VotingDirectVote>;
-    'Vec<VotingResult>': Vec<VotingResult>;
-    'Vec<VouchingStatus>': Vec<VouchingStatus>;
-    'Vec<VrfData>': Vec<VrfData>;
-    'Vec<VrfOutput>': Vec<VrfOutput>;
-    'Vec<VrfProof>': Vec<VrfProof>;
-    'Vec<Weight>': Vec<Weight>;
-    'Vec<WeightMultiplier>': Vec<WeightMultiplier>;
-    'Vec<WeightPerClass>': Vec<WeightPerClass>;
-    'Vec<WeightToFeeCoefficient>': Vec<WeightToFeeCoefficient>;
-    'Vec<WinnersData>': Vec<WinnersData>;
-    'Vec<WinnersDataTuple>': Vec<WinnersDataTuple>;
-    'Vec<WinningData>': Vec<WinningData>;
-    'Vec<WinningDataEntry>': Vec<WinningDataEntry>;
-    'Vec<WithdrawReasons>': Vec<WithdrawReasons>;
-    'Vec<Xcm>': Vec<Xcm>;
-    'Vec<XcmAssetEffects>': Vec<XcmAssetEffects>;
-    'Vec<XcmError>': Vec<XcmError>;
-    'Vec<XcmHrmpChannelAccepted>': Vec<XcmHrmpChannelAccepted>;
-    'Vec<XcmHrmpChannelClosing>': Vec<XcmHrmpChannelClosing>;
-    'Vec<XcmHrmpNewChannelOpenRequest>': Vec<XcmHrmpNewChannelOpenRequest>;
-    'Vec<XcmOrder>': Vec<XcmOrder>;
-    'Vec<XcmOrderBuyExecution>': Vec<XcmOrderBuyExecution>;
-    'Vec<XcmOrderDepositAsset>': Vec<XcmOrderDepositAsset>;
-    'Vec<XcmOrderDepositReserveAsset>': Vec<XcmOrderDepositReserveAsset>;
-    'Vec<XcmOrderExchangeAsset>': Vec<XcmOrderExchangeAsset>;
-    'Vec<XcmOrderInitiateReserveWithdraw>': Vec<XcmOrderInitiateReserveWithdraw>;
-    'Vec<XcmOrderInitiateTeleport>': Vec<XcmOrderInitiateTeleport>;
-    'Vec<XcmOrderQueryHolding>': Vec<XcmOrderQueryHolding>;
-    'Vec<XcmOrigin>': Vec<XcmOrigin>;
-    'Vec<XcmOriginKind>': Vec<XcmOriginKind>;
-    'Vec<XcmpMessageFormat>': Vec<XcmpMessageFormat>;
-    'Vec<XcmQueryResponse>': Vec<XcmQueryResponse>;
-    'Vec<XcmRelayedFrom>': Vec<XcmRelayedFrom>;
-    'Vec<XcmReserveAssetDeposit>': Vec<XcmReserveAssetDeposit>;
-    'Vec<XcmResponse>': Vec<XcmResponse>;
-    'Vec<XcmTeleportAsset>': Vec<XcmTeleportAsset>;
-    'Vec<XcmTransact>': Vec<XcmTransact>;
-    'Vec<XcmTransferAsset>': Vec<XcmTransferAsset>;
-    'Vec<XcmTransferReserveAsset>': Vec<XcmTransferReserveAsset>;
-    'Vec<XcmWithdrawAsset>': Vec<XcmWithdrawAsset>;
-    'Vec<ZkProofData>': Vec<ZkProofData>;
     AbridgedCandidateReceipt: AbridgedCandidateReceipt;
     AbridgedHostConfiguration: AbridgedHostConfiguration;
     AbridgedHrmpChannel: AbridgedHrmpChannel;
@@ -3262,17 +1251,14 @@ declare module '@polkadot/types/types/registry' {
     AccountId: AccountId;
     AccountId20: AccountId20;
     AccountId32: AccountId32;
-    AccountId32Junction: AccountId32Junction;
     AccountIdOf: AccountIdOf;
     AccountIndex: AccountIndex;
-    AccountIndex64Junction: AccountIndex64Junction;
     AccountInfo: AccountInfo;
     AccountInfoWithDualRefCount: AccountInfoWithDualRefCount;
     AccountInfoWithProviders: AccountInfoWithProviders;
     AccountInfoWithRefCount: AccountInfoWithRefCount;
     AccountInfoWithRefCountU8: AccountInfoWithRefCountU8;
     AccountInfoWithTripleRefCount: AccountInfoWithTripleRefCount;
-    AccountKey20Junction: AccountKey20Junction;
     AccountStatus: AccountStatus;
     AccountValidity: AccountValidity;
     AccountVote: AccountVote;
@@ -3305,11 +1291,25 @@ declare module '@polkadot/types/types/registry' {
     AssetId: AssetId;
     AssetIdentifier: AssetIdentifier;
     AssetInstance: AssetInstance;
+    AssetInstanceV0: AssetInstanceV0;
+    AssetInstanceV1: AssetInstanceV1;
+    AssetInstanceV2: AssetInstanceV2;
     AssetMetadata: AssetMetadata;
+    AssetMetadataDescription: AssetMetadataDescription;
+    AssetMetadataGlobalKey: AssetMetadataGlobalKey;
+    AssetMetadataKey: AssetMetadataKey;
+    AssetMetadataLocalKey: AssetMetadataLocalKey;
+    AssetMetadataLockStatus: AssetMetadataLockStatus;
+    AssetMetadataName: AssetMetadataName;
+    AssetMetadataSpec: AssetMetadataSpec;
+    AssetMetadataValue: AssetMetadataValue;
+    AssetMetadataValueDetail: AssetMetadataValueDetail;
     AssetName: AssetName;
     AssetOptions: AssetOptions;
     AssetOwnershipRelation: AssetOwnershipRelation;
     AssetPermissions: AssetPermissions;
+    AssetScope: AssetScope;
+    AssetTransferCompliance: AssetTransferCompliance;
     AssetType: AssetType;
     AssignmentId: AssignmentId;
     AssignmentKind: AssignmentKind;
@@ -3364,16 +1364,17 @@ declare module '@polkadot/types/types/registry' {
     BlockNumber: BlockNumber;
     BlockNumberFor: BlockNumberFor;
     BlockNumberOf: BlockNumberOf;
+    BlockStats: BlockStats;
     BlockTrace: BlockTrace;
     BlockTraceEvent: BlockTraceEvent;
     BlockTraceEventData: BlockTraceEventData;
     BlockTraceSpan: BlockTraceSpan;
+    BlockV0: BlockV0;
+    BlockV1: BlockV1;
+    BlockV2: BlockV2;
     BlockWeights: BlockWeights;
     BodyId: BodyId;
     BodyPart: BodyPart;
-    BodyPartAtLeastProportion: BodyPartAtLeastProportion;
-    BodyPartFraction: BodyPartFraction;
-    BodyPartMoreThanProportion: BodyPartMoreThanProportion;
     bool: bool;
     Bool: Bool;
     Bounty: Bounty;
@@ -3385,6 +1386,7 @@ declare module '@polkadot/types/types/registry' {
     BridgedBlockHash: BridgedBlockHash;
     BridgedBlockNumber: BridgedBlockNumber;
     BridgedHeader: BridgedHeader;
+    BridgeMessageId: BridgeMessageId;
     BridgeTx: BridgeTx;
     BridgeTxDetail: BridgeTxDetail;
     BridgeTxStatus: BridgeTxStatus;
@@ -3400,6 +1402,7 @@ declare module '@polkadot/types/types/registry' {
     CallHash: CallHash;
     CallHashOf: CallHashOf;
     CallIndex: CallIndex;
+    CallOrigin: CallOrigin;
     CandidateCommitments: CandidateCommitments;
     CandidateDescriptor: CandidateDescriptor;
     CandidateHash: CandidateHash;
@@ -3410,6 +1413,7 @@ declare module '@polkadot/types/types/registry' {
     CappedFee: CappedFee;
     CddId: CddId;
     CddStatus: CddStatus;
+    ChainId: ChainId;
     ChainProperties: ChainProperties;
     ChainType: ChainType;
     ChangesTrieConfiguration: ChangesTrieConfiguration;
@@ -3428,6 +1432,10 @@ declare module '@polkadot/types/types/registry' {
     ClassMetadata: ClassMetadata;
     CodecHash: CodecHash;
     CodeHash: CodeHash;
+    CodeSource: CodeSource;
+    CodeUploadRequest: CodeUploadRequest;
+    CodeUploadResult: CodeUploadResult;
+    CodeUploadResultValue: CodeUploadResultValue;
     CollatorId: CollatorId;
     CollatorSignature: CollatorSignature;
     CollectiveOrigin: CollectiveOrigin;
@@ -3435,6 +1443,7 @@ declare module '@polkadot/types/types/registry' {
     Committee: Committee;
     ComplianceRequirement: ComplianceRequirement;
     ComplianceRequirementResult: ComplianceRequirementResult;
+    CompressedRistretto: CompressedRistretto;
     Condition: Condition;
     ConditionResult: ConditionResult;
     ConditionType: ConditionType;
@@ -3442,17 +1451,28 @@ declare module '@polkadot/types/types/registry' {
     Consensus: Consensus;
     ConsensusEngineId: ConsensusEngineId;
     ConsumedWeight: ConsumedWeight;
+    ContractCallFlags: ContractCallFlags;
     ContractCallRequest: ContractCallRequest;
-    ContractConstructorSpec: ContractConstructorSpec;
-    ContractContractSpec: ContractContractSpec;
+    ContractConstructorSpecLatest: ContractConstructorSpecLatest;
+    ContractConstructorSpecV0: ContractConstructorSpecV0;
+    ContractConstructorSpecV1: ContractConstructorSpecV1;
+    ContractConstructorSpecV2: ContractConstructorSpecV2;
+    ContractConstructorSpecV3: ContractConstructorSpecV3;
+    ContractContractSpecV0: ContractContractSpecV0;
+    ContractContractSpecV1: ContractContractSpecV1;
+    ContractContractSpecV2: ContractContractSpecV2;
+    ContractContractSpecV3: ContractContractSpecV3;
     ContractCryptoHasher: ContractCryptoHasher;
     ContractDiscriminant: ContractDiscriminant;
     ContractDisplayName: ContractDisplayName;
-    ContractEventParamSpec: ContractEventParamSpec;
-    ContractEventSpec: ContractEventSpec;
+    ContractEventParamSpecLatest: ContractEventParamSpecLatest;
+    ContractEventParamSpecV0: ContractEventParamSpecV0;
+    ContractEventParamSpecV2: ContractEventParamSpecV2;
+    ContractEventSpecLatest: ContractEventSpecLatest;
+    ContractEventSpecV0: ContractEventSpecV0;
+    ContractEventSpecV1: ContractEventSpecV1;
+    ContractEventSpecV2: ContractEventSpecV2;
     ContractExecResult: ContractExecResult;
-    ContractExecResultErr: ContractExecResultErr;
-    ContractExecResultErrModule: ContractExecResultErrModule;
     ContractExecResultOk: ContractExecResultOk;
     ContractExecResultResult: ContractExecResultResult;
     ContractExecResultSuccessTo255: ContractExecResultSuccessTo255;
@@ -3462,6 +1482,8 @@ declare module '@polkadot/types/types/registry' {
     ContractExecResultTo267: ContractExecResultTo267;
     ContractInfo: ContractInfo;
     ContractInstantiateResult: ContractInstantiateResult;
+    ContractInstantiateResultTo267: ContractInstantiateResultTo267;
+    ContractInstantiateResultTo299: ContractInstantiateResultTo299;
     ContractLayoutArray: ContractLayoutArray;
     ContractLayoutCell: ContractLayoutCell;
     ContractLayoutEnum: ContractLayoutEnum;
@@ -3470,11 +1492,25 @@ declare module '@polkadot/types/types/registry' {
     ContractLayoutKey: ContractLayoutKey;
     ContractLayoutStruct: ContractLayoutStruct;
     ContractLayoutStructField: ContractLayoutStructField;
-    ContractMessageParamSpec: ContractMessageParamSpec;
-    ContractMessageSpec: ContractMessageSpec;
+    ContractMessageParamSpecLatest: ContractMessageParamSpecLatest;
+    ContractMessageParamSpecV0: ContractMessageParamSpecV0;
+    ContractMessageParamSpecV2: ContractMessageParamSpecV2;
+    ContractMessageSpecLatest: ContractMessageSpecLatest;
+    ContractMessageSpecV0: ContractMessageSpecV0;
+    ContractMessageSpecV1: ContractMessageSpecV1;
+    ContractMessageSpecV2: ContractMessageSpecV2;
+    ContractMetadata: ContractMetadata;
+    ContractMetadataLatest: ContractMetadataLatest;
+    ContractMetadataV0: ContractMetadataV0;
+    ContractMetadataV1: ContractMetadataV1;
+    ContractMetadataV2: ContractMetadataV2;
+    ContractMetadataV3: ContractMetadataV3;
     ContractProject: ContractProject;
     ContractProjectContract: ContractProjectContract;
+    ContractProjectInfo: ContractProjectInfo;
     ContractProjectSource: ContractProjectSource;
+    ContractProjectV0: ContractProjectV0;
+    ContractReturnFlags: ContractReturnFlags;
     ContractSelector: ContractSelector;
     ContractStorageKey: ContractStorageKey;
     ContractStorageLayout: ContractStorageLayout;
@@ -3484,8 +1520,8 @@ declare module '@polkadot/types/types/registry' {
     CoreIndex: CoreIndex;
     CoreOccupied: CoreOccupied;
     CorporateAction: CorporateAction;
-    Counter: Counter;
     CountryCode: CountryCode;
+    CrateVersion: CrateVersion;
     CreatedBlock: CreatedBlock;
     CustomAssetTypeId: CustomAssetTypeId;
     Data: Data;
@@ -3495,13 +1531,12 @@ declare module '@polkadot/types/types/registry' {
     DelayKindBest: DelayKindBest;
     Delegations: Delegations;
     DeletedContract: DeletedContract;
+    DeliveredMessages: DeliveredMessages;
     DepositBalance: DepositBalance;
     DepositBalanceOf: DepositBalanceOf;
     DepositInfo: DepositInfo;
     DestroyWitness: DestroyWitness;
     DidRecord: DidRecord;
-    DidRecords: DidRecords;
-    DidRecordsSuccess: DidRecordsSuccess;
     DidStatus: DidStatus;
     Digest: Digest;
     DigestItem: DigestItem;
@@ -3511,7 +1546,10 @@ declare module '@polkadot/types/types/registry' {
     DispatchClass: DispatchClass;
     DispatchError: DispatchError;
     DispatchErrorModule: DispatchErrorModule;
+    DispatchErrorModuleU8: DispatchErrorModuleU8;
+    DispatchErrorModuleU8a: DispatchErrorModuleU8a;
     DispatchErrorTo198: DispatchErrorTo198;
+    DispatchFeePayment: DispatchFeePayment;
     DispatchInfo: DispatchInfo;
     DispatchInfoTo190: DispatchInfoTo190;
     DispatchInfoTo244: DispatchInfoTo244;
@@ -3519,6 +1557,9 @@ declare module '@polkadot/types/types/registry' {
     DispatchResult: DispatchResult;
     DispatchResultOf: DispatchResultOf;
     DispatchResultTo198: DispatchResultTo198;
+    DisputeLocation: DisputeLocation;
+    DisputeResult: DisputeResult;
+    DisputeState: DisputeState;
     DisputeStatement: DisputeStatement;
     DisputeStatementSet: DisputeStatementSet;
     Distribution: Distribution;
@@ -3533,17 +1574,24 @@ declare module '@polkadot/types/types/registry' {
     DownwardMessage: DownwardMessage;
     EcdsaSignature: EcdsaSignature;
     Ed25519Signature: Ed25519Signature;
+    EIP1559Transaction: EIP1559Transaction;
+    EIP2930Transaction: EIP2930Transaction;
     EncodedFinalityProofs: EncodedFinalityProofs;
     EncodedJustification: EncodedJustification;
     EpochAuthorship: EpochAuthorship;
+    Era: Era;
     ErrorAt: ErrorAt;
     ErrorMetadataLatest: ErrorMetadataLatest;
     ErrorMetadataV10: ErrorMetadataV10;
     ErrorMetadataV11: ErrorMetadataV11;
     ErrorMetadataV12: ErrorMetadataV12;
     ErrorMetadataV13: ErrorMetadataV13;
+    ErrorMetadataV14: ErrorMetadataV14;
     ErrorMetadataV9: ErrorMetadataV9;
+    EthAccessList: EthAccessList;
+    EthAccessListItem: EthAccessListItem;
     EthAccount: EthAccount;
+    EthAddress: EthAddress;
     EthBlock: EthBlock;
     EthBloom: EthBloom;
     EthCallRequest: EthCallRequest;
@@ -3585,6 +1633,7 @@ declare module '@polkadot/types/types/registry' {
     EventMetadataV11: EventMetadataV11;
     EventMetadataV12: EventMetadataV12;
     EventMetadataV13: EventMetadataV13;
+    EventMetadataV14: EventMetadataV14;
     EventMetadataV9: EventMetadataV9;
     EventRecord: EventRecord;
     EvmAccount: EvmAccount;
@@ -3632,12 +1681,14 @@ declare module '@polkadot/types/types/registry' {
     FunctionArgumentMetadataV11: FunctionArgumentMetadataV11;
     FunctionArgumentMetadataV12: FunctionArgumentMetadataV12;
     FunctionArgumentMetadataV13: FunctionArgumentMetadataV13;
+    FunctionArgumentMetadataV14: FunctionArgumentMetadataV14;
     FunctionArgumentMetadataV9: FunctionArgumentMetadataV9;
     FunctionMetadataLatest: FunctionMetadataLatest;
     FunctionMetadataV10: FunctionMetadataV10;
     FunctionMetadataV11: FunctionMetadataV11;
     FunctionMetadataV12: FunctionMetadataV12;
     FunctionMetadataV13: FunctionMetadataV13;
+    FunctionMetadataV14: FunctionMetadataV14;
     FunctionMetadataV9: FunctionMetadataV9;
     FundIndex: FundIndex;
     FundInfo: FundInfo;
@@ -3647,6 +1698,10 @@ declare module '@polkadot/types/types/registry' {
     FundraiserName: FundraiserName;
     FundraiserStatus: FundraiserStatus;
     FundraiserTier: FundraiserTier;
+    Fungibility: Fungibility;
+    FungibilityV0: FungibilityV0;
+    FungibilityV1: FungibilityV1;
+    FungibilityV2: FungibilityV2;
     Gas: Gas;
     GiltBid: GiltBid;
     GlobalValidationData: GlobalValidationData;
@@ -3706,6 +1761,8 @@ declare module '@polkadot/types/types/registry' {
     InboundDownwardMessage: InboundDownwardMessage;
     InboundHrmpMessage: InboundHrmpMessage;
     InboundHrmpMessages: InboundHrmpMessages;
+    InboundLaneData: InboundLaneData;
+    InboundRelayer: InboundRelayer;
     InboundStatus: InboundStatus;
     IncludedBlocks: IncludedBlocks;
     InclusionFee: InclusionFee;
@@ -3719,11 +1776,17 @@ declare module '@polkadot/types/types/registry' {
     InstanceId: InstanceId;
     InstanceMetadata: InstanceMetadata;
     InstantiateRequest: InstantiateRequest;
+    InstantiateRequestV1: InstantiateRequestV1;
+    InstantiateRequestV2: InstantiateRequestV2;
     InstantiateReturnValue: InstantiateReturnValue;
+    InstantiateReturnValueOk: InstantiateReturnValueOk;
+    InstantiateReturnValueTo267: InstantiateReturnValueTo267;
     Instruction: Instruction;
     InstructionId: InstructionId;
     InstructionStatus: InstructionStatus;
+    InstructionV2: InstructionV2;
     InstructionWeights: InstructionWeights;
+    InteriorMultiLocation: InteriorMultiLocation;
     InvalidDisputeStatementKind: InvalidDisputeStatementKind;
     InvalidTransaction: InvalidTransaction;
     InvestorUid: InvestorUid;
@@ -3731,24 +1794,31 @@ declare module '@polkadot/types/types/registry' {
     ItnRewardStatus: ItnRewardStatus;
     Json: Json;
     Junction: Junction;
+    Junctions: Junctions;
+    JunctionsV1: JunctionsV1;
+    JunctionsV2: JunctionsV2;
+    JunctionV0: JunctionV0;
+    JunctionV1: JunctionV1;
+    JunctionV2: JunctionV2;
     Justification: Justification;
     JustificationNotification: JustificationNotification;
     Justifications: Justifications;
     Key: Key;
     KeyIdentityData: KeyIdentityData;
     KeyOwnerProof: KeyOwnerProof;
+    KeyRecord: KeyRecord;
     Keys: Keys;
     KeyTypeId: KeyTypeId;
     KeyValue: KeyValue;
     KeyValueOption: KeyValueOption;
     Kind: Kind;
+    LaneId: LaneId;
     LastContribution: LastContribution;
     LastRuntimeUpgradeInfo: LastRuntimeUpgradeInfo;
     LeasePeriod: LeasePeriod;
     LeasePeriodOf: LeasePeriodOf;
     Leg: Leg;
-    LegacyPalletPermissions: LegacyPalletPermissions;
-    LegacyPermissions: LegacyPermissions;
+    LegacyTransaction: LegacyTransaction;
     LegId: LegId;
     LegStatus: LegStatus;
     Limits: Limits;
@@ -3765,9 +1835,14 @@ declare module '@polkadot/types/types/registry' {
     MemberCount: MemberCount;
     MembershipProof: MembershipProof;
     Memo: Memo;
+    MessageData: MessageData;
     MessageId: MessageId;
     MessageIngestionType: MessageIngestionType;
+    MessageKey: MessageKey;
+    MessageNonce: MessageNonce;
     MessageQueueChain: MessageQueueChain;
+    MessagesDeliveryProofOf: MessagesDeliveryProofOf;
+    MessagesProofOf: MessagesProofOf;
     MessagingStateSnapshot: MessagingStateSnapshot;
     MessagingStateSnapshotEgressEntry: MessagingStateSnapshotEgressEntry;
     MetadataAll: MetadataAll;
@@ -3781,16 +1856,16 @@ declare module '@polkadot/types/types/registry' {
     MetaDescription: MetaDescription;
     MetaUrl: MetaUrl;
     MetaVersion: MetaVersion;
+    MigrationStatusResult: MigrationStatusResult;
+    MmrLeafBatchProof: MmrLeafBatchProof;
     MmrLeafProof: MmrLeafProof;
     MmrRootHash: MmrRootHash;
-    ModuleConstantMetadataLatest: ModuleConstantMetadataLatest;
     ModuleConstantMetadataV10: ModuleConstantMetadataV10;
     ModuleConstantMetadataV11: ModuleConstantMetadataV11;
     ModuleConstantMetadataV12: ModuleConstantMetadataV12;
     ModuleConstantMetadataV13: ModuleConstantMetadataV13;
     ModuleConstantMetadataV9: ModuleConstantMetadataV9;
     ModuleId: ModuleId;
-    ModuleMetadataLatest: ModuleMetadataLatest;
     ModuleMetadataV10: ModuleMetadataV10;
     ModuleMetadataV11: ModuleMetadataV11;
     ModuleMetadataV12: ModuleMetadataV12;
@@ -3805,12 +1880,20 @@ declare module '@polkadot/types/types/registry' {
     MovePortfolioItem: MovePortfolioItem;
     MultiAddress: MultiAddress;
     MultiAsset: MultiAsset;
-    MultiAssetAbstractFungible: MultiAssetAbstractFungible;
-    MultiAssetAbstractNonFungible: MultiAssetAbstractNonFungible;
-    MultiAssetConcreteFungible: MultiAssetConcreteFungible;
-    MultiAssetConcreteNonFungible: MultiAssetConcreteNonFungible;
+    MultiAssetFilter: MultiAssetFilter;
+    MultiAssetFilterV1: MultiAssetFilterV1;
+    MultiAssetFilterV2: MultiAssetFilterV2;
+    MultiAssets: MultiAssets;
+    MultiAssetsV1: MultiAssetsV1;
+    MultiAssetsV2: MultiAssetsV2;
+    MultiAssetV0: MultiAssetV0;
+    MultiAssetV1: MultiAssetV1;
+    MultiAssetV2: MultiAssetV2;
     MultiDisputeStatementSet: MultiDisputeStatementSet;
     MultiLocation: MultiLocation;
+    MultiLocationV0: MultiLocationV0;
+    MultiLocationV1: MultiLocationV1;
+    MultiLocationV2: MultiLocationV2;
     Multiplier: Multiplier;
     Multisig: Multisig;
     MultiSignature: MultiSignature;
@@ -3838,9 +1921,17 @@ declare module '@polkadot/types/types/registry' {
     OpenTipFinderTo225: OpenTipFinderTo225;
     OpenTipTip: OpenTipTip;
     OpenTipTo225: OpenTipTo225;
+    OperatingMode: OperatingMode;
+    OptionBool: OptionBool;
     Origin: Origin;
     OriginCaller: OriginCaller;
+    OriginKindV0: OriginKindV0;
+    OriginKindV1: OriginKindV1;
+    OriginKindV2: OriginKindV2;
     OutboundHrmpMessage: OutboundHrmpMessage;
+    OutboundLaneData: OutboundLaneData;
+    OutboundMessageFee: OutboundMessageFee;
+    OutboundPayload: OutboundPayload;
     OutboundStatus: OutboundStatus;
     Outcome: Outcome;
     OverweightIndex: OverweightIndex;
@@ -3872,6 +1963,7 @@ declare module '@polkadot/types/types/registry' {
     ParaId: ParaId;
     ParaInfo: ParaInfo;
     ParaLifecycle: ParaLifecycle;
+    Parameter: Parameter;
     ParaPastCodeMeta: ParaPastCodeMeta;
     ParaScheduling: ParaScheduling;
     ParathreadClaim: ParathreadClaim;
@@ -3910,10 +2002,9 @@ declare module '@polkadot/types/types/registry' {
     PipDescription: PipDescription;
     PipId: PipId;
     PipsMetadata: PipsMetadata;
-    PluralityJunction: PluralityJunction;
     PolymeshVotes: PolymeshVotes;
-    PortableRegistry: PortableRegistry;
     PortableType: PortableType;
+    PortableTypeV14: PortableTypeV14;
     PortfolioId: PortfolioId;
     PortfolioKind: PortfolioKind;
     PortfolioName: PortfolioName;
@@ -3945,6 +2036,8 @@ declare module '@polkadot/types/types/registry' {
     ProxyDefinition: ProxyDefinition;
     ProxyState: ProxyState;
     ProxyType: ProxyType;
+    QueryId: QueryId;
+    QueryStatus: QueryStatus;
     QueueConfigData: QueueConfigData;
     QueuedParathread: QueuedParathread;
     Randomness: Randomness;
@@ -3979,6 +2072,7 @@ declare module '@polkadot/types/types/registry' {
     RelayBlockNumber: RelayBlockNumber;
     RelayChainBlockNumber: RelayChainBlockNumber;
     RelayChainHash: RelayChainHash;
+    RelayerId: RelayerId;
     RelayHash: RelayHash;
     Releases: Releases;
     Remark: Remark;
@@ -3990,10 +2084,18 @@ declare module '@polkadot/types/types/registry' {
     ReportIdOf: ReportIdOf;
     ReserveData: ReserveData;
     ReserveIdentifier: ReserveIdentifier;
+    Response: Response;
+    ResponseV0: ResponseV0;
+    ResponseV1: ResponseV1;
+    ResponseV2: ResponseV2;
+    ResponseV2Error: ResponseV2Error;
+    ResponseV2Result: ResponseV2Result;
     RestrictionResult: RestrictionResult;
     Retriable: Retriable;
     RistrettoPoint: RistrettoPoint;
     RoundState: RoundState;
+    RpcDidRecords: RpcDidRecords;
+    RpcDidRecordsSuccess: RpcDidRecordsSuccess;
     RpcMethods: RpcMethods;
     RuntimeDbWeight: RuntimeDbWeight;
     RuntimeDispatchInfo: RuntimeDispatchInfo;
@@ -4059,6 +2161,21 @@ declare module '@polkadot/types/types/registry' {
     Si0TypeDefVariant: Si0TypeDefVariant;
     Si0TypeParameter: Si0TypeParameter;
     Si0Variant: Si0Variant;
+    Si1Field: Si1Field;
+    Si1LookupTypeId: Si1LookupTypeId;
+    Si1Path: Si1Path;
+    Si1Type: Si1Type;
+    Si1TypeDef: Si1TypeDef;
+    Si1TypeDefArray: Si1TypeDefArray;
+    Si1TypeDefBitSequence: Si1TypeDefBitSequence;
+    Si1TypeDefCompact: Si1TypeDefCompact;
+    Si1TypeDefComposite: Si1TypeDefComposite;
+    Si1TypeDefPrimitive: Si1TypeDefPrimitive;
+    Si1TypeDefSequence: Si1TypeDefSequence;
+    Si1TypeDefTuple: Si1TypeDefTuple;
+    Si1TypeDefVariant: Si1TypeDefVariant;
+    Si1TypeParameter: Si1TypeParameter;
+    Si1Variant: Si1Variant;
     SiField: SiField;
     Signatory: Signatory;
     Signature: Signature;
@@ -4090,6 +2207,7 @@ declare module '@polkadot/types/types/registry' {
     Slot: Slot;
     SlotNumber: SlotNumber;
     SlotRange: SlotRange;
+    SlotRange10: SlotRange10;
     SmartExtension: SmartExtension;
     SmartExtensionName: SmartExtensionName;
     SmartExtensionType: SmartExtensionType;
@@ -4099,11 +2217,19 @@ declare module '@polkadot/types/types/registry' {
     SnapshottedPip: SnapshottedPip;
     SocietyJudgement: SocietyJudgement;
     SocietyVote: SocietyVote;
+    SpecVersion: SpecVersion;
     Sr25519Signature: Sr25519Signature;
+    Stat1stKey: Stat1stKey;
+    Stat2ndKey: Stat2ndKey;
+    StatClaim: StatClaim;
     Statement: Statement;
     StatementKind: StatementKind;
+    StatOpType: StatOpType;
+    StatType: StatType;
+    StatUpdate: StatUpdate;
     StorageChangeSet: StorageChangeSet;
     StorageData: StorageData;
+    StorageDeposit: StorageDeposit;
     StorageEntryMetadataLatest: StorageEntryMetadataLatest;
     StorageEntryMetadataV10: StorageEntryMetadataV10;
     StorageEntryMetadataV11: StorageEntryMetadataV11;
@@ -4134,7 +2260,6 @@ declare module '@polkadot/types/types/registry' {
     StorageHasherV9: StorageHasherV9;
     StorageKey: StorageKey;
     StorageKind: StorageKind;
-    StorageMetadataLatest: StorageMetadataLatest;
     StorageMetadataV10: StorageMetadataV10;
     StorageMetadataV11: StorageMetadataV11;
     StorageMetadataV12: StorageMetadataV12;
@@ -4170,12 +2295,17 @@ declare module '@polkadot/types/types/registry' {
     TombstoneContractInfo: TombstoneContractInfo;
     TraceBlockResponse: TraceBlockResponse;
     TraceError: TraceError;
+    TransactionalError: TransactionalError;
     TransactionInfo: TransactionInfo;
     TransactionPriority: TransactionPriority;
     TransactionStorageProof: TransactionStorageProof;
+    TransactionV0: TransactionV0;
+    TransactionV1: TransactionV1;
+    TransactionV2: TransactionV2;
     TransactionValidityError: TransactionValidityError;
-    TransferManager: TransferManager;
-    TransferManagerResult: TransferManagerResult;
+    TransferCondition: TransferCondition;
+    TransferConditionExemptKey: TransferConditionExemptKey;
+    TransferConditionResult: TransferConditionResult;
     TransientValidationData: TransientValidationData;
     TreasuryProposal: TreasuryProposal;
     TrieId: TrieId;
@@ -4199,6 +2329,10 @@ declare module '@polkadot/types/types/registry' {
     UncleEntryItem: UncleEntryItem;
     UniqueCall: UniqueCall;
     UnknownTransaction: UnknownTransaction;
+    UnrewardedRelayer: UnrewardedRelayer;
+    UnrewardedRelayersState: UnrewardedRelayersState;
+    UpgradeGoAhead: UpgradeGoAhead;
+    UpgradeRestriction: UpgradeRestriction;
     UpwardMessage: UpwardMessage;
     Url: Url;
     usize: usize;
@@ -4222,8 +2356,11 @@ declare module '@polkadot/types/types/registry' {
     VenueType: VenueType;
     Version: Version;
     VersionedMultiAsset: VersionedMultiAsset;
+    VersionedMultiAssets: VersionedMultiAssets;
     VersionedMultiLocation: VersionedMultiLocation;
+    VersionedResponse: VersionedResponse;
     VersionedXcm: VersionedXcm;
+    VersionMigrationStage: VersionMigrationStage;
     VestingInfo: VestingInfo;
     VestingSchedule: VestingSchedule;
     Vote: Vote;
@@ -4245,40 +2382,42 @@ declare module '@polkadot/types/types/registry' {
     VrfOutput: VrfOutput;
     VrfProof: VrfProof;
     Weight: Weight;
+    WeightLimitV2: WeightLimitV2;
     WeightMultiplier: WeightMultiplier;
     WeightPerClass: WeightPerClass;
     WeightToFeeCoefficient: WeightToFeeCoefficient;
+    WildFungibility: WildFungibility;
+    WildFungibilityV0: WildFungibilityV0;
+    WildFungibilityV1: WildFungibilityV1;
+    WildFungibilityV2: WildFungibilityV2;
+    WildMultiAsset: WildMultiAsset;
+    WildMultiAssetV1: WildMultiAssetV1;
+    WildMultiAssetV2: WildMultiAssetV2;
     WinnersData: WinnersData;
+    WinnersData10: WinnersData10;
     WinnersDataTuple: WinnersDataTuple;
+    WinnersDataTuple10: WinnersDataTuple10;
     WinningData: WinningData;
+    WinningData10: WinningData10;
     WinningDataEntry: WinningDataEntry;
     WithdrawReasons: WithdrawReasons;
     Xcm: Xcm;
-    XcmAssetEffects: XcmAssetEffects;
+    XcmAssetId: XcmAssetId;
     XcmError: XcmError;
-    XcmHrmpChannelAccepted: XcmHrmpChannelAccepted;
-    XcmHrmpChannelClosing: XcmHrmpChannelClosing;
-    XcmHrmpNewChannelOpenRequest: XcmHrmpNewChannelOpenRequest;
+    XcmErrorV0: XcmErrorV0;
+    XcmErrorV1: XcmErrorV1;
+    XcmErrorV2: XcmErrorV2;
     XcmOrder: XcmOrder;
-    XcmOrderBuyExecution: XcmOrderBuyExecution;
-    XcmOrderDepositAsset: XcmOrderDepositAsset;
-    XcmOrderDepositReserveAsset: XcmOrderDepositReserveAsset;
-    XcmOrderExchangeAsset: XcmOrderExchangeAsset;
-    XcmOrderInitiateReserveWithdraw: XcmOrderInitiateReserveWithdraw;
-    XcmOrderInitiateTeleport: XcmOrderInitiateTeleport;
-    XcmOrderQueryHolding: XcmOrderQueryHolding;
+    XcmOrderV0: XcmOrderV0;
+    XcmOrderV1: XcmOrderV1;
+    XcmOrderV2: XcmOrderV2;
     XcmOrigin: XcmOrigin;
     XcmOriginKind: XcmOriginKind;
     XcmpMessageFormat: XcmpMessageFormat;
-    XcmQueryResponse: XcmQueryResponse;
-    XcmRelayedFrom: XcmRelayedFrom;
-    XcmReserveAssetDeposit: XcmReserveAssetDeposit;
-    XcmResponse: XcmResponse;
-    XcmTeleportAsset: XcmTeleportAsset;
-    XcmTransact: XcmTransact;
-    XcmTransferAsset: XcmTransferAsset;
-    XcmTransferReserveAsset: XcmTransferReserveAsset;
-    XcmWithdrawAsset: XcmWithdrawAsset;
+    XcmV0: XcmV0;
+    XcmV1: XcmV1;
+    XcmV2: XcmV2;
+    XcmVersion: XcmVersion;
     ZkProofData: ZkProofData;
-  }
-}
+  } // InterfaceTypes
+} // declare module

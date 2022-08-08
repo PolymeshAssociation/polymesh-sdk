@@ -7,27 +7,62 @@ import { setContext } from 'apollo-link-context';
 import { HttpLink } from 'apollo-link-http';
 import fetch from 'cross-fetch';
 import schema from 'polymesh-types/schema';
-import { satisfies } from 'semver';
-import { w3cwebsocket as W3CWebSocket } from 'websocket';
-import WebSocketAsPromised from 'websocket-as-promised';
 
-import { AccountManagement } from '~/AccountManagement';
-import { Assets } from '~/Assets';
-import { Identities } from '~/Identities';
 import { Account, Context, Identity, PolymeshError } from '~/internal';
 import { heartbeat } from '~/middleware/queries';
-import { Settlements } from '~/Settlements';
 import { ErrorCode, MiddlewareConfig } from '~/types';
-import { SUPPORTED_VERSION_RANGE, SYSTEM_VERSION_RPC_CALL } from '~/utils/constants';
 import { signerToString } from '~/utils/conversion';
+import { assertExpectedChainVersion } from '~/utils/internal';
 
+import { AccountManagement } from './AccountManagement';
+import { Assets } from './Assets';
 import { Claims } from './Claims';
+import { Identities } from './Identities';
 import { Network } from './Network';
+import { Settlements } from './Settlements';
 
-interface ConnectParams {
+export interface ConnectParams {
   nodeUrl: string;
   signingManager?: SigningManager;
   middleware?: MiddlewareConfig;
+  middlewareV2?: MiddlewareConfig;
+}
+
+/**
+ * @hidden
+ */
+function createMiddlewareApi(
+  middleware?: MiddlewareConfig
+): ApolloClient<NormalizedCacheObject> | null {
+  return middleware
+    ? new ApolloClient({
+        link: setContext((_, { headers }) => {
+          return {
+            headers: {
+              ...headers,
+              // eslint-disable-next-line @typescript-eslint/naming-convention
+              'x-api-key': middleware.key,
+            },
+          };
+        }).concat(
+          ApolloLink.from([
+            new HttpLink({
+              uri: middleware.link,
+              fetch,
+            }),
+          ])
+        ),
+        cache: new InMemoryCache(),
+        defaultOptions: {
+          watchQuery: {
+            fetchPolicy: 'no-cache',
+          },
+          query: {
+            fetchPolicy: 'no-cache',
+          },
+        },
+      })
+    : null;
 }
 
 /**
@@ -87,34 +122,10 @@ export class Polymesh {
    * @param params.middleware - middleware API URL and key (optional, used for historic queries)
    */
   static async connect(params: ConnectParams): Promise<Polymesh> {
-    const { nodeUrl, signingManager, middleware } = params;
+    const { nodeUrl, signingManager, middleware, middlewareV2 } = params;
     let context: Context;
 
-    /* istanbul ignore next: part of configuration, doesn't need to be tested */
-    const wsp = new WebSocketAsPromised(nodeUrl, {
-      createWebSocket: url => new W3CWebSocket(url) as unknown as WebSocket,
-      packMessage: data => JSON.stringify(data),
-      unpackMessage: data => JSON.parse(data.toString()),
-      attachRequestId: (data, requestId) => Object.assign({ id: requestId }, data),
-      extractRequestId: data => data && data.id,
-    });
-
-    await wsp.open();
-
-    const { result: version } = await wsp.sendRequest(SYSTEM_VERSION_RPC_CALL);
-
-    if (!satisfies(version, SUPPORTED_VERSION_RANGE)) {
-      throw new PolymeshError({
-        code: ErrorCode.FatalError,
-        message: 'Unsupported Polymesh version. Please upgrade the SDK',
-        data: {
-          polymeshVersion: version,
-          supportedVersionRange: SUPPORTED_VERSION_RANGE,
-        },
-      });
-    }
-
-    await wsp.close();
+    await assertExpectedChainVersion(nodeUrl);
 
     try {
       const { types, rpc } = schema;
@@ -125,41 +136,10 @@ export class Polymesh {
         rpc,
       });
 
-      let middlewareApi: ApolloClient<NormalizedCacheObject> | null = null;
-
-      if (middleware) {
-        middlewareApi = new ApolloClient({
-          link: setContext((_, { headers }) => {
-            return {
-              headers: {
-                ...headers,
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                'x-api-key': middleware.key,
-              },
-            };
-          }).concat(
-            ApolloLink.from([
-              new HttpLink({
-                uri: middleware.link,
-                fetch,
-              }),
-            ])
-          ),
-          cache: new InMemoryCache(),
-          defaultOptions: {
-            watchQuery: {
-              fetchPolicy: 'no-cache',
-            },
-            query: {
-              fetchPolicy: 'no-cache',
-            },
-          },
-        });
-      }
-
       context = await Context.create({
         polymeshApi,
-        middlewareApi,
+        middlewareApi: createMiddlewareApi(middleware),
+        middlewareApiV2: createMiddlewareApi(middlewareV2),
         signingManager,
       });
     } catch (err) {

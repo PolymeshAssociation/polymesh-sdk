@@ -1,26 +1,28 @@
 import { assertSecondaryAccounts } from '~/api/procedures/utils';
-import { Procedure } from '~/internal';
-import { PermissionedAccount, PermissionsLike, TxTags } from '~/types';
-import { Modify, tuple } from '~/types/utils';
+import { Identity, Procedure } from '~/internal';
+import { ModifySignerPermissionsParams, TxTags } from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
+import { tuple } from '~/types/utils';
 import {
   permissionsLikeToPermissions,
   permissionsToMeshPermissions,
   signerToSignerValue,
   signerValueToSignatory,
 } from '~/utils/conversion';
+import { getSecondaryAccountPermissions } from '~/utils/internal';
 
-export interface ModifySignerPermissionsParams {
-  /**
-   * list of secondary Accounts
-   */
-  secondaryAccounts: Modify<PermissionedAccount, { permissions: PermissionsLike }>[];
+/**
+ * @hidden
+ */
+export interface Storage {
+  identity: Identity;
 }
 
 /**
  * @hidden
  */
 export async function prepareModifySignerPermissions(
-  this: Procedure<ModifySignerPermissionsParams>,
+  this: Procedure<ModifySignerPermissionsParams, void, Storage>,
   args: ModifySignerPermissionsParams
 ): Promise<void> {
   const {
@@ -28,18 +30,16 @@ export async function prepareModifySignerPermissions(
       polymeshApi: { tx },
     },
     context,
+    storage: { identity },
   } = this;
 
   const { secondaryAccounts } = args;
-
-  const identity = await context.getSigningIdentity();
-
-  const existingSecondaryAccounts = await identity.getSecondaryAccounts();
-
-  assertSecondaryAccounts(
-    secondaryAccounts.map(({ account }) => account),
-    existingSecondaryAccounts
+  const accounts = secondaryAccounts.map(({ account }) => account);
+  const existingSecondaryAccounts = await getSecondaryAccountPermissions(
+    { accounts, identity },
+    context
   );
+  assertSecondaryAccounts(accounts, existingSecondaryAccounts);
 
   const signersList = secondaryAccounts.map(({ account, permissions: permissionsLike }) => {
     const permissions = permissionsLikeToPermissions(permissionsLike, context);
@@ -62,11 +62,51 @@ export async function prepareModifySignerPermissions(
 /**
  * @hidden
  */
-export const modifySignerPermissions = (): Procedure<ModifySignerPermissionsParams> =>
-  new Procedure(prepareModifySignerPermissions, {
+export async function getAuthorization(
+  this: Procedure<ModifySignerPermissionsParams, void, Storage>
+): Promise<ProcedureAuthorization> {
+  const {
+    context,
+    storage: { identity },
+  } = this;
+
+  const signingAccount = context.getSigningAccount();
+  const { account: primaryAccount } = await identity.getPrimaryAccount();
+
+  if (!signingAccount.isEqual(primaryAccount)) {
+    return {
+      signerPermissions:
+        "Secondary Account permissions can only be modified by the Identity's primary Account",
+    };
+  }
+
+  return {
     permissions: {
       transactions: [TxTags.identity.SetPermissionToSigner],
       assets: [],
       portfolios: [],
     },
-  });
+  };
+}
+
+/**
+ * @hidden
+ */
+export async function prepareStorage(
+  this: Procedure<ModifySignerPermissionsParams, void, Storage>
+): Promise<Storage> {
+  const { context } = this;
+
+  return {
+    identity: await context.getSigningIdentity(),
+  };
+}
+
+/**
+ * @hidden
+ */
+export const modifySignerPermissions = (): Procedure<
+  ModifySignerPermissionsParams,
+  void,
+  Storage
+> => new Procedure(prepareModifySignerPermissions, getAuthorization, prepareStorage);

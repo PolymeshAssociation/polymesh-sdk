@@ -1,7 +1,6 @@
-import { TxTags } from 'polymesh-types/types';
-
 import { PolymeshError, Procedure } from '~/internal';
-import { ErrorCode } from '~/types';
+import { ErrorCode, TxTags } from '~/types';
+import { getSecondaryAccountPermissions } from '~/utils/internal';
 
 /**
  * @hidden
@@ -23,12 +22,15 @@ export async function prepareLeaveIdentity(this: Procedure<void, void>): Promise
       message: 'There is no Identity associated to the signing Account',
     });
   }
-
-  const secondaryAccounts = await signingIdentity.getSecondaryAccounts();
-  const isSecondaryAccount = secondaryAccounts.find(({ account }) =>
-    account.isEqual(signingAccount)
+  const [accountPermission] = await getSecondaryAccountPermissions(
+    {
+      accounts: [signingAccount],
+      identity: signingIdentity,
+    },
+    context
   );
 
+  const isSecondaryAccount = accountPermission && signingAccount.isEqual(accountPermission.account);
   if (!isSecondaryAccount) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
