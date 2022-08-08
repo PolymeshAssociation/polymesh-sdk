@@ -141,6 +141,9 @@ export { quitSubsidy, QuitSubsidyParams } from '~/api/procedures/quitSubsidy';
 export { modifyAllowance, ModifyAllowanceParams } from '~/api/procedures/modifyAllowance';
 export { createMultiSigAccount, CreateMultiSigParams } from '~/api/procedures/createMultiSig';
 export {
+  SetAllowanceParams,
+  DecreaseAllowanceParams,
+  IncreaseAllowanceParams,
   SetCountTransferRestrictionsParams,
   SetPercentageTransferRestrictionsParams,
   SetClaimCountTransferRestrictionsParams,

@@ -72,7 +72,7 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
         rejections: rawRejections,
         status: rawStatus,
         expiry: rawExpiry,
-        auto_close: rawAutoClose,
+        autoClose: rawAutoClose,
       },
       proposal,
     ] = await Promise.all([
@@ -143,5 +143,12 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
       multiSigAddress,
       id: id.toString(),
     });
+  }
+
+  /**
+   * Returns a human readable string representation
+   */
+  public toHuman(): string {
+    return this.toJson();
   }
 }

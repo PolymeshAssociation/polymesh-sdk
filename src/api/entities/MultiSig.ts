@@ -7,7 +7,7 @@ import { accountIdToString, identityIdToString, u64ToBigNumber } from '~/utils/c
 
 interface MultiSigDetails {
   signers: Signer[];
-  signaturesRequired: BigNumber;
+  requiredSignatures: BigNumber;
 }
 
 /**
@@ -39,8 +39,8 @@ export class MultiSig extends Account {
         return new Identity({ did }, this.context);
       }
     });
-    const signaturesRequired = u64ToBigNumber(rawSignersRequired);
-    return { signers, signaturesRequired };
+    const requiredSignatures = u64ToBigNumber(rawSignersRequired);
+    return { signers, requiredSignatures };
   }
 
   /**

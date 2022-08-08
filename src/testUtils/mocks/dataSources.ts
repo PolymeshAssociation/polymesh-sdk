@@ -3858,6 +3858,7 @@ export const createMockHeader = (
 };
 
 /**
+ * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockExtrinsics = (
@@ -4225,7 +4226,7 @@ export const createMockProposalData = (proposalData?: {
       section,
     },
     !proposalData
-  ) as ProposalData;
+  ) as MockCodec<ProposalData>;
 };
 
 export const createMockProposalDetails = (proposalDetails?: {
@@ -4251,5 +4252,5 @@ export const createMockProposalDetails = (proposalDetails?: {
       auto_close: autoClose,
     },
     !proposalDetails
-  ) as ProposalDetails;
+  ) as MockCodec<ProposalDetails>;
 };

@@ -926,10 +926,13 @@ describe('Account class', () => {
 
   describe('method: getMultiSig', () => {
     it('should return null if the Account is not a MultiSig signer', async () => {
-      dsMockUtils.createQueryStub('multiSig', 'keyToMultiSig', {
-        returnValue: dsMockUtils.createMockAccountId(),
+      dsMockUtils.createQueryStub('identity', 'keyRecords', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockKeyRecord({
+            PrimaryKey: dsMockUtils.createMockAccountId(),
+          })
+        ),
       });
-
       account = new Account({ address }, context);
 
       const result = await account.getMultiSig();
@@ -938,8 +941,12 @@ describe('Account class', () => {
     });
 
     it('should return the MultiSig the Account is a signer for', async () => {
-      dsMockUtils.createQueryStub('multiSig', 'keyToMultiSig', {
-        returnValue: dsMockUtils.createMockAccountId('multiAddress'),
+      dsMockUtils.createQueryStub('identity', 'keyRecords', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockKeyRecord({
+            MultiSigSignerKey: dsMockUtils.createMockAccountId('multiAddress'),
+          })
+        ),
       });
 
       account = new Account({ address }, context);

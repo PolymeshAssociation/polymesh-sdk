@@ -47,7 +47,6 @@ import {
 } from '~/types';
 import { Ensured, EnsuredV2 } from '~/types/utils';
 import {
-  accountIdToString,
   addressToKey,
   extrinsicIdentifierToTxTag,
   identityIdToString,
