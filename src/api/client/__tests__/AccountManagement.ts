@@ -6,6 +6,7 @@ import { Account, MultiSig, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
 import { AccountBalance, PermissionType, SubCallback } from '~/types';
+import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/base/Procedure',
@@ -227,8 +228,11 @@ describe('AccountManagement class', () => {
   });
 
   describe('method: getSigningAccount', () => {
+    const stringToAccountIdStub = sinon.stub(utilsConversionModule, 'stringToAccountId');
     it('should return the signing Account', async () => {
       const address = 'someAddress';
+      const rawAddress = dsMockUtils.createMockAccountId(address);
+      stringToAccountIdStub.withArgs(address, context).returns(rawAddress);
       dsMockUtils.configureMocks({ contextOptions: { signingAddress: address } });
 
       const result = accountManagement.getSigningAccount();
@@ -316,7 +320,7 @@ describe('AccountManagement class', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const args = {
         signers: [entityMockUtils.getAccountInstance()],
-        signaturesRequired: new BigNumber(1),
+        requiredSignatures: new BigNumber(1),
       };
 
       const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;

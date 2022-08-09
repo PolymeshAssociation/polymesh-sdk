@@ -25,6 +25,7 @@ import {
   SubsidizeAccountParams,
   UnsubCallback,
 } from '~/types';
+import { stringToAccountId } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
 /**
@@ -160,7 +161,7 @@ export class AccountManagement {
   /**
    * Create a MultiSig Account
    *
-   * @note this will create an {@link AuthorizationRequest | Authorization Request} for each signer which will have to be accepted before they can approve transactions. Each signing account cannot be associated with an Identity when accepting the authorization
+   * @note this will create an {@link AuthorizationRequest | Authorization Request} for each signing Account which will have to be accepted before they can approve transactions. None of the signing Accounts can be associated with an Identity when accepting the Authorization
    *   An {@link Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived | authorizations.getReceived}.
    *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link Authorizations.getOne | authorizations.getOne}
    */
@@ -228,8 +229,9 @@ export class AccountManagement {
         },
       },
     } = this;
-
-    const rawSigners = await multiSig.multiSigSigners.entries(args.address);
+    const { address } = args;
+    const rawAddress = stringToAccountId(address, context);
+    const rawSigners = await multiSig.multiSigSigners.entries(rawAddress);
     if (rawSigners.length > 0) {
       return new MultiSig(args, context);
     }

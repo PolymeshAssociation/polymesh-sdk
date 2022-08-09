@@ -114,9 +114,9 @@ describe('MultiSig class', () => {
     });
   });
 
-  describe('method: getPendingProposals', () => {
+  describe('method: getProposals', () => {
     const id = new BigNumber(1);
-    it('should get pending proposals', async () => {
+    it('should get proposals', async () => {
       dsMockUtils.createQueryStub('multiSig', 'proposalIds', {
         entries: [[[''], createMockOption(createMockU64(id))]],
       });
@@ -139,19 +139,6 @@ describe('MultiSig class', () => {
       const expectedProposals: MultiSigProposal[] = [];
 
       expect(result).toEqual(expectedProposals);
-    });
-
-    it('should throw if a pending proposal lacks an ID', () => {
-      dsMockUtils.createQueryStub('multiSig', 'proposalIds', {
-        entries: [[[], createMockOption()]],
-      });
-
-      const expectedError = new PolymeshError({
-        code: ErrorCode.DataUnavailable,
-        message: 'A Proposal was missing its ID. Perhaps it was already executed',
-      });
-
-      return expect(multiSig.getProposals()).rejects.toThrowError(expectedError);
     });
   });
 });

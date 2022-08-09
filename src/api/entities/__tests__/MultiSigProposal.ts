@@ -105,29 +105,11 @@ describe('MultiSigProposal class', () => {
           })
         ),
       });
-
-      dsMockUtils.createQueryStub('multiSig', 'proposalDetail', {
-        returnValue: dsMockUtils.createMockProposalDetails({
-          approvals: '1',
-          rejections: '1',
-          status: 'badStatus',
-          autoClose: false,
-          expiry: null,
-        }),
-      });
-
-      const expectedError = new PolymeshError({
-        code: ErrorCode.DataUnavailable,
-        message:
-          'Unexpected MultiSigProposal status: "badStatus". Try upgrading the SDK to the latest version. Contact the Polymesh team if the problem persists',
-      });
-
-      return expect(proposal.details()).rejects.toThrowError(expectedError);
     });
   });
 
   describe('method: exists', () => {
-    it('should return true if the MultiSigProposal is present chain', async () => {
+    it('should return true if the MultiSigProposal is present on chain', async () => {
       dsMockUtils.createQueryStub('multiSig', 'proposals', {
         returnValue: dsMockUtils.createMockProposalData({
           args: [],

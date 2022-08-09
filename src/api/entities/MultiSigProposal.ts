@@ -3,7 +3,13 @@ import { BigNumber } from 'bignumber.js';
 import { Context, Entity, PolymeshError } from '~/internal';
 import { ErrorCode, TxTag } from '~/types';
 import { isProposalStatus } from '~/utils';
-import { bigNumberToU64, boolToBoolean, momentToDate, u64ToBigNumber } from '~/utils/conversion';
+import {
+  bigNumberToU64,
+  boolToBoolean,
+  momentToDate,
+  stringToAccountId,
+  u64ToBigNumber,
+} from '~/utils/conversion';
 import { assertAddressValid } from '~/utils/internal';
 
 interface UniqueIdentifiers {
@@ -24,8 +30,8 @@ export type ProposalStatus =
   | 'Rejected';
 
 export interface MultiSigProposalDetails {
-  approvals: BigNumber;
-  rejections: BigNumber;
+  approvalAmount: BigNumber;
+  rejectionAmount: BigNumber;
   status: ProposalStatus;
   expiry: Date | null;
   autoClose: boolean;
@@ -34,7 +40,7 @@ export interface MultiSigProposalDetails {
 }
 
 /**
- * A proposal for a MultiSig transaction. This is a wrapper around an extrinsic and will be executed when the approvals reach the signature threshold set on the MultiSig Account
+ * A proposal for a MultiSig transaction. This is a wrapper around an extrinsic that will be executed when the amount of approvals reaches the signature threshold set on the MultiSig Account
  */
 export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
   public multiSigAddress: string;
@@ -52,7 +58,7 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Fetches the details of the Proposal. This includes the approvals, rejections, the expiry along with details of the wrapped extrinsic
+   * Fetches the details of the Proposal. This includes the amount of approvals and rejections, the expiry, and details of the wrapped extrinsic
    */
   public async details(): Promise<MultiSigProposalDetails> {
     const {
@@ -65,6 +71,7 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
       id,
       context,
     } = this;
+    const rawMultiSignAddress = stringToAccountId(multiSigAddress, context);
     const u64Id = bigNumberToU64(id, context);
     const [
       {
@@ -76,8 +83,8 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
       },
       proposal,
     ] = await Promise.all([
-      multiSig.proposalDetail([multiSigAddress, u64Id]),
-      multiSig.proposals([multiSigAddress, u64Id]),
+      multiSig.proposalDetail([rawMultiSignAddress, u64Id]),
+      multiSig.proposals([rawMultiSignAddress, u64Id]),
     ]);
 
     let args, method, section;
@@ -93,9 +100,9 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
       });
     }
 
-    const approvals = u64ToBigNumber(rawApprovals);
-    const rejections = u64ToBigNumber(rawRejections);
-    const expiry = !rawExpiry || rawExpiry.isNone ? null : momentToDate(rawExpiry.unwrap());
+    const approvalAmount = u64ToBigNumber(rawApprovals);
+    const rejectionAmount = u64ToBigNumber(rawRejections);
+    const expiry = rawExpiry.isNone ? null : momentToDate(rawExpiry.unwrap());
     const status = rawStatus.toString();
     if (!isProposalStatus(status))
       throw new PolymeshError({
@@ -105,12 +112,12 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
     const autoClose = boolToBoolean(rawAutoClose);
 
     return {
-      approvals,
-      rejections,
+      approvalAmount,
+      rejectionAmount,
       status,
       expiry,
       autoClose,
-      args: args.map(a => a.toString()),
+      args: args.map(a => a.toString()), // TODO is this format good?
       txTag: `${section}.${method}` as TxTag,
     };
   }
@@ -130,7 +137,8 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
     const u64Id = bigNumberToU64(id, context);
-    const rawProposal = await multiSig.proposals([multiSigAddress, u64Id]);
+    const rawMultiSignAddress = stringToAccountId(multiSigAddress, context);
+    const rawProposal = await multiSig.proposals([rawMultiSignAddress, u64Id]);
     return !rawProposal.isEmpty;
   }
 

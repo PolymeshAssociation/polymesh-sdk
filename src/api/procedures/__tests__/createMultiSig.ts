@@ -54,17 +54,17 @@ describe('createMultiSig procedure', () => {
     const mockAccount = entityMockUtils.getAccountInstance();
 
     const signers = [mockAccount];
-    const signaturesRequired = new BigNumber(1);
+    const requiredSignatures = new BigNumber(1);
 
     const signatories = signers.map(s => utilsConversionModule.signerToSignatory(s, mockContext));
     const convertedSignersRequired = utilsConversionModule.bigNumberToU64(
-      signaturesRequired,
+      requiredSignatures,
       mockContext
     );
 
     const result = await prepareCreateMultiSigAccount.call(proc, {
       signers,
-      signaturesRequired,
+      requiredSignatures,
     });
 
     sinon.assert.calledWith(
@@ -83,17 +83,17 @@ describe('createMultiSig procedure', () => {
     const mockAccount = entityMockUtils.getAccountInstance();
 
     const signers = [mockAccount];
-    const signaturesRequired = new BigNumber(2);
+    const requiredSignatures = new BigNumber(2);
 
     const expectedError = new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'The number of signatures required should not exceed the number of signers',
+      message: 'The number of required signatures should not exceed the number of signers',
     });
 
     return expect(
       prepareCreateMultiSigAccount.call(proc, {
         signers,
-        signaturesRequired,
+        requiredSignatures,
       })
     ).rejects.toThrowError(expectedError);
   });

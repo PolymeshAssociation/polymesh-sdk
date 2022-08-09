@@ -1,9 +1,14 @@
 import BigNumber from 'bignumber.js';
 
 import { MultiSigProposal } from '~/api/entities/MultiSigProposal';
-import { Account, Identity, PolymeshError } from '~/internal';
+import { Account, PolymeshError } from '~/internal';
 import { ErrorCode, Signer } from '~/types';
-import { accountIdToString, identityIdToString, u64ToBigNumber } from '~/utils/conversion';
+import {
+  signatoryToSignerValue,
+  signerValueToSigner,
+  stringToAccountId,
+  u64ToBigNumber,
+} from '~/utils/conversion';
 
 interface MultiSigDetails {
   signers: Signer[];
@@ -11,11 +16,11 @@ interface MultiSigDetails {
 }
 
 /**
- * Represents a MultiSig Account. MultiSig functions like an { @link Account } except submitted extrinsics need to be approved by a number of signers
+ * Represents a MultiSig Account. A MultiSig Account is composed of one or more signing Accounts. In order to submit a transaction, a specific amount of those signing Accounts must approve it first
  */
 export class MultiSig extends Account {
   /**
-   * Returns details about this MultiSig such as the signing accounts and the required number of signatures to execute a MultiSigProposal
+   * Return details about this MultiSig such as the signing Accounts and the required number of signatures to execute a MultiSigProposal
    */
   public async details(): Promise<MultiSigDetails> {
     const {
@@ -24,27 +29,23 @@ export class MultiSig extends Account {
           query: { multiSig },
         },
       },
+      context,
       address,
     } = this;
+    const rawAddress = stringToAccountId(address, context);
     const [rawSigners, rawSignersRequired] = await Promise.all([
-      multiSig.multiSigSigners.entries(address),
-      multiSig.multiSigSignsRequired(address),
+      multiSig.multiSigSigners.entries(rawAddress),
+      multiSig.multiSigSignsRequired(rawAddress),
     ]);
     const signers = rawSigners.map(([, signatory]) => {
-      if (signatory.isAccount) {
-        const signatoryAddress = accountIdToString(signatory.asAccount);
-        return new Account({ address: signatoryAddress }, this.context);
-      } else {
-        const did = identityIdToString(signatory.asIdentity);
-        return new Identity({ did }, this.context);
-      }
+      return signerValueToSigner(signatoryToSignerValue(signatory), context);
     });
     const requiredSignatures = u64ToBigNumber(rawSignersRequired);
     return { signers, requiredSignatures };
   }
 
   /**
-   * Given an ID fetches a { @link MultiSigProposal } for this MultiSig
+   * Given an ID fetch a { @link MultiSigProposal } for this MultiSig
    *
    * @throws if the MultiSigProposal is not found
    */
@@ -64,7 +65,7 @@ export class MultiSig extends Account {
   }
 
   /**
-   * Returns all { @link MultiSigProposal | MultiSigProposals } for this MultiSig Account
+   * Return all { @link MultiSigProposal | MultiSigProposals } for this MultiSig Account
    */
   public async getProposals(): Promise<MultiSigProposal[]> {
     const {
@@ -73,23 +74,18 @@ export class MultiSig extends Account {
           query: { multiSig },
         },
       },
+      context,
       address,
     } = this;
+    const rawAddress = stringToAccountId(address, context);
 
-    const rawProposals = await multiSig.proposalIds.entries(address);
+    const rawProposals = await multiSig.proposalIds.entries(rawAddress);
     return rawProposals.map(([, rawId]) => {
-      if (rawId.isSome) {
-        const id = u64ToBigNumber(rawId.unwrap());
-        return new MultiSigProposal(
-          { multiSigAddress: address, id: new BigNumber(id) },
-          this.context
-        );
-      } else {
-        throw new PolymeshError({
-          code: ErrorCode.DataUnavailable,
-          message: 'A Proposal was missing its ID. Perhaps it was already executed',
-        });
-      }
+      const id = u64ToBigNumber(rawId.unwrap());
+      return new MultiSigProposal(
+        { multiSigAddress: address, id: new BigNumber(id) },
+        this.context
+      );
     });
   }
 }

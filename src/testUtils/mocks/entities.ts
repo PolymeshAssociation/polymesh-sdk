@@ -1484,8 +1484,8 @@ const MockMultiSigProposalClass = createMockEntityClass<MultiSigProposalOptions>
     id: new BigNumber(1),
     multiSigAddress: 'someAddress',
     details: {
-      approvals: new BigNumber(1),
-      rejections: new BigNumber(0),
+      approvalAmount: new BigNumber(1),
+      rejectionAmount: new BigNumber(0),
       status: 'ActiveOrExpired',
       expiry: null,
       autoClose: false,

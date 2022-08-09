@@ -4249,7 +4249,7 @@ export const createMockProposalDetails = (proposalDetails?: {
       rejections,
       status,
       expiry,
-      auto_close: autoClose,
+      autoClose,
     },
     !proposalDetails
   ) as MockCodec<ProposalDetails>;
