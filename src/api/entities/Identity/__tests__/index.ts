@@ -34,6 +34,7 @@ import {
 } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/TickerReservation',
@@ -1292,6 +1293,7 @@ describe('Identity class', () => {
       [PolymeshPrimitivesSecondaryKeyPermissions, Context],
       Permissions
     >;
+    let getSecondaryAccountPermissionsStub: sinon.SinonStub;
 
     beforeAll(() => {
       account = entityMockUtils.getAccountInstance({ address: accountId });
@@ -1299,6 +1301,10 @@ describe('Identity class', () => {
       meshPermissionsToPermissionsStub = sinon.stub(
         utilsConversionModule,
         'meshPermissionsToPermissions'
+      );
+      getSecondaryAccountPermissionsStub = sinon.stub(
+        utilsInternalModule,
+        'getSecondaryAccountPermissions'
       );
       fakeResult = [
         {
@@ -1353,26 +1359,36 @@ describe('Identity class', () => {
           dsMockUtils.createMockOption(rawMultiSigKeyRecord),
         ],
       });
+
+      getSecondaryAccountPermissionsStub.returns(fakeResult);
       const identity = new Identity({ did: 'someDid' }, context);
 
-      const result = await identity.getSecondaryAccounts();
-      expect(result).toEqual(fakeResult);
+      let result = await identity.getSecondaryAccounts();
+      expect(result).toEqual({ data: fakeResult, next: null });
+
+      result = await identity.getSecondaryAccounts({ size: new BigNumber(20) });
+      expect(result).toEqual({ data: fakeResult, next: null });
     });
 
     it('should allow subscription', async () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const unsubCallback = 'unsubCallBack';
 
-      const keyRecordsStub = dsMockUtils.createQueryStub('identity', 'keyRecords', {
-        multi: [dsMockUtils.createMockOption(rawSecondaryKeyRecord)],
-      });
-
-      keyRecordsStub.multi.callsFake(async (_, cbFunc) => {
-        cbFunc([dsMockUtils.createMockOption(rawSecondaryKeyRecord)]);
-        return unsubCallback;
-      });
-
       const callback = sinon.stub();
+
+      getSecondaryAccountPermissionsStub.yields([
+        {
+          account,
+          permissions: {
+            assets: null,
+            portfolios: null,
+            transactions: null,
+            transactionGroups: [],
+          },
+        },
+      ]);
+      getSecondaryAccountPermissionsStub.returns(unsubCallback);
+
       const result = await identity.getSecondaryAccounts(callback);
 
       expect(result).toBe(unsubCallback);

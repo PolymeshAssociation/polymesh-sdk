@@ -22,13 +22,8 @@ import {
   trustedClaimIssuerQuery,
   trustingAssetsQuery,
 } from '~/middleware/queriesV2';
-import {
-  CallIdEnum,
-  ClaimScopeTypeEnum,
-  ClaimTypeEnum,
-  EventIdEnum,
-  ModuleIdEnum,
-} from '~/middleware/types';
+import { ClaimScopeTypeEnum } from '~/middleware/types';
+import { CallIdEnum, ClaimTypeEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/typesV2';
 
 describe('heartbeat', () => {
   it('should pass the variables to the grapqhl query', () => {
@@ -270,7 +265,7 @@ describe('tickerExternalAgentActionsQuery', () => {
       assetId: 'SOME_TICKER',
       callerId: 'someDid',
       palletName: 'asset',
-      eventId: 'controllerTransfer',
+      eventId: EventIdEnum.ControllerTransfer,
     };
 
     result = tickerExternalAgentActionsQuery(variables);

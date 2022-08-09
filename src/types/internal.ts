@@ -16,14 +16,20 @@ import { DocumentNode } from 'graphql';
 
 import { Identity, PostTransactionValue } from '~/internal';
 import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
+import {
+  CallIdEnum as MiddlewareV2CallId,
+  ModuleIdEnum as MiddlewareV2ModuleId,
+} from '~/middleware/typesV2';
 import { CustomAssetTypeId } from '~/polkadot';
 import {
   CalendarPeriod,
+  InputStatClaim,
   KnownAssetType,
   PermissionGroupType,
   Role,
   SignerValue,
   SimplePermissions,
+  StatClaimType,
   TxTag,
 } from '~/types';
 
@@ -283,6 +289,11 @@ export interface ExtrinsicIdentifier {
   callId: CallIdEnum;
 }
 
+export interface ExtrinsicIdentifierV2 {
+  moduleId: MiddlewareV2ModuleId;
+  callId: MiddlewareV2CallId;
+}
+
 export interface ScheduleSpec {
   start: Date | null;
   period: CalendarPeriod | null;
@@ -351,6 +362,8 @@ export type InternalAssetType = KnownAssetType | { Custom: CustomAssetTypeId };
 export enum StatisticsOpType {
   Count = 'Count',
   Balance = 'Balance',
+  ClaimCount = 'ClaimCount',
+  ClaimPercentage = 'ClaimPercentage',
 }
 
 export interface TickerKey {
@@ -360,4 +373,11 @@ export interface TickerKey {
 export interface ExemptKey {
   asset: TickerKey;
   op: PolymeshPrimitivesStatisticsStatOpType;
+}
+
+export type StatClaimInputType = Omit<InputStatClaim, 'affiliate' | 'accredited'>;
+
+export interface StatClaimIssuer {
+  issuer: Identity;
+  claimType: StatClaimType;
 }

@@ -11,6 +11,11 @@ import {
 } from '~/middleware/queries';
 import { eventsByArgs, extrinsicByHash } from '~/middleware/queriesV2';
 import { CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/types';
+import {
+  CallIdEnum as MiddlewareV2CallId,
+  EventIdEnum as MiddlewareV2EventId,
+  ModuleIdEnum as MiddlewareV2ModuleId,
+} from '~/middleware/typesV2';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { AccountBalance, TxTags } from '~/types';
@@ -247,8 +252,8 @@ describe('Network Class', () => {
 
   describe('method: getEventByIndexedArgsV2', () => {
     const variables = {
-      moduleId: ModuleIdEnum.Asset,
-      eventId: EventIdEnum.AssetCreated,
+      moduleId: MiddlewareV2ModuleId.Asset,
+      eventId: MiddlewareV2EventId.AssetCreated,
     };
 
     it('should return a single event', async () => {
@@ -377,8 +382,8 @@ describe('Network Class', () => {
 
   describe('method: getEventsByIndexedArgsV2', () => {
     const variables = {
-      moduleId: ModuleIdEnum.Asset,
-      eventId: EventIdEnum.AssetCreated,
+      moduleId: MiddlewareV2ModuleId.Asset,
+      eventId: MiddlewareV2EventId.AssetCreated,
     };
 
     it('should return a list of events', async () => {
@@ -626,8 +631,8 @@ describe('Network Class', () => {
         extrinsics: {
           nodes: [
             {
-              moduleId: ModuleIdEnum.Asset,
-              callId: CallIdEnum.RegisterTicker,
+              moduleId: MiddlewareV2ModuleId.Asset,
+              callId: MiddlewareV2CallId.RegisterTicker,
               extrinsicIdx: extrinsicIdx.toNumber(),
               specVersionId: specVersionId.toNumber(),
               paramsTxt: '[]',
@@ -691,8 +696,8 @@ describe('Network Class', () => {
         extrinsics: {
           nodes: [
             {
-              moduleId: ModuleIdEnum.Asset,
-              callId: CallIdEnum.RegisterTicker,
+              moduleId: MiddlewareV2ModuleId.Asset,
+              callId: MiddlewareV2CallId.RegisterTicker,
               extrinsicIdx: extrinsicIdx,
               specVersionId: specVersionId,
               paramsTxt: '[]',
