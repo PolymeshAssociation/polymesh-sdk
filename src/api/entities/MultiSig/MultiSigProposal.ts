@@ -1,7 +1,7 @@
 import { BigNumber } from 'bignumber.js';
 
 import { Context, Entity, PolymeshError } from '~/internal';
-import { ErrorCode, TxTag } from '~/types';
+import { ErrorCode, MultiSigProposalDetails, TxTag } from '~/types';
 import { isProposalStatus } from '~/utils';
 import {
   bigNumberToU64,
@@ -20,23 +20,6 @@ interface UniqueIdentifiers {
 export interface HumanReadable {
   multiSigAddress: string;
   id: string;
-}
-
-export type ProposalStatus =
-  | 'Invalid'
-  | 'ActiveOrExpired'
-  | 'ExecutionSuccessful'
-  | 'ExecutionFailed'
-  | 'Rejected';
-
-export interface MultiSigProposalDetails {
-  approvalAmount: BigNumber;
-  rejectionAmount: BigNumber;
-  status: ProposalStatus;
-  expiry: Date | null;
-  autoClose: boolean;
-  txTag: TxTag;
-  args: string[];
 }
 
 /**

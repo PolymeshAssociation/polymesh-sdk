@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { MultiSigProposal } from '~/api/entities/MultiSigProposal';
+import { MultiSigProposal } from '~/api/entities/MultiSig/MultiSigProposal';
 import { Account, Context, MultiSig, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
@@ -17,9 +17,9 @@ import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
-  '~/api/entities/MultiSigProposal',
+  '~/api/entities/MultiSig/MultiSigProposal',
   require('~/testUtils/mocks/entities').mockMultiSigProposalModule(
-    '~/api/entities/MultiSigProposal'
+    '~/api/entities/MultiSig/MultiSigProposal'
   )
 );
 

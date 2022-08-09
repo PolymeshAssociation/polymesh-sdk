@@ -8,7 +8,7 @@ import BigNumber from 'bignumber.js';
 import { pick } from 'lodash';
 import sinon from 'sinon';
 
-import { MultiSigProposal, MultiSigProposalDetails } from '~/api/entities/MultiSigProposal';
+import { MultiSigProposal } from '~/api/entities/MultiSig/MultiSigProposal';
 import {
   Account,
   Asset,
@@ -56,6 +56,7 @@ import {
   InstructionType,
   KnownAssetType,
   Leg,
+  MultiSigProposalDetails,
   OfferingBalanceStatus,
   OfferingDetails,
   OfferingSaleStatus,
@@ -65,6 +66,7 @@ import {
   PermissionGroups,
   PermissionGroupType,
   PortfolioBalance,
+  ProposalStatus,
   ResultSet,
   ScheduleDetails,
   ScheduleWithDetails,
@@ -1486,7 +1488,7 @@ const MockMultiSigProposalClass = createMockEntityClass<MultiSigProposalOptions>
     details: {
       approvalAmount: new BigNumber(1),
       rejectionAmount: new BigNumber(0),
-      status: 'ActiveOrExpired',
+      status: ProposalStatus.ActiveOrExpired,
       expiry: null,
       autoClose: false,
     },

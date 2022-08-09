@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { MultiSigProposal } from '~/api/entities/MultiSigProposal';
+import { MultiSigProposal } from '~/api/entities/MultiSig/MultiSigProposal';
 import { Account, PolymeshError } from '~/internal';
 import { ErrorCode, Signer } from '~/types';
 import {

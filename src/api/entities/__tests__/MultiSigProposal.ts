@@ -1,12 +1,12 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { MultiSigProposal } from '~/api/entities/MultiSigProposal';
+import { MultiSigProposal } from '~/api/entities/MultiSig/MultiSigProposal';
 import { Account, Context, MultiSig, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { createMockMoment, createMockOption } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
-import { ErrorCode } from '~/types';
+import { ErrorCode, ProposalStatus } from '~/types';
 import * as utilsInternalModule from '~/utils/internal';
 
 describe('MultiSigProposal class', () => {
@@ -51,7 +51,7 @@ describe('MultiSigProposal class', () => {
         returnValue: dsMockUtils.createMockProposalDetails({
           approvals: '1',
           rejections: '1',
-          status: 'ActiveOrExpired',
+          status: ProposalStatus.ActiveOrExpired,
           autoClose: true,
           expiry: createMockOption(createMockMoment()),
         }),
@@ -81,7 +81,7 @@ describe('MultiSigProposal class', () => {
         returnValue: dsMockUtils.createMockProposalDetails({
           approvals: '1',
           rejections: '1',
-          status: 'ActiveOrExpired',
+          status: ProposalStatus.ActiveOrExpired,
           autoClose: true,
           expiry: null,
         }),

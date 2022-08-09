@@ -191,6 +191,7 @@ import {
   DistributionWithDetails,
   ExtrinsicData,
   PermissionedAccount,
+  ProposalStatus,
   ProtocolFees,
   ResultSet,
   SignerType,
@@ -4232,7 +4233,7 @@ export const createMockProposalData = (proposalData?: {
 export const createMockProposalDetails = (proposalDetails?: {
   approvals: string;
   rejections: string;
-  status: string;
+  status: ProposalStatus;
   expiry: Option<Moment> | null;
   autoClose: boolean;
 }): ProposalDetails => {

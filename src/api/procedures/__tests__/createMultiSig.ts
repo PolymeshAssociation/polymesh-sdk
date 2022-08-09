@@ -2,7 +2,7 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { MultiSig } from '~/api/entities/MultiSig';
+import { MultiSig } from '~/api/entities/MultiSig/MultiSig';
 import {
   CreateMultiSigParams,
   createMultiSigResolver,

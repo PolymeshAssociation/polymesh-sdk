@@ -1,6 +1,5 @@
 /* istanbul ignore file */
 
-import { ProposalStatus } from '~/api/entities/MultiSigProposal';
 import {
   Account,
   Asset,
@@ -46,6 +45,7 @@ import {
   MultiClaimCondition,
   NoDataClaim,
   PortfolioCustodianRole,
+  ProposalStatus,
   Role,
   RoleType,
   ScopedClaim,
@@ -373,13 +373,5 @@ export function isPolymeshTransactionBatch(value: unknown): value is PolymeshTra
  * @hidden
  */
 export function isProposalStatus(status: string): status is ProposalStatus {
-  const expectedStatus: ProposalStatus[] = [
-    'Invalid',
-    'ActiveOrExpired',
-    'ExecutionSuccessful',
-    'ExecutionFailed',
-    'Rejected',
-  ];
-
-  return expectedStatus.includes(status as ProposalStatus);
+  return status in ProposalStatus;
 }
