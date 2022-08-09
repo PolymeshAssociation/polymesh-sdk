@@ -1,3 +1,5 @@
+import sinon from 'sinon';
+
 import { Identities } from '~/api/client/Identities';
 import { Context, Identity, NumberedPortfolio, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -72,7 +74,24 @@ describe('Identities Class', () => {
 
   describe('method: createPortfolio', () => {
     it('should prepare the procedure and return the resulting transaction queue', async () => {
-      const args = { name: 'someName' };
+      const args = { names: ['someName'] };
+
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<NumberedPortfolio>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs(sinon.match({ args, transformer: sinon.match.func }), context)
+        .resolves(expectedQueue);
+
+      const queue = await identities.createPortfolio({ name: 'someName' });
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: createPortfolios', () => {
+    it('should prepare the procedure and return the resulting transaction queue', async () => {
+      const args = { names: ['someName'] };
 
       const expectedQueue = 'someQueue' as unknown as TransactionQueue<NumberedPortfolio>;
 
@@ -81,7 +100,7 @@ describe('Identities Class', () => {
         .withArgs({ args, transformer: undefined }, context)
         .resolves(expectedQueue);
 
-      const queue = await identities.createPortfolio(args);
+      const queue = await identities.createPortfolios(args);
 
       expect(queue).toBe(expectedQueue);
     });

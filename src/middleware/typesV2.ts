@@ -31,7 +31,7 @@ export type Account = Node & {
   id: Scalars['String'];
   address: Scalars['String'];
   identityId: Scalars['String'];
-  eventId: Scalars['String'];
+  eventId: EventIdEnum;
   permissionsId: Scalars['String'];
   datetime: Scalars['Datetime'];
   createdBlockId: Scalars['String'];
@@ -62,7 +62,7 @@ export type AccountFilter = {
   /** Filter by the object’s `identityId` field. */
   identityId?: Maybe<StringFilter>;
   /** Filter by the object’s `eventId` field. */
-  eventId?: Maybe<StringFilter>;
+  eventId?: Maybe<EventIdEnumFilter>;
   /** Filter by the object’s `permissionsId` field. */
   permissionsId?: Maybe<StringFilter>;
   /** Filter by the object’s `datetime` field. */
@@ -4088,18 +4088,60 @@ export enum AssetsOrderBy {
   FundingsCountDesc = 'FUNDINGS_COUNT_DESC',
 }
 
+export enum AuthTypeEnum {
+  AttestPrimaryKeyRotation = 'AttestPrimaryKeyRotation',
+  RotatePrimaryKey = 'RotatePrimaryKey',
+  RotatePrimaryKeyToSecondary = 'RotatePrimaryKeyToSecondary',
+  TransferTicker = 'TransferTicker',
+  AddMultiSigSigner = 'AddMultiSigSigner',
+  TransferAssetOwnership = 'TransferAssetOwnership',
+  JoinIdentity = 'JoinIdentity',
+  PortfolioCustody = 'PortfolioCustody',
+  BecomeAgent = 'BecomeAgent',
+  AddRelayerPayingKey = 'AddRelayerPayingKey',
+  TransferPrimaryIssuanceAgent = 'TransferPrimaryIssuanceAgent',
+  Custom = 'Custom',
+  NoData = 'NoData',
+}
+
+/** A filter to be used against AuthTypeEnum fields. All fields are combined with a logical ‘and.’ */
+export type AuthTypeEnumFilter = {
+  /** Is null (if `true` is specified) or is not null (if `false` is specified). */
+  isNull?: Maybe<Scalars['Boolean']>;
+  /** Equal to the specified value. */
+  equalTo?: Maybe<AuthTypeEnum>;
+  /** Not equal to the specified value. */
+  notEqualTo?: Maybe<AuthTypeEnum>;
+  /** Not equal to the specified value, treating null like an ordinary value. */
+  distinctFrom?: Maybe<AuthTypeEnum>;
+  /** Equal to the specified value, treating null like an ordinary value. */
+  notDistinctFrom?: Maybe<AuthTypeEnum>;
+  /** Included in the specified list. */
+  in?: Maybe<Array<AuthTypeEnum>>;
+  /** Not included in the specified list. */
+  notIn?: Maybe<Array<AuthTypeEnum>>;
+  /** Less than the specified value. */
+  lessThan?: Maybe<AuthTypeEnum>;
+  /** Less than or equal to the specified value. */
+  lessThanOrEqualTo?: Maybe<AuthTypeEnum>;
+  /** Greater than the specified value. */
+  greaterThan?: Maybe<AuthTypeEnum>;
+  /** Greater than or equal to the specified value. */
+  greaterThanOrEqualTo?: Maybe<AuthTypeEnum>;
+};
+
 export type Authorization = Node & {
   __typename?: 'Authorization';
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
   nodeId: Scalars['ID'];
   id: Scalars['String'];
-  type: Scalars['String'];
+  type: AuthTypeEnum;
   fromId: Scalars['String'];
   toId?: Maybe<Scalars['String']>;
   toKey?: Maybe<Scalars['String']>;
   data?: Maybe<Scalars['String']>;
   expiry?: Maybe<Scalars['Datetime']>;
-  status: Scalars['String'];
+  status: AuthorizationStatusEnum;
   createdBlockId: Scalars['String'];
   updatedBlockId: Scalars['String'];
   createdAt: Scalars['Datetime'];
@@ -4124,7 +4166,7 @@ export type AuthorizationFilter = {
   /** Filter by the object’s `id` field. */
   id?: Maybe<StringFilter>;
   /** Filter by the object’s `type` field. */
-  type?: Maybe<StringFilter>;
+  type?: Maybe<AuthTypeEnumFilter>;
   /** Filter by the object’s `fromId` field. */
   fromId?: Maybe<StringFilter>;
   /** Filter by the object’s `toId` field. */
@@ -4136,7 +4178,7 @@ export type AuthorizationFilter = {
   /** Filter by the object’s `expiry` field. */
   expiry?: Maybe<DatetimeFilter>;
   /** Filter by the object’s `status` field. */
-  status?: Maybe<StringFilter>;
+  status?: Maybe<AuthorizationStatusEnumFilter>;
   /** Filter by the object’s `createdBlockId` field. */
   createdBlockId?: Maybe<StringFilter>;
   /** Filter by the object’s `updatedBlockId` field. */
@@ -4151,6 +4193,39 @@ export type AuthorizationFilter = {
   or?: Maybe<Array<AuthorizationFilter>>;
   /** Negates the expression. */
   not?: Maybe<AuthorizationFilter>;
+};
+
+export enum AuthorizationStatusEnum {
+  Pending = 'Pending',
+  Consumed = 'Consumed',
+  Rejected = 'Rejected',
+  Revoked = 'Revoked',
+}
+
+/** A filter to be used against AuthorizationStatusEnum fields. All fields are combined with a logical ‘and.’ */
+export type AuthorizationStatusEnumFilter = {
+  /** Is null (if `true` is specified) or is not null (if `false` is specified). */
+  isNull?: Maybe<Scalars['Boolean']>;
+  /** Equal to the specified value. */
+  equalTo?: Maybe<AuthorizationStatusEnum>;
+  /** Not equal to the specified value. */
+  notEqualTo?: Maybe<AuthorizationStatusEnum>;
+  /** Not equal to the specified value, treating null like an ordinary value. */
+  distinctFrom?: Maybe<AuthorizationStatusEnum>;
+  /** Equal to the specified value, treating null like an ordinary value. */
+  notDistinctFrom?: Maybe<AuthorizationStatusEnum>;
+  /** Included in the specified list. */
+  in?: Maybe<Array<AuthorizationStatusEnum>>;
+  /** Not included in the specified list. */
+  notIn?: Maybe<Array<AuthorizationStatusEnum>>;
+  /** Less than the specified value. */
+  lessThan?: Maybe<AuthorizationStatusEnum>;
+  /** Less than or equal to the specified value. */
+  lessThanOrEqualTo?: Maybe<AuthorizationStatusEnum>;
+  /** Greater than the specified value. */
+  greaterThan?: Maybe<AuthorizationStatusEnum>;
+  /** Greater than or equal to the specified value. */
+  greaterThanOrEqualTo?: Maybe<AuthorizationStatusEnum>;
 };
 
 /** A connection to a list of `Authorization` values. */
@@ -15755,6 +15830,321 @@ export enum BridgeEventsOrderBy {
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
 }
 
+export enum CallIdEnum {
+  FillBlock = 'fill_block',
+  Remark = 'remark',
+  SetHeapPages = 'set_heap_pages',
+  SetCode = 'set_code',
+  SetCodeWithoutChecks = 'set_code_without_checks',
+  SetStorage = 'set_storage',
+  KillStorage = 'kill_storage',
+  KillPrefix = 'kill_prefix',
+  RemarkWithEvent = 'remark_with_event',
+  ReportEquivocation = 'report_equivocation',
+  ReportEquivocationUnsigned = 'report_equivocation_unsigned',
+  PlanConfigChange = 'plan_config_change',
+  Set = 'set',
+  Claim = 'claim',
+  Transfer = 'transfer',
+  Free = 'free',
+  ForceTransfer = 'force_transfer',
+  Freeze = 'freeze',
+  SetUncles = 'set_uncles',
+  TransferWithMemo = 'transfer_with_memo',
+  DepositBlockRewardReserveBalance = 'deposit_block_reward_reserve_balance',
+  SetBalance = 'set_balance',
+  BurnAccountBalance = 'burn_account_balance',
+  CddRegisterDid = 'cdd_register_did',
+  InvalidateCddClaims = 'invalidate_cdd_claims',
+  RemoveSecondaryKeysOld = 'remove_secondary_keys_old',
+  AcceptPrimaryKey = 'accept_primary_key',
+  ChangeCddRequirementForMkRotation = 'change_cdd_requirement_for_mk_rotation',
+  JoinIdentityAsKey = 'join_identity_as_key',
+  LeaveIdentityAsKey = 'leave_identity_as_key',
+  AddClaim = 'add_claim',
+  RevokeClaim = 'revoke_claim',
+  SetPermissionToSigner = 'set_permission_to_signer',
+  PlaceholderLegacySetPermissionToSigner = 'placeholder_legacy_set_permission_to_signer',
+  FreezeSecondaryKeys = 'freeze_secondary_keys',
+  UnfreezeSecondaryKeys = 'unfreeze_secondary_keys',
+  AddAuthorization = 'add_authorization',
+  RemoveAuthorization = 'remove_authorization',
+  AddSecondaryKeysWithAuthorizationOld = 'add_secondary_keys_with_authorization_old',
+  AddInvestorUniquenessClaim = 'add_investor_uniqueness_claim',
+  GcAddCddClaim = 'gc_add_cdd_claim',
+  GcRevokeCddClaim = 'gc_revoke_cdd_claim',
+  AddInvestorUniquenessClaimV2 = 'add_investor_uniqueness_claim_v2',
+  RevokeClaimByIndex = 'revoke_claim_by_index',
+  RotatePrimaryKeyToSecondary = 'rotate_primary_key_to_secondary',
+  AddSecondaryKeysWithAuthorization = 'add_secondary_keys_with_authorization',
+  SetSecondaryKeyPermissions = 'set_secondary_key_permissions',
+  RemoveSecondaryKeys = 'remove_secondary_keys',
+  SetActiveMembersLimit = 'set_active_members_limit',
+  DisableMember = 'disable_member',
+  AddMember = 'add_member',
+  RemoveMember = 'remove_member',
+  SwapMember = 'swap_member',
+  ResetMembers = 'reset_members',
+  AbdicateMembership = 'abdicate_membership',
+  SetVoteThreshold = 'set_vote_threshold',
+  SetReleaseCoordinator = 'set_release_coordinator',
+  SetExpiresAfter = 'set_expires_after',
+  VoteOrPropose = 'vote_or_propose',
+  Vote = 'vote',
+  CreateMultisig = 'create_multisig',
+  CreateOrApproveProposalAsIdentity = 'create_or_approve_proposal_as_identity',
+  CreateOrApproveProposalAsKey = 'create_or_approve_proposal_as_key',
+  CreateProposalAsIdentity = 'create_proposal_as_identity',
+  CreateProposalAsKey = 'create_proposal_as_key',
+  ApproveAsIdentity = 'approve_as_identity',
+  ApproveAsKey = 'approve_as_key',
+  RejectAsIdentity = 'reject_as_identity',
+  RejectAsKey = 'reject_as_key',
+  AcceptMultisigSignerAsIdentity = 'accept_multisig_signer_as_identity',
+  AcceptMultisigSignerAsKey = 'accept_multisig_signer_as_key',
+  AddMultisigSigner = 'add_multisig_signer',
+  RemoveMultisigSigner = 'remove_multisig_signer',
+  AddMultisigSignersViaCreator = 'add_multisig_signers_via_creator',
+  RemoveMultisigSignersViaCreator = 'remove_multisig_signers_via_creator',
+  ChangeSigsRequired = 'change_sigs_required',
+  MakeMultisigSecondary = 'make_multisig_secondary',
+  MakeMultisigPrimary = 'make_multisig_primary',
+  ExecuteScheduledProposal = 'execute_scheduled_proposal',
+  ChangeController = 'change_controller',
+  ChangeAdmin = 'change_admin',
+  ChangeTimelock = 'change_timelock',
+  ChangeBridgeLimit = 'change_bridge_limit',
+  ChangeBridgeExempted = 'change_bridge_exempted',
+  ForceHandleBridgeTx = 'force_handle_bridge_tx',
+  BatchProposeBridgeTx = 'batch_propose_bridge_tx',
+  ProposeBridgeTx = 'propose_bridge_tx',
+  HandleBridgeTx = 'handle_bridge_tx',
+  FreezeTxs = 'freeze_txs',
+  UnfreezeTxs = 'unfreeze_txs',
+  HandleScheduledBridgeTx = 'handle_scheduled_bridge_tx',
+  AddFreezeAdmin = 'add_freeze_admin',
+  RemoveFreezeAdmin = 'remove_freeze_admin',
+  RemoveTxs = 'remove_txs',
+  Bond = 'bond',
+  BondExtra = 'bond_extra',
+  Unbond = 'unbond',
+  WithdrawUnbonded = 'withdraw_unbonded',
+  Validate = 'validate',
+  Nominate = 'nominate',
+  Chill = 'chill',
+  SetPayee = 'set_payee',
+  SetController = 'set_controller',
+  SetValidatorCount = 'set_validator_count',
+  IncreaseValidatorCount = 'increase_validator_count',
+  ScaleValidatorCount = 'scale_validator_count',
+  AddPermissionedValidator = 'add_permissioned_validator',
+  RemovePermissionedValidator = 'remove_permissioned_validator',
+  ValidateCddExpiryNominators = 'validate_cdd_expiry_nominators',
+  SetCommissionCap = 'set_commission_cap',
+  SetMinBondThreshold = 'set_min_bond_threshold',
+  ForceNoEras = 'force_no_eras',
+  ForceNewEra = 'force_new_era',
+  SetInvulnerables = 'set_invulnerables',
+  ForceUnstake = 'force_unstake',
+  ForceNewEraAlways = 'force_new_era_always',
+  CancelDeferredSlash = 'cancel_deferred_slash',
+  PayoutStakers = 'payout_stakers',
+  Rebond = 'rebond',
+  SetHistoryDepth = 'set_history_depth',
+  ReapStash = 'reap_stash',
+  SubmitElectionSolution = 'submit_election_solution',
+  SubmitElectionSolutionUnsigned = 'submit_election_solution_unsigned',
+  PayoutStakersBySystem = 'payout_stakers_by_system',
+  ChangeSlashingAllowedFor = 'change_slashing_allowed_for',
+  UpdatePermissionedValidatorIntendedCount = 'update_permissioned_validator_intended_count',
+  SetKeys = 'set_keys',
+  PurgeKeys = 'purge_keys',
+  NoteStalled = 'note_stalled',
+  Heartbeat = 'heartbeat',
+  Sudo = 'sudo',
+  SudoUncheckedWeight = 'sudo_unchecked_weight',
+  SetKey = 'set_key',
+  SudoAs = 'sudo_as',
+  RegisterTicker = 'register_ticker',
+  AcceptTickerTransfer = 'accept_ticker_transfer',
+  AcceptAssetOwnershipTransfer = 'accept_asset_ownership_transfer',
+  CreateAsset = 'create_asset',
+  Unfreeze = 'unfreeze',
+  RenameAsset = 'rename_asset',
+  Issue = 'issue',
+  Redeem = 'redeem',
+  MakeDivisible = 'make_divisible',
+  AddDocuments = 'add_documents',
+  RemoveDocuments = 'remove_documents',
+  SetFundingRound = 'set_funding_round',
+  UpdateIdentifiers = 'update_identifiers',
+  ClaimClassicTicker = 'claim_classic_ticker',
+  ReserveClassicTicker = 'reserve_classic_ticker',
+  ControllerTransfer = 'controller_transfer',
+  RegisterCustomAssetType = 'register_custom_asset_type',
+  CreateAssetWithCustomType = 'create_asset_with_custom_type',
+  SetAssetMetadata = 'set_asset_metadata',
+  SetAssetMetadataDetails = 'set_asset_metadata_details',
+  RegisterAndSetLocalAssetMetadata = 'register_and_set_local_asset_metadata',
+  RegisterAssetMetadataLocalType = 'register_asset_metadata_local_type',
+  RegisterAssetMetadataGlobalType = 'register_asset_metadata_global_type',
+  Distribute = 'distribute',
+  PushBenefit = 'push_benefit',
+  Reclaim = 'reclaim',
+  RemoveDistribution = 'remove_distribution',
+  CreateCheckpoint = 'create_checkpoint',
+  SetSchedulesMaxComplexity = 'set_schedules_max_complexity',
+  CreateSchedule = 'create_schedule',
+  RemoveSchedule = 'remove_schedule',
+  AddComplianceRequirement = 'add_compliance_requirement',
+  RemoveComplianceRequirement = 'remove_compliance_requirement',
+  ReplaceAssetCompliance = 'replace_asset_compliance',
+  ResetAssetCompliance = 'reset_asset_compliance',
+  PauseAssetCompliance = 'pause_asset_compliance',
+  ResumeAssetCompliance = 'resume_asset_compliance',
+  AddDefaultTrustedClaimIssuer = 'add_default_trusted_claim_issuer',
+  RemoveDefaultTrustedClaimIssuer = 'remove_default_trusted_claim_issuer',
+  ChangeComplianceRequirement = 'change_compliance_requirement',
+  SetMaxDetailsLength = 'set_max_details_length',
+  SetDefaultTargets = 'set_default_targets',
+  SetDefaultWithholdingTax = 'set_default_withholding_tax',
+  SetDidWithholdingTax = 'set_did_withholding_tax',
+  InitiateCorporateAction = 'initiate_corporate_action',
+  LinkCaDoc = 'link_ca_doc',
+  RemoveCa = 'remove_ca',
+  ChangeRecordDate = 'change_record_date',
+  InitiateCorporateActionAndDistribute = 'initiate_corporate_action_and_distribute',
+  AttachBallot = 'attach_ballot',
+  ChangeEnd = 'change_end',
+  ChangeMeta = 'change_meta',
+  ChangeRcv = 'change_rcv',
+  RemoveBallot = 'remove_ballot',
+  SetPruneHistoricalPips = 'set_prune_historical_pips',
+  SetMinProposalDeposit = 'set_min_proposal_deposit',
+  SetDefaultEnactmentPeriod = 'set_default_enactment_period',
+  SetPendingPipExpiry = 'set_pending_pip_expiry',
+  SetMaxPipSkipCount = 'set_max_pip_skip_count',
+  SetActivePipLimit = 'set_active_pip_limit',
+  Propose = 'propose',
+  ApproveCommitteeProposal = 'approve_committee_proposal',
+  RejectProposal = 'reject_proposal',
+  PruneProposal = 'prune_proposal',
+  RescheduleExecution = 'reschedule_execution',
+  ClearSnapshot = 'clear_snapshot',
+  Snapshot = 'snapshot',
+  EnactSnapshotResults = 'enact_snapshot_results',
+  ExecuteScheduledPip = 'execute_scheduled_pip',
+  ExpireScheduledPip = 'expire_scheduled_pip',
+  CreatePortfolio = 'create_portfolio',
+  DeletePortfolio = 'delete_portfolio',
+  MovePortfolioFunds = 'move_portfolio_funds',
+  RenamePortfolio = 'rename_portfolio',
+  QuitPortfolioCustody = 'quit_portfolio_custody',
+  AcceptPortfolioCustody = 'accept_portfolio_custody',
+  ChangeCoefficient = 'change_coefficient',
+  ChangeBaseFee = 'change_base_fee',
+  Schedule = 'schedule',
+  Cancel = 'cancel',
+  ScheduleNamed = 'schedule_named',
+  CancelNamed = 'cancel_named',
+  ScheduleAfter = 'schedule_after',
+  ScheduleNamedAfter = 'schedule_named_after',
+  CreateVenue = 'create_venue',
+  UpdateVenueDetails = 'update_venue_details',
+  UpdateVenueType = 'update_venue_type',
+  AddInstruction = 'add_instruction',
+  AddAndAffirmInstruction = 'add_and_affirm_instruction',
+  AffirmInstruction = 'affirm_instruction',
+  WithdrawAffirmation = 'withdraw_affirmation',
+  RejectInstruction = 'reject_instruction',
+  AffirmWithReceipts = 'affirm_with_receipts',
+  ClaimReceipt = 'claim_receipt',
+  UnclaimReceipt = 'unclaim_receipt',
+  SetVenueFiltering = 'set_venue_filtering',
+  AllowVenues = 'allow_venues',
+  DisallowVenues = 'disallow_venues',
+  ChangeReceiptValidity = 'change_receipt_validity',
+  ExecuteScheduledInstruction = 'execute_scheduled_instruction',
+  RescheduleInstruction = 'reschedule_instruction',
+  AddTransferManager = 'add_transfer_manager',
+  AddExemptedEntities = 'add_exempted_entities',
+  RemoveExemptedEntities = 'remove_exempted_entities',
+  RemoveTransferManager = 'remove_transfer_manager',
+  SetActiveAssetStats = 'set_active_asset_stats',
+  BatchUpdateAssetStats = 'batch_update_asset_stats',
+  SetAssetTransferCompliance = 'set_asset_transfer_compliance',
+  SetEntitiesExempt = 'set_entities_exempt',
+  CreateFundraiser = 'create_fundraiser',
+  Invest = 'invest',
+  FreezeFundraiser = 'freeze_fundraiser',
+  UnfreezeFundraiser = 'unfreeze_fundraiser',
+  ModifyFundraiserWindow = 'modify_fundraiser_window',
+  Stop = 'stop',
+  Disbursement = 'disbursement',
+  Reimbursement = 'reimbursement',
+  Batch = 'batch',
+  BatchAtomic = 'batch_atomic',
+  BatchOptimistic = 'batch_optimistic',
+  RelayTx = 'relay_tx',
+  CreateGroup = 'create_group',
+  SetGroupPermissions = 'set_group_permissions',
+  RemoveAgent = 'remove_agent',
+  Abdicate = 'abdicate',
+  ChangeGroup = 'change_group',
+  AcceptBecomeAgent = 'accept_become_agent',
+  CreateGroupAndAddAuth = 'create_group_and_add_auth',
+  CreateAndChangeCustomGroup = 'create_and_change_custom_group',
+  SetPayingKey = 'set_paying_key',
+  AcceptPayingKey = 'accept_paying_key',
+  RemovePayingKey = 'remove_paying_key',
+  UpdatePolyxLimit = 'update_polyx_limit',
+  IncreasePolyxLimit = 'increase_polyx_limit',
+  DecreasePolyxLimit = 'decrease_polyx_limit',
+  ClaimItnReward = 'claim_itn_reward',
+  SetItnRewardStatus = 'set_itn_reward_status',
+  Call = 'call',
+  InstantiateWithCode = 'instantiate_with_code',
+  Instantiate = 'instantiate',
+  UploadCode = 'upload_code',
+  RemoveCode = 'remove_code',
+  InstantiateWithCodePerms = 'instantiate_with_code_perms',
+  InstantiateWithHashPerms = 'instantiate_with_hash_perms',
+  NotePreimage = 'note_preimage',
+  UnnotePreimage = 'unnote_preimage',
+  RequestPreimage = 'request_preimage',
+  UnrequestPreimage = 'unrequest_preimage',
+  RegisterDid = 'register_did',
+  MockCddRegisterDid = 'mock_cdd_register_did',
+  GetMyDid = 'get_my_did',
+  GetCddOf = 'get_cdd_of',
+}
+
+/** A filter to be used against CallIdEnum fields. All fields are combined with a logical ‘and.’ */
+export type CallIdEnumFilter = {
+  /** Is null (if `true` is specified) or is not null (if `false` is specified). */
+  isNull?: Maybe<Scalars['Boolean']>;
+  /** Equal to the specified value. */
+  equalTo?: Maybe<CallIdEnum>;
+  /** Not equal to the specified value. */
+  notEqualTo?: Maybe<CallIdEnum>;
+  /** Not equal to the specified value, treating null like an ordinary value. */
+  distinctFrom?: Maybe<CallIdEnum>;
+  /** Equal to the specified value, treating null like an ordinary value. */
+  notDistinctFrom?: Maybe<CallIdEnum>;
+  /** Included in the specified list. */
+  in?: Maybe<Array<CallIdEnum>>;
+  /** Not included in the specified list. */
+  notIn?: Maybe<Array<CallIdEnum>>;
+  /** Less than the specified value. */
+  lessThan?: Maybe<CallIdEnum>;
+  /** Less than or equal to the specified value. */
+  lessThanOrEqualTo?: Maybe<CallIdEnum>;
+  /** Greater than the specified value. */
+  greaterThan?: Maybe<CallIdEnum>;
+  /** Greater than or equal to the specified value. */
+  greaterThanOrEqualTo?: Maybe<CallIdEnum>;
+};
+
 export type Claim = Node & {
   __typename?: 'Claim';
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
@@ -15767,7 +16157,7 @@ export type Claim = Node & {
   lastUpdateDate: Scalars['BigFloat'];
   expiry?: Maybe<Scalars['BigFloat']>;
   filterExpiry: Scalars['BigFloat'];
-  type: Scalars['String'];
+  type: ClaimTypeEnum;
   jurisdiction?: Maybe<Scalars['String']>;
   scope?: Maybe<Scalars['JSON']>;
   cddId?: Maybe<Scalars['String']>;
@@ -15810,7 +16200,7 @@ export type ClaimFilter = {
   /** Filter by the object’s `filterExpiry` field. */
   filterExpiry?: Maybe<BigFloatFilter>;
   /** Filter by the object’s `type` field. */
-  type?: Maybe<StringFilter>;
+  type?: Maybe<ClaimTypeEnumFilter>;
   /** Filter by the object’s `jurisdiction` field. */
   jurisdiction?: Maybe<StringFilter>;
   /** Filter by the object’s `scope` field. */
@@ -15955,6 +16345,48 @@ export enum ClaimScopesOrderBy {
   PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
 }
+
+export enum ClaimTypeEnum {
+  Accredited = 'Accredited',
+  Affiliate = 'Affiliate',
+  BuyLockup = 'BuyLockup',
+  SellLockup = 'SellLockup',
+  CustomerDueDiligence = 'CustomerDueDiligence',
+  KnowYourCustomer = 'KnowYourCustomer',
+  Jurisdiction = 'Jurisdiction',
+  Exempted = 'Exempted',
+  Blocked = 'Blocked',
+  InvestorUniqueness = 'InvestorUniqueness',
+  NoData = 'NoData',
+  InvestorUniquenessV2 = 'InvestorUniquenessV2',
+  NoType = 'NoType',
+}
+
+/** A filter to be used against ClaimTypeEnum fields. All fields are combined with a logical ‘and.’ */
+export type ClaimTypeEnumFilter = {
+  /** Is null (if `true` is specified) or is not null (if `false` is specified). */
+  isNull?: Maybe<Scalars['Boolean']>;
+  /** Equal to the specified value. */
+  equalTo?: Maybe<ClaimTypeEnum>;
+  /** Not equal to the specified value. */
+  notEqualTo?: Maybe<ClaimTypeEnum>;
+  /** Not equal to the specified value, treating null like an ordinary value. */
+  distinctFrom?: Maybe<ClaimTypeEnum>;
+  /** Equal to the specified value, treating null like an ordinary value. */
+  notDistinctFrom?: Maybe<ClaimTypeEnum>;
+  /** Included in the specified list. */
+  in?: Maybe<Array<ClaimTypeEnum>>;
+  /** Not included in the specified list. */
+  notIn?: Maybe<Array<ClaimTypeEnum>>;
+  /** Less than the specified value. */
+  lessThan?: Maybe<ClaimTypeEnum>;
+  /** Less than or equal to the specified value. */
+  lessThanOrEqualTo?: Maybe<ClaimTypeEnum>;
+  /** Greater than the specified value. */
+  greaterThan?: Maybe<ClaimTypeEnum>;
+  /** Greater than or equal to the specified value. */
+  greaterThanOrEqualTo?: Maybe<ClaimTypeEnum>;
+};
 
 /** A connection to a list of `Claim` values. */
 export type ClaimsConnection = {
@@ -16581,7 +17013,7 @@ export type DistributionPayment = Node & {
   id: Scalars['String'];
   distributionId: Scalars['String'];
   targetId: Scalars['String'];
-  eventId: Scalars['String'];
+  eventId: EventIdEnum;
   amount: Scalars['BigFloat'];
   tax: Scalars['BigFloat'];
   reclaimed: Scalars['Boolean'];
@@ -16614,7 +17046,7 @@ export type DistributionPaymentFilter = {
   /** Filter by the object’s `targetId` field. */
   targetId?: Maybe<StringFilter>;
   /** Filter by the object’s `eventId` field. */
-  eventId?: Maybe<StringFilter>;
+  eventId?: Maybe<EventIdEnumFilter>;
   /** Filter by the object’s `amount` field. */
   amount?: Maybe<BigFloatFilter>;
   /** Filter by the object’s `tax` field. */
@@ -16830,8 +17262,8 @@ export type Event = Node & {
   eventIdx: Scalars['Int'];
   extrinsicIdx?: Maybe<Scalars['Int']>;
   specVersionId: Scalars['Int'];
-  moduleId: Scalars['String'];
-  eventId: Scalars['String'];
+  moduleId: ModuleIdEnum;
+  eventId: EventIdEnum;
   attributesTxt: Scalars['String'];
   eventArg0?: Maybe<Scalars['String']>;
   eventArg1?: Maybe<Scalars['String']>;
@@ -16868,9 +17300,9 @@ export type EventFilter = {
   /** Filter by the object’s `specVersionId` field. */
   specVersionId?: Maybe<IntFilter>;
   /** Filter by the object’s `moduleId` field. */
-  moduleId?: Maybe<StringFilter>;
+  moduleId?: Maybe<ModuleIdEnumFilter>;
   /** Filter by the object’s `eventId` field. */
-  eventId?: Maybe<StringFilter>;
+  eventId?: Maybe<EventIdEnumFilter>;
   /** Filter by the object’s `attributesTxt` field. */
   attributesTxt?: Maybe<StringFilter>;
   /** Filter by the object’s `eventArg0` field. */
@@ -16905,6 +17337,294 @@ export type EventFilter = {
   or?: Maybe<Array<EventFilter>>;
   /** Negates the expression. */
   not?: Maybe<EventFilter>;
+};
+
+export enum EventIdEnum {
+  ExtrinsicSuccess = 'ExtrinsicSuccess',
+  ExtrinsicFailed = 'ExtrinsicFailed',
+  CodeUpdated = 'CodeUpdated',
+  NewAccount = 'NewAccount',
+  KilledAccount = 'KilledAccount',
+  Remarked = 'Remarked',
+  IndexAssigned = 'IndexAssigned',
+  IndexFreed = 'IndexFreed',
+  IndexFrozen = 'IndexFrozen',
+  Endowed = 'Endowed',
+  BalanceSet = 'BalanceSet',
+  AccountBalanceBurned = 'AccountBalanceBurned',
+  Reserved = 'Reserved',
+  Unreserved = 'Unreserved',
+  ReserveRepatriated = 'ReserveRepatriated',
+  DidCreated = 'DidCreated',
+  SecondaryKeysAdded = 'SecondaryKeysAdded',
+  SecondaryKeysRemoved = 'SecondaryKeysRemoved',
+  SecondaryKeyLeftIdentity = 'SecondaryKeyLeftIdentity',
+  SecondaryKeyPermissionsUpdated = 'SecondaryKeyPermissionsUpdated',
+  PrimaryKeyUpdated = 'PrimaryKeyUpdated',
+  ClaimAdded = 'ClaimAdded',
+  ClaimRevoked = 'ClaimRevoked',
+  AssetDidRegistered = 'AssetDidRegistered',
+  AuthorizationAdded = 'AuthorizationAdded',
+  AuthorizationRevoked = 'AuthorizationRevoked',
+  AuthorizationRejected = 'AuthorizationRejected',
+  AuthorizationConsumed = 'AuthorizationConsumed',
+  AuthorizationRetryLimitReached = 'AuthorizationRetryLimitReached',
+  CddRequirementForPrimaryKeyUpdated = 'CddRequirementForPrimaryKeyUpdated',
+  CddClaimsInvalidated = 'CddClaimsInvalidated',
+  SecondaryKeysFrozen = 'SecondaryKeysFrozen',
+  SecondaryKeysUnfrozen = 'SecondaryKeysUnfrozen',
+  Proposed = 'Proposed',
+  VoteRetracted = 'VoteRetracted',
+  FinalVotes = 'FinalVotes',
+  Approved = 'Approved',
+  Rejected = 'Rejected',
+  Executed = 'Executed',
+  ReleaseCoordinatorUpdated = 'ReleaseCoordinatorUpdated',
+  ExpiresAfterUpdated = 'ExpiresAfterUpdated',
+  VoteThresholdUpdated = 'VoteThresholdUpdated',
+  MemberAdded = 'MemberAdded',
+  MemberRemoved = 'MemberRemoved',
+  MemberRevoked = 'MemberRevoked',
+  MembersSwapped = 'MembersSwapped',
+  MembersReset = 'MembersReset',
+  ActiveLimitChanged = 'ActiveLimitChanged',
+  Dummy = 'Dummy',
+  MultiSigCreated = 'MultiSigCreated',
+  ProposalAdded = 'ProposalAdded',
+  ProposalExecuted = 'ProposalExecuted',
+  MultiSigSignerAdded = 'MultiSigSignerAdded',
+  MultiSigSignerAuthorized = 'MultiSigSignerAuthorized',
+  MultiSigSignerRemoved = 'MultiSigSignerRemoved',
+  MultiSigSignaturesRequiredChanged = 'MultiSigSignaturesRequiredChanged',
+  ProposalApproved = 'ProposalApproved',
+  ProposalRejectionVote = 'ProposalRejectionVote',
+  ProposalRejected = 'ProposalRejected',
+  ProposalExecutionFailed = 'ProposalExecutionFailed',
+  ControllerChanged = 'ControllerChanged',
+  AdminChanged = 'AdminChanged',
+  TimelockChanged = 'TimelockChanged',
+  Bridged = 'Bridged',
+  Frozen = 'Frozen',
+  Unfrozen = 'Unfrozen',
+  FrozenTx = 'FrozenTx',
+  UnfrozenTx = 'UnfrozenTx',
+  ExemptedUpdated = 'ExemptedUpdated',
+  BridgeLimitUpdated = 'BridgeLimitUpdated',
+  TxsHandled = 'TxsHandled',
+  BridgeTxScheduled = 'BridgeTxScheduled',
+  BridgeTxScheduleFailed = 'BridgeTxScheduleFailed',
+  FreezeAdminAdded = 'FreezeAdminAdded',
+  FreezeAdminRemoved = 'FreezeAdminRemoved',
+  TxRemoved = 'TxRemoved',
+  EraPayout = 'EraPayout',
+  Reward = 'Reward',
+  Slash = 'Slash',
+  OldSlashingReportDiscarded = 'OldSlashingReportDiscarded',
+  StakingElection = 'StakingElection',
+  SolutionStored = 'SolutionStored',
+  Bonded = 'Bonded',
+  Unbonded = 'Unbonded',
+  Nominated = 'Nominated',
+  Withdrawn = 'Withdrawn',
+  PermissionedIdentityAdded = 'PermissionedIdentityAdded',
+  PermissionedIdentityRemoved = 'PermissionedIdentityRemoved',
+  InvalidatedNominators = 'InvalidatedNominators',
+  CommissionCapUpdated = 'CommissionCapUpdated',
+  MinimumBondThresholdUpdated = 'MinimumBondThresholdUpdated',
+  RewardPaymentSchedulingInterrupted = 'RewardPaymentSchedulingInterrupted',
+  SlashingAllowedForChanged = 'SlashingAllowedForChanged',
+  Offence = 'Offence',
+  NewSession = 'NewSession',
+  NewAuthorities = 'NewAuthorities',
+  Paused = 'Paused',
+  Resumed = 'Resumed',
+  HeartbeatReceived = 'HeartbeatReceived',
+  AllGood = 'AllGood',
+  SomeOffline = 'SomeOffline',
+  Sudid = 'Sudid',
+  KeyChanged = 'KeyChanged',
+  SudoAsDone = 'SudoAsDone',
+  Transfer = 'Transfer',
+  Issued = 'Issued',
+  Redeemed = 'Redeemed',
+  AssetCreated = 'AssetCreated',
+  IdentifiersUpdated = 'IdentifiersUpdated',
+  DivisibilityChanged = 'DivisibilityChanged',
+  TransferWithData = 'TransferWithData',
+  IsIssuable = 'IsIssuable',
+  TickerRegistered = 'TickerRegistered',
+  TickerTransferred = 'TickerTransferred',
+  AssetOwnershipTransferred = 'AssetOwnershipTransferred',
+  AssetFrozen = 'AssetFrozen',
+  AssetUnfrozen = 'AssetUnfrozen',
+  AssetRenamed = 'AssetRenamed',
+  FundingRoundSet = 'FundingRoundSet',
+  DocumentAdded = 'DocumentAdded',
+  DocumentRemoved = 'DocumentRemoved',
+  ExtensionRemoved = 'ExtensionRemoved',
+  ClassicTickerClaimed = 'ClassicTickerClaimed',
+  ControllerTransfer = 'ControllerTransfer',
+  CustomAssetTypeExists = 'CustomAssetTypeExists',
+  CustomAssetTypeRegistered = 'CustomAssetTypeRegistered',
+  SetAssetMetadataValue = 'SetAssetMetadataValue',
+  SetAssetMetadataValueDetails = 'SetAssetMetadataValueDetails',
+  RegisterAssetMetadataLocalType = 'RegisterAssetMetadataLocalType',
+  RegisterAssetMetadataGlobalType = 'RegisterAssetMetadataGlobalType',
+  Created = 'Created',
+  BenefitClaimed = 'BenefitClaimed',
+  Reclaimed = 'Reclaimed',
+  Removed = 'Removed',
+  CheckpointCreated = 'CheckpointCreated',
+  MaximumSchedulesComplexityChanged = 'MaximumSchedulesComplexityChanged',
+  ScheduleCreated = 'ScheduleCreated',
+  ScheduleRemoved = 'ScheduleRemoved',
+  ComplianceRequirementCreated = 'ComplianceRequirementCreated',
+  ComplianceRequirementRemoved = 'ComplianceRequirementRemoved',
+  AssetComplianceReplaced = 'AssetComplianceReplaced',
+  AssetComplianceReset = 'AssetComplianceReset',
+  AssetComplianceResumed = 'AssetComplianceResumed',
+  AssetCompliancePaused = 'AssetCompliancePaused',
+  ComplianceRequirementChanged = 'ComplianceRequirementChanged',
+  TrustedDefaultClaimIssuerAdded = 'TrustedDefaultClaimIssuerAdded',
+  TrustedDefaultClaimIssuerRemoved = 'TrustedDefaultClaimIssuerRemoved',
+  MaxDetailsLengthChanged = 'MaxDetailsLengthChanged',
+  DefaultTargetIdentitiesChanged = 'DefaultTargetIdentitiesChanged',
+  DefaultWithholdingTaxChanged = 'DefaultWithholdingTaxChanged',
+  DidWithholdingTaxChanged = 'DidWithholdingTaxChanged',
+  CaaTransferred = 'CAATransferred',
+  CaInitiated = 'CAInitiated',
+  CaLinkedToDoc = 'CALinkedToDoc',
+  CaRemoved = 'CARemoved',
+  RecordDateChanged = 'RecordDateChanged',
+  VoteCast = 'VoteCast',
+  RangeChanged = 'RangeChanged',
+  MetaChanged = 'MetaChanged',
+  RcvChanged = 'RCVChanged',
+  HistoricalPipsPruned = 'HistoricalPipsPruned',
+  ProposalCreated = 'ProposalCreated',
+  ProposalStateUpdated = 'ProposalStateUpdated',
+  Voted = 'Voted',
+  PipClosed = 'PipClosed',
+  ExecutionScheduled = 'ExecutionScheduled',
+  DefaultEnactmentPeriodChanged = 'DefaultEnactmentPeriodChanged',
+  MinimumProposalDepositChanged = 'MinimumProposalDepositChanged',
+  PendingPipExpiryChanged = 'PendingPipExpiryChanged',
+  MaxPipSkipCountChanged = 'MaxPipSkipCountChanged',
+  ActivePipLimitChanged = 'ActivePipLimitChanged',
+  ProposalRefund = 'ProposalRefund',
+  SnapshotCleared = 'SnapshotCleared',
+  SnapshotTaken = 'SnapshotTaken',
+  PipSkipped = 'PipSkipped',
+  SnapshotResultsEnacted = 'SnapshotResultsEnacted',
+  ExecutionSchedulingFailed = 'ExecutionSchedulingFailed',
+  ExpiryScheduled = 'ExpiryScheduled',
+  ExpirySchedulingFailed = 'ExpirySchedulingFailed',
+  ExecutionCancellingFailed = 'ExecutionCancellingFailed',
+  PortfolioCreated = 'PortfolioCreated',
+  PortfolioDeleted = 'PortfolioDeleted',
+  MovedBetweenPortfolios = 'MovedBetweenPortfolios',
+  PortfolioRenamed = 'PortfolioRenamed',
+  UserPortfolios = 'UserPortfolios',
+  PortfolioCustodianChanged = 'PortfolioCustodianChanged',
+  FeeSet = 'FeeSet',
+  CoefficientSet = 'CoefficientSet',
+  FeeCharged = 'FeeCharged',
+  Scheduled = 'Scheduled',
+  Canceled = 'Canceled',
+  Dispatched = 'Dispatched',
+  CallLookupFailed = 'CallLookupFailed',
+  VenueCreated = 'VenueCreated',
+  VenueDetailsUpdated = 'VenueDetailsUpdated',
+  VenueTypeUpdated = 'VenueTypeUpdated',
+  InstructionAuthorized = 'InstructionAuthorized',
+  InstructionUnauthorized = 'InstructionUnauthorized',
+  InstructionCreated = 'InstructionCreated',
+  InstructionAffirmed = 'InstructionAffirmed',
+  AffirmationWithdrawn = 'AffirmationWithdrawn',
+  InstructionRejected = 'InstructionRejected',
+  ReceiptClaimed = 'ReceiptClaimed',
+  ReceiptValidityChanged = 'ReceiptValidityChanged',
+  ReceiptUnclaimed = 'ReceiptUnclaimed',
+  VenueFiltering = 'VenueFiltering',
+  VenuesAllowed = 'VenuesAllowed',
+  VenuesBlocked = 'VenuesBlocked',
+  LegFailedExecution = 'LegFailedExecution',
+  InstructionFailed = 'InstructionFailed',
+  InstructionExecuted = 'InstructionExecuted',
+  VenueUnauthorized = 'VenueUnauthorized',
+  SchedulingFailed = 'SchedulingFailed',
+  InstructionRescheduled = 'InstructionRescheduled',
+  TransferManagerAdded = 'TransferManagerAdded',
+  TransferManagerRemoved = 'TransferManagerRemoved',
+  ExemptionsAdded = 'ExemptionsAdded',
+  ExemptionsRemoved = 'ExemptionsRemoved',
+  StatTypesAdded = 'StatTypesAdded',
+  StatTypesRemoved = 'StatTypesRemoved',
+  AssetStatsUpdated = 'AssetStatsUpdated',
+  SetAssetTransferCompliance = 'SetAssetTransferCompliance',
+  TransferConditionExemptionsAdded = 'TransferConditionExemptionsAdded',
+  TransferConditionExemptionsRemoved = 'TransferConditionExemptionsRemoved',
+  FundraiserCreated = 'FundraiserCreated',
+  Invested = 'Invested',
+  FundraiserFrozen = 'FundraiserFrozen',
+  FundraiserUnfrozen = 'FundraiserUnfrozen',
+  FundraiserWindowModified = 'FundraiserWindowModified',
+  FundraiserClosed = 'FundraiserClosed',
+  TreasuryDisbursement = 'TreasuryDisbursement',
+  TreasuryDisbursementFailed = 'TreasuryDisbursementFailed',
+  TreasuryReimbursement = 'TreasuryReimbursement',
+  BatchInterrupted = 'BatchInterrupted',
+  BatchOptimisticFailed = 'BatchOptimisticFailed',
+  BatchCompleted = 'BatchCompleted',
+  UnexpectedError = 'UnexpectedError',
+  GroupCreated = 'GroupCreated',
+  GroupPermissionsUpdated = 'GroupPermissionsUpdated',
+  AgentAdded = 'AgentAdded',
+  AgentRemoved = 'AgentRemoved',
+  GroupChanged = 'GroupChanged',
+  AuthorizedPayingKey = 'AuthorizedPayingKey',
+  AcceptedPayingKey = 'AcceptedPayingKey',
+  RemovedPayingKey = 'RemovedPayingKey',
+  UpdatedPolyxLimit = 'UpdatedPolyxLimit',
+  ItnRewardClaimed = 'ItnRewardClaimed',
+  Instantiated = 'Instantiated',
+  Terminated = 'Terminated',
+  CodeStored = 'CodeStored',
+  ContractEmitted = 'ContractEmitted',
+  CodeRemoved = 'CodeRemoved',
+  ContractCodeUpdated = 'ContractCodeUpdated',
+  Noted = 'Noted',
+  Requested = 'Requested',
+  Cleared = 'Cleared',
+  MockInvestorUidCreated = 'MockInvestorUIDCreated',
+  DidStatus = 'DidStatus',
+  CddStatus = 'CddStatus',
+}
+
+/** A filter to be used against EventIdEnum fields. All fields are combined with a logical ‘and.’ */
+export type EventIdEnumFilter = {
+  /** Is null (if `true` is specified) or is not null (if `false` is specified). */
+  isNull?: Maybe<Scalars['Boolean']>;
+  /** Equal to the specified value. */
+  equalTo?: Maybe<EventIdEnum>;
+  /** Not equal to the specified value. */
+  notEqualTo?: Maybe<EventIdEnum>;
+  /** Not equal to the specified value, treating null like an ordinary value. */
+  distinctFrom?: Maybe<EventIdEnum>;
+  /** Equal to the specified value, treating null like an ordinary value. */
+  notDistinctFrom?: Maybe<EventIdEnum>;
+  /** Included in the specified list. */
+  in?: Maybe<Array<EventIdEnum>>;
+  /** Not included in the specified list. */
+  notIn?: Maybe<Array<EventIdEnum>>;
+  /** Less than the specified value. */
+  lessThan?: Maybe<EventIdEnum>;
+  /** Less than or equal to the specified value. */
+  lessThanOrEqualTo?: Maybe<EventIdEnum>;
+  /** Greater than the specified value. */
+  greaterThan?: Maybe<EventIdEnum>;
+  /** Greater than or equal to the specified value. */
+  greaterThanOrEqualTo?: Maybe<EventIdEnum>;
 };
 
 /** A connection to a list of `Event` values. */
@@ -17029,8 +17749,8 @@ export type Extrinsic = Node & {
   signed: Scalars['Int'];
   signedbyAddress: Scalars['Int'];
   address?: Maybe<Scalars['String']>;
-  moduleId: Scalars['String'];
-  callId: Scalars['String'];
+  moduleId: ModuleIdEnum;
+  callId: CallIdEnum;
   paramsTxt: Scalars['String'];
   success: Scalars['Int'];
   nonce?: Maybe<Scalars['Int']>;
@@ -17064,9 +17784,9 @@ export type ExtrinsicFilter = {
   /** Filter by the object’s `address` field. */
   address?: Maybe<StringFilter>;
   /** Filter by the object’s `moduleId` field. */
-  moduleId?: Maybe<StringFilter>;
+  moduleId?: Maybe<ModuleIdEnumFilter>;
   /** Filter by the object’s `callId` field. */
-  callId?: Maybe<StringFilter>;
+  callId?: Maybe<CallIdEnumFilter>;
   /** Filter by the object’s `paramsTxt` field. */
   paramsTxt?: Maybe<StringFilter>;
   /** Filter by the object’s `success` field. */
@@ -17540,7 +18260,7 @@ export type Identity = Node & {
   did: Scalars['String'];
   primaryAccount: Scalars['String'];
   secondaryKeysFrozen: Scalars['Boolean'];
-  eventId: Scalars['String'];
+  eventId: EventIdEnum;
   datetime: Scalars['Datetime'];
   createdBlockId: Scalars['String'];
   updatedBlockId: Scalars['String'];
@@ -20880,7 +21600,7 @@ export type IdentityFilter = {
   /** Filter by the object’s `secondaryKeysFrozen` field. */
   secondaryKeysFrozen?: Maybe<BooleanFilter>;
   /** Filter by the object’s `eventId` field. */
-  eventId?: Maybe<StringFilter>;
+  eventId?: Maybe<EventIdEnumFilter>;
   /** Filter by the object’s `datetime` field. */
   datetime?: Maybe<DatetimeFilter>;
   /** Filter by the object’s `createdBlockId` field. */
@@ -21323,9 +22043,9 @@ export type Instruction = Node & {
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
   nodeId: Scalars['ID'];
   id: Scalars['String'];
-  eventId: Scalars['String'];
+  eventId: EventIdEnum;
   eventIdx: Scalars['Int'];
-  status: Scalars['String'];
+  status: InstructionStatusEnum;
   venueId: Scalars['String'];
   settlementType: Scalars['String'];
   endBlock?: Maybe<Scalars['Int']>;
@@ -21577,11 +22297,11 @@ export type InstructionFilter = {
   /** Filter by the object’s `id` field. */
   id?: Maybe<StringFilter>;
   /** Filter by the object’s `eventId` field. */
-  eventId?: Maybe<StringFilter>;
+  eventId?: Maybe<EventIdEnumFilter>;
   /** Filter by the object’s `eventIdx` field. */
   eventIdx?: Maybe<IntFilter>;
   /** Filter by the object’s `status` field. */
-  status?: Maybe<StringFilter>;
+  status?: Maybe<InstructionStatusEnumFilter>;
   /** Filter by the object’s `venueId` field. */
   venueId?: Maybe<StringFilter>;
   /** Filter by the object’s `settlementType` field. */
@@ -21744,6 +22464,39 @@ export type InstructionSettlementsByLegInstructionIdAndSettlementIdManyToManyEdg
   after?: Maybe<Scalars['Cursor']>;
   orderBy?: Maybe<Array<LegsOrderBy>>;
   filter?: Maybe<LegFilter>;
+};
+
+export enum InstructionStatusEnum {
+  Created = 'Created',
+  Executed = 'Executed',
+  Rejected = 'Rejected',
+  Failed = 'Failed',
+}
+
+/** A filter to be used against InstructionStatusEnum fields. All fields are combined with a logical ‘and.’ */
+export type InstructionStatusEnumFilter = {
+  /** Is null (if `true` is specified) or is not null (if `false` is specified). */
+  isNull?: Maybe<Scalars['Boolean']>;
+  /** Equal to the specified value. */
+  equalTo?: Maybe<InstructionStatusEnum>;
+  /** Not equal to the specified value. */
+  notEqualTo?: Maybe<InstructionStatusEnum>;
+  /** Not equal to the specified value, treating null like an ordinary value. */
+  distinctFrom?: Maybe<InstructionStatusEnum>;
+  /** Equal to the specified value, treating null like an ordinary value. */
+  notDistinctFrom?: Maybe<InstructionStatusEnum>;
+  /** Included in the specified list. */
+  in?: Maybe<Array<InstructionStatusEnum>>;
+  /** Not included in the specified list. */
+  notIn?: Maybe<Array<InstructionStatusEnum>>;
+  /** Less than the specified value. */
+  lessThan?: Maybe<InstructionStatusEnum>;
+  /** Less than or equal to the specified value. */
+  lessThanOrEqualTo?: Maybe<InstructionStatusEnum>;
+  /** Greater than the specified value. */
+  greaterThan?: Maybe<InstructionStatusEnum>;
+  /** Greater than or equal to the specified value. */
+  greaterThanOrEqualTo?: Maybe<InstructionStatusEnum>;
 };
 
 /** A connection to a list of `Instruction` values. */
@@ -22198,6 +22951,85 @@ export enum LegsOrderBy {
   PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
 }
+
+export enum ModuleIdEnum {
+  System = 'system',
+  Babe = 'babe',
+  Timestamp = 'timestamp',
+  Indices = 'indices',
+  Authorship = 'authorship',
+  Balances = 'balances',
+  Transactionpayment = 'transactionpayment',
+  Identity = 'identity',
+  Cddserviceproviders = 'cddserviceproviders',
+  Polymeshcommittee = 'polymeshcommittee',
+  Committeemembership = 'committeemembership',
+  Technicalcommittee = 'technicalcommittee',
+  Technicalcommitteemembership = 'technicalcommitteemembership',
+  Upgradecommittee = 'upgradecommittee',
+  Upgradecommitteemembership = 'upgradecommitteemembership',
+  Multisig = 'multisig',
+  Bridge = 'bridge',
+  Staking = 'staking',
+  Offences = 'offences',
+  Session = 'session',
+  Authoritydiscovery = 'authoritydiscovery',
+  Grandpa = 'grandpa',
+  Historical = 'historical',
+  Imonline = 'imonline',
+  Randomnesscollectiveflip = 'randomnesscollectiveflip',
+  Sudo = 'sudo',
+  Asset = 'asset',
+  Capitaldistribution = 'capitaldistribution',
+  Checkpoint = 'checkpoint',
+  Compliancemanager = 'compliancemanager',
+  Corporateaction = 'corporateaction',
+  Corporateballot = 'corporateballot',
+  Permissions = 'permissions',
+  Pips = 'pips',
+  Portfolio = 'portfolio',
+  Protocolfee = 'protocolfee',
+  Scheduler = 'scheduler',
+  Settlement = 'settlement',
+  Statistics = 'statistics',
+  Sto = 'sto',
+  Treasury = 'treasury',
+  Utility = 'utility',
+  Base = 'base',
+  Externalagents = 'externalagents',
+  Relayer = 'relayer',
+  Rewards = 'rewards',
+  Contracts = 'contracts',
+  Polymeshcontracts = 'polymeshcontracts',
+  Preimage = 'preimage',
+  Testutils = 'testutils',
+}
+
+/** A filter to be used against ModuleIdEnum fields. All fields are combined with a logical ‘and.’ */
+export type ModuleIdEnumFilter = {
+  /** Is null (if `true` is specified) or is not null (if `false` is specified). */
+  isNull?: Maybe<Scalars['Boolean']>;
+  /** Equal to the specified value. */
+  equalTo?: Maybe<ModuleIdEnum>;
+  /** Not equal to the specified value. */
+  notEqualTo?: Maybe<ModuleIdEnum>;
+  /** Not equal to the specified value, treating null like an ordinary value. */
+  distinctFrom?: Maybe<ModuleIdEnum>;
+  /** Equal to the specified value, treating null like an ordinary value. */
+  notDistinctFrom?: Maybe<ModuleIdEnum>;
+  /** Included in the specified list. */
+  in?: Maybe<Array<ModuleIdEnum>>;
+  /** Not included in the specified list. */
+  notIn?: Maybe<Array<ModuleIdEnum>>;
+  /** Less than the specified value. */
+  lessThan?: Maybe<ModuleIdEnum>;
+  /** Less than or equal to the specified value. */
+  lessThanOrEqualTo?: Maybe<ModuleIdEnum>;
+  /** Greater than the specified value. */
+  greaterThan?: Maybe<ModuleIdEnum>;
+  /** Greater than or equal to the specified value. */
+  greaterThanOrEqualTo?: Maybe<ModuleIdEnum>;
+};
 
 /** An object with a globally unique `ID`. */
 export type Node = {
@@ -24288,7 +25120,7 @@ export type Proposal = Node & {
   nodeId: Scalars['ID'];
   id: Scalars['String'];
   proposer: Scalars['String'];
-  state: Scalars['String'];
+  state: ProposalStateEnum;
   ownerId: Scalars['String'];
   balance: Scalars['BigFloat'];
   url?: Maybe<Scalars['String']>;
@@ -24450,7 +25282,7 @@ export type ProposalFilter = {
   /** Filter by the object’s `proposer` field. */
   proposer?: Maybe<StringFilter>;
   /** Filter by the object’s `state` field. */
-  state?: Maybe<StringFilter>;
+  state?: Maybe<ProposalStateEnumFilter>;
   /** Filter by the object’s `ownerId` field. */
   ownerId?: Maybe<StringFilter>;
   /** Filter by the object’s `balance` field. */
@@ -24479,6 +25311,42 @@ export type ProposalFilter = {
   or?: Maybe<Array<ProposalFilter>>;
   /** Negates the expression. */
   not?: Maybe<ProposalFilter>;
+};
+
+export enum ProposalStateEnum {
+  All = 'All',
+  Pending = 'Pending',
+  Rejected = 'Rejected',
+  Scheduled = 'Scheduled',
+  Failed = 'Failed',
+  Executed = 'Executed',
+  Expired = 'Expired',
+}
+
+/** A filter to be used against ProposalStateEnum fields. All fields are combined with a logical ‘and.’ */
+export type ProposalStateEnumFilter = {
+  /** Is null (if `true` is specified) or is not null (if `false` is specified). */
+  isNull?: Maybe<Scalars['Boolean']>;
+  /** Equal to the specified value. */
+  equalTo?: Maybe<ProposalStateEnum>;
+  /** Not equal to the specified value. */
+  notEqualTo?: Maybe<ProposalStateEnum>;
+  /** Not equal to the specified value, treating null like an ordinary value. */
+  distinctFrom?: Maybe<ProposalStateEnum>;
+  /** Equal to the specified value, treating null like an ordinary value. */
+  notDistinctFrom?: Maybe<ProposalStateEnum>;
+  /** Included in the specified list. */
+  in?: Maybe<Array<ProposalStateEnum>>;
+  /** Not included in the specified list. */
+  notIn?: Maybe<Array<ProposalStateEnum>>;
+  /** Less than the specified value. */
+  lessThan?: Maybe<ProposalStateEnum>;
+  /** Less than or equal to the specified value. */
+  lessThanOrEqualTo?: Maybe<ProposalStateEnum>;
+  /** Greater than the specified value. */
+  greaterThan?: Maybe<ProposalStateEnum>;
+  /** Greater than or equal to the specified value. */
+  greaterThanOrEqualTo?: Maybe<ProposalStateEnum>;
 };
 
 export type ProposalVote = Node & {
@@ -25825,7 +26693,7 @@ export type Settlement = Node & {
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
   nodeId: Scalars['ID'];
   id: Scalars['String'];
-  result: Scalars['String'];
+  result: SettlementResultEnum;
   createdBlockId: Scalars['String'];
   updatedBlockId: Scalars['String'];
   createdAt: Scalars['Datetime'];
@@ -26069,7 +26937,7 @@ export type SettlementFilter = {
   /** Filter by the object’s `id` field. */
   id?: Maybe<StringFilter>;
   /** Filter by the object’s `result` field. */
-  result?: Maybe<StringFilter>;
+  result?: Maybe<SettlementResultEnumFilter>;
   /** Filter by the object’s `createdBlockId` field. */
   createdBlockId?: Maybe<StringFilter>;
   /** Filter by the object’s `updatedBlockId` field. */
@@ -26224,6 +27092,39 @@ export type SettlementPortfoliosByLegSettlementIdAndToIdManyToManyEdgeLegsByToId
   filter?: Maybe<LegFilter>;
 };
 
+export enum SettlementResultEnum {
+  None = 'None',
+  Executed = 'Executed',
+  Failed = 'Failed',
+  Rejected = 'Rejected',
+}
+
+/** A filter to be used against SettlementResultEnum fields. All fields are combined with a logical ‘and.’ */
+export type SettlementResultEnumFilter = {
+  /** Is null (if `true` is specified) or is not null (if `false` is specified). */
+  isNull?: Maybe<Scalars['Boolean']>;
+  /** Equal to the specified value. */
+  equalTo?: Maybe<SettlementResultEnum>;
+  /** Not equal to the specified value. */
+  notEqualTo?: Maybe<SettlementResultEnum>;
+  /** Not equal to the specified value, treating null like an ordinary value. */
+  distinctFrom?: Maybe<SettlementResultEnum>;
+  /** Equal to the specified value, treating null like an ordinary value. */
+  notDistinctFrom?: Maybe<SettlementResultEnum>;
+  /** Included in the specified list. */
+  in?: Maybe<Array<SettlementResultEnum>>;
+  /** Not included in the specified list. */
+  notIn?: Maybe<Array<SettlementResultEnum>>;
+  /** Less than the specified value. */
+  lessThan?: Maybe<SettlementResultEnum>;
+  /** Less than or equal to the specified value. */
+  lessThanOrEqualTo?: Maybe<SettlementResultEnum>;
+  /** Greater than the specified value. */
+  greaterThan?: Maybe<SettlementResultEnum>;
+  /** Greater than or equal to the specified value. */
+  greaterThanOrEqualTo?: Maybe<SettlementResultEnum>;
+};
+
 /** A connection to a list of `Settlement` values. */
 export type SettlementsConnection = {
   __typename?: 'SettlementsConnection';
@@ -26299,7 +27200,7 @@ export type StakingEvent = Node & {
   id: Scalars['String'];
   stashAccount?: Maybe<Scalars['String']>;
   identityId?: Maybe<Scalars['String']>;
-  eventId: Scalars['String'];
+  eventId: EventIdEnum;
   amount?: Maybe<Scalars['BigFloat']>;
   nominatedValidators?: Maybe<Scalars['JSON']>;
   transactionId?: Maybe<Scalars['String']>;
@@ -26330,7 +27231,7 @@ export type StakingEventFilter = {
   /** Filter by the object’s `identityId` field. */
   identityId?: Maybe<StringFilter>;
   /** Filter by the object’s `eventId` field. */
-  eventId?: Maybe<StringFilter>;
+  eventId?: Maybe<EventIdEnumFilter>;
   /** Filter by the object’s `amount` field. */
   amount?: Maybe<BigFloatFilter>;
   /** Filter by the object’s `nominatedValidators` field. */
@@ -26439,14 +27340,45 @@ export enum StakingEventsOrderBy {
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
 }
 
+export enum StatOpTypeEnum {
+  Count = 'Count',
+  Balance = 'Balance',
+}
+
+/** A filter to be used against StatOpTypeEnum fields. All fields are combined with a logical ‘and.’ */
+export type StatOpTypeEnumFilter = {
+  /** Is null (if `true` is specified) or is not null (if `false` is specified). */
+  isNull?: Maybe<Scalars['Boolean']>;
+  /** Equal to the specified value. */
+  equalTo?: Maybe<StatOpTypeEnum>;
+  /** Not equal to the specified value. */
+  notEqualTo?: Maybe<StatOpTypeEnum>;
+  /** Not equal to the specified value, treating null like an ordinary value. */
+  distinctFrom?: Maybe<StatOpTypeEnum>;
+  /** Equal to the specified value, treating null like an ordinary value. */
+  notDistinctFrom?: Maybe<StatOpTypeEnum>;
+  /** Included in the specified list. */
+  in?: Maybe<Array<StatOpTypeEnum>>;
+  /** Not included in the specified list. */
+  notIn?: Maybe<Array<StatOpTypeEnum>>;
+  /** Less than the specified value. */
+  lessThan?: Maybe<StatOpTypeEnum>;
+  /** Less than or equal to the specified value. */
+  lessThanOrEqualTo?: Maybe<StatOpTypeEnum>;
+  /** Greater than the specified value. */
+  greaterThan?: Maybe<StatOpTypeEnum>;
+  /** Greater than or equal to the specified value. */
+  greaterThanOrEqualTo?: Maybe<StatOpTypeEnum>;
+};
+
 export type StatType = Node & {
   __typename?: 'StatType';
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
   nodeId: Scalars['ID'];
   id: Scalars['String'];
   assetId: Scalars['String'];
-  opType: Scalars['String'];
-  claimType?: Maybe<Scalars['String']>;
+  opType: StatOpTypeEnum;
+  claimType?: Maybe<ClaimTypeEnum>;
   claimIssuerId?: Maybe<Scalars['String']>;
   createdBlockId: Scalars['String'];
   updatedBlockId: Scalars['String'];
@@ -26675,9 +27607,9 @@ export type StatTypeFilter = {
   /** Filter by the object’s `assetId` field. */
   assetId?: Maybe<StringFilter>;
   /** Filter by the object’s `opType` field. */
-  opType?: Maybe<StringFilter>;
+  opType?: Maybe<StatOpTypeEnumFilter>;
   /** Filter by the object’s `claimType` field. */
-  claimType?: Maybe<StringFilter>;
+  claimType?: Maybe<ClaimTypeEnumFilter>;
   /** Filter by the object’s `claimIssuerId` field. */
   claimIssuerId?: Maybe<StringFilter>;
   /** Filter by the object’s `createdBlockId` field. */
@@ -27174,7 +28106,7 @@ export type TickerExternalAgentAction = Node & {
   assetId: Scalars['String'];
   callerId: Scalars['String'];
   palletName: Scalars['String'];
-  eventId: Scalars['String'];
+  eventId: EventIdEnum;
   eventIdx: Scalars['Int'];
   createdBlockId: Scalars['String'];
   updatedBlockId: Scalars['String'];
@@ -27206,7 +28138,7 @@ export type TickerExternalAgentActionFilter = {
   /** Filter by the object’s `palletName` field. */
   palletName?: Maybe<StringFilter>;
   /** Filter by the object’s `eventId` field. */
-  eventId?: Maybe<StringFilter>;
+  eventId?: Maybe<EventIdEnumFilter>;
   /** Filter by the object’s `eventIdx` field. */
   eventIdx?: Maybe<IntFilter>;
   /** Filter by the object’s `createdBlockId` field. */
@@ -27560,10 +28492,10 @@ export type TransferCompliance = Node & {
   nodeId: Scalars['ID'];
   id: Scalars['String'];
   assetId: Scalars['String'];
-  type: Scalars['String'];
+  type: TransferComplianceTypeEnum;
   statTypeId: Scalars['String'];
   value?: Maybe<Scalars['BigFloat']>;
-  claimType?: Maybe<Scalars['String']>;
+  claimType?: Maybe<ClaimTypeEnum>;
   claimValue?: Maybe<Scalars['String']>;
   claimIssuerId?: Maybe<Scalars['String']>;
   min?: Maybe<Scalars['BigFloat']>;
@@ -27595,8 +28527,8 @@ export type TransferComplianceExemption = Node & {
   nodeId: Scalars['ID'];
   id: Scalars['String'];
   assetId: Scalars['String'];
-  opType: Scalars['String'];
-  claimType?: Maybe<Scalars['String']>;
+  opType: StatOpTypeEnum;
+  claimType?: Maybe<ClaimTypeEnum>;
   exemptedEntityId: Scalars['String'];
   createdBlockId: Scalars['String'];
   updatedBlockId: Scalars['String'];
@@ -27622,9 +28554,9 @@ export type TransferComplianceExemptionFilter = {
   /** Filter by the object’s `assetId` field. */
   assetId?: Maybe<StringFilter>;
   /** Filter by the object’s `opType` field. */
-  opType?: Maybe<StringFilter>;
+  opType?: Maybe<StatOpTypeEnumFilter>;
   /** Filter by the object’s `claimType` field. */
-  claimType?: Maybe<StringFilter>;
+  claimType?: Maybe<ClaimTypeEnumFilter>;
   /** Filter by the object’s `exemptedEntityId` field. */
   exemptedEntityId?: Maybe<StringFilter>;
   /** Filter by the object’s `createdBlockId` field. */
@@ -27725,13 +28657,13 @@ export type TransferComplianceFilter = {
   /** Filter by the object’s `assetId` field. */
   assetId?: Maybe<StringFilter>;
   /** Filter by the object’s `type` field. */
-  type?: Maybe<StringFilter>;
+  type?: Maybe<TransferComplianceTypeEnumFilter>;
   /** Filter by the object’s `statTypeId` field. */
   statTypeId?: Maybe<StringFilter>;
   /** Filter by the object’s `value` field. */
   value?: Maybe<BigFloatFilter>;
   /** Filter by the object’s `claimType` field. */
-  claimType?: Maybe<StringFilter>;
+  claimType?: Maybe<ClaimTypeEnumFilter>;
   /** Filter by the object’s `claimValue` field. */
   claimValue?: Maybe<StringFilter>;
   /** Filter by the object’s `claimIssuerId` field. */
@@ -27754,6 +28686,39 @@ export type TransferComplianceFilter = {
   or?: Maybe<Array<TransferComplianceFilter>>;
   /** Negates the expression. */
   not?: Maybe<TransferComplianceFilter>;
+};
+
+export enum TransferComplianceTypeEnum {
+  MaxInvestorCount = 'MaxInvestorCount',
+  MaxInvestorOwnership = 'MaxInvestorOwnership',
+  ClaimCount = 'ClaimCount',
+  ClaimOwnership = 'ClaimOwnership',
+}
+
+/** A filter to be used against TransferComplianceTypeEnum fields. All fields are combined with a logical ‘and.’ */
+export type TransferComplianceTypeEnumFilter = {
+  /** Is null (if `true` is specified) or is not null (if `false` is specified). */
+  isNull?: Maybe<Scalars['Boolean']>;
+  /** Equal to the specified value. */
+  equalTo?: Maybe<TransferComplianceTypeEnum>;
+  /** Not equal to the specified value. */
+  notEqualTo?: Maybe<TransferComplianceTypeEnum>;
+  /** Not equal to the specified value, treating null like an ordinary value. */
+  distinctFrom?: Maybe<TransferComplianceTypeEnum>;
+  /** Equal to the specified value, treating null like an ordinary value. */
+  notDistinctFrom?: Maybe<TransferComplianceTypeEnum>;
+  /** Included in the specified list. */
+  in?: Maybe<Array<TransferComplianceTypeEnum>>;
+  /** Not included in the specified list. */
+  notIn?: Maybe<Array<TransferComplianceTypeEnum>>;
+  /** Less than the specified value. */
+  lessThan?: Maybe<TransferComplianceTypeEnum>;
+  /** Less than or equal to the specified value. */
+  lessThanOrEqualTo?: Maybe<TransferComplianceTypeEnum>;
+  /** Greater than the specified value. */
+  greaterThan?: Maybe<TransferComplianceTypeEnum>;
+  /** Greater than or equal to the specified value. */
+  greaterThanOrEqualTo?: Maybe<TransferComplianceTypeEnum>;
 };
 
 /** A connection to a list of `TransferCompliance` values. */
@@ -27852,7 +28817,7 @@ export type TransferManager = Node & {
   nodeId: Scalars['ID'];
   id: Scalars['String'];
   assetId: Scalars['String'];
-  type: Scalars['String'];
+  type: TransferRestrictionTypeEnum;
   value: Scalars['Int'];
   exemptedEntities: Scalars['JSON'];
   createdBlockId: Scalars['String'];
@@ -27879,7 +28844,7 @@ export type TransferManagerFilter = {
   /** Filter by the object’s `assetId` field. */
   assetId?: Maybe<StringFilter>;
   /** Filter by the object’s `type` field. */
-  type?: Maybe<StringFilter>;
+  type?: Maybe<TransferRestrictionTypeEnumFilter>;
   /** Filter by the object’s `value` field. */
   value?: Maybe<IntFilter>;
   /** Filter by the object’s `exemptedEntities` field. */
@@ -27974,6 +28939,37 @@ export enum TransferManagersOrderBy {
   PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
 }
+
+export enum TransferRestrictionTypeEnum {
+  Count = 'Count',
+  Percentage = 'Percentage',
+}
+
+/** A filter to be used against TransferRestrictionTypeEnum fields. All fields are combined with a logical ‘and.’ */
+export type TransferRestrictionTypeEnumFilter = {
+  /** Is null (if `true` is specified) or is not null (if `false` is specified). */
+  isNull?: Maybe<Scalars['Boolean']>;
+  /** Equal to the specified value. */
+  equalTo?: Maybe<TransferRestrictionTypeEnum>;
+  /** Not equal to the specified value. */
+  notEqualTo?: Maybe<TransferRestrictionTypeEnum>;
+  /** Not equal to the specified value, treating null like an ordinary value. */
+  distinctFrom?: Maybe<TransferRestrictionTypeEnum>;
+  /** Equal to the specified value, treating null like an ordinary value. */
+  notDistinctFrom?: Maybe<TransferRestrictionTypeEnum>;
+  /** Included in the specified list. */
+  in?: Maybe<Array<TransferRestrictionTypeEnum>>;
+  /** Not included in the specified list. */
+  notIn?: Maybe<Array<TransferRestrictionTypeEnum>>;
+  /** Less than the specified value. */
+  lessThan?: Maybe<TransferRestrictionTypeEnum>;
+  /** Less than or equal to the specified value. */
+  lessThanOrEqualTo?: Maybe<TransferRestrictionTypeEnum>;
+  /** Greater than the specified value. */
+  greaterThan?: Maybe<TransferRestrictionTypeEnum>;
+  /** Greater than or equal to the specified value. */
+  greaterThanOrEqualTo?: Maybe<TransferRestrictionTypeEnum>;
+};
 
 export type TrustedClaimIssuer = Node & {
   __typename?: 'TrustedClaimIssuer';

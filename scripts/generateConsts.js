@@ -109,7 +109,7 @@ function assembleCountryCodes() {
   * @hidden
   */
   export function countryCodeToMeshCountryCode(countryCode: CountryCode, context: Context): MeshCountryCode {
-    return context.polymeshApi.createType('CountryCode', countryCode);
+    return context.createType('CountryCode', countryCode);
   }
 
   /**

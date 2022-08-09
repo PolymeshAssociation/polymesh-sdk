@@ -5,6 +5,10 @@ import { Account, Context, Entity } from '~/internal';
 import { heartbeat, transactions } from '~/middleware/queries';
 import { extrinsicsByArgs } from '~/middleware/queriesV2';
 import { CallIdEnum, ExtrinsicResult, ModuleIdEnum } from '~/middleware/types';
+import {
+  CallIdEnum as MiddlewareV2CallId,
+  ModuleIdEnum as MiddlewareV2ModuleId,
+} from '~/middleware/typesV2';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId, createMockIdentityId } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
@@ -33,6 +37,7 @@ describe('Account class', () => {
   let account: Account;
   let assertAddressValidStub: sinon.SinonStub;
   let addressToKeyStub: sinon.SinonStub;
+  let getSecondaryAccountPermissionsStub: sinon.SinonStub;
   let keyToAddressStub: sinon.SinonStub;
   let txTagToExtrinsicIdentifierStub: sinon.SinonStub;
 
@@ -42,6 +47,10 @@ describe('Account class', () => {
     procedureMockUtils.initMocks();
     assertAddressValidStub = sinon.stub(utilsInternalModule, 'assertAddressValid');
     addressToKeyStub = sinon.stub(utilsConversionModule, 'addressToKey');
+    getSecondaryAccountPermissionsStub = sinon.stub(
+      utilsInternalModule,
+      'getSecondaryAccountPermissions'
+    );
     keyToAddressStub = sinon.stub(utilsConversionModule, 'keyToAddress');
     txTagToExtrinsicIdentifierStub = sinon.stub(
       utilsConversionModule,
@@ -390,8 +399,8 @@ describe('Account class', () => {
   describe('method: getTransactionHistoryV2', () => {
     it('should return a list of transactions', async () => {
       const tag = TxTags.identity.CddRegisterDid;
-      const moduleId = ModuleIdEnum.Identity;
-      const callId = CallIdEnum.CddRegisterDid;
+      const moduleId = MiddlewareV2ModuleId.Identity;
+      const callId = MiddlewareV2CallId.CddRegisterDid;
       const blockNumber1 = new BigNumber(1);
       const blockNumber2 = new BigNumber(2);
       const blockHash1 = 'someHash';
@@ -410,8 +419,8 @@ describe('Account class', () => {
         totalCount: 20,
         nodes: [
           {
-            moduleId: ModuleIdEnum.Asset,
-            callId: CallIdEnum.RegisterTicker,
+            moduleId: MiddlewareV2ModuleId.Asset,
+            callId: MiddlewareV2CallId.RegisterTicker,
             extrinsicIdx: 2,
             specVersionId: 2006,
             paramsTxt: '[]',
@@ -425,8 +434,8 @@ describe('Account class', () => {
             },
           },
           {
-            moduleId: ModuleIdEnum.Asset,
-            callId: CallIdEnum.RegisterTicker,
+            moduleId: MiddlewareV2ModuleId.Asset,
+            callId: MiddlewareV2CallId.RegisterTicker,
             extrinsicIdx: 2,
             specVersionId: 2006,
             paramsTxt: '[]',
@@ -647,6 +656,7 @@ describe('Account class', () => {
     });
 
     it('should return full permissions if the Account is the primary Account', async () => {
+      getSecondaryAccountPermissionsStub.returns([]);
       const identity = entityMockUtils.getIdentityInstance({
         getPrimaryAccount: {
           account: entityMockUtils.getAccountInstance({ address }),
@@ -680,23 +690,14 @@ describe('Account class', () => {
         portfolios: null,
       };
 
-      const identity = entityMockUtils.getIdentityInstance({
-        getSecondaryAccounts: [
-          {
-            account: entityMockUtils.getAccountInstance({ address }),
-            permissions: {
-              assets: null,
-              transactions: null,
-              transactionGroups: [],
-              portfolios: null,
-            },
-          },
-          {
-            account: entityMockUtils.getAccountInstance({ address: 'otherAddress' }),
-            permissions,
-          },
-        ],
-      });
+      getSecondaryAccountPermissionsStub.returns([
+        {
+          account: entityMockUtils.getAccountInstance({ address: 'otherAddress' }),
+          permissions,
+        },
+      ]);
+
+      const identity = entityMockUtils.getIdentityInstance({});
 
       account = new Account({ address: 'otherAddress' }, context);
 

@@ -14,7 +14,7 @@ import {
 import { Asset, Authorizations, Context, Entity, Identity, PolymeshError } from '~/internal';
 import { transactions as transactionsQuery } from '~/middleware/queries';
 import { extrinsicsByArgs } from '~/middleware/queriesV2';
-import { CallIdEnum, ModuleIdEnum, Query, TransactionOrderByInput } from '~/middleware/types';
+import { Query, TransactionOrderByInput } from '~/middleware/types';
 import { ExtrinsicsOrderBy, Query as QueryV2 } from '~/middleware/typesV2';
 import {
   AccountBalance,
@@ -47,9 +47,15 @@ import {
   stringToAccountId,
   stringToHash,
   txTagToExtrinsicIdentifier,
+  txTagToExtrinsicIdentifierV2,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { assertAddressValid, calculateNextKey, isModuleOrTagMatch } from '~/utils/internal';
+import {
+  assertAddressValid,
+  calculateNextKey,
+  getSecondaryAccountPermissions,
+  isModuleOrTagMatch,
+} from '~/utils/internal';
 
 /**
  * @hidden
@@ -495,7 +501,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     let moduleId;
     let callId;
     if (tag) {
-      ({ moduleId, callId } = txTagToExtrinsicIdentifier(tag));
+      ({ moduleId, callId } = txTagToExtrinsicIdentifierV2(tag));
     }
 
     let successFilter;
@@ -557,8 +563,8 @@ export class Account extends Entity<UniqueIdentifiers, string> {
         address: rawAddress ? keyToAddress(rawAddress, context) : null,
         nonce: nonce ? new BigNumber(nonce) : null,
         txTag: extrinsicIdentifierToTxTag({
-          moduleId: extrinsicModuleId as ModuleIdEnum,
-          callId: extrinsicCallId as CallIdEnum,
+          moduleId: extrinsicModuleId,
+          callId: extrinsicCallId,
         }),
         params: JSON.parse(paramsTxt),
         success: !!txSuccess,
@@ -604,7 +610,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
    * @throws if there is no Identity associated with the Account
    */
   public async getPermissions(): Promise<Permissions> {
-    const { address } = this;
+    const { address, context } = this;
 
     const identity = await this.getIdentity();
 
@@ -619,8 +625,11 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       {
         account: { address: primaryAccountAddress },
       },
-      secondaryAccounts,
-    ] = await Promise.all([identity.getPrimaryAccount(), identity.getSecondaryAccounts()]);
+      [permissionedAccount],
+    ] = await Promise.all([
+      identity.getPrimaryAccount(),
+      getSecondaryAccountPermissions({ accounts: [this], identity }, context),
+    ]);
 
     if (address === primaryAccountAddress) {
       return {
@@ -631,12 +640,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       };
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const account = secondaryAccounts.find(
-      ({ account: { address: secondaryAccountAddress } }) => address === secondaryAccountAddress
-    )!;
-
-    return account.permissions;
+    return permissionedAccount.permissions;
   }
 
   /**

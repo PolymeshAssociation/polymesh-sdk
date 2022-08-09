@@ -8,12 +8,14 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import { RemoveSecondaryAccountsParams, Signer, SignerType, SignerValue } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 describe('removeSecondaryAccounts procedure', () => {
   let mockContext: Mocked<Context>;
   let addTransactionStub: sinon.SinonStub;
   let signerToSignerValueStub: sinon.SinonStub<[Signer], SignerValue>;
   let stringToAccountIdStub: sinon.SinonStub<[string, Context], AccountId>;
+  let getSecondaryAccountPermissionsStub: sinon.SinonStub;
 
   let args: RemoveSecondaryAccountsParams;
 
@@ -23,6 +25,10 @@ describe('removeSecondaryAccounts procedure', () => {
     entityMockUtils.initMocks();
     signerToSignerValueStub = sinon.stub(utilsConversionModule, 'signerToSignerValue');
     stringToAccountIdStub = sinon.stub(utilsConversionModule, 'stringToAccountId');
+    getSecondaryAccountPermissionsStub = sinon.stub(
+      utilsInternalModule,
+      'getSecondaryAccountPermissions'
+    );
   });
 
   beforeEach(() => {
@@ -45,33 +51,19 @@ describe('removeSecondaryAccounts procedure', () => {
     entityMockUtils.reset();
     procedureMockUtils.reset();
     dsMockUtils.reset();
-    sinon.restore();
   });
 
   afterAll(() => {
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
+    sinon.restore();
   });
 
   it('should add a remove secondary items transaction to the queue', async () => {
     const { accounts } = args;
 
     const rawAccountId = dsMockUtils.createMockAccountId(accounts[0].address);
-
-    dsMockUtils.configureMocks({
-      contextOptions: {
-        secondaryAccounts: accounts.map(secondaryAccount => ({
-          account: secondaryAccount,
-          permissions: {
-            assets: null,
-            transactions: null,
-            transactionGroups: [],
-            portfolios: null,
-          },
-        })),
-      },
-    });
-
+    getSecondaryAccountPermissionsStub.returns(accounts.map(account => ({ account })));
     stringToAccountIdStub.withArgs(accounts[0].address, mockContext).returns(rawAccountId);
 
     const proc = procedureMockUtils.getInstance<RemoveSecondaryAccountsParams, void>(mockContext);
@@ -90,6 +82,13 @@ describe('removeSecondaryAccounts procedure', () => {
   it('should throw an error if attempting to remove the primary Account', () => {
     const proc = procedureMockUtils.getInstance<RemoveSecondaryAccountsParams, void>(mockContext);
     const account = entityMockUtils.getAccountInstance({ address: 'primaryAccount' });
+    stringToAccountIdStub
+      .withArgs('primaryAccount', mockContext)
+      .returns(dsMockUtils.createMockAccountId('primaryAccount'));
+    getSecondaryAccountPermissionsStub.returns([account]);
+    mockContext.getSigningIdentity.returns(
+      entityMockUtils.getIdentityInstance({ getPrimaryAccount: { account } })
+    );
 
     return expect(
       prepareRemoveSecondaryAccounts.call(proc, {
@@ -104,9 +103,9 @@ describe('removeSecondaryAccounts procedure', () => {
     const signerValue = { type: SignerType.Account, value: accounts[0].address };
 
     signerToSignerValueStub.withArgs(accounts[0]).returns(signerValue);
+    getSecondaryAccountPermissionsStub.returns([]);
 
     const proc = procedureMockUtils.getInstance<RemoveSecondaryAccountsParams, void>(mockContext);
-
     return expect(
       prepareRemoveSecondaryAccounts.call(proc, {
         ...args,
