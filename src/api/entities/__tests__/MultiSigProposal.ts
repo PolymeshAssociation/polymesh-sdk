@@ -132,9 +132,9 @@ describe('MultiSigProposal class', () => {
     });
   });
 
-  describe('method: toJson', () => {
+  describe('method: toHuman', () => {
     it('should return a human readable representation of the entity', () => {
-      const result = proposal.toJson();
+      const result = proposal.toHuman();
       expect(result).toEqual('{"multiSigAddress":"someAddress","id":"1"}');
     });
   });

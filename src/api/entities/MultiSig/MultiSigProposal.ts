@@ -126,20 +126,13 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Returns the MultiSig address and this Proposal's ID as a human readable string
+   * Returns a human readable string representation
    */
-  public toJson(): string {
+  public toHuman(): string {
     const { multiSigAddress, id } = this;
     return JSON.stringify({
       multiSigAddress,
       id: id.toString(),
     });
-  }
-
-  /**
-   * Returns a human readable string representation
-   */
-  public toHuman(): string {
-    return this.toJson();
   }
 }

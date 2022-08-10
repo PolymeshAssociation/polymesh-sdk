@@ -871,7 +871,6 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
     },
     toHuman: 'SOME_TICKER',
     investorCount: new BigNumber(0),
-    toJson: 'SOME_TICKER',
   }),
   ['Asset']
 );
