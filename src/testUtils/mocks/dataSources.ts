@@ -59,6 +59,7 @@ import {
   PalletSettlementVenue,
   PalletStoFundraiser,
   PolymeshPrimitivesAssetIdentifier,
+  PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
   PolymeshPrimitivesAuthorization,
   PolymeshPrimitivesAuthorizationAuthorizationData,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
@@ -4199,4 +4200,37 @@ export const createMockAssetTransferCompliance = (
     result.requirements as Mutable<BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>>
   ).size = requirements.size;
   return result;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAssetMetadataSpec = (
+  specs?:
+    | PolymeshPrimitivesAssetMetadataAssetMetadataSpec
+    | {
+        url: Option<Bytes>;
+        description: Option<Bytes>;
+        typeDef: Option<Bytes>;
+      }
+): MockCodec<PolymeshPrimitivesAssetMetadataAssetMetadataSpec> => {
+  if (isCodec<PolymeshPrimitivesAssetMetadataAssetMetadataSpec>(specs)) {
+    return specs as MockCodec<PolymeshPrimitivesAssetMetadataAssetMetadataSpec>;
+  }
+
+  const { url, description, typeDef } = specs || {
+    url: createMockOption(),
+    description: createMockOption(),
+    typeDef: createMockOption(),
+  };
+
+  return createMockCodec(
+    {
+      url,
+      description,
+      typeDef,
+    },
+    !specs
+  ) as MockCodec<PolymeshPrimitivesAssetMetadataAssetMetadataSpec>;
 };

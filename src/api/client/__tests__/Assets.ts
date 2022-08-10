@@ -6,7 +6,12 @@ import { Assets } from '~/api/client/Assets';
 import { Asset, Context, TickerReservation, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { KnownAssetType, SecurityIdentifierType, TickerReservationStatus } from '~/types';
+import {
+  AssetGlobalMetadata,
+  KnownAssetType,
+  SecurityIdentifierType,
+  TickerReservationStatus,
+} from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
@@ -433,6 +438,88 @@ describe('Assets Class', () => {
         data: [expect.objectContaining({ ticker: expectedAssets[0].ticker })],
         next: 'someKey',
       });
+    });
+  });
+
+  describe('method: getGlobalMetadata', () => {
+    let bytesToStringStub: sinon.SinonStub;
+    let u64ToBigNumberStub: sinon.SinonStub;
+
+    const rawIds = [
+      dsMockUtils.createMockU64(new BigNumber(1)),
+      dsMockUtils.createMockU64(new BigNumber(2)),
+    ];
+    const globalMetadata: AssetGlobalMetadata[] = [
+      {
+        id: new BigNumber(1),
+        name: 'SOME_NAME1',
+        specs: {
+          url: 'SOME_URL1',
+          description: 'SOME_DESCRIPTION1',
+          typeDef: 'SOME_TYPEDEF1',
+        },
+      },
+      {
+        id: new BigNumber(2),
+        name: 'SOME_NAME2',
+      },
+    ];
+    let rawGlobalMetadata;
+
+    beforeAll(() => {
+      u64ToBigNumberStub = sinon.stub(utilsConversionModule, 'u64ToBigNumber');
+      bytesToStringStub = sinon.stub(utilsConversionModule, 'bytesToString');
+    });
+
+    beforeEach(() => {
+      rawIds.forEach(rawId => {
+        rawId.eq = sinon.stub();
+        rawId.eq.withArgs(rawId).returns(true);
+      });
+      rawGlobalMetadata = globalMetadata.map(({ id, name, specs }, index) => {
+        const rawId = rawIds[index];
+        const rawName = dsMockUtils.createMockBytes(name);
+        let rawSpecs;
+        if (specs) {
+          const { url, description, typeDef } = specs;
+          const rawUrl = dsMockUtils.createMockBytes(url);
+          const rawDescription = dsMockUtils.createMockBytes(description);
+          const rawTypeDef = dsMockUtils.createMockBytes(typeDef);
+          rawSpecs = {
+            url: dsMockUtils.createMockOption(rawUrl),
+            description: dsMockUtils.createMockOption(rawDescription),
+            typeDef: dsMockUtils.createMockOption(rawTypeDef),
+          };
+          bytesToStringStub.withArgs(rawUrl).returns(url);
+          bytesToStringStub.withArgs(rawDescription).returns(description);
+          bytesToStringStub.withArgs(rawTypeDef).returns(typeDef);
+        }
+        bytesToStringStub.withArgs(rawName).returns(name);
+        u64ToBigNumberStub.withArgs(rawId).returns(id);
+
+        return {
+          rawId,
+          rawName: dsMockUtils.createMockOption(rawName),
+          rawSpecs: dsMockUtils.createMockOption(dsMockUtils.createMockAssetMetadataSpec(rawSpecs)),
+        };
+      });
+
+      dsMockUtils.createQueryStub('asset', 'assetMetadataGlobalKeyToName', {
+        entries: rawGlobalMetadata.map(({ rawId, rawName }) => tuple([rawId], rawName)),
+      });
+
+      dsMockUtils.createQueryStub('asset', 'assetMetadataGlobalSpecs', {
+        entries: rawGlobalMetadata.map(({ rawId, rawSpecs }) => tuple([rawId], rawSpecs)),
+      });
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    it('should retrieve all Asset Global Metadata on the chain', async () => {
+      const result = await assets.getGlobalMetadata();
+      expect(result).toEqual(globalMetadata);
     });
   });
 });

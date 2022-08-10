@@ -57,5 +57,16 @@ export interface AgentWithGroup {
   group: KnownPermissionGroup | CustomPermissionGroup;
 }
 
-export * from './CorporateActions/types';
+export interface AssetMetadataSpec {
+  url?: string;
+  description?: string;
+  typeDef?: string;
+}
+export interface AssetGlobalMetadata {
+  id: BigNumber;
+  name: string;
+  specs?: AssetMetadataSpec;
+}
+
 export * from './Checkpoints/types';
+export * from './CorporateActions/types';
