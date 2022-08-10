@@ -18,6 +18,10 @@ This release is compatible with Polymesh v4.1.0
 
 <!--- End of section --->
 
+## ⚠️ NPM migration
+
+The npm repository has moved to a new namespace. Make sure your `package.json` points to `@polymeshassociation/polymesh-sdk`.
+
 ## Getting Started
 
 ### Purpose

@@ -87,6 +87,9 @@ export class Polymesh {
     const { nodeUrl, signingManager, middleware } = params;
     let context: Context;
 
+    console.warn(
+      'The Polymesh SDK has migrated to a new npm repository at "https://www.npmjs.com/package/@polymeshassociation/polymesh-sdk". Please let the developer know they should update their dependency accordingly'
+    );
     await assertExpectedChainVersion(nodeUrl).catch(error => {
       if (
         error instanceof PolymeshError &&
