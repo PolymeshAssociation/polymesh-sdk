@@ -1,4 +1,4 @@
-import { Bytes } from '@polkadot/types';
+import { Bytes, u32 } from '@polkadot/types';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { IdentityId } from 'polymesh-types/types';
@@ -23,6 +23,7 @@ import {
 import { StatisticsOpType } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
+import * as utilsConversionModule from '~/utils/conversion';
 
 import {
   assertAddressValid,
@@ -44,6 +45,7 @@ import {
   hasSameElements,
   isModuleOrTagMatch,
   isPrintableAscii,
+  mergeReceipts,
   neededStatTypeForRestrictionInput,
   optionize,
   padString,
@@ -247,6 +249,81 @@ describe('sliceBatchReceipt', () => {
     expect(() => sliceBatchReceipt(mockReceipt, 1, 4)).toThrow(
       'Transaction index range out of bounds. Please report this to the Polymesh team'
     );
+  });
+});
+
+describe('mergeReceipts', () => {
+  let bigNumberToU32Stub: sinon.SinonStub;
+  let receipts: ISubmittableResult[];
+  let context: Context;
+
+  let eventsPerTransaction: u32[];
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+    eventsPerTransaction = [
+      dsMockUtils.createMockU32(new BigNumber(2)),
+      dsMockUtils.createMockU32(new BigNumber(1)),
+      dsMockUtils.createMockU32(new BigNumber(3)),
+    ];
+    bigNumberToU32Stub = sinon.stub(utilsConversionModule, 'bigNumberToU32');
+    bigNumberToU32Stub.withArgs(new BigNumber(2), context).returns(eventsPerTransaction[0]);
+    bigNumberToU32Stub.withArgs(new BigNumber(1), context).returns(eventsPerTransaction[1]);
+    bigNumberToU32Stub.withArgs(new BigNumber(3), context).returns(eventsPerTransaction[2]);
+
+    receipts = [
+      {
+        filterRecords: sinon.stub(),
+        events: ['tx0event0', 'tx0event1'],
+        findRecord: sinon.stub(),
+        toHuman: sinon.stub(),
+      },
+      {
+        filterRecords: sinon.stub(),
+        events: ['tx1event0'],
+        findRecord: sinon.stub(),
+        toHuman: sinon.stub(),
+      },
+      {
+        filterRecords: sinon.stub(),
+        events: ['tx2event0', 'tx2event1', 'tx2event2'],
+        findRecord: sinon.stub(),
+        toHuman: sinon.stub(),
+      },
+    ] as unknown as ISubmittableResult[];
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    sinon.restore();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return a receipt with all the combined events in order', () => {
+    const result = mergeReceipts(receipts, context);
+
+    expect(result.events).toEqual([
+      'tx0event0',
+      'tx0event1',
+      'tx1event0',
+      'tx2event0',
+      'tx2event1',
+      'tx2event2',
+      {
+        event: {
+          section: 'utility',
+          method: 'BatchCompleted',
+          data: [eventsPerTransaction],
+        },
+      },
+    ]);
   });
 });
 

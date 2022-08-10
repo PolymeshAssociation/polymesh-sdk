@@ -109,15 +109,17 @@ export function prepareStorage<ReturnValues extends unknown[]>(
 
     const { transformer = identity, resolver } = spec;
 
+    const endIndex = transactions.length;
+
     /*
-     * we pass the subset of events to the resolver that only correspond to the
+     * We pass the subset of events to the resolver that only correspond to the
      * transactions added in this iteration, and pass the result through the transformer, if any
      */
     resolvers.push(async (receipt: ISubmittableResult) => {
       let value;
 
       if (isResolverFunction(resolver)) {
-        value = await resolver(sliceBatchReceipt(receipt, startIndex, transactions.length));
+        value = await resolver(sliceBatchReceipt(receipt, startIndex, endIndex));
       } else {
         value = resolver;
       }
