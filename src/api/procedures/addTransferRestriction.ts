@@ -16,14 +16,18 @@ import { ProcedureAuthorization } from '~/types/internal';
 import { QueryReturnType } from '~/types/utils';
 import {
   complianceConditionsToBtreeSet,
-  getExemptedBtreeSet,
   stringToTickerKey,
   toExemptKey,
   transferRestrictionToPolymeshTransferCondition,
   transferRestrictionTypeToStatOpType,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { assertStatIsSet, checkTxType, neededStatTypeForRestrictionInput } from '~/utils/internal';
+import {
+  assertStatIsSet,
+  checkTxType,
+  getExemptedBtreeSet,
+  neededStatTypeForRestrictionInput,
+} from '~/utils/internal';
 
 /**
  * @hidden

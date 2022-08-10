@@ -8,6 +8,7 @@ import {
 import { BTreeSet, Bytes, Option, StorageKey } from '@polkadot/types';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
 import {
+  PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesSecondaryKeyKeyRecord,
   PolymeshPrimitivesStatisticsStatClaim,
   PolymeshPrimitivesStatisticsStatType,
@@ -88,6 +89,7 @@ import {
 import {
   bigNumberToU64,
   claimIssuerToMeshClaimIssuer,
+  identitiesToBtreeSet,
   identityIdToString,
   meshClaimTypeToClaimType,
   meshPermissionsToPermissions,
@@ -1518,4 +1520,18 @@ export async function getSecondaryAccountPermissions(
   const rawResults = await identityQuery.keyRecords.multi(identityKeys);
 
   return assembleResult(rawResults);
+}
+
+/**
+ * @hidden
+ */
+export async function getExemptedBtreeSet(
+  identities: (string | Identity)[],
+  ticker: string,
+  context: Context
+): Promise<BTreeSet<PolymeshPrimitivesIdentityId>> {
+  const exemptedIds = await getExemptedIds(identities, context, ticker);
+  const mapped = exemptedIds.map(exemptedId => asIdentity(exemptedId, context));
+
+  return identitiesToBtreeSet(mapped, context);
 }

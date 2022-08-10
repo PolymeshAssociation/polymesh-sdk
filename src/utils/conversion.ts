@@ -259,7 +259,6 @@ import {
   asTicker,
   conditionsAreEqual,
   createClaim,
-  getExemptedIds,
   isModuleOrTagMatch,
   optionize,
   padString,
@@ -2986,21 +2985,8 @@ export function identitiesToBtreeSet(
   context: Context
 ): BTreeSet<PolymeshPrimitivesIdentityId> {
   const rawIds = identities.map(({ did }) => stringToIdentityId(did, context));
-  return context.createType('BTreeSet<PolymeshPrimitivesIdentityId>', rawIds);
-}
 
-/**
- * @hidden
- */
-export async function getExemptedBtreeSet(
-  identities: (string | Identity)[],
-  ticker: string,
-  context: Context
-): Promise<BTreeSet<PolymeshPrimitivesIdentityId>> {
-  const exemptedIds = await getExemptedIds(identities, context, ticker);
-  const toIdentity = (did: string): Identity => new Identity({ did }, context);
-  const mapped = exemptedIds.map(toIdentity);
-  return identitiesToBtreeSet(mapped, context);
+  return context.createType('BTreeSet<PolymeshPrimitivesIdentityId>', rawIds);
 }
 
 /**
@@ -3843,9 +3829,8 @@ export function statTypeToStatOpType(
 ): PolymeshPrimitivesStatisticsStatOpType {
   if (type === StatType.Count || type === StatType.ScopedCount) {
     return statisticsOpTypeToStatOpType(StatisticsOpType.Count, context);
-  } else {
-    return statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
   }
+  return statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
 }
 
 /**
@@ -3857,9 +3842,9 @@ export function transferRestrictionTypeToStatOpType(
 ): PolymeshPrimitivesStatisticsStatOpType {
   if (type === TransferRestrictionType.Count || type === TransferRestrictionType.ClaimCount) {
     return statisticsOpTypeToStatOpType(StatisticsOpType.Count, context);
-  } else {
-    return statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
   }
+
+  return statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
 }
 
 /**
