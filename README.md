@@ -14,7 +14,7 @@
 
 ## Polymesh version
 
-This release is compatible with Polymesh v4.1.0
+This release is compatible with Polymesh v5.0
 
 <!--- End of section --->
 
@@ -40,7 +40,7 @@ https://developers.polymath.network/token-studio-api-walkthrough/
 
 Polymesh SDK API Reference:
 
-https://developers.polymath.network/polymesh-sdk-api-reference/
+https://github.com/PolymeshAssociation/polymesh-sdk/wiki
 
 ### How to use
 
