@@ -1,13 +1,9 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import {
-  ConfigureDividendDistributionParams,
-  DividendDistribution,
-  Namespace,
-  TransactionQueue,
-} from '~/internal';
+import { DividendDistribution, Namespace, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { ConfigureDividendDistributionParams } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 import { Distributions } from '../Distributions';
@@ -113,21 +109,19 @@ describe('Distributions class', () => {
         ),
       });
       dsMockUtils.createQueryStub('corporateAction', 'details', {
-        returnValue: dsMockUtils.createMockText('something'),
+        returnValue: dsMockUtils.createMockBytes('something'),
       });
       dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockDistribution({
             from: { did: 'someDid', kind: 'Default' },
             currency: 'CLP',
-            /* eslint-disable @typescript-eslint/naming-convention */
-            per_share: new BigNumber(1000000000),
+            perShare: new BigNumber(1000000000),
             amount: new BigNumber(100000000000),
             remaining: new BigNumber(5000000000),
             reclaimed: false,
-            payment_at: new BigNumber(10000000000),
-            expires_at: null,
-            /* eslint-enable @typescript-eslint/naming-convention */
+            paymentAt: new BigNumber(10000000000),
+            expiresAt: null,
           })
         ),
       });
@@ -191,14 +185,12 @@ describe('Distributions class', () => {
           dsMockUtils.createMockDistribution({
             from: { did: 'someDid', kind: 'Default' },
             currency: 'CLP',
-            /* eslint-disable @typescript-eslint/naming-convention */
-            per_share: new BigNumber(1000),
+            perShare: new BigNumber(1000),
             amount: new BigNumber(100000),
             remaining: new BigNumber(5000),
             reclaimed: false,
-            payment_at: new BigNumber(100000000),
-            expires_at: null,
-            /* eslint-enable @typescript-eslint/naming-convention */
+            paymentAt: new BigNumber(100000000),
+            expiresAt: null,
           })
         ),
       });

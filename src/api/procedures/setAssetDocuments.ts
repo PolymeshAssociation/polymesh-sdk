@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { DocumentId } from 'polymesh-types/types';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
-import { AssetDocument, ErrorCode, TxTags } from '~/types';
+import { AssetDocument, ErrorCode, SetAssetDocumentsParams, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   assetDocumentToDocument,
@@ -10,13 +10,6 @@ import {
   stringToTicker,
 } from '~/utils/conversion';
 import { checkTxType, hasSameElements } from '~/utils/internal';
-
-export interface SetAssetDocumentsParams {
-  /**
-   * list of documents
-   */
-  documents: AssetDocument[];
-}
 
 export interface Storage {
   currentDocIds: DocumentId[];

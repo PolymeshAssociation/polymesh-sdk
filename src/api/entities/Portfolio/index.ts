@@ -10,16 +10,23 @@ import {
   Entity,
   Identity,
   moveFunds,
-  MoveFundsParams,
   PolymeshError,
   quitCustody,
   setCustodian,
-  SetCustodianParams,
 } from '~/internal';
 import { settlements } from '~/middleware/queries';
-import { Query } from '~/middleware/types';
-import { ErrorCode, NoArgsProcedureMethod, ProcedureMethod, ResultSet } from '~/types';
-import { Ensured, QueryReturnType } from '~/types/utils';
+import { portfolioMovementsQuery, settlementsQuery } from '~/middleware/queriesV2';
+import { Query, SettlementDirectionEnum, SettlementResultEnum } from '~/middleware/types';
+import { Query as QueryV2 } from '~/middleware/typesV2';
+import {
+  ErrorCode,
+  MoveFundsParams,
+  NoArgsProcedureMethod,
+  ProcedureMethod,
+  ResultSet,
+  SetCustodianParams,
+} from '~/types';
+import { Ensured, EnsuredV2, QueryReturnType } from '~/types/utils';
 import {
   addressToKey,
   balanceToBigNumber,
@@ -28,6 +35,7 @@ import {
   identityIdToString,
   keyToAddress,
   middlewarePortfolioToPortfolio,
+  middlewareV2PortfolioToPortfolio,
   portfolioIdToMeshPortfolioId,
   tickerToString,
 } from '~/utils/conversion';
@@ -46,7 +54,7 @@ export interface UniqueIdentifiers {
   id?: BigNumber;
 }
 
-interface HumanReadable {
+export interface HumanReadable {
   did: string;
   id?: string;
 }
@@ -182,8 +190,20 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       const ticker = tickerToString(key.args[1]);
       const locked = balanceToBigNumber(balance);
 
-      assetBalances[ticker].locked = locked;
-      assetBalances[ticker].free = assetBalances[ticker].total.minus(locked);
+      const tickerBalance = assetBalances[ticker];
+
+      /*
+       * this avoids the edge case where an asset holder creates an instruction with a leg
+       *   that transfers 0 tokens, while not holding any tokens. This causes the portfolio to list
+       *   a locked balance of 0, while not listing any unlocked balance. This will be addressed by a
+       *   chain update, but until then this is necessary
+       */
+      if (!tickerBalance) {
+        return;
+      }
+
+      tickerBalance.locked = locked;
+      tickerBalance.free = assetBalances[ticker].total.minus(locked);
     });
 
     const mask: PortfolioBalance[] | undefined = args?.assets.map(asset => ({
@@ -209,9 +229,9 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
   /**
    * Send an invitation to an Identity to assign it as custodian for this Portfolio
    *
-   * @note this will create an {@link AuthorizationRequest | Authorization Request} which has to be accepted by the `targetIdentity`.
-   *   An {@link Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived | authorizations.getReceived}.
-   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link Authorizations.getOne | authorizations.getOne}
+   * @note this will create an {@link api/entities/AuthorizationRequest!AuthorizationRequest | Authorization Request} which has to be accepted by the `targetIdentity`.
+   *   An {@link api/entities/Account!Account} or {@link api/entities/Identity!Identity} can fetch its pending Authorization Requests by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getReceived | authorizations.getReceived}.
+   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getOne | authorizations.getOne}
    *
    * @note required role:
    *   - Portfolio Custodian
@@ -344,7 +364,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
         blockNumber,
         status,
         accounts: addresses!.map(
-          address => new Account({ address: keyToAddress('0x' + address, context) }, context)
+          address => new Account({ address: keyToAddress(address, context) }, context)
         ),
         legs: settlementLegs.map(leg => {
           return {
@@ -379,9 +399,133 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
   }
 
   /**
+   * Retrieve a list of transactions where this portfolio was involved. Can be filtered using parameters
+   *
+   * @param filters.account - Account involved in the settlement
+   * @param filters.ticker - ticker involved in the transaction
+   *
+   * @note uses the middlewareV2
+   */
+  public async getTransactionHistoryV2(
+    filters: {
+      account?: string;
+      ticker?: string;
+    } = {}
+  ): Promise<HistoricSettlement[]> {
+    const {
+      context,
+      owner: { did: identityId },
+      _id: portfolioId,
+    } = this;
+
+    const { account, ticker } = filters;
+
+    const address = account ? addressToKey(account, context) : undefined;
+
+    const settlementsPromise = context.queryMiddlewareV2<EnsuredV2<QueryV2, 'legs'>>(
+      settlementsQuery({
+        identityId,
+        portfolioId,
+        address,
+        ticker,
+      })
+    );
+
+    const portfolioMovementsPromise = context.queryMiddlewareV2<
+      EnsuredV2<QueryV2, 'portfolioMovements'>
+    >(
+      portfolioMovementsQuery({
+        identityId,
+        portfolioId,
+        address,
+        ticker,
+      })
+    );
+
+    const [settlementsResult, portfolioMovementsResult, exists] = await Promise.all([
+      settlementsPromise,
+      portfolioMovementsPromise,
+      this.exists(),
+    ]);
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: notExistsMessage,
+      });
+    }
+
+    const data: HistoricSettlement[] = [];
+
+    const portfolioFilter = `${identityId}/${new BigNumber(portfolioId || 0).toString()}`;
+
+    const getDirection = (fromId: string, toId: string): SettlementDirectionEnum => {
+      if (fromId === portfolioFilter) {
+        return SettlementDirectionEnum.Outgoing;
+      }
+      if (toId === portfolioFilter) {
+        return SettlementDirectionEnum.Incoming;
+      }
+      return SettlementDirectionEnum.None;
+    };
+
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
+    settlementsResult.data.legs.nodes.forEach(({ settlement }) => {
+      const {
+        createdBlock,
+        result: settlementResult,
+        legs: { nodes: legs },
+      } = settlement!;
+
+      const { blockId, hash } = createdBlock!;
+
+      data.push({
+        blockNumber: new BigNumber(blockId),
+        blockHash: hash,
+        status: settlementResult as SettlementResultEnum,
+        accounts: legs[0].addresses.map(
+          (accountAddress: string) =>
+            new Account({ address: keyToAddress(accountAddress, context) }, context)
+        ),
+        legs: legs.map(({ from, to, fromId, toId, assetId, amount }) => ({
+          asset: new Asset({ ticker: assetId }, context),
+          amount: new BigNumber(amount).shiftedBy(-6),
+          direction: getDirection(fromId, toId),
+          from: middlewareV2PortfolioToPortfolio(from!, context),
+          to: middlewareV2PortfolioToPortfolio(to!, context),
+        })),
+      });
+    });
+
+    portfolioMovementsResult.data.portfolioMovements.nodes.forEach(
+      ({ createdBlock, from, to, fromId, toId, assetId, amount, address: accountAddress }) => {
+        const { blockId, hash } = createdBlock!;
+        data.push({
+          blockNumber: new BigNumber(blockId),
+          blockHash: hash,
+          status: SettlementResultEnum.Executed,
+          accounts: [new Account({ address: keyToAddress(accountAddress, context) }, context)],
+          legs: [
+            {
+              asset: new Asset({ ticker: assetId }, context),
+              amount: new BigNumber(amount).shiftedBy(-6),
+              direction: getDirection(fromId, toId),
+              from: middlewareV2PortfolioToPortfolio(from!, context),
+              to: middlewareV2PortfolioToPortfolio(to!, context),
+            },
+          ],
+        });
+      }
+    );
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
+
+    return data;
+  }
+
+  /**
    * Return the Portfolio ID and owner DID
    */
-  public toJson(): HumanReadable {
+  public toHuman(): HumanReadable {
     const {
       _id: id,
       owner: { did },

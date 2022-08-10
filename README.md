@@ -14,13 +14,9 @@
 
 ## Polymesh version
 
-This release is compatible with Polymesh v4.1.0
+This release is compatible with Polymesh v5.0
 
 <!--- End of section --->
-
-## ⚠️ NPM migration
-
-The npm repository has moved to a new namespace. Make sure your `package.json` points to `@polymeshassociation/polymesh-sdk`.
 
 ## Getting Started
 
@@ -44,7 +40,7 @@ https://developers.polymath.network/token-studio-api-walkthrough/
 
 Polymesh SDK API Reference:
 
-https://developers.polymath.network/polymesh-sdk-api-reference/
+https://github.com/PolymeshAssociation/polymesh-sdk/wiki
 
 ### How to use
 
@@ -55,6 +51,12 @@ https://developers.polymath.network/polymesh-sdk-api-reference/
 Or, if you're using yarn
 
 `yarn add @polymathnetwork/polymesh-sdk`
+
+Or, if using pnpm
+
+`pnpm add @polymathnetwork/polymesh-sdk`
+
+**NOTE** it is _highly_ recommended that you use one of these three package managers. This project uses package resolutions/overrides to pin certain problematic dependencies, and these are only supported by the aforementioned package managers. Using a different package manager may result in unexpected behavior
 
 **NOTE** if using TypeScript the compiler option "skipLibCheck" should be set to true in your tsconfig.json file
 

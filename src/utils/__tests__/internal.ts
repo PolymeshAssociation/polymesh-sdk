@@ -1,31 +1,65 @@
+import { Bytes } from '@polkadot/types';
+import { AccountId } from '@polkadot/types/interfaces';
+import {
+  PolymeshPrimitivesIdentityClaimClaimType,
+  PolymeshPrimitivesIdentityId,
+  PolymeshPrimitivesSecondaryKeyKeyRecord,
+} from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { IdentityId, ModuleName, PortfolioName } from 'polymesh-types/types';
+import { IdentityId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Asset, Context, PolymeshError, PostTransactionValue, Procedure } from '~/internal';
+import {
+  Asset,
+  Context,
+  Identity,
+  PolymeshError,
+  PostTransactionValue,
+  Procedure,
+} from '~/internal';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { getWebSocketInstance, MockWebSocket } from '~/testUtils/mocks/dataSources';
 import {
+  createMockStatisticsStatClaim,
+  getWebSocketInstance,
+  MockCodec,
+  MockWebSocket,
+} from '~/testUtils/mocks/dataSources';
+import {
+  Account,
   CaCheckpointType,
   CalendarPeriod,
   CalendarUnit,
   ClaimType,
   CountryCode,
   ErrorCode,
+  ModuleName,
+  PermissionedAccount,
   ProcedureMethod,
+  RemoveAssetStatParams,
+  StatType,
+  SubCallback,
+  TransferRestrictionType,
   TxTags,
 } from '~/types';
+import { StatisticsOpType } from '~/types/internal';
 import { tuple } from '~/types/utils';
+import { MAX_TICKER_LENGTH } from '~/utils/constants';
+import * as utilsConversionModule from '~/utils/conversion';
 
 import {
   assertAddressValid,
   assertExpectedChainVersion,
   assertIsInteger,
   assertIsPositive,
+  assertTickerValid,
   asTicker,
   calculateNextKey,
+  compareStatsToInput,
+  compareStatTypeToTransferRestrictionType,
+  compareTransferRestrictionToInput,
+  compareTransferRestrictionToStat,
   createClaim,
   createProcedureMethod,
   delay,
@@ -35,9 +69,11 @@ import {
   getExemptedIds,
   getIdentity,
   getPortfolioIdsByName,
+  getSecondaryAccountPermissions,
   hasSameElements,
   isModuleOrTagMatch,
   isPrintableAscii,
+  neededStatTypeForRestrictionInput,
   optionize,
   padString,
   periodComplexity,
@@ -49,7 +85,6 @@ import {
   unwrapValue,
   unwrapValues,
 } from '../internal';
-
 jest.mock(
   '~/api/entities/Asset',
   require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
@@ -216,7 +251,7 @@ describe('filterEventRecords', () => {
     filterRecordsStub.withArgs(mod, eventName).returns([]);
 
     expect(() => filterEventRecords(mockReceipt, mod, eventName)).toThrow(
-      `Event "${mod}.${eventName}" wasn't fired even though the corresponding transaction was completed. Please report this to the Polymath team`
+      `Event "${mod}.${eventName}" wasn't fired even though the corresponding transaction was completed. Please report this to the Polymesh team`
     );
   });
 });
@@ -260,7 +295,7 @@ describe('createClaim', () => {
     });
 
     type = 'InvestorUniqueness';
-    scope = { type: ClaimScopeTypeEnum.Ticker, value: 'someTicker' };
+    scope = { type: ClaimScopeTypeEnum.Ticker, value: 'SOME_TICKER' };
 
     result = createClaim(type, null, scope, id, undefined);
     expect(result).toEqual({
@@ -740,7 +775,8 @@ describe('hasSameElements', () => {
 describe('getPortfolioIdsByName', () => {
   let context: Context;
   let portfoliosStub: sinon.SinonStub;
-  let rawNames: PortfolioName[];
+  let firstPortfolioName: MockCodec<Bytes>;
+  let rawNames: Bytes[];
   let identityId: IdentityId;
 
   beforeAll(() => {
@@ -750,7 +786,8 @@ describe('getPortfolioIdsByName', () => {
 
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
-    rawNames = [dsMockUtils.createMockText('someName'), dsMockUtils.createMockText('otherName')];
+    firstPortfolioName = dsMockUtils.createMockBytes('someName');
+    rawNames = [firstPortfolioName, dsMockUtils.createMockBytes('otherName')];
     identityId = dsMockUtils.createMockIdentityId('someDid');
     dsMockUtils.createQueryStub('portfolio', 'nameToNumber', {
       multi: [
@@ -773,13 +810,15 @@ describe('getPortfolioIdsByName', () => {
   });
 
   it('should return portfolio numbers for given portfolio name, and null for names that do not exist', async () => {
-    portfoliosStub.resolves(rawNames[0]);
+    portfoliosStub.resolves(firstPortfolioName);
+    firstPortfolioName.eq = sinon.stub();
+    firstPortfolioName.eq.withArgs(rawNames[0]).returns(true);
     const result = await getPortfolioIdsByName(
       identityId,
       [
         ...rawNames,
-        dsMockUtils.createMockText('anotherName'),
-        dsMockUtils.createMockText('yetAnotherName'),
+        dsMockUtils.createMockBytes('anotherName'),
+        dsMockUtils.createMockBytes('yetAnotherName'),
       ],
       context
     );
@@ -910,8 +949,11 @@ describe('getExemptedIds', () => {
 
 describe('assertExpectedChainVersion', () => {
   let client: MockWebSocket;
+  let warnStub: sinon.SinonStub;
+
   beforeAll(() => {
     dsMockUtils.initMocks();
+    warnStub = sinon.stub(console, 'warn');
   });
 
   beforeEach(() => {
@@ -922,21 +964,57 @@ describe('assertExpectedChainVersion', () => {
     dsMockUtils.reset();
   });
 
-  it('should resolve if it receives expected chain version', () => {
+  afterAll(() => {
+    warnStub.restore();
+  });
+
+  it('should resolve if it receives both expected RPC node and chain spec version', () => {
     const signal = assertExpectedChainVersion('ws://example.com');
     client.onopen();
 
     return expect(signal).resolves.not.toThrow();
   });
 
-  it('should throw an error given an unexpected version', () => {
+  it('should throw an error given a major RPC node version mismatch', () => {
     const signal = assertExpectedChainVersion('ws://example.com');
-    client.sendVersion('3.0.0');
+    client.sendRpcVersion('3.0.0');
     const expectedError = new PolymeshError({
       code: ErrorCode.FatalError,
-      message: 'Unsupported Polymesh version. Please upgrade the SDK',
+      message: 'Unsupported Polymesh RPC node version. Please upgrade the SDK',
     });
     return expect(signal).rejects.toThrowError(expectedError);
+  });
+
+  it('should log a warning given a minor or patch RPC node version mismatch', async () => {
+    const signal = assertExpectedChainVersion('ws://example.com');
+    client.sendSpecVersion('5000002');
+    client.sendRpcVersion('5.1.0');
+    await signal;
+    sinon.assert.calledWith(
+      warnStub,
+      'This version of the SDK supports Polymesh RPC node version 5.0.2. The node is at version 5.1.0. Please upgrade the SDK'
+    );
+  });
+
+  it('should throw an error given a major chain spec version mismatch', () => {
+    const signal = assertExpectedChainVersion('ws://example.com');
+    client.sendSpecVersion('3000000');
+    const expectedError = new PolymeshError({
+      code: ErrorCode.FatalError,
+      message: 'Unsupported Polymesh chain spec version. Please upgrade the SDK',
+    });
+    return expect(signal).rejects.toThrowError(expectedError);
+  });
+
+  it('should log a warning given a minor or patch chain spec version mismatch', async () => {
+    const signal = assertExpectedChainVersion('ws://example.com');
+    client.sendSpecVersion('5001000');
+    client.sendRpcVersion('5.0.2');
+    await signal;
+    sinon.assert.calledWith(
+      warnStub,
+      'This version of the SDK supports Polymesh chain spec version 5.0.2. The chain spec is at version 5.1.0. Please upgrade the SDK'
+    );
   });
 
   it('should throw an error if the node cannot be reached', () => {
@@ -947,5 +1025,744 @@ describe('assertExpectedChainVersion', () => {
     });
     client.triggerError(new Error('could not connect'));
     return expect(signal).rejects.toThrowError(expectedError);
+  });
+});
+
+describe('assertTickerValid', () => {
+  it('should throw an error if the string is empty', () => {
+    const ticker = '';
+
+    expect(() => assertTickerValid(ticker)).toThrow(
+      `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} character`
+    );
+  });
+
+  it('should throw an error if the string length exceeds the max ticker length', () => {
+    const ticker = 'VERY_LONG_TICKER';
+
+    expect(() => assertTickerValid(ticker)).toThrow(
+      `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} character`
+    );
+  });
+
+  it('should throw an error if the string contains unreadable characters', () => {
+    const ticker = `ILLEGAL_${String.fromCharCode(65533)}`;
+
+    expect(() => assertTickerValid(ticker)).toThrow(
+      'Only printable ASCII is allowed as ticker name'
+    );
+  });
+
+  it('should throw an error if the string is not in upper case', () => {
+    const ticker = 'FakeTicker';
+
+    expect(() => assertTickerValid(ticker)).toThrow('Ticker cannot contain lower case letters');
+  });
+
+  it('should not throw an error', () => {
+    const ticker = 'FAKE_TICKER';
+
+    assertTickerValid(ticker);
+  });
+});
+
+describe('neededStatTypeForRestrictionInput', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return a raw StatType based on the given TransferRestrictionType', () => {
+    const context = dsMockUtils.getContextInstance();
+    const mockClaimIssuer: [
+      PolymeshPrimitivesIdentityClaimClaimType,
+      PolymeshPrimitivesIdentityId
+    ] = [dsMockUtils.createMockClaimType(), dsMockUtils.createMockIdentityId()];
+
+    sinon.stub(utilsConversionModule, 'claimIssuerToMeshClaimIssuer').returns(mockClaimIssuer);
+
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStatOpType', StatisticsOpType.Count)
+      .returns('Count');
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStatOpType', StatisticsOpType.Balance)
+      .returns('Balance');
+
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStatType', { op: 'Count', claimIssuer: undefined })
+      .returns('CountStat');
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStatType', { op: 'Balance', claimIssuer: undefined })
+      .returns('BalanceStat');
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStatType', {
+        op: 'Balance',
+        claimIssuer: mockClaimIssuer,
+      })
+      .returns('ScopedBalanceStat');
+
+    let result = neededStatTypeForRestrictionInput(
+      { type: TransferRestrictionType.Count },
+      context
+    );
+
+    expect(result).toEqual('CountStat');
+
+    result = neededStatTypeForRestrictionInput(
+      { type: TransferRestrictionType.Percentage },
+      context
+    );
+    expect(result).toEqual('BalanceStat');
+
+    result = neededStatTypeForRestrictionInput(
+      {
+        type: TransferRestrictionType.ClaimPercentage,
+        claimIssuer: {
+          claimType: ClaimType.Jurisdiction,
+          issuer: entityMockUtils.getIdentityInstance(),
+        },
+      },
+      context
+    );
+    expect(result).toEqual('ScopedBalanceStat');
+  });
+});
+
+describe('compareTransferRestrictionToInput', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return true when the input matches the TransferRestriction type', () => {
+    const countTransferRestriction = dsMockUtils.createMockTransferCondition({
+      MaxInvestorCount: dsMockUtils.createMockU64(new BigNumber(10)),
+    });
+    let result = compareTransferRestrictionToInput(countTransferRestriction, {
+      type: TransferRestrictionType.Count,
+      value: new BigNumber(10),
+    });
+    expect(result).toEqual(true);
+
+    const percentTransferRestriction = dsMockUtils.createMockTransferCondition({
+      MaxInvestorOwnership: dsMockUtils.createMockPermill(new BigNumber(100000)),
+    });
+
+    result = compareTransferRestrictionToInput(percentTransferRestriction, {
+      type: TransferRestrictionType.Percentage,
+      value: new BigNumber(10),
+    });
+    expect(result).toEqual(true);
+
+    const claimCountTransferRestriction = dsMockUtils.createMockTransferCondition({
+      ClaimCount: [
+        dsMockUtils.createMockStatisticsStatClaim({ Accredited: dsMockUtils.createMockBool(true) }),
+        dsMockUtils.createMockIdentityId('someDid'),
+        dsMockUtils.createMockU64(new BigNumber(10)),
+        dsMockUtils.createMockOption(),
+      ],
+    });
+
+    result = compareTransferRestrictionToInput(claimCountTransferRestriction, {
+      value: {
+        min: new BigNumber(10),
+        claim: { type: ClaimType.Accredited, accredited: true },
+        issuer: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
+      },
+      type: TransferRestrictionType.ClaimCount,
+    });
+
+    expect(result).toEqual(true);
+
+    const claimCountTransferRestrictionWithMax = dsMockUtils.createMockTransferCondition({
+      ClaimCount: [
+        dsMockUtils.createMockStatisticsStatClaim({ Affiliate: dsMockUtils.createMockBool(true) }),
+        dsMockUtils.createMockIdentityId('someDid'),
+        dsMockUtils.createMockU64(new BigNumber(10)),
+        dsMockUtils.createMockOption(dsMockUtils.createMockU64(new BigNumber(20))),
+      ],
+    });
+
+    result = compareTransferRestrictionToInput(claimCountTransferRestrictionWithMax, {
+      value: {
+        min: new BigNumber(10),
+        max: new BigNumber(20),
+        claim: { type: ClaimType.Affiliate, affiliate: true },
+        issuer: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
+      },
+      type: TransferRestrictionType.ClaimCount,
+    });
+
+    expect(result).toEqual(true);
+
+    const claimPercentageTransferRestriction = dsMockUtils.createMockTransferCondition({
+      ClaimOwnership: [
+        dsMockUtils.createMockStatisticsStatClaim({
+          Jurisdiction: dsMockUtils.createMockOption(
+            dsMockUtils.createMockCountryCode(CountryCode.Ca)
+          ),
+        }),
+        dsMockUtils.createMockIdentityId('someDid'),
+        dsMockUtils.createMockPermill(new BigNumber(100000)),
+        dsMockUtils.createMockPermill(new BigNumber(200000)),
+      ],
+    });
+
+    result = compareTransferRestrictionToInput(claimPercentageTransferRestriction, {
+      value: {
+        min: new BigNumber(10),
+        max: new BigNumber(20),
+        claim: { type: ClaimType.Jurisdiction, countryCode: CountryCode.Ca },
+        issuer: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
+      },
+      type: TransferRestrictionType.ClaimPercentage,
+    });
+
+    expect(result).toEqual(true);
+  });
+
+  it('should return false if things do not match', () => {
+    const claimCountTransferRestrictionWithMax = dsMockUtils.createMockTransferCondition({
+      ClaimCount: [
+        dsMockUtils.createMockStatisticsStatClaim({ Affiliate: dsMockUtils.createMockBool(true) }),
+        dsMockUtils.createMockIdentityId('someDid'),
+        dsMockUtils.createMockU64(new BigNumber(10)),
+        dsMockUtils.createMockOption(dsMockUtils.createMockU64(new BigNumber(20))),
+      ],
+    });
+
+    let result = compareTransferRestrictionToInput(claimCountTransferRestrictionWithMax, {
+      value: {
+        min: new BigNumber(10),
+        max: new BigNumber(21),
+        claim: { type: ClaimType.Affiliate, affiliate: true },
+        issuer: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
+      },
+      type: TransferRestrictionType.ClaimCount,
+    });
+
+    expect(result).toEqual(false);
+
+    const claimPercentageTransferRestrictionNoMax = dsMockUtils.createMockTransferCondition({
+      ClaimCount: [
+        dsMockUtils.createMockStatisticsStatClaim({
+          Accredited: dsMockUtils.createMockBool(true),
+        }),
+        dsMockUtils.createMockIdentityId('someDid'),
+        dsMockUtils.createMockU64(new BigNumber(10)),
+        dsMockUtils.createMockOption(),
+      ],
+    });
+
+    result = compareTransferRestrictionToInput(claimPercentageTransferRestrictionNoMax, {
+      value: {
+        min: new BigNumber(10),
+        max: new BigNumber(20),
+        claim: { type: ClaimType.Affiliate, affiliate: true },
+        issuer: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
+      },
+      type: TransferRestrictionType.ClaimCount,
+    });
+
+    expect(result).toEqual(false);
+
+    const claimPercentageTransferRestriction = dsMockUtils.createMockTransferCondition({
+      ClaimOwnership: [
+        dsMockUtils.createMockStatisticsStatClaim({
+          Jurisdiction: dsMockUtils.createMockOption(
+            dsMockUtils.createMockCountryCode(CountryCode.Ca)
+          ),
+        }),
+        dsMockUtils.createMockIdentityId('someDid'),
+        dsMockUtils.createMockPermill(new BigNumber(100000)),
+        dsMockUtils.createMockPermill(new BigNumber(200000)),
+      ],
+    });
+
+    result = compareTransferRestrictionToInput(claimPercentageTransferRestriction, {
+      value: {
+        min: new BigNumber(10),
+        max: new BigNumber(21),
+        claim: { type: ClaimType.Jurisdiction, countryCode: CountryCode.Ca },
+        issuer: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
+      },
+      type: TransferRestrictionType.ClaimPercentage,
+    });
+
+    expect(result).toEqual(false);
+
+    result = compareTransferRestrictionToInput(claimPercentageTransferRestriction, {
+      value: {
+        min: new BigNumber(10),
+        max: new BigNumber(21),
+        claim: { type: ClaimType.Jurisdiction, countryCode: CountryCode.Ca },
+        issuer: entityMockUtils.getIdentityInstance({ did: 'someDid' }),
+      },
+      type: TransferRestrictionType.ClaimPercentage,
+    });
+
+    expect(result).toEqual(false);
+  });
+});
+
+describe('compareStatTypeToTransferRestrictionType', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+  const did = 'someDid';
+  const issuerId = dsMockUtils.createMockIdentityId(did);
+
+  const countStatType = dsMockUtils.createMockStatisticsStatType({
+    op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count),
+  });
+  const percentStatType = dsMockUtils.createMockStatisticsStatType({
+    op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Balance),
+  });
+
+  const claimCountStat = dsMockUtils.createMockStatisticsStatType({
+    op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count),
+    claimIssuer: [dsMockUtils.createMockClaimType(ClaimType.Affiliate), issuerId],
+  });
+  const claimPercentageStat = dsMockUtils.createMockStatisticsStatType({
+    op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Balance),
+    claimIssuer: [dsMockUtils.createMockClaimType(ClaimType.Affiliate), issuerId],
+  });
+
+  it('should return true if the PolymeshPrimitivesStatisticsStatType matches the given TransferRestriction', () => {
+    let result = compareStatTypeToTransferRestrictionType(
+      countStatType,
+      TransferRestrictionType.Count
+    );
+    expect(result).toEqual(true);
+
+    result = compareStatTypeToTransferRestrictionType(
+      percentStatType,
+      TransferRestrictionType.Percentage
+    );
+    expect(result).toEqual(true);
+
+    result = compareStatTypeToTransferRestrictionType(
+      claimCountStat,
+      TransferRestrictionType.ClaimCount
+    );
+    expect(result).toEqual(true);
+
+    result = compareStatTypeToTransferRestrictionType(
+      claimPercentageStat,
+      TransferRestrictionType.ClaimPercentage
+    );
+    expect(result).toEqual(true);
+  });
+
+  it('should return false if the PolymeshPrimitivesStatisticsStatType does not match the given TransferRestriction', () => {
+    let result = compareStatTypeToTransferRestrictionType(
+      countStatType,
+      TransferRestrictionType.Percentage
+    );
+    expect(result).toEqual(false);
+
+    result = compareStatTypeToTransferRestrictionType(
+      percentStatType,
+      TransferRestrictionType.Count
+    );
+    expect(result).toEqual(false);
+
+    result = compareStatTypeToTransferRestrictionType(
+      claimCountStat,
+      TransferRestrictionType.ClaimPercentage
+    );
+    expect(result).toEqual(false);
+
+    result = compareStatTypeToTransferRestrictionType(
+      claimPercentageStat,
+      TransferRestrictionType.ClaimCount
+    );
+    expect(result).toEqual(false);
+  });
+});
+
+describe('compareStatsToInput', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  const did = 'someDid';
+  const issuer = entityMockUtils.getIdentityInstance({ did });
+  const issuerId = dsMockUtils.createMockIdentityId(did);
+  const ticker = 'TICKER';
+
+  it('should return true if input matches stat', () => {
+    const countStat = dsMockUtils.createMockStatisticsStatType({
+      op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count),
+    });
+
+    let args: RemoveAssetStatParams = {
+      type: StatType.Count,
+      ticker,
+    };
+
+    let result = compareStatsToInput(countStat, args);
+    expect(result).toEqual(true);
+
+    const percentStat = dsMockUtils.createMockStatisticsStatType({
+      op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Balance),
+    });
+    args = { type: StatType.Percentage, ticker };
+    result = compareStatsToInput(percentStat, args);
+    expect(result).toEqual(true);
+
+    const claimCountStat = dsMockUtils.createMockStatisticsStatType({
+      op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count),
+      claimIssuer: [dsMockUtils.createMockClaimType(ClaimType.Affiliate), issuerId],
+    });
+    args = {
+      type: StatType.ScopedCount,
+      issuer,
+      claimType: ClaimType.Affiliate,
+      ticker,
+    };
+    result = compareStatsToInput(claimCountStat, args);
+    expect(result).toEqual(true);
+
+    const claimPercentageStat = dsMockUtils.createMockStatisticsStatType({
+      op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Balance),
+      claimIssuer: [dsMockUtils.createMockClaimType(ClaimType.Affiliate), issuerId],
+    });
+    args = {
+      type: StatType.ScopedPercentage,
+      issuer,
+      claimType: ClaimType.Affiliate,
+      ticker,
+    };
+    result = compareStatsToInput(claimPercentageStat, args);
+    expect(result).toEqual(true);
+  });
+
+  it('should return false if input does not match the stat', () => {
+    const countStat = dsMockUtils.createMockStatisticsStatType({
+      op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count),
+    });
+
+    let args: RemoveAssetStatParams = {
+      type: StatType.Percentage,
+      ticker,
+    };
+    let result = compareStatsToInput(countStat, args);
+    expect(result).toEqual(false);
+
+    const percentStat = dsMockUtils.createMockStatisticsStatType({
+      op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Balance),
+    });
+    args = {
+      type: StatType.ScopedPercentage,
+      issuer,
+      claimType: ClaimType.Accredited,
+      ticker,
+    };
+    result = compareStatsToInput(percentStat, args);
+    expect(result).toEqual(false);
+
+    const claimCountStat = dsMockUtils.createMockStatisticsStatType({
+      op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count),
+      claimIssuer: [dsMockUtils.createMockClaimType(ClaimType.Jurisdiction), issuerId],
+    });
+    args = {
+      type: StatType.ScopedCount,
+      issuer,
+      claimType: ClaimType.Affiliate,
+      ticker,
+    };
+    result = compareStatsToInput(claimCountStat, args);
+    expect(result).toEqual(false);
+
+    args = {
+      type: StatType.ScopedCount,
+      issuer: entityMockUtils.getIdentityInstance({ did: 'differentDid' }),
+      claimType: ClaimType.Jurisdiction,
+      ticker,
+    };
+    result = compareStatsToInput(claimCountStat, args);
+    expect(result).toEqual(false);
+
+    result = compareStatsToInput(percentStat, args);
+    expect(result).toEqual(false);
+
+    args = {
+      type: StatType.Count,
+      ticker,
+    };
+
+    result = compareStatsToInput(claimCountStat, args);
+    expect(result).toEqual(false);
+  });
+});
+
+describe('compareTransferRestrictionToStat', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+  const did = 'someDid';
+  const min = new BigNumber(10);
+  const max = new BigNumber(20);
+  const issuer = entityMockUtils.getIdentityInstance({ did });
+  const rawMax = dsMockUtils.createMockU64(max);
+  const optionMax = dsMockUtils.createMockOption(rawMax);
+  const rawMin = dsMockUtils.createMockU64(min);
+  const rawIssuerId = dsMockUtils.createMockIdentityId(did);
+  const rawClaim = createMockStatisticsStatClaim({ Accredited: dsMockUtils.createMockBool(true) });
+
+  it('should return true when a transfer restriction matches a stat', () => {
+    const countCondition = dsMockUtils.createMockTransferCondition({ MaxInvestorCount: rawMax });
+    let result = compareTransferRestrictionToStat(countCondition, StatType.Count);
+    expect(result).toEqual(true);
+
+    const percentCondition = dsMockUtils.createMockTransferCondition({
+      MaxInvestorOwnership: rawMax,
+    });
+    result = compareTransferRestrictionToStat(percentCondition, StatType.Percentage);
+    expect(result).toEqual(true);
+
+    const claimCountCondition = dsMockUtils.createMockTransferCondition({
+      ClaimCount: [rawClaim, rawIssuerId, rawMin, optionMax],
+    });
+    result = compareTransferRestrictionToStat(claimCountCondition, StatType.ScopedCount, {
+      claimType: ClaimType.Accredited,
+      issuer,
+    });
+    expect(result).toEqual(true);
+
+    const claimPercentageCondition = dsMockUtils.createMockTransferCondition({
+      ClaimOwnership: [rawClaim, rawIssuerId, rawMin, rawMax],
+    });
+    result = compareTransferRestrictionToStat(claimPercentageCondition, StatType.ScopedPercentage, {
+      claimType: ClaimType.Accredited,
+      issuer,
+    });
+    expect(result).toEqual(true);
+  });
+
+  it('should return false when a transfer restriction does not match the given stat', () => {
+    const countCondition = dsMockUtils.createMockTransferCondition({ MaxInvestorCount: rawMax });
+    let result = compareTransferRestrictionToStat(countCondition, StatType.Percentage);
+    expect(result).toEqual(false);
+
+    const percentCondition = dsMockUtils.createMockTransferCondition({
+      MaxInvestorOwnership: rawMax,
+    });
+    result = compareTransferRestrictionToStat(percentCondition, StatType.Count);
+    expect(result).toEqual(false);
+
+    const claimCountCondition = dsMockUtils.createMockTransferCondition({
+      ClaimCount: [rawClaim, rawIssuerId, rawMin, optionMax],
+    });
+    result = compareTransferRestrictionToStat(claimCountCondition, StatType.ScopedCount, {
+      claimType: ClaimType.Affiliate,
+      issuer,
+    });
+    expect(result).toEqual(false);
+
+    const claimPercentageCondition = dsMockUtils.createMockTransferCondition({
+      ClaimOwnership: [rawClaim, rawIssuerId, rawMin, rawMax],
+    });
+    result = compareTransferRestrictionToStat(claimPercentageCondition, StatType.ScopedPercentage, {
+      claimType: ClaimType.Accredited,
+      issuer: entityMockUtils.getIdentityInstance({ did: 'otherDid' }),
+    });
+    expect(result).toEqual(false);
+  });
+});
+
+describe('method: getSecondaryAccountPermissions', () => {
+  const accountId = 'someAccountId';
+  const did = 'someDid';
+
+  let account: Account;
+  let fakeResult: PermissionedAccount[];
+
+  let rawPrimaryKeyRecord: PolymeshPrimitivesSecondaryKeyKeyRecord;
+  let rawSecondaryKeyRecord: PolymeshPrimitivesSecondaryKeyKeyRecord;
+  let rawMultiSigKeyRecord: PolymeshPrimitivesSecondaryKeyKeyRecord;
+  let identityIdToStringStub: sinon.SinonStub<[PolymeshPrimitivesIdentityId], string>;
+  let stringToAccountIdStub: sinon.SinonStub<[string, Context], AccountId>;
+  let meshPermissionsToPermissionsStub: sinon.SinonStub;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    account = entityMockUtils.getAccountInstance({ address: accountId });
+    meshPermissionsToPermissionsStub = sinon.stub(
+      utilsConversionModule,
+      'meshPermissionsToPermissions'
+    );
+    stringToAccountIdStub = sinon.stub(utilsConversionModule, 'stringToAccountId');
+    identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
+    account = entityMockUtils.getAccountInstance();
+    fakeResult = [
+      {
+        account,
+        permissions: {
+          assets: null,
+          portfolios: null,
+          transactions: null,
+          transactionGroups: [],
+        },
+      },
+    ];
+  });
+
+  afterAll(() => {
+    sinon.restore();
+    dsMockUtils.cleanup();
+  });
+
+  beforeEach(() => {
+    rawPrimaryKeyRecord = dsMockUtils.createMockKeyRecord({
+      PrimaryKey: dsMockUtils.createMockIdentityId(did),
+    });
+    rawSecondaryKeyRecord = dsMockUtils.createMockKeyRecord({
+      SecondaryKey: [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockPermissions()],
+    });
+    rawMultiSigKeyRecord = dsMockUtils.createMockKeyRecord({
+      MultiSigSignerKey: dsMockUtils.createMockAccountId('someAddress'),
+    });
+
+    meshPermissionsToPermissionsStub.returns({
+      assets: null,
+      portfolios: null,
+      transactions: null,
+      transactionGroups: [],
+    });
+    stringToAccountIdStub.returns(dsMockUtils.createMockAccountId(accountId));
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  it('should return a list of Accounts', async () => {
+    const context = dsMockUtils.getContextInstance();
+    dsMockUtils.createQueryStub('identity', 'keyRecords', {
+      multi: [
+        dsMockUtils.createMockOption(rawPrimaryKeyRecord),
+        dsMockUtils.createMockOption(rawSecondaryKeyRecord),
+        dsMockUtils.createMockOption(rawMultiSigKeyRecord),
+      ],
+    });
+    identityIdToStringStub.returns('someDid');
+    const identity = new Identity({ did: 'someDid' }, context);
+
+    const result = await getSecondaryAccountPermissions(
+      {
+        accounts: [
+          entityMockUtils.getAccountInstance(),
+          account,
+          entityMockUtils.getAccountInstance(),
+        ],
+        identity,
+      },
+      context
+    );
+
+    expect(result).toEqual(fakeResult);
+  });
+
+  it('should filter out Accounts if they do not belong to the given identity', () => {
+    const mockContext = dsMockUtils.getContextInstance();
+    const otherSecondaryKey = dsMockUtils.createMockKeyRecord({
+      SecondaryKey: [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockPermissions()],
+    });
+    dsMockUtils.createQueryStub('identity', 'keyRecords', {
+      multi: [
+        dsMockUtils.createMockOption(rawPrimaryKeyRecord),
+        dsMockUtils.createMockOption(otherSecondaryKey),
+        dsMockUtils.createMockOption(rawMultiSigKeyRecord),
+      ],
+    });
+    identityIdToStringStub.returns('someDid');
+    const identity = new Identity({ did: 'otherDid' }, mockContext);
+
+    return expect(
+      getSecondaryAccountPermissions(
+        {
+          accounts: [
+            entityMockUtils.getAccountInstance(),
+            account,
+            entityMockUtils.getAccountInstance(),
+          ],
+          identity,
+        },
+        mockContext
+      )
+    ).resolves.toEqual([]);
+  });
+
+  it('should allow for subscription', async () => {
+    const mockContext = dsMockUtils.getContextInstance();
+    const callback: SubCallback<PermissionedAccount[]> = sinon.stub();
+    const unsubCallback = 'unsubCallBack';
+
+    const keyRecordsStub = dsMockUtils.createQueryStub('identity', 'keyRecords');
+    keyRecordsStub.multi.yields([
+      dsMockUtils.createMockOption(rawPrimaryKeyRecord),
+      dsMockUtils.createMockOption(rawSecondaryKeyRecord),
+      dsMockUtils.createMockOption(rawMultiSigKeyRecord),
+    ]);
+    keyRecordsStub.multi.returns(unsubCallback);
+
+    identityIdToStringStub.returns('someDid');
+    const identity = new Identity({ did }, mockContext);
+
+    const result = await getSecondaryAccountPermissions(
+      {
+        accounts: [
+          entityMockUtils.getAccountInstance(),
+          account,
+          entityMockUtils.getAccountInstance(),
+        ],
+        identity,
+      },
+      mockContext,
+      callback
+    );
+
+    sinon.assert.calledWithExactly(callback as sinon.SinonStub, fakeResult);
+    expect(result).toEqual(unsubCallback);
   });
 });

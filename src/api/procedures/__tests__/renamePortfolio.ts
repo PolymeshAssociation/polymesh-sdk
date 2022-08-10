@@ -1,4 +1,4 @@
-import { Text, u64 } from '@polkadot/types';
+import { Bytes, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { IdentityId } from 'polymesh-types/types';
 import sinon from 'sinon';
@@ -24,11 +24,11 @@ describe('renamePortfolio procedure', () => {
   const identityId = dsMockUtils.createMockIdentityId(did);
   const rawPortfolioNumber = dsMockUtils.createMockU64(id);
   const newName = 'newName';
-  const rawNewName = dsMockUtils.createMockText(newName);
+  const rawNewName = dsMockUtils.createMockBytes(newName);
   let mockContext: Mocked<Context>;
   let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
   let bigNumberToU64Stub: sinon.SinonStub<[BigNumber, Context], u64>;
-  let stringToTextStub: sinon.SinonStub<[string, Context], Text>;
+  let stringToBytesStub: sinon.SinonStub<[string, Context], Bytes>;
   let getPortfolioIdsByNameStub: sinon.SinonStub;
 
   beforeAll(() => {
@@ -37,7 +37,7 @@ describe('renamePortfolio procedure', () => {
     entityMockUtils.initMocks();
     stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
     bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
-    stringToTextStub = sinon.stub(utilsConversionModule, 'stringToText');
+    stringToBytesStub = sinon.stub(utilsConversionModule, 'stringToBytes');
     getPortfolioIdsByNameStub = sinon.stub(utilsInternalModule, 'getPortfolioIdsByName');
   });
 
@@ -50,7 +50,7 @@ describe('renamePortfolio procedure', () => {
         isOwnedBy: true,
       },
     });
-    stringToTextStub.returns(rawNewName);
+    stringToBytesStub.returns(rawNewName);
   });
 
   afterEach(() => {

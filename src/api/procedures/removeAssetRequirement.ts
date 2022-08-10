@@ -1,13 +1,9 @@
 import BigNumber from 'bignumber.js';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, Requirement, TxTags } from '~/types';
+import { ErrorCode, RemoveAssetRequirementParams, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { bigNumberToU32, stringToTicker, u32ToBigNumber } from '~/utils/conversion';
-
-export interface RemoveAssetRequirementParams {
-  requirement: BigNumber | Requirement;
-}
 
 /**
  * @hidden

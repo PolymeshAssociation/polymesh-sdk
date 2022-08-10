@@ -11,8 +11,8 @@ import { ErrorCode, TxTags } from '~/types';
 import { tuple } from '~/types/utils';
 import {
   identityIdToString,
+  stringToBytes,
   stringToIdentityId,
-  stringToText,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { filterEventRecords, getPortfolioIdsByName } from '~/utils/internal';
@@ -59,7 +59,7 @@ export async function prepareCreatePortfolios(
 
   const rawIdentityId = stringToIdentityId(did, context);
 
-  const rawNames = portfolioNames.map(name => stringToText(name, context));
+  const rawNames = portfolioNames.map(name => stringToBytes(name, context));
 
   const portfolioIds = await getPortfolioIdsByName(rawIdentityId, rawNames, context);
 

@@ -1,6 +1,6 @@
 import { QueryableStorage } from '@polkadot/api/types';
+import { PalletCorporateActionsCaId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { CAId } from 'polymesh-types/polymesh';
 
 import {
   Asset,
@@ -10,7 +10,7 @@ import {
   PolymeshError,
   Procedure,
 } from '~/internal';
-import { ErrorCode, TxTags } from '~/types';
+import { ErrorCode, RemoveCorporateActionParams, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   bigNumberToU32,
@@ -18,10 +18,6 @@ import {
   momentToDate,
   stringToTicker,
 } from '~/utils/conversion';
-
-export interface RemoveCorporateActionParams {
-  corporateAction: CorporateActionBase | BigNumber;
-}
 
 /**
  * @hidden
@@ -36,7 +32,7 @@ const caNotExistsMessage = "The Corporate Action doesn't exist";
  * @hidden
  */
 const assertCaIsRemovable = async (
-  rawCaId: CAId,
+  rawCaId: PalletCorporateActionsCaId,
   query: QueryableStorage<'promise'>,
   ticker: string,
   context: Context,
@@ -65,7 +61,7 @@ const assertCaIsRemovable = async (
       });
     }
   } else {
-    const { payment_at: rawPaymentAt } = distribution.unwrap();
+    const { paymentAt: rawPaymentAt } = distribution.unwrap();
 
     if (momentToDate(rawPaymentAt) < new Date()) {
       throw new PolymeshError({

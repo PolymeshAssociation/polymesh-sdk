@@ -1,9 +1,9 @@
 import { bool } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import { AuthorizationType as MeshAuthorizationType, Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { Context, Namespace } from '~/internal';
+import { AuthorizationType as MeshAuthorizationType, Signatory } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { AuthorizationType, Identity, SignerValue } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -87,21 +87,6 @@ describe('Authorizations class', () => {
         } as const,
       ];
 
-      /* eslint-disable @typescript-eslint/naming-convention */
-      const fakeAuthorizations = authParams.map(({ authId, expiry, issuer, data }) =>
-        dsMockUtils.createMockAuthorization({
-          auth_id: dsMockUtils.createMockU64(authId),
-          expiry: dsMockUtils.createMockOption(
-            expiry ? dsMockUtils.createMockMoment(new BigNumber(expiry.getTime())) : expiry
-          ),
-          authorization_data: dsMockUtils.createMockAuthorizationData({
-            TransferAssetOwnership: dsMockUtils.createMockTicker(data.value),
-          }),
-          authorized_by: dsMockUtils.createMockIdentityId(issuer.did),
-        })
-      );
-      /* eslint-enable @typescript-eslint/naming-convention */
-
       signerValueToSignatoryStub.returns(rawSignatory);
       booleanToBoolStub.withArgs(true, context).returns(dsMockUtils.createMockBool(true));
       booleanToBoolStub.withArgs(false, context).returns(dsMockUtils.createMockBool(false));
@@ -109,9 +94,22 @@ describe('Authorizations class', () => {
         .withArgs(filter, context)
         .returns(rawAuthorizationType);
 
+      const fakeRpcAuthorizations = authParams.map(({ authId, expiry, issuer, data }) =>
+        dsMockUtils.createMockAuthorization({
+          authId: dsMockUtils.createMockU64(authId),
+          expiry: dsMockUtils.createMockOption(
+            expiry ? dsMockUtils.createMockMoment(new BigNumber(expiry.getTime())) : expiry
+          ),
+          authorizationData: dsMockUtils.createMockAuthorizationData({
+            TransferAssetOwnership: dsMockUtils.createMockTicker(data.value),
+          }),
+          authorizedBy: dsMockUtils.createMockIdentityId(issuer.did),
+        })
+      );
+
       dsMockUtils
         .createRpcStub('identity', 'getFilteredAuthorizations')
-        .resolves(fakeAuthorizations);
+        .resolves(fakeRpcAuthorizations);
 
       const expectedAuthorizations = authParams.map(({ authId, target, issuer, expiry, data }) =>
         entityMockUtils.getAuthorizationRequestInstance({
@@ -157,20 +155,18 @@ describe('Authorizations class', () => {
       const authId = new BigNumber(1);
       const data = { type: AuthorizationType.TransferAssetOwnership, value: 'myTicker' } as const;
 
-      /* eslint-disable @typescript-eslint/naming-convention */
       dsMockUtils.createQueryStub('identity', 'authorizations', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockAuthorization({
-            auth_id: dsMockUtils.createMockU64(authId),
-            authorization_data: dsMockUtils.createMockAuthorizationData({
+            authId: dsMockUtils.createMockU64(authId),
+            authorizationData: dsMockUtils.createMockAuthorizationData({
               TransferAssetOwnership: dsMockUtils.createMockTicker(data.value),
             }),
             expiry: dsMockUtils.createMockOption(),
-            authorized_by: dsMockUtils.createMockIdentityId(issuerDid),
+            authorizedBy: dsMockUtils.createMockIdentityId(issuerDid),
           })
         ),
       });
-      /* eslint-enable @typescript-eslint/naming-convention */
 
       const result = await authsNamespace.getOne({ id });
 

@@ -8,18 +8,23 @@ import {
   Context,
   DefaultPortfolio,
   DividendDistribution,
-  initiateCorporateAction,
-  InitiateCorporateActionParams,
   NumberedPortfolio,
   PolymeshError,
   PostTransactionValue,
   Procedure,
 } from '~/internal';
-import { CorporateActionKind, ErrorCode, InputCaCheckpoint, RoleType, TxTags } from '~/types';
+import {
+  ConfigureDividendDistributionParams,
+  CorporateActionKind,
+  ErrorCode,
+  RoleType,
+  TxTags,
+} from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   bigNumberToBalance,
   bigNumberToU64,
+  corporateActionParamsToMeshCorporateActionArgs,
   dateToMoment,
   distributionToDividendDistributionParams,
   meshCorporateActionToCorporateActionParams,
@@ -38,7 +43,7 @@ export const createDividendDistributionResolver =
   async (receipt: ISubmittableResult): Promise<DividendDistribution> => {
     const [{ data }] = filterEventRecords(receipt, 'capitalDistribution', 'Created');
     const [, caId, distribution] = data;
-    const { ticker, local_id: localId } = caId;
+    const { ticker, localId } = caId;
 
     const { corporateAction } = context.polymeshApi.query;
 
@@ -57,41 +62,6 @@ export const createDividendDistributionResolver =
       context
     );
   };
-
-export type ConfigureDividendDistributionParams = Omit<
-  InitiateCorporateActionParams,
-  'kind' | 'checkpoint'
-> & {
-  /**
-   * checkpoint to be used to calculate Dividends. If a Schedule is passed, the next Checkpoint it creates will be used.
-   *   If a Date is passed, a Checkpoint will be created at that date and used
-   */
-  checkpoint: InputCaCheckpoint;
-  /**
-   * portfolio from which the Dividends will be distributed. Optional, defaults to the Corporate Actions Agent's Default Portfolio
-   */
-  originPortfolio?: NumberedPortfolio | BigNumber;
-  /**
-   * ticker of the currency in which Dividends will be distributed
-   */
-  currency: string;
-  /**
-   * amount of `currency` to distribute per each share of the Asset that a target holds
-   */
-  perShare: BigNumber;
-  /**
-   * maximum amount of `currency` to distribute in total
-   */
-  maxAmount: BigNumber;
-  /**
-   * date from which Asset Holders can claim their Dividends
-   */
-  paymentDate: Date;
-  /**
-   * Optional, defaults to never expiring
-   */
-  expiryDate?: Date;
-};
 
 /**
  * @hidden
@@ -116,7 +86,7 @@ export async function prepareConfigureDividendDistribution(
 ): Promise<PostTransactionValue<DividendDistribution>> {
   const {
     context: {
-      polymeshApi: { tx },
+      polymeshApi: { tx, query },
     },
     context,
     storage: { portfolio },
@@ -130,7 +100,11 @@ export async function prepareConfigureDividendDistribution(
     paymentDate,
     expiryDate = null,
     checkpoint,
-    ...corporateActionArgs
+    targets = null,
+    description,
+    declarationDate = new Date(),
+    defaultTaxWithholding = null,
+    taxWithholdings = null,
   } = args;
 
   if (currency === ticker) {
@@ -151,6 +125,26 @@ export async function prepareConfigureDividendDistribution(
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Expiry date must be after payment date',
+    });
+  }
+
+  if (declarationDate > new Date()) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Declaration date must be in the past',
+    });
+  }
+
+  const rawMaxDetailsLength = await query.corporateAction.maxDetailsLength();
+  const maxDetailsLength = u32ToBigNumber(rawMaxDetailsLength);
+
+  if (maxDetailsLength.lt(description.length)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Description too long',
+      data: {
+        maxLength: maxDetailsLength.toNumber(),
+      },
     });
   }
 
@@ -183,13 +177,6 @@ export async function prepareConfigureDividendDistribution(
     });
   }
 
-  const caId = await this.addProcedure(initiateCorporateAction(), {
-    ticker,
-    kind: CorporateActionKind.UnpredictableBenefit,
-    checkpoint: checkpointValue,
-    ...corporateActionArgs,
-  });
-
   const rawPortfolioNumber =
     originPortfolio &&
     optionize(bigNumberToU64)(
@@ -203,10 +190,22 @@ export async function prepareConfigureDividendDistribution(
   const rawExpiresAt = optionize(dateToMoment)(expiryDate, context);
 
   const [dividendDistribution] = this.addTransaction({
-    transaction: tx.capitalDistribution.distribute,
+    transaction: tx.corporateAction.initiateCorporateActionAndDistribute,
     resolvers: [createDividendDistributionResolver(context)],
     args: [
-      caId,
+      corporateActionParamsToMeshCorporateActionArgs(
+        {
+          ticker,
+          kind: CorporateActionKind.UnpredictableBenefit,
+          declarationDate,
+          checkpoint: checkpointValue,
+          description,
+          targets,
+          defaultTaxWithholding,
+          taxWithholdings,
+        },
+        context
+      ),
       rawPortfolioNumber,
       rawCurrency,
       rawPerShare,

@@ -1,23 +1,25 @@
+import { PolymeshPrimitivesTransferComplianceTransferCondition } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { TransferManager } from 'polymesh-types/types';
 import sinon from 'sinon';
 
+import { ClaimCount } from '~/api/entities/Asset/TransferRestrictions/ClaimCount';
+import { ClaimPercentage } from '~/api/entities/Asset/TransferRestrictions/ClaimPercentage';
+import { Asset, Context, Namespace, TransactionQueue } from '~/internal';
+import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   AddCountTransferRestrictionParams,
   AddPercentageTransferRestrictionParams,
-  Asset,
-  Context,
-  Namespace,
-  SetCountTransferRestrictionsParams,
-  SetPercentageTransferRestrictionsParams,
-  TransactionQueue,
-} from '~/internal';
-import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import {
+  ClaimType,
   CountTransferRestriction,
   PercentageTransferRestriction,
+  SetClaimCountTransferRestrictionsParams,
+  SetClaimPercentageTransferRestrictionsParams,
+  SetCountTransferRestrictionsParams,
+  SetPercentageTransferRestrictionsParams,
+  StatType,
   TransferRestrictionType,
 } from '~/types';
+import * as utilsConversionModule from '~/utils/conversion';
 
 import { Count } from '../Count';
 import { Percentage } from '../Percentage';
@@ -137,6 +139,9 @@ describe('TransferRestrictionBase class', () => {
       sinon.restore();
     });
 
+    const did = 'someDid';
+    const issuer = entityMockUtils.getIdentityInstance({ did });
+
     it('should prepare the procedure (count) with the correct arguments and context, and return the resulting transaction queue', async () => {
       const count = new Count(asset, context);
 
@@ -185,6 +190,67 @@ describe('TransferRestrictionBase class', () => {
         .resolves(expectedQueue);
 
       const queue = await percentage.setRestrictions({
+        ...args,
+      });
+
+      expect(queue).toBe(expectedQueue);
+    });
+
+    it('should prepare the procedure (ClaimCount) with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const count = new ClaimCount(asset, context);
+
+      const args: Omit<SetClaimCountTransferRestrictionsParams, 'type'> = {
+        restrictions: [
+          {
+            min: new BigNumber(10),
+            issuer,
+            claim: { type: ClaimType.Accredited, accredited: true },
+            exemptedIdentities: ['someScopeId'],
+          },
+        ],
+      };
+
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs(
+          {
+            args: { ticker: asset.ticker, ...args, type: TransferRestrictionType.ClaimCount },
+            transformer: undefined,
+          },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await count.setRestrictions({
+        ...args,
+      });
+
+      expect(queue).toBe(expectedQueue);
+    });
+
+    it('should prepare the procedure (ClaimPercentage) with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const claimPercentage = new ClaimPercentage(asset, context);
+
+      const args: Omit<SetClaimPercentageTransferRestrictionsParams, 'type'> = {
+        restrictions: [],
+      };
+
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs(
+          {
+            args: { ticker: asset.ticker, ...args, type: TransferRestrictionType.ClaimPercentage },
+            transformer: undefined,
+          },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await claimPercentage.setRestrictions({
         ...args,
       });
 
@@ -258,8 +324,13 @@ describe('TransferRestrictionBase class', () => {
     let scopeId: string;
     let countRestriction: CountTransferRestriction;
     let percentageRestriction: PercentageTransferRestriction;
-    let rawCountRestriction: TransferManager;
-    let rawPercentageRestriction: TransferManager;
+    let rawCountRestriction: PolymeshPrimitivesTransferComplianceTransferCondition;
+    let rawPercentageRestriction: PolymeshPrimitivesTransferComplianceTransferCondition;
+    let rawClaimCountRestriction: PolymeshPrimitivesTransferComplianceTransferCondition;
+    let rawClaimPercentageRestriction: PolymeshPrimitivesTransferComplianceTransferCondition;
+    const issuer = entityMockUtils.getIdentityInstance({ did: 'someDid' });
+    const min = new BigNumber(10);
+    const max = new BigNumber(20);
 
     beforeAll(() => {
       scopeId = 'someScopeId';
@@ -271,28 +342,57 @@ describe('TransferRestrictionBase class', () => {
         exemptedIds: [scopeId],
         percentage: new BigNumber(49),
       };
-      rawCountRestriction = dsMockUtils.createMockTransferManager({
-        CountTransferManager: dsMockUtils.createMockU64(countRestriction.count),
+      rawCountRestriction = dsMockUtils.createMockTransferCondition({
+        MaxInvestorCount: dsMockUtils.createMockU64(countRestriction.count),
       });
-      rawPercentageRestriction = dsMockUtils.createMockTransferManager({
-        PercentageTransferManager: dsMockUtils.createMockPermill(
+      rawPercentageRestriction = dsMockUtils.createMockTransferCondition({
+        MaxInvestorOwnership: dsMockUtils.createMockPermill(
           percentageRestriction.percentage.multipliedBy(10000)
         ),
+      });
+      rawClaimCountRestriction = dsMockUtils.createMockTransferCondition({
+        ClaimCount: [
+          dsMockUtils.createMockStatisticsStatClaim({
+            Accredited: dsMockUtils.createMockBool(true),
+          }),
+          dsMockUtils.createMockIdentityId('someDid'),
+          dsMockUtils.createMockU64(min),
+          dsMockUtils.createMockOption(dsMockUtils.createMockU64(max)),
+        ],
+      });
+      rawClaimPercentageRestriction = dsMockUtils.createMockTransferCondition({
+        ClaimOwnership: [
+          dsMockUtils.createMockStatisticsStatClaim({
+            Affiliate: dsMockUtils.createMockBool(true),
+          }),
+          dsMockUtils.createMockIdentityId('someDid'),
+          dsMockUtils.createMockU64(min),
+          dsMockUtils.createMockU64(max),
+        ],
       });
     });
 
     beforeEach(() => {
+      const maxStats = new BigNumber(2);
       context = dsMockUtils.getContextInstance();
       asset = entityMockUtils.getAssetInstance();
-      dsMockUtils.setConstMock('statistics', 'maxTransferManagersPerAsset', {
-        returnValue: dsMockUtils.createMockU32(new BigNumber(3)),
+      dsMockUtils.setConstMock('statistics', 'maxStatsPerAsset', {
+        returnValue: dsMockUtils.createMockU32(maxStats),
       });
-      dsMockUtils.createQueryStub('statistics', 'activeTransferManagers', {
-        returnValue: [rawCountRestriction, rawPercentageRestriction],
+      dsMockUtils.createQueryStub('statistics', 'assetTransferCompliances', {
+        returnValue: {
+          requirements: [
+            rawCountRestriction,
+            rawPercentageRestriction,
+            rawClaimCountRestriction,
+            rawClaimPercentageRestriction,
+          ],
+        },
       });
-      dsMockUtils.createQueryStub('statistics', 'exemptEntities', {
+      dsMockUtils.createQueryStub('statistics', 'transferConditionExemptEntities', {
         entries: [[[null, dsMockUtils.createMockScopeId(scopeId)], true]],
       });
+      sinon.stub(utilsConversionModule, 'u32ToBigNumber').returns(maxStats);
     });
 
     afterEach(() => {
@@ -301,7 +401,6 @@ describe('TransferRestrictionBase class', () => {
 
     it('should return all count transfer restrictions', async () => {
       const count = new Count(asset, context);
-
       const result = await count.get();
 
       expect(result).toEqual({
@@ -320,7 +419,7 @@ describe('TransferRestrictionBase class', () => {
         availableSlots: new BigNumber(1),
       });
 
-      dsMockUtils.createQueryStub('statistics', 'exemptEntities', {
+      dsMockUtils.createQueryStub('statistics', 'transferConditionExemptEntities', {
         entries: [],
       });
 
@@ -334,6 +433,230 @@ describe('TransferRestrictionBase class', () => {
         ],
         availableSlots: new BigNumber(1),
       });
+    });
+
+    it('should return all claimCount transfer restrictions', async () => {
+      const claimCount = new ClaimCount(asset, context);
+
+      const result = await claimCount.get();
+
+      expect(JSON.stringify(result)).toEqual(
+        JSON.stringify({
+          restrictions: [
+            {
+              min: new BigNumber(10),
+              max: new BigNumber(20),
+              claim: { type: ClaimType.Accredited, accredited: true },
+              issuer,
+              exemptedIds: ['someScopeId'],
+            },
+          ],
+          availableSlots: new BigNumber(1),
+        })
+      );
+    });
+
+    it('should return all claimPercentage transfer restrictions', async () => {
+      const claimPercentage = new ClaimPercentage(asset, context);
+
+      const result = await claimPercentage.get();
+
+      expect(JSON.stringify(result)).toEqual(
+        JSON.stringify({
+          restrictions: [
+            {
+              min: '0.001',
+              max: '0.002',
+              claim: { type: ClaimType.Affiliate, affiliate: true },
+              issuer,
+              exemptedIds: ['someScopeId'],
+            },
+          ],
+          availableSlots: new BigNumber(1),
+        })
+      );
+    });
+  });
+
+  describe('method: enableStat', () => {
+    let context: Context;
+    let asset: Asset;
+
+    beforeEach(() => {
+      context = dsMockUtils.getContextInstance();
+      asset = entityMockUtils.getAssetInstance();
+    });
+
+    afterEach(() => {
+      sinon.restore();
+    });
+
+    it('should prepare the procedure (count) with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const count = new Count(asset, context);
+
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs(
+          {
+            args: {
+              ticker: asset.ticker,
+              count: new BigNumber(3),
+              type: TransferRestrictionType.Count,
+            },
+            transformer: undefined,
+          },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await count.enableStat({ count: new BigNumber(3) });
+
+      expect(queue).toBe(expectedQueue);
+    });
+
+    it('should prepare the procedure (percentage) with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const percentage = new Percentage(asset, context);
+
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs(
+          {
+            args: {
+              ticker: asset.ticker,
+              type: StatType.Percentage,
+            },
+            transformer: undefined,
+          },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await percentage.enableStat();
+
+      expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: disableStat', () => {
+    let context: Context;
+    let asset: Asset;
+
+    beforeEach(() => {
+      context = dsMockUtils.getContextInstance();
+      asset = entityMockUtils.getAssetInstance();
+    });
+
+    afterEach(() => {
+      sinon.restore();
+    });
+
+    it('should prepare the procedure (count) with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const count = new Count(asset, context);
+
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs(
+          {
+            args: {
+              ticker: asset.ticker,
+              type: StatType.Count,
+            },
+            transformer: undefined,
+          },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await count.disableStat();
+
+      expect(queue).toBe(expectedQueue);
+    });
+
+    it('should prepare the procedure (percentage) with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const percentage = new Percentage(asset, context);
+
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs(
+          {
+            args: {
+              ticker: asset.ticker,
+              type: StatType.Percentage,
+            },
+            transformer: undefined,
+          },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await percentage.disableStat();
+
+      expect(queue).toBe(expectedQueue);
+    });
+
+    it('should prepare the procedure (ClaimCount) with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const claimCount = new ClaimCount(asset, context);
+      const issuer = entityMockUtils.getIdentityInstance();
+
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs(
+          {
+            args: {
+              ticker: asset.ticker,
+              type: StatType.ScopedCount,
+              issuer,
+              claimType: ClaimType.Jurisdiction,
+            },
+            transformer: undefined,
+          },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await claimCount.disableStat({ issuer, claimType: ClaimType.Jurisdiction });
+
+      expect(queue).toBe(expectedQueue);
+    });
+
+    it('should prepare the procedure (ClaimPercentage) with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const claimPercentage = new ClaimPercentage(asset, context);
+      const issuer = entityMockUtils.getIdentityInstance();
+
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs(
+          {
+            args: {
+              ticker: asset.ticker,
+              type: StatType.ScopedPercentage,
+              issuer,
+              claimType: ClaimType.Jurisdiction,
+            },
+            transformer: undefined,
+          },
+          context
+        )
+        .resolves(expectedQueue);
+
+      const queue = await claimPercentage.disableStat({
+        issuer,
+        claimType: ClaimType.Jurisdiction,
+      });
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 });

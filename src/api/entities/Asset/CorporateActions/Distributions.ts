@@ -3,13 +3,17 @@ import BigNumber from 'bignumber.js';
 import {
   Asset,
   configureDividendDistribution,
-  ConfigureDividendDistributionParams,
   Context,
   DividendDistribution,
   Namespace,
   PolymeshError,
 } from '~/internal';
-import { DistributionWithDetails, ErrorCode, ProcedureMethod } from '~/types';
+import {
+  ConfigureDividendDistributionParams,
+  DistributionWithDetails,
+  ErrorCode,
+  ProcedureMethod,
+} from '~/types';
 import {
   balanceToBigNumber,
   bigNumberToU32,

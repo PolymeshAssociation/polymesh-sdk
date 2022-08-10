@@ -3,6 +3,7 @@ import sinon from 'sinon';
 
 import { Context, Entity, Offering, TransactionQueue } from '~/internal';
 import { heartbeat, investments } from '~/middleware/queries';
+import { investmentsQuery } from '~/middleware/queriesV2';
 import { InvestmentResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
@@ -105,20 +106,19 @@ describe('Offering class', () => {
 
     const rawFundraiser = dsMockUtils.createMockOption(
       dsMockUtils.createMockFundraiser({
-        /* eslint-disable @typescript-eslint/naming-convention */
         creator: dsMockUtils.createMockIdentityId(someDid),
-        offering_portfolio: dsMockUtils.createMockPortfolioId({
+        offeringPortfolio: dsMockUtils.createMockPortfolioId({
           did: dsMockUtils.createMockIdentityId(someDid),
           kind: dsMockUtils.createMockPortfolioKind('Default'),
         }),
-        offering_asset: dsMockUtils.createMockTicker(ticker),
-        raising_portfolio: dsMockUtils.createMockPortfolioId({
+        offeringAsset: dsMockUtils.createMockTicker(ticker),
+        raisingPortfolio: dsMockUtils.createMockPortfolioId({
           did: dsMockUtils.createMockIdentityId(otherDid),
           kind: dsMockUtils.createMockPortfolioKind({
             User: dsMockUtils.createMockU64(new BigNumber(1)),
           }),
         }),
-        raising_asset: dsMockUtils.createMockTicker(raisingCurrency),
+        raisingAsset: dsMockUtils.createMockTicker(raisingCurrency),
         tiers: [
           dsMockUtils.createMockFundraiserTier({
             total: dsMockUtils.createMockBalance(amount),
@@ -126,18 +126,17 @@ describe('Offering class', () => {
             remaining: dsMockUtils.createMockBalance(remaining),
           }),
         ],
-        venue_id: dsMockUtils.createMockU64(new BigNumber(1)),
+        venueId: dsMockUtils.createMockU64(new BigNumber(1)),
         start: dsMockUtils.createMockMoment(new BigNumber(date.getTime())),
         end: dsMockUtils.createMockOption(
           dsMockUtils.createMockMoment(new BigNumber(date.getTime()))
         ),
         status: dsMockUtils.createMockFundraiserStatus('Live'),
-        minimum_investment: dsMockUtils.createMockBalance(minInvestmentValue),
-        /* eslint-enable @typescript-eslint/naming-convention */
+        minimumInvestment: dsMockUtils.createMockBalance(minInvestmentValue),
       })
     );
 
-    const rawName = dsMockUtils.createMockFundraiserName(name);
+    const rawName = dsMockUtils.createMockBytes(name);
 
     let offering: Offering;
 
@@ -346,6 +345,76 @@ describe('Offering class', () => {
     });
   });
 
+  describe('method: getInvestmentsV2', () => {
+    it('should return a list of investors', async () => {
+      const ticker = 'SOME_TICKER';
+      const id = new BigNumber(1);
+      const offering = new Offering({ id, ticker }, context);
+      const did = 'someDid';
+      const offeringToken = 'TICKER';
+      const raiseToken = 'USD';
+      const offeringTokenAmount = new BigNumber(10000);
+      const raiseTokenAmount = new BigNumber(1000);
+
+      const nodes = [
+        {
+          investorId: did,
+          offeringToken,
+          raiseToken,
+          offeringTokenAmount: offeringTokenAmount.toNumber(),
+          raiseTokenAmount: raiseTokenAmount.toNumber(),
+        },
+      ];
+
+      const investmentQueryResponse = {
+        totalCount: 1,
+        nodes,
+      };
+
+      dsMockUtils.createApolloV2QueryStub(
+        investmentsQuery(
+          {
+            stoId: id.toNumber(),
+            offeringToken: ticker,
+          },
+          new BigNumber(5),
+          new BigNumber(0)
+        ),
+        {
+          investments: investmentQueryResponse,
+        }
+      );
+
+      let result = await offering.getInvestmentsV2({
+        size: new BigNumber(5),
+        start: new BigNumber(0),
+      });
+
+      const { data } = result;
+
+      expect(data[0].investor.did).toBe(did);
+      expect(data[0].soldAmount).toEqual(offeringTokenAmount.div(Math.pow(10, 6)));
+      expect(data[0].investedAmount).toEqual(raiseTokenAmount.div(Math.pow(10, 6)));
+
+      dsMockUtils.createApolloV2QueryStub(
+        investmentsQuery({
+          stoId: id.toNumber(),
+          offeringToken: ticker,
+        }),
+        {
+          investments: {
+            totalCount: 0,
+            nodes: [],
+          },
+        }
+      );
+
+      result = await offering.getInvestmentsV2();
+      expect(result.data).toEqual([]);
+      expect(result.next).toBeNull();
+    });
+  });
+
   describe('method: freeze', () => {
     it('should prepare the procedure and return the resulting transaction queue', async () => {
       const ticker = 'SOME_TICKER';
@@ -440,11 +509,11 @@ describe('Offering class', () => {
     });
   });
 
-  describe('method: toJson', () => {
+  describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
       const offering = new Offering({ ticker: 'SOME_TICKER', id: new BigNumber(1) }, context);
 
-      expect(offering.toJson()).toEqual({
+      expect(offering.toHuman()).toEqual({
         id: '1',
         ticker: 'SOME_TICKER',
       });

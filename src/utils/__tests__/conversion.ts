@@ -1,58 +1,72 @@
-import { bool, Bytes, u32, u64 } from '@polkadot/types';
-import { AccountId, Balance, Hash, Moment, Permill, Signature } from '@polkadot/types/interfaces';
+import { bool, Bytes, Option, u32, u64, u128 } from '@polkadot/types';
+import {
+  AccountId,
+  Balance,
+  BlockHash,
+  Hash,
+  Moment,
+  Permill,
+  Signature,
+} from '@polkadot/types/interfaces';
+import {
+  PolymeshPrimitivesIdentityClaimClaimType,
+  PolymeshPrimitivesIdentityId,
+  PolymeshPrimitivesStatisticsStat2ndKey,
+  PolymeshPrimitivesStatisticsStatOpType,
+  PolymeshPrimitivesStatisticsStatType,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
+import type { ITuple } from '@polkadot/types-codec/types';
 import { hexToU8a } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 import {
   AgentGroup,
   AGId,
-  CAKind,
-  CalendarPeriod as MeshCalendarPeriod,
-  CddId,
-  ComplianceRequirement,
-  EcdsaSignature,
-  ExtrinsicPermissions,
-  InvestorZKProofData,
-  Memo,
-  MovePortfolioItem,
-  PortfolioId,
-  PriceTier,
-  RecordDateSpec,
-  RistrettoPoint,
-  Scalar,
-  ScheduleSpec,
-  ScopeId,
-  SettlementType,
-  TargetIdentities,
-  TransferManager,
-  TrustedIssuer,
-  VenueDetails,
-} from 'polymesh-types/polymesh';
-import {
   AssetIdentifier,
-  AssetName,
   AssetType,
   AuthorizationData,
   AuthorizationType as MeshAuthorizationType,
   CAId,
+  CAKind,
+  CalendarPeriod as MeshCalendarPeriod,
+  CddId,
   Claim as MeshClaim,
+  ComplianceRequirement,
   DocumentHash,
-  DocumentName,
-  DocumentType,
-  DocumentUri,
-  FundingRoundName,
+  EcdsaSignature,
+  ExtrinsicPermissions,
   IdentityId,
-  ModuleName,
+  InvestorZKProofData,
+  Memo,
+  MovePortfolioItem,
   Permissions as MeshPermissions,
+  PortfolioId,
+  PriceTier,
   ProtocolOp,
+  RecordDateSpec,
+  RistrettoPoint,
+  Scalar,
+  ScheduleSpec,
   Scope as MeshScope,
+  ScopeId,
+  SettlementType,
   Signatory,
-  Ticker,
-  TxTags,
+  StatClaim,
+  TargetIdentities,
+  TransferCondition,
+  TrustedIssuer,
   VenueType as MeshVenueType,
-} from 'polymesh-types/types';
+} from 'polymesh-types/polymesh';
 import sinon from 'sinon';
 
-import { Account, Context, DefaultPortfolio, Identity, NumberedPortfolio } from '~/internal';
+import {
+  Account,
+  Context,
+  DefaultPortfolio,
+  Identity,
+  NumberedPortfolio,
+  PolymeshError,
+} from '~/internal';
 import {
   CallIdEnum,
   ClaimScopeTypeEnum,
@@ -60,7 +74,16 @@ import {
   Event as MiddlewareEvent,
   ModuleIdEnum,
 } from '~/middleware/types';
+import {
+  Block as MiddlewareV2Block,
+  CallIdEnum as MiddlewareV2CallId,
+  Claim as MiddlewareV2Claim,
+  ModuleIdEnum as MiddlewareV2ModuleId,
+  Portfolio as MiddlewareV2Portfolio,
+} from '~/middleware/typesV2';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { createMockOption, createMockU64, createMockU128 } from '~/testUtils/mocks/dataSources';
+import { Mocked } from '~/testUtils/types';
 import {
   AffirmationStatus,
   AssetDocument,
@@ -77,9 +100,11 @@ import {
   CorporateActionParams,
   CountryCode,
   DividendDistributionParams,
+  ErrorCode,
   InputCondition,
   InstructionType,
   KnownAssetType,
+  ModuleName,
   OfferingBalanceStatus,
   OfferingSaleStatus,
   OfferingTier,
@@ -90,25 +115,31 @@ import {
   PermissionType,
   PortfolioMovement,
   Scope,
+  ScopeClaimProof,
   ScopeType,
   SecurityIdentifierType,
   Signer,
   SignerType,
   SignerValue,
+  StatType,
   TargetTreatment,
   TransferError,
+  TransferRestriction,
   TransferRestrictionType,
   TransferStatus,
   TrustedClaimIssuer,
   TxGroup,
+  TxTags,
   VenueType,
 } from '~/types';
-import { InstructionStatus, PermissionGroupIdentifier, ScopeClaimProof } from '~/types/internal';
+import { InstructionStatus, PermissionGroupIdentifier, StatisticsOpType } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { DUMMY_ACCOUNT_ID, MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '~/utils/constants';
+import * as internalUtils from '~/utils/internal';
 import { padString } from '~/utils/internal';
 
 import {
+  accountIdToAccount,
   accountIdToString,
   addressToKey,
   agentGroupToPermissionGroup,
@@ -116,7 +147,6 @@ import {
   assetComplianceResultToCompliance,
   assetDocumentToDocument,
   assetIdentifierToSecurityIdentifier,
-  assetNameToString,
   assetTypeToKnownOrId,
   authorizationDataToAuthorization,
   authorizationToAuthorizationData,
@@ -125,52 +155,64 @@ import {
   bigNumberToBalance,
   bigNumberToU32,
   bigNumberToU64,
+  bigNumberToU128,
   booleanToBool,
   boolToBoolean,
   bytesToString,
   calendarPeriodToMeshCalendarPeriod,
   canTransferResultToTransferStatus,
+  caTaxWithholdingsToMeshTaxWithholdings,
   cddIdToString,
   cddStatusToBoolean,
   checkpointToRecordDateSpec,
+  claimCountStatInputToStatUpdates,
+  claimCountToClaimCountRestrictionValue,
   claimToMeshClaim,
   claimTypeToMeshClaimType,
+  complianceConditionsToBtreeSet,
   complianceRequirementResultToRequirementCompliance,
   complianceRequirementToRequirement,
   corporateActionIdentifierToCaId,
   corporateActionKindToCaKind,
+  corporateActionParamsToMeshCorporateActionArgs,
+  countStatInputToStatUpdates,
+  createStat2ndKey,
   dateToMoment,
   distributionToDividendDistributionParams,
   documentHashToString,
-  documentNameToString,
   documentToAssetDocument,
-  documentTypeToString,
-  documentUriToString,
   endConditionToSettlementType,
   extrinsicIdentifierToTxTag,
-  fundingRoundNameToString,
   fundraiserTierToTier,
   fundraiserToOfferingDetails,
   granularCanTransferResultToTransferBreakdown,
   hashToString,
   identityIdToString,
+  inputStatTypeToMeshStatType,
   internalAssetTypeToAssetType,
   isCusipValid,
+  isFigiValid,
   isIsinValid,
   isLeiValid,
+  keyAndValueToStatUpdate,
   keyToAddress,
   meshAffirmationStatusToAffirmationStatus,
   meshCalendarPeriodToCalendarPeriod,
   meshClaimToClaim,
+  meshClaimToInputStatClaim,
   meshClaimTypeToClaimType,
   meshCorporateActionToCorporateActionParams,
   meshInstructionStatusToInstructionStatus,
   meshPermissionsToPermissions,
   meshScopeToScope,
+  meshStatToStatisticsOpType,
   meshVenueTypeToVenueType,
   middlewareEventToEventIdentifier,
   middlewarePortfolioToPortfolio,
   middlewareScopeToScope,
+  middlewareV2ClaimToClaimData,
+  middlewareV2EventDetailsToEventIdentifier,
+  middlewareV2PortfolioToPortfolio,
   moduleAddressToString,
   momentToDate,
   offeringTierToPriceTier,
@@ -186,29 +228,32 @@ import {
   posRatioToBigNumber,
   requirementToComplianceRequirement,
   scheduleSpecToMeshScheduleSpec,
-  scopeClaimProofToMeshScopeClaimProof,
+  scopeClaimProofToConfidentialIdentityClaimProof,
+  scopeIdsToBtreeSetIdentityId,
   scopeIdToString,
   scopeToMeshScope,
   scopeToMiddlewareScope,
   secondaryAccountToMeshSecondaryKey,
   securityIdentifierToAssetIdentifier,
-  signatoryToAccount,
   signatoryToSignerValue,
   signerToSignerValue,
   signerToString,
   signerValueToSignatory,
   signerValueToSigner,
+  sortStatsByClaimType,
+  sortTransferRestrictionByClaimValue,
+  statisticsOpTypeToStatOpType,
+  statisticsOpTypeToStatType,
+  statisticStatTypesToBtreeStatType,
+  statsClaimToStatClaimInputType,
+  statUpdatesToBtreeStatUpdate,
   storedScheduleToCheckpointScheduleParams,
   stringToAccountId,
-  stringToAssetName,
+  stringToBlockHash,
   stringToBytes,
   stringToCddId,
   stringToDocumentHash,
-  stringToDocumentName,
-  stringToDocumentType,
-  stringToDocumentUri,
   stringToEcdsaSignature,
-  stringToFundingRoundName,
   stringToHash,
   stringToIdentityId,
   stringToInvestorZKProofData,
@@ -219,29 +264,32 @@ import {
   stringToSignature,
   stringToText,
   stringToTicker,
-  stringToVenueDetails,
+  stringToTickerKey,
   targetIdentitiesToCorporateActionTargets,
   targetsToTargetIdentities,
   textToString,
   tickerToDid,
   tickerToString,
   toIdentityWithClaimsArray,
+  toIdentityWithClaimsArrayV2,
   transactionHexToTxTag,
   transactionPermissionsToExtrinsicPermissions,
   transactionPermissionsToTxGroups,
   transactionToTxTag,
-  transferManagerToTransferRestriction,
-  transferRestrictionToTransferManager,
+  transferConditionsToBtreeTransferConditions,
+  transferConditionToTransferRestriction,
+  transferRestrictionToPolymeshTransferCondition,
   trustedClaimIssuerToTrustedIssuer,
-  trustedIssuerToTrustedClaimIssuer,
   txGroupToTxTags,
   txTagToExtrinsicIdentifier,
+  txTagToExtrinsicIdentifierV2,
   txTagToProtocolOp,
   u8ToBigNumber,
   u8ToTransferStatus,
+  u16ToBigNumber,
   u32ToBigNumber,
   u64ToBigNumber,
-  venueDetailsToString,
+  u128ToBigNumber,
   venueTypeToMeshVenueType,
 } from '../conversion';
 
@@ -288,58 +336,20 @@ jest.mock(
 
 describe('tickerToDid', () => {
   it('should generate the ticker did', () => {
-    let ticker = 'someTicker';
+    let ticker = 'SOME_TICKER';
     let result = tickerToDid(ticker);
 
-    expect(result).toBe('0x51a5fed99b9d305ef26e6af92dd3dcb181a30a07dc5f075e260b82a92d48913c');
+    expect(result).toBe('0x3a2c35c06ab681afb326a1a1110467c0a6d9138b76fc0e1e42d0d5b06dae8e3d');
 
-    ticker = 'otherTicker';
+    ticker = 'OTHER_TICKER';
     result = tickerToDid(ticker);
 
-    expect(result).toBe('0xae37fa10f763fa5d302c5999ac06897f1fcf383dcc9787f1ede189ba161d06a5');
+    expect(result).toBe('0xc8870af7d813b13964b99580b394649088275d2393a3cfdbb1f1689dfb6f3981');
 
-    ticker = 'lastTicker';
+    ticker = 'LAST_TICKER';
     result = tickerToDid(ticker);
 
-    expect(result).toBe('0xa643b102d0c58adb3d13a28ab260644f2d0b010dc73aab99a3802b843868ab64');
-  });
-});
-
-describe('stringToAssetName and assetNameToString', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  describe('stringToAssetName', () => {
-    it('should convert a string to a polkadot AssetName object', () => {
-      const value = 'someName';
-      const fakeResult = 'convertedName' as unknown as AssetName;
-      const context = dsMockUtils.getContextInstance();
-
-      context.createType.withArgs('AssetName', value).returns(fakeResult);
-
-      const result = stringToAssetName(value, context);
-
-      expect(result).toEqual(fakeResult);
-    });
-  });
-
-  describe('assetNameToString', () => {
-    it('should convert a polkadot AssetName object to a string', () => {
-      const fakeResult = 'someAssetName';
-      const assetName = dsMockUtils.createMockAssetName(fakeResult);
-
-      const result = assetNameToString(assetName);
-      expect(result).toEqual(fakeResult);
-    });
+    expect(result).toBe('0x8c2d4fa74d62ff136c267a80ec3738a0eea6d804386c8238a11d8f3cc465fa79');
   });
 });
 
@@ -476,7 +486,9 @@ describe('portfolioMovementToMovePortfolioItem', () => {
       amount,
     };
 
-    context.createType.withArgs('Ticker', padString(ticker, 12)).returns(rawTicker);
+    context.createType
+      .withArgs('PolymeshPrimitivesTicker', padString(ticker, 12))
+      .returns(rawTicker);
 
     context.createType
       .withArgs('Balance', portfolioMovement.amount.multipliedBy(Math.pow(10, 6)).toString())
@@ -539,58 +551,77 @@ describe('stringToTicker and tickerToString', () => {
   });
 
   describe('stringToTicker', () => {
+    let context: Mocked<Context>;
+
+    beforeEach(() => {
+      context = dsMockUtils.getContextInstance();
+    });
+
     it('should convert a string to a polkadot Ticker object', () => {
       const value = 'SOME_TICKER';
-      const fakeResult = 'convertedTicker' as unknown as Ticker;
-      const context = dsMockUtils.getContextInstance();
+      const fakeResult = 'convertedTicker' as unknown as PolymeshPrimitivesTicker;
 
-      context.createType.withArgs('Ticker', padString(value, 12)).returns(fakeResult);
+      context.createType
+        .withArgs('PolymeshPrimitivesTicker', padString(value, 12))
+        .returns(fakeResult);
 
       const result = stringToTicker(value, context);
 
       expect(result).toBe(fakeResult);
     });
 
-    it('should throw an error if the string is empty', () => {
-      const value = '';
-      const context = dsMockUtils.getContextInstance();
-
-      expect(() => stringToTicker(value, context)).toThrow(
-        `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} character`
+    it('should throw an error if the ticker does not have a length between 1 and 12 characters', () => {
+      expect(() => stringToTicker('SOME_LONG_TICKER', context)).toThrow(
+        'Ticker length must be between 1 and 12 characters'
+      );
+      expect(() => stringToTicker('', context)).toThrow(
+        'Ticker length must be between 1 and 12 characters'
       );
     });
 
-    it('should throw an error if the string length exceeds the max ticker length', () => {
-      const value = 'veryLongTicker';
-      const context = dsMockUtils.getContextInstance();
-
-      expect(() => stringToTicker(value, context)).toThrow(
-        `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} character`
-      );
-    });
-
-    it('should throw an error if the string contains unreadable characters', () => {
-      const value = `Illegal ${String.fromCharCode(65533)}`;
-      const context = dsMockUtils.getContextInstance();
-
-      expect(() => stringToTicker(value, context)).toThrow(
+    it('should throw an error if the ticker is not printable ASCII', () => {
+      expect(() => stringToTicker('TICKER\x80', context)).toThrow(
         'Only printable ASCII is allowed as ticker name'
       );
     });
 
-    it('should throw an error if the string is not in upper case', () => {
-      const value = 'FakeTicker';
-      const context = dsMockUtils.getContextInstance();
-
-      expect(() => stringToTicker(value, context)).toThrow(
+    it('should throw an error if the ticker contains lowercase letters', () => {
+      expect(() => stringToTicker('ticker', context)).toThrow(
         'Ticker cannot contain lower case letters'
       );
     });
   });
 
+  describe('stringToTickerKey', () => {
+    beforeAll(() => {
+      dsMockUtils.initMocks();
+    });
+
+    afterEach(() => {
+      dsMockUtils.reset();
+    });
+
+    afterAll(() => {
+      dsMockUtils.cleanup();
+    });
+
+    it('should call stringToTicker and return the result as an object', () => {
+      const value = 'SOME_TICKER';
+      const fakeResult = 'convertedTicker' as unknown as PolymeshPrimitivesTicker;
+      const context = dsMockUtils.getContextInstance();
+
+      context.createType
+        .withArgs('PolymeshPrimitivesTicker', padString(value, 12))
+        .returns(fakeResult);
+
+      const result = stringToTickerKey(value, context);
+      expect(result).toEqual({ Ticker: fakeResult });
+    });
+  });
+
   describe('tickerToString', () => {
     it('should convert a polkadot Ticker object to a string', () => {
-      const fakeResult = 'someTicker';
+      const fakeResult = 'SOME_TICKER';
       const ticker = dsMockUtils.createMockTicker(fakeResult);
 
       const result = tickerToString(ticker);
@@ -618,7 +649,7 @@ describe('dateToMoment and momentToDate', () => {
       const fakeResult = 10000 as unknown as Moment;
       const context = dsMockUtils.getContextInstance();
 
-      context.createType.withArgs('Moment', Math.round(value.getTime())).returns(fakeResult);
+      context.createType.withArgs('u64', Math.round(value.getTime())).returns(fakeResult);
 
       const result = dateToMoment(value, context);
 
@@ -722,6 +753,32 @@ describe('stringToHash and hashToString', () => {
   });
 });
 
+describe('stringToBlockHash', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a block hash string into an BlockHash', () => {
+    const blockHash = 'BlockHash';
+    const fakeResult = 'type' as unknown as BlockHash;
+    const context = dsMockUtils.getContextInstance();
+
+    context.createType.withArgs('BlockHash', blockHash).returns(fakeResult);
+
+    const result = stringToBlockHash(blockHash, context);
+
+    expect(result).toBe(fakeResult);
+  });
+});
+
 describe('stringToIdentityId and identityIdToString', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -738,10 +795,10 @@ describe('stringToIdentityId and identityIdToString', () => {
   describe('stringToIdentityId', () => {
     it('should convert a did string into an IdentityId', () => {
       const identity = 'IdentityObject';
-      const fakeResult = 'type' as unknown as IdentityId;
+      const fakeResult = 'type' as unknown as PolymeshPrimitivesIdentityId;
       const context = dsMockUtils.getContextInstance();
 
-      context.createType.withArgs('IdentityId', identity).returns(fakeResult);
+      context.createType.withArgs('PolymeshPrimitivesIdentityId', identity).returns(fakeResult);
 
       const result = stringToIdentityId(identity, context);
 
@@ -907,54 +964,6 @@ describe('signerToSignerValue and signerValueToSigner', () => {
   });
 });
 
-describe('signatoryToAccount', () => {
-  let context: Context;
-
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  beforeEach(() => {
-    context = dsMockUtils.getContextInstance();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-    sinon.restore();
-  });
-
-  it('should convert a polkadot Signatory Account object to an Account', () => {
-    const address = 'someAccountId';
-    const signatory = dsMockUtils.createMockSignatory({
-      Account: dsMockUtils.createMockAccountId(address),
-    });
-
-    const result = signatoryToAccount(signatory, context);
-    expect(result).toEqual(expect.objectContaining({ address }));
-  });
-
-  it('should throw an error while converting a polkadot Signatory Identity object', () => {
-    const signatory = dsMockUtils.createMockSignatory({
-      Identity: dsMockUtils.createMockIdentityId('someIdentity'),
-    });
-
-    let err;
-    try {
-      signatoryToAccount(signatory, context);
-    } catch (error) {
-      err = error;
-    }
-
-    expect(err.message).toBe(
-      'Received an Identity where an Account was expected. Please report this issue to the Polymath team'
-    );
-  });
-});
-
 describe('signerToString', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -1026,11 +1035,13 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
       const createTypeStub = context.createType;
       createTypeStub
-        .withArgs('AuthorizationData', { [value.type]: value.value })
+        .withArgs('PolymeshPrimitivesAuthorizationAuthorizationData', { [value.type]: value.value })
         .returns(fakeResult);
 
-      const fakeTicker = 'convertedTicker' as unknown as Ticker;
-      createTypeStub.withArgs('Ticker', padString(ticker, 12)).returns(fakeTicker);
+      const fakeTicker = 'convertedTicker' as unknown as PolymeshPrimitivesTicker;
+      createTypeStub
+        .withArgs('PolymeshPrimitivesTicker', padString(ticker, 12))
+        .returns(fakeTicker);
 
       let result = authorizationToAuthorizationData(value, context);
       expect(result).toBe(fakeResult);
@@ -1055,7 +1066,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
         .withArgs('Permissions', sinon.match(sinon.match.object))
         .returns(rawPermissions);
       createTypeStub
-        .withArgs('AuthorizationData', {
+        .withArgs('PolymeshPrimitivesAuthorizationAuthorizationData', {
           [value.type]: rawPermissions,
         })
         .returns(fakeResult);
@@ -1078,7 +1089,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
         .withArgs('PortfolioId', sinon.match(sinon.match.object))
         .returns(rawPortfolioId);
       createTypeStub
-        .withArgs('AuthorizationData', {
+        .withArgs('PolymeshPrimitivesAuthorizationAuthorizationData', {
           [value.type]: rawPortfolioId,
         })
         .returns(fakeResult);
@@ -1090,7 +1101,9 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
         type: AuthorizationType.RotatePrimaryKey,
       };
 
-      createTypeStub.withArgs('AuthorizationData', { [value.type]: null }).returns(fakeResult);
+      createTypeStub
+        .withArgs('PolymeshPrimitivesAuthorizationAuthorizationData', { [value.type]: null })
+        .returns(fakeResult);
 
       result = authorizationToAuthorizationData(value, context);
       expect(result).toBe(fakeResult);
@@ -1109,7 +1122,9 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       createTypeStub.withArgs('AgentGroup', knownPermissionGroup.type).returns(rawAgentGroup);
 
       createTypeStub
-        .withArgs('AuthorizationData', { [value.type]: [fakeTicker, rawAgentGroup] })
+        .withArgs('PolymeshPrimitivesAuthorizationAuthorizationData', {
+          [value.type]: [fakeTicker, rawAgentGroup],
+        })
         .returns(fakeResult);
 
       result = authorizationToAuthorizationData(value, context);
@@ -1131,7 +1146,9 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       createTypeStub.withArgs('AgentGroup', { Custom: id }).returns(rawAgentGroup);
 
       createTypeStub
-        .withArgs('AuthorizationData', { [value.type]: [fakeTicker, rawAgentGroup] })
+        .withArgs('PolymeshPrimitivesAuthorizationAuthorizationData', {
+          [value.type]: [fakeTicker, rawAgentGroup],
+        })
         .returns(fakeResult);
       result = authorizationToAuthorizationData(value, context);
       expect(result).toBe(fakeResult);
@@ -1141,10 +1158,12 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
         value: 'TICKER',
       };
 
-      createTypeStub.withArgs('Ticker', padString('TICKER', MAX_TICKER_LENGTH)).returns(fakeTicker);
+      createTypeStub
+        .withArgs('PolymeshPrimitivesTicker', padString('TICKER', MAX_TICKER_LENGTH))
+        .returns(fakeTicker);
 
       createTypeStub
-        .withArgs('AuthorizationData', { [value.type]: fakeTicker })
+        .withArgs('PolymeshPrimitivesAuthorizationAuthorizationData', { [value.type]: fakeTicker })
         .returns(fakeResult);
 
       result = authorizationToAuthorizationData(value, context);
@@ -1155,10 +1174,12 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
         value: 'TICKER',
       };
 
-      createTypeStub.withArgs('Ticker', padString('TICKER', MAX_TICKER_LENGTH)).returns(fakeTicker);
+      createTypeStub
+        .withArgs('PolymeshPrimitivesTicker', padString('TICKER', MAX_TICKER_LENGTH))
+        .returns(fakeTicker);
 
       createTypeStub
-        .withArgs('AuthorizationData', { [value.type]: fakeTicker })
+        .withArgs('PolymeshPrimitivesAuthorizationAuthorizationData', { [value.type]: fakeTicker })
         .returns(fakeResult);
 
       result = authorizationToAuthorizationData(value, context);
@@ -1178,7 +1199,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
         .withArgs('Permissions', sinon.match(sinon.match.object))
         .returns(rawPermissions);
       createTypeStub
-        .withArgs('AuthorizationData', {
+        .withArgs('PolymeshPrimitivesAuthorizationAuthorizationData', {
           [value.type]: rawPermissions,
         })
         .returns(fakeResult);
@@ -1212,7 +1233,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
       fakeResult = {
         type: AuthorizationType.TransferTicker,
-        value: 'someTicker',
+        value: 'SOME_TICKER',
       };
       authorizationData = dsMockUtils.createMockAuthorizationData({
         TransferTicker: dsMockUtils.createMockTicker(fakeResult.value),
@@ -1268,7 +1289,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
       fakeResult = {
         type: AuthorizationType.TransferAssetOwnership,
-        value: 'someTicker',
+        value: 'SOME_TICKER',
       };
       authorizationData = dsMockUtils.createMockAuthorizationData({
         TransferAssetOwnership: dsMockUtils.createMockTicker(fakeResult.value),
@@ -1354,7 +1375,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       );
 
       expect(() => authorizationDataToAuthorization(authorizationData, context)).toThrow(
-        'Unsupported Authorization Type. Please contact the Polymath team'
+        'Unsupported Authorization Type. Please contact the Polymesh team'
       );
     });
   });
@@ -1411,12 +1432,12 @@ describe('permissionGroupIdentifierToAgentGroup and agentGroupToPermissionGroupI
       result = agentGroupToPermissionGroupIdentifier(agentGroup);
       expect(result).toEqual(PermissionGroupType.ExceptMeta);
 
-      agentGroup = dsMockUtils.createMockAgentGroup('PolymeshV1Caa');
+      agentGroup = dsMockUtils.createMockAgentGroup('PolymeshV1CAA');
 
       result = agentGroupToPermissionGroupIdentifier(agentGroup);
       expect(result).toEqual(PermissionGroupType.PolymeshV1Caa);
 
-      agentGroup = dsMockUtils.createMockAgentGroup('PolymeshV1Pia');
+      agentGroup = dsMockUtils.createMockAgentGroup('PolymeshV1PIA');
 
       result = agentGroupToPermissionGroupIdentifier(agentGroup);
       expect(result).toEqual(PermissionGroupType.PolymeshV1Pia);
@@ -1488,7 +1509,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       let fakeExtrinsicPermissionsResult: unknown =
         'convertedExtrinsicPermissions' as unknown as ExtrinsicPermissions;
       context.createType
-        .withArgs('ExtrinsicPermissions', 'Whole')
+        .withArgs('PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions', 'Whole')
         .returns(fakeExtrinsicPermissionsResult);
 
       createTypeStub
@@ -1522,7 +1543,10 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       };
 
       createTypeStub
-        .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
+        .withArgs(
+          'PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions',
+          sinon.match(sinon.match.object)
+        )
         .returns(fakeExtrinsicPermissionsResult);
 
       const ticker = 'SOME_TICKER';
@@ -1559,7 +1583,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
           },
         })
         .returns(fakeResult);
-      createTypeStub.withArgs('Ticker', padString(ticker, 12)).returns(rawTicker);
+      createTypeStub.withArgs('PolymeshPrimitivesTicker', padString(ticker, 12)).returns(rawTicker);
       createTypeStub
         .withArgs('PortfolioId', sinon.match(sinon.match.object))
         .returns(rawPortfolioId);
@@ -1579,7 +1603,10 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       };
 
       createTypeStub
-        .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
+        .withArgs(
+          'PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions',
+          sinon.match(sinon.match.object)
+        )
         .returns(fakeExtrinsicPermissionsResult);
 
       value = {
@@ -1616,7 +1643,10 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       };
 
       createTypeStub
-        .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
+        .withArgs(
+          'PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions',
+          sinon.match(sinon.match.object)
+        )
         .returns(fakeExtrinsicPermissionsResult);
 
       value = {
@@ -1664,7 +1694,10 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       };
 
       createTypeStub
-        .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
+        .withArgs(
+          'PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions',
+          sinon.match(sinon.match.object)
+        )
         .returns(fakeExtrinsicPermissionsResult);
 
       const tickers = ['B_TICKER', 'A_TICKER', 'C_TICKER'];
@@ -1695,7 +1728,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         .returns(fakeResult);
 
       tickers.forEach((t, i) =>
-        createTypeStub.withArgs('Ticker', padString(t, 12)).returns(rawTickers[i])
+        createTypeStub.withArgs('PolymeshPrimitivesTicker', padString(t, 12)).returns(rawTickers[i])
       );
 
       result = permissionsToMeshPermissions(value, context);
@@ -1759,7 +1792,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
   describe('meshPermissionsToPermissions', () => {
     it('should convert a polkadot Permissions object to a Permissions', () => {
       const context = dsMockUtils.getContextInstance();
-      const ticker = 'someTicker';
+      const ticker = 'SOME_TICKER';
       const did = 'someDid';
       let fakeResult: Permissions = {
         assets: {
@@ -1782,18 +1815,16 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         }),
         extrinsic: dsMockUtils.createMockExtrinsicPermissions({
           These: [
-            /* eslint-disable @typescript-eslint/naming-convention */
             dsMockUtils.createMockPalletPermissions({
-              pallet_name: dsMockUtils.createMockPalletName('Identity'),
-              dispatchable_names: dsMockUtils.createMockDispatchableNames({
-                These: [dsMockUtils.createMockDispatchableName('add_claim')],
+              palletName: 'Identity',
+              dispatchableNames: dsMockUtils.createMockDispatchableNames({
+                These: [dsMockUtils.createMockBytes('add_claim')],
               }),
             }),
             dsMockUtils.createMockPalletPermissions({
-              pallet_name: dsMockUtils.createMockPalletName('Authorship'),
-              dispatchable_names: dsMockUtils.createMockDispatchableNames('Whole'),
+              palletName: 'Authorship',
+              dispatchableNames: dsMockUtils.createMockDispatchableNames('Whole'),
             }),
-            /* eslint-enable @typescript-eslint/naming-convention */
           ],
         }),
         portfolio: dsMockUtils.createMockPortfolioPermissions({
@@ -1847,14 +1878,12 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         }),
         extrinsic: dsMockUtils.createMockExtrinsicPermissions({
           Except: [
-            /* eslint-disable @typescript-eslint/naming-convention */
             dsMockUtils.createMockPalletPermissions({
-              pallet_name: dsMockUtils.createMockPalletName('Identity'),
-              dispatchable_names: dsMockUtils.createMockDispatchableNames({
-                Except: [dsMockUtils.createMockDispatchableName('add_claim')],
+              palletName: 'Identity',
+              dispatchableNames: dsMockUtils.createMockDispatchableNames({
+                Except: [dsMockUtils.createMockBytes('add_claim')],
               }),
             }),
-            /* eslint-enable @typescript-eslint/naming-convention */
           ],
         }),
         portfolio: dsMockUtils.createMockPortfolioPermissions({
@@ -1972,6 +2001,80 @@ describe('bigNumberToU32 and u32ToBigNumber', () => {
       const num = dsMockUtils.createMockU32(fakeResult);
 
       const result = u32ToBigNumber(num);
+      expect(result).toEqual(new BigNumber(fakeResult));
+    });
+  });
+});
+
+describe('bigNumberToU128', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a number to a polkadot u128 object', () => {
+    const value = new BigNumber(100);
+    const fakeResult = '100' as unknown as u128;
+    const context = dsMockUtils.getContextInstance();
+
+    context.createType.withArgs('u128', value.toString()).returns(fakeResult);
+
+    const result = bigNumberToU128(value, context);
+
+    expect(result).toBe(fakeResult);
+  });
+
+  it('should throw an error if the number is negative', () => {
+    const value = new BigNumber(-100);
+    const context = dsMockUtils.getContextInstance();
+
+    expect(() => bigNumberToU128(value, context)).toThrow();
+  });
+
+  it('should throw an error if the number is not an integer', () => {
+    const value = new BigNumber(1.5);
+    const context = dsMockUtils.getContextInstance();
+
+    expect(() => bigNumberToU128(value, context)).toThrow();
+  });
+});
+
+describe('u128ToBigNumber', () => {
+  it('should convert a polkadot u128 object to a BigNumber', () => {
+    const fakeResult = new BigNumber(100);
+    const num = dsMockUtils.createMockU128(fakeResult);
+
+    const result = u128ToBigNumber(num);
+    expect(result).toEqual(new BigNumber(fakeResult));
+  });
+});
+
+describe('u16ToBigNumber', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  describe('u16ToBigNumber', () => {
+    it('should convert a polkadot u32 object to a BigNumber', () => {
+      const fakeResult = new BigNumber(100);
+      const num = dsMockUtils.createMockU16(fakeResult);
+
+      const result = u16ToBigNumber(num);
       expect(result).toEqual(new BigNumber(fakeResult));
     });
   });
@@ -2178,7 +2281,6 @@ describe('isIsinValid, isCusipValid and isLeiValid', () => {
 
   describe('isLeiValid', () => {
     it('should return if the Lei value identifier is valid or not', () => {
-      /* cSpell: disable */
       const correct = isLeiValid('724500VKKSH9QOLTFR81');
       let incorrect = isLeiValid('969500T3MBS4SQAMHJ45');
 
@@ -2187,7 +2289,30 @@ describe('isIsinValid, isCusipValid and isLeiValid', () => {
 
       incorrect = isLeiValid('969500T3MS4SQAMHJ4');
       expect(incorrect).toBeFalsy();
-      /* cSpell: enable */
+    });
+  });
+
+  describe('isFigiValid', () => {
+    it('should return if the Figi value identifier is valid or not', () => {
+      const validIdentifiers = [
+        'BBG000BLNQ16',
+        'NRG92C84SB39',
+        'BBG0013YWBF3',
+        'BBG00H9NR574',
+        'BBG00094DJF9',
+        'BBG016V71XT0',
+      ];
+
+      validIdentifiers.forEach(identifier => expect(isFigiValid(identifier)).toBeTruthy());
+
+      const invalidIdentifiers = [
+        'BBG00024DJF9', // Bad check digit
+        'BSG00024DJF9', // disallowed prefix
+        'BBB00024DJF9', // 3rd char not G
+        'BBG00024AEF9', // vowels not allowed
+      ];
+
+      invalidIdentifiers.forEach(identifier => expect(isFigiValid(identifier)).toBeFalsy());
     });
   });
 });
@@ -2313,7 +2438,7 @@ describe('u8ToTransferStatus', () => {
 
     const fakeStatusCode = new BigNumber(1);
     expect(() => u8ToTransferStatus(dsMockUtils.createMockU8(fakeStatusCode))).toThrow(
-      `Unsupported status code "${fakeStatusCode}". Please report this issue to the Polymath team`
+      `Unsupported status code "${fakeStatusCode}". Please report this issue to the Polymesh team`
     );
   });
 });
@@ -2465,13 +2590,14 @@ describe('securityIdentifierToAssetIdentifier and assetIdentifierToSecurityIdent
       // cSpell: disable-next-line
       const leiValue = '724500VKKSH9QOLTFR81';
       const cusipValue = '037833100';
+      const figiValue = 'BBG00H9NR574';
 
       let value = { type: SecurityIdentifierType.Isin, value: isinValue };
       const fakeResult = 'IsinEnum' as unknown as AssetIdentifier;
       const context = dsMockUtils.getContextInstance();
 
       context.createType
-        .withArgs('AssetIdentifier', { [SecurityIdentifierType.Isin]: isinValue })
+        .withArgs('PolymeshPrimitivesAssetIdentifier', { [SecurityIdentifierType.Isin]: isinValue })
         .returns(fakeResult);
 
       let result = securityIdentifierToAssetIdentifier(value, context);
@@ -2481,7 +2607,7 @@ describe('securityIdentifierToAssetIdentifier and assetIdentifierToSecurityIdent
       value = { type: SecurityIdentifierType.Lei, value: leiValue };
 
       context.createType
-        .withArgs('AssetIdentifier', { [SecurityIdentifierType.Lei]: leiValue })
+        .withArgs('PolymeshPrimitivesAssetIdentifier', { [SecurityIdentifierType.Lei]: leiValue })
         .returns(fakeResult);
 
       result = securityIdentifierToAssetIdentifier(value, context);
@@ -2491,7 +2617,21 @@ describe('securityIdentifierToAssetIdentifier and assetIdentifierToSecurityIdent
       value = { type: SecurityIdentifierType.Cusip, value: cusipValue };
 
       context.createType
-        .withArgs('AssetIdentifier', { [SecurityIdentifierType.Cusip]: cusipValue })
+        .withArgs('PolymeshPrimitivesAssetIdentifier', {
+          [SecurityIdentifierType.Cusip]: cusipValue,
+        })
+        .returns(fakeResult);
+
+      result = securityIdentifierToAssetIdentifier(value, context);
+
+      expect(result).toBe(fakeResult);
+
+      value = { type: SecurityIdentifierType.Figi, value: figiValue };
+
+      context.createType
+        .withArgs('PolymeshPrimitivesAssetIdentifier', {
+          [SecurityIdentifierType.Figi]: figiValue,
+        })
         .returns(fakeResult);
 
       result = securityIdentifierToAssetIdentifier(value, context);
@@ -2519,6 +2659,12 @@ describe('securityIdentifierToAssetIdentifier and assetIdentifierToSecurityIdent
 
       expect(() => securityIdentifierToAssetIdentifier(identifier, context)).toThrow(
         `Invalid security identifier ${identifier.value} of type Cusip`
+      );
+
+      identifier = { type: SecurityIdentifierType.Figi, value: 'BBB00024DJF9' };
+
+      expect(() => securityIdentifierToAssetIdentifier(identifier, context)).toThrow(
+        `Invalid security identifier ${identifier.value} of type Figi`
       );
     });
   });
@@ -2556,119 +2702,13 @@ describe('securityIdentifierToAssetIdentifier and assetIdentifierToSecurityIdent
 
       result = assetIdentifierToSecurityIdentifier(identifier);
       expect(result).toEqual(fakeResult);
-    });
-  });
-});
 
-describe('stringToFundingRoundName and fundingRoundNameToString', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
+      fakeResult = { type: SecurityIdentifierType.Figi, value: 'someValue' };
+      identifier = dsMockUtils.createMockAssetIdentifier({
+        [SecurityIdentifierType.Figi]: dsMockUtils.createMockU8aFixed('someValue'),
+      });
 
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  describe('stringToFundingRoundName', () => {
-    it('should convert a string to a polkadot FundingRoundName object', () => {
-      const value = 'someName';
-      const fakeResult = 'convertedName' as unknown as FundingRoundName;
-      const context = dsMockUtils.getContextInstance();
-
-      context.createType.withArgs('FundingRoundName', value).returns(fakeResult);
-
-      const result = stringToFundingRoundName(value, context);
-
-      expect(result).toEqual(fakeResult);
-    });
-  });
-
-  describe('fundingRoundNameToString', () => {
-    it('should convert a polkadot FundingRoundName object to a string', () => {
-      const fakeResult = 'someFundingRoundName';
-      const roundName = dsMockUtils.createMockFundingRoundName(fakeResult);
-
-      const result = fundingRoundNameToString(roundName);
-      expect(result).toEqual(fakeResult);
-    });
-  });
-});
-
-describe('stringToDocumentName and documentNameToString', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  describe('stringToDocumentName', () => {
-    it('should convert a string to a polkadot DocumentName object', () => {
-      const value = 'someName';
-      const fakeResult = 'convertedName' as unknown as DocumentName;
-      const context = dsMockUtils.getContextInstance();
-
-      context.createType.withArgs('DocumentName', value).returns(fakeResult);
-
-      const result = stringToDocumentName(value, context);
-
-      expect(result).toEqual(fakeResult);
-    });
-  });
-
-  describe('documentNameToString', () => {
-    it('should convert a polkadot DocumentName object to a string', () => {
-      const fakeResult = 'someDocumentName';
-      const docName = dsMockUtils.createMockDocumentName(fakeResult);
-
-      const result = documentNameToString(docName);
-      expect(result).toEqual(fakeResult);
-    });
-  });
-});
-
-describe('stringToDocumentUri and documentUriToString', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  describe('stringToDocumentUri', () => {
-    it('should convert a string to a polkadot DocumentUri object', () => {
-      const value = 'someUri';
-      const fakeResult = 'convertedUri' as unknown as DocumentUri;
-      const context = dsMockUtils.getContextInstance();
-
-      context.createType.withArgs('DocumentUri', value).returns(fakeResult);
-
-      const result = stringToDocumentUri(value, context);
-
-      expect(result).toEqual(fakeResult);
-    });
-  });
-
-  describe('documentUriToString', () => {
-    it('documentUriToString should convert a polkadot DocumentUri object to a string', () => {
-      const fakeResult = 'someDocumentUri';
-      const docUri = dsMockUtils.createMockDocumentUri(fakeResult);
-
-      const result = documentUriToString(docUri);
+      result = assetIdentifierToSecurityIdentifier(identifier);
       expect(result).toEqual(fakeResult);
     });
   });
@@ -2706,7 +2746,7 @@ describe('stringToDocumentHash and documentHashToString', () => {
 
       const createTypeStub = context.createType;
 
-      createTypeStub.withArgs('DocumentHash', 'None').returns(fakeResult);
+      createTypeStub.withArgs('PolymeshPrimitivesDocumentHash', 'None').returns(fakeResult);
 
       let result = stringToDocumentHash(undefined, context);
 
@@ -2853,44 +2893,6 @@ describe('stringToDocumentHash and documentHashToString', () => {
   });
 });
 
-describe('stringToDocumentType and documentTypeToString', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  describe('stringToDocumentType', () => {
-    it('should convert a string to a polkadot DocumentType object', () => {
-      const value = 'someType';
-      const fakeResult = 'convertedType' as unknown as DocumentType;
-      const context = dsMockUtils.getContextInstance();
-
-      context.createType.withArgs('DocumentType', value).returns(fakeResult);
-
-      const result = stringToDocumentType(value, context);
-
-      expect(result).toEqual(fakeResult);
-    });
-  });
-
-  describe('documentTypeToString', () => {
-    it('should convert a polkadot DocumentType object to a string', () => {
-      const fakeResult = 'someDocumentType';
-      const docType = dsMockUtils.createMockDocumentType(fakeResult);
-
-      const result = documentTypeToString(docType);
-      expect(result).toEqual(fakeResult);
-    });
-  });
-});
-
 describe('assetDocumentToDocument and documentToAssetDocument', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -2920,14 +2922,12 @@ describe('assetDocumentToDocument and documentToAssetDocument', () => {
       const context = dsMockUtils.getContextInstance();
 
       context.createType
-        .withArgs('Document', {
-          uri: stringToDocumentUri(uri, context),
-          name: stringToDocumentName(name, context),
-          /* eslint-disable @typescript-eslint/naming-convention */
-          content_hash: stringToDocumentHash(contentHash, context),
-          doc_type: null,
-          filing_date: null,
-          /* eslint-enable @typescript-eslint/naming-convention */
+        .withArgs('PolymeshPrimitivesDocument', {
+          uri: stringToBytes(uri, context),
+          name: stringToBytes(name, context),
+          contentHash: stringToDocumentHash(contentHash, context),
+          docType: null,
+          filingDate: null,
         })
         .returns(fakeResult);
 
@@ -2935,14 +2935,12 @@ describe('assetDocumentToDocument and documentToAssetDocument', () => {
       expect(result).toEqual(fakeResult);
 
       context.createType
-        .withArgs('Document', {
-          uri: stringToDocumentUri(uri, context),
-          name: stringToDocumentName(name, context),
-          /* eslint-disable @typescript-eslint/naming-convention */
-          content_hash: stringToDocumentHash(contentHash, context),
-          doc_type: stringToDocumentType(type, context),
-          filing_date: dateToMoment(filedAt, context),
-          /* eslint-enable @typescript-eslint/naming-convention */
+        .withArgs('PolymeshPrimitivesDocument', {
+          uri: stringToBytes(uri, context),
+          name: stringToBytes(name, context),
+          contentHash: stringToDocumentHash(contentHash, context),
+          docType: stringToBytes(type, context),
+          filingDate: dateToMoment(filedAt, context),
         })
         .returns(fakeResult);
 
@@ -2964,13 +2962,11 @@ describe('assetDocumentToDocument and documentToAssetDocument', () => {
       };
 
       let doc = dsMockUtils.createMockDocument({
-        uri: dsMockUtils.createMockDocumentUri(uri),
-        name: dsMockUtils.createMockDocumentName(name),
-        /* eslint-disable @typescript-eslint/naming-convention */
-        content_hash: dsMockUtils.createMockDocumentHash('None'),
-        doc_type: dsMockUtils.createMockOption(),
-        filing_date: dsMockUtils.createMockOption(),
-        /* eslint-enable @typescript-eslint/naming-convention */
+        uri: dsMockUtils.createMockBytes(uri),
+        name: dsMockUtils.createMockBytes(name),
+        contentHash: dsMockUtils.createMockDocumentHash('None'),
+        docType: dsMockUtils.createMockOption(),
+        filingDate: dsMockUtils.createMockOption(),
       });
 
       let result = documentToAssetDocument(doc);
@@ -2984,17 +2980,15 @@ describe('assetDocumentToDocument and documentToAssetDocument', () => {
       };
 
       doc = dsMockUtils.createMockDocument({
-        uri: dsMockUtils.createMockDocumentUri(uri),
-        name: dsMockUtils.createMockDocumentName(name),
-        /* eslint-disable @typescript-eslint/naming-convention */
-        content_hash: dsMockUtils.createMockDocumentHash({
+        uri: dsMockUtils.createMockBytes(uri),
+        name: dsMockUtils.createMockBytes(name),
+        contentHash: dsMockUtils.createMockDocumentHash({
           H128: dsMockUtils.createMockU8aFixed(contentHash, true),
         }),
-        doc_type: dsMockUtils.createMockOption(dsMockUtils.createMockDocumentType(type)),
-        filing_date: dsMockUtils.createMockOption(
+        docType: dsMockUtils.createMockOption(dsMockUtils.createMockBytes(type)),
+        filingDate: dsMockUtils.createMockOption(
           dsMockUtils.createMockMoment(new BigNumber(filedAt.getTime()))
         ),
-        /* eslint-enable @typescript-eslint/naming-convention */
       });
 
       result = documentToAssetDocument(doc);
@@ -3062,10 +3056,10 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
           result: false,
         },
         asset_frozen: true,
-        statistics_result: [
+        transfer_condition_result: [
           {
-            tm: {
-              CountTransferManager: dsMockUtils.createMockU64(new BigNumber(100)),
+            condition: {
+              MaxInvestorCount: createMockU64(new BigNumber(100)),
             },
             result: false,
           },
@@ -3129,10 +3123,10 @@ describe('granularCanTransferResultToTransferBreakdown', () => {
           result: false,
         },
         asset_frozen: false,
-        statistics_result: [
+        transfer_condition_result: [
           {
-            tm: {
-              CountTransferManager: dsMockUtils.createMockU64(new BigNumber(100)),
+            condition: {
+              MaxInvestorCount: dsMockUtils.createMockU64(new BigNumber(100)),
             },
             result: false,
           },
@@ -3205,9 +3199,11 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
       };
       const fakeResult = 'ScopeEnum' as unknown as MeshScope;
       const fakeIdentityId =
-        '0x51a5fed99b9d305ef26e6af92dd3dcb181a30a07dc5f075e260b82a92d48913c' as unknown as IdentityId;
+        '0x51a5fed99b9d305ef26e6af92dd3dcb181a30a07dc5f075e260b82a92d48913c' as unknown as PolymeshPrimitivesIdentityId;
 
-      context.createType.withArgs('IdentityId', value.value).returns(fakeIdentityId);
+      context.createType
+        .withArgs('PolymeshPrimitivesIdentityId', value.value)
+        .returns(fakeIdentityId);
 
       context.createType.withArgs('Scope', { [value.type]: fakeIdentityId }).returns(fakeResult);
 
@@ -3223,10 +3219,10 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
         value: 'SOME_TICKER',
       };
       const fakeResult = 'ScopeEnum' as unknown as MeshScope;
-      const fakeTicker = 'SOME_TICKER' as unknown as Ticker;
+      const fakeTicker = 'SOME_TICKER' as unknown as PolymeshPrimitivesTicker;
 
       context.createType
-        .withArgs('Ticker', padString(value.value, MAX_TICKER_LENGTH))
+        .withArgs('PolymeshPrimitivesTicker', padString(value.value, MAX_TICKER_LENGTH))
         .returns(fakeTicker);
 
       context.createType.withArgs('Scope', { [value.type]: fakeTicker }).returns(fakeResult);
@@ -3252,7 +3248,7 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
 
       fakeResult = {
         type: ScopeType.Ticker,
-        value: 'someTicker',
+        value: 'SOME_TICKER',
       };
       scope = dsMockUtils.createMockScope({
         Ticker: dsMockUtils.createMockTicker(fakeResult.value),
@@ -3294,7 +3290,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
       let value: Claim = {
         type: ClaimType.Jurisdiction,
         code: CountryCode.Cl,
-        scope: { type: ScopeType.Identity, value: 'someTickerDid' },
+        scope: { type: ScopeType.Identity, value: 'SOME_TICKER_DID' },
       };
       const fakeResult = 'meshClaim' as unknown as MeshClaim;
       const fakeScope = 'scope' as unknown as MeshScope;
@@ -3312,7 +3308,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
 
       value = {
         type: ClaimType.Exempted,
-        scope: { type: ScopeType.Identity, value: 'someTickerDid' },
+        scope: { type: ScopeType.Identity, value: 'SOME_TICKERDid' },
       };
 
       createTypeStub
@@ -3381,12 +3377,26 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
       result = claimToMeshClaim(value, context);
 
       expect(result).toBe(fakeResult);
+
+      value = {
+        type: ClaimType.NoType,
+      };
+
+      createTypeStub
+        .withArgs('Claim', {
+          [value.type]: null,
+        })
+        .returns(fakeResult);
+
+      result = claimToMeshClaim(value, context);
+
+      expect(result).toBe(fakeResult);
     });
   });
 
   describe('meshClaimToClaim', () => {
     it('should convert a polkadot Claim object to a Claim', () => {
-      let scope = { type: ScopeType.Ticker, value: 'someTicker' };
+      let scope = { type: ScopeType.Ticker, value: 'SOME_TICKER' };
 
       let fakeResult: Claim = {
         type: ClaimType.Accredited,
@@ -3548,6 +3558,131 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
   });
 });
 
+describe('corporateActionParamsToMeshCorporateActionArgs', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    dsMockUtils.setConstMock('corporateAction', 'maxTargetIds', {
+      returnValue: dsMockUtils.createMockU32(new BigNumber(10)),
+    });
+    dsMockUtils.setConstMock('corporateAction', 'maxDidWhts', {
+      returnValue: dsMockUtils.createMockU32(new BigNumber(10)),
+    });
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a list of corporate action parameters to a polkadot PalletCorporateActionsInitiateCorporateActionArgs object', () => {
+    const ticker = 'SOME_TICKER';
+    const kind = CorporateActionKind.UnpredictableBenefit;
+    const declarationDate = new Date();
+    const checkpoint = new Date(new Date().getTime() + 10000);
+    const description = 'someDescription';
+    const targets = {
+      identities: ['someDid'],
+      treatment: TargetTreatment.Exclude,
+    };
+    const defaultTaxWithholding = new BigNumber(10);
+    const taxWithholdings = [
+      {
+        identity: 'someDid',
+        percentage: new BigNumber(20),
+      },
+    ];
+
+    const rawCheckpointDate = dsMockUtils.createMockMoment(new BigNumber(checkpoint.getTime()));
+    const recordDateValue = {
+      Scheduled: rawCheckpointDate,
+    };
+    const declarationDateValue = new BigNumber(declarationDate.getTime());
+
+    const context = dsMockUtils.getContextInstance();
+    const createTypeStub = context.createType;
+
+    const rawTicker = dsMockUtils.createMockTicker(ticker);
+    const rawKind = dsMockUtils.createMockCAKind(kind);
+    const rawDeclDate = dsMockUtils.createMockMoment(declarationDateValue);
+    const rawRecordDate = dsMockUtils.createMockRecordDateSpec(recordDateValue);
+    const rawDetails = dsMockUtils.createMockBytes(description);
+    const rawTargetTreatment = dsMockUtils.createMockTargetTreatment(targets.treatment);
+    const rawTargets = dsMockUtils.createMockTargetIdentities(targets);
+    const rawTax = dsMockUtils.createMockPermill(defaultTaxWithholding);
+
+    const { identity, percentage } = taxWithholdings[0];
+    const rawIdentityId = dsMockUtils.createMockIdentityId(identity);
+    const rawPermill = dsMockUtils.createMockPermill(percentage);
+
+    const fakeResult = dsMockUtils.createMockInitiateCorporateActionArgs({
+      ticker,
+      kind,
+      declDate: declarationDateValue,
+      recordDate: dsMockUtils.createMockOption(rawRecordDate),
+      details: description,
+      targets: dsMockUtils.createMockOption(rawTargets),
+      defaultWithholdingTax: dsMockUtils.createMockOption(rawTax),
+      withholdingTax: [[rawIdentityId, rawPermill]],
+    });
+
+    createTypeStub
+      .withArgs('PolymeshPrimitivesTicker', padString(ticker, MAX_TICKER_LENGTH))
+      .returns(rawTicker);
+    createTypeStub.withArgs('CAKind', kind).returns(rawKind);
+    createTypeStub.withArgs('u64', declarationDate.getTime()).returns(rawDeclDate);
+    createTypeStub.withArgs('u64', checkpoint.getTime()).returns(rawCheckpointDate);
+    createTypeStub.withArgs('RecordDateSpec', recordDateValue).returns(rawRecordDate);
+    createTypeStub.withArgs('Bytes', description).returns(rawDetails);
+    createTypeStub.withArgs('TargetTreatment', targets.treatment).returns(rawTargetTreatment);
+    createTypeStub
+      .withArgs('TargetIdentities', {
+        identities: [rawIdentityId],
+        treatment: rawTargetTreatment,
+      })
+      .returns(rawTargets);
+    createTypeStub.withArgs('PolymeshPrimitivesIdentityId', identity).returns(rawIdentityId);
+    createTypeStub.withArgs('Permill', percentage.shiftedBy(4).toString()).returns(rawPermill);
+    createTypeStub
+      .withArgs('Permill', defaultTaxWithholding.shiftedBy(4).toString())
+      .returns(rawTax);
+
+    createTypeStub
+      .withArgs('PalletCorporateActionsInitiateCorporateActionArgs', {
+        ticker: rawTicker,
+        kind: rawKind,
+        declDate: rawDeclDate,
+        recordDate: rawRecordDate,
+        details: rawDetails,
+        targets: rawTargets,
+        defaultWithholdingTax: rawTax,
+        withholdingTax: [[rawIdentityId, rawPermill]],
+      })
+      .returns(fakeResult);
+
+    expect(
+      corporateActionParamsToMeshCorporateActionArgs(
+        {
+          ticker,
+          kind,
+          declarationDate,
+          checkpoint,
+          description,
+          targets,
+          defaultTaxWithholding,
+          taxWithholdings,
+        },
+        context
+      )
+    ).toEqual(fakeResult);
+  });
+});
+
 describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -3619,7 +3754,7 @@ describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
       result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
-      fakeResult = ClaimType.NoData;
+      fakeResult = ClaimType.NoType;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
 
@@ -3636,15 +3771,61 @@ describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
   });
 
   describe('claimTypeToMeshClaimType', () => {
-    it('should convert a ClaimType to a polkadot ClaimType object', () => {
+    it('should convert a ClaimType to a polkadot ClaimType', () => {
       const context = dsMockUtils.getContextInstance();
-      const fakeResult = 'meshClaim' as unknown as MeshClaim;
+      const mockClaim = dsMockUtils.createMockClaimType(ClaimType.Accredited);
+      context.createType
+        .withArgs('PolymeshPrimitivesIdentityClaimClaimType', ClaimType.Accredited)
+        .returns(mockClaim);
 
-      context.createType.returns(fakeResult);
-
-      const result = claimTypeToMeshClaimType(ClaimType.SellLockup, context);
-      expect(result).toEqual(fakeResult);
+      const result = claimTypeToMeshClaimType(ClaimType.Accredited, context);
+      expect(result).toEqual(mockClaim);
     });
+
+    it('should treat NoData as NoType', () => {
+      const context = dsMockUtils.getContextInstance();
+      const mockClaim = dsMockUtils.createMockClaimType(ClaimType.NoType);
+      context.createType
+        .withArgs('PolymeshPrimitivesIdentityClaimClaimType', ClaimType.NoType)
+        .returns(mockClaim);
+
+      const result = claimTypeToMeshClaimType(ClaimType.NoData, context);
+      expect(result).toEqual(mockClaim);
+    });
+  });
+});
+
+describe('meshClaimTypeToClaimType', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a statistics enabled ClaimType to a claimType', () => {
+    let fakeResult = ClaimType.Accredited;
+    let claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+    let result = meshClaimTypeToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ClaimType.Affiliate;
+    claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+    result = meshClaimTypeToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = ClaimType.Jurisdiction;
+    claimType = dsMockUtils.createMockClaimType(fakeResult);
+
+    result = meshClaimTypeToClaimType(claimType);
+    expect(result).toEqual(fakeResult);
   });
 });
 
@@ -3678,6 +3859,9 @@ describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
       result = scopeToMiddlewareScope(scope);
       expect(result).toEqual({ type: ClaimScopeTypeEnum.Ticker, value: 'someTicker\0\0' });
 
+      result = scopeToMiddlewareScope(scope, false);
+      expect(result).toEqual({ type: ClaimScopeTypeEnum.Ticker, value: 'someTicker' });
+
       scope = { type: ScopeType.Custom, value: 'customValue' };
       result = scopeToMiddlewareScope(scope);
       expect(result).toEqual({ type: ClaimScopeTypeEnum.Custom, value: scope.value });
@@ -3702,6 +3886,166 @@ describe('middlewareEventToEventIdentifier', () => {
       blockDate: new Date('10/14/1987'),
       eventIndex: new BigNumber(3),
     });
+  });
+});
+
+describe('middlewareV2EventDetailsToEventIdentifier', () => {
+  it('should convert Event details to an EventIdentifier', () => {
+    const eventIdx = 3;
+    const block = {
+      blockId: 3000,
+      hash: 'someHash',
+      datetime: new Date('10/14/1987').toISOString(),
+    } as MiddlewareV2Block;
+
+    const fakeResult = {
+      blockNumber: new BigNumber(3000),
+      blockDate: new Date('10/14/1987'),
+      blockHash: 'someHash',
+      eventIndex: new BigNumber(3),
+    };
+
+    expect(middlewareV2EventDetailsToEventIdentifier(block)).toEqual({
+      ...fakeResult,
+      eventIndex: new BigNumber(0),
+    });
+
+    expect(middlewareV2EventDetailsToEventIdentifier(block, eventIdx)).toEqual(fakeResult);
+  });
+});
+
+describe('middlewareV2ClaimToClaimData', () => {
+  let createClaimStub: sinon.SinonStub;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+    createClaimStub = sinon.stub(internalUtils, 'createClaim');
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert middleware V2 Claim to ClaimData', () => {
+    const context = dsMockUtils.getContextInstance();
+    const issuanceDate = new Date('10/14/1987');
+    const expiry = new Date('10/10/1988');
+    const middlewareV2Claim = {
+      targetId: 'targetId',
+      issuerId: 'issuerId',
+      issuanceDate: issuanceDate.getTime(),
+      expiry: null,
+      cddId: 'someCddId',
+      type: 'CustomerDueDiligence',
+    } as MiddlewareV2Claim;
+    const claim = {
+      type: ClaimType.CustomerDueDiligence,
+      id: 'someCddId',
+    };
+    createClaimStub.returns(claim);
+
+    const fakeResult = {
+      target: expect.objectContaining({ did: 'targetId' }),
+      issuer: expect.objectContaining({ did: 'issuerId' }),
+      issuedAt: issuanceDate,
+      expiry: null,
+      claim,
+    };
+
+    expect(middlewareV2ClaimToClaimData(middlewareV2Claim, context)).toEqual(fakeResult);
+
+    expect(
+      middlewareV2ClaimToClaimData(
+        {
+          ...middlewareV2Claim,
+          expiry: expiry.getTime(),
+        },
+        context
+      )
+    ).toEqual({
+      ...fakeResult,
+      expiry,
+    });
+  });
+});
+
+describe('toIdentityWithClaimsArrayV2', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return an IdentityWithClaims array object', () => {
+    const context = dsMockUtils.getContextInstance();
+    const targetDid = 'someTargetDid';
+    const issuerDid = 'someIssuerDid';
+    const cddId = 'someCddId';
+    const date = 1589816265000;
+    const customerDueDiligenceType = ClaimTypeEnum.CustomerDueDiligence;
+    const claim = {
+      target: expect.objectContaining({ did: targetDid }),
+      issuer: expect.objectContaining({ did: issuerDid }),
+      issuedAt: new Date(date),
+    };
+    const fakeResult = [
+      {
+        identity: expect.objectContaining({ did: targetDid }),
+        claims: [
+          {
+            ...claim,
+            expiry: new Date(date),
+            claim: {
+              type: customerDueDiligenceType,
+              id: cddId,
+            },
+          },
+          {
+            ...claim,
+            expiry: null,
+            claim: {
+              type: customerDueDiligenceType,
+              id: cddId,
+            },
+          },
+        ],
+      },
+    ];
+    const commonClaimData = {
+      targetId: targetDid,
+      issuerId: issuerDid,
+      issuanceDate: date,
+      cddId: cddId,
+    };
+    const fakeMiddlewareV2Claims = [
+      {
+        ...commonClaimData,
+        expiry: date,
+        type: customerDueDiligenceType,
+      },
+      {
+        ...commonClaimData,
+        expiry: null,
+        type: customerDueDiligenceType,
+      },
+    ] as MiddlewareV2Claim[];
+    /* eslint-enable @typescript-eslint/naming-convention */
+
+    const result = toIdentityWithClaimsArrayV2(fakeMiddlewareV2Claims, context, 'targetId');
+
+    expect(result).toEqual(fakeResult);
   });
 });
 
@@ -3806,7 +4150,7 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
           target: ConditionTarget.Both,
           claim: {
             type: ClaimType.Exempted,
-            scope: { type: ScopeType.Identity, value: 'someTickerDid' },
+            scope: { type: ScopeType.Identity, value: 'SOME_TICKERDid' },
           },
           trustedClaimIssuers: [
             { identity: new Identity({ did }, context), trustedFor: null },
@@ -3819,11 +4163,11 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
           claims: [
             {
               type: ClaimType.Blocked,
-              scope: { type: ScopeType.Identity, value: 'someTickerDid' },
+              scope: { type: ScopeType.Identity, value: 'SOME_TICKERDid' },
             },
             {
               type: ClaimType.SellLockup,
-              scope: { type: ScopeType.Identity, value: 'someTickerDid' },
+              scope: { type: ScopeType.Identity, value: 'SOME_TICKERDid' },
             },
           ],
         },
@@ -3832,7 +4176,7 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
           target: ConditionTarget.Receiver,
           claim: {
             type: ClaimType.Jurisdiction as const,
-            scope: { type: ScopeType.Identity, value: 'someTickerDid' },
+            scope: { type: ScopeType.Identity, value: 'SOME_TICKERDid' },
             code: CountryCode.Cl,
           },
         },
@@ -3858,30 +4202,27 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
         const meshType = type === ConditionType.IsExternalAgent ? ConditionType.IsIdentity : type;
         createTypeStub
           .withArgs(
-            'Condition',
+            'PolymeshPrimitivesCondition',
             sinon.match({
-              // eslint-disable-next-line @typescript-eslint/naming-convention
-              condition_type: sinon.match.has(meshType),
+              conditionType: sinon.match.has(meshType),
             })
           )
           .returns(`meshCondition${meshType}`);
       });
 
       createTypeStub
-        .withArgs('ComplianceRequirement', {
-          /* eslint-disable @typescript-eslint/naming-convention */
-          sender_conditions: [
+        .withArgs('PolymeshPrimitivesComplianceManagerComplianceRequirement', {
+          senderConditions: [
             'meshConditionIsPresent',
             'meshConditionIsNoneOf',
             'meshConditionIsIdentity',
           ],
-          receiver_conditions: [
+          receiverConditions: [
             'meshConditionIsPresent',
             'meshConditionIsAbsent',
             'meshConditionIsIdentity',
           ],
           id: bigNumberToU32(value.id, context),
-          /* eslint-enable @typescript-eslint/naming-convention */
         })
         .returns(fakeResult);
 
@@ -3978,24 +4319,24 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
       const issuers = issuerDids.map(({ identity }) =>
         dsMockUtils.createMockTrustedIssuer({
           issuer: dsMockUtils.createMockIdentityId(identity.did),
-          trusted_for: dsMockUtils.createMockTrustedFor(),
+          trustedFor: dsMockUtils.createMockTrustedFor(),
         })
       );
       const rawConditions = [
         dsMockUtils.createMockCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+          conditionType: dsMockUtils.createMockConditionType({
             IsPresent: dsMockUtils.createMockClaim({ KnowYourCustomer: scope }),
           }),
           issuers,
         }),
         dsMockUtils.createMockCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+          conditionType: dsMockUtils.createMockConditionType({
             IsAbsent: dsMockUtils.createMockClaim({ BuyLockup: scope }),
           }),
           issuers,
         }),
         dsMockUtils.createMockCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+          conditionType: dsMockUtils.createMockConditionType({
             IsNoneOf: [
               dsMockUtils.createMockClaim({ Blocked: scope }),
               dsMockUtils.createMockClaim({ SellLockup: scope }),
@@ -4004,7 +4345,7 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
           issuers,
         }),
         dsMockUtils.createMockCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+          conditionType: dsMockUtils.createMockConditionType({
             IsAnyOf: [
               dsMockUtils.createMockClaim({ Exempted: scope }),
               dsMockUtils.createMockClaim({
@@ -4015,7 +4356,7 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
           issuers,
         }),
         dsMockUtils.createMockCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+          conditionType: dsMockUtils.createMockConditionType({
             IsIdentity: dsMockUtils.createMockTargetIdentity({
               Specific: dsMockUtils.createMockIdentityId(targetIdentityDid),
             }),
@@ -4023,21 +4364,21 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
           issuers,
         }),
         dsMockUtils.createMockCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+          conditionType: dsMockUtils.createMockConditionType({
             IsIdentity: dsMockUtils.createMockTargetIdentity('ExternalAgent'),
           }),
           issuers,
         }),
       ];
       const complianceRequirement = dsMockUtils.createMockComplianceRequirement({
-        sender_conditions: [
+        senderConditions: [
           rawConditions[0],
           rawConditions[2],
           rawConditions[2],
           rawConditions[3],
           rawConditions[4],
         ],
-        receiver_conditions: [
+        receiverConditions: [
           rawConditions[0],
           rawConditions[1],
           rawConditions[1],
@@ -4168,6 +4509,40 @@ describe('txTagToExtrinsicIdentifier and extrinsicIdentifierToTxTag', () => {
       expect(result).toEqual(TxTags.babe.ReportEquivocation);
     });
   });
+
+  it('should convert a ExtrinsicIdentifierV2 object to a TxTag', () => {
+    let result = extrinsicIdentifierToTxTag({
+      moduleId: MiddlewareV2ModuleId.Identity,
+      callId: MiddlewareV2CallId.CddRegisterDid,
+    });
+
+    expect(result).toEqual(TxTags.identity.CddRegisterDid);
+
+    result = extrinsicIdentifierToTxTag({
+      moduleId: MiddlewareV2ModuleId.Babe,
+      callId: MiddlewareV2CallId.ReportEquivocation,
+    });
+
+    expect(result).toEqual(TxTags.babe.ReportEquivocation);
+  });
+});
+
+describe('txTagToExtrinsicIdentifierV2', () => {
+  it('should convert a TxTag enum to a ExtrinsicIdentifierV2 object', () => {
+    let result = txTagToExtrinsicIdentifierV2(TxTags.identity.CddRegisterDid);
+
+    expect(result).toEqual({
+      moduleId: MiddlewareV2ModuleId.Identity,
+      callId: MiddlewareV2CallId.CddRegisterDid,
+    });
+
+    result = txTagToExtrinsicIdentifierV2(TxTags.babe.ReportEquivocation);
+
+    expect(result).toEqual({
+      moduleId: MiddlewareV2ModuleId.Babe,
+      callId: MiddlewareV2CallId.ReportEquivocation,
+    });
+  });
 });
 
 describe('stringToText and textToString', () => {
@@ -4231,7 +4606,9 @@ describe('portfolioIdToMeshPortfolioId', () => {
     const fakeResult = 'PortfolioId' as unknown as PortfolioId;
     const context = dsMockUtils.getContextInstance();
 
-    context.createType.withArgs('IdentityId', portfolioId.did).returns(rawIdentityId);
+    context.createType
+      .withArgs('PolymeshPrimitivesIdentityId', portfolioId.did)
+      .returns(rawIdentityId);
 
     context.createType
       .withArgs('PortfolioId', {
@@ -4379,13 +4756,13 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
     const issuers = issuerDids.map(({ identity: { did } }) =>
       dsMockUtils.createMockTrustedIssuer({
         issuer: dsMockUtils.createMockIdentityId(did),
-        trusted_for: dsMockUtils.createMockTrustedFor(),
+        trustedFor: dsMockUtils.createMockTrustedFor(),
       })
     );
     const rawConditions = [
       dsMockUtils.createMockConditionResult({
         condition: dsMockUtils.createMockCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+          conditionType: dsMockUtils.createMockConditionType({
             IsPresent: dsMockUtils.createMockClaim({ KnowYourCustomer: scope }),
           }),
           issuers,
@@ -4394,7 +4771,7 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
       }),
       dsMockUtils.createMockConditionResult({
         condition: dsMockUtils.createMockCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+          conditionType: dsMockUtils.createMockConditionType({
             IsAbsent: dsMockUtils.createMockClaim({ BuyLockup: scope }),
           }),
           issuers,
@@ -4403,7 +4780,7 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
       }),
       dsMockUtils.createMockConditionResult({
         condition: dsMockUtils.createMockCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+          conditionType: dsMockUtils.createMockConditionType({
             IsNoneOf: [
               dsMockUtils.createMockClaim({ Blocked: scope }),
               dsMockUtils.createMockClaim({ SellLockup: scope }),
@@ -4415,7 +4792,7 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
       }),
       dsMockUtils.createMockConditionResult({
         condition: dsMockUtils.createMockCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+          conditionType: dsMockUtils.createMockConditionType({
             IsAnyOf: [
               dsMockUtils.createMockClaim({ Exempted: scope }),
               dsMockUtils.createMockClaim({
@@ -4429,7 +4806,7 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
       }),
       dsMockUtils.createMockConditionResult({
         condition: dsMockUtils.createMockCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+          conditionType: dsMockUtils.createMockConditionType({
             IsIdentity: dsMockUtils.createMockTargetIdentity({
               Specific: dsMockUtils.createMockIdentityId(targetIdentityDid),
             }),
@@ -4440,7 +4817,7 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
       }),
       dsMockUtils.createMockConditionResult({
         condition: dsMockUtils.createMockCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+          conditionType: dsMockUtils.createMockConditionType({
             IsIdentity: dsMockUtils.createMockTargetIdentity('ExternalAgent'),
           }),
           issuers,
@@ -4449,14 +4826,14 @@ describe('complianceRequirementResultToRequirementCompliance', () => {
       }),
     ];
     const complianceRequirement = dsMockUtils.createMockComplianceRequirementResult({
-      sender_conditions: [
+      senderConditions: [
         rawConditions[0],
         rawConditions[2],
         rawConditions[2],
         rawConditions[3],
         rawConditions[4],
       ],
-      receiver_conditions: [
+      receiverConditions: [
         rawConditions[0],
         rawConditions[1],
         rawConditions[1],
@@ -4576,14 +4953,13 @@ describe('assetComplianceResultToCompliance', () => {
     const issuers = issuerDids.map(({ identity: { did } }) =>
       dsMockUtils.createMockTrustedIssuer({
         issuer: dsMockUtils.createMockIdentityId(did),
-        trusted_for: dsMockUtils.createMockTrustedFor(),
+        trustedFor: dsMockUtils.createMockTrustedFor(),
       })
     );
     const rawConditions = [
-      /* eslint-disable @typescript-eslint/naming-convention */
       dsMockUtils.createMockConditionResult({
         condition: dsMockUtils.createMockCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+          conditionType: dsMockUtils.createMockConditionType({
             IsPresent: dsMockUtils.createMockClaim({ KnowYourCustomer: scope }),
           }),
           issuers,
@@ -4592,7 +4968,7 @@ describe('assetComplianceResultToCompliance', () => {
       }),
       dsMockUtils.createMockConditionResult({
         condition: dsMockUtils.createMockCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+          conditionType: dsMockUtils.createMockConditionType({
             IsAbsent: dsMockUtils.createMockClaim({ BuyLockup: scope }),
           }),
           issuers,
@@ -4601,7 +4977,7 @@ describe('assetComplianceResultToCompliance', () => {
       }),
       dsMockUtils.createMockConditionResult({
         condition: dsMockUtils.createMockCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+          conditionType: dsMockUtils.createMockConditionType({
             IsNoneOf: [
               dsMockUtils.createMockClaim({ Blocked: scope }),
               dsMockUtils.createMockClaim({ SellLockup: scope }),
@@ -4613,7 +4989,7 @@ describe('assetComplianceResultToCompliance', () => {
       }),
       dsMockUtils.createMockConditionResult({
         condition: dsMockUtils.createMockCondition({
-          condition_type: dsMockUtils.createMockConditionType({
+          conditionType: dsMockUtils.createMockConditionType({
             IsAnyOf: [
               dsMockUtils.createMockClaim({ Exempted: scope }),
               dsMockUtils.createMockClaim({
@@ -4628,12 +5004,11 @@ describe('assetComplianceResultToCompliance', () => {
     ];
 
     const rawRequirements = dsMockUtils.createMockComplianceRequirementResult({
-      sender_conditions: [rawConditions[0], rawConditions[2], rawConditions[3]],
-      receiver_conditions: [rawConditions[0], rawConditions[1], rawConditions[3]],
+      senderConditions: [rawConditions[0], rawConditions[2], rawConditions[3]],
+      receiverConditions: [rawConditions[0], rawConditions[1], rawConditions[3]],
       id: dsMockUtils.createMockU32(new BigNumber(1)),
       result: dsMockUtils.createMockBool(false),
     });
-    /* eslint-enable @typescript-eslint/naming-convention */
 
     let assetComplianceResult = dsMockUtils.createMockAssetComplianceResult({
       paused: dsMockUtils.createMockBool(true),
@@ -4684,8 +5059,11 @@ describe('keyToAddress and addressToKey', () => {
 
   describe('keyToAddress', () => {
     it('should encode a public key into an address', () => {
-      const result = keyToAddress(publicKey, context);
+      let result = keyToAddress(publicKey, context);
 
+      expect(result).toBe(address);
+
+      result = keyToAddress(publicKey.substring(2), context);
       expect(result).toBe(address);
     });
   });
@@ -4714,7 +5092,7 @@ describe('transactionHexToTxTag', () => {
 
     const context = dsMockUtils.getContextInstance();
 
-    context.createType.withArgs('Proposal', hex).returns(mockResult);
+    context.createType.withArgs('Call', hex).returns(mockResult);
 
     const result = transactionHexToTxTag(hex, context);
     expect(result).toEqual(fakeResult);
@@ -4884,44 +5262,6 @@ describe('venueTypeToMeshVenueType and meshVenueTypeToVenueType', () => {
 
       result = meshVenueTypeToVenueType(venueType);
       expect(result).toEqual(fakeResult);
-    });
-  });
-});
-
-describe('stringToVenueDetails and venueDetailsToString', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  describe('stringToVenueDetails', () => {
-    it('should convert a string into a polkadot VenueDetails object', () => {
-      const details = 'details';
-      const fakeResult = 'type' as unknown as VenueDetails;
-      const context = dsMockUtils.getContextInstance();
-
-      context.createType.withArgs('VenueDetails', details).returns(fakeResult);
-
-      const result = stringToVenueDetails(details, context);
-
-      expect(result).toBe(fakeResult);
-    });
-  });
-
-  describe('venueDetailsToString', () => {
-    it('should convert a polkadot VenueDetails object to a string', () => {
-      const fakeResult = 'details';
-      const venueDetails = dsMockUtils.createMockVenueDetails(fakeResult);
-
-      const result = venueDetailsToString(venueDetails);
-      expect(result).toBe(fakeResult);
     });
   });
 });
@@ -5257,10 +5597,9 @@ describe('trustedClaimIssuerToTrustedIssuer and trustedIssuerToTrustedClaimIssue
       };
 
       context.createType
-        .withArgs('TrustedIssuer', {
+        .withArgs('PolymeshPrimitivesConditionTrustedIssuer', {
           issuer: stringToIdentityId(did, context),
-          // eslint-disable-next-line @typescript-eslint/naming-convention
-          trusted_for: 'Any',
+          trustedFor: 'Any',
         })
         .returns(fakeResult);
 
@@ -5273,49 +5612,14 @@ describe('trustedClaimIssuerToTrustedIssuer and trustedIssuerToTrustedClaimIssue
       };
 
       context.createType
-        .withArgs('TrustedIssuer', {
+        .withArgs('PolymeshPrimitivesConditionTrustedIssuer', {
           issuer: stringToIdentityId(did, context),
-          // eslint-disable-next-line @typescript-eslint/naming-convention
-          trusted_for: { Specific: [ClaimType.Accredited, ClaimType.Blocked] },
+          trustedFor: { Specific: [ClaimType.Accredited, ClaimType.Blocked] },
         })
         .returns(fakeResult);
 
       result = trustedClaimIssuerToTrustedIssuer(issuer, context);
       expect(result).toBe(fakeResult);
-    });
-  });
-
-  describe('trustedIssuerToTrustedClaimIssuer', () => {
-    it('should convert an IdentityId to an Identity object', () => {
-      const did = 'someDid';
-      const context = dsMockUtils.getContextInstance();
-      let fakeResult: TrustedClaimIssuer = {
-        identity: expect.objectContaining({ did }),
-        trustedFor: null,
-      };
-      let trustedIssuer = dsMockUtils.createMockTrustedIssuer({
-        issuer: dsMockUtils.createMockIdentityId(did),
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        trusted_for: dsMockUtils.createMockTrustedFor('Any'),
-      });
-
-      let result = trustedIssuerToTrustedClaimIssuer(trustedIssuer, context);
-      expect(result).toEqual(fakeResult);
-
-      fakeResult = {
-        identity: expect.objectContaining({ did }),
-        trustedFor: [ClaimType.SellLockup],
-      };
-      trustedIssuer = dsMockUtils.createMockTrustedIssuer({
-        issuer: dsMockUtils.createMockIdentityId(did),
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        trusted_for: dsMockUtils.createMockTrustedFor({
-          Specific: [dsMockUtils.createMockClaimType(ClaimType.SellLockup)],
-        }),
-      });
-
-      result = trustedIssuerToTrustedClaimIssuer(trustedIssuer, context);
-      expect(result).toEqual(fakeResult);
     });
   });
 });
@@ -5483,7 +5787,28 @@ describe('middlewarePortfolioToPortfolio', () => {
   });
 });
 
-describe('transferRestrictionToTransferManager', () => {
+describe('middlewareV2PortfolioToPortfolio', () => {
+  it('should convert a MiddlewarePortfolio into a Portfolio', async () => {
+    const context = dsMockUtils.getContextInstance();
+    let middlewareV2Portfolio = {
+      identityId: 'someDid',
+      number: 0,
+    } as MiddlewareV2Portfolio;
+
+    let result = await middlewareV2PortfolioToPortfolio(middlewareV2Portfolio, context);
+    expect(result instanceof DefaultPortfolio).toBe(true);
+
+    middlewareV2Portfolio = {
+      identityId: 'someDid',
+      number: 10,
+    } as MiddlewareV2Portfolio;
+
+    result = await middlewareV2PortfolioToPortfolio(middlewareV2Portfolio, context);
+    expect(result instanceof NumberedPortfolio).toBe(true);
+  });
+});
+
+describe('transferRestrictionToPolymeshTransferCondition', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -5497,25 +5822,27 @@ describe('transferRestrictionToTransferManager', () => {
     sinon.restore();
   });
 
-  it('should convert a Transfer Restriction to a polkadot TransferManager object', () => {
+  it('should convert a Transfer Restriction to a PolymeshTransferCondition object', () => {
     const count = new BigNumber(10);
-    let value = {
+    let value: TransferRestriction = {
       type: TransferRestrictionType.Count,
       value: count,
     };
-    const fakeResult = 'TransferManagerEnum' as unknown as TransferManager;
+    const fakeResult = 'TransferConditionEnum' as unknown as TransferCondition;
     const context = dsMockUtils.getContextInstance();
 
     const rawCount = dsMockUtils.createMockU64(count);
 
     const createTypeStub = context.createType;
     createTypeStub
-      .withArgs('TransferManager', { CountTransferManager: rawCount })
+      .withArgs('PolymeshPrimitivesTransferComplianceTransferCondition', {
+        MaxInvestorCount: rawCount,
+      })
       .returns(fakeResult);
 
     createTypeStub.withArgs('u64', count.toString()).returns(rawCount);
 
-    let result = transferRestrictionToTransferManager(value, context);
+    let result = transferRestrictionToPolymeshTransferCondition(value, context);
 
     expect(result).toBe(fakeResult);
 
@@ -5527,29 +5854,145 @@ describe('transferRestrictionToTransferManager', () => {
     };
 
     createTypeStub
-      .withArgs('TransferManager', { PercentageTransferManager: rawPercentage })
+      .withArgs('PolymeshPrimitivesTransferComplianceTransferCondition', {
+        MaxInvestorOwnership: rawPercentage,
+      })
       .returns(fakeResult);
 
     createTypeStub
       .withArgs('Permill', percentage.multipliedBy(10000).toString())
       .returns(rawPercentage);
 
-    result = transferRestrictionToTransferManager(value, context);
+    result = transferRestrictionToPolymeshTransferCondition(value, context);
+
+    expect(result).toBe(fakeResult);
+
+    const did = 'someDid';
+    const min = new BigNumber(10);
+    const max = new BigNumber(20);
+    const issuer = entityMockUtils.getIdentityInstance({ did });
+    const countryCode = CountryCode.Ca;
+    const rawCountryCode = dsMockUtils.createMockCountryCode(CountryCode.Ca);
+    const rawMinCount = dsMockUtils.createMockU64(min);
+    const rawMaxCount = dsMockUtils.createMockOption(dsMockUtils.createMockU64(max));
+    const rawMinPercent = dsMockUtils.createMockPermill(min);
+    const rawMaxPercent = dsMockUtils.createMockPermill(max);
+    const rawIssuerId = dsMockUtils.createMockIdentityId(did);
+    const rawClaimValue = { Jurisdiction: rawCountryCode };
+
+    const claimCount = {
+      min,
+      max,
+      issuer,
+      claim: { type: ClaimType.Jurisdiction as const, countryCode },
+    };
+    value = {
+      type: TransferRestrictionType.ClaimCount,
+      value: claimCount,
+    };
+
+    createTypeStub.withArgs('u64', min.toString()).returns(rawMinCount);
+    createTypeStub.withArgs('u64', max.toString()).returns(rawMaxCount);
+    createTypeStub.withArgs('Permill', min.shiftedBy(4).toString()).returns(rawMinPercent);
+    createTypeStub.withArgs('Permill', max.shiftedBy(4).toString()).returns(rawMaxPercent);
+    createTypeStub.withArgs('CountryCode', CountryCode.Ca).returns(rawCountryCode);
+    createTypeStub.withArgs('PolymeshPrimitivesIdentityId', did).returns(rawIssuerId);
+    createTypeStub
+      .withArgs('PolymeshPrimitivesTransferComplianceTransferCondition', {
+        ClaimCount: [rawClaimValue, rawIssuerId, rawMinCount, rawMaxCount],
+      })
+      .returns(fakeResult);
+
+    result = transferRestrictionToPolymeshTransferCondition(value, context);
+
+    expect(result).toBe(fakeResult);
+
+    const claimPercentage = {
+      min,
+      max,
+      issuer,
+      claim: {
+        type: ClaimType.Affiliate as const,
+        affiliate: true,
+      },
+    };
+    value = {
+      type: TransferRestrictionType.ClaimPercentage,
+      value: claimPercentage,
+    };
+    const rawTrue = dsMockUtils.createMockBool(true);
+    const rawOwnershipClaim = { Affiliate: rawTrue };
+
+    createTypeStub.withArgs('bool', true).returns(rawTrue);
+    createTypeStub
+      .withArgs('PolymeshPrimitivesTransferComplianceTransferCondition', {
+        ClaimOwnership: [rawOwnershipClaim, rawIssuerId, rawMinPercent, rawMaxPercent],
+      })
+      .returns(fakeResult);
+
+    result = transferRestrictionToPolymeshTransferCondition(value, context);
+
+    expect(result).toBe(fakeResult);
+
+    const claimPercentageAccredited = {
+      min,
+      max,
+      issuer,
+      claim: {
+        type: ClaimType.Accredited as const,
+        accredited: true,
+      },
+    };
+    value = {
+      type: TransferRestrictionType.ClaimPercentage,
+      value: claimPercentageAccredited,
+    };
+    const rawOwnershipClaimAccredited = { Accredited: rawTrue };
+
+    createTypeStub.withArgs('bool', true).returns(rawTrue);
+    createTypeStub
+      .withArgs('PolymeshPrimitivesTransferComplianceTransferCondition', {
+        ClaimOwnership: [rawOwnershipClaimAccredited, rawIssuerId, rawMinPercent, rawMaxPercent],
+      })
+      .returns(fakeResult);
+
+    result = transferRestrictionToPolymeshTransferCondition(value, context);
 
     expect(result).toBe(fakeResult);
   });
 
-  it('should convert a polkadot Signatory object to a SignerValue', () => {
+  it('should throw if there is an unknown transfer type', () => {
+    const context = dsMockUtils.getContextInstance();
+    const value = {
+      type: 'Unknown',
+      value: new BigNumber(3),
+    } as unknown as TransferRestriction;
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.UnexpectedError,
+      message:
+        'Unexpected transfer restriction type: "Unknown". Please report this to the Polymesh team',
+    });
+
+    return expect(() =>
+      transferRestrictionToPolymeshTransferCondition(value, context)
+    ).toThrowError(expectedError);
+  });
+});
+
+describe('transferConditionToTransferRestriction', () => {
+  it('should convert a TransferRestriction to a TransferCondition', () => {
+    const mockContext = dsMockUtils.getContextInstance();
     const count = new BigNumber(10);
     let fakeResult = {
       type: TransferRestrictionType.Count,
       value: count,
     };
-    let transferManager = dsMockUtils.createMockTransferManager({
-      CountTransferManager: dsMockUtils.createMockU64(count),
+    let transferCondition = dsMockUtils.createMockTransferCondition({
+      MaxInvestorCount: dsMockUtils.createMockU64(count),
     });
 
-    let result = transferManagerToTransferRestriction(transferManager);
+    let result = transferConditionToTransferRestriction(transferCondition, mockContext);
     expect(result).toEqual(fakeResult);
 
     const percentage = new BigNumber(49);
@@ -5557,12 +6000,23 @@ describe('transferRestrictionToTransferManager', () => {
       type: TransferRestrictionType.Percentage,
       value: percentage,
     };
-    transferManager = dsMockUtils.createMockTransferManager({
-      PercentageTransferManager: dsMockUtils.createMockPermill(percentage.multipliedBy(10000)),
+    transferCondition = dsMockUtils.createMockTransferCondition({
+      MaxInvestorOwnership: dsMockUtils.createMockPermill(percentage.multipliedBy(10000)),
     });
 
-    result = transferManagerToTransferRestriction(transferManager);
+    result = transferConditionToTransferRestriction(transferCondition, mockContext);
     expect(result).toEqual(fakeResult);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (transferCondition as any).isMaxInvestorOwnership = false;
+    const expectedError = new PolymeshError({
+      code: ErrorCode.FatalError,
+      message: 'Unexpected transfer condition type',
+    });
+
+    expect(() =>
+      transferConditionToTransferRestriction(transferCondition, mockContext)
+    ).toThrowError(expectedError);
   });
 });
 
@@ -5845,6 +6299,7 @@ describe('fundraiserToOfferingDetails', () => {
       },
     ];
     const startDate = new Date();
+    startDate.setTime(startDate.getTime() - 10);
     const endDate = new Date(startDate.getTime() + 100000);
     const minInvestmentValue = new BigNumber(1);
 
@@ -5873,7 +6328,7 @@ describe('fundraiserToOfferingDetails', () => {
     };
 
     const creator = dsMockUtils.createMockIdentityId(someDid);
-    const rawName = dsMockUtils.createMockFundraiserName(name);
+    const rawName = dsMockUtils.createMockBytes(name);
     const offeringPortfolio = dsMockUtils.createMockPortfolioId({
       did: creator,
       kind: dsMockUtils.createMockPortfolioKind('Default'),
@@ -5904,19 +6359,18 @@ describe('fundraiserToOfferingDetails', () => {
     const status = dsMockUtils.createMockFundraiserStatus('Live');
     const minInvestment = dsMockUtils.createMockBalance(minInvestmentValue);
 
-    /* eslint-disable @typescript-eslint/naming-convention */
     let fundraiser = dsMockUtils.createMockFundraiser({
       creator,
-      offering_portfolio: offeringPortfolio,
-      offering_asset: offeringAsset,
-      raising_portfolio: raisingPortfolio,
-      raising_asset: raisingAsset,
+      offeringPortfolio: offeringPortfolio,
+      offeringAsset: offeringAsset,
+      raisingPortfolio: raisingPortfolio,
+      raisingAsset: raisingAsset,
       tiers: rawTiers,
-      venue_id: venueId,
+      venueId: venueId,
       start,
       end,
       status,
-      minimum_investment: minInvestment,
+      minimumInvestment: minInvestment,
     });
 
     let result = fundraiserToOfferingDetails(fundraiser, rawName, context);
@@ -5927,16 +6381,16 @@ describe('fundraiserToOfferingDetails', () => {
 
     fundraiser = dsMockUtils.createMockFundraiser({
       creator,
-      offering_portfolio: offeringPortfolio,
-      offering_asset: offeringAsset,
-      raising_portfolio: raisingPortfolio,
-      raising_asset: raisingAsset,
+      offeringPortfolio: offeringPortfolio,
+      offeringAsset: offeringAsset,
+      raisingPortfolio: raisingPortfolio,
+      raisingAsset: raisingAsset,
       tiers: rawTiers,
-      venue_id: venueId,
+      venueId: venueId,
       start: dsMockUtils.createMockMoment(new BigNumber(futureStart.getTime())),
       end: dsMockUtils.createMockOption(),
       status: dsMockUtils.createMockFundraiserStatus('Closed'),
-      minimum_investment: minInvestment,
+      minimumInvestment: minInvestment,
     });
 
     result = fundraiserToOfferingDetails(fundraiser, rawName, context);
@@ -5955,16 +6409,16 @@ describe('fundraiserToOfferingDetails', () => {
 
     fundraiser = dsMockUtils.createMockFundraiser({
       creator,
-      offering_portfolio: offeringPortfolio,
-      offering_asset: offeringAsset,
-      raising_portfolio: raisingPortfolio,
-      raising_asset: raisingAsset,
+      offeringPortfolio: offeringPortfolio,
+      offeringAsset: offeringAsset,
+      raisingPortfolio: raisingPortfolio,
+      raisingAsset: raisingAsset,
       tiers: rawTiers,
-      venue_id: venueId,
+      venueId: venueId,
       start,
       end: dsMockUtils.createMockOption(),
       status: dsMockUtils.createMockFundraiserStatus('ClosedEarly'),
-      minimum_investment: minInvestment,
+      minimumInvestment: minInvestment,
     });
 
     result = fundraiserToOfferingDetails(fundraiser, rawName, context);
@@ -5982,10 +6436,10 @@ describe('fundraiserToOfferingDetails', () => {
 
     fundraiser = dsMockUtils.createMockFundraiser({
       creator,
-      offering_portfolio: offeringPortfolio,
-      offering_asset: offeringAsset,
-      raising_portfolio: raisingPortfolio,
-      raising_asset: raisingAsset,
+      offeringPortfolio: offeringPortfolio,
+      offeringAsset: offeringAsset,
+      raisingPortfolio: raisingPortfolio,
+      raisingAsset: raisingAsset,
       tiers: [
         dsMockUtils.createMockFundraiserTier({
           total: dsMockUtils.createMockBalance(amount),
@@ -5993,11 +6447,11 @@ describe('fundraiserToOfferingDetails', () => {
           remaining: dsMockUtils.createMockBalance(new BigNumber(0)),
         }),
       ],
-      venue_id: venueId,
+      venueId: venueId,
       start,
       end: dsMockUtils.createMockOption(),
       status: dsMockUtils.createMockFundraiserStatus('Frozen'),
-      minimum_investment: minInvestment,
+      minimumInvestment: minInvestment,
     });
 
     result = fundraiserToOfferingDetails(fundraiser, rawName, context);
@@ -6021,10 +6475,10 @@ describe('fundraiserToOfferingDetails', () => {
 
     fundraiser = dsMockUtils.createMockFundraiser({
       creator,
-      offering_portfolio: offeringPortfolio,
-      offering_asset: offeringAsset,
-      raising_portfolio: raisingPortfolio,
-      raising_asset: raisingAsset,
+      offeringPortfolio: offeringPortfolio,
+      offeringAsset: offeringAsset,
+      raisingPortfolio: raisingPortfolio,
+      raisingAsset: raisingAsset,
       tiers: [
         dsMockUtils.createMockFundraiserTier({
           total: dsMockUtils.createMockBalance(amount),
@@ -6032,15 +6486,14 @@ describe('fundraiserToOfferingDetails', () => {
           remaining: dsMockUtils.createMockBalance(new BigNumber(1)),
         }),
       ],
-      venue_id: venueId,
+      venueId: venueId,
       start: dsMockUtils.createMockMoment(new BigNumber(pastStart.getTime())),
       end: dsMockUtils.createMockOption(
         dsMockUtils.createMockMoment(new BigNumber(pastEnd.getTime()))
       ),
       status: dsMockUtils.createMockFundraiserStatus('Frozen'),
-      minimum_investment: minInvestment,
+      minimumInvestment: minInvestment,
     });
-    /* eslint-enable @typescript-eslint/naming-convention */
 
     result = fundraiserToOfferingDetails(fundraiser, rawName, context);
 
@@ -6214,7 +6667,7 @@ describe('scheduleSpecToMeshScheduleSpec', () => {
     createTypeStub.withArgs('u64', `${amount}`).returns(rawAmount);
     createTypeStub.withArgs('u64', '0').returns(rawZero);
     createTypeStub.withArgs('u64', `${repetitions}`).returns(rawRepetitions);
-    createTypeStub.withArgs('Moment', start.getTime()).returns(rawStart);
+    createTypeStub.withArgs('u64', start.getTime()).returns(rawStart);
     createTypeStub
       .withArgs('CalendarPeriod', { unit: 'Month', amount: rawAmount })
       .returns(rawPeriod);
@@ -6361,7 +6814,7 @@ describe('meshCorporateActionToCorporateActionParams', () => {
     /* eslint-enable @typescript-eslint/naming-convention */
 
     let corporateAction = dsMockUtils.createMockCorporateAction(params);
-    const details = dsMockUtils.createMockText(description);
+    const details = dsMockUtils.createMockBytes(description);
 
     let result = meshCorporateActionToCorporateActionParams(corporateAction, details, context);
 
@@ -6446,18 +6899,16 @@ describe('distributionToDividendDistributionParams', () => {
       expiryDate,
     };
 
-    /* eslint-disable @typescript-eslint/naming-convention */
     const params = {
       from: { did, kind: { User: dsMockUtils.createMockU64(from) } },
       currency,
-      per_share: perShare.shiftedBy(6),
+      perShare: perShare.shiftedBy(6),
       amount: maxAmount.shiftedBy(6),
       remaining: new BigNumber(9000).shiftedBy(6),
       reclaimed: false,
-      payment_at: new BigNumber(paymentDate.getTime()),
-      expires_at: dsMockUtils.createMockMoment(new BigNumber(expiryDate.getTime())),
+      paymentAt: new BigNumber(paymentDate.getTime()),
+      expiresAt: dsMockUtils.createMockMoment(new BigNumber(expiryDate.getTime())),
     };
-    /* eslint-enable @typescript-eslint/naming-convention */
 
     let distribution = dsMockUtils.createMockDistribution(params);
 
@@ -6465,8 +6916,7 @@ describe('distributionToDividendDistributionParams', () => {
 
     expect(result).toEqual(fakeResult);
 
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    distribution = dsMockUtils.createMockDistribution({ ...params, expires_at: null });
+    distribution = dsMockUtils.createMockDistribution({ ...params, expiresAt: null });
 
     result = distributionToDividendDistributionParams(distribution, context);
 
@@ -6538,7 +6988,7 @@ describe('checkpointToRecordDateSpec', () => {
     const context = dsMockUtils.getContextInstance();
     const createTypeStub = context.createType;
 
-    createTypeStub.withArgs('Moment', value.getTime()).returns(rawDate);
+    createTypeStub.withArgs('u64', value.getTime()).returns(rawDate);
     createTypeStub.withArgs('RecordDateSpec', { Scheduled: rawDate }).returns(fakeResult);
 
     const result = checkpointToRecordDateSpec(value, context);
@@ -6605,8 +7055,21 @@ describe('targetIdentitiesToCorporateActionTargets', () => {
 });
 
 describe('targetsToTargetIdentities', () => {
+  const did = 'someDid';
+  const treatment = TargetTreatment.Include;
+  const value = { identities: [entityMockUtils.getIdentityInstance({ did })], treatment };
+
+  let context: Mocked<Context>;
+
   beforeAll(() => {
     dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+    dsMockUtils.setConstMock('corporateAction', 'maxTargetIds', {
+      returnValue: dsMockUtils.createMockU32(new BigNumber(1)),
+    });
   });
 
   afterEach(() => {
@@ -6618,17 +7081,13 @@ describe('targetsToTargetIdentities', () => {
   });
 
   it('should convert a CorporateActionTargets object to a polkadot TargetIdentities object', () => {
-    const did = 'someDid';
-    const treatment = TargetTreatment.Include;
-    const value = { identities: [entityMockUtils.getIdentityInstance({ did })], treatment };
     const fakeResult = 'targetIdentities' as unknown as TargetIdentities;
-    const context = dsMockUtils.getContextInstance();
     const createTypeStub = context.createType;
 
     const rawDid = dsMockUtils.createMockIdentityId(did);
     const rawTreatment = dsMockUtils.createMockTargetTreatment();
 
-    createTypeStub.withArgs('IdentityId', did).returns(rawDid);
+    createTypeStub.withArgs('PolymeshPrimitivesIdentityId', did).returns(rawDid);
     createTypeStub.withArgs('TargetTreatment', treatment).returns(rawTreatment);
     createTypeStub
       .withArgs('TargetIdentities', {
@@ -6640,6 +7099,71 @@ describe('targetsToTargetIdentities', () => {
     const result = targetsToTargetIdentities(value, context);
 
     expect(result).toEqual(fakeResult);
+  });
+
+  it('should throw an error if there are more targets than the max allowed amount', () => {
+    expect(() =>
+      targetsToTargetIdentities(
+        { identities: ['someDid', 'otherDid'], treatment: TargetTreatment.Exclude },
+        context
+      )
+    ).toThrow('Too many target Identities');
+  });
+
+  it('should not throw an error if there are less or equal targets than the max allowed amount', () => {
+    expect(() => targetsToTargetIdentities(value, context)).not.toThrow();
+  });
+});
+
+describe('caTaxWithholdingsToMeshTaxWithholdings', () => {
+  let context: Mocked<Context>;
+
+  const withholdings = [
+    {
+      identity: 'someDid',
+      percentage: new BigNumber(50),
+    },
+    {
+      identity: 'otherDid',
+      percentage: new BigNumber(10),
+    },
+  ];
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+    dsMockUtils.setConstMock('corporateAction', 'maxDidWhts', {
+      returnValue: dsMockUtils.createMockU32(new BigNumber(1)),
+    });
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should throw an error if the tax withholding entries are more than the max allowed', () => {
+    expect(() => caTaxWithholdingsToMeshTaxWithholdings(withholdings, context)).toThrow();
+  });
+
+  it('should convert a set of tax withholding entries to a set of polkadot tax withholding entry', () => {
+    const createTypeStub = context.createType;
+
+    const { identity, percentage } = withholdings[0];
+    const rawIdentityId = dsMockUtils.createMockIdentityId(identity);
+    const rawPermill = dsMockUtils.createMockPermill(percentage);
+    createTypeStub.withArgs('PolymeshPrimitivesIdentityId', identity).returns(rawIdentityId);
+    createTypeStub.withArgs('Permill', percentage.shiftedBy(4).toString()).returns(rawPermill);
+
+    expect(caTaxWithholdingsToMeshTaxWithholdings([withholdings[0]], context)).toEqual([
+      [rawIdentityId, rawPermill],
+    ]);
   });
 });
 
@@ -6666,14 +7190,15 @@ describe('corporateActionIdentifierToCaId', () => {
     const localId = dsMockUtils.createMockU32(args.localId);
     const fakeResult = 'CAId' as unknown as CAId;
 
-    context.createType.withArgs('Ticker', padString(args.ticker, 12)).returns(ticker);
+    context.createType
+      .withArgs('PolymeshPrimitivesTicker', padString(args.ticker, 12))
+      .returns(ticker);
     context.createType.withArgs('u32', args.localId.toString()).returns(localId);
 
     context.createType
-      .withArgs('CAId', {
+      .withArgs('PalletCorporateActionsCaId', {
         ticker,
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        local_id: localId,
+        localId: localId,
       })
       .returns(fakeResult);
 
@@ -6760,7 +7285,7 @@ describe('stringToScalar', () => {
   });
 });
 
-describe('scopeClaimProofToMeshScopeClaimProof', () => {
+describe('scopeClaimProofToConfidentialIdentityClaimProof', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -6803,20 +7328,20 @@ describe('scopeClaimProofToMeshScopeClaimProof', () => {
     const rawSubtractExpressionsRes = dsMockUtils.createMockRistrettoPoint(subtractExpressionsRes);
     const rawBlindedScopeDidHash = dsMockUtils.createMockRistrettoPoint(blindedScopeDidHash);
     const rawZkProofData = dsMockUtils.createMockZkProofData({
-      subtract_expressions_res: subtractExpressionsRes,
-      challenge_responses: [firstChallengeResponse, secondChallengeResponse],
-      blinded_scope_did_hash: blindedScopeDidHash,
+      subtractExpressionsRes: subtractExpressionsRes,
+      challengeResponses: [firstChallengeResponse, secondChallengeResponse],
+      blindedScopeDidHash: blindedScopeDidHash,
     });
     const rawProofScopeIdWellFormed = dsMockUtils.createMockSignature(proofScopeIdWellFormed);
     const rawScopeId = dsMockUtils.createMockRistrettoPoint(scopeId);
     const fakeResult = dsMockUtils.createMockScopeClaimProof({
-      proof_scope_id_wellformed: proofScopeIdWellFormed,
-      proof_scope_id_cdd_id_match: {
-        subtract_expressions_res: subtractExpressionsRes,
-        challenge_responses: [firstChallengeResponse, secondChallengeResponse],
-        blinded_scope_did_hash: blindedScopeDidHash,
+      proofScopeIdWellformed: proofScopeIdWellFormed,
+      proofScopeIdCddIdMatch: {
+        subtractExpressionsRes: subtractExpressionsRes,
+        challengeResponses: [firstChallengeResponse, secondChallengeResponse],
+        blindedScopeDidHash: blindedScopeDidHash,
       },
-      scope_id: scopeId,
+      scopeId,
     });
 
     const zkProofData = {
@@ -6825,9 +7350,9 @@ describe('scopeClaimProofToMeshScopeClaimProof', () => {
       blinded_scope_did_hash: rawBlindedScopeDidHash,
     };
     const scopeClaimProof = {
-      proof_scope_id_wellformed: rawProofScopeIdWellFormed,
-      proof_scope_id_cdd_id_match: rawZkProofData,
-      scope_id: rawScopeId,
+      proofScopeIdWellformed: rawProofScopeIdWellFormed,
+      proofScopeIdCddIdMatch: rawZkProofData,
+      scopeId: rawScopeId,
     };
     /* eslint-enable @typescript-eslint/naming-convention */
     const context = dsMockUtils.getContextInstance();
@@ -6851,9 +7376,11 @@ describe('scopeClaimProofToMeshScopeClaimProof', () => {
       .returns(rawProofScopeIdWellFormed);
     context.createType.withArgs('RistrettoPoint', scopeId).returns(rawScopeId);
 
-    context.createType.withArgs('ScopeClaimProof', scopeClaimProof).returns(fakeResult);
+    context.createType
+      .withArgs('ConfidentialIdentityClaimProofsScopeClaimProof', scopeClaimProof)
+      .returns(fakeResult);
 
-    const result = scopeClaimProofToMeshScopeClaimProof(proof, scopeId, context);
+    const result = scopeClaimProofToConfidentialIdentityClaimProof(proof, scopeId, context);
 
     expect(result).toEqual(fakeResult);
   });
@@ -6882,14 +7409,19 @@ describe('transactionPermissionsToExtrinsicPermissions', () => {
     const fakeResult = 'convertedExtrinsicPermissions' as unknown as ExtrinsicPermissions;
 
     context.createType
-      .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
+      .withArgs(
+        'PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions',
+        sinon.match(sinon.match.object)
+      )
       .returns(fakeResult);
 
     let result = transactionPermissionsToExtrinsicPermissions(value, context);
 
     expect(result).toEqual(fakeResult);
 
-    context.createType.withArgs('ExtrinsicPermissions', 'Whole').returns(fakeResult);
+    context.createType
+      .withArgs('PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions', 'Whole')
+      .returns(fakeResult);
 
     result = transactionPermissionsToExtrinsicPermissions(null, context);
 
@@ -6917,7 +7449,6 @@ describe('agentGroupToPermissionGroup', () => {
     const context = dsMockUtils.getContextInstance();
 
     let agentGroup = dsMockUtils.createMockAgentGroup('Full');
-
     let result = agentGroupToPermissionGroup(agentGroup, ticker, context);
     expect(result).toEqual(
       expect.objectContaining({
@@ -6936,8 +7467,7 @@ describe('agentGroupToPermissionGroup', () => {
       })
     );
 
-    agentGroup = dsMockUtils.createMockAgentGroup('PolymeshV1Caa');
-
+    agentGroup = dsMockUtils.createMockAgentGroup('PolymeshV1CAA');
     result = agentGroupToPermissionGroup(agentGroup, ticker, context);
     expect(result).toEqual(
       expect.objectContaining({
@@ -6946,7 +7476,7 @@ describe('agentGroupToPermissionGroup', () => {
       })
     );
 
-    agentGroup = dsMockUtils.createMockAgentGroup('PolymeshV1Pia');
+    agentGroup = dsMockUtils.createMockAgentGroup('PolymeshV1PIA');
 
     result = agentGroupToPermissionGroup(agentGroup, ticker, context);
     expect(result).toEqual(
@@ -6964,5 +7494,813 @@ describe('agentGroupToPermissionGroup', () => {
     expect(result).toEqual(
       expect.objectContaining({ asset: expect.objectContaining({ ticker }), id })
     );
+  });
+
+  describe('scopeIdsToBtreeSetIdentityId', () => {
+    it('should convert scopeIds to a BTreeSetIdentityID', () => {
+      const context = dsMockUtils.getContextInstance();
+      const ids = ['b', 'a', 'c'] as unknown as PolymeshPrimitivesIdentityId[];
+      context.createType
+        .withArgs('BTreeSet<PolymeshPrimitivesIdentityId>', ['b', 'a', 'c'])
+        .returns(['a', 'b', 'c']);
+
+      const result = scopeIdsToBtreeSetIdentityId(ids, context);
+      expect(result).toEqual(['a', 'b', 'c']);
+    });
+  });
+
+  describe('statisticsOpTypeToStatType', () => {
+    it('should return a statType', () => {
+      const op = 'MaxInvestorCount' as unknown as PolymeshPrimitivesStatisticsStatOpType;
+      const context = dsMockUtils.getContextInstance();
+      context.createType
+        .withArgs('PolymeshPrimitivesStatisticsStatType', { op, claimIssuer: undefined })
+        .returns('statType');
+
+      const result = statisticsOpTypeToStatType({ op }, context);
+
+      expect(result).toEqual('statType');
+    });
+  });
+
+  describe('statUpdate', () => {
+    it('should return a statUpdate', () => {
+      const key2 = 'key2' as unknown as PolymeshPrimitivesStatisticsStat2ndKey;
+      const value = createMockU128(new BigNumber(3));
+      const context = dsMockUtils.getContextInstance();
+
+      context.createType
+        .withArgs('PolymeshPrimitivesStatisticsStatUpdate', { key2, value })
+        .returns('statUpdate');
+
+      const result = keyAndValueToStatUpdate(key2, value, context);
+
+      expect(result).toEqual('statUpdate');
+    });
+  });
+
+  describe('meshStatToStat', () => {
+    it('should return the type', () => {
+      const rawStat = {
+        op: { type: 'Count' },
+        claimIssuer: createMockOption(),
+      } as unknown as PolymeshPrimitivesStatisticsStatType;
+
+      const result = meshStatToStatisticsOpType(rawStat);
+
+      expect(result).toEqual(StatisticsOpType.Count);
+    });
+  });
+
+  describe('createStat2ndKey', () => {
+    it('should return a NoClaimStat 2nd key', () => {
+      const context = dsMockUtils.getContextInstance();
+
+      context.createType
+        .withArgs('PolymeshPrimitivesStatisticsStat2ndKey', 'NoClaimStat')
+        .returns('2ndKey');
+
+      const result = createStat2ndKey('NoClaimStat', context);
+
+      expect(result).toEqual('2ndKey');
+    });
+
+    it('should return a scoped second key', () => {
+      const context = dsMockUtils.getContextInstance();
+
+      context.createType
+        .withArgs('PolymeshPrimitivesStatisticsStat2ndKey', {
+          claim: { [ClaimType.Jurisdiction]: CountryCode.Ca },
+        })
+        .returns('Scoped2ndKey');
+
+      const result = createStat2ndKey(ClaimType.Jurisdiction, context, CountryCode.Ca);
+
+      expect(result).toEqual('Scoped2ndKey');
+    });
+  });
+});
+
+describe('statisticsOpTypeToStatOpType', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert an Offering Tier into a polkadot PriceTier object', () => {
+    const context = dsMockUtils.getContextInstance();
+    const fakeStat = 'fakeStat';
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStatOpType', StatisticsOpType.Count)
+      .returns(fakeStat);
+
+    const result = statisticsOpTypeToStatOpType(StatisticsOpType.Count, context);
+    expect(result).toEqual(fakeStat);
+  });
+});
+
+describe('accountIdToAccount', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert an AccountId to a string', () => {
+    const context = dsMockUtils.getContextInstance();
+    const mockAccountId = dsMockUtils.createMockAccountId('someAddress');
+    const result = accountIdToAccount(mockAccountId, context);
+    expect(result.address).toEqual('someAddress');
+  });
+});
+
+describe('statUpdatesToBtreeStatUpdate', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert stat updates to a sorted BTreeSet', () => {
+    const context = dsMockUtils.getContextInstance();
+    const key2 = dsMockUtils.createMock2ndKey();
+    const stat1 = dsMockUtils.createMockStatUpdate({ key2, value: new BigNumber(1) });
+    const stat2 = dsMockUtils.createMockStatUpdate({ key2, value: new BigNumber(2) });
+
+    context.createType.returns([stat1, stat2]);
+
+    const input = [stat1, stat2];
+    const result = statUpdatesToBtreeStatUpdate(input, context);
+    expect(result).toEqual([stat1, stat2]);
+  });
+});
+
+describe('complianceConditionsToBtreeSet', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert transfer conditions to a sorted BTreeSet', () => {
+    const context = dsMockUtils.getContextInstance();
+    const condition1 = dsMockUtils.createMockTransferCondition();
+    const condition2 = dsMockUtils.createMockTransferCondition();
+
+    context.createType.returns([condition1, condition2]);
+
+    const input = [condition2, condition1];
+    const result = complianceConditionsToBtreeSet(input, context);
+    expect(result).toEqual([condition1, condition2]);
+  });
+});
+
+describe('statisticStatTypesToBtreeStatType', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert an array of PolymeshPrimitivesStatisticsStatType to a BTreeSet', () => {
+    const context = dsMockUtils.getContextInstance();
+    const stat = dsMockUtils.createMockStatisticsStatType();
+
+    const btreeSet = dsMockUtils.createMockBTreeSet([stat]);
+
+    context.createType
+      .withArgs('BTreeSet<PolymeshPrimitivesStatisticsStatType>', [stat])
+      .returns(btreeSet);
+
+    const result = statisticStatTypesToBtreeStatType([stat], context);
+
+    expect(result).toEqual(btreeSet);
+  });
+});
+
+describe('transferConditionsToBtreeTransferConditions', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert an array of PolymeshPrimitivesStatisticsStatType to a BTreeSet', () => {
+    const context = dsMockUtils.getContextInstance();
+    const condition = dsMockUtils.createMockTransferCondition();
+
+    const btreeSet = dsMockUtils.createMockBTreeSet([condition]);
+
+    context.createType
+      .withArgs('BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>', [condition])
+      .returns(btreeSet);
+
+    const result = transferConditionsToBtreeTransferConditions([condition], context);
+
+    expect(result).toEqual(btreeSet);
+  });
+});
+
+describe('meshClaimToInputStatClaim', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a meshClaimStat to StatClaimUserInput', () => {
+    let args = dsMockUtils.createMockStatisticsStatClaim({
+      Accredited: dsMockUtils.createMockBool(true),
+    });
+    let result = meshClaimToInputStatClaim(args);
+    expect(result).toEqual({
+      accredited: true,
+      type: ClaimType.Accredited,
+    });
+
+    args = dsMockUtils.createMockStatisticsStatClaim({
+      Affiliate: dsMockUtils.createMockBool(true),
+    });
+    result = meshClaimToInputStatClaim(args);
+    expect(result).toEqual({
+      affiliate: true,
+      type: ClaimType.Affiliate,
+    });
+
+    args = dsMockUtils.createMockStatisticsStatClaim({
+      Jurisdiction: dsMockUtils.createMockOption(),
+    });
+    result = meshClaimToInputStatClaim(args);
+    expect(result).toEqual({
+      countryCode: undefined,
+      type: ClaimType.Jurisdiction,
+    });
+
+    args = dsMockUtils.createMockStatisticsStatClaim({
+      Jurisdiction: dsMockUtils.createMockOption(dsMockUtils.createMockCountryCode(CountryCode.Ca)),
+    });
+    result = meshClaimToInputStatClaim(args);
+    expect(result).toEqual({
+      countryCode: CountryCode.Ca,
+      type: ClaimType.Jurisdiction,
+    });
+  });
+});
+
+describe('claimCountToClaimCountRestrictionValue', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  const did = 'someDid';
+
+  it('should return a ClaimRestrictionValue', () => {
+    const context = dsMockUtils.getContextInstance();
+    const min = new BigNumber(10);
+    const max = new BigNumber(20);
+    const rawMin = dsMockUtils.createMockU64(min);
+    const rawMax = dsMockUtils.createMockU64(max);
+    const maxOption = dsMockUtils.createMockOption(rawMax);
+    const issuer = entityMockUtils.getIdentityInstance({ did });
+    const rawIssuerId = dsMockUtils.createMockIdentityId(did);
+    const rawClaim = dsMockUtils.createMockStatisticsStatClaim({
+      Accredited: dsMockUtils.createMockBool(true),
+    });
+    let result = claimCountToClaimCountRestrictionValue(
+      [rawClaim, rawIssuerId, rawMin, maxOption] as unknown as ITuple<
+        [StatClaim, IdentityId, u64, Option<u64>]
+      >,
+      context
+    );
+    expect(JSON.stringify(result)).toEqual(
+      JSON.stringify({
+        claim: {
+          type: ClaimType.Accredited,
+          accredited: true,
+        },
+        issuer,
+        min,
+        max,
+      })
+    );
+
+    result = claimCountToClaimCountRestrictionValue(
+      [rawClaim, rawIssuerId, rawMin, dsMockUtils.createMockOption()] as unknown as ITuple<
+        [StatClaim, IdentityId, u64, Option<u64>]
+      >,
+      context
+    );
+    expect(JSON.stringify(result)).toEqual(
+      JSON.stringify({
+        claim: {
+          type: ClaimType.Accredited,
+          accredited: true,
+        },
+        issuer,
+        min,
+        max: undefined,
+      })
+    );
+  });
+});
+
+describe('statsClaimToStatClaimUserType', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a stats claim to a Claim', () => {
+    const accreditedClaim = dsMockUtils.createMockStatisticsStatClaim({
+      Accredited: dsMockUtils.createMockBool(true),
+    });
+    let result = statsClaimToStatClaimInputType(accreditedClaim);
+    expect(result).toEqual({ type: ClaimType.Accredited });
+
+    const affiliateClaim = dsMockUtils.createMockStatisticsStatClaim({
+      Affiliate: dsMockUtils.createMockBool(false),
+    });
+    result = statsClaimToStatClaimInputType(affiliateClaim);
+    expect(result).toEqual({ type: ClaimType.Affiliate });
+
+    const jurisdictionClaim = dsMockUtils.createMockStatisticsStatClaim({
+      Jurisdiction: dsMockUtils.createMockOption(dsMockUtils.createMockCountryCode(CountryCode.Ca)),
+    });
+    result = statsClaimToStatClaimInputType(jurisdictionClaim);
+    expect(result).toEqual({ type: ClaimType.Jurisdiction });
+  });
+});
+
+describe('claimCountStatInputToStatUpdates', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return stat update values', () => {
+    const context = dsMockUtils.getContextInstance();
+    const yes = new BigNumber(12);
+    const no = new BigNumber(14);
+    const canadaCount = new BigNumber(7);
+    const usCount = new BigNumber(10);
+    const rawYes = dsMockUtils.createMockU64(yes);
+    const rawNo = dsMockUtils.createMockU64(no);
+    const rawCanadaCount = dsMockUtils.createMockU64(canadaCount);
+    const rawUsCount = dsMockUtils.createMockU64(usCount);
+    const rawYesKey = dsMockUtils.createMock2ndKey();
+    const rawNoKey = dsMockUtils.createMock2ndKey();
+    const rawCountryKey = dsMockUtils.createMockCountryCode(CountryCode.Ca);
+    const fakeYesUpdate = 'fakeYes';
+    const fakeNoUpdate = 'fakeNo';
+    const fakeJurisdictionUpdate = 'fakeJurisdiction';
+    const issuer = entityMockUtils.getIdentityInstance();
+
+    context.createType.withArgs('u128', yes.toString()).returns(rawYes);
+    context.createType.withArgs('u128', no.toString()).returns(rawNo);
+    context.createType.withArgs('u128', canadaCount.toString()).returns(rawCanadaCount);
+    context.createType.withArgs('u128', usCount.toString()).returns(rawUsCount);
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStat2ndKey', {
+        claim: { [ClaimType.Affiliate]: true },
+      })
+      .returns(rawYesKey);
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStat2ndKey', {
+        claim: { [ClaimType.Affiliate]: false },
+      })
+      .returns(rawNoKey);
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStat2ndKey', {
+        claim: { [ClaimType.Accredited]: true },
+      })
+      .returns(rawYesKey);
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStat2ndKey', {
+        claim: { [ClaimType.Accredited]: false },
+      })
+      .returns(rawNoKey);
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStat2ndKey', {
+        claim: { [ClaimType.Jurisdiction]: CountryCode.Ca },
+      })
+      .returns(rawCountryKey);
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStat2ndKey', {
+        claim: { [ClaimType.Jurisdiction]: CountryCode.Us },
+      })
+      .returns(rawCountryKey);
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStatUpdate', { key2: rawYesKey, value: rawYes })
+      .returns(fakeYesUpdate);
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStatUpdate', { key2: rawNoKey, value: rawNo })
+      .returns(fakeNoUpdate);
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStatUpdate', {
+        key2: rawCountryKey,
+        value: rawCanadaCount,
+      })
+      .returns(fakeJurisdictionUpdate);
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStatUpdate', {
+        key2: rawCountryKey,
+        value: rawUsCount,
+      })
+      .returns(fakeJurisdictionUpdate);
+    context.createType
+      .withArgs('BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>', [fakeYesUpdate, fakeNoUpdate])
+      .returns('yesNoBtreeSet');
+    context.createType
+      .withArgs('BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>', [
+        fakeJurisdictionUpdate,
+        fakeJurisdictionUpdate,
+      ])
+      .returns('jurisdictionBtreeSet');
+
+    let result = claimCountStatInputToStatUpdates(
+      {
+        issuer,
+        claimType: ClaimType.Affiliate,
+        value: { affiliate: yes, nonAffiliate: no },
+      },
+      context
+    );
+    expect(result).toEqual('yesNoBtreeSet');
+
+    result = claimCountStatInputToStatUpdates(
+      {
+        issuer,
+        claimType: ClaimType.Accredited,
+        value: { accredited: yes, nonAccredited: no },
+      },
+      context
+    );
+    expect(result).toEqual('yesNoBtreeSet');
+
+    const countryValue = [
+      {
+        countryCode: CountryCode.Ca,
+        count: canadaCount,
+      },
+      {
+        countryCode: CountryCode.Us,
+        count: usCount,
+      },
+    ];
+    result = claimCountStatInputToStatUpdates(
+      {
+        issuer,
+        claimType: ClaimType.Jurisdiction,
+        value: countryValue,
+      },
+      context
+    );
+    expect(result).toEqual('jurisdictionBtreeSet');
+  });
+});
+
+describe('countStatInputToStatUpdates', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert input parameters into an StatUpdate', () => {
+    const context = dsMockUtils.getContextInstance();
+    const count = new BigNumber(3);
+    const rawCount = dsMockUtils.createMockU128(count);
+
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStat2ndKey', 'NoClaimStat')
+      .returns('2ndKey');
+    context.createType.withArgs('u128', count.toString()).returns(rawCount);
+    context.createType
+      .withArgs('PolymeshPrimitivesStatisticsStatUpdate', { key2: '2ndKey', value: rawCount })
+      .returns('statUpdate');
+    context.createType
+      .withArgs('BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>', ['statUpdate'])
+      .returns('fakeResult');
+
+    const result = countStatInputToStatUpdates({ count }, context);
+    expect(result).toEqual('fakeResult');
+  });
+});
+
+describe('sortStatsByClaimType', () => {
+  it('should sort by claim type', () => {
+    const issuer = dsMockUtils.createMockIdentityId('did');
+    type ClaimTypeTuple = [PolymeshPrimitivesIdentityClaimClaimType, PolymeshPrimitivesIdentityId];
+    const accreditedIssuer: ClaimTypeTuple = [
+      dsMockUtils.createMockClaimType(ClaimType.Accredited),
+      issuer,
+    ];
+    const affiliateIssuer: ClaimTypeTuple = [
+      dsMockUtils.createMockClaimType(ClaimType.Affiliate),
+      issuer,
+    ];
+    const jurisdictionIssuer: ClaimTypeTuple = [
+      dsMockUtils.createMockClaimType(ClaimType.Jurisdiction),
+      issuer,
+    ];
+    const nonStatIssuer: ClaimTypeTuple = [
+      dsMockUtils.createMockClaimType(ClaimType.Blocked),
+      issuer,
+    ];
+    const op = dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count);
+    const accreditedStat = dsMockUtils.createMockStatisticsStatType({
+      op,
+      claimIssuer: accreditedIssuer,
+    });
+
+    const affiliateStat = dsMockUtils.createMockStatisticsStatType({
+      op,
+      claimIssuer: affiliateIssuer,
+    });
+
+    const jurisdictionStat = dsMockUtils.createMockStatisticsStatType({
+      op,
+      claimIssuer: jurisdictionIssuer,
+    });
+
+    const nonStat = dsMockUtils.createMockStatisticsStatType({
+      op,
+      claimIssuer: nonStatIssuer,
+    });
+
+    const countStat = dsMockUtils.createMockStatisticsStatType({ op });
+
+    let result = sortStatsByClaimType([jurisdictionStat, accreditedStat, affiliateStat, countStat]);
+
+    expect(result).toEqual([accreditedStat, affiliateStat, jurisdictionStat, countStat]);
+
+    result = sortStatsByClaimType([
+      nonStat,
+      jurisdictionStat,
+      nonStat,
+      countStat,
+      nonStat,
+      jurisdictionStat,
+      countStat,
+      affiliateStat,
+      countStat,
+    ]);
+
+    expect(result).toEqual([
+      affiliateStat,
+      jurisdictionStat,
+      jurisdictionStat,
+      nonStat,
+      nonStat,
+      nonStat,
+      countStat,
+      countStat,
+      countStat,
+    ]);
+  });
+});
+
+describe('sortTransferRestrictionByClaimValue', () => {
+  it('should sort conditions', () => {
+    const countRestriction = dsMockUtils.createMockTransferCondition({
+      MaxInvestorCount: dsMockUtils.createMockU64(new BigNumber(10)),
+    });
+    const percentRestriction = dsMockUtils.createMockTransferCondition({
+      MaxInvestorOwnership: dsMockUtils.createMockU64(new BigNumber(10)),
+    });
+    const accreditedRestriction = dsMockUtils.createMockTransferCondition({
+      ClaimCount: [
+        dsMockUtils.createMockStatisticsStatClaim({ Accredited: dsMockUtils.createMockBool(true) }),
+        dsMockUtils.createMockIdentityId(),
+        dsMockUtils.createMockU64(new BigNumber(10)),
+        dsMockUtils.createMockOption(),
+      ],
+    });
+    const affiliatedRestriction = dsMockUtils.createMockTransferCondition({
+      ClaimCount: [
+        dsMockUtils.createMockStatisticsStatClaim({ Affiliate: dsMockUtils.createMockBool(true) }),
+        dsMockUtils.createMockIdentityId(),
+        dsMockUtils.createMockU64(new BigNumber(10)),
+        dsMockUtils.createMockOption(),
+      ],
+    });
+    const canadaRestriction = dsMockUtils.createMockTransferCondition({
+      ClaimCount: [
+        dsMockUtils.createMockStatisticsStatClaim({
+          Jurisdiction: dsMockUtils.createMockOption(
+            dsMockUtils.createMockCountryCode(CountryCode.Ca)
+          ),
+        }),
+        dsMockUtils.createMockIdentityId(),
+        dsMockUtils.createMockU64(new BigNumber(10)),
+        dsMockUtils.createMockOption(),
+      ],
+    });
+    const usRestriction = dsMockUtils.createMockTransferCondition({
+      ClaimCount: [
+        dsMockUtils.createMockStatisticsStatClaim({
+          Jurisdiction: dsMockUtils.createMockOption(
+            dsMockUtils.createMockCountryCode(CountryCode.Us)
+          ),
+        }),
+        dsMockUtils.createMockIdentityId(),
+        dsMockUtils.createMockU64(new BigNumber(10)),
+        dsMockUtils.createMockOption(),
+      ],
+    });
+    const jurisdictionRestriction = dsMockUtils.createMockTransferCondition({
+      ClaimOwnership: [
+        dsMockUtils.createMockStatisticsStatClaim({
+          Jurisdiction: dsMockUtils.createMockOption(),
+        }),
+        dsMockUtils.createMockIdentityId(),
+        dsMockUtils.createMockPermill(new BigNumber(10)),
+        dsMockUtils.createMockPermill(new BigNumber(20)),
+      ],
+    });
+    const ownershipAffiliateRestriction = dsMockUtils.createMockTransferCondition({
+      ClaimOwnership: [
+        dsMockUtils.createMockStatisticsStatClaim({
+          Affiliate: dsMockUtils.createMockBool(true),
+        }),
+        dsMockUtils.createMockIdentityId(),
+        dsMockUtils.createMockPermill(new BigNumber(10)),
+        dsMockUtils.createMockPermill(new BigNumber(20)),
+      ],
+    });
+
+    let result = sortTransferRestrictionByClaimValue([
+      countRestriction,
+      percentRestriction,
+      accreditedRestriction,
+      affiliatedRestriction,
+      ownershipAffiliateRestriction,
+      canadaRestriction,
+      usRestriction,
+      jurisdictionRestriction,
+    ]);
+    expect(result).toEqual([
+      jurisdictionRestriction,
+      canadaRestriction,
+      usRestriction,
+      countRestriction,
+      percentRestriction,
+      accreditedRestriction,
+      affiliatedRestriction,
+      ownershipAffiliateRestriction,
+    ]);
+
+    result = sortTransferRestrictionByClaimValue([
+      canadaRestriction,
+      jurisdictionRestriction,
+      accreditedRestriction,
+      affiliatedRestriction,
+      usRestriction,
+      jurisdictionRestriction,
+      canadaRestriction,
+    ]);
+    expect(result).toEqual([
+      jurisdictionRestriction,
+      jurisdictionRestriction,
+      canadaRestriction,
+      canadaRestriction,
+      usRestriction,
+      accreditedRestriction,
+      affiliatedRestriction,
+    ]);
+  });
+});
+
+describe('inputStatTypeToMeshStatType', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert InputStatType to PolymeshPrimitivesStatisticsStatType', () => {
+    const mockContext = dsMockUtils.getContextInstance();
+    const createTypeStub = mockContext.createType;
+    const fakeOp = 'fakeOp';
+    const fakeIssuer = 'fakeIssuer';
+    const fakeClaimType = 'fakeClaimType';
+    const fakeStatistic = 'fakeStatistic';
+    const did = 'did';
+
+    createTypeStub
+      .withArgs('PolymeshPrimitivesStatisticsStatOpType', StatisticsOpType.Count)
+      .returns(fakeOp);
+
+    createTypeStub
+      .withArgs('PolymeshPrimitivesStatisticsStatOpType', StatisticsOpType.Balance)
+      .returns(fakeOp);
+
+    createTypeStub
+      .withArgs('PolymeshPrimitivesStatisticsStatType', { op: fakeOp, claimIssuer: undefined })
+      .returns(fakeStatistic);
+
+    createTypeStub
+      .withArgs('PolymeshPrimitivesIdentityClaimClaimType', ClaimType.Accredited)
+      .returns(fakeClaimType);
+
+    createTypeStub.withArgs('PolymeshPrimitivesIdentityId', did).returns(fakeIssuer);
+
+    createTypeStub
+      .withArgs('PolymeshPrimitivesStatisticsStatType', {
+        op: fakeOp,
+        claimIssuer: [fakeClaimType, fakeIssuer],
+      })
+      .returns(fakeStatistic);
+
+    const unscopedInput = { type: StatType.Count } as const;
+    let result = inputStatTypeToMeshStatType(unscopedInput, mockContext);
+    expect(result).toEqual(fakeStatistic);
+
+    const scopedInput = {
+      type: StatType.ScopedPercentage,
+      claimIssuer: {
+        issuer: entityMockUtils.getIdentityInstance({ did }),
+        claimType: ClaimType.Accredited,
+      },
+    } as const;
+    result = inputStatTypeToMeshStatType(scopedInput, mockContext);
+    expect(result).toEqual(fakeStatistic);
   });
 });

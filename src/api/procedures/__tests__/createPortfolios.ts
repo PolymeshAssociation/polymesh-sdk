@@ -1,4 +1,4 @@
-import { Text, u64 } from '@polkadot/types';
+import { Bytes, u64 } from '@polkadot/types';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { IdentityId } from 'polymesh-types/types';
@@ -18,10 +18,10 @@ import * as utilsInternalModule from '~/utils/internal';
 describe('createPortfolios procedure', () => {
   let mockContext: Mocked<Context>;
   let numberedPortfolio: PostTransactionValue<NumberedPortfolio>;
-  let stringToTextStub: sinon.SinonStub<[string, Context], Text>;
+  let stringToBytesStub: sinon.SinonStub<[string, Context], Bytes>;
   let getPortfolioIdsByNameStub: sinon.SinonStub;
   let newPortfolioName: string;
-  let rawNewPortfolioName: Text;
+  let rawNewPortfolioName: Bytes;
   let addBatchTransactionStub: sinon.SinonStub;
 
   beforeAll(() => {
@@ -31,11 +31,11 @@ describe('createPortfolios procedure', () => {
 
     numberedPortfolio = 'numberedPortfolio' as unknown as PostTransactionValue<NumberedPortfolio>;
 
-    stringToTextStub = sinon.stub(utilsConversionModule, 'stringToText');
+    stringToBytesStub = sinon.stub(utilsConversionModule, 'stringToBytes');
     getPortfolioIdsByNameStub = sinon.stub(utilsInternalModule, 'getPortfolioIdsByName');
 
     newPortfolioName = 'newPortfolioName';
-    rawNewPortfolioName = dsMockUtils.createMockText(newPortfolioName);
+    rawNewPortfolioName = dsMockUtils.createMockBytes(newPortfolioName);
   });
 
   beforeEach(() => {
@@ -43,7 +43,7 @@ describe('createPortfolios procedure', () => {
     addBatchTransactionStub = procedureMockUtils
       .getAddBatchTransactionStub()
       .returns([[numberedPortfolio]]);
-    stringToTextStub.withArgs(newPortfolioName, mockContext).returns(rawNewPortfolioName);
+    stringToBytesStub.withArgs(newPortfolioName, mockContext).returns(rawNewPortfolioName);
   });
 
   afterEach(() => {

@@ -1,52 +1,69 @@
 import BigNumber from 'bignumber.js';
 
 import {
-  AddCountTransferRestrictionParams,
-  AddPercentageTransferRestrictionParams,
+  addAssetStat,
   addTransferRestriction,
   AddTransferRestrictionParams,
   Asset,
   Context,
   Namespace,
-  SetCountTransferRestrictionsParams,
-  SetPercentageTransferRestrictionsParams,
+  removeAssetStat,
   setTransferRestrictions,
-  SetTransferRestrictionsParams,
   SetTransferRestrictionsStorage,
 } from '~/internal';
 import {
-  ActiveTransferRestrictions,
-  CountTransferRestriction,
+  AddAssetStatParams,
+  AddRestrictionParams,
+  ClaimCountRestrictionValue,
+  GetTransferRestrictionReturnType,
   NoArgsProcedureMethod,
-  PercentageTransferRestriction,
   ProcedureMethod,
+  RemoveAssetStatParams,
+  RemoveBalanceStatParams,
+  RemoveCountStatParams,
+  RemoveScopedBalanceParams,
+  RemoveScopedCountParams,
+  SetAssetStatParams,
+  SetClaimCountTransferRestrictionsParams,
+  SetClaimPercentageTransferRestrictionsParams,
+  SetCountTransferRestrictionsParams,
+  SetPercentageTransferRestrictionsParams,
+  SetRestrictionsParams,
+  StatType,
   TransferRestrictionType,
 } from '~/types';
 import {
   scopeIdToString,
-  stringToTicker,
-  transferManagerToTransferRestriction,
+  stringToTickerKey,
+  transferConditionToTransferRestriction,
   u32ToBigNumber,
 } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
-type AddRestrictionParams<T> = Omit<
+export type SetTransferRestrictionsParams = { ticker: string } & (
+  | SetCountTransferRestrictionsParams
+  | SetPercentageTransferRestrictionsParams
+  | SetClaimCountTransferRestrictionsParams
+  | SetClaimPercentageTransferRestrictionsParams
+);
+
+export type RemoveAssetStatParamsBase<T> = Omit<
   T extends TransferRestrictionType.Count
-    ? AddCountTransferRestrictionParams
-    : AddPercentageTransferRestrictionParams,
+    ? RemoveCountStatParams
+    : T extends TransferRestrictionType.Percentage
+    ? RemoveBalanceStatParams
+    : T extends TransferRestrictionType.ClaimCount
+    ? RemoveScopedCountParams
+    : RemoveScopedBalanceParams,
   'type'
 >;
 
-type SetRestrictionsParams<T> = Omit<
-  T extends TransferRestrictionType.Count
-    ? SetCountTransferRestrictionsParams
-    : SetPercentageTransferRestrictionsParams,
-  'type'
->;
-
-type GetReturnType<T> = ActiveTransferRestrictions<
-  T extends TransferRestrictionType.Count ? CountTransferRestriction : PercentageTransferRestriction
->;
+const restrictionTypeToStatType = {
+  [TransferRestrictionType.Count]: StatType.Count,
+  [TransferRestrictionType.Percentage]: StatType.Percentage,
+  [TransferRestrictionType.ClaimCount]: StatType.ScopedCount,
+  [TransferRestrictionType.ClaimPercentage]: StatType.ScopedPercentage,
+};
 
 /**
  * Base class for managing Transfer Restrictions
@@ -87,7 +104,7 @@ export abstract class TransferRestrictionBase<
       {
         getProcedureAndArgs: args => [
           setTransferRestrictions,
-          { ...args, type: this.type, ticker } as unknown as SetTransferRestrictionsParams,
+          { ...args, type: this.type, ticker } as SetTransferRestrictionsParams,
         ],
       },
       context
@@ -105,9 +122,41 @@ export abstract class TransferRestrictionBase<
             restrictions: [],
             type: this.type,
             ticker,
-          } as unknown as SetTransferRestrictionsParams,
+          } as SetTransferRestrictionsParams,
         ],
         voidArgs: true,
+      },
+      context
+    );
+
+    this.enableStat = createProcedureMethod<SetAssetStatParams<T>, AddAssetStatParams, void>(
+      {
+        getProcedureAndArgs: args => [
+          addAssetStat,
+          {
+            ...args,
+            type: restrictionTypeToStatType[this.type],
+            ticker,
+          } as AddAssetStatParams,
+        ],
+      },
+      context
+    );
+
+    this.disableStat = createProcedureMethod<
+      RemoveAssetStatParamsBase<T>,
+      RemoveAssetStatParams,
+      void
+    >(
+      {
+        getProcedureAndArgs: args => [
+          removeAssetStat,
+          {
+            ...args,
+            type: restrictionTypeToStatType[this.type],
+            ticker,
+          } as RemoveAssetStatParams,
+        ],
       },
       context
     );
@@ -135,13 +184,25 @@ export abstract class TransferRestrictionBase<
   public removeRestrictions: NoArgsProcedureMethod<BigNumber>;
 
   /**
+   * Enables statistic of the corresponding type for this Asset, which are required for restrictions to be created
+   */
+  public enableStat: ProcedureMethod<SetAssetStatParams<T>, void>;
+
+  /**
+   * Removes an Asset statistic
+   *
+   * @throws if the statistic is being used or is not set
+   */
+  public disableStat: ProcedureMethod<RemoveAssetStatParamsBase<T>, void>;
+
+  /**
    * Retrieve all active Transfer Restrictions of the corresponding type
    *
    * @note there is a maximum number of restrictions allowed across all types.
    *   The `availableSlots` property of the result represents how many more restrictions can be added
    *   before reaching that limit
    */
-  public async get(): Promise<GetReturnType<T>> {
+  public async get(): Promise<GetTransferRestrictionReturnType<T>> {
     const {
       parent: { ticker },
       context: {
@@ -153,19 +214,23 @@ export abstract class TransferRestrictionBase<
       context,
       type,
     } = this;
-
-    const rawTicker = stringToTicker(ticker, context);
-    const activeTms = await statistics.activeTransferManagers(rawTicker);
-    const filteredTms = activeTms.filter(tm => {
+    const tickerKey = stringToTickerKey(ticker, context);
+    const { requirements } = await statistics.assetTransferCompliances(tickerKey);
+    const filteredRequirements = [...requirements].filter(requirement => {
       if (type === TransferRestrictionType.Count) {
-        return tm.isCountTransferManager;
+        return requirement.isMaxInvestorCount;
+      } else if (type === TransferRestrictionType.Percentage) {
+        return requirement.isMaxInvestorOwnership;
+      } else if (type === TransferRestrictionType.ClaimCount) {
+        return requirement.isClaimCount;
+      } else {
+        return requirement.isClaimOwnership;
       }
-
-      return tm.isPercentageTransferManager;
     });
-
     const rawExemptedLists = await Promise.all(
-      filteredTms.map(tm => statistics.exemptEntities.entries([rawTicker, tm]))
+      filteredRequirements.map(() =>
+        statistics.transferConditionExemptEntities.entries({ asset: tickerKey })
+      )
     );
 
     const restrictions = rawExemptedLists.map((list, index) => {
@@ -176,16 +241,27 @@ export abstract class TransferRestrictionBase<
           },
         ]) => scopeIdToString(scopeId) // `ScopeId` and `IdentityId` are the same type, so this is fine
       );
-      const { value } = transferManagerToTransferRestriction(filteredTms[index]);
+      const { value } = transferConditionToTransferRestriction(
+        filteredRequirements[index],
+        context
+      );
       let restriction;
 
       if (type === TransferRestrictionType.Count) {
         restriction = {
           count: value,
         };
-      } else {
+      } else if (type === TransferRestrictionType.Percentage) {
         restriction = {
           percentage: value,
+        };
+      } else {
+        const { min, max, claim, issuer } = value as ClaimCountRestrictionValue;
+        restriction = {
+          min,
+          max,
+          claim,
+          issuer,
         };
       }
 
@@ -198,11 +274,11 @@ export abstract class TransferRestrictionBase<
       return restriction;
     });
 
-    const maxTransferManagers = u32ToBigNumber(consts.statistics.maxTransferManagersPerAsset);
+    const maxTransferConditions = u32ToBigNumber(consts.statistics.maxTransferConditionsPerAsset);
 
     return {
       restrictions,
-      availableSlots: maxTransferManagers.minus(activeTms.length),
-    } as GetReturnType<T>;
+      availableSlots: maxTransferConditions.minus(restrictions.length),
+    } as GetTransferRestrictionReturnType<T>;
   }
 }

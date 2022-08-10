@@ -1,14 +1,12 @@
 import { Balance } from '@polkadot/types/interfaces';
+import {
+  PalletCorporateActionsCorporateAction,
+  PalletCorporateActionsDistribution,
+  PalletCorporateActionsInitiateCorporateActionArgs,
+} from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import {
-  CAId,
-  CorporateAction,
-  Distribution,
-  Moment,
-  PortfolioNumber,
-  Ticker,
-} from 'polymesh-types/types';
+import { CAId, Moment, PortfolioNumber, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -22,7 +20,7 @@ import {
 import { Context, DividendDistribution, NumberedPortfolio, PostTransactionValue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { InputCaCheckpoint, RoleType, TargetTreatment, TxTags } from '~/types';
+import { CorporateActionKind, InputCaCheckpoint, RoleType, TargetTreatment, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -76,18 +74,20 @@ describe('configureDividendDistribution procedure', () => {
   let rawAmount: Balance;
   let rawPaymentAt: Moment;
   let rawExpiresAt: Moment;
+  let rawCorporateActionArgs: PalletCorporateActionsInitiateCorporateActionArgs;
 
   let rawCaId: PostTransactionValue<CAId>;
   let distribution: PostTransactionValue<DividendDistribution>;
 
   let mockContext: Mocked<Context>;
   let addTransactionStub: sinon.SinonStub;
-  let distributeTransaction: PolymeshTx<unknown[]>;
+  let initiateCorporateActionAndDistributeTransaction: PolymeshTx<unknown[]>;
 
   let stringToTickerStub: sinon.SinonStub;
   let bigNumberToU64Stub: sinon.SinonStub;
   let dateToMomentStub: sinon.SinonStub;
   let bigNumberToBalanceStub: sinon.SinonStub;
+  let corporateActionParamsToMeshCorporateActionArgsStub: sinon.SinonStub;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
@@ -127,6 +127,22 @@ describe('configureDividendDistribution procedure', () => {
     rawAmount = dsMockUtils.createMockBalance(maxAmount);
     rawPaymentAt = dsMockUtils.createMockMoment(new BigNumber(paymentDate.getTime()));
     rawExpiresAt = dsMockUtils.createMockMoment(new BigNumber(expiryDate.getTime()));
+    rawCorporateActionArgs = dsMockUtils.createMockInitiateCorporateActionArgs({
+      ticker,
+      kind: CorporateActionKind.UnpredictableBenefit,
+      declDate: dsMockUtils.createMockMoment(new BigNumber(declarationDate.getTime())),
+      recordDate: dsMockUtils.createMockOption(
+        dsMockUtils.createMockRecordDateSpec({
+          Scheduled: dsMockUtils.createMockMoment(new BigNumber(checkpoint.getTime())),
+        })
+      ),
+      details: description,
+      targets: dsMockUtils.createMockOption(dsMockUtils.createMockTargetIdentities(targets)),
+      defaultWithholdingTax: dsMockUtils.createMockOption(
+        dsMockUtils.createMockPermill(defaultTaxWithholding)
+      ),
+      withholdingTax: [[taxWithholdings[0].identity, taxWithholdings[0].percentage]],
+    });
 
     rawCaId = 'caId' as unknown as PostTransactionValue<CAId>;
     distribution = 'distribution' as unknown as PostTransactionValue<DividendDistribution>;
@@ -135,12 +151,19 @@ describe('configureDividendDistribution procedure', () => {
     bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
     dateToMomentStub = sinon.stub(utilsConversionModule, 'dateToMoment');
     bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
+    corporateActionParamsToMeshCorporateActionArgsStub = sinon.stub(
+      utilsConversionModule,
+      'corporateActionParamsToMeshCorporateActionArgs'
+    );
   });
 
   beforeEach(() => {
     procedureMockUtils.getAddProcedureStub().returns(rawCaId);
     addTransactionStub = procedureMockUtils.getAddTransactionStub().returns([distribution]);
-    distributeTransaction = dsMockUtils.createTxStub('capitalDistribution', 'distribute');
+    initiateCorporateActionAndDistributeTransaction = dsMockUtils.createTxStub(
+      'corporateAction',
+      'initiateCorporateActionAndDistribute'
+    );
 
     mockContext = dsMockUtils.getContextInstance();
 
@@ -150,6 +173,40 @@ describe('configureDividendDistribution procedure', () => {
     dateToMomentStub.withArgs(expiryDate, mockContext).returns(rawExpiresAt);
     bigNumberToBalanceStub.withArgs(perShare, mockContext).returns(rawPerShare);
     bigNumberToBalanceStub.withArgs(maxAmount, mockContext).returns(rawAmount);
+    corporateActionParamsToMeshCorporateActionArgsStub
+      .withArgs(
+        {
+          ticker,
+          kind: CorporateActionKind.UnpredictableBenefit,
+          declarationDate,
+          checkpoint,
+          description,
+          targets,
+          defaultTaxWithholding,
+          taxWithholdings,
+        },
+        mockContext
+      )
+      .returns(rawCorporateActionArgs);
+    corporateActionParamsToMeshCorporateActionArgsStub
+      .withArgs(
+        {
+          ticker,
+          kind: CorporateActionKind.UnpredictableBenefit,
+          declarationDate: sinon.match.date,
+          checkpoint,
+          description,
+          targets: null,
+          defaultTaxWithholding: null,
+          taxWithholdings: null,
+        },
+        mockContext
+      )
+      .returns(rawCorporateActionArgs);
+
+    dsMockUtils.createQueryStub('corporateAction', 'maxDetailsLength', {
+      returnValue: dsMockUtils.createMockU32(new BigNumber(100)),
+    });
   });
 
   afterEach(() => {
@@ -225,6 +282,37 @@ describe('configureDividendDistribution procedure', () => {
     expect(err.message).toBe('Payment date must be in the future');
   });
 
+  it('should throw an error if the declaration date is in the future', async () => {
+    const proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(
+      mockContext,
+      { portfolio: originPortfolio }
+    );
+
+    let err;
+
+    try {
+      await prepareConfigureDividendDistribution.call(proc, {
+        ticker,
+        declarationDate: new Date(new Date().getTime() + 500000),
+        checkpoint,
+        description,
+        targets,
+        defaultTaxWithholding,
+        taxWithholdings,
+        originPortfolio,
+        currency,
+        perShare,
+        maxAmount,
+        paymentDate,
+        expiryDate,
+      });
+    } catch (error) {
+      err = error;
+    }
+
+    expect(err.message).toBe('Declaration date must be in the past');
+  });
+
   it('should throw an error if the payment date is earlier than the Checkpoint date', async () => {
     const proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(
       mockContext,
@@ -280,6 +368,40 @@ describe('configureDividendDistribution procedure', () => {
     }
 
     expect(err.message).toBe('Payment date must be after the Checkpoint date');
+  });
+
+  it('should throw an error if the description length is greater than the allowed maximum', async () => {
+    const proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(
+      mockContext,
+      { portfolio: originPortfolio }
+    );
+
+    dsMockUtils.createQueryStub('corporateAction', 'maxDetailsLength', {
+      returnValue: dsMockUtils.createMockU32(new BigNumber(1)),
+    });
+
+    let err;
+
+    try {
+      await prepareConfigureDividendDistribution.call(proc, {
+        ticker,
+        declarationDate,
+        checkpoint,
+        description,
+        targets,
+        defaultTaxWithholding,
+        taxWithholdings,
+        currency,
+        perShare,
+        maxAmount,
+        paymentDate,
+        expiryDate,
+      });
+    } catch (error) {
+      err = error;
+    }
+
+    expect(err.message).toBe('Description too long');
   });
 
   it('should throw an error if the payment date is after the expiry date', async () => {
@@ -394,7 +516,7 @@ describe('configureDividendDistribution procedure', () => {
     expect(err.message).toBe("The origin Portfolio doesn't exist");
   });
 
-  it('should add a distribute transaction to the queue', async () => {
+  it('should add an initiate corporate action and distribute transaction to the queue', async () => {
     let proc = procedureMockUtils.getInstance<Params, DividendDistribution, Storage>(mockContext, {
       portfolio: originPortfolio,
     });
@@ -418,10 +540,10 @@ describe('configureDividendDistribution procedure', () => {
     sinon.assert.calledWith(
       addTransactionStub,
       sinon.match({
-        transaction: distributeTransaction,
+        transaction: initiateCorporateActionAndDistributeTransaction,
         resolvers: sinon.match.array,
         args: [
-          rawCaId,
+          rawCorporateActionArgs,
           rawPortfolioNumber,
           rawCurrency,
           rawPerShare,
@@ -453,10 +575,10 @@ describe('configureDividendDistribution procedure', () => {
     sinon.assert.calledWith(
       addTransactionStub,
       sinon.match({
-        transaction: distributeTransaction,
+        transaction: initiateCorporateActionAndDistributeTransaction,
         resolvers: sinon.match.array,
         args: [
-          rawCaId,
+          rawCorporateActionArgs,
           rawPortfolioNumber,
           rawCurrency,
           rawPerShare,
@@ -483,12 +605,8 @@ describe('configureDividendDistribution procedure', () => {
 
     await prepareConfigureDividendDistribution.call(proc, {
       ticker,
-      declarationDate,
       checkpoint,
       description,
-      targets,
-      defaultTaxWithholding,
-      taxWithholdings,
       currency,
       perShare,
       maxAmount,
@@ -498,9 +616,17 @@ describe('configureDividendDistribution procedure', () => {
     sinon.assert.calledWith(
       addTransactionStub,
       sinon.match({
-        transaction: distributeTransaction,
+        transaction: initiateCorporateActionAndDistributeTransaction,
         resolvers: sinon.match.array,
-        args: [rawCaId, null, rawCurrency, rawPerShare, rawAmount, rawPaymentAt, null],
+        args: [
+          rawCorporateActionArgs,
+          null,
+          rawCurrency,
+          rawPerShare,
+          rawAmount,
+          rawPaymentAt,
+          null,
+        ],
       })
     );
   });
@@ -511,8 +637,8 @@ describe('configureDividendDistribution procedure', () => {
     const portfolioNumber = new BigNumber(3);
     const did = 'someDid';
 
-    let rawCorporateAction: CorporateAction;
-    let rawDistribution: Distribution;
+    let rawCorporateAction: PalletCorporateActionsCorporateAction;
+    let rawDistribution: PalletCorporateActionsDistribution;
 
     beforeAll(() => {
       entityMockUtils.initMocks();
@@ -539,12 +665,12 @@ describe('configureDividendDistribution procedure', () => {
       rawDistribution = dsMockUtils.createMockDistribution({
         from: { did, kind: { User: dsMockUtils.createMockU64(portfolioNumber) } },
         currency,
-        per_share: perShare.shiftedBy(6),
+        perShare: perShare.shiftedBy(6),
         amount: maxAmount.shiftedBy(6),
         remaining: new BigNumber(10000),
         reclaimed: false,
-        payment_at: new BigNumber(paymentDate.getTime()),
-        expires_at: dsMockUtils.createMockOption(
+        paymentAt: new BigNumber(paymentDate.getTime()),
+        expiresAt: dsMockUtils.createMockOption(
           dsMockUtils.createMockMoment(new BigNumber(expiryDate?.getTime()))
         ),
       });
@@ -554,23 +680,21 @@ describe('configureDividendDistribution procedure', () => {
         returnValue: dsMockUtils.createMockOption(rawCorporateAction),
       });
       dsMockUtils.createQueryStub('corporateAction', 'details', {
-        returnValue: dsMockUtils.createMockText(description),
+        returnValue: dsMockUtils.createMockBytes(description),
       });
     });
 
     beforeEach(() => {
-      /* eslint-disable @typescript-eslint/naming-convention */
       filterEventRecordsStub.returns([
         dsMockUtils.createMockIEvent([
           'data',
           dsMockUtils.createMockCAId({
             ticker,
-            local_id: id,
+            localId: id,
           }),
           rawDistribution,
         ]),
       ]);
-      /* eslint-enable @typescript-eslint/naming-convention */
     });
 
     afterEach(() => {

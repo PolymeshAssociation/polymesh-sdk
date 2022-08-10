@@ -8,23 +8,61 @@ import { HttpLink } from 'apollo-link-http';
 import fetch from 'cross-fetch';
 import schema from 'polymesh-types/schema';
 
-import { AccountManagement } from '~/AccountManagement';
-import { Assets } from '~/Assets';
-import { Identities } from '~/Identities';
 import { Account, Context, Identity, PolymeshError } from '~/internal';
 import { heartbeat } from '~/middleware/queries';
-import { Settlements } from '~/Settlements';
 import { ErrorCode, MiddlewareConfig } from '~/types';
 import { signerToString } from '~/utils/conversion';
 import { assertExpectedChainVersion } from '~/utils/internal';
 
+import { AccountManagement } from './AccountManagement';
+import { Assets } from './Assets';
 import { Claims } from './Claims';
+import { Identities } from './Identities';
 import { Network } from './Network';
+import { Settlements } from './Settlements';
 
-interface ConnectParams {
+export interface ConnectParams {
   nodeUrl: string;
   signingManager?: SigningManager;
   middleware?: MiddlewareConfig;
+  middlewareV2?: MiddlewareConfig;
+}
+
+/**
+ * @hidden
+ */
+function createMiddlewareApi(
+  middleware?: MiddlewareConfig
+): ApolloClient<NormalizedCacheObject> | null {
+  return middleware
+    ? new ApolloClient({
+        link: setContext((_, { headers }) => {
+          return {
+            headers: {
+              ...headers,
+              // eslint-disable-next-line @typescript-eslint/naming-convention
+              'x-api-key': middleware.key,
+            },
+          };
+        }).concat(
+          ApolloLink.from([
+            new HttpLink({
+              uri: middleware.link,
+              fetch,
+            }),
+          ])
+        ),
+        cache: new InMemoryCache(),
+        defaultOptions: {
+          watchQuery: {
+            fetchPolicy: 'no-cache',
+          },
+          query: {
+            fetchPolicy: 'no-cache',
+          },
+        },
+      })
+    : null;
 }
 
 /**
@@ -84,22 +122,10 @@ export class Polymesh {
    * @param params.middleware - middleware API URL and key (optional, used for historic queries)
    */
   static async connect(params: ConnectParams): Promise<Polymesh> {
-    const { nodeUrl, signingManager, middleware } = params;
+    const { nodeUrl, signingManager, middleware, middlewareV2 } = params;
     let context: Context;
 
-    console.warn(
-      'The Polymesh SDK has migrated to a new npm repository at "https://www.npmjs.com/package/@polymeshassociation/polymesh-sdk". Please let the developer know they should update their dependency accordingly'
-    );
-    await assertExpectedChainVersion(nodeUrl).catch(error => {
-      if (
-        error instanceof PolymeshError &&
-        error.message.includes('Unsupported Polymesh version')
-      ) {
-        console.warn(error.message);
-      } else {
-        throw error;
-      }
-    });
+    await assertExpectedChainVersion(nodeUrl);
 
     try {
       const { types, rpc } = schema;
@@ -110,41 +136,10 @@ export class Polymesh {
         rpc,
       });
 
-      let middlewareApi: ApolloClient<NormalizedCacheObject> | null = null;
-
-      if (middleware) {
-        middlewareApi = new ApolloClient({
-          link: setContext((_, { headers }) => {
-            return {
-              headers: {
-                ...headers,
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                'x-api-key': middleware.key,
-              },
-            };
-          }).concat(
-            ApolloLink.from([
-              new HttpLink({
-                uri: middleware.link,
-                fetch,
-              }),
-            ])
-          ),
-          cache: new InMemoryCache(),
-          defaultOptions: {
-            watchQuery: {
-              fetchPolicy: 'no-cache',
-            },
-            query: {
-              fetchPolicy: 'no-cache',
-            },
-          },
-        });
-      }
-
       context = await Context.create({
         polymeshApi,
-        middlewareApi,
+        middlewareApi: createMiddlewareApi(middleware),
+        middlewareApiV2: createMiddlewareApi(middlewareV2),
         signingManager,
       });
     } catch (err) {

@@ -1,6 +1,6 @@
 import { Option } from '@polkadot/types';
+import { PalletCorporateActionsCorporateAction } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { CorporateAction as MeshCorporateAction } from 'polymesh-types/types';
 
 import {
   Asset,
@@ -9,11 +9,15 @@ import {
   Context,
   Entity,
   linkCaDocs,
-  LinkCaDocsParams,
-  ModifyCaCheckpointParams,
   PolymeshError,
 } from '~/internal';
-import { ErrorCode, InputCaCheckpoint, ProcedureMethod } from '~/types';
+import {
+  ErrorCode,
+  InputCaCheckpoint,
+  LinkCaDocsParams,
+  ModifyCaCheckpointParams,
+  ProcedureMethod,
+} from '~/types';
 import { HumanReadableType, Modify } from '~/types/utils';
 import {
   bigNumberToU32,
@@ -193,7 +197,7 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
       });
     }
 
-    const { record_date: recordDate } = corporateAction.unwrap();
+    const { recordDate } = corporateAction.unwrap();
 
     if (recordDate.isNone) {
       return null;
@@ -215,8 +219,8 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
     const createdCheckpointIndex = u64ToBigNumber(amount).toNumber();
     if (createdCheckpointIndex >= schedulePoints.length) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const schedule = schedules.find(({ id: schedId }) =>
-        u64ToBigNumber(schedId).eq(u64ToBigNumber(scheduleId))
+      const schedule = schedules.find(({ id }) =>
+        u64ToBigNumber(id).eq(u64ToBigNumber(scheduleId))
       )!;
 
       return new CheckpointSchedule(
@@ -234,7 +238,7 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
   /**
    * @hidden
    */
-  private fetchCorporateAction(): Promise<Option<MeshCorporateAction>> {
+  private fetchCorporateAction(): Promise<Option<PalletCorporateActionsCorporateAction>> {
     const {
       context: {
         polymeshApi: { query },
@@ -252,7 +256,7 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
   /**
    * Return the Corporate Action's static data
    */
-  public toJson(): HumanReadable {
+  public toHuman(): HumanReadable {
     const {
       asset,
       id,

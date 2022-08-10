@@ -5,8 +5,14 @@ import {
   DropLast,
   ObsInnerType,
 } from '@polkadot/api/types';
-import { StorageKey } from '@polkadot/types';
+import { BTreeSet, Bytes, Option, StorageKey } from '@polkadot/types';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
+import {
+  PolymeshPrimitivesSecondaryKeyKeyRecord,
+  PolymeshPrimitivesStatisticsStatClaim,
+  PolymeshPrimitivesStatisticsStatType,
+  PolymeshPrimitivesTransferComplianceTransferCondition,
+} from '@polkadot/types/lookup';
 import { AnyFunction, AnyTuple, IEvent, ISubmittableResult } from '@polkadot/types/types';
 import { stringUpperFirst } from '@polkadot/util';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
@@ -14,14 +20,8 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import stringify from 'json-stable-stringify';
 import { differenceWith, flatMap, isEqual, mapValues, noop, padEnd, uniq } from 'lodash';
-import {
-  IdentityId,
-  ModuleName,
-  PortfolioName,
-  PortfolioNumber,
-  TxTag,
-} from 'polymesh-types/types';
-import { satisfies } from 'semver';
+import { IdentityId, PortfolioNumber } from 'polymesh-types/types';
+import { major, satisfies } from 'semver';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 
 import {
@@ -36,6 +36,7 @@ import {
 } from '~/internal';
 import { Scope as MiddlewareScope } from '~/middleware/types';
 import {
+  Account,
   CaCheckpointType,
   CalendarPeriod,
   CalendarUnit,
@@ -47,13 +48,22 @@ import {
   ErrorCode,
   InputCaCheckpoint,
   InputCondition,
+  ModuleName,
   NextKey,
   NoArgsProcedureMethod,
   PaginationOptions,
+  PermissionedAccount,
   ProcedureAuthorizationStatus,
   ProcedureMethod,
   ProcedureOpts,
+  RemoveAssetStatParams,
   Scope,
+  StatType,
+  SubCallback,
+  TransferRestriction,
+  TransferRestrictionType,
+  TxTag,
+  UnsubCallback,
 } from '~/types';
 import {
   Events,
@@ -62,18 +72,33 @@ import {
   MapTxWithArgs,
   MaybePostTransactionValue,
   PolymeshTx,
+  StatClaimIssuer,
+  StatisticsOpType,
   TxWithArgs,
 } from '~/types/internal';
 import { HumanReadableType, ProcedureFunc, UnionOfProcedureFuncs } from '~/types/utils';
 import {
   DEFAULT_GQL_PAGE_SIZE,
-  SUPPORTED_VERSION_RANGE,
+  MAX_TICKER_LENGTH,
+  STATE_RUNTIME_VERSION_CALL,
+  SUPPORTED_NODE_VERSION_RANGE,
+  SUPPORTED_SPEC_VERSION_RANGE,
   SYSTEM_VERSION_RPC_CALL,
 } from '~/utils/constants';
 import {
   bigNumberToU64,
+  claimIssuerToMeshClaimIssuer,
+  identityIdToString,
+  meshClaimTypeToClaimType,
+  meshPermissionsToPermissions,
+  meshStatToStatisticsOpType,
   middlewareScopeToScope,
+  permillToBigNumber,
   signerToString,
+  statisticsOpTypeToStatOpType,
+  statisticsOpTypeToStatType,
+  statsClaimToStatClaimInputType,
+  stringToAccountId,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { isEntity, isMultiClaimCondition, isSingleClaimCondition } from '~/utils/typeguards';
@@ -276,7 +301,9 @@ export function filterEventRecords<
   if (!eventRecords.length) {
     throw new PolymeshError({
       code: ErrorCode.UnexpectedError,
-      message: `Event "${mod}.${eventName}" wasn't fired even though the corresponding transaction was completed. Please report this to the Polymath team`,
+      message: `Event "${mod}.${String(
+        eventName
+      )}" wasn't fired even though the corresponding transaction was completed. Please report this to the Polymesh team`,
     });
   }
 
@@ -719,13 +746,13 @@ export function isModuleOrTagMatch(a: TxTag | ModuleName, b: TxTag | ModuleName)
  * @hidden
  *
  * Recursively convert a value into a human readable (JSON compliant) version:
- *   - Entities are converted via their `.toJson` method
+ *   - Entities are converted via their `.toHuman` method
  *   - Dates are converted to ISO strings
  *   - BigNumbers are converted to numerical strings
  */
 export function toHumanReadable<T>(obj: T): HumanReadableType<T> {
   if (isEntity<unknown, HumanReadableType<T>>(obj)) {
-    return obj.toJson();
+    return obj.toHuman();
   }
 
   if (obj instanceof BigNumber) {
@@ -874,7 +901,7 @@ export function assembleBatchTransactions<ArgsArray extends unknown[][]>(
  */
 export async function getPortfolioIdsByName(
   rawIdentityId: IdentityId,
-  rawNames: PortfolioName[],
+  rawNames: Bytes[],
   context: Context
 ): Promise<(BigNumber | null)[]> {
   const {
@@ -884,7 +911,7 @@ export async function getPortfolioIdsByName(
   } = context;
 
   const rawPortfolioNumbers = await portfolio.nameToNumber.multi<PortfolioNumber>(
-    rawNames.map<[IdentityId, PortfolioName]>(name => [rawIdentityId, name])
+    rawNames.map<[IdentityId, Bytes]>(name => [rawIdentityId, name])
   );
 
   const portfolioIds = rawPortfolioNumbers.map(number => u64ToBigNumber(number));
@@ -894,7 +921,7 @@ export async function getPortfolioIdsByName(
    * since nameToNumber returns 1 for non-existing portfolios, if a name maps to number 1,
    *  we need to check if the given name actually matches the first portfolio
    */
-  let firstPortfolioName: PortfolioName;
+  let firstPortfolioName: Bytes;
 
   /*
    * even though we make this call without knowing if we will need
@@ -1002,7 +1029,6 @@ export async function getExemptedIds(
   } else {
     exemptedIds.push(...identityEntities.map(identity => asDid(identity), context));
   }
-
   const hasDuplicates = uniq(exemptedIds).length !== exemptedIds.length;
 
   if (hasDuplicates) {
@@ -1019,6 +1045,112 @@ export async function getExemptedIds(
 /**
  * @hidden
  *
+ * @returns true if the node version is within the accepted range
+ */
+function handleNodeVersionResponse(
+  data: { result: string },
+  reject: (reason?: unknown) => void
+): boolean {
+  const { result: version } = data;
+
+  if (!satisfies(version, major(SUPPORTED_NODE_VERSION_RANGE).toString())) {
+    const error = new PolymeshError({
+      code: ErrorCode.FatalError,
+      message: 'Unsupported Polymesh RPC node version. Please upgrade the SDK',
+      data: {
+        rpcNodeVersion: version,
+        supportedVersionRange: SUPPORTED_NODE_VERSION_RANGE,
+      },
+    });
+
+    reject(error);
+
+    return false;
+  }
+
+  if (!satisfies(version, SUPPORTED_NODE_VERSION_RANGE)) {
+    console.warn(
+      `This version of the SDK supports Polymesh RPC node version ${SUPPORTED_NODE_VERSION_RANGE}. The node is at version ${version}. Please upgrade the SDK`
+    );
+  }
+
+  return true;
+}
+
+/**
+ * @hidden
+ *
+ * Add a dot to a number every three digits from right to left
+ */
+function addDotSeparator(value: number): string {
+  let result = '';
+
+  value
+    .toString()
+    .split('')
+    .reverse()
+    .forEach((char, index) => {
+      if ((index + 1) % 3 === 1 && index !== 0) {
+        result = `.${result}`;
+      }
+
+      result = `${char}${result}`;
+    });
+
+  return result;
+}
+
+/**
+ * @hidden
+ *
+ * @returns true if the spec version is within the accepted range
+ */
+function handleSpecVersionResponse(
+  data: { result: { specVersion: number } },
+  reject: (reason?: unknown) => void
+): boolean {
+  const {
+    result: { specVersion },
+  } = data;
+
+  /*
+   * the spec version number comes as a single number (i.e. 5000000). It should be parsed as xxx_yyy_zzz
+   * where xxx is the major version, yyy is the minor version, and zzz is the patch version. So for example, 5001023
+   * would be version 5.1.23
+   */
+  const specVersionAsSemver = addDotSeparator(specVersion)
+    .split('.')
+    // remove leading zeroes, for example 020 becomes 20, 000 becomes 0
+    .map((ver: string) => ver.replace(/^0+(?!$)/g, ''))
+    .join('.');
+
+  if (!satisfies(specVersionAsSemver, major(SUPPORTED_SPEC_VERSION_RANGE).toString())) {
+    const error = new PolymeshError({
+      code: ErrorCode.FatalError,
+      message: 'Unsupported Polymesh chain spec version. Please upgrade the SDK',
+      data: {
+        specVersion: specVersionAsSemver,
+        supportedVersionRange: SUPPORTED_SPEC_VERSION_RANGE,
+      },
+    });
+
+    reject(error);
+
+    return false;
+  }
+
+  if (!satisfies(specVersionAsSemver, SUPPORTED_SPEC_VERSION_RANGE)) {
+    console.warn(
+      `This version of the SDK supports Polymesh chain spec version ${SUPPORTED_SPEC_VERSION_RANGE}. The chain spec is at version ${specVersionAsSemver}. Please upgrade the SDK`
+    );
+  }
+
+  return true;
+}
+
+/**
+ * @hidden
+ *
  * Checks chain version. This function uses a websocket as it's intended to be called during initialization
  * @param nodeUrl - URL for the chain node
  * @returns A promise that resolves if the version is in the expected range, otherwise it will reject
@@ -1027,30 +1159,31 @@ export function assertExpectedChainVersion(nodeUrl: string): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     const client = new W3CWebSocket(nodeUrl);
 
-    client.onopen = () => {
-      const msg = { ...SYSTEM_VERSION_RPC_CALL, id: 'assertExpectedChainVersion' };
-      client.send(JSON.stringify(msg));
+    client.onopen = (): void => {
+      client.send(JSON.stringify(SYSTEM_VERSION_RPC_CALL));
+      client.send(JSON.stringify(STATE_RUNTIME_VERSION_CALL));
     };
 
-    client.onmessage = msg => {
-      client.close();
-      const { result: version } = JSON.parse(msg.data.toString());
-      if (!satisfies(version, SUPPORTED_VERSION_RANGE)) {
-        const error = new PolymeshError({
-          code: ErrorCode.FatalError,
-          message: 'Unsupported Polymesh version. Please upgrade the SDK',
-          data: {
-            polymeshVersion: version,
-            supportedVersionRange: SUPPORTED_VERSION_RANGE,
-          },
-        });
-        reject(error);
+    let nodeVersionFetched: boolean;
+    let specVersionFetched: boolean;
+
+    client.onmessage = (msg): void => {
+      const data = JSON.parse(msg.data.toString());
+      const { id } = data;
+
+      if (id === SYSTEM_VERSION_RPC_CALL.id) {
+        nodeVersionFetched = handleNodeVersionResponse(data, reject);
       } else {
+        specVersionFetched = handleSpecVersionResponse(data, reject);
+      }
+
+      if (nodeVersionFetched && specVersionFetched) {
+        client.close();
         resolve();
       }
     };
 
-    client.onerror = (error: Error) => {
+    client.onerror = (error: Error): void => {
       client.close();
       const err = new PolymeshError({
         code: ErrorCode.FatalError,
@@ -1060,4 +1193,329 @@ export function assertExpectedChainVersion(nodeUrl: string): Promise<void> {
       reject(err);
     };
   });
+}
+
+/**
+ * @hidden
+ *
+ * Validates a ticker value
+ */
+export function assertTickerValid(ticker: string): void {
+  if (!ticker.length || ticker.length > MAX_TICKER_LENGTH) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} characters`,
+    });
+  }
+
+  if (!isPrintableAscii(ticker)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Only printable ASCII is allowed as ticker name',
+    });
+  }
+
+  if (ticker !== ticker.toUpperCase()) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Ticker cannot contain lower case letters',
+    });
+  }
+}
+
+/**
+ * @hidden
+ * @returns true is the given stat is able to track the data for the given args
+ */
+export function compareStatsToInput(
+  rawStatType: PolymeshPrimitivesStatisticsStatType,
+  args: RemoveAssetStatParams
+): boolean {
+  let claimIssuer;
+  const { type } = args;
+
+  if (type === StatType.ScopedCount || type === StatType.ScopedPercentage) {
+    claimIssuer = { issuer: args.issuer, claimType: args.claimType };
+  }
+
+  if (rawStatType.claimIssuer.isNone && !!claimIssuer) {
+    return false;
+  }
+
+  if (rawStatType.claimIssuer.isSome) {
+    if (!claimIssuer) {
+      return false;
+    }
+
+    const { issuer, claimType } = claimIssuer;
+    const [meshType, meshIssuer] = rawStatType.claimIssuer.unwrap();
+    const issuerDid = identityIdToString(meshIssuer);
+    const statType = meshClaimTypeToClaimType(meshType);
+    if (issuerDid !== issuer.did) {
+      return false;
+    }
+
+    if (statType !== claimType) {
+      return false;
+    }
+  }
+
+  const stat = meshStatToStatisticsOpType(rawStatType);
+  let cmpStat;
+  if (stat === StatisticsOpType.Count) {
+    cmpStat = StatType.Count;
+  } else if (stat === StatisticsOpType.Balance) {
+    cmpStat = StatType.Percentage;
+  } else if (stat === StatisticsOpType.ClaimCount) {
+    cmpStat = StatType.ScopedCount;
+  } else {
+    cmpStat = StatType.ScopedPercentage;
+  }
+
+  return cmpStat === type;
+}
+
+/**
+ * @hidden
+ * @returns true if the given StatType is able to track the data for the given transfer condition
+ */
+export function compareTransferRestrictionToStat(
+  transferCondition: PolymeshPrimitivesTransferComplianceTransferCondition,
+  type: StatType,
+  claimIssuer?: StatClaimIssuer
+): boolean {
+  if (
+    (type === StatType.Count && transferCondition.isMaxInvestorCount) ||
+    (type === StatType.Percentage && transferCondition.isMaxInvestorOwnership)
+  ) {
+    return true;
+  }
+
+  if (!claimIssuer) {
+    return false;
+  }
+
+  const {
+    issuer: { did: issuerDid },
+    claimType,
+  } = claimIssuer;
+
+  let rawClaim, issuer;
+  if (transferCondition.isClaimCount) {
+    [rawClaim, issuer] = transferCondition.asClaimCount;
+  } else if (transferCondition.isClaimOwnership) {
+    [rawClaim, issuer] = transferCondition.asClaimOwnership;
+  }
+  if (rawClaim && issuer) {
+    const restrictionIssuerDid = identityIdToString(issuer);
+    const claim = statsClaimToStatClaimInputType(rawClaim);
+    if (restrictionIssuerDid === issuerDid && claim.type === claimType) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * @hidden
+ */
+function getClaimType(statClaim: PolymeshPrimitivesStatisticsStatClaim): ClaimType {
+  if (statClaim.isAccredited) {
+    return ClaimType.Accredited;
+  } else if (statClaim.isAffiliate) {
+    return ClaimType.Affiliate;
+  } else {
+    return ClaimType.Jurisdiction;
+  }
+}
+
+/**
+ * @hidden
+ */
+function compareOptionalBigNumbers(a: BigNumber | undefined, b: BigNumber | undefined): boolean {
+  if (a === undefined && b === undefined) {
+    return true;
+  }
+  if (a === undefined || b === undefined) {
+    return false;
+  }
+  return a.eq(b);
+}
+
+/**
+ * @hidden
+ */
+export function compareTransferRestrictionToInput(
+  rawRestriction: PolymeshPrimitivesTransferComplianceTransferCondition,
+  inputRestriction: TransferRestriction
+): boolean {
+  const { type, value } = inputRestriction;
+  if (rawRestriction.isMaxInvestorCount && type === TransferRestrictionType.Count) {
+    const currentCount = u64ToBigNumber(rawRestriction.asMaxInvestorCount);
+    return currentCount.eq(value);
+  } else if (rawRestriction.isMaxInvestorOwnership && type === TransferRestrictionType.Percentage) {
+    const currentOwnership = permillToBigNumber(rawRestriction.asMaxInvestorOwnership);
+    return currentOwnership.eq(value);
+  } else if (rawRestriction.isClaimCount && type === TransferRestrictionType.ClaimCount) {
+    const [statClaim, rawIssuerId, rawMin, maybeMax] = rawRestriction.asClaimCount;
+    const issuerDid = identityIdToString(rawIssuerId);
+    const min = u64ToBigNumber(rawMin);
+    const max = maybeMax.isSome ? u64ToBigNumber(maybeMax.unwrap()) : undefined;
+    const { min: valueMin, max: valueMax, claim: valueClaim, issuer: valueIssuer } = value;
+
+    return (
+      valueMin.eq(min) &&
+      compareOptionalBigNumbers(max, valueMax) &&
+      valueClaim.type === getClaimType(statClaim) &&
+      issuerDid === valueIssuer.did
+    );
+  } else if (rawRestriction.isClaimOwnership && type === TransferRestrictionType.ClaimPercentage) {
+    const { min: valueMin, max: valueMax, claim: valueClaim, issuer: valueIssuer } = value;
+    const [statClaim, rawIssuerId, rawMin, rawMax] = rawRestriction.asClaimOwnership;
+    const issuerDid = identityIdToString(rawIssuerId);
+    const min = permillToBigNumber(rawMin);
+    const max = permillToBigNumber(rawMax);
+
+    return (
+      valueMin.eq(min) &&
+      valueMax.eq(max) &&
+      valueClaim.type === getClaimType(statClaim) &&
+      issuerDid === valueIssuer.did
+    );
+  }
+
+  return false;
+}
+
+/**
+ * @hidden
+ */
+export function compareStatTypeToTransferRestrictionType(
+  statType: PolymeshPrimitivesStatisticsStatType,
+  transferRestrictionType: TransferRestrictionType
+): boolean {
+  const opType = meshStatToStatisticsOpType(statType);
+  if (opType === StatisticsOpType.Count) {
+    return transferRestrictionType === TransferRestrictionType.Count;
+  } else if (opType === StatisticsOpType.Balance) {
+    return transferRestrictionType === TransferRestrictionType.Percentage;
+  } else if (opType === StatisticsOpType.ClaimCount) {
+    return transferRestrictionType === TransferRestrictionType.ClaimCount;
+  } else {
+    return transferRestrictionType === TransferRestrictionType.ClaimPercentage;
+  }
+}
+
+/**
+ * @hidden
+ * @param args.type TransferRestriction type that was given
+ * @param args.claimIssuer optional Issuer and ClaimType for the scope of the Stat
+ * @param context
+ * @returns encoded StatType needed for the TransferRestriction to be enabled
+ */
+export function neededStatTypeForRestrictionInput(
+  args: { type: TransferRestrictionType; claimIssuer?: StatClaimIssuer },
+  context: Context
+): PolymeshPrimitivesStatisticsStatType {
+  const { type, claimIssuer } = args;
+
+  let rawOp;
+  if (type === TransferRestrictionType.Count || type === TransferRestrictionType.ClaimCount) {
+    rawOp = statisticsOpTypeToStatOpType(StatisticsOpType.Count, context);
+  } else {
+    rawOp = statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
+  }
+
+  const rawIssuer = claimIssuer ? claimIssuerToMeshClaimIssuer(claimIssuer, context) : undefined;
+  return statisticsOpTypeToStatType({ op: rawOp, claimIssuer: rawIssuer }, context);
+}
+
+/**
+ * @hidden
+ * @throws if stat is not found in the given set
+ */
+export function assertStatIsSet(
+  currentStats: BTreeSet<PolymeshPrimitivesStatisticsStatType>,
+  neededStat: PolymeshPrimitivesStatisticsStatType
+): void {
+  const needStat = ![...currentStats].find(s => s.eq(neededStat));
+
+  if (needStat) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message:
+        'The appropriate stat type for this restriction is not set. Try calling enableStat in the namespace first',
+    });
+  }
+}
+
+/**
+ * @hidden
+ *
+ * Fetches Account permissions for the given secondary Accounts
+ *
+ * @note non secondary Accounts will be skipped, so there maybe less PermissionedAccounts returned than Accounts given
+ *
+ * @param args.accounts a list of accounts to fetch permissions for
+ * @param args.identity optional. If passed, Accounts that are not part of the given Identity will be filtered out
+ */
+export async function getSecondaryAccountPermissions(
+  args: { accounts: Account[]; identity?: Identity },
+  context: Context,
+  callback: SubCallback<PermissionedAccount[]>
+): Promise<UnsubCallback>;
+
+export async function getSecondaryAccountPermissions(
+  args: { accounts: Account[]; identity?: Identity },
+  context: Context
+): Promise<PermissionedAccount[]>;
+// eslint-disable-next-line require-jsdoc
+export async function getSecondaryAccountPermissions(
+  args: {
+    accounts: Account[];
+    identity?: Identity;
+  },
+  context: Context,
+  callback?: SubCallback<PermissionedAccount[]>
+): Promise<PermissionedAccount[] | UnsubCallback> {
+  const {
+    polymeshApi: {
+      query: { identity: identityQuery },
+    },
+  } = context;
+
+  const { accounts, identity } = args;
+
+  const assembleResult = (
+    optKeyRecords: Option<PolymeshPrimitivesSecondaryKeyKeyRecord>[]
+  ): PermissionedAccount[] => {
+    return optKeyRecords.reduce((result: PermissionedAccount[], optKeyRecord, index) => {
+      const account = accounts[index];
+      const record = optKeyRecord.unwrap();
+
+      if (record.isSecondaryKey) {
+        const [rawIdentityId, rawPermissions] = record.asSecondaryKey;
+
+        if (identity && identityIdToString(rawIdentityId) !== identity.did) {
+          return result;
+        }
+        result.push({
+          account,
+          permissions: meshPermissionsToPermissions(rawPermissions, context),
+        });
+      }
+      return result;
+    }, []);
+  };
+
+  const identityKeys = accounts.map(({ address }) => stringToAccountId(address, context));
+  if (callback) {
+    return identityQuery.keyRecords.multi(identityKeys, result => {
+      return callback(assembleResult(result));
+    });
+  }
+  const rawResults = await identityQuery.keyRecords.multi(identityKeys);
+
+  return assembleResult(rawResults);
 }
