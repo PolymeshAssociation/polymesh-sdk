@@ -211,31 +211,23 @@ export async function prepareSetTransferRestrictions(
     })
   );
 
-  Object.entries(toSetExemptions).forEach(([claimType, exempted]) => {
-    const rawClaimType = claimType === 'None' ? undefined : (claimType as ClaimType);
-    const exemptKey = toExemptKey(tickerKey, op, rawClaimType);
-    const exemptedBtreeSet = identitiesToBtreeSet(exempted, context);
-    transactions.push(
-      checkTxType({
-        transaction: statistics.setEntitiesExempt,
-        feeMultiplier: new BigNumber(exemptedBtreeSet.size),
-        args: [true, exemptKey, exemptedBtreeSet],
-      })
-    );
-  });
+  const pushExemptions = (exemptions: ExemptionRecords, exempt: boolean): void => {
+    Object.entries(exemptions).forEach(([claimType, exempted]) => {
+      const rawClaimType = claimType === 'None' ? undefined : (claimType as ClaimType);
+      const exemptKey = toExemptKey(tickerKey, op, rawClaimType);
+      const exemptedBtreeSet = identitiesToBtreeSet(exempted, context);
+      transactions.push(
+        checkTxType({
+          transaction: statistics.setEntitiesExempt,
+          feeMultiplier: new BigNumber(exemptedBtreeSet.size),
+          args: [exempt, exemptKey, exemptedBtreeSet],
+        })
+      );
+    });
+  };
 
-  Object.entries(toRemoveExemptions).forEach(([claimType, unExempted]) => {
-    const rawClaimType = claimType === 'None' ? undefined : (claimType as ClaimType);
-    const exemptKey = toExemptKey(tickerKey, op, rawClaimType);
-    const unExemptedBtreeSet = identitiesToBtreeSet(unExempted, context);
-    transactions.push(
-      checkTxType({
-        transaction: statistics.setEntitiesExempt,
-        feeMultiplier: new BigNumber(unExemptedBtreeSet.size),
-        args: [false, exemptKey, unExemptedBtreeSet],
-      })
-    );
-  });
+  pushExemptions(toSetExemptions, true);
+  pushExemptions(toRemoveExemptions, false);
 
   this.addBatchTransaction({ transactions });
   return finalCount;
