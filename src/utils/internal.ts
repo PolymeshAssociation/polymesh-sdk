@@ -5,7 +5,7 @@ import {
   DropLast,
   ObsInnerType,
 } from '@polkadot/api/types';
-import { Bytes, StorageKey } from '@polkadot/types';
+import { Bytes, StorageKey, u32 } from '@polkadot/types';
 import { EventRecord } from '@polkadot/types/interfaces';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
 import { PolymeshPrimitivesStatisticsStatType } from '@polkadot/types/lookup';
@@ -71,6 +71,7 @@ import {
   SYSTEM_VERSION_RPC_CALL,
 } from '~/utils/constants';
 import {
+  bigNumberToU32,
   middlewareScopeToScope,
   signerToString,
   statisticsOpTypeToStatOpType,
@@ -268,6 +269,24 @@ export function filterEventRecords<
 }
 
 /**
+ * Return a clone of a transaction receipt with the passed events
+ */
+function cloneReceipt(receipt: ISubmittableResult, events: EventRecord[]): ISubmittableResult {
+  const { filterRecords, findRecord, toHuman } = receipt;
+
+  const clone: ISubmittableResult = {
+    ...receipt,
+    events,
+  };
+
+  clone.filterRecords = filterRecords;
+  clone.findRecord = findRecord;
+  clone.toHuman = toHuman;
+
+  return clone;
+}
+
+/**
  * @hidden
  *
  * Return a clone of a batch transaction receipt that only contains events for a subset of the
@@ -306,7 +325,7 @@ export function sliceBatchReceipt(
     });
   }
 
-  const { events, filterRecords, findRecord, toHuman } = receipt;
+  const { events } = receipt;
 
   const eventsPerExtrinsic = rawEventsPerExtrinsic.map(u32ToBigNumber);
   const clonedEvents = [...events];
@@ -329,16 +348,48 @@ export function sliceBatchReceipt(
     }
   });
 
-  const clone: ISubmittableResult = {
-    ...receipt,
-    events: slicedEvents,
-  };
+  return cloneReceipt(receipt, slicedEvents);
+}
 
-  clone.filterRecords = filterRecords.bind(clone);
-  clone.findRecord = findRecord.bind(clone);
-  clone.toHuman = toHuman.bind(clone);
+/**
+ * Return a clone of the last receipt in the passes array, containing the accumulated events
+ *   of all receipts
+ */
+export function mergeReceipts(
+  receipts: ISubmittableResult[],
+  context: Context
+): ISubmittableResult {
+  const eventsPerTransaction: u32[] = [];
+  const allEvents: EventRecord[] = [];
 
-  return clone;
+  receipts.forEach(({ events }) => {
+    eventsPerTransaction.push(bigNumberToU32(new BigNumber(events.length), context));
+    allEvents.push(...events);
+  });
+
+  const lastReceipt = receipts[receipts.length - 1];
+
+  /*
+   * Here we simulate a `BatchCompleted` event with the amount of events of
+   * each transaction. That way, if some psychopath user decides to merge a bunch of transactions
+   * into a batch and then split it again, we won't lose track of which events correspond to which
+   * transaction
+   *
+   * NOTE: this is a bit fragile since we might want to use more functionalities of the event object in the future,
+   * but attempting to instantiate a real polkadot `GenericEvent` would be way more messy. It might come to that
+   * in the future though. It's also worth considering that this is an extreme edge case, since (hopefully) no one
+   * in their right mind would create a batch only to split it back up again
+   */
+  return cloneReceipt(lastReceipt, [
+    ...allEvents,
+    {
+      event: {
+        section: 'utility',
+        method: 'BatchCompleted',
+        data: [eventsPerTransaction],
+      },
+    } as unknown as EventRecord,
+  ]);
 }
 
 /**

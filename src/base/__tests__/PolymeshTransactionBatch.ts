@@ -31,7 +31,6 @@ describe('Polymesh Transaction Batch class', () => {
   const txSpec = {
     signingAddress: 'signingAddress',
     signer: 'signer' as PolkadotSigner,
-    isCritical: false,
   };
 
   afterEach(() => {
@@ -213,6 +212,95 @@ describe('Polymesh Transaction Batch class', () => {
       );
 
       expect(tx.supportsSubsidy()).toBe(false);
+    });
+  });
+
+  describe('method: splitTransactions', () => {
+    it('should return an array of the individual transactions in the batch', async () => {
+      const tx1 = dsMockUtils.createTxStub('asset', 'registerTicker');
+      const tx2 = dsMockUtils.createTxStub('asset', 'createAsset');
+      const args = tuple('A_TICKER');
+
+      const transactions = [
+        {
+          transaction: tx1,
+          args,
+        },
+        {
+          transaction: tx2,
+          args,
+        },
+      ];
+
+      const batch1 = new PolymeshTransactionBatch(
+        {
+          ...txSpec,
+          transactions,
+          resolver: (): number => 1,
+        },
+        context
+      );
+
+      const splitTransactions1 = batch1.splitTransactions();
+
+      expect(splitTransactions1.length).toBe(2);
+
+      const result1a = await splitTransactions1[0].run();
+      const result1b = await splitTransactions1[1].run();
+
+      expect(result1a).toBe(undefined);
+      expect(result1b).toBe(1);
+
+      const batch2 = new PolymeshTransactionBatch(
+        {
+          ...txSpec,
+          transactions,
+          resolver: 'foo',
+        },
+        context
+      );
+
+      const splitTransactions2 = batch2.splitTransactions();
+
+      expect(splitTransactions2.length).toBe(2);
+
+      const result2a = await splitTransactions2[0].run();
+      const result2b = await splitTransactions2[1].run();
+
+      expect(result2a).toBe(undefined);
+      expect(result2b).toBe('foo');
+    });
+
+    it('should ensure transactions are run in the same order as they come in the batch', () => {
+      const tx1 = dsMockUtils.createTxStub('asset', 'registerTicker');
+      const tx2 = dsMockUtils.createTxStub('asset', 'createAsset');
+      const args = tuple('A_TICKER');
+
+      const transactions = [
+        {
+          transaction: tx1,
+          args,
+        },
+        {
+          transaction: tx2,
+          args,
+        },
+      ];
+
+      const batch = new PolymeshTransactionBatch(
+        {
+          ...txSpec,
+          transactions,
+          resolver: (): number => 1,
+        },
+        context
+      );
+
+      const splitTransactions = batch.splitTransactions();
+
+      expect(() => splitTransactions[1].run()).toThrow(
+        'Transactions resulting from splitting a batch must be run in order'
+      );
     });
   });
 });
