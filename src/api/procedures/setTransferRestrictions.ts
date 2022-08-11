@@ -145,7 +145,7 @@ function transformInput(
   // calculate exemptions to add — for each input exemption check if it already exists
   forEach(inputExemptions, (toAddIds, cType) => {
     const key = cType as ClaimKey;
-    const currentIds = currentExemptions[key] || [];
+    const currentIds = currentExemptions[key];
     toAddIds.forEach(id => {
       addExemptionIfNotPresent(id, toSetExemptions, key, currentIds);
     });
@@ -153,9 +153,8 @@ function transformInput(
 
   // calculate exemptions to remove — for each current exemption check if it was in the input
   forEach(currentExemptions, (currentIds, cType) => {
-    // Object.entries(currentExemptions).forEach(([cType, currentIds]) => {
     const key = cType as ClaimKey;
-    const given = inputExemptions[key] || [];
+    const given = inputExemptions[key];
     currentIds.forEach(id => {
       addExemptionIfNotPresent(id, toRemoveExemptions, cType as ClaimKey, given);
     });
