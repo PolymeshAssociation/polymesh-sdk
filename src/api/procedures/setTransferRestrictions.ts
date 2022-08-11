@@ -72,9 +72,12 @@ export interface Storage {
 }
 /**
  * @hidden
+ *
+ * Calculates the smallest change needed to get to the requested state from the current state.
+ * While clearing and building the restrictions would be simpler, it would be inefficient use of gas fees
  */
 function transformInput(
-  restrictions:
+  inputRestrictions:
     | CountTransferRestrictionInput[]
     | PercentageTransferRestrictionInput[]
     | ClaimCountTransferRestrictionInput[]
@@ -91,11 +94,12 @@ function transformInput(
   const toSetExemptions: ExemptionRecords = {};
   const toRemoveExemptions: ExemptionRecords = {};
 
-  let needDifferentConditions = restrictions.length !== currentRestrictions.length;
+  let needDifferentConditions = inputRestrictions.length !== currentRestrictions.length;
   const conditions: PolymeshPrimitivesTransferComplianceTransferCondition[] = [];
   const inputExemptions: ExemptionRecords = {};
 
-  restrictions.forEach(restriction => {
+  // for each restriction check if we need to make a condition and track all exemptions
+  inputRestrictions.forEach(restriction => {
     let value: BigNumber | ClaimCountRestrictionValue | ClaimPercentageTransferRestriction;
     let claimType: ClaimType | undefined;
     if ('count' in restriction) {
@@ -124,6 +128,7 @@ function transformInput(
     });
   });
 
+  // calculate exemptions to add — for each input exemption check if it already exists
   Object.entries(inputExemptions).forEach(([cType, toAddIds]) => {
     const key = cType as ClaimKey;
     const currentIds = currentExemptions[key] || [];
@@ -132,6 +137,7 @@ function transformInput(
     });
   });
 
+  // calculate exemptions to remove — for each current exemption check if it was in the input
   Object.entries(currentExemptions).forEach(([cType, currentIds]) => {
     const given = inputExemptions[cType as ClaimKey] || [];
     currentIds.forEach(id => {
