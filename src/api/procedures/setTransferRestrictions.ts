@@ -5,7 +5,7 @@ import {
   PolymeshPrimitivesTransferComplianceTransferConditionExemptKey,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { flatten, keys } from 'lodash';
+import { entries, flatten, forEach } from 'lodash';
 import { TransferCondition } from 'polymesh-types/types';
 
 import { SetTransferRestrictionsParams } from '~/api/entities/Asset/TransferRestrictions/TransferRestrictionBase';
@@ -20,6 +20,7 @@ import {
   CountTransferRestrictionInput,
   ErrorCode,
   PercentageTransferRestrictionInput,
+  StatClaimType,
   TransferRestriction,
   TransferRestrictionType,
   TxTag,
@@ -27,6 +28,7 @@ import {
 } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
+  booleanToBool,
   complianceConditionsToBtreeSet,
   identitiesToBtreeSet,
   identityIdToString,
@@ -49,8 +51,14 @@ import {
  * @hidden
  */
 
-type ClaimKey = keyof typeof ClaimType | 'None';
-type ExemptionRecords = Partial<Record<ClaimKey, Identity[]>>;
+type ClaimKey = StatClaimType | 'None';
+type ExemptionRecords = Record<ClaimKey, Identity[]>;
+const newExemptionRecord = (): ExemptionRecords => ({
+  Accredited: [],
+  Affiliate: [],
+  Jurisdiction: [],
+  None: [],
+});
 
 const addExemptionIfNotPresent = (
   toInsertId: Identity,
@@ -91,17 +99,17 @@ function transformInput(
   toSetExemptions: ExemptionRecords;
   toRemoveExemptions: ExemptionRecords;
 } {
-  const toSetExemptions: ExemptionRecords = {};
-  const toRemoveExemptions: ExemptionRecords = {};
+  const toSetExemptions = newExemptionRecord();
+  const toRemoveExemptions = newExemptionRecord();
 
   let needDifferentConditions = inputRestrictions.length !== currentRestrictions.length;
   const conditions: PolymeshPrimitivesTransferComplianceTransferCondition[] = [];
-  const inputExemptions: ExemptionRecords = {};
+  const inputExemptions = newExemptionRecord();
 
   // for each restriction check if we need to make a condition and track all exemptions
   inputRestrictions.forEach(restriction => {
     let value: BigNumber | ClaimCountRestrictionValue | ClaimPercentageTransferRestriction;
-    let claimType: ClaimType | undefined;
+    let claimType: StatClaimType | undefined;
     if ('count' in restriction) {
       value = restriction.count;
     } else if ('percentage' in restriction) {
@@ -129,7 +137,7 @@ function transformInput(
   });
 
   // calculate exemptions to add — for each input exemption check if it already exists
-  Object.entries(inputExemptions).forEach(([cType, toAddIds]) => {
+  forEach(inputExemptions, (toAddIds, cType) => {
     const key = cType as ClaimKey;
     const currentIds = currentExemptions[key] || [];
     toAddIds.forEach(id => {
@@ -138,14 +146,17 @@ function transformInput(
   });
 
   // calculate exemptions to remove — for each current exemption check if it was in the input
-  Object.entries(currentExemptions).forEach(([cType, currentIds]) => {
-    const given = inputExemptions[cType as ClaimKey] || [];
+  forEach(currentExemptions, (currentIds, cType) => {
+    // Object.entries(currentExemptions).forEach(([cType, currentIds]) => {
+    const key = cType as ClaimKey;
+    const given = inputExemptions[key] || [];
     currentIds.forEach(id => {
       addExemptionIfNotPresent(id, toRemoveExemptions, cType as ClaimKey, given);
     });
   });
 
-  const sizeOf = (obj: Record<string, unknown>): number => keys(obj).length;
+  const sizeOf = (obj: Record<string, unknown>): number =>
+    flatten(entries(obj).map(([, identities]) => identities)).length;
   const needDifferentExemptions = sizeOf(toSetExemptions) > 0 || sizeOf(toRemoveExemptions) > 0;
   if (!needDifferentConditions && !needDifferentExemptions) {
     throw new PolymeshError({
@@ -212,15 +223,19 @@ export async function prepareSetTransferRestrictions(
   );
 
   const pushExemptions = (exemptions: ExemptionRecords, exempt: boolean): void => {
-    Object.entries(exemptions).forEach(([claimType, exempted]) => {
+    forEach(exemptions, (exempted, claimType) => {
+      if (exempted.length === 0) {
+        return;
+      }
       const rawClaimType = claimType === 'None' ? undefined : (claimType as ClaimType);
       const exemptKey = toExemptKey(tickerKey, op, rawClaimType);
       const exemptedBtreeSet = identitiesToBtreeSet(exempted, context);
+      const rawExempt = booleanToBool(exempt, context);
       transactions.push(
         checkTxType({
           transaction: statistics.setEntitiesExempt,
           feeMultiplier: new BigNumber(exemptedBtreeSet.size),
-          args: [exempt, exemptKey, exemptedBtreeSet],
+          args: [rawExempt, exemptKey, exemptedBtreeSet],
         })
       );
     });
@@ -371,7 +386,7 @@ export async function prepareStorage(
     );
   });
   const rawCurrentExemptions = flatten(await Promise.all(exemptionFetchers));
-  const currentExemptions: ExemptionRecords = {};
+  const currentExemptions = newExemptionRecord();
 
   rawCurrentExemptions.forEach(
     ([
@@ -382,7 +397,7 @@ export async function prepareStorage(
       const did = identityIdToString(rawDid);
       let claimType: ClaimKey = 'None';
       if (rawClaimType.isSome) {
-        claimType = meshClaimTypeToClaimType(rawClaimType.unwrap());
+        claimType = meshClaimTypeToClaimType(rawClaimType.unwrap()) as ClaimKey;
       }
       const identity = new Identity({ did }, context);
       addExemptionIfNotPresent(identity, currentExemptions, claimType);

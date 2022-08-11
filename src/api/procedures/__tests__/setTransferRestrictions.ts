@@ -1,4 +1,4 @@
-import { BTreeSet, u64 } from '@polkadot/types';
+import { bool, BTreeSet, u64 } from '@polkadot/types';
 import { Permill } from '@polkadot/types/interfaces';
 import {
   PolymeshPrimitivesIdentityClaimClaimType,
@@ -101,12 +101,21 @@ describe('setTransferRestrictions procedure', () => {
   let rawClaimCountRestrictionBtreeSet: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
   let rawClaimPercentageRestrictionBtreeSet: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
   let identityIdToStringStub: sinon.SinonStub<[PolymeshPrimitivesIdentityId], string>;
+  let booleanToBoolSub: sinon.SinonStub<[boolean, Context], bool>;
 
   const min = new BigNumber(10);
   const max = new BigNumber(20);
   const did = 'issuerDid';
   const exemptedDid = 'exemptedDid';
   const issuer = entityMockUtils.getIdentityInstance({ did });
+  const emptyExemptions = {
+    Accredited: [],
+    Affiliate: [],
+    Jurisdiction: [],
+    None: [],
+  };
+  const rawTrue = dsMockUtils.createMockBool(true);
+  const rawFalse = dsMockUtils.createMockBool(false);
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -133,6 +142,7 @@ describe('setTransferRestrictions procedure', () => {
       'statisticsOpTypeToStatType'
     );
     identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
+    booleanToBoolSub = sinon.stub(utilsConversionModule, 'booleanToBool');
     ticker = 'TICKER';
     count = new BigNumber(10);
     percentage = new BigNumber(49);
@@ -277,7 +287,7 @@ describe('setTransferRestrictions procedure', () => {
       mockContext,
       {
         currentRestrictions: [rawPercentageRestriction],
-        currentExemptions: {},
+        currentExemptions: emptyExemptions,
         occupiedSlots: new BigNumber(0),
       }
     );
@@ -299,7 +309,7 @@ describe('setTransferRestrictions procedure', () => {
       mockContext,
       {
         currentRestrictions: [rawCountRestriction],
-        currentExemptions: {},
+        currentExemptions: emptyExemptions,
         occupiedSlots: new BigNumber(0),
       }
     );
@@ -327,7 +337,7 @@ describe('setTransferRestrictions procedure', () => {
       mockContext,
       {
         currentRestrictions: [],
-        currentExemptions: {},
+        currentExemptions: emptyExemptions,
         occupiedSlots: new BigNumber(0),
       }
     );
@@ -372,11 +382,12 @@ describe('setTransferRestrictions procedure', () => {
   });
 
   it('should add exempted identities if they were given', async () => {
+    booleanToBoolSub.withArgs(true, mockContext).returns(rawTrue);
     const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
         currentRestrictions: [],
-        currentExemptions: {},
+        currentExemptions: emptyExemptions,
         occupiedSlots: new BigNumber(0),
       }
     );
@@ -417,7 +428,7 @@ describe('setTransferRestrictions procedure', () => {
           transaction: setEntitiesExemptTransaction,
           feeMultiplier: new BigNumber(3),
           args: [
-            true,
+            rawTrue,
             { asset: { Ticker: rawTicker }, op, claimType: undefined },
             exemptedDidsBtreeSet,
           ],
@@ -451,7 +462,7 @@ describe('setTransferRestrictions procedure', () => {
           transaction: setEntitiesExemptTransaction,
           feeMultiplier: new BigNumber(3),
           args: [
-            true,
+            rawTrue,
             { asset: { Ticker: rawTicker }, op, claimType: ClaimType.Accredited },
             exemptedDidsBtreeSet,
           ],
@@ -463,11 +474,13 @@ describe('setTransferRestrictions procedure', () => {
   });
 
   it('should remove exempted identities if they were not given', async () => {
+    booleanToBoolSub.withArgs(false, mockContext).returns(rawFalse);
     let proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
         currentRestrictions: [],
         currentExemptions: {
+          ...emptyExemptions,
           None: [
             entityMockUtils.getIdentityInstance({ did: '0x1000' }),
             entityMockUtils.getIdentityInstance({ did: '0x2000' }),
@@ -505,7 +518,7 @@ describe('setTransferRestrictions procedure', () => {
           transaction: setEntitiesExemptTransaction,
           feeMultiplier: new BigNumber(2),
           args: [
-            false,
+            rawFalse,
             { asset: { Ticker: rawTicker }, op, claimType: undefined },
             exemptedDidsBtreeSet,
           ],
@@ -520,6 +533,7 @@ describe('setTransferRestrictions procedure', () => {
       {
         currentRestrictions: [],
         currentExemptions: {
+          ...emptyExemptions,
           Accredited: [
             entityMockUtils.getIdentityInstance({ did: '0x1000' }),
             entityMockUtils.getIdentityInstance({ did: '0x2000' }),
@@ -551,7 +565,7 @@ describe('setTransferRestrictions procedure', () => {
           transaction: setEntitiesExemptTransaction,
           feeMultiplier: new BigNumber(2),
           args: [
-            false,
+            rawFalse,
             { asset: { Ticker: rawTicker }, op, claimType: ClaimType.Accredited },
             exemptedDidsBtreeSet,
           ],
@@ -573,7 +587,7 @@ describe('setTransferRestrictions procedure', () => {
       mockContext,
       {
         currentRestrictions: [rawCountRestriction],
-        currentExemptions: {},
+        currentExemptions: emptyExemptions,
         occupiedSlots: new BigNumber(0),
       }
     );
@@ -600,7 +614,7 @@ describe('setTransferRestrictions procedure', () => {
       mockContext,
       {
         currentRestrictions: [rawCountRestriction],
-        currentExemptions: {},
+        currentExemptions: emptyExemptions,
         occupiedSlots: new BigNumber(0),
       }
     );
@@ -622,7 +636,7 @@ describe('setTransferRestrictions procedure', () => {
       mockContext,
       {
         currentRestrictions: [rawPercentageRestriction],
-        currentExemptions: {},
+        currentExemptions: emptyExemptions,
         occupiedSlots: new BigNumber(0),
       }
     );
@@ -646,7 +660,7 @@ describe('setTransferRestrictions procedure', () => {
       mockContext,
       {
         currentRestrictions: [],
-        currentExemptions: {},
+        currentExemptions: emptyExemptions,
         occupiedSlots: new BigNumber(0),
       }
     );
@@ -670,7 +684,7 @@ describe('setTransferRestrictions procedure', () => {
       mockContext,
       {
         currentRestrictions: [rawCountRestriction],
-        currentExemptions: {},
+        currentExemptions: emptyExemptions,
         occupiedSlots: new BigNumber(3),
       }
     );
@@ -695,7 +709,7 @@ describe('setTransferRestrictions procedure', () => {
         mockContext,
         {
           currentRestrictions: [],
-          currentExemptions: {},
+          currentExemptions: emptyExemptions,
           occupiedSlots: new BigNumber(0),
         }
       );
@@ -716,7 +730,7 @@ describe('setTransferRestrictions procedure', () => {
         mockContext,
         {
           currentRestrictions: [],
-          currentExemptions: {},
+          currentExemptions: emptyExemptions,
           occupiedSlots: new BigNumber(0),
         }
       );
@@ -819,7 +833,7 @@ describe('setTransferRestrictions procedure', () => {
       expect(result).toEqual({
         occupiedSlots: new BigNumber(3),
         currentRestrictions: [rawCountRestriction],
-        currentExemptions: {},
+        currentExemptions: emptyExemptions,
       });
 
       args = {
@@ -839,7 +853,7 @@ describe('setTransferRestrictions procedure', () => {
       expect(result).toEqual({
         currentRestrictions: [rawPercentageRestriction],
         occupiedSlots: new BigNumber(3),
-        currentExemptions: {},
+        currentExemptions: emptyExemptions,
       });
 
       args.restrictions = [];
@@ -850,7 +864,7 @@ describe('setTransferRestrictions procedure', () => {
       expect(result).toEqual({
         currentRestrictions: [rawPercentageRestriction],
         occupiedSlots: new BigNumber(3),
-        currentExemptions: {},
+        currentExemptions: emptyExemptions,
       });
 
       getCountStub.resolves({
@@ -863,7 +877,7 @@ describe('setTransferRestrictions procedure', () => {
       expect(result).toEqual({
         currentRestrictions: [rawPercentageRestriction],
         occupiedSlots: new BigNumber(3),
-        currentExemptions: {},
+        currentExemptions: emptyExemptions,
       });
 
       args = {
@@ -875,7 +889,7 @@ describe('setTransferRestrictions procedure', () => {
       expect(result).toEqual({
         currentRestrictions: [rawClaimCountRestriction],
         occupiedSlots: new BigNumber(3),
-        currentExemptions: {},
+        currentExemptions: emptyExemptions,
       });
 
       args = {
@@ -887,7 +901,7 @@ describe('setTransferRestrictions procedure', () => {
       expect(result).toEqual({
         currentRestrictions: [rawClaimPercentageRestriction],
         occupiedSlots: new BigNumber(3),
-        currentExemptions: {},
+        currentExemptions: emptyExemptions,
       });
     });
 
@@ -923,6 +937,7 @@ describe('setTransferRestrictions procedure', () => {
           occupiedSlots: new BigNumber(3),
           currentRestrictions: [rawCountRestriction],
           currentExemptions: {
+            ...emptyExemptions,
             Accredited: [mockIdentity],
           },
         })
