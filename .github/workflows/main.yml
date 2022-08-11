@@ -55,6 +55,7 @@ jobs:
         run: |
           yarn build:ts
           cp package.json dist/package.json
+          cp README.md dist/README.md
           cp -R node_modules dist/node_modules
       - name: release
         env:
