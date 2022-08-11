@@ -16,7 +16,6 @@ import {
   KnownPermissionGroup,
   NumberedPortfolio,
   PolymeshError,
-  PostTransactionValue,
   TickerReservation,
   Venue,
 } from '~/internal';
@@ -40,7 +39,6 @@ import {
   TickerReservationStatus,
   TransactionPermissions,
 } from '~/types';
-import { MaybePostTransactionValue } from '~/types/internal';
 import { tickerToString, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
 
@@ -629,7 +627,7 @@ export async function assertGroupDoesNotExist(
  */
 export const createAuthorizationResolver =
   (
-    auth: MaybePostTransactionValue<Authorization>,
+    auth: Authorization,
     issuer: Identity,
     target: Identity | Account,
     expiry: Date | null,
@@ -637,15 +635,9 @@ export const createAuthorizationResolver =
   ) =>
   (receipt: ISubmittableResult): AuthorizationRequest => {
     const [{ data }] = filterEventRecords(receipt, 'identity', 'AuthorizationAdded');
-    let rawAuth;
-    if (auth instanceof PostTransactionValue) {
-      rawAuth = auth.value;
-    } else {
-      rawAuth = auth;
-    }
 
     const authId = u64ToBigNumber(data[3]);
-    return new AuthorizationRequest({ authId, expiry, issuer, target, data: rawAuth }, context);
+    return new AuthorizationRequest({ authId, expiry, issuer, target, data: auth }, context);
   };
 
 /**

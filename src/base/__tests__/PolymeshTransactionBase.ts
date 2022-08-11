@@ -55,6 +55,35 @@ describe('Polymesh Transaction Base class', () => {
     dsMockUtils.cleanup();
   });
 
+  describe('method: toTransactionSpec', () => {
+    it('should return the base tx spec of a transaction', () => {
+      const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
+      const args = tuple('FOO');
+      const resolver = (): number => 1;
+      const transformer = (): number => 2;
+      const paidForBy = entityMockUtils.getIdentityInstance();
+
+      const tx = new PolymeshTransaction(
+        {
+          ...txSpec,
+          transaction,
+          args,
+          resolver,
+          transformer,
+          feeMultiplier: new BigNumber(10),
+          paidForBy,
+        },
+        context
+      );
+
+      expect(PolymeshTransactionBase.toTransactionSpec(tx)).toEqual({
+        resolver,
+        transformer,
+        paidForBy,
+      });
+    });
+  });
+
   describe('method: run', () => {
     let getBlockStub: sinon.SinonStub;
 
@@ -133,7 +162,7 @@ describe('Polymesh Transaction Base class', () => {
 
       tx.run().catch(noop);
 
-      await fakePromise(1);
+      await fakePromise(2);
 
       expect(tx.status).toBe(TransactionStatus.Unapproved);
 
@@ -162,7 +191,7 @@ describe('Polymesh Transaction Base class', () => {
       expect(tx.status).toBe(TransactionStatus.Succeeded);
     });
 
-    it('should resolve the result if it is a PostTransactionValue', async () => {
+    it('should resolve the result if it is a resolver function', async () => {
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
       const args = tuple('YET_ANOTHER_TICKER');
       const resolverStub = sinon.stub().resolves(1);
@@ -579,7 +608,7 @@ describe('Polymesh Transaction Base class', () => {
     });
   });
 
-  describe('method: getFees', () => {
+  describe('method: getTotalFees', () => {
     let balanceToBigNumberStub: sinon.SinonStub<[Balance], BigNumber>;
     let protocolFees: BigNumber[];
     let gasFees: BigNumber[];
@@ -628,7 +657,7 @@ describe('Polymesh Transaction Base class', () => {
         context
       );
 
-      let { fees, payingAccountData } = await tx.getFees();
+      let { fees, payingAccountData } = await tx.getTotalFees();
 
       expect(fees.protocol).toEqual(new BigNumber(250));
       expect(fees.gas).toEqual(new BigNumber(5));
@@ -648,7 +677,7 @@ describe('Polymesh Transaction Base class', () => {
         context
       );
 
-      ({ fees, payingAccountData } = await tx.getFees());
+      ({ fees, payingAccountData } = await tx.getTotalFees());
 
       expect(fees.protocol).toEqual(new BigNumber(500));
       expect(fees.gas).toEqual(new BigNumber(5));
@@ -667,7 +696,7 @@ describe('Polymesh Transaction Base class', () => {
         context
       );
 
-      ({ fees, payingAccountData } = await tx.getFees());
+      ({ fees, payingAccountData } = await tx.getTotalFees());
 
       expect(fees.protocol).toEqual(new BigNumber(150));
       expect(fees.gas).toEqual(new BigNumber(10));
@@ -686,7 +715,7 @@ describe('Polymesh Transaction Base class', () => {
         context
       );
 
-      ({ fees, payingAccountData } = await tx.getFees());
+      ({ fees, payingAccountData } = await tx.getTotalFees());
 
       expect(fees.protocol).toEqual(new BigNumber(150));
       expect(fees.gas).toEqual(new BigNumber(10));
@@ -697,7 +726,6 @@ describe('Polymesh Transaction Base class', () => {
       tx = new PolymeshTransactionBatch<void>(
         {
           ...txSpec,
-          fee: undefined,
           transactions: [
             {
               transaction: tx1,
@@ -713,7 +741,7 @@ describe('Polymesh Transaction Base class', () => {
         context
       );
 
-      ({ fees, payingAccountData } = await tx.getFees());
+      ({ fees, payingAccountData } = await tx.getTotalFees());
 
       expect(fees.protocol).toEqual(new BigNumber(400));
       expect(fees.gas).toEqual(new BigNumber(10));

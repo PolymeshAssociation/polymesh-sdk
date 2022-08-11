@@ -2,7 +2,7 @@ import { Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
 import { Context, PolymeshTransaction } from '~/internal';
-import { dsMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { tuple } from '~/types/utils';
 
@@ -11,6 +11,7 @@ describe('Polymesh Transaction class', () => {
 
   beforeAll(() => {
     dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
   });
 
   beforeEach(() => {
@@ -19,13 +20,46 @@ describe('Polymesh Transaction class', () => {
 
   const txSpec = {
     signingAddress: 'signingAddress',
-    isCritical: false,
     signer: 'signer' as PolkadotSigner,
     fee: new BigNumber(100),
   };
 
   afterEach(() => {
     dsMockUtils.reset();
+    entityMockUtils.initMocks();
+  });
+
+  describe('method: toTransactionSpec', () => {
+    it('should return the tx spec of a transaction', () => {
+      const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
+      const args = tuple('FOO');
+      const resolver = (): number => 1;
+      const transformer = (): number => 2;
+      const paidForBy = entityMockUtils.getIdentityInstance();
+
+      const tx = new PolymeshTransaction(
+        {
+          ...txSpec,
+          transaction,
+          args,
+          resolver,
+          transformer,
+          feeMultiplier: new BigNumber(10),
+          paidForBy,
+        },
+        context
+      );
+
+      expect(PolymeshTransaction.toTransactionSpec(tx)).toEqual({
+        resolver,
+        transformer,
+        paidForBy,
+        transaction,
+        args,
+        fee: txSpec.fee,
+        feeMultiplier: new BigNumber(10),
+      });
+    });
   });
 
   describe('get: args', () => {

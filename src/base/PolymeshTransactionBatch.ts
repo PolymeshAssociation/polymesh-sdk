@@ -6,10 +6,11 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
 import { Context, PolymeshTransactionBase } from '~/internal';
+import { MapTxData } from '~/types';
 import {
   BatchTransactionSpec,
-  MapTxData,
   MapTxDataWithFees,
+  MapTxWithArgs,
   TransactionSigningData,
 } from '~/types/internal';
 import { transactionToTxTag, u32ToBigNumber } from '~/utils/conversion';
@@ -22,6 +23,26 @@ export class PolymeshTransactionBatch<
   TransformedReturnValue = ReturnValue,
   Args extends unknown[][] = unknown[][]
 > extends PolymeshTransactionBase<ReturnValue, TransformedReturnValue> {
+  /**
+   * @hidden
+   */
+  public static override toTransactionSpec<R, A extends unknown[][], T>(
+    inputTransaction: PolymeshTransactionBatch<R, T, A>
+  ): BatchTransactionSpec<R, A, T> {
+    const spec = PolymeshTransactionBase.toTransactionSpec(inputTransaction);
+    const { transactionData } = inputTransaction;
+
+    return {
+      ...spec,
+      transactions: transactionData.map(({ transaction, args, fee, feeMultiplier }) => ({
+        transaction,
+        args,
+        fee,
+        feeMultiplier,
+      })) as MapTxWithArgs<A>,
+    };
+  }
+
   /**
    * @hidden
    *
@@ -41,11 +62,12 @@ export class PolymeshTransactionBatch<
 
     super(rest, context);
 
-    this.transactionData = transactions.map(({ transaction, args, feeMultiplier }) => ({
+    this.transactionData = transactions.map(({ transaction, args, feeMultiplier, fee }) => ({
       tag: transactionToTxTag(transaction),
       args,
       feeMultiplier,
       transaction,
+      fee,
     })) as MapTxDataWithFees<Args>;
   }
 
@@ -79,11 +101,15 @@ export class PolymeshTransactionBatch<
   /**
    * @hidden
    */
-  protected getProtocolFees(): Promise<BigNumber> {
+  public getProtocolFees(): Promise<BigNumber> {
     return P.reduce(
       this.transactionData,
-      async (total, { tag, feeMultiplier = new BigNumber(1) }) => {
-        const [{ fees }] = await this.context.getProtocolFees({ tags: [tag] });
+      async (total, { tag, feeMultiplier = new BigNumber(1), fee }) => {
+        let fees = fee;
+
+        if (!fees) {
+          [{ fees }] = await this.context.getProtocolFees({ tags: [tag] });
+        }
 
         return total.plus(fees.multipliedBy(feeMultiplier));
       },

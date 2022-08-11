@@ -56,7 +56,7 @@ export interface Storage {
  */
 async function addManualFees(
   currentFee: BigNumber | undefined,
-  tags: { tag: TxTag; feeMultiplier: BigNumber }[] | TxTag[],
+  tags: TxTag[],
   context: Context
 ): Promise<BigNumber | undefined> {
   if (!currentFee) {
@@ -64,19 +64,10 @@ async function addManualFees(
   }
 
   const fees = await context.getProtocolFees({
-    tags: tags.map(tagData => (typeof tagData !== 'string' ? tagData.tag : tagData)),
+    tags,
   });
 
-  return fees.reduce((prev, { fees: nextFees }, index) => {
-    const tagData = tags[index];
-    let feeMultiplier = new BigNumber(1);
-
-    if (typeof tagData !== 'string') {
-      ({ feeMultiplier } = tagData);
-    }
-
-    return prev.plus(nextFees.times(feeMultiplier));
-  }, currentFee);
+  return fees.reduce((prev, { fees: nextFees }) => prev.plus(nextFees), currentFee);
 }
 
 /**
@@ -176,6 +167,7 @@ export async function prepareCreateAsset(
       transactions.push(
         checkTxType({
           transaction: tx.asset.createAssetWithCustomType,
+          fee,
           args: [
             rawName,
             rawTicker,
@@ -193,6 +185,7 @@ export async function prepareCreateAsset(
       transactions.push(
         checkTxType({
           transaction: tx.asset.createAsset,
+          fee,
           args: [
             rawName,
             rawTicker,
@@ -211,6 +204,7 @@ export async function prepareCreateAsset(
     transactions.push(
       checkTxType({
         transaction: tx.asset.createAsset,
+        fee,
         args: [
           rawName,
           rawTicker,
@@ -227,12 +221,6 @@ export async function prepareCreateAsset(
   if (initialSupply && initialSupply.gt(0)) {
     const rawInitialSupply = bigNumberToBalance(initialSupply, context, isDivisible);
 
-    /*
-     * if we're using custom fees because we're creating the Asset without registering first, we have to manually add
-     *   the fees for issuing
-     */
-    fee = await addManualFees(fee, [TxTags.asset.Issue], context);
-
     transactions.push(
       checkTxType({
         transaction: tx.asset.issue,
@@ -246,16 +234,9 @@ export async function prepareCreateAsset(
 
     const feeMultiplier = new BigNumber(rawDocuments.length);
 
-    /*
-     * if we're using custom fees because we're creating the Asset without registering first, we have to manually add
-     *   the fees for adding documents
-     */
-    fee = await addManualFees(fee, [{ tag: TxTags.asset.AddDocuments, feeMultiplier }], context);
-
     transactions.push(
       checkTxType({
         transaction: tx.asset.addDocuments,
-        // this will be ignored if manual fees are passed
         feeMultiplier,
         args: [rawDocuments, rawTicker],
       })
@@ -264,7 +245,6 @@ export async function prepareCreateAsset(
 
   return {
     transactions,
-    fee,
     resolver: newAsset,
   };
 }

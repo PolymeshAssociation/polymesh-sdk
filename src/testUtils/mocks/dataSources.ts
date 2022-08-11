@@ -191,6 +191,7 @@ import {
   SignerType,
   SubsidyWithAllowance,
   TxTags,
+  UnsubCallback,
 } from '~/types';
 import {
   Consts,
@@ -394,7 +395,6 @@ const MockContextClass = class {
 let errorStub: SinonStub;
 
 type StatusCallback = (receipt: ISubmittableResult) => void;
-type UnsubCallback = () => void;
 
 interface TxMockData {
   statusCallback: StatusCallback;

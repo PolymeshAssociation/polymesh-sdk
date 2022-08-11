@@ -1,5 +1,4 @@
 export { PolymeshError } from '~/base/PolymeshError';
-export { PostTransactionValue } from '~/base/PostTransactionValue';
 export { Context } from '~/base/Context';
 export { PolymeshTransactionBase } from '~/base/PolymeshTransactionBase';
 export { PolymeshTransaction } from '~/base/PolymeshTransaction';
@@ -134,3 +133,4 @@ export { removeExternalAgent } from '~/api/procedures/removeExternalAgent';
 export { waivePermissions } from '~/api/procedures/waivePermissions';
 export { quitSubsidy, QuitSubsidyParams } from '~/api/procedures/quitSubsidy';
 export { modifyAllowance, ModifyAllowanceParams } from '~/api/procedures/modifyAllowance';
+export { createTransactionBatch } from '~/api/procedures/createTransactionBatch';

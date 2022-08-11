@@ -13,7 +13,6 @@ import {
   Instruction,
   NumberedPortfolio,
   PolymeshError,
-  PostTransactionValue,
   Procedure,
 } from '~/internal';
 import {
@@ -97,17 +96,13 @@ type InternalAddInstructionParams = [
  * @hidden
  */
 export const createAddInstructionResolver =
-  (context: Context, previousInstructions?: PostTransactionValue<Instruction[]>) =>
+  (context: Context) =>
   (receipt: ISubmittableResult): Instruction[] => {
     const events = filterEventRecords(receipt, 'settlement', 'InstructionCreated');
 
     const result = events.map(
       ({ data }) => new Instruction({ id: u64ToBigNumber(data[2]) }, context)
     );
-
-    if (previousInstructions) {
-      return previousInstructions.value.concat(result);
-    }
 
     return result;
   };

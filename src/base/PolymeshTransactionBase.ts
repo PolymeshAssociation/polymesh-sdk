@@ -6,7 +6,7 @@ import P from 'bluebird';
 import { EventEmitter } from 'events';
 import { range } from 'lodash';
 
-import { Context, Identity, PolymeshError, PostTransactionValue } from '~/internal';
+import { Context, Identity, PolymeshError } from '~/internal';
 import { latestProcessedBlock } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
@@ -15,11 +15,12 @@ import {
   PayingAccountFees,
   PayingAccountType,
   TransactionStatus,
+  UnsubCallback,
 } from '~/types';
 import {
   BaseTransactionSpec,
   isResolverFunction,
-  MaybePostTransactionValue,
+  MaybeResolverFunction,
   TransactionSigningData,
 } from '~/types/internal';
 import { Ensured } from '~/types/utils';
@@ -41,6 +42,21 @@ export abstract class PolymeshTransactionBase<
   ReturnValue = void,
   TransformedReturnValue = ReturnValue
 > {
+  /**
+   * @hidden
+   */
+  public static toTransactionSpec<R, T>(
+    transaction: PolymeshTransactionBase<R, T>
+  ): BaseTransactionSpec<R, T> {
+    const { resolver, transformer, paidForBy } = transaction;
+
+    return {
+      resolver,
+      transformer,
+      paidForBy,
+    };
+  }
+
   /**
    * current status of the transaction
    */
@@ -87,9 +103,9 @@ export abstract class PolymeshTransactionBase<
   /**
    * @hidden
    *
-   * wrapper for a value that will exist after this transaction has executed
+   * function that transforms the transaction's return value before returning it after it is run
    */
-  protected returnValue: MaybePostTransactionValue<ReturnValue>;
+  protected resolver: MaybeResolverFunction<ReturnValue>;
 
   /**
    * @hidden
@@ -115,19 +131,10 @@ export abstract class PolymeshTransactionBase<
   /**
    * @hidden
    *
-   * used by procedures to set the fee manually in case the protocol op can't be
-   *   dynamically generated from the transaction name, or a specific procedure has
-   *   special rules for calculating them
-   */
-  protected protocolFee?: BigNumber;
-
-  /**
-   * @hidden
-   *
    * function that transforms the return value to another type. Useful when using the same
    *   Procedure for different endpoints which are supposed to return different values
    */
-  protected transformer: (
+  protected transformer?: (
     result: ReturnValue
   ) => Promise<TransformedReturnValue> | TransformedReturnValue;
 
@@ -147,28 +154,14 @@ export abstract class PolymeshTransactionBase<
       TransactionSigningData,
     context: Context
   ) {
-    const {
-      resolver,
-      transformer = async (val): Promise<TransformedReturnValue> =>
-        val as unknown as TransformedReturnValue,
-      signingAddress,
-      signer,
-      fee,
-      paidForBy,
-    } = transactionSpec;
-
-    if (isResolverFunction(resolver)) {
-      this.returnValue = new PostTransactionValue(resolver);
-    } else {
-      this.returnValue = resolver;
-    }
+    const { resolver, transformer, signingAddress, signer, paidForBy } = transactionSpec;
 
     this.signingAddress = signingAddress;
     this.signer = signer;
-    this.protocolFee = fee;
     this.context = context;
     this.paidForBy = paidForBy;
     this.transformer = transformer;
+    this.resolver = resolver;
   }
 
   /**
@@ -191,21 +184,23 @@ export abstract class PolymeshTransactionBase<
       const receipt = await this.internalRun();
       this.receipt = receipt;
 
-      const { returnValue } = this;
+      const {
+        resolver,
+        transformer = async (val): Promise<TransformedReturnValue> =>
+          val as unknown as TransformedReturnValue,
+      } = this;
 
       let value: ReturnValue;
 
-      if (returnValue instanceof PostTransactionValue) {
-        await returnValue.run(receipt);
-
-        value = returnValue.value;
+      if (isResolverFunction(resolver)) {
+        value = await resolver(receipt);
       } else {
-        value = returnValue;
+        value = resolver;
       }
 
       this.updateStatus(TransactionStatus.Succeeded);
 
-      return this.transformer(value);
+      return transformer(value);
     } catch (err) {
       const error: PolymeshError = err;
 
@@ -353,7 +348,7 @@ export abstract class PolymeshTransactionBase<
    *
    * @returns unsubscribe function
    */
-  public onStatusChange(listener: (transaction: PolymeshTransactionBase) => void): () => void {
+  public onStatusChange(listener: (transaction: PolymeshTransactionBase) => void): UnsubCallback {
     const { emitter } = this;
 
     emitter.on(Event.StatusChange, listener);
@@ -366,20 +361,17 @@ export abstract class PolymeshTransactionBase<
   /**
    * Retrieve a breakdown of the fees required to run this transaction, as well as the Account responsible for paying them
    *
-   * @note these values might change if the transaction is run at a later time. This can be due to a governance vote or other
+   * @note these values might be inaccurate if the transaction is run at a later time. This can be due to a governance vote or other
    *   chain related factors (like modifications to a specific subsidizer relationship or a chain upgrade)
    */
-  public async getFees(): Promise<PayingAccountFees> {
+  public async getTotalFees(): Promise<PayingAccountFees> {
     const { signingAddress } = this;
-    let { protocolFee: protocol } = this;
 
     const composedTx = this.composeTx();
 
     const paymentInfoPromise = composedTx.paymentInfo(signingAddress);
 
-    if (!protocol) {
-      protocol = await this.getProtocolFees();
-    }
+    const protocol = await this.getProtocolFees();
 
     const [payingAccount, { partialFee }] = await Promise.all([
       this.getPayingAccount(),
@@ -412,7 +404,7 @@ export abstract class PolymeshTransactionBase<
    * @returns unsubscribe function
    * @throws if the middleware wasn't enabled when instantiating the SDK client
    */
-  public onProcessedByMiddleware(listener: (err?: PolymeshError) => void): () => void {
+  public onProcessedByMiddleware(listener: (err?: PolymeshError) => void): UnsubCallback {
     const { context, emitter } = this;
 
     if (!context.isMiddlewareEnabled()) {
@@ -553,11 +545,12 @@ export abstract class PolymeshTransactionBase<
   }
 
   /**
-   * @hidden
-   *
-   * Fetch and calculate this transaction's protocol fees
+   * Return this transaction's protocol fees. These are extra fees charged for
+   *   specific operations on the chain. Not to be confused with network fees (which
+   *   depend on the complexity of the operation), protocol fees are set by governance and/or
+   *   chain upgrades
    */
-  protected abstract getProtocolFees(): Promise<BigNumber>;
+  public abstract getProtocolFees(): Promise<BigNumber>;
 
   /**
    * @hidden
@@ -609,7 +602,7 @@ export abstract class PolymeshTransactionBase<
     const {
       fees: { total },
       payingAccountData,
-    } = await this.getFees();
+    } = await this.getTotalFees();
 
     const { type, balance } = payingAccountData;
 

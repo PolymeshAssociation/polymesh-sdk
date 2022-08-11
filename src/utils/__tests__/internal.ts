@@ -4,7 +4,7 @@ import BigNumber from 'bignumber.js';
 import { IdentityId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Asset, Context, PolymeshError, PostTransactionValue, Procedure } from '~/internal';
+import { Asset, Context, PolymeshError, Procedure } from '~/internal';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { getWebSocketInstance, MockCodec, MockWebSocket } from '~/testUtils/mocks/dataSources';
@@ -54,8 +54,6 @@ import {
   serialize,
   sliceBatchReceipt,
   unserialize,
-  unwrapValue,
-  unwrapValues,
 } from '../internal';
 
 jest.mock(
@@ -167,33 +165,6 @@ describe('getDid', () => {
     const result = await getDid(undefined, context);
 
     expect(result).toBe((await context.getSigningIdentity()).did);
-  });
-});
-
-describe('unwrapValue', () => {
-  it('should unwrap a Post Transaction Value', async () => {
-    const wrapped = new PostTransactionValue(async () => 1);
-    await wrapped.run({} as ISubmittableResult);
-
-    const unwrapped = unwrapValue(wrapped);
-
-    expect(unwrapped).toEqual(1);
-  });
-
-  it('should return a non Post Transaction Value as is', () => {
-    expect(unwrapValue(1)).toBe(1);
-  });
-});
-
-describe('unwrapValues', () => {
-  it('should unwrap all Post Transaction Values in the array', async () => {
-    const values = [1, 2, 3, 4, 5];
-    const wrapped = values.map(value => new PostTransactionValue(async () => value));
-    await Promise.all(wrapped.map(postValue => postValue.run({} as ISubmittableResult)));
-
-    const unwrapped = unwrapValues(wrapped);
-
-    expect(unwrapped).toEqual(values);
   });
 });
 

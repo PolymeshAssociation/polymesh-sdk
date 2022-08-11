@@ -34,6 +34,7 @@ import {
   Requirement,
   Scope,
   SecurityIdentifier,
+  TransactionArray,
   TransactionPermissions,
   TxGroup,
   VenueType,
@@ -784,4 +785,8 @@ export interface MoveFundsParams {
    * list of Assets (and the corresponding token amounts) that will be moved
    */
   items: PortfolioMovement[];
+}
+
+export interface CreateTransactionBatchParams<ReturnValues extends readonly [...unknown[]]> {
+  transactions: Readonly<TransactionArray<ReturnValues>>;
 }

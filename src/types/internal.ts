@@ -1,3 +1,5 @@
+/* istanbul ignore file */
+
 import {
   AugmentedEvents,
   AugmentedSubmittable,
@@ -14,13 +16,7 @@ import { ISubmittableResult, Signer as PolkadotSigner } from '@polkadot/types/ty
 import BigNumber from 'bignumber.js';
 import { DocumentNode } from 'graphql';
 
-import {
-  Identity,
-  PolymeshTransaction,
-  PolymeshTransactionBatch,
-  PostTransactionValue,
-  Procedure,
-} from '~/internal';
+import { Identity, Procedure } from '~/internal';
 import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { CustomAssetTypeId } from '~/polkadot';
 import {
@@ -30,7 +26,7 @@ import {
   Role,
   SignerValue,
   SimplePermissions,
-  TxTag,
+  TxData,
 } from '~/types';
 
 /**
@@ -65,28 +61,6 @@ export type Queries = QueryableStorage<'promise'>;
 export type Consts = QueryableConsts<'promise'>;
 
 /**
- * Transform a tuple of types into an array of {@link PostTransactionValue}.
- * For each type in the tuple, the corresponding {@link PostTransactionValue} resolves to that type
- *
- * @param Values - types of the values to be wrapped
- */
-export type PostTransactionValueArray<Values extends unknown[]> = {
-  [P in keyof Values]: PostTransactionValue<Values[P]>;
-};
-
-/**
- * Either a specific type or a {@link PostTransactionValue} that wraps a value of that type
- */
-export type MaybePostTransactionValue<T> = PostTransactionValue<T> | T;
-
-/**
- * Apply the {@link MaybePostTransactionValue} type to all members of a tuple
- */
-export type MapMaybePostTransactionValue<T extends unknown[]> = {
-  [K in keyof T]: MaybePostTransactionValue<T[K]>;
-};
-
-/**
  * Low level transaction method in the polkadot API
  *
  * @param Args - arguments of the transaction
@@ -104,6 +78,11 @@ interface BaseTx<Args extends unknown[] = unknown[]> {
    * amount by which the protocol fees should be multiplied (only applicable to transactions where the input size impacts the total fees)
    */
   feeMultiplier?: BigNumber;
+  /**
+   * protocol fees associated with running the transaction (not gas). If not passed, they will be fetched from the chain. This is used for
+   *   special cases where the fees aren't trivially derived from the extrinsic type
+   */
+  fee?: BigNumber;
 }
 
 /**
@@ -117,20 +96,6 @@ export type TxWithArgs<Args extends unknown[] = unknown[]> = BaseTx<Args> &
     : {
         args: Args;
       });
-
-/**
- * Transaction data for display purposes
- */
-export interface TxData<Args extends unknown[] = unknown[]> {
-  /**
-   * transaction string identifier
-   */
-  tag: TxTag;
-  /**
-   * arguments with which the transaction will be called
-   */
-  args: Args;
-}
 
 export type TxDataWithFees<Args extends unknown[] = unknown[]> = TxData<Args> &
   Omit<TxWithArgs<Args>, 'args'>;
@@ -147,13 +112,6 @@ export type MapPolymeshTx<ArgsArray extends unknown[][]> = {
  */
 export type MapTxWithArgs<ArgsArray extends unknown[][]> = {
   [K in keyof ArgsArray]: ArgsArray[K] extends unknown[] ? TxWithArgs<ArgsArray[K]> : never;
-};
-
-/**
- * Apply the {@link TxData} type to all args in an array
- */
-export type MapTxData<ArgsArray extends unknown[][]> = {
-  [K in keyof ArgsArray]: ArgsArray[K] extends unknown[] ? TxData<ArgsArray[K]> : never;
 };
 
 /**
@@ -199,10 +157,6 @@ export function isResolverFunction<ReturnValue>(
  * Base Transaction Schema
  */
 export interface BaseTransactionSpec<ReturnValue, TransformedReturnValue = ReturnValue> {
-  /**
-   * any protocol fees associated with running the transaction (not gas)
-   */
-  fee?: BigNumber;
   /**
    * third party Identity that will pay for the transaction (for example when joining an Identity/multisig as a secondary key).
    *   This is separate from a subsidy, and takes precedence over it. If the signing Account is being subsidized and
@@ -267,50 +221,6 @@ export interface TransactionSigningData {
    */
   signer: PolkadotSigner;
 }
-
-/**
- * Common args for `addTransaction` and `addBatchTransaction`
- */
-export interface AddTransactionArgsBase<Values extends unknown[]> {
-  /**
-   * value in POLYX of the transaction (should only be set manually in special cases,
-   *   otherwise it is fetched automatically from the chain). Fee multipliers have no effect on this value
-   */
-  fee?: BigNumber;
-  /**
-   * asynchronous callbacks used to return runtime data after the transaction has finished successfully
-   */
-  resolvers?: ResolverFunctionArray<Values>;
-  /**
-   * whether this transaction failing should make the entire queue fail or not. Defaults to true
-   */
-  isCritical?: boolean;
-  /**
-   * third party Identity that will pay for the transaction fees. No value means that the caller pays
-   */
-  paidForBy?: Identity;
-}
-
-/**
- * Args for `addBatchTransaction`
- */
-export interface AddBatchTransactionArgs<
-  Values extends unknown[],
-  ArgsArray extends (unknown[] | [])[]
-> extends AddTransactionArgsBase<Values> {
-  /**
-   * list of transactions to be added to the batch, with their respective arguments and fee multipliers
-   */
-  transactions: MapTxWithArgs<[...ArgsArray]>;
-}
-
-/**
- * Args for `addTransaction`
- */
-export type AddTransactionArgs<
-  TxArgs extends unknown[] | [],
-  Values extends unknown[]
-> = AddTransactionArgsBase<Values> & TxWithArgs<TxArgs>;
 
 export interface AuthTarget {
   target: SignerValue;
@@ -406,10 +316,6 @@ export enum StatisticsOpType {
 export interface TickerKey {
   Ticker: PolymeshPrimitivesTicker;
 }
-
-export type GenericPolymeshTransaction<ProcedureReturnValue, ReturnValue> =
-  | PolymeshTransaction<ProcedureReturnValue, ReturnValue>
-  | PolymeshTransactionBatch<ProcedureReturnValue, ReturnValue>;
 
 /**
  * Infer Procedure parameters parameters from a Procedure function
