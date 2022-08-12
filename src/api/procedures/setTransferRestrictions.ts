@@ -162,6 +162,7 @@ function transformInput(
 
   const sizeOf = (obj: Record<string, unknown>): number =>
     flatten(entries(obj).map(([, identities]) => identities)).length;
+
   const needDifferentExemptions = sizeOf(toSetExemptions) > 0 || sizeOf(toRemoveExemptions) > 0;
   if (!needDifferentConditions && !needDifferentExemptions) {
     throw new PolymeshError({
