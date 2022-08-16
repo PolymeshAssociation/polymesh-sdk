@@ -54,7 +54,7 @@ Or, if you're using yarn
 
 Or, if using pnpm
 
-`pnpm add @polymeshassociation@/polymesh-sdk`
+`pnpm add @polymeshassociation/polymesh-sdk`
 
 **NOTE** it is _highly_ recommended that you use one of these three package managers. This project uses package resolutions/overrides to pin certain problematic dependencies, and these are only supported by the aforementioned package managers. Using a different package manager may result in unexpected behavior
 
