@@ -7,7 +7,7 @@ import {
   bigNumberToU32,
   permissionsLikeToPermissions,
   stringToTicker,
-  transactionPermissionsToExtrinsicPermissions,
+  transactionPermissionsToPalletPermissions,
 } from '~/utils/conversion';
 
 /**
@@ -49,10 +49,7 @@ export async function prepareSetGroupPermissions(
   } = group;
   const rawTicker = stringToTicker(ticker, context);
   const rawAgId = bigNumberToU32(id, context);
-  const rawExtrinsicPermissions = transactionPermissionsToExtrinsicPermissions(
-    transactions,
-    context
-  );
+  const rawExtrinsicPermissions = transactionPermissionsToPalletPermissions(transactions, context);
 
   this.addTransaction({
     transaction: externalAgents.setGroupPermissions,

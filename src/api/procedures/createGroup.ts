@@ -5,7 +5,7 @@ import { ProcedureAuthorization } from '~/types/internal';
 import {
   permissionsLikeToPermissions,
   stringToTicker,
-  transactionPermissionsToExtrinsicPermissions,
+  transactionPermissionsToPalletPermissions,
 } from '~/utils/conversion';
 
 /**
@@ -45,10 +45,7 @@ export async function prepareCreateGroup(
 
   await assertGroupDoesNotExist(asset, transactions);
 
-  const rawExtrinsicPermissions = transactionPermissionsToExtrinsicPermissions(
-    transactions,
-    context
-  );
+  const rawExtrinsicPermissions = transactionPermissionsToPalletPermissions(transactions, context);
 
   const [customPermissionGroup] = this.addTransaction({
     transaction: externalAgents.createGroup,

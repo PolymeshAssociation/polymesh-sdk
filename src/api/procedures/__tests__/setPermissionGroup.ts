@@ -43,7 +43,7 @@ describe('setPermissionGroup procedure', () => {
   let externalAgentsChangeGroupTransaction: PolymeshTx<unknown[]>;
   let externalAgentsCreateAndChangeGroupTransaction: PolymeshTx<unknown[]>;
   let permissionGroupIdentifierToAgentGroupStub: sinon.SinonStub;
-  let transactionPermissionsToExtrinsicPermissionsStub: sinon.SinonStub;
+  let transactionPermissionsToPalletPermissionsStub: sinon.SinonStub;
   let stringToTickerStub: sinon.SinonStub;
   let stringToIdentityIdStub: sinon.SinonStub;
   let getGroupFromPermissionsStub: sinon.SinonStub;
@@ -53,9 +53,9 @@ describe('setPermissionGroup procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
 
-    transactionPermissionsToExtrinsicPermissionsStub = sinon.stub(
+    transactionPermissionsToPalletPermissionsStub = sinon.stub(
       utilsConversionModule,
-      'transactionPermissionsToExtrinsicPermissions'
+      'transactionPermissionsToPalletPermissions'
     );
 
     permissionGroupIdentifierToAgentGroupStub = sinon.stub(
@@ -80,7 +80,7 @@ describe('setPermissionGroup procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
     stringToTickerStub.returns(rawTicker);
     stringToIdentityIdStub.returns(rawIdentityId);
-    transactionPermissionsToExtrinsicPermissionsStub.returns(rawExtrinsicPermissions);
+    transactionPermissionsToPalletPermissionsStub.returns(rawExtrinsicPermissions);
   });
 
   afterEach(() => {

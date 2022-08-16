@@ -24,7 +24,7 @@ import {
   permissionsLikeToPermissions,
   stringToIdentityId,
   stringToTicker,
-  transactionPermissionsToExtrinsicPermissions,
+  transactionPermissionsToPalletPermissions,
 } from '~/utils/conversion';
 import { asAsset } from '~/utils/internal';
 
@@ -112,7 +112,7 @@ export async function prepareSetPermissionGroup(
         resolvers: [createCreateGroupResolver(context)],
         args: [
           rawTicker,
-          transactionPermissionsToExtrinsicPermissions(transactions, context),
+          transactionPermissionsToPalletPermissions(transactions, context),
           rawIdentityId,
         ],
       });

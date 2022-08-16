@@ -27,7 +27,7 @@ import {
   signerToString,
   signerValueToSignatory,
   stringToTicker,
-  transactionPermissionsToExtrinsicPermissions,
+  transactionPermissionsToPalletPermissions,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { filterEventRecords, optionize } from '~/utils/internal';
@@ -124,7 +124,7 @@ export async function prepareInviteExternalAgent(
         resolvers: [createGroupAndAuthorizationResolver(targetIdentity)],
         args: [
           rawTicker,
-          transactionPermissionsToExtrinsicPermissions(transactions, context),
+          transactionPermissionsToPalletPermissions(transactions, context),
           rawSignatory,
         ],
       });

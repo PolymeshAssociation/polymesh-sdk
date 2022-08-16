@@ -269,7 +269,7 @@ describe('inviteExternalAgent procedure', () => {
     });
     const rawPermissions = dsMockUtils.createMockExtrinsicPermissions('Whole');
     sinon
-      .stub(utilsConversionModule, 'transactionPermissionsToExtrinsicPermissions')
+      .stub(utilsConversionModule, 'transactionPermissionsToPalletPermissions')
       .returns(rawPermissions);
     sinon.stub(utilsConversionModule, 'stringToTicker').returns(rawTicker);
 

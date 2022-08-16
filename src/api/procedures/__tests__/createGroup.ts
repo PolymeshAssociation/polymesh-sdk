@@ -56,7 +56,7 @@ describe('createGroup procedure', () => {
 
     sinon.stub(utilsConversionModule, 'stringToTicker').returns(rawTicker);
     sinon
-      .stub(utilsConversionModule, 'transactionPermissionsToExtrinsicPermissions')
+      .stub(utilsConversionModule, 'transactionPermissionsToPalletPermissions')
       .returns(rawExtrinsicPermissions);
 
     permissionsLikeToPermissionsStub = sinon.stub(

@@ -273,7 +273,7 @@ import {
   toIdentityWithClaimsArray,
   toIdentityWithClaimsArrayV2,
   transactionHexToTxTag,
-  transactionPermissionsToExtrinsicPermissions,
+  transactionPermissionsToPalletPermissions,
   transactionPermissionsToTxGroups,
   transactionToTxTag,
   transferConditionsToBtreeTransferConditions,
@@ -1509,7 +1509,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       let fakeExtrinsicPermissionsResult: unknown =
         'convertedExtrinsicPermissions' as unknown as ExtrinsicPermissions;
       context.createType
-        .withArgs('PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions', 'Whole')
+        .withArgs('ExtrinsicPermissions', 'Whole')
         .returns(fakeExtrinsicPermissionsResult);
 
       createTypeStub
@@ -1543,10 +1543,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       };
 
       createTypeStub
-        .withArgs(
-          'PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions',
-          sinon.match(sinon.match.object)
-        )
+        .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
         .returns(fakeExtrinsicPermissionsResult);
 
       const ticker = 'SOME_TICKER';
@@ -1603,10 +1600,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       };
 
       createTypeStub
-        .withArgs(
-          'PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions',
-          sinon.match(sinon.match.object)
-        )
+        .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
         .returns(fakeExtrinsicPermissionsResult);
 
       value = {
@@ -1643,10 +1637,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       };
 
       createTypeStub
-        .withArgs(
-          'PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions',
-          sinon.match(sinon.match.object)
-        )
+        .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
         .returns(fakeExtrinsicPermissionsResult);
 
       value = {
@@ -1694,10 +1685,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       };
 
       createTypeStub
-        .withArgs(
-          'PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions',
-          sinon.match(sinon.match.object)
-        )
+        .withArgs('ExtrinsicPermissions', sinon.match(sinon.match.object))
         .returns(fakeExtrinsicPermissionsResult);
 
       const tickers = ['B_TICKER', 'A_TICKER', 'C_TICKER'];
@@ -7415,7 +7403,7 @@ describe('transactionPermissionsToExtrinsicPermissions', () => {
       )
       .returns(fakeResult);
 
-    let result = transactionPermissionsToExtrinsicPermissions(value, context);
+    let result = transactionPermissionsToPalletPermissions(value, context);
 
     expect(result).toEqual(fakeResult);
 
@@ -7423,7 +7411,7 @@ describe('transactionPermissionsToExtrinsicPermissions', () => {
       .withArgs('PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions', 'Whole')
       .returns(fakeResult);
 
-    result = transactionPermissionsToExtrinsicPermissions(null, context);
+    result = transactionPermissionsToPalletPermissions(null, context);
 
     expect(result).toEqual(fakeResult);
   });

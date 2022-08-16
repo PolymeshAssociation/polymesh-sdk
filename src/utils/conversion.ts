@@ -113,6 +113,7 @@ import {
   ConditionType as MeshConditionType,
   DocumentHash,
   EcdsaSignature,
+  ExtrinsicPermissions,
   FundraiserTier,
   GranularCanTransferResult,
   IdentityId,
@@ -966,12 +967,25 @@ function buildPalletPermissions(
 /**
  * @hidden
  */
-export function transactionPermissionsToExtrinsicPermissions(
+export function transactionPermissionsToPalletPermissions(
   transactionPermissions: TransactionPermissions | null,
   context: Context
 ): PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions {
   return context.createType(
     'PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions',
+    transactionPermissions ? buildPalletPermissions(transactionPermissions) : 'Whole'
+  );
+}
+
+/**
+ * @hidden
+ */
+export function transactionPermissionsToExtrinsicPermissions(
+  transactionPermissions: TransactionPermissions | null,
+  context: Context
+): ExtrinsicPermissions {
+  return context.createType(
+    'ExtrinsicPermissions',
     transactionPermissions ? buildPalletPermissions(transactionPermissions) : 'Whole'
   );
 }

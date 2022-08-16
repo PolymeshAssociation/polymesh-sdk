@@ -47,7 +47,7 @@ describe('setGroupPermissions procedure', () => {
 
     sinon.stub(utilsConversionModule, 'stringToTicker').returns(rawTicker);
     sinon
-      .stub(utilsConversionModule, 'transactionPermissionsToExtrinsicPermissions')
+      .stub(utilsConversionModule, 'transactionPermissionsToPalletPermissions')
       .returns(rawExtrinsicPermissions);
     sinon.stub(utilsConversionModule, 'bigNumberToU32').returns(rawAgId);
 
