@@ -29,7 +29,7 @@ describe('renamePortfolio procedure', () => {
   let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
   let bigNumberToU64Stub: sinon.SinonStub<[BigNumber, Context], u64>;
   let stringToBytesStub: sinon.SinonStub<[string, Context], Bytes>;
-  let getPortfolioIdByNameStub: sinon.SinonStub;
+  let getPortfolioIdsByNameStub: sinon.SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -38,7 +38,7 @@ describe('renamePortfolio procedure', () => {
     stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
     bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
     stringToBytesStub = sinon.stub(utilsConversionModule, 'stringToBytes');
-    getPortfolioIdByNameStub = sinon.stub(utilsInternalModule, 'getPortfolioIdByName');
+    getPortfolioIdsByNameStub = sinon.stub(utilsInternalModule, 'getPortfolioIdsByName');
   });
 
   beforeEach(() => {
@@ -65,7 +65,7 @@ describe('renamePortfolio procedure', () => {
   });
 
   it('should throw an error if the new name is the same as the current one', () => {
-    getPortfolioIdByNameStub.returns(id);
+    getPortfolioIdsByNameStub.returns([id]);
 
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
 
@@ -79,7 +79,7 @@ describe('renamePortfolio procedure', () => {
   });
 
   it('should throw an error if there already is a portfolio with the new name', () => {
-    getPortfolioIdByNameStub.returns(new BigNumber(2));
+    getPortfolioIdsByNameStub.returns([new BigNumber(2)]);
 
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
 
@@ -93,7 +93,7 @@ describe('renamePortfolio procedure', () => {
   });
 
   it('should return a rename portfolio transaction spec', async () => {
-    getPortfolioIdByNameStub.returns(undefined);
+    getPortfolioIdsByNameStub.returns([]);
 
     const transaction = dsMockUtils.createTxStub('portfolio', 'renamePortfolio');
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);

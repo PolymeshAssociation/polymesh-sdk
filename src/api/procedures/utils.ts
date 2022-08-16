@@ -127,15 +127,9 @@ export function assertSecondaryAccounts(
   accounts: Account[],
   secondaryAccounts: PermissionedAccount[]
 ): void {
-  const notInTheList: string[] = [];
-  accounts.forEach(account => {
-    const isPresent = secondaryAccounts.find(({ account: existingAccount }) =>
-      account.isEqual(existingAccount)
-    );
-    if (!isPresent) {
-      notInTheList.push(account.address);
-    }
-  });
+  const addresses = accounts.map(({ address }) => address);
+  const secondaryAddresses = secondaryAccounts.map(({ account: { address } }) => address);
+  const notInTheList = addresses.filter(address => !secondaryAddresses.includes(address));
 
   if (notInTheList.length) {
     throw new PolymeshError({

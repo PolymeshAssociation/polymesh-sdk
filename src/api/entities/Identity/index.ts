@@ -1,8 +1,8 @@
-import { Option, u64 } from '@polkadot/types';
+import { Option, StorageKey, u64 } from '@polkadot/types';
 import { AccountId32 } from '@polkadot/types/interfaces';
 import {
   PolymeshPrimitivesIdentityDidRecord,
-  PolymeshPrimitivesSecondaryKeyKeyRecord,
+  PolymeshPrimitivesIdentityId,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
@@ -20,7 +20,9 @@ import {
   Venue,
 } from '~/internal';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
+import { assetHoldersQuery, trustingAssetsQuery } from '~/middleware/queriesV2';
 import { Query } from '~/middleware/types';
+import { AssetHoldersOrderBy, Query as QueryV2 } from '~/middleware/typesV2';
 import { CddStatus } from '~/polkadot/polymesh';
 import {
   CheckRolesResult,
@@ -28,13 +30,14 @@ import {
   ErrorCode,
   GroupedInstructions,
   Order,
+  PaginationOptions,
   PermissionedAccount,
   ResultSet,
   Role,
   SubCallback,
   UnsubCallback,
 } from '~/types';
-import { Ensured, QueryReturnType, tuple } from '~/types/utils';
+import { Ensured, EnsuredV2, QueryReturnType, tuple } from '~/types/utils';
 import {
   isCddProviderRole,
   isIdentityRole,
@@ -44,14 +47,12 @@ import {
 } from '~/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
-  accountIdToAccount,
   accountIdToString,
   balanceToBigNumber,
   boolToBoolean,
   cddStatusToBoolean,
   corporateActionIdentifierToCaId,
   identityIdToString,
-  meshPermissionsToPermissions,
   portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
@@ -61,7 +62,13 @@ import {
   transactionPermissionsToTxGroups,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { asTicker, calculateNextKey, removePadding } from '~/utils/internal';
+import {
+  asTicker,
+  calculateNextKey,
+  getSecondaryAccountPermissions,
+  removePadding,
+  requestPaginated,
+} from '~/utils/internal';
 
 import { AssetPermissions } from './AssetPermissions';
 import { IdentityAuthorizations } from './IdentityAuthorizations';
@@ -359,6 +366,51 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
+   * Retrieve a list of all Assets which were held at one point by this Identity
+   *
+   * @note uses the middlewareV2
+   * @note supports pagination
+   */
+  public async getHeldAssetsV2(
+    opts: {
+      order?: AssetHoldersOrderBy;
+      size?: BigNumber;
+      start?: BigNumber;
+    } = {}
+  ): Promise<ResultSet<Asset>> {
+    const { context, did } = this;
+
+    const { size, start, order } = opts;
+
+    const {
+      data: {
+        assetHolders: { nodes, totalCount },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'assetHolders'>>(
+      assetHoldersQuery(
+        {
+          identityId: did,
+        },
+        size,
+        start,
+        order
+      )
+    );
+
+    const count = new BigNumber(totalCount);
+
+    const data = nodes.map(({ assetId: ticker }) => new Asset({ ticker }, context));
+
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
+  }
+
+  /**
    * Check whether this Identity possesses all specified roles
    */
   public async checkRoles(roles: Role[]): Promise<CheckRolesResult> {
@@ -406,6 +458,25 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     );
 
     return tickers.map(ticker => new Asset({ ticker: removePadding(ticker) }, context));
+  }
+
+  /**
+   * Get the list of Assets for which this Identity is a trusted claim issuer
+   *
+   * @note uses the middlewareV2
+   */
+  public async getTrustingAssetsV2(): Promise<Asset[]> {
+    const { context, did } = this;
+
+    const {
+      data: {
+        trustedClaimIssuers: { nodes },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'trustedClaimIssuers'>>(
+      trustingAssetsQuery({ issuer: did })
+    );
+
+    return nodes.map(({ assetId: ticker }) => new Asset({ ticker }, context));
   }
 
   /**
@@ -682,18 +753,27 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   /**
    * Get the list of secondary Accounts related to the Identity
    *
+   * @note supports pagination
    * @note can be subscribed to
-   * @note This method currently lacks pagination and may be slow for identities with many thousands of keys
    */
-  public async getSecondaryAccounts(): Promise<PermissionedAccount[]>;
   public async getSecondaryAccounts(
+    paginationOpts?: PaginationOptions
+  ): Promise<ResultSet<PermissionedAccount>>;
+
+  public async getSecondaryAccounts(
+    callback: SubCallback<PermissionedAccount[]>
+  ): Promise<UnsubCallback>;
+
+  public getSecondaryAccounts(
+    paginationOpts: PaginationOptions,
     callback: SubCallback<PermissionedAccount[]>
   ): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
   public async getSecondaryAccounts(
+    args?: PaginationOptions | SubCallback<PermissionedAccount[]>,
     callback?: SubCallback<PermissionedAccount[]>
-  ): Promise<PermissionedAccount[] | UnsubCallback> {
+  ): Promise<ResultSet<PermissionedAccount> | UnsubCallback> {
     const {
       did,
       context,
@@ -704,51 +784,51 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       },
     } = this;
 
-    const assembleResult = (
-      rawSecondaryKeyKeyRecord: Option<PolymeshPrimitivesSecondaryKeyKeyRecord>[],
-      accountIds: AccountId32[]
-    ): PermissionedAccount[] => {
-      return rawSecondaryKeyKeyRecord.reduce(
-        (secondaryKeys: PermissionedAccount[], optKeyRecord, index) => {
-          const account = accountIdToAccount(accountIds[index], context);
-          const keyRecord = optKeyRecord.unwrap();
-
-          if (keyRecord.isSecondaryKey) {
-            const [, permissions] = keyRecord.asSecondaryKey;
-            secondaryKeys.push({
-              account,
-              permissions: meshPermissionsToPermissions(permissions, context),
-            });
-          }
-
-          return secondaryKeys;
-        },
-        []
-      );
-    };
-
-    const keys = await identity.didKeys.entries(did);
-
-    const identityKeys = keys.map(([key]) => {
-      const [, value] = key.args;
-      return value;
-    });
-
-    if (callback) {
-      return identity.keyRecords.multi(identityKeys, result =>
-        callback(assembleResult(result, identityKeys))
-      );
+    let opts;
+    let cb: SubCallback<PermissionedAccount[]> | undefined = callback;
+    switch (typeof args) {
+      case 'undefined': {
+        break;
+      }
+      case 'function': {
+        cb = args;
+        break;
+      }
+      default: {
+        opts = args;
+        break;
+      }
     }
 
-    const rawPermissions = await identity.keyRecords.multi(identityKeys);
+    const keyToAccount = (
+      key: StorageKey<[PolymeshPrimitivesIdentityId, AccountId32]>
+    ): Account => {
+      const [, value] = key.args;
+      const address = accountIdToString(value);
+      return new Account({ address }, context);
+    };
 
-    return assembleResult(rawPermissions, identityKeys);
+    const { entries: keys, lastKey: next } = await requestPaginated(identity.didKeys, {
+      arg: did,
+      paginationOpts: opts,
+    });
+    const accounts = keys.map(([key]) => keyToAccount(key));
+
+    if (cb) {
+      return getSecondaryAccountPermissions({ accounts }, context, cb);
+    }
+
+    const data = await getSecondaryAccountPermissions({ accounts }, context);
+    return {
+      data,
+      next,
+    };
   }
 
   /**
    * Determine whether this Identity exists on chain
    *
-   * @note asset Identities aren't considered to exist for the
+   * @note asset Identities aren't considered to exist for this check
    */
   public async exists(): Promise<boolean> {
     const { did, context } = this;

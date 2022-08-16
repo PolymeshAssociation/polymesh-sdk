@@ -1,36 +1,35 @@
-import {
-  PolymeshPrimitivesStatisticsStatType,
-  PolymeshPrimitivesTransferComplianceTransferCondition,
-} from '@polkadot/types/lookup';
-import { BTreeSet } from '@polkadot/types-codec';
+import { QueryableStorageEntry } from '@polkadot/api/types';
 import BigNumber from 'bignumber.js';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import {
+  AddClaimCountTransferRestrictionParams,
+  AddClaimPercentageTransferRestrictionParams,
   AddCountTransferRestrictionParams,
   AddPercentageTransferRestrictionParams,
   ErrorCode,
+  TransferRestriction,
   TransferRestrictionType,
   TxTags,
 } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization, StatisticsOpType } from '~/types/internal';
+import { QueryReturnType } from '~/types/utils';
 import {
-  bigNumberToU128,
-  createStat2ndKey,
+  complianceConditionsToBtreeSet,
   scopeIdsToBtreeSetIdentityId,
   statisticsOpTypeToStatOpType,
-  statisticsOpTypeToStatType,
-  statisticStatTypesToBtreeStatType,
-  statUpdate,
-  statUpdatesToBtreeStatUpdate,
   stringToIdentityId,
   stringToTickerKey,
   toExemptKey,
-  transferConditionsToBtreeTransferConditions,
   transferRestrictionToPolymeshTransferCondition,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { checkTxType, getExemptedIds, neededStatTypeForRestrictionInput } from '~/utils/internal';
+import {
+  assertStatIsSet,
+  checkTxType,
+  getExemptedIds,
+  neededStatTypeForRestrictionInput,
+} from '~/utils/internal';
 
 /**
  * @hidden
@@ -38,38 +37,62 @@ import { checkTxType, getExemptedIds, neededStatTypeForRestrictionInput } from '
 export type AddTransferRestrictionParams = { ticker: string } & (
   | AddCountTransferRestrictionParams
   | AddPercentageTransferRestrictionParams
+  | AddClaimCountTransferRestrictionParams
+  | AddClaimPercentageTransferRestrictionParams
 );
-
-export interface Storage {
-  currentRestrictions: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
-  currentStats: BTreeSet<PolymeshPrimitivesStatisticsStatType>;
-  needStat: boolean;
-}
 
 /**
  * @hidden
  */
 export async function prepareAddTransferRestriction(
-  this: Procedure<AddTransferRestrictionParams, BigNumber, Storage>,
+  this: Procedure<AddTransferRestrictionParams, BigNumber>,
   args: AddTransferRestrictionParams
 ): Promise<BatchTransactionSpec<BigNumber, unknown[][]>> {
   const {
     context: {
       polymeshApi: {
         tx: { statistics },
-        query,
+        query: { statistics: statisticsQuery },
+        queryMulti,
         consts,
       },
     },
-    storage: { needStat, currentStats, currentRestrictions },
     context,
   } = this;
   const { ticker, exemptedIdentities = [], type } = args;
   const tickerKey = stringToTickerKey(ticker, context);
 
+  let claimIssuer;
+  if (
+    type === TransferRestrictionType.ClaimCount ||
+    type === TransferRestrictionType.ClaimPercentage
+  ) {
+    const {
+      claim: { type: claimType },
+      issuer,
+    } = args;
+    claimIssuer = { claimType, issuer };
+  }
+
+  const [currentStats, { requirements: currentRestrictions }] = await queryMulti<
+    [
+      QueryReturnType<typeof statisticsQuery.activeAssetStats>,
+      QueryReturnType<typeof statisticsQuery.assetTransferCompliances>
+    ]
+  >([
+    [statisticsQuery.activeAssetStats as unknown as QueryableStorageEntry<'promise'>, tickerKey],
+    [
+      statisticsQuery.assetTransferCompliances as unknown as QueryableStorageEntry<'promise'>,
+      tickerKey,
+    ],
+  ]);
+
+  const neededStat = neededStatTypeForRestrictionInput({ type, claimIssuer }, context);
+  assertStatIsSet(currentStats, neededStat);
   const maxConditions = u32ToBigNumber(consts.statistics.maxTransferConditionsPerAsset);
 
   const restrictionAmount = new BigNumber(currentRestrictions.size);
+
   if (restrictionAmount.gte(maxConditions)) {
     throw new PolymeshError({
       code: ErrorCode.LimitExceeded,
@@ -78,66 +101,48 @@ export async function prepareAddTransferRestriction(
     });
   }
 
-  let value: BigNumber;
-  let chainType: TransferRestrictionType;
+  let restriction: TransferRestriction;
   if (type === TransferRestrictionType.Count) {
-    value = args.count;
-    chainType = TransferRestrictionType.Count;
+    const value = args.count;
+    restriction = { type, value };
+  } else if (type === TransferRestrictionType.Percentage) {
+    const value = args.percentage;
+    restriction = { type, value };
+  } else if (type === TransferRestrictionType.ClaimCount) {
+    const { min, max: maybeMax, issuer, claim } = args;
+    restriction = { type, value: { min, max: maybeMax, issuer, claim } };
   } else {
-    value = args.percentage;
-    chainType = TransferRestrictionType.Percentage;
+    const { min, max, issuer, claim } = args;
+    restriction = { type, value: { min, max, issuer, claim } };
   }
 
-  const rawTransferCondition = transferRestrictionToPolymeshTransferCondition(
-    { type: chainType, value },
-    context
-  );
+  const rawTransferCondition = transferRestrictionToPolymeshTransferCondition(restriction, context);
+  const hasRestriction = !![...currentRestrictions].find(r => r.eq(rawTransferCondition));
 
-  const exists = currentRestrictions.has(rawTransferCondition);
-
-  if (exists) {
+  if (hasRestriction) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
       message: 'Cannot add the same restriction more than once',
     });
   }
 
-  const op =
-    type === TransferRestrictionType.Count
-      ? statisticsOpTypeToStatOpType(StatisticsOpType.Count, context)
-      : statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
+  const conditions = complianceConditionsToBtreeSet(
+    [...currentRestrictions, rawTransferCondition],
+    context
+  );
 
   const transactions = [];
-
-  if (needStat) {
-    const newStat = statisticsOpTypeToStatType(op, context);
-    const rawNewStats = statisticStatTypesToBtreeStatType([...currentStats, newStat], context);
-    transactions.push(
-      checkTxType({
-        transaction: statistics.setActiveAssetStats,
-        args: [tickerKey, rawNewStats],
-      })
-    );
-
-    // If the stat restriction is a Count the actual value needs to be set. This is due to the potentially slow operation of counting all holders for the chain
-    if (type === TransferRestrictionType.Count) {
-      const holders = await query.asset.balanceOf.entries(tickerKey.Ticker);
-      const holderCount = new BigNumber(holders.length);
-      // if an asset has many investors this could be slow and instead should be fetched from SubQuery
-      // These should happen near the assets inception, so for now query the chain directly
-      const secondKey = createStat2ndKey(context);
-      const stat = statUpdate(secondKey, bigNumberToU128(holderCount, context), context);
-      const statValue = statUpdatesToBtreeStatUpdate([stat], context);
-      transactions.push(
-        checkTxType({
-          transaction: statistics.batchUpdateAssetStats,
-          args: [tickerKey, newStat, statValue],
-        })
-      );
-    }
-  }
+  transactions.push(
+    checkTxType({
+      transaction: statistics.setAssetTransferCompliance,
+      args: [tickerKey, conditions],
+    })
+  );
 
   if (exemptedIdentities.length) {
+    const op = [TransferRestrictionType.Count, TransferRestrictionType.ClaimCount].includes(type)
+      ? statisticsOpTypeToStatOpType(StatisticsOpType.Count, context)
+      : statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
     const exemptedIds = await getExemptedIds(exemptedIdentities, context, ticker);
     const exemptedScopeIds = exemptedIds.map(entityId => stringToIdentityId(entityId, context));
     const btreeIds = scopeIdsToBtreeSetIdentityId(exemptedScopeIds, context);
@@ -151,15 +156,6 @@ export async function prepareAddTransferRestriction(
     );
   }
 
-  const newConditions = [...currentRestrictions, rawTransferCondition];
-  const rawNewConditions = transferConditionsToBtreeTransferConditions(newConditions, context);
-  transactions.push(
-    checkTxType({
-      transaction: statistics.setAssetTransferCompliance,
-      args: [tickerKey, rawNewConditions],
-    })
-  );
-
   return { transactions, resolver: restrictionAmount.plus(1) };
 }
 
@@ -167,21 +163,13 @@ export async function prepareAddTransferRestriction(
  * @hidden
  */
 export function getAuthorization(
-  this: Procedure<AddTransferRestrictionParams, BigNumber, Storage>,
+  this: Procedure<AddTransferRestrictionParams, BigNumber>,
   { ticker, exemptedIdentities = [] }: AddTransferRestrictionParams
 ): ProcedureAuthorization {
-  const {
-    storage: { needStat },
-  } = this;
-
   const transactions = [TxTags.statistics.SetAssetTransferCompliance];
 
   if (exemptedIdentities.length) {
     transactions.push(TxTags.statistics.SetEntitiesExempt);
-  }
-
-  if (needStat) {
-    transactions.push(TxTags.statistics.SetActiveAssetStats);
   }
 
   return {
@@ -196,42 +184,5 @@ export function getAuthorization(
 /**
  * @hidden
  */
-export async function prepareStorage(
-  this: Procedure<AddTransferRestrictionParams, BigNumber, Storage>,
-  args: AddTransferRestrictionParams
-): Promise<Storage> {
-  const {
-    context,
-    context: {
-      polymeshApi: {
-        query: { statistics },
-      },
-    },
-  } = this;
-  const { ticker, type } = args;
-
-  const tickerKey = stringToTickerKey(ticker, context);
-
-  const [{ requirements: currentRestrictions }, currentStats] = await Promise.all([
-    statistics.assetTransferCompliances(tickerKey),
-    statistics.activeAssetStats(tickerKey),
-  ]);
-
-  const neededStat = neededStatTypeForRestrictionInput(type, context);
-  const needStat = !currentStats.has(neededStat);
-
-  return {
-    currentRestrictions,
-    needStat,
-    currentStats,
-  };
-}
-
-/**
- * @hidden
- */
-export const addTransferRestriction = (): Procedure<
-  AddTransferRestrictionParams,
-  BigNumber,
-  Storage
-> => new Procedure(prepareAddTransferRestriction, getAuthorization, prepareStorage);
+export const addTransferRestriction = (): Procedure<AddTransferRestrictionParams, BigNumber> =>
+  new Procedure(prepareAddTransferRestriction, getAuthorization);

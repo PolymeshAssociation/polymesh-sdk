@@ -9,6 +9,7 @@ import sinon from 'sinon';
 
 import { Asset, Context, Entity, PolymeshTransaction } from '~/internal';
 import { eventByIndexedArgs, tickerExternalAgentHistory } from '~/middleware/queries';
+import { assetQuery, tickerExternalAgentHistoryQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { SecurityToken as MeshSecurityToken } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -472,6 +473,58 @@ describe('Asset class', () => {
     });
   });
 
+  describe('method: createdAtV2', () => {
+    it('should return the event identifier object of the Asset creation', async () => {
+      const ticker = 'SOME_TICKER';
+      const blockNumber = new BigNumber(1234);
+      const blockDate = new Date('4/14/2020');
+      const blockHash = 'someHash';
+      const eventIdx = new BigNumber(1);
+      const variables = {
+        ticker,
+      };
+      const fakeResult = { blockNumber, blockHash, blockDate, eventIndex: eventIdx };
+      const context = dsMockUtils.getContextInstance();
+      const asset = new Asset({ ticker }, context);
+
+      dsMockUtils.createApolloV2QueryStub(assetQuery(variables), {
+        assets: {
+          nodes: [
+            {
+              createdBlock: {
+                blockId: blockNumber.toNumber(),
+                datetime: blockDate,
+                hash: blockHash,
+              },
+              eventIdx: eventIdx.toNumber(),
+            },
+          ],
+        },
+      });
+
+      const result = await asset.createdAtV2();
+
+      expect(result).toEqual(fakeResult);
+    });
+
+    it('should return null if the query result is empty', async () => {
+      const ticker = 'SOME_TICKER';
+      const variables = {
+        ticker,
+      };
+      const context = dsMockUtils.getContextInstance();
+      const asset = new Asset({ ticker }, context);
+
+      dsMockUtils.createApolloV2QueryStub(assetQuery(variables), {
+        assets: {
+          nodes: [],
+        },
+      });
+      const result = await asset.createdAtV2();
+      expect(result).toBeNull();
+    });
+  });
+
   describe('method: freeze', () => {
     it('should prepare the procedure and return the resulting transaction', async () => {
       const ticker = 'TICKER';
@@ -803,6 +856,68 @@ describe('Asset class', () => {
       expect(result.length).toEqual(1);
       expect(result[0].identity.did).toEqual(did);
       expect(result[0].history.length).toEqual(0);
+    });
+  });
+
+  describe('method: getOperationHistoryV2', () => {
+    it('should return a list of agent operations', async () => {
+      const ticker = 'TICKER';
+      const context = dsMockUtils.getContextInstance();
+      const asset = new Asset({ ticker }, context);
+
+      const did = 'someDid';
+      const blockId = new BigNumber(1);
+      const blockHash = 'someHash';
+      const eventIndex = new BigNumber(1);
+      const datetime = '2020-10-10';
+
+      dsMockUtils.createApolloV2QueryStub(
+        tickerExternalAgentHistoryQuery({
+          assetId: ticker,
+        }),
+        {
+          tickerExternalAgentHistories: {
+            nodes: [
+              {
+                identityId: did,
+                eventIdx: eventIndex.toNumber(),
+                createdBlock: {
+                  blockId: blockId.toNumber(),
+                  datetime,
+                  hash: blockHash,
+                },
+              },
+            ],
+          },
+        }
+      );
+
+      let result = await asset.getOperationHistoryV2();
+
+      expect(result.length).toEqual(1);
+      expect(result[0].identity.did).toEqual(did);
+      expect(result[0].history.length).toEqual(1);
+      expect(result[0].history[0]).toEqual({
+        blockNumber: blockId,
+        blockHash,
+        blockDate: new Date(`${datetime}Z`),
+        eventIndex,
+      });
+
+      dsMockUtils.createApolloV2QueryStub(
+        tickerExternalAgentHistoryQuery({
+          assetId: ticker,
+        }),
+        {
+          tickerExternalAgentHistories: {
+            nodes: [],
+          },
+        }
+      );
+
+      result = await asset.getOperationHistoryV2();
+
+      expect(result.length).toEqual(0);
     });
   });
 

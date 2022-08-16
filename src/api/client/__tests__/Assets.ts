@@ -1,3 +1,4 @@
+import { StorageKey } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
@@ -8,6 +9,7 @@ import { Mocked } from '~/testUtils/types';
 import { KnownAssetType, SecurityIdentifierType, TickerReservationStatus } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/TickerReservation',
@@ -369,6 +371,70 @@ describe('Assets Class', () => {
 
       expect(assetResults).toHaveLength(1);
       expect(assetResults[0].ticker).toBe(fakeTicker);
+    });
+  });
+
+  describe('method: get', () => {
+    let requestPaginatedStub: sinon.SinonStub;
+    const expectedAssets = [
+      {
+        name: 'someAsset',
+        ticker: 'SOME_ASSET',
+      },
+      {
+        name: 'otherAsset',
+        ticker: 'OTHER_ASSET',
+      },
+    ];
+
+    beforeAll(() => {
+      requestPaginatedStub = sinon.stub(utilsInternalModule, 'requestPaginated');
+    });
+
+    beforeEach(() => {
+      dsMockUtils.createQueryStub('asset', 'assetNames');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    it('should retrieve all Assets on the chain', async () => {
+      const entries = expectedAssets.map(({ name, ticker }) =>
+        tuple(
+          {
+            args: [dsMockUtils.createMockTicker(ticker)],
+          } as unknown as StorageKey,
+          dsMockUtils.createMockBytes(name)
+        )
+      );
+
+      requestPaginatedStub.resolves({ entries, lastKey: null });
+
+      const result = await assets.get();
+
+      const expectedData = expectedAssets.map(({ ticker }) => expect.objectContaining({ ticker }));
+      expect(result).toEqual({ data: expectedData, next: null });
+    });
+
+    it('should retrieve the first page of results', async () => {
+      const entries = [
+        tuple(
+          {
+            args: [dsMockUtils.createMockTicker(expectedAssets[0].ticker)],
+          } as unknown as StorageKey,
+          dsMockUtils.createMockBytes(expectedAssets[0].name)
+        ),
+      ];
+
+      requestPaginatedStub.resolves({ entries, lastKey: 'someKey' });
+
+      const result = await assets.get({ size: new BigNumber(1) });
+
+      expect(result).toEqual({
+        data: [expect.objectContaining({ ticker: expectedAssets[0].ticker })],
+        next: 'someKey',
+      });
     });
   });
 });

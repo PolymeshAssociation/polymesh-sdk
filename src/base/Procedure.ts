@@ -31,7 +31,7 @@ function assertOnlyOneAsset(assets: Asset[]): void {
     throw new PolymeshError({
       code: ErrorCode.FatalError,
       message:
-        'Procedures cannot require permissions for more than one Asset. Please contact the Polymath team',
+        'Procedures cannot require permissions for more than one Asset. Please contact the Polymesh team',
     });
   }
 }

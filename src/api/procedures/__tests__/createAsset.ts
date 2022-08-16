@@ -1,8 +1,9 @@
-import { bool, Bytes, Option, Vec } from '@polkadot/types';
+import { bool, BTreeSet, Bytes, Option, Vec } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import {
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesDocument,
+  PolymeshPrimitivesStatisticsStatType,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import {
@@ -26,14 +27,16 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { Mocked } from '~/testUtils/types';
 import {
   AssetDocument,
+  ClaimType,
   KnownAssetType,
   RoleType,
   SecurityIdentifier,
   SecurityIdentifierType,
+  StatType,
   TickerReservationStatus,
   TxTags,
 } from '~/types';
-import { InternalAssetType, PolymeshTx } from '~/types/internal';
+import { InternalAssetType, PolymeshTx, TickerKey } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -53,6 +56,11 @@ describe('createAsset procedure', () => {
   let bigNumberToBalanceStub: sinon.SinonStub;
   let stringToBytesStub: sinon.SinonStub<[string, Context], Bytes>;
   let booleanToBoolStub: sinon.SinonStub<[boolean, Context], bool>;
+  let stringToTickerKeyStub: sinon.SinonStub<[string, Context], TickerKey>;
+  let statisticStatTypesToBtreeStatTypeStub: sinon.SinonStub<
+    [PolymeshPrimitivesStatisticsStatType[], Context],
+    BTreeSet<PolymeshPrimitivesStatisticsStatType>
+  >;
   let internalAssetTypeToAssetTypeStub: sinon.SinonStub<[InternalAssetType, Context], AssetType>;
   let securityIdentifierToAssetIdentifierStub: sinon.SinonStub<
     [SecurityIdentifier, Context],
@@ -99,6 +107,11 @@ describe('createAsset procedure', () => {
     bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
     stringToBytesStub = sinon.stub(utilsConversionModule, 'stringToBytes');
     booleanToBoolStub = sinon.stub(utilsConversionModule, 'booleanToBool');
+    stringToTickerKeyStub = sinon.stub(utilsConversionModule, 'stringToTickerKey');
+    statisticStatTypesToBtreeStatTypeStub = sinon.stub(
+      utilsConversionModule,
+      'statisticStatTypesToBtreeStatType'
+    );
     internalAssetTypeToAssetTypeStub = sinon.stub(
       utilsConversionModule,
       'internalAssetTypeToAssetType'
@@ -163,13 +176,7 @@ describe('createAsset procedure', () => {
       requireInvestorUniqueness,
       reservationRequired: true,
     };
-    protocolFees = [
-      new BigNumber(250),
-      new BigNumber(150),
-      new BigNumber(100),
-      new BigNumber(50),
-      new BigNumber(25),
-    ];
+    protocolFees = [new BigNumber(250), new BigNumber(150), new BigNumber(100)];
   });
 
   let createAssetTransaction: PolymeshTx<
@@ -204,6 +211,7 @@ describe('createAsset procedure', () => {
     stringToBytesStub.withArgs(name, mockContext).returns(rawName);
     booleanToBoolStub.withArgs(isDivisible, mockContext).returns(rawIsDivisible);
     booleanToBoolStub.withArgs(!requireInvestorUniqueness, mockContext).returns(rawDisableIu);
+    stringToTickerKeyStub.withArgs(ticker, mockContext).returns({ Ticker: rawTicker });
     internalAssetTypeToAssetTypeStub
       .withArgs(assetType as KnownAssetType, mockContext)
       .returns(rawType);
@@ -225,14 +233,8 @@ describe('createAsset procedure', () => {
         { tag: TxTags.asset.CreateAsset, fees: protocolFees[1] },
       ]);
     mockContext.getProtocolFees
-      .withArgs({ tags: [TxTags.asset.Issue] })
-      .resolves([{ tag: TxTags.asset.Issue, fees: protocolFees[2] }]);
-    mockContext.getProtocolFees
-      .withArgs({ tags: [TxTags.asset.AddDocuments] })
-      .resolves([{ tag: TxTags.asset.AddDocuments, fees: protocolFees[3] }]);
-    mockContext.getProtocolFees
       .withArgs({ tags: [TxTags.asset.RegisterCustomAssetType] })
-      .resolves([{ tag: TxTags.asset.RegisterCustomAssetType, fees: protocolFees[4] }]);
+      .resolves([{ tag: TxTags.asset.RegisterCustomAssetType, fees: protocolFees[2] }]);
   });
 
   afterEach(() => {
@@ -471,12 +473,55 @@ describe('createAsset procedure', () => {
             rawFundingRound,
             rawDisableIu,
           ],
-          fee: protocolFees[0].plus(protocolFees[1]),
+          fee: protocolFees[0].plus(protocolFees[1]).plus(protocolFees[2]),
         },
         {
           transaction: addDocumentsTx,
           feeMultiplier: new BigNumber(rawDocuments.length),
           args: [rawDocuments, rawTicker],
+        },
+      ],
+      resolver: expect.objectContaining({ ticker }),
+    });
+  });
+
+  it('should add a set statistics transaction to the batch', async () => {
+    const mockStatsBtree = dsMockUtils.createMockBTreeSet<PolymeshPrimitivesStatisticsStatType>([]);
+
+    const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
+      customTypeData: null,
+      status: TickerReservationStatus.Reserved,
+    });
+    const createAssetTx = dsMockUtils.createTxStub('asset', 'createAsset');
+    const addStatsTx = dsMockUtils.createTxStub('statistics', 'setActiveAssetStats');
+    const issuer = entityMockUtils.getIdentityInstance();
+    statisticStatTypesToBtreeStatTypeStub.returns(mockStatsBtree);
+
+    const result = await prepareCreateAsset.call(proc, {
+      ...args,
+      initialStatistics: [
+        { type: StatType.Percentage },
+        { type: StatType.ScopedCount, claimIssuer: { claimType: ClaimType.Accredited, issuer } },
+      ],
+    });
+
+    expect(result).toEqual({
+      transactions: [
+        {
+          transaction: createAssetTx,
+          args: [
+            rawName,
+            rawTicker,
+            rawIsDivisible,
+            rawType,
+            rawIdentifiers,
+            rawFundingRound,
+            rawDisableIu,
+          ],
+        },
+        {
+          transaction: addStatsTx,
+          args: [{ Ticker: rawTicker }, mockStatsBtree],
         },
       ],
       resolver: expect.objectContaining({ ticker }),
@@ -548,7 +593,11 @@ describe('createAsset procedure', () => {
 
       boundFunc = getAuthorization.bind(proc);
 
-      result = await boundFunc({ ...args, documents: [{ uri: 'www.doc.com', name: 'myDoc' }] });
+      result = await boundFunc({
+        ...args,
+        documents: [{ uri: 'www.doc.com', name: 'myDoc' }],
+        initialStatistics: [{ type: StatType.Count }],
+      });
 
       expect(result).toEqual({
         roles: [{ type: RoleType.TickerOwner, ticker }],
@@ -559,6 +608,7 @@ describe('createAsset procedure', () => {
             TxTags.asset.CreateAsset,
             TxTags.asset.AddDocuments,
             TxTags.asset.RegisterCustomAssetType,
+            TxTags.statistics.SetActiveAssetStats,
           ],
         },
       });

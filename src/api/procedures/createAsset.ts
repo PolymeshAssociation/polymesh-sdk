@@ -5,10 +5,12 @@ import { values } from 'lodash';
 import { Asset, Context, PolymeshError, Procedure, TickerReservation } from '~/internal';
 import { CustomAssetTypeId } from '~/polkadot/polymesh';
 import {
+  AssetTx,
   CreateAssetWithTickerParams,
   ErrorCode,
   KnownAssetType,
   RoleType,
+  StatisticsTx,
   TickerReservationStatus,
   TxTag,
   TxTags,
@@ -19,10 +21,13 @@ import {
   bigNumberToBalance,
   booleanToBool,
   boolToBoolean,
+  inputStatTypeToMeshStatType,
   internalAssetTypeToAssetType,
   securityIdentifierToAssetIdentifier,
+  statisticStatTypesToBtreeStatType,
   stringToBytes,
   stringToTicker,
+  stringToTickerKey,
 } from '~/utils/conversion';
 import { checkTxType, optionize } from '~/utils/internal';
 
@@ -71,6 +76,29 @@ async function addManualFees(
 }
 
 /**
+ * @throws if the Ticker is not available
+ */
+function assertTickerAvailable(
+  ticker: string,
+  status: TickerReservationStatus,
+  reservationRequired: boolean
+): void {
+  if (status === TickerReservationStatus.AssetCreated) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: `An Asset with ticker "${ticker}" already exists`,
+    });
+  }
+
+  if (status === TickerReservationStatus.Free && reservationRequired) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: `You must first reserve ticker "${ticker}" in order to create an Asset with it`,
+    });
+  }
+}
+
+/**
  * @hidden
  */
 export async function prepareCreateAsset(
@@ -98,21 +126,10 @@ export async function prepareCreateAsset(
     documents,
     requireInvestorUniqueness,
     reservationRequired,
+    initialStatistics,
   } = args;
 
-  if (status === TickerReservationStatus.AssetCreated) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: `An Asset with ticker "${ticker}" already exists`,
-    });
-  }
-
-  if (status === TickerReservationStatus.Free && reservationRequired) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: `You must first reserve ticker "${ticker}" in order to create an Asset with it`,
-    });
-  }
+  assertTickerAvailable(ticker, status, reservationRequired);
 
   const rawTicker = stringToTicker(ticker, context);
   const rawName = stringToBytes(name, context);
@@ -125,15 +142,20 @@ export async function prepareCreateAsset(
 
   const newAsset = new Asset({ ticker }, context);
 
-  let fee: undefined | BigNumber;
+  const transactions = [];
 
   /*
    * we waive any protocol fees if the Asset is created in Ethereum. If not created and ticker is not yet reserved,
    *   we set the fee to the sum of protocol fees for ticker registration and Asset creation.
+   *
+   * To do this, we keep track of transaction tags, and if manual fee calculations are needed, perform the fee calculation
+   * before adding the batch transaction.
    */
   const classicTicker = await asset.classicTickers(rawTicker);
   const assetCreatedInEthereum =
     classicTicker.isSome && boolToBoolean(classicTicker.unwrap().isCreated);
+
+  let fee: BigNumber | undefined;
 
   if (assetCreatedInEthereum) {
     fee = new BigNumber(0);
@@ -145,8 +167,6 @@ export async function prepareCreateAsset(
     );
   }
 
-  const transactions = [];
-
   /*
    * - if the passed Asset type isn't one of the fixed ones (custom), we check if there is already
    *   an on-chain custom Asset type with that name:
@@ -157,13 +177,13 @@ export async function prepareCreateAsset(
   if (customTypeData) {
     const { rawValue, id } = customTypeData;
 
-    if (id.isEmpty) {
-      /*
-       * if we're using custom fees because we're creating the Asset without registering first, we have to manually add
-       *   the fees for registering a custom Asset type
-       */
-      fee = await addManualFees(fee, [TxTags.asset.RegisterCustomAssetType], context);
+    /*
+     * We add the fee for registering a custom asset type in case we're calculating
+     * the Asset creation fees manually
+     */
+    fee = await addManualFees(fee, [TxTags.asset.RegisterCustomAssetType], context);
 
+    if (id.isEmpty) {
       transactions.push(
         checkTxType({
           transaction: tx.asset.createAssetWithCustomType,
@@ -218,6 +238,19 @@ export async function prepareCreateAsset(
     );
   }
 
+  if (initialStatistics?.length) {
+    const tickerKey = stringToTickerKey(ticker, context);
+    const rawStats = initialStatistics.map(i => inputStatTypeToMeshStatType(i, context));
+    const bTreeStats = statisticStatTypesToBtreeStatType(rawStats, context);
+
+    transactions.push(
+      checkTxType({
+        transaction: tx.statistics.setActiveAssetStats,
+        args: [tickerKey, bTreeStats],
+      })
+    );
+  }
+
   if (initialSupply && initialSupply.gt(0)) {
     const rawInitialSupply = bigNumberToBalance(initialSupply, context, isDivisible);
 
@@ -254,13 +287,13 @@ export async function prepareCreateAsset(
  */
 export async function getAuthorization(
   this: Procedure<Params, Asset, Storage>,
-  { ticker, documents }: Params
+  { ticker, documents, initialStatistics }: Params
 ): Promise<ProcedureAuthorization> {
   const {
     storage: { customTypeData, status },
   } = this;
 
-  const transactions = [TxTags.asset.CreateAsset];
+  const transactions: (AssetTx | StatisticsTx)[] = [TxTags.asset.CreateAsset];
 
   if (documents?.length) {
     transactions.push(TxTags.asset.AddDocuments);
@@ -268,6 +301,10 @@ export async function getAuthorization(
 
   if (customTypeData?.id.isEmpty) {
     transactions.push(TxTags.asset.RegisterCustomAssetType);
+  }
+
+  if (initialStatistics?.length) {
+    transactions.push(TxTags.statistics.SetActiveAssetStats);
   }
 
   const auth: ProcedureAuthorization = {

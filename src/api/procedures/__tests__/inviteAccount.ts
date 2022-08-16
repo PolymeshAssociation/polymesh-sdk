@@ -116,17 +116,20 @@ describe('inviteAccount procedure', () => {
     dsMockUtils.configureMocks({
       contextOptions: {
         sentAuthorizations,
-        secondaryAccounts: [
-          {
-            account,
-            permissions: {
-              assets: null,
-              portfolios: null,
-              transactions: null,
-              transactionGroups: [],
+        secondaryAccounts: {
+          data: [
+            {
+              account,
+              permissions: {
+                assets: null,
+                portfolios: null,
+                transactions: null,
+                transactionGroups: [],
+              },
             },
-          },
-        ],
+          ],
+          next: null,
+        },
       },
     });
 
@@ -242,17 +245,20 @@ describe('inviteAccount procedure', () => {
       contextOptions: {
         withSigningManager: true,
         sentAuthorizations: sentAuthorizations,
-        secondaryAccounts: [
-          {
-            account,
-            permissions: {
-              assets: null,
-              portfolios: null,
-              transactions: null,
-              transactionGroups: [],
+        secondaryAccounts: {
+          data: [
+            {
+              account,
+              permissions: {
+                assets: null,
+                portfolios: null,
+                transactions: null,
+                transactionGroups: [],
+              },
             },
-          },
-        ],
+          ],
+          next: null,
+        },
       },
     });
 

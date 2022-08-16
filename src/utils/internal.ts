@@ -5,10 +5,15 @@ import {
   DropLast,
   ObsInnerType,
 } from '@polkadot/api/types';
-import { Bytes, StorageKey, u32 } from '@polkadot/types';
+import { BTreeSet, Bytes, Option, StorageKey, u32 } from '@polkadot/types';
 import { EventRecord } from '@polkadot/types/interfaces';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
-import { PolymeshPrimitivesStatisticsStatType } from '@polkadot/types/lookup';
+import {
+  PolymeshPrimitivesSecondaryKeyKeyRecord,
+  PolymeshPrimitivesStatisticsStatClaim,
+  PolymeshPrimitivesStatisticsStatType,
+  PolymeshPrimitivesTransferComplianceTransferCondition,
+} from '@polkadot/types/lookup';
 import { AnyFunction, AnyTuple, IEvent, ISubmittableResult } from '@polkadot/types/types';
 import { stringUpperFirst } from '@polkadot/util';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
@@ -16,7 +21,7 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import stringify from 'json-stable-stringify';
 import { differenceWith, flatMap, isEqual, mapValues, noop, padEnd, uniq } from 'lodash';
-import { IdentityId } from 'polymesh-types/types';
+import { IdentityId, PortfolioNumber } from 'polymesh-types/types';
 import { major, satisfies } from 'semver';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 
@@ -30,6 +35,7 @@ import {
 } from '~/internal';
 import { Scope as MiddlewareScope } from '~/middleware/types';
 import {
+  Account,
   CaCheckpointType,
   CalendarPeriod,
   CalendarUnit,
@@ -46,18 +52,25 @@ import {
   NextKey,
   NoArgsProcedureMethod,
   PaginationOptions,
+  PermissionedAccount,
   ProcedureAuthorizationStatus,
   ProcedureMethod,
   ProcedureOpts,
+  RemoveAssetStatParams,
   Scope,
+  StatType,
+  SubCallback,
+  TransferRestriction,
   TransferRestrictionType,
   TxTag,
+  UnsubCallback,
 } from '~/types';
 import {
   Events,
   Falsyable,
   MapTxWithArgs,
   PolymeshTx,
+  StatClaimIssuer,
   StatisticsOpType,
   TxWithArgs,
 } from '~/types/internal';
@@ -72,10 +85,19 @@ import {
 } from '~/utils/constants';
 import {
   bigNumberToU32,
+  bigNumberToU64,
+  claimIssuerToMeshClaimIssuer,
+  identityIdToString,
+  meshClaimTypeToClaimType,
+  meshPermissionsToPermissions,
+  meshStatToStatisticsOpType,
   middlewareScopeToScope,
+  permillToBigNumber,
   signerToString,
   statisticsOpTypeToStatOpType,
   statisticsOpTypeToStatType,
+  statsClaimToStatClaimInputType,
+  stringToAccountId,
   u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
@@ -259,7 +281,7 @@ export function filterEventRecords<
       code: ErrorCode.UnexpectedError,
       message: `Event "${mod}.${String(
         eventName
-      )}" wasn't fired even though the corresponding transaction was completed. Please report this to the Polymath team`,
+      )}" wasn't fired even though the corresponding transaction was completed. Please report this to the Polymesh team`,
     });
   }
 
@@ -977,36 +999,53 @@ export function assembleBatchTransactions<ArgsArray extends unknown[][]>(
 /**
  * @hidden
  *
- * Returns portfolio number for a given portfolio name
+ * Returns portfolio numbers for a set of portfolio names
  */
-export async function getPortfolioIdByName(
+export async function getPortfolioIdsByName(
   rawIdentityId: IdentityId,
-  rawName: Bytes,
+  rawNames: Bytes[],
   context: Context
-): Promise<BigNumber | null> {
+): Promise<(BigNumber | null)[]> {
   const {
     polymeshApi: {
       query: { portfolio },
     },
   } = context;
 
-  const rawPortfolioNumber = await portfolio.nameToNumber(rawIdentityId, rawName);
+  const rawPortfolioNumbers = await portfolio.nameToNumber.multi<PortfolioNumber>(
+    rawNames.map<[IdentityId, Bytes]>(name => [rawIdentityId, name])
+  );
 
-  const portfolioId = u64ToBigNumber(rawPortfolioNumber);
+  const portfolioIds = rawPortfolioNumbers.map(number => u64ToBigNumber(number));
 
   // TODO @prashantasdeveloper remove this logic once nameToNumber returns Option<PortfolioNumber>
-  if (portfolioId.eq(1)) {
-    /**
-     * since nameToNumber returns 1 for non-existing portfolios,
-     * we need to check if the name matches against the portfolio number 1
-     */
-    const rawExistingPortfolioName = await portfolio.portfolios(rawIdentityId, rawPortfolioNumber);
-    if (!rawName.eq(rawExistingPortfolioName)) {
-      return null;
-    }
-  }
+  /**
+   * since nameToNumber returns 1 for non-existing portfolios, if a name maps to number 1,
+   *  we need to check if the given name actually matches the first portfolio
+   */
+  let firstPortfolioName: Bytes;
 
-  return portfolioId;
+  /*
+   * even though we make this call without knowing if we will need
+   *  the result, we only await for it if necessary, so it's still
+   *  performant
+   */
+  const gettingFirstPortfolioName = portfolio.portfolios(
+    rawIdentityId,
+    bigNumberToU64(new BigNumber(1), context)
+  );
+
+  return P.map(portfolioIds, async (id, index) => {
+    if (id.eq(1)) {
+      firstPortfolioName = await gettingFirstPortfolioName;
+
+      if (!firstPortfolioName.eq(rawNames[index])) {
+        return null;
+      }
+    }
+
+    return id;
+  });
 }
 
 /**
@@ -1288,14 +1327,297 @@ export function assertTickerValid(ticker: string): void {
 
 /**
  * @hidden
+ * @returns true is the given stat is able to track the data for the given args
+ */
+export function compareStatsToInput(
+  rawStatType: PolymeshPrimitivesStatisticsStatType,
+  args: RemoveAssetStatParams
+): boolean {
+  let claimIssuer;
+  const { type } = args;
+
+  if (type === StatType.ScopedCount || type === StatType.ScopedPercentage) {
+    claimIssuer = { issuer: args.issuer, claimType: args.claimType };
+  }
+
+  if (rawStatType.claimIssuer.isNone && !!claimIssuer) {
+    return false;
+  }
+
+  if (rawStatType.claimIssuer.isSome) {
+    if (!claimIssuer) {
+      return false;
+    }
+
+    const { issuer, claimType } = claimIssuer;
+    const [meshType, meshIssuer] = rawStatType.claimIssuer.unwrap();
+    const issuerDid = identityIdToString(meshIssuer);
+    const statType = meshClaimTypeToClaimType(meshType);
+    if (issuerDid !== issuer.did) {
+      return false;
+    }
+
+    if (statType !== claimType) {
+      return false;
+    }
+  }
+
+  const stat = meshStatToStatisticsOpType(rawStatType);
+  let cmpStat;
+  if (stat === StatisticsOpType.Count) {
+    cmpStat = StatType.Count;
+  } else if (stat === StatisticsOpType.Balance) {
+    cmpStat = StatType.Percentage;
+  } else if (stat === StatisticsOpType.ClaimCount) {
+    cmpStat = StatType.ScopedCount;
+  } else {
+    cmpStat = StatType.ScopedPercentage;
+  }
+
+  return cmpStat === type;
+}
+
+/**
+ * @hidden
+ * @returns true if the given StatType is able to track the data for the given transfer condition
+ */
+export function compareTransferRestrictionToStat(
+  transferCondition: PolymeshPrimitivesTransferComplianceTransferCondition,
+  type: StatType,
+  claimIssuer?: StatClaimIssuer
+): boolean {
+  if (
+    (type === StatType.Count && transferCondition.isMaxInvestorCount) ||
+    (type === StatType.Percentage && transferCondition.isMaxInvestorOwnership)
+  ) {
+    return true;
+  }
+
+  if (!claimIssuer) {
+    return false;
+  }
+
+  const {
+    issuer: { did: issuerDid },
+    claimType,
+  } = claimIssuer;
+
+  let rawClaim, issuer;
+  if (transferCondition.isClaimCount) {
+    [rawClaim, issuer] = transferCondition.asClaimCount;
+  } else if (transferCondition.isClaimOwnership) {
+    [rawClaim, issuer] = transferCondition.asClaimOwnership;
+  }
+  if (rawClaim && issuer) {
+    const restrictionIssuerDid = identityIdToString(issuer);
+    const claim = statsClaimToStatClaimInputType(rawClaim);
+    if (restrictionIssuerDid === issuerDid && claim.type === claimType) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * @hidden
+ */
+function getClaimType(statClaim: PolymeshPrimitivesStatisticsStatClaim): ClaimType {
+  if (statClaim.isAccredited) {
+    return ClaimType.Accredited;
+  } else if (statClaim.isAffiliate) {
+    return ClaimType.Affiliate;
+  } else {
+    return ClaimType.Jurisdiction;
+  }
+}
+
+/**
+ * @hidden
+ */
+function compareOptionalBigNumbers(a: BigNumber | undefined, b: BigNumber | undefined): boolean {
+  if (a === undefined && b === undefined) {
+    return true;
+  }
+  if (a === undefined || b === undefined) {
+    return false;
+  }
+  return a.eq(b);
+}
+
+/**
+ * @hidden
+ */
+export function compareTransferRestrictionToInput(
+  rawRestriction: PolymeshPrimitivesTransferComplianceTransferCondition,
+  inputRestriction: TransferRestriction
+): boolean {
+  const { type, value } = inputRestriction;
+  if (rawRestriction.isMaxInvestorCount && type === TransferRestrictionType.Count) {
+    const currentCount = u64ToBigNumber(rawRestriction.asMaxInvestorCount);
+    return currentCount.eq(value);
+  } else if (rawRestriction.isMaxInvestorOwnership && type === TransferRestrictionType.Percentage) {
+    const currentOwnership = permillToBigNumber(rawRestriction.asMaxInvestorOwnership);
+    return currentOwnership.eq(value);
+  } else if (rawRestriction.isClaimCount && type === TransferRestrictionType.ClaimCount) {
+    const [statClaim, rawIssuerId, rawMin, maybeMax] = rawRestriction.asClaimCount;
+    const issuerDid = identityIdToString(rawIssuerId);
+    const min = u64ToBigNumber(rawMin);
+    const max = maybeMax.isSome ? u64ToBigNumber(maybeMax.unwrap()) : undefined;
+    const { min: valueMin, max: valueMax, claim: valueClaim, issuer: valueIssuer } = value;
+
+    return (
+      valueMin.eq(min) &&
+      compareOptionalBigNumbers(max, valueMax) &&
+      valueClaim.type === getClaimType(statClaim) &&
+      issuerDid === valueIssuer.did
+    );
+  } else if (rawRestriction.isClaimOwnership && type === TransferRestrictionType.ClaimPercentage) {
+    const { min: valueMin, max: valueMax, claim: valueClaim, issuer: valueIssuer } = value;
+    const [statClaim, rawIssuerId, rawMin, rawMax] = rawRestriction.asClaimOwnership;
+    const issuerDid = identityIdToString(rawIssuerId);
+    const min = permillToBigNumber(rawMin);
+    const max = permillToBigNumber(rawMax);
+
+    return (
+      valueMin.eq(min) &&
+      valueMax.eq(max) &&
+      valueClaim.type === getClaimType(statClaim) &&
+      issuerDid === valueIssuer.did
+    );
+  }
+
+  return false;
+}
+
+/**
+ * @hidden
+ */
+export function compareStatTypeToTransferRestrictionType(
+  statType: PolymeshPrimitivesStatisticsStatType,
+  transferRestrictionType: TransferRestrictionType
+): boolean {
+  const opType = meshStatToStatisticsOpType(statType);
+  if (opType === StatisticsOpType.Count) {
+    return transferRestrictionType === TransferRestrictionType.Count;
+  } else if (opType === StatisticsOpType.Balance) {
+    return transferRestrictionType === TransferRestrictionType.Percentage;
+  } else if (opType === StatisticsOpType.ClaimCount) {
+    return transferRestrictionType === TransferRestrictionType.ClaimCount;
+  } else {
+    return transferRestrictionType === TransferRestrictionType.ClaimPercentage;
+  }
+}
+
+/**
+ * @hidden
+ * @param args.type TransferRestriction type that was given
+ * @param args.claimIssuer optional Issuer and ClaimType for the scope of the Stat
+ * @param context
+ * @returns encoded StatType needed for the TransferRestriction to be enabled
  */
 export function neededStatTypeForRestrictionInput(
-  type: TransferRestrictionType,
+  args: { type: TransferRestrictionType; claimIssuer?: StatClaimIssuer },
   context: Context
 ): PolymeshPrimitivesStatisticsStatType {
-  const neededOp =
-    type === TransferRestrictionType.Count ? StatisticsOpType.Count : StatisticsOpType.Balance;
-  const rawOp = statisticsOpTypeToStatOpType(neededOp, context);
+  const { type, claimIssuer } = args;
 
-  return statisticsOpTypeToStatType(rawOp, context);
+  let rawOp;
+  if (type === TransferRestrictionType.Count || type === TransferRestrictionType.ClaimCount) {
+    rawOp = statisticsOpTypeToStatOpType(StatisticsOpType.Count, context);
+  } else {
+    rawOp = statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
+  }
+
+  const rawIssuer = claimIssuer ? claimIssuerToMeshClaimIssuer(claimIssuer, context) : undefined;
+  return statisticsOpTypeToStatType({ op: rawOp, claimIssuer: rawIssuer }, context);
+}
+
+/**
+ * @hidden
+ * @throws if stat is not found in the given set
+ */
+export function assertStatIsSet(
+  currentStats: BTreeSet<PolymeshPrimitivesStatisticsStatType>,
+  neededStat: PolymeshPrimitivesStatisticsStatType
+): void {
+  const needStat = ![...currentStats].find(s => s.eq(neededStat));
+
+  if (needStat) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message:
+        'The appropriate stat type for this restriction is not set. Try calling enableStat in the namespace first',
+    });
+  }
+}
+
+/**
+ * @hidden
+ *
+ * Fetches Account permissions for the given secondary Accounts
+ *
+ * @note non secondary Accounts will be skipped, so there maybe less PermissionedAccounts returned than Accounts given
+ *
+ * @param args.accounts a list of accounts to fetch permissions for
+ * @param args.identity optional. If passed, Accounts that are not part of the given Identity will be filtered out
+ */
+export async function getSecondaryAccountPermissions(
+  args: { accounts: Account[]; identity?: Identity },
+  context: Context,
+  callback: SubCallback<PermissionedAccount[]>
+): Promise<UnsubCallback>;
+
+export async function getSecondaryAccountPermissions(
+  args: { accounts: Account[]; identity?: Identity },
+  context: Context
+): Promise<PermissionedAccount[]>;
+// eslint-disable-next-line require-jsdoc
+export async function getSecondaryAccountPermissions(
+  args: {
+    accounts: Account[];
+    identity?: Identity;
+  },
+  context: Context,
+  callback?: SubCallback<PermissionedAccount[]>
+): Promise<PermissionedAccount[] | UnsubCallback> {
+  const {
+    polymeshApi: {
+      query: { identity: identityQuery },
+    },
+  } = context;
+
+  const { accounts, identity } = args;
+
+  const assembleResult = (
+    optKeyRecords: Option<PolymeshPrimitivesSecondaryKeyKeyRecord>[]
+  ): PermissionedAccount[] => {
+    return optKeyRecords.reduce((result: PermissionedAccount[], optKeyRecord, index) => {
+      const account = accounts[index];
+      const record = optKeyRecord.unwrap();
+
+      if (record.isSecondaryKey) {
+        const [rawIdentityId, rawPermissions] = record.asSecondaryKey;
+
+        if (identity && identityIdToString(rawIdentityId) !== identity.did) {
+          return result;
+        }
+        result.push({
+          account,
+          permissions: meshPermissionsToPermissions(rawPermissions, context),
+        });
+      }
+      return result;
+    }, []);
+  };
+
+  const identityKeys = accounts.map(({ address }) => stringToAccountId(address, context));
+  if (callback) {
+    return identityQuery.keyRecords.multi(identityKeys, result => {
+      return callback(assembleResult(result));
+    });
+  }
+  const rawResults = await identityQuery.keyRecords.multi(identityKeys);
+
+  return assembleResult(rawResults);
 }

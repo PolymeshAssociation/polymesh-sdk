@@ -14,14 +14,20 @@ import {
 } from '~/internal';
 import {
   ActiveTransferRestrictions,
+  AddCountStatInput,
   AssetDocument,
   CalendarPeriod,
+  ClaimCountStatInput,
+  ClaimCountTransferRestriction,
+  ClaimPercentageTransferRestriction,
   ClaimTarget,
   CountTransferRestriction,
   InputCaCheckpoint,
   InputCondition,
   InputCorporateActionTargets,
   InputCorporateActionTaxWithholdings,
+  InputStatClaim,
+  InputStatType,
   InputTargets,
   InputTaxWithholding,
   InputTrustedClaimIssuer,
@@ -34,6 +40,7 @@ import {
   Requirement,
   Scope,
   SecurityIdentifier,
+  StatClaimIssuer,
   TransactionArray,
   TransactionPermissions,
   TxGroup,
@@ -44,24 +51,119 @@ import { Modify } from '~/types/utils';
 export type AddRestrictionParams<T> = Omit<
   T extends TransferRestrictionType.Count
     ? AddCountTransferRestrictionParams
-    : AddPercentageTransferRestrictionParams,
+    : T extends TransferRestrictionType.Percentage
+    ? AddPercentageTransferRestrictionParams
+    : T extends TransferRestrictionType.ClaimCount
+    ? AddClaimCountTransferRestrictionParams
+    : AddClaimPercentageTransferRestrictionParams,
   'type'
 >;
 
 export type SetRestrictionsParams<T> = Omit<
   T extends TransferRestrictionType.Count
     ? SetCountTransferRestrictionsParams
-    : SetPercentageTransferRestrictionsParams,
+    : T extends TransferRestrictionType.Percentage
+    ? SetPercentageTransferRestrictionsParams
+    : T extends TransferRestrictionType.ClaimCount
+    ? SetClaimCountTransferRestrictionsParams
+    : SetClaimPercentageTransferRestrictionsParams,
   'type'
 >;
 
 export type GetTransferRestrictionReturnType<T> = ActiveTransferRestrictions<
-  T extends TransferRestrictionType.Count ? CountTransferRestriction : PercentageTransferRestriction
+  T extends TransferRestrictionType.Count
+    ? CountTransferRestriction
+    : T extends TransferRestrictionType.Percentage
+    ? PercentageTransferRestriction
+    : T extends TransferRestrictionType.ClaimCount
+    ? ClaimCountTransferRestriction
+    : ClaimPercentageTransferRestriction
 >;
+
+export type RemoveAssetStatParams = { ticker: string } & (
+  | RemoveCountStatParams
+  | RemoveBalanceStatParams
+  | RemoveScopedCountParams
+  | RemoveScopedBalanceParams
+);
+
+export type AddCountStatParams = AddCountStatInput & {
+  type: StatType.Count;
+};
+
+export type AddPercentageStatParams = {
+  type: StatType.Percentage;
+};
+
+export type AddClaimCountStatParams = ClaimCountStatInput & {
+  type: StatType.ScopedCount;
+};
+
+export type AddClaimPercentageStatParams = StatClaimIssuer & {
+  type: StatType.ScopedPercentage;
+};
+
+export type AddAssetStatParams = { ticker: string } & (
+  | AddCountStatParams
+  | AddPercentageStatParams
+  | AddClaimCountStatParams
+  | AddClaimPercentageStatParams
+);
+
+export type RemoveCountStatParams = {
+  type: StatType.Count;
+};
+
+export type RemoveBalanceStatParams = {
+  type: StatType.Percentage;
+};
+
+export type RemoveScopedCountParams = StatClaimIssuer & {
+  type: StatType.ScopedCount;
+};
+
+export type RemoveScopedBalanceParams = StatClaimIssuer & {
+  type: StatType.ScopedPercentage;
+};
+
+export type SetAssetStatParams<T> = Omit<
+  T extends TransferRestrictionType.Count
+    ? AddCountStatParams
+    : T extends TransferRestrictionType.Percentage
+    ? AddPercentageStatParams
+    : T extends TransferRestrictionType.ClaimCount
+    ? AddClaimCountStatParams
+    : AddClaimPercentageStatParams,
+  'type'
+>;
+
+/**
+ * Represents the different type of statistics that can be enabled for an Asset
+ */
+export enum StatType {
+  /**
+   * Keeps a count of the total number of investors
+   */
+  Count = 'Count',
+  /**
+   * Keeps track of the amount of supply investors hold
+   */
+  Percentage = 'Percentage',
+  /**
+   * Keeps a count of the total number of investors who have a certain claim
+   */
+  ScopedCount = 'ScopedCount',
+  /**
+   * Keeps track of the amount of supply held between investors who have a certain claim
+   */
+  ScopedPercentage = 'ScopedPercentage',
+}
 
 export enum TransferRestrictionType {
   Count = 'Count',
   Percentage = 'Percentage',
+  ClaimCount = 'ClaimCount',
+  ClaimPercentage = 'ClaimPercentage',
 }
 
 export interface TransferRestriction {
@@ -90,6 +192,19 @@ export interface PercentageTransferRestrictionInput extends TransferRestrictionI
   percentage: BigNumber;
 }
 
+export interface ClaimCountTransferRestrictionInput extends TransferRestrictionInputBase {
+  min: BigNumber;
+  max?: BigNumber;
+  issuer: Identity;
+  claim: InputStatClaim;
+}
+export interface ClaimPercentageTransferRestrictionInput extends TransferRestrictionInputBase {
+  min: BigNumber;
+  max: BigNumber;
+  issuer: Identity;
+  claim: InputStatClaim;
+}
+
 export type AddCountTransferRestrictionParams = CountTransferRestrictionInput & {
   type: TransferRestrictionType.Count;
 };
@@ -97,6 +212,15 @@ export type AddCountTransferRestrictionParams = CountTransferRestrictionInput & 
 export type AddPercentageTransferRestrictionParams = PercentageTransferRestrictionInput & {
   type: TransferRestrictionType.Percentage;
 };
+
+export type AddClaimCountTransferRestrictionParams = ClaimCountTransferRestrictionInput & {
+  type: TransferRestrictionType.ClaimCount;
+};
+
+export type AddClaimPercentageTransferRestrictionParams =
+  ClaimPercentageTransferRestrictionInput & {
+    type: TransferRestrictionType.ClaimPercentage;
+  };
 
 export interface SetCountTransferRestrictionsParams {
   /**
@@ -112,6 +236,16 @@ export interface SetPercentageTransferRestrictionsParams {
    */
   restrictions: PercentageTransferRestrictionInput[];
   type: TransferRestrictionType.Percentage;
+}
+
+export interface SetClaimCountTransferRestrictionsParams {
+  restrictions: ClaimCountTransferRestrictionInput[];
+  type: TransferRestrictionType.ClaimCount;
+}
+
+export interface SetClaimPercentageTransferRestrictionsParams {
+  restrictions: ClaimPercentageTransferRestrictionInput[];
+  type: TransferRestrictionType.ClaimPercentage;
 }
 
 export interface InviteAccountParams {
@@ -185,6 +319,20 @@ export interface CreateAssetParams {
    *   to hold it. More information about Investor Uniqueness and PUIS [here](https://developers.polymesh.live/introduction/identity#polymesh-unique-identity-system-puis)
    */
   requireInvestorUniqueness: boolean;
+
+  /**
+   * (optional) type of statistics that should be enabled for the Asset
+   *
+   * Enabling statistics allows for TransferRestrictions to be made. For example the SEC requires registration for a company that
+   * has either more than 2000 investors, or more than 500 non accredited investors. To prevent crossing this limit two restrictions are
+   * needed, a `Count` of 2000, and a `ScopedCount` of non accredited with a maximum of 500. [source](https://www.sec.gov/info/smallbus/secg/jobs-act-section-12g-small-business-compliance-guide.htm)
+   *
+   * These restrictions require a `Count` and `ScopedCount` statistic to be created. Although they an be created after the Asset is made, it is recommended to create statistics
+   * before the Asset is circulated. Count statistics made after Asset creation need their initial value set, so it is simpler to create them before investors hold the Asset.
+   * If you do need to create a stat for an Asset after creation, you can use the { @link api/entities/Asset/TransferRestrictions/TransferRestrictionBase!TransferRestrictionBase.enableStat | enableStat } method in
+   * the appropriate namespace
+   */
+  initialStatistics?: InputStatType[];
 }
 
 export interface CreateAssetWithTickerParams extends CreateAssetParams {

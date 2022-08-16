@@ -25,7 +25,9 @@ import {
   reclaimDividendDistributionFunds,
 } from '~/internal';
 import { getHistoryOfPaymentEventsForCa, getWithholdingTaxesOfCa } from '~/middleware/queries';
+import { distributionPaymentsQuery, distributionQuery } from '~/middleware/queriesV2';
 import { Query } from '~/middleware/types';
+import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   CorporateActionKind,
   DistributionPayment,
@@ -41,7 +43,14 @@ import {
   TargetTreatment,
 } from '~/types';
 import { ProcedureParams } from '~/types/internal';
-import { Ensured, HumanReadableType, Modify, QueryReturnType, tuple } from '~/types/utils';
+import {
+  Ensured,
+  EnsuredV2,
+  HumanReadableType,
+  Modify,
+  QueryReturnType,
+  tuple,
+} from '~/types/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_DECIMALS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   balanceToBigNumber,
@@ -475,6 +484,43 @@ export class DividendDistribution extends CorporateActionBase {
   }
 
   /**
+   * Retrieve the amount of taxes that have been withheld up to this point in this Distribution
+   *
+   * @note uses the middlewareV2
+   */
+  public async getWithheldTaxV2(): Promise<BigNumber> {
+    const {
+      id,
+      asset: { ticker },
+      context,
+    } = this;
+
+    const taxPromise = context.queryMiddlewareV2<EnsuredV2<QueryV2, 'distribution'>>(
+      distributionQuery({
+        id: `${ticker}/${id.toString()}`,
+      })
+    );
+
+    const [
+      exists,
+      {
+        data: {
+          distribution: { taxes },
+        },
+      },
+    ] = await Promise.all([this.exists(), taxPromise]);
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: notExistsMessage,
+      });
+    }
+
+    return new BigNumber(taxes).shiftedBy(-6);
+  }
+
+  /**
    * Retrieve the payment history for this Distribution
    *
    * @note uses the middleware
@@ -555,6 +601,77 @@ export class DividendDistribution extends CorporateActionBase {
         ...payment,
         blockHash: hashToString(hashes[index]),
       })),
+      next,
+      count,
+    };
+  }
+
+  /**
+   * Retrieve the payment history for this Distribution
+   *
+   * @note uses the middleware V2
+   * @note supports pagination
+   */
+  public async getPaymentHistoryV2(
+    opts: { size?: BigNumber; start?: BigNumber } = {}
+  ): Promise<ResultSet<DistributionPayment>> {
+    const {
+      id,
+      asset: { ticker },
+      context,
+    } = this;
+    const { size, start } = opts;
+
+    const paymentsPromise = context.queryMiddlewareV2<EnsuredV2<QueryV2, 'distributionPayments'>>(
+      distributionPaymentsQuery(
+        {
+          distributionId: `${ticker}/${id.toString()}`,
+        },
+        size,
+        start
+      )
+    );
+
+    const [exists, result] = await Promise.all([this.exists(), paymentsPromise]);
+
+    if (!exists) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: notExistsMessage,
+      });
+    }
+
+    const {
+      data: {
+        distributionPayments: { nodes, totalCount },
+      },
+    } = result;
+
+    const count = new BigNumber(totalCount);
+    const data: DistributionPayment[] = [];
+
+    nodes.forEach(({ createdBlock, datetime, targetId: did, amount, tax }) => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const { blockId, hash } = createdBlock!;
+
+      data.push({
+        blockNumber: new BigNumber(blockId),
+        blockHash: hash,
+        date: new Date(datetime),
+        target: new Identity({ did }, context),
+        amount: new BigNumber(amount).shiftedBy(-6),
+        /**
+         * Since we want to depict the `withheldTax` as percentage value between 0-100,
+         *   we multiply the tax(`Permill`) by 100, hence shifted by -4
+         */
+        withheldTax: new BigNumber(tax).shiftedBy(-4),
+      });
+    });
+
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
       next,
       count,
     };

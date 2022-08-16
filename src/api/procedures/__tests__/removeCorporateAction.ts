@@ -98,7 +98,7 @@ describe('removeCorporateAction procedure', () => {
           amount: new BigNumber(50000000000),
           remaining: new BigNumber(40000000000),
           paymentAt: new BigNumber(new Date('1/1/2020').getTime()),
-          expiresAt: null,
+          expiresAt: dsMockUtils.createMockOption(),
           reclaimed: false,
         })
       ),
@@ -152,7 +152,7 @@ describe('removeCorporateAction procedure', () => {
           amount: new BigNumber(50000000000),
           remaining: new BigNumber(40000000000),
           paymentAt: new BigNumber(new Date('10/10/2030').getTime()),
-          expiresAt: null,
+          expiresAt: dsMockUtils.createMockOption(),
           reclaimed: false,
         })
       ),

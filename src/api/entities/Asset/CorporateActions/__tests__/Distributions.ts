@@ -122,7 +122,7 @@ describe('Distributions class', () => {
             remaining: new BigNumber(5000000000),
             reclaimed: false,
             paymentAt: new BigNumber(10000000000),
-            expiresAt: null,
+            expiresAt: dsMockUtils.createMockOption(),
           })
         ),
       });
@@ -191,7 +191,7 @@ describe('Distributions class', () => {
             remaining: new BigNumber(5000),
             reclaimed: false,
             paymentAt: new BigNumber(100000000),
-            expiresAt: null,
+            expiresAt: dsMockUtils.createMockOption(),
           })
         ),
       });

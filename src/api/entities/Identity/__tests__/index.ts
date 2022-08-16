@@ -13,7 +13,9 @@ import sinon from 'sinon';
 
 import { Asset, Context, Entity, Identity } from '~/internal';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
-import { ScopeId } from '~/polkadot/polymesh';
+import { assetHoldersQuery, trustingAssetsQuery } from '~/middleware/queriesV2';
+import { AssetHoldersOrderBy } from '~/middleware/typesV2';
+import { ScopeId } from '~/polkadot/polymesh/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
 import {
@@ -32,6 +34,7 @@ import {
 } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/TickerReservation',
@@ -593,6 +596,26 @@ describe('Identity class', () => {
     });
   });
 
+  describe('method: getTrustingAssetsV2', () => {
+    const did = 'someDid';
+    const tickers = ['ASSET1', 'ASSET2'];
+
+    it('should return a list of Assets', async () => {
+      const identity = new Identity({ did }, context);
+
+      dsMockUtils.createApolloV2QueryStub(trustingAssetsQuery({ issuer: did }), {
+        trustedClaimIssuers: {
+          nodes: tickers.map(ticker => ({ assetId: ticker })),
+        },
+      });
+
+      const result = await identity.getTrustingAssetsV2();
+
+      expect(result[0].ticker).toBe('ASSET1');
+      expect(result[1].ticker).toBe('ASSET2');
+    });
+  });
+
   describe('method: getHeldAssets', () => {
     const did = 'someDid';
     const tickers = ['ASSET1', 'ASSET2'];
@@ -623,6 +646,45 @@ describe('Identity class', () => {
         start: new BigNumber(0),
         size: new BigNumber(1),
         order: Order.Asc,
+      });
+
+      expect(result.data[0].ticker).toBe(tickers[0]);
+      expect(result.data[1].ticker).toBe(tickers[1]);
+    });
+  });
+
+  describe('method: getHeldAssetsV2', () => {
+    const did = 'someDid';
+    const tickers = ['ASSET1', 'ASSET2'];
+
+    it('should return a list of Assets', async () => {
+      const identity = new Identity({ did }, context);
+
+      dsMockUtils.createApolloV2QueryStub(assetHoldersQuery({ identityId: did }), {
+        assetHolders: { nodes: tickers.map(ticker => ({ assetId: ticker })), totalCount: 2 },
+      });
+
+      let result = await identity.getHeldAssetsV2();
+
+      expect(result.data[0].ticker).toBe(tickers[0]);
+      expect(result.data[1].ticker).toBe(tickers[1]);
+
+      dsMockUtils.createApolloV2QueryStub(
+        assetHoldersQuery(
+          { identityId: did },
+          new BigNumber(1),
+          new BigNumber(0),
+          AssetHoldersOrderBy.CreatedBlockIdAsc
+        ),
+        {
+          assetHolders: { nodes: tickers.map(ticker => ({ assetId: ticker })), totalCount: 2 },
+        }
+      );
+
+      result = await identity.getHeldAssetsV2({
+        start: new BigNumber(0),
+        size: new BigNumber(1),
+        order: AssetHoldersOrderBy.CreatedBlockIdAsc,
       });
 
       expect(result.data[0].ticker).toBe(tickers[0]);
@@ -1235,6 +1297,7 @@ describe('Identity class', () => {
       [PolymeshPrimitivesSecondaryKeyPermissions, Context],
       Permissions
     >;
+    let getSecondaryAccountPermissionsStub: sinon.SinonStub;
 
     beforeAll(() => {
       account = entityMockUtils.getAccountInstance({ address: accountId });
@@ -1242,6 +1305,10 @@ describe('Identity class', () => {
       meshPermissionsToPermissionsStub = sinon.stub(
         utilsConversionModule,
         'meshPermissionsToPermissions'
+      );
+      getSecondaryAccountPermissionsStub = sinon.stub(
+        utilsInternalModule,
+        'getSecondaryAccountPermissions'
       );
       fakeResult = [
         {
@@ -1296,26 +1363,36 @@ describe('Identity class', () => {
           dsMockUtils.createMockOption(rawMultiSigKeyRecord),
         ],
       });
+
+      getSecondaryAccountPermissionsStub.returns(fakeResult);
       const identity = new Identity({ did: 'someDid' }, context);
 
-      const result = await identity.getSecondaryAccounts();
-      expect(result).toEqual(fakeResult);
+      let result = await identity.getSecondaryAccounts();
+      expect(result).toEqual({ data: fakeResult, next: null });
+
+      result = await identity.getSecondaryAccounts({ size: new BigNumber(20) });
+      expect(result).toEqual({ data: fakeResult, next: null });
     });
 
     it('should allow subscription', async () => {
       const identity = new Identity({ did: 'someDid' }, context);
       const unsubCallback = 'unsubCallBack';
 
-      const keyRecordsStub = dsMockUtils.createQueryStub('identity', 'keyRecords', {
-        multi: [dsMockUtils.createMockOption(rawSecondaryKeyRecord)],
-      });
-
-      keyRecordsStub.multi.callsFake(async (_, cbFunc) => {
-        cbFunc([dsMockUtils.createMockOption(rawSecondaryKeyRecord)]);
-        return unsubCallback;
-      });
-
       const callback = sinon.stub();
+
+      getSecondaryAccountPermissionsStub.yields([
+        {
+          account,
+          permissions: {
+            assets: null,
+            portfolios: null,
+            transactions: null,
+            transactionGroups: [],
+          },
+        },
+      ]);
+      getSecondaryAccountPermissionsStub.returns(unsubCallback);
+
       const result = await identity.getSecondaryAccounts(callback);
 
       expect(result).toBe(unsubCallback);

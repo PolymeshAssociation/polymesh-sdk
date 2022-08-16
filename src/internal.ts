@@ -22,7 +22,7 @@ export {
   ConsumeAuthorizationRequestsParams,
   ConsumeParams,
 } from '~/api/procedures/consumeAuthorizationRequests';
-export { createPortfolio } from '~/api/procedures/createPortfolio';
+export { createPortfolios } from '~/api/procedures/createPortfolios';
 export { createAsset } from '~/api/procedures/createAsset';
 export { createVenue } from '~/api/procedures/createVenue';
 export { inviteAccount } from '~/api/procedures/inviteAccount';
@@ -68,12 +68,10 @@ export { redeemTokens } from '~/api/procedures/redeemTokens';
 export {
   addTransferRestriction,
   AddTransferRestrictionParams,
-  Storage as AddTransferRestrictionStorage,
 } from '~/api/procedures/addTransferRestriction';
 export { launchOffering } from '~/api/procedures/launchOffering';
 export {
   setTransferRestrictions,
-  SetTransferRestrictionsParams,
   Storage as SetTransferRestrictionsStorage,
 } from '~/api/procedures/setTransferRestrictions';
 export {
@@ -134,3 +132,14 @@ export { waivePermissions } from '~/api/procedures/waivePermissions';
 export { quitSubsidy, QuitSubsidyParams } from '~/api/procedures/quitSubsidy';
 export { modifyAllowance, ModifyAllowanceParams } from '~/api/procedures/modifyAllowance';
 export { createTransactionBatch } from '~/api/procedures/createTransactionBatch';
+export {
+  SetAllowanceParams,
+  DecreaseAllowanceParams,
+  IncreaseAllowanceParams,
+  SetCountTransferRestrictionsParams,
+  SetPercentageTransferRestrictionsParams,
+  SetClaimCountTransferRestrictionsParams,
+  SetClaimPercentageTransferRestrictionsParams,
+} from '~/api/procedures/types';
+export { addAssetStat } from '~/api/procedures/addAssetStat';
+export { removeAssetStat } from '~/api/procedures/removeAssetStat';

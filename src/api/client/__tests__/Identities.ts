@@ -1,4 +1,5 @@
 import { Identities } from '~/api/client/Identities';
+import { createPortfolioTransformer } from '~/api/entities/Venue';
 import { Context, Identity, NumberedPortfolio, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -79,10 +80,31 @@ describe('Identities Class', () => {
 
       procedureMockUtils
         .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
+        .withArgs(
+          { args: { names: [args.name] }, transformer: createPortfolioTransformer },
+          context
+        )
         .resolves(expectedTransaction);
 
       const tx = await identities.createPortfolio(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: createPortfolios', () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const args = { names: ['someName'] };
+
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<NumberedPortfolio>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedTransaction);
+
+      const tx = await identities.createPortfolios(args);
 
       expect(tx).toBe(expectedTransaction);
     });

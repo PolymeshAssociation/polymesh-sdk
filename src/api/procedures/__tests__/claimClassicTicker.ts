@@ -50,7 +50,7 @@ describe('claimClassicTicker procedure', () => {
     dsMockUtils.createQueryStub('asset', 'tickers', {
       returnValue: dsMockUtils.createMockTickerRegistration({
         owner: CLASSIC_TICKER_OWNER_DID,
-        expiry: null,
+        expiry: dsMockUtils.createMockOption(),
       }),
     });
     dsMockUtils.createQueryStub('asset', 'classicTickers', {
@@ -112,7 +112,7 @@ describe('claimClassicTicker procedure', () => {
   it('should throw an error if the ticker has already been claimed', () => {
     dsMockUtils.createQueryStub('asset', 'tickers', {
       returnValue: dsMockUtils.createMockTickerRegistration({
-        expiry: null,
+        expiry: dsMockUtils.createMockOption(),
         owner: 'someDid',
       }),
     });

@@ -36,7 +36,7 @@ describe('removeAssetRequirement procedure', () => {
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     ticker = 'SOME_TICKER';
-    requirement = new BigNumber(2);
+    requirement = new BigNumber(1);
 
     args = {
       ticker,
@@ -99,7 +99,7 @@ describe('removeAssetRequirement procedure', () => {
 
   it('should throw an error if the supplied id is not present in the current requirements', () => {
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
-    const complianceRequirementId = new BigNumber(1);
+    const complianceRequirementId = new BigNumber(10);
 
     return expect(
       prepareRemoveAssetRequirement.call(proc, {
