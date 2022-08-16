@@ -1,6 +1,5 @@
 import { SubmittableExtrinsic } from '@polkadot/api/types';
 import { u32 } from '@polkadot/types';
-import { DispatchError } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
@@ -15,7 +14,7 @@ import {
   TransactionSigningData,
 } from '~/types/internal';
 import { transactionToTxTag, u32ToBigNumber } from '~/utils/conversion';
-import { mergeReceipts } from '~/utils/internal';
+import { filterEventRecords, mergeReceipts } from '~/utils/internal';
 
 /**
  * Wrapper class for a batch of Polymesh Transactions
@@ -245,14 +244,15 @@ export class PolymeshTransactionBatch<
     receipt: ISubmittableResult
   ): void {
     // If one of the transactions in the batch fails, this event gets emitted
-    const failed = receipt.findRecord('utility', 'BatchInterrupted');
+    const [failed] = filterEventRecords(receipt, 'utility', 'BatchInterrupted', true);
 
     if (failed) {
       const {
-        event: { data: failedData },
+        data: [, failedData],
       } = failed;
+
       const failedIndex = u32ToBigNumber(failedData[0] as u32).toNumber();
-      const dispatchError = failedData[1] as DispatchError;
+      const dispatchError = failedData[1];
 
       this.handleExtrinsicFailure(resolve, reject, dispatchError, { failedIndex });
     } else {

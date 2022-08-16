@@ -265,7 +265,8 @@ type EventData<Event> = Event extends AugmentedEvent<'promise', infer Data> ? Da
  * @hidden
  * Find every occurrence of a specific event inside a receipt
  *
- * @throws If the event is not found
+ * @param skipError - optional. If true, no error will be thrown if the event is not found,
+ *   and the function will return an empty array
  */
 export function filterEventRecords<
   ModuleName extends keyof Events,
@@ -273,10 +274,11 @@ export function filterEventRecords<
 >(
   receipt: ISubmittableResult,
   mod: ModuleName,
-  eventName: EventName
+  eventName: EventName,
+  skipError?: true
 ): IEvent<EventData<Events[ModuleName][EventName]>>[] {
   const eventRecords = receipt.filterRecords(mod, eventName as string);
-  if (!eventRecords.length) {
+  if (!eventRecords.length && !skipError) {
     throw new PolymeshError({
       code: ErrorCode.UnexpectedError,
       message: `Event "${mod}.${String(

@@ -1,5 +1,5 @@
 import { SubmittableExtrinsic } from '@polkadot/api/types';
-import { DispatchError, EventRecord } from '@polkadot/types/interfaces';
+import { SpRuntimeDispatchError } from '@polkadot/types/lookup';
 import { ISubmittableResult, RegistryError, Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
@@ -25,7 +25,7 @@ import {
 } from '~/types/internal';
 import { Ensured } from '~/types/utils';
 import { balanceToBigNumber, hashToString, u32ToBigNumber } from '~/utils/conversion';
-import { defusePromise, delay } from '~/utils/internal';
+import { defusePromise, delay, filterEventRecords } from '~/utils/internal';
 
 /**
  * @hidden
@@ -254,7 +254,7 @@ export abstract class PolymeshTransactionBase<
         const { status } = receipt;
         let isLastCallback = false;
         let unsubscribing = Promise.resolve();
-        let extrinsicFailedEvent: EventRecord | undefined;
+        let extrinsicFailedEvent;
 
         // isCompleted === isFinalized || isInBlock || isError
         if (receipt.isCompleted) {
@@ -278,7 +278,7 @@ export abstract class PolymeshTransactionBase<
             );
 
             // if the extrinsic failed due to an on-chain error, we should handle it in a special way
-            extrinsicFailedEvent = receipt.findRecord('system', 'ExtrinsicFailed');
+            [extrinsicFailedEvent] = filterEventRecords(receipt, 'system', 'ExtrinsicFailed', true);
 
             // extrinsic failed so we can unsubscribe
             isLastCallback = !!extrinsicFailedEvent;
@@ -300,12 +300,10 @@ export abstract class PolymeshTransactionBase<
           let finishing = Promise.resolve();
 
           if (extrinsicFailedEvent) {
-            const {
-              event: { data },
-            } = extrinsicFailedEvent;
+            const { data } = extrinsicFailedEvent;
 
             finishing = Promise.all([settingBlockData, unsubscribing]).then(() => {
-              this.handleExtrinsicFailure(resolve, reject, data[0] as DispatchError);
+              this.handleExtrinsicFailure(resolve, reject, data[0]);
             });
           } else if (receipt.isFinalized) {
             finishing = Promise.all([settingBlockData, unsubscribing]).then(() => {
@@ -558,7 +556,7 @@ export abstract class PolymeshTransactionBase<
   protected handleExtrinsicFailure(
     _resolve: (value: ISubmittableResult | PromiseLike<ISubmittableResult>) => void,
     reject: (reason?: unknown) => void,
-    error: DispatchError,
+    error: SpRuntimeDispatchError,
     data?: Record<string, unknown>
   ): void {
     // get revert message from event

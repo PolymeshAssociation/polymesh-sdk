@@ -298,7 +298,7 @@ describe('Polymesh Transaction Base class', () => {
       );
       let runPromise = tx.run();
 
-      await fakePromise(1);
+      await fakePromise(3);
 
       dsMockUtils.updateTxStatus(
         transaction,

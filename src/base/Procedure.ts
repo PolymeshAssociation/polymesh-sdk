@@ -352,11 +352,13 @@ export class Procedure<Args = void, ReturnValue = void, Storage = Record<string,
       if (!('transactions' in spec)) {
         return new PolymeshTransaction<ReturnValue, TransformedReturnValue>(spec, ctx);
       } else if (spec.transactions.length === 1) {
-        const [{ transaction, args: txArgs }] = spec.transactions;
+        const [{ transaction, args: txArgs, fee, feeMultiplier }] = spec.transactions;
         return new PolymeshTransaction<ReturnValue, TransformedReturnValue>(
           {
             ...spec,
-            transaction: transaction,
+            transaction,
+            fee,
+            feeMultiplier,
             args: txArgs,
           },
           ctx

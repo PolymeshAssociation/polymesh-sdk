@@ -509,8 +509,12 @@ const successReceipt: ISubmittableResult = merge({}, defaultReceipt, {
 const batchFailedReceipt: ISubmittableResult = merge({}, successReceipt, {
   findRecord: (mod: string, event: string) =>
     mod === 'utility' && event === 'BatchInterrupted'
-      ? { event: { data: [{ toString: (): string => '1' }, 'Some Error'] } }
+      ? { event: { data: [[], [{ toString: (): string => '1' }, 'Some Error']] } }
       : undefined,
+  filterRecords: (mod: string, event: string) =>
+    mod === 'utility' && event === 'BatchInterrupted'
+      ? [{ event: { data: [[], [{ toString: (): string => '1' }, 'Some Error']] } }]
+      : [],
 });
 
 /**
@@ -522,6 +526,7 @@ const createFailReceipt = (
 ): ISubmittableResult =>
   merge({}, baseReceipt, {
     findRecord: () => ({ event: { data: [err] } }),
+    filterRecords: () => [{ event: { data: [err] } }],
   });
 
 const badOriginFailReceipt = createFailReceipt({ isBadOrigin: true });
