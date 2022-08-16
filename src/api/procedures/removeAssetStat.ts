@@ -5,8 +5,8 @@ import {
 } from '@polkadot/types/lookup';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, RemoveAssetStatParams, StatClaimIssuer, StatType, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ErrorCode, RemoveAssetStatParams, StatClaimIssuer, TxTags } from '~/types';
+import { ProcedureAuthorization, StatType } from '~/types/internal';
 import { QueryReturnType } from '~/types/utils';
 import {
   claimIssuerToMeshClaimIssuer,
@@ -54,7 +54,9 @@ export async function prepareRemoveAssetStat(
   let rawClaimIssuer:
     | [PolymeshPrimitivesIdentityClaimClaimType, PolymeshPrimitivesIdentityId]
     | undefined;
+
   if (type === StatType.ScopedCount || type === StatType.ScopedPercentage) {
+    // should be based on if its present or not
     claimIssuer = { issuer: args.issuer, claimType: args.claimType };
     rawClaimIssuer = claimIssuerToMeshClaimIssuer(claimIssuer, context);
   }

@@ -209,7 +209,6 @@ import {
   SignerValue,
   SingleClaimCondition,
   StatClaimType,
-  StatType,
   TargetTreatment,
   Tier,
   TransactionPermissions,
@@ -238,7 +237,7 @@ import {
   ScheduleSpec,
   StatClaimInputType,
   StatClaimIssuer,
-  StatisticsOpType,
+  StatType,
   TickerKey,
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
@@ -3798,23 +3797,24 @@ export function statUpdatesToBtreeStatUpdate(
  */
 export function meshStatToStatisticsOpType(
   rawStat: PolymeshPrimitivesStatisticsStatType
-): keyof typeof StatisticsOpType {
+): keyof typeof StatType {
   if (rawStat.claimIssuer.isNone) {
     return rawStat.op.type;
   } else {
     if (rawStat.op.type === 'Count') {
-      return StatisticsOpType.ClaimCount;
+      return StatType.ScopedCount;
     } else {
-      return StatisticsOpType.ClaimPercentage;
+      return StatType.ScopedPercentage;
     }
   }
 }
 
 /**
  * @hidden
+ * @param type - On chain "Scoped" or not is determined by the presence of the claim, and not be distinct types
  */
 export function statisticsOpTypeToStatOpType(
-  type: StatisticsOpType,
+  type: StatType.Count | StatType.Balance,
   context: Context
 ): PolymeshPrimitivesStatisticsStatOpType {
   return context.createType('PolymeshPrimitivesStatisticsStatOpType', type);
@@ -3828,9 +3828,9 @@ export function statTypeToStatOpType(
   context: Context
 ): PolymeshPrimitivesStatisticsStatOpType {
   if (type === StatType.Count || type === StatType.ScopedCount) {
-    return statisticsOpTypeToStatOpType(StatisticsOpType.Count, context);
+    return statisticsOpTypeToStatOpType(StatType.Count, context);
   }
-  return statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
+  return statisticsOpTypeToStatOpType(StatType.Balance, context);
 }
 
 /**
@@ -3841,10 +3841,10 @@ export function transferRestrictionTypeToStatOpType(
   context: Context
 ): PolymeshPrimitivesStatisticsStatOpType {
   if (type === TransferRestrictionType.Count || type === TransferRestrictionType.ClaimCount) {
-    return statisticsOpTypeToStatOpType(StatisticsOpType.Count, context);
+    return statisticsOpTypeToStatOpType(StatType.Count, context);
   }
 
-  return statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
+  return statisticsOpTypeToStatOpType(StatType.Balance, context);
 }
 
 /**

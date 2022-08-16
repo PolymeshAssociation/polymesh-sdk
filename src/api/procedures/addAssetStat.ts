@@ -1,6 +1,6 @@
 import { Asset, PolymeshError, Procedure } from '~/internal';
-import { AddAssetStatParams, ErrorCode, StatType, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { AddAssetStatParams, ErrorCode, TxTags } from '~/types';
+import { ProcedureAuthorization, StatType } from '~/types/internal';
 import {
   claimCountStatInputToStatUpdates,
   claimIssuerToMeshClaimIssuer,

@@ -16,9 +16,9 @@ import {
   SetClaimPercentageTransferRestrictionsParams,
   SetCountTransferRestrictionsParams,
   SetPercentageTransferRestrictionsParams,
-  StatType,
   TransferRestrictionType,
 } from '~/types';
+import { StatType } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 import { Count } from '../Count';
@@ -527,7 +527,7 @@ describe('TransferRestrictionBase class', () => {
           {
             args: {
               ticker: asset.ticker,
-              type: StatType.Percentage,
+              type: StatType.Balance,
             },
             transformer: undefined,
           },
@@ -589,7 +589,7 @@ describe('TransferRestrictionBase class', () => {
           {
             args: {
               ticker: asset.ticker,
-              type: StatType.Percentage,
+              type: StatType.Balance,
             },
             transformer: undefined,
           },

@@ -360,11 +360,11 @@ export type PermissionGroupIdentifier = PermissionGroupType | { custom: BigNumbe
 
 export type InternalAssetType = KnownAssetType | { Custom: CustomAssetTypeId };
 
-export enum StatisticsOpType {
+export enum StatType {
   Count = 'Count',
   Balance = 'Balance',
-  ClaimCount = 'ClaimCount',
-  ClaimPercentage = 'ClaimPercentage',
+  ScopedCount = 'ScopedCount', // TODO not a real type
+  ScopedPercentage = 'ScopedPercentage', // TODO not a real type
 }
 
 export interface TickerKey {

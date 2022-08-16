@@ -27,7 +27,7 @@ import {
   TransferRestrictionType,
   TxTags,
 } from '~/types';
-import { PolymeshTx, StatisticsOpType, TickerKey } from '~/types/internal';
+import { PolymeshTx, StatType, TickerKey } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -145,10 +145,10 @@ describe('addTransferRestriction procedure', () => {
 
     rawCountStatType = dsMockUtils.createMockStatisticsStatType();
     rawBalanceStatType = dsMockUtils.createMockStatisticsStatType({
-      op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Balance),
+      op: dsMockUtils.createMockStatisticsOpType(StatType.Balance),
     });
     rawClaimCountStatType = dsMockUtils.createMockStatisticsStatType({
-      op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.ClaimCount),
+      op: dsMockUtils.createMockStatisticsOpType(StatType.ScopedCount),
       claimIssuer: [dsMockUtils.createMockClaimType(), dsMockUtils.createMockIdentityId()],
     });
     mockStatTypeBtree = dsMockUtils.createMockBTreeSet([
@@ -158,8 +158,8 @@ describe('addTransferRestriction procedure', () => {
     ]);
     statCompareEqStub = rawCountStatType.eq as sinon.SinonStub;
     statCompareEqStub.returns(true);
-    rawCountOp = dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count);
-    rawBalanceOp = dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Balance);
+    rawCountOp = dsMockUtils.createMockStatisticsOpType(StatType.Count);
+    rawBalanceOp = dsMockUtils.createMockStatisticsOpType(StatType.Balance);
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawCount = dsMockUtils.createMockU64(count);
     rawScopeId = dsMockUtils.createMockIdentityId(did);

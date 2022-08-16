@@ -195,14 +195,7 @@ import {
   SubsidyWithAllowance,
   TxTags,
 } from '~/types';
-import {
-  Consts,
-  Extrinsics,
-  GraphqlQuery,
-  PolymeshTx,
-  Queries,
-  StatisticsOpType,
-} from '~/types/internal';
+import { Consts, Extrinsics, GraphqlQuery, PolymeshTx, Queries, StatType } from '~/types/internal';
 import { ArgsType, Mutable, tuple } from '~/types/utils';
 import { STATE_RUNTIME_VERSION_CALL, SYSTEM_VERSION_RPC_CALL } from '~/utils/constants';
 
@@ -3990,7 +3983,7 @@ export const createMockProtocolOp = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockStatisticsOpType = (
-  op?: PolymeshPrimitivesStatisticsStatOpType | StatisticsOpType
+  op?: PolymeshPrimitivesStatisticsStatOpType | StatType
 ): MockCodec<PolymeshPrimitivesStatisticsStatOpType> => {
   if (isCodec<PolymeshPrimitivesStatisticsStatOpType>(op)) {
     return op as MockCodec<PolymeshPrimitivesStatisticsStatOpType>;
@@ -3999,8 +3992,8 @@ export const createMockStatisticsOpType = (
   return createMockCodec(
     {
       type: op,
-      isCount: op === StatisticsOpType.Count,
-      isBalance: op === StatisticsOpType.Balance,
+      isCount: op === StatType.Count,
+      isBalance: op === StatType.Balance,
     },
     !op
   ) as MockCodec<PolymeshPrimitivesStatisticsStatOpType>;
@@ -4011,7 +4004,7 @@ export const createMockStatisticsOpType = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockStatisticsOpTypeToStatType = (
-  op?: PolymeshPrimitivesStatisticsStatType | StatisticsOpType
+  op?: PolymeshPrimitivesStatisticsStatType | StatType
 ): MockCodec<PolymeshPrimitivesStatisticsStatType> => {
   if (isCodec<PolymeshPrimitivesStatisticsStatType>(op)) {
     return op as MockCodec<PolymeshPrimitivesStatisticsStatType>;
@@ -4021,8 +4014,8 @@ export const createMockStatisticsOpTypeToStatType = (
     {
       op: {
         type: op,
-        isCount: op === StatisticsOpType.Count,
-        isBalance: op === StatisticsOpType.Balance,
+        isCount: op === StatType.Count,
+        isBalance: op === StatType.Balance,
       },
     },
     !op

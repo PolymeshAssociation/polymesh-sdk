@@ -59,7 +59,6 @@ import {
   ProcedureOpts,
   RemoveAssetStatParams,
   Scope,
-  StatType,
   SubCallback,
   TransferRestriction,
   TransferRestrictionType,
@@ -74,7 +73,7 @@ import {
   MaybePostTransactionValue,
   PolymeshTx,
   StatClaimIssuer,
-  StatisticsOpType,
+  StatType,
   TxWithArgs,
 } from '~/types/internal';
 import { HumanReadableType, ProcedureFunc, UnionOfProcedureFuncs } from '~/types/utils';
@@ -97,10 +96,10 @@ import {
   middlewareScopeToScope,
   permillToBigNumber,
   signerToString,
-  statisticsOpTypeToStatOpType,
   statisticsOpTypeToStatType,
   statsClaimToStatClaimInputType,
   stringToAccountId,
+  transferRestrictionTypeToStatOpType,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { isEntity, isMultiClaimCondition, isSingleClaimCondition } from '~/utils/typeguards';
@@ -1264,11 +1263,11 @@ export function compareStatsToInput(
 
   const stat = meshStatToStatisticsOpType(rawStatType);
   let cmpStat;
-  if (stat === StatisticsOpType.Count) {
+  if (stat === StatType.Count) {
     cmpStat = StatType.Count;
-  } else if (stat === StatisticsOpType.Balance) {
-    cmpStat = StatType.Percentage;
-  } else if (stat === StatisticsOpType.ClaimCount) {
+  } else if (stat === StatType.Balance) {
+    cmpStat = StatType.Balance;
+  } else if (stat === StatType.ScopedCount) {
     cmpStat = StatType.ScopedCount;
   } else {
     cmpStat = StatType.ScopedPercentage;
@@ -1288,7 +1287,7 @@ export function compareTransferRestrictionToStat(
 ): boolean {
   if (
     (type === StatType.Count && transferCondition.isMaxInvestorCount) ||
-    (type === StatType.Percentage && transferCondition.isMaxInvestorOwnership)
+    (type === StatType.Balance && transferCondition.isMaxInvestorOwnership)
   ) {
     return true;
   }
@@ -1398,11 +1397,11 @@ export function compareStatTypeToTransferRestrictionType(
   transferRestrictionType: TransferRestrictionType
 ): boolean {
   const opType = meshStatToStatisticsOpType(statType);
-  if (opType === StatisticsOpType.Count) {
+  if (opType === StatType.Count) {
     return transferRestrictionType === TransferRestrictionType.Count;
-  } else if (opType === StatisticsOpType.Balance) {
+  } else if (opType === StatType.Balance) {
     return transferRestrictionType === TransferRestrictionType.Percentage;
-  } else if (opType === StatisticsOpType.ClaimCount) {
+  } else if (opType === StatType.ScopedCount) {
     return transferRestrictionType === TransferRestrictionType.ClaimCount;
   } else {
     return transferRestrictionType === TransferRestrictionType.ClaimPercentage;
@@ -1422,12 +1421,7 @@ export function neededStatTypeForRestrictionInput(
 ): PolymeshPrimitivesStatisticsStatType {
   const { type, claimIssuer } = args;
 
-  let rawOp;
-  if (type === TransferRestrictionType.Count || type === TransferRestrictionType.ClaimCount) {
-    rawOp = statisticsOpTypeToStatOpType(StatisticsOpType.Count, context);
-  } else {
-    rawOp = statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
-  }
+  const rawOp = transferRestrictionTypeToStatOpType(type, context);
 
   const rawIssuer = claimIssuer ? claimIssuerToMeshClaimIssuer(claimIssuer, context) : undefined;
   return statisticsOpTypeToStatType({ op: rawOp, claimIssuer: rawIssuer }, context);

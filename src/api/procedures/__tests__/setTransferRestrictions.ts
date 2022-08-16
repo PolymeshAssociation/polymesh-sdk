@@ -31,7 +31,7 @@ import {
   TransferRestrictionType,
   TxTags,
 } from '~/types';
-import { PolymeshTx, StatisticsOpType, TickerKey } from '~/types/internal';
+import { PolymeshTx, StatType, TickerKey } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -101,7 +101,7 @@ describe('setTransferRestrictions procedure', () => {
   let rawClaimCountRestrictionBtreeSet: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
   let rawClaimPercentageRestrictionBtreeSet: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
   let identityIdToStringStub: sinon.SinonStub<[PolymeshPrimitivesIdentityId], string>;
-  let booleanToBoolSub: sinon.SinonStub<[boolean, Context], bool>;
+  let booleanToBoolStub: sinon.SinonStub<[boolean, Context], bool>;
 
   const min = new BigNumber(10);
   const max = new BigNumber(20);
@@ -142,7 +142,7 @@ describe('setTransferRestrictions procedure', () => {
       'statisticsOpTypeToStatType'
     );
     identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
-    booleanToBoolSub = sinon.stub(utilsConversionModule, 'booleanToBool');
+    booleanToBoolStub = sinon.stub(utilsConversionModule, 'booleanToBool');
     ticker = 'TICKER';
     count = new BigNumber(10);
     percentage = new BigNumber(49);
@@ -382,7 +382,7 @@ describe('setTransferRestrictions procedure', () => {
   });
 
   it('should add exempted identities if they were given', async () => {
-    booleanToBoolSub.withArgs(true, mockContext).returns(rawTrue);
+    booleanToBoolStub.withArgs(true, mockContext).returns(rawTrue);
     const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
@@ -474,7 +474,7 @@ describe('setTransferRestrictions procedure', () => {
   });
 
   it('should remove exempted identities if they were not given', async () => {
-    booleanToBoolSub.withArgs(false, mockContext).returns(rawFalse);
+    booleanToBoolStub.withArgs(false, mockContext).returns(rawFalse);
     let proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
@@ -673,7 +673,7 @@ describe('setTransferRestrictions procedure', () => {
     expect(err.message).toBe('The restrictions and exemptions are already in place');
   });
 
-  it('should throw an error if attempting to add more restrictions than there are slots available', async () => {
+  it('should throw an eStatTypeng to add more restrictions than there are slots available', async () => {
     args = {
       ticker,
       restrictions: [{ count }, { count: new BigNumber(2) }],
@@ -846,7 +846,7 @@ describe('setTransferRestrictions procedure', () => {
         ],
       };
 
-      statStub.returns(StatisticsOpType.Balance);
+      statStub.returns(StatType.Balance);
 
       result = await boundFunc(args);
 

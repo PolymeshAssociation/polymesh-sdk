@@ -32,11 +32,10 @@ import {
   RoleType,
   SecurityIdentifier,
   SecurityIdentifierType,
-  StatType,
   TickerReservationStatus,
   TxTags,
 } from '~/types';
-import { InternalAssetType, PolymeshTx, TickerKey } from '~/types/internal';
+import { InternalAssetType, PolymeshTx, StatType, TickerKey } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -524,7 +523,7 @@ describe('createAsset procedure', () => {
     const result = await prepareCreateAsset.call(proc, {
       ...args,
       initialStatistics: [
-        { type: StatType.Percentage },
+        { type: StatType.Balance },
         { type: StatType.ScopedCount, claimIssuer: { claimType: ClaimType.Accredited, issuer } },
       ],
     });

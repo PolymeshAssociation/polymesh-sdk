@@ -9,7 +9,6 @@ import {
   SubsidyData,
   TaxWithholding,
 } from '~/api/entities/types';
-import { StatType } from '~/api/procedures/types';
 import { CountryCode, ModuleName, TxTag, TxTags } from '~/generated/types';
 import {
   Account,
@@ -27,6 +26,7 @@ import {
   Offering,
   TransactionQueue,
 } from '~/internal';
+import { StatType } from '~/types/internal';
 import { Modify } from '~/types/utils';
 
 export * from '~/generated/types';
@@ -342,7 +342,7 @@ export type InputStatClaim =
 
 export type InputStatType =
   | {
-      type: StatType.Count | StatType.Percentage;
+      type: StatType.Count | StatType.Balance;
     }
   | {
       type: StatType.ScopedCount | StatType.ScopedPercentage;

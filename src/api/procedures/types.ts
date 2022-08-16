@@ -45,6 +45,7 @@ import {
   TxGroup,
   VenueType,
 } from '~/types';
+import { StatType } from '~/types/internal';
 import { Modify } from '~/types/utils';
 
 export type AddRestrictionParams<T> = Omit<
@@ -91,7 +92,7 @@ export type AddCountStatParams = AddCountStatInput & {
 };
 
 export type AddPercentageStatParams = {
-  type: StatType.Percentage;
+  type: StatType.Balance;
 };
 
 export type AddClaimCountStatParams = ClaimCountStatInput & {
@@ -114,7 +115,7 @@ export type RemoveCountStatParams = {
 };
 
 export type RemoveBalanceStatParams = {
-  type: StatType.Percentage;
+  type: StatType.Balance;
 };
 
 export type RemoveScopedCountParams = StatClaimIssuer & {
@@ -135,28 +136,6 @@ export type SetAssetStatParams<T> = Omit<
     : AddClaimPercentageStatParams,
   'type'
 >;
-
-/**
- * Represents the different type of statistics that can be enabled for an Asset
- */
-export enum StatType {
-  /**
-   * Keeps a count of the total number of investors
-   */
-  Count = 'Count',
-  /**
-   * Keeps track of the amount of supply investors hold
-   */
-  Percentage = 'Percentage',
-  /**
-   * Keeps a count of the total number of investors who have a certain claim
-   */
-  ScopedCount = 'ScopedCount',
-  /**
-   * Keeps track of the amount of supply held between investors who have a certain claim
-   */
-  ScopedPercentage = 'ScopedPercentage',
-}
 
 export enum TransferRestrictionType {
   Count = 'Count',
