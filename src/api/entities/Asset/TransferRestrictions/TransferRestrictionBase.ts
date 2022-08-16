@@ -62,7 +62,7 @@ const restrictionTypeToStatType = {
   [TransferRestrictionType.Count]: StatType.Count,
   [TransferRestrictionType.Percentage]: StatType.Balance,
   [TransferRestrictionType.ClaimCount]: StatType.ScopedCount,
-  [TransferRestrictionType.ClaimPercentage]: StatType.ScopedPercentage,
+  [TransferRestrictionType.ClaimPercentage]: StatType.ScopedBalance,
 };
 
 /**

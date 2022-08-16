@@ -641,7 +641,7 @@ describe('TransferRestrictionBase class', () => {
           {
             args: {
               ticker: asset.ticker,
-              type: StatType.ScopedPercentage,
+              type: StatType.ScopedBalance,
               issuer,
               claimType: ClaimType.Jurisdiction,
             },

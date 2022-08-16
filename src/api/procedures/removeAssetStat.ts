@@ -55,7 +55,7 @@ export async function prepareRemoveAssetStat(
     | [PolymeshPrimitivesIdentityClaimClaimType, PolymeshPrimitivesIdentityId]
     | undefined;
 
-  if (type === StatType.ScopedCount || type === StatType.ScopedPercentage) {
+  if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
     // should be based on if its present or not
     claimIssuer = { issuer: args.issuer, claimType: args.claimType };
     rawClaimIssuer = claimIssuerToMeshClaimIssuer(claimIssuer, context);

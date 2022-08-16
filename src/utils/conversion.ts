@@ -3804,7 +3804,7 @@ export function meshStatToStatisticsOpType(
     if (rawStat.op.type === 'Count') {
       return StatType.ScopedCount;
     } else {
-      return StatType.ScopedPercentage;
+      return StatType.ScopedBalance;
     }
   }
 }
@@ -4012,7 +4012,7 @@ export function inputStatTypeToMeshStatType(
   const { type } = input;
   const op = statTypeToStatOpType(type, context);
   let claimIssuer;
-  if (type === StatType.ScopedCount || type === StatType.ScopedPercentage) {
+  if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
     claimIssuer = claimIssuerToMeshClaimIssuer(input.claimIssuer, context);
   }
   return statisticsOpTypeToStatType({ op, claimIssuer }, context);

@@ -1458,7 +1458,7 @@ describe('compareStatsToInput', () => {
       claimIssuer: [dsMockUtils.createMockClaimType(ClaimType.Affiliate), issuerId],
     });
     args = {
-      type: StatType.ScopedPercentage,
+      type: StatType.ScopedBalance,
       issuer,
       claimType: ClaimType.Affiliate,
       ticker,
@@ -1483,7 +1483,7 @@ describe('compareStatsToInput', () => {
       op: dsMockUtils.createMockStatisticsOpType(StatType.Balance),
     });
     args = {
-      type: StatType.ScopedPercentage,
+      type: StatType.ScopedBalance,
       issuer,
       claimType: ClaimType.Accredited,
       ticker,
@@ -1571,7 +1571,7 @@ describe('compareTransferRestrictionToStat', () => {
     const claimPercentageCondition = dsMockUtils.createMockTransferCondition({
       ClaimOwnership: [rawClaim, rawIssuerId, rawMin, rawMax],
     });
-    result = compareTransferRestrictionToStat(claimPercentageCondition, StatType.ScopedPercentage, {
+    result = compareTransferRestrictionToStat(claimPercentageCondition, StatType.ScopedBalance, {
       claimType: ClaimType.Accredited,
       issuer,
     });
@@ -1601,7 +1601,7 @@ describe('compareTransferRestrictionToStat', () => {
     const claimPercentageCondition = dsMockUtils.createMockTransferCondition({
       ClaimOwnership: [rawClaim, rawIssuerId, rawMin, rawMax],
     });
-    result = compareTransferRestrictionToStat(claimPercentageCondition, StatType.ScopedPercentage, {
+    result = compareTransferRestrictionToStat(claimPercentageCondition, StatType.ScopedBalance, {
       claimType: ClaimType.Accredited,
       issuer: entityMockUtils.getIdentityInstance({ did: 'otherDid' }),
     });

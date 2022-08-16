@@ -360,11 +360,22 @@ export type PermissionGroupIdentifier = PermissionGroupType | { custom: BigNumbe
 
 export type InternalAssetType = KnownAssetType | { Custom: CustomAssetTypeId };
 
+/**
+ * Represents the StatType from the `statistics` module.
+ *
+ * @note the chain doesn't use "Scoped" types, but they are needed here to discriminate the input instead of having an optional input
+ */
 export enum StatType {
   Count = 'Count',
   Balance = 'Balance',
-  ScopedCount = 'ScopedCount', // TODO not a real type
-  ScopedPercentage = 'ScopedPercentage', // TODO not a real type
+  /**
+   * ScopedCount is an SDK only type, on chain it is `Count` with a claimType option present
+   */
+  ScopedCount = 'ScopedCount',
+  /**
+   * ScopedPercentage is an SDK only type, on chain it is `Balance` with a claimType option present
+   */
+  ScopedBalance = 'ScopedBalance',
 }
 
 export interface TickerKey {

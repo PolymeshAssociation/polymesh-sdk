@@ -100,7 +100,7 @@ export type AddClaimCountStatParams = ClaimCountStatInput & {
 };
 
 export type AddClaimPercentageStatParams = StatClaimIssuer & {
-  type: StatType.ScopedPercentage;
+  type: StatType.ScopedBalance;
 };
 
 export type AddAssetStatParams = { ticker: string } & (
@@ -123,7 +123,7 @@ export type RemoveScopedCountParams = StatClaimIssuer & {
 };
 
 export type RemoveScopedBalanceParams = StatClaimIssuer & {
-  type: StatType.ScopedPercentage;
+  type: StatType.ScopedBalance;
 };
 
 export type SetAssetStatParams<T> = Omit<

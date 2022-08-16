@@ -1235,7 +1235,7 @@ export function compareStatsToInput(
   let claimIssuer;
   const { type } = args;
 
-  if (type === StatType.ScopedCount || type === StatType.ScopedPercentage) {
+  if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
     claimIssuer = { issuer: args.issuer, claimType: args.claimType };
   }
 
@@ -1270,7 +1270,7 @@ export function compareStatsToInput(
   } else if (stat === StatType.ScopedCount) {
     cmpStat = StatType.ScopedCount;
   } else {
-    cmpStat = StatType.ScopedPercentage;
+    cmpStat = StatType.ScopedBalance;
   }
 
   return cmpStat === type;

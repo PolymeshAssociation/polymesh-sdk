@@ -345,7 +345,7 @@ export type InputStatType =
       type: StatType.Count | StatType.Balance;
     }
   | {
-      type: StatType.ScopedCount | StatType.ScopedPercentage;
+      type: StatType.ScopedCount | StatType.ScopedBalance;
       claimIssuer: StatClaimIssuer;
     };
 

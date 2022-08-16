@@ -8327,7 +8327,7 @@ describe('inputStatTypeToMeshStatType', () => {
     expect(result).toEqual(fakeStatistic);
 
     const scopedInput = {
-      type: StatType.ScopedPercentage,
+      type: StatType.ScopedBalance,
       claimIssuer: {
         issuer: entityMockUtils.getIdentityInstance({ did }),
         claimType: ClaimType.Accredited,
