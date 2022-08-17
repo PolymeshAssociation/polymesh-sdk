@@ -93,7 +93,7 @@ import {
   Signer as PolkadotSigner,
 } from '@polkadot/types/types';
 import { hexToU8a, stringToU8a } from '@polkadot/util';
-import { SigningManager } from '@polymathnetwork/signing-manager-types';
+import { SigningManager } from '@polymeshassociation/signing-manager-types';
 import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient from 'apollo-client';
 import BigNumber from 'bignumber.js';
