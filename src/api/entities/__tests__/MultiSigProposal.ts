@@ -49,8 +49,8 @@ describe('MultiSigProposal class', () => {
     it('should return the details of the MultiSigProposal', async () => {
       dsMockUtils.createQueryStub('multiSig', 'proposalDetail', {
         returnValue: dsMockUtils.createMockProposalDetails({
-          approvals: '1',
-          rejections: '1',
+          approvals: new BigNumber(1),
+          rejections: new BigNumber(1),
           status: ProposalStatus.ActiveOrExpired,
           autoClose: true,
           expiry: createMockOption(createMockMoment()),
@@ -59,7 +59,7 @@ describe('MultiSigProposal class', () => {
 
       dsMockUtils.createQueryStub('multiSig', 'proposals', {
         returnValue: createMockOption(
-          dsMockUtils.createMockProposalData({
+          dsMockUtils.createMockCall({
             args: ['ABC'],
             method: 'reserveTicker',
             section: 'asset',
@@ -79,8 +79,8 @@ describe('MultiSigProposal class', () => {
 
       dsMockUtils.createQueryStub('multiSig', 'proposalDetail', {
         returnValue: dsMockUtils.createMockProposalDetails({
-          approvals: '1',
-          rejections: '1',
+          approvals: new BigNumber(1),
+          rejections: new BigNumber(1),
           status: ProposalStatus.ActiveOrExpired,
           autoClose: true,
           expiry: null,
@@ -98,20 +98,38 @@ describe('MultiSigProposal class', () => {
     it('should throw if it receives an unexpected proposal status', () => {
       dsMockUtils.createQueryStub('multiSig', 'proposals', {
         returnValue: createMockOption(
-          dsMockUtils.createMockProposalData({
+          dsMockUtils.createMockCall({
             args: ['ABC'],
             method: 'reserveTicker',
             section: 'asset',
           })
         ),
       });
+
+      dsMockUtils.createQueryStub('multiSig', 'proposalDetail', {
+        returnValue: dsMockUtils.createMockProposalDetails({
+          approvals: dsMockUtils.createMockU64(new BigNumber(1)),
+          rejections: dsMockUtils.createMockU64(new BigNumber(1)),
+          status: dsMockUtils.createMockProposalStatus('unknownStatus' as ProposalStatus),
+          expiry: dsMockUtils.createMockOption(),
+          autoClose: dsMockUtils.createMockBool(true),
+        }),
+      });
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.UnexpectedError,
+        message:
+          'Unexpected MultiSigProposal status. Try upgrading the SDK to the latest version. Contact the Polymesh team if the problem persists',
+      });
+
+      return expect(proposal.details()).rejects.toThrowError(expectedError);
     });
   });
 
   describe('method: exists', () => {
     it('should return true if the MultiSigProposal is present on chain', async () => {
       dsMockUtils.createQueryStub('multiSig', 'proposals', {
-        returnValue: dsMockUtils.createMockProposalData({
+        returnValue: dsMockUtils.createMockCall({
           args: [],
           method: 'Asset',
           section: 'create',
@@ -124,7 +142,7 @@ describe('MultiSigProposal class', () => {
 
     it('should return false if the MultiSigProposal is not present on chain', async () => {
       dsMockUtils.createQueryStub('multiSig', 'proposals', {
-        returnValue: dsMockUtils.createMockProposalData(),
+        returnValue: dsMockUtils.createMockCall(),
       });
 
       const result = await proposal.exists();

@@ -935,8 +935,15 @@ describe('Account class', () => {
       });
       account = new Account({ address }, context);
 
-      const result = await account.getMultiSig();
+      let result = await account.getMultiSig();
 
+      expect(result).toBeNull();
+
+      dsMockUtils.createQueryStub('identity', 'keyRecords', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
+      result = await account.getMultiSig();
       expect(result).toBeNull();
     });
 

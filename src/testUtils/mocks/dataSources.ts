@@ -151,9 +151,9 @@ import {
   PortfolioValidityResult,
   PosRatio,
   PriceTier,
-  ProposalData,
   ProposalDetails,
   ProposalState,
+  ProposalStatus,
   ProtocolOp,
   RecordDate,
   RecordDateSpec,
@@ -191,7 +191,6 @@ import {
   DistributionWithDetails,
   ExtrinsicData,
   PermissionedAccount,
-  ProposalStatus,
   ProtocolFees,
   ResultSet,
   SignerType,
@@ -2922,6 +2921,21 @@ export const createMockProposalState = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockProposalStatus = (
+  proposalStatus?:
+    | 'Invalid'
+    | 'ActiveOrExpired'
+    | 'ExecutionSuccessful'
+    | 'ExecutionFailed'
+    | 'Rejected'
+): MockCodec<ProposalStatus> => {
+  return createMockEnum(proposalStatus) as MockCodec<ProposalStatus>;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockPip = (pip?: {
   id: u32;
   proposal: Call;
@@ -4209,12 +4223,12 @@ export const createMockAssetTransferCompliance = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockProposalData = (proposalData?: {
+export const createMockCall = (callArgs?: {
   args: unknown[];
   method: string;
   section: string;
-}): ProposalData => {
-  const { args, method, section } = proposalData || {
+}): MockCodec<Call> => {
+  const { args, method, section } = callArgs || {
     args: [],
     method: '',
     section: '',
@@ -4226,23 +4240,23 @@ export const createMockProposalData = (proposalData?: {
       method,
       section,
     },
-    !proposalData
-  ) as MockCodec<ProposalData>;
+    !callArgs
+  ) as MockCodec<Call>;
 };
 
 export const createMockProposalDetails = (proposalDetails?: {
-  approvals: string;
-  rejections: string;
-  status: ProposalStatus;
+  approvals: u64 | Parameters<typeof createMockU64>[0];
+  rejections: u64 | Parameters<typeof createMockU64>[0];
+  status: ProposalStatus | Parameters<typeof createMockProposalStatus>[0];
+  autoClose: bool | Parameters<typeof createMockBool>[0];
   expiry: Option<Moment> | null;
-  autoClose: boolean;
 }): ProposalDetails => {
   const { approvals, rejections, status, autoClose, expiry } = proposalDetails || {
-    approvals: '0',
-    rejections: '0',
-    status: '',
-    autoClose: false,
-    expiry: null,
+    approvals: createMockU64(),
+    rejections: createMockU64(),
+    status: createMockProposalStatus(),
+    autoClose: createMockBool(),
+    expiry: createMockOption(),
   };
   return createMockCodec(
     {

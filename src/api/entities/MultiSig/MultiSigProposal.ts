@@ -90,7 +90,8 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
     if (!isProposalStatus(status))
       throw new PolymeshError({
         code: ErrorCode.FatalError,
-        message: `Unexpected MultiSigProposal status: "${status}". Try upgrading the SDK to the latest version. Contact the Polymesh team if the problem persists`,
+        message:
+          'Unexpected MultiSigProposal status. Try upgrading the SDK to the latest version. Contact the Polymesh team if the problem persists',
       });
     const autoClose = boolToBoolean(rawAutoClose);
 
@@ -100,7 +101,7 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
       status,
       expiry,
       autoClose,
-      args: args.map(a => a.toString()), // TODO is this format good?
+      args: args.map(a => a.toString()),
       txTag: `${section}.${method}` as TxTag,
     };
   }
