@@ -415,10 +415,6 @@ describe('addTransferRestriction procedure', () => {
       claim,
       ticker,
     };
-    result = await prepareAddTransferRestriction.call(proc, {
-      ...args,
-      exemptedIdentities: [entityMockUtils.getIdentityInstance()],
-    });
 
     result = await prepareAddTransferRestriction.call(proc, args);
 

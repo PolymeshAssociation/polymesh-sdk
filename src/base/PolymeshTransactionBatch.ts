@@ -1,5 +1,4 @@
 import { SubmittableExtrinsic } from '@polkadot/api/types';
-import { u32 } from '@polkadot/types';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
@@ -251,7 +250,7 @@ export class PolymeshTransactionBatch<
         data: [, failedData],
       } = failed;
 
-      const failedIndex = u32ToBigNumber(failedData[0] as u32).toNumber();
+      const failedIndex = u32ToBigNumber(failedData[0]).toNumber();
       const dispatchError = failedData[1];
 
       this.handleExtrinsicFailure(resolve, reject, dispatchError, { failedIndex });

@@ -116,12 +116,12 @@ describe('Polymesh Transaction Base class', () => {
         {
           ...txSpec,
           transactions: [{ transaction: underlyingTx, args }],
-          resolver: undefined,
+          resolver: 3,
         },
         context
       );
 
-      tx.run().catch(noop);
+      const runPromise = tx.run().catch(noop);
 
       await fakePromise();
 
@@ -139,6 +139,10 @@ describe('Polymesh Transaction Base class', () => {
       expect(tx.txHash).toBeDefined();
       expect(tx.txIndex).toBeDefined();
       expect(tx.status).toBe(TransactionStatus.Succeeded);
+
+      const result = await runPromise;
+
+      expect(result).toBe(3);
     });
 
     it('should update the transaction status', async () => {
