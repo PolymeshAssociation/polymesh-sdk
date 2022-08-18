@@ -2,12 +2,17 @@ import { AccountId } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import sinon, { SinonStub } from 'sinon';
 
-import { ModifyMultiSigParams, prepareModifyMultiSig } from '~/api/procedures/modifyMultiSig';
-import { Context, PolymeshError } from '~/internal';
+import {
+  getAuthorization,
+  ModifyMultiSigParams,
+  prepareModifyMultiSig,
+  prepareStorage,
+} from '~/api/procedures/modifyMultiSig';
+import { Context, ModifyMultiSigStorage, MultiSig, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { getAccountInstance, getIdentityInstance } from '~/testUtils/mocks/entities';
+import { getAccountInstance, getIdentityInstance, MockMultiSig } from '~/testUtils/mocks/entities';
 import { Mocked } from '~/testUtils/types';
-import { ErrorCode } from '~/types';
+import { ErrorCode, TxTags } from '~/types';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -18,10 +23,15 @@ jest.mock(
 
 describe('modifyMultiSig procedure', () => {
   let mockContext: Mocked<Context>;
-  let addTransactionStub: sinon.SinonStub;
+  let addBatchTransactionStub: sinon.SinonStub;
   let rawAccountId: AccountId;
   let stringToAccountIdStub: SinonStub<[string, Context], AccountId>;
   let signerToSignatoryStub: SinonStub;
+
+  const oldSigner1 = getAccountInstance({ address: 'abc' });
+  const oldSigner2 = getAccountInstance({ address: 'def' });
+  const newSigner1 = getAccountInstance({ address: 'xyz' });
+  const newSigner2 = getAccountInstance({ address: 'jki' });
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -39,8 +49,13 @@ describe('modifyMultiSig procedure', () => {
     });
     rawAccountId = dsMockUtils.createMockAccountId(DUMMY_ACCOUNT_ID);
     mockContext = dsMockUtils.getContextInstance();
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
+    addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
     stringToAccountIdStub.withArgs(DUMMY_ACCOUNT_ID, mockContext).returns(rawAccountId);
+
+    signerToSignatoryStub.withArgs(oldSigner1, mockContext).returns('oldOne');
+    signerToSignatoryStub.withArgs(oldSigner2, mockContext).returns('oldTwo');
+    signerToSignatoryStub.withArgs(newSigner1, mockContext).returns('newOne');
+    signerToSignatoryStub.withArgs(newSigner2, mockContext).returns('newTwo');
   });
 
   afterEach(() => {
@@ -67,7 +82,14 @@ describe('modifyMultiSig procedure', () => {
       signers,
     };
 
-    const proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void, ModifyMultiSigStorage>(
+      mockContext,
+      {
+        signersToAdd: [],
+        signersToRemove: [],
+        requiredSignatures: new BigNumber(2),
+      }
+    );
 
     const expectedError = new PolymeshError({
       code: ErrorCode.ValidationError,
@@ -85,7 +107,14 @@ describe('modifyMultiSig procedure', () => {
       signers: [getAccountInstance()],
     };
 
-    const proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void, ModifyMultiSigStorage>(
+      mockContext,
+      {
+        signersToAdd: [newSigner1],
+        signersToRemove: [],
+        requiredSignatures: new BigNumber(1),
+      }
+    );
 
     const expectedError = new PolymeshError({
       code: ErrorCode.ValidationError,
@@ -99,36 +128,27 @@ describe('modifyMultiSig procedure', () => {
     const args = {
       multiSig: entityMockUtils.getMultiSigInstance({
         getCreator: getIdentityInstance(),
-        details: {
-          signers: [getAccountInstance(), getAccountInstance()],
-          requiredSignatures: new BigNumber(2),
-        },
       }),
-      signers: [getAccountInstance()],
+      signers: [newSigner1],
     };
 
-    const proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void, ModifyMultiSigStorage>(
+      mockContext,
+      { signersToAdd: [newSigner1], signersToRemove: [], requiredSignatures: new BigNumber(3) }
+    );
 
     const expectedError = new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'The number of signatures required should not exceed the number of signers',
+      message: 'The number of required signatures should not exceed the number of signers',
     });
 
     return expect(prepareModifyMultiSig.call(proc, args)).rejects.toThrowError(expectedError);
   });
 
   it('should add update and remove signer transactions to the queue', async () => {
-    const oldSigner1 = getAccountInstance({ address: 'abc' });
-    const oldSigner2 = getAccountInstance({ address: 'def' });
-    const newSigner1 = getAccountInstance({ address: 'xyz' });
-    const newSigner2 = getAccountInstance({ address: 'jki' });
     const multiSig = entityMockUtils.getMultiSigInstance({
       address: DUMMY_ACCOUNT_ID,
       getCreator: getIdentityInstance(),
-      details: {
-        signers: [oldSigner1, oldSigner2],
-        requiredSignatures: new BigNumber(2),
-      },
     });
 
     const args = {
@@ -142,38 +162,35 @@ describe('modifyMultiSig procedure', () => {
       'removeMultisigSignersViaCreator'
     );
 
-    signerToSignatoryStub.withArgs(oldSigner1, mockContext).returns('oldOne');
-    signerToSignatoryStub.withArgs(oldSigner2, mockContext).returns('oldTwo');
-    signerToSignatoryStub.withArgs(newSigner1, mockContext).returns('newOne');
-    signerToSignatoryStub.withArgs(newSigner2, mockContext).returns('newTwo');
+    const proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void, ModifyMultiSigStorage>(
+      mockContext,
+      {
+        signersToAdd: [newSigner1, newSigner2],
+        signersToRemove: [oldSigner1, oldSigner2],
+        requiredSignatures: new BigNumber(2),
+      }
+    );
 
-    const proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void>(mockContext);
+    await prepareModifyMultiSig.call(proc, args);
 
-    await expect(prepareModifyMultiSig.call(proc, args)).resolves.not.toThrow();
-
-    sinon.assert.calledWith(addTransactionStub, {
-      transaction: addTransaction,
-      args: [rawAccountId, ['newOne', 'newTwo']],
-    });
-
-    sinon.assert.calledWith(addTransactionStub, {
-      transaction: removeTransaction,
-      args: [rawAccountId, ['oldOne', 'oldTwo']],
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: [
+        {
+          transaction: addTransaction,
+          args: [rawAccountId, ['newOne', 'newTwo']],
+        },
+        {
+          transaction: removeTransaction,
+          args: [rawAccountId, ['oldOne', 'oldTwo']],
+        },
+      ],
     });
   });
 
   it('should only add an add signers transaction if no signers are to be removed', async () => {
-    const oldSigner1 = getAccountInstance({ address: 'abc' });
-    const oldSigner2 = getAccountInstance({ address: 'def' });
-    const newSigner1 = getAccountInstance({ address: 'xyz' });
-    const newSigner2 = getAccountInstance({ address: 'jki' });
     const multiSig = entityMockUtils.getMultiSigInstance({
       address: DUMMY_ACCOUNT_ID,
       getCreator: getIdentityInstance(),
-      details: {
-        signers: [oldSigner1, oldSigner2],
-        requiredSignatures: new BigNumber(2),
-      },
     });
 
     const args = {
@@ -183,33 +200,36 @@ describe('modifyMultiSig procedure', () => {
 
     const addTransaction = dsMockUtils.createTxStub('multiSig', 'addMultisigSignersViaCreator');
 
-    signerToSignatoryStub.withArgs(oldSigner1, mockContext).returns('oldOne');
-    signerToSignatoryStub.withArgs(oldSigner2, mockContext).returns('oldTwo');
     signerToSignatoryStub.withArgs(newSigner1, mockContext).returns('newOne');
     signerToSignatoryStub.withArgs(newSigner2, mockContext).returns('newTwo');
 
-    const proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void, ModifyMultiSigStorage>(
+      mockContext,
+      {
+        signersToAdd: [newSigner1, newSigner2],
+        signersToRemove: [],
+        requiredSignatures: new BigNumber(2),
+      }
+    );
 
     await expect(prepareModifyMultiSig.call(proc, args)).resolves.not.toThrow();
 
-    sinon.assert.calledWith(addTransactionStub, {
-      transaction: addTransaction,
-      args: [rawAccountId, ['newOne', 'newTwo']],
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: [
+        {
+          transaction: addTransaction,
+          args: [rawAccountId, ['newOne', 'newTwo']],
+        },
+      ],
     });
 
-    sinon.assert.calledOnce(addTransactionStub);
+    sinon.assert.calledOnce(addBatchTransactionStub);
   });
 
-  it('should only add a remove transaction to the queue if there are no signers to remove', async () => {
-    const oldSigner1 = getAccountInstance({ address: 'abc' });
-    const oldSigner2 = getAccountInstance({ address: 'def' });
+  it('should add only a remove transaction to the queue if there are no signers to add', async () => {
     const multiSig = entityMockUtils.getMultiSigInstance({
       address: DUMMY_ACCOUNT_ID,
       getCreator: getIdentityInstance(),
-      details: {
-        signers: [oldSigner1, oldSigner2],
-        requiredSignatures: new BigNumber(1),
-      },
     });
 
     const args = {
@@ -222,17 +242,94 @@ describe('modifyMultiSig procedure', () => {
       'removeMultisigSignersViaCreator'
     );
 
-    signerToSignatoryStub.withArgs(oldSigner1, mockContext).returns('oldOne');
-    signerToSignatoryStub.withArgs(oldSigner2, mockContext).returns('oldTwo');
-
-    const proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void>(mockContext);
+    const proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void, ModifyMultiSigStorage>(
+      mockContext,
+      {
+        signersToAdd: [],
+        signersToRemove: [oldSigner2],
+        requiredSignatures: new BigNumber(1),
+      }
+    );
 
     await expect(prepareModifyMultiSig.call(proc, args)).resolves.not.toThrow();
 
-    sinon.assert.calledWith(addTransactionStub, {
-      transaction: removeTransaction,
-      args: [rawAccountId, ['oldTwo']],
+    sinon.assert.calledWith(addBatchTransactionStub, {
+      transactions: [{ transaction: removeTransaction, args: [rawAccountId, ['oldTwo']] }],
     });
-    sinon.assert.calledOnce(addTransactionStub);
+    sinon.assert.calledOnce(addBatchTransactionStub);
+  });
+
+  describe('getAuthorization', () => {
+    it('should return the appropriate roles and permissions', () => {
+      let proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void, ModifyMultiSigStorage>(
+        mockContext,
+        {
+          signersToAdd: [newSigner1],
+          signersToRemove: [],
+          requiredSignatures: new BigNumber(1),
+        }
+      );
+
+      let boundFunc = getAuthorization.bind(proc);
+
+      let result = boundFunc();
+      expect(result).toEqual({
+        permissions: {
+          transactions: [TxTags.multiSig.AddMultisigSignersViaCreator],
+          assets: undefined,
+          portfolios: undefined,
+        },
+      });
+
+      proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void, ModifyMultiSigStorage>(
+        mockContext,
+        {
+          signersToAdd: [],
+          signersToRemove: [oldSigner1],
+          requiredSignatures: new BigNumber(1),
+        }
+      );
+
+      boundFunc = getAuthorization.bind(proc);
+
+      result = boundFunc();
+
+      expect(result).toEqual({
+        permissions: {
+          transactions: [TxTags.multiSig.RemoveMultisigSignersViaCreator],
+          assets: undefined,
+          portfolios: undefined,
+        },
+      });
+    });
+  });
+
+  describe('prepareStorage', () => {
+    it('should return the relevant data', async () => {
+      const multiSig = new MultiSig({ address: 'abc' }, mockContext) as MockMultiSig;
+      multiSig.details.returns({
+        signers: [oldSigner1, oldSigner2],
+        requiredSignatures: new BigNumber(3),
+      });
+
+      const proc = procedureMockUtils.getInstance<
+        ModifyMultiSigParams,
+        void,
+        ModifyMultiSigStorage
+      >(mockContext, {
+        signersToAdd: [],
+        signersToRemove: [],
+        requiredSignatures: new BigNumber(3),
+      });
+
+      const boundFunc = prepareStorage.bind(proc);
+
+      const result = await boundFunc({ signers: [newSigner1, newSigner2], multiSig });
+      expect(result).toEqual({
+        signersToRemove: [oldSigner1, oldSigner2],
+        signersToAdd: [newSigner1, newSigner2],
+        requiredSignatures: new BigNumber(3),
+      });
+    });
   });
 });

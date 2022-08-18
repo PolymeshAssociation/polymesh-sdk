@@ -2,7 +2,14 @@ import BigNumber from 'bignumber.js';
 
 import { UniqueIdentifiers } from '~/api/entities/Account';
 import { MultiSigProposal } from '~/api/entities/MultiSig/MultiSigProposal';
-import { Account, Context, Identity, modifyMultiSigAccount, PolymeshError } from '~/internal';
+import {
+  Account,
+  Context,
+  Identity,
+  modifyMultiSigAccount,
+  ModifyMultiSigParams,
+  PolymeshError,
+} from '~/internal';
 import { ErrorCode, ProcedureMethod, Signer } from '~/types';
 import {
   addressToKey,
@@ -136,5 +143,8 @@ export class MultiSig extends Account {
     });
   }
 
-  public modify: ProcedureMethod<{ signers: Signer[] }, void>;
+  /**
+   * Modify the signers for the MultiSig. The signing Account must belong to the Identity of the creator of the MultiSig
+   */
+  public modify: ProcedureMethod<Pick<ModifyMultiSigParams, 'signers'>, void>;
 }

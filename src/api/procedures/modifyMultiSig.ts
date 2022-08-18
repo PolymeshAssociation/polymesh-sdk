@@ -1,50 +1,74 @@
+import BigNumber from 'bignumber.js';
+
 import { PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, MultiSig, Signer, TxTags } from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
 import { signerToSignatory, signerToString, stringToAccountId } from '~/utils/conversion';
+import { checkTxType } from '~/utils/internal';
 
 /**
  * @hidden
  */
 export interface ModifyMultiSigParams {
+  /**
+   * The MultiSig to be modified
+   */
   multiSig: MultiSig;
+  /**
+   * The signers to set for the MultiSig
+   */
   signers: Signer[];
+}
+
+export interface Storage {
+  signersToAdd: Signer[];
+  signersToRemove: Signer[];
+  requiredSignatures: BigNumber;
 }
 
 /**
  * @hidden
  */
-function calculateSignerDelta(current: Signer[], target: Signer[]): [Signer[], Signer[]] {
+function calculateSignerDelta(
+  current: Signer[],
+  target: Signer[]
+): Pick<Storage, 'signersToAdd' | 'signersToRemove'> {
   const currentSet = new Set(current.map(signerToString));
   const targetSet = new Set(target.map(signerToString));
 
   const newSigners = new Set([...target].filter(s => !currentSet.has(signerToString(s))));
   const removedSigners = new Set([...current].filter(s => !targetSet.has(signerToString(s))));
 
-  return [Array.from(newSigners), Array.from(removedSigners)];
+  return { signersToAdd: Array.from(newSigners), signersToRemove: Array.from(removedSigners) };
 }
 
 /**
  * @hidden
  */
 export async function prepareModifyMultiSig(
-  this: Procedure<ModifyMultiSigParams, void>,
+  this: Procedure<ModifyMultiSigParams, void, Storage>,
   args: ModifyMultiSigParams
 ): Promise<void> {
-  // adds or removes signers and can change number of signatures required.
-  // Should also provide a "as owner flag" to allow for a user to "override" other signatures
   const {
     context: {
       polymeshApi: { tx },
     },
+    storage: { signersToAdd, signersToRemove, requiredSignatures },
     context,
   } = this;
   const { signers, multiSig: multi } = args;
 
-  // ensure calling account is creator, other actions require a proposal from the multisig
   const [signingIdentity, creator] = await Promise.all([
     context.getSigningIdentity(),
-    await multi.getCreator(),
+    multi.getCreator(),
   ]);
+
+  if (signersToAdd.length === 0 && signersToRemove.length === 0) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'The given signers are equal to the current signers',
+    });
+  }
 
   if (!creator.isEqual(signingIdentity)) {
     throw new PolymeshError({
@@ -54,50 +78,77 @@ export async function prepareModifyMultiSig(
   }
 
   const rawAddress = stringToAccountId(multi.address, context);
-  const { signers: currentSigners, requiredSignatures } = await multi.details();
 
   if (requiredSignatures.gt(signers.length)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'The number of signatures required should not exceed the number of signers',
+      message: 'The number of required signatures should not exceed the number of signers',
     });
   }
 
-  const [addedSigners, removedSigners] = calculateSignerDelta(currentSigners, signers);
+  const transactions = [];
 
-  if (addedSigners.length === 0 && removedSigners.length === 0) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'The given signers are equal to the current signers',
-    });
+  if (signersToAdd.length > 0) {
+    const rawAddedSigners = signersToAdd.map(s => signerToSignatory(s, context));
+    transactions.push(
+      checkTxType({
+        transaction: tx.multiSig.addMultisigSignersViaCreator,
+        args: [rawAddress, rawAddedSigners],
+      })
+    );
   }
 
-  if (addedSigners.length > 0) {
-    const rawAddedSigners = addedSigners.map(s => signerToSignatory(s, context));
-    this.addTransaction({
-      transaction: tx.multiSig.addMultisigSignersViaCreator,
-      args: [rawAddress, rawAddedSigners],
-    });
+  if (signersToRemove.length > 0) {
+    const rawRemovedSigners = signersToRemove.map(s => signerToSignatory(s, context));
+    transactions.push(
+      checkTxType({
+        transaction: tx.multiSig.removeMultisigSignersViaCreator,
+        args: [rawAddress, rawRemovedSigners],
+      })
+    );
   }
 
-  if (removedSigners.length > 0) {
-    const rawRemovedSigners = removedSigners.map(s => signerToSignatory(s, context));
-    this.addTransaction({
-      transaction: tx.multiSig.removeMultisigSignersViaCreator,
-      args: [rawAddress, rawRemovedSigners],
-    });
-  }
+  this.addBatchTransaction({ transactions });
 }
 
 /**
  * @hidden
  */
-export const modifyMultiSigAccount = (): Procedure<ModifyMultiSigParams, void> =>
-  new Procedure(prepareModifyMultiSig, {
+export function getAuthorization(
+  this: Procedure<ModifyMultiSigParams, void, Storage>
+): ProcedureAuthorization {
+  const {
+    storage: { signersToAdd, signersToRemove },
+  } = this;
+  const transactions = [];
+  if (signersToAdd.length > 0) {
+    transactions.push(TxTags.multiSig.AddMultisigSignersViaCreator);
+  }
+
+  if (signersToRemove.length > 0) {
+    transactions.push(TxTags.multiSig.RemoveMultisigSignersViaCreator);
+  }
+
+  return {
     permissions: {
-      transactions: [
-        TxTags.multiSig.AddMultisigSignersViaCreator,
-        TxTags.multiSig.RemoveMultisigSignersViaCreator,
-      ],
+      transactions,
     },
-  });
+  };
+}
+
+/**
+ * @hidden
+ */
+export async function prepareStorage(
+  this: Procedure<ModifyMultiSigParams, void, Storage>,
+  { signers, multiSig }: ModifyMultiSigParams
+): Promise<Storage> {
+  const { signers: currentSigners, requiredSignatures } = await multiSig.details();
+  return { ...calculateSignerDelta(currentSigners, signers), requiredSignatures };
+}
+
+/**
+ * @hidden
+ */
+export const modifyMultiSig = (): Procedure<ModifyMultiSigParams, void, Storage> =>
+  new Procedure(prepareModifyMultiSig, getAuthorization, prepareStorage);

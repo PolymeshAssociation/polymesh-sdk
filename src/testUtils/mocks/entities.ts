@@ -1492,7 +1492,7 @@ const MockMultiSigClass = createMockEntityClass<MultiSigOptions>(
      * @hidden
      */
     public configure(opts: Required<MultiSigOptions>) {
-      this.uuid = 'account';
+      this.uuid = 'multiSig';
       this.address = opts.address;
       this.key = opts.key;
       this.isFrozen = createEntityGetterStub(opts.isFrozen);
@@ -1526,7 +1526,7 @@ const MockMultiSigClass = createMockEntityClass<MultiSigOptions>(
     },
     getCreator: getIdentityInstance(),
   }),
-  ['MultiSig']
+  ['Account', 'MultiSig']
 );
 
 const MockMultiSigProposalClass = createMockEntityClass<MultiSigProposalOptions>(
