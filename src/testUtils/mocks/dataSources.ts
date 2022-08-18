@@ -2438,29 +2438,6 @@ export const createMockPermissions = (permissions?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockRpcPermissions = (permissions?: {
-  asset: AssetPermissions;
-  extrinsic: ExtrinsicPermissions;
-  portfolio: PortfolioPermissions;
-}): MockCodec<Permissions> => {
-  const perms = permissions || {
-    asset: createMockAssetPermissions(),
-    extrinsic: createMockExtrinsicPermissions(),
-    portfolio: createMockPortfolioPermissions(),
-  };
-
-  return createMockCodec(
-    {
-      ...perms,
-    },
-    !permissions
-  );
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
 export const createMockAuthorizationData = (
   authorizationData?:
     | { AttestPrimaryKeyRotation: PolymeshPrimitivesIdentityId }
