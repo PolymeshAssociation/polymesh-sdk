@@ -12,8 +12,8 @@ import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/MultiSig',
-  require('~/testUtils/mocks/entities').mockMultiSigModule('~/api/entities/MultiSig')
+  '~/api/entities/MultiSig/MultiSig',
+  require('~/testUtils/mocks/entities').mockMultiSigModule('~/api/entities/MultiSig/MultiSig')
 );
 
 describe('modifyMultiSig procedure', () => {
@@ -61,7 +61,7 @@ describe('modifyMultiSig procedure', () => {
       multiSig: entityMockUtils.getMultiSigInstance({
         details: {
           signers,
-          signaturesRequired: new BigNumber(1),
+          requiredSignatures: new BigNumber(1),
         },
       }),
       signers,
@@ -101,7 +101,7 @@ describe('modifyMultiSig procedure', () => {
         getCreator: getIdentityInstance(),
         details: {
           signers: [getAccountInstance(), getAccountInstance()],
-          signaturesRequired: new BigNumber(2),
+          requiredSignatures: new BigNumber(2),
         },
       }),
       signers: [getAccountInstance()],
@@ -127,7 +127,7 @@ describe('modifyMultiSig procedure', () => {
       getCreator: getIdentityInstance(),
       details: {
         signers: [oldSigner1, oldSigner2],
-        signaturesRequired: new BigNumber(2),
+        requiredSignatures: new BigNumber(2),
       },
     });
 
@@ -172,7 +172,7 @@ describe('modifyMultiSig procedure', () => {
       getCreator: getIdentityInstance(),
       details: {
         signers: [oldSigner1, oldSigner2],
-        signaturesRequired: new BigNumber(2),
+        requiredSignatures: new BigNumber(2),
       },
     });
 
@@ -208,7 +208,7 @@ describe('modifyMultiSig procedure', () => {
       getCreator: getIdentityInstance(),
       details: {
         signers: [oldSigner1, oldSigner2],
-        signaturesRequired: new BigNumber(1),
+        requiredSignatures: new BigNumber(1),
       },
     });
 

@@ -2,15 +2,11 @@ import BigNumber from 'bignumber.js';
 import { Memo } from 'polymesh-types/polymesh';
 import sinon from 'sinon';
 
-import {
-  getAuthorization,
-  prepareTransferPolyx,
-  TransferPolyxParams,
-} from '~/api/procedures/transferPolyx';
+import { getAuthorization, prepareTransferPolyx } from '~/api/procedures/transferPolyx';
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { TxTags } from '~/types';
+import { TransferPolyxParams, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -50,7 +46,7 @@ describe('transferPolyx procedure', () => {
   });
 
   it('should throw an error if the user has insufficient balance to transfer', () => {
-    dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', { returnValue: {} });
+    dsMockUtils.createQueryStub('identity', 'didRecords', { returnValue: {} });
 
     const proc = procedureMockUtils.getInstance<TransferPolyxParams, void>(mockContext);
 
@@ -78,7 +74,7 @@ describe('transferPolyx procedure', () => {
 
   it("should throw an error if sender Identity doesn't have valid CDD", () => {
     dsMockUtils
-      .createQueryStub('identity', 'keyToIdentityIds')
+      .createQueryStub('identity', 'didRecords')
       .returns(dsMockUtils.createMockIdentityId('signingIdentityId'));
 
     mockContext = dsMockUtils.getContextInstance({
@@ -94,7 +90,7 @@ describe('transferPolyx procedure', () => {
 
   it("should throw an error if destination Account doesn't have valid CDD", () => {
     dsMockUtils
-      .createQueryStub('identity', 'keyToIdentityIds')
+      .createQueryStub('identity', 'didRecords')
       .returns(dsMockUtils.createMockIdentityId('signingIdentityId'));
 
     entityMockUtils.configureMocks({
@@ -121,7 +117,7 @@ describe('transferPolyx procedure', () => {
     const rawMemo = 'memo' as unknown as Memo;
 
     dsMockUtils
-      .createQueryStub('identity', 'keyToIdentityIds')
+      .createQueryStub('identity', 'didRecords')
       .returns(dsMockUtils.createMockIdentityId('signingIdentityId'));
 
     sinon.stub(utilsConversionModule, 'stringToAccountId').returns(rawAccount);

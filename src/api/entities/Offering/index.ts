@@ -1,6 +1,6 @@
-import { Option } from '@polkadot/types';
+import { Bytes, Option } from '@polkadot/types';
+import { PalletStoFundraiser } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { Fundraiser, FundraiserName } from 'polymesh-types/types';
 
 import {
   Asset,
@@ -9,21 +9,23 @@ import {
   Entity,
   Identity,
   investInOffering,
-  InvestInOfferingParams,
-  modifyStoTimes,
-  ModifyStoTimesParams,
+  modifyOfferingTimes,
   toggleFreezeOffering,
 } from '~/internal';
 import { investments } from '~/middleware/queries';
+import { investmentsQuery } from '~/middleware/queriesV2';
 import { Query } from '~/middleware/types';
+import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
+  InvestInOfferingParams,
+  ModifyOfferingTimesParams,
   NoArgsProcedureMethod,
   ProcedureMethod,
   ResultSet,
   SubCallback,
   UnsubCallback,
 } from '~/types';
-import { Ensured } from '~/types/utils';
+import { Ensured, EnsuredV2 } from '~/types/utils';
 import { bigNumberToU64, fundraiserToOfferingDetails, stringToTicker } from '~/utils/conversion';
 import { calculateNextKey, createProcedureMethod, toHumanReadable } from '~/utils/internal';
 
@@ -34,7 +36,7 @@ export interface UniqueIdentifiers {
   ticker: string;
 }
 
-interface HumanReadable {
+export interface HumanReadable {
   id: string;
   ticker: string;
 }
@@ -93,7 +95,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
       context
     );
     this.modifyTimes = createProcedureMethod(
-      { getProcedureAndArgs: args => [modifyStoTimes, { ticker, id, ...args }] },
+      { getProcedureAndArgs: args => [modifyOfferingTimes, { ticker, id, ...args }] },
       context
     );
     this.invest = createProcedureMethod(
@@ -126,14 +128,14 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
     } = this;
 
     const assembleResult = (
-      rawFundraiser: Option<Fundraiser>,
-      rawName: FundraiserName
+      rawFundraiser: Option<PalletStoFundraiser>,
+      rawName: Bytes
     ): OfferingDetails => fundraiserToOfferingDetails(rawFundraiser.unwrap(), rawName, context);
 
     const rawTicker = stringToTicker(ticker, context);
     const rawU64 = bigNumberToU64(id, context);
 
-    const fetchName = (): Promise<FundraiserName> => sto.fundraiserNames(rawTicker, rawU64);
+    const fetchName = (): Promise<Bytes> => sto.fundraiserNames(rawTicker, rawU64);
 
     if (callback) {
       const fundraiserName = await fetchName();
@@ -171,7 +173,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
    *   - Trying to modify anything on an Offering that already ended
    *   - Trying to change start or end time to a past date
    */
-  public modifyTimes: ProcedureMethod<ModifyStoTimesParams, void>;
+  public modifyTimes: ProcedureMethod<ModifyOfferingTimesParams, void>;
 
   /**
    * Invest in the Offering
@@ -246,6 +248,61 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
   }
 
   /**
+   * Retrieve all investments made on this Offering
+   *
+   * @param opts.size - page size
+   * @param opts.start - page offset
+   *
+   * @note supports pagination
+   * @note uses the middleware V2
+   */
+  public async getInvestmentsV2(
+    opts: {
+      size?: BigNumber;
+      start?: BigNumber;
+    } = {}
+  ): Promise<ResultSet<Investment>> {
+    const {
+      context,
+      id,
+      asset: { ticker },
+    } = this;
+
+    const { size, start } = opts;
+
+    const {
+      data: {
+        investments: { nodes, totalCount },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'investments'>>(
+      investmentsQuery(
+        {
+          stoId: id.toNumber(),
+          offeringToken: ticker,
+        },
+        size,
+        start
+      )
+    );
+
+    const count = new BigNumber(totalCount);
+
+    const data = nodes.map(({ investorId: did, offeringTokenAmount, raiseTokenAmount }) => ({
+      investor: new Identity({ did }, context),
+      soldAmount: new BigNumber(offeringTokenAmount).shiftedBy(-6),
+      investedAmount: new BigNumber(raiseTokenAmount).shiftedBy(-6),
+    }));
+
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
+  }
+
+  /**
    * Determine whether this Offering exists on chain
    */
   public async exists(): Promise<boolean> {
@@ -266,7 +323,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
   /**
    * Return the Offering's ID and Asset ticker
    */
-  public toJson(): HumanReadable {
+  public toHuman(): HumanReadable {
     const { asset, id } = this;
 
     return toHumanReadable({

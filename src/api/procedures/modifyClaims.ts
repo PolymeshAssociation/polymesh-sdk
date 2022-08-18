@@ -1,13 +1,24 @@
 import { Moment } from '@polkadot/types/interfaces';
+import { PolymeshPrimitivesIdentityId } from '@polkadot/types/lookup';
 import P from 'bluebird';
 import { cloneDeep, isEqual, uniq } from 'lodash';
-import { Claim as MeshClaim, IdentityId } from 'polymesh-types/types';
 
 import { Context, Identity, PolymeshError, Procedure } from '~/internal';
 import { didsWithClaims } from '~/middleware/queries';
 import { Claim as MiddlewareClaim, Query } from '~/middleware/types';
-import { CddClaim, Claim, ClaimTarget, ClaimType, ErrorCode, RoleType, TxTags } from '~/types';
-import { ClaimOperation, ProcedureAuthorization } from '~/types/internal';
+import { Claim as MeshClaim } from '~/polkadot/polymesh';
+import {
+  CddClaim,
+  Claim,
+  ClaimOperation,
+  ClaimTarget,
+  ClaimType,
+  ErrorCode,
+  ModifyClaimsParams,
+  RoleType,
+  TxTags,
+} from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
 import { Ensured, tuple } from '~/types/utils';
 import { DEFAULT_CDD_ID } from '~/utils/constants';
 import {
@@ -22,32 +33,6 @@ import {
 } from '~/utils/conversion';
 import { asIdentity, assembleBatchTransactions } from '~/utils/internal';
 import { isInvestorUniquenessClaim, isScopedClaim } from '~/utils/typeguards';
-
-interface AddClaimsParams {
-  /**
-   * array of claims to be added
-   */
-  claims: ClaimTarget[];
-  operation: ClaimOperation.Add;
-}
-
-interface EditClaimsParams {
-  /**
-   * array of claims to be edited
-   */
-  claims: ClaimTarget[];
-  operation: ClaimOperation.Edit;
-}
-
-interface RevokeClaimsParams {
-  /**
-   * array of claims to be revoked
-   */
-  claims: Omit<ClaimTarget, 'expiry'>[];
-  operation: ClaimOperation.Revoke;
-}
-
-export type ModifyClaimsParams = AddClaimsParams | EditClaimsParams | RevokeClaimsParams;
 
 const areSameClaims = (claim: Claim, { scope, type }: MiddlewareClaim): boolean => {
   let isSameScope = true;
@@ -164,7 +149,7 @@ export async function prepareModifyClaims(
     context,
   } = this;
 
-  const modifyClaimArgs: [IdentityId, MeshClaim, Moment | null][] = [];
+  const modifyClaimArgs: [PolymeshPrimitivesIdentityId, MeshClaim, Moment | null][] = [];
   let allTargets: string[] = [];
 
   claims.forEach(({ target, expiry, claim }: ClaimTarget) => {

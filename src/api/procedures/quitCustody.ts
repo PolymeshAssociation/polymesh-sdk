@@ -1,7 +1,7 @@
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import { DefaultPortfolio, NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, RoleType, TxTags } from '~/types';
-import { PortfolioId, ProcedureAuthorization } from '~/types/internal';
+import { ErrorCode, PortfolioId, RoleType, TxTags } from '~/types';
+import { ProcedureAuthorization } from '~/types/internal';
 import { portfolioIdToMeshPortfolioId, portfolioLikeToPortfolioId } from '~/utils/conversion';
 
 /**

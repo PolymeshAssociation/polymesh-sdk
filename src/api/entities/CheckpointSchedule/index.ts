@@ -17,12 +17,12 @@ export interface UniqueIdentifiers {
   ticker: string;
 }
 
-interface CalendarPeriodHumanReadable {
+export interface CalendarPeriodHumanReadable {
   unit: CalendarUnit;
   amount: string;
 }
 
-interface HumanReadable {
+export interface HumanReadable {
   id: string;
   ticker: string;
   period: CalendarPeriodHumanReadable | null;
@@ -208,7 +208,7 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
   /**
    * Return the Schedule's static data
    */
-  public toJson(): HumanReadable {
+  public toHuman(): HumanReadable {
     const { asset, id, expiryDate, complexity, start, period } = this;
 
     return toHumanReadable({

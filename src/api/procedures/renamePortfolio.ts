@@ -1,14 +1,10 @@
 import BigNumber from 'bignumber.js';
 
 import { NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, RoleType, TxTags } from '~/types';
+import { ErrorCode, RenamePortfolioParams, RoleType, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
-import { bigNumberToU64, stringToIdentityId, stringToText } from '~/utils/conversion';
-import { getPortfolioIdByName } from '~/utils/internal';
-
-export interface RenamePortfolioParams {
-  name: string;
-}
+import { bigNumberToU64, stringToBytes, stringToIdentityId } from '~/utils/conversion';
+import { getPortfolioIdsByName } from '~/utils/internal';
 
 /**
  * @hidden
@@ -35,9 +31,9 @@ export async function prepareRenamePortfolio(
 
   const identityId = stringToIdentityId(did, context);
 
-  const rawNewName = stringToText(newName, context);
+  const rawNewName = stringToBytes(newName, context);
 
-  const existingPortfolioNumber = await getPortfolioIdByName(identityId, rawNewName, context);
+  const [existingPortfolioNumber] = await getPortfolioIdsByName(identityId, [rawNewName], context);
 
   if (existingPortfolioNumber) {
     if (id.eq(existingPortfolioNumber)) {
@@ -52,7 +48,6 @@ export async function prepareRenamePortfolio(
       });
     }
   }
-
   this.addTransaction({
     transaction: portfolio.renamePortfolio,
     args: [bigNumberToU64(id, context), rawNewName],

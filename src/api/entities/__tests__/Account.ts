@@ -3,8 +3,14 @@ import sinon from 'sinon';
 
 import { Account, Context, Entity } from '~/internal';
 import { heartbeat, transactions } from '~/middleware/queries';
+import { extrinsicsByArgs } from '~/middleware/queriesV2';
 import { CallIdEnum, ExtrinsicResult, ModuleIdEnum } from '~/middleware/types';
+import {
+  CallIdEnum as MiddlewareV2CallId,
+  ModuleIdEnum as MiddlewareV2ModuleId,
+} from '~/middleware/typesV2';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { createMockAccountId, createMockIdentityId } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
@@ -31,6 +37,9 @@ describe('Account class', () => {
   let account: Account;
   let assertAddressValidStub: sinon.SinonStub;
   let addressToKeyStub: sinon.SinonStub;
+  let getSecondaryAccountPermissionsStub: sinon.SinonStub;
+  let keyToAddressStub: sinon.SinonStub;
+  let txTagToExtrinsicIdentifierStub: sinon.SinonStub;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
@@ -38,6 +47,15 @@ describe('Account class', () => {
     procedureMockUtils.initMocks();
     assertAddressValidStub = sinon.stub(utilsInternalModule, 'assertAddressValid');
     addressToKeyStub = sinon.stub(utilsConversionModule, 'addressToKey');
+    getSecondaryAccountPermissionsStub = sinon.stub(
+      utilsInternalModule,
+      'getSecondaryAccountPermissions'
+    );
+    keyToAddressStub = sinon.stub(utilsConversionModule, 'keyToAddress');
+    txTagToExtrinsicIdentifierStub = sinon.stub(
+      utilsConversionModule,
+      'txTagToExtrinsicIdentifier'
+    );
 
     address = 'someAddress';
     key = 'someKey';
@@ -164,17 +182,51 @@ describe('Account class', () => {
   describe('method: getIdentity', () => {
     it('should return the Identity associated to the Account', async () => {
       const did = 'someDid';
-      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockIdentityId(did),
+      dsMockUtils.createQueryStub('identity', 'keyRecords', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockKeyRecord({
+            PrimaryKey: createMockIdentityId(did),
+          })
+        ),
       });
 
-      const result = await account.getIdentity();
+      let result = await account.getIdentity();
       expect(result?.did).toBe(did);
+
+      const secondaryDid = 'secondaryDid';
+      dsMockUtils.createQueryStub('identity', 'keyRecords', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockKeyRecord({
+            SecondaryKey: [
+              dsMockUtils.createMockIdentityId(secondaryDid),
+              dsMockUtils.createMockPermissions(),
+            ],
+          })
+        ),
+      });
+      result = await account.getIdentity();
+      expect(result?.did).toBe(secondaryDid);
+
+      const multiDid = 'multiDid';
+      dsMockUtils.createQueryStub('identity', 'keyRecords', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockKeyRecord({
+            MultiSigSignerKey: createMockAccountId('someAddress'),
+          })
+        ),
+      });
+
+      dsMockUtils.createQueryStub('multiSig', 'multiSigToIdentity', {
+        returnValue: multiDid,
+      });
+
+      result = await account.getIdentity();
+      expect(result?.did).toBe(multiDid);
     });
 
     it('should return null if there is no Identity associated to the Account', async () => {
-      dsMockUtils.createQueryStub('identity', 'keyToIdentityIds', {
-        returnValue: dsMockUtils.createMockIdentityId(),
+      dsMockUtils.createQueryStub('identity', 'keyRecords', {
+        returnValue: dsMockUtils.createMockOption(null),
       });
 
       const result = await account.getIdentity();
@@ -195,7 +247,7 @@ describe('Account class', () => {
 
       addressToKeyStub.returns(key);
 
-      sinon.stub(utilsConversionModule, 'txTagToExtrinsicIdentifier').withArgs(tag).returns({
+      txTagToExtrinsicIdentifierStub.withArgs(tag).returns({
         moduleId,
         callId,
       });
@@ -293,6 +345,7 @@ describe('Account class', () => {
               extrinsicsRoot: 'hash',
               stateRoot: 'hash',
             },
+            extrinsics: undefined,
           },
         }),
       });
@@ -343,31 +396,218 @@ describe('Account class', () => {
     });
   });
 
+  describe('method: getTransactionHistoryV2', () => {
+    it('should return a list of transactions', async () => {
+      const tag = TxTags.identity.CddRegisterDid;
+      const moduleId = MiddlewareV2ModuleId.Identity;
+      const callId = MiddlewareV2CallId.CddRegisterDid;
+      const blockNumber1 = new BigNumber(1);
+      const blockNumber2 = new BigNumber(2);
+      const blockHash1 = 'someHash';
+      const blockHash2 = 'otherHash';
+      const addressKey = 'd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d';
+
+      addressToKeyStub.returns(addressKey);
+      keyToAddressStub.returns(address);
+
+      txTagToExtrinsicIdentifierStub.withArgs(tag).returns({
+        moduleId,
+        callId,
+      });
+
+      const extrinsicsQueryResponse = {
+        totalCount: 20,
+        nodes: [
+          {
+            moduleId: MiddlewareV2ModuleId.Asset,
+            callId: MiddlewareV2CallId.RegisterTicker,
+            extrinsicIdx: 2,
+            specVersionId: 2006,
+            paramsTxt: '[]',
+            blockId: blockNumber1.toNumber(),
+            address,
+            nonce: 1,
+            success: 0,
+            signedbyAddress: 1,
+            block: {
+              hash: blockHash1,
+            },
+          },
+          {
+            moduleId: MiddlewareV2ModuleId.Asset,
+            callId: MiddlewareV2CallId.RegisterTicker,
+            extrinsicIdx: 2,
+            specVersionId: 2006,
+            paramsTxt: '[]',
+            blockId: blockNumber2.toNumber(),
+            success: 1,
+            signedbyAddress: 1,
+            block: {
+              hash: blockHash2,
+              id: blockNumber2.toNumber(),
+              datetime: '',
+            },
+          },
+        ],
+      };
+
+      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
+
+      dsMockUtils.createApolloV2QueryStub(
+        extrinsicsByArgs(
+          {
+            blockId: blockNumber1.toString(),
+            address: addressKey,
+            moduleId,
+            callId,
+            success: undefined,
+          },
+          new BigNumber(2),
+          new BigNumber(1)
+        ),
+        {
+          extrinsics: extrinsicsQueryResponse,
+        }
+      );
+
+      dsMockUtils.createRpcStub('chain', 'getBlock', {
+        returnValue: dsMockUtils.createMockSignedBlock({
+          block: {
+            header: {
+              parentHash: 'hash',
+              number: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(blockNumber1)),
+              extrinsicsRoot: 'hash',
+              stateRoot: 'hash',
+            },
+            extrinsics: undefined,
+          },
+        }),
+      });
+
+      let result = await account.getTransactionHistoryV2({
+        blockNumber: blockNumber1,
+        tag,
+        size: new BigNumber(2),
+        start: new BigNumber(1),
+      });
+
+      expect(result.data[0].blockNumber).toEqual(blockNumber1);
+      expect(result.data[1].blockNumber).toEqual(blockNumber2);
+      expect(result.data[0].blockHash).toEqual(blockHash1);
+      expect(result.data[1].blockHash).toEqual(blockHash2);
+      expect(result.data[0].address).toEqual(address);
+      expect(result.data[1].address).toBeNull();
+      expect(result.data[0].nonce).toEqual(new BigNumber(1));
+      expect(result.data[1].nonce).toBeNull();
+      expect(result.data[0].success).toBeFalsy();
+      expect(result.data[1].success).toBeTruthy();
+      expect(result.count).toEqual(new BigNumber(20));
+      expect(result.next).toEqual(new BigNumber(3));
+
+      dsMockUtils.createApolloV2QueryStub(
+        extrinsicsByArgs(
+          {
+            blockId: blockNumber1.toString(),
+            address: addressKey,
+            moduleId,
+            callId,
+            success: 0,
+          },
+          new BigNumber(2),
+          new BigNumber(1)
+        ),
+        {
+          extrinsics: extrinsicsQueryResponse,
+        }
+      );
+
+      result = await account.getTransactionHistoryV2({
+        blockHash: blockHash1,
+        tag,
+        success: false,
+        size: new BigNumber(2),
+        start: new BigNumber(1),
+      });
+
+      expect(result.data[0].blockNumber).toEqual(blockNumber1);
+      expect(result.data[1].blockNumber).toEqual(blockNumber2);
+      expect(result.data[0].blockHash).toEqual(blockHash1);
+      expect(result.data[1].blockHash).toEqual(blockHash2);
+      expect(result.data[0].address).toEqual(address);
+      expect(result.data[1].address).toBeNull();
+      expect(result.data[0].success).toBeFalsy();
+      expect(result.data[1].success).toBeTruthy();
+      expect(result.count).toEqual(new BigNumber(20));
+      expect(result.next).toEqual(new BigNumber(3));
+
+      dsMockUtils.createApolloV2QueryStub(
+        extrinsicsByArgs({
+          blockId: undefined,
+          address: addressKey,
+          moduleId: undefined,
+          callId: undefined,
+          success: 1,
+        }),
+        {
+          extrinsics: extrinsicsQueryResponse,
+        }
+      );
+
+      result = await account.getTransactionHistoryV2({ success: true });
+
+      expect(result.data[0].blockNumber).toEqual(blockNumber1);
+      expect(result.data[0].address).toEqual(address);
+      expect(result.data[0].success).toBeFalsy();
+      expect(result.count).toEqual(new BigNumber(20));
+      expect(result.next).toBeNull();
+
+      dsMockUtils.createApolloV2QueryStub(
+        extrinsicsByArgs({
+          blockId: undefined,
+          address: addressKey,
+          moduleId: undefined,
+          callId: undefined,
+          success: undefined,
+        }),
+        {
+          extrinsics: { nodes: [] },
+        }
+      );
+
+      result = await account.getTransactionHistoryV2();
+      expect(result.data).toEqual([]);
+      expect(result.next).toBeNull();
+    });
+  });
+
   describe('method: isFrozen', () => {
     it('should return if the Account is frozen or not', async () => {
-      const keyToIdentityIdsStub = dsMockUtils.createQueryStub('identity', 'keyToIdentityIds');
+      const didRecordsStub = dsMockUtils.createQueryStub('identity', 'didRecords');
 
-      /* eslint-disable @typescript-eslint/naming-convention */
-      dsMockUtils.createQueryStub('identity', 'didRecords').returns(
-        dsMockUtils.createMockDidRecord({
-          primary_key: dsMockUtils.createMockAccountId(address),
-          roles: [],
-          secondary_keys: [],
-        })
+      const keyRecordsStub = dsMockUtils.createQueryStub('identity', 'keyRecords').returns(
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockKeyRecord({
+            SecondaryKey: [
+              dsMockUtils.createMockIdentityId('someDid'),
+              dsMockUtils.createMockPermissions(),
+            ],
+          })
+        )
       );
-      /* eslint-enable @typescript-eslint/naming-convention */
+
+      didRecordsStub.returns(
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockIdentityDidRecord({
+            primaryKey: dsMockUtils.createMockOption(dsMockUtils.createMockAccountId(address)),
+          })
+        )
+      );
+
       const isDidFrozenStub = dsMockUtils.createQueryStub('identity', 'isDidFrozen', {
         returnValue: dsMockUtils.createMockBool(false),
       });
 
-      keyToIdentityIdsStub.returns(dsMockUtils.createMockIdentityId());
-
       let result = await account.isFrozen();
-      expect(result).toBe(false);
-
-      keyToIdentityIdsStub.returns(dsMockUtils.createMockIdentityId(address));
-
-      result = await account.isFrozen();
       expect(result).toBe(false);
 
       const otherAddress = 'otherAddress';
@@ -380,12 +620,17 @@ describe('Account class', () => {
 
       result = await account.isFrozen();
       expect(result).toBe(true);
+
+      keyRecordsStub.resolves(dsMockUtils.createMockOption());
+
+      result = await account.isFrozen();
+      expect(result).toBe(false);
     });
   });
 
-  describe('method: toJson', () => {
+  describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
-      expect(account.toJson()).toBe(account.address);
+      expect(account.toHuman()).toBe(account.address);
     });
   });
 
@@ -396,12 +641,31 @@ describe('Account class', () => {
   });
 
   describe('method: getPermissions', () => {
+    it('should throw if no Identity is associated with the Account', async () => {
+      context = dsMockUtils.getContextInstance();
+
+      account = new Account({ address }, context);
+
+      const getIdentitySpy = jest.spyOn(account, 'getIdentity').mockResolvedValue(null);
+
+      await expect(() => account.getPermissions()).rejects.toThrowError(
+        'There is no Identity associated with this Account'
+      );
+
+      getIdentitySpy.mockRestore();
+    });
+
     it('should return full permissions if the Account is the primary Account', async () => {
-      context = dsMockUtils.getContextInstance({
-        primaryAccount: address,
+      getSecondaryAccountPermissionsStub.returns([]);
+      const identity = entityMockUtils.getIdentityInstance({
+        getPrimaryAccount: {
+          account: entityMockUtils.getAccountInstance({ address }),
+        },
       });
 
       account = new Account({ address }, context);
+
+      const getIdentitySpy = jest.spyOn(account, 'getIdentity').mockResolvedValue(identity);
 
       const result = await account.getPermissions();
 
@@ -411,55 +675,45 @@ describe('Account class', () => {
         transactionGroups: [],
         portfolios: null,
       });
+
+      getIdentitySpy.mockRestore();
     });
 
     it("should return the Account's permissions if it is a secondary Account", async () => {
       const permissions = {
         assets: null,
-        transactions: null,
+        transactions: {
+          values: [TxTags.identity.AcceptPrimaryKey],
+          type: PermissionType.Include,
+        },
         transactionGroups: [],
         portfolios: null,
       };
 
-      context = dsMockUtils.getContextInstance({
-        secondaryAccounts: [
-          { account: entityMockUtils.getAccountInstance({ address }), permissions },
-          {
-            account: entityMockUtils.getAccountInstance({ address: 'otherAddress' }),
-            permissions: {
-              assets: null,
-              transactions: {
-                values: [TxTags.identity.AcceptPrimaryKey],
-                type: PermissionType.Include,
-              },
-              transactionGroups: [],
-              portfolios: null,
-            },
-          },
-        ],
-      });
+      getSecondaryAccountPermissionsStub.returns([
+        {
+          account: entityMockUtils.getAccountInstance({ address: 'otherAddress' }),
+          permissions,
+        },
+      ]);
 
-      account = new Account({ address }, context);
+      const identity = entityMockUtils.getIdentityInstance({});
+
+      account = new Account({ address: 'otherAddress' }, context);
+
+      const getIdentitySpy = jest.spyOn(account, 'getIdentity').mockResolvedValue(identity);
 
       const result = await account.getPermissions();
 
       expect(result).toEqual(permissions);
+
+      getIdentitySpy.mockRestore();
     });
   });
 
   describe('method: checkPermissions', () => {
     it('should return whether the Account has the passed permissions', async () => {
-      context = dsMockUtils.getContextInstance({
-        primaryAccount: address,
-      });
-
-      account = new Account({ address }, context);
-
-      let result = await account.checkPermissions({ assets: [], portfolios: [], transactions: [] });
-
-      expect(result).toEqual({
-        result: true,
-      });
+      const getPermissionsSpy = jest.spyOn(account, 'getPermissions');
 
       let permissions: Permissions = {
         assets: null,
@@ -467,19 +721,10 @@ describe('Account class', () => {
         transactionGroups: [],
         portfolios: null,
       };
-      const secondaryAccountAddress = 'secondaryAccount';
-      const secondaryAccount = entityMockUtils.getAccountInstance({
-        address: secondaryAccountAddress,
-      });
 
-      context = dsMockUtils.getContextInstance({
-        primaryAccount: address,
-        secondaryAccounts: [{ account: secondaryAccount, permissions }],
-      });
+      getPermissionsSpy.mockResolvedValue(permissions);
 
-      account = new Account({ address: secondaryAccountAddress }, context);
-
-      result = await account.checkPermissions({
+      let result = await account.checkPermissions({
         assets: null,
         portfolios: null,
         transactions: null,
@@ -498,12 +743,8 @@ describe('Account class', () => {
           type: PermissionType.Include,
         },
       };
-      context = dsMockUtils.getContextInstance({
-        primaryAccount: address,
-        secondaryAccounts: [{ account: secondaryAccount, permissions }],
-      });
 
-      account = new Account({ address: secondaryAccountAddress }, context);
+      getPermissionsSpy.mockResolvedValue(permissions);
 
       const portfolio = entityMockUtils.getDefaultPortfolioInstance({ did: 'otherDid' });
 
@@ -529,12 +770,8 @@ describe('Account class', () => {
           type: PermissionType.Exclude,
         },
       };
-      context = dsMockUtils.getContextInstance({
-        primaryAccount: address,
-        secondaryAccounts: [{ account: secondaryAccount, permissions }],
-      });
 
-      account = new Account({ address: secondaryAccountAddress }, context);
+      getPermissionsSpy.mockResolvedValue(permissions);
 
       result = await account.checkPermissions({
         assets: [asset],
@@ -594,12 +831,8 @@ describe('Account class', () => {
           type: PermissionType.Exclude,
         },
       };
-      context = dsMockUtils.getContextInstance({
-        primaryAccount: address,
-        secondaryAccounts: [{ account: secondaryAccount, permissions }],
-      });
 
-      account = new Account({ address: secondaryAccountAddress }, context);
+      getPermissionsSpy.mockResolvedValue(permissions);
 
       result = await account.checkPermissions({
         assets: [],
@@ -628,12 +861,8 @@ describe('Account class', () => {
           type: PermissionType.Exclude,
         },
       };
-      context = dsMockUtils.getContextInstance({
-        primaryAccount: address,
-        secondaryAccounts: [{ account: secondaryAccount, permissions }],
-      });
 
-      account = new Account({ address: secondaryAccountAddress }, context);
+      getPermissionsSpy.mockResolvedValue(permissions);
 
       result = await account.checkPermissions({
         assets: [],
@@ -648,14 +877,20 @@ describe('Account class', () => {
           transactions: [TxTags.identity.AddClaim],
         },
       });
+      getPermissionsSpy.mockRestore();
     });
 
     it('should exempt certain transactions from requiring permissions', async () => {
-      context = dsMockUtils.getContextInstance({
-        primaryAccount: address,
-      });
+      const permissions: Permissions = {
+        assets: null,
+        transactions: null,
+        transactionGroups: [],
+        portfolios: null,
+      };
 
-      account = new Account({ address }, context);
+      const getPermissionsSpy = jest
+        .spyOn(account, 'getPermissions')
+        .mockResolvedValue(permissions);
 
       const result = await account.checkPermissions({
         assets: [],
@@ -672,47 +907,60 @@ describe('Account class', () => {
       expect(result).toEqual({
         result: true,
       });
+      getPermissionsSpy.mockRestore();
     });
   });
 
   describe('method: hasPermissions', () => {
     it('should return whether the Account has the passed permissions', async () => {
-      const mockAccount = entityMockUtils.getAccountInstance({ address });
-      context = dsMockUtils.getContextInstance({
-        primaryAccount: address,
-      });
-
-      account = new Account(mockAccount, context);
+      const checkPermissionsSpy = jest
+        .spyOn(account, 'checkPermissions')
+        .mockResolvedValue({ result: true });
 
       const result = await account.hasPermissions({ assets: [], portfolios: [], transactions: [] });
 
       expect(result).toEqual(true);
+      checkPermissionsSpy.mockRestore();
     });
   });
 
   describe('method: getMultiSig', () => {
     it('should return null if the Account is not a MultiSig signer', async () => {
-      dsMockUtils.createQueryStub('multiSig', 'keyToMultiSig', {
-        returnValue: dsMockUtils.createMockAccountId(),
+      dsMockUtils.createQueryStub('identity', 'keyRecords', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockKeyRecord({
+            PrimaryKey: dsMockUtils.createMockAccountId(),
+          })
+        ),
       });
-
       account = new Account({ address }, context);
 
-      const result = await account.getMultiSig();
+      let result = await account.getMultiSig();
 
+      expect(result).toBeNull();
+
+      dsMockUtils.createQueryStub('identity', 'keyRecords', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
+      result = await account.getMultiSig();
       expect(result).toBeNull();
     });
 
     it('should return the MultiSig the Account is a signer for', async () => {
-      dsMockUtils.createQueryStub('multiSig', 'keyToMultiSig', {
-        returnValue: dsMockUtils.createMockAccountId('multiAddress'),
+      dsMockUtils.createQueryStub('identity', 'keyRecords', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockKeyRecord({
+            MultiSigSignerKey: dsMockUtils.createMockAccountId('multiAddress'),
+          })
+        ),
       });
 
       account = new Account({ address }, context);
 
       const result = await account.getMultiSig();
 
-      expect(result?.address).toEqual('multiAddress');
+      expect(result?.address).toEqual('someAddress');
     });
   });
 });

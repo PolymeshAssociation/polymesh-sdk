@@ -1,14 +1,21 @@
-import { SigningManager } from '@polymathnetwork/signing-manager-types';
+import { SigningManager } from '@polymeshassociation/signing-manager-types';
 import { ApolloLink, GraphQLRequest } from 'apollo-link';
-import * as apolloLinkContextModule from 'apollo-link-context';
-import semver from 'semver';
 import sinon from 'sinon';
 
+import { Polymesh } from '~/api/client/Polymesh';
+import { PolymeshError } from '~/internal';
 import { heartbeat } from '~/middleware/queries';
-import { Polymesh } from '~/Polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { SUPPORTED_VERSION_RANGE } from '~/utils/constants';
+import { ErrorCode } from '~/types';
+import { SUPPORTED_NODE_VERSION_RANGE } from '~/utils/constants';
+import * as internalUtils from '~/utils/internal';
 
+jest.mock('apollo-link-context', () => ({
+  ...jest.requireActual('apollo-link-context'),
+  setContext: sinon.stub().callsFake(cbFunc => {
+    return new ApolloLink(cbFunc({} as GraphQLRequest, {}));
+  }),
+}));
 jest.mock(
   '@polkadot/api',
   require('~/testUtils/mocks/dataSources').mockPolkadotModule('@polkadot/api')
@@ -43,12 +50,13 @@ jest.mock(
   '~/api/entities/Asset',
   require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
-jest.mock(
-  'websocket-as-promised',
-  require('~/testUtils/mocks/dataSources').mockWebSocketAsPromisedModule()
-);
 
 describe('Polymesh Class', () => {
+  let versionStub: sinon.SinonStub;
+  beforeEach(() => {
+    versionStub = sinon.stub(internalUtils, 'assertExpectedChainVersion').resolves(undefined);
+  });
+
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
@@ -56,6 +64,7 @@ describe('Polymesh Class', () => {
   });
 
   afterEach(() => {
+    sinon.restore();
     dsMockUtils.reset();
     entityMockUtils.reset();
     procedureMockUtils.reset();
@@ -66,13 +75,7 @@ describe('Polymesh Class', () => {
     procedureMockUtils.cleanup();
   });
 
-  describe('method: create', () => {
-    beforeAll(() => {
-      sinon.stub(apolloLinkContextModule, 'setContext').callsFake(cbFunc => {
-        return new ApolloLink(cbFunc({} as GraphQLRequest, {}));
-      });
-    });
-
+  describe('method: connect', () => {
     it('should instantiate Context and return a Polymesh instance', async () => {
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
@@ -94,6 +97,7 @@ describe('Polymesh Class', () => {
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
+        middlewareApiV2: null,
         signingManager,
       });
     });
@@ -116,24 +120,38 @@ describe('Polymesh Class', () => {
       sinon.assert.calledWith(createStub, {
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: null,
         signingManager: undefined,
       });
     });
 
-    it('should throw an error if the Polymesh version does not satisfy the supported version range', async () => {
-      jest.spyOn(semver, 'satisfies').mockImplementationOnce(() => false);
+    it('should throw if the Polymesh version does not satisfy the supported version range', async () => {
+      const error = new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: 'Unsupported Polymesh RPC node version. Please upgrade the SDK',
+        data: { supportedVersionRange: SUPPORTED_NODE_VERSION_RANGE },
+      });
+      versionStub.rejects(error);
 
-      let err;
-      try {
-        await Polymesh.connect({
+      await expect(
+        Polymesh.connect({
           nodeUrl: 'wss://some.url',
-        });
-      } catch (e) {
-        err = e;
-      }
+        })
+      ).rejects.toThrow(error);
+    });
 
-      expect(err.message).toBe('Unsupported Polymesh version. Please upgrade the SDK');
-      expect(err.data.supportedVersionRange).toBe(SUPPORTED_VERSION_RANGE);
+    it('should throw an error if the Polymesh version check could not connect to the node', async () => {
+      const error = new PolymeshError({
+        code: ErrorCode.FatalError,
+        message: 'Unable to connect',
+      });
+      versionStub.rejects(error);
+
+      return expect(
+        Polymesh.connect({
+          nodeUrl: 'wss://some.url',
+        })
+      ).rejects.toThrowError(error);
     });
 
     it('should throw an error if the middleware credentials are incorrect', async () => {

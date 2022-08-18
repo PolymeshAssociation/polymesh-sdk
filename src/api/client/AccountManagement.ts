@@ -1,4 +1,4 @@
-import { MultiSig } from '~/api/entities/MultiSig';
+import { MultiSig } from '~/api/entities/MultiSig/MultiSig';
 import {
   Account,
   AuthorizationRequest,
@@ -6,24 +6,26 @@ import {
   createMultiSigAccount,
   CreateMultiSigParams,
   inviteAccount,
-  InviteAccountParams,
   leaveIdentity,
   modifySignerPermissions,
-  ModifySignerPermissionsParams,
+  modifySignerPermissionsStorage,
   removeSecondaryAccounts,
-  RemoveSecondaryAccountsParams,
   subsidizeAccount,
-  SubsidizeAccountParams,
   toggleFreezeSecondaryAccounts,
 } from '~/internal';
 import {
   AccountBalance,
+  InviteAccountParams,
+  ModifySignerPermissionsParams,
   NoArgsProcedureMethod,
   PermissionType,
   ProcedureMethod,
+  RemoveSecondaryAccountsParams,
   SubCallback,
+  SubsidizeAccountParams,
   UnsubCallback,
 } from '~/types';
+import { stringToAccountId } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
 /**
@@ -51,7 +53,8 @@ export class AccountManagement {
     this.revokePermissions = createProcedureMethod<
       { secondaryAccounts: Account[] },
       ModifySignerPermissionsParams,
-      void
+      void,
+      modifySignerPermissionsStorage
     >(
       {
         getProcedureAndArgs: args => {
@@ -115,20 +118,24 @@ export class AccountManagement {
 
   /**
    * Revoke all permissions of a list of secondary Accounts associated with the signing Identity
+   *
+   * @throws if the signing Account is not the primary Account of the Identity whose secondary Account permissions are being revoked
    */
   public revokePermissions: ProcedureMethod<{ secondaryAccounts: Account[] }, void>;
 
   /**
    * Modify all permissions of a list of secondary Accounts associated with the signing Identity
+   *
+   * @throws if the signing Account is not the primary Account of the Identity whose secondary Account permissions are being modified
    */
   public modifyPermissions: ProcedureMethod<ModifySignerPermissionsParams, void>;
 
   /**
    * Send an invitation to an Account to join the signing Identity as a secondary Account
    *
-   * @note this will create an {@link AuthorizationRequest | Authorization Request} which has to be accepted by the `targetAccount`.
-   *   An {@link Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived | authorizations.getReceived}.
-   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link Authorizations.getOne | authorizations.getOne}
+   * @note this will create an {@link api/entities/AuthorizationRequest!AuthorizationRequest | Authorization Request} which has to be accepted by the `targetAccount`.
+   *   An {@link api/entities/Account!Account} or {@link api/entities/Identity!Identity} can fetch its pending Authorization Requests by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getReceived | authorizations.getReceived}.
+   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getOne | authorizations.getOne}
    */
   public inviteAccount: ProcedureMethod<InviteAccountParams, AuthorizationRequest>;
 
@@ -145,16 +152,16 @@ export class AccountManagement {
   /**
    * Send an Authorization Request to an Account to subsidize its transaction fees
    *
-   * @note this will create an {@link AuthorizationRequest | Authorization Request} which has to be accepted by the `beneficiary` Account.
-   *   An {@link Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived | authorizations.getReceived}.
-   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link Authorizations.getOne | authorizations.getOne}
+   * @note this will create an {@link api/entities/AuthorizationRequest!AuthorizationRequest | Authorization Request} which has to be accepted by the `beneficiary` Account.
+   *   An {@link api/entities/Account!Account} or {@link api/entities/Identity!Identity} can fetch its pending Authorization Requests by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getReceived | authorizations.getReceived}.
+   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getOne | authorizations.getOne}
    */
   public subsidizeAccount: ProcedureMethod<SubsidizeAccountParams, AuthorizationRequest>;
 
   /**
    * Create a MultiSig Account
    *
-   * @note this will create an {@link AuthorizationRequest | Authorization Request} for each signer which will have to be accepted before they can approve transactions. Each signing account cannot be associated with an Identity when accepting the authorization
+   * @note this will create an {@link AuthorizationRequest | Authorization Request} for each signing Account which will have to be accepted before they can approve transactions. None of the signing Accounts can be associated with an Identity when accepting the Authorization
    *   An {@link Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived | authorizations.getReceived}.
    *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link Authorizations.getOne | authorizations.getOne}
    */
@@ -222,8 +229,9 @@ export class AccountManagement {
         },
       },
     } = this;
-
-    const rawSigners = await multiSig.multiSigSigners.entries(args.address);
+    const { address } = args;
+    const rawAddress = stringToAccountId(address, context);
+    const rawSigners = await multiSig.multiSigSigners.entries(rawAddress);
     if (rawSigners.length > 0) {
       return new MultiSig(args, context);
     }

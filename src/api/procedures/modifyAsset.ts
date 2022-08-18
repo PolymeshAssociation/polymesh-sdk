@@ -1,42 +1,12 @@
 import { Asset, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, SecurityIdentifier, TxTags } from '~/types';
+import { ErrorCode, ModifyAssetParams, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   securityIdentifierToAssetIdentifier,
-  stringToAssetName,
-  stringToFundingRoundName,
+  stringToBytes,
   stringToTicker,
 } from '~/utils/conversion';
 import { checkTxType, hasSameElements } from '~/utils/internal';
-
-export type ModifyAssetParams =
-  | {
-      /**
-       * makes an indivisible Asset divisible
-       */
-      makeDivisible?: true;
-      name: string;
-      fundingRound?: string;
-      identifiers?: SecurityIdentifier[];
-    }
-  | {
-      makeDivisible: true;
-      name?: string;
-      fundingRound?: string;
-      identifiers?: SecurityIdentifier[];
-    }
-  | {
-      makeDivisible?: true;
-      name?: string;
-      fundingRound: string;
-      identifiers?: SecurityIdentifier[];
-    }
-  | {
-      makeDivisible?: true;
-      name?: string;
-      fundingRound?: string;
-      identifiers: SecurityIdentifier[];
-    };
 
 /**
  * @hidden
@@ -112,10 +82,11 @@ export async function prepareModifyAsset(
       });
     }
 
+    const nameBytes = stringToBytes(newName, context);
     transactions.push(
       checkTxType({
         transaction: tx.asset.renameAsset,
-        args: [rawTicker, stringToAssetName(newName, context)],
+        args: [rawTicker, nameBytes],
       })
     );
   }
@@ -128,10 +99,11 @@ export async function prepareModifyAsset(
       });
     }
 
+    const fundingBytes = stringToBytes(newFundingRound, context);
     transactions.push(
       checkTxType({
         transaction: tx.asset.setFundingRound,
-        args: [rawTicker, stringToFundingRoundName(newFundingRound, context)],
+        args: [rawTicker, fundingBytes],
       })
     );
   }

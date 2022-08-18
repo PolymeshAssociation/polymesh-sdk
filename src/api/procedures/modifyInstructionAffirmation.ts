@@ -1,7 +1,7 @@
 import { u32, u64 } from '@polkadot/types';
+import { PolymeshPrimitivesIdentityIdPortfolioId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
-import { PortfolioId } from 'polymesh-types/types';
 
 import { assertInstructionValid } from '~/api/procedures/utils';
 import { Instruction, PolymeshError, Procedure } from '~/internal';
@@ -9,16 +9,14 @@ import {
   AffirmationStatus,
   DefaultPortfolio,
   ErrorCode,
+  InstructionAffirmationOperation,
   Leg,
+  ModifyInstructionAffirmationParams,
   NumberedPortfolio,
   TxTag,
   TxTags,
 } from '~/types';
-import {
-  InstructionAffirmationOperation,
-  PolymeshTx,
-  ProcedureAuthorization,
-} from '~/types/internal';
+import { PolymeshTx, ProcedureAuthorization } from '~/types/internal';
 import { QueryReturnType, tuple } from '~/types/utils';
 import {
   bigNumberToU32,
@@ -27,14 +25,6 @@ import {
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolioId,
 } from '~/utils/conversion';
-
-export interface AffirmInstructionParams {
-  id: BigNumber;
-}
-export interface ModifyInstructionAffirmationParams {
-  id: BigNumber;
-  operation: InstructionAffirmationOperation;
-}
 
 export interface Storage {
   portfolios: (DefaultPortfolio | NumberedPortfolio)[];
@@ -74,13 +64,13 @@ export async function prepareModifyInstructionAffirmation(
   }
 
   const rawInstructionId = bigNumberToU64(id, context);
-  const rawPortfolioIds: PortfolioId[] = portfolios.map(portfolio =>
+  const rawPortfolioIds: PolymeshPrimitivesIdentityIdPortfolioId[] = portfolios.map(portfolio =>
     portfolioIdToMeshPortfolioId(portfolioLikeToPortfolioId(portfolio), context)
   );
 
   const excludeCriteria: AffirmationStatus[] = [];
   let errorMessage: string;
-  let transaction: PolymeshTx<[u64, PortfolioId[], u32]> | null = null;
+  let transaction: PolymeshTx<[u64, PolymeshPrimitivesIdentityIdPortfolioId[], u32]> | null = null;
 
   switch (operation) {
     case InstructionAffirmationOperation.Affirm: {

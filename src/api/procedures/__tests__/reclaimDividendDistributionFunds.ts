@@ -23,8 +23,7 @@ describe('reclaimDividendDistributionFunds procedure', () => {
   const expiryDate = new Date(new Date().getTime() + 1000 * 60 * 60 * 24 * 365);
   const did = 'someDid';
 
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  const rawCaId = dsMockUtils.createMockCAId({ ticker, local_id: id });
+  const rawCaId = dsMockUtils.createMockCAId({ ticker, localId: id });
 
   let origin: DefaultPortfolio;
   let distribution: DividendDistribution;

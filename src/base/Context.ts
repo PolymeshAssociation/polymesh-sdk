@@ -2,31 +2,32 @@ import { ApiPromise } from '@polkadot/api';
 import { getTypeDef, Option } from '@polkadot/types';
 import { AccountInfo } from '@polkadot/types/interfaces';
 import {
+  PalletCorporateActionsCaId,
+  PalletCorporateActionsDistribution,
+  PalletRelayerSubsidy,
+} from '@polkadot/types/lookup';
+import {
   CallFunction,
-  InterfaceTypes,
+  Codec,
+  DetectCodec,
   Signer as PolkadotSigner,
   TypeDef,
   TypeDefInfo,
 } from '@polkadot/types/types';
-import { SigningManager } from '@polymathnetwork/signing-manager-types';
+import { SigningManager } from '@polymeshassociation/signing-manager-types';
 import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient, { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, clone, flatMap, flatten, flattenDeep } from 'lodash';
 import { polymesh } from 'polymesh-types/definitions';
-import {
-  CAId,
-  Distribution,
-  ModuleName,
-  ProtocolOp,
-  Subsidy as MeshSubsidy,
-  TxTag,
-} from 'polymesh-types/types';
+import { ProtocolOp } from 'polymesh-types/types';
 
 import { Account, Asset, DividendDistribution, Identity, PolymeshError, Subsidy } from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
+import { claimsQuery, heartbeatQuery } from '~/middleware/queriesV2';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
+import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   AccountBalance,
   ArrayTransactionArgument,
@@ -36,18 +37,26 @@ import {
   CorporateActionParams,
   DistributionWithDetails,
   ErrorCode,
+  ModuleName,
   PlainTransactionArgument,
+  ProtocolFees,
   ResultSet,
   SimpleEnumTransactionArgument,
   SubCallback,
   SubsidyWithAllowance,
   TransactionArgument,
   TransactionArgumentType,
+  TxTag,
   UnsubCallback,
 } from '~/types';
 import { GraphqlQuery } from '~/types/internal';
-import { Ensured, QueryReturnType } from '~/types/utils';
-import { MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE, ROOT_TYPES } from '~/utils/constants';
+import { Ensured, EnsuredV2, QueryReturnType } from '~/types/utils';
+import {
+  DEFAULT_GQL_PAGE_SIZE,
+  MAX_CONCURRENT_REQUESTS,
+  MAX_PAGE_SIZE,
+  ROOT_TYPES,
+} from '~/utils/constants';
 import {
   accountIdToString,
   balanceToBigNumber,
@@ -59,16 +68,18 @@ import {
   identityIdToString,
   meshClaimToClaim,
   meshCorporateActionToCorporateActionParams,
+  middlewareV2ClaimToClaimData,
   momentToDate,
   posRatioToBigNumber,
   signerToString,
   stringToAccountId,
+  stringToHash,
   stringToIdentityId,
   stringToTicker,
   textToString,
   tickerToString,
   txTagToProtocolOp,
-  u8ToBigNumber,
+  u16ToBigNumber,
   u32ToBigNumber,
 } from '~/utils/conversion';
 import { assertAddressValid, calculateNextKey, createClaim } from '~/utils/internal';
@@ -76,6 +87,7 @@ import { assertAddressValid, calculateNextKey, createClaim } from '~/utils/inter
 interface ConstructorParams {
   polymeshApi: ApiPromise;
   middlewareApi: ApolloClient<NormalizedCacheObject> | null;
+  middlewareApiV2: ApolloClient<NormalizedCacheObject> | null;
   ss58Format: BigNumber;
   signingManager?: SigningManager;
 }
@@ -87,6 +99,7 @@ interface ConstructorParams {
  *
  * - Holds the polkadot API instance
  * - Holds the middleware API instance (if any)
+ * - Holds the middleware V2 API instance (if any)
  * - Holds the Signing Manager (if any)
  */
 export class Context {
@@ -103,6 +116,8 @@ export class Context {
 
   private _middlewareApi: ApolloClient<NormalizedCacheObject> | null;
 
+  private _middlewareApiV2: ApolloClient<NormalizedCacheObject> | null;
+
   private _polymeshApi: ApiPromise;
 
   private _signingManager?: SigningManager;
@@ -113,30 +128,13 @@ export class Context {
    * @hidden
    */
   private constructor(params: ConstructorParams) {
-    const { polymeshApi, middlewareApi, ss58Format } = params;
+    const { polymeshApi, middlewareApi, middlewareApiV2, ss58Format } = params;
 
     this._middlewareApi = middlewareApi;
+    this._middlewareApiV2 = middlewareApiV2;
     this._polymeshApi = polymeshApi;
-    this.polymeshApi = Context.createPolymeshApiProxy(this);
+    this.polymeshApi = polymeshApi;
     this.ss58Format = ss58Format;
-  }
-
-  /**
-   * @hidden
-   */
-  static createPolymeshApiProxy(ctx: Context): ApiPromise {
-    return new Proxy(ctx._polymeshApi, {
-      get: (target, prop: keyof ApiPromise): ApiPromise[keyof ApiPromise] => {
-        if (prop === 'tx' && !ctx.signingAddress) {
-          throw new PolymeshError({
-            code: ErrorCode.General,
-            message: 'Cannot perform transactions without an active Account',
-          });
-        }
-
-        return target[prop];
-      },
-    });
   }
 
   /**
@@ -147,13 +145,20 @@ export class Context {
   static async create(params: {
     polymeshApi: ApiPromise;
     middlewareApi: ApolloClient<NormalizedCacheObject> | null;
+    middlewareApiV2: ApolloClient<NormalizedCacheObject> | null;
     signingManager?: SigningManager;
   }): Promise<Context> {
-    const { polymeshApi, middlewareApi, signingManager } = params;
+    const { polymeshApi, middlewareApi, middlewareApiV2, signingManager } = params;
 
-    const ss58Format: BigNumber = u8ToBigNumber(polymeshApi.consts.system.ss58Prefix);
+    const ss58Format: BigNumber = u16ToBigNumber(polymeshApi.consts.system.ss58Prefix);
 
-    const context = new Context({ polymeshApi, middlewareApi, signingManager, ss58Format });
+    const context = new Context({
+      polymeshApi,
+      middlewareApi,
+      middlewareApiV2,
+      signingManager,
+      ss58Format,
+    });
 
     const isArchiveNodePromise = context.isCurrentNodeArchive();
 
@@ -209,7 +214,6 @@ export class Context {
 
     // this could be undefined
     const [firstAccount] = await signingManager.getAccounts();
-
     if (!firstAccount) {
       this.signingAddress = undefined;
     } else {
@@ -371,11 +375,13 @@ export class Context {
 
     const rawAddress = stringToAccountId(address, this);
 
-    const assembleResult = (meshSubsidy: Option<MeshSubsidy>): SubsidyWithAllowance | null => {
+    const assembleResult = (
+      meshSubsidy: Option<PalletRelayerSubsidy>
+    ): SubsidyWithAllowance | null => {
       if (meshSubsidy.isNone) {
         return null;
       }
-      const { paying_key: payingKey, remaining } = meshSubsidy.unwrap();
+      const { payingKey, remaining } = meshSubsidy.unwrap();
       const allowance = balanceToBigNumber(remaining);
       const subsidy = new Subsidy(
         { beneficiary: address, subsidizer: accountIdToString(payingKey) },
@@ -496,7 +502,7 @@ export class Context {
     const invalidDids: string[] = [];
 
     records.forEach((record, index) => {
-      if (record.isEmpty) {
+      if (record.isNone) {
         invalidDids.push(dids[index]);
       }
     });
@@ -521,7 +527,8 @@ export class Context {
     if (!exists) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
-        message: 'The Identity does not exist',
+        message:
+          'The passed DID does not correspond to an on-chain user Identity. It may correspond to an Asset Identity',
       });
     }
 
@@ -531,30 +538,70 @@ export class Context {
   /**
    * @hidden
    *
-   * Retrieve the protocol fees associated with running a specific transaction
+   * Retrieve the protocol fees associated with running specific transactions
    *
-   * @param tag - transaction tag (i.e. TxTags.asset.CreateAsset or "asset.createAsset")
+   * @param tags - list of transaction tags (i.e. [TxTags.asset.CreateAsset, TxTags.asset.RegisterTicker] or ["asset.createAsset", "asset.registerTicker"])
+   * @param blockHash - optional hash of the block to get the protocol fees at that block
    */
-  public async getProtocolFees({ tag }: { tag: TxTag }): Promise<BigNumber> {
+  public async getProtocolFees({
+    tags,
+    blockHash,
+  }: {
+    tags: TxTag[];
+    blockHash?: string;
+  }): Promise<ProtocolFees[]> {
     const {
       polymeshApi: {
-        query: { protocolFee },
+        query: {
+          protocolFee: { baseFees, coefficient },
+        },
       },
     } = this;
 
-    let protocolOp: ProtocolOp;
-    try {
-      protocolOp = txTagToProtocolOp(tag, this);
-    } catch (err) {
-      return new BigNumber(0);
-    }
+    const tagsMap = new Map<TxTag, ProtocolOp | undefined>();
 
-    const [baseFee, coefficient] = await Promise.all([
-      protocolFee.baseFees(protocolOp),
-      protocolFee.coefficient(),
+    tags.forEach(tag => {
+      try {
+        tagsMap.set(tag, txTagToProtocolOp(tag, this));
+      } catch (err) {
+        tagsMap.set(tag, undefined);
+      }
+    });
+
+    const [baseFeesEntries, coefficientValue] = await Promise.all([
+      blockHash ? baseFees.entriesAt(stringToHash(blockHash, this)) : baseFees.entries(),
+      coefficient(),
     ]);
 
-    return balanceToBigNumber(baseFee).multipliedBy(posRatioToBigNumber(coefficient));
+    const assembleResult = (rawProtocolOp: ProtocolOp | undefined): BigNumber => {
+      const baseFeeEntry = baseFeesEntries.find(
+        ([
+          {
+            args: [protocolOp],
+          },
+        ]) => protocolOp.eq(rawProtocolOp)
+      );
+
+      let fee = new BigNumber(0);
+
+      if (baseFeeEntry) {
+        const [, balance] = baseFeeEntry;
+        fee = balanceToBigNumber(balance).multipliedBy(posRatioToBigNumber(coefficientValue));
+      }
+
+      return fee;
+    };
+
+    const protocolFees: ProtocolFees[] = [];
+
+    tagsMap.forEach((rawProtocolOp, txTag) => {
+      protocolFees.push({
+        tag: txTag,
+        fees: assembleResult(rawProtocolOp),
+      });
+    });
+
+    return protocolFees;
   }
 
   /**
@@ -742,7 +789,7 @@ export class Context {
       },
     } = this;
     const { assets } = args;
-    const distributionsMultiParams: CAId[] = [];
+    const distributionsMultiParams: PalletCorporateActionsCaId[] = [];
     const corporateActionParams: CorporateActionParams[] = [];
     const corporateActionIds: BigNumber[] = [];
     const tickers: string[] = [];
@@ -809,31 +856,33 @@ export class Context {
 
     const result: DistributionWithDetails[] = [];
 
-    flattenDeep<Option<Distribution>>(distributions).forEach((distribution, index) => {
-      if (distribution.isNone) {
-        return;
-      }
+    flattenDeep<Option<PalletCorporateActionsDistribution>>(distributions).forEach(
+      (distribution, index) => {
+        if (distribution.isNone) {
+          return;
+        }
 
-      const dist = distribution.unwrap();
+        const dist = distribution.unwrap();
 
-      const { reclaimed, remaining } = dist;
+        const { reclaimed, remaining } = dist;
 
-      result.push({
-        distribution: new DividendDistribution(
-          {
-            ticker: tickers[index],
-            id: corporateActionIds[index],
-            ...corporateActionParams[index],
-            ...distributionToDividendDistributionParams(dist, this),
+        result.push({
+          distribution: new DividendDistribution(
+            {
+              ticker: tickers[index],
+              id: corporateActionIds[index],
+              ...corporateActionParams[index],
+              ...distributionToDividendDistributionParams(dist, this),
+            },
+            this
+          ),
+          details: {
+            remainingFunds: balanceToBigNumber(remaining),
+            fundsReclaimed: boolToBoolean(reclaimed),
           },
-          this
-        ),
-        details: {
-          remainingFunds: balanceToBigNumber(remaining),
-          fundsReclaimed: boolToBoolean(reclaimed),
-        },
-      });
-    });
+        });
+      }
+    );
 
     return result;
   }
@@ -879,24 +928,19 @@ export class Context {
     const claimData = await P.map(claim1stKeys, async claim1stKey => {
       const entries = await identity.claims.entries(claim1stKey);
       const data: ClaimData[] = [];
-      entries.forEach(
-        ([
-          key,
-          { claim_issuer: claimIssuer, issuance_date: issuanceDate, expiry: rawExpiry, claim },
-        ]) => {
-          const { target } = key.args[0];
-          const expiry = !rawExpiry.isEmpty ? momentToDate(rawExpiry.unwrap()) : null;
-          if ((!includeExpired && (expiry === null || expiry > new Date())) || includeExpired) {
-            data.push({
-              target: new Identity({ did: identityIdToString(target) }, this),
-              issuer: new Identity({ did: identityIdToString(claimIssuer) }, this),
-              issuedAt: momentToDate(issuanceDate),
-              expiry,
-              claim: meshClaimToClaim(claim),
-            });
-          }
+      entries.forEach(([key, { claimIssuer, issuanceDate, expiry: rawExpiry, claim }]) => {
+        const { target } = key.args[0];
+        const expiry = !rawExpiry.isEmpty ? momentToDate(rawExpiry.unwrap()) : null;
+        if ((!includeExpired && (expiry === null || expiry > new Date())) || includeExpired) {
+          data.push({
+            target: new Identity({ did: identityIdToString(target) }, this),
+            issuer: new Identity({ did: identityIdToString(claimIssuer) }, this),
+            issuedAt: momentToDate(issuanceDate),
+            expiry,
+            claim: meshClaimToClaim(claim),
+          });
         }
-      );
+      });
       return data;
     });
 
@@ -975,6 +1019,58 @@ export class Context {
 
   /**
    * @hidden
+   */
+  public async getIdentityClaimsFromMiddlewareV2(args: {
+    targets?: (string | Identity)[];
+    trustedClaimIssuers?: (string | Identity)[];
+    claimTypes?: Exclude<ClaimType, ClaimType.InvestorUniquenessV2>[];
+    includeExpired?: boolean;
+    size?: BigNumber;
+    start?: BigNumber;
+  }): Promise<ResultSet<ClaimData>> {
+    const {
+      targets,
+      claimTypes,
+      trustedClaimIssuers,
+      includeExpired,
+      size = new BigNumber(DEFAULT_GQL_PAGE_SIZE),
+      start = new BigNumber(0),
+    } = args;
+
+    const {
+      data: {
+        claims: { nodes: claimsList, totalCount },
+      },
+    } = await this.queryMiddlewareV2<EnsuredV2<QueryV2, 'claims'>>(
+      claimsQuery(
+        {
+          dids: targets?.map(target => signerToString(target)),
+          trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
+            signerToString(trustedClaimIssuer)
+          ),
+          claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
+          includeExpired,
+        },
+        size,
+        start
+      )
+    );
+
+    const count = new BigNumber(totalCount);
+
+    const data = claimsList.map(claim => middlewareV2ClaimToClaimData(claim, this));
+
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
+  }
+
+  /**
+   * @hidden
    *
    * Retrieve a list of claims. Can be filtered using parameters
    *
@@ -1036,6 +1132,66 @@ export class Context {
   /**
    * @hidden
    *
+   * Retrieve a list of claims. Can be filtered using parameters
+   *
+   * @param opts.targets - Identities (or Identity IDs) for which to fetch claims (targets). Defaults to all targets
+   * @param opts.trustedClaimIssuers - Identity IDs of claim issuers. Defaults to all claim issuers
+   * @param opts.claimTypes - types of the claims to fetch. Defaults to any type
+   * @param opts.includeExpired - whether to include expired claims. Defaults to true
+   * @param opts.size - page size
+   * @param opts.start - page offset
+   *
+   * @note uses the middleware V2 (optional)
+   */
+  public async issuedClaimsV2(
+    opts: {
+      targets?: (string | Identity)[];
+      trustedClaimIssuers?: (string | Identity)[];
+      claimTypes?: Exclude<ClaimType, ClaimType.InvestorUniquenessV2>[];
+      includeExpired?: boolean;
+      size?: BigNumber;
+      start?: BigNumber;
+    } = {}
+  ): Promise<ResultSet<ClaimData>> {
+    const { targets, trustedClaimIssuers, claimTypes, includeExpired = true, size, start } = opts;
+
+    const isMiddlewareV2Available = await this.isMiddlewareV2Available();
+
+    if (isMiddlewareV2Available) {
+      return this.getIdentityClaimsFromMiddlewareV2({
+        targets,
+        trustedClaimIssuers,
+        claimTypes,
+        includeExpired,
+        size,
+        start,
+      });
+    }
+
+    if (!targets) {
+      throw new PolymeshError({
+        code: ErrorCode.MiddlewareError,
+        message: 'Cannot perform this action without an active middleware V2 connection',
+      });
+    }
+
+    const identityClaimsFromChain = await this.getIdentityClaimsFromChain({
+      targets,
+      claimTypes,
+      trustedClaimIssuers,
+      includeExpired,
+    });
+
+    return {
+      data: identityClaimsFromChain,
+      next: null,
+      count: undefined,
+    };
+  }
+
+  /**
+   * @hidden
+   *
    * Retrieve the middleware client
    *
    * @throws if the middleware is not enabled
@@ -1050,6 +1206,23 @@ export class Context {
       });
     }
 
+    return api;
+  }
+
+  /**
+   * Retrieve the middleware v2 client
+   *
+   * @throws if the middleware V2 is not enabled
+   */
+  public get middlewareApiV2(): ApolloClient<NormalizedCacheObject> {
+    const { _middlewareApiV2: api } = this;
+
+    if (!api) {
+      throw new PolymeshError({
+        code: ErrorCode.MiddlewareError,
+        message: 'Cannot perform this action without an active middleware v2 connection',
+      });
+    }
     return api;
   }
 
@@ -1080,10 +1253,43 @@ export class Context {
   /**
    * @hidden
    *
+   * Make a query to the middleware V2 server using the apollo client
+   */
+  public async queryMiddlewareV2<Result extends Partial<QueryV2>>(
+    query: GraphqlQuery<unknown>
+  ): Promise<ApolloQueryResult<Result>> {
+    let result: ApolloQueryResult<Result>;
+    try {
+      result = await this.middlewareApiV2.query(query);
+    } catch (err) {
+      const resultMessage = err.networkError?.result?.message;
+      const { message: errorMessage } = err;
+      const message = resultMessage ?? errorMessage;
+      throw new PolymeshError({
+        code: ErrorCode.MiddlewareError,
+        message: `Error in middleware V2 query: ${message}`,
+      });
+    }
+
+    return result;
+  }
+
+  /**
+   * @hidden
+   *
    * Return whether the middleware was enabled at startup
    */
   public isMiddlewareEnabled(): boolean {
     return !!this._middlewareApi;
+  }
+
+  /**
+   * @hidden
+   *
+   * Return whether the middleware V2 was enabled at startup
+   */
+  public isMiddlewareV2Enabled(): boolean {
+    return !!this._middlewareApiV2;
   }
 
   /**
@@ -1094,6 +1300,21 @@ export class Context {
   public async isMiddlewareAvailable(): Promise<boolean> {
     try {
       await this.middlewareApi.query(heartbeat());
+    } catch (err) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * @hidden
+   *
+   * Return whether the middleware V2 is enabled and online
+   */
+  public async isMiddlewareV2Available(): Promise<boolean> {
+    try {
+      await this.middlewareApiV2.query(heartbeatQuery());
     } catch (err) {
       return false;
     }
@@ -1133,14 +1354,20 @@ export class Context {
    */
   public disconnect(): Promise<void> {
     const { polymeshApi } = this;
-    let middlewareApi;
+    let middlewareApi, middlewareApiV2;
 
     if (this.isMiddlewareEnabled()) {
       ({ middlewareApi } = this);
     }
+
+    if (this.isMiddlewareV2Enabled()) {
+      ({ middlewareApiV2 } = this);
+    }
+
     this.isDisconnected = true;
 
     middlewareApi && middlewareApi.stop();
+    middlewareApiV2 && middlewareApiV2.stop();
 
     return polymeshApi.disconnect();
   }
@@ -1152,24 +1379,25 @@ export class Context {
    *   Context to Procedures with different signing Accounts
    */
   public clone(): Context {
-    const cloned = clone(this);
-    cloned.polymeshApi = Context.createPolymeshApiProxy(cloned);
-
-    return cloned;
+    return clone(this);
   }
 
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   /**
    *  @hidden
    *
    * Creates an instance of a type as registered in the polymeshApi instance
    */
-  public createType<K extends keyof InterfaceTypes>(type: K, params: unknown): InterfaceTypes[K] {
+  public createType<T extends Codec = Codec, K extends string = string>(
+    type: K,
+    params: unknown
+  ): DetectCodec<T, K> {
     try {
       return this.polymeshApi.createType(type, params);
     } catch (error) {
       throw new PolymeshError({
         code: ErrorCode.UnexpectedError,
-        message: `Could not create internal Polymesh type: "${type}". Please report this error to the Polymath team`,
+        message: `Could not create internal Polymesh type: "${type}". Please report this error to the Polymesh team`,
         data: { type, params, error },
       });
     }

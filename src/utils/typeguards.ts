@@ -1,6 +1,5 @@
 /* istanbul ignore file */
 
-import { ProposalStatus } from '~/api/entities/MultiSigProposal';
 import {
   Account,
   Asset,
@@ -46,6 +45,7 @@ import {
   MultiClaimCondition,
   NoDataClaim,
   PortfolioCustodianRole,
+  ProposalStatus,
   Role,
   RoleType,
   ScopedClaim,
@@ -197,6 +197,7 @@ export function isPolymeshError(value: unknown): value is PolymeshError {
 export function isUnscopedClaim(claim: Claim): claim is UnscopedClaim {
   return [
     ClaimType.NoData,
+    ClaimType.NoType,
     ClaimType.CustomerDueDiligence,
     ClaimType.InvestorUniquenessV2,
   ].includes(claim.type);
@@ -372,13 +373,5 @@ export function isPolymeshTransactionBatch(value: unknown): value is PolymeshTra
  * @hidden
  */
 export function isProposalStatus(status: string): status is ProposalStatus {
-  const expectedStatus: ProposalStatus[] = [
-    'Invalid',
-    'ActiveOrExpired',
-    'ExecutionSuccessful',
-    'ExecutionFailed',
-    'Rejected',
-  ];
-
-  return expectedStatus.includes(status as ProposalStatus);
+  return status in ProposalStatus;
 }

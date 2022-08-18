@@ -1,8 +1,10 @@
+import BigNumber from 'bignumber.js';
+
 import { AuthorizationRequest, Authorizations, Identity } from '~/internal';
 import { PaginationOptions, ResultSet } from '~/types';
 import { QueryReturnType, tuple } from '~/types/utils';
-import { signatoryToSignerValue, stringToIdentityId } from '~/utils/conversion';
-import { requestPaginated } from '~/utils/internal';
+import { bigNumberToU64, signatoryToSignerValue, stringToIdentityId } from '~/utils/conversion';
+import { defusePromise, requestPaginated } from '~/utils/internal';
 
 /**
  * Handles all Identity Authorization related functionality
@@ -50,5 +52,51 @@ export class IdentityAuthorizations extends Authorizations<Identity> {
       data,
       next,
     };
+  }
+
+  /**
+   * Retrieve a single Authorization Request targeting or issued by this Identity by its ID
+   *
+   * @throws if there is no Authorization Request with the passed ID targeting or issued by this Identity
+   */
+  public override async getOne(args: { id: BigNumber }): Promise<AuthorizationRequest> {
+    const {
+      context,
+      parent: { did },
+      context: {
+        polymeshApi: {
+          query: { identity },
+        },
+      },
+    } = this;
+
+    const { id } = args;
+
+    const rawId = bigNumberToU64(id, context);
+
+    /*
+     * We're using `defusePromise` here because if the id corresponds to a sent auth,
+     * we don't care about the error, and if it doesn't, then we return the promise and
+     * the error will be handled by the caller
+     */
+    const gettingReceivedAuth = defusePromise(super.getOne({ id }));
+
+    /**
+     * `authorizations` storage only returns results for the authorization target,
+     * so `authorizationsGiven` needs to be queried first to find the relevant target if present
+     */
+    const targetSignatory = await identity.authorizationsGiven(
+      stringToIdentityId(did, context),
+      rawId
+    );
+
+    if (!targetSignatory.isEmpty) {
+      const auth = await identity.authorizations(targetSignatory, rawId);
+      const target = signatoryToSignerValue(targetSignatory);
+
+      return this.createAuthorizationRequests([{ auth: auth.unwrap(), target }])[0];
+    }
+
+    return gettingReceivedAuth;
   }
 }

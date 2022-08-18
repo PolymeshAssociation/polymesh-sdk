@@ -1,5 +1,7 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
+import P from 'bluebird';
+import { isEqual } from 'lodash';
 
 import {
   Account,
@@ -28,17 +30,18 @@ import {
   ErrorCode,
   GenericAuthorizationData,
   InputCondition,
-  InputTargets,
   InputTaxWithholding,
   InstructionStatus,
   InstructionType,
   PermissionedAccount,
   PermissionGroupType,
+  PortfolioId,
   Signer,
   TickerReservationStatus,
+  TransactionPermissions,
 } from '~/types';
-import { MaybePostTransactionValue, PortfolioId } from '~/types/internal';
-import { u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
+import { MaybePostTransactionValue } from '~/types/internal';
+import { tickerToString, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
 
 /**
@@ -62,7 +65,7 @@ export async function assertInstructionValid(
     const latestBlock = await context.getLatestBlock();
     const { endBlock } = details;
 
-    if (latestBlock >= endBlock) {
+    if (latestBlock.gte(endBlock)) {
       throw new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message: 'The Instruction cannot be modified; it has already reached its end block',
@@ -126,15 +129,9 @@ export function assertSecondaryAccounts(
   accounts: Account[],
   secondaryAccounts: PermissionedAccount[]
 ): void {
-  const notInTheList: string[] = [];
-  accounts.forEach(account => {
-    const isPresent = secondaryAccounts.find(({ account: existingAccount }) =>
-      account.isEqual(existingAccount)
-    );
-    if (!isPresent) {
-      notInTheList.push(account.address);
-    }
-  });
+  const addresses = accounts.map(({ address }) => address);
+  const secondaryAddresses = secondaryAccounts.map(({ account: { address } }) => address);
+  const notInTheList = addresses.filter(address => !secondaryAddresses.includes(address));
 
   if (notInTheList.length) {
     throw new PolymeshError({
@@ -175,32 +172,13 @@ export function assertDistributionOpen(paymentDate: Date, expiryDate: Date | nul
 /**
  * @hidden
  */
-export function assertCaTargetsValid(targets: InputTargets, context: Context): void {
-  const { maxTargetIds } = context.polymeshApi.consts.corporateAction;
-
-  const maxTargets = u64ToBigNumber(maxTargetIds);
-
-  if (maxTargets.lt(targets.identities.length)) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Too many target Identities',
-      data: {
-        maxTargets,
-      },
-    });
-  }
-}
-
-/**
- * @hidden
- */
 export function assertCaTaxWithholdingsValid(
   taxWithholdings: InputTaxWithholding[],
   context: Context
 ): void {
   const { maxDidWhts } = context.polymeshApi.consts.corporateAction;
 
-  const maxWithholdingEntries = u64ToBigNumber(maxDidWhts);
+  const maxWithholdingEntries = u32ToBigNumber(maxDidWhts);
 
   if (maxWithholdingEntries.lt(taxWithholdings.length)) {
     throw new PolymeshError({
@@ -250,6 +228,8 @@ export async function assertDistributionDatesValid(
   expiryDate: Date | null
 ): Promise<void> {
   let checkpointDate: Date;
+
+  await assertCaCheckpointValid(checkpoint);
 
   if (checkpoint instanceof Date) {
     checkpointDate = checkpoint;
@@ -422,16 +402,17 @@ export async function assertMultiSigSignerAuthorizationValid(
       });
     }
 
-    const exitingIdentity = await target.getIdentity();
-    if (exitingIdentity) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'The target Account is already part of an Identity',
-      });
-    }
+    const identityRecord = await context.polymeshApi.query.identity.keyRecords(address);
 
-    const multiSig = await context.polymeshApi.query.multiSig.keyToMultiSig(address);
-    if (!multiSig.isEmpty) {
+    if (identityRecord.isSome) {
+      const record = identityRecord.unwrap();
+      if (record.isPrimaryKey || record.isSecondaryKey) {
+        throw new PolymeshError({
+          code: ErrorCode.ValidationError,
+          message: 'The target Account is already part of an Identity',
+        });
+      }
+
       throw new PolymeshError({
         code: ErrorCode.ValidationError,
         message: 'The target Account is already associated to a multisig address',
@@ -594,6 +575,52 @@ export async function assertAuthorizationRequestValid(
   }
 }
 
+/**
+ * @hidden
+ *
+ * Retrieve the Permission Group that has the same permissions as the ones passed as input, or undefined if
+ *   there is no matching group
+ */
+export async function getGroupFromPermissions(
+  asset: Asset,
+  permissions: TransactionPermissions | null
+): Promise<(CustomPermissionGroup | KnownPermissionGroup) | undefined> {
+  const { custom, known } = await asset.permissions.getGroups();
+  const allGroups = [...custom, ...known];
+
+  const currentGroupPermissions = await P.map(allGroups, group => group.getPermissions());
+
+  const duplicatedGroupIndex = currentGroupPermissions.findIndex(
+    ({ transactions: transactionPermissions }) => isEqual(transactionPermissions, permissions)
+  );
+
+  return allGroups[duplicatedGroupIndex];
+}
+
+/**
+ * @hidden
+ */
+export async function assertGroupDoesNotExist(
+  asset: Asset,
+  permissions: TransactionPermissions | null
+): Promise<void> {
+  const matchingGroup = await getGroupFromPermissions(asset, permissions);
+
+  if (matchingGroup) {
+    throw new PolymeshError({
+      code: ErrorCode.NoDataChange,
+      message: 'There already exists a group with the exact same permissions',
+      data: {
+        groupId:
+          matchingGroup instanceof CustomPermissionGroup ? matchingGroup.id : matchingGroup.type,
+      },
+    });
+  }
+}
+
+/**
+ * @hidden
+ */
 export const createAuthorizationResolver =
   (
     auth: MaybePostTransactionValue<Authorization>,
@@ -613,4 +640,18 @@ export const createAuthorizationResolver =
 
     const authId = u64ToBigNumber(data[3]);
     return new AuthorizationRequest({ authId, expiry, issuer, target, data: rawAuth }, context);
+  };
+
+/**
+ * @hidden
+ */
+export const createCreateGroupResolver =
+  (context: Context) =>
+  (receipt: ISubmittableResult): CustomPermissionGroup => {
+    const [{ data }] = filterEventRecords(receipt, 'externalAgents', 'GroupCreated');
+
+    return new CustomPermissionGroup(
+      { id: u32ToBigNumber(data[2]), ticker: tickerToString(data[1]) },
+      context
+    );
   };

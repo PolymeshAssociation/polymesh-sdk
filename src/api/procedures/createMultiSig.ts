@@ -11,7 +11,7 @@ import { filterEventRecords } from '~/utils/internal';
  */
 export interface CreateMultiSigParams {
   signers: Signer[];
-  signaturesRequired: BigNumber;
+  requiredSignatures: BigNumber;
 }
 
 export const createMultiSigResolver =
@@ -36,16 +36,16 @@ export async function prepareCreateMultiSigAccount(
     },
     context,
   } = this;
-  const { signers, signaturesRequired } = args;
+  const { signers, requiredSignatures } = args;
 
-  if (signaturesRequired.gt(signers.length)) {
+  if (requiredSignatures.gt(signers.length)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'The number of signatures required should not exceed the number of signers',
+      message: 'The number of required signatures should not exceed the number of signers',
     });
   }
 
-  const rawSignaturesRequired = bigNumberToU64(signaturesRequired, context);
+  const rawSignaturesRequired = bigNumberToU64(requiredSignatures, context);
   const rawSignatories = signers.map(signer => signerToSignatory(signer, context));
 
   const [multiSig] = this.addTransaction({

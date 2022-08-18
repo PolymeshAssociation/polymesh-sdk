@@ -1,8 +1,8 @@
 import BigNumber from 'bignumber.js';
-import { StoredSchedule } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { CheckpointSchedule, Context, Entity } from '~/internal';
+import { StoredSchedule } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { CalendarPeriod, CalendarUnit } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -134,7 +134,7 @@ describe('CheckpointSchedule class', () => {
         returnValue: [
           dsMockUtils.createMockStoredSchedule({
             id: rawScheduleId,
-          } as StoredSchedule),
+          } as unknown as StoredSchedule),
         ],
       });
 
@@ -197,7 +197,7 @@ describe('CheckpointSchedule class', () => {
         returnValue: [
           dsMockUtils.createMockStoredSchedule({
             id: rawScheduleId,
-          } as StoredSchedule),
+          } as unknown as StoredSchedule),
         ],
       });
 
@@ -227,7 +227,7 @@ describe('CheckpointSchedule class', () => {
         returnValue: [
           dsMockUtils.createMockStoredSchedule({
             id: rawScheduleId,
-          } as StoredSchedule),
+          } as unknown as StoredSchedule),
         ],
       });
 
@@ -256,7 +256,7 @@ describe('CheckpointSchedule class', () => {
         returnValue: [
           dsMockUtils.createMockStoredSchedule({
             id: dsMockUtils.createMockU64(id),
-          } as StoredSchedule),
+          } as unknown as StoredSchedule),
         ],
       });
 
@@ -275,7 +275,7 @@ describe('CheckpointSchedule class', () => {
     });
   });
 
-  describe('method: toJson', () => {
+  describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
       const schedule = new CheckpointSchedule(
         {
@@ -288,7 +288,7 @@ describe('CheckpointSchedule class', () => {
         },
         context
       );
-      expect(schedule.toJson()).toEqual({
+      expect(schedule.toHuman()).toEqual({
         id: '1',
         ticker: 'SOME_TICKER',
         period: {

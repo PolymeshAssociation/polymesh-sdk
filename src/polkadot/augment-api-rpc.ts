@@ -1,14 +1,18 @@
 // Auto-generated via `yarn polkadot-types-from-chain`, do not edit
 /* eslint-disable */
 
+import {
+  PolymeshPrimitivesAuthorization,
+  PolymeshPrimitivesIdentityId,
+} from '@polkadot/types/lookup';
+import type { AugmentedRpc } from '@polkadot/rpc-core/types';
+import type { Metadata, StorageKey } from '@polkadot/types';
 import type {
   Bytes,
   HashMap,
   Json,
-  Metadata,
   Null,
   Option,
-  StorageKey,
   Text,
   U256,
   U64,
@@ -16,8 +20,8 @@ import type {
   bool,
   u32,
   u64,
-} from '@polkadot/types';
-import type { AnyNumber, Codec, IExtrinsic, ITuple, Observable } from '@polkadot/types/types';
+} from '@polkadot/types-codec';
+import type { AnyNumber, Codec, ITuple } from '@polkadot/types-codec/types';
 import type { ExtrinsicOrHash, ExtrinsicStatus } from '@polkadot/types/interfaces/author';
 import type { EpochAuthorship } from '@polkadot/types/interfaces/babe';
 import type { BeefySignedCommitment } from '@polkadot/types/interfaces/beefy';
@@ -25,11 +29,14 @@ import type { BlockHash } from '@polkadot/types/interfaces/chain';
 import type { PrefixedStorageKey } from '@polkadot/types/interfaces/childstate';
 import type { AuthorityId } from '@polkadot/types/interfaces/consensus';
 import type {
+  CodeUploadRequest,
+  CodeUploadResult,
   ContractCallRequest,
   ContractExecResult,
   ContractInstantiateResult,
   InstantiateRequest,
 } from '@polkadot/types/interfaces/contracts';
+import type { BlockStats } from '@polkadot/types/interfaces/dev';
 import type { CreatedBlock } from '@polkadot/types/interfaces/engine';
 import type {
   EthAccount,
@@ -52,7 +59,7 @@ import type {
   JustificationNotification,
   ReportedRoundStates,
 } from '@polkadot/types/interfaces/grandpa';
-import type { MmrLeafProof } from '@polkadot/types/interfaces/mmr';
+import type { MmrLeafBatchProof, MmrLeafProof } from '@polkadot/types/interfaces/mmr';
 import type { StorageKind } from '@polkadot/types/interfaces/offchain';
 import type { FeeDetails, RuntimeDispatchInfo } from '@polkadot/types/interfaces/payment';
 import type { RpcMethods } from '@polkadot/types/interfaces/rpc';
@@ -73,6 +80,7 @@ import type {
   StorageData,
 } from '@polkadot/types/interfaces/runtime';
 import type {
+  MigrationStatusResult,
   ReadProof,
   RuntimeVersion,
   TraceBlockResponse,
@@ -87,15 +95,14 @@ import type {
   PeerInfo,
   SyncState,
 } from '@polkadot/types/interfaces/system';
+import type { IExtrinsic, Observable } from '@polkadot/types/types';
 import type {
   AssetComplianceResult,
   AssetDidResult,
-  Authorization,
   AuthorizationType,
   CanTransferResult,
   CappedFee,
   CddStatus,
-  DidRecords,
   DidStatus,
   GranularCanTransferResult,
   IdentityId,
@@ -103,12 +110,13 @@ import type {
   PipId,
   PortfolioId,
   ProtocolOp,
+  RpcDidRecords,
   Signatory,
   Ticker,
   VoteCount,
 } from 'polymesh-types/polymesh';
 
-declare module '@polkadot/rpc-core/types.jsonrpc' {
+declare module '@polkadot/rpc-core/types/jsonrpc' {
   export interface RpcInterface {
     asset: {
       /**
@@ -117,10 +125,10 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
       canTransfer: AugmentedRpc<
         (
           sender: AccountId | string | Uint8Array,
-          from_custodian: Option<IdentityId> | null | object | string | Uint8Array,
-          from_portfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
-          to_custodian: Option<IdentityId> | null | object | string | Uint8Array,
-          to_portfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
+          fromCustodian: Option<PolymeshPrimitivesIdentityId> | null | object | string | Uint8Array,
+          fromPortfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
+          toCustodian: Option<PolymeshPrimitivesIdentityId> | null | object | string | Uint8Array,
+          toPortfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
           ticker: Ticker | string | Uint8Array,
           value: Balance | AnyNumber | Uint8Array,
           blockHash?: Hash | string | Uint8Array
@@ -131,10 +139,10 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
        **/
       canTransferGranular: AugmentedRpc<
         (
-          from_custodian: Option<IdentityId> | null | object | string | Uint8Array,
-          from_portfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
-          to_custodian: Option<IdentityId> | null | object | string | Uint8Array,
-          to_portfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
+          fromCustodian: Option<PolymeshPrimitivesIdentityId> | null | object | string | Uint8Array,
+          fromPortfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
+          toCustodian: Option<PolymeshPrimitivesIdentityId> | null | object | string | Uint8Array,
+          toPortfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
           ticker: Ticker | string | Uint8Array,
           value: Balance | AnyNumber | Uint8Array,
           blockHash?: Hash | string | Uint8Array
@@ -196,6 +204,10 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
       epochAuthorship: AugmentedRpc<() => Observable<HashMap<AuthorityId, EpochAuthorship>>>;
     };
     beefy: {
+      /**
+       * Returns hash of the latest BEEFY finalized block as seen by this client.
+       **/
+      getFinalizedHead: AugmentedRpc<() => Observable<H256>>;
       /**
        * Returns the block most recently finalized by BEEFY, alongside side its justification.
        **/
@@ -267,6 +279,16 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
         ) => Observable<Option<StorageData>>
       >;
       /**
+       * Returns child storage entries for multiple keys at a specific block state
+       **/
+      getStorageEntries: AugmentedRpc<
+        (
+          childKey: PrefixedStorageKey | string | Uint8Array,
+          keys: Vec<StorageKey> | (StorageKey | string | Uint8Array | any)[],
+          at?: Hash | string | Uint8Array
+        ) => Observable<Vec<Option<StorageData>>>
+      >;
+      /**
        * Returns the hash of a child storage entry at a block state
        **/
       getStorageHash: AugmentedRpc<
@@ -294,8 +316,8 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
       canTransfer: AugmentedRpc<
         (
           ticker: Ticker | string | Uint8Array,
-          from_did: Option<IdentityId> | null | object | string | Uint8Array,
-          to_did: Option<IdentityId> | null | object | string | Uint8Array,
+          fromDid: Option<IdentityId> | null | object | string | Uint8Array,
+          toDid: Option<IdentityId> | null | object | string | Uint8Array,
           blockHash?: Hash | string | Uint8Array
         ) => Observable<AssetComplianceResult>
       >;
@@ -308,7 +330,14 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
         (
           callRequest:
             | ContractCallRequest
-            | { origin?: any; dest?: any; value?: any; gasLimit?: any; inputData?: any }
+            | {
+                origin?: any;
+                dest?: any;
+                value?: any;
+                gasLimit?: any;
+                storageDepositLimit?: any;
+                inputData?: any;
+              }
             | string
             | Uint8Array,
           at?: BlockHash | string | Uint8Array
@@ -331,7 +360,15 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
         (
           request:
             | InstantiateRequest
-            | { origin?: any; endowment?: any; gasLimit?: any; code?: any; data?: any; salt?: any }
+            | {
+                origin?: any;
+                value?: any;
+                gasLimit?: any;
+                storageDepositLimit?: any;
+                code?: any;
+                data?: any;
+                salt?: any;
+              }
             | string
             | Uint8Array,
           at?: BlockHash | string | Uint8Array
@@ -345,6 +382,27 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
           address: AccountId | string | Uint8Array,
           at?: BlockHash | string | Uint8Array
         ) => Observable<Option<BlockNumber>>
+      >;
+      /**
+       * Upload new code without instantiating a contract from it
+       **/
+      uploadCode: AugmentedRpc<
+        (
+          uploadRequest:
+            | CodeUploadRequest
+            | { origin?: any; code?: any; storageDepositLimit?: any }
+            | string
+            | Uint8Array,
+          at?: BlockHash | string | Uint8Array
+        ) => Observable<CodeUploadResult>
+      >;
+    };
+    dev: {
+      /**
+       * Reexecute the specified `block_hash` and gather statistics while doing so
+       **/
+      getBlockStats: AugmentedRpc<
+        (at: Hash | string | Uint8Array) => Observable<Option<BlockStats>>
       >;
     };
     engine: {
@@ -692,13 +750,11 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
     };
     grandpa: {
       /**
-       * Prove finality for the range (begin; end] hash.
+       * Prove finality for the given block number, returning the Justification for the last block in the set.
        **/
       proveFinality: AugmentedRpc<
         (
-          begin: BlockHash | string | Uint8Array,
-          end: BlockHash | string | Uint8Array,
-          authoritiesSetId?: u64 | AnyNumber | Uint8Array
+          blockNumber: BlockNumber | AnyNumber | Uint8Array
         ) => Observable<Option<EncodedFinalityProofs>>
       >;
       /**
@@ -727,7 +783,7 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
         (
           did: IdentityId | string | Uint8Array,
           blockHash?: Hash | string | Uint8Array
-        ) => Observable<DidRecords>
+        ) => Observable<RpcDidRecords>
       >;
       /**
        * Retrieve status of the DID
@@ -744,8 +800,8 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
       getFilteredAuthorizations: AugmentedRpc<
         (
           signatory: Signatory | { Identity: any } | { Account: any } | string | Uint8Array,
-          allow_expired: bool | boolean | Uint8Array,
-          auth_type?:
+          allowExpired: bool | boolean | Uint8Array,
+          authType?:
             | AuthorizationType
             | 'AttestPrimaryKeyRotation'
             | 'RotatePrimaryKey'
@@ -760,7 +816,7 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
             | number
             | Uint8Array,
           blockHash?: Hash | string | Uint8Array
-        ) => Observable<Vec<Authorization>>
+        ) => Observable<Vec<PolymeshPrimitivesAuthorization>>
       >;
       /**
        * Query relation between a signing key and a DID
@@ -784,13 +840,22 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
     };
     mmr: {
       /**
+       * Generate MMR proof for the given leaf indices.
+       **/
+      generateBatchProof: AugmentedRpc<
+        (
+          leafIndices: Vec<u64> | (u64 | AnyNumber | Uint8Array)[],
+          at?: BlockHash | string | Uint8Array
+        ) => Observable<MmrLeafProof>
+      >;
+      /**
        * Generate MMR proof for given leaf index.
        **/
       generateProof: AugmentedRpc<
         (
           leafIndex: u64 | AnyNumber | Uint8Array,
           at?: BlockHash | string | Uint8Array
-        ) => Observable<MmrLeafProof>
+        ) => Observable<MmrLeafBatchProof>
       >;
     };
     net: {
@@ -1100,8 +1165,15 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
         (
           block: Hash | string | Uint8Array,
           targets: Option<Text> | null | object | string | Uint8Array,
-          storageKeys: Option<Text> | null | object | string | Uint8Array
+          storageKeys: Option<Text> | null | object | string | Uint8Array,
+          methods: Option<Text> | null | object | string | Uint8Array
         ) => Observable<TraceBlockResponse>
+      >;
+      /**
+       * Check current migration state
+       **/
+      trieMigrationStatus: AugmentedRpc<
+        (at?: BlockHash | string | Uint8Array) => Observable<MigrationStatusResult>
       >;
     };
     syncstate: {
@@ -1205,5 +1277,5 @@ declare module '@polkadot/rpc-core/types.jsonrpc' {
        **/
       sha3: AugmentedRpc<(data: Bytes | string | Uint8Array) => Observable<H256>>;
     };
-  }
-}
+  } // RpcInterface
+} // declare module

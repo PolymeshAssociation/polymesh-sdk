@@ -1,6 +1,5 @@
-import { MultiSig } from '~/api/entities/MultiSig';
 import { PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, Signer, TxTags } from '~/types';
+import { ErrorCode, MultiSig, Signer, TxTags } from '~/types';
 import { signerToSignatory, signerToString, stringToAccountId } from '~/utils/conversion';
 
 /**
@@ -42,8 +41,11 @@ export async function prepareModifyMultiSig(
   const { signers, multiSig: multi } = args;
 
   // ensure calling account is creator, other actions require a proposal from the multisig
-  const signingIdentity = await context.getSigningIdentity();
-  const creator = await multi.getCreator();
+  const [signingIdentity, creator] = await Promise.all([
+    context.getSigningIdentity(),
+    await multi.getCreator(),
+  ]);
+
   if (!creator.isEqual(signingIdentity)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
@@ -52,9 +54,9 @@ export async function prepareModifyMultiSig(
   }
 
   const rawAddress = stringToAccountId(multi.address, context);
-  const { signers: currentSigners, signaturesRequired } = await multi.details();
+  const { signers: currentSigners, requiredSignatures } = await multi.details();
 
-  if (signaturesRequired.gt(signers.length)) {
+  if (requiredSignatures.gt(signers.length)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'The number of signatures required should not exceed the number of signers',

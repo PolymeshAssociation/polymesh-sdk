@@ -1,9 +1,15 @@
 import { BigNumber } from 'bignumber.js';
 
 import { Context, Entity, PolymeshError } from '~/internal';
-import { ErrorCode, TxTag } from '~/types';
+import { ErrorCode, MultiSigProposalDetails, TxTag } from '~/types';
 import { isProposalStatus } from '~/utils';
-import { bigNumberToU64, boolToBoolean, momentToDate, u64ToBigNumber } from '~/utils/conversion';
+import {
+  bigNumberToU64,
+  boolToBoolean,
+  momentToDate,
+  stringToAccountId,
+  u64ToBigNumber,
+} from '~/utils/conversion';
 import { assertAddressValid } from '~/utils/internal';
 
 interface UniqueIdentifiers {
@@ -16,25 +22,8 @@ export interface HumanReadable {
   id: string;
 }
 
-export type ProposalStatus =
-  | 'Invalid'
-  | 'ActiveOrExpired'
-  | 'ExecutionSuccessful'
-  | 'ExecutionFailed'
-  | 'Rejected';
-
-export interface MultiSigProposalDetails {
-  approvals: BigNumber;
-  rejections: BigNumber;
-  status: ProposalStatus;
-  expiry: Date | null;
-  autoClose: boolean;
-  txTag: TxTag;
-  args: string[];
-}
-
 /**
- * A proposal for a MultiSig transaction. This is a wrapper around an extrinsic and will be executed when the approvals reach the signature threshold set on the MultiSig Account
+ * A proposal for a MultiSig transaction. This is a wrapper around an extrinsic that will be executed when the amount of approvals reaches the signature threshold set on the MultiSig Account
  */
 export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
   public multiSigAddress: string;
@@ -52,7 +41,7 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Fetches the details of the Proposal. This includes the approvals, rejections, the expiry along with details of the wrapped extrinsic
+   * Fetches the details of the Proposal. This includes the amount of approvals and rejections, the expiry, and details of the wrapped extrinsic
    */
   public async details(): Promise<MultiSigProposalDetails> {
     const {
@@ -65,6 +54,7 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
       id,
       context,
     } = this;
+    const rawMultiSignAddress = stringToAccountId(multiSigAddress, context);
     const u64Id = bigNumberToU64(id, context);
     const [
       {
@@ -72,12 +62,12 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
         rejections: rawRejections,
         status: rawStatus,
         expiry: rawExpiry,
-        auto_close: rawAutoClose,
+        autoClose: rawAutoClose,
       },
       proposal,
     ] = await Promise.all([
-      multiSig.proposalDetail([multiSigAddress, u64Id]),
-      multiSig.proposals([multiSigAddress, u64Id]),
+      multiSig.proposalDetail([rawMultiSignAddress, u64Id]),
+      multiSig.proposals([rawMultiSignAddress, u64Id]),
     ]);
 
     let args, method, section;
@@ -93,20 +83,21 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
       });
     }
 
-    const approvals = u64ToBigNumber(rawApprovals);
-    const rejections = u64ToBigNumber(rawRejections);
-    const expiry = !rawExpiry || rawExpiry.isNone ? null : momentToDate(rawExpiry.unwrap());
+    const approvalAmount = u64ToBigNumber(rawApprovals);
+    const rejectionAmount = u64ToBigNumber(rawRejections);
+    const expiry = rawExpiry.isNone ? null : momentToDate(rawExpiry.unwrap());
     const status = rawStatus.toString();
     if (!isProposalStatus(status))
       throw new PolymeshError({
         code: ErrorCode.FatalError,
-        message: `Unexpected MultiSigProposal status: "${status}". Try upgrading the SDK to the latest version. Contact the Polymesh team if the problem persists`,
+        message:
+          'Unexpected MultiSigProposal status. Try upgrading the SDK to the latest version. Contact the Polymesh team if the problem persists',
       });
     const autoClose = boolToBoolean(rawAutoClose);
 
     return {
-      approvals,
-      rejections,
+      approvalAmount,
+      rejectionAmount,
       status,
       expiry,
       autoClose,
@@ -130,14 +121,15 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
     const u64Id = bigNumberToU64(id, context);
-    const rawProposal = await multiSig.proposals([multiSigAddress, u64Id]);
+    const rawMultiSignAddress = stringToAccountId(multiSigAddress, context);
+    const rawProposal = await multiSig.proposals([rawMultiSignAddress, u64Id]);
     return !rawProposal.isEmpty;
   }
 
   /**
-   * Returns the MultiSig address and this Proposal's ID as a human readable string
+   * Returns a human readable string representation
    */
-  public toJson(): string {
+  public toHuman(): string {
     const { multiSigAddress, id } = this;
     return JSON.stringify({
       multiSigAddress,

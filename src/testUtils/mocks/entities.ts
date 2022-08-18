@@ -1,4 +1,6 @@
 /* istanbul ignore file */
+
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-use-before-define */
@@ -6,7 +8,7 @@ import BigNumber from 'bignumber.js';
 import { pick } from 'lodash';
 import sinon from 'sinon';
 
-import { MultiSigProposal, MultiSigProposalDetails } from '~/api/entities/MultiSigProposal';
+import { MultiSigProposal } from '~/api/entities/MultiSig/MultiSigProposal';
 import {
   Account,
   Asset,
@@ -55,6 +57,7 @@ import {
   InstructionType,
   KnownAssetType,
   Leg,
+  MultiSigProposalDetails,
   OfferingBalanceStatus,
   OfferingDetails,
   OfferingSaleStatus,
@@ -64,6 +67,7 @@ import {
   PermissionGroups,
   PermissionGroupType,
   PortfolioBalance,
+  ProposalStatus,
   ResultSet,
   ScheduleDetails,
   ScheduleWithDetails,
@@ -102,7 +106,7 @@ export type MockMultiSigProposal = Mocked<MultiSigProposal>;
 interface EntityOptions {
   exists?: boolean;
   isEqual?: boolean;
-  toJson?: any;
+  toHuman?: any;
 }
 
 type EntityGetter<Result> = Partial<Result> | ((...args: any) => any) | sinon.SinonStub;
@@ -119,10 +123,11 @@ interface IdentityOptions extends EntityOptions {
   getPrimaryAccount?: EntityGetter<PermissionedAccount>;
   authorizationsGetReceived?: EntityGetter<AuthorizationRequest[]>;
   authorizationsGetSent?: EntityGetter<ResultSet<AuthorizationRequest>>;
+  authorizationsGetOne?: EntityGetter<AuthorizationRequest>;
   getVenues?: EntityGetter<Venue[]>;
   getScopeId?: EntityGetter<string | null>;
   getAssetBalance?: EntityGetter<BigNumber>;
-  getSecondaryAccounts?: EntityGetter<PermissionedAccount[]>;
+  getSecondaryAccounts?: EntityGetter<ResultSet<PermissionedAccount>>;
   areSecondaryAccountsFrozen?: EntityGetter<boolean>;
   assetPermissionsGetGroup?: EntityGetter<CustomPermissionGroup | KnownPermissionGroup>;
   assetPermissionsGet?: EntityGetter<AssetWithGroup[]>;
@@ -145,6 +150,12 @@ interface AssetOptions extends EntityOptions {
   transferRestrictionsPercentageGet?: EntityGetter<
     ActiveTransferRestrictions<PercentageTransferRestriction>
   >;
+  transferRestrictionsClaimCountGet?: EntityGetter<
+    ActiveTransferRestrictions<CountTransferRestriction>
+  >;
+  transferRestrictionsClaimPercentageGet?: EntityGetter<
+    ActiveTransferRestrictions<PercentageTransferRestriction>
+  >;
   corporateActionsGetAgents?: EntityGetter<Identity[]>;
   corporateActionsGetDefaultConfig?: EntityGetter<CorporateActionDefaultConfig>;
   permissionsGetAgents?: EntityGetter<AgentWithGroup[]>;
@@ -152,6 +163,7 @@ interface AssetOptions extends EntityOptions {
   complianceRequirementsGet?: EntityGetter<ComplianceRequirements>;
   checkpointsGetOne?: EntityGetter<Checkpoint>;
   checkpointsSchedulesGetOne?: EntityGetter<ScheduleWithDetails>;
+  investorCount?: EntityGetter<BigNumber>;
 }
 
 interface AuthorizationRequestOptions extends EntityOptions {
@@ -284,7 +296,7 @@ interface MultiSigProposalOptions extends EntityOptions {
 }
 
 interface MultiSigOptions extends AccountOptions {
-  details?: { signers: Signer[]; signaturesRequired: BigNumber };
+  details?: { signers: Signer[]; requiredSignatures: BigNumber };
   getCreator?: EntityGetter<Identity>;
 }
 
@@ -348,14 +360,14 @@ function createMockEntityClass<Options extends EntityOptions>(
     ({
       isEqual: true,
       exists: true,
-      toJson: 'DEFAULT_JSON_STRING_PLEASE_OVERRIDE',
+      toHuman: 'DEFAULT_JSON_STRING_PLEASE_OVERRIDE',
       ...defaultOptions(),
       ...options,
     } as Required<Options>);
   return class MockClass extends Class {
     isEqual = sinon.stub();
     exists = sinon.stub();
-    toJson = sinon.stub();
+    toHuman = sinon.stub();
 
     private static constructorStub = sinon.stub();
 
@@ -436,7 +448,7 @@ function createMockEntityClass<Options extends EntityOptions>(
 
       this.exists.returns(fullOpts.exists);
       this.isEqual.returns(fullOpts.isEqual);
-      this.toJson.returns(fullOpts.toJson);
+      this.toHuman.returns(fullOpts.toHuman);
     }
 
     /**
@@ -492,6 +504,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     authorizations = {} as {
       getReceived: sinon.SinonStub;
       getSent: sinon.SinonStub;
+      getOne: sinon.SinonStub;
     };
 
     assetPermissions = {} as {
@@ -528,6 +541,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
       this.getPrimaryAccount = createEntityGetterStub(opts.getPrimaryAccount);
       this.authorizations.getReceived = createEntityGetterStub(opts.authorizationsGetReceived);
       this.authorizations.getSent = createEntityGetterStub(opts.authorizationsGetSent);
+      this.authorizations.getOne = createEntityGetterStub(opts.authorizationsGetOne);
       this.assetPermissions.get = createEntityGetterStub(opts.assetPermissionsGet);
       this.assetPermissions.getGroup = createEntityGetterStub(opts.assetPermissionsGetGroup);
       this.assetPermissions.hasPermissions = createEntityGetterStub(
@@ -550,10 +564,11 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     isCddProvider: false,
     authorizationsGetReceived: [],
     authorizationsGetSent: { data: [], next: null, count: new BigNumber(0) },
+    authorizationsGetOne: getAuthorizationRequestInstance(),
     getVenues: [],
     getScopeId: 'someScopeId',
     getAssetBalance: new BigNumber(100),
-    getSecondaryAccounts: [],
+    getSecondaryAccounts: { data: [], next: null },
     areSecondaryAccountsFrozen: false,
     getPrimaryAccount: {
       account: getAccountInstance(),
@@ -575,7 +590,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     checkRoles: {
       result: true,
     },
-    toJson: 'someDid',
+    toHuman: 'someDid',
   }),
   ['Identity']
 );
@@ -661,7 +676,7 @@ const MockSubsidyClass = createMockEntityClass<SubsidyOptions>(
     beneficiary: 'beneficiary',
     subsidizer: 'subsidizer',
     getAllowance: new BigNumber(100),
-    toJson: {
+    toHuman: {
       beneficiary: 'beneficiary',
       subsidizer: 'subsidizer',
     },
@@ -718,11 +733,19 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
     transferRestrictions = {
       count: {},
       percentage: {},
+      claimCount: {},
+      claimPercentage: {},
     } as {
       count: {
         get: sinon.SinonStub;
       };
       percentage: {
+        get: sinon.SinonStub;
+      };
+      claimCount: {
+        get: sinon.SinonStub;
+      };
+      claimPercentage: {
         get: sinon.SinonStub;
       };
     };
@@ -754,6 +777,8 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
       getOne: sinon.SinonStub;
     };
 
+    investorCount!: sinon.SinonStub;
+
     /**
      * @hidden
      */
@@ -778,6 +803,12 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
       this.transferRestrictions.percentage.get = createEntityGetterStub(
         opts.transferRestrictionsPercentageGet
       );
+      this.transferRestrictions.claimCount.get = createEntityGetterStub(
+        opts.transferRestrictionsClaimCountGet
+      );
+      this.transferRestrictions.claimPercentage.get = createEntityGetterStub(
+        opts.transferRestrictionsClaimPercentageGet
+      );
       this.corporateActions.getAgents = createEntityGetterStub(opts.corporateActionsGetAgents);
       this.corporateActions.getDefaultConfig = createEntityGetterStub(
         opts.corporateActionsGetDefaultConfig
@@ -787,6 +818,7 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
       this.compliance.requirements.get = createEntityGetterStub(opts.complianceRequirementsGet);
       this.checkpoints.schedules.getOne = createEntityGetterStub(opts.checkpointsSchedulesGetOne);
       this.checkpoints.getOne = createEntityGetterStub(opts.checkpointsGetOne);
+      this.investorCount = createEntityGetterStub(opts.investorCount);
     }
   },
   () => ({
@@ -814,6 +846,14 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
       restrictions: [],
       availableSlots: new BigNumber(3),
     },
+    transferRestrictionsClaimCountGet: {
+      restrictions: [],
+      availableSlots: new BigNumber(3),
+    },
+    transferRestrictionsClaimPercentageGet: {
+      restrictions: [],
+      availableSlots: new BigNumber(3),
+    },
     corporateActionsGetAgents: [],
     corporateActionsGetDefaultConfig: {
       targets: { identities: [], treatment: TargetTreatment.Exclude },
@@ -837,7 +877,8 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
         nextCheckpointDate: new Date(new Date().getTime() + 1000 * 60 * 60),
       },
     },
-    toJson: 'SOME_TICKER',
+    toHuman: 'SOME_TICKER',
+    investorCount: new BigNumber(0),
   }),
   ['Asset']
 );
@@ -1012,7 +1053,7 @@ const MockNumberedPortfolioClass = createMockEntityClass<NumberedPortfolioOption
     did: 'someDid',
     getCustodian: getIdentityInstance(),
     isCustodiedBy: true,
-    toJson: {
+    toHuman: {
       did: 'someDid',
       id: '1',
     },
@@ -1061,7 +1102,7 @@ const MockDefaultPortfolioClass = createMockEntityClass<DefaultPortfolioOptions>
     did: 'someDid',
     getCustodian: getIdentityInstance(),
     isCustodiedBy: true,
-    toJson: {
+    toHuman: {
       did: 'someDid',
     },
   }),
@@ -1481,7 +1522,7 @@ const MockMultiSigClass = createMockEntityClass<MultiSigOptions>(
     },
     details: {
       signers: [],
-      signaturesRequired: new BigNumber(0),
+      requiredSignatures: new BigNumber(0),
     },
     getCreator: getIdentityInstance(),
   }),
@@ -1514,9 +1555,9 @@ const MockMultiSigProposalClass = createMockEntityClass<MultiSigProposalOptions>
     id: new BigNumber(1),
     multiSigAddress: 'someAddress',
     details: {
-      approvals: new BigNumber(1),
-      rejections: new BigNumber(0),
-      status: 'ActiveOrExpired',
+      approvalAmount: new BigNumber(1),
+      rejectionAmount: new BigNumber(0),
+      status: ProposalStatus.ActiveOrExpired,
       expiry: null,
       autoClose: false,
     },
