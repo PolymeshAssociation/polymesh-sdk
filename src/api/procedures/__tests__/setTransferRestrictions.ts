@@ -132,7 +132,7 @@ describe('setTransferRestrictions procedure', () => {
       utilsConversionModule,
       'transferRestrictionTypeToStatOpType'
     );
-    statStub = sinon.stub(utilsConversionModule, 'meshStatToStatisticsOpType');
+    statStub = sinon.stub(utilsConversionModule, 'statTypeToStatOpType');
     complianceConditionsToBtreeSetStub = sinon.stub(
       utilsConversionModule,
       'complianceConditionsToBtreeSet'

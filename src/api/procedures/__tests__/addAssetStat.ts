@@ -105,7 +105,7 @@ describe('addAssetStat procedure', () => {
     dsMockUtils.setConstMock('statistics', 'maxTransferConditionsPerAsset', {
       returnValue: dsMockUtils.createMockU32(new BigNumber(3)),
     });
-    statStub = sinon.stub(utilsConversionModule, 'meshStatToStatisticsOpType');
+    statStub = sinon.stub(utilsConversionModule, 'meshStatToStatType');
     activeAssetStatsStub = dsMockUtils.createQueryStub('statistics', 'activeAssetStats');
     activeAssetStatsStub.returns(dsMockUtils.createMockBTreeSet([]));
     statisticStatTypesToBtreeStatTypeStub = sinon.stub(

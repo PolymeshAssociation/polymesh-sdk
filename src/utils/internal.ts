@@ -92,7 +92,7 @@ import {
   identityIdToString,
   meshClaimTypeToClaimType,
   meshPermissionsToPermissions,
-  meshStatToStatisticsOpType,
+  meshStatToStatType,
   middlewareScopeToScope,
   permillToBigNumber,
   signerToString,
@@ -1261,19 +1261,9 @@ export function compareStatsToInput(
     }
   }
 
-  const stat = meshStatToStatisticsOpType(rawStatType);
-  let cmpStat;
-  if (stat === StatType.Count) {
-    cmpStat = StatType.Count;
-  } else if (stat === StatType.Balance) {
-    cmpStat = StatType.Balance;
-  } else if (stat === StatType.ScopedCount) {
-    cmpStat = StatType.ScopedCount;
-  } else {
-    cmpStat = StatType.ScopedBalance;
-  }
+  const stat = meshStatToStatType(rawStatType);
 
-  return cmpStat === type;
+  return stat === type;
 }
 
 /**
@@ -1396,7 +1386,7 @@ export function compareStatTypeToTransferRestrictionType(
   statType: PolymeshPrimitivesStatisticsStatType,
   transferRestrictionType: TransferRestrictionType
 ): boolean {
-  const opType = meshStatToStatisticsOpType(statType);
+  const opType = meshStatToStatType(statType);
   if (opType === StatType.Count) {
     return transferRestrictionType === TransferRestrictionType.Count;
   } else if (opType === StatType.Balance) {

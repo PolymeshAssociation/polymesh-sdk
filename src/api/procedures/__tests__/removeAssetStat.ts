@@ -123,7 +123,7 @@ describe('removeAssetStat procedure', () => {
       utilsConversionModule,
       'statisticsOpTypeToStatType'
     );
-    statStub = sinon.stub(utilsConversionModule, 'meshStatToStatisticsOpType');
+    statStub = sinon.stub(utilsConversionModule, 'meshStatToStatType');
     statisticStatTypesToBtreeStatTypeStub = sinon.stub(
       utilsConversionModule,
       'statisticStatTypesToBtreeStatType'

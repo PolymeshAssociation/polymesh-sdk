@@ -62,10 +62,10 @@ const newExemptionRecord = (): ExemptionRecords => ({
 
 /**
  * @hidden
- * @param toInsertId - The Identity to insert into the exemption records
- * @param exemptionRecords - The records that will be mutated if the Identity should be added
- * @param claimType - the type of Claim the Identity is exempt from
- * @param filterSet - A set of Identities that should not be added into exemption records if given
+ * @param toInsertId - Identity to insert into the exemption records
+ * @param exemptionRecords - records that will be mutated if the Identity should be added
+ * @param claimType - type of Claim the Identity is exempt from
+ * @param filterSet - set of Identities that should not be added into exemption records if given
  */
 const addExemptionIfNotPresent = (
   toInsertId: Identity,
@@ -156,7 +156,7 @@ function transformInput(
     const key = cType as ClaimKey;
     const given = inputExemptions[key];
     currentIds.forEach(id => {
-      addExemptionIfNotPresent(id, toRemoveExemptions, cType as ClaimKey, given);
+      addExemptionIfNotPresent(id, toRemoveExemptions, key, given);
     });
   });
 

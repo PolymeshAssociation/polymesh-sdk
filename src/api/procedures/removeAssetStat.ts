@@ -56,7 +56,6 @@ export async function prepareRemoveAssetStat(
     | undefined;
 
   if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
-    // should be based on if its present or not
     claimIssuer = { issuer: args.issuer, claimType: args.claimType };
     rawClaimIssuer = claimIssuerToMeshClaimIssuer(claimIssuer, context);
   }

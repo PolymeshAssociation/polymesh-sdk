@@ -205,7 +205,7 @@ import {
   meshInstructionStatusToInstructionStatus,
   meshPermissionsToPermissions,
   meshScopeToScope,
-  meshStatToStatisticsOpType,
+  meshStatToStatType,
   meshVenueTypeToVenueType,
   middlewareEventToEventIdentifier,
   middlewarePortfolioToPortfolio,
@@ -241,7 +241,6 @@ import {
   signerValueToSigner,
   sortStatsByClaimType,
   sortTransferRestrictionByClaimValue,
-  statisticsOpTypeToStatOpType,
   statisticsOpTypeToStatType,
   statisticStatTypesToBtreeStatType,
   statsClaimToStatClaimInputType,
@@ -7579,7 +7578,7 @@ describe('agentGroupToPermissionGroup', () => {
         claimIssuer: createMockOption(),
       } as unknown as PolymeshPrimitivesStatisticsStatType;
 
-      const result = meshStatToStatisticsOpType(rawStat);
+      const result = meshStatToStatType(rawStat);
 
       expect(result).toEqual(StatType.Count);
     });
@@ -7611,31 +7610,6 @@ describe('agentGroupToPermissionGroup', () => {
 
       expect(result).toEqual('Scoped2ndKey');
     });
-  });
-});
-
-describe('statisticsOpTypeToStatOpType', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  it('should convert a StatType into its raw type', () => {
-    const context = dsMockUtils.getContextInstance();
-    const fakeStat = 'fakeStat';
-    context.createType
-      .withArgs('PolymeshPrimitivesStatisticsStatOpType', StatType.Count)
-      .returns(fakeStat);
-
-    const result = statisticsOpTypeToStatOpType(StatType.Count, context);
-    expect(result).toEqual(fakeStat);
   });
 });
 

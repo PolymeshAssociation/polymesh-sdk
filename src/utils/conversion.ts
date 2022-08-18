@@ -3795,29 +3795,20 @@ export function statUpdatesToBtreeStatUpdate(
 /**
  * @hidden
  */
-export function meshStatToStatisticsOpType(
-  rawStat: PolymeshPrimitivesStatisticsStatType
-): keyof typeof StatType {
+export function meshStatToStatType(rawStat: PolymeshPrimitivesStatisticsStatType): StatType {
   if (rawStat.claimIssuer.isNone) {
-    return rawStat.op.type;
-  } else {
     if (rawStat.op.type === 'Count') {
-      return StatType.ScopedCount;
+      return StatType.Count;
     } else {
-      return StatType.ScopedBalance;
+      return StatType.Balance;
     }
   }
-}
 
-/**
- * @hidden
- * @param type - On chain "Scoped" or not is determined by the presence of the claim, and not be distinct types
- */
-export function statisticsOpTypeToStatOpType(
-  type: StatType.Count | StatType.Balance,
-  context: Context
-): PolymeshPrimitivesStatisticsStatOpType {
-  return context.createType('PolymeshPrimitivesStatisticsStatOpType', type);
+  if (rawStat.op.type === 'Count') {
+    return StatType.ScopedCount;
+  } else {
+    return StatType.ScopedBalance;
+  }
 }
 
 /**
@@ -3828,9 +3819,9 @@ export function statTypeToStatOpType(
   context: Context
 ): PolymeshPrimitivesStatisticsStatOpType {
   if (type === StatType.Count || type === StatType.ScopedCount) {
-    return statisticsOpTypeToStatOpType(StatType.Count, context);
+    return context.createType('PolymeshPrimitivesStatisticsStatOpType', StatType.Count);
   }
-  return statisticsOpTypeToStatOpType(StatType.Balance, context);
+  return context.createType('PolymeshPrimitivesStatisticsStatOpType', StatType.Balance);
 }
 
 /**
@@ -3841,10 +3832,10 @@ export function transferRestrictionTypeToStatOpType(
   context: Context
 ): PolymeshPrimitivesStatisticsStatOpType {
   if (type === TransferRestrictionType.Count || type === TransferRestrictionType.ClaimCount) {
-    return statisticsOpTypeToStatOpType(StatType.Count, context);
+    return context.createType('PolymeshPrimitivesStatisticsStatOpType', StatType.Count);
   }
 
-  return statisticsOpTypeToStatOpType(StatType.Balance, context);
+  return context.createType('PolymeshPrimitivesStatisticsStatOpType', StatType.Balance);
 }
 
 /**
