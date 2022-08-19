@@ -3796,15 +3796,20 @@ export function statUpdatesToBtreeStatUpdate(
  * @hidden
  */
 export function meshStatToStatType(rawStat: PolymeshPrimitivesStatisticsStatType): StatType {
-  if (rawStat.claimIssuer.isNone) {
-    if (rawStat.op.type === 'Count') {
+  const {
+    op: { type },
+    claimIssuer,
+  } = rawStat;
+
+  if (claimIssuer.isNone) {
+    if (type === 'Count') {
       return StatType.Count;
     } else {
       return StatType.Balance;
     }
   }
 
-  if (rawStat.op.type === 'Count') {
+  if (type === 'Count') {
     return StatType.ScopedCount;
   } else {
     return StatType.ScopedBalance;
