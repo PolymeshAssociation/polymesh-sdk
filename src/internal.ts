@@ -139,7 +139,7 @@ export { removeExternalAgent } from '~/api/procedures/removeExternalAgent';
 export { waivePermissions } from '~/api/procedures/waivePermissions';
 export { quitSubsidy, QuitSubsidyParams } from '~/api/procedures/quitSubsidy';
 export { modifyAllowance, ModifyAllowanceParams } from '~/api/procedures/modifyAllowance';
-export { createMultiSigAccount, CreateMultiSigParams } from '~/api/procedures/createMultiSig';
+export { createMultiSigAccount } from '~/api/procedures/createMultiSig';
 export {
   SetAllowanceParams,
   DecreaseAllowanceParams,

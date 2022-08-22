@@ -4,7 +4,6 @@ import {
   AuthorizationRequest,
   Context,
   createMultiSigAccount,
-  CreateMultiSigParams,
   inviteAccount,
   leaveIdentity,
   modifySignerPermissions,
@@ -15,6 +14,7 @@ import {
 } from '~/internal';
 import {
   AccountBalance,
+  CreateMultiSigParams,
   InviteAccountParams,
   ModifySignerPermissionsParams,
   NoArgsProcedureMethod,
@@ -161,9 +161,9 @@ export class AccountManagement {
   /**
    * Create a MultiSig Account
    *
-   * @note this will create an {@link AuthorizationRequest | Authorization Request} for each signing Account which will have to be accepted before they can approve transactions. None of the signing Accounts can be associated with an Identity when accepting the Authorization
-   *   An {@link Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived | authorizations.getReceived}.
-   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link Authorizations.getOne | authorizations.getOne}
+   * @note this will create an {@link api/entities/AuthorizationRequest!AuthorizationRequest | Authorization Request} for each signing Account which will have to be accepted before they can approve transactions. None of the signing Accounts can be associated with an Identity when accepting the Authorization
+   *   An {@link api/entities/Account!Account} or {@link api/entities/Identity!Identity} can fetch its pending Authorization Requests by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getReceived | authorizations.getReceived}.
+   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getOne | authorizations.getOne}
    */
   public createMultiSigAccount: ProcedureMethod<CreateMultiSigParams, MultiSig>;
 
@@ -218,7 +218,7 @@ export class AccountManagement {
   }
 
   /**
-   * Return an Account instance from an address. If the Account has multiSig signers the returned value will be a {@link MultiSig} instance
+   * Return an Account instance from an address. If the Account has multiSig signers, the returned value will be a {@link api/entities/MultiSig/MultiSig!MultiSig} instance
    */
   public async getAccount(args: { address: string }): Promise<Account | MultiSig> {
     const {

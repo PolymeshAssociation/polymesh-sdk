@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { TxTag } from '~/types';
+import { Signer, TxTag } from '~/types';
 
 export enum ProposalStatus {
   Invalid = 'Invalid',
@@ -39,4 +39,9 @@ export interface MultiSigProposalDetails {
    * The arguments to be passed to the transaction for this proposal
    */
   args: string[];
+}
+
+export interface MultiSigDetails {
+  signers: Signer[];
+  requiredSignatures: BigNumber;
 }

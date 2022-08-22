@@ -4,14 +4,13 @@ import sinon from 'sinon';
 
 import { MultiSig } from '~/api/entities/MultiSig/MultiSig';
 import {
-  CreateMultiSigParams,
   createMultiSigResolver,
   prepareCreateMultiSigAccount,
 } from '~/api/procedures/createMultiSig';
 import { Context, PolymeshError, PostTransactionValue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ErrorCode } from '~/types';
+import { CreateMultiSigParams, ErrorCode } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 

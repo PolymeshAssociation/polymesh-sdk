@@ -730,13 +730,13 @@ export class Account extends Entity<UniqueIdentifiers, string> {
         },
       },
       context,
+      address,
     } = this;
-    const { address } = this;
 
     const rawAddress = stringToAccountId(address, context);
 
     const rawOptKeyRecord = await identity.keyRecords(rawAddress);
-    if (rawOptKeyRecord.isEmpty) {
+    if (rawOptKeyRecord.isNone) {
       return null;
     }
     const rawKeyRecord = rawOptKeyRecord.unwrap();

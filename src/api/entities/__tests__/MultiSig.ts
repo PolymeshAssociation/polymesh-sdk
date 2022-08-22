@@ -1,7 +1,6 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { MultiSigProposal } from '~/api/entities/MultiSig/MultiSigProposal';
 import { Account, Context, MultiSig, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
@@ -122,11 +121,7 @@ describe('MultiSig class', () => {
       });
       const result = await multiSig.getProposals();
 
-      const expectedProposals: MultiSigProposal[] = [
-        new MultiSigProposal({ multiSigAddress: address, id }, context),
-      ];
-
-      expect(JSON.stringify(result)).toEqual(JSON.stringify(expectedProposals));
+      expect(result).toEqual([expect.objectContaining({ multiSigAddress: address, id })]);
     });
 
     it('should return an empty array if no proposals are pending', async () => {
@@ -136,9 +131,7 @@ describe('MultiSig class', () => {
 
       const result = await multiSig.getProposals();
 
-      const expectedProposals: MultiSigProposal[] = [];
-
-      expect(result).toEqual(expectedProposals);
+      expect(result).toEqual([]);
     });
   });
 });
