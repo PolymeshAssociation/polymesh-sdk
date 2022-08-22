@@ -515,7 +515,9 @@ describe('portfolioMovementToMovePortfolioItem', () => {
 
     expect(result).toBe(fakeResult);
 
-    context.createType.withArgs('Memo', padString(memo, 32)).returns(rawMemo);
+    context.createType
+      .withArgs('PolymeshCommonUtilitiesBalancesMemo', memo.padEnd(32))
+      .returns(rawMemo);
 
     context.createType
       .withArgs('MovePortfolioItem', {
@@ -2335,7 +2337,9 @@ describe('stringToMemo', () => {
     const fakeResult = 'memoDescription' as unknown as Memo;
     const context = dsMockUtils.getContextInstance();
 
-    context.createType.withArgs('Memo', padString(value, 32)).returns(fakeResult);
+    context.createType
+      .withArgs('PolymeshCommonUtilitiesBalancesMemo', value.padEnd(32))
+      .returns(fakeResult);
 
     const result = stringToMemo(value, context);
 

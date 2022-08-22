@@ -1440,7 +1440,7 @@ export function stringToMemo(value: string, context: Context): Memo {
     });
   }
 
-  return context.createType('Memo', padString(value, MAX_MEMO_LENGTH));
+  return context.createType('PolymeshCommonUtilitiesBalancesMemo', value.padEnd(MAX_MEMO_LENGTH));
 }
 
 /**
