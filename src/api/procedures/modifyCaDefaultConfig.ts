@@ -1,3 +1,6 @@
+import { Permill } from '@polkadot/types/interfaces';
+import { PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+
 import { assertCaTaxWithholdingsValid } from '~/api/procedures/utils';
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import {
@@ -8,7 +11,6 @@ import {
   TxTags,
 } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
-import { tuple } from '~/types/utils';
 import {
   percentageToPermill,
   signerToString,
@@ -128,21 +130,20 @@ export async function prepareModifyCaDefaultConfig(
       });
     }
 
-    const transaction = tx.corporateAction.setDidWithholdingTax;
+    const argsArray: [PolymeshPrimitivesTicker, PolymeshPrimitivesIdentityId, Permill][] =
+      newTaxWithholdings.map(({ identity, percentage }) => [
+        rawTicker,
+        stringToIdentityId(signerToString(identity), context),
+        percentageToPermill(percentage, context),
+      ]);
 
     transactions.push(
-      ...assembleBatchTransactions(
-        tuple({
-          transaction,
-          argsArray: newTaxWithholdings.map(({ identity, percentage }) =>
-            tuple(
-              rawTicker,
-              stringToIdentityId(signerToString(identity), context),
-              percentageToPermill(percentage, context)
-            )
-          ),
-        })
-      )
+      ...assembleBatchTransactions([
+        {
+          transaction: tx.corporateAction.setDidWithholdingTax,
+          argsArray,
+        },
+      ])
     );
   }
 

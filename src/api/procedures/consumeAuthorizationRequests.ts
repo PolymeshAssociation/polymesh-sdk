@@ -76,12 +76,12 @@ export async function prepareConsumeAuthorizationRequests(
       const type = key as AllowedAuthType;
 
       transactions.push(
-        ...assembleBatchTransactions(
-          tuple({
+        ...assembleBatchTransactions([
+          {
             transaction: typesToExtrinsics[type],
             argsArray: ids,
-          })
-        )
+          },
+        ])
       );
     });
 

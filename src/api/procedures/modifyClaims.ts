@@ -19,7 +19,7 @@ import {
   TxTags,
 } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
-import { Ensured, tuple } from '~/types/utils';
+import { Ensured } from '~/types/utils';
 import { DEFAULT_CDD_ID } from '~/utils/constants';
 import {
   balanceToBigNumber,
@@ -156,13 +156,11 @@ export async function prepareModifyClaims(
     const rawExpiry = expiry ? dateToMoment(expiry, context) : null;
 
     allTargets.push(signerToString(target));
-    modifyClaimArgs.push(
-      tuple(
-        stringToIdentityId(signerToString(target), context),
-        claimToMeshClaim(claim, context),
-        rawExpiry
-      )
-    );
+    modifyClaimArgs.push([
+      stringToIdentityId(signerToString(target), context),
+      claimToMeshClaim(claim, context),
+      rawExpiry,
+    ]);
   });
 
   allTargets = uniq(allTargets);
@@ -236,12 +234,16 @@ export async function prepareModifyClaims(
       });
     }
 
-    const transactions = assembleBatchTransactions(
-      tuple({
-        transaction: identity.revokeClaim,
-        argsArray: modifyClaimArgs.map(([identityId, claim]) => tuple(identityId, claim)),
-      })
+    const argsArray: [PolymeshPrimitivesIdentityId, MeshClaim][] = modifyClaimArgs.map(
+      ([identityId, claim]) => [identityId, claim]
     );
+
+    const transactions = assembleBatchTransactions([
+      {
+        transaction: identity.revokeClaim,
+        argsArray,
+      },
+    ]);
 
     return { transactions, resolver: undefined };
   }
@@ -260,12 +262,12 @@ export async function prepareModifyClaims(
     }
   }
 
-  const txs = assembleBatchTransactions(
-    tuple({
+  const txs = assembleBatchTransactions([
+    {
       transaction: identity.addClaim,
       argsArray: modifyClaimArgs,
-    })
-  );
+    },
+  ]);
 
   return { transactions: txs, resolver: undefined };
 }
