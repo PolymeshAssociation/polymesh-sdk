@@ -2392,17 +2392,17 @@
     "@types/websocket" "^1.0.5"
     websocket "^1.0.34"
 
-"@polymathnetwork/local-signing-manager@1.0.5":
-  version "1.0.5"
-  resolved "https://registry.yarnpkg.com/@polymathnetwork/local-signing-manager/-/local-signing-manager-1.0.5.tgz#6d1878f78279266802bd7f418b62940b4b38a1f8"
-  integrity sha512-FatnaQ2neVReqaE/VaPbdwSKbMXVFhRoOVfGp2f0cIrpctg920JU55ggh5sqhj59I2v3aRsla5e+H468nYizWA==
+"@polymeshassociation/local-signing-manager@1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@polymeshassociation/local-signing-manager/-/local-signing-manager-1.1.0.tgz#2bd2f24236a0a48566687be6a4bcfd96197e1ce7"
+  integrity sha512-7MwPzq5Ybg5XE1JeRnqrYrhyRSRgASIJ8PizVSXNS8snPcDgqiQrQkHPNBTC/KzLFeEpJzOTH4wcb5sgSRFI2Q==
   dependencies:
-    "@polymathnetwork/signing-manager-types" "^1.0.3"
+    "@polymeshassociation/signing-manager-types" "^1.1.0"
 
-"@polymathnetwork/signing-manager-types@^1.0.3":
-  version "1.0.3"
-  resolved "https://registry.yarnpkg.com/@polymathnetwork/signing-manager-types/-/signing-manager-types-1.0.3.tgz#80f8696c34e6e1a6a570e2d25ae967b614f5822a"
-  integrity sha512-4o0gxlvDAgS08MlnAkxqJJ6B9CGTj47/rhjUdPoH1GJ1AbnLAX3TCoZvr/qgBZe+7SLKPd8fur2o2x1m4KtSfw==
+"@polymeshassociation/signing-manager-types@^1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@polymeshassociation/signing-manager-types/-/signing-manager-types-1.1.0.tgz#c77f6a5d669a89cbd668d0e82aa602c390442715"
+  integrity sha512-kwcmmgKCdwpGyXL8BFSVykeVLq0ilHx7EgwT2QVjXT+eNwLvnROdV49XLCxJBznYVWmq9VvcNNOrM5lKRdQP6g==
 
 "@samverschueren/stream-to-observable@^0.3.0":
   version "0.3.1"
