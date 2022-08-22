@@ -122,7 +122,6 @@ import {
   Moment,
   MovePortfolioItem,
   Percentage,
-  Permissions as MeshPermissions,
   PortfolioId as MeshPortfolioId,
   PosRatio,
   PriceTier,
@@ -982,7 +981,7 @@ export function transactionPermissionsToExtrinsicPermissions(
 export function permissionsToMeshPermissions(
   permissions: Permissions,
   context: Context
-): MeshPermissions {
+): PolymeshPrimitivesSecondaryKeyPermissions {
   const { assets, transactions, portfolios } = permissions;
 
   const extrinsic = transactionPermissionsToExtrinsicPermissions(transactions, context);
@@ -1027,7 +1026,7 @@ export function permissionsToMeshPermissions(
     portfolio,
   };
 
-  return context.createType('Permissions', value);
+  return context.createType('PolymeshPrimitivesSecondaryKeyPermissions', value);
 }
 
 /**
