@@ -1,5 +1,5 @@
 import { ISubmittableResult } from '@polkadot/types/types';
-import { PolkadotSigner } from '@polymathnetwork/signing-manager-types';
+import { PolkadotSigner } from '@polymeshassociation/signing-manager-types';
 import sinon from 'sinon';
 
 import {
