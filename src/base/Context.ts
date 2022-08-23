@@ -14,7 +14,7 @@ import {
   TypeDef,
   TypeDefInfo,
 } from '@polkadot/types/types';
-import { SigningManager } from '@polymathnetwork/signing-manager-types';
+import { SigningManager } from '@polymeshassociation/signing-manager-types';
 import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient, { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
