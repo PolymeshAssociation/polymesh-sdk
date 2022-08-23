@@ -79,10 +79,7 @@ export class MultiSig extends Account {
 
     return rawProposals.map(([, rawId]) => {
       const id = u64ToBigNumber(rawId.unwrap());
-      return new MultiSigProposal(
-        { multiSigAddress: address, id: new BigNumber(id) },
-        this.context
-      );
+      return new MultiSigProposal({ multiSigAddress: address, id: new BigNumber(id) }, context);
     });
   }
 }
