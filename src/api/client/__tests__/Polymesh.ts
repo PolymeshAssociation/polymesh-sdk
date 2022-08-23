@@ -1,4 +1,4 @@
-import { SigningManager } from '@polymathnetwork/signing-manager-types';
+import { SigningManager } from '@polymeshassociation/signing-manager-types';
 import { ApolloLink, GraphQLRequest } from 'apollo-link';
 import sinon from 'sinon';
 

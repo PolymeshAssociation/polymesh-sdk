@@ -1078,12 +1078,12 @@ describe('assertExpectedChainVersion', () => {
 
   it('should log a warning given a minor or patch RPC node version mismatch', async () => {
     const signal = assertExpectedChainVersion('ws://example.com');
-    client.sendSpecVersion('5000000');
+    client.sendSpecVersion('5000002');
     client.sendRpcVersion('5.1.0');
     await signal;
     sinon.assert.calledWith(
       warnStub,
-      'This version of the SDK supports Polymesh RPC node version 5.0.0. The node is at version 5.1.0. Please upgrade the SDK'
+      'This version of the SDK supports Polymesh RPC node version 5.0.2. The node is at version 5.1.0. Please upgrade the SDK'
     );
   });
 
@@ -1100,11 +1100,11 @@ describe('assertExpectedChainVersion', () => {
   it('should log a warning given a minor or patch chain spec version mismatch', async () => {
     const signal = assertExpectedChainVersion('ws://example.com');
     client.sendSpecVersion('5001000');
-    client.sendRpcVersion('5.0.0');
+    client.sendRpcVersion('5.0.2');
     await signal;
     sinon.assert.calledWith(
       warnStub,
-      'This version of the SDK supports Polymesh chain spec version 5.0.0. The chain spec is at version 5.1.0. Please upgrade the SDK'
+      'This version of the SDK supports Polymesh chain spec version 5.0.2. The chain spec is at version 5.1.0. Please upgrade the SDK'
     );
   });
 
