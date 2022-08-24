@@ -11,6 +11,7 @@ import { latestProcessedBlock } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
   ErrorCode,
+  GenericPolymeshTransaction,
   PayingAccount,
   PayingAccountFees,
   PayingAccountType,
@@ -346,7 +347,9 @@ export abstract class PolymeshTransactionBase<
    *
    * @returns unsubscribe function
    */
-  public onStatusChange(listener: (transaction: PolymeshTransactionBase) => void): UnsubCallback {
+  public onStatusChange(
+    listener: (transaction: GenericPolymeshTransaction<ReturnValue, TransformedReturnValue>) => void
+  ): UnsubCallback {
     const { emitter } = this;
 
     emitter.on(Event.StatusChange, listener);
