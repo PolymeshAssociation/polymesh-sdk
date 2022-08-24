@@ -55,7 +55,7 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
     const rawMultiSignAddress = stringToAccountId(multiSigAddress, context);
-    const u64Id = bigNumberToU64(id, context);
+    const rawId = bigNumberToU64(id, context);
     const [
       {
         approvals: rawApprovals,
@@ -66,21 +66,21 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
       },
       proposal,
     ] = await Promise.all([
-      multiSig.proposalDetail([rawMultiSignAddress, u64Id]),
-      multiSig.proposals([rawMultiSignAddress, u64Id]),
+      multiSig.proposalDetail([rawMultiSignAddress, rawId]),
+      multiSig.proposals([rawMultiSignAddress, rawId]),
     ]);
 
     let args, method, section;
-    if (proposal.isSome) {
-      const value = proposal.unwrap();
-      args = value.args;
-      method = value.method;
-      section = value.section;
-    } else {
+    if (proposal.isNone) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
         message: `Proposal with ID: "${id}" was not found. It may have already been executed`,
       });
+    } else {
+      const value = proposal.unwrap();
+      args = value.args;
+      method = value.method;
+      section = value.section;
     }
 
     const approvalAmount = u64ToBigNumber(rawApprovals);
@@ -107,7 +107,7 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Determines whether or not this Proposal exists on chain
+   * Determines whether this Proposal exists on chain
    */
   public async exists(): Promise<boolean> {
     const {
@@ -120,9 +120,9 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
       id,
       context,
     } = this;
-    const u64Id = bigNumberToU64(id, context);
+    const rawId = bigNumberToU64(id, context);
     const rawMultiSignAddress = stringToAccountId(multiSigAddress, context);
-    const rawProposal = await multiSig.proposals([rawMultiSignAddress, u64Id]);
+    const rawProposal = await multiSig.proposals([rawMultiSignAddress, rawId]);
     return !rawProposal.isEmpty;
   }
 
@@ -131,9 +131,10 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
    */
   public toHuman(): string {
     const { multiSigAddress, id } = this;
+
     return JSON.stringify({
       multiSigAddress,
-      id: id.toString(),
+      id,
     });
   }
 }

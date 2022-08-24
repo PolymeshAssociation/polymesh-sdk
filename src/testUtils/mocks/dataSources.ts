@@ -4244,6 +4244,10 @@ export const createMockCall = (callArgs?: {
   ) as MockCodec<Call>;
 };
 
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockProposalDetails = (proposalDetails?: {
   approvals: u64 | Parameters<typeof createMockU64>[0];
   rejections: u64 | Parameters<typeof createMockU64>[0];

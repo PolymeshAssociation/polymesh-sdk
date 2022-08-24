@@ -516,7 +516,9 @@ describe('portfolioMovementToMovePortfolioItem', () => {
 
     expect(result).toBe(fakeResult);
 
-    context.createType.withArgs('Memo', padString(memo, 32)).returns(rawMemo);
+    context.createType
+      .withArgs('PolymeshCommonUtilitiesBalancesMemo', memo.padEnd(32))
+      .returns(rawMemo);
 
     context.createType
       .withArgs('MovePortfolioItem', {
@@ -1094,7 +1096,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       });
 
       createTypeStub
-        .withArgs('Permissions', sinon.match(sinon.match.object))
+        .withArgs('PolymeshPrimitivesSecondaryKeyPermissions', sinon.match(sinon.match.object))
         .returns(rawPermissions);
       createTypeStub
         .withArgs('PolymeshPrimitivesAuthorizationAuthorizationData', {
@@ -1227,7 +1229,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       };
 
       createTypeStub
-        .withArgs('Permissions', sinon.match(sinon.match.object))
+        .withArgs('PolymeshPrimitivesSecondaryKeyPermissions', sinon.match(sinon.match.object))
         .returns(rawPermissions);
       createTypeStub
         .withArgs('PolymeshPrimitivesAuthorizationAuthorizationData', {
@@ -1525,7 +1527,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
   });
 
   describe('permissionsToMeshPermissions', () => {
-    it('should convert a Permissions to a polkadot Permissions object (ordering tx alphabetically)', () => {
+    it('should convert a Permissions to a polkadot PolymeshPrimitivesSecondaryKeyPermissions object (ordering tx alphabetically)', () => {
       let value: Permissions = {
         assets: null,
         transactions: null,
@@ -1544,7 +1546,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         .returns(fakeExtrinsicPermissionsResult);
 
       createTypeStub
-        .withArgs('Permissions', {
+        .withArgs('PolymeshPrimitivesSecondaryKeyPermissions', {
           asset: 'Whole',
           extrinsic: fakeExtrinsicPermissionsResult,
           portfolio: 'Whole',
@@ -1604,7 +1606,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         kind: dsMockUtils.createMockPortfolioKind('Default'),
       });
       createTypeStub
-        .withArgs('Permissions', {
+        .withArgs('PolymeshPrimitivesSecondaryKeyPermissions', {
           asset: {
             These: [rawTicker],
           },
@@ -1652,7 +1654,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       };
 
       createTypeStub
-        .withArgs('Permissions', {
+        .withArgs('PolymeshPrimitivesSecondaryKeyPermissions', {
           asset: 'Whole',
           extrinsic: fakeExtrinsicPermissionsResult,
           portfolio: 'Whole',
@@ -1697,7 +1699,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       };
 
       createTypeStub
-        .withArgs('Permissions', {
+        .withArgs('PolymeshPrimitivesSecondaryKeyPermissions', {
           asset: {
             Except: [rawTicker],
           },
@@ -1751,7 +1753,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
 
       const rawTickers = tickers.map(t => dsMockUtils.createMockTicker(t));
       createTypeStub
-        .withArgs('Permissions', {
+        .withArgs('PolymeshPrimitivesSecondaryKeyPermissions', {
           asset: { These: [rawTickers[1], rawTickers[0], rawTickers[2]] },
           extrinsic: fakeExtrinsicPermissionsResult,
           portfolio: { These: [rawPortfolioId] },
@@ -2366,7 +2368,9 @@ describe('stringToMemo', () => {
     const fakeResult = 'memoDescription' as unknown as Memo;
     const context = dsMockUtils.getContextInstance();
 
-    context.createType.withArgs('Memo', padString(value, 32)).returns(fakeResult);
+    context.createType
+      .withArgs('PolymeshCommonUtilitiesBalancesMemo', value.padEnd(32))
+      .returns(fakeResult);
 
     const result = stringToMemo(value, context);
 

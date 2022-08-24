@@ -40,6 +40,7 @@ import {
   Requirement,
   Scope,
   SecurityIdentifier,
+  Signer,
   StatClaimIssuer,
   TransactionPermissions,
   TxGroup,
@@ -932,4 +933,9 @@ export interface MoveFundsParams {
    * list of Assets (and the corresponding token amounts) that will be moved
    */
   items: PortfolioMovement[];
+}
+
+export interface CreateMultiSigParams {
+  signers: Signer[];
+  requiredSignatures: BigNumber;
 }

@@ -10,7 +10,7 @@ import {
   ModifyMultiSigParams,
   PolymeshError,
 } from '~/internal';
-import { ErrorCode, ProcedureMethod, Signer } from '~/types';
+import { ErrorCode, MultiSigDetails, ProcedureMethod } from '~/types';
 import {
   addressToKey,
   identityIdToString,
@@ -20,11 +20,6 @@ import {
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
-
-interface MultiSigDetails {
-  signers: Signer[];
-  requiredSignatures: BigNumber;
-}
 
 /**
  * Represents a MultiSig Account. A MultiSig Account is composed of one or more signing Accounts. In order to submit a transaction, a specific amount of those signing Accounts must approve it first
@@ -59,6 +54,7 @@ export class MultiSig extends Account {
       context,
       address,
     } = this;
+
     const rawAddress = stringToAccountId(address, context);
     const [rawSigners, rawSignersRequired] = await Promise.all([
       multiSig.multiSigSigners.entries(rawAddress),
@@ -72,7 +68,7 @@ export class MultiSig extends Account {
   }
 
   /**
-   * Given an ID fetch a { @link MultiSigProposal } for this MultiSig
+   * Given an ID, fetch a { @link api/entities/MultiSig/MultiSigProposal!MultiSigProposal } for this MultiSig
    *
    * @throws if the MultiSigProposal is not found
    */
@@ -119,7 +115,7 @@ export class MultiSig extends Account {
   }
 
   /**
-   * Return all { @link MultiSigProposal | MultiSigProposals } for this MultiSig Account
+   * Return all { @link api/entities/MultiSig/MultiSigProposal!MultiSigProposal } for this MultiSig Account
    */
   public async getProposals(): Promise<MultiSigProposal[]> {
     const {
@@ -134,12 +130,10 @@ export class MultiSig extends Account {
     const rawAddress = stringToAccountId(address, context);
 
     const rawProposals = await multiSig.proposalIds.entries(rawAddress);
+
     return rawProposals.map(([, rawId]) => {
       const id = u64ToBigNumber(rawId.unwrap());
-      return new MultiSigProposal(
-        { multiSigAddress: address, id: new BigNumber(id) },
-        this.context
-      );
+      return new MultiSigProposal({ multiSigAddress: address, id: new BigNumber(id) }, context);
     });
   }
 
