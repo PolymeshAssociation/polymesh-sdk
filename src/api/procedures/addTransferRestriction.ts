@@ -12,7 +12,7 @@ import {
   TransferRestrictionType,
   TxTags,
 } from '~/types';
-import { ProcedureAuthorization, StatisticsOpType } from '~/types/internal';
+import { BatchTransactionSpec, ProcedureAuthorization, StatisticsOpType } from '~/types/internal';
 import { QueryReturnType } from '~/types/utils';
 import {
   complianceConditionsToBtreeSet,
@@ -47,7 +47,7 @@ export type AddTransferRestrictionParams = { ticker: string } & (
 export async function prepareAddTransferRestriction(
   this: Procedure<AddTransferRestrictionParams, BigNumber>,
   args: AddTransferRestrictionParams
-): Promise<BigNumber> {
+): Promise<BatchTransactionSpec<BigNumber, unknown[][]>> {
   const {
     context: {
       polymeshApi: {
@@ -92,6 +92,7 @@ export async function prepareAddTransferRestriction(
   const maxConditions = u32ToBigNumber(consts.statistics.maxTransferConditionsPerAsset);
 
   const restrictionAmount = new BigNumber(currentRestrictions.size);
+
   if (restrictionAmount.gte(maxConditions)) {
     throw new PolymeshError({
       code: ErrorCode.LimitExceeded,
@@ -124,6 +125,7 @@ export async function prepareAddTransferRestriction(
       message: 'Cannot add the same restriction more than once',
     });
   }
+
   const conditions = complianceConditionsToBtreeSet(
     [...currentRestrictions, rawTransferCondition],
     context
@@ -138,10 +140,9 @@ export async function prepareAddTransferRestriction(
   );
 
   if (exemptedIdentities.length) {
-    const op =
-      type === TransferRestrictionType.Count
-        ? statisticsOpTypeToStatOpType(StatisticsOpType.Count, context)
-        : statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
+    const op = [TransferRestrictionType.Count, TransferRestrictionType.ClaimCount].includes(type)
+      ? statisticsOpTypeToStatOpType(StatisticsOpType.Count, context)
+      : statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
     const exemptedIds = await getExemptedIds(exemptedIdentities, context, ticker);
     const exemptedScopeIds = exemptedIds.map(entityId => stringToIdentityId(entityId, context));
     const btreeIds = scopeIdsToBtreeSetIdentityId(exemptedScopeIds, context);
@@ -154,8 +155,8 @@ export async function prepareAddTransferRestriction(
       })
     );
   }
-  this.addBatchTransaction({ transactions });
-  return restrictionAmount.plus(1);
+
+  return { transactions, resolver: restrictionAmount.plus(1) };
 }
 
 /**

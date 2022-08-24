@@ -2,7 +2,7 @@ import { StorageKey } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Asset, Namespace, TransactionQueue } from '~/internal';
+import { Asset, Namespace, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { AssetDocument } from '~/types';
 import { tuple } from '~/types/utils';
@@ -42,7 +42,7 @@ describe('Documents class', () => {
       sinon.restore();
     });
 
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const context = dsMockUtils.getContextInstance();
       const asset = entityMockUtils.getAssetInstance();
       const documents = new Documents(asset, context);
@@ -57,16 +57,16 @@ describe('Documents class', () => {
         ],
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args: { ticker: asset.ticker, ...args }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await documents.set(args);
+      const tx = await documents.set(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 

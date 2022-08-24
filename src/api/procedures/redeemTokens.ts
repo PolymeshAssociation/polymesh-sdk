@@ -1,6 +1,6 @@
 import { Asset, DefaultPortfolio, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RedeemTokensParams, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { bigNumberToBalance, stringToTicker } from '~/utils/conversion';
 
 /**
@@ -14,7 +14,7 @@ export type Params = { ticker: string } & RedeemTokensParams;
 export async function prepareRedeemTokens(
   this: Procedure<Params, void>,
   args: Params
-): Promise<void> {
+): Promise<TransactionSpec<void, ExtrinsicParams<'asset', 'redeem'>>> {
   const {
     context,
     context: {
@@ -47,10 +47,11 @@ export async function prepareRedeemTokens(
     });
   }
 
-  this.addTransaction({
+  return {
     transaction: tx.asset.redeem,
     args: [rawTicker, bigNumberToBalance(amount, context, isDivisible)],
-  });
+    resolver: undefined,
+  };
 }
 
 /**

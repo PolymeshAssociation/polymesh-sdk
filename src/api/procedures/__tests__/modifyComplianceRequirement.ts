@@ -58,16 +58,12 @@ describe('modifyComplianceRequirement procedure', () => {
     ];
   });
 
-  let addTransactionStub: sinon.SinonStub;
-
   let modifyComplianceRequirementTransaction: PolymeshTx<[PolymeshPrimitivesTicker]>;
 
   beforeEach(() => {
     dsMockUtils.setConstMock('complianceManager', 'maxConditionComplexity', {
       returnValue: dsMockUtils.createMockU32(new BigNumber(50)),
     });
-
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
     modifyComplianceRequirementTransaction = dsMockUtils.createTxStub(
       'complianceManager',
@@ -131,7 +127,7 @@ describe('modifyComplianceRequirement procedure', () => {
     );
   });
 
-  it('should add a modify compliance requirement transaction to the queue', async () => {
+  it('should return a modify compliance requirement transaction spec', async () => {
     const fakeConditions = [{ claim: '' }] as unknown as Condition[];
     const fakeSenderConditions = 'senderConditions' as unknown as PolymeshPrimitivesCondition[];
     const fakeReceiverConditions = 'receiverConditions' as unknown as PolymeshPrimitivesCondition[];
@@ -154,11 +150,12 @@ describe('modifyComplianceRequirement procedure', () => {
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await prepareModifyComplianceRequirement.call(proc, args);
+    const result = await prepareModifyComplianceRequirement.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction: modifyComplianceRequirementTransaction,
       args: [rawTicker, rawComplianceRequirement],
+      resolver: undefined,
     });
   });
 

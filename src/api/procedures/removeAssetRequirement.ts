@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RemoveAssetRequirementParams, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { bigNumberToU32, stringToTicker, u32ToBigNumber } from '~/utils/conversion';
 
 /**
@@ -18,7 +18,9 @@ export type Params = RemoveAssetRequirementParams & {
 export async function prepareRemoveAssetRequirement(
   this: Procedure<Params, Asset>,
   args: Params
-): Promise<Asset> {
+): Promise<
+  TransactionSpec<Asset, ExtrinsicParams<'complianceManager', 'removeComplianceRequirement'>>
+> {
   const {
     context: {
       polymeshApi: { query, tx },
@@ -40,12 +42,11 @@ export async function prepareRemoveAssetRequirement(
     });
   }
 
-  this.addTransaction({
+  return {
     transaction: tx.complianceManager.removeComplianceRequirement,
     args: [rawTicker, bigNumberToU32(reqId, context)],
-  });
-
-  return new Asset({ ticker }, context);
+    resolver: new Asset({ ticker }, context),
+  };
 }
 
 /**

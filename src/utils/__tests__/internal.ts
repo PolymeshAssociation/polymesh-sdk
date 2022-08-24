@@ -1,4 +1,4 @@
-import { Bytes } from '@polkadot/types';
+import { Bytes, u32 } from '@polkadot/types';
 import { AccountId } from '@polkadot/types/interfaces';
 import {
   PolymeshPrimitivesIdentityClaimClaimType,
@@ -10,14 +10,7 @@ import BigNumber from 'bignumber.js';
 import { IdentityId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import {
-  Asset,
-  Context,
-  Identity,
-  PolymeshError,
-  PostTransactionValue,
-  Procedure,
-} from '~/internal';
+import { Asset, Context, Identity, PolymeshError, Procedure } from '~/internal';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
@@ -73,6 +66,7 @@ import {
   hasSameElements,
   isModuleOrTagMatch,
   isPrintableAscii,
+  mergeReceipts,
   neededStatTypeForRestrictionInput,
   optionize,
   padString,
@@ -81,9 +75,8 @@ import {
   requestAtBlock,
   requestPaginated,
   serialize,
+  sliceBatchReceipt,
   unserialize,
-  unwrapValue,
-  unwrapValues,
 } from '../internal';
 jest.mock(
   '~/api/entities/Asset',
@@ -197,33 +190,6 @@ describe('getDid', () => {
   });
 });
 
-describe('unwrapValue', () => {
-  it('should unwrap a Post Transaction Value', async () => {
-    const wrapped = new PostTransactionValue(async () => 1);
-    await wrapped.run({} as ISubmittableResult);
-
-    const unwrapped = unwrapValue(wrapped);
-
-    expect(unwrapped).toEqual(1);
-  });
-
-  it('should return a non Post Transaction Value as is', () => {
-    expect(unwrapValue(1)).toBe(1);
-  });
-});
-
-describe('unwrapValues', () => {
-  it('should unwrap all Post Transaction Values in the array', async () => {
-    const values = [1, 2, 3, 4, 5];
-    const wrapped = values.map(value => new PostTransactionValue(async () => value));
-    await Promise.all(wrapped.map(postValue => postValue.run({} as ISubmittableResult)));
-
-    const unwrapped = unwrapValues(wrapped);
-
-    expect(unwrapped).toEqual(values);
-  });
-});
-
 describe('filterEventRecords', () => {
   const filterRecordsStub = sinon.stub();
   const mockReceipt = {
@@ -253,6 +219,131 @@ describe('filterEventRecords', () => {
     expect(() => filterEventRecords(mockReceipt, mod, eventName)).toThrow(
       `Event "${mod}.${eventName}" wasn't fired even though the corresponding transaction was completed. Please report this to the Polymesh team`
     );
+  });
+});
+
+describe('sliceBatchReceipt', () => {
+  const filterRecordsStub = sinon.stub();
+  const mockReceipt = {
+    filterRecords: filterRecordsStub,
+    events: ['tx0event0', 'tx0event1', 'tx1event0', 'tx2event0', 'tx2event1', 'tx2event2'],
+    findRecord: sinon.stub(),
+    toHuman: sinon.stub(),
+  } as unknown as ISubmittableResult;
+
+  beforeEach(() => {
+    filterRecordsStub.withArgs('utility', 'BatchCompleted').returns([
+      {
+        event: {
+          data: [
+            [
+              dsMockUtils.createMockU32(new BigNumber(2)),
+              dsMockUtils.createMockU32(new BigNumber(1)),
+              dsMockUtils.createMockU32(new BigNumber(3)),
+            ],
+          ],
+        },
+      },
+    ]);
+  });
+
+  afterEach(() => {
+    filterRecordsStub.reset();
+  });
+
+  it('should return the cloned receipt with a subset of events', () => {
+    let slicedReceipt = sliceBatchReceipt(mockReceipt, 1, 3);
+
+    expect(slicedReceipt.events).toEqual(['tx1event0', 'tx2event0', 'tx2event1', 'tx2event2']);
+
+    slicedReceipt = sliceBatchReceipt(mockReceipt, 0, 2);
+
+    expect(slicedReceipt.events).toEqual(['tx0event0', 'tx0event1', 'tx1event0']);
+  });
+
+  it('should throw an error if the transaction indexes are out of bounds', () => {
+    expect(() => sliceBatchReceipt(mockReceipt, -1, 2)).toThrow(
+      'Transaction index range out of bounds. Please report this to the Polymesh team'
+    );
+
+    expect(() => sliceBatchReceipt(mockReceipt, 1, 4)).toThrow(
+      'Transaction index range out of bounds. Please report this to the Polymesh team'
+    );
+  });
+});
+
+describe('mergeReceipts', () => {
+  let bigNumberToU32Stub: sinon.SinonStub;
+  let receipts: ISubmittableResult[];
+  let context: Context;
+
+  let eventsPerTransaction: u32[];
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+    eventsPerTransaction = [
+      dsMockUtils.createMockU32(new BigNumber(2)),
+      dsMockUtils.createMockU32(new BigNumber(1)),
+      dsMockUtils.createMockU32(new BigNumber(3)),
+    ];
+    bigNumberToU32Stub = sinon.stub(utilsConversionModule, 'bigNumberToU32');
+    bigNumberToU32Stub.withArgs(new BigNumber(2), context).returns(eventsPerTransaction[0]);
+    bigNumberToU32Stub.withArgs(new BigNumber(1), context).returns(eventsPerTransaction[1]);
+    bigNumberToU32Stub.withArgs(new BigNumber(3), context).returns(eventsPerTransaction[2]);
+
+    receipts = [
+      {
+        filterRecords: sinon.stub(),
+        events: ['tx0event0', 'tx0event1'],
+        findRecord: sinon.stub(),
+        toHuman: sinon.stub(),
+      },
+      {
+        filterRecords: sinon.stub(),
+        events: ['tx1event0'],
+        findRecord: sinon.stub(),
+        toHuman: sinon.stub(),
+      },
+      {
+        filterRecords: sinon.stub(),
+        events: ['tx2event0', 'tx2event1', 'tx2event2'],
+        findRecord: sinon.stub(),
+        toHuman: sinon.stub(),
+      },
+    ] as unknown as ISubmittableResult[];
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    sinon.restore();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return a receipt with all the combined events in order', () => {
+    const result = mergeReceipts(receipts, context);
+
+    expect(result.events).toEqual([
+      'tx0event0',
+      'tx0event1',
+      'tx1event0',
+      'tx2event0',
+      'tx2event1',
+      'tx2event2',
+      {
+        event: {
+          section: 'utility',
+          method: 'BatchCompleted',
+          data: [eventsPerTransaction],
+        },
+      },
+    ]);
   });
 });
 
@@ -1335,19 +1426,27 @@ describe('compareStatTypeToTransferRestrictionType', () => {
   const issuerId = dsMockUtils.createMockIdentityId(did);
 
   const countStatType = dsMockUtils.createMockStatisticsStatType({
-    op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count),
+    op: dsMockUtils.createMockStatisticsStatOpType(StatisticsOpType.Count),
+    claimIssuer: dsMockUtils.createMockOption(),
   });
   const percentStatType = dsMockUtils.createMockStatisticsStatType({
-    op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Balance),
+    op: dsMockUtils.createMockStatisticsStatOpType(StatisticsOpType.Balance),
+    claimIssuer: dsMockUtils.createMockOption(),
   });
 
   const claimCountStat = dsMockUtils.createMockStatisticsStatType({
-    op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count),
-    claimIssuer: [dsMockUtils.createMockClaimType(ClaimType.Affiliate), issuerId],
+    op: dsMockUtils.createMockStatisticsStatOpType(StatisticsOpType.Count),
+    claimIssuer: dsMockUtils.createMockOption([
+      dsMockUtils.createMockClaimType(ClaimType.Affiliate),
+      issuerId,
+    ]),
   });
   const claimPercentageStat = dsMockUtils.createMockStatisticsStatType({
-    op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Balance),
-    claimIssuer: [dsMockUtils.createMockClaimType(ClaimType.Affiliate), issuerId],
+    op: dsMockUtils.createMockStatisticsStatOpType(StatisticsOpType.Balance),
+    claimIssuer: dsMockUtils.createMockOption([
+      dsMockUtils.createMockClaimType(ClaimType.Affiliate),
+      issuerId,
+    ]),
   });
 
   it('should return true if the PolymeshPrimitivesStatisticsStatType matches the given TransferRestriction', () => {
@@ -1423,7 +1522,8 @@ describe('compareStatsToInput', () => {
 
   it('should return true if input matches stat', () => {
     const countStat = dsMockUtils.createMockStatisticsStatType({
-      op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count),
+      op: dsMockUtils.createMockStatisticsStatOpType(StatisticsOpType.Count),
+      claimIssuer: dsMockUtils.createMockOption(),
     });
 
     let args: RemoveAssetStatParams = {
@@ -1435,15 +1535,19 @@ describe('compareStatsToInput', () => {
     expect(result).toEqual(true);
 
     const percentStat = dsMockUtils.createMockStatisticsStatType({
-      op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Balance),
+      op: dsMockUtils.createMockStatisticsStatOpType(StatisticsOpType.Balance),
+      claimIssuer: dsMockUtils.createMockOption(),
     });
     args = { type: StatType.Percentage, ticker };
     result = compareStatsToInput(percentStat, args);
     expect(result).toEqual(true);
 
     const claimCountStat = dsMockUtils.createMockStatisticsStatType({
-      op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count),
-      claimIssuer: [dsMockUtils.createMockClaimType(ClaimType.Affiliate), issuerId],
+      op: dsMockUtils.createMockStatisticsStatOpType(StatisticsOpType.Count),
+      claimIssuer: dsMockUtils.createMockOption([
+        dsMockUtils.createMockClaimType(ClaimType.Affiliate),
+        issuerId,
+      ]),
     });
     args = {
       type: StatType.ScopedCount,
@@ -1455,8 +1559,11 @@ describe('compareStatsToInput', () => {
     expect(result).toEqual(true);
 
     const claimPercentageStat = dsMockUtils.createMockStatisticsStatType({
-      op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Balance),
-      claimIssuer: [dsMockUtils.createMockClaimType(ClaimType.Affiliate), issuerId],
+      op: dsMockUtils.createMockStatisticsStatOpType(StatisticsOpType.Balance),
+      claimIssuer: dsMockUtils.createMockOption([
+        dsMockUtils.createMockClaimType(ClaimType.Affiliate),
+        issuerId,
+      ]),
     });
     args = {
       type: StatType.ScopedPercentage,
@@ -1470,7 +1577,8 @@ describe('compareStatsToInput', () => {
 
   it('should return false if input does not match the stat', () => {
     const countStat = dsMockUtils.createMockStatisticsStatType({
-      op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count),
+      op: dsMockUtils.createMockStatisticsStatOpType(StatisticsOpType.Count),
+      claimIssuer: dsMockUtils.createMockOption(),
     });
 
     let args: RemoveAssetStatParams = {
@@ -1481,7 +1589,8 @@ describe('compareStatsToInput', () => {
     expect(result).toEqual(false);
 
     const percentStat = dsMockUtils.createMockStatisticsStatType({
-      op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Balance),
+      op: dsMockUtils.createMockStatisticsStatOpType(StatisticsOpType.Balance),
+      claimIssuer: dsMockUtils.createMockOption(),
     });
     args = {
       type: StatType.ScopedPercentage,
@@ -1493,8 +1602,11 @@ describe('compareStatsToInput', () => {
     expect(result).toEqual(false);
 
     const claimCountStat = dsMockUtils.createMockStatisticsStatType({
-      op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count),
-      claimIssuer: [dsMockUtils.createMockClaimType(ClaimType.Jurisdiction), issuerId],
+      op: dsMockUtils.createMockStatisticsStatOpType(StatisticsOpType.Count),
+      claimIssuer: dsMockUtils.createMockOption([
+        dsMockUtils.createMockClaimType(ClaimType.Jurisdiction),
+        issuerId,
+      ]),
     });
     args = {
       type: StatType.ScopedCount,

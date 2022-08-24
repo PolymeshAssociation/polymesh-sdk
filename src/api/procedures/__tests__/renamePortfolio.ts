@@ -92,8 +92,8 @@ describe('renamePortfolio procedure', () => {
     ).rejects.toThrow('A Portfolio with that name already exists');
   });
 
-  it('should add a rename portfolio transaction to the queue', async () => {
-    getPortfolioIdsByNameStub.returns([null]);
+  it('should return a rename portfolio transaction spec', async () => {
+    getPortfolioIdsByNameStub.returns([]);
 
     const transaction = dsMockUtils.createTxStub('portfolio', 'renamePortfolio');
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
@@ -104,13 +104,11 @@ describe('renamePortfolio procedure', () => {
       name: newName,
     });
 
-    const addTransactionStub = procedureMockUtils.getAddTransactionStub();
-
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction,
       args: [rawPortfolioNumber, rawNewName],
+      resolver: expect.objectContaining({ id }),
     });
-    expect(result.id).toBe(id);
   });
 
   describe('getAuthorization', () => {

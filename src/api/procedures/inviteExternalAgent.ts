@@ -8,7 +8,6 @@ import {
   Identity,
   KnownPermissionGroup,
   PolymeshError,
-  PostTransactionValue,
   Procedure,
 } from '~/internal';
 import {
@@ -19,7 +18,7 @@ import {
   SignerType,
   TxTags,
 } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
   dateToMoment,
@@ -62,7 +61,13 @@ export interface Storage {
 export async function prepareInviteExternalAgent(
   this: Procedure<Params, AuthorizationRequest, Storage>,
   args: Params
-): Promise<PostTransactionValue<AuthorizationRequest>> {
+): Promise<
+  | TransactionSpec<
+      AuthorizationRequest,
+      ExtrinsicParams<'externalAgents', 'createGroupAndAddAuth'>
+    >
+  | TransactionSpec<AuthorizationRequest, ExtrinsicParams<'identity', 'addAuthorization'>>
+> {
   const {
     context: {
       polymeshApi: {
@@ -119,17 +124,15 @@ export async function prepareInviteExternalAgent(
      *   Otherwise, we use the existing group's ID to create the Authorization request
      */
     if (!matchingGroup) {
-      const [authRequest] = this.addTransaction({
+      return {
         transaction: externalAgents.createGroupAndAddAuth,
-        resolvers: [createGroupAndAuthorizationResolver(targetIdentity)],
         args: [
           rawTicker,
           transactionPermissionsToExtrinsicPermissions(transactions, context),
           rawSignatory,
         ],
-      });
-
-      return authRequest;
+        resolver: createGroupAndAuthorizationResolver(targetIdentity),
+      };
     }
 
     newAuthorizationData = createBecomeAgentData(matchingGroup);
@@ -138,15 +141,17 @@ export async function prepareInviteExternalAgent(
 
   const rawExpiry = optionize(dateToMoment)(expiry, context);
 
-  const [auth] = this.addTransaction({
+  return {
     transaction: identity.addAuthorization,
-    resolvers: [
-      createAuthorizationResolver(newAuthorizationData, issuer, targetIdentity, expiry, context),
-    ],
     args: [rawSignatory, rawAuthorizationData, rawExpiry],
-  });
-
-  return auth;
+    resolver: createAuthorizationResolver(
+      newAuthorizationData,
+      issuer,
+      targetIdentity,
+      expiry,
+      context
+    ),
+  };
 }
 
 /**

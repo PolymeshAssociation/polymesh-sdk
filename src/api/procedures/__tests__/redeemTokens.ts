@@ -23,7 +23,6 @@ jest.mock(
 
 describe('redeemTokens procedure', () => {
   let mockContext: Mocked<Context>;
-  let addTransactionStub: sinon.SinonStub;
   let ticker: string;
   let rawTicker: Ticker;
   let amount: BigNumber;
@@ -48,7 +47,6 @@ describe('redeemTokens procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
     bigNumberToBalanceStub.withArgs(amount, mockContext).returns(rawAmount);
   });
@@ -64,7 +62,7 @@ describe('redeemTokens procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should add a redeem transaction to the queue', async () => {
+  it('should return a redeem transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('asset', 'redeem');
@@ -85,12 +83,12 @@ describe('redeemTokens procedure', () => {
       },
     });
 
-    await prepareRedeemTokens.call(proc, {
+    const result = await prepareRedeemTokens.call(proc, {
       ticker,
       amount,
     });
 
-    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawAmount] });
+    expect(result).toEqual({ transaction, args: [rawTicker, rawAmount], resolver: undefined });
   });
 
   it('should throw an error if the portfolio has not sufficient balance to redeem', () => {

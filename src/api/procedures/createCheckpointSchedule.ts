@@ -1,15 +1,8 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 
-import {
-  Asset,
-  CheckpointSchedule,
-  Context,
-  PolymeshError,
-  PostTransactionValue,
-  Procedure,
-} from '~/internal';
+import { Asset, CheckpointSchedule, Context, PolymeshError, Procedure } from '~/internal';
 import { CreateCheckpointScheduleParams, ErrorCode, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   scheduleSpecToMeshScheduleSpec,
   storedScheduleToCheckpointScheduleParams,
@@ -49,7 +42,7 @@ export const createCheckpointScheduleResolver =
 export async function prepareCreateCheckpointSchedule(
   this: Procedure<Params, CheckpointSchedule>,
   args: Params
-): Promise<PostTransactionValue<CheckpointSchedule>> {
+): Promise<TransactionSpec<CheckpointSchedule, ExtrinsicParams<'checkpoint', 'createSchedule'>>> {
   const { context } = this;
   const { ticker, start, period, repetitions } = args;
 
@@ -64,13 +57,11 @@ export async function prepareCreateCheckpointSchedule(
   const rawTicker = stringToTicker(ticker, context);
   const rawSchedule = scheduleSpecToMeshScheduleSpec({ start, period, repetitions }, context);
 
-  const [schedule] = this.addTransaction({
+  return {
     transaction: context.polymeshApi.tx.checkpoint.createSchedule,
-    resolvers: [createCheckpointScheduleResolver(ticker, context)],
     args: [rawTicker, rawSchedule],
-  });
-
-  return schedule;
+    resolver: createCheckpointScheduleResolver(ticker, context),
+  };
 }
 
 /**

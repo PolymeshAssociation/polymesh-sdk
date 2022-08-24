@@ -31,7 +31,6 @@ describe('toggleFreezeOffering procedure', () => {
   let rawTicker: Ticker;
   let id: BigNumber;
   let rawId: u64;
-  let offering: Offering;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -43,13 +42,9 @@ describe('toggleFreezeOffering procedure', () => {
     id = new BigNumber(1);
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawId = dsMockUtils.createMockU64(id);
-    offering = new Offering({ ticker, id }, mockContext);
   });
 
-  let addTransactionStub: sinon.SinonStub;
-
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
     bigNumberToU64Stub.withArgs(id, mockContext).returns(rawId);
@@ -158,7 +153,7 @@ describe('toggleFreezeOffering procedure', () => {
     ).rejects.toThrow('The Offering is already closed');
   });
 
-  it('should add a freeze transaction to the queue', async () => {
+  it('should return a freeze transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<ToggleFreezeOfferingParams, Offering>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('sto', 'freezeFundraiser');
@@ -169,12 +164,14 @@ describe('toggleFreezeOffering procedure', () => {
       freeze: true,
     });
 
-    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawId] });
-
-    expect(offering.asset.ticker).toBe(result.asset.ticker);
+    expect(result).toEqual({
+      transaction,
+      args: [rawTicker, rawId],
+      resolver: expect.objectContaining({ asset: expect.objectContaining({ ticker }) }),
+    });
   });
 
-  it('should add a unfreeze transaction to the queue', async () => {
+  it('should return an unfreeze transaction spec', async () => {
     entityMockUtils.configureMocks({
       offeringOptions: {
         details: {
@@ -197,9 +194,11 @@ describe('toggleFreezeOffering procedure', () => {
       freeze: false,
     });
 
-    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawId] });
-
-    expect(offering.asset.ticker).toBe(result.asset.ticker);
+    expect(result).toEqual({
+      transaction,
+      args: [rawTicker, rawId],
+      resolver: expect.objectContaining({ asset: expect.objectContaining({ ticker }) }),
+    });
   });
 
   describe('getAuthorization', () => {

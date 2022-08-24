@@ -7,7 +7,7 @@ import {
   Context,
   CorporateActionBase,
   Entity,
-  TransactionQueue,
+  PolymeshTransaction,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
@@ -159,7 +159,7 @@ describe('CorporateAction class', () => {
   });
 
   describe('method: linkDocuments', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = {
         documents: [
           {
@@ -170,16 +170,16 @@ describe('CorporateAction class', () => {
         ],
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args: { id, ticker, ...args }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await corporateAction.linkDocuments(args);
+      const tx = await corporateAction.linkDocuments(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 

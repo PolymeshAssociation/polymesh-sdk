@@ -10,7 +10,6 @@ import {
   DividendDistribution,
   NumberedPortfolio,
   PolymeshError,
-  PostTransactionValue,
   Procedure,
 } from '~/internal';
 import {
@@ -20,7 +19,7 @@ import {
   RoleType,
   TxTags,
 } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   bigNumberToBalance,
   bigNumberToU64,
@@ -83,7 +82,12 @@ export interface Storage {
 export async function prepareConfigureDividendDistribution(
   this: Procedure<Params, DividendDistribution, Storage>,
   args: Params
-): Promise<PostTransactionValue<DividendDistribution>> {
+): Promise<
+  TransactionSpec<
+    DividendDistribution,
+    ExtrinsicParams<'corporateAction', 'initiateCorporateActionAndDistribute'>
+  >
+> {
   const {
     context: {
       polymeshApi: { tx, query },
@@ -189,9 +193,9 @@ export async function prepareConfigureDividendDistribution(
   const rawPaymentAt = dateToMoment(paymentDate, context);
   const rawExpiresAt = optionize(dateToMoment)(expiryDate, context);
 
-  const [dividendDistribution] = this.addTransaction({
+  return {
     transaction: tx.corporateAction.initiateCorporateActionAndDistribute,
-    resolvers: [createDividendDistributionResolver(context)],
+    resolver: createDividendDistributionResolver(context),
     args: [
       corporateActionParamsToMeshCorporateActionArgs(
         {
@@ -213,9 +217,7 @@ export async function prepareConfigureDividendDistribution(
       rawPaymentAt,
       rawExpiresAt,
     ],
-  });
-
-  return dividendDistribution;
+  };
 }
 
 /**

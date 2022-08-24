@@ -7,7 +7,7 @@ import {
   ModifyCaDefaultConfigParams,
   TxTags,
 } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
   percentageToPermill,
@@ -42,7 +42,7 @@ const areSameTargets = (targets: CorporateActionTargets, newTargets: InputTarget
 export async function prepareModifyCaDefaultConfig(
   this: Procedure<Params, void>,
   args: Params
-): Promise<void> {
+): Promise<BatchTransactionSpec<void, unknown[][]>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -146,7 +146,7 @@ export async function prepareModifyCaDefaultConfig(
     );
   }
 
-  this.addBatchTransaction({ transactions });
+  return { transactions, resolver: undefined };
 }
 
 /**

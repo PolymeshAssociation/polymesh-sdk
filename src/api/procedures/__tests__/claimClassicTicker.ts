@@ -25,7 +25,6 @@ describe('claimClassicTicker procedure', () => {
   let did: string;
   let rawTicker: Ticker;
   let rawEthereumSignature: EcdsaSignature;
-  let addTransactionStub: sinon.SinonStub;
   let stringToTickerStub: sinon.SinonStub;
   let stringToEcdsaSignatureStub: sinon.SinonStub;
 
@@ -45,14 +44,13 @@ describe('claimClassicTicker procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawEthereumSignature = dsMockUtils.createMockEcdsaSignature(ethereumSignature);
 
     dsMockUtils.createQueryStub('asset', 'tickers', {
       returnValue: dsMockUtils.createMockTickerRegistration({
         owner: CLASSIC_TICKER_OWNER_DID,
-        expiry: null,
+        expiry: dsMockUtils.createMockOption(),
       }),
     });
     dsMockUtils.createQueryStub('asset', 'classicTickers', {
@@ -114,7 +112,7 @@ describe('claimClassicTicker procedure', () => {
   it('should throw an error if the ticker has already been claimed', () => {
     dsMockUtils.createQueryStub('asset', 'tickers', {
       returnValue: dsMockUtils.createMockTickerRegistration({
-        expiry: null,
+        expiry: dsMockUtils.createMockOption(),
         owner: 'someDid',
       }),
     });
@@ -177,17 +175,18 @@ describe('claimClassicTicker procedure', () => {
     });
   });
 
-  it('should add a claim classic ticker transaction to the queue', async () => {
+  it('should return a claim classic ticker transaction spec', async () => {
     const transaction = dsMockUtils.createTxStub('asset', 'claimClassicTicker');
     const proc = procedureMockUtils.getInstance<ClaimClassicTickerParams, TickerReservation>(
       mockContext
     );
 
-    await prepareClaimClassicTicker.call(proc, { ticker, ethereumSignature });
+    const result = await prepareClaimClassicTicker.call(proc, { ticker, ethereumSignature });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction,
       args: [rawTicker, rawEthereumSignature],
+      resolver: expect.objectContaining({ ticker }),
     });
   });
 });

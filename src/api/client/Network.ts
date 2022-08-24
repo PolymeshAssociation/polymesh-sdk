@@ -53,14 +53,14 @@ export class Network {
   }
 
   /**
-   * Retrieve the number of the latest block in the chain
+   * Retrieve the number of the latest finalized block in the chain
    */
   public getLatestBlock(): Promise<BigNumber> {
     return this.context.getLatestBlock();
   }
 
   /**
-   * Fetch the current network version (i.e. 3.1.0)
+   * Fetch the current network version (e.g. 3.1.0)
    */
   public async getVersion(): Promise<string> {
     return this.context.getNetworkVersion();
@@ -98,7 +98,7 @@ export class Network {
   /**
    * Retrieve the protocol fees associated with running specific transactions
    *
-   * @param args.tags - list of transaction tags (i.e. [TxTags.asset.CreateAsset, TxTags.asset.RegisterTicker] or ["asset.createAsset", "asset.registerTicker"])
+   * @param args.tags - list of transaction tags (e.g. [TxTags.asset.CreateAsset, TxTags.asset.RegisterTicker] or ["asset.createAsset", "asset.registerTicker"])
    */
   public getProtocolFees(args: { tags: TxTag[] }): Promise<ProtocolFees[]> {
     return this.context.getProtocolFees(args);
@@ -395,6 +395,8 @@ export class Network {
         context.getProtocolFees({ tags: [txTag], blockHash }),
       ]);
 
+      const gas = balanceToBigNumber(partialFee);
+
       return {
         blockNumber: new BigNumber(blockNumber),
         blockHash,
@@ -408,8 +410,9 @@ export class Network {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         extrinsicHash: extrinsicHash!,
         fee: {
-          gas: balanceToBigNumber(partialFee),
+          gas,
           protocol: protocolFees,
+          total: gas.plus(protocolFees),
         },
       };
     }
@@ -479,10 +482,12 @@ export class Network {
         block: { extrinsics: blockExtrinsics },
       } = await getBlock(rawBlockHash);
 
-      const [{ partialFee }, [{ fees: protocolFees }]] = await Promise.all([
+      const [{ partialFee }, [{ fees: protocol }]] = await Promise.all([
         queryInfo(blockExtrinsics[extrinsicIdx].toHex(), rawBlockHash),
         context.getProtocolFees({ tags: [txTag], blockHash }),
       ]);
+
+      const gas = balanceToBigNumber(partialFee);
 
       return {
         blockNumber: new BigNumber(blockNumber),
@@ -497,8 +502,9 @@ export class Network {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         extrinsicHash: extrinsicHash!,
         fee: {
-          gas: balanceToBigNumber(partialFee),
-          protocol: protocolFees,
+          gas,
+          protocol,
+          total: gas.plus(protocol),
         },
       };
     }

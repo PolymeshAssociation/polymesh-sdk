@@ -26,7 +26,6 @@ describe('removeCheckpointSchedule procedure', () => {
   let u32ToBigNumberStub: sinon.SinonStub;
   let ticker: string;
   let rawTicker: Ticker;
-  let addTransactionStub: sinon.SinonStub;
   let id: BigNumber;
   let rawId: u64;
 
@@ -47,7 +46,6 @@ describe('removeCheckpointSchedule procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
     stringToTickerStub.returns(rawTicker);
     bigNumberToU64Stub.returns(rawId);
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
     dsMockUtils.createQueryStub('checkpoint', 'scheduleRefCount');
   });
@@ -107,7 +105,7 @@ describe('removeCheckpointSchedule procedure', () => {
     );
   });
 
-  it('should add a remove schedule transaction to the queue', async () => {
+  it('should return a remove schedule transaction spec', async () => {
     const args = {
       ticker,
       schedule: id,
@@ -126,21 +124,21 @@ describe('removeCheckpointSchedule procedure', () => {
     let transaction = dsMockUtils.createTxStub('checkpoint', 'removeSchedule');
     let proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await prepareRemoveCheckpointSchedule.call(proc, args);
+    let result = await prepareRemoveCheckpointSchedule.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawId] });
+    expect(result).toEqual({ transaction, args: [rawTicker, rawId], resolver: undefined });
 
     transaction = dsMockUtils.createTxStub('checkpoint', 'removeSchedule');
     proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await prepareRemoveCheckpointSchedule.call(proc, {
+    result = await prepareRemoveCheckpointSchedule.call(proc, {
       ticker,
       schedule: entityMockUtils.getCheckpointScheduleInstance({
         id: new BigNumber(1),
       }),
     });
 
-    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawId] });
+    expect(result).toEqual({ transaction, args: [rawTicker, rawId], resolver: undefined });
   });
 
   describe('getAuthorization', () => {

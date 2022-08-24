@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Assets } from '~/api/client/Assets';
-import { Asset, Context, TickerReservation, TransactionQueue } from '~/internal';
+import { Asset, Context, PolymeshTransaction, TickerReservation } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { KnownAssetType, SecurityIdentifierType, TickerReservationStatus } from '~/types';
@@ -53,26 +53,27 @@ describe('Assets Class', () => {
   });
 
   describe('method: reserveTicker', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = {
         ticker: 'SOME_TICKER',
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<TickerReservation>;
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<TickerReservation>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await assets.reserveTicker(args);
+      const tx = await assets.reserveTicker(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: createAsset', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const ticker = 'FAKE_TICKER';
 
       const args = {
@@ -87,36 +88,37 @@ describe('Assets Class', () => {
         reservationRequired: false,
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await assets.createAsset(args);
+      const tx = await assets.createAsset(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: claimClassicTicker', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = {
         ticker: 'SOME_TICKER',
         ethereumSignature: 'someSig',
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<TickerReservation>;
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<TickerReservation>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await assets.claimClassicTicker(args);
+      const tx = await assets.claimClassicTicker(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 

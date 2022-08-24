@@ -64,13 +64,9 @@ describe('transferAssetOwnership procedure', () => {
     };
   });
 
-  let addTransactionStub: sinon.SinonStub;
-
   let transaction: PolymeshTx<[Signatory, AuthorizationData, Option<Moment>]>;
 
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
-
     transaction = dsMockUtils.createTxStub('identity', 'addAuthorization');
 
     mockContext = dsMockUtils.getContextInstance();
@@ -95,34 +91,28 @@ describe('transferAssetOwnership procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should add an add authorization transaction to the queue', async () => {
+  it('should return an add authorization transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
 
-    await prepareTransferAssetOwnership.call(proc, args);
+    const result = await prepareTransferAssetOwnership.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction,
-        resolvers: sinon.match.array,
-        args: [rawSignatory, rawAuthorizationData, null],
-      })
-    );
+    expect(result).toEqual({
+      transaction,
+      args: [rawSignatory, rawAuthorizationData, null],
+      resolver: expect.any(Function),
+    });
   });
 
-  it('should add an add authorization transaction with expiry to the queue if an expiry date was passed', async () => {
+  it('should return an add authorization transaction with expiry spec if an expiry date was passed', async () => {
     const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
 
-    await prepareTransferAssetOwnership.call(proc, { ...args, expiry });
+    const result = await prepareTransferAssetOwnership.call(proc, { ...args, expiry });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction,
-        resolvers: sinon.match.array,
-        args: [rawSignatory, rawAuthorizationData, rawMoment],
-      })
-    );
+    expect(result).toEqual({
+      transaction,
+      args: [rawSignatory, rawAuthorizationData, rawMoment],
+      resolver: expect.any(Function),
+    });
   });
 
   describe('getAuthorization', () => {

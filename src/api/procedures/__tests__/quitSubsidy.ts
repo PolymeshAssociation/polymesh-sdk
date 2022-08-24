@@ -66,8 +66,7 @@ describe('quitSubsidy procedure', () => {
     expect(error.message).toBe('The Subsidy no longer exists');
   });
 
-  it('should add a transaction to the queue', async () => {
-    const addTransactionStub = procedureMockUtils.getAddTransactionStub();
+  it('should return a transaction spec', async () => {
     const removePayingKeyTransaction = dsMockUtils.createTxStub('relayer', 'removePayingKey');
 
     const rawBeneficiaryAccountId = dsMockUtils.createMockAccountId('beneficiary');
@@ -77,15 +76,13 @@ describe('quitSubsidy procedure', () => {
 
     const proc = procedureMockUtils.getInstance<QuitSubsidyParams, void>(mockContext);
 
-    await prepareQuitSubsidy.call(proc, args);
+    const result = await prepareQuitSubsidy.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction: removePayingKeyTransaction,
-        args: [rawBeneficiaryAccountId, rawSubsidizerAccountId],
-      })
-    );
+    expect(result).toEqual({
+      transaction: removePayingKeyTransaction,
+      args: [rawBeneficiaryAccountId, rawSubsidizerAccountId],
+      resolver: undefined,
+    });
   });
 
   describe('getAuthorization', () => {

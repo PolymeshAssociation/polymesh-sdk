@@ -6911,7 +6911,9 @@ describe('distributionToDividendDistributionParams', () => {
       remaining: new BigNumber(9000).shiftedBy(6),
       reclaimed: false,
       paymentAt: new BigNumber(paymentDate.getTime()),
-      expiresAt: dsMockUtils.createMockMoment(new BigNumber(expiryDate.getTime())),
+      expiresAt: dsMockUtils.createMockOption(
+        dsMockUtils.createMockMoment(new BigNumber(expiryDate.getTime()))
+      ),
     };
 
     let distribution = dsMockUtils.createMockDistribution(params);
@@ -6920,7 +6922,10 @@ describe('distributionToDividendDistributionParams', () => {
 
     expect(result).toEqual(fakeResult);
 
-    distribution = dsMockUtils.createMockDistribution({ ...params, expiresAt: null });
+    distribution = dsMockUtils.createMockDistribution({
+      ...params,
+      expiresAt: dsMockUtils.createMockOption(),
+    });
 
     result = distributionToDividendDistributionParams(distribution, context);
 
@@ -7647,8 +7652,14 @@ describe('statUpdatesToBtreeStatUpdate', () => {
   it('should convert stat updates to a sorted BTreeSet', () => {
     const context = dsMockUtils.getContextInstance();
     const key2 = dsMockUtils.createMock2ndKey();
-    const stat1 = dsMockUtils.createMockStatUpdate({ key2, value: new BigNumber(1) });
-    const stat2 = dsMockUtils.createMockStatUpdate({ key2, value: new BigNumber(2) });
+    const stat1 = dsMockUtils.createMockStatUpdate({
+      key2,
+      value: dsMockUtils.createMockOption(dsMockUtils.createMockU128(new BigNumber(1))),
+    });
+    const stat2 = dsMockUtils.createMockStatUpdate({
+      key2,
+      value: dsMockUtils.createMockOption(dsMockUtils.createMockU128(new BigNumber(2))),
+    });
 
     context.createType.returns([stat1, stat2]);
 
@@ -8082,28 +8093,31 @@ describe('sortStatsByClaimType', () => {
       dsMockUtils.createMockClaimType(ClaimType.Blocked),
       issuer,
     ];
-    const op = dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count);
+    const op = dsMockUtils.createMockStatisticsStatOpType(StatisticsOpType.Count);
     const accreditedStat = dsMockUtils.createMockStatisticsStatType({
       op,
-      claimIssuer: accreditedIssuer,
+      claimIssuer: dsMockUtils.createMockOption(accreditedIssuer),
     });
 
     const affiliateStat = dsMockUtils.createMockStatisticsStatType({
       op,
-      claimIssuer: affiliateIssuer,
+      claimIssuer: dsMockUtils.createMockOption(affiliateIssuer),
     });
 
     const jurisdictionStat = dsMockUtils.createMockStatisticsStatType({
       op,
-      claimIssuer: jurisdictionIssuer,
+      claimIssuer: dsMockUtils.createMockOption(jurisdictionIssuer),
     });
 
     const nonStat = dsMockUtils.createMockStatisticsStatType({
       op,
-      claimIssuer: nonStatIssuer,
+      claimIssuer: dsMockUtils.createMockOption(nonStatIssuer),
     });
 
-    const countStat = dsMockUtils.createMockStatisticsStatType({ op });
+    const countStat = dsMockUtils.createMockStatisticsStatType({
+      op,
+      claimIssuer: dsMockUtils.createMockOption(),
+    });
 
     let result = sortStatsByClaimType([jurisdictionStat, accreditedStat, affiliateStat, countStat]);
 

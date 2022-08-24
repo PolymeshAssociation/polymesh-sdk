@@ -1,6 +1,6 @@
 import { ApiPromise } from '@polkadot/api';
 import { getTypeDef, Option } from '@polkadot/types';
-import { AccountInfo } from '@polkadot/types/interfaces';
+import { AccountInfo, Header } from '@polkadot/types/interfaces';
 import {
   PalletCorporateActionsCaId,
   PalletCorporateActionsDistribution,
@@ -123,6 +123,8 @@ export class Context {
   private _signingManager?: SigningManager;
 
   private signingAddress?: string;
+
+  private nonce?: BigNumber;
 
   /**
    * @hidden
@@ -540,7 +542,7 @@ export class Context {
    *
    * Retrieve the protocol fees associated with running specific transactions
    *
-   * @param tags - list of transaction tags (i.e. [TxTags.asset.CreateAsset, TxTags.asset.RegisterTicker] or ["asset.createAsset", "asset.registerTicker"])
+   * @param tags - list of transaction tags (e.g. [TxTags.asset.CreateAsset, TxTags.asset.RegisterTicker] or ["asset.createAsset", "asset.registerTicker"])
    * @param blockHash - optional hash of the block to get the protocol fees at that block
    */
   public async getProtocolFees({
@@ -1325,10 +1327,28 @@ export class Context {
   /**
    * @hidden
    *
-   * Retrieve the latest block number
+   * Retrieve the number of the latest finalized block
    */
   public async getLatestBlock(): Promise<BigNumber> {
-    const { number } = await this.polymeshApi.rpc.chain.getHeader();
+    const { chain } = this.polymeshApi.rpc;
+
+    /*
+     * This is faster than calling `getFinalizedHead` and then `getHeader`.
+     * We're promisifying a callback subscription to the latest finalized block
+     * and unsubscribing as soon as we get the first result
+     */
+    const gettingHeader = new Promise<Header>((resolve, reject) => {
+      const gettingUnsub = chain.subscribeFinalizedHeads(header => {
+        gettingUnsub
+          .then(unsub => {
+            unsub();
+            resolve(header);
+          })
+          .catch(err => reject(err));
+      });
+    });
+
+    const { number } = await gettingHeader;
 
     return u32ToBigNumber(number.unwrap());
   }
@@ -1401,5 +1421,25 @@ export class Context {
         data: { type, params, error },
       });
     }
+  }
+
+  /**
+   * @hidden
+   *
+   * Set the nonce value
+   */
+  public setNonce(nonce?: BigNumber): void {
+    this.nonce = nonce;
+  }
+
+  /**
+   * @hidden
+   *
+   * Retrieve the nonce value
+   */
+  public getNonce(): BigNumber {
+    // nonce: -1 takes pending transactions into consideration.
+    // More information can be found at: https://polkadot.js.org/docs/api/cookbook/tx/#how-do-i-take-the-pending-tx-pool-into-account-in-my-nonce
+    return new BigNumber(this.nonce || -1);
   }
 }

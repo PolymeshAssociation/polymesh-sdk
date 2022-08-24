@@ -22,7 +22,6 @@ describe('payDividends procedure', () => {
 
   let mockContext: Mocked<Context>;
   let stringToIdentityIdStub: sinon.SinonStub;
-  let addBatchTransactionStub: sinon.SinonStub;
   let payDividendsTransaction: PolymeshTx<unknown[]>;
 
   beforeAll(() => {
@@ -42,7 +41,6 @@ describe('payDividends procedure', () => {
   });
 
   beforeEach(() => {
-    addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
     payDividendsTransaction = dsMockUtils.createTxStub('capitalDistribution', 'pushBenefit');
     mockContext = dsMockUtils.getContextInstance();
   });
@@ -58,7 +56,7 @@ describe('payDividends procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should add a stop Offering transaction to the queue', async () => {
+  it('should return a stop Offering transaction spec', async () => {
     const targets = ['someDid'];
     const identityId = dsMockUtils.createMockIdentityId(targets[0]);
 
@@ -83,9 +81,11 @@ describe('payDividends procedure', () => {
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await preparePayDividends.call(proc, { targets, distribution });
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    const result = await preparePayDividends.call(proc, { targets, distribution });
+
+    expect(result).toEqual({
       transactions: [{ transaction: payDividendsTransaction, args: [rawCaId, identityId] }],
+      resolver: undefined,
     });
   });
 

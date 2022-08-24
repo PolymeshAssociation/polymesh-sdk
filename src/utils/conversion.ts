@@ -3811,7 +3811,7 @@ export function meshStatToStatisticsOpType(
  * @hidden
  */
 export function statisticsOpTypeToStatOpType(
-  type: StatisticsOpType,
+  type: StatisticsOpType.Count | StatisticsOpType.Balance,
   context: Context
 ): PolymeshPrimitivesStatisticsStatOpType {
   return context.createType('PolymeshPrimitivesStatisticsStatOpType', type);

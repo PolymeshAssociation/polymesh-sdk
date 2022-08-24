@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Context, CustomPermissionGroup, PermissionGroup, TransactionQueue } from '~/internal';
+import { Context, CustomPermissionGroup, PermissionGroup, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -15,7 +15,7 @@ jest.mock(
 );
 
 describe('CustomPermissionGroup class', () => {
-  const ticker = 'ASSETNAME';
+  const ticker = 'ASSET_NAME';
   const id = new BigNumber(1);
 
   let context: Context;
@@ -82,7 +82,7 @@ describe('CustomPermissionGroup class', () => {
   });
 
   describe('method: setPermissions', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const customPermissionGroup = new CustomPermissionGroup({ id, ticker }, context);
 
       const args = {
@@ -91,7 +91,7 @@ describe('CustomPermissionGroup class', () => {
         },
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -99,11 +99,11 @@ describe('CustomPermissionGroup class', () => {
           { args: { ...args, group: customPermissionGroup }, transformer: undefined },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await customPermissionGroup.setPermissions(args);
+      const tx = await customPermissionGroup.setPermissions(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 

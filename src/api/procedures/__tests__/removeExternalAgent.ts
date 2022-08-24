@@ -35,7 +35,6 @@ describe('removeExternalAgent procedure', () => {
   let ticker: string;
   let asset: Asset;
   let target: string;
-  let addTransactionStub: sinon.SinonStub;
   let stringToTickerStub: sinon.SinonStub;
   let stringToIdentityIdStub: sinon.SinonStub;
 
@@ -53,7 +52,6 @@ describe('removeExternalAgent procedure', () => {
   beforeEach(() => {
     entityMockUtils.configureMocks();
     mockContext = dsMockUtils.getContextInstance();
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
   });
 
   afterEach(() => {
@@ -142,7 +140,7 @@ describe('removeExternalAgent procedure', () => {
     );
   });
 
-  it('should add a remove agent transaction to the queue', async () => {
+  it('should return a remove agent transaction spec', async () => {
     const transaction = dsMockUtils.createTxStub('externalAgents', 'removeAgent');
     let proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       asset: entityMockUtils.getAssetInstance({
@@ -171,12 +169,12 @@ describe('removeExternalAgent procedure', () => {
     stringToTickerStub.returns(rawTicker);
     stringToIdentityIdStub.returns(rawAgent);
 
-    await prepareRemoveExternalAgent.call(proc, {
+    let result = await prepareRemoveExternalAgent.call(proc, {
       target,
       ticker,
     });
 
-    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawAgent] });
+    expect(result).toEqual({ transaction, args: [rawTicker, rawAgent], resolver: undefined });
 
     proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       asset: entityMockUtils.getAssetInstance({
@@ -199,11 +197,11 @@ describe('removeExternalAgent procedure', () => {
       }),
     });
 
-    await prepareRemoveExternalAgent.call(proc, {
+    result = await prepareRemoveExternalAgent.call(proc, {
       target,
       ticker,
     });
 
-    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawAgent] });
+    expect(result).toEqual({ transaction, args: [rawTicker, rawAgent], resolver: undefined });
   });
 });

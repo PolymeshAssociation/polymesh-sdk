@@ -18,7 +18,7 @@ import {
   CorporateActionBase,
   DefaultPortfolio,
   Identity,
-  modifyDistributionCheckpoint,
+  modifyCaCheckpoint,
   NumberedPortfolio,
   payDividends,
   PolymeshError,
@@ -42,6 +42,7 @@ import {
   ResultSet,
   TargetTreatment,
 } from '~/types';
+import { ProcedureParams } from '~/types/internal';
 import {
   Ensured,
   EnsuredV2,
@@ -172,11 +173,20 @@ export class DividendDistribution extends CorporateActionBase {
       context
     );
 
-    this.modifyCheckpoint = createProcedureMethod(
+    this.modifyCheckpoint = createProcedureMethod<
+      Modify<
+        ModifyCaCheckpointParams,
+        {
+          checkpoint: InputCaCheckpoint;
+        }
+      >,
+      ProcedureParams<typeof modifyCaCheckpoint>,
+      void
+    >(
       {
         getProcedureAndArgs: modifyCheckpointArgs => [
-          modifyDistributionCheckpoint,
-          { distribution: this, ...modifyCheckpointArgs },
+          modifyCaCheckpoint,
+          { corporateAction: this, ...modifyCheckpointArgs },
         ],
       },
       context
