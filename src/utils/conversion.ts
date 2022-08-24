@@ -13,6 +13,7 @@ import {
   PalletCorporateActionsCorporateAction,
   PalletCorporateActionsDistribution,
   PalletCorporateActionsInitiateCorporateActionArgs,
+  PalletMultisigProposalStatus,
   PalletStoFundraiser,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesAuthorizationAuthorizationData,
@@ -195,6 +196,7 @@ import {
   PortfolioId,
   PortfolioLike,
   PortfolioMovement,
+  ProposalStatus,
   Requirement,
   RequirementCompliance,
   Scope,
@@ -4006,4 +4008,13 @@ export function inputStatTypeToMeshStatType(
     claimIssuer = claimIssuerToMeshClaimIssuer(input.claimIssuer, context);
   }
   return statisticsOpTypeToStatType({ op, claimIssuer }, context);
+}
+
+/**
+ * @hidden
+ */
+export function meshProposalStatusToProposalStatus(
+  status: PalletMultisigProposalStatus
+): ProposalStatus {
+  return ProposalStatus[status.type as keyof typeof ProposalStatus];
 }

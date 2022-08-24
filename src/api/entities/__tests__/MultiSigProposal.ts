@@ -94,36 +94,6 @@ describe('MultiSigProposal class', () => {
 
       return expect(proposal.details()).rejects.toThrowError(expectedError);
     });
-
-    it('should throw if it receives an unexpected proposal status', () => {
-      dsMockUtils.createQueryStub('multiSig', 'proposals', {
-        returnValue: createMockOption(
-          dsMockUtils.createMockCall({
-            args: ['ABC'],
-            method: 'reserveTicker',
-            section: 'asset',
-          })
-        ),
-      });
-
-      dsMockUtils.createQueryStub('multiSig', 'proposalDetail', {
-        returnValue: dsMockUtils.createMockProposalDetails({
-          approvals: dsMockUtils.createMockU64(new BigNumber(1)),
-          rejections: dsMockUtils.createMockU64(new BigNumber(1)),
-          status: dsMockUtils.createMockProposalStatus('unknownStatus' as ProposalStatus),
-          expiry: dsMockUtils.createMockOption(),
-          autoClose: dsMockUtils.createMockBool(true),
-        }),
-      });
-
-      const expectedError = new PolymeshError({
-        code: ErrorCode.UnexpectedError,
-        message:
-          'Unexpected MultiSigProposal status. Try upgrading the SDK to the latest version. Contact the Polymesh team if the problem persists',
-      });
-
-      return expect(proposal.details()).rejects.toThrowError(expectedError);
-    });
   });
 
   describe('method: exists', () => {
@@ -153,7 +123,7 @@ describe('MultiSigProposal class', () => {
   describe('method: toHuman', () => {
     it('should return a human readable representation of the entity', () => {
       const result = proposal.toHuman();
-      expect(result).toEqual('{"multiSigAddress":"someAddress","id":"1"}');
+      expect(result).toEqual({ id: '1', multiSigAddress: 'someAddress' });
     });
   });
 });

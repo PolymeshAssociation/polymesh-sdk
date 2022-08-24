@@ -2,10 +2,10 @@ import { BigNumber } from 'bignumber.js';
 
 import { Context, Entity, PolymeshError } from '~/internal';
 import { ErrorCode, MultiSigProposalDetails, TxTag } from '~/types';
-import { isProposalStatus } from '~/utils';
 import {
   bigNumberToU64,
   boolToBoolean,
+  meshProposalStatusToProposalStatus,
   momentToDate,
   stringToAccountId,
   u64ToBigNumber,
@@ -25,7 +25,7 @@ export interface HumanReadable {
 /**
  * A proposal for a MultiSig transaction. This is a wrapper around an extrinsic that will be executed when the amount of approvals reaches the signature threshold set on the MultiSig Account
  */
-export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
+export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
   public multiSigAddress: string;
   public id: BigNumber;
 
@@ -86,13 +86,7 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
     const approvalAmount = u64ToBigNumber(rawApprovals);
     const rejectionAmount = u64ToBigNumber(rawRejections);
     const expiry = rawExpiry.isNone ? null : momentToDate(rawExpiry.unwrap());
-    const status = rawStatus.toString();
-    if (!isProposalStatus(status))
-      throw new PolymeshError({
-        code: ErrorCode.FatalError,
-        message:
-          'Unexpected MultiSigProposal status. Try upgrading the SDK to the latest version. Contact the Polymesh team if the problem persists',
-      });
+    const status = meshProposalStatusToProposalStatus(rawStatus);
     const autoClose = boolToBoolean(rawAutoClose);
 
     return {
@@ -129,12 +123,12 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
   /**
    * Returns a human readable string representation
    */
-  public toHuman(): string {
+  public toHuman(): HumanReadable {
     const { multiSigAddress, id } = this;
 
-    return JSON.stringify({
+    return {
       multiSigAddress,
-      id,
-    });
+      id: id.toString(),
+    };
   }
 }
