@@ -31,6 +31,7 @@ import {
   InputTargets,
   InputTaxWithholding,
   InputTrustedClaimIssuer,
+  MultiSig,
   OfferingTier,
   PercentageTransferRestriction,
   PermissionedAccount,
@@ -938,4 +939,15 @@ export interface MoveFundsParams {
 export interface CreateMultiSigParams {
   signers: Signer[];
   requiredSignatures: BigNumber;
+}
+
+export interface ModifyMultiSigParams {
+  /**
+   * The MultiSig to be modified
+   */
+  multiSig: MultiSig;
+  /**
+   * The signers to set for the MultiSig
+   */
+  signers: Signer[];
 }

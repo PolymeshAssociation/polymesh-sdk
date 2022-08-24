@@ -1,24 +1,10 @@
 import BigNumber from 'bignumber.js';
 
 import { PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, MultiSig, Signer, TxTags } from '~/types';
+import { ErrorCode, ModifyMultiSigParams, Signer, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { signerToSignatory, signerToString, stringToAccountId } from '~/utils/conversion';
 import { checkTxType } from '~/utils/internal';
-
-/**
- * @hidden
- */
-export interface ModifyMultiSigParams {
-  /**
-   * The MultiSig to be modified
-   */
-  multiSig: MultiSig;
-  /**
-   * The signers to set for the MultiSig
-   */
-  signers: Signer[];
-}
 
 export interface Storage {
   signersToAdd: Signer[];
@@ -66,7 +52,8 @@ export async function prepareModifyMultiSig(
   if (signersToAdd.length === 0 && signersToRemove.length === 0) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'The given signers are equal to the current signers',
+      message:
+        'The given signers are equal to the current signers. At least one signer should be added or removed',
     });
   }
 
@@ -89,7 +76,7 @@ export async function prepareModifyMultiSig(
   const transactions = [];
 
   if (signersToAdd.length > 0) {
-    const rawAddedSigners = signersToAdd.map(s => signerToSignatory(s, context));
+    const rawAddedSigners = signersToAdd.map(signer => signerToSignatory(signer, context));
     transactions.push(
       checkTxType({
         transaction: tx.multiSig.addMultisigSignersViaCreator,
@@ -99,7 +86,7 @@ export async function prepareModifyMultiSig(
   }
 
   if (signersToRemove.length > 0) {
-    const rawRemovedSigners = signersToRemove.map(s => signerToSignatory(s, context));
+    const rawRemovedSigners = signersToRemove.map(signer => signerToSignatory(signer, context));
     transactions.push(
       checkTxType({
         transaction: tx.multiSig.removeMultisigSignersViaCreator,

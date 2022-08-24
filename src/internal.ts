@@ -142,7 +142,6 @@ export { modifyAllowance, ModifyAllowanceParams } from '~/api/procedures/modifyA
 export { createMultiSigAccount } from '~/api/procedures/createMultiSig';
 export {
   modifyMultiSig as modifyMultiSigAccount,
-  ModifyMultiSigParams,
   Storage as ModifyMultiSigStorage,
 } from '~/api/procedures/modifyMultiSig';
 export {

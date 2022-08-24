@@ -4,7 +4,6 @@ import sinon, { SinonStub } from 'sinon';
 
 import {
   getAuthorization,
-  ModifyMultiSigParams,
   prepareModifyMultiSig,
   prepareStorage,
 } from '~/api/procedures/modifyMultiSig';
@@ -12,7 +11,7 @@ import { Context, ModifyMultiSigStorage, MultiSig, PolymeshError } from '~/inter
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { getAccountInstance, getIdentityInstance, MockMultiSig } from '~/testUtils/mocks/entities';
 import { Mocked } from '~/testUtils/types';
-import { ErrorCode, TxTags } from '~/types';
+import { ErrorCode, ModifyMultiSigParams, TxTags } from '~/types';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -93,7 +92,8 @@ describe('modifyMultiSig procedure', () => {
 
     const expectedError = new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'The given signers are equal to the current signers',
+      message:
+        'The given signers are equal to the current signers. At least one signer should be added or removed',
     });
 
     return expect(prepareModifyMultiSig.call(proc, args)).rejects.toThrowError(expectedError);

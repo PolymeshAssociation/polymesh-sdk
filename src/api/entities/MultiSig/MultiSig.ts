@@ -2,15 +2,8 @@ import BigNumber from 'bignumber.js';
 
 import { UniqueIdentifiers } from '~/api/entities/Account';
 import { MultiSigProposal } from '~/api/entities/MultiSig/MultiSigProposal';
-import {
-  Account,
-  Context,
-  Identity,
-  modifyMultiSigAccount,
-  ModifyMultiSigParams,
-  PolymeshError,
-} from '~/internal';
-import { ErrorCode, MultiSigDetails, ProcedureMethod } from '~/types';
+import { Account, Context, Identity, modifyMultiSigAccount, PolymeshError } from '~/internal';
+import { ErrorCode, ModifyMultiSigParams, MultiSigDetails, ProcedureMethod } from '~/types';
 import {
   addressToKey,
   identityIdToString,
@@ -98,9 +91,10 @@ export class MultiSig extends Account {
         },
       },
       context,
+      address,
     } = this;
 
-    const rawAddress = addressToKey(this.address, context);
+    const rawAddress = addressToKey(address, context);
     const rawCreatorDid = await multiSig.multiSigToIdentity(rawAddress);
     if (rawCreatorDid.isEmpty) {
       throw new PolymeshError({
