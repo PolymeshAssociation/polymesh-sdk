@@ -53,7 +53,7 @@ describe('MultiSigProposal class', () => {
           rejections: new BigNumber(1),
           status: ProposalStatus.ActiveOrExpired,
           autoClose: true,
-          expiry: createMockOption(createMockMoment()),
+          expiry: createMockOption(createMockMoment(new BigNumber(3))),
         }),
       });
 
@@ -67,9 +67,39 @@ describe('MultiSigProposal class', () => {
         ),
       });
 
-      const result = await proposal.details();
+      let result = await proposal.details();
 
-      expect(result).toBeDefined();
+      expect(result).toEqual({
+        approvalAmount: new BigNumber(1),
+        args: ['ABC'],
+        autoClose: undefined,
+        expiry: new Date(3),
+        rejectionAmount: new BigNumber(1),
+        status: undefined,
+        txTag: 'asset.reserveTicker',
+      });
+
+      dsMockUtils.createQueryStub('multiSig', 'proposalDetail', {
+        returnValue: dsMockUtils.createMockProposalDetails({
+          approvals: new BigNumber(1),
+          rejections: new BigNumber(1),
+          status: ProposalStatus.ActiveOrExpired,
+          autoClose: true,
+          expiry: createMockOption(),
+        }),
+      });
+
+      result = await proposal.details();
+
+      expect(result).toEqual({
+        approvalAmount: new BigNumber(1),
+        args: ['ABC'],
+        autoClose: undefined,
+        expiry: null,
+        rejectionAmount: new BigNumber(1),
+        status: undefined,
+        txTag: 'asset.reserveTicker',
+      });
     });
 
     it('should throw an error if no data is returned', () => {
