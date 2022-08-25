@@ -76,12 +76,12 @@ export async function prepareConsumeAuthorizationRequests(
       const type = key as AllowedAuthType;
 
       transactions.push(
-        ...assembleBatchTransactions(
-          tuple({
+        ...assembleBatchTransactions([
+          {
             transaction: typesToExtrinsics[type],
             argsArray: ids,
-          })
-        )
+          },
+        ])
       );
     });
 
@@ -98,12 +98,12 @@ export async function prepareConsumeAuthorizationRequests(
         falseBool
       )
     );
-    const transactions = assembleBatchTransactions(
-      tuple({
+    const transactions = assembleBatchTransactions([
+      {
         transaction: tx.identity.removeAuthorization,
         argsArray: authIdentifiers,
-      })
-    );
+      },
+    ]);
 
     return { transactions, resolver: undefined };
   }
