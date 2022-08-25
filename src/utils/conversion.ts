@@ -4016,5 +4016,5 @@ export function inputStatTypeToMeshStatType(
 export function meshProposalStatusToProposalStatus(
   status: PalletMultisigProposalStatus
 ): ProposalStatus {
-  return ProposalStatus[status.type as keyof typeof ProposalStatus];
+  return ProposalStatus[status.type];
 }
