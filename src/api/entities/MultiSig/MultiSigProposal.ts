@@ -77,10 +77,7 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
         message: `Proposal with ID: "${id}" was not found. It may have already been executed`,
       });
     } else {
-      const value = proposal.unwrap();
-      args = value.args;
-      method = value.method;
-      section = value.section;
+      ({ args, method, section } = proposal.unwrap());
     }
 
     const approvalAmount = u64ToBigNumber(rawApprovals);
@@ -117,7 +114,7 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
     const rawId = bigNumberToU64(id, context);
     const rawMultiSignAddress = stringToAccountId(multiSigAddress, context);
     const rawProposal = await multiSig.proposals([rawMultiSignAddress, rawId]);
-    return !rawProposal.isEmpty;
+    return rawProposal.isSome;
   }
 
   /**
