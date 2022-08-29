@@ -587,6 +587,7 @@ export enum ClaimTypeEnum {
   InvestorUniqueness = 'InvestorUniqueness',
   NoData = 'NoData',
   InvestorUniquenessV2 = 'InvestorUniquenessV2',
+  NoType = 'NoType',
 }
 
 export type CorporateActionsWithCaId = {
