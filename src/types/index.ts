@@ -1536,7 +1536,9 @@ export type GenericPolymeshTransaction<ProcedureReturnValue, ReturnValue> =
   | PolymeshTransactionBatch<ProcedureReturnValue, ReturnValue>;
 
 export type TransactionArray<ReturnValues extends readonly [...unknown[]]> = {
-  [K in keyof ReturnValues]: GenericPolymeshTransaction<ReturnValues[K], ReturnValues[K]>;
+  // The type has to be any here to account for procedures with transformed return values
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [K in keyof ReturnValues]: GenericPolymeshTransaction<any, ReturnValues[K]>;
 };
 
 /**

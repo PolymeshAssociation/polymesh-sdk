@@ -156,10 +156,10 @@ export class PolymeshTransactionBatch<
    * console.log(`New Asset created! Ticker: ${ticker}`);
    * ```
    */
-  public splitTransactions(): [
-    ...PolymeshTransaction<void>[],
-    PolymeshTransaction<ReturnValue, TransformedReturnValue>
-  ] {
+  public splitTransactions(): (
+    | PolymeshTransaction<void>
+    | PolymeshTransaction<ReturnValue, TransformedReturnValue>
+  )[] {
     const { signingAddress, signer, context } = this;
     const { transactions, resolver, transformer } =
       PolymeshTransactionBatch.toTransactionSpec(this);
@@ -228,10 +228,7 @@ export class PolymeshTransactionBatch<
       }) as (() => Promise<TransformedReturnValue>) | (() => Promise<void>);
 
       return newTransaction;
-    }) as [
-      ...PolymeshTransaction<void>[],
-      PolymeshTransaction<ReturnValue, TransformedReturnValue>
-    ];
+    });
   }
 
   /**
