@@ -25,6 +25,7 @@ import {
 import { CustomAssetTypeId } from '~/polkadot';
 import {
   CalendarPeriod,
+  ClaimType,
   InputStatClaim,
   KnownAssetType,
   PermissionGroupType,
@@ -318,11 +319,22 @@ export type PermissionGroupIdentifier = PermissionGroupType | { custom: BigNumbe
 
 export type InternalAssetType = KnownAssetType | { Custom: CustomAssetTypeId };
 
-export enum StatisticsOpType {
+/**
+ * Represents the StatType from the `statistics` module.
+ *
+ * @note the chain doesn't use "Scoped" types, but they are needed here to discriminate the input instead of having an optional input
+ */
+export enum StatType {
   Count = 'Count',
   Balance = 'Balance',
-  ClaimCount = 'ClaimCount',
-  ClaimPercentage = 'ClaimPercentage',
+  /**
+   * ScopedCount is an SDK only type, on chain it is `Count` with a claimType option present
+   */
+  ScopedCount = 'ScopedCount',
+  /**
+   * ScopedPercentage is an SDK only type, on chain it is `Balance` with a claimType option present
+   */
+  ScopedBalance = 'ScopedBalance',
 }
 
 export interface TickerKey {
@@ -338,6 +350,7 @@ export type ProcedureParams<ProcedureFunction extends (...args: unknown[]) => un
 export interface ExemptKey {
   asset: TickerKey;
   op: PolymeshPrimitivesStatisticsStatOpType;
+  claimType?: ClaimType;
 }
 
 export type StatClaimInputType = Omit<InputStatClaim, 'affiliate' | 'accredited'>;

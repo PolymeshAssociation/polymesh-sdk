@@ -1,7 +1,6 @@
 import { BTreeSet, u64 } from '@polkadot/types';
 import { Permill } from '@polkadot/types/interfaces';
 import {
-  PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesStatisticsStatType,
@@ -30,7 +29,7 @@ import {
   TransferRestrictionType,
   TxTags,
 } from '~/types';
-import { PolymeshTx, StatisticsOpType, TickerKey } from '~/types/internal';
+import { PolymeshTx, StatType, TickerKey } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -88,26 +87,11 @@ describe('addTransferRestriction procedure', () => {
   let setExemptedEntitiesTransaction: PolymeshTx<
     [PolymeshPrimitivesTicker, PolymeshPrimitivesTransferComplianceTransferCondition, ScopeId[]]
   >;
-  let scopeIdsToBtreeSetIdentityIdStub: sinon.SinonStub<
-    [PolymeshPrimitivesIdentityId[], Context],
-    BTreeSet<PolymeshPrimitivesIdentityId>
-  >;
-  let statisticsOpTypeToStatOpTypeStub: sinon.SinonStub<
-    [StatisticsOpType.Count | StatisticsOpType.Balance, Context],
+  let transferRestrictionTypeToStatOpTypeStub: sinon.SinonStub<
+    [TransferRestrictionType, Context],
     PolymeshPrimitivesStatisticsStatOpType
   >;
-  let statisticsOpTypeToStatTypeStub: sinon.SinonStub<
-    [
-      {
-        op: PolymeshPrimitivesStatisticsStatOpType;
-        claimIssuer?: [PolymeshPrimitivesIdentityClaimClaimType, PolymeshPrimitivesIdentityId];
-      },
-      Context
-    ],
-    PolymeshPrimitivesStatisticsStatType
-  >;
   let mockStatTypeBtree: BTreeSet<PolymeshPrimitivesStatisticsStatType>;
-  let mockNeededStat: PolymeshPrimitivesStatisticsStatType;
   let mockCountBtreeSet: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
   let mockPercentBtree: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
   let mockClaimCountBtree: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
@@ -173,10 +157,6 @@ describe('addTransferRestriction procedure', () => {
       'transferRestrictionToPolymeshTransferCondition'
     );
     stringToTickerKeyStub = sinon.stub(utilsConversionModule, 'stringToTickerKey');
-    scopeIdsToBtreeSetIdentityIdStub = sinon.stub(
-      utilsConversionModule,
-      'scopeIdsToBtreeSetIdentityId'
-    );
     transferConditionsToBtreeTransferConditionsStub = sinon.stub(
       utilsConversionModule,
       'transferConditionsToBtreeTransferConditions'
@@ -185,23 +165,19 @@ describe('addTransferRestriction procedure', () => {
       utilsConversionModule,
       'complianceConditionsToBtreeSet'
     );
-    statisticsOpTypeToStatOpTypeStub = sinon.stub(
+    transferRestrictionTypeToStatOpTypeStub = sinon.stub(
       utilsConversionModule,
-      'statisticsOpTypeToStatOpType'
-    );
-    statisticsOpTypeToStatTypeStub = sinon.stub(
-      utilsConversionModule,
-      'statisticsOpTypeToStatType'
+      'transferRestrictionTypeToStatOpType'
     );
     stringToScopeIdStub = sinon.stub(utilsConversionModule, 'stringToScopeId');
 
     rawCountStatType = dsMockUtils.createMockStatisticsStatType();
     rawBalanceStatType = dsMockUtils.createMockStatisticsStatType({
-      op: dsMockUtils.createMockStatisticsStatOpType(StatisticsOpType.Balance),
+      op: dsMockUtils.createMockStatisticsOpType(StatType.Balance),
       claimIssuer: dsMockUtils.createMockOption(),
     });
     rawClaimCountStatType = dsMockUtils.createMockStatisticsStatType({
-      op: dsMockUtils.createMockStatisticsStatOpType(StatisticsOpType.Count),
+      op: dsMockUtils.createMockStatisticsOpType(StatType.ScopedCount),
       claimIssuer: dsMockUtils.createMockOption([
         dsMockUtils.createMockClaimType(),
         dsMockUtils.createMockIdentityId(),
@@ -212,11 +188,10 @@ describe('addTransferRestriction procedure', () => {
       rawBalanceStatType,
       rawClaimCountStatType,
     ]);
-    mockNeededStat = dsMockUtils.createMockStatisticsStatType();
     statCompareEqStub = rawCountStatType.eq as sinon.SinonStub;
     statCompareEqStub.returns(true);
-    rawCountOp = dsMockUtils.createMockStatisticsStatOpType(StatisticsOpType.Count);
-    rawBalanceOp = dsMockUtils.createMockStatisticsStatOpType(StatisticsOpType.Balance);
+    rawCountOp = dsMockUtils.createMockStatisticsOpType(StatType.Count);
+    rawBalanceOp = dsMockUtils.createMockStatisticsOpType(StatType.Balance);
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawCount = dsMockUtils.createMockU64(count);
     rawScopeId = dsMockUtils.createMockIdentityId(did);
@@ -290,13 +265,18 @@ describe('addTransferRestriction procedure', () => {
     complianceConditionsToBtreeSetStub
       .withArgs([rawClaimPercentageCondition], mockContext)
       .returns(mockClaimPercentageBtree);
-    statisticsOpTypeToStatOpTypeStub
-      .withArgs(StatisticsOpType.Count, mockContext)
+    transferRestrictionTypeToStatOpTypeStub
+      .withArgs(TransferRestrictionType.Count, mockContext)
       .returns(rawCountOp);
-    statisticsOpTypeToStatOpTypeStub
-      .withArgs(StatisticsOpType.Balance, mockContext)
+    transferRestrictionTypeToStatOpTypeStub
+      .withArgs(TransferRestrictionType.ClaimCount, mockContext)
+      .returns(rawCountOp);
+    transferRestrictionTypeToStatOpTypeStub
+      .withArgs(TransferRestrictionType.Percentage, mockContext)
       .returns(rawBalanceOp);
-    statisticsOpTypeToStatTypeStub.returns(mockNeededStat);
+    transferRestrictionTypeToStatOpTypeStub
+      .withArgs(TransferRestrictionType.ClaimPercentage, mockContext)
+      .returns(rawBalanceOp);
 
     dsMockUtils.createQueryStub('statistics', 'activeAssetStats');
 
@@ -372,7 +352,10 @@ describe('addTransferRestriction procedure', () => {
     const rawIdentityBtree = dsMockUtils.createMockBTreeSet<PolymeshPrimitivesIdentityId>([
       rawIdentityScopeId,
     ]);
-    scopeIdsToBtreeSetIdentityIdStub.returns(rawIdentityBtree);
+
+    mockContext.createType
+      .withArgs('BTreeSet<PolymeshPrimitivesIdentityId>', [undefined])
+      .returns(rawIdentityBtree);
 
     entityMockUtils.configureMocks({
       identityOptions: { getScopeId: identityScopeId },
@@ -400,7 +383,11 @@ describe('addTransferRestriction procedure', () => {
         {
           transaction: setExemptedEntitiesTransaction,
           feeMultiplier: new BigNumber(1),
-          args: [true, { asset: { Ticker: rawTicker }, op: rawCountOp }, rawIdentityBtree],
+          args: [
+            true,
+            { asset: { Ticker: rawTicker }, op: rawCountOp, claimType: ClaimType.Jurisdiction },
+            rawIdentityBtree,
+          ],
         },
       ],
       resolver: new BigNumber(1),
@@ -427,7 +414,11 @@ describe('addTransferRestriction procedure', () => {
         {
           transaction: setExemptedEntitiesTransaction,
           feeMultiplier: new BigNumber(1),
-          args: [true, { asset: { Ticker: rawTicker }, op: rawBalanceOp }, rawIdentityBtree],
+          args: [
+            true,
+            { asset: { Ticker: rawTicker }, op: rawBalanceOp, claimType: ClaimType.Jurisdiction },
+            rawIdentityBtree,
+          ],
         },
       ],
       resolver: new BigNumber(1),
@@ -511,7 +502,7 @@ describe('addTransferRestriction procedure', () => {
     );
   });
 
-  it('should throw an error if exempted entities are repeated', async () => {
+  it('should throw an error if exempted entities are repeated', () => {
     args = {
       type: TransferRestrictionType.Count,
       exemptedIdentities: ['someScopeId', 'someScopeId'],
@@ -522,16 +513,14 @@ describe('addTransferRestriction procedure', () => {
       mockContext
     );
 
-    let err;
+    const expectedError = new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message:
+        'One or more of the passed exempted Identities are repeated or have the same Scope ID',
+    });
 
-    try {
-      await prepareAddTransferRestriction.call(proc, args);
-    } catch (error) {
-      err = error;
-    }
-
-    expect(err.message).toBe(
-      'One or more of the passed exempted Identities are repeated or have the same Scope ID'
+    return expect(prepareAddTransferRestriction.call(proc, args)).rejects.toThrowError(
+      expectedError
     );
   });
 

@@ -43,6 +43,9 @@ export class Count extends TransferRestrictionBase<TransferRestrictionType.Count
   /**
    * Sets all Count Transfer Restrictions on this Asset
    *
+   * @note this method sets exempted Identities for restrictions as well. If an Identity is currently exempted from a Count Transfer Restriction
+   * but not passed into this call then it will be removed
+   *
    * @note the result is the total amount of restrictions after the procedure has run
    */
   public declare setRestrictions: ProcedureMethod<
