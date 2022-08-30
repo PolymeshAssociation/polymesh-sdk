@@ -26,7 +26,7 @@ import {
   TxTag,
   TxTags,
 } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import {
   booleanToBool,
   complianceConditionsToBtreeSet,
@@ -180,7 +180,7 @@ function transformInput(
 export async function prepareSetTransferRestrictions(
   this: Procedure<SetTransferRestrictionsParams, BigNumber, Storage>,
   args: SetTransferRestrictionsParams
-): Promise<BigNumber> {
+): Promise<BatchTransactionSpec<BigNumber, unknown[][]>> {
   const {
     context: {
       polymeshApi: {
@@ -221,6 +221,7 @@ export async function prepareSetTransferRestrictions(
 
   const transactions = [];
   const op = transferRestrictionTypeToStatOpType(type, context);
+
   transactions.push(
     checkTxType({
       transaction: statistics.setAssetTransferCompliance,
@@ -250,8 +251,7 @@ export async function prepareSetTransferRestrictions(
   pushExemptions(toSetExemptions, true);
   pushExemptions(toRemoveExemptions, false);
 
-  this.addBatchTransaction({ transactions });
-  return finalCount;
+  return { transactions, resolver: finalCount };
 }
 
 /**

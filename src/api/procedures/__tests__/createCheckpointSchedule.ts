@@ -9,7 +9,7 @@ import {
   Params,
   prepareCreateCheckpointSchedule,
 } from '~/api/procedures/createCheckpointSchedule';
-import { CheckpointSchedule, Context, PostTransactionValue } from '~/internal';
+import { CheckpointSchedule, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { CalendarUnit, TxTags } from '~/types';
@@ -37,7 +37,6 @@ describe('createCheckpointSchedule procedure', () => {
   >;
   let ticker: string;
   let rawTicker: Ticker;
-  let schedule: PostTransactionValue<CheckpointSchedule>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -50,13 +49,9 @@ describe('createCheckpointSchedule procedure', () => {
     );
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    schedule = 'schedule' as unknown as PostTransactionValue<CheckpointSchedule>;
   });
 
-  let addTransactionStub: sinon.SinonStub;
-
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub().returns([schedule]);
     mockContext = dsMockUtils.getContextInstance();
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
   });
@@ -85,7 +80,7 @@ describe('createCheckpointSchedule procedure', () => {
     ).rejects.toThrow('Schedule start date must be in the future');
   });
 
-  it('should add a create checkpoint schedule transaction to the queue', async () => {
+  it('should return a create checkpoint schedule transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, CheckpointSchedule>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('checkpoint', 'createSchedule');
@@ -119,12 +114,11 @@ describe('createCheckpointSchedule procedure', () => {
       repetitions,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({ transaction, resolvers: sinon.match.array, args: [rawTicker, rawSpec] })
-    );
-
-    expect(result).toBe(schedule);
+    expect(result).toEqual({
+      transaction,
+      resolver: expect.any(Function),
+      args: [rawTicker, rawSpec],
+    });
   });
 
   describe('createCheckpointScheduleResolver', () => {

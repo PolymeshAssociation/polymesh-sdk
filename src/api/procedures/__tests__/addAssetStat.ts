@@ -44,7 +44,6 @@ describe('addAssetStat procedure', () => {
   let rawStatUpdate: PolymeshPrimitivesStatisticsStatUpdate;
   let raw2ndKey: PolymeshPrimitivesStatisticsStat2ndKey;
 
-  let addBatchTransactionStub: sinon.SinonStub;
   let setActiveAssetStatsTxStub: PolymeshTx<
     [PolymeshPrimitivesTicker, PolymeshPrimitivesTransferComplianceTransferCondition]
   >;
@@ -116,7 +115,6 @@ describe('addAssetStat procedure', () => {
 
   beforeEach(() => {
     statStub.returns(StatType.Balance);
-    addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
     setActiveAssetStatsTxStub = dsMockUtils.createTxStub('statistics', 'setActiveAssetStats');
     batchUpdateAssetStatsTxStub = dsMockUtils.createTxStub('statistics', 'batchUpdateAssetStats');
 
@@ -155,15 +153,16 @@ describe('addAssetStat procedure', () => {
     };
     const proc = procedureMockUtils.getInstance<AddAssetStatParams, void>(mockContext, {});
 
-    await prepareAddAssetStat.call(proc, args);
+    let result = await prepareAddAssetStat.call(proc, args);
 
-    sinon.assert.calledWith(addBatchTransactionStub.firstCall, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: setActiveAssetStatsTxStub,
           args: [{ Ticker: rawTicker }, rawStatBtreeSet],
         },
       ],
+      resolver: undefined,
     });
 
     args = {
@@ -173,9 +172,9 @@ describe('addAssetStat procedure', () => {
     };
 
     sinon.stub(utilsConversionModule, 'countStatInputToStatUpdates').returns(statUpdateBtreeSet);
-    await prepareAddAssetStat.call(proc, args);
+    result = await prepareAddAssetStat.call(proc, args);
 
-    sinon.assert.calledWith(addBatchTransactionStub.secondCall, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: setActiveAssetStatsTxStub,
@@ -186,6 +185,7 @@ describe('addAssetStat procedure', () => {
           args: [{ Ticker: rawTicker }, rawStatType, statUpdateBtreeSet],
         },
       ],
+      resolver: undefined,
     });
 
     args = {
@@ -202,8 +202,10 @@ describe('addAssetStat procedure', () => {
     sinon
       .stub(utilsConversionModule, 'claimCountStatInputToStatUpdates')
       .returns(statUpdateBtreeSet);
-    await prepareAddAssetStat.call(proc, args);
-    sinon.assert.calledWith(addBatchTransactionStub.thirdCall, {
+
+    result = await prepareAddAssetStat.call(proc, args);
+
+    expect(result).toEqual({
       transactions: [
         {
           transaction: setActiveAssetStatsTxStub,
@@ -214,6 +216,7 @@ describe('addAssetStat procedure', () => {
           args: [{ Ticker: rawTicker }, rawStatType, statUpdateBtreeSet],
         },
       ],
+      resolver: undefined,
     });
   });
 

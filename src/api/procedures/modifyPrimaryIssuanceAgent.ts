@@ -7,7 +7,7 @@ import {
   SignerType,
   TxTags,
 } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
   dateToMoment,
@@ -30,7 +30,7 @@ export type Params = ModifyPrimaryIssuanceAgentParams & {
 export async function prepareModifyPrimaryIssuanceAgent(
   this: Procedure<Params, void>,
   args: Params
-): Promise<void> {
+): Promise<TransactionSpec<void, ExtrinsicParams<'identity', 'addAuthorization'>>> {
   const {
     context: {
       polymeshApi: {
@@ -90,10 +90,11 @@ export async function prepareModifyPrimaryIssuanceAgent(
     rawExpiry = null;
   }
 
-  this.addTransaction({
+  return {
     transaction: identity.addAuthorization,
     args: [rawSignatory, rawAuthorizationData, rawExpiry],
-  });
+    resolver: undefined,
+  };
 }
 
 /**

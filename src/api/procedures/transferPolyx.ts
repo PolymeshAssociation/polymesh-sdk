@@ -1,6 +1,6 @@
 import { Account, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TransferPolyxParams, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   bigNumberToBalance,
   signerToString,
@@ -14,7 +14,10 @@ import {
 export async function prepareTransferPolyx(
   this: Procedure<TransferPolyxParams>,
   args: TransferPolyxParams
-): Promise<void> {
+): Promise<
+  | TransactionSpec<void, ExtrinsicParams<'balances', 'transfer'>>
+  | TransactionSpec<void, ExtrinsicParams<'balances', 'transferWithMemo'>>
+> {
   const {
     context: {
       polymeshApi: { tx },
@@ -80,16 +83,18 @@ export async function prepareTransferPolyx(
   const rawAmount = bigNumberToBalance(amount, context);
 
   if (memo) {
-    this.addTransaction({
+    return {
       transaction: tx.balances.transferWithMemo,
       args: [rawAccountId, rawAmount, stringToMemo(memo, context)],
-    });
-  } else {
-    this.addTransaction({
-      transaction: tx.balances.transfer,
-      args: [rawAccountId, rawAmount],
-    });
+      resolver: undefined,
+    };
   }
+
+  return {
+    transaction: tx.balances.transfer,
+    args: [rawAccountId, rawAmount],
+    resolver: undefined,
+  };
 }
 
 /**

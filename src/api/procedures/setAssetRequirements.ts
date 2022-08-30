@@ -4,7 +4,7 @@ import { flatten, map } from 'lodash';
 import { assertRequirementsNotTooComplex } from '~/api/procedures/utils';
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import { Condition, ErrorCode, InputCondition, SetAssetRequirementsParams, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { requirementToComplianceRequirement, stringToTicker } from '~/utils/conversion';
 import { conditionsAreEqual, hasSameElements } from '~/utils/internal';
 
@@ -21,7 +21,10 @@ export type Params = SetAssetRequirementsParams & {
 export async function prepareSetAssetRequirements(
   this: Procedure<Params, Asset>,
   args: Params
-): Promise<Asset> {
+): Promise<
+  | TransactionSpec<Asset, ExtrinsicParams<'complianceManager', 'resetAssetCompliance'>>
+  | TransactionSpec<Asset, ExtrinsicParams<'complianceManager', 'replaceAssetCompliance'>>
+> {
   const {
     context: {
       polymeshApi: { tx },
@@ -60,25 +63,24 @@ export async function prepareSetAssetRequirements(
   }
 
   if (!requirements.length) {
-    this.addTransaction({
+    return {
       transaction: tx.complianceManager.resetAssetCompliance,
       args: [rawTicker],
-    });
-  } else {
-    const rawAssetCompliance = requirements.map((requirement, index) =>
-      requirementToComplianceRequirement(
-        { conditions: requirement, id: new BigNumber(index) },
-        context
-      )
-    );
-
-    this.addTransaction({
-      transaction: tx.complianceManager.replaceAssetCompliance,
-      args: [rawTicker, rawAssetCompliance],
-    });
+      resolver: asset,
+    };
   }
+  const rawAssetCompliance = requirements.map((requirement, index) =>
+    requirementToComplianceRequirement(
+      { conditions: requirement, id: new BigNumber(index) },
+      context
+    )
+  );
 
-  return asset;
+  return {
+    transaction: tx.complianceManager.replaceAssetCompliance,
+    args: [rawTicker, rawAssetCompliance],
+    resolver: asset,
+  };
 }
 
 /**

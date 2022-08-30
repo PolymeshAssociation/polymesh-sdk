@@ -1,6 +1,6 @@
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { stringToTicker } from '~/utils/conversion';
 
 export interface ToggleFreezeTransfersParams {
@@ -20,7 +20,7 @@ export type Params = ToggleFreezeTransfersParams & {
 export async function prepareToggleFreezeTransfers(
   this: Procedure<Params, Asset>,
   args: Params
-): Promise<Asset> {
+): Promise<TransactionSpec<Asset, ExtrinsicParams<'asset', 'freeze'>>> {
   const {
     context: {
       polymeshApi: {
@@ -45,25 +45,24 @@ export async function prepareToggleFreezeTransfers(
       });
     }
 
-    this.addTransaction({
+    return {
       transaction: asset.freeze,
       args: [rawTicker],
-    });
-  } else {
-    if (!isFrozen) {
-      throw new PolymeshError({
-        code: ErrorCode.NoDataChange,
-        message: 'The Asset is already unfrozen',
-      });
-    }
-
-    this.addTransaction({
-      transaction: asset.unfreeze,
-      args: [rawTicker],
+      resolver: assetEntity,
+    };
+  }
+  if (!isFrozen) {
+    throw new PolymeshError({
+      code: ErrorCode.NoDataChange,
+      message: 'The Asset is already unfrozen',
     });
   }
 
-  return assetEntity;
+  return {
+    transaction: asset.unfreeze,
+    args: [rawTicker],
+    resolver: assetEntity,
+  };
 }
 
 /**

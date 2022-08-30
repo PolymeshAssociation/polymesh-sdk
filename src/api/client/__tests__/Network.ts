@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Network } from '~/api/client/Network';
-import { Context, TransactionQueue } from '~/internal';
+import { Context, PolymeshTransaction } from '~/internal';
 import {
   eventByIndexedArgs,
   eventsByIndexedArgs,
@@ -181,22 +181,22 @@ describe('Network Class', () => {
   });
 
   describe('method: transferPolyx', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = {
         to: 'someAccount',
         amount: new BigNumber(50),
       };
 
-      const expectedQueue = '' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await network.transferPolyx(args);
+      const tx = await network.transferPolyx(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -543,6 +543,7 @@ describe('Network Class', () => {
         fee: {
           gas: gasFees,
           protocol: protocolFees,
+          total: gasFees.plus(protocolFees),
         },
       });
 
@@ -580,6 +581,7 @@ describe('Network Class', () => {
         fee: {
           gas: gasFees,
           protocol: protocolFees,
+          total: gasFees.plus(protocolFees),
         },
       });
     });
@@ -689,6 +691,7 @@ describe('Network Class', () => {
         fee: {
           gas: gasFees,
           protocol: protocolFees,
+          total: gasFees.plus(protocolFees),
         },
       });
 
@@ -728,6 +731,7 @@ describe('Network Class', () => {
         fee: {
           gas: gasFees,
           protocol: protocolFees,
+          total: gasFees.plus(protocolFees),
         },
       });
     });

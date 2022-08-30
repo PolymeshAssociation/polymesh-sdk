@@ -12,7 +12,7 @@ import {
   TransferRestrictionType,
   TxTags,
 } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import { QueryReturnType } from '~/types/utils';
 import {
   complianceConditionsToBtreeSet,
@@ -45,7 +45,7 @@ export type AddTransferRestrictionParams = { ticker: string } & (
 export async function prepareAddTransferRestriction(
   this: Procedure<AddTransferRestrictionParams, BigNumber>,
   args: AddTransferRestrictionParams
-): Promise<BigNumber> {
+): Promise<BatchTransactionSpec<BigNumber, unknown[][]>> {
   const {
     context: {
       polymeshApi: {
@@ -90,6 +90,7 @@ export async function prepareAddTransferRestriction(
   const maxConditions = u32ToBigNumber(consts.statistics.maxTransferConditionsPerAsset);
 
   const restrictionAmount = new BigNumber(currentRestrictions.size);
+
   if (restrictionAmount.gte(maxConditions)) {
     throw new PolymeshError({
       code: ErrorCode.LimitExceeded,
@@ -126,6 +127,7 @@ export async function prepareAddTransferRestriction(
       message: 'Cannot add the same restriction more than once',
     });
   }
+
   const conditions = complianceConditionsToBtreeSet(
     [...currentRestrictions, rawTransferCondition],
     context
@@ -152,8 +154,7 @@ export async function prepareAddTransferRestriction(
     );
   }
 
-  this.addBatchTransaction({ transactions });
-  return restrictionAmount.plus(1);
+  return { transactions, resolver: restrictionAmount.plus(1) };
 }
 
 /**

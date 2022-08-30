@@ -4,7 +4,7 @@ import {
 } from '@polkadot/types/lookup';
 import sinon from 'sinon';
 
-import { Asset, Context, Namespace, TransactionQueue } from '~/internal';
+import { Asset, Context, Namespace, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { ModifyAssetTrustedClaimIssuersAddSetParams } from '~/types';
 import { TrustedClaimIssuerOperation } from '~/types/internal';
@@ -51,7 +51,7 @@ describe('TrustedClaimIssuers class', () => {
       sinon.restore();
     });
 
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const context = dsMockUtils.getContextInstance();
       const asset = entityMockUtils.getAssetInstance();
       const trustedClaimIssuers = new TrustedClaimIssuers(asset, context);
@@ -63,7 +63,7 @@ describe('TrustedClaimIssuers class', () => {
         ],
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -74,13 +74,13 @@ describe('TrustedClaimIssuers class', () => {
           },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await trustedClaimIssuers.set({
+      const tx = await trustedClaimIssuers.set({
         ...args,
       });
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -89,7 +89,7 @@ describe('TrustedClaimIssuers class', () => {
       sinon.restore();
     });
 
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const context = dsMockUtils.getContextInstance();
       const asset = entityMockUtils.getAssetInstance();
       const trustedClaimIssuers = new TrustedClaimIssuers(asset, context);
@@ -101,7 +101,7 @@ describe('TrustedClaimIssuers class', () => {
         ],
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -112,13 +112,13 @@ describe('TrustedClaimIssuers class', () => {
           },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await trustedClaimIssuers.add({
+      const tx = await trustedClaimIssuers.add({
         ...args,
       });
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -127,7 +127,7 @@ describe('TrustedClaimIssuers class', () => {
       sinon.restore();
     });
 
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const context = dsMockUtils.getContextInstance();
       const asset = entityMockUtils.getAssetInstance();
       const trustedClaimIssuers = new TrustedClaimIssuers(asset, context);
@@ -136,7 +136,7 @@ describe('TrustedClaimIssuers class', () => {
         claimIssuers: ['someDid', 'otherDid'],
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -147,13 +147,13 @@ describe('TrustedClaimIssuers class', () => {
           },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await trustedClaimIssuers.remove({
+      const tx = await trustedClaimIssuers.remove({
         ...args,
       });
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 

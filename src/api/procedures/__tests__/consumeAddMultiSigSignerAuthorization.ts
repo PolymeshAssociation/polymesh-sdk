@@ -53,10 +53,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
     sinon.stub(utilsConversionModule, 'addressToKey');
   });
 
-  let addTransactionStub: sinon.SinonStub;
-
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
     bigNumberToU64Stub.withArgs(authId, mockContext).returns(rawAuthId);
     booleanToBoolStub.withArgs(true, mockContext).returns(rawTrue);
@@ -156,7 +153,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
     ).rejects.toThrowError(expectedError);
   });
 
-  it('should add a acceptMultisigSignerAsKey transaction to the queue if the target is an Account', async () => {
+  it('should return a acceptMultisigSignerAsKey transaction spec if the target is an Account', async () => {
     const proc = procedureMockUtils.getInstance<ConsumeAddMultiSigSignerAuthorizationParams, void>(
       mockContext
     );
@@ -172,7 +169,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
       getIdentity: null,
     });
 
-    await prepareConsumeAddMultiSigSignerAuthorization.call(proc, {
+    const result = await prepareConsumeAddMultiSigSignerAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(
         {
           target,
@@ -189,14 +186,15 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
       accept: true,
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction,
       paidForBy: issuer,
       args: [rawAuthId],
+      resolver: undefined,
     });
   });
 
-  it('should add a acceptMultisigSignerAsIdentity transaction to the queue if the target is an Identity', async () => {
+  it('should return a acceptMultisigSignerAsIdentity transaction spec if the target is an Identity', async () => {
     const proc = procedureMockUtils.getInstance<ConsumeAddMultiSigSignerAuthorizationParams, void>(
       mockContext
     );
@@ -206,7 +204,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
     const issuer = entityMockUtils.getIdentityInstance();
     const target = entityMockUtils.getIdentityInstance({ did: 'someOtherDid' });
 
-    await prepareConsumeAddMultiSigSignerAuthorization.call(proc, {
+    const result = await prepareConsumeAddMultiSigSignerAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(
         {
           target,
@@ -223,14 +221,15 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
       accept: true,
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction,
       paidForBy: issuer,
       args: [rawAuthId],
+      resolver: undefined,
     });
   });
 
-  it('should add a removeAuthorization transaction to the queue if accept is set to false', async () => {
+  it('should return a removeAuthorization transaction spec if accept is set to false', async () => {
     const proc = procedureMockUtils.getInstance<ConsumeAddMultiSigSignerAuthorizationParams, void>(
       mockContext
     );
@@ -246,7 +245,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
 
     sinon.stub(utilsConversionModule, 'signerValueToSignatory').returns(rawSignatory);
 
-    await prepareConsumeAddMultiSigSignerAuthorization.call(proc, {
+    let result = await prepareConsumeAddMultiSigSignerAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(
         {
           target,
@@ -263,9 +262,10 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
       accept: false,
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction,
       args: [rawSignatory, rawAuthId, rawFalse],
+      resolver: undefined,
     });
 
     target = entityMockUtils.getAccountInstance({
@@ -274,7 +274,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
       getIdentity: null,
     });
 
-    await prepareConsumeAddMultiSigSignerAuthorization.call(proc, {
+    result = await prepareConsumeAddMultiSigSignerAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(
         {
           target,
@@ -291,10 +291,11 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
       accept: false,
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction,
       paidForBy: issuer,
       args: [rawSignatory, rawAuthId, rawTrue],
+      resolver: undefined,
     });
   });
 

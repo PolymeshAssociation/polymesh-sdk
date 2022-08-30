@@ -53,7 +53,6 @@ describe('removeAssetStat procedure', () => {
     PolymeshPrimitivesTransferComplianceAssetTransferCompliance
   ];
 
-  let addTransactionStub: sinon.SinonStub;
   let setActiveAssetStats: PolymeshTx<
     [PolymeshPrimitivesTicker, PolymeshPrimitivesTransferComplianceTransferCondition]
   >;
@@ -137,16 +136,19 @@ describe('removeAssetStat procedure', () => {
     statStub.returns(StatType.Balance);
     mockRemoveTarget = dsMockUtils.createMockStatisticsStatType();
     mockRemoveTargetEqSub = mockRemoveTarget.eq as sinon.SinonStub;
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
     setActiveAssetStats = dsMockUtils.createTxStub('statistics', 'setActiveAssetStats');
 
     rawCountStatType = dsMockUtils.createMockStatisticsStatType();
     rawBalanceStatType = dsMockUtils.createMockStatisticsStatType({
       op: dsMockUtils.createMockStatisticsOpType(StatType.Balance),
+      claimIssuer: dsMockUtils.createMockOption(),
     });
     rawClaimCountStatType = dsMockUtils.createMockStatisticsStatType({
       op: dsMockUtils.createMockStatisticsOpType(StatType.ScopedCount),
-      claimIssuer: [dsMockUtils.createMockClaimType(), dsMockUtils.createMockIdentityId()],
+      claimIssuer: dsMockUtils.createMockOption([
+        dsMockUtils.createMockClaimType(),
+        dsMockUtils.createMockIdentityId(),
+      ]),
     });
     statBtreeSet = dsMockUtils.createMockBTreeSet([
       rawCountStatType,
@@ -209,11 +211,12 @@ describe('removeAssetStat procedure', () => {
     queryMultiStub.resolves([statBtreeSet, { requirements: [] }]);
     const proc = procedureMockUtils.getInstance<RemoveAssetStatParams, void>(mockContext);
 
-    await prepareRemoveAssetStat.call(proc, args);
+    let result = await prepareRemoveAssetStat.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub.firstCall, {
+    expect(result).toEqual({
       transaction: setActiveAssetStats,
       args: [{ Ticker: rawTicker }, emptyStatTypeBtreeSet],
+      resolver: undefined,
     });
 
     args = {
@@ -223,11 +226,12 @@ describe('removeAssetStat procedure', () => {
       claimType: ClaimType.Affiliate,
     };
 
-    await prepareRemoveAssetStat.call(proc, args);
+    result = await prepareRemoveAssetStat.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub.secondCall, {
+    expect(result).toEqual({
       transaction: setActiveAssetStats,
       args: [{ Ticker: rawTicker }, emptyStatTypeBtreeSet],
+      resolver: undefined,
     });
   });
 

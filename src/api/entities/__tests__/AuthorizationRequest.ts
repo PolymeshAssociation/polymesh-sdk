@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { AuthorizationRequest, Context, Entity, Identity, TransactionQueue } from '~/internal';
+import { AuthorizationRequest, Context, Entity, Identity, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Authorization, AuthorizationType, SignerType } from '~/types';
 
@@ -69,7 +69,7 @@ describe('AuthorizationRequest class', () => {
       sinon.restore();
     });
 
-    it('should prepare the consumeAuthorizationRequests procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the consumeAuthorizationRequests procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const authorizationRequest = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
@@ -86,19 +86,19 @@ describe('AuthorizationRequest class', () => {
         authRequests: [authorizationRequest],
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await authorizationRequest.accept();
+      const tx = await authorizationRequest.accept();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
 
-    it('should prepare the consumeJoinOrRotateAuthorization procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the consumeJoinOrRotateAuthorization procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const authorizationRequest = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
@@ -123,19 +123,19 @@ describe('AuthorizationRequest class', () => {
         accept: true,
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await authorizationRequest.accept();
+      const tx = await authorizationRequest.accept();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
 
-    it('should prepare the consumeJoinOrRotateAuthorization procedure with a RotatePrimaryKeyToSecondary auth and return the resulting transaction queue', async () => {
+    it('should prepare the consumeJoinOrRotateAuthorization procedure with a RotatePrimaryKeyToSecondary auth and return the resulting transaction', async () => {
       const authorizationRequest = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
@@ -160,19 +160,19 @@ describe('AuthorizationRequest class', () => {
         accept: true,
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await authorizationRequest.accept();
+      const tx = await authorizationRequest.accept();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
 
-    it('should prepare the consumeAddMultiSigSignerAuthorization procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the consumeAddMultiSigSignerAuthorization procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const authorizationRequest = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
@@ -192,16 +192,16 @@ describe('AuthorizationRequest class', () => {
         accept: true,
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await authorizationRequest.accept();
+      const tx = await authorizationRequest.accept();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -210,7 +210,7 @@ describe('AuthorizationRequest class', () => {
       sinon.restore();
     });
 
-    it('should prepare the consumeAuthorizationRequest procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the consumeAuthorizationRequest procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const authorizationRequest = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
@@ -227,19 +227,19 @@ describe('AuthorizationRequest class', () => {
         authRequests: [authorizationRequest],
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await authorizationRequest.remove();
+      const tx = await authorizationRequest.remove();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
 
-    it('should prepare the consumeJoinOrRotateAuthorization procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the consumeJoinOrRotateAuthorization procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const authorizationRequest = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
@@ -264,19 +264,19 @@ describe('AuthorizationRequest class', () => {
         accept: false,
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await authorizationRequest.remove();
+      const tx = await authorizationRequest.remove();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
 
-    it('should prepare the consumeAddMultiSigSignerAuthorization procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the consumeAddMultiSigSignerAuthorization procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const authorizationRequest = new AuthorizationRequest(
         {
           authId: new BigNumber(1),
@@ -296,20 +296,20 @@ describe('AuthorizationRequest class', () => {
         accept: false,
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await authorizationRequest.remove();
+      const tx = await authorizationRequest.remove();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
-  it('should prepare the consumeRotatePrimaryKeyToSecondary procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+  it('should prepare the consumeRotatePrimaryKeyToSecondary procedure with the correct arguments and context, and return the resulting transaction', async () => {
     const authorizationRequest = new AuthorizationRequest(
       {
         authId: new BigNumber(1),
@@ -334,16 +334,16 @@ describe('AuthorizationRequest class', () => {
       accept: false,
     };
 
-    const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+    const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
     procedureMockUtils
       .getPrepareStub()
       .withArgs({ args, transformer: undefined }, context)
-      .resolves(expectedQueue);
+      .resolves(expectedTransaction);
 
-    const queue = await authorizationRequest.remove();
+    const tx = await authorizationRequest.remove();
 
-    expect(queue).toBe(expectedQueue);
+    expect(tx).toBe(expectedTransaction);
   });
 
   describe('method: isExpired', () => {

@@ -71,10 +71,7 @@ describe('consumeAuthorizationRequests procedure', () => {
     });
   });
 
-  let addBatchTransactionStub: sinon.SinonStub;
-
   beforeEach(() => {
-    addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
     rawFalseBool = dsMockUtils.createMockBool(false);
     authParams = [
@@ -189,75 +186,60 @@ describe('consumeAuthorizationRequests procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should add a batch of accept authorization transactions (dependent on the type of auth) to the queue and ignore expired requests', async () => {
+  it('should return a batch spec of accept authorization transactions (dependent on the type of auth) and ignore expired requests', async () => {
     const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>(
       mockContext
     );
 
-    await prepareConsumeAuthorizationRequests.call(proc, {
+    const result = await prepareConsumeAuthorizationRequests.call(proc, {
       accept: true,
       authRequests: auths,
     });
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
-      transactions: [
-        {
-          transaction: acceptAssetOwnershipTransferTransaction,
-          args: rawAuthIds[0],
-        },
-      ],
-    });
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: acceptPayingKeyTransaction,
           args: rawAuthIds[1],
         },
-      ],
-    });
-
-    sinon.assert.calledWith(addBatchTransactionStub, {
-      transactions: [
         {
           transaction: acceptBecomeAgentTransaction,
           args: rawAuthIds[2],
         },
-      ],
-    });
-    sinon.assert.calledWith(addBatchTransactionStub, {
-      transactions: [
         {
           transaction: acceptPortfolioCustodyTransaction,
           args: rawAuthIds[3],
         },
-      ],
-    });
-    sinon.assert.calledWith(addBatchTransactionStub, {
-      transactions: [
+        {
+          transaction: acceptAssetOwnershipTransferTransaction,
+          args: rawAuthIds[0],
+        },
         {
           transaction: acceptTickerTransferTransaction,
           args: rawAuthIds[4],
         },
       ],
+      resolver: undefined,
     });
   });
 
-  it('should add a batch of remove authorization transactions to the queue and ignore expired requests', async () => {
+  it('should return a batch of remove authorization transactions spec and ignore expired requests', async () => {
     const proc = procedureMockUtils.getInstance<ConsumeAuthorizationRequestsParams, void>(
       mockContext
     );
 
     const transaction = dsMockUtils.createTxStub('identity', 'removeAuthorization');
 
-    await prepareConsumeAuthorizationRequests.call(proc, {
+    const result = await prepareConsumeAuthorizationRequests.call(proc, {
       accept: false,
       authRequests: auths,
     });
 
     const authIds = rawAuthIdentifiers.slice(0, -1);
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: authIds.map(authId => ({ transaction, args: authId })),
+      resolver: undefined,
     });
   });
 

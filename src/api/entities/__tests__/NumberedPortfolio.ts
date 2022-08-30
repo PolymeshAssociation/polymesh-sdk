@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Context, Entity, NumberedPortfolio, PolymeshError, TransactionQueue } from '~/internal';
+import { Context, Entity, NumberedPortfolio, PolymeshError, PolymeshTransaction } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { portfolioQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
@@ -70,21 +70,22 @@ describe('NumberedPortfolio class', () => {
   });
 
   describe('method: modifyName', () => {
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
       const id = new BigNumber(1);
       const did = 'someDid';
       const name = 'newName';
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<NumberedPortfolio>;
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<NumberedPortfolio>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args: { id, did, name }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await numberedPortfolio.modifyName({ name });
+      const tx = await numberedPortfolio.modifyName({ name });
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 

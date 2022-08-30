@@ -4,7 +4,7 @@ import sinon from 'sinon';
 
 import { ClaimCount } from '~/api/entities/Asset/TransferRestrictions/ClaimCount';
 import { ClaimPercentage } from '~/api/entities/Asset/TransferRestrictions/ClaimPercentage';
-import { Asset, Context, Namespace, TransactionQueue } from '~/internal';
+import { Asset, Context, Namespace, NumberedPortfolio, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   AddCountTransferRestrictionParams,
@@ -69,7 +69,7 @@ describe('TransferRestrictionBase class', () => {
       sinon.restore();
     });
 
-    it('should prepare the procedure (count) with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure (count) with the correct arguments and context, and return the resulting transaction', async () => {
       const count = new Count(asset, context);
 
       const args: Omit<AddCountTransferRestrictionParams, 'type'> = {
@@ -77,7 +77,7 @@ describe('TransferRestrictionBase class', () => {
         exemptedIdentities: ['someScopeId'],
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<number>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -88,16 +88,16 @@ describe('TransferRestrictionBase class', () => {
           },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await count.addRestriction({
+      const tx = await count.addRestriction({
         ...args,
       });
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
 
-    it('should prepare the procedure (percentage) with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure (percentage) with the correct arguments and context, and return the resulting transaction', async () => {
       const percentage = new Percentage(asset, context);
 
       const args: Omit<AddPercentageTransferRestrictionParams, 'type'> = {
@@ -105,7 +105,7 @@ describe('TransferRestrictionBase class', () => {
         exemptedIdentities: ['someScopeId'],
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<number>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -116,13 +116,13 @@ describe('TransferRestrictionBase class', () => {
           },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await percentage.addRestriction({
+      const tx = await percentage.addRestriction({
         ...args,
       });
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -139,17 +139,14 @@ describe('TransferRestrictionBase class', () => {
       sinon.restore();
     });
 
-    const did = 'someDid';
-    const issuer = entityMockUtils.getIdentityInstance({ did });
-
-    it('should prepare the procedure (count) with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure (count) with the correct arguments and context, and return the resulting transaction', async () => {
       const count = new Count(asset, context);
 
       const args: Omit<SetCountTransferRestrictionsParams, 'type'> = {
         restrictions: [{ count: new BigNumber(3), exemptedIdentities: ['someScopeId'] }],
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<number>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -160,23 +157,23 @@ describe('TransferRestrictionBase class', () => {
           },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await count.setRestrictions({
+      const tx = await count.setRestrictions({
         ...args,
       });
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
 
-    it('should prepare the procedure (percentage) with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure (percentage) with the correct arguments and context, and return the resulting transaction', async () => {
       const percentage = new Percentage(asset, context);
 
       const args: Omit<SetPercentageTransferRestrictionsParams, 'type'> = {
         restrictions: [{ percentage: new BigNumber(49), exemptedIdentities: ['someScopeId'] }],
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<number>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -187,16 +184,18 @@ describe('TransferRestrictionBase class', () => {
           },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await percentage.setRestrictions({
+      const tx = await percentage.setRestrictions({
         ...args,
       });
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
 
     it('should prepare the procedure (ClaimCount) with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const did = 'someDid';
+      const issuer = entityMockUtils.getIdentityInstance({ did });
       const count = new ClaimCount(asset, context);
 
       const args: Omit<SetClaimCountTransferRestrictionsParams, 'type'> = {
@@ -210,7 +209,9 @@ describe('TransferRestrictionBase class', () => {
         ],
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<
+        NumberedPortfolio[]
+      >;
 
       procedureMockUtils
         .getPrepareStub()
@@ -221,13 +222,13 @@ describe('TransferRestrictionBase class', () => {
           },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await count.setRestrictions({
+      const transaction = await count.setRestrictions({
         ...args,
       });
 
-      expect(queue).toBe(expectedQueue);
+      expect(transaction).toBe(expectedTransaction);
     });
 
     it('should prepare the procedure (ClaimPercentage) with the correct arguments and context, and return the resulting transaction queue', async () => {
@@ -237,7 +238,9 @@ describe('TransferRestrictionBase class', () => {
         restrictions: [],
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<
+        NumberedPortfolio[]
+      >;
 
       procedureMockUtils
         .getPrepareStub()
@@ -248,13 +251,13 @@ describe('TransferRestrictionBase class', () => {
           },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await claimPercentage.setRestrictions({
+      const transaction = await claimPercentage.setRestrictions({
         ...args,
       });
 
-      expect(queue).toBe(expectedQueue);
+      expect(transaction).toBe(expectedTransaction);
     });
   });
 
@@ -271,10 +274,10 @@ describe('TransferRestrictionBase class', () => {
       sinon.restore();
     });
 
-    it('should prepare the procedure (count) with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure (count) with the correct arguments and context, and return the resulting transaction', async () => {
       const count = new Count(asset, context);
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<number>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -285,17 +288,17 @@ describe('TransferRestrictionBase class', () => {
           },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await count.removeRestrictions();
+      const tx = await count.removeRestrictions();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
 
-    it('should prepare the procedure (percentage) with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure (percentage) with the correct arguments and context, and return the resulting transaction', async () => {
       const percentage = new Percentage(asset, context);
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<number>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -310,11 +313,11 @@ describe('TransferRestrictionBase class', () => {
           },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await percentage.removeRestrictions();
+      const tx = await percentage.removeRestrictions();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -494,7 +497,9 @@ describe('TransferRestrictionBase class', () => {
     it('should prepare the procedure (count) with the correct arguments and context, and return the resulting transaction queue', async () => {
       const count = new Count(asset, context);
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<
+        NumberedPortfolio[]
+      >;
 
       procedureMockUtils
         .getPrepareStub()
@@ -509,17 +514,19 @@ describe('TransferRestrictionBase class', () => {
           },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await count.enableStat({ count: new BigNumber(3) });
+      const transaction = await count.enableStat({ count: new BigNumber(3) });
 
-      expect(queue).toBe(expectedQueue);
+      expect(transaction).toBe(expectedTransaction);
     });
 
     it('should prepare the procedure (percentage) with the correct arguments and context, and return the resulting transaction queue', async () => {
       const percentage = new Percentage(asset, context);
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<
+        NumberedPortfolio[]
+      >;
 
       procedureMockUtils
         .getPrepareStub()
@@ -533,11 +540,11 @@ describe('TransferRestrictionBase class', () => {
           },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await percentage.enableStat();
+      const transaction = await percentage.enableStat();
 
-      expect(queue).toBe(expectedQueue);
+      expect(transaction).toBe(expectedTransaction);
     });
   });
 
@@ -557,7 +564,9 @@ describe('TransferRestrictionBase class', () => {
     it('should prepare the procedure (count) with the correct arguments and context, and return the resulting transaction queue', async () => {
       const count = new Count(asset, context);
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<
+        NumberedPortfolio[]
+      >;
 
       procedureMockUtils
         .getPrepareStub()
@@ -571,17 +580,19 @@ describe('TransferRestrictionBase class', () => {
           },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await count.disableStat();
+      const transaction = await count.disableStat();
 
-      expect(queue).toBe(expectedQueue);
+      expect(transaction).toBe(expectedTransaction);
     });
 
     it('should prepare the procedure (percentage) with the correct arguments and context, and return the resulting transaction queue', async () => {
       const percentage = new Percentage(asset, context);
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<
+        NumberedPortfolio[]
+      >;
 
       procedureMockUtils
         .getPrepareStub()
@@ -595,18 +606,20 @@ describe('TransferRestrictionBase class', () => {
           },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await percentage.disableStat();
+      const transaction = await percentage.disableStat();
 
-      expect(queue).toBe(expectedQueue);
+      expect(transaction).toBe(expectedTransaction);
     });
 
     it('should prepare the procedure (ClaimCount) with the correct arguments and context, and return the resulting transaction queue', async () => {
       const claimCount = new ClaimCount(asset, context);
       const issuer = entityMockUtils.getIdentityInstance();
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<
+        NumberedPortfolio[]
+      >;
 
       procedureMockUtils
         .getPrepareStub()
@@ -622,18 +635,23 @@ describe('TransferRestrictionBase class', () => {
           },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await claimCount.disableStat({ issuer, claimType: ClaimType.Jurisdiction });
+      const transaction = await claimCount.disableStat({
+        issuer,
+        claimType: ClaimType.Jurisdiction,
+      });
 
-      expect(queue).toBe(expectedQueue);
+      expect(transaction).toBe(expectedTransaction);
     });
 
     it('should prepare the procedure (ClaimPercentage) with the correct arguments and context, and return the resulting transaction queue', async () => {
       const claimPercentage = new ClaimPercentage(asset, context);
       const issuer = entityMockUtils.getIdentityInstance();
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<number>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<
+        NumberedPortfolio[]
+      >;
 
       procedureMockUtils
         .getPrepareStub()
@@ -649,14 +667,14 @@ describe('TransferRestrictionBase class', () => {
           },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await claimPercentage.disableStat({
+      const transaction = await claimPercentage.disableStat({
         issuer,
         claimType: ClaimType.Jurisdiction,
       });
 
-      expect(queue).toBe(expectedQueue);
+      expect(transaction).toBe(expectedTransaction);
     });
   });
 });

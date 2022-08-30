@@ -18,7 +18,7 @@ import {
   RoleType,
   TxTags,
 } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import { Ensured, tuple } from '~/types/utils';
 import { DEFAULT_CDD_ID } from '~/utils/constants';
 import {
@@ -137,7 +137,7 @@ const findInvalidCddClaims = async (
 export async function prepareModifyClaims(
   this: Procedure<ModifyClaimsParams, void>,
   args: ModifyClaimsParams
-): Promise<void> {
+): Promise<BatchTransactionSpec<void, unknown[][]>> {
   const { claims, operation } = args;
 
   const {
@@ -243,9 +243,7 @@ export async function prepareModifyClaims(
       })
     );
 
-    this.addBatchTransaction({ transactions });
-
-    return;
+    return { transactions, resolver: undefined };
   }
 
   if (operation === ClaimOperation.Add) {
@@ -269,7 +267,7 @@ export async function prepareModifyClaims(
     })
   );
 
-  this.addBatchTransaction({ transactions: txs });
+  return { transactions: txs, resolver: undefined };
 }
 
 /**

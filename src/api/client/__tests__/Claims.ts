@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Claims } from '~/api/client/Claims';
-import { Context, TransactionQueue } from '~/internal';
+import { Context, PolymeshTransaction } from '~/internal';
 import { didsWithClaims, issuerDidsWithClaimsByTarget } from '~/middleware/queries';
 import { claimsGroupingQuery, claimsQuery } from '~/middleware/queriesV2';
 import { ClaimScopeTypeEnum, ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
@@ -556,7 +556,7 @@ describe('Claims Class', () => {
       sinon.restore();
     });
 
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const targets: ClaimTarget[] = [
         {
           target: 'someDid',
@@ -569,7 +569,7 @@ describe('Claims Class', () => {
 
       const args = { claims: targets };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -577,11 +577,11 @@ describe('Claims Class', () => {
           { args: { ...args, operation: ClaimOperation.Add }, transformer: undefined },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await claims.addClaims(args);
+      const tx = await claims.addClaims(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -590,7 +590,7 @@ describe('Claims Class', () => {
       sinon.restore();
     });
 
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const ticker = 'SOME_ASSET';
       const cddId = 'someId';
       const proof = 'someProof';
@@ -605,16 +605,16 @@ describe('Claims Class', () => {
         expiry,
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await claims.addInvestorUniquenessClaim(args);
+      const tx = await claims.addInvestorUniquenessClaim(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -623,7 +623,7 @@ describe('Claims Class', () => {
       sinon.restore();
     });
 
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const targets: ClaimTarget[] = [
         {
           target: 'someDid',
@@ -636,7 +636,7 @@ describe('Claims Class', () => {
 
       const args = { claims: targets };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -644,11 +644,11 @@ describe('Claims Class', () => {
           { args: { ...args, operation: ClaimOperation.Edit }, transformer: undefined },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await claims.editClaims(args);
+      const tx = await claims.editClaims(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -657,7 +657,7 @@ describe('Claims Class', () => {
       sinon.restore();
     });
 
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const targets: ClaimTarget[] = [
         {
           target: 'someDid',
@@ -670,7 +670,7 @@ describe('Claims Class', () => {
 
       const args = { claims: targets };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -678,11 +678,11 @@ describe('Claims Class', () => {
           { args: { ...args, operation: ClaimOperation.Revoke }, transformer: undefined },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await claims.revokeClaims(args);
+      const tx = await claims.revokeClaims(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 

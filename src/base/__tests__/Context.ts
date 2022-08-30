@@ -1,5 +1,6 @@
 import { Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
+import P from 'bluebird';
 import sinon from 'sinon';
 
 import { Account, Context, PolymeshError } from '~/internal';
@@ -96,11 +97,12 @@ describe('Context class', () => {
 
   it('should check if the middleware client is equal to the instance passed to the constructor', async () => {
     const middlewareApi = dsMockUtils.getMiddlewareApi();
+    const middlewareApiV2 = dsMockUtils.getMiddlewareApiV2();
 
     const context = await Context.create({
       polymeshApi: dsMockUtils.getApiInstance(),
       middlewareApi,
-      middlewareApiV2: null,
+      middlewareApiV2,
     });
 
     expect(context.middlewareApi).toEqual(middlewareApi);
@@ -1258,11 +1260,7 @@ describe('Context class', () => {
         },
       ];
 
-      dsMockUtils.configureMocks({
-        contextOptions: {
-          middlewareAvailable: false,
-        },
-      });
+      dsMockUtils.throwOnMiddlewareQuery('No Middleware');
 
       const entriesStub = sinon.stub();
       entriesStub.resolves([
@@ -1337,11 +1335,7 @@ describe('Context class', () => {
         middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
-      dsMockUtils.configureMocks({
-        contextOptions: {
-          middlewareAvailable: false,
-        },
-      });
+      dsMockUtils.throwOnMiddlewareQuery('No Middleware');
 
       return expect(context.issuedClaims()).rejects.toThrow(
         'Cannot perform this action without an active middleware connection'
@@ -1628,7 +1622,7 @@ describe('Context class', () => {
         middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
-      dsMockUtils.throwOnMiddlewareQuery();
+      dsMockUtils.throwOnMiddlewareQuery({ message: 'Error' });
 
       await expect(
         context.queryMiddleware('query' as unknown as GraphqlQuery<unknown>)
@@ -1681,19 +1675,21 @@ describe('Context class', () => {
         middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
-      dsMockUtils.throwOnMiddlewareV2Query();
+      dsMockUtils.throwOnMiddlewareV2Query({ message: 'Error' });
 
       await expect(
         context.queryMiddlewareV2('query' as unknown as GraphqlQuery<unknown>)
       ).rejects.toThrow('Error in middleware V2 query: Error');
 
-      dsMockUtils.throwOnMiddlewareQuery({ networkError: {}, message: 'Error' });
+      dsMockUtils.throwOnMiddlewareV2Query({ networkError: {}, message: 'Error' });
 
       await expect(
         context.queryMiddlewareV2('query' as unknown as GraphqlQuery<unknown>)
       ).rejects.toThrow('Error in middleware V2 query: Error');
 
-      dsMockUtils.throwOnMiddlewareQuery({ networkError: { result: { message: 'Some Message' } } });
+      dsMockUtils.throwOnMiddlewareV2Query({
+        networkError: { result: { message: 'Some Message' } },
+      });
 
       return expect(
         context.queryMiddlewareV2('query' as unknown as GraphqlQuery<unknown>)
@@ -1730,10 +1726,15 @@ describe('Context class', () => {
     it('should return the latest block', async () => {
       const blockNumber = new BigNumber(100);
 
-      dsMockUtils.createRpcStub('chain', 'getHeader', {
-        returnValue: {
-          number: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(blockNumber)),
-        },
+      const stub = dsMockUtils.createRpcStub('chain', 'subscribeFinalizedHeads');
+      stub.callsFake(async callback => {
+        setImmediate(() =>
+          // eslint-disable-next-line node/no-callback-literal
+          callback({
+            number: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(blockNumber)),
+          })
+        );
+        return (): void => undefined;
       });
 
       const context = await Context.create({
@@ -1745,6 +1746,26 @@ describe('Context class', () => {
       const result = await context.getLatestBlock();
 
       expect(result).toEqual(blockNumber);
+    });
+
+    it('should throw any errors encountered while fetching', async () => {
+      const stub = dsMockUtils.createRpcStub('chain', 'subscribeFinalizedHeads');
+      const err = new Error('Foo');
+      stub.callsFake(callback => {
+        setImmediate(() =>
+          // eslint-disable-next-line node/no-callback-literal
+          callback({})
+        );
+        return P.delay(0).throw(err);
+      });
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
+      });
+
+      return expect(context.getLatestBlock()).rejects.toThrow(err);
     });
   });
 
@@ -2052,7 +2073,7 @@ describe('Context class', () => {
             remaining: new BigNumber(400000000000),
             reclaimed: false,
             paymentAt: new BigNumber(new Date('10/14/1987').getTime()),
-            expiresAt: null,
+            expiresAt: dsMockUtils.createMockOption(),
           })
         ),
         dsMockUtils.createMockOption(
@@ -2064,7 +2085,7 @@ describe('Context class', () => {
             remaining: new BigNumber(200000000000),
             reclaimed: false,
             paymentAt: new BigNumber(new Date('11/26/1989').getTime()),
-            expiresAt: null,
+            expiresAt: dsMockUtils.createMockOption(),
           })
         ),
         dsMockUtils.createMockOption(),
@@ -2224,6 +2245,63 @@ describe('Context class', () => {
       });
 
       expect(() => context.createType('Bytes', 'abc')).toThrowError(expectedError);
+    });
+  });
+
+  describe('method: setNonce', () => {
+    beforeAll(() => {
+      sinon.stub(utilsInternalModule, 'assertAddressValid');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    it('should set the passed value as nonce', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
+        signingManager: dsMockUtils.getSigningManagerInstance({
+          getAccounts: ['someAddress', 'otherAddress'],
+        }),
+      });
+
+      context.setNonce(new BigNumber(10));
+
+      expect(context.getNonce()).toEqual(new BigNumber(10));
+    });
+  });
+
+  describe('method: getNonce', () => {
+    let context: Context;
+
+    beforeAll(() => {
+      sinon.stub(utilsInternalModule, 'assertAddressValid');
+    });
+
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    beforeEach(async () => {
+      context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
+        signingManager: dsMockUtils.getSigningManagerInstance({
+          getAccounts: ['someAddress', 'otherAddress'],
+        }),
+      });
+    });
+
+    it('should return -1 if no nonce is set', () => {
+      expect(context.getNonce()).toEqual(new BigNumber(-1));
+    });
+
+    it('should return the nonce value', async () => {
+      context.setNonce(new BigNumber(10));
+      expect(context.getNonce()).toEqual(new BigNumber(10));
     });
   });
 });

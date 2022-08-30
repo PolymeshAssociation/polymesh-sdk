@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Context, Entity, Subsidy, TransactionQueue } from '~/internal';
+import { Context, Entity, PolymeshTransaction, Subsidy } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { AllowanceOperation } from '~/types';
@@ -73,19 +73,19 @@ describe('Subsidy class', () => {
       sinon.restore();
     });
 
-    it('should prepare the quit procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the quit procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = { subsidy };
 
-      const expectedQueue = 'mockQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'mockTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await subsidy.quit();
+      const tx = await subsidy.quit();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -94,10 +94,10 @@ describe('Subsidy class', () => {
       sinon.restore();
     });
 
-    it('should prepare the setAllowance procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the setAllowance procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = { allowance: new BigNumber(50) };
 
-      const expectedQueue = 'mockQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'mockTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -105,11 +105,11 @@ describe('Subsidy class', () => {
           { args: { ...args, subsidy, operation: AllowanceOperation.Set }, transformer: undefined },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await subsidy.setAllowance(args);
+      const tx = await subsidy.setAllowance(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -118,10 +118,10 @@ describe('Subsidy class', () => {
       sinon.restore();
     });
 
-    it('should prepare the increaseAllowance procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the increaseAllowance procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = { allowance: new BigNumber(50) };
 
-      const expectedQueue = 'mockQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'mockTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -132,11 +132,11 @@ describe('Subsidy class', () => {
           },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await subsidy.increaseAllowance(args);
+      const tx = await subsidy.increaseAllowance(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -145,10 +145,10 @@ describe('Subsidy class', () => {
       sinon.restore();
     });
 
-    it('should prepare the decreaseAllowance procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the decreaseAllowance procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = { allowance: new BigNumber(50) };
 
-      const expectedQueue = 'mockQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'mockTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -159,11 +159,11 @@ describe('Subsidy class', () => {
           },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await subsidy.decreaseAllowance(args);
+      const tx = await subsidy.decreaseAllowance(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
