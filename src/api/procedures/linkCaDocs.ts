@@ -4,7 +4,7 @@ import { isEqual, remove } from 'lodash';
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import { DocumentId } from '~/polkadot/polymesh';
 import { ErrorCode, LinkCaDocsParams, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   corporateActionIdentifierToCaId,
   documentToAssetDocument,
@@ -25,7 +25,7 @@ export type Params = LinkCaDocsParams & {
 export async function prepareLinkCaDocs(
   this: Procedure<Params, void>,
   args: Params
-): Promise<void> {
+): Promise<TransactionSpec<void, ExtrinsicParams<'corporateAction', 'linkCaDoc'>>> {
   const {
     context: {
       polymeshApi: {
@@ -66,10 +66,11 @@ export async function prepareLinkCaDocs(
 
   const rawCaId = corporateActionIdentifierToCaId({ ticker, localId: caId }, context);
 
-  this.addTransaction({
+  return {
     transaction: corporateAction.linkCaDoc,
     args: [rawCaId, docIdsToLink],
-  });
+    resolver: undefined,
+  };
 }
 
 /**

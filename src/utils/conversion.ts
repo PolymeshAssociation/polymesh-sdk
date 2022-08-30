@@ -125,7 +125,6 @@ import {
   Moment,
   MovePortfolioItem,
   Percentage,
-  Permissions as MeshPermissions,
   PortfolioId as MeshPortfolioId,
   PosRatio,
   PriceTier,
@@ -989,7 +988,7 @@ export function transactionPermissionsToExtrinsicPermissions(
 export function permissionsToMeshPermissions(
   permissions: Permissions,
   context: Context
-): MeshPermissions {
+): PolymeshPrimitivesSecondaryKeyPermissions {
   const { assets, transactions, portfolios } = permissions;
 
   const extrinsic = transactionPermissionsToExtrinsicPermissions(transactions, context);
@@ -1034,7 +1033,7 @@ export function permissionsToMeshPermissions(
     portfolio,
   };
 
-  return context.createType('Permissions', value);
+  return context.createType('PolymeshPrimitivesSecondaryKeyPermissions', value);
 }
 
 /**
@@ -1448,7 +1447,7 @@ export function stringToMemo(value: string, context: Context): Memo {
     });
   }
 
-  return context.createType('Memo', padString(value, MAX_MEMO_LENGTH));
+  return context.createType('PolymeshCommonUtilitiesBalancesMemo', value.padEnd(MAX_MEMO_LENGTH));
 }
 
 /**
@@ -3819,7 +3818,7 @@ export function meshStatToStatisticsOpType(
  * @hidden
  */
 export function statisticsOpTypeToStatOpType(
-  type: StatisticsOpType,
+  type: StatisticsOpType.Count | StatisticsOpType.Balance,
   context: Context
 ): PolymeshPrimitivesStatisticsStatOpType {
   return context.createType('PolymeshPrimitivesStatisticsStatOpType', type);

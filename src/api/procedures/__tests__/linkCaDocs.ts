@@ -80,12 +80,9 @@ describe('linkCaDocs procedure', () => {
     sinon.stub(utilsConversionModule, 'corporateActionIdentifierToCaId').returns(rawCaId);
   });
 
-  let addTransactionStub: sinon.SinonStub;
   let linkCaDocTransaction: PolymeshTx<[Vec<Document>, Ticker]>;
 
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
-
     dsMockUtils.createQueryStub('asset', 'assetDocuments', {
       entries: [documentEntries[0], documentEntries[1]],
     });
@@ -136,14 +133,15 @@ describe('linkCaDocs procedure', () => {
     expect(error.data.documents[0].name).toEqual(name);
   });
 
-  it('should add a link ca doc transaction to the queue', async () => {
+  it('should return a link ca doc transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await prepareLinkCaDocs.call(proc, args);
+    const result = await prepareLinkCaDocs.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction: linkCaDocTransaction,
       args: [rawCaId, rawDocumentIds],
+      resolver: undefined,
     });
   });
 

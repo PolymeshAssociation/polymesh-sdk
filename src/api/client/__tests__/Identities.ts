@@ -1,7 +1,6 @@
-import sinon from 'sinon';
-
 import { Identities } from '~/api/client/Identities';
-import { Context, Identity, NumberedPortfolio, TransactionQueue } from '~/internal';
+import { createPortfolioTransformer } from '~/api/entities/Venue';
+import { Context, Identity, NumberedPortfolio, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 
@@ -54,55 +53,60 @@ describe('Identities Class', () => {
   });
 
   describe('method: registerIdentity', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = {
         targetAccount: 'someTarget',
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Identity>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Identity>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await identities.registerIdentity(args);
+      const tx = await identities.registerIdentity(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: createPortfolio', () => {
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
-      const args = { names: ['someName'] };
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const args = { name: 'someName' };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<NumberedPortfolio>;
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<NumberedPortfolio>;
 
       procedureMockUtils
         .getPrepareStub()
-        .withArgs(sinon.match({ args, transformer: sinon.match.func }), context)
-        .resolves(expectedQueue);
+        .withArgs(
+          { args: { names: [args.name] }, transformer: createPortfolioTransformer },
+          context
+        )
+        .resolves(expectedTransaction);
 
-      const queue = await identities.createPortfolio({ name: 'someName' });
+      const tx = await identities.createPortfolio(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: createPortfolios', () => {
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
       const args = { names: ['someName'] };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<NumberedPortfolio>;
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<NumberedPortfolio>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await identities.createPortfolios(args);
+      const tx = await identities.createPortfolios(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 

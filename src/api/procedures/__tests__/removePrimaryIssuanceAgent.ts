@@ -25,7 +25,6 @@ describe('removePrimaryIssuanceAgent procedure', () => {
   let did: string;
   let rawTicker: Ticker;
   let rawIdentityId: IdentityId;
-  let addTransactionStub: sinon.SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -43,7 +42,6 @@ describe('removePrimaryIssuanceAgent procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
     stringToTickerStub.returns(rawTicker);
     stringToIdentityIdStub.returns(rawIdentityId);
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
   });
 
   afterEach(() => {
@@ -57,7 +55,7 @@ describe('removePrimaryIssuanceAgent procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should add a remove primary issuance agent transaction to the queue', async () => {
+  it('should return a remove primary issuance agent transaction spec', async () => {
     const args = {
       ticker,
     };
@@ -73,9 +71,9 @@ describe('removePrimaryIssuanceAgent procedure', () => {
     const transaction = dsMockUtils.createTxStub('externalAgents', 'removeAgent');
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await prepareRemovePrimaryIssuanceAgent.call(proc, args);
+    const result = await prepareRemovePrimaryIssuanceAgent.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawIdentityId] });
+    expect(result).toEqual({ transaction, args: [rawTicker, rawIdentityId], resolver: undefined });
   });
 
   it('should throw an error if primary issuance agent list has more than one Identity', () => {

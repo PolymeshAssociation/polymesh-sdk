@@ -55,7 +55,7 @@ describe('setTransferRestrictions procedure', () => {
     BTreeSet<PolymeshPrimitivesIdentityId>
   >;
   let statisticsOpTypeToStatOpTypeStub: sinon.SinonStub<
-    [StatisticsOpType, Context],
+    [StatisticsOpType.Count | StatisticsOpType.Balance, Context],
     PolymeshPrimitivesStatisticsStatOpType
   >;
   let complianceConditionsToBtreeSetStub: sinon.SinonStub<
@@ -163,8 +163,6 @@ describe('setTransferRestrictions procedure', () => {
     };
   });
 
-  let addBatchTransactionStub: sinon.SinonStub;
-
   let setAssetTransferComplianceTransaction: PolymeshTx<[Ticker, TransferCondition]>;
   let setEntitiesExemptTransaction: PolymeshTx<
     [
@@ -183,8 +181,6 @@ describe('setTransferRestrictions procedure', () => {
     dsMockUtils.setConstMock('statistics', 'maxTransferConditionsPerAsset', {
       returnValue: dsMockUtils.createMockU32(new BigNumber(3)),
     });
-
-    addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
 
     setAssetTransferComplianceTransaction = dsMockUtils.createTxStub(
       'statistics',
@@ -236,7 +232,7 @@ describe('setTransferRestrictions procedure', () => {
       .withArgs(maxOwnershipRestriction, mockContext)
       .returns(rawPercentageRestriction);
     transferRestrictionToPolymeshTransferConditionStub
-      .withArgs(claimCountRestriction, mockContext)
+      .withArgs(sinon.match(claimCountRestriction), mockContext)
       .returns(rawClaimCountRestriction);
     transferRestrictionToPolymeshTransferConditionStub
       .withArgs(claimPercentageRestriction, mockContext)
@@ -269,7 +265,7 @@ describe('setTransferRestrictions procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should add a setTransferRestrictions transaction to the queue', async () => {
+  it('should add a setTransferRestrictions transaction to the batch', async () => {
     let proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
@@ -280,16 +276,15 @@ describe('setTransferRestrictions procedure', () => {
 
     let result = await prepareSetTransferRestrictions.call(proc, args);
 
-    sinon.assert.calledWith(addBatchTransactionStub.firstCall, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: setAssetTransferComplianceTransaction,
           args: [{ Ticker: rawTicker }, rawCountRestrictionBtreeSet],
         },
       ],
+      resolver: new BigNumber(1),
     });
-
-    expect(result).toEqual(new BigNumber(1));
 
     proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
@@ -307,62 +302,15 @@ describe('setTransferRestrictions procedure', () => {
 
     result = await prepareSetTransferRestrictions.call(proc, args);
 
-    sinon.assert.calledWith(addBatchTransactionStub.secondCall, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: setAssetTransferComplianceTransaction,
           args: [{ Ticker: rawTicker }, rawPercentageRestrictionBtreeSet],
         },
       ],
+      resolver: new BigNumber(1),
     });
-
-    expect(result).toEqual(new BigNumber(1));
-
-    proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
-      mockContext,
-      {
-        currentRestrictions: [],
-        occupiedSlots: new BigNumber(0),
-      }
-    );
-
-    args = {
-      ticker,
-      restrictions: [claimCountRestrictionValue],
-      type: TransferRestrictionType.ClaimCount,
-    };
-
-    result = await prepareSetTransferRestrictions.call(proc, args);
-
-    sinon.assert.calledWith(addBatchTransactionStub.thirdCall, {
-      transactions: [
-        {
-          transaction: setAssetTransferComplianceTransaction,
-          args: [{ Ticker: rawTicker }, rawClaimCountRestrictionBtreeSet],
-        },
-      ],
-    });
-
-    expect(result).toEqual(new BigNumber(1));
-
-    args = {
-      ticker,
-      restrictions: [claimPercentageRestrictionValue],
-      type: TransferRestrictionType.ClaimPercentage,
-    };
-
-    result = await prepareSetTransferRestrictions.call(proc, args);
-
-    sinon.assert.calledWith(addBatchTransactionStub.lastCall, {
-      transactions: [
-        {
-          transaction: setAssetTransferComplianceTransaction,
-          args: [{ Ticker: rawTicker }, rawClaimPercentageRestrictionBtreeSet],
-        },
-      ],
-    });
-
-    expect(result).toEqual(new BigNumber(1));
   });
 
   it('should add exempted identities if they were given', async () => {
@@ -384,20 +332,19 @@ describe('setTransferRestrictions procedure', () => {
     statisticsOpTypeToStatOpTypeStub
       .withArgs(StatisticsOpType.Count, mockContext)
       .returns(op as unknown as PolymeshPrimitivesStatisticsStatOpType);
-
     args = {
       ticker,
-      restrictions: [{ count, exemptedIdentities: exemptedDids }],
-      type: TransferRestrictionType.Count,
+      restrictions: [{ ...claimCountRestrictionValue, exemptedIdentities: exemptedDids }],
+      type: TransferRestrictionType.ClaimCount,
     };
 
     const result = await prepareSetTransferRestrictions.call(proc, args);
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: setAssetTransferComplianceTransaction,
-          args: [{ Ticker: rawTicker }, rawCountRestrictionBtreeSet],
+          args: [{ Ticker: rawTicker }, rawClaimCountRestrictionBtreeSet],
         },
         {
           transaction: setEntitiesExemptTransaction,
@@ -405,12 +352,11 @@ describe('setTransferRestrictions procedure', () => {
           args: [true, { asset: { Ticker: rawTicker }, op }, exemptedDidsBtreeSet],
         },
       ],
+      resolver: new BigNumber(1),
     });
-
-    expect(result).toEqual(new BigNumber(1));
   });
 
-  it('should remove restrictions by adding a setTransferRestriction transaction to the queue', async () => {
+  it('should remove restrictions by adding a setTransferRestriction transaction to the batch', async () => {
     args = {
       type: TransferRestrictionType.Count,
       restrictions: [],
@@ -430,16 +376,15 @@ describe('setTransferRestrictions procedure', () => {
 
     const result = await prepareSetTransferRestrictions.call(proc, args);
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: setAssetTransferComplianceTransaction,
           args: [{ Ticker: rawTicker }, emptyConditionsBtreeSet],
         },
       ],
+      resolver: new BigNumber(0),
     });
-
-    expect(result).toEqual(new BigNumber(0));
   });
 
   it('should throw an error if attempting to add restrictions that already exist', async () => {

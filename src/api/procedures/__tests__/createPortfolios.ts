@@ -9,7 +9,7 @@ import {
   Params,
   prepareCreatePortfolios,
 } from '~/api/procedures/createPortfolios';
-import { Context, NumberedPortfolio, PostTransactionValue } from '~/internal';
+import { Context, NumberedPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -17,19 +17,15 @@ import * as utilsInternalModule from '~/utils/internal';
 
 describe('createPortfolios procedure', () => {
   let mockContext: Mocked<Context>;
-  let numberedPortfolio: PostTransactionValue<NumberedPortfolio>;
   let stringToBytesStub: sinon.SinonStub<[string, Context], Bytes>;
   let getPortfolioIdsByNameStub: sinon.SinonStub;
   let newPortfolioName: string;
   let rawNewPortfolioName: Bytes;
-  let addBatchTransactionStub: sinon.SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-
-    numberedPortfolio = 'numberedPortfolio' as unknown as PostTransactionValue<NumberedPortfolio>;
 
     stringToBytesStub = sinon.stub(utilsConversionModule, 'stringToBytes');
     getPortfolioIdsByNameStub = sinon.stub(utilsInternalModule, 'getPortfolioIdsByName');
@@ -40,9 +36,6 @@ describe('createPortfolios procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    addBatchTransactionStub = procedureMockUtils
-      .getAddBatchTransactionStub()
-      .returns([[numberedPortfolio]]);
     stringToBytesStub.withArgs(newPortfolioName, mockContext).returns(rawNewPortfolioName);
   });
 
@@ -66,26 +59,22 @@ describe('createPortfolios procedure', () => {
     ).rejects.toThrow('There already exist Portfolios with some of the given names');
   });
 
-  it('should add a create portfolio transaction to the queue', async () => {
+  it('should return a create portfolio transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio[]>(mockContext);
     const createPortfolioTransaction = dsMockUtils.createTxStub('portfolio', 'createPortfolio');
     getPortfolioIdsByNameStub.resolves([null]);
 
     const result = await prepareCreatePortfolios.call(proc, { names: [newPortfolioName] });
 
-    sinon.assert.calledWith(
-      addBatchTransactionStub,
-      sinon.match({
-        transactions: [
-          {
-            transaction: createPortfolioTransaction,
-            args: [rawNewPortfolioName],
-          },
-        ],
-        resolvers: sinon.match.array,
-      })
-    );
-    expect(result).toEqual([numberedPortfolio]);
+    expect(result).toEqual({
+      transactions: [
+        {
+          transaction: createPortfolioTransaction,
+          args: [rawNewPortfolioName],
+        },
+      ],
+      resolver: expect.any(Function),
+    });
   });
 });
 

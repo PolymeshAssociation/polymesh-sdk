@@ -8,7 +8,7 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Params } from '~/api/procedures/setAssetRequirements';
-import { Asset, Context, Namespace, TransactionQueue } from '~/internal';
+import { Asset, Context, Namespace, PolymeshTransaction } from '~/internal';
 import { AssetComplianceResult } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockCodec } from '~/testUtils/mocks/dataSources';
@@ -62,7 +62,7 @@ describe('Requirements class', () => {
       sinon.restore();
     });
 
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const context = dsMockUtils.getContextInstance();
       const asset = entityMockUtils.getAssetInstance();
       const requirements = new Requirements(asset, context);
@@ -90,16 +90,16 @@ describe('Requirements class', () => {
         ],
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args: { ticker: asset.ticker, ...args }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await requirements.set(args);
+      const tx = await requirements.set(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -108,7 +108,7 @@ describe('Requirements class', () => {
       sinon.restore();
     });
 
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const context = dsMockUtils.getContextInstance();
       const asset = entityMockUtils.getAssetInstance();
       const requirements = new Requirements(asset, context);
@@ -134,16 +134,16 @@ describe('Requirements class', () => {
         ] as InputCondition[],
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args: { ticker: asset.ticker, ...args }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await requirements.add(args);
+      const tx = await requirements.add(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -152,7 +152,7 @@ describe('Requirements class', () => {
       sinon.restore();
     });
 
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const context = dsMockUtils.getContextInstance();
       const asset = entityMockUtils.getAssetInstance();
       const requirements = new Requirements(asset, context);
@@ -161,16 +161,16 @@ describe('Requirements class', () => {
         requirement: new BigNumber(10),
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args: { ticker: asset.ticker, ...args }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await requirements.remove(args);
+      const tx = await requirements.remove(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -179,12 +179,12 @@ describe('Requirements class', () => {
       sinon.restore();
     });
 
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const context = dsMockUtils.getContextInstance();
       const asset = entityMockUtils.getAssetInstance();
       const requirements = new Requirements(asset, context);
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedQueue = 'someQueue' as unknown as PolymeshTransaction<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -194,9 +194,9 @@ describe('Requirements class', () => {
         )
         .resolves(expectedQueue);
 
-      const queue = await requirements.reset();
+      const tx = await requirements.reset();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedQueue);
     });
   });
 
@@ -427,21 +427,21 @@ describe('Requirements class', () => {
       sinon.restore();
     });
 
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const context = dsMockUtils.getContextInstance();
       const asset = entityMockUtils.getAssetInstance();
       const requirements = new Requirements(asset, context);
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedQueue = 'someQueue' as unknown as PolymeshTransaction<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args: { ticker: asset.ticker, pause: true }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
-      const queue = await requirements.pause();
+      const tx = await requirements.pause();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedQueue);
     });
   });
 
@@ -450,21 +450,21 @@ describe('Requirements class', () => {
       sinon.restore();
     });
 
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const context = dsMockUtils.getContextInstance();
       const asset = entityMockUtils.getAssetInstance();
       const requirements = new Requirements(asset, context);
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedQueue = 'someQueue' as unknown as PolymeshTransaction<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args: { ticker: asset.ticker, pause: false }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
-      const queue = await requirements.unpause();
+      const tx = await requirements.unpause();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedQueue);
     });
   });
 
@@ -473,7 +473,7 @@ describe('Requirements class', () => {
       sinon.restore();
     });
 
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const context = dsMockUtils.getContextInstance();
       const asset = entityMockUtils.getAssetInstance();
       const requirements = new Requirements(asset, context);
@@ -489,16 +489,16 @@ describe('Requirements class', () => {
         ] as InputCondition[],
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedQueue = 'someQueue' as unknown as PolymeshTransaction<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args: { ticker: asset.ticker, ...args }, transformer: undefined }, context)
         .resolves(expectedQueue);
 
-      const queue = await requirements.modify(args);
+      const tx = await requirements.modify(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedQueue);
     });
   });
 

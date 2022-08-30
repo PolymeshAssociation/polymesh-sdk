@@ -15,7 +15,6 @@ jest.mock(
 
 describe('modifyVenue procedure', () => {
   let mockContext: Mocked<Context>;
-  let addBatchTransactionStub: sinon.SinonStub;
   let venueId: BigNumber;
 
   let venue: Venue;
@@ -30,7 +29,6 @@ describe('modifyVenue procedure', () => {
   beforeEach(() => {
     entityMockUtils.configureMocks();
     mockContext = dsMockUtils.getContextInstance();
-    addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
 
     venue = entityMockUtils.getVenueInstance({ id: venueId });
   });
@@ -85,7 +83,7 @@ describe('modifyVenue procedure', () => {
     );
   });
 
-  it('should add an update venue transaction to the queue', async () => {
+  it('should add an update venue transaction to the batch', async () => {
     const description = 'someDetails';
     const type = VenueType.Exchange;
 
@@ -110,9 +108,9 @@ describe('modifyVenue procedure', () => {
     const updateVenueTypeTransaction = dsMockUtils.createTxStub('settlement', 'updateVenueType');
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await prepareModifyVenue.call(proc, args);
+    let result = await prepareModifyVenue.call(proc, args);
 
-    sinon.assert.calledWith(addBatchTransactionStub.firstCall, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: updateVenueDetailsTransaction,
@@ -123,34 +121,37 @@ describe('modifyVenue procedure', () => {
           args: [rawId, rawType],
         },
       ],
+      resolver: undefined,
     });
 
-    await prepareModifyVenue.call(proc, {
+    result = await prepareModifyVenue.call(proc, {
       venue,
       type,
     });
 
-    sinon.assert.calledWith(addBatchTransactionStub.secondCall, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: updateVenueTypeTransaction,
           args: [rawId, rawType],
         },
       ],
+      resolver: undefined,
     });
 
-    await prepareModifyVenue.call(proc, {
+    result = await prepareModifyVenue.call(proc, {
       venue,
       description,
     });
 
-    sinon.assert.calledWith(addBatchTransactionStub.thirdCall, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: updateVenueDetailsTransaction,
           args: [rawId, rawDetails],
         },
       ],
+      resolver: undefined,
     });
   });
 

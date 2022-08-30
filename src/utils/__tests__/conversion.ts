@@ -515,7 +515,9 @@ describe('portfolioMovementToMovePortfolioItem', () => {
 
     expect(result).toBe(fakeResult);
 
-    context.createType.withArgs('Memo', padString(memo, 32)).returns(rawMemo);
+    context.createType
+      .withArgs('PolymeshCommonUtilitiesBalancesMemo', memo.padEnd(32))
+      .returns(rawMemo);
 
     context.createType
       .withArgs('MovePortfolioItem', {
@@ -1063,7 +1065,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       });
 
       createTypeStub
-        .withArgs('Permissions', sinon.match(sinon.match.object))
+        .withArgs('PolymeshPrimitivesSecondaryKeyPermissions', sinon.match(sinon.match.object))
         .returns(rawPermissions);
       createTypeStub
         .withArgs('PolymeshPrimitivesAuthorizationAuthorizationData', {
@@ -1196,7 +1198,7 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       };
 
       createTypeStub
-        .withArgs('Permissions', sinon.match(sinon.match.object))
+        .withArgs('PolymeshPrimitivesSecondaryKeyPermissions', sinon.match(sinon.match.object))
         .returns(rawPermissions);
       createTypeStub
         .withArgs('PolymeshPrimitivesAuthorizationAuthorizationData', {
@@ -1494,7 +1496,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
   });
 
   describe('permissionsToMeshPermissions', () => {
-    it('should convert a Permissions to a polkadot Permissions object (ordering tx alphabetically)', () => {
+    it('should convert a Permissions to a polkadot PolymeshPrimitivesSecondaryKeyPermissions object (ordering tx alphabetically)', () => {
       let value: Permissions = {
         assets: null,
         transactions: null,
@@ -1513,7 +1515,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         .returns(fakeExtrinsicPermissionsResult);
 
       createTypeStub
-        .withArgs('Permissions', {
+        .withArgs('PolymeshPrimitivesSecondaryKeyPermissions', {
           asset: 'Whole',
           extrinsic: fakeExtrinsicPermissionsResult,
           portfolio: 'Whole',
@@ -1573,7 +1575,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         kind: dsMockUtils.createMockPortfolioKind('Default'),
       });
       createTypeStub
-        .withArgs('Permissions', {
+        .withArgs('PolymeshPrimitivesSecondaryKeyPermissions', {
           asset: {
             These: [rawTicker],
           },
@@ -1621,7 +1623,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       };
 
       createTypeStub
-        .withArgs('Permissions', {
+        .withArgs('PolymeshPrimitivesSecondaryKeyPermissions', {
           asset: 'Whole',
           extrinsic: fakeExtrinsicPermissionsResult,
           portfolio: 'Whole',
@@ -1666,7 +1668,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       };
 
       createTypeStub
-        .withArgs('Permissions', {
+        .withArgs('PolymeshPrimitivesSecondaryKeyPermissions', {
           asset: {
             Except: [rawTicker],
           },
@@ -1720,7 +1722,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
 
       const rawTickers = tickers.map(t => dsMockUtils.createMockTicker(t));
       createTypeStub
-        .withArgs('Permissions', {
+        .withArgs('PolymeshPrimitivesSecondaryKeyPermissions', {
           asset: { These: [rawTickers[1], rawTickers[0], rawTickers[2]] },
           extrinsic: fakeExtrinsicPermissionsResult,
           portfolio: { These: [rawPortfolioId] },
@@ -2335,7 +2337,9 @@ describe('stringToMemo', () => {
     const fakeResult = 'memoDescription' as unknown as Memo;
     const context = dsMockUtils.getContextInstance();
 
-    context.createType.withArgs('Memo', padString(value, 32)).returns(fakeResult);
+    context.createType
+      .withArgs('PolymeshCommonUtilitiesBalancesMemo', value.padEnd(32))
+      .returns(fakeResult);
 
     const result = stringToMemo(value, context);
 
@@ -6907,7 +6911,9 @@ describe('distributionToDividendDistributionParams', () => {
       remaining: new BigNumber(9000).shiftedBy(6),
       reclaimed: false,
       paymentAt: new BigNumber(paymentDate.getTime()),
-      expiresAt: dsMockUtils.createMockMoment(new BigNumber(expiryDate.getTime())),
+      expiresAt: dsMockUtils.createMockOption(
+        dsMockUtils.createMockMoment(new BigNumber(expiryDate.getTime()))
+      ),
     };
 
     let distribution = dsMockUtils.createMockDistribution(params);
@@ -6916,7 +6922,10 @@ describe('distributionToDividendDistributionParams', () => {
 
     expect(result).toEqual(fakeResult);
 
-    distribution = dsMockUtils.createMockDistribution({ ...params, expiresAt: null });
+    distribution = dsMockUtils.createMockDistribution({
+      ...params,
+      expiresAt: dsMockUtils.createMockOption(),
+    });
 
     result = distributionToDividendDistributionParams(distribution, context);
 
@@ -7643,8 +7652,14 @@ describe('statUpdatesToBtreeStatUpdate', () => {
   it('should convert stat updates to a sorted BTreeSet', () => {
     const context = dsMockUtils.getContextInstance();
     const key2 = dsMockUtils.createMock2ndKey();
-    const stat1 = dsMockUtils.createMockStatUpdate({ key2, value: new BigNumber(1) });
-    const stat2 = dsMockUtils.createMockStatUpdate({ key2, value: new BigNumber(2) });
+    const stat1 = dsMockUtils.createMockStatUpdate({
+      key2,
+      value: dsMockUtils.createMockOption(dsMockUtils.createMockU128(new BigNumber(1))),
+    });
+    const stat2 = dsMockUtils.createMockStatUpdate({
+      key2,
+      value: dsMockUtils.createMockOption(dsMockUtils.createMockU128(new BigNumber(2))),
+    });
 
     context.createType.returns([stat1, stat2]);
 
@@ -8078,28 +8093,31 @@ describe('sortStatsByClaimType', () => {
       dsMockUtils.createMockClaimType(ClaimType.Blocked),
       issuer,
     ];
-    const op = dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Count);
+    const op = dsMockUtils.createMockStatisticsStatOpType(StatisticsOpType.Count);
     const accreditedStat = dsMockUtils.createMockStatisticsStatType({
       op,
-      claimIssuer: accreditedIssuer,
+      claimIssuer: dsMockUtils.createMockOption(accreditedIssuer),
     });
 
     const affiliateStat = dsMockUtils.createMockStatisticsStatType({
       op,
-      claimIssuer: affiliateIssuer,
+      claimIssuer: dsMockUtils.createMockOption(affiliateIssuer),
     });
 
     const jurisdictionStat = dsMockUtils.createMockStatisticsStatType({
       op,
-      claimIssuer: jurisdictionIssuer,
+      claimIssuer: dsMockUtils.createMockOption(jurisdictionIssuer),
     });
 
     const nonStat = dsMockUtils.createMockStatisticsStatType({
       op,
-      claimIssuer: nonStatIssuer,
+      claimIssuer: dsMockUtils.createMockOption(nonStatIssuer),
     });
 
-    const countStat = dsMockUtils.createMockStatisticsStatType({ op });
+    const countStat = dsMockUtils.createMockStatisticsStatType({
+      op,
+      claimIssuer: dsMockUtils.createMockOption(),
+    });
 
     let result = sortStatsByClaimType([jurisdictionStat, accreditedStat, affiliateStat, countStat]);
 

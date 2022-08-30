@@ -22,7 +22,6 @@ describe('claimDividends procedure', () => {
   let distribution: DividendDistribution;
 
   let mockContext: Mocked<Context>;
-  let addTransactionStub: sinon.SinonStub;
   let claimDividendsTransaction: PolymeshTx<unknown[]>;
 
   beforeAll(() => {
@@ -35,7 +34,6 @@ describe('claimDividends procedure', () => {
   });
 
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
     claimDividendsTransaction = dsMockUtils.createTxStub('capitalDistribution', 'claim');
     mockContext = dsMockUtils.getContextInstance();
   });
@@ -147,7 +145,7 @@ describe('claimDividends procedure', () => {
     expect(err.message).toBe('The signing Identity has already claimed dividends');
   });
 
-  it('should add a claim dividends transaction to the queue', async () => {
+  it('should return a claim dividends transaction spec', async () => {
     distribution = entityMockUtils.getDividendDistributionInstance({
       paymentDate,
       getParticipant: {
@@ -159,13 +157,14 @@ describe('claimDividends procedure', () => {
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await prepareClaimDividends.call(proc, {
+    const result = await prepareClaimDividends.call(proc, {
       distribution,
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction: claimDividendsTransaction,
       args: [rawCaId],
+      resolver: undefined,
     });
   });
 });

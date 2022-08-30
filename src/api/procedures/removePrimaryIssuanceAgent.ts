@@ -1,6 +1,6 @@
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { stringToIdentityId, stringToTicker } from '~/utils/conversion';
 
 /**
@@ -16,7 +16,7 @@ export type Params = {
 export async function prepareRemovePrimaryIssuanceAgent(
   this: Procedure<Params, void>,
   args: Params
-): Promise<void> {
+): Promise<TransactionSpec<void, ExtrinsicParams<'externalAgents', 'removeAgent'>>> {
   const {
     context: {
       polymeshApi: {
@@ -42,10 +42,11 @@ export async function prepareRemovePrimaryIssuanceAgent(
   const rawTicker = stringToTicker(ticker, context);
   const rawIdentityId = stringToIdentityId(primaryIssuanceAgents[0].did, context);
 
-  this.addTransaction({
+  return {
     transaction: externalAgents.removeAgent,
     args: [rawTicker, rawIdentityId],
-  });
+    resolver: undefined,
+  };
 }
 
 /**

@@ -47,10 +47,7 @@ describe('modifyCaDefaultConfig procedure', () => {
     );
   });
 
-  let addBatchTransactionStub: sinon.SinonStub;
-
   beforeEach(() => {
-    addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
   });
@@ -153,7 +150,7 @@ describe('modifyCaDefaultConfig procedure', () => {
     ).rejects.toThrow();
   });
 
-  it('should add a set default targets transaction to the queue', async () => {
+  it('should add a set default targets transaction to the batch', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('corporateAction', 'setDefaultTargets');
@@ -180,15 +177,15 @@ describe('modifyCaDefaultConfig procedure', () => {
     });
     targetsToTargetIdentitiesStub.withArgs(targets, mockContext).returns(rawTargets);
 
-    await prepareModifyCaDefaultConfig.call(proc, {
+    let result = await prepareModifyCaDefaultConfig.call(proc, {
       ticker,
       targets,
     });
 
-    sinon.assert.calledWith(
-      addBatchTransactionStub,
-      sinon.match({ transactions: [{ transaction, args: [rawTicker, rawTargets] }] })
-    );
+    expect(result).toEqual({
+      transactions: [{ transaction, args: [rawTicker, rawTargets] }],
+      resolver: undefined,
+    });
 
     rawTargets = dsMockUtils.createMockTargetIdentities({
       identities: ['someDid', 'otherDid'],
@@ -201,18 +198,18 @@ describe('modifyCaDefaultConfig procedure', () => {
     };
     targetsToTargetIdentitiesStub.withArgs(targets, mockContext).returns(rawTargets);
 
-    await prepareModifyCaDefaultConfig.call(proc, {
+    result = await prepareModifyCaDefaultConfig.call(proc, {
       ticker,
       targets,
     });
 
-    sinon.assert.calledWith(
-      addBatchTransactionStub,
-      sinon.match({ transactions: [{ transaction, args: [rawTicker, rawTargets] }] })
-    );
+    expect(result).toEqual({
+      transactions: [{ transaction, args: [rawTicker, rawTargets] }],
+      resolver: undefined,
+    });
   });
 
-  it('should add a set default withholding tax transaction to the queue', async () => {
+  it('should add a set default withholding tax transaction to the batch', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('corporateAction', 'setDefaultWithholdingTax');
@@ -228,18 +225,18 @@ describe('modifyCaDefaultConfig procedure', () => {
     const rawPercentage = dsMockUtils.createMockPermill(new BigNumber(150000));
     percentageToPermillStub.withArgs(new BigNumber(15), mockContext).returns(rawPercentage);
 
-    await prepareModifyCaDefaultConfig.call(proc, {
+    const result = await prepareModifyCaDefaultConfig.call(proc, {
       ticker,
       defaultTaxWithholding: new BigNumber(15),
     });
 
-    sinon.assert.calledWith(
-      addBatchTransactionStub,
-      sinon.match({ transactions: [{ transaction, args: [rawTicker, rawPercentage] }] })
-    );
+    expect(result).toEqual({
+      transactions: [{ transaction, args: [rawTicker, rawPercentage] }],
+      resolver: undefined,
+    });
   });
 
-  it('should add a batch of set did withholding tax transactions to the queue', async () => {
+  it('should add a batch of set did withholding tax transactions to the batch', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('corporateAction', 'setDidWithholdingTax');
@@ -264,19 +261,20 @@ describe('modifyCaDefaultConfig procedure', () => {
         percentage: new BigNumber(25),
       },
     ];
-    await prepareModifyCaDefaultConfig.call(proc, {
+    const result = await prepareModifyCaDefaultConfig.call(proc, {
       ticker,
       taxWithholdings,
     });
 
     sinon.assert.calledWith(assertCaTaxWithholdingsValidStub, taxWithholdings, mockContext);
-    sinon.assert.calledWith(procedureMockUtils.getAddBatchTransactionStub(), {
+    expect(result).toEqual({
       transactions: [
         {
           transaction,
           args: [rawTicker, rawDid, rawPercentage],
         },
       ],
+      resolver: undefined,
     });
   });
 

@@ -1,6 +1,6 @@
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import { AddAssetStatParams, ErrorCode, StatType, TxTags } from '~/types';
-import { ProcedureAuthorization, StatisticsOpType } from '~/types/internal';
+import { BatchTransactionSpec, ProcedureAuthorization, StatisticsOpType } from '~/types/internal';
 import {
   claimCountStatInputToStatUpdates,
   claimIssuerToMeshClaimIssuer,
@@ -18,7 +18,7 @@ import { checkTxType, compareStatsToInput } from '~/utils/internal';
 export async function prepareAddAssetStat(
   this: Procedure<AddAssetStatParams, void>,
   args: AddAssetStatParams
-): Promise<void> {
+): Promise<BatchTransactionSpec<void, unknown[][]>> {
   const {
     context: {
       polymeshApi: {
@@ -81,7 +81,7 @@ export async function prepareAddAssetStat(
       })
     );
   }
-  this.addBatchTransaction({ transactions });
+  return { transactions, resolver: undefined };
 }
 
 /**

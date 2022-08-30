@@ -13,13 +13,7 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/addInstruction';
-import {
-  Context,
-  DefaultPortfolio,
-  Instruction,
-  NumberedPortfolio,
-  PostTransactionValue,
-} from '~/internal';
+import { Context, DefaultPortfolio, Instruction, NumberedPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -87,9 +81,6 @@ describe('addInstruction procedure', () => {
   let rawAuthSettlementType: SettlementType;
   let rawBlockSettlementType: SettlementType;
   let rawLeg: { from: PortfolioId; to: PortfolioId; asset: Ticker; amount: Balance };
-
-  let instruction: PostTransactionValue<Instruction[]>;
-  let addBatchTransactionStub: sinon.SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks({
@@ -162,8 +153,6 @@ describe('addInstruction procedure', () => {
       amount: rawAmount,
       asset: rawTicker,
     };
-
-    instruction = ['instruction'] as unknown as PostTransactionValue<[Instruction]>;
   });
 
   let addAndAuthorizeInstructionTransaction: PolymeshTx<
@@ -185,10 +174,6 @@ describe('addInstruction procedure', () => {
   >;
 
   beforeEach(() => {
-    addBatchTransactionStub = procedureMockUtils
-      .getAddBatchTransactionStub()
-      .returns([instruction]);
-
     const tickerReservationDetailsStub = sinon.stub();
     tickerReservationDetailsStub.resolves({
       owner: entityMockUtils.getIdentityInstance(),
@@ -434,7 +419,7 @@ describe('addInstruction procedure', () => {
     expect(error.data.failedInstructionIndexes[0]).toBe(0);
   });
 
-  it('should add an add and authorize instruction transaction to the queue', async () => {
+  it('should return an add and authorize instruction transaction spec', async () => {
     dsMockUtils.configureMocks({ contextOptions: { did: fromDid } });
     entityMockUtils.configureMocks({
       venueOptions: {
@@ -448,22 +433,18 @@ describe('addInstruction procedure', () => {
 
     const result = await prepareAddInstruction.call(proc, args);
 
-    sinon.assert.calledWith(
-      addBatchTransactionStub,
-      sinon.match({
-        transactions: [
-          {
-            transaction: addAndAuthorizeInstructionTransaction,
-            args: [rawVenueId, rawAuthSettlementType, null, null, [rawLeg], [rawFrom, rawTo]],
-          },
-        ],
-        resolvers: sinon.match.array,
-      })
-    );
-    expect(result).toBe(instruction);
+    expect(result).toEqual({
+      transactions: [
+        {
+          transaction: addAndAuthorizeInstructionTransaction,
+          args: [rawVenueId, rawAuthSettlementType, null, null, [rawLeg], [rawFrom, rawTo]],
+        },
+      ],
+      resolver: expect.any(Function),
+    });
   });
 
-  it('should add an add instruction transaction to the queue', async () => {
+  it('should return an add instruction transaction spec', async () => {
     dsMockUtils.configureMocks({ contextOptions: { did: fromDid } });
     entityMockUtils.configureMocks({
       venueOptions: {
@@ -494,19 +475,15 @@ describe('addInstruction procedure', () => {
       ],
     });
 
-    sinon.assert.calledWith(
-      addBatchTransactionStub,
-      sinon.match({
-        transactions: [
-          {
-            transaction: addInstructionTransaction,
-            args: [rawVenueId, rawBlockSettlementType, rawTradeDate, rawValueDate, [rawLeg]],
-          },
-        ],
-        resolvers: sinon.match.array,
-      })
-    );
-    expect(result).toBe(instruction);
+    expect(result).toEqual({
+      transactions: [
+        {
+          transaction: addInstructionTransaction,
+          args: [rawVenueId, rawBlockSettlementType, rawTradeDate, rawValueDate, [rawLeg]],
+        },
+      ],
+      resolver: expect.any(Function),
+    });
   });
 
   describe('getAuthorization', () => {
@@ -614,23 +591,5 @@ describe('createAddInstructionResolver', () => {
     const result = createAddInstructionResolver(fakeContext)({} as ISubmittableResult);
 
     expect(result[0].id).toEqual(id);
-  });
-
-  it('should return a list of new Instructions', () => {
-    const fakeContext = {} as Context;
-    const previousInstructionId = new BigNumber(2);
-
-    const previousInstructions = {
-      value: [new Instruction({ id: previousInstructionId }, fakeContext)],
-    } as unknown as PostTransactionValue<Instruction[]>;
-
-    const result = createAddInstructionResolver(
-      fakeContext,
-      previousInstructions
-    )({} as ISubmittableResult);
-
-    expect(result.length).toEqual(2);
-    expect(result[0].id).toEqual(previousInstructionId);
-    expect(result[1].id).toEqual(id);
   });
 });

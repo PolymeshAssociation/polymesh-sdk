@@ -1,6 +1,5 @@
 import BigNumber from 'bignumber.js';
 
-import { MetadataLockStatus } from '~/api/entities/MetadataEntry/types';
 import {
   Account,
   Asset,
@@ -42,6 +41,7 @@ import {
   Scope,
   SecurityIdentifier,
   StatClaimIssuer,
+  TransactionArray,
   TransactionPermissions,
   TxGroup,
   VenueType,
@@ -300,17 +300,17 @@ export interface CreateAssetParams {
    */
   isDivisible: boolean;
   /**
-   * type of security that the Asset represents (i.e. Equity, Debt, Commodity, etc). Common values are included in the
+   * type of security that the Asset represents (e.g. Equity, Debt, Commodity). Common values are included in the
    *   {@link types!KnownAssetType} enum, but custom values can be used as well. Custom values must be registered on-chain the first time
    *   they're used, requiring an additional transaction. They aren't tied to a specific Asset
    */
   assetType: string;
   /**
-   * array of domestic or international alphanumeric security identifiers for the Asset (ISIN, CUSIP, FIGI, etc)
+   * array of domestic or international alphanumeric security identifiers for the Asset (e.g. ISIN, CUSIP, FIGI)
    */
   securityIdentifiers?: SecurityIdentifier[];
   /**
-   * (optional) funding round in which the Asset currently is (Series A, Series B, etc)
+   * (optional) funding round in which the Asset currently is (e.g. Series A, Series B)
    */
   fundingRound?: string;
   documents?: AssetDocument[];
@@ -703,7 +703,7 @@ export interface LaunchOfferingParams {
    */
   raisingPortfolio: PortfolioLike;
   /**
-   * ticker symbol of the currency in which the funds are being raised (i.e. 'USD' or 'CAD').
+   * ticker symbol of the currency in which the funds are being raised (e.g. 'USD' or 'CAD').
    *   Other Assets can be used as currency as well
    */
   raisingCurrency: string;
@@ -935,15 +935,6 @@ export interface MoveFundsParams {
   items: PortfolioMovement[];
 }
 
-export interface ModifyMetadataValueParams {
-  /**
-   * new start time (optional, will be left the same if not passed)
-   */
-  value?: Date;
-  /**
-   * new end time (optional, will be left th same if not passed). A null value means the Offering doesn't end
-   */
-  expiry: Date | null;
-
-  lockStatus: MetadataLockStatus;
+export interface CreateTransactionBatchParams<ReturnValues extends readonly [...unknown[]]> {
+  transactions: Readonly<TransactionArray<ReturnValues>>;
 }

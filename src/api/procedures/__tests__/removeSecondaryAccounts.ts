@@ -12,7 +12,6 @@ import * as utilsInternalModule from '~/utils/internal';
 
 describe('removeSecondaryAccounts procedure', () => {
   let mockContext: Mocked<Context>;
-  let addTransactionStub: sinon.SinonStub;
   let signerToSignerValueStub: sinon.SinonStub<[Signer], SignerValue>;
   let stringToAccountIdStub: sinon.SinonStub<[string, Context], AccountId>;
   let getSecondaryAccountPermissionsStub: sinon.SinonStub;
@@ -32,7 +31,6 @@ describe('removeSecondaryAccounts procedure', () => {
   });
 
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
 
     const secondaryAccount = entityMockUtils.getAccountInstance({
@@ -59,7 +57,7 @@ describe('removeSecondaryAccounts procedure', () => {
     sinon.restore();
   });
 
-  it('should add a remove secondary items transaction to the queue', async () => {
+  it('should return a remove secondary items transaction spec', async () => {
     const { accounts } = args;
 
     const rawAccountId = dsMockUtils.createMockAccountId(accounts[0].address);
@@ -70,12 +68,13 @@ describe('removeSecondaryAccounts procedure', () => {
 
     const transaction = dsMockUtils.createTxStub('identity', 'removeSecondaryKeys');
 
-    await prepareRemoveSecondaryAccounts.call(proc, args);
+    const result = await prepareRemoveSecondaryAccounts.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction,
       feeMultiplier: new BigNumber(1),
       args: [[rawAccountId]],
+      resolver: undefined,
     });
   });
 

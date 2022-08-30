@@ -2,7 +2,7 @@ import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import sinon, { SinonStub } from 'sinon';
 
-import { CheckpointSchedule, Context, Namespace, TransactionQueue } from '~/internal';
+import { CheckpointSchedule, Context, Namespace, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { CalendarUnit, ScheduleWithDetails } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -64,8 +64,9 @@ describe('Schedules class', () => {
       sinon.restore();
     });
 
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<CheckpointSchedule>;
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<CheckpointSchedule>;
       const args = {
         start: null,
         period: {
@@ -78,11 +79,11 @@ describe('Schedules class', () => {
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args: { ticker, ...args }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await schedules.create(args);
+      const tx = await schedules.create(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -91,8 +92,8 @@ describe('Schedules class', () => {
       sinon.restore();
     });
 
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
       const args = {
         schedule: new BigNumber(1),
       };
@@ -100,11 +101,11 @@ describe('Schedules class', () => {
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args: { ticker, ...args }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await schedules.remove(args);
+      const tx = await schedules.remove(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 

@@ -36,7 +36,6 @@ describe('setGroupPermissions procedure', () => {
   const rawAgId = dsMockUtils.createMockU32(customId);
 
   let mockContext: Mocked<Context>;
-  let addTransactionStub: sinon.SinonStub;
   let externalAgentsSetGroupPermissionsTransaction: PolymeshTx<unknown[]>;
   let permissionsLikeToPermissionsStub: sinon.SinonStub;
 
@@ -58,7 +57,6 @@ describe('setGroupPermissions procedure', () => {
   });
 
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
     externalAgentsSetGroupPermissionsTransaction = dsMockUtils.createTxStub(
       'externalAgents',
       'setGroupPermissions'
@@ -103,7 +101,7 @@ describe('setGroupPermissions procedure', () => {
     expect(error.message).toBe('New permissions are the same as the current ones');
   });
 
-  it('should add a set group permissions transaction to the queue', async () => {
+  it('should return a set group permissions transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const fakePermissions = { transactions: permissions.transactions };
@@ -111,7 +109,7 @@ describe('setGroupPermissions procedure', () => {
       .withArgs(fakePermissions, mockContext)
       .returns(permissions.transactions);
 
-    await prepareSetGroupPermissions.call(proc, {
+    const result = await prepareSetGroupPermissions.call(proc, {
       group: entityMockUtils.getCustomPermissionGroupInstance({
         ticker,
         id: customId,
@@ -123,9 +121,10 @@ describe('setGroupPermissions procedure', () => {
       permissions: fakePermissions,
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction: externalAgentsSetGroupPermissionsTransaction,
       args: [rawTicker, rawAgId, rawExtrinsicPermissions],
+      resolver: undefined,
     });
   });
 

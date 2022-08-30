@@ -25,7 +25,6 @@ describe('waivePermissions procedure', () => {
   const rawTicker = dsMockUtils.createMockTicker(ticker);
 
   let mockContext: Mocked<Context>;
-  let addTransactionStub: sinon.SinonStub;
   let externalAgentsAbdicateTransaction: PolymeshTx<unknown[]>;
 
   beforeAll(() => {
@@ -37,7 +36,6 @@ describe('waivePermissions procedure', () => {
   });
 
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
     externalAgentsAbdicateTransaction = dsMockUtils.createTxStub('externalAgents', 'abdicate');
     mockContext = dsMockUtils.getContextInstance();
   });
@@ -94,7 +92,7 @@ describe('waivePermissions procedure', () => {
     expect(error.message).toBe('The Identity is not an Agent for the Asset');
   });
 
-  it('should add an abdicate transaction to the queue', async () => {
+  it('should return an abdicate transaction spec', async () => {
     const asset = entityMockUtils.getAssetInstance({
       ticker,
       permissionsGetAgents: [
@@ -111,16 +109,17 @@ describe('waivePermissions procedure', () => {
       asset,
     });
 
-    await prepareWaivePermissions.call(proc, {
+    const result = await prepareWaivePermissions.call(proc, {
       asset,
       identity: entityMockUtils.getIdentityInstance({
         did,
       }),
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction: externalAgentsAbdicateTransaction,
       args: [rawTicker],
+      resolver: undefined,
     });
   });
 

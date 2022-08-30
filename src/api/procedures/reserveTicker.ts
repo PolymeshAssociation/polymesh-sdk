@@ -1,14 +1,8 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 
-import {
-  Context,
-  PolymeshError,
-  PostTransactionValue,
-  Procedure,
-  TickerReservation,
-} from '~/internal';
+import { Context, PolymeshError, Procedure, TickerReservation } from '~/internal';
 import { ErrorCode, ReserveTickerParams, RoleType, TickerReservationStatus, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { stringToTicker, tickerToString } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
 
@@ -31,7 +25,7 @@ export const createTickerReservationResolver =
 export async function prepareReserveTicker(
   this: Procedure<ReserveTickerParams, TickerReservation>,
   args: ReserveTickerParams
-): Promise<PostTransactionValue<TickerReservation>> {
+): Promise<TransactionSpec<TickerReservation, ExtrinsicParams<'asset', 'registerTicker'>>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -70,13 +64,11 @@ export async function prepareReserveTicker(
     }
   }
 
-  const [newReservation] = this.addTransaction({
+  return {
     transaction: tx.asset.registerTicker,
-    resolvers: [createTickerReservationResolver(context)],
     args: [rawTicker],
-  });
-
-  return newReservation;
+    resolver: createTickerReservationResolver(context),
+  };
 }
 
 /**
