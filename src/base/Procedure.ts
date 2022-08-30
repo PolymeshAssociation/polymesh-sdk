@@ -339,8 +339,8 @@ export class Procedure<Args = void, ReturnValue = void, Storage = Record<string,
 
       const procedureResult = await prepareTransactionsPromise;
 
-      const signingAddress = context.getSigningAddress();
-      const signer = context.getExternalSigner();
+      const signingAddress = ctx.getSigningAddress();
+      const signer = ctx.getExternalSigner();
 
       const spec = {
         ...procedureResult,
