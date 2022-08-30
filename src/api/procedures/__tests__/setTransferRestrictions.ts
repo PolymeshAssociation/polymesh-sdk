@@ -433,11 +433,11 @@ describe('setTransferRestrictions procedure', () => {
       ticker,
       restrictions: [
         {
-          ...claimCountRestrictionValue,
+          count,
           exemptedIdentities: exemptedDids,
         },
       ],
-      type: TransferRestrictionType.ClaimCount,
+      type: TransferRestrictionType.Count,
     };
 
     result = await prepareSetTransferRestrictions.call(proc, args);
@@ -446,14 +446,14 @@ describe('setTransferRestrictions procedure', () => {
       transactions: [
         {
           transaction: setAssetTransferComplianceTransaction,
-          args: [{ Ticker: rawTicker }, rawClaimCountRestrictionBtreeSet],
+          args: [{ Ticker: rawTicker }, rawCountRestrictionBtreeSet],
         },
         {
           transaction: setEntitiesExemptTransaction,
           feeMultiplier: new BigNumber(3),
           args: [
             rawTrue,
-            { asset: { Ticker: rawTicker }, op, claimType: ClaimType.Accredited },
+            { asset: { Ticker: rawTicker }, op, claimType: undefined },
             exemptedDidsBtreeSet,
           ],
         },

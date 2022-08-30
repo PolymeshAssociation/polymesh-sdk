@@ -4012,7 +4012,7 @@ export const createMockStatisticsOpType = (
       isBalance: op === StatType.Balance,
     },
     !op
-  ) as MockCodec<PolymeshPrimitivesStatisticsStatOpType>;
+  );
 };
 
 /**
@@ -4035,7 +4035,7 @@ export const createMockStatisticsOpTypeToStatType = (
       },
     },
     !op
-  ) as MockCodec<PolymeshPrimitivesStatisticsStatType>;
+  );
 };
 
 /**

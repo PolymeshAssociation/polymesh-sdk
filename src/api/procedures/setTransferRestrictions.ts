@@ -137,6 +137,7 @@ function transformInput(
 
     restriction.exemptedIdentities?.forEach(exemption => {
       const key = claimType || 'None';
+      console.log('claimType in exempted loop', claimType, 'key: ', key);
       const id = asIdentity(exemption, context);
       addExemptionIfNotPresent(id, inputExemptions, key);
     });
