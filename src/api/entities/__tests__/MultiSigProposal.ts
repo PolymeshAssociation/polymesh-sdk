@@ -129,11 +129,13 @@ describe('MultiSigProposal class', () => {
   describe('method: exists', () => {
     it('should return true if the MultiSigProposal is present on chain', async () => {
       dsMockUtils.createQueryStub('multiSig', 'proposals', {
-        returnValue: dsMockUtils.createMockCall({
-          args: [],
-          method: 'Asset',
-          section: 'create',
-        }),
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockCall({
+            args: [],
+            method: 'Asset',
+            section: 'create',
+          })
+        ),
       });
 
       const result = await proposal.exists();
@@ -142,7 +144,7 @@ describe('MultiSigProposal class', () => {
 
     it('should return false if the MultiSigProposal is not present on chain', async () => {
       dsMockUtils.createQueryStub('multiSig', 'proposals', {
-        returnValue: dsMockUtils.createMockCall(),
+        returnValue: dsMockUtils.createMockOption(),
       });
 
       const result = await proposal.exists();
