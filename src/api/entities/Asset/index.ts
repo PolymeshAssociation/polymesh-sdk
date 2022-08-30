@@ -9,6 +9,7 @@ import {
 import BigNumber from 'bignumber.js';
 import { flatten, groupBy, map } from 'lodash';
 
+import { Metadata } from '~/api/entities/Asset/Metadata';
 import {
   AuthorizationRequest,
   Context,
@@ -116,6 +117,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
   public checkpoints: Checkpoints;
   public corporateActions: CorporateActions;
   public permissions: Permissions;
+  public metadata: Metadata;
 
   /**
    * @hidden
@@ -138,6 +140,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
     this.checkpoints = new Checkpoints(this, context);
     this.corporateActions = new CorporateActions(this, context);
     this.permissions = new Permissions(this, context);
+    this.metadata = new Metadata(this, context);
 
     this.transferOwnership = createProcedureMethod(
       { getProcedureAndArgs: args => [transferAssetOwnership, { ticker, ...args }] },

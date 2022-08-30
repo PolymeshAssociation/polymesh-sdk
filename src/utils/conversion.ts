@@ -15,6 +15,9 @@ import {
   PalletCorporateActionsInitiateCorporateActionArgs,
   PalletStoFundraiser,
   PolymeshPrimitivesAssetIdentifier,
+  PolymeshPrimitivesAssetMetadataAssetMetadataKey,
+  PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
+  PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail,
   PolymeshPrimitivesAuthorizationAuthorizationData,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
   PolymeshPrimitivesCondition,
@@ -181,6 +184,10 @@ import {
   InputTrustedClaimIssuer,
   InstructionType,
   KnownAssetType,
+  MetadataLockStatus,
+  MetadataSpec,
+  MetadataType,
+  MetadataValue,
   ModuleName,
   MultiClaimCondition,
   OfferingBalanceStatus,
@@ -4000,4 +4007,81 @@ export function inputStatTypeToMeshStatType(
     claimIssuer = claimIssuerToMeshClaimIssuer(input.claimIssuer, context);
   }
   return statisticsOpTypeToStatType({ op, claimIssuer }, context);
+}
+
+/**
+ * @hidden
+ */
+export function meshMetadataSpecToMetadataSpec(
+  rawSpecs?: Option<PolymeshPrimitivesAssetMetadataAssetMetadataSpec>
+): MetadataSpec {
+  const specs: MetadataSpec = {};
+
+  if (rawSpecs && rawSpecs.isSome) {
+    const { url: rawUrl, description: rawDescription, typeDef: rawTypeDef } = rawSpecs.unwrap();
+
+    if (rawUrl.isSome) {
+      specs.url = bytesToString(rawUrl.unwrap());
+    }
+
+    if (rawDescription.isSome) {
+      specs.description = bytesToString(rawDescription.unwrap());
+    }
+
+    if (rawTypeDef.isSome) {
+      specs.typeDef = bytesToString(rawTypeDef.unwrap());
+    }
+  }
+  return specs;
+}
+
+/**
+ * @hidden
+ */
+export function metadataToMeshMetadataKey(
+  type: MetadataType,
+  id: BigNumber,
+  context: Context
+): PolymeshPrimitivesAssetMetadataAssetMetadataKey {
+  const rawId = bigNumberToU64(id, context);
+
+  let metadataKey;
+  if (type === MetadataType.Local) {
+    metadataKey = { Local: rawId };
+  } else {
+    metadataKey = { Global: rawId };
+  }
+
+  return context.createType('PolymeshPrimitivesAssetMetadataAssetMetadataKey', metadataKey);
+}
+
+/**
+ * @hidden
+ */
+export function meshMetadataValueToMetadataValue(
+  rawValue: Option<Bytes>,
+  rawDetails: Option<PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail>
+): MetadataValue | null {
+  if (rawValue.isEmpty) {
+    return null;
+  }
+
+  let lockStatus = MetadataLockStatus.Unlocked;
+  let expiry;
+
+  if (rawDetails.isSome) {
+    const { lockStatus: rawLockStatus, expire } = rawDetails.unwrap();
+    if (rawLockStatus.isLocked) {
+      lockStatus = MetadataLockStatus.Locked;
+    }
+    if (rawLockStatus.isLockedUntil) {
+      lockStatus = MetadataLockStatus.LockedUntil;
+      expiry = momentToDate(expire.unwrap());
+    }
+  }
+  return {
+    value: bytesToString(rawValue.unwrap()),
+    lockStatus,
+    expiry,
+  };
 }

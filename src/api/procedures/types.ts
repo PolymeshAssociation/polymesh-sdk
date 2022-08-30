@@ -1,5 +1,6 @@
 import BigNumber from 'bignumber.js';
 
+import { MetadataLockStatus } from '~/api/entities/MetadataEntry/types';
 import {
   Account,
   Asset,
@@ -932,4 +933,17 @@ export interface MoveFundsParams {
    * list of Assets (and the corresponding token amounts) that will be moved
    */
   items: PortfolioMovement[];
+}
+
+export interface ModifyMetadataValueParams {
+  /**
+   * new start time (optional, will be left the same if not passed)
+   */
+  value?: Date;
+  /**
+   * new end time (optional, will be left th same if not passed). A null value means the Offering doesn't end
+   */
+  expiry: Date | null;
+
+  lockStatus: MetadataLockStatus;
 }

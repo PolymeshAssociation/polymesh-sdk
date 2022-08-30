@@ -7,7 +7,7 @@ import { Asset, Context, TickerReservation, TransactionQueue } from '~/internal'
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
-  AssetGlobalMetadata,
+  AssetGlobalMetadataKey,
   KnownAssetType,
   SecurityIdentifierType,
   TickerReservationStatus,
@@ -441,7 +441,7 @@ describe('Assets Class', () => {
     });
   });
 
-  describe('method: getGlobalMetadata', () => {
+  describe('method: getGlobalMetadataKeys', () => {
     let bytesToStringStub: sinon.SinonStub;
     let u64ToBigNumberStub: sinon.SinonStub;
 
@@ -449,7 +449,7 @@ describe('Assets Class', () => {
       dsMockUtils.createMockU64(new BigNumber(1)),
       dsMockUtils.createMockU64(new BigNumber(2)),
     ];
-    const globalMetadata: AssetGlobalMetadata[] = [
+    const globalMetadata: AssetGlobalMetadataKey[] = [
       {
         id: new BigNumber(1),
         name: 'SOME_NAME1',
@@ -462,6 +462,7 @@ describe('Assets Class', () => {
       {
         id: new BigNumber(2),
         name: 'SOME_NAME2',
+        specs: {},
       },
     ];
     let rawGlobalMetadata;
@@ -518,7 +519,7 @@ describe('Assets Class', () => {
     });
 
     it('should retrieve all Asset Global Metadata on the chain', async () => {
-      const result = await assets.getGlobalMetadata();
+      const result = await assets.getGlobalMetadataKeys();
       expect(result).toEqual(globalMetadata);
     });
   });

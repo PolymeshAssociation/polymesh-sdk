@@ -9,11 +9,10 @@ import {
   TickerReservation,
 } from '~/internal';
 import {
-  AssetGlobalMetadata,
-  AssetMetadataSpec,
   ClaimClassicTickerParams,
   CreateAssetWithTickerParams,
   ErrorCode,
+  GlobalMetadataKey,
   PaginationOptions,
   ProcedureMethod,
   ReserveTickerParams,
@@ -24,6 +23,7 @@ import {
 } from '~/types';
 import {
   bytesToString,
+  meshMetadataSpecToMetadataSpec,
   stringToIdentityId,
   tickerToString,
   u64ToBigNumber,
@@ -262,7 +262,7 @@ export class Assets {
    * Retrieve all the Asset Global Metadata on chain.
    * This includes metadata id, name and optional specs
    */
-  public async getGlobalMetadata(): Promise<AssetGlobalMetadata[]> {
+  public async getGlobalMetadataKeys(): Promise<GlobalMetadataKey[]> {
     const {
       context: {
         polymeshApi: {
@@ -278,6 +278,17 @@ export class Assets {
       assetMetadataGlobalSpecs.entries(),
     ]);
 
+    const specsEntryMap = new Map(
+      specsEntries.map(
+        ([
+          {
+            args: [rawKeyId],
+          },
+          rawSpecs,
+        ]) => [rawKeyId.toString(), rawSpecs]
+      )
+    );
+
     return keyToNameEntries.map(
       ([
         {
@@ -285,48 +296,13 @@ export class Assets {
         },
         rawName,
       ]) => {
-        const metadata: AssetGlobalMetadata = {
+        const rawSpecs = specsEntryMap.get(rawId.toString());
+
+        return {
           id: u64ToBigNumber(rawId),
           name: bytesToString(rawName.unwrap()),
+          specs: meshMetadataSpecToMetadataSpec(rawSpecs),
         };
-
-        const specEntry = specsEntries.find(
-          ([
-            {
-              args: [rawKeyId],
-            },
-          ]) => rawKeyId.eq(rawId)
-        );
-
-        if (specEntry) {
-          const [, rawSpecs] = specEntry;
-          if (rawSpecs.isSome) {
-            const specs: AssetMetadataSpec = {};
-            const {
-              url: rawUrl,
-              description: rawDescription,
-              typeDef: rawTypeDef,
-            } = rawSpecs.unwrap();
-
-            if (rawUrl.isSome) {
-              specs.url = bytesToString(rawUrl.unwrap());
-            }
-
-            if (rawDescription.isSome) {
-              specs.description = bytesToString(rawDescription.unwrap());
-            }
-
-            if (rawTypeDef.isSome) {
-              specs.typeDef = bytesToString(rawTypeDef.unwrap());
-            }
-
-            if (Object.keys(specs).length > 0) {
-              metadata.specs = specs;
-            }
-          }
-        }
-
-        return metadata;
       }
     );
   }
