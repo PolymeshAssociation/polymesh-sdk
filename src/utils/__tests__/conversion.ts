@@ -124,7 +124,6 @@ import {
   Signer,
   SignerType,
   SignerValue,
-  StatType,
   TargetTreatment,
   TransferError,
   TransferRestriction,
@@ -135,7 +134,7 @@ import {
   TxTags,
   VenueType,
 } from '~/types';
-import { InstructionStatus, PermissionGroupIdentifier, StatisticsOpType } from '~/types/internal';
+import { InstructionStatus, PermissionGroupIdentifier, StatType } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { DUMMY_ACCOUNT_ID, MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '~/utils/constants';
 import * as internalUtils from '~/utils/internal';
@@ -190,6 +189,7 @@ import {
   fundraiserToOfferingDetails,
   granularCanTransferResultToTransferBreakdown,
   hashToString,
+  identitiesToBtreeSet,
   identityIdToString,
   inputStatTypeToMeshStatType,
   internalAssetTypeToAssetType,
@@ -210,7 +210,7 @@ import {
   meshMetadataValueToMetadataValue,
   meshPermissionsToPermissions,
   meshScopeToScope,
-  meshStatToStatisticsOpType,
+  meshStatToStatType,
   meshVenueTypeToVenueType,
   metadataToMeshMetadataKey,
   middlewareEventToEventIdentifier,
@@ -235,7 +235,6 @@ import {
   requirementToComplianceRequirement,
   scheduleSpecToMeshScheduleSpec,
   scopeClaimProofToConfidentialIdentityClaimProof,
-  scopeIdsToBtreeSetIdentityId,
   scopeIdToString,
   scopeToMeshScope,
   scopeToMiddlewareScope,
@@ -248,7 +247,6 @@ import {
   signerValueToSigner,
   sortStatsByClaimType,
   sortTransferRestrictionByClaimValue,
-  statisticsOpTypeToStatOpType,
   statisticsOpTypeToStatType,
   statisticStatTypesToBtreeStatType,
   statsClaimToStatClaimInputType,
@@ -285,6 +283,7 @@ import {
   transferConditionsToBtreeTransferConditions,
   transferConditionToTransferRestriction,
   transferRestrictionToPolymeshTransferCondition,
+  transferRestrictionTypeToStatOpType,
   trustedClaimIssuerToTrustedIssuer,
   txGroupToTxTags,
   txTagToExtrinsicIdentifier,
@@ -7511,15 +7510,19 @@ describe('agentGroupToPermissionGroup', () => {
     );
   });
 
-  describe('scopeIdsToBtreeSetIdentityId', () => {
-    it('should convert scopeIds to a BTreeSetIdentityID', () => {
+  describe('identitiesToBtreeSet', () => {
+    it('should convert Identities to a BTreeSetIdentityID', () => {
       const context = dsMockUtils.getContextInstance();
-      const ids = ['b', 'a', 'c'] as unknown as PolymeshPrimitivesIdentityId[];
+      const ids = [{ did: 'b' }, { did: 'a' }, { did: 'c' }] as unknown as Identity[];
+      ids.forEach(({ did }) =>
+        context.createType.withArgs('PolymeshPrimitivesIdentityId', did).returns(did)
+      );
+
       context.createType
         .withArgs('BTreeSet<PolymeshPrimitivesIdentityId>', ['b', 'a', 'c'])
         .returns(['a', 'b', 'c']);
 
-      const result = scopeIdsToBtreeSetIdentityId(ids, context);
+      const result = identitiesToBtreeSet(ids, context);
       expect(result).toEqual(['a', 'b', 'c']);
     });
   });
@@ -7535,6 +7538,35 @@ describe('agentGroupToPermissionGroup', () => {
       const result = statisticsOpTypeToStatType({ op }, context);
 
       expect(result).toEqual('statType');
+    });
+  });
+
+  describe('transferRestrictionTypeToStatOpType', () => {
+    it('should return the appropriate StatType for the TransferRestriction', () => {
+      const context = dsMockUtils.getContextInstance();
+
+      context.createType
+        .withArgs('PolymeshPrimitivesStatisticsStatOpType', StatType.Count)
+        .returns('countType');
+
+      context.createType
+        .withArgs('PolymeshPrimitivesStatisticsStatOpType', StatType.Balance)
+        .returns('percentType');
+
+      let result = transferRestrictionTypeToStatOpType(TransferRestrictionType.Count, context);
+      expect(result).toEqual('countType');
+
+      result = transferRestrictionTypeToStatOpType(TransferRestrictionType.ClaimCount, context);
+      expect(result).toEqual('countType');
+
+      result = transferRestrictionTypeToStatOpType(TransferRestrictionType.Percentage, context);
+      expect(result).toEqual('percentType');
+
+      result = transferRestrictionTypeToStatOpType(
+        TransferRestrictionType.ClaimPercentage,
+        context
+      );
+      expect(result).toEqual('percentType');
     });
   });
 
@@ -7561,9 +7593,9 @@ describe('agentGroupToPermissionGroup', () => {
         claimIssuer: createMockOption(),
       } as unknown as PolymeshPrimitivesStatisticsStatType;
 
-      const result = meshStatToStatisticsOpType(rawStat);
+      const result = meshStatToStatType(rawStat);
 
-      expect(result).toEqual(StatisticsOpType.Count);
+      expect(result).toEqual(StatType.Count);
     });
   });
 
@@ -7593,31 +7625,6 @@ describe('agentGroupToPermissionGroup', () => {
 
       expect(result).toEqual('Scoped2ndKey');
     });
-  });
-});
-
-describe('statisticsOpTypeToStatOpType', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  it('should convert an Offering Tier into a polkadot PriceTier object', () => {
-    const context = dsMockUtils.getContextInstance();
-    const fakeStat = 'fakeStat';
-    context.createType
-      .withArgs('PolymeshPrimitivesStatisticsStatOpType', StatisticsOpType.Count)
-      .returns(fakeStat);
-
-    const result = statisticsOpTypeToStatOpType(StatisticsOpType.Count, context);
-    expect(result).toEqual(fakeStat);
   });
 });
 
@@ -8099,7 +8106,7 @@ describe('sortStatsByClaimType', () => {
       dsMockUtils.createMockClaimType(ClaimType.Blocked),
       issuer,
     ];
-    const op = dsMockUtils.createMockStatisticsStatOpType(StatisticsOpType.Count);
+    const op = dsMockUtils.createMockStatisticsOpType(StatType.Count);
     const accreditedStat = dsMockUtils.createMockStatisticsStatType({
       op,
       claimIssuer: dsMockUtils.createMockOption(accreditedIssuer),
@@ -8289,11 +8296,11 @@ describe('inputStatTypeToMeshStatType', () => {
     const did = 'did';
 
     createTypeStub
-      .withArgs('PolymeshPrimitivesStatisticsStatOpType', StatisticsOpType.Count)
+      .withArgs('PolymeshPrimitivesStatisticsStatOpType', StatType.Count)
       .returns(fakeOp);
 
     createTypeStub
-      .withArgs('PolymeshPrimitivesStatisticsStatOpType', StatisticsOpType.Balance)
+      .withArgs('PolymeshPrimitivesStatisticsStatOpType', StatType.Balance)
       .returns(fakeOp);
 
     createTypeStub
@@ -8318,7 +8325,7 @@ describe('inputStatTypeToMeshStatType', () => {
     expect(result).toEqual(fakeStatistic);
 
     const scopedInput = {
-      type: StatType.ScopedPercentage,
+      type: StatType.ScopedBalance,
       claimIssuer: {
         issuer: entityMockUtils.getIdentityInstance({ did }),
         claimType: ClaimType.Accredited,

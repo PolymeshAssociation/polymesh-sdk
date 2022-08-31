@@ -1,13 +1,13 @@
 import { Asset, PolymeshError, Procedure } from '~/internal';
-import { AddAssetStatParams, ErrorCode, StatType, TxTags } from '~/types';
-import { BatchTransactionSpec, ProcedureAuthorization, StatisticsOpType } from '~/types/internal';
+import { AddAssetStatParams, ErrorCode, TxTags } from '~/types';
+import { BatchTransactionSpec, ProcedureAuthorization, StatType } from '~/types/internal';
 import {
   claimCountStatInputToStatUpdates,
   claimIssuerToMeshClaimIssuer,
   countStatInputToStatUpdates,
-  statisticsOpTypeToStatOpType,
   statisticsOpTypeToStatType,
   statisticStatTypesToBtreeStatType,
+  statTypeToStatOpType,
   stringToTickerKey,
 } from '~/utils/conversion';
 import { checkTxType, compareStatsToInput } from '~/utils/internal';
@@ -41,15 +41,12 @@ export async function prepareAddAssetStat(
     });
   }
 
-  const op =
-    type === StatType.Count || type === StatType.ScopedCount
-      ? statisticsOpTypeToStatOpType(StatisticsOpType.Count, context)
-      : statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
+  const op = statTypeToStatOpType(type, context);
 
   const transactions = [];
 
   let rawClaimIssuer;
-  if (type === StatType.ScopedCount || type === StatType.ScopedPercentage) {
+  if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
     rawClaimIssuer = claimIssuerToMeshClaimIssuer(args, context);
   }
 

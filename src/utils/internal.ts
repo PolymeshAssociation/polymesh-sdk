@@ -9,6 +9,7 @@ import { BTreeSet, Bytes, Option, StorageKey, u32 } from '@polkadot/types';
 import { EventRecord } from '@polkadot/types/interfaces';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
 import {
+  PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesSecondaryKeyKeyRecord,
   PolymeshPrimitivesStatisticsStatClaim,
   PolymeshPrimitivesStatisticsStatType,
@@ -58,7 +59,6 @@ import {
   ProcedureOpts,
   RemoveAssetStatParams,
   Scope,
-  StatType,
   SubCallback,
   TransferRestriction,
   TransferRestrictionType,
@@ -71,7 +71,7 @@ import {
   MapTxWithArgs,
   PolymeshTx,
   StatClaimIssuer,
-  StatisticsOpType,
+  StatType,
   TxWithArgs,
 } from '~/types/internal';
 import { HumanReadableType, ProcedureFunc, UnionOfProcedureFuncs } from '~/types/utils';
@@ -87,17 +87,18 @@ import {
   bigNumberToU32,
   bigNumberToU64,
   claimIssuerToMeshClaimIssuer,
+  identitiesToBtreeSet,
   identityIdToString,
   meshClaimTypeToClaimType,
   meshPermissionsToPermissions,
-  meshStatToStatisticsOpType,
+  meshStatToStatType,
   middlewareScopeToScope,
   permillToBigNumber,
   signerToString,
-  statisticsOpTypeToStatOpType,
   statisticsOpTypeToStatType,
   statsClaimToStatClaimInputType,
   stringToAccountId,
+  transferRestrictionTypeToStatOpType,
   u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
@@ -1338,7 +1339,7 @@ export function compareStatsToInput(
   let claimIssuer;
   const { type } = args;
 
-  if (type === StatType.ScopedCount || type === StatType.ScopedPercentage) {
+  if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
     claimIssuer = { issuer: args.issuer, claimType: args.claimType };
   }
 
@@ -1364,19 +1365,9 @@ export function compareStatsToInput(
     }
   }
 
-  const stat = meshStatToStatisticsOpType(rawStatType);
-  let cmpStat;
-  if (stat === StatisticsOpType.Count) {
-    cmpStat = StatType.Count;
-  } else if (stat === StatisticsOpType.Balance) {
-    cmpStat = StatType.Percentage;
-  } else if (stat === StatisticsOpType.ClaimCount) {
-    cmpStat = StatType.ScopedCount;
-  } else {
-    cmpStat = StatType.ScopedPercentage;
-  }
+  const stat = meshStatToStatType(rawStatType);
 
-  return cmpStat === type;
+  return stat === type;
 }
 
 /**
@@ -1390,7 +1381,7 @@ export function compareTransferRestrictionToStat(
 ): boolean {
   if (
     (type === StatType.Count && transferCondition.isMaxInvestorCount) ||
-    (type === StatType.Percentage && transferCondition.isMaxInvestorOwnership)
+    (type === StatType.Balance && transferCondition.isMaxInvestorOwnership)
   ) {
     return true;
   }
@@ -1499,12 +1490,12 @@ export function compareStatTypeToTransferRestrictionType(
   statType: PolymeshPrimitivesStatisticsStatType,
   transferRestrictionType: TransferRestrictionType
 ): boolean {
-  const opType = meshStatToStatisticsOpType(statType);
-  if (opType === StatisticsOpType.Count) {
+  const opType = meshStatToStatType(statType);
+  if (opType === StatType.Count) {
     return transferRestrictionType === TransferRestrictionType.Count;
-  } else if (opType === StatisticsOpType.Balance) {
+  } else if (opType === StatType.Balance) {
     return transferRestrictionType === TransferRestrictionType.Percentage;
-  } else if (opType === StatisticsOpType.ClaimCount) {
+  } else if (opType === StatType.ScopedCount) {
     return transferRestrictionType === TransferRestrictionType.ClaimCount;
   } else {
     return transferRestrictionType === TransferRestrictionType.ClaimPercentage;
@@ -1524,12 +1515,7 @@ export function neededStatTypeForRestrictionInput(
 ): PolymeshPrimitivesStatisticsStatType {
   const { type, claimIssuer } = args;
 
-  let rawOp;
-  if (type === TransferRestrictionType.Count || type === TransferRestrictionType.ClaimCount) {
-    rawOp = statisticsOpTypeToStatOpType(StatisticsOpType.Count, context);
-  } else {
-    rawOp = statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
-  }
+  const rawOp = transferRestrictionTypeToStatOpType(type, context);
 
   const rawIssuer = claimIssuer ? claimIssuerToMeshClaimIssuer(claimIssuer, context) : undefined;
   return statisticsOpTypeToStatType({ op: rawOp, claimIssuer: rawIssuer }, context);
@@ -1622,4 +1608,18 @@ export async function getSecondaryAccountPermissions(
   const rawResults = await identityQuery.keyRecords.multi(identityKeys);
 
   return assembleResult(rawResults);
+}
+
+/**
+ * @hidden
+ */
+export async function getExemptedBtreeSet(
+  identities: (string | Identity)[],
+  ticker: string,
+  context: Context
+): Promise<BTreeSet<PolymeshPrimitivesIdentityId>> {
+  const exemptedIds = await getExemptedIds(identities, context, ticker);
+  const mapped = exemptedIds.map(exemptedId => asIdentity(exemptedId, context));
+
+  return identitiesToBtreeSet(mapped, context);
 }

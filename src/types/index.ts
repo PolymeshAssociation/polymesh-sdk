@@ -11,7 +11,7 @@ import {
   SubsidyData,
   TaxWithholding,
 } from '~/api/entities/types';
-import { CreateTransactionBatchParams, StatType } from '~/api/procedures/types';
+import { CreateTransactionBatchParams } from '~/api/procedures/types';
 import { CountryCode, ModuleName, TxTag, TxTags } from '~/generated/types';
 import {
   Account,
@@ -30,6 +30,7 @@ import {
   PolymeshTransaction,
   PolymeshTransactionBatch,
 } from '~/internal';
+import { StatType } from '~/types/internal';
 import { Modify } from '~/types/utils';
 
 export * from '~/generated/types';
@@ -323,10 +324,10 @@ export type InputStatClaim =
 
 export type InputStatType =
   | {
-      type: StatType.Count | StatType.Percentage;
+      type: StatType.Count | StatType.Balance;
     }
   | {
-      type: StatType.ScopedCount | StatType.ScopedPercentage;
+      type: StatType.ScopedCount | StatType.ScopedBalance;
       claimIssuer: StatClaimIssuer;
     };
 

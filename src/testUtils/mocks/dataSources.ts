@@ -200,14 +200,7 @@ import {
   TxTags,
   UnsubCallback,
 } from '~/types';
-import {
-  Consts,
-  Extrinsics,
-  GraphqlQuery,
-  PolymeshTx,
-  Queries,
-  StatisticsOpType,
-} from '~/types/internal';
+import { Consts, Extrinsics, GraphqlQuery, PolymeshTx, Queries, StatType } from '~/types/internal';
 import { ArgsType, Mutable, tuple } from '~/types/utils';
 import { STATE_RUNTIME_VERSION_CALL, SYSTEM_VERSION_RPC_CALL } from '~/utils/constants';
 
@@ -4008,14 +4001,44 @@ export const createMockProtocolOp = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockStatisticsStatOpType = (
-  op?: PolymeshPrimitivesStatisticsStatOpType | StatisticsOpType.Count | StatisticsOpType.Balance
+export const createMockStatisticsOpType = (
+  op?: PolymeshPrimitivesStatisticsStatOpType | StatType
 ): MockCodec<PolymeshPrimitivesStatisticsStatOpType> => {
   if (isCodec<PolymeshPrimitivesStatisticsStatOpType>(op)) {
     return op as MockCodec<PolymeshPrimitivesStatisticsStatOpType>;
   }
 
-  return createMockEnum<PolymeshPrimitivesStatisticsStatOpType>(op);
+  return createMockCodec(
+    {
+      type: op,
+      isCount: op === StatType.Count,
+      isBalance: op === StatType.Balance,
+    },
+    !op
+  );
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockStatisticsOpTypeToStatType = (
+  op?: PolymeshPrimitivesStatisticsStatType | StatType
+): MockCodec<PolymeshPrimitivesStatisticsStatType> => {
+  if (isCodec<PolymeshPrimitivesStatisticsStatType>(op)) {
+    return op as MockCodec<PolymeshPrimitivesStatisticsStatType>;
+  }
+
+  return createMockCodec(
+    {
+      op: {
+        type: op,
+        isCount: op === StatType.Count,
+        isBalance: op === StatType.Balance,
+      },
+    },
+    !op
+  );
 };
 
 /**
@@ -4037,7 +4060,7 @@ export const createMockStatisticsStatType = (
   }
 
   const { op, claimIssuer } = stat || {
-    op: createMockStatisticsStatOpType(),
+    op: createMockStatisticsOpType(),
     claimIssuer: createMockOption(),
   };
 
