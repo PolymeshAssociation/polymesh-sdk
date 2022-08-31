@@ -236,12 +236,16 @@ export async function prepareModifyClaims(
       });
     }
 
-    const transactions = assembleBatchTransactions(
-      tuple({
-        transaction: identity.revokeClaim,
-        argsArray: modifyClaimArgs.map(([identityId, claim]) => tuple(identityId, claim)),
-      })
+    const argsArray: [PolymeshPrimitivesIdentityId, MeshClaim][] = modifyClaimArgs.map(
+      ([identityId, claim]) => [identityId, claim]
     );
+
+    const transactions = assembleBatchTransactions([
+      {
+        transaction: identity.revokeClaim,
+        argsArray,
+      },
+    ]);
 
     return { transactions, resolver: undefined };
   }
@@ -260,12 +264,12 @@ export async function prepareModifyClaims(
     }
   }
 
-  const txs = assembleBatchTransactions(
-    tuple({
+  const txs = assembleBatchTransactions([
+    {
       transaction: identity.addClaim,
       argsArray: modifyClaimArgs,
-    })
-  );
+    },
+  ]);
 
   return { transactions: txs, resolver: undefined };
 }

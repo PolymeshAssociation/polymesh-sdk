@@ -25,7 +25,6 @@ import {
   TxTags,
 } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
-import { tuple } from '~/types/utils';
 import { MAX_LEGS_LENGTH } from '~/utils/constants';
 import {
   bigNumberToBalance,
@@ -316,18 +315,16 @@ export async function prepareAddInstruction(
   const addAndAffirmTx = settlement.addAndAffirmInstruction;
   const addTx = settlement.addInstruction;
 
-  const transactions = assembleBatchTransactions(
-    tuple(
-      {
-        transaction: addTx,
-        argsArray: addInstructionParams,
-      },
-      {
-        transaction: addAndAffirmTx,
-        argsArray: addAndAffirmInstructionParams,
-      }
-    )
-  );
+  const transactions = assembleBatchTransactions([
+    {
+      transaction: addTx,
+      argsArray: addInstructionParams,
+    },
+    {
+      transaction: addAndAffirmTx,
+      argsArray: addAndAffirmInstructionParams,
+    },
+  ] as const);
 
   return {
     transactions,
