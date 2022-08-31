@@ -1,22 +1,15 @@
 import BigNumber from 'bignumber.js';
 import { isEqual, remove } from 'lodash';
-import { DocumentId } from 'polymesh-types/types';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
-import { AssetDocument, ErrorCode, TxTags } from '~/types';
+import { DocumentId } from '~/polkadot/polymesh';
+import { ErrorCode, LinkCaDocsParams, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   corporateActionIdentifierToCaId,
   documentToAssetDocument,
   stringToTicker,
 } from '~/utils/conversion';
-
-export interface LinkCaDocsParams {
-  /**
-   * list of documents
-   */
-  documents: AssetDocument[];
-}
 
 /**
  * @hidden

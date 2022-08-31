@@ -4,17 +4,21 @@ import BigNumber from 'bignumber.js';
 import { Claim as MeshClaim, IdentityId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import {
-  getAuthorization,
-  ModifyClaimsParams,
-  prepareModifyClaims,
-} from '~/api/procedures/modifyClaims';
+import { getAuthorization, prepareModifyClaims } from '~/api/procedures/modifyClaims';
 import { Context, Identity } from '~/internal';
 import { didsWithClaims } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Claim, ClaimType, RoleType, ScopeType, TxTags } from '~/types';
-import { ClaimOperation, PolymeshTx } from '~/types/internal';
+import {
+  Claim,
+  ClaimOperation,
+  ClaimType,
+  ModifyClaimsParams,
+  RoleType,
+  ScopeType,
+  TxTags,
+} from '~/types';
+import { PolymeshTx } from '~/types/internal';
 import { DEFAULT_CDD_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 

@@ -1,5 +1,5 @@
+import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { Ticker } from 'polymesh-types/types';
 import sinon, { SinonStub } from 'sinon';
 
 import { CheckpointSchedule, Context, Namespace, TransactionQueue } from '~/internal';
@@ -27,7 +27,7 @@ describe('Schedules class', () => {
 
   let ticker: string;
 
-  let stringToTickerStub: SinonStub<[string, Context], Ticker>;
+  let stringToTickerStub: SinonStub<[string, Context], PolymeshPrimitivesTicker>;
 
   beforeAll(() => {
     entityMockUtils.initMocks();

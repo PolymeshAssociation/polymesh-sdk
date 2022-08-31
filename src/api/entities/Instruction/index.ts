@@ -11,19 +11,19 @@ import {
   Venue,
 } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
+import { instructionsQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
+import { EventIdEnum as MiddlewareV2Event, Query as QueryV2 } from '~/middleware/typesV2';
 import {
   ErrorCode,
   EventIdentifier,
+  InstructionAffirmationOperation,
   NoArgsProcedureMethod,
   PaginationOptions,
   ResultSet,
 } from '~/types';
-import {
-  InstructionAffirmationOperation,
-  InstructionStatus as InternalInstructionStatus,
-} from '~/types/internal';
-import { Ensured } from '~/types/utils';
+import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
+import { Ensured, EnsuredV2 } from '~/types/utils';
 import {
   balanceToBigNumber,
   bigNumberToU64,
@@ -32,6 +32,7 @@ import {
   meshInstructionStatusToInstructionStatus,
   meshPortfolioIdToPortfolio,
   middlewareEventToEventIdentifier,
+  middlewareV2EventDetailsToEventIdentifier,
   momentToDate,
   tickerToString,
   u32ToBigNumber,
@@ -206,11 +207,11 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     const {
       status: rawStatus,
-      created_at: createdAt,
-      trade_date: tradeDate,
-      value_date: valueDate,
-      settlement_type: type,
-      venue_id: venueId,
+      createdAt,
+      tradeDate,
+      valueDate,
+      settlementType: type,
+      venueId,
     } = await settlement.instructionDetails(bigNumberToU64(id, context));
 
     const status = meshInstructionStatusToInstructionStatus(rawStatus);
@@ -383,6 +384,45 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
+   * Retrieve current status of this Instruction
+   *
+   * @note uses the middlewareV2
+   */
+  public async getStatusV2(): Promise<InstructionStatusResult> {
+    const isPending = await this.isPending();
+
+    if (isPending) {
+      return {
+        status: InstructionStatus.Pending,
+      };
+    }
+
+    const [executedEventIdentifier, failedEventIdentifier] = await Promise.all([
+      this.getInstructionEventFromMiddlewareV2(MiddlewareV2Event.InstructionExecuted),
+      this.getInstructionEventFromMiddlewareV2(MiddlewareV2Event.InstructionFailed),
+    ]);
+
+    if (executedEventIdentifier) {
+      return {
+        status: InstructionStatus.Executed,
+        eventIdentifier: executedEventIdentifier,
+      };
+    }
+
+    if (failedEventIdentifier) {
+      return {
+        status: InstructionStatus.Failed,
+        eventIdentifier: failedEventIdentifier,
+      };
+    }
+
+    throw new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: "It isn't possible to determine the current status of this Instruction",
+    });
+  }
+
+  /**
    * Reject this instruction
    *
    * @note reject on `SettleOnAffirmation` will execute the settlement and it will fail immediately.
@@ -432,9 +472,37 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
+   * @hidden
+   * Retrieve Instruction status event from middleware V2
+   */
+  private async getInstructionEventFromMiddlewareV2(
+    eventId: MiddlewareV2Event
+  ): Promise<EventIdentifier | null> {
+    const { id, context } = this;
+
+    const {
+      data: {
+        instructions: {
+          nodes: [details],
+        },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'instructions'>>(
+      instructionsQuery({
+        eventId,
+        id: id.toString(),
+      })
+    );
+
+    return optionize(middlewareV2EventDetailsToEventIdentifier)(
+      details?.updatedBlock,
+      details?.eventIdx
+    );
+  }
+
+  /**
    * Return the Instruction's ID
    */
-  public toJson(): string {
+  public toHuman(): string {
     return this.id.toString();
   }
 }

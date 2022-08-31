@@ -1,4 +1,5 @@
 import { Vec } from '@polkadot/types';
+import { PolymeshPrimitivesConditionTrustedIssuer } from '@polkadot/types/lookup';
 import { IdentityId, Ticker, TrustedIssuer } from 'polymesh-types/types';
 import sinon from 'sinon';
 
@@ -28,7 +29,7 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let trustedClaimIssuerToTrustedIssuerStub: sinon.SinonStub<
     [InputTrustedClaimIssuer, Context],
-    TrustedIssuer
+    PolymeshPrimitivesConditionTrustedIssuer
   >;
   let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
   let identityIdToStringStub: sinon.SinonStub<[IdentityId], string>;
@@ -37,7 +38,7 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
   let claimIssuerDids: string[];
   let claimIssuers: TrustedClaimIssuer[];
   let rawTicker: Ticker;
-  let rawClaimIssuers: TrustedIssuer[];
+  let rawClaimIssuers: PolymeshPrimitivesConditionTrustedIssuer[];
   let args: Omit<Params, 'operation' | 'claimIssuers'>;
 
   beforeAll(() => {
@@ -51,7 +52,7 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
     );
     stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
     identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
-    ticker = 'someTicker';
+    ticker = 'SOME_TICKER';
     claimIssuerDids = ['aDid', 'otherDid', 'differentDid'];
     claimIssuers = claimIssuerDids.map(did => ({
       identity: entityMockUtils.getIdentityInstance({ did }),
@@ -61,8 +62,7 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
     rawClaimIssuers = claimIssuerDids.map(did =>
       dsMockUtils.createMockTrustedIssuer({
         issuer: dsMockUtils.createMockIdentityId(did),
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        trusted_for: dsMockUtils.createMockTrustedFor('Any'),
+        trustedFor: dsMockUtils.createMockTrustedFor('Any'),
       })
     );
     args = {
@@ -123,12 +123,12 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
   });
 
   it('should throw an error if the new list is the same as the current one (set)', () => {
-    const alternativeClaimIssuers: TrustedIssuer[] = rawClaimIssuers.map(({ issuer }) =>
-      dsMockUtils.createMockTrustedIssuer({
-        issuer,
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        trusted_for: dsMockUtils.createMockTrustedFor({ Specific: [] }),
-      })
+    const alternativeClaimIssuers: PolymeshPrimitivesConditionTrustedIssuer[] = rawClaimIssuers.map(
+      ({ issuer }) =>
+        dsMockUtils.createMockTrustedIssuer({
+          issuer,
+          trustedFor: dsMockUtils.createMockTrustedFor({ Specific: [] }),
+        })
     );
     trustedClaimIssuerStub.withArgs(rawTicker).returns(alternativeClaimIssuers);
     claimIssuerDids.forEach((did, index) => {

@@ -1,14 +1,10 @@
 import BigNumber from 'bignumber.js';
-import { find } from 'lodash';
 
 import { assertSecondaryAccounts } from '~/api/procedures/utils';
 import { PolymeshError, Procedure } from '~/internal';
-import { Account, ErrorCode, TxTags } from '~/types';
-import { signerToSignerValue, signerValueToSignatory } from '~/utils/conversion';
-
-export interface RemoveSecondaryAccountsParams {
-  accounts: Account[];
-}
+import { ErrorCode, RemoveSecondaryAccountsParams, TxTags } from '~/types';
+import { stringToAccountId } from '~/utils/conversion';
+import { getSecondaryAccountPermissions } from '~/utils/internal';
 
 /**
  * @hidden
@@ -30,10 +26,10 @@ export async function prepareRemoveSecondaryAccounts(
 
   const [{ account: primaryAccount }, secondaryAccounts] = await Promise.all([
     identity.getPrimaryAccount(),
-    identity.getSecondaryAccounts(),
+    getSecondaryAccountPermissions({ accounts, identity }, context),
   ]);
 
-  const isPrimaryAccountPresent = find(accounts, account => account.isEqual(primaryAccount));
+  const isPrimaryAccountPresent = accounts.find(account => account.isEqual(primaryAccount));
 
   if (isPrimaryAccountPresent) {
     throw new PolymeshError({
@@ -47,7 +43,7 @@ export async function prepareRemoveSecondaryAccounts(
   this.addTransaction({
     transaction: tx.identity.removeSecondaryKeys,
     feeMultiplier: new BigNumber(accounts.length),
-    args: [accounts.map(account => signerValueToSignatory(signerToSignerValue(account), context))],
+    args: [accounts.map(({ address }) => stringToAccountId(address, context))],
   });
 }
 

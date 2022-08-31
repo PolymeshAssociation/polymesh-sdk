@@ -1,9 +1,10 @@
 import { Moment } from '@polkadot/types/interfaces';
+import { PolymeshPrimitivesAuthorizationAuthorizationData } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { AuthorizationData, Signatory } from 'polymesh-types/types';
+import { Signatory } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { InviteAccountParams, prepareInviteAccount } from '~/api/procedures/inviteAccount';
+import { prepareInviteAccount } from '~/api/procedures/inviteAccount';
 import { Account, AuthorizationRequest, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -11,6 +12,7 @@ import {
   Authorization,
   AuthorizationType,
   Identity,
+  InviteAccountParams,
   ResultSet,
   SignerType,
   SignerValue,
@@ -27,7 +29,7 @@ describe('inviteAccount procedure', () => {
   let addTransactionStub: sinon.SinonStub;
   let authorizationToAuthorizationDataStub: sinon.SinonStub<
     [Authorization, Context],
-    AuthorizationData
+    PolymeshPrimitivesAuthorizationAuthorizationData
   >;
   let dateToMomentStub: sinon.SinonStub<[Date, Context], Moment>;
   let signerToStringStub: sinon.SinonStub<[string | Identity | Account], string>;
@@ -116,17 +118,20 @@ describe('inviteAccount procedure', () => {
     dsMockUtils.configureMocks({
       contextOptions: {
         sentAuthorizations,
-        secondaryAccounts: [
-          {
-            account,
-            permissions: {
-              assets: null,
-              portfolios: null,
-              transactions: null,
-              transactionGroups: [],
+        secondaryAccounts: {
+          data: [
+            {
+              account,
+              permissions: {
+                assets: null,
+                portfolios: null,
+                transactions: null,
+                transactionGroups: [],
+              },
             },
-          },
-        ],
+          ],
+          next: null,
+        },
       },
     });
 
@@ -251,17 +256,20 @@ describe('inviteAccount procedure', () => {
       contextOptions: {
         withSigningManager: true,
         sentAuthorizations: sentAuthorizations,
-        secondaryAccounts: [
-          {
-            account,
-            permissions: {
-              assets: null,
-              portfolios: null,
-              transactions: null,
-              transactionGroups: [],
+        secondaryAccounts: {
+          data: [
+            {
+              account,
+              permissions: {
+                assets: null,
+                portfolios: null,
+                transactions: null,
+                transactionGroups: [],
+              },
             },
-          },
-        ],
+          ],
+          next: null,
+        },
       },
     });
 

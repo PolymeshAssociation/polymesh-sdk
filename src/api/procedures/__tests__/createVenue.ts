@@ -1,20 +1,21 @@
+import { Bytes } from '@polkadot/types';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { VenueDetails, VenueType as MeshVenueType } from 'polymesh-types/types';
+import { VenueType as MeshVenueType } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import { createCreateVenueResolver, prepareCreateVenue } from '~/api/procedures/createVenue';
-import { Context, CreateVenueParams, PostTransactionValue, Venue } from '~/internal';
+import { Context, PostTransactionValue, Venue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { VenueType } from '~/types';
+import { CreateVenueParams, VenueType } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
 describe('createVenue procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToVenueDetailsStub: sinon.SinonStub<[string, Context], VenueDetails>;
+  let stringToBytes: sinon.SinonStub<[string, Context], Bytes>;
   let venueTypeToMeshVenueTypeStub: sinon.SinonStub<[VenueType, Context], MeshVenueType>;
   let addTransactionStub: sinon.SinonStub;
   let createVenueTransaction: PolymeshTx<unknown[]>;
@@ -24,7 +25,7 @@ describe('createVenue procedure', () => {
     entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
     dsMockUtils.initMocks();
-    stringToVenueDetailsStub = sinon.stub(utilsConversionModule, 'stringToVenueDetails');
+    stringToBytes = sinon.stub(utilsConversionModule, 'stringToBytes');
     venueTypeToMeshVenueTypeStub = sinon.stub(utilsConversionModule, 'venueTypeToMeshVenueType');
     venue = 'venue' as unknown as PostTransactionValue<Venue>;
   });
@@ -53,12 +54,12 @@ describe('createVenue procedure', () => {
       description,
       type,
     };
-    const rawDetails = dsMockUtils.createMockVenueDetails(description);
+    const rawDetails = dsMockUtils.createMockBytes(description);
     const rawType = dsMockUtils.createMockVenueType(type);
 
     const proc = procedureMockUtils.getInstance<CreateVenueParams, Venue>(mockContext);
 
-    stringToVenueDetailsStub.withArgs(description, mockContext).returns(rawDetails);
+    stringToBytes.withArgs(description, mockContext).returns(rawDetails);
     venueTypeToMeshVenueTypeStub.withArgs(type, mockContext).returns(rawType);
 
     const result = await prepareCreateVenue.call(proc, args);

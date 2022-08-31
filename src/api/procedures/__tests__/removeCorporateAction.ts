@@ -28,8 +28,7 @@ describe('removeCorporateAction procedure', () => {
 
   const ticker = 'SOME_TICKER';
   const id = new BigNumber(1);
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  const rawCaId = dsMockUtils.createMockCAId({ ticker, local_id: id });
+  const rawCaId = dsMockUtils.createMockCAId({ ticker, localId: id });
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -92,19 +91,17 @@ describe('removeCorporateAction procedure', () => {
     dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockDistribution({
-          /* eslint-disable @typescript-eslint/naming-convention */
           from: {
             kind: 'Default',
             did: 'someDid',
           },
           currency: 'USD',
-          per_share: new BigNumber(20000000),
+          perShare: new BigNumber(20000000),
           amount: new BigNumber(50000000000),
           remaining: new BigNumber(40000000000),
-          payment_at: new BigNumber(new Date('1/1/2020').getTime()),
-          expires_at: null,
+          paymentAt: new BigNumber(new Date('1/1/2020').getTime()),
+          expiresAt: null,
           reclaimed: false,
-          /* eslint-enable @typescript-eslint/naming-convention */
         })
       ),
     });
@@ -148,19 +145,17 @@ describe('removeCorporateAction procedure', () => {
     dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockDistribution({
-          /* eslint-disable @typescript-eslint/naming-convention */
           from: {
             kind: 'Default',
             did: 'someDid',
           },
           currency: 'USD',
-          per_share: new BigNumber(20000000),
+          perShare: new BigNumber(20000000),
           amount: new BigNumber(50000000000),
           remaining: new BigNumber(40000000000),
-          payment_at: new BigNumber(new Date('10/10/2030').getTime()),
-          expires_at: null,
+          paymentAt: new BigNumber(new Date('10/10/2030').getTime()),
+          expiresAt: null,
           reclaimed: false,
-          /* eslint-enable @typescript-eslint/naming-convention */
         })
       ),
     });

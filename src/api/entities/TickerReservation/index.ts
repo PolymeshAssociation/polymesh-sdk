@@ -1,22 +1,27 @@
 import { QueryableStorageEntry } from '@polkadot/api/types';
-import { SecurityToken as MeshToken, TickerRegistration } from 'polymesh-types/types';
+import { PalletAssetSecurityToken, PalletAssetTickerRegistration } from '@polkadot/types/lookup';
 
 import {
   Asset,
   AuthorizationRequest,
   Context,
   createAsset,
-  CreateAssetParams,
   Entity,
   Identity,
   reserveTicker,
   transferTickerOwnership,
-  TransferTickerOwnershipParams,
 } from '~/internal';
-import { NoArgsProcedureMethod, ProcedureMethod, SubCallback, UnsubCallback } from '~/types';
+import {
+  CreateAssetParams,
+  NoArgsProcedureMethod,
+  ProcedureMethod,
+  SubCallback,
+  TransferTickerOwnershipParams,
+  UnsubCallback,
+} from '~/types';
 import { QueryReturnType } from '~/types/utils';
 import { identityIdToString, momentToDate, stringToTicker } from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
+import { assertTickerValid, createProcedureMethod } from '~/utils/internal';
 
 import { TickerReservationDetails, TickerReservationStatus } from './types';
 
@@ -55,6 +60,8 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
     super(identifiers, context);
 
     const { ticker } = identifiers;
+
+    assertTickerValid(ticker);
 
     this.ticker = ticker;
 
@@ -105,8 +112,8 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
     const rawTicker = stringToTicker(ticker, context);
 
     const assembleResult = (
-      { owner: tickerOwner, expiry }: TickerRegistration,
-      { owner_did: assetOwner }: MeshToken
+      { owner: tickerOwner, expiry }: PalletAssetTickerRegistration,
+      { ownerDid: assetOwner }: PalletAssetSecurityToken
     ): TickerReservationDetails => {
       const tickerOwned = !tickerOwner.isEmpty;
       const assetOwned = !assetOwner.isEmpty;
@@ -187,9 +194,9 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
    * Transfer ownership of the Ticker Reservation to another Identity. This generates an authorization request that must be accepted
    *   by the target
    *
-   * @note this will create {@link AuthorizationRequest | Authorization Request} which has to be accepted by the `target` Identity.
-   *   An {@link Account} or {@link Identity} can fetch its pending Authorization Requests by calling {@link Authorizations.getReceived | authorizations.getReceived}.
-   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link Authorizations.getOne | authorizations.getOne}
+   * @note this will create {@link api/entities/AuthorizationRequest!AuthorizationRequest | Authorization Request} which has to be accepted by the `target` Identity.
+   *   An {@link api/entities/Account!Account} or {@link api/entities/Identity!Identity} can fetch its pending Authorization Requests by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getReceived | authorizations.getReceived}.
+   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getOne | authorizations.getOne}
    *
    * @note required role:
    *   - Ticker Owner
@@ -212,7 +219,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
   /**
    * Return the Reservation's ticker
    */
-  public toJson(): string {
+  public toHuman(): string {
     return this.ticker;
   }
 }

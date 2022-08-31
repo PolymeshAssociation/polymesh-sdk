@@ -1,8 +1,7 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 
-import { Account, Context, Identity, PostTransactionValue, Procedure } from '~/internal';
-import { PermissionedAccount, PermissionsLike, RoleType, TxTags } from '~/types';
-import { Modify } from '~/types/utils';
+import { Context, Identity, PostTransactionValue, Procedure } from '~/internal';
+import { RegisterIdentityParams, RoleType, TxTags } from '~/types';
 import {
   identityIdToString,
   permissionsLikeToPermissions,
@@ -11,11 +10,6 @@ import {
   stringToAccountId,
 } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
-
-export interface RegisterIdentityParams {
-  targetAccount: string | Account;
-  secondaryAccounts?: Modify<PermissionedAccount, { permissions: PermissionsLike }>[];
-}
 
 /**
  * @hidden

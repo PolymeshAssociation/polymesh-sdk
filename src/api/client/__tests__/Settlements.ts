@@ -1,11 +1,10 @@
 import BigNumber from 'bignumber.js';
 
+import { Settlements } from '~/api/client/Settlements';
 import { addInstructionTransformer, Context, TransactionQueue, Venue } from '~/internal';
-import { Settlements } from '~/Settlements';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Instruction, VenueType } from '~/types';
-import { InstructionAffirmationOperation } from '~/types/internal';
+import { Instruction, InstructionAffirmationOperation, VenueType } from '~/types';
 
 jest.mock(
   '~/api/entities/Venue',

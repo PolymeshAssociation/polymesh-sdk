@@ -55,11 +55,13 @@ jobs:
         run: |
           yarn build:ts
           cp package.json dist/package.json
+          cp README.md dist/README.md
           cp -R node_modules dist/node_modules
       - name: release
         env:
           GITHUB_TOKEN: ${{ secrets.JERE_RELEASE_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.ASSOCIATION_NPM_TOKEN }}
         run: |
           cd dist
+          yarn --frozen-lockfile
           yarn semantic-release

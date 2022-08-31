@@ -1,13 +1,7 @@
-import BigNumber from 'bignumber.js';
-
 import { Asset, DefaultPortfolio, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, TxTags } from '~/types';
+import { ErrorCode, RedeemTokensParams, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { bigNumberToBalance, stringToTicker } from '~/utils/conversion';
-
-export interface RedeemTokensParams {
-  amount: BigNumber;
-}
 
 /**
  * @hidden

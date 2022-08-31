@@ -1,6 +1,7 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
+import { Network } from '~/api/client/Network';
 import { Context, TransactionQueue } from '~/internal';
 import {
   eventByIndexedArgs,
@@ -8,11 +9,17 @@ import {
   heartbeat,
   transactionByHash,
 } from '~/middleware/queries';
+import { eventsByArgs, extrinsicByHash } from '~/middleware/queriesV2';
 import { CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/types';
-import { Network } from '~/Network';
+import {
+  CallIdEnum as MiddlewareV2CallId,
+  EventIdEnum as MiddlewareV2EventId,
+  ModuleIdEnum as MiddlewareV2ModuleId,
+} from '~/middleware/typesV2';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { AccountBalance, TxTags } from '~/types';
+import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/Account',
@@ -26,6 +33,8 @@ jest.mock(
 describe('Network Class', () => {
   let context: Mocked<Context>;
   let network: Network;
+  let stringToBlockHashStub: sinon.SinonStub;
+  let balanceToBigNumberStub: sinon.SinonStub;
 
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
@@ -36,6 +45,8 @@ describe('Network Class', () => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
+    stringToBlockHashStub = sinon.stub(utilsConversionModule, 'stringToBlockHash');
+    balanceToBigNumberStub = sinon.stub(utilsConversionModule, 'balanceToBigNumber');
   });
 
   afterEach(() => {
@@ -108,11 +119,20 @@ describe('Network Class', () => {
 
   describe('method: getProtocolFees', () => {
     it('should return the fees associated to the supplied transaction', async () => {
-      dsMockUtils.configureMocks({ contextOptions: { transactionFee: new BigNumber(500) } });
+      const mockResult = [
+        {
+          tag: TxTags.asset.CreateAsset,
+          fees: new BigNumber(500),
+        },
+      ];
+      dsMockUtils.configureMocks({
+        contextOptions: {
+          transactionFees: mockResult,
+        },
+      });
+      const result = await network.getProtocolFees({ tags: [TxTags.asset.CreateAsset] });
 
-      const fee = await network.getProtocolFees({ tag: TxTags.asset.CreateAsset });
-
-      expect(fee).toEqual(new BigNumber(500));
+      expect(result).toEqual(mockResult);
     });
   });
 
@@ -230,6 +250,72 @@ describe('Network Class', () => {
     });
   });
 
+  describe('method: getEventByIndexedArgsV2', () => {
+    const variables = {
+      moduleId: MiddlewareV2ModuleId.Asset,
+      eventId: MiddlewareV2EventId.AssetCreated,
+    };
+
+    it('should return a single event', async () => {
+      const blockNumber = new BigNumber(1234);
+      const blockDate = new Date('4/14/2020');
+      const eventIdx = new BigNumber(1);
+      const blockHash = 'blockHash';
+      const fakeResult = { blockNumber, blockDate, blockHash, eventIndex: eventIdx };
+
+      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
+      dsMockUtils.createApolloV2QueryStub(
+        eventsByArgs(
+          {
+            ...variables,
+            eventArg0: undefined,
+            eventArg1: undefined,
+            eventArg2: undefined,
+          },
+          new BigNumber(1)
+        ),
+        {
+          events: {
+            nodes: [
+              {
+                block: {
+                  blockId: blockNumber.toNumber(),
+                  datetime: blockDate,
+                  hash: blockHash,
+                },
+                eventIdx: eventIdx.toNumber(),
+              },
+            ],
+          },
+        }
+      );
+
+      const result = await network.getEventByIndexedArgsV2(variables);
+      expect(result).toEqual(fakeResult);
+    });
+
+    it('should return null if the query result is empty', async () => {
+      dsMockUtils.createApolloV2QueryStub(
+        eventsByArgs(
+          {
+            ...variables,
+            eventArg0: 'someDid',
+            eventArg1: undefined,
+            eventArg2: undefined,
+          },
+          new BigNumber(1)
+        ),
+        {
+          events: {
+            nodes: [],
+          },
+        }
+      );
+      const result = await network.getEventByIndexedArgsV2({ ...variables, eventArg0: 'someDid' });
+      expect(result).toBeNull();
+    });
+  });
+
   describe('method: getEventsByIndexedArgs', () => {
     const variables = {
       moduleId: ModuleIdEnum.Asset,
@@ -294,17 +380,108 @@ describe('Network Class', () => {
     });
   });
 
+  describe('method: getEventsByIndexedArgsV2', () => {
+    const variables = {
+      moduleId: MiddlewareV2ModuleId.Asset,
+      eventId: MiddlewareV2EventId.AssetCreated,
+    };
+
+    it('should return a list of events', async () => {
+      const blockNumber = new BigNumber(1234);
+      const blockDate = new Date('4/14/2020');
+      const eventIdx = new BigNumber(1);
+      const blockHash = 'blockHash';
+      const start = new BigNumber(0);
+      const size = new BigNumber(1);
+      const fakeResult = [{ blockNumber, blockHash, blockDate, eventIndex: eventIdx }];
+
+      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
+
+      dsMockUtils.createApolloV2QueryStub(
+        eventsByArgs(
+          {
+            ...variables,
+            eventArg0: undefined,
+            eventArg1: undefined,
+            eventArg2: undefined,
+          },
+          size,
+          start
+        ),
+        {
+          events: {
+            nodes: [
+              {
+                block: {
+                  blockId: blockNumber.toNumber(),
+                  datetime: blockDate,
+                  hash: blockHash,
+                },
+                eventIdx: eventIdx.toNumber(),
+              },
+            ],
+          },
+        }
+      );
+
+      const result = await network.getEventsByIndexedArgsV2({
+        ...variables,
+        start,
+        size,
+      });
+      expect(result).toEqual(fakeResult);
+    });
+
+    it('should return null if the query result is empty', async () => {
+      dsMockUtils.createApolloV2QueryStub(
+        eventsByArgs({
+          ...variables,
+          eventArg0: 'someDid',
+          eventArg1: undefined,
+          eventArg2: undefined,
+        }),
+        {
+          events: { nodes: [] },
+        }
+      );
+      const result = await network.getEventsByIndexedArgsV2({
+        ...variables,
+        eventArg0: 'someDid',
+      });
+      expect(result).toBeNull();
+    });
+  });
+
   describe('method: getTransactionByHash', () => {
     const variable = { txHash: 'someHash' };
+    let getBlockStub: sinon.SinonStub;
+    let queryInfoStub: sinon.SinonStub;
+
+    beforeEach(() => {
+      getBlockStub = dsMockUtils.createRpcStub('chain', 'getBlock');
+      queryInfoStub = dsMockUtils.createRpcStub('payment', 'queryInfo');
+    });
 
     it('should return a transaction', async () => {
       const blockNumber = new BigNumber(1);
-      const blockHash = 'someHash';
-      const extrinsicIdx = new BigNumber(2);
+      const blockHash = 'blockHash';
+      const extrinsicIdx = new BigNumber(0);
       const address = 'someAddress';
       const specVersionId = new BigNumber(2006);
+      const gasFees = new BigNumber(10);
+      const protocolFees = new BigNumber(1000);
 
-      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
+      dsMockUtils.configureMocks({
+        contextOptions: {
+          withSigningManager: true,
+          transactionFees: [
+            {
+              tag: TxTags.asset.RegisterTicker,
+              fees: protocolFees,
+            },
+          ],
+        },
+      });
 
       dsMockUtils.createApolloQueryStub(transactionByHash({ transactionHash: variable.txHash }), {
         /* eslint-disable @typescript-eslint/naming-convention */
@@ -324,6 +501,33 @@ describe('Network Class', () => {
         /* eslint-enable @typescript-eslint/naming-convention */
       });
 
+      const rawBlockHash = dsMockUtils.createMockBlockHash(blockHash);
+
+      stringToBlockHashStub.withArgs(blockHash).returns(rawBlockHash);
+
+      getBlockStub.withArgs(rawBlockHash).resolves(
+        dsMockUtils.createMockSignedBlock({
+          block: {
+            header: undefined,
+            extrinsics: [
+              {
+                toHex: jest.fn().mockImplementation(() => 'hex'),
+              },
+            ],
+          },
+        })
+      );
+
+      const rawGasFees = dsMockUtils.createMockBalance(gasFees);
+
+      balanceToBigNumberStub.withArgs(rawGasFees).returns(gasFees);
+
+      queryInfoStub.withArgs('hex', rawBlockHash).resolves(
+        dsMockUtils.createMockRuntimeDispatchInfo({
+          partialFee: rawGasFees,
+        })
+      );
+
       let result = await network.getTransactionByHash(variable);
       expect(result).toEqual({
         blockNumber,
@@ -336,6 +540,10 @@ describe('Network Class', () => {
         success: false,
         specVersionId,
         extrinsicHash: undefined,
+        fee: {
+          gas: gasFees,
+          protocol: protocolFees,
+        },
       });
 
       dsMockUtils.createApolloQueryStub(transactionByHash({ transactionHash: variable.txHash }), {
@@ -369,6 +577,10 @@ describe('Network Class', () => {
         success: false,
         specVersionId,
         extrinsicHash: undefined,
+        fee: {
+          gas: gasFees,
+          protocol: protocolFees,
+        },
       });
     });
 
@@ -380,6 +592,154 @@ describe('Network Class', () => {
         {}
       );
       const result = await network.getTransactionByHash(variable);
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('method: getTransactionByHashV2', () => {
+    const variable = { txHash: 'someHash' };
+    let getBlockStub: sinon.SinonStub;
+    let queryInfoStub: sinon.SinonStub;
+
+    beforeEach(() => {
+      getBlockStub = dsMockUtils.createRpcStub('chain', 'getBlock');
+      queryInfoStub = dsMockUtils.createRpcStub('payment', 'queryInfo');
+    });
+
+    it('should return a transaction', async () => {
+      const blockNumber = new BigNumber(1);
+      const blockHash = 'blockHash';
+      const extrinsicIdx = new BigNumber(0);
+      const address = 'someAddress';
+      const specVersionId = new BigNumber(2006);
+      const gasFees = new BigNumber(10);
+      const protocolFees = new BigNumber(1000);
+
+      dsMockUtils.configureMocks({
+        contextOptions: {
+          withSigningManager: true,
+          transactionFees: [
+            {
+              tag: TxTags.asset.RegisterTicker,
+              fees: protocolFees,
+            },
+          ],
+        },
+      });
+
+      dsMockUtils.createApolloV2QueryStub(extrinsicByHash({ extrinsicHash: variable.txHash }), {
+        extrinsics: {
+          nodes: [
+            {
+              moduleId: MiddlewareV2ModuleId.Asset,
+              callId: MiddlewareV2CallId.RegisterTicker,
+              extrinsicIdx: extrinsicIdx.toNumber(),
+              specVersionId: specVersionId.toNumber(),
+              paramsTxt: '[]',
+              address,
+              success: 0,
+              block: {
+                blockId: blockNumber.toNumber(),
+                hash: blockHash,
+              },
+            },
+          ],
+        },
+      });
+
+      const rawBlockHash = dsMockUtils.createMockBlockHash(blockHash);
+
+      stringToBlockHashStub.withArgs(blockHash).returns(rawBlockHash);
+
+      getBlockStub.withArgs(rawBlockHash).resolves(
+        dsMockUtils.createMockSignedBlock({
+          block: {
+            header: undefined,
+            extrinsics: [
+              {
+                toHex: jest.fn().mockImplementation(() => 'hex'),
+              },
+            ],
+          },
+        })
+      );
+
+      const rawGasFees = dsMockUtils.createMockBalance(gasFees);
+
+      balanceToBigNumberStub.withArgs(rawGasFees).returns(gasFees);
+
+      queryInfoStub.withArgs('hex', rawBlockHash).resolves(
+        dsMockUtils.createMockRuntimeDispatchInfo({
+          partialFee: rawGasFees,
+        })
+      );
+
+      let result = await network.getTransactionByHashV2(variable);
+      expect(result).toEqual({
+        blockNumber,
+        blockHash,
+        extrinsicIdx,
+        address,
+        nonce: null,
+        txTag: 'asset.registerTicker',
+        params: [],
+        success: false,
+        specVersionId,
+        extrinsicHash: undefined,
+        fee: {
+          gas: gasFees,
+          protocol: protocolFees,
+        },
+      });
+
+      dsMockUtils.createApolloV2QueryStub(extrinsicByHash({ extrinsicHash: variable.txHash }), {
+        extrinsics: {
+          nodes: [
+            {
+              moduleId: MiddlewareV2ModuleId.Asset,
+              callId: MiddlewareV2CallId.RegisterTicker,
+              extrinsicIdx: extrinsicIdx,
+              specVersionId: specVersionId,
+              paramsTxt: '[]',
+              nonce: 12345,
+              address: null,
+              success: 0,
+              block: {
+                blockId: blockNumber.toNumber(),
+                hash: blockHash,
+              },
+            },
+          ],
+        },
+      });
+
+      result = await network.getTransactionByHashV2(variable);
+      expect(result).toEqual({
+        blockNumber,
+        blockHash,
+        extrinsicIdx,
+        address: null,
+        nonce: new BigNumber(12345),
+        txTag: 'asset.registerTicker',
+        params: [],
+        success: false,
+        specVersionId,
+        extrinsicHash: undefined,
+        fee: {
+          gas: gasFees,
+          protocol: protocolFees,
+        },
+      });
+    });
+
+    it('should return null if the query result is empty', async () => {
+      dsMockUtils.createApolloV2QueryStub(
+        extrinsicByHash({
+          extrinsicHash: variable.txHash,
+        }),
+        { extrinsics: { nodes: [] } }
+      );
+      const result = await network.getTransactionByHashV2(variable);
       expect(result).toBeNull();
     });
   });

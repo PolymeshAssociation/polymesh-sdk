@@ -1,12 +1,8 @@
 import { Asset, Identity, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, RoleType, TxTags } from '~/types';
+import { ErrorCode, RoleType, TxTags, WaivePermissionsParams } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import { stringToTicker } from '~/utils/conversion';
 import { asAsset } from '~/utils/internal';
-
-export interface WaivePermissionsParams {
-  asset: string | Asset;
-}
 
 /**
  * @hidden

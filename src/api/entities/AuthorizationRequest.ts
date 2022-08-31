@@ -26,7 +26,7 @@ export interface UniqueIdentifiers {
   authId: BigNumber;
 }
 
-interface HumanReadable {
+export interface HumanReadable {
   issuer: HumanReadableType<Identity>;
   expiry: string | null;
   target: SignerValue;
@@ -211,7 +211,7 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
   /**
    * Return the Authorization's static data
    */
-  public toJson(): HumanReadable {
+  public toHuman(): HumanReadable {
     const { data, issuer, target, expiry, authId } = this;
 
     return toHumanReadable({

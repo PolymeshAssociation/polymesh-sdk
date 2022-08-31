@@ -4,10 +4,9 @@ import sinon from 'sinon';
 
 import { getAuthorization, prepareModifyAllowance } from '~/api/procedures/modifyAllowance';
 import { Context, ModifyAllowanceParams, Procedure, Subsidy } from '~/internal';
-import { TxTags } from '~/polkadot';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { AllowanceOperation } from '~/types/internal';
+import { AllowanceOperation, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(

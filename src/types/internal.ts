@@ -6,20 +6,31 @@ import {
   SubmittableExtrinsic,
   SubmittableExtrinsics,
 } from '@polkadot/api/types';
+import {
+  PolymeshPrimitivesStatisticsStatOpType,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import { ISubmittableResult, Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { DocumentNode } from 'graphql';
 
 import { Identity, PostTransactionValue } from '~/internal';
 import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
-import { CustomAssetTypeId, TxTag } from '~/polkadot';
+import {
+  CallIdEnum as MiddlewareV2CallId,
+  ModuleIdEnum as MiddlewareV2ModuleId,
+} from '~/middleware/typesV2';
+import { CustomAssetTypeId } from '~/polkadot';
 import {
   CalendarPeriod,
+  InputStatClaim,
   KnownAssetType,
   PermissionGroupType,
   Role,
   SignerValue,
   SimplePermissions,
+  StatClaimType,
+  TxTag,
 } from '~/types';
 
 /**
@@ -267,12 +278,6 @@ export interface GraphqlQuery<Variables = undefined> {
   variables: Variables;
 }
 
-export enum ClaimOperation {
-  Revoke = 'Revoke',
-  Add = 'Add',
-  Edit = 'Edit',
-}
-
 export enum TrustedClaimIssuerOperation {
   Remove = 'Remove',
   Add = 'Add',
@@ -284,30 +289,15 @@ export interface ExtrinsicIdentifier {
   callId: CallIdEnum;
 }
 
-export interface PortfolioId {
-  did: string;
-  number?: BigNumber;
-}
-
-export enum InstructionAffirmationOperation {
-  Affirm = 'Affirm',
-  Withdraw = 'Withdraw',
-  Reject = 'Reject',
+export interface ExtrinsicIdentifierV2 {
+  moduleId: MiddlewareV2ModuleId;
+  callId: MiddlewareV2CallId;
 }
 
 export interface ScheduleSpec {
   start: Date | null;
   period: CalendarPeriod | null;
   repetitions: BigNumber | null;
-}
-
-export interface ScopeClaimProof {
-  proofScopeIdWellFormed: string;
-  proofScopeIdCddIdMatch: {
-    challengeResponses: [string, string];
-    subtractExpressionsRes: string;
-    blindedScopeDidHash: string;
-  };
 }
 
 export interface CorporateActionIdentifier {
@@ -369,8 +359,25 @@ export type PermissionGroupIdentifier = PermissionGroupType | { custom: BigNumbe
 
 export type InternalAssetType = KnownAssetType | { Custom: CustomAssetTypeId };
 
-export enum AllowanceOperation {
-  Set = 'Set',
-  Increase = 'Increase',
-  Decrease = 'Decrease',
+export enum StatisticsOpType {
+  Count = 'Count',
+  Balance = 'Balance',
+  ClaimCount = 'ClaimCount',
+  ClaimPercentage = 'ClaimPercentage',
+}
+
+export interface TickerKey {
+  Ticker: PolymeshPrimitivesTicker;
+}
+
+export interface ExemptKey {
+  asset: TickerKey;
+  op: PolymeshPrimitivesStatisticsStatOpType;
+}
+
+export type StatClaimInputType = Omit<InputStatClaim, 'affiliate' | 'accredited'>;
+
+export interface StatClaimIssuer {
+  issuer: Identity;
+  claimType: StatClaimType;
 }

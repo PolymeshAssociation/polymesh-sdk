@@ -1,10 +1,11 @@
 import sinon from 'sinon';
 
 import { prepareLeaveIdentity } from '~/api/procedures/leaveIdentity';
-import { Context } from '~/internal';
+import { Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { PermissionedAccount } from '~/types';
+import { ErrorCode } from '~/types';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Asset',
@@ -13,11 +14,17 @@ jest.mock(
 
 describe('leaveIdentity procedure', () => {
   let mockContext: Mocked<Context>;
+  let getSecondaryAccountPermissionsStub: sinon.SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
+
+    getSecondaryAccountPermissionsStub = sinon.stub(
+      utilsInternalModule,
+      'getSecondaryAccountPermissions'
+    );
   });
 
   beforeEach(() => {
@@ -42,31 +49,26 @@ describe('leaveIdentity procedure', () => {
         getIdentity: null,
       })
     );
+    getSecondaryAccountPermissionsStub.returns([]);
 
-    let error;
+    const expectedError = new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'There is no Identity associated to the signing Account',
+    });
 
-    try {
-      await prepareLeaveIdentity.call(proc);
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe('There is no Identity associated to the signing Account');
+    return expect(prepareLeaveIdentity.call(proc)).rejects.toThrowError(expectedError);
   });
 
-  it('should throw an error if the signing Account is not a secondary Account', async () => {
+  it('should throw an error if the signing Account is not a secondary Account', () => {
     const proc = procedureMockUtils.getInstance<void, void>(mockContext);
     mockContext.getSigningAccount.returns(entityMockUtils.getAccountInstance());
 
-    let error;
+    const expectedError = new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: 'Only secondary Accounts are allowed to leave an Identity',
+    });
 
-    try {
-      await prepareLeaveIdentity.call(proc);
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe('Only secondary Accounts are allowed to leave an Identity');
+    return expect(prepareLeaveIdentity.call(proc)).rejects.toThrowError(expectedError);
   });
 
   it('should add a leave Identity as Account transaction to the queue', async () => {
@@ -76,18 +78,18 @@ describe('leaveIdentity procedure', () => {
       'identity',
       'leaveIdentityAsKey'
     );
-    mockContext.getSigningAccount.returns(
-      entityMockUtils.getAccountInstance({
-        address,
-        getIdentity: entityMockUtils.getIdentityInstance({
-          getSecondaryAccounts: [
-            {
-              account: entityMockUtils.getAccountInstance({ address }),
-            } as unknown as PermissionedAccount,
-          ],
-        }),
-      })
-    );
+
+    getSecondaryAccountPermissionsStub.returns([
+      {
+        account: entityMockUtils.getAccountInstance({ address }),
+        permissions: {
+          assets: null,
+          portfolios: null,
+          transactionGroups: [],
+          transactions: null,
+        },
+      },
+    ]);
 
     const proc = procedureMockUtils.getInstance<void, void>(mockContext);
 

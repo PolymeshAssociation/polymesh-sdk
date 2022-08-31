@@ -37,7 +37,7 @@ describe('issueTokens procedure', () => {
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     bigNumberToBalance = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
-    ticker = 'someTicker';
+    ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     amount = new BigNumber(100);
     rawAmount = dsMockUtils.createMockBalance(amount);

@@ -99,9 +99,9 @@ export class PolymeshTransactionBatch<
     return P.reduce(
       this.getUnwrappedTransactions(),
       async (total, { tag, feeMultiplier = new BigNumber(1) }) => {
-        const fee = await this.context.getProtocolFees({ tag });
+        const [{ fees }] = await this.context.getProtocolFees({ tags: [tag] });
 
-        return total.plus(fee.multipliedBy(feeMultiplier));
+        return total.plus(fees.multipliedBy(feeMultiplier));
       },
       new BigNumber(0)
     );

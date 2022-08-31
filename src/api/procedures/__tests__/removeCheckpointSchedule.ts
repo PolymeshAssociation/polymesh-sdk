@@ -37,7 +37,7 @@ describe('removeCheckpointSchedule procedure', () => {
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
     u32ToBigNumberStub = sinon.stub(utilsConversionModule, 'u32ToBigNumber');
-    ticker = 'someTicker';
+    ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     id = new BigNumber(1);
     rawId = dsMockUtils.createMockU64(id);
@@ -73,7 +73,7 @@ describe('removeCheckpointSchedule procedure', () => {
       returnValue: [
         dsMockUtils.createMockStoredSchedule({
           id: dsMockUtils.createMockU64(new BigNumber(5)),
-        } as StoredSchedule),
+        } as unknown as StoredSchedule),
       ],
     });
 
@@ -94,7 +94,7 @@ describe('removeCheckpointSchedule procedure', () => {
       returnValue: [
         dsMockUtils.createMockStoredSchedule({
           id: dsMockUtils.createMockU64(id),
-        } as StoredSchedule),
+        } as unknown as StoredSchedule),
       ],
     });
 

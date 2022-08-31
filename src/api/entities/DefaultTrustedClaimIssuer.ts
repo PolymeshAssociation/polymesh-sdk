@@ -1,11 +1,14 @@
 import { Asset, Context, Identity, PolymeshError } from '~/internal';
 import { eventByAddedTrustedClaimIssuer } from '~/middleware/queries';
+import { trustedClaimIssuerQuery } from '~/middleware/queriesV2';
 import { Query } from '~/middleware/types';
+import { Query as QueryV2 } from '~/middleware/typesV2';
 import { ClaimType, ErrorCode, EventIdentifier } from '~/types';
-import { Ensured } from '~/types/utils';
+import { Ensured, EnsuredV2 } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
   middlewareEventToEventIdentifier,
+  middlewareV2EventDetailsToEventIdentifier,
   stringToTicker,
   trustedIssuerToTrustedClaimIssuer,
 } from '~/utils/conversion';
@@ -69,6 +72,35 @@ export class DefaultTrustedClaimIssuer extends Identity {
     );
 
     return optionize(middlewareEventToEventIdentifier)(event);
+  }
+
+  /**
+   * Retrieve the identifier data (block number, date and event index) of the event that was emitted when the trusted claim issuer was added
+   *
+   * @note uses the middlewareV2
+   * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
+   */
+  public async addedAtV2(): Promise<EventIdentifier | null> {
+    const {
+      asset: { ticker: assetId },
+      did: issuer,
+      context,
+    } = this;
+
+    const {
+      data: {
+        trustedClaimIssuers: {
+          nodes: [node],
+        },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'trustedClaimIssuers'>>(
+      trustedClaimIssuerQuery({
+        assetId,
+        issuer,
+      })
+    );
+
+    return optionize(middlewareV2EventDetailsToEventIdentifier)(node?.createdBlock, node?.eventIdx);
   }
 
   /**

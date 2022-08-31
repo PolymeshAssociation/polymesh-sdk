@@ -1,8 +1,12 @@
-import { u64 } from '@polkadot/types';
+import { Option, StorageKey, u64 } from '@polkadot/types';
+import { AccountId32 } from '@polkadot/types/interfaces';
+import {
+  PolymeshPrimitivesIdentityDidRecord,
+  PolymeshPrimitivesIdentityId,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, flatten, uniqBy } from 'lodash';
-import { CddStatus, DidRecord } from 'polymesh-types/types';
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
@@ -16,20 +20,24 @@ import {
   Venue,
 } from '~/internal';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
+import { assetHoldersQuery, trustingAssetsQuery } from '~/middleware/queriesV2';
 import { Query } from '~/middleware/types';
+import { AssetHoldersOrderBy, Query as QueryV2 } from '~/middleware/typesV2';
+import { CddStatus } from '~/polkadot/polymesh';
 import {
   CheckRolesResult,
   DistributionWithDetails,
   ErrorCode,
   GroupedInstructions,
   Order,
+  PaginationOptions,
   PermissionedAccount,
   ResultSet,
   Role,
   SubCallback,
   UnsubCallback,
 } from '~/types';
-import { Ensured, QueryReturnType, tuple } from '~/types/utils';
+import { Ensured, EnsuredV2, QueryReturnType, tuple } from '~/types/utils';
 import {
   isCddProviderRole,
   isIdentityRole,
@@ -45,18 +53,22 @@ import {
   cddStatusToBoolean,
   corporateActionIdentifierToCaId,
   identityIdToString,
-  meshPermissionsToPermissions,
   portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
   scopeIdToString,
-  signatoryToAccount,
   stringToIdentityId,
   stringToTicker,
   transactionPermissionsToTxGroups,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { asTicker, calculateNextKey, removePadding } from '~/utils/internal';
+import {
+  asTicker,
+  calculateNextKey,
+  getSecondaryAccountPermissions,
+  removePadding,
+  requestPaginated,
+} from '~/utils/internal';
 
 import { AssetPermissions } from './AssetPermissions';
 import { IdentityAuthorizations } from './IdentityAuthorizations';
@@ -95,6 +107,8 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
   /**
    * Create an Identity entity
+   *
+   * @hidden
    */
   constructor(identifiers: UniqueIdentifiers, context: Context) {
     super(identifiers, context);
@@ -185,7 +199,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const meshAsset = await asset.tokens(rawTicker);
 
-    if (meshAsset.owner_did.isEmpty) {
+    if (meshAsset.ownerDid.isEmpty) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
         message: `There is no Asset with ticker "${ticker}"`,
@@ -278,9 +292,15 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const assembleResult = ({ primary_key: primaryKey }: DidRecord): PermissionedAccount => {
+    const assembleResult = (
+      record: Option<PolymeshPrimitivesIdentityDidRecord>
+    ): PermissionedAccount => {
+      // we know the record exists because otherwise the Identity couldn't have been fetched
+      const { primaryKey } = record.unwrap();
+
       return {
-        account: new Account({ address: accountIdToString(primaryKey) }, context),
+        // we know the primary key exists because Asset Identities aren't considered Identities by the SDK for now
+        account: new Account({ address: accountIdToString(primaryKey.unwrap()) }, context),
         permissions: {
           assets: null,
           portfolios: null,
@@ -346,6 +366,51 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
+   * Retrieve a list of all Assets which were held at one point by this Identity
+   *
+   * @note uses the middlewareV2
+   * @note supports pagination
+   */
+  public async getHeldAssetsV2(
+    opts: {
+      order?: AssetHoldersOrderBy;
+      size?: BigNumber;
+      start?: BigNumber;
+    } = {}
+  ): Promise<ResultSet<Asset>> {
+    const { context, did } = this;
+
+    const { size, start, order } = opts;
+
+    const {
+      data: {
+        assetHolders: { nodes, totalCount },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'assetHolders'>>(
+      assetHoldersQuery(
+        {
+          identityId: did,
+        },
+        size,
+        start,
+        order
+      )
+    );
+
+    const count = new BigNumber(totalCount);
+
+    const data = nodes.map(({ assetId: ticker }) => new Asset({ ticker }, context));
+
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
+  }
+
+  /**
    * Check whether this Identity possesses all specified roles
    */
   public async checkRoles(roles: Role[]): Promise<CheckRolesResult> {
@@ -396,6 +461,25 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
+   * Get the list of Assets for which this Identity is a trusted claim issuer
+   *
+   * @note uses the middlewareV2
+   */
+  public async getTrustingAssetsV2(): Promise<Asset[]> {
+    const { context, did } = this;
+
+    const {
+      data: {
+        trustedClaimIssuers: { nodes },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'trustedClaimIssuers'>>(
+      trustingAssetsQuery({ issuer: did })
+    );
+
+    return nodes.map(({ assetId: ticker }) => new Asset({ ticker }, context));
+  }
+
+  /**
    * Retrieve all Venues created by this Identity
    *
    * @note can be subscribed to
@@ -433,8 +517,8 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    * Retrieve the Scope ID associated to this Identity's Investor Uniqueness Claim for a specific Asset, or null
    *   if there is none
    *
-   * @note more on Investor Uniqueness {@link https://developers.polymesh.network/introduction/identity#polymesh-unique-identity-system-puis | here} and
-   *   {@link https://developers.polymesh.network/polymesh-docs/primitives/confidential-identity | here}
+   * @note more on Investor Uniqueness [here](https://developers.polymesh.network/introduction/identity#polymesh-unique-identity-system-puis) and
+   *   [here](https://developers.polymesh.network/polymesh-docs/primitives/confidential-identity)
    */
   public async getScopeId(args: { asset: Asset | string }): Promise<string | null> {
     const { context, did } = this;
@@ -572,7 +656,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     return rawInstructions
       .filter(({ status }) => status.isPending)
-      .map(({ instruction_id: id }) => new Instruction({ id: u64ToBigNumber(id) }, context));
+      .map(({ instructionId: id }) => new Instruction({ id: u64ToBigNumber(id) }, context));
   }
 
   /**
@@ -669,17 +753,27 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   /**
    * Get the list of secondary Accounts related to the Identity
    *
+   * @note supports pagination
    * @note can be subscribed to
    */
-  public async getSecondaryAccounts(): Promise<PermissionedAccount[]>;
   public async getSecondaryAccounts(
+    paginationOpts?: PaginationOptions
+  ): Promise<ResultSet<PermissionedAccount>>;
+
+  public async getSecondaryAccounts(
+    callback: SubCallback<PermissionedAccount[]>
+  ): Promise<UnsubCallback>;
+
+  public getSecondaryAccounts(
+    paginationOpts: PaginationOptions,
     callback: SubCallback<PermissionedAccount[]>
   ): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
   public async getSecondaryAccounts(
+    args?: PaginationOptions | SubCallback<PermissionedAccount[]>,
     callback?: SubCallback<PermissionedAccount[]>
-  ): Promise<PermissionedAccount[] | UnsubCallback> {
+  ): Promise<ResultSet<PermissionedAccount> | UnsubCallback> {
     const {
       did,
       context,
@@ -690,40 +784,76 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       },
     } = this;
 
-    const assembleResult = ({
-      secondary_keys: secondaryAccounts,
-    }: DidRecord): PermissionedAccount[] => {
-      return secondaryAccounts.map(({ signer: rawSigner, permissions }) => ({
-        account: signatoryToAccount(rawSigner, context),
-        permissions: meshPermissionsToPermissions(permissions, context),
-      }));
-    };
-
-    if (callback) {
-      return identity.didRecords(did, records => callback(assembleResult(records)));
+    let opts;
+    let cb: SubCallback<PermissionedAccount[]> | undefined = callback;
+    switch (typeof args) {
+      case 'undefined': {
+        break;
+      }
+      case 'function': {
+        cb = args;
+        break;
+      }
+      default: {
+        opts = args;
+        break;
+      }
     }
 
-    const didRecords = await identity.didRecords(did);
-    return assembleResult(didRecords);
+    const keyToAccount = (
+      key: StorageKey<[PolymeshPrimitivesIdentityId, AccountId32]>
+    ): Account => {
+      const [, value] = key.args;
+      const address = accountIdToString(value);
+      return new Account({ address }, context);
+    };
+
+    const { entries: keys, lastKey: next } = await requestPaginated(identity.didKeys, {
+      arg: did,
+      paginationOpts: opts,
+    });
+    const accounts = keys.map(([key]) => keyToAccount(key));
+
+    if (cb) {
+      return getSecondaryAccountPermissions({ accounts }, context, cb);
+    }
+
+    const data = await getSecondaryAccountPermissions({ accounts }, context);
+    return {
+      data,
+      next,
+    };
   }
 
   /**
    * Determine whether this Identity exists on chain
+   *
+   * @note asset Identities aren't considered to exist for this check
    */
   public async exists(): Promise<boolean> {
     const { did, context } = this;
 
-    const recordSize = await context.polymeshApi.query.identity.didRecords.size(
+    const didRecord = await context.polymeshApi.query.identity.didRecords(
       stringToIdentityId(did, context)
     );
 
-    return !recordSize.isZero();
+    if (didRecord.isNone) {
+      return false;
+    }
+
+    const record = didRecord.unwrap();
+
+    if (record.primaryKey.isNone) {
+      return false;
+    }
+
+    return true;
   }
 
   /**
    * Return the Identity's DID
    */
-  public toJson(): string {
+  public toHuman(): string {
     return this.did;
   }
 }

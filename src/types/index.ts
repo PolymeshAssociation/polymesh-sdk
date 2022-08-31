@@ -1,14 +1,16 @@
 import { TypeDef } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { ModuleName, TxTag, TxTags } from 'polymesh-types/types';
 
 import {
+  CorporateActionTargets,
   DividendDistributionDetails,
   OfferingDetails,
   ScheduleDetails,
   SubsidyData,
+  TaxWithholding,
 } from '~/api/entities/types';
-import { CountryCode } from '~/generated/types';
+import { StatType } from '~/api/procedures/types';
+import { CountryCode, ModuleName, TxTag, TxTags } from '~/generated/types';
 import {
   Account,
   Asset,
@@ -25,7 +27,6 @@ import {
   Offering,
   TransactionQueue,
 } from '~/internal';
-import { PortfolioId } from '~/types/internal';
 import { Modify } from '~/types/utils';
 
 export * from '~/generated/types';
@@ -110,6 +111,11 @@ export interface VenueOwnerRole {
   venueId: BigNumber;
 }
 
+export interface PortfolioId {
+  did: string;
+  number?: BigNumber;
+}
+
 export interface PortfolioCustodianRole {
   type: RoleType.PortfolioCustodian;
   portfolioId: PortfolioId;
@@ -145,6 +151,7 @@ export enum SecurityIdentifierType {
   Cusip = 'Cusip',
   Cins = 'Cins',
   Lei = 'Lei',
+  Figi = 'Figi',
 }
 
 // NOTE: query.asset.identifiers doesn’t support custom identifier types properly for now
@@ -217,6 +224,7 @@ export enum ClaimType {
   Exempted = 'Exempted',
   Blocked = 'Blocked',
   InvestorUniqueness = 'InvestorUniqueness',
+  NoType = 'NoType',
   NoData = 'NoData',
   InvestorUniquenessV2 = 'InvestorUniquenessV2',
 }
@@ -274,6 +282,10 @@ export interface InvestorUniquenessClaim {
   scopeId: string;
 }
 
+export interface NoTypeClaim {
+  type: ClaimType.NoType;
+}
+
 export interface NoDataClaim {
   type: ClaimType.NoData;
 }
@@ -294,7 +306,7 @@ export type ScopedClaim =
   | ExemptedClaim
   | BlockedClaim;
 
-export type UnscopedClaim = NoDataClaim | CddClaim | InvestorUniquenessV2Claim;
+export type UnscopedClaim = NoDataClaim | NoTypeClaim | CddClaim | InvestorUniquenessV2Claim;
 
 export type Claim = ScopedClaim | UnscopedClaim;
 
@@ -305,6 +317,37 @@ export interface ClaimData<ClaimType = Claim> {
   expiry: Date | null;
   claim: ClaimType;
 }
+
+export type StatClaimType = ClaimType.Accredited | ClaimType.Affiliate | ClaimType.Jurisdiction;
+
+export interface StatJurisdictionClaimInput {
+  type: ClaimType.Jurisdiction;
+  countryCode?: CountryCode;
+}
+
+export interface StatAccreditedClaimInput {
+  type: ClaimType.Accredited;
+  accredited: boolean;
+}
+
+export interface StatAffiliateClaimInput {
+  type: ClaimType.Affiliate;
+  affiliate: boolean;
+}
+
+export type InputStatClaim =
+  | StatJurisdictionClaimInput
+  | StatAccreditedClaimInput
+  | StatAffiliateClaimInput;
+
+export type InputStatType =
+  | {
+      type: StatType.Count | StatType.Percentage;
+    }
+  | {
+      type: StatType.ScopedCount | StatType.ScopedPercentage;
+      claimIssuer: StatClaimIssuer;
+    };
 
 export interface IdentityWithClaims {
   identity: Identity;
@@ -328,6 +371,15 @@ export interface ExtrinsicData {
   success: boolean;
   specVersionId: BigNumber;
   extrinsicHash: string;
+}
+
+export interface ExtrinsicDataWithFees extends ExtrinsicData {
+  fee: Fees;
+}
+
+export interface ProtocolFees {
+  tag: TxTag;
+  fees: BigNumber;
 }
 
 export interface ClaimScope {
@@ -467,7 +519,7 @@ export enum ErrorCode {
   /**
    * transaction failed due to an on-chain error. This is a business logic error,
    *   and it should be caught by the SDK before being sent to the chain.
-   *   Please report it to the Polymath team
+   *   Please report it to the Polymesh team
    */
   TransactionReverted = 'TransactionReverted',
   /**
@@ -520,7 +572,7 @@ export enum ErrorCode {
   InsufficientBalance = 'InsufficientBalance',
   /**
    * errors that are the result of something unforeseen.
-   *   These should generally be reported to the Polymath team
+   *   These should generally be reported to the Polymesh team
    */
   UnexpectedError = 'UnexpectedError',
   /**
@@ -1219,17 +1271,10 @@ interface TransferRestrictionBase {
    * array of Scope/Identity IDs that are exempted from the Restriction
    *
    * @note if the Asset requires investor uniqueness, Scope IDs are used. Otherwise, we use Identity IDs. More on Scope IDs and investor uniqueness
-   *   {@link https://developers.polymesh.network/introduction/identity#polymesh-unique-identity-system-puis | here} and
-   *   {@link https://developers.polymesh.network/polymesh-docs/primitives/confidential-identity | here}
+   *   [here](https://developers.polymesh.network/introduction/identity#polymesh-unique-identity-system-puis) and
+   *   [here](https://developers.polymesh.network/polymesh-docs/primitives/confidential-identity)
    */
   exemptedIds?: string[];
-}
-
-interface TransferRestrictionInputBase {
-  /**
-   * array of Identities (or DIDs) that are exempted from the Restriction
-   */
-  exemptedIdentities?: (Identity | string)[];
 }
 
 export interface CountTransferRestriction extends TransferRestrictionBase {
@@ -1242,23 +1287,45 @@ export interface PercentageTransferRestriction extends TransferRestrictionBase {
    */
   percentage: BigNumber;
 }
-
-export interface CountTransferRestrictionInput extends TransferRestrictionInputBase {
+export interface ClaimCountTransferRestriction extends TransferRestrictionBase {
   /**
-   * limit on the amount of different (unique) investors that can hold the Asset at once
+   * The type of investors this restriction applies to. e.g. non-accredited
    */
-  count: BigNumber;
+  claim: InputStatClaim;
+  /**
+   * The minimum amount of investors the must meet the Claim criteria
+   */
+  min: BigNumber;
+  /**
+   * The maximum amount of investors that must meet the Claim criteria
+   */
+  max?: BigNumber;
+
+  issuer: Identity;
 }
-
-export interface PercentageTransferRestrictionInput extends TransferRestrictionInputBase {
+export interface ClaimPercentageTransferRestriction extends TransferRestrictionBase {
   /**
-   * maximum percentage (0-100) of the total supply of the Asset that can be held by a single investor at once
+   * The type of investors this restriction applies to. e.g. Canadian investor
    */
-  percentage: BigNumber;
+  claim: InputStatClaim;
+  /**
+   * The minimum percentage of the total supply that investors meeting the Claim criteria must hold
+   */
+  min: BigNumber;
+  /**
+   * The maximum percentage of the total supply that investors meeting the Claim criteria must hold
+   */
+  max: BigNumber;
+
+  issuer: Identity;
 }
 
 export interface ActiveTransferRestrictions<
-  Restriction extends CountTransferRestriction | PercentageTransferRestriction
+  Restriction extends
+    | CountTransferRestriction
+    | PercentageTransferRestriction
+    | ClaimCountTransferRestriction
+    | ClaimPercentageTransferRestriction
 > {
   restrictions: Restriction[];
   /**
@@ -1270,12 +1337,64 @@ export interface ActiveTransferRestrictions<
 export enum TransferRestrictionType {
   Count = 'Count',
   Percentage = 'Percentage',
+  ClaimCount = 'ClaimCount',
+  ClaimPercentage = 'ClaimPercentage',
 }
 
-export interface TransferRestriction {
-  type: TransferRestrictionType;
-  value: BigNumber;
+export type TransferRestriction =
+  | {
+      type: TransferRestrictionType.Count;
+      value: BigNumber;
+    }
+  | { type: TransferRestrictionType.Percentage; value: BigNumber }
+  | {
+      type: TransferRestrictionType.ClaimCount;
+      value: ClaimCountRestrictionValue;
+    }
+  | {
+      type: TransferRestrictionType.ClaimPercentage;
+      value: ClaimPercentageRestrictionValue;
+    };
+
+export interface ClaimCountRestrictionValue {
+  min: BigNumber;
+  max?: BigNumber;
+  issuer: Identity;
+  claim: InputStatClaim;
 }
+
+export interface ClaimPercentageRestrictionValue {
+  min: BigNumber;
+  max: BigNumber;
+  issuer: Identity;
+  claim: InputStatClaim;
+}
+
+export interface AddCountStatInput {
+  count: BigNumber;
+}
+
+export interface StatClaimIssuer {
+  issuer: Identity;
+  claimType: StatClaimType;
+}
+
+export type ClaimCountStatInput =
+  | {
+      issuer: Identity;
+      claimType: ClaimType.Accredited;
+      value: { accredited: BigNumber; nonAccredited: BigNumber };
+    }
+  | {
+      issuer: Identity;
+      claimType: ClaimType.Affiliate;
+      value: { affiliate: BigNumber; nonAffiliate: BigNumber };
+    }
+  | {
+      issuer: Identity;
+      claimType: ClaimType.Jurisdiction;
+      value: { countryCode: CountryCode; count: BigNumber }[];
+    };
 
 export enum CalendarUnit {
   Second = 'second',
@@ -1311,6 +1430,9 @@ export interface DistributionPayment {
   date: Date;
   target: Identity;
   amount: BigNumber;
+  /**
+   * percentage (0-100) of tax withholding for the `target` identity
+   */
   withheldTax: BigNumber;
 }
 
@@ -1393,8 +1515,38 @@ export type PrivateKey =
       seed: string;
     };
 
-export { TxTags, TxTag, ModuleName };
+/**
+ * Targets of a corporate action in a flexible structure for input purposes
+ */
+export type InputCorporateActionTargets = Modify<
+  CorporateActionTargets,
+  {
+    identities: (string | Identity)[];
+  }
+>;
+
+/**
+ * Per-Identity tax withholdings of a corporate action in a flexible structure for input purposes
+ */
+export type InputCorporateActionTaxWithholdings = Modify<
+  TaxWithholding,
+  {
+    identity: string | Identity;
+  }
+>[];
+
+export { TxTags, TxTag, ModuleName, CountryCode };
 export { EventRecord } from '@polkadot/types/interfaces';
+export { ConnectParams } from '~/api/client/Polymesh';
 export * from '~/api/entities/types';
 export * from '~/base/types';
-export { Order } from '~/middleware/types';
+export {
+  Order,
+  EventIdEnum,
+  ModuleIdEnum,
+  TransactionOrderByInput,
+  TransactionOrderFields,
+  SettlementResultEnum,
+  SettlementDirectionEnum,
+} from '~/middleware/types';
+export * from '~/api/procedures/types';

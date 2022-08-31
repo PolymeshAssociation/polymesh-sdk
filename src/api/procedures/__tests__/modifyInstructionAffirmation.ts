@@ -3,13 +3,11 @@ import BigNumber from 'bignumber.js';
 import {
   AffirmationStatus as MeshAffirmationStatus,
   PortfolioId as MeshPortfolioId,
-  TxTags,
 } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
   getAuthorization,
-  ModifyInstructionAffirmationParams,
   prepareModifyInstructionAffirmation,
   prepareStorage,
   Storage,
@@ -18,8 +16,14 @@ import * as procedureUtilsModule from '~/api/procedures/utils';
 import { Context, DefaultPortfolio, Instruction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { AffirmationStatus, PortfolioLike } from '~/types';
-import { InstructionAffirmationOperation, PortfolioId } from '~/types/internal';
+import {
+  AffirmationStatus,
+  InstructionAffirmationOperation,
+  ModifyInstructionAffirmationParams,
+  PortfolioId,
+  PortfolioLike,
+  TxTags,
+} from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -374,29 +378,28 @@ describe('modifyInstructionAffirmation procedure', () => {
   });
 
   describe('prepareStorage', () => {
+    const fromDid = 'fromDid';
+    const toDid = 'toDid';
+
+    let from = entityMockUtils.getDefaultPortfolioInstance({ did: fromDid, isCustodiedBy: true });
+    let to = entityMockUtils.getDefaultPortfolioInstance({ did: toDid, isCustodiedBy: true });
+    const amount = new BigNumber(1);
+    const asset = entityMockUtils.getAssetInstance({ ticker: 'SOME_ASSET' });
+
     it('should return the portfolios for which to modify affirmation status', async () => {
       const proc = procedureMockUtils.getInstance<
         ModifyInstructionAffirmationParams,
         Instruction,
         Storage
       >(mockContext);
+
       const boundFunc = prepareStorage.bind(proc);
-
-      const fromDid = 'fromDid';
-      const toDid = 'toDid';
-
-      let from = entityMockUtils.getDefaultPortfolioInstance({ did: fromDid, isCustodiedBy: true });
-      let to = entityMockUtils.getDefaultPortfolioInstance({ did: toDid, isCustodiedBy: true });
-      const amount = new BigNumber(1);
-      const asset = entityMockUtils.getAssetInstance({ ticker: 'SOME_ASSET' });
-
       entityMockUtils.configureMocks({
         instructionOptions: {
           getLegs: { data: [{ from, to, amount, asset }], next: null },
         },
       });
-
-      let result = await boundFunc({
+      const result = await boundFunc({
         id: new BigNumber(1),
         operation: InstructionAffirmationOperation.Affirm,
       });
@@ -409,7 +412,16 @@ describe('modifyInstructionAffirmation procedure', () => {
         senderLegAmount: new BigNumber(1),
         totalLegAmount: new BigNumber(1),
       });
+    });
 
+    it('should return the portfolios  for which to modify affirmation status when there is no sender legs', async () => {
+      const proc = procedureMockUtils.getInstance<
+        ModifyInstructionAffirmationParams,
+        Instruction,
+        Storage
+      >(mockContext);
+
+      const boundFunc = prepareStorage.bind(proc);
       from = entityMockUtils.getDefaultPortfolioInstance({ did: fromDid, isCustodiedBy: false });
       to = entityMockUtils.getDefaultPortfolioInstance({ did: toDid, isCustodiedBy: false });
 
@@ -419,7 +431,7 @@ describe('modifyInstructionAffirmation procedure', () => {
         },
       });
 
-      result = await boundFunc({
+      const result = await boundFunc({
         id: new BigNumber(1),
         operation: InstructionAffirmationOperation.Affirm,
       });

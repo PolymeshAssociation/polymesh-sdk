@@ -1,35 +1,12 @@
-import { ISubmittableResult } from '@polkadot/types/types';
-import P from 'bluebird';
-import { isEqual } from 'lodash';
-
-import {
-  Asset,
-  Context,
-  CustomPermissionGroup,
-  PolymeshError,
-  PostTransactionValue,
-  Procedure,
-} from '~/internal';
-import { ErrorCode, TransactionPermissions, TxGroup, TxTags } from '~/types';
+import { assertGroupDoesNotExist, createCreateGroupResolver } from '~/api/procedures/utils';
+import { Asset, CustomPermissionGroup, PostTransactionValue, Procedure } from '~/internal';
+import { CreateGroupParams, TxTags } from '~/types';
 import { ProcedureAuthorization } from '~/types/internal';
 import {
   permissionsLikeToPermissions,
   stringToTicker,
-  tickerToString,
   transactionPermissionsToExtrinsicPermissions,
-  u64ToBigNumber,
 } from '~/utils/conversion';
-import { filterEventRecords } from '~/utils/internal';
-
-export interface CreateGroupParams {
-  permissions:
-    | {
-        transactions: TransactionPermissions;
-      }
-    | {
-        transactionGroups: TxGroup[];
-      };
-}
 
 /**
  * @hidden
@@ -44,20 +21,6 @@ export type Params = CreateGroupParams & {
 export interface Storage {
   asset: Asset;
 }
-
-/**
- * @hidden
- */
-export const createCreateGroupResolver =
-  (context: Context) =>
-  (receipt: ISubmittableResult): CustomPermissionGroup => {
-    const [{ data }] = filterEventRecords(receipt, 'externalAgents', 'GroupCreated');
-
-    return new CustomPermissionGroup(
-      { id: u64ToBigNumber(data[2]), ticker: tickerToString(data[1]) },
-      context
-    );
-  };
 
 /**
  * @hidden
@@ -80,24 +43,7 @@ export async function prepareCreateGroup(
   const rawTicker = stringToTicker(ticker, context);
   const { transactions } = permissionsLikeToPermissions(permissions, context);
 
-  const { custom, known } = await asset.permissions.getGroups();
-  const allGroups = [...custom, ...known];
-
-  const currentGroupPermissions = await P.map(allGroups, group => group.getPermissions());
-
-  const duplicatedGroupIndex = currentGroupPermissions.findIndex(
-    ({ transactions: transactionPermissions }) => isEqual(transactionPermissions, transactions)
-  );
-
-  if (duplicatedGroupIndex > -1) {
-    const group = allGroups[duplicatedGroupIndex];
-
-    throw new PolymeshError({
-      code: ErrorCode.NoDataChange,
-      message: 'There already exists a group with the exact same permissions',
-      data: { groupId: group instanceof CustomPermissionGroup ? group.id : group.type },
-    });
-  }
+  await assertGroupDoesNotExist(asset, transactions);
 
   const rawExtrinsicPermissions = transactionPermissionsToExtrinsicPermissions(
     transactions,
