@@ -9,6 +9,7 @@ import {
   Signature,
 } from '@polkadot/types/interfaces';
 import {
+  PolymeshPrimitivesAssetMetadataAssetMetadataKey,
   PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesStatisticsStat2ndKey,
@@ -104,6 +105,8 @@ import {
   InputCondition,
   InstructionType,
   KnownAssetType,
+  MetadataLockStatus,
+  MetadataType,
   ModuleName,
   OfferingBalanceStatus,
   OfferingSaleStatus,
@@ -203,10 +206,13 @@ import {
   meshClaimTypeToClaimType,
   meshCorporateActionToCorporateActionParams,
   meshInstructionStatusToInstructionStatus,
+  meshMetadataSpecToMetadataSpec,
+  meshMetadataValueToMetadataValue,
   meshPermissionsToPermissions,
   meshScopeToScope,
   meshStatToStatisticsOpType,
   meshVenueTypeToVenueType,
+  metadataToMeshMetadataKey,
   middlewareEventToEventIdentifier,
   middlewarePortfolioToPortfolio,
   middlewareScopeToScope,
@@ -8320,5 +8326,152 @@ describe('inputStatTypeToMeshStatType', () => {
     } as const;
     result = inputStatTypeToMeshStatType(scopedInput, mockContext);
     expect(result).toEqual(fakeStatistic);
+  });
+});
+
+describe('meshMetadataSpecToMetadataSpec', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a meshMetadataSpec to MetadataSpec', () => {
+    let result = meshMetadataSpecToMetadataSpec();
+    expect(result).toEqual({});
+
+    result = meshMetadataSpecToMetadataSpec(dsMockUtils.createMockOption());
+    expect(result).toEqual({});
+
+    let rawSpecs = dsMockUtils.createMockOption(dsMockUtils.createMockAssetMetadataSpec());
+
+    result = meshMetadataSpecToMetadataSpec(rawSpecs);
+    expect(result).toEqual({});
+
+    rawSpecs = dsMockUtils.createMockOption(
+      dsMockUtils.createMockAssetMetadataSpec({
+        url: dsMockUtils.createMockOption(dsMockUtils.createMockBytes('SOME_URL')),
+        description: dsMockUtils.createMockOption(dsMockUtils.createMockBytes('SOME_DESC')),
+        typeDef: dsMockUtils.createMockOption(dsMockUtils.createMockBytes('SOME_TYPEDEF')),
+      })
+    );
+
+    result = meshMetadataSpecToMetadataSpec(rawSpecs);
+    expect(result).toEqual({
+      url: 'SOME_URL',
+      description: 'SOME_DESC',
+      typeDef: 'SOME_TYPEDEF',
+    });
+  });
+});
+
+describe('metadataToMeshMetadataKey', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert MetadataType and ID to PolymeshPrimitivesAssetMetadataAssetMetadataKey', () => {
+    const context = dsMockUtils.getContextInstance();
+    const id = new BigNumber(1);
+    const rawId = dsMockUtils.createMockU64(id);
+    context.createType.withArgs('u64', id.toString()).returns(rawId);
+
+    const fakeResult = 'metadataKey' as unknown as PolymeshPrimitivesAssetMetadataAssetMetadataKey;
+
+    context.createType
+      .withArgs('PolymeshPrimitivesAssetMetadataAssetMetadataKey', {
+        Local: rawId,
+      })
+      .returns(fakeResult);
+
+    let result = metadataToMeshMetadataKey(MetadataType.Local, id, context);
+
+    expect(result).toBe(fakeResult);
+
+    context.createType
+      .withArgs('PolymeshPrimitivesAssetMetadataAssetMetadataKey', {
+        Global: rawId,
+      })
+      .returns(fakeResult);
+
+    result = metadataToMeshMetadataKey(MetadataType.Global, id, context);
+
+    expect(result).toBe(fakeResult);
+  });
+});
+
+describe('meshMetadataValueToMetadataValue', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a optional Bytes and PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail to MetadataValue', () => {
+    let result = meshMetadataValueToMetadataValue(
+      dsMockUtils.createMockOption(),
+      dsMockUtils.createMockOption()
+    );
+    expect(result).toBeNull();
+
+    const rawValue = dsMockUtils.createMockOption(dsMockUtils.createMockBytes('SOME_VALUE'));
+
+    result = meshMetadataValueToMetadataValue(rawValue, dsMockUtils.createMockOption());
+    expect(result).toEqual({
+      value: 'SOME_VALUE',
+      lockStatus: MetadataLockStatus.Unlocked,
+      expiry: undefined,
+    });
+
+    let rawDetails = dsMockUtils.createMockOption(
+      dsMockUtils.createMockAssetMetadataValueDetail({
+        lockStatus: dsMockUtils.createMockAssetMetadataLockStatus('Locked'),
+        expire: dsMockUtils.createMockOption(),
+      })
+    );
+    result = meshMetadataValueToMetadataValue(rawValue, rawDetails);
+    expect(result).toEqual({
+      value: 'SOME_VALUE',
+      lockStatus: MetadataLockStatus.Locked,
+      expiry: undefined,
+    });
+
+    const expiry = new Date('2030/01/01');
+
+    rawDetails = dsMockUtils.createMockOption(
+      dsMockUtils.createMockAssetMetadataValueDetail({
+        lockStatus: dsMockUtils.createMockAssetMetadataLockStatus('LockedUntil'),
+        expire: dsMockUtils.createMockOption(
+          dsMockUtils.createMockU64(new BigNumber(expiry.getTime()))
+        ),
+      })
+    );
+
+    result = meshMetadataValueToMetadataValue(rawValue, rawDetails);
+    expect(result).toEqual({
+      value: 'SOME_VALUE',
+      lockStatus: MetadataLockStatus.LockedUntil,
+      expiry,
+    });
   });
 });

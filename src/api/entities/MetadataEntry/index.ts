@@ -75,22 +75,36 @@ export class MetadataEntry extends Entity<UniqueIdentifiers, HumanReadable> {
       context: {
         polymeshApi: {
           query: {
-            asset: { assetMetadataLocalKeyToName, assetMetadataLocalSpecs },
+            asset: {
+              assetMetadataLocalKeyToName,
+              assetMetadataLocalSpecs,
+              assetMetadataGlobalKeyToName,
+              assetMetadataGlobalSpecs,
+            },
           },
         },
       },
       id,
       asset: { ticker },
+      type,
       context,
     } = this;
 
     const rawId = bigNumberToU64(id, context);
     const rawTicker = stringToTicker(ticker, context);
 
-    const [rawName, rawSpecs] = await Promise.all([
-      assetMetadataLocalKeyToName(rawTicker, rawId),
-      assetMetadataLocalSpecs(rawTicker, rawId),
-    ]);
+    let rawName, rawSpecs;
+    if (type === MetadataType.Local) {
+      [rawName, rawSpecs] = await Promise.all([
+        assetMetadataLocalKeyToName(rawTicker, rawId),
+        assetMetadataLocalSpecs(rawTicker, rawId),
+      ]);
+    } else {
+      [rawName, rawSpecs] = await Promise.all([
+        assetMetadataGlobalKeyToName(rawId),
+        assetMetadataGlobalSpecs(rawId),
+      ]);
+    }
 
     return {
       name: bytesToString(rawName.unwrap()),

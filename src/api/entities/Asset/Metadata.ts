@@ -1,8 +1,7 @@
-import { u64 } from '@polkadot/types';
+import { Bytes, Option, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 
-import { MetadataEntry } from '~/api/entities/MetadataEntry';
-import { Asset, Namespace, PolymeshError } from '~/internal';
+import { Asset, MetadataEntry, Namespace, PolymeshError } from '~/internal';
 import { ErrorCode, MetadataType } from '~/types';
 import { bigNumberToU64, stringToTicker, u64ToBigNumber } from '~/utils/conversion';
 
@@ -76,24 +75,21 @@ export class Metadata extends Namespace<Asset> {
 
     const rawId = bigNumberToU64(id, context);
 
+    let rawName: Option<Bytes>;
     if (type === MetadataType.Global) {
-      const rawGlobalKey = await assetMetadataGlobalKeyToName(rawId);
-
-      if (rawGlobalKey.isSome) {
-        return new MetadataEntry({ ticker, type, id }, context);
-      }
+      rawName = await assetMetadataGlobalKeyToName(rawId);
     } else {
       const rawTicker = stringToTicker(ticker, context);
-      const rawLocalKey = await assetMetadataLocalKeyToName(rawTicker, rawId);
-
-      if (rawLocalKey.isSome) {
-        return new MetadataEntry({ ticker, type, id }, context);
-      }
+      rawName = await assetMetadataLocalKeyToName(rawTicker, rawId);
     }
 
-    throw new PolymeshError({
-      code: ErrorCode.DataUnavailable,
-      message: `There is no ${type.toLowerCase()} Asset Metadata with id "${id.toString()}"`,
-    });
+    if (rawName.isEmpty) {
+      throw new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: `There is no ${type.toLowerCase()} Asset Metadata with id "${id.toString()}"`,
+      });
+    }
+
+    return new MetadataEntry({ ticker, type, id }, context);
   }
 }

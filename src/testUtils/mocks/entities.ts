@@ -21,6 +21,7 @@ import {
   Identity,
   Instruction,
   KnownPermissionGroup,
+  MetadataEntry,
   NumberedPortfolio,
   Offering,
   Subsidy,
@@ -55,6 +56,10 @@ import {
   InstructionType,
   KnownAssetType,
   Leg,
+  MetadataDetails,
+  MetadataLockStatus,
+  MetadataType,
+  MetadataValue,
   OfferingBalanceStatus,
   OfferingDetails,
   OfferingSaleStatus,
@@ -158,6 +163,14 @@ interface AssetOptions extends EntityOptions {
   checkpointsGetOne?: EntityGetter<Checkpoint>;
   checkpointsSchedulesGetOne?: EntityGetter<ScheduleWithDetails>;
   investorCount?: EntityGetter<BigNumber>;
+}
+
+interface MetadataEntryOptions extends EntityOptions {
+  id?: BigNumber;
+  ticker?: string;
+  type?: MetadataType;
+  details?: EntityGetter<MetadataDetails>;
+  value?: EntityGetter<MetadataValue | null>;
 }
 
 interface AuthorizationRequestOptions extends EntityOptions {
@@ -865,6 +878,53 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
   ['Asset']
 );
 
+const MockMetadataEntryClass = createMockEntityClass<MetadataEntryOptions>(
+  class {
+    uuid!: string;
+    id!: BigNumber;
+    asset!: Asset;
+    type!: MetadataType;
+    details!: sinon.SinonStub;
+    value!: sinon.SinonStub;
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof MetadataEntry>) {
+      return extractFromArgs(args, ['id', 'ticker', 'type']);
+    }
+
+    /**
+     * @hidden
+     */
+    public configure(opts: Required<MetadataEntryOptions>) {
+      this.uuid = 'sto';
+      this.id = opts.id;
+      this.asset = getAssetInstance({ ticker: opts.ticker });
+      this.type = opts.type;
+      this.details = createEntityGetterStub(opts.details);
+      this.value = createEntityGetterStub(opts.value);
+    }
+  },
+  () => ({
+    details: {
+      name: 'SOME_NAME',
+      specs: {
+        url: 'SOME_URL',
+      },
+    },
+    value: {
+      value: 'SOME_VALUE',
+      lockStatus: MetadataLockStatus.Unlocked,
+      expiry: undefined,
+    },
+    ticker: 'SOME_TICKER',
+    id: new BigNumber(1),
+    type: MetadataType.Local,
+  }),
+  ['MetadataEntry']
+);
+
 const MockAuthorizationRequestClass = createMockEntityClass<AuthorizationRequestOptions>(
   class {
     uuid!: string;
@@ -1507,6 +1567,11 @@ export const mockTickerReservationModule = (path: string) => (): Record<string, 
 export const mockAssetModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   Asset: MockAssetClass,
+});
+
+export const mockMetadataEntryModule = (path: string) => (): Record<string, unknown> => ({
+  ...jest.requireActual(path),
+  MetadataEntry: MockMetadataEntryClass,
 });
 
 export const mockAuthorizationRequestModule = (path: string) => (): Record<string, unknown> => ({

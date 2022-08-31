@@ -60,7 +60,9 @@ import {
   PalletSettlementVenue,
   PalletStoFundraiser,
   PolymeshPrimitivesAssetIdentifier,
+  PolymeshPrimitivesAssetMetadataAssetMetadataLockStatus,
   PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
+  PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail,
   PolymeshPrimitivesAuthorization,
   PolymeshPrimitivesAuthorizationAuthorizationData,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
@@ -4220,4 +4222,44 @@ export const createMockAssetMetadataSpec = (
     },
     !specs
   ) as MockCodec<PolymeshPrimitivesAssetMetadataAssetMetadataSpec>;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAssetMetadataLockStatus = (
+  lockStatus?: 'Locked' | 'Unlocked' | 'LockedUntil'
+): MockCodec<PolymeshPrimitivesAssetMetadataAssetMetadataLockStatus> => {
+  return createMockEnum<PolymeshPrimitivesAssetMetadataAssetMetadataLockStatus>(lockStatus);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAssetMetadataValueDetail = (
+  valueDetail?:
+    | PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail
+    | {
+        lockStatus: PolymeshPrimitivesAssetMetadataAssetMetadataLockStatus;
+        expire: Option<u64>;
+      }
+): MockCodec<PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail> => {
+  if (isCodec<PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail>(valueDetail)) {
+    return valueDetail as MockCodec<PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail>;
+  }
+
+  const { lockStatus, expire } = valueDetail || {
+    lockStatus: createMockAssetMetadataLockStatus('Unlocked'),
+    expire: createMockOption(),
+  };
+
+  return createMockCodec(
+    {
+      lockStatus,
+      expire,
+    },
+    false
+  ) as MockCodec<PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail>;
 };

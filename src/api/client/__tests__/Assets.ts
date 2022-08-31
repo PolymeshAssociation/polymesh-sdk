@@ -7,7 +7,7 @@ import { Asset, Context, PolymeshTransaction, TickerReservation } from '~/intern
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
-  AssetGlobalMetadataKey,
+  GlobalMetadataKey,
   KnownAssetType,
   SecurityIdentifierType,
   TickerReservationStatus,
@@ -446,12 +446,13 @@ describe('Assets Class', () => {
   describe('method: getGlobalMetadataKeys', () => {
     let bytesToStringStub: sinon.SinonStub;
     let u64ToBigNumberStub: sinon.SinonStub;
+    let meshMetadataSpecToMetadataSpecStub: sinon.SinonStub;
 
     const rawIds = [
       dsMockUtils.createMockU64(new BigNumber(1)),
       dsMockUtils.createMockU64(new BigNumber(2)),
     ];
-    const globalMetadata: AssetGlobalMetadataKey[] = [
+    const globalMetadata: GlobalMetadataKey[] = [
       {
         id: new BigNumber(1),
         name: 'SOME_NAME1',
@@ -472,6 +473,10 @@ describe('Assets Class', () => {
     beforeAll(() => {
       u64ToBigNumberStub = sinon.stub(utilsConversionModule, 'u64ToBigNumber');
       bytesToStringStub = sinon.stub(utilsConversionModule, 'bytesToString');
+      meshMetadataSpecToMetadataSpecStub = sinon.stub(
+        utilsConversionModule,
+        'meshMetadataSpecToMetadataSpec'
+      );
     });
 
     beforeEach(() => {
@@ -482,28 +487,30 @@ describe('Assets Class', () => {
       rawGlobalMetadata = globalMetadata.map(({ id, name, specs }, index) => {
         const rawId = rawIds[index];
         const rawName = dsMockUtils.createMockBytes(name);
-        let rawSpecs;
-        if (specs) {
-          const { url, description, typeDef } = specs;
-          const rawUrl = dsMockUtils.createMockBytes(url);
-          const rawDescription = dsMockUtils.createMockBytes(description);
-          const rawTypeDef = dsMockUtils.createMockBytes(typeDef);
-          rawSpecs = {
-            url: dsMockUtils.createMockOption(rawUrl),
-            description: dsMockUtils.createMockOption(rawDescription),
-            typeDef: dsMockUtils.createMockOption(rawTypeDef),
-          };
-          bytesToStringStub.withArgs(rawUrl).returns(url);
-          bytesToStringStub.withArgs(rawDescription).returns(description);
-          bytesToStringStub.withArgs(rawTypeDef).returns(typeDef);
-        }
+        const { url, description, typeDef } = specs;
+        const rawUrl = dsMockUtils.createMockBytes(url);
+        const rawDescription = dsMockUtils.createMockBytes(description);
+        const rawTypeDef = dsMockUtils.createMockBytes(typeDef);
+        const rawSpecs = {
+          url: dsMockUtils.createMockOption(rawUrl),
+          description: dsMockUtils.createMockOption(rawDescription),
+          typeDef: dsMockUtils.createMockOption(rawTypeDef),
+        };
+        bytesToStringStub.withArgs(rawUrl).returns(url);
+        bytesToStringStub.withArgs(rawDescription).returns(description);
+        bytesToStringStub.withArgs(rawTypeDef).returns(typeDef);
         bytesToStringStub.withArgs(rawName).returns(name);
         u64ToBigNumberStub.withArgs(rawId).returns(id);
+
+        const rawMetadataSpecs = dsMockUtils.createMockOption(
+          dsMockUtils.createMockAssetMetadataSpec(rawSpecs)
+        );
+        meshMetadataSpecToMetadataSpecStub.withArgs(rawMetadataSpecs).returns(specs);
 
         return {
           rawId,
           rawName: dsMockUtils.createMockOption(rawName),
-          rawSpecs: dsMockUtils.createMockOption(dsMockUtils.createMockAssetMetadataSpec(rawSpecs)),
+          rawSpecs: rawMetadataSpecs,
         };
       });
 
