@@ -30,6 +30,7 @@ import {
   TickerExternalAgentHistory,
   TickerExternalAgentsOrderBy,
   TrustedClaimIssuer,
+  TrustedClaimIssuersOrderBy,
 } from '~/middleware/typesV2';
 import { GraphqlQuery } from '~/types/internal';
 import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
@@ -150,7 +151,7 @@ export function claimsQuery(
      {
       claims(
         ${filter}
-        orderBy: [${ClaimsOrderBy.TargetIdAsc}, ${ClaimsOrderBy.CreatedBlockIdAsc}, ${ClaimsOrderBy.EventIdxAsc}]
+        orderBy: [${ClaimsOrderBy.TargetIdAsc}, ${ClaimsOrderBy.CreatedAtAsc}, ${ClaimsOrderBy.CreatedBlockIdAsc}, ${ClaimsOrderBy.EventIdxAsc}]
         first: $size
         offset: $start
       ) {
@@ -192,7 +193,7 @@ export function investmentsQuery(
         filter: { stoId: { equalTo: $stoId }, offeringToken: { equalTo: $offeringToken } }
         first: $size
         offset: $start
-        orderBy: [${InvestmentsOrderBy.CreatedBlockIdAsc}]
+        orderBy: [${InvestmentsOrderBy.CreatedAtAsc}, ${InvestmentsOrderBy.CreatedBlockIdAsc}]
       ) {
         totalCount
         nodes {
@@ -426,7 +427,8 @@ export function trustedClaimIssuerQuery(
   const query = gql`
     query TrustedClaimIssuerQuery($assetId: String!, $issuer: String!) {
       trustedClaimIssuers(
-        filter: { assetId: { equalTo: $assetId }, issuer: { equalTo: $issuer } }
+        filter: { assetId: { equalTo: $assetId }, issuer: { equalTo: $issuer } },
+        orderBy: [${TrustedClaimIssuersOrderBy.CreatedAtDesc}, ${TrustedClaimIssuersOrderBy.CreatedBlockIdDesc}]
       ) {
         nodes {
           eventIdx
@@ -456,7 +458,10 @@ export function trustingAssetsQuery(
 ): GraphqlQuery<QueryArgs<TrustedClaimIssuer, 'issuer'>> {
   const query = gql`
     query TrustedClaimIssuerQuery($issuer: String!) {
-      trustedClaimIssuers(filter: { issuer: { equalTo: $issuer } }) {
+      trustedClaimIssuers(
+        filter: { issuer: { equalTo: $issuer } }, 
+        orderBy: [${TrustedClaimIssuersOrderBy.AssetIdAsc}]
+      ) {
         nodes {
           assetId
         }
@@ -573,7 +578,7 @@ export function tickerExternalAgentHistoryQuery(
     query TickerExternalAgentHistoryQuery($assetId: String!) {
       tickerExternalAgentHistories(
         filter: { assetId: { equalTo: $assetId } }
-        orderBy: [${TickerExternalAgentHistoriesOrderBy.CreatedBlockIdAsc}]
+        orderBy: [${TickerExternalAgentHistoriesOrderBy.CreatedAtAsc}, ${TickerExternalAgentHistoriesOrderBy.CreatedBlockIdAsc}]
       ) {
         nodes {
           identityId
@@ -618,7 +623,7 @@ export function tickerExternalAgentActionsQuery(
         ${filter}
         first: $size
         offset: $start
-        orderBy: [${TickerExternalAgentActionsOrderBy.CreatedBlockIdDesc}]
+        orderBy: [${TickerExternalAgentActionsOrderBy.CreatedAtDesc}, ${TickerExternalAgentActionsOrderBy.CreatedBlockIdDesc}]
       ) {
         totalCount
         nodes {
@@ -712,7 +717,7 @@ export function assetHoldersQuery(
   filters: QueryArgs<AssetHolder, 'identityId'>,
   size?: BigNumber,
   start?: BigNumber,
-  orderBy = AssetHoldersOrderBy.CreatedBlockIdAsc
+  orderBy = AssetHoldersOrderBy.AssetIdAsc
 ): GraphqlQuery<PaginatedQueryArgs<QueryArgs<DistributionPayment, 'distributionId'>>> {
   const query = gql`
     query AssetHoldersQuery($identityId: String!, $size: Int, $start: Int) {
