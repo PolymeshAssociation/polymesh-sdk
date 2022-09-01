@@ -89,6 +89,7 @@ export { Account } from '~/api/entities/Account';
 export { TickerReservation } from '~/api/entities/TickerReservation';
 export { Asset } from '~/api/entities/Asset';
 export { MetadataEntry } from '~/api/entities/MetadataEntry';
+export { registerMetadata } from '~/api/procedures/registerMetadata';
 export { AuthorizationRequest } from '~/api/entities/AuthorizationRequest';
 export { DefaultTrustedClaimIssuer } from '~/api/entities/DefaultTrustedClaimIssuer';
 export { Offering } from '~/api/entities/Offering';

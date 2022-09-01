@@ -4244,7 +4244,7 @@ export const createMockAssetMetadataSpec = (
       typeDef,
     },
     !specs
-  ) as MockCodec<PolymeshPrimitivesAssetMetadataAssetMetadataSpec>;
+  );
 };
 
 /**
@@ -4252,9 +4252,23 @@ export const createMockAssetMetadataSpec = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockAssetMetadataLockStatus = (
-  lockStatus?: 'Locked' | 'Unlocked' | 'LockedUntil'
+  args:
+    | {
+        lockStatus?: 'Locked' | 'Unlocked';
+      }
+    | {
+        lockStatus: 'LockedUntil';
+        lockedUntil: Date;
+      }
 ): MockCodec<PolymeshPrimitivesAssetMetadataAssetMetadataLockStatus> => {
-  return createMockEnum<PolymeshPrimitivesAssetMetadataAssetMetadataLockStatus>(lockStatus);
+  const { lockStatus } = args;
+  let meshLockStatus;
+  if (lockStatus === 'LockedUntil') {
+    meshLockStatus = { LockedUntil: createMockU64(new BigNumber(args.lockedUntil.getTime())) };
+  } else {
+    meshLockStatus = lockStatus;
+  }
+  return createMockEnum<PolymeshPrimitivesAssetMetadataAssetMetadataLockStatus>(meshLockStatus);
 };
 
 /**
@@ -4274,7 +4288,7 @@ export const createMockAssetMetadataValueDetail = (
   }
 
   const { lockStatus, expire } = valueDetail || {
-    lockStatus: createMockAssetMetadataLockStatus('Unlocked'),
+    lockStatus: createMockAssetMetadataLockStatus({ lockStatus: 'Unlocked' }),
     expire: createMockOption(),
   };
 
@@ -4284,5 +4298,5 @@ export const createMockAssetMetadataValueDetail = (
       expire,
     },
     false
-  ) as MockCodec<PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail>;
+  );
 };

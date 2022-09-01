@@ -31,6 +31,8 @@ import {
   InputTargets,
   InputTaxWithholding,
   InputTrustedClaimIssuer,
+  MetadataLockStatus,
+  MetadataSpec,
   OfferingTier,
   PercentageTransferRestriction,
   PermissionedAccount,
@@ -917,3 +919,24 @@ export interface MoveFundsParams {
 export interface CreateTransactionBatchParams<ReturnValues extends readonly [...unknown[]]> {
   transactions: Readonly<TransactionArray<ReturnValues>>;
 }
+
+export type RegisterMetadataParams =
+  | {
+      name: string;
+      specs: MetadataSpec;
+    }
+  | {
+      name: string;
+      specs: MetadataSpec;
+      value: string;
+      expiry: Date | null;
+      lockStatus: Exclude<MetadataLockStatus, MetadataLockStatus.LockedUntil>;
+    }
+  | {
+      name: string;
+      specs: MetadataSpec;
+      value: string;
+      expiry: Date | null;
+      lockStatus: MetadataLockStatus.LockedUntil;
+      lockedUntil: Date;
+    };

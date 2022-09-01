@@ -24,8 +24,9 @@ export interface MetadataDetails {
 
 export interface MetadataValue {
   value: string;
+  expiry: Date | null;
   lockStatus: MetadataLockStatus;
-  expiry?: Date;
+  lockedUntil?: Date;
 }
 
 export type GlobalMetadataKey = MetadataDetails & {

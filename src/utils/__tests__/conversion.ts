@@ -8446,28 +8446,33 @@ describe('meshMetadataValueToMetadataValue', () => {
     result = meshMetadataValueToMetadataValue(rawValue, dsMockUtils.createMockOption());
     expect(result).toEqual({
       value: 'SOME_VALUE',
+      expiry: null,
       lockStatus: MetadataLockStatus.Unlocked,
-      expiry: undefined,
     });
 
     let rawDetails = dsMockUtils.createMockOption(
       dsMockUtils.createMockAssetMetadataValueDetail({
-        lockStatus: dsMockUtils.createMockAssetMetadataLockStatus('Locked'),
+        lockStatus: dsMockUtils.createMockAssetMetadataLockStatus({ lockStatus: 'Locked' }),
         expire: dsMockUtils.createMockOption(),
       })
     );
     result = meshMetadataValueToMetadataValue(rawValue, rawDetails);
     expect(result).toEqual({
       value: 'SOME_VALUE',
+      expiry: null,
       lockStatus: MetadataLockStatus.Locked,
-      expiry: undefined,
     });
 
     const expiry = new Date('2030/01/01');
 
+    const lockedUntil = new Date('2025/01/01');
+
     rawDetails = dsMockUtils.createMockOption(
       dsMockUtils.createMockAssetMetadataValueDetail({
-        lockStatus: dsMockUtils.createMockAssetMetadataLockStatus('LockedUntil'),
+        lockStatus: dsMockUtils.createMockAssetMetadataLockStatus({
+          lockStatus: 'LockedUntil',
+          lockedUntil,
+        }),
         expire: dsMockUtils.createMockOption(
           dsMockUtils.createMockU64(new BigNumber(expiry.getTime()))
         ),
@@ -8477,8 +8482,9 @@ describe('meshMetadataValueToMetadataValue', () => {
     result = meshMetadataValueToMetadataValue(rawValue, rawDetails);
     expect(result).toEqual({
       value: 'SOME_VALUE',
-      lockStatus: MetadataLockStatus.LockedUntil,
       expiry,
+      lockStatus: MetadataLockStatus.LockedUntil,
+      lockedUntil,
     });
   });
 });

@@ -249,6 +249,8 @@ import {
 import { tuple } from '~/types/utils';
 import {
   IGNORE_CHECKSUM,
+  MAX_ASSET_METADATA_TYPE_DEF_LENGTH,
+  MAX_ASSET_METADATA_VALUE_LENGTH,
   MAX_BALANCE,
   MAX_DECIMALS,
   MAX_MEMO_LENGTH,
@@ -4023,6 +4025,32 @@ export function inputStatTypeToMeshStatType(
 /**
  * @hidden
  */
+export function metadataSpecToMeshMetadataSpec(
+  specs: MetadataSpec,
+  context: Context
+): PolymeshPrimitivesAssetMetadataAssetMetadataSpec {
+  const { url, description, typeDef } = specs;
+
+  if (typeDef && typeDef.length > MAX_ASSET_METADATA_TYPE_DEF_LENGTH) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: '"typeDef" length exceeded for given Asset Metadata spec',
+      data: {
+        maxLength: MAX_ASSET_METADATA_TYPE_DEF_LENGTH,
+      },
+    });
+  }
+
+  return context.createType('PolymeshPrimitivesAssetMetadataAssetMetadataSpec', {
+    url: optionize(stringToBytes)(url, context),
+    description: optionize(stringToBytes)(description, context),
+    typeDef: optionize(stringToBytes)(typeDef, context),
+  });
+}
+
+/**
+ * @hidden
+ */
 export function meshMetadataSpecToMetadataSpec(
   rawSpecs?: Option<PolymeshPrimitivesAssetMetadataAssetMetadataSpec>
 ): MetadataSpec {
@@ -4077,22 +4105,85 @@ export function meshMetadataValueToMetadataValue(
     return null;
   }
 
-  let lockStatus = MetadataLockStatus.Unlocked;
-  let expiry;
+  let metadataValue: MetadataValue = {
+    value: bytesToString(rawValue.unwrap()),
+    lockStatus: MetadataLockStatus.Unlocked,
+    expiry: null,
+  };
 
   if (rawDetails.isSome) {
     const { lockStatus: rawLockStatus, expire } = rawDetails.unwrap();
+
+    metadataValue = { ...metadataValue, expiry: optionize(momentToDate)(expire.unwrapOr(null)) };
+
     if (rawLockStatus.isLocked) {
-      lockStatus = MetadataLockStatus.Locked;
+      metadataValue = { ...metadataValue, lockStatus: MetadataLockStatus.Locked };
     }
+
     if (rawLockStatus.isLockedUntil) {
-      lockStatus = MetadataLockStatus.LockedUntil;
-      expiry = momentToDate(expire.unwrap());
+      metadataValue = {
+        ...metadataValue,
+        lockStatus: MetadataLockStatus.LockedUntil,
+        lockedUntil: momentToDate(rawLockStatus.asLockedUntil),
+      };
     }
   }
-  return {
-    value: bytesToString(rawValue.unwrap()),
-    lockStatus,
-    expiry,
-  };
+  return metadataValue;
+}
+
+/**
+ * @hidden
+ */
+export function metadataValueToMeshMetadataValue(value: string, context: Context): Bytes {
+  if (value.length > MAX_ASSET_METADATA_VALUE_LENGTH) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Asset Metadata value length exceeded',
+      data: {
+        maxLength: MAX_ASSET_METADATA_VALUE_LENGTH,
+      },
+    });
+  }
+  return stringToBytes(value, context);
+}
+
+/**
+ * @hidden
+ */
+export function metadataValueDetailToMeshMetadataValueDetail(
+  details:
+    | {
+        lockStatus: Exclude<MetadataLockStatus, MetadataLockStatus.LockedUntil>;
+        expiry: Date | null;
+      }
+    | { lockStatus: MetadataLockStatus.LockedUntil; expiry: Date | null; lockedUntil: Date },
+  context: Context
+): PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail {
+  const { lockStatus, expiry } = details;
+
+  let meshLockStatus;
+  if (lockStatus === MetadataLockStatus.LockedUntil) {
+    const { lockedUntil } = details;
+    if (lockedUntil < new Date()) {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'Locked until date is in the past',
+      });
+    }
+    meshLockStatus = { LockedUntil: dateToMoment(lockedUntil, context) };
+  } else {
+    meshLockStatus = lockStatus;
+  }
+
+  if (expiry && expiry < new Date()) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Expiry date is in the past',
+    });
+  }
+
+  return context.createType('PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail', {
+    expire: optionize(dateToMoment)(expiry, context),
+    lockStatus: meshLockStatus,
+  });
 }

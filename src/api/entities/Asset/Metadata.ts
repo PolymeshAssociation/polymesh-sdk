@@ -1,14 +1,41 @@
 import { Bytes, Option, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 
-import { Asset, MetadataEntry, Namespace, PolymeshError } from '~/internal';
-import { ErrorCode, MetadataType } from '~/types';
+import {
+  Asset,
+  Context,
+  MetadataEntry,
+  Namespace,
+  PolymeshError,
+  registerMetadata,
+} from '~/internal';
+import { ErrorCode, MetadataType, ProcedureMethod, RegisterMetadataParams } from '~/types';
 import { bigNumberToU64, stringToTicker, u64ToBigNumber } from '~/utils/conversion';
+import { createProcedureMethod } from '~/utils/internal';
 
 /**
  * Handles all Asset Metadata related functionality
  */
 export class Metadata extends Namespace<Asset> {
+  /**
+   * @hidden
+   */
+  constructor(parent: Asset, context: Context) {
+    super(parent, context);
+
+    const { ticker } = parent;
+
+    this.register = createProcedureMethod(
+      { getProcedureAndArgs: args => [registerMetadata, { ticker, ...args }] },
+      context
+    );
+  }
+
+  /**
+   * Register a metadata for this Asset and optionally set its value. Value can be set by passing `value` parameter and specifying its `lockStatus`
+   */
+  public register: ProcedureMethod<RegisterMetadataParams, MetadataEntry>;
+
   /**
    * Retrieve all the Metadata keys for this particular asset
    */
