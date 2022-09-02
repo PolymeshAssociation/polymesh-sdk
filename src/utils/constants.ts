@@ -139,7 +139,3 @@ export const MAX_LEGS_LENGTH = 10;
  * Default CDD ID associated with an Identity on chain. Used for Identities onboarded without PUIS
  */
 export const DEFAULT_CDD_ID = '0x0000000000000000000000000000000000000000000000000000000000000000';
-
-export const MAX_ASSET_METADATA_NAME_LENGTH = 256;
-export const MAX_ASSET_METADATA_TYPE_DEF_LENGTH = 8 * 1024;
-export const MAX_ASSET_METADATA_VALUE_LENGTH = 8 * 1024;

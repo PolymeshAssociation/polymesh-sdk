@@ -10,6 +10,7 @@ import {
 } from '@polkadot/types/interfaces';
 import {
   PolymeshPrimitivesAssetMetadataAssetMetadataKey,
+  PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
   PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesStatisticsStat2ndKey,
@@ -212,6 +213,7 @@ import {
   meshScopeToScope,
   meshStatToStatType,
   meshVenueTypeToVenueType,
+  metadataSpecToMeshMetadataSpec,
   metadataToMeshMetadataKey,
   middlewareEventToEventIdentifier,
   middlewarePortfolioToPortfolio,
@@ -8333,6 +8335,86 @@ describe('inputStatTypeToMeshStatType', () => {
     } as const;
     result = inputStatTypeToMeshStatType(scopedInput, mockContext);
     expect(result).toEqual(fakeStatistic);
+  });
+});
+
+describe('metadataSpecToMeshMetadataSpec', () => {
+  let mockContext: Mocked<Context>;
+  let typeDefMaxLength: BigNumber;
+  let rawTypeDefMaxLength: u32;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockContext = dsMockUtils.getContextInstance();
+    typeDefMaxLength = new BigNumber(15);
+    rawTypeDefMaxLength = dsMockUtils.createMockU32(typeDefMaxLength);
+
+    dsMockUtils.setConstMock('asset', 'assetMetadataTypeDefMaxLength', {
+      returnValue: rawTypeDefMaxLength,
+    });
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should throw an error if typeDef exceeds max length', () => {
+    const expectedError = new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: '"typeDef" length exceeded for given Asset Metadata spec',
+      data: {
+        maxLength: typeDefMaxLength,
+      },
+    });
+
+    expect(() =>
+      metadataSpecToMeshMetadataSpec({ typeDef: 'INCORRECT_TYPEDEF_VALUE' }, mockContext)
+    ).toThrowError(expectedError);
+  });
+
+  it('should convert metadataSpec to PolymeshPrimitivesAssetMetadataAssetMetadataSpec', () => {
+    const fakeMetadataSpec =
+      'fakeMetadataSpec' as unknown as PolymeshPrimitivesAssetMetadataAssetMetadataSpec;
+
+    mockContext.createType
+      .withArgs('PolymeshPrimitivesAssetMetadataAssetMetadataSpec', {
+        url: null,
+        description: null,
+        typeDef: null,
+      })
+      .returns(fakeMetadataSpec);
+
+    let result = metadataSpecToMeshMetadataSpec({}, mockContext);
+    expect(result).toEqual(fakeMetadataSpec);
+
+    const url = 'SOME_URL';
+    const fakeUrl = 'fakeUrl' as unknown as Bytes;
+    const description = 'SOME_DESCRIPTION';
+    const fakeDescription = 'fakeDescription' as unknown as Bytes;
+    const typeDef = 'SOME_TYPE_DEF';
+    const fakeTypeDef = 'fakeTypeDef' as unknown as Bytes;
+
+    mockContext.createType.withArgs('Bytes', url).returns(fakeUrl);
+    mockContext.createType.withArgs('Bytes', description).returns(fakeDescription);
+    mockContext.createType.withArgs('Bytes', typeDef).returns(fakeTypeDef);
+
+    mockContext.createType
+      .withArgs('PolymeshPrimitivesAssetMetadataAssetMetadataSpec', {
+        url: fakeUrl,
+        description: fakeDescription,
+        typeDef: fakeTypeDef,
+      })
+      .returns(fakeMetadataSpec);
+
+    result = metadataSpecToMeshMetadataSpec({ url, description, typeDef }, mockContext);
+    expect(result).toEqual(fakeMetadataSpec);
   });
 });
 

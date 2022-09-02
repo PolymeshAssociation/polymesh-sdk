@@ -249,8 +249,6 @@ import {
 import { tuple } from '~/types/utils';
 import {
   IGNORE_CHECKSUM,
-  MAX_ASSET_METADATA_TYPE_DEF_LENGTH,
-  MAX_ASSET_METADATA_VALUE_LENGTH,
   MAX_BALANCE,
   MAX_DECIMALS,
   MAX_MEMO_LENGTH,
@@ -4031,12 +4029,23 @@ export function metadataSpecToMeshMetadataSpec(
 ): PolymeshPrimitivesAssetMetadataAssetMetadataSpec {
   const { url, description, typeDef } = specs;
 
-  if (typeDef && typeDef.length > MAX_ASSET_METADATA_TYPE_DEF_LENGTH) {
+  const {
+    polymeshApi: {
+      consts: {
+        asset: { assetMetadataTypeDefMaxLength },
+      },
+    },
+  } = context;
+
+  const metadataTypeDefMaxLength = u32ToBigNumber(assetMetadataTypeDefMaxLength);
+
+  console.log(metadataTypeDefMaxLength);
+  if (typeDef && metadataTypeDefMaxLength.lt(typeDef.length)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: '"typeDef" length exceeded for given Asset Metadata spec',
       data: {
-        maxLength: MAX_ASSET_METADATA_TYPE_DEF_LENGTH,
+        maxLength: metadataTypeDefMaxLength,
       },
     });
   }
@@ -4135,12 +4144,22 @@ export function meshMetadataValueToMetadataValue(
  * @hidden
  */
 export function metadataValueToMeshMetadataValue(value: string, context: Context): Bytes {
-  if (value.length > MAX_ASSET_METADATA_VALUE_LENGTH) {
+  const {
+    polymeshApi: {
+      consts: {
+        asset: { assetMetadataValueMaxLength },
+      },
+    },
+  } = context;
+
+  const metadataValueMaxLength = u32ToBigNumber(assetMetadataValueMaxLength);
+
+  if (metadataValueMaxLength.lt(value.length)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Asset Metadata value length exceeded',
       data: {
-        maxLength: MAX_ASSET_METADATA_VALUE_LENGTH,
+        maxLength: metadataValueMaxLength,
       },
     });
   }

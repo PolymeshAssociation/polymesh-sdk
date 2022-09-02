@@ -5,13 +5,13 @@ import { Asset, Context, MetadataEntry, PolymeshError, Procedure } from '~/inter
 import { ErrorCode, MetadataType, RegisterMetadataParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { QueryReturnType } from '~/types/utils';
-import { MAX_ASSET_METADATA_NAME_LENGTH } from '~/utils/constants';
 import {
   metadataSpecToMeshMetadataSpec,
   metadataValueDetailToMeshMetadataValueDetail,
   metadataValueToMeshMetadataValue,
   stringToBytes,
   stringToTicker,
+  u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
@@ -52,6 +52,9 @@ export async function prepareRegisterMetadata(
         query: {
           asset: { assetMetadataGlobalNameToKey, assetMetadataLocalNameToKey },
         },
+        consts: {
+          asset: { assetMetadataNameMaxLength },
+        },
         queryMulti,
       },
     },
@@ -61,12 +64,13 @@ export async function prepareRegisterMetadata(
 
   const rawTicker = stringToTicker(ticker, context);
 
-  if (name.length > MAX_ASSET_METADATA_NAME_LENGTH) {
+  const metadataNameMaxLength = u32ToBigNumber(assetMetadataNameMaxLength);
+  if (metadataNameMaxLength.lt(name.length)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Asset Metadata name length exceeded',
       data: {
-        maxLength: MAX_ASSET_METADATA_NAME_LENGTH,
+        maxLength: metadataNameMaxLength,
       },
     });
   }
