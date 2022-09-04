@@ -4,10 +4,12 @@ import {
   PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail,
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
+import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import {
+  createMetadataResolver,
   getAuthorization,
   Params,
   prepareRegisterMetadata,
@@ -15,9 +17,10 @@ import {
 import { Context, MetadataEntry, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ErrorCode, MetadataLockStatus, TxTags } from '~/types';
+import { ErrorCode, MetadataLockStatus, MetadataType, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Asset',
@@ -77,9 +80,9 @@ describe('registerMetadata procedure', () => {
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
 
-    stringToTickerStub.withArgs(ticker).returns(rawTicker);
+    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
 
-    metadataNameMaxLength = new BigNumber(10);
+    metadataNameMaxLength = new BigNumber(15);
     rawMetadataNameMaxLength = dsMockUtils.createMockU32(metadataNameMaxLength);
 
     dsMockUtils.setConstMock('asset', 'assetMetadataNameMaxLength', {
@@ -90,14 +93,10 @@ describe('registerMetadata procedure', () => {
 
     name = 'SOME_NAME';
     rawName = dsMockUtils.createMockBytes(name);
-    stringToBytesStub.withArgs(name).returns(rawName);
+    stringToBytesStub.withArgs(name, mockContext).returns(rawName);
 
-    rawSpecs = dsMockUtils.createMockAssetMetadataSpec({
-      url: dsMockUtils.createMockOption(dsMockUtils.createMockBytes('SOME_URL')),
-      description: dsMockUtils.createMockOption(),
-      typeDef: dsMockUtils.createMockOption(),
-    });
-    metadataSpecToMeshMetadataSpecStub.withArgs({}).returns(rawSpecs);
+    rawSpecs = dsMockUtils.createMockAssetMetadataSpec();
+    metadataSpecToMeshMetadataSpecStub.returns(rawSpecs);
 
     params = {
       ticker,
@@ -243,6 +242,49 @@ describe('registerMetadata procedure', () => {
           portfolios: [],
         },
       });
+    });
+  });
+
+  describe('createMetadataResolver', () => {
+    let filterEventRecordsStub: sinon.SinonStub;
+    let u64ToBigNumberStub: sinon.SinonStub;
+    const id = new BigNumber(10);
+    const rawId = dsMockUtils.createMockU64(id);
+
+    beforeAll(() => {
+      entityMockUtils.initMocks({
+        instructionOptions: {
+          id,
+        },
+      });
+
+      filterEventRecordsStub = sinon.stub(utilsInternalModule, 'filterEventRecords');
+      u64ToBigNumberStub = sinon.stub(utilsConversionModule, 'u64ToBigNumber');
+    });
+
+    beforeEach(() => {
+      filterEventRecordsStub.returns([
+        dsMockUtils.createMockIEvent(['someIdentity', 'someTicker', 'someName', rawId]),
+      ]);
+      u64ToBigNumberStub.withArgs(rawId).returns(id);
+    });
+
+    afterEach(() => {
+      filterEventRecordsStub.reset();
+    });
+
+    it('should return the new MetadataEntry', () => {
+      const fakeContext = {} as Context;
+
+      const result = createMetadataResolver(ticker, fakeContext)({} as ISubmittableResult);
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          id,
+          asset: expect.objectContaining({ ticker }),
+          type: MetadataType.Local,
+        })
+      );
     });
   });
 });

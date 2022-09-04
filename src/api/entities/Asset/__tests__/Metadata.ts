@@ -4,7 +4,7 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Metadata } from '~/api/entities/Asset/Metadata';
-import { Asset, Context, Namespace } from '~/internal';
+import { Asset, Context, MetadataEntry, Namespace, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MetadataType } from '~/types';
 import { tuple } from '~/types/utils';
@@ -64,6 +64,23 @@ describe('Metadata class', () => {
 
   it('should extend namespace', () => {
     expect(Metadata.prototype instanceof Namespace).toBe(true);
+  });
+
+  describe('method: register', () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<MetadataEntry>;
+      const params = { name: 'SOME_METADATA', specs: {} };
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { ticker, ...params }, transformer: undefined }, context)
+        .resolves(expectedTransaction);
+
+      const tx = await metadata.register(params);
+
+      expect(tx).toBe(expectedTransaction);
+    });
   });
 
   describe('method: get', () => {

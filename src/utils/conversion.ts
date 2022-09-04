@@ -4039,7 +4039,6 @@ export function metadataSpecToMeshMetadataSpec(
 
   const metadataTypeDefMaxLength = u32ToBigNumber(assetMetadataTypeDefMaxLength);
 
-  console.log(metadataTypeDefMaxLength);
   if (typeDef && metadataTypeDefMaxLength.lt(typeDef.length)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,

@@ -26,7 +26,7 @@ export type Params = RegisterMetadataParams & {
 /**
  * @hidden
  */
-export const createOfferingResolver =
+export const createMetadataResolver =
   (ticker: string, context: Context) =>
   (receipt: ISubmittableResult): MetadataEntry => {
     const [{ data }] = filterEventRecords(receipt, 'asset', 'RegisterAssetMetadataLocalType');
@@ -110,14 +110,14 @@ export async function prepareRegisterMetadata(
         metadataValueToMeshMetadataValue(value, context),
         metadataValueDetailToMeshMetadataValueDetail(rest, context),
       ],
-      resolver: createOfferingResolver(ticker, context),
+      resolver: createMetadataResolver(ticker, context),
     };
   }
 
   return {
     transaction: tx.asset.registerAssetMetadataLocalType,
     args,
-    resolver: createOfferingResolver(ticker, context),
+    resolver: createMetadataResolver(ticker, context),
   };
 }
 
