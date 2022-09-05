@@ -69,7 +69,7 @@ check-coverage:
         with:
           name: coverage-artifacts
           failOnError: false
-
+          
   release:
     name: Building and releasing project
     runs-on: ubuntu-latest
