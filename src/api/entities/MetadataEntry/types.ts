@@ -22,12 +22,21 @@ export interface MetadataDetails {
   specs: MetadataSpec;
 }
 
-export interface MetadataValue {
-  value: string;
+export type MetadataValueDetails = {
   expiry: Date | null;
-  lockStatus: MetadataLockStatus;
-  lockedUntil?: Date;
-}
+} & (
+  | {
+      lockStatus: Exclude<MetadataLockStatus, MetadataLockStatus.LockedUntil>;
+    }
+  | {
+      lockStatus: MetadataLockStatus.LockedUntil;
+      lockedUntil: Date;
+    }
+);
+
+export type MetadataValue = {
+  value: string;
+} & MetadataValueDetails;
 
 export type GlobalMetadataKey = MetadataDetails & {
   id: BigNumber;

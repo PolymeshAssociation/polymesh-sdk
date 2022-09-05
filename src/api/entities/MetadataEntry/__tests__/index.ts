@@ -1,10 +1,15 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Context, Entity, MetadataEntry } from '~/internal';
+import { Context, Entity, MetadataEntry, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MetadataLockStatus, MetadataSpec, MetadataType, MetadataValue } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
+
+jest.mock(
+  '~/base/Procedure',
+  require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
 
 describe('MetadataEntry class', () => {
   let context: Context;
@@ -68,6 +73,23 @@ describe('MetadataEntry class', () => {
       expect(
         MetadataEntry.isUniqueIdentifiers({ id: new BigNumber(1), ticker: 3, type: 'Random' })
       ).toBe(false);
+    });
+  });
+
+  describe('method: set', () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<MetadataEntry>;
+      const params = { value: 'SOME_VALUE' };
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args: { metadataEntry, ...params }, transformer: undefined }, context)
+        .resolves(expectedTransaction);
+
+      const tx = await metadataEntry.set(params);
+
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -142,7 +164,7 @@ describe('MetadataEntry class', () => {
 
       const fakeResult: MetadataValue = {
         value: 'SOME_VALUE',
-        lockStatus: MetadataLockStatus.LockedUntil,
+        lockStatus: MetadataLockStatus.Unlocked,
         expiry: new Date('2030/01/01'),
       };
       meshMetadataValueToMetadataValueStub.returns(fakeResult);

@@ -8647,7 +8647,7 @@ describe('metadataValueDetailToMeshMetadataValueDetail', () => {
   it('should throw an error if expiry date is in the past', () => {
     const expectedError = new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'Expiry date is in the past',
+      message: 'Expiry date must be in the future',
     });
 
     expect(() =>
@@ -8661,7 +8661,7 @@ describe('metadataValueDetailToMeshMetadataValueDetail', () => {
   it('should throw an error if locked until date is in the past', () => {
     const expectedError = new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'Locked until date is in the past',
+      message: 'Locked until date must be in the future',
     });
 
     expect(() =>

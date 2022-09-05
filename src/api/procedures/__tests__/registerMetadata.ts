@@ -205,14 +205,26 @@ describe('registerMetadata procedure', () => {
     params = {
       ...params,
       value: 'SOME_VALUE',
-      expiry: null,
-      lockStatus: MetadataLockStatus.LockedUntil,
-      lockedUntil: new Date('2025/01/01'),
     };
 
     const proc = procedureMockUtils.getInstance<Params, MetadataEntry>(mockContext);
 
-    const result = await prepareRegisterMetadata.call(proc, params);
+    let result = await prepareRegisterMetadata.call(proc, params);
+
+    expect(result).toEqual({
+      transaction: registerAndSetLocalAssetMetadataStub,
+      args: [rawTicker, rawName, rawSpecs, rawValue, null],
+      resolver: expect.any(Function),
+    });
+
+    result = await prepareRegisterMetadata.call(proc, {
+      ...params,
+      details: {
+        expiry: null,
+        lockStatus: MetadataLockStatus.LockedUntil,
+        lockedUntil: new Date('2025/01/01'),
+      },
+    });
 
     expect(result).toEqual({
       transaction: registerAndSetLocalAssetMetadataStub,
@@ -235,7 +247,7 @@ describe('registerMetadata procedure', () => {
         },
       });
 
-      expect(boundFunc({ ...params, value: 'SOME_VALUE', expiry: null })).toEqual({
+      expect(boundFunc({ ...params, value: 'SOME_VALUE' })).toEqual({
         permissions: {
           transactions: [TxTags.asset.RegisterAndSetLocalAssetMetadata],
           assets: [expect.objectContaining({ ticker })],

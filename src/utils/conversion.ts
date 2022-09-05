@@ -4185,7 +4185,7 @@ export function metadataValueDetailToMeshMetadataValueDetail(
     if (lockedUntil < new Date()) {
       throw new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
-        message: 'Locked until date is in the past',
+        message: 'Locked until date must be in the future',
       });
     }
     meshLockStatus = { LockedUntil: dateToMoment(lockedUntil, context) };
@@ -4196,7 +4196,7 @@ export function metadataValueDetailToMeshMetadataValueDetail(
   if (expiry && expiry < new Date()) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'Expiry date is in the past',
+      message: 'Expiry date must be in the future',
     });
   }
 

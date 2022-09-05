@@ -14,7 +14,7 @@ import {
   u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { filterEventRecords } from '~/utils/internal';
+import { filterEventRecords, optionize } from '~/utils/internal';
 
 /**
  * @hidden
@@ -101,14 +101,14 @@ export async function prepareRegisterMetadata(
 
   if ('value' in params) {
     // eslint-disable-next-line @typescript-eslint/no-shadow, @typescript-eslint/no-unused-vars
-    const { name, specs, value, ...rest } = params;
+    const { value, details } = params;
 
     return {
       transaction: tx.asset.registerAndSetLocalAssetMetadata,
       args: [
         ...args,
         metadataValueToMeshMetadataValue(value, context),
-        metadataValueDetailToMeshMetadataValueDetail(rest, context),
+        optionize(metadataValueDetailToMeshMetadataValueDetail)(details, context),
       ],
       resolver: createMetadataResolver(ticker, context),
     };

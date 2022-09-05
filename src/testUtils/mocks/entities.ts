@@ -302,6 +302,7 @@ type MockOptions = {
   subsidyOptions?: SubsidyOptions;
   tickerReservationOptions?: TickerReservationOptions;
   assetOptions?: AssetOptions;
+  metadataEntryOptions?: MetadataEntryOptions;
   authorizationRequestOptions?: AuthorizationRequestOptions;
   venueOptions?: VenueOptions;
   instructionOptions?: InstructionOptions;
@@ -1645,6 +1646,7 @@ export const initMocks = function (opts?: MockOptions): void {
   MockSubsidyClass.init(opts?.subsidyOptions);
   MockTickerReservationClass.init(opts?.tickerReservationOptions);
   MockAssetClass.init(opts?.assetOptions);
+  MockMetadataEntryClass.init(opts?.metadataEntryOptions);
   MockAuthorizationRequestClass.init(opts?.authorizationRequestOptions);
   MockVenueClass.init(opts?.venueOptions);
   MockInstructionClass.init(opts?.instructionOptions);
@@ -1670,6 +1672,7 @@ export const configureMocks = function (opts?: MockOptions): void {
   MockSubsidyClass.setOptions(opts?.subsidyOptions);
   MockTickerReservationClass.setOptions(opts?.tickerReservationOptions);
   MockAssetClass.setOptions(opts?.assetOptions);
+  MockMetadataEntryClass.setOptions(opts?.metadataEntryOptions);
   MockAuthorizationRequestClass.setOptions(opts?.authorizationRequestOptions);
   MockVenueClass.setOptions(opts?.venueOptions);
   MockInstructionClass.setOptions(opts?.instructionOptions);
@@ -1694,6 +1697,7 @@ export const reset = function (): void {
   MockSubsidyClass.resetOptions();
   MockTickerReservationClass.resetOptions();
   MockAssetClass.resetOptions();
+  MockMetadataEntryClass.resetOptions();
   MockAuthorizationRequestClass.resetOptions();
   MockVenueClass.resetOptions();
   MockInstructionClass.resetOptions();

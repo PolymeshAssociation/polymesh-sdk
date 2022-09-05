@@ -1,6 +1,7 @@
 import BigNumber from 'bignumber.js';
 
-import { Asset, Context, Entity } from '~/internal';
+import { Asset, Context, Entity, setMetadata } from '~/internal';
+import { ProcedureMethod, SetMetadataParams } from '~/types';
 import {
   bigNumberToU64,
   bytesToString,
@@ -9,7 +10,7 @@ import {
   metadataToMeshMetadataKey,
   stringToTicker,
 } from '~/utils/conversion';
-import { toHumanReadable } from '~/utils/internal';
+import { createProcedureMethod, toHumanReadable } from '~/utils/internal';
 
 import { MetadataDetails, MetadataType, MetadataValue } from './types';
 
@@ -65,7 +66,19 @@ export class MetadataEntry extends Entity<UniqueIdentifiers, HumanReadable> {
     this.id = id;
     this.asset = new Asset({ ticker }, context);
     this.type = type;
+
+    this.set = createProcedureMethod(
+      { getProcedureAndArgs: args => [setMetadata, { ...args, metadataEntry: this }] },
+      context
+    );
   }
+
+  /**
+   * Assign a new list of documents to the Asset by replacing the existing list of documents with the ones passed in the parameters
+   *
+   * This requires two transactions
+   */
+  public set: ProcedureMethod<SetMetadataParams, MetadataEntry>;
 
   /**
    * Retrieve name and specs for this Asset MetadataEntry

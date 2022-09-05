@@ -60,6 +60,7 @@ import {
   PalletSettlementVenue,
   PalletStoFundraiser,
   PolymeshPrimitivesAssetIdentifier,
+  PolymeshPrimitivesAssetMetadataAssetMetadataKey,
   PolymeshPrimitivesAssetMetadataAssetMetadataLockStatus,
   PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
   PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail,
@@ -4212,6 +4213,19 @@ export const createMockAssetTransferCompliance = (
   const args = { paused: createMockBool(paused), requirements: createMockBTreeSet(requirements) };
 
   return createMockCodec(args, !transferCompliance);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAssetMetadataKey = (
+  key: PolymeshPrimitivesAssetMetadataAssetMetadataKey | { Local: u64 } | { Global: u64 }
+): MockCodec<PolymeshPrimitivesAssetMetadataAssetMetadataKey> => {
+  if (isCodec<PolymeshPrimitivesAssetMetadataAssetMetadataKey>(key)) {
+    return key as MockCodec<PolymeshPrimitivesAssetMetadataAssetMetadataKey>;
+  }
+  return createMockEnum<PolymeshPrimitivesAssetMetadataAssetMetadataKey>(key);
 };
 
 /**
