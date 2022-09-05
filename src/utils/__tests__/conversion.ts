@@ -183,6 +183,7 @@ import {
   documentToAssetDocument,
   endConditionToSettlementType,
   extrinsicIdentifierToTxTag,
+  fundingRoundToAssetFundingRound,
   fundraiserTierToTier,
   fundraiserToOfferingDetails,
   granularCanTransferResultToTransferBreakdown,
@@ -215,6 +216,7 @@ import {
   middlewareV2PortfolioToPortfolio,
   moduleAddressToString,
   momentToDate,
+  nameToAssetName,
   offeringTierToPriceTier,
   percentageToPermill,
   permillToBigNumber,
@@ -2572,6 +2574,106 @@ describe('posRatioToBigNumber', () => {
 
     const result = posRatioToBigNumber(balance);
     expect(result).toEqual(new BigNumber(numerator).dividedBy(new BigNumber(denominator)));
+  });
+});
+
+describe('nameToAssetName', () => {
+  let mockContext: Mocked<Context>;
+  let nameMaxLength: BigNumber;
+  let rawNameMaxLength: u32;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockContext = dsMockUtils.getContextInstance();
+    nameMaxLength = new BigNumber(10);
+    rawNameMaxLength = dsMockUtils.createMockU32(nameMaxLength);
+
+    dsMockUtils.setConstMock('asset', 'assetNameMaxLength', {
+      returnValue: rawNameMaxLength,
+    });
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should throw an error if Asset name exceeds max length', () => {
+    const expectedError = new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Asset name length exceeded',
+      data: {
+        maxLength: nameMaxLength,
+      },
+    });
+
+    expect(() => nameToAssetName('TOO_LONG_NAME', mockContext)).toThrowError(expectedError);
+  });
+
+  it('should convert Asset name to Bytes', () => {
+    const name = 'SOME_NAME';
+    const fakeName = 'fakeName' as unknown as Bytes;
+    mockContext.createType.withArgs('Bytes', name).returns(fakeName);
+
+    const result = nameToAssetName(name, mockContext);
+    expect(result).toEqual(fakeName);
+  });
+});
+
+describe('fundingRoundToAssetFundingRound', () => {
+  let mockContext: Mocked<Context>;
+  let fundingRoundNameMaxLength: BigNumber;
+  let rawFundingRoundNameMaxLength: u32;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockContext = dsMockUtils.getContextInstance();
+    fundingRoundNameMaxLength = new BigNumber(10);
+    rawFundingRoundNameMaxLength = dsMockUtils.createMockU32(fundingRoundNameMaxLength);
+
+    dsMockUtils.setConstMock('asset', 'fundingRoundNameMaxLength', {
+      returnValue: rawFundingRoundNameMaxLength,
+    });
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should throw an error if funding round name exceeds max length', () => {
+    const expectedError = new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Asset funding round name length exceeded',
+      data: {
+        maxLength: fundingRoundNameMaxLength,
+      },
+    });
+
+    expect(() =>
+      fundingRoundToAssetFundingRound('TOO_LONG_FUNDING_ROUND_NAME', mockContext)
+    ).toThrowError(expectedError);
+  });
+
+  it('should convert funding round name to Bytes', () => {
+    const name = 'SOME_NAME';
+    const fakeFundingRoundName = 'fakeFundingRoundName' as unknown as Bytes;
+    mockContext.createType.withArgs('Bytes', name).returns(fakeFundingRoundName);
+
+    const result = fundingRoundToAssetFundingRound(name, mockContext);
+    expect(result).toEqual(fakeFundingRoundName);
   });
 });
 

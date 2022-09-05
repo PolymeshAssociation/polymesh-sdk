@@ -1578,6 +1578,58 @@ export function posRatioToBigNumber(postRatio: PosRatio): BigNumber {
 /**
  * @hidden
  */
+export function nameToAssetName(value: string, context: Context): Bytes {
+  const {
+    polymeshApi: {
+      consts: {
+        asset: { assetNameMaxLength },
+      },
+    },
+  } = context;
+
+  const nameMaxLength = u32ToBigNumber(assetNameMaxLength);
+
+  if (nameMaxLength.lt(value.length)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Asset name length exceeded',
+      data: {
+        maxLength: nameMaxLength,
+      },
+    });
+  }
+  return stringToBytes(value, context);
+}
+
+/**
+ * @hidden
+ */
+export function fundingRoundToAssetFundingRound(value: string, context: Context): Bytes {
+  const {
+    polymeshApi: {
+      consts: {
+        asset: { fundingRoundNameMaxLength },
+      },
+    },
+  } = context;
+
+  const nameMaxLength = u32ToBigNumber(fundingRoundNameMaxLength);
+
+  if (nameMaxLength.lt(value.length)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Asset funding round name length exceeded',
+      data: {
+        maxLength: nameMaxLength,
+      },
+    });
+  }
+  return stringToBytes(value, context);
+}
+
+/**
+ * @hidden
+ */
 export function isIsinValid(isin: string): boolean {
   isin = isin.toUpperCase();
 
