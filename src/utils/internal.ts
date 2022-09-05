@@ -372,7 +372,7 @@ export async function requestPaginated<F extends AnyFunction, T extends AnyTuple
     }
   } else {
     /*
-     * NOTE @prashantasdeveloper: this assertion is required because types
+     * NOTE @monitz87: this assertion is required because types
      *   are inconsistent in the polkadot repo
      */
     entries = await query.entries(...(args as DropLast<Parameters<F>>));

@@ -37,7 +37,7 @@ export async function prepareCreateVenue(
   const rawDetails = stringToBytes(description, context);
   const rawType = venueTypeToMeshVenueType(type, context);
 
-  // NOTE @prashantasdeveloper: we're sending an empty signer array for the moment
+  // NOTE @monitz87: we're sending an empty signer array for the moment
   const [newVenue] = this.addTransaction({
     transaction: settlement.createVenue,
     resolvers: [createCreateVenueResolver(context)],

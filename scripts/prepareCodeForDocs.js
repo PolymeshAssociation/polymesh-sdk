@@ -31,7 +31,7 @@ const importRegex = /(import .+? from '.+?';\n)\n/s;
 const getTypeArgumentsFromProcedureMethod = typeString => {
   const source = ts.createSourceFile('temp', typeString);
 
-  // NOTE @prashantasdeveloper: this is very ugly but it's the quickest way I found of getting the type arguments
+  // NOTE @monitz87: this is very ugly but it's the quickest way I found of getting the type arguments
   const signature = source.getChildren(source)[0].getChildren(source)[0].getChildren(source)[0];
   const kind = signature.getChildren(source)[0].getText(source);
   const [first, , second, , third] = signature
@@ -69,7 +69,7 @@ const createReplacementSignature = (_, funcName, type) => {
   const name = funcName.replace('abstract ', '');
   const isAbstract = name !== funcName;
 
-  // NOTE @prashantasdeveloper: we make the function return a type asserted value to avoid compilation errors
+  // NOTE @monitz87: we make the function return a type asserted value to avoid compilation errors
   const implementation = ` {
     return {} as ${returnType};
   }`;
