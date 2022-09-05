@@ -1,6 +1,4 @@
 /*
- * Author: Jeremías Díaz (monitz87)
- *
  * This script is part of a workaround to be able to make ProcedureMethods be correctly
  *  recognized as functions by typedoc. Since how to create a typedoc plugin is not documented
  *  (and we're using an older version), the way we're handling it is:
@@ -33,7 +31,7 @@ const importRegex = /(import .+? from '.+?';\n)\n/s;
 const getTypeArgumentsFromProcedureMethod = typeString => {
   const source = ts.createSourceFile('temp', typeString);
 
-  // NOTE @monitz87: this is very ugly but it's the quickest way I found of getting the type arguments
+  // NOTE @prashantasdeveloper: this is very ugly but it's the quickest way I found of getting the type arguments
   const signature = source.getChildren(source)[0].getChildren(source)[0].getChildren(source)[0];
   const kind = signature.getChildren(source)[0].getText(source);
   const [first, , second, , third] = signature
@@ -71,7 +69,7 @@ const createReplacementSignature = (_, funcName, type) => {
   const name = funcName.replace('abstract ', '');
   const isAbstract = name !== funcName;
 
-  // NOTE @monitz87: we make the function return a type asserted value to avoid compilation errors
+  // NOTE @prashantasdeveloper: we make the function return a type asserted value to avoid compilation errors
   const implementation = ` {
     return {} as ${returnType};
   }`;

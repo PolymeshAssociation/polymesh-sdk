@@ -147,7 +147,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
     };
 
     if (callback) {
-      // NOTE @monitz87: the type assertions are necessary because queryMulti doesn't play nice with strict types
+      // NOTE @prashantasdeveloper: the type assertions are necessary because queryMulti doesn't play nice with strict types
       return queryMulti<
         [QueryReturnType<typeof asset.tickers>, QueryReturnType<typeof asset.tokens>]
       >(
@@ -162,7 +162,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
       );
     }
 
-    // NOTE @monitz87: the type assertions are necessary because queryMulti doesn't play nice with strict types
+    // NOTE @prashantasdeveloper: the type assertions are necessary because queryMulti doesn't play nice with strict types
     const [tickerRegistration, meshAsset] = await queryMulti<
       [QueryReturnType<typeof asset.tickers>, QueryReturnType<typeof asset.tokens>]
     >([

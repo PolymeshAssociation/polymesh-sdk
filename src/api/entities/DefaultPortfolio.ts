@@ -12,7 +12,7 @@ export class DefaultPortfolio extends Portfolio {
    * @hidden
    */
   constructor(identifiers: UniqueIdentifiers, context: Context) {
-    // NOTE @monitz87: this is necessary to remove `id` from the DefaultPortfolio constructor signature
+    // NOTE @prashantasdeveloper: this is necessary to remove `id` from the DefaultPortfolio constructor signature
     super({ ...identifiers, id: undefined }, context);
   }
 

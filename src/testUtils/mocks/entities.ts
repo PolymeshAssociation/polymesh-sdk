@@ -374,7 +374,7 @@ function createMockEntityClass<Options extends EntityOptions>(
         const entity = entities[className];
 
         /*
-         * NOTE @monitz87: This is the only way I managed to spoof "instanceof"
+         * NOTE @prashantasdeveloper: This is the only way I managed to spoof "instanceof"
          *  without breaking everything else:
          *
          * - If the Entity in question isn't being mocked as an import (entity.isMockEntity === false),

@@ -372,7 +372,7 @@ export async function requestPaginated<F extends AnyFunction, T extends AnyTuple
     }
   } else {
     /*
-     * NOTE @monitz87: this assertion is required because types
+     * NOTE @prashantasdeveloper: this assertion is required because types
      *   are inconsistent in the polkadot repo
      */
     entries = await query.entries(...(args as DropLast<Parameters<F>>));
@@ -869,7 +869,7 @@ type MapTxAndArgsArray<Args extends unknown[][]> = {
   [K in keyof Args]: Args[K] extends unknown[] ? TxAndArgsArray<Args[K]> : never;
 };
 
-// * TODO @monitz87: delete this function when we eliminate `addBatchTransaction`
+// * TODO @prashantasdeveloper: delete this function when we eliminate `addBatchTransaction`
 /**
  * @hidden
  */
@@ -883,7 +883,7 @@ function mapArgs<Args extends unknown[] | []>({
   })) as unknown as MapTxWithArgs<Args[]>;
 }
 
-// * TODO @monitz87: delete this function when we eliminate `addBatchTransaction`
+// * TODO @prashantasdeveloper: delete this function when we eliminate `addBatchTransaction`
 /**
  * Assemble the `transactions` array that has to be passed to `addBatchTransaction` from a set of parameter arrays with their
  *   respective transaction
