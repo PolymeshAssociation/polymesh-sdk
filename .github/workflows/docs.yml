@@ -49,7 +49,7 @@ jobs:
         with:
           path: 'docs'
         env:
-          GH_PERSONAL_ACCESS_TOKEN: ${{ secrets.JERE_RELEASE_TOKEN }}
+          GH_PERSONAL_ACCESS_TOKEN: ${{ secrets.RELEASE_TOKEN }}
 
   readme:
     name: Readme
