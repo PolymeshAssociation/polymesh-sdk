@@ -42,7 +42,7 @@
     "@polymeshassociation/signing-manager-types": "^1.1.0",
     "@semantic-release/changelog": "^6.0.1",
     "@types/bluebird": "^3.5.30",
-    "@types/jest": "26.0.24",
+    "@types/jest": "28.1.1",
     "@types/json-stable-stringify": "^1.0.32",
     "@types/lodash": "^4.14.149",
     "@types/node": "^13.1.8",
