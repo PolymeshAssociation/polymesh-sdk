@@ -7,7 +7,8 @@ Do not open issues that might have security implications! It is critical that se
 Vulnerabilities can be reported by emailing repository admins:
 
 - Víctor Vicente victor@polymath.network
-- Jeremías Diaz jeremias@polymath.network
+- Eric Richardson ericrichardson@polymath.network
+- Prashant Bajpai prashant@polymath.network
 
 Please include the requested information listed below (as much as you can provide) to help us better understand the nature and scope of the possible issue:
 
