@@ -2,8 +2,9 @@ import { Asset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, ModifyAssetParams, TxTags } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import {
+  fundingRoundToAssetFundingRound,
+  nameToAssetName,
   securityIdentifierToAssetIdentifier,
-  stringToBytes,
   stringToTicker,
 } from '~/utils/conversion';
 import { checkTxType, hasSameElements } from '~/utils/internal';
@@ -82,7 +83,7 @@ export async function prepareModifyAsset(
       });
     }
 
-    const nameBytes = stringToBytes(newName, context);
+    const nameBytes = nameToAssetName(newName, context);
     transactions.push(
       checkTxType({
         transaction: tx.asset.renameAsset,
@@ -99,7 +100,7 @@ export async function prepareModifyAsset(
       });
     }
 
-    const fundingBytes = stringToBytes(newFundingRound, context);
+    const fundingBytes = fundingRoundToAssetFundingRound(newFundingRound, context);
     transactions.push(
       checkTxType({
         transaction: tx.asset.setFundingRound,
