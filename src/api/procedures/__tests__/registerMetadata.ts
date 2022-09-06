@@ -120,7 +120,6 @@ describe('registerMetadata procedure', () => {
     entityMockUtils.reset();
     procedureMockUtils.reset();
     dsMockUtils.reset();
-    sinon.restore();
   });
 
   afterAll(() => {

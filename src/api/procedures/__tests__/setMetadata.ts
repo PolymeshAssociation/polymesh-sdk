@@ -77,18 +77,17 @@ describe('setMetadata procedure', () => {
     id = new BigNumber(1);
     type = MetadataType.Local;
 
-    entityMockUtils.configureMocks({
-      metadataEntryOptions: {
-        value: {
-          value: 'OLD_VALUE',
-          expiry: null,
-          lockStatus: MetadataLockStatus.LockedUntil,
-          lockedUntil: new Date('1987/01/01'),
-        },
+    metadataEntry = entityMockUtils.getMetadataEntryInstance({
+      id,
+      type,
+      ticker,
+      value: {
+        value: 'OLD_VALUE',
+        expiry: null,
+        lockStatus: MetadataLockStatus.LockedUntil,
+        lockedUntil: new Date('1987/01/01'),
       },
     });
-
-    metadataEntry = new MetadataEntry({ id, type, ticker }, mockContext);
 
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
 
@@ -115,7 +114,6 @@ describe('setMetadata procedure', () => {
     entityMockUtils.reset();
     procedureMockUtils.reset();
     dsMockUtils.reset();
-    sinon.restore();
   });
 
   afterAll(() => {
@@ -124,15 +122,15 @@ describe('setMetadata procedure', () => {
   });
 
   it('should throw an error if MetadataEntry status is Locked', () => {
-    entityMockUtils.configureMocks({
-      metadataEntryOptions: {
+    params = {
+      metadataEntry: entityMockUtils.getMetadataEntryInstance({
+        id,
+        type,
+        ticker,
         value: {
           lockStatus: MetadataLockStatus.Locked,
         },
-      },
-    });
-    params = {
-      metadataEntry: new MetadataEntry({ id, type, ticker }, mockContext),
+      }),
       value: 'SOME_VALUE',
     };
     const proc = procedureMockUtils.getInstance<Params, MetadataEntry>(mockContext);
@@ -146,16 +144,16 @@ describe('setMetadata procedure', () => {
   });
 
   it('should throw an error if MetadataEntry is still in locked phase', () => {
-    entityMockUtils.configureMocks({
-      metadataEntryOptions: {
+    params = {
+      metadataEntry: entityMockUtils.getMetadataEntryInstance({
+        id,
+        type,
+        ticker,
         value: {
           lockStatus: MetadataLockStatus.LockedUntil,
           lockedUntil,
         },
-      },
-    });
-    params = {
-      metadataEntry: new MetadataEntry({ id, type, ticker }, mockContext),
+      }),
       value: 'SOME_VALUE',
     };
     const proc = procedureMockUtils.getInstance<Params, MetadataEntry>(mockContext);
@@ -172,14 +170,8 @@ describe('setMetadata procedure', () => {
   });
 
   it('should throw an error if MetadataEntry value details are being set without specifying the value', () => {
-    entityMockUtils.configureMocks({
-      metadataEntryOptions: {
-        value: null,
-      },
-    });
-
     params = {
-      metadataEntry: new MetadataEntry({ id, type, ticker }, mockContext),
+      metadataEntry: entityMockUtils.getMetadataEntryInstance({ id, type, ticker, value: null }),
       details: {
         expiry: null,
         lockStatus: MetadataLockStatus.Unlocked,

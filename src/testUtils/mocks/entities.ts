@@ -89,6 +89,7 @@ export type MockAccount = Mocked<Account>;
 export type MockSubsidy = Mocked<Subsidy>;
 export type MockTickerReservation = Mocked<TickerReservation>;
 export type MockAsset = Mocked<Asset>;
+export type MockMetadataEntry = Mocked<MetadataEntry>;
 export type MockAuthorizationRequest = Mocked<AuthorizationRequest>;
 export type MockVenue = Mocked<Venue>;
 export type MockInstruction = Mocked<Instruction>;
@@ -1782,6 +1783,20 @@ export const getAssetInstance = (opts?: AssetOptions): MockAsset => {
   }
 
   return instance as unknown as MockAsset;
+};
+
+/**
+ * @hidden
+ * Retrieve a MetadataEntry instance
+ */
+export const getMetadataEntryInstance = (opts?: MetadataEntryOptions): MockMetadataEntry => {
+  const instance = new MockMetadataEntryClass();
+
+  if (opts) {
+    instance.configure(opts);
+  }
+
+  return instance as unknown as MockMetadataEntry;
 };
 
 /**
