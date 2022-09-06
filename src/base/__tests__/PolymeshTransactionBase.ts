@@ -23,7 +23,9 @@ describe('Polymesh Transaction Base class', () => {
   let context: Mocked<Context>;
 
   beforeAll(() => {
-    jest.useFakeTimers('legacy');
+    jest.useFakeTimers({
+      legacyFakeTimers: true,
+    });
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
   });

@@ -54,6 +54,8 @@ describe('createAsset procedure', () => {
   let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
   let bigNumberToBalanceStub: sinon.SinonStub;
   let stringToBytesStub: sinon.SinonStub<[string, Context], Bytes>;
+  let nameToAssetNameStub: sinon.SinonStub<[string, Context], Bytes>;
+  let fundingRoundToAssetFundingRoundStub: sinon.SinonStub<[string, Context], Bytes>;
   let booleanToBoolStub: sinon.SinonStub<[boolean, Context], bool>;
   let stringToTickerKeyStub: sinon.SinonStub<[string, Context], TickerKey>;
   let statisticStatTypesToBtreeStatTypeStub: sinon.SinonStub<
@@ -105,6 +107,11 @@ describe('createAsset procedure', () => {
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
     bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
     stringToBytesStub = sinon.stub(utilsConversionModule, 'stringToBytes');
+    nameToAssetNameStub = sinon.stub(utilsConversionModule, 'nameToAssetName');
+    fundingRoundToAssetFundingRoundStub = sinon.stub(
+      utilsConversionModule,
+      'fundingRoundToAssetFundingRound'
+    );
     booleanToBoolStub = sinon.stub(utilsConversionModule, 'booleanToBool');
     stringToTickerKeyStub = sinon.stub(utilsConversionModule, 'stringToTickerKey');
     statisticStatTypesToBtreeStatTypeStub = sinon.stub(
@@ -207,7 +214,7 @@ describe('createAsset procedure', () => {
     bigNumberToBalanceStub
       .withArgs(initialSupply, mockContext, isDivisible)
       .returns(rawInitialSupply);
-    stringToBytesStub.withArgs(name, mockContext).returns(rawName);
+    nameToAssetNameStub.withArgs(name, mockContext).returns(rawName);
     booleanToBoolStub.withArgs(isDivisible, mockContext).returns(rawIsDivisible);
     booleanToBoolStub.withArgs(!requireInvestorUniqueness, mockContext).returns(rawDisableIu);
     stringToTickerKeyStub.withArgs(ticker, mockContext).returns({ Ticker: rawTicker });
@@ -217,7 +224,9 @@ describe('createAsset procedure', () => {
     securityIdentifierToAssetIdentifierStub
       .withArgs(securityIdentifiers[0], mockContext)
       .returns(rawIdentifiers[0]);
-    stringToBytesStub.withArgs(fundingRound, mockContext).returns(rawFundingRound);
+    fundingRoundToAssetFundingRoundStub
+      .withArgs(fundingRound, mockContext)
+      .returns(rawFundingRound);
     assetDocumentToDocumentStub
       .withArgs(
         { uri: documents[0].uri, contentHash: documents[0].contentHash, name: documents[0].name },

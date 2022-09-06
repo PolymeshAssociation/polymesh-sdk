@@ -85,7 +85,9 @@ jest.mock('websocket', require('~/testUtils/mocks/dataSources').mockWebSocketMod
 
 describe('delay', () => {
   beforeAll(() => {
-    jest.useFakeTimers('legacy');
+    jest.useFakeTimers({
+      legacyFakeTimers: true,
+    });
   });
 
   afterAll(() => {
