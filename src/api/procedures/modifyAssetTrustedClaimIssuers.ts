@@ -181,18 +181,16 @@ export async function prepareModifyAssetTrustedClaimIssuers(
     });
   }
 
-  const transactions = assembleBatchTransactions(
-    tuple(
-      {
-        transaction: tx.complianceManager.removeDefaultTrustedClaimIssuer,
-        argsArray: claimIssuersToDelete,
-      },
-      {
-        transaction: tx.complianceManager.addDefaultTrustedClaimIssuer,
-        argsArray: claimIssuersToAdd,
-      }
-    )
-  );
+  const transactions = assembleBatchTransactions([
+    {
+      transaction: tx.complianceManager.removeDefaultTrustedClaimIssuer,
+      argsArray: claimIssuersToDelete,
+    },
+    {
+      transaction: tx.complianceManager.addDefaultTrustedClaimIssuer,
+      argsArray: claimIssuersToAdd,
+    },
+  ] as const);
 
   return { transactions, resolver: new Asset({ ticker }, context) };
 }

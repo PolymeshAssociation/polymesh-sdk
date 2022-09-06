@@ -965,12 +965,12 @@ export async function getCheckpointValue(
   }
 }
 
-interface TxAndArgsArray<Args extends unknown[] = unknown[]> {
+interface TxAndArgsArray<Args extends Readonly<unknown[]> = Readonly<unknown[]>> {
   transaction: PolymeshTx<Args>;
   argsArray: Args[];
 }
 
-type MapTxAndArgsArray<Args extends unknown[][]> = {
+type MapTxAndArgsArray<Args extends Readonly<unknown[][]>> = {
   [K in keyof Args]: Args[K] extends unknown[] ? TxAndArgsArray<Args[K]> : never;
 };
 
@@ -988,12 +988,12 @@ function mapArgs<Args extends unknown[] | []>({
 }
 
 /**
- * Assemble the `transactions` array that has to be passed to `addBatchTransaction` from a set of parameter arrays with their
+ * Assemble the `transactions` array that is expected in a `BatchTransactionSpec` from a set of parameter arrays with their
  *   respective transaction
  *
  * @note This method ensures type safety for batches with a variable amount of transactions
  */
-export function assembleBatchTransactions<ArgsArray extends unknown[][]>(
+export function assembleBatchTransactions<ArgsArray extends Readonly<unknown[][]>>(
   txsAndArgs: MapTxAndArgsArray<ArgsArray>
 ): MapTxWithArgs<unknown[][]> {
   return flatMap(txsAndArgs, mapArgs) as unknown as MapTxWithArgs<unknown[][]>;
@@ -1055,7 +1055,7 @@ export async function getPortfolioIdsByName(
  * @hidden
  *
  * Check if a transaction matches the type of its args. Returns the same value but stripped of the types. This function has no logic, it's strictly
- *   for type safety around `addBatchTransaction`
+ *   for type safety when returning a `BatchTransactionSpec` with a variable amount of transactions
  */
 export function checkTxType<Args extends unknown[]>(tx: TxWithArgs<Args>): TxWithArgs<unknown[]> {
   return tx as unknown as TxWithArgs<unknown[]>;

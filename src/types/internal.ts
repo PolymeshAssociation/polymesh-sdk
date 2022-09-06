@@ -72,9 +72,8 @@ export type Consts = QueryableConsts<'promise'>;
  *
  * @param Args - arguments of the transaction
  */
-export type PolymeshTx<Args extends unknown[] = unknown[]> = AugmentedSubmittable<
-  (...args: Args) => SubmittableExtrinsic<'promise'>
->;
+export type PolymeshTx<Args extends Readonly<unknown[]> = Readonly<unknown[]>> =
+  AugmentedSubmittable<(...args: Args) => SubmittableExtrinsic<'promise'>>;
 
 interface BaseTx<Args extends unknown[] = unknown[]> {
   /**
