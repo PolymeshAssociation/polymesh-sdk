@@ -8,7 +8,6 @@ import BigNumber from 'bignumber.js';
 import { pick } from 'lodash';
 import sinon from 'sinon';
 
-import { MultiSigProposal } from '~/api/entities/MultiSigProposal';
 import {
   Account,
   Asset,
@@ -23,6 +22,7 @@ import {
   Instruction,
   KnownPermissionGroup,
   MultiSig,
+  MultiSigProposal,
   NumberedPortfolio,
   Offering,
   Subsidy,

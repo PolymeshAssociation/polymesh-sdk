@@ -51,3 +51,4 @@ export * from './TickerReservation/types';
 export * from './Venue/types';
 export * from './Subsidy/types';
 export * from './MultiSig/types';
+export * from './MultiSigProposal/types';
