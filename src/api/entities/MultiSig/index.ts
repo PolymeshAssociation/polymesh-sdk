@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { MultiSigProposal } from '~/api/entities/MultiSig/MultiSigProposal';
+import { MultiSigProposal } from '~/api/entities/MultiSigProposal';
 import { Account, PolymeshError } from '~/internal';
 import { ErrorCode, MultiSigDetails } from '~/types';
 import {
@@ -37,6 +37,7 @@ export class MultiSig extends Account {
       return signerValueToSigner(signatoryToSignerValue(signatory), context);
     });
     const requiredSignatures = u64ToBigNumber(rawSignersRequired);
+
     return { signers, requiredSignatures };
   }
 
@@ -49,7 +50,9 @@ export class MultiSig extends Account {
     const { id } = args;
     const { address, context } = this;
     const proposal = new MultiSigProposal({ multiSigAddress: address, id }, context);
+
     const exists = await proposal.exists();
+
     if (!exists) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
@@ -73,13 +76,15 @@ export class MultiSig extends Account {
       context,
       address,
     } = this;
+
     const rawAddress = stringToAccountId(address, context);
 
     const rawProposals = await multiSig.proposalIds.entries(rawAddress);
 
     return rawProposals.map(([, rawId]) => {
       const id = u64ToBigNumber(rawId.unwrap());
-      return new MultiSigProposal({ multiSigAddress: address, id: new BigNumber(id) }, context);
+
+      return new MultiSigProposal({ multiSigAddress: address, id }, context);
     });
   }
 }

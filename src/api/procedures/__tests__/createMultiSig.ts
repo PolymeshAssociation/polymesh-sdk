@@ -2,7 +2,7 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { MultiSig } from '~/api/entities/MultiSig/MultiSig';
+import { MultiSig } from '~/api/entities/MultiSig';
 import {
   createMultiSigResolver,
   prepareCreateMultiSigAccount,
@@ -55,8 +55,10 @@ describe('createMultiSig procedure', () => {
     const signers = [mockAccount];
     const requiredSignatures = new BigNumber(1);
 
-    const signatories = signers.map(s => utilsConversionModule.signerToSignatory(s, mockContext));
-    const convertedSignersRequired = utilsConversionModule.bigNumberToU64(
+    const rawSignatories = signers.map(s =>
+      utilsConversionModule.signerToSignatory(s, mockContext)
+    );
+    const rawRequiredSignatures = utilsConversionModule.bigNumberToU64(
       requiredSignatures,
       mockContext
     );
@@ -71,7 +73,7 @@ describe('createMultiSig procedure', () => {
       sinon.match({
         transaction: createMultiSigTransaction,
         resolvers: sinon.match.array,
-        args: [signatories, convertedSignersRequired],
+        args: [rawSignatories, rawRequiredSignatures],
       })
     );
     expect(result).toBe(multiSigResponse);

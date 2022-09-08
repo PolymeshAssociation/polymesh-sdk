@@ -35,13 +35,13 @@ export async function prepareCreateMultiSigAccount(
     });
   }
 
-  const rawSignaturesRequired = bigNumberToU64(requiredSignatures, context);
+  const rawRequiredSignatures = bigNumberToU64(requiredSignatures, context);
   const rawSignatories = signers.map(signer => signerToSignatory(signer, context));
 
   const [multiSig] = this.addTransaction({
     transaction: tx.multiSig.createMultisig,
     resolvers: [createMultiSigResolver(context)],
-    args: [rawSignatories, rawSignaturesRequired],
+    args: [rawSignatories, rawRequiredSignatures],
   });
 
   return multiSig;

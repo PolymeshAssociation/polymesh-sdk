@@ -1,13 +1,18 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { MultiSigProposal } from '~/api/entities/MultiSig/MultiSigProposal';
+import { MultiSigProposal } from '~/api/entities/MultiSigProposal';
 import { Account, Context, MultiSig, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { createMockMoment, createMockOption } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import { ErrorCode, ProposalStatus } from '~/types';
 import * as utilsInternalModule from '~/utils/internal';
+
+jest.mock(
+  '~/api/entities/MultiSig',
+  require('~/testUtils/mocks/entities').mockMultiSigModule('~/api/entities/MultiSig')
+);
 
 describe('MultiSigProposal class', () => {
   let context: Mocked<Context>;
