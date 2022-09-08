@@ -99,7 +99,6 @@ describe('MultiSig class', () => {
         id,
         multiSig: expect.objectContaining({ address }),
       });
-      // expect(result.multiSig).toEqual(address);
     });
 
     it("should throw if the proposal doesn't exist", () => {
