@@ -88,7 +88,7 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
     const approvalAmount = u64ToBigNumber(rawApprovals);
     const rejectionAmount = u64ToBigNumber(rawRejections);
     const expiry = optionize(momentToDate)(rawExpiry.unwrapOr(null));
-    const status = meshProposalStatusToProposalStatus(rawStatus);
+    const status = meshProposalStatusToProposalStatus(rawStatus, expiry);
     const autoClose = boolToBoolean(rawAutoClose);
 
     return {

@@ -65,7 +65,7 @@ import {
 } from 'lodash';
 import { CountryCode as MeshCountryCode } from 'polymesh-types/types';
 
-import { assertCaTaxWithholdingsValid } from '~/api/procedures/utils';
+import { assertCaTaxWithholdingsValid, UnreachableCaseError } from '~/api/procedures/utils';
 import { countryCodeToMeshCountryCode, meshCountryCodeToCountryCode } from '~/generated/utils';
 import {
   Account,
@@ -4069,7 +4069,26 @@ export function inputStatTypeToMeshStatType(
  * @hidden
  */
 export function meshProposalStatusToProposalStatus(
-  status: PalletMultisigProposalStatus
+  status: PalletMultisigProposalStatus,
+  expiry: Date | null
 ): ProposalStatus {
-  return ProposalStatus[status.type];
+  const { type } = status;
+  switch (type) {
+    case 'ActiveOrExpired':
+      if (!expiry || expiry > new Date()) {
+        return ProposalStatus.Active;
+      } else {
+        return ProposalStatus.Expired;
+      }
+    case 'Invalid':
+      return ProposalStatus.Invalid;
+    case 'ExecutionSuccessful':
+      return ProposalStatus.Successful;
+    case 'ExecutionFailed':
+      return ProposalStatus.Failed;
+    case 'Rejected':
+      return ProposalStatus.Rejected;
+    default:
+      throw new UnreachableCaseError(type);
+  }
 }

@@ -9,6 +9,7 @@ import {
   Signature,
 } from '@polkadot/types/interfaces';
 import {
+  PalletMultisigProposalStatus,
   PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesStatisticsStat2ndKey,
@@ -59,6 +60,7 @@ import {
 } from 'polymesh-types/polymesh';
 import sinon from 'sinon';
 
+import { UnreachableCaseError } from '~/api/procedures/utils';
 import {
   Account,
   Context,
@@ -114,6 +116,7 @@ import {
   PermissionsLike,
   PermissionType,
   PortfolioMovement,
+  ProposalStatus,
   Scope,
   ScopeClaimProof,
   ScopeType,
@@ -205,6 +208,7 @@ import {
   meshCorporateActionToCorporateActionParams,
   meshInstructionStatusToInstructionStatus,
   meshPermissionsToPermissions,
+  meshProposalStatusToProposalStatus,
   meshScopeToScope,
   meshStatToStatisticsOpType,
   meshVenueTypeToVenueType,
@@ -8439,5 +8443,55 @@ describe('inputStatTypeToMeshStatType', () => {
     } as const;
     result = inputStatTypeToMeshStatType(scopedInput, mockContext);
     expect(result).toEqual(fakeStatistic);
+  });
+});
+
+describe('meshProposalStatusToProposalStatus', () => {
+  it('should convert raw statuses to the correct ProposalStatus', () => {
+    let result = meshProposalStatusToProposalStatus(
+      dsMockUtils.createMockProposalStatus('ActiveOrExpired'),
+      null
+    );
+    expect(result).toEqual(ProposalStatus.Active);
+
+    result = meshProposalStatusToProposalStatus(
+      dsMockUtils.createMockProposalStatus('ActiveOrExpired'),
+      new Date(1)
+    );
+    expect(result).toEqual(ProposalStatus.Expired);
+
+    result = meshProposalStatusToProposalStatus(
+      dsMockUtils.createMockProposalStatus('ExecutionSuccessful'),
+      null
+    );
+    expect(result).toEqual(ProposalStatus.Successful);
+
+    result = meshProposalStatusToProposalStatus(
+      dsMockUtils.createMockProposalStatus('ExecutionFailed'),
+      null
+    );
+    expect(result).toEqual(ProposalStatus.Failed);
+
+    result = meshProposalStatusToProposalStatus(
+      dsMockUtils.createMockProposalStatus('Rejected'),
+      null
+    );
+    expect(result).toEqual(ProposalStatus.Rejected);
+
+    result = meshProposalStatusToProposalStatus(
+      dsMockUtils.createMockProposalStatus('Invalid'),
+      null
+    );
+    expect(result).toEqual(ProposalStatus.Invalid);
+  });
+
+  it('should throw an error if it receives an unknown status', () => {
+    const expectedError = new UnreachableCaseError('UnknownStatus' as never);
+    return expect(() =>
+      meshProposalStatusToProposalStatus(
+        { type: 'UnknownStatus' } as unknown as PalletMultisigProposalStatus,
+        null
+      )
+    ).toThrowError(expectedError);
   });
 });

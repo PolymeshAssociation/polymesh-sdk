@@ -4,9 +4,10 @@ import { TxTag } from '~/types';
 
 export enum ProposalStatus {
   Invalid = 'Invalid',
-  ActiveOrExpired = 'ActiveOrExpired',
-  ExecutionSuccessful = 'ExecutionSuccessful',
-  ExecutionFailed = 'ExecutionFailed',
+  Active = 'Active',
+  Expired = 'Expired',
+  Successful = 'ExecutionSuccessful',
+  Failed = 'ExecutionFailed',
   Rejected = 'Rejected',
 }
 

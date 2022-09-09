@@ -56,7 +56,7 @@ describe('MultiSigProposal class', () => {
         returnValue: dsMockUtils.createMockProposalDetails({
           approvals: new BigNumber(1),
           rejections: new BigNumber(1),
-          status: ProposalStatus.ActiveOrExpired,
+          status: dsMockUtils.createMockProposalStatus('ActiveOrExpired'),
           autoClose: true,
           expiry: createMockOption(createMockMoment(new BigNumber(3))),
         }),
@@ -80,7 +80,7 @@ describe('MultiSigProposal class', () => {
         autoClose: undefined,
         expiry: new Date(3),
         rejectionAmount: new BigNumber(1),
-        status: undefined,
+        status: ProposalStatus.Expired,
         txTag: 'asset.reserveTicker',
       });
 
@@ -88,7 +88,7 @@ describe('MultiSigProposal class', () => {
         returnValue: dsMockUtils.createMockProposalDetails({
           approvals: new BigNumber(1),
           rejections: new BigNumber(1),
-          status: ProposalStatus.ActiveOrExpired,
+          status: dsMockUtils.createMockProposalStatus('ActiveOrExpired'),
           autoClose: true,
           expiry: createMockOption(),
         }),
@@ -102,7 +102,7 @@ describe('MultiSigProposal class', () => {
         autoClose: undefined,
         expiry: null,
         rejectionAmount: new BigNumber(1),
-        status: undefined,
+        status: ProposalStatus.Active,
         txTag: 'asset.reserveTicker',
       });
     });
@@ -116,7 +116,7 @@ describe('MultiSigProposal class', () => {
         returnValue: dsMockUtils.createMockProposalDetails({
           approvals: new BigNumber(1),
           rejections: new BigNumber(1),
-          status: ProposalStatus.ActiveOrExpired,
+          status: dsMockUtils.createMockProposalStatus('ActiveOrExpired'),
           autoClose: true,
           expiry: null,
         }),

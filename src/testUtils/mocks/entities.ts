@@ -1517,7 +1517,7 @@ const MockMultiSigProposalClass = createMockEntityClass<MultiSigProposalOptions>
     details: {
       approvalAmount: new BigNumber(1),
       rejectionAmount: new BigNumber(0),
-      status: ProposalStatus.ActiveOrExpired,
+      status: ProposalStatus.Active,
       expiry: null,
       autoClose: false,
     },
