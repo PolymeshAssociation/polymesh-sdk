@@ -80,6 +80,7 @@ describe('MetadataEntry class', () => {
     it('should prepare the procedure and return the resulting transaction', async () => {
       const expectedTransaction =
         'someTransaction' as unknown as PolymeshTransaction<MetadataEntry>;
+
       const params = { value: 'SOME_VALUE' };
 
       procedureMockUtils
@@ -94,7 +95,11 @@ describe('MetadataEntry class', () => {
   });
 
   describe('method: details', () => {
-    it('should return the name and specs of metadata', async () => {
+    afterAll(() => {
+      sinon.restore();
+    });
+
+    it('should return the name and specs of MetadataEntry', async () => {
       sinon.stub(utilsConversionModule, 'bigNumberToU64');
 
       const rawName = dsMockUtils.createMockOption(dsMockUtils.createMockBytes('SOME_NAME'));
@@ -146,7 +151,7 @@ describe('MetadataEntry class', () => {
   });
 
   describe('method: value', () => {
-    it('should return the value of metadata', async () => {
+    it('should return the value and its details of the MetadataEntry', async () => {
       sinon.stub(utilsConversionModule, 'metadataToMeshMetadataKey');
       dsMockUtils.createQueryStub('asset', 'assetMetadataValues');
       dsMockUtils.createQueryStub('asset', 'assetMetadataValueDetails');
@@ -176,7 +181,7 @@ describe('MetadataEntry class', () => {
   });
 
   describe('method: exists', () => {
-    it('should return whether the Offering exists', async () => {
+    it('should return whether the MetadataEntry exists', async () => {
       const result = await metadataEntry.exists();
       expect(result).toBe(true);
     });

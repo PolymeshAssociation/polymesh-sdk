@@ -37,17 +37,16 @@ describe('Metadata class', () => {
     procedureMockUtils.initMocks();
 
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-
-    ticker = 'SOME_TICKER';
   });
 
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
+    ticker = 'SOME_TICKER';
+    rawTicker = dsMockUtils.createMockTicker(ticker);
     asset = entityMockUtils.getAssetInstance({ ticker });
 
     metadata = new Metadata(asset, context);
 
-    rawTicker = dsMockUtils.createMockTicker(ticker);
     stringToTickerStub.withArgs(ticker, context).returns(rawTicker);
   });
 
@@ -70,6 +69,7 @@ describe('Metadata class', () => {
     it('should prepare the procedure and return the resulting transaction', async () => {
       const expectedTransaction =
         'someTransaction' as unknown as PolymeshTransaction<MetadataEntry>;
+
       const params = { name: 'SOME_METADATA', specs: {} };
 
       procedureMockUtils
@@ -175,7 +175,7 @@ describe('Metadata class', () => {
       );
     });
 
-    it('should MetadataEntry for requested id and type', async () => {
+    it('should return the MetadataEntry for requested id and type', async () => {
       const rawName = dsMockUtils.createMockOption(dsMockUtils.createMockBytes('SOME_NAME'));
       dsMockUtils.createQueryStub('asset', 'assetMetadataGlobalKeyToName', {
         returnValue: rawName,

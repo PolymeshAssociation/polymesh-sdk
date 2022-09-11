@@ -32,12 +32,15 @@ export class Metadata extends Namespace<Asset> {
   }
 
   /**
-   * Register a metadata for this Asset and optionally set its value. Value can be set by passing `value` parameter and specifying its `lockStatus`
+   * Register a metadata for this Asset and optionally set its value.
+   * The metadata value can be set by passing `value` parameter and specifying other optional `details` about the value
+   *
+   * @note This registers a metadata of type `Local`
    */
   public register: ProcedureMethod<RegisterMetadataParams, MetadataEntry>;
 
   /**
-   * Retrieve all the Metadata keys for this particular asset
+   * Retrieve all the MetadataEntry for this Asset
    */
   public async get(): Promise<MetadataEntry[]> {
     const {
@@ -81,9 +84,9 @@ export class Metadata extends Namespace<Asset> {
   }
 
   /**
-   * Retrieve a single Asset Metadata by its ID and type
+   * Retrieve a single MetadataEntry by its ID and type
    *
-   * @throws if there is no Asset Metadata with the passed ID and specified type
+   * @throws if there is no MetadataEntry with the passed ID and specified type
    */
   public async getOne(args: { type: MetadataType; id: BigNumber }): Promise<MetadataEntry> {
     const {
@@ -103,6 +106,7 @@ export class Metadata extends Namespace<Asset> {
     const rawId = bigNumberToU64(id, context);
 
     let rawName: Option<Bytes>;
+
     if (type === MetadataType.Global) {
       rawName = await assetMetadataGlobalKeyToName(rawId);
     } else {

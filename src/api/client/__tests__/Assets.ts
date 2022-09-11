@@ -481,7 +481,6 @@ describe('Assets Class', () => {
 
     beforeEach(() => {
       rawIds.forEach(rawId => {
-        rawId.eq = sinon.stub();
         rawId.eq.withArgs(rawId).returns(true);
       });
       rawGlobalMetadata = globalMetadata.map(({ id, name, specs }, index) => {

@@ -4225,6 +4225,7 @@ export const createMockAssetMetadataKey = (
   if (isCodec<PolymeshPrimitivesAssetMetadataAssetMetadataKey>(key)) {
     return key as MockCodec<PolymeshPrimitivesAssetMetadataAssetMetadataKey>;
   }
+
   return createMockEnum<PolymeshPrimitivesAssetMetadataAssetMetadataKey>(key);
 };
 
@@ -4276,12 +4277,15 @@ export const createMockAssetMetadataLockStatus = (
       }
 ): MockCodec<PolymeshPrimitivesAssetMetadataAssetMetadataLockStatus> => {
   const { lockStatus } = args;
+
   let meshLockStatus;
   if (lockStatus === 'LockedUntil') {
-    meshLockStatus = { LockedUntil: createMockU64(new BigNumber(args.lockedUntil.getTime())) };
+    const { lockedUntil } = args;
+    meshLockStatus = { LockedUntil: createMockU64(new BigNumber(lockedUntil.getTime())) };
   } else {
     meshLockStatus = lockStatus;
   }
+
   return createMockEnum<PolymeshPrimitivesAssetMetadataAssetMetadataLockStatus>(meshLockStatus);
 };
 

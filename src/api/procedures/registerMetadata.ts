@@ -30,9 +30,10 @@ export const createMetadataResolver =
   (ticker: string, context: Context) =>
   (receipt: ISubmittableResult): MetadataEntry => {
     const [{ data }] = filterEventRecords(receipt, 'asset', 'RegisterAssetMetadataLocalType');
-    const newId = u64ToBigNumber(data[3]);
 
-    return new MetadataEntry({ id: newId, ticker, type: MetadataType.Local }, context);
+    const id = u64ToBigNumber(data[3]);
+
+    return new MetadataEntry({ id, ticker, type: MetadataType.Local }, context);
   };
 
 /**

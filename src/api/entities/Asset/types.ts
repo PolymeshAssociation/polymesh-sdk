@@ -57,5 +57,5 @@ export interface AgentWithGroup {
   group: KnownPermissionGroup | CustomPermissionGroup;
 }
 
-export * from './Checkpoints/types';
 export * from './CorporateActions/types';
+export * from './Checkpoints/types';

@@ -119,6 +119,7 @@ describe('setMetadata procedure', () => {
   afterAll(() => {
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
+    sinon.restore();
   });
 
   it('should throw an error if MetadataEntry status is Locked', () => {

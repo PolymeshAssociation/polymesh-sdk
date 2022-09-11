@@ -899,13 +899,13 @@ const MockMetadataEntryClass = createMockEntityClass<MetadataEntryOptions>(
     /**
      * @hidden
      */
-    public configure(opts: Required<MetadataEntryOptions>) {
-      this.uuid = 'sto';
-      this.id = opts.id;
-      this.asset = getAssetInstance({ ticker: opts.ticker });
-      this.type = opts.type;
-      this.details = createEntityGetterStub(opts.details);
-      this.value = createEntityGetterStub(opts.value);
+    public configure({ id, ticker, type, details, value }: Required<MetadataEntryOptions>) {
+      this.uuid = 'metadataEntry';
+      this.id = id;
+      this.asset = getAssetInstance({ ticker });
+      this.type = type;
+      this.details = createEntityGetterStub(details);
+      this.value = createEntityGetterStub(value);
     }
   },
   () => ({

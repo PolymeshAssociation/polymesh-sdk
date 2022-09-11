@@ -187,6 +187,7 @@ import {
   MetadataSpec,
   MetadataType,
   MetadataValue,
+  MetadataValueDetails,
   ModuleName,
   MultiClaimCondition,
   OfferingBalanceStatus,
@@ -4164,7 +4165,7 @@ export function meshMetadataValueToMetadataValue(
   rawValue: Option<Bytes>,
   rawDetails: Option<PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail>
 ): MetadataValue | null {
-  if (rawValue.isEmpty) {
+  if (rawValue.isNone) {
     return null;
   }
 
@@ -4224,12 +4225,7 @@ export function metadataValueToMeshMetadataValue(value: string, context: Context
  * @hidden
  */
 export function metadataValueDetailToMeshMetadataValueDetail(
-  details:
-    | {
-        lockStatus: Exclude<MetadataLockStatus, MetadataLockStatus.LockedUntil>;
-        expiry: Date | null;
-      }
-    | { lockStatus: MetadataLockStatus.LockedUntil; expiry: Date | null; lockedUntil: Date },
+  details: MetadataValueDetails,
   context: Context
 ): PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail {
   const { lockStatus, expiry } = details;
@@ -4237,12 +4233,14 @@ export function metadataValueDetailToMeshMetadataValueDetail(
   let meshLockStatus;
   if (lockStatus === MetadataLockStatus.LockedUntil) {
     const { lockedUntil } = details;
+
     if (lockedUntil < new Date()) {
       throw new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
         message: 'Locked until date must be in the future',
       });
     }
+
     meshLockStatus = { LockedUntil: dateToMoment(lockedUntil, context) };
   } else {
     meshLockStatus = lockStatus;

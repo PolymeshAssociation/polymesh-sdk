@@ -23,13 +23,25 @@ export interface MetadataDetails {
 }
 
 export type MetadataValueDetails = {
+  /**
+   * Date at which the Metadata value expires, null if it never expires
+   */
   expiry: Date | null;
 } & (
   | {
+      /**
+       * Lock status of the Metadata value
+       */
       lockStatus: Exclude<MetadataLockStatus, MetadataLockStatus.LockedUntil>;
     }
   | {
+      /**
+       * Lock status of the Metadata value
+       */
       lockStatus: MetadataLockStatus.LockedUntil;
+      /**
+       * Date till which the Metadata value will be locked
+       */
       lockedUntil: Date;
     }
 );

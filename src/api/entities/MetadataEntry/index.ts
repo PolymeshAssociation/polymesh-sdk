@@ -15,9 +15,9 @@ import { createProcedureMethod, toHumanReadable } from '~/utils/internal';
 import { MetadataDetails, MetadataType, MetadataValue } from './types';
 
 export interface UniqueIdentifiers {
-  id: BigNumber;
   ticker: string;
   type: MetadataType;
+  id: BigNumber;
 }
 
 export interface HumanReadable {
@@ -31,11 +31,6 @@ export interface HumanReadable {
  */
 export class MetadataEntry extends Entity<UniqueIdentifiers, HumanReadable> {
   /**
-   * identifier number of the MetadataEntry
-   */
-  public id: BigNumber;
-
-  /**
    * Asset for which this is the metadata
    */
   public asset: Asset;
@@ -44,6 +39,11 @@ export class MetadataEntry extends Entity<UniqueIdentifiers, HumanReadable> {
    * Type of metadata represented by this instance
    */
   public type: MetadataType;
+
+  /**
+   * identifier number of the MetadataEntry
+   */
+  public id: BigNumber;
 
   /**
    * @hidden
@@ -61,11 +61,11 @@ export class MetadataEntry extends Entity<UniqueIdentifiers, HumanReadable> {
   public constructor(identifiers: UniqueIdentifiers, context: Context) {
     super(identifiers, context);
 
-    const { id, ticker, type } = identifiers;
+    const { ticker, type, id } = identifiers;
 
-    this.id = id;
     this.asset = new Asset({ ticker }, context);
     this.type = type;
+    this.id = id;
 
     this.set = createProcedureMethod(
       { getProcedureAndArgs: args => [setMetadata, { ...args, metadataEntry: this }] },
@@ -74,14 +74,14 @@ export class MetadataEntry extends Entity<UniqueIdentifiers, HumanReadable> {
   }
 
   /**
-   * Assign a new list of documents to the Asset by replacing the existing list of documents with the ones passed in the parameters
+   * Assign new value for the MetadataEntry along with its details or optionally only set the details (expiry + lock status) of any Metadata value
    *
-   * This requires two transactions
+   * @note - Value or the details can only be set if the MetadataEntry is not locked
    */
   public set: ProcedureMethod<SetMetadataParams, MetadataEntry>;
 
   /**
-   * Retrieve name and specs for this Asset MetadataEntry
+   * Retrieve name and specs for this MetadataEntry
    */
   public async details(): Promise<MetadataDetails> {
     const {
@@ -126,7 +126,9 @@ export class MetadataEntry extends Entity<UniqueIdentifiers, HumanReadable> {
   }
 
   /**
-   * Retrieve the MetadataEntry's details
+   * Retrieve the value and details (expiry + lock status) for this MetadataEntry
+   *
+   * @note - This returns `null` if no value is yet specified for this MetadataEntry
    */
   public async value(): Promise<MetadataValue | null> {
     const {

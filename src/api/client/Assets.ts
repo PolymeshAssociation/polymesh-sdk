@@ -259,8 +259,7 @@ export class Assets {
   }
 
   /**
-   * Retrieve all the Asset Global Metadata on chain.
-   * This includes metadata id, name and optional specs
+   * Retrieve all the Asset Global Metadata on chain. This includes metadata id, name and specs
    */
   public async getGlobalMetadataKeys(): Promise<GlobalMetadataKey[]> {
     const {

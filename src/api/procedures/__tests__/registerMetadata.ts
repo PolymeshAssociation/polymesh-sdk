@@ -125,6 +125,7 @@ describe('registerMetadata procedure', () => {
   afterAll(() => {
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
+    sinon.restore();
   });
 
   it('should throw an error if attempting to add a metadata exceeding the allowed name ', () => {
