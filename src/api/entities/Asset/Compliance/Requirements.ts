@@ -209,42 +209,6 @@ export class Requirements extends Namespace<Asset> {
   public unpause: NoArgsProcedureMethod<Asset>;
 
   /**
-   * Check whether the sender and receiver Identities in a transfer comply with all the requirements of this Asset
-   *
-   * @note this does not take balances into account
-   *
-   * @param args.from - sender Identity (optional, defaults to the signing Identity)
-   * @param args.to - receiver Identity
-   *
-   * @deprecated in favor of `settlements.canTransfer`
-   */
-  public async checkSettle(args: {
-    from?: string | Identity;
-    to: string | Identity;
-  }): Promise<Compliance> {
-    const {
-      parent: { ticker },
-      context: {
-        polymeshApi: { rpc },
-      },
-      context,
-    } = this;
-
-    const { from = await context.getSigningIdentity(), to } = args;
-
-    const fromDid = stringToIdentityId(signerToString(from), context);
-    const toDid = signerToString(to);
-
-    const res: AssetComplianceResult = await rpc.compliance.canTransfer(
-      stringToTicker(ticker, context),
-      fromDid,
-      stringToIdentityId(toDid, context)
-    );
-
-    return assetComplianceResultToCompliance(res, context);
-  }
-
-  /**
    * Check whether Asset compliance requirements are paused or not
    */
   public async arePaused(): Promise<boolean> {

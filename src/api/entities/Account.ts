@@ -701,17 +701,6 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Check if this Account possesses certain Permissions to act on behalf of its corresponding Identity
-   *
-   * @deprecated in favor of `checkPermissions`
-   */
-  public async hasPermissions(permissions: SimplePermissions): Promise<boolean> {
-    const { result } = await this.checkPermissions(permissions);
-
-    return result;
-  }
-
-  /**
    * Determine whether this Account exists on chain
    */
   public async exists(): Promise<boolean> {

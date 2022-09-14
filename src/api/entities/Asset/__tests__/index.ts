@@ -150,7 +150,6 @@ describe('Asset class', () => {
       expect(details.isDivisible).toBe(isDivisible);
       expect(details.owner.did).toBe(owner);
       expect(details.assetType).toBe(assetType);
-      expect(details.primaryIssuanceAgents[0].did).toBe(did);
       expect(details.fullAgents[0].did).toBe(owner);
       expect(details.requiresInvestorUniqueness).toBe(true);
 
@@ -164,7 +163,6 @@ describe('Asset class', () => {
       });
 
       details = await asset.details();
-      expect(details.primaryIssuanceAgents).toEqual([]);
       expect(details.fullAgents[0].did).toEqual(did);
 
       tokensStub.resolves(
@@ -213,7 +211,6 @@ describe('Asset class', () => {
           name,
           owner: sinon.match({ did: owner }),
           totalSupply: new BigNumber(totalSupply).div(Math.pow(10, 6)),
-          primaryIssuanceAgents: [sinon.match({ did })],
           fullAgents: [sinon.match({ did: owner })],
           requiresInvestorUniqueness: true,
         })
@@ -605,45 +602,6 @@ describe('Asset class', () => {
 
       expect(result).toBe(unsubCallback);
       sinon.assert.calledWithExactly(callback, boolValue);
-    });
-  });
-
-  describe('method: modifyPrimaryIssuanceAgent', () => {
-    it('should prepare the procedure and return the resulting transaction', async () => {
-      const ticker = 'TICKER';
-      const target = 'someDid';
-      const context = dsMockUtils.getContextInstance();
-      const asset = new Asset({ ticker }, context);
-
-      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
-
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { ticker, target }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
-
-      const queue = await asset.modifyPrimaryIssuanceAgent({ target });
-
-      expect(queue).toBe(expectedTransaction);
-    });
-  });
-
-  describe('method: removePrimaryIssuanceAgent', () => {
-    it('should prepare the procedure and return the resulting transaction', async () => {
-      const ticker = 'TICKER';
-      const context = dsMockUtils.getContextInstance();
-      const asset = new Asset({ ticker }, context);
-
-      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
-
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { ticker }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
-
-      const queue = await asset.removePrimaryIssuanceAgent();
-
-      expect(queue).toBe(expectedTransaction);
     });
   });
 

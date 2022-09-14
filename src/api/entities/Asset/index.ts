@@ -16,9 +16,7 @@ import {
   Entity,
   Identity,
   modifyAsset,
-  modifyPrimaryIssuanceAgent,
   redeemTokens,
-  removePrimaryIssuanceAgent,
   toggleFreezeTransfers,
   transferAssetOwnership,
 } from '~/internal';
@@ -31,7 +29,6 @@ import {
   EventIdentifier,
   HistoricAgentOperation,
   ModifyAssetParams,
-  ModifyPrimaryIssuanceAgentParams,
   NoArgsProcedureMethod,
   ProcedureMethod,
   RedeemTokensParams,
@@ -161,14 +158,6 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       },
       context
     );
-    this.modifyPrimaryIssuanceAgent = createProcedureMethod(
-      { getProcedureAndArgs: args => [modifyPrimaryIssuanceAgent, { ticker, ...args }] },
-      context
-    );
-    this.removePrimaryIssuanceAgent = createProcedureMethod(
-      { getProcedureAndArgs: () => [removePrimaryIssuanceAgent, { ticker }], voidArgs: true },
-      context
-    );
     this.redeem = createProcedureMethod(
       { getProcedureAndArgs: args => [redeemTokens, { ticker, ...args }] },
       context
@@ -226,16 +215,11 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       assetName: Bytes,
       iuDisabled: bool
     ): Promise<AssetDetails> => {
-      const primaryIssuanceAgents: Identity[] = [];
       const fullAgents: Identity[] = [];
 
       agentGroups.forEach(([storageKey, agentGroup]) => {
         const rawAgentGroup = agentGroup.unwrap();
-        if (rawAgentGroup.isPolymeshV1PIA) {
-          primaryIssuanceAgents.push(
-            new Identity({ did: identityIdToString(storageKey.args[1]) }, context)
-          );
-        } else if (rawAgentGroup.isFull) {
+        if (rawAgentGroup.isFull) {
           fullAgents.push(new Identity({ did: identityIdToString(storageKey.args[1]) }, context));
         }
       });
@@ -257,7 +241,6 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
         name: bytesToString(assetName),
         owner,
         totalSupply: balanceToBigNumber(totalSupply),
-        primaryIssuanceAgents,
         fullAgents,
         requiresInvestorUniqueness: !boolToBoolean(iuDisabled),
       };
@@ -461,26 +444,6 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
 
     return boolToBoolean(result);
   }
-
-  /**
-   * Assign a new primary issuance agent for the Asset
-   *
-   * @note this will create an {@link api/entities/AuthorizationRequest!AuthorizationRequest | Authorization Request} which has to be accepted by the `target` Identity.
-   *   An {@link api/entities/Account!Account} or {@link api/entities/Identity!Identity} can fetch its pending Authorization Requests by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getReceived | authorizations.getReceived}.
-   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getOne | authorizations.getOne}
-   *
-   * @deprecated in favor of `inviteAgent`
-   */
-  public modifyPrimaryIssuanceAgent: ProcedureMethod<ModifyPrimaryIssuanceAgentParams, void>;
-
-  /**
-   * Remove the primary issuance agent of the Asset
-   *
-   * @note if primary issuance agent is not set, Asset owner would be used by default
-   *
-   * @deprecated
-   */
-  public removePrimaryIssuanceAgent: NoArgsProcedureMethod<void>;
 
   /**
    * Redeem (burn) an amount of this Asset's tokens

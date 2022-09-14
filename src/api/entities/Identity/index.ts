@@ -433,17 +433,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Check whether this Identity possesses all specified roles
-   *
-   * @deprecated in favor of `checkRoles`
-   */
-  public async hasRoles(roles: Role[]): Promise<boolean> {
-    const checkedRoles = await Promise.all(roles.map(this.hasRole.bind(this)));
-
-    return checkedRoles.every(hasRole => hasRole);
-  }
-
-  /**
    * Get the list of Assets for which this Identity is a trusted claim issuer
    *
    * @note uses the middleware
@@ -604,59 +593,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       pending,
       failed,
     };
-  }
-
-  /**
-   * Retrieve all pending Instructions involving this Identity
-   *
-   * @deprecated in favor of `getInstructions`
-   */
-  public async getPendingInstructions(): Promise<Instruction[]> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { settlement },
-        },
-      },
-      did,
-      portfolios,
-      context,
-    } = this;
-
-    const ownedPortfolios = await portfolios.getPortfolios();
-
-    const [ownedCustodiedPortfolios, { data: custodiedPortfolios }] = await Promise.all([
-      P.filter(ownedPortfolios, portfolio => portfolio.isCustodiedBy({ identity: did })),
-      this.portfolios.getCustodiedPortfolios(),
-    ]);
-
-    const allPortfolios = [...ownedCustodiedPortfolios, ...custodiedPortfolios];
-
-    const portfolioIds = allPortfolios.map(portfolioLikeToPortfolioId);
-
-    await P.map(portfolioIds, portfolioId => assertPortfolioExists(portfolioId, context));
-
-    const portfolioIdChunks = chunk(portfolioIds, MAX_CONCURRENT_REQUESTS);
-
-    const chunkedInstructions = await P.mapSeries(portfolioIdChunks, async portfolioIdChunk => {
-      const auths = await P.map(portfolioIdChunk, portfolioId =>
-        settlement.userAffirmations.entries(portfolioIdToMeshPortfolioId(portfolioId, context))
-      );
-
-      const instructionIds = uniqBy(
-        flatten(auths).map(([key]) => key.args[1]),
-        id => id.toNumber()
-      );
-      return settlement.instructionDetails.multi<
-        QueryReturnType<typeof settlement.instructionDetails>
-      >(instructionIds);
-    });
-
-    const rawInstructions = flatten(chunkedInstructions);
-
-    return rawInstructions
-      .filter(({ status }) => status.isPending)
-      .map(({ instructionId: id }) => new Instruction({ id: u64ToBigNumber(id) }, context));
   }
 
   /**

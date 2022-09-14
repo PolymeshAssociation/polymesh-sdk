@@ -13,7 +13,6 @@ import {
   PortfolioId,
   PortfolioLike,
   TransferBreakdown,
-  TransferStatus,
 } from '~/types';
 import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -39,7 +38,6 @@ describe('Settlements class', () => {
   let rawTicker: PolymeshPrimitivesTicker;
   let rawToDid: PolymeshPrimitivesIdentityId;
   let rawAmount: Balance;
-  let statusCode: BigNumber;
   let amount: BigNumber;
   let toDid: string;
   let ticker: string;
@@ -49,7 +47,6 @@ describe('Settlements class', () => {
     dsMockUtils.initMocks();
 
     toDid = 'toDid';
-    statusCode = new BigNumber(81);
     amount = new BigNumber(100);
     stringToAccountIdStub = sinon.stub(utilsConversionModule, 'stringToAccountId');
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
@@ -92,113 +89,6 @@ describe('Settlements class', () => {
 
   it('should extend namespace', () => {
     expect(Settlements.prototype instanceof Namespace).toBe(true);
-  });
-
-  describe('method: canSettle', () => {
-    let fromDid: string;
-    let fromPortfolioId: PortfolioId;
-    let toPortfolioId: PortfolioId;
-    let rawFromPortfolio: MeshPortfolioId;
-    let rawToPortfolio: MeshPortfolioId;
-    let rawFromDid: PolymeshPrimitivesIdentityId;
-    let fromPortfolio: entityMockUtils.MockDefaultPortfolio;
-    let toPortfolio: entityMockUtils.MockDefaultPortfolio;
-
-    beforeAll(() => {
-      fromDid = 'fromDid';
-      fromPortfolioId = { did: fromDid };
-      toPortfolioId = { did: toDid };
-      rawFromDid = dsMockUtils.createMockIdentityId(fromDid);
-      rawFromPortfolio = dsMockUtils.createMockPortfolioId({ did: fromDid, kind: 'Default' });
-      rawToPortfolio = dsMockUtils.createMockPortfolioId({ did: toDid, kind: 'Default' });
-    });
-
-    beforeEach(() => {
-      fromPortfolio = entityMockUtils.getDefaultPortfolioInstance(fromPortfolioId);
-      toPortfolio = entityMockUtils.getDefaultPortfolioInstance(toPortfolioId);
-      portfolioLikeToPortfolioIdStub.withArgs(fromDid).returns(fromPortfolioId);
-      portfolioLikeToPortfolioIdStub.withArgs(toDid).returns(toPortfolioId);
-      portfolioLikeToPortfolioIdStub.withArgs(fromDid).returns(fromPortfolioId);
-      portfolioIdToMeshPortfolioIdStub.withArgs(toPortfolioId, mockContext).returns(rawToPortfolio);
-      portfolioIdToPortfolioStub.withArgs(fromPortfolioId, mockContext).returns(fromPortfolio);
-      portfolioIdToPortfolioStub.withArgs(toPortfolioId, mockContext).returns(toPortfolio);
-      stringToIdentityIdStub.withArgs(fromDid, mockContext).returns(rawFromDid);
-    });
-
-    it('should return a status value representing whether the transaction can be made from the signing Identity', async () => {
-      const signingIdentity = await mockContext.getSigningIdentity();
-      const { did: signingDid } = signingIdentity;
-      const rawSigningDid = dsMockUtils.createMockIdentityId(signingDid);
-
-      const rawDummyAccountId = dsMockUtils.createMockAccountId(DUMMY_ACCOUNT_ID);
-      const currentDefaultPortfolioId = { did: signingDid };
-
-      fromPortfolio.getCustodian.resolves(entityMockUtils.getIdentityInstance({ did: signingDid }));
-      toPortfolio.getCustodian.resolves(entityMockUtils.getIdentityInstance({ did: toDid }));
-
-      portfolioLikeToPortfolioIdStub.withArgs(signingIdentity).returns(currentDefaultPortfolioId);
-      portfolioIdToMeshPortfolioIdStub
-        .withArgs(currentDefaultPortfolioId, mockContext)
-        .returns(rawFromPortfolio);
-      portfolioIdToPortfolioStub.withArgs(currentDefaultPortfolioId, mockContext).returns(
-        entityMockUtils.getDefaultPortfolioInstance({
-          did: signingDid,
-        })
-      );
-      stringToIdentityIdStub.withArgs(signingDid, mockContext).returns(rawSigningDid);
-      stringToAccountIdStub.withArgs(DUMMY_ACCOUNT_ID, mockContext).returns(rawDummyAccountId);
-
-      const rawResponse = dsMockUtils.createMockCanTransferResult({
-        Ok: dsMockUtils.createMockU8(statusCode),
-      });
-
-      dsMockUtils
-        .createRpcStub('asset', 'canTransfer')
-        .withArgs(
-          rawDummyAccountId,
-          rawSigningDid,
-          rawFromPortfolio,
-          rawToDid,
-          rawToPortfolio,
-          rawTicker,
-          rawAmount
-        )
-        .returns(rawResponse);
-
-      const result = await settlements.canSettle({ to: toDid, amount });
-
-      expect(result).toBe(TransferStatus.Success);
-    });
-
-    it('should return a status value representing whether the transaction can be made from another Identity', async () => {
-      const rawResponse = dsMockUtils.createMockCanTransferResult({
-        Ok: dsMockUtils.createMockU8(statusCode),
-      });
-
-      fromPortfolio.getCustodian.resolves(entityMockUtils.getIdentityInstance({ did: fromDid }));
-      toPortfolio.getCustodian.resolves(entityMockUtils.getIdentityInstance({ did: toDid }));
-
-      portfolioIdToMeshPortfolioIdStub
-        .withArgs({ did: fromDid }, mockContext)
-        .returns(rawFromPortfolio);
-
-      dsMockUtils
-        .createRpcStub('asset', 'canTransfer')
-        .withArgs(
-          rawAccountId,
-          rawFromDid,
-          rawFromPortfolio,
-          rawToDid,
-          rawToPortfolio,
-          rawTicker,
-          rawAmount
-        )
-        .returns(rawResponse);
-
-      const result = await settlements.canSettle({ from: fromDid, to: toDid, amount });
-
-      expect(result).toBe(TransferStatus.Success);
-    });
   });
 
   describe('method: canTransfer', () => {

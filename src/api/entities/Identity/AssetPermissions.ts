@@ -283,20 +283,6 @@ export class AssetPermissions extends Namespace<Identity> {
   }
 
   /**
-   * Check whether this Identity has specific transaction Permissions over an Asset
-   *
-   * @deprecated in favor of `checkPermissions`
-   */
-  public async hasPermissions(args: {
-    asset: Asset | string;
-    transactions: TxTag[] | null;
-  }): Promise<boolean> {
-    const { result } = await this.checkPermissions(args);
-
-    return result;
-  }
-
-  /**
    * Retrieve this Identity's Permission Group for a specific Asset
    */
   public async getGroup({
