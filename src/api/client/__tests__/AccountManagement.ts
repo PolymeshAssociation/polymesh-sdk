@@ -2,10 +2,11 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { AccountManagement } from '~/api/client/AccountManagement';
-import { Account, TransactionQueue } from '~/internal';
+import { Account, MultiSig, TransactionQueue } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
 import { AccountBalance, PermissionType, SubCallback } from '~/types';
+import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/base/Procedure',
@@ -203,16 +204,35 @@ describe('AccountManagement class', () => {
   describe('method: getAccount', () => {
     it('should return an Account object with the passed address', async () => {
       const params = { address: 'testAddress' };
+      dsMockUtils.createQueryStub('multiSig', 'multiSigSigners', {
+        returnValue: [],
+      });
 
-      const result = accountManagement.getAccount(params);
+      const result = await accountManagement.getAccount(params);
 
+      expect(result).toBeInstanceOf(Account);
+      expect(result.address).toBe(params.address);
+    });
+
+    it('should return a MultiSig instance if the address is for a MultiSig', async () => {
+      const params = { address: 'testAddress' };
+      dsMockUtils.createQueryStub('multiSig', 'multiSigSigners', {
+        entries: [[['someSignerAddress'], 'someSignerAddress']],
+      });
+
+      const result = await accountManagement.getAccount(params);
+
+      expect(result).toBeInstanceOf(MultiSig);
       expect(result.address).toBe(params.address);
     });
   });
 
   describe('method: getSigningAccount', () => {
+    const stringToAccountIdStub = sinon.stub(utilsConversionModule, 'stringToAccountId');
     it('should return the signing Account', async () => {
       const address = 'someAddress';
+      const rawAddress = dsMockUtils.createMockAccountId(address);
+      stringToAccountIdStub.withArgs(address, context).returns(rawAddress);
       dsMockUtils.configureMocks({ contextOptions: { signingAddress: address } });
 
       const result = accountManagement.getSigningAccount();
@@ -293,6 +313,26 @@ describe('AccountManagement class', () => {
       const result = await accountManagement.getSigningAccounts();
 
       expect(result).toEqual(accounts);
+    });
+  });
+
+  describe('method: createMultiSigAccount', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+      const args = {
+        signers: [entityMockUtils.getAccountInstance()],
+        requiredSignatures: new BigNumber(1),
+      };
+
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await accountManagement.createMultiSigAccount(args);
+
+      expect(queue).toBe(expectedQueue);
     });
   });
 });

@@ -79,7 +79,7 @@ describe('Account class', () => {
   });
 
   it('should extend Entity', () => {
-    expect(Account.prototype instanceof Entity).toBe(true);
+    expect(Account.prototype).toBeInstanceOf(Entity);
   });
 
   it('should throw an error if the supplied address is not encoded with the correct SS58 format', () => {
@@ -921,6 +921,46 @@ describe('Account class', () => {
 
       expect(result).toEqual(true);
       checkPermissionsSpy.mockRestore();
+    });
+  });
+
+  describe('method: getMultiSig', () => {
+    it('should return null if the Account is not a MultiSig signer', async () => {
+      dsMockUtils.createQueryStub('identity', 'keyRecords', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockKeyRecord({
+            PrimaryKey: dsMockUtils.createMockAccountId(),
+          })
+        ),
+      });
+      account = new Account({ address }, context);
+
+      let result = await account.getMultiSig();
+
+      expect(result).toBeNull();
+
+      dsMockUtils.createQueryStub('identity', 'keyRecords', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+
+      result = await account.getMultiSig();
+      expect(result).toBeNull();
+    });
+
+    it('should return the MultiSig the Account is a signer for', async () => {
+      dsMockUtils.createQueryStub('identity', 'keyRecords', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockKeyRecord({
+            MultiSigSignerKey: dsMockUtils.createMockAccountId('multiAddress'),
+          })
+        ),
+      });
+
+      account = new Account({ address }, context);
+
+      const result = await account.getMultiSig();
+
+      expect(result?.address).toEqual('someAddress');
     });
   });
 });

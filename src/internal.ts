@@ -87,6 +87,8 @@ export { controllerTransfer } from '~/api/procedures/controllerTransfer';
 export { linkCaDocs } from '~/api/procedures/linkCaDocs';
 export { Identity } from '~/api/entities/Identity';
 export { Account } from '~/api/entities/Account';
+export { MultiSig } from '~/api/entities/MultiSig';
+export { MultiSigProposal } from '~/api/entities/MultiSigProposal';
 export { TickerReservation } from '~/api/entities/TickerReservation';
 export { Asset } from '~/api/entities/Asset';
 export { AuthorizationRequest } from '~/api/entities/AuthorizationRequest';
@@ -137,6 +139,7 @@ export { removeExternalAgent } from '~/api/procedures/removeExternalAgent';
 export { waivePermissions } from '~/api/procedures/waivePermissions';
 export { quitSubsidy, QuitSubsidyParams } from '~/api/procedures/quitSubsidy';
 export { modifyAllowance, ModifyAllowanceParams } from '~/api/procedures/modifyAllowance';
+export { createMultiSigAccount } from '~/api/procedures/createMultiSig';
 export {
   SetAllowanceParams,
   DecreaseAllowanceParams,
