@@ -8,7 +8,6 @@ import BigNumber from 'bignumber.js';
 import { pick } from 'lodash';
 import sinon from 'sinon';
 
-import { MultiSigProposal } from '~/api/entities/MultiSig/MultiSigProposal';
 import {
   Account,
   Asset,
@@ -23,6 +22,7 @@ import {
   Instruction,
   KnownPermissionGroup,
   MultiSig,
+  MultiSigProposal,
   NumberedPortfolio,
   Offering,
   Subsidy,
@@ -289,15 +289,15 @@ interface DividendDistributionOptions extends EntityOptions {
   getParticipant?: EntityGetter<DistributionParticipant | null>;
 }
 
-interface MultiSigProposalOptions extends EntityOptions {
-  id?: BigNumber;
-  multiSigAddress?: string;
-  details?: EntityGetter<MultiSigProposalDetails>;
-}
-
 interface MultiSigOptions extends AccountOptions {
+  address?: string;
   details?: { signers: Signer[]; requiredSignatures: BigNumber };
   getCreator?: EntityGetter<Identity>;
+}
+interface MultiSigProposalOptions extends EntityOptions {
+  id?: BigNumber;
+  multiSig?: MultiSig;
+  details?: EntityGetter<MultiSigProposalDetails>;
 }
 
 type MockOptions = {
@@ -1526,13 +1526,13 @@ const MockMultiSigClass = createMockEntityClass<MultiSigOptions>(
     },
     getCreator: getIdentityInstance(),
   }),
-  ['Account', 'MultiSig']
+  ['MultiSig', 'Account']
 );
 
 const MockMultiSigProposalClass = createMockEntityClass<MultiSigProposalOptions>(
   class {
     id!: BigNumber;
-    multiSigAddress!: string;
+    multiSig!: MultiSig;
     details!: sinon.SinonStub;
 
     /**
@@ -1547,17 +1547,17 @@ const MockMultiSigProposalClass = createMockEntityClass<MultiSigProposalOptions>
      */
     public configure(opts: Required<MultiSigProposalOptions>) {
       this.id = opts.id;
-      this.multiSigAddress = opts.multiSigAddress;
+      this.multiSig = opts.multiSig;
       this.details = createEntityGetterStub(opts.details);
     }
   },
   () => ({
     id: new BigNumber(1),
-    multiSigAddress: 'someAddress',
+    multiSig: getMultiSigInstance({ address: 'someAddress' }),
     details: {
       approvalAmount: new BigNumber(1),
       rejectionAmount: new BigNumber(0),
-      status: ProposalStatus.ActiveOrExpired,
+      status: ProposalStatus.Active,
       expiry: null,
       autoClose: false,
     },

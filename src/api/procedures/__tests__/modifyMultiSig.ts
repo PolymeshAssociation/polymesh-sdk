@@ -16,8 +16,8 @@ import { DUMMY_ACCOUNT_ID } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
-  '~/api/entities/MultiSig/MultiSig',
-  require('~/testUtils/mocks/entities').mockMultiSigModule('~/api/entities/MultiSig/MultiSig')
+  '~/api/entities/MultiSig',
+  require('~/testUtils/mocks/entities').mockMultiSigModule('~/api/entities/MultiSig')
 );
 
 describe('modifyMultiSig procedure', () => {

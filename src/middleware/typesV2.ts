@@ -15456,9 +15456,7 @@ export type BlocksEdge = {
 
 /** Grouping methods for `Block` for usage during aggregation. */
 export enum BlocksGroupBy {
-  BlockId = 'BLOCK_ID',
   ParentId = 'PARENT_ID',
-  Hash = 'HASH',
   ParentHash = 'PARENT_HASH',
   StateRoot = 'STATE_ROOT',
   ExtrinsicsRoot = 'EXTRINSICS_ROOT',
@@ -15704,6 +15702,7 @@ export type BridgeEvent = Node & {
   recipient: Scalars['String'];
   amount: Scalars['BigFloat'];
   txHash: Scalars['String'];
+  eventIdx: Scalars['Int'];
   datetime: Scalars['Datetime'];
   createdBlockId: Scalars['String'];
   updatedBlockId: Scalars['String'];
@@ -15734,6 +15733,8 @@ export type BridgeEventFilter = {
   amount?: Maybe<BigFloatFilter>;
   /** Filter by the object’s `txHash` field. */
   txHash?: Maybe<StringFilter>;
+  /** Filter by the object’s `eventIdx` field. */
+  eventIdx?: Maybe<IntFilter>;
   /** Filter by the object’s `datetime` field. */
   datetime?: Maybe<DatetimeFilter>;
   /** Filter by the object’s `createdBlockId` field. */
@@ -15790,6 +15791,7 @@ export enum BridgeEventsGroupBy {
   Recipient = 'RECIPIENT',
   Amount = 'AMOUNT',
   TxHash = 'TX_HASH',
+  EventIdx = 'EVENT_IDX',
   Datetime = 'DATETIME',
   CreatedBlockId = 'CREATED_BLOCK_ID',
   UpdatedBlockId = 'UPDATED_BLOCK_ID',
@@ -15816,6 +15818,8 @@ export enum BridgeEventsOrderBy {
   AmountDesc = 'AMOUNT_DESC',
   TxHashAsc = 'TX_HASH_ASC',
   TxHashDesc = 'TX_HASH_DESC',
+  EventIdxAsc = 'EVENT_IDX_ASC',
+  EventIdxDesc = 'EVENT_IDX_DESC',
   DatetimeAsc = 'DATETIME_ASC',
   DatetimeDesc = 'DATETIME_DESC',
   CreatedBlockIdAsc = 'CREATED_BLOCK_ID_ASC',
@@ -17278,6 +17282,7 @@ export type Event = Node & {
   transferTo?: Maybe<Scalars['String']>;
   createdAt: Scalars['Datetime'];
   updatedAt: Scalars['Datetime'];
+  attributes?: Maybe<Scalars['JSON']>;
   /** Reads a single `Block` that is related to this `Event`. */
   block?: Maybe<Block>;
 };
@@ -17331,6 +17336,8 @@ export type EventFilter = {
   createdAt?: Maybe<DatetimeFilter>;
   /** Filter by the object’s `updatedAt` field. */
   updatedAt?: Maybe<DatetimeFilter>;
+  /** Filter by the object’s `attributes` field. */
+  attributes?: Maybe<JsonFilter>;
   /** Checks for all expressions in this list. */
   and?: Maybe<Array<EventFilter>>;
   /** Checks for any expressions in this list. */
@@ -17681,6 +17688,7 @@ export enum EventsGroupBy {
   TransferTo = 'TRANSFER_TO',
   CreatedAt = 'CREATED_AT',
   UpdatedAt = 'UPDATED_AT',
+  Attributes = 'ATTRIBUTES',
 }
 
 /** Conditions for `Event` aggregates. */
@@ -17734,6 +17742,8 @@ export enum EventsOrderBy {
   CreatedAtDesc = 'CREATED_AT_DESC',
   UpdatedAtAsc = 'UPDATED_AT_ASC',
   UpdatedAtDesc = 'UPDATED_AT_DESC',
+  AttributesAsc = 'ATTRIBUTES_ASC',
+  AttributesDesc = 'ATTRIBUTES_DESC',
   PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
 }
@@ -17758,6 +17768,7 @@ export type Extrinsic = Node & {
   specVersionId: Scalars['Int'];
   createdAt: Scalars['Datetime'];
   updatedAt: Scalars['Datetime'];
+  params?: Maybe<Scalars['JSON']>;
   /** Reads a single `Block` that is related to this `Extrinsic`. */
   block?: Maybe<Block>;
 };
@@ -17801,6 +17812,8 @@ export type ExtrinsicFilter = {
   createdAt?: Maybe<DatetimeFilter>;
   /** Filter by the object’s `updatedAt` field. */
   updatedAt?: Maybe<DatetimeFilter>;
+  /** Filter by the object’s `params` field. */
+  params?: Maybe<JsonFilter>;
   /** Checks for all expressions in this list. */
   and?: Maybe<Array<ExtrinsicFilter>>;
   /** Checks for any expressions in this list. */
@@ -17858,6 +17871,7 @@ export enum ExtrinsicsGroupBy {
   SpecVersionId = 'SPEC_VERSION_ID',
   CreatedAt = 'CREATED_AT',
   UpdatedAt = 'UPDATED_AT',
+  Params = 'PARAMS',
 }
 
 /** Conditions for `Extrinsic` aggregates. */
@@ -17901,6 +17915,8 @@ export enum ExtrinsicsOrderBy {
   CreatedAtDesc = 'CREATED_AT_DESC',
   UpdatedAtAsc = 'UPDATED_AT_ASC',
   UpdatedAtDesc = 'UPDATED_AT_DESC',
+  ParamsAsc = 'PARAMS_ASC',
+  ParamsDesc = 'PARAMS_DESC',
   PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
 }

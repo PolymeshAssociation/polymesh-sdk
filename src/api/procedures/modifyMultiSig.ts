@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import { sign } from 'crypto';
 
 import { PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, ModifyMultiSigParams, Signer, TxTags } from '~/types';
@@ -56,7 +57,6 @@ export async function prepareModifyMultiSig(
         'The given signers are equal to the current signers. At least one signer should be added or removed',
     });
   }
-
   if (!creator.isEqual(signingIdentity)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,

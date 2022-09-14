@@ -87,8 +87,8 @@ export { controllerTransfer } from '~/api/procedures/controllerTransfer';
 export { linkCaDocs } from '~/api/procedures/linkCaDocs';
 export { Identity } from '~/api/entities/Identity';
 export { Account } from '~/api/entities/Account';
-export { MultiSig } from '~/api/entities/MultiSig/MultiSig';
-export { MultiSigProposal } from '~/api/entities/MultiSig/MultiSigProposal';
+export { MultiSig } from '~/api/entities/MultiSig';
+export { MultiSigProposal } from '~/api/entities/MultiSigProposal';
 export { TickerReservation } from '~/api/entities/TickerReservation';
 export { Asset } from '~/api/entities/Asset';
 export { AuthorizationRequest } from '~/api/entities/AuthorizationRequest';
@@ -140,10 +140,7 @@ export { waivePermissions } from '~/api/procedures/waivePermissions';
 export { quitSubsidy, QuitSubsidyParams } from '~/api/procedures/quitSubsidy';
 export { modifyAllowance, ModifyAllowanceParams } from '~/api/procedures/modifyAllowance';
 export { createMultiSigAccount } from '~/api/procedures/createMultiSig';
-export {
-  modifyMultiSig as modifyMultiSigAccount,
-  Storage as ModifyMultiSigStorage,
-} from '~/api/procedures/modifyMultiSig';
+export { Storage as ModifyMultiSigStorage, modifyMultiSig } from '~/api/procedures/modifyMultiSig';
 export {
   SetCountTransferRestrictionsParams,
   SetPercentageTransferRestrictionsParams,

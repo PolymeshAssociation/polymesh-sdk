@@ -1,6 +1,4 @@
 /*
- * Author: Jeremías Díaz (monitz87)
- *
  * This script is part of a workaround to be able to make ProcedureMethods be correctly
  *  recognized as functions by typedoc. Since how to create a typedoc plugin is not documented
  *  (and we're using an older version), the way we're handling it is:

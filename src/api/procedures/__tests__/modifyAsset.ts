@@ -1,4 +1,3 @@
-import { Bytes } from '@polkadot/types';
 import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import sinon from 'sinon';
 
@@ -17,7 +16,6 @@ jest.mock(
 describe('modifyAsset procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerStub: sinon.SinonStub<[string, Context], PolymeshPrimitivesTicker>;
-  let stringToBytesStub: sinon.SinonStub<[string, Context], Bytes>;
   let ticker: string;
   let rawTicker: PolymeshPrimitivesTicker;
   let fundingRound: string;
@@ -29,7 +27,6 @@ describe('modifyAsset procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    stringToBytesStub = sinon.stub(utilsConversionModule, 'stringToBytes');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     fundingRound = 'Series A';
@@ -142,7 +139,10 @@ describe('modifyAsset procedure', () => {
   it('should add a rename Asset transaction to the queue', async () => {
     const newName = 'NEW_NAME';
     const rawAssetName = dsMockUtils.createMockBytes(newName);
-    stringToBytesStub.withArgs(newName, mockContext).returns(rawAssetName);
+    sinon
+      .stub(utilsConversionModule, 'nameToAssetName')
+      .withArgs(newName, mockContext)
+      .returns(rawAssetName);
 
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
@@ -167,7 +167,10 @@ describe('modifyAsset procedure', () => {
   it('should add a set funding round transaction to the queue', async () => {
     const newFundingRound = 'Series B';
     const rawFundingRound = dsMockUtils.createMockBytes(newFundingRound);
-    stringToBytesStub.withArgs(newFundingRound, mockContext).returns(rawFundingRound);
+    sinon
+      .stub(utilsConversionModule, 'fundingRoundToAssetFundingRound')
+      .withArgs(newFundingRound, mockContext)
+      .returns(rawFundingRound);
 
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 

@@ -13,6 +13,7 @@ import {
   PalletCorporateActionsCorporateAction,
   PalletCorporateActionsDistribution,
   PalletCorporateActionsInitiateCorporateActionArgs,
+  PalletMultisigProposalStatus,
   PalletStoFundraiser,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesAuthorizationAuthorizationData,
@@ -64,7 +65,7 @@ import {
 } from 'lodash';
 import { CountryCode as MeshCountryCode } from 'polymesh-types/types';
 
-import { assertCaTaxWithholdingsValid } from '~/api/procedures/utils';
+import { assertCaTaxWithholdingsValid, UnreachableCaseError } from '~/api/procedures/utils';
 import { countryCodeToMeshCountryCode, meshCountryCodeToCountryCode } from '~/generated/utils';
 import {
   Account,
@@ -195,6 +196,7 @@ import {
   PortfolioId,
   PortfolioLike,
   PortfolioMovement,
+  ProposalStatus,
   Requirement,
   RequirementCompliance,
   Scope,
@@ -1447,7 +1449,10 @@ export function stringToMemo(value: string, context: Context): Memo {
     });
   }
 
-  return context.createType('PolymeshCommonUtilitiesBalancesMemo', value.padEnd(MAX_MEMO_LENGTH));
+  return context.createType(
+    'PolymeshCommonUtilitiesBalancesMemo',
+    padString(value, MAX_MEMO_LENGTH)
+  );
 }
 
 /**
@@ -1580,6 +1585,58 @@ export function assetTypeToKnownOrId(assetType: AssetType): KnownAssetType | Big
 export function posRatioToBigNumber(postRatio: PosRatio): BigNumber {
   const [numerator, denominator] = postRatio.map(u32ToBigNumber);
   return numerator.dividedBy(denominator);
+}
+
+/**
+ * @hidden
+ */
+export function nameToAssetName(value: string, context: Context): Bytes {
+  const {
+    polymeshApi: {
+      consts: {
+        asset: { assetNameMaxLength },
+      },
+    },
+  } = context;
+
+  const nameMaxLength = u32ToBigNumber(assetNameMaxLength);
+
+  if (nameMaxLength.lt(value.length)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Asset name length exceeded',
+      data: {
+        maxLength: nameMaxLength,
+      },
+    });
+  }
+  return stringToBytes(value, context);
+}
+
+/**
+ * @hidden
+ */
+export function fundingRoundToAssetFundingRound(value: string, context: Context): Bytes {
+  const {
+    polymeshApi: {
+      consts: {
+        asset: { fundingRoundNameMaxLength },
+      },
+    },
+  } = context;
+
+  const nameMaxLength = u32ToBigNumber(fundingRoundNameMaxLength);
+
+  if (nameMaxLength.lt(value.length)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Asset funding round name length exceeded',
+      data: {
+        maxLength: nameMaxLength,
+      },
+    });
+  }
+  return stringToBytes(value, context);
 }
 
 /**
@@ -4006,4 +4063,32 @@ export function inputStatTypeToMeshStatType(
     claimIssuer = claimIssuerToMeshClaimIssuer(input.claimIssuer, context);
   }
   return statisticsOpTypeToStatType({ op, claimIssuer }, context);
+}
+
+/**
+ * @hidden
+ */
+export function meshProposalStatusToProposalStatus(
+  status: PalletMultisigProposalStatus,
+  expiry: Date | null
+): ProposalStatus {
+  const { type } = status;
+  switch (type) {
+    case 'ActiveOrExpired':
+      if (!expiry || expiry > new Date()) {
+        return ProposalStatus.Active;
+      } else {
+        return ProposalStatus.Expired;
+      }
+    case 'Invalid':
+      return ProposalStatus.Invalid;
+    case 'ExecutionSuccessful':
+      return ProposalStatus.Successful;
+    case 'ExecutionFailed':
+      return ProposalStatus.Failed;
+    case 'Rejected':
+      return ProposalStatus.Rejected;
+    default:
+      throw new UnreachableCaseError(type);
+  }
 }

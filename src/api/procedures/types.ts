@@ -9,6 +9,7 @@ import {
   DefaultPortfolio,
   Identity,
   KnownPermissionGroup,
+  MultiSig,
   NumberedPortfolio,
   Venue,
 } from '~/internal';
@@ -31,7 +32,6 @@ import {
   InputTargets,
   InputTaxWithholding,
   InputTrustedClaimIssuer,
-  MultiSig,
   OfferingTier,
   PercentageTransferRestriction,
   PermissionedAccount,

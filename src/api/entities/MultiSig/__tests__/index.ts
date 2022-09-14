@@ -16,9 +16,9 @@ import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
-  '~/api/entities/MultiSig/MultiSigProposal',
+  '~/api/entities/MultiSigProposal',
   require('~/testUtils/mocks/entities').mockMultiSigProposalModule(
-    '~/api/entities/MultiSig/MultiSigProposal'
+    '~/api/entities/MultiSigProposal'
   )
 );
 
@@ -100,9 +100,10 @@ describe('MultiSig class', () => {
         multiSigProposalOptions: { exists: true },
       });
       const result = await multiSig.getProposal({ id });
-      expect(result).toBeDefined();
-      expect(result.id).toEqual(id);
-      expect(result.multiSigAddress).toEqual(address);
+      expect(result).toMatchObject({
+        id,
+        multiSig: expect.objectContaining({ address }),
+      });
     });
 
     it("should throw if the proposal doesn't exist", () => {
@@ -126,7 +127,7 @@ describe('MultiSig class', () => {
       });
       const result = await multiSig.getProposals();
 
-      expect(result).toEqual([expect.objectContaining({ multiSigAddress: address, id })]);
+      expect(result).toMatchObject([{ multiSig: expect.objectContaining({ address }), id }]);
     });
 
     it('should return an empty array if no proposals are pending', async () => {
@@ -165,10 +166,11 @@ describe('MultiSig class', () => {
   });
 
   describe('method: modify', () => {
+    const account = entityMockUtils.getAccountInstance({ address });
     it('should prepare the procedure and return the resulting transaction queue', async () => {
       const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
       const args = {
-        signers: [],
+        signers: [account],
       };
 
       procedureMockUtils

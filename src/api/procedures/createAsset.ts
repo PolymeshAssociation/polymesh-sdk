@@ -21,8 +21,10 @@ import {
   bigNumberToBalance,
   booleanToBool,
   boolToBoolean,
+  fundingRoundToAssetFundingRound,
   inputStatTypeToMeshStatType,
   internalAssetTypeToAssetType,
+  nameToAssetName,
   securityIdentifierToAssetIdentifier,
   statisticStatTypesToBtreeStatType,
   stringToBytes,
@@ -139,12 +141,12 @@ export async function prepareCreateAsset(
   assertTickerAvailable(ticker, status, reservationRequired);
 
   const rawTicker = stringToTicker(ticker, context);
-  const rawName = stringToBytes(name, context);
+  const rawName = nameToAssetName(name, context);
   const rawIsDivisible = booleanToBool(isDivisible, context);
   const rawIdentifiers = securityIdentifiers.map(identifier =>
     securityIdentifierToAssetIdentifier(identifier, context)
   );
-  const rawFundingRound = optionize(stringToBytes)(fundingRound, context);
+  const rawFundingRound = optionize(fundingRoundToAssetFundingRound)(fundingRound, context);
   const rawDisableIu = booleanToBool(!requireInvestorUniqueness, context);
 
   const newAsset = new Asset({ ticker }, context);

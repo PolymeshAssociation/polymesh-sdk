@@ -1,16 +1,16 @@
 import { BigNumber } from 'bignumber.js';
 
-import { Context, Entity, PolymeshError } from '~/internal';
+import { Context, Entity, MultiSig, PolymeshError } from '~/internal';
 import { ErrorCode, MultiSigProposalDetails, TxTag } from '~/types';
-import { isProposalStatus } from '~/utils';
 import {
   bigNumberToU64,
   boolToBoolean,
+  meshProposalStatusToProposalStatus,
   momentToDate,
   stringToAccountId,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { assertAddressValid } from '~/utils/internal';
+import { assertAddressValid, optionize } from '~/utils/internal';
 
 interface UniqueIdentifiers {
   multiSigAddress: string;
@@ -25,8 +25,8 @@ export interface HumanReadable {
 /**
  * A proposal for a MultiSig transaction. This is a wrapper around an extrinsic that will be executed when the amount of approvals reaches the signature threshold set on the MultiSig Account
  */
-export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
-  public multiSigAddress: string;
+export class MultiSigProposal extends Entity<UniqueIdentifiers, HumanReadable> {
+  public multiSig: MultiSig;
   public id: BigNumber;
 
   /**
@@ -34,9 +34,12 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
    */
   constructor(identifiers: UniqueIdentifiers, context: Context) {
     super(identifiers, context);
+
     const { multiSigAddress, id } = identifiers;
+
     assertAddressValid(multiSigAddress, context.ss58Format);
-    this.multiSigAddress = multiSigAddress;
+
+    this.multiSig = new MultiSig({ address: multiSigAddress }, context);
     this.id = id;
   }
 
@@ -50,12 +53,14 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
           query: { multiSig },
         },
       },
-      multiSigAddress,
+      multiSig: { address: multiSigAddress },
       id,
       context,
     } = this;
+
     const rawMultiSignAddress = stringToAccountId(multiSigAddress, context);
     const rawId = bigNumberToU64(id, context);
+
     const [
       {
         approvals: rawApprovals,
@@ -77,22 +82,13 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
         message: `Proposal with ID: "${id}" was not found. It may have already been executed`,
       });
     } else {
-      const value = proposal.unwrap();
-      args = value.args;
-      method = value.method;
-      section = value.section;
+      ({ args, method, section } = proposal.unwrap());
     }
 
     const approvalAmount = u64ToBigNumber(rawApprovals);
     const rejectionAmount = u64ToBigNumber(rawRejections);
-    const expiry = rawExpiry.isNone ? null : momentToDate(rawExpiry.unwrap());
-    const status = rawStatus.toString();
-    if (!isProposalStatus(status))
-      throw new PolymeshError({
-        code: ErrorCode.FatalError,
-        message:
-          'Unexpected MultiSigProposal status. Try upgrading the SDK to the latest version. Contact the Polymesh team if the problem persists',
-      });
+    const expiry = optionize(momentToDate)(rawExpiry.unwrapOr(null));
+    const status = meshProposalStatusToProposalStatus(rawStatus, expiry);
     const autoClose = boolToBoolean(rawAutoClose);
 
     return {
@@ -116,25 +112,30 @@ export class MultiSigProposal extends Entity<UniqueIdentifiers, string> {
           query: { multiSig },
         },
       },
-      multiSigAddress,
+      multiSig: { address: multiSigAddress },
       id,
       context,
     } = this;
+
     const rawId = bigNumberToU64(id, context);
     const rawMultiSignAddress = stringToAccountId(multiSigAddress, context);
     const rawProposal = await multiSig.proposals([rawMultiSignAddress, rawId]);
-    return !rawProposal.isEmpty;
+
+    return rawProposal.isSome;
   }
 
   /**
-   * Returns a human readable string representation
+   * Returns a human readable representation
    */
-  public toHuman(): string {
-    const { multiSigAddress, id } = this;
-
-    return JSON.stringify({
-      multiSigAddress,
+  public toHuman(): HumanReadable {
+    const {
+      multiSig: { address: multiSigAddress },
       id,
-    });
+    } = this;
+
+    return {
+      multiSigAddress,
+      id: id.toString(),
+    };
   }
 }
