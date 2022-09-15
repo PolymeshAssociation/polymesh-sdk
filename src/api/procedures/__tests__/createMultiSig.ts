@@ -26,9 +26,7 @@ describe('createMultiSig procedure', () => {
   });
 
   beforeEach(() => {
-    // multiSigResponse = ['callerDid', 'multiSigResponse'] as unknown;
     mockContext = dsMockUtils.getContextInstance();
-    // addTransactionStub = procedureMockUtils.getAddTransactionStub().returns([multiSigResponse]);
   });
 
   afterEach(() => {
