@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { AccountManagement } from '~/api/client/AccountManagement';
-import { Account, MultiSig, TransactionQueue } from '~/internal';
+import { Account, MultiSig, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
 import { AccountBalance, PermissionType, SubCallback } from '~/types';
@@ -44,39 +44,39 @@ describe('AccountManagement class', () => {
   });
 
   describe('method: leaveIdentity', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args: undefined, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await accountManagement.leaveIdentity();
+      const tx = await accountManagement.leaveIdentity();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: removeSecondaryAccounts', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const accounts = [entityMockUtils.getAccountInstance({ address: 'someAccount' })];
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args: { accounts }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await accountManagement.removeSecondaryAccounts({ accounts });
+      const tx = await accountManagement.removeSecondaryAccounts({ accounts });
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: revokePermissions', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const account = entityMockUtils.getAccountInstance({ address: 'someAccount' });
       const secondaryAccounts = [
         {
@@ -89,21 +89,21 @@ describe('AccountManagement class', () => {
         },
       ];
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args: { secondaryAccounts }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await accountManagement.revokePermissions({ secondaryAccounts: [account] });
+      const tx = await accountManagement.revokePermissions({ secondaryAccounts: [account] });
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: modifyPermissions', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const secondaryAccounts = [
         {
           account: entityMockUtils.getAccountInstance({ address: 'someAccount' }),
@@ -111,93 +111,93 @@ describe('AccountManagement class', () => {
         },
       ];
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args: { secondaryAccounts }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await accountManagement.modifyPermissions({ secondaryAccounts });
+      const tx = await accountManagement.modifyPermissions({ secondaryAccounts });
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: inviteAccount', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = {
         targetAccount: 'someAccount',
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await accountManagement.inviteAccount(args);
+      const tx = await accountManagement.inviteAccount(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: freezeSecondaryAccounts', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = {
         freeze: true,
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await accountManagement.freezeSecondaryAccounts();
+      const tx = await accountManagement.freezeSecondaryAccounts();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: unfreezeSecondaryAccounts', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = {
         freeze: false,
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await accountManagement.unfreezeSecondaryAccounts();
+      const tx = await accountManagement.unfreezeSecondaryAccounts();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: subsidizeAccount', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = {
         beneficiary: 'someAccount',
         allowance: new BigNumber(1000),
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await accountManagement.subsidizeAccount(args);
+      const tx = await accountManagement.subsidizeAccount(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -323,7 +323,7 @@ describe('AccountManagement class', () => {
         requiredSignatures: new BigNumber(1),
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedQueue = 'someQueue' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()

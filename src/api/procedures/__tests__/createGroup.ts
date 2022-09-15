@@ -45,7 +45,6 @@ describe('createGroup procedure', () => {
   });
 
   let mockContext: Mocked<Context>;
-  let addTransactionStub: sinon.SinonStub;
   let externalAgentsCreateGroupTransaction: PolymeshTx<unknown[]>;
   let permissionsLikeToPermissionsStub: sinon.SinonStub;
 
@@ -67,7 +66,6 @@ describe('createGroup procedure', () => {
   });
 
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
     externalAgentsCreateGroupTransaction = dsMockUtils.createTxStub(
       'externalAgents',
       'createGroup'
@@ -119,7 +117,7 @@ describe('createGroup procedure', () => {
     assertGroupDoesNotExistStub.restore();
   });
 
-  it('should add a create group transaction to the queue', async () => {
+  it('should return a create group transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(
       mockContext,
       {
@@ -147,19 +145,16 @@ describe('createGroup procedure', () => {
       .withArgs(fakePermissions, mockContext)
       .returns({ transactions });
 
-    await prepareCreateGroup.call(proc, {
+    let result = await prepareCreateGroup.call(proc, {
       ticker,
       permissions: fakePermissions,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction: externalAgentsCreateGroupTransaction,
-        resolvers: sinon.match.array,
-        args: [rawTicker, rawExtrinsicPermissions],
-      })
-    );
+    expect(result).toEqual({
+      transaction: externalAgentsCreateGroupTransaction,
+      args: [rawTicker, rawExtrinsicPermissions],
+      resolver: expect.any(Function),
+    });
 
     permissionsLikeToPermissionsStub
       .withArgs(
@@ -173,19 +168,16 @@ describe('createGroup procedure', () => {
       )
       .returns({ transactions: null });
 
-    await prepareCreateGroup.call(proc, {
+    result = await prepareCreateGroup.call(proc, {
       ticker,
       permissions: { transactions },
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction: externalAgentsCreateGroupTransaction,
-        resolvers: sinon.match.array,
-        args: [rawTicker, rawExtrinsicPermissions],
-      })
-    );
+    expect(result).toEqual({
+      transaction: externalAgentsCreateGroupTransaction,
+      args: [rawTicker, rawExtrinsicPermissions],
+      resolver: expect.any(Function),
+    });
   });
 
   describe('prepareStorage', () => {

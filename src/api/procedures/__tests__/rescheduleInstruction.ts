@@ -67,17 +67,19 @@ describe('rescheduleInstruction procedure', () => {
     ).rejects.toThrow('Only failed Instructions can be rescheduled');
   });
 
-  it('should add a reschedule Instruction transaction to the queue', async () => {
+  it('should return a reschedule Instruction transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('settlement', 'rescheduleInstruction');
 
-    await prepareRescheduleInstruction.call(proc, {
+    const result = await prepareRescheduleInstruction.call(proc, {
       id,
     });
 
-    const addTransactionStub = procedureMockUtils.getAddTransactionStub();
-
-    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawId] });
+    expect(result).toEqual({
+      transaction,
+      args: [rawId],
+      resolver: expect.objectContaining({ id }),
+    });
   });
 });

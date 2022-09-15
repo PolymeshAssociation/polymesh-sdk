@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, ModifyMultiSigParams, Signer, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import { signerToSignatory, signerToString, stringToAccountId } from '~/utils/conversion';
 import { checkTxType } from '~/utils/internal';
 
@@ -34,7 +34,7 @@ function calculateSignerDelta(
 export async function prepareModifyMultiSig(
   this: Procedure<ModifyMultiSigParams, void, Storage>,
   args: ModifyMultiSigParams
-): Promise<void> {
+): Promise<BatchTransactionSpec<void, unknown[][]>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -94,7 +94,10 @@ export async function prepareModifyMultiSig(
     );
   }
 
-  this.addBatchTransaction({ transactions });
+  return {
+    transactions,
+    resolver: undefined,
+  };
 }
 
 /**

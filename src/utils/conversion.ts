@@ -210,7 +210,6 @@ import {
   SignerValue,
   SingleClaimCondition,
   StatClaimType,
-  StatType,
   TargetTreatment,
   Tier,
   TransactionPermissions,
@@ -239,7 +238,7 @@ import {
   ScheduleSpec,
   StatClaimInputType,
   StatClaimIssuer,
-  StatisticsOpType,
+  StatType,
   TickerKey,
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
@@ -3043,11 +3042,13 @@ export function transferRestrictionToPolymeshTransferCondition(
 /**
  * @hidden
  */
-export function scopeIdsToBtreeSetIdentityId(
-  scopeIds: PolymeshPrimitivesIdentityId[],
+export function identitiesToBtreeSet(
+  identities: Identity[],
   context: Context
 ): BTreeSet<PolymeshPrimitivesIdentityId> {
-  return context.createType('BTreeSet<PolymeshPrimitivesIdentityId>', scopeIds);
+  const rawIds = identities.map(({ did }) => stringToIdentityId(did, context));
+
+  return context.createType('BTreeSet<PolymeshPrimitivesIdentityId>', rawIds);
 }
 
 /**
@@ -3857,28 +3858,25 @@ export function statUpdatesToBtreeStatUpdate(
 /**
  * @hidden
  */
-export function meshStatToStatisticsOpType(
-  rawStat: PolymeshPrimitivesStatisticsStatType
-): keyof typeof StatisticsOpType {
-  if (rawStat.claimIssuer.isNone) {
-    return rawStat.op.type;
-  } else {
-    if (rawStat.op.type === 'Count') {
-      return StatisticsOpType.ClaimCount;
+export function meshStatToStatType(rawStat: PolymeshPrimitivesStatisticsStatType): StatType {
+  const {
+    op: { type },
+    claimIssuer,
+  } = rawStat;
+
+  if (claimIssuer.isNone) {
+    if (type === 'Count') {
+      return StatType.Count;
     } else {
-      return StatisticsOpType.ClaimPercentage;
+      return StatType.Balance;
     }
   }
-}
 
-/**
- * @hidden
- */
-export function statisticsOpTypeToStatOpType(
-  type: StatisticsOpType,
-  context: Context
-): PolymeshPrimitivesStatisticsStatOpType {
-  return context.createType('PolymeshPrimitivesStatisticsStatOpType', type);
+  if (type === 'Count') {
+    return StatType.ScopedCount;
+  } else {
+    return StatType.ScopedBalance;
+  }
 }
 
 /**
@@ -3889,10 +3887,23 @@ export function statTypeToStatOpType(
   context: Context
 ): PolymeshPrimitivesStatisticsStatOpType {
   if (type === StatType.Count || type === StatType.ScopedCount) {
-    return statisticsOpTypeToStatOpType(StatisticsOpType.Count, context);
-  } else {
-    return statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
+    return context.createType('PolymeshPrimitivesStatisticsStatOpType', StatType.Count);
   }
+  return context.createType('PolymeshPrimitivesStatisticsStatOpType', StatType.Balance);
+}
+
+/**
+ * @hidden
+ */
+export function transferRestrictionTypeToStatOpType(
+  type: TransferRestrictionType,
+  context: Context
+): PolymeshPrimitivesStatisticsStatOpType {
+  if (type === TransferRestrictionType.Count || type === TransferRestrictionType.ClaimCount) {
+    return context.createType('PolymeshPrimitivesStatisticsStatOpType', StatType.Count);
+  }
+
+  return context.createType('PolymeshPrimitivesStatisticsStatOpType', StatType.Balance);
 }
 
 /**
@@ -3996,9 +4007,10 @@ export function complianceConditionsToBtreeSet(
  */
 export function toExemptKey(
   tickerKey: TickerKey,
-  op: PolymeshPrimitivesStatisticsStatOpType
+  op: PolymeshPrimitivesStatisticsStatOpType,
+  claimType?: ClaimType
 ): ExemptKey {
-  return { asset: tickerKey, op };
+  return { asset: tickerKey, op, claimType };
 }
 
 /**
@@ -4059,7 +4071,7 @@ export function inputStatTypeToMeshStatType(
   const { type } = input;
   const op = statTypeToStatOpType(type, context);
   let claimIssuer;
-  if (type === StatType.ScopedCount || type === StatType.ScopedPercentage) {
+  if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
     claimIssuer = claimIssuerToMeshClaimIssuer(input.claimIssuer, context);
   }
   return statisticsOpTypeToStatType({ op, claimIssuer }, context);

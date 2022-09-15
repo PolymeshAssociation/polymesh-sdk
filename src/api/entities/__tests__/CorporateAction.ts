@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 
-import { Context, CorporateAction, CorporateActionBase, TransactionQueue } from '~/internal';
+import { Context, CorporateAction, CorporateActionBase, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   CorporateActionKind,
@@ -89,8 +89,8 @@ describe('CorporateAction class', () => {
   });
 
   describe('method: modifyCheckpoint', () => {
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
       const args = {
         checkpoint: new Date(),
       };
@@ -98,11 +98,11 @@ describe('CorporateAction class', () => {
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args: { corporateAction, ...args }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await corporateAction.modifyCheckpoint(args);
+      const tx = await corporateAction.modifyCheckpoint(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 });

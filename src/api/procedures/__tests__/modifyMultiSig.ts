@@ -22,7 +22,6 @@ jest.mock(
 
 describe('modifyMultiSig procedure', () => {
   let mockContext: Mocked<Context>;
-  let addBatchTransactionStub: sinon.SinonStub;
   let rawAccountId: AccountId;
   let stringToAccountIdStub: SinonStub<[string, Context], AccountId>;
   let signerToSignatoryStub: SinonStub;
@@ -48,7 +47,6 @@ describe('modifyMultiSig procedure', () => {
     });
     rawAccountId = dsMockUtils.createMockAccountId(DUMMY_ACCOUNT_ID);
     mockContext = dsMockUtils.getContextInstance();
-    addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
     stringToAccountIdStub.withArgs(DUMMY_ACCOUNT_ID, mockContext).returns(rawAccountId);
 
     signerToSignatoryStub.withArgs(oldSigner1, mockContext).returns('oldOne');
@@ -171,9 +169,9 @@ describe('modifyMultiSig procedure', () => {
       }
     );
 
-    await prepareModifyMultiSig.call(proc, args);
+    const result = await prepareModifyMultiSig.call(proc, args);
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: addTransaction,
@@ -212,9 +210,9 @@ describe('modifyMultiSig procedure', () => {
       }
     );
 
-    await expect(prepareModifyMultiSig.call(proc, args)).resolves.not.toThrow();
+    const result = await prepareModifyMultiSig.call(proc, args);
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: addTransaction,
@@ -222,8 +220,6 @@ describe('modifyMultiSig procedure', () => {
         },
       ],
     });
-
-    sinon.assert.calledOnce(addBatchTransactionStub);
   });
 
   it('should add only a remove transaction to the queue if there are no signers to add', async () => {
@@ -251,12 +247,11 @@ describe('modifyMultiSig procedure', () => {
       }
     );
 
-    await expect(prepareModifyMultiSig.call(proc, args)).resolves.not.toThrow();
+    const result = await prepareModifyMultiSig.call(proc, args);
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: [{ transaction: removeTransaction, args: [rawAccountId, ['oldTwo']] }],
     });
-    sinon.assert.calledOnce(addBatchTransactionStub);
   });
 
   describe('getAuthorization', () => {

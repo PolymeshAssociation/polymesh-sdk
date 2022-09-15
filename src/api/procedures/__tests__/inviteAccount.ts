@@ -26,7 +26,6 @@ jest.mock(
 
 describe('inviteAccount procedure', () => {
   let mockContext: Mocked<Context>;
-  let addTransactionStub: sinon.SinonStub;
   let authorizationToAuthorizationDataStub: sinon.SinonStub<
     [Authorization, Context],
     PolymeshPrimitivesAuthorizationAuthorizationData
@@ -59,7 +58,6 @@ describe('inviteAccount procedure', () => {
   });
 
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
     args = { targetAccount: address };
   });
@@ -75,7 +73,7 @@ describe('inviteAccount procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should add an add authorization transaction to the queue', async () => {
+  it('should return an add authorization transaction spec', async () => {
     const expiry = new Date('1/1/2040');
     const target = new Account({ address }, mockContext);
     const account = entityMockUtils.getAccountInstance({ address: 'someFakeAccount' });
@@ -156,27 +154,21 @@ describe('inviteAccount procedure', () => {
 
     const transaction = dsMockUtils.createTxStub('identity', 'addAuthorization');
 
-    await prepareInviteAccount.call(proc, args);
+    let result = await prepareInviteAccount.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction,
-        resolvers: sinon.match.array,
-        args: [rawSignatory, rawAuthorizationData, null],
-      })
-    );
+    expect(result).toEqual({
+      transaction,
+      args: [rawSignatory, rawAuthorizationData, null],
+      resolver: expect.any(Function),
+    });
 
-    await prepareInviteAccount.call(proc, { ...args, expiry });
+    result = await prepareInviteAccount.call(proc, { ...args, expiry });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction,
-        resolvers: sinon.match.array,
-        args: [rawSignatory, rawAuthorizationData, rawExpiry],
-      })
-    );
+    expect(result).toEqual({
+      transaction,
+      args: [rawSignatory, rawAuthorizationData, rawExpiry],
+      resolver: expect.any(Function),
+    });
 
     permissionsLikeToPermissionsStub.resolves({
       assets: null,
@@ -184,7 +176,7 @@ describe('inviteAccount procedure', () => {
       portfolios: null,
     });
 
-    await prepareInviteAccount.call(proc, {
+    result = await prepareInviteAccount.call(proc, {
       ...args,
       permissions: {
         assets: null,
@@ -193,14 +185,11 @@ describe('inviteAccount procedure', () => {
       },
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction,
-        resolvers: sinon.match.array,
-        args: [rawSignatory, rawAuthorizationData, null],
-      })
-    );
+    expect(result).toEqual({
+      transaction,
+      args: [rawSignatory, rawAuthorizationData, null],
+      resolver: expect.any(Function),
+    });
   });
 
   it('should throw an error if the passed Account is already part of an Identity', () => {

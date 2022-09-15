@@ -105,39 +105,40 @@ describe('modifyAllowance procedure', () => {
       'Amount of allowance to decrease cannot be more than the current allowance'
     ));
 
-  it('should add a transaction to the queue', async () => {
-    const addTransactionStub = procedureMockUtils.getAddTransactionStub();
-
+  it('should return a transaction spec', async () => {
     const updatePolyxLimitTransaction = dsMockUtils.createTxStub('relayer', 'updatePolyxLimit');
 
-    await prepareModifyAllowance.call(proc, args);
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction: updatePolyxLimitTransaction,
-        args: [rawBeneficiaryAccountId, rawAllowance],
-      })
-    );
+    let result = await prepareModifyAllowance.call(proc, args);
 
-    await prepareModifyAllowance.call(proc, { ...args, operation: AllowanceOperation.Increase });
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction: increasePolyxLimitTransaction,
-        args: [rawBeneficiaryAccountId, rawAllowance],
-      })
-    );
+    expect(result).toEqual({
+      transaction: updatePolyxLimitTransaction,
+      args: [rawBeneficiaryAccountId, rawAllowance],
+      resolver: undefined,
+    });
+
+    result = await prepareModifyAllowance.call(proc, {
+      ...args,
+      operation: AllowanceOperation.Increase,
+    });
+
+    expect(result).toEqual({
+      transaction: increasePolyxLimitTransaction,
+      args: [rawBeneficiaryAccountId, rawAllowance],
+      resolver: undefined,
+    });
 
     const decreasePolyxLimitTransaction = dsMockUtils.createTxStub('relayer', 'decreasePolyxLimit');
 
-    await prepareModifyAllowance.call(proc, { ...args, operation: AllowanceOperation.Decrease });
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction: decreasePolyxLimitTransaction,
-        args: [rawBeneficiaryAccountId, rawAllowance],
-      })
-    );
+    result = await prepareModifyAllowance.call(proc, {
+      ...args,
+      operation: AllowanceOperation.Decrease,
+    });
+
+    expect(result).toEqual({
+      transaction: decreasePolyxLimitTransaction,
+      args: [rawBeneficiaryAccountId, rawAllowance],
+      resolver: undefined,
+    });
   });
 
   describe('getAuthorization', () => {

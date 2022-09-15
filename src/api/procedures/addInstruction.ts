@@ -13,7 +13,6 @@ import {
   Instruction,
   NumberedPortfolio,
   PolymeshError,
-  PostTransactionValue,
   Procedure,
 } from '~/internal';
 import {
@@ -25,8 +24,7 @@ import {
   SettlementTx,
   TxTags,
 } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
-import { tuple } from '~/types/utils';
+import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import { MAX_LEGS_LENGTH } from '~/utils/constants';
 import {
   bigNumberToBalance,
@@ -97,17 +95,13 @@ type InternalAddInstructionParams = [
  * @hidden
  */
 export const createAddInstructionResolver =
-  (context: Context, previousInstructions?: PostTransactionValue<Instruction[]>) =>
+  (context: Context) =>
   (receipt: ISubmittableResult): Instruction[] => {
     const events = filterEventRecords(receipt, 'settlement', 'InstructionCreated');
 
     const result = events.map(
       ({ data }) => new Instruction({ id: u64ToBigNumber(data[2]) }, context)
     );
-
-    if (previousInstructions) {
-      return previousInstructions.value.concat(result);
-    }
 
     return result;
   };
@@ -247,7 +241,7 @@ async function getTxArgsAndErrors(
 export async function prepareAddInstruction(
   this: Procedure<Params, Instruction[], Storage>,
   args: Params
-): Promise<PostTransactionValue<Instruction[]>> {
+): Promise<BatchTransactionSpec<Instruction[], unknown[][]>> {
   const {
     context: {
       polymeshApi: {
@@ -321,25 +315,21 @@ export async function prepareAddInstruction(
   const addAndAffirmTx = settlement.addAndAffirmInstruction;
   const addTx = settlement.addInstruction;
 
-  const transactions = assembleBatchTransactions(
-    tuple(
-      {
-        transaction: addTx,
-        argsArray: addInstructionParams,
-      },
-      {
-        transaction: addAndAffirmTx,
-        argsArray: addAndAffirmInstructionParams,
-      }
-    )
-  );
+  const transactions = assembleBatchTransactions([
+    {
+      transaction: addTx,
+      argsArray: addInstructionParams,
+    },
+    {
+      transaction: addAndAffirmTx,
+      argsArray: addAndAffirmInstructionParams,
+    },
+  ] as const);
 
-  const [resultInstructions] = this.addBatchTransaction({
+  return {
     transactions,
-    resolvers: [createAddInstructionResolver(context)],
-  });
-
-  return resultInstructions;
+    resolver: createAddInstructionResolver(context),
+  };
 }
 
 /**

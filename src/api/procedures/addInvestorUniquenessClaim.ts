@@ -1,6 +1,6 @@
 import { PolymeshError, Procedure } from '~/internal';
 import { AddInvestorUniquenessClaimParams, ClaimType, ErrorCode, TxTag, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   claimToMeshClaim,
   dateToMoment,
@@ -16,7 +16,10 @@ import {
 export async function prepareAddInvestorUniquenessClaim(
   this: Procedure<AddInvestorUniquenessClaimParams, void>,
   args: AddInvestorUniquenessClaimParams
-): Promise<void> {
+): Promise<
+  | TransactionSpec<void, ExtrinsicParams<'identity', 'addInvestorUniquenessClaim'>>
+  | TransactionSpec<void, ExtrinsicParams<'identity', 'addInvestorUniquenessClaimV2'>>
+> {
   const {
     context: {
       polymeshApi: { tx },
@@ -41,13 +44,14 @@ export async function prepareAddInvestorUniquenessClaim(
       { type: ClaimType.InvestorUniqueness, scope, cddId, scopeId },
       context
     );
-    this.addTransaction({
+    return {
       transaction: tx.identity.addInvestorUniquenessClaim,
       args: [meshIdentityId, meshClaim, stringToInvestorZKProofData(proof, context), meshExpiry],
-    });
+      resolver: undefined,
+    };
   } else {
     const meshClaim = claimToMeshClaim({ type: ClaimType.InvestorUniquenessV2, cddId }, context);
-    this.addTransaction({
+    return {
       transaction: tx.identity.addInvestorUniquenessClaimV2,
       args: [
         meshIdentityId,
@@ -56,7 +60,8 @@ export async function prepareAddInvestorUniquenessClaim(
         scopeClaimProofToConfidentialIdentityClaimProof(proof, scopeId, context),
         meshExpiry,
       ],
-    });
+      resolver: undefined,
+    };
   }
 }
 

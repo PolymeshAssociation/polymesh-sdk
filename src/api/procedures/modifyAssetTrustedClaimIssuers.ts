@@ -13,7 +13,11 @@ import {
   TrustedClaimIssuer,
   TxTags,
 } from '~/types';
-import { ProcedureAuthorization, TrustedClaimIssuerOperation } from '~/types/internal';
+import {
+  BatchTransactionSpec,
+  ProcedureAuthorization,
+  TrustedClaimIssuerOperation,
+} from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
   signerToString,
@@ -90,7 +94,7 @@ const areSameClaimIssuers = (
 export async function prepareModifyAssetTrustedClaimIssuers(
   this: Procedure<Params, Asset>,
   args: Params
-): Promise<Asset> {
+): Promise<BatchTransactionSpec<Asset, unknown[][]>> {
   const {
     context: {
       polymeshApi: { query, tx },
@@ -177,22 +181,18 @@ export async function prepareModifyAssetTrustedClaimIssuers(
     });
   }
 
-  const transactions = assembleBatchTransactions(
-    tuple(
-      {
-        transaction: tx.complianceManager.removeDefaultTrustedClaimIssuer,
-        argsArray: claimIssuersToDelete,
-      },
-      {
-        transaction: tx.complianceManager.addDefaultTrustedClaimIssuer,
-        argsArray: claimIssuersToAdd,
-      }
-    )
-  );
+  const transactions = assembleBatchTransactions([
+    {
+      transaction: tx.complianceManager.removeDefaultTrustedClaimIssuer,
+      argsArray: claimIssuersToDelete,
+    },
+    {
+      transaction: tx.complianceManager.addDefaultTrustedClaimIssuer,
+      argsArray: claimIssuersToAdd,
+    },
+  ] as const);
 
-  this.addBatchTransaction({ transactions });
-
-  return new Asset({ ticker }, context);
+  return { transactions, resolver: new Asset({ ticker }, context) };
 }
 
 /**

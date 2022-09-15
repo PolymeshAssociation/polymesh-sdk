@@ -20,7 +20,6 @@ describe('modifyAsset procedure', () => {
   let rawTicker: PolymeshPrimitivesTicker;
   let fundingRound: string;
   let identifiers: SecurityIdentifier[];
-  let addBatchTransactionStub: sinon.SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -39,7 +38,6 @@ describe('modifyAsset procedure', () => {
   });
 
   beforeEach(() => {
-    addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
   });
@@ -119,7 +117,7 @@ describe('modifyAsset procedure', () => {
     ).rejects.toThrow('New identifiers are the same as current identifiers');
   });
 
-  it('should add a make divisible transaction to the queue', async () => {
+  it('should add a make divisible transaction to the batch', async () => {
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('asset', 'makeDivisible');
@@ -129,14 +127,13 @@ describe('modifyAsset procedure', () => {
       makeDivisible: true,
     });
 
-    sinon.assert.calledWith(
-      addBatchTransactionStub,
-      sinon.match({ transactions: [{ transaction, args: [rawTicker] }] })
-    );
-    expect(result.ticker).toBe(ticker);
+    expect(result).toEqual({
+      transactions: [{ transaction, args: [rawTicker] }],
+      resolver: expect.objectContaining({ ticker }),
+    });
   });
 
-  it('should add a rename Asset transaction to the queue', async () => {
+  it('should add a rename Asset transaction to the batch', async () => {
     const newName = 'NEW_NAME';
     const rawAssetName = dsMockUtils.createMockBytes(newName);
     sinon
@@ -153,18 +150,18 @@ describe('modifyAsset procedure', () => {
       name: newName,
     });
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction,
           args: [rawTicker, rawAssetName],
         },
       ],
+      resolver: expect.objectContaining({ ticker }),
     });
-    expect(result.ticker).toBe(ticker);
   });
 
-  it('should add a set funding round transaction to the queue', async () => {
+  it('should add a set funding round transaction to the batch', async () => {
     const newFundingRound = 'Series B';
     const rawFundingRound = dsMockUtils.createMockBytes(newFundingRound);
     sinon
@@ -181,18 +178,18 @@ describe('modifyAsset procedure', () => {
       fundingRound: newFundingRound,
     });
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction,
           args: [rawTicker, rawFundingRound],
         },
       ],
+      resolver: expect.objectContaining({ ticker }),
     });
-    expect(result.ticker).toBe(ticker);
   });
 
-  it('should add a update identifiers transaction to the queue', async () => {
+  it('should add a update identifiers transaction to the batch', async () => {
     const rawIdentifier = dsMockUtils.createMockAssetIdentifier({
       Isin: dsMockUtils.createMockU8aFixed(identifiers[0].value),
     });
@@ -207,15 +204,15 @@ describe('modifyAsset procedure', () => {
       identifiers,
     });
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction,
           args: [rawTicker, [rawIdentifier]],
         },
       ],
+      resolver: expect.objectContaining({ ticker }),
     });
-    expect(result.ticker).toBe(ticker);
   });
 
   describe('getAuthorization', () => {

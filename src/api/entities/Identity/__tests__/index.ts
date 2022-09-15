@@ -84,7 +84,9 @@ describe('Identity class', () => {
   });
 
   beforeEach(() => {
-    context = dsMockUtils.getContextInstance();
+    context = dsMockUtils.getContextInstance({
+      middlewareEnabled: true,
+    });
   });
 
   afterEach(() => {
@@ -579,11 +581,13 @@ describe('Identity class', () => {
     const tickers = ['ASSET1\0\0', 'ASSET2\0\0'];
 
     it('should return a list of Assets', async () => {
-      const identity = new Identity({ did }, context);
-
+      context = dsMockUtils.getContextInstance({
+        middlewareEnabled: true,
+      });
       dsMockUtils.createApolloQueryStub(tokensByTrustedClaimIssuer({ claimIssuerDid: did }), {
         tokensByTrustedClaimIssuer: tickers,
       });
+      const identity = new Identity({ did }, context);
 
       const result = await identity.getTrustingAssets();
 

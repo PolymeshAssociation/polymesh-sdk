@@ -2,7 +2,7 @@ import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Asset, Context, Namespace, TransactionQueue } from '~/internal';
+import { Asset, Context, Namespace, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { TargetTreatment } from '~/types';
 import { tuple } from '~/types/utils';
@@ -64,7 +64,7 @@ describe('CorporateActions class', () => {
   });
 
   describe('method: setDefaultConfig', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const targets = {
         identities: ['someDid'],
         treatment: TargetTreatment.Exclude,
@@ -76,7 +76,7 @@ describe('CorporateActions class', () => {
           percentage: new BigNumber(20),
         },
       ];
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -87,53 +87,53 @@ describe('CorporateActions class', () => {
           },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await corporateActions.setDefaultConfig({
+      const tx = await corporateActions.setDefaultConfig({
         targets,
         taxWithholdings,
         defaultTaxWithholding,
       });
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: setAgent', () => {
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
       const target = 'someDid';
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args: { ticker, target }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await corporateActions.setAgent({ target });
+      const tx = await corporateActions.setAgent({ target });
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: removeAgent', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args: { ticker: 'SOME_TICKER' }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await corporateActions.removeAgent();
+      const tx = await corporateActions.removeAgent();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: remove', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
       const corporateAction = new BigNumber(100);
 
       procedureMockUtils
@@ -142,11 +142,11 @@ describe('CorporateActions class', () => {
           { args: { corporateAction, ticker: 'SOME_TICKER' }, transformer: undefined },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await corporateActions.remove({ corporateAction });
+      const tx = await corporateActions.remove({ corporateAction });
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 

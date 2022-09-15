@@ -2,7 +2,7 @@ import { StorageKey, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Context, Entity, Instruction, TransactionQueue } from '~/internal';
+import { Context, Entity, Instruction, PolymeshTransaction } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { instructionsQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
@@ -558,8 +558,8 @@ describe('Instruction class', () => {
       sinon.restore();
     });
 
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -570,10 +570,10 @@ describe('Instruction class', () => {
           },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await instruction.reject();
-      expect(queue).toBe(expectedQueue);
+      const tx = await instruction.reject();
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -582,8 +582,8 @@ describe('Instruction class', () => {
       sinon.restore();
     });
 
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Instruction>;
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Instruction>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -594,11 +594,11 @@ describe('Instruction class', () => {
           },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await instruction.affirm();
+      const tx = await instruction.affirm();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -607,8 +607,8 @@ describe('Instruction class', () => {
       sinon.restore();
     });
 
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Instruction>;
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Instruction>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -619,11 +619,11 @@ describe('Instruction class', () => {
           },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await instruction.withdraw();
+      const tx = await instruction.withdraw();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -632,8 +632,8 @@ describe('Instruction class', () => {
       sinon.restore();
     });
 
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Instruction>;
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Instruction>;
 
       procedureMockUtils
         .getPrepareStub()
@@ -644,11 +644,11 @@ describe('Instruction class', () => {
           },
           context
         )
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await instruction.reschedule();
+      const tx = await instruction.reschedule();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 

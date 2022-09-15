@@ -2,7 +2,7 @@ import { isEqual } from 'lodash';
 
 import { CustomPermissionGroup, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, SetGroupPermissionsParams, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   bigNumberToU32,
   permissionsLikeToPermissions,
@@ -21,7 +21,7 @@ export type Params = { group: CustomPermissionGroup } & SetGroupPermissionsParam
 export async function prepareSetGroupPermissions(
   this: Procedure<Params, void>,
   args: Params
-): Promise<void> {
+): Promise<TransactionSpec<void, ExtrinsicParams<'externalAgents', 'setGroupPermissions'>>> {
   const {
     context: {
       polymeshApi: {
@@ -54,10 +54,11 @@ export async function prepareSetGroupPermissions(
     context
   );
 
-  this.addTransaction({
+  return {
     transaction: externalAgents.setGroupPermissions,
     args: [rawTicker, rawAgId, rawExtrinsicPermissions],
-  });
+    resolver: undefined,
+  };
 }
 
 /**

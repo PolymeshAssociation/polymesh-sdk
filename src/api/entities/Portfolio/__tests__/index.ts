@@ -2,7 +2,14 @@ import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Asset, Context, Entity, NumberedPortfolio, Portfolio, TransactionQueue } from '~/internal';
+import {
+  Asset,
+  Context,
+  Entity,
+  NumberedPortfolio,
+  PolymeshTransaction,
+  Portfolio,
+} from '~/internal';
 import { heartbeat, settlements } from '~/middleware/queries';
 import { portfolioMovementsQuery, settlementsQuery } from '~/middleware/queriesV2';
 import {
@@ -324,38 +331,38 @@ describe('Portfolio class', () => {
   });
 
   describe('method: moveFunds', () => {
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
       const args = {
         to: new NumberedPortfolio({ id: new BigNumber(1), did: 'someDid' }, context),
         items: [{ asset: 'someAsset', amount: new BigNumber(100) }],
       };
       const portfolio = new NonAbstract({ did: 'someDid' }, context);
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args: { ...args, from: portfolio }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await portfolio.moveFunds(args);
+      const tx = await portfolio.moveFunds(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: quitCustody', () => {
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
       const portfolio = new NonAbstract({ did: 'someDid' }, context);
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args: { portfolio }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await portfolio.quitCustody();
+      const tx = await portfolio.quitCustody();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -372,19 +379,19 @@ describe('Portfolio class', () => {
       sinon.restore();
     });
 
-    it('should prepare the procedure and return the resulting transaction queue', async () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
       const portfolio = new NonAbstract({ id, did }, context);
       const targetIdentity = 'someTarget';
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args: { id, did, targetIdentity }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await portfolio.setCustodian({ targetIdentity });
+      const tx = await portfolio.setCustodian({ targetIdentity });
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 

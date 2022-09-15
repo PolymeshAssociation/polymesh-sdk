@@ -924,6 +924,19 @@ describe('Account class', () => {
     });
   });
 
+  describe('method: getCurrentNonce', () => {
+    it('should return the current nonce of the Account', async () => {
+      const nonce = new BigNumber(123);
+      sinon.stub(utilsConversionModule, 'stringToAccountId');
+      dsMockUtils
+        .createRpcStub('system', 'accountNextIndex')
+        .resolves(dsMockUtils.createMockU32(nonce));
+
+      const result = await account.getCurrentNonce();
+      expect(result).toEqual(nonce);
+    });
+  });
+
   describe('method: getMultiSig', () => {
     it('should return null if the Account is not a MultiSig signer', async () => {
       dsMockUtils.createQueryStub('identity', 'keyRecords', {

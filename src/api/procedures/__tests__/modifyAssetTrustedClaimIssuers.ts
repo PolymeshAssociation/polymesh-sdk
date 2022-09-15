@@ -70,14 +70,10 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
     };
   });
 
-  let addBatchTransactionStub: sinon.SinonStub;
-
   let removeDefaultTrustedClaimIssuerTransaction: PolymeshTx<[Vec<IdentityId>, Ticker]>;
   let addDefaultTrustedClaimIssuerTransaction: PolymeshTx<[Vec<TrustedIssuer>, Ticker]>;
 
   beforeEach(() => {
-    addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
-
     trustedClaimIssuerStub = dsMockUtils.createQueryStub(
       'complianceManager',
       'trustedClaimIssuer',
@@ -179,7 +175,7 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
       operation: TrustedClaimIssuerOperation.Set,
     });
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: [
         ...currentClaimIssuers.map(({ issuer }) => ({
           transaction: removeDefaultTrustedClaimIssuerTransaction,
@@ -190,8 +186,8 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
           args: [rawTicker, issuer],
         })),
       ],
+      resolver: expect.objectContaining({ ticker }),
     });
-    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   it('should not add a remove claim issuers transaction if there are no default claim issuers set on the Asset (set)', async () => {
@@ -206,14 +202,13 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
       operation: TrustedClaimIssuerOperation.Set,
     });
 
-    sinon.assert.calledWith(addBatchTransactionStub.firstCall, {
+    expect(result).toEqual({
       transactions: rawClaimIssuers.map(issuer => ({
         transaction: addDefaultTrustedClaimIssuerTransaction,
         args: [rawTicker, issuer],
       })),
+      resolver: expect.objectContaining({ ticker }),
     });
-    sinon.assert.calledOnce(addBatchTransactionStub);
-    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   it('should not add an add claim issuers transaction if there are no claim issuers passed as arguments (set)', async () => {
@@ -227,14 +222,13 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
       operation: TrustedClaimIssuerOperation.Set,
     });
 
-    sinon.assert.calledWith(addBatchTransactionStub.firstCall, {
+    expect(result).toEqual({
       transactions: currentClaimIssuers.map(({ issuer }) => ({
         transaction: removeDefaultTrustedClaimIssuerTransaction,
         args: [rawTicker, issuer],
       })),
+      resolver: expect.objectContaining({ ticker }),
     });
-    sinon.assert.calledOnce(addBatchTransactionStub);
-    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   it('should throw an error if trying to remove an Identity that is not a trusted claim issuer', async () => {
@@ -271,13 +265,13 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
       operation: TrustedClaimIssuerOperation.Remove,
     });
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: currentClaimIssuers.map(({ issuer }) => ({
         transaction: removeDefaultTrustedClaimIssuerTransaction,
         args: [rawTicker, issuer],
       })),
+      resolver: expect.objectContaining({ ticker }),
     });
-    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   it('should throw an error if trying to add an Identity that is already a Trusted Claim Issuer', async () => {
@@ -314,13 +308,13 @@ describe('modifyAssetTrustedClaimIssuers procedure', () => {
       operation: TrustedClaimIssuerOperation.Add,
     });
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: rawClaimIssuers.map(issuer => ({
         transaction: addDefaultTrustedClaimIssuerTransaction,
         args: [rawTicker, issuer],
       })),
+      resolver: expect.objectContaining({ ticker }),
     });
-    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   describe('getAuthorization', () => {

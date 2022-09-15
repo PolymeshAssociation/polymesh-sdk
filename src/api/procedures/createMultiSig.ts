@@ -1,7 +1,8 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 
-import { Context, MultiSig, PolymeshError, PostTransactionValue, Procedure } from '~/internal';
+import { Context, MultiSig, PolymeshError, Procedure } from '~/internal';
 import { CreateMultiSigParams, ErrorCode, TxTags } from '~/types';
+import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
 import { accountIdToString, bigNumberToU64, signerToSignatory } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
 
@@ -19,7 +20,7 @@ export const createMultiSigResolver =
 export async function prepareCreateMultiSigAccount(
   this: Procedure<CreateMultiSigParams, MultiSig>,
   args: CreateMultiSigParams
-): Promise<PostTransactionValue<MultiSig>> {
+): Promise<TransactionSpec<MultiSig, ExtrinsicParams<'multiSig', 'createMultisig'>>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -38,13 +39,11 @@ export async function prepareCreateMultiSigAccount(
   const rawRequiredSignatures = bigNumberToU64(requiredSignatures, context);
   const rawSignatories = signers.map(signer => signerToSignatory(signer, context));
 
-  const [multiSig] = this.addTransaction({
+  return {
     transaction: tx.multiSig.createMultisig,
-    resolvers: [createMultiSigResolver(context)],
+    resolver: createMultiSigResolver(context),
     args: [rawSignatories, rawRequiredSignatures],
-  });
-
-  return multiSig;
+  };
 }
 
 /**

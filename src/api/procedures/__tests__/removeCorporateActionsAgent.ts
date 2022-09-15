@@ -20,7 +20,6 @@ jest.mock(
 describe('removeCorporateActionsAgent procedure', () => {
   let mockContext: Mocked<Context>;
   let ticker: string;
-  let addTransactionStub: sinon.SinonStub;
   let id: BigNumber;
 
   beforeAll(() => {
@@ -32,7 +31,6 @@ describe('removeCorporateActionsAgent procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
   });
 
   afterEach(() => {
@@ -46,7 +44,7 @@ describe('removeCorporateActionsAgent procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should add a remove corporate agent transaction to the queue', async () => {
+  it('should return a remove corporate agent transaction spec', async () => {
     const did = 'someDid';
 
     entityMockUtils.configureMocks({
@@ -64,9 +62,9 @@ describe('removeCorporateActionsAgent procedure', () => {
     const transaction = dsMockUtils.createTxStub('externalAgents', 'removeAgent');
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await prepareRemoveCorporateActionsAgent.call(proc, { ticker });
+    const result = await prepareRemoveCorporateActionsAgent.call(proc, { ticker });
 
-    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawIdentityId] });
+    expect(result).toEqual({ transaction, args: [rawTicker, rawIdentityId], resolver: undefined });
   });
 
   it('should throw an error if Corporate Actions Agent list has more than one Identity', () => {

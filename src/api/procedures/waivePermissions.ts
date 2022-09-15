@@ -1,6 +1,6 @@
 import { Asset, Identity, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RoleType, TxTags, WaivePermissionsParams } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { stringToTicker } from '~/utils/conversion';
 import { asAsset } from '~/utils/internal';
 
@@ -24,7 +24,7 @@ export interface Storage {
 export async function prepareWaivePermissions(
   this: Procedure<Params, void, Storage>,
   args: Params
-): Promise<void> {
+): Promise<TransactionSpec<void, ExtrinsicParams<'externalAgents', 'abdicate'>>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -47,10 +47,11 @@ export async function prepareWaivePermissions(
 
   const rawTicker = stringToTicker(asset.ticker, context);
 
-  this.addTransaction({
+  return {
     transaction: tx.externalAgents.abdicate,
     args: [rawTicker],
-  });
+    resolver: undefined,
+  };
 }
 
 /**

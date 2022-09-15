@@ -1,7 +1,7 @@
 import { assertAuthorizationRequestValid } from '~/api/procedures/utils';
 import { Account, AuthorizationRequest, Identity, PolymeshError, Procedure } from '~/internal';
 import { AuthorizationType, ErrorCode, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   bigNumberToU64,
   booleanToBool,
@@ -30,7 +30,12 @@ export interface Storage {
 export async function prepareConsumeJoinOrRotateAuthorization(
   this: Procedure<ConsumeJoinOrRotateAuthorizationParams, void, Storage>,
   args: ConsumeJoinOrRotateAuthorizationParams
-): Promise<void> {
+): Promise<
+  | TransactionSpec<void, ExtrinsicParams<'identity', 'removeAuthorization'>>
+  | TransactionSpec<void, ExtrinsicParams<'identity', 'joinIdentityAsKey'>>
+  | TransactionSpec<void, ExtrinsicParams<'identity', 'acceptPrimaryKey'>>
+  | TransactionSpec<void, ExtrinsicParams<'identity', 'rotatePrimaryKeyToSecondary'>>
+> {
   const {
     context: {
       polymeshApi: {
@@ -71,7 +76,7 @@ export async function prepareConsumeJoinOrRotateAuthorization(
       baseArgs.paidForBy = issuer;
     }
 
-    this.addTransaction({
+    return {
       transaction: identity.removeAuthorization,
       ...baseArgs,
       args: [
@@ -79,30 +84,31 @@ export async function prepareConsumeJoinOrRotateAuthorization(
         rawAuthId,
         booleanToBool(calledByTarget, context),
       ],
-    });
-
-    return;
+      resolver: undefined,
+    };
   }
 
   await assertAuthorizationRequestValid(authRequest, context);
 
   if (type === AuthorizationType.JoinIdentity) {
-    this.addTransaction({
+    return {
       transaction: identity.joinIdentityAsKey,
       paidForBy: issuer,
       args: [rawAuthId],
-    });
+      resolver: undefined,
+    };
   } else {
     const transaction =
       type === AuthorizationType.RotatePrimaryKey
         ? identity.acceptPrimaryKey
         : identity.rotatePrimaryKeyToSecondary;
 
-    this.addTransaction({
+    return {
       transaction,
       paidForBy: issuer,
       args: [rawAuthId, null],
-    });
+      resolver: undefined,
+    };
   }
 }
 

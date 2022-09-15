@@ -26,7 +26,6 @@ describe('closeOffering procedure', () => {
   const rawId = dsMockUtils.createMockU64(id);
 
   let mockContext: Mocked<Context>;
-  let addTransactionStub: sinon.SinonStub;
   let stopStoTransaction: PolymeshTx<unknown[]>;
 
   beforeAll(() => {
@@ -49,7 +48,6 @@ describe('closeOffering procedure', () => {
   });
 
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
     stopStoTransaction = dsMockUtils.createTxStub('sto', 'stop');
     mockContext = dsMockUtils.getContextInstance();
   });
@@ -65,14 +63,15 @@ describe('closeOffering procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should add a stop sto transaction to the queue', async () => {
+  it('should return a stop sto transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await prepareCloseOffering.call(proc, { ticker, id });
+    const result = await prepareCloseOffering.call(proc, { ticker, id });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction: stopStoTransaction,
       args: [rawTicker, rawId],
+      resolver: undefined,
     });
   });
 

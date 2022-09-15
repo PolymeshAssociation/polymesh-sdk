@@ -28,7 +28,6 @@ describe('modifyClaims procedure', () => {
   let dateToMomentStub: sinon.SinonStub<[Date, Context], Moment>;
   let identityIdToStringStub: sinon.SinonStub<[IdentityId], string>;
   let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
-  let addBatchTransactionStub: sinon.SinonStub;
   let addClaimTransaction: PolymeshTx<[IdentityId, Claim, Option<Moment>]>;
   let revokeClaimTransaction: PolymeshTx<[IdentityId, Claim]>;
   let balanceToBigNumberStub: sinon.SinonStub<[Balance], BigNumber>;
@@ -133,7 +132,6 @@ describe('modifyClaims procedure', () => {
   });
 
   beforeEach(() => {
-    addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
     addClaimTransaction = dsMockUtils.createTxStub('identity', 'addClaim');
     revokeClaimTransaction = dsMockUtils.createTxStub('identity', 'revokeClaim');
@@ -175,7 +173,7 @@ describe('modifyClaims procedure', () => {
     expect(error.data).toMatchObject({ nonExistentDids: [otherDid] });
   });
 
-  it('should add a batch of add claim transactions to the queue', async () => {
+  it('should return a batch of add claim transactions spec', async () => {
     dsMockUtils.configureMocks({
       contextOptions: {
         issuedClaims: {
@@ -196,7 +194,7 @@ describe('modifyClaims procedure', () => {
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
     const { did } = await mockContext.getSigningIdentity();
 
-    await prepareModifyClaims.call(proc, {
+    let result = await prepareModifyClaims.call(proc, {
       claims: [
         {
           target: someDid,
@@ -207,16 +205,17 @@ describe('modifyClaims procedure', () => {
       operation: ClaimOperation.Add,
     });
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: addClaimTransaction,
           args: [rawSomeDid, rawBuyLockupClaim, rawExpiry],
         },
       ],
+      resolver: undefined,
     });
 
-    await prepareModifyClaims.call(proc, args);
+    result = await prepareModifyClaims.call(proc, args);
 
     const rawAddClaimItems = [
       [rawSomeDid, rawCddClaim, null],
@@ -225,11 +224,12 @@ describe('modifyClaims procedure', () => {
       [rawSomeDid, rawIuClaim, null],
     ] as const;
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: rawAddClaimItems.map(item => ({
         transaction: addClaimTransaction,
         args: item,
       })),
+      resolver: undefined,
     });
 
     sinon.resetHistory();
@@ -258,13 +258,14 @@ describe('modifyClaims procedure', () => {
       }
     );
 
-    await prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Edit });
+    result = await prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Edit });
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: rawAddClaimItems.map(item => ({
         transaction: addClaimTransaction,
         args: item,
       })),
+      resolver: undefined,
     });
 
     dsMockUtils.configureMocks({
@@ -285,7 +286,7 @@ describe('modifyClaims procedure', () => {
       },
     });
 
-    await prepareModifyClaims.call(proc, {
+    result = await prepareModifyClaims.call(proc, {
       claims: [
         {
           target: someDid,
@@ -296,13 +297,14 @@ describe('modifyClaims procedure', () => {
       operation: ClaimOperation.Add,
     });
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: addClaimTransaction,
           args: [rawSomeDid, rawDefaultCddClaim, rawExpiry],
         },
       ],
+      resolver: undefined,
     });
   });
 
@@ -454,7 +456,7 @@ describe('modifyClaims procedure', () => {
     );
   });
 
-  it('should add a batch of revoke claim transactions to the queue', async () => {
+  it('should return a batch of revoke claim transactions spec', async () => {
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
     const { did } = await mockContext.getSigningIdentity();
 
@@ -485,7 +487,10 @@ describe('modifyClaims procedure', () => {
     dsMockUtils.createQueryStub('asset', 'aggregateBalance');
     balanceToBigNumberStub.returns(new BigNumber(0));
 
-    await prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Revoke });
+    const result = await prepareModifyClaims.call(proc, {
+      ...args,
+      operation: ClaimOperation.Revoke,
+    });
 
     const rawRevokeClaimItems = [
       [rawSomeDid, rawCddClaim],
@@ -494,11 +499,12 @@ describe('modifyClaims procedure', () => {
       [rawSomeDid, rawIuClaim],
     ];
 
-    sinon.assert.calledWith(addBatchTransactionStub, {
+    expect(result).toEqual({
       transactions: rawRevokeClaimItems.map(item => ({
         transaction: revokeClaimTransaction,
         args: item,
       })),
+      resolver: undefined,
     });
   });
 });

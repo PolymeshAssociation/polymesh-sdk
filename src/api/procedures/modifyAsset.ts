@@ -1,6 +1,6 @@
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, ModifyAssetParams, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import {
   fundingRoundToAssetFundingRound,
   nameToAssetName,
@@ -20,7 +20,7 @@ export type Params = { ticker: string } & ModifyAssetParams;
 export async function prepareModifyAsset(
   this: Procedure<Params, Asset>,
   args: Params
-): Promise<Asset> {
+): Promise<BatchTransactionSpec<Asset, unknown[][]>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -132,9 +132,7 @@ export async function prepareModifyAsset(
     );
   }
 
-  this.addBatchTransaction({ transactions });
-
-  return asset;
+  return { transactions, resolver: asset };
 }
 
 /**

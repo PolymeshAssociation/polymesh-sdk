@@ -29,7 +29,6 @@ describe('issueTokens procedure', () => {
   let rawTicker: Ticker;
   let amount: BigNumber;
   let rawAmount: Balance;
-  let addTransactionStub: sinon.SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -46,7 +45,6 @@ describe('issueTokens procedure', () => {
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
     stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
   });
 
   afterEach(() => {
@@ -113,7 +111,7 @@ describe('issueTokens procedure', () => {
     });
   });
 
-  it('should add a issue transaction to the queue', async () => {
+  it('should return a issue transaction spec', async () => {
     const isDivisible = true;
     const args = {
       amount,
@@ -138,8 +136,11 @@ describe('issueTokens procedure', () => {
     });
 
     const result = await prepareIssueTokens.call(proc, args);
-    sinon.assert.calledWith(addTransactionStub, { transaction, args: [rawTicker, rawAmount] });
-    expect(result.ticker).toBe(ticker);
+    expect(result).toEqual({
+      transaction,
+      args: [rawTicker, rawAmount],
+      resolver: expect.objectContaining({ ticker }),
+    });
   });
 
   describe('getAuthorization', () => {

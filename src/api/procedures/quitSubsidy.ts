@@ -1,6 +1,6 @@
 import { PolymeshError, Procedure, Subsidy } from '~/internal';
 import { ErrorCode, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { stringToAccountId } from '~/utils/conversion';
 
 export interface QuitSubsidyParams {
@@ -13,7 +13,7 @@ export interface QuitSubsidyParams {
 export async function prepareQuitSubsidy(
   this: Procedure<QuitSubsidyParams, void>,
   args: QuitSubsidyParams
-): Promise<void> {
+): Promise<TransactionSpec<void, ExtrinsicParams<'relayer', 'removePayingKey'>>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -42,10 +42,11 @@ export async function prepareQuitSubsidy(
 
   const rawSubsidizerAccount = stringToAccountId(subsidizerAddress, context);
 
-  this.addTransaction({
+  return {
     transaction: tx.relayer.removePayingKey,
     args: [rawBeneficiaryAccount, rawSubsidizerAccount],
-  });
+    resolver: undefined,
+  };
 }
 
 /**

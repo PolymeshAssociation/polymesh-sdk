@@ -73,10 +73,7 @@ describe('controllerTransfer procedure', () => {
     rawAmount = dsMockUtils.createMockBalance(amount);
   });
 
-  let addTransactionStub: sinon.SinonStub;
-
   beforeEach(() => {
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
     mockContext = dsMockUtils.getContextInstance();
     stringToTickerStub.returns(rawTicker);
     portfolioIdToPortfolioStub.returns(originPortfolio);
@@ -127,22 +124,23 @@ describe('controllerTransfer procedure', () => {
     ).rejects.toThrow('The origin Portfolio does not have enough free balance for this transfer');
   });
 
-  it('should add a controller transfer transaction to the queue', async () => {
+  it('should return a controller transfer transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       did: 'someDid',
     });
 
     const transaction = dsMockUtils.createTxStub('asset', 'controllerTransfer');
 
-    await prepareControllerTransfer.call(proc, {
+    const result = await prepareControllerTransfer.call(proc, {
       ticker,
       originPortfolio,
       amount,
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction,
       args: [rawTicker, rawAmount, rawPortfolioId],
+      resolver: undefined,
     });
   });
 

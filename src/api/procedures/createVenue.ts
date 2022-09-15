@@ -1,7 +1,8 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 
-import { Context, PostTransactionValue, Procedure, Venue } from '~/internal';
+import { Context, Procedure, Venue } from '~/internal';
 import { CreateVenueParams, TxTags } from '~/types';
+import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
 import { stringToBytes, u64ToBigNumber, venueTypeToMeshVenueType } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
 
@@ -23,7 +24,7 @@ export const createCreateVenueResolver =
 export async function prepareCreateVenue(
   this: Procedure<CreateVenueParams, Venue>,
   args: CreateVenueParams
-): Promise<PostTransactionValue<Venue>> {
+): Promise<TransactionSpec<Venue, ExtrinsicParams<'settlement', 'createVenue'>>> {
   const {
     context: {
       polymeshApi: {
@@ -38,13 +39,11 @@ export async function prepareCreateVenue(
   const rawType = venueTypeToMeshVenueType(type, context);
 
   // NOTE @monitz87: we're sending an empty signer array for the moment
-  const [newVenue] = this.addTransaction({
+  return {
     transaction: settlement.createVenue,
-    resolvers: [createCreateVenueResolver(context)],
     args: [rawDetails, [], rawType],
-  });
-
-  return newVenue;
+    resolver: createCreateVenueResolver(context),
+  };
 }
 
 /**

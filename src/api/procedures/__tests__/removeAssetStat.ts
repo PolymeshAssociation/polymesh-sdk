@@ -20,10 +20,9 @@ import {
   ErrorCode,
   RemoveAssetStatParams,
   StatClaimType,
-  StatType,
   TxTags,
 } from '~/types';
-import { PolymeshTx, StatisticsOpType, TickerKey } from '~/types/internal';
+import { PolymeshTx, StatType, TickerKey } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -54,7 +53,6 @@ describe('removeAssetStat procedure', () => {
     PolymeshPrimitivesTransferComplianceAssetTransferCompliance
   ];
 
-  let addTransactionStub: sinon.SinonStub;
   let setActiveAssetStats: PolymeshTx<
     [PolymeshPrimitivesTicker, PolymeshPrimitivesTransferComplianceTransferCondition]
   >;
@@ -124,7 +122,7 @@ describe('removeAssetStat procedure', () => {
       utilsConversionModule,
       'statisticsOpTypeToStatType'
     );
-    statStub = sinon.stub(utilsConversionModule, 'meshStatToStatisticsOpType');
+    statStub = sinon.stub(utilsConversionModule, 'meshStatToStatType');
     statisticStatTypesToBtreeStatTypeStub = sinon.stub(
       utilsConversionModule,
       'statisticStatTypesToBtreeStatType'
@@ -135,19 +133,22 @@ describe('removeAssetStat procedure', () => {
   });
 
   beforeEach(() => {
-    statStub.returns(StatisticsOpType.Balance);
+    statStub.returns(StatType.Balance);
     mockRemoveTarget = dsMockUtils.createMockStatisticsStatType();
     mockRemoveTargetEqSub = mockRemoveTarget.eq as sinon.SinonStub;
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
     setActiveAssetStats = dsMockUtils.createTxStub('statistics', 'setActiveAssetStats');
 
     rawCountStatType = dsMockUtils.createMockStatisticsStatType();
     rawBalanceStatType = dsMockUtils.createMockStatisticsStatType({
-      op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.Balance),
+      op: dsMockUtils.createMockStatisticsOpType(StatType.Balance),
+      claimIssuer: dsMockUtils.createMockOption(),
     });
     rawClaimCountStatType = dsMockUtils.createMockStatisticsStatType({
-      op: dsMockUtils.createMockStatisticsOpType(StatisticsOpType.ClaimCount),
-      claimIssuer: [dsMockUtils.createMockClaimType(), dsMockUtils.createMockIdentityId()],
+      op: dsMockUtils.createMockStatisticsOpType(StatType.ScopedCount),
+      claimIssuer: dsMockUtils.createMockOption([
+        dsMockUtils.createMockClaimType(),
+        dsMockUtils.createMockIdentityId(),
+      ]),
     });
     statBtreeSet = dsMockUtils.createMockBTreeSet([
       rawCountStatType,
@@ -188,7 +189,7 @@ describe('removeAssetStat procedure', () => {
     stringToTickerKeyStub.withArgs(ticker, mockContext).returns({ Ticker: rawTicker });
     statisticStatTypesToBtreeStatTypeStub.returns(emptyStatTypeBtreeSet);
     args = {
-      type: StatType.Percentage,
+      type: StatType.Balance,
       ticker,
     };
   });
@@ -210,11 +211,12 @@ describe('removeAssetStat procedure', () => {
     queryMultiStub.resolves([statBtreeSet, { requirements: [] }]);
     const proc = procedureMockUtils.getInstance<RemoveAssetStatParams, void>(mockContext);
 
-    await prepareRemoveAssetStat.call(proc, args);
+    let result = await prepareRemoveAssetStat.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub.firstCall, {
+    expect(result).toEqual({
       transaction: setActiveAssetStats,
       args: [{ Ticker: rawTicker }, emptyStatTypeBtreeSet],
+      resolver: undefined,
     });
 
     args = {
@@ -224,11 +226,12 @@ describe('removeAssetStat procedure', () => {
       claimType: ClaimType.Affiliate,
     };
 
-    await prepareRemoveAssetStat.call(proc, args);
+    result = await prepareRemoveAssetStat.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub.secondCall, {
+    expect(result).toEqual({
       transaction: setActiveAssetStats,
       args: [{ Ticker: rawTicker }, emptyStatTypeBtreeSet],
+      resolver: undefined,
     });
   });
 
@@ -265,7 +268,7 @@ describe('removeAssetStat procedure', () => {
 
     await expect(prepareRemoveAssetStat.call(proc, args)).rejects.toThrowError(expectedError);
 
-    statStub.returns(StatisticsOpType.Count);
+    statStub.returns(StatType.Count);
 
     args = {
       ticker: 'TICKER',

@@ -7,7 +7,7 @@ import {
   createMultiSigResolver,
   prepareCreateMultiSigAccount,
 } from '~/api/procedures/createMultiSig';
-import { Context, PolymeshError, PostTransactionValue } from '~/internal';
+import { Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { CreateMultiSigParams, ErrorCode } from '~/types';
@@ -16,8 +16,6 @@ import * as utilsInternalModule from '~/utils/internal';
 
 describe('createMultiSig procedure', () => {
   let mockContext: Mocked<Context>;
-  let multiSigResponse: PostTransactionValue<MultiSig>;
-  let addTransactionStub: sinon.SinonStub;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -28,12 +26,7 @@ describe('createMultiSig procedure', () => {
   });
 
   beforeEach(() => {
-    multiSigResponse = [
-      'callerDid',
-      'multiSigResponse',
-    ] as unknown as PostTransactionValue<MultiSig>;
     mockContext = dsMockUtils.getContextInstance();
-    addTransactionStub = procedureMockUtils.getAddTransactionStub().returns([multiSigResponse]);
   });
 
   afterEach(() => {
@@ -68,15 +61,11 @@ describe('createMultiSig procedure', () => {
       requiredSignatures,
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction: createMultiSigTransaction,
-        resolvers: sinon.match.array,
-        args: [rawSignatories, rawRequiredSignatures],
-      })
-    );
-    expect(result).toBe(multiSigResponse);
+    expect(result).toEqual({
+      transaction: createMultiSigTransaction,
+      resolver: expect.any(Function),
+      args: [rawSignatories, rawRequiredSignatures],
+    });
   });
 
   it('should throw an error if more signatures are required than signers', () => {

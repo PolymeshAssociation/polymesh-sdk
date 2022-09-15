@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Asset, Context, Entity, TickerReservation, TransactionQueue } from '~/internal';
+import { Asset, Context, Entity, PolymeshTransaction, TickerReservation } from '~/internal';
 import { dsMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { KnownAssetType, SecurityIdentifierType, TickerReservationStatus } from '~/types';
@@ -212,7 +212,7 @@ describe('TickerReservation class', () => {
   });
 
   describe('method: extend', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const tickerReservation = new TickerReservation({ ticker }, context);
 
       const args = {
@@ -220,21 +220,22 @@ describe('TickerReservation class', () => {
         extendPeriod: true,
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<TickerReservation>;
+      const expectedTransaction =
+        'someTransaction' as unknown as PolymeshTransaction<TickerReservation>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await tickerReservation.extend();
+      const tx = await tickerReservation.extend();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: createAsset', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const tickerReservation = new TickerReservation({ ticker }, context);
 
       const args = {
@@ -249,21 +250,21 @@ describe('TickerReservation class', () => {
         reservationRequired: true,
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await tickerReservation.createAsset(args);
+      const tx = await tickerReservation.createAsset(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
   describe('method: transferOwnership', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const tickerReservation = new TickerReservation({ ticker }, context);
       const target = 'someOtherDid';
       const expiry = new Date('10/10/2022');
@@ -274,16 +275,16 @@ describe('TickerReservation class', () => {
         expiry,
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await tickerReservation.transferOwnership(args);
+      const tx = await tickerReservation.transferOwnership(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 

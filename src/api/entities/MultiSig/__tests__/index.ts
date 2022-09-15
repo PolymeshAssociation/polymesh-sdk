@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Account, Context, MultiSig, PolymeshError } from '~/internal';
+import { Account, Context, MultiSig, PolymeshError, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   createMockAccountId,
@@ -11,7 +11,7 @@ import {
   createMockU64,
 } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
-import { ErrorCode, TransactionQueue } from '~/types';
+import { ErrorCode } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -168,7 +168,7 @@ describe('MultiSig class', () => {
   describe('method: modify', () => {
     const account = entityMockUtils.getAccountInstance({ address });
     it('should prepare the procedure and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+      const expectedTransaction = 'someQueue' as unknown as PolymeshTransaction<void>;
       const args = {
         signers: [account],
       };
@@ -176,11 +176,11 @@ describe('MultiSig class', () => {
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args: { multiSig, ...args }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
       const queue = await multiSig.modify(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(queue).toBe(expectedTransaction);
     });
   });
 });
