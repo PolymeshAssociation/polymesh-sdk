@@ -91,7 +91,7 @@ describe('modifyMultiSig procedure', () => {
     );
 
     const expectedError = new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.NoDataChange,
       message:
         'The given signers are equal to the current signers. At least one signer should be added or removed',
     });
