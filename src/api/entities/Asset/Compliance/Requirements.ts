@@ -9,17 +9,14 @@ import {
   addAssetRequirement,
   Asset,
   Context,
-  Identity,
   modifyComplianceRequirement,
   Namespace,
   removeAssetRequirement,
   setAssetRequirements,
   togglePauseRequirements,
 } from '~/internal';
-import { AssetComplianceResult } from '~/polkadot/polymesh';
 import {
   AddAssetRequirementParams,
-  Compliance,
   ComplianceRequirements,
   ModifyComplianceRequirementParams,
   NoArgsProcedureMethod,
@@ -31,11 +28,8 @@ import {
 } from '~/types';
 import { QueryReturnType } from '~/types/utils';
 import {
-  assetComplianceResultToCompliance,
   boolToBoolean,
   complianceRequirementToRequirement,
-  signerToString,
-  stringToIdentityId,
   stringToTicker,
   trustedIssuerToTrustedClaimIssuer,
 } from '~/utils/conversion';
