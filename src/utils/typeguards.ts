@@ -45,6 +45,7 @@ import {
   MultiClaimCondition,
   NoDataClaim,
   PortfolioCustodianRole,
+  ProposalStatus,
   Role,
   RoleType,
   ScopedClaim,
@@ -374,4 +375,11 @@ export function isPolymeshTransactionBatch<
   Args extends unknown[][] = unknown[][]
 >(value: unknown): value is PolymeshTransactionBatch<ReturnValue, TransformedReturnValue, Args> {
   return value instanceof PolymeshTransactionBatch;
+}
+
+/**
+ * @hidden
+ */
+export function isProposalStatus(status: string): status is ProposalStatus {
+  return status in ProposalStatus;
 }
