@@ -289,8 +289,10 @@ interface DividendDistributionOptions extends EntityOptions {
   getParticipant?: EntityGetter<DistributionParticipant | null>;
 }
 
-interface MultiSigOptions extends EntityOptions {
+interface MultiSigOptions extends AccountOptions {
   address?: string;
+  details?: { signers: Signer[]; requiredSignatures: BigNumber };
+  getCreator?: EntityGetter<Identity>;
 }
 interface MultiSigProposalOptions extends EntityOptions {
   id?: BigNumber;
@@ -1467,7 +1469,17 @@ const MockCustomPermissionGroupClass = createMockEntityClass<CustomPermissionGro
 
 const MockMultiSigClass = createMockEntityClass<MultiSigOptions>(
   class {
+    uuid!: string;
     address!: string;
+    key!: string;
+    isFrozen!: sinon.SinonStub;
+    getBalance!: sinon.SinonStub;
+    getIdentity!: sinon.SinonStub;
+    getTransactionHistory!: sinon.SinonStub;
+    hasPermissions!: sinon.SinonStub;
+    checkPermissions!: sinon.SinonStub;
+    details!: sinon.SinonStub;
+    getCreator!: sinon.SinonStub;
 
     /**
      * @hidden
@@ -1480,11 +1492,39 @@ const MockMultiSigClass = createMockEntityClass<MultiSigOptions>(
      * @hidden
      */
     public configure(opts: Required<MultiSigOptions>) {
+      this.uuid = 'multiSig';
       this.address = opts.address;
+      this.key = opts.key;
+      this.isFrozen = createEntityGetterStub(opts.isFrozen);
+      this.getBalance = createEntityGetterStub(opts.getBalance);
+      this.getIdentity = createEntityGetterStub(opts.getIdentity);
+      this.getTransactionHistory = createEntityGetterStub(opts.getTransactionHistory);
+      this.hasPermissions = createEntityGetterStub(opts.hasPermissions);
+      this.checkPermissions = createEntityGetterStub(opts.checkPermissions);
+      this.details = createEntityGetterStub(opts.details);
+      this.getCreator = createEntityGetterStub(opts.getCreator);
     }
   },
   () => ({
     address: 'someAddress',
+    key: 'someKey',
+    getBalance: {
+      free: new BigNumber(100),
+      locked: new BigNumber(10),
+      total: new BigNumber(110),
+    },
+    getTransactionHistory: [],
+    getIdentity: getIdentityInstance(),
+    isFrozen: false,
+    hasPermissions: true,
+    checkPermissions: {
+      result: true,
+    },
+    details: {
+      signers: [],
+      requiredSignatures: new BigNumber(0),
+    },
+    getCreator: getIdentityInstance(),
   }),
   ['MultiSig', 'Account']
 );
@@ -1705,6 +1745,7 @@ export const configureMocks = function (opts?: MockOptions): void {
   MockCheckpointScheduleClass.setOptions(opts?.checkpointScheduleOptions);
   MockCorporateActionClass.setOptions(opts?.corporateActionOptions);
   MockDividendDistributionClass.setOptions(opts?.dividendDistributionOptions);
+  MockMultiSigClass.setOptions(opts?.multiSigOptions);
   MockMultiSigProposalClass.setOptions(opts?.multiSigProposalOptions);
 };
 
@@ -1730,6 +1771,7 @@ export const reset = function (): void {
   MockCheckpointScheduleClass.resetOptions();
   MockCorporateActionClass.resetOptions();
   MockDividendDistributionClass.resetOptions();
+  MockMultiSigClass.resetOptions();
   MockMultiSigProposalClass.resetOptions();
 };
 

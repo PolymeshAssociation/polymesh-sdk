@@ -140,10 +140,8 @@ export { waivePermissions } from '~/api/procedures/waivePermissions';
 export { quitSubsidy, QuitSubsidyParams } from '~/api/procedures/quitSubsidy';
 export { modifyAllowance, ModifyAllowanceParams } from '~/api/procedures/modifyAllowance';
 export { createMultiSigAccount } from '~/api/procedures/createMultiSig';
+export { Storage as ModifyMultiSigStorage, modifyMultiSig } from '~/api/procedures/modifyMultiSig';
 export {
-  SetAllowanceParams,
-  DecreaseAllowanceParams,
-  IncreaseAllowanceParams,
   SetCountTransferRestrictionsParams,
   SetPercentageTransferRestrictionsParams,
   SetClaimCountTransferRestrictionsParams,

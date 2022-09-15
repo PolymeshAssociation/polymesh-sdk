@@ -9,6 +9,7 @@ import {
   DefaultPortfolio,
   Identity,
   KnownPermissionGroup,
+  MultiSig,
   NumberedPortfolio,
   Venue,
 } from '~/internal';
@@ -938,4 +939,15 @@ export interface MoveFundsParams {
 export interface CreateMultiSigParams {
   signers: Signer[];
   requiredSignatures: BigNumber;
+}
+
+export interface ModifyMultiSigParams {
+  /**
+   * The MultiSig to be modified
+   */
+  multiSig: MultiSig;
+  /**
+   * The signers to set for the MultiSig
+   */
+  signers: Signer[];
 }
