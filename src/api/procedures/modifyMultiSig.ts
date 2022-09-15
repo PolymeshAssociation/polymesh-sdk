@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import { sign } from 'crypto';
 
 import { PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, ModifyMultiSigParams, Signer, TxTags } from '~/types';
@@ -43,16 +42,16 @@ export async function prepareModifyMultiSig(
     storage: { signersToAdd, signersToRemove, requiredSignatures },
     context,
   } = this;
-  const { signers, multiSig: multi } = args;
+  const { signers, multiSig } = args;
 
   const [signingIdentity, creator] = await Promise.all([
     context.getSigningIdentity(),
-    multi.getCreator(),
+    multiSig.getCreator(),
   ]);
 
-  if (signersToAdd.length === 0 && signersToRemove.length === 0) {
+  if (!signersToAdd.length && !signersToRemove.length) {
     throw new PolymeshError({
-      code: ErrorCode.ValidationError,
+      code: ErrorCode.NoDataChange,
       message:
         'The given signers are equal to the current signers. At least one signer should be added or removed',
     });
@@ -64,7 +63,7 @@ export async function prepareModifyMultiSig(
     });
   }
 
-  const rawAddress = stringToAccountId(multi.address, context);
+  const rawAddress = stringToAccountId(multiSig.address, context);
 
   if (requiredSignatures.gt(signers.length)) {
     throw new PolymeshError({
