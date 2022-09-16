@@ -11,7 +11,15 @@ import {
   union,
 } from 'lodash';
 
-import { Asset, Authorizations, Context, Entity, Identity, PolymeshError } from '~/internal';
+import {
+  Asset,
+  Authorizations,
+  Context,
+  Entity,
+  Identity,
+  MultiSig,
+  PolymeshError,
+} from '~/internal';
 import { transactions as transactionsQuery } from '~/middleware/queries';
 import { extrinsicsByArgs } from '~/middleware/queriesV2';
 import { Query, TransactionOrderByInput } from '~/middleware/types';
@@ -712,6 +720,34 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
+   * Fetch the MultiSig this Account is part of. If this Account is not a signer on any MultiSig, return null
+   */
+  public async getMultiSig(): Promise<MultiSig | null> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { identity },
+        },
+      },
+      context,
+      address,
+    } = this;
+
+    const rawAddress = stringToAccountId(address, context);
+
+    const rawOptKeyRecord = await identity.keyRecords(rawAddress);
+    if (rawOptKeyRecord.isNone) {
+      return null;
+    }
+    const rawKeyRecord = rawOptKeyRecord.unwrap();
+    if (!rawKeyRecord.isMultiSigSignerKey) {
+      return null;
+    }
+
+    return new MultiSig({ address }, context);
+  }
+
+  /**
    * Determine whether this Account exists on chain
    */
   public async exists(): Promise<boolean> {
@@ -723,5 +759,26 @@ export class Account extends Entity<UniqueIdentifiers, string> {
    */
   public toHuman(): string {
     return this.address;
+  }
+
+  /**
+   * Retrieve the current nonce for this Account
+   */
+  public async getCurrentNonce(): Promise<BigNumber> {
+    const {
+      context: {
+        polymeshApi: {
+          rpc: {
+            system: { accountNextIndex },
+          },
+        },
+      },
+      address,
+      context,
+    } = this;
+
+    const index = await accountNextIndex(stringToAccountId(address, context));
+
+    return u32ToBigNumber(index);
   }
 }

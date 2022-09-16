@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { MAX_BALANCE } from '~/utils/constants';
 import { bigNumberToBalance, stringToTicker } from '~/utils/conversion';
 
@@ -21,7 +21,7 @@ export interface Storage {
 export async function prepareIssueTokens(
   this: Procedure<IssueTokensParams, Asset, Storage>,
   args: IssueTokensParams
-): Promise<Asset> {
+): Promise<TransactionSpec<Asset, ExtrinsicParams<'asset', 'issue'>>> {
   const {
     context: {
       polymeshApi: {
@@ -51,12 +51,11 @@ export async function prepareIssueTokens(
   const rawTicker = stringToTicker(ticker, context);
   const rawValue = bigNumberToBalance(amount, context, isDivisible);
 
-  this.addTransaction({
+  return {
     transaction: asset.issue,
     args: [rawTicker, rawValue],
-  });
-
-  return assetEntity;
+    resolver: assetEntity,
+  };
 }
 
 /**

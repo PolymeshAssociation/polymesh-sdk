@@ -2,7 +2,7 @@ import { StorageKey } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Checkpoint, Context, Namespace, TransactionQueue } from '~/internal';
+import { Checkpoint, Context, Namespace, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -62,17 +62,17 @@ describe('Checkpoints class', () => {
       sinon.restore();
     });
 
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Checkpoint>;
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Checkpoint>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args: { ticker }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await checkpoints.create();
+      const tx = await checkpoints.create();
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 

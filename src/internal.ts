@@ -1,5 +1,4 @@
 export { PolymeshError } from '~/base/PolymeshError';
-export { PostTransactionValue } from '~/base/PostTransactionValue';
 export { Context } from '~/base/Context';
 export { PolymeshTransactionBase } from '~/base/PolymeshTransactionBase';
 export { PolymeshTransaction } from '~/base/PolymeshTransaction';
@@ -87,6 +86,8 @@ export { controllerTransfer } from '~/api/procedures/controllerTransfer';
 export { linkCaDocs } from '~/api/procedures/linkCaDocs';
 export { Identity } from '~/api/entities/Identity';
 export { Account } from '~/api/entities/Account';
+export { MultiSig } from '~/api/entities/MultiSig';
+export { MultiSigProposal } from '~/api/entities/MultiSigProposal';
 export { TickerReservation } from '~/api/entities/TickerReservation';
 export { Asset } from '~/api/entities/Asset';
 export { AuthorizationRequest } from '~/api/entities/AuthorizationRequest';
@@ -97,7 +98,6 @@ export { Instruction } from '~/api/entities/Instruction';
 export { Portfolio } from '~/api/entities/Portfolio';
 export { DefaultPortfolio } from '~/api/entities/DefaultPortfolio';
 export { NumberedPortfolio } from '~/api/entities/NumberedPortfolio';
-export { TransactionQueue } from '~/base/TransactionQueue';
 export { Checkpoint } from '~/api/entities/Checkpoint';
 export { CheckpointSchedule } from '~/api/entities/CheckpointSchedule';
 export { PermissionGroup } from '~/api/entities/PermissionGroup';
@@ -117,10 +117,6 @@ export { modifyCaCheckpoint } from '~/api/procedures/modifyCaCheckpoint';
 export { payDividends } from '~/api/procedures/payDividends';
 export { modifyCaDefaultConfig } from '~/api/procedures/modifyCaDefaultConfig';
 export { removeCorporateAction } from '~/api/procedures/removeCorporateAction';
-export {
-  modifyDistributionCheckpoint,
-  ModifyDistributionCheckpointParams,
-} from '~/api/procedures/modifyDistributionCheckpoint';
 export { reclaimDividendDistributionFunds } from '~/api/procedures/reclaimDividendDistributionFunds';
 export { transferTickerOwnership } from '~/api/procedures/transferTickerOwnership';
 export { toggleFreezeSecondaryAccounts } from '~/api/procedures/toggleFreezeSecondaryAccounts';
@@ -137,10 +133,10 @@ export { removeExternalAgent } from '~/api/procedures/removeExternalAgent';
 export { waivePermissions } from '~/api/procedures/waivePermissions';
 export { quitSubsidy, QuitSubsidyParams } from '~/api/procedures/quitSubsidy';
 export { modifyAllowance, ModifyAllowanceParams } from '~/api/procedures/modifyAllowance';
+export { createTransactionBatch } from '~/api/procedures/createTransactionBatch';
+export { createMultiSigAccount } from '~/api/procedures/createMultiSig';
+export { Storage as ModifyMultiSigStorage, modifyMultiSig } from '~/api/procedures/modifyMultiSig';
 export {
-  SetAllowanceParams,
-  DecreaseAllowanceParams,
-  IncreaseAllowanceParams,
   SetCountTransferRestrictionsParams,
   SetPercentageTransferRestrictionsParams,
   SetClaimCountTransferRestrictionsParams,

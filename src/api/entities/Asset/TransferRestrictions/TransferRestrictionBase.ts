@@ -29,9 +29,9 @@ import {
   SetCountTransferRestrictionsParams,
   SetPercentageTransferRestrictionsParams,
   SetRestrictionsParams,
-  StatType,
   TransferRestrictionType,
 } from '~/types';
+import { StatType } from '~/types/internal';
 import {
   scopeIdToString,
   stringToTickerKey,
@@ -60,9 +60,9 @@ export type RemoveAssetStatParamsBase<T> = Omit<
 
 const restrictionTypeToStatType = {
   [TransferRestrictionType.Count]: StatType.Count,
-  [TransferRestrictionType.Percentage]: StatType.Percentage,
+  [TransferRestrictionType.Percentage]: StatType.Balance,
   [TransferRestrictionType.ClaimCount]: StatType.ScopedCount,
-  [TransferRestrictionType.ClaimPercentage]: StatType.ScopedPercentage,
+  [TransferRestrictionType.ClaimPercentage]: StatType.ScopedBalance,
 };
 
 /**

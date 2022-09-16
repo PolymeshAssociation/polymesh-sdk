@@ -3,7 +3,7 @@ import { PalletStoFundraiser, PolymeshPrimitivesTicker } from '@polkadot/types/l
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Asset, Context, Namespace, Offering, TransactionQueue } from '~/internal';
+import { Asset, Context, Namespace, Offering, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   OfferingBalanceStatus,
@@ -71,8 +71,8 @@ describe('Offerings class', () => {
       sinon.restore();
     });
 
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Offering>;
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Offering>;
       const args = {
         offeringPortfolio: 'otherDid',
         raisingCurrency: 'USD',
@@ -85,11 +85,11 @@ describe('Offerings class', () => {
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args: { ticker, ...args }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await offerings.launch(args);
+      const tx = await offerings.launch(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 

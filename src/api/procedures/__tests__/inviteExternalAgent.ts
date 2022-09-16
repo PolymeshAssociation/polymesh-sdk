@@ -50,7 +50,6 @@ describe('inviteExternalAgent procedure', () => {
   let rawTicker: Ticker;
   let rawAgentGroup: AgentGroup;
   let target: string;
-  let addTransactionStub: sinon.SinonStub;
   let rawSignatory: Signatory;
   let rawAuthorizationData: PolymeshPrimitivesAuthorizationAuthorizationData;
 
@@ -87,7 +86,6 @@ describe('inviteExternalAgent procedure', () => {
     authorizationToAuthorizationDataStub.returns(rawAuthorizationData);
     signerToStringStub.returns(target);
     signerValueToSignatoryStub.returns(rawSignatory);
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
   });
 
   afterEach(() => {
@@ -167,7 +165,7 @@ describe('inviteExternalAgent procedure', () => {
     );
   });
 
-  it('should add an add authorization transaction to the queue if an existing group is passed', async () => {
+  it('should return an add authorization transaction spec if an existing group is passed', async () => {
     const transaction = dsMockUtils.createTxStub('identity', 'addAuthorization');
     const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest, Storage>(
       mockContext,
@@ -183,20 +181,17 @@ describe('inviteExternalAgent procedure', () => {
       }
     );
 
-    await prepareInviteExternalAgent.call(proc, {
+    const result = await prepareInviteExternalAgent.call(proc, {
       target,
       ticker,
       permissions: entityMockUtils.getKnownPermissionGroupInstance(),
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction,
-        resolvers: sinon.match.array,
-        args: [rawSignatory, rawAuthorizationData, null],
-      })
-    );
+    expect(result).toEqual({
+      transaction,
+      args: [rawSignatory, rawAuthorizationData, null],
+      resolver: expect.any(Function),
+    });
   });
 
   it('should use the existing group ID if there is a group with the same permissions as the ones passed', async () => {
@@ -231,21 +226,18 @@ describe('inviteExternalAgent procedure', () => {
       }
     );
 
-    await prepareInviteExternalAgent.call(proc, args);
+    const result = await prepareInviteExternalAgent.call(proc, args);
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction,
-        resolvers: sinon.match.array,
-        args: [rawSignatory, rawAuthorizationData, null],
-      })
-    );
+    expect(result).toEqual({
+      transaction,
+      args: [rawSignatory, rawAuthorizationData, null],
+      resolver: expect.any(Function),
+    });
 
     getGroupFromPermissionsStub.restore();
   });
 
-  it('should add a create group and add authorization transaction to the queue if the group does not exist', async () => {
+  it('should return a create group and add authorization transaction spec if the group does not exist', async () => {
     const transaction = dsMockUtils.createTxStub('externalAgents', 'createGroupAndAddAuth');
     const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest, Storage>(
       mockContext,
@@ -273,7 +265,7 @@ describe('inviteExternalAgent procedure', () => {
       .returns(rawPermissions);
     sinon.stub(utilsConversionModule, 'stringToTicker').returns(rawTicker);
 
-    await prepareInviteExternalAgent.call(proc, {
+    const result = await prepareInviteExternalAgent.call(proc, {
       target: entityMockUtils.getIdentityInstance({ did: target }),
       ticker,
       permissions: {
@@ -284,14 +276,11 @@ describe('inviteExternalAgent procedure', () => {
       },
     });
 
-    sinon.assert.calledWith(
-      addTransactionStub,
-      sinon.match({
-        transaction,
-        resolvers: sinon.match.array,
-        args: [rawTicker, rawPermissions, rawSignatory],
-      })
-    );
+    expect(result).toEqual({
+      transaction,
+      args: [rawTicker, rawPermissions, rawSignatory],
+      resolver: expect.any(Function),
+    });
   });
 });
 

@@ -5,7 +5,7 @@ import sinon from 'sinon';
 
 import { Context, PolymeshTransactionBatch } from '~/internal';
 import { fakePromise } from '~/testUtils';
-import { dsMockUtils } from '~/testUtils/mocks';
+import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { TransactionStatus, TxTags } from '~/types';
 import { tuple } from '~/types/utils';
@@ -15,25 +15,68 @@ describe('Polymesh Transaction Batch class', () => {
 
   beforeAll(() => {
     dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
   });
 
   beforeEach(() => {
-    context = dsMockUtils.getContextInstance();
+    context = dsMockUtils.getContextInstance({
+      balance: {
+        free: new BigNumber(100000),
+        locked: new BigNumber(0),
+        total: new BigNumber(100000),
+      },
+    });
   });
 
   const txSpec = {
     signingAddress: 'signingAddress',
     signer: 'signer' as PolkadotSigner,
-    isCritical: false,
-    fee: new BigNumber(100),
   };
 
   afterEach(() => {
     dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  describe('method: toTransactionSpec', () => {
+    it('should return the tx spec of a transaction', () => {
+      const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
+      const args = tuple('FOO');
+      const resolver = (): number => 1;
+      const transformer = (): number => 2;
+      const paidForBy = entityMockUtils.getIdentityInstance();
+
+      const tx = new PolymeshTransactionBatch(
+        {
+          ...txSpec,
+          transactions: [
+            { transaction, args, fee: new BigNumber(100), feeMultiplier: new BigNumber(10) },
+          ],
+          resolver,
+          transformer,
+          paidForBy,
+        },
+        context
+      );
+
+      expect(PolymeshTransactionBatch.toTransactionSpec(tx)).toEqual({
+        resolver,
+        transformer,
+        paidForBy,
+        transactions: [
+          {
+            transaction,
+            args,
+            feeMultiplier: new BigNumber(10),
+            fee: new BigNumber(100),
+          },
+        ],
+      });
+    });
   });
 
   describe('get: transactions', () => {
-    it('should return unwrapped transactions', () => {
+    it('should return transactions and their arguments', () => {
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
       const args = tuple('A_TICKER');
 
@@ -48,6 +91,7 @@ describe('Polymesh Transaction Batch class', () => {
         {
           ...txSpec,
           transactions,
+          resolver: undefined,
         },
         context
       );
@@ -60,7 +104,6 @@ describe('Polymesh Transaction Batch class', () => {
       ];
 
       expect(tx.transactions).toEqual(expectedResult);
-      expect(tx.transactions).toEqual(expectedResult); // this second call is to cover the case where the internal value is already set
     });
   });
 
@@ -94,11 +137,14 @@ describe('Polymesh Transaction Batch class', () => {
               args,
             },
           ],
+          resolver: undefined,
         },
         context
       );
 
       tx.run().catch(noop);
+
+      await fakePromise(2);
 
       dsMockUtils.updateTxStatus(batchStub, dsMockUtils.MockTxStatus.InBlock);
 
@@ -109,7 +155,6 @@ describe('Polymesh Transaction Batch class', () => {
       await fakePromise();
 
       sinon.assert.calledWith(transaction, ...args);
-      sinon.assert.calledOnce(batchStub);
       expect(tx.blockHash).toBeDefined();
       expect(tx.blockNumber).toBeDefined();
       expect(tx.txHash).toBeDefined();
@@ -130,10 +175,13 @@ describe('Polymesh Transaction Batch class', () => {
               args,
             },
           ],
+          resolver: undefined,
         },
         context
       );
       const runPromise = tx.run();
+
+      await fakePromise(2);
 
       dsMockUtils.updateTxStatus(batchStub, dsMockUtils.MockTxStatus.BatchFailed);
 
@@ -158,11 +206,101 @@ describe('Polymesh Transaction Batch class', () => {
         {
           ...txSpec,
           transactions,
+          resolver: undefined,
         },
         context
       );
 
       expect(tx.supportsSubsidy()).toBe(false);
+    });
+  });
+
+  describe('method: splitTransactions', () => {
+    it('should return an array of the individual transactions in the batch', async () => {
+      const tx1 = dsMockUtils.createTxStub('asset', 'registerTicker');
+      const tx2 = dsMockUtils.createTxStub('asset', 'createAsset');
+      const args = tuple('A_TICKER');
+
+      const transactions = [
+        {
+          transaction: tx1,
+          args,
+        },
+        {
+          transaction: tx2,
+          args,
+        },
+      ];
+
+      const batch1 = new PolymeshTransactionBatch(
+        {
+          ...txSpec,
+          transactions,
+          resolver: (): number => 1,
+        },
+        context
+      );
+
+      const splitTransactions1 = batch1.splitTransactions();
+
+      expect(splitTransactions1.length).toBe(2);
+
+      const result1a = await splitTransactions1[0].run();
+      const result1b = await splitTransactions1[1].run();
+
+      expect(result1a).toBe(undefined);
+      expect(result1b).toBe(1);
+
+      const batch2 = new PolymeshTransactionBatch(
+        {
+          ...txSpec,
+          transactions,
+          resolver: 'foo',
+        },
+        context
+      );
+
+      const splitTransactions2 = batch2.splitTransactions();
+
+      expect(splitTransactions2.length).toBe(2);
+
+      const result2a = await splitTransactions2[0].run();
+      const result2b = await splitTransactions2[1].run();
+
+      expect(result2a).toBe(undefined);
+      expect(result2b).toBe('foo');
+    });
+
+    it('should ensure transactions are run in the same order as they come in the batch', () => {
+      const tx1 = dsMockUtils.createTxStub('asset', 'registerTicker');
+      const tx2 = dsMockUtils.createTxStub('asset', 'createAsset');
+      const args = tuple('A_TICKER');
+
+      const transactions = [
+        {
+          transaction: tx1,
+          args,
+        },
+        {
+          transaction: tx2,
+          args,
+        },
+      ];
+
+      const batch = new PolymeshTransactionBatch(
+        {
+          ...txSpec,
+          transactions,
+          resolver: (): number => 1,
+        },
+        context
+      );
+
+      const splitTransactions = batch.splitTransactions();
+
+      expect(() => splitTransactions[1].run()).toThrow(
+        'Transactions resulting from splitting a batch must be run in order'
+      );
     });
   });
 });

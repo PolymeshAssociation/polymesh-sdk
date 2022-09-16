@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
-import { Asset, Namespace, TransactionQueue } from '~/internal';
+import { Asset, Namespace, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 
 import { Issuance } from '../Issuance';
@@ -38,7 +38,7 @@ describe('Issuance class', () => {
       sinon.restore();
     });
 
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const context = dsMockUtils.getContextInstance();
       const asset = entityMockUtils.getAssetInstance();
       const issuance = new Issuance(asset, context);
@@ -48,16 +48,16 @@ describe('Issuance class', () => {
         amount: new BigNumber(100),
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await issuance.issue(args);
+      const tx = await issuance.issue(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 });

@@ -101,12 +101,12 @@ describe('reclaimDividendDistributionFunds procedure', () => {
     expect(err.message).toBe('Distribution funds have already been reclaimed');
   });
 
-  it('should add a reclaim transaction to the queue', async () => {
+  it('should return a reclaim transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const transaction = dsMockUtils.createTxStub('capitalDistribution', 'reclaim');
 
-    await prepareReclaimDividendDistributionFunds.call(proc, {
+    const result = await prepareReclaimDividendDistributionFunds.call(proc, {
       distribution: entityMockUtils.getDividendDistributionInstance({
         origin,
         ticker,
@@ -114,9 +114,10 @@ describe('reclaimDividendDistributionFunds procedure', () => {
       }),
     });
 
-    sinon.assert.calledWith(procedureMockUtils.getAddTransactionStub(), {
+    expect(result).toEqual({
       transaction,
       args: [rawCaId],
+      resolver: undefined,
     });
   });
 

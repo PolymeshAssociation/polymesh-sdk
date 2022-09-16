@@ -71,9 +71,8 @@ describe('leaveIdentity procedure', () => {
     return expect(prepareLeaveIdentity.call(proc)).rejects.toThrowError(expectedError);
   });
 
-  it('should add a leave Identity as Account transaction to the queue', async () => {
+  it('should return a leave Identity as Account transaction spec', async () => {
     const address = 'someAddress';
-    const addTransactionStub = procedureMockUtils.getAddTransactionStub();
     const leaveIdentityAsKeyTransaction = dsMockUtils.createTxStub(
       'identity',
       'leaveIdentityAsKey'
@@ -93,8 +92,8 @@ describe('leaveIdentity procedure', () => {
 
     const proc = procedureMockUtils.getInstance<void, void>(mockContext);
 
-    await prepareLeaveIdentity.call(proc);
+    const result = await prepareLeaveIdentity.call(proc);
 
-    sinon.assert.calledWith(addTransactionStub, { transaction: leaveIdentityAsKeyTransaction });
+    expect(result).toEqual({ transaction: leaveIdentityAsKeyTransaction, resolver: undefined });
   });
 });

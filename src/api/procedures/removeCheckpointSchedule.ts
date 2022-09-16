@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RemoveCheckpointScheduleParams, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { bigNumberToU64, stringToTicker, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
 
 /**
@@ -18,7 +18,7 @@ export type Params = RemoveCheckpointScheduleParams & {
 export async function prepareRemoveCheckpointSchedule(
   this: Procedure<Params, void>,
   args: Params
-): Promise<void> {
+): Promise<TransactionSpec<void, ExtrinsicParams<'checkpoint', 'removeSchedule'>>> {
   const {
     context,
     context: {
@@ -55,10 +55,11 @@ export async function prepareRemoveCheckpointSchedule(
     });
   }
 
-  this.addTransaction({
+  return {
     transaction: tx.checkpoint.removeSchedule,
     args: [rawTicker, rawScheduleId],
-  });
+    resolver: undefined,
+  };
 }
 
 /**

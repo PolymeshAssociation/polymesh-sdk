@@ -12,22 +12,20 @@ import {
   TransferRestrictionType,
   TxTags,
 } from '~/types';
-import { ProcedureAuthorization, StatisticsOpType } from '~/types/internal';
+import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import { QueryReturnType } from '~/types/utils';
 import {
   complianceConditionsToBtreeSet,
-  scopeIdsToBtreeSetIdentityId,
-  statisticsOpTypeToStatOpType,
-  stringToIdentityId,
   stringToTickerKey,
   toExemptKey,
   transferRestrictionToPolymeshTransferCondition,
+  transferRestrictionTypeToStatOpType,
   u32ToBigNumber,
 } from '~/utils/conversion';
 import {
   assertStatIsSet,
   checkTxType,
-  getExemptedIds,
+  getExemptedBtreeSet,
   neededStatTypeForRestrictionInput,
 } from '~/utils/internal';
 
@@ -47,7 +45,7 @@ export type AddTransferRestrictionParams = { ticker: string } & (
 export async function prepareAddTransferRestriction(
   this: Procedure<AddTransferRestrictionParams, BigNumber>,
   args: AddTransferRestrictionParams
-): Promise<BigNumber> {
+): Promise<BatchTransactionSpec<BigNumber, unknown[][]>> {
   const {
     context: {
       polymeshApi: {
@@ -68,10 +66,10 @@ export async function prepareAddTransferRestriction(
     type === TransferRestrictionType.ClaimPercentage
   ) {
     const {
-      claim: { type: claimType },
+      claim: { type: cType },
       issuer,
     } = args;
-    claimIssuer = { claimType, issuer };
+    claimIssuer = { claimType: cType, issuer };
   }
 
   const [currentStats, { requirements: currentRestrictions }] = await queryMulti<
@@ -92,6 +90,7 @@ export async function prepareAddTransferRestriction(
   const maxConditions = u32ToBigNumber(consts.statistics.maxTransferConditionsPerAsset);
 
   const restrictionAmount = new BigNumber(currentRestrictions.size);
+
   if (restrictionAmount.gte(maxConditions)) {
     throw new PolymeshError({
       code: ErrorCode.LimitExceeded,
@@ -101,6 +100,8 @@ export async function prepareAddTransferRestriction(
   }
 
   let restriction: TransferRestriction;
+  let claimType;
+
   if (type === TransferRestrictionType.Count) {
     const value = args.count;
     restriction = { type, value };
@@ -110,9 +111,11 @@ export async function prepareAddTransferRestriction(
   } else if (type === TransferRestrictionType.ClaimCount) {
     const { min, max: maybeMax, issuer, claim } = args;
     restriction = { type, value: { min, max: maybeMax, issuer, claim } };
+    claimType = claim.type;
   } else {
     const { min, max, issuer, claim } = args;
     restriction = { type, value: { min, max, issuer, claim } };
+    claimType = claim.type;
   }
 
   const rawTransferCondition = transferRestrictionToPolymeshTransferCondition(restriction, context);
@@ -124,6 +127,7 @@ export async function prepareAddTransferRestriction(
       message: 'Cannot add the same restriction more than once',
     });
   }
+
   const conditions = complianceConditionsToBtreeSet(
     [...currentRestrictions, rawTransferCondition],
     context
@@ -138,24 +142,19 @@ export async function prepareAddTransferRestriction(
   );
 
   if (exemptedIdentities.length) {
-    const op =
-      type === TransferRestrictionType.Count
-        ? statisticsOpTypeToStatOpType(StatisticsOpType.Count, context)
-        : statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
-    const exemptedIds = await getExemptedIds(exemptedIdentities, context, ticker);
-    const exemptedScopeIds = exemptedIds.map(entityId => stringToIdentityId(entityId, context));
-    const btreeIds = scopeIdsToBtreeSetIdentityId(exemptedScopeIds, context);
-    const exemptKey = toExemptKey(tickerKey, op);
+    const op = transferRestrictionTypeToStatOpType(type, context);
+    const exemptedIdBtreeSet = await getExemptedBtreeSet(exemptedIdentities, ticker, context);
+    const exemptKey = toExemptKey(tickerKey, op, claimType);
     transactions.push(
       checkTxType({
         transaction: statistics.setEntitiesExempt,
-        feeMultiplier: new BigNumber(exemptedIds.length),
-        args: [true, exemptKey, btreeIds],
+        feeMultiplier: new BigNumber(exemptedIdBtreeSet.size),
+        args: [true, exemptKey, exemptedIdBtreeSet],
       })
     );
   }
-  this.addBatchTransaction({ transactions });
-  return restrictionAmount.plus(1);
+
+  return { transactions, resolver: restrictionAmount.plus(1) };
 }
 
 /**

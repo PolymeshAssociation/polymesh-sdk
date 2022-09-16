@@ -26,7 +26,7 @@ export class Settlements extends Namespace<Asset> {
    *
    * @note this takes locked tokens into account. For example, if portfolio A has 1000 tokens and this function is called to check if 700 of them can be
    *   transferred to portfolio B (assuming everything else checks out) the result will be success. If an instruction is created and authorized to transfer those 700 tokens,
-   *   they would become locked. From that point, further calls to this function would yield failed results because of the funds being locked, even though they haven't been
+   *   they would become locked. From that point, further calls to this function would return failed results because of the funds being locked, even though they haven't been
    *   transferred yet
    *
    * @param args.from - sender Portfolio (optional, defaults to the signing Identity's Default Portfolio)
@@ -96,7 +96,7 @@ export class Settlements extends Namespace<Asset> {
    *
    * @note this takes locked tokens into account. For example, if portfolio A has 1000 tokens and this function is called to check if 700 of them can be
    *   transferred to portfolio B (assuming everything else checks out) the result will be success. If an instruction is created and authorized to transfer those 700 tokens,
-   *   they would become locked. From that point, further calls to this function would yield failed results because of the funds being locked, even though they haven't been
+   *   they would become locked. From that point, further calls to this function would return failed results because of the funds being locked, even though they haven't been
    *   transferred yet
    *
    * @param args.from - sender Portfolio (optional, defaults to the signing Identity's Default Portfolio)

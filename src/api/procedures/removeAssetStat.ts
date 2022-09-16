@@ -5,8 +5,13 @@ import {
 } from '@polkadot/types/lookup';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, RemoveAssetStatParams, StatClaimIssuer, StatType, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ErrorCode, RemoveAssetStatParams, StatClaimIssuer, TxTags } from '~/types';
+import {
+  ExtrinsicParams,
+  ProcedureAuthorization,
+  StatType,
+  TransactionSpec,
+} from '~/types/internal';
 import { QueryReturnType } from '~/types/utils';
 import {
   claimIssuerToMeshClaimIssuer,
@@ -15,7 +20,7 @@ import {
   statTypeToStatOpType,
   stringToTickerKey,
 } from '~/utils/conversion';
-import { checkTxType, compareTransferRestrictionToStat } from '~/utils/internal';
+import { compareTransferRestrictionToStat } from '~/utils/internal';
 
 /**
  * @hidden
@@ -23,7 +28,7 @@ import { checkTxType, compareTransferRestrictionToStat } from '~/utils/internal'
 export async function prepareRemoveAssetStat(
   this: Procedure<RemoveAssetStatParams, void>,
   args: RemoveAssetStatParams
-): Promise<void> {
+): Promise<TransactionSpec<void, ExtrinsicParams<'statistics', 'setActiveAssetStats'>>> {
   const {
     context: {
       polymeshApi: {
@@ -54,7 +59,8 @@ export async function prepareRemoveAssetStat(
   let rawClaimIssuer:
     | [PolymeshPrimitivesIdentityClaimClaimType, PolymeshPrimitivesIdentityId]
     | undefined;
-  if (type === StatType.ScopedCount || type === StatType.ScopedPercentage) {
+
+  if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
     claimIssuer = { issuer: args.issuer, claimType: args.claimType };
     rawClaimIssuer = claimIssuerToMeshClaimIssuer(claimIssuer, context);
   }
@@ -85,12 +91,11 @@ export async function prepareRemoveAssetStat(
   }
   const newStats = statisticStatTypesToBtreeStatType(statsArr, context);
 
-  this.addTransaction(
-    checkTxType({
-      transaction: statistics.setActiveAssetStats,
-      args: [tickerKey, newStats],
-    })
-  );
+  return {
+    transaction: statistics.setActiveAssetStats,
+    args: [tickerKey, newStats],
+    resolver: undefined,
+  };
 }
 
 /**

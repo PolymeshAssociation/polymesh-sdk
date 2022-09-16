@@ -118,8 +118,6 @@ describe('setAssetRequirements procedure', () => {
     };
   });
 
-  let addTransactionStub: sinon.SinonStub;
-
   let resetAssetComplianceTransaction: PolymeshTx<[Ticker]>;
   let replaceAssetComplianceTransaction: PolymeshTx<Vec<ComplianceRequirement>>;
 
@@ -135,8 +133,6 @@ describe('setAssetRequirements procedure', () => {
         },
       },
     });
-
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
     resetAssetComplianceTransaction = dsMockUtils.createTxStub(
       'complianceManager',
@@ -183,21 +179,19 @@ describe('setAssetRequirements procedure', () => {
     );
   });
 
-  it('should add a reset asset compliance transaction to the queue if the new requirements are empty', async () => {
+  it('should return a reset asset compliance transaction spec if the new requirements are empty', async () => {
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
     const result = await prepareSetAssetRequirements.call(proc, { ...args, requirements: [] });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction: resetAssetComplianceTransaction,
       args: [rawTicker],
+      resolver: expect.objectContaining({ ticker }),
     });
-
-    sinon.assert.calledOnce(addTransactionStub);
-    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
-  it('should add a replace asset compliance transactions to the queue', async () => {
+  it('should return a replace asset compliance transaction spec', async () => {
     entityMockUtils.configureMocks({
       assetOptions: {
         complianceRequirementsGet: {
@@ -210,12 +204,11 @@ describe('setAssetRequirements procedure', () => {
 
     const result = await prepareSetAssetRequirements.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction: replaceAssetComplianceTransaction,
       args: [rawTicker, rawComplianceRequirements],
+      resolver: expect.objectContaining({ ticker }),
     });
-
-    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   describe('getAuthorization', () => {

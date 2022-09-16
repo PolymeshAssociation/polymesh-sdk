@@ -8,7 +8,7 @@ import {
   CustomPermissionGroup,
   KnownPermissionGroup,
   Namespace,
-  TransactionQueue,
+  PolymeshTransaction,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { PermissionGroupType, TransactionPermissions } from '~/types';
@@ -75,22 +75,22 @@ describe('Permissions class', () => {
       sinon.restore();
     });
 
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = {
         ticker: asset.ticker,
         permissions: { transactions: {} as TransactionPermissions },
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await permissions.createGroup(args);
+      const tx = await permissions.createGroup(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -99,23 +99,23 @@ describe('Permissions class', () => {
       sinon.restore();
     });
 
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = {
         ticker: asset.ticker,
         target,
         permissions: { transactions: {} as TransactionPermissions },
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await permissions.inviteAgent(args);
+      const tx = await permissions.inviteAgent(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 
@@ -124,22 +124,22 @@ describe('Permissions class', () => {
       sinon.restore();
     });
 
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = {
         ticker: asset.ticker,
         target,
       };
 
-      const expectedQueue = 'someQueue' as unknown as TransactionQueue<Asset>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
       procedureMockUtils
         .getPrepareStub()
         .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+        .resolves(expectedTransaction);
 
-      const queue = await permissions.removeAgent(args);
+      const tx = await permissions.removeAgent(args);
 
-      expect(queue).toBe(expectedQueue);
+      expect(tx).toBe(expectedTransaction);
     });
   });
 

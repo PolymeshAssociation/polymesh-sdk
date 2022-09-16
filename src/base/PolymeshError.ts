@@ -31,7 +31,7 @@ export class PolymeshError extends Error {
   }) {
     super(message || defaultMessages[code] || `Unknown error, code: ${code}`);
 
-    this.code = code || ErrorCode.FatalError;
+    this.code = code;
     this.data = data;
   }
 }

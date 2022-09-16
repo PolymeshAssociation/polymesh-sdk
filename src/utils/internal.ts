@@ -5,9 +5,11 @@ import {
   DropLast,
   ObsInnerType,
 } from '@polkadot/api/types';
-import { BTreeSet, Bytes, Option, StorageKey } from '@polkadot/types';
+import { BTreeSet, Bytes, Option, StorageKey, u32 } from '@polkadot/types';
+import { EventRecord } from '@polkadot/types/interfaces';
 import { BlockHash } from '@polkadot/types/interfaces/chain';
 import {
+  PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesSecondaryKeyKeyRecord,
   PolymeshPrimitivesStatisticsStatClaim,
   PolymeshPrimitivesStatisticsStatType,
@@ -31,8 +33,6 @@ import {
   Context,
   Identity,
   PolymeshError,
-  PostTransactionValue,
-  TransactionQueue,
 } from '~/internal';
 import { Scope as MiddlewareScope } from '~/middleware/types';
 import {
@@ -46,6 +46,7 @@ import {
   ConditionType,
   CountryCode,
   ErrorCode,
+  GenericPolymeshTransaction,
   InputCaCheckpoint,
   InputCondition,
   ModuleName,
@@ -58,7 +59,6 @@ import {
   ProcedureOpts,
   RemoveAssetStatParams,
   Scope,
-  StatType,
   SubCallback,
   TransferRestriction,
   TransferRestrictionType,
@@ -68,12 +68,10 @@ import {
 import {
   Events,
   Falsyable,
-  MapMaybePostTransactionValue,
   MapTxWithArgs,
-  MaybePostTransactionValue,
   PolymeshTx,
   StatClaimIssuer,
-  StatisticsOpType,
+  StatType,
   TxWithArgs,
 } from '~/types/internal';
 import { HumanReadableType, ProcedureFunc, UnionOfProcedureFuncs } from '~/types/utils';
@@ -86,19 +84,22 @@ import {
   SYSTEM_VERSION_RPC_CALL,
 } from '~/utils/constants';
 import {
+  bigNumberToU32,
   bigNumberToU64,
   claimIssuerToMeshClaimIssuer,
+  identitiesToBtreeSet,
   identityIdToString,
   meshClaimTypeToClaimType,
   meshPermissionsToPermissions,
-  meshStatToStatisticsOpType,
+  meshStatToStatType,
   middlewareScopeToScope,
   permillToBigNumber,
   signerToString,
-  statisticsOpTypeToStatOpType,
   statisticsOpTypeToStatType,
   statsClaimToStatClaimInputType,
   stringToAccountId,
+  transferRestrictionTypeToStatOpType,
+  u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { isEntity, isMultiClaimCondition, isSingleClaimCondition } from '~/utils/typeguards';
@@ -258,28 +259,6 @@ export function createClaim(
 
 /**
  * @hidden
- *
- * Unwrap a Post Transaction Value
- */
-export function unwrapValue<T>(value: MaybePostTransactionValue<T>): T {
-  if (value instanceof PostTransactionValue) {
-    return value.value;
-  }
-
-  return value;
-}
-
-/**
- * @hidden
- *
- * Unwrap all Post Transaction Values present in a tuple
- */
-export function unwrapValues<T extends unknown[]>(values: MapMaybePostTransactionValue<T>): T {
-  return values.map(unwrapValue) as T;
-}
-
-/**
- * @hidden
  */
 type EventData<Event> = Event extends AugmentedEvent<'promise', infer Data> ? Data : never;
 
@@ -287,7 +266,8 @@ type EventData<Event> = Event extends AugmentedEvent<'promise', infer Data> ? Da
  * @hidden
  * Find every occurrence of a specific event inside a receipt
  *
- * @throws If the event is not found
+ * @param skipError - optional. If true, no error will be thrown if the event is not found,
+ *   and the function will return an empty array
  */
 export function filterEventRecords<
   ModuleName extends keyof Events,
@@ -295,10 +275,11 @@ export function filterEventRecords<
 >(
   receipt: ISubmittableResult,
   mod: ModuleName,
-  eventName: EventName
+  eventName: EventName,
+  skipError?: true
 ): IEvent<EventData<Events[ModuleName][EventName]>>[] {
   const eventRecords = receipt.filterRecords(mod, eventName as string);
-  if (!eventRecords.length) {
+  if (!eventRecords.length && !skipError) {
     throw new PolymeshError({
       code: ErrorCode.UnexpectedError,
       message: `Event "${mod}.${String(
@@ -310,6 +291,130 @@ export function filterEventRecords<
   return eventRecords.map(
     eventRecord => eventRecord.event as unknown as IEvent<EventData<Events[ModuleName][EventName]>>
   );
+}
+
+/**
+ * Return a clone of a transaction receipt with the passed events
+ */
+function cloneReceipt(receipt: ISubmittableResult, events: EventRecord[]): ISubmittableResult {
+  const { filterRecords, findRecord, toHuman } = receipt;
+
+  const clone: ISubmittableResult = {
+    ...receipt,
+    events,
+  };
+
+  clone.filterRecords = filterRecords;
+  clone.findRecord = findRecord;
+  clone.toHuman = toHuman;
+
+  return clone;
+}
+
+/**
+ * @hidden
+ *
+ * Return a clone of a batch transaction receipt that only contains events for a subset of the
+ *   extrinsics in the batch. This is useful when a batch has several extrinsics that emit
+ *   the same events and we want `filterEventRecords` to only search among the events emitted by
+ *   some of them.
+ *
+ * A good example of this is when merging similar batches together. If we wish to preserve the return
+ *   value of each batch, this is a good way of ensuring that the resolver function of a batch has
+ *   access to the events that correspond only to the extrinsics in said batch
+ *
+ * @param from - index of the first transaction in the subset
+ * @param to - end index of the subset (not included)
+ *
+ * @note this function does not mutate the original receipt
+ */
+export function sliceBatchReceipt(
+  receipt: ISubmittableResult,
+  from: number,
+  to: number
+): ISubmittableResult {
+  const [
+    {
+      data: [rawEventsPerExtrinsic],
+    },
+  ] = filterEventRecords(receipt, 'utility', 'BatchCompleted');
+
+  if (rawEventsPerExtrinsic.length < to || from < 0) {
+    throw new PolymeshError({
+      code: ErrorCode.UnexpectedError,
+      message: 'Transaction index range out of bounds. Please report this to the Polymesh team',
+      data: {
+        to,
+        from,
+      },
+    });
+  }
+
+  const { events } = receipt;
+
+  const eventsPerExtrinsic = rawEventsPerExtrinsic.map(u32ToBigNumber);
+  const clonedEvents = [...events];
+
+  const slicedEvents: EventRecord[] = [];
+
+  /*
+   * For each extrinsic, we remove the first N events from the original receipt, where N is the amount
+   * of events emitted for that extrinsic according to the `BatchCompleted` event's data. If the extrinsic is in the desired range,
+   * we add the removed events to the cloned receipt. Otherwise we ignore them
+   *
+   * The order of events in the receipt is such that the events of all extrinsics in the batch come first (in the same order
+   * in which the extrinsics were added to the batch), and then come the events related to the batch itself
+   */
+  eventsPerExtrinsic.forEach((n, index) => {
+    const removedEvents = clonedEvents.splice(0, n.toNumber());
+
+    if (index >= from && index < to) {
+      slicedEvents.push(...removedEvents);
+    }
+  });
+
+  return cloneReceipt(receipt, slicedEvents);
+}
+
+/**
+ * Return a clone of the last receipt in the passes array, containing the accumulated events
+ *   of all receipts
+ */
+export function mergeReceipts(
+  receipts: ISubmittableResult[],
+  context: Context
+): ISubmittableResult {
+  const eventsPerTransaction: u32[] = [];
+  const allEvents: EventRecord[] = [];
+
+  receipts.forEach(({ events }) => {
+    eventsPerTransaction.push(bigNumberToU32(new BigNumber(events.length), context));
+    allEvents.push(...events);
+  });
+
+  const lastReceipt = receipts[receipts.length - 1];
+
+  /*
+   * Here we simulate a `BatchCompleted` event with the amount of events of
+   * each transaction. That way, if some psychopath user decides to merge a bunch of transactions
+   * into a batch and then split it again, we won't lose track of which events correspond to which
+   * transaction
+   *
+   * NOTE: this is a bit fragile since we might want to use more functionalities of the event object in the future,
+   * but attempting to instantiate a real polkadot `GenericEvent` would be way more messy. It might come to that
+   * in the future though. It's also worth considering that this is an extreme edge case, since (hopefully) no one
+   * in their right mind would create a batch only to split it back up again
+   */
+  return cloneReceipt(lastReceipt, [
+    ...allEvents,
+    {
+      event: {
+        section: 'utility',
+        method: 'BatchCompleted',
+        data: [eventsPerTransaction],
+      },
+    } as unknown as EventRecord,
+  ]);
 }
 
 /**
@@ -546,7 +651,7 @@ export function createProcedureMethod<
   if (voidArgs) {
     const voidMethod = (
       opts: ProcedureOpts = {}
-    ): Promise<TransactionQueue<ProcedureReturnValue, ReturnValue>> => {
+    ): Promise<GenericPolymeshTransaction<ProcedureReturnValue, ReturnValue>> => {
       const [proc, procArgs] = getProcedureAndArgs();
       return proc().prepare({ args: procArgs, transformer }, context, opts);
     };
@@ -565,7 +670,7 @@ export function createProcedureMethod<
   const method = (
     methodArgs: MethodArgs,
     opts: ProcedureOpts = {}
-  ): Promise<TransactionQueue<ProcedureReturnValue, ReturnValue>> => {
+  ): Promise<GenericPolymeshTransaction<ProcedureReturnValue, ReturnValue>> => {
     const [proc, procArgs] = getProcedureAndArgs(methodArgs);
     return proc().prepare({ args: procArgs, transformer }, context, opts);
   };
@@ -860,16 +965,15 @@ export async function getCheckpointValue(
   }
 }
 
-interface TxAndArgsArray<Args extends unknown[] = unknown[]> {
+interface TxAndArgsArray<Args extends Readonly<unknown[]> = Readonly<unknown[]>> {
   transaction: PolymeshTx<Args>;
   argsArray: Args[];
 }
 
-type MapTxAndArgsArray<Args extends unknown[][]> = {
+type MapTxAndArgsArray<Args extends Readonly<unknown[][]>> = {
   [K in keyof Args]: Args[K] extends unknown[] ? TxAndArgsArray<Args[K]> : never;
 };
 
-// * TODO @prashantasdeveloper: delete this function when we eliminate `addBatchTransaction`
 /**
  * @hidden
  */
@@ -883,12 +987,13 @@ function mapArgs<Args extends unknown[] | []>({
   })) as unknown as MapTxWithArgs<Args[]>;
 }
 
-// * TODO @prashantasdeveloper: delete this function when we eliminate `addBatchTransaction`
 /**
- * Assemble the `transactions` array that has to be passed to `addBatchTransaction` from a set of parameter arrays with their
+ * Assemble the `transactions` array that is expected in a `BatchTransactionSpec` from a set of parameter arrays with their
  *   respective transaction
+ *
+ * @note This method ensures type safety for batches with a variable amount of transactions
  */
-export function assembleBatchTransactions<ArgsArray extends unknown[][]>(
+export function assembleBatchTransactions<ArgsArray extends Readonly<unknown[][]>>(
   txsAndArgs: MapTxAndArgsArray<ArgsArray>
 ): MapTxWithArgs<unknown[][]> {
   return flatMap(txsAndArgs, mapArgs) as unknown as MapTxWithArgs<unknown[][]>;
@@ -950,7 +1055,7 @@ export async function getPortfolioIdsByName(
  * @hidden
  *
  * Check if a transaction matches the type of its args. Returns the same value but stripped of the types. This function has no logic, it's strictly
- *   for type safety around `addBatchTransaction`
+ *   for type safety when returning a `BatchTransactionSpec` with a variable amount of transactions
  */
 export function checkTxType<Args extends unknown[]>(tx: TxWithArgs<Args>): TxWithArgs<unknown[]> {
   return tx as unknown as TxWithArgs<unknown[]>;
@@ -1114,7 +1219,7 @@ function handleSpecVersionResponse(
   } = data;
 
   /*
-   * the spec version number comes as a single number (i.e. 5000000). It should be parsed as xxx_yyy_zzz
+   * the spec version number comes as a single number (e.g. 5000000). It should be parsed as xxx_yyy_zzz
    * where xxx is the major version, yyy is the minor version, and zzz is the patch version. So for example, 5001023
    * would be version 5.1.23
    */
@@ -1234,7 +1339,7 @@ export function compareStatsToInput(
   let claimIssuer;
   const { type } = args;
 
-  if (type === StatType.ScopedCount || type === StatType.ScopedPercentage) {
+  if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
     claimIssuer = { issuer: args.issuer, claimType: args.claimType };
   }
 
@@ -1260,19 +1365,9 @@ export function compareStatsToInput(
     }
   }
 
-  const stat = meshStatToStatisticsOpType(rawStatType);
-  let cmpStat;
-  if (stat === StatisticsOpType.Count) {
-    cmpStat = StatType.Count;
-  } else if (stat === StatisticsOpType.Balance) {
-    cmpStat = StatType.Percentage;
-  } else if (stat === StatisticsOpType.ClaimCount) {
-    cmpStat = StatType.ScopedCount;
-  } else {
-    cmpStat = StatType.ScopedPercentage;
-  }
+  const stat = meshStatToStatType(rawStatType);
 
-  return cmpStat === type;
+  return stat === type;
 }
 
 /**
@@ -1286,7 +1381,7 @@ export function compareTransferRestrictionToStat(
 ): boolean {
   if (
     (type === StatType.Count && transferCondition.isMaxInvestorCount) ||
-    (type === StatType.Percentage && transferCondition.isMaxInvestorOwnership)
+    (type === StatType.Balance && transferCondition.isMaxInvestorOwnership)
   ) {
     return true;
   }
@@ -1395,12 +1490,12 @@ export function compareStatTypeToTransferRestrictionType(
   statType: PolymeshPrimitivesStatisticsStatType,
   transferRestrictionType: TransferRestrictionType
 ): boolean {
-  const opType = meshStatToStatisticsOpType(statType);
-  if (opType === StatisticsOpType.Count) {
+  const opType = meshStatToStatType(statType);
+  if (opType === StatType.Count) {
     return transferRestrictionType === TransferRestrictionType.Count;
-  } else if (opType === StatisticsOpType.Balance) {
+  } else if (opType === StatType.Balance) {
     return transferRestrictionType === TransferRestrictionType.Percentage;
-  } else if (opType === StatisticsOpType.ClaimCount) {
+  } else if (opType === StatType.ScopedCount) {
     return transferRestrictionType === TransferRestrictionType.ClaimCount;
   } else {
     return transferRestrictionType === TransferRestrictionType.ClaimPercentage;
@@ -1420,12 +1515,7 @@ export function neededStatTypeForRestrictionInput(
 ): PolymeshPrimitivesStatisticsStatType {
   const { type, claimIssuer } = args;
 
-  let rawOp;
-  if (type === TransferRestrictionType.Count || type === TransferRestrictionType.ClaimCount) {
-    rawOp = statisticsOpTypeToStatOpType(StatisticsOpType.Count, context);
-  } else {
-    rawOp = statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
-  }
+  const rawOp = transferRestrictionTypeToStatOpType(type, context);
 
   const rawIssuer = claimIssuer ? claimIssuerToMeshClaimIssuer(claimIssuer, context) : undefined;
   return statisticsOpTypeToStatType({ op: rawOp, claimIssuer: rawIssuer }, context);
@@ -1518,4 +1608,18 @@ export async function getSecondaryAccountPermissions(
   const rawResults = await identityQuery.keyRecords.multi(identityKeys);
 
   return assembleResult(rawResults);
+}
+
+/**
+ * @hidden
+ */
+export async function getExemptedBtreeSet(
+  identities: (string | Identity)[],
+  ticker: string,
+  context: Context
+): Promise<BTreeSet<PolymeshPrimitivesIdentityId>> {
+  const exemptedIds = await getExemptedIds(identities, context, ticker);
+  const mapped = exemptedIds.map(exemptedId => asIdentity(exemptedId, context));
+
+  return identitiesToBtreeSet(mapped, context);
 }

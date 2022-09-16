@@ -13,6 +13,7 @@ import {
   PalletCorporateActionsCorporateAction,
   PalletCorporateActionsDistribution,
   PalletCorporateActionsInitiateCorporateActionArgs,
+  PalletMultisigProposalStatus,
   PalletStoFundraiser,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesAuthorizationAuthorizationData,
@@ -64,7 +65,7 @@ import {
 } from 'lodash';
 import { CountryCode as MeshCountryCode } from 'polymesh-types/types';
 
-import { assertCaTaxWithholdingsValid } from '~/api/procedures/utils';
+import { assertCaTaxWithholdingsValid, UnreachableCaseError } from '~/api/procedures/utils';
 import { countryCodeToMeshCountryCode, meshCountryCodeToCountryCode } from '~/generated/utils';
 import {
   Account,
@@ -195,6 +196,7 @@ import {
   PortfolioId,
   PortfolioLike,
   PortfolioMovement,
+  ProposalStatus,
   Requirement,
   RequirementCompliance,
   Scope,
@@ -208,7 +210,6 @@ import {
   SignerValue,
   SingleClaimCondition,
   StatClaimType,
-  StatType,
   TargetTreatment,
   Tier,
   TransactionPermissions,
@@ -237,7 +238,7 @@ import {
   ScheduleSpec,
   StatClaimInputType,
   StatClaimIssuer,
-  StatisticsOpType,
+  StatType,
   TickerKey,
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
@@ -474,6 +475,13 @@ export function signerValueToSigner(signerValue: SignerValue, context: Context):
   }
 
   return new Identity({ did: value }, context);
+}
+
+/**
+ * @hidden
+ */
+export function signerToSignatory(signer: Signer, context: Context): Signatory {
+  return signerValueToSignatory(signerToSignerValue(signer), context);
 }
 
 /**
@@ -1576,6 +1584,58 @@ export function assetTypeToKnownOrId(assetType: AssetType): KnownAssetType | Big
 export function posRatioToBigNumber(postRatio: PosRatio): BigNumber {
   const [numerator, denominator] = postRatio.map(u32ToBigNumber);
   return numerator.dividedBy(denominator);
+}
+
+/**
+ * @hidden
+ */
+export function nameToAssetName(value: string, context: Context): Bytes {
+  const {
+    polymeshApi: {
+      consts: {
+        asset: { assetNameMaxLength },
+      },
+    },
+  } = context;
+
+  const nameMaxLength = u32ToBigNumber(assetNameMaxLength);
+
+  if (nameMaxLength.lt(value.length)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Asset name length exceeded',
+      data: {
+        maxLength: nameMaxLength,
+      },
+    });
+  }
+  return stringToBytes(value, context);
+}
+
+/**
+ * @hidden
+ */
+export function fundingRoundToAssetFundingRound(value: string, context: Context): Bytes {
+  const {
+    polymeshApi: {
+      consts: {
+        asset: { fundingRoundNameMaxLength },
+      },
+    },
+  } = context;
+
+  const nameMaxLength = u32ToBigNumber(fundingRoundNameMaxLength);
+
+  if (nameMaxLength.lt(value.length)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Asset funding round name length exceeded',
+      data: {
+        maxLength: nameMaxLength,
+      },
+    });
+  }
+  return stringToBytes(value, context);
 }
 
 /**
@@ -2982,11 +3042,13 @@ export function transferRestrictionToPolymeshTransferCondition(
 /**
  * @hidden
  */
-export function scopeIdsToBtreeSetIdentityId(
-  scopeIds: PolymeshPrimitivesIdentityId[],
+export function identitiesToBtreeSet(
+  identities: Identity[],
   context: Context
 ): BTreeSet<PolymeshPrimitivesIdentityId> {
-  return context.createType('BTreeSet<PolymeshPrimitivesIdentityId>', scopeIds);
+  const rawIds = identities.map(({ did }) => stringToIdentityId(did, context));
+
+  return context.createType('BTreeSet<PolymeshPrimitivesIdentityId>', rawIds);
 }
 
 /**
@@ -3796,28 +3858,25 @@ export function statUpdatesToBtreeStatUpdate(
 /**
  * @hidden
  */
-export function meshStatToStatisticsOpType(
-  rawStat: PolymeshPrimitivesStatisticsStatType
-): keyof typeof StatisticsOpType {
-  if (rawStat.claimIssuer.isNone) {
-    return rawStat.op.type;
-  } else {
-    if (rawStat.op.type === 'Count') {
-      return StatisticsOpType.ClaimCount;
+export function meshStatToStatType(rawStat: PolymeshPrimitivesStatisticsStatType): StatType {
+  const {
+    op: { type },
+    claimIssuer,
+  } = rawStat;
+
+  if (claimIssuer.isNone) {
+    if (type === 'Count') {
+      return StatType.Count;
     } else {
-      return StatisticsOpType.ClaimPercentage;
+      return StatType.Balance;
     }
   }
-}
 
-/**
- * @hidden
- */
-export function statisticsOpTypeToStatOpType(
-  type: StatisticsOpType,
-  context: Context
-): PolymeshPrimitivesStatisticsStatOpType {
-  return context.createType('PolymeshPrimitivesStatisticsStatOpType', type);
+  if (type === 'Count') {
+    return StatType.ScopedCount;
+  } else {
+    return StatType.ScopedBalance;
+  }
 }
 
 /**
@@ -3828,10 +3887,23 @@ export function statTypeToStatOpType(
   context: Context
 ): PolymeshPrimitivesStatisticsStatOpType {
   if (type === StatType.Count || type === StatType.ScopedCount) {
-    return statisticsOpTypeToStatOpType(StatisticsOpType.Count, context);
-  } else {
-    return statisticsOpTypeToStatOpType(StatisticsOpType.Balance, context);
+    return context.createType('PolymeshPrimitivesStatisticsStatOpType', StatType.Count);
   }
+  return context.createType('PolymeshPrimitivesStatisticsStatOpType', StatType.Balance);
+}
+
+/**
+ * @hidden
+ */
+export function transferRestrictionTypeToStatOpType(
+  type: TransferRestrictionType,
+  context: Context
+): PolymeshPrimitivesStatisticsStatOpType {
+  if (type === TransferRestrictionType.Count || type === TransferRestrictionType.ClaimCount) {
+    return context.createType('PolymeshPrimitivesStatisticsStatOpType', StatType.Count);
+  }
+
+  return context.createType('PolymeshPrimitivesStatisticsStatOpType', StatType.Balance);
 }
 
 /**
@@ -3935,9 +4007,10 @@ export function complianceConditionsToBtreeSet(
  */
 export function toExemptKey(
   tickerKey: TickerKey,
-  op: PolymeshPrimitivesStatisticsStatOpType
+  op: PolymeshPrimitivesStatisticsStatOpType,
+  claimType?: ClaimType
 ): ExemptKey {
-  return { asset: tickerKey, op };
+  return { asset: tickerKey, op, claimType };
 }
 
 /**
@@ -3998,8 +4071,36 @@ export function inputStatTypeToMeshStatType(
   const { type } = input;
   const op = statTypeToStatOpType(type, context);
   let claimIssuer;
-  if (type === StatType.ScopedCount || type === StatType.ScopedPercentage) {
+  if (type === StatType.ScopedCount || type === StatType.ScopedBalance) {
     claimIssuer = claimIssuerToMeshClaimIssuer(input.claimIssuer, context);
   }
   return statisticsOpTypeToStatType({ op, claimIssuer }, context);
+}
+
+/**
+ * @hidden
+ */
+export function meshProposalStatusToProposalStatus(
+  status: PalletMultisigProposalStatus,
+  expiry: Date | null
+): ProposalStatus {
+  const { type } = status;
+  switch (type) {
+    case 'ActiveOrExpired':
+      if (!expiry || expiry > new Date()) {
+        return ProposalStatus.Active;
+      } else {
+        return ProposalStatus.Expired;
+      }
+    case 'Invalid':
+      return ProposalStatus.Invalid;
+    case 'ExecutionSuccessful':
+      return ProposalStatus.Successful;
+    case 'ExecutionFailed':
+      return ProposalStatus.Failed;
+    case 'Rejected':
+      return ProposalStatus.Rejected;
+    default:
+      throw new UnreachableCaseError(type);
+  }
 }

@@ -63,16 +63,12 @@ describe('addAssetRequirement procedure', () => {
     };
   });
 
-  let addTransactionStub: sinon.SinonStub;
-
   let addComplianceRequirementTransaction: PolymeshTx<[Ticker]>;
 
   beforeEach(() => {
     dsMockUtils.setConstMock('complianceManager', 'maxConditionComplexity', {
       returnValue: dsMockUtils.createMockU32(new BigNumber(50)),
     });
-
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
 
     addComplianceRequirementTransaction = dsMockUtils.createTxStub(
       'complianceManager',
@@ -116,7 +112,7 @@ describe('addAssetRequirement procedure', () => {
     );
   });
 
-  it('should add an add compliance requirement transaction to the queue', async () => {
+  it('should return an add compliance requirement transaction spec', async () => {
     const fakeConditions = ['condition'] as unknown as Condition[];
     const fakeSenderConditions = 'senderConditions' as unknown as PolymeshPrimitivesCondition[];
     const fakeReceiverConditions = 'receiverConditions' as unknown as PolymeshPrimitivesCondition[];
@@ -138,12 +134,11 @@ describe('addAssetRequirement procedure', () => {
       conditions: fakeConditions,
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction: addComplianceRequirementTransaction,
       args: [rawTicker, fakeSenderConditions, fakeReceiverConditions],
+      resolver: expect.objectContaining({ ticker }),
     });
-
-    expect(result).toEqual(expect.objectContaining({ ticker }));
   });
 
   describe('getAuthorization', () => {

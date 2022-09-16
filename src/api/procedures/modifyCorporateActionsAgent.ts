@@ -7,7 +7,7 @@ import {
   SignerType,
   TxTags,
 } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
   dateToMoment,
@@ -26,7 +26,7 @@ export type Params = { ticker: string } & ModifyCorporateActionsAgentParams;
 export async function prepareModifyCorporateActionsAgent(
   this: Procedure<Params, void>,
   args: Params
-): Promise<void> {
+): Promise<TransactionSpec<void, ExtrinsicParams<'identity', 'addAuthorization'>>> {
   const {
     context: {
       polymeshApi: { tx },
@@ -81,10 +81,11 @@ export async function prepareModifyCorporateActionsAgent(
     rawExpiry = dateToMoment(requestExpiry, context);
   }
 
-  this.addTransaction({
+  return {
     transaction: tx.identity.addAuthorization,
     args: [rawSignatory, rawAuthorizationData, rawExpiry],
-  });
+    resolver: undefined,
+  };
 }
 
 /**

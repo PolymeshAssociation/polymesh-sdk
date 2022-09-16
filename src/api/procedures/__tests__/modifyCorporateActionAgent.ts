@@ -33,7 +33,6 @@ describe('modifyCorporateActionAgent procedure', () => {
   let rawTicker: Ticker;
   let rawAgentGroup: AgentGroup;
   let target: string;
-  let addTransactionStub: sinon.SinonStub;
   let rawSignatory: Signatory;
   let rawAuthorizationData: PolymeshPrimitivesAuthorizationAuthorizationData;
 
@@ -70,7 +69,6 @@ describe('modifyCorporateActionAgent procedure', () => {
     authorizationToAuthorizationDataStub.returns(rawAuthorizationData);
     signerToStringStub.returns(target);
     signerValueToSignatoryStub.returns(rawSignatory);
-    addTransactionStub = procedureMockUtils.getAddTransactionStub();
   });
 
   afterEach(() => {
@@ -139,7 +137,7 @@ describe('modifyCorporateActionAgent procedure', () => {
     );
   });
 
-  it('should add an add authorization transaction to the queue', async () => {
+  it('should return an add authorization transaction spec', async () => {
     const args = {
       target,
       ticker,
@@ -152,21 +150,23 @@ describe('modifyCorporateActionAgent procedure', () => {
     const transaction = dsMockUtils.createTxStub('identity', 'addAuthorization');
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    await prepareModifyCorporateActionsAgent.call(proc, args);
+    let result = await prepareModifyCorporateActionsAgent.call(proc, args);
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction,
       args: [rawSignatory, rawAuthorizationData, null],
+      resolver: undefined,
     });
 
-    await prepareModifyCorporateActionsAgent.call(proc, {
+    result = await prepareModifyCorporateActionsAgent.call(proc, {
       ...args,
       requestExpiry,
     });
 
-    sinon.assert.calledWith(addTransactionStub, {
+    expect(result).toEqual({
       transaction,
       args: [rawSignatory, rawAuthorizationData, rawExpiry],
+      resolver: undefined,
     });
   });
 

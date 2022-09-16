@@ -11,7 +11,7 @@ import {
   Tier,
   TxTags,
 } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   bigNumberToBalance,
   bigNumberToU64,
@@ -105,7 +105,7 @@ export const calculateTierStats = (
 export async function prepareInvestInSto(
   this: Procedure<Params, void, Storage>,
   args: Params
-): Promise<void> {
+): Promise<TransactionSpec<void, ExtrinsicParams<'txSto', 'invest'>>> {
   const {
     context: {
       polymeshApi: {
@@ -166,7 +166,7 @@ export async function prepareInvestInSto(
     });
   }
 
-  this.addTransaction({
+  return {
     transaction: txSto.invest,
     args: [
       portfolioIdToMeshPortfolioId(purchasePortfolioId, context),
@@ -177,7 +177,8 @@ export async function prepareInvestInSto(
       optionize(bigNumberToBalance)(maxPrice, context),
       null,
     ],
-  });
+    resolver: undefined,
+  };
 }
 
 /**

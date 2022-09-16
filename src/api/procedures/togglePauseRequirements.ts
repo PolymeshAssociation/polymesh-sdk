@@ -1,6 +1,6 @@
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { boolToBoolean, stringToTicker } from '~/utils/conversion';
 
 export interface TogglePauseRequirementsParams {
@@ -20,7 +20,10 @@ export type Params = TogglePauseRequirementsParams & {
 export async function prepareTogglePauseRequirements(
   this: Procedure<Params, Asset>,
   args: Params
-): Promise<Asset> {
+): Promise<
+  | TransactionSpec<Asset, ExtrinsicParams<'complianceManager', 'pauseAssetCompliance'>>
+  | TransactionSpec<Asset, ExtrinsicParams<'complianceManager', 'resumeAssetCompliance'>>
+> {
   const {
     context: {
       polymeshApi: { query, tx },
@@ -40,14 +43,13 @@ export async function prepareTogglePauseRequirements(
     });
   }
 
-  this.addTransaction({
+  return {
     transaction: pause
       ? tx.complianceManager.pauseAssetCompliance
       : tx.complianceManager.resumeAssetCompliance,
     args: [rawTicker],
-  });
-
-  return new Asset({ ticker }, context);
+    resolver: new Asset({ ticker }, context),
+  };
 }
 
 /**

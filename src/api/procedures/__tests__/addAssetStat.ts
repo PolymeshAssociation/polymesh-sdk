@@ -22,10 +22,9 @@ import {
   CountryCode,
   ErrorCode,
   StatClaimType,
-  StatType,
   TxTags,
 } from '~/types';
-import { PolymeshTx, StatisticsOpType, TickerKey } from '~/types/internal';
+import { PolymeshTx, StatType, TickerKey } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -45,7 +44,6 @@ describe('addAssetStat procedure', () => {
   let rawStatUpdate: PolymeshPrimitivesStatisticsStatUpdate;
   let raw2ndKey: PolymeshPrimitivesStatisticsStat2ndKey;
 
-  let addBatchTransactionStub: sinon.SinonStub;
   let setActiveAssetStatsTxStub: PolymeshTx<
     [PolymeshPrimitivesTicker, PolymeshPrimitivesTransferComplianceTransferCondition]
   >;
@@ -106,7 +104,7 @@ describe('addAssetStat procedure', () => {
     dsMockUtils.setConstMock('statistics', 'maxTransferConditionsPerAsset', {
       returnValue: dsMockUtils.createMockU32(new BigNumber(3)),
     });
-    statStub = sinon.stub(utilsConversionModule, 'meshStatToStatisticsOpType');
+    statStub = sinon.stub(utilsConversionModule, 'meshStatToStatType');
     activeAssetStatsStub = dsMockUtils.createQueryStub('statistics', 'activeAssetStats');
     activeAssetStatsStub.returns(dsMockUtils.createMockBTreeSet([]));
     statisticStatTypesToBtreeStatTypeStub = sinon.stub(
@@ -116,8 +114,7 @@ describe('addAssetStat procedure', () => {
   });
 
   beforeEach(() => {
-    statStub.returns(StatisticsOpType.Balance);
-    addBatchTransactionStub = procedureMockUtils.getAddBatchTransactionStub();
+    statStub.returns(StatType.Balance);
     setActiveAssetStatsTxStub = dsMockUtils.createTxStub('statistics', 'setActiveAssetStats');
     batchUpdateAssetStatsTxStub = dsMockUtils.createTxStub('statistics', 'batchUpdateAssetStats');
 
@@ -151,20 +148,21 @@ describe('addAssetStat procedure', () => {
 
   it('should add an setAssetStats transaction to the queue', async () => {
     args = {
-      type: StatType.Percentage,
+      type: StatType.Balance,
       ticker,
     };
     const proc = procedureMockUtils.getInstance<AddAssetStatParams, void>(mockContext, {});
 
-    await prepareAddAssetStat.call(proc, args);
+    let result = await prepareAddAssetStat.call(proc, args);
 
-    sinon.assert.calledWith(addBatchTransactionStub.firstCall, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: setActiveAssetStatsTxStub,
           args: [{ Ticker: rawTicker }, rawStatBtreeSet],
         },
       ],
+      resolver: undefined,
     });
 
     args = {
@@ -174,9 +172,9 @@ describe('addAssetStat procedure', () => {
     };
 
     sinon.stub(utilsConversionModule, 'countStatInputToStatUpdates').returns(statUpdateBtreeSet);
-    await prepareAddAssetStat.call(proc, args);
+    result = await prepareAddAssetStat.call(proc, args);
 
-    sinon.assert.calledWith(addBatchTransactionStub.secondCall, {
+    expect(result).toEqual({
       transactions: [
         {
           transaction: setActiveAssetStatsTxStub,
@@ -187,6 +185,7 @@ describe('addAssetStat procedure', () => {
           args: [{ Ticker: rawTicker }, rawStatType, statUpdateBtreeSet],
         },
       ],
+      resolver: undefined,
     });
 
     args = {
@@ -203,8 +202,10 @@ describe('addAssetStat procedure', () => {
     sinon
       .stub(utilsConversionModule, 'claimCountStatInputToStatUpdates')
       .returns(statUpdateBtreeSet);
-    await prepareAddAssetStat.call(proc, args);
-    sinon.assert.calledWith(addBatchTransactionStub.thirdCall, {
+
+    result = await prepareAddAssetStat.call(proc, args);
+
+    expect(result).toEqual({
       transactions: [
         {
           transaction: setActiveAssetStatsTxStub,
@@ -215,19 +216,20 @@ describe('addAssetStat procedure', () => {
           args: [{ Ticker: rawTicker }, rawStatType, statUpdateBtreeSet],
         },
       ],
+      resolver: undefined,
     });
   });
 
   it('should throw an error if the appropriate stat is not set', () => {
     const proc = procedureMockUtils.getInstance<AddAssetStatParams, void>(mockContext, {});
     args = {
-      type: StatType.Percentage,
+      type: StatType.Balance,
       ticker,
     };
 
     activeAssetStatsStub.returns([rawStatType]);
 
-    statStub.returns(StatisticsOpType.Balance);
+    statStub.returns(StatType.Balance);
 
     const expectedError = new PolymeshError({
       code: ErrorCode.NoDataChange,
@@ -258,7 +260,7 @@ describe('addAssetStat procedure', () => {
           portfolios: [],
         },
       });
-      expect(boundFunc({ ticker, type: StatType.Percentage })).toEqual({
+      expect(boundFunc({ ticker, type: StatType.Balance })).toEqual({
         permissions: {
           assets: [expect.objectContaining({ ticker })],
           transactions: [TxTags.statistics.SetActiveAssetStats],

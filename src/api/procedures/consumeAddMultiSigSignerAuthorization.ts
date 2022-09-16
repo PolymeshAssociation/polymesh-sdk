@@ -1,7 +1,7 @@
 import { assertAuthorizationRequestValid } from '~/api/procedures/utils';
 import { Account, AuthorizationRequest, Identity, Procedure } from '~/internal';
 import { TxTags } from '~/types';
-import { ProcedureAuthorization } from '~/types/internal';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   bigNumberToU64,
   booleanToBool,
@@ -24,7 +24,11 @@ export interface ConsumeAddMultiSigSignerAuthorizationParams {
 export async function prepareConsumeAddMultiSigSignerAuthorization(
   this: Procedure<ConsumeAddMultiSigSignerAuthorizationParams>,
   args: ConsumeAddMultiSigSignerAuthorizationParams
-): Promise<void> {
+): Promise<
+  | TransactionSpec<void, ExtrinsicParams<'identity', 'removeAuthorization'>>
+  | TransactionSpec<void, ExtrinsicParams<'multiSig', 'acceptMultisigSignerAsIdentity'>>
+  | TransactionSpec<void, ExtrinsicParams<'multiSig', 'acceptMultisigSignerAsKey'>>
+> {
   const {
     context: {
       polymeshApi: {
@@ -49,7 +53,7 @@ export async function prepareConsumeAddMultiSigSignerAuthorization(
       addTransactionArgs.paidForBy = issuer;
     }
 
-    this.addTransaction({
+    return {
       transaction: identity.removeAuthorization,
       ...addTransactionArgs,
       args: [
@@ -57,9 +61,8 @@ export async function prepareConsumeAddMultiSigSignerAuthorization(
         rawAuthId,
         booleanToBool(paidByThirdParty, context),
       ],
-    });
-
-    return;
+      resolver: undefined,
+    };
   }
 
   await assertAuthorizationRequestValid(authRequest, context);
@@ -69,7 +72,7 @@ export async function prepareConsumeAddMultiSigSignerAuthorization(
       ? multiSig.acceptMultisigSignerAsKey
       : multiSig.acceptMultisigSignerAsIdentity;
 
-  this.addTransaction({ transaction, paidForBy: issuer, args: [rawAuthId] });
+  return { transaction, paidForBy: issuer, args: [rawAuthId], resolver: undefined };
 }
 
 /**

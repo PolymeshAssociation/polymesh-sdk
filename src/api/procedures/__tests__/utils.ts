@@ -28,7 +28,6 @@ import {
   Identity,
   Instruction,
   PolymeshError,
-  PostTransactionValue,
 } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId, createMockIdentityId } from '~/testUtils/mocks/dataSources';
@@ -1423,28 +1422,6 @@ describe('createAuthorizationResolver', () => {
     } as unknown as ISubmittableResult);
     expect(authRequest.authId).toEqual(new BigNumber(3));
   });
-
-  it('should return a function that creates an AuthorizationRequest with a PostTransaction Authorization', async () => {
-    const authData: Authorization = {
-      type: AuthorizationType.RotatePrimaryKey,
-    };
-
-    const postTransaction = new PostTransactionValue(() => authData);
-    await postTransaction.run({} as ISubmittableResult);
-
-    const resolver = createAuthorizationResolver(
-      postTransaction,
-      entityMockUtils.getIdentityInstance(),
-      entityMockUtils.getIdentityInstance(),
-      null,
-      mockContext
-    );
-
-    const authRequest = resolver({
-      filterRecords: filterRecords,
-    } as unknown as ISubmittableResult);
-    expect(authRequest.authId).toEqual(new BigNumber(3));
-  });
 });
 
 describe('createCreateGroupResolver', () => {
@@ -1482,7 +1459,7 @@ describe('createCreateGroupResolver', () => {
 
     const resolver = createCreateGroupResolver(mockContext);
     const result = resolver({
-      filterRecords: filterRecords,
+      filterRecords,
     } as unknown as ISubmittableResult);
 
     expect(result.id).toEqual(agId);
