@@ -1,4 +1,4 @@
-import { AugmentedQuery } from '@polkadot/api/types';
+import { AugmentedQueries, AugmentedQuery } from '@polkadot/api/types';
 import type { Observable } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
@@ -59,6 +59,29 @@ export type QueryReturnType<T> = T extends AugmentedQuery<'promise', infer Fun>
   ? ReturnType<Fun> extends Observable<infer R>
     ? R
     : never
+  : never;
+
+/**
+ * @hidden
+ *
+ * Extract the polkadot.js query function
+ *
+ * @example `QueryableStorageFunction<'identity', 'authorizations'>` returns
+ * `(
+ *     arg1:
+ *      | PolymeshPrimitivesSecondaryKeySignatory
+ *      | { Identity: any }
+ *      | { Account: any }
+ *      | string
+ *      | Uint8Array,
+ *    arg2: u64 | AnyNumber | Uint8Array
+ *  ) => Observable<Option<PolymeshPrimitivesAuthorization>>`
+ */
+export type QueryFunction<
+  ModuleName extends keyof AugmentedQueries<'promise'>,
+  QueryName extends keyof AugmentedQueries<'promise'>[ModuleName]
+> = AugmentedQueries<'promise'>[ModuleName][QueryName] extends AugmentedQuery<'promise', infer Fun>
+  ? Fun
   : never;
 
 /**
