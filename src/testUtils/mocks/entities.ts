@@ -6,7 +6,6 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import BigNumber from 'bignumber.js';
 import { pick } from 'lodash';
-import sinon from 'sinon';
 
 import {
   Account,
@@ -103,7 +102,7 @@ interface EntityOptions {
   toHuman?: any;
 }
 
-type EntityGetter<Result> = Partial<Result> | ((...args: any) => any) | sinon.SinonStub;
+type EntityGetter<Result> = Partial<Result> | ((...args: any) => any) | jest.Mock;
 
 interface IdentityOptions extends EntityOptions {
   did?: string;
@@ -346,11 +345,11 @@ function createMockEntityClass<Options extends EntityOptions>(
       ...options,
     } as Required<Options>);
   return class MockClass extends Class {
-    isEqual = sinon.stub();
-    exists = sinon.stub();
-    toHuman = sinon.stub();
+    isEqual = jest.fn();
+    exists = jest.fn();
+    toHuman = jest.fn();
 
-    private static constructorStub = sinon.stub();
+    private static constructorStub = jest.fn();
 
     private static options = {} as Required<Options>;
 
@@ -427,9 +426,9 @@ function createMockEntityClass<Options extends EntityOptions>(
 
       super.configure(fullOpts);
 
-      this.exists.returns(fullOpts.exists);
-      this.isEqual.returns(fullOpts.isEqual);
-      this.toHuman.returns(fullOpts.toHuman);
+      this.exists.mockReturnValue(fullOpts.exists);
+      this.isEqual.mockReturnValue(fullOpts.isEqual);
+      this.toHuman.mockReturnValue(fullOpts.toHuman);
     }
 
     /**
@@ -459,14 +458,14 @@ function createEntityGetterStub<Result>(args: EntityGetter<Result>, isAsync = tr
     return args;
   }
 
-  const newStub = sinon.stub();
+  const newStub = jest.fn();
 
   if (typeof args === 'function') {
-    newStub.callsFake(args as (...fnArgs: any[]) => any);
+    newStub.mockImplementation(args as (...fnArgs: any[]) => any);
   } else if (isAsync) {
-    newStub.resolves(args);
+    newStub.mockResolvedValue(args);
   } else {
-    newStub.returns(args);
+    newStub.mockReturnValue(args);
   }
 
   return newStub;
@@ -476,31 +475,31 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
   class {
     uuid!: string;
     did!: string;
-    hasRoles!: sinon.SinonStub;
-    checkRoles!: sinon.SinonStub;
-    hasRole!: sinon.SinonStub;
-    hasValidCdd!: sinon.SinonStub;
-    getPrimaryAccount!: sinon.SinonStub;
+    hasRoles!: jest.Mock;
+    checkRoles!: jest.Mock;
+    hasRole!: jest.Mock;
+    hasValidCdd!: jest.Mock;
+    getPrimaryAccount!: jest.Mock;
     portfolios = {};
     authorizations = {} as {
-      getReceived: sinon.SinonStub;
-      getSent: sinon.SinonStub;
-      getOne: sinon.SinonStub;
+      getReceived: jest.Mock;
+      getSent: jest.Mock;
+      getOne: jest.Mock;
     };
 
     assetPermissions = {} as {
-      get: sinon.SinonStub;
-      getGroup: sinon.SinonStub;
-      hasPermissions: sinon.SinonStub;
-      checkPermissions: sinon.SinonStub;
+      get: jest.Mock;
+      getGroup: jest.Mock;
+      hasPermissions: jest.Mock;
+      checkPermissions: jest.Mock;
     };
 
-    getVenues!: sinon.SinonStub;
-    getScopeId!: sinon.SinonStub;
-    getAssetBalance!: sinon.SinonStub;
-    getSecondaryAccounts!: sinon.SinonStub;
-    areSecondaryAccountsFrozen!: sinon.SinonStub;
-    isCddProvider!: sinon.SinonStub;
+    getVenues!: jest.Mock;
+    getScopeId!: jest.Mock;
+    getAssetBalance!: jest.Mock;
+    getSecondaryAccounts!: jest.Mock;
+    areSecondaryAccountsFrozen!: jest.Mock;
+    isCddProvider!: jest.Mock;
 
     /**
      * @hidden
@@ -581,12 +580,12 @@ const MockAccountClass = createMockEntityClass<AccountOptions>(
     uuid!: string;
     address!: string;
     key!: string;
-    isFrozen!: sinon.SinonStub;
-    getBalance!: sinon.SinonStub;
-    getIdentity!: sinon.SinonStub;
-    getTransactionHistory!: sinon.SinonStub;
-    hasPermissions!: sinon.SinonStub;
-    checkPermissions!: sinon.SinonStub;
+    isFrozen!: jest.Mock;
+    getBalance!: jest.Mock;
+    getIdentity!: jest.Mock;
+    getTransactionHistory!: jest.Mock;
+    hasPermissions!: jest.Mock;
+    checkPermissions!: jest.Mock;
 
     /**
      * @hidden
@@ -634,7 +633,7 @@ const MockSubsidyClass = createMockEntityClass<SubsidyOptions>(
     uuid!: string;
     beneficiary!: Account;
     subsidizer!: Account;
-    getAllowance!: sinon.SinonStub;
+    getAllowance!: jest.Mock;
 
     /**
      * @hidden
@@ -669,7 +668,7 @@ const MockTickerReservationClass = createMockEntityClass<TickerReservationOption
   class {
     uuid!: string;
     ticker!: string;
-    details!: sinon.SinonStub;
+    details!: jest.Mock;
 
     /**
      * @hidden
@@ -703,14 +702,14 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
     uuid!: string;
     ticker!: string;
     did!: string;
-    details!: sinon.SinonStub;
-    currentFundingRound!: sinon.SinonStub;
-    isFrozen!: sinon.SinonStub;
+    details!: jest.Mock;
+    currentFundingRound!: jest.Mock;
+    isFrozen!: jest.Mock;
     transfers = {} as {
-      canTransfer: sinon.SinonStub;
+      canTransfer: jest.Mock;
     };
 
-    getIdentifiers!: sinon.SinonStub;
+    getIdentifiers!: jest.Mock;
     transferRestrictions = {
       count: {},
       percentage: {},
@@ -718,34 +717,34 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
       claimPercentage: {},
     } as {
       count: {
-        get: sinon.SinonStub;
+        get: jest.Mock;
       };
       percentage: {
-        get: sinon.SinonStub;
+        get: jest.Mock;
       };
       claimCount: {
-        get: sinon.SinonStub;
+        get: jest.Mock;
       };
       claimPercentage: {
-        get: sinon.SinonStub;
+        get: jest.Mock;
       };
     };
 
     corporateActions = {} as {
-      getAgents: sinon.SinonStub;
-      getDefaultConfig: sinon.SinonStub;
+      getAgents: jest.Mock;
+      getDefaultConfig: jest.Mock;
     };
 
     permissions = {} as {
-      getGroups: sinon.SinonStub;
-      getAgents: sinon.SinonStub;
+      getGroups: jest.Mock;
+      getAgents: jest.Mock;
     };
 
     compliance = {
       requirements: {},
     } as {
       requirements: {
-        get: sinon.SinonStub;
+        get: jest.Mock;
       };
     };
 
@@ -753,12 +752,12 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
       schedules: {},
     } as {
       schedules: {
-        getOne: sinon.SinonStub;
+        getOne: jest.Mock;
       };
-      getOne: sinon.SinonStub;
+      getOne: jest.Mock;
     };
 
-    investorCount!: sinon.SinonStub;
+    investorCount!: jest.Mock;
 
     /**
      * @hidden
@@ -873,7 +872,7 @@ const MockAuthorizationRequestClass = createMockEntityClass<AuthorizationRequest
     target!: Signer;
     expiry!: Date | null;
     data!: Authorization;
-    isExpired!: sinon.SinonStub;
+    isExpired!: jest.Mock;
 
     /**
      * @hidden
@@ -910,7 +909,7 @@ const MockVenueClass = createMockEntityClass<VenueOptions>(
   class {
     uuid!: string;
     id!: BigNumber;
-    details!: sinon.SinonStub;
+    details!: jest.Mock;
 
     /**
      * @hidden
@@ -943,9 +942,9 @@ const MockInstructionClass = createMockEntityClass<InstructionOptions>(
   class {
     uuid!: string;
     id!: BigNumber;
-    details!: sinon.SinonStub;
-    getLegs!: sinon.SinonStub;
-    isPending!: sinon.SinonStub;
+    details!: jest.Mock;
+    getLegs!: jest.Mock;
+    isPending!: jest.Mock;
 
     /**
      * @hidden
@@ -996,10 +995,10 @@ const MockNumberedPortfolioClass = createMockEntityClass<NumberedPortfolioOption
     uuid!: string;
     id!: BigNumber;
     owner!: Identity;
-    isOwnedBy!: sinon.SinonStub;
-    getAssetBalances!: sinon.SinonStub;
-    getCustodian!: sinon.SinonStub;
-    isCustodiedBy!: sinon.SinonStub;
+    isOwnedBy!: jest.Mock;
+    getAssetBalances!: jest.Mock;
+    getCustodian!: jest.Mock;
+    isCustodiedBy!: jest.Mock;
 
     /**
      * @hidden
@@ -1047,10 +1046,10 @@ const MockDefaultPortfolioClass = createMockEntityClass<DefaultPortfolioOptions>
   class {
     uuid!: string;
     owner!: Identity;
-    isOwnedBy!: sinon.SinonStub;
-    getAssetBalances!: sinon.SinonStub;
-    getCustodian!: sinon.SinonStub;
-    isCustodiedBy!: sinon.SinonStub;
+    isOwnedBy!: jest.Mock;
+    getAssetBalances!: jest.Mock;
+    getCustodian!: jest.Mock;
+    isCustodiedBy!: jest.Mock;
 
     /**
      * @hidden
@@ -1096,7 +1095,7 @@ const MockOfferingClass = createMockEntityClass<OfferingOptions>(
     uuid!: string;
     id!: BigNumber;
     asset!: Asset;
-    details!: sinon.SinonStub;
+    details!: jest.Mock;
 
     /**
      * @hidden
@@ -1152,10 +1151,10 @@ const MockCheckpointClass = createMockEntityClass<CheckpointOptions>(
     uuid!: string;
     id!: BigNumber;
     asset!: Asset;
-    createdAt!: sinon.SinonStub;
-    totalSupply!: sinon.SinonStub;
-    allBalances!: sinon.SinonStub;
-    balance!: sinon.SinonStub;
+    createdAt!: jest.Mock;
+    totalSupply!: jest.Mock;
+    allBalances!: jest.Mock;
+    balance!: jest.Mock;
 
     /**
      * @hidden
@@ -1205,7 +1204,7 @@ const MockCheckpointScheduleClass = createMockEntityClass<CheckpointScheduleOpti
     period!: CalendarPeriod | null;
     expiryDate!: Date | null;
     complexity!: BigNumber;
-    details!: sinon.SinonStub;
+    details!: jest.Mock;
 
     /**
      * @hidden
@@ -1327,9 +1326,9 @@ const MockDividendDistributionClass = createMockEntityClass<DividendDistribution
     maxAmount!: BigNumber;
     expiryDate!: Date | null;
     paymentDate!: Date;
-    details!: sinon.SinonStub;
-    getParticipant!: sinon.SinonStub;
-    checkpoint!: sinon.SinonStub;
+    details!: jest.Mock;
+    getParticipant!: jest.Mock;
+    checkpoint!: jest.Mock;
 
     /**
      * @hidden
@@ -1419,7 +1418,7 @@ const MockCustomPermissionGroupClass = createMockEntityClass<CustomPermissionGro
     uuid!: string;
     id!: BigNumber;
     asset!: Asset;
-    getPermissions!: sinon.SinonStub;
+    getPermissions!: jest.Mock;
 
     /**
      * @hidden
@@ -1454,7 +1453,7 @@ const MockKnownPermissionGroupClass = createMockEntityClass<KnownPermissionGroup
     uuid!: string;
     type!: PermissionGroupType;
     asset!: Asset;
-    getPermissions!: sinon.SinonStub;
+    getPermissions!: jest.Mock;
 
     /**
      * @hidden

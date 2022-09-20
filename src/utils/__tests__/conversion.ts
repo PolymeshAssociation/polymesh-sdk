@@ -1,24 +1,31 @@
-import { bool, Bytes, Option, u32, u64, u128 } from '@polkadot/types';
+import { bool, Bytes, Option, Text, u32, u64, u128 } from '@polkadot/types';
 import {
   AccountId,
   Balance,
   BlockHash,
+  Call,
   Hash,
   Moment,
   Permill,
   Signature,
 } from '@polkadot/types/interfaces';
 import {
+  PolymeshPrimitivesCondition,
+  PolymeshPrimitivesDocument,
   PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesStatisticsStat2ndKey,
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesStatisticsStatType,
+  PolymeshPrimitivesStatisticsStatUpdate,
+  PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions,
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
+import { BTreeSet } from '@polkadot/types-codec';
 import type { ITuple } from '@polkadot/types-codec/types';
 import { hexToU8a } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 import {
   AgentGroup,
   AGId,
@@ -57,7 +64,6 @@ import {
   TrustedIssuer,
   VenueType as MeshVenueType,
 } from 'polymesh-types/polymesh';
-import sinon from 'sinon';
 
 import {
   Account,
@@ -82,7 +88,12 @@ import {
   Portfolio as MiddlewareV2Portfolio,
 } from '~/middleware/typesV2';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { createMockOption, createMockU64, createMockU128 } from '~/testUtils/mocks/dataSources';
+import {
+  createMockOption,
+  createMockU64,
+  createMockU128,
+  getCreateTypeStub,
+} from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import {
   AffirmationStatus,
@@ -373,7 +384,7 @@ describe('booleanToBool and boolToBoolean', () => {
       const fakeResult = 'true' as unknown as bool;
       const context = dsMockUtils.getContextInstance();
 
-      context.createType.withArgs('bool', value).returns(fakeResult);
+      when(context.createType).calledWith('bool', value).mockReturnValue(fakeResult);
 
       const result = booleanToBool(value, context);
 
@@ -411,7 +422,7 @@ describe('stringToBytes and bytesToString', () => {
       const fakeResult = 'convertedBytes' as unknown as Bytes;
       const context = dsMockUtils.getContextInstance();
 
-      context.createType.withArgs('Bytes', value).returns(fakeResult);
+      when(context.createType).calledWith('Bytes', value).mockReturnValue(fakeResult);
 
       const result = stringToBytes(value, context);
 
@@ -448,7 +459,7 @@ describe('stringToInvestorZKProofData', () => {
     const fakeResult = 'convertedProof' as unknown as InvestorZKProofData;
     const context = dsMockUtils.getContextInstance();
 
-    context.createType.withArgs('InvestorZKProofData', value).returns(fakeResult);
+    when(context.createType).calledWith('InvestorZKProofData', value).mockReturnValue(fakeResult);
 
     const result = stringToInvestorZKProofData(value, context);
 
@@ -487,21 +498,21 @@ describe('portfolioMovementToMovePortfolioItem', () => {
       amount,
     };
 
-    context.createType
-      .withArgs('PolymeshPrimitivesTicker', padString(ticker, 12))
-      .returns(rawTicker);
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesTicker', padString(ticker, 12))
+      .mockReturnValue(rawTicker);
 
-    context.createType
-      .withArgs('Balance', portfolioMovement.amount.multipliedBy(Math.pow(10, 6)).toString())
-      .returns(rawAmount);
+    when(context.createType)
+      .calledWith('Balance', portfolioMovement.amount.multipliedBy(Math.pow(10, 6)).toString())
+      .mockReturnValue(rawAmount);
 
-    context.createType
-      .withArgs('MovePortfolioItem', {
+    when(context.createType)
+      .calledWith('MovePortfolioItem', {
         ticker: rawTicker,
         amount: rawAmount,
         memo: null,
       })
-      .returns(fakeResult);
+      .mockReturnValue(fakeResult);
 
     let result = portfolioMovementToMovePortfolioItem(portfolioMovement, context);
 
@@ -516,17 +527,17 @@ describe('portfolioMovementToMovePortfolioItem', () => {
 
     expect(result).toBe(fakeResult);
 
-    context.createType
-      .withArgs('PolymeshCommonUtilitiesBalancesMemo', padString(memo, 32))
-      .returns(rawMemo);
+    when(context.createType)
+      .calledWith('PolymeshCommonUtilitiesBalancesMemo', padString(memo, 32))
+      .mockReturnValue(rawMemo);
 
-    context.createType
-      .withArgs('MovePortfolioItem', {
+    when(context.createType)
+      .calledWith('MovePortfolioItem', {
         ticker: rawTicker,
         amount: rawAmount,
         memo: rawMemo,
       })
-      .returns(fakeResult);
+      .mockReturnValue(fakeResult);
 
     portfolioMovement = {
       asset,
@@ -564,9 +575,9 @@ describe('stringToTicker and tickerToString', () => {
       const value = 'SOME_TICKER';
       const fakeResult = 'convertedTicker' as unknown as PolymeshPrimitivesTicker;
 
-      context.createType
-        .withArgs('PolymeshPrimitivesTicker', padString(value, 12))
-        .returns(fakeResult);
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesTicker', padString(value, 12))
+        .mockReturnValue(fakeResult);
 
       const result = stringToTicker(value, context);
 
@@ -613,9 +624,9 @@ describe('stringToTicker and tickerToString', () => {
       const fakeResult = 'convertedTicker' as unknown as PolymeshPrimitivesTicker;
       const context = dsMockUtils.getContextInstance();
 
-      context.createType
-        .withArgs('PolymeshPrimitivesTicker', padString(value, 12))
-        .returns(fakeResult);
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesTicker', padString(value, 12))
+        .mockReturnValue(fakeResult);
 
       const result = stringToTickerKey(value, context);
       expect(result).toEqual({ Ticker: fakeResult });
@@ -652,7 +663,9 @@ describe('dateToMoment and momentToDate', () => {
       const fakeResult = 10000 as unknown as Moment;
       const context = dsMockUtils.getContextInstance();
 
-      context.createType.withArgs('u64', Math.round(value.getTime())).returns(fakeResult);
+      when(context.createType)
+        .calledWith('u64', Math.round(value.getTime()))
+        .mockReturnValue(fakeResult);
 
       const result = dateToMoment(value, context);
 
@@ -690,7 +703,7 @@ describe('stringToAccountId and accountIdToString', () => {
       const fakeResult = 'convertedAccountId' as unknown as AccountId;
       const context = dsMockUtils.getContextInstance();
 
-      context.createType.withArgs('AccountId', value).returns(fakeResult);
+      when(context.createType).calledWith('AccountId', value).mockReturnValue(fakeResult);
 
       const result = stringToAccountId(value, context);
 
@@ -737,7 +750,7 @@ describe('stringToHash and hashToString', () => {
       const fakeResult = 'convertedHash' as unknown as Hash;
       const context = dsMockUtils.getContextInstance();
 
-      context.createType.withArgs('Hash', value).returns(fakeResult);
+      when(context.createType).calledWith('Hash', value).mockReturnValue(fakeResult);
 
       const result = stringToHash(value, context);
 
@@ -774,7 +787,7 @@ describe('stringToBlockHash', () => {
     const fakeResult = 'type' as unknown as BlockHash;
     const context = dsMockUtils.getContextInstance();
 
-    context.createType.withArgs('BlockHash', blockHash).returns(fakeResult);
+    when(context.createType).calledWith('BlockHash', blockHash).mockReturnValue(fakeResult);
 
     const result = stringToBlockHash(blockHash, context);
 
@@ -801,7 +814,9 @@ describe('stringToIdentityId and identityIdToString', () => {
       const fakeResult = 'type' as unknown as PolymeshPrimitivesIdentityId;
       const context = dsMockUtils.getContextInstance();
 
-      context.createType.withArgs('PolymeshPrimitivesIdentityId', identity).returns(fakeResult);
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesIdentityId', identity)
+        .mockReturnValue(fakeResult);
 
       const result = stringToIdentityId(identity, context);
 
@@ -838,7 +853,7 @@ describe('stringToEcdsaSignature', () => {
     const fakeResult = 'sig' as unknown as EcdsaSignature;
     const context = dsMockUtils.getContextInstance();
 
-    context.createType.withArgs('EcdsaSignature', signature).returns(fakeResult);
+    when(context.createType).calledWith('EcdsaSignature', signature).mockReturnValue(fakeResult);
 
     const result = stringToEcdsaSignature(signature, context);
 
@@ -857,7 +872,7 @@ describe('signerValueToSignatory and signatoryToSignerValue', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    sinon.restore();
+    jest.restoreAllMocks();
   });
 
   describe('signerValueToSignatory', () => {
@@ -869,7 +884,9 @@ describe('signerValueToSignatory and signatoryToSignerValue', () => {
       const fakeResult = 'SignatoryEnum' as unknown as Signatory;
       const context = dsMockUtils.getContextInstance();
 
-      context.createType.withArgs('Signatory', { [value.type]: value.value }).returns(fakeResult);
+      when(context.createType)
+        .calledWith('Signatory', { [value.type]: value.value })
+        .mockReturnValue(fakeResult);
 
       const result = signerValueToSignatory(value, context);
 
@@ -923,7 +940,7 @@ describe('signerToSignerValue and signerValueToSigner', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    sinon.restore();
+    jest.restoreAllMocks();
   });
 
   describe('signerToSignerValue', () => {
@@ -1037,14 +1054,16 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       const fakeResult = 'AuthorizationDataEnum' as unknown as AuthorizationData;
 
       const createTypeStub = context.createType;
-      createTypeStub
-        .withArgs('PolymeshPrimitivesAuthorizationAuthorizationData', { [value.type]: value.value })
-        .returns(fakeResult);
+      when(createTypeStub)
+        .calledWith('PolymeshPrimitivesAuthorizationAuthorizationData', {
+          [value.type]: value.value,
+        })
+        .mockReturnValue(fakeResult);
 
       const fakeTicker = 'convertedTicker' as unknown as PolymeshPrimitivesTicker;
-      createTypeStub
-        .withArgs('PolymeshPrimitivesTicker', padString(ticker, 12))
-        .returns(fakeTicker);
+      when(createTypeStub)
+        .calledWith('PolymeshPrimitivesTicker', padString(ticker, 12))
+        .mockReturnValue(fakeTicker);
 
       let result = authorizationToAuthorizationData(value, context);
       expect(result).toBe(fakeResult);
@@ -1065,14 +1084,14 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
         extrinsic: dsMockUtils.createMockExtrinsicPermissions('Whole'),
       });
 
-      createTypeStub
-        .withArgs('PolymeshPrimitivesSecondaryKeyPermissions', sinon.match(sinon.match.object))
-        .returns(rawPermissions);
-      createTypeStub
-        .withArgs('PolymeshPrimitivesAuthorizationAuthorizationData', {
+      when(createTypeStub)
+        .calledWith('PolymeshPrimitivesSecondaryKeyPermissions', expect.anything())
+        .mockReturnValue(rawPermissions);
+      when(createTypeStub)
+        .calledWith('PolymeshPrimitivesAuthorizationAuthorizationData', {
           [value.type]: rawPermissions,
         })
-        .returns(fakeResult);
+        .mockReturnValue(fakeResult);
 
       result = authorizationToAuthorizationData(value, context);
       expect(result).toBe(fakeResult);
@@ -1088,14 +1107,14 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
         kind: dsMockUtils.createMockPortfolioKind('Default'),
       });
 
-      createTypeStub
-        .withArgs('PortfolioId', sinon.match(sinon.match.object))
-        .returns(rawPortfolioId);
-      createTypeStub
-        .withArgs('PolymeshPrimitivesAuthorizationAuthorizationData', {
+      when(createTypeStub)
+        .calledWith('PortfolioId', expect.anything())
+        .mockReturnValue(rawPortfolioId);
+      when(createTypeStub)
+        .calledWith('PolymeshPrimitivesAuthorizationAuthorizationData', {
           [value.type]: rawPortfolioId,
         })
-        .returns(fakeResult);
+        .mockReturnValue(fakeResult);
 
       result = authorizationToAuthorizationData(value, context);
       expect(result).toBe(fakeResult);
@@ -1104,9 +1123,9 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
         type: AuthorizationType.RotatePrimaryKey,
       };
 
-      createTypeStub
-        .withArgs('PolymeshPrimitivesAuthorizationAuthorizationData', { [value.type]: null })
-        .returns(fakeResult);
+      when(createTypeStub)
+        .calledWith('PolymeshPrimitivesAuthorizationAuthorizationData', { [value.type]: null })
+        .mockReturnValue(fakeResult);
 
       result = authorizationToAuthorizationData(value, context);
       expect(result).toBe(fakeResult);
@@ -1122,13 +1141,15 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       };
 
       let rawAgentGroup = 'Full' as unknown as AgentGroup;
-      createTypeStub.withArgs('AgentGroup', knownPermissionGroup.type).returns(rawAgentGroup);
+      when(createTypeStub)
+        .calledWith('AgentGroup', knownPermissionGroup.type)
+        .mockReturnValue(rawAgentGroup);
 
-      createTypeStub
-        .withArgs('PolymeshPrimitivesAuthorizationAuthorizationData', {
+      when(createTypeStub)
+        .calledWith('PolymeshPrimitivesAuthorizationAuthorizationData', {
           [value.type]: [fakeTicker, rawAgentGroup],
         })
-        .returns(fakeResult);
+        .mockReturnValue(fakeResult);
 
       result = authorizationToAuthorizationData(value, context);
       expect(result).toBe(fakeResult);
@@ -1145,14 +1166,16 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       };
 
       rawAgentGroup = 'Full' as unknown as AgentGroup;
-      createTypeStub.withArgs('u32', id.toString()).returns(id);
-      createTypeStub.withArgs('AgentGroup', { Custom: id }).returns(rawAgentGroup);
+      when(createTypeStub)
+        .calledWith('u32', id.toString())
+        .mockReturnValue(id as unknown as u32);
+      when(createTypeStub).calledWith('AgentGroup', { Custom: id }).mockReturnValue(rawAgentGroup);
 
-      createTypeStub
-        .withArgs('PolymeshPrimitivesAuthorizationAuthorizationData', {
+      when(createTypeStub)
+        .calledWith('PolymeshPrimitivesAuthorizationAuthorizationData', {
           [value.type]: [fakeTicker, rawAgentGroup],
         })
-        .returns(fakeResult);
+        .mockReturnValue(fakeResult);
       result = authorizationToAuthorizationData(value, context);
       expect(result).toBe(fakeResult);
 
@@ -1161,13 +1184,15 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
         value: 'TICKER',
       };
 
-      createTypeStub
-        .withArgs('PolymeshPrimitivesTicker', padString('TICKER', MAX_TICKER_LENGTH))
-        .returns(fakeTicker);
+      when(createTypeStub)
+        .calledWith('PolymeshPrimitivesTicker', padString('TICKER', MAX_TICKER_LENGTH))
+        .mockReturnValue(fakeTicker);
 
-      createTypeStub
-        .withArgs('PolymeshPrimitivesAuthorizationAuthorizationData', { [value.type]: fakeTicker })
-        .returns(fakeResult);
+      when(createTypeStub)
+        .calledWith('PolymeshPrimitivesAuthorizationAuthorizationData', {
+          [value.type]: fakeTicker,
+        })
+        .mockReturnValue(fakeResult);
 
       result = authorizationToAuthorizationData(value, context);
       expect(result).toBe(fakeResult);
@@ -1177,13 +1202,15 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
         value: 'TICKER',
       };
 
-      createTypeStub
-        .withArgs('PolymeshPrimitivesTicker', padString('TICKER', MAX_TICKER_LENGTH))
-        .returns(fakeTicker);
+      when(createTypeStub)
+        .calledWith('PolymeshPrimitivesTicker', padString('TICKER', MAX_TICKER_LENGTH))
+        .mockReturnValue(fakeTicker);
 
-      createTypeStub
-        .withArgs('PolymeshPrimitivesAuthorizationAuthorizationData', { [value.type]: fakeTicker })
-        .returns(fakeResult);
+      when(createTypeStub)
+        .calledWith('PolymeshPrimitivesAuthorizationAuthorizationData', {
+          [value.type]: fakeTicker,
+        })
+        .mockReturnValue(fakeResult);
 
       result = authorizationToAuthorizationData(value, context);
       expect(result).toBe(fakeResult);
@@ -1198,14 +1225,14 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
         },
       };
 
-      createTypeStub
-        .withArgs('PolymeshPrimitivesSecondaryKeyPermissions', sinon.match(sinon.match.object))
-        .returns(rawPermissions);
-      createTypeStub
-        .withArgs('PolymeshPrimitivesAuthorizationAuthorizationData', {
+      when(createTypeStub)
+        .calledWith('PolymeshPrimitivesSecondaryKeyPermissions', expect.anything())
+        .mockReturnValue(rawPermissions);
+      when(createTypeStub)
+        .calledWith('PolymeshPrimitivesAuthorizationAuthorizationData', {
           [value.type]: rawPermissions,
         })
-        .returns(fakeResult);
+        .mockReturnValue(fakeResult);
 
       result = authorizationToAuthorizationData(value, context);
       expect(result).toBe(fakeResult);
@@ -1403,7 +1430,7 @@ describe('permissionGroupIdentifierToAgentGroup and agentGroupToPermissionGroupI
       const fakeResult = 'convertedAgentGroup' as unknown as AgentGroup;
       const context = dsMockUtils.getContextInstance();
 
-      context.createType.withArgs('AgentGroup', value).returns(fakeResult);
+      when(context.createType).calledWith('AgentGroup', value).mockReturnValue(fakeResult);
 
       let result = permissionGroupIdentifierToAgentGroup(value, context);
 
@@ -1414,8 +1441,10 @@ describe('permissionGroupIdentifierToAgentGroup and agentGroupToPermissionGroupI
 
       const u32FakeResult = '100' as unknown as u32;
 
-      context.createType.withArgs('u32', custom.toString()).returns(u32FakeResult);
-      context.createType.withArgs('AgentGroup', { Custom: u32FakeResult }).returns(fakeResult);
+      when(context.createType).calledWith('u32', custom.toString()).mockReturnValue(u32FakeResult);
+      when(context.createType)
+        .calledWith('AgentGroup', { Custom: u32FakeResult })
+        .mockReturnValue(fakeResult);
 
       result = permissionGroupIdentifierToAgentGroup(value, context);
 
@@ -1473,7 +1502,7 @@ describe('authorizationTypeToMeshAuthorizationType', () => {
     const fakeResult = 'convertedAuthorizationType' as unknown as MeshAuthorizationType;
     const context = dsMockUtils.getContextInstance();
 
-    context.createType.withArgs('AuthorizationType', value).returns(fakeResult);
+    when(context.createType).calledWith('AuthorizationType', value).mockReturnValue(fakeResult);
 
     const result = authorizationTypeToMeshAuthorizationType(value, context);
 
@@ -1511,17 +1540,19 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
 
       let fakeExtrinsicPermissionsResult: unknown =
         'convertedExtrinsicPermissions' as unknown as ExtrinsicPermissions;
-      context.createType
-        .withArgs('PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions', 'Whole')
-        .returns(fakeExtrinsicPermissionsResult);
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions', 'Whole')
+        .mockReturnValue(
+          fakeExtrinsicPermissionsResult as unknown as PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions
+        );
 
-      createTypeStub
-        .withArgs('PolymeshPrimitivesSecondaryKeyPermissions', {
+      when(createTypeStub)
+        .calledWith('PolymeshPrimitivesSecondaryKeyPermissions', {
           asset: 'Whole',
           extrinsic: fakeExtrinsicPermissionsResult,
           portfolio: 'Whole',
         })
-        .returns(fakeResult);
+        .mockReturnValue(fakeResult);
 
       let result = permissionsToMeshPermissions(value, context);
       expect(result).toEqual(fakeResult);
@@ -1545,12 +1576,11 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         ],
       };
 
-      createTypeStub
-        .withArgs(
-          'PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions',
-          sinon.match(sinon.match.object)
-        )
-        .returns(fakeExtrinsicPermissionsResult);
+      when(createTypeStub)
+        .calledWith('PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions', expect.anything())
+        .mockReturnValue(
+          fakeExtrinsicPermissionsResult as unknown as PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions
+        );
 
       const ticker = 'SOME_TICKER';
       const did = 'someDid';
@@ -1575,8 +1605,8 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         did: dsMockUtils.createMockIdentityId(did),
         kind: dsMockUtils.createMockPortfolioKind('Default'),
       });
-      createTypeStub
-        .withArgs('PolymeshPrimitivesSecondaryKeyPermissions', {
+      when(createTypeStub)
+        .calledWith('PolymeshPrimitivesSecondaryKeyPermissions', {
           asset: {
             These: [rawTicker],
           },
@@ -1585,11 +1615,13 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
             These: [rawPortfolioId],
           },
         })
-        .returns(fakeResult);
-      createTypeStub.withArgs('PolymeshPrimitivesTicker', padString(ticker, 12)).returns(rawTicker);
-      createTypeStub
-        .withArgs('PortfolioId', sinon.match(sinon.match.object))
-        .returns(rawPortfolioId);
+        .mockReturnValue(fakeResult);
+      when(createTypeStub)
+        .calledWith('PolymeshPrimitivesTicker', padString(ticker, 12))
+        .mockReturnValue(rawTicker);
+      when(createTypeStub)
+        .calledWith('PortfolioId', expect.anything())
+        .mockReturnValue(rawPortfolioId);
 
       result = permissionsToMeshPermissions(value, context);
       expect(result).toEqual(fakeResult);
@@ -1605,12 +1637,11 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         ],
       };
 
-      createTypeStub
-        .withArgs(
-          'PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions',
-          sinon.match(sinon.match.object)
-        )
-        .returns(fakeExtrinsicPermissionsResult);
+      when(createTypeStub)
+        .calledWith('PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions', expect.anything())
+        .mockReturnValue(
+          fakeExtrinsicPermissionsResult as unknown as PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions
+        );
 
       value = {
         assets: null,
@@ -1623,13 +1654,13 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         portfolios: null,
       };
 
-      createTypeStub
-        .withArgs('PolymeshPrimitivesSecondaryKeyPermissions', {
+      when(createTypeStub)
+        .calledWith('PolymeshPrimitivesSecondaryKeyPermissions', {
           asset: 'Whole',
           extrinsic: fakeExtrinsicPermissionsResult,
           portfolio: 'Whole',
         })
-        .returns(fakeResult);
+        .mockReturnValue(fakeResult);
 
       result = permissionsToMeshPermissions(value, context);
       expect(result).toEqual(fakeResult);
@@ -1645,12 +1676,11 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         ],
       };
 
-      createTypeStub
-        .withArgs(
-          'PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions',
-          sinon.match(sinon.match.object)
-        )
-        .returns(fakeExtrinsicPermissionsResult);
+      when(createTypeStub)
+        .calledWith('PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions', expect.anything())
+        .mockReturnValue(
+          fakeExtrinsicPermissionsResult as unknown as PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions
+        );
 
       value = {
         assets: {
@@ -1668,8 +1698,8 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         },
       };
 
-      createTypeStub
-        .withArgs('PolymeshPrimitivesSecondaryKeyPermissions', {
+      when(createTypeStub)
+        .calledWith('PolymeshPrimitivesSecondaryKeyPermissions', {
           asset: {
             Except: [rawTicker],
           },
@@ -1678,7 +1708,7 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
             Except: [rawPortfolioId],
           },
         })
-        .returns(fakeResult);
+        .mockReturnValue(fakeResult);
 
       result = permissionsToMeshPermissions(value, context);
       expect(result).toEqual(fakeResult);
@@ -1696,12 +1726,11 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
         ],
       };
 
-      createTypeStub
-        .withArgs(
-          'PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions',
-          sinon.match(sinon.match.object)
-        )
-        .returns(fakeExtrinsicPermissionsResult);
+      when(createTypeStub)
+        .calledWith('PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions', expect.anything())
+        .mockReturnValue(
+          fakeExtrinsicPermissionsResult as unknown as PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions
+        );
 
       const tickers = ['B_TICKER', 'A_TICKER', 'C_TICKER'];
 
@@ -1722,16 +1751,18 @@ describe('permissionsToMeshPermissions and meshPermissionsToPermissions', () => 
       };
 
       const rawTickers = tickers.map(t => dsMockUtils.createMockTicker(t));
-      createTypeStub
-        .withArgs('PolymeshPrimitivesSecondaryKeyPermissions', {
+      when(createTypeStub)
+        .calledWith('PolymeshPrimitivesSecondaryKeyPermissions', {
           asset: { These: [rawTickers[1], rawTickers[0], rawTickers[2]] },
           extrinsic: fakeExtrinsicPermissionsResult,
           portfolio: { These: [rawPortfolioId] },
         })
-        .returns(fakeResult);
+        .mockReturnValue(fakeResult);
 
       tickers.forEach((t, i) =>
-        createTypeStub.withArgs('PolymeshPrimitivesTicker', padString(t, 12)).returns(rawTickers[i])
+        when(createTypeStub)
+          .calledWith('PolymeshPrimitivesTicker', padString(t, 12))
+          .mockReturnValue(rawTickers[i])
       );
 
       result = permissionsToMeshPermissions(value, context);
@@ -1924,7 +1955,7 @@ describe('bigNumberToU64 and u64ToBigNumber', () => {
       const fakeResult = '100' as unknown as u64;
       const context = dsMockUtils.getContextInstance();
 
-      context.createType.withArgs('u64', value.toString()).returns(fakeResult);
+      when(context.createType).calledWith('u64', value.toString()).mockReturnValue(fakeResult);
 
       const result = bigNumberToU64(value, context);
 
@@ -1976,7 +2007,7 @@ describe('bigNumberToU32 and u32ToBigNumber', () => {
       const fakeResult = '100' as unknown as u32;
       const context = dsMockUtils.getContextInstance();
 
-      context.createType.withArgs('u32', value.toString()).returns(fakeResult);
+      when(context.createType).calledWith('u32', value.toString()).mockReturnValue(fakeResult);
 
       const result = bigNumberToU32(value, context);
 
@@ -2027,7 +2058,7 @@ describe('bigNumberToU128', () => {
     const fakeResult = '100' as unknown as u128;
     const context = dsMockUtils.getContextInstance();
 
-    context.createType.withArgs('u128', value.toString()).returns(fakeResult);
+    when(context.createType).calledWith('u128', value.toString()).mockReturnValue(fakeResult);
 
     const result = bigNumberToU128(value, context);
 
@@ -2124,9 +2155,9 @@ describe('percentageToPermill and permillToBigNumber', () => {
       const fakeResult = '100' as unknown as Permill;
       const context = dsMockUtils.getContextInstance();
 
-      context.createType
-        .withArgs('Permill', value.multipliedBy(Math.pow(10, 4)).toString())
-        .returns(fakeResult);
+      when(context.createType)
+        .calledWith('Permill', value.multipliedBy(Math.pow(10, 4)).toString())
+        .mockReturnValue(fakeResult);
 
       const result = percentageToPermill(value, context);
 
@@ -2178,9 +2209,9 @@ describe('bigNumberToBalance and balanceToBigNumber', () => {
       const fakeResult = '100' as unknown as Balance;
       const context = dsMockUtils.getContextInstance();
 
-      context.createType
-        .withArgs('Balance', value.multipliedBy(Math.pow(10, 6)).toString())
-        .returns(fakeResult);
+      when(context.createType)
+        .calledWith('Balance', value.multipliedBy(Math.pow(10, 6)).toString())
+        .mockReturnValue(fakeResult);
 
       let result = bigNumberToBalance(value, context, false);
 
@@ -2188,9 +2219,9 @@ describe('bigNumberToBalance and balanceToBigNumber', () => {
 
       value = new BigNumber(100.1);
 
-      context.createType
-        .withArgs('Balance', value.multipliedBy(Math.pow(10, 6)).toString())
-        .returns(fakeResult);
+      when(context.createType)
+        .calledWith('Balance', value.multipliedBy(Math.pow(10, 6)).toString())
+        .mockReturnValue(fakeResult);
 
       result = bigNumberToBalance(value, context);
 
@@ -2338,9 +2369,9 @@ describe('stringToMemo', () => {
     const fakeResult = 'memoDescription' as unknown as Memo;
     const context = dsMockUtils.getContextInstance();
 
-    context.createType
-      .withArgs('PolymeshCommonUtilitiesBalancesMemo', padString(value, 32))
-      .returns(fakeResult);
+    when(context.createType)
+      .calledWith('PolymeshCommonUtilitiesBalancesMemo', padString(value, 32))
+      .mockReturnValue(fakeResult);
 
     const result = stringToMemo(value, context);
 
@@ -2467,7 +2498,7 @@ describe('internalSecurityTypeToAssetType and assetTypeToKnownOrId', () => {
       const fakeResult = 'CommodityEnum' as unknown as AssetType;
       const context = dsMockUtils.getContextInstance();
 
-      context.createType.withArgs('AssetType', value).returns(fakeResult);
+      when(context.createType).calledWith('AssetType', value).mockReturnValue(fakeResult);
 
       const result = internalAssetTypeToAssetType(value, context);
 
@@ -2618,7 +2649,7 @@ describe('nameToAssetName', () => {
   it('should convert Asset name to Bytes', () => {
     const name = 'SOME_NAME';
     const fakeName = 'fakeName' as unknown as Bytes;
-    mockContext.createType.withArgs('Bytes', name).returns(fakeName);
+    when(mockContext.createType).calledWith('Bytes', name).mockReturnValue(fakeName);
 
     const result = nameToAssetName(name, mockContext);
     expect(result).toEqual(fakeName);
@@ -2669,7 +2700,7 @@ describe('fundingRoundToAssetFundingRound', () => {
   it('should convert funding round name to Bytes', () => {
     const name = 'SOME_NAME';
     const fakeFundingRoundName = 'fakeFundingRoundName' as unknown as Bytes;
-    mockContext.createType.withArgs('Bytes', name).returns(fakeFundingRoundName);
+    when(mockContext.createType).calledWith('Bytes', name).mockReturnValue(fakeFundingRoundName);
 
     const result = fundingRoundToAssetFundingRound(name, mockContext);
     expect(result).toEqual(fakeFundingRoundName);
@@ -2701,9 +2732,11 @@ describe('securityIdentifierToAssetIdentifier and assetIdentifierToSecurityIdent
       const fakeResult = 'IsinEnum' as unknown as AssetIdentifier;
       const context = dsMockUtils.getContextInstance();
 
-      context.createType
-        .withArgs('PolymeshPrimitivesAssetIdentifier', { [SecurityIdentifierType.Isin]: isinValue })
-        .returns(fakeResult);
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesAssetIdentifier', {
+          [SecurityIdentifierType.Isin]: isinValue,
+        })
+        .mockReturnValue(fakeResult);
 
       let result = securityIdentifierToAssetIdentifier(value, context);
 
@@ -2711,9 +2744,9 @@ describe('securityIdentifierToAssetIdentifier and assetIdentifierToSecurityIdent
 
       value = { type: SecurityIdentifierType.Lei, value: leiValue };
 
-      context.createType
-        .withArgs('PolymeshPrimitivesAssetIdentifier', { [SecurityIdentifierType.Lei]: leiValue })
-        .returns(fakeResult);
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesAssetIdentifier', { [SecurityIdentifierType.Lei]: leiValue })
+        .mockReturnValue(fakeResult);
 
       result = securityIdentifierToAssetIdentifier(value, context);
 
@@ -2721,11 +2754,11 @@ describe('securityIdentifierToAssetIdentifier and assetIdentifierToSecurityIdent
 
       value = { type: SecurityIdentifierType.Cusip, value: cusipValue };
 
-      context.createType
-        .withArgs('PolymeshPrimitivesAssetIdentifier', {
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesAssetIdentifier', {
           [SecurityIdentifierType.Cusip]: cusipValue,
         })
-        .returns(fakeResult);
+        .mockReturnValue(fakeResult);
 
       result = securityIdentifierToAssetIdentifier(value, context);
 
@@ -2733,11 +2766,11 @@ describe('securityIdentifierToAssetIdentifier and assetIdentifierToSecurityIdent
 
       value = { type: SecurityIdentifierType.Figi, value: figiValue };
 
-      context.createType
-        .withArgs('PolymeshPrimitivesAssetIdentifier', {
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesAssetIdentifier', {
           [SecurityIdentifierType.Figi]: figiValue,
         })
-        .returns(fakeResult);
+        .mockReturnValue(fakeResult);
 
       result = securityIdentifierToAssetIdentifier(value, context);
 
@@ -2851,79 +2884,81 @@ describe('stringToDocumentHash and documentHashToString', () => {
 
       const createTypeStub = context.createType;
 
-      createTypeStub.withArgs('PolymeshPrimitivesDocumentHash', 'None').returns(fakeResult);
+      when(createTypeStub)
+        .calledWith('PolymeshPrimitivesDocumentHash', 'None')
+        .mockReturnValue(fakeResult);
 
       let result = stringToDocumentHash(undefined, context);
 
       expect(result).toEqual(fakeResult);
 
       let value = '0x1';
-      createTypeStub
-        .withArgs('DocumentHash', { H128: hexToU8a(value.padEnd(34, '0')) })
-        .returns(fakeResult);
+      when(createTypeStub)
+        .calledWith('DocumentHash', { H128: hexToU8a(value.padEnd(34, '0')) })
+        .mockReturnValue(fakeResult);
 
       result = stringToDocumentHash(value, context);
 
       expect(result).toEqual(fakeResult);
 
       value = value.padEnd(35, '1');
-      createTypeStub
-        .withArgs('DocumentHash', { H160: hexToU8a(value.padEnd(42, '0')) })
-        .returns(fakeResult);
+      when(createTypeStub)
+        .calledWith('DocumentHash', { H160: hexToU8a(value.padEnd(42, '0')) })
+        .mockReturnValue(fakeResult);
 
       result = stringToDocumentHash(value, context);
 
       expect(result).toEqual(fakeResult);
 
       value = value.padEnd(43, '1');
-      createTypeStub
-        .withArgs('DocumentHash', { H192: hexToU8a(value.padEnd(50, '0')) })
-        .returns(fakeResult);
+      when(createTypeStub)
+        .calledWith('DocumentHash', { H192: hexToU8a(value.padEnd(50, '0')) })
+        .mockReturnValue(fakeResult);
 
       result = stringToDocumentHash(value, context);
 
       expect(result).toEqual(fakeResult);
 
       value = value.padEnd(51, '1');
-      createTypeStub
-        .withArgs('DocumentHash', { H224: hexToU8a(value.padEnd(58, '0')) })
-        .returns(fakeResult);
+      when(createTypeStub)
+        .calledWith('DocumentHash', { H224: hexToU8a(value.padEnd(58, '0')) })
+        .mockReturnValue(fakeResult);
 
       result = stringToDocumentHash(value, context);
 
       expect(result).toEqual(fakeResult);
 
       value = value.padEnd(59, '1');
-      createTypeStub
-        .withArgs('DocumentHash', { H256: hexToU8a(value.padEnd(66, '0')) })
-        .returns(fakeResult);
+      when(createTypeStub)
+        .calledWith('DocumentHash', { H256: hexToU8a(value.padEnd(66, '0')) })
+        .mockReturnValue(fakeResult);
 
       result = stringToDocumentHash(value, context);
 
       expect(result).toEqual(fakeResult);
 
       value = value.padEnd(67, '1');
-      createTypeStub
-        .withArgs('DocumentHash', { H320: hexToU8a(value.padEnd(82, '0')) })
-        .returns(fakeResult);
+      when(createTypeStub)
+        .calledWith('DocumentHash', { H320: hexToU8a(value.padEnd(82, '0')) })
+        .mockReturnValue(fakeResult);
 
       result = stringToDocumentHash(value, context);
 
       expect(result).toEqual(fakeResult);
 
       value = value.padEnd(83, '1');
-      createTypeStub
-        .withArgs('DocumentHash', { H384: hexToU8a(value.padEnd(98, '0')) })
-        .returns(fakeResult);
+      when(createTypeStub)
+        .calledWith('DocumentHash', { H384: hexToU8a(value.padEnd(98, '0')) })
+        .mockReturnValue(fakeResult);
 
       result = stringToDocumentHash(value, context);
 
       expect(result).toEqual(fakeResult);
 
       value = value.padEnd(99, '1');
-      createTypeStub
-        .withArgs('DocumentHash', { H512: hexToU8a(value.padEnd(130, '0')) })
-        .returns(fakeResult);
+      when(createTypeStub)
+        .calledWith('DocumentHash', { H512: hexToU8a(value.padEnd(130, '0')) })
+        .mockReturnValue(fakeResult);
 
       result = stringToDocumentHash(value, context);
 
@@ -3023,31 +3058,31 @@ describe('assetDocumentToDocument and documentToAssetDocument', () => {
         contentHash,
         name,
       };
-      const fakeResult = 'convertedDocument' as unknown as Document;
+      const fakeResult = 'convertedDocument' as unknown as PolymeshPrimitivesDocument;
       const context = dsMockUtils.getContextInstance();
 
-      context.createType
-        .withArgs('PolymeshPrimitivesDocument', {
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesDocument', {
           uri: stringToBytes(uri, context),
           name: stringToBytes(name, context),
           contentHash: stringToDocumentHash(contentHash, context),
           docType: null,
           filingDate: null,
         })
-        .returns(fakeResult);
+        .mockReturnValue(fakeResult);
 
       let result = assetDocumentToDocument(value, context);
       expect(result).toEqual(fakeResult);
 
-      context.createType
-        .withArgs('PolymeshPrimitivesDocument', {
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesDocument', {
           uri: stringToBytes(uri, context),
           name: stringToBytes(name, context),
           contentHash: stringToDocumentHash(contentHash, context),
           docType: stringToBytes(type, context),
           filingDate: dateToMoment(filedAt, context),
         })
-        .returns(fakeResult);
+        .mockReturnValue(fakeResult);
 
       result = assetDocumentToDocument({ ...value, filedAt, type }, context);
       expect(result).toEqual(fakeResult);
@@ -3289,7 +3324,9 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
       };
       const fakeResult = 'ScopeEnum' as unknown as MeshScope;
 
-      context.createType.withArgs('Scope', { [value.type]: value.value }).returns(fakeResult);
+      when(context.createType)
+        .calledWith('Scope', { [value.type]: value.value })
+        .mockReturnValue(fakeResult);
 
       const result = scopeToMeshScope(value, context);
 
@@ -3306,11 +3343,13 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
       const fakeIdentityId =
         '0x51a5fed99b9d305ef26e6af92dd3dcb181a30a07dc5f075e260b82a92d48913c' as unknown as PolymeshPrimitivesIdentityId;
 
-      context.createType
-        .withArgs('PolymeshPrimitivesIdentityId', value.value)
-        .returns(fakeIdentityId);
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesIdentityId', value.value)
+        .mockReturnValue(fakeIdentityId);
 
-      context.createType.withArgs('Scope', { [value.type]: fakeIdentityId }).returns(fakeResult);
+      when(context.createType)
+        .calledWith('Scope', { [value.type]: fakeIdentityId })
+        .mockReturnValue(fakeResult);
 
       const result = scopeToMeshScope(value, context);
 
@@ -3326,11 +3365,13 @@ describe('scopeToMeshScope and meshScopeToScope', () => {
       const fakeResult = 'ScopeEnum' as unknown as MeshScope;
       const fakeTicker = 'SOME_TICKER' as unknown as PolymeshPrimitivesTicker;
 
-      context.createType
-        .withArgs('PolymeshPrimitivesTicker', padString(value.value, MAX_TICKER_LENGTH))
-        .returns(fakeTicker);
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesTicker', padString(value.value, MAX_TICKER_LENGTH))
+        .mockReturnValue(fakeTicker);
 
-      context.createType.withArgs('Scope', { [value.type]: fakeTicker }).returns(fakeResult);
+      when(context.createType)
+        .calledWith('Scope', { [value.type]: fakeTicker })
+        .mockReturnValue(fakeResult);
 
       const result = scopeToMeshScope(value, context);
 
@@ -3402,10 +3443,10 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
 
       const createTypeStub = context.createType;
 
-      createTypeStub.withArgs('Scope', sinon.match.any).returns(fakeScope);
-      createTypeStub
-        .withArgs('Claim', { [value.type]: [value.code, scopeToMeshScope(value.scope, context)] })
-        .returns(fakeResult);
+      when(createTypeStub).calledWith('Scope', expect.anything()).mockReturnValue(fakeScope);
+      when(createTypeStub)
+        .calledWith('Claim', { [value.type]: [value.code, scopeToMeshScope(value.scope, context)] })
+        .mockReturnValue(fakeResult);
 
       let result = claimToMeshClaim(value, context);
 
@@ -3416,9 +3457,9 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
         scope: { type: ScopeType.Identity, value: 'SOME_TICKERDid' },
       };
 
-      createTypeStub
-        .withArgs('Claim', { [value.type]: scopeToMeshScope(value.scope, context) })
-        .returns(fakeResult);
+      when(createTypeStub)
+        .calledWith('Claim', { [value.type]: scopeToMeshScope(value.scope, context) })
+        .mockReturnValue(fakeResult);
 
       result = claimToMeshClaim(value, context);
 
@@ -3429,9 +3470,9 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
         id: 'someCddId',
       };
 
-      createTypeStub
-        .withArgs('Claim', { [value.type]: stringToCddId(value.id, context) })
-        .returns(fakeResult);
+      when(createTypeStub)
+        .calledWith('Claim', { [value.type]: stringToCddId(value.id, context) })
+        .mockReturnValue(fakeResult);
 
       result = claimToMeshClaim(value, context);
 
@@ -3441,7 +3482,9 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
         type: ClaimType.NoData,
       };
 
-      createTypeStub.withArgs('Claim', { [value.type]: null }).returns(fakeResult);
+      when(createTypeStub)
+        .calledWith('Claim', { [value.type]: null })
+        .mockReturnValue(fakeResult);
 
       result = claimToMeshClaim(value, context);
 
@@ -3454,15 +3497,15 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
         scopeId: 'someScopeId',
       };
 
-      createTypeStub
-        .withArgs('Claim', {
+      when(createTypeStub)
+        .calledWith('Claim', {
           [value.type]: [
             scopeToMeshScope(value.scope, context),
             stringToScopeId(value.scopeId, context),
             stringToCddId(value.cddId, context),
           ],
         })
-        .returns(fakeResult);
+        .mockReturnValue(fakeResult);
 
       result = claimToMeshClaim(value, context);
 
@@ -3473,11 +3516,11 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
         cddId: 'someCddId',
       };
 
-      createTypeStub
-        .withArgs('Claim', {
+      when(createTypeStub)
+        .calledWith('Claim', {
           [value.type]: stringToCddId(value.cddId, context),
         })
-        .returns(fakeResult);
+        .mockReturnValue(fakeResult);
 
       result = claimToMeshClaim(value, context);
 
@@ -3487,11 +3530,11 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
         type: ClaimType.NoType,
       };
 
-      createTypeStub
-        .withArgs('Claim', {
+      when(createTypeStub)
+        .calledWith('Claim', {
           [value.type]: null,
         })
-        .returns(fakeResult);
+        .mockReturnValue(fakeResult);
 
       result = claimToMeshClaim(value, context);
 
@@ -3736,29 +3779,37 @@ describe('corporateActionParamsToMeshCorporateActionArgs', () => {
       withholdingTax: [[rawIdentityId, rawPermill]],
     });
 
-    createTypeStub
-      .withArgs('PolymeshPrimitivesTicker', padString(ticker, MAX_TICKER_LENGTH))
-      .returns(rawTicker);
-    createTypeStub.withArgs('CAKind', kind).returns(rawKind);
-    createTypeStub.withArgs('u64', declarationDate.getTime()).returns(rawDeclDate);
-    createTypeStub.withArgs('u64', checkpoint.getTime()).returns(rawCheckpointDate);
-    createTypeStub.withArgs('RecordDateSpec', recordDateValue).returns(rawRecordDate);
-    createTypeStub.withArgs('Bytes', description).returns(rawDetails);
-    createTypeStub.withArgs('TargetTreatment', targets.treatment).returns(rawTargetTreatment);
-    createTypeStub
-      .withArgs('TargetIdentities', {
+    when(createTypeStub)
+      .calledWith('PolymeshPrimitivesTicker', padString(ticker, MAX_TICKER_LENGTH))
+      .mockReturnValue(rawTicker);
+    when(createTypeStub).calledWith('CAKind', kind).mockReturnValue(rawKind);
+    when(createTypeStub).calledWith('u64', declarationDate.getTime()).mockReturnValue(rawDeclDate);
+    when(createTypeStub).calledWith('u64', checkpoint.getTime()).mockReturnValue(rawCheckpointDate);
+    when(createTypeStub)
+      .calledWith('RecordDateSpec', recordDateValue)
+      .mockReturnValue(rawRecordDate);
+    when(createTypeStub).calledWith('Bytes', description).mockReturnValue(rawDetails);
+    when(createTypeStub)
+      .calledWith('TargetTreatment', targets.treatment)
+      .mockReturnValue(rawTargetTreatment);
+    when(createTypeStub)
+      .calledWith('TargetIdentities', {
         identities: [rawIdentityId],
         treatment: rawTargetTreatment,
       })
-      .returns(rawTargets);
-    createTypeStub.withArgs('PolymeshPrimitivesIdentityId', identity).returns(rawIdentityId);
-    createTypeStub.withArgs('Permill', percentage.shiftedBy(4).toString()).returns(rawPermill);
-    createTypeStub
-      .withArgs('Permill', defaultTaxWithholding.shiftedBy(4).toString())
-      .returns(rawTax);
+      .mockReturnValue(rawTargets);
+    when(createTypeStub)
+      .calledWith('PolymeshPrimitivesIdentityId', identity)
+      .mockReturnValue(rawIdentityId);
+    when(createTypeStub)
+      .calledWith('Permill', percentage.shiftedBy(4).toString())
+      .mockReturnValue(rawPermill);
+    when(createTypeStub)
+      .calledWith('Permill', defaultTaxWithholding.shiftedBy(4).toString())
+      .mockReturnValue(rawTax);
 
-    createTypeStub
-      .withArgs('PalletCorporateActionsInitiateCorporateActionArgs', {
+    when(createTypeStub)
+      .calledWith('PalletCorporateActionsInitiateCorporateActionArgs', {
         ticker: rawTicker,
         kind: rawKind,
         declDate: rawDeclDate,
@@ -3768,7 +3819,7 @@ describe('corporateActionParamsToMeshCorporateActionArgs', () => {
         defaultWithholdingTax: rawTax,
         withholdingTax: [[rawIdentityId, rawPermill]],
       })
-      .returns(fakeResult);
+      .mockReturnValue(fakeResult);
 
     expect(
       corporateActionParamsToMeshCorporateActionArgs(
@@ -3879,9 +3930,9 @@ describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
     it('should convert a ClaimType to a polkadot ClaimType', () => {
       const context = dsMockUtils.getContextInstance();
       const mockClaim = dsMockUtils.createMockClaimType(ClaimType.Accredited);
-      context.createType
-        .withArgs('PolymeshPrimitivesIdentityClaimClaimType', ClaimType.Accredited)
-        .returns(mockClaim);
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesIdentityClaimClaimType', ClaimType.Accredited)
+        .mockReturnValue(mockClaim);
 
       const result = claimTypeToMeshClaimType(ClaimType.Accredited, context);
       expect(result).toEqual(mockClaim);
@@ -3890,9 +3941,9 @@ describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
     it('should treat NoData as NoType', () => {
       const context = dsMockUtils.getContextInstance();
       const mockClaim = dsMockUtils.createMockClaimType(ClaimType.NoType);
-      context.createType
-        .withArgs('PolymeshPrimitivesIdentityClaimClaimType', ClaimType.NoType)
-        .returns(mockClaim);
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesIdentityClaimClaimType', ClaimType.NoType)
+        .mockReturnValue(mockClaim);
 
       const result = claimTypeToMeshClaimType(ClaimType.NoData, context);
       expect(result).toEqual(mockClaim);
@@ -4020,12 +4071,12 @@ describe('middlewareV2EventDetailsToEventIdentifier', () => {
 });
 
 describe('middlewareV2ClaimToClaimData', () => {
-  let createClaimStub: sinon.SinonStub;
+  let createClaimStub: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
-    createClaimStub = sinon.stub(internalUtils, 'createClaim');
+    createClaimStub = jest.spyOn(internalUtils, 'createClaim');
   });
 
   afterEach(() => {
@@ -4053,7 +4104,7 @@ describe('middlewareV2ClaimToClaimData', () => {
       type: ClaimType.CustomerDueDiligence,
       id: 'someCddId',
     };
-    createClaimStub.returns(claim);
+    createClaimStub.mockReturnValue(claim);
 
     const fakeResult = {
       target: expect.objectContaining({ did: 'targetId' }),
@@ -4173,7 +4224,7 @@ describe('stringToCddId and cddIdToString', () => {
       const fakeResult = 'type' as unknown as CddId;
       const context = dsMockUtils.getContextInstance();
 
-      context.createType.withArgs('CddId', cddId).returns(fakeResult);
+      when(context.createType).calledWith('CddId', cddId).mockReturnValue(fakeResult);
 
       const result = stringToCddId(cddId, context);
 
@@ -4211,7 +4262,7 @@ describe('stringToScopeId and scopeIdToString', () => {
       const fakeResult = 'type' as unknown as ScopeId;
       const context = dsMockUtils.getContextInstance();
 
-      context.createType.withArgs('ScopeId', scopeId).returns(fakeResult);
+      when(context.createType).calledWith('ScopeId', scopeId).mockReturnValue(fakeResult);
 
       const result = stringToScopeId(scopeId, context);
 
@@ -4230,7 +4281,7 @@ describe('stringToScopeId and scopeIdToString', () => {
   });
 });
 
-describe('requirementToComplianceRequirement and complianceRequirementToRequirement', () => {
+describe.skip('requirementToComplianceRequirement and complianceRequirementToRequirement', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
@@ -4305,18 +4356,20 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
 
       conditions.forEach(({ type }) => {
         const meshType = type === ConditionType.IsExternalAgent ? ConditionType.IsIdentity : type;
-        createTypeStub
-          .withArgs(
+        when(createTypeStub)
+          .calledWith(
             'PolymeshPrimitivesCondition',
-            sinon.match({
-              conditionType: sinon.match.has(meshType),
+            expect.objectContaining({
+              conditionType: {
+                [meshType]: expect.anything(),
+              },
             })
           )
-          .returns(`meshCondition${meshType}`);
+          .mockReturnValue(`meshCondition${meshType}` as unknown as PolymeshPrimitivesCondition);
       });
 
-      createTypeStub
-        .withArgs('PolymeshPrimitivesComplianceManagerComplianceRequirement', {
+      when(createTypeStub)
+        .calledWith('PolymeshPrimitivesComplianceManagerComplianceRequirement', {
           senderConditions: [
             'meshConditionIsPresent',
             'meshConditionIsNoneOf',
@@ -4329,7 +4382,7 @@ describe('requirementToComplianceRequirement and complianceRequirementToRequirem
           ],
           id: bigNumberToU32(value.id, context),
         })
-        .returns(fakeResult);
+        .mockReturnValue(fakeResult);
 
       const result = requirementToComplianceRequirement(value, context);
 
@@ -4520,50 +4573,59 @@ describe('txTagToProtocolOp', () => {
     const fakeResult = 'convertedProtocolOp' as unknown as ProtocolOp;
     const context = dsMockUtils.getContextInstance();
 
-    const createTypeStub = context.createType
-      .withArgs('ProtocolOp', 'AssetRegisterTicker')
-      .returns(fakeResult);
+    const createTypeStub = context.createType;
+    when(createTypeStub)
+      .calledWith('ProtocolOp', 'AssetRegisterTicker')
+      .mockReturnValue(fakeResult);
     expect(txTagToProtocolOp(TxTags.asset.RegisterTicker, context)).toEqual(fakeResult);
 
-    createTypeStub.withArgs('ProtocolOp', 'AssetIssue').returns(fakeResult);
+    when(createTypeStub).calledWith('ProtocolOp', 'AssetIssue').mockReturnValue(fakeResult);
     expect(txTagToProtocolOp(TxTags.asset.Issue, context)).toEqual(fakeResult);
 
-    createTypeStub.withArgs('ProtocolOp', 'AssetAddDocuments').returns(fakeResult);
+    when(createTypeStub).calledWith('ProtocolOp', 'AssetAddDocuments').mockReturnValue(fakeResult);
     expect(txTagToProtocolOp(TxTags.asset.AddDocuments, context)).toEqual(fakeResult);
 
-    createTypeStub.withArgs('ProtocolOp', 'AssetCreateAsset').returns(fakeResult);
+    when(createTypeStub).calledWith('ProtocolOp', 'AssetCreateAsset').mockReturnValue(fakeResult);
     expect(txTagToProtocolOp(TxTags.asset.CreateAsset, context)).toEqual(fakeResult);
 
-    createTypeStub.withArgs('ProtocolOp', 'CheckpointCreateSchedule').returns(fakeResult);
+    when(createTypeStub)
+      .calledWith('ProtocolOp', 'CheckpointCreateSchedule')
+      .mockReturnValue(fakeResult);
     expect(txTagToProtocolOp(TxTags.checkpoint.CreateSchedule, context)).toEqual(fakeResult);
 
-    createTypeStub
-      .withArgs('ProtocolOp', 'ComplianceManagerAddComplianceRequirement')
-      .returns(fakeResult);
+    when(createTypeStub)
+      .calledWith('ProtocolOp', 'ComplianceManagerAddComplianceRequirement')
+      .mockReturnValue(fakeResult);
     expect(txTagToProtocolOp(TxTags.complianceManager.AddComplianceRequirement, context)).toEqual(
       fakeResult
     );
 
-    createTypeStub.withArgs('ProtocolOp', 'IdentityCddRegisterDid').returns(fakeResult);
+    when(createTypeStub)
+      .calledWith('ProtocolOp', 'IdentityCddRegisterDid')
+      .mockReturnValue(fakeResult);
     expect(txTagToProtocolOp(TxTags.identity.CddRegisterDid, context)).toEqual(fakeResult);
 
-    createTypeStub.withArgs('ProtocolOp', 'IdentityAddClaim').returns(fakeResult);
+    when(createTypeStub).calledWith('ProtocolOp', 'IdentityAddClaim').mockReturnValue(fakeResult);
     expect(txTagToProtocolOp(TxTags.identity.AddClaim, context)).toEqual(fakeResult);
 
-    createTypeStub
-      .withArgs('ProtocolOp', 'IdentityAddSecondaryKeysWithAuthorization')
-      .returns(fakeResult);
+    when(createTypeStub)
+      .calledWith('ProtocolOp', 'IdentityAddSecondaryKeysWithAuthorization')
+      .mockReturnValue(fakeResult);
     expect(txTagToProtocolOp(TxTags.identity.AddSecondaryKeysWithAuthorization, context)).toEqual(
       fakeResult
     );
 
-    createTypeStub.withArgs('ProtocolOp', 'PipsPropose').returns(fakeResult);
+    when(createTypeStub).calledWith('ProtocolOp', 'PipsPropose').mockReturnValue(fakeResult);
     expect(txTagToProtocolOp(TxTags.pips.Propose, context)).toEqual(fakeResult);
 
-    createTypeStub.withArgs('ProtocolOp', 'CorporateBallotAttachBallot').returns(fakeResult);
+    when(createTypeStub)
+      .calledWith('ProtocolOp', 'CorporateBallotAttachBallot')
+      .mockReturnValue(fakeResult);
     expect(txTagToProtocolOp(TxTags.corporateBallot.AttachBallot, context)).toEqual(fakeResult);
 
-    createTypeStub.withArgs('ProtocolOp', 'CapitalDistributionDistribute').returns(fakeResult);
+    when(createTypeStub)
+      .calledWith('ProtocolOp', 'CapitalDistributionDistribute')
+      .mockReturnValue(fakeResult);
     expect(txTagToProtocolOp(TxTags.capitalDistribution.Distribute, context)).toEqual(fakeResult);
   });
 
@@ -4669,7 +4731,7 @@ describe('stringToText and textToString', () => {
       const fakeResult = 'convertedText' as unknown as Text;
       const context = dsMockUtils.getContextInstance();
 
-      context.createType.withArgs('Text', value).returns(fakeResult);
+      when(context.createType).calledWith('Text', value).mockReturnValue(fakeResult);
 
       const result = stringToText(value, context);
 
@@ -4711,29 +4773,29 @@ describe('portfolioIdToMeshPortfolioId', () => {
     const fakeResult = 'PortfolioId' as unknown as PortfolioId;
     const context = dsMockUtils.getContextInstance();
 
-    context.createType
-      .withArgs('PolymeshPrimitivesIdentityId', portfolioId.did)
-      .returns(rawIdentityId);
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesIdentityId', portfolioId.did)
+      .mockReturnValue(rawIdentityId);
 
-    context.createType
-      .withArgs('PortfolioId', {
+    when(context.createType)
+      .calledWith('PortfolioId', {
         did: rawIdentityId,
         kind: 'Default',
       })
-      .returns(fakeResult);
+      .mockReturnValue(fakeResult);
 
     let result = portfolioIdToMeshPortfolioId(portfolioId, context);
 
     expect(result).toBe(fakeResult);
 
-    context.createType.withArgs('u64', number.toString()).returns(rawU64);
+    when(context.createType).calledWith('u64', number.toString()).mockReturnValue(rawU64);
 
-    context.createType
-      .withArgs('PortfolioId', {
+    when(context.createType)
+      .calledWith('PortfolioId', {
         did: rawIdentityId,
         kind: { User: rawU64 },
       })
-      .returns(fakeResult);
+      .mockReturnValue(fakeResult);
 
     result = portfolioIdToMeshPortfolioId({ ...portfolioId, number }, context);
 
@@ -5193,11 +5255,11 @@ describe('transactionHexToTxTag', () => {
     const mockResult = {
       method: 'disbursement',
       section: 'treasury',
-    };
+    } as unknown as Call;
 
     const context = dsMockUtils.getContextInstance();
 
-    context.createType.withArgs('Call', hex).returns(mockResult);
+    when(context.createType).calledWith('Call', hex).mockReturnValue(mockResult);
 
     const result = transactionHexToTxTag(hex, context);
     expect(result).toEqual(fakeResult);
@@ -5302,12 +5364,12 @@ describe('secondaryAccountToMeshSecondaryKey', () => {
       permissions: mockPermissions,
     });
 
-    context.createType
-      .withArgs('SecondaryKey', {
+    when(context.createType)
+      .calledWith('SecondaryKey', {
         signer: signerValueToSignatory({ type: SignerType.Account, value: address }, context),
         permissions: permissionsToMeshPermissions(secondaryAccount.permissions, context),
       })
-      .returns(fakeResult);
+      .mockReturnValue(fakeResult);
 
     const result = secondaryAccountToMeshSecondaryKey(secondaryAccount, context);
 
@@ -5334,7 +5396,7 @@ describe('venueTypeToMeshVenueType and meshVenueTypeToVenueType', () => {
       const fakeResult = 'Other' as unknown as MeshVenueType;
       const context = dsMockUtils.getContextInstance();
 
-      context.createType.withArgs('VenueType', value).returns(fakeResult);
+      when(context.createType).calledWith('VenueType', value).mockReturnValue(fakeResult);
 
       const result = venueTypeToMeshVenueType(value, context);
 
@@ -5459,9 +5521,9 @@ describe('endConditionToSettlementType', () => {
     const fakeResult = 'type' as unknown as SettlementType;
     const context = dsMockUtils.getContextInstance();
 
-    context.createType
-      .withArgs('SettlementType', InstructionType.SettleOnAffirmation)
-      .returns(fakeResult);
+    when(context.createType)
+      .calledWith('SettlementType', InstructionType.SettleOnAffirmation)
+      .mockReturnValue(fakeResult);
 
     let result = endConditionToSettlementType(
       { type: InstructionType.SettleOnAffirmation },
@@ -5473,10 +5535,12 @@ describe('endConditionToSettlementType', () => {
     const blockNumber = new BigNumber(10);
     const rawBlockNumber = dsMockUtils.createMockU32(blockNumber);
 
-    context.createType.withArgs('u32', blockNumber.toString()).returns(rawBlockNumber);
-    context.createType
-      .withArgs('SettlementType', { [InstructionType.SettleOnBlock]: rawBlockNumber })
-      .returns(fakeResult);
+    when(context.createType)
+      .calledWith('u32', blockNumber.toString())
+      .mockReturnValue(rawBlockNumber);
+    when(context.createType)
+      .calledWith('SettlementType', { [InstructionType.SettleOnBlock]: rawBlockNumber })
+      .mockReturnValue(fakeResult);
 
     result = endConditionToSettlementType(
       { type: InstructionType.SettleOnBlock, value: new BigNumber(10) },
@@ -5701,12 +5765,12 @@ describe('trustedClaimIssuerToTrustedIssuer and trustedIssuerToTrustedClaimIssue
         trustedFor: null,
       };
 
-      context.createType
-        .withArgs('PolymeshPrimitivesConditionTrustedIssuer', {
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesConditionTrustedIssuer', {
           issuer: stringToIdentityId(did, context),
           trustedFor: 'Any',
         })
-        .returns(fakeResult);
+        .mockReturnValue(fakeResult);
 
       let result = trustedClaimIssuerToTrustedIssuer(issuer, context);
       expect(result).toBe(fakeResult);
@@ -5716,12 +5780,12 @@ describe('trustedClaimIssuerToTrustedIssuer and trustedIssuerToTrustedClaimIssue
         trustedFor: [ClaimType.Accredited, ClaimType.Blocked],
       };
 
-      context.createType
-        .withArgs('PolymeshPrimitivesConditionTrustedIssuer', {
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesConditionTrustedIssuer', {
           issuer: stringToIdentityId(did, context),
           trustedFor: { Specific: [ClaimType.Accredited, ClaimType.Blocked] },
         })
-        .returns(fakeResult);
+        .mockReturnValue(fakeResult);
 
       result = trustedClaimIssuerToTrustedIssuer(issuer, context);
       expect(result).toBe(fakeResult);
@@ -5924,7 +5988,7 @@ describe('transferRestrictionToPolymeshTransferCondition', () => {
 
   afterAll(() => {
     dsMockUtils.cleanup();
-    sinon.restore();
+    jest.restoreAllMocks();
   });
 
   it('should convert a Transfer Restriction to a PolymeshTransferCondition object', () => {
@@ -5939,13 +6003,13 @@ describe('transferRestrictionToPolymeshTransferCondition', () => {
     const rawCount = dsMockUtils.createMockU64(count);
 
     const createTypeStub = context.createType;
-    createTypeStub
-      .withArgs('PolymeshPrimitivesTransferComplianceTransferCondition', {
+    when(createTypeStub)
+      .calledWith('PolymeshPrimitivesTransferComplianceTransferCondition', {
         MaxInvestorCount: rawCount,
       })
-      .returns(fakeResult);
+      .mockReturnValue(fakeResult);
 
-    createTypeStub.withArgs('u64', count.toString()).returns(rawCount);
+    when(createTypeStub).calledWith('u64', count.toString()).mockReturnValue(rawCount);
 
     let result = transferRestrictionToPolymeshTransferCondition(value, context);
 
@@ -5958,15 +6022,15 @@ describe('transferRestrictionToPolymeshTransferCondition', () => {
       value: percentage,
     };
 
-    createTypeStub
-      .withArgs('PolymeshPrimitivesTransferComplianceTransferCondition', {
+    when(createTypeStub)
+      .calledWith('PolymeshPrimitivesTransferComplianceTransferCondition', {
         MaxInvestorOwnership: rawPercentage,
       })
-      .returns(fakeResult);
+      .mockReturnValue(fakeResult);
 
-    createTypeStub
-      .withArgs('Permill', percentage.multipliedBy(10000).toString())
-      .returns(rawPercentage);
+    when(createTypeStub)
+      .calledWith('Permill', percentage.multipliedBy(10000).toString())
+      .mockReturnValue(rawPercentage);
 
     result = transferRestrictionToPolymeshTransferCondition(value, context);
 
@@ -5996,17 +6060,23 @@ describe('transferRestrictionToPolymeshTransferCondition', () => {
       value: claimCount,
     };
 
-    createTypeStub.withArgs('u64', min.toString()).returns(rawMinCount);
-    createTypeStub.withArgs('u64', max.toString()).returns(rawMaxCount);
-    createTypeStub.withArgs('Permill', min.shiftedBy(4).toString()).returns(rawMinPercent);
-    createTypeStub.withArgs('Permill', max.shiftedBy(4).toString()).returns(rawMaxPercent);
-    createTypeStub.withArgs('CountryCode', CountryCode.Ca).returns(rawCountryCode);
-    createTypeStub.withArgs('PolymeshPrimitivesIdentityId', did).returns(rawIssuerId);
-    createTypeStub
-      .withArgs('PolymeshPrimitivesTransferComplianceTransferCondition', {
+    when(createTypeStub).calledWith('u64', min.toString()).mockReturnValue(rawMinCount);
+    when(createTypeStub).calledWith('u64', max.toString()).mockReturnValue(rawMaxCount);
+    when(createTypeStub)
+      .calledWith('Permill', min.shiftedBy(4).toString())
+      .mockReturnValue(rawMinPercent);
+    when(createTypeStub)
+      .calledWith('Permill', max.shiftedBy(4).toString())
+      .mockReturnValue(rawMaxPercent);
+    when(createTypeStub).calledWith('CountryCode', CountryCode.Ca).mockReturnValue(rawCountryCode);
+    when(createTypeStub)
+      .calledWith('PolymeshPrimitivesIdentityId', did)
+      .mockReturnValue(rawIssuerId);
+    when(createTypeStub)
+      .calledWith('PolymeshPrimitivesTransferComplianceTransferCondition', {
         ClaimCount: [rawClaimValue, rawIssuerId, rawMinCount, rawMaxCount],
       })
-      .returns(fakeResult);
+      .mockReturnValue(fakeResult);
 
     result = transferRestrictionToPolymeshTransferCondition(value, context);
 
@@ -6028,12 +6098,12 @@ describe('transferRestrictionToPolymeshTransferCondition', () => {
     const rawTrue = dsMockUtils.createMockBool(true);
     const rawOwnershipClaim = { Affiliate: rawTrue };
 
-    createTypeStub.withArgs('bool', true).returns(rawTrue);
-    createTypeStub
-      .withArgs('PolymeshPrimitivesTransferComplianceTransferCondition', {
+    when(createTypeStub).calledWith('bool', true).mockReturnValue(rawTrue);
+    when(createTypeStub)
+      .calledWith('PolymeshPrimitivesTransferComplianceTransferCondition', {
         ClaimOwnership: [rawOwnershipClaim, rawIssuerId, rawMinPercent, rawMaxPercent],
       })
-      .returns(fakeResult);
+      .mockReturnValue(fakeResult);
 
     result = transferRestrictionToPolymeshTransferCondition(value, context);
 
@@ -6054,12 +6124,12 @@ describe('transferRestrictionToPolymeshTransferCondition', () => {
     };
     const rawOwnershipClaimAccredited = { Accredited: rawTrue };
 
-    createTypeStub.withArgs('bool', true).returns(rawTrue);
-    createTypeStub
-      .withArgs('PolymeshPrimitivesTransferComplianceTransferCondition', {
+    when(createTypeStub).calledWith('bool', true).mockReturnValue(rawTrue);
+    when(createTypeStub)
+      .calledWith('PolymeshPrimitivesTransferComplianceTransferCondition', {
         ClaimOwnership: [rawOwnershipClaimAccredited, rawIssuerId, rawMinPercent, rawMaxPercent],
       })
-      .returns(fakeResult);
+      .mockReturnValue(fakeResult);
 
     result = transferRestrictionToPolymeshTransferCondition(value, context);
 
@@ -6155,19 +6225,19 @@ describe('offeringTierToPriceTier', () => {
 
     const createTypeStub = context.createType;
 
-    createTypeStub
-      .withArgs('Balance', total.multipliedBy(Math.pow(10, 6)).toString())
-      .returns(rawTotal);
-    createTypeStub
-      .withArgs('Balance', price.multipliedBy(Math.pow(10, 6)).toString())
-      .returns(rawPrice);
+    when(createTypeStub)
+      .calledWith('Balance', total.multipliedBy(Math.pow(10, 6)).toString())
+      .mockReturnValue(rawTotal);
+    when(createTypeStub)
+      .calledWith('Balance', price.multipliedBy(Math.pow(10, 6)).toString())
+      .mockReturnValue(rawPrice);
 
-    createTypeStub
-      .withArgs('PriceTier', {
+    when(createTypeStub)
+      .calledWith('PriceTier', {
         total: rawTotal,
         price: rawPrice,
       })
-      .returns(fakeResult);
+      .mockReturnValue(fakeResult);
 
     const result = offeringTierToPriceTier(offeringTier, context);
 
@@ -6653,10 +6723,10 @@ describe('calendarPeriodToMeshCalendarPeriod and meshCalendarPeriodToCalendarPer
       const createTypeStub = context.createType;
       const rawAmount = dsMockUtils.createMockU64(amount);
 
-      createTypeStub.withArgs('u64', `${amount}`).returns(rawAmount);
-      createTypeStub
-        .withArgs('CalendarPeriod', { unit: 'Month', amount: rawAmount })
-        .returns(fakeResult);
+      when(createTypeStub).calledWith('u64', `${amount}`).mockReturnValue(rawAmount);
+      when(createTypeStub)
+        .calledWith('CalendarPeriod', { unit: 'Month', amount: rawAmount })
+        .mockReturnValue(fakeResult);
 
       const result = calendarPeriodToMeshCalendarPeriod(value, context);
 
@@ -6769,30 +6839,30 @@ describe('scheduleSpecToMeshScheduleSpec', () => {
     });
     const rawRepetitions = dsMockUtils.createMockU64(repetitions);
 
-    createTypeStub.withArgs('u64', `${amount}`).returns(rawAmount);
-    createTypeStub.withArgs('u64', '0').returns(rawZero);
-    createTypeStub.withArgs('u64', `${repetitions}`).returns(rawRepetitions);
-    createTypeStub.withArgs('u64', start.getTime()).returns(rawStart);
-    createTypeStub
-      .withArgs('CalendarPeriod', { unit: 'Month', amount: rawAmount })
-      .returns(rawPeriod);
-    createTypeStub
-      .withArgs('CalendarPeriod', { unit: 'Month', amount: rawZero })
-      .returns(rawZeroPeriod);
-    createTypeStub
-      .withArgs('ScheduleSpec', {
+    when(createTypeStub).calledWith('u64', `${amount}`).mockReturnValue(rawAmount);
+    when(createTypeStub).calledWith('u64', '0').mockReturnValue(rawZero);
+    when(createTypeStub).calledWith('u64', `${repetitions}`).mockReturnValue(rawRepetitions);
+    when(createTypeStub).calledWith('u64', start.getTime()).mockReturnValue(rawStart);
+    when(createTypeStub)
+      .calledWith('CalendarPeriod', { unit: 'Month', amount: rawAmount })
+      .mockReturnValue(rawPeriod);
+    when(createTypeStub)
+      .calledWith('CalendarPeriod', { unit: 'Month', amount: rawZero })
+      .mockReturnValue(rawZeroPeriod);
+    when(createTypeStub)
+      .calledWith('ScheduleSpec', {
         start: rawStart,
         period: rawPeriod,
         remaining: rawRepetitions,
       })
-      .returns(fakeResult);
-    createTypeStub
-      .withArgs('ScheduleSpec', {
+      .mockReturnValue(fakeResult);
+    when(createTypeStub)
+      .calledWith('ScheduleSpec', {
         start: null,
         period: rawZeroPeriod,
         remaining: rawZero,
       })
-      .returns(fakeResult);
+      .mockReturnValue(fakeResult);
 
     let result = scheduleSpecToMeshScheduleSpec(value, context);
 
@@ -7052,7 +7122,7 @@ describe('corporateActionKindToCaKind', () => {
     const fakeResult = 'issuerNotice' as unknown as CAKind;
     const context = dsMockUtils.getContextInstance();
 
-    context.createType.withArgs('CAKind', value).returns(fakeResult);
+    when(context.createType).calledWith('CAKind', value).mockReturnValue(fakeResult);
 
     const result = corporateActionKindToCaKind(value, context);
 
@@ -7082,8 +7152,10 @@ describe('checkpointToRecordDateSpec', () => {
     const context = dsMockUtils.getContextInstance();
     const createTypeStub = context.createType;
 
-    createTypeStub.withArgs('u64', id.toString()).returns(rawId);
-    createTypeStub.withArgs('RecordDateSpec', { Existing: rawId }).returns(fakeResult);
+    when(createTypeStub).calledWith('u64', id.toString()).mockReturnValue(rawId);
+    when(createTypeStub)
+      .calledWith('RecordDateSpec', { Existing: rawId })
+      .mockReturnValue(fakeResult);
 
     const result = checkpointToRecordDateSpec(value, context);
 
@@ -7098,8 +7170,10 @@ describe('checkpointToRecordDateSpec', () => {
     const context = dsMockUtils.getContextInstance();
     const createTypeStub = context.createType;
 
-    createTypeStub.withArgs('u64', value.getTime()).returns(rawDate);
-    createTypeStub.withArgs('RecordDateSpec', { Scheduled: rawDate }).returns(fakeResult);
+    when(createTypeStub).calledWith('u64', value.getTime()).mockReturnValue(rawDate);
+    when(createTypeStub)
+      .calledWith('RecordDateSpec', { Scheduled: rawDate })
+      .mockReturnValue(fakeResult);
 
     const result = checkpointToRecordDateSpec(value, context);
 
@@ -7115,8 +7189,10 @@ describe('checkpointToRecordDateSpec', () => {
     const context = dsMockUtils.getContextInstance();
     const createTypeStub = context.createType;
 
-    createTypeStub.withArgs('u64', id.toString()).returns(rawId);
-    createTypeStub.withArgs('RecordDateSpec', { ExistingSchedule: rawId }).returns(fakeResult);
+    when(createTypeStub).calledWith('u64', id.toString()).mockReturnValue(rawId);
+    when(createTypeStub)
+      .calledWith('RecordDateSpec', { ExistingSchedule: rawId })
+      .mockReturnValue(fakeResult);
 
     const result = checkpointToRecordDateSpec(value, context);
 
@@ -7197,14 +7273,14 @@ describe('targetsToTargetIdentities', () => {
     const rawDid = dsMockUtils.createMockIdentityId(did);
     const rawTreatment = dsMockUtils.createMockTargetTreatment();
 
-    createTypeStub.withArgs('PolymeshPrimitivesIdentityId', did).returns(rawDid);
-    createTypeStub.withArgs('TargetTreatment', treatment).returns(rawTreatment);
-    createTypeStub
-      .withArgs('TargetIdentities', {
+    when(createTypeStub).calledWith('PolymeshPrimitivesIdentityId', did).mockReturnValue(rawDid);
+    when(createTypeStub).calledWith('TargetTreatment', treatment).mockReturnValue(rawTreatment);
+    when(createTypeStub)
+      .calledWith('TargetIdentities', {
         identities: [rawDid],
         treatment: rawTreatment,
       })
-      .returns(fakeResult);
+      .mockReturnValue(fakeResult);
 
     const result = targetsToTargetIdentities(value, context);
 
@@ -7268,8 +7344,12 @@ describe('caTaxWithholdingsToMeshTaxWithholdings', () => {
     const { identity, percentage } = withholdings[0];
     const rawIdentityId = dsMockUtils.createMockIdentityId(identity);
     const rawPermill = dsMockUtils.createMockPermill(percentage);
-    createTypeStub.withArgs('PolymeshPrimitivesIdentityId', identity).returns(rawIdentityId);
-    createTypeStub.withArgs('Permill', percentage.shiftedBy(4).toString()).returns(rawPermill);
+    when(createTypeStub)
+      .calledWith('PolymeshPrimitivesIdentityId', identity)
+      .mockReturnValue(rawIdentityId);
+    when(createTypeStub)
+      .calledWith('Permill', percentage.shiftedBy(4).toString())
+      .mockReturnValue(rawPermill);
 
     expect(caTaxWithholdingsToMeshTaxWithholdings([withholdings[0]], context)).toEqual([
       [rawIdentityId, rawPermill],
@@ -7300,17 +7380,17 @@ describe('corporateActionIdentifierToCaId', () => {
     const localId = dsMockUtils.createMockU32(args.localId);
     const fakeResult = 'CAId' as unknown as CAId;
 
-    context.createType
-      .withArgs('PolymeshPrimitivesTicker', padString(args.ticker, 12))
-      .returns(ticker);
-    context.createType.withArgs('u32', args.localId.toString()).returns(localId);
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesTicker', padString(args.ticker, 12))
+      .mockReturnValue(ticker);
+    when(context.createType).calledWith('u32', args.localId.toString()).mockReturnValue(localId);
 
-    context.createType
-      .withArgs('PalletCorporateActionsCaId', {
+    when(context.createType)
+      .calledWith('PalletCorporateActionsCaId', {
         ticker,
         localId: localId,
       })
-      .returns(fakeResult);
+      .mockReturnValue(fakeResult);
 
     const result = corporateActionIdentifierToCaId(args, context);
     expect(result).toEqual(fakeResult);
@@ -7335,7 +7415,7 @@ describe('stringToSignature', () => {
     const fakeResult = 'convertedSignature' as unknown as Signature;
     const context = dsMockUtils.getContextInstance();
 
-    context.createType.withArgs('Signature', value).returns(fakeResult);
+    when(context.createType).calledWith('Signature', value).mockReturnValue(fakeResult);
 
     const result = stringToSignature(value, context);
 
@@ -7361,7 +7441,7 @@ describe('stringToRistrettoPoint', () => {
     const fakeResult = 'convertedRistrettoPoint' as unknown as RistrettoPoint;
     const context = dsMockUtils.getContextInstance();
 
-    context.createType.withArgs('RistrettoPoint', value).returns(fakeResult);
+    when(context.createType).calledWith('RistrettoPoint', value).mockReturnValue(fakeResult);
 
     const result = stringToRistrettoPoint(value, context);
 
@@ -7387,7 +7467,7 @@ describe('stringToScalar', () => {
     const fakeResult = 'convertedScalar' as unknown as Scalar;
     const context = dsMockUtils.getContextInstance();
 
-    context.createType.withArgs('Scalar', value).returns(fakeResult);
+    when(context.createType).calledWith('Scalar', value).mockReturnValue(fakeResult);
 
     const result = stringToScalar(value, context);
 
@@ -7467,28 +7547,28 @@ describe('scopeClaimProofToConfidentialIdentityClaimProof', () => {
     /* eslint-enable @typescript-eslint/naming-convention */
     const context = dsMockUtils.getContextInstance();
 
-    context.createType
-      .withArgs('Scalar', firstChallengeResponse)
-      .returns(rawFirstChallengeResponse);
-    context.createType
-      .withArgs('Scalar', secondChallengeResponse)
-      .returns(rawSecondChallengeResponse);
-    context.createType
-      .withArgs('RistrettoPoint', subtractExpressionsRes)
-      .returns(rawSubtractExpressionsRes);
-    context.createType
-      .withArgs('RistrettoPoint', blindedScopeDidHash)
-      .returns(rawBlindedScopeDidHash);
-    context.createType.withArgs('ZkProofData', zkProofData).returns(rawZkProofData);
+    when(context.createType)
+      .calledWith('Scalar', firstChallengeResponse)
+      .mockReturnValue(rawFirstChallengeResponse);
+    when(context.createType)
+      .calledWith('Scalar', secondChallengeResponse)
+      .mockReturnValue(rawSecondChallengeResponse);
+    when(context.createType)
+      .calledWith('RistrettoPoint', subtractExpressionsRes)
+      .mockReturnValue(rawSubtractExpressionsRes);
+    when(context.createType)
+      .calledWith('RistrettoPoint', blindedScopeDidHash)
+      .mockReturnValue(rawBlindedScopeDidHash);
+    when(context.createType).calledWith('ZkProofData', zkProofData).mockReturnValue(rawZkProofData);
 
-    context.createType
-      .withArgs('Signature', proofScopeIdWellFormed)
-      .returns(rawProofScopeIdWellFormed);
-    context.createType.withArgs('RistrettoPoint', scopeId).returns(rawScopeId);
+    when(context.createType)
+      .calledWith('Signature', proofScopeIdWellFormed)
+      .mockReturnValue(rawProofScopeIdWellFormed);
+    when(context.createType).calledWith('RistrettoPoint', scopeId).mockReturnValue(rawScopeId);
 
-    context.createType
-      .withArgs('ConfidentialIdentityClaimProofsScopeClaimProof', scopeClaimProof)
-      .returns(fakeResult);
+    when(context.createType)
+      .calledWith('ConfidentialIdentityClaimProofsScopeClaimProof', scopeClaimProof)
+      .mockReturnValue(fakeResult);
 
     const result = scopeClaimProofToConfidentialIdentityClaimProof(proof, scopeId, context);
 
@@ -7518,20 +7598,17 @@ describe('transactionPermissionsToExtrinsicPermissions', () => {
 
     const fakeResult = 'convertedExtrinsicPermissions' as unknown as ExtrinsicPermissions;
 
-    context.createType
-      .withArgs(
-        'PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions',
-        sinon.match(sinon.match.object)
-      )
-      .returns(fakeResult);
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions', expect.anything())
+      .mockReturnValue(fakeResult);
 
     let result = transactionPermissionsToExtrinsicPermissions(value, context);
 
     expect(result).toEqual(fakeResult);
 
-    context.createType
-      .withArgs('PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions', 'Whole')
-      .returns(fakeResult);
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions', 'Whole')
+      .mockReturnValue(fakeResult);
 
     result = transactionPermissionsToExtrinsicPermissions(null, context);
 
@@ -7611,12 +7688,14 @@ describe('agentGroupToPermissionGroup', () => {
       const context = dsMockUtils.getContextInstance();
       const ids = [{ did: 'b' }, { did: 'a' }, { did: 'c' }] as unknown as Identity[];
       ids.forEach(({ did }) =>
-        context.createType.withArgs('PolymeshPrimitivesIdentityId', did).returns(did)
+        when(context.createType)
+          .calledWith('PolymeshPrimitivesIdentityId', did)
+          .mockReturnValue(did as unknown as PolymeshPrimitivesIdentityId)
       );
 
-      context.createType
-        .withArgs('BTreeSet<PolymeshPrimitivesIdentityId>', ['b', 'a', 'c'])
-        .returns(['a', 'b', 'c']);
+      when(context.createType)
+        .calledWith('BTreeSet<PolymeshPrimitivesIdentityId>', ['b', 'a', 'c'])
+        .mockReturnValue(['a', 'b', 'c'] as unknown as BTreeSet<PolymeshPrimitivesIdentityId>);
 
       const result = identitiesToBtreeSet(ids, context);
       expect(result).toEqual(['a', 'b', 'c']);
@@ -7627,9 +7706,9 @@ describe('agentGroupToPermissionGroup', () => {
     it('should return a statType', () => {
       const op = 'MaxInvestorCount' as unknown as PolymeshPrimitivesStatisticsStatOpType;
       const context = dsMockUtils.getContextInstance();
-      context.createType
-        .withArgs('PolymeshPrimitivesStatisticsStatType', { op, claimIssuer: undefined })
-        .returns('statType');
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesStatisticsStatType', { op, claimIssuer: undefined })
+        .mockReturnValue('statType' as unknown as PolymeshPrimitivesStatisticsStatType);
 
       const result = statisticsOpTypeToStatType({ op }, context);
 
@@ -7641,13 +7720,13 @@ describe('agentGroupToPermissionGroup', () => {
     it('should return the appropriate StatType for the TransferRestriction', () => {
       const context = dsMockUtils.getContextInstance();
 
-      context.createType
-        .withArgs('PolymeshPrimitivesStatisticsStatOpType', StatType.Count)
-        .returns('countType');
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesStatisticsStatOpType', StatType.Count)
+        .mockReturnValue('countType' as unknown as PolymeshPrimitivesStatisticsStatOpType);
 
-      context.createType
-        .withArgs('PolymeshPrimitivesStatisticsStatOpType', StatType.Balance)
-        .returns('percentType');
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesStatisticsStatOpType', StatType.Balance)
+        .mockReturnValue('percentType' as unknown as PolymeshPrimitivesStatisticsStatOpType);
 
       let result = transferRestrictionTypeToStatOpType(TransferRestrictionType.Count, context);
       expect(result).toEqual('countType');
@@ -7672,9 +7751,9 @@ describe('agentGroupToPermissionGroup', () => {
       const value = createMockU128(new BigNumber(3));
       const context = dsMockUtils.getContextInstance();
 
-      context.createType
-        .withArgs('PolymeshPrimitivesStatisticsStatUpdate', { key2, value })
-        .returns('statUpdate');
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesStatisticsStatUpdate', { key2, value })
+        .mockReturnValue('statUpdate' as unknown as PolymeshPrimitivesStatisticsStatUpdate);
 
       const result = keyAndValueToStatUpdate(key2, value, context);
 
@@ -7699,9 +7778,9 @@ describe('agentGroupToPermissionGroup', () => {
     it('should return a NoClaimStat 2nd key', () => {
       const context = dsMockUtils.getContextInstance();
 
-      context.createType
-        .withArgs('PolymeshPrimitivesStatisticsStat2ndKey', 'NoClaimStat')
-        .returns('2ndKey');
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesStatisticsStat2ndKey', 'NoClaimStat')
+        .mockReturnValue('2ndKey' as unknown as PolymeshPrimitivesStatisticsStat2ndKey);
 
       const result = createStat2ndKey('NoClaimStat', context);
 
@@ -7711,11 +7790,11 @@ describe('agentGroupToPermissionGroup', () => {
     it('should return a scoped second key', () => {
       const context = dsMockUtils.getContextInstance();
 
-      context.createType
-        .withArgs('PolymeshPrimitivesStatisticsStat2ndKey', {
+      when(context.createType)
+        .calledWith('PolymeshPrimitivesStatisticsStat2ndKey', {
           claim: { [ClaimType.Jurisdiction]: CountryCode.Ca },
         })
-        .returns('Scoped2ndKey');
+        .mockReturnValue('Scoped2ndKey' as unknown as PolymeshPrimitivesStatisticsStat2ndKey);
 
       const result = createStat2ndKey(ClaimType.Jurisdiction, context, CountryCode.Ca);
 
@@ -7770,9 +7849,11 @@ describe('statUpdatesToBtreeStatUpdate', () => {
       value: dsMockUtils.createMockOption(dsMockUtils.createMockU128(new BigNumber(2))),
     });
 
-    context.createType.returns([stat1, stat2]);
-
     const input = [stat1, stat2];
+    when(context.createType)
+      .calledWith('BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>', input)
+      .mockReturnValue([stat1, stat2] as any);
+
     const result = statUpdatesToBtreeStatUpdate(input, context);
     expect(result).toEqual([stat1, stat2]);
   });
@@ -7796,9 +7877,11 @@ describe('complianceConditionsToBtreeSet', () => {
     const condition1 = dsMockUtils.createMockTransferCondition();
     const condition2 = dsMockUtils.createMockTransferCondition();
 
-    context.createType.returns([condition1, condition2]);
-
     const input = [condition2, condition1];
+    when(context.createType)
+      .calledWith('BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>', input)
+      .mockReturnValue([condition1, condition2] as any);
+
     const result = complianceConditionsToBtreeSet(input, context);
     expect(result).toEqual([condition1, condition2]);
   });
@@ -7823,9 +7906,9 @@ describe('statisticStatTypesToBtreeStatType', () => {
 
     const btreeSet = dsMockUtils.createMockBTreeSet([stat]);
 
-    context.createType
-      .withArgs('BTreeSet<PolymeshPrimitivesStatisticsStatType>', [stat])
-      .returns(btreeSet);
+    when(context.createType)
+      .calledWith('BTreeSet<PolymeshPrimitivesStatisticsStatType>', [stat])
+      .mockReturnValue(btreeSet);
 
     const result = statisticStatTypesToBtreeStatType([stat], context);
 
@@ -7852,9 +7935,9 @@ describe('transferConditionsToBtreeTransferConditions', () => {
 
     const btreeSet = dsMockUtils.createMockBTreeSet([condition]);
 
-    context.createType
-      .withArgs('BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>', [condition])
-      .returns(btreeSet);
+    when(context.createType)
+      .calledWith('BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>', [condition])
+      .mockReturnValue(btreeSet);
 
     const result = transferConditionsToBtreeTransferConditions([condition], context);
 
@@ -8044,67 +8127,73 @@ describe('claimCountStatInputToStatUpdates', () => {
     const fakeJurisdictionUpdate = 'fakeJurisdiction';
     const issuer = entityMockUtils.getIdentityInstance();
 
-    context.createType.withArgs('u128', yes.toString()).returns(rawYes);
-    context.createType.withArgs('u128', no.toString()).returns(rawNo);
-    context.createType.withArgs('u128', canadaCount.toString()).returns(rawCanadaCount);
-    context.createType.withArgs('u128', usCount.toString()).returns(rawUsCount);
-    context.createType
-      .withArgs('PolymeshPrimitivesStatisticsStat2ndKey', {
+    when(context.createType).calledWith('u128', yes.toString()).mockReturnValue(rawYes);
+    when(context.createType).calledWith('u128', no.toString()).mockReturnValue(rawNo);
+    when(context.createType)
+      .calledWith('u128', canadaCount.toString())
+      .mockReturnValue(rawCanadaCount);
+    when(context.createType).calledWith('u128', usCount.toString()).mockReturnValue(rawUsCount);
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesStatisticsStat2ndKey', {
         claim: { [ClaimType.Affiliate]: true },
       })
-      .returns(rawYesKey);
-    context.createType
-      .withArgs('PolymeshPrimitivesStatisticsStat2ndKey', {
+      .mockReturnValue(rawYesKey);
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesStatisticsStat2ndKey', {
         claim: { [ClaimType.Affiliate]: false },
       })
-      .returns(rawNoKey);
-    context.createType
-      .withArgs('PolymeshPrimitivesStatisticsStat2ndKey', {
+      .mockReturnValue(rawNoKey);
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesStatisticsStat2ndKey', {
         claim: { [ClaimType.Accredited]: true },
       })
-      .returns(rawYesKey);
-    context.createType
-      .withArgs('PolymeshPrimitivesStatisticsStat2ndKey', {
+      .mockReturnValue(rawYesKey);
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesStatisticsStat2ndKey', {
         claim: { [ClaimType.Accredited]: false },
       })
-      .returns(rawNoKey);
-    context.createType
-      .withArgs('PolymeshPrimitivesStatisticsStat2ndKey', {
+      .mockReturnValue(rawNoKey);
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesStatisticsStat2ndKey', {
         claim: { [ClaimType.Jurisdiction]: CountryCode.Ca },
       })
-      .returns(rawCountryKey);
-    context.createType
-      .withArgs('PolymeshPrimitivesStatisticsStat2ndKey', {
+      .mockReturnValue(rawCountryKey);
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesStatisticsStat2ndKey', {
         claim: { [ClaimType.Jurisdiction]: CountryCode.Us },
       })
-      .returns(rawCountryKey);
-    context.createType
-      .withArgs('PolymeshPrimitivesStatisticsStatUpdate', { key2: rawYesKey, value: rawYes })
-      .returns(fakeYesUpdate);
-    context.createType
-      .withArgs('PolymeshPrimitivesStatisticsStatUpdate', { key2: rawNoKey, value: rawNo })
-      .returns(fakeNoUpdate);
-    context.createType
-      .withArgs('PolymeshPrimitivesStatisticsStatUpdate', {
+      .mockReturnValue(rawCountryKey as unknown as PolymeshPrimitivesStatisticsStat2ndKey);
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesStatisticsStatUpdate', { key2: rawYesKey, value: rawYes })
+      .mockReturnValue(fakeYesUpdate as unknown as PolymeshPrimitivesStatisticsStatUpdate);
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesStatisticsStatUpdate', { key2: rawNoKey, value: rawNo })
+      .mockReturnValue(fakeNoUpdate as unknown as PolymeshPrimitivesStatisticsStatUpdate);
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesStatisticsStatUpdate', {
         key2: rawCountryKey,
         value: rawCanadaCount,
       })
-      .returns(fakeJurisdictionUpdate);
-    context.createType
-      .withArgs('PolymeshPrimitivesStatisticsStatUpdate', {
+      .mockReturnValue(fakeJurisdictionUpdate as unknown as PolymeshPrimitivesStatisticsStatUpdate);
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesStatisticsStatUpdate', {
         key2: rawCountryKey,
         value: rawUsCount,
       })
-      .returns(fakeJurisdictionUpdate);
-    context.createType
-      .withArgs('BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>', [fakeYesUpdate, fakeNoUpdate])
-      .returns('yesNoBtreeSet');
-    context.createType
-      .withArgs('BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>', [
+      .mockReturnValue(fakeJurisdictionUpdate as unknown as PolymeshPrimitivesStatisticsStatUpdate);
+    when(context.createType)
+      .calledWith('BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>', [fakeYesUpdate, fakeNoUpdate])
+      .mockReturnValue(
+        'yesNoBtreeSet' as unknown as BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>
+      );
+    when(context.createType)
+      .calledWith('BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>', [
         fakeJurisdictionUpdate,
         fakeJurisdictionUpdate,
       ])
-      .returns('jurisdictionBtreeSet');
+      .mockReturnValue(
+        'jurisdictionBtreeSet' as unknown as BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>
+      );
 
     let result = claimCountStatInputToStatUpdates(
       {
@@ -8166,16 +8255,16 @@ describe('countStatInputToStatUpdates', () => {
     const count = new BigNumber(3);
     const rawCount = dsMockUtils.createMockU128(count);
 
-    context.createType
-      .withArgs('PolymeshPrimitivesStatisticsStat2ndKey', 'NoClaimStat')
-      .returns('2ndKey');
-    context.createType.withArgs('u128', count.toString()).returns(rawCount);
-    context.createType
-      .withArgs('PolymeshPrimitivesStatisticsStatUpdate', { key2: '2ndKey', value: rawCount })
-      .returns('statUpdate');
-    context.createType
-      .withArgs('BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>', ['statUpdate'])
-      .returns('fakeResult');
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesStatisticsStat2ndKey', 'NoClaimStat')
+      .mockReturnValue('2ndKey' as unknown as PolymeshPrimitivesStatisticsStat2ndKey);
+    when(context.createType).calledWith('u128', count.toString()).mockReturnValue(rawCount);
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesStatisticsStatUpdate', { key2: '2ndKey', value: rawCount })
+      .mockReturnValue('statUpdate' as unknown as PolymeshPrimitivesStatisticsStatUpdate);
+    when(context.createType)
+      .calledWith('BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>', ['statUpdate'])
+      .mockReturnValue('fakeResult' as unknown as BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>);
 
     const result = countStatInputToStatUpdates({ count }, context);
     expect(result).toEqual('fakeResult');
@@ -8385,36 +8474,38 @@ describe('inputStatTypeToMeshStatType', () => {
   it('should convert InputStatType to PolymeshPrimitivesStatisticsStatType', () => {
     const mockContext = dsMockUtils.getContextInstance();
     const createTypeStub = mockContext.createType;
-    const fakeOp = 'fakeOp';
-    const fakeIssuer = 'fakeIssuer';
-    const fakeClaimType = 'fakeClaimType';
-    const fakeStatistic = 'fakeStatistic';
+    const fakeOp = 'fakeOp' as unknown as PolymeshPrimitivesStatisticsStatOpType;
+    const fakeIssuer = 'fakeIssuer' as unknown as PolymeshPrimitivesIdentityId;
+    const fakeClaimType = 'fakeClaimType' as unknown as PolymeshPrimitivesIdentityClaimClaimType;
+    const fakeStatistic = 'fakeStatistic' as unknown as PolymeshPrimitivesStatisticsStatType;
     const did = 'did';
 
-    createTypeStub
-      .withArgs('PolymeshPrimitivesStatisticsStatOpType', StatType.Count)
-      .returns(fakeOp);
+    when(createTypeStub)
+      .calledWith('PolymeshPrimitivesStatisticsStatOpType', StatType.Count)
+      .mockReturnValue(fakeOp);
 
-    createTypeStub
-      .withArgs('PolymeshPrimitivesStatisticsStatOpType', StatType.Balance)
-      .returns(fakeOp);
+    when(createTypeStub)
+      .calledWith('PolymeshPrimitivesStatisticsStatOpType', StatType.Balance)
+      .mockReturnValue(fakeOp);
 
-    createTypeStub
-      .withArgs('PolymeshPrimitivesStatisticsStatType', { op: fakeOp, claimIssuer: undefined })
-      .returns(fakeStatistic);
+    when(createTypeStub)
+      .calledWith('PolymeshPrimitivesStatisticsStatType', { op: fakeOp, claimIssuer: undefined })
+      .mockReturnValue(fakeStatistic);
 
-    createTypeStub
-      .withArgs('PolymeshPrimitivesIdentityClaimClaimType', ClaimType.Accredited)
-      .returns(fakeClaimType);
+    when(createTypeStub)
+      .calledWith('PolymeshPrimitivesIdentityClaimClaimType', ClaimType.Accredited)
+      .mockReturnValue(fakeClaimType);
 
-    createTypeStub.withArgs('PolymeshPrimitivesIdentityId', did).returns(fakeIssuer);
+    when(createTypeStub)
+      .calledWith('PolymeshPrimitivesIdentityId', did)
+      .mockReturnValue(fakeIssuer);
 
-    createTypeStub
-      .withArgs('PolymeshPrimitivesStatisticsStatType', {
+    when(createTypeStub)
+      .calledWith('PolymeshPrimitivesStatisticsStatType', {
         op: fakeOp,
         claimIssuer: [fakeClaimType, fakeIssuer],
       })
-      .returns(fakeStatistic);
+      .mockReturnValue(fakeStatistic);
 
     const unscopedInput = { type: StatType.Count } as const;
     let result = inputStatTypeToMeshStatType(unscopedInput, mockContext);

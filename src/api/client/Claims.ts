@@ -534,12 +534,10 @@ export class Claims {
       identity => identity.did
     );
 
-    const identitiesWithClaims = issuers.map(identity => {
-      return {
-        identity,
-        claims: filter(identityClaimsFromChain, ({ issuer }) => issuer.isEqual(identity)),
-      };
-    });
+    const identitiesWithClaims = issuers.map(identity => ({
+      identity,
+      claims: filter(identityClaimsFromChain, ({ issuer }) => issuer.isEqual(identity)),
+    }));
 
     return {
       data: identitiesWithClaims,

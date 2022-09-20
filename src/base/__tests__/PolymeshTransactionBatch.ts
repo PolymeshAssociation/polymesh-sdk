@@ -1,7 +1,6 @@
 import { Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { noop } from 'lodash';
-import sinon from 'sinon';
 
 import { Context, PolymeshTransactionBatch } from '~/internal';
 import { fakePromise } from '~/testUtils';
@@ -154,7 +153,7 @@ describe('Polymesh Transaction Batch class', () => {
 
       await fakePromise();
 
-      sinon.assert.calledWith(transaction, ...args);
+      expect(transaction).toHaveBeenCalledWith(...args);
       expect(tx.blockHash).toBeDefined();
       expect(tx.blockNumber).toBeDefined();
       expect(tx.txHash).toBeDefined();

@@ -1,6 +1,6 @@
 import { SigningManager } from '@polymeshassociation/signing-manager-types';
 import { ApolloLink, GraphQLRequest } from 'apollo-link';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Polymesh } from '~/api/client/Polymesh';
 import { PolymeshError, PolymeshTransactionBatch } from '~/internal';
@@ -12,7 +12,7 @@ import * as internalUtils from '~/utils/internal';
 
 jest.mock('apollo-link-context', () => ({
   ...jest.requireActual('apollo-link-context'),
-  setContext: sinon.stub().callsFake(cbFunc => {
+  setContext: jest.fn().mockImplementation(cbFunc => {
     return new ApolloLink(cbFunc({} as GraphQLRequest, {}));
   }),
 }));
@@ -52,9 +52,13 @@ jest.mock(
 );
 
 describe('Polymesh Class', () => {
-  let versionStub: sinon.SinonStub;
+  let versionStub: jest.SpyInstance;
   beforeEach(() => {
-    versionStub = sinon.stub(internalUtils, 'assertExpectedChainVersion').resolves(undefined);
+    versionStub = jest
+      .spyOn(internalUtils, 'assertExpectedChainVersion')
+      .mockClear()
+      .mockImplementation()
+      .mockResolvedValue(undefined);
   });
 
   beforeAll(() => {
@@ -64,7 +68,7 @@ describe('Polymesh Class', () => {
   });
 
   afterEach(() => {
-    sinon.restore();
+    jest.restoreAllMocks();
     dsMockUtils.reset();
     entityMockUtils.reset();
     procedureMockUtils.reset();
@@ -93,8 +97,8 @@ describe('Polymesh Class', () => {
         signingManager,
       });
 
-      sinon.assert.calledOnce(createStub);
-      sinon.assert.calledWith(createStub, {
+      expect(createStub).toHaveBeenCalledTimes(1);
+      expect(createStub).toHaveBeenCalledWith({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
         middlewareApiV2: null,
@@ -116,8 +120,8 @@ describe('Polymesh Class', () => {
         middleware,
       });
 
-      sinon.assert.calledOnce(createStub);
-      sinon.assert.calledWith(createStub, {
+      expect(createStub).toHaveBeenCalledTimes(1);
+      expect(createStub).toHaveBeenCalledWith({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
         middlewareApiV2: null,
@@ -131,7 +135,9 @@ describe('Polymesh Class', () => {
         message: 'Unsupported Polymesh RPC node version. Please upgrade the SDK',
         data: { supportedVersionRange: SUPPORTED_NODE_VERSION_RANGE },
       });
-      versionStub.rejects(error);
+      versionStub.mockImplementation(() => {
+        throw error;
+      });
 
       await expect(
         Polymesh.connect({
@@ -145,7 +151,9 @@ describe('Polymesh Class', () => {
         code: ErrorCode.FatalError,
         message: 'Unable to connect',
       });
-      versionStub.rejects(error);
+      versionStub.mockImplementation(() => {
+        throw error;
+      });
 
       return expect(
         Polymesh.connect({
@@ -267,7 +275,7 @@ describe('Polymesh Class', () => {
         nodeUrl: 'wss://some.url',
       });
 
-      const callback = sinon.stub();
+      const callback = jest.fn();
 
       const unsub = polymesh.onConnectionError(callback);
 
@@ -278,7 +286,7 @@ describe('Polymesh Class', () => {
 
       polkadot.emit('error');
 
-      sinon.assert.calledOnce(callback);
+      expect(callback).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -290,7 +298,7 @@ describe('Polymesh Class', () => {
         nodeUrl: 'wss://some.url',
       });
 
-      const callback = sinon.stub();
+      const callback = jest.fn();
 
       const unsub = polymesh.onDisconnect(callback);
 
@@ -301,7 +309,7 @@ describe('Polymesh Class', () => {
 
       polkadot.emit('disconnected');
 
-      sinon.assert.calledOnce(callback);
+      expect(callback).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -316,7 +324,7 @@ describe('Polymesh Class', () => {
       });
 
       await polymesh.disconnect();
-      sinon.assert.calledOnce(dsMockUtils.getContextInstance().disconnect);
+      expect(dsMockUtils.getContextInstance().disconnect).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -334,7 +342,7 @@ describe('Polymesh Class', () => {
       const address = 'address';
 
       await polymesh.setSigningAccount(address);
-      sinon.assert.calledWith(dsMockUtils.getContextInstance().setSigningAddress, address);
+      expect(dsMockUtils.getContextInstance().setSigningAddress).toHaveBeenCalledWith(address);
     });
   });
 
@@ -352,7 +360,9 @@ describe('Polymesh Class', () => {
       const signingManager = 'manager' as unknown as SigningManager;
 
       await polymesh.setSigningManager(signingManager);
-      sinon.assert.calledWith(dsMockUtils.getContextInstance().setSigningManager, signingManager);
+      expect(dsMockUtils.getContextInstance().setSigningManager).toHaveBeenCalledWith(
+        signingManager
+      );
     });
   });
 
@@ -373,10 +383,9 @@ describe('Polymesh Class', () => {
       >;
       const transactions = ['foo', 'bar', 'baz'] as unknown as TransactionArray<[void, void]>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { transactions }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareStub())
+        .calledWith({ args: { transactions }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await polymesh.createTransactionBatch({
         transactions,

@@ -1,6 +1,6 @@
 import { StorageKey } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Assets } from '~/api/client/Assets';
 import { Asset, Context, PolymeshTransaction, TickerReservation } from '~/internal';
@@ -61,10 +61,9 @@ describe('Assets Class', () => {
       const expectedTransaction =
         'someTransaction' as unknown as PolymeshTransaction<TickerReservation>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareStub())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await assets.reserveTicker(args);
 
@@ -90,10 +89,9 @@ describe('Assets Class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareStub())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await assets.createAsset(args);
 
@@ -111,10 +109,9 @@ describe('Assets Class', () => {
       const expectedTransaction =
         'someTransaction' as unknown as PolymeshTransaction<TickerReservation>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareStub())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await assets.claimClassicTicker(args);
 
@@ -176,21 +173,21 @@ describe('Assets Class', () => {
         },
       });
 
-      const callback = sinon.stub();
+      const callback = jest.fn();
       const result = await assets.isTickerAvailable({ ticker: 'SOME_TICKER' }, callback);
 
       expect(result).toBe(unsubCallback);
-      sinon.assert.calledWithExactly(callback, true);
+      expect(callback).toBeCalledWith(true);
     });
   });
 
   describe('method: getTickerReservations', () => {
     beforeAll(() => {
-      sinon.stub(utilsConversionModule, 'signerValueToSignatory');
+      jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return a list of ticker reservations if did parameter is set', async () => {
@@ -294,11 +291,11 @@ describe('Assets Class', () => {
 
   describe('method: getAssets', () => {
     beforeAll(() => {
-      sinon.stub(utilsConversionModule, 'signerValueToSignatory');
+      jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return a list of Assets owned by the supplied did', async () => {
@@ -375,7 +372,7 @@ describe('Assets Class', () => {
   });
 
   describe('method: get', () => {
-    let requestPaginatedStub: sinon.SinonStub;
+    let requestPaginatedStub: jest.SpyInstance;
     const expectedAssets = [
       {
         name: 'someAsset',
@@ -388,7 +385,10 @@ describe('Assets Class', () => {
     ];
 
     beforeAll(() => {
-      requestPaginatedStub = sinon.stub(utilsInternalModule, 'requestPaginated');
+      requestPaginatedStub = jest
+        .spyOn(utilsInternalModule, 'requestPaginated')
+        .mockClear()
+        .mockImplementation();
     });
 
     beforeEach(() => {
@@ -396,7 +396,7 @@ describe('Assets Class', () => {
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should retrieve all Assets on the chain', async () => {
@@ -409,7 +409,7 @@ describe('Assets Class', () => {
         )
       );
 
-      requestPaginatedStub.resolves({ entries, lastKey: null });
+      requestPaginatedStub.mockResolvedValue({ entries, lastKey: null });
 
       const result = await assets.get();
 
@@ -427,7 +427,7 @@ describe('Assets Class', () => {
         ),
       ];
 
-      requestPaginatedStub.resolves({ entries, lastKey: 'someKey' });
+      requestPaginatedStub.mockResolvedValue({ entries, lastKey: 'someKey' });
 
       const result = await assets.get({ size: new BigNumber(1) });
 

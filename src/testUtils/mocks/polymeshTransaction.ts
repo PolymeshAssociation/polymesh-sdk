@@ -2,7 +2,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
 import { merge } from 'lodash';
-import sinon, { SinonStub } from 'sinon';
 
 import { PolymeshTransaction } from '~/internal';
 import { Mocked } from '~/testUtils/types';
@@ -23,8 +22,8 @@ interface TransactionMockData {
   resolved: boolean;
 }
 
-let polymeshTransactionConstructorStub: SinonStub;
-let polymeshTransactionBatchConstructorStub: SinonStub;
+let polymeshTransactionConstructorStub: jest.Mock;
+let polymeshTransactionBatchConstructorStub: jest.Mock;
 
 const MockPolymeshTransactionClass = class {
   /**
@@ -63,14 +62,14 @@ const transactionMocksData = new Map<MockTransaction, TransactionMockData>();
  */
 export function initMocks(): void {
   transactionMocksData.clear();
-  polymeshTransactionConstructorStub = sinon.stub();
-  polymeshTransactionBatchConstructorStub = sinon.stub();
-  polymeshTransactionConstructorStub.callsFake(args => {
+  polymeshTransactionConstructorStub = jest.fn();
+  polymeshTransactionBatchConstructorStub = jest.fn();
+  polymeshTransactionConstructorStub.mockImplementation(args => {
     const value = merge({}, args);
     Object.setPrototypeOf(value, require('~/internal').PolymeshTransaction.prototype);
     return value;
   });
-  polymeshTransactionBatchConstructorStub.callsFake(args => {
+  polymeshTransactionBatchConstructorStub.mockImplementation(args => {
     const value = merge({}, args);
     Object.setPrototypeOf(value, require('~/internal').PolymeshTransactionBatch.prototype);
     return value;
@@ -81,7 +80,7 @@ export function initMocks(): void {
  * @hidden
  * Reinitialize mocks
  */
-export function reset(): void {
+export function mockReset(): void {
   initMocks();
 }
 
@@ -95,18 +94,20 @@ export function reset(): void {
 export function setupNextTransactions(specs: MockTransactionSpec[]): MockTransaction[] {
   const receipt = 'someReceipt';
   const error = 'Transaction Error';
-  const updateStatusStub = sinon.stub();
+  const updateStatusStub = jest.fn();
 
   const instances = specs.map(({ autoResolve, fees = null, supportsSubsidy = true }) => {
     const instance = {} as MockTransaction;
     if (autoResolve === TransactionStatus.Failed) {
-      instance.run = sinon.stub().rejects(new Error(error)) as unknown as MockTransaction['run'];
+      instance.run = jest.fn().mockImplementation(() => {
+        throw new Error(error);
+      });
     } else if (autoResolve === TransactionStatus.Succeeded) {
-      instance.run = sinon.stub().resolves(receipt) as unknown as MockTransaction['run'];
+      instance.run = jest.fn().mockResolvedValue(receipt) as unknown as MockTransaction['run'];
     } else {
-      const runStub = sinon.stub().returns(
+      const runStub = jest.fn().mockReturnValue(
         new Promise((resolve, reject) => {
-          updateStatusStub.callsFake((newStatus: TransactionStatus) => {
+          updateStatusStub.mockImplementation((newStatus: TransactionStatus) => {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const { statusChangeListener } = transactionMocksData.get(instance)!;
 
@@ -130,7 +131,7 @@ export function setupNextTransactions(specs: MockTransactionSpec[]): MockTransac
       instance.run = runStub as unknown as MockTransaction['run'];
     }
 
-    instance.onStatusChange = sinon.stub().callsFake(listener => {
+    instance.onStatusChange = jest.fn().mockImplementation(listener => {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const mockData = transactionMocksData.get(instance)!;
 
@@ -141,24 +142,28 @@ export function setupNextTransactions(specs: MockTransactionSpec[]): MockTransac
     }) as unknown as MockTransaction['onStatusChange'];
 
     instance.status = autoResolve || TransactionStatus.Idle;
-    instance.getTotalFees = sinon.stub().resolves(fees) as MockTransaction['getTotalFees'];
-    instance.supportsSubsidy = sinon
-      .stub()
-      .returns(supportsSubsidy) as MockTransaction['supportsSubsidy'];
+    instance.getTotalFees = jest.fn().mockResolvedValue(fees) as MockTransaction['getTotalFees'];
+    instance.supportsSubsidy = jest
+      .fn()
+      .mockReturnValue(supportsSubsidy) as MockTransaction['supportsSubsidy'];
 
     transactionMocksData.set(instance, {
       updateStatusStub,
       resolved: !!autoResolve,
-      statusChangeListener: sinon.stub(),
+      statusChangeListener: jest.fn(),
     });
 
     return instance;
   });
 
-  polymeshTransactionConstructorStub = sinon.stub();
+  polymeshTransactionConstructorStub = jest.fn();
 
   instances.forEach((instance, index) => {
-    polymeshTransactionConstructorStub.onCall(index).returns(instance);
+    polymeshTransactionConstructorStub.mockImplementation(() => {
+      if (polymeshTransactionConstructorStub.mock.calls.length === index) {
+        return instance;
+      }
+    });
   });
 
   return instances;
@@ -208,13 +213,13 @@ export function updateTransactionStatus(
 /**
  * @hidden
  */
-export function getTransactionConstructorStub(): sinon.SinonStub {
+export function getTransactionConstructorStub(): jest.Mock {
   return polymeshTransactionConstructorStub;
 }
 
 /**
  * @hidden
  */
-export function getTransactionBatchConstructorStub(): sinon.SinonStub {
+export function getTransactionBatchConstructorStub(): jest.Mock {
   return polymeshTransactionBatchConstructorStub;
 }

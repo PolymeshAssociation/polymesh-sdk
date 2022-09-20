@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Network } from '~/api/client/Network';
 import { Context, PolymeshTransaction } from '~/internal';
@@ -33,8 +33,8 @@ jest.mock(
 describe('Network Class', () => {
   let context: Mocked<Context>;
   let network: Network;
-  let stringToBlockHashStub: sinon.SinonStub;
-  let balanceToBigNumberStub: sinon.SinonStub;
+  let stringToBlockHashStub: jest.SpyInstance;
+  let balanceToBigNumberStub: jest.SpyInstance;
 
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
@@ -45,8 +45,8 @@ describe('Network Class', () => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
-    stringToBlockHashStub = sinon.stub(utilsConversionModule, 'stringToBlockHash');
-    balanceToBigNumberStub = sinon.stub(utilsConversionModule, 'balanceToBigNumber');
+    stringToBlockHashStub = jest.spyOn(utilsConversionModule, 'stringToBlockHash');
+    balanceToBigNumberStub = jest.spyOn(utilsConversionModule, 'balanceToBigNumber');
   });
 
   afterEach(() => {
@@ -110,7 +110,9 @@ describe('Network Class', () => {
       };
 
       dsMockUtils.setRuntimeVersion({ specVersion: dsMockUtils.createMockU32(version) });
-      dsMockUtils.createRpcStub('system', 'chain').resolves(dsMockUtils.createMockText(name));
+      dsMockUtils
+        .createRpcStub('system', 'chain')
+        .mockResolvedValue(dsMockUtils.createMockText(name));
 
       const result = await network.getNetworkProperties();
       expect(result).toEqual(fakeResult);
@@ -166,17 +168,17 @@ describe('Network Class', () => {
 
       entityMockUtils.configureMocks({
         accountOptions: {
-          getBalance: sinon.stub().callsFake(async cbFunc => {
+          getBalance: jest.fn().mockImplementation(async cbFunc => {
             cbFunc(fakeBalance);
             return unsubCallback;
           }),
         },
       });
 
-      const callback = sinon.stub();
+      const callback = jest.fn();
       const result = await network.getTreasuryBalance(callback);
       expect(result).toEqual(unsubCallback);
-      sinon.assert.calledWithExactly(callback, fakeBalance.free);
+      expect(callback).toBeCalledWith(fakeBalance.free);
     });
   });
 
@@ -189,10 +191,9 @@ describe('Network Class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareStub())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await network.transferPolyx(args);
 
@@ -454,8 +455,8 @@ describe('Network Class', () => {
 
   describe('method: getTransactionByHash', () => {
     const variable = { txHash: 'someHash' };
-    let getBlockStub: sinon.SinonStub;
-    let queryInfoStub: sinon.SinonStub;
+    let getBlockStub: jest.Mock;
+    let queryInfoStub: jest.Mock;
 
     beforeEach(() => {
       getBlockStub = dsMockUtils.createRpcStub('chain', 'getBlock');
@@ -503,30 +504,34 @@ describe('Network Class', () => {
 
       const rawBlockHash = dsMockUtils.createMockBlockHash(blockHash);
 
-      stringToBlockHashStub.withArgs(blockHash).returns(rawBlockHash);
+      when(stringToBlockHashStub).calledWith(blockHash, context).mockReturnValue(rawBlockHash);
 
-      getBlockStub.withArgs(rawBlockHash).resolves(
-        dsMockUtils.createMockSignedBlock({
-          block: {
-            header: undefined,
-            extrinsics: [
-              {
-                toHex: jest.fn().mockImplementation(() => 'hex'),
-              },
-            ],
-          },
-        })
-      );
+      when(getBlockStub)
+        .calledWith(rawBlockHash)
+        .mockResolvedValue(
+          dsMockUtils.createMockSignedBlock({
+            block: {
+              header: undefined,
+              extrinsics: [
+                {
+                  toHex: jest.fn().mockImplementation(() => 'hex'),
+                },
+              ],
+            },
+          })
+        );
 
       const rawGasFees = dsMockUtils.createMockBalance(gasFees);
 
-      balanceToBigNumberStub.withArgs(rawGasFees).returns(gasFees);
+      when(balanceToBigNumberStub).calledWith(rawGasFees).mockReturnValue(gasFees);
 
-      queryInfoStub.withArgs('hex', rawBlockHash).resolves(
-        dsMockUtils.createMockRuntimeDispatchInfo({
-          partialFee: rawGasFees,
-        })
-      );
+      when(queryInfoStub)
+        .calledWith('hex', rawBlockHash)
+        .mockResolvedValue(
+          dsMockUtils.createMockRuntimeDispatchInfo({
+            partialFee: rawGasFees,
+          })
+        );
 
       let result = await network.getTransactionByHash(variable);
       expect(result).toEqual({
@@ -600,8 +605,8 @@ describe('Network Class', () => {
 
   describe('method: getTransactionByHashV2', () => {
     const variable = { txHash: 'someHash' };
-    let getBlockStub: sinon.SinonStub;
-    let queryInfoStub: sinon.SinonStub;
+    let getBlockStub: jest.Mock;
+    let queryInfoStub: jest.Mock;
 
     beforeEach(() => {
       getBlockStub = dsMockUtils.createRpcStub('chain', 'getBlock');
@@ -651,30 +656,34 @@ describe('Network Class', () => {
 
       const rawBlockHash = dsMockUtils.createMockBlockHash(blockHash);
 
-      stringToBlockHashStub.withArgs(blockHash).returns(rawBlockHash);
+      when(stringToBlockHashStub).calledWith(blockHash, context).mockReturnValue(rawBlockHash);
 
-      getBlockStub.withArgs(rawBlockHash).resolves(
-        dsMockUtils.createMockSignedBlock({
-          block: {
-            header: undefined,
-            extrinsics: [
-              {
-                toHex: jest.fn().mockImplementation(() => 'hex'),
-              },
-            ],
-          },
-        })
-      );
+      when(getBlockStub)
+        .calledWith(rawBlockHash)
+        .mockResolvedValue(
+          dsMockUtils.createMockSignedBlock({
+            block: {
+              header: undefined,
+              extrinsics: [
+                {
+                  toHex: jest.fn().mockImplementation(() => 'hex'),
+                },
+              ],
+            },
+          })
+        );
 
       const rawGasFees = dsMockUtils.createMockBalance(gasFees);
 
-      balanceToBigNumberStub.withArgs(rawGasFees).returns(gasFees);
+      when(balanceToBigNumberStub).calledWith(rawGasFees).mockReturnValue(gasFees);
 
-      queryInfoStub.withArgs('hex', rawBlockHash).resolves(
-        dsMockUtils.createMockRuntimeDispatchInfo({
-          partialFee: rawGasFees,
-        })
-      );
+      when(queryInfoStub)
+        .calledWith('hex', rawBlockHash)
+        .mockResolvedValue(
+          dsMockUtils.createMockRuntimeDispatchInfo({
+            partialFee: rawGasFees,
+          })
+        );
 
       let result = await network.getTransactionByHashV2(variable);
       expect(result).toEqual({

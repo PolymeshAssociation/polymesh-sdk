@@ -84,7 +84,7 @@ describe('Polymesh Transaction class', () => {
 
   describe('method: supportsSubsidy', () => {
     it('should return whether the transaction supports subsidy', () => {
-      context.supportsSubsidy.onFirstCall().returns(false);
+      context.supportsSubsidy.mockReturnValueOnce(false);
 
       const transaction = dsMockUtils.createTxStub('identity', 'leaveIdentityAsKey');
 

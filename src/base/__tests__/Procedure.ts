@@ -1,7 +1,7 @@
 import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 import { PosRatio, ProtocolOp } from 'polymesh-types/types';
-import sinon from 'sinon';
 
 import { Context, Procedure } from '~/internal';
 import {
@@ -46,7 +46,7 @@ describe('Procedure class', () => {
     dsMockUtils.reset();
     entityMockUtils.reset();
     procedureMockUtils.reset();
-    polymeshTransactionMockUtils.reset();
+    polymeshTransactionMockUtils.mockReset();
   });
 
   afterAll(() => {
@@ -56,13 +56,13 @@ describe('Procedure class', () => {
 
   describe('method: checkAuthorization', () => {
     it('should return whether the current user has sufficient authorization to run the procedure', async () => {
-      const prepareFunc = sinon.stub();
-      const authFunc = sinon.stub();
+      const prepareFunc = jest.fn();
+      const authFunc = jest.fn();
       const authorization: ProcedureAuthorization = {
         roles: true,
         permissions: true,
       };
-      authFunc.resolves(authorization);
+      authFunc.mockResolvedValue(authorization);
       let procedure = new Procedure(prepareFunc, authFunc);
 
       const args = 'args';
@@ -90,7 +90,7 @@ describe('Procedure class', () => {
           },
         },
       });
-      authFunc.resolves({
+      authFunc.mockResolvedValue({
         roles: [{ type: RoleType.TickerOwner, ticker: 'ticker' }],
         permissions: {
           assets: null,
@@ -116,7 +116,7 @@ describe('Procedure class', () => {
       });
 
       context = dsMockUtils.getContextInstance({ hasAssetPermissions: true });
-      authFunc.resolves({
+      authFunc.mockResolvedValue({
         roles: [{ type: RoleType.TickerOwner, ticker: 'ticker' }],
         permissions: {
           assets: [entityMockUtils.getAssetInstance({ ticker: 'SOME_TICKER' })],
@@ -134,7 +134,7 @@ describe('Procedure class', () => {
         noIdentity: false,
       });
 
-      authFunc.resolves({
+      authFunc.mockResolvedValue({
         roles: [{ type: RoleType.TickerOwner, ticker: 'ticker' }],
         permissions: {
           assets: [entityMockUtils.getAssetInstance({ ticker: 'SOME_TICKER' })],
@@ -157,7 +157,7 @@ describe('Procedure class', () => {
         noIdentity: false,
       });
 
-      authFunc.resolves({
+      authFunc.mockResolvedValue({
         roles: [{ type: RoleType.TickerOwner, ticker: 'ticker' }],
         signerPermissions: {
           assets: [entityMockUtils.getAssetInstance({ ticker: 'SOME_TICKER' })],
@@ -180,7 +180,7 @@ describe('Procedure class', () => {
         noIdentity: false,
       });
 
-      authFunc.resolves({
+      authFunc.mockResolvedValue({
         roles: [{ type: RoleType.TickerOwner, ticker: 'ticker' }],
         permissions: {
           assets: [entityMockUtils.getAssetInstance({ ticker: 'SOME_TICKER' })],
@@ -198,7 +198,7 @@ describe('Procedure class', () => {
       });
 
       context = dsMockUtils.getContextInstance();
-      context.getSigningAccount.returns(
+      context.getSigningAccount.mockReturnValue(
         entityMockUtils.getAccountInstance({
           getIdentity: null,
           isFrozen: false,
@@ -227,9 +227,9 @@ describe('Procedure class', () => {
     });
 
     it('should throw an error if the Procedure requires permissions over more than one Asset', () => {
-      const prepareFunc = sinon.stub();
-      const authFunc = sinon.stub();
-      authFunc.resolves({
+      const prepareFunc = jest.fn();
+      const authFunc = jest.fn();
+      authFunc.mockResolvedValue({
         permissions: {
           assets: [
             entityMockUtils.getAssetInstance({ ticker: 'SOME_TICKER' }),
@@ -249,9 +249,9 @@ describe('Procedure class', () => {
   });
 
   describe('method: prepare', () => {
-    let posRatioToBigNumberStub: sinon.SinonStub<[PosRatio], BigNumber>;
-    let balanceToBigNumberStub: sinon.SinonStub<[Balance], BigNumber>;
-    let txTagToProtocolOpStub: sinon.SinonStub<[TxTag, Context], ProtocolOp>;
+    let posRatioToBigNumberStub: jest.SpyInstance<BigNumber, [PosRatio]>;
+    let balanceToBigNumberStub: jest.SpyInstance<BigNumber, [Balance]>;
+    let txTagToProtocolOpStub: jest.SpyInstance<ProtocolOp, [TxTag, Context]>;
     let txTags: TxTag[];
     let fees: BigNumber[];
     let rawCoefficient: PosRatio;
@@ -261,9 +261,9 @@ describe('Procedure class', () => {
     let coefficient: BigNumber;
 
     beforeAll(() => {
-      posRatioToBigNumberStub = sinon.stub(utilsConversionModule, 'posRatioToBigNumber');
-      balanceToBigNumberStub = sinon.stub(utilsConversionModule, 'balanceToBigNumber');
-      txTagToProtocolOpStub = sinon.stub(utilsConversionModule, 'txTagToProtocolOp');
+      posRatioToBigNumberStub = jest.spyOn(utilsConversionModule, 'posRatioToBigNumber');
+      balanceToBigNumberStub = jest.spyOn(utilsConversionModule, 'balanceToBigNumber');
+      txTagToProtocolOpStub = jest.spyOn(utilsConversionModule, 'txTagToProtocolOp');
       txTags = [TxTags.asset.RegisterTicker, TxTags.identity.CddRegisterDid];
       fees = [new BigNumber(250), new BigNumber(0)];
       numerator = new BigNumber(7);
@@ -277,22 +277,22 @@ describe('Procedure class', () => {
       dsMockUtils.createQueryStub('protocolFee', 'coefficient', {
         returnValue: rawCoefficient,
       });
-      dsMockUtils
-        .createQueryStub('protocolFee', 'baseFees')
-        .withArgs('AssetRegisterTicker')
-        .resolves(rawFees[0]);
-      dsMockUtils
-        .createQueryStub('protocolFee', 'baseFees')
-        .withArgs('IdentityRegisterDid')
-        .resolves(rawFees[1]);
+      when(dsMockUtils.createQueryStub('protocolFee', 'baseFees'))
+        .calledWith('AssetRegisterTicker')
+        .mockResolvedValue(rawFees[0]);
+      when(dsMockUtils.createQueryStub('protocolFee', 'baseFees'))
+        .calledWith('IdentityRegisterDid')
+        .mockResolvedValue(rawFees[1]);
 
-      posRatioToBigNumberStub.withArgs(rawCoefficient).returns(coefficient);
+      when(posRatioToBigNumberStub).calledWith(rawCoefficient).mockReturnValue(coefficient);
       txTags.forEach(txTag =>
-        txTagToProtocolOpStub.withArgs(txTag, context).returns(txTag as unknown as ProtocolOp)
+        when(txTagToProtocolOpStub)
+          .calledWith(txTag, context)
+          .mockReturnValue(txTag as unknown as ProtocolOp)
       );
 
       rawFees.forEach((rawFee, index) =>
-        balanceToBigNumberStub.withArgs(rawFee).returns(new BigNumber(fees[index]))
+        when(balanceToBigNumberStub).calledWith(rawFee).mockReturnValue(new BigNumber(fees[index]))
       );
     });
 
@@ -338,18 +338,17 @@ describe('Procedure class', () => {
         ],
       });
 
-      sinon.assert.calledWith(
-        batchConstructorStub,
-        sinon.match({
-          transactions: sinon.match([
-            sinon.match({ transaction: tx1, args: [ticker] }),
-            sinon.match({ transaction: tx2, args: [secondaryAccounts] }),
+      expect(batchConstructorStub).toHaveBeenCalledWith(
+        expect.objectContaining({
+          transactions: expect.objectContaining([
+            expect.objectContaining({ transaction: tx1, args: [ticker] }),
+            expect.objectContaining({ transaction: tx2, args: [secondaryAccounts] }),
           ]),
         }),
         { ...context, signingAddress: 'something', nonce: new BigNumber(15) }
       );
-      sinon.assert.calledWith(context.setSigningAddress, 'something');
-      sinon.assert.calledWith(context.setNonce, new BigNumber(15));
+      expect(context.setSigningAddress).toHaveBeenCalledWith('something');
+      expect(context.setNonce).toHaveBeenCalledWith(new BigNumber(15));
 
       const func2 = async function (
         this: Procedure<typeof procArgs, string>,
@@ -374,12 +373,15 @@ describe('Procedure class', () => {
         transaction: tx1,
         args: [ticker],
       });
-      sinon.assert.calledWith(constructorStub, sinon.match({ transaction: tx1, args: [ticker] }), {
-        ...context,
-        signingAddress: 'something',
-        nonce: new BigNumber(-1),
-      });
-      sinon.assert.calledWith(context.setSigningAddress, 'something');
+      expect(constructorStub).toHaveBeenCalledWith(
+        expect.objectContaining({ transaction: tx1, args: [ticker] }),
+        {
+          ...context,
+          signingAddress: 'something',
+          nonce: new BigNumber(-1),
+        }
+      );
+      expect(context.setSigningAddress).toHaveBeenCalledWith('something');
 
       const func3 = async function (
         this: Procedure<typeof procArgs, string>,
@@ -393,7 +395,7 @@ describe('Procedure class', () => {
 
       const proc3 = new Procedure(func3);
 
-      constructorStub.resetHistory();
+      constructorStub.mockReset();
 
       const transaction3 = await proc3.prepare({ args: procArgs }, context, {
         signingAccount: 'something',
@@ -404,15 +406,18 @@ describe('Procedure class', () => {
         transaction: tx1,
         args: [ticker],
       });
-      sinon.assert.calledWith(constructorStub, sinon.match({ transaction: tx1, args: [ticker] }), {
-        ...context,
-        signingAddress: 'something',
-        nonce: new BigNumber(10),
-      });
-      sinon.assert.calledWith(context.setSigningAddress, 'something');
-      sinon.assert.calledWith(context.setNonce, new BigNumber(10));
+      expect(constructorStub).toHaveBeenCalledWith(
+        expect.objectContaining({ transaction: tx1, args: [ticker] }),
+        {
+          ...context,
+          signingAddress: 'something',
+          nonce: new BigNumber(10),
+        }
+      );
+      expect(context.setSigningAddress).toHaveBeenCalledWith('something');
+      expect(context.setNonce).toHaveBeenCalledWith(new BigNumber(10));
 
-      constructorStub.resetHistory();
+      constructorStub.mockReset();
 
       const nonce = (): Promise<BigNumber> => Promise.resolve(new BigNumber(15));
 
@@ -421,28 +426,34 @@ describe('Procedure class', () => {
         nonce,
       });
 
-      sinon.assert.calledWith(constructorStub, sinon.match({ transaction: tx1, args: [ticker] }), {
-        ...context,
-        signingAddress: 'something',
-        nonce: new BigNumber(15),
-      });
+      expect(constructorStub).toHaveBeenCalledWith(
+        expect.objectContaining({ transaction: tx1, args: [ticker] }),
+        {
+          ...context,
+          signingAddress: 'something',
+          nonce: new BigNumber(15),
+        }
+      );
 
-      sinon.assert.calledWith(context.setNonce, new BigNumber(15));
+      expect(context.setNonce).toHaveBeenCalledWith(new BigNumber(15));
 
-      constructorStub.resetHistory();
+      constructorStub.mockReset();
 
       await proc3.prepare({ args: procArgs }, context, {
         signingAccount: 'something',
         nonce: Promise.resolve(new BigNumber(12)),
       });
 
-      sinon.assert.calledWith(constructorStub, sinon.match({ transaction: tx1, args: [ticker] }), {
-        ...context,
-        signingAddress: 'something',
-        nonce: new BigNumber(12),
-      });
+      expect(constructorStub).toHaveBeenCalledWith(
+        expect.objectContaining({ transaction: tx1, args: [ticker] }),
+        {
+          ...context,
+          signingAddress: 'something',
+          nonce: new BigNumber(12),
+        }
+      );
 
-      sinon.assert.calledWith(context.setNonce, new BigNumber(12));
+      expect(context.setNonce).toHaveBeenCalledWith(new BigNumber(12));
     });
 
     it('should throw any errors encountered during preparation', () => {
@@ -534,7 +545,7 @@ describe('Procedure class', () => {
 
       context = dsMockUtils.getContextInstance();
 
-      context.getSigningAccount.returns(
+      context.getSigningAccount.mockReturnValue(
         entityMockUtils.getAccountInstance({
           getIdentity: null,
         })

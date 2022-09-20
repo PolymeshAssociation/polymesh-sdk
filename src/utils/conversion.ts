@@ -3988,7 +3988,7 @@ export function complianceConditionsToBtreeSet(
 ): BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition> {
   const sortedConditions = sortTransferRestrictionByClaimValue(conditions);
   return context.createType(
-    'BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition> ',
+    'BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>',
     sortedConditions
   );
 }

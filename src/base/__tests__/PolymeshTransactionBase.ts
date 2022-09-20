@@ -1,8 +1,8 @@
 import { Balance } from '@polkadot/types/interfaces';
 import { Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 import { noop } from 'lodash';
-import sinon from 'sinon';
 
 import {
   Context,
@@ -87,7 +87,7 @@ describe('Polymesh Transaction Base class', () => {
   });
 
   describe('method: run', () => {
-    let getBlockStub: sinon.SinonStub;
+    let getBlockStub: jest.Mock;
 
     beforeEach(() => {
       getBlockStub = dsMockUtils.createRpcStub('chain', 'getBlock', {
@@ -135,7 +135,7 @@ describe('Polymesh Transaction Base class', () => {
 
       await fakePromise();
 
-      sinon.assert.calledWith(underlyingTx, ...args);
+      expect(underlyingTx).toHaveBeenCalledWith(...args);
       expect(tx.blockHash).toBeDefined();
       expect(tx.blockNumber).toBeDefined();
       expect(tx.txHash).toBeDefined();
@@ -200,7 +200,7 @@ describe('Polymesh Transaction Base class', () => {
     it('should resolve the result if it is a resolver function', async () => {
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
       const args = tuple('YET_ANOTHER_TICKER');
-      const resolverStub = sinon.stub().resolves(1);
+      const resolverStub = jest.fn().mockResolvedValue(1);
       const balance = {
         free: new BigNumber(1000000),
         locked: new BigNumber(0),
@@ -232,7 +232,7 @@ describe('Polymesh Transaction Base class', () => {
 
       await tx.run();
 
-      sinon.assert.calledOnce(resolverStub);
+      expect(resolverStub).toHaveBeenCalledTimes(1);
     });
 
     it('should throw an error if attempting to run a transaction that has already run', async () => {
@@ -389,7 +389,9 @@ describe('Polymesh Transaction Base class', () => {
 
     it('should throw an error if there is a problem fetching block data', async () => {
       const message = 'Something went wrong';
-      getBlockStub.rejects(new Error(message));
+      getBlockStub.mockImplementation(() => {
+        throw new Error(message);
+      });
 
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker', {
         autoResolve: false,
@@ -571,15 +573,15 @@ describe('Polymesh Transaction Base class', () => {
         context
       );
 
-      const listenerStub = sinon.stub();
+      const listenerStub = jest.fn();
 
       tx.onStatusChange(t => listenerStub(t.status));
 
       await tx.run();
 
-      sinon.assert.calledWith(listenerStub.firstCall, TransactionStatus.Unapproved);
-      sinon.assert.calledWith(listenerStub.secondCall, TransactionStatus.Running);
-      sinon.assert.calledWith(listenerStub.thirdCall, TransactionStatus.Succeeded);
+      expect(listenerStub.mock.calls[0]).toHaveBeenCalledWith(TransactionStatus.Unapproved);
+      expect(listenerStub.mock.calls[1]).toHaveBeenCalledWith(TransactionStatus.Running);
+      expect(listenerStub.mock.calls[2]).toHaveBeenCalledWith(TransactionStatus.Succeeded);
     });
 
     it('should return an unsubscribe function', async () => {
@@ -598,7 +600,7 @@ describe('Polymesh Transaction Base class', () => {
         context
       );
 
-      const listenerStub = sinon.stub();
+      const listenerStub = jest.fn();
 
       const unsub = tx.onStatusChange(t => listenerStub(t.status));
 
@@ -608,40 +610,46 @@ describe('Polymesh Transaction Base class', () => {
 
       unsub();
 
-      sinon.assert.calledWith(listenerStub.firstCall, TransactionStatus.Unapproved);
-      sinon.assert.calledWith(listenerStub.secondCall, TransactionStatus.Running);
-      sinon.assert.callCount(listenerStub, 2);
+      expect(listenerStub.mock.calls[0]).toHaveBeenCalledWith(TransactionStatus.Unapproved);
+      expect(listenerStub.mock.calls[1]).toHaveBeenCalledWith(TransactionStatus.Running);
+      expect(listenerStub).toHaveBeenCalledTimes(2);
     });
   });
 
   describe('method: getTotalFees', () => {
-    let balanceToBigNumberStub: sinon.SinonStub<[Balance], BigNumber>;
+    let balanceToBigNumberStub: jest.SpyInstance<BigNumber, [Balance]>;
     let protocolFees: BigNumber[];
     let gasFees: BigNumber[];
     let rawGasFees: Balance[];
 
     beforeAll(() => {
-      balanceToBigNumberStub = sinon.stub(utilsConversionModule, 'balanceToBigNumber');
+      balanceToBigNumberStub = jest.spyOn(utilsConversionModule, 'balanceToBigNumber');
       protocolFees = [new BigNumber(250), new BigNumber(150)];
       gasFees = [new BigNumber(5), new BigNumber(10)];
       rawGasFees = gasFees.map(dsMockUtils.createMockBalance);
     });
 
     beforeEach(() => {
-      context.getProtocolFees.withArgs({ tags: [TxTags.asset.RegisterTicker] }).resolves([
-        {
-          tag: TxTags.asset.RegisterTicker,
-          fees: protocolFees[0],
-        },
-      ]);
-      context.getProtocolFees.withArgs({ tags: [TxTags.asset.CreateAsset] }).resolves([
-        {
-          tag: TxTags.asset.CreateAsset,
-          fees: protocolFees[1],
-        },
-      ]);
+      when(context.getProtocolFees)
+        .calledWith({ tags: [TxTags.asset.RegisterTicker] })
+        .mockResolvedValue([
+          {
+            tag: TxTags.asset.RegisterTicker,
+            fees: protocolFees[0],
+          },
+        ]);
+      when(context.getProtocolFees)
+        .calledWith({ tags: [TxTags.asset.CreateAsset] })
+        .mockResolvedValue([
+          {
+            tag: TxTags.asset.CreateAsset,
+            fees: protocolFees[1],
+          },
+        ]);
       rawGasFees.forEach((rawGasFee, index) =>
-        balanceToBigNumberStub.withArgs(rawGasFee).returns(new BigNumber(gasFees[index]))
+        when(balanceToBigNumberStub)
+          .calledWith(rawGasFee)
+          .mockReturnValue(new BigNumber(gasFees[index]))
       );
     });
 
@@ -787,23 +795,22 @@ describe('Polymesh Transaction Base class', () => {
         context
       );
 
-      const listenerStub = sinon.stub();
+      const listenerStub = jest.fn();
       tx.onProcessedByMiddleware(err => listenerStub(err));
 
       const stub = dsMockUtils.createApolloQueryStub(latestProcessedBlock(), {
         latestBlock: { id: blockNumber.minus(1).toNumber() },
       });
 
-      stub
-        .withArgs(latestProcessedBlock())
-        .onCall(3)
-        .resolves({ data: { latestBlock: { id: blockNumber.toNumber() } } });
+      when(stub)
+        .calledWith(latestProcessedBlock())
+        .mockResolvedValue({ data: { latestBlock: { id: blockNumber.toNumber() } } });
 
       await tx.run();
 
       await fakePromises();
 
-      sinon.assert.calledWith(listenerStub.firstCall, undefined);
+      expect(listenerStub.mock.calls[0]).toHaveBeenCalledWith(undefined);
     });
 
     it('should execute a callback with an error if 10 seconds pass without the data being processed', async () => {
@@ -820,7 +827,7 @@ describe('Polymesh Transaction Base class', () => {
         context
       );
 
-      const listenerStub = sinon.stub();
+      const listenerStub = jest.fn();
       tx.onProcessedByMiddleware(err => listenerStub(err));
 
       dsMockUtils.createApolloQueryStub(latestProcessedBlock(), {
@@ -831,7 +838,7 @@ describe('Polymesh Transaction Base class', () => {
 
       await fakePromises();
 
-      expect(listenerStub.getCall(0).args[0].message).toBe(
+      expect(listenerStub.mock.calls[0][0].message).toBe(
         'Middleware has not synced after 5 attempts'
       );
     });
@@ -852,7 +859,7 @@ describe('Polymesh Transaction Base class', () => {
         context
       );
 
-      const listenerStub = sinon.stub();
+      const listenerStub = jest.fn();
 
       await tx.run();
       expect(() => tx.onProcessedByMiddleware(err => listenerStub(err))).toThrow(
@@ -874,7 +881,7 @@ describe('Polymesh Transaction Base class', () => {
         context
       );
 
-      const listenerStub = sinon.stub();
+      const listenerStub = jest.fn();
       const unsub = tx.onProcessedByMiddleware(err => listenerStub(err));
 
       dsMockUtils.createApolloQueryStub(latestProcessedBlock(), {
@@ -890,7 +897,7 @@ describe('Polymesh Transaction Base class', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (tx as any).emitter.emit('ProcessedByMiddleware');
 
-      sinon.assert.callCount(listenerStub, 1);
+      expect(listenerStub).toHaveBeenCalledTimes(1);
     });
   });
 });

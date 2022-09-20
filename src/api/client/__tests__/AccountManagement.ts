@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { AccountManagement } from '~/api/client/AccountManagement';
 import { Account, PolymeshTransaction } from '~/internal';
@@ -46,10 +46,9 @@ describe('AccountManagement class', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: undefined, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareStub())
+        .calledWith({ args: undefined, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await accountManagement.leaveIdentity();
 
@@ -63,10 +62,9 @@ describe('AccountManagement class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { accounts }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareStub())
+        .calledWith({ args: { accounts }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await accountManagement.removeSecondaryAccounts({ accounts });
 
@@ -90,10 +88,9 @@ describe('AccountManagement class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { secondaryAccounts }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareStub())
+        .calledWith({ args: { secondaryAccounts }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await accountManagement.revokePermissions({ secondaryAccounts: [account] });
 
@@ -112,10 +109,9 @@ describe('AccountManagement class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { secondaryAccounts }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareStub())
+        .calledWith({ args: { secondaryAccounts }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await accountManagement.modifyPermissions({ secondaryAccounts });
 
@@ -131,10 +127,9 @@ describe('AccountManagement class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareStub())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await accountManagement.inviteAccount(args);
 
@@ -150,10 +145,9 @@ describe('AccountManagement class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareStub())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await accountManagement.freezeSecondaryAccounts();
 
@@ -169,10 +163,9 @@ describe('AccountManagement class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareStub())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await accountManagement.unfreezeSecondaryAccounts();
 
@@ -189,10 +182,9 @@ describe('AccountManagement class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareStub())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await accountManagement.subsidizeAccount(args);
 
@@ -221,7 +213,9 @@ describe('AccountManagement class', () => {
     });
 
     it('should return null if there is no set signing Account', async () => {
-      context.getSigningAccount.throws('err');
+      context.getSigningAccount.mockImplementation(() => {
+        throw new Error('err');
+      });
 
       const result = accountManagement.getSigningAccount();
 
@@ -260,15 +254,15 @@ describe('AccountManagement class', () => {
       entityMockUtils.configureMocks({ accountOptions: { getBalance: fakeBalance } });
 
       let accountBalanceStub = (
-        dsMockUtils.getContextInstance().getSigningAccount().getBalance as sinon.SinonStub
-      ).resolves(unsubCallback);
+        dsMockUtils.getContextInstance().getSigningAccount().getBalance as jest.Mock
+      ).mockResolvedValue(unsubCallback);
 
       const callback = (() => 1 as unknown) as SubCallback<AccountBalance>;
       let result = await accountManagement.getAccountBalance(callback);
       expect(result).toEqual(unsubCallback);
-      sinon.assert.calledWithExactly(accountBalanceStub, callback);
+      expect(accountBalanceStub).toBeCalledWith(callback);
 
-      accountBalanceStub = sinon.stub().resolves(unsubCallback);
+      accountBalanceStub = jest.fn().mockResolvedValue(unsubCallback);
       entityMockUtils.configureMocks({
         accountOptions: {
           getBalance: accountBalanceStub,
@@ -277,7 +271,7 @@ describe('AccountManagement class', () => {
       const account = 'someId';
       result = await accountManagement.getAccountBalance({ account }, callback);
       expect(result).toEqual(unsubCallback);
-      sinon.assert.calledWithExactly(accountBalanceStub, callback);
+      expect(accountBalanceStub).toBeCalledWith(callback);
     });
   });
 

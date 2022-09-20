@@ -3,11 +3,13 @@
 import {
   AugmentedEvents,
   AugmentedSubmittable,
+  DecoratedRpc,
   QueryableConsts,
   QueryableStorage,
   SubmittableExtrinsic,
   SubmittableExtrinsics,
 } from '@polkadot/api/types';
+import { RpcInterface } from '@polkadot/rpc-core/types';
 import {
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesTicker,
@@ -66,6 +68,8 @@ export type Queries = QueryableStorage<'promise'>;
  * Polkadot's `consts` submodule
  */
 export type Consts = QueryableConsts<'promise'>;
+
+export type Rpcs = DecoratedRpc<'promise', RpcInterface>;
 
 /**
  * Low level transaction method in the polkadot API
