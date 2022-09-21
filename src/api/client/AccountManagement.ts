@@ -218,7 +218,7 @@ export class AccountManagement {
   }
 
   /**
-   * Return an Account instance from an address. If the Account has multiSig signers, the returned value will be a {@link api/entities/MultiSig/MultiSig!MultiSig} instance
+   * Return an Account instance from an address. If the Account has multiSig signers, the returned value will be a {@link api/entities/MultiSig!MultiSig} instance
    */
   public async getAccount(args: { address: string }): Promise<Account | MultiSig> {
     const {

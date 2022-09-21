@@ -43,12 +43,12 @@ import {
   SecurityIdentifier,
   Signer,
   StatClaimIssuer,
+  StatType,
   TransactionArray,
   TransactionPermissions,
   TxGroup,
   VenueType,
 } from '~/types';
-import { StatType } from '~/types/internal';
 import { Modify } from '~/types/utils';
 
 export type AddRestrictionParams<T> = Omit<

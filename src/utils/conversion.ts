@@ -210,6 +210,7 @@ import {
   SignerValue,
   SingleClaimCondition,
   StatClaimType,
+  StatType,
   TargetTreatment,
   Tier,
   TransactionPermissions,
@@ -238,7 +239,6 @@ import {
   ScheduleSpec,
   StatClaimInputType,
   StatClaimIssuer,
-  StatType,
   TickerKey,
 } from '~/types/internal';
 import { tuple } from '~/types/utils';

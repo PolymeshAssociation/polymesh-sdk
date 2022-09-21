@@ -59,7 +59,7 @@ export class MultiSig extends Account {
   }
 
   /**
-   * Given an ID, fetch a { @link api/entities/MultiSig/MultiSigProposal!MultiSigProposal } for this MultiSig
+   * Given an ID, fetch a { @link api/entities/MultiSigProposal!MultiSigProposal } for this MultiSig
    *
    * @throws if the MultiSigProposal is not found
    */
@@ -81,7 +81,7 @@ export class MultiSig extends Account {
   }
 
   /**
-   * Return all { @link api/entities/MultiSig/MultiSigProposal!MultiSigProposal } for this MultiSig Account
+   * Return all { @link api/entities/MultiSigProposal!MultiSigProposal } for this MultiSig Account
    */
   public async getProposals(): Promise<MultiSigProposal[]> {
     const {
