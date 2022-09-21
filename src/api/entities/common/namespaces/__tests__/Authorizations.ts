@@ -1,6 +1,6 @@
 import { bool } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Context, Namespace } from '~/internal';
 import { AuthorizationType as MeshAuthorizationType, Signatory } from '~/polkadot/polymesh';
@@ -41,21 +41,21 @@ describe('Authorizations class', () => {
   });
 
   describe('method: getReceived', () => {
-    let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
-    let booleanToBoolStub: sinon.SinonStub<[boolean, Context], bool>;
-    let authorizationTypeToMeshAuthorizationTypeStub: sinon.SinonStub<
-      [AuthorizationType, Context],
-      MeshAuthorizationType
+    let signerValueToSignatoryStub: jest.SpyInstance<Signatory, [SignerValue, Context]>;
+    let booleanToBoolStub: jest.SpyInstance<bool, [boolean, Context]>;
+    let authorizationTypeToMeshAuthorizationTypeStub: jest.SpyInstance<
+      MeshAuthorizationType,
+      [AuthorizationType, Context]
     >;
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     beforeAll(() => {
-      signerValueToSignatoryStub = sinon.stub(utilsConversionModule, 'signerValueToSignatory');
-      booleanToBoolStub = sinon.stub(utilsConversionModule, 'booleanToBool');
-      authorizationTypeToMeshAuthorizationTypeStub = sinon.stub(
+      signerValueToSignatoryStub = jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
+      booleanToBoolStub = jest.spyOn(utilsConversionModule, 'booleanToBool');
+      authorizationTypeToMeshAuthorizationTypeStub = jest.spyOn(
         utilsConversionModule,
         'authorizationTypeToMeshAuthorizationType'
       );
@@ -87,12 +87,16 @@ describe('Authorizations class', () => {
         } as const,
       ];
 
-      signerValueToSignatoryStub.returns(rawSignatory);
-      booleanToBoolStub.withArgs(true, context).returns(dsMockUtils.createMockBool(true));
-      booleanToBoolStub.withArgs(false, context).returns(dsMockUtils.createMockBool(false));
-      authorizationTypeToMeshAuthorizationTypeStub
-        .withArgs(filter, context)
-        .returns(rawAuthorizationType);
+      when(signerValueToSignatoryStub).mockReturnValue(rawSignatory);
+      when(booleanToBoolStub)
+        .calledWith(true, context)
+        .mockReturnValue(dsMockUtils.createMockBool(true));
+      when(booleanToBoolStub)
+        .calledWith(false, context)
+        .mockReturnValue(dsMockUtils.createMockBool(false));
+      when(authorizationTypeToMeshAuthorizationTypeStub)
+        .calledWith(filter, context)
+        .mockReturnValue(rawAuthorizationType);
 
       const fakeRpcAuthorizations = authParams.map(({ authId, expiry, issuer, data }) =>
         dsMockUtils.createMockAuthorization({
@@ -109,7 +113,7 @@ describe('Authorizations class', () => {
 
       dsMockUtils
         .createRpcStub('identity', 'getFilteredAuthorizations')
-        .resolves(fakeRpcAuthorizations);
+        .mockResolvedValue(fakeRpcAuthorizations);
 
       const expectedAuthorizations = authParams.map(({ authId, target, issuer, expiry, data }) =>
         entityMockUtils.getAuthorizationRequestInstance({
@@ -136,12 +140,12 @@ describe('Authorizations class', () => {
 
   describe('method: getOne', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     beforeAll(() => {
-      sinon.stub(utilsConversionModule, 'signerValueToSignatory');
-      sinon.stub(utilsConversionModule, 'bigNumberToU64');
+      jest.spyOn(utilsConversionModule, 'signerValueToSignatory').mockImplementation();
+      jest.spyOn(utilsConversionModule, 'bigNumberToU64').mockImplementation();
     });
 
     it('should return the requested Authorization Request', async () => {

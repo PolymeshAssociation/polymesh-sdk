@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Context, Entity, NumberedPortfolio, PolymeshError, PolymeshTransaction } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
@@ -78,10 +78,9 @@ describe('NumberedPortfolio class', () => {
       const expectedTransaction =
         'someTransaction' as unknown as PolymeshTransaction<NumberedPortfolio>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { id, did, name }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareStub())
+        .calledWith({ args: { id, did, name }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await numberedPortfolio.modifyName({ name });
 
@@ -100,10 +99,9 @@ describe('NumberedPortfolio class', () => {
       dsMockUtils.createQueryStub('portfolio', 'portfolios', {
         returnValue: rawPortfolioName,
       });
-      sinon
-        .stub(utilsConversionModule, 'bytesToString')
-        .withArgs(rawPortfolioName)
-        .returns(portfolioName);
+      when(jest.spyOn(utilsConversionModule, 'bytesToString'))
+        .calledWith(rawPortfolioName)
+        .mockReturnValue(portfolioName);
 
       const result = await numberedPortfolio.getName();
 
@@ -233,19 +231,19 @@ describe('NumberedPortfolio class', () => {
         size: new BigNumber(0),
       });
 
-      sinon
-        .stub(utilsConversionModule, 'stringToIdentityId')
-        .returns(dsMockUtils.createMockIdentityId(did));
-      sinon
-        .stub(utilsConversionModule, 'bigNumberToU64')
-        .returns(dsMockUtils.createMockU64(portfolioId));
+      jest
+        .spyOn(utilsConversionModule, 'stringToIdentityId')
+        .mockReturnValue(dsMockUtils.createMockIdentityId(did));
+      jest
+        .spyOn(utilsConversionModule, 'bigNumberToU64')
+        .mockReturnValue(dsMockUtils.createMockU64(portfolioId));
 
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
 
       let result = await numberedPortfolio.exists();
       expect(result).toBe(false);
 
-      portfoliosStub.size.resolves(dsMockUtils.createMockU64(new BigNumber(10)));
+      portfoliosStub.size.mockResolvedValue(dsMockUtils.createMockU64(new BigNumber(10)));
 
       result = await numberedPortfolio.exists();
       expect(result).toBe(true);

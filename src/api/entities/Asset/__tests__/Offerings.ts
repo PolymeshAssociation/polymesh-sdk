@@ -1,7 +1,7 @@
 import { Bytes } from '@polkadot/types';
 import { PalletStoFundraiser, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Asset, Context, Namespace, Offering, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -68,7 +68,7 @@ describe('Offerings class', () => {
 
   describe('method: launch', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
@@ -82,10 +82,9 @@ describe('Offerings class', () => {
         minInvestment: new BigNumber(100),
       };
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { ticker, ...args }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareStub())
+        .calledWith({ args: { ticker, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await offerings.launch(args);
 
@@ -122,10 +121,10 @@ describe('Offerings class', () => {
     let rawTicker: PolymeshPrimitivesTicker;
     let rawName: Bytes;
 
-    let stringToTickerStub: sinon.SinonStub<[string, Context], PolymeshPrimitivesTicker>;
-    let fundraiserToOfferingDetailsStub: sinon.SinonStub<
-      [PalletStoFundraiser, Bytes, Context],
-      OfferingDetails
+    let stringToTickerStub: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+    let fundraiserToOfferingDetailsStub: jest.SpyInstance<
+      OfferingDetails,
+      [PalletStoFundraiser, Bytes, Context]
     >;
 
     let details: OfferingDetails[];
@@ -133,8 +132,8 @@ describe('Offerings class', () => {
 
     beforeAll(() => {
       rawTicker = dsMockUtils.createMockTicker(ticker);
-      stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-      fundraiserToOfferingDetailsStub = sinon.stub(
+      stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
+      fundraiserToOfferingDetailsStub = jest.spyOn(
         utilsConversionModule,
         'fundraiserToOfferingDetails'
       );
@@ -256,13 +255,13 @@ describe('Offerings class', () => {
     });
 
     beforeEach(() => {
-      stringToTickerStub.withArgs(ticker, context).returns(rawTicker);
-      fundraiserToOfferingDetailsStub
-        .withArgs(fundraisers[0], rawName, context)
-        .returns(details[0]);
-      fundraiserToOfferingDetailsStub
-        .withArgs(fundraisers[1], rawName, context)
-        .returns(details[1]);
+      when(stringToTickerStub).calledWith(ticker, context).mockReturnValue(rawTicker);
+      when(fundraiserToOfferingDetailsStub)
+        .calledWith(fundraisers[0], rawName, context)
+        .mockReturnValue(details[0]);
+      when(fundraiserToOfferingDetailsStub)
+        .calledWith(fundraisers[1], rawName, context)
+        .mockReturnValue(details[1]);
 
       dsMockUtils.createQueryStub('sto', 'fundraisers', {
         entries: [
@@ -285,7 +284,7 @@ describe('Offerings class', () => {
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return all Offerings associated to the Asset', async () => {

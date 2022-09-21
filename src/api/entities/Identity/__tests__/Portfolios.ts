@@ -1,7 +1,7 @@
 import { StorageKey, u64 } from '@polkadot/types';
 import { PolymeshPrimitivesIdentityId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   Context,
@@ -36,8 +36,8 @@ describe('Portfolios class', () => {
   const numberedPortfolioId = new BigNumber(1);
   const rawNumberedPortfolioId = dsMockUtils.createMockU64(numberedPortfolioId);
   let mockContext: Mocked<Context>;
-  let stringToIdentityIdStub: sinon.SinonStub<[string, Context], PolymeshPrimitivesIdentityId>;
-  let u64ToBigNumberStub: sinon.SinonStub<[u64], BigNumber>;
+  let stringToIdentityIdStub: jest.SpyInstance<PolymeshPrimitivesIdentityId, [string, Context]>;
+  let u64ToBigNumberStub: jest.SpyInstance<BigNumber, [u64]>;
   let portfolios: Portfolios;
   let identity: Identity;
 
@@ -45,8 +45,8 @@ describe('Portfolios class', () => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
-    stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
-    u64ToBigNumberStub = sinon.stub(utilsConversionModule, 'u64ToBigNumber');
+    stringToIdentityIdStub = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
+    u64ToBigNumberStub = jest.spyOn(utilsConversionModule, 'u64ToBigNumber');
   });
 
   beforeEach(() => {
@@ -81,8 +81,8 @@ describe('Portfolios class', () => {
         ],
       });
 
-      stringToIdentityIdStub.withArgs(did, mockContext).returns(rawIdentityId);
-      u64ToBigNumberStub.returns(numberedPortfolioId);
+      when(stringToIdentityIdStub).calledWith(did, mockContext).mockReturnValue(rawIdentityId);
+      u64ToBigNumberStub.mockReturnValue(numberedPortfolioId);
 
       const result = await portfolios.getPortfolios();
       expect(result).toHaveLength(2);
@@ -124,10 +124,12 @@ describe('Portfolios class', () => {
         ),
       ];
 
-      sinon.stub(utilsInternalModule, 'requestPaginated').resolves({ entries, lastKey: null });
+      jest
+        .spyOn(utilsInternalModule, 'requestPaginated')
+        .mockResolvedValue({ entries, lastKey: null });
 
-      stringToIdentityIdStub.withArgs(did, mockContext).returns(rawIdentityId);
-      u64ToBigNumberStub.returns(numberedPortfolioId);
+      when(stringToIdentityIdStub).calledWith(did, mockContext).mockReturnValue(rawIdentityId);
+      u64ToBigNumberStub.mockReturnValue(numberedPortfolioId);
 
       const { data } = await portfolios.getCustodiedPortfolios();
       expect(data).toHaveLength(2);
@@ -174,10 +176,9 @@ describe('Portfolios class', () => {
       const portfolioId = new BigNumber(5);
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { id: portfolioId, did }, transformer: undefined }, mockContext)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareStub())
+        .calledWith({ args: { id: portfolioId, did }, transformer: undefined }, mockContext)
+        .mockResolvedValue(expectedTransaction);
 
       let tx = await portfolios.delete({ portfolio: portfolioId });
 

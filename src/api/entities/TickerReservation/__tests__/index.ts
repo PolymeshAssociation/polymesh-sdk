@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Asset, Context, Entity, PolymeshTransaction, TickerReservation } from '~/internal';
 import { dsMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -14,13 +14,13 @@ jest.mock(
 
 describe('TickerReservation class', () => {
   const ticker = 'FAKE_TICKER';
-  let assertTickerValidStub: sinon.SinonStub;
+  let assertTickerValidStub: jest.SpyInstance;
   let context: Mocked<Context>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
-    assertTickerValidStub = sinon.stub(utilsInternalModule, 'assertTickerValid');
+    assertTickerValidStub = jest.spyOn(utilsInternalModule, 'assertTickerValid');
   });
 
   afterEach(() => {
@@ -40,11 +40,13 @@ describe('TickerReservation class', () => {
 
   describe('constructor', () => {
     it('should throw an error if the supplied ticker is invalid', () => {
-      assertTickerValidStub.throws();
+      assertTickerValidStub.mockImplementation(() => {
+        throw new Error('err');
+      });
 
       expect(() => new TickerReservation({ ticker: 'some_ticker' }, context)).toThrow();
 
-      sinon.reset();
+      jest.restoreAllMocks();
     });
 
     it('should assign ticker to instance', () => {
@@ -63,7 +65,7 @@ describe('TickerReservation class', () => {
   });
 
   describe('method: details', () => {
-    let queryMultiStub: sinon.SinonStub;
+    let queryMultiStub: jest.SpyInstance;
 
     beforeEach(() => {
       dsMockUtils.createQueryStub('asset', 'tickers');
@@ -74,7 +76,7 @@ describe('TickerReservation class', () => {
     it('should return details for a free ticker', async () => {
       const tickerReservation = new TickerReservation({ ticker }, context);
 
-      queryMultiStub.resolves([
+      queryMultiStub.mockResolvedValue([
         dsMockUtils.createMockTickerRegistration(),
         dsMockUtils.createMockSecurityToken(),
       ]);
@@ -94,7 +96,7 @@ describe('TickerReservation class', () => {
 
       const tickerReservation = new TickerReservation({ ticker }, context);
 
-      queryMultiStub.resolves([
+      queryMultiStub.mockResolvedValue([
         dsMockUtils.createMockTickerRegistration({
           owner: dsMockUtils.createMockIdentityId(ownerDid),
           expiry: dsMockUtils.createMockOption(
@@ -119,7 +121,7 @@ describe('TickerReservation class', () => {
 
       const tickerReservation = new TickerReservation({ ticker }, context);
 
-      queryMultiStub.resolves([
+      queryMultiStub.mockResolvedValue([
         dsMockUtils.createMockTickerRegistration({
           owner: dsMockUtils.createMockIdentityId(ownerDid),
           expiry: dsMockUtils.createMockOption(), // null expiry
@@ -142,7 +144,7 @@ describe('TickerReservation class', () => {
 
       const tickerReservation = new TickerReservation({ ticker }, context);
 
-      queryMultiStub.resolves([
+      queryMultiStub.mockResolvedValue([
         dsMockUtils.createMockTickerRegistration({
           owner: dsMockUtils.createMockIdentityId(ownerDid),
           expiry: dsMockUtils.createMockOption(
@@ -167,7 +169,7 @@ describe('TickerReservation class', () => {
 
       const tickerReservation = new TickerReservation({ ticker }, context);
 
-      queryMultiStub.resolves([
+      queryMultiStub.mockResolvedValue([
         dsMockUtils.createMockTickerRegistration({
           owner: dsMockUtils.createMockIdentityId(ownerDid),
           expiry: dsMockUtils.createMockOption(),
@@ -194,16 +196,16 @@ describe('TickerReservation class', () => {
 
       const unsubCallback = 'unsubCallback';
 
-      queryMultiStub.callsFake(async (_, cbFunc) => {
+      queryMultiStub.mockImplementation(async (_, cbFunc) => {
         cbFunc([dsMockUtils.createMockTickerRegistration(), dsMockUtils.createMockSecurityToken()]);
         return unsubCallback;
       });
 
-      const callback = sinon.stub();
+      const callback = jest.fn();
       const unsub = await tickerReservation.details(callback);
 
       expect(unsub).toBe(unsubCallback);
-      sinon.assert.calledWith(callback, {
+      expect(callback).toHaveBeenCalledWith({
         owner: null,
         expiryDate: null,
         status: TickerReservationStatus.Free,
@@ -223,10 +225,9 @@ describe('TickerReservation class', () => {
       const expectedTransaction =
         'someTransaction' as unknown as PolymeshTransaction<TickerReservation>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareStub())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await tickerReservation.extend();
 
@@ -252,10 +253,9 @@ describe('TickerReservation class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareStub())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await tickerReservation.createAsset(args);
 
@@ -277,10 +277,9 @@ describe('TickerReservation class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareStub())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await tickerReservation.transferOwnership(args);
 

@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Context, Entity, Offering, PolymeshTransaction } from '~/internal';
 import { heartbeat, investments } from '~/middleware/queries';
@@ -196,20 +196,22 @@ describe('Offering class', () => {
         returnValue: rawName,
       });
 
-      dsMockUtils.createQueryStub('sto', 'fundraisers').callsFake(async (_a, _b, cbFunc) => {
-        cbFunc(rawFundraiser, rawName);
-        return unsubCallback;
-      });
+      dsMockUtils
+        .createQueryStub('sto', 'fundraisers')
+        .mockImplementation(async (_a, _b, cbFunc) => {
+          cbFunc(rawFundraiser, rawName);
+          return unsubCallback;
+        });
 
-      const callback = sinon.stub();
+      const callback = jest.fn();
       const result = await offering.details(callback);
 
-      sinon
-        .stub(utilsConversionModule, 'fundraiserToOfferingDetails')
-        .returns({} as OfferingDetails);
+      jest
+        .spyOn(utilsConversionModule, 'fundraiserToOfferingDetails')
+        .mockReturnValue({} as OfferingDetails);
 
       expect(result).toBe(unsubCallback);
-      sinon.assert.calledWithExactly(callback, sinon.match({}));
+      expect(callback).toBeCalledWith(expect.objectContaining({}));
     });
   });
 
@@ -226,10 +228,9 @@ describe('Offering class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareStub())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await offering.close();
 
@@ -256,10 +257,9 @@ describe('Offering class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareStub())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await offering.modifyTimes({
         start,
@@ -423,10 +423,9 @@ describe('Offering class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Offering>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { ticker, id, freeze: true }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareStub())
+        .calledWith({ args: { ticker, id, freeze: true }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await offering.freeze();
 
@@ -442,10 +441,9 @@ describe('Offering class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Offering>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { ticker, id, freeze: false }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareStub())
+        .calledWith({ args: { ticker, id, freeze: false }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await offering.unfreeze();
 
@@ -474,10 +472,9 @@ describe('Offering class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareStub())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await offering.invest({
         purchasePortfolio,

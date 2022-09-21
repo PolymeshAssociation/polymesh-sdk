@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import sinon, { SinonStub } from 'sinon';
+import { when } from 'jest-when';
 
 import {
   Checkpoint,
@@ -155,7 +155,11 @@ describe('DividendDistribution class', () => {
   describe('method: checkpoint', () => {
     it('should just pass the call down the line', async () => {
       const fakeResult = 'checkpoint' as unknown as Checkpoint;
-      sinon.stub(CorporateActionBase.prototype, 'checkpoint').resolves(fakeResult);
+      jest
+        .spyOn(CorporateActionBase.prototype, 'checkpoint')
+        .mockClear()
+        .mockImplementation()
+        .mockResolvedValue(fakeResult);
 
       const result = await dividendDistribution.checkpoint();
 
@@ -193,10 +197,13 @@ describe('DividendDistribution class', () => {
     it('should prepare the procedure and return the resulting transaction', async () => {
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { distribution: dividendDistribution }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareStub())
+        .calledWith(
+          { args: { distribution: dividendDistribution }, transformer: undefined },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await dividendDistribution.claim();
 
@@ -209,16 +216,16 @@ describe('DividendDistribution class', () => {
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
       const identityTargets = ['identityDid'];
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareStub())
+        .calledWith(
           {
             args: { targets: identityTargets, distribution: dividendDistribution },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await dividendDistribution.pay({ targets: identityTargets });
 
@@ -259,13 +266,13 @@ describe('DividendDistribution class', () => {
         checkpoint: new Date(),
       };
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareStub())
+        .calledWith(
           { args: { corporateAction: dividendDistribution, ...args }, transformer: undefined },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await dividendDistribution.modifyCheckpoint(args);
 
@@ -376,10 +383,11 @@ describe('DividendDistribution class', () => {
         },
       ];
 
-      const allBalancesStub = sinon.stub();
+      const allBalancesStub = jest.fn();
 
-      allBalancesStub.onFirstCall().resolves({ data: balances, next: 'notNull' });
-      allBalancesStub.onSecondCall().resolves({ data: [], next: null });
+      allBalancesStub
+        .mockResolvedValue({ data: balances, next: 'notNull' })
+        .mockResolvedValue({ data: [], next: null });
 
       entityMockUtils.configureMocks({
         checkpointOptions: {
@@ -391,9 +399,11 @@ describe('DividendDistribution class', () => {
         identities: [excluded],
         treatment: TargetTreatment.Exclude,
       };
-      sinon
-        .stub(dividendDistribution, 'checkpoint')
-        .resolves(entityMockUtils.getCheckpointInstance());
+      jest
+        .spyOn(dividendDistribution, 'checkpoint')
+        .mockClear()
+        .mockImplementation()
+        .mockResolvedValue(entityMockUtils.getCheckpointInstance());
 
       dsMockUtils.createQueryStub('capitalDistribution', 'holderPaid', {
         multi: [dsMockUtils.createMockBool(true)],
@@ -426,9 +436,9 @@ describe('DividendDistribution class', () => {
         did: 'targetDid',
         isEqual: false,
       });
-      balances[0].identity.isEqual.onSecondCall().returns(true);
+      balances[0].identity.isEqual.mockReturnValue(true);
 
-      allBalancesStub.onThirdCall().resolves({ data: balances, next: null });
+      allBalancesStub.mockResolvedValue({ data: balances, next: null });
 
       result = await dividendDistribution.getParticipants();
 
@@ -444,9 +454,11 @@ describe('DividendDistribution class', () => {
     });
 
     it("should return an empty array if the distribution checkpoint hasn't been created yet", async () => {
-      sinon
-        .stub(dividendDistribution, 'checkpoint')
-        .resolves(entityMockUtils.getCheckpointScheduleInstance());
+      jest
+        .spyOn(dividendDistribution, 'checkpoint')
+        .mockClear()
+        .mockImplementation()
+        .mockResolvedValue(entityMockUtils.getCheckpointScheduleInstance());
 
       const result = await dividendDistribution.getParticipants();
 
@@ -464,20 +476,26 @@ describe('DividendDistribution class', () => {
         identities: [excluded],
         treatment: TargetTreatment.Exclude,
       };
-      sinon.stub(dividendDistribution, 'checkpoint').resolves(
-        entityMockUtils.getCheckpointInstance({
-          balance,
-        })
-      );
+      jest
+        .spyOn(dividendDistribution, 'checkpoint')
+        .mockClear()
+        .mockImplementation()
+        .mockResolvedValue(
+          entityMockUtils.getCheckpointInstance({
+            balance,
+          })
+        );
 
-      sinon
-        .stub(utilsConversionModule, 'stringToIdentityId')
-        .returns(dsMockUtils.createMockIdentityId(did));
+      jest
+        .spyOn(utilsConversionModule, 'stringToIdentityId')
+        .mockClear()
+        .mockReturnValue(dsMockUtils.createMockIdentityId(did));
 
-      sinon
-        .stub(utilsConversionModule, 'corporateActionIdentifierToCaId')
-        .returns(dsMockUtils.createMockCAId({ ticker, localId: id }));
-      sinon.stub(utilsConversionModule, 'boolToBoolean').returns(false);
+      jest
+        .spyOn(utilsConversionModule, 'corporateActionIdentifierToCaId')
+        .mockClear()
+        .mockReturnValue(dsMockUtils.createMockCAId({ ticker, localId: id }));
+      jest.spyOn(utilsConversionModule, 'boolToBoolean').mockClear().mockReturnValue(false);
 
       dsMockUtils.createQueryStub('capitalDistribution', 'holderPaid', {
         returnValue: false,
@@ -499,7 +517,7 @@ describe('DividendDistribution class', () => {
         isEqual: false,
         did: 'targetDid',
       });
-      targetIdentity.isEqual.onSecondCall().returns(true);
+      targetIdentity.isEqual.mockReturnValue(false).mockReturnValue(true);
 
       result = await dividendDistribution.getParticipant({
         identity: targetIdentity,
@@ -511,9 +529,9 @@ describe('DividendDistribution class', () => {
       expect(result?.taxWithholdingPercentage).toEqual(new BigNumber(5));
       expect(result?.amountAfterTax.decimalPlaces()).toBeLessThanOrEqual(MAX_DECIMALS);
 
-      (context.getSigningIdentity as SinonStub).resolves(
-        entityMockUtils.getIdentityInstance({ did, isEqual: false })
-      );
+      context.getSigningIdentity = jest
+        .fn()
+        .mockResolvedValue(entityMockUtils.getIdentityInstance({ did, isEqual: false }));
 
       result = await dividendDistribution.getParticipant();
 
@@ -525,9 +543,11 @@ describe('DividendDistribution class', () => {
     });
 
     it("should return null if the distribution checkpoint hasn't been created yet", async () => {
-      sinon
-        .stub(dividendDistribution, 'checkpoint')
-        .resolves(entityMockUtils.getCheckpointScheduleInstance());
+      jest
+        .spyOn(dividendDistribution, 'checkpoint')
+        .mockClear()
+        .mockImplementation()
+        .mockResolvedValue(entityMockUtils.getCheckpointScheduleInstance());
 
       const result = await dividendDistribution.getParticipant({
         identity: 'someDid',
@@ -543,11 +563,15 @@ describe('DividendDistribution class', () => {
         identities: [excluded],
         treatment: TargetTreatment.Exclude,
       };
-      sinon.stub(dividendDistribution, 'checkpoint').resolves(
-        entityMockUtils.getCheckpointInstance({
-          balance: new BigNumber(10),
-        })
-      );
+      jest
+        .spyOn(dividendDistribution, 'checkpoint')
+        .mockClear()
+        .mockImplementation()
+        .mockResolvedValue(
+          entityMockUtils.getCheckpointInstance({
+            balance: new BigNumber(10),
+          })
+        );
 
       const result = await dividendDistribution.getParticipant({
         identity: did,
@@ -561,10 +585,13 @@ describe('DividendDistribution class', () => {
     it('should prepare the procedure and return the resulting transaction', async () => {
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { distribution: dividendDistribution }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareStub())
+        .calledWith(
+          { args: { distribution: dividendDistribution }, transformer: undefined },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await dividendDistribution.reclaimFunds();
 

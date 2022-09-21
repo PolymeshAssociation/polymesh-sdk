@@ -1,6 +1,6 @@
 import { StorageKey } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Checkpoint, Context, Entity } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -23,7 +23,7 @@ describe('Checkpoint class', () => {
   let id: BigNumber;
   let ticker: string;
 
-  let balanceToBigNumberStub: sinon.SinonStub;
+  let balanceToBigNumberStub: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -32,7 +32,7 @@ describe('Checkpoint class', () => {
     id = new BigNumber(1);
     ticker = 'SOME_TICKER';
 
-    balanceToBigNumberStub = sinon.stub(utilsConversionModule, 'balanceToBigNumber');
+    balanceToBigNumberStub = jest.spyOn(utilsConversionModule, 'balanceToBigNumber');
   });
 
   beforeEach(() => {
@@ -95,7 +95,7 @@ describe('Checkpoint class', () => {
         returnValue: dsMockUtils.createMockBalance(balance),
       });
 
-      balanceToBigNumberStub.returns(expected);
+      balanceToBigNumberStub.mockReturnValue(expected);
 
       const result = await checkpoint.totalSupply();
       expect(result).toEqual(expected);
@@ -103,10 +103,10 @@ describe('Checkpoint class', () => {
   });
 
   describe('method: allBalances', () => {
-    let stringToIdentityIdStub: sinon.SinonStub;
+    let stringToIdentityIdStub: jest.SpyInstance;
 
     beforeAll(() => {
-      stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
+      stringToIdentityIdStub = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
     });
 
     it("should return the Checkpoint's Asset Holder balances", async () => {
@@ -135,8 +135,8 @@ describe('Checkpoint class', () => {
 
       rawBalanceOf.forEach(({ identityId, balance: rawBalance }, index) => {
         const { identity, balance } = balanceOf[index];
-        balanceToBigNumberStub.withArgs(rawBalance).returns(balance);
-        stringToIdentityIdStub.withArgs(identity).returns(identityId);
+        when(balanceToBigNumberStub).calledWith(rawBalance).mockReturnValue(balance);
+        when(stringToIdentityIdStub).calledWith(identity).mockReturnValue(identityId);
       });
 
       const balanceOfEntries = rawBalanceOf.map(({ identityId, balance }) =>
@@ -145,9 +145,9 @@ describe('Checkpoint class', () => {
 
       dsMockUtils.createQueryStub('asset', 'balanceOf');
 
-      sinon
-        .stub(utilsInternalModule, 'requestPaginated')
-        .resolves({ entries: balanceOfEntries, lastKey: null });
+      jest
+        .spyOn(utilsInternalModule, 'requestPaginated')
+        .mockResolvedValue({ entries: balanceOfEntries, lastKey: null });
 
       dsMockUtils.createQueryStub('checkpoint', 'balanceUpdates', {
         multi: [
@@ -169,7 +169,7 @@ describe('Checkpoint class', () => {
       });
 
       rawBalanceMulti.forEach((rawBalance, index) => {
-        balanceToBigNumberStub.withArgs(rawBalance).returns(balanceMulti[index]);
+        when(balanceToBigNumberStub).calledWith(rawBalance).mockReturnValue(balanceMulti[index]);
       });
 
       const { data } = await checkpoint.allBalances();
@@ -190,7 +190,7 @@ describe('Checkpoint class', () => {
 
       const expected = new BigNumber(balance).shiftedBy(-6);
 
-      balanceToBigNumberStub.returns(expected);
+      balanceToBigNumberStub.mockReturnValue(expected);
 
       dsMockUtils.createQueryStub('checkpoint', 'balanceUpdates', {
         returnValue: [
@@ -226,7 +226,7 @@ describe('Checkpoint class', () => {
 
   describe('method: exists', () => {
     it('should return whether the checkpoint exists', async () => {
-      sinon.stub(utilsConversionModule, 'stringToTicker');
+      jest.spyOn(utilsConversionModule, 'stringToTicker').mockImplementation();
 
       const checkpoint = new Checkpoint({ id, ticker }, context);
 

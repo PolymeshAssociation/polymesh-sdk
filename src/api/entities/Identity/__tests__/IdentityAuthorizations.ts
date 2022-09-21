@@ -1,6 +1,6 @@
 import { StorageKey } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Authorizations, Identity, Namespace } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -43,14 +43,14 @@ describe('IdentityAuthorizations class', () => {
 
   describe('method: getSent', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should retrieve all pending authorizations sent by the Identity', async () => {
-      sinon.stub(utilsConversionModule, 'signerValueToSignatory');
+      jest.spyOn(utilsConversionModule, 'signerValueToSignatory').mockImplementation();
       dsMockUtils.createQueryStub('identity', 'authorizationsGiven');
 
-      const requestPaginatedStub = sinon.stub(utilsInternalModule, 'requestPaginated');
+      const requestPaginatedStub = jest.spyOn(utilsInternalModule, 'requestPaginated');
 
       const did = 'someDid';
 
@@ -99,16 +99,19 @@ describe('IdentityAuthorizations class', () => {
           )
       );
 
-      requestPaginatedStub.resolves({ entries: authorizationsGivenEntries, lastKey: null });
+      requestPaginatedStub.mockResolvedValue({
+        entries: authorizationsGivenEntries,
+        lastKey: null,
+      });
 
       const authsMultiArgs = authorizationsGivenEntries.map(([keys, signatory]) =>
         tuple(signatory, keys.args[1])
       );
 
       const authorizationsStub = dsMockUtils.createQueryStub('identity', 'authorizations');
-      authorizationsStub.multi
-        .withArgs(authsMultiArgs)
-        .resolves(authorizations.map(dsMockUtils.createMockOption));
+      when(authorizationsStub.multi)
+        .calledWith(authsMultiArgs)
+        .mockResolvedValue(authorizations.map(dsMockUtils.createMockOption));
 
       const expectedAuthorizations = authParams.map(({ authId, target, issuer, expiry, data }) =>
         entityMockUtils.getAuthorizationRequestInstance({
@@ -145,12 +148,12 @@ describe('IdentityAuthorizations class', () => {
 
   describe('method: getOne', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     beforeAll(() => {
-      sinon.stub(utilsConversionModule, 'signerValueToSignatory');
-      sinon.stub(utilsConversionModule, 'bigNumberToU64');
+      jest.spyOn(utilsConversionModule, 'signerValueToSignatory').mockImplementation();
+      jest.spyOn(utilsConversionModule, 'bigNumberToU64').mockImplementation();
     });
 
     it('should return the requested Authorization Request issued by the parent Identity', async () => {

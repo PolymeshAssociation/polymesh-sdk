@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Context, CustomPermissionGroup, PermissionGroup, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -25,7 +25,7 @@ describe('CustomPermissionGroup class', () => {
     entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
 
-    sinon.stub(utilsConversionModule, 'stringToTicker');
+    jest.spyOn(utilsConversionModule, 'stringToTicker').mockImplementation();
   });
 
   beforeEach(() => {
@@ -93,13 +93,13 @@ describe('CustomPermissionGroup class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareStub())
+        .calledWith(
           { args: { ...args, group: customPermissionGroup }, transformer: undefined },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await customPermissionGroup.setPermissions(args);
 

@@ -1,6 +1,6 @@
 import { PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   Context,
@@ -188,10 +188,9 @@ describe('AssetPermissions class', () => {
       };
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { identity, group }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareStub())
+        .calledWith({ args: { identity, group }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await assetPermissions.setGroup({ group });
 
@@ -429,10 +428,9 @@ describe('AssetPermissions class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareStub())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await assetPermissions.waive(args);
 
@@ -443,20 +441,20 @@ describe('AssetPermissions class', () => {
   describe('method: get', () => {
     let rawDid: PolymeshPrimitivesIdentityId;
     let rawTicker: PolymeshPrimitivesTicker;
-    let stringToIdentityIdStub: sinon.SinonStub;
+    let stringToIdentityIdStub: jest.SpyInstance;
 
     beforeAll(() => {
-      stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
+      stringToIdentityIdStub = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
       rawDid = dsMockUtils.createMockIdentityId(did);
       rawTicker = dsMockUtils.createMockTicker(ticker);
     });
 
     beforeEach(() => {
-      stringToIdentityIdStub.withArgs(did, context).returns(rawDid);
+      when(stringToIdentityIdStub).calledWith(did, context).mockReturnValue(rawDid);
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return a list of AgentWithGroup', async () => {
@@ -475,7 +473,7 @@ describe('AssetPermissions class', () => {
         },
       });
 
-      sinon.stub(assetPermissions, 'getGroup').resolves(group);
+      jest.spyOn(assetPermissions, 'getGroup').mockResolvedValue(group);
 
       dsMockUtils.createQueryStub('externalAgents', 'agentOf', {
         entries: [tuple([rawDid, rawTicker], {})],

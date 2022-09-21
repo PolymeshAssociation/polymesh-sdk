@@ -3,7 +3,7 @@ import {
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Context, DefaultTrustedClaimIssuer, Identity } from '~/internal';
 import { eventByAddedTrustedClaimIssuer } from '~/middleware/queries';
@@ -152,14 +152,14 @@ describe('DefaultTrustedClaimIssuer class', () => {
   describe('method: trustedFor', () => {
     let ticker: string;
     let rawTicker: PolymeshPrimitivesTicker;
-    let stringToTickerStub: sinon.SinonStub;
+    let stringToTickerStub: jest.SpyInstance;
     let claimIssuers: PolymeshPrimitivesConditionTrustedIssuer[];
-    let trustedClaimIssuerStub: sinon.SinonStub;
+    let trustedClaimIssuerStub: jest.SpyInstance;
 
     beforeAll(() => {
       ticker = 'SOME_TICKER';
       rawTicker = dsMockUtils.createMockTicker(ticker);
-      stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
+      stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
       claimIssuers = [
         dsMockUtils.createMockTrustedIssuer({
           issuer: dsMockUtils.createMockIdentityId('someDid'),
@@ -177,16 +177,16 @@ describe('DefaultTrustedClaimIssuer class', () => {
     });
 
     beforeEach(() => {
-      stringToTickerStub.withArgs(ticker, context).returns(rawTicker);
+      when(stringToTickerStub).calledWith(ticker, context).mockReturnValue(rawTicker);
       trustedClaimIssuerStub = dsMockUtils.createQueryStub(
         'complianceManager',
         'trustedClaimIssuer'
       );
-      trustedClaimIssuerStub.withArgs(rawTicker).resolves(claimIssuers);
+      when(trustedClaimIssuerStub).calledWith(rawTicker).mockResolvedValue(claimIssuers);
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return the claim types for which the Claim Issuer is trusted', async () => {
