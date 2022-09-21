@@ -124,6 +124,7 @@ import {
   Signer,
   SignerType,
   SignerValue,
+  StatType,
   TargetTreatment,
   TransferError,
   TransferRestriction,
@@ -134,7 +135,7 @@ import {
   TxTags,
   VenueType,
 } from '~/types';
-import { InstructionStatus, PermissionGroupIdentifier, StatType } from '~/types/internal';
+import { InstructionStatus, PermissionGroupIdentifier } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { DUMMY_ACCOUNT_ID, MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '~/utils/constants';
 import * as internalUtils from '~/utils/internal';
