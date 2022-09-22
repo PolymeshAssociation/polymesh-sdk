@@ -999,6 +999,7 @@ function initApi(): void {
   initConsts();
   initQueryMulti();
 
+  mockInstanceContainer.apiInstance.at = sinon.stub().resolves(mockInstanceContainer.apiInstance);
   apiPromiseCreateStub = sinon.stub();
   MockApiPromiseClass.create = apiPromiseCreateStub.resolves(mockInstanceContainer.apiInstance);
 }
@@ -1297,7 +1298,6 @@ export function createQueryStub<
   if (!runtimeModule[query]) {
     stub = sinon.stub() as unknown as QueryStub;
     stub.entries = sinon.stub();
-    stub.entriesAt = sinon.stub();
     stub.entriesPaged = sinon.stub();
     stub.at = sinon.stub();
     stub.multi = sinon.stub();
@@ -1318,7 +1318,6 @@ export function createQueryStub<
   ]);
   stub.entries.resolves(entryResults);
   stub.entriesPaged.resolves(entryResults);
-  stub.entriesAt.resolves(entryResults);
 
   if (opts?.multi) {
     stub.multi.resolves(opts.multi);
@@ -1554,6 +1553,14 @@ export function getMiddlewareApiV2(): ApolloClient<NormalizedCacheObject> &
  */
 export function getCreateTypeStub(): SinonStub {
   return mockInstanceContainer.apiInstance.createType as SinonStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the at method
+ */
+export function getAtStub(): SinonStub {
+  return mockInstanceContainer.apiInstance.at as SinonStub;
 }
 
 /**

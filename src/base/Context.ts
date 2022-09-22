@@ -82,7 +82,7 @@ import {
   u16ToBigNumber,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { assertAddressValid, calculateNextKey, createClaim } from '~/utils/internal';
+import { assertAddressValid, calculateNextKey, createClaim, getApiAtBlock } from '~/utils/internal';
 
 interface ConstructorParams {
   polymeshApi: ApiPromise;
@@ -190,13 +190,18 @@ export class Context {
   private async isCurrentNodeArchive(): Promise<boolean> {
     const {
       polymeshApi: {
-        query: { balances, system },
+        query: { system },
       },
+      polymeshApi,
     } = this;
 
     try {
       const blockHash = await system.blockHash(bigNumberToU32(new BigNumber(0), this));
-      const balance = await balances.totalIssuance.at(blockHash);
+
+      const apiAt = await polymeshApi.at(blockHash);
+
+      const balance = await apiAt.query.balances.totalIssuance();
+
       return balanceToBigNumber(balance).gt(new BigNumber(0));
     } catch (e) {
       return false;
@@ -570,8 +575,19 @@ export class Context {
       }
     });
 
+    let baseFeesQuery;
+    if (blockHash) {
+      ({
+        query: {
+          protocolFee: { baseFees: baseFeesQuery },
+        },
+      } = await getApiAtBlock(this, stringToHash(blockHash, this)));
+    } else {
+      baseFeesQuery = baseFees;
+    }
+
     const [baseFeesEntries, coefficientValue] = await Promise.all([
-      blockHash ? baseFees.entriesAt(stringToHash(blockHash, this)) : baseFees.entries(),
+      baseFeesQuery.entries(),
       coefficient(),
     ]);
 
