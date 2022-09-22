@@ -20,6 +20,7 @@ import {
   Identity,
   Instruction,
   KnownPermissionGroup,
+  MetadataEntry,
   MultiSig,
   MultiSigProposal,
   NumberedPortfolio,
@@ -56,6 +57,10 @@ import {
   InstructionType,
   KnownAssetType,
   Leg,
+  MetadataDetails,
+  MetadataLockStatus,
+  MetadataType,
+  MetadataValue,
   MultiSigProposalDetails,
   OfferingBalanceStatus,
   OfferingDetails,
@@ -87,6 +92,7 @@ export type MockAccount = Mocked<Account>;
 export type MockSubsidy = Mocked<Subsidy>;
 export type MockTickerReservation = Mocked<TickerReservation>;
 export type MockAsset = Mocked<Asset>;
+export type MockMetadataEntry = Mocked<MetadataEntry>;
 export type MockAuthorizationRequest = Mocked<AuthorizationRequest>;
 export type MockVenue = Mocked<Venue>;
 export type MockInstruction = Mocked<Instruction>;
@@ -163,6 +169,14 @@ interface AssetOptions extends EntityOptions {
   checkpointsGetOne?: EntityGetter<Checkpoint>;
   checkpointsSchedulesGetOne?: EntityGetter<ScheduleWithDetails>;
   investorCount?: EntityGetter<BigNumber>;
+}
+
+interface MetadataEntryOptions extends EntityOptions {
+  id?: BigNumber;
+  ticker?: string;
+  type?: MetadataType;
+  details?: EntityGetter<MetadataDetails>;
+  value?: EntityGetter<MetadataValue | null>;
 }
 
 interface AuthorizationRequestOptions extends EntityOptions {
@@ -305,6 +319,7 @@ type MockOptions = {
   subsidyOptions?: SubsidyOptions;
   tickerReservationOptions?: TickerReservationOptions;
   assetOptions?: AssetOptions;
+  metadataEntryOptions?: MetadataEntryOptions;
   authorizationRequestOptions?: AuthorizationRequestOptions;
   venueOptions?: VenueOptions;
   instructionOptions?: InstructionOptions;
@@ -880,6 +895,53 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
     investorCount: new BigNumber(0),
   }),
   ['Asset']
+);
+
+const MockMetadataEntryClass = createMockEntityClass<MetadataEntryOptions>(
+  class {
+    uuid!: string;
+    id!: BigNumber;
+    asset!: Asset;
+    type!: MetadataType;
+    details!: sinon.SinonStub;
+    value!: sinon.SinonStub;
+
+    /**
+     * @hidden
+     */
+    public argsToOpts(...args: ConstructorParameters<typeof MetadataEntry>) {
+      return extractFromArgs(args, ['id', 'ticker', 'type']);
+    }
+
+    /**
+     * @hidden
+     */
+    public configure({ id, ticker, type, details, value }: Required<MetadataEntryOptions>) {
+      this.uuid = 'metadataEntry';
+      this.id = id;
+      this.asset = getAssetInstance({ ticker });
+      this.type = type;
+      this.details = createEntityGetterStub(details);
+      this.value = createEntityGetterStub(value);
+    }
+  },
+  () => ({
+    details: {
+      name: 'SOME_NAME',
+      specs: {
+        url: 'SOME_URL',
+      },
+    },
+    value: {
+      value: 'SOME_VALUE',
+      lockStatus: MetadataLockStatus.Unlocked,
+      expiry: undefined,
+    },
+    ticker: 'SOME_TICKER',
+    id: new BigNumber(1),
+    type: MetadataType.Local,
+  }),
+  ['MetadataEntry']
 );
 
 const MockAuthorizationRequestClass = createMockEntityClass<AuthorizationRequestOptions>(
@@ -1624,6 +1686,11 @@ export const mockAssetModule = (path: string) => (): Record<string, unknown> => 
   Asset: MockAssetClass,
 });
 
+export const mockMetadataEntryModule = (path: string) => (): Record<string, unknown> => ({
+  ...jest.requireActual(path),
+  MetadataEntry: MockMetadataEntryClass,
+});
+
 export const mockAuthorizationRequestModule = (path: string) => (): Record<string, unknown> => ({
   ...jest.requireActual(path),
   AuthorizationRequest: MockAuthorizationRequestClass,
@@ -1705,6 +1772,7 @@ export const initMocks = function (opts?: MockOptions): void {
   MockSubsidyClass.init(opts?.subsidyOptions);
   MockTickerReservationClass.init(opts?.tickerReservationOptions);
   MockAssetClass.init(opts?.assetOptions);
+  MockMetadataEntryClass.init(opts?.metadataEntryOptions);
   MockAuthorizationRequestClass.init(opts?.authorizationRequestOptions);
   MockVenueClass.init(opts?.venueOptions);
   MockInstructionClass.init(opts?.instructionOptions);
@@ -1732,6 +1800,7 @@ export const configureMocks = function (opts?: MockOptions): void {
   MockSubsidyClass.setOptions(opts?.subsidyOptions);
   MockTickerReservationClass.setOptions(opts?.tickerReservationOptions);
   MockAssetClass.setOptions(opts?.assetOptions);
+  MockMetadataEntryClass.setOptions(opts?.metadataEntryOptions);
   MockAuthorizationRequestClass.setOptions(opts?.authorizationRequestOptions);
   MockVenueClass.setOptions(opts?.venueOptions);
   MockInstructionClass.setOptions(opts?.instructionOptions);
@@ -1758,6 +1827,7 @@ export const reset = function (): void {
   MockSubsidyClass.resetOptions();
   MockTickerReservationClass.resetOptions();
   MockAssetClass.resetOptions();
+  MockMetadataEntryClass.resetOptions();
   MockAuthorizationRequestClass.resetOptions();
   MockVenueClass.resetOptions();
   MockInstructionClass.resetOptions();
@@ -1844,6 +1914,20 @@ export const getAssetInstance = (opts?: AssetOptions): MockAsset => {
   }
 
   return instance as unknown as MockAsset;
+};
+
+/**
+ * @hidden
+ * Retrieve a MetadataEntry instance
+ */
+export const getMetadataEntryInstance = (opts?: MetadataEntryOptions): MockMetadataEntry => {
+  const instance = new MockMetadataEntryClass();
+
+  if (opts) {
+    instance.configure(opts);
+  }
+
+  return instance as unknown as MockMetadataEntry;
 };
 
 /**

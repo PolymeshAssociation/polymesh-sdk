@@ -11,6 +11,9 @@ import {
 } from '@polkadot/types/interfaces';
 import {
   PalletMultisigProposalStatus,
+  PolymeshPrimitivesAssetMetadataAssetMetadataKey,
+  PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
+  PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail,
   PolymeshPrimitivesCondition,
   PolymeshPrimitivesDocument,
   PolymeshPrimitivesIdentityClaimClaimType,
@@ -113,6 +116,8 @@ import {
   InputCondition,
   InstructionType,
   KnownAssetType,
+  MetadataLockStatus,
+  MetadataType,
   ModuleName,
   OfferingBalanceStatus,
   OfferingSaleStatus,
@@ -215,11 +220,17 @@ import {
   meshClaimTypeToClaimType,
   meshCorporateActionToCorporateActionParams,
   meshInstructionStatusToInstructionStatus,
+  meshMetadataSpecToMetadataSpec,
+  meshMetadataValueToMetadataValue,
   meshPermissionsToPermissions,
   meshProposalStatusToProposalStatus,
   meshScopeToScope,
   meshStatToStatType,
   meshVenueTypeToVenueType,
+  metadataSpecToMeshMetadataSpec,
+  metadataToMeshMetadataKey,
+  metadataValueDetailToMeshMetadataValueDetail,
+  metadataValueToMeshMetadataValue,
   middlewareEventToEventIdentifier,
   middlewarePortfolioToPortfolio,
   middlewareScopeToScope,
@@ -8608,5 +8619,402 @@ describe('meshProposalStatusToProposalStatus', () => {
         null
       )
     ).toThrowError(expectedError);
+  });
+});
+
+describe('metadataSpecToMeshMetadataSpec', () => {
+  let mockContext: Mocked<Context>;
+  let typeDefMaxLength: BigNumber;
+  let rawTypeDefMaxLength: u32;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockContext = dsMockUtils.getContextInstance();
+    typeDefMaxLength = new BigNumber(15);
+    rawTypeDefMaxLength = dsMockUtils.createMockU32(typeDefMaxLength);
+
+    dsMockUtils.setConstMock('asset', 'assetMetadataTypeDefMaxLength', {
+      returnValue: rawTypeDefMaxLength,
+    });
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should throw an error if typeDef exceeds max length', () => {
+    const expectedError = new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: '"typeDef" length exceeded for given Asset Metadata spec',
+      data: {
+        maxLength: typeDefMaxLength,
+      },
+    });
+
+    expect(() =>
+      metadataSpecToMeshMetadataSpec({ typeDef: 'INCORRECT_TYPEDEF_VALUE' }, mockContext)
+    ).toThrowError(expectedError);
+  });
+
+  it('should convert metadataSpec to PolymeshPrimitivesAssetMetadataAssetMetadataSpec', () => {
+    const fakeMetadataSpec =
+      'fakeMetadataSpec' as unknown as PolymeshPrimitivesAssetMetadataAssetMetadataSpec;
+
+    mockContext.createType
+      .withArgs('PolymeshPrimitivesAssetMetadataAssetMetadataSpec', {
+        url: null,
+        description: null,
+        typeDef: null,
+      })
+      .returns(fakeMetadataSpec);
+
+    let result = metadataSpecToMeshMetadataSpec({}, mockContext);
+    expect(result).toEqual(fakeMetadataSpec);
+
+    const url = 'SOME_URL';
+    const fakeUrl = 'fakeUrl' as unknown as Bytes;
+    const description = 'SOME_DESCRIPTION';
+    const fakeDescription = 'fakeDescription' as unknown as Bytes;
+    const typeDef = 'SOME_TYPE_DEF';
+    const fakeTypeDef = 'fakeTypeDef' as unknown as Bytes;
+
+    mockContext.createType.withArgs('Bytes', url).returns(fakeUrl);
+    mockContext.createType.withArgs('Bytes', description).returns(fakeDescription);
+    mockContext.createType.withArgs('Bytes', typeDef).returns(fakeTypeDef);
+
+    mockContext.createType
+      .withArgs('PolymeshPrimitivesAssetMetadataAssetMetadataSpec', {
+        url: fakeUrl,
+        description: fakeDescription,
+        typeDef: fakeTypeDef,
+      })
+      .returns(fakeMetadataSpec);
+
+    result = metadataSpecToMeshMetadataSpec({ url, description, typeDef }, mockContext);
+    expect(result).toEqual(fakeMetadataSpec);
+  });
+});
+
+describe('meshMetadataSpecToMetadataSpec', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a meshMetadataSpec to MetadataSpec', () => {
+    let result = meshMetadataSpecToMetadataSpec();
+    expect(result).toEqual({});
+
+    result = meshMetadataSpecToMetadataSpec(dsMockUtils.createMockOption());
+    expect(result).toEqual({});
+
+    let rawSpecs = dsMockUtils.createMockOption(dsMockUtils.createMockAssetMetadataSpec());
+
+    result = meshMetadataSpecToMetadataSpec(rawSpecs);
+    expect(result).toEqual({});
+
+    rawSpecs = dsMockUtils.createMockOption(
+      dsMockUtils.createMockAssetMetadataSpec({
+        url: dsMockUtils.createMockOption(dsMockUtils.createMockBytes('SOME_URL')),
+        description: dsMockUtils.createMockOption(dsMockUtils.createMockBytes('SOME_DESC')),
+        typeDef: dsMockUtils.createMockOption(dsMockUtils.createMockBytes('SOME_TYPEDEF')),
+      })
+    );
+
+    result = meshMetadataSpecToMetadataSpec(rawSpecs);
+    expect(result).toEqual({
+      url: 'SOME_URL',
+      description: 'SOME_DESC',
+      typeDef: 'SOME_TYPEDEF',
+    });
+  });
+});
+
+describe('metadataToMeshMetadataKey', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert MetadataType and ID to PolymeshPrimitivesAssetMetadataAssetMetadataKey', () => {
+    const context = dsMockUtils.getContextInstance();
+    const id = new BigNumber(1);
+    const rawId = dsMockUtils.createMockU64(id);
+    context.createType.withArgs('u64', id.toString()).returns(rawId);
+
+    const fakeResult = 'metadataKey' as unknown as PolymeshPrimitivesAssetMetadataAssetMetadataKey;
+
+    context.createType
+      .withArgs('PolymeshPrimitivesAssetMetadataAssetMetadataKey', {
+        Local: rawId,
+      })
+      .returns(fakeResult);
+
+    let result = metadataToMeshMetadataKey(MetadataType.Local, id, context);
+
+    expect(result).toBe(fakeResult);
+
+    context.createType
+      .withArgs('PolymeshPrimitivesAssetMetadataAssetMetadataKey', {
+        Global: rawId,
+      })
+      .returns(fakeResult);
+
+    result = metadataToMeshMetadataKey(MetadataType.Global, id, context);
+
+    expect(result).toBe(fakeResult);
+  });
+});
+
+describe('meshMetadataValueToMetadataValue', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a optional Bytes and PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail to MetadataValue', () => {
+    let result = meshMetadataValueToMetadataValue(
+      dsMockUtils.createMockOption(),
+      dsMockUtils.createMockOption()
+    );
+    expect(result).toBeNull();
+
+    const rawValue = dsMockUtils.createMockOption(dsMockUtils.createMockBytes('SOME_VALUE'));
+
+    result = meshMetadataValueToMetadataValue(rawValue, dsMockUtils.createMockOption());
+    expect(result).toEqual({
+      value: 'SOME_VALUE',
+      expiry: null,
+      lockStatus: MetadataLockStatus.Unlocked,
+    });
+
+    let rawDetails = dsMockUtils.createMockOption(
+      dsMockUtils.createMockAssetMetadataValueDetail({
+        lockStatus: dsMockUtils.createMockAssetMetadataLockStatus({ lockStatus: 'Locked' }),
+        expire: dsMockUtils.createMockOption(),
+      })
+    );
+    result = meshMetadataValueToMetadataValue(rawValue, rawDetails);
+    expect(result).toEqual({
+      value: 'SOME_VALUE',
+      expiry: null,
+      lockStatus: MetadataLockStatus.Locked,
+    });
+
+    const expiry = new Date('2030/01/01');
+
+    const lockedUntil = new Date('2025/01/01');
+
+    rawDetails = dsMockUtils.createMockOption(
+      dsMockUtils.createMockAssetMetadataValueDetail({
+        lockStatus: dsMockUtils.createMockAssetMetadataLockStatus({
+          lockStatus: 'LockedUntil',
+          lockedUntil,
+        }),
+        expire: dsMockUtils.createMockOption(
+          dsMockUtils.createMockU64(new BigNumber(expiry.getTime()))
+        ),
+      })
+    );
+
+    result = meshMetadataValueToMetadataValue(rawValue, rawDetails);
+    expect(result).toEqual({
+      value: 'SOME_VALUE',
+      expiry,
+      lockStatus: MetadataLockStatus.LockedUntil,
+      lockedUntil,
+    });
+  });
+});
+
+describe('metadataValueToMeshMetadataValue', () => {
+  let mockContext: Mocked<Context>;
+  let valueMaxLength: BigNumber;
+  let rawValueMaxLength: u32;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockContext = dsMockUtils.getContextInstance();
+    valueMaxLength = new BigNumber(15);
+    rawValueMaxLength = dsMockUtils.createMockU32(valueMaxLength);
+
+    dsMockUtils.setConstMock('asset', 'assetMetadataValueMaxLength', {
+      returnValue: rawValueMaxLength,
+    });
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should throw an error if value exceeds max length', () => {
+    const expectedError = new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Asset Metadata value length exceeded',
+      data: {
+        maxLength: valueMaxLength,
+      },
+    });
+
+    expect(() =>
+      metadataValueToMeshMetadataValue('INCORRECT_VALUE_LENGTH', mockContext)
+    ).toThrowError(expectedError);
+  });
+
+  it('should convert value to Bytes', () => {
+    const value = 'SOME_VALUE';
+    const fakeValue = 'fakeValue' as unknown as Bytes;
+    mockContext.createType.withArgs('Bytes', value).returns(fakeValue);
+
+    const result = metadataValueToMeshMetadataValue(value, mockContext);
+    expect(result).toEqual(fakeValue);
+  });
+});
+
+describe('metadataValueDetailToMeshMetadataValueDetail', () => {
+  let mockContext: Mocked<Context>;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockContext = dsMockUtils.getContextInstance();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should throw an error if expiry date is in the past', () => {
+    const expectedError = new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Expiry date must be in the future',
+    });
+
+    expect(() =>
+      metadataValueDetailToMeshMetadataValueDetail(
+        { lockStatus: MetadataLockStatus.Locked, expiry: new Date('10/14/1987') },
+        mockContext
+      )
+    ).toThrowError(expectedError);
+  });
+
+  it('should throw an error if locked until date is in the past', () => {
+    const expectedError = new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Locked until date must be in the future',
+    });
+
+    expect(() =>
+      metadataValueDetailToMeshMetadataValueDetail(
+        {
+          expiry: null,
+          lockStatus: MetadataLockStatus.LockedUntil,
+          lockedUntil: new Date('10/14/1987'),
+        },
+        mockContext
+      )
+    ).toThrowError(expectedError);
+  });
+
+  it('should convert value details to PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail', () => {
+    const fakeValueDetail =
+      'fakeValueDetail' as unknown as PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail;
+
+    mockContext.createType
+      .withArgs('PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail', {
+        expire: null,
+        lockStatus: MetadataLockStatus.Unlocked,
+      })
+      .returns(fakeValueDetail);
+
+    let result = metadataValueDetailToMeshMetadataValueDetail(
+      {
+        lockStatus: MetadataLockStatus.Unlocked,
+        expiry: null,
+      },
+      mockContext
+    );
+
+    expect(result).toEqual(fakeValueDetail);
+
+    const date = new Date('2030/01/01');
+    const fakeTime = 'fakeTime';
+    mockContext.createType.withArgs('u64', date.getTime()).returns(fakeTime);
+
+    mockContext.createType
+      .withArgs('PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail', {
+        lockStatus: MetadataLockStatus.Locked,
+        expire: fakeTime,
+      })
+      .returns(fakeValueDetail);
+
+    result = metadataValueDetailToMeshMetadataValueDetail(
+      {
+        lockStatus: MetadataLockStatus.Locked,
+        expiry: date,
+      },
+      mockContext
+    );
+
+    expect(result).toEqual(fakeValueDetail);
+
+    mockContext.createType
+      .withArgs('PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail', {
+        expire: null,
+        lockStatus: { LockedUntil: fakeTime },
+      })
+      .returns(fakeValueDetail);
+
+    result = metadataValueDetailToMeshMetadataValueDetail(
+      {
+        lockStatus: MetadataLockStatus.LockedUntil,
+        lockedUntil: date,
+        expiry: null,
+      },
+      mockContext
+    );
+
+    expect(result).toEqual(fakeValueDetail);
   });
 });
