@@ -1007,6 +1007,9 @@ function initApi(): void {
   initConsts();
   initQueryMulti();
 
+  mockInstanceContainer.apiInstance.at = jest
+    .fn()
+    .mockResolvedValue(mockInstanceContainer.apiInstance);
   apiPromiseCreateStub = jest.fn();
   MockApiPromiseClass.create = apiPromiseCreateStub.mockResolvedValue(
     mockInstanceContainer.apiInstance
@@ -1315,7 +1318,6 @@ export function createQueryStub<
   if (!runtimeModule[query]) {
     stub = jest.fn() as unknown as QueryStub;
     stub.entries = jest.fn();
-    stub.entriesAt = jest.fn();
     stub.entriesPaged = jest.fn();
     stub.at = jest.fn();
     stub.multi = jest.fn();
@@ -1336,7 +1338,6 @@ export function createQueryStub<
   ]);
   stub.entries.mockResolvedValue(entryResults);
   stub.entriesPaged.mockResolvedValue(entryResults);
-  stub.entriesAt.mockResolvedValue(entryResults);
 
   if (opts?.multi) {
     stub.multi.mockResolvedValue(opts.multi);
@@ -1594,6 +1595,14 @@ export function getMiddlewareApiV2(): ApolloClient<NormalizedCacheObject> &
  */
 export function getCreateTypeStub(): jest.Mock {
   return mockInstanceContainer.apiInstance.createType as jest.Mock;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the at method
+ */
+export function getAtStub(): jest.Mock {
+  return mockInstanceContainer.apiInstance.at as jest.Mock;
 }
 
 /**

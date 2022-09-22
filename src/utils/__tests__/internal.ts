@@ -17,6 +17,8 @@ import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   createMockStatisticsStatClaim,
+  getApiInstance,
+  getAtStub,
   getWebSocketInstance,
   MockCodec,
   MockWebSocket,
@@ -58,6 +60,7 @@ import {
   createProcedureMethod,
   delay,
   filterEventRecords,
+  getApiAtBlock,
   getCheckpointValue,
   getDid,
   getExemptedIds,
@@ -478,7 +481,52 @@ describe('requestPaginated', () => {
   });
 });
 
+describe('getApiAtBlock', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should throw an error if the node is not archive', () => {
+    const context = dsMockUtils.getContextInstance({
+      isArchiveNode: false,
+    });
+
+    return expect(getApiAtBlock(context, 'blockHash')).rejects.toThrow(
+      'Cannot query previous blocks in a non-archive node'
+    );
+  });
+
+  it('should return corresponding API state at given block', async () => {
+    const context = dsMockUtils.getContextInstance();
+
+    const result = await getApiAtBlock(context, 'blockHash');
+
+    expect(result).toEqual(getApiInstance());
+    expect(getAtStub()).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('requestAtBlock', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
   it('should fetch and return the value at a certain block (current if left empty)', async () => {
     const context = dsMockUtils.getContextInstance({
       isArchiveNode: true,
@@ -487,12 +535,14 @@ describe('requestAtBlock', () => {
     const queryStub = dsMockUtils.createQueryStub('asset', 'tickers', {
       returnValue,
     });
+    const apiAtStub = getAtStub();
 
     const blockHash = 'someBlockHash';
     const ticker = 'ticker';
 
     let res = await requestAtBlock(
-      queryStub,
+      'asset',
+      'tickers',
       {
         blockHash,
         args: [ticker],
@@ -500,40 +550,24 @@ describe('requestAtBlock', () => {
       context
     );
 
-    expect(queryStub.at).toHaveBeenCalledWith(blockHash, ticker);
+    expect(apiAtStub).toHaveBeenCalledTimes(1);
+    expect(queryStub).toHaveBeenCalledWith(ticker);
     expect(res).toBe(returnValue);
 
+    apiAtStub.mockClear();
+
     res = await requestAtBlock(
-      queryStub,
+      'asset',
+      'tickers',
       {
         args: [ticker],
       },
       context
     );
 
+    expect(apiAtStub).toHaveBeenCalledTimes(0);
     expect(queryStub).toHaveBeenCalledWith(ticker);
     expect(res).toBe(returnValue);
-  });
-
-  it('should throw an error if the node is not archive', () => {
-    const context = dsMockUtils.getContextInstance({
-      isArchiveNode: false,
-    });
-
-    const queryStub = dsMockUtils.createQueryStub('asset', 'tickers', {
-      returnValue: dsMockUtils.createMockU32(new BigNumber(5)),
-    });
-
-    return expect(
-      requestAtBlock(
-        queryStub,
-        {
-          blockHash: 'someBlockHash',
-          args: ['ticker'],
-        },
-        context
-      )
-    ).rejects.toThrow('Cannot query previous blocks in a non-archive node');
   });
 });
 

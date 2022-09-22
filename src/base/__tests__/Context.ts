@@ -8,7 +8,7 @@ import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { claimsQuery, heartbeatQuery } from '~/middleware/queriesV2';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { createMockAccountId } from '~/testUtils/mocks/dataSources';
+import { createMockAccountId, getAtStub } from '~/testUtils/mocks/dataSources';
 import {
   ClaimType,
   CorporateActionKind,
@@ -831,7 +831,9 @@ describe('Context class', () => {
 
       expect(result).toEqual(mockResult);
 
+      context.isArchiveNode = true;
       result = await context.getProtocolFees({ tags, blockHash: '0x000' });
+      expect(getAtStub()).toHaveBeenCalledTimes(1);
       expect(result).toEqual(mockResult);
     });
   });
