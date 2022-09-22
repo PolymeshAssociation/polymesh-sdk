@@ -12,6 +12,7 @@ import {
   ClaimClassicTickerParams,
   CreateAssetWithTickerParams,
   ErrorCode,
+  GlobalMetadataKey,
   PaginationOptions,
   ProcedureMethod,
   ReserveTickerParams,
@@ -20,7 +21,13 @@ import {
   TickerReservationStatus,
   UnsubCallback,
 } from '~/types';
-import { stringToIdentityId, tickerToString } from '~/utils/conversion';
+import {
+  bytesToString,
+  meshMetadataSpecToMetadataSpec,
+  stringToIdentityId,
+  tickerToString,
+  u64ToBigNumber,
+} from '~/utils/conversion';
 import {
   createProcedureMethod,
   getDid,
@@ -249,5 +256,53 @@ export class Assets {
       data,
       next,
     };
+  }
+
+  /**
+   * Retrieve all the Asset Global Metadata on chain. This includes metadata id, name and specs
+   */
+  public async getGlobalMetadataKeys(): Promise<GlobalMetadataKey[]> {
+    const {
+      context: {
+        polymeshApi: {
+          query: {
+            asset: { assetMetadataGlobalKeyToName, assetMetadataGlobalSpecs },
+          },
+        },
+      },
+    } = this;
+
+    const [keyToNameEntries, specsEntries] = await Promise.all([
+      assetMetadataGlobalKeyToName.entries(),
+      assetMetadataGlobalSpecs.entries(),
+    ]);
+
+    const specsEntryMap = new Map(
+      specsEntries.map(
+        ([
+          {
+            args: [rawKeyId],
+          },
+          rawSpecs,
+        ]) => [rawKeyId.toString(), rawSpecs]
+      )
+    );
+
+    return keyToNameEntries.map(
+      ([
+        {
+          args: [rawId],
+        },
+        rawName,
+      ]) => {
+        const rawSpecs = specsEntryMap.get(rawId.toString());
+
+        return {
+          id: u64ToBigNumber(rawId),
+          name: bytesToString(rawName.unwrap()),
+          specs: meshMetadataSpecToMetadataSpec(rawSpecs),
+        };
+      }
+    );
   }
 }
