@@ -61,6 +61,7 @@ import {
   ProcedureOpts,
   RemoveAssetStatParams,
   Scope,
+  StatType,
   SubCallback,
   TransferRestriction,
   TransferRestrictionType,
@@ -74,7 +75,6 @@ import {
   PolymeshTx,
   Queries,
   StatClaimIssuer,
-  StatType,
   TxWithArgs,
 } from '~/types/internal';
 import {

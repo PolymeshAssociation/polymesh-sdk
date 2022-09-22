@@ -1,7 +1,9 @@
+import { MultiSig } from '~/api/entities/MultiSig';
 import {
   Account,
   AuthorizationRequest,
   Context,
+  createMultiSigAccount,
   inviteAccount,
   leaveIdentity,
   modifySignerPermissions,
@@ -12,6 +14,7 @@ import {
 } from '~/internal';
 import {
   AccountBalance,
+  CreateMultiSigParams,
   InviteAccountParams,
   ModifySignerPermissionsParams,
   NoArgsProcedureMethod,
@@ -22,6 +25,7 @@ import {
   SubsidizeAccountParams,
   UnsubCallback,
 } from '~/types';
+import { stringToAccountId } from '~/utils/conversion';
 import { createProcedureMethod } from '~/utils/internal';
 
 /**
@@ -96,6 +100,10 @@ export class AccountManagement {
       { getProcedureAndArgs: args => [subsidizeAccount, { ...args }] },
       context
     );
+    this.createMultiSigAccount = createProcedureMethod(
+      { getProcedureAndArgs: args => [createMultiSigAccount, args] },
+      context
+    );
   }
 
   /**
@@ -151,6 +159,15 @@ export class AccountManagement {
   public subsidizeAccount: ProcedureMethod<SubsidizeAccountParams, AuthorizationRequest>;
 
   /**
+   * Create a MultiSig Account
+   *
+   * @note this will create an {@link api/entities/AuthorizationRequest!AuthorizationRequest | Authorization Request} for each signing Account which will have to be accepted before they can approve transactions. None of the signing Accounts can be associated with an Identity when accepting the Authorization
+   *   An {@link api/entities/Account!Account} or {@link api/entities/Identity!Identity} can fetch its pending Authorization Requests by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getReceived | authorizations.getReceived}.
+   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getOne | authorizations.getOne}
+   */
+  public createMultiSigAccount: ProcedureMethod<CreateMultiSigParams, MultiSig>;
+
+  /**
    * Get the free/locked POLYX balance of an Account
    *
    * @param args.account - defaults to the signing Account
@@ -201,10 +218,23 @@ export class AccountManagement {
   }
 
   /**
-   * Return an Account instance from an address
+   * Return an Account instance from an address. If the Account has multiSig signers, the returned value will be a {@link api/entities/MultiSig!MultiSig} instance
    */
-  public getAccount(args: { address: string }): Account {
-    const { context } = this;
+  public async getAccount(args: { address: string }): Promise<Account | MultiSig> {
+    const {
+      context,
+      context: {
+        polymeshApi: {
+          query: { multiSig },
+        },
+      },
+    } = this;
+    const { address } = args;
+    const rawAddress = stringToAccountId(address, context);
+    const rawSigners = await multiSig.multiSigSigners.entries(rawAddress);
+    if (rawSigners.length > 0) {
+      return new MultiSig(args, context);
+    }
 
     return new Account(args, context);
   }
