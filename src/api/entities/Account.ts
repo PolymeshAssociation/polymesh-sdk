@@ -11,7 +11,15 @@ import {
   union,
 } from 'lodash';
 
-import { Asset, Authorizations, Context, Entity, Identity, PolymeshError } from '~/internal';
+import {
+  Asset,
+  Authorizations,
+  Context,
+  Entity,
+  Identity,
+  MultiSig,
+  PolymeshError,
+} from '~/internal';
 import { transactions as transactionsQuery } from '~/middleware/queries';
 import { extrinsicsByArgs } from '~/middleware/queriesV2';
 import { Query, TransactionOrderByInput } from '~/middleware/types';
@@ -709,6 +717,34 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     const { result } = await this.checkPermissions(permissions);
 
     return result;
+  }
+
+  /**
+   * Fetch the MultiSig this Account is part of. If this Account is not a signer on any MultiSig, return null
+   */
+  public async getMultiSig(): Promise<MultiSig | null> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { identity },
+        },
+      },
+      context,
+      address,
+    } = this;
+
+    const rawAddress = stringToAccountId(address, context);
+
+    const rawOptKeyRecord = await identity.keyRecords(rawAddress);
+    if (rawOptKeyRecord.isNone) {
+      return null;
+    }
+    const rawKeyRecord = rawOptKeyRecord.unwrap();
+    if (!rawKeyRecord.isMultiSigSignerKey) {
+      return null;
+    }
+
+    return new MultiSig({ address }, context);
   }
 
   /**
