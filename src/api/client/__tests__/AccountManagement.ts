@@ -194,6 +194,10 @@ describe('AccountManagement class', () => {
   });
 
   describe('method: getAccount', () => {
+    beforeEach(() => {
+      jest.spyOn(utilsConversionModule, 'stringToAccountId').mockImplementation();
+    });
+
     it('should return an Account object with the passed address', async () => {
       const params = { address: 'testAddress' };
       dsMockUtils.createQueryStub('multiSig', 'multiSigSigners', {
