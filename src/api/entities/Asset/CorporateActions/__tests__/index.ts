@@ -99,38 +99,6 @@ describe('CorporateActions class', () => {
     });
   });
 
-  describe('method: setAgent', () => {
-    it('should prepare the procedure and return the resulting transaction', async () => {
-      const target = 'someDid';
-
-      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
-
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { ticker, target }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
-
-      const tx = await corporateActions.setAgent({ target });
-
-      expect(tx).toBe(expectedTransaction);
-    });
-  });
-
-  describe('method: removeAgent', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
-      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
-
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { ticker: 'SOME_TICKER' }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
-
-      const tx = await corporateActions.removeAgent();
-
-      expect(tx).toBe(expectedTransaction);
-    });
-  });
-
   describe('method: remove', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;

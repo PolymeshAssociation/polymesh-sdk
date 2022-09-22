@@ -400,26 +400,6 @@ describe('AssetPermissions class', () => {
     });
   });
 
-  describe('method: hasPermissions', () => {
-    beforeAll(() => {
-      entityMockUtils.initMocks();
-    });
-
-    afterEach(() => {
-      entityMockUtils.reset();
-    });
-
-    it('should check whether the Identity has the appropriate permissions for the Asset', async () => {
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
-        returnValue: dsMockUtils.createMockOption(),
-      });
-
-      const result = await assetPermissions.hasPermissions({ asset, transactions: null });
-
-      expect(result).toBe(false);
-    });
-  });
-
   describe('method: waive', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = {

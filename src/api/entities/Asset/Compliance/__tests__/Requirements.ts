@@ -2,17 +2,14 @@ import { Vec } from '@polkadot/types/codec';
 import {
   PolymeshPrimitivesComplianceManagerAssetCompliance,
   PolymeshPrimitivesIdentityId,
-  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import sinon from 'sinon';
 
 import { Params } from '~/api/procedures/setAssetRequirements';
 import { Asset, Context, Namespace, PolymeshTransaction } from '~/internal';
-import { AssetComplianceResult } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockCodec } from '~/testUtils/mocks/dataSources';
-import { Mocked } from '~/testUtils/types';
 import {
   ClaimType,
   ComplianceRequirements,
@@ -531,90 +528,6 @@ describe('Requirements class', () => {
       const result = await requirements.arePaused();
 
       expect(result).toEqual(fakeResult);
-    });
-  });
-
-  describe('method: checkSettle', () => {
-    let context: Mocked<Context>;
-    let asset: Asset;
-    let requirements: Requirements;
-    let signingDid: string;
-    let fromDid: string;
-    let toDid: string;
-    let rawFromDid: PolymeshPrimitivesIdentityId;
-    let rawToDid: PolymeshPrimitivesIdentityId;
-    let rawCurrentDid: PolymeshPrimitivesIdentityId;
-    let rawTicker: PolymeshPrimitivesTicker;
-
-    let stringToIdentityIdStub: sinon.SinonStub;
-    let assetComplianceResultToRequirementComplianceStub: sinon.SinonStub;
-    let stringToTickerStub: sinon.SinonStub;
-
-    beforeAll(() => {
-      fromDid = 'fromDid';
-      toDid = 'toDid';
-
-      stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
-      assetComplianceResultToRequirementComplianceStub = sinon.stub(
-        utilsConversionModule,
-        'assetComplianceResultToCompliance'
-      );
-      stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    });
-
-    beforeEach(async () => {
-      context = dsMockUtils.getContextInstance();
-      asset = entityMockUtils.getAssetInstance();
-      requirements = new Requirements(asset, context);
-      ({ did: signingDid } = await context.getSigningIdentity());
-
-      rawFromDid = dsMockUtils.createMockIdentityId(fromDid);
-      rawToDid = dsMockUtils.createMockIdentityId(toDid);
-      rawCurrentDid = dsMockUtils.createMockIdentityId(signingDid);
-      rawTicker = dsMockUtils.createMockTicker(asset.ticker);
-
-      stringToIdentityIdStub.withArgs(signingDid, context).returns(rawCurrentDid);
-      stringToIdentityIdStub.withArgs(fromDid, context).returns(rawFromDid);
-      stringToIdentityIdStub.withArgs(toDid, context).returns(rawToDid);
-      stringToTickerStub.withArgs(asset.ticker, context).returns(rawTicker);
-    });
-
-    afterAll(() => {
-      sinon.restore();
-    });
-
-    it('should return the current requirement compliance and whether the transfer complies', async () => {
-      const rawResponse = 'response' as unknown as AssetComplianceResult;
-
-      dsMockUtils
-        .createRpcStub('compliance', 'canTransfer')
-        .withArgs(rawTicker, rawCurrentDid, rawToDid)
-        .resolves(rawResponse);
-
-      const fakeResult = 'result';
-
-      assetComplianceResultToRequirementComplianceStub.withArgs(rawResponse).returns(fakeResult);
-
-      const result = await requirements.checkSettle({ to: toDid });
-
-      expect(result).toEqual(fakeResult);
-    });
-
-    it('should return the current requirement compliance and whether the transfer complies with another Identity', async () => {
-      const rawResponse = 'response' as unknown as AssetComplianceResult;
-
-      dsMockUtils
-        .createRpcStub('compliance', 'canTransfer')
-        .withArgs(rawTicker, rawFromDid, rawToDid)
-        .resolves(rawResponse);
-
-      const fakeResult = 'result';
-
-      assetComplianceResultToRequirementComplianceStub.withArgs(rawResponse).returns(fakeResult);
-
-      const result = await requirements.checkSettle({ from: fromDid, to: toDid });
-
-      expect(result).toBe(fakeResult);
     });
   });
 });
