@@ -16,9 +16,9 @@ import {
   SetClaimPercentageTransferRestrictionsParams,
   SetCountTransferRestrictionsParams,
   SetPercentageTransferRestrictionsParams,
+  StatType,
   TransferRestrictionType,
 } from '~/types';
-import { StatType } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 import { Count } from '../Count';

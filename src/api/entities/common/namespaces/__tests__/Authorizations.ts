@@ -158,7 +158,8 @@ describe('Authorizations class', () => {
 
       const authId = new BigNumber(1);
       const data = { type: AuthorizationType.TransferAssetOwnership, value: 'myTicker' } as const;
-
+      const mockId = dsMockUtils.createMockU64(new BigNumber(1));
+      mockId.eq.withArgs(1);
       dsMockUtils.createQueryStub('identity', 'authorizations', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockAuthorization({

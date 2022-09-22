@@ -6,6 +6,7 @@ import { noop } from 'lodash';
 
 import {
   Context,
+  PolymeshError,
   PolymeshTransaction,
   PolymeshTransactionBase,
   PolymeshTransactionBatch,
@@ -15,7 +16,7 @@ import { fakePromise, fakePromises } from '~/testUtils';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { MockTxStatus } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
-import { PayingAccountType, TransactionStatus, TxTags } from '~/types';
+import { ErrorCode, PayingAccountType, TransactionStatus, TxTags } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -895,6 +896,87 @@ describe('Polymesh Transaction Base class', () => {
       (tx as any).emitter.emit('ProcessedByMiddleware');
 
       expect(listenerStub).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('getter: result', () => {
+    it('should return a result if the transaction was successful', async () => {
+      const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
+      const resolver = (): number => 1;
+      const transformer = (): number => 2;
+      const args = tuple('FOO');
+      const tx = new PolymeshTransaction(
+        {
+          ...txSpec,
+          transaction,
+          args,
+          resolver,
+          transformer,
+        },
+        context
+      );
+
+      await tx.run();
+
+      expect(tx.result).toEqual(2);
+    });
+
+    it('should throw an error is the transaction was not successful', () => {
+      const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
+      const args = tuple('FOO');
+      const tx = new PolymeshTransaction(
+        {
+          ...txSpec,
+          transaction,
+          args,
+          resolver: undefined,
+        },
+        context
+      );
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.General,
+        message:
+          'The result of the transaction was checked before it has been completed. property `result` should only be read if transaction `isSuccess` property is true',
+      });
+
+      expect(() => tx.result).toThrowError(expectedError);
+    });
+  });
+
+  describe('getter: isSuccess', () => {
+    it('should be true if the transaction status is TransactionStatus.Success', async () => {
+      const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
+      const args = tuple('FOO');
+      const tx = new PolymeshTransaction(
+        {
+          ...txSpec,
+          transaction,
+          args,
+          resolver: undefined,
+        },
+        context
+      );
+
+      await tx.run();
+
+      expect(tx.isSuccess).toEqual(true);
+    });
+
+    it('should be false otherwise', () => {
+      const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
+      const args = tuple('FOO');
+      const tx = new PolymeshTransaction(
+        {
+          ...txSpec,
+          transaction,
+          args,
+          resolver: undefined,
+        },
+        context
+      );
+
+      expect(tx.isSuccess).toEqual(false);
     });
   });
 });
