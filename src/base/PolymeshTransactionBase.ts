@@ -655,9 +655,9 @@ export abstract class PolymeshTransactionBase<
 
   /**
    * returns the transaction result - this is the same value as the Promise run returns
-   * @note it is generally preferable to `await` the `Promise` returned by { @link base/PolymeshTransactionBase!PolymeshTransactionBase.run | transaction.run() } over reading this property
+   * @note it is generally preferable to `await` the `Promise` returned by { @link base/PolymeshTransactionBase!PolymeshTransactionBase.run | transaction.run() } instead of reading this property
    *
-   * @throws if the is { @link base/PolymeshTransactionBase!PolymeshTransactionBase.isSuccess | transaction.isSuccess } is false — be sure to check before accessing
+   * @throws if the { @link base/PolymeshTransactionBase!PolymeshTransactionBase.isSuccess | transaction.isSuccess } property is false — be sure to check that before accessing!
    */
   get result(): TransformedReturnValue {
     if (this.isSuccess) {
