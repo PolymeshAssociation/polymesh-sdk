@@ -2,17 +2,14 @@ import { Vec } from '@polkadot/types/codec';
 import {
   PolymeshPrimitivesComplianceManagerAssetCompliance,
   PolymeshPrimitivesIdentityId,
-  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Params } from '~/api/procedures/setAssetRequirements';
 import { Asset, Context, Namespace, PolymeshTransaction } from '~/internal';
-import { AssetComplianceResult } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockCodec } from '~/testUtils/mocks/dataSources';
-import { Mocked } from '~/testUtils/types';
 import {
   ClaimType,
   ComplianceRequirements,
@@ -550,92 +547,6 @@ describe('Requirements class', () => {
       const result = await requirements.arePaused();
 
       expect(result).toEqual(fakeResult);
-    });
-  });
-
-  describe('method: checkSettle', () => {
-    let context: Mocked<Context>;
-    let asset: Asset;
-    let requirements: Requirements;
-    let signingDid: string;
-    let fromDid: string;
-    let toDid: string;
-    let rawFromDid: PolymeshPrimitivesIdentityId;
-    let rawToDid: PolymeshPrimitivesIdentityId;
-    let rawCurrentDid: PolymeshPrimitivesIdentityId;
-    let rawTicker: PolymeshPrimitivesTicker;
-
-    let stringToIdentityIdStub: jest.SpyInstance;
-    let assetComplianceResultToRequirementComplianceStub: jest.SpyInstance;
-    let stringToTickerStub: jest.SpyInstance;
-
-    beforeAll(() => {
-      fromDid = 'fromDid';
-      toDid = 'toDid';
-
-      stringToIdentityIdStub = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
-      assetComplianceResultToRequirementComplianceStub = jest.spyOn(
-        utilsConversionModule,
-        'assetComplianceResultToCompliance'
-      );
-      stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
-    });
-
-    beforeEach(async () => {
-      context = dsMockUtils.getContextInstance();
-      asset = entityMockUtils.getAssetInstance();
-      requirements = new Requirements(asset, context);
-      ({ did: signingDid } = await context.getSigningIdentity());
-
-      rawFromDid = dsMockUtils.createMockIdentityId(fromDid);
-      rawToDid = dsMockUtils.createMockIdentityId(toDid);
-      rawCurrentDid = dsMockUtils.createMockIdentityId(signingDid);
-      rawTicker = dsMockUtils.createMockTicker(asset.ticker);
-
-      when(stringToIdentityIdStub).calledWith(signingDid, context).mockReturnValue(rawCurrentDid);
-      when(stringToIdentityIdStub).calledWith(fromDid, context).mockReturnValue(rawFromDid);
-      when(stringToIdentityIdStub).calledWith(toDid, context).mockReturnValue(rawToDid);
-      when(stringToTickerStub).calledWith(asset.ticker, context).mockReturnValue(rawTicker);
-    });
-
-    afterAll(() => {
-      jest.restoreAllMocks();
-    });
-
-    it('should return the current requirement compliance and whether the transfer complies', async () => {
-      const rawResponse = 'response' as unknown as AssetComplianceResult;
-
-      when(dsMockUtils.createRpcStub('compliance', 'canTransfer'))
-        .calledWith(rawTicker, rawCurrentDid, rawToDid)
-        .mockResolvedValue(rawResponse);
-
-      const fakeResult = 'result';
-
-      when(assetComplianceResultToRequirementComplianceStub)
-        .calledWith(rawResponse, context)
-        .mockReturnValue(fakeResult);
-
-      const result = await requirements.checkSettle({ to: toDid });
-
-      expect(result).toEqual(fakeResult);
-    });
-
-    it('should return the current requirement compliance and whether the transfer complies with another Identity', async () => {
-      const rawResponse = 'response' as unknown as AssetComplianceResult;
-
-      when(dsMockUtils.createRpcStub('compliance', 'canTransfer'))
-        .calledWith(rawTicker, rawFromDid, rawToDid)
-        .mockResolvedValue(rawResponse);
-
-      const fakeResult = 'result';
-
-      when(assetComplianceResultToRequirementComplianceStub)
-        .calledWith(rawResponse, context)
-        .mockReturnValue(fakeResult);
-
-      const result = await requirements.checkSettle({ from: fromDid, to: toDid });
-
-      expect(result).toBe(fakeResult);
     });
   });
 });

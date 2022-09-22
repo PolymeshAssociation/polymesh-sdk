@@ -31,7 +31,6 @@ export { issueTokens, IssueTokensParams } from '~/api/procedures/issueTokens';
 export { modifyClaims } from '~/api/procedures/modifyClaims';
 export { modifyInstructionAffirmation } from '~/api/procedures/modifyInstructionAffirmation';
 export { modifyAsset } from '~/api/procedures/modifyAsset';
-export { modifyPrimaryIssuanceAgent } from '~/api/procedures/modifyPrimaryIssuanceAgent';
 export {
   modifyAssetTrustedClaimIssuers,
   Params as ModifyAssetTrustedClaimIssuersParams,
@@ -58,7 +57,6 @@ export {
 } from '~/api/procedures/togglePauseRequirements';
 export { transferPolyx } from '~/api/procedures/transferPolyx';
 export { transferAssetOwnership } from '~/api/procedures/transferAssetOwnership';
-export { removePrimaryIssuanceAgent } from '~/api/procedures/removePrimaryIssuanceAgent';
 export { deletePortfolio } from '~/api/procedures/deletePortfolio';
 export { renamePortfolio } from '~/api/procedures/renamePortfolio';
 export { moveFunds } from '~/api/procedures/moveFunds';
@@ -115,7 +113,6 @@ export { DividendDistribution } from '~/api/entities/DividendDistribution';
 export { modifyCorporateActionsAgent } from '~/api/procedures/modifyCorporateActionsAgent';
 export { configureDividendDistribution } from '~/api/procedures/configureDividendDistribution';
 export { claimDividends } from '~/api/procedures/claimDividends';
-export { removeCorporateActionsAgent } from '~/api/procedures/removeCorporateActionsAgent';
 export { modifyCaCheckpoint } from '~/api/procedures/modifyCaCheckpoint';
 export { payDividends } from '~/api/procedures/payDividends';
 export { modifyCaDefaultConfig } from '~/api/procedures/modifyCaDefaultConfig';

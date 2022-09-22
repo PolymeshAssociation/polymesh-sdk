@@ -916,19 +916,6 @@ describe('Account class', () => {
     });
   });
 
-  describe('method: hasPermissions', () => {
-    it('should return whether the Account has the passed permissions', async () => {
-      const checkPermissionsSpy = jest
-        .spyOn(account, 'checkPermissions')
-        .mockResolvedValue({ result: true });
-
-      const result = await account.hasPermissions({ assets: [], portfolios: [], transactions: [] });
-
-      expect(result).toEqual(true);
-      checkPermissionsSpy.mockRestore();
-    });
-  });
-
   describe('method: getCurrentNonce', () => {
     it('should return the current nonce of the Account', async () => {
       const nonce = new BigNumber(123);

@@ -709,17 +709,6 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Check if this Account possesses certain Permissions to act on behalf of its corresponding Identity
-   *
-   * @deprecated in favor of `checkPermissions`
-   */
-  public async hasPermissions(permissions: SimplePermissions): Promise<boolean> {
-    const { result } = await this.checkPermissions(permissions);
-
-    return result;
-  }
-
-  /**
    * Fetch the MultiSig this Account is part of. If this Account is not a signer on any MultiSig, return null
    */
   public async getMultiSig(): Promise<MultiSig | null> {

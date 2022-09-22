@@ -13,7 +13,7 @@ import {
 } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { InstructionStatus, InstructionType, VenueType } from '~/types';
+import { InstructionStatus, VenueType } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -188,53 +188,6 @@ describe('Venue class', () => {
       expect(result.failed[0].id).toEqual(id2);
       expect(result.pending).toHaveLength(1);
       expect(result.failed).toHaveLength(1);
-    });
-  });
-
-  describe('method: getPendingInstructions', () => {
-    afterAll(() => {
-      jest.restoreAllMocks();
-    });
-
-    it("should return the Venue's pending instructions", async () => {
-      const instructionId = new BigNumber(1);
-
-      entityMockUtils.configureMocks({
-        instructionOptions: { id: instructionId, isPending: true },
-      });
-      when(jest.spyOn(utilsConversionModule, 'bigNumberToU64'))
-        .calledWith(id, context)
-        .mockReturnValue(rawId);
-
-      dsMockUtils
-        .createQueryStub('settlement', 'venueInfo')
-        .mockResolvedValue(dsMockUtils.createMockOption(dsMockUtils.createMockVenue()));
-
-      dsMockUtils.createQueryStub('settlement', 'venueInstructions', {
-        entries: [[tuple(rawId, dsMockUtils.createMockU64(instructionId)), []]],
-      });
-
-      let result = await venue.getPendingInstructions();
-
-      expect(result[0].id).toEqual(instructionId);
-
-      entityMockUtils.configureMocks({
-        instructionOptions: {
-          id: instructionId,
-          exists: true,
-          details: {
-            status: InstructionStatus.Failed,
-            createdAt: new Date('10/14/1987'),
-            tradeDate: null,
-            valueDate: null,
-            venue,
-            type: InstructionType.SettleOnAffirmation,
-          },
-        },
-      });
-
-      result = await venue.getPendingInstructions();
-      expect(result.length).toBe(0);
     });
   });
 

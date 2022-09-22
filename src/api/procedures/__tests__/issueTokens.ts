@@ -123,7 +123,6 @@ describe('issueTokens procedure', () => {
         ticker,
         details: {
           isDivisible,
-          primaryIssuanceAgents: [entityMockUtils.getIdentityInstance()],
         },
       },
     });
