@@ -8667,13 +8667,13 @@ describe('metadataSpecToMeshMetadataSpec', () => {
     const fakeMetadataSpec =
       'fakeMetadataSpec' as unknown as PolymeshPrimitivesAssetMetadataAssetMetadataSpec;
 
-    mockContext.createType
-      .withArgs('PolymeshPrimitivesAssetMetadataAssetMetadataSpec', {
+    when(mockContext.createType)
+      .calledWith('PolymeshPrimitivesAssetMetadataAssetMetadataSpec', {
         url: null,
         description: null,
         typeDef: null,
       })
-      .returns(fakeMetadataSpec);
+      .mockReturnValue(fakeMetadataSpec);
 
     let result = metadataSpecToMeshMetadataSpec({}, mockContext);
     expect(result).toEqual(fakeMetadataSpec);
@@ -8685,17 +8685,17 @@ describe('metadataSpecToMeshMetadataSpec', () => {
     const typeDef = 'SOME_TYPE_DEF';
     const fakeTypeDef = 'fakeTypeDef' as unknown as Bytes;
 
-    mockContext.createType.withArgs('Bytes', url).returns(fakeUrl);
-    mockContext.createType.withArgs('Bytes', description).returns(fakeDescription);
-    mockContext.createType.withArgs('Bytes', typeDef).returns(fakeTypeDef);
+    when(mockContext.createType).calledWith('Bytes', url).mockReturnValue(fakeUrl);
+    when(mockContext.createType).calledWith('Bytes', description).mockReturnValue(fakeDescription);
+    when(mockContext.createType).calledWith('Bytes', typeDef).mockReturnValue(fakeTypeDef);
 
-    mockContext.createType
-      .withArgs('PolymeshPrimitivesAssetMetadataAssetMetadataSpec', {
+    when(mockContext.createType)
+      .calledWith('PolymeshPrimitivesAssetMetadataAssetMetadataSpec', {
         url: fakeUrl,
         description: fakeDescription,
         typeDef: fakeTypeDef,
       })
-      .returns(fakeMetadataSpec);
+      .mockReturnValue(fakeMetadataSpec);
 
     result = metadataSpecToMeshMetadataSpec({ url, description, typeDef }, mockContext);
     expect(result).toEqual(fakeMetadataSpec);
@@ -8761,25 +8761,25 @@ describe('metadataToMeshMetadataKey', () => {
     const context = dsMockUtils.getContextInstance();
     const id = new BigNumber(1);
     const rawId = dsMockUtils.createMockU64(id);
-    context.createType.withArgs('u64', id.toString()).returns(rawId);
+    when(context.createType).calledWith('u64', id.toString()).mockReturnValue(rawId);
 
     const fakeResult = 'metadataKey' as unknown as PolymeshPrimitivesAssetMetadataAssetMetadataKey;
 
-    context.createType
-      .withArgs('PolymeshPrimitivesAssetMetadataAssetMetadataKey', {
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesAssetMetadataAssetMetadataKey', {
         Local: rawId,
       })
-      .returns(fakeResult);
+      .mockReturnValue(fakeResult);
 
     let result = metadataToMeshMetadataKey(MetadataType.Local, id, context);
 
     expect(result).toBe(fakeResult);
 
-    context.createType
-      .withArgs('PolymeshPrimitivesAssetMetadataAssetMetadataKey', {
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesAssetMetadataAssetMetadataKey', {
         Global: rawId,
       })
-      .returns(fakeResult);
+      .mockReturnValue(fakeResult);
 
     result = metadataToMeshMetadataKey(MetadataType.Global, id, context);
 
@@ -8899,7 +8899,7 @@ describe('metadataValueToMeshMetadataValue', () => {
   it('should convert value to Bytes', () => {
     const value = 'SOME_VALUE';
     const fakeValue = 'fakeValue' as unknown as Bytes;
-    mockContext.createType.withArgs('Bytes', value).returns(fakeValue);
+    when(mockContext.createType).calledWith('Bytes', value).mockReturnValue(fakeValue);
 
     const result = metadataValueToMeshMetadataValue(value, mockContext);
     expect(result).toEqual(fakeValue);
@@ -8961,12 +8961,12 @@ describe('metadataValueDetailToMeshMetadataValueDetail', () => {
     const fakeValueDetail =
       'fakeValueDetail' as unknown as PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail;
 
-    mockContext.createType
-      .withArgs('PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail', {
+    when(mockContext.createType)
+      .calledWith('PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail', {
         expire: null,
         lockStatus: MetadataLockStatus.Unlocked,
       })
-      .returns(fakeValueDetail);
+      .mockReturnValue(fakeValueDetail);
 
     let result = metadataValueDetailToMeshMetadataValueDetail(
       {
@@ -8979,15 +8979,15 @@ describe('metadataValueDetailToMeshMetadataValueDetail', () => {
     expect(result).toEqual(fakeValueDetail);
 
     const date = new Date('2030/01/01');
-    const fakeTime = 'fakeTime';
-    mockContext.createType.withArgs('u64', date.getTime()).returns(fakeTime);
+    const fakeTime = 'fakeTime' as unknown as u64;
+    when(mockContext.createType).calledWith('u64', date.getTime()).mockReturnValue(fakeTime);
 
-    mockContext.createType
-      .withArgs('PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail', {
+    when(mockContext.createType)
+      .calledWith('PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail', {
         lockStatus: MetadataLockStatus.Locked,
         expire: fakeTime,
       })
-      .returns(fakeValueDetail);
+      .mockReturnValue(fakeValueDetail);
 
     result = metadataValueDetailToMeshMetadataValueDetail(
       {
@@ -8999,12 +8999,12 @@ describe('metadataValueDetailToMeshMetadataValueDetail', () => {
 
     expect(result).toEqual(fakeValueDetail);
 
-    mockContext.createType
-      .withArgs('PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail', {
+    when(mockContext.createType)
+      .calledWith('PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail', {
         expire: null,
         lockStatus: { LockedUntil: fakeTime },
       })
-      .returns(fakeValueDetail);
+      .mockReturnValue(fakeValueDetail);
 
     result = metadataValueDetailToMeshMetadataValueDetail(
       {

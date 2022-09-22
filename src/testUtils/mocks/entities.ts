@@ -903,8 +903,8 @@ const MockMetadataEntryClass = createMockEntityClass<MetadataEntryOptions>(
     id!: BigNumber;
     asset!: Asset;
     type!: MetadataType;
-    details!: sinon.SinonStub;
-    value!: sinon.SinonStub;
+    details!: jest.SpyInstance;
+    value!: jest.SpyInstance;
 
     /**
      * @hidden

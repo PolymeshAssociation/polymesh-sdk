@@ -5,7 +5,7 @@ import {
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { getAuthorization, Params, prepareSetMetadata } from '~/api/procedures/setMetadata';
 import { Context, MetadataEntry, PolymeshError } from '~/internal';
@@ -26,9 +26,9 @@ jest.mock(
 
 describe('setMetadata procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: sinon.SinonStub;
-  let metadataToMeshMetadataKeyStub: sinon.SinonStub;
-  let metadataValueDetailToMeshMetadataValueDetailStub: sinon.SinonStub;
+  let stringToTickerStub: jest.SpyInstance;
+  let metadataToMeshMetadataKeyStub: jest.SpyInstance;
+  let metadataValueDetailToMeshMetadataValueDetailStub: jest.SpyInstance;
 
   let ticker: string;
   let id: BigNumber;
@@ -61,9 +61,9 @@ describe('setMetadata procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
 
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    metadataToMeshMetadataKeyStub = sinon.stub(utilsConversionModule, 'metadataToMeshMetadataKey');
-    metadataValueDetailToMeshMetadataValueDetailStub = sinon.stub(
+    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    metadataToMeshMetadataKeyStub = jest.spyOn(utilsConversionModule, 'metadataToMeshMetadataKey');
+    metadataValueDetailToMeshMetadataValueDetailStub = jest.spyOn(
       utilsConversionModule,
       'metadataValueDetailToMeshMetadataValueDetail'
     );
@@ -89,12 +89,14 @@ describe('setMetadata procedure', () => {
       },
     });
 
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
+    when(stringToTickerStub).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
 
     rawMetadataKey = dsMockUtils.createMockAssetMetadataKey({
       Local: dsMockUtils.createMockU64(id),
     });
-    metadataToMeshMetadataKeyStub.withArgs(type, id, mockContext).returns(rawMetadataKey);
+    when(metadataToMeshMetadataKeyStub)
+      .calledWith(type, id, mockContext)
+      .mockReturnValue(rawMetadataKey);
 
     lockedUntil = new Date('2030/01/01');
     rawValueDetail = dsMockUtils.createMockAssetMetadataValueDetail({
@@ -104,7 +106,7 @@ describe('setMetadata procedure', () => {
       }),
       expire: dsMockUtils.createMockOption(),
     });
-    metadataValueDetailToMeshMetadataValueDetailStub.returns(rawValueDetail);
+    metadataValueDetailToMeshMetadataValueDetailStub.mockReturnValue(rawValueDetail);
 
     setAssetMetadataStub = dsMockUtils.createTxStub('asset', 'setAssetMetadata');
     setAssetMetadataDetailsStub = dsMockUtils.createTxStub('asset', 'setAssetMetadataDetails');
@@ -119,7 +121,7 @@ describe('setMetadata procedure', () => {
   afterAll(() => {
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
-    sinon.restore();
+    jest.restoreAllMocks();
   });
 
   it('should throw an error if MetadataEntry status is Locked', () => {
@@ -196,12 +198,12 @@ describe('setMetadata procedure', () => {
       value: 'SOME_VALUE',
       metadataEntry,
     };
-    const metadataValueToMeshMetadataValueStub = sinon.stub(
+    const metadataValueToMeshMetadataValueStub = jest.spyOn(
       utilsConversionModule,
       'metadataValueToMeshMetadataValue'
     );
     const rawValue = dsMockUtils.createMockBytes('SOME_VALUE');
-    metadataValueToMeshMetadataValueStub.returns(rawValue);
+    metadataValueToMeshMetadataValueStub.mockReturnValue(rawValue);
 
     let result = await prepareSetMetadata.call(proc, params);
 

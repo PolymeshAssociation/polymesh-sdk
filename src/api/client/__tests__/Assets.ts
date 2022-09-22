@@ -444,9 +444,9 @@ describe('Assets Class', () => {
   });
 
   describe('method: getGlobalMetadataKeys', () => {
-    let bytesToStringStub: sinon.SinonStub;
-    let u64ToBigNumberStub: sinon.SinonStub;
-    let meshMetadataSpecToMetadataSpecStub: sinon.SinonStub;
+    let bytesToStringStub: jest.SpyInstance;
+    let u64ToBigNumberStub: jest.SpyInstance;
+    let meshMetadataSpecToMetadataSpecStub: jest.SpyInstance;
 
     const rawIds = [
       dsMockUtils.createMockU64(new BigNumber(1)),
@@ -471,9 +471,9 @@ describe('Assets Class', () => {
     let rawGlobalMetadata;
 
     beforeAll(() => {
-      u64ToBigNumberStub = sinon.stub(utilsConversionModule, 'u64ToBigNumber');
-      bytesToStringStub = sinon.stub(utilsConversionModule, 'bytesToString');
-      meshMetadataSpecToMetadataSpecStub = sinon.stub(
+      u64ToBigNumberStub = jest.spyOn(utilsConversionModule, 'u64ToBigNumber');
+      bytesToStringStub = jest.spyOn(utilsConversionModule, 'bytesToString');
+      meshMetadataSpecToMetadataSpecStub = jest.spyOn(
         utilsConversionModule,
         'meshMetadataSpecToMetadataSpec'
       );
@@ -481,7 +481,7 @@ describe('Assets Class', () => {
 
     beforeEach(() => {
       rawIds.forEach(rawId => {
-        rawId.eq.withArgs(rawId).returns(true);
+        when(rawId.eq).calledWith(rawId).mockReturnValue(true);
       });
       rawGlobalMetadata = globalMetadata.map(({ id, name, specs }, index) => {
         const rawId = rawIds[index];
@@ -495,16 +495,18 @@ describe('Assets Class', () => {
           description: dsMockUtils.createMockOption(rawDescription),
           typeDef: dsMockUtils.createMockOption(rawTypeDef),
         };
-        bytesToStringStub.withArgs(rawUrl).returns(url);
-        bytesToStringStub.withArgs(rawDescription).returns(description);
-        bytesToStringStub.withArgs(rawTypeDef).returns(typeDef);
-        bytesToStringStub.withArgs(rawName).returns(name);
-        u64ToBigNumberStub.withArgs(rawId).returns(id);
+        when(bytesToStringStub).calledWith(rawUrl).mockReturnValue(url);
+        when(bytesToStringStub).calledWith(rawDescription).mockReturnValue(description);
+        when(bytesToStringStub).calledWith(rawTypeDef).mockReturnValue(typeDef);
+        when(bytesToStringStub).calledWith(rawName).mockReturnValue(name);
+        when(u64ToBigNumberStub).calledWith(rawId).mockReturnValue(id);
 
         const rawMetadataSpecs = dsMockUtils.createMockOption(
           dsMockUtils.createMockAssetMetadataSpec(rawSpecs)
         );
-        meshMetadataSpecToMetadataSpecStub.withArgs(rawMetadataSpecs).returns(specs);
+        when(meshMetadataSpecToMetadataSpecStub)
+          .calledWith(rawMetadataSpecs)
+          .mockReturnValue(specs);
 
         return {
           rawId,
@@ -523,7 +525,7 @@ describe('Assets Class', () => {
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should retrieve all Asset Global Metadata on the chain', async () => {

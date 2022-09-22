@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Context, Entity, MetadataEntry, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -23,7 +23,7 @@ describe('MetadataEntry class', () => {
     entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
 
-    sinon.stub(utilsConversionModule, 'stringToTicker');
+    jest.spyOn(utilsConversionModule, 'stringToTicker').mockImplementation();
   });
 
   beforeEach(() => {
@@ -83,10 +83,9 @@ describe('MetadataEntry class', () => {
 
       const params = { value: 'SOME_VALUE' };
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { metadataEntry, ...params }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareStub())
+        .calledWith({ args: { metadataEntry, ...params }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await metadataEntry.set(params);
 
@@ -96,11 +95,11 @@ describe('MetadataEntry class', () => {
 
   describe('method: details', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return the name and specs of MetadataEntry', async () => {
-      sinon.stub(utilsConversionModule, 'bigNumberToU64');
+      jest.spyOn(utilsConversionModule, 'bigNumberToU64').mockImplementation();
 
       const rawName = dsMockUtils.createMockOption(dsMockUtils.createMockBytes('SOME_NAME'));
       const rawSpecs = dsMockUtils.createMockOption(dsMockUtils.createMockAssetMetadataSpec());
@@ -112,10 +111,9 @@ describe('MetadataEntry class', () => {
       });
 
       const fakeSpecs: MetadataSpec = { url: 'SOME_URL' };
-      sinon
-        .stub(utilsConversionModule, 'meshMetadataSpecToMetadataSpec')
-        .withArgs(rawSpecs)
-        .returns(fakeSpecs);
+      when(jest.spyOn(utilsConversionModule, 'meshMetadataSpecToMetadataSpec'))
+        .calledWith(rawSpecs)
+        .mockReturnValue(fakeSpecs);
 
       let result = await metadataEntry.details();
 
@@ -152,16 +150,16 @@ describe('MetadataEntry class', () => {
 
   describe('method: value', () => {
     it('should return the value and its details of the MetadataEntry', async () => {
-      sinon.stub(utilsConversionModule, 'metadataToMeshMetadataKey');
+      jest.spyOn(utilsConversionModule, 'metadataToMeshMetadataKey').mockImplementation();
       dsMockUtils.createQueryStub('asset', 'assetMetadataValues');
       dsMockUtils.createQueryStub('asset', 'assetMetadataValueDetails');
 
-      const meshMetadataValueToMetadataValueStub = sinon.stub(
+      const meshMetadataValueToMetadataValueStub = jest.spyOn(
         utilsConversionModule,
         'meshMetadataValueToMetadataValue'
       );
 
-      meshMetadataValueToMetadataValueStub.returns(null);
+      meshMetadataValueToMetadataValueStub.mockReturnValue(null);
 
       let result = await metadataEntry.value();
 
@@ -172,7 +170,7 @@ describe('MetadataEntry class', () => {
         lockStatus: MetadataLockStatus.Unlocked,
         expiry: new Date('2030/01/01'),
       };
-      meshMetadataValueToMetadataValueStub.returns(fakeResult);
+      meshMetadataValueToMetadataValueStub.mockReturnValue(fakeResult);
 
       result = await metadataEntry.value();
 
