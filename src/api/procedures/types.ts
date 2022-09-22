@@ -9,6 +9,7 @@ import {
   DefaultPortfolio,
   Identity,
   KnownPermissionGroup,
+  MultiSig,
   NumberedPortfolio,
   Venue,
 } from '~/internal';
@@ -40,13 +41,14 @@ import {
   Requirement,
   Scope,
   SecurityIdentifier,
+  Signer,
   StatClaimIssuer,
+  StatType,
   TransactionArray,
   TransactionPermissions,
   TxGroup,
   VenueType,
 } from '~/types';
-import { StatType } from '~/types/internal';
 import { Modify } from '~/types/utils';
 
 export type AddRestrictionParams<T> = Omit<
@@ -916,4 +918,19 @@ export interface MoveFundsParams {
 
 export interface CreateTransactionBatchParams<ReturnValues extends readonly [...unknown[]]> {
   transactions: Readonly<TransactionArray<ReturnValues>>;
+}
+export interface CreateMultiSigParams {
+  signers: Signer[];
+  requiredSignatures: BigNumber;
+}
+
+export interface ModifyMultiSigParams {
+  /**
+   * The MultiSig to be modified
+   */
+  multiSig: MultiSig;
+  /**
+   * The signers to set for the MultiSig
+   */
+  signers: Signer[];
 }

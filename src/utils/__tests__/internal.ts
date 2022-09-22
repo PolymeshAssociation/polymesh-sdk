@@ -31,11 +31,11 @@ import {
   PermissionedAccount,
   ProcedureMethod,
   RemoveAssetStatParams,
+  StatType,
   SubCallback,
   TransferRestrictionType,
   TxTags,
 } from '~/types';
-import { StatType } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
