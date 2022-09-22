@@ -220,11 +220,11 @@ describe('AccountManagement class', () => {
   });
 
   describe('method: getSigningAccount', () => {
-    const stringToAccountIdStub = sinon.stub(utilsConversionModule, 'stringToAccountId');
+    const stringToAccountIdStub = jest.spyOn(utilsConversionModule, 'stringToAccountId');
     it('should return the signing Account', async () => {
       const address = 'someAddress';
       const rawAddress = dsMockUtils.createMockAccountId(address);
-      stringToAccountIdStub.withArgs(address, context).returns(rawAddress);
+      when(stringToAccountIdStub).calledWith(address, context).mockReturnValue(rawAddress);
       dsMockUtils.configureMocks({ contextOptions: { signingAddress: address } });
 
       const result = accountManagement.getSigningAccount();
@@ -319,10 +319,9 @@ describe('AccountManagement class', () => {
 
       const expectedQueue = 'someQueue' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+      when(procedureMockUtils.getPrepareStub())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedQueue);
 
       const queue = await accountManagement.createMultiSigAccount(args);
 

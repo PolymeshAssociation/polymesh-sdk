@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Account, Context, MultiSig, PolymeshError, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -37,8 +37,8 @@ describe('MultiSig class', () => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
-    sinon.stub(utilsInternalModule, 'assertAddressValid');
-    sinon.stub(utilsConversionModule, 'addressToKey');
+    jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
+    jest.spyOn(utilsConversionModule, 'addressToKey').mockImplementation();
 
     address = 'someAddress';
   });
@@ -57,7 +57,7 @@ describe('MultiSig class', () => {
   afterAll(() => {
     dsMockUtils.cleanup();
     procedureMockUtils.cleanup();
-    sinon.restore();
+    jest.restoreAllMocks();
   });
 
   it('should extend Account', () => {
@@ -173,10 +173,9 @@ describe('MultiSig class', () => {
         signers: [account],
       };
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { multiSig, ...args }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareStub())
+        .calledWith({ args: { multiSig, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const queue = await multiSig.modify(args);
 

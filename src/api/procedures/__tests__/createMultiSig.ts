@@ -1,6 +1,5 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
 
 import { MultiSig } from '~/api/entities/MultiSig';
 import {
@@ -21,8 +20,8 @@ describe('createMultiSig procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    sinon.stub(utilsInternalModule, 'assertAddressValid');
-    sinon.stub(utilsConversionModule, 'addressToKey');
+    jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
+    jest.spyOn(utilsConversionModule, 'addressToKey').mockImplementation();
   });
 
   beforeEach(() => {
@@ -90,19 +89,21 @@ describe('createMultiSig procedure', () => {
 });
 
 describe('createMultiSigResolver', () => {
-  const filterEventRecordsStub = sinon.stub(utilsInternalModule, 'filterEventRecords');
+  const filterEventRecordsStub = jest.spyOn(utilsInternalModule, 'filterEventRecords');
   const did = 'someDid';
   const rawIdentityId = dsMockUtils.createMockIdentityId(did);
   const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
   const rawAddress = dsMockUtils.createMockAccountId(address);
 
   beforeEach(() => {
-    filterEventRecordsStub.returns([dsMockUtils.createMockIEvent([rawIdentityId, rawAddress])]);
+    filterEventRecordsStub.mockReturnValue([
+      dsMockUtils.createMockIEvent([rawIdentityId, rawAddress]),
+    ]);
   });
 
   afterEach(() => {
-    sinon.reset();
-    filterEventRecordsStub.reset();
+    jest.resetAllMocks();
+    filterEventRecordsStub.mockReset();
   });
 
   it('should return the new MultiSig', () => {

@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
 
 import { MultiSigProposal } from '~/api/entities/MultiSigProposal';
 import { Account, Context, MultiSig, PolymeshError } from '~/internal';
@@ -24,7 +23,7 @@ describe('MultiSigProposal class', () => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
-    sinon.stub(utilsInternalModule, 'assertAddressValid');
+    jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
 
     address = 'someAddress';
   });
@@ -43,7 +42,7 @@ describe('MultiSigProposal class', () => {
   afterAll(() => {
     dsMockUtils.cleanup();
     procedureMockUtils.cleanup();
-    sinon.restore();
+    jest.restoreAllMocks();
   });
 
   it('should extend Entity', () => {

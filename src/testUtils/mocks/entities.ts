@@ -1471,14 +1471,14 @@ const MockMultiSigClass = createMockEntityClass<MultiSigOptions>(
     uuid!: string;
     address!: string;
     key!: string;
-    isFrozen!: sinon.SinonStub;
-    getBalance!: sinon.SinonStub;
-    getIdentity!: sinon.SinonStub;
-    getTransactionHistory!: sinon.SinonStub;
-    hasPermissions!: sinon.SinonStub;
-    checkPermissions!: sinon.SinonStub;
-    details!: sinon.SinonStub;
-    getCreator!: sinon.SinonStub;
+    isFrozen!: jest.Mock;
+    getBalance!: jest.Mock;
+    getIdentity!: jest.Mock;
+    getTransactionHistory!: jest.Mock;
+    hasPermissions!: jest.Mock;
+    checkPermissions!: jest.Mock;
+    details!: jest.Mock;
+    getCreator!: jest.Mock;
 
     /**
      * @hidden
@@ -1532,7 +1532,7 @@ const MockMultiSigProposalClass = createMockEntityClass<MultiSigProposalOptions>
   class {
     id!: BigNumber;
     multiSig!: MultiSig;
-    details!: sinon.SinonStub;
+    details!: jest.Mock;
 
     /**
      * @hidden
