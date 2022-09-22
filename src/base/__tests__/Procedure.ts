@@ -395,8 +395,6 @@ describe('Procedure class', () => {
 
       const proc3 = new Procedure(func3);
 
-      constructorStub.mockReset();
-
       const transaction3 = await proc3.prepare({ args: procArgs }, context, {
         signingAccount: 'something',
         nonce: () => new BigNumber(10),

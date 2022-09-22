@@ -103,7 +103,6 @@ import BigNumber from 'bignumber.js';
 import { EventEmitter } from 'events';
 import { when } from 'jest-when';
 import { cloneDeep, map, merge, upperFirst } from 'lodash';
-import { SinonStubbedInstance } from 'sinon';
 
 import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
 import {
@@ -1560,9 +1559,9 @@ export function setContextAccountBalance(balance: AccountBalance): void {
  * @hidden
  * Retrieve an instance of the mocked Polkadot API
  */
-export function getApiInstance(): ApiPromise & SinonStubbedInstance<ApiPromise> & EventEmitter {
+export function getApiInstance(): ApiPromise & jest.Mocked<ApiPromise> & EventEmitter {
   return mockInstanceContainer.apiInstance as unknown as ApiPromise &
-    SinonStubbedInstance<ApiPromise> &
+    jest.Mocked<ApiPromise> &
     EventEmitter;
 }
 
@@ -1579,9 +1578,9 @@ export function getWebSocketInstance(): MockWebSocket {
  * Retrieve an instance of the mocked Apollo Client
  */
 export function getMiddlewareApi(): ApolloClient<NormalizedCacheObject> &
-  SinonStubbedInstance<ApolloClient<NormalizedCacheObject>> {
+  jest.Mocked<ApolloClient<NormalizedCacheObject>> {
   return mockInstanceContainer.apolloInstance as unknown as ApolloClient<NormalizedCacheObject> &
-    SinonStubbedInstance<ApolloClient<NormalizedCacheObject>>;
+    jest.Mocked<ApolloClient<NormalizedCacheObject>>;
 }
 
 /**
@@ -1589,9 +1588,9 @@ export function getMiddlewareApi(): ApolloClient<NormalizedCacheObject> &
  * Retrieve an instance of the mocked v2 Apollo Client
  */
 export function getMiddlewareApiV2(): ApolloClient<NormalizedCacheObject> &
-  SinonStubbedInstance<ApolloClient<NormalizedCacheObject>> {
+  jest.Mocked<ApolloClient<NormalizedCacheObject>> {
   return mockInstanceContainer.apolloInstanceV2 as unknown as ApolloClient<NormalizedCacheObject> &
-    SinonStubbedInstance<ApolloClient<NormalizedCacheObject>>;
+    jest.Mocked<ApolloClient<NormalizedCacheObject>>;
 }
 
 /**
