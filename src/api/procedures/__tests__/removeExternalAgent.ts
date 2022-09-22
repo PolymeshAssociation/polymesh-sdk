@@ -1,5 +1,3 @@
-import sinon from 'sinon';
-
 import {
   getAuthorization,
   Params,
@@ -35,8 +33,8 @@ describe('removeExternalAgent procedure', () => {
   let ticker: string;
   let asset: Asset;
   let target: string;
-  let stringToTickerStub: sinon.SinonStub;
-  let stringToIdentityIdStub: sinon.SinonStub;
+  let stringToTickerStub: jest.SpyInstance;
+  let stringToIdentityIdStub: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -45,8 +43,8 @@ describe('removeExternalAgent procedure', () => {
     ticker = 'SOME_TICKER';
     asset = entityMockUtils.getAssetInstance({ ticker });
     target = 'someDid';
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
+    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    stringToIdentityIdStub = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
   });
 
   beforeEach(() => {
@@ -166,8 +164,8 @@ describe('removeExternalAgent procedure', () => {
     const rawTicker = dsMockUtils.createMockTicker(ticker);
     const rawAgent = dsMockUtils.createMockIdentityId(target);
 
-    stringToTickerStub.returns(rawTicker);
-    stringToIdentityIdStub.returns(rawAgent);
+    stringToTickerStub.mockReturnValue(rawTicker);
+    stringToIdentityIdStub.mockReturnValue(rawAgent);
 
     let result = await prepareRemoveExternalAgent.call(proc, {
       target,

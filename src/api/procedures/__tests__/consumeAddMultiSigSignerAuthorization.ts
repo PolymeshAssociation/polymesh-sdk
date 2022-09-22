@@ -1,6 +1,6 @@
 import { bool, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   ConsumeAddMultiSigSignerAuthorizationParams,
@@ -10,7 +10,6 @@ import {
 import { AuthorizationRequest, Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
-  createMockIdentityDidRecord,
   createMockIdentityId,
   createMockKeyRecord,
   createMockOption,
@@ -27,8 +26,8 @@ jest.mock(
 describe('consumeAddMultiSigSignerAuthorization procedure', () => {
   let mockContext: Mocked<Context>;
   let targetAddress: string;
-  let bigNumberToU64Stub: sinon.SinonStub<[BigNumber, Context], u64>;
-  let booleanToBoolStub: sinon.SinonStub<[boolean, Context], bool>;
+  let bigNumberToU64Stub: jest.SpyInstance<u64, [BigNumber, Context]>;
+  let booleanToBoolStub: jest.SpyInstance<bool, [boolean, Context]>;
   let rawTrue: bool;
   let rawFalse: bool;
   let authId: BigNumber;
@@ -43,21 +42,21 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
     });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
-    booleanToBoolStub = sinon.stub(utilsConversionModule, 'booleanToBool');
+    bigNumberToU64Stub = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
+    booleanToBoolStub = jest.spyOn(utilsConversionModule, 'booleanToBool');
     authId = new BigNumber(1);
     rawAuthId = dsMockUtils.createMockU64(authId);
     rawTrue = dsMockUtils.createMockBool(true);
     rawFalse = dsMockUtils.createMockBool(false);
 
-    sinon.stub(utilsConversionModule, 'addressToKey');
+    jest.spyOn(utilsConversionModule, 'addressToKey').mockImplementation();
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    bigNumberToU64Stub.withArgs(authId, mockContext).returns(rawAuthId);
-    booleanToBoolStub.withArgs(true, mockContext).returns(rawTrue);
-    booleanToBoolStub.withArgs(false, mockContext).returns(rawFalse);
+    when(bigNumberToU64Stub).calledWith(authId, mockContext).mockReturnValue(rawAuthId);
+    when(booleanToBoolStub).calledWith(true, mockContext).mockReturnValue(rawTrue);
+    when(booleanToBoolStub).calledWith(false, mockContext).mockReturnValue(rawFalse);
     dsMockUtils.createQueryStub('identity', 'authorizations', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockAuthorization({
@@ -114,11 +113,9 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
     );
 
     dsMockUtils.createTxStub('multiSig', 'acceptMultisigSignerAsKey');
-    dsMockUtils.createQueryStub('identity', 'keyRecords').returns(createMockIdentityDidRecord());
-
     dsMockUtils
       .createQueryStub('identity', 'keyRecords')
-      .returns(
+      .mockReturnValue(
         createMockOption(createMockKeyRecord({ PrimaryKey: createMockIdentityId('someId') }))
       );
 
@@ -243,7 +240,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
       Identity: dsMockUtils.createMockIdentityId(target.did),
     });
 
-    sinon.stub(utilsConversionModule, 'signerValueToSignatory').returns(rawSignatory);
+    jest.spyOn(utilsConversionModule, 'signerValueToSignatory').mockReturnValue(rawSignatory);
 
     let result = await prepareConsumeAddMultiSigSignerAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(
@@ -378,7 +375,7 @@ describe('consumeAddMultiSigSignerAuthorization procedure', () => {
         },
       });
 
-      mockContext.getSigningAccount.returns(
+      mockContext.getSigningAccount.mockReturnValue(
         entityMockUtils.getAccountInstance({ address, getIdentity: null })
       );
 

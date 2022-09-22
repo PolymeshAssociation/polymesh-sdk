@@ -1,10 +1,10 @@
 import { u32, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 import {
   AffirmationStatus as MeshAffirmationStatus,
   PortfolioId as MeshPortfolioId,
 } from 'polymesh-types/types';
-import sinon from 'sinon';
 
 import {
   getAuthorization,
@@ -51,13 +51,13 @@ describe('modifyInstructionAffirmation procedure', () => {
   const portfolioId: PortfolioId = { did };
   const latestBlock = new BigNumber(100);
   let mockContext: Mocked<Context>;
-  let bigNumberToU64Stub: sinon.SinonStub<[BigNumber, Context], u64>;
-  let bigNumberToU32Stub: sinon.SinonStub<[BigNumber, Context], u32>;
-  let portfolioLikeToPortfolioIdStub: sinon.SinonStub<[PortfolioLike], PortfolioId>;
-  let portfolioIdToMeshPortfolioIdStub: sinon.SinonStub<[PortfolioId, Context], MeshPortfolioId>;
-  let meshAffirmationStatusToAffirmationStatusStub: sinon.SinonStub<
-    [MeshAffirmationStatus],
-    AffirmationStatus
+  let bigNumberToU64Stub: jest.SpyInstance<u64, [BigNumber, Context]>;
+  let bigNumberToU32Stub: jest.SpyInstance<u32, [BigNumber, Context]>;
+  let portfolioLikeToPortfolioIdStub: jest.SpyInstance<PortfolioId, [PortfolioLike]>;
+  let portfolioIdToMeshPortfolioIdStub: jest.SpyInstance<MeshPortfolioId, [PortfolioId, Context]>;
+  let meshAffirmationStatusToAffirmationStatusStub: jest.SpyInstance<
+    AffirmationStatus,
+    [MeshAffirmationStatus]
   >;
 
   beforeAll(() => {
@@ -71,22 +71,22 @@ describe('modifyInstructionAffirmation procedure', () => {
 
     portfolio = entityMockUtils.getDefaultPortfolioInstance({ did: 'someDid ' });
     legAmount = new BigNumber(2);
-    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
-    bigNumberToU32Stub = sinon.stub(utilsConversionModule, 'bigNumberToU32');
-    portfolioLikeToPortfolioIdStub = sinon.stub(
+    bigNumberToU64Stub = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
+    bigNumberToU32Stub = jest.spyOn(utilsConversionModule, 'bigNumberToU32');
+    portfolioLikeToPortfolioIdStub = jest.spyOn(
       utilsConversionModule,
       'portfolioLikeToPortfolioId'
     );
-    portfolioIdToMeshPortfolioIdStub = sinon.stub(
+    portfolioIdToMeshPortfolioIdStub = jest.spyOn(
       utilsConversionModule,
       'portfolioIdToMeshPortfolioId'
     );
-    meshAffirmationStatusToAffirmationStatusStub = sinon.stub(
+    meshAffirmationStatusToAffirmationStatusStub = jest.spyOn(
       utilsConversionModule,
       'meshAffirmationStatusToAffirmationStatus'
     );
 
-    sinon.stub(procedureUtilsModule, 'assertInstructionValid');
+    jest.spyOn(procedureUtilsModule, 'assertInstructionValid').mockImplementation();
   });
 
   beforeEach(() => {
@@ -95,10 +95,12 @@ describe('modifyInstructionAffirmation procedure', () => {
     dsMockUtils.createTxStub('settlement', 'withdrawAffirmation');
     dsMockUtils.createTxStub('settlement', 'rejectInstruction');
     mockContext = dsMockUtils.getContextInstance();
-    bigNumberToU64Stub.returns(rawInstructionId);
-    bigNumberToU32Stub.returns(rawLegAmount);
-    portfolioLikeToPortfolioIdStub.withArgs(portfolio).returns(portfolioId);
-    portfolioIdToMeshPortfolioIdStub.withArgs(portfolioId, mockContext).returns(rawPortfolioId);
+    bigNumberToU64Stub.mockReturnValue(rawInstructionId);
+    bigNumberToU32Stub.mockReturnValue(rawLegAmount);
+    when(portfolioLikeToPortfolioIdStub).calledWith(portfolio).mockReturnValue(portfolioId);
+    when(portfolioIdToMeshPortfolioIdStub)
+      .calledWith(portfolioId, mockContext)
+      .mockReturnValue(rawPortfolioId);
   });
 
   afterEach(() => {
@@ -117,9 +119,9 @@ describe('modifyInstructionAffirmation procedure', () => {
     dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
     });
-    meshAffirmationStatusToAffirmationStatusStub
-      .withArgs(rawAffirmationStatus)
-      .returns(AffirmationStatus.Affirmed);
+    when(meshAffirmationStatusToAffirmationStatusStub)
+      .calledWith(rawAffirmationStatus)
+      .mockReturnValue(AffirmationStatus.Affirmed);
 
     const proc = procedureMockUtils.getInstance<
       ModifyInstructionAffirmationParams,
@@ -144,9 +146,9 @@ describe('modifyInstructionAffirmation procedure', () => {
     dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
     });
-    meshAffirmationStatusToAffirmationStatusStub
-      .withArgs(rawAffirmationStatus)
-      .returns(AffirmationStatus.Affirmed);
+    when(meshAffirmationStatusToAffirmationStatusStub)
+      .calledWith(rawAffirmationStatus)
+      .mockReturnValue(AffirmationStatus.Affirmed);
 
     const proc = procedureMockUtils.getInstance<
       ModifyInstructionAffirmationParams,
@@ -171,9 +173,9 @@ describe('modifyInstructionAffirmation procedure', () => {
     dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
     });
-    meshAffirmationStatusToAffirmationStatusStub
-      .withArgs(rawAffirmationStatus)
-      .returns(AffirmationStatus.Pending);
+    when(meshAffirmationStatusToAffirmationStatusStub)
+      .calledWith(rawAffirmationStatus)
+      .mockReturnValue(AffirmationStatus.Pending);
 
     const proc = procedureMockUtils.getInstance<
       ModifyInstructionAffirmationParams,
@@ -205,9 +207,9 @@ describe('modifyInstructionAffirmation procedure', () => {
     dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
     });
-    meshAffirmationStatusToAffirmationStatusStub
-      .withArgs(rawAffirmationStatus)
-      .returns(AffirmationStatus.Pending);
+    when(meshAffirmationStatusToAffirmationStatusStub)
+      .calledWith(rawAffirmationStatus)
+      .mockReturnValue(AffirmationStatus.Pending);
 
     const proc = procedureMockUtils.getInstance<
       ModifyInstructionAffirmationParams,
@@ -232,9 +234,9 @@ describe('modifyInstructionAffirmation procedure', () => {
     dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
     });
-    meshAffirmationStatusToAffirmationStatusStub
-      .withArgs(rawAffirmationStatus)
-      .returns(AffirmationStatus.Affirmed);
+    when(meshAffirmationStatusToAffirmationStatusStub)
+      .calledWith(rawAffirmationStatus)
+      .mockReturnValue(AffirmationStatus.Affirmed);
 
     const proc = procedureMockUtils.getInstance<
       ModifyInstructionAffirmationParams,
@@ -266,15 +268,16 @@ describe('modifyInstructionAffirmation procedure', () => {
     dsMockUtils.createQueryStub('settlement', 'userAffirmations', {
       multi: [rawAffirmationStatus, rawAffirmationStatus],
     });
-    meshAffirmationStatusToAffirmationStatusStub
-      .withArgs(rawAffirmationStatus)
-      .returns(AffirmationStatus.Pending);
+    when(meshAffirmationStatusToAffirmationStatusStub)
+      .calledWith(rawAffirmationStatus)
+      .mockReturnValue(AffirmationStatus.Pending);
 
-    const isCustodiedByStub = sinon.stub();
-    isCustodiedByStub.onCall(0).returns(true);
-    isCustodiedByStub.onCall(1).returns(true);
-    isCustodiedByStub.onCall(2).returns(false);
-    isCustodiedByStub.onCall(3).returns(false);
+    const isCustodiedByStub = jest
+      .fn()
+      .mockReturnValueOnce(true)
+      .mockReturnValueOnce(true)
+      .mockReturnValueOnce(false)
+      .mockReturnValue(false);
 
     entityMockUtils.configureMocks({
       defaultPortfolioOptions: {

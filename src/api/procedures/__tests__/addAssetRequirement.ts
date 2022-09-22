@@ -3,8 +3,8 @@ import {
   PolymeshPrimitivesCondition,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 import { Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
 
 import {
   getAuthorization,
@@ -25,10 +25,10 @@ jest.mock(
 
 describe('addAssetRequirement procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let requirementToComplianceRequirementStub: sinon.SinonStub<
-    [InputRequirement, Context],
-    PolymeshPrimitivesComplianceManagerComplianceRequirement
+  let stringToTickerStub: jest.SpyInstance<Ticker, [string, Context]>;
+  let requirementToComplianceRequirementStub: jest.SpyInstance<
+    PolymeshPrimitivesComplianceManagerComplianceRequirement,
+    [InputRequirement, Context]
   >;
   let ticker: string;
   let conditions: Condition[];
@@ -39,8 +39,8 @@ describe('addAssetRequirement procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    requirementToComplianceRequirementStub = sinon.stub(
+    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    requirementToComplianceRequirementStub = jest.spyOn(
       utilsConversionModule,
       'requirementToComplianceRequirement'
     );
@@ -77,7 +77,7 @@ describe('addAssetRequirement procedure', () => {
 
     mockContext = dsMockUtils.getContextInstance();
 
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
+    when(stringToTickerStub).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
   });
 
   afterEach(() => {
@@ -117,9 +117,9 @@ describe('addAssetRequirement procedure', () => {
     const fakeSenderConditions = 'senderConditions' as unknown as PolymeshPrimitivesCondition[];
     const fakeReceiverConditions = 'receiverConditions' as unknown as PolymeshPrimitivesCondition[];
 
-    requirementToComplianceRequirementStub
-      .withArgs({ conditions: fakeConditions, id: new BigNumber(1) }, mockContext)
-      .returns(
+    when(requirementToComplianceRequirementStub)
+      .calledWith({ conditions: fakeConditions, id: new BigNumber(1) }, mockContext)
+      .mockReturnValue(
         dsMockUtils.createMockComplianceRequirement({
           senderConditions: fakeSenderConditions,
           receiverConditions: fakeReceiverConditions,

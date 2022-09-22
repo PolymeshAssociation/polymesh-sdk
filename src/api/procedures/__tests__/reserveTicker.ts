@@ -1,7 +1,7 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 import { Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
 
 import {
   createTickerReservationResolver,
@@ -25,7 +25,7 @@ jest.mock(
 
 describe('reserveTicker procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
+  let stringToTickerStub: jest.SpyInstance<Ticker, [string, Context]>;
   let ticker: string;
   let rawTicker: Ticker;
   let args: ReserveTickerParams;
@@ -42,7 +42,7 @@ describe('reserveTicker procedure', () => {
     });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
+    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     args = {
@@ -71,7 +71,7 @@ describe('reserveTicker procedure', () => {
 
     mockContext = dsMockUtils.getContextInstance();
 
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
+    when(stringToTickerStub).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
   });
 
   afterEach(() => {
@@ -207,7 +207,7 @@ describe('reserveTicker procedure', () => {
 });
 
 describe('tickerReservationResolver', () => {
-  const filterEventRecordsStub = sinon.stub(utilsInternalModule, 'filterEventRecords');
+  const filterEventRecordsStub = jest.spyOn(utilsInternalModule, 'filterEventRecords');
   const tickerString = 'SOME_TICKER';
   const ticker = dsMockUtils.createMockTicker(tickerString);
 
@@ -216,11 +216,11 @@ describe('tickerReservationResolver', () => {
   });
 
   beforeEach(() => {
-    filterEventRecordsStub.returns([dsMockUtils.createMockIEvent(['someDid', ticker])]);
+    filterEventRecordsStub.mockReturnValue([dsMockUtils.createMockIEvent(['someDid', ticker])]);
   });
 
   afterEach(() => {
-    filterEventRecordsStub.reset();
+    filterEventRecordsStub.mockReset();
   });
 
   it('should return the new Ticker Reservation', () => {

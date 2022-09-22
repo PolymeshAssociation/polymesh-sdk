@@ -1,6 +1,6 @@
 import { bool } from '@polkadot/types';
+import { when } from 'jest-when';
 import { Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
 
 import {
   getAuthorization,
@@ -20,9 +20,9 @@ jest.mock(
 
 describe('togglePauseRequirements procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let assetCompliancesStub: sinon.SinonStub;
-  let boolToBooleanStub: sinon.SinonStub<[bool], boolean>;
+  let stringToTickerStub: jest.SpyInstance<Ticker, [string, Context]>;
+  let assetCompliancesStub: jest.Mock;
+  let boolToBooleanStub: jest.SpyInstance<boolean, [bool]>;
   let ticker: string;
   let rawTicker: Ticker;
 
@@ -30,22 +30,22 @@ describe('togglePauseRequirements procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    boolToBooleanStub = sinon.stub(utilsConversionModule, 'boolToBoolean');
+    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    boolToBooleanStub = jest.spyOn(utilsConversionModule, 'boolToBoolean');
     ticker = 'TEST';
     rawTicker = dsMockUtils.createMockTicker(ticker);
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
+    when(stringToTickerStub).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
     assetCompliancesStub = dsMockUtils.createQueryStub('complianceManager', 'assetCompliances', {
       returnValue: [],
     });
-    assetCompliancesStub.withArgs(rawTicker).resolves({
+    when(assetCompliancesStub).calledWith(rawTicker).mockResolvedValue({
       paused: true,
     });
-    boolToBooleanStub.returns(true);
+    boolToBooleanStub.mockReturnValue(true);
   });
 
   afterEach(() => {
@@ -71,11 +71,11 @@ describe('togglePauseRequirements procedure', () => {
   });
 
   it('should throw an error if pause is set to false and the asset compliance requirements are already unpaused', () => {
-    assetCompliancesStub.withArgs(rawTicker).returns({
+    when(assetCompliancesStub).calledWith(rawTicker).mockReturnValue({
       paused: false,
     });
 
-    boolToBooleanStub.returns(false);
+    boolToBooleanStub.mockReturnValue(false);
 
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
@@ -88,11 +88,11 @@ describe('togglePauseRequirements procedure', () => {
   });
 
   it('should return a pause asset compliance transaction spec', async () => {
-    assetCompliancesStub.withArgs(rawTicker).returns({
+    when(assetCompliancesStub).calledWith(rawTicker).mockReturnValue({
       paused: false,
     });
 
-    boolToBooleanStub.returns(false);
+    boolToBooleanStub.mockReturnValue(false);
 
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 

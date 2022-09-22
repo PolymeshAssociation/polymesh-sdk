@@ -1,7 +1,7 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 import { Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
 
 import {
   createCheckpointResolver,
@@ -27,7 +27,7 @@ jest.mock(
 
 describe('createCheckpoint procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
+  let stringToTickerStub: jest.SpyInstance<Ticker, [string, Context]>;
   let ticker: string;
   let rawTicker: Ticker;
 
@@ -35,14 +35,14 @@ describe('createCheckpoint procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
+    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
+    when(stringToTickerStub).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
   });
 
   afterEach(() => {
@@ -69,7 +69,7 @@ describe('createCheckpoint procedure', () => {
   });
 
   describe('createCheckpointResolver', () => {
-    const filterEventRecordsStub = sinon.stub(utilsInternalModule, 'filterEventRecords');
+    const filterEventRecordsStub = jest.spyOn(utilsInternalModule, 'filterEventRecords');
     const id = new BigNumber(1);
 
     beforeAll(() => {
@@ -77,11 +77,13 @@ describe('createCheckpoint procedure', () => {
     });
 
     beforeEach(() => {
-      filterEventRecordsStub.returns([dsMockUtils.createMockIEvent(['someDid', ticker, id])]);
+      filterEventRecordsStub.mockReturnValue([
+        dsMockUtils.createMockIEvent(['someDid', ticker, id]),
+      ]);
     });
 
     afterEach(() => {
-      filterEventRecordsStub.reset();
+      filterEventRecordsStub.mockReset();
     });
 
     it('should return the new Checkpoint', () => {

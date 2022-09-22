@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
 
 import { getAuthorization, Params, prepareCloseOffering } from '~/api/procedures/closeOffering';
 import { Context } from '~/internal';
@@ -43,8 +42,8 @@ describe('closeOffering procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
 
-    sinon.stub(utilsConversionModule, 'stringToTicker').returns(rawTicker);
-    sinon.stub(utilsConversionModule, 'bigNumberToU64').returns(rawId);
+    jest.spyOn(utilsConversionModule, 'stringToTicker').mockReturnValue(rawTicker);
+    jest.spyOn(utilsConversionModule, 'bigNumberToU64').mockReturnValue(rawId);
   });
 
   beforeEach(() => {

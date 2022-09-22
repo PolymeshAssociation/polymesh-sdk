@@ -1,8 +1,8 @@
 import { Moment } from '@polkadot/types/interfaces';
 import { PolymeshPrimitivesAuthorizationAuthorizationData } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 import { AgentGroup, Signatory, Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
 
 import {
   getAuthorization,
@@ -22,13 +22,13 @@ jest.mock(
 
 describe('modifyCorporateActionAgent procedure', () => {
   let mockContext: Mocked<Context>;
-  let authorizationToAuthorizationDataStub: sinon.SinonStub<
-    [Authorization, Context],
-    PolymeshPrimitivesAuthorizationAuthorizationData
+  let authorizationToAuthorizationDataStub: jest.SpyInstance<
+    PolymeshPrimitivesAuthorizationAuthorizationData,
+    [Authorization, Context]
   >;
-  let dateToMomentStub: sinon.SinonStub<[Date, Context], Moment>;
-  let signerToStringStub: sinon.SinonStub<[string | Identity | Account], string>;
-  let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
+  let dateToMomentStub: jest.SpyInstance<Moment, [Date, Context]>;
+  let signerToStringStub: jest.SpyInstance<string, [string | Identity | Account]>;
+  let signerValueToSignatoryStub: jest.SpyInstance<Signatory, [SignerValue, Context]>;
   let ticker: string;
   let rawTicker: Ticker;
   let rawAgentGroup: AgentGroup;
@@ -40,13 +40,13 @@ describe('modifyCorporateActionAgent procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    authorizationToAuthorizationDataStub = sinon.stub(
+    authorizationToAuthorizationDataStub = jest.spyOn(
       utilsConversionModule,
       'authorizationToAuthorizationData'
     );
-    dateToMomentStub = sinon.stub(utilsConversionModule, 'dateToMoment');
-    signerToStringStub = sinon.stub(utilsConversionModule, 'signerToString');
-    signerValueToSignatoryStub = sinon.stub(utilsConversionModule, 'signerValueToSignatory');
+    dateToMomentStub = jest.spyOn(utilsConversionModule, 'dateToMoment');
+    signerToStringStub = jest.spyOn(utilsConversionModule, 'signerToString');
+    signerValueToSignatoryStub = jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawAgentGroup = dsMockUtils.createMockAgentGroup('Full');
@@ -66,9 +66,9 @@ describe('modifyCorporateActionAgent procedure', () => {
       },
     });
     mockContext = dsMockUtils.getContextInstance();
-    authorizationToAuthorizationDataStub.returns(rawAuthorizationData);
-    signerToStringStub.returns(target);
-    signerValueToSignatoryStub.returns(rawSignatory);
+    authorizationToAuthorizationDataStub.mockReturnValue(rawAuthorizationData);
+    signerToStringStub.mockReturnValue(target);
+    signerValueToSignatoryStub.mockReturnValue(rawSignatory);
   });
 
   afterEach(() => {
@@ -145,7 +145,7 @@ describe('modifyCorporateActionAgent procedure', () => {
     const requestExpiry = new Date('12/12/2050');
     const rawExpiry = dsMockUtils.createMockMoment(new BigNumber(requestExpiry.getTime()));
 
-    dateToMomentStub.withArgs(requestExpiry, mockContext).returns(rawExpiry);
+    when(dateToMomentStub).calledWith(requestExpiry, mockContext).mockReturnValue(rawExpiry);
 
     const transaction = dsMockUtils.createTxStub('identity', 'addAuthorization');
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);

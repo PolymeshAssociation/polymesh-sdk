@@ -1,6 +1,6 @@
 import { bool, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   ConsumeJoinOrRotateAuthorizationParams,
@@ -25,8 +25,8 @@ import * as utilsConversionModule from '~/utils/conversion';
 describe('consumeJoinOrRotateAuthorization procedure', () => {
   let mockContext: Mocked<Context>;
   let targetAddress: string;
-  let bigNumberToU64Stub: sinon.SinonStub<[BigNumber, Context], u64>;
-  let booleanToBoolStub: sinon.SinonStub<[boolean, Context], bool>;
+  let bigNumberToU64Stub: jest.SpyInstance<u64, [BigNumber, Context]>;
+  let booleanToBoolStub: jest.SpyInstance<bool, [boolean, Context]>;
   let rawTrue: bool;
   let rawFalse: bool;
   let authId: BigNumber;
@@ -43,14 +43,14 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
     });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
-    booleanToBoolStub = sinon.stub(utilsConversionModule, 'booleanToBool');
+    bigNumberToU64Stub = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
+    booleanToBoolStub = jest.spyOn(utilsConversionModule, 'booleanToBool');
     authId = new BigNumber(1);
     rawAuthId = dsMockUtils.createMockU64(authId);
     rawTrue = dsMockUtils.createMockBool(true);
     rawFalse = dsMockUtils.createMockBool(false);
 
-    sinon.stub(utilsConversionModule, 'addressToKey');
+    jest.spyOn(utilsConversionModule, 'addressToKey').mockImplementation();
   });
 
   beforeEach(() => {
@@ -65,9 +65,9 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       ),
     });
     mockContext = dsMockUtils.getContextInstance();
-    bigNumberToU64Stub.withArgs(authId, mockContext).returns(rawAuthId);
-    booleanToBoolStub.withArgs(true, mockContext).returns(rawTrue);
-    booleanToBoolStub.withArgs(false, mockContext).returns(rawFalse);
+    when(bigNumberToU64Stub).calledWith(authId, mockContext).mockReturnValue(rawAuthId);
+    when(booleanToBoolStub).calledWith(true, mockContext).mockReturnValue(rawTrue);
+    when(booleanToBoolStub).calledWith(false, mockContext).mockReturnValue(rawFalse);
 
     targetAccount = entityMockUtils.getAccountInstance({ address: targetAddress });
   });
@@ -358,7 +358,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       Identity: dsMockUtils.createMockIdentityId(target.did),
     });
 
-    sinon.stub(utilsConversionModule, 'signerValueToSignatory').returns(rawSignatory);
+    jest.spyOn(utilsConversionModule, 'signerValueToSignatory').mockReturnValue(rawSignatory);
 
     let result = await prepareConsumeJoinOrRotateAuthorization.call(proc, {
       authRequest: new AuthorizationRequest(
@@ -497,7 +497,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       });
 
       targetAccount = entityMockUtils.getAccountInstance({ address, getIdentity: null });
-      mockContext.getSigningAccount.returns(targetAccount);
+      mockContext.getSigningAccount.mockReturnValue(targetAccount);
 
       proc = procedureMockUtils.getInstance<ConsumeJoinOrRotateAuthorizationParams, void, Storage>(
         mockContext,

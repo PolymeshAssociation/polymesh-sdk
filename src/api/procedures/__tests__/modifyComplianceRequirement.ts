@@ -4,7 +4,7 @@ import {
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   getAuthorization,
@@ -25,10 +25,10 @@ jest.mock(
 
 describe('modifyComplianceRequirement procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], PolymeshPrimitivesTicker>;
-  let requirementToComplianceRequirementStub: sinon.SinonStub<
-    [InputRequirement, Context],
-    PolymeshPrimitivesComplianceManagerComplianceRequirement
+  let stringToTickerStub: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let requirementToComplianceRequirementStub: jest.SpyInstance<
+    PolymeshPrimitivesComplianceManagerComplianceRequirement,
+    [InputRequirement, Context]
   >;
   let ticker: string;
   let conditions: Condition[];
@@ -39,8 +39,8 @@ describe('modifyComplianceRequirement procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    requirementToComplianceRequirementStub = sinon.stub(
+    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    requirementToComplianceRequirementStub = jest.spyOn(
       utilsConversionModule,
       'requirementToComplianceRequirement'
     );
@@ -72,7 +72,7 @@ describe('modifyComplianceRequirement procedure', () => {
 
     mockContext = dsMockUtils.getContextInstance();
 
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
+    when(stringToTickerStub).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
 
     entityMockUtils.configureMocks({
       assetOptions: {
@@ -138,9 +138,9 @@ describe('modifyComplianceRequirement procedure', () => {
       id: dsMockUtils.createMockU32(new BigNumber(1)),
     });
 
-    requirementToComplianceRequirementStub
-      .withArgs({ conditions: fakeConditions, id: new BigNumber(1) }, mockContext)
-      .returns(rawComplianceRequirement);
+    when(requirementToComplianceRequirementStub)
+      .calledWith({ conditions: fakeConditions, id: new BigNumber(1) }, mockContext)
+      .mockReturnValue(rawComplianceRequirement);
 
     args = {
       ticker,

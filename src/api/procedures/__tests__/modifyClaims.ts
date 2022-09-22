@@ -1,8 +1,8 @@
 import { Option } from '@polkadot/types';
 import { Balance, Moment } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 import { Claim as MeshClaim, IdentityId } from 'polymesh-types/types';
-import sinon from 'sinon';
 
 import { getAuthorization, prepareModifyClaims } from '~/api/procedures/modifyClaims';
 import { Context, Identity } from '~/internal';
@@ -24,13 +24,13 @@ import * as utilsConversionModule from '~/utils/conversion';
 
 describe('modifyClaims procedure', () => {
   let mockContext: Mocked<Context>;
-  let claimToMeshClaimStub: sinon.SinonStub<[Claim, Context], MeshClaim>;
-  let dateToMomentStub: sinon.SinonStub<[Date, Context], Moment>;
-  let identityIdToStringStub: sinon.SinonStub<[IdentityId], string>;
-  let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
+  let claimToMeshClaimStub: jest.SpyInstance<MeshClaim, [Claim, Context]>;
+  let dateToMomentStub: jest.SpyInstance<Moment, [Date, Context]>;
+  let identityIdToStringStub: jest.SpyInstance<string, [IdentityId]>;
+  let stringToIdentityIdStub: jest.SpyInstance<IdentityId, [string, Context]>;
   let addClaimTransaction: PolymeshTx<[IdentityId, Claim, Option<Moment>]>;
   let revokeClaimTransaction: PolymeshTx<[IdentityId, Claim]>;
-  let balanceToBigNumberStub: sinon.SinonStub<[Balance], BigNumber>;
+  let balanceToBigNumberStub: jest.SpyInstance<BigNumber, [Balance]>;
 
   let someDid: string;
   let otherDid: string;
@@ -57,14 +57,14 @@ describe('modifyClaims procedure', () => {
     procedureMockUtils.initMocks();
     dsMockUtils.initMocks();
 
-    claimToMeshClaimStub = sinon.stub(utilsConversionModule, 'claimToMeshClaim');
-    dateToMomentStub = sinon.stub(utilsConversionModule, 'dateToMoment');
-    identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
-    stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
-    balanceToBigNumberStub = sinon.stub(utilsConversionModule, 'balanceToBigNumber');
+    claimToMeshClaimStub = jest.spyOn(utilsConversionModule, 'claimToMeshClaim');
+    dateToMomentStub = jest.spyOn(utilsConversionModule, 'dateToMoment');
+    identityIdToStringStub = jest.spyOn(utilsConversionModule, 'identityIdToString');
+    stringToIdentityIdStub = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
+    balanceToBigNumberStub = jest.spyOn(utilsConversionModule, 'balanceToBigNumber');
 
-    sinon.stub(utilsConversionModule, 'stringToTicker');
-    sinon.stub(utilsConversionModule, 'stringToScopeId');
+    jest.spyOn(utilsConversionModule, 'stringToTicker').mockImplementation();
+    jest.spyOn(utilsConversionModule, 'stringToScopeId').mockImplementation();
 
     someDid = 'someDid';
     otherDid = 'otherDid';
@@ -135,14 +135,18 @@ describe('modifyClaims procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
     addClaimTransaction = dsMockUtils.createTxStub('identity', 'addClaim');
     revokeClaimTransaction = dsMockUtils.createTxStub('identity', 'revokeClaim');
-    claimToMeshClaimStub.withArgs(cddClaim, mockContext).returns(rawCddClaim);
-    claimToMeshClaimStub.withArgs(buyLockupClaim, mockContext).returns(rawBuyLockupClaim);
-    claimToMeshClaimStub.withArgs(iuClaim, mockContext).returns(rawIuClaim);
-    claimToMeshClaimStub.withArgs(defaultCddClaim, mockContext).returns(rawDefaultCddClaim);
-    stringToIdentityIdStub.withArgs(someDid, mockContext).returns(rawSomeDid);
-    stringToIdentityIdStub.withArgs(otherDid, mockContext).returns(rawOtherDid);
-    dateToMomentStub.withArgs(expiry, mockContext).returns(rawExpiry);
-    identityIdToStringStub.withArgs(rawOtherDid).returns(otherDid);
+    when(claimToMeshClaimStub).calledWith(cddClaim, mockContext).mockReturnValue(rawCddClaim);
+    when(claimToMeshClaimStub)
+      .calledWith(buyLockupClaim, mockContext)
+      .mockReturnValue(rawBuyLockupClaim);
+    when(claimToMeshClaimStub).calledWith(iuClaim, mockContext).mockReturnValue(rawIuClaim);
+    when(claimToMeshClaimStub)
+      .calledWith(defaultCddClaim, mockContext)
+      .mockReturnValue(rawDefaultCddClaim);
+    when(stringToIdentityIdStub).calledWith(someDid, mockContext).mockReturnValue(rawSomeDid);
+    when(stringToIdentityIdStub).calledWith(otherDid, mockContext).mockReturnValue(rawOtherDid);
+    when(dateToMomentStub).calledWith(expiry, mockContext).mockReturnValue(rawExpiry);
+    when(identityIdToStringStub).calledWith(rawOtherDid).mockReturnValue(otherDid);
   });
 
   afterEach(() => {
@@ -232,7 +236,7 @@ describe('modifyClaims procedure', () => {
       resolver: undefined,
     });
 
-    sinon.resetHistory();
+    jest.clearAllMocks();
 
     dsMockUtils.createApolloQueryStub(
       didsWithClaims({
@@ -447,7 +451,7 @@ describe('modifyClaims procedure', () => {
     );
 
     dsMockUtils.createQueryStub('asset', 'aggregateBalance');
-    balanceToBigNumberStub.returns(new BigNumber(1));
+    balanceToBigNumberStub.mockReturnValue(new BigNumber(1));
 
     return expect(
       prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Revoke })
@@ -485,7 +489,7 @@ describe('modifyClaims procedure', () => {
     );
 
     dsMockUtils.createQueryStub('asset', 'aggregateBalance');
-    balanceToBigNumberStub.returns(new BigNumber(0));
+    balanceToBigNumberStub.mockReturnValue(new BigNumber(0));
 
     const result = await prepareModifyClaims.call(proc, {
       ...args,

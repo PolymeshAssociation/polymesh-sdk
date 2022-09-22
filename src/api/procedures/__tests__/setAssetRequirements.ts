@@ -4,8 +4,8 @@ import {
   PolymeshPrimitivesCondition,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 import { ComplianceRequirement, Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
 
 import {
   getAuthorization,
@@ -35,10 +35,10 @@ jest.mock(
 
 describe('setAssetRequirements procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let requirementToComplianceRequirementStub: sinon.SinonStub<
-    [InputRequirement, Context],
-    PolymeshPrimitivesComplianceManagerComplianceRequirement
+  let stringToTickerStub: jest.SpyInstance<Ticker, [string, Context]>;
+  let requirementToComplianceRequirementStub: jest.SpyInstance<
+    PolymeshPrimitivesComplianceManagerComplianceRequirement,
+    [InputRequirement, Context]
   >;
   let ticker: string;
   let requirements: Condition[][];
@@ -53,8 +53,8 @@ describe('setAssetRequirements procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    requirementToComplianceRequirementStub = sinon.stub(
+    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    requirementToComplianceRequirementStub = jest.spyOn(
       utilsConversionModule,
       'requirementToComplianceRequirement'
     );
@@ -146,7 +146,7 @@ describe('setAssetRequirements procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
 
     rawComplianceRequirements = [];
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
+    when(stringToTickerStub).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
     requirements.forEach((conditions, index) => {
       const complianceRequirement = dsMockUtils.createMockComplianceRequirement({
         senderConditions: senderConditions[index],
@@ -154,9 +154,9 @@ describe('setAssetRequirements procedure', () => {
         id: dsMockUtils.createMockU32(new BigNumber(index)),
       });
       rawComplianceRequirements.push(complianceRequirement);
-      requirementToComplianceRequirementStub
-        .withArgs({ conditions, id: new BigNumber(index) }, mockContext)
-        .returns(complianceRequirement);
+      when(requirementToComplianceRequirementStub)
+        .calledWith({ conditions, id: new BigNumber(index) }, mockContext)
+        .mockReturnValue(complianceRequirement);
     });
   });
 

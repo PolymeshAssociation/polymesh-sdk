@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 import { EcdsaSignature, Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
 
 import { prepareClaimClassicTicker } from '~/api/procedures/claimClassicTicker';
 import { Context } from '~/internal';
@@ -25,8 +25,8 @@ describe('claimClassicTicker procedure', () => {
   let did: string;
   let rawTicker: Ticker;
   let rawEthereumSignature: EcdsaSignature;
-  let stringToTickerStub: sinon.SinonStub;
-  let stringToEcdsaSignatureStub: sinon.SinonStub;
+  let stringToTickerStub: jest.SpyInstance;
+  let stringToEcdsaSignatureStub: jest.SpyInstance;
 
   beforeAll(() => {
     did = '0x0600000000000000000000000000000000000000000000000000000000000000';
@@ -38,8 +38,8 @@ describe('claimClassicTicker procedure', () => {
       '0xce3f19a1aaaf04adfcd16fbc19ffd5d2d3117588a543dac2ff6befd2c6320b7c6ec586df0ec276775b6f53cb2dfc69f78efc2ef974e04cb269fe2e5d9546ea791c';
     ethereumAddress = '0xb710e549e2ac26ad77c3acc2bb7f6bb48d7e7c7f';
 
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    stringToEcdsaSignatureStub = sinon.stub(utilsConversionModule, 'stringToEcdsaSignature');
+    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    stringToEcdsaSignatureStub = jest.spyOn(utilsConversionModule, 'stringToEcdsaSignature');
   });
 
   beforeEach(() => {
@@ -61,8 +61,10 @@ describe('claimClassicTicker procedure', () => {
         })
       ),
     });
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
-    stringToEcdsaSignatureStub.withArgs(ethereumSignature).returns(rawEthereumSignature);
+    when(stringToTickerStub).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(stringToEcdsaSignatureStub)
+      .calledWith(ethereumSignature, mockContext)
+      .mockReturnValue(rawEthereumSignature);
   });
 
   afterEach(() => {

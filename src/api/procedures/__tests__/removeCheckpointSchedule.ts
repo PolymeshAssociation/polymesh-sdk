@@ -1,7 +1,6 @@
 import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { StoredSchedule, Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
 
 import {
   getAuthorization,
@@ -21,9 +20,9 @@ jest.mock(
 
 describe('removeCheckpointSchedule procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: sinon.SinonStub;
-  let bigNumberToU64Stub: sinon.SinonStub;
-  let u32ToBigNumberStub: sinon.SinonStub;
+  let stringToTickerStub: jest.SpyInstance;
+  let bigNumberToU64Stub: jest.SpyInstance;
+  let u32ToBigNumberStub: jest.SpyInstance;
   let ticker: string;
   let rawTicker: Ticker;
   let id: BigNumber;
@@ -33,9 +32,9 @@ describe('removeCheckpointSchedule procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
-    u32ToBigNumberStub = sinon.stub(utilsConversionModule, 'u32ToBigNumber');
+    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    bigNumberToU64Stub = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
+    u32ToBigNumberStub = jest.spyOn(utilsConversionModule, 'u32ToBigNumber');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     id = new BigNumber(1);
@@ -44,8 +43,8 @@ describe('removeCheckpointSchedule procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    stringToTickerStub.returns(rawTicker);
-    bigNumberToU64Stub.returns(rawId);
+    stringToTickerStub.mockReturnValue(rawTicker);
+    bigNumberToU64Stub.mockReturnValue(rawId);
 
     dsMockUtils.createQueryStub('checkpoint', 'scheduleRefCount');
   });
@@ -96,7 +95,7 @@ describe('removeCheckpointSchedule procedure', () => {
       ],
     });
 
-    u32ToBigNumberStub.returns(new BigNumber(1));
+    u32ToBigNumberStub.mockReturnValue(new BigNumber(1));
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
@@ -119,7 +118,7 @@ describe('removeCheckpointSchedule procedure', () => {
       ],
     });
 
-    u32ToBigNumberStub.returns(new BigNumber(0));
+    u32ToBigNumberStub.mockReturnValue(new BigNumber(0));
 
     let transaction = dsMockUtils.createTxStub('checkpoint', 'removeSchedule');
     let proc = procedureMockUtils.getInstance<Params, void>(mockContext);

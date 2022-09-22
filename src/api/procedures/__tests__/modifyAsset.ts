@@ -1,5 +1,5 @@
 import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { getAuthorization, Params, prepareModifyAsset } from '~/api/procedures/modifyAsset';
 import { Asset, Context } from '~/internal';
@@ -15,7 +15,7 @@ jest.mock(
 
 describe('modifyAsset procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], PolymeshPrimitivesTicker>;
+  let stringToTickerStub: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
   let ticker: string;
   let rawTicker: PolymeshPrimitivesTicker;
   let fundingRound: string;
@@ -25,7 +25,7 @@ describe('modifyAsset procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
+    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     fundingRound = 'Series A';
@@ -39,7 +39,7 @@ describe('modifyAsset procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
+    when(stringToTickerStub).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
   });
 
   afterEach(() => {
@@ -136,10 +136,9 @@ describe('modifyAsset procedure', () => {
   it('should add a rename Asset transaction to the batch', async () => {
     const newName = 'NEW_NAME';
     const rawAssetName = dsMockUtils.createMockBytes(newName);
-    sinon
-      .stub(utilsConversionModule, 'nameToAssetName')
-      .withArgs(newName, mockContext)
-      .returns(rawAssetName);
+    when(jest.spyOn(utilsConversionModule, 'nameToAssetName'))
+      .calledWith(newName, mockContext)
+      .mockReturnValue(rawAssetName);
 
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
@@ -164,10 +163,9 @@ describe('modifyAsset procedure', () => {
   it('should add a set funding round transaction to the batch', async () => {
     const newFundingRound = 'Series B';
     const rawFundingRound = dsMockUtils.createMockBytes(newFundingRound);
-    sinon
-      .stub(utilsConversionModule, 'fundingRoundToAssetFundingRound')
-      .withArgs(newFundingRound, mockContext)
-      .returns(rawFundingRound);
+    when(jest.spyOn(utilsConversionModule, 'fundingRoundToAssetFundingRound'))
+      .calledWith(newFundingRound, mockContext)
+      .mockReturnValue(rawFundingRound);
 
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
@@ -193,7 +191,9 @@ describe('modifyAsset procedure', () => {
     const rawIdentifier = dsMockUtils.createMockAssetIdentifier({
       Isin: dsMockUtils.createMockU8aFixed(identifiers[0].value),
     });
-    sinon.stub(utilsConversionModule, 'securityIdentifierToAssetIdentifier').returns(rawIdentifier);
+    jest
+      .spyOn(utilsConversionModule, 'securityIdentifierToAssetIdentifier')
+      .mockReturnValue(rawIdentifier);
 
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 

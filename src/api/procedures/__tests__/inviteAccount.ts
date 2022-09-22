@@ -1,8 +1,8 @@
 import { Moment } from '@polkadot/types/interfaces';
 import { PolymeshPrimitivesAuthorizationAuthorizationData } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 import { Signatory } from 'polymesh-types/types';
-import sinon from 'sinon';
 
 import { prepareInviteAccount } from '~/api/procedures/inviteAccount';
 import { Account, AuthorizationRequest, Context } from '~/internal';
@@ -26,14 +26,14 @@ jest.mock(
 
 describe('inviteAccount procedure', () => {
   let mockContext: Mocked<Context>;
-  let authorizationToAuthorizationDataStub: sinon.SinonStub<
-    [Authorization, Context],
-    PolymeshPrimitivesAuthorizationAuthorizationData
+  let authorizationToAuthorizationDataStub: jest.SpyInstance<
+    PolymeshPrimitivesAuthorizationAuthorizationData,
+    [Authorization, Context]
   >;
-  let dateToMomentStub: sinon.SinonStub<[Date, Context], Moment>;
-  let signerToStringStub: sinon.SinonStub<[string | Identity | Account], string>;
-  let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
-  let permissionsLikeToPermissionsStub: sinon.SinonStub;
+  let dateToMomentStub: jest.SpyInstance<Moment, [Date, Context]>;
+  let signerToStringStub: jest.SpyInstance<string, [string | Identity | Account]>;
+  let signerValueToSignatoryStub: jest.SpyInstance<Signatory, [SignerValue, Context]>;
+  let permissionsLikeToPermissionsStub: jest.SpyInstance;
 
   let args: InviteAccountParams;
   const authId = new BigNumber(1);
@@ -44,14 +44,14 @@ describe('inviteAccount procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
 
-    authorizationToAuthorizationDataStub = sinon.stub(
+    authorizationToAuthorizationDataStub = jest.spyOn(
       utilsConversionModule,
       'authorizationToAuthorizationData'
     );
-    dateToMomentStub = sinon.stub(utilsConversionModule, 'dateToMoment');
-    signerToStringStub = sinon.stub(utilsConversionModule, 'signerToString');
-    signerValueToSignatoryStub = sinon.stub(utilsConversionModule, 'signerValueToSignatory');
-    permissionsLikeToPermissionsStub = sinon.stub(
+    dateToMomentStub = jest.spyOn(utilsConversionModule, 'dateToMoment');
+    signerToStringStub = jest.spyOn(utilsConversionModule, 'signerToString');
+    signerValueToSignatoryStub = jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
+    permissionsLikeToPermissionsStub = jest.spyOn(
       utilsConversionModule,
       'permissionsLikeToPermissions'
     );
@@ -139,14 +139,14 @@ describe('inviteAccount procedure', () => {
       },
     });
 
-    signerToStringStub.withArgs(account).returns(account.address);
-    signerToStringStub.withArgs(args.targetAccount).returns(address);
-    signerToStringStub.withArgs(target).returns('someValue');
-    signerValueToSignatoryStub
-      .withArgs({ type: SignerType.Account, value: address }, mockContext)
-      .returns(rawSignatory);
-    authorizationToAuthorizationDataStub.returns(rawAuthorizationData);
-    dateToMomentStub.withArgs(expiry, mockContext).returns(rawExpiry);
+    when(signerToStringStub).calledWith(account).mockReturnValue(account.address);
+    when(signerToStringStub).calledWith(args.targetAccount).mockReturnValue(address);
+    when(signerToStringStub).calledWith(target).mockReturnValue('someValue');
+    when(signerValueToSignatoryStub)
+      .calledWith({ type: SignerType.Account, value: address }, mockContext)
+      .mockReturnValue(rawSignatory);
+    authorizationToAuthorizationDataStub.mockReturnValue(rawAuthorizationData);
+    when(dateToMomentStub).calledWith(expiry, mockContext).mockReturnValue(rawExpiry);
 
     const proc = procedureMockUtils.getInstance<InviteAccountParams, AuthorizationRequest>(
       mockContext
@@ -170,7 +170,7 @@ describe('inviteAccount procedure', () => {
       resolver: expect.any(Function),
     });
 
-    permissionsLikeToPermissionsStub.resolves({
+    permissionsLikeToPermissionsStub.mockResolvedValue({
       assets: null,
       transactions: null,
       portfolios: null,
@@ -199,7 +199,7 @@ describe('inviteAccount procedure', () => {
       getIdentity: identity,
     });
 
-    signerToStringStub.withArgs(args.targetAccount).returns(address);
+    when(signerToStringStub).calledWith(args.targetAccount).mockReturnValue(address);
 
     const proc = procedureMockUtils.getInstance<InviteAccountParams, AuthorizationRequest>(
       mockContext
@@ -268,8 +268,8 @@ describe('inviteAccount procedure', () => {
       },
     });
 
-    signerToStringStub.withArgs(args.targetAccount).returns(address);
-    signerToStringStub.withArgs(target).returns(address);
+    when(signerToStringStub).calledWith(args.targetAccount).mockReturnValue(address);
+    when(signerToStringStub).calledWith(target).mockReturnValue(address);
 
     const proc = procedureMockUtils.getInstance<InviteAccountParams, AuthorizationRequest>(
       mockContext

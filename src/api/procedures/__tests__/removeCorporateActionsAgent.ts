@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
 
 import {
   getAuthorization,
@@ -56,8 +55,8 @@ describe('removeCorporateActionsAgent procedure', () => {
     const rawTicker = dsMockUtils.createMockTicker(ticker);
     const rawIdentityId = dsMockUtils.createMockIdentityId(did);
 
-    sinon.stub(utilsConversionModule, 'stringToTicker').returns(rawTicker);
-    sinon.stub(utilsConversionModule, 'stringToIdentityId').returns(rawIdentityId);
+    jest.spyOn(utilsConversionModule, 'stringToTicker').mockReturnValue(rawTicker);
+    jest.spyOn(utilsConversionModule, 'stringToIdentityId').mockReturnValue(rawIdentityId);
 
     const transaction = dsMockUtils.createTxStub('externalAgents', 'removeAgent');
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);

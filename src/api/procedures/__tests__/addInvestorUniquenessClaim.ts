@@ -4,6 +4,7 @@ import {
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 import {
   Claim as MeshClaim,
   InvestorZKProofData,
@@ -11,7 +12,6 @@ import {
   Scope as MeshScope,
   ScopeId,
 } from 'polymesh-types/types';
-import sinon from 'sinon';
 
 import {
   getAuthorization,
@@ -46,16 +46,16 @@ describe('addInvestorUniquenessClaim procedure', () => {
   let blindedScopeDidHash: string;
   let scopeClaimProof: ScopeClaimProof;
   let expiry: Date;
-  let stringToIdentityIdStub: sinon.SinonStub<[string, Context], PolymeshPrimitivesIdentityId>;
-  let claimToMeshClaimStub: sinon.SinonStub<[Claim, Context], MeshClaim>;
-  let stringToInvestorZkProofDataStub: sinon.SinonStub<[string, Context], InvestorZKProofData>;
-  let scopeClaimProofToMeshScopeClaimProofStub: sinon.SinonStub<
-    [ScopeClaimProof, string, Context],
-    ConfidentialIdentityClaimProofsScopeClaimProof
+  let stringToIdentityIdStub: jest.SpyInstance<PolymeshPrimitivesIdentityId, [string, Context]>;
+  let claimToMeshClaimStub: jest.SpyInstance<MeshClaim, [Claim, Context]>;
+  let stringToInvestorZkProofDataStub: jest.SpyInstance<InvestorZKProofData, [string, Context]>;
+  let scopeClaimProofToMeshScopeClaimProofStub: jest.SpyInstance<
+    ConfidentialIdentityClaimProofsScopeClaimProof,
+    [ScopeClaimProof, string, Context]
   >;
-  let scopeToMeshScopeStub: sinon.SinonStub<[Scope, Context], MeshScope>;
-  let stringToScopeIdStub: sinon.SinonStub<[string, Context], ScopeId>;
-  let dateToMomentStub: sinon.SinonStub<[Date, Context], Moment>;
+  let scopeToMeshScopeStub: jest.SpyInstance<MeshScope, [Scope, Context]>;
+  let stringToScopeIdStub: jest.SpyInstance<ScopeId, [string, Context]>;
+  let dateToMomentStub: jest.SpyInstance<Moment, [Date, Context]>;
   let rawDid: PolymeshPrimitivesIdentityId;
   let rawTicker: PolymeshPrimitivesTicker;
   let rawScope: MeshScope;
@@ -92,19 +92,19 @@ describe('addInvestorUniquenessClaim procedure', () => {
     };
     expiry = new Date(new Date().getTime() + 10000);
 
-    stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
-    claimToMeshClaimStub = sinon.stub(utilsConversionModule, 'claimToMeshClaim');
-    stringToInvestorZkProofDataStub = sinon.stub(
+    stringToIdentityIdStub = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
+    claimToMeshClaimStub = jest.spyOn(utilsConversionModule, 'claimToMeshClaim');
+    stringToInvestorZkProofDataStub = jest.spyOn(
       utilsConversionModule,
       'stringToInvestorZKProofData'
     );
-    scopeClaimProofToMeshScopeClaimProofStub = sinon.stub(
+    scopeClaimProofToMeshScopeClaimProofStub = jest.spyOn(
       utilsConversionModule,
       'scopeClaimProofToConfidentialIdentityClaimProof'
     );
-    dateToMomentStub = sinon.stub(utilsConversionModule, 'dateToMoment');
-    stringToScopeIdStub = sinon.stub(utilsConversionModule, 'stringToScopeId');
-    scopeToMeshScopeStub = sinon.stub(utilsConversionModule, 'scopeToMeshScope');
+    dateToMomentStub = jest.spyOn(utilsConversionModule, 'dateToMoment');
+    stringToScopeIdStub = jest.spyOn(utilsConversionModule, 'stringToScopeId');
+    scopeToMeshScopeStub = jest.spyOn(utilsConversionModule, 'scopeToMeshScope');
     rawDid = dsMockUtils.createMockIdentityId(did);
     rawTicker = dsMockUtils.createMockTicker(ticker);
     /* eslint-disable @typescript-eslint/naming-convention */
@@ -137,9 +137,9 @@ describe('addInvestorUniquenessClaim procedure', () => {
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
 
-    stringToIdentityIdStub.withArgs(did, mockContext).returns(rawDid);
-    claimToMeshClaimStub
-      .withArgs(
+    when(stringToIdentityIdStub).calledWith(did, mockContext).mockReturnValue(rawDid);
+    when(claimToMeshClaimStub)
+      .calledWith(
         {
           type: ClaimType.InvestorUniqueness,
           scope,
@@ -148,23 +148,23 @@ describe('addInvestorUniquenessClaim procedure', () => {
         },
         mockContext
       )
-      .returns(rawClaim);
-    claimToMeshClaimStub
-      .withArgs(
+      .mockReturnValue(rawClaim);
+    when(claimToMeshClaimStub)
+      .calledWith(
         {
           type: ClaimType.InvestorUniquenessV2,
           cddId,
         },
         mockContext
       )
-      .returns(rawClaimV2);
-    stringToInvestorZkProofDataStub.withArgs(proof, mockContext).returns(rawProof);
-    scopeClaimProofToMeshScopeClaimProofStub
-      .withArgs(scopeClaimProof, scopeId, mockContext)
-      .returns(rawScopeClaimProof);
-    dateToMomentStub.withArgs(expiry, mockContext).returns(rawExpiry);
-    stringToScopeIdStub.withArgs(scopeId, mockContext).returns(rawScopeId);
-    scopeToMeshScopeStub.withArgs(scope, mockContext).returns(rawScope);
+      .mockReturnValue(rawClaimV2);
+    when(stringToInvestorZkProofDataStub).calledWith(proof, mockContext).mockReturnValue(rawProof);
+    when(scopeClaimProofToMeshScopeClaimProofStub)
+      .calledWith(scopeClaimProof, scopeId, mockContext)
+      .mockReturnValue(rawScopeClaimProof);
+    when(dateToMomentStub).calledWith(expiry, mockContext).mockReturnValue(rawExpiry);
+    when(stringToScopeIdStub).calledWith(scopeId, mockContext).mockReturnValue(rawScopeId);
+    when(scopeToMeshScopeStub).calledWith(scope, mockContext).mockReturnValue(rawScope);
   });
 
   afterEach(() => {

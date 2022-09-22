@@ -1,7 +1,7 @@
 import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 import { IdentityId } from 'polymesh-types/types';
-import sinon from 'sinon';
 
 import {
   DeletePortfolioParams,
@@ -28,24 +28,24 @@ describe('deletePortfolio procedure', () => {
   const portfolioNumber = dsMockUtils.createMockU64(id);
   const zeroBalance = { total: new BigNumber(0) } as PortfolioBalance;
   let mockContext: Mocked<Context>;
-  let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
-  let bigNumberToU64Stub: sinon.SinonStub<[BigNumber, Context], u64>;
+  let stringToIdentityIdStub: jest.SpyInstance<IdentityId, [string, Context]>;
+  let bigNumberToU64Stub: jest.SpyInstance<u64, [BigNumber, Context]>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
-    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
+    stringToIdentityIdStub = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
+    bigNumberToU64Stub = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    stringToIdentityIdStub.withArgs(did, mockContext).returns(identityId);
-    bigNumberToU64Stub.withArgs(id, mockContext).returns(portfolioNumber);
+    when(stringToIdentityIdStub).calledWith(did, mockContext).mockReturnValue(identityId);
+    when(bigNumberToU64Stub).calledWith(id, mockContext).mockReturnValue(portfolioNumber);
     dsMockUtils
       .createQueryStub('portfolio', 'portfolios')
-      .returns(dsMockUtils.createMockBytes('someName'));
+      .mockReturnValue(dsMockUtils.createMockBytes('someName'));
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
         isOwnedBy: true,
@@ -140,10 +140,9 @@ describe('deletePortfolio procedure', () => {
       const portfolioId = { did: args.did, number: args.id };
       const portfolio = entityMockUtils.getNumberedPortfolioInstance(args);
 
-      sinon
-        .stub(utilsConversionModule, 'portfolioLikeToPortfolio')
-        .withArgs({ identity: args.did, id: args.id }, mockContext)
-        .returns(portfolio);
+      when(jest.spyOn(utilsConversionModule, 'portfolioLikeToPortfolio'))
+        .calledWith({ identity: args.did, id: args.id }, mockContext)
+        .mockReturnValue(portfolio);
 
       expect(boundFunc(args)).toEqual({
         roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],

@@ -1,6 +1,6 @@
 import { AccountId, Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { prepareSubsidizeAccount } from '~/api/procedures/subsidizeAccount';
 import { Account, AuthorizationRequest, Context } from '~/internal';
@@ -17,9 +17,9 @@ jest.mock(
 describe('subsidizeAccount procedure', () => {
   let mockContext: Mocked<Context>;
 
-  let signerToStringStub: sinon.SinonStub<[string | Identity | Account], string>;
-  let stringToAccountIdStub: sinon.SinonStub<[string, Context], AccountId>;
-  let bigNumberToBalanceStub: sinon.SinonStub<[BigNumber, Context, boolean?], Balance>;
+  let signerToStringStub: jest.SpyInstance<string, [string | Identity | Account]>;
+  let stringToAccountIdStub: jest.SpyInstance<AccountId, [string, Context]>;
+  let bigNumberToBalanceStub: jest.SpyInstance<Balance, [BigNumber, Context, boolean?]>;
 
   let args: SubsidizeAccountParams;
   const authId = new BigNumber(1);
@@ -34,9 +34,9 @@ describe('subsidizeAccount procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
 
-    signerToStringStub = sinon.stub(utilsConversionModule, 'signerToString');
-    stringToAccountIdStub = sinon.stub(utilsConversionModule, 'stringToAccountId');
-    bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
+    signerToStringStub = jest.spyOn(utilsConversionModule, 'signerToString');
+    stringToAccountIdStub = jest.spyOn(utilsConversionModule, 'stringToAccountId');
+    bigNumberToBalanceStub = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
   });
 
   beforeEach(() => {
@@ -87,7 +87,7 @@ describe('subsidizeAccount procedure', () => {
       },
     });
 
-    signerToStringStub.withArgs(beneficiary).returns(address);
+    when(signerToStringStub).calledWith(beneficiary).mockReturnValue(address);
 
     const proc = procedureMockUtils.getInstance<SubsidizeAccountParams, AuthorizationRequest>(
       mockContext
@@ -154,9 +154,11 @@ describe('subsidizeAccount procedure', () => {
 
     rawAllowance = dsMockUtils.createMockBalance(allowance);
 
-    stringToAccountIdStub.withArgs(address, mockContext).returns(rawBeneficiaryAccount);
+    when(stringToAccountIdStub)
+      .calledWith(address, mockContext)
+      .mockReturnValue(rawBeneficiaryAccount);
 
-    bigNumberToBalanceStub.withArgs(allowance, mockContext).returns(rawAllowance);
+    when(bigNumberToBalanceStub).calledWith(allowance, mockContext).mockReturnValue(rawAllowance);
 
     const proc = procedureMockUtils.getInstance<SubsidizeAccountParams, AuthorizationRequest>(
       mockContext

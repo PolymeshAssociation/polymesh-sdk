@@ -10,7 +10,7 @@ import {
 } from '@polkadot/types/lookup';
 import { BTreeSet } from '@polkadot/types-codec';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { getAuthorization, prepareAddAssetStat } from '~/api/procedures/addAssetStat';
 import { Context, PolymeshError } from '~/internal';
@@ -34,7 +34,7 @@ jest.mock(
 
 describe('addAssetStat procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerKeyStub: sinon.SinonStub<[string, Context], TickerKey>;
+  let stringToTickerKeyStub: jest.SpyInstance<TickerKey, [string, Context]>;
   let ticker: string;
   let count: BigNumber;
   let rawTicker: PolymeshPrimitivesTicker;
@@ -54,35 +54,35 @@ describe('addAssetStat procedure', () => {
       BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>
     ]
   >;
-  let statisticsOpTypeToStatOpTypeStub: sinon.SinonStub<
+  let statisticsOpTypeToStatOpTypeStub: jest.SpyInstance<
+    PolymeshPrimitivesStatisticsStatType,
     [
       {
         op: PolymeshPrimitivesStatisticsStatOpType;
         claimIssuer?: [PolymeshPrimitivesIdentityClaimClaimType, PolymeshPrimitivesIdentityId];
       },
       Context
-    ],
-    PolymeshPrimitivesStatisticsStatType
+    ]
   >;
-  let statisticStatTypesToBtreeStatTypeStub: sinon.SinonStub<
-    [PolymeshPrimitivesStatisticsStatType[], Context],
-    BTreeSet<PolymeshPrimitivesStatisticsStatType>
+  let statisticStatTypesToBtreeStatTypeStub: jest.SpyInstance<
+    BTreeSet<PolymeshPrimitivesStatisticsStatType>,
+    [PolymeshPrimitivesStatisticsStatType[], Context]
   >;
-  let statUpdatesToBtreeStatUpdateStub: sinon.SinonStub<
-    [PolymeshPrimitivesStatisticsStatUpdate[], Context],
-    BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>
+  let statUpdatesToBtreeStatUpdateStub: jest.SpyInstance<
+    BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>,
+    [PolymeshPrimitivesStatisticsStatUpdate[], Context]
   >;
-  let createStat2ndKeyStub: sinon.SinonStub<
+  let createStat2ndKeyStub: jest.SpyInstance<
+    PolymeshPrimitivesStatisticsStat2ndKey,
     [
       type: 'NoClaimStat' | StatClaimType,
       context: Context,
       claimStat?: CountryCode | 'yes' | 'no' | undefined
-    ],
-    PolymeshPrimitivesStatisticsStat2ndKey
+    ]
   >;
   let statUpdateBtreeSet: BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>;
-  let activeAssetStatsStub: sinon.SinonStub;
-  let statStub: sinon.SinonStub;
+  let activeAssetStatsStub: jest.Mock;
+  let statStub: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -91,30 +91,30 @@ describe('addAssetStat procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
     ticker = 'TICKER';
     count = new BigNumber(10);
-    stringToTickerKeyStub = sinon.stub(utilsConversionModule, 'stringToTickerKey');
-    createStat2ndKeyStub = sinon.stub(utilsConversionModule, 'createStat2ndKey');
-    statisticsOpTypeToStatOpTypeStub = sinon.stub(
+    stringToTickerKeyStub = jest.spyOn(utilsConversionModule, 'stringToTickerKey');
+    createStat2ndKeyStub = jest.spyOn(utilsConversionModule, 'createStat2ndKey');
+    statisticsOpTypeToStatOpTypeStub = jest.spyOn(
       utilsConversionModule,
       'statisticsOpTypeToStatType'
     );
-    statUpdatesToBtreeStatUpdateStub = sinon.stub(
+    statUpdatesToBtreeStatUpdateStub = jest.spyOn(
       utilsConversionModule,
       'statUpdatesToBtreeStatUpdate'
     );
     dsMockUtils.setConstMock('statistics', 'maxTransferConditionsPerAsset', {
       returnValue: dsMockUtils.createMockU32(new BigNumber(3)),
     });
-    statStub = sinon.stub(utilsConversionModule, 'meshStatToStatType');
+    statStub = jest.spyOn(utilsConversionModule, 'meshStatToStatType');
     activeAssetStatsStub = dsMockUtils.createQueryStub('statistics', 'activeAssetStats');
-    activeAssetStatsStub.returns(dsMockUtils.createMockBTreeSet([]));
-    statisticStatTypesToBtreeStatTypeStub = sinon.stub(
+    activeAssetStatsStub.mockReturnValue(dsMockUtils.createMockBTreeSet([]));
+    statisticStatTypesToBtreeStatTypeStub = jest.spyOn(
       utilsConversionModule,
       'statisticStatTypesToBtreeStatType'
     );
   });
 
   beforeEach(() => {
-    statStub.returns(StatType.Balance);
+    statStub.mockReturnValue(StatType.Balance);
     setActiveAssetStatsTxStub = dsMockUtils.createTxStub('statistics', 'setActiveAssetStats');
     batchUpdateAssetStatsTxStub = dsMockUtils.createTxStub('statistics', 'batchUpdateAssetStats');
 
@@ -124,14 +124,18 @@ describe('addAssetStat procedure', () => {
     rawStatUpdate = dsMockUtils.createMockStatUpdate();
     statUpdateBtreeSet = dsMockUtils.createMockBTreeSet([rawStatUpdate]);
 
-    createStat2ndKeyStub.withArgs('NoClaimStat', mockContext, undefined).returns(raw2ndKey);
-    statUpdatesToBtreeStatUpdateStub
-      .withArgs([rawStatUpdate], mockContext)
-      .returns(statUpdateBtreeSet);
-    statisticsOpTypeToStatOpTypeStub.returns(rawStatType);
+    when(createStat2ndKeyStub)
+      .calledWith('NoClaimStat', mockContext, undefined)
+      .mockReturnValue(raw2ndKey);
+    when(statUpdatesToBtreeStatUpdateStub)
+      .calledWith([rawStatUpdate], mockContext)
+      .mockReturnValue(statUpdateBtreeSet);
+    statisticsOpTypeToStatOpTypeStub.mockReturnValue(rawStatType);
 
-    stringToTickerKeyStub.withArgs(ticker, mockContext).returns({ Ticker: rawTicker });
-    statisticStatTypesToBtreeStatTypeStub.returns(rawStatBtreeSet);
+    when(stringToTickerKeyStub)
+      .calledWith(ticker, mockContext)
+      .mockReturnValue({ Ticker: rawTicker });
+    statisticStatTypesToBtreeStatTypeStub.mockReturnValue(rawStatBtreeSet);
   });
 
   afterEach(() => {
@@ -143,7 +147,7 @@ describe('addAssetStat procedure', () => {
   afterAll(() => {
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
-    sinon.restore();
+    jest.restoreAllMocks();
   });
 
   it('should add an setAssetStats transaction to the queue', async () => {
@@ -171,7 +175,9 @@ describe('addAssetStat procedure', () => {
       count,
     };
 
-    sinon.stub(utilsConversionModule, 'countStatInputToStatUpdates').returns(statUpdateBtreeSet);
+    jest
+      .spyOn(utilsConversionModule, 'countStatInputToStatUpdates')
+      .mockReturnValue(statUpdateBtreeSet);
     result = await prepareAddAssetStat.call(proc, args);
 
     expect(result).toEqual({
@@ -199,9 +205,9 @@ describe('addAssetStat procedure', () => {
       },
     };
 
-    sinon
-      .stub(utilsConversionModule, 'claimCountStatInputToStatUpdates')
-      .returns(statUpdateBtreeSet);
+    jest
+      .spyOn(utilsConversionModule, 'claimCountStatInputToStatUpdates')
+      .mockReturnValue(statUpdateBtreeSet);
 
     result = await prepareAddAssetStat.call(proc, args);
 
@@ -227,9 +233,9 @@ describe('addAssetStat procedure', () => {
       ticker,
     };
 
-    activeAssetStatsStub.returns([rawStatType]);
+    activeAssetStatsStub.mockReturnValue([rawStatType]);
 
-    statStub.returns(StatType.Balance);
+    statStub.mockReturnValue(StatType.Balance);
 
     const expectedError = new PolymeshError({
       code: ErrorCode.NoDataChange,

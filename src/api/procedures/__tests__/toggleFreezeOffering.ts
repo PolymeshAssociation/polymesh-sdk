@@ -1,7 +1,7 @@
 import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 import { Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
 
 import {
   getAuthorization,
@@ -25,8 +25,8 @@ jest.mock(
 
 describe('toggleFreezeOffering procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let bigNumberToU64Stub: sinon.SinonStub<[BigNumber, Context], u64>;
+  let stringToTickerStub: jest.SpyInstance<Ticker, [string, Context]>;
+  let bigNumberToU64Stub: jest.SpyInstance<u64, [BigNumber, Context]>;
   let ticker: string;
   let rawTicker: Ticker;
   let id: BigNumber;
@@ -36,8 +36,8 @@ describe('toggleFreezeOffering procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
+    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    bigNumberToU64Stub = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
     ticker = 'tickerFrozen';
     id = new BigNumber(1);
     rawTicker = dsMockUtils.createMockTicker(ticker);
@@ -46,8 +46,8 @@ describe('toggleFreezeOffering procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
-    bigNumberToU64Stub.withArgs(id, mockContext).returns(rawId);
+    when(stringToTickerStub).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(bigNumberToU64Stub).calledWith(id, mockContext).mockReturnValue(rawId);
   });
 
   afterEach(() => {

@@ -6,6 +6,7 @@ import {
   PolymeshPrimitivesStatisticsStatType,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 import {
   AssetIdentifier,
   AssetName,
@@ -13,7 +14,6 @@ import {
   FundingRoundName,
   Ticker,
 } from 'polymesh-types/types';
-import sinon from 'sinon';
 
 import {
   getAuthorization,
@@ -51,25 +51,25 @@ jest.mock(
 
 describe('createAsset procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let bigNumberToBalanceStub: sinon.SinonStub;
-  let stringToBytesStub: sinon.SinonStub<[string, Context], Bytes>;
-  let nameToAssetNameStub: sinon.SinonStub<[string, Context], Bytes>;
-  let fundingRoundToAssetFundingRoundStub: sinon.SinonStub<[string, Context], Bytes>;
-  let booleanToBoolStub: sinon.SinonStub<[boolean, Context], bool>;
-  let stringToTickerKeyStub: sinon.SinonStub<[string, Context], TickerKey>;
-  let statisticStatTypesToBtreeStatTypeStub: sinon.SinonStub<
-    [PolymeshPrimitivesStatisticsStatType[], Context],
-    BTreeSet<PolymeshPrimitivesStatisticsStatType>
+  let stringToTickerStub: jest.SpyInstance<Ticker, [string, Context]>;
+  let bigNumberToBalanceStub: jest.SpyInstance;
+  let stringToBytesStub: jest.SpyInstance<Bytes, [string, Context]>;
+  let nameToAssetNameStub: jest.SpyInstance<Bytes, [string, Context]>;
+  let fundingRoundToAssetFundingRoundStub: jest.SpyInstance<Bytes, [string, Context]>;
+  let booleanToBoolStub: jest.SpyInstance<bool, [boolean, Context]>;
+  let stringToTickerKeyStub: jest.SpyInstance<TickerKey, [string, Context]>;
+  let statisticStatTypesToBtreeStatTypeStub: jest.SpyInstance<
+    BTreeSet<PolymeshPrimitivesStatisticsStatType>,
+    [PolymeshPrimitivesStatisticsStatType[], Context]
   >;
-  let internalAssetTypeToAssetTypeStub: sinon.SinonStub<[InternalAssetType, Context], AssetType>;
-  let securityIdentifierToAssetIdentifierStub: sinon.SinonStub<
-    [SecurityIdentifier, Context],
-    PolymeshPrimitivesAssetIdentifier
+  let internalAssetTypeToAssetTypeStub: jest.SpyInstance<AssetType, [InternalAssetType, Context]>;
+  let securityIdentifierToAssetIdentifierStub: jest.SpyInstance<
+    PolymeshPrimitivesAssetIdentifier,
+    [SecurityIdentifier, Context]
   >;
-  let assetDocumentToDocumentStub: sinon.SinonStub<
-    [AssetDocument, Context],
-    PolymeshPrimitivesDocument
+  let assetDocumentToDocumentStub: jest.SpyInstance<
+    PolymeshPrimitivesDocument,
+    [AssetDocument, Context]
   >;
   let ticker: string;
   let name: string;
@@ -104,29 +104,29 @@ describe('createAsset procedure', () => {
     });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
-    stringToBytesStub = sinon.stub(utilsConversionModule, 'stringToBytes');
-    nameToAssetNameStub = sinon.stub(utilsConversionModule, 'nameToAssetName');
-    fundingRoundToAssetFundingRoundStub = sinon.stub(
+    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    bigNumberToBalanceStub = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
+    stringToBytesStub = jest.spyOn(utilsConversionModule, 'stringToBytes');
+    nameToAssetNameStub = jest.spyOn(utilsConversionModule, 'nameToAssetName');
+    fundingRoundToAssetFundingRoundStub = jest.spyOn(
       utilsConversionModule,
       'fundingRoundToAssetFundingRound'
     );
-    booleanToBoolStub = sinon.stub(utilsConversionModule, 'booleanToBool');
-    stringToTickerKeyStub = sinon.stub(utilsConversionModule, 'stringToTickerKey');
-    statisticStatTypesToBtreeStatTypeStub = sinon.stub(
+    booleanToBoolStub = jest.spyOn(utilsConversionModule, 'booleanToBool');
+    stringToTickerKeyStub = jest.spyOn(utilsConversionModule, 'stringToTickerKey');
+    statisticStatTypesToBtreeStatTypeStub = jest.spyOn(
       utilsConversionModule,
       'statisticStatTypesToBtreeStatType'
     );
-    internalAssetTypeToAssetTypeStub = sinon.stub(
+    internalAssetTypeToAssetTypeStub = jest.spyOn(
       utilsConversionModule,
       'internalAssetTypeToAssetType'
     );
-    securityIdentifierToAssetIdentifierStub = sinon.stub(
+    securityIdentifierToAssetIdentifierStub = jest.spyOn(
       utilsConversionModule,
       'securityIdentifierToAssetIdentifier'
     );
-    assetDocumentToDocumentStub = sinon.stub(utilsConversionModule, 'assetDocumentToDocument');
+    assetDocumentToDocumentStub = jest.spyOn(utilsConversionModule, 'assetDocumentToDocument');
     ticker = 'SOME_TICKER';
     name = 'someName';
     initialSupply = new BigNumber(100);
@@ -210,39 +210,43 @@ describe('createAsset procedure', () => {
 
     mockContext = dsMockUtils.getContextInstance();
 
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
-    bigNumberToBalanceStub
-      .withArgs(initialSupply, mockContext, isDivisible)
-      .returns(rawInitialSupply);
-    nameToAssetNameStub.withArgs(name, mockContext).returns(rawName);
-    booleanToBoolStub.withArgs(isDivisible, mockContext).returns(rawIsDivisible);
-    booleanToBoolStub.withArgs(!requireInvestorUniqueness, mockContext).returns(rawDisableIu);
-    stringToTickerKeyStub.withArgs(ticker, mockContext).returns({ Ticker: rawTicker });
-    internalAssetTypeToAssetTypeStub
-      .withArgs(assetType as KnownAssetType, mockContext)
-      .returns(rawType);
-    securityIdentifierToAssetIdentifierStub
-      .withArgs(securityIdentifiers[0], mockContext)
-      .returns(rawIdentifiers[0]);
-    fundingRoundToAssetFundingRoundStub
-      .withArgs(fundingRound, mockContext)
-      .returns(rawFundingRound);
-    assetDocumentToDocumentStub
-      .withArgs(
+    when(stringToTickerStub).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(bigNumberToBalanceStub)
+      .calledWith(initialSupply, mockContext, isDivisible)
+      .mockReturnValue(rawInitialSupply);
+    when(nameToAssetNameStub).calledWith(name, mockContext).mockReturnValue(rawName);
+    when(booleanToBoolStub).calledWith(isDivisible, mockContext).mockReturnValue(rawIsDivisible);
+    when(booleanToBoolStub)
+      .calledWith(!requireInvestorUniqueness, mockContext)
+      .mockReturnValue(rawDisableIu);
+    when(stringToTickerKeyStub)
+      .calledWith(ticker, mockContext)
+      .mockReturnValue({ Ticker: rawTicker });
+    when(internalAssetTypeToAssetTypeStub)
+      .calledWith(assetType as KnownAssetType, mockContext)
+      .mockReturnValue(rawType);
+    when(securityIdentifierToAssetIdentifierStub)
+      .calledWith(securityIdentifiers[0], mockContext)
+      .mockReturnValue(rawIdentifiers[0]);
+    when(fundingRoundToAssetFundingRoundStub)
+      .calledWith(fundingRound, mockContext)
+      .mockReturnValue(rawFundingRound);
+    when(assetDocumentToDocumentStub)
+      .calledWith(
         { uri: documents[0].uri, contentHash: documents[0].contentHash, name: documents[0].name },
         mockContext
       )
-      .returns(rawDocuments[0]);
+      .mockReturnValue(rawDocuments[0]);
 
-    mockContext.getProtocolFees
-      .withArgs({ tags: [TxTags.asset.RegisterTicker, TxTags.asset.CreateAsset] })
-      .resolves([
+    when(mockContext.getProtocolFees)
+      .calledWith({ tags: [TxTags.asset.RegisterTicker, TxTags.asset.CreateAsset] })
+      .mockResolvedValue([
         { tag: TxTags.asset.RegisterTicker, fees: protocolFees[0] },
         { tag: TxTags.asset.CreateAsset, fees: protocolFees[1] },
       ]);
-    mockContext.getProtocolFees
-      .withArgs({ tags: [TxTags.asset.RegisterCustomAssetType] })
-      .resolves([{ tag: TxTags.asset.RegisterCustomAssetType, fees: protocolFees[2] }]);
+    when(mockContext.getProtocolFees)
+      .calledWith({ tags: [TxTags.asset.RegisterCustomAssetType] })
+      .mockResolvedValue([{ tag: TxTags.asset.RegisterCustomAssetType, fees: protocolFees[2] }]);
   });
 
   afterEach(() => {
@@ -461,7 +465,9 @@ describe('createAsset procedure', () => {
     const createAssetTx = dsMockUtils.createTxStub('asset', 'createAsset');
     const addDocumentsTx = dsMockUtils.createTxStub('asset', 'addDocuments');
 
-    internalAssetTypeToAssetTypeStub.withArgs({ Custom: rawTypeId }, mockContext).returns(rawType);
+    when(internalAssetTypeToAssetTypeStub)
+      .calledWith({ Custom: rawTypeId }, mockContext)
+      .mockReturnValue(rawType);
     const result = await prepareCreateAsset.call(proc, {
       ...args,
       documents,
@@ -503,7 +509,7 @@ describe('createAsset procedure', () => {
     const createAssetTx = dsMockUtils.createTxStub('asset', 'createAsset');
     const addStatsTx = dsMockUtils.createTxStub('statistics', 'setActiveAssetStats');
     const issuer = entityMockUtils.getIdentityInstance();
-    statisticStatTypesToBtreeStatTypeStub.returns(mockStatsBtree);
+    statisticStatTypesToBtreeStatTypeStub.mockReturnValue(mockStatsBtree);
 
     const result = await prepareCreateAsset.call(proc, {
       ...args,
@@ -687,7 +693,7 @@ describe('createAsset procedure', () => {
       });
 
       const rawValue = dsMockUtils.createMockBytes('something');
-      stringToBytesStub.withArgs('something', mockContext).returns(rawValue);
+      when(stringToBytesStub).calledWith('something', mockContext).mockReturnValue(rawValue);
       let id = dsMockUtils.createMockU32();
 
       const customTypesStub = dsMockUtils.createQueryStub('asset', 'customTypesInverse', {
@@ -705,7 +711,7 @@ describe('createAsset procedure', () => {
       });
 
       id = dsMockUtils.createMockU32(new BigNumber(10));
-      customTypesStub.resolves(id);
+      customTypesStub.mockResolvedValue(id);
 
       result = await boundFunc({ assetType: 'something' } as Params);
 

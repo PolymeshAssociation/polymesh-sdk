@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 import { Moment } from 'polymesh-types/types';
-import sinon from 'sinon';
 
 import {
   getAuthorization,
@@ -42,7 +42,7 @@ describe('modifyStoTimes procedure', () => {
   let mockContext: Mocked<Context>;
   let modifyFundraiserWindowTransaction: PolymeshTx<unknown[]>;
 
-  let dateToMomentStub: sinon.SinonStub<[Date, Context], Moment>;
+  let dateToMomentStub: jest.SpyInstance<Moment, [Date, Context]>;
 
   const args = {
     ticker,
@@ -56,9 +56,9 @@ describe('modifyStoTimes procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
 
-    sinon.stub(utilsConversionModule, 'stringToTicker').returns(rawTicker);
-    sinon.stub(utilsConversionModule, 'bigNumberToU64').returns(rawId);
-    dateToMomentStub = sinon.stub(utilsConversionModule, 'dateToMoment');
+    jest.spyOn(utilsConversionModule, 'stringToTicker').mockReturnValue(rawTicker);
+    jest.spyOn(utilsConversionModule, 'bigNumberToU64').mockReturnValue(rawId);
+    dateToMomentStub = jest.spyOn(utilsConversionModule, 'dateToMoment');
   });
 
   beforeEach(() => {
@@ -77,10 +77,10 @@ describe('modifyStoTimes procedure', () => {
     });
     mockContext = dsMockUtils.getContextInstance();
 
-    dateToMomentStub.withArgs(newStart, mockContext).returns(rawNewStart);
-    dateToMomentStub.withArgs(newEnd, mockContext).returns(rawNewEnd);
-    dateToMomentStub.withArgs(start, mockContext).returns(rawStart);
-    dateToMomentStub.withArgs(end, mockContext).returns(rawEnd);
+    when(dateToMomentStub).calledWith(newStart, mockContext).mockReturnValue(rawNewStart);
+    when(dateToMomentStub).calledWith(newEnd, mockContext).mockReturnValue(rawNewEnd);
+    when(dateToMomentStub).calledWith(start, mockContext).mockReturnValue(rawStart);
+    when(dateToMomentStub).calledWith(end, mockContext).mockReturnValue(rawEnd);
   });
 
   afterEach(() => {

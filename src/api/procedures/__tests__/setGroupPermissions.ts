@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   getAuthorization,
@@ -37,20 +37,20 @@ describe('setGroupPermissions procedure', () => {
 
   let mockContext: Mocked<Context>;
   let externalAgentsSetGroupPermissionsTransaction: PolymeshTx<unknown[]>;
-  let permissionsLikeToPermissionsStub: sinon.SinonStub;
+  let permissionsLikeToPermissionsStub: jest.SpyInstance;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
 
-    sinon.stub(utilsConversionModule, 'stringToTicker').returns(rawTicker);
-    sinon
-      .stub(utilsConversionModule, 'transactionPermissionsToExtrinsicPermissions')
-      .returns(rawExtrinsicPermissions);
-    sinon.stub(utilsConversionModule, 'bigNumberToU32').returns(rawAgId);
+    jest.spyOn(utilsConversionModule, 'stringToTicker').mockReturnValue(rawTicker);
+    jest
+      .spyOn(utilsConversionModule, 'transactionPermissionsToExtrinsicPermissions')
+      .mockReturnValue(rawExtrinsicPermissions);
+    jest.spyOn(utilsConversionModule, 'bigNumberToU32').mockReturnValue(rawAgId);
 
-    permissionsLikeToPermissionsStub = sinon.stub(
+    permissionsLikeToPermissionsStub = jest.spyOn(
       utilsConversionModule,
       'permissionsLikeToPermissions'
     );
@@ -78,7 +78,7 @@ describe('setGroupPermissions procedure', () => {
   it('should throw an error if new permissions are the same as the current ones', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    permissionsLikeToPermissionsStub.returns(permissions);
+    permissionsLikeToPermissionsStub.mockReturnValue(permissions);
 
     let error;
 
@@ -105,9 +105,9 @@ describe('setGroupPermissions procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const fakePermissions = { transactions: permissions.transactions };
-    permissionsLikeToPermissionsStub
-      .withArgs(fakePermissions, mockContext)
-      .returns(permissions.transactions);
+    when(permissionsLikeToPermissionsStub)
+      .calledWith(fakePermissions, mockContext)
+      .mockReturnValue(permissions.transactions);
 
     const result = await prepareSetGroupPermissions.call(proc, {
       group: entityMockUtils.getCustomPermissionGroupInstance({

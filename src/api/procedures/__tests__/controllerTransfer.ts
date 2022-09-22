@@ -1,7 +1,6 @@
 import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import { PortfolioId as MeshPortfolioId, Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
 
 import {
   getAuthorization,
@@ -29,16 +28,16 @@ jest.mock(
 
 describe('controllerTransfer procedure', () => {
   let mockContext: Mocked<Context>;
-  let portfolioIdToPortfolioStub: sinon.SinonStub<
-    [PortfolioId, Context],
-    DefaultPortfolio | NumberedPortfolio
+  let portfolioIdToPortfolioStub: jest.SpyInstance<
+    DefaultPortfolio | NumberedPortfolio,
+    [PortfolioId, Context]
   >;
-  let bigNumberToBalanceStub: sinon.SinonStub<
-    [BigNumber, Context, (boolean | undefined)?],
-    Balance
+  let bigNumberToBalanceStub: jest.SpyInstance<
+    Balance,
+    [BigNumber, Context, (boolean | undefined)?]
   >;
-  let portfolioIdToMeshPortfolioIdStub: sinon.SinonStub;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
+  let portfolioIdToMeshPortfolioIdStub: jest.SpyInstance;
+  let stringToTickerStub: jest.SpyInstance<Ticker, [string, Context]>;
   let ticker: string;
   let rawTicker: Ticker;
   let did: string;
@@ -51,13 +50,13 @@ describe('controllerTransfer procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    portfolioIdToPortfolioStub = sinon.stub(utilsConversionModule, 'portfolioIdToPortfolio');
-    bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
-    portfolioIdToMeshPortfolioIdStub = sinon.stub(
+    portfolioIdToPortfolioStub = jest.spyOn(utilsConversionModule, 'portfolioIdToPortfolio');
+    bigNumberToBalanceStub = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
+    portfolioIdToMeshPortfolioIdStub = jest.spyOn(
       utilsConversionModule,
       'portfolioIdToMeshPortfolioId'
     );
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
+    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     did = 'fakeDid';
@@ -75,10 +74,10 @@ describe('controllerTransfer procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    stringToTickerStub.returns(rawTicker);
-    portfolioIdToPortfolioStub.returns(originPortfolio);
-    bigNumberToBalanceStub.returns(rawAmount);
-    portfolioIdToMeshPortfolioIdStub.returns(rawPortfolioId);
+    stringToTickerStub.mockReturnValue(rawTicker);
+    portfolioIdToPortfolioStub.mockReturnValue(originPortfolio);
+    bigNumberToBalanceStub.mockReturnValue(rawAmount);
+    portfolioIdToMeshPortfolioIdStub.mockReturnValue(rawPortfolioId);
   });
 
   afterEach(() => {

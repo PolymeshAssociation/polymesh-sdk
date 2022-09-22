@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { getAuthorization, Params, preparePayDividends } from '~/api/procedures/payDividends';
 import { Context, DividendDistribution } from '~/internal';
@@ -21,7 +21,7 @@ describe('payDividends procedure', () => {
   let distribution: DividendDistribution;
 
   let mockContext: Mocked<Context>;
-  let stringToIdentityIdStub: sinon.SinonStub;
+  let stringToIdentityIdStub: jest.SpyInstance;
   let payDividendsTransaction: PolymeshTx<unknown[]>;
 
   beforeAll(() => {
@@ -36,8 +36,8 @@ describe('payDividends procedure', () => {
     dsMockUtils.initMocks({ contextOptions: { did } });
     procedureMockUtils.initMocks();
 
-    sinon.stub(utilsConversionModule, 'corporateActionIdentifierToCaId').returns(rawCaId);
-    stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
+    jest.spyOn(utilsConversionModule, 'corporateActionIdentifierToCaId').mockReturnValue(rawCaId);
+    stringToIdentityIdStub = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
   });
 
   beforeEach(() => {
@@ -77,7 +77,7 @@ describe('payDividends procedure', () => {
       expiryDate,
     });
 
-    stringToIdentityIdStub.returns(identityId);
+    stringToIdentityIdStub.mockReturnValue(identityId);
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
@@ -178,9 +178,9 @@ describe('payDividends procedure', () => {
     });
 
     dids.forEach(targetDid =>
-      stringToIdentityIdStub
-        .withArgs(targetDid)
-        .returns(dsMockUtils.createMockIdentityId(targetDid))
+      when(stringToIdentityIdStub)
+        .calledWith(targetDid)
+        .mockReturnValue(dsMockUtils.createMockIdentityId(targetDid))
     );
 
     distribution = entityMockUtils.getDividendDistributionInstance({

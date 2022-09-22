@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
 
 import {
   getAuthorization,
@@ -23,7 +22,7 @@ jest.mock(
 
 describe('removeCorporateAction procedure', () => {
   let mockContext: Mocked<Context>;
-  let corporateActionsQueryStub: sinon.SinonStub;
+  let corporateActionsQueryStub: jest.SpyInstance;
 
   const ticker = 'SOME_TICKER';
   const id = new BigNumber(1);
@@ -34,7 +33,7 @@ describe('removeCorporateAction procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
 
-    sinon.stub(utilsConversionModule, 'corporateActionIdentifierToCaId').returns(rawCaId);
+    jest.spyOn(utilsConversionModule, 'corporateActionIdentifierToCaId').mockReturnValue(rawCaId);
   });
 
   beforeEach(() => {
@@ -73,7 +72,7 @@ describe('removeCorporateAction procedure', () => {
       returnValue: dsMockUtils.createMockOption(),
     });
 
-    corporateActionsQueryStub.returns(dsMockUtils.createMockOption());
+    corporateActionsQueryStub.mockReturnValue(dsMockUtils.createMockOption());
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
@@ -165,7 +164,7 @@ describe('removeCorporateAction procedure', () => {
 
     expect(result).toEqual({ transaction, args: [rawCaId], resolver: undefined });
 
-    corporateActionsQueryStub.returns(
+    corporateActionsQueryStub.mockReturnValue(
       dsMockUtils.createMockOption(dsMockUtils.createMockCorporateAction())
     );
 

@@ -1,7 +1,7 @@
 import { AccountId } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
+import { when } from 'jest-when';
 import { SecondaryKey as MeshSecondaryKey } from 'polymesh-types/types';
-import sinon from 'sinon';
 
 import {
   createRegisterIdentityResolver,
@@ -17,10 +17,10 @@ import * as utilsInternalModule from '~/utils/internal';
 
 describe('registerIdentity procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToAccountIdStub: sinon.SinonStub<[string, Context], AccountId>;
-  let secondaryAccountToMeshSecondaryKeyStub: sinon.SinonStub<
-    [PermissionedAccount, Context],
-    MeshSecondaryKey
+  let stringToAccountIdStub: jest.SpyInstance<AccountId, [string, Context]>;
+  let secondaryAccountToMeshSecondaryKeyStub: jest.SpyInstance<
+    MeshSecondaryKey,
+    [PermissionedAccount, Context]
   >;
   let registerIdentityTransaction: PolymeshTx<unknown[]>;
 
@@ -28,8 +28,8 @@ describe('registerIdentity procedure', () => {
     entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
     dsMockUtils.initMocks();
-    stringToAccountIdStub = sinon.stub(utilsConversionModule, 'stringToAccountId');
-    secondaryAccountToMeshSecondaryKeyStub = sinon.stub(
+    stringToAccountIdStub = jest.spyOn(utilsConversionModule, 'stringToAccountId');
+    secondaryAccountToMeshSecondaryKeyStub = jest.spyOn(
       utilsConversionModule,
       'secondaryAccountToMeshSecondaryKey'
     );
@@ -78,10 +78,12 @@ describe('registerIdentity procedure', () => {
 
     const proc = procedureMockUtils.getInstance<RegisterIdentityParams, Identity>(mockContext);
 
-    stringToAccountIdStub.withArgs(targetAccount, mockContext).returns(rawAccountId);
-    secondaryAccountToMeshSecondaryKeyStub
-      .withArgs(secondaryAccounts[0], mockContext)
-      .returns(rawSecondaryAccount);
+    when(stringToAccountIdStub)
+      .calledWith(targetAccount, mockContext)
+      .mockReturnValue(rawAccountId);
+    when(secondaryAccountToMeshSecondaryKeyStub)
+      .calledWith(secondaryAccounts[0], mockContext)
+      .mockReturnValue(rawSecondaryAccount);
 
     let result = await prepareRegisterIdentity.call(proc, args);
 
@@ -102,7 +104,7 @@ describe('registerIdentity procedure', () => {
 });
 
 describe('createRegisterIdentityResolver', () => {
-  const filterEventRecordsStub = sinon.stub(utilsInternalModule, 'filterEventRecords');
+  const filterEventRecordsStub = jest.spyOn(utilsInternalModule, 'filterEventRecords');
   const did = 'someDid';
   const rawDid = dsMockUtils.createMockIdentityId(did);
 
@@ -115,13 +117,13 @@ describe('createRegisterIdentityResolver', () => {
   });
 
   beforeEach(() => {
-    filterEventRecordsStub.returns([
+    filterEventRecordsStub.mockReturnValue([
       dsMockUtils.createMockIEvent([rawDid, 'accountId', 'signingItem']),
     ]);
   });
 
   afterEach(() => {
-    filterEventRecordsStub.reset();
+    filterEventRecordsStub.mockReset();
   });
 
   it('should return the new Identity', () => {

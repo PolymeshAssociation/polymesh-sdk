@@ -1,6 +1,6 @@
 import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Params, prepareRescheduleInstruction } from '~/api/procedures/rescheduleInstruction';
 import { Context, Instruction } from '~/internal';
@@ -18,18 +18,18 @@ describe('rescheduleInstruction procedure', () => {
   const id = new BigNumber(1);
   const rawId = dsMockUtils.createMockU64(id);
   let mockContext: Mocked<Context>;
-  let bigNumberToU64Stub: sinon.SinonStub<[BigNumber, Context], u64>;
+  let bigNumberToU64Stub: jest.SpyInstance<u64, [BigNumber, Context]>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
+    bigNumberToU64Stub = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    bigNumberToU64Stub.withArgs(id, mockContext).returns(rawId);
+    when(bigNumberToU64Stub).calledWith(id, mockContext).mockReturnValue(rawId);
     entityMockUtils.configureMocks({
       instructionOptions: {
         details: {

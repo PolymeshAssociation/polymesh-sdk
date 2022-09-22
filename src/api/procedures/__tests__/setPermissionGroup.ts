@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   getAuthorization,
@@ -41,29 +41,29 @@ describe('setPermissionGroup procedure', () => {
   let mockContext: Mocked<Context>;
   let externalAgentsChangeGroupTransaction: PolymeshTx<unknown[]>;
   let externalAgentsCreateAndChangeGroupTransaction: PolymeshTx<unknown[]>;
-  let permissionGroupIdentifierToAgentGroupStub: sinon.SinonStub;
-  let transactionPermissionsToExtrinsicPermissionsStub: sinon.SinonStub;
-  let stringToTickerStub: sinon.SinonStub;
-  let stringToIdentityIdStub: sinon.SinonStub;
-  let getGroupFromPermissionsStub: sinon.SinonStub;
+  let permissionGroupIdentifierToAgentGroupStub: jest.SpyInstance;
+  let transactionPermissionsToExtrinsicPermissionsStub: jest.SpyInstance;
+  let stringToTickerStub: jest.SpyInstance;
+  let stringToIdentityIdStub: jest.SpyInstance;
+  let getGroupFromPermissionsStub: jest.SpyInstance;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
 
-    transactionPermissionsToExtrinsicPermissionsStub = sinon.stub(
+    transactionPermissionsToExtrinsicPermissionsStub = jest.spyOn(
       utilsConversionModule,
       'transactionPermissionsToExtrinsicPermissions'
     );
 
-    permissionGroupIdentifierToAgentGroupStub = sinon.stub(
+    permissionGroupIdentifierToAgentGroupStub = jest.spyOn(
       utilsConversionModule,
       'permissionGroupIdentifierToAgentGroup'
     );
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
-    getGroupFromPermissionsStub = sinon.stub(utilsProcedureModule, 'getGroupFromPermissions');
+    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    stringToIdentityIdStub = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
+    getGroupFromPermissionsStub = jest.spyOn(utilsProcedureModule, 'getGroupFromPermissions');
   });
 
   beforeEach(() => {
@@ -76,9 +76,9 @@ describe('setPermissionGroup procedure', () => {
       'createAndChangeCustomGroup'
     );
     mockContext = dsMockUtils.getContextInstance();
-    stringToTickerStub.returns(rawTicker);
-    stringToIdentityIdStub.returns(rawIdentityId);
-    transactionPermissionsToExtrinsicPermissionsStub.returns(rawExtrinsicPermissions);
+    stringToTickerStub.mockReturnValue(rawTicker);
+    stringToIdentityIdStub.mockReturnValue(rawIdentityId);
+    transactionPermissionsToExtrinsicPermissionsStub.mockReturnValue(rawExtrinsicPermissions);
   });
 
   afterEach(() => {
@@ -249,7 +249,7 @@ describe('setPermissionGroup procedure', () => {
         isEqual: false,
       });
 
-    getGroupFromPermissionsStub.resolves(expectedGroup);
+    getGroupFromPermissionsStub.mockResolvedValue(expectedGroup);
 
     const proc = procedureMockUtils.getInstance<
       Params,
@@ -271,9 +271,9 @@ describe('setPermissionGroup procedure', () => {
       Custom: dsMockUtils.createMockU32(existingGroupId),
     });
 
-    permissionGroupIdentifierToAgentGroupStub
-      .withArgs({ custom: existingGroupId }, mockContext)
-      .returns(rawAgentGroup);
+    when(permissionGroupIdentifierToAgentGroupStub)
+      .calledWith({ custom: existingGroupId }, mockContext)
+      .mockReturnValue(rawAgentGroup);
 
     let result = await prepareSetPermissionGroup.call(proc, {
       identity,
@@ -296,11 +296,11 @@ describe('setPermissionGroup procedure', () => {
       type: PermissionGroupType.ExceptMeta,
       isEqual: false,
     });
-    getGroupFromPermissionsStub.resolves(expectedGroup);
+    getGroupFromPermissionsStub.mockResolvedValue(expectedGroup);
 
-    permissionGroupIdentifierToAgentGroupStub
-      .withArgs(PermissionGroupType.ExceptMeta, mockContext)
-      .returns(rawAgentGroup);
+    when(permissionGroupIdentifierToAgentGroupStub)
+      .calledWith(PermissionGroupType.ExceptMeta, mockContext)
+      .mockReturnValue(rawAgentGroup);
 
     result = await prepareSetPermissionGroup.call(proc, {
       identity,
@@ -345,15 +345,15 @@ describe('setPermissionGroup procedure', () => {
       }),
     });
 
-    getGroupFromPermissionsStub.resolves(undefined);
+    getGroupFromPermissionsStub.mockResolvedValue(undefined);
 
     const rawAgentGroup = dsMockUtils.createMockAgentGroup({
       Custom: dsMockUtils.createMockU32(id),
     });
 
-    permissionGroupIdentifierToAgentGroupStub
-      .withArgs({ custom: id }, mockContext)
-      .returns(rawAgentGroup);
+    when(permissionGroupIdentifierToAgentGroupStub)
+      .calledWith({ custom: id }, mockContext)
+      .mockReturnValue(rawAgentGroup);
 
     let result = await prepareSetPermissionGroup.call(proc, {
       identity,

@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 import { Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
 
 import {
   getAuthorization,
@@ -21,12 +21,12 @@ jest.mock(
 
 describe('modifyCaDefaultConfig procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: sinon.SinonStub;
-  let targetsToTargetIdentitiesStub: sinon.SinonStub;
-  let percentageToPermillStub: sinon.SinonStub;
-  let stringToIdentityIdStub: sinon.SinonStub;
+  let stringToTickerStub: jest.SpyInstance;
+  let targetsToTargetIdentitiesStub: jest.SpyInstance;
+  let percentageToPermillStub: jest.SpyInstance;
+  let stringToIdentityIdStub: jest.SpyInstance;
 
-  let assertCaTaxWithholdingsValidStub: sinon.SinonStub;
+  let assertCaTaxWithholdingsValidStub: jest.SpyInstance;
 
   let ticker: string;
   let rawTicker: Ticker;
@@ -35,21 +35,22 @@ describe('modifyCaDefaultConfig procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    targetsToTargetIdentitiesStub = sinon.stub(utilsConversionModule, 'targetsToTargetIdentities');
-    percentageToPermillStub = sinon.stub(utilsConversionModule, 'percentageToPermill');
-    stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
+    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    targetsToTargetIdentitiesStub = jest.spyOn(utilsConversionModule, 'targetsToTargetIdentities');
+    percentageToPermillStub = jest.spyOn(utilsConversionModule, 'percentageToPermill');
+    stringToIdentityIdStub = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    assertCaTaxWithholdingsValidStub = sinon.stub(
+    assertCaTaxWithholdingsValidStub = jest.spyOn(
       utilsProcedureModule,
       'assertCaTaxWithholdingsValid'
     );
+    assertCaTaxWithholdingsValidStub.mockImplementation();
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
+    when(stringToTickerStub).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
   });
 
   afterEach(() => {
@@ -140,7 +141,11 @@ describe('modifyCaDefaultConfig procedure', () => {
       assetOptions: { corporateActionsGetDefaultConfig: { taxWithholdings } },
     });
 
-    assertCaTaxWithholdingsValidStub.withArgs(taxWithholdings, mockContext).throws();
+    when(assertCaTaxWithholdingsValidStub)
+      .calledWith(taxWithholdings, mockContext)
+      .mockImplementation(() => {
+        throw new Error('err');
+      });
 
     return expect(
       prepareModifyCaDefaultConfig.call(proc, {
@@ -175,7 +180,9 @@ describe('modifyCaDefaultConfig procedure', () => {
       identities: [],
       treatment: 'Exclude',
     });
-    targetsToTargetIdentitiesStub.withArgs(targets, mockContext).returns(rawTargets);
+    when(targetsToTargetIdentitiesStub)
+      .calledWith(targets, mockContext)
+      .mockReturnValue(rawTargets);
 
     let result = await prepareModifyCaDefaultConfig.call(proc, {
       ticker,
@@ -196,7 +203,9 @@ describe('modifyCaDefaultConfig procedure', () => {
       identities: ['someDid', 'otherDid'],
       treatment: TargetTreatment.Exclude,
     };
-    targetsToTargetIdentitiesStub.withArgs(targets, mockContext).returns(rawTargets);
+    when(targetsToTargetIdentitiesStub)
+      .calledWith(targets, mockContext)
+      .mockReturnValue(rawTargets);
 
     result = await prepareModifyCaDefaultConfig.call(proc, {
       ticker,
@@ -223,7 +232,9 @@ describe('modifyCaDefaultConfig procedure', () => {
     });
 
     const rawPercentage = dsMockUtils.createMockPermill(new BigNumber(150000));
-    percentageToPermillStub.withArgs(new BigNumber(15), mockContext).returns(rawPercentage);
+    when(percentageToPermillStub)
+      .calledWith(new BigNumber(15), mockContext)
+      .mockReturnValue(rawPercentage);
 
     const result = await prepareModifyCaDefaultConfig.call(proc, {
       ticker,
@@ -252,8 +263,10 @@ describe('modifyCaDefaultConfig procedure', () => {
     const rawDid = dsMockUtils.createMockIdentityId('someDid');
     const rawPercentage = dsMockUtils.createMockPermill(new BigNumber(250000));
 
-    stringToIdentityIdStub.withArgs('someDid', mockContext).returns(rawDid);
-    percentageToPermillStub.withArgs(new BigNumber(25), mockContext).returns(rawPercentage);
+    when(stringToIdentityIdStub).calledWith('someDid', mockContext).mockReturnValue(rawDid);
+    when(percentageToPermillStub)
+      .calledWith(new BigNumber(25), mockContext)
+      .mockReturnValue(rawPercentage);
 
     const taxWithholdings = [
       {
@@ -266,7 +279,7 @@ describe('modifyCaDefaultConfig procedure', () => {
       taxWithholdings,
     });
 
-    sinon.assert.calledWith(assertCaTaxWithholdingsValidStub, taxWithholdings, mockContext);
+    expect(assertCaTaxWithholdingsValidStub).toHaveBeenCalledWith(taxWithholdings, mockContext);
     expect(result).toEqual({
       transactions: [
         {

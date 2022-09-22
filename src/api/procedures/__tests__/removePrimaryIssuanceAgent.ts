@@ -1,5 +1,4 @@
 import { IdentityId, Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
 
 import {
   getAuthorization,
@@ -19,8 +18,8 @@ jest.mock(
 
 describe('removePrimaryIssuanceAgent procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: sinon.SinonStub;
-  let stringToIdentityIdStub: sinon.SinonStub;
+  let stringToTickerStub: jest.SpyInstance;
+  let stringToIdentityIdStub: jest.SpyInstance;
   let ticker: string;
   let did: string;
   let rawTicker: Ticker;
@@ -30,8 +29,8 @@ describe('removePrimaryIssuanceAgent procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
+    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    stringToIdentityIdStub = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     did = 'someDid';
@@ -40,8 +39,8 @@ describe('removePrimaryIssuanceAgent procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    stringToTickerStub.returns(rawTicker);
-    stringToIdentityIdStub.returns(rawIdentityId);
+    stringToTickerStub.mockReturnValue(rawTicker);
+    stringToIdentityIdStub.mockReturnValue(rawIdentityId);
   });
 
   afterEach(() => {

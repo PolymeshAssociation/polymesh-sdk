@@ -1,8 +1,8 @@
 import { u64 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 import { PortfolioId as MeshPortfolioId, Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
 
 import {
   getAuthorization,
@@ -39,11 +39,11 @@ jest.mock(
 
 describe('investInOffering procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let portfolioIdToMeshPortfolioIdStub: sinon.SinonStub<[PortfolioId, Context], MeshPortfolioId>;
-  let portfolioLikeToPortfolioIdStub: sinon.SinonStub<[PortfolioLike], PortfolioId>;
-  let bigNumberToU64Stub: sinon.SinonStub<[BigNumber, Context], u64>;
-  let bigNumberToBalanceStub: sinon.SinonStub<[BigNumber, Context, boolean?], Balance>;
+  let stringToTickerStub: jest.SpyInstance<Ticker, [string, Context]>;
+  let portfolioIdToMeshPortfolioIdStub: jest.SpyInstance<MeshPortfolioId, [PortfolioId, Context]>;
+  let portfolioLikeToPortfolioIdStub: jest.SpyInstance<PortfolioId, [PortfolioLike]>;
+  let bigNumberToU64Stub: jest.SpyInstance<u64, [BigNumber, Context]>;
+  let bigNumberToBalanceStub: jest.SpyInstance<Balance, [BigNumber, Context, boolean?]>;
 
   let id: BigNumber;
   let ticker: string;
@@ -65,17 +65,17 @@ describe('investInOffering procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    portfolioIdToMeshPortfolioIdStub = sinon.stub(
+    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    portfolioIdToMeshPortfolioIdStub = jest.spyOn(
       utilsConversionModule,
       'portfolioIdToMeshPortfolioId'
     );
-    portfolioLikeToPortfolioIdStub = sinon.stub(
+    portfolioLikeToPortfolioIdStub = jest.spyOn(
       utilsConversionModule,
       'portfolioLikeToPortfolioId'
     );
-    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
-    bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
+    bigNumberToU64Stub = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
+    bigNumberToBalanceStub = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
     id = new BigNumber(id);
     rawId = dsMockUtils.createMockU64(id);
     ticker = 'tickerFrozen';
@@ -100,18 +100,24 @@ describe('investInOffering procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
-    portfolioLikeToPortfolioIdStub.withArgs(purchasePortfolio).returns(purchasePortfolioId);
-    portfolioIdToMeshPortfolioIdStub
-      .withArgs(purchasePortfolioId, mockContext)
-      .returns(rawPurchasePortfolio);
-    portfolioLikeToPortfolioIdStub.withArgs(fundingPortfolio).returns(fundingPortfolioId);
-    portfolioIdToMeshPortfolioIdStub
-      .withArgs(fundingPortfolioId, mockContext)
-      .returns(rawFundingPortfolio);
-    bigNumberToU64Stub.withArgs(id, mockContext).returns(rawId);
-    bigNumberToBalanceStub.withArgs(purchaseAmount, mockContext).returns(rawPurchaseAmount);
-    bigNumberToBalanceStub.withArgs(maxPrice, mockContext).returns(rawMaxPrice);
+    when(stringToTickerStub).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(portfolioLikeToPortfolioIdStub)
+      .calledWith(purchasePortfolio)
+      .mockReturnValue(purchasePortfolioId);
+    when(portfolioIdToMeshPortfolioIdStub)
+      .calledWith(purchasePortfolioId, mockContext)
+      .mockReturnValue(rawPurchasePortfolio);
+    when(portfolioLikeToPortfolioIdStub)
+      .calledWith(fundingPortfolio)
+      .mockReturnValue(fundingPortfolioId);
+    when(portfolioIdToMeshPortfolioIdStub)
+      .calledWith(fundingPortfolioId, mockContext)
+      .mockReturnValue(rawFundingPortfolio);
+    when(bigNumberToU64Stub).calledWith(id, mockContext).mockReturnValue(rawId);
+    when(bigNumberToBalanceStub)
+      .calledWith(purchaseAmount, mockContext)
+      .mockReturnValue(rawPurchaseAmount);
+    when(bigNumberToBalanceStub).calledWith(maxPrice, mockContext).mockReturnValue(rawMaxPrice);
 
     args = {
       id,
@@ -372,16 +378,20 @@ describe('investInOffering procedure', () => {
       });
       const boundFunc = getAuthorization.bind(proc);
 
-      const portfolioIdToPortfolioStub = sinon.stub(
-        utilsConversionModule,
-        'portfolioIdToPortfolio'
-      );
+      const portfolioIdToPortfolioStub = jest
+        .spyOn(utilsConversionModule, 'portfolioIdToPortfolio')
+        .mockClear()
+        .mockImplementation();
       const portfolios = [
         'investment' as unknown as DefaultPortfolio,
         'funding' as unknown as DefaultPortfolio,
       ];
-      portfolioIdToPortfolioStub.withArgs(purchasePortfolioId, mockContext).returns(portfolios[0]);
-      portfolioIdToPortfolioStub.withArgs(fundingPortfolioId, mockContext).returns(portfolios[1]);
+      when(portfolioIdToPortfolioStub)
+        .calledWith(purchasePortfolioId, mockContext)
+        .mockReturnValue(portfolios[0]);
+      when(portfolioIdToPortfolioStub)
+        .calledWith(fundingPortfolioId, mockContext)
+        .mockReturnValue(portfolios[1]);
 
       const roles = [
         { type: RoleType.PortfolioCustodian, portfolioId: purchasePortfolioId },

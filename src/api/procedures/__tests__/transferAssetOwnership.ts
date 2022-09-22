@@ -2,8 +2,8 @@ import { Option } from '@polkadot/types';
 import { Moment } from '@polkadot/types/interfaces';
 import { PolymeshPrimitivesAuthorizationAuthorizationData } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 import { AuthorizationData, Signatory } from 'polymesh-types/types';
-import sinon from 'sinon';
 
 import {
   getAuthorization,
@@ -24,12 +24,12 @@ jest.mock(
 
 describe('transferAssetOwnership procedure', () => {
   let mockContext: Mocked<Context>;
-  let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
-  let authorizationToAuthorizationDataStub: sinon.SinonStub<
-    [Authorization, Context],
-    PolymeshPrimitivesAuthorizationAuthorizationData
+  let signerValueToSignatoryStub: jest.SpyInstance<Signatory, [SignerValue, Context]>;
+  let authorizationToAuthorizationDataStub: jest.SpyInstance<
+    PolymeshPrimitivesAuthorizationAuthorizationData,
+    [Authorization, Context]
   >;
-  let dateToMomentStub: sinon.SinonStub<[Date, Context], Moment>;
+  let dateToMomentStub: jest.SpyInstance<Moment, [Date, Context]>;
   let ticker: string;
   let did: string;
   let expiry: Date;
@@ -42,12 +42,12 @@ describe('transferAssetOwnership procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    signerValueToSignatoryStub = sinon.stub(utilsConversionModule, 'signerValueToSignatory');
-    authorizationToAuthorizationDataStub = sinon.stub(
+    signerValueToSignatoryStub = jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
+    authorizationToAuthorizationDataStub = jest.spyOn(
       utilsConversionModule,
       'authorizationToAuthorizationData'
     );
-    dateToMomentStub = sinon.stub(utilsConversionModule, 'dateToMoment');
+    dateToMomentStub = jest.spyOn(utilsConversionModule, 'dateToMoment');
     ticker = 'SOME_TICKER';
     did = 'someOtherDid';
     expiry = new Date('10/14/3040');
@@ -71,13 +71,13 @@ describe('transferAssetOwnership procedure', () => {
 
     mockContext = dsMockUtils.getContextInstance();
 
-    signerValueToSignatoryStub
-      .withArgs({ type: SignerType.Identity, value: did }, mockContext)
-      .returns(rawSignatory);
-    authorizationToAuthorizationDataStub
-      .withArgs({ type: AuthorizationType.TransferAssetOwnership, value: ticker }, mockContext)
-      .returns(rawAuthorizationData);
-    dateToMomentStub.withArgs(expiry, mockContext).returns(rawMoment);
+    when(signerValueToSignatoryStub)
+      .calledWith({ type: SignerType.Identity, value: did }, mockContext)
+      .mockReturnValue(rawSignatory);
+    when(authorizationToAuthorizationDataStub)
+      .calledWith({ type: AuthorizationType.TransferAssetOwnership, value: ticker }, mockContext)
+      .mockReturnValue(rawAuthorizationData);
+    when(dateToMomentStub).calledWith(expiry, mockContext).mockReturnValue(rawMoment);
   });
 
   afterEach(() => {

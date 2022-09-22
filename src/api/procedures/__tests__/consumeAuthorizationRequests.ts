@@ -1,7 +1,7 @@
 import { bool, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 import { Signatory } from 'polymesh-types/types';
-import sinon from 'sinon';
 
 import {
   ConsumeAuthorizationRequestsParams,
@@ -28,9 +28,9 @@ jest.mock(
 
 describe('consumeAuthorizationRequests procedure', () => {
   let mockContext: Mocked<Context>;
-  let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
-  let bigNumberToU64Stub: sinon.SinonStub<[BigNumber, Context], u64>;
-  let booleanToBoolStub: sinon.SinonStub<[boolean, Context], bool>;
+  let signerValueToSignatoryStub: jest.SpyInstance<Signatory, [SignerValue, Context]>;
+  let bigNumberToU64Stub: jest.SpyInstance<u64, [BigNumber, Context]>;
+  let booleanToBoolStub: jest.SpyInstance<bool, [boolean, Context]>;
   let authParams: {
     authId: BigNumber;
     expiry: Date | null;
@@ -43,20 +43,20 @@ describe('consumeAuthorizationRequests procedure', () => {
   let rawAuthIds: [u64][];
   let rawFalseBool: bool;
 
-  let acceptAssetOwnershipTransferTransaction: sinon.SinonStub;
-  let acceptPayingKeyTransaction: sinon.SinonStub;
-  let acceptBecomeAgentTransaction: sinon.SinonStub;
-  let acceptPortfolioCustodyTransaction: sinon.SinonStub;
-  let acceptTickerTransferTransaction: sinon.SinonStub;
+  let acceptAssetOwnershipTransferTransaction: jest.Mock;
+  let acceptPayingKeyTransaction: jest.Mock;
+  let acceptBecomeAgentTransaction: jest.Mock;
+  let acceptPortfolioCustodyTransaction: jest.Mock;
+  let acceptTickerTransferTransaction: jest.Mock;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    signerValueToSignatoryStub = sinon.stub(utilsConversionModule, 'signerValueToSignatory');
-    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
-    booleanToBoolStub = sinon.stub(utilsConversionModule, 'booleanToBool');
-    sinon.stub(utilsConversionModule, 'addressToKey');
+    signerValueToSignatoryStub = jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
+    bigNumberToU64Stub = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
+    booleanToBoolStub = jest.spyOn(utilsConversionModule, 'booleanToBool');
+    jest.spyOn(utilsConversionModule, 'addressToKey').mockImplementation();
     dsMockUtils.createQueryStub('identity', 'authorizations', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockAuthorization({
@@ -152,15 +152,17 @@ describe('consumeAuthorizationRequests procedure', () => {
 
       const rawAuthId = dsMockUtils.createMockU64(authId);
       rawAuthIds.push([rawAuthId]);
-      bigNumberToU64Stub.withArgs(authId, mockContext).returns(rawAuthId);
+      when(bigNumberToU64Stub).calledWith(authId, mockContext).mockReturnValue(rawAuthId);
       const rawSignatory = dsMockUtils.createMockSignatory({
         Identity: dsMockUtils.createMockIdentityId(signerValue.value),
       });
 
       rawAuthIdentifiers.push([rawSignatory, rawAuthId, rawFalseBool]);
-      signerValueToSignatoryStub.withArgs(signerValue, mockContext).returns(rawSignatory);
+      when(signerValueToSignatoryStub)
+        .calledWith(signerValue, mockContext)
+        .mockReturnValue(rawSignatory);
     });
-    booleanToBoolStub.withArgs(false, mockContext).returns(rawFalseBool);
+    when(booleanToBoolStub).calledWith(false, mockContext).mockReturnValue(rawFalseBool);
 
     acceptAssetOwnershipTransferTransaction = dsMockUtils.createTxStub(
       'asset',

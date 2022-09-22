@@ -1,8 +1,8 @@
 import { Vec } from '@polkadot/types';
 import { PolymeshPrimitivesDocument } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 import { Document, DocumentId, Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
 
 import {
   getAuthorization,
@@ -26,10 +26,10 @@ jest.mock(
 
 describe('setAssetDocuments procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let assetDocumentToDocumentStub: sinon.SinonStub<
-    [AssetDocument, Context],
-    PolymeshPrimitivesDocument
+  let stringToTickerStub: jest.SpyInstance<Ticker, [string, Context]>;
+  let assetDocumentToDocumentStub: jest.SpyInstance<
+    PolymeshPrimitivesDocument,
+    [AssetDocument, Context]
   >;
   let ticker: string;
   let documents: AssetDocument[];
@@ -50,9 +50,9 @@ describe('setAssetDocuments procedure', () => {
     });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    sinon.stub(utilsConversionModule, 'signerValueToSignatory');
-    assetDocumentToDocumentStub = sinon.stub(utilsConversionModule, 'assetDocumentToDocument');
+    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
+    assetDocumentToDocumentStub = jest.spyOn(utilsConversionModule, 'assetDocumentToDocument');
     ticker = 'SOME_TICKER';
     documents = [
       {
@@ -102,9 +102,11 @@ describe('setAssetDocuments procedure', () => {
 
     mockContext = dsMockUtils.getContextInstance();
 
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
+    when(stringToTickerStub).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
     documents.forEach((doc, index) => {
-      assetDocumentToDocumentStub.withArgs(doc, mockContext).returns(rawDocuments[index]);
+      when(assetDocumentToDocumentStub)
+        .calledWith(doc, mockContext)
+        .mockReturnValue(rawDocuments[index]);
     });
   });
 

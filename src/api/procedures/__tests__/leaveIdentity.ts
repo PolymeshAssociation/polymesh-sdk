@@ -1,5 +1,3 @@
-import sinon from 'sinon';
-
 import { prepareLeaveIdentity } from '~/api/procedures/leaveIdentity';
 import { Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -14,14 +12,14 @@ jest.mock(
 
 describe('leaveIdentity procedure', () => {
   let mockContext: Mocked<Context>;
-  let getSecondaryAccountPermissionsStub: sinon.SinonStub;
+  let getSecondaryAccountPermissionsStub: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
 
-    getSecondaryAccountPermissionsStub = sinon.stub(
+    getSecondaryAccountPermissionsStub = jest.spyOn(
       utilsInternalModule,
       'getSecondaryAccountPermissions'
     );
@@ -44,12 +42,12 @@ describe('leaveIdentity procedure', () => {
 
   it('should throw an error if the Account is not associated to any Identity', async () => {
     const proc = procedureMockUtils.getInstance<void, void>(mockContext);
-    mockContext.getSigningAccount.returns(
+    mockContext.getSigningAccount.mockReturnValue(
       entityMockUtils.getAccountInstance({
         getIdentity: null,
       })
     );
-    getSecondaryAccountPermissionsStub.returns([]);
+    getSecondaryAccountPermissionsStub.mockReturnValue([]);
 
     const expectedError = new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
@@ -61,7 +59,7 @@ describe('leaveIdentity procedure', () => {
 
   it('should throw an error if the signing Account is not a secondary Account', () => {
     const proc = procedureMockUtils.getInstance<void, void>(mockContext);
-    mockContext.getSigningAccount.returns(entityMockUtils.getAccountInstance());
+    mockContext.getSigningAccount.mockReturnValue(entityMockUtils.getAccountInstance());
 
     const expectedError = new PolymeshError({
       code: ErrorCode.DataUnavailable,
@@ -78,7 +76,7 @@ describe('leaveIdentity procedure', () => {
       'leaveIdentityAsKey'
     );
 
-    getSecondaryAccountPermissionsStub.returns([
+    getSecondaryAccountPermissionsStub.mockReturnValue([
       {
         account: entityMockUtils.getAccountInstance({ address }),
         permissions: {
