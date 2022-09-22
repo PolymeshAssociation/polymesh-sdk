@@ -5,13 +5,8 @@ import {
 } from '@polkadot/types/lookup';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, RemoveAssetStatParams, StatClaimIssuer, TxTags } from '~/types';
-import {
-  ExtrinsicParams,
-  ProcedureAuthorization,
-  StatType,
-  TransactionSpec,
-} from '~/types/internal';
+import { ErrorCode, RemoveAssetStatParams, StatClaimIssuer, StatType, TxTags } from '~/types';
+import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { QueryReturnType } from '~/types/utils';
 import {
   claimIssuerToMeshClaimIssuer,

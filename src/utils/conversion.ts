@@ -13,6 +13,7 @@ import {
   PalletCorporateActionsCorporateAction,
   PalletCorporateActionsDistribution,
   PalletCorporateActionsInitiateCorporateActionArgs,
+  PalletMultisigProposalStatus,
   PalletStoFundraiser,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesAssetMetadataAssetMetadataKey,
@@ -67,7 +68,7 @@ import {
 } from 'lodash';
 import { CountryCode as MeshCountryCode } from 'polymesh-types/types';
 
-import { assertCaTaxWithholdingsValid } from '~/api/procedures/utils';
+import { assertCaTaxWithholdingsValid, UnreachableCaseError } from '~/api/procedures/utils';
 import { countryCodeToMeshCountryCode, meshCountryCodeToCountryCode } from '~/generated/utils';
 import {
   Account,
@@ -203,6 +204,7 @@ import {
   PortfolioId,
   PortfolioLike,
   PortfolioMovement,
+  ProposalStatus,
   Requirement,
   RequirementCompliance,
   Scope,
@@ -216,6 +218,7 @@ import {
   SignerValue,
   SingleClaimCondition,
   StatClaimType,
+  StatType,
   TargetTreatment,
   Tier,
   TransactionPermissions,
@@ -244,7 +247,6 @@ import {
   ScheduleSpec,
   StatClaimInputType,
   StatClaimIssuer,
-  StatType,
   TickerKey,
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
@@ -481,6 +483,13 @@ export function signerValueToSigner(signerValue: SignerValue, context: Context):
   }
 
   return new Identity({ did: value }, context);
+}
+
+/**
+ * @hidden
+ */
+export function signerToSignatory(signer: Signer, context: Context): Signatory {
+  return signerValueToSignatory(signerToSignerValue(signer), context);
 }
 
 /**
@@ -4074,6 +4083,34 @@ export function inputStatTypeToMeshStatType(
     claimIssuer = claimIssuerToMeshClaimIssuer(input.claimIssuer, context);
   }
   return statisticsOpTypeToStatType({ op, claimIssuer }, context);
+}
+
+/**
+ * @hidden
+ */
+export function meshProposalStatusToProposalStatus(
+  status: PalletMultisigProposalStatus,
+  expiry: Date | null
+): ProposalStatus {
+  const { type } = status;
+  switch (type) {
+    case 'ActiveOrExpired':
+      if (!expiry || expiry > new Date()) {
+        return ProposalStatus.Active;
+      } else {
+        return ProposalStatus.Expired;
+      }
+    case 'Invalid':
+      return ProposalStatus.Invalid;
+    case 'ExecutionSuccessful':
+      return ProposalStatus.Successful;
+    case 'ExecutionFailed':
+      return ProposalStatus.Failed;
+    case 'Rejected':
+      return ProposalStatus.Rejected;
+    default:
+      throw new UnreachableCaseError(type);
+  }
 }
 
 /**

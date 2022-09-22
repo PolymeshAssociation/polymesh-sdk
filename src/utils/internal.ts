@@ -1,5 +1,7 @@
 import {
+  ApiDecoration,
   AugmentedEvent,
+  AugmentedQueries,
   AugmentedQuery,
   AugmentedQueryDoubleMap,
   DropLast,
@@ -59,6 +61,7 @@ import {
   ProcedureOpts,
   RemoveAssetStatParams,
   Scope,
+  StatType,
   SubCallback,
   TransferRestriction,
   TransferRestrictionType,
@@ -70,11 +73,16 @@ import {
   Falsyable,
   MapTxWithArgs,
   PolymeshTx,
+  Queries,
   StatClaimIssuer,
-  StatType,
   TxWithArgs,
 } from '~/types/internal';
-import { HumanReadableType, ProcedureFunc, UnionOfProcedureFuncs } from '~/types/utils';
+import {
+  HumanReadableType,
+  ProcedureFunc,
+  QueryFunction,
+  UnionOfProcedureFuncs,
+} from '~/types/utils';
 import {
   DEFAULT_GQL_PAGE_SIZE,
   MAX_TICKER_LENGTH,
@@ -492,30 +500,56 @@ export async function requestPaginated<F extends AnyFunction, T extends AnyTuple
 /**
  * @hidden
  *
+ * Gets Polymesh API instance at a particular block
+ */
+export async function getApiAtBlock(
+  context: Context,
+  blockHash: string | BlockHash
+): Promise<ApiDecoration<'promise'>> {
+  const { polymeshApi, isArchiveNode } = context;
+
+  if (!isArchiveNode) {
+    throw new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: 'Cannot query previous blocks in a non-archive node',
+    });
+  }
+
+  return polymeshApi.at(blockHash);
+}
+
+/**
+ * @hidden
+ *
  * Makes a request to the chain. If a block hash is supplied,
  *   the request will be made at that block. Otherwise, the most recent block will be queried
  */
-export async function requestAtBlock<F extends AnyFunction>(
-  query: AugmentedQuery<'promise', F> | AugmentedQueryDoubleMap<'promise', F>,
+export async function requestAtBlock<
+  ModuleName extends keyof AugmentedQueries<'promise'>,
+  QueryName extends keyof AugmentedQueries<'promise'>[ModuleName]
+>(
+  moduleName: ModuleName,
+  queryName: QueryName,
   opts: {
     blockHash?: string | BlockHash;
-    args: Parameters<F>;
+    args: Parameters<QueryFunction<ModuleName, QueryName>>;
   },
   context: Context
-): Promise<ObsInnerType<ReturnType<F>>> {
+): Promise<ObsInnerType<ReturnType<QueryFunction<ModuleName, QueryName>>>> {
   const { blockHash, args } = opts;
 
+  let query: Queries;
   if (blockHash) {
-    if (!context.isArchiveNode) {
-      throw new PolymeshError({
-        code: ErrorCode.DataUnavailable,
-        message: 'Cannot query previous blocks in a non-archive node',
-      });
-    }
-    return query.at(blockHash, ...args);
+    ({ query } = await getApiAtBlock(context, blockHash));
+  } else {
+    ({ query } = context.polymeshApi);
   }
 
-  return query(...args);
+  const queryMethod = query[moduleName][queryName] as unknown as QueryFunction<
+    typeof moduleName,
+    typeof queryName
+  >;
+  return queryMethod(...args);
 }
 
 /**

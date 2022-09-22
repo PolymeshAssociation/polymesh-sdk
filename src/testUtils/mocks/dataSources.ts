@@ -156,7 +156,9 @@ import {
   PortfolioValidityResult,
   PosRatio,
   PriceTier,
+  ProposalDetails,
   ProposalState,
+  ProposalStatus,
   ProtocolOp,
   RecordDate,
   RecordDateSpec,
@@ -197,11 +199,12 @@ import {
   ProtocolFees,
   ResultSet,
   SignerType,
+  StatType,
   SubsidyWithAllowance,
   TxTags,
   UnsubCallback,
 } from '~/types';
-import { Consts, Extrinsics, GraphqlQuery, PolymeshTx, Queries, StatType } from '~/types/internal';
+import { Consts, Extrinsics, GraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
 import { ArgsType, Mutable, tuple } from '~/types/utils';
 import { STATE_RUNTIME_VERSION_CALL, SYSTEM_VERSION_RPC_CALL } from '~/utils/constants';
 
@@ -1000,6 +1003,7 @@ function initApi(): void {
   initConsts();
   initQueryMulti();
 
+  mockInstanceContainer.apiInstance.at = sinon.stub().resolves(mockInstanceContainer.apiInstance);
   apiPromiseCreateStub = sinon.stub();
   MockApiPromiseClass.create = apiPromiseCreateStub.resolves(mockInstanceContainer.apiInstance);
 }
@@ -1298,7 +1302,6 @@ export function createQueryStub<
   if (!runtimeModule[query]) {
     stub = sinon.stub() as unknown as QueryStub;
     stub.entries = sinon.stub();
-    stub.entriesAt = sinon.stub();
     stub.entriesPaged = sinon.stub();
     stub.at = sinon.stub();
     stub.multi = sinon.stub();
@@ -1319,7 +1322,6 @@ export function createQueryStub<
   ]);
   stub.entries.resolves(entryResults);
   stub.entriesPaged.resolves(entryResults);
-  stub.entriesAt.resolves(entryResults);
 
   if (opts?.multi) {
     stub.multi.resolves(opts.multi);
@@ -1555,6 +1557,14 @@ export function getMiddlewareApiV2(): ApolloClient<NormalizedCacheObject> &
  */
 export function getCreateTypeStub(): SinonStub {
   return mockInstanceContainer.apiInstance.createType as SinonStub;
+}
+
+/**
+ * @hidden
+ * Retrieve the stub of the at method
+ */
+export function getAtStub(): SinonStub {
+  return mockInstanceContainer.apiInstance.at as SinonStub;
 }
 
 /**
@@ -2934,6 +2944,21 @@ export const createMockProposalState = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockProposalStatus = (
+  proposalStatus?:
+    | 'Invalid'
+    | 'ActiveOrExpired'
+    | 'ExecutionSuccessful'
+    | 'ExecutionFailed'
+    | 'Rejected'
+): MockCodec<ProposalStatus> => {
+  return createMockEnum(proposalStatus) as MockCodec<ProposalStatus>;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockPip = (pip?: {
   id: u32;
   proposal: Call;
@@ -3869,6 +3894,7 @@ export const createMockHeader = (
 };
 
 /**
+ * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockExtrinsics = (
@@ -4213,6 +4239,61 @@ export const createMockAssetTransferCompliance = (
   const args = { paused: createMockBool(paused), requirements: createMockBTreeSet(requirements) };
 
   return createMockCodec(args, !transferCompliance);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockCall = (callArgs?: {
+  args: unknown[];
+  method: string;
+  section: string;
+}): MockCodec<Call> => {
+  const { args, method, section } = callArgs || {
+    args: [],
+    method: '',
+    section: '',
+  };
+
+  return createMockCodec(
+    {
+      args: createMockCodec(args, false),
+      method,
+      section,
+    },
+    !callArgs
+  ) as MockCodec<Call>;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockProposalDetails = (proposalDetails?: {
+  approvals: u64 | Parameters<typeof createMockU64>[0];
+  rejections: u64 | Parameters<typeof createMockU64>[0];
+  status: ProposalStatus | Parameters<typeof createMockProposalStatus>[0];
+  autoClose: bool | Parameters<typeof createMockBool>[0];
+  expiry: Option<Moment> | null;
+}): ProposalDetails => {
+  const { approvals, rejections, status, autoClose, expiry } = proposalDetails || {
+    approvals: createMockU64(),
+    rejections: createMockU64(),
+    status: createMockProposalStatus(),
+    autoClose: createMockBool(),
+    expiry: createMockOption(),
+  };
+  return createMockCodec(
+    {
+      approvals,
+      rejections,
+      status,
+      expiry,
+      autoClose,
+    },
+    !proposalDetails
+  ) as MockCodec<ProposalDetails>;
 };
 
 /**

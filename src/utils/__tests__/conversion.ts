@@ -9,6 +9,7 @@ import {
   Signature,
 } from '@polkadot/types/interfaces';
 import {
+  PalletMultisigProposalStatus,
   PolymeshPrimitivesAssetMetadataAssetMetadataKey,
   PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
   PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail,
@@ -62,6 +63,7 @@ import {
 } from 'polymesh-types/polymesh';
 import sinon from 'sinon';
 
+import { UnreachableCaseError } from '~/api/procedures/utils';
 import {
   Account,
   Context,
@@ -119,6 +121,7 @@ import {
   PermissionsLike,
   PermissionType,
   PortfolioMovement,
+  ProposalStatus,
   Scope,
   ScopeClaimProof,
   ScopeType,
@@ -126,6 +129,7 @@ import {
   Signer,
   SignerType,
   SignerValue,
+  StatType,
   TargetTreatment,
   TransferError,
   TransferRestriction,
@@ -136,7 +140,7 @@ import {
   TxTags,
   VenueType,
 } from '~/types';
-import { InstructionStatus, PermissionGroupIdentifier, StatType } from '~/types/internal';
+import { InstructionStatus, PermissionGroupIdentifier } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import { DUMMY_ACCOUNT_ID, MAX_BALANCE, MAX_DECIMALS, MAX_TICKER_LENGTH } from '~/utils/constants';
 import * as internalUtils from '~/utils/internal';
@@ -212,6 +216,7 @@ import {
   meshMetadataSpecToMetadataSpec,
   meshMetadataValueToMetadataValue,
   meshPermissionsToPermissions,
+  meshProposalStatusToProposalStatus,
   meshScopeToScope,
   meshStatToStatType,
   meshVenueTypeToVenueType,
@@ -248,6 +253,7 @@ import {
   secondaryAccountToMeshSecondaryKey,
   securityIdentifierToAssetIdentifier,
   signatoryToSignerValue,
+  signerToSignatory,
   signerToSignerValue,
   signerToString,
   signerValueToSignatory,
@@ -885,6 +891,36 @@ describe('signerValueToSignatory and signatoryToSignerValue', () => {
       const result = signerValueToSignatory(value, context);
 
       expect(result).toBe(fakeResult);
+    });
+  });
+
+  describe('signerToSignatory', () => {
+    beforeAll(() => {
+      dsMockUtils.initMocks();
+      entityMockUtils.initMocks();
+    });
+
+    afterEach(() => {
+      dsMockUtils.reset();
+      entityMockUtils.reset();
+    });
+
+    afterAll(() => {
+      dsMockUtils.cleanup();
+      sinon.restore();
+    });
+    it('should convert a Signer to a polkadot Signatory object', () => {
+      const context = dsMockUtils.getContextInstance();
+      const address = DUMMY_ACCOUNT_ID;
+      const fakeResult = 'SignatoryEnum' as unknown as Signatory;
+      const account = new Account({ address }, context);
+
+      context.createType
+        .withArgs('Signatory', { [SignerType.Account]: address })
+        .returns(fakeResult);
+
+      const result = signerToSignatory(account, context);
+      expect(result).toEqual(fakeResult);
     });
   });
 
@@ -8440,6 +8476,56 @@ describe('inputStatTypeToMeshStatType', () => {
     } as const;
     result = inputStatTypeToMeshStatType(scopedInput, mockContext);
     expect(result).toEqual(fakeStatistic);
+  });
+});
+
+describe('meshProposalStatusToProposalStatus', () => {
+  it('should convert raw statuses to the correct ProposalStatus', () => {
+    let result = meshProposalStatusToProposalStatus(
+      dsMockUtils.createMockProposalStatus('ActiveOrExpired'),
+      null
+    );
+    expect(result).toEqual(ProposalStatus.Active);
+
+    result = meshProposalStatusToProposalStatus(
+      dsMockUtils.createMockProposalStatus('ActiveOrExpired'),
+      new Date(1)
+    );
+    expect(result).toEqual(ProposalStatus.Expired);
+
+    result = meshProposalStatusToProposalStatus(
+      dsMockUtils.createMockProposalStatus('ExecutionSuccessful'),
+      null
+    );
+    expect(result).toEqual(ProposalStatus.Successful);
+
+    result = meshProposalStatusToProposalStatus(
+      dsMockUtils.createMockProposalStatus('ExecutionFailed'),
+      null
+    );
+    expect(result).toEqual(ProposalStatus.Failed);
+
+    result = meshProposalStatusToProposalStatus(
+      dsMockUtils.createMockProposalStatus('Rejected'),
+      null
+    );
+    expect(result).toEqual(ProposalStatus.Rejected);
+
+    result = meshProposalStatusToProposalStatus(
+      dsMockUtils.createMockProposalStatus('Invalid'),
+      null
+    );
+    expect(result).toEqual(ProposalStatus.Invalid);
+  });
+
+  it('should throw an error if it receives an unknown status', () => {
+    const expectedError = new UnreachableCaseError('UnknownStatus' as never);
+    return expect(() =>
+      meshProposalStatusToProposalStatus(
+        { type: 'UnknownStatus' } as unknown as PalletMultisigProposalStatus,
+        null
+      )
+    ).toThrowError(expectedError);
   });
 });
 
