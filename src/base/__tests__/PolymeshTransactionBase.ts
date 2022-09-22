@@ -91,8 +91,8 @@ describe('Polymesh Transaction Base class', () => {
 
     beforeEach(() => {
       getBlockStub = dsMockUtils.createRpcStub('chain', 'getBlock');
-      getBlockStub.mockResolvedValue({
-        returnValue: dsMockUtils.createMockSignedBlock({
+      getBlockStub.mockResolvedValue(
+        dsMockUtils.createMockSignedBlock({
           block: {
             header: {
               number: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(new BigNumber(1))),
@@ -102,10 +102,8 @@ describe('Polymesh Transaction Base class', () => {
             },
             extrinsics: undefined,
           },
-        }),
-      });
-
-      dsMockUtils.createTxStub('utility', 'batchAtomic');
+        })
+      );
     });
 
     it('should execute the underlying transaction with the provided arguments, setting the tx and block hash when finished', async () => {
@@ -390,9 +388,7 @@ describe('Polymesh Transaction Base class', () => {
 
     it('should throw an error if there is a problem fetching block data', async () => {
       const message = 'Something went wrong';
-      getBlockStub.mockImplementation(() => {
-        throw new Error(message);
-      });
+      getBlockStub.mockRejectedValue(new Error(message));
 
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker', {
         autoResolve: false,
@@ -580,9 +576,9 @@ describe('Polymesh Transaction Base class', () => {
 
       await tx.run();
 
-      expect(listenerStub.mock.calls[0]).toHaveBeenCalledWith(TransactionStatus.Unapproved);
-      expect(listenerStub.mock.calls[1]).toHaveBeenCalledWith(TransactionStatus.Running);
-      expect(listenerStub.mock.calls[2]).toHaveBeenCalledWith(TransactionStatus.Succeeded);
+      expect(listenerStub.mock.calls[0][0]).toBe(TransactionStatus.Unapproved);
+      expect(listenerStub.mock.calls[1][0]).toBe(TransactionStatus.Running);
+      expect(listenerStub.mock.calls[2][0]).toBe(TransactionStatus.Succeeded);
     });
 
     it('should return an unsubscribe function', async () => {
@@ -611,8 +607,8 @@ describe('Polymesh Transaction Base class', () => {
 
       unsub();
 
-      expect(listenerStub.mock.calls[0]).toHaveBeenCalledWith(TransactionStatus.Unapproved);
-      expect(listenerStub.mock.calls[1]).toHaveBeenCalledWith(TransactionStatus.Running);
+      expect(listenerStub.mock.calls[0][0]).toBe(TransactionStatus.Unapproved);
+      expect(listenerStub.mock.calls[1][0]).toBe(TransactionStatus.Running);
       expect(listenerStub).toHaveBeenCalledTimes(2);
     });
   });
@@ -811,7 +807,7 @@ describe('Polymesh Transaction Base class', () => {
 
       await fakePromises();
 
-      expect(listenerStub.mock.calls[0]).toHaveBeenCalledWith(undefined);
+      expect(listenerStub).toHaveBeenCalledWith(undefined);
     });
 
     it('should execute a callback with an error if 10 seconds pass without the data being processed', async () => {
@@ -845,8 +841,7 @@ describe('Polymesh Transaction Base class', () => {
     });
 
     it('should throw an error if the middleware is not enabled', async () => {
-      context = dsMockUtils.getContextInstance({ middlewareEnabled: false });
-
+      context.isMiddlewareEnabled = jest.fn().mockReturnValue(false);
       const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
       const args = tuple('PLEASE_NO_MORE');
 
@@ -866,6 +861,7 @@ describe('Polymesh Transaction Base class', () => {
       expect(() => tx.onProcessedByMiddleware(err => listenerStub(err))).toThrow(
         'Cannot subscribe without an enabled middleware connection'
       );
+      context.isMiddlewareEnabled.mockClear();
     });
 
     it('should return an unsubscribe function', async () => {
