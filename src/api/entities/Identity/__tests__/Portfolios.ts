@@ -177,7 +177,7 @@ describe('Portfolios class', () => {
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
       when(procedureMockUtils.getPrepareStub())
-        .calledWith({ args: { id: portfolioId, did }, transformer: undefined }, mockContext)
+        .calledWith({ args: { id: portfolioId, did }, transformer: undefined }, mockContext, {})
         .mockResolvedValue(expectedTransaction);
 
       let tx = await portfolios.delete({ portfolio: portfolioId });

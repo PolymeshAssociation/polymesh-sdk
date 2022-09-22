@@ -472,6 +472,8 @@ export async function requestPaginated<F extends AnyFunction, T extends AnyTuple
       startKey,
     });
 
+    console.log(entries);
+
     if (pageSize.eq(entries.length)) {
       lastKey = entries[entries.length - 1][0].toHex();
     }

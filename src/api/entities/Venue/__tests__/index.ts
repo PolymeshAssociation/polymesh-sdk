@@ -150,10 +150,10 @@ describe('Venue class', () => {
       const detailsStub = jest.fn();
 
       detailsStub
-        .mockResolvedValue({
+        .mockResolvedValueOnce({
           status: InstructionStatus.Pending,
         })
-        .mockResolvedValue({
+        .mockResolvedValueOnce({
           status: InstructionStatus.Failed,
         })
         .mockResolvedValue({

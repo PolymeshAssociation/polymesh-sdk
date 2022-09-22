@@ -155,11 +155,7 @@ describe('DividendDistribution class', () => {
   describe('method: checkpoint', () => {
     it('should just pass the call down the line', async () => {
       const fakeResult = 'checkpoint' as unknown as Checkpoint;
-      jest
-        .spyOn(CorporateActionBase.prototype, 'checkpoint')
-        .mockClear()
-        .mockImplementation()
-        .mockResolvedValue(fakeResult);
+      jest.spyOn(CorporateActionBase.prototype, 'checkpoint').mockResolvedValue(fakeResult);
 
       const result = await dividendDistribution.checkpoint();
 
@@ -386,8 +382,8 @@ describe('DividendDistribution class', () => {
       const allBalancesStub = jest.fn();
 
       allBalancesStub
-        .mockResolvedValue({ data: balances, next: 'notNull' })
-        .mockResolvedValue({ data: [], next: null });
+        .mockResolvedValueOnce({ data: balances, next: 'notNull' })
+        .mockResolvedValueOnce({ data: [], next: null });
 
       entityMockUtils.configureMocks({
         checkpointOptions: {
@@ -401,8 +397,6 @@ describe('DividendDistribution class', () => {
       };
       jest
         .spyOn(dividendDistribution, 'checkpoint')
-        .mockClear()
-        .mockImplementation()
         .mockResolvedValue(entityMockUtils.getCheckpointInstance());
 
       dsMockUtils.createQueryStub('capitalDistribution', 'holderPaid', {
@@ -436,7 +430,7 @@ describe('DividendDistribution class', () => {
         did: 'targetDid',
         isEqual: false,
       });
-      balances[0].identity.isEqual.mockReturnValue(true);
+      balances[0].identity.isEqual.mockReturnValueOnce(false).mockReturnValue(true);
 
       allBalancesStub.mockResolvedValue({ data: balances, next: null });
 
@@ -456,8 +450,6 @@ describe('DividendDistribution class', () => {
     it("should return an empty array if the distribution checkpoint hasn't been created yet", async () => {
       jest
         .spyOn(dividendDistribution, 'checkpoint')
-        .mockClear()
-        .mockImplementation()
         .mockResolvedValue(entityMockUtils.getCheckpointScheduleInstance());
 
       const result = await dividendDistribution.getParticipants();
@@ -476,26 +468,20 @@ describe('DividendDistribution class', () => {
         identities: [excluded],
         treatment: TargetTreatment.Exclude,
       };
-      jest
-        .spyOn(dividendDistribution, 'checkpoint')
-        .mockClear()
-        .mockImplementation()
-        .mockResolvedValue(
-          entityMockUtils.getCheckpointInstance({
-            balance,
-          })
-        );
+      jest.spyOn(dividendDistribution, 'checkpoint').mockResolvedValue(
+        entityMockUtils.getCheckpointInstance({
+          balance,
+        })
+      );
 
       jest
         .spyOn(utilsConversionModule, 'stringToIdentityId')
-        .mockClear()
         .mockReturnValue(dsMockUtils.createMockIdentityId(did));
 
       jest
         .spyOn(utilsConversionModule, 'corporateActionIdentifierToCaId')
-        .mockClear()
         .mockReturnValue(dsMockUtils.createMockCAId({ ticker, localId: id }));
-      jest.spyOn(utilsConversionModule, 'boolToBoolean').mockClear().mockReturnValue(false);
+      jest.spyOn(utilsConversionModule, 'boolToBoolean').mockReturnValue(false);
 
       dsMockUtils.createQueryStub('capitalDistribution', 'holderPaid', {
         returnValue: false,
@@ -517,7 +503,7 @@ describe('DividendDistribution class', () => {
         isEqual: false,
         did: 'targetDid',
       });
-      targetIdentity.isEqual.mockReturnValue(false).mockReturnValue(true);
+      targetIdentity.isEqual.mockReturnValueOnce(false).mockReturnValue(true);
 
       result = await dividendDistribution.getParticipant({
         identity: targetIdentity,
@@ -545,8 +531,6 @@ describe('DividendDistribution class', () => {
     it("should return null if the distribution checkpoint hasn't been created yet", async () => {
       jest
         .spyOn(dividendDistribution, 'checkpoint')
-        .mockClear()
-        .mockImplementation()
         .mockResolvedValue(entityMockUtils.getCheckpointScheduleInstance());
 
       const result = await dividendDistribution.getParticipant({
@@ -563,15 +547,11 @@ describe('DividendDistribution class', () => {
         identities: [excluded],
         treatment: TargetTreatment.Exclude,
       };
-      jest
-        .spyOn(dividendDistribution, 'checkpoint')
-        .mockClear()
-        .mockImplementation()
-        .mockResolvedValue(
-          entityMockUtils.getCheckpointInstance({
-            balance: new BigNumber(10),
-          })
-        );
+      jest.spyOn(dividendDistribution, 'checkpoint').mockResolvedValue(
+        entityMockUtils.getCheckpointInstance({
+          balance: new BigNumber(10),
+        })
+      );
 
       const result = await dividendDistribution.getParticipant({
         identity: did,

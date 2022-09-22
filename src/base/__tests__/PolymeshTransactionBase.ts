@@ -90,7 +90,8 @@ describe('Polymesh Transaction Base class', () => {
     let getBlockStub: jest.Mock;
 
     beforeEach(() => {
-      getBlockStub = dsMockUtils.createRpcStub('chain', 'getBlock', {
+      getBlockStub = dsMockUtils.createRpcStub('chain', 'getBlock');
+      getBlockStub.mockResolvedValue({
         returnValue: dsMockUtils.createMockSignedBlock({
           block: {
             header: {

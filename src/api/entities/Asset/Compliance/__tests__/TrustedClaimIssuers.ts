@@ -217,7 +217,7 @@ describe('TrustedClaimIssuers class', () => {
       const unsubCallback = 'unsubCallback';
 
       when(trustedClaimIssuerStub)
-        .calledWith(rawTicker)
+        .calledWith(rawTicker, expect.any(Function))
         .mockImplementation((_, cbFunc) => {
           cbFunc(claimIssuers);
           return unsubCallback;

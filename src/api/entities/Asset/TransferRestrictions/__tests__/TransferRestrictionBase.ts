@@ -1,5 +1,6 @@
 import { PolymeshPrimitivesTransferComplianceTransferCondition } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 
 import { ClaimCount } from '~/api/entities/Asset/TransferRestrictions/ClaimCount';
 import { ClaimPercentage } from '~/api/entities/Asset/TransferRestrictions/ClaimPercentage';
@@ -41,9 +42,9 @@ describe('TransferRestrictionBase class', () => {
   });
 
   afterEach(() => {
-    dsMockUtils.mockReset();
-    entityMockUtils.mockReset();
-    procedureMockUtils.initMocks();
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
@@ -84,7 +85,8 @@ describe('TransferRestrictionBase class', () => {
             args: { ticker: asset.ticker, ...args, type: TransferRestrictionType.Count },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
         .mockResolvedValue(expectedTransaction);
 
@@ -111,7 +113,8 @@ describe('TransferRestrictionBase class', () => {
             args: { ticker: asset.ticker, ...args, type: TransferRestrictionType.Percentage },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
         .mockResolvedValue(expectedTransaction);
 
@@ -151,7 +154,8 @@ describe('TransferRestrictionBase class', () => {
             args: { ticker: asset.ticker, ...args, type: TransferRestrictionType.Count },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
         .mockResolvedValue(expectedTransaction);
 
@@ -177,7 +181,8 @@ describe('TransferRestrictionBase class', () => {
             args: { ticker: asset.ticker, ...args, type: TransferRestrictionType.Percentage },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
         .mockResolvedValue(expectedTransaction);
 
@@ -214,7 +219,8 @@ describe('TransferRestrictionBase class', () => {
             args: { ticker: asset.ticker, ...args, type: TransferRestrictionType.ClaimCount },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
         .mockResolvedValue(expectedTransaction);
 
@@ -242,7 +248,8 @@ describe('TransferRestrictionBase class', () => {
             args: { ticker: asset.ticker, ...args, type: TransferRestrictionType.ClaimPercentage },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
         .mockResolvedValue(expectedTransaction);
 
@@ -278,7 +285,8 @@ describe('TransferRestrictionBase class', () => {
             args: { ticker: asset.ticker, restrictions: [], type: TransferRestrictionType.Count },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
         .mockResolvedValue(expectedTransaction);
 
@@ -302,7 +310,8 @@ describe('TransferRestrictionBase class', () => {
             },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
         .mockResolvedValue(expectedTransaction);
 
@@ -502,7 +511,8 @@ describe('TransferRestrictionBase class', () => {
             },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
         .mockResolvedValue(expectedTransaction);
 
@@ -527,7 +537,8 @@ describe('TransferRestrictionBase class', () => {
             },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
         .mockResolvedValue(expectedTransaction);
 
@@ -566,7 +577,8 @@ describe('TransferRestrictionBase class', () => {
             },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
         .mockResolvedValue(expectedTransaction);
 
@@ -591,7 +603,8 @@ describe('TransferRestrictionBase class', () => {
             },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
         .mockResolvedValue(expectedTransaction);
 
@@ -619,7 +632,8 @@ describe('TransferRestrictionBase class', () => {
             },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
         .mockResolvedValue(expectedTransaction);
 
@@ -650,7 +664,8 @@ describe('TransferRestrictionBase class', () => {
             },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
         .mockResolvedValue(expectedTransaction);
 

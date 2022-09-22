@@ -441,12 +441,13 @@ describe('removePadding', () => {
 
 describe('requestPaginated', () => {
   it('should fetch and return entries and the hex value of the last key', async () => {
+    const entries = [
+      tuple(['ticker0'], dsMockUtils.createMockU32(new BigNumber(0))),
+      tuple(['ticker1'], dsMockUtils.createMockU32(new BigNumber(1))),
+      tuple(['ticker2'], dsMockUtils.createMockU32(new BigNumber(2))),
+    ];
     const queryStub = dsMockUtils.createQueryStub('asset', 'tickers', {
-      entries: [
-        tuple(['ticker0'], dsMockUtils.createMockU32(new BigNumber(0))),
-        tuple(['ticker1'], dsMockUtils.createMockU32(new BigNumber(1))),
-        tuple(['ticker2'], dsMockUtils.createMockU32(new BigNumber(2))),
-      ],
+      entries,
     });
 
     let res = await requestPaginated(queryStub, {
@@ -456,7 +457,7 @@ describe('requestPaginated', () => {
     expect(res.lastKey).toBeNull();
     expect(queryStub.entries).toHaveBeenCalledTimes(1);
 
-    jest.resetAllMocks();
+    jest.clearAllMocks();
 
     res = await requestPaginated(queryStub, {
       paginationOpts: { size: new BigNumber(3) },
@@ -465,7 +466,7 @@ describe('requestPaginated', () => {
     expect(typeof res.lastKey).toBe('string');
     expect(queryStub.entriesPaged).toHaveBeenCalledTimes(1);
 
-    jest.resetAllMocks();
+    jest.clearAllMocks();
 
     res = await requestPaginated(queryStub, {
       paginationOpts: { size: new BigNumber(4) },
@@ -1863,12 +1864,14 @@ describe('method: getSecondaryAccountPermissions', () => {
     const unsubCallback = 'unsubCallBack';
 
     const keyRecordsStub = dsMockUtils.createQueryStub('identity', 'keyRecords');
-    keyRecordsStub.multi.mockResolvedValue([
-      dsMockUtils.createMockOption(rawPrimaryKeyRecord),
-      dsMockUtils.createMockOption(rawSecondaryKeyRecord),
-      dsMockUtils.createMockOption(rawMultiSigKeyRecord),
-    ]);
-    keyRecordsStub.multi.mockReturnValue(unsubCallback);
+    keyRecordsStub.multi.mockImplementation((_, cbFunc) => {
+      cbFunc([
+        dsMockUtils.createMockOption(rawPrimaryKeyRecord),
+        dsMockUtils.createMockOption(rawSecondaryKeyRecord),
+        dsMockUtils.createMockOption(rawMultiSigKeyRecord),
+      ]);
+      return unsubCallback;
+    });
 
     identityIdToStringStub.mockReturnValue('someDid');
     const identity = new Identity({ did }, mockContext);

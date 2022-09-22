@@ -46,8 +46,10 @@ describe('Account class', () => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
-    assertAddressValidStub = jest.spyOn(utilsInternalModule, 'assertAddressValid');
-    addressToKeyStub = jest.spyOn(utilsConversionModule, 'addressToKey');
+    assertAddressValidStub = jest
+      .spyOn(utilsInternalModule, 'assertAddressValid')
+      .mockImplementation();
+    addressToKeyStub = jest.spyOn(utilsConversionModule, 'addressToKey').mockImplementation();
     getSecondaryAccountPermissionsStub = jest.spyOn(
       utilsInternalModule,
       'getSecondaryAccountPermissions'

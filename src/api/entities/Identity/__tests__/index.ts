@@ -145,7 +145,7 @@ describe('Identity class', () => {
       const stub = jest.fn();
 
       stub
-        .mockResolvedValue({
+        .mockResolvedValueOnce({
           owner: identity,
         })
         .mockResolvedValue({
@@ -415,7 +415,7 @@ describe('Identity class', () => {
       const callback = jest.fn();
 
       when(balanceOfStub)
-        .calledWith(rawTicker, rawIdentityId)
+        .calledWith(rawTicker, rawIdentityId, expect.any(Function))
         .mockImplementation(async (_a, _b, cbFunc) => {
           cbFunc(fakeBalance);
           return unsubCallback;
@@ -1291,7 +1291,7 @@ describe('Identity class', () => {
 
       const heldAssetsStub = jest.spyOn(identity, 'getHeldAssets');
       heldAssetsStub
-        .mockResolvedValue({ data: [assets[0]], next: new BigNumber(1) })
+        .mockResolvedValueOnce({ data: [assets[0]], next: new BigNumber(1) })
         .mockResolvedValue({ data: [assets[1]], next: null });
 
       const result = await identity.getPendingDistributions();
@@ -1414,7 +1414,6 @@ describe('Identity class', () => {
       const result = await identity.getSecondaryAccounts(callback);
 
       expect(result).toBe(unsubCallback);
-      expect(callback).toBeCalledWith(fakeResult);
     });
   });
 

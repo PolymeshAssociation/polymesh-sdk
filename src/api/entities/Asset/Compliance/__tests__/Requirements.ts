@@ -612,7 +612,7 @@ describe('Requirements class', () => {
       const fakeResult = 'result';
 
       when(assetComplianceResultToRequirementComplianceStub)
-        .calledWith(rawResponse)
+        .calledWith(rawResponse, context)
         .mockReturnValue(fakeResult);
 
       const result = await requirements.checkSettle({ to: toDid });
@@ -630,7 +630,7 @@ describe('Requirements class', () => {
       const fakeResult = 'result';
 
       when(assetComplianceResultToRequirementComplianceStub)
-        .calledWith(rawResponse)
+        .calledWith(rawResponse, context)
         .mockReturnValue(fakeResult);
 
       const result = await requirements.checkSettle({ from: fromDid, to: toDid });

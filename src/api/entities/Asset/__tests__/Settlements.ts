@@ -249,10 +249,12 @@ describe('Settlements class', () => {
 
     beforeEach(() => {
       toPortfolio = entityMockUtils.getDefaultPortfolioInstance({
-        did: toDid,
+        ...toPortfolioId,
+        getCustodian: entityMockUtils.getIdentityInstance({ did: toPortfolioId.did }),
       });
       fromPortfolio = entityMockUtils.getDefaultPortfolioInstance({
-        did: fromDid,
+        ...fromPortfolioId,
+        getCustodian: entityMockUtils.getIdentityInstance({ did: fromPortfolioId.did }),
       });
       when(portfolioLikeToPortfolioIdStub).calledWith(toDid).mockReturnValue(toPortfolioId);
       when(portfolioLikeToPortfolioIdStub).calledWith(fromDid).mockReturnValue(fromPortfolioId);
@@ -274,6 +276,10 @@ describe('Settlements class', () => {
       const rawSigningDid = dsMockUtils.createMockIdentityId(signingDid);
 
       const currentDefaultPortfolioId = { did: signingDid };
+
+      when(stringToIdentityIdStub)
+        .calledWith(signingDid, mockContext)
+        .mockReturnValue(rawSigningDid);
 
       when(portfolioLikeToPortfolioIdStub)
         .calledWith(signingIdentity)
