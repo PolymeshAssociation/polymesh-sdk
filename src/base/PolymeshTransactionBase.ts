@@ -149,6 +149,12 @@ export abstract class PolymeshTransactionBase<
 
   /**
    * @hidden
+   * the result that was returned from this transaction after being successfully ran
+   */
+  private _result: TransformedReturnValue | undefined;
+
+  /**
+   * @hidden
    */
   constructor(
     transactionSpec: BaseTransactionSpec<ReturnValue, TransformedReturnValue> &
@@ -199,9 +205,10 @@ export abstract class PolymeshTransactionBase<
         value = resolver;
       }
 
+      this._result = await transformer(value);
       this.updateStatus(TransactionStatus.Succeeded);
 
-      return transformer(value);
+      return this._result;
     } catch (err) {
       const error: PolymeshError = err;
 
@@ -644,6 +651,32 @@ export abstract class PolymeshTransactionBase<
         },
       });
     }
+  }
+
+  /**
+   * returns the transaction result - this is the same value as the Promise run returns
+   * @note it is generally preferable to `await` the `Promise` returned by { @link base/PolymeshTransactionBase!PolymeshTransactionBase.run | transaction.run() } instead of reading this property
+   *
+   * @throws if the { @link base/PolymeshTransactionBase!PolymeshTransactionBase.isSuccess | transaction.isSuccess } property is false — be sure to check that before accessing!
+   */
+  get result(): TransformedReturnValue {
+    if (this.isSuccess) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      return this._result!;
+    } else {
+      throw new PolymeshError({
+        code: ErrorCode.General,
+        message:
+          'The result of the transaction was checked before it has been completed. property `result` should only be read if transaction `isSuccess` property is true',
+      });
+    }
+  }
+
+  /**
+   * returns true if transaction has completed successfully
+   */
+  get isSuccess(): boolean {
+    return this.status === TransactionStatus.Succeeded;
   }
 
   /**
