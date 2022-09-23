@@ -1107,11 +1107,11 @@ describe('assertExpectedChainVersion', () => {
     warnStub.mockRestore();
   });
 
-  it('should resolve if it receives both expected RPC node and chain spec version', async () => {
-    const signal = await assertExpectedChainVersion('ws://example.com');
+  it('should resolve if it receives both expected RPC node and chain spec version', () => {
+    const signal = assertExpectedChainVersion('ws://example.com');
     client.onopen();
 
-    return expect(signal).toBeUndefined();
+    return expect(signal).resolves.not.toThrow();
   });
 
   it('should throw an error given a major RPC node version mismatch', () => {
