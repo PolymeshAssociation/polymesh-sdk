@@ -17,8 +17,8 @@ import * as utilsInternalModule from '~/utils/internal';
 
 describe('createPortfolios procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToBytesStub: jest.SpyInstance<Bytes, [string, Context]>;
-  let getPortfolioIdsByNameStub: jest.SpyInstance;
+  let stringToBytesSpy: jest.SpyInstance<Bytes, [string, Context]>;
+  let getPortfolioIdsByNameSpy: jest.SpyInstance;
   let newPortfolioName: string;
   let rawNewPortfolioName: Bytes;
 
@@ -27,8 +27,8 @@ describe('createPortfolios procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
 
-    stringToBytesStub = jest.spyOn(utilsConversionModule, 'stringToBytes');
-    getPortfolioIdsByNameStub = jest.spyOn(utilsInternalModule, 'getPortfolioIdsByName');
+    stringToBytesSpy = jest.spyOn(utilsConversionModule, 'stringToBytes');
+    getPortfolioIdsByNameSpy = jest.spyOn(utilsInternalModule, 'getPortfolioIdsByName');
 
     newPortfolioName = 'newPortfolioName';
     rawNewPortfolioName = dsMockUtils.createMockBytes(newPortfolioName);
@@ -36,7 +36,7 @@ describe('createPortfolios procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    when(stringToBytesStub)
+    when(stringToBytesSpy)
       .calledWith(newPortfolioName, mockContext)
       .mockReturnValue(rawNewPortfolioName);
   });
@@ -54,7 +54,7 @@ describe('createPortfolios procedure', () => {
 
   it('should throw an error if the portfolio name is duplicated', () => {
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio[]>(mockContext);
-    getPortfolioIdsByNameStub.mockResolvedValue([new BigNumber(1)]);
+    getPortfolioIdsByNameSpy.mockResolvedValue([new BigNumber(1)]);
 
     return expect(
       prepareCreatePortfolios.call(proc, { names: [newPortfolioName] })
@@ -63,8 +63,8 @@ describe('createPortfolios procedure', () => {
 
   it('should return a create portfolio transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio[]>(mockContext);
-    const createPortfolioTransaction = dsMockUtils.createTxStub('portfolio', 'createPortfolio');
-    getPortfolioIdsByNameStub.mockResolvedValue([null]);
+    const createPortfolioTransaction = dsMockUtils.createTxMock('portfolio', 'createPortfolio');
+    getPortfolioIdsByNameSpy.mockResolvedValue([null]);
 
     const result = await prepareCreatePortfolios.call(proc, { names: [newPortfolioName] });
 
@@ -81,28 +81,28 @@ describe('createPortfolios procedure', () => {
 });
 
 describe('createPortfoliosResolver', () => {
-  const filterEventRecordsStub = jest.spyOn(utilsInternalModule, 'filterEventRecords');
+  const filterEventRecordsSpy = jest.spyOn(utilsInternalModule, 'filterEventRecords');
   const did = 'someDid';
   const rawIdentityId = dsMockUtils.createMockIdentityId(did);
   const id = new BigNumber(1);
   const rawId = dsMockUtils.createMockU64(id);
-  let identityIdToStringStub: jest.SpyInstance<string, [IdentityId]>;
-  let u64ToBigNumberStub: jest.SpyInstance<BigNumber, [u64]>;
+  let identityIdToStringSpy: jest.SpyInstance<string, [IdentityId]>;
+  let u64ToBigNumberSpy: jest.SpyInstance<BigNumber, [u64]>;
 
   beforeAll(() => {
-    identityIdToStringStub = jest.spyOn(utilsConversionModule, 'identityIdToString');
-    u64ToBigNumberStub = jest.spyOn(utilsConversionModule, 'u64ToBigNumber');
+    identityIdToStringSpy = jest.spyOn(utilsConversionModule, 'identityIdToString');
+    u64ToBigNumberSpy = jest.spyOn(utilsConversionModule, 'u64ToBigNumber');
   });
 
   beforeEach(() => {
-    when(identityIdToStringStub).calledWith(rawIdentityId).mockReturnValue(did);
-    when(u64ToBigNumberStub).calledWith(rawId).mockReturnValue(id);
-    filterEventRecordsStub.mockReturnValue([dsMockUtils.createMockIEvent([rawIdentityId, rawId])]);
+    when(identityIdToStringSpy).calledWith(rawIdentityId).mockReturnValue(did);
+    when(u64ToBigNumberSpy).calledWith(rawId).mockReturnValue(id);
+    filterEventRecordsSpy.mockReturnValue([dsMockUtils.createMockIEvent([rawIdentityId, rawId])]);
   });
 
   afterEach(() => {
     jest.resetAllMocks();
-    filterEventRecordsStub.mockReset();
+    filterEventRecordsSpy.mockReset();
   });
 
   it('should return the new Numbered Portfolios', () => {

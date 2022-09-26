@@ -16,7 +16,7 @@ import * as utilsInternalModule from '~/utils/internal';
 describe('createVenue procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToBytes: jest.SpyInstance<Bytes, [string, Context]>;
-  let venueTypeToMeshVenueTypeStub: jest.SpyInstance<MeshVenueType, [VenueType, Context]>;
+  let venueTypeToMeshVenueTypeSpy: jest.SpyInstance<MeshVenueType, [VenueType, Context]>;
   let createVenueTransaction: PolymeshTx<unknown[]>;
 
   beforeAll(() => {
@@ -24,12 +24,12 @@ describe('createVenue procedure', () => {
     procedureMockUtils.initMocks();
     dsMockUtils.initMocks();
     stringToBytes = jest.spyOn(utilsConversionModule, 'stringToBytes');
-    venueTypeToMeshVenueTypeStub = jest.spyOn(utilsConversionModule, 'venueTypeToMeshVenueType');
+    venueTypeToMeshVenueTypeSpy = jest.spyOn(utilsConversionModule, 'venueTypeToMeshVenueType');
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    createVenueTransaction = dsMockUtils.createTxStub('settlement', 'createVenue');
+    createVenueTransaction = dsMockUtils.createTxMock('settlement', 'createVenue');
   });
 
   afterEach(() => {
@@ -56,7 +56,7 @@ describe('createVenue procedure', () => {
     const proc = procedureMockUtils.getInstance<CreateVenueParams, Venue>(mockContext);
 
     when(stringToBytes).calledWith(description, mockContext).mockReturnValue(rawDetails);
-    when(venueTypeToMeshVenueTypeStub).calledWith(type, mockContext).mockReturnValue(rawType);
+    when(venueTypeToMeshVenueTypeSpy).calledWith(type, mockContext).mockReturnValue(rawType);
 
     const result = await prepareCreateVenue.call(proc, args);
 
@@ -69,7 +69,7 @@ describe('createVenue procedure', () => {
 });
 
 describe('createCreateVenueResolver', () => {
-  const filterEventRecordsStub = jest.spyOn(utilsInternalModule, 'filterEventRecords');
+  const filterEventRecordsSpy = jest.spyOn(utilsInternalModule, 'filterEventRecords');
   const id = new BigNumber(10);
   const rawId = dsMockUtils.createMockU64(id);
 
@@ -82,11 +82,11 @@ describe('createCreateVenueResolver', () => {
   });
 
   beforeEach(() => {
-    filterEventRecordsStub.mockReturnValue([dsMockUtils.createMockIEvent(['did', rawId])]);
+    filterEventRecordsSpy.mockReturnValue([dsMockUtils.createMockIEvent(['did', rawId])]);
   });
 
   afterEach(() => {
-    filterEventRecordsStub.mockReset();
+    filterEventRecordsSpy.mockReset();
   });
 
   it('should return the new Venue', () => {

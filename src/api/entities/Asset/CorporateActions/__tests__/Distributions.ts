@@ -68,7 +68,7 @@ describe('Distributions class', () => {
       const expectedTransaction =
         'someTransaction' as unknown as PolymeshTransaction<DividendDistribution>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           { args: { ticker: asset.ticker, ...args }, transformer: undefined },
           context,
@@ -95,7 +95,7 @@ describe('Distributions class', () => {
       const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
 
-      dsMockUtils.createQueryStub('corporateAction', 'corporateActions', {
+      dsMockUtils.createQueryMock('corporateAction', 'corporateActions', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockCorporateAction({
             kind: 'PredictableBenefit',
@@ -112,10 +112,10 @@ describe('Distributions class', () => {
           })
         ),
       });
-      dsMockUtils.createQueryStub('corporateAction', 'details', {
+      dsMockUtils.createQueryMock('corporateAction', 'details', {
         returnValue: dsMockUtils.createMockBytes('something'),
       });
-      dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
+      dsMockUtils.createQueryMock('capitalDistribution', 'distributions', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockDistribution({
             from: { did: 'someDid', kind: 'Default' },
@@ -148,7 +148,7 @@ describe('Distributions class', () => {
       const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
 
-      dsMockUtils.createQueryStub('corporateAction', 'corporateActions', {
+      dsMockUtils.createQueryMock('corporateAction', 'corporateActions', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockCorporateAction({
             kind: 'PredictableBenefit',
@@ -165,10 +165,10 @@ describe('Distributions class', () => {
           })
         ),
       });
-      dsMockUtils.createQueryStub('corporateAction', 'details', {
+      dsMockUtils.createQueryMock('corporateAction', 'details', {
         returnValue: dsMockUtils.createMockText('something'),
       });
-      dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
+      dsMockUtils.createQueryMock('capitalDistribution', 'distributions', {
         returnValue: dsMockUtils.createMockOption(),
       });
 
@@ -181,10 +181,10 @@ describe('Distributions class', () => {
         'The Dividend Distribution does not exist'
       );
 
-      dsMockUtils.createQueryStub('corporateAction', 'corporateActions', {
+      dsMockUtils.createQueryMock('corporateAction', 'corporateActions', {
         returnValue: dsMockUtils.createMockOption(),
       });
-      dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
+      dsMockUtils.createQueryMock('capitalDistribution', 'distributions', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockDistribution({
             from: { did: 'someDid', kind: 'Default' },

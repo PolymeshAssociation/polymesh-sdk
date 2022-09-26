@@ -35,9 +35,9 @@ describe('createTransactionBatch procedure', () => {
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
 
-    tx1 = dsMockUtils.createTxStub('asset', 'registerTicker');
-    tx2 = dsMockUtils.createTxStub('asset', 'createAsset');
-    tx3 = dsMockUtils.createTxStub('portfolio', 'createPortfolio');
+    tx1 = dsMockUtils.createTxMock('asset', 'registerTicker');
+    tx2 = dsMockUtils.createTxMock('asset', 'createAsset');
+    tx3 = dsMockUtils.createTxMock('portfolio', 'createPortfolio');
   });
 
   afterEach(() => {

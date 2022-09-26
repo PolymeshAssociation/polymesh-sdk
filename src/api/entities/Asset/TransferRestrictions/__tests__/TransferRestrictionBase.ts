@@ -79,7 +79,7 @@ describe('TransferRestrictionBase class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<number>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
             args: { ticker: asset.ticker, ...args, type: TransferRestrictionType.Count },
@@ -107,7 +107,7 @@ describe('TransferRestrictionBase class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<number>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
             args: { ticker: asset.ticker, ...args, type: TransferRestrictionType.Percentage },
@@ -148,7 +148,7 @@ describe('TransferRestrictionBase class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<number>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
             args: { ticker: asset.ticker, ...args, type: TransferRestrictionType.Count },
@@ -175,7 +175,7 @@ describe('TransferRestrictionBase class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<number>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
             args: { ticker: asset.ticker, ...args, type: TransferRestrictionType.Percentage },
@@ -213,7 +213,7 @@ describe('TransferRestrictionBase class', () => {
         NumberedPortfolio[]
       >;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
             args: { ticker: asset.ticker, ...args, type: TransferRestrictionType.ClaimCount },
@@ -242,7 +242,7 @@ describe('TransferRestrictionBase class', () => {
         NumberedPortfolio[]
       >;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
             args: { ticker: asset.ticker, ...args, type: TransferRestrictionType.ClaimPercentage },
@@ -279,7 +279,7 @@ describe('TransferRestrictionBase class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<number>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
             args: { ticker: asset.ticker, restrictions: [], type: TransferRestrictionType.Count },
@@ -300,7 +300,7 @@ describe('TransferRestrictionBase class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<number>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
             args: {
@@ -382,7 +382,7 @@ describe('TransferRestrictionBase class', () => {
       dsMockUtils.setConstMock('statistics', 'maxStatsPerAsset', {
         returnValue: dsMockUtils.createMockU32(maxStats),
       });
-      dsMockUtils.createQueryStub('statistics', 'assetTransferCompliances', {
+      dsMockUtils.createQueryMock('statistics', 'assetTransferCompliances', {
         returnValue: {
           requirements: [
             rawCountRestriction,
@@ -392,7 +392,7 @@ describe('TransferRestrictionBase class', () => {
           ],
         },
       });
-      dsMockUtils.createQueryStub('statistics', 'transferConditionExemptEntities', {
+      dsMockUtils.createQueryMock('statistics', 'transferConditionExemptEntities', {
         entries: [[[null, dsMockUtils.createMockScopeId(scopeId)], true]],
       });
       jest.spyOn(utilsConversionModule, 'u32ToBigNumber').mockClear().mockReturnValue(maxStats);
@@ -422,7 +422,7 @@ describe('TransferRestrictionBase class', () => {
         availableSlots: new BigNumber(1),
       });
 
-      dsMockUtils.createQueryStub('statistics', 'transferConditionExemptEntities', {
+      dsMockUtils.createQueryMock('statistics', 'transferConditionExemptEntities', {
         entries: [],
       });
 
@@ -501,7 +501,7 @@ describe('TransferRestrictionBase class', () => {
         NumberedPortfolio[]
       >;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
             args: {
@@ -528,7 +528,7 @@ describe('TransferRestrictionBase class', () => {
         NumberedPortfolio[]
       >;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
             args: {
@@ -568,7 +568,7 @@ describe('TransferRestrictionBase class', () => {
         NumberedPortfolio[]
       >;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
             args: {
@@ -594,7 +594,7 @@ describe('TransferRestrictionBase class', () => {
         NumberedPortfolio[]
       >;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
             args: {
@@ -621,7 +621,7 @@ describe('TransferRestrictionBase class', () => {
         NumberedPortfolio[]
       >;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
             args: {
@@ -653,7 +653,7 @@ describe('TransferRestrictionBase class', () => {
         NumberedPortfolio[]
       >;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
             args: {

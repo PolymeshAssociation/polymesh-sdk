@@ -78,7 +78,7 @@ describe('Subsidy class', () => {
 
       const expectedTransaction = 'mockTransaction' as unknown as PolymeshTransaction<void>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -98,7 +98,7 @@ describe('Subsidy class', () => {
 
       const expectedTransaction = 'mockTransaction' as unknown as PolymeshTransaction<void>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           { args: { ...args, subsidy, operation: AllowanceOperation.Set }, transformer: undefined },
           context,
@@ -122,7 +122,7 @@ describe('Subsidy class', () => {
 
       const expectedTransaction = 'mockTransaction' as unknown as PolymeshTransaction<void>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
             args: { ...args, subsidy, operation: AllowanceOperation.Increase },
@@ -149,7 +149,7 @@ describe('Subsidy class', () => {
 
       const expectedTransaction = 'mockTransaction' as unknown as PolymeshTransaction<void>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
             args: { ...args, subsidy, operation: AllowanceOperation.Decrease },

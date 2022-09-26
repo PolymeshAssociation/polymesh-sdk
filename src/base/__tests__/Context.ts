@@ -8,7 +8,7 @@ import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { claimsQuery, heartbeatQuery } from '~/middleware/queriesV2';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { createMockAccountId, getAtStub } from '~/testUtils/mocks/dataSources';
+import { createMockAccountId, getAtMock } from '~/testUtils/mocks/dataSources';
 import {
   ClaimType,
   CorporateActionKind,
@@ -67,7 +67,7 @@ describe('Context class', () => {
     dsMockUtils.setConstMock('system', 'ss58Prefix', {
       returnValue: dsMockUtils.createMockU8(new BigNumber(42)),
     });
-    dsMockUtils.createQueryStub('identity', 'didRecords', {
+    dsMockUtils.createQueryMock('identity', 'didRecords', {
       returnValue: dsMockUtils.createMockIdentityDidRecord({
         primaryKey: dsMockUtils.createMockOption(dsMockUtils.createMockAccountId('someDid')),
       }),
@@ -114,10 +114,10 @@ describe('Context class', () => {
     });
 
     beforeEach(() => {
-      dsMockUtils.createQueryStub('balances', 'totalIssuance', {
+      dsMockUtils.createQueryMock('balances', 'totalIssuance', {
         returnValue: dsMockUtils.createMockBalance(new BigNumber(100)),
       });
-      dsMockUtils.createQueryStub('system', 'blockHash', {
+      dsMockUtils.createQueryMock('system', 'blockHash', {
         returnValue: dsMockUtils.createMockHash('someBlockHash'),
       });
     });
@@ -307,7 +307,7 @@ describe('Context class', () => {
         }),
       });
 
-      dsMockUtils.createQueryStub('system', 'account', { returnValue });
+      dsMockUtils.createQueryMock('system', 'account', { returnValue });
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -336,7 +336,7 @@ describe('Context class', () => {
         }),
       });
 
-      dsMockUtils.createQueryStub('system', 'account', { returnValue });
+      dsMockUtils.createQueryMock('system', 'account', { returnValue });
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -366,7 +366,7 @@ describe('Context class', () => {
         }),
       });
 
-      dsMockUtils.createQueryStub('system', 'account').mockImplementation(async (_, cbFunc) => {
+      dsMockUtils.createQueryMock('system', 'account').mockImplementation(async (_, cbFunc) => {
         cbFunc(returnValue);
         return unsubCallback;
       });
@@ -407,7 +407,7 @@ describe('Context class', () => {
         })
       );
 
-      dsMockUtils.createQueryStub('relayer', 'subsidies', { returnValue });
+      dsMockUtils.createQueryMock('relayer', 'subsidies', { returnValue });
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -437,7 +437,7 @@ describe('Context class', () => {
         })
       );
 
-      dsMockUtils.createQueryStub('relayer', 'subsidies', { returnValue });
+      dsMockUtils.createQueryMock('relayer', 'subsidies', { returnValue });
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -458,7 +458,7 @@ describe('Context class', () => {
     it('should return null if the Account has no subsidizer', async () => {
       const returnValue = dsMockUtils.createMockOption();
 
-      dsMockUtils.createQueryStub('relayer', 'subsidies', { returnValue });
+      dsMockUtils.createQueryMock('relayer', 'subsidies', { returnValue });
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -481,7 +481,7 @@ describe('Context class', () => {
         })
       );
 
-      dsMockUtils.createQueryStub('relayer', 'subsidies').mockImplementation(async (_, cbFunc) => {
+      dsMockUtils.createQueryMock('relayer', 'subsidies').mockImplementation(async (_, cbFunc) => {
         cbFunc(returnValue);
         return unsubCallback;
       });
@@ -519,7 +519,7 @@ describe('Context class', () => {
 
     it('should return the signing Identity', async () => {
       const did = 'someDid';
-      dsMockUtils.createQueryStub('identity', 'didRecords', {
+      dsMockUtils.createQueryMock('identity', 'didRecords', {
         returnValue: dsMockUtils.createMockIdentityDidRecord({
           primaryKey: dsMockUtils.createMockOption(createMockAccountId(did)),
         }),
@@ -743,7 +743,7 @@ describe('Context class', () => {
     it('should return which DIDs in the input array are invalid', async () => {
       const inputDids = ['someDid', 'otherDid', 'invalidDid', 'otherInvalidDid'];
       /* eslint-disable @typescript-eslint/naming-convention */
-      dsMockUtils.createQueryStub('identity', 'didRecords', {
+      dsMockUtils.createQueryMock('identity', 'didRecords', {
         multi: [
           dsMockUtils.createMockOption(
             dsMockUtils.createMockIdentityDidRecord({
@@ -784,7 +784,7 @@ describe('Context class', () => {
     });
 
     it('should return the fees associated to the supplied transaction', async () => {
-      dsMockUtils.createQueryStub('protocolFee', 'coefficient', {
+      dsMockUtils.createQueryMock('protocolFee', 'coefficient', {
         returnValue: dsMockUtils.createMockPosRatio(new BigNumber(1), new BigNumber(2)),
       });
 
@@ -798,21 +798,21 @@ describe('Context class', () => {
       rawProtocolOp.eq = jest.fn();
       when(rawProtocolOp.eq).calledWith(rawProtocolOp).mockReturnValue(true);
 
-      const txTagToProtocolOpStub = jest
+      const txTagToProtocolOpSpy = jest
         .spyOn(utilsConversionModule, 'txTagToProtocolOp')
         .mockClear()
         .mockImplementation();
 
-      when(txTagToProtocolOpStub)
+      when(txTagToProtocolOpSpy)
         .calledWith(TxTags.asset.CreateAsset, context)
         .mockReturnValue(rawProtocolOp);
-      when(txTagToProtocolOpStub)
+      when(txTagToProtocolOpSpy)
         .calledWith(TxTags.asset.Freeze, context)
         .mockImplementation(() => {
           throw new Error('err');
         }); // transaction without fees
 
-      dsMockUtils.createQueryStub('protocolFee', 'baseFees', {
+      dsMockUtils.createQueryMock('protocolFee', 'baseFees', {
         entries: [tuple([rawProtocolOp], dsMockUtils.createMockBalance(new BigNumber(500000000)))],
       });
 
@@ -833,7 +833,7 @@ describe('Context class', () => {
 
       context.isArchiveNode = true;
       result = await context.getProtocolFees({ tags, blockHash: '0x000' });
-      expect(getAtStub()).toHaveBeenCalledTimes(1);
+      expect(getAtMock()).toHaveBeenCalledTimes(1);
       expect(result).toEqual(mockResult);
     });
   });
@@ -848,7 +848,7 @@ describe('Context class', () => {
     });
 
     it('should return a representation of the arguments of a transaction', async () => {
-      dsMockUtils.createQueryStub('protocolFee', 'coefficient', {
+      dsMockUtils.createQueryMock('protocolFee', 'coefficient', {
         returnValue: dsMockUtils.createMockPosRatio(new BigNumber(1), new BigNumber(2)),
       });
 
@@ -858,7 +858,7 @@ describe('Context class', () => {
         middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
-      dsMockUtils.createTxStub('asset', 'registerTicker', {
+      dsMockUtils.createTxMock('asset', 'registerTicker', {
         meta: {
           args: [
             {
@@ -877,7 +877,7 @@ describe('Context class', () => {
         },
       ]);
 
-      dsMockUtils.createTxStub('identity', 'addClaim', {
+      dsMockUtils.createTxMock('identity', 'addClaim', {
         meta: {
           args: [
             {
@@ -947,7 +947,7 @@ describe('Context class', () => {
         },
       ]);
 
-      dsMockUtils.createTxStub('identity', 'cddRegisterDid', {
+      dsMockUtils.createTxMock('identity', 'cddRegisterDid', {
         meta: {
           args: [
             {
@@ -968,7 +968,7 @@ describe('Context class', () => {
         },
       ]);
 
-      dsMockUtils.createTxStub('asset', 'createAsset', {
+      dsMockUtils.createTxMock('asset', 'createAsset', {
         meta: {
           args: [
             {
@@ -992,7 +992,7 @@ describe('Context class', () => {
         },
       ]);
 
-      dsMockUtils.createTxStub('asset', 'updateIdentifiers', {
+      dsMockUtils.createTxMock('asset', 'updateIdentifiers', {
         meta: {
           args: [
             {
@@ -1013,7 +1013,7 @@ describe('Context class', () => {
         },
       ]);
 
-      dsMockUtils.createTxStub('asset', 'setFundingRound', {
+      dsMockUtils.createTxMock('asset', 'setFundingRound', {
         meta: {
           args: [
             {
@@ -1033,7 +1033,7 @@ describe('Context class', () => {
         },
       ]);
 
-      dsMockUtils.createTxStub('asset', 'unfreeze', {
+      dsMockUtils.createTxMock('asset', 'unfreeze', {
         meta: {
           args: [
             {
@@ -1062,7 +1062,7 @@ describe('Context class', () => {
         },
       ]);
 
-      dsMockUtils.createTxStub('asset', 'claimClassicTicker', {
+      dsMockUtils.createTxMock('asset', 'claimClassicTicker', {
         meta: {
           args: [
             {
@@ -1159,7 +1159,7 @@ describe('Context class', () => {
         ],
       };
 
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.createApolloQueryMock(
         didsWithClaims({
           dids: [targetDid],
           trustedClaimIssuers: [targetDid],
@@ -1186,7 +1186,7 @@ describe('Context class', () => {
       expect(result.count).toEqual(new BigNumber(25));
       expect(result.next).toEqual(new BigNumber(1));
 
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.createApolloQueryMock(
         didsWithClaims({
           dids: undefined,
           trustedClaimIssuers: undefined,
@@ -1272,8 +1272,8 @@ describe('Context class', () => {
 
       dsMockUtils.throwOnMiddlewareQuery('No Middleware');
 
-      const entriesStub = jest.fn();
-      entriesStub.mockResolvedValue([
+      const entriesMock = jest.fn();
+      entriesMock.mockResolvedValue([
         tuple(
           { args: [claim1stKey] },
           {
@@ -1301,7 +1301,7 @@ describe('Context class', () => {
         ),
       ]);
 
-      dsMockUtils.createQueryStub('identity', 'claims').entries = entriesStub;
+      dsMockUtils.createQueryMock('identity', 'claims').entries = entriesMock;
 
       let result = await context.issuedClaims({
         targets: [targetDid],
@@ -1419,7 +1419,7 @@ describe('Context class', () => {
         ],
       };
 
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloV2QueryMock(
         claimsQuery(
           {
             dids: [targetDid],
@@ -1448,7 +1448,7 @@ describe('Context class', () => {
       expect(result.count).toEqual(new BigNumber(25));
       expect(result.next).toEqual(new BigNumber(2));
 
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloV2QueryMock(
         claimsQuery(
           {
             dids: undefined,
@@ -1535,8 +1535,8 @@ describe('Context class', () => {
         },
       ];
 
-      const entriesStub = jest.fn();
-      entriesStub.mockResolvedValue([
+      const entriesMock = jest.fn();
+      entriesMock.mockResolvedValue([
         tuple(
           { args: [claim1stKey] },
           {
@@ -1564,7 +1564,7 @@ describe('Context class', () => {
         ),
       ]);
 
-      dsMockUtils.createQueryStub('identity', 'claims').entries = entriesStub;
+      dsMockUtils.createQueryMock('identity', 'claims').entries = entriesMock;
 
       let result = await context.issuedClaimsV2({
         targets: [targetDid],
@@ -1661,7 +1661,7 @@ describe('Context class', () => {
         middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
-      dsMockUtils.createApolloQueryStub(fakeQuery, fakeResult);
+      dsMockUtils.createApolloQueryMock(fakeQuery, fakeResult);
 
       const res = await context.queryMiddleware(fakeQuery);
 
@@ -1716,7 +1716,7 @@ describe('Context class', () => {
         middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
-      dsMockUtils.createApolloV2QueryStub(fakeQuery, fakeResult);
+      dsMockUtils.createApolloV2QueryMock(fakeQuery, fakeResult);
 
       const res = await context.queryMiddlewareV2(fakeQuery);
 
@@ -1736,8 +1736,8 @@ describe('Context class', () => {
     it('should return the latest block', async () => {
       const blockNumber = new BigNumber(100);
 
-      const stub = dsMockUtils.createRpcStub('chain', 'subscribeFinalizedHeads');
-      stub.mockImplementation(async callback => {
+      const mock = dsMockUtils.createRpcMock('chain', 'subscribeFinalizedHeads');
+      mock.mockImplementation(async callback => {
         setImmediate(() =>
           // eslint-disable-next-line node/no-callback-literal
           callback({
@@ -1759,9 +1759,9 @@ describe('Context class', () => {
     });
 
     it('should throw any errors encountered while fetching', async () => {
-      const stub = dsMockUtils.createRpcStub('chain', 'subscribeFinalizedHeads');
+      const mock = dsMockUtils.createRpcMock('chain', 'subscribeFinalizedHeads');
       const err = new Error('Foo');
-      stub.mockImplementation(callback => {
+      mock.mockImplementation(callback => {
         setImmediate(() =>
           // eslint-disable-next-line node/no-callback-literal
           callback({})
@@ -1791,7 +1791,7 @@ describe('Context class', () => {
     it('should return the network version', async () => {
       const version = '1.0.0';
 
-      dsMockUtils.createRpcStub('system', 'version', {
+      dsMockUtils.createRpcMock('system', 'version', {
         returnValue: dsMockUtils.createMockText(version),
       });
 
@@ -1891,7 +1891,7 @@ describe('Context class', () => {
         middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
-      dsMockUtils.createApolloQueryStub(heartbeat(), true);
+      dsMockUtils.createApolloQueryMock(heartbeat(), true);
 
       const result = await context.isMiddlewareAvailable();
 
@@ -1929,7 +1929,7 @@ describe('Context class', () => {
         middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
-      dsMockUtils.createApolloV2QueryStub(heartbeatQuery(), true);
+      dsMockUtils.createApolloV2QueryMock(heartbeatQuery(), true);
 
       const result = await context.isMiddlewareV2Available();
 
@@ -2108,7 +2108,7 @@ describe('Context class', () => {
         dsMockUtils.createMockCAId({ ticker: rawTickers[1], localId: localIds[2] }),
       ];
 
-      dsMockUtils.createQueryStub('corporateAction', 'corporateActions', {
+      dsMockUtils.createQueryMock('corporateAction', 'corporateActions', {
         entries: [
           [[rawTickers[0], localIds[0]], corporateActions[0]],
           [[rawTickers[1], localIds[1]], corporateActions[1]],
@@ -2120,33 +2120,33 @@ describe('Context class', () => {
         dsMockUtils.createMockBytes('details2'),
         dsMockUtils.createMockBytes('details3'),
       ];
-      const corporateActionIdentifierToCaIdStub = jest.spyOn(
+      const corporateActionIdentifierToCaIdSpy = jest.spyOn(
         utilsConversionModule,
         'corporateActionIdentifierToCaId'
       );
-      when(corporateActionIdentifierToCaIdStub)
+      when(corporateActionIdentifierToCaIdSpy)
         .calledWith({ ticker: tickers[0], localId: new BigNumber(localIds[0]) }, context)
         .mockReturnValue(caIds[0]);
-      when(corporateActionIdentifierToCaIdStub)
+      when(corporateActionIdentifierToCaIdSpy)
         .calledWith({ ticker: tickers[1], localId: new BigNumber(localIds[1]) }, context)
         .mockReturnValue(caIds[1]);
-      when(corporateActionIdentifierToCaIdStub)
+      when(corporateActionIdentifierToCaIdSpy)
         .calledWith({ ticker: tickers[1], localId: new BigNumber(localIds[2]) }, context)
         .mockReturnValue(caIds[2]);
 
-      const detailsStub = dsMockUtils.createQueryStub('corporateAction', 'details');
-      when(detailsStub).calledWith(caIds[0]).mockResolvedValue(details[0]);
-      when(detailsStub).calledWith(caIds[1]).mockResolvedValue(details[1]);
-      when(detailsStub).calledWith(caIds[2]).mockResolvedValue(details[2]);
+      const detailsMock = dsMockUtils.createQueryMock('corporateAction', 'details');
+      when(detailsMock).calledWith(caIds[0]).mockResolvedValue(details[0]);
+      when(detailsMock).calledWith(caIds[1]).mockResolvedValue(details[1]);
+      when(detailsMock).calledWith(caIds[2]).mockResolvedValue(details[2]);
 
-      dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
+      dsMockUtils.createQueryMock('capitalDistribution', 'distributions', {
         multi: distributions,
       });
 
-      const stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
+      const stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
 
       tickers.forEach((ticker, index) =>
-        when(stringToTickerStub).calledWith(ticker, context).mockReturnValue(rawTickers[index])
+        when(stringToTickerSpy).calledWith(ticker, context).mockReturnValue(rawTickers[index])
       );
 
       const result = await context.getDividendDistributionsForAssets({
@@ -2233,7 +2233,7 @@ describe('Context class', () => {
         middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
-      when(dsMockUtils.getCreateTypeStub()).calledWith('Bytes', 'abc').mockReturnValue('abc');
+      when(dsMockUtils.getCreateTypeMock()).calledWith('Bytes', 'abc').mockReturnValue('abc');
 
       const result = context.createType('Bytes', 'abc');
       expect(result).toEqual('abc');
@@ -2246,7 +2246,7 @@ describe('Context class', () => {
         middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
-      dsMockUtils.getCreateTypeStub().mockImplementation(() => {
+      dsMockUtils.getCreateTypeMock().mockImplementation(() => {
         throw new Error('Could not create Polymesh type');
       });
 

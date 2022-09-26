@@ -79,11 +79,11 @@ describe('configureDividendDistribution procedure', () => {
   let mockContext: Mocked<Context>;
   let initiateCorporateActionAndDistributeTransaction: PolymeshTx<unknown[]>;
 
-  let stringToTickerStub: jest.SpyInstance;
-  let bigNumberToU64Stub: jest.SpyInstance;
-  let dateToMomentStub: jest.SpyInstance;
-  let bigNumberToBalanceStub: jest.SpyInstance;
-  let corporateActionParamsToMeshCorporateActionArgsStub: jest.SpyInstance;
+  let stringToTickerSpy: jest.SpyInstance;
+  let bigNumberToU64Spy: jest.SpyInstance;
+  let dateToMomentSpy: jest.SpyInstance;
+  let bigNumberToBalanceSpy: jest.SpyInstance;
+  let corporateActionParamsToMeshCorporateActionArgsSpy: jest.SpyInstance;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
@@ -140,33 +140,33 @@ describe('configureDividendDistribution procedure', () => {
       withholdingTax: [[taxWithholdings[0].identity, taxWithholdings[0].percentage]],
     });
 
-    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
-    bigNumberToU64Stub = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
-    dateToMomentStub = jest.spyOn(utilsConversionModule, 'dateToMoment');
-    bigNumberToBalanceStub = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
-    corporateActionParamsToMeshCorporateActionArgsStub = jest.spyOn(
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
+    dateToMomentSpy = jest.spyOn(utilsConversionModule, 'dateToMoment');
+    bigNumberToBalanceSpy = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
+    corporateActionParamsToMeshCorporateActionArgsSpy = jest.spyOn(
       utilsConversionModule,
       'corporateActionParamsToMeshCorporateActionArgs'
     );
   });
 
   beforeEach(() => {
-    initiateCorporateActionAndDistributeTransaction = dsMockUtils.createTxStub(
+    initiateCorporateActionAndDistributeTransaction = dsMockUtils.createTxMock(
       'corporateAction',
       'initiateCorporateActionAndDistribute'
     );
 
     mockContext = dsMockUtils.getContextInstance();
 
-    when(stringToTickerStub).calledWith(currency, mockContext).mockReturnValue(rawCurrency);
-    when(bigNumberToU64Stub)
+    when(stringToTickerSpy).calledWith(currency, mockContext).mockReturnValue(rawCurrency);
+    when(bigNumberToU64Spy)
       .calledWith(originPortfolio.id, mockContext)
       .mockReturnValue(rawPortfolioNumber);
-    when(dateToMomentStub).calledWith(paymentDate, mockContext).mockReturnValue(rawPaymentAt);
-    when(dateToMomentStub).calledWith(expiryDate, mockContext).mockReturnValue(rawExpiresAt);
-    when(bigNumberToBalanceStub).calledWith(perShare, mockContext).mockReturnValue(rawPerShare);
-    when(bigNumberToBalanceStub).calledWith(maxAmount, mockContext).mockReturnValue(rawAmount);
-    when(corporateActionParamsToMeshCorporateActionArgsStub)
+    when(dateToMomentSpy).calledWith(paymentDate, mockContext).mockReturnValue(rawPaymentAt);
+    when(dateToMomentSpy).calledWith(expiryDate, mockContext).mockReturnValue(rawExpiresAt);
+    when(bigNumberToBalanceSpy).calledWith(perShare, mockContext).mockReturnValue(rawPerShare);
+    when(bigNumberToBalanceSpy).calledWith(maxAmount, mockContext).mockReturnValue(rawAmount);
+    when(corporateActionParamsToMeshCorporateActionArgsSpy)
       .calledWith(
         {
           ticker,
@@ -181,7 +181,7 @@ describe('configureDividendDistribution procedure', () => {
         mockContext
       )
       .mockReturnValue(rawCorporateActionArgs);
-    when(corporateActionParamsToMeshCorporateActionArgsStub)
+    when(corporateActionParamsToMeshCorporateActionArgsSpy)
       .calledWith(
         {
           ticker,
@@ -197,7 +197,7 @@ describe('configureDividendDistribution procedure', () => {
       )
       .mockReturnValue(rawCorporateActionArgs);
 
-    dsMockUtils.createQueryStub('corporateAction', 'maxDetailsLength', {
+    dsMockUtils.createQueryMock('corporateAction', 'maxDetailsLength', {
       returnValue: dsMockUtils.createMockU32(new BigNumber(100)),
     });
   });
@@ -369,7 +369,7 @@ describe('configureDividendDistribution procedure', () => {
       { portfolio: originPortfolio }
     );
 
-    dsMockUtils.createQueryStub('corporateAction', 'maxDetailsLength', {
+    dsMockUtils.createQueryMock('corporateAction', 'maxDetailsLength', {
       returnValue: dsMockUtils.createMockU32(new BigNumber(1)),
     });
 
@@ -606,7 +606,7 @@ describe('configureDividendDistribution procedure', () => {
   });
 
   describe('dividendDistributionResolver', () => {
-    const filterEventRecordsStub = jest.spyOn(utilsInternalModule, 'filterEventRecords');
+    const filterEventRecordsSpy = jest.spyOn(utilsInternalModule, 'filterEventRecords');
     const id = new BigNumber(1);
     const portfolioNumber = new BigNumber(3);
     const did = 'someDid';
@@ -650,16 +650,16 @@ describe('configureDividendDistribution procedure', () => {
       });
       /* eslint-enable @typescript-eslint/naming-convention */
 
-      dsMockUtils.createQueryStub('corporateAction', 'corporateActions', {
+      dsMockUtils.createQueryMock('corporateAction', 'corporateActions', {
         returnValue: dsMockUtils.createMockOption(rawCorporateAction),
       });
-      dsMockUtils.createQueryStub('corporateAction', 'details', {
+      dsMockUtils.createQueryMock('corporateAction', 'details', {
         returnValue: dsMockUtils.createMockBytes(description),
       });
     });
 
     beforeEach(() => {
-      filterEventRecordsStub.mockReturnValue([
+      filterEventRecordsSpy.mockReturnValue([
         dsMockUtils.createMockIEvent([
           'data',
           dsMockUtils.createMockCAId({
@@ -672,7 +672,7 @@ describe('configureDividendDistribution procedure', () => {
     });
 
     afterEach(() => {
-      filterEventRecordsStub.mockReset();
+      filterEventRecordsSpy.mockReset();
     });
 
     it('should return the new DividendDistribution', async () => {

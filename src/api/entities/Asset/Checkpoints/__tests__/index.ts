@@ -65,7 +65,7 @@ describe('Checkpoints class', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Checkpoint>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args: { ticker }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -104,11 +104,11 @@ describe('Checkpoints class', () => {
     });
 
     it('should return all created checkpoints with their timestamps and total supply', async () => {
-      const stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
+      const stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
 
-      dsMockUtils.createQueryStub('checkpoint', 'totalSupply');
+      dsMockUtils.createQueryMock('checkpoint', 'totalSupply');
 
-      const requestPaginatedStub = jest.spyOn(utilsInternalModule, 'requestPaginated');
+      const requestPaginatedSpy = jest.spyOn(utilsInternalModule, 'requestPaginated');
 
       const totalSupply = [
         {
@@ -123,7 +123,7 @@ describe('Checkpoints class', () => {
         },
       ];
 
-      when(stringToTickerStub).calledWith(ticker, context).mockReturnValue(rawTicker);
+      when(stringToTickerSpy).calledWith(ticker, context).mockReturnValue(rawTicker);
 
       const rawTotalSupply = totalSupply.map(({ checkpointId, balance }) => ({
         checkpointId: dsMockUtils.createMockU64(checkpointId),
@@ -134,10 +134,10 @@ describe('Checkpoints class', () => {
         tuple({ args: [rawTicker, checkpointId] } as unknown as StorageKey, balance)
       );
 
-      requestPaginatedStub.mockResolvedValue({ entries: totalSupplyEntries, lastKey: null });
+      requestPaginatedSpy.mockResolvedValue({ entries: totalSupplyEntries, lastKey: null });
 
-      const timestampsStub = dsMockUtils.createQueryStub('checkpoint', 'timestamps');
-      timestampsStub.multi.mockResolvedValue(
+      const timestampsMock = dsMockUtils.createQueryMock('checkpoint', 'timestamps');
+      timestampsMock.multi.mockResolvedValue(
         totalSupply.map(({ moment }) =>
           dsMockUtils.createMockMoment(new BigNumber(moment.getTime()))
         )

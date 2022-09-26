@@ -26,8 +26,8 @@ jest.mock(
 
 describe('setAssetDocuments procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: jest.SpyInstance<Ticker, [string, Context]>;
-  let assetDocumentToDocumentStub: jest.SpyInstance<
+  let stringToTickerSpy: jest.SpyInstance<Ticker, [string, Context]>;
+  let assetDocumentToDocumentSpy: jest.SpyInstance<
     PolymeshPrimitivesDocument,
     [AssetDocument, Context]
   >;
@@ -50,9 +50,9 @@ describe('setAssetDocuments procedure', () => {
     });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
     jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
-    assetDocumentToDocumentStub = jest.spyOn(utilsConversionModule, 'assetDocumentToDocument');
+    assetDocumentToDocumentSpy = jest.spyOn(utilsConversionModule, 'assetDocumentToDocument');
     ticker = 'SOME_TICKER';
     documents = [
       {
@@ -93,18 +93,18 @@ describe('setAssetDocuments procedure', () => {
   let addDocumentsTransaction: PolymeshTx<[Vec<Document>, Ticker]>;
 
   beforeEach(() => {
-    dsMockUtils.createQueryStub('asset', 'assetDocuments', {
+    dsMockUtils.createQueryMock('asset', 'assetDocuments', {
       entries: [documentEntries[0]],
     });
 
-    removeDocumentsTransaction = dsMockUtils.createTxStub('asset', 'removeDocuments');
-    addDocumentsTransaction = dsMockUtils.createTxStub('asset', 'addDocuments');
+    removeDocumentsTransaction = dsMockUtils.createTxMock('asset', 'removeDocuments');
+    addDocumentsTransaction = dsMockUtils.createTxMock('asset', 'addDocuments');
 
     mockContext = dsMockUtils.getContextInstance();
 
-    when(stringToTickerStub).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
     documents.forEach((doc, index) => {
-      when(assetDocumentToDocumentStub)
+      when(assetDocumentToDocumentSpy)
         .calledWith(doc, mockContext)
         .mockReturnValue(rawDocuments[index]);
     });
@@ -236,7 +236,7 @@ describe('setAssetDocuments procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
-      dsMockUtils.createQueryStub('asset', 'assetDocuments', {
+      dsMockUtils.createQueryMock('asset', 'assetDocuments', {
         entries: documentEntries,
       });
 

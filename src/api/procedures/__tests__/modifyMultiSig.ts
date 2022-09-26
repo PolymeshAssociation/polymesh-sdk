@@ -23,8 +23,8 @@ jest.mock(
 describe('modifyMultiSig procedure', () => {
   let mockContext: Mocked<Context>;
   let rawAccountId: AccountId;
-  let stringToAccountIdStub: jest.SpyInstance<AccountId, [string, Context]>;
-  let signerToSignatoryStub: jest.SpyInstance;
+  let stringToAccountIdSpy: jest.SpyInstance<AccountId, [string, Context]>;
+  let signerToSignatorySpy: jest.SpyInstance;
 
   const oldSigner1 = getAccountInstance({ address: 'abc' });
   const oldSigner2 = getAccountInstance({ address: 'def' });
@@ -35,10 +35,10 @@ describe('modifyMultiSig procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToAccountIdStub = jest
+    stringToAccountIdSpy = jest
       .spyOn(utilsConversionModule, 'stringToAccountId')
       .mockImplementation();
-    signerToSignatoryStub = jest
+    signerToSignatorySpy = jest
       .spyOn(utilsConversionModule, 'signerToSignatory')
       .mockImplementation();
   });
@@ -51,14 +51,14 @@ describe('modifyMultiSig procedure', () => {
     });
     rawAccountId = dsMockUtils.createMockAccountId(DUMMY_ACCOUNT_ID);
     mockContext = dsMockUtils.getContextInstance();
-    when(stringToAccountIdStub)
+    when(stringToAccountIdSpy)
       .calledWith(DUMMY_ACCOUNT_ID, mockContext)
       .mockReturnValue(rawAccountId);
 
-    when(signerToSignatoryStub).calledWith(oldSigner1, mockContext).mockReturnValue('oldOne');
-    when(signerToSignatoryStub).calledWith(oldSigner2, mockContext).mockReturnValue('oldTwo');
-    when(signerToSignatoryStub).calledWith(newSigner1, mockContext).mockReturnValue('newOne');
-    when(signerToSignatoryStub).calledWith(newSigner2, mockContext).mockReturnValue('newTwo');
+    when(signerToSignatorySpy).calledWith(oldSigner1, mockContext).mockReturnValue('oldOne');
+    when(signerToSignatorySpy).calledWith(oldSigner2, mockContext).mockReturnValue('oldTwo');
+    when(signerToSignatorySpy).calledWith(newSigner1, mockContext).mockReturnValue('newOne');
+    when(signerToSignatorySpy).calledWith(newSigner2, mockContext).mockReturnValue('newTwo');
   });
 
   afterEach(() => {
@@ -160,8 +160,8 @@ describe('modifyMultiSig procedure', () => {
       signers: [newSigner1, newSigner2],
     };
 
-    const addTransaction = dsMockUtils.createTxStub('multiSig', 'addMultisigSignersViaCreator');
-    const removeTransaction = dsMockUtils.createTxStub(
+    const addTransaction = dsMockUtils.createTxMock('multiSig', 'addMultisigSignersViaCreator');
+    const removeTransaction = dsMockUtils.createTxMock(
       'multiSig',
       'removeMultisigSignersViaCreator'
     );
@@ -202,10 +202,10 @@ describe('modifyMultiSig procedure', () => {
       signers: [oldSigner1, oldSigner2, newSigner1, newSigner2],
     };
 
-    const addTransaction = dsMockUtils.createTxStub('multiSig', 'addMultisigSignersViaCreator');
+    const addTransaction = dsMockUtils.createTxMock('multiSig', 'addMultisigSignersViaCreator');
 
-    when(signerToSignatoryStub).calledWith(newSigner1, mockContext).mockReturnValue('newOne');
-    when(signerToSignatoryStub).calledWith(newSigner2, mockContext).mockReturnValue('newTwo');
+    when(signerToSignatorySpy).calledWith(newSigner1, mockContext).mockReturnValue('newOne');
+    when(signerToSignatorySpy).calledWith(newSigner2, mockContext).mockReturnValue('newTwo');
 
     const proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void, ModifyMultiSigStorage>(
       mockContext,
@@ -239,7 +239,7 @@ describe('modifyMultiSig procedure', () => {
       signers: [oldSigner1],
     };
 
-    const removeTransaction = dsMockUtils.createTxStub(
+    const removeTransaction = dsMockUtils.createTxMock(
       'multiSig',
       'removeMultisigSignersViaCreator'
     );

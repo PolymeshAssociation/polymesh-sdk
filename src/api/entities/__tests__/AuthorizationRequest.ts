@@ -88,7 +88,7 @@ describe('AuthorizationRequest class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -124,7 +124,7 @@ describe('AuthorizationRequest class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -160,7 +160,7 @@ describe('AuthorizationRequest class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -191,7 +191,7 @@ describe('AuthorizationRequest class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -225,7 +225,7 @@ describe('AuthorizationRequest class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -261,7 +261,7 @@ describe('AuthorizationRequest class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -292,7 +292,7 @@ describe('AuthorizationRequest class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -329,7 +329,7 @@ describe('AuthorizationRequest class', () => {
 
     const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-    when(procedureMockUtils.getPrepareStub())
+    when(procedureMockUtils.getPrepareMock())
       .calledWith({ args, transformer: undefined }, context, {})
       .mockResolvedValue(expectedTransaction);
 
@@ -370,12 +370,12 @@ describe('AuthorizationRequest class', () => {
         context
       );
 
-      dsMockUtils.createQueryStub('identity', 'authorizations', {
+      dsMockUtils.createQueryMock('identity', 'authorizations', {
         returnValue: dsMockUtils.createMockOption(),
       });
       await expect(authorizationRequest.exists()).resolves.toBe(false);
 
-      dsMockUtils.createQueryStub('identity', 'authorizations', {
+      dsMockUtils.createQueryMock('identity', 'authorizations', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockAuthorization({
             authId: new BigNumber(1),

@@ -236,7 +236,7 @@ function createApolloClient(): Mocked<Mutable<ApolloClient<NormalizedCacheObject
   } as unknown as Mocked<Mutable<ApolloClient<NormalizedCacheObject>>>;
 }
 
-let apolloConstructorStub: jest.Mock;
+let apolloConstructorMock: jest.Mock;
 
 /**
  * Creates mock websocket class. Contains additional methods for tests to control it
@@ -246,14 +246,14 @@ export class MockWebSocket {
    * @hidden
    */
   onopen(): void {
-    // stub for onopen
+    // mock for onopen
   }
 
   /**
    * @hidden
    */
   onclose(): void {
-    // stub for onclose
+    // mock for onclose
   }
 
   /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -261,21 +261,21 @@ export class MockWebSocket {
    * @hidden
    */
   onerror(_err: Error): void {
-    // stub for onerror
+    // mock for onerror
   }
 
   /**
    * @hidden
    */
   onmessage(_msg: Record<string, unknown>): void {
-    // stub for onmessage
+    // mock for onmessage
   }
 
   /**
    * @hidden
    */
   close(): void {
-    // stub for close
+    // mock for close
   }
 
   /**
@@ -333,7 +333,7 @@ function createWebSocket(): MockWebSocket {
   return new MockWebSocket();
 }
 
-let webSocketConstructorStub: jest.Mock;
+let webSocketConstructorMock: jest.Mock;
 
 export type MockContext = Mocked<Context>;
 
@@ -355,7 +355,7 @@ const MockApolloClientClass = class {
    * @hidden
    */
   public constructor() {
-    return apolloConstructorStub();
+    return apolloConstructorMock();
   }
 };
 
@@ -373,31 +373,31 @@ const MockWebSocketClass = class {
    * @hidden
    */
   public constructor() {
-    return webSocketConstructorStub();
+    return webSocketConstructorMock();
   }
 };
 
-let apiPromiseCreateStub: jest.Mock;
+let apiPromiseCreateMock: jest.Mock;
 
 const MockApiPromiseClass = class {
   /**
    * @hidden
    */
-  public static create = apiPromiseCreateStub;
+  public static create = apiPromiseCreateMock;
 };
 
 const MockWsProviderClass = class {};
 
-let contextCreateStub: jest.Mock;
+let contextCreateMock: jest.Mock;
 
 const MockContextClass = class {
   /**
    * @hidden
    */
-  public static create = contextCreateStub;
+  public static create = contextCreateMock;
 };
 
-let errorStub: jest.Mock;
+let errorMock: jest.Mock;
 
 type StatusCallback = (receipt: ISubmittableResult) => void;
 
@@ -455,7 +455,7 @@ interface SigningManagerOptions {
   getExternalSigner?: PolkadotSigner | null;
 }
 
-export interface StubQuery {
+export interface MockQuery {
   entries: jest.Mock;
   entriesAt: jest.Mock;
   entriesPaged: jest.Mock;
@@ -464,7 +464,7 @@ export interface StubQuery {
   size: jest.Mock;
 }
 
-export interface StubRpc {
+export interface MockRpc {
   raw: jest.Mock;
 }
 
@@ -636,7 +636,7 @@ let constsModule = {} as Consts;
 
 let rpcModule = {} as DecoratedRpc<any, any>;
 
-let queryMultiStub = jest.fn();
+let queryMultiMock = jest.fn();
 
 const defaultContextOptions: ContextOptions = {
   did: 'someDid',
@@ -816,8 +816,8 @@ function configureContext(opts: ContextOptions): void {
   const getNonce = jest.fn();
   getNonce.mockReturnValue(nonce);
 
-  const queryStub = mockInstanceContainer.apolloInstance.query;
-  const queryStubV2 = mockInstanceContainer.apolloInstanceV2.query;
+  const queryMock = mockInstanceContainer.apolloInstance.query;
+  const queryMockV2 = mockInstanceContainer.apolloInstanceV2.query;
   const contextInstance = {
     signingAddress,
     nonce,
@@ -838,8 +838,8 @@ function configureContext(opts: ContextOptions): void {
     getExternalSigner: jest.fn().mockReturnValue(opts.getExternalSigner),
     polymeshApi: mockInstanceContainer.apiInstance,
     middlewareApi: mockInstanceContainer.apolloInstance,
-    queryMiddleware: jest.fn().mockImplementation(query => queryStub(query)),
-    queryMiddlewareV2: jest.fn().mockImplementation(query => queryStubV2(query)),
+    queryMiddleware: jest.fn().mockImplementation(query => queryMock(query)),
+    queryMiddlewareV2: jest.fn().mockImplementation(query => queryMockV2(query)),
     middlewareApiV2: mockInstanceContainer.apolloInstanceV2,
     getInvalidDids: jest.fn().mockResolvedValue(opts.invalidDids),
     getProtocolFees: jest.fn().mockResolvedValue(opts.transactionFees),
@@ -873,14 +873,14 @@ function configureContext(opts: ContextOptions): void {
 
   Object.assign(mockInstanceContainer.contextInstance, contextInstance);
 
-  MockContextClass.create = contextCreateStub.mockResolvedValue(contextInstance);
+  MockContextClass.create = contextCreateMock.mockResolvedValue(contextInstance);
 }
 
 /**
  * @hidden
  */
 function initContext(opts?: ContextOptions): void {
-  contextCreateStub = jest.fn();
+  contextCreateMock = jest.fn();
 
   contextOptions = { ...defaultContextOptions, ...opts };
 
@@ -945,12 +945,12 @@ function updateConsts(mod?: Consts): void {
 /**
  * @hidden
  */
-function updateQueryMulti(stub?: jest.Mock): void {
-  const updateTo = stub || queryMultiStub;
+function updateQueryMulti(mock?: jest.Mock): void {
+  const updateTo = mock || queryMultiMock;
 
-  queryMultiStub = updateTo;
+  queryMultiMock = updateTo;
 
-  mockInstanceContainer.apiInstance.queryMulti = queryMultiStub;
+  mockInstanceContainer.apiInstance.queryMulti = queryMultiMock;
 }
 
 /**
@@ -992,9 +992,9 @@ function initConsts(): void {
  * Mock queryMulti
  */
 function initQueryMulti(): void {
-  const stub = jest.fn();
+  const mock = jest.fn();
 
-  updateQueryMulti(stub);
+  updateQueryMulti(mock);
 }
 
 /**
@@ -1014,8 +1014,8 @@ function initApi(): void {
   mockInstanceContainer.apiInstance.at = jest
     .fn()
     .mockResolvedValue(mockInstanceContainer.apiInstance);
-  apiPromiseCreateStub = jest.fn();
-  MockApiPromiseClass.create = apiPromiseCreateStub.mockResolvedValue(
+  apiPromiseCreateMock = jest.fn();
+  MockApiPromiseClass.create = apiPromiseCreateMock.mockResolvedValue(
     mockInstanceContainer.apiInstance
   );
 }
@@ -1091,12 +1091,12 @@ export function initMocks(opts?: {
   initSigningManager(opts?.signingManagerOptions);
 
   // Apollo
-  apolloConstructorStub = jest.fn().mockReturnValue(mockInstanceContainer.apolloInstance);
+  apolloConstructorMock = jest.fn().mockReturnValue(mockInstanceContainer.apolloInstance);
 
-  webSocketConstructorStub = jest.fn().mockReturnValue(mockInstanceContainer.webSocketInstance);
+  webSocketConstructorMock = jest.fn().mockReturnValue(mockInstanceContainer.webSocketInstance);
 
   txMocksData.clear();
-  errorStub = jest.fn().mockImplementation(() => {
+  errorMock = jest.fn().mockImplementation(() => {
     throw new Error('Error');
   });
 }
@@ -1125,14 +1125,14 @@ export function reset(): void {
 
 /**
  * @hidden
- * Create and returns a mocked transaction. Each call will create a new version of the stub
+ * Create and returns a mocked transaction. Each call will create a new version of the mock
  *
  * @param mod - name of the module
  * @param tx - name of the transaction function
  * @param autoResolve - if set to a status, the transaction will resolve immediately with that status.
  *  If set to false, the transaction lifecycle will be controlled by {@link updateTxStatus}
  */
-export function createTxStub<
+export function createTxMock<
   ModuleName extends keyof Extrinsics,
   TransactionName extends keyof Extrinsics[ModuleName]
 >(
@@ -1203,40 +1203,40 @@ export function createTxStub<
 
 /**
  * @hidden
- * Create and return an apollo query stub
+ * Create and return an apollo query mock
  *
  * @param query - apollo document node
  * @param returnValue
  */
-export function createApolloQueryStub(query: GraphqlQuery<any>, returnData: unknown): jest.Mock {
-  const { query: stub } = mockInstanceContainer.apolloInstance;
+export function createApolloQueryMock(query: GraphqlQuery<any>, returnData: unknown): jest.Mock {
+  const { query: mock } = mockInstanceContainer.apolloInstance;
 
-  when(stub)
+  when(mock)
     .calledWith(query)
     .mockResolvedValue({
       data: returnData,
     } as any);
 
-  return stub;
+  return mock;
 }
 
 /**
  * @hidden
- * Create and return an apollo query stub
+ * Create and return an apollo query mock
  *
  * @param query - apollo document node
  * @param returnValue
  */
-export function createApolloV2QueryStub(query: GraphqlQuery<any>, returnData: unknown): jest.Mock {
-  const { query: stub } = mockInstanceContainer.apolloInstanceV2;
+export function createApolloV2QueryMock(query: GraphqlQuery<any>, returnData: unknown): jest.Mock {
+  const { query: mock } = mockInstanceContainer.apolloInstanceV2;
 
-  when(stub)
+  when(mock)
     .calledWith(query)
     .mockResolvedValue({
       data: returnData,
     } as any);
 
-  return stub;
+  return mock;
 }
 
 /**
@@ -1247,26 +1247,26 @@ function mockQueries(
   queries: { query: GraphqlQuery<any>; returnData: unknown }[],
   instance: Mocked<Mutable<ApolloClient<NormalizedCacheObject>>>
 ): jest.Mock {
-  const { query: stub } = instance;
+  const { query: mock } = instance;
 
   queries.forEach(({ query, returnData: data }) => {
-    when(stub)
+    when(mock)
       .calledWith(query)
       .mockResolvedValue({
         data,
       } as any);
   });
 
-  return stub;
+  return mock;
 }
 
 /**
  * @hidden
- * Create and return an apollo stub for multiple queries
+ * Create and return an apollo mock for multiple queries
  *
- * @param queries - query and returnData for each stubbed query
+ * @param queries - query and returnData for each mocked query
  */
-export function createApolloMultipleQueriesStub(
+export function createApolloMultipleQueriesMock(
   queries: { query: GraphqlQuery<any>; returnData: unknown }[]
 ): jest.Mock {
   const instance = mockInstanceContainer.apolloInstance;
@@ -1276,11 +1276,11 @@ export function createApolloMultipleQueriesStub(
 
 /**
  * @hidden
- * Create and return an apollo stub for multiple V2 queries
+ * Create and return an apollo mock for multiple V2 queries
  *
- * @param queries - query and returnData for each stubbed query
+ * @param queries - query and returnData for each mocked query
  */
-export function createApolloMultipleV2QueriesStub(
+export function createApolloMultipleV2QueriesMock(
   queries: { query: GraphqlQuery<any>; returnData: unknown }[]
 ): jest.Mock {
   const instance = mockInstanceContainer.apolloInstanceV2;
@@ -1290,12 +1290,12 @@ export function createApolloMultipleV2QueriesStub(
 
 /**
  * @hidden
- * Create and return a query stub
+ * Create and return a query mock
  *
  * @param mod - name of the module
  * @param query - name of the query function
  */
-export function createQueryStub<
+export function createQueryMock<
   ModuleName extends keyof Queries,
   QueryName extends keyof Queries[ModuleName]
 >(
@@ -1307,7 +1307,7 @@ export function createQueryStub<
     multi?: unknown;
     size?: BigNumber;
   }
-): Queries[ModuleName][QueryName] & jest.Mock & StubQuery {
+): Queries[ModuleName][QueryName] & jest.Mock & MockQuery {
   let runtimeModule = queryModule[mod];
 
   if (!runtimeModule) {
@@ -1315,23 +1315,23 @@ export function createQueryStub<
     queryModule[mod] = runtimeModule;
   }
 
-  type QueryStub = Queries[ModuleName][QueryName] & jest.Mock & StubQuery;
+  type QueryMock = Queries[ModuleName][QueryName] & jest.Mock & MockQuery;
 
-  let stub: QueryStub;
+  let mock: QueryMock;
 
   if (!runtimeModule[query]) {
-    stub = jest.fn() as unknown as QueryStub;
-    stub.entries = jest.fn();
-    stub.entriesPaged = jest.fn();
-    stub.at = jest.fn();
-    stub.multi = jest.fn();
-    stub.size = jest.fn();
-    runtimeModule[query] = stub;
+    mock = jest.fn() as unknown as QueryMock;
+    mock.entries = jest.fn();
+    mock.entriesPaged = jest.fn();
+    mock.at = jest.fn();
+    mock.multi = jest.fn();
+    mock.size = jest.fn();
+    runtimeModule[query] = mock;
 
     updateQuery();
   } else {
     const instance = mockInstanceContainer.apiInstance;
-    stub = instance.query[mod][query] as QueryStub;
+    mock = instance.query[mod][query] as QueryMock;
   }
 
   const entries = opts?.entries ?? [];
@@ -1340,34 +1340,34 @@ export function createQueryStub<
     { args: keys, toHex: (): string => `key${index}` },
     value,
   ]);
-  stub.entries.mockResolvedValue(entryResults);
-  stub.entriesPaged.mockResolvedValue(entryResults);
+  mock.entries.mockResolvedValue(entryResults);
+  mock.entriesPaged.mockResolvedValue(entryResults);
 
   if (opts?.multi) {
-    stub.multi.mockResolvedValue(opts.multi);
+    mock.multi.mockResolvedValue(opts.multi);
   }
   if (typeof opts?.size !== 'undefined') {
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
-    stub.size.mockResolvedValue(createMockU64(new BigNumber(opts.size)));
+    mock.size.mockResolvedValue(createMockU64(new BigNumber(opts.size)));
   }
   if (opts?.returnValue) {
-    stub.mockResolvedValue(opts.returnValue);
-    stub.at.mockResolvedValue(opts.returnValue);
+    mock.mockResolvedValue(opts.returnValue);
+    mock.at.mockResolvedValue(opts.returnValue);
   }
 
-  return stub;
+  return mock;
 }
 
 let count = 0;
 
 /**
  * @hidden
- * Create and return a rpc stub
+ * Create and return a rpc mock
  *
  * @param mod - name of the module
  * @param rpc - name of the rpc function
  */
-export function createRpcStub<
+export function createRpcMock<
   ModuleName extends keyof Rpcs,
   RpcName extends keyof Rpcs[ModuleName]
 >(
@@ -1383,27 +1383,27 @@ export function createRpcStub<
     runtimeModule = rpcModule[mod] = {};
   }
 
-  type RpcStub = Rpcs[ModuleName][RpcName] & jest.Mock & StubRpc;
+  type RpcMock = Rpcs[ModuleName][RpcName] & jest.Mock & MockRpc;
 
-  let stub: RpcStub;
+  let mock: RpcMock;
 
   if (!runtimeModule[rpc]) {
-    stub = jest.fn() as unknown as RpcStub;
-    stub.raw = jest.fn();
-    runtimeModule[rpc] = stub;
+    mock = jest.fn() as unknown as RpcMock;
+    mock.raw = jest.fn();
+    runtimeModule[rpc] = mock;
     updateRpc();
   } else {
     const instance = mockInstanceContainer.apiInstance;
-    stub = instance.rpc[mod][rpc] as RpcStub;
+    mock = instance.rpc[mod][rpc] as RpcMock;
   }
 
   if (opts?.returnValue) {
-    stub.mockResolvedValue(opts.returnValue);
+    mock.mockResolvedValue(opts.returnValue);
   }
 
-  (stub as any).count = count++;
+  (mock as any).count = count++;
 
-  return stub;
+  return mock;
 }
 
 /**
@@ -1444,8 +1444,8 @@ export function setConstMock<
 /**
  * @hidden
  */
-export function getQueryMultiStub(): jest.Mock {
-  return queryMultiStub;
+export function getQueryMultiMock(): jest.Mock {
+  return queryMultiMock;
 }
 
 /**
@@ -1530,7 +1530,7 @@ export function throwOnMiddlewareV2Query(err?: unknown): void {
  * Make calls to `Context.create` throw an error
  */
 export function throwOnContextCreation(): void {
-  MockContextClass.create = errorStub;
+  MockContextClass.create = errorMock;
 }
 
 /**
@@ -1542,7 +1542,7 @@ export function throwOnApiCreation(error?: unknown): void {
     ? jest.fn().mockImplementation(() => {
         throw error;
       })
-    : errorStub;
+    : errorMock;
 }
 
 /**
@@ -1595,17 +1595,17 @@ export function getMiddlewareApiV2(): ApolloClient<NormalizedCacheObject> &
 
 /**
  * @hidden
- * Retrieve the stub of the createType method
+ * Retrieve the mock of the createType method
  */
-export function getCreateTypeStub(): jest.Mock {
+export function getCreateTypeMock(): jest.Mock {
   return mockInstanceContainer.apiInstance.createType as jest.Mock;
 }
 
 /**
  * @hidden
- * Retrieve the stub of the at method
+ * Retrieve the mock of the at method
  */
-export function getAtStub(): jest.Mock {
+export function getAtMock(): jest.Mock {
   return mockInstanceContainer.apiInstance.at as jest.Mock;
 }
 
@@ -1622,10 +1622,10 @@ export function getContextInstance(opts?: ContextOptions): MockContext {
 
 /**
  * @hidden
- * Retrieve the stub of the `Context.create` method
+ * Retrieve the mock of the `Context.create` method
  */
-export function getContextCreateStub(): jest.Mock {
-  return contextCreateStub;
+export function getContextCreateMock(): jest.Mock {
+  return contextCreateMock;
 }
 
 /**

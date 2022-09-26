@@ -20,7 +20,7 @@ jest.mock(
 
 describe('linkCaDocs procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: jest.SpyInstance<Ticker, [string, Context]>;
+  let stringToTickerSpy: jest.SpyInstance<Ticker, [string, Context]>;
   let ticker: string;
   let id: BigNumber;
   let documents: AssetDocument[];
@@ -35,7 +35,7 @@ describe('linkCaDocs procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
     ticker = 'SOME_TICKER';
     id = new BigNumber(1);
     documents = [
@@ -83,15 +83,15 @@ describe('linkCaDocs procedure', () => {
   let linkCaDocTransaction: PolymeshTx<[Vec<Document>, Ticker]>;
 
   beforeEach(() => {
-    dsMockUtils.createQueryStub('asset', 'assetDocuments', {
+    dsMockUtils.createQueryMock('asset', 'assetDocuments', {
       entries: [documentEntries[0], documentEntries[1]],
     });
 
-    linkCaDocTransaction = dsMockUtils.createTxStub('corporateAction', 'linkCaDoc');
+    linkCaDocTransaction = dsMockUtils.createTxMock('corporateAction', 'linkCaDoc');
 
     mockContext = dsMockUtils.getContextInstance();
 
-    when(stringToTickerStub).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
   });
 
   afterEach(() => {

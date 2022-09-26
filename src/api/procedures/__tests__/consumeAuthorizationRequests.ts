@@ -28,9 +28,9 @@ jest.mock(
 
 describe('consumeAuthorizationRequests procedure', () => {
   let mockContext: Mocked<Context>;
-  let signerValueToSignatoryStub: jest.SpyInstance<Signatory, [SignerValue, Context]>;
-  let bigNumberToU64Stub: jest.SpyInstance<u64, [BigNumber, Context]>;
-  let booleanToBoolStub: jest.SpyInstance<bool, [boolean, Context]>;
+  let signerValueToSignatorySpy: jest.SpyInstance<Signatory, [SignerValue, Context]>;
+  let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
+  let booleanToBoolSpy: jest.SpyInstance<bool, [boolean, Context]>;
   let authParams: {
     authId: BigNumber;
     expiry: Date | null;
@@ -53,11 +53,11 @@ describe('consumeAuthorizationRequests procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    signerValueToSignatoryStub = jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
-    bigNumberToU64Stub = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
-    booleanToBoolStub = jest.spyOn(utilsConversionModule, 'booleanToBool');
+    signerValueToSignatorySpy = jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
+    bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
+    booleanToBoolSpy = jest.spyOn(utilsConversionModule, 'booleanToBool');
     jest.spyOn(utilsConversionModule, 'addressToKey').mockImplementation();
-    dsMockUtils.createQueryStub('identity', 'authorizations', {
+    dsMockUtils.createQueryMock('identity', 'authorizations', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockAuthorization({
           authorizationData: dsMockUtils.createMockAuthorizationData({
@@ -152,29 +152,29 @@ describe('consumeAuthorizationRequests procedure', () => {
 
       const rawAuthId = dsMockUtils.createMockU64(authId);
       rawAuthIds.push([rawAuthId]);
-      when(bigNumberToU64Stub).calledWith(authId, mockContext).mockReturnValue(rawAuthId);
+      when(bigNumberToU64Spy).calledWith(authId, mockContext).mockReturnValue(rawAuthId);
       const rawSignatory = dsMockUtils.createMockSignatory({
         Identity: dsMockUtils.createMockIdentityId(signerValue.value),
       });
 
       rawAuthIdentifiers.push([rawSignatory, rawAuthId, rawFalseBool]);
-      when(signerValueToSignatoryStub)
+      when(signerValueToSignatorySpy)
         .calledWith(signerValue, mockContext)
         .mockReturnValue(rawSignatory);
     });
-    when(booleanToBoolStub).calledWith(false, mockContext).mockReturnValue(rawFalseBool);
+    when(booleanToBoolSpy).calledWith(false, mockContext).mockReturnValue(rawFalseBool);
 
-    acceptAssetOwnershipTransferTransaction = dsMockUtils.createTxStub(
+    acceptAssetOwnershipTransferTransaction = dsMockUtils.createTxMock(
       'asset',
       'acceptAssetOwnershipTransfer'
     );
-    acceptPayingKeyTransaction = dsMockUtils.createTxStub('relayer', 'acceptPayingKey');
-    acceptBecomeAgentTransaction = dsMockUtils.createTxStub('externalAgents', 'acceptBecomeAgent');
-    acceptPortfolioCustodyTransaction = dsMockUtils.createTxStub(
+    acceptPayingKeyTransaction = dsMockUtils.createTxMock('relayer', 'acceptPayingKey');
+    acceptBecomeAgentTransaction = dsMockUtils.createTxMock('externalAgents', 'acceptBecomeAgent');
+    acceptPortfolioCustodyTransaction = dsMockUtils.createTxMock(
       'portfolio',
       'acceptPortfolioCustody'
     );
-    acceptTickerTransferTransaction = dsMockUtils.createTxStub('asset', 'acceptTickerTransfer');
+    acceptTickerTransferTransaction = dsMockUtils.createTxMock('asset', 'acceptTickerTransfer');
   });
 
   afterEach(() => {
@@ -230,7 +230,7 @@ describe('consumeAuthorizationRequests procedure', () => {
       mockContext
     );
 
-    const transaction = dsMockUtils.createTxStub('identity', 'removeAuthorization');
+    const transaction = dsMockUtils.createTxMock('identity', 'removeAuthorization');
 
     const result = await prepareConsumeAuthorizationRequests.call(proc, {
       accept: false,

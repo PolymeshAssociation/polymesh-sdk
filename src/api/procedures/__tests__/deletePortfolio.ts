@@ -28,23 +28,23 @@ describe('deletePortfolio procedure', () => {
   const portfolioNumber = dsMockUtils.createMockU64(id);
   const zeroBalance = { total: new BigNumber(0) } as PortfolioBalance;
   let mockContext: Mocked<Context>;
-  let stringToIdentityIdStub: jest.SpyInstance<IdentityId, [string, Context]>;
-  let bigNumberToU64Stub: jest.SpyInstance<u64, [BigNumber, Context]>;
+  let stringToIdentityIdSpy: jest.SpyInstance<IdentityId, [string, Context]>;
+  let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToIdentityIdStub = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
-    bigNumberToU64Stub = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
+    stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
+    bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    when(stringToIdentityIdStub).calledWith(did, mockContext).mockReturnValue(identityId);
-    when(bigNumberToU64Stub).calledWith(id, mockContext).mockReturnValue(portfolioNumber);
+    when(stringToIdentityIdSpy).calledWith(did, mockContext).mockReturnValue(identityId);
+    when(bigNumberToU64Spy).calledWith(id, mockContext).mockReturnValue(portfolioNumber);
     dsMockUtils
-      .createQueryStub('portfolio', 'portfolios')
+      .createQueryMock('portfolio', 'portfolios')
       .mockReturnValue(dsMockUtils.createMockBytes('someName'));
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
@@ -105,7 +105,7 @@ describe('deletePortfolio procedure', () => {
   it('should return a delete portfolio transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<DeletePortfolioParams, void>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('portfolio', 'deletePortfolio');
+    const transaction = dsMockUtils.createTxMock('portfolio', 'deletePortfolio');
 
     let result = await prepareDeletePortfolio.call(proc, {
       id,

@@ -78,7 +78,7 @@ describe('NumberedPortfolio class', () => {
       const expectedTransaction =
         'someTransaction' as unknown as PolymeshTransaction<NumberedPortfolio>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args: { id, did, name }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -96,7 +96,7 @@ describe('NumberedPortfolio class', () => {
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
       const spy = jest.spyOn(numberedPortfolio, 'exists').mockResolvedValue(true);
       const rawPortfolioName = dsMockUtils.createMockBytes(portfolioName);
-      dsMockUtils.createQueryStub('portfolio', 'portfolios', {
+      dsMockUtils.createQueryMock('portfolio', 'portfolios', {
         returnValue: rawPortfolioName,
       });
       when(jest.spyOn(utilsConversionModule, 'bytesToString'))
@@ -111,7 +111,7 @@ describe('NumberedPortfolio class', () => {
 
     it('should throw an error if the Portfolio no longer exists', async () => {
       const emptyName = dsMockUtils.createMockText('');
-      dsMockUtils.createQueryStub('portfolio', 'portfolios', {
+      dsMockUtils.createQueryMock('portfolio', 'portfolios', {
         returnValue: emptyName,
       });
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
@@ -148,7 +148,7 @@ describe('NumberedPortfolio class', () => {
       const fakeResult = { blockNumber, blockDate, eventIndex: eventIdx };
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
 
-      dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {
+      dsMockUtils.createApolloQueryMock(eventByIndexedArgs(variables), {
         /* eslint-disable @typescript-eslint/naming-convention */
         eventByIndexedArgs: {
           block_id: blockNumber.toNumber(),
@@ -166,7 +166,7 @@ describe('NumberedPortfolio class', () => {
     it('should return null if the query result is empty', async () => {
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
 
-      dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {});
+      dsMockUtils.createApolloQueryMock(eventByIndexedArgs(variables), {});
       const result = await numberedPortfolio.createdAt();
       expect(result).toBeNull();
     });
@@ -188,7 +188,7 @@ describe('NumberedPortfolio class', () => {
       const fakeResult = { blockNumber, blockHash, blockDate, eventIndex: eventIdx };
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
 
-      dsMockUtils.createApolloV2QueryStub(portfolioQuery(variables), {
+      dsMockUtils.createApolloV2QueryMock(portfolioQuery(variables), {
         portfolios: {
           nodes: [
             {
@@ -211,7 +211,7 @@ describe('NumberedPortfolio class', () => {
     it('should return null if the query result is empty', async () => {
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
 
-      dsMockUtils.createApolloV2QueryStub(portfolioQuery(variables), {
+      dsMockUtils.createApolloV2QueryMock(portfolioQuery(variables), {
         portfolios: {
           nodes: [],
         },
@@ -227,7 +227,7 @@ describe('NumberedPortfolio class', () => {
       const id = new BigNumber(1);
       const portfolioId = new BigNumber(0);
 
-      const portfoliosStub = dsMockUtils.createQueryStub('portfolio', 'portfolios', {
+      const portfoliosMock = dsMockUtils.createQueryMock('portfolio', 'portfolios', {
         size: new BigNumber(0),
       });
 
@@ -243,7 +243,7 @@ describe('NumberedPortfolio class', () => {
       let result = await numberedPortfolio.exists();
       expect(result).toBe(false);
 
-      portfoliosStub.size.mockResolvedValue(dsMockUtils.createMockU64(new BigNumber(10)));
+      portfoliosMock.size.mockResolvedValue(dsMockUtils.createMockU64(new BigNumber(10)));
 
       result = await numberedPortfolio.exists();
       expect(result).toBe(true);

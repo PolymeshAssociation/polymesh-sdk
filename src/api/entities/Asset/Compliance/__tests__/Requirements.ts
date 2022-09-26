@@ -89,7 +89,7 @@ describe('Requirements class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           { args: { ticker: asset.ticker, ...args }, transformer: undefined },
           context,
@@ -136,7 +136,7 @@ describe('Requirements class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           { args: { ticker: asset.ticker, ...args }, transformer: undefined },
           context,
@@ -166,7 +166,7 @@ describe('Requirements class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           { args: { ticker: asset.ticker, ...args }, transformer: undefined },
           context,
@@ -192,7 +192,7 @@ describe('Requirements class', () => {
 
       const expectedQueue = 'someQueue' as unknown as PolymeshTransaction<Asset>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           { args: { ticker: asset.ticker, requirements: [] }, transformer: undefined },
           context,
@@ -215,18 +215,18 @@ describe('Requirements class', () => {
     let notDefaultClaimIssuer: TrustedClaimIssuer;
     let assetDid: string;
     let cddId: string;
-    let trustedIssuerToTrustedClaimIssuerStub: jest.SpyInstance;
+    let trustedIssuerToTrustedClaimIssuerSpy: jest.SpyInstance;
 
     let expected: ComplianceRequirements;
 
-    let queryMultiStub: jest.SpyInstance;
+    let queryMultiMock: jest.Mock;
     let queryMultiResult: [
       MockCodec<PolymeshPrimitivesComplianceManagerAssetCompliance>,
       Vec<PolymeshPrimitivesIdentityId>
     ];
 
     beforeAll(() => {
-      trustedIssuerToTrustedClaimIssuerStub = jest.spyOn(
+      trustedIssuerToTrustedClaimIssuerSpy = jest.spyOn(
         utilsConversionModule,
         'trustedIssuerToTrustedClaimIssuer'
       );
@@ -249,12 +249,12 @@ describe('Requirements class', () => {
       };
       assetDid = 'someAssetDid';
       cddId = 'someCddId';
-      dsMockUtils.createQueryStub('complianceManager', 'assetCompliances');
-      dsMockUtils.createQueryStub('complianceManager', 'trustedClaimIssuer');
+      dsMockUtils.createQueryMock('complianceManager', 'assetCompliances');
+      dsMockUtils.createQueryMock('complianceManager', 'trustedClaimIssuer');
 
-      queryMultiStub = dsMockUtils.getQueryMultiStub();
+      queryMultiMock = dsMockUtils.getQueryMultiMock();
 
-      trustedIssuerToTrustedClaimIssuerStub.mockReturnValue({
+      trustedIssuerToTrustedClaimIssuerSpy.mockReturnValue({
         identity: defaultClaimIssuers[0].identity,
         trustedFor: null,
       });
@@ -375,7 +375,7 @@ describe('Requirements class', () => {
     });
 
     it('should return all requirements attached to the Asset, along with the default trusted claim issuers', async () => {
-      queryMultiStub.mockResolvedValue(queryMultiResult);
+      queryMultiMock.mockResolvedValue(queryMultiResult);
       const result = await requirements.get();
 
       expect(result).toEqual(expected);
@@ -383,7 +383,7 @@ describe('Requirements class', () => {
 
     it('should allow subscription', async () => {
       const unsubCallback = 'unsubCallback';
-      queryMultiStub.mockImplementation((_, cbFunc) => {
+      queryMultiMock.mockImplementation((_, cbFunc) => {
         cbFunc(queryMultiResult);
         return unsubCallback;
       });
@@ -441,7 +441,7 @@ describe('Requirements class', () => {
 
       const expectedQueue = 'someQueue' as unknown as PolymeshTransaction<Asset>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           { args: { ticker: asset.ticker, pause: true }, transformer: undefined },
           context,
@@ -467,7 +467,7 @@ describe('Requirements class', () => {
 
       const expectedQueue = 'someQueue' as unknown as PolymeshTransaction<Asset>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           { args: { ticker: asset.ticker, pause: false }, transformer: undefined },
           context,
@@ -504,7 +504,7 @@ describe('Requirements class', () => {
 
       const expectedQueue = 'someQueue' as unknown as PolymeshTransaction<Asset>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           { args: { ticker: asset.ticker, ...args }, transformer: undefined },
           context,
@@ -540,7 +540,7 @@ describe('Requirements class', () => {
         .calledWith(mockBool)
         .mockReturnValue(fakeResult);
 
-      when(dsMockUtils.createQueryStub('complianceManager', 'assetCompliances'))
+      when(dsMockUtils.createQueryMock('complianceManager', 'assetCompliances'))
         .calledWith(rawTicker)
         .mockResolvedValue({ paused: mockBool });
 

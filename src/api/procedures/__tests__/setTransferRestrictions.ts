@@ -46,25 +46,25 @@ jest.mock(
 
 describe('setTransferRestrictions procedure', () => {
   let mockContext: Mocked<Context>;
-  let transferRestrictionToPolymeshTransferConditionStub: jest.SpyInstance<
+  let transferRestrictionToPolymeshTransferConditionSpy: jest.SpyInstance<
     TransferCondition,
     [TransferRestriction, Context]
   >;
-  let stringToTickerKeyStub: jest.SpyInstance<TickerKey, [string, Context]>;
-  let stringToScopeIdStub: jest.SpyInstance<ScopeId, [string, Context]>;
-  let identitiesToBtreeSetStub: jest.SpyInstance<
+  let stringToTickerKeySpy: jest.SpyInstance<TickerKey, [string, Context]>;
+  let stringToScopeIdSpy: jest.SpyInstance<ScopeId, [string, Context]>;
+  let identitiesToBtreeSetSpy: jest.SpyInstance<
     BTreeSet<PolymeshPrimitivesIdentityId>,
     [Identity[], Context]
   >;
-  let transferRestrictionTypeToStatOpTypeStub: jest.SpyInstance<
+  let transferRestrictionTypeToStatOpTypeSpy: jest.SpyInstance<
     PolymeshPrimitivesStatisticsStatOpType,
     [TransferRestrictionType, Context]
   >;
-  let complianceConditionsToBtreeSetStub: jest.SpyInstance<
+  let complianceConditionsToBtreeSetSpy: jest.SpyInstance<
     BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>,
     [PolymeshPrimitivesTransferComplianceTransferCondition[], Context]
   >;
-  let statisticsOpTypeToStatTypeStub: jest.SpyInstance<
+  let statisticsOpTypeToStatTypeSpy: jest.SpyInstance<
     PolymeshPrimitivesStatisticsStatType,
     [
       {
@@ -74,7 +74,7 @@ describe('setTransferRestrictions procedure', () => {
       Context
     ]
   >;
-  let statStub: jest.SpyInstance;
+  let statSpy: jest.SpyInstance;
   let ticker: string;
   let count: BigNumber;
   let percentage: BigNumber;
@@ -95,14 +95,14 @@ describe('setTransferRestrictions procedure', () => {
   let rawStatType: PolymeshPrimitivesStatisticsStatType;
   let rawStatTypeBtree: BTreeSet<PolymeshPrimitivesStatisticsStatType>;
   let mockNeededStat: PolymeshPrimitivesStatisticsStatType;
-  let rawStatStatTypeEqStub: jest.Mock;
+  let rawStatStatTypeEqMock: jest.Mock;
   let args: SetTransferRestrictionsParams;
   let rawCountRestrictionBtreeSet: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
   let rawPercentageRestrictionBtreeSet: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
   let rawClaimCountRestrictionBtreeSet: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
   let rawClaimPercentageRestrictionBtreeSet: BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>;
-  let identityIdToStringStub: jest.SpyInstance<string, [PolymeshPrimitivesIdentityId]>;
-  let booleanToBoolStub: jest.SpyInstance<bool, [boolean, Context]>;
+  let identityIdToStringSpy: jest.SpyInstance<string, [PolymeshPrimitivesIdentityId]>;
+  let booleanToBoolSpy: jest.SpyInstance<bool, [boolean, Context]>;
 
   const min = new BigNumber(10);
   const max = new BigNumber(20);
@@ -122,28 +122,25 @@ describe('setTransferRestrictions procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    transferRestrictionToPolymeshTransferConditionStub = jest.spyOn(
+    transferRestrictionToPolymeshTransferConditionSpy = jest.spyOn(
       utilsConversionModule,
       'transferRestrictionToPolymeshTransferCondition'
     );
-    stringToTickerKeyStub = jest.spyOn(utilsConversionModule, 'stringToTickerKey');
-    stringToScopeIdStub = jest.spyOn(utilsConversionModule, 'stringToScopeId');
-    identitiesToBtreeSetStub = jest.spyOn(utilsConversionModule, 'identitiesToBtreeSet');
-    transferRestrictionTypeToStatOpTypeStub = jest.spyOn(
+    stringToTickerKeySpy = jest.spyOn(utilsConversionModule, 'stringToTickerKey');
+    stringToScopeIdSpy = jest.spyOn(utilsConversionModule, 'stringToScopeId');
+    identitiesToBtreeSetSpy = jest.spyOn(utilsConversionModule, 'identitiesToBtreeSet');
+    transferRestrictionTypeToStatOpTypeSpy = jest.spyOn(
       utilsConversionModule,
       'transferRestrictionTypeToStatOpType'
     );
-    statStub = jest.spyOn(utilsConversionModule, 'statTypeToStatOpType');
-    complianceConditionsToBtreeSetStub = jest.spyOn(
+    statSpy = jest.spyOn(utilsConversionModule, 'statTypeToStatOpType');
+    complianceConditionsToBtreeSetSpy = jest.spyOn(
       utilsConversionModule,
       'complianceConditionsToBtreeSet'
     );
-    statisticsOpTypeToStatTypeStub = jest.spyOn(
-      utilsConversionModule,
-      'statisticsOpTypeToStatType'
-    );
-    identityIdToStringStub = jest.spyOn(utilsConversionModule, 'identityIdToString');
-    booleanToBoolStub = jest.spyOn(utilsConversionModule, 'booleanToBool');
+    statisticsOpTypeToStatTypeSpy = jest.spyOn(utilsConversionModule, 'statisticsOpTypeToStatType');
+    identityIdToStringSpy = jest.spyOn(utilsConversionModule, 'identityIdToString');
+    booleanToBoolSpy = jest.spyOn(utilsConversionModule, 'booleanToBool');
     ticker = 'TICKER';
     count = new BigNumber(10);
     percentage = new BigNumber(49);
@@ -196,11 +193,11 @@ describe('setTransferRestrictions procedure', () => {
       returnValue: dsMockUtils.createMockU32(new BigNumber(3)),
     });
 
-    setAssetTransferComplianceTransaction = dsMockUtils.createTxStub(
+    setAssetTransferComplianceTransaction = dsMockUtils.createTxMock(
       'statistics',
       'setAssetTransferCompliance'
     );
-    setEntitiesExemptTransaction = dsMockUtils.createTxStub('statistics', 'setEntitiesExempt');
+    setEntitiesExemptTransaction = dsMockUtils.createTxMock('statistics', 'setEntitiesExempt');
 
     mockContext = dsMockUtils.getContextInstance();
 
@@ -236,38 +233,38 @@ describe('setTransferRestrictions procedure', () => {
     rawScopeId = dsMockUtils.createMockScopeId(exemptedDid);
     rawStatType = dsMockUtils.createMockStatisticsStatType();
     mockNeededStat = dsMockUtils.createMockStatisticsStatType();
-    rawStatStatTypeEqStub = rawStatType.eq as jest.Mock;
+    rawStatStatTypeEqMock = rawStatType.eq as jest.Mock;
     rawStatTypeBtree = dsMockUtils.createMockBTreeSet([rawStatType]);
 
-    when(transferRestrictionToPolymeshTransferConditionStub)
+    when(transferRestrictionToPolymeshTransferConditionSpy)
       .calledWith(maxInvestorRestriction, mockContext)
       .mockReturnValue(rawCountRestriction);
-    when(transferRestrictionToPolymeshTransferConditionStub)
+    when(transferRestrictionToPolymeshTransferConditionSpy)
       .calledWith(maxOwnershipRestriction, mockContext)
       .mockReturnValue(rawPercentageRestriction);
-    when(transferRestrictionToPolymeshTransferConditionStub)
+    when(transferRestrictionToPolymeshTransferConditionSpy)
       .calledWith(expect.objectContaining(claimCountRestriction), mockContext)
       .mockReturnValue(rawClaimCountRestriction);
-    when(transferRestrictionToPolymeshTransferConditionStub)
+    when(transferRestrictionToPolymeshTransferConditionSpy)
       .calledWith(claimPercentageRestriction, mockContext)
       .mockReturnValue(rawClaimPercentageRestriction);
-    when(stringToTickerKeyStub)
+    when(stringToTickerKeySpy)
       .calledWith(ticker, mockContext)
       .mockReturnValue({ Ticker: rawTicker });
-    when(stringToScopeIdStub).calledWith(exemptedDid, mockContext).mockReturnValue(rawScopeId);
-    when(complianceConditionsToBtreeSetStub)
+    when(stringToScopeIdSpy).calledWith(exemptedDid, mockContext).mockReturnValue(rawScopeId);
+    when(complianceConditionsToBtreeSetSpy)
       .calledWith([rawCountRestriction], mockContext)
       .mockReturnValue(rawCountRestrictionBtreeSet);
-    when(complianceConditionsToBtreeSetStub)
+    when(complianceConditionsToBtreeSetSpy)
       .calledWith([rawPercentageRestriction], mockContext)
       .mockReturnValue(rawPercentageRestrictionBtreeSet);
-    when(complianceConditionsToBtreeSetStub)
+    when(complianceConditionsToBtreeSetSpy)
       .calledWith([rawClaimCountRestriction], mockContext)
       .mockReturnValue(rawClaimCountRestrictionBtreeSet);
-    when(complianceConditionsToBtreeSetStub)
+    when(complianceConditionsToBtreeSetSpy)
       .calledWith([rawClaimPercentageRestriction], mockContext)
       .mockReturnValue(rawClaimPercentageRestrictionBtreeSet);
-    statisticsOpTypeToStatTypeStub.mockReturnValue(mockNeededStat);
+    statisticsOpTypeToStatTypeSpy.mockReturnValue(mockNeededStat);
   });
 
   afterEach(() => {
@@ -377,7 +374,7 @@ describe('setTransferRestrictions procedure', () => {
   });
 
   it('should add exempted identities if they were given', async () => {
-    when(booleanToBoolStub).calledWith(true, mockContext).mockReturnValue(rawTrue);
+    when(booleanToBoolSpy).calledWith(true, mockContext).mockReturnValue(rawTrue);
     const proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
@@ -395,13 +392,13 @@ describe('setTransferRestrictions procedure', () => {
       dsMockUtils.createMockBTreeSet<PolymeshPrimitivesIdentityId>(exemptedDids);
     const op = 'Count';
 
-    identitiesToBtreeSetStub.mockReturnValue(exemptedDidsBtreeSet);
+    identitiesToBtreeSetSpy.mockReturnValue(exemptedDidsBtreeSet);
 
-    when(transferRestrictionTypeToStatOpTypeStub)
+    when(transferRestrictionTypeToStatOpTypeSpy)
       .calledWith(TransferRestrictionType.Count, mockContext)
       .mockReturnValue(op as unknown as PolymeshPrimitivesStatisticsStatOpType);
 
-    when(transferRestrictionTypeToStatOpTypeStub)
+    when(transferRestrictionTypeToStatOpTypeSpy)
       .calledWith(TransferRestrictionType.ClaimCount, mockContext)
       .mockReturnValue(op as unknown as PolymeshPrimitivesStatisticsStatOpType);
     args = {
@@ -409,7 +406,7 @@ describe('setTransferRestrictions procedure', () => {
       restrictions: [{ ...claimCountRestrictionValue, exemptedIdentities: exemptedDids }],
       type: TransferRestrictionType.ClaimCount,
     };
-    complianceConditionsToBtreeSetStub.mockReturnValue(rawClaimCountRestrictionBtreeSet);
+    complianceConditionsToBtreeSetSpy.mockReturnValue(rawClaimCountRestrictionBtreeSet);
 
     let result = await prepareSetTransferRestrictions.call(proc, args);
 
@@ -442,7 +439,7 @@ describe('setTransferRestrictions procedure', () => {
       ],
       type: TransferRestrictionType.Count,
     };
-    complianceConditionsToBtreeSetStub.mockReturnValue(rawCountRestrictionBtreeSet);
+    complianceConditionsToBtreeSetSpy.mockReturnValue(rawCountRestrictionBtreeSet);
 
     result = await prepareSetTransferRestrictions.call(proc, args);
 
@@ -467,7 +464,7 @@ describe('setTransferRestrictions procedure', () => {
   });
 
   it('should remove exempted identities if they were not given', async () => {
-    when(booleanToBoolStub).calledWith(false, mockContext).mockReturnValue(rawFalse);
+    when(booleanToBoolSpy).calledWith(false, mockContext).mockReturnValue(rawFalse);
     let proc = procedureMockUtils.getInstance<SetTransferRestrictionsParams, BigNumber, Storage>(
       mockContext,
       {
@@ -488,9 +485,9 @@ describe('setTransferRestrictions procedure', () => {
       dsMockUtils.createMockBTreeSet<PolymeshPrimitivesIdentityId>(exemptedDids);
     const op = 'Count';
 
-    identitiesToBtreeSetStub.mockReturnValue(exemptedDidsBtreeSet);
+    identitiesToBtreeSetSpy.mockReturnValue(exemptedDidsBtreeSet);
 
-    when(transferRestrictionTypeToStatOpTypeStub)
+    when(transferRestrictionTypeToStatOpTypeSpy)
       .calledWith(TransferRestrictionType.Count, mockContext)
       .mockReturnValue(op as unknown as PolymeshPrimitivesStatisticsStatOpType);
 
@@ -535,7 +532,7 @@ describe('setTransferRestrictions procedure', () => {
       }
     );
 
-    when(transferRestrictionTypeToStatOpTypeStub)
+    when(transferRestrictionTypeToStatOpTypeSpy)
       .calledWith(TransferRestrictionType.ClaimCount, mockContext)
       .mockReturnValue(op as unknown as PolymeshPrimitivesStatisticsStatOpType);
 
@@ -584,7 +581,7 @@ describe('setTransferRestrictions procedure', () => {
     );
     const emptyConditionsBtreeSet =
       dsMockUtils.createMockBTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>([]);
-    when(complianceConditionsToBtreeSetStub)
+    when(complianceConditionsToBtreeSetSpy)
       .calledWith([], mockContext)
       .mockReturnValue(emptyConditionsBtreeSet);
 
@@ -747,10 +744,10 @@ describe('setTransferRestrictions procedure', () => {
 
     let rawIdentityScopeId: ScopeId;
 
-    const getCountStub = jest.fn();
-    const getPercentageStub = jest.fn();
-    const getClaimCountStub = jest.fn();
-    const getClaimPercentageStub = jest.fn();
+    const getCountMock = jest.fn();
+    const getPercentageMock = jest.fn();
+    const getClaimCountMock = jest.fn();
+    const getClaimPercentageMock = jest.fn();
 
     beforeAll(() => {
       identityScopeId = 'someScopeId';
@@ -759,26 +756,26 @@ describe('setTransferRestrictions procedure', () => {
     });
 
     beforeEach(() => {
-      dsMockUtils.createQueryStub('statistics', 'transferConditionExemptEntities', {
+      dsMockUtils.createQueryMock('statistics', 'transferConditionExemptEntities', {
         entries: [],
       });
-      when(stringToScopeIdStub)
+      when(stringToScopeIdSpy)
         .calledWith(identityScopeId, mockContext)
         .mockReturnValue(rawIdentityScopeId);
 
-      getCountStub.mockResolvedValue({
+      getCountMock.mockResolvedValue({
         restrictions: [{ count }],
         availableSlots: new BigNumber(1),
       });
-      getPercentageStub.mockResolvedValue({
+      getPercentageMock.mockResolvedValue({
         restrictions: [{ percentage }],
         availableSlots: new BigNumber(1),
       });
-      getClaimCountStub.mockResolvedValue({
+      getClaimCountMock.mockResolvedValue({
         restrictions: [claimCountRestrictionValue],
         availableSlots: new BigNumber(1),
       });
-      getClaimPercentageStub.mockResolvedValue({
+      getClaimPercentageMock.mockResolvedValue({
         restrictions: [claimPercentageRestrictionValue],
         availableSlots: new BigNumber(1),
       });
@@ -787,14 +784,14 @@ describe('setTransferRestrictions procedure', () => {
           getScopeId: identityScopeId,
         },
         assetOptions: {
-          transferRestrictionsCountGet: getCountStub,
-          transferRestrictionsPercentageGet: getPercentageStub,
-          transferRestrictionsClaimCountGet: getClaimCountStub,
-          transferRestrictionsClaimPercentageGet: getClaimPercentageStub,
+          transferRestrictionsCountGet: getCountMock,
+          transferRestrictionsPercentageGet: getPercentageMock,
+          transferRestrictionsClaimCountGet: getClaimCountMock,
+          transferRestrictionsClaimPercentageGet: getClaimPercentageMock,
         },
       });
 
-      dsMockUtils.createQueryStub('statistics', 'activeAssetStats', {
+      dsMockUtils.createQueryMock('statistics', 'activeAssetStats', {
         returnValue: rawStatTypeBtree,
       });
     });
@@ -804,8 +801,8 @@ describe('setTransferRestrictions procedure', () => {
     });
 
     it('should fetch, process and return shared data', async () => {
-      rawStatStatTypeEqStub.mockReturnValue(true);
-      identityIdToStringStub.mockReturnValue('someDid');
+      rawStatStatTypeEqMock.mockReturnValue(true);
+      identityIdToStringSpy.mockReturnValue('someDid');
       const proc = procedureMockUtils.getInstance<
         SetTransferRestrictionsParams,
         BigNumber,
@@ -840,7 +837,7 @@ describe('setTransferRestrictions procedure', () => {
         ],
       };
 
-      statStub.mockReturnValue(StatType.Balance);
+      statSpy.mockReturnValue(StatType.Balance);
 
       result = await boundFunc(args);
 
@@ -852,7 +849,7 @@ describe('setTransferRestrictions procedure', () => {
 
       args.restrictions = [];
 
-      getCountStub.mockResolvedValue({ restrictions: [{ count }], availableSlots: 1 });
+      getCountMock.mockResolvedValue({ restrictions: [{ count }], availableSlots: 1 });
 
       result = await boundFunc(args);
       expect(result).toEqual({
@@ -861,7 +858,7 @@ describe('setTransferRestrictions procedure', () => {
         currentExemptions: emptyExemptions,
       });
 
-      getCountStub.mockResolvedValue({
+      getCountMock.mockResolvedValue({
         restrictions: [{ count, exemptedIds: [exemptedDid] }],
         availableSlots: 1,
       });
@@ -900,16 +897,16 @@ describe('setTransferRestrictions procedure', () => {
     });
 
     it('should return current exemptions for the restriction', async () => {
-      rawStatStatTypeEqStub.mockReturnValue(true);
+      rawStatStatTypeEqMock.mockReturnValue(true);
       const proc = procedureMockUtils.getInstance<
         SetTransferRestrictionsParams,
         BigNumber,
         Storage
       >(mockContext);
       const boundFunc = prepareStorage.bind(proc);
-      identityIdToStringStub.mockReturnValue('someDid');
-      const stub = dsMockUtils.createQueryStub('statistics', 'transferConditionExemptEntities');
-      stub.entries.mockResolvedValue([
+      identityIdToStringSpy.mockReturnValue('someDid');
+      const mock = dsMockUtils.createQueryMock('statistics', 'transferConditionExemptEntities');
+      mock.entries.mockResolvedValue([
         [
           {
             args: [
@@ -939,10 +936,10 @@ describe('setTransferRestrictions procedure', () => {
     });
 
     it('should throw an error if the appropriate stat is not set', async () => {
-      dsMockUtils.createQueryStub('statistics', 'activeAssetStats', {
+      dsMockUtils.createQueryMock('statistics', 'activeAssetStats', {
         returnValue: rawStatTypeBtree,
       });
-      rawStatStatTypeEqStub.mockReturnValue(false);
+      rawStatStatTypeEqMock.mockReturnValue(false);
 
       const proc = procedureMockUtils.getInstance<
         SetTransferRestrictionsParams,

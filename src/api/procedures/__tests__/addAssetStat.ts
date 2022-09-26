@@ -35,7 +35,7 @@ jest.mock(
 
 describe('addAssetStat procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerKeyStub: jest.SpyInstance<TickerKey, [string, Context]>;
+  let stringToTickerKeySpy: jest.SpyInstance<TickerKey, [string, Context]>;
   let ticker: string;
   let count: BigNumber;
   let rawTicker: PolymeshPrimitivesTicker;
@@ -45,17 +45,17 @@ describe('addAssetStat procedure', () => {
   let rawStatUpdate: PolymeshPrimitivesStatisticsStatUpdate;
   let raw2ndKey: PolymeshPrimitivesStatisticsStat2ndKey;
 
-  let setActiveAssetStatsTxStub: PolymeshTx<
+  let setActiveAssetStatsTxMock: PolymeshTx<
     [PolymeshPrimitivesTicker, PolymeshPrimitivesTransferComplianceTransferCondition]
   >;
-  let batchUpdateAssetStatsTxStub: PolymeshTx<
+  let batchUpdateAssetStatsTxMock: PolymeshTx<
     [
       PolymeshPrimitivesTicker,
       PolymeshPrimitivesStatisticsStatType,
       BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>
     ]
   >;
-  let statisticsOpTypeToStatOpTypeStub: jest.SpyInstance<
+  let statisticsOpTypeToStatOpTypeSpy: jest.SpyInstance<
     PolymeshPrimitivesStatisticsStatType,
     [
       {
@@ -65,15 +65,15 @@ describe('addAssetStat procedure', () => {
       Context
     ]
   >;
-  let statisticStatTypesToBtreeStatTypeStub: jest.SpyInstance<
+  let statisticStatTypesToBtreeStatTypeSpy: jest.SpyInstance<
     BTreeSet<PolymeshPrimitivesStatisticsStatType>,
     [PolymeshPrimitivesStatisticsStatType[], Context]
   >;
-  let statUpdatesToBtreeStatUpdateStub: jest.SpyInstance<
+  let statUpdatesToBtreeStatUpdateSpy: jest.SpyInstance<
     BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>,
     [PolymeshPrimitivesStatisticsStatUpdate[], Context]
   >;
-  let createStat2ndKeyStub: jest.SpyInstance<
+  let createStat2ndKeySpy: jest.SpyInstance<
     PolymeshPrimitivesStatisticsStat2ndKey,
     [
       type: 'NoClaimStat' | StatClaimType,
@@ -82,8 +82,8 @@ describe('addAssetStat procedure', () => {
     ]
   >;
   let statUpdateBtreeSet: BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>;
-  let activeAssetStatsStub: jest.Mock;
-  let statStub: jest.SpyInstance;
+  let activeAssetStatsMock: jest.Mock;
+  let statSpy: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -92,32 +92,32 @@ describe('addAssetStat procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
     ticker = 'TICKER';
     count = new BigNumber(10);
-    stringToTickerKeyStub = jest.spyOn(utilsConversionModule, 'stringToTickerKey');
-    createStat2ndKeyStub = jest.spyOn(utilsConversionModule, 'createStat2ndKey');
-    statisticsOpTypeToStatOpTypeStub = jest.spyOn(
+    stringToTickerKeySpy = jest.spyOn(utilsConversionModule, 'stringToTickerKey');
+    createStat2ndKeySpy = jest.spyOn(utilsConversionModule, 'createStat2ndKey');
+    statisticsOpTypeToStatOpTypeSpy = jest.spyOn(
       utilsConversionModule,
       'statisticsOpTypeToStatType'
     );
-    statUpdatesToBtreeStatUpdateStub = jest.spyOn(
+    statUpdatesToBtreeStatUpdateSpy = jest.spyOn(
       utilsConversionModule,
       'statUpdatesToBtreeStatUpdate'
     );
     dsMockUtils.setConstMock('statistics', 'maxTransferConditionsPerAsset', {
       returnValue: dsMockUtils.createMockU32(new BigNumber(3)),
     });
-    statStub = jest.spyOn(utilsConversionModule, 'meshStatToStatType');
-    activeAssetStatsStub = dsMockUtils.createQueryStub('statistics', 'activeAssetStats');
-    activeAssetStatsStub.mockReturnValue(dsMockUtils.createMockBTreeSet([]));
-    statisticStatTypesToBtreeStatTypeStub = jest.spyOn(
+    statSpy = jest.spyOn(utilsConversionModule, 'meshStatToStatType');
+    activeAssetStatsMock = dsMockUtils.createQueryMock('statistics', 'activeAssetStats');
+    activeAssetStatsMock.mockReturnValue(dsMockUtils.createMockBTreeSet([]));
+    statisticStatTypesToBtreeStatTypeSpy = jest.spyOn(
       utilsConversionModule,
       'statisticStatTypesToBtreeStatType'
     );
   });
 
   beforeEach(() => {
-    statStub.mockReturnValue(StatType.Balance);
-    setActiveAssetStatsTxStub = dsMockUtils.createTxStub('statistics', 'setActiveAssetStats');
-    batchUpdateAssetStatsTxStub = dsMockUtils.createTxStub('statistics', 'batchUpdateAssetStats');
+    statSpy.mockReturnValue(StatType.Balance);
+    setActiveAssetStatsTxMock = dsMockUtils.createTxMock('statistics', 'setActiveAssetStats');
+    batchUpdateAssetStatsTxMock = dsMockUtils.createTxMock('statistics', 'batchUpdateAssetStats');
 
     rawStatType = dsMockUtils.createMockStatisticsStatType();
     rawStatBtreeSet = dsMockUtils.createMockBTreeSet([rawStatType]);
@@ -125,18 +125,18 @@ describe('addAssetStat procedure', () => {
     rawStatUpdate = dsMockUtils.createMockStatUpdate();
     statUpdateBtreeSet = dsMockUtils.createMockBTreeSet([rawStatUpdate]);
 
-    when(createStat2ndKeyStub)
+    when(createStat2ndKeySpy)
       .calledWith('NoClaimStat', mockContext, undefined)
       .mockReturnValue(raw2ndKey);
-    when(statUpdatesToBtreeStatUpdateStub)
+    when(statUpdatesToBtreeStatUpdateSpy)
       .calledWith([rawStatUpdate], mockContext)
       .mockReturnValue(statUpdateBtreeSet);
-    statisticsOpTypeToStatOpTypeStub.mockReturnValue(rawStatType);
+    statisticsOpTypeToStatOpTypeSpy.mockReturnValue(rawStatType);
 
-    when(stringToTickerKeyStub)
+    when(stringToTickerKeySpy)
       .calledWith(ticker, mockContext)
       .mockReturnValue({ Ticker: rawTicker });
-    statisticStatTypesToBtreeStatTypeStub.mockReturnValue(rawStatBtreeSet);
+    statisticStatTypesToBtreeStatTypeSpy.mockReturnValue(rawStatBtreeSet);
   });
 
   afterEach(() => {
@@ -163,7 +163,7 @@ describe('addAssetStat procedure', () => {
     expect(result).toEqual({
       transactions: [
         {
-          transaction: setActiveAssetStatsTxStub,
+          transaction: setActiveAssetStatsTxMock,
           args: [{ Ticker: rawTicker }, rawStatBtreeSet],
         },
       ],
@@ -184,11 +184,11 @@ describe('addAssetStat procedure', () => {
     expect(result).toEqual({
       transactions: [
         {
-          transaction: setActiveAssetStatsTxStub,
+          transaction: setActiveAssetStatsTxMock,
           args: [{ Ticker: rawTicker }, rawStatBtreeSet],
         },
         {
-          transaction: batchUpdateAssetStatsTxStub,
+          transaction: batchUpdateAssetStatsTxMock,
           args: [{ Ticker: rawTicker }, rawStatType, statUpdateBtreeSet],
         },
       ],
@@ -215,11 +215,11 @@ describe('addAssetStat procedure', () => {
     expect(result).toEqual({
       transactions: [
         {
-          transaction: setActiveAssetStatsTxStub,
+          transaction: setActiveAssetStatsTxMock,
           args: [{ Ticker: rawTicker }, rawStatBtreeSet],
         },
         {
-          transaction: batchUpdateAssetStatsTxStub,
+          transaction: batchUpdateAssetStatsTxMock,
           args: [{ Ticker: rawTicker }, rawStatType, statUpdateBtreeSet],
         },
       ],
@@ -234,9 +234,9 @@ describe('addAssetStat procedure', () => {
       ticker,
     };
 
-    activeAssetStatsStub.mockReturnValue([rawStatType]);
+    activeAssetStatsMock.mockReturnValue([rawStatType]);
 
-    statStub.mockReturnValue(StatType.Balance);
+    statSpy.mockReturnValue(StatType.Balance);
 
     const expectedError = new PolymeshError({
       code: ErrorCode.NoDataChange,

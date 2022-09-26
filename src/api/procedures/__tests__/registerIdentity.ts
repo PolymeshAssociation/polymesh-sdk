@@ -17,8 +17,8 @@ import * as utilsInternalModule from '~/utils/internal';
 
 describe('registerIdentity procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToAccountIdStub: jest.SpyInstance<AccountId, [string, Context]>;
-  let secondaryAccountToMeshSecondaryKeyStub: jest.SpyInstance<
+  let stringToAccountIdSpy: jest.SpyInstance<AccountId, [string, Context]>;
+  let secondaryAccountToMeshSecondaryKeySpy: jest.SpyInstance<
     MeshSecondaryKey,
     [PermissionedAccount, Context]
   >;
@@ -28,8 +28,8 @@ describe('registerIdentity procedure', () => {
     entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
     dsMockUtils.initMocks();
-    stringToAccountIdStub = jest.spyOn(utilsConversionModule, 'stringToAccountId');
-    secondaryAccountToMeshSecondaryKeyStub = jest.spyOn(
+    stringToAccountIdSpy = jest.spyOn(utilsConversionModule, 'stringToAccountId');
+    secondaryAccountToMeshSecondaryKeySpy = jest.spyOn(
       utilsConversionModule,
       'secondaryAccountToMeshSecondaryKey'
     );
@@ -37,7 +37,7 @@ describe('registerIdentity procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    registerIdentityTransaction = dsMockUtils.createTxStub('identity', 'cddRegisterDid');
+    registerIdentityTransaction = dsMockUtils.createTxMock('identity', 'cddRegisterDid');
   });
 
   afterEach(() => {
@@ -78,10 +78,8 @@ describe('registerIdentity procedure', () => {
 
     const proc = procedureMockUtils.getInstance<RegisterIdentityParams, Identity>(mockContext);
 
-    when(stringToAccountIdStub)
-      .calledWith(targetAccount, mockContext)
-      .mockReturnValue(rawAccountId);
-    when(secondaryAccountToMeshSecondaryKeyStub)
+    when(stringToAccountIdSpy).calledWith(targetAccount, mockContext).mockReturnValue(rawAccountId);
+    when(secondaryAccountToMeshSecondaryKeySpy)
       .calledWith(secondaryAccounts[0], mockContext)
       .mockReturnValue(rawSecondaryAccount);
 
@@ -104,7 +102,7 @@ describe('registerIdentity procedure', () => {
 });
 
 describe('createRegisterIdentityResolver', () => {
-  const filterEventRecordsStub = jest.spyOn(utilsInternalModule, 'filterEventRecords');
+  const filterEventRecordsSpy = jest.spyOn(utilsInternalModule, 'filterEventRecords');
   const did = 'someDid';
   const rawDid = dsMockUtils.createMockIdentityId(did);
 
@@ -117,13 +115,13 @@ describe('createRegisterIdentityResolver', () => {
   });
 
   beforeEach(() => {
-    filterEventRecordsStub.mockReturnValue([
+    filterEventRecordsSpy.mockReturnValue([
       dsMockUtils.createMockIEvent([rawDid, 'accountId', 'signingItem']),
     ]);
   });
 
   afterEach(() => {
-    filterEventRecordsStub.mockReset();
+    filterEventRecordsSpy.mockReset();
   });
 
   it('should return the new Identity', () => {

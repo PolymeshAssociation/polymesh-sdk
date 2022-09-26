@@ -25,8 +25,8 @@ jest.mock(
 
 describe('modifyComplianceRequirement procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
-  let requirementToComplianceRequirementStub: jest.SpyInstance<
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let requirementToComplianceRequirementSpy: jest.SpyInstance<
     PolymeshPrimitivesComplianceManagerComplianceRequirement,
     [InputRequirement, Context]
   >;
@@ -39,8 +39,8 @@ describe('modifyComplianceRequirement procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
-    requirementToComplianceRequirementStub = jest.spyOn(
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    requirementToComplianceRequirementSpy = jest.spyOn(
       utilsConversionModule,
       'requirementToComplianceRequirement'
     );
@@ -65,14 +65,14 @@ describe('modifyComplianceRequirement procedure', () => {
       returnValue: dsMockUtils.createMockU32(new BigNumber(50)),
     });
 
-    modifyComplianceRequirementTransaction = dsMockUtils.createTxStub(
+    modifyComplianceRequirementTransaction = dsMockUtils.createTxMock(
       'complianceManager',
       'changeComplianceRequirement'
     );
 
     mockContext = dsMockUtils.getContextInstance();
 
-    when(stringToTickerStub).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
 
     entityMockUtils.configureMocks({
       assetOptions: {
@@ -138,7 +138,7 @@ describe('modifyComplianceRequirement procedure', () => {
       id: dsMockUtils.createMockU32(new BigNumber(1)),
     });
 
-    when(requirementToComplianceRequirementStub)
+    when(requirementToComplianceRequirementSpy)
       .calledWith({ conditions: fakeConditions, id: new BigNumber(1) }, mockContext)
       .mockReturnValue(rawComplianceRequirement);
 

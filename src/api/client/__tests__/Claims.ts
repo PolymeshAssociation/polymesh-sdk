@@ -186,7 +186,7 @@ describe('Claims Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.createApolloQueryMock(
         didsWithClaims({
           dids: [targetDid],
           scope: undefined,
@@ -214,7 +214,7 @@ describe('Claims Class', () => {
       expect(result.count).toEqual(new BigNumber(25));
       expect(result.next).toEqual(new BigNumber(1));
 
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.createApolloQueryMock(
         didsWithClaims({
           dids: undefined,
           scope: undefined,
@@ -310,7 +310,7 @@ describe('Claims Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.createApolloQueryMock(
         didsWithClaims({
           dids: [targetDid],
           scope: { type: ClaimScopeTypeEnum[scope.type], value: padString(scope.value, 12) },
@@ -400,7 +400,7 @@ describe('Claims Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloV2QueryMock(
         claimsQuery({
           dids: [targetDid],
           scope: undefined,
@@ -426,7 +426,7 @@ describe('Claims Class', () => {
       expect(result.count).toEqual(new BigNumber(1));
       expect(result.next).toEqual(null);
 
-      dsMockUtils.createApolloMultipleV2QueriesStub([
+      dsMockUtils.createApolloMultipleV2QueriesMock([
         {
           query: claimsGroupingQuery({
             scope: undefined,
@@ -522,7 +522,7 @@ describe('Claims Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloV2QueryMock(
         claimsQuery({
           dids: [targetDid],
           scope: { type: 'Ticker', value: 'someValue' },
@@ -571,7 +571,7 @@ describe('Claims Class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           { args: { ...args, operation: ClaimOperation.Add }, transformer: undefined },
           context,
@@ -607,7 +607,7 @@ describe('Claims Class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -637,7 +637,7 @@ describe('Claims Class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           { args: { ...args, operation: ClaimOperation.Edit }, transformer: undefined },
           context,
@@ -671,7 +671,7 @@ describe('Claims Class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           { args: { ...args, operation: ClaimOperation.Revoke }, transformer: undefined },
           context,
@@ -830,7 +830,7 @@ describe('Claims Class', () => {
         .calledWith(issuerDidsWithClaimsByTargetQueryResponse.items, context)
         .mockReturnValue(fakeClaims);
 
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.createApolloQueryMock(
         issuerDidsWithClaimsByTarget({
           target: did,
           scope: undefined,
@@ -856,7 +856,7 @@ describe('Claims Class', () => {
       expect(result.count).toEqual(new BigNumber(25));
       expect(result.next).toEqual(new BigNumber(1));
 
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.createApolloQueryMock(
         issuerDidsWithClaimsByTarget({
           target: did,
           scope: undefined,
@@ -1012,7 +1012,7 @@ describe('Claims Class', () => {
         .calledWith(claimsQueryResponse.nodes as unknown as Claim[], context, 'issuerId')
         .mockReturnValue(fakeClaims);
 
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloV2QueryMock(
         claimsQuery({
           dids: [did],
           scope,
@@ -1037,7 +1037,7 @@ describe('Claims Class', () => {
       expect(result.count).toEqual(new BigNumber(1));
       expect(result.next).toEqual(null);
 
-      dsMockUtils.createApolloMultipleV2QueriesStub([
+      dsMockUtils.createApolloMultipleV2QueriesMock([
         {
           query: claimsGroupingQuery(
             {
@@ -1259,7 +1259,7 @@ describe('Claims Class', () => {
       .calledWith(issuerDidsWithClaimsByTargetQueryResponse.items, context)
       .mockReturnValue(fakeClaims);
 
-    dsMockUtils.createApolloQueryStub(
+    dsMockUtils.createApolloQueryMock(
       issuerDidsWithClaimsByTarget({
         target: did,
         scope: { type: ClaimScopeTypeEnum[scope.type], value: padString(scope.value, 12) },

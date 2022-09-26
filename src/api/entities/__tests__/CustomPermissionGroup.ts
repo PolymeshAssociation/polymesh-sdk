@@ -93,7 +93,7 @@ describe('CustomPermissionGroup class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           { args: { ...args, group: customPermissionGroup }, transformer: undefined },
           context,
@@ -111,7 +111,7 @@ describe('CustomPermissionGroup class', () => {
     it('should return a list of permissions and transaction groups', async () => {
       const customPermissionGroup = new CustomPermissionGroup({ id, ticker }, context);
 
-      dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
+      dsMockUtils.createQueryMock('externalAgents', 'groupPermissions', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockExtrinsicPermissions({
             These: [
@@ -145,13 +145,13 @@ describe('CustomPermissionGroup class', () => {
     it('should return whether the Custom Permission Group exists', async () => {
       const customPermissionGroup = new CustomPermissionGroup({ id, ticker }, context);
 
-      dsMockUtils.createQueryStub('externalAgents', 'aGIdSequence', {
+      dsMockUtils.createQueryMock('externalAgents', 'aGIdSequence', {
         returnValue: dsMockUtils.createMockU32(new BigNumber(0)),
       });
 
       await expect(customPermissionGroup.exists()).resolves.toBe(false);
 
-      dsMockUtils.createQueryStub('externalAgents', 'aGIdSequence', {
+      dsMockUtils.createQueryMock('externalAgents', 'aGIdSequence', {
         returnValue: dsMockUtils.createMockU32(new BigNumber(10)),
       });
 

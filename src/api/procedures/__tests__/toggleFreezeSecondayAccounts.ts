@@ -78,7 +78,7 @@ describe('toggleFreezeSecondaryAccounts procedure', () => {
       mockContext
     );
 
-    const transaction = dsMockUtils.createTxStub('identity', 'freezeSecondaryKeys');
+    const transaction = dsMockUtils.createTxMock('identity', 'freezeSecondaryKeys');
 
     const result = await prepareToggleFreezeSecondaryAccounts.call(proc, {
       freeze: true,
@@ -98,7 +98,7 @@ describe('toggleFreezeSecondaryAccounts procedure', () => {
       mockContext
     );
 
-    const transaction = dsMockUtils.createTxStub('identity', 'unfreezeSecondaryKeys');
+    const transaction = dsMockUtils.createTxMock('identity', 'unfreezeSecondaryKeys');
 
     const result = await prepareToggleFreezeSecondaryAccounts.call(proc, {
       freeze: false,

@@ -20,9 +20,9 @@ jest.mock(
 
 describe('removeCheckpointSchedule procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: jest.SpyInstance;
-  let bigNumberToU64Stub: jest.SpyInstance;
-  let u32ToBigNumberStub: jest.SpyInstance;
+  let stringToTickerSpy: jest.SpyInstance;
+  let bigNumberToU64Spy: jest.SpyInstance;
+  let u32ToBigNumberSpy: jest.SpyInstance;
   let ticker: string;
   let rawTicker: Ticker;
   let id: BigNumber;
@@ -32,9 +32,9 @@ describe('removeCheckpointSchedule procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
-    bigNumberToU64Stub = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
-    u32ToBigNumberStub = jest.spyOn(utilsConversionModule, 'u32ToBigNumber');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
+    u32ToBigNumberSpy = jest.spyOn(utilsConversionModule, 'u32ToBigNumber');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     id = new BigNumber(1);
@@ -43,10 +43,10 @@ describe('removeCheckpointSchedule procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    stringToTickerStub.mockReturnValue(rawTicker);
-    bigNumberToU64Stub.mockReturnValue(rawId);
+    stringToTickerSpy.mockReturnValue(rawTicker);
+    bigNumberToU64Spy.mockReturnValue(rawId);
 
-    dsMockUtils.createQueryStub('checkpoint', 'scheduleRefCount');
+    dsMockUtils.createQueryMock('checkpoint', 'scheduleRefCount');
   });
 
   afterEach(() => {
@@ -66,7 +66,7 @@ describe('removeCheckpointSchedule procedure', () => {
       schedule: id,
     };
 
-    dsMockUtils.createQueryStub('checkpoint', 'schedules', {
+    dsMockUtils.createQueryMock('checkpoint', 'schedules', {
       returnValue: [
         dsMockUtils.createMockStoredSchedule({
           id: dsMockUtils.createMockU64(new BigNumber(5)),
@@ -87,7 +87,7 @@ describe('removeCheckpointSchedule procedure', () => {
       schedule: id,
     };
 
-    dsMockUtils.createQueryStub('checkpoint', 'schedules', {
+    dsMockUtils.createQueryMock('checkpoint', 'schedules', {
       returnValue: [
         dsMockUtils.createMockStoredSchedule({
           id: dsMockUtils.createMockU64(id),
@@ -95,7 +95,7 @@ describe('removeCheckpointSchedule procedure', () => {
       ],
     });
 
-    u32ToBigNumberStub.mockReturnValue(new BigNumber(1));
+    u32ToBigNumberSpy.mockReturnValue(new BigNumber(1));
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
@@ -110,7 +110,7 @@ describe('removeCheckpointSchedule procedure', () => {
       schedule: id,
     };
 
-    dsMockUtils.createQueryStub('checkpoint', 'schedules', {
+    dsMockUtils.createQueryMock('checkpoint', 'schedules', {
       returnValue: [
         dsMockUtils.createMockStoredSchedule({
           id: rawId,
@@ -118,16 +118,16 @@ describe('removeCheckpointSchedule procedure', () => {
       ],
     });
 
-    u32ToBigNumberStub.mockReturnValue(new BigNumber(0));
+    u32ToBigNumberSpy.mockReturnValue(new BigNumber(0));
 
-    let transaction = dsMockUtils.createTxStub('checkpoint', 'removeSchedule');
+    let transaction = dsMockUtils.createTxMock('checkpoint', 'removeSchedule');
     let proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     let result = await prepareRemoveCheckpointSchedule.call(proc, args);
 
     expect(result).toEqual({ transaction, args: [rawTicker, rawId], resolver: undefined });
 
-    transaction = dsMockUtils.createTxStub('checkpoint', 'removeSchedule');
+    transaction = dsMockUtils.createTxMock('checkpoint', 'removeSchedule');
     proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     result = await prepareRemoveCheckpointSchedule.call(proc, {

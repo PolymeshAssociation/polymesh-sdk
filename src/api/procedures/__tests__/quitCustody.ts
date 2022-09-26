@@ -28,23 +28,20 @@ describe('quitCustody procedure', () => {
   const did = 'someDid';
 
   let mockContext: Mocked<Context>;
-  let portfolioIdToMeshPortfolioIdStub: jest.SpyInstance<MeshPortfolioId, [PortfolioId, Context]>;
-  let portfolioLikeToPortfolioIdStub: jest.SpyInstance;
-  let assertPortfolioExistsStub: jest.SpyInstance;
+  let portfolioIdToMeshPortfolioIdSpy: jest.SpyInstance<MeshPortfolioId, [PortfolioId, Context]>;
+  let portfolioLikeToPortfolioIdSpy: jest.SpyInstance;
+  let assertPortfolioExistsSpy: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    portfolioIdToMeshPortfolioIdStub = jest.spyOn(
+    portfolioIdToMeshPortfolioIdSpy = jest.spyOn(
       utilsConversionModule,
       'portfolioIdToMeshPortfolioId'
     );
-    portfolioLikeToPortfolioIdStub = jest.spyOn(
-      utilsConversionModule,
-      'portfolioLikeToPortfolioId'
-    );
-    assertPortfolioExistsStub = jest.spyOn(procedureUtilsModule, 'assertPortfolioExists');
+    portfolioLikeToPortfolioIdSpy = jest.spyOn(utilsConversionModule, 'portfolioLikeToPortfolioId');
+    assertPortfolioExistsSpy = jest.spyOn(procedureUtilsModule, 'assertPortfolioExists');
   });
 
   beforeEach(() => {
@@ -54,7 +51,7 @@ describe('quitCustody procedure', () => {
         isOwnedBy: true,
       },
     });
-    assertPortfolioExistsStub.mockReturnValue(true);
+    assertPortfolioExistsSpy.mockReturnValue(true);
   });
 
   afterEach(() => {
@@ -104,7 +101,7 @@ describe('quitCustody procedure', () => {
 
     const portfolioId: { did: string; number?: BigNumber } = { did, number: id };
 
-    when(portfolioIdToMeshPortfolioIdStub)
+    when(portfolioIdToMeshPortfolioIdSpy)
       .calledWith(portfolioId, mockContext)
       .mockReturnValue(rawMeshPortfolioId);
 
@@ -112,7 +109,7 @@ describe('quitCustody procedure', () => {
       portfolioId,
     });
 
-    const transaction = dsMockUtils.createTxStub('portfolio', 'quitPortfolioCustody');
+    const transaction = dsMockUtils.createTxMock('portfolio', 'quitPortfolioCustody');
 
     const result = await prepareQuitCustody.call(proc, {
       portfolio,
@@ -179,7 +176,7 @@ describe('quitCustody procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
-      when(portfolioLikeToPortfolioIdStub).calledWith(portfolio).mockReturnValue(portfolioId);
+      when(portfolioLikeToPortfolioIdSpy).calledWith(portfolio).mockReturnValue(portfolioId);
 
       const result = await boundFunc({ portfolio });
 

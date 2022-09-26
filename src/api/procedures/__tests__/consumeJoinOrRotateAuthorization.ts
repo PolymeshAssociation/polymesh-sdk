@@ -25,8 +25,8 @@ import * as utilsConversionModule from '~/utils/conversion';
 describe('consumeJoinOrRotateAuthorization procedure', () => {
   let mockContext: Mocked<Context>;
   let targetAddress: string;
-  let bigNumberToU64Stub: jest.SpyInstance<u64, [BigNumber, Context]>;
-  let booleanToBoolStub: jest.SpyInstance<bool, [boolean, Context]>;
+  let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
+  let booleanToBoolSpy: jest.SpyInstance<bool, [boolean, Context]>;
   let rawTrue: bool;
   let rawFalse: bool;
   let authId: BigNumber;
@@ -43,8 +43,8 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
     });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    bigNumberToU64Stub = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
-    booleanToBoolStub = jest.spyOn(utilsConversionModule, 'booleanToBool');
+    bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
+    booleanToBoolSpy = jest.spyOn(utilsConversionModule, 'booleanToBool');
     authId = new BigNumber(1);
     rawAuthId = dsMockUtils.createMockU64(authId);
     rawTrue = dsMockUtils.createMockBool(true);
@@ -54,7 +54,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
   });
 
   beforeEach(() => {
-    dsMockUtils.createQueryStub('identity', 'authorizations', {
+    dsMockUtils.createQueryMock('identity', 'authorizations', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockAuthorization({
           authorizationData: dsMockUtils.createMockAuthorizationData('RotatePrimaryKey'),
@@ -65,9 +65,9 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       ),
     });
     mockContext = dsMockUtils.getContextInstance();
-    when(bigNumberToU64Stub).calledWith(authId, mockContext).mockReturnValue(rawAuthId);
-    when(booleanToBoolStub).calledWith(true, mockContext).mockReturnValue(rawTrue);
-    when(booleanToBoolStub).calledWith(false, mockContext).mockReturnValue(rawFalse);
+    when(bigNumberToU64Spy).calledWith(authId, mockContext).mockReturnValue(rawAuthId);
+    when(booleanToBoolSpy).calledWith(true, mockContext).mockReturnValue(rawTrue);
+    when(booleanToBoolSpy).calledWith(false, mockContext).mockReturnValue(rawFalse);
 
     targetAccount = entityMockUtils.getAccountInstance({ address: targetAddress });
   });
@@ -167,7 +167,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       calledByTarget: true,
     });
 
-    const transaction = dsMockUtils.createTxStub('identity', 'joinIdentityAsKey');
+    const transaction = dsMockUtils.createTxMock('identity', 'joinIdentityAsKey');
 
     const issuer = entityMockUtils.getIdentityInstance();
     const target = entityMockUtils.getAccountInstance({
@@ -215,7 +215,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       calledByTarget: true,
     });
 
-    const transaction = dsMockUtils.createTxStub('identity', 'rotatePrimaryKeyToSecondary');
+    const transaction = dsMockUtils.createTxMock('identity', 'rotatePrimaryKeyToSecondary');
 
     const issuer = entityMockUtils.getIdentityInstance();
     const target = entityMockUtils.getAccountInstance({
@@ -263,7 +263,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       calledByTarget: true,
     });
 
-    const transaction = dsMockUtils.createTxStub('identity', 'acceptPrimaryKey');
+    const transaction = dsMockUtils.createTxMock('identity', 'acceptPrimaryKey');
 
     const issuer = entityMockUtils.getIdentityInstance();
     const target = entityMockUtils.getAccountInstance({
@@ -349,7 +349,7 @@ describe('consumeJoinOrRotateAuthorization procedure', () => {
       calledByTarget: false,
     });
 
-    const transaction = dsMockUtils.createTxStub('identity', 'removeAuthorization');
+    const transaction = dsMockUtils.createTxMock('identity', 'removeAuthorization');
 
     const issuer = entityMockUtils.getIdentityInstance();
     let target: Signer = new Identity({ did: 'someOtherDid' }, mockContext);

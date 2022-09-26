@@ -36,8 +36,8 @@ describe('Portfolios class', () => {
   const numberedPortfolioId = new BigNumber(1);
   const rawNumberedPortfolioId = dsMockUtils.createMockU64(numberedPortfolioId);
   let mockContext: Mocked<Context>;
-  let stringToIdentityIdStub: jest.SpyInstance<PolymeshPrimitivesIdentityId, [string, Context]>;
-  let u64ToBigNumberStub: jest.SpyInstance<BigNumber, [u64]>;
+  let stringToIdentityIdSpy: jest.SpyInstance<PolymeshPrimitivesIdentityId, [string, Context]>;
+  let u64ToBigNumberSpy: jest.SpyInstance<BigNumber, [u64]>;
   let portfolios: Portfolios;
   let identity: Identity;
 
@@ -45,8 +45,8 @@ describe('Portfolios class', () => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
-    stringToIdentityIdStub = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
-    u64ToBigNumberStub = jest.spyOn(utilsConversionModule, 'u64ToBigNumber');
+    stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
+    u64ToBigNumberSpy = jest.spyOn(utilsConversionModule, 'u64ToBigNumber');
   });
 
   beforeEach(() => {
@@ -72,7 +72,7 @@ describe('Portfolios class', () => {
 
   describe('method: getPortfolios', () => {
     it('should retrieve all the portfolios for the Identity', async () => {
-      dsMockUtils.createQueryStub('portfolio', 'portfolios', {
+      dsMockUtils.createQueryMock('portfolio', 'portfolios', {
         entries: [
           tuple(
             [dsMockUtils.createMockIdentityId(did), rawNumberedPortfolioId],
@@ -81,8 +81,8 @@ describe('Portfolios class', () => {
         ],
       });
 
-      when(stringToIdentityIdStub).calledWith(did, mockContext).mockReturnValue(rawIdentityId);
-      u64ToBigNumberStub.mockReturnValue(numberedPortfolioId);
+      when(stringToIdentityIdSpy).calledWith(did, mockContext).mockReturnValue(rawIdentityId);
+      u64ToBigNumberSpy.mockReturnValue(numberedPortfolioId);
 
       const result = await portfolios.getPortfolios();
       expect(result).toHaveLength(2);
@@ -95,7 +95,7 @@ describe('Portfolios class', () => {
 
   describe('method: getCustodiedPortfolios', () => {
     it('should retrieve all the Portfolios custodied by the Identity', async () => {
-      dsMockUtils.createQueryStub('portfolio', 'portfoliosInCustody');
+      dsMockUtils.createQueryMock('portfolio', 'portfoliosInCustody');
 
       const entries = [
         tuple(
@@ -128,8 +128,8 @@ describe('Portfolios class', () => {
         .spyOn(utilsInternalModule, 'requestPaginated')
         .mockResolvedValue({ entries, lastKey: null });
 
-      when(stringToIdentityIdStub).calledWith(did, mockContext).mockReturnValue(rawIdentityId);
-      u64ToBigNumberStub.mockReturnValue(numberedPortfolioId);
+      when(stringToIdentityIdSpy).calledWith(did, mockContext).mockReturnValue(rawIdentityId);
+      u64ToBigNumberSpy.mockReturnValue(numberedPortfolioId);
 
       const { data } = await portfolios.getCustodiedPortfolios();
       expect(data).toHaveLength(2);
@@ -176,7 +176,7 @@ describe('Portfolios class', () => {
       const portfolioId = new BigNumber(5);
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args: { id: portfolioId, did }, transformer: undefined }, mockContext, {})
         .mockResolvedValue(expectedTransaction);
 

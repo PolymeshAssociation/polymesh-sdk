@@ -23,7 +23,7 @@ jest.mock(
 
 describe('issueTokens procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: jest.SpyInstance<Ticker, [string, Context]>;
+  let stringToTickerSpy: jest.SpyInstance<Ticker, [string, Context]>;
   let bigNumberToBalance: jest.SpyInstance;
   let ticker: string;
   let rawTicker: Ticker;
@@ -34,7 +34,7 @@ describe('issueTokens procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
     bigNumberToBalance = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
@@ -44,7 +44,7 @@ describe('issueTokens procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    when(stringToTickerStub).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
   });
 
   afterEach(() => {
@@ -131,7 +131,7 @@ describe('issueTokens procedure', () => {
       .calledWith(amount, mockContext, isDivisible)
       .mockReturnValue(rawAmount);
 
-    const transaction = dsMockUtils.createTxStub('asset', 'issue');
+    const transaction = dsMockUtils.createTxMock('asset', 'issue');
     const proc = procedureMockUtils.getInstance<IssueTokensParams, Asset, Storage>(mockContext, {
       asset: entityMockUtils.getAssetInstance(),
     });

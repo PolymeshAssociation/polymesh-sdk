@@ -27,9 +27,9 @@ describe('AssetHolder class', () => {
   let ticker: string;
   let mockContext: Mocked<Context>;
   let rawTicker: PolymeshPrimitivesTicker;
-  let requestPaginatedStub: jest.SpyInstance;
-  let identityIdToStringStub: jest.SpyInstance<string, [PolymeshPrimitivesIdentityId]>;
-  let balanceToBigNumberStub: jest.SpyInstance<BigNumber, [Balance]>;
+  let requestPaginatedSpy: jest.SpyInstance;
+  let identityIdToStringSpy: jest.SpyInstance<string, [PolymeshPrimitivesIdentityId]>;
+  let balanceToBigNumberSpy: jest.SpyInstance<BigNumber, [Balance]>;
   const fakeData = [
     {
       identity: 'someIdentity',
@@ -47,9 +47,9 @@ describe('AssetHolder class', () => {
     ticker = 'TEST';
     mockContext = dsMockUtils.getContextInstance();
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    requestPaginatedStub = jest.spyOn(utilsInternalModule, 'requestPaginated');
-    identityIdToStringStub = jest.spyOn(utilsConversionModule, 'identityIdToString');
-    balanceToBigNumberStub = jest.spyOn(utilsConversionModule, 'balanceToBigNumber');
+    requestPaginatedSpy = jest.spyOn(utilsInternalModule, 'requestPaginated');
+    identityIdToStringSpy = jest.spyOn(utilsConversionModule, 'identityIdToString');
+    balanceToBigNumberSpy = jest.spyOn(utilsConversionModule, 'balanceToBigNumber');
     when(jest.spyOn(utilsConversionModule, 'stringToTicker'))
       .calledWith(ticker, mockContext)
       .mockReturnValue(rawTicker);
@@ -74,7 +74,7 @@ describe('AssetHolder class', () => {
     });
 
     it('should retrieve all the Asset Holders with balance', async () => {
-      dsMockUtils.createQueryStub('asset', 'balanceOf');
+      dsMockUtils.createQueryMock('asset', 'balanceOf');
 
       const expectedHolders: IdentityBalance[] = [];
 
@@ -87,8 +87,8 @@ describe('AssetHolder class', () => {
         const fakeBalance = dsMockUtils.createMockBalance(value);
         const balance = new BigNumber(value);
 
-        when(identityIdToStringStub).calledWith(identityId).mockReturnValue(identity);
-        when(balanceToBigNumberStub).calledWith(fakeBalance).mockReturnValue(balance);
+        when(identityIdToStringSpy).calledWith(identityId).mockReturnValue(identity);
+        when(balanceToBigNumberSpy).calledWith(fakeBalance).mockReturnValue(balance);
 
         balanceOfEntries.push(
           tuple({ args: [rawTicker, identityId] } as unknown as StorageKey, fakeBalance)
@@ -100,7 +100,7 @@ describe('AssetHolder class', () => {
         });
       });
 
-      requestPaginatedStub.mockResolvedValue({ entries: balanceOfEntries, lastKey: null });
+      requestPaginatedSpy.mockResolvedValue({ entries: balanceOfEntries, lastKey: null });
 
       const asset = entityMockUtils.getAssetInstance();
       const assetHolders = new AssetHolders(asset, context);
@@ -112,7 +112,7 @@ describe('AssetHolder class', () => {
     });
 
     it('should retrieve the first page of results with only one Asset Holder', async () => {
-      dsMockUtils.createQueryStub('asset', 'balanceOf');
+      dsMockUtils.createQueryMock('asset', 'balanceOf');
 
       const expectedHolders: IdentityBalance[] = [];
 
@@ -125,8 +125,8 @@ describe('AssetHolder class', () => {
       const fakeBalance = dsMockUtils.createMockBalance(value);
       const balance = new BigNumber(value);
 
-      when(identityIdToStringStub).calledWith(identityId).mockReturnValue(identity);
-      when(balanceToBigNumberStub).calledWith(fakeBalance).mockReturnValue(balance);
+      when(identityIdToStringSpy).calledWith(identityId).mockReturnValue(identity);
+      when(balanceToBigNumberSpy).calledWith(fakeBalance).mockReturnValue(balance);
 
       balanceOfEntries.push(
         tuple({ args: [rawTicker, identityId] } as unknown as StorageKey, fakeBalance)
@@ -137,7 +137,7 @@ describe('AssetHolder class', () => {
         balance,
       });
 
-      requestPaginatedStub.mockResolvedValue({ entries: balanceOfEntries, lastKey: 'someKey' });
+      requestPaginatedSpy.mockResolvedValue({ entries: balanceOfEntries, lastKey: 'someKey' });
 
       const asset = entityMockUtils.getAssetInstance();
       const assetHolders = new AssetHolders(asset, context);

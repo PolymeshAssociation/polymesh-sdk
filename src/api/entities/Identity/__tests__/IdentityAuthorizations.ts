@@ -48,9 +48,9 @@ describe('IdentityAuthorizations class', () => {
 
     it('should retrieve all pending authorizations sent by the Identity', async () => {
       jest.spyOn(utilsConversionModule, 'signerValueToSignatory').mockImplementation();
-      dsMockUtils.createQueryStub('identity', 'authorizationsGiven');
+      dsMockUtils.createQueryMock('identity', 'authorizationsGiven');
 
-      const requestPaginatedStub = jest.spyOn(utilsInternalModule, 'requestPaginated');
+      const requestPaginatedSpy = jest.spyOn(utilsInternalModule, 'requestPaginated');
 
       const did = 'someDid';
 
@@ -99,7 +99,7 @@ describe('IdentityAuthorizations class', () => {
           )
       );
 
-      requestPaginatedStub.mockResolvedValue({
+      requestPaginatedSpy.mockResolvedValue({
         entries: authorizationsGivenEntries,
         lastKey: null,
       });
@@ -108,8 +108,8 @@ describe('IdentityAuthorizations class', () => {
         tuple(signatory, keys.args[1])
       );
 
-      const authorizationsStub = dsMockUtils.createQueryStub('identity', 'authorizations');
-      when(authorizationsStub.multi)
+      const authorizationsMock = dsMockUtils.createQueryMock('identity', 'authorizations');
+      when(authorizationsMock.multi)
         .calledWith(authsMultiArgs)
         .mockResolvedValue(authorizations.map(dsMockUtils.createMockOption));
 
@@ -167,14 +167,14 @@ describe('IdentityAuthorizations class', () => {
 
       const data = { type: AuthorizationType.TransferAssetOwnership, value: 'myTicker' } as const;
 
-      dsMockUtils.createQueryStub('identity', 'authorizationsGiven', {
+      dsMockUtils.createQueryMock('identity', 'authorizationsGiven', {
         returnValue: dsMockUtils.createMockSignatory({
           Identity: dsMockUtils.createMockIdentityId(targetDid),
         }),
       });
 
       /* eslint-disable @typescript-eslint/naming-convention */
-      dsMockUtils.createQueryStub('identity', 'authorizations', {
+      dsMockUtils.createQueryMock('identity', 'authorizations', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockAuthorization({
             authId: dsMockUtils.createMockU64(id),
@@ -208,7 +208,7 @@ describe('IdentityAuthorizations class', () => {
 
       const data = { type: AuthorizationType.TransferAssetOwnership, value: 'myTicker' } as const;
 
-      dsMockUtils.createQueryStub('identity', 'authorizationsGiven', {
+      dsMockUtils.createQueryMock('identity', 'authorizationsGiven', {
         returnValue: dsMockUtils.createMockSignatory(),
       });
 
@@ -236,7 +236,7 @@ describe('IdentityAuthorizations class', () => {
       const authsNamespace = new IdentityAuthorizations(identity, context);
       const id = new BigNumber(1);
 
-      dsMockUtils.createQueryStub('identity', 'authorizationsGiven', {
+      dsMockUtils.createQueryMock('identity', 'authorizationsGiven', {
         returnValue: dsMockUtils.createMockSignatory(),
       });
 

@@ -88,7 +88,7 @@ describe('Venue class', () => {
         .calledWith(id, context)
         .mockReturnValue(rawId);
 
-      when(dsMockUtils.createQueryStub('settlement', 'venueInfo'))
+      when(dsMockUtils.createQueryMock('settlement', 'venueInfo'))
         .calledWith(rawId)
         .mockResolvedValue(dsMockUtils.createMockOption());
 
@@ -114,7 +114,7 @@ describe('Venue class', () => {
         .mockReturnValue(rawId);
       when(jest.spyOn(utilsConversionModule, 'bytesToString')).mockReturnValue(description);
 
-      when(dsMockUtils.createQueryStub('settlement', 'venueInfo'))
+      when(dsMockUtils.createQueryMock('settlement', 'venueInfo'))
         .calledWith(rawId)
         .mockResolvedValue(
           dsMockUtils.createMockOption(
@@ -124,7 +124,7 @@ describe('Venue class', () => {
             })
           )
         );
-      when(dsMockUtils.createQueryStub('settlement', 'details'))
+      when(dsMockUtils.createQueryMock('settlement', 'details'))
         .calledWith(rawId)
         .mockResolvedValue(dsMockUtils.createMockBytes(description));
 
@@ -147,9 +147,9 @@ describe('Venue class', () => {
       const id1 = new BigNumber(1);
       const id2 = new BigNumber(2);
 
-      const detailsStub = jest.fn();
+      const detailsMock = jest.fn();
 
-      detailsStub
+      detailsMock
         .mockResolvedValueOnce({
           status: InstructionStatus.Pending,
         })
@@ -162,7 +162,7 @@ describe('Venue class', () => {
 
       entityMockUtils.configureMocks({
         instructionOptions: {
-          details: detailsStub,
+          details: detailsMock,
         },
       });
 
@@ -171,10 +171,10 @@ describe('Venue class', () => {
         .mockReturnValue(rawId);
 
       dsMockUtils
-        .createQueryStub('settlement', 'venueInfo')
+        .createQueryMock('settlement', 'venueInfo')
         .mockResolvedValue(dsMockUtils.createMockOption(dsMockUtils.createMockVenue()));
 
-      dsMockUtils.createQueryStub('settlement', 'venueInstructions', {
+      dsMockUtils.createQueryMock('settlement', 'venueInstructions', {
         entries: [
           [tuple(rawId, dsMockUtils.createMockU64(id1)), []],
           [tuple(rawId, dsMockUtils.createMockU64(id2)), []],
@@ -217,7 +217,7 @@ describe('Venue class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Instruction>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
             args: { instructions: [{ legs, tradeDate, endBlock }], venueId: venue.id },
@@ -268,7 +268,7 @@ describe('Venue class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Instruction>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
             args: { venueId: venue.id, instructions },
@@ -295,7 +295,7 @@ describe('Venue class', () => {
       const description = 'someDetails';
       const type = VenueType.Other;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
             args: { venue, description, type },

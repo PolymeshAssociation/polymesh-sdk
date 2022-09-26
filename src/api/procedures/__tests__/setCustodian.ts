@@ -44,26 +44,26 @@ jest.mock(
 
 describe('setCustodian procedure', () => {
   let mockContext: Mocked<Context>;
-  let authorizationToAuthorizationDataStub: jest.SpyInstance<
+  let authorizationToAuthorizationDataSpy: jest.SpyInstance<
     PolymeshPrimitivesAuthorizationAuthorizationData,
     [Authorization, Context]
   >;
-  let dateToMomentStub: jest.SpyInstance<Moment, [Date, Context]>;
-  let signerToStringStub: jest.SpyInstance<string, [string | Identity | Account]>;
-  let signerValueToSignatoryStub: jest.SpyInstance<Signatory, [SignerValue, Context]>;
+  let dateToMomentSpy: jest.SpyInstance<Moment, [Date, Context]>;
+  let signerToStringSpy: jest.SpyInstance<string, [string | Identity | Account]>;
+  let signerValueToSignatorySpy: jest.SpyInstance<Signatory, [SignerValue, Context]>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
 
-    authorizationToAuthorizationDataStub = jest.spyOn(
+    authorizationToAuthorizationDataSpy = jest.spyOn(
       utilsConversionModule,
       'authorizationToAuthorizationData'
     );
-    dateToMomentStub = jest.spyOn(utilsConversionModule, 'dateToMoment');
-    signerToStringStub = jest.spyOn(utilsConversionModule, 'signerToString');
-    signerValueToSignatoryStub = jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
+    dateToMomentSpy = jest.spyOn(utilsConversionModule, 'dateToMoment');
+    signerToStringSpy = jest.spyOn(utilsConversionModule, 'signerToString');
+    signerValueToSignatorySpy = jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
   });
 
   beforeEach(() => {
@@ -104,9 +104,9 @@ describe('setCustodian procedure', () => {
       },
     });
 
-    when(signerToStringStub).calledWith(signer).mockReturnValue(signer.address);
-    when(signerToStringStub).calledWith(args.targetIdentity).mockReturnValue(args.targetIdentity);
-    when(signerToStringStub).calledWith(target).mockReturnValue(args.targetIdentity);
+    when(signerToStringSpy).calledWith(signer).mockReturnValue(signer.address);
+    when(signerToStringSpy).calledWith(args.targetIdentity).mockReturnValue(args.targetIdentity);
+    when(signerToStringSpy).calledWith(target).mockReturnValue(args.targetIdentity);
 
     const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
 
@@ -156,18 +156,18 @@ describe('setCustodian procedure', () => {
       },
     });
 
-    when(signerToStringStub).calledWith(signer).mockReturnValue(signer.address);
-    when(signerToStringStub).calledWith(args.targetIdentity).mockReturnValue(args.targetIdentity);
-    when(signerToStringStub).calledWith(target).mockReturnValue('someValue');
-    when(signerValueToSignatoryStub)
+    when(signerToStringSpy).calledWith(signer).mockReturnValue(signer.address);
+    when(signerToStringSpy).calledWith(args.targetIdentity).mockReturnValue(args.targetIdentity);
+    when(signerToStringSpy).calledWith(target).mockReturnValue('someValue');
+    when(signerValueToSignatorySpy)
       .calledWith({ type: SignerType.Identity, value: args.targetIdentity }, mockContext)
       .mockReturnValue(rawSignatory);
-    authorizationToAuthorizationDataStub.mockReturnValue(rawAuthorizationData);
-    when(dateToMomentStub).calledWith(expiry, mockContext).mockReturnValue(rawExpiry);
+    authorizationToAuthorizationDataSpy.mockReturnValue(rawAuthorizationData);
+    when(dateToMomentSpy).calledWith(expiry, mockContext).mockReturnValue(rawExpiry);
 
     const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('identity', 'addAuthorization');
+    const transaction = dsMockUtils.createTxMock('identity', 'addAuthorization');
 
     let result = await prepareSetCustodian.call(proc, args);
 

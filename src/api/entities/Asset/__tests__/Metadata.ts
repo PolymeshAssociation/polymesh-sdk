@@ -29,14 +29,14 @@ describe('Metadata class', () => {
   let context: Context;
   let metadata: Metadata;
   let rawTicker: PolymeshPrimitivesTicker;
-  let stringToTickerStub: jest.SpyInstance;
+  let stringToTickerSpy: jest.SpyInstance;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
 
-    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
   });
 
   beforeEach(() => {
@@ -47,7 +47,7 @@ describe('Metadata class', () => {
 
     metadata = new Metadata(asset, context);
 
-    when(stringToTickerStub).calledWith(ticker, context).mockReturnValue(rawTicker);
+    when(stringToTickerSpy).calledWith(ticker, context).mockReturnValue(rawTicker);
   });
 
   afterEach(() => {
@@ -72,7 +72,7 @@ describe('Metadata class', () => {
 
       const params = { name: 'SOME_METADATA', specs: {} };
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args: { ticker, ...params }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -85,10 +85,10 @@ describe('Metadata class', () => {
   describe('method: get', () => {
     let ids: BigNumber[];
     let rawIds: u64[];
-    let u64ToBigNumberStub: jest.SpyInstance;
+    let u64ToBigNumberSpy: jest.SpyInstance;
 
     beforeAll(() => {
-      u64ToBigNumberStub = jest.spyOn(utilsConversionModule, 'u64ToBigNumber');
+      u64ToBigNumberSpy = jest.spyOn(utilsConversionModule, 'u64ToBigNumber');
     });
 
     beforeEach(() => {
@@ -96,10 +96,10 @@ describe('Metadata class', () => {
       rawIds = [dsMockUtils.createMockU64(ids[0]), dsMockUtils.createMockU64(ids[1])];
 
       rawIds.forEach((rawId, index) =>
-        when(u64ToBigNumberStub).calledWith(rawId).mockReturnValue(ids[index])
+        when(u64ToBigNumberSpy).calledWith(rawId).mockReturnValue(ids[index])
       );
 
-      dsMockUtils.createQueryStub('asset', 'assetMetadataGlobalKeyToName', {
+      dsMockUtils.createQueryMock('asset', 'assetMetadataGlobalKeyToName', {
         entries: [
           tuple(
             [rawIds[0]],
@@ -108,7 +108,7 @@ describe('Metadata class', () => {
         ],
       });
 
-      dsMockUtils.createQueryStub('asset', 'assetMetadataLocalKeyToName', {
+      dsMockUtils.createQueryMock('asset', 'assetMetadataLocalKeyToName', {
         entries: rawIds.map((rawId, index) =>
           tuple(
             [rawTicker, rawId],
@@ -161,14 +161,14 @@ describe('Metadata class', () => {
     });
 
     it('should throw an error if no MetadataEntry is found', async () => {
-      dsMockUtils.createQueryStub('asset', 'assetMetadataGlobalKeyToName', {
+      dsMockUtils.createQueryMock('asset', 'assetMetadataGlobalKeyToName', {
         returnValue: dsMockUtils.createMockOption(),
       });
       await expect(metadata.getOne({ id, type: MetadataType.Global })).rejects.toThrow(
         `There is no global Asset Metadata with id "${id.toString()}"`
       );
 
-      dsMockUtils.createQueryStub('asset', 'assetMetadataLocalKeyToName', {
+      dsMockUtils.createQueryMock('asset', 'assetMetadataLocalKeyToName', {
         returnValue: dsMockUtils.createMockOption(),
       });
       await expect(metadata.getOne({ id, type: MetadataType.Local })).rejects.toThrow(
@@ -178,7 +178,7 @@ describe('Metadata class', () => {
 
     it('should return the MetadataEntry for requested id and type', async () => {
       const rawName = dsMockUtils.createMockOption(dsMockUtils.createMockBytes('SOME_NAME'));
-      dsMockUtils.createQueryStub('asset', 'assetMetadataGlobalKeyToName', {
+      dsMockUtils.createQueryMock('asset', 'assetMetadataGlobalKeyToName', {
         returnValue: rawName,
       });
 
@@ -191,11 +191,11 @@ describe('Metadata class', () => {
         })
       );
 
-      dsMockUtils.createQueryStub('asset', 'assetMetadataGlobalKeyToName', {
+      dsMockUtils.createQueryMock('asset', 'assetMetadataGlobalKeyToName', {
         returnValue: dsMockUtils.createMockOption(),
       });
 
-      dsMockUtils.createQueryStub('asset', 'assetMetadataLocalKeyToName', {
+      dsMockUtils.createQueryMock('asset', 'assetMetadataLocalKeyToName', {
         returnValue: rawName,
       });
 

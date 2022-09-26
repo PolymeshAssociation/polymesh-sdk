@@ -50,7 +50,7 @@ describe('Issuance class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 

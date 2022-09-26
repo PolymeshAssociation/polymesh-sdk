@@ -59,7 +59,7 @@ describe('Documents class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           { args: { ticker: asset.ticker, ...args }, transformer: undefined },
           context,
@@ -80,8 +80,8 @@ describe('Documents class', () => {
 
     it('should retrieve all documents linked to the Asset', async () => {
       const asset = entityMockUtils.getAssetInstance();
-      dsMockUtils.createQueryStub('asset', 'assetDocuments');
-      const requestPaginatedStub = jest.spyOn(utilsInternalModule, 'requestPaginated');
+      dsMockUtils.createQueryMock('asset', 'assetDocuments');
+      const requestPaginatedSpy = jest.spyOn(utilsInternalModule, 'requestPaginated');
 
       const expectedDocuments: AssetDocument[] = [
         {
@@ -117,7 +117,7 @@ describe('Documents class', () => {
         )
       );
 
-      requestPaginatedStub.mockResolvedValue({ entries, lastKey: null });
+      requestPaginatedSpy.mockResolvedValue({ entries, lastKey: null });
 
       const context = dsMockUtils.getContextInstance();
       const documents = new Documents(asset, context);

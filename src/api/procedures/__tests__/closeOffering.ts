@@ -47,7 +47,7 @@ describe('closeOffering procedure', () => {
   });
 
   beforeEach(() => {
-    stopStoTransaction = dsMockUtils.createTxStub('sto', 'stop');
+    stopStoTransaction = dsMockUtils.createTxMock('sto', 'stop');
     mockContext = dsMockUtils.getContextInstance();
   });
 

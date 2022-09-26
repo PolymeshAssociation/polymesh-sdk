@@ -27,8 +27,8 @@ describe('redeemTokens procedure', () => {
   let rawTicker: Ticker;
   let amount: BigNumber;
   let rawAmount: Balance;
-  let stringToTickerStub: jest.SpyInstance<Ticker, [string, Context]>;
-  let bigNumberToBalanceStub: jest.SpyInstance<
+  let stringToTickerSpy: jest.SpyInstance<Ticker, [string, Context]>;
+  let bigNumberToBalanceSpy: jest.SpyInstance<
     Balance,
     [BigNumber, Context, (boolean | undefined)?]
   >;
@@ -41,14 +41,14 @@ describe('redeemTokens procedure', () => {
     rawTicker = dsMockUtils.createMockTicker(ticker);
     amount = new BigNumber(100);
     rawAmount = dsMockUtils.createMockBalance(amount);
-    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
-    bigNumberToBalanceStub = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    bigNumberToBalanceSpy = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    when(stringToTickerStub).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
-    when(bigNumberToBalanceStub).calledWith(amount, mockContext, true).mockReturnValue(rawAmount);
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(bigNumberToBalanceSpy).calledWith(amount, mockContext, true).mockReturnValue(rawAmount);
   });
 
   afterEach(() => {
@@ -65,7 +65,7 @@ describe('redeemTokens procedure', () => {
   it('should return a redeem transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('asset', 'redeem');
+    const transaction = dsMockUtils.createTxMock('asset', 'redeem');
 
     entityMockUtils.configureMocks({
       assetOptions: {

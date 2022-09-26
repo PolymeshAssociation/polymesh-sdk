@@ -30,7 +30,7 @@ describe('modifyCaCheckpoint procedure', () => {
   });
 
   beforeEach(() => {
-    changeRecordDateTransaction = dsMockUtils.createTxStub('corporateAction', 'changeRecordDate');
+    changeRecordDateTransaction = dsMockUtils.createTxMock('corporateAction', 'changeRecordDate');
     mockContext = dsMockUtils.getContextInstance();
   });
 

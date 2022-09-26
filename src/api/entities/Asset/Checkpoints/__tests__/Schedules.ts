@@ -27,7 +27,7 @@ describe('Schedules class', () => {
 
   let ticker: string;
 
-  let stringToTickerStub: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
@@ -36,7 +36,7 @@ describe('Schedules class', () => {
 
     ticker = 'SOME_TICKER';
 
-    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
   });
 
   afterEach(() => {
@@ -76,7 +76,7 @@ describe('Schedules class', () => {
         repetitions: null,
       };
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args: { ticker, ...args }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -97,7 +97,7 @@ describe('Schedules class', () => {
         schedule: new BigNumber(1),
       };
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args: { ticker, ...args }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -108,7 +108,7 @@ describe('Schedules class', () => {
   });
 
   describe('method: getOne', () => {
-    let getStub: jest.SpyInstance;
+    let getSpy: jest.SpyInstance;
     let id: BigNumber;
 
     beforeAll(() => {
@@ -116,7 +116,7 @@ describe('Schedules class', () => {
     });
 
     beforeEach(() => {
-      getStub = jest.spyOn(schedules, 'get');
+      getSpy = jest.spyOn(schedules, 'get');
     });
 
     afterAll(() => {
@@ -132,14 +132,14 @@ describe('Schedules class', () => {
         },
       };
 
-      getStub.mockResolvedValue([fakeResult]);
+      getSpy.mockResolvedValue([fakeResult]);
 
       const result = await schedules.getOne({ id });
       expect(result).toEqual(fakeResult);
     });
 
     it('should throw an error if the Schedule does not exist', () => {
-      getStub.mockResolvedValue([]);
+      getSpy.mockResolvedValue([]);
 
       return expect(schedules.getOne({ id })).rejects.toThrow('The Schedule does not exist');
     });
@@ -161,7 +161,7 @@ describe('Schedules class', () => {
         amount: new BigNumber(1),
       };
 
-      when(stringToTickerStub).calledWith(ticker, context).mockReturnValue(rawTicker);
+      when(stringToTickerSpy).calledWith(ticker, context).mockReturnValue(rawTicker);
 
       jest
         .spyOn(utilsConversionModule, 'storedScheduleToCheckpointScheduleParams')
@@ -173,7 +173,7 @@ describe('Schedules class', () => {
           nextCheckpointDate,
         });
 
-      dsMockUtils.createQueryStub('checkpoint', 'schedules', {
+      dsMockUtils.createQueryMock('checkpoint', 'schedules', {
         returnValue: [
           dsMockUtils.createMockStoredSchedule({
             schedule: dsMockUtils.createMockCheckpointSchedule({
@@ -228,8 +228,8 @@ describe('Schedules class', () => {
     });
 
     it('should return the sum of the complexity of all schedules', async () => {
-      const getStub = jest.spyOn(schedules, 'get');
-      getStub.mockResolvedValue([
+      const getSpy = jest.spyOn(schedules, 'get');
+      getSpy.mockResolvedValue([
         {
           schedule: entityMockUtils.getCheckpointScheduleInstance({ complexity: new BigNumber(1) }),
         },
@@ -247,7 +247,7 @@ describe('Schedules class', () => {
 
       expect(result).toEqual(new BigNumber(5.5));
 
-      getStub.mockResolvedValue([]);
+      getSpy.mockResolvedValue([]);
 
       result = await schedules.currentComplexity();
 
@@ -261,7 +261,7 @@ describe('Schedules class', () => {
     });
 
     it('should return the maximum complexity from the chain', async () => {
-      dsMockUtils.createQueryStub('checkpoint', 'schedulesMaxComplexity', {
+      dsMockUtils.createQueryMock('checkpoint', 'schedulesMaxComplexity', {
         returnValue: dsMockUtils.createMockU64(new BigNumber(20)),
       });
 

@@ -22,13 +22,13 @@ jest.mock(
 
 describe('modifyCorporateActionAgent procedure', () => {
   let mockContext: Mocked<Context>;
-  let authorizationToAuthorizationDataStub: jest.SpyInstance<
+  let authorizationToAuthorizationDataSpy: jest.SpyInstance<
     PolymeshPrimitivesAuthorizationAuthorizationData,
     [Authorization, Context]
   >;
-  let dateToMomentStub: jest.SpyInstance<Moment, [Date, Context]>;
-  let signerToStringStub: jest.SpyInstance<string, [string | Identity | Account]>;
-  let signerValueToSignatoryStub: jest.SpyInstance<Signatory, [SignerValue, Context]>;
+  let dateToMomentSpy: jest.SpyInstance<Moment, [Date, Context]>;
+  let signerToStringSpy: jest.SpyInstance<string, [string | Identity | Account]>;
+  let signerValueToSignatorySpy: jest.SpyInstance<Signatory, [SignerValue, Context]>;
   let ticker: string;
   let rawTicker: Ticker;
   let rawAgentGroup: AgentGroup;
@@ -40,13 +40,13 @@ describe('modifyCorporateActionAgent procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    authorizationToAuthorizationDataStub = jest.spyOn(
+    authorizationToAuthorizationDataSpy = jest.spyOn(
       utilsConversionModule,
       'authorizationToAuthorizationData'
     );
-    dateToMomentStub = jest.spyOn(utilsConversionModule, 'dateToMoment');
-    signerToStringStub = jest.spyOn(utilsConversionModule, 'signerToString');
-    signerValueToSignatoryStub = jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
+    dateToMomentSpy = jest.spyOn(utilsConversionModule, 'dateToMoment');
+    signerToStringSpy = jest.spyOn(utilsConversionModule, 'signerToString');
+    signerValueToSignatorySpy = jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawAgentGroup = dsMockUtils.createMockAgentGroup('Full');
@@ -66,9 +66,9 @@ describe('modifyCorporateActionAgent procedure', () => {
       },
     });
     mockContext = dsMockUtils.getContextInstance();
-    authorizationToAuthorizationDataStub.mockReturnValue(rawAuthorizationData);
-    signerToStringStub.mockReturnValue(target);
-    signerValueToSignatoryStub.mockReturnValue(rawSignatory);
+    authorizationToAuthorizationDataSpy.mockReturnValue(rawAuthorizationData);
+    signerToStringSpy.mockReturnValue(target);
+    signerValueToSignatorySpy.mockReturnValue(rawSignatory);
   });
 
   afterEach(() => {
@@ -145,9 +145,9 @@ describe('modifyCorporateActionAgent procedure', () => {
     const requestExpiry = new Date('12/12/2050');
     const rawExpiry = dsMockUtils.createMockMoment(new BigNumber(requestExpiry.getTime()));
 
-    when(dateToMomentStub).calledWith(requestExpiry, mockContext).mockReturnValue(rawExpiry);
+    when(dateToMomentSpy).calledWith(requestExpiry, mockContext).mockReturnValue(rawExpiry);
 
-    const transaction = dsMockUtils.createTxStub('identity', 'addAuthorization');
+    const transaction = dsMockUtils.createTxMock('identity', 'addAuthorization');
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     let result = await prepareModifyCorporateActionsAgent.call(proc, args);

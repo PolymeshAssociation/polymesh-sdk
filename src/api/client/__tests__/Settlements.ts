@@ -109,7 +109,7 @@ describe('Settlements Class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Venue>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -142,7 +142,7 @@ describe('Settlements Class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Instruction>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
             args: { instructions: [{ legs, tradeDate, endBlock }], venueId },
@@ -164,7 +164,7 @@ describe('Settlements Class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Venue>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
             args: { id: instructionId, operation: InstructionAffirmationOperation.Affirm },

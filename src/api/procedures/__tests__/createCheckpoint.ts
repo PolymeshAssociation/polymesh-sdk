@@ -27,7 +27,7 @@ jest.mock(
 
 describe('createCheckpoint procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: jest.SpyInstance<Ticker, [string, Context]>;
+  let stringToTickerSpy: jest.SpyInstance<Ticker, [string, Context]>;
   let ticker: string;
   let rawTicker: Ticker;
 
@@ -35,14 +35,14 @@ describe('createCheckpoint procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    when(stringToTickerStub).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
   });
 
   afterEach(() => {
@@ -59,7 +59,7 @@ describe('createCheckpoint procedure', () => {
   it('should return a create checkpoint transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, Checkpoint>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('checkpoint', 'createCheckpoint');
+    const transaction = dsMockUtils.createTxMock('checkpoint', 'createCheckpoint');
 
     const result = await prepareCreateCheckpoint.call(proc, {
       ticker,
@@ -69,7 +69,7 @@ describe('createCheckpoint procedure', () => {
   });
 
   describe('createCheckpointResolver', () => {
-    const filterEventRecordsStub = jest.spyOn(utilsInternalModule, 'filterEventRecords');
+    const filterEventRecordsSpy = jest.spyOn(utilsInternalModule, 'filterEventRecords');
     const id = new BigNumber(1);
 
     beforeAll(() => {
@@ -77,13 +77,13 @@ describe('createCheckpoint procedure', () => {
     });
 
     beforeEach(() => {
-      filterEventRecordsStub.mockReturnValue([
+      filterEventRecordsSpy.mockReturnValue([
         dsMockUtils.createMockIEvent(['someDid', ticker, id]),
       ]);
     });
 
     afterEach(() => {
-      filterEventRecordsStub.mockReset();
+      filterEventRecordsSpy.mockReset();
     });
 
     it('should return the new Checkpoint', () => {

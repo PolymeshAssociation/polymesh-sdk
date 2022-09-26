@@ -52,9 +52,9 @@ jest.mock(
 );
 
 describe('Polymesh Class', () => {
-  let versionStub: jest.SpyInstance;
+  let versionSpy: jest.SpyInstance;
   beforeEach(() => {
-    versionStub = jest
+    versionSpy = jest
       .spyOn(internalUtils, 'assertExpectedChainVersion')
       .mockClear()
       .mockImplementation()
@@ -90,15 +90,15 @@ describe('Polymesh Class', () => {
 
     it('should instantiate Context with a Signing Manager and return a Polymesh instance', async () => {
       const signingManager = 'signingManager' as unknown as SigningManager;
-      const createStub = dsMockUtils.getContextCreateStub();
+      const createMock = dsMockUtils.getContextCreateMock();
 
       await Polymesh.connect({
         nodeUrl: 'wss://some.url',
         signingManager,
       });
 
-      expect(createStub).toHaveBeenCalledTimes(1);
-      expect(createStub).toHaveBeenCalledWith({
+      expect(createMock).toHaveBeenCalledTimes(1);
+      expect(createMock).toHaveBeenCalledWith({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,
         middlewareApiV2: null,
@@ -107,21 +107,21 @@ describe('Polymesh Class', () => {
     });
 
     it('should instantiate Context with middleware credentials and return a Polymesh instance', async () => {
-      const createStub = dsMockUtils.getContextCreateStub();
+      const createMock = dsMockUtils.getContextCreateMock();
       const middleware = {
         link: 'someLink',
         key: 'someKey',
       };
 
-      dsMockUtils.createApolloQueryStub(heartbeat(), true);
+      dsMockUtils.createApolloQueryMock(heartbeat(), true);
 
       await Polymesh.connect({
         nodeUrl: 'wss://some.url',
         middleware,
       });
 
-      expect(createStub).toHaveBeenCalledTimes(1);
-      expect(createStub).toHaveBeenCalledWith({
+      expect(createMock).toHaveBeenCalledTimes(1);
+      expect(createMock).toHaveBeenCalledWith({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: dsMockUtils.getMiddlewareApi(),
         middlewareApiV2: null,
@@ -135,7 +135,7 @@ describe('Polymesh Class', () => {
         message: 'Unsupported Polymesh RPC node version. Please upgrade the SDK',
         data: { supportedVersionRange: SUPPORTED_NODE_VERSION_RANGE },
       });
-      versionStub.mockImplementation(() => {
+      versionSpy.mockImplementation(() => {
         throw error;
       });
 
@@ -151,7 +151,7 @@ describe('Polymesh Class', () => {
         code: ErrorCode.FatalError,
         message: 'Unable to connect',
       });
-      versionStub.mockImplementation(() => {
+      versionSpy.mockImplementation(() => {
         throw error;
       });
 
@@ -383,7 +383,7 @@ describe('Polymesh Class', () => {
       >;
       const transactions = ['foo', 'bar', 'baz'] as unknown as TransactionArray<[void, void]>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args: { transactions }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 

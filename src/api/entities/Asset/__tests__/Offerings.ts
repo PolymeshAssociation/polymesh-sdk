@@ -82,7 +82,7 @@ describe('Offerings class', () => {
         minInvestment: new BigNumber(100),
       };
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args: { ticker, ...args }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -121,8 +121,8 @@ describe('Offerings class', () => {
     let rawTicker: PolymeshPrimitivesTicker;
     let rawName: Bytes;
 
-    let stringToTickerStub: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
-    let fundraiserToOfferingDetailsStub: jest.SpyInstance<
+    let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+    let fundraiserToOfferingDetailsSpy: jest.SpyInstance<
       OfferingDetails,
       [PalletStoFundraiser, Bytes, Context]
     >;
@@ -132,8 +132,8 @@ describe('Offerings class', () => {
 
     beforeAll(() => {
       rawTicker = dsMockUtils.createMockTicker(ticker);
-      stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
-      fundraiserToOfferingDetailsStub = jest.spyOn(
+      stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+      fundraiserToOfferingDetailsSpy = jest.spyOn(
         utilsConversionModule,
         'fundraiserToOfferingDetails'
       );
@@ -255,15 +255,15 @@ describe('Offerings class', () => {
     });
 
     beforeEach(() => {
-      when(stringToTickerStub).calledWith(ticker, context).mockReturnValue(rawTicker);
-      when(fundraiserToOfferingDetailsStub)
+      when(stringToTickerSpy).calledWith(ticker, context).mockReturnValue(rawTicker);
+      when(fundraiserToOfferingDetailsSpy)
         .calledWith(fundraisers[0], rawName, context)
         .mockReturnValue(details[0]);
-      when(fundraiserToOfferingDetailsStub)
+      when(fundraiserToOfferingDetailsSpy)
         .calledWith(fundraisers[1], rawName, context)
         .mockReturnValue(details[1]);
 
-      dsMockUtils.createQueryStub('sto', 'fundraisers', {
+      dsMockUtils.createQueryMock('sto', 'fundraisers', {
         entries: [
           tuple(
             [rawTicker, dsMockUtils.createMockU64(new BigNumber(1))],
@@ -275,7 +275,7 @@ describe('Offerings class', () => {
           ),
         ],
       });
-      dsMockUtils.createQueryStub('sto', 'fundraiserNames', {
+      dsMockUtils.createQueryMock('sto', 'fundraiserNames', {
         entries: [
           tuple([rawTicker, dsMockUtils.createMockU64(new BigNumber(1))], rawName),
           tuple([rawTicker, dsMockUtils.createMockU64(new BigNumber(2))], rawName),

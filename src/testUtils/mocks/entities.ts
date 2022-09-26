@@ -383,7 +383,7 @@ function createMockEntityClass<Options extends EntityOptions>(
     exists = jest.fn();
     toHuman = jest.fn();
 
-    private static constructorStub = jest.fn();
+    private static constructorMock = jest.fn();
 
     private static options = {} as Required<Options>;
 
@@ -448,8 +448,8 @@ function createMockEntityClass<Options extends EntityOptions>(
     /**
      * @hidden
      */
-    public static getConstructorStub() {
-      return this.constructorStub;
+    public static getConstructorMock() {
+      return this.constructorMock;
     }
 
     /**
@@ -477,7 +477,7 @@ function createMockEntityClass<Options extends EntityOptions>(
         opts = this.argsToOpts(...args);
       }
 
-      MockClass.constructorStub(...args);
+      MockClass.constructorMock(...args);
 
       this.configure(opts);
     }
@@ -485,24 +485,24 @@ function createMockEntityClass<Options extends EntityOptions>(
 }
 
 /**
- * Make an entity getter stub that returns a value or calls a specific function
+ * Make an entity getter mock that returns a value or calls a specific function
  */
-function createEntityGetterStub<Result>(args: EntityGetter<Result>, isAsync = true) {
+function createEntityGetterMock<Result>(args: EntityGetter<Result>, isAsync = true) {
   if (typeof args === 'function' && 'withArgs' in args) {
     return args;
   }
 
-  const newStub = jest.fn();
+  const newMock = jest.fn();
 
   if (typeof args === 'function') {
-    newStub.mockImplementation(args as (...fnArgs: any[]) => any);
+    newMock.mockImplementation(args as (...fnArgs: any[]) => any);
   } else if (isAsync) {
-    newStub.mockResolvedValue(args);
+    newMock.mockResolvedValue(args);
   } else {
-    newStub.mockReturnValue(args);
+    newMock.mockReturnValue(args);
   }
 
-  return newStub;
+  return newMock;
 }
 
 const MockIdentityClass = createMockEntityClass<IdentityOptions>(
@@ -548,28 +548,28 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     public configure(opts: Required<IdentityOptions>) {
       this.uuid = 'identity';
       this.did = opts.did;
-      this.hasRoles = createEntityGetterStub(opts.hasRoles);
-      this.checkRoles = createEntityGetterStub(opts.checkRoles);
-      this.hasRole = createEntityGetterStub(opts.hasRole);
-      this.hasValidCdd = createEntityGetterStub(opts.hasValidCdd);
-      this.getPrimaryAccount = createEntityGetterStub(opts.getPrimaryAccount);
-      this.authorizations.getReceived = createEntityGetterStub(opts.authorizationsGetReceived);
-      this.authorizations.getSent = createEntityGetterStub(opts.authorizationsGetSent);
-      this.authorizations.getOne = createEntityGetterStub(opts.authorizationsGetOne);
-      this.assetPermissions.get = createEntityGetterStub(opts.assetPermissionsGet);
-      this.assetPermissions.getGroup = createEntityGetterStub(opts.assetPermissionsGetGroup);
-      this.assetPermissions.hasPermissions = createEntityGetterStub(
+      this.hasRoles = createEntityGetterMock(opts.hasRoles);
+      this.checkRoles = createEntityGetterMock(opts.checkRoles);
+      this.hasRole = createEntityGetterMock(opts.hasRole);
+      this.hasValidCdd = createEntityGetterMock(opts.hasValidCdd);
+      this.getPrimaryAccount = createEntityGetterMock(opts.getPrimaryAccount);
+      this.authorizations.getReceived = createEntityGetterMock(opts.authorizationsGetReceived);
+      this.authorizations.getSent = createEntityGetterMock(opts.authorizationsGetSent);
+      this.authorizations.getOne = createEntityGetterMock(opts.authorizationsGetOne);
+      this.assetPermissions.get = createEntityGetterMock(opts.assetPermissionsGet);
+      this.assetPermissions.getGroup = createEntityGetterMock(opts.assetPermissionsGetGroup);
+      this.assetPermissions.hasPermissions = createEntityGetterMock(
         opts.assetPermissionsHasPermissions
       );
-      this.assetPermissions.checkPermissions = createEntityGetterStub(
+      this.assetPermissions.checkPermissions = createEntityGetterMock(
         opts.assetPermissionsCheckPermissions
       );
-      this.getVenues = createEntityGetterStub(opts.getVenues);
-      this.getScopeId = createEntityGetterStub(opts.getScopeId);
-      this.getAssetBalance = createEntityGetterStub(opts.getAssetBalance);
-      this.getSecondaryAccounts = createEntityGetterStub(opts.getSecondaryAccounts);
-      this.areSecondaryAccountsFrozen = createEntityGetterStub(opts.areSecondaryAccountsFrozen);
-      this.isCddProvider = createEntityGetterStub(opts.isCddProvider);
+      this.getVenues = createEntityGetterMock(opts.getVenues);
+      this.getScopeId = createEntityGetterMock(opts.getScopeId);
+      this.getAssetBalance = createEntityGetterMock(opts.getAssetBalance);
+      this.getSecondaryAccounts = createEntityGetterMock(opts.getSecondaryAccounts);
+      this.areSecondaryAccountsFrozen = createEntityGetterMock(opts.areSecondaryAccountsFrozen);
+      this.isCddProvider = createEntityGetterMock(opts.isCddProvider);
     }
   },
   () => ({
@@ -635,12 +635,12 @@ const MockAccountClass = createMockEntityClass<AccountOptions>(
       this.uuid = 'account';
       this.address = opts.address;
       this.key = opts.key;
-      this.isFrozen = createEntityGetterStub(opts.isFrozen);
-      this.getBalance = createEntityGetterStub(opts.getBalance);
-      this.getIdentity = createEntityGetterStub(opts.getIdentity);
-      this.getTransactionHistory = createEntityGetterStub(opts.getTransactionHistory);
-      this.hasPermissions = createEntityGetterStub(opts.hasPermissions);
-      this.checkPermissions = createEntityGetterStub(opts.checkPermissions);
+      this.isFrozen = createEntityGetterMock(opts.isFrozen);
+      this.getBalance = createEntityGetterMock(opts.getBalance);
+      this.getIdentity = createEntityGetterMock(opts.getIdentity);
+      this.getTransactionHistory = createEntityGetterMock(opts.getTransactionHistory);
+      this.hasPermissions = createEntityGetterMock(opts.hasPermissions);
+      this.checkPermissions = createEntityGetterMock(opts.checkPermissions);
     }
   },
   () => ({
@@ -683,7 +683,7 @@ const MockSubsidyClass = createMockEntityClass<SubsidyOptions>(
       this.uuid = 'subsidy';
       this.beneficiary = getAccountInstance({ address: opts.beneficiary });
       this.subsidizer = getAccountInstance({ address: opts.subsidizer });
-      this.getAllowance = createEntityGetterStub(opts.getAllowance);
+      this.getAllowance = createEntityGetterMock(opts.getAllowance);
     }
   },
   () => ({
@@ -717,7 +717,7 @@ const MockTickerReservationClass = createMockEntityClass<TickerReservationOption
     public configure(opts: Required<TickerReservationOptions>) {
       this.uuid = 'tickerReservation';
       this.ticker = opts.ticker;
-      this.details = createEntityGetterStub(opts.details);
+      this.details = createEntityGetterMock(opts.details);
     }
   },
   () => ({
@@ -806,33 +806,33 @@ const MockAssetClass = createMockEntityClass<AssetOptions>(
     public configure(opts: Required<AssetOptions>) {
       this.uuid = 'asset';
       this.ticker = opts.ticker;
-      this.details = createEntityGetterStub(opts.details);
-      this.currentFundingRound = createEntityGetterStub(opts.currentFundingRound);
-      this.isFrozen = createEntityGetterStub(opts.isFrozen);
-      this.transfers.canTransfer = createEntityGetterStub(opts.transfersCanTransfer);
-      this.getIdentifiers = createEntityGetterStub(opts.getIdentifiers);
-      this.transferRestrictions.count.get = createEntityGetterStub(
+      this.details = createEntityGetterMock(opts.details);
+      this.currentFundingRound = createEntityGetterMock(opts.currentFundingRound);
+      this.isFrozen = createEntityGetterMock(opts.isFrozen);
+      this.transfers.canTransfer = createEntityGetterMock(opts.transfersCanTransfer);
+      this.getIdentifiers = createEntityGetterMock(opts.getIdentifiers);
+      this.transferRestrictions.count.get = createEntityGetterMock(
         opts.transferRestrictionsCountGet
       );
-      this.transferRestrictions.percentage.get = createEntityGetterStub(
+      this.transferRestrictions.percentage.get = createEntityGetterMock(
         opts.transferRestrictionsPercentageGet
       );
-      this.transferRestrictions.claimCount.get = createEntityGetterStub(
+      this.transferRestrictions.claimCount.get = createEntityGetterMock(
         opts.transferRestrictionsClaimCountGet
       );
-      this.transferRestrictions.claimPercentage.get = createEntityGetterStub(
+      this.transferRestrictions.claimPercentage.get = createEntityGetterMock(
         opts.transferRestrictionsClaimPercentageGet
       );
-      this.corporateActions.getAgents = createEntityGetterStub(opts.corporateActionsGetAgents);
-      this.corporateActions.getDefaultConfig = createEntityGetterStub(
+      this.corporateActions.getAgents = createEntityGetterMock(opts.corporateActionsGetAgents);
+      this.corporateActions.getDefaultConfig = createEntityGetterMock(
         opts.corporateActionsGetDefaultConfig
       );
-      this.permissions.getGroups = createEntityGetterStub(opts.permissionsGetGroups);
-      this.permissions.getAgents = createEntityGetterStub(opts.permissionsGetAgents);
-      this.compliance.requirements.get = createEntityGetterStub(opts.complianceRequirementsGet);
-      this.checkpoints.schedules.getOne = createEntityGetterStub(opts.checkpointsSchedulesGetOne);
-      this.checkpoints.getOne = createEntityGetterStub(opts.checkpointsGetOne);
-      this.investorCount = createEntityGetterStub(opts.investorCount);
+      this.permissions.getGroups = createEntityGetterMock(opts.permissionsGetGroups);
+      this.permissions.getAgents = createEntityGetterMock(opts.permissionsGetAgents);
+      this.compliance.requirements.get = createEntityGetterMock(opts.complianceRequirementsGet);
+      this.checkpoints.schedules.getOne = createEntityGetterMock(opts.checkpointsSchedulesGetOne);
+      this.checkpoints.getOne = createEntityGetterMock(opts.checkpointsGetOne);
+      this.investorCount = createEntityGetterMock(opts.investorCount);
     }
   },
   () => ({
@@ -921,8 +921,8 @@ const MockMetadataEntryClass = createMockEntityClass<MetadataEntryOptions>(
       this.id = id;
       this.asset = getAssetInstance({ ticker });
       this.type = type;
-      this.details = createEntityGetterStub(details);
-      this.value = createEntityGetterStub(value);
+      this.details = createEntityGetterMock(details);
+      this.value = createEntityGetterMock(value);
     }
   },
   () => ({
@@ -971,7 +971,7 @@ const MockAuthorizationRequestClass = createMockEntityClass<AuthorizationRequest
       this.target = opts.target;
       this.expiry = opts.expiry;
       this.data = opts.data;
-      this.isExpired = createEntityGetterStub(opts.isExpired, false);
+      this.isExpired = createEntityGetterMock(opts.isExpired, false);
     }
   },
   () => ({
@@ -1004,7 +1004,7 @@ const MockVenueClass = createMockEntityClass<VenueOptions>(
     public configure(opts: Required<VenueOptions>) {
       this.uuid = 'venue';
       this.id = opts.id;
-      this.details = createEntityGetterStub(opts.details);
+      this.details = createEntityGetterMock(opts.details);
     }
   },
   () => ({
@@ -1039,9 +1039,9 @@ const MockInstructionClass = createMockEntityClass<InstructionOptions>(
     public configure(opts: Required<InstructionOptions>) {
       this.uuid = 'instruction';
       this.id = opts.id;
-      this.details = createEntityGetterStub(opts.details);
-      this.getLegs = createEntityGetterStub(opts.getLegs);
-      this.isPending = createEntityGetterStub(opts.isPending);
+      this.details = createEntityGetterMock(opts.details);
+      this.getLegs = createEntityGetterMock(opts.getLegs);
+      this.isPending = createEntityGetterMock(opts.isPending);
     }
   },
   () => ({
@@ -1094,10 +1094,10 @@ const MockNumberedPortfolioClass = createMockEntityClass<NumberedPortfolioOption
       this.uuid = 'numberedPortfolio';
       this.id = opts.id;
       this.owner = getIdentityInstance({ did: opts.did });
-      this.isOwnedBy = createEntityGetterStub(opts.isOwnedBy);
-      this.getAssetBalances = createEntityGetterStub(opts.getAssetBalances);
-      this.getCustodian = createEntityGetterStub(opts.getCustodian);
-      this.isCustodiedBy = createEntityGetterStub(opts.isCustodiedBy);
+      this.isOwnedBy = createEntityGetterMock(opts.isOwnedBy);
+      this.getAssetBalances = createEntityGetterMock(opts.getAssetBalances);
+      this.getCustodian = createEntityGetterMock(opts.getCustodian);
+      this.isCustodiedBy = createEntityGetterMock(opts.isCustodiedBy);
     }
   },
   () => ({
@@ -1144,10 +1144,10 @@ const MockDefaultPortfolioClass = createMockEntityClass<DefaultPortfolioOptions>
     public configure(opts: Required<DefaultPortfolioOptions>) {
       this.uuid = 'defaultPortfolio';
       this.owner = getIdentityInstance({ did: opts.did });
-      this.isOwnedBy = createEntityGetterStub(opts.isOwnedBy);
-      this.getAssetBalances = createEntityGetterStub(opts.getAssetBalances);
-      this.getCustodian = createEntityGetterStub(opts.getCustodian);
-      this.isCustodiedBy = createEntityGetterStub(opts.isCustodiedBy);
+      this.isOwnedBy = createEntityGetterMock(opts.isOwnedBy);
+      this.getAssetBalances = createEntityGetterMock(opts.getAssetBalances);
+      this.getCustodian = createEntityGetterMock(opts.getCustodian);
+      this.isCustodiedBy = createEntityGetterMock(opts.isCustodiedBy);
     }
   },
   () => ({
@@ -1191,7 +1191,7 @@ const MockOfferingClass = createMockEntityClass<OfferingOptions>(
       this.uuid = 'sto';
       this.id = opts.id;
       this.asset = getAssetInstance({ ticker: opts.ticker });
-      this.details = createEntityGetterStub(opts.details);
+      this.details = createEntityGetterMock(opts.details);
     }
   },
   () => ({
@@ -1250,10 +1250,10 @@ const MockCheckpointClass = createMockEntityClass<CheckpointOptions>(
       this.uuid = 'checkpoint';
       this.id = opts.id;
       this.asset = getAssetInstance({ ticker: opts.ticker });
-      this.createdAt = createEntityGetterStub(opts.createdAt);
-      this.totalSupply = createEntityGetterStub(opts.totalSupply);
-      this.allBalances = createEntityGetterStub(opts.allBalances);
-      this.balance = createEntityGetterStub(opts.balance);
+      this.createdAt = createEntityGetterMock(opts.createdAt);
+      this.totalSupply = createEntityGetterMock(opts.totalSupply);
+      this.allBalances = createEntityGetterMock(opts.allBalances);
+      this.balance = createEntityGetterMock(opts.balance);
     }
   },
   () => ({
@@ -1304,7 +1304,7 @@ const MockCheckpointScheduleClass = createMockEntityClass<CheckpointScheduleOpti
       this.period = opts.period;
       this.expiryDate = opts.expiryDate;
       this.complexity = opts.complexity;
-      this.details = createEntityGetterStub(opts.details);
+      this.details = createEntityGetterMock(opts.details);
     }
   },
   () => ({
@@ -1451,9 +1451,9 @@ const MockDividendDistributionClass = createMockEntityClass<DividendDistribution
       this.maxAmount = opts.maxAmount;
       this.expiryDate = opts.expiryDate;
       this.paymentDate = opts.paymentDate;
-      this.details = createEntityGetterStub(opts.details);
-      this.getParticipant = createEntityGetterStub(opts.getParticipant);
-      this.checkpoint = createEntityGetterStub(opts.checkpoint);
+      this.details = createEntityGetterMock(opts.details);
+      this.getParticipant = createEntityGetterMock(opts.getParticipant);
+      this.checkpoint = createEntityGetterMock(opts.checkpoint);
     }
   },
   () => ({
@@ -1514,7 +1514,7 @@ const MockCustomPermissionGroupClass = createMockEntityClass<CustomPermissionGro
       this.uuid = 'customPermissionGroup';
       this.id = opts.id;
       this.asset = getAssetInstance({ ticker: opts.ticker });
-      this.getPermissions = createEntityGetterStub(opts.getPermissions);
+      this.getPermissions = createEntityGetterMock(opts.getPermissions);
     }
   },
   () => ({
@@ -1556,14 +1556,14 @@ const MockMultiSigClass = createMockEntityClass<MultiSigOptions>(
       this.uuid = 'multiSig';
       this.address = opts.address;
       this.key = opts.key;
-      this.isFrozen = createEntityGetterStub(opts.isFrozen);
-      this.getBalance = createEntityGetterStub(opts.getBalance);
-      this.getIdentity = createEntityGetterStub(opts.getIdentity);
-      this.getTransactionHistory = createEntityGetterStub(opts.getTransactionHistory);
-      this.hasPermissions = createEntityGetterStub(opts.hasPermissions);
-      this.checkPermissions = createEntityGetterStub(opts.checkPermissions);
-      this.details = createEntityGetterStub(opts.details);
-      this.getCreator = createEntityGetterStub(opts.getCreator);
+      this.isFrozen = createEntityGetterMock(opts.isFrozen);
+      this.getBalance = createEntityGetterMock(opts.getBalance);
+      this.getIdentity = createEntityGetterMock(opts.getIdentity);
+      this.getTransactionHistory = createEntityGetterMock(opts.getTransactionHistory);
+      this.hasPermissions = createEntityGetterMock(opts.hasPermissions);
+      this.checkPermissions = createEntityGetterMock(opts.checkPermissions);
+      this.details = createEntityGetterMock(opts.details);
+      this.getCreator = createEntityGetterMock(opts.getCreator);
     }
   },
   () => ({
@@ -1609,7 +1609,7 @@ const MockMultiSigProposalClass = createMockEntityClass<MultiSigProposalOptions>
     public configure(opts: Required<MultiSigProposalOptions>) {
       this.id = opts.id;
       this.multiSig = opts.multiSig;
-      this.details = createEntityGetterStub(opts.details);
+      this.details = createEntityGetterMock(opts.details);
     }
   },
   () => ({
@@ -1647,7 +1647,7 @@ const MockKnownPermissionGroupClass = createMockEntityClass<KnownPermissionGroup
       this.uuid = 'knownPermissionGroup';
       this.type = opts.type;
       this.asset = getAssetInstance({ ticker: opts.ticker });
-      this.getPermissions = createEntityGetterStub(opts.getPermissions);
+      this.getPermissions = createEntityGetterMock(opts.getPermissions);
     }
   },
   () => ({

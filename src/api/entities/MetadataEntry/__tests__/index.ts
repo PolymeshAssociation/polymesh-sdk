@@ -83,7 +83,7 @@ describe('MetadataEntry class', () => {
 
       const params = { value: 'SOME_VALUE' };
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args: { metadataEntry, ...params }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -103,10 +103,10 @@ describe('MetadataEntry class', () => {
 
       const rawName = dsMockUtils.createMockOption(dsMockUtils.createMockBytes('SOME_NAME'));
       const rawSpecs = dsMockUtils.createMockOption(dsMockUtils.createMockAssetMetadataSpec());
-      dsMockUtils.createQueryStub('asset', 'assetMetadataLocalKeyToName', {
+      dsMockUtils.createQueryMock('asset', 'assetMetadataLocalKeyToName', {
         returnValue: rawName,
       });
-      dsMockUtils.createQueryStub('asset', 'assetMetadataLocalSpecs', {
+      dsMockUtils.createQueryMock('asset', 'assetMetadataLocalSpecs', {
         returnValue: rawSpecs,
       });
 
@@ -122,17 +122,17 @@ describe('MetadataEntry class', () => {
         specs: fakeSpecs,
       });
 
-      dsMockUtils.createQueryStub('asset', 'assetMetadataLocalKeyToName', {
+      dsMockUtils.createQueryMock('asset', 'assetMetadataLocalKeyToName', {
         returnValue: null,
       });
-      dsMockUtils.createQueryStub('asset', 'assetMetadataLocalSpecs', {
+      dsMockUtils.createQueryMock('asset', 'assetMetadataLocalSpecs', {
         returnValue: null,
       });
 
-      dsMockUtils.createQueryStub('asset', 'assetMetadataGlobalKeyToName', {
+      dsMockUtils.createQueryMock('asset', 'assetMetadataGlobalKeyToName', {
         returnValue: rawName,
       });
-      dsMockUtils.createQueryStub('asset', 'assetMetadataGlobalSpecs', {
+      dsMockUtils.createQueryMock('asset', 'assetMetadataGlobalSpecs', {
         returnValue: rawSpecs,
       });
 
@@ -151,15 +151,15 @@ describe('MetadataEntry class', () => {
   describe('method: value', () => {
     it('should return the value and its details of the MetadataEntry', async () => {
       jest.spyOn(utilsConversionModule, 'metadataToMeshMetadataKey').mockImplementation();
-      dsMockUtils.createQueryStub('asset', 'assetMetadataValues');
-      dsMockUtils.createQueryStub('asset', 'assetMetadataValueDetails');
+      dsMockUtils.createQueryMock('asset', 'assetMetadataValues');
+      dsMockUtils.createQueryMock('asset', 'assetMetadataValueDetails');
 
-      const meshMetadataValueToMetadataValueStub = jest.spyOn(
+      const meshMetadataValueToMetadataValueSpy = jest.spyOn(
         utilsConversionModule,
         'meshMetadataValueToMetadataValue'
       );
 
-      meshMetadataValueToMetadataValueStub.mockReturnValue(null);
+      meshMetadataValueToMetadataValueSpy.mockReturnValue(null);
 
       let result = await metadataEntry.value();
 
@@ -170,7 +170,7 @@ describe('MetadataEntry class', () => {
         lockStatus: MetadataLockStatus.Unlocked,
         expiry: new Date('2030/01/01'),
       };
-      meshMetadataValueToMetadataValueStub.mockReturnValue(fakeResult);
+      meshMetadataValueToMetadataValueSpy.mockReturnValue(fakeResult);
 
       result = await metadataEntry.value();
 

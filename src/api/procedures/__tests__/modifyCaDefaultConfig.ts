@@ -21,12 +21,12 @@ jest.mock(
 
 describe('modifyCaDefaultConfig procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: jest.SpyInstance;
-  let targetsToTargetIdentitiesStub: jest.SpyInstance;
-  let percentageToPermillStub: jest.SpyInstance;
-  let stringToIdentityIdStub: jest.SpyInstance;
+  let stringToTickerSpy: jest.SpyInstance;
+  let targetsToTargetIdentitiesSpy: jest.SpyInstance;
+  let percentageToPermillSpy: jest.SpyInstance;
+  let stringToIdentityIdSpy: jest.SpyInstance;
 
-  let assertCaTaxWithholdingsValidStub: jest.SpyInstance;
+  let assertCaTaxWithholdingsValidSpy: jest.SpyInstance;
 
   let ticker: string;
   let rawTicker: Ticker;
@@ -35,22 +35,22 @@ describe('modifyCaDefaultConfig procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
-    targetsToTargetIdentitiesStub = jest.spyOn(utilsConversionModule, 'targetsToTargetIdentities');
-    percentageToPermillStub = jest.spyOn(utilsConversionModule, 'percentageToPermill');
-    stringToIdentityIdStub = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    targetsToTargetIdentitiesSpy = jest.spyOn(utilsConversionModule, 'targetsToTargetIdentities');
+    percentageToPermillSpy = jest.spyOn(utilsConversionModule, 'percentageToPermill');
+    stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
-    assertCaTaxWithholdingsValidStub = jest.spyOn(
+    assertCaTaxWithholdingsValidSpy = jest.spyOn(
       utilsProcedureModule,
       'assertCaTaxWithholdingsValid'
     );
-    assertCaTaxWithholdingsValidStub.mockImplementation();
+    assertCaTaxWithholdingsValidSpy.mockImplementation();
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    when(stringToTickerStub).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
   });
 
   afterEach(() => {
@@ -141,7 +141,7 @@ describe('modifyCaDefaultConfig procedure', () => {
       assetOptions: { corporateActionsGetDefaultConfig: { taxWithholdings } },
     });
 
-    when(assertCaTaxWithholdingsValidStub)
+    when(assertCaTaxWithholdingsValidSpy)
       .calledWith(taxWithholdings, mockContext)
       .mockImplementation(() => {
         throw new Error('err');
@@ -158,7 +158,7 @@ describe('modifyCaDefaultConfig procedure', () => {
   it('should add a set default targets transaction to the batch', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('corporateAction', 'setDefaultTargets');
+    const transaction = dsMockUtils.createTxMock('corporateAction', 'setDefaultTargets');
 
     let targets: InputTargets = {
       identities: [],
@@ -180,9 +180,7 @@ describe('modifyCaDefaultConfig procedure', () => {
       identities: [],
       treatment: 'Exclude',
     });
-    when(targetsToTargetIdentitiesStub)
-      .calledWith(targets, mockContext)
-      .mockReturnValue(rawTargets);
+    when(targetsToTargetIdentitiesSpy).calledWith(targets, mockContext).mockReturnValue(rawTargets);
 
     let result = await prepareModifyCaDefaultConfig.call(proc, {
       ticker,
@@ -203,9 +201,7 @@ describe('modifyCaDefaultConfig procedure', () => {
       identities: ['someDid', 'otherDid'],
       treatment: TargetTreatment.Exclude,
     };
-    when(targetsToTargetIdentitiesStub)
-      .calledWith(targets, mockContext)
-      .mockReturnValue(rawTargets);
+    when(targetsToTargetIdentitiesSpy).calledWith(targets, mockContext).mockReturnValue(rawTargets);
 
     result = await prepareModifyCaDefaultConfig.call(proc, {
       ticker,
@@ -221,7 +217,7 @@ describe('modifyCaDefaultConfig procedure', () => {
   it('should add a set default withholding tax transaction to the batch', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('corporateAction', 'setDefaultWithholdingTax');
+    const transaction = dsMockUtils.createTxMock('corporateAction', 'setDefaultWithholdingTax');
 
     entityMockUtils.configureMocks({
       assetOptions: {
@@ -232,7 +228,7 @@ describe('modifyCaDefaultConfig procedure', () => {
     });
 
     const rawPercentage = dsMockUtils.createMockPermill(new BigNumber(150000));
-    when(percentageToPermillStub)
+    when(percentageToPermillSpy)
       .calledWith(new BigNumber(15), mockContext)
       .mockReturnValue(rawPercentage);
 
@@ -250,7 +246,7 @@ describe('modifyCaDefaultConfig procedure', () => {
   it('should add a batch of set did withholding tax transactions to the batch', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('corporateAction', 'setDidWithholdingTax');
+    const transaction = dsMockUtils.createTxMock('corporateAction', 'setDidWithholdingTax');
 
     entityMockUtils.configureMocks({
       assetOptions: {
@@ -263,8 +259,8 @@ describe('modifyCaDefaultConfig procedure', () => {
     const rawDid = dsMockUtils.createMockIdentityId('someDid');
     const rawPercentage = dsMockUtils.createMockPermill(new BigNumber(250000));
 
-    when(stringToIdentityIdStub).calledWith('someDid', mockContext).mockReturnValue(rawDid);
-    when(percentageToPermillStub)
+    when(stringToIdentityIdSpy).calledWith('someDid', mockContext).mockReturnValue(rawDid);
+    when(percentageToPermillSpy)
       .calledWith(new BigNumber(25), mockContext)
       .mockReturnValue(rawPercentage);
 
@@ -279,7 +275,7 @@ describe('modifyCaDefaultConfig procedure', () => {
       taxWithholdings,
     });
 
-    expect(assertCaTaxWithholdingsValidStub).toHaveBeenCalledWith(taxWithholdings, mockContext);
+    expect(assertCaTaxWithholdingsValidSpy).toHaveBeenCalledWith(taxWithholdings, mockContext);
     expect(result).toEqual({
       transactions: [
         {

@@ -25,7 +25,7 @@ jest.mock(
 
 describe('reserveTicker procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: jest.SpyInstance<Ticker, [string, Context]>;
+  let stringToTickerSpy: jest.SpyInstance<Ticker, [string, Context]>;
   let ticker: string;
   let rawTicker: Ticker;
   let args: ReserveTickerParams;
@@ -42,7 +42,7 @@ describe('reserveTicker procedure', () => {
     });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     args = {
@@ -63,15 +63,15 @@ describe('reserveTicker procedure', () => {
       },
     });
 
-    dsMockUtils.createQueryStub('asset', 'tickerConfig', {
+    dsMockUtils.createQueryMock('asset', 'tickerConfig', {
       returnValue: dsMockUtils.createMockTickerRegistrationConfig(),
     });
 
-    transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
+    transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
 
     mockContext = dsMockUtils.getContextInstance();
 
-    when(stringToTickerStub).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
   });
 
   afterEach(() => {
@@ -207,7 +207,7 @@ describe('reserveTicker procedure', () => {
 });
 
 describe('tickerReservationResolver', () => {
-  const filterEventRecordsStub = jest.spyOn(utilsInternalModule, 'filterEventRecords');
+  const filterEventRecordsSpy = jest.spyOn(utilsInternalModule, 'filterEventRecords');
   const tickerString = 'SOME_TICKER';
   const ticker = dsMockUtils.createMockTicker(tickerString);
 
@@ -216,11 +216,11 @@ describe('tickerReservationResolver', () => {
   });
 
   beforeEach(() => {
-    filterEventRecordsStub.mockReturnValue([dsMockUtils.createMockIEvent(['someDid', ticker])]);
+    filterEventRecordsSpy.mockReturnValue([dsMockUtils.createMockIEvent(['someDid', ticker])]);
   });
 
   afterEach(() => {
-    filterEventRecordsStub.mockReset();
+    filterEventRecordsSpy.mockReset();
   });
 
   it('should return the new Ticker Reservation', () => {

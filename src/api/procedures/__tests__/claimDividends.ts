@@ -33,7 +33,7 @@ describe('claimDividends procedure', () => {
   });
 
   beforeEach(() => {
-    claimDividendsTransaction = dsMockUtils.createTxStub('capitalDistribution', 'claim');
+    claimDividendsTransaction = dsMockUtils.createTxMock('capitalDistribution', 'claim');
     mockContext = dsMockUtils.getContextInstance();
   });
 

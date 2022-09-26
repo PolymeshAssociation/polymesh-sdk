@@ -177,11 +177,11 @@ describe('Offering class', () => {
         totalRemaining: remaining.shiftedBy(-6),
       };
 
-      dsMockUtils.createQueryStub('sto', 'fundraisers', {
+      dsMockUtils.createQueryMock('sto', 'fundraisers', {
         returnValue: rawFundraiser,
       });
 
-      dsMockUtils.createQueryStub('sto', 'fundraiserNames', {
+      dsMockUtils.createQueryMock('sto', 'fundraiserNames', {
         returnValue: rawName,
       });
 
@@ -192,12 +192,12 @@ describe('Offering class', () => {
     it('should allow subscription', async () => {
       const unsubCallback = 'unsubCallBack';
 
-      dsMockUtils.createQueryStub('sto', 'fundraiserNames', {
+      dsMockUtils.createQueryMock('sto', 'fundraiserNames', {
         returnValue: rawName,
       });
 
       dsMockUtils
-        .createQueryStub('sto', 'fundraisers')
+        .createQueryMock('sto', 'fundraisers')
         .mockImplementation(async (_a, _b, cbFunc) => {
           cbFunc(rawFundraiser, rawName);
           return unsubCallback;
@@ -228,7 +228,7 @@ describe('Offering class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -257,7 +257,7 @@ describe('Offering class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -299,9 +299,9 @@ describe('Offering class', () => {
       };
       /* eslint-enable @typescript-eslint/naming-convention */
 
-      dsMockUtils.createApolloQueryStub(heartbeat(), true);
+      dsMockUtils.createApolloQueryMock(heartbeat(), true);
 
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.createApolloQueryMock(
         investments({
           stoId: id.toNumber(),
           ticker,
@@ -324,7 +324,7 @@ describe('Offering class', () => {
       expect(data[0].soldAmount).toEqual(offeringTokenAmount.div(Math.pow(10, 6)));
       expect(data[0].investedAmount).toEqual(raiseTokenAmount.div(Math.pow(10, 6)));
 
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.createApolloQueryMock(
         investments({
           stoId: id.toNumber(),
           ticker,
@@ -371,7 +371,7 @@ describe('Offering class', () => {
         nodes,
       };
 
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloV2QueryMock(
         investmentsQuery(
           {
             stoId: id.toNumber(),
@@ -396,7 +396,7 @@ describe('Offering class', () => {
       expect(data[0].soldAmount).toEqual(offeringTokenAmount.div(Math.pow(10, 6)));
       expect(data[0].investedAmount).toEqual(raiseTokenAmount.div(Math.pow(10, 6)));
 
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloV2QueryMock(
         investmentsQuery({
           stoId: id.toNumber(),
           offeringToken: ticker,
@@ -423,7 +423,7 @@ describe('Offering class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Offering>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args: { ticker, id, freeze: true }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -441,7 +441,7 @@ describe('Offering class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Offering>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args: { ticker, id, freeze: false }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -472,7 +472,7 @@ describe('Offering class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -490,14 +490,14 @@ describe('Offering class', () => {
     it('should return whether the Offering exists', async () => {
       const offering = new Offering({ ticker: 'SOME_TICKER', id: new BigNumber(1) }, context);
 
-      dsMockUtils.createQueryStub('sto', 'fundraisers', {
+      dsMockUtils.createQueryMock('sto', 'fundraisers', {
         returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockFundraiser()),
       });
 
       let result = await offering.exists();
       expect(result).toBe(true);
 
-      dsMockUtils.createQueryStub('sto', 'fundraisers', {
+      dsMockUtils.createQueryMock('sto', 'fundraisers', {
         returnValue: dsMockUtils.createMockOption(),
       });
 

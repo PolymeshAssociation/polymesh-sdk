@@ -100,11 +100,11 @@ describe('modifyVenue procedure', () => {
     jest.spyOn(utilsConversionModule, 'stringToBytes').mockReturnValue(rawDetails);
     jest.spyOn(utilsConversionModule, 'venueTypeToMeshVenueType').mockReturnValue(rawType);
 
-    const updateVenueDetailsTransaction = dsMockUtils.createTxStub(
+    const updateVenueDetailsTransaction = dsMockUtils.createTxMock(
       'settlement',
       'updateVenueDetails'
     );
-    const updateVenueTypeTransaction = dsMockUtils.createTxStub('settlement', 'updateVenueType');
+    const updateVenueTypeTransaction = dsMockUtils.createTxMock('settlement', 'updateVenueType');
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     let result = await prepareModifyVenue.call(proc, args);

@@ -249,9 +249,9 @@ describe('Procedure class', () => {
   });
 
   describe('method: prepare', () => {
-    let posRatioToBigNumberStub: jest.SpyInstance<BigNumber, [PosRatio]>;
-    let balanceToBigNumberStub: jest.SpyInstance<BigNumber, [Balance]>;
-    let txTagToProtocolOpStub: jest.SpyInstance<ProtocolOp, [TxTag, Context]>;
+    let posRatioToBigNumberSpy: jest.SpyInstance<BigNumber, [PosRatio]>;
+    let balanceToBigNumberSpy: jest.SpyInstance<BigNumber, [Balance]>;
+    let txTagToProtocolOpSpy: jest.SpyInstance<ProtocolOp, [TxTag, Context]>;
     let txTags: TxTag[];
     let fees: BigNumber[];
     let rawCoefficient: PosRatio;
@@ -261,9 +261,9 @@ describe('Procedure class', () => {
     let coefficient: BigNumber;
 
     beforeAll(() => {
-      posRatioToBigNumberStub = jest.spyOn(utilsConversionModule, 'posRatioToBigNumber');
-      balanceToBigNumberStub = jest.spyOn(utilsConversionModule, 'balanceToBigNumber');
-      txTagToProtocolOpStub = jest.spyOn(utilsConversionModule, 'txTagToProtocolOp');
+      posRatioToBigNumberSpy = jest.spyOn(utilsConversionModule, 'posRatioToBigNumber');
+      balanceToBigNumberSpy = jest.spyOn(utilsConversionModule, 'balanceToBigNumber');
+      txTagToProtocolOpSpy = jest.spyOn(utilsConversionModule, 'txTagToProtocolOp');
       txTags = [TxTags.asset.RegisterTicker, TxTags.identity.CddRegisterDid];
       fees = [new BigNumber(250), new BigNumber(0)];
       numerator = new BigNumber(7);
@@ -274,25 +274,25 @@ describe('Procedure class', () => {
     });
 
     beforeEach(() => {
-      dsMockUtils.createQueryStub('protocolFee', 'coefficient', {
+      dsMockUtils.createQueryMock('protocolFee', 'coefficient', {
         returnValue: rawCoefficient,
       });
-      when(dsMockUtils.createQueryStub('protocolFee', 'baseFees'))
+      when(dsMockUtils.createQueryMock('protocolFee', 'baseFees'))
         .calledWith('AssetRegisterTicker')
         .mockResolvedValue(rawFees[0]);
-      when(dsMockUtils.createQueryStub('protocolFee', 'baseFees'))
+      when(dsMockUtils.createQueryMock('protocolFee', 'baseFees'))
         .calledWith('IdentityRegisterDid')
         .mockResolvedValue(rawFees[1]);
 
-      when(posRatioToBigNumberStub).calledWith(rawCoefficient).mockReturnValue(coefficient);
+      when(posRatioToBigNumberSpy).calledWith(rawCoefficient).mockReturnValue(coefficient);
       txTags.forEach(txTag =>
-        when(txTagToProtocolOpStub)
+        when(txTagToProtocolOpSpy)
           .calledWith(txTag, context)
           .mockReturnValue(txTag as unknown as ProtocolOp)
       );
 
       rawFees.forEach((rawFee, index) =>
-        when(balanceToBigNumberStub).calledWith(rawFee).mockReturnValue(new BigNumber(fees[index]))
+        when(balanceToBigNumberSpy).calledWith(rawFee).mockReturnValue(new BigNumber(fees[index]))
       );
     });
 
@@ -303,8 +303,8 @@ describe('Procedure class', () => {
         ticker,
         secondaryAccounts,
       };
-      const tx1 = dsMockUtils.createTxStub('asset', 'registerTicker');
-      const tx2 = dsMockUtils.createTxStub('identity', 'cddRegisterDid');
+      const tx1 = dsMockUtils.createTxMock('asset', 'registerTicker');
+      const tx2 = dsMockUtils.createTxMock('identity', 'cddRegisterDid');
 
       const returnValue = 'good';
 
@@ -328,8 +328,8 @@ describe('Procedure class', () => {
         nonce: new BigNumber(15),
       });
 
-      const batchConstructorStub =
-        polymeshTransactionMockUtils.getTransactionBatchConstructorStub();
+      const batchConstructorMock =
+        polymeshTransactionMockUtils.getTransactionBatchConstructorMock();
 
       expect(transaction).toMatchObject({
         transactions: [
@@ -338,7 +338,7 @@ describe('Procedure class', () => {
         ],
       });
 
-      expect(batchConstructorStub).toHaveBeenCalledWith(
+      expect(batchConstructorMock).toHaveBeenCalledWith(
         expect.objectContaining({
           transactions: expect.objectContaining([
             expect.objectContaining({ transaction: tx1, args: [ticker] }),
@@ -367,13 +367,13 @@ describe('Procedure class', () => {
         signingAccount: 'something',
       });
 
-      const constructorStub = polymeshTransactionMockUtils.getTransactionConstructorStub();
+      const constructorMock = polymeshTransactionMockUtils.getTransactionConstructorMock();
 
       expect(transaction2).toMatchObject({
         transaction: tx1,
         args: [ticker],
       });
-      expect(constructorStub).toHaveBeenCalledWith(
+      expect(constructorMock).toHaveBeenCalledWith(
         expect.objectContaining({ transaction: tx1, args: [ticker] }),
         {
           ...context,
@@ -404,7 +404,7 @@ describe('Procedure class', () => {
         transaction: tx1,
         args: [ticker],
       });
-      expect(constructorStub).toHaveBeenCalledWith(
+      expect(constructorMock).toHaveBeenCalledWith(
         expect.objectContaining({ transaction: tx1, args: [ticker] }),
         {
           ...context,
@@ -415,7 +415,7 @@ describe('Procedure class', () => {
       expect(context.setSigningAddress).toHaveBeenCalledWith('something');
       expect(context.setNonce).toHaveBeenCalledWith(new BigNumber(10));
 
-      constructorStub.mockReset();
+      constructorMock.mockReset();
 
       const nonce = (): Promise<BigNumber> => Promise.resolve(new BigNumber(15));
 
@@ -424,7 +424,7 @@ describe('Procedure class', () => {
         nonce,
       });
 
-      expect(constructorStub).toHaveBeenCalledWith(
+      expect(constructorMock).toHaveBeenCalledWith(
         expect.objectContaining({ transaction: tx1, args: [ticker] }),
         {
           ...context,
@@ -435,14 +435,14 @@ describe('Procedure class', () => {
 
       expect(context.setNonce).toHaveBeenCalledWith(new BigNumber(15));
 
-      constructorStub.mockReset();
+      constructorMock.mockReset();
 
       await proc3.prepare({ args: procArgs }, context, {
         signingAccount: 'something',
         nonce: Promise.resolve(new BigNumber(12)),
       });
 
-      expect(constructorStub).toHaveBeenCalledWith(
+      expect(constructorMock).toHaveBeenCalledWith(
         expect.objectContaining({ transaction: tx1, args: [ticker] }),
         {
           ...context,
@@ -485,7 +485,7 @@ describe('Procedure class', () => {
         this: Procedure<typeof procArgs, string>
       ): Promise<TransactionSpec<string, [string]>> {
         return {
-          transaction: dsMockUtils.createTxStub('asset', 'registerTicker'),
+          transaction: dsMockUtils.createTxMock('asset', 'registerTicker'),
           args: [ticker],
           resolver: 'success',
         };
@@ -580,7 +580,7 @@ describe('Procedure class', () => {
 
     beforeAll(() => {
       proc = new Procedure(async () => ({
-        transaction: dsMockUtils.createTxStub('asset', 'registerTicker'),
+        transaction: dsMockUtils.createTxMock('asset', 'registerTicker'),
         resolver: undefined,
         args: ['TICKER'],
       }));
@@ -606,7 +606,7 @@ describe('Procedure class', () => {
 
     beforeAll(() => {
       proc = new Procedure(async () => ({
-        transaction: dsMockUtils.createTxStub('asset', 'registerTicker'),
+        transaction: dsMockUtils.createTxMock('asset', 'registerTicker'),
         resolver: undefined,
         args: ['TICKER'],
       }));

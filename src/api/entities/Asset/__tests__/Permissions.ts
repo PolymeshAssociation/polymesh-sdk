@@ -83,7 +83,7 @@ describe('Permissions class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -107,7 +107,7 @@ describe('Permissions class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -130,7 +130,7 @@ describe('Permissions class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -192,7 +192,7 @@ describe('Permissions class', () => {
     it('should retrieve all the permission groups of the Asset', async () => {
       const id = new BigNumber(1);
 
-      dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
+      dsMockUtils.createQueryMock('externalAgents', 'groupPermissions', {
         entries: [
           tuple(
             [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockU32(id)],
@@ -220,7 +220,7 @@ describe('Permissions class', () => {
       const otherDid = 'otherDid';
       const customId = new BigNumber(1);
 
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+      dsMockUtils.createQueryMock('externalAgents', 'groupOfAgent', {
         entries: [
           tuple(
             [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(did)],

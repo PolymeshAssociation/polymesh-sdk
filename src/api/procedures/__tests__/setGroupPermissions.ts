@@ -37,7 +37,7 @@ describe('setGroupPermissions procedure', () => {
 
   let mockContext: Mocked<Context>;
   let externalAgentsSetGroupPermissionsTransaction: PolymeshTx<unknown[]>;
-  let permissionsLikeToPermissionsStub: jest.SpyInstance;
+  let permissionsLikeToPermissionsSpy: jest.SpyInstance;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
@@ -50,14 +50,14 @@ describe('setGroupPermissions procedure', () => {
       .mockReturnValue(rawExtrinsicPermissions);
     jest.spyOn(utilsConversionModule, 'bigNumberToU32').mockReturnValue(rawAgId);
 
-    permissionsLikeToPermissionsStub = jest.spyOn(
+    permissionsLikeToPermissionsSpy = jest.spyOn(
       utilsConversionModule,
       'permissionsLikeToPermissions'
     );
   });
 
   beforeEach(() => {
-    externalAgentsSetGroupPermissionsTransaction = dsMockUtils.createTxStub(
+    externalAgentsSetGroupPermissionsTransaction = dsMockUtils.createTxMock(
       'externalAgents',
       'setGroupPermissions'
     );
@@ -78,7 +78,7 @@ describe('setGroupPermissions procedure', () => {
   it('should throw an error if new permissions are the same as the current ones', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    permissionsLikeToPermissionsStub.mockReturnValue(permissions);
+    permissionsLikeToPermissionsSpy.mockReturnValue(permissions);
 
     let error;
 
@@ -105,7 +105,7 @@ describe('setGroupPermissions procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     const fakePermissions = { transactions: permissions.transactions };
-    when(permissionsLikeToPermissionsStub)
+    when(permissionsLikeToPermissionsSpy)
       .calledWith(fakePermissions, mockContext)
       .mockReturnValue(permissions.transactions);
 

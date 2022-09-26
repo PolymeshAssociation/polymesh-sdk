@@ -26,9 +26,9 @@ jest.mock(
 
 describe('setMetadata procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: jest.SpyInstance;
-  let metadataToMeshMetadataKeyStub: jest.SpyInstance;
-  let metadataValueDetailToMeshMetadataValueDetailStub: jest.SpyInstance;
+  let stringToTickerSpy: jest.SpyInstance;
+  let metadataToMeshMetadataKeySpy: jest.SpyInstance;
+  let metadataValueDetailToMeshMetadataValueDetailSpy: jest.SpyInstance;
 
   let ticker: string;
   let id: BigNumber;
@@ -36,7 +36,7 @@ describe('setMetadata procedure', () => {
   let rawTicker: PolymeshPrimitivesTicker;
   let rawMetadataKey: PolymeshPrimitivesAssetMetadataAssetMetadataKey;
   let params: Params;
-  let setAssetMetadataStub: PolymeshTx<
+  let setAssetMetadataMock: PolymeshTx<
     [
       PolymeshPrimitivesTicker,
       PolymeshPrimitivesAssetMetadataAssetMetadataKey,
@@ -45,7 +45,7 @@ describe('setMetadata procedure', () => {
     ]
   >;
 
-  let setAssetMetadataDetailsStub: PolymeshTx<
+  let setAssetMetadataDetailsMock: PolymeshTx<
     [
       PolymeshPrimitivesTicker,
       PolymeshPrimitivesAssetMetadataAssetMetadataKey,
@@ -61,9 +61,9 @@ describe('setMetadata procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
 
-    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
-    metadataToMeshMetadataKeyStub = jest.spyOn(utilsConversionModule, 'metadataToMeshMetadataKey');
-    metadataValueDetailToMeshMetadataValueDetailStub = jest.spyOn(
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    metadataToMeshMetadataKeySpy = jest.spyOn(utilsConversionModule, 'metadataToMeshMetadataKey');
+    metadataValueDetailToMeshMetadataValueDetailSpy = jest.spyOn(
       utilsConversionModule,
       'metadataValueDetailToMeshMetadataValueDetail'
     );
@@ -89,12 +89,12 @@ describe('setMetadata procedure', () => {
       },
     });
 
-    when(stringToTickerStub).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
 
     rawMetadataKey = dsMockUtils.createMockAssetMetadataKey({
       Local: dsMockUtils.createMockU64(id),
     });
-    when(metadataToMeshMetadataKeyStub)
+    when(metadataToMeshMetadataKeySpy)
       .calledWith(type, id, mockContext)
       .mockReturnValue(rawMetadataKey);
 
@@ -106,10 +106,10 @@ describe('setMetadata procedure', () => {
       }),
       expire: dsMockUtils.createMockOption(),
     });
-    metadataValueDetailToMeshMetadataValueDetailStub.mockReturnValue(rawValueDetail);
+    metadataValueDetailToMeshMetadataValueDetailSpy.mockReturnValue(rawValueDetail);
 
-    setAssetMetadataStub = dsMockUtils.createTxStub('asset', 'setAssetMetadata');
-    setAssetMetadataDetailsStub = dsMockUtils.createTxStub('asset', 'setAssetMetadataDetails');
+    setAssetMetadataMock = dsMockUtils.createTxMock('asset', 'setAssetMetadata');
+    setAssetMetadataDetailsMock = dsMockUtils.createTxMock('asset', 'setAssetMetadataDetails');
   });
 
   afterEach(() => {
@@ -198,12 +198,12 @@ describe('setMetadata procedure', () => {
       value: 'SOME_VALUE',
       metadataEntry,
     };
-    const metadataValueToMeshMetadataValueStub = jest.spyOn(
+    const metadataValueToMeshMetadataValueSpy = jest.spyOn(
       utilsConversionModule,
       'metadataValueToMeshMetadataValue'
     );
     const rawValue = dsMockUtils.createMockBytes('SOME_VALUE');
-    metadataValueToMeshMetadataValueStub.mockReturnValue(rawValue);
+    metadataValueToMeshMetadataValueSpy.mockReturnValue(rawValue);
 
     let result = await prepareSetMetadata.call(proc, params);
 
@@ -214,7 +214,7 @@ describe('setMetadata procedure', () => {
     });
 
     expect(result).toEqual({
-      transaction: setAssetMetadataStub,
+      transaction: setAssetMetadataMock,
       args: [rawTicker, rawMetadataKey, rawValue, null],
       resolver: fakeResult,
     });
@@ -229,7 +229,7 @@ describe('setMetadata procedure', () => {
     });
 
     expect(result).toEqual({
-      transaction: setAssetMetadataStub,
+      transaction: setAssetMetadataMock,
       args: [rawTicker, rawMetadataKey, rawValue, rawValueDetail],
       resolver: fakeResult,
     });
@@ -256,7 +256,7 @@ describe('setMetadata procedure', () => {
     });
 
     expect(result).toEqual({
-      transaction: setAssetMetadataDetailsStub,
+      transaction: setAssetMetadataDetailsMock,
       args: [rawTicker, rawMetadataKey, rawValueDetail],
       resolver: fakeResult,
     });

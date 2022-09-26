@@ -46,7 +46,7 @@ describe('createGroup procedure', () => {
 
   let mockContext: Mocked<Context>;
   let externalAgentsCreateGroupTransaction: PolymeshTx<unknown[]>;
-  let permissionsLikeToPermissionsStub: jest.SpyInstance;
+  let permissionsLikeToPermissionsSpy: jest.SpyInstance;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
@@ -58,7 +58,7 @@ describe('createGroup procedure', () => {
       .spyOn(utilsConversionModule, 'transactionPermissionsToExtrinsicPermissions')
       .mockReturnValue(rawExtrinsicPermissions);
 
-    permissionsLikeToPermissionsStub = jest.spyOn(
+    permissionsLikeToPermissionsSpy = jest.spyOn(
       utilsConversionModule,
       'permissionsLikeToPermissions'
     );
@@ -66,7 +66,7 @@ describe('createGroup procedure', () => {
   });
 
   beforeEach(() => {
-    externalAgentsCreateGroupTransaction = dsMockUtils.createTxStub(
+    externalAgentsCreateGroupTransaction = dsMockUtils.createTxMock(
       'externalAgents',
       'createGroup'
     );
@@ -86,8 +86,8 @@ describe('createGroup procedure', () => {
 
   it('should throw an error if there already exists a group with exactly the same permissions', async () => {
     const errorMsg = 'ERROR';
-    const assertGroupDoesNotExistStub = jest.spyOn(procedureUtilsModule, 'assertGroupDoesNotExist');
-    assertGroupDoesNotExistStub.mockImplementation(() => {
+    const assertGroupDoesNotExistSpy = jest.spyOn(procedureUtilsModule, 'assertGroupDoesNotExist');
+    assertGroupDoesNotExistSpy.mockImplementation(() => {
       throw new Error(errorMsg);
     });
 
@@ -96,7 +96,7 @@ describe('createGroup procedure', () => {
       permissions: { transactions },
     };
 
-    when(permissionsLikeToPermissionsStub)
+    when(permissionsLikeToPermissionsSpy)
       .calledWith({ transactions }, mockContext)
       .mockReturnValue({ transactions });
 
@@ -116,7 +116,7 @@ describe('createGroup procedure', () => {
 
     await expect(prepareCreateGroup.call(proc, args)).rejects.toThrow(errorMsg);
 
-    assertGroupDoesNotExistStub.mockRestore();
+    assertGroupDoesNotExistSpy.mockRestore();
   });
 
   it('should return a create group transaction spec', async () => {
@@ -143,7 +143,7 @@ describe('createGroup procedure', () => {
     );
 
     const fakePermissions = { transactions };
-    when(permissionsLikeToPermissionsStub)
+    when(permissionsLikeToPermissionsSpy)
       .calledWith(fakePermissions, mockContext)
       .mockReturnValue({ transactions });
 
@@ -158,7 +158,7 @@ describe('createGroup procedure', () => {
       resolver: expect.any(Function),
     });
 
-    when(permissionsLikeToPermissionsStub)
+    when(permissionsLikeToPermissionsSpy)
       .calledWith(
         {
           transactions: {

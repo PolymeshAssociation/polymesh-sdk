@@ -96,7 +96,7 @@ describe('CorporateAction class', () => {
         checkpoint: new Date(),
       };
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args: { corporateAction, ...args }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 

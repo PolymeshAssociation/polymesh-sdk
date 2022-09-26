@@ -62,7 +62,7 @@ describe('Identities Class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Identity>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -79,7 +79,7 @@ describe('Identities Class', () => {
       const expectedTransaction =
         'someTransaction' as unknown as PolymeshTransaction<NumberedPortfolio>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           { args: { names: [args.name] }, transformer: createPortfolioTransformer },
           context,
@@ -100,7 +100,7 @@ describe('Identities Class', () => {
       const expectedTransaction =
         'someTransaction' as unknown as PolymeshTransaction<NumberedPortfolio>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 

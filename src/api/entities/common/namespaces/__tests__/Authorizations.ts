@@ -41,9 +41,9 @@ describe('Authorizations class', () => {
   });
 
   describe('method: getReceived', () => {
-    let signerValueToSignatoryStub: jest.SpyInstance<Signatory, [SignerValue, Context]>;
-    let booleanToBoolStub: jest.SpyInstance<bool, [boolean, Context]>;
-    let authorizationTypeToMeshAuthorizationTypeStub: jest.SpyInstance<
+    let signerValueToSignatorySpy: jest.SpyInstance<Signatory, [SignerValue, Context]>;
+    let booleanToBoolSpy: jest.SpyInstance<bool, [boolean, Context]>;
+    let authorizationTypeToMeshAuthorizationTypeSpy: jest.SpyInstance<
       MeshAuthorizationType,
       [AuthorizationType, Context]
     >;
@@ -53,9 +53,9 @@ describe('Authorizations class', () => {
     });
 
     beforeAll(() => {
-      signerValueToSignatoryStub = jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
-      booleanToBoolStub = jest.spyOn(utilsConversionModule, 'booleanToBool');
-      authorizationTypeToMeshAuthorizationTypeStub = jest.spyOn(
+      signerValueToSignatorySpy = jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
+      booleanToBoolSpy = jest.spyOn(utilsConversionModule, 'booleanToBool');
+      authorizationTypeToMeshAuthorizationTypeSpy = jest.spyOn(
         utilsConversionModule,
         'authorizationTypeToMeshAuthorizationType'
       );
@@ -87,14 +87,14 @@ describe('Authorizations class', () => {
         } as const,
       ];
 
-      when(signerValueToSignatoryStub).mockReturnValue(rawSignatory);
-      when(booleanToBoolStub)
+      when(signerValueToSignatorySpy).mockReturnValue(rawSignatory);
+      when(booleanToBoolSpy)
         .calledWith(true, context)
         .mockReturnValue(dsMockUtils.createMockBool(true));
-      when(booleanToBoolStub)
+      when(booleanToBoolSpy)
         .calledWith(false, context)
         .mockReturnValue(dsMockUtils.createMockBool(false));
-      when(authorizationTypeToMeshAuthorizationTypeStub)
+      when(authorizationTypeToMeshAuthorizationTypeSpy)
         .calledWith(filter, context)
         .mockReturnValue(rawAuthorizationType);
 
@@ -112,7 +112,7 @@ describe('Authorizations class', () => {
       );
 
       dsMockUtils
-        .createRpcStub('identity', 'getFilteredAuthorizations')
+        .createRpcMock('identity', 'getFilteredAuthorizations')
         .mockResolvedValue(fakeRpcAuthorizations);
 
       const expectedAuthorizations = authParams.map(({ authId, target, issuer, expiry, data }) =>
@@ -159,7 +159,7 @@ describe('Authorizations class', () => {
       const authId = new BigNumber(1);
       const data = { type: AuthorizationType.TransferAssetOwnership, value: 'myTicker' } as const;
 
-      dsMockUtils.createQueryStub('identity', 'authorizations', {
+      dsMockUtils.createQueryMock('identity', 'authorizations', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockAuthorization({
             authId: dsMockUtils.createMockU64(authId),
@@ -188,7 +188,7 @@ describe('Authorizations class', () => {
       const authsNamespace = new Authorizations(identity, context);
       const id = new BigNumber(1);
 
-      dsMockUtils.createQueryStub('identity', 'authorizations', {
+      dsMockUtils.createQueryMock('identity', 'authorizations', {
         returnValue: dsMockUtils.createMockOption(),
       });
 

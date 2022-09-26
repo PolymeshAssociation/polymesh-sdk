@@ -23,7 +23,7 @@ describe('Checkpoint class', () => {
   let id: BigNumber;
   let ticker: string;
 
-  let balanceToBigNumberStub: jest.SpyInstance;
+  let balanceToBigNumberSpy: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -32,7 +32,7 @@ describe('Checkpoint class', () => {
     id = new BigNumber(1);
     ticker = 'SOME_TICKER';
 
-    balanceToBigNumberStub = jest.spyOn(utilsConversionModule, 'balanceToBigNumber');
+    balanceToBigNumberSpy = jest.spyOn(utilsConversionModule, 'balanceToBigNumber');
   });
 
   beforeEach(() => {
@@ -75,7 +75,7 @@ describe('Checkpoint class', () => {
       const checkpoint = new Checkpoint({ id, ticker }, context);
       const timestamp = 12000;
 
-      dsMockUtils.createQueryStub('checkpoint', 'timestamps', {
+      dsMockUtils.createQueryMock('checkpoint', 'timestamps', {
         returnValue: dsMockUtils.createMockMoment(new BigNumber(timestamp)),
       });
 
@@ -91,11 +91,11 @@ describe('Checkpoint class', () => {
       const balance = new BigNumber(10000000000);
       const expected = new BigNumber(balance).shiftedBy(-6);
 
-      dsMockUtils.createQueryStub('checkpoint', 'totalSupply', {
+      dsMockUtils.createQueryMock('checkpoint', 'totalSupply', {
         returnValue: dsMockUtils.createMockBalance(balance),
       });
 
-      balanceToBigNumberStub.mockReturnValue(expected);
+      balanceToBigNumberSpy.mockReturnValue(expected);
 
       const result = await checkpoint.totalSupply();
       expect(result).toEqual(expected);
@@ -103,10 +103,10 @@ describe('Checkpoint class', () => {
   });
 
   describe('method: allBalances', () => {
-    let stringToIdentityIdStub: jest.SpyInstance;
+    let stringToIdentityIdSpy: jest.SpyInstance;
 
     beforeAll(() => {
-      stringToIdentityIdStub = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
+      stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
     });
 
     it("should return the Checkpoint's Asset Holder balances", async () => {
@@ -135,21 +135,21 @@ describe('Checkpoint class', () => {
 
       rawBalanceOf.forEach(({ identityId, balance: rawBalance }, index) => {
         const { identity, balance } = balanceOf[index];
-        when(balanceToBigNumberStub).calledWith(rawBalance).mockReturnValue(balance);
-        when(stringToIdentityIdStub).calledWith(identity).mockReturnValue(identityId);
+        when(balanceToBigNumberSpy).calledWith(rawBalance).mockReturnValue(balance);
+        when(stringToIdentityIdSpy).calledWith(identity).mockReturnValue(identityId);
       });
 
       const balanceOfEntries = rawBalanceOf.map(({ identityId, balance }) =>
         tuple({ args: [rawTicker, identityId] } as unknown as StorageKey, balance)
       );
 
-      dsMockUtils.createQueryStub('asset', 'balanceOf');
+      dsMockUtils.createQueryMock('asset', 'balanceOf');
 
       jest
         .spyOn(utilsInternalModule, 'requestPaginated')
         .mockResolvedValue({ entries: balanceOfEntries, lastKey: null });
 
-      dsMockUtils.createQueryStub('checkpoint', 'balanceUpdates', {
+      dsMockUtils.createQueryMock('checkpoint', 'balanceUpdates', {
         multi: [
           [
             dsMockUtils.createMockU64(new BigNumber(1)),
@@ -164,12 +164,12 @@ describe('Checkpoint class', () => {
 
       const rawBalanceMulti = balanceMulti.map(balance => dsMockUtils.createMockBalance(balance));
 
-      dsMockUtils.createQueryStub('checkpoint', 'balance', {
+      dsMockUtils.createQueryMock('checkpoint', 'balance', {
         multi: rawBalanceMulti,
       });
 
       rawBalanceMulti.forEach((rawBalance, index) => {
-        when(balanceToBigNumberStub).calledWith(rawBalance).mockReturnValue(balanceMulti[index]);
+        when(balanceToBigNumberSpy).calledWith(rawBalance).mockReturnValue(balanceMulti[index]);
       });
 
       const { data } = await checkpoint.allBalances();
@@ -190,9 +190,9 @@ describe('Checkpoint class', () => {
 
       const expected = new BigNumber(balance).shiftedBy(-6);
 
-      balanceToBigNumberStub.mockReturnValue(expected);
+      balanceToBigNumberSpy.mockReturnValue(expected);
 
-      dsMockUtils.createQueryStub('checkpoint', 'balanceUpdates', {
+      dsMockUtils.createQueryMock('checkpoint', 'balanceUpdates', {
         returnValue: [
           dsMockUtils.createMockU64(new BigNumber(1)),
           dsMockUtils.createMockU64(new BigNumber(2)),
@@ -200,7 +200,7 @@ describe('Checkpoint class', () => {
         ],
       });
 
-      dsMockUtils.createQueryStub('checkpoint', 'balance', {
+      dsMockUtils.createQueryMock('checkpoint', 'balance', {
         returnValue: dsMockUtils.createMockBalance(balance),
       });
 
@@ -212,7 +212,7 @@ describe('Checkpoint class', () => {
 
       expect(result).toEqual(expected);
 
-      dsMockUtils.createQueryStub('checkpoint', 'balanceUpdates', {
+      dsMockUtils.createQueryMock('checkpoint', 'balanceUpdates', {
         returnValue: [],
       });
 
@@ -230,7 +230,7 @@ describe('Checkpoint class', () => {
 
       const checkpoint = new Checkpoint({ id, ticker }, context);
 
-      dsMockUtils.createQueryStub('checkpoint', 'checkpointIdSequence', {
+      dsMockUtils.createQueryMock('checkpoint', 'checkpointIdSequence', {
         returnValue: [dsMockUtils.createMockU64(new BigNumber(5))],
       });
 
@@ -238,7 +238,7 @@ describe('Checkpoint class', () => {
 
       expect(result).toBe(true);
 
-      dsMockUtils.createQueryStub('checkpoint', 'checkpointIdSequence', {
+      dsMockUtils.createQueryMock('checkpoint', 'checkpointIdSequence', {
         returnValue: [dsMockUtils.createMockU64(new BigNumber(0))],
       });
 

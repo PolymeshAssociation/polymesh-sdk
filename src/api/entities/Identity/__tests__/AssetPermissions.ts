@@ -66,7 +66,7 @@ describe('AssetPermissions class', () => {
 
   describe('method: getGroup', () => {
     it('should throw an error if the Identity is no longer an Agent', async () => {
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+      dsMockUtils.createQueryMock('externalAgents', 'groupOfAgent', {
         returnValue: dsMockUtils.createMockOption(),
       });
 
@@ -82,7 +82,7 @@ describe('AssetPermissions class', () => {
     });
 
     it('should return the permission group associated with the Agent', async () => {
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+      dsMockUtils.createQueryMock('externalAgents', 'groupOfAgent', {
         returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('Full')),
       });
 
@@ -105,7 +105,7 @@ describe('AssetPermissions class', () => {
       };
       const fakeResult = { blockNumber, blockDate, eventIndex: eventIdx };
 
-      dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {
+      dsMockUtils.createApolloQueryMock(eventByIndexedArgs(variables), {
         /* eslint-disable @typescript-eslint/naming-convention */
         eventByIndexedArgs: {
           block_id: blockNumber.toNumber(),
@@ -127,7 +127,7 @@ describe('AssetPermissions class', () => {
         eventArg1: utilsInternalModule.padString(ticker, MAX_TICKER_LENGTH),
       };
 
-      dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {});
+      dsMockUtils.createApolloQueryMock(eventByIndexedArgs(variables), {});
       const result = await assetPermissions.enabledAt({ asset });
       expect(result).toBeNull();
     });
@@ -144,7 +144,7 @@ describe('AssetPermissions class', () => {
       };
       const fakeResult = { blockNumber, blockHash, blockDate, eventIndex: eventIdx };
 
-      dsMockUtils.createApolloV2QueryStub(tickerExternalAgentsQuery(variables), {
+      dsMockUtils.createApolloV2QueryMock(tickerExternalAgentsQuery(variables), {
         tickerExternalAgents: {
           nodes: [
             {
@@ -169,7 +169,7 @@ describe('AssetPermissions class', () => {
         assetId: ticker,
       };
 
-      dsMockUtils.createApolloV2QueryStub(tickerExternalAgentsQuery(variables), {
+      dsMockUtils.createApolloV2QueryMock(tickerExternalAgentsQuery(variables), {
         tickerExternalAgents: { nodes: [] },
       });
       const result = await assetPermissions.enabledAtV2({ asset });
@@ -188,7 +188,7 @@ describe('AssetPermissions class', () => {
       };
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args: { identity, group }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -208,7 +208,7 @@ describe('AssetPermissions class', () => {
     });
 
     it('should check whether the Identity has the appropriate permissions for the Asset', async () => {
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+      dsMockUtils.createQueryMock('externalAgents', 'groupOfAgent', {
         returnValue: dsMockUtils.createMockOption(),
       });
 
@@ -219,7 +219,7 @@ describe('AssetPermissions class', () => {
         missingPermissions: null,
         message: 'The Identity is not an Agent for the Asset',
       });
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+      dsMockUtils.createQueryMock('externalAgents', 'groupOfAgent', {
         returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('Full')),
       });
 
@@ -227,7 +227,7 @@ describe('AssetPermissions class', () => {
 
       expect(result).toEqual({ result: true });
 
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+      dsMockUtils.createQueryMock('externalAgents', 'groupOfAgent', {
         returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('ExceptMeta')),
       });
 
@@ -252,7 +252,7 @@ describe('AssetPermissions class', () => {
 
       expect(result).toEqual({ result: true });
 
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+      dsMockUtils.createQueryMock('externalAgents', 'groupOfAgent', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockAgentGroup('PolymeshV1PIA')
         ),
@@ -287,7 +287,7 @@ describe('AssetPermissions class', () => {
         result: true,
       });
 
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+      dsMockUtils.createQueryMock('externalAgents', 'groupOfAgent', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockAgentGroup('PolymeshV1CAA')
         ),
@@ -312,12 +312,12 @@ describe('AssetPermissions class', () => {
         result: true,
       });
 
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+      dsMockUtils.createQueryMock('externalAgents', 'groupOfAgent', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockAgentGroup({ Custom: dsMockUtils.createMockU32(new BigNumber(1)) })
         ),
       });
-      dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
+      dsMockUtils.createQueryMock('externalAgents', 'groupPermissions', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockExtrinsicPermissions('Whole')
         ),
@@ -333,7 +333,7 @@ describe('AssetPermissions class', () => {
       });
 
       /* eslint-disable @typescript-eslint/naming-convention */
-      dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
+      dsMockUtils.createQueryMock('externalAgents', 'groupPermissions', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockExtrinsicPermissions({
             These: [
@@ -368,7 +368,7 @@ describe('AssetPermissions class', () => {
         missingPermissions: [TxTags.asset.CreateAsset],
       });
 
-      dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
+      dsMockUtils.createQueryMock('externalAgents', 'groupPermissions', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockExtrinsicPermissions({
             Except: [
@@ -408,7 +408,7 @@ describe('AssetPermissions class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -421,16 +421,16 @@ describe('AssetPermissions class', () => {
   describe('method: get', () => {
     let rawDid: PolymeshPrimitivesIdentityId;
     let rawTicker: PolymeshPrimitivesTicker;
-    let stringToIdentityIdStub: jest.SpyInstance;
+    let stringToIdentityIdSpy: jest.SpyInstance;
 
     beforeAll(() => {
-      stringToIdentityIdStub = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
+      stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
       rawDid = dsMockUtils.createMockIdentityId(did);
       rawTicker = dsMockUtils.createMockTicker(ticker);
     });
 
     beforeEach(() => {
-      when(stringToIdentityIdStub).calledWith(did, context).mockReturnValue(rawDid);
+      when(stringToIdentityIdSpy).calledWith(did, context).mockReturnValue(rawDid);
     });
 
     afterAll(() => {
@@ -455,7 +455,7 @@ describe('AssetPermissions class', () => {
 
       jest.spyOn(assetPermissions, 'getGroup').mockResolvedValue(group);
 
-      dsMockUtils.createQueryStub('externalAgents', 'agentOf', {
+      dsMockUtils.createQueryMock('externalAgents', 'agentOf', {
         entries: [tuple([rawDid, rawTicker], {})],
       });
 
@@ -473,11 +473,11 @@ describe('AssetPermissions class', () => {
       const eventIndex = new BigNumber(1);
       const datetime = '2020-10-10';
 
-      dsMockUtils.createQueryStub('system', 'blockHash', {
+      dsMockUtils.createQueryMock('system', 'blockHash', {
         multi: [dsMockUtils.createMockHash(blockHash)],
       });
       /* eslint-disable @typescript-eslint/naming-convention */
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.createApolloQueryMock(
         tickerExternalAgentActions({
           ticker,
           caller_did: did,
@@ -519,7 +519,7 @@ describe('AssetPermissions class', () => {
       ]);
 
       /* eslint-disable @typescript-eslint/naming-convention */
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.createApolloQueryMock(
         tickerExternalAgentActions({
           ticker,
           caller_did: did,
@@ -554,7 +554,7 @@ describe('AssetPermissions class', () => {
       const eventIndex = new BigNumber(1);
       const datetime = '2020-10-10';
 
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloV2QueryMock(
         tickerExternalAgentActionsQuery(
           {
             assetId: ticker,
@@ -599,7 +599,7 @@ describe('AssetPermissions class', () => {
         },
       ]);
 
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloV2QueryMock(
         tickerExternalAgentActionsQuery({
           assetId: ticker,
           callerId: did,

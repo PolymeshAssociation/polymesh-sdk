@@ -77,7 +77,7 @@ describe('CorporateActions class', () => {
       ];
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
             args: { ticker: 'SOME_TICKER', targets, taxWithholdings, defaultTaxWithholding },
@@ -103,7 +103,7 @@ describe('CorporateActions class', () => {
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
       const corporateAction = new BigNumber(100);
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           { args: { corporateAction, ticker: 'SOME_TICKER' }, transformer: undefined },
           context,
@@ -123,7 +123,7 @@ describe('CorporateActions class', () => {
       const otherDid = 'otherDid';
       const fakeTicker = 'TEST';
 
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+      dsMockUtils.createQueryMock('externalAgents', 'groupOfAgent', {
         entries: [
           tuple(
             [dsMockUtils.createMockTicker(fakeTicker), dsMockUtils.createMockIdentityId(did)],
@@ -147,11 +147,11 @@ describe('CorporateActions class', () => {
       const dids = ['someDid', 'otherDid'];
       const defaultTaxWithholding = new BigNumber(10);
 
-      dsMockUtils.createQueryStub('corporateAction', 'defaultTargetIdentities');
-      dsMockUtils.createQueryStub('corporateAction', 'defaultWithholdingTax');
-      dsMockUtils.createQueryStub('corporateAction', 'didWithholdingTax');
+      dsMockUtils.createQueryMock('corporateAction', 'defaultTargetIdentities');
+      dsMockUtils.createQueryMock('corporateAction', 'defaultWithholdingTax');
+      dsMockUtils.createQueryMock('corporateAction', 'didWithholdingTax');
 
-      dsMockUtils.getQueryMultiStub().mockResolvedValue([
+      dsMockUtils.getQueryMultiMock().mockResolvedValue([
         dsMockUtils.createMockTargetIdentities({
           identities: dids,
           treatment: 'Include',

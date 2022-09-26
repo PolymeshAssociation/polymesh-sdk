@@ -35,8 +35,8 @@ jest.mock(
 
 describe('setAssetRequirements procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: jest.SpyInstance<Ticker, [string, Context]>;
-  let requirementToComplianceRequirementStub: jest.SpyInstance<
+  let stringToTickerSpy: jest.SpyInstance<Ticker, [string, Context]>;
+  let requirementToComplianceRequirementSpy: jest.SpyInstance<
     PolymeshPrimitivesComplianceManagerComplianceRequirement,
     [InputRequirement, Context]
   >;
@@ -53,8 +53,8 @@ describe('setAssetRequirements procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
-    requirementToComplianceRequirementStub = jest.spyOn(
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    requirementToComplianceRequirementSpy = jest.spyOn(
       utilsConversionModule,
       'requirementToComplianceRequirement'
     );
@@ -134,11 +134,11 @@ describe('setAssetRequirements procedure', () => {
       },
     });
 
-    resetAssetComplianceTransaction = dsMockUtils.createTxStub(
+    resetAssetComplianceTransaction = dsMockUtils.createTxMock(
       'complianceManager',
       'resetAssetCompliance'
     );
-    replaceAssetComplianceTransaction = dsMockUtils.createTxStub(
+    replaceAssetComplianceTransaction = dsMockUtils.createTxMock(
       'complianceManager',
       'replaceAssetCompliance'
     );
@@ -146,7 +146,7 @@ describe('setAssetRequirements procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
 
     rawComplianceRequirements = [];
-    when(stringToTickerStub).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
     requirements.forEach((conditions, index) => {
       const complianceRequirement = dsMockUtils.createMockComplianceRequirement({
         senderConditions: senderConditions[index],
@@ -154,7 +154,7 @@ describe('setAssetRequirements procedure', () => {
         id: dsMockUtils.createMockU32(new BigNumber(index)),
       });
       rawComplianceRequirements.push(complianceRequirement);
-      when(requirementToComplianceRequirementStub)
+      when(requirementToComplianceRequirementSpy)
         .calledWith({ conditions, id: new BigNumber(index) }, mockContext)
         .mockReturnValue(complianceRequirement);
     });

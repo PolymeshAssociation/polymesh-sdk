@@ -45,7 +45,7 @@ describe('transferPolyx procedure', () => {
   });
 
   it('should throw an error if the user has insufficient balance to transfer', () => {
-    dsMockUtils.createQueryStub('identity', 'didRecords', { returnValue: {} });
+    dsMockUtils.createQueryMock('identity', 'didRecords', { returnValue: {} });
 
     const proc = procedureMockUtils.getInstance<TransferPolyxParams, void>(mockContext);
 
@@ -73,7 +73,7 @@ describe('transferPolyx procedure', () => {
 
   it("should throw an error if sender Identity doesn't have valid CDD", () => {
     dsMockUtils
-      .createQueryStub('identity', 'didRecords')
+      .createQueryMock('identity', 'didRecords')
       .mockReturnValue(dsMockUtils.createMockIdentityId('signingIdentityId'));
 
     mockContext = dsMockUtils.getContextInstance({
@@ -89,7 +89,7 @@ describe('transferPolyx procedure', () => {
 
   it("should throw an error if destination Account doesn't have valid CDD", () => {
     dsMockUtils
-      .createQueryStub('identity', 'didRecords')
+      .createQueryMock('identity', 'didRecords')
       .mockReturnValue(dsMockUtils.createMockIdentityId('signingIdentityId'));
 
     entityMockUtils.configureMocks({
@@ -116,14 +116,14 @@ describe('transferPolyx procedure', () => {
     const rawMemo = 'memo' as unknown as Memo;
 
     dsMockUtils
-      .createQueryStub('identity', 'didRecords')
+      .createQueryMock('identity', 'didRecords')
       .mockReturnValue(dsMockUtils.createMockIdentityId('signingIdentityId'));
 
     jest.spyOn(utilsConversionModule, 'stringToAccountId').mockReturnValue(rawAccount);
     jest.spyOn(utilsConversionModule, 'bigNumberToBalance').mockReturnValue(rawAmount);
     jest.spyOn(utilsConversionModule, 'stringToMemo').mockReturnValue(rawMemo);
 
-    let tx = dsMockUtils.createTxStub('balances', 'transfer');
+    let tx = dsMockUtils.createTxMock('balances', 'transfer');
     const proc = procedureMockUtils.getInstance<TransferPolyxParams, void>(mockContext);
 
     let result = await prepareTransferPolyx.call(proc, {
@@ -137,7 +137,7 @@ describe('transferPolyx procedure', () => {
       resolver: undefined,
     });
 
-    tx = dsMockUtils.createTxStub('balances', 'transferWithMemo');
+    tx = dsMockUtils.createTxMock('balances', 'transferWithMemo');
 
     result = await prepareTransferPolyx.call(proc, {
       to,

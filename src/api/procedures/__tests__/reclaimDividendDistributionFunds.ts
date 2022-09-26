@@ -103,7 +103,7 @@ describe('reclaimDividendDistributionFunds procedure', () => {
   it('should return a reclaim transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('capitalDistribution', 'reclaim');
+    const transaction = dsMockUtils.createTxMock('capitalDistribution', 'reclaim');
 
     const result = await prepareReclaimDividendDistributionFunds.call(proc, {
       distribution: entityMockUtils.getDividendDistributionInstance({

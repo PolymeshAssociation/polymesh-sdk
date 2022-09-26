@@ -51,7 +51,7 @@ describe('MultiSigProposal class', () => {
 
   describe('method: details', () => {
     it('should return the details of the MultiSigProposal', async () => {
-      dsMockUtils.createQueryStub('multiSig', 'proposalDetail', {
+      dsMockUtils.createQueryMock('multiSig', 'proposalDetail', {
         returnValue: dsMockUtils.createMockProposalDetails({
           approvals: new BigNumber(1),
           rejections: new BigNumber(1),
@@ -61,7 +61,7 @@ describe('MultiSigProposal class', () => {
         }),
       });
 
-      dsMockUtils.createQueryStub('multiSig', 'proposals', {
+      dsMockUtils.createQueryMock('multiSig', 'proposals', {
         returnValue: createMockOption(
           dsMockUtils.createMockCall({
             args: ['ABC'],
@@ -83,7 +83,7 @@ describe('MultiSigProposal class', () => {
         txTag: 'asset.reserveTicker',
       });
 
-      dsMockUtils.createQueryStub('multiSig', 'proposalDetail', {
+      dsMockUtils.createQueryMock('multiSig', 'proposalDetail', {
         returnValue: dsMockUtils.createMockProposalDetails({
           approvals: new BigNumber(1),
           rejections: new BigNumber(1),
@@ -107,11 +107,11 @@ describe('MultiSigProposal class', () => {
     });
 
     it('should throw an error if no data is returned', () => {
-      dsMockUtils.createQueryStub('multiSig', 'proposals', {
+      dsMockUtils.createQueryMock('multiSig', 'proposals', {
         returnValue: createMockOption(),
       });
 
-      dsMockUtils.createQueryStub('multiSig', 'proposalDetail', {
+      dsMockUtils.createQueryMock('multiSig', 'proposalDetail', {
         returnValue: dsMockUtils.createMockProposalDetails({
           approvals: new BigNumber(1),
           rejections: new BigNumber(1),
@@ -132,7 +132,7 @@ describe('MultiSigProposal class', () => {
 
   describe('method: exists', () => {
     it('should return true if the MultiSigProposal is present on chain', async () => {
-      dsMockUtils.createQueryStub('multiSig', 'proposals', {
+      dsMockUtils.createQueryMock('multiSig', 'proposals', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockCall({
             args: [],
@@ -147,7 +147,7 @@ describe('MultiSigProposal class', () => {
     });
 
     it('should return false if the MultiSigProposal is not present on chain', async () => {
-      dsMockUtils.createQueryStub('multiSig', 'proposals', {
+      dsMockUtils.createQueryMock('multiSig', 'proposals', {
         returnValue: dsMockUtils.createMockOption(),
       });
 

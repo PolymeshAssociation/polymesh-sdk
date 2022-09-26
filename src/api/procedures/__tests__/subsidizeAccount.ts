@@ -17,9 +17,9 @@ jest.mock(
 describe('subsidizeAccount procedure', () => {
   let mockContext: Mocked<Context>;
 
-  let signerToStringStub: jest.SpyInstance<string, [string | Identity | Account]>;
-  let stringToAccountIdStub: jest.SpyInstance<AccountId, [string, Context]>;
-  let bigNumberToBalanceStub: jest.SpyInstance<Balance, [BigNumber, Context, boolean?]>;
+  let signerToStringSpy: jest.SpyInstance<string, [string | Identity | Account]>;
+  let stringToAccountIdSpy: jest.SpyInstance<AccountId, [string, Context]>;
+  let bigNumberToBalanceSpy: jest.SpyInstance<Balance, [BigNumber, Context, boolean?]>;
 
   let args: SubsidizeAccountParams;
   const authId = new BigNumber(1);
@@ -34,9 +34,9 @@ describe('subsidizeAccount procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
 
-    signerToStringStub = jest.spyOn(utilsConversionModule, 'signerToString');
-    stringToAccountIdStub = jest.spyOn(utilsConversionModule, 'stringToAccountId');
-    bigNumberToBalanceStub = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
+    signerToStringSpy = jest.spyOn(utilsConversionModule, 'signerToString');
+    stringToAccountIdSpy = jest.spyOn(utilsConversionModule, 'stringToAccountId');
+    bigNumberToBalanceSpy = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
   });
 
   beforeEach(() => {
@@ -87,7 +87,7 @@ describe('subsidizeAccount procedure', () => {
       },
     });
 
-    when(signerToStringStub).calledWith(beneficiary).mockReturnValue(address);
+    when(signerToStringSpy).calledWith(beneficiary).mockReturnValue(address);
 
     const proc = procedureMockUtils.getInstance<SubsidizeAccountParams, AuthorizationRequest>(
       mockContext
@@ -154,17 +154,17 @@ describe('subsidizeAccount procedure', () => {
 
     rawAllowance = dsMockUtils.createMockBalance(allowance);
 
-    when(stringToAccountIdStub)
+    when(stringToAccountIdSpy)
       .calledWith(address, mockContext)
       .mockReturnValue(rawBeneficiaryAccount);
 
-    when(bigNumberToBalanceStub).calledWith(allowance, mockContext).mockReturnValue(rawAllowance);
+    when(bigNumberToBalanceSpy).calledWith(allowance, mockContext).mockReturnValue(rawAllowance);
 
     const proc = procedureMockUtils.getInstance<SubsidizeAccountParams, AuthorizationRequest>(
       mockContext
     );
 
-    const transaction = dsMockUtils.createTxStub('relayer', 'setPayingKey');
+    const transaction = dsMockUtils.createTxMock('relayer', 'setPayingKey');
 
     const result = await prepareSubsidizeAccount.call(proc, { ...args, beneficiary });
 

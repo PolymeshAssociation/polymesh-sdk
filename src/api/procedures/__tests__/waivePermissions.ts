@@ -34,7 +34,7 @@ describe('waivePermissions procedure', () => {
   });
 
   beforeEach(() => {
-    externalAgentsAbdicateTransaction = dsMockUtils.createTxStub('externalAgents', 'abdicate');
+    externalAgentsAbdicateTransaction = dsMockUtils.createTxMock('externalAgents', 'abdicate');
     mockContext = dsMockUtils.getContextInstance();
   });
 

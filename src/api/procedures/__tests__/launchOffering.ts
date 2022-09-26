@@ -49,15 +49,15 @@ jest.mock(
 
 describe('launchOffering procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: jest.SpyInstance<Ticker, [string, Context]>;
-  let portfolioIdToMeshPortfolioIdStub: jest.SpyInstance<MeshPortfolioId, [PortfolioId, Context]>;
-  let portfolioLikeToPortfolioIdStub: jest.SpyInstance<PortfolioId, [PortfolioLike]>;
-  let bigNumberToU64Stub: jest.SpyInstance<u64, [BigNumber, Context]>;
-  let dateToMomentStub: jest.SpyInstance<Moment, [Date, Context]>;
-  let bigNumberToBalanceStub: jest.SpyInstance<Balance, [BigNumber, Context, boolean?]>;
-  let offeringTierToPriceTierStub: jest.SpyInstance<PriceTier, [OfferingTier, Context]>;
-  let stringToBytesStub: jest.SpyInstance<Bytes, [string, Context]>;
-  let portfolioIdToPortfolioStub: jest.SpyInstance;
+  let stringToTickerSpy: jest.SpyInstance<Ticker, [string, Context]>;
+  let portfolioIdToMeshPortfolioIdSpy: jest.SpyInstance<MeshPortfolioId, [PortfolioId, Context]>;
+  let portfolioLikeToPortfolioIdSpy: jest.SpyInstance<PortfolioId, [PortfolioLike]>;
+  let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
+  let dateToMomentSpy: jest.SpyInstance<Moment, [Date, Context]>;
+  let bigNumberToBalanceSpy: jest.SpyInstance<Balance, [BigNumber, Context, boolean?]>;
+  let offeringTierToPriceTierSpy: jest.SpyInstance<PriceTier, [OfferingTier, Context]>;
+  let stringToBytesSpy: jest.SpyInstance<Bytes, [string, Context]>;
+  let portfolioIdToPortfolioSpy: jest.SpyInstance;
   let ticker: string;
   let offeringPortfolio: PortfolioLike;
   let portfolio: entityMockUtils.MockDefaultPortfolio;
@@ -90,21 +90,18 @@ describe('launchOffering procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
-    portfolioIdToMeshPortfolioIdStub = jest.spyOn(
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    portfolioIdToMeshPortfolioIdSpy = jest.spyOn(
       utilsConversionModule,
       'portfolioIdToMeshPortfolioId'
     );
-    portfolioLikeToPortfolioIdStub = jest.spyOn(
-      utilsConversionModule,
-      'portfolioLikeToPortfolioId'
-    );
-    offeringTierToPriceTierStub = jest.spyOn(utilsConversionModule, 'offeringTierToPriceTier');
-    bigNumberToU64Stub = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
-    dateToMomentStub = jest.spyOn(utilsConversionModule, 'dateToMoment');
-    bigNumberToBalanceStub = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
-    stringToBytesStub = jest.spyOn(utilsConversionModule, 'stringToBytes');
-    portfolioIdToPortfolioStub = jest.spyOn(utilsConversionModule, 'portfolioIdToPortfolio');
+    portfolioLikeToPortfolioIdSpy = jest.spyOn(utilsConversionModule, 'portfolioLikeToPortfolioId');
+    offeringTierToPriceTierSpy = jest.spyOn(utilsConversionModule, 'offeringTierToPriceTier');
+    bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
+    dateToMomentSpy = jest.spyOn(utilsConversionModule, 'dateToMoment');
+    bigNumberToBalanceSpy = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
+    stringToBytesSpy = jest.spyOn(utilsConversionModule, 'stringToBytes');
+    portfolioIdToPortfolioSpy = jest.spyOn(utilsConversionModule, 'portfolioIdToPortfolio');
     ticker = 'tickerFrozen';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     offeringPortfolio = 'oneDid';
@@ -150,34 +147,34 @@ describe('launchOffering procedure', () => {
       },
     });
     mockContext = dsMockUtils.getContextInstance();
-    when(stringToTickerStub).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
-    when(stringToTickerStub)
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(stringToTickerSpy)
       .calledWith(raisingCurrency, mockContext)
       .mockReturnValue(rawRaisingCurrency);
-    when(portfolioLikeToPortfolioIdStub)
+    when(portfolioLikeToPortfolioIdSpy)
       .calledWith(offeringPortfolio)
       .mockReturnValue(offeringPortfolioId);
-    when(portfolioIdToMeshPortfolioIdStub)
+    when(portfolioIdToMeshPortfolioIdSpy)
       .calledWith(offeringPortfolioId, mockContext)
       .mockReturnValue(rawOfferingPortfolio);
-    when(portfolioLikeToPortfolioIdStub)
+    when(portfolioLikeToPortfolioIdSpy)
       .calledWith(raisingPortfolio)
       .mockReturnValue(raisingPortfolioId);
-    when(portfolioIdToMeshPortfolioIdStub)
+    when(portfolioIdToMeshPortfolioIdSpy)
       .calledWith(raisingPortfolioId, mockContext)
       .mockReturnValue(rawRaisingPortfolio);
-    when(offeringTierToPriceTierStub)
+    when(offeringTierToPriceTierSpy)
       .calledWith({ amount, price }, mockContext)
       .mockReturnValue(rawTiers[0]);
-    when(bigNumberToU64Stub).calledWith(venue.id, mockContext).mockReturnValue(rawVenueId);
-    when(dateToMomentStub).calledWith(start, mockContext).mockReturnValue(rawStart);
-    when(dateToMomentStub).calledWith(end, mockContext).mockReturnValue(rawEnd);
-    when(stringToBytesStub).calledWith(name, mockContext).mockReturnValue(rawName);
-    when(bigNumberToBalanceStub)
+    when(bigNumberToU64Spy).calledWith(venue.id, mockContext).mockReturnValue(rawVenueId);
+    when(dateToMomentSpy).calledWith(start, mockContext).mockReturnValue(rawStart);
+    when(dateToMomentSpy).calledWith(end, mockContext).mockReturnValue(rawEnd);
+    when(stringToBytesSpy).calledWith(name, mockContext).mockReturnValue(rawName);
+    when(bigNumberToBalanceSpy)
       .calledWith(minInvestment, mockContext)
       .mockReturnValue(rawMinInvestment);
     portfolio = entityMockUtils.getDefaultPortfolioInstance(offeringPortfolioId);
-    when(portfolioIdToPortfolioStub)
+    when(portfolioIdToPortfolioSpy)
       .calledWith(offeringPortfolioId, mockContext)
       .mockReturnValue(portfolio);
 
@@ -269,7 +266,7 @@ describe('launchOffering procedure', () => {
       raisingPortfolioId,
     });
 
-    const transaction = dsMockUtils.createTxStub('sto', 'createFundraiser');
+    const transaction = dsMockUtils.createTxMock('sto', 'createFundraiser');
 
     let result = await prepareLaunchOffering.call(proc, args);
 
@@ -330,7 +327,7 @@ describe('launchOffering procedure', () => {
   });
 
   describe('stoResolver', () => {
-    const filterEventRecordsStub = jest.spyOn(utilsInternalModule, 'filterEventRecords');
+    const filterEventRecordsSpy = jest.spyOn(utilsInternalModule, 'filterEventRecords');
     const stoId = new BigNumber(15);
 
     beforeAll(() => {
@@ -338,13 +335,13 @@ describe('launchOffering procedure', () => {
     });
 
     beforeEach(() => {
-      filterEventRecordsStub.mockReturnValue([
+      filterEventRecordsSpy.mockReturnValue([
         dsMockUtils.createMockIEvent(['filler', dsMockUtils.createMockU64(stoId)]),
       ]);
     });
 
     afterEach(() => {
-      filterEventRecordsStub.mockReset();
+      filterEventRecordsSpy.mockReset();
     });
 
     it('should return the new Offering', () => {
@@ -368,10 +365,10 @@ describe('launchOffering procedure', () => {
         'offering' as unknown as DefaultPortfolio,
         'raising' as unknown as DefaultPortfolio,
       ];
-      when(portfolioIdToPortfolioStub)
+      when(portfolioIdToPortfolioSpy)
         .calledWith(offeringPortfolioId, mockContext)
         .mockReturnValue(portfolios[0]);
-      when(portfolioIdToPortfolioStub)
+      when(portfolioIdToPortfolioSpy)
         .calledWith(raisingPortfolioId, mockContext)
         .mockReturnValue(portfolios[1]);
 

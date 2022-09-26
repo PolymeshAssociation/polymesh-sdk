@@ -18,7 +18,7 @@ describe('quitSubsidy procedure', () => {
   let beneficiary: Account;
   let subsidizer: Account;
   let subsidy: Subsidy;
-  let stringToAccountIdStub: jest.SpyInstance<AccountId, [string, Context]>;
+  let stringToAccountIdSpy: jest.SpyInstance<AccountId, [string, Context]>;
   let args: QuitSubsidyParams;
 
   beforeAll(() => {
@@ -26,7 +26,7 @@ describe('quitSubsidy procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
 
-    stringToAccountIdStub = jest.spyOn(utilsConversionModule, 'stringToAccountId');
+    stringToAccountIdSpy = jest.spyOn(utilsConversionModule, 'stringToAccountId');
   });
 
   beforeEach(() => {
@@ -67,14 +67,14 @@ describe('quitSubsidy procedure', () => {
   });
 
   it('should return a transaction spec', async () => {
-    const removePayingKeyTransaction = dsMockUtils.createTxStub('relayer', 'removePayingKey');
+    const removePayingKeyTransaction = dsMockUtils.createTxMock('relayer', 'removePayingKey');
 
     const rawBeneficiaryAccountId = dsMockUtils.createMockAccountId('beneficiary');
     const rawSubsidizerAccountId = dsMockUtils.createMockAccountId('subsidizer');
-    when(stringToAccountIdStub)
+    when(stringToAccountIdSpy)
       .calledWith('beneficiary', mockContext)
       .mockReturnValue(rawBeneficiaryAccountId);
-    when(stringToAccountIdStub)
+    when(stringToAccountIdSpy)
       .calledWith('subsidizer', mockContext)
       .mockReturnValue(rawSubsidizerAccountId);
 

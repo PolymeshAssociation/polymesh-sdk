@@ -25,8 +25,8 @@ jest.mock(
 
 describe('addAssetRequirement procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: jest.SpyInstance<Ticker, [string, Context]>;
-  let requirementToComplianceRequirementStub: jest.SpyInstance<
+  let stringToTickerSpy: jest.SpyInstance<Ticker, [string, Context]>;
+  let requirementToComplianceRequirementSpy: jest.SpyInstance<
     PolymeshPrimitivesComplianceManagerComplianceRequirement,
     [InputRequirement, Context]
   >;
@@ -39,8 +39,8 @@ describe('addAssetRequirement procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
-    requirementToComplianceRequirementStub = jest.spyOn(
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    requirementToComplianceRequirementSpy = jest.spyOn(
       utilsConversionModule,
       'requirementToComplianceRequirement'
     );
@@ -70,14 +70,14 @@ describe('addAssetRequirement procedure', () => {
       returnValue: dsMockUtils.createMockU32(new BigNumber(50)),
     });
 
-    addComplianceRequirementTransaction = dsMockUtils.createTxStub(
+    addComplianceRequirementTransaction = dsMockUtils.createTxMock(
       'complianceManager',
       'addComplianceRequirement'
     );
 
     mockContext = dsMockUtils.getContextInstance();
 
-    when(stringToTickerStub).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
   });
 
   afterEach(() => {
@@ -117,7 +117,7 @@ describe('addAssetRequirement procedure', () => {
     const fakeSenderConditions = 'senderConditions' as unknown as PolymeshPrimitivesCondition[];
     const fakeReceiverConditions = 'receiverConditions' as unknown as PolymeshPrimitivesCondition[];
 
-    when(requirementToComplianceRequirementStub)
+    when(requirementToComplianceRequirementSpy)
       .calledWith({ conditions: fakeConditions, id: new BigNumber(1) }, mockContext)
       .mockReturnValue(
         dsMockUtils.createMockComplianceRequirement({

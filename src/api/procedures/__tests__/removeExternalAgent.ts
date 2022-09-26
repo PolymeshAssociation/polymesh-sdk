@@ -33,8 +33,8 @@ describe('removeExternalAgent procedure', () => {
   let ticker: string;
   let asset: Asset;
   let target: string;
-  let stringToTickerStub: jest.SpyInstance;
-  let stringToIdentityIdStub: jest.SpyInstance;
+  let stringToTickerSpy: jest.SpyInstance;
+  let stringToIdentityIdSpy: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -43,8 +43,8 @@ describe('removeExternalAgent procedure', () => {
     ticker = 'SOME_TICKER';
     asset = entityMockUtils.getAssetInstance({ ticker });
     target = 'someDid';
-    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
-    stringToIdentityIdStub = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
   });
 
   beforeEach(() => {
@@ -139,7 +139,7 @@ describe('removeExternalAgent procedure', () => {
   });
 
   it('should return a remove agent transaction spec', async () => {
-    const transaction = dsMockUtils.createTxStub('externalAgents', 'removeAgent');
+    const transaction = dsMockUtils.createTxMock('externalAgents', 'removeAgent');
     let proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       asset: entityMockUtils.getAssetInstance({
         permissionsGetAgents: [
@@ -164,8 +164,8 @@ describe('removeExternalAgent procedure', () => {
     const rawTicker = dsMockUtils.createMockTicker(ticker);
     const rawAgent = dsMockUtils.createMockIdentityId(target);
 
-    stringToTickerStub.mockReturnValue(rawTicker);
-    stringToIdentityIdStub.mockReturnValue(rawAgent);
+    stringToTickerSpy.mockReturnValue(rawTicker);
+    stringToIdentityIdSpy.mockReturnValue(rawAgent);
 
     let result = await prepareRemoveExternalAgent.call(proc, {
       target,

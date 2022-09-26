@@ -14,13 +14,13 @@ jest.mock(
 
 describe('TickerReservation class', () => {
   const ticker = 'FAKE_TICKER';
-  let assertTickerValidStub: jest.SpyInstance;
+  let assertTickerValidSpy: jest.SpyInstance;
   let context: Mocked<Context>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
-    assertTickerValidStub = jest.spyOn(utilsInternalModule, 'assertTickerValid');
+    assertTickerValidSpy = jest.spyOn(utilsInternalModule, 'assertTickerValid');
   });
 
   afterEach(() => {
@@ -40,7 +40,7 @@ describe('TickerReservation class', () => {
 
   describe('constructor', () => {
     it('should throw an error if the supplied ticker is invalid', () => {
-      assertTickerValidStub.mockImplementation(() => {
+      assertTickerValidSpy.mockImplementation(() => {
         throw new Error('err');
       });
 
@@ -65,18 +65,18 @@ describe('TickerReservation class', () => {
   });
 
   describe('method: details', () => {
-    let queryMultiStub: jest.SpyInstance;
+    let queryMultiMock: jest.Mock;
 
     beforeEach(() => {
-      dsMockUtils.createQueryStub('asset', 'tickers');
-      dsMockUtils.createQueryStub('asset', 'tokens');
-      queryMultiStub = dsMockUtils.getQueryMultiStub();
+      dsMockUtils.createQueryMock('asset', 'tickers');
+      dsMockUtils.createQueryMock('asset', 'tokens');
+      queryMultiMock = dsMockUtils.getQueryMultiMock();
     });
 
     it('should return details for a free ticker', async () => {
       const tickerReservation = new TickerReservation({ ticker }, context);
 
-      queryMultiStub.mockResolvedValue([
+      queryMultiMock.mockResolvedValue([
         dsMockUtils.createMockTickerRegistration(),
         dsMockUtils.createMockSecurityToken(),
       ]);
@@ -96,7 +96,7 @@ describe('TickerReservation class', () => {
 
       const tickerReservation = new TickerReservation({ ticker }, context);
 
-      queryMultiStub.mockResolvedValue([
+      queryMultiMock.mockResolvedValue([
         dsMockUtils.createMockTickerRegistration({
           owner: dsMockUtils.createMockIdentityId(ownerDid),
           expiry: dsMockUtils.createMockOption(
@@ -121,7 +121,7 @@ describe('TickerReservation class', () => {
 
       const tickerReservation = new TickerReservation({ ticker }, context);
 
-      queryMultiStub.mockResolvedValue([
+      queryMultiMock.mockResolvedValue([
         dsMockUtils.createMockTickerRegistration({
           owner: dsMockUtils.createMockIdentityId(ownerDid),
           expiry: dsMockUtils.createMockOption(), // null expiry
@@ -144,7 +144,7 @@ describe('TickerReservation class', () => {
 
       const tickerReservation = new TickerReservation({ ticker }, context);
 
-      queryMultiStub.mockResolvedValue([
+      queryMultiMock.mockResolvedValue([
         dsMockUtils.createMockTickerRegistration({
           owner: dsMockUtils.createMockIdentityId(ownerDid),
           expiry: dsMockUtils.createMockOption(
@@ -169,7 +169,7 @@ describe('TickerReservation class', () => {
 
       const tickerReservation = new TickerReservation({ ticker }, context);
 
-      queryMultiStub.mockResolvedValue([
+      queryMultiMock.mockResolvedValue([
         dsMockUtils.createMockTickerRegistration({
           owner: dsMockUtils.createMockIdentityId(ownerDid),
           expiry: dsMockUtils.createMockOption(),
@@ -196,7 +196,7 @@ describe('TickerReservation class', () => {
 
       const unsubCallback = 'unsubCallback';
 
-      queryMultiStub.mockImplementation(async (_, cbFunc) => {
+      queryMultiMock.mockImplementation(async (_, cbFunc) => {
         cbFunc([dsMockUtils.createMockTickerRegistration(), dsMockUtils.createMockSecurityToken()]);
         return unsubCallback;
       });
@@ -225,7 +225,7 @@ describe('TickerReservation class', () => {
       const expectedTransaction =
         'someTransaction' as unknown as PolymeshTransaction<TickerReservation>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -253,7 +253,7 @@ describe('TickerReservation class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -277,7 +277,7 @@ describe('TickerReservation class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -291,14 +291,14 @@ describe('TickerReservation class', () => {
     it('should return whether the Reservation exists', async () => {
       const tickerRes = new TickerReservation({ ticker: 'SOME_TICKER' }, context);
 
-      dsMockUtils.createQueryStub('asset', 'tickers', {
+      dsMockUtils.createQueryMock('asset', 'tickers', {
         size: new BigNumber(10),
       });
 
       let result = await tickerRes.exists();
       expect(result).toBe(true);
 
-      dsMockUtils.createQueryStub('asset', 'tickers', {
+      dsMockUtils.createQueryMock('asset', 'tickers', {
         size: new BigNumber(0),
       });
 

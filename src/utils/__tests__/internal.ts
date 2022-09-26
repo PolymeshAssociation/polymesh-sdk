@@ -18,7 +18,7 @@ import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   createMockStatisticsStatClaim,
   getApiInstance,
-  getAtStub,
+  getAtMock,
   getWebSocketInstance,
   MockCodec,
   MockWebSocket,
@@ -197,20 +197,20 @@ describe('getDid', () => {
 });
 
 describe('filterEventRecords', () => {
-  const filterRecordsStub = jest.fn();
+  const filterRecordsMock = jest.fn();
   const mockReceipt = {
-    filterRecords: filterRecordsStub,
+    filterRecords: filterRecordsMock,
   } as unknown as ISubmittableResult;
 
   afterEach(() => {
-    filterRecordsStub.mockReset();
+    filterRecordsMock.mockReset();
   });
 
   it('should return the corresponding Event Record', () => {
     const mod = 'asset';
     const eventName = 'TickerRegistered';
     const fakeResult = 'event';
-    when(filterRecordsStub)
+    when(filterRecordsMock)
       .calledWith(mod, eventName)
       .mockReturnValue([{ event: fakeResult }]);
 
@@ -222,7 +222,7 @@ describe('filterEventRecords', () => {
   it("should throw an error if the Event wasn't fired", () => {
     const mod = 'asset';
     const eventName = 'TickerRegistered';
-    when(filterRecordsStub).calledWith(mod, eventName).mockReturnValue([]);
+    when(filterRecordsMock).calledWith(mod, eventName).mockReturnValue([]);
 
     expect(() => filterEventRecords(mockReceipt, mod, eventName)).toThrow(
       `Event "${mod}.${eventName}" wasn't fired even though the corresponding transaction was completed. Please report this to the Polymesh team`
@@ -231,16 +231,16 @@ describe('filterEventRecords', () => {
 });
 
 describe('sliceBatchReceipt', () => {
-  const filterRecordsStub = jest.fn();
+  const filterRecordsMock = jest.fn();
   const mockReceipt = {
-    filterRecords: filterRecordsStub,
+    filterRecords: filterRecordsMock,
     events: ['tx0event0', 'tx0event1', 'tx1event0', 'tx2event0', 'tx2event1', 'tx2event2'],
     findRecord: jest.fn(),
     toHuman: jest.fn(),
   } as unknown as ISubmittableResult;
 
   beforeEach(() => {
-    when(filterRecordsStub)
+    when(filterRecordsMock)
       .calledWith('utility', 'BatchCompleted')
       .mockReturnValue([
         {
@@ -258,7 +258,7 @@ describe('sliceBatchReceipt', () => {
   });
 
   afterEach(() => {
-    filterRecordsStub.mockReset();
+    filterRecordsMock.mockReset();
   });
 
   it('should return the cloned receipt with a subset of events', () => {
@@ -283,7 +283,7 @@ describe('sliceBatchReceipt', () => {
 });
 
 describe('mergeReceipts', () => {
-  let bigNumberToU32Stub: jest.SpyInstance;
+  let bigNumberToU32Spy: jest.SpyInstance;
   let receipts: ISubmittableResult[];
   let context: Context;
 
@@ -300,14 +300,14 @@ describe('mergeReceipts', () => {
       dsMockUtils.createMockU32(new BigNumber(1)),
       dsMockUtils.createMockU32(new BigNumber(3)),
     ];
-    bigNumberToU32Stub = jest.spyOn(utilsConversionModule, 'bigNumberToU32');
-    when(bigNumberToU32Stub)
+    bigNumberToU32Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU32');
+    when(bigNumberToU32Spy)
       .calledWith(new BigNumber(2), context)
       .mockReturnValue(eventsPerTransaction[0]);
-    when(bigNumberToU32Stub)
+    when(bigNumberToU32Spy)
       .calledWith(new BigNumber(1), context)
       .mockReturnValue(eventsPerTransaction[1]);
-    when(bigNumberToU32Stub)
+    when(bigNumberToU32Spy)
       .calledWith(new BigNumber(3), context)
       .mockReturnValue(eventsPerTransaction[2]);
 
@@ -449,35 +449,35 @@ describe('requestPaginated', () => {
       tuple(['ticker1'], dsMockUtils.createMockU32(new BigNumber(1))),
       tuple(['ticker2'], dsMockUtils.createMockU32(new BigNumber(2))),
     ];
-    const queryStub = dsMockUtils.createQueryStub('asset', 'tickers', {
+    const queryMock = dsMockUtils.createQueryMock('asset', 'tickers', {
       entries,
     });
 
-    let res = await requestPaginated(queryStub, {
+    let res = await requestPaginated(queryMock, {
       paginationOpts: undefined,
     });
 
     expect(res.lastKey).toBeNull();
-    expect(queryStub.entries).toHaveBeenCalledTimes(1);
+    expect(queryMock.entries).toHaveBeenCalledTimes(1);
 
     jest.clearAllMocks();
 
-    res = await requestPaginated(queryStub, {
+    res = await requestPaginated(queryMock, {
       paginationOpts: { size: new BigNumber(3) },
     });
 
     expect(typeof res.lastKey).toBe('string');
-    expect(queryStub.entriesPaged).toHaveBeenCalledTimes(1);
+    expect(queryMock.entriesPaged).toHaveBeenCalledTimes(1);
 
     jest.clearAllMocks();
 
-    res = await requestPaginated(queryStub, {
+    res = await requestPaginated(queryMock, {
       paginationOpts: { size: new BigNumber(4) },
       arg: 'something',
     });
 
     expect(res.lastKey).toBeNull();
-    expect(queryStub.entriesPaged).toHaveBeenCalledTimes(1);
+    expect(queryMock.entriesPaged).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -510,7 +510,7 @@ describe('getApiAtBlock', () => {
     const result = await getApiAtBlock(context, 'blockHash');
 
     expect(result).toEqual(getApiInstance());
-    expect(getAtStub()).toHaveBeenCalledTimes(1);
+    expect(getAtMock()).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -532,10 +532,10 @@ describe('requestAtBlock', () => {
       isArchiveNode: true,
     });
     const returnValue = dsMockUtils.createMockU32(new BigNumber(5));
-    const queryStub = dsMockUtils.createQueryStub('asset', 'tickers', {
+    const queryMock = dsMockUtils.createQueryMock('asset', 'tickers', {
       returnValue,
     });
-    const apiAtStub = getAtStub();
+    const apiAtMock = getAtMock();
 
     const blockHash = 'someBlockHash';
     const ticker = 'ticker';
@@ -550,11 +550,11 @@ describe('requestAtBlock', () => {
       context
     );
 
-    expect(apiAtStub).toHaveBeenCalledTimes(1);
-    expect(queryStub).toHaveBeenCalledWith(ticker);
+    expect(apiAtMock).toHaveBeenCalledTimes(1);
+    expect(queryMock).toHaveBeenCalledWith(ticker);
     expect(res).toBe(returnValue);
 
-    apiAtStub.mockClear();
+    apiAtMock.mockClear();
 
     res = await requestAtBlock(
       'asset',
@@ -565,8 +565,8 @@ describe('requestAtBlock', () => {
       context
     );
 
-    expect(apiAtStub).toHaveBeenCalledTimes(0);
-    expect(queryStub).toHaveBeenCalledWith(ticker);
+    expect(apiAtMock).toHaveBeenCalledTimes(0);
+    expect(queryMock).toHaveBeenCalledWith(ticker);
     expect(res).toBe(returnValue);
   });
 });
@@ -913,7 +913,7 @@ describe('hasSameElements', () => {
 
 describe('getPortfolioIdsByName', () => {
   let context: Context;
-  let portfoliosStub: jest.SpyInstance;
+  let portfoliosMock: jest.Mock;
   let firstPortfolioName: MockCodec<Bytes>;
   let rawNames: Bytes[];
   let identityId: IdentityId;
@@ -928,7 +928,7 @@ describe('getPortfolioIdsByName', () => {
     firstPortfolioName = dsMockUtils.createMockBytes('someName');
     rawNames = [firstPortfolioName, dsMockUtils.createMockBytes('otherName')];
     identityId = dsMockUtils.createMockIdentityId('someDid');
-    dsMockUtils.createQueryStub('portfolio', 'nameToNumber', {
+    dsMockUtils.createQueryMock('portfolio', 'nameToNumber', {
       multi: [
         dsMockUtils.createMockU64(new BigNumber(1)),
         dsMockUtils.createMockU64(new BigNumber(2)),
@@ -936,7 +936,7 @@ describe('getPortfolioIdsByName', () => {
         dsMockUtils.createMockU64(new BigNumber(1)),
       ],
     });
-    portfoliosStub = dsMockUtils.createQueryStub('portfolio', 'portfolios');
+    portfoliosMock = dsMockUtils.createQueryMock('portfolio', 'portfolios');
   });
 
   afterEach(() => {
@@ -949,7 +949,7 @@ describe('getPortfolioIdsByName', () => {
   });
 
   it('should return portfolio numbers for given portfolio name, and null for names that do not exist', async () => {
-    portfoliosStub.mockResolvedValue(firstPortfolioName);
+    portfoliosMock.mockResolvedValue(firstPortfolioName);
     firstPortfolioName.eq = jest.fn();
     when(firstPortfolioName.eq).calledWith(rawNames[0]).mockReturnValue(true);
     const result = await getPortfolioIdsByName(
@@ -1088,11 +1088,11 @@ describe('getExemptedIds', () => {
 
 describe('assertExpectedChainVersion', () => {
   let client: MockWebSocket;
-  let warnStub: jest.SpyInstance;
+  let warnSpy: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
-    warnStub = jest.spyOn(console, 'warn');
+    warnSpy = jest.spyOn(console, 'warn');
   });
 
   beforeEach(() => {
@@ -1104,7 +1104,7 @@ describe('assertExpectedChainVersion', () => {
   });
 
   afterAll(() => {
-    warnStub.mockRestore();
+    warnSpy.mockRestore();
   });
 
   it('should resolve if it receives both expected RPC node and chain spec version', () => {
@@ -1129,7 +1129,7 @@ describe('assertExpectedChainVersion', () => {
     client.sendSpecVersion('5000002');
     client.sendRpcVersion('5.1.0');
     await signal;
-    expect(warnStub).toHaveBeenCalledWith(
+    expect(warnSpy).toHaveBeenCalledWith(
       'This version of the SDK supports Polymesh RPC node version 5.0.2. The node is at version 5.1.0. Please upgrade the SDK'
     );
   });
@@ -1149,7 +1149,7 @@ describe('assertExpectedChainVersion', () => {
     client.sendSpecVersion('5001000');
     client.sendRpcVersion('5.0.2');
     await signal;
-    expect(warnStub).toHaveBeenCalledWith(
+    expect(warnSpy).toHaveBeenCalledWith(
       'This version of the SDK supports Polymesh chain spec version 5.0.2. The chain spec is at version 5.1.0. Please upgrade the SDK'
     );
   });
@@ -1780,19 +1780,19 @@ describe('method: getSecondaryAccountPermissions', () => {
   let rawPrimaryKeyRecord: PolymeshPrimitivesSecondaryKeyKeyRecord;
   let rawSecondaryKeyRecord: PolymeshPrimitivesSecondaryKeyKeyRecord;
   let rawMultiSigKeyRecord: PolymeshPrimitivesSecondaryKeyKeyRecord;
-  let identityIdToStringStub: jest.SpyInstance<string, [PolymeshPrimitivesIdentityId]>;
-  let stringToAccountIdStub: jest.SpyInstance<AccountId, [string, Context]>;
-  let meshPermissionsToPermissionsStub: jest.SpyInstance;
+  let identityIdToStringSpy: jest.SpyInstance<string, [PolymeshPrimitivesIdentityId]>;
+  let stringToAccountIdSpy: jest.SpyInstance<AccountId, [string, Context]>;
+  let meshPermissionsToPermissionsSpy: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     account = entityMockUtils.getAccountInstance({ address: accountId });
-    meshPermissionsToPermissionsStub = jest.spyOn(
+    meshPermissionsToPermissionsSpy = jest.spyOn(
       utilsConversionModule,
       'meshPermissionsToPermissions'
     );
-    stringToAccountIdStub = jest.spyOn(utilsConversionModule, 'stringToAccountId');
-    identityIdToStringStub = jest.spyOn(utilsConversionModule, 'identityIdToString');
+    stringToAccountIdSpy = jest.spyOn(utilsConversionModule, 'stringToAccountId');
+    identityIdToStringSpy = jest.spyOn(utilsConversionModule, 'identityIdToString');
     account = entityMockUtils.getAccountInstance();
     fakeResult = [
       {
@@ -1823,13 +1823,13 @@ describe('method: getSecondaryAccountPermissions', () => {
       MultiSigSignerKey: dsMockUtils.createMockAccountId('someAddress'),
     });
 
-    meshPermissionsToPermissionsStub.mockReturnValue({
+    meshPermissionsToPermissionsSpy.mockReturnValue({
       assets: null,
       portfolios: null,
       transactions: null,
       transactionGroups: [],
     });
-    stringToAccountIdStub.mockReturnValue(dsMockUtils.createMockAccountId(accountId));
+    stringToAccountIdSpy.mockReturnValue(dsMockUtils.createMockAccountId(accountId));
   });
 
   afterEach(() => {
@@ -1838,14 +1838,14 @@ describe('method: getSecondaryAccountPermissions', () => {
 
   it('should return a list of Accounts', async () => {
     const context = dsMockUtils.getContextInstance();
-    dsMockUtils.createQueryStub('identity', 'keyRecords', {
+    dsMockUtils.createQueryMock('identity', 'keyRecords', {
       multi: [
         dsMockUtils.createMockOption(rawPrimaryKeyRecord),
         dsMockUtils.createMockOption(rawSecondaryKeyRecord),
         dsMockUtils.createMockOption(rawMultiSigKeyRecord),
       ],
     });
-    identityIdToStringStub.mockReturnValue('someDid');
+    identityIdToStringSpy.mockReturnValue('someDid');
     const identity = new Identity({ did: 'someDid' }, context);
 
     const result = await getSecondaryAccountPermissions(
@@ -1868,14 +1868,14 @@ describe('method: getSecondaryAccountPermissions', () => {
     const otherSecondaryKey = dsMockUtils.createMockKeyRecord({
       SecondaryKey: [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockPermissions()],
     });
-    dsMockUtils.createQueryStub('identity', 'keyRecords', {
+    dsMockUtils.createQueryMock('identity', 'keyRecords', {
       multi: [
         dsMockUtils.createMockOption(rawPrimaryKeyRecord),
         dsMockUtils.createMockOption(otherSecondaryKey),
         dsMockUtils.createMockOption(rawMultiSigKeyRecord),
       ],
     });
-    identityIdToStringStub.mockReturnValue('someDid');
+    identityIdToStringSpy.mockReturnValue('someDid');
     const identity = new Identity({ did: 'otherDid' }, mockContext);
 
     const result = await getSecondaryAccountPermissions(
@@ -1897,8 +1897,8 @@ describe('method: getSecondaryAccountPermissions', () => {
     const callback: SubCallback<PermissionedAccount[]> = jest.fn().mockImplementation();
     const unsubCallback = 'unsubCallBack';
 
-    const keyRecordsStub = dsMockUtils.createQueryStub('identity', 'keyRecords');
-    keyRecordsStub.multi.mockImplementation((_, cbFunc) => {
+    const keyRecordsMock = dsMockUtils.createQueryMock('identity', 'keyRecords');
+    keyRecordsMock.multi.mockImplementation((_, cbFunc) => {
       cbFunc([
         dsMockUtils.createMockOption(rawPrimaryKeyRecord),
         dsMockUtils.createMockOption(rawSecondaryKeyRecord),
@@ -1907,7 +1907,7 @@ describe('method: getSecondaryAccountPermissions', () => {
       return unsubCallback;
     });
 
-    identityIdToStringStub.mockReturnValue('someDid');
+    identityIdToStringSpy.mockReturnValue('someDid');
     const identity = new Identity({ did }, mockContext);
 
     const result = await getSecondaryAccountPermissions(

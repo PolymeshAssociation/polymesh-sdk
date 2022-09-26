@@ -26,31 +26,31 @@ describe('renamePortfolio procedure', () => {
   const newName = 'newName';
   const rawNewName = dsMockUtils.createMockBytes(newName);
   let mockContext: Mocked<Context>;
-  let stringToIdentityIdStub: jest.SpyInstance<IdentityId, [string, Context]>;
-  let bigNumberToU64Stub: jest.SpyInstance<u64, [BigNumber, Context]>;
-  let stringToBytesStub: jest.SpyInstance<Bytes, [string, Context]>;
-  let getPortfolioIdsByNameStub: jest.SpyInstance;
+  let stringToIdentityIdSpy: jest.SpyInstance<IdentityId, [string, Context]>;
+  let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
+  let stringToBytesSpy: jest.SpyInstance<Bytes, [string, Context]>;
+  let getPortfolioIdsByNameSpy: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToIdentityIdStub = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
-    bigNumberToU64Stub = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
-    stringToBytesStub = jest.spyOn(utilsConversionModule, 'stringToBytes');
-    getPortfolioIdsByNameStub = jest.spyOn(utilsInternalModule, 'getPortfolioIdsByName');
+    stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
+    bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
+    stringToBytesSpy = jest.spyOn(utilsConversionModule, 'stringToBytes');
+    getPortfolioIdsByNameSpy = jest.spyOn(utilsInternalModule, 'getPortfolioIdsByName');
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    when(stringToIdentityIdStub).calledWith(did, mockContext).mockReturnValue(identityId);
-    when(bigNumberToU64Stub).calledWith(id, mockContext).mockReturnValue(rawPortfolioNumber);
+    when(stringToIdentityIdSpy).calledWith(did, mockContext).mockReturnValue(identityId);
+    when(bigNumberToU64Spy).calledWith(id, mockContext).mockReturnValue(rawPortfolioNumber);
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
         isOwnedBy: true,
       },
     });
-    stringToBytesStub.mockReturnValue(rawNewName);
+    stringToBytesSpy.mockReturnValue(rawNewName);
   });
 
   afterEach(() => {
@@ -65,7 +65,7 @@ describe('renamePortfolio procedure', () => {
   });
 
   it('should throw an error if the new name is the same as the current one', () => {
-    getPortfolioIdsByNameStub.mockReturnValue([id]);
+    getPortfolioIdsByNameSpy.mockReturnValue([id]);
 
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
 
@@ -79,7 +79,7 @@ describe('renamePortfolio procedure', () => {
   });
 
   it('should throw an error if there already is a portfolio with the new name', () => {
-    getPortfolioIdsByNameStub.mockReturnValue([new BigNumber(2)]);
+    getPortfolioIdsByNameSpy.mockReturnValue([new BigNumber(2)]);
 
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
 
@@ -93,9 +93,9 @@ describe('renamePortfolio procedure', () => {
   });
 
   it('should return a rename portfolio transaction spec', async () => {
-    getPortfolioIdsByNameStub.mockReturnValue([]);
+    getPortfolioIdsByNameSpy.mockReturnValue([]);
 
-    const transaction = dsMockUtils.createTxStub('portfolio', 'renamePortfolio');
+    const transaction = dsMockUtils.createTxMock('portfolio', 'renamePortfolio');
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
 
     const result = await prepareRenamePortfolio.call(proc, {

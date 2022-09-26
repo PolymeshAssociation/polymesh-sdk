@@ -30,8 +30,8 @@ jest.mock(
 
 describe('createCheckpointSchedule procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: jest.SpyInstance<Ticker, [string, Context]>;
-  let scheduleSpecToMeshScheduleSpecStub: jest.SpyInstance<
+  let stringToTickerSpy: jest.SpyInstance<Ticker, [string, Context]>;
+  let scheduleSpecToMeshScheduleSpecSpy: jest.SpyInstance<
     MeshScheduleSpec,
     [ScheduleSpec, Context]
   >;
@@ -42,8 +42,8 @@ describe('createCheckpointSchedule procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
-    scheduleSpecToMeshScheduleSpecStub = jest.spyOn(
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    scheduleSpecToMeshScheduleSpecSpy = jest.spyOn(
       utilsConversionModule,
       'scheduleSpecToMeshScheduleSpec'
     );
@@ -53,7 +53,7 @@ describe('createCheckpointSchedule procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    when(stringToTickerStub).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
   });
 
   afterEach(() => {
@@ -83,7 +83,7 @@ describe('createCheckpointSchedule procedure', () => {
   it('should return a create checkpoint schedule transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, CheckpointSchedule>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('checkpoint', 'createSchedule');
+    const transaction = dsMockUtils.createTxMock('checkpoint', 'createSchedule');
 
     const start = new Date(new Date().getTime() + 10000);
     const period = {
@@ -103,7 +103,7 @@ describe('createCheckpointSchedule procedure', () => {
       remaining: dsMockUtils.createMockU32(repetitions),
     });
 
-    when(scheduleSpecToMeshScheduleSpecStub)
+    when(scheduleSpecToMeshScheduleSpecSpy)
       .calledWith({ start, period, repetitions }, mockContext)
       .mockReturnValue(rawSpec);
 
@@ -122,7 +122,7 @@ describe('createCheckpointSchedule procedure', () => {
   });
 
   describe('createCheckpointScheduleResolver', () => {
-    const filterEventRecordsStub = jest.spyOn(utilsInternalModule, 'filterEventRecords');
+    const filterEventRecordsSpy = jest.spyOn(utilsInternalModule, 'filterEventRecords');
     const id = new BigNumber(1);
     const start = new Date('10/14/1987');
     const period = {
@@ -145,7 +145,7 @@ describe('createCheckpointSchedule procedure', () => {
     });
 
     beforeEach(() => {
-      filterEventRecordsStub.mockReturnValue([
+      filterEventRecordsSpy.mockReturnValue([
         dsMockUtils.createMockIEvent([
           dsMockUtils.createMockIdentityId('someDid'),
           dsMockUtils.createMockTicker(ticker),
@@ -166,7 +166,7 @@ describe('createCheckpointSchedule procedure', () => {
     });
 
     afterEach(() => {
-      filterEventRecordsStub.mockReset();
+      filterEventRecordsSpy.mockReset();
     });
 
     it('should return the new CheckpointSchedule', () => {

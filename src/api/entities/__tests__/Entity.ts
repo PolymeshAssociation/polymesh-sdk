@@ -21,10 +21,10 @@ describe('Entity class', () => {
     jest.restoreAllMocks();
   });
 
-  const serializeStub = jest.spyOn(utilsInternalModule, 'serialize');
+  const serializeSpy = jest.spyOn(utilsInternalModule, 'serialize');
   describe('method: generateUuid', () => {
     it("should generate the Entity's UUID", async () => {
-      when(serializeStub)
+      when(serializeSpy)
         .calledWith('Entity', {
           did: 'abc',
         })
@@ -35,14 +35,14 @@ describe('Entity class', () => {
   });
 
   describe('method: unserialize', () => {
-    let unserializeStub: jest.SpyInstance;
+    let unserializeSpy: jest.SpyInstance;
 
     beforeAll(() => {
-      unserializeStub = jest.spyOn(utilsInternalModule, 'unserialize');
+      unserializeSpy = jest.spyOn(utilsInternalModule, 'unserialize');
     });
 
     it('should throw an error if the string is not related to an Entity Unique Identifier', async () => {
-      unserializeStub.mockReturnValue(undefined);
+      unserializeSpy.mockReturnValue(undefined);
       expect(() => Entity.unserialize('def')).toThrow(
         "The string doesn't correspond to the UUID of type Entity"
       );
@@ -50,15 +50,15 @@ describe('Entity class', () => {
 
     it('should return an Entity Unique Identifier object', async () => {
       const fakeReturn = { someIdentifier: 'abc' };
-      unserializeStub.mockReturnValue(fakeReturn);
+      unserializeSpy.mockReturnValue(fakeReturn);
       expect(Entity.unserialize('def')).toEqual(fakeReturn);
     });
   });
 
   describe('method: isEqual', () => {
     it('should return whether the entities are the same', () => {
-      when(serializeStub).calledWith('NonAbstract', { foo: 'bar' }).mockReturnValue('first');
-      when(serializeStub).calledWith('NonAbstract', { bar: 'baz' }).mockReturnValue('second');
+      when(serializeSpy).calledWith('NonAbstract', { foo: 'bar' }).mockReturnValue('first');
+      when(serializeSpy).calledWith('NonAbstract', { bar: 'baz' }).mockReturnValue('second');
 
       const first = new NonAbstract({ foo: 'bar' }, {} as Context);
       const second = new NonAbstract({ bar: 'baz' }, {} as Context);

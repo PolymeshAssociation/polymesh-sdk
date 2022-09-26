@@ -21,7 +21,7 @@ jest.mock(
 
 describe('removeAssetRequirement procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: jest.SpyInstance<Ticker, [string, Context]>;
+  let stringToTickerSpy: jest.SpyInstance<Ticker, [string, Context]>;
   let ticker: string;
   let requirement: BigNumber;
   let rawTicker: Ticker;
@@ -34,7 +34,7 @@ describe('removeAssetRequirement procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
     ticker = 'SOME_TICKER';
     requirement = new BigNumber(1);
 
@@ -51,14 +51,14 @@ describe('removeAssetRequirement procedure', () => {
       returnValue: dsMockUtils.createMockU32(new BigNumber(50)),
     });
 
-    removeComplianceRequirementTransaction = dsMockUtils.createTxStub(
+    removeComplianceRequirementTransaction = dsMockUtils.createTxMock(
       'complianceManager',
       'removeComplianceRequirement'
     );
 
     mockContext = dsMockUtils.getContextInstance();
 
-    when(stringToTickerStub).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
 
     senderConditions = [
       'senderConditions0' as unknown as MeshCondition[],
@@ -79,7 +79,7 @@ describe('removeAssetRequirement procedure', () => {
         } as unknown as ComplianceRequirement)
     );
 
-    dsMockUtils.createQueryStub('complianceManager', 'assetCompliances', {
+    dsMockUtils.createQueryMock('complianceManager', 'assetCompliances', {
       returnValue: {
         requirements: rawComplianceRequirement,
       },

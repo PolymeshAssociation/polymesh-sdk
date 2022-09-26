@@ -24,12 +24,12 @@ jest.mock(
 
 describe('transferAssetOwnership procedure', () => {
   let mockContext: Mocked<Context>;
-  let signerValueToSignatoryStub: jest.SpyInstance<Signatory, [SignerValue, Context]>;
-  let authorizationToAuthorizationDataStub: jest.SpyInstance<
+  let signerValueToSignatorySpy: jest.SpyInstance<Signatory, [SignerValue, Context]>;
+  let authorizationToAuthorizationDataSpy: jest.SpyInstance<
     PolymeshPrimitivesAuthorizationAuthorizationData,
     [Authorization, Context]
   >;
-  let dateToMomentStub: jest.SpyInstance<Moment, [Date, Context]>;
+  let dateToMomentSpy: jest.SpyInstance<Moment, [Date, Context]>;
   let ticker: string;
   let did: string;
   let expiry: Date;
@@ -42,12 +42,12 @@ describe('transferAssetOwnership procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    signerValueToSignatoryStub = jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
-    authorizationToAuthorizationDataStub = jest.spyOn(
+    signerValueToSignatorySpy = jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
+    authorizationToAuthorizationDataSpy = jest.spyOn(
       utilsConversionModule,
       'authorizationToAuthorizationData'
     );
-    dateToMomentStub = jest.spyOn(utilsConversionModule, 'dateToMoment');
+    dateToMomentSpy = jest.spyOn(utilsConversionModule, 'dateToMoment');
     ticker = 'SOME_TICKER';
     did = 'someOtherDid';
     expiry = new Date('10/14/3040');
@@ -67,17 +67,17 @@ describe('transferAssetOwnership procedure', () => {
   let transaction: PolymeshTx<[Signatory, AuthorizationData, Option<Moment>]>;
 
   beforeEach(() => {
-    transaction = dsMockUtils.createTxStub('identity', 'addAuthorization');
+    transaction = dsMockUtils.createTxMock('identity', 'addAuthorization');
 
     mockContext = dsMockUtils.getContextInstance();
 
-    when(signerValueToSignatoryStub)
+    when(signerValueToSignatorySpy)
       .calledWith({ type: SignerType.Identity, value: did }, mockContext)
       .mockReturnValue(rawSignatory);
-    when(authorizationToAuthorizationDataStub)
+    when(authorizationToAuthorizationDataSpy)
       .calledWith({ type: AuthorizationType.TransferAssetOwnership, value: ticker }, mockContext)
       .mockReturnValue(rawAuthorizationData);
-    when(dateToMomentStub).calledWith(expiry, mockContext).mockReturnValue(rawMoment);
+    when(dateToMomentSpy).calledWith(expiry, mockContext).mockReturnValue(rawMoment);
   });
 
   afterEach(() => {

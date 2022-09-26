@@ -22,8 +22,8 @@ jest.mock(
 describe('modifyAllowance procedure', () => {
   let mockContext: Mocked<Context>;
   let subsidy: Subsidy;
-  let stringToAccountIdStub: jest.SpyInstance<AccountId, [string, Context]>;
-  let bigNumberToBalanceStub: jest.SpyInstance<
+  let stringToAccountIdSpy: jest.SpyInstance<AccountId, [string, Context]>;
+  let bigNumberToBalanceSpy: jest.SpyInstance<
     Balance,
     [BigNumber, Context, (boolean | undefined)?]
   >;
@@ -45,8 +45,8 @@ describe('modifyAllowance procedure', () => {
       },
     });
 
-    stringToAccountIdStub = jest.spyOn(utilsConversionModule, 'stringToAccountId');
-    bigNumberToBalanceStub = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
+    stringToAccountIdSpy = jest.spyOn(utilsConversionModule, 'stringToAccountId');
+    bigNumberToBalanceSpy = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
   });
 
   beforeEach(() => {
@@ -57,14 +57,14 @@ describe('modifyAllowance procedure', () => {
     args = { subsidy, operation: AllowanceOperation.Set, allowance };
 
     rawBeneficiaryAccountId = dsMockUtils.createMockAccountId('beneficiary');
-    when(stringToAccountIdStub)
+    when(stringToAccountIdSpy)
       .calledWith('beneficiary', mockContext)
       .mockReturnValue(rawBeneficiaryAccountId);
 
     rawAllowance = dsMockUtils.createMockBalance(allowance);
-    when(bigNumberToBalanceStub).calledWith(allowance, mockContext).mockReturnValue(rawAllowance);
+    when(bigNumberToBalanceSpy).calledWith(allowance, mockContext).mockReturnValue(rawAllowance);
 
-    increasePolyxLimitTransaction = dsMockUtils.createTxStub('relayer', 'increasePolyxLimit');
+    increasePolyxLimitTransaction = dsMockUtils.createTxMock('relayer', 'increasePolyxLimit');
 
     proc = procedureMockUtils.getInstance<ModifyAllowanceParams, void>(mockContext);
   });
@@ -108,7 +108,7 @@ describe('modifyAllowance procedure', () => {
     ));
 
   it('should return a transaction spec', async () => {
-    const updatePolyxLimitTransaction = dsMockUtils.createTxStub('relayer', 'updatePolyxLimit');
+    const updatePolyxLimitTransaction = dsMockUtils.createTxMock('relayer', 'updatePolyxLimit');
 
     let result = await prepareModifyAllowance.call(proc, args);
 
@@ -129,7 +129,7 @@ describe('modifyAllowance procedure', () => {
       resolver: undefined,
     });
 
-    const decreasePolyxLimitTransaction = dsMockUtils.createTxStub('relayer', 'decreasePolyxLimit');
+    const decreasePolyxLimitTransaction = dsMockUtils.createTxMock('relayer', 'decreasePolyxLimit');
 
     result = await prepareModifyAllowance.call(proc, {
       ...args,

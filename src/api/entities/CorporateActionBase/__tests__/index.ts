@@ -50,7 +50,7 @@ describe('CorporateAction class', () => {
 
   let corporateAction: CorporateActionBase;
 
-  let corporateActionsQueryStub: jest.SpyInstance;
+  let corporateActionsQueryMock: jest.Mock;
 
   // eslint-disable-next-line require-jsdoc
   class NonAbstract extends CorporateActionBase {
@@ -79,7 +79,7 @@ describe('CorporateAction class', () => {
     defaultTaxWithholding = new BigNumber(10);
     taxWithholdings = [];
 
-    corporateActionsQueryStub = dsMockUtils.createQueryStub('corporateAction', 'corporateActions', {
+    corporateActionsQueryMock = dsMockUtils.createQueryMock('corporateAction', 'corporateActions', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockCorporateAction({
           kind,
@@ -172,7 +172,7 @@ describe('CorporateAction class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args: { id, ticker, ...args }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -188,7 +188,7 @@ describe('CorporateAction class', () => {
 
       expect(result).toBe(true);
 
-      corporateActionsQueryStub.mockResolvedValue(dsMockUtils.createMockOption());
+      corporateActionsQueryMock.mockResolvedValue(dsMockUtils.createMockOption());
 
       result = await corporateAction.exists();
 
@@ -197,10 +197,10 @@ describe('CorporateAction class', () => {
   });
 
   describe('method: checkpoint', () => {
-    let schedulePointsQueryStub: jest.SpyInstance;
+    let schedulePointsQueryMock: jest.Mock;
 
     beforeEach(() => {
-      dsMockUtils.createQueryStub('checkpoint', 'schedules', {
+      dsMockUtils.createQueryMock('checkpoint', 'schedules', {
         returnValue: [
           dsMockUtils.createMockStoredSchedule({
             schedule: {
@@ -217,13 +217,13 @@ describe('CorporateAction class', () => {
         ],
       });
 
-      schedulePointsQueryStub = dsMockUtils.createQueryStub('checkpoint', 'schedulePoints', {
+      schedulePointsQueryMock = dsMockUtils.createQueryMock('checkpoint', 'schedulePoints', {
         returnValue: [],
       });
     });
 
     it('should throw an error if the Corporate Action does not exist', async () => {
-      corporateActionsQueryStub.mockResolvedValue(dsMockUtils.createMockOption());
+      corporateActionsQueryMock.mockResolvedValue(dsMockUtils.createMockOption());
 
       let err;
       try {
@@ -244,7 +244,7 @@ describe('CorporateAction class', () => {
     });
 
     it('should return null if the CA does not have a record date', async () => {
-      corporateActionsQueryStub.mockResolvedValue(
+      corporateActionsQueryMock.mockResolvedValue(
         dsMockUtils.createMockOption(
           dsMockUtils.createMockCorporateAction({
             kind,
@@ -267,7 +267,7 @@ describe('CorporateAction class', () => {
     });
 
     it('should return null if the CA does not have a record date', async () => {
-      schedulePointsQueryStub.mockResolvedValue([
+      schedulePointsQueryMock.mockResolvedValue([
         'someCheckpoint',
         dsMockUtils.createMockU64(new BigNumber(1)),
       ]);
@@ -276,7 +276,7 @@ describe('CorporateAction class', () => {
       expect(result.id).toEqual(new BigNumber(1));
       expect(result instanceof Checkpoint);
 
-      corporateActionsQueryStub.mockResolvedValue(
+      corporateActionsQueryMock.mockResolvedValue(
         dsMockUtils.createMockOption(
           dsMockUtils.createMockCorporateAction({
             kind,

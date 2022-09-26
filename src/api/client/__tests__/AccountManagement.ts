@@ -47,7 +47,7 @@ describe('AccountManagement class', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args: undefined, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -63,7 +63,7 @@ describe('AccountManagement class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args: { accounts }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -89,7 +89,7 @@ describe('AccountManagement class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args: { secondaryAccounts }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -110,7 +110,7 @@ describe('AccountManagement class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args: { secondaryAccounts }, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -128,7 +128,7 @@ describe('AccountManagement class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -146,7 +146,7 @@ describe('AccountManagement class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -164,7 +164,7 @@ describe('AccountManagement class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -183,7 +183,7 @@ describe('AccountManagement class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args, transformer: undefined }, context, {})
         .mockResolvedValue(expectedTransaction);
 
@@ -194,13 +194,13 @@ describe('AccountManagement class', () => {
   });
 
   describe('method: getAccount', () => {
-    beforeEach(() => {
+    beforeAll(() => {
       jest.spyOn(utilsConversionModule, 'stringToAccountId').mockImplementation();
     });
 
     it('should return an Account object with the passed address', async () => {
       const params = { address: 'testAddress' };
-      dsMockUtils.createQueryStub('multiSig', 'multiSigSigners', {
+      dsMockUtils.createQueryMock('multiSig', 'multiSigSigners', {
         returnValue: [],
       });
 
@@ -212,7 +212,7 @@ describe('AccountManagement class', () => {
 
     it('should return a MultiSig instance if the address is for a MultiSig', async () => {
       const params = { address: 'testAddress' };
-      dsMockUtils.createQueryStub('multiSig', 'multiSigSigners', {
+      dsMockUtils.createQueryMock('multiSig', 'multiSigSigners', {
         entries: [[['someSignerAddress'], 'someSignerAddress']],
       });
 
@@ -224,11 +224,11 @@ describe('AccountManagement class', () => {
   });
 
   describe('method: getSigningAccount', () => {
-    const stringToAccountIdStub = jest.spyOn(utilsConversionModule, 'stringToAccountId');
+    const stringToAccountIdSpy = jest.spyOn(utilsConversionModule, 'stringToAccountId');
     it('should return the signing Account', async () => {
       const address = 'someAddress';
       const rawAddress = dsMockUtils.createMockAccountId(address);
-      when(stringToAccountIdStub).calledWith(address, context).mockReturnValue(rawAddress);
+      when(stringToAccountIdSpy).calledWith(address, context).mockReturnValue(rawAddress);
       dsMockUtils.configureMocks({ contextOptions: { signingAddress: address } });
 
       const result = accountManagement.getSigningAccount();
@@ -277,25 +277,25 @@ describe('AccountManagement class', () => {
       dsMockUtils.configureMocks({ contextOptions: { balance: fakeBalance } });
       entityMockUtils.configureMocks({ accountOptions: { getBalance: fakeBalance } });
 
-      let accountBalanceStub = (
+      let accountBalanceMock = (
         dsMockUtils.getContextInstance().getSigningAccount().getBalance as jest.Mock
       ).mockResolvedValue(unsubCallback);
 
       const callback = (() => 1 as unknown) as SubCallback<AccountBalance>;
       let result = await accountManagement.getAccountBalance(callback);
       expect(result).toEqual(unsubCallback);
-      expect(accountBalanceStub).toBeCalledWith(callback);
+      expect(accountBalanceMock).toBeCalledWith(callback);
 
-      accountBalanceStub = jest.fn().mockResolvedValue(unsubCallback);
+      accountBalanceMock = jest.fn().mockResolvedValue(unsubCallback);
       entityMockUtils.configureMocks({
         accountOptions: {
-          getBalance: accountBalanceStub,
+          getBalance: accountBalanceMock,
         },
       });
       const account = 'someId';
       result = await accountManagement.getAccountBalance({ account }, callback);
       expect(result).toEqual(unsubCallback);
-      expect(accountBalanceStub).toBeCalledWith(callback);
+      expect(accountBalanceMock).toBeCalledWith(callback);
     });
   });
 
@@ -323,7 +323,7 @@ describe('AccountManagement class', () => {
 
       const expectedQueue = 'someQueue' as unknown as PolymeshTransaction<void>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith({ args, transformer: undefined }, context, {})
         .mockResolvedValue(expectedQueue);
 

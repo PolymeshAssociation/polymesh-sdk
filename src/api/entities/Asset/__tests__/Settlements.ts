@@ -24,16 +24,16 @@ describe('Settlements class', () => {
   let mockContext: Mocked<Context>;
   let mockAsset: Mocked<Asset>;
   let settlements: Settlements;
-  let stringToAccountIdStub: jest.SpyInstance<AccountId, [string, Context]>;
-  let stringToTickerStub: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
-  let bigNumberToBalanceStub: jest.SpyInstance;
-  let portfolioIdToMeshPortfolioIdStub: jest.SpyInstance<MeshPortfolioId, [PortfolioId, Context]>;
-  let portfolioLikeToPortfolioIdStub: jest.SpyInstance<PortfolioId, [PortfolioLike]>;
-  let portfolioIdToPortfolioStub: jest.SpyInstance<
+  let stringToAccountIdSpy: jest.SpyInstance<AccountId, [string, Context]>;
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let bigNumberToBalanceSpy: jest.SpyInstance;
+  let portfolioIdToMeshPortfolioIdSpy: jest.SpyInstance<MeshPortfolioId, [PortfolioId, Context]>;
+  let portfolioLikeToPortfolioIdSpy: jest.SpyInstance<PortfolioId, [PortfolioLike]>;
+  let portfolioIdToPortfolioSpy: jest.SpyInstance<
     DefaultPortfolio | NumberedPortfolio,
     [PortfolioId, Context]
   >;
-  let stringToIdentityIdStub: jest.SpyInstance<PolymeshPrimitivesIdentityId, [string, Context]>;
+  let stringToIdentityIdSpy: jest.SpyInstance<PolymeshPrimitivesIdentityId, [string, Context]>;
   let rawAccountId: AccountId;
   let rawTicker: PolymeshPrimitivesTicker;
   let rawToDid: PolymeshPrimitivesIdentityId;
@@ -48,36 +48,33 @@ describe('Settlements class', () => {
 
     toDid = 'toDid';
     amount = new BigNumber(100);
-    stringToAccountIdStub = jest.spyOn(utilsConversionModule, 'stringToAccountId');
-    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
-    bigNumberToBalanceStub = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
-    portfolioIdToMeshPortfolioIdStub = jest.spyOn(
+    stringToAccountIdSpy = jest.spyOn(utilsConversionModule, 'stringToAccountId');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    bigNumberToBalanceSpy = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
+    portfolioIdToMeshPortfolioIdSpy = jest.spyOn(
       utilsConversionModule,
       'portfolioIdToMeshPortfolioId'
     );
-    portfolioLikeToPortfolioIdStub = jest.spyOn(
-      utilsConversionModule,
-      'portfolioLikeToPortfolioId'
-    );
-    portfolioIdToPortfolioStub = jest.spyOn(utilsConversionModule, 'portfolioIdToPortfolio');
-    stringToIdentityIdStub = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
+    portfolioLikeToPortfolioIdSpy = jest.spyOn(utilsConversionModule, 'portfolioLikeToPortfolioId');
+    portfolioIdToPortfolioSpy = jest.spyOn(utilsConversionModule, 'portfolioIdToPortfolio');
+    stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
     rawAmount = dsMockUtils.createMockBalance(amount);
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
     mockAsset = entityMockUtils.getAssetInstance();
-    when(bigNumberToBalanceStub).calledWith(amount, mockContext, false).mockReturnValue(rawAmount);
+    when(bigNumberToBalanceSpy).calledWith(amount, mockContext, false).mockReturnValue(rawAmount);
     settlements = new Settlements(mockAsset, mockContext);
     ticker = mockAsset.ticker;
     rawAccountId = dsMockUtils.createMockAccountId(DUMMY_ACCOUNT_ID);
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawToDid = dsMockUtils.createMockIdentityId(toDid);
-    when(stringToAccountIdStub)
+    when(stringToAccountIdSpy)
       .calledWith(DUMMY_ACCOUNT_ID, mockContext)
       .mockReturnValue(rawAccountId);
-    when(stringToTickerStub).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
-    when(stringToIdentityIdStub).calledWith(toDid, mockContext).mockReturnValue(rawToDid);
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(stringToIdentityIdSpy).calledWith(toDid, mockContext).mockReturnValue(rawToDid);
   });
 
   afterEach(() => {
@@ -102,7 +99,7 @@ describe('Settlements class', () => {
     let rawFromDid: PolymeshPrimitivesIdentityId;
     let fromPortfolio: entityMockUtils.MockDefaultPortfolio;
     let toPortfolio: entityMockUtils.MockDefaultPortfolio;
-    let granularCanTransferResultToTransferBreakdownStub: jest.SpyInstance;
+    let granularCanTransferResultToTransferBreakdownSpy: jest.SpyInstance;
 
     beforeAll(() => {
       fromDid = 'fromDid';
@@ -111,7 +108,7 @@ describe('Settlements class', () => {
       rawFromDid = dsMockUtils.createMockIdentityId(fromDid);
       rawFromPortfolio = dsMockUtils.createMockPortfolioId({ did: fromDid, kind: 'Default' });
       rawToPortfolio = dsMockUtils.createMockPortfolioId({ did: toDid, kind: 'Default' });
-      granularCanTransferResultToTransferBreakdownStub = jest.spyOn(
+      granularCanTransferResultToTransferBreakdownSpy = jest.spyOn(
         utilsConversionModule,
         'granularCanTransferResultToTransferBreakdown'
       );
@@ -126,18 +123,18 @@ describe('Settlements class', () => {
         ...fromPortfolioId,
         getCustodian: entityMockUtils.getIdentityInstance({ did: fromPortfolioId.did }),
       });
-      when(portfolioLikeToPortfolioIdStub).calledWith(toDid).mockReturnValue(toPortfolioId);
-      when(portfolioLikeToPortfolioIdStub).calledWith(fromDid).mockReturnValue(fromPortfolioId);
-      when(portfolioIdToMeshPortfolioIdStub)
+      when(portfolioLikeToPortfolioIdSpy).calledWith(toDid).mockReturnValue(toPortfolioId);
+      when(portfolioLikeToPortfolioIdSpy).calledWith(fromDid).mockReturnValue(fromPortfolioId);
+      when(portfolioIdToMeshPortfolioIdSpy)
         .calledWith(toPortfolioId, mockContext)
         .mockReturnValue(rawToPortfolio);
-      when(portfolioIdToPortfolioStub)
+      when(portfolioIdToPortfolioSpy)
         .calledWith(toPortfolioId, mockContext)
         .mockReturnValue(toPortfolio);
-      when(portfolioIdToPortfolioStub)
+      when(portfolioIdToPortfolioSpy)
         .calledWith(fromPortfolioId, mockContext)
         .mockReturnValue(fromPortfolio);
-      when(stringToIdentityIdStub).calledWith(fromDid, mockContext).mockReturnValue(rawFromDid);
+      when(stringToIdentityIdSpy).calledWith(fromDid, mockContext).mockReturnValue(rawFromDid);
     });
 
     it('should return a transfer breakdown representing whether the transaction can be made from the signing Identity', async () => {
@@ -147,17 +144,17 @@ describe('Settlements class', () => {
 
       const currentDefaultPortfolioId = { did: signingDid };
 
-      when(stringToIdentityIdStub)
+      when(stringToIdentityIdSpy)
         .calledWith(signingDid, mockContext)
         .mockReturnValue(rawSigningDid);
 
-      when(portfolioLikeToPortfolioIdStub)
+      when(portfolioLikeToPortfolioIdSpy)
         .calledWith(signingIdentity)
         .mockReturnValue(currentDefaultPortfolioId);
-      when(portfolioIdToMeshPortfolioIdStub)
+      when(portfolioIdToMeshPortfolioIdSpy)
         .calledWith(currentDefaultPortfolioId, mockContext)
         .mockReturnValue(rawFromPortfolio);
-      when(portfolioIdToPortfolioStub)
+      when(portfolioIdToPortfolioSpy)
         .calledWith(currentDefaultPortfolioId, mockContext)
         .mockReturnValue(
           entityMockUtils.getDefaultPortfolioInstance({
@@ -168,13 +165,13 @@ describe('Settlements class', () => {
 
       const response = 'rpcResponse' as unknown as GranularCanTransferResult;
 
-      when(dsMockUtils.createRpcStub('asset', 'canTransferGranular'))
+      when(dsMockUtils.createRpcMock('asset', 'canTransferGranular'))
         .calledWith(rawSigningDid, rawFromPortfolio, rawToDid, rawToPortfolio, rawTicker, rawAmount)
         .mockReturnValue(response);
 
       const expected = 'breakdown' as unknown as TransferBreakdown;
 
-      when(granularCanTransferResultToTransferBreakdownStub)
+      when(granularCanTransferResultToTransferBreakdownSpy)
         .calledWith(response, mockContext)
         .mockReturnValue(expected);
 
@@ -186,7 +183,7 @@ describe('Settlements class', () => {
     it('should return a transfer breakdown representing whether the transaction can be made from another Identity', async () => {
       const response = 'rpcResponse' as unknown as GranularCanTransferResult;
 
-      when(portfolioIdToMeshPortfolioIdStub)
+      when(portfolioIdToMeshPortfolioIdSpy)
         .calledWith({ did: fromDid }, mockContext)
         .mockReturnValue(rawFromPortfolio);
 
@@ -196,13 +193,13 @@ describe('Settlements class', () => {
       toPortfolio.getCustodian.mockResolvedValue(
         entityMockUtils.getIdentityInstance({ did: toDid })
       );
-      when(dsMockUtils.createRpcStub('asset', 'canTransferGranular'))
+      when(dsMockUtils.createRpcMock('asset', 'canTransferGranular'))
         .calledWith(rawFromDid, rawFromPortfolio, rawToDid, rawToPortfolio, rawTicker, rawAmount)
         .mockReturnValue(response);
 
       const expected = 'breakdown' as unknown as TransferBreakdown;
 
-      when(granularCanTransferResultToTransferBreakdownStub)
+      when(granularCanTransferResultToTransferBreakdownSpy)
         .calledWith(response, mockContext)
         .mockReturnValue(expected);
 

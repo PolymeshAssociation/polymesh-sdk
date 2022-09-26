@@ -33,12 +33,12 @@ jest.mock(
 
 describe('registerMetadata procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: jest.SpyInstance;
-  let u32ToBigNumberStub: jest.SpyInstance;
-  let stringToBytesStub: jest.SpyInstance;
-  let metadataSpecToMeshMetadataSpecStub: jest.SpyInstance;
+  let stringToTickerSpy: jest.SpyInstance;
+  let u32ToBigNumberSpy: jest.SpyInstance;
+  let stringToBytesSpy: jest.SpyInstance;
+  let metadataSpecToMeshMetadataSpecSpy: jest.SpyInstance;
 
-  let queryMultiStub: jest.SpyInstance;
+  let queryMultiMock: jest.Mock;
   let ticker: string;
   let rawTicker: PolymeshPrimitivesTicker;
   let metadataNameMaxLength: BigNumber;
@@ -47,11 +47,11 @@ describe('registerMetadata procedure', () => {
   let name: string;
   let rawName: Bytes;
   let rawSpecs: PolymeshPrimitivesAssetMetadataAssetMetadataSpec;
-  let registerAssetMetadataLocalTypeTxStub: PolymeshTx<
+  let registerAssetMetadataLocalTypeTxMock: PolymeshTx<
     [PolymeshPrimitivesTicker, Bytes, PolymeshPrimitivesAssetMetadataAssetMetadataSpec]
   >;
 
-  let registerAndSetLocalAssetMetadataStub: PolymeshTx<
+  let registerAndSetLocalAssetMetadataMock: PolymeshTx<
     [
       PolymeshPrimitivesTicker,
       Bytes,
@@ -66,10 +66,10 @@ describe('registerMetadata procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
 
-    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
-    u32ToBigNumberStub = jest.spyOn(utilsConversionModule, 'u32ToBigNumber');
-    stringToBytesStub = jest.spyOn(utilsConversionModule, 'stringToBytes');
-    metadataSpecToMeshMetadataSpecStub = jest.spyOn(
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    u32ToBigNumberSpy = jest.spyOn(utilsConversionModule, 'u32ToBigNumber');
+    stringToBytesSpy = jest.spyOn(utilsConversionModule, 'stringToBytes');
+    metadataSpecToMeshMetadataSpecSpy = jest.spyOn(
       utilsConversionModule,
       'metadataSpecToMeshMetadataSpec'
     );
@@ -80,7 +80,7 @@ describe('registerMetadata procedure', () => {
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
 
-    when(stringToTickerStub).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
 
     metadataNameMaxLength = new BigNumber(15);
     rawMetadataNameMaxLength = dsMockUtils.createMockU32(metadataNameMaxLength);
@@ -89,30 +89,30 @@ describe('registerMetadata procedure', () => {
       returnValue: rawMetadataNameMaxLength,
     });
 
-    when(u32ToBigNumberStub)
+    when(u32ToBigNumberSpy)
       .calledWith(rawMetadataNameMaxLength)
       .mockReturnValue(metadataNameMaxLength);
 
     name = 'SOME_NAME';
     rawName = dsMockUtils.createMockBytes(name);
-    when(stringToBytesStub).calledWith(name, mockContext).mockReturnValue(rawName);
+    when(stringToBytesSpy).calledWith(name, mockContext).mockReturnValue(rawName);
 
     rawSpecs = dsMockUtils.createMockAssetMetadataSpec();
-    metadataSpecToMeshMetadataSpecStub.mockReturnValue(rawSpecs);
+    metadataSpecToMeshMetadataSpecSpy.mockReturnValue(rawSpecs);
 
     params = {
       ticker,
       name,
       specs: {},
     };
-    dsMockUtils.createQueryStub('asset', 'assetMetadataGlobalNameToKey');
-    dsMockUtils.createQueryStub('asset', 'assetMetadataLocalNameToKey');
-    queryMultiStub = dsMockUtils.getQueryMultiStub();
-    registerAssetMetadataLocalTypeTxStub = dsMockUtils.createTxStub(
+    dsMockUtils.createQueryMock('asset', 'assetMetadataGlobalNameToKey');
+    dsMockUtils.createQueryMock('asset', 'assetMetadataLocalNameToKey');
+    queryMultiMock = dsMockUtils.getQueryMultiMock();
+    registerAssetMetadataLocalTypeTxMock = dsMockUtils.createTxMock(
       'asset',
       'registerAssetMetadataLocalType'
     );
-    registerAndSetLocalAssetMetadataStub = dsMockUtils.createTxStub(
+    registerAndSetLocalAssetMetadataMock = dsMockUtils.createTxMock(
       'asset',
       'registerAndSetLocalAssetMetadata'
     );
@@ -158,14 +158,14 @@ describe('registerMetadata procedure', () => {
       message: `Metadata with name "${name}" already exists`,
     });
 
-    queryMultiStub.mockResolvedValue([
+    queryMultiMock.mockResolvedValue([
       dsMockUtils.createMockOption(rawId),
       dsMockUtils.createMockOption(),
     ]);
 
     await expect(prepareRegisterMetadata.call(proc, params)).rejects.toThrowError(expectedError);
 
-    queryMultiStub.mockResolvedValue([
+    queryMultiMock.mockResolvedValue([
       dsMockUtils.createMockOption(),
       dsMockUtils.createMockOption(rawId),
     ]);
@@ -174,7 +174,7 @@ describe('registerMetadata procedure', () => {
   });
 
   it('should return a register asset metadata local type transaction spec', async () => {
-    queryMultiStub.mockResolvedValue([
+    queryMultiMock.mockResolvedValue([
       dsMockUtils.createMockOption(),
       dsMockUtils.createMockOption(),
     ]);
@@ -184,21 +184,21 @@ describe('registerMetadata procedure', () => {
     const result = await prepareRegisterMetadata.call(proc, params);
 
     expect(result).toEqual({
-      transaction: registerAssetMetadataLocalTypeTxStub,
+      transaction: registerAssetMetadataLocalTypeTxMock,
       args: [rawTicker, rawName, rawSpecs],
       resolver: expect.any(Function),
     });
   });
 
   it('should return a register and set local asset metadata transaction spec', async () => {
-    const metadataValueToMeshMetadataValueStub = jest.spyOn(
+    const metadataValueToMeshMetadataValueSpy = jest.spyOn(
       utilsConversionModule,
       'metadataValueToMeshMetadataValue'
     );
     const rawValue = dsMockUtils.createMockBytes('SOME_VALUE');
-    metadataValueToMeshMetadataValueStub.mockReturnValue(rawValue);
+    metadataValueToMeshMetadataValueSpy.mockReturnValue(rawValue);
 
-    const metadataValueDetailToMeshMetadataValueDetailStub = jest.spyOn(
+    const metadataValueDetailToMeshMetadataValueDetailSpy = jest.spyOn(
       utilsConversionModule,
       'metadataValueDetailToMeshMetadataValueDetail'
     );
@@ -209,9 +209,9 @@ describe('registerMetadata procedure', () => {
       }),
       expire: dsMockUtils.createMockOption(),
     });
-    metadataValueDetailToMeshMetadataValueDetailStub.mockReturnValue(rawValueDetail);
+    metadataValueDetailToMeshMetadataValueDetailSpy.mockReturnValue(rawValueDetail);
 
-    queryMultiStub.mockResolvedValue([
+    queryMultiMock.mockResolvedValue([
       dsMockUtils.createMockOption(),
       dsMockUtils.createMockOption(),
     ]);
@@ -226,7 +226,7 @@ describe('registerMetadata procedure', () => {
     let result = await prepareRegisterMetadata.call(proc, params);
 
     expect(result).toEqual({
-      transaction: registerAndSetLocalAssetMetadataStub,
+      transaction: registerAndSetLocalAssetMetadataMock,
       args: [rawTicker, rawName, rawSpecs, rawValue, null],
       resolver: expect.any(Function),
     });
@@ -241,7 +241,7 @@ describe('registerMetadata procedure', () => {
     });
 
     expect(result).toEqual({
-      transaction: registerAndSetLocalAssetMetadataStub,
+      transaction: registerAndSetLocalAssetMetadataMock,
       args: [rawTicker, rawName, rawSpecs, rawValue, rawValueDetail],
       resolver: expect.any(Function),
     });
@@ -272,8 +272,8 @@ describe('registerMetadata procedure', () => {
   });
 
   describe('createMetadataResolver', () => {
-    let filterEventRecordsStub: jest.SpyInstance;
-    let u64ToBigNumberStub: jest.SpyInstance;
+    let filterEventRecordsSpy: jest.SpyInstance;
+    let u64ToBigNumberSpy: jest.SpyInstance;
     const id = new BigNumber(10);
     const rawId = dsMockUtils.createMockU64(id);
 
@@ -284,19 +284,19 @@ describe('registerMetadata procedure', () => {
         },
       });
 
-      filterEventRecordsStub = jest.spyOn(utilsInternalModule, 'filterEventRecords');
-      u64ToBigNumberStub = jest.spyOn(utilsConversionModule, 'u64ToBigNumber');
+      filterEventRecordsSpy = jest.spyOn(utilsInternalModule, 'filterEventRecords');
+      u64ToBigNumberSpy = jest.spyOn(utilsConversionModule, 'u64ToBigNumber');
     });
 
     beforeEach(() => {
-      filterEventRecordsStub.mockReturnValue([
+      filterEventRecordsSpy.mockReturnValue([
         dsMockUtils.createMockIEvent(['someIdentity', 'someTicker', 'someName', rawId]),
       ]);
-      when(u64ToBigNumberStub).calledWith(rawId).mockReturnValue(id);
+      when(u64ToBigNumberSpy).calledWith(rawId).mockReturnValue(id);
     });
 
     afterEach(() => {
-      filterEventRecordsStub.mockReset();
+      filterEventRecordsSpy.mockReset();
     });
 
     it('should return the new MetadataEntry', () => {

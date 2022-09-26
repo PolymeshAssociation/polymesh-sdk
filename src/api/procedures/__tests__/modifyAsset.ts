@@ -15,7 +15,7 @@ jest.mock(
 
 describe('modifyAsset procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
   let ticker: string;
   let rawTicker: PolymeshPrimitivesTicker;
   let fundingRound: string;
@@ -25,7 +25,7 @@ describe('modifyAsset procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     fundingRound = 'Series A';
@@ -39,7 +39,7 @@ describe('modifyAsset procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    when(stringToTickerStub).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
   });
 
   afterEach(() => {
@@ -120,7 +120,7 @@ describe('modifyAsset procedure', () => {
   it('should add a make divisible transaction to the batch', async () => {
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('asset', 'makeDivisible');
+    const transaction = dsMockUtils.createTxMock('asset', 'makeDivisible');
 
     const result = await prepareModifyAsset.call(proc, {
       ticker,
@@ -142,7 +142,7 @@ describe('modifyAsset procedure', () => {
 
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('asset', 'renameAsset');
+    const transaction = dsMockUtils.createTxMock('asset', 'renameAsset');
 
     const result = await prepareModifyAsset.call(proc, {
       ticker,
@@ -169,7 +169,7 @@ describe('modifyAsset procedure', () => {
 
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('asset', 'setFundingRound');
+    const transaction = dsMockUtils.createTxMock('asset', 'setFundingRound');
 
     const result = await prepareModifyAsset.call(proc, {
       ticker,
@@ -197,7 +197,7 @@ describe('modifyAsset procedure', () => {
 
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('asset', 'updateIdentifiers');
+    const transaction = dsMockUtils.createTxMock('asset', 'updateIdentifiers');
 
     const result = await prepareModifyAsset.call(proc, {
       ticker,

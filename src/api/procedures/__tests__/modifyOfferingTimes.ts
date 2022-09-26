@@ -42,7 +42,7 @@ describe('modifyStoTimes procedure', () => {
   let mockContext: Mocked<Context>;
   let modifyFundraiserWindowTransaction: PolymeshTx<unknown[]>;
 
-  let dateToMomentStub: jest.SpyInstance<Moment, [Date, Context]>;
+  let dateToMomentSpy: jest.SpyInstance<Moment, [Date, Context]>;
 
   const args = {
     ticker,
@@ -58,7 +58,7 @@ describe('modifyStoTimes procedure', () => {
 
     jest.spyOn(utilsConversionModule, 'stringToTicker').mockReturnValue(rawTicker);
     jest.spyOn(utilsConversionModule, 'bigNumberToU64').mockReturnValue(rawId);
-    dateToMomentStub = jest.spyOn(utilsConversionModule, 'dateToMoment');
+    dateToMomentSpy = jest.spyOn(utilsConversionModule, 'dateToMoment');
   });
 
   beforeEach(() => {
@@ -77,10 +77,10 @@ describe('modifyStoTimes procedure', () => {
     });
     mockContext = dsMockUtils.getContextInstance();
 
-    when(dateToMomentStub).calledWith(newStart, mockContext).mockReturnValue(rawNewStart);
-    when(dateToMomentStub).calledWith(newEnd, mockContext).mockReturnValue(rawNewEnd);
-    when(dateToMomentStub).calledWith(start, mockContext).mockReturnValue(rawStart);
-    when(dateToMomentStub).calledWith(end, mockContext).mockReturnValue(rawEnd);
+    when(dateToMomentSpy).calledWith(newStart, mockContext).mockReturnValue(rawNewStart);
+    when(dateToMomentSpy).calledWith(newEnd, mockContext).mockReturnValue(rawNewEnd);
+    when(dateToMomentSpy).calledWith(start, mockContext).mockReturnValue(rawStart);
+    when(dateToMomentSpy).calledWith(end, mockContext).mockReturnValue(rawEnd);
   });
 
   afterEach(() => {
@@ -96,7 +96,7 @@ describe('modifyStoTimes procedure', () => {
 
   it('should return a modify fundraiser window transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
-    modifyFundraiserWindowTransaction = dsMockUtils.createTxStub('sto', 'modifyFundraiserWindow');
+    modifyFundraiserWindowTransaction = dsMockUtils.createTxMock('sto', 'modifyFundraiserWindow');
 
     let result = await prepareModifyOfferingTimes.call(proc, args);
 

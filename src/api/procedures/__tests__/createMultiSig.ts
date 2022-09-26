@@ -41,7 +41,7 @@ describe('createMultiSig procedure', () => {
 
   it('should add a create multiSig transaction to the queue', async () => {
     const proc = procedureMockUtils.getInstance<CreateMultiSigParams, MultiSig>(mockContext);
-    const createMultiSigTransaction = dsMockUtils.createTxStub('multiSig', 'createMultisig');
+    const createMultiSigTransaction = dsMockUtils.createTxMock('multiSig', 'createMultisig');
     const mockAccount = entityMockUtils.getAccountInstance();
 
     const signers = [mockAccount];
@@ -89,21 +89,21 @@ describe('createMultiSig procedure', () => {
 });
 
 describe('createMultiSigResolver', () => {
-  const filterEventRecordsStub = jest.spyOn(utilsInternalModule, 'filterEventRecords');
+  const filterEventRecordsSpy = jest.spyOn(utilsInternalModule, 'filterEventRecords');
   const did = 'someDid';
   const rawIdentityId = dsMockUtils.createMockIdentityId(did);
   const address = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
   const rawAddress = dsMockUtils.createMockAccountId(address);
 
   beforeEach(() => {
-    filterEventRecordsStub.mockReturnValue([
+    filterEventRecordsSpy.mockReturnValue([
       dsMockUtils.createMockIEvent([rawIdentityId, rawAddress]),
     ]);
   });
 
   afterEach(() => {
     jest.resetAllMocks();
-    filterEventRecordsStub.mockReset();
+    filterEventRecordsSpy.mockReset();
   });
 
   it('should return the new MultiSig', () => {

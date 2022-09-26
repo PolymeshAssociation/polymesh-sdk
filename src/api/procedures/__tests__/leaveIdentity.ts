@@ -12,14 +12,14 @@ jest.mock(
 
 describe('leaveIdentity procedure', () => {
   let mockContext: Mocked<Context>;
-  let getSecondaryAccountPermissionsStub: jest.SpyInstance;
+  let getSecondaryAccountPermissionsSpy: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
 
-    getSecondaryAccountPermissionsStub = jest.spyOn(
+    getSecondaryAccountPermissionsSpy = jest.spyOn(
       utilsInternalModule,
       'getSecondaryAccountPermissions'
     );
@@ -47,7 +47,7 @@ describe('leaveIdentity procedure', () => {
         getIdentity: null,
       })
     );
-    getSecondaryAccountPermissionsStub.mockReturnValue([]);
+    getSecondaryAccountPermissionsSpy.mockReturnValue([]);
 
     const expectedError = new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
@@ -71,12 +71,12 @@ describe('leaveIdentity procedure', () => {
 
   it('should return a leave Identity as Account transaction spec', async () => {
     const address = 'someAddress';
-    const leaveIdentityAsKeyTransaction = dsMockUtils.createTxStub(
+    const leaveIdentityAsKeyTransaction = dsMockUtils.createTxMock(
       'identity',
       'leaveIdentityAsKey'
     );
 
-    getSecondaryAccountPermissionsStub.mockReturnValue([
+    getSecondaryAccountPermissionsSpy.mockReturnValue([
       {
         account: entityMockUtils.getAccountInstance({ address }),
         permissions: {

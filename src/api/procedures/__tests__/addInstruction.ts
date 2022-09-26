@@ -35,17 +35,17 @@ jest.mock(
 
 describe('addInstruction procedure', () => {
   let mockContext: Mocked<Context>;
-  let portfolioIdToMeshPortfolioIdStub: jest.SpyInstance;
-  let portfolioLikeToPortfolioIdStub: jest.SpyInstance;
-  let portfolioLikeToPortfolioStub: jest.SpyInstance;
-  let getCustodianStub: jest.Mock;
-  let stringToTickerStub: jest.SpyInstance<Ticker, [string, Context]>;
-  let bigNumberToU64Stub: jest.SpyInstance<u64, [BigNumber, Context]>;
-  let bigNumberToBalanceStub: jest.SpyInstance<
+  let portfolioIdToMeshPortfolioIdSpy: jest.SpyInstance;
+  let portfolioLikeToPortfolioIdSpy: jest.SpyInstance;
+  let portfolioLikeToPortfolioSpy: jest.SpyInstance;
+  let getCustodianMock: jest.Mock;
+  let stringToTickerSpy: jest.SpyInstance<Ticker, [string, Context]>;
+  let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
+  let bigNumberToBalanceSpy: jest.SpyInstance<
     Balance,
     [BigNumber, Context, (boolean | undefined)?]
   >;
-  let endConditionToSettlementTypeStub: jest.SpyInstance<
+  let endConditionToSettlementTypeSpy: jest.SpyInstance<
     SettlementType,
     [
       (
@@ -55,7 +55,7 @@ describe('addInstruction procedure', () => {
       Context
     ]
   >;
-  let dateToMomentStub: jest.SpyInstance<Moment, [Date, Context]>;
+  let dateToMomentSpy: jest.SpyInstance<Moment, [Date, Context]>;
   let venueId: BigNumber;
   let amount: BigNumber;
   let from: PortfolioLike;
@@ -94,24 +94,21 @@ describe('addInstruction procedure', () => {
     });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    portfolioIdToMeshPortfolioIdStub = jest.spyOn(
+    portfolioIdToMeshPortfolioIdSpy = jest.spyOn(
       utilsConversionModule,
       'portfolioIdToMeshPortfolioId'
     );
-    portfolioLikeToPortfolioIdStub = jest.spyOn(
-      utilsConversionModule,
-      'portfolioLikeToPortfolioId'
-    );
-    portfolioLikeToPortfolioStub = jest.spyOn(utilsConversionModule, 'portfolioLikeToPortfolio');
-    getCustodianStub = jest.fn();
-    stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
-    bigNumberToU64Stub = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
-    bigNumberToBalanceStub = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
-    endConditionToSettlementTypeStub = jest.spyOn(
+    portfolioLikeToPortfolioIdSpy = jest.spyOn(utilsConversionModule, 'portfolioLikeToPortfolioId');
+    portfolioLikeToPortfolioSpy = jest.spyOn(utilsConversionModule, 'portfolioLikeToPortfolio');
+    getCustodianMock = jest.fn();
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
+    bigNumberToBalanceSpy = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
+    endConditionToSettlementTypeSpy = jest.spyOn(
       utilsConversionModule,
       'endConditionToSettlementType'
     );
-    dateToMomentStub = jest.spyOn(utilsConversionModule, 'dateToMoment');
+    dateToMomentSpy = jest.spyOn(utilsConversionModule, 'dateToMoment');
     venueId = new BigNumber(1);
     amount = new BigNumber(100);
     from = 'fromDid';
@@ -174,55 +171,53 @@ describe('addInstruction procedure', () => {
   >;
 
   beforeEach(() => {
-    const tickerReservationDetailsStub = jest.fn();
-    tickerReservationDetailsStub.mockResolvedValue({
+    const tickerReservationDetailsMock = jest.fn();
+    tickerReservationDetailsMock.mockResolvedValue({
       owner: entityMockUtils.getIdentityInstance(),
       expiryDate: null,
       status: TickerReservationStatus.Free,
     });
 
-    addAndAuthorizeInstructionTransaction = dsMockUtils.createTxStub(
+    addAndAuthorizeInstructionTransaction = dsMockUtils.createTxMock(
       'settlement',
       'addAndAffirmInstruction'
     );
-    addInstructionTransaction = dsMockUtils.createTxStub('settlement', 'addInstruction');
+    addInstructionTransaction = dsMockUtils.createTxMock('settlement', 'addInstruction');
 
     mockContext = dsMockUtils.getContextInstance();
 
-    when(portfolioLikeToPortfolioIdStub).calledWith(from).mockReturnValue({ did: fromDid });
-    when(portfolioLikeToPortfolioIdStub).calledWith(to).mockReturnValue({ did: toDid });
-    when(portfolioLikeToPortfolioIdStub)
-      .calledWith(fromPortfolio)
-      .mockReturnValue({ did: fromDid });
-    when(portfolioLikeToPortfolioIdStub).calledWith(toPortfolio).mockReturnValue({ did: toDid });
-    when(portfolioLikeToPortfolioStub).calledWith(from, mockContext).mockReturnValue(fromPortfolio);
-    when(portfolioLikeToPortfolioStub).calledWith(to, mockContext).mockReturnValue(toPortfolio);
-    when(portfolioIdToMeshPortfolioIdStub)
+    when(portfolioLikeToPortfolioIdSpy).calledWith(from).mockReturnValue({ did: fromDid });
+    when(portfolioLikeToPortfolioIdSpy).calledWith(to).mockReturnValue({ did: toDid });
+    when(portfolioLikeToPortfolioIdSpy).calledWith(fromPortfolio).mockReturnValue({ did: fromDid });
+    when(portfolioLikeToPortfolioIdSpy).calledWith(toPortfolio).mockReturnValue({ did: toDid });
+    when(portfolioLikeToPortfolioSpy).calledWith(from, mockContext).mockReturnValue(fromPortfolio);
+    when(portfolioLikeToPortfolioSpy).calledWith(to, mockContext).mockReturnValue(toPortfolio);
+    when(portfolioIdToMeshPortfolioIdSpy)
       .calledWith({ did: fromDid }, mockContext)
       .mockReturnValue(rawFrom);
-    when(portfolioIdToMeshPortfolioIdStub)
+    when(portfolioIdToMeshPortfolioIdSpy)
       .calledWith({ did: toDid }, mockContext)
       .mockReturnValue(rawTo);
-    getCustodianStub.mockReturnValueOnce({ did: fromDid }).mockReturnValue({ did: toDid });
+    getCustodianMock.mockReturnValueOnce({ did: fromDid }).mockReturnValue({ did: toDid });
     entityMockUtils.configureMocks({
       numberedPortfolioOptions: {
-        getCustodian: getCustodianStub,
+        getCustodian: getCustodianMock,
       },
       tickerReservationOptions: {
-        details: tickerReservationDetailsStub,
+        details: tickerReservationDetailsMock,
       },
     });
-    when(stringToTickerStub).calledWith(asset, mockContext).mockReturnValue(rawTicker);
-    when(bigNumberToU64Stub).calledWith(venueId, mockContext).mockReturnValue(rawVenueId);
-    when(bigNumberToBalanceStub).calledWith(amount, mockContext).mockReturnValue(rawAmount);
-    when(endConditionToSettlementTypeStub)
+    when(stringToTickerSpy).calledWith(asset, mockContext).mockReturnValue(rawTicker);
+    when(bigNumberToU64Spy).calledWith(venueId, mockContext).mockReturnValue(rawVenueId);
+    when(bigNumberToBalanceSpy).calledWith(amount, mockContext).mockReturnValue(rawAmount);
+    when(endConditionToSettlementTypeSpy)
       .calledWith({ type: InstructionType.SettleOnBlock, value: endBlock }, mockContext)
       .mockReturnValue(rawBlockSettlementType);
-    when(endConditionToSettlementTypeStub)
+    when(endConditionToSettlementTypeSpy)
       .calledWith({ type: InstructionType.SettleOnAffirmation }, mockContext)
       .mockReturnValue(rawAuthSettlementType);
-    when(dateToMomentStub).calledWith(tradeDate, mockContext).mockReturnValue(rawTradeDate);
-    when(dateToMomentStub).calledWith(valueDate, mockContext).mockReturnValue(rawValueDate);
+    when(dateToMomentSpy).calledWith(tradeDate, mockContext).mockReturnValue(rawTradeDate);
+    when(dateToMomentSpy).calledWith(valueDate, mockContext).mockReturnValue(rawValueDate);
 
     args = {
       venueId,
@@ -431,7 +426,7 @@ describe('addInstruction procedure', () => {
         exists: true,
       },
     });
-    getCustodianStub.mockReturnValue({ did: fromDid });
+    getCustodianMock.mockReturnValue({ did: fromDid });
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
       portfoliosToAffirm: [[fromPortfolio, toPortfolio]],
     });
@@ -456,7 +451,7 @@ describe('addInstruction procedure', () => {
         exists: true,
       },
     });
-    getCustodianStub.mockReturnValue({ did: toDid });
+    getCustodianMock.mockReturnValue({ did: toDid });
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
       portfoliosToAffirm: [[]],
     });
@@ -545,10 +540,10 @@ describe('addInstruction procedure', () => {
       fromPortfolio = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: true });
       toPortfolio = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: true });
 
-      when(portfolioLikeToPortfolioStub)
+      when(portfolioLikeToPortfolioSpy)
         .calledWith(from, mockContext)
         .mockReturnValue(fromPortfolio);
-      when(portfolioLikeToPortfolioStub).calledWith(to, mockContext).mockReturnValue(toPortfolio);
+      when(portfolioLikeToPortfolioSpy).calledWith(to, mockContext).mockReturnValue(toPortfolio);
 
       let result = await boundFunc(args);
 
@@ -559,10 +554,10 @@ describe('addInstruction procedure', () => {
       fromPortfolio = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: false });
       toPortfolio = entityMockUtils.getNumberedPortfolioInstance({ isCustodiedBy: false });
 
-      when(portfolioLikeToPortfolioStub)
+      when(portfolioLikeToPortfolioSpy)
         .calledWith(from, mockContext)
         .mockReturnValue(fromPortfolio);
-      when(portfolioLikeToPortfolioStub).calledWith(to, mockContext).mockReturnValue(toPortfolio);
+      when(portfolioLikeToPortfolioSpy).calledWith(to, mockContext).mockReturnValue(toPortfolio);
 
       result = await boundFunc(args);
 
@@ -574,7 +569,7 @@ describe('addInstruction procedure', () => {
 });
 
 describe('createAddInstructionResolver', () => {
-  const filterEventRecordsStub = jest.spyOn(utilsInternalModule, 'filterEventRecords');
+  const filterEventRecordsSpy = jest.spyOn(utilsInternalModule, 'filterEventRecords');
   const id = new BigNumber(10);
   const rawId = dsMockUtils.createMockU64(id);
 
@@ -587,13 +582,13 @@ describe('createAddInstructionResolver', () => {
   });
 
   beforeEach(() => {
-    filterEventRecordsStub.mockReturnValue([
+    filterEventRecordsSpy.mockReturnValue([
       dsMockUtils.createMockIEvent(['did', 'venueId', rawId]),
     ]);
   });
 
   afterEach(() => {
-    filterEventRecordsStub.mockReset();
+    filterEventRecordsSpy.mockReset();
   });
 
   it('should return the new Instruction', () => {

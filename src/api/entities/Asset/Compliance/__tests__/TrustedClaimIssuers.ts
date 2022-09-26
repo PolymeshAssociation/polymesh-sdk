@@ -65,7 +65,7 @@ describe('TrustedClaimIssuers class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
             args: { ticker: asset.ticker, ...args, operation: TrustedClaimIssuerOperation.Set },
@@ -103,7 +103,7 @@ describe('TrustedClaimIssuers class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
             args: { ticker: asset.ticker, ...args, operation: TrustedClaimIssuerOperation.Add },
@@ -138,7 +138,7 @@ describe('TrustedClaimIssuers class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
-      when(procedureMockUtils.getPrepareStub())
+      when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
             args: { ticker: asset.ticker, ...args, operation: TrustedClaimIssuerOperation.Remove },
@@ -160,20 +160,20 @@ describe('TrustedClaimIssuers class', () => {
   describe('method: get', () => {
     let ticker: string;
     let rawTicker: PolymeshPrimitivesTicker;
-    let stringToTickerStub: jest.SpyInstance;
+    let stringToTickerSpy: jest.SpyInstance;
     let context: Context;
     let asset: Asset;
     let expectedDids: string[];
     let claimIssuers: PolymeshPrimitivesConditionTrustedIssuer[];
 
-    let trustedClaimIssuerStub: jest.SpyInstance;
+    let trustedClaimIssuerMock: jest.Mock;
 
     let trustedClaimIssuers: TrustedClaimIssuers;
 
     beforeAll(() => {
       ticker = 'test';
       rawTicker = dsMockUtils.createMockTicker(ticker);
-      stringToTickerStub = jest.spyOn(utilsConversionModule, 'stringToTicker');
+      stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
       context = dsMockUtils.getContextInstance();
       asset = entityMockUtils.getAssetInstance({ ticker });
 
@@ -190,8 +190,8 @@ describe('TrustedClaimIssuers class', () => {
         );
       });
 
-      when(stringToTickerStub).calledWith(ticker, context).mockReturnValue(rawTicker);
-      trustedClaimIssuerStub = dsMockUtils.createQueryStub(
+      when(stringToTickerSpy).calledWith(ticker, context).mockReturnValue(rawTicker);
+      trustedClaimIssuerMock = dsMockUtils.createQueryMock(
         'complianceManager',
         'trustedClaimIssuer'
       );
@@ -204,7 +204,7 @@ describe('TrustedClaimIssuers class', () => {
     });
 
     it('should return the current default trusted claim issuers', async () => {
-      when(trustedClaimIssuerStub).calledWith(rawTicker).mockResolvedValue(claimIssuers);
+      when(trustedClaimIssuerMock).calledWith(rawTicker).mockResolvedValue(claimIssuers);
 
       const result = await trustedClaimIssuers.get();
 
@@ -216,7 +216,7 @@ describe('TrustedClaimIssuers class', () => {
     it('should allow subscription', async () => {
       const unsubCallback = 'unsubCallback';
 
-      when(trustedClaimIssuerStub)
+      when(trustedClaimIssuerMock)
         .calledWith(rawTicker, expect.any(Function))
         .mockImplementation((_, cbFunc) => {
           cbFunc(claimIssuers);
