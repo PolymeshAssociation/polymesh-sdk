@@ -1,6 +1,5 @@
 import BigNumber from 'bignumber.js';
 import { Memo } from 'polymesh-types/polymesh';
-import sinon from 'sinon';
 
 import { getAuthorization, prepareTransferPolyx } from '~/api/procedures/transferPolyx';
 import { Context } from '~/internal';
@@ -26,7 +25,7 @@ describe('transferPolyx procedure', () => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
-    sinon.stub(utilsInternalModule, 'assertAddressValid');
+    jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
   });
 
   beforeEach(() => {
@@ -42,11 +41,11 @@ describe('transferPolyx procedure', () => {
   afterAll(() => {
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
-    sinon.restore();
+    jest.restoreAllMocks();
   });
 
   it('should throw an error if the user has insufficient balance to transfer', () => {
-    dsMockUtils.createQueryStub('identity', 'didRecords', { returnValue: {} });
+    dsMockUtils.createQueryMock('identity', 'didRecords', { returnValue: {} });
 
     const proc = procedureMockUtils.getInstance<TransferPolyxParams, void>(mockContext);
 
@@ -74,8 +73,8 @@ describe('transferPolyx procedure', () => {
 
   it("should throw an error if sender Identity doesn't have valid CDD", () => {
     dsMockUtils
-      .createQueryStub('identity', 'didRecords')
-      .returns(dsMockUtils.createMockIdentityId('signingIdentityId'));
+      .createQueryMock('identity', 'didRecords')
+      .mockReturnValue(dsMockUtils.createMockIdentityId('signingIdentityId'));
 
     mockContext = dsMockUtils.getContextInstance({
       validCdd: false,
@@ -90,8 +89,8 @@ describe('transferPolyx procedure', () => {
 
   it("should throw an error if destination Account doesn't have valid CDD", () => {
     dsMockUtils
-      .createQueryStub('identity', 'didRecords')
-      .returns(dsMockUtils.createMockIdentityId('signingIdentityId'));
+      .createQueryMock('identity', 'didRecords')
+      .mockReturnValue(dsMockUtils.createMockIdentityId('signingIdentityId'));
 
     entityMockUtils.configureMocks({
       accountOptions: {
@@ -117,14 +116,14 @@ describe('transferPolyx procedure', () => {
     const rawMemo = 'memo' as unknown as Memo;
 
     dsMockUtils
-      .createQueryStub('identity', 'didRecords')
-      .returns(dsMockUtils.createMockIdentityId('signingIdentityId'));
+      .createQueryMock('identity', 'didRecords')
+      .mockReturnValue(dsMockUtils.createMockIdentityId('signingIdentityId'));
 
-    sinon.stub(utilsConversionModule, 'stringToAccountId').returns(rawAccount);
-    sinon.stub(utilsConversionModule, 'bigNumberToBalance').returns(rawAmount);
-    sinon.stub(utilsConversionModule, 'stringToMemo').returns(rawMemo);
+    jest.spyOn(utilsConversionModule, 'stringToAccountId').mockReturnValue(rawAccount);
+    jest.spyOn(utilsConversionModule, 'bigNumberToBalance').mockReturnValue(rawAmount);
+    jest.spyOn(utilsConversionModule, 'stringToMemo').mockReturnValue(rawMemo);
 
-    let tx = dsMockUtils.createTxStub('balances', 'transfer');
+    let tx = dsMockUtils.createTxMock('balances', 'transfer');
     const proc = procedureMockUtils.getInstance<TransferPolyxParams, void>(mockContext);
 
     let result = await prepareTransferPolyx.call(proc, {
@@ -138,7 +137,7 @@ describe('transferPolyx procedure', () => {
       resolver: undefined,
     });
 
-    tx = dsMockUtils.createTxStub('balances', 'transferWithMemo');
+    tx = dsMockUtils.createTxMock('balances', 'transferWithMemo');
 
     result = await prepareTransferPolyx.call(proc, {
       to,

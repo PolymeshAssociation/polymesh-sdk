@@ -1,6 +1,6 @@
 import { AccountId } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import sinon, { SinonStub } from 'sinon';
+import { when } from 'jest-when';
 
 import {
   getAuthorization,
@@ -23,8 +23,8 @@ jest.mock(
 describe('modifyMultiSig procedure', () => {
   let mockContext: Mocked<Context>;
   let rawAccountId: AccountId;
-  let stringToAccountIdStub: SinonStub<[string, Context], AccountId>;
-  let signerToSignatoryStub: SinonStub;
+  let stringToAccountIdSpy: jest.SpyInstance<AccountId, [string, Context]>;
+  let signerToSignatorySpy: jest.SpyInstance;
 
   const oldSigner1 = getAccountInstance({ address: 'abc' });
   const oldSigner2 = getAccountInstance({ address: 'def' });
@@ -35,8 +35,12 @@ describe('modifyMultiSig procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToAccountIdStub = sinon.stub(utilsConversionModule, 'stringToAccountId');
-    signerToSignatoryStub = sinon.stub(utilsConversionModule, 'signerToSignatory');
+    stringToAccountIdSpy = jest
+      .spyOn(utilsConversionModule, 'stringToAccountId')
+      .mockImplementation();
+    signerToSignatorySpy = jest
+      .spyOn(utilsConversionModule, 'signerToSignatory')
+      .mockImplementation();
   });
 
   beforeEach(() => {
@@ -47,12 +51,14 @@ describe('modifyMultiSig procedure', () => {
     });
     rawAccountId = dsMockUtils.createMockAccountId(DUMMY_ACCOUNT_ID);
     mockContext = dsMockUtils.getContextInstance();
-    stringToAccountIdStub.withArgs(DUMMY_ACCOUNT_ID, mockContext).returns(rawAccountId);
+    when(stringToAccountIdSpy)
+      .calledWith(DUMMY_ACCOUNT_ID, mockContext)
+      .mockReturnValue(rawAccountId);
 
-    signerToSignatoryStub.withArgs(oldSigner1, mockContext).returns('oldOne');
-    signerToSignatoryStub.withArgs(oldSigner2, mockContext).returns('oldTwo');
-    signerToSignatoryStub.withArgs(newSigner1, mockContext).returns('newOne');
-    signerToSignatoryStub.withArgs(newSigner2, mockContext).returns('newTwo');
+    when(signerToSignatorySpy).calledWith(oldSigner1, mockContext).mockReturnValue('oldOne');
+    when(signerToSignatorySpy).calledWith(oldSigner2, mockContext).mockReturnValue('oldTwo');
+    when(signerToSignatorySpy).calledWith(newSigner1, mockContext).mockReturnValue('newOne');
+    when(signerToSignatorySpy).calledWith(newSigner2, mockContext).mockReturnValue('newTwo');
   });
 
   afterEach(() => {
@@ -154,8 +160,8 @@ describe('modifyMultiSig procedure', () => {
       signers: [newSigner1, newSigner2],
     };
 
-    const addTransaction = dsMockUtils.createTxStub('multiSig', 'addMultisigSignersViaCreator');
-    const removeTransaction = dsMockUtils.createTxStub(
+    const addTransaction = dsMockUtils.createTxMock('multiSig', 'addMultisigSignersViaCreator');
+    const removeTransaction = dsMockUtils.createTxMock(
       'multiSig',
       'removeMultisigSignersViaCreator'
     );
@@ -196,10 +202,10 @@ describe('modifyMultiSig procedure', () => {
       signers: [oldSigner1, oldSigner2, newSigner1, newSigner2],
     };
 
-    const addTransaction = dsMockUtils.createTxStub('multiSig', 'addMultisigSignersViaCreator');
+    const addTransaction = dsMockUtils.createTxMock('multiSig', 'addMultisigSignersViaCreator');
 
-    signerToSignatoryStub.withArgs(newSigner1, mockContext).returns('newOne');
-    signerToSignatoryStub.withArgs(newSigner2, mockContext).returns('newTwo');
+    when(signerToSignatorySpy).calledWith(newSigner1, mockContext).mockReturnValue('newOne');
+    when(signerToSignatorySpy).calledWith(newSigner2, mockContext).mockReturnValue('newTwo');
 
     const proc = procedureMockUtils.getInstance<ModifyMultiSigParams, void, ModifyMultiSigStorage>(
       mockContext,
@@ -233,7 +239,7 @@ describe('modifyMultiSig procedure', () => {
       signers: [oldSigner1],
     };
 
-    const removeTransaction = dsMockUtils.createTxStub(
+    const removeTransaction = dsMockUtils.createTxMock(
       'multiSig',
       'removeMultisigSignersViaCreator'
     );
@@ -302,7 +308,7 @@ describe('modifyMultiSig procedure', () => {
   describe('prepareStorage', () => {
     it('should return the relevant data', async () => {
       const multiSig = new MultiSig({ address: 'abc' }, mockContext) as MockMultiSig;
-      multiSig.details.returns({
+      multiSig.details.mockResolvedValue({
         signers: [oldSigner1, oldSigner2],
         requiredSignatures: new BigNumber(3),
       });

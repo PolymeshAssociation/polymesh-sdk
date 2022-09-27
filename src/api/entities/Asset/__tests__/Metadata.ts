@@ -1,7 +1,7 @@
 import { u64 } from '@polkadot/types';
 import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Metadata } from '~/api/entities/Asset/Metadata';
 import { Asset, Context, MetadataEntry, Namespace, PolymeshTransaction } from '~/internal';
@@ -29,14 +29,14 @@ describe('Metadata class', () => {
   let context: Context;
   let metadata: Metadata;
   let rawTicker: PolymeshPrimitivesTicker;
-  let stringToTickerStub: sinon.SinonStub;
+  let stringToTickerSpy: jest.SpyInstance;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
 
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
   });
 
   beforeEach(() => {
@@ -47,7 +47,7 @@ describe('Metadata class', () => {
 
     metadata = new Metadata(asset, context);
 
-    stringToTickerStub.withArgs(ticker, context).returns(rawTicker);
+    when(stringToTickerSpy).calledWith(ticker, context).mockReturnValue(rawTicker);
   });
 
   afterEach(() => {
@@ -72,10 +72,9 @@ describe('Metadata class', () => {
 
       const params = { name: 'SOME_METADATA', specs: {} };
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { ticker, ...params }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { ticker, ...params }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await metadata.register(params);
 
@@ -86,19 +85,21 @@ describe('Metadata class', () => {
   describe('method: get', () => {
     let ids: BigNumber[];
     let rawIds: u64[];
-    let u64ToBigNumberStub: sinon.SinonStub;
+    let u64ToBigNumberSpy: jest.SpyInstance;
 
     beforeAll(() => {
-      u64ToBigNumberStub = sinon.stub(utilsConversionModule, 'u64ToBigNumber');
+      u64ToBigNumberSpy = jest.spyOn(utilsConversionModule, 'u64ToBigNumber');
     });
 
     beforeEach(() => {
       ids = [new BigNumber(1), new BigNumber(2)];
       rawIds = [dsMockUtils.createMockU64(ids[0]), dsMockUtils.createMockU64(ids[1])];
 
-      rawIds.forEach((rawId, index) => u64ToBigNumberStub.withArgs(rawId).returns(ids[index]));
+      rawIds.forEach((rawId, index) =>
+        when(u64ToBigNumberSpy).calledWith(rawId).mockReturnValue(ids[index])
+      );
 
-      dsMockUtils.createQueryStub('asset', 'assetMetadataGlobalKeyToName', {
+      dsMockUtils.createQueryMock('asset', 'assetMetadataGlobalKeyToName', {
         entries: [
           tuple(
             [rawIds[0]],
@@ -107,7 +108,7 @@ describe('Metadata class', () => {
         ],
       });
 
-      dsMockUtils.createQueryStub('asset', 'assetMetadataLocalKeyToName', {
+      dsMockUtils.createQueryMock('asset', 'assetMetadataLocalKeyToName', {
         entries: rawIds.map((rawId, index) =>
           tuple(
             [rawTicker, rawId],
@@ -118,7 +119,7 @@ describe('Metadata class', () => {
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return all MetadataEntry associated to the Asset', async () => {
@@ -148,7 +149,7 @@ describe('Metadata class', () => {
     let id: BigNumber;
 
     beforeAll(() => {
-      sinon.stub(utilsConversionModule, 'bigNumberToU64');
+      jest.spyOn(utilsConversionModule, 'bigNumberToU64').mockImplementation();
     });
 
     beforeEach(() => {
@@ -156,18 +157,18 @@ describe('Metadata class', () => {
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should throw an error if no MetadataEntry is found', async () => {
-      dsMockUtils.createQueryStub('asset', 'assetMetadataGlobalKeyToName', {
+      dsMockUtils.createQueryMock('asset', 'assetMetadataGlobalKeyToName', {
         returnValue: dsMockUtils.createMockOption(),
       });
       await expect(metadata.getOne({ id, type: MetadataType.Global })).rejects.toThrow(
         `There is no global Asset Metadata with id "${id.toString()}"`
       );
 
-      dsMockUtils.createQueryStub('asset', 'assetMetadataLocalKeyToName', {
+      dsMockUtils.createQueryMock('asset', 'assetMetadataLocalKeyToName', {
         returnValue: dsMockUtils.createMockOption(),
       });
       await expect(metadata.getOne({ id, type: MetadataType.Local })).rejects.toThrow(
@@ -177,7 +178,7 @@ describe('Metadata class', () => {
 
     it('should return the MetadataEntry for requested id and type', async () => {
       const rawName = dsMockUtils.createMockOption(dsMockUtils.createMockBytes('SOME_NAME'));
-      dsMockUtils.createQueryStub('asset', 'assetMetadataGlobalKeyToName', {
+      dsMockUtils.createQueryMock('asset', 'assetMetadataGlobalKeyToName', {
         returnValue: rawName,
       });
 
@@ -190,11 +191,11 @@ describe('Metadata class', () => {
         })
       );
 
-      dsMockUtils.createQueryStub('asset', 'assetMetadataGlobalKeyToName', {
+      dsMockUtils.createQueryMock('asset', 'assetMetadataGlobalKeyToName', {
         returnValue: dsMockUtils.createMockOption(),
       });
 
-      dsMockUtils.createQueryStub('asset', 'assetMetadataLocalKeyToName', {
+      dsMockUtils.createQueryMock('asset', 'assetMetadataLocalKeyToName', {
         returnValue: rawName,
       });
 

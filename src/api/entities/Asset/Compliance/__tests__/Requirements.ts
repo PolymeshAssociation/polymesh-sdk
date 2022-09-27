@@ -4,7 +4,7 @@ import {
   PolymeshPrimitivesIdentityId,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Params } from '~/api/procedures/setAssetRequirements';
 import { Asset, Context, Namespace, PolymeshTransaction } from '~/internal';
@@ -56,7 +56,7 @@ describe('Requirements class', () => {
 
   describe('method: set', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
@@ -89,10 +89,13 @@ describe('Requirements class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { ticker: asset.ticker, ...args }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          { args: { ticker: asset.ticker, ...args }, transformer: undefined },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await requirements.set(args);
 
@@ -102,7 +105,7 @@ describe('Requirements class', () => {
 
   describe('method: add', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
@@ -133,10 +136,13 @@ describe('Requirements class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { ticker: asset.ticker, ...args }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          { args: { ticker: asset.ticker, ...args }, transformer: undefined },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await requirements.add(args);
 
@@ -146,7 +152,7 @@ describe('Requirements class', () => {
 
   describe('method: remove', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
@@ -160,10 +166,13 @@ describe('Requirements class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { ticker: asset.ticker, ...args }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          { args: { ticker: asset.ticker, ...args }, transformer: undefined },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await requirements.remove(args);
 
@@ -173,7 +182,7 @@ describe('Requirements class', () => {
 
   describe('method: reset', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
@@ -183,13 +192,13 @@ describe('Requirements class', () => {
 
       const expectedQueue = 'someQueue' as unknown as PolymeshTransaction<Asset>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           { args: { ticker: asset.ticker, requirements: [] }, transformer: undefined },
-          context
+          context,
+          {}
         )
-        .resolves(expectedQueue);
+        .mockResolvedValue(expectedQueue);
 
       const tx = await requirements.reset();
 
@@ -206,18 +215,18 @@ describe('Requirements class', () => {
     let notDefaultClaimIssuer: TrustedClaimIssuer;
     let assetDid: string;
     let cddId: string;
-    let trustedIssuerToTrustedClaimIssuer: sinon.SinonStub;
+    let trustedIssuerToTrustedClaimIssuerSpy: jest.SpyInstance;
 
     let expected: ComplianceRequirements;
 
-    let queryMultiStub: sinon.SinonStub;
+    let queryMultiMock: jest.Mock;
     let queryMultiResult: [
       MockCodec<PolymeshPrimitivesComplianceManagerAssetCompliance>,
       Vec<PolymeshPrimitivesIdentityId>
     ];
 
     beforeAll(() => {
-      trustedIssuerToTrustedClaimIssuer = sinon.stub(
+      trustedIssuerToTrustedClaimIssuerSpy = jest.spyOn(
         utilsConversionModule,
         'trustedIssuerToTrustedClaimIssuer'
       );
@@ -240,12 +249,12 @@ describe('Requirements class', () => {
       };
       assetDid = 'someAssetDid';
       cddId = 'someCddId';
-      dsMockUtils.createQueryStub('complianceManager', 'assetCompliances');
-      dsMockUtils.createQueryStub('complianceManager', 'trustedClaimIssuer');
+      dsMockUtils.createQueryMock('complianceManager', 'assetCompliances');
+      dsMockUtils.createQueryMock('complianceManager', 'trustedClaimIssuer');
 
-      queryMultiStub = dsMockUtils.getQueryMultiStub();
+      queryMultiMock = dsMockUtils.getQueryMultiMock();
 
-      trustedIssuerToTrustedClaimIssuer.returns({
+      trustedIssuerToTrustedClaimIssuerSpy.mockReturnValue({
         identity: defaultClaimIssuers[0].identity,
         trustedFor: null,
       });
@@ -362,11 +371,11 @@ describe('Requirements class', () => {
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return all requirements attached to the Asset, along with the default trusted claim issuers', async () => {
-      queryMultiStub.resolves(queryMultiResult);
+      queryMultiMock.mockResolvedValue(queryMultiResult);
       const result = await requirements.get();
 
       expect(result).toEqual(expected);
@@ -374,20 +383,19 @@ describe('Requirements class', () => {
 
     it('should allow subscription', async () => {
       const unsubCallback = 'unsubCallback';
-      queryMultiStub.callsFake((_, cbFunc) => {
+      queryMultiMock.mockImplementation((_, cbFunc) => {
         cbFunc(queryMultiResult);
         return unsubCallback;
       });
 
-      const callback = sinon.stub();
+      const callback = jest.fn();
 
       const result = await requirements.get(callback);
 
       expect(result).toBe(unsubCallback);
 
-      sinon.assert.calledWithExactly(
-        callback,
-        sinon.match({
+      expect(callback).toHaveBeenCalledWith(
+        expect.objectContaining({
           requirements: [
             {
               id: new BigNumber(1),
@@ -396,7 +404,9 @@ describe('Requirements class', () => {
                   ...expected.requirements[0].conditions[0],
                   trustedClaimIssuers: [
                     {
-                      identity: sinon.match({ did: notDefaultClaimIssuer.identity.did }),
+                      identity: expect.objectContaining({
+                        did: notDefaultClaimIssuer.identity.did,
+                      }),
                       trustedFor: null,
                     },
                   ],
@@ -410,7 +420,7 @@ describe('Requirements class', () => {
           ],
           defaultTrustedClaimIssuers: [
             {
-              identity: sinon.match({ did: 'defaultIssuer' }),
+              identity: expect.objectContaining({ did: 'defaultIssuer' }),
               trustedFor: null,
             },
           ],
@@ -421,7 +431,7 @@ describe('Requirements class', () => {
 
   describe('method: pause', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
@@ -431,10 +441,13 @@ describe('Requirements class', () => {
 
       const expectedQueue = 'someQueue' as unknown as PolymeshTransaction<Asset>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { ticker: asset.ticker, pause: true }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          { args: { ticker: asset.ticker, pause: true }, transformer: undefined },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedQueue);
 
       const tx = await requirements.pause();
 
@@ -444,7 +457,7 @@ describe('Requirements class', () => {
 
   describe('method: unpause', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
@@ -454,10 +467,13 @@ describe('Requirements class', () => {
 
       const expectedQueue = 'someQueue' as unknown as PolymeshTransaction<Asset>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { ticker: asset.ticker, pause: false }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          { args: { ticker: asset.ticker, pause: false }, transformer: undefined },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedQueue);
 
       const tx = await requirements.unpause();
 
@@ -467,7 +483,7 @@ describe('Requirements class', () => {
 
   describe('method: modify', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
@@ -488,10 +504,13 @@ describe('Requirements class', () => {
 
       const expectedQueue = 'someQueue' as unknown as PolymeshTransaction<Asset>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { ticker: asset.ticker, ...args }, transformer: undefined }, context)
-        .resolves(expectedQueue);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          { args: { ticker: asset.ticker, ...args }, transformer: undefined },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedQueue);
 
       const tx = await requirements.modify(args);
 
@@ -501,7 +520,7 @@ describe('Requirements class', () => {
 
   describe('method: arePaused', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return whether compliance conditions are paused or not', async () => {
@@ -513,17 +532,17 @@ describe('Requirements class', () => {
 
       const requirements = new Requirements(asset, context);
 
-      sinon
-        .stub(utilsConversionModule, 'stringToTicker')
-        .withArgs(asset.ticker, context)
-        .returns(rawTicker);
+      when(jest.spyOn(utilsConversionModule, 'stringToTicker'))
+        .calledWith(asset.ticker, context)
+        .mockReturnValue(rawTicker);
 
-      sinon.stub(utilsConversionModule, 'boolToBoolean').withArgs(mockBool).returns(fakeResult);
+      when(jest.spyOn(utilsConversionModule, 'boolToBoolean'))
+        .calledWith(mockBool)
+        .mockReturnValue(fakeResult);
 
-      dsMockUtils
-        .createQueryStub('complianceManager', 'assetCompliances')
-        .withArgs(rawTicker)
-        .resolves({ paused: mockBool });
+      when(dsMockUtils.createQueryMock('complianceManager', 'assetCompliances'))
+        .calledWith(rawTicker)
+        .mockResolvedValue({ paused: mockBool });
 
       const result = await requirements.arePaused();
 

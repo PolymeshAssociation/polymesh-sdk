@@ -31,7 +31,7 @@ describe('Polymesh Transaction class', () => {
 
   describe('method: toTransactionSpec', () => {
     it('should return the tx spec of a transaction', () => {
-      const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
+      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
       const args = tuple('FOO');
       const resolver = (): number => 1;
       const transformer = (): number => 2;
@@ -64,7 +64,7 @@ describe('Polymesh Transaction class', () => {
 
   describe('get: args', () => {
     it('should return unwrapped args', () => {
-      const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
+      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
       const args = tuple('A_TICKER');
 
       const tx = new PolymeshTransaction(
@@ -84,9 +84,9 @@ describe('Polymesh Transaction class', () => {
 
   describe('method: supportsSubsidy', () => {
     it('should return whether the transaction supports subsidy', () => {
-      context.supportsSubsidy.onFirstCall().returns(false);
+      context.supportsSubsidy.mockReturnValueOnce(false);
 
-      const transaction = dsMockUtils.createTxStub('identity', 'leaveIdentityAsKey');
+      const transaction = dsMockUtils.createTxMock('identity', 'leaveIdentityAsKey');
 
       const tx = new PolymeshTransaction<void, void, []>(
         {

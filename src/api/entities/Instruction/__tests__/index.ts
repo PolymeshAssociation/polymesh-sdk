@@ -1,6 +1,6 @@
 import { StorageKey, u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Context, Entity, Instruction, PolymeshTransaction } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
@@ -83,21 +83,21 @@ describe('Instruction class', () => {
 
   describe('method: isExecuted', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
-    let bigNumberToU64Stub: sinon.SinonStub;
-    let instructionCounterStub: sinon.SinonStub;
+    let bigNumberToU64Spy: jest.SpyInstance;
+    let instructionCounterMock: jest.Mock;
 
     beforeAll(() => {
-      bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
+      bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
     });
 
     beforeEach(() => {
-      instructionCounterStub = dsMockUtils.createQueryStub('settlement', 'instructionCounter', {
+      instructionCounterMock = dsMockUtils.createQueryMock('settlement', 'instructionCounter', {
         returnValue: dsMockUtils.createMockU64(new BigNumber(1000)),
       });
-      bigNumberToU64Stub.withArgs(id, context).returns(rawId);
+      when(bigNumberToU64Spy).calledWith(id, context).mockReturnValue(rawId);
     });
 
     it('should return whether the instruction is executed', async () => {
@@ -127,22 +127,23 @@ describe('Instruction class', () => {
         settlementType: dsMockUtils.createMockSettlementType(type),
       });
 
-      const instructionDetailsStub = dsMockUtils
-        .createQueryStub('settlement', 'instructionDetails')
-        .withArgs(rawId)
-        .resolves(queryResult);
+      const instructionDetailsMock = dsMockUtils.createQueryMock(
+        'settlement',
+        'instructionDetails'
+      );
+      when(instructionDetailsMock).calledWith(rawId).mockResolvedValue(queryResult);
 
       let result = await instruction.isExecuted();
 
       expect(result).toBe(true);
 
-      instructionCounterStub.resolves(dsMockUtils.createMockU64(new BigNumber(0)));
+      instructionCounterMock.mockResolvedValue(dsMockUtils.createMockU64(new BigNumber(0)));
 
       result = await instruction.isExecuted();
 
       expect(result).toBe(false);
 
-      instructionDetailsStub.resolves(
+      instructionDetailsMock.mockResolvedValue(
         dsMockUtils.createMockInstruction({
           ...queryResult,
           status: dsMockUtils.createMockInstructionStatus('Unknown'),
@@ -157,17 +158,17 @@ describe('Instruction class', () => {
 
   describe('method: isPending', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
-    let bigNumberToU64Stub: sinon.SinonStub;
+    let bigNumberToU64Spy: jest.SpyInstance;
 
     beforeAll(() => {
-      bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
+      bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
     });
 
     beforeEach(() => {
-      bigNumberToU64Stub.withArgs(id, context).returns(rawId);
+      when(bigNumberToU64Spy).calledWith(id, context).mockReturnValue(rawId);
     });
 
     it('should return whether the instruction is pending', async () => {
@@ -197,16 +198,17 @@ describe('Instruction class', () => {
         settlementType: dsMockUtils.createMockSettlementType(type),
       });
 
-      const instructionDetailsStub = dsMockUtils
-        .createQueryStub('settlement', 'instructionDetails')
-        .withArgs(rawId)
-        .resolves(queryResult);
+      const instructionDetailsMock = dsMockUtils.createQueryMock(
+        'settlement',
+        'instructionDetails'
+      );
+      when(instructionDetailsMock).calledWith(rawId).mockResolvedValue(queryResult);
 
       let result = await instruction.isPending();
 
       expect(result).toBe(true);
 
-      instructionDetailsStub.resolves(
+      instructionDetailsMock.mockResolvedValue(
         dsMockUtils.createMockInstruction({
           ...queryResult,
           status: dsMockUtils.createMockInstructionStatus('Unknown'),
@@ -221,17 +223,17 @@ describe('Instruction class', () => {
 
   describe('method: exists', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
-    let bigNumberToU64Stub: sinon.SinonStub;
+    let bigNumberToU64Spy: jest.SpyInstance;
 
     beforeAll(() => {
-      bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
+      bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
     });
 
     beforeEach(() => {
-      bigNumberToU64Stub.withArgs(id, context).returns(rawId);
+      when(bigNumberToU64Spy).calledWith(id, context).mockReturnValue(rawId);
     });
 
     it('should return whether the instruction exists', async () => {
@@ -239,15 +241,15 @@ describe('Instruction class', () => {
 
       entityMockUtils.configureMocks({ identityOptions: { did: owner } });
 
-      const instructionCounterStub = dsMockUtils
-        .createQueryStub('settlement', 'instructionCounter')
-        .resolves(dsMockUtils.createMockU64(new BigNumber(10)));
+      const instructionCounterMock = dsMockUtils
+        .createQueryMock('settlement', 'instructionCounter')
+        .mockResolvedValue(dsMockUtils.createMockU64(new BigNumber(10)));
 
       let result = await instruction.exists();
 
       expect(result).toBe(true);
 
-      instructionCounterStub.resolves(dsMockUtils.createMockU64(new BigNumber(0)));
+      instructionCounterMock.mockResolvedValue(dsMockUtils.createMockU64(new BigNumber(0)));
 
       result = await instruction.exists();
 
@@ -257,17 +259,17 @@ describe('Instruction class', () => {
 
   describe('method: details', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
-    let bigNumberToU64Stub: sinon.SinonStub;
+    let bigNumberToU64Spy: jest.SpyInstance;
 
     beforeAll(() => {
-      bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
+      bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
     });
 
     beforeEach(() => {
-      bigNumberToU64Stub.withArgs(id, context).returns(rawId);
+      when(bigNumberToU64Spy).calledWith(id, context).mockReturnValue(rawId);
     });
 
     it('should return the Instruction details', async () => {
@@ -297,10 +299,11 @@ describe('Instruction class', () => {
         settlementType: dsMockUtils.createMockSettlementType(type),
       });
 
-      const instructionDetailsStub = dsMockUtils
-        .createQueryStub('settlement', 'instructionDetails')
-        // .withArgs(rawId)
-        .resolves(queryResult);
+      const instructionDetailsMock = dsMockUtils.createQueryMock(
+        'settlement',
+        'instructionDetails'
+      );
+      when(instructionDetailsMock).calledWith(rawId).mockResolvedValue(queryResult);
 
       let result = await instruction.details();
 
@@ -316,7 +319,7 @@ describe('Instruction class', () => {
       type = InstructionType.SettleOnBlock;
       const endBlock = new BigNumber(100);
 
-      instructionDetailsStub.resolves(
+      instructionDetailsMock.mockResolvedValue(
         dsMockUtils.createMockInstruction({
           ...queryResult,
           tradeDate: dsMockUtils.createMockOption(),
@@ -342,7 +345,7 @@ describe('Instruction class', () => {
       status = InstructionStatus.Failed;
       type = InstructionType.SettleOnAffirmation;
 
-      instructionDetailsStub.resolves(
+      instructionDetailsMock.mockResolvedValue(
         dsMockUtils.createMockInstruction({
           ...queryResult,
           status: dsMockUtils.createMockInstructionStatus(status),
@@ -362,10 +365,9 @@ describe('Instruction class', () => {
     });
 
     it('should throw an error if the Instruction is not pending', () => {
-      dsMockUtils
-        .createQueryStub('settlement', 'instructionDetails')
-        .withArgs(rawId)
-        .resolves(
+      when(dsMockUtils.createQueryMock('settlement', 'instructionDetails'))
+        .calledWith(rawId)
+        .mockResolvedValue(
           dsMockUtils.createMockInstruction({
             instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
             status: dsMockUtils.createMockInstructionStatus('Unknown'),
@@ -388,10 +390,10 @@ describe('Instruction class', () => {
     const status = AffirmationStatus.Affirmed;
     let rawStorageKey: [u64, MeshPortfolioId][];
 
-    let instructionDetailsStub: sinon.SinonStub;
+    let instructionDetailsMock: jest.Mock;
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     beforeAll(() => {
@@ -412,19 +414,21 @@ describe('Instruction class', () => {
           dsMockUtils.createMockAffirmationStatus(AffirmationStatus.Affirmed)
         )
       );
-      sinon
-        .stub(utilsInternalModule, 'requestPaginated')
-        .resolves({ entries: authsReceivedEntries, lastKey: null });
+      jest
+        .spyOn(utilsInternalModule, 'requestPaginated')
+        .mockResolvedValue({ entries: authsReceivedEntries, lastKey: null });
 
-      sinon.stub(utilsConversionModule, 'identityIdToString').returns(did);
-      sinon.stub(utilsConversionModule, 'meshAffirmationStatusToAffirmationStatus').returns(status);
+      jest.spyOn(utilsConversionModule, 'identityIdToString').mockClear().mockReturnValue(did);
+      jest
+        .spyOn(utilsConversionModule, 'meshAffirmationStatusToAffirmationStatus')
+        .mockReturnValue(status);
     });
 
     beforeEach(() => {
-      dsMockUtils.createQueryStub('settlement', 'instructionCounter', {
+      dsMockUtils.createQueryMock('settlement', 'instructionCounter', {
         returnValue: dsMockUtils.createMockU64(new BigNumber(1000)),
       });
-      instructionDetailsStub = dsMockUtils.createQueryStub('settlement', 'instructionDetails', {
+      instructionDetailsMock = dsMockUtils.createQueryMock('settlement', 'instructionDetails', {
         returnValue: dsMockUtils.createMockInstruction({
           instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
           venueId: dsMockUtils.createMockU64(new BigNumber(1)),
@@ -437,11 +441,11 @@ describe('Instruction class', () => {
           valueDate: dsMockUtils.createMockOption(),
         }),
       });
-      dsMockUtils.createQueryStub('settlement', 'affirmsReceived');
+      dsMockUtils.createQueryMock('settlement', 'affirmsReceived');
     });
 
     it('should throw an error if the instruction is not pending', () => {
-      instructionDetailsStub.resolves(
+      instructionDetailsMock.mockResolvedValue(
         dsMockUtils.createMockInstruction({
           /* eslint-disable @typescript-eslint/naming-convention */
           instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
@@ -469,25 +473,25 @@ describe('Instruction class', () => {
   });
 
   describe('method: getLegs', () => {
-    let instructionDetailsStub: sinon.SinonStub;
+    let instructionDetailsMock: jest.Mock;
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
-    let bigNumberToU64Stub: sinon.SinonStub;
+    let bigNumberToU64Spy: jest.SpyInstance;
 
     beforeAll(() => {
-      bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
+      bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
     });
 
     beforeEach(() => {
-      dsMockUtils.createQueryStub('settlement', 'instructionCounter', {
+      dsMockUtils.createQueryMock('settlement', 'instructionCounter', {
         returnValue: dsMockUtils.createMockU64(new BigNumber(1000)),
       });
-      bigNumberToU64Stub.withArgs(id, context).returns(rawId);
-      dsMockUtils.createQueryStub('settlement', 'instructionLegs');
-      instructionDetailsStub = dsMockUtils.createQueryStub('settlement', 'instructionDetails', {
+      when(bigNumberToU64Spy).calledWith(id, context).mockReturnValue(rawId);
+      dsMockUtils.createQueryMock('settlement', 'instructionLegs');
+      instructionDetailsMock = dsMockUtils.createQueryMock('settlement', 'instructionDetails', {
         returnValue: dsMockUtils.createMockInstruction({
           instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
           venueId: dsMockUtils.createMockU64(new BigNumber(1)),
@@ -525,7 +529,11 @@ describe('Instruction class', () => {
         }),
       ];
 
-      sinon.stub(utilsInternalModule, 'requestPaginated').resolves({ entries, lastKey: null });
+      jest
+        .spyOn(utilsInternalModule, 'requestPaginated')
+        .mockClear()
+        .mockImplementation()
+        .mockResolvedValue({ entries, lastKey: null });
 
       const { data: leg } = await instruction.getLegs();
 
@@ -536,7 +544,7 @@ describe('Instruction class', () => {
     });
 
     it('should throw an error if the instruction is not pending', () => {
-      instructionDetailsStub.resolves(
+      instructionDetailsMock.mockResolvedValue(
         dsMockUtils.createMockInstruction({
           instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
           venueId: dsMockUtils.createMockU64(),
@@ -555,22 +563,22 @@ describe('Instruction class', () => {
 
   describe('method: reject', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure and return the resulting transaction', async () => {
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           {
             args: { id, operation: InstructionAffirmationOperation.Reject },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await instruction.reject();
       expect(tx).toBe(expectedTransaction);
@@ -579,22 +587,22 @@ describe('Instruction class', () => {
 
   describe('method: affirm', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure and return the resulting transaction', async () => {
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Instruction>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           {
             args: { id, operation: InstructionAffirmationOperation.Affirm },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await instruction.affirm();
 
@@ -604,22 +612,22 @@ describe('Instruction class', () => {
 
   describe('method: withdraw', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure and return the resulting transaction', async () => {
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Instruction>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           {
             args: { id, operation: InstructionAffirmationOperation.Withdraw },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await instruction.withdraw();
 
@@ -629,22 +637,22 @@ describe('Instruction class', () => {
 
   describe('method: reschedule', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure and return the resulting transaction', async () => {
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Instruction>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           {
             args: { id },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await instruction.reschedule();
 
@@ -654,17 +662,17 @@ describe('Instruction class', () => {
 
   describe('method: getStatus', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
-    let bigNumberToU64Stub: sinon.SinonStub;
+    let bigNumberToU64Spy: jest.SpyInstance;
 
     beforeAll(() => {
-      bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
+      bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
     });
 
     beforeEach(() => {
-      bigNumberToU64Stub.withArgs(id, context).returns(rawId);
+      when(bigNumberToU64Spy).calledWith(id, context).mockReturnValue(rawId);
     });
 
     it('should return Pending Instruction status', async () => {
@@ -678,10 +686,9 @@ describe('Instruction class', () => {
         settlementType: dsMockUtils.createMockSettlementType(),
       });
 
-      dsMockUtils
-        .createQueryStub('settlement', 'instructionDetails')
-        .withArgs(rawId)
-        .resolves(queryResult);
+      when(dsMockUtils.createQueryMock('settlement', 'instructionDetails'))
+        .calledWith(rawId)
+        .mockResolvedValue(queryResult);
 
       const result = await instruction.getStatus();
       expect(result).toMatchObject({
@@ -719,12 +726,11 @@ describe('Instruction class', () => {
         settlementType: dsMockUtils.createMockSettlementType(),
       });
 
-      dsMockUtils
-        .createQueryStub('settlement', 'instructionDetails')
-        .withArgs(rawId)
-        .resolves(queryResult);
+      when(dsMockUtils.createQueryMock('settlement', 'instructionDetails'))
+        .calledWith(rawId)
+        .mockResolvedValue(queryResult);
 
-      dsMockUtils.createApolloQueryStub(eventByIndexedArgs(queryVariables), {
+      dsMockUtils.createApolloQueryMock(eventByIndexedArgs(queryVariables), {
         eventByIndexedArgs: fakeQueryResult,
       });
 
@@ -765,12 +771,11 @@ describe('Instruction class', () => {
         settlementType: dsMockUtils.createMockSettlementType(),
       });
 
-      dsMockUtils
-        .createQueryStub('settlement', 'instructionDetails')
-        .withArgs(rawId)
-        .resolves(queryResult);
+      when(dsMockUtils.createQueryMock('settlement', 'instructionDetails'))
+        .calledWith(rawId)
+        .mockResolvedValue(queryResult);
 
-      dsMockUtils.createApolloMultipleQueriesStub([
+      dsMockUtils.createApolloMultipleQueriesMock([
         {
           query: eventByIndexedArgs(queryVariables),
           returnData: {
@@ -813,12 +818,11 @@ describe('Instruction class', () => {
         settlementType: dsMockUtils.createMockSettlementType(),
       });
 
-      dsMockUtils
-        .createQueryStub('settlement', 'instructionDetails')
-        .withArgs(rawId)
-        .resolves(queryResult);
+      when(dsMockUtils.createQueryMock('settlement', 'instructionDetails'))
+        .calledWith(rawId)
+        .mockResolvedValue(queryResult);
 
-      dsMockUtils.createApolloMultipleQueriesStub([
+      dsMockUtils.createApolloMultipleQueriesMock([
         {
           query: eventByIndexedArgs(queryVariables),
           returnData: {
@@ -844,17 +848,17 @@ describe('Instruction class', () => {
 
   describe('method: getStatusV2', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
-    let bigNumberToU64Stub: sinon.SinonStub;
+    let bigNumberToU64Spy: jest.SpyInstance;
 
     beforeAll(() => {
-      bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
+      bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
     });
 
     beforeEach(() => {
-      bigNumberToU64Stub.withArgs(id, context).returns(rawId);
+      when(bigNumberToU64Spy).calledWith(id, context).mockReturnValue(rawId);
     });
 
     it('should return Pending Instruction status', async () => {
@@ -868,10 +872,9 @@ describe('Instruction class', () => {
         settlementType: dsMockUtils.createMockSettlementType(),
       });
 
-      dsMockUtils
-        .createQueryStub('settlement', 'instructionDetails')
-        .withArgs(rawId)
-        .resolves(queryResult);
+      when(dsMockUtils.createQueryMock('settlement', 'instructionDetails'))
+        .calledWith(rawId)
+        .mockResolvedValue(queryResult);
 
       const result = await instruction.getStatusV2();
       expect(result).toMatchObject({
@@ -906,12 +909,11 @@ describe('Instruction class', () => {
         settlementType: dsMockUtils.createMockSettlementType(),
       });
 
-      dsMockUtils
-        .createQueryStub('settlement', 'instructionDetails')
-        .withArgs(rawId)
-        .resolves(queryResult);
+      when(dsMockUtils.createQueryMock('settlement', 'instructionDetails'))
+        .calledWith(rawId)
+        .mockResolvedValue(queryResult);
 
-      dsMockUtils.createApolloMultipleV2QueriesStub([
+      dsMockUtils.createApolloMultipleV2QueriesMock([
         {
           query: instructionsQuery(queryVariables),
           returnData: {
@@ -963,12 +965,11 @@ describe('Instruction class', () => {
         settlementType: dsMockUtils.createMockSettlementType(),
       });
 
-      dsMockUtils
-        .createQueryStub('settlement', 'instructionDetails')
-        .withArgs(rawId)
-        .resolves(queryResult);
+      when(dsMockUtils.createQueryMock('settlement', 'instructionDetails'))
+        .calledWith(rawId)
+        .mockResolvedValue(queryResult);
 
-      dsMockUtils.createApolloMultipleV2QueriesStub([
+      dsMockUtils.createApolloMultipleV2QueriesMock([
         {
           query: instructionsQuery(queryVariables),
           returnData: {
@@ -1014,12 +1015,11 @@ describe('Instruction class', () => {
         settlementType: dsMockUtils.createMockSettlementType(),
       });
 
-      dsMockUtils
-        .createQueryStub('settlement', 'instructionDetails')
-        .withArgs(rawId)
-        .resolves(queryResult);
+      when(dsMockUtils.createQueryMock('settlement', 'instructionDetails'))
+        .calledWith(rawId)
+        .mockResolvedValue(queryResult);
 
-      dsMockUtils.createApolloMultipleV2QueriesStub([
+      dsMockUtils.createApolloMultipleV2QueriesMock([
         {
           query: instructionsQuery(queryVariables),
           returnData: {

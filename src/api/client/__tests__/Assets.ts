@@ -1,6 +1,6 @@
 import { StorageKey } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Assets } from '~/api/client/Assets';
 import { Asset, Context, PolymeshTransaction, TickerReservation } from '~/internal';
@@ -66,10 +66,9 @@ describe('Assets Class', () => {
       const expectedTransaction =
         'someTransaction' as unknown as PolymeshTransaction<TickerReservation>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await assets.reserveTicker(args);
 
@@ -95,10 +94,9 @@ describe('Assets Class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await assets.createAsset(args);
 
@@ -116,10 +114,9 @@ describe('Assets Class', () => {
       const expectedTransaction =
         'someTransaction' as unknown as PolymeshTransaction<TickerReservation>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await assets.claimClassicTicker(args);
 
@@ -181,21 +178,21 @@ describe('Assets Class', () => {
         },
       });
 
-      const callback = sinon.stub();
+      const callback = jest.fn();
       const result = await assets.isTickerAvailable({ ticker: 'SOME_TICKER' }, callback);
 
       expect(result).toBe(unsubCallback);
-      sinon.assert.calledWithExactly(callback, true);
+      expect(callback).toBeCalledWith(true);
     });
   });
 
   describe('method: getTickerReservations', () => {
     beforeAll(() => {
-      sinon.stub(utilsConversionModule, 'signerValueToSignatory');
+      jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return a list of ticker reservations if did parameter is set', async () => {
@@ -204,7 +201,7 @@ describe('Assets Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
+      dsMockUtils.createQueryMock('asset', 'assetOwnershipRelations', {
         entries: [
           tuple(
             [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
@@ -225,7 +222,7 @@ describe('Assets Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
+      dsMockUtils.createQueryMock('asset', 'assetOwnershipRelations', {
         entries: [
           tuple(
             [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
@@ -247,7 +244,7 @@ describe('Assets Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
+      dsMockUtils.createQueryMock('asset', 'assetOwnershipRelations', {
         entries: [
           tuple(
             [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
@@ -299,11 +296,11 @@ describe('Assets Class', () => {
 
   describe('method: getAssets', () => {
     beforeAll(() => {
-      sinon.stub(utilsConversionModule, 'signerValueToSignatory');
+      jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return a list of Assets owned by the supplied did', async () => {
@@ -312,7 +309,7 @@ describe('Assets Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
+      dsMockUtils.createQueryMock('asset', 'assetOwnershipRelations', {
         entries: [
           tuple(
             [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
@@ -333,7 +330,7 @@ describe('Assets Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
+      dsMockUtils.createQueryMock('asset', 'assetOwnershipRelations', {
         entries: [
           tuple(
             [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
@@ -355,7 +352,7 @@ describe('Assets Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      dsMockUtils.createQueryStub('asset', 'assetOwnershipRelations', {
+      dsMockUtils.createQueryMock('asset', 'assetOwnershipRelations', {
         entries: [
           tuple(
             [dsMockUtils.createMockIdentityId(did), dsMockUtils.createMockTicker(fakeTicker)],
@@ -380,7 +377,7 @@ describe('Assets Class', () => {
   });
 
   describe('method: get', () => {
-    let requestPaginatedStub: sinon.SinonStub;
+    let requestPaginatedSpy: jest.SpyInstance;
     const expectedAssets = [
       {
         name: 'someAsset',
@@ -393,15 +390,18 @@ describe('Assets Class', () => {
     ];
 
     beforeAll(() => {
-      requestPaginatedStub = sinon.stub(utilsInternalModule, 'requestPaginated');
+      requestPaginatedSpy = jest
+        .spyOn(utilsInternalModule, 'requestPaginated')
+        .mockClear()
+        .mockImplementation();
     });
 
     beforeEach(() => {
-      dsMockUtils.createQueryStub('asset', 'assetNames');
+      dsMockUtils.createQueryMock('asset', 'assetNames');
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should retrieve all Assets on the chain', async () => {
@@ -414,7 +414,7 @@ describe('Assets Class', () => {
         )
       );
 
-      requestPaginatedStub.resolves({ entries, lastKey: null });
+      requestPaginatedSpy.mockResolvedValue({ entries, lastKey: null });
 
       const result = await assets.get();
 
@@ -432,7 +432,7 @@ describe('Assets Class', () => {
         ),
       ];
 
-      requestPaginatedStub.resolves({ entries, lastKey: 'someKey' });
+      requestPaginatedSpy.mockResolvedValue({ entries, lastKey: 'someKey' });
 
       const result = await assets.get({ size: new BigNumber(1) });
 
@@ -444,9 +444,9 @@ describe('Assets Class', () => {
   });
 
   describe('method: getGlobalMetadataKeys', () => {
-    let bytesToStringStub: sinon.SinonStub;
-    let u64ToBigNumberStub: sinon.SinonStub;
-    let meshMetadataSpecToMetadataSpecStub: sinon.SinonStub;
+    let bytesToStringSpy: jest.SpyInstance;
+    let u64ToBigNumberSpy: jest.SpyInstance;
+    let meshMetadataSpecToMetadataSpecSpy: jest.SpyInstance;
 
     const rawIds = [
       dsMockUtils.createMockU64(new BigNumber(1)),
@@ -471,9 +471,9 @@ describe('Assets Class', () => {
     let rawGlobalMetadata;
 
     beforeAll(() => {
-      u64ToBigNumberStub = sinon.stub(utilsConversionModule, 'u64ToBigNumber');
-      bytesToStringStub = sinon.stub(utilsConversionModule, 'bytesToString');
-      meshMetadataSpecToMetadataSpecStub = sinon.stub(
+      u64ToBigNumberSpy = jest.spyOn(utilsConversionModule, 'u64ToBigNumber');
+      bytesToStringSpy = jest.spyOn(utilsConversionModule, 'bytesToString');
+      meshMetadataSpecToMetadataSpecSpy = jest.spyOn(
         utilsConversionModule,
         'meshMetadataSpecToMetadataSpec'
       );
@@ -481,7 +481,7 @@ describe('Assets Class', () => {
 
     beforeEach(() => {
       rawIds.forEach(rawId => {
-        rawId.eq.withArgs(rawId).returns(true);
+        when(rawId.eq).calledWith(rawId).mockReturnValue(true);
       });
       rawGlobalMetadata = globalMetadata.map(({ id, name, specs }, index) => {
         const rawId = rawIds[index];
@@ -495,16 +495,16 @@ describe('Assets Class', () => {
           description: dsMockUtils.createMockOption(rawDescription),
           typeDef: dsMockUtils.createMockOption(rawTypeDef),
         };
-        bytesToStringStub.withArgs(rawUrl).returns(url);
-        bytesToStringStub.withArgs(rawDescription).returns(description);
-        bytesToStringStub.withArgs(rawTypeDef).returns(typeDef);
-        bytesToStringStub.withArgs(rawName).returns(name);
-        u64ToBigNumberStub.withArgs(rawId).returns(id);
+        when(bytesToStringSpy).calledWith(rawUrl).mockReturnValue(url);
+        when(bytesToStringSpy).calledWith(rawDescription).mockReturnValue(description);
+        when(bytesToStringSpy).calledWith(rawTypeDef).mockReturnValue(typeDef);
+        when(bytesToStringSpy).calledWith(rawName).mockReturnValue(name);
+        when(u64ToBigNumberSpy).calledWith(rawId).mockReturnValue(id);
 
         const rawMetadataSpecs = dsMockUtils.createMockOption(
           dsMockUtils.createMockAssetMetadataSpec(rawSpecs)
         );
-        meshMetadataSpecToMetadataSpecStub.withArgs(rawMetadataSpecs).returns(specs);
+        when(meshMetadataSpecToMetadataSpecSpy).calledWith(rawMetadataSpecs).mockReturnValue(specs);
 
         return {
           rawId,
@@ -513,17 +513,17 @@ describe('Assets Class', () => {
         };
       });
 
-      dsMockUtils.createQueryStub('asset', 'assetMetadataGlobalKeyToName', {
+      dsMockUtils.createQueryMock('asset', 'assetMetadataGlobalKeyToName', {
         entries: rawGlobalMetadata.map(({ rawId, rawName }) => tuple([rawId], rawName)),
       });
 
-      dsMockUtils.createQueryStub('asset', 'assetMetadataGlobalSpecs', {
+      dsMockUtils.createQueryMock('asset', 'assetMetadataGlobalSpecs', {
         entries: rawGlobalMetadata.map(({ rawId, rawSpecs }) => tuple([rawId], rawSpecs)),
       });
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should retrieve all Asset Global Metadata on the chain', async () => {

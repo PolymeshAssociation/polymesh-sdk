@@ -1,6 +1,5 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 import { PolkadotSigner } from '@polymeshassociation/signing-manager-types';
-import sinon from 'sinon';
 
 import {
   getAuthorization,
@@ -36,9 +35,9 @@ describe('createTransactionBatch procedure', () => {
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
 
-    tx1 = dsMockUtils.createTxStub('asset', 'registerTicker');
-    tx2 = dsMockUtils.createTxStub('asset', 'createAsset');
-    tx3 = dsMockUtils.createTxStub('portfolio', 'createPortfolio');
+    tx1 = dsMockUtils.createTxMock('asset', 'registerTicker');
+    tx2 = dsMockUtils.createTxMock('asset', 'createAsset');
+    tx3 = dsMockUtils.createTxMock('portfolio', 'createPortfolio');
   });
 
   afterEach(() => {
@@ -198,7 +197,7 @@ describe('createTransactionBatch procedure', () => {
         resolvers: [expect.any(Function), expect.any(Function)],
       });
 
-      sinon.stub(utilsInternalModule, 'sliceBatchReceipt');
+      jest.spyOn(utilsInternalModule, 'sliceBatchReceipt').mockImplementation();
 
       await expect(result.resolvers[0]({} as ISubmittableResult)).resolves.toBe(1);
       await expect(result.resolvers[1]({} as ISubmittableResult)).resolves.toBe(4);

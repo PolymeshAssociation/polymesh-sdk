@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
 
 import { MultiSigProposal } from '~/api/entities/MultiSigProposal';
 import { Account, Context, MultiSig, PolymeshError } from '~/internal';
@@ -24,7 +23,7 @@ describe('MultiSigProposal class', () => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
-    sinon.stub(utilsInternalModule, 'assertAddressValid');
+    jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
 
     address = 'someAddress';
   });
@@ -43,7 +42,7 @@ describe('MultiSigProposal class', () => {
   afterAll(() => {
     dsMockUtils.cleanup();
     procedureMockUtils.cleanup();
-    sinon.restore();
+    jest.restoreAllMocks();
   });
 
   it('should extend Entity', () => {
@@ -52,7 +51,7 @@ describe('MultiSigProposal class', () => {
 
   describe('method: details', () => {
     it('should return the details of the MultiSigProposal', async () => {
-      dsMockUtils.createQueryStub('multiSig', 'proposalDetail', {
+      dsMockUtils.createQueryMock('multiSig', 'proposalDetail', {
         returnValue: dsMockUtils.createMockProposalDetails({
           approvals: new BigNumber(1),
           rejections: new BigNumber(1),
@@ -62,7 +61,7 @@ describe('MultiSigProposal class', () => {
         }),
       });
 
-      dsMockUtils.createQueryStub('multiSig', 'proposals', {
+      dsMockUtils.createQueryMock('multiSig', 'proposals', {
         returnValue: createMockOption(
           dsMockUtils.createMockCall({
             args: ['ABC'],
@@ -84,7 +83,7 @@ describe('MultiSigProposal class', () => {
         txTag: 'asset.reserveTicker',
       });
 
-      dsMockUtils.createQueryStub('multiSig', 'proposalDetail', {
+      dsMockUtils.createQueryMock('multiSig', 'proposalDetail', {
         returnValue: dsMockUtils.createMockProposalDetails({
           approvals: new BigNumber(1),
           rejections: new BigNumber(1),
@@ -108,11 +107,11 @@ describe('MultiSigProposal class', () => {
     });
 
     it('should throw an error if no data is returned', () => {
-      dsMockUtils.createQueryStub('multiSig', 'proposals', {
+      dsMockUtils.createQueryMock('multiSig', 'proposals', {
         returnValue: createMockOption(),
       });
 
-      dsMockUtils.createQueryStub('multiSig', 'proposalDetail', {
+      dsMockUtils.createQueryMock('multiSig', 'proposalDetail', {
         returnValue: dsMockUtils.createMockProposalDetails({
           approvals: new BigNumber(1),
           rejections: new BigNumber(1),
@@ -133,7 +132,7 @@ describe('MultiSigProposal class', () => {
 
   describe('method: exists', () => {
     it('should return true if the MultiSigProposal is present on chain', async () => {
-      dsMockUtils.createQueryStub('multiSig', 'proposals', {
+      dsMockUtils.createQueryMock('multiSig', 'proposals', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockCall({
             args: [],
@@ -148,7 +147,7 @@ describe('MultiSigProposal class', () => {
     });
 
     it('should return false if the MultiSigProposal is not present on chain', async () => {
-      dsMockUtils.createQueryStub('multiSig', 'proposals', {
+      dsMockUtils.createQueryMock('multiSig', 'proposals', {
         returnValue: dsMockUtils.createMockOption(),
       });
 

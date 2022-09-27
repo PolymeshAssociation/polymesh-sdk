@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Account, Context, MultiSig, PolymeshError, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -37,8 +37,8 @@ describe('MultiSig class', () => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
-    sinon.stub(utilsInternalModule, 'assertAddressValid');
-    sinon.stub(utilsConversionModule, 'addressToKey');
+    jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
+    jest.spyOn(utilsConversionModule, 'addressToKey').mockImplementation();
 
     address = 'someAddress';
   });
@@ -57,7 +57,7 @@ describe('MultiSig class', () => {
   afterAll(() => {
     dsMockUtils.cleanup();
     procedureMockUtils.cleanup();
-    sinon.restore();
+    jest.restoreAllMocks();
   });
 
   it('should extend Account', () => {
@@ -66,7 +66,7 @@ describe('MultiSig class', () => {
 
   describe('method: details', () => {
     it('should return the details of the MultiSig', async () => {
-      dsMockUtils.createQueryStub('multiSig', 'multiSigSigners', {
+      dsMockUtils.createQueryMock('multiSig', 'multiSigSigners', {
         entries: [
           [
             [],
@@ -83,7 +83,7 @@ describe('MultiSig class', () => {
         ],
       });
 
-      dsMockUtils.createQueryStub('multiSig', 'multiSigSignsRequired', {
+      dsMockUtils.createQueryMock('multiSig', 'multiSigSignsRequired', {
         returnValue: 2,
       });
       const result = await multiSig.details();
@@ -122,7 +122,7 @@ describe('MultiSig class', () => {
   describe('method: getProposals', () => {
     const id = new BigNumber(1);
     it('should get proposals', async () => {
-      dsMockUtils.createQueryStub('multiSig', 'proposalIds', {
+      dsMockUtils.createQueryMock('multiSig', 'proposalIds', {
         entries: [[[''], createMockOption(createMockU64(id))]],
       });
       const result = await multiSig.getProposals();
@@ -131,7 +131,7 @@ describe('MultiSig class', () => {
     });
 
     it('should return an empty array if no proposals are pending', async () => {
-      dsMockUtils.createQueryStub('multiSig', 'proposalIds', {
+      dsMockUtils.createQueryMock('multiSig', 'proposalIds', {
         entries: [],
       });
 
@@ -144,7 +144,7 @@ describe('MultiSig class', () => {
   describe('method: getCreator', () => {
     it('should return the Identity of the creator of the MultiSig', async () => {
       const expectedDid = 'abc';
-      dsMockUtils.createQueryStub('multiSig', 'multiSigToIdentity', {
+      dsMockUtils.createQueryMock('multiSig', 'multiSigToIdentity', {
         returnValue: createMockIdentityId(expectedDid),
       });
 
@@ -153,7 +153,7 @@ describe('MultiSig class', () => {
     });
 
     it('should throw an error if there is no creator', () => {
-      dsMockUtils.createQueryStub('multiSig', 'multiSigToIdentity', {
+      dsMockUtils.createQueryMock('multiSig', 'multiSigToIdentity', {
         returnValue: createMockIdentityId(),
       });
       const expectedError = new PolymeshError({
@@ -173,10 +173,9 @@ describe('MultiSig class', () => {
         signers: [account],
       };
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { multiSig, ...args }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { multiSig, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const queue = await multiSig.modify(args);
 

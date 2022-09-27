@@ -1,7 +1,7 @@
 import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 import { Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
 
 import { getAuthorization, Params, prepareRedeemTokens } from '~/api/procedures/redeemTokens';
 import { Context } from '~/internal';
@@ -27,10 +27,10 @@ describe('redeemTokens procedure', () => {
   let rawTicker: Ticker;
   let amount: BigNumber;
   let rawAmount: Balance;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let bigNumberToBalanceStub: sinon.SinonStub<
-    [BigNumber, Context, (boolean | undefined)?],
-    Balance
+  let stringToTickerSpy: jest.SpyInstance<Ticker, [string, Context]>;
+  let bigNumberToBalanceSpy: jest.SpyInstance<
+    Balance,
+    [BigNumber, Context, (boolean | undefined)?]
   >;
 
   beforeAll(() => {
@@ -41,14 +41,14 @@ describe('redeemTokens procedure', () => {
     rawTicker = dsMockUtils.createMockTicker(ticker);
     amount = new BigNumber(100);
     rawAmount = dsMockUtils.createMockBalance(amount);
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    bigNumberToBalanceSpy = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
-    bigNumberToBalanceStub.withArgs(amount, mockContext).returns(rawAmount);
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(bigNumberToBalanceSpy).calledWith(amount, mockContext, true).mockReturnValue(rawAmount);
   });
 
   afterEach(() => {
@@ -65,7 +65,7 @@ describe('redeemTokens procedure', () => {
   it('should return a redeem transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('asset', 'redeem');
+    const transaction = dsMockUtils.createTxMock('asset', 'redeem');
 
     entityMockUtils.configureMocks({
       assetOptions: {

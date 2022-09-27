@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 
 import { Settlements } from '~/api/client/Settlements';
 import { addInstructionTransformer, Context, PolymeshTransaction, Venue } from '~/internal';
@@ -108,10 +109,9 @@ describe('Settlements Class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Venue>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await settlements.createVenue(args);
 
@@ -142,16 +142,16 @@ describe('Settlements Class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Instruction>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           {
             args: { instructions: [{ legs, tradeDate, endBlock }], venueId },
             transformer: addInstructionTransformer,
           },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await settlements.addInstruction({ venueId, legs, tradeDate, endBlock });
       expect(tx).toBe(expectedTransaction);
@@ -164,16 +164,16 @@ describe('Settlements Class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Venue>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           {
             args: { id: instructionId, operation: InstructionAffirmationOperation.Affirm },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await settlements.affirmInstruction({ id: instructionId });
 

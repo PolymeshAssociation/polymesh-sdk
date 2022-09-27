@@ -1,7 +1,6 @@
 import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
 import { PortfolioId as MeshPortfolioId, Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
 
 import {
   getAuthorization,
@@ -29,16 +28,16 @@ jest.mock(
 
 describe('controllerTransfer procedure', () => {
   let mockContext: Mocked<Context>;
-  let portfolioIdToPortfolioStub: sinon.SinonStub<
-    [PortfolioId, Context],
-    DefaultPortfolio | NumberedPortfolio
+  let portfolioIdToPortfolioSpy: jest.SpyInstance<
+    DefaultPortfolio | NumberedPortfolio,
+    [PortfolioId, Context]
   >;
-  let bigNumberToBalanceStub: sinon.SinonStub<
-    [BigNumber, Context, (boolean | undefined)?],
-    Balance
+  let bigNumberToBalanceSpy: jest.SpyInstance<
+    Balance,
+    [BigNumber, Context, (boolean | undefined)?]
   >;
-  let portfolioIdToMeshPortfolioIdStub: sinon.SinonStub;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
+  let portfolioIdToMeshPortfolioIdSpy: jest.SpyInstance;
+  let stringToTickerSpy: jest.SpyInstance<Ticker, [string, Context]>;
   let ticker: string;
   let rawTicker: Ticker;
   let did: string;
@@ -51,13 +50,13 @@ describe('controllerTransfer procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    portfolioIdToPortfolioStub = sinon.stub(utilsConversionModule, 'portfolioIdToPortfolio');
-    bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
-    portfolioIdToMeshPortfolioIdStub = sinon.stub(
+    portfolioIdToPortfolioSpy = jest.spyOn(utilsConversionModule, 'portfolioIdToPortfolio');
+    bigNumberToBalanceSpy = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
+    portfolioIdToMeshPortfolioIdSpy = jest.spyOn(
       utilsConversionModule,
       'portfolioIdToMeshPortfolioId'
     );
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     did = 'fakeDid';
@@ -75,10 +74,10 @@ describe('controllerTransfer procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    stringToTickerStub.returns(rawTicker);
-    portfolioIdToPortfolioStub.returns(originPortfolio);
-    bigNumberToBalanceStub.returns(rawAmount);
-    portfolioIdToMeshPortfolioIdStub.returns(rawPortfolioId);
+    stringToTickerSpy.mockReturnValue(rawTicker);
+    portfolioIdToPortfolioSpy.mockReturnValue(originPortfolio);
+    bigNumberToBalanceSpy.mockReturnValue(rawAmount);
+    portfolioIdToMeshPortfolioIdSpy.mockReturnValue(rawPortfolioId);
   });
 
   afterEach(() => {
@@ -129,7 +128,7 @@ describe('controllerTransfer procedure', () => {
       did: 'someDid',
     });
 
-    const transaction = dsMockUtils.createTxStub('asset', 'controllerTransfer');
+    const transaction = dsMockUtils.createTxMock('asset', 'controllerTransfer');
 
     const result = await prepareControllerTransfer.call(proc, {
       ticker,

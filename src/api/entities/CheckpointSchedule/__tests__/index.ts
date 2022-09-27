@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { CheckpointSchedule, Context, Entity } from '~/internal';
 import { StoredSchedule } from '~/polkadot/polymesh';
@@ -25,8 +25,8 @@ describe('CheckpointSchedule class', () => {
   let start: Date;
   let remaining: BigNumber;
   let nextCheckpointDate: Date;
-  let stringToTickerStub: sinon.SinonStub;
-  let bigNumberToU64Stub: sinon.SinonStub;
+  let stringToTickerSpy: jest.SpyInstance;
+  let bigNumberToU64Spy: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -41,8 +41,8 @@ describe('CheckpointSchedule class', () => {
     start = new Date('10/14/1987 UTC');
     remaining = new BigNumber(11);
     nextCheckpointDate = new Date(new Date().getTime() + 60 * 60 * 1000 * 24 * 365 * 60);
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
   });
 
   beforeEach(() => {
@@ -128,9 +128,9 @@ describe('CheckpointSchedule class', () => {
       );
       const rawScheduleId = dsMockUtils.createMockU64(id);
 
-      stringToTickerStub.returns(dsMockUtils.createMockTicker(ticker));
+      stringToTickerSpy.mockReturnValue(dsMockUtils.createMockTicker(ticker));
 
-      dsMockUtils.createQueryStub('checkpoint', 'schedules', {
+      dsMockUtils.createQueryMock('checkpoint', 'schedules', {
         returnValue: [
           dsMockUtils.createMockStoredSchedule({
             id: rawScheduleId,
@@ -157,11 +157,11 @@ describe('CheckpointSchedule class', () => {
       );
       const rawScheduleId = dsMockUtils.createMockU64(id);
 
-      stringToTickerStub.returns(dsMockUtils.createMockTicker(ticker));
-      sinon.stub(utilsConversionModule, 'u32ToBigNumber').returns(rawRemaining);
-      sinon.stub(utilsConversionModule, 'momentToDate').returns(nextCheckpointDate);
+      stringToTickerSpy.mockReturnValue(dsMockUtils.createMockTicker(ticker));
+      jest.spyOn(utilsConversionModule, 'u32ToBigNumber').mockClear().mockReturnValue(rawRemaining);
+      jest.spyOn(utilsConversionModule, 'momentToDate').mockReturnValue(nextCheckpointDate);
 
-      dsMockUtils.createQueryStub('checkpoint', 'schedules', {
+      dsMockUtils.createQueryMock('checkpoint', 'schedules', {
         returnValue: [
           dsMockUtils.createMockStoredSchedule({
             schedule: dsMockUtils.createMockCheckpointSchedule({
@@ -193,7 +193,7 @@ describe('CheckpointSchedule class', () => {
       );
       const rawScheduleId = dsMockUtils.createMockU64(id);
 
-      dsMockUtils.createQueryStub('checkpoint', 'schedules', {
+      dsMockUtils.createQueryMock('checkpoint', 'schedules', {
         returnValue: [
           dsMockUtils.createMockStoredSchedule({
             id: rawScheduleId,
@@ -223,7 +223,7 @@ describe('CheckpointSchedule class', () => {
       const rawSecondId = dsMockUtils.createMockU64(secondId);
       const rawScheduleId = dsMockUtils.createMockU64(id);
 
-      dsMockUtils.createQueryStub('checkpoint', 'schedules', {
+      dsMockUtils.createQueryMock('checkpoint', 'schedules', {
         returnValue: [
           dsMockUtils.createMockStoredSchedule({
             id: rawScheduleId,
@@ -231,12 +231,12 @@ describe('CheckpointSchedule class', () => {
         ],
       });
 
-      dsMockUtils.createQueryStub('checkpoint', 'schedulePoints', {
+      dsMockUtils.createQueryMock('checkpoint', 'schedulePoints', {
         returnValue: [rawFirstId, rawSecondId],
       });
 
-      bigNumberToU64Stub.withArgs(firstId).returns(rawFirstId);
-      bigNumberToU64Stub.withArgs(secondId).returns(rawSecondId);
+      when(bigNumberToU64Spy).calledWith(firstId).mockReturnValue(rawFirstId);
+      when(bigNumberToU64Spy).calledWith(secondId).mockReturnValue(rawSecondId);
 
       const result = await schedule.getCheckpoints();
 
@@ -252,7 +252,7 @@ describe('CheckpointSchedule class', () => {
         context
       );
 
-      dsMockUtils.createQueryStub('checkpoint', 'schedules', {
+      dsMockUtils.createQueryMock('checkpoint', 'schedules', {
         returnValue: [
           dsMockUtils.createMockStoredSchedule({
             id: dsMockUtils.createMockU64(id),

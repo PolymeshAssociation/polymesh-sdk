@@ -1,6 +1,6 @@
 import { Balance } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   Asset,
@@ -136,20 +136,20 @@ describe('Portfolio class', () => {
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return the custodian of the portfolio', async () => {
       const portfolio = new NonAbstract({ did, id }, context);
       const custodianDid = 'custodianDid';
       const signingIdentityDid = 'signingIdentity';
-      const identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
-      const portfolioCustodianStub = dsMockUtils.createQueryStub('portfolio', 'portfolioCustodian');
+      const identityIdToStringSpy = jest.spyOn(utilsConversionModule, 'identityIdToString');
+      const portfolioCustodianMock = dsMockUtils.createQueryMock('portfolio', 'portfolioCustodian');
 
-      portfolioCustodianStub.returns(
+      portfolioCustodianMock.mockReturnValue(
         dsMockUtils.createMockOption(dsMockUtils.createMockIdentityId(custodianDid))
       );
-      identityIdToStringStub.returns(custodianDid);
+      identityIdToStringSpy.mockReturnValue(custodianDid);
 
       const spy = jest
         .spyOn(portfolio, 'getCustodian')
@@ -158,10 +158,10 @@ describe('Portfolio class', () => {
       let result = await portfolio.isCustodiedBy();
       expect(result).toEqual(false);
 
-      portfolioCustodianStub.returns(
+      portfolioCustodianMock.mockReturnValue(
         dsMockUtils.createMockOption(dsMockUtils.createMockIdentityId(signingIdentityDid))
       );
-      identityIdToStringStub.returns(signingIdentityDid);
+      identityIdToStringSpy.mockReturnValue(signingIdentityDid);
       spy.mockResolvedValue(entityMockUtils.getIdentityInstance({ isEqual: true }));
 
       result = await portfolio.isCustodiedBy({
@@ -214,18 +214,18 @@ describe('Portfolio class', () => {
           User: dsMockUtils.createMockU64(id),
         }),
       });
-      sinon.stub(utilsConversionModule, 'portfolioIdToMeshPortfolioId');
+      jest.spyOn(utilsConversionModule, 'portfolioIdToMeshPortfolioId').mockImplementation();
       dsMockUtils.configureMocks({ contextOptions: { did } });
     });
 
     beforeEach(() => {
-      dsMockUtils.createQueryStub('portfolio', 'portfolioAssetBalances', {
+      dsMockUtils.createQueryMock('portfolio', 'portfolioAssetBalances', {
         entries: [
           tuple([rawPortfolioId, rawTicker0], rawTotal0),
           tuple([rawPortfolioId, rawTicker1], rawTotal1),
         ],
       });
-      dsMockUtils.createQueryStub('portfolio', 'portfolioLockedAssets', {
+      dsMockUtils.createQueryMock('portfolio', 'portfolioLockedAssets', {
         entries: [
           tuple([rawPortfolioId, rawTicker0], rawLocked0),
           tuple([rawPortfolioId, rawTicker1], rawLocked1),
@@ -235,7 +235,7 @@ describe('Portfolio class', () => {
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it("should return all of the portfolio's assets and their balances", async () => {
@@ -289,31 +289,33 @@ describe('Portfolio class', () => {
     beforeAll(() => {
       did = 'someDid';
       id = new BigNumber(1);
-      sinon.stub(utilsConversionModule, 'portfolioIdToMeshPortfolioId');
+      jest.spyOn(utilsConversionModule, 'portfolioIdToMeshPortfolioId').mockImplementation();
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return the custodian of the portfolio', async () => {
       const custodianDid = 'custodianDid';
-      const identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
+      const identityIdToStringSpy = jest.spyOn(utilsConversionModule, 'identityIdToString');
 
       dsMockUtils
-        .createQueryStub('portfolio', 'portfolioCustodian')
-        .returns(dsMockUtils.createMockOption(dsMockUtils.createMockIdentityId(custodianDid)));
+        .createQueryMock('portfolio', 'portfolioCustodian')
+        .mockReturnValue(
+          dsMockUtils.createMockOption(dsMockUtils.createMockIdentityId(custodianDid))
+        );
 
-      identityIdToStringStub.returns(custodianDid);
+      identityIdToStringSpy.mockReturnValue(custodianDid);
 
       const portfolio = new NonAbstract({ did, id }, context);
 
       let result = await portfolio.getCustodian();
       expect(result.did).toEqual(custodianDid);
 
-      dsMockUtils.createQueryStub('portfolio', 'portfolioCustodian').returns({});
+      dsMockUtils.createQueryMock('portfolio', 'portfolioCustodian').mockReturnValue({});
 
-      identityIdToStringStub.returns(did);
+      identityIdToStringSpy.mockReturnValue(did);
 
       result = await portfolio.getCustodian();
       expect(result.did).toEqual(did);
@@ -322,7 +324,7 @@ describe('Portfolio class', () => {
     it('should throw an error if the portfolio does not exist', () => {
       const portfolio = new NonAbstract({ did, id }, context);
       exists = false;
-      dsMockUtils.createQueryStub('portfolio', 'portfolioCustodian');
+      dsMockUtils.createQueryMock('portfolio', 'portfolioCustodian');
 
       return expect(portfolio.getCustodian()).rejects.toThrow(
         "The Portfolio doesn't exist or was removed by its owner"
@@ -339,10 +341,9 @@ describe('Portfolio class', () => {
       const portfolio = new NonAbstract({ did: 'someDid' }, context);
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { ...args, from: portfolio }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { ...args, from: portfolio }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await portfolio.moveFunds(args);
 
@@ -355,10 +356,9 @@ describe('Portfolio class', () => {
       const portfolio = new NonAbstract({ did: 'someDid' }, context);
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { portfolio }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { portfolio }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await portfolio.quitCustody();
 
@@ -376,7 +376,7 @@ describe('Portfolio class', () => {
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure and return the resulting transaction', async () => {
@@ -384,10 +384,9 @@ describe('Portfolio class', () => {
       const targetIdentity = 'someTarget';
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { id, did, targetIdentity }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { id, did, targetIdentity }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await portfolio.setCustodian({ targetIdentity });
 
@@ -405,7 +404,7 @@ describe('Portfolio class', () => {
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return a list of transactions', async () => {
@@ -486,14 +485,16 @@ describe('Portfolio class', () => {
       /* eslint-enable @typescript-eslint/naming-convention */
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
-      dsMockUtils.createApolloQueryStub(heartbeat(), true);
-      sinon.stub(utilsConversionModule, 'addressToKey').withArgs(account, context).returns(key);
+      dsMockUtils.createApolloQueryMock(heartbeat(), true);
+      when(jest.spyOn(utilsConversionModule, 'addressToKey'))
+        .calledWith(account, context)
+        .mockReturnValue(key);
 
-      dsMockUtils.createQueryStub('system', 'blockHash', {
+      dsMockUtils.createQueryMock('system', 'blockHash', {
         multi: [dsMockUtils.createMockHash(blockHash1), dsMockUtils.createMockHash(blockHash2)],
       });
 
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.createApolloQueryMock(
         settlements({
           identityId: did,
           portfolioNumber: id.toString(),
@@ -530,7 +531,7 @@ describe('Portfolio class', () => {
       expect(result.count).toEqual(new BigNumber(20));
       expect(result.next).toEqual(new BigNumber(5));
 
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.createApolloQueryMock(
         settlements({
           identityId: did,
           portfolioNumber: null,
@@ -558,8 +559,8 @@ describe('Portfolio class', () => {
       const portfolio = new NonAbstract({ did, id }, context);
       exists = false;
 
-      dsMockUtils.createApolloQueryStub(heartbeat(), true);
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.createApolloQueryMock(heartbeat(), true);
+      dsMockUtils.createApolloQueryMock(
         settlements({
           identityId: did,
           portfolioNumber: null,
@@ -592,7 +593,7 @@ describe('Portfolio class', () => {
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return a list of transactions', async () => {
@@ -684,10 +685,12 @@ describe('Portfolio class', () => {
       };
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
-      dsMockUtils.createApolloQueryStub(heartbeat(), true);
-      sinon.stub(utilsConversionModule, 'addressToKey').withArgs(account, context).returns(key);
+      dsMockUtils.createApolloQueryMock(heartbeat(), true);
+      when(jest.spyOn(utilsConversionModule, 'addressToKey'))
+        .calledWith(account, context)
+        .mockReturnValue(key);
 
-      dsMockUtils.createApolloMultipleV2QueriesStub([
+      dsMockUtils.createApolloMultipleV2QueriesMock([
         {
           query: settlementsQuery({
             identityId: did,
@@ -733,7 +736,7 @@ describe('Portfolio class', () => {
       expect((result[1].legs[0].from as NumberedPortfolio).id).toEqual(portfolioId2);
       expect(result[1].legs[0].to.owner.did).toEqual(portfolioDid1);
 
-      dsMockUtils.createApolloMultipleV2QueriesStub([
+      dsMockUtils.createApolloMultipleV2QueriesMock([
         {
           query: settlementsQuery({
             identityId: did,
@@ -798,8 +801,8 @@ describe('Portfolio class', () => {
       const portfolio = new NonAbstract({ did, id }, context);
       exists = false;
 
-      dsMockUtils.createApolloQueryStub(heartbeat(), true);
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.createApolloQueryMock(heartbeat(), true);
+      dsMockUtils.createApolloQueryMock(
         settlements({
           identityId: did,
           portfolioNumber: null,

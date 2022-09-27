@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 import { EcdsaSignature, Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
 
 import { prepareClaimClassicTicker } from '~/api/procedures/claimClassicTicker';
 import { Context } from '~/internal';
@@ -25,8 +25,8 @@ describe('claimClassicTicker procedure', () => {
   let did: string;
   let rawTicker: Ticker;
   let rawEthereumSignature: EcdsaSignature;
-  let stringToTickerStub: sinon.SinonStub;
-  let stringToEcdsaSignatureStub: sinon.SinonStub;
+  let stringToTickerSpy: jest.SpyInstance;
+  let stringToEcdsaSignatureSpy: jest.SpyInstance;
 
   beforeAll(() => {
     did = '0x0600000000000000000000000000000000000000000000000000000000000000';
@@ -38,8 +38,8 @@ describe('claimClassicTicker procedure', () => {
       '0xce3f19a1aaaf04adfcd16fbc19ffd5d2d3117588a543dac2ff6befd2c6320b7c6ec586df0ec276775b6f53cb2dfc69f78efc2ef974e04cb269fe2e5d9546ea791c';
     ethereumAddress = '0xb710e549e2ac26ad77c3acc2bb7f6bb48d7e7c7f';
 
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    stringToEcdsaSignatureStub = sinon.stub(utilsConversionModule, 'stringToEcdsaSignature');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    stringToEcdsaSignatureSpy = jest.spyOn(utilsConversionModule, 'stringToEcdsaSignature');
   });
 
   beforeEach(() => {
@@ -47,13 +47,13 @@ describe('claimClassicTicker procedure', () => {
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawEthereumSignature = dsMockUtils.createMockEcdsaSignature(ethereumSignature);
 
-    dsMockUtils.createQueryStub('asset', 'tickers', {
+    dsMockUtils.createQueryMock('asset', 'tickers', {
       returnValue: dsMockUtils.createMockTickerRegistration({
         owner: CLASSIC_TICKER_OWNER_DID,
         expiry: dsMockUtils.createMockOption(),
       }),
     });
-    dsMockUtils.createQueryStub('asset', 'classicTickers', {
+    dsMockUtils.createQueryMock('asset', 'classicTickers', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockClassicTickerRegistration({
           ethOwner: ethereumAddress,
@@ -61,8 +61,10 @@ describe('claimClassicTicker procedure', () => {
         })
       ),
     });
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
-    stringToEcdsaSignatureStub.withArgs(ethereumSignature).returns(rawEthereumSignature);
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(stringToEcdsaSignatureSpy)
+      .calledWith(ethereumSignature, mockContext)
+      .mockReturnValue(rawEthereumSignature);
   });
 
   afterEach(() => {
@@ -77,7 +79,7 @@ describe('claimClassicTicker procedure', () => {
   });
 
   it('should throw an error if the ticker is not in the reserved classic ticker list', () => {
-    dsMockUtils.createQueryStub('asset', 'classicTickers', {
+    dsMockUtils.createQueryMock('asset', 'classicTickers', {
       returnValue: dsMockUtils.createMockOption(),
     });
 
@@ -91,7 +93,7 @@ describe('claimClassicTicker procedure', () => {
   });
 
   it('should throw an error if the ticker reservation has expired', () => {
-    dsMockUtils.createQueryStub('asset', 'tickers', {
+    dsMockUtils.createQueryMock('asset', 'tickers', {
       returnValue: dsMockUtils.createMockTickerRegistration({
         expiry: dsMockUtils.createMockOption(
           dsMockUtils.createMockMoment(new BigNumber(new Date('10/14/1987').getTime()))
@@ -110,7 +112,7 @@ describe('claimClassicTicker procedure', () => {
   });
 
   it('should throw an error if the ticker has already been claimed', () => {
-    dsMockUtils.createQueryStub('asset', 'tickers', {
+    dsMockUtils.createQueryMock('asset', 'tickers', {
       returnValue: dsMockUtils.createMockTickerRegistration({
         expiry: dsMockUtils.createMockOption(),
         owner: 'someDid',
@@ -146,7 +148,7 @@ describe('claimClassicTicker procedure', () => {
   });
 
   it('should throw an error if the ethereum address that owns the ticker is not the same one that signed', async () => {
-    dsMockUtils.createQueryStub('asset', 'classicTickers', {
+    dsMockUtils.createQueryMock('asset', 'classicTickers', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockClassicTickerRegistration({
           ethOwner: 'notYou',
@@ -176,7 +178,7 @@ describe('claimClassicTicker procedure', () => {
   });
 
   it('should return a claim classic ticker transaction spec', async () => {
-    const transaction = dsMockUtils.createTxStub('asset', 'claimClassicTicker');
+    const transaction = dsMockUtils.createTxMock('asset', 'claimClassicTicker');
     const proc = procedureMockUtils.getInstance<ClaimClassicTickerParams, TickerReservation>(
       mockContext
     );

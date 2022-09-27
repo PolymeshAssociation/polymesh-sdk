@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 import { range } from 'lodash';
-import sinon from 'sinon';
 
 import {
   Asset,
@@ -72,7 +72,7 @@ describe('Permissions class', () => {
 
   describe('method: createGroup', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
@@ -83,10 +83,9 @@ describe('Permissions class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await permissions.createGroup(args);
 
@@ -96,7 +95,7 @@ describe('Permissions class', () => {
 
   describe('method: inviteAgent', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
@@ -108,10 +107,9 @@ describe('Permissions class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await permissions.inviteAgent(args);
 
@@ -121,7 +119,7 @@ describe('Permissions class', () => {
 
   describe('method: removeAgent', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
@@ -132,10 +130,9 @@ describe('Permissions class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await permissions.removeAgent(args);
 
@@ -145,7 +142,7 @@ describe('Permissions class', () => {
 
   describe('method: getGroup', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should retrieve a specific Custom Permission Group', async () => {
@@ -189,13 +186,13 @@ describe('Permissions class', () => {
 
   describe('method: getGroups', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should retrieve all the permission groups of the Asset', async () => {
       const id = new BigNumber(1);
 
-      dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
+      dsMockUtils.createQueryMock('externalAgents', 'groupPermissions', {
         entries: [
           tuple(
             [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockU32(id)],
@@ -223,7 +220,7 @@ describe('Permissions class', () => {
       const otherDid = 'otherDid';
       const customId = new BigNumber(1);
 
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+      dsMockUtils.createQueryMock('externalAgents', 'groupOfAgent', {
         entries: [
           tuple(
             [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(did)],

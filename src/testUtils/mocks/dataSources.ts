@@ -105,8 +105,8 @@ import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient from 'apollo-client';
 import BigNumber from 'bignumber.js';
 import { EventEmitter } from 'events';
+import { when } from 'jest-when';
 import { cloneDeep, map, merge, upperFirst } from 'lodash';
-import sinon, { SinonStub, SinonStubbedInstance } from 'sinon';
 
 import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
 import {
@@ -204,7 +204,7 @@ import {
   TxTags,
   UnsubCallback,
 } from '~/types';
-import { Consts, Extrinsics, GraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
+import { Consts, Extrinsics, GraphqlQuery, PolymeshTx, Queries, Rpcs } from '~/types/internal';
 import { ArgsType, Mutable, tuple } from '~/types/utils';
 import { STATE_RUNTIME_VERSION_CALL, SYSTEM_VERSION_RPC_CALL } from '~/utils/constants';
 
@@ -222,7 +222,7 @@ function createApi(): Mutable<ApiPromise> & EventEmitter {
       apiEmitter.on(event, listener),
     off: (event: string, listener: (...args: unknown[]) => unknown) =>
       apiEmitter.off(event, listener),
-    disconnect: sinon.stub() as () => Promise<void>,
+    disconnect: jest.fn() as () => Promise<void>,
   } as Mutable<ApiPromise> & EventEmitter;
 }
 
@@ -231,12 +231,12 @@ function createApi(): Mutable<ApiPromise> & EventEmitter {
  */
 function createApolloClient(): Mocked<Mutable<ApolloClient<NormalizedCacheObject>>> {
   return {
-    stop: sinon.stub(),
-    query: sinon.stub(),
+    stop: jest.fn(),
+    query: jest.fn(),
   } as unknown as Mocked<Mutable<ApolloClient<NormalizedCacheObject>>>;
 }
 
-let apolloConstructorStub: SinonStub;
+let apolloConstructorMock: jest.Mock;
 
 /**
  * Creates mock websocket class. Contains additional methods for tests to control it
@@ -246,14 +246,14 @@ export class MockWebSocket {
    * @hidden
    */
   onopen(): void {
-    // stub for onopen
+    // mock for onopen
   }
 
   /**
    * @hidden
    */
   onclose(): void {
-    // stub for onclose
+    // mock for onclose
   }
 
   /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -261,21 +261,21 @@ export class MockWebSocket {
    * @hidden
    */
   onerror(_err: Error): void {
-    // stub for onerror
+    // mock for onerror
   }
 
   /**
    * @hidden
    */
   onmessage(_msg: Record<string, unknown>): void {
-    // stub for onmessage
+    // mock for onmessage
   }
 
   /**
    * @hidden
    */
   close(): void {
-    // stub for close
+    // mock for close
   }
 
   /**
@@ -333,7 +333,7 @@ function createWebSocket(): MockWebSocket {
   return new MockWebSocket();
 }
 
-let webSocketConstructorStub: SinonStub;
+let webSocketConstructorMock: jest.Mock;
 
 export type MockContext = Mocked<Context>;
 
@@ -355,7 +355,7 @@ const MockApolloClientClass = class {
    * @hidden
    */
   public constructor() {
-    return apolloConstructorStub();
+    return apolloConstructorMock();
   }
 };
 
@@ -373,31 +373,31 @@ const MockWebSocketClass = class {
    * @hidden
    */
   public constructor() {
-    return webSocketConstructorStub();
+    return webSocketConstructorMock();
   }
 };
 
-let apiPromiseCreateStub: SinonStub;
+let apiPromiseCreateMock: jest.Mock;
 
 const MockApiPromiseClass = class {
   /**
    * @hidden
    */
-  public static create = apiPromiseCreateStub;
+  public static create = apiPromiseCreateMock;
 };
 
 const MockWsProviderClass = class {};
 
-let contextCreateStub: SinonStub;
+let contextCreateMock: jest.Mock;
 
 const MockContextClass = class {
   /**
    * @hidden
    */
-  public static create = contextCreateStub;
+  public static create = contextCreateMock;
 };
 
-let errorStub: SinonStub;
+let errorMock: jest.Mock;
 
 type StatusCallback = (receipt: ISubmittableResult) => void;
 
@@ -455,13 +455,17 @@ interface SigningManagerOptions {
   getExternalSigner?: PolkadotSigner | null;
 }
 
-export interface StubQuery {
-  entries: SinonStub;
-  entriesAt: SinonStub;
-  entriesPaged: SinonStub;
-  at: SinonStub;
-  multi: SinonStub;
-  size: SinonStub;
+export interface MockQuery {
+  entries: jest.Mock;
+  entriesAt: jest.Mock;
+  entriesPaged: jest.Mock;
+  at: jest.Mock;
+  multi: jest.Mock;
+  size: jest.Mock;
+}
+
+export interface MockRpc {
+  raw: jest.Mock;
 }
 
 export enum TxFailReason {
@@ -632,7 +636,7 @@ let constsModule = {} as Consts;
 
 let rpcModule = {} as DecoratedRpc<any, any>;
 
-let queryMultiStub = sinon.stub();
+let queryMultiMock = jest.fn();
 
 const defaultContextOptions: ContextOptions = {
   did: 'someDid',
@@ -751,14 +755,14 @@ let signingManagerOptions = defaultSigningManagerOptions;
  * @hidden
  */
 function configureContext(opts: ContextOptions): void {
-  const getSigningIdentity = sinon.stub();
+  const getSigningIdentity = jest.fn();
   const identity = {
     did: opts.did,
-    hasRoles: sinon.stub().resolves(opts.hasRoles),
-    checkRoles: sinon.stub().resolves(opts.checkRoles),
-    hasValidCdd: sinon.stub().resolves(opts.validCdd),
-    getAssetBalance: sinon.stub().resolves(opts.assetBalance),
-    getPrimaryAccount: sinon.stub().resolves({
+    hasRoles: jest.fn().mockResolvedValue(opts.hasRoles),
+    checkRoles: jest.fn().mockResolvedValue(opts.checkRoles),
+    hasValidCdd: jest.fn().mockResolvedValue(opts.validCdd),
+    getAssetBalance: jest.fn().mockResolvedValue(opts.assetBalance),
+    getPrimaryAccount: jest.fn().mockResolvedValue({
       account: {
         address: opts.primaryAccount,
       },
@@ -769,110 +773,114 @@ function configureContext(opts: ContextOptions): void {
         portfolios: null,
       },
     }),
-    getSecondaryAccounts: sinon.stub().resolves(opts.secondaryAccounts),
+    getSecondaryAccounts: jest.fn().mockResolvedValue(opts.secondaryAccounts),
     authorizations: {
-      getSent: sinon.stub().resolves(opts.sentAuthorizations),
+      getSent: jest.fn().mockResolvedValue(opts.sentAuthorizations),
     },
     assetPermissions: {
-      hasPermissions: sinon.stub().resolves(opts.hasAssetPermissions),
-      checkPermissions: sinon.stub().resolves(opts.checkAssetPermissions),
+      hasPermissions: jest.fn().mockResolvedValue(opts.hasAssetPermissions),
+      checkPermissions: jest.fn().mockResolvedValue(opts.checkAssetPermissions),
     },
-    areSecondaryAccountsFrozen: sinon.stub().resolves(opts.areSecondaryAccountsFrozen),
-    isEqual: sinon.stub().returns(opts.signingIdentityIsEqual),
+    areSecondaryAccountsFrozen: jest.fn().mockResolvedValue(opts.areSecondaryAccountsFrozen),
+    isEqual: jest.fn().mockReturnValue(opts.signingIdentityIsEqual),
   };
   opts.withSigningManager
-    ? getSigningIdentity.resolves(identity)
-    : getSigningIdentity.throws(
-        new Error('The signing Account does not have an associated Identity')
-      );
-  const getSigningAccount = sinon.stub();
+    ? getSigningIdentity.mockResolvedValue(identity)
+    : getSigningIdentity.mockImplementation(() => {
+        throw new Error('The signing Account does not have an associated Identity');
+      });
+  const getSigningAccount = jest.fn();
   opts.withSigningManager
-    ? getSigningAccount.returns({
+    ? getSigningAccount.mockReturnValue({
         address: opts.signingAddress,
-        getBalance: sinon.stub().resolves(opts.balance),
-        getSubsidy: sinon.stub().resolves(opts.subsidy),
-        getIdentity: sinon.stub().resolves(identity),
-        getTransactionHistory: sinon.stub().resolves(opts.transactionHistory),
-        hasPermissions: sinon.stub().resolves(opts.hasPermissions),
-        checkPermissions: sinon.stub().resolves(opts.checkPermissions),
-        isFrozen: sinon.stub().resolves(opts.isFrozen),
-        isEqual: sinon.stub().returns(opts.signingAccountIsEqual),
+        getBalance: jest.fn().mockResolvedValue(opts.balance),
+        getSubsidy: jest.fn().mockResolvedValue(opts.subsidy),
+        getIdentity: jest.fn().mockResolvedValue(identity),
+        getTransactionHistory: jest.fn().mockResolvedValue(opts.transactionHistory),
+        hasPermissions: jest.fn().mockResolvedValue(opts.hasPermissions),
+        checkPermissions: jest.fn().mockResolvedValue(opts.checkPermissions),
+        isFrozen: jest.fn().mockResolvedValue(opts.isFrozen),
+        isEqual: jest.fn().mockReturnValue(opts.signingAccountIsEqual),
       })
-    : getSigningAccount.throws(new Error('There is no Account associated with the SDK'));
+    : getSigningAccount.mockImplementation(() => {
+        throw new Error('There is no Account associated with the SDK');
+      });
   const signingAddress = opts.withSigningManager ? opts.signingAddress : undefined;
-  const getSigningAddress = sinon.stub();
+  const getSigningAddress = jest.fn();
   opts.withSigningManager
-    ? getSigningAddress.returns(signingAddress)
-    : getSigningAddress.throws(
-        new Error('There is no Account associated with the current SDK instance')
-      );
+    ? getSigningAddress.mockReturnValue(signingAddress)
+    : getSigningAddress.mockImplementation(() => {
+        throw new Error('There is no Account associated with the current SDK instance');
+      });
   const nonce = new BigNumber(opts.nonce || -1);
-  const getNonce = sinon.stub();
-  getNonce.returns(nonce);
+  const getNonce = jest.fn();
+  getNonce.mockReturnValue(nonce);
 
-  const queryStub = mockInstanceContainer.apolloInstance.query;
-  const queryStubV2 = mockInstanceContainer.apolloInstanceV2.query;
+  const queryMock = mockInstanceContainer.apolloInstance.query;
+  const queryMockV2 = mockInstanceContainer.apolloInstanceV2.query;
   const contextInstance = {
     signingAddress,
     nonce,
     getSigningIdentity,
     getSigningAccount,
     getSigningAddress,
-    accountBalance: sinon.stub().resolves(opts.balance),
-    accountSubsidy: sinon.stub().resolves(opts.subsidy),
-    getSigningAccounts: sinon.stub().resolves(opts.getSigningAccounts),
-    setSigningAddress: sinon.stub().callsFake(address => {
+    accountBalance: jest.fn().mockResolvedValue(opts.balance),
+    accountSubsidy: jest.fn().mockResolvedValue(opts.subsidy),
+    getSigningAccounts: jest.fn().mockResolvedValue(opts.getSigningAccounts),
+    setSigningAddress: jest.fn().mockImplementation(address => {
       (contextInstance as any).signingAddress = address;
     }),
-    setNonce: sinon.stub().callsFake(txNonce => {
+    setNonce: jest.fn().mockImplementation(txNonce => {
       (contextInstance as any).nonce = new BigNumber(txNonce || -1);
     }),
     getNonce,
-    setSigningManager: sinon.stub(),
-    getExternalSigner: sinon.stub().returns(opts.getExternalSigner),
+    setSigningManager: jest.fn(),
+    getExternalSigner: jest.fn().mockReturnValue(opts.getExternalSigner),
     polymeshApi: mockInstanceContainer.apiInstance,
     middlewareApi: mockInstanceContainer.apolloInstance,
-    queryMiddleware: sinon.stub().callsFake(query => queryStub(query)),
-    queryMiddlewareV2: sinon.stub().callsFake(query => queryStubV2(query)),
+    queryMiddleware: jest.fn().mockImplementation(query => queryMock(query)),
+    queryMiddlewareV2: jest.fn().mockImplementation(query => queryMockV2(query)),
     middlewareApiV2: mockInstanceContainer.apolloInstanceV2,
-    getInvalidDids: sinon.stub().resolves(opts.invalidDids),
-    getProtocolFees: sinon.stub().resolves(opts.transactionFees),
-    getTransactionArguments: sinon.stub().returns([]),
-    getSecondaryAccounts: sinon.stub().returns({ data: opts.secondaryAccounts, next: null }),
-    issuedClaims: sinon.stub().resolves(opts.issuedClaims),
-    getIdentity: sinon.stub().resolves(opts.getIdentity),
-    getIdentityClaimsFromChain: sinon.stub().resolves(opts.getIdentityClaimsFromChain),
-    getIdentityClaimsFromMiddleware: sinon.stub().resolves(opts.getIdentityClaimsFromMiddleware),
-    getIdentityClaimsFromMiddlewareV2: sinon
-      .stub()
-      .resolves(opts.getIdentityClaimsFromMiddlewareV2),
-    getLatestBlock: sinon.stub().resolves(opts.latestBlock),
-    isMiddlewareEnabled: sinon.stub().returns(opts.middlewareEnabled),
-    isMiddlewareAvailable: sinon.stub().resolves(opts.middlewareAvailable),
-    isMiddlewareV2Available: sinon.stub().resolves(opts.middlewareV2Available),
+    getInvalidDids: jest.fn().mockResolvedValue(opts.invalidDids),
+    getProtocolFees: jest.fn().mockResolvedValue(opts.transactionFees),
+    getTransactionArguments: jest.fn().mockReturnValue([]),
+    getSecondaryAccounts: jest.fn().mockReturnValue({ data: opts.secondaryAccounts, next: null }),
+    issuedClaims: jest.fn().mockResolvedValue(opts.issuedClaims),
+    getIdentity: jest.fn().mockResolvedValue(opts.getIdentity),
+    getIdentityClaimsFromChain: jest.fn().mockResolvedValue(opts.getIdentityClaimsFromChain),
+    getIdentityClaimsFromMiddleware: jest
+      .fn()
+      .mockResolvedValue(opts.getIdentityClaimsFromMiddleware),
+    getIdentityClaimsFromMiddlewareV2: jest
+      .fn()
+      .mockResolvedValue(opts.getIdentityClaimsFromMiddlewareV2),
+    getLatestBlock: jest.fn().mockResolvedValue(opts.latestBlock),
+    isMiddlewareEnabled: jest.fn().mockReturnValue(opts.middlewareEnabled),
+    isMiddlewareAvailable: jest.fn().mockResolvedValue(opts.middlewareAvailable),
+    isMiddlewareV2Available: jest.fn().mockResolvedValue(opts.middlewareV2Available),
     isArchiveNode: opts.isArchiveNode,
     ss58Format: opts.ss58Format,
-    disconnect: sinon.stub(),
-    getDividendDistributionsForAssets: sinon
-      .stub()
-      .resolves(opts.getDividendDistributionsForAssets),
-    getNetworkVersion: sinon.stub().resolves(opts.networkVersion),
-    supportsSubsidy: sinon.stub().returns(opts.supportsSubsidy),
-    createType: sinon.stub(),
+    disconnect: jest.fn(),
+    getDividendDistributionsForAssets: jest
+      .fn()
+      .mockResolvedValue(opts.getDividendDistributionsForAssets),
+    getNetworkVersion: jest.fn().mockResolvedValue(opts.networkVersion),
+    supportsSubsidy: jest.fn().mockReturnValue(opts.supportsSubsidy),
+    createType: jest.fn() as jest.Mock<unknown, [unknown]>,
   } as unknown as MockContext;
 
-  contextInstance.clone = sinon.stub<[], Context>().returns(contextInstance);
+  contextInstance.clone = jest.fn().mockReturnValue(contextInstance);
 
   Object.assign(mockInstanceContainer.contextInstance, contextInstance);
 
-  MockContextClass.create = contextCreateStub.resolves(contextInstance);
+  MockContextClass.create = contextCreateMock.mockResolvedValue(contextInstance);
 }
 
 /**
  * @hidden
  */
 function initContext(opts?: ContextOptions): void {
-  contextCreateStub = sinon.stub();
+  contextCreateMock = jest.fn();
 
   contextOptions = { ...defaultContextOptions, ...opts };
 
@@ -937,12 +945,12 @@ function updateConsts(mod?: Consts): void {
 /**
  * @hidden
  */
-function updateQueryMulti(stub?: SinonStub): void {
-  const updateTo = stub || queryMultiStub;
+function updateQueryMulti(mock?: jest.Mock): void {
+  const updateTo = mock || queryMultiMock;
 
-  queryMultiStub = updateTo;
+  queryMultiMock = updateTo;
 
-  mockInstanceContainer.apiInstance.queryMulti = queryMultiStub;
+  mockInstanceContainer.apiInstance.queryMulti = queryMultiMock;
 }
 
 /**
@@ -984,9 +992,9 @@ function initConsts(): void {
  * Mock queryMulti
  */
 function initQueryMulti(): void {
-  const stub = sinon.stub();
+  const mock = jest.fn();
 
-  updateQueryMulti(stub);
+  updateQueryMulti(mock);
 }
 
 /**
@@ -994,7 +1002,7 @@ function initQueryMulti(): void {
  */
 function initApi(): void {
   mockInstanceContainer.apiInstance.registry = 'registry' as unknown as Registry;
-  mockInstanceContainer.apiInstance.createType = sinon.stub();
+  mockInstanceContainer.apiInstance.createType = jest.fn();
   mockInstanceContainer.apiInstance.runtimeVersion = {} as RuntimeVersion;
 
   initTx();
@@ -1003,9 +1011,13 @@ function initApi(): void {
   initConsts();
   initQueryMulti();
 
-  mockInstanceContainer.apiInstance.at = sinon.stub().resolves(mockInstanceContainer.apiInstance);
-  apiPromiseCreateStub = sinon.stub();
-  MockApiPromiseClass.create = apiPromiseCreateStub.resolves(mockInstanceContainer.apiInstance);
+  mockInstanceContainer.apiInstance.at = jest
+    .fn()
+    .mockResolvedValue(mockInstanceContainer.apiInstance);
+  apiPromiseCreateMock = jest.fn();
+  MockApiPromiseClass.create = apiPromiseCreateMock.mockResolvedValue(
+    mockInstanceContainer.apiInstance
+  );
 }
 
 /**
@@ -1013,9 +1025,9 @@ function initApi(): void {
  */
 function configureSigningManager(opts: SigningManagerOptions): void {
   const signingManagerInstance = {
-    getAccounts: sinon.stub().resolves(opts.getAccounts),
-    getExternalSigner: sinon.stub().returns(opts.getExternalSigner),
-    setSs58Format: sinon.stub(),
+    getAccounts: jest.fn().mockResolvedValue(opts.getAccounts),
+    getExternalSigner: jest.fn().mockReturnValue(opts.getExternalSigner),
+    setSs58Format: jest.fn(),
   };
 
   Object.assign(
@@ -1079,12 +1091,14 @@ export function initMocks(opts?: {
   initSigningManager(opts?.signingManagerOptions);
 
   // Apollo
-  apolloConstructorStub = sinon.stub().returns(mockInstanceContainer.apolloInstance);
+  apolloConstructorMock = jest.fn().mockReturnValue(mockInstanceContainer.apolloInstance);
 
-  webSocketConstructorStub = sinon.stub().returns(mockInstanceContainer.webSocketInstance);
+  webSocketConstructorMock = jest.fn().mockReturnValue(mockInstanceContainer.webSocketInstance);
 
   txMocksData.clear();
-  errorStub = sinon.stub().throws(new Error('Error'));
+  errorMock = jest.fn().mockImplementation(() => {
+    throw new Error('Error');
+  });
 }
 
 /**
@@ -1111,14 +1125,14 @@ export function reset(): void {
 
 /**
  * @hidden
- * Create and returns a mocked transaction. Each call will create a new version of the stub
+ * Create and returns a mocked transaction. Each call will create a new version of the mock
  *
  * @param mod - name of the module
  * @param tx - name of the transaction function
  * @param autoResolve - if set to a status, the transaction will resolve immediately with that status.
  *  If set to false, the transaction lifecycle will be controlled by {@link updateTxStatus}
  */
-export function createTxStub<
+export function createTxMock<
   ModuleName extends keyof Extrinsics,
   TransactionName extends keyof Extrinsics[ModuleName]
 >(
@@ -1129,7 +1143,7 @@ export function createTxStub<
     gas?: Balance;
     meta?: { args: Array<{ name: string; type: string }> };
   } = {}
-): PolymeshTx<ArgsType<Extrinsics[ModuleName][TransactionName]>> & SinonStub {
+): PolymeshTx<ArgsType<Extrinsics[ModuleName][TransactionName]>> & jest.Mock {
   let runtimeModule = txModule[mod];
 
   if (!runtimeModule) {
@@ -1144,15 +1158,15 @@ export function createTxStub<
     meta = { args: [] },
   } = opts;
 
-  const transaction = sinon.stub().returns({
+  const transaction = jest.fn().mockReturnValue({
     method: tx, // should be a `Call` object, but this is enough for testing
     hash: tx,
-    signAndSend: sinon.stub().callsFake((_, __, cb: StatusCallback) => {
+    signAndSend: jest.fn().mockImplementation((_, __, cb: StatusCallback) => {
       if (autoResolve === MockTxStatus.Rejected) {
         return Promise.reject(new Error('Cancelled'));
       }
 
-      const unsubCallback = sinon.stub();
+      const unsubCallback = jest.fn();
 
       txMocksData.set(runtimeModule[tx], {
         statusCallback: cb,
@@ -1168,7 +1182,7 @@ export function createTxStub<
       return new Promise(resolve => setImmediate(() => resolve(unsubCallback)));
     }),
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
-    paymentInfo: sinon.stub().resolves({ partialFee: gas }),
+    paymentInfo: jest.fn().mockResolvedValue({ partialFee: gas }),
   }) as unknown as Extrinsics[ModuleName][TransactionName];
 
   (transaction as any).section = mod;
@@ -1184,41 +1198,45 @@ export function createTxStub<
   return instance.tx[mod][tx] as unknown as PolymeshTx<
     ArgsType<Extrinsics[ModuleName][TransactionName]>
   > &
-    SinonStub;
+    jest.Mock;
 }
 
 /**
  * @hidden
- * Create and return an apollo query stub
+ * Create and return an apollo query mock
  *
  * @param query - apollo document node
  * @param returnValue
  */
-export function createApolloQueryStub(query: GraphqlQuery<any>, returnData: unknown): SinonStub {
-  const { query: stub } = mockInstanceContainer.apolloInstance;
+export function createApolloQueryMock(query: GraphqlQuery<any>, returnData: unknown): jest.Mock {
+  const { query: mock } = mockInstanceContainer.apolloInstance;
 
-  stub.withArgs(query).resolves({
-    data: returnData,
-  });
+  when(mock)
+    .calledWith(query)
+    .mockResolvedValue({
+      data: returnData,
+    } as any);
 
-  return stub;
+  return mock;
 }
 
 /**
  * @hidden
- * Create and return an apollo query stub
+ * Create and return an apollo query mock
  *
  * @param query - apollo document node
  * @param returnValue
  */
-export function createApolloV2QueryStub(query: GraphqlQuery<any>, returnData: unknown): SinonStub {
-  const { query: stub } = mockInstanceContainer.apolloInstanceV2;
+export function createApolloV2QueryMock(query: GraphqlQuery<any>, returnData: unknown): jest.Mock {
+  const { query: mock } = mockInstanceContainer.apolloInstanceV2;
 
-  stub.withArgs(query).resolves({
-    data: returnData,
-  });
+  when(mock)
+    .calledWith(query)
+    .mockResolvedValue({
+      data: returnData,
+    } as any);
 
-  return stub;
+  return mock;
 }
 
 /**
@@ -1228,27 +1246,29 @@ export function createApolloV2QueryStub(query: GraphqlQuery<any>, returnData: un
 function mockQueries(
   queries: { query: GraphqlQuery<any>; returnData: unknown }[],
   instance: Mocked<Mutable<ApolloClient<NormalizedCacheObject>>>
-): sinon.SinonStub {
-  const { query: stub } = instance;
+): jest.Mock {
+  const { query: mock } = instance;
 
   queries.forEach(({ query, returnData: data }) => {
-    stub.withArgs(query).resolves({
-      data,
-    });
+    when(mock)
+      .calledWith(query)
+      .mockResolvedValue({
+        data,
+      } as any);
   });
 
-  return stub;
+  return mock;
 }
 
 /**
  * @hidden
- * Create and return an apollo stub for multiple queries
+ * Create and return an apollo mock for multiple queries
  *
- * @param queries - query and returnData for each stubbed query
+ * @param queries - query and returnData for each mocked query
  */
-export function createApolloMultipleQueriesStub(
+export function createApolloMultipleQueriesMock(
   queries: { query: GraphqlQuery<any>; returnData: unknown }[]
-): sinon.SinonStub {
+): jest.Mock {
   const instance = mockInstanceContainer.apolloInstance;
 
   return mockQueries(queries, instance);
@@ -1256,13 +1276,13 @@ export function createApolloMultipleQueriesStub(
 
 /**
  * @hidden
- * Create and return an apollo stub for multiple V2 queries
+ * Create and return an apollo mock for multiple V2 queries
  *
- * @param queries - query and returnData for each stubbed query
+ * @param queries - query and returnData for each mocked query
  */
-export function createApolloMultipleV2QueriesStub(
+export function createApolloMultipleV2QueriesMock(
   queries: { query: GraphqlQuery<any>; returnData: unknown }[]
-): SinonStub {
+): jest.Mock {
   const instance = mockInstanceContainer.apolloInstanceV2;
 
   return mockQueries(queries, instance);
@@ -1270,12 +1290,12 @@ export function createApolloMultipleV2QueriesStub(
 
 /**
  * @hidden
- * Create and return a query stub
+ * Create and return a query mock
  *
  * @param mod - name of the module
  * @param query - name of the query function
  */
-export function createQueryStub<
+export function createQueryMock<
   ModuleName extends keyof Queries,
   QueryName extends keyof Queries[ModuleName]
 >(
@@ -1287,7 +1307,7 @@ export function createQueryStub<
     multi?: unknown;
     size?: BigNumber;
   }
-): Queries[ModuleName][QueryName] & SinonStub & StubQuery {
+): Queries[ModuleName][QueryName] & jest.Mock & MockQuery {
   let runtimeModule = queryModule[mod];
 
   if (!runtimeModule) {
@@ -1295,23 +1315,23 @@ export function createQueryStub<
     queryModule[mod] = runtimeModule;
   }
 
-  type QueryStub = Queries[ModuleName][QueryName] & SinonStub & StubQuery;
+  type QueryMock = Queries[ModuleName][QueryName] & jest.Mock & MockQuery;
 
-  let stub: QueryStub;
+  let mock: QueryMock;
 
   if (!runtimeModule[query]) {
-    stub = sinon.stub() as unknown as QueryStub;
-    stub.entries = sinon.stub();
-    stub.entriesPaged = sinon.stub();
-    stub.at = sinon.stub();
-    stub.multi = sinon.stub();
-    stub.size = sinon.stub();
-    runtimeModule[query] = stub;
+    mock = jest.fn() as unknown as QueryMock;
+    mock.entries = jest.fn();
+    mock.entriesPaged = jest.fn();
+    mock.at = jest.fn();
+    mock.multi = jest.fn();
+    mock.size = jest.fn();
+    runtimeModule[query] = mock;
 
     updateQuery();
   } else {
     const instance = mockInstanceContainer.apiInstance;
-    stub = instance.query[mod][query] as QueryStub;
+    mock = instance.query[mod][query] as QueryMock;
   }
 
   const entries = opts?.entries ?? [];
@@ -1320,58 +1340,70 @@ export function createQueryStub<
     { args: keys, toHex: (): string => `key${index}` },
     value,
   ]);
-  stub.entries.resolves(entryResults);
-  stub.entriesPaged.resolves(entryResults);
+  mock.entries.mockResolvedValue(entryResults);
+  mock.entriesPaged.mockResolvedValue(entryResults);
 
   if (opts?.multi) {
-    stub.multi.resolves(opts.multi);
+    mock.multi.mockResolvedValue(opts.multi);
   }
   if (typeof opts?.size !== 'undefined') {
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
-    stub.size.resolves(createMockU64(new BigNumber(opts.size)));
+    mock.size.mockResolvedValue(createMockU64(new BigNumber(opts.size)));
   }
   if (opts?.returnValue) {
-    stub.resolves(opts.returnValue);
-    stub.at.resolves(opts.returnValue);
+    mock.mockResolvedValue(opts.returnValue);
+    mock.at.mockResolvedValue(opts.returnValue);
   }
 
-  return stub;
+  return mock;
 }
 
 let count = 0;
 
 /**
  * @hidden
- * Create and return a rpc stub
+ * Create and return a rpc mock
  *
  * @param mod - name of the module
  * @param rpc - name of the rpc function
  */
-export function createRpcStub(
-  mod: string,
-  rpc: string,
+export function createRpcMock<
+  ModuleName extends keyof Rpcs,
+  RpcName extends keyof Rpcs[ModuleName]
+>(
+  mod: ModuleName,
+  rpc: RpcName,
   opts?: {
     returnValue?: unknown;
   }
-): SinonStub {
+): Rpcs[ModuleName][RpcName] & jest.Mock {
   let runtimeModule: any = rpcModule[mod];
 
   if (!runtimeModule) {
     runtimeModule = rpcModule[mod] = {};
   }
 
-  const stub: SinonStub = sinon.stub();
-  runtimeModule[rpc] = stub;
+  type RpcMock = Rpcs[ModuleName][RpcName] & jest.Mock & MockRpc;
 
-  updateRpc();
+  let mock: RpcMock;
 
-  if (opts?.returnValue) {
-    stub.resolves(opts.returnValue);
+  if (!runtimeModule[rpc]) {
+    mock = jest.fn() as unknown as RpcMock;
+    mock.raw = jest.fn();
+    runtimeModule[rpc] = mock;
+    updateRpc();
+  } else {
+    const instance = mockInstanceContainer.apiInstance;
+    mock = instance.rpc[mod][rpc] as RpcMock;
   }
 
-  (stub as any).count = count++;
+  if (opts?.returnValue) {
+    mock.mockResolvedValue(opts.returnValue);
+  }
 
-  return stub;
+  (mock as any).count = count++;
+
+  return mock;
 }
 
 /**
@@ -1412,8 +1444,8 @@ export function setConstMock<
 /**
  * @hidden
  */
-export function getQueryMultiStub(): SinonStub {
-  return queryMultiStub;
+export function getQueryMultiMock(): jest.Mock {
+  return queryMultiMock;
 }
 
 /**
@@ -1461,7 +1493,9 @@ export function updateTxStatus<
   }
 
   if (status === MockTxStatus.FailedToUnsubscribe) {
-    (txMockData.unsubCallback as sinon.SinonStub).throws('Unsub error');
+    (txMockData.unsubCallback as jest.Mock).mockImplementation(() => {
+      throw new Error('Unsub error');
+    });
   }
 
   txMockData.statusCallback(statusToReceipt(status, failReason));
@@ -1474,7 +1508,9 @@ export function updateTxStatus<
 export function throwOnMiddlewareQuery(err?: unknown): void {
   const instance = mockInstanceContainer.apolloInstance;
 
-  instance.query.throws(err || new Error('Something went wrong'));
+  instance.query.mockImplementation(() => {
+    throw err || new Error('Something went wrong');
+  });
 }
 
 /**
@@ -1484,7 +1520,9 @@ export function throwOnMiddlewareQuery(err?: unknown): void {
 export function throwOnMiddlewareV2Query(err?: unknown): void {
   const instance = mockInstanceContainer.apolloInstanceV2;
 
-  instance.query.throws(err || new Error('Something went wrong'));
+  instance.query.mockImplementation(() => {
+    throw err || new Error('Something went wrong');
+  });
 }
 
 /**
@@ -1492,7 +1530,7 @@ export function throwOnMiddlewareV2Query(err?: unknown): void {
  * Make calls to `Context.create` throw an error
  */
 export function throwOnContextCreation(): void {
-  MockContextClass.create = errorStub;
+  MockContextClass.create = errorMock;
 }
 
 /**
@@ -1500,7 +1538,11 @@ export function throwOnContextCreation(): void {
  * Make calls to `ApiPromise.create` throw an error
  */
 export function throwOnApiCreation(error?: unknown): void {
-  MockApiPromiseClass.create = error ? sinon.stub().throws(error) : errorStub;
+  MockApiPromiseClass.create = error
+    ? jest.fn().mockImplementation(() => {
+        throw error;
+      })
+    : errorMock;
 }
 
 /**
@@ -1510,16 +1552,16 @@ export function throwOnApiCreation(error?: unknown): void {
  * @param balance - new account balance
  */
 export function setContextAccountBalance(balance: AccountBalance): void {
-  mockInstanceContainer.contextInstance.accountBalance.returns(balance);
+  mockInstanceContainer.contextInstance.accountBalance.mockResolvedValue(balance as any);
 }
 
 /**
  * @hidden
  * Retrieve an instance of the mocked Polkadot API
  */
-export function getApiInstance(): ApiPromise & SinonStubbedInstance<ApiPromise> & EventEmitter {
+export function getApiInstance(): ApiPromise & jest.Mocked<ApiPromise> & EventEmitter {
   return mockInstanceContainer.apiInstance as unknown as ApiPromise &
-    SinonStubbedInstance<ApiPromise> &
+    jest.Mocked<ApiPromise> &
     EventEmitter;
 }
 
@@ -1536,9 +1578,9 @@ export function getWebSocketInstance(): MockWebSocket {
  * Retrieve an instance of the mocked Apollo Client
  */
 export function getMiddlewareApi(): ApolloClient<NormalizedCacheObject> &
-  SinonStubbedInstance<ApolloClient<NormalizedCacheObject>> {
-  return mockInstanceContainer.apolloInstance as ApolloClient<NormalizedCacheObject> &
-    SinonStubbedInstance<ApolloClient<NormalizedCacheObject>>;
+  jest.Mocked<ApolloClient<NormalizedCacheObject>> {
+  return mockInstanceContainer.apolloInstance as unknown as ApolloClient<NormalizedCacheObject> &
+    jest.Mocked<ApolloClient<NormalizedCacheObject>>;
 }
 
 /**
@@ -1546,25 +1588,25 @@ export function getMiddlewareApi(): ApolloClient<NormalizedCacheObject> &
  * Retrieve an instance of the mocked v2 Apollo Client
  */
 export function getMiddlewareApiV2(): ApolloClient<NormalizedCacheObject> &
-  SinonStubbedInstance<ApolloClient<NormalizedCacheObject>> {
-  return mockInstanceContainer.apolloInstanceV2 as ApolloClient<NormalizedCacheObject> &
-    SinonStubbedInstance<ApolloClient<NormalizedCacheObject>>;
+  jest.Mocked<ApolloClient<NormalizedCacheObject>> {
+  return mockInstanceContainer.apolloInstanceV2 as unknown as ApolloClient<NormalizedCacheObject> &
+    jest.Mocked<ApolloClient<NormalizedCacheObject>>;
 }
 
 /**
  * @hidden
- * Retrieve the stub of the createType method
+ * Retrieve the mock of the createType method
  */
-export function getCreateTypeStub(): SinonStub {
-  return mockInstanceContainer.apiInstance.createType as SinonStub;
+export function getCreateTypeMock(): jest.Mock {
+  return mockInstanceContainer.apiInstance.createType as jest.Mock;
 }
 
 /**
  * @hidden
- * Retrieve the stub of the at method
+ * Retrieve the mock of the at method
  */
-export function getAtStub(): SinonStub {
-  return mockInstanceContainer.apiInstance.at as SinonStub;
+export function getAtMock(): jest.Mock {
+  return mockInstanceContainer.apiInstance.at as jest.Mock;
 }
 
 /**
@@ -1580,10 +1622,10 @@ export function getContextInstance(opts?: ContextOptions): MockContext {
 
 /**
  * @hidden
- * Retrieve the stub of the `Context.create` method
+ * Retrieve the mock of the `Context.create` method
  */
-export function getContextCreateStub(): SinonStub {
-  return contextCreateStub;
+export function getContextCreateMock(): jest.Mock {
+  return contextCreateMock;
 }
 
 /**
@@ -1618,7 +1660,7 @@ function isOption<T extends Codec>(codec: any): codec is Option<T> {
   return typeof codec?.unwrap === 'function';
 }
 
-export type MockCodec<C extends Codec> = C & { eq: sinon.SinonStub };
+export type MockCodec<C extends Codec> = C & { eq: jest.Mock };
 
 /**
  * @hidden
@@ -1631,7 +1673,7 @@ const createMockCodec = <T extends Codec>(codec: unknown, isEmpty: boolean): Moc
 
   (clone as any)._isCodec = true;
   clone.isEmpty = isEmpty;
-  clone.eq = sinon.stub();
+  clone.eq = jest.fn();
 
   return clone;
 };

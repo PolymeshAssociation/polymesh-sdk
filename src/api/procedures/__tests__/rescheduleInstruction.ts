@@ -1,6 +1,6 @@
 import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Params, prepareRescheduleInstruction } from '~/api/procedures/rescheduleInstruction';
 import { Context, Instruction } from '~/internal';
@@ -18,18 +18,18 @@ describe('rescheduleInstruction procedure', () => {
   const id = new BigNumber(1);
   const rawId = dsMockUtils.createMockU64(id);
   let mockContext: Mocked<Context>;
-  let bigNumberToU64Stub: sinon.SinonStub<[BigNumber, Context], u64>;
+  let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
+    bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    bigNumberToU64Stub.withArgs(id, mockContext).returns(rawId);
+    when(bigNumberToU64Spy).calledWith(id, mockContext).mockReturnValue(rawId);
     entityMockUtils.configureMocks({
       instructionOptions: {
         details: {
@@ -70,7 +70,7 @@ describe('rescheduleInstruction procedure', () => {
   it('should return a reschedule Instruction transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('settlement', 'rescheduleInstruction');
+    const transaction = dsMockUtils.createTxMock('settlement', 'rescheduleInstruction');
 
     const result = await prepareRescheduleInstruction.call(proc, {
       id,
