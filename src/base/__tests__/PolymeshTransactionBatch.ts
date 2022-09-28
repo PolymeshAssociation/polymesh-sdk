@@ -30,6 +30,7 @@ describe('Polymesh Transaction Batch class', () => {
   const txSpec = {
     signingAddress: 'signingAddress',
     signer: 'signer' as PolkadotSigner,
+    mortality: { immortal: false } as const,
   };
 
   afterEach(() => {

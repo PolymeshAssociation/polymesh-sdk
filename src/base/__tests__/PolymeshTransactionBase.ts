@@ -46,6 +46,7 @@ describe('Polymesh Transaction Base class', () => {
     signer: 'signer' as PolkadotSigner,
     isCritical: false,
     fee: new BigNumber(100),
+    mortality: { immortal: false } as const,
   };
 
   afterEach(() => {
@@ -553,6 +554,54 @@ describe('Polymesh Transaction Base class', () => {
         "The caller Account does not have enough POLYX balance to pay this transaction's fees"
       );
       expect(tx.status).toBe(TransactionStatus.Failed);
+    });
+
+    it('should call signAndSend with era 0 when given an immortal mortality option', async () => {
+      const transaction = dsMockUtils.createTxMock('staking', 'bond');
+      const args = tuple('FOO');
+      const txWithArgsMock = transaction(...args);
+
+      const tx = new PolymeshTransaction(
+        {
+          ...txSpec,
+          mortality: { immortal: true },
+          transaction,
+          args,
+          resolver: undefined,
+        },
+        context
+      );
+
+      await tx.run();
+      expect(txWithArgsMock.signAndSend).toHaveBeenCalledWith(
+        txSpec.signingAddress,
+        expect.objectContaining({ era: 0 }),
+        expect.any(Function)
+      );
+    });
+
+    it('should call signAndSend with the blocksToLive when given a mortal mortality option', async () => {
+      const transaction = dsMockUtils.createTxMock('staking', 'bond');
+      const args = tuple('FOO');
+      const txWithArgsMock = transaction(...args);
+
+      const tx = new PolymeshTransaction(
+        {
+          ...txSpec,
+          mortality: { immortal: false, blocksToLive: new BigNumber(7) },
+          transaction,
+          args,
+          resolver: undefined,
+        },
+        context
+      );
+
+      await tx.run();
+      expect(txWithArgsMock.signAndSend).toHaveBeenCalledWith(
+        txSpec.signingAddress,
+        expect.objectContaining({ era: 7 }),
+        expect.any(Function)
+      );
     });
   });
 

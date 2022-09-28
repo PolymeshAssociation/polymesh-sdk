@@ -141,6 +141,7 @@ describe('createTransactionBatch procedure', () => {
             resolver: 1,
             signingAddress: 'someAddress',
             signer: {} as PolkadotSigner,
+            mortality: { immortal: false },
           },
           mockContext
         ),
@@ -152,6 +153,7 @@ describe('createTransactionBatch procedure', () => {
             transformer: (val): number => val * 2,
             signingAddress: 'someAddress',
             signer: {} as PolkadotSigner,
+            mortality: { immortal: false },
           },
           mockContext
         ),

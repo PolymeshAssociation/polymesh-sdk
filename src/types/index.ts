@@ -1443,7 +1443,34 @@ export interface ProcedureOpts {
    * @note the passed value can be either the nonce itself or a function that returns the nonce. This allows, for example, passing a closure that increases the returned value every time it's called, or a function that fetches the nonce from the chain or a different source
    */
   nonce?: BigNumber | Promise<BigNumber> | (() => BigNumber | Promise<BigNumber>);
+
+  /**
+   * This option allows for transactions that never expire, aka "immortal". By default, a transaction is only valid for approximately 5 minutes (250 blocks) after its construction. Allows for transaction construction to be decoupled from its submission, such as requiring manual approval for the signing or providing "at least once" guarantees.
+   *
+   * More information can be found [here](https://wiki.polkadot.network/docs/build-protocol-info#transaction-mortality). Note the Polymesh chain will **never** reap Accounts, so the risk of a replay attack is mitigated.
+   */
+  mortality?: MortalityProcedureOpt;
 }
+
+/**
+ * This transaction will never expire
+ */
+export interface ImmortalProcedureOptValue {
+  readonly immortal: true;
+}
+
+/**
+ * This transaction will be rejected if not included after a while (at most a few hours, by default 5 minutes). Not passing `blocksToLive` is equivalent to the default behavior
+ */
+export interface MortalProcedureOptValue {
+  readonly immortal: false;
+  /**
+   * Either the default or an "immortal" transaction should work for most use cases. If you insist on setting this value, it should not exceed the chain's `BlockHashCount` (250). A block should be produced every 6 seconds.
+   */
+  readonly blocksToLive?: BigNumber;
+}
+
+export type MortalityProcedureOpt = ImmortalProcedureOptValue | MortalProcedureOptValue;
 
 export interface CreateTransactionBatchProcedureMethod {
   <ReturnValues extends readonly [...unknown[]]>(
