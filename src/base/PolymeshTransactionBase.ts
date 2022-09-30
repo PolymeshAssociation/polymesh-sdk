@@ -263,8 +263,7 @@ export abstract class PolymeshTransactionBase<
     const { signingAddress, signer, mortality, context } = this;
 
     const nonce = context.getNonce().toNumber();
-    // era represents how many blocks the transaction should be valid for
-    const era = mortality.immortal ? 0 : mortality.blocksToLive?.toNumber();
+    const era = mortality.immortal ? 0 : undefined;
 
     this.updateStatus(TransactionStatus.Unapproved);
 

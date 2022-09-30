@@ -579,30 +579,6 @@ describe('Polymesh Transaction Base class', () => {
         expect.any(Function)
       );
     });
-
-    it('should call signAndSend with the blocksToLive when given a mortal mortality option', async () => {
-      const transaction = dsMockUtils.createTxMock('staking', 'bond');
-      const args = tuple('FOO');
-      const txWithArgsMock = transaction(...args);
-
-      const tx = new PolymeshTransaction(
-        {
-          ...txSpec,
-          mortality: { immortal: false, blocksToLive: new BigNumber(7) },
-          transaction,
-          args,
-          resolver: undefined,
-        },
-        context
-      );
-
-      await tx.run();
-      expect(txWithArgsMock.signAndSend).toHaveBeenCalledWith(
-        txSpec.signingAddress,
-        expect.objectContaining({ era: 7 }),
-        expect.any(Function)
-      );
-    });
   });
 
   describe('method: onStatusChange', () => {

@@ -1460,14 +1460,10 @@ export interface ImmortalProcedureOptValue {
 }
 
 /**
- * This transaction will be rejected if not included after a while (at most a few hours, by default 5 minutes). Not passing `blocksToLive` is equivalent to the default behavior
+ * This transaction will be rejected if not included in a block after several minutes
  */
 export interface MortalProcedureOptValue {
   readonly immortal: false;
-  /**
-   * Either the default or an "immortal" transaction should work for most use cases. If you insist on setting this value, it should not exceed the chain's `BlockHashCount` (250). A block should be produced every 6 seconds.
-   */
-  readonly blocksToLive?: BigNumber;
 }
 
 export type MortalityProcedureOpt = ImmortalProcedureOptValue | MortalProcedureOptValue;
