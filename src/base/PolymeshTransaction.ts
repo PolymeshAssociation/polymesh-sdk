@@ -4,7 +4,7 @@ import BigNumber from 'bignumber.js';
 
 import { Context, PolymeshTransactionBase } from '~/internal';
 import { TxTag, TxTags } from '~/types';
-import { PolymeshTx, TransactionSigningData, TransactionSpec } from '~/types/internal';
+import { PolymeshTx, TransactionConstructionData, TransactionSpec } from '~/types/internal';
 import { transactionToTxTag } from '~/utils/conversion';
 
 /**
@@ -74,7 +74,7 @@ export class PolymeshTransaction<
    */
   constructor(
     transactionSpec: TransactionSpec<ReturnValue, Args, TransformedReturnValue> &
-      TransactionSigningData,
+      TransactionConstructionData,
     context: Context
   ) {
     const { args = [], feeMultiplier, transaction, fee, paidForBy, ...rest } = transactionSpec;

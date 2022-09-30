@@ -30,6 +30,7 @@ import {
   ClaimType,
   InputStatClaim,
   KnownAssetType,
+  MortalityProcedureOpt,
   PermissionGroupType,
   Role,
   SignerValue,
@@ -221,15 +222,22 @@ export type GenericTransactionSpec<ReturnValue> =
   | BatchTransactionSpec<ReturnValue, unknown[][]>
   | TransactionSpec<ReturnValue, unknown[]>;
 
-export interface TransactionSigningData {
+/**
+ * Additional information for constructing the final transaction
+ */
+export interface TransactionConstructionData {
   /**
-   * Account that will sign the transaction
+   * address of the key that will sign the transaction
    */
   signingAddress: string;
   /**
    * object that handles the payload signing logic
    */
   signer: PolkadotSigner;
+  /**
+   * how long the transaction should be valid for
+   */
+  mortality: MortalityProcedureOpt;
 }
 
 export interface AuthTarget {

@@ -10,7 +10,7 @@ import {
   isResolverFunction,
   MapTxDataWithFees,
   MapTxWithArgs,
-  TransactionSigningData,
+  TransactionConstructionData,
 } from '~/types/internal';
 import { transactionToTxTag, u32ToBigNumber } from '~/utils/conversion';
 import { filterEventRecords, mergeReceipts } from '~/utils/internal';
@@ -55,7 +55,7 @@ export class PolymeshTransactionBatch<
    */
   constructor(
     transactionSpec: BatchTransactionSpec<ReturnValue, Args, TransformedReturnValue> &
-      TransactionSigningData,
+      TransactionConstructionData,
     context: Context
   ) {
     const { transactions, ...rest } = transactionSpec;
@@ -160,7 +160,8 @@ export class PolymeshTransactionBatch<
     | PolymeshTransaction<void>
     | PolymeshTransaction<ReturnValue, TransformedReturnValue>
   )[] {
-    const { signingAddress, signer, context } = this;
+    const { signingAddress, signer, mortality, context } = this;
+
     const { transactions, resolver, transformer } =
       PolymeshTransactionBatch.toTransactionSpec(this);
 
@@ -175,6 +176,7 @@ export class PolymeshTransactionBatch<
         signingAddress,
         transaction,
         args,
+        mortality,
       };
 
       let newTransaction;

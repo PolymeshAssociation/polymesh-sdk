@@ -22,6 +22,7 @@ describe('Polymesh Transaction class', () => {
     signingAddress: 'signingAddress',
     signer: 'signer' as PolkadotSigner,
     fee: new BigNumber(100),
+    mortality: { immortal: true },
   };
 
   afterEach(() => {

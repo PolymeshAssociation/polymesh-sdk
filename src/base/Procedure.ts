@@ -275,6 +275,11 @@ export class Procedure<Args = void, ReturnValue = void, Storage = Record<string,
   ): Promise<GenericPolymeshTransaction<ReturnValue, TransformedReturnValue>> {
     try {
       const { args: procArgs, transformer } = args;
+
+      const mortality = opts?.mortality || {
+        immortal: false,
+      };
+
       const ctx = await this.setup(procArgs, context, opts);
 
       // parallelize the async calls
@@ -346,6 +351,7 @@ export class Procedure<Args = void, ReturnValue = void, Storage = Record<string,
         ...procedureResult,
         signer,
         signingAddress,
+        mortality,
         transformer,
       };
 
