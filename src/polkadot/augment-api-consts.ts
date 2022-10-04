@@ -21,7 +21,6 @@ declare module '@polkadot/api-base/types/consts' {
       assetMetadataValueMaxLength: u32 & AugmentedConst<ApiType>;
       assetNameMaxLength: u32 & AugmentedConst<ApiType>;
       fundingRoundNameMaxLength: u32 & AugmentedConst<ApiType>;
-      maxNumberOfTMExtensionForAsset: u32 & AugmentedConst<ApiType>;
     };
     authorship: {
       /**
