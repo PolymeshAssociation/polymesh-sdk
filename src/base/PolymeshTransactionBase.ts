@@ -262,15 +262,15 @@ export abstract class PolymeshTransactionBase<
   private async internalRun(): Promise<ISubmittableResult> {
     const { signingAddress, signer, mortality, context } = this;
 
+    // era is how many blocks the transaction remains valid for, `undefined` for default
+    const era = mortality.immortal ? 0 : mortality.lifetime?.toNumber();
     const nonce = context.getNonce().toNumber();
-    const era = mortality.immortal ? 0 : undefined;
 
     this.updateStatus(TransactionStatus.Unapproved);
 
     return new Promise((resolve, reject) => {
       const txWithArgs = this.composeTx();
       let settingBlockData = Promise.resolve();
-
       const gettingUnsub = txWithArgs.signAndSend(
         signingAddress,
         { nonce, signer, era },
@@ -280,10 +280,10 @@ export abstract class PolymeshTransactionBase<
           let unsubscribing = Promise.resolve();
           let extrinsicFailedEvent;
 
-          // isCompleted implies status is one of: isFinalized, isInBlock isError
+          // isCompleted implies status is one of: isFinalized, isInBlock or isError
           if (receipt.isCompleted) {
             if (receipt.isInBlock) {
-              const blockHash = status.asInBlock;
+              const inBlockHash = status.asInBlock;
 
               /*
                * this must be done to ensure that the block hash and number are set before the success event
@@ -291,8 +291,8 @@ export abstract class PolymeshTransactionBase<
                *   one resolves
                */
               settingBlockData = defusePromise(
-                this.context.polymeshApi.rpc.chain.getBlock(blockHash).then(({ block }) => {
-                  this.blockHash = hashToString(blockHash);
+                this.context.polymeshApi.rpc.chain.getBlock(inBlockHash).then(({ block }) => {
+                  this.blockHash = hashToString(inBlockHash);
                   this.blockNumber = u32ToBigNumber(block.header.number.unwrap());
 
                   // we know that the index has to be set by the time the transaction is included in a block
