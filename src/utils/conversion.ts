@@ -14,6 +14,7 @@ import {
   PalletCorporateActionsDistribution,
   PalletCorporateActionsInitiateCorporateActionArgs,
   PalletMultisigProposalStatus,
+  PalletSettlementInstructionMemo,
   PalletStoFundraiser,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesAuthorizationAuthorizationData,
@@ -4103,4 +4104,14 @@ export function meshProposalStatusToProposalStatus(
     default:
       throw new UnreachableCaseError(type);
   }
+}
+
+/**
+ * @hidden
+ */
+export function stringToInstructionMemo(
+  value: string,
+  context: Context
+): PalletSettlementInstructionMemo {
+  return context.createType('PalletSettlementInstructionMemo', padString(value, MAX_MEMO_LENGTH));
 }
