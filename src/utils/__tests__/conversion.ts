@@ -7523,7 +7523,7 @@ describe('scopeClaimProofToConfidentialIdentityClaimProof', () => {
     context.createType.withArgs('RistrettoPoint', scopeId).returns(rawScopeId);
 
     context.createType
-      .withArgs('ConfidentialIdentityClaimProofsScopeClaimProof', scopeClaimProof)
+      .withArgs('ConfidentialIdentityV2ClaimProofsScopeClaimProof', scopeClaimProof)
       .returns(fakeResult);
 
     const result = scopeClaimProofToConfidentialIdentityClaimProof(proof, scopeId, context);
