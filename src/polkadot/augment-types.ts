@@ -1098,6 +1098,7 @@ import type {
   CorporateAction,
   CountryCode,
   CustomAssetTypeId,
+  CustomClaimTypeId,
   DepositInfo,
   DidRecord,
   DidStatus,
@@ -1513,6 +1514,7 @@ declare module '@polkadot/types/types/registry' {
     CrateVersion: CrateVersion;
     CreatedBlock: CreatedBlock;
     CustomAssetTypeId: CustomAssetTypeId;
+    CustomClaimTypeId: CustomClaimTypeId;
     Data: Data;
     DeferredOffenceOf: DeferredOffenceOf;
     DefunctVoter: DefunctVoter;

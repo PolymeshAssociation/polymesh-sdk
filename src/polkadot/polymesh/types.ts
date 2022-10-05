@@ -444,7 +444,7 @@ export interface Claim extends Enum {
   readonly isInvestorUniquenessV2: boolean;
   readonly asInvestorUniquenessV2: CddId;
   readonly isCustom: boolean;
-  readonly asCustom: ITuple<[u32, Option<Scope>]>;
+  readonly asCustom: ITuple<[CustomClaimTypeId, Option<Scope>]>;
   readonly type:
     | 'Accredited'
     | 'Affiliate'
@@ -488,6 +488,7 @@ export interface ClaimType extends Enum {
   readonly isNoData: boolean;
   readonly isInvestorUniquenessV2: boolean;
   readonly isCustom: boolean;
+  readonly asCustom: CustomClaimTypeId;
   readonly type:
     | 'Accredited'
     | 'Affiliate'
@@ -1085,6 +1086,9 @@ export interface CountryCode extends Enum {
 /** @name CustomAssetTypeId */
 export interface CustomAssetTypeId extends u32 {}
 
+/** @name CustomClaimTypeId */
+export interface CustomClaimTypeId extends u32 {}
+
 /** @name DepositInfo */
 export interface DepositInfo extends Struct {
   readonly owner: AccountId;
@@ -1463,7 +1467,6 @@ export interface Permissions extends Struct {
 export interface Pip extends Struct {
   readonly id: PipId;
   readonly proposal: Call;
-  readonly state: ProposalState;
   readonly proposer: Proposer;
 }
 

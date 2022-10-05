@@ -470,6 +470,7 @@ export default {
       proof_scope_id_cdd_id_match: 'ZkProofData',
       scope_id: 'RistrettoPoint',
     },
+    CustomClaimTypeId: 'u32',
     Claim: {
       _enum: {
         Accredited: 'Scope',
@@ -483,8 +484,8 @@ export default {
         Blocked: 'Scope',
         InvestorUniqueness: '(Scope, ScopeId, CddId)',
         NoData: '',
-        InvestorUniquenessV2: '(CddId)',
-        Custom: '(u32, Option<Scope>)',
+        InvestorUniquenessV2: 'CddId',
+        Custom: '(CustomClaimTypeId, Option<Scope>)',
       },
     },
     ClaimType: {
@@ -501,7 +502,7 @@ export default {
         InvestorUniqueness: '',
         NoData: '',
         InvestorUniquenessV2: '',
-        Custom: '',
+        Custom: 'CustomClaimTypeId',
       },
     },
     IdentityClaim: {
@@ -662,7 +663,6 @@ export default {
     Pip: {
       id: 'PipId',
       proposal: 'Call',
-      state: 'ProposalState',
       proposer: 'Proposer',
     },
     ProposalData: {
