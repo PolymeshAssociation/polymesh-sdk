@@ -1092,7 +1092,6 @@ import type {
   Committee,
   ComplianceRequirement,
   ComplianceRequirementResult,
-  CompressedRistretto,
   Condition,
   ConditionResult,
   ConditionType,
@@ -1114,8 +1113,6 @@ import type {
   ErrorAt,
   EventCounts,
   EventDid,
-  ExtVersion,
-  ExtensionAttributes,
   ExtrinsicPermissions,
   FundingRoundName,
   Fundraiser,
@@ -1129,6 +1126,7 @@ import type {
   IdentityId,
   IdentityRole,
   InactiveMember,
+  InitiateCorporateActionArgs,
   Instruction,
   InstructionId,
   InstructionStatus,
@@ -1143,9 +1141,6 @@ import type {
   LocalCAId,
   MaybeBlock,
   Memo,
-  MetaDescription,
-  MetaUrl,
-  MetaVersion,
   Motion,
   MotionInfoLink,
   MotionTitle,
@@ -1198,9 +1193,6 @@ import type {
   Signatory,
   SkippedCount,
   SlashingSwitch,
-  SmartExtension,
-  SmartExtensionName,
-  SmartExtensionType,
   SnapshotId,
   SnapshotMetadata,
   SnapshotResult,
@@ -1218,8 +1210,6 @@ import type {
   TargetIdentity,
   TargetTreatment,
   Tax,
-  TemplateDetails,
-  TemplateMetadata,
   Ticker,
   TickerRegistration,
   TickerRegistrationConfig,
@@ -1443,7 +1433,6 @@ declare module '@polkadot/types/types/registry' {
     Committee: Committee;
     ComplianceRequirement: ComplianceRequirement;
     ComplianceRequirementResult: ComplianceRequirementResult;
-    CompressedRistretto: CompressedRistretto;
     Condition: Condition;
     ConditionResult: ConditionResult;
     ConditionType: ConditionType;
@@ -1646,7 +1635,6 @@ declare module '@polkadot/types/types/registry' {
     ExitRevert: ExitRevert;
     ExitSucceed: ExitSucceed;
     ExplicitDisputeStatement: ExplicitDisputeStatement;
-    ExtensionAttributes: ExtensionAttributes;
     Extrinsic: Extrinsic;
     ExtrinsicEra: ExtrinsicEra;
     ExtrinsicMetadataLatest: ExtrinsicMetadataLatest;
@@ -1665,7 +1653,6 @@ declare module '@polkadot/types/types/registry' {
     ExtrinsicsWeight: ExtrinsicsWeight;
     ExtrinsicUnknown: ExtrinsicUnknown;
     ExtrinsicV4: ExtrinsicV4;
-    ExtVersion: ExtVersion;
     FeeDetails: FeeDetails;
     Fixed128: Fixed128;
     Fixed64: Fixed64;
@@ -1772,6 +1759,7 @@ declare module '@polkadot/types/types/registry' {
     Index: Index;
     IndicesLookupSource: IndicesLookupSource;
     InitializationData: InitializationData;
+    InitiateCorporateActionArgs: InitiateCorporateActionArgs;
     InstanceDetails: InstanceDetails;
     InstanceId: InstanceId;
     InstanceMetadata: InstanceMetadata;
@@ -1853,9 +1841,6 @@ declare module '@polkadot/types/types/registry' {
     MetadataV13: MetadataV13;
     MetadataV14: MetadataV14;
     MetadataV9: MetadataV9;
-    MetaDescription: MetaDescription;
-    MetaUrl: MetaUrl;
-    MetaVersion: MetaVersion;
     MigrationStatusResult: MigrationStatusResult;
     MmrLeafBatchProof: MmrLeafBatchProof;
     MmrLeafProof: MmrLeafProof;
@@ -2208,9 +2193,6 @@ declare module '@polkadot/types/types/registry' {
     SlotNumber: SlotNumber;
     SlotRange: SlotRange;
     SlotRange10: SlotRange10;
-    SmartExtension: SmartExtension;
-    SmartExtensionName: SmartExtensionName;
-    SmartExtensionType: SmartExtensionType;
     SnapshotId: SnapshotId;
     SnapshotMetadata: SnapshotMetadata;
     SnapshotResult: SnapshotResult;
@@ -2284,8 +2266,6 @@ declare module '@polkadot/types/types/registry' {
     TAssetBalance: TAssetBalance;
     TAssetDepositBalance: TAssetDepositBalance;
     Tax: Tax;
-    TemplateDetails: TemplateDetails;
-    TemplateMetadata: TemplateMetadata;
     Text: Text;
     Ticker: Ticker;
     TickerRegistration: TickerRegistration;
