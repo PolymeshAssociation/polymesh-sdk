@@ -5,6 +5,7 @@ import { Account, Context, MultiSig, PolymeshError, PolymeshTransaction } from '
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   createMockAccountId,
+  createMockBool,
   createMockIdentityId,
   createMockOption,
   createMockSignatory,
@@ -69,16 +70,22 @@ describe('MultiSig class', () => {
       dsMockUtils.createQueryStub('multiSig', 'multiSigSigners', {
         entries: [
           [
-            [],
-            createMockSignatory({
-              Identity: createMockIdentityId('def'),
-            }),
+            [
+              createMockAccountId(),
+              createMockSignatory({
+                Identity: createMockIdentityId('def'),
+              }),
+            ],
+            createMockBool(true),
           ],
           [
-            [],
-            createMockSignatory({
-              Account: createMockAccountId('abc'),
-            }),
+            [
+              createMockAccountId(),
+              createMockSignatory({
+                Account: createMockAccountId('abc'),
+              }),
+            ],
+            createMockBool(true),
           ],
         ],
       });
