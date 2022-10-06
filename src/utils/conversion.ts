@@ -25,6 +25,7 @@ import {
   PolymeshPrimitivesDocumentHash,
   PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityId,
+  PolymeshPrimitivesIdentityIdPortfolioKind,
   PolymeshPrimitivesSecondaryKeyPermissions,
   PolymeshPrimitivesStatisticsStat2ndKey,
   PolymeshPrimitivesStatisticsStatClaim,
@@ -269,6 +270,7 @@ import {
 import {
   isIdentityCondition,
   isMultiClaimCondition,
+  isNumberedPortfolio,
   isSingleClaimCondition,
 } from '~/utils/typeguards';
 
@@ -701,6 +703,22 @@ export function portfolioIdToMeshPortfolioId(
     did: stringToIdentityId(did, context),
     kind: number ? { User: bigNumberToU64(number, context) } : 'Default',
   });
+}
+
+/**
+ * @hidden
+ */
+export function portfolioToPortfolioKind(
+  portfolio: DefaultPortfolio | NumberedPortfolio,
+  context: Context
+): PolymeshPrimitivesIdentityIdPortfolioKind {
+  let portfolioKind;
+  if (isNumberedPortfolio(portfolio)) {
+    portfolioKind = { User: bigNumberToU64(portfolio.id, context) };
+  } else {
+    portfolioKind = 'Default';
+  }
+  return context.createType('PolymeshPrimitivesIdentityIdPortfolioKind', portfolioKind);
 }
 
 /**
