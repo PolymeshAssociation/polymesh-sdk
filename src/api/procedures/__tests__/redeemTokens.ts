@@ -166,28 +166,45 @@ describe('redeemTokens procedure', () => {
 
       dsMockUtils.getContextInstance({ did: someDid });
 
-      const fromPortfolio = entityMockUtils.getDefaultPortfolioInstance({
+      let fromPortfolio = entityMockUtils.getDefaultPortfolioInstance({
         did: someDid,
       });
-      const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+
+      let proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
         fromPortfolio,
       });
+
       const params = {
         ticker,
         amount,
-        from: fromPortfolio,
       };
-      const boundFunc = getAuthorization.bind(proc);
+      let boundFunc = getAuthorization.bind(proc);
 
-      const result = await boundFunc(params);
+      let result = await boundFunc(params);
 
       expect(result).toEqual({
         permissions: {
           transactions: [TxTags.asset.Redeem],
           assets: [expect.objectContaining({ ticker })],
-          portfolios: [
-            expect.objectContaining({ owner: expect.objectContaining({ did: someDid }) }),
-          ],
+          portfolios: [fromPortfolio],
+        },
+      });
+
+      fromPortfolio = entityMockUtils.getNumberedPortfolioInstance();
+
+      proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
+        fromPortfolio,
+      });
+
+      boundFunc = getAuthorization.bind(proc);
+
+      result = await boundFunc({ ...params, from: fromPortfolio });
+
+      expect(result).toEqual({
+        permissions: {
+          transactions: [TxTags.asset.RedeemFromPortfolio],
+          assets: [expect.objectContaining({ ticker })],
+          portfolios: [fromPortfolio],
         },
       });
     });

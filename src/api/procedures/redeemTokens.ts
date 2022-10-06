@@ -74,7 +74,7 @@ export async function prepareRedeemTokens(
  */
 export async function getAuthorization(
   this: Procedure<Params, void, Storage>,
-  { ticker }: Params
+  { ticker, from }: Params
 ): Promise<ProcedureAuthorization> {
   const {
     context,
@@ -83,7 +83,7 @@ export async function getAuthorization(
 
   return {
     permissions: {
-      transactions: [TxTags.asset.Redeem],
+      transactions: [from ? TxTags.asset.RedeemFromPortfolio : TxTags.asset.Redeem],
       assets: [new Asset({ ticker }, context)],
       portfolios: [fromPortfolio],
     },
