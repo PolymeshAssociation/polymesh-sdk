@@ -8,7 +8,7 @@ import {
   Signature,
 } from '@polkadot/types/interfaces';
 import {
-  ConfidentialIdentityClaimProofsScopeClaimProof,
+  ConfidentialIdentityV2ClaimProofsScopeClaimProof,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCorporateAction,
   PalletCorporateActionsDistribution,
@@ -3594,7 +3594,7 @@ export function scopeClaimProofToConfidentialIdentityClaimProof(
   proof: ScopeClaimProof,
   scopeId: string,
   context: Context
-): ConfidentialIdentityClaimProofsScopeClaimProof {
+): ConfidentialIdentityV2ClaimProofsScopeClaimProof {
   const {
     proofScopeIdWellFormed,
     proofScopeIdCddIdMatch: { challengeResponses, subtractExpressionsRes, blindedScopeDidHash },
@@ -3608,7 +3608,7 @@ export function scopeClaimProofToConfidentialIdentityClaimProof(
     /* eslint-enable @typescript-eslint/naming-convention */
   });
 
-  return context.createType('ConfidentialIdentityClaimProofsScopeClaimProof', {
+  return context.createType('ConfidentialIdentityV2ClaimProofsScopeClaimProof', {
     proofScopeIdWellformed: stringToSignature(proofScopeIdWellFormed, context),
     proofScopeIdCddIdMatch: zkProofData,
     scopeId: stringToRistrettoPoint(scopeId, context),

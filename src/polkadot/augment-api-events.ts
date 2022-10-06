@@ -35,6 +35,7 @@ import type {
   PalletPipsProposalState,
   PalletPipsProposer,
   PalletPipsSnapshottedPip,
+  PalletSettlementInstructionMemo,
   PalletSettlementLeg,
   PalletSettlementSettlementType,
   PalletSettlementVenueType,
@@ -80,7 +81,7 @@ declare module '@polkadot/api-base/types/events' {
     asset: {
       /**
        * Event for creation of the asset.
-       * caller DID/ owner DID, ticker, divisibility, asset type, beneficiary DID, disable investor uniqueness
+       * caller DID/ owner DID, ticker, divisibility, asset type, beneficiary DID, disable investor uniqueness, asset name, identifiers, funding round
        **/
       AssetCreated: AugmentedEvent<
         ApiType,
@@ -90,7 +91,10 @@ declare module '@polkadot/api-base/types/events' {
           bool,
           PolymeshPrimitivesAssetAssetType,
           PolymeshPrimitivesIdentityId,
-          bool
+          bool,
+          Bytes,
+          Vec<PolymeshPrimitivesAssetIdentifier>,
+          Option<Bytes>
         ]
       >;
       /**
@@ -1078,6 +1082,15 @@ declare module '@polkadot/api-base/types/events' {
         [Option<PolymeshPrimitivesIdentityId>, Option<AccountId32>, u64]
       >;
       /**
+       * Accepting Authorization retry limit reached.
+       *
+       * (authorized_identity, authorized_key, auth_id)
+       **/
+      AuthorizationRetryLimitReached: AugmentedEvent<
+        ApiType,
+        [Option<PolymeshPrimitivesIdentityId>, Option<AccountId32>, u64]
+      >;
+      /**
        * Authorization revoked by the authorizer.
        *
        * (authorized_identity, authorized_key, auth_id)
@@ -1117,6 +1130,12 @@ declare module '@polkadot/api-base/types/events' {
         ApiType,
         [PolymeshPrimitivesIdentityId, PolymeshPrimitivesIdentityClaim]
       >;
+      /**
+       * A new CustomClaimType was added.
+       *
+       * (DID, id, Type)
+       **/
+      CustomClaimTypeAdded: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, u32, Bytes]>;
       /**
        * Identity created.
        *
@@ -1745,7 +1764,7 @@ declare module '@polkadot/api-base/types/events' {
       >;
       /**
        * A new instruction has been created
-       * (did, venue_id, instruction_id, settlement_type, trade_date, value_date, legs)
+       * (did, venue_id, instruction_id, settlement_type, trade_date, value_date, legs, memo)
        **/
       InstructionCreated: AugmentedEvent<
         ApiType,
@@ -1756,7 +1775,8 @@ declare module '@polkadot/api-base/types/events' {
           PalletSettlementSettlementType,
           Option<u64>,
           Option<u64>,
-          Vec<PalletSettlementLeg>
+          Vec<PalletSettlementLeg>,
+          Option<PalletSettlementInstructionMemo>
         ]
       >;
       /**
@@ -1836,6 +1856,13 @@ declare module '@polkadot/api-base/types/events' {
       VenuesBlocked: AugmentedEvent<
         ApiType,
         [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, Vec<u64>]
+      >;
+      /**
+       * An existing venue's signers has been updated (did, venue_id, signers, update_type)
+       **/
+      VenueSignersUpdated: AugmentedEvent<
+        ApiType,
+        [PolymeshPrimitivesIdentityId, u64, Vec<AccountId32>, bool]
       >;
       /**
        * An existing venue's type has been updated (did, venue_id, type)
