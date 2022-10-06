@@ -26,6 +26,7 @@ export type InstructionDetails = {
    */
   valueDate: Date | null;
   venue: Venue;
+  memo: string | null;
 } & (
   | {
       type: InstructionType.SettleOnAffirmation;

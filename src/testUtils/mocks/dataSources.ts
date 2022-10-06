@@ -57,6 +57,7 @@ import {
   PalletCorporateActionsTargetIdentities,
   PalletRelayerSubsidy,
   PalletSettlementInstruction,
+  PalletSettlementInstructionMemo,
   PalletSettlementVenue,
   PalletStoFundraiser,
   PolymeshPrimitivesAssetIdentifier,
@@ -4283,4 +4284,18 @@ export const createMockProposalDetails = (proposalDetails?: {
     },
     !proposalDetails
   ) as MockCodec<ProposalDetails>;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockInstructionMemo = (
+  memo?: string | PalletSettlementInstructionMemo
+): MockCodec<PalletSettlementInstructionMemo> => {
+  if (isCodec<PalletSettlementInstructionMemo>(memo)) {
+    return memo as MockCodec<PalletSettlementInstructionMemo>;
+  }
+
+  return createMockStringCodec<PalletSettlementInstructionMemo>(memo);
 };

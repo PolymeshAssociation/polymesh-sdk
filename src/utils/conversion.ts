@@ -1,4 +1,4 @@
-import { bool, Bytes, Option, Text, u8, u16, u32, u64, u128 } from '@polkadot/types';
+import { bool, Bytes, Option, Text, u8, U8aFixed, u16, u32, u64, u128 } from '@polkadot/types';
 import {
   AccountId,
   Balance,
@@ -14,6 +14,7 @@ import {
   PalletCorporateActionsDistribution,
   PalletCorporateActionsInitiateCorporateActionArgs,
   PalletMultisigProposalStatus,
+  PalletSettlementInstructionMemo,
   PalletStoFundraiser,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesAuthorizationAuthorizationData,
@@ -37,6 +38,7 @@ import {
 import { ITuple } from '@polkadot/types/types';
 import { BTreeSet } from '@polkadot/types-codec';
 import {
+  hexToString,
   hexToU8a,
   isHex,
   stringLowerFirst,
@@ -725,7 +727,9 @@ export function txGroupToTxTags(group: TxGroup): TxTag[] {
         TxTags.identity.AddInvestorUniquenessClaim,
         TxTags.portfolio.MovePortfolioFunds,
         TxTags.settlement.AddInstruction,
+        TxTags.settlement.AddInstructionWithMemo,
         TxTags.settlement.AddAndAffirmInstruction,
+        TxTags.settlement.AddAndAffirmInstructionWithMemo,
         TxTags.settlement.AffirmInstruction,
         TxTags.settlement.RejectInstruction,
         TxTags.settlement.CreateVenue,
@@ -753,7 +757,9 @@ export function txGroupToTxTags(group: TxGroup): TxTag[] {
         TxTags.identity.AddInvestorUniquenessClaim,
         TxTags.settlement.CreateVenue,
         TxTags.settlement.AddInstruction,
+        TxTags.settlement.AddInstructionWithMemo,
         TxTags.settlement.AddAndAffirmInstruction,
+        TxTags.settlement.AddAndAffirmInstructionWithMemo,
       ];
     }
     case TxGroup.Issuance: {
@@ -1437,7 +1443,7 @@ export function authorizationDataToAuthorization(
 /**
  * @hidden
  */
-export function stringToMemo(value: string, context: Context): Memo {
+function assertMemoValid(value: string): void {
   if (value.length > MAX_MEMO_LENGTH) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
@@ -1447,6 +1453,13 @@ export function stringToMemo(value: string, context: Context): Memo {
       },
     });
   }
+}
+
+/**
+ * @hidden
+ */
+export function stringToMemo(value: string, context: Context): Memo {
+  assertMemoValid(value);
 
   return context.createType(
     'PolymeshCommonUtilitiesBalancesMemo',
@@ -4103,4 +4116,23 @@ export function meshProposalStatusToProposalStatus(
     default:
       throw new UnreachableCaseError(type);
   }
+}
+
+/**
+ * @hidden
+ */
+export function stringToInstructionMemo(
+  value: string,
+  context: Context
+): PalletSettlementInstructionMemo {
+  assertMemoValid(value);
+
+  return context.createType('PalletSettlementInstructionMemo', padString(value, MAX_MEMO_LENGTH));
+}
+
+/**
+ * @hidden
+ */
+export function instructionMemoToString(value: U8aFixed): string {
+  return removePadding(hexToString(value.toString()));
 }
