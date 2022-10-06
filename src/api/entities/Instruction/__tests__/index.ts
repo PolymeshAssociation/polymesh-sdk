@@ -261,6 +261,7 @@ describe('Instruction class', () => {
     });
 
     let bigNumberToU64Stub: sinon.SinonStub;
+    let queryMultiStub: sinon.SinonStub;
 
     beforeAll(() => {
       bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
@@ -268,6 +269,9 @@ describe('Instruction class', () => {
 
     beforeEach(() => {
       bigNumberToU64Stub.withArgs(id, context).returns(rawId);
+      dsMockUtils.createQueryStub('settlement', 'instructionDetails');
+      dsMockUtils.createQueryStub('settlement', 'instructionMemos');
+      queryMultiStub = dsMockUtils.getQueryMultiStub();
     });
 
     it('should return the Instruction details', async () => {
@@ -278,10 +282,11 @@ describe('Instruction class', () => {
       const venueId = new BigNumber(1);
       let type = InstructionType.SettleOnAffirmation;
       const owner = 'someDid';
+      const memo = 'someMemo';
 
       entityMockUtils.configureMocks({ identityOptions: { did: owner } });
 
-      const queryResult = dsMockUtils.createMockInstruction({
+      const rawInstructionDetails = dsMockUtils.createMockInstruction({
         instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
         status: dsMockUtils.createMockInstructionStatus(status),
         venueId: dsMockUtils.createMockU64(venueId),
@@ -297,10 +302,11 @@ describe('Instruction class', () => {
         settlementType: dsMockUtils.createMockSettlementType(type),
       });
 
-      const instructionDetailsStub = dsMockUtils
-        .createQueryStub('settlement', 'instructionDetails')
-        // .withArgs(rawId)
-        .resolves(queryResult);
+      const rawInstructionMemo = dsMockUtils.createMockOption(
+        dsMockUtils.createMockInstructionMemo(memo)
+      );
+
+      queryMultiStub.resolves([rawInstructionDetails, rawInstructionMemo]);
 
       let result = await instruction.details();
 
@@ -310,22 +316,24 @@ describe('Instruction class', () => {
         tradeDate,
         valueDate,
         type,
+        memo,
       });
       expect(result.venue.id).toEqual(venueId);
 
       type = InstructionType.SettleOnBlock;
       const endBlock = new BigNumber(100);
 
-      instructionDetailsStub.resolves(
+      queryMultiStub.resolves([
         dsMockUtils.createMockInstruction({
-          ...queryResult,
+          ...rawInstructionDetails,
           tradeDate: dsMockUtils.createMockOption(),
           valueDate: dsMockUtils.createMockOption(),
           settlementType: dsMockUtils.createMockSettlementType({
             SettleOnBlock: dsMockUtils.createMockU32(endBlock),
           }),
-        })
-      );
+        }),
+        dsMockUtils.createMockOption(),
+      ]);
 
       result = await instruction.details();
 
@@ -336,18 +344,20 @@ describe('Instruction class', () => {
         valueDate: null,
         type,
         endBlock,
+        memo: null,
       });
       expect(result.venue.id).toEqual(venueId);
 
       status = InstructionStatus.Failed;
       type = InstructionType.SettleOnAffirmation;
 
-      instructionDetailsStub.resolves(
+      queryMultiStub.resolves([
         dsMockUtils.createMockInstruction({
-          ...queryResult,
+          ...rawInstructionDetails,
           status: dsMockUtils.createMockInstructionStatus(status),
-        })
-      );
+        }),
+        rawInstructionMemo,
+      ]);
 
       result = await instruction.details();
 
@@ -357,25 +367,24 @@ describe('Instruction class', () => {
         tradeDate,
         valueDate,
         type,
+        memo,
       });
       expect(result.venue.id).toEqual(venueId);
     });
 
     it('should throw an error if the Instruction is not pending', () => {
-      dsMockUtils
-        .createQueryStub('settlement', 'instructionDetails')
-        .withArgs(rawId)
-        .resolves(
-          dsMockUtils.createMockInstruction({
-            instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
-            status: dsMockUtils.createMockInstructionStatus('Unknown'),
-            venueId: dsMockUtils.createMockU64(new BigNumber(1)),
-            createdAt: dsMockUtils.createMockOption(),
-            tradeDate: dsMockUtils.createMockOption(),
-            valueDate: dsMockUtils.createMockOption(),
-            settlementType: dsMockUtils.createMockSettlementType(),
-          })
-        );
+      queryMultiStub.resolves([
+        dsMockUtils.createMockInstruction({
+          instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
+          status: dsMockUtils.createMockInstructionStatus('Unknown'),
+          venueId: dsMockUtils.createMockU64(new BigNumber(1)),
+          createdAt: dsMockUtils.createMockOption(),
+          tradeDate: dsMockUtils.createMockOption(),
+          valueDate: dsMockUtils.createMockOption(),
+          settlementType: dsMockUtils.createMockSettlementType(),
+        }),
+        dsMockUtils.createMockOption(),
+      ]);
 
       return expect(instruction.details()).rejects.toThrow(
         'Instruction has already been executed/rejected and it was purged from chain'

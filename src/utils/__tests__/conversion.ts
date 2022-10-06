@@ -10,6 +10,7 @@ import {
 } from '@polkadot/types/interfaces';
 import {
   PalletMultisigProposalStatus,
+  PalletSettlementInstructionMemo,
   PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesStatisticsStat2ndKey,
@@ -18,7 +19,7 @@ import {
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import type { ITuple } from '@polkadot/types-codec/types';
-import { hexToU8a } from '@polkadot/util';
+import { hexToU8a, stringToHex } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 import {
   AgentGroup,
@@ -194,6 +195,7 @@ import {
   identitiesToBtreeSet,
   identityIdToString,
   inputStatTypeToMeshStatType,
+  instructionMemoToString,
   internalAssetTypeToAssetType,
   isCusipValid,
   isFigiValid,
@@ -262,6 +264,7 @@ import {
   stringToEcdsaSignature,
   stringToHash,
   stringToIdentityId,
+  stringToInstructionMemo,
   stringToInvestorZKProofData,
   stringToMemo,
   stringToRistrettoPoint,
@@ -8515,5 +8518,45 @@ describe('meshProposalStatusToProposalStatus', () => {
         null
       )
     ).toThrowError(expectedError);
+  });
+});
+
+describe('stringToInstructionMemo and instructionMemoToString', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  describe('stringToInstructionMemo', () => {
+    it('should convert a string to a polkadot PalletSettlementInstructionMemo object', () => {
+      const value = 'someDescription';
+      const fakeResult = 'memoDescription' as unknown as PalletSettlementInstructionMemo;
+      const context = dsMockUtils.getContextInstance();
+
+      context.createType
+        .withArgs('PalletSettlementInstructionMemo', padString(value, 32))
+        .returns(fakeResult);
+
+      const result = stringToInstructionMemo(value, context);
+
+      expect(result).toEqual(fakeResult);
+    });
+  });
+
+  describe('instructionMemoToString', () => {
+    it('should convert an InstructionMemo to string', () => {
+      const fakeResult = 'memoDescription';
+      const rawMemo = dsMockUtils.createMockInstructionMemo(stringToHex(fakeResult));
+
+      const result = instructionMemoToString(rawMemo);
+      expect(result).toBe(fakeResult);
+    });
   });
 });
