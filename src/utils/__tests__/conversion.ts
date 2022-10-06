@@ -13,6 +13,7 @@ import {
   PalletSettlementInstructionMemo,
   PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityId,
+  PolymeshPrimitivesIdentityIdPortfolioKind,
   PolymeshPrimitivesStatisticsStat2ndKey,
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesStatisticsStatType,
@@ -234,6 +235,7 @@ import {
   portfolioLikeToPortfolio,
   portfolioLikeToPortfolioId,
   portfolioMovementToMovePortfolioItem,
+  portfolioToPortfolioKind,
   posRatioToBigNumber,
   requirementToComplianceRequirement,
   scheduleSpecToMeshScheduleSpec,
@@ -4775,6 +4777,52 @@ describe('portfolioIdToMeshPortfolioId', () => {
       .returns(fakeResult);
 
     result = portfolioIdToMeshPortfolioId({ ...portfolioId, number }, context);
+
+    expect(result).toBe(fakeResult);
+  });
+});
+
+describe('portfolioIdToMeshPortfolioId', () => {
+  beforeAll(() => {
+    entityMockUtils.initMocks();
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    entityMockUtils.reset();
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a portfolio to a polkadot PortfolioKind', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    const fakeResult = 'PortfolioKind' as unknown as PolymeshPrimitivesIdentityIdPortfolioKind;
+
+    context.createType
+      .withArgs('PolymeshPrimitivesIdentityIdPortfolioKind', 'Default')
+      .returns(fakeResult);
+
+    let result = portfolioToPortfolioKind(entityMockUtils.getDefaultPortfolioInstance(), context);
+
+    expect(result).toBe(fakeResult);
+
+    const number = new BigNumber(1);
+    const rawU64 = dsMockUtils.createMockU64(number);
+
+    context.createType.withArgs('u64', number.toString()).returns(rawU64);
+
+    context.createType
+      .withArgs('PolymeshPrimitivesIdentityIdPortfolioKind', { User: rawU64 })
+      .returns(fakeResult);
+
+    result = portfolioToPortfolioKind(
+      entityMockUtils.getNumberedPortfolioInstance({ id: number }),
+      context
+    );
 
     expect(result).toBe(fakeResult);
   });

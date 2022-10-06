@@ -509,6 +509,10 @@ export interface ModifyPrimaryIssuanceAgentParams {
 
 export interface RedeemTokensParams {
   amount: BigNumber;
+  /**
+   * portfolio (or portfolio ID) from which Assets will be redeemed (optional, defaults to the default Portfolio)
+   */
+  from?: BigNumber | DefaultPortfolio | NumberedPortfolio;
 }
 
 export interface TransferAssetOwnershipParams {
