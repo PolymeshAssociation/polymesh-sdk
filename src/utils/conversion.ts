@@ -727,7 +727,9 @@ export function txGroupToTxTags(group: TxGroup): TxTag[] {
         TxTags.identity.AddInvestorUniquenessClaim,
         TxTags.portfolio.MovePortfolioFunds,
         TxTags.settlement.AddInstruction,
+        TxTags.settlement.AddInstructionWithMemo,
         TxTags.settlement.AddAndAffirmInstruction,
+        TxTags.settlement.AddAndAffirmInstructionWithMemo,
         TxTags.settlement.AffirmInstruction,
         TxTags.settlement.RejectInstruction,
         TxTags.settlement.CreateVenue,
@@ -755,7 +757,9 @@ export function txGroupToTxTags(group: TxGroup): TxTag[] {
         TxTags.identity.AddInvestorUniquenessClaim,
         TxTags.settlement.CreateVenue,
         TxTags.settlement.AddInstruction,
+        TxTags.settlement.AddInstructionWithMemo,
         TxTags.settlement.AddAndAffirmInstruction,
+        TxTags.settlement.AddAndAffirmInstructionWithMemo,
       ];
     }
     case TxGroup.Issuance: {

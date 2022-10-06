@@ -262,9 +262,11 @@ describe('Instruction class', () => {
 
     let bigNumberToU64Stub: sinon.SinonStub;
     let queryMultiStub: sinon.SinonStub;
+    let instructionMemoToStringStub: sinon.SinonStub;
 
     beforeAll(() => {
       bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
+      instructionMemoToStringStub = sinon.stub(utilsConversionModule, 'instructionMemoToString');
     });
 
     beforeEach(() => {
@@ -302,11 +304,12 @@ describe('Instruction class', () => {
         settlementType: dsMockUtils.createMockSettlementType(type),
       });
 
-      const rawInstructionMemo = dsMockUtils.createMockOption(
-        dsMockUtils.createMockInstructionMemo(memo)
-      );
+      const rawInstructionMemo = dsMockUtils.createMockInstructionMemo(memo);
+      const rawOptionalMemo = dsMockUtils.createMockOption(rawInstructionMemo);
 
-      queryMultiStub.resolves([rawInstructionDetails, rawInstructionMemo]);
+      instructionMemoToStringStub.withArgs(rawInstructionMemo).returns(memo);
+
+      queryMultiStub.resolves([rawInstructionDetails, rawOptionalMemo]);
 
       let result = await instruction.details();
 
@@ -356,7 +359,7 @@ describe('Instruction class', () => {
           ...rawInstructionDetails,
           status: dsMockUtils.createMockInstructionStatus(status),
         }),
-        rawInstructionMemo,
+        rawOptionalMemo,
       ]);
 
       result = await instruction.details();
