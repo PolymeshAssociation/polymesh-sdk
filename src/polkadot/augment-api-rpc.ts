@@ -107,6 +107,7 @@ import type {
   GranularCanTransferResult,
   IdentityId,
   KeyIdentityData,
+  Member,
   PipId,
   PortfolioId,
   ProtocolOp,
@@ -765,6 +766,20 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
        * Subscribes to grandpa justifications
        **/
       subscribeJustifications: AugmentedRpc<() => Observable<JustificationNotification>>;
+    };
+    group: {
+      /**
+       * Get the CDD members
+       **/
+      getCDDValidMembers: AugmentedRpc<
+        (blockHash?: Hash | string | Uint8Array) => Observable<Vec<Member>>
+      >;
+      /**
+       * Get the GC members
+       **/
+      getGCValidMembers: AugmentedRpc<
+        (blockHash?: Hash | string | Uint8Array) => Observable<Vec<Member>>
+      >;
     };
     identity: {
       /**

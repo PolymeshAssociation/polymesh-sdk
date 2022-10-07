@@ -1141,6 +1141,7 @@ import type {
   LegStatus,
   LocalCAId,
   MaybeBlock,
+  Member,
   Memo,
   Motion,
   MotionInfoLink,
@@ -1822,6 +1823,7 @@ declare module '@polkadot/types/types/registry' {
     MaybeBlock: MaybeBlock;
     MaybeRandomness: MaybeRandomness;
     MaybeVrf: MaybeVrf;
+    Member: Member;
     MemberCount: MemberCount;
     MembershipProof: MembershipProof;
     Memo: Memo;
