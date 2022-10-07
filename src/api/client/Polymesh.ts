@@ -146,6 +146,12 @@ export class Polymesh {
         provider: new WsProvider(nodeUrl),
         types,
         rpc,
+        signedExtensions: {
+          StoreCallMetadata: {
+            extrinsic: {},
+            payload: {},
+          },
+        },
       });
 
       context = await Context.create({

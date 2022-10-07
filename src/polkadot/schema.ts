@@ -1491,5 +1491,17 @@ export default {
         type: 'GranularCanTransferResult',
       },
     },
+    group: {
+      getCDDValidMembers: {
+        description: 'Something',
+        params: [],
+        type: 'Vec<Member>',
+      },
+      getGCValidMembers: {
+        description: 'Something',
+        params: [],
+        type: 'Vec<Member>',
+      },
+    },
   },
 };
