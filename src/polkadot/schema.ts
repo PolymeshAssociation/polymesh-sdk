@@ -1169,6 +1169,11 @@ export default {
         PolymeshV1PIA: '',
       },
     },
+    Member: {
+      id: 'IdentityId',
+      expiry_at: 'Option<Moment>',
+      inactive_from: 'Option<Moment>',
+    },
     ItnRewardStatus: {
       _enum: {
         Unclaimed: 'Balance',
@@ -1490,6 +1495,36 @@ export default {
         ],
         type: 'GranularCanTransferResult',
       },
+    },
+    group: {
+      getCDDValidMembers: {
+        description: 'Get the CDD members',
+        params: [
+          {
+            name: 'blockHash',
+            type: 'Hash',
+            isOptional: true,
+          },
+        ],
+        type: 'Vec<Member>',
+      },
+      getGCValidMembers: {
+        description: 'Get the GC members',
+        params: [
+          {
+            name: 'blockHash',
+            type: 'Hash',
+            isOptional: true,
+          },
+        ],
+        type: 'Vec<Member>',
+      },
+    },
+  },
+  signedExtensions: {
+    StoreCallMetadata: {
+      extrinsic: {},
+      payload: {},
     },
   },
 };

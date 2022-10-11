@@ -1409,6 +1409,13 @@ export interface MaybeBlock extends Enum {
   readonly type: 'Some' | 'None';
 }
 
+/** @name Member */
+export interface Member extends Struct {
+  readonly id: IdentityId;
+  readonly expiry_at: Option<Moment>;
+  readonly inactive_from: Option<Moment>;
+}
+
 /** @name Memo */
 export interface Memo extends U8aFixed {}
 
