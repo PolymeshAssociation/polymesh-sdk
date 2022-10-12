@@ -14,7 +14,9 @@ import {
   PalletCorporateActionsDistribution,
   PalletCorporateActionsInitiateCorporateActionArgs,
   PalletMultisigProposalStatus,
+  PalletPortfolioMovePortfolioItem,
   PalletStoFundraiser,
+  PolymeshCommonUtilitiesBalancesMemo,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesAuthorizationAuthorizationData,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
@@ -119,9 +121,7 @@ import {
   IdentityId,
   InstructionStatus as MeshInstructionStatus,
   InvestorZKProofData,
-  Memo,
   Moment,
-  MovePortfolioItem,
   Percentage,
   PortfolioId as MeshPortfolioId,
   PosRatio,
@@ -1437,7 +1437,7 @@ export function authorizationDataToAuthorization(
 /**
  * @hidden
  */
-export function stringToMemo(value: string, context: Context): Memo {
+export function stringToMemo(value: string, context: Context): PolymeshCommonUtilitiesBalancesMemo {
   if (value.length > MAX_MEMO_LENGTH) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
@@ -2945,9 +2945,9 @@ export function toIdentityWithClaimsArrayV2(
 export function portfolioMovementToMovePortfolioItem(
   portfolioItem: PortfolioMovement,
   context: Context
-): MovePortfolioItem {
+): PalletPortfolioMovePortfolioItem {
   const { asset, amount, memo } = portfolioItem;
-  return context.createType('MovePortfolioItem', {
+  return context.createType('PalletPortfolioMovePortfolioItem', {
     ticker: stringToTicker(asTicker(asset), context),
     amount: bigNumberToBalance(amount, context),
     memo: optionize(stringToMemo)(memo, context),
