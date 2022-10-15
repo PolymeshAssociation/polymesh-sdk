@@ -1,5 +1,3 @@
-import { QueryableStorageEntry } from '@polkadot/api/types';
-
 import {
   Asset,
   Context,
@@ -9,7 +7,6 @@ import {
   removeCorporateAction,
 } from '~/internal';
 import { ModifyCaDefaultConfigParams, ProcedureMethod, RemoveCorporateActionParams } from '~/types';
-import { QueryReturnType } from '~/types/utils';
 import {
   identityIdToString,
   permillToBigNumber,

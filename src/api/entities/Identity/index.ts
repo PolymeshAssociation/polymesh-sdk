@@ -37,7 +37,7 @@ import {
   SubCallback,
   UnsubCallback,
 } from '~/types';
-import { Ensured, EnsuredV2, QueryReturnType, tuple } from '~/types/utils';
+import { Ensured, EnsuredV2, tuple } from '~/types/utils';
 import {
   isCddProviderRole,
   isIdentityRole,
@@ -571,9 +571,9 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
         flatten(auths).map(([key, status]) => ({ id: key.args[1], status })),
         ({ id }) => id.toNumber()
       );
-      const instructions = await settlement.instructionDetails.multi<
-        QueryReturnType<typeof settlement.instructionDetails>
-      >(uniqueEntries.map(({ id }) => id));
+      const instructions = await settlement.instructionDetails.multi(
+        uniqueEntries.map(({ id }) => id)
+      );
 
       uniqueEntries.forEach(({ id, status }, index) => {
         const instruction = new Instruction({ id: u64ToBigNumber(id) }, context);

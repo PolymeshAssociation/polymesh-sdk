@@ -25,7 +25,7 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import stringify from 'json-stable-stringify';
 import { differenceWith, flatMap, isEqual, mapValues, noop, padEnd, uniq } from 'lodash';
-import { IdentityId, PortfolioNumber } from 'polymesh-types/types';
+import { IdentityId } from 'polymesh-types/types';
 import { major, satisfies } from 'semver';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 
@@ -1094,7 +1094,7 @@ export async function getPortfolioIdsByName(
     },
   } = context;
 
-  const rawPortfolioNumbers = await portfolio.nameToNumber.multi<PortfolioNumber>(
+  const rawPortfolioNumbers = await portfolio.nameToNumber.multi(
     rawNames.map<[IdentityId, Bytes]>(name => [rawIdentityId, name])
   );
 

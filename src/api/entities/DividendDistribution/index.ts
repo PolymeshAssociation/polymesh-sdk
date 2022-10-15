@@ -43,14 +43,7 @@ import {
   TargetTreatment,
 } from '~/types';
 import { ProcedureParams } from '~/types/internal';
-import {
-  Ensured,
-  EnsuredV2,
-  HumanReadableType,
-  Modify,
-  QueryReturnType,
-  tuple,
-} from '~/types/utils';
+import { Ensured, EnsuredV2, HumanReadableType, Modify, tuple } from '~/types/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_DECIMALS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   balanceToBigNumber,
@@ -593,7 +586,7 @@ export class DividendDistribution extends CorporateActionBase {
     let hashes: Hash[] = [];
 
     if (multiParams.length) {
-      hashes = await system.blockHash.multi<QueryReturnType<typeof system.blockHash>>(multiParams);
+      hashes = await system.blockHash.multi(multiParams);
     }
 
     return {
@@ -711,9 +704,7 @@ export class DividendDistribution extends CorporateActionBase {
           tuple(caId, stringToIdentityId(did, context))
         );
 
-        return capitalDistribution.holderPaid.multi<
-          QueryReturnType<typeof capitalDistribution.holderPaid>
-        >(multiParams);
+        return capitalDistribution.holderPaid.multi(multiParams);
       });
 
       const results = await Promise.all(parallelMultiCalls);
