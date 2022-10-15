@@ -17,6 +17,7 @@ import {
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesTransferComplianceTransferCondition,
 } from '@polkadot/types/lookup';
+import type { Callback, Codec, Observable } from '@polkadot/types/types';
 import { AnyFunction, AnyTuple, IEvent, ISubmittableResult } from '@polkadot/types/types';
 import { stringUpperFirst } from '@polkadot/util';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
@@ -516,6 +517,50 @@ export async function getApiAtBlock(
   }
 
   return polymeshApi.at(blockHash);
+}
+
+type QueryMultiParam<T extends AugmentedQuery<'promise', AnyFunction>[]> = {
+  [index in keyof T]: T[index] extends AugmentedQuery<'promise', infer Fun>
+    ? [T[index], ...Parameters<Fun>]
+    : never;
+};
+
+type QueryMultiReturnType<T extends AugmentedQuery<'promise', AnyFunction>[]> = {
+  [index in keyof T]: T[index] extends AugmentedQuery<'promise', infer Fun>
+    ? ReturnType<Fun> extends Observable<infer R>
+      ? R
+      : never
+    : never;
+};
+
+/**
+ * @hidden
+ *
+ * Makes an multi request to the chain
+ */
+export async function requestMulti<T extends AugmentedQuery<'promise', AnyFunction>[]>(
+  context: Context,
+  queries: QueryMultiParam<T>
+): Promise<QueryMultiReturnType<T>>;
+export async function requestMulti<T extends AugmentedQuery<'promise', AnyFunction>[]>(
+  context: Context,
+  queries: QueryMultiParam<T>,
+  callback: Callback<QueryMultiReturnType<T>>
+): Promise<UnsubCallback>;
+// eslint-disable-next-line require-jsdoc
+export async function requestMulti<T extends AugmentedQuery<'promise', AnyFunction>[]>(
+  context: Context,
+  queries: QueryMultiParam<T>,
+  callback?: Callback<QueryMultiReturnType<T>>
+): Promise<QueryMultiReturnType<T> | UnsubCallback> {
+  const {
+    polymeshApi: { queryMulti },
+  } = context;
+
+  if (callback) {
+    return queryMulti(queries, callback as unknown as Callback<Codec[]>);
+  }
+  return queryMulti(queries) as unknown as QueryMultiReturnType<T>;
 }
 
 /**
