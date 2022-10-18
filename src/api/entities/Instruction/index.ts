@@ -14,6 +14,7 @@ import { eventByIndexedArgs } from '~/middleware/queries';
 import { instructionsQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { EventIdEnum as MiddlewareV2Event, Query as QueryV2 } from '~/middleware/typesV2';
+import { InstructionStatus as MeshInstructionStatus } from '~/polkadot/polymesh';
 import {
   ErrorCode,
   EventIdentifier,
@@ -21,6 +22,8 @@ import {
   NoArgsProcedureMethod,
   PaginationOptions,
   ResultSet,
+  SubCallback,
+  UnsubCallback,
 } from '~/types';
 import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
 import { Ensured, EnsuredV2 } from '~/types/utils';
@@ -171,6 +174,44 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     const statusResult = meshInstructionStatusToInstructionStatus(status);
 
     return statusResult === InternalInstructionStatus.Pending;
+  }
+
+  /**
+   * Retrieve current status of the Instruction. This can be subscribed to know if instruction fails
+   *
+   * @note can be subscribed to
+   */
+  public async onStatusChange(callback: SubCallback<InstructionStatus>): Promise<UnsubCallback> {
+    const {
+      context: {
+        polymeshApi: {
+          query: {
+            settlement: { instructionDetails },
+          },
+        },
+      },
+      id,
+      context,
+    } = this;
+
+    const assembleResult = (rawStatus: MeshInstructionStatus): InstructionStatus => {
+      const status = meshInstructionStatusToInstructionStatus(rawStatus);
+
+      if (status === InternalInstructionStatus.Unknown) {
+        throw new PolymeshError({
+          code: ErrorCode.DataUnavailable,
+          message: executedMessage,
+        });
+      }
+
+      return status === InternalInstructionStatus.Pending
+        ? InstructionStatus.Pending
+        : InstructionStatus.Failed;
+    };
+
+    return instructionDetails(bigNumberToU64(id, context), ({ status }) => {
+      return callback(assembleResult(status));
+    });
   }
 
   /**
