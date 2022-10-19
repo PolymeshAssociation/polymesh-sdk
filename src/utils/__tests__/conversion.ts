@@ -10,7 +10,9 @@ import {
 } from '@polkadot/types/interfaces';
 import {
   PalletMultisigProposalStatus,
+  PalletPortfolioMovePortfolioItem,
   PalletSettlementInstructionMemo,
+  PolymeshCommonUtilitiesBalancesMemo,
   PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesIdentityIdPortfolioKind,
@@ -40,8 +42,6 @@ import {
   ExtrinsicPermissions,
   IdentityId,
   InvestorZKProofData,
-  Memo,
-  MovePortfolioItem,
   Permissions as MeshPermissions,
   PortfolioId,
   PriceTier,
@@ -490,8 +490,9 @@ describe('portfolioMovementToMovePortfolioItem', () => {
     const asset = entityMockUtils.getAssetInstance({ ticker });
     const rawTicker = dsMockUtils.createMockTicker(ticker);
     const rawAmount = dsMockUtils.createMockBalance(amount);
-    const rawMemo = 'memo' as unknown as Memo;
-    const fakeResult = 'MovePortfolioItem' as unknown as MovePortfolioItem;
+    const rawMemo = 'memo' as unknown as PolymeshCommonUtilitiesBalancesMemo;
+    const fakeResult =
+      'PalletPortfolioMovePortfolioItem' as unknown as PalletPortfolioMovePortfolioItem;
 
     let portfolioMovement: PortfolioMovement = {
       asset: ticker,
@@ -507,7 +508,7 @@ describe('portfolioMovementToMovePortfolioItem', () => {
       .returns(rawAmount);
 
     context.createType
-      .withArgs('MovePortfolioItem', {
+      .withArgs('PalletPortfolioMovePortfolioItem', {
         ticker: rawTicker,
         amount: rawAmount,
         memo: null,
@@ -532,7 +533,7 @@ describe('portfolioMovementToMovePortfolioItem', () => {
       .returns(rawMemo);
 
     context.createType
-      .withArgs('MovePortfolioItem', {
+      .withArgs('PalletPortfolioMovePortfolioItem', {
         ticker: rawTicker,
         amount: rawAmount,
         memo: rawMemo,
@@ -2376,7 +2377,7 @@ describe('stringToMemo', () => {
 
   it('should convert a string to a polkadot Memo object', () => {
     const value = 'someDescription';
-    const fakeResult = 'memoDescription' as unknown as Memo;
+    const fakeResult = 'memoDescription' as unknown as PolymeshCommonUtilitiesBalancesMemo;
     const context = dsMockUtils.getContextInstance();
 
     context.createType

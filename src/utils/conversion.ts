@@ -14,8 +14,10 @@ import {
   PalletCorporateActionsDistribution,
   PalletCorporateActionsInitiateCorporateActionArgs,
   PalletMultisigProposalStatus,
+  PalletPortfolioMovePortfolioItem,
   PalletSettlementInstructionMemo,
   PalletStoFundraiser,
+  PolymeshCommonUtilitiesBalancesMemo,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesAuthorizationAuthorizationData,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
@@ -122,9 +124,7 @@ import {
   IdentityId,
   InstructionStatus as MeshInstructionStatus,
   InvestorZKProofData,
-  Memo,
   Moment,
-  MovePortfolioItem,
   Percentage,
   PortfolioId as MeshPortfolioId,
   PosRatio,
@@ -1476,7 +1476,7 @@ function assertMemoValid(value: string): void {
 /**
  * @hidden
  */
-export function stringToMemo(value: string, context: Context): Memo {
+export function stringToMemo(value: string, context: Context): PolymeshCommonUtilitiesBalancesMemo {
   assertMemoValid(value);
 
   return context.createType(
@@ -2976,9 +2976,9 @@ export function toIdentityWithClaimsArrayV2(
 export function portfolioMovementToMovePortfolioItem(
   portfolioItem: PortfolioMovement,
   context: Context
-): MovePortfolioItem {
+): PalletPortfolioMovePortfolioItem {
   const { asset, amount, memo } = portfolioItem;
-  return context.createType('MovePortfolioItem', {
+  return context.createType('PalletPortfolioMovePortfolioItem', {
     ticker: stringToTicker(asTicker(asset), context),
     amount: bigNumberToBalance(amount, context),
     memo: optionize(stringToMemo)(memo, context),

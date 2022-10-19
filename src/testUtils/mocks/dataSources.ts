@@ -55,6 +55,7 @@ import {
   PalletCorporateActionsInitiateCorporateActionArgs,
   PalletCorporateActionsRecordDateSpec,
   PalletCorporateActionsTargetIdentities,
+  PalletPortfolioMovePortfolioItem,
   PalletRelayerSubsidy,
   PalletSettlementInstruction,
   PalletSettlementInstructionMemo,
@@ -142,7 +143,6 @@ import {
   InstructionStatus,
   InvestorZKProofData,
   Moment,
-  MovePortfolioItem,
   PalletName,
   Pip,
   PipId,
@@ -2078,9 +2078,9 @@ export const createMockPortfolioId = (
 export const createMockMovePortfolioItem = (movePortfolioItem?: {
   ticker: PolymeshPrimitivesTicker | Parameters<typeof createMockTicker>[0];
   amount: Balance | Parameters<typeof createMockBalance>[0];
-}): MockCodec<MovePortfolioItem> => {
-  if (isCodec<MovePortfolioItem>(movePortfolioItem)) {
-    return movePortfolioItem as MockCodec<MovePortfolioItem>;
+}): MockCodec<PalletPortfolioMovePortfolioItem> => {
+  if (isCodec<PalletPortfolioMovePortfolioItem>(movePortfolioItem)) {
+    return movePortfolioItem as MockCodec<PalletPortfolioMovePortfolioItem>;
   }
 
   const { ticker, amount } = movePortfolioItem || {
