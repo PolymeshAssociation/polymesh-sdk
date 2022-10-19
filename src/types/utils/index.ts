@@ -1,5 +1,4 @@
 import { AugmentedQueries, AugmentedQuery } from '@polkadot/api/types';
-import type { Observable } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
 import { Entity, Procedure } from '~/internal';
@@ -47,19 +46,6 @@ export type HumanReadableType<T> = T extends Entity<unknown, infer H>
         : HumanReadableType<T[K]>;
     }
   : T;
-
-/**
- * @hidden
- *
- * Extract the return type of a polkadot.js query function
- *
- * @example `QueryReturnType<typeof identity.authorizations>` returns `Option<Authorization>`
- */
-export type QueryReturnType<T> = T extends AugmentedQuery<'promise', infer Fun>
-  ? ReturnType<Fun> extends Observable<infer R>
-    ? R
-    : never
-  : never;
 
 /**
  * @hidden

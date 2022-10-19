@@ -22,7 +22,7 @@ import {
   ProcedureAuthorization,
   TransactionSpec,
 } from '~/types/internal';
-import { QueryReturnType, tuple } from '~/types/utils';
+import { tuple } from '~/types/utils';
 import {
   bigNumberToU32,
   bigNumberToU64,
@@ -100,9 +100,7 @@ export async function prepareModifyInstructionAffirmation(
 
   const multiArgs = rawPortfolioIds.map(portfolioId => tuple(portfolioId, rawInstructionId));
 
-  const rawAffirmationStatuses = await settlement.userAffirmations.multi<
-    QueryReturnType<typeof settlement.userAffirmations>
-  >(multiArgs);
+  const rawAffirmationStatuses = await settlement.userAffirmations.multi(multiArgs);
 
   const affirmationStatuses = rawAffirmationStatuses.map(meshAffirmationStatusToAffirmationStatus);
 

@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import { Asset, Context, Entity, Identity } from '~/internal';
 import { CheckpointId, IdentityId, Ticker } from '~/polkadot/polymesh';
 import { IdentityBalance, PaginationOptions, ResultSet } from '~/types';
-import { QueryReturnType, tuple } from '~/types/utils';
+import { tuple } from '~/types/utils';
 import {
   balanceToBigNumber,
   bigNumberToU64,
@@ -143,9 +143,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
     });
 
     // Query for balance updates
-    const rawBalanceUpdates = await checkpoint.balanceUpdates.multi<
-      QueryReturnType<typeof checkpoint.balanceUpdates>
-    >(balanceUpdatesMultiParams);
+    const rawBalanceUpdates = await checkpoint.balanceUpdates.multi(balanceUpdatesMultiParams);
 
     const checkpointBalanceMultiParams: {
       did: string;
@@ -174,9 +172,9 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
     });
 
     // Query for Identities with balance updates
-    const checkpointBalances = await checkpoint.balance.multi<
-      QueryReturnType<typeof checkpoint.balance>
-    >(checkpointBalanceMultiParams.map(({ params }) => params));
+    const checkpointBalances = await checkpoint.balance.multi(
+      checkpointBalanceMultiParams.map(({ params }) => params)
+    );
 
     return {
       data: [

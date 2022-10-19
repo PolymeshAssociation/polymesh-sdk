@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { AuthorizationRequest, Authorizations, Identity } from '~/internal';
 import { PaginationOptions, ResultSet } from '~/types';
-import { QueryReturnType, tuple } from '~/types/utils';
+import { tuple } from '~/types/utils';
 import { bigNumberToU64, signatoryToSignerValue, stringToIdentityId } from '~/utils/conversion';
 import { defusePromise, requestPaginated } from '~/utils/internal';
 
@@ -37,9 +37,7 @@ export class IdentityAuthorizations extends Authorizations<Identity> {
       tuple(signatory, storageKey.args[1])
     );
 
-    const authorizations = await identity.authorizations.multi<
-      QueryReturnType<typeof identity.authorizations>
-    >(authQueryParams);
+    const authorizations = await identity.authorizations.multi(authQueryParams);
 
     const data = this.createAuthorizationRequests(
       authorizations.map((auth, index) => ({

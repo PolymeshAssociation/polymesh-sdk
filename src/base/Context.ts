@@ -50,7 +50,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import { GraphqlQuery } from '~/types/internal';
-import { Ensured, EnsuredV2, QueryReturnType } from '~/types/utils';
+import { Ensured, EnsuredV2 } from '~/types/utils';
 import {
   DEFAULT_GQL_PAGE_SIZE,
   MAX_CONCURRENT_REQUESTS,
@@ -502,9 +502,7 @@ export class Context {
 
     const dids = identities.map(signerToString);
     const rawIdentities = dids.map(did => stringToIdentityId(did, this));
-    const records = await identity.didRecords.multi<QueryReturnType<typeof identity.didRecords>>(
-      rawIdentities
-    );
+    const records = await identity.didRecords.multi(rawIdentities);
 
     const invalidDids: string[] = [];
 
@@ -864,11 +862,7 @@ export class Context {
     const requestChunks = chunk(paramChunks, MAX_CONCURRENT_REQUESTS);
     const distributions = await P.mapSeries(requestChunks, requestChunk =>
       Promise.all(
-        requestChunk.map(paramChunk =>
-          capitalDistribution.distributions.multi<
-            QueryReturnType<typeof capitalDistribution.distributions>
-          >(paramChunk)
-        )
+        requestChunk.map(paramChunk => capitalDistribution.distributions.multi(paramChunk))
       )
     );
 

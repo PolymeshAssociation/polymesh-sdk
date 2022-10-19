@@ -38,7 +38,7 @@ import {
   TransferAssetOwnershipParams,
   UnsubCallback,
 } from '~/types';
-import { Ensured, EnsuredV2, Modify, QueryReturnType } from '~/types/utils';
+import { Ensured, EnsuredV2, Modify } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
   assetIdentifierToSecurityIdentifier,
@@ -571,7 +571,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
     let hashes: Hash[] = [];
 
     if (multiParams.length) {
-      hashes = await system.blockHash.multi<QueryReturnType<typeof system.blockHash>>(multiParams);
+      hashes = await system.blockHash.multi(multiParams);
     }
 
     const finalResults: HistoricAgentOperation[] = [];

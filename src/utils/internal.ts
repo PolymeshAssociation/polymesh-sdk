@@ -17,6 +17,7 @@ import {
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesTransferComplianceTransferCondition,
 } from '@polkadot/types/lookup';
+import type { Callback, Codec, Observable } from '@polkadot/types/types';
 import { AnyFunction, AnyTuple, IEvent, ISubmittableResult } from '@polkadot/types/types';
 import { stringUpperFirst } from '@polkadot/util';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
@@ -24,7 +25,7 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import stringify from 'json-stable-stringify';
 import { differenceWith, flatMap, isEqual, mapValues, noop, padEnd, uniq } from 'lodash';
-import { IdentityId, PortfolioNumber } from 'polymesh-types/types';
+import { IdentityId } from 'polymesh-types/types';
 import { major, satisfies } from 'semver';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 
@@ -516,6 +517,50 @@ export async function getApiAtBlock(
   }
 
   return polymeshApi.at(blockHash);
+}
+
+type QueryMultiParam<T extends AugmentedQuery<'promise', AnyFunction>[]> = {
+  [index in keyof T]: T[index] extends AugmentedQuery<'promise', infer Fun>
+    ? [T[index], ...Parameters<Fun>]
+    : never;
+};
+
+type QueryMultiReturnType<T extends AugmentedQuery<'promise', AnyFunction>[]> = {
+  [index in keyof T]: T[index] extends AugmentedQuery<'promise', infer Fun>
+    ? ReturnType<Fun> extends Observable<infer R>
+      ? R
+      : never
+    : never;
+};
+
+/**
+ * @hidden
+ *
+ * Makes an multi request to the chain
+ */
+export async function requestMulti<T extends AugmentedQuery<'promise', AnyFunction>[]>(
+  context: Context,
+  queries: QueryMultiParam<T>
+): Promise<QueryMultiReturnType<T>>;
+export async function requestMulti<T extends AugmentedQuery<'promise', AnyFunction>[]>(
+  context: Context,
+  queries: QueryMultiParam<T>,
+  callback: Callback<QueryMultiReturnType<T>>
+): Promise<UnsubCallback>;
+// eslint-disable-next-line require-jsdoc
+export async function requestMulti<T extends AugmentedQuery<'promise', AnyFunction>[]>(
+  context: Context,
+  queries: QueryMultiParam<T>,
+  callback?: Callback<QueryMultiReturnType<T>>
+): Promise<QueryMultiReturnType<T> | UnsubCallback> {
+  const {
+    polymeshApi: { queryMulti },
+  } = context;
+
+  if (callback) {
+    return queryMulti(queries, callback as unknown as Callback<Codec[]>);
+  }
+  return queryMulti(queries) as unknown as QueryMultiReturnType<T>;
 }
 
 /**
@@ -1049,7 +1094,7 @@ export async function getPortfolioIdsByName(
     },
   } = context;
 
-  const rawPortfolioNumbers = await portfolio.nameToNumber.multi<PortfolioNumber>(
+  const rawPortfolioNumbers = await portfolio.nameToNumber.multi(
     rawNames.map<[IdentityId, Bytes]>(name => [rawIdentityId, name])
   );
 

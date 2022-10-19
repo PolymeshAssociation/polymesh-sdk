@@ -1,5 +1,3 @@
-import { QueryableStorageEntry } from '@polkadot/api/types';
-
 import {
   Asset,
   Context,
@@ -9,14 +7,13 @@ import {
   removeCorporateAction,
 } from '~/internal';
 import { ModifyCaDefaultConfigParams, ProcedureMethod, RemoveCorporateActionParams } from '~/types';
-import { QueryReturnType } from '~/types/utils';
 import {
   identityIdToString,
   permillToBigNumber,
   stringToTicker,
   targetIdentitiesToCorporateActionTargets,
 } from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
+import { createProcedureMethod, requestMulti } from '~/utils/internal';
 
 import { Distributions } from './Distributions';
 import { CorporateActionDefaultConfig } from './types';
@@ -107,29 +104,22 @@ export class CorporateActions extends Namespace<Asset> {
         polymeshApi: {
           query: { corporateAction },
         },
-        polymeshApi,
       },
       context,
     } = this;
 
     const rawTicker = stringToTicker(ticker, context);
 
-    const [targets, defaultTaxWithholding, taxWithholdings] = await polymeshApi.queryMulti<
+    const [targets, defaultTaxWithholding, taxWithholdings] = await requestMulti<
       [
-        QueryReturnType<typeof corporateAction.defaultTargetIdentities>,
-        QueryReturnType<typeof corporateAction.defaultWithholdingTax>,
-        QueryReturnType<typeof corporateAction.didWithholdingTax>
+        typeof corporateAction.defaultTargetIdentities,
+        typeof corporateAction.defaultWithholdingTax,
+        typeof corporateAction.didWithholdingTax
       ]
-    >([
-      [
-        corporateAction.defaultTargetIdentities as unknown as QueryableStorageEntry<'promise'>,
-        rawTicker,
-      ],
-      [
-        corporateAction.defaultWithholdingTax as unknown as QueryableStorageEntry<'promise'>,
-        rawTicker,
-      ],
-      [corporateAction.didWithholdingTax as unknown as QueryableStorageEntry<'promise'>, rawTicker],
+    >(context, [
+      [corporateAction.defaultTargetIdentities, rawTicker],
+      [corporateAction.defaultWithholdingTax, rawTicker],
+      [corporateAction.didWithholdingTax, rawTicker],
     ]);
 
     return {

@@ -10,7 +10,7 @@ import {
   PaginationOptions,
   ResultSet,
 } from '~/types';
-import { QueryReturnType, tuple } from '~/types/utils';
+import { tuple } from '~/types/utils';
 import {
   balanceToBigNumber,
   momentToDate,
@@ -114,9 +114,7 @@ export class Checkpoints extends Namespace<Asset> {
       }
     );
 
-    const timestamps = await checkpointQuery.timestamps.multi<
-      QueryReturnType<typeof checkpointQuery.timestamps>
-    >(checkpointsMultiParams);
+    const timestamps = await checkpointQuery.timestamps.multi(checkpointsMultiParams);
 
     const data = timestamps.map((moment, i) => {
       const { totalSupply, checkpoint } = checkpoints[i];
