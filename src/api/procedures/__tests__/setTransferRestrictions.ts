@@ -10,7 +10,6 @@ import {
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { ScopeId } from 'polymesh-types/types';
 
 import { SetTransferRestrictionsParams } from '~/api/entities/Asset/TransferRestrictions/TransferRestrictionBase';
 import {
@@ -92,7 +91,7 @@ describe('setTransferRestrictions procedure', () => {
   let rawPercentageRestriction: PolymeshPrimitivesTransferComplianceTransferCondition;
   let rawClaimCountRestriction: PolymeshPrimitivesTransferComplianceTransferCondition;
   let rawClaimPercentageRestriction: PolymeshPrimitivesTransferComplianceTransferCondition;
-  let rawScopeId: ScopeId;
+  let rawExemptedDid: PolymeshPrimitivesIdentityId;
   let rawStatType: PolymeshPrimitivesStatisticsStatType;
   let rawStatTypeBtree: BTreeSet<PolymeshPrimitivesStatisticsStatType>;
   let mockNeededStat: PolymeshPrimitivesStatisticsStatType;
@@ -233,7 +232,7 @@ describe('setTransferRestrictions procedure', () => {
     rawClaimPercentageRestrictionBtreeSet = dsMockUtils.createMockBTreeSet([
       rawClaimPercentageRestriction,
     ]);
-    rawScopeId = dsMockUtils.createMockScopeId(exemptedDid);
+    rawExemptedDid = dsMockUtils.createMockIdentityId(exemptedDid);
     rawStatType = dsMockUtils.createMockStatisticsStatType();
     mockNeededStat = dsMockUtils.createMockStatisticsStatType();
     rawStatStatTypeEqMock = rawStatType.eq as jest.Mock;
@@ -254,7 +253,9 @@ describe('setTransferRestrictions procedure', () => {
     when(stringToTickerKeySpy)
       .calledWith(ticker, mockContext)
       .mockReturnValue({ Ticker: rawTicker });
-    when(stringToIdentityIdSpy).calledWith(exemptedDid, mockContext).mockReturnValue(rawScopeId);
+    when(stringToIdentityIdSpy)
+      .calledWith(exemptedDid, mockContext)
+      .mockReturnValue(rawExemptedDid);
     when(complianceConditionsToBtreeSetSpy)
       .calledWith([rawCountRestriction], mockContext)
       .mockReturnValue(rawCountRestrictionBtreeSet);
@@ -745,7 +746,7 @@ describe('setTransferRestrictions procedure', () => {
   describe('prepareStorage', () => {
     let identityScopeId: string;
 
-    let rawIdentityScopeId: ScopeId;
+    let rawIdentityScopeId: PolymeshPrimitivesIdentityId;
 
     const getCountMock = jest.fn();
     const getPercentageMock = jest.fn();
@@ -755,7 +756,7 @@ describe('setTransferRestrictions procedure', () => {
     beforeAll(() => {
       identityScopeId = 'someScopeId';
 
-      rawIdentityScopeId = dsMockUtils.createMockScopeId(identityScopeId);
+      rawIdentityScopeId = dsMockUtils.createMockIdentityId(identityScopeId);
     });
 
     beforeEach(() => {

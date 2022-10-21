@@ -10,7 +10,6 @@ import {
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { ScopeId } from 'polymesh-types/types';
 
 import {
   AddTransferRestrictionParams,
@@ -86,7 +85,11 @@ describe('addTransferRestriction procedure', () => {
     [PolymeshPrimitivesTicker, PolymeshPrimitivesTransferComplianceTransferCondition]
   >;
   let setExemptedEntitiesTransaction: PolymeshTx<
-    [PolymeshPrimitivesTicker, PolymeshPrimitivesTransferComplianceTransferCondition, ScopeId[]]
+    [
+      PolymeshPrimitivesTicker,
+      PolymeshPrimitivesTransferComplianceTransferCondition,
+      PolymeshPrimitivesIdentityId[]
+    ]
   >;
   let transferRestrictionTypeToStatOpTypeSpy: jest.SpyInstance<
     PolymeshPrimitivesStatisticsStatOpType,
@@ -351,7 +354,7 @@ describe('addTransferRestriction procedure', () => {
 
   it('should return an add exempted entities transaction spec', async () => {
     const identityScopeId = 'anotherScopeId';
-    const rawIdentityScopeId = dsMockUtils.createMockScopeId(identityScopeId);
+    const rawIdentityScopeId = dsMockUtils.createMockIdentityId(identityScopeId);
     const rawIdentityBtree = dsMockUtils.createMockBTreeSet<PolymeshPrimitivesIdentityId>([
       rawIdentityScopeId,
     ]);

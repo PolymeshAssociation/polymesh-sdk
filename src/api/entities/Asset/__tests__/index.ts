@@ -680,22 +680,22 @@ describe('Asset class', () => {
 
       const identityScopes = [
         {
-          scopeId: dsMockUtils.createMockScopeId('someScopeId'),
+          scopeId: dsMockUtils.createMockIdentityId('someScopeId'),
           identityId: dsMockUtils.createMockIdentityId('someDid'),
           balance: dsMockUtils.createMockBalance(new BigNumber(100)),
         },
         {
-          scopeId: dsMockUtils.createMockScopeId('someScopeId'),
+          scopeId: dsMockUtils.createMockIdentityId('someScopeId'),
           identityId: dsMockUtils.createMockIdentityId('someOtherDid'),
           balance: dsMockUtils.createMockBalance(new BigNumber(50)),
         },
         {
-          scopeId: dsMockUtils.createMockScopeId('randomScopeId'),
+          scopeId: dsMockUtils.createMockIdentityId('randomScopeId'),
           identityId: dsMockUtils.createMockIdentityId('randomDid'),
           balance: dsMockUtils.createMockBalance(new BigNumber(10)),
         },
         {
-          scopeId: dsMockUtils.createMockScopeId('excludedScopeId'),
+          scopeId: dsMockUtils.createMockIdentityId('excludedScopeId'),
           identityId: dsMockUtils.createMockIdentityId('zeroCountDid'),
           balance: dsMockUtils.createMockBalance(new BigNumber(0)),
         },

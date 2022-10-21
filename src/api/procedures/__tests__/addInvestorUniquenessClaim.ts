@@ -109,7 +109,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
     rawClaim = dsMockUtils.createMockClaim({
       InvestorUniqueness: [
         dsMockUtils.createMockScope({ Ticker: rawTicker }),
-        dsMockUtils.createMockScopeId(ticker),
+        dsMockUtils.createMockIdentityId(ticker),
         dsMockUtils.createMockCddId(cddId),
       ],
     });
@@ -117,7 +117,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
       InvestorUniquenessV2: dsMockUtils.createMockCddId(cddId),
     });
     rawScope = dsMockUtils.createMockScope({ Ticker: rawTicker });
-    rawScopeId = dsMockUtils.createMockScopeId(scopeId);
+    rawScopeId = dsMockUtils.createMockIdentityId(scopeId);
     rawProof = dsMockUtils.createMockInvestorZKProofData(proof);
     rawScopeClaimProof = dsMockUtils.createMockScopeClaimProof({
       proofScopeIdWellformed: proofScopeIdWellFormed,

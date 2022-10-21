@@ -32,6 +32,7 @@ import {
   PolymeshPrimitivesCalendarCalendarPeriod,
   PolymeshPrimitivesCddId,
   PolymeshPrimitivesCondition,
+  PolymeshPrimitivesConditionTargetIdentity,
   PolymeshPrimitivesDocument,
   PolymeshPrimitivesDocumentHash,
   PolymeshPrimitivesEthereumEcdsaSignature,
@@ -3739,7 +3740,7 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
       claim = dsMockUtils.createMockClaim({
         InvestorUniqueness: [
           dsMockUtils.createMockScope({ Identity: dsMockUtils.createMockIdentityId(scope.value) }),
-          dsMockUtils.createMockScopeId(fakeResult.scopeId),
+          dsMockUtils.createMockIdentityId(fakeResult.scopeId),
           dsMockUtils.createMockCddId(fakeResult.cddId),
         ],
       });
@@ -4313,16 +4314,16 @@ describe('identityIdToString', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should convert a ScopeId to a scopeId string', () => {
+  it('should convert a PolymeshPrimitivesIdentityId to a identityId string', () => {
     const fakeResult = 'scopeId';
-    const scopeId = dsMockUtils.createMockScopeId(fakeResult);
+    const scopeId = dsMockUtils.createMockIdentityId(fakeResult);
 
     const result = identityIdToString(scopeId);
     expect(result).toBe(fakeResult);
   });
 });
 
-describe.skip('requirementToComplianceRequirement and complianceRequirementToRequirement', () => {
+describe('requirementToComplianceRequirement and complianceRequirementToRequirement', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
@@ -4394,6 +4395,14 @@ describe.skip('requirementToComplianceRequirement and complianceRequirementToReq
       const fakeResult = 'convertedComplianceRequirement' as unknown as ComplianceRequirement;
 
       const createTypeMock = context.createType;
+
+      when(createTypeMock)
+        .calledWith('PolymeshPrimitivesIdentityClaimClaim', expect.anything())
+        .mockReturnValue('claim' as unknown as PolymeshPrimitivesIdentityClaimClaim);
+
+      when(createTypeMock)
+        .calledWith('PolymeshPrimitivesConditionTargetIdentity', expect.anything())
+        .mockReturnValue('targetIdentity' as unknown as PolymeshPrimitivesConditionTargetIdentity);
 
       conditions.forEach(({ type }) => {
         const meshType = type === ConditionType.IsExternalAgent ? ConditionType.IsIdentity : type;

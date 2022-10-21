@@ -164,7 +164,6 @@ import {
   GranularCanTransferResult,
   Moment,
   PortfolioValidityResult,
-  ScopeId,
   TransferConditionResult,
 } from '~/polkadot/polymesh';
 import { dsMockUtils } from '~/testUtils/mocks';
@@ -2578,13 +2577,6 @@ export const createMockScope = (
  */
 export const createMockCddId = (cddId?: string): MockCodec<PolymeshPrimitivesCddId> =>
   createMockStringCodec<PolymeshPrimitivesCddId>(cddId);
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockScopeId = (scopeId?: string): ScopeId =>
-  createMockStringCodec<ScopeId>(scopeId);
 
 /**
  * @hidden

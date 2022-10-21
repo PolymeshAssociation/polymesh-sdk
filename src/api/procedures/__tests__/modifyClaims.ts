@@ -124,7 +124,7 @@ describe('modifyClaims procedure', () => {
     rawIuClaim = dsMockUtils.createMockClaim({
       InvestorUniqueness: [
         dsMockUtils.createMockScope(),
-        dsMockUtils.createMockScopeId(),
+        dsMockUtils.createMockIdentityId(),
         dsMockUtils.createMockCddId(),
       ],
     });
