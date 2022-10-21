@@ -1,6 +1,9 @@
 import { Balance } from '@polkadot/types/interfaces';
+import {
+  PolymeshPrimitivesIdentityIdPortfolioId,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { PortfolioId as MeshPortfolioId, Ticker } from 'polymesh-types/types';
 
 import {
   getAuthorization,
@@ -37,11 +40,11 @@ describe('controllerTransfer procedure', () => {
     [BigNumber, Context, (boolean | undefined)?]
   >;
   let portfolioIdToMeshPortfolioIdSpy: jest.SpyInstance;
-  let stringToTickerSpy: jest.SpyInstance<Ticker, [string, Context]>;
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
   let ticker: string;
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
   let did: string;
-  let rawPortfolioId: MeshPortfolioId;
+  let rawPortfolioId: PolymeshPrimitivesIdentityIdPortfolioId;
   let originPortfolio: DefaultPortfolio;
   let rawAmount: Balance;
   let amount: BigNumber;

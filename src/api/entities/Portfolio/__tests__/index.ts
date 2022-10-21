@@ -1,4 +1,8 @@
 import { Balance } from '@polkadot/types/interfaces';
+import {
+  PolymeshPrimitivesIdentityIdPortfolioId,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -17,7 +21,6 @@ import {
   SettlementResult,
   SettlementResultEnum,
 } from '~/middleware/types';
-import { PortfolioId, Ticker } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -182,14 +185,14 @@ describe('Portfolio class', () => {
     let total1: BigNumber;
     let locked0: BigNumber;
     let locked1: BigNumber;
-    let rawTicker0: Ticker;
-    let rawTicker1: Ticker;
-    let rawTicker2: Ticker;
+    let rawTicker0: PolymeshPrimitivesTicker;
+    let rawTicker1: PolymeshPrimitivesTicker;
+    let rawTicker2: PolymeshPrimitivesTicker;
     let rawTotal0: Balance;
     let rawTotal1: Balance;
     let rawLocked0: Balance;
     let rawLocked1: Balance;
-    let rawPortfolioId: PortfolioId;
+    let rawPortfolioId: PolymeshPrimitivesIdentityIdPortfolioId;
 
     beforeAll(() => {
       did = 'someDid';

@@ -1,8 +1,10 @@
 import { Moment } from '@polkadot/types/interfaces';
-import { PolymeshPrimitivesAuthorizationAuthorizationData } from '@polkadot/types/lookup';
+import {
+  PolymeshPrimitivesAuthorizationAuthorizationData,
+  PolymeshPrimitivesSecondaryKeySignatory,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { Signatory } from 'polymesh-types/types';
 
 import { prepareInviteAccount } from '~/api/procedures/inviteAccount';
 import { Account, AuthorizationRequest, Context } from '~/internal';
@@ -32,7 +34,10 @@ describe('inviteAccount procedure', () => {
   >;
   let dateToMomentSpy: jest.SpyInstance<Moment, [Date, Context]>;
   let signerToStringSpy: jest.SpyInstance<string, [string | Identity | Account]>;
-  let signerValueToSignatorySpy: jest.SpyInstance<Signatory, [SignerValue, Context]>;
+  let signerValueToSignatorySpy: jest.SpyInstance<
+    PolymeshPrimitivesSecondaryKeySignatory,
+    [SignerValue, Context]
+  >;
   let permissionsLikeToPermissionsSpy: jest.SpyInstance;
 
   let args: InviteAccountParams;

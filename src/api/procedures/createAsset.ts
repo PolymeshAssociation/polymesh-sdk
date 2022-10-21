@@ -1,9 +1,8 @@
-import { Bytes } from '@polkadot/types';
+import { Bytes, u32 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { values } from 'lodash';
 
 import { Asset, Context, PolymeshError, Procedure, TickerReservation } from '~/internal';
-import { CustomAssetTypeId } from '~/polkadot/polymesh';
 import {
   AssetTx,
   CreateAssetWithTickerParams,
@@ -49,7 +48,7 @@ export interface Storage {
    *   null value means the type is not custom
    */
   customTypeData: {
-    id: CustomAssetTypeId;
+    id: u32;
     rawValue: Bytes;
   } | null;
 

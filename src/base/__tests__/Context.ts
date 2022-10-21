@@ -881,7 +881,7 @@ describe('Context class', () => {
         meta: {
           args: [
             {
-              type: 'IdentityId',
+              type: 'PolymeshPrimitivesIdentityId',
               name: 'target',
             },
             {
@@ -893,7 +893,7 @@ describe('Context class', () => {
               name: 'expiry',
             },
             {
-              type: '(IdentityId, u32)',
+              type: '(PolymeshPrimitivesIdentityId, u32)',
               name: 'identityPair',
             },
           ],
@@ -972,7 +972,7 @@ describe('Context class', () => {
         meta: {
           args: [
             {
-              type: 'Vec<IdentityId>',
+              type: 'Vec<PolymeshPrimitivesIdentityId>',
               name: 'dids',
             },
           ],

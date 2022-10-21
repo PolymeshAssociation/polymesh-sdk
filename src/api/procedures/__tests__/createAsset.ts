@@ -1,19 +1,14 @@
 import { bool, BTreeSet, Bytes, Option, Vec } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import {
+  PolymeshPrimitivesAssetAssetType,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesDocument,
   PolymeshPrimitivesStatisticsStatType,
+  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import {
-  AssetIdentifier,
-  AssetName,
-  AssetType,
-  FundingRoundName,
-  Ticker,
-} from 'polymesh-types/types';
 
 import {
   getAuthorization,
@@ -52,7 +47,7 @@ jest.mock(
 
 describe('createAsset procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance<Ticker, [string, Context]>;
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
   let bigNumberToBalanceSpy: jest.SpyInstance;
   let stringToBytesSpy: jest.SpyInstance<Bytes, [string, Context]>;
   let nameToAssetNameSpy: jest.SpyInstance<Bytes, [string, Context]>;
@@ -63,7 +58,10 @@ describe('createAsset procedure', () => {
     BTreeSet<PolymeshPrimitivesStatisticsStatType>,
     [PolymeshPrimitivesStatisticsStatType[], Context]
   >;
-  let internalAssetTypeToAssetTypeSpy: jest.SpyInstance<AssetType, [InternalAssetType, Context]>;
+  let internalAssetTypeToAssetTypeSpy: jest.SpyInstance<
+    PolymeshPrimitivesAssetAssetType,
+    [InternalAssetType, Context]
+  >;
   let securityIdentifierToAssetIdentifierSpy: jest.SpyInstance<
     PolymeshPrimitivesAssetIdentifier,
     [SecurityIdentifier, Context]
@@ -81,11 +79,11 @@ describe('createAsset procedure', () => {
   let fundingRound: string;
   let requireInvestorUniqueness: boolean;
   let documents: AssetDocument[];
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
   let rawName: Bytes;
   let rawInitialSupply: Balance;
   let rawIsDivisible: bool;
-  let rawType: AssetType;
+  let rawType: PolymeshPrimitivesAssetAssetType;
   let rawIdentifiers: PolymeshPrimitivesAssetIdentifier[];
   let rawFundingRound: Bytes;
   let rawDisableIu: bool;
@@ -188,13 +186,13 @@ describe('createAsset procedure', () => {
 
   let createAssetTransaction: PolymeshTx<
     [
-      AssetName,
-      Ticker,
+      Bytes,
+      PolymeshPrimitivesTicker,
       Balance,
       bool,
-      AssetType,
-      Vec<AssetIdentifier>,
-      Option<FundingRoundName>,
+      PolymeshPrimitivesAssetAssetType,
+      Vec<PolymeshPrimitivesAssetIdentifier>,
+      Option<Bytes>,
       bool
     ]
   >;

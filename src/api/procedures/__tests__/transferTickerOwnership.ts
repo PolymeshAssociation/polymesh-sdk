@@ -1,9 +1,11 @@
 import { Option } from '@polkadot/types';
 import { Moment } from '@polkadot/types/interfaces';
-import { PolymeshPrimitivesAuthorizationAuthorizationData } from '@polkadot/types/lookup';
+import {
+  PolymeshPrimitivesAuthorizationAuthorizationData,
+  PolymeshPrimitivesSecondaryKeySignatory,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { AuthorizationData, Signatory } from 'polymesh-types/types';
 
 import {
   getAuthorization,
@@ -34,7 +36,10 @@ jest.mock(
 
 describe('transferTickerOwnership procedure', () => {
   let mockContext: Mocked<Context>;
-  let signerValueToSignatorySpy: jest.SpyInstance<Signatory, [SignerValue, Context]>;
+  let signerValueToSignatorySpy: jest.SpyInstance<
+    PolymeshPrimitivesSecondaryKeySignatory,
+    [SignerValue, Context]
+  >;
   let authorizationToAuthorizationDataSpy: jest.SpyInstance<
     PolymeshPrimitivesAuthorizationAuthorizationData,
     [Authorization, Context]
@@ -43,7 +48,7 @@ describe('transferTickerOwnership procedure', () => {
   let ticker: string;
   let did: string;
   let expiry: Date;
-  let rawSignatory: Signatory;
+  let rawSignatory: PolymeshPrimitivesSecondaryKeySignatory;
   let rawAuthorizationData: PolymeshPrimitivesAuthorizationAuthorizationData;
   let rawMoment: Moment;
   let args: Params;
@@ -74,7 +79,13 @@ describe('transferTickerOwnership procedure', () => {
     };
   });
 
-  let transaction: PolymeshTx<[Signatory, AuthorizationData, Option<Moment>]>;
+  let transaction: PolymeshTx<
+    [
+      PolymeshPrimitivesSecondaryKeySignatory,
+      PolymeshPrimitivesAuthorizationAuthorizationData,
+      Option<Moment>
+    ]
+  >;
 
   beforeEach(() => {
     transaction = dsMockUtils.createTxMock('identity', 'addAuthorization');

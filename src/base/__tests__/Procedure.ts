@@ -1,7 +1,10 @@
 import { Balance } from '@polkadot/types/interfaces';
+import {
+  PolymeshCommonUtilitiesProtocolFeeProtocolOp,
+  PolymeshPrimitivesPosRatio,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { PosRatio, ProtocolOp } from 'polymesh-types/types';
 
 import { Context, Procedure } from '~/internal';
 import {
@@ -249,12 +252,15 @@ describe('Procedure class', () => {
   });
 
   describe('method: prepare', () => {
-    let posRatioToBigNumberSpy: jest.SpyInstance<BigNumber, [PosRatio]>;
+    let posRatioToBigNumberSpy: jest.SpyInstance<BigNumber, [PolymeshPrimitivesPosRatio]>;
     let balanceToBigNumberSpy: jest.SpyInstance<BigNumber, [Balance]>;
-    let txTagToProtocolOpSpy: jest.SpyInstance<ProtocolOp, [TxTag, Context]>;
+    let txTagToProtocolOpSpy: jest.SpyInstance<
+      PolymeshCommonUtilitiesProtocolFeeProtocolOp,
+      [TxTag, Context]
+    >;
     let txTags: TxTag[];
     let fees: BigNumber[];
-    let rawCoefficient: PosRatio;
+    let rawCoefficient: PolymeshPrimitivesPosRatio;
     let rawFees: Balance[];
     let numerator: BigNumber;
     let denominator: BigNumber;
@@ -288,7 +294,7 @@ describe('Procedure class', () => {
       txTags.forEach(txTag =>
         when(txTagToProtocolOpSpy)
           .calledWith(txTag, context)
-          .mockReturnValue(txTag as unknown as ProtocolOp)
+          .mockReturnValue(txTag as unknown as PolymeshCommonUtilitiesProtocolFeeProtocolOp)
       );
 
       rawFees.forEach((rawFee, index) =>

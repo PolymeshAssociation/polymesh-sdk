@@ -1,7 +1,7 @@
 import { AccountId } from '@polkadot/types/interfaces';
+import { PolymeshPrimitivesSecondaryKey } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import { when } from 'jest-when';
-import { SecondaryKey as MeshSecondaryKey } from 'polymesh-types/types';
 
 import {
   createRegisterIdentityResolver,
@@ -19,7 +19,7 @@ describe('registerIdentity procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToAccountIdSpy: jest.SpyInstance<AccountId, [string, Context]>;
   let secondaryAccountToMeshSecondaryKeySpy: jest.SpyInstance<
-    MeshSecondaryKey,
+    PolymeshPrimitivesSecondaryKey,
     [PermissionedAccount, Context]
   >;
   let registerIdentityTransaction: PolymeshTx<unknown[]>;

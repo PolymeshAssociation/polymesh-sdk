@@ -2,10 +2,10 @@ import { Vec } from '@polkadot/types';
 import {
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
   PolymeshPrimitivesCondition,
+  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { ComplianceRequirement, Ticker } from 'polymesh-types/types';
 
 import {
   getAuthorization,
@@ -35,7 +35,7 @@ jest.mock(
 
 describe('setAssetRequirements procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance<Ticker, [string, Context]>;
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
   let requirementToComplianceRequirementSpy: jest.SpyInstance<
     PolymeshPrimitivesComplianceManagerComplianceRequirement,
     [InputRequirement, Context]
@@ -43,7 +43,7 @@ describe('setAssetRequirements procedure', () => {
   let ticker: string;
   let requirements: Condition[][];
   let currentRequirements: Requirement[];
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
   let senderConditions: PolymeshPrimitivesCondition[][];
   let receiverConditions: PolymeshPrimitivesCondition[][];
   let rawComplianceRequirements: PolymeshPrimitivesComplianceManagerComplianceRequirement[];
@@ -118,8 +118,10 @@ describe('setAssetRequirements procedure', () => {
     };
   });
 
-  let resetAssetComplianceTransaction: PolymeshTx<[Ticker]>;
-  let replaceAssetComplianceTransaction: PolymeshTx<Vec<ComplianceRequirement>>;
+  let resetAssetComplianceTransaction: PolymeshTx<[PolymeshPrimitivesTicker]>;
+  let replaceAssetComplianceTransaction: PolymeshTx<
+    Vec<PolymeshPrimitivesComplianceManagerComplianceRequirement>
+  >;
 
   beforeEach(() => {
     dsMockUtils.setConstMock('complianceManager', 'maxConditionComplexity', {

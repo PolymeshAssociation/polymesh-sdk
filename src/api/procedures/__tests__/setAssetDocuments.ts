@@ -1,8 +1,7 @@
-import { Vec } from '@polkadot/types';
-import { PolymeshPrimitivesDocument } from '@polkadot/types/lookup';
+import { u32, Vec } from '@polkadot/types';
+import { PolymeshPrimitivesDocument, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { Document, DocumentId, Ticker } from 'polymesh-types/types';
 
 import {
   getAuthorization,
@@ -26,16 +25,16 @@ jest.mock(
 
 describe('setAssetDocuments procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance<Ticker, [string, Context]>;
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
   let assetDocumentToDocumentSpy: jest.SpyInstance<
     PolymeshPrimitivesDocument,
     [AssetDocument, Context]
   >;
   let ticker: string;
   let documents: AssetDocument[];
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
   let rawDocuments: PolymeshPrimitivesDocument[];
-  let documentEntries: [[Ticker, DocumentId], PolymeshPrimitivesDocument][];
+  let documentEntries: [[PolymeshPrimitivesTicker, u32], PolymeshPrimitivesDocument][];
   let args: Params;
 
   beforeAll(() => {
@@ -89,8 +88,8 @@ describe('setAssetDocuments procedure', () => {
     };
   });
 
-  let removeDocumentsTransaction: PolymeshTx<[Vec<DocumentId>, Ticker]>;
-  let addDocumentsTransaction: PolymeshTx<[Vec<Document>, Ticker]>;
+  let removeDocumentsTransaction: PolymeshTx<[Vec<u32>, PolymeshPrimitivesTicker]>;
+  let addDocumentsTransaction: PolymeshTx<[Vec<u32>, PolymeshPrimitivesTicker]>;
 
   beforeEach(() => {
     dsMockUtils.createQueryMock('asset', 'assetDocuments', {

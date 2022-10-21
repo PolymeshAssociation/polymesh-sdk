@@ -1,9 +1,10 @@
 import { bool } from '@polkadot/types';
+import { PolymeshPrimitivesSecondaryKeySignatory } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Context, Namespace } from '~/internal';
-import { AuthorizationType as MeshAuthorizationType, Signatory } from '~/polkadot/polymesh';
+import { AuthorizationType as MeshAuthorizationType } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { AuthorizationType, Identity, SignerValue } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -41,7 +42,10 @@ describe('Authorizations class', () => {
   });
 
   describe('method: getReceived', () => {
-    let signerValueToSignatorySpy: jest.SpyInstance<Signatory, [SignerValue, Context]>;
+    let signerValueToSignatorySpy: jest.SpyInstance<
+      PolymeshPrimitivesSecondaryKeySignatory,
+      [SignerValue, Context]
+    >;
     let booleanToBoolSpy: jest.SpyInstance<bool, [boolean, Context]>;
     let authorizationTypeToMeshAuthorizationTypeSpy: jest.SpyInstance<
       MeshAuthorizationType,

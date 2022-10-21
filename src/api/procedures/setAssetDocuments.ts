@@ -1,5 +1,5 @@
+import { u32 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import { DocumentId } from 'polymesh-types/types';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import { AssetDocument, ErrorCode, SetAssetDocumentsParams, TxTags } from '~/types';
@@ -12,7 +12,7 @@ import {
 import { checkTxType, hasSameElements } from '~/utils/internal';
 
 export interface Storage {
-  currentDocIds: DocumentId[];
+  currentDocIds: u32[];
   currentDocs: AssetDocument[];
 }
 
@@ -122,7 +122,7 @@ export async function prepareStorage(
     stringToTicker(ticker, context)
   );
 
-  const currentDocIds: DocumentId[] = [];
+  const currentDocIds: u32[] = [];
   const currentDocs: AssetDocument[] = [];
 
   currentDocEntries.forEach(([key, doc]) => {

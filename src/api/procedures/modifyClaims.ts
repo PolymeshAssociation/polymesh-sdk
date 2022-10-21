@@ -1,12 +1,14 @@
 import { Moment } from '@polkadot/types/interfaces';
-import { PolymeshPrimitivesIdentityId } from '@polkadot/types/lookup';
+import {
+  PolymeshPrimitivesIdentityClaimClaim,
+  PolymeshPrimitivesIdentityId,
+} from '@polkadot/types/lookup';
 import P from 'bluebird';
 import { cloneDeep, isEqual, uniq } from 'lodash';
 
 import { Context, Identity, PolymeshError, Procedure } from '~/internal';
 import { didsWithClaims } from '~/middleware/queries';
 import { Claim as MiddlewareClaim, Query } from '~/middleware/types';
-import { Claim as MeshClaim } from '~/polkadot/polymesh';
 import {
   CddClaim,
   Claim,
@@ -28,7 +30,6 @@ import {
   middlewareScopeToScope,
   signerToString,
   stringToIdentityId,
-  stringToScopeId,
   stringToTicker,
 } from '~/utils/conversion';
 import { asIdentity, assembleBatchTransactions } from '~/utils/internal';
@@ -72,7 +73,7 @@ const findPositiveBalanceIuClaims = (claims: ClaimTarget[], context: Context): P
 
         const balance = await context.polymeshApi.query.asset.aggregateBalance(
           stringToTicker(value, context),
-          stringToScopeId(scopeId, context)
+          stringToIdentityId(scopeId, context)
         );
 
         if (!balanceToBigNumber(balance).isZero()) {
@@ -149,7 +150,11 @@ export async function prepareModifyClaims(
     context,
   } = this;
 
-  const modifyClaimArgs: [PolymeshPrimitivesIdentityId, MeshClaim, Moment | null][] = [];
+  const modifyClaimArgs: [
+    PolymeshPrimitivesIdentityId,
+    PolymeshPrimitivesIdentityClaimClaim,
+    Moment | null
+  ][] = [];
   let allTargets: string[] = [];
 
   claims.forEach(({ target, expiry, claim }: ClaimTarget) => {
@@ -236,9 +241,8 @@ export async function prepareModifyClaims(
       });
     }
 
-    const argsArray: [PolymeshPrimitivesIdentityId, MeshClaim][] = modifyClaimArgs.map(
-      ([identityId, claim]) => [identityId, claim]
-    );
+    const argsArray: [PolymeshPrimitivesIdentityId, PolymeshPrimitivesIdentityClaimClaim][] =
+      modifyClaimArgs.map(([identityId, claim]) => [identityId, claim]);
 
     const transactions = assembleBatchTransactions([
       {

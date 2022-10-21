@@ -1,6 +1,6 @@
 /* istanbul ignore file */
 
-import { CountryCode as MeshCountryCode } from 'polymesh-types/types';
+import { PolymeshPrimitivesJurisdictionCountryCode } from '@polkadot/types/lookup';
 
 import { Context } from '~/internal';
 import { CountryCode } from '~/types';
@@ -11,14 +11,16 @@ import { CountryCode } from '~/types';
 export function countryCodeToMeshCountryCode(
   countryCode: CountryCode,
   context: Context
-): MeshCountryCode {
-  return context.createType('CountryCode', countryCode);
+): PolymeshPrimitivesJurisdictionCountryCode {
+  return context.createType('PolymeshPrimitivesJurisdictionCountryCode', countryCode);
 }
 
 /**
  * @hidden
  */
-export function meshCountryCodeToCountryCode(meshCountryCode: MeshCountryCode): CountryCode {
+export function meshCountryCodeToCountryCode(
+  meshCountryCode: PolymeshPrimitivesJurisdictionCountryCode
+): CountryCode {
   if (meshCountryCode.isAf) {
     return CountryCode.Af;
   }

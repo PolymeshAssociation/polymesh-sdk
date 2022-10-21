@@ -1,7 +1,7 @@
 import { Bytes, u64 } from '@polkadot/types';
+import { PolymeshPrimitivesIdentityId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { IdentityId } from 'polymesh-types/types';
 
 import { getAuthorization, Params, prepareRenamePortfolio } from '~/api/procedures/renamePortfolio';
 import { Context, NumberedPortfolio } from '~/internal';
@@ -26,7 +26,7 @@ describe('renamePortfolio procedure', () => {
   const newName = 'newName';
   const rawNewName = dsMockUtils.createMockBytes(newName);
   let mockContext: Mocked<Context>;
-  let stringToIdentityIdSpy: jest.SpyInstance<IdentityId, [string, Context]>;
+  let stringToIdentityIdSpy: jest.SpyInstance<PolymeshPrimitivesIdentityId, [string, Context]>;
   let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
   let stringToBytesSpy: jest.SpyInstance<Bytes, [string, Context]>;
   let getPortfolioIdsByNameSpy: jest.SpyInstance;

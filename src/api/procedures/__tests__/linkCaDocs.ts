@@ -1,8 +1,11 @@
-import { Vec } from '@polkadot/types';
-import { PalletCorporateActionsCaId, PolymeshPrimitivesDocument } from '@polkadot/types/lookup';
+import { u32, Vec } from '@polkadot/types';
+import {
+  PalletCorporateActionsCaId,
+  PolymeshPrimitivesDocument,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { Document, DocumentId, Ticker } from 'polymesh-types/types';
 
 import { getAuthorization, Params, prepareLinkCaDocs } from '~/api/procedures/linkCaDocs';
 import { Context } from '~/internal';
@@ -20,14 +23,14 @@ jest.mock(
 
 describe('linkCaDocs procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance<Ticker, [string, Context]>;
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
   let ticker: string;
   let id: BigNumber;
   let documents: AssetDocument[];
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
   let rawDocuments: PolymeshPrimitivesDocument[];
-  let rawDocumentIds: DocumentId[];
-  let documentEntries: [[Ticker, DocumentId], PolymeshPrimitivesDocument][];
+  let rawDocumentIds: u32[];
+  let documentEntries: [[PolymeshPrimitivesTicker, u32], PolymeshPrimitivesDocument][];
   let args: Params;
   let rawCaId: PalletCorporateActionsCaId;
 
@@ -80,7 +83,7 @@ describe('linkCaDocs procedure', () => {
     jest.spyOn(utilsConversionModule, 'corporateActionIdentifierToCaId').mockReturnValue(rawCaId);
   });
 
-  let linkCaDocTransaction: PolymeshTx<[Vec<Document>, Ticker]>;
+  let linkCaDocTransaction: PolymeshTx<[Vec<PolymeshPrimitivesDocument>, PolymeshPrimitivesTicker]>;
 
   beforeEach(() => {
     dsMockUtils.createQueryMock('asset', 'assetDocuments', {

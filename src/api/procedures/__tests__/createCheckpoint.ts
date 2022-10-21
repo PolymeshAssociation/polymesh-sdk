@@ -1,7 +1,7 @@
+import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { Ticker } from 'polymesh-types/types';
 
 import {
   createCheckpointResolver,
@@ -27,9 +27,9 @@ jest.mock(
 
 describe('createCheckpoint procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance<Ticker, [string, Context]>;
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
   let ticker: string;
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
 
   beforeAll(() => {
     dsMockUtils.initMocks();

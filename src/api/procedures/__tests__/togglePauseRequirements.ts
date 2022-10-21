@@ -1,6 +1,6 @@
 import { bool } from '@polkadot/types';
+import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import { when } from 'jest-when';
-import { Ticker } from 'polymesh-types/types';
 
 import {
   getAuthorization,
@@ -20,11 +20,11 @@ jest.mock(
 
 describe('togglePauseRequirements procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance<Ticker, [string, Context]>;
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
   let assetCompliancesMock: jest.Mock;
   let boolToBooleanSpy: jest.SpyInstance<boolean, [bool]>;
   let ticker: string;
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
 
   beforeAll(() => {
     dsMockUtils.initMocks();

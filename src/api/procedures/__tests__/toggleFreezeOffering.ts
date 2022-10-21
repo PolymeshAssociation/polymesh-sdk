@@ -1,7 +1,7 @@
 import { u64 } from '@polkadot/types';
+import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { Ticker } from 'polymesh-types/types';
 
 import {
   getAuthorization,
@@ -25,10 +25,10 @@ jest.mock(
 
 describe('toggleFreezeOffering procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance<Ticker, [string, Context]>;
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
   let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
   let ticker: string;
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
   let id: BigNumber;
   let rawId: u64;
 

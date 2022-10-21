@@ -1,7 +1,7 @@
 import { Balance } from '@polkadot/types/interfaces';
+import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { Ticker } from 'polymesh-types/types';
 
 import {
   getAuthorization,
@@ -23,10 +23,10 @@ jest.mock(
 
 describe('issueTokens procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance<Ticker, [string, Context]>;
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
   let bigNumberToBalance: jest.SpyInstance;
   let ticker: string;
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
   let amount: BigNumber;
   let rawAmount: Balance;
 

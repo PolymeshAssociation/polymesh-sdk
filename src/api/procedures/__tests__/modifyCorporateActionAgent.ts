@@ -1,8 +1,12 @@
 import { Moment } from '@polkadot/types/interfaces';
-import { PolymeshPrimitivesAuthorizationAuthorizationData } from '@polkadot/types/lookup';
+import {
+  PolymeshPrimitivesAgentAgentGroup,
+  PolymeshPrimitivesAuthorizationAuthorizationData,
+  PolymeshPrimitivesSecondaryKeySignatory,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { AgentGroup, Signatory, Ticker } from 'polymesh-types/types';
 
 import {
   getAuthorization,
@@ -28,12 +32,15 @@ describe('modifyCorporateActionAgent procedure', () => {
   >;
   let dateToMomentSpy: jest.SpyInstance<Moment, [Date, Context]>;
   let signerToStringSpy: jest.SpyInstance<string, [string | Identity | Account]>;
-  let signerValueToSignatorySpy: jest.SpyInstance<Signatory, [SignerValue, Context]>;
+  let signerValueToSignatorySpy: jest.SpyInstance<
+    PolymeshPrimitivesSecondaryKeySignatory,
+    [SignerValue, Context]
+  >;
   let ticker: string;
-  let rawTicker: Ticker;
-  let rawAgentGroup: AgentGroup;
+  let rawTicker: PolymeshPrimitivesTicker;
+  let rawAgentGroup: PolymeshPrimitivesAgentAgentGroup;
   let target: string;
-  let rawSignatory: Signatory;
+  let rawSignatory: PolymeshPrimitivesSecondaryKeySignatory;
   let rawAuthorizationData: PolymeshPrimitivesAuthorizationAuthorizationData;
 
   beforeAll(() => {

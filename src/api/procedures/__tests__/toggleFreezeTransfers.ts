@@ -1,5 +1,5 @@
+import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import { when } from 'jest-when';
-import { Ticker } from 'polymesh-types/types';
 
 import {
   getAuthorization,
@@ -19,9 +19,9 @@ jest.mock(
 
 describe('toggleFreezeTransfers procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance<Ticker, [string, Context]>;
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
   let ticker: string;
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
 
   beforeAll(() => {
     dsMockUtils.initMocks();

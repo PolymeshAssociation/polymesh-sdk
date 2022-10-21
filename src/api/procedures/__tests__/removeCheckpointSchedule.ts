@@ -1,6 +1,9 @@
 import { u64 } from '@polkadot/types';
+import {
+  PolymeshCommonUtilitiesCheckpointStoredSchedule,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { StoredSchedule, Ticker } from 'polymesh-types/types';
 
 import {
   getAuthorization,
@@ -24,7 +27,7 @@ describe('removeCheckpointSchedule procedure', () => {
   let bigNumberToU64Spy: jest.SpyInstance;
   let u32ToBigNumberSpy: jest.SpyInstance;
   let ticker: string;
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
   let id: BigNumber;
   let rawId: u64;
 
@@ -70,7 +73,7 @@ describe('removeCheckpointSchedule procedure', () => {
       returnValue: [
         dsMockUtils.createMockStoredSchedule({
           id: dsMockUtils.createMockU64(new BigNumber(5)),
-        } as unknown as StoredSchedule),
+        } as unknown as PolymeshCommonUtilitiesCheckpointStoredSchedule),
       ],
     });
 
@@ -91,7 +94,7 @@ describe('removeCheckpointSchedule procedure', () => {
       returnValue: [
         dsMockUtils.createMockStoredSchedule({
           id: dsMockUtils.createMockU64(id),
-        } as unknown as StoredSchedule),
+        } as unknown as PolymeshCommonUtilitiesCheckpointStoredSchedule),
       ],
     });
 
@@ -114,7 +117,7 @@ describe('removeCheckpointSchedule procedure', () => {
       returnValue: [
         dsMockUtils.createMockStoredSchedule({
           id: rawId,
-        } as StoredSchedule),
+        } as PolymeshCommonUtilitiesCheckpointStoredSchedule),
       ],
     });
 

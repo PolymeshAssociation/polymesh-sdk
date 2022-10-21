@@ -1,6 +1,7 @@
 import { bool, Bytes } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import {
+  PalletAssetSecurityToken,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
@@ -11,7 +12,6 @@ import { Asset, Context, Entity, PolymeshTransaction } from '~/internal';
 import { eventByIndexedArgs, tickerExternalAgentHistory } from '~/middleware/queries';
 import { assetQuery, tickerExternalAgentHistoryQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
-import { SecurityToken as MeshSecurityToken } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { SecurityIdentifier, SecurityIdentifierType } from '~/types';
 import { tuple } from '~/types/utils';
@@ -80,7 +80,7 @@ describe('Asset class', () => {
     let iuDisabled: boolean;
     let did: string;
 
-    let rawToken: MeshSecurityToken;
+    let rawToken: PalletAssetSecurityToken;
     let rawName: Bytes;
     let rawIuDisabled: bool;
 

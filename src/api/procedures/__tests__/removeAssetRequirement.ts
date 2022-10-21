@@ -1,6 +1,10 @@
+import {
+  PolymeshPrimitivesComplianceManagerComplianceRequirement,
+  PolymeshPrimitivesCondition,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { ComplianceRequirement, Condition as MeshCondition, Ticker } from 'polymesh-types/types';
 
 import {
   getAuthorization,
@@ -21,13 +25,13 @@ jest.mock(
 
 describe('removeAssetRequirement procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance<Ticker, [string, Context]>;
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
   let ticker: string;
   let requirement: BigNumber;
-  let rawTicker: Ticker;
-  let senderConditions: MeshCondition[][];
-  let receiverConditions: MeshCondition[][];
-  let rawComplianceRequirement: ComplianceRequirement[];
+  let rawTicker: PolymeshPrimitivesTicker;
+  let senderConditions: PolymeshPrimitivesCondition[][];
+  let receiverConditions: PolymeshPrimitivesCondition[][];
+  let rawComplianceRequirement: PolymeshPrimitivesComplianceManagerComplianceRequirement[];
   let args: Params;
 
   beforeAll(() => {
@@ -44,7 +48,7 @@ describe('removeAssetRequirement procedure', () => {
     };
   });
 
-  let removeComplianceRequirementTransaction: PolymeshTx<[Ticker]>;
+  let removeComplianceRequirementTransaction: PolymeshTx<[PolymeshPrimitivesTicker]>;
 
   beforeEach(() => {
     dsMockUtils.setConstMock('complianceManager', 'maxConditionComplexity', {
@@ -61,12 +65,12 @@ describe('removeAssetRequirement procedure', () => {
     when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
 
     senderConditions = [
-      'senderConditions0' as unknown as MeshCondition[],
-      'senderConditions1' as unknown as MeshCondition[],
+      'senderConditions0' as unknown as PolymeshPrimitivesCondition[],
+      'senderConditions1' as unknown as PolymeshPrimitivesCondition[],
     ];
     receiverConditions = [
-      'receiverConditions0' as unknown as MeshCondition[],
-      'receiverConditions1' as unknown as MeshCondition[],
+      'receiverConditions0' as unknown as PolymeshPrimitivesCondition[],
+      'receiverConditions1' as unknown as PolymeshPrimitivesCondition[],
     ];
     rawComplianceRequirement = senderConditions.map(
       (sConditions, index) =>
@@ -76,7 +80,7 @@ describe('removeAssetRequirement procedure', () => {
           receiver_conditions: receiverConditions[index],
           /* eslint-enable @typescript-eslint/naming-convention */
           id: dsMockUtils.createMockU32(new BigNumber(index)),
-        } as unknown as ComplianceRequirement)
+        } as unknown as PolymeshPrimitivesComplianceManagerComplianceRequirement)
     );
 
     dsMockUtils.createQueryMock('complianceManager', 'assetCompliances', {

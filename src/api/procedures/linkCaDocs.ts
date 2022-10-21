@@ -1,8 +1,8 @@
+import { u32 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { isEqual, remove } from 'lodash';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
-import { DocumentId } from '~/polkadot/polymesh';
 import { ErrorCode, LinkCaDocsParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
@@ -41,7 +41,7 @@ export async function prepareLinkCaDocs(
 
   const rawAssetDocuments = await assetDocuments.entries(stringToTicker(ticker, context));
 
-  const docIdsToLink: DocumentId[] = [];
+  const docIdsToLink: u32[] = [];
   const documentsCopy = [...documents]; // avoid mutation
 
   rawAssetDocuments.forEach(([key, doc]) => {

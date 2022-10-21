@@ -51,7 +51,6 @@ import {
   identityIdToString,
   middlewareEventToEventIdentifier,
   middlewareV2EventDetailsToEventIdentifier,
-  scopeIdToString,
   stringToTicker,
   tickerToDid,
 } from '~/utils/conversion';
@@ -504,7 +503,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
         balance,
       ]) => {
         if (!balanceToBigNumber(balance).isZero()) {
-          assetHolders.add(scopeIdToString(scopeId));
+          assetHolders.add(identityIdToString(scopeId));
         }
       }
     );

@@ -1,7 +1,10 @@
+import {
+  PalletAssetCheckpointScheduleSpec,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { ScheduleSpec as MeshScheduleSpec, Ticker } from 'polymesh-types/types';
 
 import {
   createCheckpointScheduleResolver,
@@ -30,13 +33,13 @@ jest.mock(
 
 describe('createCheckpointSchedule procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance<Ticker, [string, Context]>;
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
   let scheduleSpecToMeshScheduleSpecSpy: jest.SpyInstance<
-    MeshScheduleSpec,
+    PalletAssetCheckpointScheduleSpec,
     [ScheduleSpec, Context]
   >;
   let ticker: string;
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
 
   beforeAll(() => {
     dsMockUtils.initMocks();

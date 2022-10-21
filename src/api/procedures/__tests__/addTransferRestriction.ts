@@ -103,7 +103,7 @@ describe('addTransferRestriction procedure', () => {
     PolymeshPrimitivesTransferComplianceAssetTransferCompliance
   ];
   let statCompareEqMock: jest.Mock;
-  let stringToScopeIdSpy: jest.SpyInstance;
+  let stringToIdentityIdSpy: jest.SpyInstance;
   const did = 'someDid';
   const ticker = 'TICKER';
 
@@ -170,7 +170,7 @@ describe('addTransferRestriction procedure', () => {
       utilsConversionModule,
       'transferRestrictionTypeToStatOpType'
     );
-    stringToScopeIdSpy = jest.spyOn(utilsConversionModule, 'stringToScopeId');
+    stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
 
     rawCountStatType = dsMockUtils.createMockStatisticsStatType();
     rawBalanceStatType = dsMockUtils.createMockStatisticsStatType({
@@ -239,7 +239,7 @@ describe('addTransferRestriction procedure', () => {
     mockClaimCountBtree = dsMockUtils.createMockBTreeSet([rawClaimCountCondition]);
     mockClaimPercentageBtree = dsMockUtils.createMockBTreeSet([rawClaimPercentageCondition]);
 
-    when(stringToScopeIdSpy).calledWith(did, mockContext).mockReturnValue(rawScopeId);
+    when(stringToIdentityIdSpy).calledWith(did, mockContext).mockReturnValue(rawScopeId);
 
     when(transferRestrictionToPolymeshTransferConditionSpy)
       .calledWith(countRestriction, mockContext)

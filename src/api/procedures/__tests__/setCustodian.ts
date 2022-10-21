@@ -1,8 +1,10 @@
 import { Moment } from '@polkadot/types/interfaces';
-import { PolymeshPrimitivesAuthorizationAuthorizationData } from '@polkadot/types/lookup';
+import {
+  PolymeshPrimitivesAuthorizationAuthorizationData,
+  PolymeshPrimitivesSecondaryKeySignatory,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { Signatory } from 'polymesh-types/types';
 
 import { getAuthorization, Params, prepareSetCustodian } from '~/api/procedures/setCustodian';
 import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
@@ -50,7 +52,10 @@ describe('setCustodian procedure', () => {
   >;
   let dateToMomentSpy: jest.SpyInstance<Moment, [Date, Context]>;
   let signerToStringSpy: jest.SpyInstance<string, [string | Identity | Account]>;
-  let signerValueToSignatorySpy: jest.SpyInstance<Signatory, [SignerValue, Context]>;
+  let signerValueToSignatorySpy: jest.SpyInstance<
+    PolymeshPrimitivesSecondaryKeySignatory,
+    [SignerValue, Context]
+  >;
 
   beforeAll(() => {
     dsMockUtils.initMocks();

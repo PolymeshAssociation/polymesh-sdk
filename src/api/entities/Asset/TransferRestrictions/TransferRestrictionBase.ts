@@ -33,7 +33,7 @@ import {
   TransferRestrictionType,
 } from '~/types';
 import {
-  scopeIdToString,
+  identityIdToString,
   stringToTickerKey,
   transferConditionToTransferRestriction,
   u32ToBigNumber,
@@ -239,7 +239,7 @@ export abstract class TransferRestrictionBase<
           {
             args: [, scopeId],
           },
-        ]) => scopeIdToString(scopeId) // `ScopeId` and `IdentityId` are the same type, so this is fine
+        ]) => identityIdToString(scopeId) // `ScopeId` and `PolymeshPrimitivesIdentityId` are the same type, so this is fine
       );
       const { value } = transferConditionToTransferRestriction(
         filteredRequirements[index],
