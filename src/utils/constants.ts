@@ -114,7 +114,7 @@ export const SUPPORTED_NODE_VERSION_RANGE = '5.1.0';
 /**
  * The Polymesh chain spec version range that is compatible with this version of the SDK
  */
-export const SUPPORTED_SPEC_VERSION_RANGE = '5.1.0';
+export const SUPPORTED_SPEC_VERSION_RANGE = '5.1.2';
 
 export const SYSTEM_VERSION_RPC_CALL = {
   jsonrpc: '2.0',
