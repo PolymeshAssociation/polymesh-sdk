@@ -1105,7 +1105,7 @@ describe('assertExpectedChainVersion', () => {
     await signal;
     sinon.assert.calledWith(
       warnStub,
-      'This version of the SDK supports Polymesh chain spec version 5.1.0. The chain spec is at version 5.1.7. Please upgrade the SDK'
+      'This version of the SDK supports Polymesh chain spec version 5.1.2. The chain spec is at version 5.1.7. Please upgrade the SDK'
     );
   });
 
