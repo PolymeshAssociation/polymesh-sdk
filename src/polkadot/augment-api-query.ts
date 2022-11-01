@@ -984,7 +984,7 @@ declare module '@polkadot/api-base/types/storage' {
        * The `CorporateActions` map stores `Ticker => LocalId => The CA`,
        * so we can infer `Ticker => CAId`. Therefore, we don't need a double map.
        **/
-      cADocLink: AugmentedQuery<
+      caDocLink: AugmentedQuery<
         ApiType,
         (
           arg: PalletCorporateActionsCaId | { ticker?: any; localId?: any } | string | Uint8Array
@@ -995,7 +995,7 @@ declare module '@polkadot/api-base/types/storage' {
        * The next per-`Ticker` CA ID in the sequence.
        * The full ID is defined as a combination of `Ticker` and a number in this sequence.
        **/
-      cAIdSequence: AugmentedQuery<
+      caIdSequence: AugmentedQuery<
         ApiType,
         (arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<u32>,
         [PolymeshPrimitivesTicker]
@@ -1190,7 +1190,7 @@ declare module '@polkadot/api-base/types/storage' {
        * The full ID is defined as a combination of `Ticker` and a number in this sequence,
        * which starts from 1, rather than 0.
        **/
-      aGIdSequence: AugmentedQuery<
+      agIdSequence: AugmentedQuery<
         ApiType,
         (arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<u32>,
         [PolymeshPrimitivesTicker]
