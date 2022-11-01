@@ -26,7 +26,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import { stringToAccountId } from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
+import { asAccount, createProcedureMethod } from '~/utils/internal';
 
 /**
  * Handles functionality related to Account Management
@@ -206,8 +206,8 @@ export class AccountManagement {
 
     if (!account) {
       account = context.getSigningAccount();
-    } else if (typeof account === 'string') {
-      account = new Account({ address: account }, context);
+    } else {
+      account = asAccount(account, context);
     }
 
     if (cb) {

@@ -9,7 +9,7 @@ import {
   signerToSignerValue,
   signerValueToSignatory,
 } from '~/utils/conversion';
-import { getSecondaryAccountPermissions } from '~/utils/internal';
+import { asAccount, getSecondaryAccountPermissions } from '~/utils/internal';
 
 /**
  * @hidden
@@ -34,7 +34,7 @@ export async function prepareModifySignerPermissions(
   } = this;
 
   const { secondaryAccounts } = args;
-  const accounts = secondaryAccounts.map(({ account }) => account);
+  const accounts = secondaryAccounts.map(({ account }) => asAccount(account, context));
   const existingSecondaryAccounts = await getSecondaryAccountPermissions(
     { accounts, identity },
     context
@@ -46,7 +46,10 @@ export async function prepareModifySignerPermissions(
 
     const rawPermissions = permissionsToMeshPermissions(permissions, context);
 
-    return tuple(signerValueToSignatory(signerToSignerValue(account), context), rawPermissions);
+    return tuple(
+      signerValueToSignatory(signerToSignerValue(asAccount(account, context)), context),
+      rawPermissions
+    );
   });
 
   const transaction = tx.identity.setPermissionToSigner;
