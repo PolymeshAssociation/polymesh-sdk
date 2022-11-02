@@ -10,7 +10,7 @@ import BigNumber from 'bignumber.js';
 import { IdentityId } from 'polymesh-types/types';
 import sinon from 'sinon';
 
-import { Asset, Context, Identity, PolymeshError, Procedure } from '~/internal';
+import { Account, Asset, Context, Identity, PolymeshError, Procedure } from '~/internal';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
@@ -20,7 +20,6 @@ import {
   MockWebSocket,
 } from '~/testUtils/mocks/dataSources';
 import {
-  Account,
   CaCheckpointType,
   CalendarPeriod,
   CalendarUnit,
@@ -41,6 +40,7 @@ import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 
 import {
+  asAccount,
   assertAddressValid,
   assertExpectedChainVersion,
   assertIsInteger,
@@ -77,9 +77,14 @@ import {
   sliceBatchReceipt,
   unserialize,
 } from '../internal';
+
 jest.mock(
   '~/api/entities/Asset',
   require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+);
+jest.mock(
+  '~/api/entities/Account',
+  require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
 );
 jest.mock('websocket', require('~/testUtils/mocks/dataSources').mockWebSocketModule());
 
@@ -188,6 +193,43 @@ describe('getDid', () => {
     const result = await getDid(undefined, context);
 
     expect(result).toBe((await context.getSigningIdentity()).did);
+  });
+});
+
+describe('asAccount', () => {
+  let context: Context;
+  let address: string;
+  let account: Account;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+    address = 'someAddress';
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+    account = new Account({ address }, context);
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return Account for given address', async () => {
+    const result = asAccount(address, context);
+
+    expect(result).toEqual(expect.objectContaining({ address }));
+  });
+
+  it('should return the passed Account', async () => {
+    const result = asAccount(account, context);
+
+    expect(result).toBe(account);
   });
 });
 

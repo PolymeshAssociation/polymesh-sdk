@@ -239,7 +239,10 @@ export interface ModifySignerPermissionsParams {
   /**
    * list of secondary Accounts
    */
-  secondaryAccounts: Modify<PermissionedAccount, { permissions: PermissionsLike }>[];
+  secondaryAccounts: Modify<
+    PermissionedAccount,
+    { account: string | Account; permissions: PermissionsLike }
+  >[];
 }
 
 export interface RemoveSecondaryAccountsParams {
