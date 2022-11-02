@@ -1867,6 +1867,7 @@ describe('method: getSecondaryAccountPermissions', () => {
       multi: [
         dsMockUtils.createMockOption(rawPrimaryKeyRecord),
         dsMockUtils.createMockOption(otherSecondaryKey),
+        dsMockUtils.createMockOption(),
         dsMockUtils.createMockOption(rawMultiSigKeyRecord),
       ],
     });
