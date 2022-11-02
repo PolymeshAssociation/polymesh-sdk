@@ -1590,6 +1590,9 @@ export async function getSecondaryAccountPermissions(
   ): PermissionedAccount[] => {
     return optKeyRecords.reduce((result: PermissionedAccount[], optKeyRecord, index) => {
       const account = accounts[index];
+      if (optKeyRecord.isNone) {
+        return result;
+      }
       const record = optKeyRecord.unwrap();
 
       if (record.isSecondaryKey) {
