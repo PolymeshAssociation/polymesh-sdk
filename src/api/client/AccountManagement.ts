@@ -51,7 +51,7 @@ export class AccountManagement {
       context
     );
     this.revokePermissions = createProcedureMethod<
-      { secondaryAccounts: Account[] },
+      { secondaryAccounts: (string | Account)[] },
       ModifySignerPermissionsParams,
       void,
       modifySignerPermissionsStorage
@@ -121,7 +121,7 @@ export class AccountManagement {
    *
    * @throws if the signing Account is not the primary Account of the Identity whose secondary Account permissions are being revoked
    */
-  public revokePermissions: ProcedureMethod<{ secondaryAccounts: Account[] }, void>;
+  public revokePermissions: ProcedureMethod<{ secondaryAccounts: (string | Account)[] }, void>;
 
   /**
    * Modify all permissions of a list of secondary Accounts associated with the signing Identity
