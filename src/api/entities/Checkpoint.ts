@@ -1,7 +1,8 @@
+import { u64 } from '@polkadot/types';
+import { PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import { Asset, Context, Entity, Identity } from '~/internal';
-import { CheckpointId, IdentityId, Ticker } from '~/polkadot/polymesh';
 import { IdentityBalance, PaginationOptions, ResultSet } from '~/types';
 import { tuple } from '~/types/utils';
 import {
@@ -128,7 +129,8 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
     });
 
     const currentDidBalances: { did: string; balance: BigNumber }[] = [];
-    const balanceUpdatesMultiParams: [Ticker, IdentityId][] = [];
+    const balanceUpdatesMultiParams: [PolymeshPrimitivesTicker, PolymeshPrimitivesIdentityId][] =
+      [];
 
     // Prepare the query for balance updates. Push to currentDidBalances to be used if there are no updates for the balance
     entries.forEach(([storageKey, balance]) => {
@@ -147,7 +149,7 @@ export class Checkpoint extends Entity<UniqueIdentifiers, HumanReadable> {
 
     const checkpointBalanceMultiParams: {
       did: string;
-      params: [(Ticker | CheckpointId)[], IdentityId];
+      params: [(PolymeshPrimitivesTicker | u64)[], PolymeshPrimitivesIdentityId];
     }[] = [];
     const currentIdentityBalances: IdentityBalance[] = [];
 

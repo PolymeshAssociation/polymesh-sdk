@@ -1,10 +1,14 @@
 import { u64 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
+import {
+  PalletSettlementSettlementType,
+  PolymeshPrimitivesIdentityIdPortfolioId,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { flatten, isEqual, union, unionWith } from 'lodash';
-import { Moment, PortfolioId, SettlementType, Ticker } from 'polymesh-types/types';
 
 import { assertPortfolioExists, assertVenueExists } from '~/api/procedures/utils';
 import {
@@ -63,16 +67,16 @@ export interface Storage {
  */
 type InternalAddAndAffirmInstructionParams = [
   u64,
-  SettlementType,
-  Moment | null,
-  Moment | null,
+  PalletSettlementSettlementType,
+  u64 | null,
+  u64 | null,
   {
-    from: PortfolioId;
-    to: PortfolioId;
-    asset: Ticker;
+    from: PolymeshPrimitivesIdentityIdPortfolioId;
+    to: PolymeshPrimitivesIdentityIdPortfolioId;
+    asset: PolymeshPrimitivesTicker;
     amount: Balance;
   }[],
-  PortfolioId[]
+  PolymeshPrimitivesIdentityIdPortfolioId[]
 ][];
 
 /**
@@ -80,13 +84,13 @@ type InternalAddAndAffirmInstructionParams = [
  */
 type InternalAddInstructionParams = [
   u64,
-  SettlementType,
-  Moment | null,
-  Moment | null,
+  PalletSettlementSettlementType,
+  u64 | null,
+  u64 | null,
   {
-    from: PortfolioId;
-    to: PortfolioId;
-    asset: Ticker;
+    from: PolymeshPrimitivesIdentityIdPortfolioId;
+    to: PolymeshPrimitivesIdentityIdPortfolioId;
+    asset: PolymeshPrimitivesTicker;
     amount: Balance;
   }[]
 ][];
@@ -172,9 +176,9 @@ async function getTxArgsAndErrors(
       const rawTradeDate = optionize(dateToMoment)(tradeDate, context);
       const rawValueDate = optionize(dateToMoment)(valueDate, context);
       const rawLegs: {
-        from: PortfolioId;
-        to: PortfolioId;
-        asset: Ticker;
+        from: PolymeshPrimitivesIdentityIdPortfolioId;
+        to: PolymeshPrimitivesIdentityIdPortfolioId;
+        asset: PolymeshPrimitivesTicker;
         amount: Balance;
       }[] = [];
 

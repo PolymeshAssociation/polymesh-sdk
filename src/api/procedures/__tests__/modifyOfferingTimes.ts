@@ -1,6 +1,6 @@
+import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { Moment } from 'polymesh-types/types';
 
 import {
   getAuthorization,
@@ -42,7 +42,7 @@ describe('modifyStoTimes procedure', () => {
   let mockContext: Mocked<Context>;
   let modifyFundraiserWindowTransaction: PolymeshTx<unknown[]>;
 
-  let dateToMomentSpy: jest.SpyInstance<Moment, [Date, Context]>;
+  let dateToMomentSpy: jest.SpyInstance<u64, [Date, Context]>;
 
   const args = {
     ticker,

@@ -1,7 +1,7 @@
 import { u64 } from '@polkadot/types';
+import { PolymeshPrimitivesIdentityId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { IdentityId } from 'polymesh-types/types';
 
 import {
   DeletePortfolioParams,
@@ -28,7 +28,7 @@ describe('deletePortfolio procedure', () => {
   const portfolioNumber = dsMockUtils.createMockU64(id);
   const zeroBalance = { total: new BigNumber(0) } as PortfolioBalance;
   let mockContext: Mocked<Context>;
-  let stringToIdentityIdSpy: jest.SpyInstance<IdentityId, [string, Context]>;
+  let stringToIdentityIdSpy: jest.SpyInstance<PolymeshPrimitivesIdentityId, [string, Context]>;
   let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
 
   beforeAll(() => {

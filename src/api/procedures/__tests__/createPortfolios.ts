@@ -1,8 +1,8 @@
 import { Bytes, u64 } from '@polkadot/types';
+import { PolymeshPrimitivesIdentityId } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { IdentityId } from 'polymesh-types/types';
 
 import {
   createPortfoliosResolver,
@@ -86,7 +86,7 @@ describe('createPortfoliosResolver', () => {
   const rawIdentityId = dsMockUtils.createMockIdentityId(did);
   const id = new BigNumber(1);
   const rawId = dsMockUtils.createMockU64(id);
-  let identityIdToStringSpy: jest.SpyInstance<string, [IdentityId]>;
+  let identityIdToStringSpy: jest.SpyInstance<string, [PolymeshPrimitivesIdentityId]>;
   let u64ToBigNumberSpy: jest.SpyInstance<BigNumber, [u64]>;
 
   beforeAll(() => {

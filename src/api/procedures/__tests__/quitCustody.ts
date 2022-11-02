@@ -1,6 +1,6 @@
+import { PolymeshPrimitivesIdentityIdPortfolioId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { PortfolioId as MeshPortfolioId } from 'polymesh-types/types';
 
 import {
   getAuthorization,
@@ -28,7 +28,10 @@ describe('quitCustody procedure', () => {
   const did = 'someDid';
 
   let mockContext: Mocked<Context>;
-  let portfolioIdToMeshPortfolioIdSpy: jest.SpyInstance<MeshPortfolioId, [PortfolioId, Context]>;
+  let portfolioIdToMeshPortfolioIdSpy: jest.SpyInstance<
+    PolymeshPrimitivesIdentityIdPortfolioId,
+    [PortfolioId, Context]
+  >;
   let portfolioLikeToPortfolioIdSpy: jest.SpyInstance;
   let assertPortfolioExistsSpy: jest.SpyInstance;
 

@@ -10,7 +10,6 @@ import {
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { IdentityId } from 'polymesh-types/types';
 
 import { Asset, Context, Identity, PolymeshError, Procedure } from '~/internal';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
@@ -916,7 +915,7 @@ describe('getPortfolioIdsByName', () => {
   let portfoliosMock: jest.Mock;
   let firstPortfolioName: MockCodec<Bytes>;
   let rawNames: Bytes[];
-  let identityId: IdentityId;
+  let identityId: PolymeshPrimitivesIdentityId;
 
   beforeAll(() => {
     dsMockUtils.initMocks();

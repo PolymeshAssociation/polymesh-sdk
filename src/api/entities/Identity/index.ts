@@ -23,7 +23,6 @@ import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/querie
 import { assetHoldersQuery, trustingAssetsQuery } from '~/middleware/queriesV2';
 import { Query } from '~/middleware/types';
 import { AssetHoldersOrderBy, Query as QueryV2 } from '~/middleware/typesV2';
-import { CddStatus } from '~/polkadot/polymesh';
 import {
   CheckRolesResult,
   DistributionWithDetails,
@@ -56,7 +55,6 @@ import {
   portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
-  scopeIdToString,
   stringToIdentityId,
   stringToTicker,
   transactionPermissionsToTxGroups,
@@ -230,7 +228,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       },
     } = this;
     const identityId = stringToIdentityId(did, context);
-    const result: CddStatus = await rpc.identity.isIdentityHasValidCdd(identityId);
+    const result = await rpc.identity.isIdentityHasValidCdd(identityId);
     return cddStatusToBoolean(result);
   }
 
@@ -524,7 +522,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       return null;
     }
 
-    return scopeIdToString(scopeId);
+    return identityIdToString(scopeId);
   }
 
   /**

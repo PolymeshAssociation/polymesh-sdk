@@ -6,7 +6,6 @@ import {
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { entries, flatten, forEach } from 'lodash';
-import { TransferCondition } from 'polymesh-types/types';
 
 import { SetTransferRestrictionsParams } from '~/api/entities/Asset/TransferRestrictions/TransferRestrictionBase';
 import { Asset, Context, Identity, PolymeshError, Procedure } from '~/internal';
@@ -80,7 +79,7 @@ const addExemptionIfNotPresent = (
 };
 
 export interface Storage {
-  currentRestrictions: TransferCondition[];
+  currentRestrictions: PolymeshPrimitivesTransferComplianceTransferCondition[];
   currentExemptions: ExemptionRecords;
   occupiedSlots: BigNumber;
 }
@@ -96,7 +95,7 @@ function transformInput(
     | PercentageTransferRestrictionInput[]
     | ClaimCountTransferRestrictionInput[]
     | ClaimPercentageTransferRestrictionInput[],
-  currentRestrictions: TransferCondition[],
+  currentRestrictions: PolymeshPrimitivesTransferComplianceTransferCondition[],
   currentExemptions: ExemptionRecords,
   type: TransferRestrictionType,
   context: Context
@@ -127,8 +126,9 @@ function transformInput(
 
     const condition = { type, value } as TransferRestriction;
 
-    const compareConditions = (transferCondition: TransferCondition): boolean =>
-      compareTransferRestrictionToInput(transferCondition, condition);
+    const compareConditions = (
+      transferCondition: PolymeshPrimitivesTransferComplianceTransferCondition
+    ): boolean => compareTransferRestrictionToInput(transferCondition, condition);
     if (!needDifferentConditions) {
       needDifferentConditions = ![...currentRestrictions].find(compareConditions);
     }

@@ -108,14 +108,14 @@ function assembleCountryCodes() {
   let countryCodeFunctions = `/**
   * @hidden
   */
-  export function countryCodeToMeshCountryCode(countryCode: CountryCode, context: Context): MeshCountryCode {
-    return context.createType('CountryCode', countryCode);
+  export function countryCodeToMeshCountryCode(countryCode: CountryCode, context: Context): PolymeshPrimitivesJurisdictionCountryCode {
+    return context.createType('PolymeshPrimitivesJurisdictionCountryCode', countryCode);
   }
 
   /**
    * @hidden
    */
-  export function meshCountryCodeToCountryCode(meshCountryCode: MeshCountryCode): CountryCode {`;
+  export function meshCountryCodeToCountryCode(meshCountryCode: PolymeshPrimitivesJurisdictionCountryCode): CountryCode {`;
 
   countryCodes.forEach((code, index) => {
     const isLast = index === countryCodes.length - 1;
@@ -153,7 +153,7 @@ ${generatedTxTags}`;
 
 const utilsFile = `${istanbulIgnore}
 
-import { CountryCode as MeshCountryCode } from 'polymesh-types/types';
+import { PolymeshPrimitivesJurisdictionCountryCode } from '@polkadot/types/lookup';
 
 import { Context } from '~/internal';
 import { CountryCode } from '~/types';

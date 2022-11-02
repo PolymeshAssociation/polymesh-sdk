@@ -1,7 +1,7 @@
+import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { Ticker } from 'polymesh-types/types';
 
 import {
   createTickerReservationResolver,
@@ -25,9 +25,9 @@ jest.mock(
 
 describe('reserveTicker procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance<Ticker, [string, Context]>;
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
   let ticker: string;
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
   let args: ReserveTickerParams;
 
   beforeAll(() => {
@@ -50,7 +50,7 @@ describe('reserveTicker procedure', () => {
     };
   });
 
-  let transaction: PolymeshTx<[Ticker]>;
+  let transaction: PolymeshTx<[PolymeshPrimitivesTicker]>;
 
   beforeEach(() => {
     entityMockUtils.configureMocks({
@@ -223,7 +223,7 @@ describe('tickerReservationResolver', () => {
     filterEventRecordsSpy.mockReset();
   });
 
-  it('should return the new Ticker Reservation', () => {
+  it('should return the new PolymeshPrimitivesTicker Reservation', () => {
     const fakeContext = {} as Context;
 
     const result = createTickerReservationResolver(fakeContext)({} as ISubmittableResult);

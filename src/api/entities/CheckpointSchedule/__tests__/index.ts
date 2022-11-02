@@ -1,8 +1,8 @@
+import { PolymeshCommonUtilitiesCheckpointStoredSchedule } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { CheckpointSchedule, Context, Entity } from '~/internal';
-import { StoredSchedule } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { CalendarPeriod, CalendarUnit } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -134,7 +134,7 @@ describe('CheckpointSchedule class', () => {
         returnValue: [
           dsMockUtils.createMockStoredSchedule({
             id: rawScheduleId,
-          } as unknown as StoredSchedule),
+          } as unknown as PolymeshCommonUtilitiesCheckpointStoredSchedule),
         ],
       });
 
@@ -197,7 +197,7 @@ describe('CheckpointSchedule class', () => {
         returnValue: [
           dsMockUtils.createMockStoredSchedule({
             id: rawScheduleId,
-          } as unknown as StoredSchedule),
+          } as unknown as PolymeshCommonUtilitiesCheckpointStoredSchedule),
         ],
       });
 
@@ -227,7 +227,7 @@ describe('CheckpointSchedule class', () => {
         returnValue: [
           dsMockUtils.createMockStoredSchedule({
             id: rawScheduleId,
-          } as unknown as StoredSchedule),
+          } as unknown as PolymeshCommonUtilitiesCheckpointStoredSchedule),
         ],
       });
 
@@ -256,7 +256,7 @@ describe('CheckpointSchedule class', () => {
         returnValue: [
           dsMockUtils.createMockStoredSchedule({
             id: dsMockUtils.createMockU64(id),
-          } as unknown as StoredSchedule),
+          } as unknown as PolymeshCommonUtilitiesCheckpointStoredSchedule),
         ],
       });
 

@@ -25,7 +25,6 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import stringify from 'json-stable-stringify';
 import { differenceWith, flatMap, isEqual, mapValues, noop, padEnd, uniq } from 'lodash';
-import { IdentityId } from 'polymesh-types/types';
 import { major, satisfies } from 'semver';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 
@@ -1084,7 +1083,7 @@ export function assembleBatchTransactions<ArgsArray extends Readonly<unknown[][]
  * Returns portfolio numbers for a set of portfolio names
  */
 export async function getPortfolioIdsByName(
-  rawIdentityId: IdentityId,
+  rawIdentityId: PolymeshPrimitivesIdentityId,
   rawNames: Bytes[],
   context: Context
 ): Promise<(BigNumber | null)[]> {
@@ -1095,7 +1094,7 @@ export async function getPortfolioIdsByName(
   } = context;
 
   const rawPortfolioNumbers = await portfolio.nameToNumber.multi(
-    rawNames.map<[IdentityId, Bytes]>(name => [rawIdentityId, name])
+    rawNames.map<[PolymeshPrimitivesIdentityId, Bytes]>(name => [rawIdentityId, name])
   );
 
   const portfolioIds = rawPortfolioNumbers.map(number => u64ToBigNumber(number));
@@ -1167,7 +1166,7 @@ export function defusePromise<T>(promise: Promise<T>): Promise<T> {
  *
  * @note fetches missing scope IDs from the chain
  * @note even though the signature for `addExemptedEntities` requires `ScopeId`s as parameters,
- *   it accepts and handles `IdentityId` parameters as well. Nothing special has to be done typing-wise since they're both aliases
+ *   it accepts and handles `PolymeshPrimitivesIdentityId` parameters as well. Nothing special has to be done typing-wise since they're both aliases
  *   for `U8aFixed`
  *
  * @throws
