@@ -45,8 +45,8 @@ import {
   SignedBlock,
 } from '@polkadot/types/interfaces';
 import {
-  ConfidentialIdentityClaimProofsScopeClaimProof,
-  ConfidentialIdentityClaimProofsZkProofData,
+  ConfidentialIdentityV2ClaimProofsScopeClaimProof,
+  ConfidentialIdentityV2ClaimProofsZkProofData,
   PalletAssetClassicTickerRegistration,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCaKind,
@@ -58,6 +58,7 @@ import {
   PalletPortfolioMovePortfolioItem,
   PalletRelayerSubsidy,
   PalletSettlementInstruction,
+  PalletSettlementInstructionMemo,
   PalletSettlementVenue,
   PalletStoFundraiser,
   PolymeshPrimitivesAssetIdentifier,
@@ -195,11 +196,12 @@ import {
   ProtocolFees,
   ResultSet,
   SignerType,
+  StatType,
   SubsidyWithAllowance,
   TxTags,
   UnsubCallback,
 } from '~/types';
-import { Consts, Extrinsics, GraphqlQuery, PolymeshTx, Queries, StatType } from '~/types/internal';
+import { Consts, Extrinsics, GraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
 import { ArgsType, Mutable, tuple } from '~/types/utils';
 import { STATE_RUNTIME_VERSION_CALL, SYSTEM_VERSION_RPC_CALL } from '~/utils/constants';
 
@@ -3461,13 +3463,13 @@ export const createMockSignature = (signature?: string | Signature): MockCodec<S
  */
 export const createMockZkProofData = (
   zkProofData?:
-    | ConfidentialIdentityClaimProofsZkProofData
+    | ConfidentialIdentityV2ClaimProofsZkProofData
     | {
         challengeResponses: [Scalar, Scalar] | [string, string];
         subtractExpressionsRes: RistrettoPoint | string;
         blindedScopeDidHash: RistrettoPoint | string;
       }
-): MockCodec<ConfidentialIdentityClaimProofsZkProofData> => {
+): MockCodec<ConfidentialIdentityV2ClaimProofsZkProofData> => {
   const { challengeResponses, subtractExpressionsRes, blindedScopeDidHash } = zkProofData || {
     challengeResponses: [createMockScalar(), createMockScalar()],
     subtractExpressionsRes: createMockRistrettoPoint(),
@@ -3533,7 +3535,7 @@ export const createMockTargetIdentities = (
  */
 export const createMockScopeClaimProof = (
   scopeClaimProof?:
-    | ConfidentialIdentityClaimProofsScopeClaimProof
+    | ConfidentialIdentityV2ClaimProofsScopeClaimProof
     | {
         proofScopeIdWellformed: Signature | string;
         proofScopeIdCddIdMatch:
@@ -3545,7 +3547,7 @@ export const createMockScopeClaimProof = (
             };
         scopeId: RistrettoPoint | string;
       }
-): MockCodec<ConfidentialIdentityClaimProofsScopeClaimProof> => {
+): MockCodec<ConfidentialIdentityV2ClaimProofsScopeClaimProof> => {
   const { proofScopeIdWellformed, proofScopeIdCddIdMatch, scopeId } = scopeClaimProof || {
     proofScopeIdWellformed: createMockSignature(),
     proofScopeIdCddIdMatch: createMockZkProofData(),
@@ -3556,7 +3558,7 @@ export const createMockScopeClaimProof = (
     {
       proofScopeIdWellformed: createMockSignature(proofScopeIdWellformed as Signature),
       proofScopeIdCddIdMatch: createMockZkProofData(
-        proofScopeIdCddIdMatch as ConfidentialIdentityClaimProofsZkProofData
+        proofScopeIdCddIdMatch as ConfidentialIdentityV2ClaimProofsZkProofData
       ),
       scopeId: createMockRistrettoPoint(scopeId as RistrettoPoint),
     },
@@ -4282,4 +4284,18 @@ export const createMockProposalDetails = (proposalDetails?: {
     },
     !proposalDetails
   ) as MockCodec<ProposalDetails>;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockInstructionMemo = (
+  memo?: string | PalletSettlementInstructionMemo
+): MockCodec<PalletSettlementInstructionMemo> => {
+  if (isCodec<PalletSettlementInstructionMemo>(memo)) {
+    return memo as MockCodec<PalletSettlementInstructionMemo>;
+  }
+
+  return createMockStringCodec<PalletSettlementInstructionMemo>(memo);
 };

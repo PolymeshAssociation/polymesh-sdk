@@ -60,6 +60,7 @@ export default {
         CINS: '[u8; 9]',
         ISIN: '[u8; 12]',
         LEI: '[u8; 20]',
+        FIGI: '[u8; 12]',
       },
     },
     AssetOwnershipRelation: {
@@ -455,11 +456,7 @@ export default {
         Custom: 'Vec<u8>',
       },
     },
-    InvestorZKProofData: {
-      r: 'CompressedRistretto',
-      s: 'Scalar',
-    },
-    CompressedRistretto: '[u8; 32]',
+    InvestorZKProofData: '[u8; 64]',
     Scalar: '[u8; 32]',
     RistrettoPoint: '[u8; 32]',
     ZkProofData: {
@@ -472,6 +469,7 @@ export default {
       proof_scope_id_cdd_id_match: 'ZkProofData',
       scope_id: 'RistrettoPoint',
     },
+    CustomClaimTypeId: 'u32',
     Claim: {
       _enum: {
         Accredited: 'Scope',
@@ -485,7 +483,8 @@ export default {
         Blocked: 'Scope',
         InvestorUniqueness: '(Scope, ScopeId, CddId)',
         NoData: '',
-        InvestorUniquenessV2: '(CddId)',
+        InvestorUniquenessV2: 'CddId',
+        Custom: '(CustomClaimTypeId, Option<Scope>)',
       },
     },
     ClaimType: {
@@ -502,6 +501,7 @@ export default {
         InvestorUniqueness: '',
         NoData: '',
         InvestorUniquenessV2: '',
+        Custom: 'CustomClaimTypeId',
       },
     },
     IdentityClaim: {
@@ -662,7 +662,6 @@ export default {
     Pip: {
       id: 'PipId',
       proposal: 'Call',
-      state: 'ProposalState',
       proposer: 'Proposer',
     },
     ProposalData: {
@@ -691,37 +690,6 @@ export default {
         AddRelayerPayingKey: '(AccountId, AccountId, Balance)',
         RotatePrimaryKeyToSecondary: 'Permissions',
       },
-    },
-    SmartExtensionType: {
-      _enum: {
-        TransferManager: '',
-        Offerings: '',
-        SmartWallet: '',
-        Custom: 'Vec<u8>',
-      },
-    },
-    SmartExtensionName: 'Text',
-    SmartExtension: {
-      extension_type: 'SmartExtensionType',
-      extension_name: 'SmartExtensionName',
-      extension_id: 'AccountId',
-      is_archive: 'bool',
-    },
-    MetaUrl: 'Text',
-    MetaDescription: 'Text',
-    MetaVersion: 'u32',
-    ExtVersion: 'u32',
-    TemplateMetadata: {
-      url: 'Option<MetaUrl>',
-      se_type: 'SmartExtensionType',
-      usage_fee: 'Balance',
-      description: 'MetaDescription',
-      version: 'MetaVersion',
-    },
-    TemplateDetails: {
-      instantiation_fee: 'Balance',
-      owner: 'IdentityId',
-      frozen: 'bool',
     },
     AuthorizationNonce: 'u64',
     Percentage: 'Permill',
@@ -1086,10 +1054,6 @@ export default {
     VenueType: {
       _enum: ['Other', 'Distribution', 'Sto', 'Exchange'],
     },
-    ExtensionAttributes: {
-      usage_fee: 'Balance',
-      version: 'MetaVersion',
-    },
     Tax: 'Permill',
     TargetIdentities: {
       identities: 'Vec<IdentityId>',
@@ -1132,6 +1096,16 @@ export default {
       targets: 'TargetIdentities',
       default_withholding_tax: 'Tax',
       withholding_tax: 'Vec<(IdentityId, Tax)>',
+    },
+    InitiateCorporateActionArgs: {
+      ticker: 'Ticker',
+      kind: 'CAKind',
+      decl_date: 'Moment',
+      record_date: 'Option<RecordDateSpec>',
+      details: 'CADetails',
+      targets: 'Option<TargetIdentities>',
+      default_withholding_tax: 'Option<Tax>',
+      withholding_tax: 'Option<Vec<(IdentityId, Tax)>>',
     },
     LocalCAId: 'u32',
     CAId: {
@@ -1194,6 +1168,11 @@ export default {
         PolymeshV1CAA: '',
         PolymeshV1PIA: '',
       },
+    },
+    Member: {
+      id: 'IdentityId',
+      expiry_at: 'Option<Moment>',
+      inactive_from: 'Option<Moment>',
     },
     ItnRewardStatus: {
       _enum: {
@@ -1516,6 +1495,36 @@ export default {
         ],
         type: 'GranularCanTransferResult',
       },
+    },
+    group: {
+      getCDDValidMembers: {
+        description: 'Get the CDD members',
+        params: [
+          {
+            name: 'blockHash',
+            type: 'Hash',
+            isOptional: true,
+          },
+        ],
+        type: 'Vec<Member>',
+      },
+      getGCValidMembers: {
+        description: 'Get the GC members',
+        params: [
+          {
+            name: 'blockHash',
+            type: 'Hash',
+            isOptional: true,
+          },
+        ],
+        type: 'Vec<Member>',
+      },
+    },
+  },
+  signedExtensions: {
+    StoreCallMetadata: {
+      extrinsic: {},
+      payload: {},
     },
   },
 };

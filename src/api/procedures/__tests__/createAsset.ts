@@ -32,10 +32,11 @@ import {
   RoleType,
   SecurityIdentifier,
   SecurityIdentifierType,
+  StatType,
   TickerReservationStatus,
   TxTags,
 } from '~/types';
-import { InternalAssetType, PolymeshTx, StatType, TickerKey } from '~/types/internal';
+import { InternalAssetType, PolymeshTx, TickerKey } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(

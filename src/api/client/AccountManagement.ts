@@ -26,7 +26,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import { stringToAccountId } from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
+import { asAccount, createProcedureMethod } from '~/utils/internal';
 
 /**
  * Handles functionality related to Account Management
@@ -51,7 +51,7 @@ export class AccountManagement {
       context
     );
     this.revokePermissions = createProcedureMethod<
-      { secondaryAccounts: Account[] },
+      { secondaryAccounts: (string | Account)[] },
       ModifySignerPermissionsParams,
       void,
       modifySignerPermissionsStorage
@@ -121,7 +121,7 @@ export class AccountManagement {
    *
    * @throws if the signing Account is not the primary Account of the Identity whose secondary Account permissions are being revoked
    */
-  public revokePermissions: ProcedureMethod<{ secondaryAccounts: Account[] }, void>;
+  public revokePermissions: ProcedureMethod<{ secondaryAccounts: (string | Account)[] }, void>;
 
   /**
    * Modify all permissions of a list of secondary Accounts associated with the signing Identity
@@ -206,8 +206,8 @@ export class AccountManagement {
 
     if (!account) {
       account = context.getSigningAccount();
-    } else if (typeof account === 'string') {
-      account = new Account({ address: account }, context);
+    } else {
+      account = asAccount(account, context);
     }
 
     if (cb) {
@@ -218,7 +218,7 @@ export class AccountManagement {
   }
 
   /**
-   * Return an Account instance from an address. If the Account has multiSig signers, the returned value will be a {@link api/entities/MultiSig/MultiSig!MultiSig} instance
+   * Return an Account instance from an address. If the Account has multiSig signers, the returned value will be a {@link api/entities/MultiSig!MultiSig} instance
    */
   public async getAccount(args: { address: string }): Promise<Account | MultiSig> {
     const {

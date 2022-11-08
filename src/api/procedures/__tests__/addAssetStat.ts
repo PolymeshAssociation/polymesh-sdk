@@ -22,9 +22,10 @@ import {
   CountryCode,
   ErrorCode,
   StatClaimType,
+  StatType,
   TxTags,
 } from '~/types';
-import { PolymeshTx, StatType, TickerKey } from '~/types/internal';
+import { PolymeshTx, TickerKey } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(

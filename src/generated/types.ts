@@ -324,6 +324,7 @@ export enum IdentityTx {
   PlaceholderLegacySetPermissionToSigner = 'identity.placeholderLegacySetPermissionToSigner',
   AddSecondaryKeysWithAuthorizationOld = 'identity.addSecondaryKeysWithAuthorizationOld',
   SetSecondaryKeyPermissions = 'identity.setSecondaryKeyPermissions',
+  RegisterCustomClaimType = 'identity.registerCustomClaimType',
 }
 
 export enum CddServiceProvidersTx {
@@ -515,6 +516,7 @@ export enum AssetTx {
   RegisterAndSetLocalAssetMetadata = 'asset.registerAndSetLocalAssetMetadata',
   RegisterAssetMetadataLocalType = 'asset.registerAssetMetadataLocalType',
   RegisterAssetMetadataGlobalType = 'asset.registerAssetMetadataGlobalType',
+  RedeemFromPortfolio = 'asset.redeemFromPortfolio',
 }
 
 export enum CapitalDistributionTx {
@@ -626,6 +628,9 @@ export enum SettlementTx {
   ChangeReceiptValidity = 'settlement.changeReceiptValidity',
   ExecuteScheduledInstruction = 'settlement.executeScheduledInstruction',
   RescheduleInstruction = 'settlement.rescheduleInstruction',
+  UpdateVenueSigners = 'settlement.updateVenueSigners',
+  AddInstructionWithMemo = 'settlement.addInstructionWithMemo',
+  AddAndAffirmInstructionWithMemo = 'settlement.addAndAffirmInstructionWithMemo',
 }
 
 export enum StatisticsTx {

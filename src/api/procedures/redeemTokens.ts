@@ -1,7 +1,13 @@
-import { Asset, DefaultPortfolio, PolymeshError, Procedure } from '~/internal';
+import BigNumber from 'bignumber.js';
+
+import { Asset, DefaultPortfolio, NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RedeemTokensParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
-import { bigNumberToBalance, stringToTicker } from '~/utils/conversion';
+import { bigNumberToBalance, portfolioToPortfolioKind, stringToTicker } from '~/utils/conversion';
+
+export interface Storage {
+  fromPortfolio: DefaultPortfolio | NumberedPortfolio;
+}
 
 /**
  * @hidden
@@ -12,30 +18,29 @@ export type Params = { ticker: string } & RedeemTokensParams;
  * @hidden
  */
 export async function prepareRedeemTokens(
-  this: Procedure<Params, void>,
+  this: Procedure<Params, void, Storage>,
   args: Params
-): Promise<TransactionSpec<void, ExtrinsicParams<'asset', 'redeem'>>> {
+): Promise<
+  | TransactionSpec<void, ExtrinsicParams<'asset', 'redeem'>>
+  | TransactionSpec<void, ExtrinsicParams<'asset', 'redeemFromPortfolio'>>
+> {
   const {
     context,
     context: {
       polymeshApi: { tx },
     },
+    storage: { fromPortfolio },
   } = this;
-  const { ticker, amount } = args;
+
+  const { ticker, amount, from } = args;
 
   const asset = new Asset({ ticker }, context);
   const rawTicker = stringToTicker(ticker, context);
 
-  const [{ isDivisible }, { did }] = await Promise.all([
+  const [[{ free }], { isDivisible }] = await Promise.all([
+    fromPortfolio.getAssetBalances({ assets: [ticker] }),
     asset.details(),
-    context.getSigningIdentity(),
   ]);
-
-  const defaultPortfolio = new DefaultPortfolio({ did }, context);
-
-  const portfolioBalance = await defaultPortfolio.getAssetBalances({ assets: [ticker] });
-
-  const { free } = portfolioBalance[0];
 
   if (free.lt(amount)) {
     throw new PolymeshError({
@@ -47,9 +52,19 @@ export async function prepareRedeemTokens(
     });
   }
 
+  const rawAmount = bigNumberToBalance(amount, context, isDivisible);
+
+  if (from) {
+    return {
+      transaction: tx.asset.redeemFromPortfolio,
+      args: [rawTicker, rawAmount, portfolioToPortfolioKind(fromPortfolio, context)],
+      resolver: undefined,
+    };
+  }
+
   return {
     transaction: tx.asset.redeem,
-    args: [rawTicker, bigNumberToBalance(amount, context, isDivisible)],
+    args: [rawTicker, rawAmount],
     resolver: undefined,
   };
 }
@@ -58,18 +73,19 @@ export async function prepareRedeemTokens(
  * @hidden
  */
 export async function getAuthorization(
-  this: Procedure<Params, void>,
-  { ticker }: Params
+  this: Procedure<Params, void, Storage>,
+  { ticker, from }: Params
 ): Promise<ProcedureAuthorization> {
-  const { context } = this;
-
-  const { did } = await context.getSigningIdentity();
+  const {
+    context,
+    storage: { fromPortfolio },
+  } = this;
 
   return {
     permissions: {
-      transactions: [TxTags.asset.Redeem],
+      transactions: [from ? TxTags.asset.RedeemFromPortfolio : TxTags.asset.Redeem],
       assets: [new Asset({ ticker }, context)],
-      portfolios: [new DefaultPortfolio({ did }, context)],
+      portfolios: [fromPortfolio],
     },
   };
 }
@@ -77,5 +93,31 @@ export async function getAuthorization(
 /**
  * @hidden
  */
-export const redeemTokens = (): Procedure<Params, void> =>
-  new Procedure(prepareRedeemTokens, getAuthorization);
+export async function prepareStorage(
+  this: Procedure<Params, void, Storage>,
+  { from }: Params
+): Promise<Storage> {
+  const { context } = this;
+
+  const { did } = await context.getSigningIdentity();
+
+  let fromPortfolio: DefaultPortfolio | NumberedPortfolio;
+
+  if (!from) {
+    fromPortfolio = new DefaultPortfolio({ did }, context);
+  } else if (from instanceof BigNumber) {
+    fromPortfolio = new NumberedPortfolio({ did, id: from }, context);
+  } else {
+    fromPortfolio = from;
+  }
+
+  return {
+    fromPortfolio,
+  };
+}
+
+/**
+ * @hidden
+ */
+export const redeemTokens = (): Procedure<Params, void, Storage> =>
+  new Procedure(prepareRedeemTokens, getAuthorization, prepareStorage);

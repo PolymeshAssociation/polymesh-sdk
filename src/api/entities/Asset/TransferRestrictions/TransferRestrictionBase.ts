@@ -29,9 +29,9 @@ import {
   SetCountTransferRestrictionsParams,
   SetPercentageTransferRestrictionsParams,
   SetRestrictionsParams,
+  StatType,
   TransferRestrictionType,
 } from '~/types';
-import { StatType } from '~/types/internal';
 import {
   scopeIdToString,
   stringToTickerKey,

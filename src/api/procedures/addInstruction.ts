@@ -1,5 +1,6 @@
 import { u64 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
+import { PalletSettlementInstructionMemo } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
@@ -34,6 +35,7 @@ import {
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolio,
   portfolioLikeToPortfolioId,
+  stringToInstructionMemo,
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
@@ -72,7 +74,8 @@ type InternalAddAndAffirmInstructionParams = [
     asset: Ticker;
     amount: Balance;
   }[],
-  PortfolioId[]
+  PortfolioId[],
+  PalletSettlementInstructionMemo | null
 ][];
 
 /**
@@ -88,7 +91,8 @@ type InternalAddInstructionParams = [
     to: PortfolioId;
     asset: Ticker;
     amount: Balance;
-  }[]
+  }[],
+  PalletSettlementInstructionMemo | null
 ][];
 
 /**
@@ -119,6 +123,7 @@ async function getTxArgsAndErrors(
   errIndexes: {
     legEmptyErrIndexes: number[];
     legLengthErrIndexes: number[];
+    legAmountErrIndexes: number[];
     endBlockErrIndexes: number[];
     datesErrIndexes: number[];
   };
@@ -130,19 +135,25 @@ async function getTxArgsAndErrors(
 
   const legEmptyErrIndexes: number[] = [];
   const legLengthErrIndexes: number[] = [];
+  const legAmountErrIndexes: number[] = [];
   const endBlockErrIndexes: number[] = [];
   /**
    * array of indexes of Instructions where the value date is before the trade date
    */
   const datesErrIndexes: number[] = [];
 
-  await P.each(instructions, async ({ legs, endBlock, tradeDate, valueDate }, i) => {
+  await P.each(instructions, async ({ legs, endBlock, tradeDate, valueDate, memo }, i) => {
     if (!legs.length) {
       legEmptyErrIndexes.push(i);
     }
 
     if (legs.length > MAX_LEGS_LENGTH) {
       legLengthErrIndexes.push(i);
+    }
+
+    const zeroAmountLegs = legs.filter(leg => leg.amount.isZero());
+    if (zeroAmountLegs.length) {
+      legAmountErrIndexes.push(i);
     }
 
     let endCondition;
@@ -164,6 +175,7 @@ async function getTxArgsAndErrors(
     if (
       !legEmptyErrIndexes.length &&
       !legLengthErrIndexes.length &&
+      !legAmountErrIndexes.length &&
       !endBlockErrIndexes.length &&
       !datesErrIndexes.length
     ) {
@@ -177,6 +189,7 @@ async function getTxArgsAndErrors(
         asset: Ticker;
         amount: Balance;
       }[] = [];
+      const rawInstructionMemo = optionize(stringToInstructionMemo)(memo, context);
 
       await Promise.all(
         legs.map(async ({ from, to, amount, asset }) => {
@@ -210,6 +223,7 @@ async function getTxArgsAndErrors(
           portfoliosToAffirm[i].map(portfolio =>
             portfolioIdToMeshPortfolioId(portfolioLikeToPortfolioId(portfolio), context)
           ),
+          rawInstructionMemo,
         ]);
       } else {
         addInstructionParams.push([
@@ -218,6 +232,7 @@ async function getTxArgsAndErrors(
           rawTradeDate,
           rawValueDate,
           rawLegs,
+          rawInstructionMemo,
         ]);
       }
     }
@@ -227,6 +242,7 @@ async function getTxArgsAndErrors(
     errIndexes: {
       legEmptyErrIndexes,
       legLengthErrIndexes,
+      legAmountErrIndexes,
       endBlockErrIndexes,
       datesErrIndexes,
     },
@@ -266,7 +282,13 @@ export async function prepareAddInstruction(
   }
 
   const {
-    errIndexes: { legEmptyErrIndexes, legLengthErrIndexes, endBlockErrIndexes, datesErrIndexes },
+    errIndexes: {
+      legEmptyErrIndexes,
+      legLengthErrIndexes,
+      legAmountErrIndexes,
+      endBlockErrIndexes,
+      datesErrIndexes,
+    },
     addAndAffirmInstructionParams,
     addInstructionParams,
   } = await getTxArgsAndErrors(instructions, portfoliosToAffirm, latestBlock, venueId, context);
@@ -277,6 +299,16 @@ export async function prepareAddInstruction(
       message: "The legs array can't be empty",
       data: {
         failedInstructionIndexes: legEmptyErrIndexes,
+      },
+    });
+  }
+
+  if (legAmountErrIndexes.length) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Instruction legs cannot have zero amount',
+      data: {
+        failedInstructionIndexes: legAmountErrIndexes,
       },
     });
   }
@@ -312,8 +344,8 @@ export async function prepareAddInstruction(
     });
   }
 
-  const addAndAffirmTx = settlement.addAndAffirmInstruction;
-  const addTx = settlement.addInstruction;
+  const addAndAffirmTx = settlement.addAndAffirmInstructionWithMemo;
+  const addTx = settlement.addInstructionWithMemo;
 
   const transactions = assembleBatchTransactions([
     {
@@ -349,8 +381,8 @@ export async function getAuthorization(
   portfoliosToAffirm.forEach(portfoliosList => {
     transactions = union(transactions, [
       portfoliosList.length
-        ? TxTags.settlement.AddAndAffirmInstruction
-        : TxTags.settlement.AddInstruction,
+        ? TxTags.settlement.AddAndAffirmInstructionWithMemo
+        : TxTags.settlement.AddInstructionWithMemo,
     ]);
     portfolios = unionWith(portfolios, portfoliosList, isEqual);
   });

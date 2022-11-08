@@ -30,7 +30,6 @@ import {
   PolymeshTransaction,
   PolymeshTransactionBatch,
 } from '~/internal';
-import { StatType } from '~/types/internal';
 import { Modify } from '~/types/utils';
 
 export * from '~/generated/types';
@@ -331,6 +330,23 @@ export type InputStatType =
       claimIssuer: StatClaimIssuer;
     };
 
+/**
+ * Represents the StatType from the `statistics` module.
+ *
+ * @note the chain doesn't use "Scoped" types, but they are needed here to discriminate the input instead of having an optional input
+ */
+export enum StatType {
+  Count = 'Count',
+  Balance = 'Balance',
+  /**
+   * ScopedCount is an SDK only type, on chain it is `Count` with a claimType option present
+   */
+  ScopedCount = 'ScopedCount',
+  /**
+   * ScopedPercentage is an SDK only type, on chain it is `Balance` with a claimType option present
+   */
+  ScopedBalance = 'ScopedBalance',
+}
 export interface IdentityWithClaims {
   identity: Identity;
   claims: ClaimData[];
@@ -817,7 +833,9 @@ export enum TxGroup {
    * - TxTags.identity.AddInvestorUniquenessClaim
    * - TxTags.portfolio.MovePortfolioFunds
    * - TxTags.settlement.AddInstruction
+   * - TxTags.settlement.AddInstructionWithMemo
    * - TxTags.settlement.AddAndAffirmInstruction
+   * - TxTags.settlement.AddAndAffirmInstructionWithMemo
    * - TxTags.settlement.AffirmInstruction
    * - TxTags.settlement.RejectInstruction
    * - TxTags.settlement.CreateVenue
@@ -842,7 +860,9 @@ export enum TxGroup {
    * - TxTags.identity.AddInvestorUniquenessClaim
    * - TxTags.settlement.CreateVenue
    * - TxTags.settlement.AddInstruction
+   * - TxTags.settlement.AddInstructionWithMemo
    * - TxTags.settlement.AddAndAffirmInstruction
+   * - TxTags.settlement.AddAndAffirmInstructionWithMemo
    */
   Distribution = 'Distribution',
   /**

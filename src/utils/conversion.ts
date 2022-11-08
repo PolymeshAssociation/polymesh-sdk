@@ -1,4 +1,4 @@
-import { bool, Bytes, Option, Text, u8, u16, u32, u64, u128 } from '@polkadot/types';
+import { bool, Bytes, Option, Text, u8, U8aFixed, u16, u32, u64, u128 } from '@polkadot/types';
 import {
   AccountId,
   Balance,
@@ -8,13 +8,14 @@ import {
   Signature,
 } from '@polkadot/types/interfaces';
 import {
-  ConfidentialIdentityClaimProofsScopeClaimProof,
+  ConfidentialIdentityV2ClaimProofsScopeClaimProof,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCorporateAction,
   PalletCorporateActionsDistribution,
   PalletCorporateActionsInitiateCorporateActionArgs,
   PalletMultisigProposalStatus,
   PalletPortfolioMovePortfolioItem,
+  PalletSettlementInstructionMemo,
   PalletStoFundraiser,
   PolymeshCommonUtilitiesBalancesMemo,
   PolymeshPrimitivesAssetIdentifier,
@@ -26,6 +27,7 @@ import {
   PolymeshPrimitivesDocumentHash,
   PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityId,
+  PolymeshPrimitivesIdentityIdPortfolioKind,
   PolymeshPrimitivesSecondaryKeyPermissions,
   PolymeshPrimitivesStatisticsStat2ndKey,
   PolymeshPrimitivesStatisticsStatClaim,
@@ -39,6 +41,7 @@ import {
 import { ITuple } from '@polkadot/types/types';
 import { BTreeSet } from '@polkadot/types-codec';
 import {
+  hexToString,
   hexToU8a,
   isHex,
   stringLowerFirst,
@@ -210,6 +213,7 @@ import {
   SignerValue,
   SingleClaimCondition,
   StatClaimType,
+  StatType,
   TargetTreatment,
   Tier,
   TransactionPermissions,
@@ -238,7 +242,6 @@ import {
   ScheduleSpec,
   StatClaimInputType,
   StatClaimIssuer,
-  StatType,
   TickerKey,
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
@@ -267,6 +270,7 @@ import {
 import {
   isIdentityCondition,
   isMultiClaimCondition,
+  isNumberedPortfolio,
   isSingleClaimCondition,
 } from '~/utils/typeguards';
 
@@ -704,6 +708,22 @@ export function portfolioIdToMeshPortfolioId(
 /**
  * @hidden
  */
+export function portfolioToPortfolioKind(
+  portfolio: DefaultPortfolio | NumberedPortfolio,
+  context: Context
+): PolymeshPrimitivesIdentityIdPortfolioKind {
+  let portfolioKind;
+  if (isNumberedPortfolio(portfolio)) {
+    portfolioKind = { User: bigNumberToU64(portfolio.id, context) };
+  } else {
+    portfolioKind = 'Default';
+  }
+  return context.createType('PolymeshPrimitivesIdentityIdPortfolioKind', portfolioKind);
+}
+
+/**
+ * @hidden
+ */
 export function stringToText(text: string, context: Context): Text {
   return context.createType('Text', text);
 }
@@ -725,7 +745,9 @@ export function txGroupToTxTags(group: TxGroup): TxTag[] {
         TxTags.identity.AddInvestorUniquenessClaim,
         TxTags.portfolio.MovePortfolioFunds,
         TxTags.settlement.AddInstruction,
+        TxTags.settlement.AddInstructionWithMemo,
         TxTags.settlement.AddAndAffirmInstruction,
+        TxTags.settlement.AddAndAffirmInstructionWithMemo,
         TxTags.settlement.AffirmInstruction,
         TxTags.settlement.RejectInstruction,
         TxTags.settlement.CreateVenue,
@@ -753,7 +775,9 @@ export function txGroupToTxTags(group: TxGroup): TxTag[] {
         TxTags.identity.AddInvestorUniquenessClaim,
         TxTags.settlement.CreateVenue,
         TxTags.settlement.AddInstruction,
+        TxTags.settlement.AddInstructionWithMemo,
         TxTags.settlement.AddAndAffirmInstruction,
+        TxTags.settlement.AddAndAffirmInstructionWithMemo,
       ];
     }
     case TxGroup.Issuance: {
@@ -1437,7 +1461,7 @@ export function authorizationDataToAuthorization(
 /**
  * @hidden
  */
-export function stringToMemo(value: string, context: Context): PolymeshCommonUtilitiesBalancesMemo {
+function assertMemoValid(value: string): void {
   if (value.length > MAX_MEMO_LENGTH) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
@@ -1447,6 +1471,13 @@ export function stringToMemo(value: string, context: Context): PolymeshCommonUti
       },
     });
   }
+}
+
+/**
+ * @hidden
+ */
+export function stringToMemo(value: string, context: Context): PolymeshCommonUtilitiesBalancesMemo {
+  assertMemoValid(value);
 
   return context.createType(
     'PolymeshCommonUtilitiesBalancesMemo',
@@ -3594,7 +3625,7 @@ export function scopeClaimProofToConfidentialIdentityClaimProof(
   proof: ScopeClaimProof,
   scopeId: string,
   context: Context
-): ConfidentialIdentityClaimProofsScopeClaimProof {
+): ConfidentialIdentityV2ClaimProofsScopeClaimProof {
   const {
     proofScopeIdWellFormed,
     proofScopeIdCddIdMatch: { challengeResponses, subtractExpressionsRes, blindedScopeDidHash },
@@ -3608,7 +3639,7 @@ export function scopeClaimProofToConfidentialIdentityClaimProof(
     /* eslint-enable @typescript-eslint/naming-convention */
   });
 
-  return context.createType('ConfidentialIdentityClaimProofsScopeClaimProof', {
+  return context.createType('ConfidentialIdentityV2ClaimProofsScopeClaimProof', {
     proofScopeIdWellformed: stringToSignature(proofScopeIdWellFormed, context),
     proofScopeIdCddIdMatch: zkProofData,
     scopeId: stringToRistrettoPoint(scopeId, context),
@@ -4103,4 +4134,23 @@ export function meshProposalStatusToProposalStatus(
     default:
       throw new UnreachableCaseError(type);
   }
+}
+
+/**
+ * @hidden
+ */
+export function stringToInstructionMemo(
+  value: string,
+  context: Context
+): PalletSettlementInstructionMemo {
+  assertMemoValid(value);
+
+  return context.createType('PalletSettlementInstructionMemo', padString(value, MAX_MEMO_LENGTH));
+}
+
+/**
+ * @hidden
+ */
+export function instructionMemoToString(value: U8aFixed): string {
+  return removePadding(hexToString(value.toString()));
 }

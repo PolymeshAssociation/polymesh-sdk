@@ -192,16 +192,6 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
 
       const tickerBalance = assetBalances[ticker];
 
-      /*
-       * this avoids the edge case where an asset holder creates an instruction with a leg
-       *   that transfers 0 tokens, while not holding any tokens. This causes the portfolio to list
-       *   a locked balance of 0, while not listing any unlocked balance. This will be addressed by a
-       *   chain update, but until then this is necessary
-       */
-      if (!tickerBalance) {
-        return;
-      }
-
       tickerBalance.locked = locked;
       tickerBalance.free = assetBalances[ticker].total.minus(locked);
     });
