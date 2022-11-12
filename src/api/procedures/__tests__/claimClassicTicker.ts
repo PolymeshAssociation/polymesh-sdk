@@ -1,6 +1,9 @@
+import {
+  PolymeshPrimitivesEthereumEcdsaSignature,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { EcdsaSignature, Ticker } from 'polymesh-types/types';
 
 import { prepareClaimClassicTicker } from '~/api/procedures/claimClassicTicker';
 import { Context } from '~/internal';
@@ -23,8 +26,8 @@ describe('claimClassicTicker procedure', () => {
   let ethereumSignature: string;
   let ethereumAddress: string;
   let did: string;
-  let rawTicker: Ticker;
-  let rawEthereumSignature: EcdsaSignature;
+  let rawTicker: PolymeshPrimitivesTicker;
+  let rawEthereumSignature: PolymeshPrimitivesEthereumEcdsaSignature;
   let stringToTickerSpy: jest.SpyInstance;
   let stringToEcdsaSignatureSpy: jest.SpyInstance;
 

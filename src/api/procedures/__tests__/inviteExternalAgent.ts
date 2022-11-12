@@ -1,8 +1,13 @@
-import { PolymeshPrimitivesAuthorizationAuthorizationData } from '@polkadot/types/lookup';
+import {
+  PolymeshPrimitivesAgentAgentGroup,
+  PolymeshPrimitivesAuthorizationAuthorizationData,
+  PolymeshPrimitivesIdentityId,
+  PolymeshPrimitivesSecondaryKeySignatory,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { AgentGroup, IdentityId, Signatory, Ticker } from 'polymesh-types/types';
 
 import {
   createGroupAndAuthorizationResolver,
@@ -44,16 +49,19 @@ describe('inviteExternalAgent procedure', () => {
     [Authorization, Context]
   >;
   let signerToStringSpy: jest.SpyInstance<string, [string | Identity | Account]>;
-  let signerValueToSignatorySpy: jest.SpyInstance<Signatory, [SignerValue, Context]>;
+  let signerValueToSignatorySpy: jest.SpyInstance<
+    PolymeshPrimitivesSecondaryKeySignatory,
+    [SignerValue, Context]
+  >;
   let stringToIdentityIdSpy: jest.SpyInstance;
   let ticker: string;
   let asset: Asset;
-  let rawTicker: Ticker;
-  let rawAgentGroup: AgentGroup;
+  let rawTicker: PolymeshPrimitivesTicker;
+  let rawAgentGroup: PolymeshPrimitivesAgentAgentGroup;
   let target: string;
-  let rawSignatory: Signatory;
+  let rawSignatory: PolymeshPrimitivesSecondaryKeySignatory;
   let rawAuthorizationData: PolymeshPrimitivesAuthorizationAuthorizationData;
-  let rawIdentityId: IdentityId;
+  let rawIdentityId: PolymeshPrimitivesIdentityId;
 
   beforeAll(() => {
     dsMockUtils.initMocks();

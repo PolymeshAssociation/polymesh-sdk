@@ -1,8 +1,8 @@
+import { u64 } from '@polkadot/types';
 import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import { Asset, Checkpoint, Context, createCheckpoint, Namespace, PolymeshError } from '~/internal';
-import { CheckpointId } from '~/polkadot/polymesh';
 import {
   CheckpointWithData,
   ErrorCode,
@@ -96,7 +96,7 @@ export class Checkpoints extends Namespace<Asset> {
       paginationOpts,
     });
 
-    const checkpointsMultiParams: [PolymeshPrimitivesTicker, CheckpointId][] = [];
+    const checkpointsMultiParams: [PolymeshPrimitivesTicker, u64][] = [];
     const checkpoints: { checkpoint: Checkpoint; totalSupply: BigNumber }[] = [];
 
     entries.forEach(

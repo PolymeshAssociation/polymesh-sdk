@@ -10,7 +10,6 @@ import {
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { ScopeId } from 'polymesh-types/types';
 
 import {
   AddTransferRestrictionParams,
@@ -86,7 +85,11 @@ describe('addTransferRestriction procedure', () => {
     [PolymeshPrimitivesTicker, PolymeshPrimitivesTransferComplianceTransferCondition]
   >;
   let setExemptedEntitiesTransaction: PolymeshTx<
-    [PolymeshPrimitivesTicker, PolymeshPrimitivesTransferComplianceTransferCondition, ScopeId[]]
+    [
+      PolymeshPrimitivesTicker,
+      PolymeshPrimitivesTransferComplianceTransferCondition,
+      PolymeshPrimitivesIdentityId[]
+    ]
   >;
   let transferRestrictionTypeToStatOpTypeSpy: jest.SpyInstance<
     PolymeshPrimitivesStatisticsStatOpType,
@@ -103,7 +106,7 @@ describe('addTransferRestriction procedure', () => {
     PolymeshPrimitivesTransferComplianceAssetTransferCompliance
   ];
   let statCompareEqMock: jest.Mock;
-  let stringToScopeIdSpy: jest.SpyInstance;
+  let stringToIdentityIdSpy: jest.SpyInstance;
   const did = 'someDid';
   const ticker = 'TICKER';
 
@@ -170,7 +173,7 @@ describe('addTransferRestriction procedure', () => {
       utilsConversionModule,
       'transferRestrictionTypeToStatOpType'
     );
-    stringToScopeIdSpy = jest.spyOn(utilsConversionModule, 'stringToScopeId');
+    stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
 
     rawCountStatType = dsMockUtils.createMockStatisticsStatType();
     rawBalanceStatType = dsMockUtils.createMockStatisticsStatType({
@@ -239,7 +242,7 @@ describe('addTransferRestriction procedure', () => {
     mockClaimCountBtree = dsMockUtils.createMockBTreeSet([rawClaimCountCondition]);
     mockClaimPercentageBtree = dsMockUtils.createMockBTreeSet([rawClaimPercentageCondition]);
 
-    when(stringToScopeIdSpy).calledWith(did, mockContext).mockReturnValue(rawScopeId);
+    when(stringToIdentityIdSpy).calledWith(did, mockContext).mockReturnValue(rawScopeId);
 
     when(transferRestrictionToPolymeshTransferConditionSpy)
       .calledWith(countRestriction, mockContext)
@@ -351,7 +354,7 @@ describe('addTransferRestriction procedure', () => {
 
   it('should return an add exempted entities transaction spec', async () => {
     const identityScopeId = 'anotherScopeId';
-    const rawIdentityScopeId = dsMockUtils.createMockScopeId(identityScopeId);
+    const rawIdentityScopeId = dsMockUtils.createMockIdentityId(identityScopeId);
     const rawIdentityBtree = dsMockUtils.createMockBTreeSet<PolymeshPrimitivesIdentityId>([
       rawIdentityScopeId,
     ]);

@@ -5,6 +5,7 @@ import {
   PalletCorporateActionsCaId,
   PalletCorporateActionsDistribution,
   PalletRelayerSubsidy,
+  PolymeshCommonUtilitiesProtocolFeeProtocolOp,
 } from '@polkadot/types/lookup';
 import {
   CallFunction,
@@ -21,7 +22,6 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, clone, flatMap, flatten, flattenDeep } from 'lodash';
 import { polymesh } from 'polymesh-types/definitions';
-import { ProtocolOp } from 'polymesh-types/types';
 
 import { Account, Asset, DividendDistribution, Identity, PolymeshError, Subsidy } from '~/internal';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
@@ -563,7 +563,7 @@ export class Context {
       },
     } = this;
 
-    const tagsMap = new Map<TxTag, ProtocolOp | undefined>();
+    const tagsMap = new Map<TxTag, PolymeshCommonUtilitiesProtocolFeeProtocolOp | undefined>();
 
     tags.forEach(tag => {
       try {
@@ -589,7 +589,9 @@ export class Context {
       coefficient(),
     ]);
 
-    const assembleResult = (rawProtocolOp: ProtocolOp | undefined): BigNumber => {
+    const assembleResult = (
+      rawProtocolOp: PolymeshCommonUtilitiesProtocolFeeProtocolOp | undefined
+    ): BigNumber => {
       const baseFeeEntry = baseFeesEntries.find(
         ([
           {

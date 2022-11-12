@@ -1,10 +1,14 @@
 import { Option, u32, u64 } from '@polkadot/types';
 import { Balance, Moment } from '@polkadot/types/interfaces';
-import { PalletSettlementInstructionMemo } from '@polkadot/types/lookup';
+import {
+  PalletSettlementInstructionMemo,
+  PalletSettlementSettlementType,
+  PolymeshPrimitivesIdentityIdPortfolioId,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { PortfolioId, SettlementType, Ticker } from 'polymesh-types/types';
 
 import {
   createAddInstructionResolver,
@@ -40,14 +44,14 @@ describe('addInstruction procedure', () => {
   let portfolioLikeToPortfolioIdSpy: jest.SpyInstance;
   let portfolioLikeToPortfolioSpy: jest.SpyInstance;
   let getCustodianMock: jest.Mock;
-  let stringToTickerSpy: jest.SpyInstance<Ticker, [string, Context]>;
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
   let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
   let bigNumberToBalanceSpy: jest.SpyInstance<
     Balance,
     [BigNumber, Context, (boolean | undefined)?]
   >;
   let endConditionToSettlementTypeSpy: jest.SpyInstance<
-    SettlementType,
+    PalletSettlementSettlementType,
     [
       (
         | { type: InstructionType.SettleOnAffirmation }
@@ -75,16 +79,21 @@ describe('addInstruction procedure', () => {
 
   let rawVenueId: u64;
   let rawAmount: Balance;
-  let rawFrom: PortfolioId;
-  let rawTo: PortfolioId;
-  let rawTicker: Ticker;
+  let rawFrom: PolymeshPrimitivesIdentityIdPortfolioId;
+  let rawTo: PolymeshPrimitivesIdentityIdPortfolioId;
+  let rawTicker: PolymeshPrimitivesTicker;
   let rawTradeDate: Moment;
   let rawValueDate: Moment;
   let rawEndBlock: u32;
   let rawInstructionMemo: PalletSettlementInstructionMemo;
-  let rawAuthSettlementType: SettlementType;
-  let rawBlockSettlementType: SettlementType;
-  let rawLeg: { from: PortfolioId; to: PortfolioId; asset: Ticker; amount: Balance };
+  let rawAuthSettlementType: PalletSettlementSettlementType;
+  let rawBlockSettlementType: PalletSettlementSettlementType;
+  let rawLeg: {
+    from: PolymeshPrimitivesIdentityIdPortfolioId;
+    to: PolymeshPrimitivesIdentityIdPortfolioId;
+    asset: PolymeshPrimitivesTicker;
+    amount: Balance;
+  };
 
   beforeAll(() => {
     dsMockUtils.initMocks({
@@ -163,19 +172,29 @@ describe('addInstruction procedure', () => {
   let addAndAuthorizeInstructionTransaction: PolymeshTx<
     [
       u64,
-      SettlementType,
+      PalletSettlementSettlementType,
       Option<Moment>,
-      { from: PortfolioId; to: PortfolioId; asset: Ticker; amount: Balance }[],
-      PortfolioId[],
+      {
+        from: PolymeshPrimitivesIdentityIdPortfolioId;
+        to: PolymeshPrimitivesIdentityIdPortfolioId;
+        asset: PolymeshPrimitivesTicker;
+        amount: Balance;
+      }[],
+      PolymeshPrimitivesIdentityIdPortfolioId[],
       Option<PalletSettlementInstructionMemo>
     ]
   >;
   let addInstructionTransaction: PolymeshTx<
     [
       u64,
-      SettlementType,
+      PalletSettlementSettlementType,
       Option<Moment>,
-      { from: PortfolioId; to: PortfolioId; asset: Ticker; amount: Balance }[],
+      {
+        from: PolymeshPrimitivesIdentityIdPortfolioId;
+        to: PolymeshPrimitivesIdentityIdPortfolioId;
+        asset: PolymeshPrimitivesTicker;
+        amount: Balance;
+      }[],
       Option<PalletSettlementInstructionMemo>
     ]
   >;

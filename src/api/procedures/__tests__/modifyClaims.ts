@@ -1,8 +1,11 @@
 import { Option } from '@polkadot/types';
 import { Balance, Moment } from '@polkadot/types/interfaces';
+import {
+  PolymeshPrimitivesIdentityClaimClaim,
+  PolymeshPrimitivesIdentityId,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { Claim as MeshClaim, IdentityId } from 'polymesh-types/types';
 
 import { getAuthorization, prepareModifyClaims } from '~/api/procedures/modifyClaims';
 import { Context, Identity } from '~/internal';
@@ -24,12 +27,12 @@ import * as utilsConversionModule from '~/utils/conversion';
 
 describe('modifyClaims procedure', () => {
   let mockContext: Mocked<Context>;
-  let claimToMeshClaimSpy: jest.SpyInstance<MeshClaim, [Claim, Context]>;
+  let claimToMeshClaimSpy: jest.SpyInstance<PolymeshPrimitivesIdentityClaimClaim, [Claim, Context]>;
   let dateToMomentSpy: jest.SpyInstance<Moment, [Date, Context]>;
-  let identityIdToStringSpy: jest.SpyInstance<string, [IdentityId]>;
-  let stringToIdentityIdSpy: jest.SpyInstance<IdentityId, [string, Context]>;
-  let addClaimTransaction: PolymeshTx<[IdentityId, Claim, Option<Moment>]>;
-  let revokeClaimTransaction: PolymeshTx<[IdentityId, Claim]>;
+  let identityIdToStringSpy: jest.SpyInstance<string, [PolymeshPrimitivesIdentityId]>;
+  let stringToIdentityIdSpy: jest.SpyInstance<PolymeshPrimitivesIdentityId, [string, Context]>;
+  let addClaimTransaction: PolymeshTx<[PolymeshPrimitivesIdentityId, Claim, Option<Moment>]>;
+  let revokeClaimTransaction: PolymeshTx<[PolymeshPrimitivesIdentityId, Claim]>;
   let balanceToBigNumberSpy: jest.SpyInstance<BigNumber, [Balance]>;
 
   let someDid: string;
@@ -42,12 +45,12 @@ describe('modifyClaims procedure', () => {
   let expiry: Date;
   let args: ModifyClaimsParams;
 
-  let rawCddClaim: MeshClaim;
-  let rawBuyLockupClaim: MeshClaim;
-  let rawIuClaim: MeshClaim;
-  let rawDefaultCddClaim: MeshClaim;
-  let rawSomeDid: IdentityId;
-  let rawOtherDid: IdentityId;
+  let rawCddClaim: PolymeshPrimitivesIdentityClaimClaim;
+  let rawBuyLockupClaim: PolymeshPrimitivesIdentityClaimClaim;
+  let rawIuClaim: PolymeshPrimitivesIdentityClaimClaim;
+  let rawDefaultCddClaim: PolymeshPrimitivesIdentityClaimClaim;
+  let rawSomeDid: PolymeshPrimitivesIdentityId;
+  let rawOtherDid: PolymeshPrimitivesIdentityId;
   let rawExpiry: Moment;
 
   const includeExpired = true;
@@ -64,7 +67,6 @@ describe('modifyClaims procedure', () => {
     balanceToBigNumberSpy = jest.spyOn(utilsConversionModule, 'balanceToBigNumber');
 
     jest.spyOn(utilsConversionModule, 'stringToTicker').mockImplementation();
-    jest.spyOn(utilsConversionModule, 'stringToScopeId').mockImplementation();
 
     someDid = 'someDid';
     otherDid = 'otherDid';
@@ -122,7 +124,7 @@ describe('modifyClaims procedure', () => {
     rawIuClaim = dsMockUtils.createMockClaim({
       InvestorUniqueness: [
         dsMockUtils.createMockScope(),
-        dsMockUtils.createMockScopeId(),
+        dsMockUtils.createMockIdentityId(),
         dsMockUtils.createMockCddId(),
       ],
     });

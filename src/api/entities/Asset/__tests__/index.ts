@@ -1,6 +1,7 @@
 import { bool, Bytes } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import {
+  PalletAssetSecurityToken,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
@@ -11,7 +12,6 @@ import { Asset, Context, Entity, PolymeshTransaction } from '~/internal';
 import { eventByIndexedArgs, tickerExternalAgentHistory } from '~/middleware/queries';
 import { assetQuery, tickerExternalAgentHistoryQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
-import { SecurityToken as MeshSecurityToken } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { SecurityIdentifier, SecurityIdentifierType } from '~/types';
 import { tuple } from '~/types/utils';
@@ -80,7 +80,7 @@ describe('Asset class', () => {
     let iuDisabled: boolean;
     let did: string;
 
-    let rawToken: MeshSecurityToken;
+    let rawToken: PalletAssetSecurityToken;
     let rawName: Bytes;
     let rawIuDisabled: bool;
 
@@ -680,22 +680,22 @@ describe('Asset class', () => {
 
       const identityScopes = [
         {
-          scopeId: dsMockUtils.createMockScopeId('someScopeId'),
+          scopeId: dsMockUtils.createMockIdentityId('someScopeId'),
           identityId: dsMockUtils.createMockIdentityId('someDid'),
           balance: dsMockUtils.createMockBalance(new BigNumber(100)),
         },
         {
-          scopeId: dsMockUtils.createMockScopeId('someScopeId'),
+          scopeId: dsMockUtils.createMockIdentityId('someScopeId'),
           identityId: dsMockUtils.createMockIdentityId('someOtherDid'),
           balance: dsMockUtils.createMockBalance(new BigNumber(50)),
         },
         {
-          scopeId: dsMockUtils.createMockScopeId('randomScopeId'),
+          scopeId: dsMockUtils.createMockIdentityId('randomScopeId'),
           identityId: dsMockUtils.createMockIdentityId('randomDid'),
           balance: dsMockUtils.createMockBalance(new BigNumber(10)),
         },
         {
-          scopeId: dsMockUtils.createMockScopeId('excludedScopeId'),
+          scopeId: dsMockUtils.createMockIdentityId('excludedScopeId'),
           identityId: dsMockUtils.createMockIdentityId('zeroCountDid'),
           balance: dsMockUtils.createMockBalance(new BigNumber(0)),
         },

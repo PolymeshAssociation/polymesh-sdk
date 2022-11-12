@@ -1,4 +1,5 @@
 import { StorageKey, u64 } from '@polkadot/types';
+import { PolymeshPrimitivesIdentityIdPortfolioId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -7,7 +8,6 @@ import { eventByIndexedArgs } from '~/middleware/queries';
 import { instructionsQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { EventIdEnum as MiddlewareV2EventId } from '~/middleware/typesV2';
-import { PortfolioId as MeshPortfolioId } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -399,7 +399,7 @@ describe('Instruction class', () => {
   describe('method: getAffirmations', () => {
     const did = 'someDid';
     const status = AffirmationStatus.Affirmed;
-    let rawStorageKey: [u64, MeshPortfolioId][];
+    let rawStorageKey: [u64, PolymeshPrimitivesIdentityIdPortfolioId][];
 
     let instructionDetailsMock: jest.Mock;
 

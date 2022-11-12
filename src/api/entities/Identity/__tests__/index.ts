@@ -15,7 +15,6 @@ import { Asset, Context, Entity, Identity } from '~/internal';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import { assetHoldersQuery, trustingAssetsQuery } from '~/middleware/queriesV2';
 import { AssetHoldersOrderBy } from '~/middleware/typesV2';
-import { ScopeId } from '~/polkadot/polymesh/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
 import {
@@ -739,7 +738,7 @@ describe('Identity class', () => {
 
     let rawDid: PolymeshPrimitivesIdentityId;
     let rawTicker: PolymeshPrimitivesTicker;
-    let rawScopeId: ScopeId;
+    let rawScopeId: PolymeshPrimitivesIdentityId;
 
     let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
 
@@ -750,7 +749,7 @@ describe('Identity class', () => {
 
       rawDid = dsMockUtils.createMockIdentityId(did);
       rawTicker = dsMockUtils.createMockTicker(ticker);
-      rawScopeId = dsMockUtils.createMockScopeId(scopeId);
+      rawScopeId = dsMockUtils.createMockIdentityId(scopeId);
 
       stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
     });
@@ -781,7 +780,7 @@ describe('Identity class', () => {
 
     it("should return null if the Identity doesn't have a ScopeId for the Asset", async () => {
       dsMockUtils.createQueryMock('asset', 'scopeIdOf', {
-        returnValue: dsMockUtils.createMockScopeId(),
+        returnValue: dsMockUtils.createMockIdentityId(),
       });
 
       const result = await identity.getScopeId({ asset: ticker });

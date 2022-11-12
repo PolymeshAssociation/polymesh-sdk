@@ -10,6 +10,7 @@ import {
   SubmittableExtrinsics,
 } from '@polkadot/api/types';
 import { RpcInterface } from '@polkadot/rpc-core/types';
+import { u32 } from '@polkadot/types';
 import {
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesTicker,
@@ -24,7 +25,6 @@ import {
   CallIdEnum as MiddlewareV2CallId,
   ModuleIdEnum as MiddlewareV2ModuleId,
 } from '~/middleware/typesV2';
-import { CustomAssetTypeId } from '~/polkadot';
 import {
   CalendarPeriod,
   ClaimType,
@@ -329,7 +329,7 @@ export enum InstructionStatus {
  */
 export type PermissionGroupIdentifier = PermissionGroupType | { custom: BigNumber };
 
-export type InternalAssetType = KnownAssetType | { Custom: CustomAssetTypeId };
+export type InternalAssetType = KnownAssetType | { Custom: u32 };
 
 export interface TickerKey {
   Ticker: PolymeshPrimitivesTicker;
