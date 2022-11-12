@@ -1,5 +1,5 @@
 import { createAuthorizationResolver } from '~/api/procedures/utils';
-import { Account, AuthorizationRequest, PolymeshError, Procedure } from '~/internal';
+import { AuthorizationRequest, PolymeshError, Procedure } from '~/internal';
 import {
   AddRelayerPayingKeyAuthorizationData,
   AuthorizationType,
@@ -9,6 +9,7 @@ import {
 } from '~/types';
 import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
 import { bigNumberToBalance, signerToString, stringToAccountId } from '~/utils/conversion';
+import { asAccount } from '~/utils/internal';
 
 /**
  * @hidden
@@ -26,13 +27,7 @@ export async function prepareSubsidizeAccount(
 
   const { beneficiary, allowance } = args;
 
-  let account: Account;
-
-  if (beneficiary instanceof Account) {
-    account = beneficiary;
-  } else {
-    account = new Account({ address: beneficiary }, context);
-  }
+  const account = asAccount(beneficiary, context);
 
   const { address: beneficiaryAddress } = account;
 

@@ -1,5 +1,5 @@
 import {
-  ConfidentialIdentityClaimProofsScopeClaimProof,
+  ConfidentialIdentityV2ClaimProofsScopeClaimProof,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
@@ -50,7 +50,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
   let claimToMeshClaimSpy: jest.SpyInstance<MeshClaim, [Claim, Context]>;
   let stringToInvestorZkProofDataSpy: jest.SpyInstance<InvestorZKProofData, [string, Context]>;
   let scopeClaimProofToMeshScopeClaimProofSpy: jest.SpyInstance<
-    ConfidentialIdentityClaimProofsScopeClaimProof,
+    ConfidentialIdentityV2ClaimProofsScopeClaimProof,
     [ScopeClaimProof, string, Context]
   >;
   let scopeToMeshScopeSpy: jest.SpyInstance<MeshScope, [Scope, Context]>;
@@ -63,7 +63,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
   let rawClaim: MeshClaim;
   let rawClaimV2: MeshClaim;
   let rawProof: InvestorZKProofData;
-  let rawScopeClaimProof: ConfidentialIdentityClaimProofsScopeClaimProof;
+  let rawScopeClaimProof: ConfidentialIdentityV2ClaimProofsScopeClaimProof;
   let rawExpiry: Moment;
 
   beforeAll(() => {

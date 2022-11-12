@@ -30,6 +30,7 @@ import { major, satisfies } from 'semver';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 
 import {
+  Account,
   Asset,
   Checkpoint,
   CheckpointSchedule,
@@ -39,7 +40,6 @@ import {
 } from '~/internal';
 import { Scope as MiddlewareScope } from '~/middleware/types';
 import {
-  Account,
   CaCheckpointType,
   CalendarPeriod,
   CalendarUnit,
@@ -188,6 +188,14 @@ export async function getDid(
  */
 export function asIdentity(value: string | Identity, context: Context): Identity {
   return typeof value === 'string' ? new Identity({ did: value }, context) : value;
+}
+
+/**
+ * @hidden
+ * Given an address return the corresponding Account, given an Account return the Account
+ */
+export function asAccount(value: string | Account, context: Context): Account {
+  return typeof value === 'string' ? new Account({ address: value }, context) : value;
 }
 
 /**
@@ -1661,6 +1669,9 @@ export async function getSecondaryAccountPermissions(
   ): PermissionedAccount[] => {
     return optKeyRecords.reduce((result: PermissionedAccount[], optKeyRecord, index) => {
       const account = accounts[index];
+      if (optKeyRecord.isNone) {
+        return result;
+      }
       const record = optKeyRecord.unwrap();
 
       if (record.isSecondaryKey) {

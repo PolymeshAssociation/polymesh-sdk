@@ -2,14 +2,9 @@
 /* eslint-disable */
 
 import type {
-  ConfidentialIdentityClaimProofsScopeClaimProof,
-  ConfidentialIdentityClaimProofsZkProofData,
-  ConfidentialIdentitySignSignature,
-  Curve25519DalekBackendSerialU64FieldFieldElement51,
-  Curve25519DalekEdwardsEdwardsPoint,
-  Curve25519DalekRistrettoCompressedRistretto,
-  Curve25519DalekRistrettoRistrettoPoint,
-  Curve25519DalekScalar,
+  ConfidentialIdentityV2ClaimProofsScopeClaimProof,
+  ConfidentialIdentityV2ClaimProofsZkProofData,
+  ConfidentialIdentityV2SignSignature,
   FinalityGrandpaEquivocationPrecommit,
   FinalityGrandpaEquivocationPrevote,
   FinalityGrandpaPrecommit,
@@ -84,6 +79,7 @@ import type {
   PalletComplianceManagerCall,
   PalletComplianceManagerError,
   PalletComplianceManagerEvent,
+  PalletContractsCall,
   PalletContractsError,
   PalletContractsEvent,
   PalletContractsSchedule,
@@ -195,6 +191,7 @@ import type {
   PalletSettlementCall,
   PalletSettlementError,
   PalletSettlementInstruction,
+  PalletSettlementInstructionMemo,
   PalletSettlementInstructionStatus,
   PalletSettlementLeg,
   PalletSettlementLegStatus,
@@ -313,7 +310,6 @@ import type {
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesIdentityIdPortfolioKind,
-  PolymeshPrimitivesInvestorZkproofDataV1InvestorZKProofData,
   PolymeshPrimitivesJurisdictionCountryCode,
   PolymeshPrimitivesPosRatio,
   PolymeshPrimitivesSecondaryKey,
@@ -340,7 +336,6 @@ import type {
   PolymeshRuntimeDevelopRuntime,
   PolymeshRuntimeDevelopRuntimeOriginCaller,
   PolymeshRuntimeDevelopRuntimeSessionKeys,
-  SchnorrkelSignSignature,
   SpAuthorityDiscoveryAppPublic,
   SpConsensusBabeAllowedSlots,
   SpConsensusBabeAppPublic,
@@ -377,14 +372,9 @@ import type {
 
 declare module '@polkadot/types/types/registry' {
   export interface InterfaceTypes {
-    ConfidentialIdentityClaimProofsScopeClaimProof: ConfidentialIdentityClaimProofsScopeClaimProof;
-    ConfidentialIdentityClaimProofsZkProofData: ConfidentialIdentityClaimProofsZkProofData;
-    ConfidentialIdentitySignSignature: ConfidentialIdentitySignSignature;
-    Curve25519DalekBackendSerialU64FieldFieldElement51: Curve25519DalekBackendSerialU64FieldFieldElement51;
-    Curve25519DalekEdwardsEdwardsPoint: Curve25519DalekEdwardsEdwardsPoint;
-    Curve25519DalekRistrettoCompressedRistretto: Curve25519DalekRistrettoCompressedRistretto;
-    Curve25519DalekRistrettoRistrettoPoint: Curve25519DalekRistrettoRistrettoPoint;
-    Curve25519DalekScalar: Curve25519DalekScalar;
+    ConfidentialIdentityV2ClaimProofsScopeClaimProof: ConfidentialIdentityV2ClaimProofsScopeClaimProof;
+    ConfidentialIdentityV2ClaimProofsZkProofData: ConfidentialIdentityV2ClaimProofsZkProofData;
+    ConfidentialIdentityV2SignSignature: ConfidentialIdentityV2SignSignature;
     FinalityGrandpaEquivocationPrecommit: FinalityGrandpaEquivocationPrecommit;
     FinalityGrandpaEquivocationPrevote: FinalityGrandpaEquivocationPrevote;
     FinalityGrandpaPrecommit: FinalityGrandpaPrecommit;
@@ -459,6 +449,7 @@ declare module '@polkadot/types/types/registry' {
     PalletComplianceManagerCall: PalletComplianceManagerCall;
     PalletComplianceManagerError: PalletComplianceManagerError;
     PalletComplianceManagerEvent: PalletComplianceManagerEvent;
+    PalletContractsCall: PalletContractsCall;
     PalletContractsError: PalletContractsError;
     PalletContractsEvent: PalletContractsEvent;
     PalletContractsSchedule: PalletContractsSchedule;
@@ -570,6 +561,7 @@ declare module '@polkadot/types/types/registry' {
     PalletSettlementCall: PalletSettlementCall;
     PalletSettlementError: PalletSettlementError;
     PalletSettlementInstruction: PalletSettlementInstruction;
+    PalletSettlementInstructionMemo: PalletSettlementInstructionMemo;
     PalletSettlementInstructionStatus: PalletSettlementInstructionStatus;
     PalletSettlementLeg: PalletSettlementLeg;
     PalletSettlementLegStatus: PalletSettlementLegStatus;
@@ -688,7 +680,6 @@ declare module '@polkadot/types/types/registry' {
     PolymeshPrimitivesIdentityId: PolymeshPrimitivesIdentityId;
     PolymeshPrimitivesIdentityIdPortfolioId: PolymeshPrimitivesIdentityIdPortfolioId;
     PolymeshPrimitivesIdentityIdPortfolioKind: PolymeshPrimitivesIdentityIdPortfolioKind;
-    PolymeshPrimitivesInvestorZkproofDataV1InvestorZKProofData: PolymeshPrimitivesInvestorZkproofDataV1InvestorZKProofData;
     PolymeshPrimitivesJurisdictionCountryCode: PolymeshPrimitivesJurisdictionCountryCode;
     PolymeshPrimitivesPosRatio: PolymeshPrimitivesPosRatio;
     PolymeshPrimitivesSecondaryKey: PolymeshPrimitivesSecondaryKey;
@@ -715,7 +706,6 @@ declare module '@polkadot/types/types/registry' {
     PolymeshRuntimeDevelopRuntime: PolymeshRuntimeDevelopRuntime;
     PolymeshRuntimeDevelopRuntimeOriginCaller: PolymeshRuntimeDevelopRuntimeOriginCaller;
     PolymeshRuntimeDevelopRuntimeSessionKeys: PolymeshRuntimeDevelopRuntimeSessionKeys;
-    SchnorrkelSignSignature: SchnorrkelSignSignature;
     SpAuthorityDiscoveryAppPublic: SpAuthorityDiscoveryAppPublic;
     SpConsensusBabeAllowedSlots: SpConsensusBabeAllowedSlots;
     SpConsensusBabeAppPublic: SpConsensusBabeAppPublic;

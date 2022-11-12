@@ -50,9 +50,15 @@ export class MultiSig extends Account {
       multiSig.multiSigSigners.entries(rawAddress),
       multiSig.multiSigSignsRequired(rawAddress),
     ]);
-    const signers = rawSigners.map(([, signatory]) => {
-      return signerValueToSigner(signatoryToSignerValue(signatory), context);
-    });
+    const signers = rawSigners.map(
+      ([
+        {
+          args: [, signatory],
+        },
+      ]) => {
+        return signerValueToSigner(signatoryToSignerValue(signatory), context);
+      }
+    );
     const requiredSignatures = u64ToBigNumber(rawSignersRequired);
 
     return { signers, requiredSignatures };

@@ -2,7 +2,7 @@ import { PolymeshPrimitivesAuthorizationAuthorizationData } from '@polkadot/type
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { AgentGroup, Signatory, Ticker } from 'polymesh-types/types';
+import { AgentGroup, IdentityId, Signatory, Ticker } from 'polymesh-types/types';
 
 import {
   createGroupAndAuthorizationResolver,
@@ -45,6 +45,7 @@ describe('inviteExternalAgent procedure', () => {
   >;
   let signerToStringSpy: jest.SpyInstance<string, [string | Identity | Account]>;
   let signerValueToSignatorySpy: jest.SpyInstance<Signatory, [SignerValue, Context]>;
+  let stringToIdentityIdSpy: jest.SpyInstance;
   let ticker: string;
   let asset: Asset;
   let rawTicker: Ticker;
@@ -52,6 +53,7 @@ describe('inviteExternalAgent procedure', () => {
   let target: string;
   let rawSignatory: Signatory;
   let rawAuthorizationData: PolymeshPrimitivesAuthorizationAuthorizationData;
+  let rawIdentityId: IdentityId;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -62,6 +64,7 @@ describe('inviteExternalAgent procedure', () => {
       'authorizationToAuthorizationData'
     );
     signerToStringSpy = jest.spyOn(utilsConversionModule, 'signerToString');
+    stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
     signerValueToSignatorySpy = jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
@@ -74,6 +77,7 @@ describe('inviteExternalAgent procedure', () => {
     rawAuthorizationData = dsMockUtils.createMockAuthorizationData({
       BecomeAgent: [rawTicker, rawAgentGroup],
     });
+    rawIdentityId = dsMockUtils.createMockIdentityId(target);
   });
 
   beforeEach(() => {
@@ -86,6 +90,7 @@ describe('inviteExternalAgent procedure', () => {
     authorizationToAuthorizationDataSpy.mockReturnValue(rawAuthorizationData);
     signerToStringSpy.mockReturnValue(target);
     signerValueToSignatorySpy.mockReturnValue(rawSignatory);
+    stringToIdentityIdSpy.mockReturnValue(rawIdentityId);
   });
 
   afterEach(() => {
@@ -278,7 +283,7 @@ describe('inviteExternalAgent procedure', () => {
 
     expect(result).toEqual({
       transaction,
-      args: [rawTicker, rawPermissions, rawSignatory],
+      args: [rawTicker, rawPermissions, rawIdentityId, null],
       resolver: expect.any(Function),
     });
   });

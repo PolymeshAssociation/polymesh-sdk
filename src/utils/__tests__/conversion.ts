@@ -11,6 +11,9 @@ import {
 } from '@polkadot/types/interfaces';
 import {
   PalletMultisigProposalStatus,
+  PalletPortfolioMovePortfolioItem,
+  PalletSettlementInstructionMemo,
+  PolymeshCommonUtilitiesBalancesMemo,
   PolymeshPrimitivesAssetMetadataAssetMetadataKey,
   PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
   PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail,
@@ -18,6 +21,7 @@ import {
   PolymeshPrimitivesDocument,
   PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityId,
+  PolymeshPrimitivesIdentityIdPortfolioKind,
   PolymeshPrimitivesStatisticsStat2ndKey,
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesStatisticsStatType,
@@ -28,7 +32,7 @@ import {
 } from '@polkadot/types/lookup';
 import { BTreeSet } from '@polkadot/types-codec';
 import type { ITuple } from '@polkadot/types-codec/types';
-import { hexToU8a } from '@polkadot/util';
+import { hexToU8a, stringToHex } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 import {
@@ -49,8 +53,6 @@ import {
   ExtrinsicPermissions,
   IdentityId,
   InvestorZKProofData,
-  Memo,
-  MovePortfolioItem,
   Permissions as MeshPermissions,
   PortfolioId,
   PriceTier,
@@ -206,6 +208,7 @@ import {
   identitiesToBtreeSet,
   identityIdToString,
   inputStatTypeToMeshStatType,
+  instructionMemoToString,
   internalAssetTypeToAssetType,
   isCusipValid,
   isFigiValid,
@@ -250,6 +253,7 @@ import {
   portfolioLikeToPortfolio,
   portfolioLikeToPortfolioId,
   portfolioMovementToMovePortfolioItem,
+  portfolioToPortfolioKind,
   posRatioToBigNumber,
   requirementToComplianceRequirement,
   scheduleSpecToMeshScheduleSpec,
@@ -280,6 +284,7 @@ import {
   stringToEcdsaSignature,
   stringToHash,
   stringToIdentityId,
+  stringToInstructionMemo,
   stringToInvestorZKProofData,
   stringToMemo,
   stringToRistrettoPoint,
@@ -503,8 +508,9 @@ describe('portfolioMovementToMovePortfolioItem', () => {
     const asset = entityMockUtils.getAssetInstance({ ticker });
     const rawTicker = dsMockUtils.createMockTicker(ticker);
     const rawAmount = dsMockUtils.createMockBalance(amount);
-    const rawMemo = 'memo' as unknown as Memo;
-    const fakeResult = 'MovePortfolioItem' as unknown as MovePortfolioItem;
+    const rawMemo = 'memo' as unknown as PolymeshCommonUtilitiesBalancesMemo;
+    const fakeResult =
+      'PalletPortfolioMovePortfolioItem' as unknown as PalletPortfolioMovePortfolioItem;
 
     let portfolioMovement: PortfolioMovement = {
       asset: ticker,
@@ -520,7 +526,7 @@ describe('portfolioMovementToMovePortfolioItem', () => {
       .mockReturnValue(rawAmount);
 
     when(context.createType)
-      .calledWith('MovePortfolioItem', {
+      .calledWith('PalletPortfolioMovePortfolioItem', {
         ticker: rawTicker,
         amount: rawAmount,
         memo: null,
@@ -545,7 +551,7 @@ describe('portfolioMovementToMovePortfolioItem', () => {
       .mockReturnValue(rawMemo);
 
     when(context.createType)
-      .calledWith('MovePortfolioItem', {
+      .calledWith('PalletPortfolioMovePortfolioItem', {
         ticker: rawTicker,
         amount: rawAmount,
         memo: rawMemo,
@@ -2409,7 +2415,7 @@ describe('stringToMemo', () => {
 
   it('should convert a string to a polkadot Memo object', () => {
     const value = 'someDescription';
-    const fakeResult = 'memoDescription' as unknown as Memo;
+    const fakeResult = 'memoDescription' as unknown as PolymeshCommonUtilitiesBalancesMemo;
     const context = dsMockUtils.getContextInstance();
 
     when(context.createType)
@@ -4846,6 +4852,52 @@ describe('portfolioIdToMeshPortfolioId', () => {
   });
 });
 
+describe('portfolioIdToMeshPortfolioId', () => {
+  beforeAll(() => {
+    entityMockUtils.initMocks();
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    entityMockUtils.reset();
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a portfolio to a polkadot PortfolioKind', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    const fakeResult = 'PortfolioKind' as unknown as PolymeshPrimitivesIdentityIdPortfolioKind;
+
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesIdentityIdPortfolioKind', 'Default')
+      .mockReturnValue(fakeResult);
+
+    let result = portfolioToPortfolioKind(entityMockUtils.getDefaultPortfolioInstance(), context);
+
+    expect(result).toBe(fakeResult);
+
+    const number = new BigNumber(1);
+    const rawU64 = dsMockUtils.createMockU64(number);
+
+    when(context.createType).calledWith('u64', number.toString()).mockReturnValue(rawU64);
+
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesIdentityIdPortfolioKind', { User: rawU64 })
+      .mockReturnValue(fakeResult);
+
+    result = portfolioToPortfolioKind(
+      entityMockUtils.getNumberedPortfolioInstance({ id: number }),
+      context
+    );
+
+    expect(result).toBe(fakeResult);
+  });
+});
+
 describe('complianceRequirementResultToRequirementCompliance', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -6296,7 +6348,9 @@ describe('txGroupToTxTags', () => {
       TxTags.identity.AddInvestorUniquenessClaim,
       TxTags.portfolio.MovePortfolioFunds,
       TxTags.settlement.AddInstruction,
+      TxTags.settlement.AddInstructionWithMemo,
       TxTags.settlement.AddAndAffirmInstruction,
+      TxTags.settlement.AddAndAffirmInstructionWithMemo,
       TxTags.settlement.AffirmInstruction,
       TxTags.settlement.RejectInstruction,
       TxTags.settlement.CreateVenue,
@@ -6327,7 +6381,9 @@ describe('txGroupToTxTags', () => {
       TxTags.identity.AddInvestorUniquenessClaim,
       TxTags.settlement.CreateVenue,
       TxTags.settlement.AddInstruction,
+      TxTags.settlement.AddInstructionWithMemo,
       TxTags.settlement.AddAndAffirmInstruction,
+      TxTags.settlement.AddAndAffirmInstructionWithMemo,
     ]);
 
     result = txGroupToTxTags(TxGroup.Issuance);
@@ -6391,7 +6447,9 @@ describe('transactionPermissionsToTxGroups', () => {
           TxTags.identity.AddInvestorUniquenessClaim,
           TxTags.portfolio.MovePortfolioFunds,
           TxTags.settlement.AddInstruction,
+          TxTags.settlement.AddInstructionWithMemo,
           TxTags.settlement.AddAndAffirmInstruction,
+          TxTags.settlement.AddAndAffirmInstructionWithMemo,
           TxTags.settlement.AffirmInstruction,
           TxTags.settlement.RejectInstruction,
           TxTags.settlement.CreateVenue,
@@ -6420,7 +6478,9 @@ describe('transactionPermissionsToTxGroups', () => {
           TxTags.identity.AddInvestorUniquenessClaim,
           TxTags.portfolio.MovePortfolioFunds,
           TxTags.settlement.AddInstruction,
+          TxTags.settlement.AddInstructionWithMemo,
           TxTags.settlement.AddAndAffirmInstruction,
+          TxTags.settlement.AddAndAffirmInstructionWithMemo,
           TxTags.settlement.AffirmInstruction,
           TxTags.settlement.RejectInstruction,
           TxTags.settlement.CreateVenue,
@@ -7610,7 +7670,7 @@ describe('scopeClaimProofToConfidentialIdentityClaimProof', () => {
     when(context.createType).calledWith('RistrettoPoint', scopeId).mockReturnValue(rawScopeId);
 
     when(context.createType)
-      .calledWith('ConfidentialIdentityClaimProofsScopeClaimProof', scopeClaimProof)
+      .calledWith('ConfidentialIdentityV2ClaimProofsScopeClaimProof', scopeClaimProof)
       .mockReturnValue(fakeResult);
 
     const result = scopeClaimProofToConfidentialIdentityClaimProof(proof, scopeId, context);
@@ -9016,5 +9076,45 @@ describe('metadataValueDetailToMeshMetadataValueDetail', () => {
     );
 
     expect(result).toEqual(fakeValueDetail);
+  });
+});
+
+describe('stringToInstructionMemo and instructionMemoToString', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  describe('stringToInstructionMemo', () => {
+    it('should convert a string to a polkadot PalletSettlementInstructionMemo object', () => {
+      const value = 'someDescription';
+      const fakeResult = 'memoDescription' as unknown as PalletSettlementInstructionMemo;
+      const context = dsMockUtils.getContextInstance();
+
+      when(context.createType)
+        .calledWith('PalletSettlementInstructionMemo', padString(value, 32))
+        .mockReturnValue(fakeResult);
+
+      const result = stringToInstructionMemo(value, context);
+
+      expect(result).toEqual(fakeResult);
+    });
+  });
+
+  describe('instructionMemoToString', () => {
+    it('should convert an InstructionMemo to string', () => {
+      const fakeResult = 'memoDescription';
+      const rawMemo = dsMockUtils.createMockInstructionMemo(stringToHex(fakeResult));
+
+      const result = instructionMemoToString(rawMemo);
+      expect(result).toBe(fakeResult);
+    });
   });
 });
