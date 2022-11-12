@@ -25,7 +25,6 @@ import {
   AddInstructionsParams,
   ErrorCode,
   InstructionType,
-  PortfolioId,
   RoleType,
   SettlementTx,
   TxTags,
