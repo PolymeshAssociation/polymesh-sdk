@@ -281,12 +281,11 @@ import {
   stringToInstructionMemo,
   stringToInvestorZKProofData,
   stringToMemo,
-  stringToRistrettoPoint,
-  stringToScalar,
   stringToSignature,
   stringToText,
   stringToTicker,
   stringToTickerKey,
+  stringToU8aFixed,
   targetIdentitiesToCorporateActionTargets,
   targetsToTargetIdentities,
   textToString,
@@ -7562,7 +7561,7 @@ describe('stringToSignature', () => {
   });
 });
 
-describe('stringToRistrettoPoint', () => {
+describe('stringToU8aFixed', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -7575,40 +7574,14 @@ describe('stringToRistrettoPoint', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should convert a string to a polkadot Curve25519DalekRistrettoRistrettoPoint object', () => {
+  it('should convert a string to a polkadot U8aFixed object', () => {
     const value = 'someValue';
-    const fakeResult = 'convertedRistrettoPoint' as unknown as U8aFixed;
+    const fakeResult = 'result' as unknown as U8aFixed;
     const context = dsMockUtils.getContextInstance();
 
     when(context.createType).calledWith('U8aFixed', value).mockReturnValue(fakeResult);
 
-    const result = stringToRistrettoPoint(value, context);
-
-    expect(result).toEqual(fakeResult);
-  });
-});
-
-describe('stringToScalar', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  it('should convert a string to a polkadot Curve25519DalekScalar object', () => {
-    const value = 'someValue';
-    const fakeResult = 'convertedScalar' as unknown as U8aFixed;
-    const context = dsMockUtils.getContextInstance();
-
-    when(context.createType).calledWith('U8aFixed', value).mockReturnValue(fakeResult);
-
-    const result = stringToScalar(value, context);
+    const result = stringToU8aFixed(value, context);
 
     expect(result).toEqual(fakeResult);
   });
@@ -7652,17 +7625,17 @@ describe('scopeClaimProofToConfidentialIdentityClaimProof', () => {
       },
     };
     /* eslint-disable @typescript-eslint/naming-convention */
-    const rawFirstChallengeResponse = dsMockUtils.createMockScalar(firstChallengeResponse);
-    const rawSecondChallengeResponse = dsMockUtils.createMockScalar(secondChallengeResponse);
-    const rawSubtractExpressionsRes = dsMockUtils.createMockRistrettoPoint(subtractExpressionsRes);
-    const rawBlindedScopeDidHash = dsMockUtils.createMockRistrettoPoint(blindedScopeDidHash);
+    const rawFirstChallengeResponse = dsMockUtils.createMockU8aFixed(firstChallengeResponse);
+    const rawSecondChallengeResponse = dsMockUtils.createMockU8aFixed(secondChallengeResponse);
+    const rawSubtractExpressionsRes = dsMockUtils.createMockU8aFixed(subtractExpressionsRes);
+    const rawBlindedScopeDidHash = dsMockUtils.createMockU8aFixed(blindedScopeDidHash);
     const rawZkProofData = dsMockUtils.createMockZkProofData({
       subtractExpressionsRes: subtractExpressionsRes,
       challengeResponses: [firstChallengeResponse, secondChallengeResponse],
       blindedScopeDidHash: blindedScopeDidHash,
     });
     const rawProofScopeIdWellFormed = dsMockUtils.createMockSignature(proofScopeIdWellFormed);
-    const rawScopeId = dsMockUtils.createMockRistrettoPoint(scopeId);
+    const rawScopeId = dsMockUtils.createMockU8aFixed(scopeId);
     const fakeResult = dsMockUtils.createMockScopeClaimProof({
       proofScopeIdWellformed: proofScopeIdWellFormed,
       proofScopeIdCddIdMatch: {

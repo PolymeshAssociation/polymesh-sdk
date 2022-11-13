@@ -3344,18 +3344,6 @@ export const createMockScheduleSpec = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockScalar = (scalar?: string | U8aFixed): MockCodec<U8aFixed> => {
-  if (!scalar || typeof scalar === 'string') {
-    return createMockU8aFixed(scalar);
-  } else {
-    return scalar as MockCodec<U8aFixed>;
-  }
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
 export const createMockRecordDateSpec = (
   recordDateSpec?:
     | { Scheduled: Moment }
@@ -3368,20 +3356,6 @@ export const createMockRecordDateSpec = (
   }
 
   return createMockEnum<PalletCorporateActionsRecordDateSpec>(recordDateSpec);
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockRistrettoPoint = (
-  ristrettoPoint?: string | U8aFixed
-): MockCodec<U8aFixed> => {
-  if (!ristrettoPoint || typeof ristrettoPoint === 'string') {
-    return createMockU8aFixed(ristrettoPoint);
-  } else {
-    return ristrettoPoint as MockCodec<U8aFixed>;
-  }
 };
 
 /**
@@ -3454,19 +3428,19 @@ export const createMockZkProofData = (
       }
 ): MockCodec<ConfidentialIdentityV2ClaimProofsZkProofData> => {
   const { challengeResponses, subtractExpressionsRes, blindedScopeDidHash } = zkProofData || {
-    challengeResponses: [createMockScalar(), createMockScalar()],
-    subtractExpressionsRes: createMockRistrettoPoint(),
-    blindedScopeDidHash: createMockRistrettoPoint(),
+    challengeResponses: [createMockU8aFixed(), createMockU8aFixed()],
+    subtractExpressionsRes: createMockU8aFixed(),
+    blindedScopeDidHash: createMockU8aFixed(),
   };
 
   return createMockCodec(
     {
       challengeResponses: [
-        createMockScalar(challengeResponses[0] as string),
-        createMockScalar(challengeResponses[1] as string),
+        createMockU8aFixed(challengeResponses[0] as string),
+        createMockU8aFixed(challengeResponses[1] as string),
       ],
-      subtractExpressionsRes: createMockRistrettoPoint(subtractExpressionsRes as string),
-      blindedScopeDidHash: createMockRistrettoPoint(blindedScopeDidHash as string),
+      subtractExpressionsRes: createMockU8aFixed(subtractExpressionsRes as string),
+      blindedScopeDidHash: createMockU8aFixed(blindedScopeDidHash as string),
     },
     !zkProofData
   );
@@ -3536,14 +3510,14 @@ export const createMockScopeClaimProof = (
   const { proofScopeIdWellformed, proofScopeIdCddIdMatch, scopeId } = scopeClaimProof || {
     proofScopeIdWellformed: createMockSignature(),
     proofScopeIdCddIdMatch: createMockZkProofData(),
-    scopeId: createMockRistrettoPoint(),
+    scopeId: createMockU8aFixed(),
   };
 
   return createMockCodec(
     {
       proofScopeIdWellformed: createMockSignature(proofScopeIdWellformed),
       proofScopeIdCddIdMatch: createMockZkProofData(proofScopeIdCddIdMatch),
-      scopeId: createMockRistrettoPoint(scopeId),
+      scopeId: createMockU8aFixed(scopeId as string),
     },
     !scopeClaimProof
   );

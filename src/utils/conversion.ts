@@ -3615,25 +3615,11 @@ export function meshCorporateActionToCorporateActionParams(
 /**
  * @hidden
  */
-export function stringToRistrettoPoint(ristrettoPoint: string, context: Context): U8aFixed {
-  return context.createType('U8aFixed', ristrettoPoint);
-}
-
-/**
- * @hidden
- */
 export function corporateActionKindToCaKind(
   kind: CorporateActionKind,
   context: Context
 ): PalletCorporateActionsCaKind {
   return context.createType('PalletCorporateActionsCaKind', kind);
-}
-
-/**
- * @hidden
- */
-export function stringToScalar(scalar: string, context: Context): U8aFixed {
-  return context.createType('U8aFixed', scalar);
 }
 
 /**
@@ -3673,16 +3659,16 @@ export function scopeClaimProofToConfidentialIdentityClaimProof(
 
   const zkProofData = context.createType('ConfidentialIdentityClaimProofsZkProofData', {
     /* eslint-disable @typescript-eslint/naming-convention */
-    challenge_responses: challengeResponses.map(cr => stringToScalar(cr, context)),
-    subtract_expressions_res: stringToRistrettoPoint(subtractExpressionsRes, context),
-    blinded_scope_did_hash: stringToRistrettoPoint(blindedScopeDidHash, context),
+    challenge_responses: challengeResponses.map(cr => stringToU8aFixed(cr, context)),
+    subtract_expressions_res: stringToU8aFixed(subtractExpressionsRes, context),
+    blinded_scope_did_hash: stringToU8aFixed(blindedScopeDidHash, context),
     /* eslint-enable @typescript-eslint/naming-convention */
   });
 
   return context.createType('ConfidentialIdentityV2ClaimProofsScopeClaimProof', {
     proofScopeIdWellformed: stringToSignature(proofScopeIdWellFormed, context),
     proofScopeIdCddIdMatch: zkProofData,
-    scopeId: stringToRistrettoPoint(scopeId, context),
+    scopeId: stringToU8aFixed(scopeId, context),
   });
 }
 
