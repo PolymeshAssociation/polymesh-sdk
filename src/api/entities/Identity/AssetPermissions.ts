@@ -327,6 +327,10 @@ export class AssetPermissions extends Namespace<Identity> {
    */
   public async enabledAt({ asset }: { asset: string | Asset }): Promise<EventIdentifier | null> {
     const { context } = this;
+    if (context.isMiddlewareV2Enabled()) {
+      return this.enabledAtV2({ asset });
+    }
+
     const ticker = asTicker(asset);
 
     const {
@@ -412,6 +416,16 @@ export class AssetPermissions extends Namespace<Identity> {
 
     /* eslint-disable @typescript-eslint/naming-convention */
     const { asset, moduleId: pallet_name, eventId: event_id, size, start } = opts;
+
+    if (context.isMiddlewareV2Enabled()) {
+      return this.getOperationHistoryV2({
+        asset,
+        moduleId: pallet_name as MiddlewareV2ModuleId,
+        eventId: event_id as MiddlewareV2EventId,
+        size,
+        start,
+      });
+    }
 
     const ticker = asTicker(asset);
 

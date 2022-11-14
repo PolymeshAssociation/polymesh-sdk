@@ -532,6 +532,11 @@ export class DividendDistribution extends CorporateActionBase {
         },
       },
     } = this;
+
+    if (context.isMiddlewareV2Enabled()) {
+      return this.getPaymentHistoryV2(opts);
+    }
+
     const { size, start } = opts;
 
     const paymentsPromise = context.queryMiddleware<

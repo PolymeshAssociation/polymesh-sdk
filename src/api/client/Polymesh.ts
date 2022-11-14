@@ -29,6 +29,9 @@ import { Settlements } from './Settlements';
 export interface ConnectParams {
   nodeUrl: string;
   signingManager?: SigningManager;
+  /**
+   * @deprecated in favour of middlewareV2
+   */
   middleware?: MiddlewareConfig;
   middlewareV2?: MiddlewareConfig;
 }

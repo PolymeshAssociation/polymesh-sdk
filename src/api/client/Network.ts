@@ -167,6 +167,16 @@ export class Network {
 
     const { moduleId, eventId, eventArg0, eventArg1, eventArg2 } = opts;
 
+    if (context.isMiddlewareV2Enabled()) {
+      return this.getEventByIndexedArgsV2({
+        moduleId: moduleId as MiddlewareV2ModuleId,
+        eventId: eventId as MiddlewareV2EventId,
+        eventArg0,
+        eventArg1,
+        eventArg2,
+      });
+    }
+
     const {
       data: { eventByIndexedArgs: event },
     } = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
@@ -251,6 +261,18 @@ export class Network {
     const { context } = this;
 
     const { moduleId, eventId, eventArg0, eventArg1, eventArg2, size, start } = opts;
+
+    if (context.isMiddlewareV2Enabled()) {
+      return this.getEventsByIndexedArgsV2({
+        moduleId: moduleId as MiddlewareV2ModuleId,
+        eventId: eventId as MiddlewareV2EventId,
+        eventArg0,
+        eventArg1,
+        eventArg2,
+        size,
+        start,
+      });
+    }
 
     const result = await context.queryMiddleware<Ensured<Query, 'eventsByIndexedArgs'>>(
       eventsByIndexedArgs({
@@ -351,6 +373,10 @@ export class Network {
       },
       context,
     } = this;
+
+    if (context.isMiddlewareV2Enabled()) {
+      return this.getTransactionByHashV2(opts);
+    }
 
     const { txHash: transactionHash } = opts;
 

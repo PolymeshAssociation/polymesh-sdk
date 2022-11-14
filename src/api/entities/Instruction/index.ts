@@ -364,6 +364,10 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       };
     }
 
+    if (this.context.isMiddlewareV2Enabled()) {
+      return this.getStatusV2();
+    }
+
     let eventIdentifier = await this.getInstructionEventFromMiddleware(
       EventIdEnum.InstructionExecuted
     );

@@ -158,6 +158,10 @@ export class Claims {
 
     const did = await getDid(target, context);
 
+    if (context.isMiddlewareV2Enabled()) {
+      return this.getIssuedClaimsV2(opts);
+    }
+
     return context.getIdentityClaimsFromMiddleware({
       trustedClaimIssuers: [did],
       includeExpired,
@@ -222,6 +226,10 @@ export class Claims {
     } = {}
   ): Promise<ResultSet<IdentityWithClaims>> {
     const { context } = this;
+
+    if (context.isMiddlewareV2Enabled()) {
+      return this.getIdentitiesWithClaimsV2(opts);
+    }
 
     const {
       targets,
@@ -475,6 +483,10 @@ export class Claims {
     } = {}
   ): Promise<ResultSet<IdentityWithClaims>> {
     const { context } = this;
+
+    if (context.isMiddlewareV2Enabled()) {
+      return this.getTargetingClaimsV2(opts);
+    }
 
     const { target, trustedClaimIssuers, scope, includeExpired = true, size, start } = opts;
 

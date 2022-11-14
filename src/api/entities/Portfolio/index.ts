@@ -313,6 +313,16 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       _id: portfolioId,
     } = this;
 
+    if (context.isMiddlewareV2Enabled()) {
+      const data = await this.getTransactionHistoryV2(filters);
+
+      return {
+        data,
+        count: new BigNumber(data.length),
+        next: null,
+      };
+    }
+
     const { account, ticker, size, start } = filters;
 
     const settlementsPromise = context.queryMiddleware<Ensured<Query, 'settlements'>>(

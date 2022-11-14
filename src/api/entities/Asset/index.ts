@@ -363,6 +363,10 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
   public async createdAt(): Promise<EventIdentifier | null> {
     const { ticker, context } = this;
 
+    if (context.isMiddlewareV2Enabled()) {
+      return this.createdAtV2();
+    }
+
     const {
       data: { eventByIndexedArgs: event },
     } = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
@@ -533,6 +537,10 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       context,
       ticker,
     } = this;
+
+    if (context.isMiddlewareV2Enabled()) {
+      return this.getOperationHistoryV2();
+    }
 
     const {
       data: { tickerExternalAgentHistory: tickerExternalAgentHistoryResult },

@@ -1,6 +1,7 @@
 import { hexStripPrefix } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 import {
+  capitalize,
   difference,
   differenceBy,
   differenceWith,
@@ -395,6 +396,15 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     } = {}
   ): Promise<ResultSet<ExtrinsicData>> {
     const { context, address } = this;
+
+    if (context.isMiddlewareV2Enabled()) {
+      const { orderBy, ...rest } = filters;
+      let order: ExtrinsicsOrderBy = ExtrinsicsOrderBy.CreatedAtAsc;
+      if (orderBy) {
+        order = (capitalize(orderBy.field) + orderBy.order) as ExtrinsicsOrderBy;
+      }
+      return this.getTransactionHistoryV2({ ...rest, orderBy: order });
+    }
 
     const { tag, success, size, start, orderBy, blockHash } = filters;
     let { blockNumber } = filters;
