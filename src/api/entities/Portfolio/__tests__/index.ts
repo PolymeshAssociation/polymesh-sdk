@@ -180,14 +180,12 @@ describe('Portfolio class', () => {
     let id: BigNumber;
     let ticker0: string;
     let ticker1: string;
-    let ticker2: string;
     let total0: BigNumber;
     let total1: BigNumber;
     let locked0: BigNumber;
     let locked1: BigNumber;
     let rawTicker0: PolymeshPrimitivesTicker;
     let rawTicker1: PolymeshPrimitivesTicker;
-    let rawTicker2: PolymeshPrimitivesTicker;
     let rawTotal0: Balance;
     let rawTotal1: Balance;
     let rawLocked0: Balance;
@@ -199,14 +197,12 @@ describe('Portfolio class', () => {
       id = new BigNumber(1);
       ticker0 = 'TICKER0';
       ticker1 = 'TICKER1';
-      ticker2 = 'TICKER2';
       total0 = new BigNumber(100);
       total1 = new BigNumber(200);
       locked0 = new BigNumber(50);
       locked1 = new BigNumber(25);
       rawTicker0 = dsMockUtils.createMockTicker(ticker0);
       rawTicker1 = dsMockUtils.createMockTicker(ticker1);
-      rawTicker2 = dsMockUtils.createMockTicker(ticker2);
       rawTotal0 = dsMockUtils.createMockBalance(total0.shiftedBy(6));
       rawTotal1 = dsMockUtils.createMockBalance(total1.shiftedBy(6));
       rawLocked0 = dsMockUtils.createMockBalance(locked0.shiftedBy(6));
@@ -232,7 +228,6 @@ describe('Portfolio class', () => {
         entries: [
           tuple([rawPortfolioId, rawTicker0], rawLocked0),
           tuple([rawPortfolioId, rawTicker1], rawLocked1),
-          tuple([rawPortfolioId, rawTicker2], dsMockUtils.createMockBalance(new BigNumber(0))),
         ],
       });
     });

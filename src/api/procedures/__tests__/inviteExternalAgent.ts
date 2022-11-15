@@ -1,6 +1,7 @@
 import {
   PolymeshPrimitivesAgentAgentGroup,
   PolymeshPrimitivesAuthorizationAuthorizationData,
+  PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesSecondaryKeySignatory,
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
@@ -52,6 +53,7 @@ describe('inviteExternalAgent procedure', () => {
     PolymeshPrimitivesSecondaryKeySignatory,
     [SignerValue, Context]
   >;
+  let stringToIdentityIdSpy: jest.SpyInstance;
   let ticker: string;
   let asset: Asset;
   let rawTicker: PolymeshPrimitivesTicker;
@@ -59,6 +61,7 @@ describe('inviteExternalAgent procedure', () => {
   let target: string;
   let rawSignatory: PolymeshPrimitivesSecondaryKeySignatory;
   let rawAuthorizationData: PolymeshPrimitivesAuthorizationAuthorizationData;
+  let rawIdentityId: PolymeshPrimitivesIdentityId;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -69,6 +72,7 @@ describe('inviteExternalAgent procedure', () => {
       'authorizationToAuthorizationData'
     );
     signerToStringSpy = jest.spyOn(utilsConversionModule, 'signerToString');
+    stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
     signerValueToSignatorySpy = jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
@@ -81,6 +85,7 @@ describe('inviteExternalAgent procedure', () => {
     rawAuthorizationData = dsMockUtils.createMockAuthorizationData({
       BecomeAgent: [rawTicker, rawAgentGroup],
     });
+    rawIdentityId = dsMockUtils.createMockIdentityId(target);
   });
 
   beforeEach(() => {
@@ -93,6 +98,7 @@ describe('inviteExternalAgent procedure', () => {
     authorizationToAuthorizationDataSpy.mockReturnValue(rawAuthorizationData);
     signerToStringSpy.mockReturnValue(target);
     signerValueToSignatorySpy.mockReturnValue(rawSignatory);
+    stringToIdentityIdSpy.mockReturnValue(rawIdentityId);
   });
 
   afterEach(() => {
@@ -285,7 +291,7 @@ describe('inviteExternalAgent procedure', () => {
 
     expect(result).toEqual({
       transaction,
-      args: [rawTicker, rawPermissions, rawSignatory],
+      args: [rawTicker, rawPermissions, rawIdentityId, null],
       resolver: expect.any(Function),
     });
   });

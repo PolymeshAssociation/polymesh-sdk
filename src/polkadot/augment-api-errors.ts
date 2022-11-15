@@ -7,17 +7,9 @@ declare module '@polkadot/api-base/types/errors' {
   export interface AugmentedErrors<ApiType extends ApiTypes> {
     asset: {
       /**
-       * When extension already archived.
-       **/
-      AlreadyArchived: AugmentedError<ApiType>;
-      /**
        * The token is already frozen.
        **/
       AlreadyFrozen: AugmentedError<ApiType>;
-      /**
-       * When extension already un-archived.
-       **/
-      AlreadyUnArchived: AugmentedError<ApiType>;
       /**
        * The token has already been created.
        **/
@@ -59,17 +51,9 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       BalanceOverflow: AugmentedError<ApiType>;
       /**
-       * When extension is already added.
-       **/
-      ExtensionAlreadyPresent: AugmentedError<ApiType>;
-      /**
        * Maximum length of the funding round name has been exceeded.
        **/
       FundingRoundNameMaxLengthExceeded: AugmentedError<ApiType>;
-      /**
-       * Given smart extension is not compatible with the asset.
-       **/
-      IncompatibleExtensionVersion: AugmentedError<ApiType>;
       /**
        * The sender balance is not sufficient.
        **/
@@ -98,10 +82,6 @@ declare module '@polkadot/api-base/types/errors' {
        * Investor Uniqueness claims are not allowed for this asset.
        **/
       InvestorUniquenessClaimNotAllowed: AugmentedError<ApiType>;
-      /**
-       * Number of Transfer Manager extensions attached to an asset is equal to MaxNumberOfTMExtensionForAsset.
-       **/
-      MaximumTMExtensionLimitReached: AugmentedError<ApiType>;
       /**
        * Maximum length of asset name has been exceeded.
        **/
@@ -819,6 +799,14 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       CurrentIdentityCannotBeForwarded: AugmentedError<ApiType>;
       /**
+       * The custom claim type trying to be registered already exists.
+       **/
+      CustomClaimTypeAlreadyExists: AugmentedError<ApiType>;
+      /**
+       * The custom claim type does not exist.
+       **/
+      CustomClaimTypeDoesNotExist: AugmentedError<ApiType>;
+      /**
        * A custom scope is too long.
        * It can at most be `32` characters long.
        **/
@@ -1433,6 +1421,14 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       SettleOnPastBlock: AugmentedError<ApiType>;
       /**
+       * Signer is already added to venue.
+       **/
+      SignerAlreadyExists: AugmentedError<ApiType>;
+      /**
+       * Signer is not added to venue.
+       **/
+      SignerDoesNotExist: AugmentedError<ApiType>;
+      /**
        * Sender does not have required permissions.
        **/
       Unauthorized: AugmentedError<ApiType>;
@@ -1452,6 +1448,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Instruction status is unknown
        **/
       UnknownInstruction: AugmentedError<ApiType>;
+      /**
+       * Instruction leg amount can't be zero
+       **/
+      ZeroAmount: AugmentedError<ApiType>;
     };
     staking: {
       /**

@@ -1,5 +1,5 @@
 import { createAuthorizationResolver } from '~/api/procedures/utils';
-import { Account, AuthorizationRequest, PolymeshError, Procedure } from '~/internal';
+import { AuthorizationRequest, PolymeshError, Procedure } from '~/internal';
 import {
   Authorization,
   AuthorizationType,
@@ -18,7 +18,7 @@ import {
   signerToString,
   signerValueToSignatory,
 } from '~/utils/conversion';
-import { optionize } from '~/utils/internal';
+import { asAccount, optionize } from '~/utils/internal';
 
 /**
  * @hidden
@@ -40,13 +40,7 @@ export async function prepareInviteAccount(
 
   const address = signerToString(targetAccount);
 
-  let account: Account;
-
-  if (targetAccount instanceof Account) {
-    account = targetAccount;
-  } else {
-    account = new Account({ address: targetAccount }, context);
-  }
+  const account = asAccount(targetAccount, context);
 
   const [authorizationRequests, existingIdentity] = await Promise.all([
     identity.authorizations.getSent(),

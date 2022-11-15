@@ -1,16 +1,9 @@
-import { bool, Bytes, Option, Text, u8, u16, u32, u64, u128 } from '@polkadot/types';
+import { bool, Bytes, Option, Text, u8, U8aFixed, u16, u32, u64, u128 } from '@polkadot/types';
+import { AccountId, Balance, BlockHash, Hash, Permill } from '@polkadot/types/interfaces';
 import {
-  AccountId,
-  Balance,
-  BlockHash,
-  Hash,
-  Permill,
-  Signature,
-} from '@polkadot/types/interfaces';
-import {
-  ConfidentialIdentityClaimProofsScopeClaimProof,
-  Curve25519DalekRistrettoRistrettoPoint,
-  Curve25519DalekScalar,
+  ConfidentialIdentityV2ClaimProofsScopeClaimProof,
+  ConfidentialIdentityV2ClaimProofsZkProofData,
+  ConfidentialIdentityV2SignSignature,
   PalletAssetCheckpointScheduleSpec,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCaKind,
@@ -22,6 +15,7 @@ import {
   PalletMultisigProposalStatus,
   PalletPortfolioMovePortfolioItem,
   PalletSettlementAffirmationStatus,
+  PalletSettlementInstructionMemo,
   PalletSettlementInstructionStatus,
   PalletSettlementSettlementType,
   PalletSettlementVenueType,
@@ -53,7 +47,7 @@ import {
   PolymeshPrimitivesIdentityClaimScope,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesIdentityIdPortfolioId,
-  PolymeshPrimitivesInvestorZkproofDataV1InvestorZKProofData,
+  PolymeshPrimitivesIdentityIdPortfolioKind,
   PolymeshPrimitivesJurisdictionCountryCode,
   PolymeshPrimitivesPosRatio,
   PolymeshPrimitivesSecondaryKey,
@@ -71,6 +65,7 @@ import {
 import { ITuple } from '@polkadot/types/types';
 import { BTreeSet } from '@polkadot/types-codec';
 import {
+  hexToString,
   hexToU8a,
   isHex,
   stringLowerFirst,
@@ -269,6 +264,7 @@ import {
 import {
   isIdentityCondition,
   isMultiClaimCondition,
+  isNumberedPortfolio,
   isSingleClaimCondition,
 } from '~/utils/typeguards';
 
@@ -341,10 +337,17 @@ export function tickerToString(ticker: PolymeshPrimitivesTicker): string {
 export function stringToInvestorZKProofData(
   proof: string,
   context: Context
-): PolymeshPrimitivesInvestorZkproofDataV1InvestorZKProofData {
-  return context.createType('PolymeshPrimitivesInvestorZkproofDataV1InvestorZKProofData', proof);
+): ConfidentialIdentityV2ClaimProofsZkProofData {
+  return context.createType('ConfidentialIdentityV2ClaimProofsZkProofData', proof);
 }
 /* eslint-enable @typescript-eslint/naming-convention */
+
+/**
+ * @hidden
+ */
+export function stringToU8aFixed(value: string, context: Context): U8aFixed {
+  return context.createType('U8aFixed', value);
+}
 
 /**
  * @hidden
@@ -726,6 +729,22 @@ export function portfolioIdToMeshPortfolioId(
 /**
  * @hidden
  */
+export function portfolioToPortfolioKind(
+  portfolio: DefaultPortfolio | NumberedPortfolio,
+  context: Context
+): PolymeshPrimitivesIdentityIdPortfolioKind {
+  let portfolioKind;
+  if (isNumberedPortfolio(portfolio)) {
+    portfolioKind = { User: bigNumberToU64(portfolio.id, context) };
+  } else {
+    portfolioKind = 'Default';
+  }
+  return context.createType('PolymeshPrimitivesIdentityIdPortfolioKind', portfolioKind);
+}
+
+/**
+ * @hidden
+ */
 export function stringToText(text: string, context: Context): Text {
   return context.createType('Text', text);
 }
@@ -747,7 +766,9 @@ export function txGroupToTxTags(group: TxGroup): TxTag[] {
         TxTags.identity.AddInvestorUniquenessClaim,
         TxTags.portfolio.MovePortfolioFunds,
         TxTags.settlement.AddInstruction,
+        TxTags.settlement.AddInstructionWithMemo,
         TxTags.settlement.AddAndAffirmInstruction,
+        TxTags.settlement.AddAndAffirmInstructionWithMemo,
         TxTags.settlement.AffirmInstruction,
         TxTags.settlement.RejectInstruction,
         TxTags.settlement.CreateVenue,
@@ -775,7 +796,9 @@ export function txGroupToTxTags(group: TxGroup): TxTag[] {
         TxTags.identity.AddInvestorUniquenessClaim,
         TxTags.settlement.CreateVenue,
         TxTags.settlement.AddInstruction,
+        TxTags.settlement.AddInstructionWithMemo,
         TxTags.settlement.AddAndAffirmInstruction,
+        TxTags.settlement.AddAndAffirmInstructionWithMemo,
       ];
     }
     case TxGroup.Issuance: {
@@ -1459,7 +1482,7 @@ export function authorizationDataToAuthorization(
 /**
  * @hidden
  */
-export function stringToMemo(value: string, context: Context): PolymeshCommonUtilitiesBalancesMemo {
+function assertMemoValid(value: string): void {
   if (value.length > MAX_MEMO_LENGTH) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
@@ -1469,6 +1492,13 @@ export function stringToMemo(value: string, context: Context): PolymeshCommonUti
       },
     });
   }
+}
+
+/**
+ * @hidden
+ */
+export function stringToMemo(value: string, context: Context): PolymeshCommonUtilitiesBalancesMemo {
+  assertMemoValid(value);
 
   return context.createType(
     'PolymeshCommonUtilitiesBalancesMemo',
@@ -3523,8 +3553,11 @@ export function storedScheduleToCheckpointScheduleParams(
 /**
  * @hidden
  */
-export function stringToSignature(signature: string, context: Context): Signature {
-  return context.createType('Signature', signature);
+export function stringToSignature(
+  signature: string,
+  context: Context
+): ConfidentialIdentityV2SignSignature {
+  return context.createType('ConfidentialIdentityV2SignSignature', signature);
 }
 
 /**
@@ -3582,28 +3615,11 @@ export function meshCorporateActionToCorporateActionParams(
 /**
  * @hidden
  */
-export function stringToRistrettoPoint(
-  ristrettoPoint: string,
-  context: Context
-): Curve25519DalekRistrettoRistrettoPoint {
-  return context.createType('Curve25519DalekRistrettoRistrettoPoint', ristrettoPoint);
-}
-
-/**
- * @hidden
- */
 export function corporateActionKindToCaKind(
   kind: CorporateActionKind,
   context: Context
 ): PalletCorporateActionsCaKind {
   return context.createType('PalletCorporateActionsCaKind', kind);
-}
-
-/**
- * @hidden
- */
-export function stringToScalar(scalar: string, context: Context): Curve25519DalekScalar {
-  return context.createType('Curve25519DalekScalar', scalar);
 }
 
 /**
@@ -3635,7 +3651,7 @@ export function scopeClaimProofToConfidentialIdentityClaimProof(
   proof: ScopeClaimProof,
   scopeId: string,
   context: Context
-): ConfidentialIdentityClaimProofsScopeClaimProof {
+): ConfidentialIdentityV2ClaimProofsScopeClaimProof {
   const {
     proofScopeIdWellFormed,
     proofScopeIdCddIdMatch: { challengeResponses, subtractExpressionsRes, blindedScopeDidHash },
@@ -3643,16 +3659,16 @@ export function scopeClaimProofToConfidentialIdentityClaimProof(
 
   const zkProofData = context.createType('ConfidentialIdentityClaimProofsZkProofData', {
     /* eslint-disable @typescript-eslint/naming-convention */
-    challenge_responses: challengeResponses.map(cr => stringToScalar(cr, context)),
-    subtract_expressions_res: stringToRistrettoPoint(subtractExpressionsRes, context),
-    blinded_scope_did_hash: stringToRistrettoPoint(blindedScopeDidHash, context),
+    challenge_responses: challengeResponses.map(cr => stringToU8aFixed(cr, context)),
+    subtract_expressions_res: stringToU8aFixed(subtractExpressionsRes, context),
+    blinded_scope_did_hash: stringToU8aFixed(blindedScopeDidHash, context),
     /* eslint-enable @typescript-eslint/naming-convention */
   });
 
-  return context.createType('ConfidentialIdentityClaimProofsScopeClaimProof', {
+  return context.createType('ConfidentialIdentityV2ClaimProofsScopeClaimProof', {
     proofScopeIdWellformed: stringToSignature(proofScopeIdWellFormed, context),
     proofScopeIdCddIdMatch: zkProofData,
-    scopeId: stringToRistrettoPoint(scopeId, context),
+    scopeId: stringToU8aFixed(scopeId, context),
   });
 }
 
@@ -4185,6 +4201,18 @@ export function metadataSpecToMeshMetadataSpec(
 /**
  * @hidden
  */
+export function stringToInstructionMemo(
+  value: string,
+  context: Context
+): PalletSettlementInstructionMemo {
+  assertMemoValid(value);
+
+  return context.createType('PalletSettlementInstructionMemo', padString(value, MAX_MEMO_LENGTH));
+}
+
+/**
+ * @hidden
+ */
 export function meshMetadataSpecToMetadataSpec(
   rawSpecs?: Option<PolymeshPrimitivesAssetMetadataAssetMetadataSpec>
 ): MetadataSpec {
@@ -4327,4 +4355,11 @@ export function metadataValueDetailToMeshMetadataValueDetail(
     expire: optionize(dateToMoment)(expiry, context),
     lockStatus: meshLockStatus,
   });
+}
+
+/**
+ * @hidden
+ */
+export function instructionMemoToString(value: U8aFixed): string {
+  return removePadding(hexToString(value.toString()));
 }

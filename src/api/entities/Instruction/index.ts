@@ -28,6 +28,7 @@ import {
   balanceToBigNumber,
   bigNumberToU64,
   identityIdToString,
+  instructionMemoToString,
   meshAffirmationStatusToAffirmationStatus,
   meshInstructionStatusToInstructionStatus,
   meshPortfolioIdToPortfolio,
@@ -38,7 +39,7 @@ import {
   u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod, optionize, requestPaginated } from '~/utils/internal';
+import { createProcedureMethod, optionize, requestMulti, requestPaginated } from '~/utils/internal';
 
 import {
   InstructionAffirmation,
@@ -198,21 +199,24 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     const {
       context: {
         polymeshApi: {
-          query: { settlement },
+          query: {
+            settlement: { instructionDetails, instructionMemos },
+          },
         },
       },
       id,
       context,
     } = this;
 
-    const {
-      status: rawStatus,
-      createdAt,
-      tradeDate,
-      valueDate,
-      settlementType: type,
-      venueId,
-    } = await settlement.instructionDetails(bigNumberToU64(id, context));
+    const rawId = bigNumberToU64(id, context);
+
+    const [
+      { status: rawStatus, createdAt, tradeDate, valueDate, settlementType: type, venueId },
+      memo,
+    ] = await requestMulti<[typeof instructionDetails, typeof instructionMemos]>(context, [
+      [instructionDetails, rawId],
+      [instructionMemos, rawId],
+    ]);
 
     const status = meshInstructionStatusToInstructionStatus(rawStatus);
 
@@ -232,6 +236,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       tradeDate: tradeDate.isSome ? momentToDate(tradeDate.unwrap()) : null,
       valueDate: valueDate.isSome ? momentToDate(valueDate.unwrap()) : null,
       venue: new Venue({ id: u64ToBigNumber(venueId) }, context),
+      memo: memo.isSome ? instructionMemoToString(memo.unwrap()) : null,
     };
 
     if (type.isSettleOnAffirmation) {

@@ -1,6 +1,7 @@
 import { Option, u32, u64 } from '@polkadot/types';
 import { Balance, Moment } from '@polkadot/types/interfaces';
 import {
+  PalletSettlementInstructionMemo,
   PalletSettlementSettlementType,
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesTicker,
@@ -60,6 +61,7 @@ describe('addInstruction procedure', () => {
     ]
   >;
   let dateToMomentSpy: jest.SpyInstance<Moment, [Date, Context]>;
+  let stringToInstructionMemoSpy: jest.SpyInstance;
   let venueId: BigNumber;
   let amount: BigNumber;
   let from: PortfolioLike;
@@ -72,6 +74,7 @@ describe('addInstruction procedure', () => {
   let tradeDate: Date;
   let valueDate: Date;
   let endBlock: BigNumber;
+  let memo: string;
   let args: Params;
 
   let rawVenueId: u64;
@@ -82,6 +85,7 @@ describe('addInstruction procedure', () => {
   let rawTradeDate: Moment;
   let rawValueDate: Moment;
   let rawEndBlock: u32;
+  let rawInstructionMemo: PalletSettlementInstructionMemo;
   let rawAuthSettlementType: PalletSettlementSettlementType;
   let rawBlockSettlementType: PalletSettlementSettlementType;
   let rawLeg: {
@@ -118,6 +122,8 @@ describe('addInstruction procedure', () => {
       'endConditionToSettlementType'
     );
     dateToMomentSpy = jest.spyOn(utilsConversionModule, 'dateToMoment');
+    stringToInstructionMemoSpy = jest.spyOn(utilsConversionModule, 'stringToInstructionMemo');
+
     venueId = new BigNumber(1);
     amount = new BigNumber(100);
     from = 'fromDid';
@@ -137,6 +143,7 @@ describe('addInstruction procedure', () => {
     tradeDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     valueDate = new Date(now.getTime() + 24 * 60 * 60 * 1000 + 1);
     endBlock = new BigNumber(1000);
+    memo = 'SOME_MEMO';
     rawVenueId = dsMockUtils.createMockU64(venueId);
     rawAmount = dsMockUtils.createMockBalance(amount);
     rawFrom = dsMockUtils.createMockPortfolioId({
@@ -151,6 +158,7 @@ describe('addInstruction procedure', () => {
     rawTradeDate = dsMockUtils.createMockMoment(new BigNumber(tradeDate.getTime()));
     rawValueDate = dsMockUtils.createMockMoment(new BigNumber(valueDate.getTime()));
     rawEndBlock = dsMockUtils.createMockU32(endBlock);
+    rawInstructionMemo = dsMockUtils.createMockInstructionMemo(memo);
     rawAuthSettlementType = dsMockUtils.createMockSettlementType('SettleOnAffirmation');
     rawBlockSettlementType = dsMockUtils.createMockSettlementType({ SettleOnBlock: rawEndBlock });
     rawLeg = {
@@ -172,7 +180,8 @@ describe('addInstruction procedure', () => {
         asset: PolymeshPrimitivesTicker;
         amount: Balance;
       }[],
-      PolymeshPrimitivesIdentityIdPortfolioId[]
+      PolymeshPrimitivesIdentityIdPortfolioId[],
+      Option<PalletSettlementInstructionMemo>
     ]
   >;
   let addInstructionTransaction: PolymeshTx<
@@ -185,7 +194,8 @@ describe('addInstruction procedure', () => {
         to: PolymeshPrimitivesIdentityIdPortfolioId;
         asset: PolymeshPrimitivesTicker;
         amount: Balance;
-      }[]
+      }[],
+      Option<PalletSettlementInstructionMemo>
     ]
   >;
 
@@ -199,9 +209,9 @@ describe('addInstruction procedure', () => {
 
     addAndAuthorizeInstructionTransaction = dsMockUtils.createTxMock(
       'settlement',
-      'addAndAffirmInstruction'
+      'addAndAffirmInstructionWithMemo'
     );
-    addInstructionTransaction = dsMockUtils.createTxMock('settlement', 'addInstruction');
+    addInstructionTransaction = dsMockUtils.createTxMock('settlement', 'addInstructionWithMemo');
 
     mockContext = dsMockUtils.getContextInstance();
 
@@ -237,6 +247,9 @@ describe('addInstruction procedure', () => {
       .mockReturnValue(rawAuthSettlementType);
     when(dateToMomentSpy).calledWith(tradeDate, mockContext).mockReturnValue(rawTradeDate);
     when(dateToMomentSpy).calledWith(valueDate, mockContext).mockReturnValue(rawValueDate);
+    when(stringToInstructionMemoSpy)
+      .calledWith(memo, mockContext)
+      .mockReturnValue(rawInstructionMemo);
 
     args = {
       venueId,
@@ -302,6 +315,33 @@ describe('addInstruction procedure', () => {
     }
 
     expect(error.message).toBe("The legs array can't be empty");
+    expect(error.code).toBe(ErrorCode.ValidationError);
+    expect(error.data.failedInstructionIndexes[0]).toBe(0);
+  });
+
+  it('should throw an error if any instruction contains leg with zero amount', async () => {
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
+      portfoliosToAffirm: [],
+    });
+
+    entityMockUtils.configureMocks({
+      venueOptions: { exists: true },
+    });
+
+    let error;
+    const legs = Array(2).fill({
+      from,
+      to,
+      amount: new BigNumber(0),
+      asset: entityMockUtils.getAssetInstance({ ticker: asset }),
+    });
+    try {
+      await prepareAddInstruction.call(proc, { venueId, instructions: [{ legs }] });
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('Instruction legs cannot have zero amount');
     expect(error.code).toBe(ErrorCode.ValidationError);
     expect(error.data.failedInstructionIndexes[0]).toBe(0);
   });
@@ -456,7 +496,7 @@ describe('addInstruction procedure', () => {
       transactions: [
         {
           transaction: addAndAuthorizeInstructionTransaction,
-          args: [rawVenueId, rawAuthSettlementType, null, null, [rawLeg], [rawFrom, rawTo]],
+          args: [rawVenueId, rawAuthSettlementType, null, null, [rawLeg], [rawFrom, rawTo], null],
         },
       ],
       resolver: expect.any(Function),
@@ -490,6 +530,7 @@ describe('addInstruction procedure', () => {
           tradeDate,
           valueDate,
           endBlock,
+          memo,
         },
       ],
     });
@@ -498,7 +539,14 @@ describe('addInstruction procedure', () => {
       transactions: [
         {
           transaction: addInstructionTransaction,
-          args: [rawVenueId, rawBlockSettlementType, rawTradeDate, rawValueDate, [rawLeg]],
+          args: [
+            rawVenueId,
+            rawBlockSettlementType,
+            rawTradeDate,
+            rawValueDate,
+            [rawLeg],
+            rawInstructionMemo,
+          ],
         },
       ],
       resolver: expect.any(Function),
@@ -524,7 +572,7 @@ describe('addInstruction procedure', () => {
         permissions: {
           assets: [],
           portfolios: [fromPortfolio, toPortfolio],
-          transactions: [TxTags.settlement.AddAndAffirmInstruction],
+          transactions: [TxTags.settlement.AddAndAffirmInstructionWithMemo],
         },
       });
 
@@ -545,7 +593,7 @@ describe('addInstruction procedure', () => {
         permissions: {
           assets: [],
           portfolios: [],
-          transactions: [TxTags.settlement.AddInstruction],
+          transactions: [TxTags.settlement.AddInstructionWithMemo],
         },
       });
     });

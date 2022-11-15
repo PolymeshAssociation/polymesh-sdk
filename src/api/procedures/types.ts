@@ -241,7 +241,10 @@ export interface ModifySignerPermissionsParams {
   /**
    * list of secondary Accounts
    */
-  secondaryAccounts: Modify<PermissionedAccount, { permissions: PermissionsLike }>[];
+  secondaryAccounts: Modify<
+    PermissionedAccount,
+    { account: string | Account; permissions: PermissionsLike }
+  >[];
 }
 
 export interface RemoveSecondaryAccountsParams {
@@ -421,6 +424,10 @@ export interface AddInstructionParams {
    * block at which the Instruction will be executed automatically (optional, the Instruction will be executed when all participants have authorized it if not supplied)
    */
   endBlock?: BigNumber;
+  /**
+   * identifier string to help differentiate instructions
+   */
+  memo?: string;
 }
 
 export interface AddInstructionsParams {
@@ -507,6 +514,10 @@ export interface ModifyPrimaryIssuanceAgentParams {
 
 export interface RedeemTokensParams {
   amount: BigNumber;
+  /**
+   * portfolio (or portfolio ID) from which Assets will be redeemed (optional, defaults to the default Portfolio)
+   */
+  from?: BigNumber | DefaultPortfolio | NumberedPortfolio;
 }
 
 export interface TransferAssetOwnershipParams {

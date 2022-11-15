@@ -1,10 +1,9 @@
-import { u64 } from '@polkadot/types';
+import { U8aFixed, u64 } from '@polkadot/types';
 import {
-  ConfidentialIdentityClaimProofsScopeClaimProof,
+  ConfidentialIdentityV2ClaimProofsScopeClaimProof,
   PolymeshPrimitivesIdentityClaimClaim,
   PolymeshPrimitivesIdentityClaimScope,
   PolymeshPrimitivesIdentityId,
-  PolymeshPrimitivesInvestorZkproofDataV1InvestorZKProofData,
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
@@ -45,12 +44,9 @@ describe('addInvestorUniquenessClaim procedure', () => {
   let expiry: Date;
   let stringToIdentityIdSpy: jest.SpyInstance<PolymeshPrimitivesIdentityId, [string, Context]>;
   let claimToMeshClaimSpy: jest.SpyInstance<PolymeshPrimitivesIdentityClaimClaim, [Claim, Context]>;
-  let stringToInvestorZkProofDataSpy: jest.SpyInstance<
-    PolymeshPrimitivesInvestorZkproofDataV1InvestorZKProofData,
-    [string, Context]
-  >;
+  let stringToU8aFixedSpy: jest.SpyInstance<U8aFixed, [string, Context]>;
   let scopeClaimProofToMeshScopeClaimProofSpy: jest.SpyInstance<
-    ConfidentialIdentityClaimProofsScopeClaimProof,
+    ConfidentialIdentityV2ClaimProofsScopeClaimProof,
     [ScopeClaimProof, string, Context]
   >;
   let scopeToMeshScopeSpy: jest.SpyInstance<PolymeshPrimitivesIdentityClaimScope, [Scope, Context]>;
@@ -61,8 +57,8 @@ describe('addInvestorUniquenessClaim procedure', () => {
   let rawScopeId: PolymeshPrimitivesIdentityId;
   let rawClaim: PolymeshPrimitivesIdentityClaimClaim;
   let rawClaimV2: PolymeshPrimitivesIdentityClaimClaim;
-  let rawProof: PolymeshPrimitivesInvestorZkproofDataV1InvestorZKProofData;
-  let rawScopeClaimProof: ConfidentialIdentityClaimProofsScopeClaimProof;
+  let rawProof: U8aFixed;
+  let rawScopeClaimProof: ConfidentialIdentityV2ClaimProofsScopeClaimProof;
   let rawExpiry: u64;
 
   beforeAll(() => {
@@ -93,10 +89,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
 
     stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
     claimToMeshClaimSpy = jest.spyOn(utilsConversionModule, 'claimToMeshClaim');
-    stringToInvestorZkProofDataSpy = jest.spyOn(
-      utilsConversionModule,
-      'stringToInvestorZKProofData'
-    );
+    stringToU8aFixedSpy = jest.spyOn(utilsConversionModule, 'stringToU8aFixed');
     scopeClaimProofToMeshScopeClaimProofSpy = jest.spyOn(
       utilsConversionModule,
       'scopeClaimProofToConfidentialIdentityClaimProof'
@@ -118,7 +111,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
     });
     rawScope = dsMockUtils.createMockScope({ Ticker: rawTicker });
     rawScopeId = dsMockUtils.createMockIdentityId(scopeId);
-    rawProof = dsMockUtils.createMockInvestorZKProofData(proof);
+    rawProof = dsMockUtils.createMockU8aFixed(proof);
     rawScopeClaimProof = dsMockUtils.createMockScopeClaimProof({
       proofScopeIdWellformed: proofScopeIdWellFormed,
       proofScopeIdCddIdMatch: {
@@ -156,7 +149,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
         mockContext
       )
       .mockReturnValue(rawClaimV2);
-    when(stringToInvestorZkProofDataSpy).calledWith(proof, mockContext).mockReturnValue(rawProof);
+    when(stringToU8aFixedSpy).calledWith(proof, mockContext).mockReturnValue(rawProof);
     when(scopeClaimProofToMeshScopeClaimProofSpy)
       .calledWith(scopeClaimProof, scopeId, mockContext)
       .mockReturnValue(rawScopeClaimProof);

@@ -55,6 +55,7 @@ import type {
   PalletPipsDepositInfo,
   PalletPipsPip,
   PalletPipsPipsMetadata,
+  PalletPipsProposalState,
   PalletPipsSnapshotMetadata,
   PalletPipsSnapshottedPip,
   PalletPipsVote,
@@ -65,6 +66,7 @@ import type {
   PalletSchedulerScheduledV3,
   PalletSettlementAffirmationStatus,
   PalletSettlementInstruction,
+  PalletSettlementInstructionMemo,
   PalletSettlementLeg,
   PalletSettlementLegStatus,
   PalletSettlementVenue,
@@ -982,7 +984,7 @@ declare module '@polkadot/api-base/types/storage' {
        * The `CorporateActions` map stores `Ticker => LocalId => The CA`,
        * so we can infer `Ticker => CAId`. Therefore, we don't need a double map.
        **/
-      cADocLink: AugmentedQuery<
+      caDocLink: AugmentedQuery<
         ApiType,
         (
           arg: PalletCorporateActionsCaId | { ticker?: any; localId?: any } | string | Uint8Array
@@ -993,7 +995,7 @@ declare module '@polkadot/api-base/types/storage' {
        * The next per-`Ticker` CA ID in the sequence.
        * The full ID is defined as a combination of `Ticker` and a number in this sequence.
        **/
-      cAIdSequence: AugmentedQuery<
+      caIdSequence: AugmentedQuery<
         ApiType,
         (arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<u32>,
         [PolymeshPrimitivesTicker]
@@ -1188,7 +1190,7 @@ declare module '@polkadot/api-base/types/storage' {
        * The full ID is defined as a combination of `Ticker` and a number in this sequence,
        * which starts from 1, rather than 0.
        **/
-      aGIdSequence: AugmentedQuery<
+      agIdSequence: AugmentedQuery<
         ApiType,
         (arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<u32>,
         [PolymeshPrimitivesTicker]
@@ -1334,6 +1336,26 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       currentPayer: AugmentedQuery<ApiType, () => Observable<Option<AccountId32>>, []>;
       /**
+       * The next `CustomClaimTypeId`.
+       **/
+      customClaimIdSequence: AugmentedQuery<ApiType, () => Observable<u32>, []>;
+      /**
+       * CustomClaimTypeId -> String constant
+       **/
+      customClaims: AugmentedQuery<
+        ApiType,
+        (arg: u32 | AnyNumber | Uint8Array) => Observable<Bytes>,
+        [u32]
+      >;
+      /**
+       * String constant -> CustomClaimTypeId
+       **/
+      customClaimsInverse: AugmentedQuery<
+        ApiType,
+        (arg: Bytes | string | Uint8Array) => Observable<u32>,
+        [Bytes]
+      >;
+      /**
        * A reverse double map to allow finding all keys for an identity.
        **/
       didKeys: AugmentedQuery<
@@ -1455,7 +1477,7 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       multiSigNonce: AugmentedQuery<ApiType, () => Observable<u64>, []>;
       /**
-       * Signers of a multisig. (multisig, signer) => signer.
+       * Signers of a multisig. (multisig, signer) => bool.
        **/
       multiSigSigners: AugmentedQuery<
         ApiType,
@@ -1467,7 +1489,7 @@ declare module '@polkadot/api-base/types/storage' {
             | { Account: any }
             | string
             | Uint8Array
-        ) => Observable<PolymeshPrimitivesSecondaryKeySignatory>,
+        ) => Observable<bool>,
         [AccountId32, PolymeshPrimitivesSecondaryKeySignatory]
       >;
       /**
@@ -1704,6 +1726,15 @@ declare module '@polkadot/api-base/types/storage' {
       proposals: AugmentedQuery<
         ApiType,
         (arg: u32 | AnyNumber | Uint8Array) => Observable<Option<PalletPipsPip>>,
+        [u32]
+      >;
+      /**
+       * Proposal state for a given id.
+       * proposal id -> proposalState
+       **/
+      proposalStates: AugmentedQuery<
+        ApiType,
+        (arg: u32 | AnyNumber | Uint8Array) => Observable<Option<PalletPipsProposalState>>,
         [u32]
       >;
       /**
@@ -2135,6 +2166,14 @@ declare module '@polkadot/api-base/types/storage' {
         [u64, u64]
       >;
       /**
+       * Instruction memo
+       **/
+      instructionMemos: AugmentedQuery<
+        ApiType,
+        (arg: u64 | AnyNumber | Uint8Array) => Observable<Option<U8aFixed>>,
+        [u64]
+      >;
+      /**
        * Tracks redemption of receipts. (signer, receipt_uid) -> receipt_used
        **/
       receiptsUsed: AugmentedQuery<
@@ -2426,6 +2465,18 @@ declare module '@polkadot/api-base/types/storage' {
         ) => Observable<Option<u128>>,
         [u32, AccountId32]
       >;
+      /**
+       * Indices of validators that have offended in the active era and whether they are currently
+       * disabled.
+       *
+       * This value should be a superset of disabled validators since not all offences lead to the
+       * validator being disabled (if there was no slash). This is needed to track the percentage of
+       * validators that have offended in the current era, ensuring a new era is forced if
+       * `OffendingValidatorsThreshold` is reached. The vec is always kept sorted so that we can find
+       * whether a given validator has previously offended using binary search. It gets cleared when
+       * the era ends.
+       **/
+      offendingValidators: AugmentedQuery<ApiType, () => Observable<Vec<ITuple<[u32, bool]>>>, []>;
       /**
        * Where the reward payment should be made. Keyed by stash.
        **/

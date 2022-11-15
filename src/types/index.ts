@@ -833,7 +833,9 @@ export enum TxGroup {
    * - TxTags.identity.AddInvestorUniquenessClaim
    * - TxTags.portfolio.MovePortfolioFunds
    * - TxTags.settlement.AddInstruction
+   * - TxTags.settlement.AddInstructionWithMemo
    * - TxTags.settlement.AddAndAffirmInstruction
+   * - TxTags.settlement.AddAndAffirmInstructionWithMemo
    * - TxTags.settlement.AffirmInstruction
    * - TxTags.settlement.RejectInstruction
    * - TxTags.settlement.CreateVenue
@@ -858,7 +860,9 @@ export enum TxGroup {
    * - TxTags.identity.AddInvestorUniquenessClaim
    * - TxTags.settlement.CreateVenue
    * - TxTags.settlement.AddInstruction
+   * - TxTags.settlement.AddInstructionWithMemo
    * - TxTags.settlement.AddAndAffirmInstruction
+   * - TxTags.settlement.AddAndAffirmInstructionWithMemo
    */
   Distribution = 'Distribution',
   /**
