@@ -94,6 +94,12 @@ describe('AssetPermissions class', () => {
   });
 
   describe('method: enabledAt', () => {
+    beforeEach(() => {
+      dsMockUtils.configureMocks({
+        contextOptions: { middlewareV2Enabled: false },
+      });
+    });
+
     it('should return the event identifier object of the agent added', async () => {
       const blockNumber = new BigNumber(1234);
       const blockDate = new Date('4/14/2020');
@@ -467,6 +473,12 @@ describe('AssetPermissions class', () => {
   });
 
   describe('method: getOperationHistory', () => {
+    beforeEach(() => {
+      dsMockUtils.configureMocks({
+        contextOptions: { middlewareV2Enabled: false },
+      });
+    });
+
     it('should return the Events triggered by Operations the Identity has performed on a specific Asset', async () => {
       const blockId = new BigNumber(1);
       const blockHash = 'someHash';

@@ -684,6 +684,9 @@ describe('Instruction class', () => {
 
     beforeEach(() => {
       when(bigNumberToU64Spy).calledWith(id, context).mockReturnValue(rawId);
+      dsMockUtils.configureMocks({
+        contextOptions: { middlewareV2Enabled: false },
+      });
     });
 
     it('should return Pending Instruction status', async () => {

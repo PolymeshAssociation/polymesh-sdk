@@ -272,6 +272,9 @@ describe('Offering class', () => {
 
   describe('method: getInvestments', () => {
     it('should return a list of investors', async () => {
+      dsMockUtils.configureMocks({
+        contextOptions: { middlewareV2Enabled: false },
+      });
       const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
       const offering = new Offering({ id, ticker }, context);

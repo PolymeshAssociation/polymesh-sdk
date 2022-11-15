@@ -482,7 +482,9 @@ describe('Portfolio class', () => {
       };
       /* eslint-enable @typescript-eslint/naming-convention */
 
-      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
+      dsMockUtils.configureMocks({
+        contextOptions: { withSigningManager: true, middlewareV2Enabled: false },
+      });
       dsMockUtils.createApolloQueryMock(heartbeat(), true);
       when(jest.spyOn(utilsConversionModule, 'addressToKey'))
         .calledWith(account, context)

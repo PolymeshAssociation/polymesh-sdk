@@ -277,6 +277,12 @@ describe('DividendDistribution class', () => {
   });
 
   describe('method: getWithheldTax', () => {
+    beforeEach(() => {
+      dsMockUtils.configureMocks({
+        contextOptions: { middlewareV2Enabled: false },
+      });
+    });
+
     it('should return the amount of the withheld tax', async () => {
       const fakeTax = new BigNumber(100);
 
@@ -580,6 +586,12 @@ describe('DividendDistribution class', () => {
   });
 
   describe('method: getPaymentHistory', () => {
+    beforeEach(() => {
+      dsMockUtils.configureMocks({
+        contextOptions: { middlewareV2Enabled: false },
+      });
+    });
+
     it('should return the amount of the withheld tax', async () => {
       const blockId = new BigNumber(1);
       const blockHash = 'someHash';

@@ -69,6 +69,12 @@ describe('DefaultTrustedClaimIssuer class', () => {
       identityId: did,
     };
 
+    beforeEach(() => {
+      dsMockUtils.configureMocks({
+        contextOptions: { middlewareV2Enabled: false },
+      });
+    });
+
     it('should return the event identifier object of the trusted claim issuer creation', async () => {
       const blockNumber = new BigNumber(1234);
       const blockDate = new Date('4/14/2020');

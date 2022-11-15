@@ -213,7 +213,9 @@ describe('Network Class', () => {
       const eventIdx = new BigNumber(1);
       const fakeResult = { blockNumber, blockDate, eventIndex: eventIdx };
 
-      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
+      dsMockUtils.configureMocks({
+        contextOptions: { withSigningManager: true, middlewareV2Enabled: false },
+      });
       dsMockUtils.createApolloQueryMock(
         eventByIndexedArgs({
           ...variables,
@@ -237,6 +239,9 @@ describe('Network Class', () => {
     });
 
     it('should return null if the query result is empty', async () => {
+      dsMockUtils.configureMocks({
+        contextOptions: { withSigningManager: true, middlewareV2Enabled: false },
+      });
       dsMockUtils.createApolloQueryMock(
         eventByIndexedArgs({
           ...variables,
@@ -329,7 +334,9 @@ describe('Network Class', () => {
       const eventIdx = new BigNumber(1);
       const fakeResult = [{ blockNumber, blockDate, eventIndex: eventIdx }];
 
-      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
+      dsMockUtils.configureMocks({
+        contextOptions: { withSigningManager: true, middlewareV2Enabled: false },
+      });
 
       dsMockUtils.createApolloQueryMock(
         eventsByIndexedArgs({
@@ -362,6 +369,10 @@ describe('Network Class', () => {
     });
 
     it('should return null if the query result is empty', async () => {
+      dsMockUtils.configureMocks({
+        contextOptions: { withSigningManager: true, middlewareV2Enabled: false },
+      });
+
       dsMockUtils.createApolloQueryMock(
         eventsByIndexedArgs({
           ...variables,
@@ -475,6 +486,7 @@ describe('Network Class', () => {
       dsMockUtils.configureMocks({
         contextOptions: {
           withSigningManager: true,
+          middlewareV2Enabled: false,
           transactionFees: [
             {
               tag: TxTags.asset.RegisterTicker,
@@ -592,6 +604,9 @@ describe('Network Class', () => {
     });
 
     it('should return null if the query result is empty', async () => {
+      dsMockUtils.configureMocks({
+        contextOptions: { withSigningManager: true, middlewareV2Enabled: false },
+      });
       dsMockUtils.createApolloQueryMock(
         transactionByHash({
           transactionHash: variable.txHash,

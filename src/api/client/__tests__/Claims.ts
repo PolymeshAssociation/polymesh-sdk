@@ -77,6 +77,7 @@ describe('Claims Class', () => {
       dsMockUtils.configureMocks({
         contextOptions: {
           getIdentityClaimsFromMiddleware,
+          middlewareV2Enabled: false,
         },
       });
 
@@ -184,7 +185,9 @@ describe('Claims Class', () => {
       };
       /* eslint-enable @typescript-eslint/naming-convention */
 
-      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
+      dsMockUtils.configureMocks({
+        contextOptions: { withSigningManager: true, middlewareV2Enabled: false },
+      });
 
       dsMockUtils.createApolloQueryMock(
         didsWithClaims({
@@ -308,7 +311,9 @@ describe('Claims Class', () => {
         ],
       };
 
-      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
+      dsMockUtils.configureMocks({
+        contextOptions: { withSigningManager: true, middlewareV2Enabled: false },
+      });
 
       dsMockUtils.createApolloQueryMock(
         didsWithClaims({
@@ -824,7 +829,9 @@ describe('Claims Class', () => {
         ],
       };
 
-      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
+      dsMockUtils.configureMocks({
+        contextOptions: { withSigningManager: true, middlewareV2Enabled: false },
+      });
 
       when(jest.spyOn(utilsConversionModule, 'toIdentityWithClaimsArray'))
         .calledWith(issuerDidsWithClaimsByTargetQueryResponse.items, context)
@@ -938,6 +945,7 @@ describe('Claims Class', () => {
         contextOptions: {
           middlewareAvailable: false,
           getIdentityClaimsFromChain: identityClaims,
+          middlewareV2Enabled: false,
         },
       });
 
@@ -960,6 +968,92 @@ describe('Claims Class', () => {
       });
 
       expect(result.data.length).toEqual(2);
+    });
+
+    it('should return a list of claims issued with an Identity as target and a given Scope', async () => {
+      const did = 'someDid';
+      const issuerDid = 'someIssuerDid';
+      const scope: Scope = { type: ScopeType.Ticker, value: 'someValue' };
+      const date = 1589816265000;
+      const claim = {
+        target: entityMockUtils.getIdentityInstance({ did }),
+        issuer: entityMockUtils.getIdentityInstance({ did: issuerDid }),
+        issuedAt: new Date(date),
+      };
+      const fakeClaims: IdentityWithClaims[] = [
+        {
+          identity: entityMockUtils.getIdentityInstance({ did }),
+          claims: [
+            {
+              ...claim,
+              expiry: new Date(date),
+              claim: {
+                type: ClaimType.Accredited,
+                scope,
+              },
+            },
+          ],
+        },
+      ];
+
+      /* eslint-disable @typescript-eslint/naming-convention */
+      const commonClaimData = {
+        targetDID: did,
+        issuer: issuerDid,
+        issuance_date: date,
+        last_update_date: date,
+      };
+      /* eslint-enable @typescript-eslint/naming-convention */
+      const issuerDidsWithClaimsByTargetQueryResponse: IdentityWithClaimsResult = {
+        totalCount: 25,
+        items: [
+          {
+            did,
+            claims: [
+              {
+                ...commonClaimData,
+                expiry: date,
+                type: ClaimTypeEnum.Accredited,
+                scope: { type: ClaimScopeTypeEnum[scope.type], value: padString(scope.value, 12) },
+              },
+            ],
+          },
+        ],
+      };
+
+      dsMockUtils.configureMocks({
+        contextOptions: { withSigningManager: true, middlewareV2Enabled: false },
+      });
+
+      when(jest.spyOn(utilsConversionModule, 'toIdentityWithClaimsArray'))
+        .calledWith(issuerDidsWithClaimsByTargetQueryResponse.items, context)
+        .mockReturnValue(fakeClaims);
+
+      dsMockUtils.createApolloQueryMock(
+        issuerDidsWithClaimsByTarget({
+          target: did,
+          scope: { type: ClaimScopeTypeEnum[scope.type], value: padString(scope.value, 12) },
+          trustedClaimIssuers: [did],
+          includeExpired: false,
+          count: 1,
+          skip: undefined,
+        }),
+        {
+          issuerDidsWithClaimsByTarget: issuerDidsWithClaimsByTargetQueryResponse,
+        }
+      );
+
+      const result = await claims.getTargetingClaims({
+        target: did,
+        trustedClaimIssuers: [did],
+        scope,
+        includeExpired: false,
+        size: new BigNumber(1),
+      });
+
+      expect(result.data).toEqual(fakeClaims);
+      expect(result.count).toEqual(new BigNumber(25));
+      expect(result.next).toEqual(new BigNumber(1));
     });
   });
 
@@ -1200,89 +1294,5 @@ describe('Claims Class', () => {
       result = await claims.getInvestorUniquenessClaims();
       expect(result).toEqual(identityClaims);
     });
-  });
-
-  it('should return a list of claims issued with an Identity as target and a given Scope', async () => {
-    const did = 'someDid';
-    const issuerDid = 'someIssuerDid';
-    const scope: Scope = { type: ScopeType.Ticker, value: 'someValue' };
-    const date = 1589816265000;
-    const claim = {
-      target: entityMockUtils.getIdentityInstance({ did }),
-      issuer: entityMockUtils.getIdentityInstance({ did: issuerDid }),
-      issuedAt: new Date(date),
-    };
-    const fakeClaims: IdentityWithClaims[] = [
-      {
-        identity: entityMockUtils.getIdentityInstance({ did }),
-        claims: [
-          {
-            ...claim,
-            expiry: new Date(date),
-            claim: {
-              type: ClaimType.Accredited,
-              scope,
-            },
-          },
-        ],
-      },
-    ];
-
-    /* eslint-disable @typescript-eslint/naming-convention */
-    const commonClaimData = {
-      targetDID: did,
-      issuer: issuerDid,
-      issuance_date: date,
-      last_update_date: date,
-    };
-    /* eslint-enable @typescript-eslint/naming-convention */
-    const issuerDidsWithClaimsByTargetQueryResponse: IdentityWithClaimsResult = {
-      totalCount: 25,
-      items: [
-        {
-          did,
-          claims: [
-            {
-              ...commonClaimData,
-              expiry: date,
-              type: ClaimTypeEnum.Accredited,
-              scope: { type: ClaimScopeTypeEnum[scope.type], value: padString(scope.value, 12) },
-            },
-          ],
-        },
-      ],
-    };
-
-    dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
-
-    when(jest.spyOn(utilsConversionModule, 'toIdentityWithClaimsArray'))
-      .calledWith(issuerDidsWithClaimsByTargetQueryResponse.items, context)
-      .mockReturnValue(fakeClaims);
-
-    dsMockUtils.createApolloQueryMock(
-      issuerDidsWithClaimsByTarget({
-        target: did,
-        scope: { type: ClaimScopeTypeEnum[scope.type], value: padString(scope.value, 12) },
-        trustedClaimIssuers: [did],
-        includeExpired: false,
-        count: 1,
-        skip: undefined,
-      }),
-      {
-        issuerDidsWithClaimsByTarget: issuerDidsWithClaimsByTargetQueryResponse,
-      }
-    );
-
-    const result = await claims.getTargetingClaims({
-      target: did,
-      trustedClaimIssuers: [did],
-      scope,
-      includeExpired: false,
-      size: new BigNumber(1),
-    });
-
-    expect(result.data).toEqual(fakeClaims);
-    expect(result.count).toEqual(new BigNumber(25));
-    expect(result.next).toEqual(new BigNumber(1));
   });
 });

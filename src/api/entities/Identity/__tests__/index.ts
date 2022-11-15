@@ -535,7 +535,7 @@ describe('Identity class', () => {
 
     it('should return a list of Assets', async () => {
       context = dsMockUtils.getContextInstance({
-        middlewareEnabled: true,
+        middlewareV2Enabled: false,
       });
       dsMockUtils.createApolloQueryMock(tokensByTrustedClaimIssuer({ claimIssuerDid: did }), {
         tokensByTrustedClaimIssuer: tickers,
@@ -572,6 +572,12 @@ describe('Identity class', () => {
   describe('method: getHeldAssets', () => {
     const did = 'someDid';
     const tickers = ['ASSET1', 'ASSET2'];
+
+    beforeEach(() => {
+      dsMockUtils.configureMocks({
+        contextOptions: { middlewareV2Enabled: false },
+      });
+    });
 
     it('should return a list of Assets', async () => {
       const identity = new Identity({ did }, context);

@@ -422,6 +422,11 @@ describe('Asset class', () => {
   });
 
   describe('method: createdAt', () => {
+    let context: Context;
+    beforeEach(() => {
+      context = dsMockUtils.getContextInstance({ middlewareV2Enabled: false });
+    });
+
     it('should return the event identifier object of the Asset creation', async () => {
       const ticker = 'SOME_TICKER';
       const blockNumber = new BigNumber(1234);
@@ -433,7 +438,6 @@ describe('Asset class', () => {
         eventArg1: utilsInternalModule.padString(ticker, MAX_TICKER_LENGTH),
       };
       const fakeResult = { blockNumber, blockDate, eventIndex: eventIdx };
-      const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
 
       dsMockUtils.createApolloQueryMock(eventByIndexedArgs(variables), {
@@ -458,7 +462,6 @@ describe('Asset class', () => {
         eventId: EventIdEnum.AssetCreated,
         eventArg1: utilsInternalModule.padString(ticker, MAX_TICKER_LENGTH),
       };
-      const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
 
       dsMockUtils.createApolloQueryMock(eventByIndexedArgs(variables), {});
@@ -746,7 +749,7 @@ describe('Asset class', () => {
   describe('method: getOperationHistory', () => {
     it('should return a list of agent operations', async () => {
       const ticker = 'TICKER';
-      const context = dsMockUtils.getContextInstance();
+      const context = dsMockUtils.getContextInstance({ middlewareV2Enabled: false });
       const asset = new Asset({ ticker }, context);
 
       const did = 'someDid';
