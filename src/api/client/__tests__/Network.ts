@@ -18,7 +18,7 @@ import {
 } from '~/middleware/typesV2';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { AccountBalance, TxTags } from '~/types';
+import { AccountBalance, EventIdentifier, ExtrinsicDataWithFees, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -254,6 +254,14 @@ describe('Network Class', () => {
       const result = await network.getEventByIndexedArgs({ ...variables, eventArg0: 'someDid' });
       expect(result).toBeNull();
     });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      const fakeResult = 'fakeResult' as unknown as EventIdentifier;
+      jest.spyOn(network, 'getEventByIndexedArgsV2').mockResolvedValue(fakeResult);
+
+      const result = await network.getEventByIndexedArgs(variables);
+      expect(result).toEqual(fakeResult);
+    });
   });
 
   describe('method: getEventByIndexedArgsV2', () => {
@@ -389,6 +397,14 @@ describe('Network Class', () => {
         eventArg0: 'someDid',
       });
       expect(result).toBeNull();
+    });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      const fakeResult = 'fakeResult' as unknown as EventIdentifier[];
+      jest.spyOn(network, 'getEventsByIndexedArgsV2').mockResolvedValue(fakeResult);
+
+      const result = await network.getEventsByIndexedArgs(variables);
+      expect(result).toEqual(fakeResult);
     });
   });
 
@@ -615,6 +631,14 @@ describe('Network Class', () => {
       );
       const result = await network.getTransactionByHash(variable);
       expect(result).toBeNull();
+    });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      const fakeResult = 'fakeResult' as unknown as ExtrinsicDataWithFees;
+      jest.spyOn(network, 'getTransactionByHashV2').mockResolvedValue(fakeResult);
+
+      const result = await network.getTransactionByHash(variable);
+      expect(result).toEqual(fakeResult);
     });
   });
 

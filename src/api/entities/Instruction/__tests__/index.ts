@@ -14,6 +14,7 @@ import {
   AffirmationStatus,
   InstructionAffirmationOperation,
   InstructionStatus,
+  InstructionStatusResult,
   InstructionType,
 } from '~/types';
 import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
@@ -857,6 +858,18 @@ describe('Instruction class', () => {
       return expect(instruction.getStatus()).rejects.toThrow(
         "It isn't possible to determine the current status of this Instruction"
       );
+    });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      dsMockUtils.configureMocks({
+        contextOptions: { middlewareV2Enabled: true },
+      });
+      jest.spyOn(instruction, 'isPending').mockResolvedValue(false);
+      const fakeResult = 'fakeResult' as unknown as InstructionStatusResult;
+      jest.spyOn(instruction, 'getStatusV2').mockResolvedValue(fakeResult);
+
+      const result = await instruction.getStatus();
+      expect(result).toEqual(fakeResult);
     });
   });
 

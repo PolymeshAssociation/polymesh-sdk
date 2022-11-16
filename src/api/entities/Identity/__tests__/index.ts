@@ -25,6 +25,7 @@ import {
   PermissionedAccount,
   Permissions,
   PortfolioCustodianRole,
+  ResultSet,
   Role,
   RoleType,
   TickerOwnerRole,
@@ -547,6 +548,16 @@ describe('Identity class', () => {
       expect(result[0].ticker).toBe('ASSET1');
       expect(result[1].ticker).toBe('ASSET2');
     });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      const identity = new Identity({ did }, context);
+
+      const fakeResult = 'fakeResult' as unknown as Asset[];
+      jest.spyOn(identity, 'getTrustingAssetsV2').mockResolvedValue(fakeResult);
+
+      const result = await identity.getTrustingAssets();
+      expect(result).toEqual(fakeResult);
+    });
   });
 
   describe('method: getTrustingAssetsV2', () => {
@@ -573,13 +584,10 @@ describe('Identity class', () => {
     const did = 'someDid';
     const tickers = ['ASSET1', 'ASSET2'];
 
-    beforeEach(() => {
+    it('should return a list of Assets', async () => {
       dsMockUtils.configureMocks({
         contextOptions: { middlewareV2Enabled: false },
       });
-    });
-
-    it('should return a list of Assets', async () => {
       const identity = new Identity({ did }, context);
 
       dsMockUtils.createApolloQueryMock(
@@ -609,6 +617,16 @@ describe('Identity class', () => {
 
       expect(result.data[0].ticker).toBe(tickers[0]);
       expect(result.data[1].ticker).toBe(tickers[1]);
+    });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      const identity = new Identity({ did }, context);
+
+      const fakeResult = 'fakeResult' as unknown as ResultSet<Asset>;
+      jest.spyOn(identity, 'getHeldAssetsV2').mockResolvedValue(fakeResult);
+
+      const result = await identity.getHeldAssets();
+      expect(result).toEqual(fakeResult);
     });
   });
 

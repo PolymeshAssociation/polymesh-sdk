@@ -13,7 +13,12 @@ import { eventByIndexedArgs, tickerExternalAgentHistory } from '~/middleware/que
 import { assetQuery, tickerExternalAgentHistoryQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { SecurityIdentifier, SecurityIdentifierType } from '~/types';
+import {
+  EventIdentifier,
+  HistoricAgentOperation,
+  SecurityIdentifier,
+  SecurityIdentifierType,
+} from '~/types';
 import { tuple } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -468,6 +473,16 @@ describe('Asset class', () => {
       const result = await asset.createdAt();
       expect(result).toBeNull();
     });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      dsMockUtils.configureMocks({ contextOptions: { middlewareV2Enabled: true } });
+      const asset = new Asset({ ticker: 'SOME_TICKER' }, context);
+      const fakeResult = 'fakeResult' as unknown as EventIdentifier;
+      jest.spyOn(asset, 'createdAtV2').mockResolvedValue(fakeResult);
+
+      const result = await asset.createdAt();
+      expect(result).toEqual(fakeResult);
+    });
   });
 
   describe('method: createdAtV2', () => {
@@ -814,6 +829,15 @@ describe('Asset class', () => {
       expect(result.length).toEqual(1);
       expect(result[0].identity.did).toEqual(did);
       expect(result[0].history.length).toEqual(0);
+    });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      const asset = new Asset({ ticker: 'SOME_TICKER' }, dsMockUtils.getContextInstance());
+      const fakeResult = 'fakeResult' as unknown as HistoricAgentOperation[];
+      jest.spyOn(asset, 'getOperationHistoryV2').mockResolvedValue(fakeResult);
+
+      const result = await asset.getOperationHistory();
+      expect(result).toEqual(fakeResult);
     });
   });
 

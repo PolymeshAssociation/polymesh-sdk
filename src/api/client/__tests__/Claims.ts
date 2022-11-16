@@ -87,6 +87,14 @@ describe('Claims Class', () => {
       result = await claims.getIssuedClaims({ target });
       expect(result).toEqual(getIdentityClaimsFromMiddleware);
     });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      const fakeResult = 'fakeResult' as unknown as ResultSet<ClaimData>;
+      jest.spyOn(claims, 'getIssuedClaimsV2').mockResolvedValue(fakeResult);
+
+      const result = await claims.getIssuedClaims();
+      expect(result).toEqual(fakeResult);
+    });
   });
 
   describe('method: getIssuedClaimsV2', () => {
@@ -343,6 +351,14 @@ describe('Claims Class', () => {
       expect(JSON.stringify(result.data)).toBe(JSON.stringify(fakeClaims));
       expect(result.count).toEqual(new BigNumber(25));
       expect(result.next).toEqual(new BigNumber(1));
+    });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      const fakeResult = 'fakeResult' as unknown as ResultSet<IdentityWithClaims>;
+      jest.spyOn(claims, 'getIdentitiesWithClaimsV2').mockResolvedValue(fakeResult);
+
+      const result = await claims.getIdentitiesWithClaims();
+      expect(result).toEqual(fakeResult);
     });
   });
 
@@ -1054,6 +1070,14 @@ describe('Claims Class', () => {
       expect(result.data).toEqual(fakeClaims);
       expect(result.count).toEqual(new BigNumber(25));
       expect(result.next).toEqual(new BigNumber(1));
+    });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      const fakeResult = 'fakeResult' as unknown as ResultSet<IdentityWithClaims>;
+      jest.spyOn(claims, 'getTargetingClaimsV2').mockResolvedValue(fakeResult);
+
+      const result = await claims.getTargetingClaims();
+      expect(result).toEqual(fakeResult);
     });
   });
 

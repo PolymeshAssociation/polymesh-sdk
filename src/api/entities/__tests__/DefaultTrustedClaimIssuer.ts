@@ -9,7 +9,7 @@ import { Context, DefaultTrustedClaimIssuer, Identity } from '~/internal';
 import { eventByAddedTrustedClaimIssuer } from '~/middleware/queries';
 import { trustedClaimIssuerQuery } from '~/middleware/queriesV2';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { ClaimType } from '~/types';
+import { ClaimType, EventIdentifier } from '~/types';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
@@ -103,6 +103,18 @@ describe('DefaultTrustedClaimIssuer class', () => {
       dsMockUtils.createApolloQueryMock(eventByAddedTrustedClaimIssuer(variables), {});
       const result = await trustedClaimIssuer.addedAt();
       expect(result).toBeNull();
+    });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      dsMockUtils.configureMocks({
+        contextOptions: { middlewareV2Enabled: true },
+      });
+      const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, ticker }, context);
+      const fakeResult = 'fakeResult' as unknown as EventIdentifier;
+      jest.spyOn(trustedClaimIssuer, 'addedAtV2').mockResolvedValue(fakeResult);
+
+      const result = await trustedClaimIssuer.addedAt();
+      expect(result).toEqual(fakeResult);
     });
   });
 

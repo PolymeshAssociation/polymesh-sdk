@@ -15,9 +15,11 @@ import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
   Balance,
+  ExtrinsicData,
   ModuleName,
   Permissions,
   PermissionType,
+  ResultSet,
   SubsidyWithAllowance,
   TxTags,
   UnsubCallback,
@@ -397,6 +399,14 @@ describe('Account class', () => {
       expect(result.data[0].success).toBeFalsy();
       expect(result.count).toEqual(new BigNumber(20));
       expect(result.next).toBeNull();
+    });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      const fakeResult = 'fakeResult' as unknown as ResultSet<ExtrinsicData>;
+      jest.spyOn(account, 'getTransactionHistoryV2').mockResolvedValue(fakeResult);
+
+      const result = await account.getTransactionHistory();
+      expect(result).toEqual(fakeResult);
     });
   });
 

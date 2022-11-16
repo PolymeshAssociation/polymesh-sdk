@@ -454,6 +454,10 @@ export class DividendDistribution extends CorporateActionBase {
       context,
     } = this;
 
+    if (context.isMiddlewareV2Enabled()) {
+      return this.getWithheldTaxV2();
+    }
+
     const taxPromise = context.queryMiddleware<Ensured<Query, 'getWithholdingTaxesOfCA'>>(
       getWithholdingTaxesOfCa({
         // eslint-disable-next-line @typescript-eslint/naming-convention

@@ -14,7 +14,14 @@ import { tickerExternalAgentActionsQuery, tickerExternalAgentsQuery } from '~/mi
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Asset, PermissionGroupType, PermissionType, TxTags } from '~/types';
+import {
+  Asset,
+  EventIdentifier,
+  PermissionGroupType,
+  PermissionType,
+  ResultSet,
+  TxTags,
+} from '~/types';
 import { tuple } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -136,6 +143,17 @@ describe('AssetPermissions class', () => {
       dsMockUtils.createApolloQueryMock(eventByIndexedArgs(variables), {});
       const result = await assetPermissions.enabledAt({ asset });
       expect(result).toBeNull();
+    });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      dsMockUtils.configureMocks({
+        contextOptions: { middlewareV2Enabled: true },
+      });
+      const fakeResult = 'fakeResult' as unknown as EventIdentifier;
+      jest.spyOn(assetPermissions, 'enabledAtV2').mockResolvedValue(fakeResult);
+
+      const result = await assetPermissions.enabledAt({ asset });
+      expect(result).toEqual(fakeResult);
     });
   });
 
@@ -473,13 +491,10 @@ describe('AssetPermissions class', () => {
   });
 
   describe('method: getOperationHistory', () => {
-    beforeEach(() => {
+    it('should return the Events triggered by Operations the Identity has performed on a specific Asset', async () => {
       dsMockUtils.configureMocks({
         contextOptions: { middlewareV2Enabled: false },
       });
-    });
-
-    it('should return the Events triggered by Operations the Identity has performed on a specific Asset', async () => {
       const blockId = new BigNumber(1);
       const blockHash = 'someHash';
       const eventIndex = new BigNumber(1);
@@ -556,6 +571,14 @@ describe('AssetPermissions class', () => {
       expect(result.next).toEqual(null);
       expect(result.count).toEqual(new BigNumber(0));
       expect(result.data).toEqual([]);
+    });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      const fakeResult = 'fakeResult' as unknown as ResultSet<EventIdentifier>;
+      jest.spyOn(assetPermissions, 'getOperationHistoryV2').mockResolvedValue(fakeResult);
+
+      const result = await assetPermissions.getOperationHistory({ asset });
+      expect(result).toEqual(fakeResult);
     });
   });
 
