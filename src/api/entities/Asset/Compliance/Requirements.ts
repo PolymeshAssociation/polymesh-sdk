@@ -213,6 +213,8 @@ export class Requirements extends Namespace<Asset> {
    *
    * @param args.from - sender Identity (optional, defaults to the signing Identity)
    * @param args.to - receiver Identity
+   *
+   * @deprecated in favor of `settlements.canTransfer` (set amount to 0 to imitate this call)
    */
   public async checkSettle(args: {
     from?: string | Identity;
