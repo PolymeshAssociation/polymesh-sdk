@@ -588,7 +588,7 @@ describe('Requirements class', () => {
 
       dsMockUtils
         .createRpcStub('compliance', 'canTransfer')
-        .withArgs(rawTicker, rawCurrentDid, rawToDid)
+        .withArgs(rawTicker, signingDid, toDid)
         .resolves(rawResponse);
 
       const fakeResult = 'result';
@@ -605,7 +605,7 @@ describe('Requirements class', () => {
 
       dsMockUtils
         .createRpcStub('compliance', 'canTransfer')
-        .withArgs(rawTicker, rawFromDid, rawToDid)
+        .withArgs(rawTicker, fromDid, toDid)
         .resolves(rawResponse);
 
       const fakeResult = 'result';
