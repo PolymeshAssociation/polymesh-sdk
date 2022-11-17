@@ -591,6 +591,7 @@ describe('Requirements class', () => {
 
     it('should return the current requirement compliance and whether the transfer complies with another Identity', async () => {
       const rawResponse = 'response' as unknown as AssetComplianceResult;
+      const toIdentity = entityMockUtils.getIdentityInstance({ did: toDid });
 
       dsMockUtils
         .createRpcStub('compliance', 'canTransfer')
@@ -601,7 +602,7 @@ describe('Requirements class', () => {
 
       assetComplianceResultToRequirementComplianceStub.withArgs(rawResponse).returns(fakeResult);
 
-      const result = await requirements.checkSettle({ from: fromDid, to: toDid });
+      const result = await requirements.checkSettle({ from: fromDid, to: toIdentity });
 
       expect(result).toBe(fakeResult);
     });
