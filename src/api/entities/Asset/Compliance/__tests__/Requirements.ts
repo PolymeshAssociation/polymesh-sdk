@@ -541,12 +541,8 @@ describe('Requirements class', () => {
     let signingDid: string;
     let fromDid: string;
     let toDid: string;
-    let rawFromDid: PolymeshPrimitivesIdentityId;
-    let rawToDid: PolymeshPrimitivesIdentityId;
-    let rawCurrentDid: PolymeshPrimitivesIdentityId;
     let rawTicker: PolymeshPrimitivesTicker;
 
-    let stringToIdentityIdStub: sinon.SinonStub;
     let assetComplianceResultToRequirementComplianceStub: sinon.SinonStub;
     let stringToTickerStub: sinon.SinonStub;
 
@@ -554,7 +550,6 @@ describe('Requirements class', () => {
       fromDid = 'fromDid';
       toDid = 'toDid';
 
-      stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
       assetComplianceResultToRequirementComplianceStub = sinon.stub(
         utilsConversionModule,
         'assetComplianceResultToCompliance'
@@ -568,14 +563,8 @@ describe('Requirements class', () => {
       requirements = new Requirements(asset, context);
       ({ did: signingDid } = await context.getSigningIdentity());
 
-      rawFromDid = dsMockUtils.createMockIdentityId(fromDid);
-      rawToDid = dsMockUtils.createMockIdentityId(toDid);
-      rawCurrentDid = dsMockUtils.createMockIdentityId(signingDid);
       rawTicker = dsMockUtils.createMockTicker(asset.ticker);
 
-      stringToIdentityIdStub.withArgs(signingDid, context).returns(rawCurrentDid);
-      stringToIdentityIdStub.withArgs(fromDid, context).returns(rawFromDid);
-      stringToIdentityIdStub.withArgs(toDid, context).returns(rawToDid);
       stringToTickerStub.withArgs(asset.ticker, context).returns(rawTicker);
     });
 
