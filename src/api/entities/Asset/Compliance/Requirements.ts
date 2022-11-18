@@ -34,8 +34,6 @@ import {
   assetComplianceResultToCompliance,
   boolToBoolean,
   complianceRequirementToRequirement,
-  signerToString,
-  stringToIdentityId,
   stringToTicker,
   trustedIssuerToTrustedClaimIssuer,
 } from '~/utils/conversion';
@@ -216,7 +214,7 @@ export class Requirements extends Namespace<Asset> {
    * @param args.from - sender Identity (optional, defaults to the signing Identity)
    * @param args.to - receiver Identity
    *
-   * @deprecated in favor of `settlements.canTransfer`
+   * @deprecated in favor of `settlements.canTransfer` (set amount to 0 to imitate this call)
    */
   public async checkSettle(args: {
     from?: string | Identity;
@@ -231,14 +229,13 @@ export class Requirements extends Namespace<Asset> {
     } = this;
 
     const { from = await context.getSigningIdentity(), to } = args;
-
-    const fromDid = stringToIdentityId(signerToString(from), context);
-    const toDid = signerToString(to);
+    const fromDid = typeof from === 'string' ? from : from.did;
+    const toDid = typeof to === 'string' ? to : to.did;
 
     const res: AssetComplianceResult = await rpc.compliance.canTransfer(
       stringToTicker(ticker, context),
       fromDid,
-      stringToIdentityId(toDid, context)
+      toDid
     );
 
     return assetComplianceResultToCompliance(res, context);

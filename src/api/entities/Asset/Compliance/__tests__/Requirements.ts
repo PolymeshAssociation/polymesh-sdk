@@ -541,12 +541,8 @@ describe('Requirements class', () => {
     let signingDid: string;
     let fromDid: string;
     let toDid: string;
-    let rawFromDid: PolymeshPrimitivesIdentityId;
-    let rawToDid: PolymeshPrimitivesIdentityId;
-    let rawCurrentDid: PolymeshPrimitivesIdentityId;
     let rawTicker: PolymeshPrimitivesTicker;
 
-    let stringToIdentityIdStub: sinon.SinonStub;
     let assetComplianceResultToRequirementComplianceStub: sinon.SinonStub;
     let stringToTickerStub: sinon.SinonStub;
 
@@ -554,7 +550,6 @@ describe('Requirements class', () => {
       fromDid = 'fromDid';
       toDid = 'toDid';
 
-      stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
       assetComplianceResultToRequirementComplianceStub = sinon.stub(
         utilsConversionModule,
         'assetComplianceResultToCompliance'
@@ -568,14 +563,8 @@ describe('Requirements class', () => {
       requirements = new Requirements(asset, context);
       ({ did: signingDid } = await context.getSigningIdentity());
 
-      rawFromDid = dsMockUtils.createMockIdentityId(fromDid);
-      rawToDid = dsMockUtils.createMockIdentityId(toDid);
-      rawCurrentDid = dsMockUtils.createMockIdentityId(signingDid);
       rawTicker = dsMockUtils.createMockTicker(asset.ticker);
 
-      stringToIdentityIdStub.withArgs(signingDid, context).returns(rawCurrentDid);
-      stringToIdentityIdStub.withArgs(fromDid, context).returns(rawFromDid);
-      stringToIdentityIdStub.withArgs(toDid, context).returns(rawToDid);
       stringToTickerStub.withArgs(asset.ticker, context).returns(rawTicker);
     });
 
@@ -588,7 +577,7 @@ describe('Requirements class', () => {
 
       dsMockUtils
         .createRpcStub('compliance', 'canTransfer')
-        .withArgs(rawTicker, rawCurrentDid, rawToDid)
+        .withArgs(rawTicker, signingDid, toDid)
         .resolves(rawResponse);
 
       const fakeResult = 'result';
@@ -602,17 +591,18 @@ describe('Requirements class', () => {
 
     it('should return the current requirement compliance and whether the transfer complies with another Identity', async () => {
       const rawResponse = 'response' as unknown as AssetComplianceResult;
+      const toIdentity = entityMockUtils.getIdentityInstance({ did: toDid });
 
       dsMockUtils
         .createRpcStub('compliance', 'canTransfer')
-        .withArgs(rawTicker, rawFromDid, rawToDid)
+        .withArgs(rawTicker, fromDid, toDid)
         .resolves(rawResponse);
 
       const fakeResult = 'result';
 
       assetComplianceResultToRequirementComplianceStub.withArgs(rawResponse).returns(fakeResult);
 
-      const result = await requirements.checkSettle({ from: fromDid, to: toDid });
+      const result = await requirements.checkSettle({ from: fromDid, to: toIdentity });
 
       expect(result).toBe(fakeResult);
     });
