@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
 
 import {
   getAuthorization,
@@ -31,7 +30,7 @@ describe('modifyCaCheckpoint procedure', () => {
   });
 
   beforeEach(() => {
-    changeRecordDateTransaction = dsMockUtils.createTxStub('corporateAction', 'changeRecordDate');
+    changeRecordDateTransaction = dsMockUtils.createTxMock('corporateAction', 'changeRecordDate');
     mockContext = dsMockUtils.getContextInstance();
   });
 
@@ -184,13 +183,15 @@ describe('modifyCaCheckpoint procedure', () => {
 
     const rawCaId = dsMockUtils.createMockCAId({ ticker, localId: id });
 
-    sinon.stub(utilsConversionModule, 'corporateActionIdentifierToCaId').returns(rawCaId);
+    jest.spyOn(utilsConversionModule, 'corporateActionIdentifierToCaId').mockReturnValue(rawCaId);
 
     const rawRecordDateSpec = dsMockUtils.createMockRecordDateSpec({
       Scheduled: dsMockUtils.createMockMoment(new BigNumber(new Date().getTime())),
     });
 
-    sinon.stub(utilsConversionModule, 'checkpointToRecordDateSpec').returns(rawRecordDateSpec);
+    jest
+      .spyOn(utilsConversionModule, 'checkpointToRecordDateSpec')
+      .mockReturnValue(rawRecordDateSpec);
 
     let result = await prepareModifyCaCheckpoint.call(proc, {
       corporateAction: entityMockUtils.getCorporateActionInstance({

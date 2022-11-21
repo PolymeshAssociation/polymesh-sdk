@@ -1,17 +1,17 @@
 import { bool, Bytes } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import {
+  PalletAssetSecurityToken,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Asset, Context, Entity, PolymeshTransaction } from '~/internal';
 import { eventByIndexedArgs, tickerExternalAgentHistory } from '~/middleware/queries';
 import { assetQuery, tickerExternalAgentHistoryQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
-import { SecurityToken as MeshSecurityToken } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { SecurityIdentifier, SecurityIdentifierType } from '~/types';
 import { tuple } from '~/types/utils';
@@ -29,7 +29,7 @@ jest.mock(
 );
 
 describe('Asset class', () => {
-  let bytesToStringStub: sinon.SinonStub;
+  let bytesToStringSpy: jest.SpyInstance;
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
@@ -80,7 +80,7 @@ describe('Asset class', () => {
     let iuDisabled: boolean;
     let did: string;
 
-    let rawToken: MeshSecurityToken;
+    let rawToken: PalletAssetSecurityToken;
     let rawName: Bytes;
     let rawIuDisabled: bool;
 
@@ -96,7 +96,7 @@ describe('Asset class', () => {
       assetType = 'EquityCommon';
       iuDisabled = false;
       did = 'someDid';
-      bytesToStringStub = sinon.stub(utilsConversionModule, 'bytesToString');
+      bytesToStringSpy = jest.spyOn(utilsConversionModule, 'bytesToString');
     });
 
     beforeEach(() => {
@@ -111,7 +111,7 @@ describe('Asset class', () => {
       context = dsMockUtils.getContextInstance();
       asset = new Asset({ ticker }, context);
 
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+      dsMockUtils.createQueryMock('externalAgents', 'groupOfAgent', {
         entries: [
           tuple(
             [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(did)],
@@ -127,20 +127,20 @@ describe('Asset class', () => {
           ),
         ],
       });
-      dsMockUtils.createQueryStub('asset', 'assetNames', {
+      dsMockUtils.createQueryMock('asset', 'assetNames', {
         returnValue: rawName,
       });
-      dsMockUtils.createQueryStub('asset', 'disableInvestorUniqueness', {
+      dsMockUtils.createQueryMock('asset', 'disableInvestorUniqueness', {
         returnValue: rawIuDisabled,
       });
     });
 
     it('should return details for an Asset', async () => {
-      const tokensStub = dsMockUtils.createQueryStub('asset', 'tokens', {
+      const tokensMock = dsMockUtils.createQueryMock('asset', 'tokens', {
         returnValue: rawToken,
       });
 
-      bytesToStringStub.withArgs(rawName).returns(name);
+      when(bytesToStringSpy).calledWith(rawName).mockReturnValue(name);
       let details = await asset.details();
 
       expect(details.name).toBe(name);
@@ -150,11 +150,10 @@ describe('Asset class', () => {
       expect(details.isDivisible).toBe(isDivisible);
       expect(details.owner.did).toBe(owner);
       expect(details.assetType).toBe(assetType);
-      expect(details.primaryIssuanceAgents[0].did).toBe(did);
       expect(details.fullAgents[0].did).toBe(owner);
       expect(details.requiresInvestorUniqueness).toBe(true);
 
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+      dsMockUtils.createQueryMock('externalAgents', 'groupOfAgent', {
         entries: [
           tuple(
             [dsMockUtils.createMockTicker(ticker), dsMockUtils.createMockIdentityId(did)],
@@ -164,10 +163,9 @@ describe('Asset class', () => {
       });
 
       details = await asset.details();
-      expect(details.primaryIssuanceAgents).toEqual([]);
       expect(details.fullAgents[0].did).toEqual(did);
 
-      tokensStub.resolves(
+      tokensMock.mockResolvedValue(
         dsMockUtils.createMockSecurityToken({
           ownerDid: dsMockUtils.createMockIdentityId(owner),
           assetType: dsMockUtils.createMockAssetType({
@@ -180,10 +178,10 @@ describe('Asset class', () => {
 
       const customType = 'something';
       const rawCustomType = dsMockUtils.createMockBytes(customType);
-      dsMockUtils.createQueryStub('asset', 'customTypes', {
+      dsMockUtils.createQueryMock('asset', 'customTypes', {
         returnValue: rawCustomType,
       });
-      bytesToStringStub.withArgs(rawCustomType).returns(customType);
+      when(bytesToStringSpy).calledWith(rawCustomType).mockReturnValue(customType);
 
       details = await asset.details();
       expect(details.assetType).toEqual(customType);
@@ -194,27 +192,25 @@ describe('Asset class', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (rawToken as any).primaryIssuanceAgent = dsMockUtils.createMockOption();
 
-      dsMockUtils.createQueryStub('asset', 'tokens').callsFake(async (_, cbFunc) => {
+      dsMockUtils.createQueryMock('asset', 'tokens').mockImplementation(async (_, cbFunc) => {
         cbFunc(rawToken);
 
         return unsubCallback;
       });
 
-      bytesToStringStub.withArgs(rawName).returns(name);
+      when(bytesToStringSpy).calledWith(rawName).mockReturnValue(name);
 
-      const callback = sinon.stub();
+      const callback = jest.fn();
       const result = await asset.details(callback);
       expect(result).toBe(unsubCallback);
-      sinon.assert.calledWithExactly(
-        callback,
-        sinon.match({
+      expect(callback).toBeCalledWith(
+        expect.objectContaining({
           assetType,
           isDivisible,
           name,
-          owner: sinon.match({ did: owner }),
+          owner: expect.objectContaining({ did: owner }),
           totalSupply: new BigNumber(totalSupply).div(Math.pow(10, 6)),
-          primaryIssuanceAgents: [sinon.match({ did })],
-          fullAgents: [sinon.match({ did: owner })],
+          fullAgents: [expect.objectContaining({ did: owner })],
           requiresInvestorUniqueness: true,
         })
       );
@@ -236,10 +232,9 @@ describe('Asset class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { ticker, ...args }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { ticker, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await asset.transferOwnership(args);
 
@@ -260,10 +255,9 @@ describe('Asset class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { ticker, ...args }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { ticker, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await asset.modify(args);
 
@@ -291,7 +285,7 @@ describe('Asset class', () => {
     });
 
     it('should return null if there is no funding round for an Asset', async () => {
-      dsMockUtils.createQueryStub('asset', 'fundingRound', {
+      dsMockUtils.createQueryMock('asset', 'fundingRound', {
         returnValue: dsMockUtils.createMockBytes(),
       });
 
@@ -301,10 +295,10 @@ describe('Asset class', () => {
     });
 
     it('should return the funding round for an Asset', async () => {
-      dsMockUtils.createQueryStub('asset', 'fundingRound', {
+      dsMockUtils.createQueryMock('asset', 'fundingRound', {
         returnValue: rawFundingRound,
       });
-      bytesToStringStub.withArgs(rawFundingRound).returns(fundingRound);
+      when(bytesToStringSpy).calledWith(rawFundingRound).mockReturnValue(fundingRound);
       const result = await asset.currentFundingRound();
 
       expect(result).toBe(fundingRound);
@@ -313,18 +307,18 @@ describe('Asset class', () => {
     it('should allow subscription', async () => {
       const unsubCallback = 'unsubCallBack';
 
-      dsMockUtils.createQueryStub('asset', 'fundingRound').callsFake(async (_, cbFunc) => {
+      dsMockUtils.createQueryMock('asset', 'fundingRound').mockImplementation(async (_, cbFunc) => {
         cbFunc(rawFundingRound);
 
         return unsubCallback;
       });
-      bytesToStringStub.withArgs(rawFundingRound).returns(fundingRound);
+      when(bytesToStringSpy).calledWith(rawFundingRound).mockReturnValue(fundingRound);
 
-      const callback = sinon.stub();
+      const callback = jest.fn();
       const result = await asset.currentFundingRound(callback);
 
       expect(result).toBe(unsubCallback);
-      sinon.assert.calledWithExactly(callback, fundingRound);
+      expect(callback).toBeCalledWith(fundingRound);
     });
   });
 
@@ -397,7 +391,7 @@ describe('Asset class', () => {
     });
 
     it('should return the list of security identifiers for an Asset', async () => {
-      dsMockUtils.createQueryStub('asset', 'identifiers', {
+      dsMockUtils.createQueryMock('asset', 'identifiers', {
         returnValue: [isinMock, cusipMock, cinsMock, leiMock, figiMock],
       });
 
@@ -413,17 +407,17 @@ describe('Asset class', () => {
     it('should allow subscription', async () => {
       const unsubCallback = 'unsubCallBack';
 
-      dsMockUtils.createQueryStub('asset', 'identifiers').callsFake(async (_, cbFunc) => {
+      dsMockUtils.createQueryMock('asset', 'identifiers').mockImplementation(async (_, cbFunc) => {
         cbFunc([isinMock, cusipMock, cinsMock, leiMock, figiMock]);
 
         return unsubCallback;
       });
 
-      const callback = sinon.stub();
+      const callback = jest.fn();
       const result = await asset.getIdentifiers(callback);
 
       expect(result).toBe(unsubCallback);
-      sinon.assert.calledWithExactly(callback, securityIdentifiers);
+      expect(callback).toBeCalledWith(securityIdentifiers);
     });
   });
 
@@ -442,7 +436,7 @@ describe('Asset class', () => {
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
 
-      dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {
+      dsMockUtils.createApolloQueryMock(eventByIndexedArgs(variables), {
         /* eslint-disable @typescript-eslint/naming-convention */
         eventByIndexedArgs: {
           block_id: blockNumber.toNumber(),
@@ -467,7 +461,7 @@ describe('Asset class', () => {
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
 
-      dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {});
+      dsMockUtils.createApolloQueryMock(eventByIndexedArgs(variables), {});
       const result = await asset.createdAt();
       expect(result).toBeNull();
     });
@@ -487,7 +481,7 @@ describe('Asset class', () => {
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
 
-      dsMockUtils.createApolloV2QueryStub(assetQuery(variables), {
+      dsMockUtils.createApolloV2QueryMock(assetQuery(variables), {
         assets: {
           nodes: [
             {
@@ -515,7 +509,7 @@ describe('Asset class', () => {
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
 
-      dsMockUtils.createApolloV2QueryStub(assetQuery(variables), {
+      dsMockUtils.createApolloV2QueryMock(assetQuery(variables), {
         assets: {
           nodes: [],
         },
@@ -533,10 +527,9 @@ describe('Asset class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { ticker, freeze: true }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { ticker, freeze: true }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await asset.freeze();
 
@@ -552,10 +545,9 @@ describe('Asset class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { ticker, freeze: false }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { ticker, freeze: false }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await asset.unfreeze();
 
@@ -564,7 +556,7 @@ describe('Asset class', () => {
   });
 
   describe('method: isFrozen', () => {
-    let frozenStub: sinon.SinonStub;
+    let frozenMock: jest.Mock;
     let boolValue: boolean;
     let rawBoolValue: bool;
 
@@ -574,7 +566,7 @@ describe('Asset class', () => {
     });
 
     beforeEach(() => {
-      frozenStub = dsMockUtils.createQueryStub('asset', 'frozen');
+      frozenMock = dsMockUtils.createQueryMock('asset', 'frozen');
     });
 
     it('should return whether the Asset is frozen or not', async () => {
@@ -582,7 +574,7 @@ describe('Asset class', () => {
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
 
-      frozenStub.resolves(rawBoolValue);
+      frozenMock.mockResolvedValue(rawBoolValue);
 
       const result = await asset.isFrozen();
 
@@ -595,55 +587,16 @@ describe('Asset class', () => {
       const asset = new Asset({ ticker }, context);
       const unsubCallback = 'unsubCallBack';
 
-      frozenStub.callsFake(async (_, cbFunc) => {
+      frozenMock.mockImplementation(async (_, cbFunc) => {
         cbFunc(rawBoolValue);
         return unsubCallback;
       });
 
-      const callback = sinon.stub();
+      const callback = jest.fn();
       const result = await asset.isFrozen(callback);
 
       expect(result).toBe(unsubCallback);
-      sinon.assert.calledWithExactly(callback, boolValue);
-    });
-  });
-
-  describe('method: modifyPrimaryIssuanceAgent', () => {
-    it('should prepare the procedure and return the resulting transaction', async () => {
-      const ticker = 'TICKER';
-      const target = 'someDid';
-      const context = dsMockUtils.getContextInstance();
-      const asset = new Asset({ ticker }, context);
-
-      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
-
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { ticker, target }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
-
-      const queue = await asset.modifyPrimaryIssuanceAgent({ target });
-
-      expect(queue).toBe(expectedTransaction);
-    });
-  });
-
-  describe('method: removePrimaryIssuanceAgent', () => {
-    it('should prepare the procedure and return the resulting transaction', async () => {
-      const ticker = 'TICKER';
-      const context = dsMockUtils.getContextInstance();
-      const asset = new Asset({ ticker }, context);
-
-      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
-
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { ticker }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
-
-      const queue = await asset.removePrimaryIssuanceAgent();
-
-      expect(queue).toBe(expectedTransaction);
+      expect(callback).toBeCalledWith(boolValue);
     });
   });
 
@@ -656,10 +609,9 @@ describe('Asset class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { amount, ticker }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { amount, ticker }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const queue = await asset.redeem({ amount });
 
@@ -670,31 +622,31 @@ describe('Asset class', () => {
   describe('method: investorCount', () => {
     let ticker: string;
     let rawTicker: PolymeshPrimitivesTicker;
-    let stringToTickerStub: sinon.SinonStub;
-    let boolToBooleanStub: sinon.SinonStub<[bool], boolean>;
+    let stringToTickerSpy: jest.SpyInstance;
+    let boolToBooleanSpy: jest.SpyInstance<boolean, [bool]>;
 
     beforeAll(() => {
       ticker = 'TICKER';
       rawTicker = dsMockUtils.createMockTicker(ticker);
-      stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-      boolToBooleanStub = sinon.stub(utilsConversionModule, 'boolToBoolean');
+      stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+      boolToBooleanSpy = jest.spyOn(utilsConversionModule, 'boolToBoolean');
     });
 
     beforeEach(() => {
-      stringToTickerStub.withArgs(ticker).returns(rawTicker);
+      when(stringToTickerSpy).calledWith(ticker).mockReturnValue(rawTicker);
     });
 
     it('should return the amount of unique investors that hold the Asset when PUIS is disabled', async () => {
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
 
-      dsMockUtils.createQueryStub('asset', 'disableInvestorUniqueness', {
+      dsMockUtils.createQueryMock('asset', 'disableInvestorUniqueness', {
         returnValue: dsMockUtils.createMockBool(true),
       });
 
-      boolToBooleanStub.returns(true);
+      boolToBooleanSpy.mockReturnValue(true);
 
-      dsMockUtils.createQueryStub('asset', 'balanceOf', {
+      dsMockUtils.createQueryMock('asset', 'balanceOf', {
         entries: [
           tuple(
             [rawTicker, dsMockUtils.createMockIdentityId('0x600')],
@@ -720,42 +672,42 @@ describe('Asset class', () => {
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
 
-      dsMockUtils.createQueryStub('asset', 'disableInvestorUniqueness', {
+      dsMockUtils.createQueryMock('asset', 'disableInvestorUniqueness', {
         returnValue: dsMockUtils.createMockBool(false),
       });
 
-      boolToBooleanStub.returns(false);
+      boolToBooleanSpy.mockReturnValue(false);
 
       const identityScopes = [
         {
-          scopeId: dsMockUtils.createMockScopeId('someScopeId'),
+          scopeId: dsMockUtils.createMockIdentityId('someScopeId'),
           identityId: dsMockUtils.createMockIdentityId('someDid'),
           balance: dsMockUtils.createMockBalance(new BigNumber(100)),
         },
         {
-          scopeId: dsMockUtils.createMockScopeId('someScopeId'),
+          scopeId: dsMockUtils.createMockIdentityId('someScopeId'),
           identityId: dsMockUtils.createMockIdentityId('someOtherDid'),
           balance: dsMockUtils.createMockBalance(new BigNumber(50)),
         },
         {
-          scopeId: dsMockUtils.createMockScopeId('randomScopeId'),
+          scopeId: dsMockUtils.createMockIdentityId('randomScopeId'),
           identityId: dsMockUtils.createMockIdentityId('randomDid'),
           balance: dsMockUtils.createMockBalance(new BigNumber(10)),
         },
         {
-          scopeId: dsMockUtils.createMockScopeId('excludedScopeId'),
+          scopeId: dsMockUtils.createMockIdentityId('excludedScopeId'),
           identityId: dsMockUtils.createMockIdentityId('zeroCountDid'),
           balance: dsMockUtils.createMockBalance(new BigNumber(0)),
         },
       ];
 
-      dsMockUtils.createQueryStub('asset', 'scopeIdOf', {
+      dsMockUtils.createQueryMock('asset', 'scopeIdOf', {
         entries: identityScopes.map(({ identityId, scopeId }) =>
           tuple([rawTicker, identityId], scopeId)
         ),
       });
 
-      dsMockUtils.createQueryStub('asset', 'balanceOfAtScope', {
+      dsMockUtils.createQueryMock('asset', 'balanceOfAtScope', {
         entries: identityScopes.map(({ identityId, scopeId, balance }) =>
           tuple([scopeId, identityId], balance)
         ),
@@ -777,10 +729,13 @@ describe('Asset class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { ticker, originPortfolio, amount }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          { args: { ticker, originPortfolio, amount }, transformer: undefined },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
 
       const queue = await asset.controllerTransfer({ originPortfolio, amount });
 
@@ -800,10 +755,10 @@ describe('Asset class', () => {
       const eventIndex = new BigNumber(1);
       const datetime = '2020-10-10';
 
-      dsMockUtils.createQueryStub('system', 'blockHash', {
+      dsMockUtils.createQueryMock('system', 'blockHash', {
         multi: [dsMockUtils.createMockHash(blockHash)],
       });
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.createApolloQueryMock(
         tickerExternalAgentHistory({
           ticker,
         }),
@@ -837,7 +792,7 @@ describe('Asset class', () => {
         eventIndex,
       });
 
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.createApolloQueryMock(
         tickerExternalAgentHistory({
           ticker,
         }),
@@ -871,7 +826,7 @@ describe('Asset class', () => {
       const eventIndex = new BigNumber(1);
       const datetime = '2020-10-10';
 
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloV2QueryMock(
         tickerExternalAgentHistoryQuery({
           assetId: ticker,
         }),
@@ -904,7 +859,7 @@ describe('Asset class', () => {
         eventIndex,
       });
 
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloV2QueryMock(
         tickerExternalAgentHistoryQuery({
           assetId: ticker,
         }),
@@ -927,7 +882,7 @@ describe('Asset class', () => {
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
 
-      dsMockUtils.createQueryStub('asset', 'tokens', {
+      dsMockUtils.createQueryMock('asset', 'tokens', {
         size: new BigNumber(10),
       });
 
@@ -935,7 +890,7 @@ describe('Asset class', () => {
 
       expect(result).toBe(true);
 
-      dsMockUtils.createQueryStub('asset', 'tokens', {
+      dsMockUtils.createQueryMock('asset', 'tokens', {
         size: new BigNumber(0),
       });
 

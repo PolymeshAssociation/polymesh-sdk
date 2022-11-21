@@ -8,7 +8,7 @@ import {
 } from '@polkadot/types/lookup';
 import { BTreeSet } from '@polkadot/types-codec';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { getAuthorization, prepareRemoveAssetStat } from '~/api/procedures/removeAssetStat';
 import { Context, PolymeshError } from '~/internal';
@@ -34,7 +34,7 @@ jest.mock(
 describe('removeAssetStat procedure', () => {
   const did = 'someDid';
   let mockContext: Mocked<Context>;
-  let stringToTickerKeyStub: sinon.SinonStub<[string, Context], TickerKey>;
+  let stringToTickerKeySpy: jest.SpyInstance<TickerKey, [string, Context]>;
   let ticker: string;
   let rawTicker: PolymeshPrimitivesTicker;
   let args: RemoveAssetStatParams;
@@ -47,8 +47,8 @@ describe('removeAssetStat procedure', () => {
   let rawPercentageCondition: PolymeshPrimitivesTransferComplianceTransferCondition;
   let rawClaimCountCondition: PolymeshPrimitivesTransferComplianceTransferCondition;
   let mockRemoveTarget: PolymeshPrimitivesStatisticsStatType;
-  let mockRemoveTargetEqSub: sinon.SinonStub;
-  let queryMultiStub: sinon.SinonStub;
+  let mockRemoveTargetEqSub: jest.Mock;
+  let queryMultiMock: jest.Mock;
   let queryMultiResult: [
     BTreeSet<PolymeshPrimitivesStatisticsStatType>,
     PolymeshPrimitivesTransferComplianceAssetTransferCompliance
@@ -57,25 +57,25 @@ describe('removeAssetStat procedure', () => {
   let setActiveAssetStats: PolymeshTx<
     [PolymeshPrimitivesTicker, PolymeshPrimitivesTransferComplianceTransferCondition]
   >;
-  let statUpdatesToBtreeStatUpdateStub: sinon.SinonStub<
-    [PolymeshPrimitivesStatisticsStatUpdate[], Context],
-    BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>
+  let statUpdatesToBtreeStatUpdateSpy: jest.SpyInstance<
+    BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>,
+    [PolymeshPrimitivesStatisticsStatUpdate[], Context]
   >;
-  let statisticsOpTypeToStatTypeStub: sinon.SinonStub;
-  let createStat2ndKeyStub: sinon.SinonStub<
+  let statisticsOpTypeToStatTypeSpy: jest.SpyInstance;
+  let createStat2ndKeySpy: jest.SpyInstance<
+    PolymeshPrimitivesStatisticsStat2ndKey,
     [
       type: 'NoClaimStat' | StatClaimType,
       context: Context,
       claimStat?: CountryCode | 'yes' | 'no' | undefined
-    ],
-    PolymeshPrimitivesStatisticsStat2ndKey
+    ]
   >;
   let rawStatUpdateBtree: BTreeSet<PolymeshPrimitivesStatisticsStatUpdate>;
-  let statisticStatTypesToBtreeStatTypeStub: sinon.SinonStub<
-    [PolymeshPrimitivesStatisticsStatType[], Context],
-    BTreeSet<PolymeshPrimitivesStatisticsStatType>
+  let statisticStatTypesToBtreeStatTypeSpy: jest.SpyInstance<
+    BTreeSet<PolymeshPrimitivesStatisticsStatType>,
+    [PolymeshPrimitivesStatisticsStatType[], Context]
   >;
-  let statStub: sinon.SinonStub;
+  let statSpy: jest.SpyInstance;
   let emptyStatTypeBtreeSet: BTreeSet<PolymeshPrimitivesStatisticsStatType>;
   let statBtreeSet: BTreeSet<PolymeshPrimitivesStatisticsStatType>;
 
@@ -109,9 +109,9 @@ describe('removeAssetStat procedure', () => {
     entityMockUtils.initMocks();
     mockContext = dsMockUtils.getContextInstance();
     ticker = 'TICKER';
-    stringToTickerKeyStub = sinon.stub(utilsConversionModule, 'stringToTickerKey');
-    createStat2ndKeyStub = sinon.stub(utilsConversionModule, 'createStat2ndKey');
-    statUpdatesToBtreeStatUpdateStub = sinon.stub(
+    stringToTickerKeySpy = jest.spyOn(utilsConversionModule, 'stringToTickerKey');
+    createStat2ndKeySpy = jest.spyOn(utilsConversionModule, 'createStat2ndKey');
+    statUpdatesToBtreeStatUpdateSpy = jest.spyOn(
       utilsConversionModule,
       'statUpdatesToBtreeStatUpdate'
     );
@@ -119,25 +119,22 @@ describe('removeAssetStat procedure', () => {
       returnValue: dsMockUtils.createMockU32(new BigNumber(3)),
     });
 
-    statisticsOpTypeToStatTypeStub = sinon.stub(
-      utilsConversionModule,
-      'statisticsOpTypeToStatType'
-    );
-    statStub = sinon.stub(utilsConversionModule, 'meshStatToStatType');
-    statisticStatTypesToBtreeStatTypeStub = sinon.stub(
+    statisticsOpTypeToStatTypeSpy = jest.spyOn(utilsConversionModule, 'statisticsOpTypeToStatType');
+    statSpy = jest.spyOn(utilsConversionModule, 'meshStatToStatType');
+    statisticStatTypesToBtreeStatTypeSpy = jest.spyOn(
       utilsConversionModule,
       'statisticStatTypesToBtreeStatType'
     );
-    // queryMulti is mocked for the results, but query still needs to be stubbed to avoid dereference on undefined
-    dsMockUtils.createQueryStub('statistics', 'activeAssetStats');
-    queryMultiStub = dsMockUtils.getQueryMultiStub();
+    // queryMulti is mocked for the results, but query still needs to be mocked to avoid dereference on undefined
+    dsMockUtils.createQueryMock('statistics', 'activeAssetStats');
+    queryMultiMock = dsMockUtils.getQueryMultiMock();
   });
 
   beforeEach(() => {
-    statStub.returns(StatType.Balance);
+    statSpy.mockReturnValue(StatType.Balance);
     mockRemoveTarget = dsMockUtils.createMockStatisticsStatType();
-    mockRemoveTargetEqSub = mockRemoveTarget.eq as sinon.SinonStub;
-    setActiveAssetStats = dsMockUtils.createTxStub('statistics', 'setActiveAssetStats');
+    mockRemoveTargetEqSub = mockRemoveTarget.eq as jest.Mock;
+    setActiveAssetStats = dsMockUtils.createTxMock('statistics', 'setActiveAssetStats');
 
     rawCountStatType = dsMockUtils.createMockStatisticsStatType();
     rawBalanceStatType = dsMockUtils.createMockStatisticsStatType({
@@ -178,17 +175,21 @@ describe('removeAssetStat procedure', () => {
       ],
     });
 
-    createStat2ndKeyStub.withArgs('NoClaimStat', mockContext, undefined).returns(raw2ndKey);
-    statisticsOpTypeToStatTypeStub.returns(mockRemoveTarget);
+    when(createStat2ndKeySpy)
+      .calledWith('NoClaimStat', mockContext, undefined)
+      .mockReturnValue(raw2ndKey);
+    statisticsOpTypeToStatTypeSpy.mockReturnValue(mockRemoveTarget);
 
-    statUpdatesToBtreeStatUpdateStub
-      .withArgs([rawStatUpdate], mockContext)
-      .returns(rawStatUpdateBtree);
+    when(statUpdatesToBtreeStatUpdateSpy)
+      .calledWith([rawStatUpdate], mockContext)
+      .mockReturnValue(rawStatUpdateBtree);
     queryMultiResult = [dsMockUtils.createMockBTreeSet([]), fakeCurrentRequirements];
-    queryMultiStub.returns(queryMultiResult);
+    queryMultiMock.mockReturnValue(queryMultiResult);
 
-    stringToTickerKeyStub.withArgs(ticker, mockContext).returns({ Ticker: rawTicker });
-    statisticStatTypesToBtreeStatTypeStub.returns(emptyStatTypeBtreeSet);
+    when(stringToTickerKeySpy)
+      .calledWith(ticker, mockContext)
+      .mockReturnValue({ Ticker: rawTicker });
+    statisticStatTypesToBtreeStatTypeSpy.mockReturnValue(emptyStatTypeBtreeSet);
     args = {
       type: StatType.Balance,
       ticker,
@@ -204,12 +205,12 @@ describe('removeAssetStat procedure', () => {
   afterAll(() => {
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
-    sinon.restore();
+    jest.restoreAllMocks();
   });
 
   it('should add a setAssetStats transaction to the queue', async () => {
-    mockRemoveTargetEqSub.returns(true);
-    queryMultiStub.resolves([statBtreeSet, { requirements: [] }]);
+    mockRemoveTargetEqSub.mockReturnValue(true);
+    queryMultiMock.mockResolvedValue([statBtreeSet, { requirements: [] }]);
     const proc = procedureMockUtils.getInstance<RemoveAssetStatParams, void>(mockContext);
 
     let result = await prepareRemoveAssetStat.call(proc, args);
@@ -237,7 +238,7 @@ describe('removeAssetStat procedure', () => {
   });
 
   it('should throw if the stat is not set', async () => {
-    queryMultiStub.resolves([statBtreeSet, { requirements: [] }]);
+    queryMultiMock.mockResolvedValue([statBtreeSet, { requirements: [] }]);
     const proc = procedureMockUtils.getInstance<RemoveAssetStatParams, void>(mockContext);
 
     const expectedError = new PolymeshError({
@@ -250,7 +251,7 @@ describe('removeAssetStat procedure', () => {
 
   it('should throw an error if the stat is being used', async () => {
     const proc = procedureMockUtils.getInstance<RemoveAssetStatParams, void>(mockContext);
-    queryMultiStub.resolves([
+    queryMultiMock.mockResolvedValue([
       statBtreeSet,
       {
         requirements: dsMockUtils.createMockBTreeSet([
@@ -269,7 +270,7 @@ describe('removeAssetStat procedure', () => {
 
     await expect(prepareRemoveAssetStat.call(proc, args)).rejects.toThrowError(expectedError);
 
-    statStub.returns(StatType.Count);
+    statSpy.mockReturnValue(StatType.Count);
 
     args = {
       ticker: 'TICKER',

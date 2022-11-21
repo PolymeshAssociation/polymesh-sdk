@@ -1,7 +1,7 @@
 import { Balance } from '@polkadot/types/interfaces';
+import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   getAuthorization,
@@ -36,13 +36,13 @@ jest.mock(
 describe('redeemTokens procedure', () => {
   let mockContext: Mocked<Context>;
   let ticker: string;
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
   let amount: BigNumber;
   let rawAmount: Balance;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let bigNumberToBalanceStub: sinon.SinonStub<
-    [BigNumber, Context, (boolean | undefined)?],
-    Balance
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let bigNumberToBalanceSpy: jest.SpyInstance<
+    Balance,
+    [BigNumber, Context, (boolean | undefined)?]
   >;
 
   beforeAll(() => {
@@ -53,14 +53,14 @@ describe('redeemTokens procedure', () => {
     rawTicker = dsMockUtils.createMockTicker(ticker);
     amount = new BigNumber(100);
     rawAmount = dsMockUtils.createMockBalance(amount);
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    bigNumberToBalanceStub = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    bigNumberToBalanceSpy = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
-    bigNumberToBalanceStub.withArgs(amount, mockContext).returns(rawAmount);
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(bigNumberToBalanceSpy).calledWith(amount, mockContext, true).mockReturnValue(rawAmount);
     entityMockUtils.configureMocks({
       assetOptions: {
         details: {
@@ -93,7 +93,7 @@ describe('redeemTokens procedure', () => {
       }),
     });
 
-    const transaction = dsMockUtils.createTxStub('asset', 'redeem');
+    const transaction = dsMockUtils.createTxMock('asset', 'redeem');
 
     const result = await prepareRedeemTokens.call(proc, {
       ticker,
@@ -117,16 +117,15 @@ describe('redeemTokens procedure', () => {
       fromPortfolio: from,
     });
 
-    const transaction = dsMockUtils.createTxStub('asset', 'redeemFromPortfolio');
+    const transaction = dsMockUtils.createTxMock('asset', 'redeemFromPortfolio');
 
     const rawPortfolioKind = dsMockUtils.createMockPortfolioKind({
       User: dsMockUtils.createMockU64(new BigNumber(1)),
     });
 
-    sinon
-      .stub(utilsConversionModule, 'portfolioToPortfolioKind')
-      .withArgs(from, mockContext)
-      .returns(rawPortfolioKind);
+    when(jest.spyOn(utilsConversionModule, 'portfolioToPortfolioKind'))
+      .calledWith(from, mockContext)
+      .mockReturnValue(rawPortfolioKind);
 
     const result = await prepareRedeemTokens.call(proc, {
       ticker,

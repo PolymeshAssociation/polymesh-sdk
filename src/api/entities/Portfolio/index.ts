@@ -26,7 +26,7 @@ import {
   ResultSet,
   SetCustodianParams,
 } from '~/types';
-import { Ensured, EnsuredV2, QueryReturnType } from '~/types/utils';
+import { Ensured, EnsuredV2 } from '~/types/utils';
 import {
   addressToKey,
   balanceToBigNumber,
@@ -375,7 +375,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     let hashes: Hash[] = [];
 
     if (multiParams.length) {
-      hashes = await system.blockHash.multi<QueryReturnType<typeof system.blockHash>>(multiParams);
+      hashes = await system.blockHash.multi(multiParams);
     }
 
     return {

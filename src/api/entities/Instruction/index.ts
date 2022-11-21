@@ -1,4 +1,3 @@
-import { QueryableStorageEntry } from '@polkadot/api/types';
 import BigNumber from 'bignumber.js';
 
 import {
@@ -24,7 +23,7 @@ import {
   ResultSet,
 } from '~/types';
 import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
-import { Ensured, EnsuredV2, QueryReturnType } from '~/types/utils';
+import { Ensured, EnsuredV2 } from '~/types/utils';
 import {
   balanceToBigNumber,
   bigNumberToU64,
@@ -40,7 +39,7 @@ import {
   u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod, optionize, requestPaginated } from '~/utils/internal';
+import { createProcedureMethod, optionize, requestMulti, requestPaginated } from '~/utils/internal';
 
 import {
   InstructionAffirmation,
@@ -203,7 +202,6 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
           query: {
             settlement: { instructionDetails, instructionMemos },
           },
-          queryMulti,
         },
       },
       id,
@@ -215,11 +213,9 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     const [
       { status: rawStatus, createdAt, tradeDate, valueDate, settlementType: type, venueId },
       memo,
-    ] = await queryMulti<
-      [QueryReturnType<typeof instructionDetails>, QueryReturnType<typeof instructionMemos>]
-    >([
-      [instructionDetails as unknown as QueryableStorageEntry<'promise'>, rawId],
-      [instructionMemos as unknown as QueryableStorageEntry<'promise'>, rawId],
+    ] = await requestMulti<[typeof instructionDetails, typeof instructionMemos]>(context, [
+      [instructionDetails, rawId],
+      [instructionMemos, rawId],
     ]);
 
     const status = meshInstructionStatusToInstructionStatus(rawStatus);

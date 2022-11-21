@@ -164,21 +164,6 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Retrieve all pending Instructions in this Venue
-   *
-   * @deprecated in favor of `getInstructions`
-   */
-  public async getPendingInstructions(): Promise<Instruction[]> {
-    const instructions = await this.fetchInstructions();
-
-    return P.filter(instructions, async instruction => {
-      const { status } = await instruction.details();
-
-      return status === InstructionStatus.Pending;
-    });
-  }
-
-  /**
    * Fetch instructions from the chain
    */
   private async fetchInstructions(): Promise<Instruction[]> {

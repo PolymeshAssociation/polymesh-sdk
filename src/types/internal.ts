@@ -3,11 +3,14 @@
 import {
   AugmentedEvents,
   AugmentedSubmittable,
+  DecoratedRpc,
   QueryableConsts,
   QueryableStorage,
   SubmittableExtrinsic,
   SubmittableExtrinsics,
 } from '@polkadot/api/types';
+import { RpcInterface } from '@polkadot/rpc-core/types';
+import { u32 } from '@polkadot/types';
 import {
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesTicker,
@@ -22,12 +25,12 @@ import {
   CallIdEnum as MiddlewareV2CallId,
   ModuleIdEnum as MiddlewareV2ModuleId,
 } from '~/middleware/typesV2';
-import { CustomAssetTypeId } from '~/polkadot';
 import {
   CalendarPeriod,
   ClaimType,
   InputStatClaim,
   KnownAssetType,
+  MortalityProcedureOpt,
   PermissionGroupType,
   Role,
   SignerValue,
@@ -66,6 +69,8 @@ export type Queries = QueryableStorage<'promise'>;
  * Polkadot's `consts` submodule
  */
 export type Consts = QueryableConsts<'promise'>;
+
+export type Rpcs = DecoratedRpc<'promise', RpcInterface>;
 
 /**
  * Low level transaction method in the polkadot API
@@ -217,15 +222,22 @@ export type GenericTransactionSpec<ReturnValue> =
   | BatchTransactionSpec<ReturnValue, unknown[][]>
   | TransactionSpec<ReturnValue, unknown[]>;
 
-export interface TransactionSigningData {
+/**
+ * Additional information for constructing the final transaction
+ */
+export interface TransactionConstructionData {
   /**
-   * Account that will sign the transaction
+   * address of the key that will sign the transaction
    */
   signingAddress: string;
   /**
    * object that handles the payload signing logic
    */
   signer: PolkadotSigner;
+  /**
+   * how long the transaction should be valid for
+   */
+  mortality: MortalityProcedureOpt;
 }
 
 export interface AuthTarget {
@@ -317,7 +329,7 @@ export enum InstructionStatus {
  */
 export type PermissionGroupIdentifier = PermissionGroupType | { custom: BigNumber };
 
-export type InternalAssetType = KnownAssetType | { Custom: CustomAssetTypeId };
+export type InternalAssetType = KnownAssetType | { Custom: u32 };
 
 export interface TickerKey {
   Ticker: PolymeshPrimitivesTicker;

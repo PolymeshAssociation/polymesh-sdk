@@ -32,6 +32,8 @@ import {
   InputTargets,
   InputTaxWithholding,
   InputTrustedClaimIssuer,
+  MetadataSpec,
+  MetadataValueDetails,
   OfferingTier,
   PercentageTransferRestriction,
   PermissionedAccount,
@@ -930,6 +932,7 @@ export interface MoveFundsParams {
 export interface CreateTransactionBatchParams<ReturnValues extends readonly [...unknown[]]> {
   transactions: Readonly<TransactionArray<ReturnValues>>;
 }
+
 export interface CreateMultiSigParams {
   signers: Signer[];
   requiredSignatures: BigNumber;
@@ -945,3 +948,19 @@ export interface ModifyMultiSigParams {
    */
   signers: Signer[];
 }
+
+export type SetMetadataParams =
+  | { value: string; details?: MetadataValueDetails }
+  | { details: MetadataValueDetails };
+
+export type RegisterMetadataParams =
+  | {
+      name: string;
+      specs: MetadataSpec;
+    }
+  | {
+      name: string;
+      specs: MetadataSpec;
+      value: string;
+      details?: MetadataValueDetails;
+    };

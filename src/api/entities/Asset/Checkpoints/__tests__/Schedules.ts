@@ -1,6 +1,6 @@
 import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import sinon, { SinonStub } from 'sinon';
+import { when } from 'jest-when';
 
 import { CheckpointSchedule, Context, Namespace, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -27,7 +27,7 @@ describe('Schedules class', () => {
 
   let ticker: string;
 
-  let stringToTickerStub: SinonStub<[string, Context], PolymeshPrimitivesTicker>;
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
@@ -36,7 +36,7 @@ describe('Schedules class', () => {
 
     ticker = 'SOME_TICKER';
 
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
   });
 
   afterEach(() => {
@@ -61,7 +61,7 @@ describe('Schedules class', () => {
 
   describe('method: create', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
@@ -76,10 +76,9 @@ describe('Schedules class', () => {
         repetitions: null,
       };
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { ticker, ...args }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { ticker, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await schedules.create(args);
 
@@ -89,7 +88,7 @@ describe('Schedules class', () => {
 
   describe('method: remove', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
@@ -98,10 +97,9 @@ describe('Schedules class', () => {
         schedule: new BigNumber(1),
       };
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { ticker, ...args }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { ticker, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await schedules.remove(args);
 
@@ -110,7 +108,7 @@ describe('Schedules class', () => {
   });
 
   describe('method: getOne', () => {
-    let getStub: sinon.SinonStub;
+    let getSpy: jest.SpyInstance;
     let id: BigNumber;
 
     beforeAll(() => {
@@ -118,11 +116,11 @@ describe('Schedules class', () => {
     });
 
     beforeEach(() => {
-      getStub = sinon.stub(schedules, 'get');
+      getSpy = jest.spyOn(schedules, 'get');
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return the requested Checkpoint Schedule', async () => {
@@ -134,14 +132,14 @@ describe('Schedules class', () => {
         },
       };
 
-      getStub.resolves([fakeResult]);
+      getSpy.mockResolvedValue([fakeResult]);
 
       const result = await schedules.getOne({ id });
       expect(result).toEqual(fakeResult);
     });
 
     it('should throw an error if the Schedule does not exist', () => {
-      getStub.resolves([]);
+      getSpy.mockResolvedValue([]);
 
       return expect(schedules.getOne({ id })).rejects.toThrow('The Schedule does not exist');
     });
@@ -149,7 +147,7 @@ describe('Schedules class', () => {
 
   describe('method: get', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return the current checkpoint schedules', async () => {
@@ -163,17 +161,19 @@ describe('Schedules class', () => {
         amount: new BigNumber(1),
       };
 
-      stringToTickerStub.withArgs(ticker, context).returns(rawTicker);
+      when(stringToTickerSpy).calledWith(ticker, context).mockReturnValue(rawTicker);
 
-      sinon.stub(utilsConversionModule, 'storedScheduleToCheckpointScheduleParams').returns({
-        id,
-        period,
-        start,
-        remaining,
-        nextCheckpointDate,
-      });
+      jest
+        .spyOn(utilsConversionModule, 'storedScheduleToCheckpointScheduleParams')
+        .mockReturnValue({
+          id,
+          period,
+          start,
+          remaining,
+          nextCheckpointDate,
+        });
 
-      dsMockUtils.createQueryStub('checkpoint', 'schedules', {
+      dsMockUtils.createQueryMock('checkpoint', 'schedules', {
         returnValue: [
           dsMockUtils.createMockStoredSchedule({
             schedule: dsMockUtils.createMockCheckpointSchedule({
@@ -205,7 +205,7 @@ describe('Schedules class', () => {
 
   describe('method: complexityOf', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return the complexity of the passed period', () => {
@@ -214,7 +214,9 @@ describe('Schedules class', () => {
         amount: new BigNumber(7),
       };
       const expected = new BigNumber(2);
-      sinon.stub(utilsInternalModule, 'periodComplexity').withArgs(period).returns(expected);
+      when(jest.spyOn(utilsInternalModule, 'periodComplexity'))
+        .calledWith(period)
+        .mockReturnValue(expected);
 
       expect(schedules.complexityOf(period)).toBe(expected);
     });
@@ -222,12 +224,12 @@ describe('Schedules class', () => {
 
   describe('method: currentComplexity', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return the sum of the complexity of all schedules', async () => {
-      const getStub = sinon.stub(schedules, 'get');
-      getStub.resolves([
+      const getSpy = jest.spyOn(schedules, 'get');
+      getSpy.mockResolvedValue([
         {
           schedule: entityMockUtils.getCheckpointScheduleInstance({ complexity: new BigNumber(1) }),
         },
@@ -245,7 +247,7 @@ describe('Schedules class', () => {
 
       expect(result).toEqual(new BigNumber(5.5));
 
-      getStub.resolves([]);
+      getSpy.mockResolvedValue([]);
 
       result = await schedules.currentComplexity();
 
@@ -255,11 +257,11 @@ describe('Schedules class', () => {
 
   describe('method: maxComplexity', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return the maximum complexity from the chain', async () => {
-      dsMockUtils.createQueryStub('checkpoint', 'schedulesMaxComplexity', {
+      dsMockUtils.createQueryMock('checkpoint', 'schedulesMaxComplexity', {
         returnValue: dsMockUtils.createMockU64(new BigNumber(20)),
       });
 

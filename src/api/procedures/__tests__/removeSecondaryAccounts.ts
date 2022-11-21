@@ -1,6 +1,6 @@
 import { AccountId } from '@polkadot/types/interfaces';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { prepareRemoveSecondaryAccounts } from '~/api/procedures/removeSecondaryAccounts';
 import { Context } from '~/internal';
@@ -12,9 +12,9 @@ import * as utilsInternalModule from '~/utils/internal';
 
 describe('removeSecondaryAccounts procedure', () => {
   let mockContext: Mocked<Context>;
-  let signerToSignerValueStub: sinon.SinonStub<[Signer], SignerValue>;
-  let stringToAccountIdStub: sinon.SinonStub<[string, Context], AccountId>;
-  let getSecondaryAccountPermissionsStub: sinon.SinonStub;
+  let signerToSignerValueSpy: jest.SpyInstance<SignerValue, [Signer]>;
+  let stringToAccountIdSpy: jest.SpyInstance<AccountId, [string, Context]>;
+  let getSecondaryAccountPermissionsSpy: jest.SpyInstance;
 
   let args: RemoveSecondaryAccountsParams;
 
@@ -22,9 +22,9 @@ describe('removeSecondaryAccounts procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    signerToSignerValueStub = sinon.stub(utilsConversionModule, 'signerToSignerValue');
-    stringToAccountIdStub = sinon.stub(utilsConversionModule, 'stringToAccountId');
-    getSecondaryAccountPermissionsStub = sinon.stub(
+    signerToSignerValueSpy = jest.spyOn(utilsConversionModule, 'signerToSignerValue');
+    stringToAccountIdSpy = jest.spyOn(utilsConversionModule, 'stringToAccountId');
+    getSecondaryAccountPermissionsSpy = jest.spyOn(
       utilsInternalModule,
       'getSecondaryAccountPermissions'
     );
@@ -36,7 +36,7 @@ describe('removeSecondaryAccounts procedure', () => {
     const secondaryAccount = entityMockUtils.getAccountInstance({
       address: '',
     });
-    secondaryAccount.isEqual.onFirstCall().returns(false).onSecondCall().returns(true);
+    secondaryAccount.isEqual.mockReturnValueOnce(false).mockReturnValue(true);
 
     const accounts = [secondaryAccount];
 
@@ -54,19 +54,21 @@ describe('removeSecondaryAccounts procedure', () => {
   afterAll(() => {
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
-    sinon.restore();
+    jest.restoreAllMocks();
   });
 
   it('should return a remove secondary items transaction spec', async () => {
     const { accounts } = args;
 
     const rawAccountId = dsMockUtils.createMockAccountId(accounts[0].address);
-    getSecondaryAccountPermissionsStub.returns(accounts.map(account => ({ account })));
-    stringToAccountIdStub.withArgs(accounts[0].address, mockContext).returns(rawAccountId);
+    getSecondaryAccountPermissionsSpy.mockReturnValue(accounts.map(account => ({ account })));
+    when(stringToAccountIdSpy)
+      .calledWith(accounts[0].address, mockContext)
+      .mockReturnValue(rawAccountId);
 
     const proc = procedureMockUtils.getInstance<RemoveSecondaryAccountsParams, void>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('identity', 'removeSecondaryKeys');
+    const transaction = dsMockUtils.createTxMock('identity', 'removeSecondaryKeys');
 
     const result = await prepareRemoveSecondaryAccounts.call(proc, args);
 
@@ -81,13 +83,13 @@ describe('removeSecondaryAccounts procedure', () => {
   it('should throw an error if attempting to remove the primary Account', () => {
     const proc = procedureMockUtils.getInstance<RemoveSecondaryAccountsParams, void>(mockContext);
     const account = entityMockUtils.getAccountInstance({ address: 'primaryAccount' });
-    stringToAccountIdStub
-      .withArgs('primaryAccount', mockContext)
-      .returns(dsMockUtils.createMockAccountId('primaryAccount'));
-    getSecondaryAccountPermissionsStub.returns([account]);
-    mockContext.getSigningIdentity.returns(
-      entityMockUtils.getIdentityInstance({ getPrimaryAccount: { account } })
-    );
+    when(stringToAccountIdSpy)
+      .calledWith('primaryAccount', mockContext)
+      .mockReturnValue(dsMockUtils.createMockAccountId('primaryAccount'));
+    getSecondaryAccountPermissionsSpy.mockReturnValue([account]);
+    mockContext.getSigningIdentity = jest
+      .fn()
+      .mockReturnValue(entityMockUtils.getIdentityInstance({ getPrimaryAccount: { account } }));
 
     return expect(
       prepareRemoveSecondaryAccounts.call(proc, {
@@ -101,8 +103,8 @@ describe('removeSecondaryAccounts procedure', () => {
     const { accounts } = args;
     const signerValue = { type: SignerType.Account, value: accounts[0].address };
 
-    signerToSignerValueStub.withArgs(accounts[0]).returns(signerValue);
-    getSecondaryAccountPermissionsStub.returns([]);
+    when(signerToSignerValueSpy).calledWith(accounts[0]).mockReturnValue(signerValue);
+    getSecondaryAccountPermissionsSpy.mockReturnValue([]);
 
     const proc = procedureMockUtils.getInstance<RemoveSecondaryAccountsParams, void>(mockContext);
     return expect(

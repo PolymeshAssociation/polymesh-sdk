@@ -36,7 +36,7 @@ import {
   TxTags,
   WaivePermissionsParams,
 } from '~/types';
-import { Ensured, EnsuredV2, QueryReturnType } from '~/types/utils';
+import { Ensured, EnsuredV2 } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
   agentGroupToPermissionGroup,
@@ -283,20 +283,6 @@ export class AssetPermissions extends Namespace<Identity> {
   }
 
   /**
-   * Check whether this Identity has specific transaction Permissions over an Asset
-   *
-   * @deprecated in favor of `checkPermissions`
-   */
-  public async hasPermissions(args: {
-    asset: Asset | string;
-    transactions: TxTag[] | null;
-  }): Promise<boolean> {
-    const { result } = await this.checkPermissions(args);
-
-    return result;
-  }
-
-  /**
    * Retrieve this Identity's Permission Group for a specific Asset
    */
   public async getGroup({
@@ -465,7 +451,7 @@ export class AssetPermissions extends Namespace<Identity> {
     let hashes: Hash[] = [];
 
     if (multiParams.length) {
-      hashes = await system.blockHash.multi<QueryReturnType<typeof system.blockHash>>(multiParams);
+      hashes = await system.blockHash.multi(multiParams);
     }
 
     const count = new BigNumber(totalCount);

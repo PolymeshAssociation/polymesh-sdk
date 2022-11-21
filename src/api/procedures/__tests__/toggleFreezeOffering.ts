@@ -1,7 +1,7 @@
 import { u64 } from '@polkadot/types';
+import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   getAuthorization,
@@ -25,10 +25,10 @@ jest.mock(
 
 describe('toggleFreezeOffering procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let bigNumberToU64Stub: sinon.SinonStub<[BigNumber, Context], u64>;
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
   let ticker: string;
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
   let id: BigNumber;
   let rawId: u64;
 
@@ -36,8 +36,8 @@ describe('toggleFreezeOffering procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
     ticker = 'tickerFrozen';
     id = new BigNumber(1);
     rawTicker = dsMockUtils.createMockTicker(ticker);
@@ -46,8 +46,8 @@ describe('toggleFreezeOffering procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
-    bigNumberToU64Stub.withArgs(id, mockContext).returns(rawId);
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(bigNumberToU64Spy).calledWith(id, mockContext).mockReturnValue(rawId);
   });
 
   afterEach(() => {
@@ -156,7 +156,7 @@ describe('toggleFreezeOffering procedure', () => {
   it('should return a freeze transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<ToggleFreezeOfferingParams, Offering>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('sto', 'freezeFundraiser');
+    const transaction = dsMockUtils.createTxMock('sto', 'freezeFundraiser');
 
     const result = await prepareToggleFreezeOffering.call(proc, {
       ticker,
@@ -186,7 +186,7 @@ describe('toggleFreezeOffering procedure', () => {
 
     const proc = procedureMockUtils.getInstance<ToggleFreezeOfferingParams, Offering>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('sto', 'unfreezeFundraiser');
+    const transaction = dsMockUtils.createTxMock('sto', 'unfreezeFundraiser');
 
     const result = await prepareToggleFreezeOffering.call(proc, {
       ticker,

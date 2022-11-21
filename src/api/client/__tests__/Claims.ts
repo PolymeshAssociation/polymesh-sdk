@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Claims } from '~/api/client/Claims';
 import { Context, PolymeshTransaction } from '~/internal';
@@ -186,7 +186,7 @@ describe('Claims Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.createApolloQueryMock(
         didsWithClaims({
           dids: [targetDid],
           scope: undefined,
@@ -214,7 +214,7 @@ describe('Claims Class', () => {
       expect(result.count).toEqual(new BigNumber(25));
       expect(result.next).toEqual(new BigNumber(1));
 
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.createApolloQueryMock(
         didsWithClaims({
           dids: undefined,
           scope: undefined,
@@ -310,7 +310,7 @@ describe('Claims Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.createApolloQueryMock(
         didsWithClaims({
           dids: [targetDid],
           scope: { type: ClaimScopeTypeEnum[scope.type], value: padString(scope.value, 12) },
@@ -400,7 +400,7 @@ describe('Claims Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloV2QueryMock(
         claimsQuery({
           dids: [targetDid],
           scope: undefined,
@@ -426,7 +426,7 @@ describe('Claims Class', () => {
       expect(result.count).toEqual(new BigNumber(1));
       expect(result.next).toEqual(null);
 
-      dsMockUtils.createApolloMultipleV2QueriesStub([
+      dsMockUtils.createApolloMultipleV2QueriesMock([
         {
           query: claimsGroupingQuery({
             scope: undefined,
@@ -522,7 +522,7 @@ describe('Claims Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloV2QueryMock(
         claimsQuery({
           dids: [targetDid],
           scope: { type: 'Ticker', value: 'someValue' },
@@ -553,7 +553,7 @@ describe('Claims Class', () => {
 
   describe('method: addClaims', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
@@ -571,13 +571,13 @@ describe('Claims Class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           { args: { ...args, operation: ClaimOperation.Add }, transformer: undefined },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await claims.addClaims(args);
 
@@ -587,7 +587,7 @@ describe('Claims Class', () => {
 
   describe('method: addInvestorUniquenessClaim', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
@@ -607,10 +607,9 @@ describe('Claims Class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await claims.addInvestorUniquenessClaim(args);
 
@@ -620,7 +619,7 @@ describe('Claims Class', () => {
 
   describe('method: editClaims', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
@@ -638,13 +637,13 @@ describe('Claims Class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           { args: { ...args, operation: ClaimOperation.Edit }, transformer: undefined },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await claims.editClaims(args);
 
@@ -654,7 +653,7 @@ describe('Claims Class', () => {
 
   describe('method: revokeClaims', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
@@ -672,13 +671,13 @@ describe('Claims Class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           { args: { ...args, operation: ClaimOperation.Revoke }, transformer: undefined },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await claims.revokeClaims(args);
 
@@ -774,7 +773,7 @@ describe('Claims Class', () => {
 
   describe('method: getTargetingClaims', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return a list of claims issued with an Identity as target', async () => {
@@ -827,12 +826,11 @@ describe('Claims Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      sinon
-        .stub(utilsConversionModule, 'toIdentityWithClaimsArray')
-        .withArgs(issuerDidsWithClaimsByTargetQueryResponse.items, context)
-        .returns(fakeClaims);
+      when(jest.spyOn(utilsConversionModule, 'toIdentityWithClaimsArray'))
+        .calledWith(issuerDidsWithClaimsByTargetQueryResponse.items, context)
+        .mockReturnValue(fakeClaims);
 
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.createApolloQueryMock(
         issuerDidsWithClaimsByTarget({
           target: did,
           scope: undefined,
@@ -858,7 +856,7 @@ describe('Claims Class', () => {
       expect(result.count).toEqual(new BigNumber(25));
       expect(result.next).toEqual(new BigNumber(1));
 
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.createApolloQueryMock(
         issuerDidsWithClaimsByTarget({
           target: did,
           scope: undefined,
@@ -890,11 +888,14 @@ describe('Claims Class', () => {
       };
 
       const issuer1 = entityMockUtils.getIdentityInstance({ did: issuer });
-      issuer1.isEqual.onFirstCall().returns(true).onSecondCall().returns(false);
+      issuer1.isEqual = jest.fn();
+      when(issuer1.isEqual).calledWith(issuer1).mockReturnValue(true);
       const issuer2 = entityMockUtils.getIdentityInstance({ did: issuer });
-      issuer2.isEqual.onFirstCall().returns(true).onSecondCall().returns(false);
+      issuer2.isEqual = jest.fn();
+      when(issuer2.isEqual).calledWith(issuer1).mockReturnValue(true);
       const issuer3 = entityMockUtils.getIdentityInstance({ did: otherIssuer });
-      issuer3.isEqual.onFirstCall().returns(false).onSecondCall().returns(true);
+      issuer3.isEqual = jest.fn();
+      when(issuer3.isEqual).calledWith(issuer3).mockReturnValue(true);
 
       const identityClaims: ClaimData[] = [
         {
@@ -964,7 +965,7 @@ describe('Claims Class', () => {
 
   describe('method: getTargetingClaimsV2', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return a list of claims issued with an Identity as target', async () => {
@@ -1007,12 +1008,11 @@ describe('Claims Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      sinon
-        .stub(utilsConversionModule, 'toIdentityWithClaimsArrayV2')
-        .withArgs(claimsQueryResponse.nodes as unknown as Claim[], context, 'issuerId')
-        .returns(fakeClaims);
+      when(jest.spyOn(utilsConversionModule, 'toIdentityWithClaimsArrayV2'))
+        .calledWith(claimsQueryResponse.nodes as unknown as Claim[], context, 'issuerId')
+        .mockReturnValue(fakeClaims);
 
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloV2QueryMock(
         claimsQuery({
           dids: [did],
           scope,
@@ -1037,7 +1037,7 @@ describe('Claims Class', () => {
       expect(result.count).toEqual(new BigNumber(1));
       expect(result.next).toEqual(null);
 
-      dsMockUtils.createApolloMultipleV2QueriesStub([
+      dsMockUtils.createApolloMultipleV2QueriesMock([
         {
           query: claimsGroupingQuery(
             {
@@ -1089,11 +1089,14 @@ describe('Claims Class', () => {
       };
 
       const issuer1 = entityMockUtils.getIdentityInstance({ did: issuer });
-      issuer1.isEqual.onFirstCall().returns(true).onSecondCall().returns(false);
+      issuer1.isEqual = jest.fn();
+      when(issuer1.isEqual).calledWith(issuer1).mockReturnValue(true);
       const issuer2 = entityMockUtils.getIdentityInstance({ did: issuer });
-      issuer2.isEqual.onFirstCall().returns(true).onSecondCall().returns(false);
+      issuer2.isEqual = jest.fn();
+      when(issuer2.isEqual).calledWith(issuer1).mockReturnValue(true);
       const issuer3 = entityMockUtils.getIdentityInstance({ did: otherIssuer });
-      issuer3.isEqual.onFirstCall().returns(false).onSecondCall().returns(true);
+      issuer3.isEqual = jest.fn();
+      when(issuer3.isEqual).calledWith(issuer3).mockReturnValue(true);
 
       const identityClaims: ClaimData[] = [
         {
@@ -1252,12 +1255,11 @@ describe('Claims Class', () => {
 
     dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-    sinon
-      .stub(utilsConversionModule, 'toIdentityWithClaimsArray')
-      .withArgs(issuerDidsWithClaimsByTargetQueryResponse.items, context)
-      .returns(fakeClaims);
+    when(jest.spyOn(utilsConversionModule, 'toIdentityWithClaimsArray'))
+      .calledWith(issuerDidsWithClaimsByTargetQueryResponse.items, context)
+      .mockReturnValue(fakeClaims);
 
-    dsMockUtils.createApolloQueryStub(
+    dsMockUtils.createApolloQueryMock(
       issuerDidsWithClaimsByTarget({
         target: did,
         scope: { type: ClaimScopeTypeEnum[scope.type], value: padString(scope.value, 12) },

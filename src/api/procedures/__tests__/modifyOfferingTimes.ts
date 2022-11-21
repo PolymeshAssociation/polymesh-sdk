@@ -1,6 +1,6 @@
+import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import { Moment } from 'polymesh-types/types';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   getAuthorization,
@@ -42,7 +42,7 @@ describe('modifyStoTimes procedure', () => {
   let mockContext: Mocked<Context>;
   let modifyFundraiserWindowTransaction: PolymeshTx<unknown[]>;
 
-  let dateToMomentStub: sinon.SinonStub<[Date, Context], Moment>;
+  let dateToMomentSpy: jest.SpyInstance<u64, [Date, Context]>;
 
   const args = {
     ticker,
@@ -56,9 +56,9 @@ describe('modifyStoTimes procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
 
-    sinon.stub(utilsConversionModule, 'stringToTicker').returns(rawTicker);
-    sinon.stub(utilsConversionModule, 'bigNumberToU64').returns(rawId);
-    dateToMomentStub = sinon.stub(utilsConversionModule, 'dateToMoment');
+    jest.spyOn(utilsConversionModule, 'stringToTicker').mockReturnValue(rawTicker);
+    jest.spyOn(utilsConversionModule, 'bigNumberToU64').mockReturnValue(rawId);
+    dateToMomentSpy = jest.spyOn(utilsConversionModule, 'dateToMoment');
   });
 
   beforeEach(() => {
@@ -77,10 +77,10 @@ describe('modifyStoTimes procedure', () => {
     });
     mockContext = dsMockUtils.getContextInstance();
 
-    dateToMomentStub.withArgs(newStart, mockContext).returns(rawNewStart);
-    dateToMomentStub.withArgs(newEnd, mockContext).returns(rawNewEnd);
-    dateToMomentStub.withArgs(start, mockContext).returns(rawStart);
-    dateToMomentStub.withArgs(end, mockContext).returns(rawEnd);
+    when(dateToMomentSpy).calledWith(newStart, mockContext).mockReturnValue(rawNewStart);
+    when(dateToMomentSpy).calledWith(newEnd, mockContext).mockReturnValue(rawNewEnd);
+    when(dateToMomentSpy).calledWith(start, mockContext).mockReturnValue(rawStart);
+    when(dateToMomentSpy).calledWith(end, mockContext).mockReturnValue(rawEnd);
   });
 
   afterEach(() => {
@@ -96,7 +96,7 @@ describe('modifyStoTimes procedure', () => {
 
   it('should return a modify fundraiser window transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
-    modifyFundraiserWindowTransaction = dsMockUtils.createTxStub('sto', 'modifyFundraiserWindow');
+    modifyFundraiserWindowTransaction = dsMockUtils.createTxMock('sto', 'modifyFundraiserWindow');
 
     let result = await prepareModifyOfferingTimes.call(proc, args);
 

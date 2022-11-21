@@ -2,7 +2,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
 import { merge } from 'lodash';
-import sinon, { SinonStub } from 'sinon';
 
 import { Context, Procedure } from '~/internal';
 import { Mocked } from '~/testUtils/types';
@@ -13,15 +12,15 @@ const mockInstanceContainer = {
   procedure: {} as MockProcedure,
 };
 
-let procedureConstructorStub: SinonStub;
-let prepareStub: SinonStub;
+let procedureConstructorMock: jest.Mock;
+let prepareMock: jest.Mock;
 
 export const MockProcedureClass = class {
   /**
    * @hidden
    */
   constructor(...args: unknown[]) {
-    return procedureConstructorStub(...args);
+    return procedureConstructorMock(...args);
   }
 };
 
@@ -35,14 +34,14 @@ export const mockProcedureModule = (path: string) => (): Record<string, unknown>
  * Initialize the procedure instance
  */
 function initProcedure(): void {
-  procedureConstructorStub = sinon.stub();
-  prepareStub = sinon.stub();
+  procedureConstructorMock = jest.fn();
+  prepareMock = jest.fn();
   const procedure = {
-    prepare: prepareStub.returns({}),
+    prepare: prepareMock.mockReturnValue({}),
   } as unknown as MockProcedure;
 
   Object.assign(mockInstanceContainer.procedure, procedure);
-  procedureConstructorStub.callsFake(args => {
+  procedureConstructorMock.mockImplementation(args => {
     const value = merge({}, procedure, args);
     Object.setPrototypeOf(value, require('~/internal').Procedure.prototype);
     return value;
@@ -92,8 +91,8 @@ export function getInstance<T, U, S = Record<string, unknown>>(
 
 /**
  * @hidden
- * Retrieve the stub of the `prepare` method
+ * Retrieve the mock of the `prepare` method
  */
-export function getPrepareStub(): SinonStub {
-  return prepareStub;
+export function getPrepareMock(): jest.Mock {
+  return prepareMock;
 }

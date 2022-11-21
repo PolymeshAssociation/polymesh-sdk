@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Context, CustomPermissionGroup, PermissionGroup, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -25,7 +25,7 @@ describe('CustomPermissionGroup class', () => {
     entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
 
-    sinon.stub(utilsConversionModule, 'stringToTicker');
+    jest.spyOn(utilsConversionModule, 'stringToTicker').mockImplementation();
   });
 
   beforeEach(() => {
@@ -93,13 +93,13 @@ describe('CustomPermissionGroup class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           { args: { ...args, group: customPermissionGroup }, transformer: undefined },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await customPermissionGroup.setPermissions(args);
 
@@ -111,7 +111,7 @@ describe('CustomPermissionGroup class', () => {
     it('should return a list of permissions and transaction groups', async () => {
       const customPermissionGroup = new CustomPermissionGroup({ id, ticker }, context);
 
-      dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
+      dsMockUtils.createQueryMock('externalAgents', 'groupPermissions', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockExtrinsicPermissions({
             These: [
@@ -145,19 +145,19 @@ describe('CustomPermissionGroup class', () => {
     it('should return whether the Custom Permission Group exists', async () => {
       const customPermissionGroup = new CustomPermissionGroup({ id, ticker }, context);
 
-      dsMockUtils.createQueryStub('externalAgents', 'agIdSequence', {
+      dsMockUtils.createQueryMock('externalAgents', 'agIdSequence', {
         returnValue: dsMockUtils.createMockU32(new BigNumber(0)),
       });
 
       await expect(customPermissionGroup.exists()).resolves.toBe(false);
 
-      dsMockUtils.createQueryStub('externalAgents', 'agIdSequence', {
+      dsMockUtils.createQueryMock('externalAgents', 'agIdSequence', {
         returnValue: dsMockUtils.createMockU32(new BigNumber(10)),
       });
 
       await expect(customPermissionGroup.exists()).resolves.toBe(true);
 
-      dsMockUtils.createQueryStub('externalAgents', 'agIdSequence', {
+      dsMockUtils.createQueryMock('externalAgents', 'agIdSequence', {
         returnValue: dsMockUtils.createMockU32(new BigNumber(1)),
       });
 

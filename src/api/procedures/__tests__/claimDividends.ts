@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
 
 import { Params, prepareClaimDividends } from '~/api/procedures/claimDividends';
 import { Context, DividendDistribution } from '~/internal';
@@ -29,12 +28,12 @@ describe('claimDividends procedure', () => {
     dsMockUtils.initMocks({ contextOptions: { did } });
     procedureMockUtils.initMocks();
 
-    sinon.stub(utilsConversionModule, 'corporateActionIdentifierToCaId').returns(rawCaId);
-    sinon.stub(utilsConversionModule, 'stringToIdentityId').returns(rawDid);
+    jest.spyOn(utilsConversionModule, 'corporateActionIdentifierToCaId').mockReturnValue(rawCaId);
+    jest.spyOn(utilsConversionModule, 'stringToIdentityId').mockReturnValue(rawDid);
   });
 
   beforeEach(() => {
-    claimDividendsTransaction = dsMockUtils.createTxStub('capitalDistribution', 'claim');
+    claimDividendsTransaction = dsMockUtils.createTxMock('capitalDistribution', 'claim');
     mockContext = dsMockUtils.getContextInstance();
   });
 

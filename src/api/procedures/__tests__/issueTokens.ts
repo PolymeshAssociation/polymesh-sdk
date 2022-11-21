@@ -1,7 +1,7 @@
 import { Balance } from '@polkadot/types/interfaces';
+import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   getAuthorization,
@@ -23,10 +23,10 @@ jest.mock(
 
 describe('issueTokens procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let bigNumberToBalance: sinon.SinonStub;
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let bigNumberToBalance: jest.SpyInstance;
   let ticker: string;
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
   let amount: BigNumber;
   let rawAmount: Balance;
 
@@ -34,8 +34,8 @@ describe('issueTokens procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    bigNumberToBalance = sinon.stub(utilsConversionModule, 'bigNumberToBalance');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    bigNumberToBalance = jest.spyOn(utilsConversionModule, 'bigNumberToBalance');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     amount = new BigNumber(100);
@@ -44,7 +44,7 @@ describe('issueTokens procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
   });
 
   afterEach(() => {
@@ -123,14 +123,15 @@ describe('issueTokens procedure', () => {
         ticker,
         details: {
           isDivisible,
-          primaryIssuanceAgents: [entityMockUtils.getIdentityInstance()],
         },
       },
     });
 
-    bigNumberToBalance.withArgs(amount, mockContext, isDivisible).returns(rawAmount);
+    when(bigNumberToBalance)
+      .calledWith(amount, mockContext, isDivisible)
+      .mockReturnValue(rawAmount);
 
-    const transaction = dsMockUtils.createTxStub('asset', 'issue');
+    const transaction = dsMockUtils.createTxMock('asset', 'issue');
     const proc = procedureMockUtils.getInstance<IssueTokensParams, Asset, Storage>(mockContext, {
       asset: entityMockUtils.getAssetInstance(),
     });

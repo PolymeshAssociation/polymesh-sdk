@@ -9,6 +9,7 @@ import {
 import BigNumber from 'bignumber.js';
 import { flatten, groupBy, map } from 'lodash';
 
+import { Metadata } from '~/api/entities/Asset/Metadata';
 import {
   AuthorizationRequest,
   Context,
@@ -16,9 +17,7 @@ import {
   Entity,
   Identity,
   modifyAsset,
-  modifyPrimaryIssuanceAgent,
   redeemTokens,
-  removePrimaryIssuanceAgent,
   toggleFreezeTransfers,
   transferAssetOwnership,
 } from '~/internal';
@@ -31,7 +30,6 @@ import {
   EventIdentifier,
   HistoricAgentOperation,
   ModifyAssetParams,
-  ModifyPrimaryIssuanceAgentParams,
   NoArgsProcedureMethod,
   ProcedureMethod,
   RedeemTokensParams,
@@ -40,7 +38,7 @@ import {
   TransferAssetOwnershipParams,
   UnsubCallback,
 } from '~/types';
-import { Ensured, EnsuredV2, Modify, QueryReturnType } from '~/types/utils';
+import { Ensured, EnsuredV2, Modify } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
   assetIdentifierToSecurityIdentifier,
@@ -53,7 +51,6 @@ import {
   identityIdToString,
   middlewareEventToEventIdentifier,
   middlewareV2EventDetailsToEventIdentifier,
-  scopeIdToString,
   stringToTicker,
   tickerToDid,
 } from '~/utils/conversion';
@@ -116,6 +113,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
   public checkpoints: Checkpoints;
   public corporateActions: CorporateActions;
   public permissions: Permissions;
+  public metadata: Metadata;
 
   /**
    * @hidden
@@ -138,6 +136,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
     this.checkpoints = new Checkpoints(this, context);
     this.corporateActions = new CorporateActions(this, context);
     this.permissions = new Permissions(this, context);
+    this.metadata = new Metadata(this, context);
 
     this.transferOwnership = createProcedureMethod(
       { getProcedureAndArgs: args => [transferAssetOwnership, { ticker, ...args }] },
@@ -159,14 +158,6 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
         getProcedureAndArgs: () => [toggleFreezeTransfers, { ticker, freeze: false }],
         voidArgs: true,
       },
-      context
-    );
-    this.modifyPrimaryIssuanceAgent = createProcedureMethod(
-      { getProcedureAndArgs: args => [modifyPrimaryIssuanceAgent, { ticker, ...args }] },
-      context
-    );
-    this.removePrimaryIssuanceAgent = createProcedureMethod(
-      { getProcedureAndArgs: () => [removePrimaryIssuanceAgent, { ticker }], voidArgs: true },
       context
     );
     this.redeem = createProcedureMethod(
@@ -226,16 +217,11 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       assetName: Bytes,
       iuDisabled: bool
     ): Promise<AssetDetails> => {
-      const primaryIssuanceAgents: Identity[] = [];
       const fullAgents: Identity[] = [];
 
       agentGroups.forEach(([storageKey, agentGroup]) => {
         const rawAgentGroup = agentGroup.unwrap();
-        if (rawAgentGroup.isPolymeshV1PIA) {
-          primaryIssuanceAgents.push(
-            new Identity({ did: identityIdToString(storageKey.args[1]) }, context)
-          );
-        } else if (rawAgentGroup.isFull) {
+        if (rawAgentGroup.isFull) {
           fullAgents.push(new Identity({ did: identityIdToString(storageKey.args[1]) }, context));
         }
       });
@@ -257,7 +243,6 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
         name: bytesToString(assetName),
         owner,
         totalSupply: balanceToBigNumber(totalSupply),
-        primaryIssuanceAgents,
         fullAgents,
         requiresInvestorUniqueness: !boolToBoolean(iuDisabled),
       };
@@ -463,26 +448,6 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Assign a new primary issuance agent for the Asset
-   *
-   * @note this will create an {@link api/entities/AuthorizationRequest!AuthorizationRequest | Authorization Request} which has to be accepted by the `target` Identity.
-   *   An {@link api/entities/Account!Account} or {@link api/entities/Identity!Identity} can fetch its pending Authorization Requests by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getReceived | authorizations.getReceived}.
-   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getOne | authorizations.getOne}
-   *
-   * @deprecated in favor of `inviteAgent`
-   */
-  public modifyPrimaryIssuanceAgent: ProcedureMethod<ModifyPrimaryIssuanceAgentParams, void>;
-
-  /**
-   * Remove the primary issuance agent of the Asset
-   *
-   * @note if primary issuance agent is not set, Asset owner would be used by default
-   *
-   * @deprecated
-   */
-  public removePrimaryIssuanceAgent: NoArgsProcedureMethod<void>;
-
-  /**
    * Redeem (burn) an amount of this Asset's tokens
    *
    * @note tokens are removed from the caller's Default Portfolio
@@ -538,7 +503,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
         balance,
       ]) => {
         if (!balanceToBigNumber(balance).isZero()) {
-          assetHolders.add(scopeIdToString(scopeId));
+          assetHolders.add(identityIdToString(scopeId));
         }
       }
     );
@@ -605,7 +570,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
     let hashes: Hash[] = [];
 
     if (multiParams.length) {
-      hashes = await system.blockHash.multi<QueryReturnType<typeof system.blockHash>>(multiParams);
+      hashes = await system.blockHash.multi(multiParams);
     }
 
     const finalResults: HistoricAgentOperation[] = [];

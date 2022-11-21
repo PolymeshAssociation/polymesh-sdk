@@ -1,6 +1,6 @@
 import { StorageKey } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Asset, Namespace, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -39,7 +39,7 @@ describe('Documents class', () => {
 
   describe('method: set', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
@@ -59,10 +59,13 @@ describe('Documents class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { ticker: asset.ticker, ...args }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          { args: { ticker: asset.ticker, ...args }, transformer: undefined },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await documents.set(args);
 
@@ -72,13 +75,13 @@ describe('Documents class', () => {
 
   describe('method: get', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should retrieve all documents linked to the Asset', async () => {
       const asset = entityMockUtils.getAssetInstance();
-      dsMockUtils.createQueryStub('asset', 'assetDocuments');
-      const requestPaginatedStub = sinon.stub(utilsInternalModule, 'requestPaginated');
+      dsMockUtils.createQueryMock('asset', 'assetDocuments');
+      const requestPaginatedSpy = jest.spyOn(utilsInternalModule, 'requestPaginated');
 
       const expectedDocuments: AssetDocument[] = [
         {
@@ -114,7 +117,7 @@ describe('Documents class', () => {
         )
       );
 
-      requestPaginatedStub.resolves({ entries, lastKey: null });
+      requestPaginatedSpy.mockResolvedValue({ entries, lastKey: null });
 
       const context = dsMockUtils.getContextInstance();
       const documents = new Documents(asset, context);

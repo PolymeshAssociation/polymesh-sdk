@@ -1,7 +1,7 @@
+import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 
 import { Asset, Offering, PolymeshError, Procedure } from '~/internal';
-import { Moment } from '~/polkadot/polymesh';
 import {
   ErrorCode,
   ModifyOfferingTimesParams,
@@ -104,7 +104,7 @@ export async function prepareModifyOfferingTimes(
   const rawTicker = stringToTicker(ticker, context);
   const rawId = bigNumberToU64(id, context);
   const rawStart = newStart ? dateToMoment(newStart, context) : dateToMoment(start, context);
-  let rawEnd: Moment | null;
+  let rawEnd: u64 | null;
 
   if (newEnd === null) {
     rawEnd = null;

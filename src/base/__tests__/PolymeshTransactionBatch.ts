@@ -1,7 +1,6 @@
 import { Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { noop } from 'lodash';
-import sinon from 'sinon';
 
 import { Context, PolymeshTransactionBatch } from '~/internal';
 import { fakePromise } from '~/testUtils';
@@ -31,6 +30,7 @@ describe('Polymesh Transaction Batch class', () => {
   const txSpec = {
     signingAddress: 'signingAddress',
     signer: 'signer' as PolkadotSigner,
+    mortality: { immortal: false } as const,
   };
 
   afterEach(() => {
@@ -40,7 +40,7 @@ describe('Polymesh Transaction Batch class', () => {
 
   describe('method: toTransactionSpec', () => {
     it('should return the tx spec of a transaction', () => {
-      const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
+      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
       const args = tuple('FOO');
       const resolver = (): number => 1;
       const transformer = (): number => 2;
@@ -77,7 +77,7 @@ describe('Polymesh Transaction Batch class', () => {
 
   describe('get: transactions', () => {
     it('should return transactions and their arguments', () => {
-      const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
+      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
       const args = tuple('A_TICKER');
 
       const transactions = [
@@ -109,7 +109,7 @@ describe('Polymesh Transaction Batch class', () => {
 
   describe('method: run', () => {
     beforeAll(() => {
-      dsMockUtils.createRpcStub('chain', 'getBlock', {
+      dsMockUtils.createRpcMock('chain', 'getBlock', {
         returnValue: dsMockUtils.createMockSignedBlock({
           block: {
             header: {
@@ -124,8 +124,8 @@ describe('Polymesh Transaction Batch class', () => {
       });
     });
     it('should execute the underlying transaction with the provided arguments, setting the tx and block hash when finished', async () => {
-      const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
-      const batchStub = dsMockUtils.createTxStub('utility', 'batchAtomic', { autoResolve: false });
+      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
+      const batchMock = dsMockUtils.createTxMock('utility', 'batchAtomic', { autoResolve: false });
       const args = tuple('A_TICKER');
 
       const tx = new PolymeshTransactionBatch(
@@ -146,15 +146,15 @@ describe('Polymesh Transaction Batch class', () => {
 
       await fakePromise(2);
 
-      dsMockUtils.updateTxStatus(batchStub, dsMockUtils.MockTxStatus.InBlock);
+      dsMockUtils.updateTxStatus(batchMock, dsMockUtils.MockTxStatus.InBlock);
 
       await fakePromise();
 
-      dsMockUtils.updateTxStatus(batchStub, dsMockUtils.MockTxStatus.Succeeded);
+      dsMockUtils.updateTxStatus(batchMock, dsMockUtils.MockTxStatus.Succeeded);
 
       await fakePromise();
 
-      sinon.assert.calledWith(transaction, ...args);
+      expect(transaction).toHaveBeenCalledWith(...args);
       expect(tx.blockHash).toBeDefined();
       expect(tx.blockNumber).toBeDefined();
       expect(tx.txHash).toBeDefined();
@@ -162,8 +162,8 @@ describe('Polymesh Transaction Batch class', () => {
     });
 
     it('should throw an error when one of the transactions in the batch fails', async () => {
-      const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
-      const batchStub = dsMockUtils.createTxStub('utility', 'batchAtomic', { autoResolve: false });
+      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
+      const batchMock = dsMockUtils.createTxMock('utility', 'batchAtomic', { autoResolve: false });
       const args = tuple('ANOTHER_TICKER');
 
       const tx = new PolymeshTransactionBatch(
@@ -183,7 +183,7 @@ describe('Polymesh Transaction Batch class', () => {
 
       await fakePromise(2);
 
-      dsMockUtils.updateTxStatus(batchStub, dsMockUtils.MockTxStatus.BatchFailed);
+      dsMockUtils.updateTxStatus(batchMock, dsMockUtils.MockTxStatus.BatchFailed);
 
       await expect(runPromise).rejects.toThrow('Unknown error');
       expect(tx.status).toBe(TransactionStatus.Failed);
@@ -192,7 +192,7 @@ describe('Polymesh Transaction Batch class', () => {
 
   describe('method: supportsSubsidy', () => {
     it('should return false', () => {
-      const transaction = dsMockUtils.createTxStub('asset', 'registerTicker');
+      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
       const args = tuple('A_TICKER');
 
       const transactions = [
@@ -217,8 +217,8 @@ describe('Polymesh Transaction Batch class', () => {
 
   describe('method: splitTransactions', () => {
     it('should return an array of the individual transactions in the batch', async () => {
-      const tx1 = dsMockUtils.createTxStub('asset', 'registerTicker');
-      const tx2 = dsMockUtils.createTxStub('asset', 'createAsset');
+      const tx1 = dsMockUtils.createTxMock('asset', 'registerTicker');
+      const tx2 = dsMockUtils.createTxMock('asset', 'createAsset');
       const args = tuple('A_TICKER');
 
       const transactions = [
@@ -272,8 +272,8 @@ describe('Polymesh Transaction Batch class', () => {
     });
 
     it('should ensure transactions are run in the same order as they come in the batch', () => {
-      const tx1 = dsMockUtils.createTxStub('asset', 'registerTicker');
-      const tx2 = dsMockUtils.createTxStub('asset', 'createAsset');
+      const tx1 = dsMockUtils.createTxMock('asset', 'registerTicker');
+      const tx2 = dsMockUtils.createTxMock('asset', 'createAsset');
       const args = tuple('A_TICKER');
 
       const transactions = [

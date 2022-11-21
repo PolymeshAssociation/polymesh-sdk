@@ -7,7 +7,7 @@ import {
   scopeClaimProofToConfidentialIdentityClaimProof,
   scopeToMeshScope,
   stringToIdentityId,
-  stringToInvestorZKProofData,
+  stringToU8aFixed,
 } from '~/utils/conversion';
 
 /**
@@ -46,7 +46,7 @@ export async function prepareAddInvestorUniquenessClaim(
     );
     return {
       transaction: tx.identity.addInvestorUniquenessClaim,
-      args: [meshIdentityId, meshClaim, stringToInvestorZKProofData(proof, context), meshExpiry],
+      args: [meshIdentityId, meshClaim, stringToU8aFixed(proof, context), meshExpiry],
       resolver: undefined,
     };
   } else {

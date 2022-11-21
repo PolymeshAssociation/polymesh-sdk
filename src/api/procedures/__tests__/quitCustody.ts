@@ -1,6 +1,6 @@
+import { PolymeshPrimitivesIdentityIdPortfolioId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { PortfolioId as MeshPortfolioId } from 'polymesh-types/types';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   getAuthorization,
@@ -28,23 +28,23 @@ describe('quitCustody procedure', () => {
   const did = 'someDid';
 
   let mockContext: Mocked<Context>;
-  let portfolioIdToMeshPortfolioIdStub: sinon.SinonStub<[PortfolioId, Context], MeshPortfolioId>;
-  let portfolioLikeToPortfolioIdStub: sinon.SinonStub;
-  let assertPortfolioExistsStub: sinon.SinonStub;
+  let portfolioIdToMeshPortfolioIdSpy: jest.SpyInstance<
+    PolymeshPrimitivesIdentityIdPortfolioId,
+    [PortfolioId, Context]
+  >;
+  let portfolioLikeToPortfolioIdSpy: jest.SpyInstance;
+  let assertPortfolioExistsSpy: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    portfolioIdToMeshPortfolioIdStub = sinon.stub(
+    portfolioIdToMeshPortfolioIdSpy = jest.spyOn(
       utilsConversionModule,
       'portfolioIdToMeshPortfolioId'
     );
-    portfolioLikeToPortfolioIdStub = sinon.stub(
-      utilsConversionModule,
-      'portfolioLikeToPortfolioId'
-    );
-    assertPortfolioExistsStub = sinon.stub(procedureUtilsModule, 'assertPortfolioExists');
+    portfolioLikeToPortfolioIdSpy = jest.spyOn(utilsConversionModule, 'portfolioLikeToPortfolioId');
+    assertPortfolioExistsSpy = jest.spyOn(procedureUtilsModule, 'assertPortfolioExists');
   });
 
   beforeEach(() => {
@@ -54,7 +54,7 @@ describe('quitCustody procedure', () => {
         isOwnedBy: true,
       },
     });
-    assertPortfolioExistsStub.returns(true);
+    assertPortfolioExistsSpy.mockReturnValue(true);
   });
 
   afterEach(() => {
@@ -104,13 +104,15 @@ describe('quitCustody procedure', () => {
 
     const portfolioId: { did: string; number?: BigNumber } = { did, number: id };
 
-    portfolioIdToMeshPortfolioIdStub.withArgs(portfolioId, mockContext).returns(rawMeshPortfolioId);
+    when(portfolioIdToMeshPortfolioIdSpy)
+      .calledWith(portfolioId, mockContext)
+      .mockReturnValue(rawMeshPortfolioId);
 
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       portfolioId,
     });
 
-    const transaction = dsMockUtils.createTxStub('portfolio', 'quitPortfolioCustody');
+    const transaction = dsMockUtils.createTxMock('portfolio', 'quitPortfolioCustody');
 
     const result = await prepareQuitCustody.call(proc, {
       portfolio,
@@ -177,7 +179,7 @@ describe('quitCustody procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
-      portfolioLikeToPortfolioIdStub.withArgs(portfolio).returns(portfolioId);
+      when(portfolioLikeToPortfolioIdSpy).calledWith(portfolio).mockReturnValue(portfolioId);
 
       const result = await boundFunc({ portfolio });
 

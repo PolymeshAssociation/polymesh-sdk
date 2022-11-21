@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { AuthorizationRequest, Context, Entity, Identity, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -66,7 +66,7 @@ describe('AuthorizationRequest class', () => {
 
   describe('method: accept', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the consumeAuthorizationRequests procedure with the correct arguments and context, and return the resulting transaction', async () => {
@@ -88,10 +88,9 @@ describe('AuthorizationRequest class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await authorizationRequest.accept();
 
@@ -125,10 +124,9 @@ describe('AuthorizationRequest class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await authorizationRequest.accept();
 
@@ -162,10 +160,9 @@ describe('AuthorizationRequest class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await authorizationRequest.accept();
 
@@ -194,10 +191,9 @@ describe('AuthorizationRequest class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await authorizationRequest.accept();
 
@@ -207,7 +203,7 @@ describe('AuthorizationRequest class', () => {
 
   describe('method: remove', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the consumeAuthorizationRequest procedure with the correct arguments and context, and return the resulting transaction', async () => {
@@ -229,10 +225,9 @@ describe('AuthorizationRequest class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await authorizationRequest.remove();
 
@@ -266,10 +261,9 @@ describe('AuthorizationRequest class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await authorizationRequest.remove();
 
@@ -298,10 +292,9 @@ describe('AuthorizationRequest class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await authorizationRequest.remove();
 
@@ -336,10 +329,9 @@ describe('AuthorizationRequest class', () => {
 
     const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-    procedureMockUtils
-      .getPrepareStub()
-      .withArgs({ args, transformer: undefined }, context)
-      .resolves(expectedTransaction);
+    when(procedureMockUtils.getPrepareMock())
+      .calledWith({ args, transformer: undefined }, context, {})
+      .mockResolvedValue(expectedTransaction);
 
     const tx = await authorizationRequest.remove();
 
@@ -378,12 +370,12 @@ describe('AuthorizationRequest class', () => {
         context
       );
 
-      dsMockUtils.createQueryStub('identity', 'authorizations', {
+      dsMockUtils.createQueryMock('identity', 'authorizations', {
         returnValue: dsMockUtils.createMockOption(),
       });
       await expect(authorizationRequest.exists()).resolves.toBe(false);
 
-      dsMockUtils.createQueryStub('identity', 'authorizations', {
+      dsMockUtils.createQueryMock('identity', 'authorizations', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockAuthorization({
             authId: new BigNumber(1),

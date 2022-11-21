@@ -2,7 +2,7 @@ import {
   PolymeshPrimitivesConditionTrustedIssuer,
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Asset, Context, Namespace, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -48,7 +48,7 @@ describe('TrustedClaimIssuers class', () => {
 
   describe('method: set', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
@@ -65,16 +65,16 @@ describe('TrustedClaimIssuers class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           {
             args: { ticker: asset.ticker, ...args, operation: TrustedClaimIssuerOperation.Set },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await trustedClaimIssuers.set({
         ...args,
@@ -86,7 +86,7 @@ describe('TrustedClaimIssuers class', () => {
 
   describe('method: add', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
@@ -103,16 +103,16 @@ describe('TrustedClaimIssuers class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           {
             args: { ticker: asset.ticker, ...args, operation: TrustedClaimIssuerOperation.Add },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await trustedClaimIssuers.add({
         ...args,
@@ -124,7 +124,7 @@ describe('TrustedClaimIssuers class', () => {
 
   describe('method: remove', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
@@ -138,16 +138,16 @@ describe('TrustedClaimIssuers class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           {
             args: { ticker: asset.ticker, ...args, operation: TrustedClaimIssuerOperation.Remove },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await trustedClaimIssuers.remove({
         ...args,
@@ -160,20 +160,20 @@ describe('TrustedClaimIssuers class', () => {
   describe('method: get', () => {
     let ticker: string;
     let rawTicker: PolymeshPrimitivesTicker;
-    let stringToTickerStub: sinon.SinonStub;
+    let stringToTickerSpy: jest.SpyInstance;
     let context: Context;
     let asset: Asset;
     let expectedDids: string[];
     let claimIssuers: PolymeshPrimitivesConditionTrustedIssuer[];
 
-    let trustedClaimIssuerStub: sinon.SinonStub;
+    let trustedClaimIssuerMock: jest.Mock;
 
     let trustedClaimIssuers: TrustedClaimIssuers;
 
     beforeAll(() => {
       ticker = 'test';
       rawTicker = dsMockUtils.createMockTicker(ticker);
-      stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
+      stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
       context = dsMockUtils.getContextInstance();
       asset = entityMockUtils.getAssetInstance({ ticker });
 
@@ -190,8 +190,8 @@ describe('TrustedClaimIssuers class', () => {
         );
       });
 
-      stringToTickerStub.withArgs(ticker, context).returns(rawTicker);
-      trustedClaimIssuerStub = dsMockUtils.createQueryStub(
+      when(stringToTickerSpy).calledWith(ticker, context).mockReturnValue(rawTicker);
+      trustedClaimIssuerMock = dsMockUtils.createQueryMock(
         'complianceManager',
         'trustedClaimIssuer'
       );
@@ -200,11 +200,11 @@ describe('TrustedClaimIssuers class', () => {
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return the current default trusted claim issuers', async () => {
-      trustedClaimIssuerStub.withArgs(rawTicker).resolves(claimIssuers);
+      when(trustedClaimIssuerMock).calledWith(rawTicker).mockResolvedValue(claimIssuers);
 
       const result = await trustedClaimIssuers.get();
 
@@ -216,19 +216,25 @@ describe('TrustedClaimIssuers class', () => {
     it('should allow subscription', async () => {
       const unsubCallback = 'unsubCallback';
 
-      trustedClaimIssuerStub.withArgs(rawTicker).callsFake((_, cbFunc) => {
-        cbFunc(claimIssuers);
-        return unsubCallback;
-      });
+      when(trustedClaimIssuerMock)
+        .calledWith(rawTicker, expect.any(Function))
+        .mockImplementation((_, cbFunc) => {
+          cbFunc(claimIssuers);
+          return unsubCallback;
+        });
 
-      const callback = sinon.stub();
+      const callback = jest.fn();
 
       const result = await trustedClaimIssuers.get(callback);
 
       expect(result).toBe(unsubCallback);
-      sinon.assert.calledWithExactly(
-        callback,
-        sinon.match(expectedDids.map(did => ({ identity: sinon.match({ did }), trustedFor: null })))
+      expect(callback).toHaveBeenCalledWith(
+        expect.objectContaining(
+          expectedDids.map(did => ({
+            identity: expect.objectContaining({ did }),
+            trustedFor: null,
+          }))
+        )
       );
     });
   });

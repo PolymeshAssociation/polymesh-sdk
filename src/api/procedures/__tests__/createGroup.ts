@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   getAuthorization,
@@ -46,19 +46,19 @@ describe('createGroup procedure', () => {
 
   let mockContext: Mocked<Context>;
   let externalAgentsCreateGroupTransaction: PolymeshTx<unknown[]>;
-  let permissionsLikeToPermissionsStub: sinon.SinonStub;
+  let permissionsLikeToPermissionsSpy: jest.SpyInstance;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
 
-    sinon.stub(utilsConversionModule, 'stringToTicker').returns(rawTicker);
-    sinon
-      .stub(utilsConversionModule, 'transactionPermissionsToExtrinsicPermissions')
-      .returns(rawExtrinsicPermissions);
+    jest.spyOn(utilsConversionModule, 'stringToTicker').mockReturnValue(rawTicker);
+    jest
+      .spyOn(utilsConversionModule, 'transactionPermissionsToExtrinsicPermissions')
+      .mockReturnValue(rawExtrinsicPermissions);
 
-    permissionsLikeToPermissionsStub = sinon.stub(
+    permissionsLikeToPermissionsSpy = jest.spyOn(
       utilsConversionModule,
       'permissionsLikeToPermissions'
     );
@@ -66,7 +66,7 @@ describe('createGroup procedure', () => {
   });
 
   beforeEach(() => {
-    externalAgentsCreateGroupTransaction = dsMockUtils.createTxStub(
+    externalAgentsCreateGroupTransaction = dsMockUtils.createTxMock(
       'externalAgents',
       'createGroup'
     );
@@ -86,17 +86,19 @@ describe('createGroup procedure', () => {
 
   it('should throw an error if there already exists a group with exactly the same permissions', async () => {
     const errorMsg = 'ERROR';
-    const assertGroupDoesNotExistStub = sinon.stub(procedureUtilsModule, 'assertGroupDoesNotExist');
-    assertGroupDoesNotExistStub.rejects(new Error(errorMsg));
+    const assertGroupDoesNotExistSpy = jest.spyOn(procedureUtilsModule, 'assertGroupDoesNotExist');
+    assertGroupDoesNotExistSpy.mockImplementation(() => {
+      throw new Error(errorMsg);
+    });
 
     const args = {
       ticker,
       permissions: { transactions },
     };
 
-    permissionsLikeToPermissionsStub
-      .withArgs({ transactions }, mockContext)
-      .returns({ transactions });
+    when(permissionsLikeToPermissionsSpy)
+      .calledWith({ transactions }, mockContext)
+      .mockReturnValue({ transactions });
 
     const proc = procedureMockUtils.getInstance<Params, CustomPermissionGroup, Storage>(
       mockContext,
@@ -114,7 +116,7 @@ describe('createGroup procedure', () => {
 
     await expect(prepareCreateGroup.call(proc, args)).rejects.toThrow(errorMsg);
 
-    assertGroupDoesNotExistStub.restore();
+    assertGroupDoesNotExistSpy.mockRestore();
   });
 
   it('should return a create group transaction spec', async () => {
@@ -141,9 +143,9 @@ describe('createGroup procedure', () => {
     );
 
     const fakePermissions = { transactions };
-    permissionsLikeToPermissionsStub
-      .withArgs(fakePermissions, mockContext)
-      .returns({ transactions });
+    when(permissionsLikeToPermissionsSpy)
+      .calledWith(fakePermissions, mockContext)
+      .mockReturnValue({ transactions });
 
     let result = await prepareCreateGroup.call(proc, {
       ticker,
@@ -156,8 +158,8 @@ describe('createGroup procedure', () => {
       resolver: expect.any(Function),
     });
 
-    permissionsLikeToPermissionsStub
-      .withArgs(
+    when(permissionsLikeToPermissionsSpy)
+      .calledWith(
         {
           transactions: {
             type: PermissionType.Include,
@@ -166,7 +168,7 @@ describe('createGroup procedure', () => {
         },
         mockContext
       )
-      .returns({ transactions: null });
+      .mockReturnValue({ transactions: null });
 
     result = await prepareCreateGroup.call(proc, {
       ticker,

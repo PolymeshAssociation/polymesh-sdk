@@ -43,7 +43,7 @@ export const CLASSIC_CLAIM_SIGNATURE_PREFIX = 'classic_claim';
 export const CLASSIC_TICKER_OWNER_DID =
   '0x73797374656d3a706f6c796d6174685f636c61737369635f6d69670000000000';
 
-const didTypes = ['IdentityId'];
+const didTypes = ['PolymeshPrimitivesIdentityId'];
 
 const addressTypes = [
   'AccountId',

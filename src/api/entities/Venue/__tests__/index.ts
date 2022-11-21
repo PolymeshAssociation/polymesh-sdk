@@ -1,6 +1,6 @@
 import { u64 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { createPortfolioTransformer } from '~/api/entities/Venue';
 import {
@@ -13,7 +13,7 @@ import {
 } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { InstructionStatus, InstructionType, VenueType } from '~/types';
+import { InstructionStatus, VenueType } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -77,19 +77,20 @@ describe('Venue class', () => {
 
   describe('method: exists', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return whether if the venue exists or not', async () => {
       const owner = 'someDid';
 
       entityMockUtils.configureMocks({ identityOptions: { did: owner } });
-      sinon.stub(utilsConversionModule, 'bigNumberToU64').withArgs(id, context).returns(rawId);
+      when(jest.spyOn(utilsConversionModule, 'bigNumberToU64'))
+        .calledWith(id, context)
+        .mockReturnValue(rawId);
 
-      dsMockUtils
-        .createQueryStub('settlement', 'venueInfo')
-        .withArgs(rawId)
-        .resolves(dsMockUtils.createMockOption());
+      when(dsMockUtils.createQueryMock('settlement', 'venueInfo'))
+        .calledWith(rawId)
+        .mockResolvedValue(dsMockUtils.createMockOption());
 
       const result = await venue.exists();
 
@@ -99,7 +100,7 @@ describe('Venue class', () => {
 
   describe('method: details', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return the Venue details', async () => {
@@ -108,13 +109,14 @@ describe('Venue class', () => {
       const owner = 'someDid';
 
       entityMockUtils.configureMocks({ identityOptions: { did: owner } });
-      sinon.stub(utilsConversionModule, 'bigNumberToU64').withArgs(id, context).returns(rawId);
-      sinon.stub(utilsConversionModule, 'bytesToString').returns(description);
+      when(jest.spyOn(utilsConversionModule, 'bigNumberToU64'))
+        .calledWith(id, context)
+        .mockReturnValue(rawId);
+      when(jest.spyOn(utilsConversionModule, 'bytesToString')).mockReturnValue(description);
 
-      dsMockUtils
-        .createQueryStub('settlement', 'venueInfo')
-        .withArgs(rawId)
-        .resolves(
+      when(dsMockUtils.createQueryMock('settlement', 'venueInfo'))
+        .calledWith(rawId)
+        .mockResolvedValue(
           dsMockUtils.createMockOption(
             dsMockUtils.createMockVenue({
               creator: dsMockUtils.createMockIdentityId(owner),
@@ -122,10 +124,9 @@ describe('Venue class', () => {
             })
           )
         );
-      dsMockUtils
-        .createQueryStub('settlement', 'details')
-        .withArgs(rawId)
-        .resolves(dsMockUtils.createMockBytes(description));
+      when(dsMockUtils.createQueryMock('settlement', 'details'))
+        .calledWith(rawId)
+        .mockResolvedValue(dsMockUtils.createMockBytes(description));
 
       const result = await venue.details();
 
@@ -139,38 +140,41 @@ describe('Venue class', () => {
 
   describe('method: getInstructions', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it("should return the Venue's pending and failed instructions", async () => {
       const id1 = new BigNumber(1);
       const id2 = new BigNumber(2);
 
-      const detailsStub = sinon.stub();
+      const detailsMock = jest.fn();
 
-      detailsStub.onFirstCall().resolves({
-        status: InstructionStatus.Pending,
-      });
-      detailsStub.onSecondCall().resolves({
-        status: InstructionStatus.Failed,
-      });
-      detailsStub.onThirdCall().resolves({
-        status: InstructionStatus.Executed,
-      });
+      detailsMock
+        .mockResolvedValueOnce({
+          status: InstructionStatus.Pending,
+        })
+        .mockResolvedValueOnce({
+          status: InstructionStatus.Failed,
+        })
+        .mockResolvedValue({
+          status: InstructionStatus.Executed,
+        });
 
       entityMockUtils.configureMocks({
         instructionOptions: {
-          details: detailsStub,
+          details: detailsMock,
         },
       });
 
-      sinon.stub(utilsConversionModule, 'bigNumberToU64').withArgs(id, context).returns(rawId);
+      when(jest.spyOn(utilsConversionModule, 'bigNumberToU64'))
+        .calledWith(id, context)
+        .mockReturnValue(rawId);
 
       dsMockUtils
-        .createQueryStub('settlement', 'venueInfo')
-        .resolves(dsMockUtils.createMockOption(dsMockUtils.createMockVenue()));
+        .createQueryMock('settlement', 'venueInfo')
+        .mockResolvedValue(dsMockUtils.createMockOption(dsMockUtils.createMockVenue()));
 
-      dsMockUtils.createQueryStub('settlement', 'venueInstructions', {
+      dsMockUtils.createQueryMock('settlement', 'venueInstructions', {
         entries: [
           [tuple(rawId, dsMockUtils.createMockU64(id1)), []],
           [tuple(rawId, dsMockUtils.createMockU64(id2)), []],
@@ -187,54 +191,9 @@ describe('Venue class', () => {
     });
   });
 
-  describe('method: getPendingInstructions', () => {
-    afterAll(() => {
-      sinon.restore();
-    });
-
-    it("should return the Venue's pending instructions", async () => {
-      const instructionId = new BigNumber(1);
-
-      entityMockUtils.configureMocks({
-        instructionOptions: { id: instructionId, isPending: true },
-      });
-      sinon.stub(utilsConversionModule, 'bigNumberToU64').withArgs(id, context).returns(rawId);
-
-      dsMockUtils
-        .createQueryStub('settlement', 'venueInfo')
-        .resolves(dsMockUtils.createMockOption(dsMockUtils.createMockVenue()));
-
-      dsMockUtils.createQueryStub('settlement', 'venueInstructions', {
-        entries: [[tuple(rawId, dsMockUtils.createMockU64(instructionId)), []]],
-      });
-
-      let result = await venue.getPendingInstructions();
-
-      expect(result[0].id).toEqual(instructionId);
-
-      entityMockUtils.configureMocks({
-        instructionOptions: {
-          id: instructionId,
-          exists: true,
-          details: {
-            status: InstructionStatus.Failed,
-            createdAt: new Date('10/14/1987'),
-            tradeDate: null,
-            valueDate: null,
-            venue,
-            type: InstructionType.SettleOnAffirmation,
-          },
-        },
-      });
-
-      result = await venue.getPendingInstructions();
-      expect(result.length).toBe(0);
-    });
-  });
-
   describe('method: addInstruction', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure and return the resulting transaction', async () => {
@@ -258,16 +217,16 @@ describe('Venue class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Instruction>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           {
             args: { instructions: [{ legs, tradeDate, endBlock }], venueId: venue.id },
             transformer: addInstructionTransformer,
           },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await venue.addInstruction({ legs, tradeDate, endBlock });
 
@@ -277,7 +236,7 @@ describe('Venue class', () => {
 
   describe('method: addInstructions', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure and return the resulting transaction', async () => {
@@ -309,16 +268,16 @@ describe('Venue class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Instruction>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           {
             args: { venueId: venue.id, instructions },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await venue.addInstructions({ instructions });
 
@@ -328,7 +287,7 @@ describe('Venue class', () => {
 
   describe('method: modify', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure and return the resulting transaction', async () => {
@@ -336,16 +295,16 @@ describe('Venue class', () => {
       const description = 'someDetails';
       const type = VenueType.Other;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           {
             args: { venue, description, type },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await venue.modify({ description, type });
 

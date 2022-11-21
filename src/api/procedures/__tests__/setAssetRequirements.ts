@@ -2,10 +2,10 @@ import { Vec } from '@polkadot/types';
 import {
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
   PolymeshPrimitivesCondition,
+  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { ComplianceRequirement, Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   getAuthorization,
@@ -35,15 +35,15 @@ jest.mock(
 
 describe('setAssetRequirements procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let requirementToComplianceRequirementStub: sinon.SinonStub<
-    [InputRequirement, Context],
-    PolymeshPrimitivesComplianceManagerComplianceRequirement
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let requirementToComplianceRequirementSpy: jest.SpyInstance<
+    PolymeshPrimitivesComplianceManagerComplianceRequirement,
+    [InputRequirement, Context]
   >;
   let ticker: string;
   let requirements: Condition[][];
   let currentRequirements: Requirement[];
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
   let senderConditions: PolymeshPrimitivesCondition[][];
   let receiverConditions: PolymeshPrimitivesCondition[][];
   let rawComplianceRequirements: PolymeshPrimitivesComplianceManagerComplianceRequirement[];
@@ -53,8 +53,8 @@ describe('setAssetRequirements procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    requirementToComplianceRequirementStub = sinon.stub(
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    requirementToComplianceRequirementSpy = jest.spyOn(
       utilsConversionModule,
       'requirementToComplianceRequirement'
     );
@@ -118,8 +118,10 @@ describe('setAssetRequirements procedure', () => {
     };
   });
 
-  let resetAssetComplianceTransaction: PolymeshTx<[Ticker]>;
-  let replaceAssetComplianceTransaction: PolymeshTx<Vec<ComplianceRequirement>>;
+  let resetAssetComplianceTransaction: PolymeshTx<[PolymeshPrimitivesTicker]>;
+  let replaceAssetComplianceTransaction: PolymeshTx<
+    Vec<PolymeshPrimitivesComplianceManagerComplianceRequirement>
+  >;
 
   beforeEach(() => {
     dsMockUtils.setConstMock('complianceManager', 'maxConditionComplexity', {
@@ -134,11 +136,11 @@ describe('setAssetRequirements procedure', () => {
       },
     });
 
-    resetAssetComplianceTransaction = dsMockUtils.createTxStub(
+    resetAssetComplianceTransaction = dsMockUtils.createTxMock(
       'complianceManager',
       'resetAssetCompliance'
     );
-    replaceAssetComplianceTransaction = dsMockUtils.createTxStub(
+    replaceAssetComplianceTransaction = dsMockUtils.createTxMock(
       'complianceManager',
       'replaceAssetCompliance'
     );
@@ -146,7 +148,7 @@ describe('setAssetRequirements procedure', () => {
     mockContext = dsMockUtils.getContextInstance();
 
     rawComplianceRequirements = [];
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
     requirements.forEach((conditions, index) => {
       const complianceRequirement = dsMockUtils.createMockComplianceRequirement({
         senderConditions: senderConditions[index],
@@ -154,9 +156,9 @@ describe('setAssetRequirements procedure', () => {
         id: dsMockUtils.createMockU32(new BigNumber(index)),
       });
       rawComplianceRequirements.push(complianceRequirement);
-      requirementToComplianceRequirementStub
-        .withArgs({ conditions, id: new BigNumber(index) }, mockContext)
-        .returns(complianceRequirement);
+      when(requirementToComplianceRequirementSpy)
+        .calledWith({ conditions, id: new BigNumber(index) }, mockContext)
+        .mockReturnValue(complianceRequirement);
     });
   });
 
