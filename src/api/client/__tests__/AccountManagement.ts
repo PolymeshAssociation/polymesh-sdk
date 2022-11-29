@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { AccountManagement } from '~/api/client/AccountManagement';
-import { Account, MultiSig, PolymeshTransaction } from '~/internal';
+import { Account, MultiSig, PolymeshTransaction, Subsidy } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
 import { AccountBalance, PermissionType, SubCallback } from '~/types';
@@ -15,6 +15,11 @@ jest.mock(
 jest.mock(
   '~/api/entities/Account',
   require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
+);
+
+jest.mock(
+  '~/api/entities/Subsidy',
+  require('~/testUtils/mocks/entities').mockSubsidyModule('~/api/entities/Subsidy')
 );
 
 describe('AccountManagement class', () => {
@@ -330,6 +335,16 @@ describe('AccountManagement class', () => {
       const queue = await accountManagement.createMultiSigAccount(args);
 
       expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: getSubsidy', () => {
+    it('should return an Subsidy object with the passed beneficiary and subsidizer', async () => {
+      const params = { beneficiary: 'beneficiary', subsidizer: 'subsidizer' };
+
+      const result = await accountManagement.getSubsidy(params);
+
+      expect(result).toBeInstanceOf(Subsidy);
     });
   });
 });

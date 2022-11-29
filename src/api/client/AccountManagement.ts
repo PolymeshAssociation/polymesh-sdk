@@ -10,6 +10,7 @@ import {
   modifySignerPermissionsStorage,
   removeSecondaryAccounts,
   subsidizeAccount,
+  Subsidy,
   toggleFreezeSecondaryAccounts,
 } from '~/internal';
 import {
@@ -257,5 +258,16 @@ export class AccountManagement {
    */
   public async getSigningAccounts(): Promise<Account[]> {
     return this.context.getSigningAccounts();
+  }
+
+  /**
+   * Return an Subsidy instance for a pair of beneficiary and subsidizer
+   */
+  public getSubsidy(args: { beneficiary: string; subsidizer: string }): Subsidy {
+    const { context } = this;
+
+    const { beneficiary, subsidizer } = args;
+
+    return new Subsidy({ beneficiary, subsidizer }, context);
   }
 }
