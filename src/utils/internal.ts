@@ -528,7 +528,11 @@ export async function getApiAtBlock(
 
 type QueryMultiParam<T extends AugmentedQuery<'promise', AnyFunction>[]> = {
   [index in keyof T]: T[index] extends AugmentedQuery<'promise', infer Fun>
-    ? [T[index], ...Parameters<Fun>]
+    ? Fun extends (firstArg: infer First, ...restArg: infer Rest) => ReturnType<Fun>
+      ? Rest extends never[]
+        ? [T[index], First]
+        : [T[index], Parameters<Fun>]
+      : never
     : never;
 };
 
