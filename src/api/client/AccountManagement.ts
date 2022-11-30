@@ -261,13 +261,19 @@ export class AccountManagement {
   }
 
   /**
-   * Return an Subsidy instance for a pair of beneficiary and subsidizer
+   * Return an Subsidy instance for a pair of beneficiary and subsidizer Account
    */
-  public getSubsidy(args: { beneficiary: string; subsidizer: string }): Subsidy {
+  public getSubsidy(args: {
+    beneficiary: string | Account;
+    subsidizer: string | Account;
+  }): Subsidy {
     const { context } = this;
 
     const { beneficiary, subsidizer } = args;
 
-    return new Subsidy({ beneficiary, subsidizer }, context);
+    const { address: beneficiaryAddress } = asAccount(beneficiary, context);
+    const { address: subsidizerAddress } = asAccount(subsidizer, context);
+
+    return new Subsidy({ beneficiary: beneficiaryAddress, subsidizer: subsidizerAddress }, context);
   }
 }
