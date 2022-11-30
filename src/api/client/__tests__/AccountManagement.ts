@@ -339,10 +339,10 @@ describe('AccountManagement class', () => {
   });
 
   describe('method: getSubsidy', () => {
-    it('should return an Subsidy object with the passed beneficiary and subsidizer', async () => {
+    it('should return an Subsidy object with the passed beneficiary and subsidizer', () => {
       const params = { beneficiary: 'beneficiary', subsidizer: 'subsidizer' };
 
-      const result = await accountManagement.getSubsidy(params);
+      const result = accountManagement.getSubsidy(params);
 
       expect(result).toBeInstanceOf(Subsidy);
     });
