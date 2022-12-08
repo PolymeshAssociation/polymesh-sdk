@@ -623,9 +623,19 @@ describe('Identity class', () => {
       const identity = new Identity({ did }, context);
 
       const fakeResult = 'fakeResult' as unknown as ResultSet<Asset>;
-      jest.spyOn(identity, 'getHeldAssetsV2').mockResolvedValue(fakeResult);
+      const getHeldAssetV2Spy = jest.spyOn(identity, 'getHeldAssetsV2');
+      when(getHeldAssetV2Spy)
+        .calledWith({ order: AssetHoldersOrderBy.AssetIdAsc })
+        .mockResolvedValueOnce(fakeResult);
 
-      const result = await identity.getHeldAssets();
+      let result = await identity.getHeldAssets();
+      expect(result).toEqual(fakeResult);
+
+      when(getHeldAssetV2Spy)
+        .calledWith({ order: AssetHoldersOrderBy.AssetIdDesc })
+        .mockResolvedValueOnce(fakeResult);
+
+      result = await identity.getHeldAssets({ order: Order.Desc });
       expect(result).toEqual(fakeResult);
     });
   });

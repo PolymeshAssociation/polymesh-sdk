@@ -4,9 +4,16 @@ import { when } from 'jest-when';
 import { Account, Context, Entity } from '~/internal';
 import { heartbeat, transactions } from '~/middleware/queries';
 import { extrinsicsByArgs } from '~/middleware/queriesV2';
-import { CallIdEnum, ExtrinsicResult, ModuleIdEnum } from '~/middleware/types';
+import {
+  CallIdEnum,
+  ExtrinsicResult,
+  ModuleIdEnum,
+  Order,
+  TransactionOrderFields,
+} from '~/middleware/types';
 import {
   CallIdEnum as MiddlewareV2CallId,
+  ExtrinsicsOrderBy,
   ModuleIdEnum as MiddlewareV2ModuleId,
 } from '~/middleware/typesV2';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -403,9 +410,24 @@ describe('Account class', () => {
 
     it('should call v2 query if middlewareV2 is enabled', async () => {
       const fakeResult = 'fakeResult' as unknown as ResultSet<ExtrinsicData>;
-      jest.spyOn(account, 'getTransactionHistoryV2').mockResolvedValue(fakeResult);
+      const getTransactionHistoryV2Spy = jest.spyOn(account, 'getTransactionHistoryV2');
+      getTransactionHistoryV2Spy.mockResolvedValue(fakeResult);
 
-      const result = await account.getTransactionHistory();
+      let result = await account.getTransactionHistory();
+      expect(result).toEqual(fakeResult);
+      expect(getTransactionHistoryV2Spy).toHaveBeenCalledWith({
+        orderBy: ExtrinsicsOrderBy.CreatedAtAsc,
+      });
+
+      result = await account.getTransactionHistory({
+        orderBy: {
+          order: Order.Asc,
+          field: TransactionOrderFields.ModuleId,
+        },
+      });
+      expect(getTransactionHistoryV2Spy).toHaveBeenCalledWith({
+        orderBy: ExtrinsicsOrderBy.ModuleIdAsc,
+      });
       expect(result).toEqual(fakeResult);
     });
   });

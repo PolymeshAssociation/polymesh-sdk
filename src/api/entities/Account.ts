@@ -1,7 +1,6 @@
 import { hexStripPrefix } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
 import {
-  capitalize,
   difference,
   differenceBy,
   differenceWith,
@@ -401,7 +400,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       const { orderBy, ...rest } = filters;
       let order: ExtrinsicsOrderBy = ExtrinsicsOrderBy.CreatedAtAsc;
       if (orderBy) {
-        order = (capitalize(orderBy.field) + orderBy.order) as ExtrinsicsOrderBy;
+        order = `${orderBy.field}_${orderBy.order}`.toUpperCase() as ExtrinsicsOrderBy;
       }
       return this.getTransactionHistoryV2({ ...rest, orderBy: order });
     }
