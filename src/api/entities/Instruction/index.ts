@@ -10,10 +10,11 @@ import {
   rescheduleInstruction,
   Venue,
 } from '~/internal';
+import { EventIdEnum as MiddlewareV2Event } from '~/middleware/enumsV2';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { instructionsQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
-import { EventIdEnum as MiddlewareV2Event, Query as QueryV2 } from '~/middleware/typesV2';
+import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   ErrorCode,
   EventIdentifier,

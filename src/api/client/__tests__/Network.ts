@@ -4,6 +4,11 @@ import { when } from 'jest-when';
 import { Network } from '~/api/client/Network';
 import { Context, PolymeshTransaction } from '~/internal';
 import {
+  CallIdEnum as MiddlewareV2CallId,
+  EventIdEnum as MiddlewareV2EventId,
+  ModuleIdEnum as MiddlewareV2ModuleId,
+} from '~/middleware/enumsV2';
+import {
   eventByIndexedArgs,
   eventsByIndexedArgs,
   heartbeat,
@@ -11,11 +16,6 @@ import {
 } from '~/middleware/queries';
 import { eventsByArgs, extrinsicByHash } from '~/middleware/queriesV2';
 import { CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/types';
-import {
-  CallIdEnum as MiddlewareV2CallId,
-  EventIdEnum as MiddlewareV2EventId,
-  ModuleIdEnum as MiddlewareV2ModuleId,
-} from '~/middleware/typesV2';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { AccountBalance, EventIdentifier, ExtrinsicDataWithFees, TxTags } from '~/types';

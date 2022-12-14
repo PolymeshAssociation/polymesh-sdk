@@ -13,14 +13,14 @@ import {
   setPermissionGroup,
   waivePermissions,
 } from '~/internal';
-import { eventByIndexedArgs, tickerExternalAgentActions } from '~/middleware/queries';
-import { tickerExternalAgentActionsQuery, tickerExternalAgentsQuery } from '~/middleware/queriesV2';
-import { EventIdEnum as EventId, ModuleIdEnum as ModuleId, Query } from '~/middleware/types';
 import {
   EventIdEnum as MiddlewareV2EventId,
   ModuleIdEnum as MiddlewareV2ModuleId,
-  Query as QueryV2,
-} from '~/middleware/typesV2';
+} from '~/middleware/enumsV2';
+import { eventByIndexedArgs, tickerExternalAgentActions } from '~/middleware/queries';
+import { tickerExternalAgentActionsQuery, tickerExternalAgentsQuery } from '~/middleware/queriesV2';
+import { EventIdEnum as EventId, ModuleIdEnum as ModuleId, Query } from '~/middleware/types';
+import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   AssetWithGroup,
   CheckPermissionsResult,
@@ -420,8 +420,8 @@ export class AssetPermissions extends Namespace<Identity> {
     if (context.isMiddlewareV2Enabled()) {
       return this.getOperationHistoryV2({
         asset,
-        moduleId: pallet_name as MiddlewareV2ModuleId,
-        eventId: event_id as MiddlewareV2EventId,
+        moduleId: pallet_name as unknown as MiddlewareV2ModuleId,
+        eventId: event_id as unknown as MiddlewareV2EventId,
         size,
         start,
       });

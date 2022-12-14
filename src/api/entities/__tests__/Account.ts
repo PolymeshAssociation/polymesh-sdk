@@ -2,6 +2,10 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Account, Context, Entity } from '~/internal';
+import {
+  CallIdEnum as MiddlewareV2CallId,
+  ModuleIdEnum as MiddlewareV2ModuleId,
+} from '~/middleware/enumsV2';
 import { heartbeat, transactions } from '~/middleware/queries';
 import { extrinsicsByArgs } from '~/middleware/queriesV2';
 import {
@@ -11,11 +15,7 @@ import {
   Order,
   TransactionOrderFields,
 } from '~/middleware/types';
-import {
-  CallIdEnum as MiddlewareV2CallId,
-  ExtrinsicsOrderBy,
-  ModuleIdEnum as MiddlewareV2ModuleId,
-} from '~/middleware/typesV2';
+import { ExtrinsicsOrderBy } from '~/middleware/typesV2';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId, createMockIdentityId } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';

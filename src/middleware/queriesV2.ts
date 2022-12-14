@@ -1,13 +1,13 @@
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
+import { ClaimTypeEnum, middlewareV2EnumMap } from '~/middleware/enumsV2';
 import {
   Asset,
   AssetHolder,
   AssetHoldersOrderBy,
   ClaimsGroupBy,
   ClaimsOrderBy,
-  ClaimTypeEnum,
   Distribution,
   DistributionPayment,
   Event,
@@ -272,7 +272,8 @@ function createArgsAndFilters(
   Object.keys(filters).forEach(attribute => {
     if (filters[attribute]) {
       const type = typeMap[attribute] || 'String';
-      args.push(`$${attribute}: ${type}!`);
+      const middlewareType = middlewareV2EnumMap[type] || type;
+      args.push(`$${attribute}: ${middlewareType}!`);
       gqlFilters.push(`${attribute}: { equalTo: $${attribute} }`);
     }
   });
