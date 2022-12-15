@@ -7,7 +7,6 @@ const enumAliasFile = path.resolve('src', 'middleware', 'enumsV2.ts');
 
 let rawData = fs.readFileSync(typesV2File).toString('utf8');
 
-// console.log(rawData);
 const enumRegex = new RegExp(/\/\*\* @enum\\n@enumName (.*) \*\/\nexport enum (.*) {/g);
 
 const matches = rawData.matchAll(enumRegex);

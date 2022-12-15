@@ -2,6 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { Account, Context, transferPolyx } from '~/internal';
 import {
+  CallIdEnum as MiddlewareV2CallId,
   EventIdEnum as MiddlewareV2EventId,
   ModuleIdEnum as MiddlewareV2ModuleId,
 } from '~/middleware/enumsV2';
@@ -495,8 +496,8 @@ export class Network {
       } = transaction;
 
       const txTag = extrinsicIdentifierToTxTag({
-        moduleId,
-        callId,
+        moduleId: moduleId as MiddlewareV2ModuleId,
+        callId: callId as MiddlewareV2CallId,
       });
 
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

@@ -4,6 +4,7 @@ import P from 'bluebird';
 import { when } from 'jest-when';
 
 import { Account, Context, PolymeshError } from '~/internal';
+import { ClaimTypeEnum as MiddlewareV2ClaimType } from '~/middleware/enumsV2';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { claimsQuery, heartbeatQuery } from '~/middleware/queriesV2';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
@@ -1424,7 +1425,7 @@ describe('Context class', () => {
           {
             dids: [targetDid],
             trustedClaimIssuers: [targetDid],
-            claimTypes: [ClaimTypeEnum.Accredited],
+            claimTypes: [MiddlewareV2ClaimType.Accredited],
             includeExpired: true,
           },
           new BigNumber(2),

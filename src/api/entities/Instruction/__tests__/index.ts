@@ -942,16 +942,20 @@ describe('Instruction class', () => {
 
       dsMockUtils.createApolloMultipleV2QueriesMock([
         {
-          query: instructionsQuery(queryVariables),
+          query: instructionsQuery(queryVariables, new BigNumber(1), new BigNumber(0)),
           returnData: {
             instructions: { nodes: [fakeQueryResult] },
           },
         },
         {
-          query: instructionsQuery({
-            ...queryVariables,
-            eventId: MiddlewareV2EventId.InstructionFailed,
-          }),
+          query: instructionsQuery(
+            {
+              ...queryVariables,
+              eventId: MiddlewareV2EventId.InstructionFailed,
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
           returnData: {
             instructions: { nodes: [] },
           },
@@ -998,7 +1002,7 @@ describe('Instruction class', () => {
 
       dsMockUtils.createApolloMultipleV2QueriesMock([
         {
-          query: instructionsQuery(queryVariables),
+          query: instructionsQuery(queryVariables, new BigNumber(1), new BigNumber(0)),
           returnData: {
             instructions: {
               nodes: [],
@@ -1006,10 +1010,14 @@ describe('Instruction class', () => {
           },
         },
         {
-          query: instructionsQuery({
-            ...queryVariables,
-            eventId: MiddlewareV2EventId.InstructionFailed,
-          }),
+          query: instructionsQuery(
+            {
+              ...queryVariables,
+              eventId: MiddlewareV2EventId.InstructionFailed,
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
           returnData: {
             instructions: {
               nodes: [fakeQueryResult],
@@ -1048,16 +1056,20 @@ describe('Instruction class', () => {
 
       dsMockUtils.createApolloMultipleV2QueriesMock([
         {
-          query: instructionsQuery(queryVariables),
+          query: instructionsQuery(queryVariables, new BigNumber(1), new BigNumber(0)),
           returnData: {
             instructions: { nodes: [] },
           },
         },
         {
-          query: instructionsQuery({
-            ...queryVariables,
-            eventId: MiddlewareV2EventId.InstructionFailed,
-          }),
+          query: instructionsQuery(
+            {
+              ...queryVariables,
+              eventId: MiddlewareV2EventId.InstructionFailed,
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
           returnData: {
             instructions: { nodes: [] },
           },

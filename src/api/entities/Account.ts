@@ -20,6 +20,10 @@ import {
   MultiSig,
   PolymeshError,
 } from '~/internal';
+import {
+  CallIdEnum as MiddlewareV2CallId,
+  ModuleIdEnum as MiddlewareV2ModuleId,
+} from '~/middleware/enumsV2';
 import { transactions as transactionsQuery } from '~/middleware/queries';
 import { extrinsicsByArgs } from '~/middleware/queriesV2';
 import { Query, TransactionOrderByInput } from '~/middleware/types';
@@ -580,8 +584,8 @@ export class Account extends Entity<UniqueIdentifiers, string> {
         address: rawAddress ? keyToAddress(rawAddress, context) : null,
         nonce: nonce ? new BigNumber(nonce) : null,
         txTag: extrinsicIdentifierToTxTag({
-          moduleId: extrinsicModuleId,
-          callId: extrinsicCallId,
+          moduleId: extrinsicModuleId as MiddlewareV2ModuleId,
+          callId: extrinsicCallId as MiddlewareV2CallId,
         }),
         params: JSON.parse(paramsTxt),
         success: !!txSuccess,

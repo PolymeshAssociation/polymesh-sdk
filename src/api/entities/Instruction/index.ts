@@ -497,10 +497,14 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
         },
       },
     } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'instructions'>>(
-      instructionsQuery({
-        eventId,
-        id: id.toString(),
-      })
+      instructionsQuery(
+        {
+          eventId,
+          id: id.toString(),
+        },
+        new BigNumber(1),
+        new BigNumber(0)
+      )
     );
 
     return optionize(middlewareV2EventDetailsToEventIdentifier)(
