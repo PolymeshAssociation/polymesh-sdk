@@ -482,7 +482,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       data.push({
         blockNumber: new BigNumber(blockId),
         blockHash: hash,
-        status: settlementResult as SettlementResultEnum,
+        status: settlementResult as unknown as SettlementResultEnum,
         accounts: legs[0].addresses.map(
           (accountAddress: string) =>
             new Account({ address: keyToAddress(accountAddress, context) }, context)

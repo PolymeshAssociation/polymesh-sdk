@@ -20,11 +20,11 @@ import BigNumber from 'bignumber.js';
 import { DocumentNode } from 'graphql';
 
 import { Identity, Procedure } from '~/internal';
-import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
 import {
   CallIdEnum as MiddlewareV2CallId,
   ModuleIdEnum as MiddlewareV2ModuleId,
-} from '~/middleware/typesV2';
+} from '~/middleware/enumsV2';
+import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
 import {
   CalendarPeriod,
   ClaimType,

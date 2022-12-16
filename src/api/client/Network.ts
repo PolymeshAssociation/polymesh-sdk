@@ -1,14 +1,15 @@
 import BigNumber from 'bignumber.js';
 
 import { Account, Context, transferPolyx } from '~/internal';
+import {
+  CallIdEnum as MiddlewareV2CallId,
+  EventIdEnum as MiddlewareV2EventId,
+  ModuleIdEnum as MiddlewareV2ModuleId,
+} from '~/middleware/enumsV2';
 import { eventByIndexedArgs, eventsByIndexedArgs, transactionByHash } from '~/middleware/queries';
 import { eventsByArgs, extrinsicByHash } from '~/middleware/queriesV2';
 import { EventIdEnum as EventId, ModuleIdEnum as ModuleId, Query } from '~/middleware/types';
-import {
-  EventIdEnum as MiddlewareV2EventId,
-  ModuleIdEnum as MiddlewareV2ModuleId,
-  Query as QueryV2,
-} from '~/middleware/typesV2';
+import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   EventIdentifier,
   ExtrinsicDataWithFees,
@@ -169,8 +170,8 @@ export class Network {
 
     if (context.isMiddlewareV2Enabled()) {
       return this.getEventByIndexedArgsV2({
-        moduleId: moduleId as MiddlewareV2ModuleId,
-        eventId: eventId as MiddlewareV2EventId,
+        moduleId: moduleId as unknown as MiddlewareV2ModuleId,
+        eventId: eventId as unknown as MiddlewareV2EventId,
         eventArg0,
         eventArg1,
         eventArg2,
@@ -264,8 +265,8 @@ export class Network {
 
     if (context.isMiddlewareV2Enabled()) {
       return this.getEventsByIndexedArgsV2({
-        moduleId: moduleId as MiddlewareV2ModuleId,
-        eventId: eventId as MiddlewareV2EventId,
+        moduleId: moduleId as unknown as MiddlewareV2ModuleId,
+        eventId: eventId as unknown as MiddlewareV2EventId,
         eventArg0,
         eventArg1,
         eventArg2,
@@ -495,8 +496,8 @@ export class Network {
       } = transaction;
 
       const txTag = extrinsicIdentifierToTxTag({
-        moduleId,
-        callId,
+        moduleId: moduleId as MiddlewareV2ModuleId,
+        callId: callId as MiddlewareV2CallId,
       });
 
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

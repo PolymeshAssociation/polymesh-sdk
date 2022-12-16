@@ -4,10 +4,10 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Context, Entity, Instruction, PolymeshTransaction } from '~/internal';
+import { EventIdEnum as MiddlewareV2EventId } from '~/middleware/enumsV2';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { instructionsQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
-import { EventIdEnum as MiddlewareV2EventId } from '~/middleware/typesV2';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -942,16 +942,20 @@ describe('Instruction class', () => {
 
       dsMockUtils.createApolloMultipleV2QueriesMock([
         {
-          query: instructionsQuery(queryVariables),
+          query: instructionsQuery(queryVariables, new BigNumber(1), new BigNumber(0)),
           returnData: {
             instructions: { nodes: [fakeQueryResult] },
           },
         },
         {
-          query: instructionsQuery({
-            ...queryVariables,
-            eventId: MiddlewareV2EventId.InstructionFailed,
-          }),
+          query: instructionsQuery(
+            {
+              ...queryVariables,
+              eventId: MiddlewareV2EventId.InstructionFailed,
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
           returnData: {
             instructions: { nodes: [] },
           },
@@ -998,7 +1002,7 @@ describe('Instruction class', () => {
 
       dsMockUtils.createApolloMultipleV2QueriesMock([
         {
-          query: instructionsQuery(queryVariables),
+          query: instructionsQuery(queryVariables, new BigNumber(1), new BigNumber(0)),
           returnData: {
             instructions: {
               nodes: [],
@@ -1006,10 +1010,14 @@ describe('Instruction class', () => {
           },
         },
         {
-          query: instructionsQuery({
-            ...queryVariables,
-            eventId: MiddlewareV2EventId.InstructionFailed,
-          }),
+          query: instructionsQuery(
+            {
+              ...queryVariables,
+              eventId: MiddlewareV2EventId.InstructionFailed,
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
           returnData: {
             instructions: {
               nodes: [fakeQueryResult],
@@ -1048,16 +1056,20 @@ describe('Instruction class', () => {
 
       dsMockUtils.createApolloMultipleV2QueriesMock([
         {
-          query: instructionsQuery(queryVariables),
+          query: instructionsQuery(queryVariables, new BigNumber(1), new BigNumber(0)),
           returnData: {
             instructions: { nodes: [] },
           },
         },
         {
-          query: instructionsQuery({
-            ...queryVariables,
-            eventId: MiddlewareV2EventId.InstructionFailed,
-          }),
+          query: instructionsQuery(
+            {
+              ...queryVariables,
+              eventId: MiddlewareV2EventId.InstructionFailed,
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
           returnData: {
             instructions: { nodes: [] },
           },

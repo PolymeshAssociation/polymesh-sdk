@@ -77,6 +77,11 @@ import {
   PolymeshError,
 } from '~/internal';
 import {
+  CallIdEnum as MiddlewareV2CallId,
+  ClaimTypeEnum as MiddlewareV2ClaimType,
+  ModuleIdEnum as MiddlewareV2ModuleId,
+} from '~/middleware/enumsV2';
+import {
   CallIdEnum,
   ClaimScopeTypeEnum,
   ClaimTypeEnum,
@@ -85,9 +90,7 @@ import {
 } from '~/middleware/types';
 import {
   Block as MiddlewareV2Block,
-  CallIdEnum as MiddlewareV2CallId,
   Claim as MiddlewareV2Claim,
-  ModuleIdEnum as MiddlewareV2ModuleId,
   Portfolio as MiddlewareV2Portfolio,
 } from '~/middleware/typesV2';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -4208,7 +4211,7 @@ describe('toIdentityWithClaimsArrayV2', () => {
     const issuerDid = 'someIssuerDid';
     const cddId = 'someCddId';
     const date = 1589816265000;
-    const customerDueDiligenceType = ClaimTypeEnum.CustomerDueDiligence;
+    const customerDueDiligenceType = MiddlewareV2ClaimType.CustomerDueDiligence;
     const claim = {
       target: expect.objectContaining({ did: targetDid }),
       issuer: expect.objectContaining({ did: issuerDid }),
