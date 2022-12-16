@@ -1,26 +1,41 @@
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
-import { addInstruction, Context, Entity, Identity, Instruction, modifyVenue } from '~/internal';
+import {
+  addInstruction,
+  Asset,
+  Context,
+  Entity,
+  Identity,
+  Instruction,
+  modifyVenue,
+} from '~/internal';
+import { InstructionStatusEnum } from '~/middleware/enumsV2';
+import { instructionsQuery } from '~/middleware/queriesV2';
+import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   AddInstructionParams,
   AddInstructionsParams,
   GroupedInstructions,
   InstructionStatus,
+  InstructionType,
   ModifyVenueParams,
   NumberedPortfolio,
   ProcedureMethod,
+  ResultSet,
 } from '~/types';
+import { EnsuredV2 } from '~/types/utils';
 import {
   bigNumberToU64,
   bytesToString,
   identityIdToString,
   meshVenueTypeToVenueType,
+  middlewareV2PortfolioToPortfolio,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
+import { calculateNextKey, createProcedureMethod } from '~/utils/internal';
 
-import { VenueDetails } from './types';
+import { HistoricInstruction, VenueDetails } from './types';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
@@ -188,6 +203,101 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
         },
       ]) => new Instruction({ id: u64ToBigNumber(instructionId) }, context)
     );
+  }
+
+  /**
+   * Retrieve all Instructions that have been associated with this Venue instance
+   *
+   * @param opts.size - page size
+   * @param opts.start - page offset
+   *
+   * @note uses the middleware V2
+   * @note supports pagination
+   */
+  public async getHistoricalInstructions(
+    opts: {
+      size?: BigNumber;
+      start?: BigNumber;
+    } = {}
+  ): Promise<ResultSet<HistoricInstruction>> {
+    const { context, id } = this;
+
+    const { size, start } = opts;
+
+    const {
+      data: {
+        instructions: { nodes: instructionsResult, totalCount },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'instructions'>>(
+      instructionsQuery(
+        {
+          venueId: id.toString(),
+        },
+        size,
+        start
+      )
+    );
+
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
+    const data = instructionsResult.map(
+      ({
+        id: instructionId,
+        status,
+        settlementType,
+        endBlock,
+        tradeDate,
+        valueDate,
+        legs: { nodes: legs },
+        memo,
+        createdBlock,
+        venueId,
+      }) => {
+        const { blockId, hash, datetime } = createdBlock!;
+
+        let typeDetails;
+
+        if (settlementType === InstructionType.SettleOnBlock) {
+          typeDetails = {
+            type: InstructionType.SettleOnBlock,
+            endBlock: new BigNumber(endBlock!),
+          };
+        } else {
+          typeDetails = {
+            type: InstructionType.SettleOnAffirmation,
+          };
+        }
+
+        return {
+          id: new BigNumber(instructionId),
+          blockNumber: new BigNumber(blockId),
+          blockHash: hash,
+          status: status as InstructionStatusEnum,
+          tradeDate,
+          valueDate,
+          ...typeDetails,
+          memo: memo || null,
+          venueId: new BigNumber(venueId),
+          createdAt: new Date(datetime),
+          legs: legs.map(({ from, to, assetId, amount }) => ({
+            asset: new Asset({ ticker: assetId }, context),
+            amount: new BigNumber(amount).shiftedBy(-6),
+            from: middlewareV2PortfolioToPortfolio(from!, context),
+            to: middlewareV2PortfolioToPortfolio(to!, context),
+          })),
+        };
+      }
+    );
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
+
+    const count = new BigNumber(totalCount);
+
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
   }
 
   /**

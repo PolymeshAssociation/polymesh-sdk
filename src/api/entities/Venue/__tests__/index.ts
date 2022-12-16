@@ -8,18 +8,37 @@ import {
   Context,
   Entity,
   Instruction,
+  NumberedPortfolio,
   PolymeshTransaction,
   Venue,
 } from '~/internal';
+import { InstructionStatusEnum } from '~/middleware/enumsV2';
+import { instructionsQuery } from '~/middleware/queriesV2';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { InstructionStatus, VenueType } from '~/types';
+import { InstructionStatus, InstructionType, VenueType } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/Identity',
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
+);
+jest.mock(
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+);
+jest.mock(
+  '~/api/entities/DefaultPortfolio',
+  require('~/testUtils/mocks/entities').mockDefaultPortfolioModule(
+    '~/api/entities/DefaultPortfolio'
+  )
+);
+jest.mock(
+  '~/api/entities/NumberedPortfolio',
+  require('~/testUtils/mocks/entities').mockNumberedPortfolioModule(
+    '~/api/entities/NumberedPortfolio'
+  )
 );
 jest.mock(
   '~/api/entities/Instruction',
@@ -135,6 +154,161 @@ describe('Venue class', () => {
         description,
         type,
       });
+    });
+  });
+
+  describe('method: getHistoricalInstructions', () => {
+    it('should return the paginated list of all instructions that have been associated with a Venue', async () => {
+      const instructionId1 = new BigNumber(1);
+      const instructionId2 = new BigNumber(2);
+      const blockNumber = new BigNumber(1234);
+      const blockHash = 'someHash';
+      const memo = 'memo';
+      const ticker = 'SOME_TICKER';
+      const amount1 = new BigNumber(10);
+      const amount2 = new BigNumber(5);
+      const venueId = new BigNumber(1);
+      const createdAt = new Date('2022/01/01');
+      const status = InstructionStatusEnum.Executed;
+      const portfolioDid1 = 'portfolioDid1';
+      const portfolioKind1 = 'Default';
+
+      const portfolioDid2 = 'portfolioDid2';
+      const portfolioKind2 = '10';
+      const type1 = InstructionType.SettleOnAffirmation;
+      const type2 = InstructionType.SettleOnBlock;
+      const endBlock = new BigNumber(1238);
+
+      const legs1 = [
+        {
+          assetId: ticker,
+          amount: amount1.shiftedBy(6).toString(),
+          from: {
+            number: portfolioKind1,
+            identityId: portfolioDid1,
+          },
+          to: {
+            number: portfolioKind2,
+            identityId: portfolioDid2,
+          },
+        },
+      ];
+      const legs2 = [
+        {
+          assetId: ticker,
+          amount: amount2.shiftedBy(6).toString(),
+          from: {
+            number: portfolioKind2,
+            identityId: portfolioDid2,
+          },
+          to: {
+            number: portfolioKind1,
+            identityId: portfolioDid1,
+          },
+        },
+      ];
+
+      const nodes = [
+        {
+          id: instructionId1.toString(),
+          createdBlock: {
+            blockId: blockNumber.toString(),
+            hash: blockHash,
+            datetime: createdAt,
+          },
+          status,
+          memo,
+          venueId: venueId.toString(),
+          settlementType: type1,
+          legs: {
+            nodes: legs1,
+          },
+        },
+        {
+          id: instructionId2.toString(),
+          createdBlock: {
+            blockId: blockNumber.toString(),
+            hash: blockHash,
+            datetime: createdAt,
+          },
+          status,
+          settlementType: type2,
+          endBlock: endBlock.toString(),
+          venueId: venueId.toString(),
+          legs: {
+            nodes: legs2,
+          },
+        },
+      ];
+
+      const instructionsResponse = {
+        totalCount: 5,
+        nodes,
+      };
+
+      dsMockUtils.createApolloV2QueryMock(
+        instructionsQuery(
+          {
+            venueId: venueId.toString(),
+          },
+          new BigNumber(2),
+          new BigNumber(0)
+        ),
+        {
+          instructions: instructionsResponse,
+        }
+      );
+
+      let result = await venue.getHistoricalInstructions({
+        size: new BigNumber(2),
+        start: new BigNumber(0),
+      });
+
+      const { data, next, count } = result;
+
+      expect(next).toEqual(new BigNumber(2));
+      expect(count).toEqual(new BigNumber(5));
+
+      expect(data[0].id).toEqual(instructionId1);
+      expect(data[0].blockHash).toEqual(blockHash);
+      expect(data[0].blockNumber).toEqual(blockNumber);
+      expect(data[0].status).toEqual(status);
+      expect(data[0].memo).toEqual(memo);
+      expect(data[0].type).toEqual(InstructionType.SettleOnAffirmation);
+      expect(data[0].venueId).toEqual(venueId);
+      expect(data[0].createdAt).toEqual(createdAt);
+      expect(data[0].legs[0].asset.ticker).toBe(ticker);
+      expect(data[0].legs[0].amount).toEqual(amount1);
+      expect(data[0].legs[0].from.owner.did).toBe(portfolioDid1);
+      expect(data[0].legs[0].to.owner.did).toBe(portfolioDid2);
+      expect((data[0].legs[0].to as NumberedPortfolio).id).toEqual(new BigNumber(portfolioKind2));
+
+      expect(data[1].id).toEqual(instructionId2);
+      expect(data[1].memo).toBeNull();
+      expect(data[1].type).toEqual(InstructionType.SettleOnBlock);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect((data[1] as any).endBlock).toEqual(endBlock);
+      expect(data[1].venueId).toEqual(venueId);
+      expect(data[1].createdAt).toEqual(createdAt);
+      expect(data[1].legs[0].asset.ticker).toBe(ticker);
+      expect(data[1].legs[0].amount).toEqual(amount2);
+      expect(data[1].legs[0].from.owner.did).toBe(portfolioDid2);
+      expect(data[1].legs[0].to.owner.did).toBe(portfolioDid1);
+      expect((data[1].legs[0].from as NumberedPortfolio).id).toEqual(new BigNumber(portfolioKind2));
+
+      dsMockUtils.createApolloV2QueryMock(
+        instructionsQuery({
+          venueId: venueId.toString(),
+        }),
+        {
+          instructions: instructionsResponse,
+        }
+      );
+
+      result = await venue.getHistoricalInstructions();
+
+      expect(result.count).toEqual(new BigNumber(5));
+      expect(result.next).toEqual(null);
     });
   });
 
