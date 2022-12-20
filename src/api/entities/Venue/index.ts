@@ -1,16 +1,7 @@
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
-import {
-  addInstruction,
-  Asset,
-  Context,
-  Entity,
-  Identity,
-  Instruction,
-  modifyVenue,
-} from '~/internal';
-import { InstructionStatusEnum } from '~/middleware/enumsV2';
+import { addInstruction, Context, Entity, Identity, Instruction, modifyVenue } from '~/internal';
 import { instructionsQuery } from '~/middleware/queriesV2';
 import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
@@ -18,7 +9,6 @@ import {
   AddInstructionsParams,
   GroupedInstructions,
   InstructionStatus,
-  InstructionType,
   ModifyVenueParams,
   NumberedPortfolio,
   ProcedureMethod,
@@ -30,7 +20,7 @@ import {
   bytesToString,
   identityIdToString,
   meshVenueTypeToVenueType,
-  middlewareV2PortfolioToPortfolio,
+  middlewareInstructionToHistoricInstruction,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { calculateNextKey, createProcedureMethod } from '~/utils/internal';
@@ -238,56 +228,9 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
       )
     );
 
-    /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    const data = instructionsResult.map(
-      ({
-        id: instructionId,
-        status,
-        settlementType,
-        endBlock,
-        tradeDate,
-        valueDate,
-        legs: { nodes: legs },
-        memo,
-        createdBlock,
-        venueId,
-      }) => {
-        const { blockId, hash, datetime } = createdBlock!;
-
-        let typeDetails;
-
-        if (settlementType === InstructionType.SettleOnBlock) {
-          typeDetails = {
-            type: InstructionType.SettleOnBlock,
-            endBlock: new BigNumber(endBlock!),
-          };
-        } else {
-          typeDetails = {
-            type: InstructionType.SettleOnAffirmation,
-          };
-        }
-
-        return {
-          id: new BigNumber(instructionId),
-          blockNumber: new BigNumber(blockId),
-          blockHash: hash,
-          status: status as InstructionStatusEnum,
-          tradeDate,
-          valueDate,
-          ...typeDetails,
-          memo: memo || null,
-          venueId: new BigNumber(venueId),
-          createdAt: new Date(datetime),
-          legs: legs.map(({ from, to, assetId, amount }) => ({
-            asset: new Asset({ ticker: assetId }, context),
-            amount: new BigNumber(amount).shiftedBy(-6),
-            from: middlewareV2PortfolioToPortfolio(from!, context),
-            to: middlewareV2PortfolioToPortfolio(to!, context),
-          })),
-        };
-      }
+    const data = instructionsResult.map(middlewareInstruction =>
+      middlewareInstructionToHistoricInstruction(middlewareInstruction, context)
     );
-    /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
     const count = new BigNumber(totalCount);
 
