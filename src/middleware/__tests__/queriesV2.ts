@@ -12,6 +12,7 @@ import {
   extrinsicByHash,
   extrinsicsByArgs,
   heartbeatQuery,
+  instructionsByDidQuery,
   instructionsQuery,
   investmentsQuery,
   portfolioMovementsQuery,
@@ -122,6 +123,13 @@ describe('instructionsQuery', () => {
       size: 10,
       start: 2,
     });
+  });
+});
+
+describe('instructionsByDidQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const result = instructionsByDidQuery('someDid');
+    expect(result.query).toBeDefined();
   });
 });
 
