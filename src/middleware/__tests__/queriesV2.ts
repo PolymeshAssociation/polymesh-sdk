@@ -130,6 +130,7 @@ describe('instructionsByDidQuery', () => {
   it('should pass the variables to the grapqhl query', () => {
     const result = instructionsByDidQuery('someDid');
     expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({ fromId: 'someDid/', toId: 'someDid/' });
   });
 });
 

@@ -324,12 +324,14 @@ export function instructionsQuery(
  *
  * Get Instructions where an identity is involved
  */
-export function instructionsByDidQuery(identityId: string): GraphqlQuery {
+export function instructionsByDidQuery(
+  identityId: string
+): GraphqlQuery<QueryArgs<Leg, 'fromId' | 'toId'>> {
   const query = gql`
-    query InstructionsByDidQuery
+    query InstructionsByDidQuery($fromId: String!, $toId: String!)
      {
       legs(
-        filter: { or: [{ fromId: { startsWith: "${identityId}" } }, { toId: { startsWith: "${identityId}" } }] }
+        filter: { or: [{ fromId: { startsWith: $fromId } }, { toId: { startsWith: $toId } }] }
         orderBy: [${LegsOrderBy.CreatedAtAsc}, ${LegsOrderBy.InstructionIdAsc}]
       ) {
         nodes {
@@ -379,7 +381,7 @@ export function instructionsByDidQuery(identityId: string): GraphqlQuery {
 
   return {
     query,
-    variables: undefined,
+    variables: { fromId: `${identityId}/`, toId: `${identityId}/` },
   };
 }
 
