@@ -11,6 +11,7 @@ import {
   union,
 } from 'lodash';
 
+import { Subsidies } from '~/api/entities/Subsidies';
 import {
   Asset,
   Authorizations,
@@ -276,6 +277,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
 
   // Namespaces
   public authorizations: Authorizations<Account>;
+  public subsidies: Subsidies;
 
   /**
    * @hidden
@@ -290,6 +292,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     this.address = address;
     this.key = addressToKey(address, context);
     this.authorizations = new Authorizations(this, context);
+    this.subsidies = new Subsidies(this, context);
   }
 
   /**
