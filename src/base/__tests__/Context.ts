@@ -1,3 +1,4 @@
+import { ApiPromise } from '@polkadot/api';
 import { Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
@@ -266,6 +267,21 @@ describe('Context class', () => {
         message: 'There is no signing Account associated with the SDK instance',
       });
       expect(() => context.getSigningAccount()).toThrowError(expectedError);
+    });
+
+    it('should set the external api on the polkadot instance', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
+      });
+      const signingManager = dsMockUtils.getSigningManagerInstance();
+      const polymeshApi = context.getPolymeshApi();
+      const polkadotSigner = signingManager.getExternalSigner();
+
+      await context.setSigningManager(signingManager);
+
+      expect(polymeshApi.setSigner).toHaveBeenCalledWith(polkadotSigner);
     });
   });
 
