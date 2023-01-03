@@ -1,4 +1,3 @@
-import { ApiPromise } from '@polkadot/api';
 import { Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
