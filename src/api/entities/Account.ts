@@ -321,6 +321,8 @@ export class Account extends Entity<UniqueIdentifiers, string> {
    *   this Account isn't being subsidized, return null
    *
    * @note can be subscribed to
+   *
+   * @deprecated in favour of {@link api/entities/Subsidies!Subsidies.getSubsidizer | subsidies.getSubsidizer}
    */
   public getSubsidy(): Promise<SubsidyWithAllowance | null>;
   public getSubsidy(callback: SubCallback<SubsidyWithAllowance | null>): Promise<UnsubCallback>;
