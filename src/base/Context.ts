@@ -216,6 +216,7 @@ export class Context {
    */
   public async setSigningManager(signingManager: SigningManager): Promise<void> {
     this._signingManager = signingManager;
+    this._polymeshApi.setSigner(signingManager.getExternalSigner());
 
     signingManager.setSs58Format(this.ss58Format.toNumber());
 
