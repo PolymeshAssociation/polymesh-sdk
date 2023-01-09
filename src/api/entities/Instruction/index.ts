@@ -1,3 +1,4 @@
+import { QueryableStorageEntry } from '@polkadot/api/types';
 import BigNumber from 'bignumber.js';
 
 import {
@@ -23,11 +24,12 @@ import {
   ResultSet,
 } from '~/types';
 import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
-import { Ensured, EnsuredV2 } from '~/types/utils';
+import { Ensured, EnsuredV2, QueryReturnType } from '~/types/utils';
 import {
   balanceToBigNumber,
   bigNumberToU64,
   identityIdToString,
+  instructionMemoToString,
   meshAffirmationStatusToAffirmationStatus,
   meshInstructionStatusToInstructionStatus,
   meshPortfolioIdToPortfolio,
@@ -198,22 +200,27 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     const {
       context: {
         polymeshApi: {
-          query: { settlement },
+          query: {
+            settlement: { instructionDetails, instructionMemos },
+          },
+          queryMulti,
         },
       },
       id,
       context,
     } = this;
 
-    const {
-      status: rawStatus,
-      createdAt,
-      tradeDate,
-      valueDate,
-      settlementType: type,
-      venueId,
-    } = await settlement.instructionDetails(bigNumberToU64(id, context));
+    const rawId = bigNumberToU64(id, context);
 
+    const [
+      { status: rawStatus, createdAt, tradeDate, valueDate, settlementType: type, venueId },
+      memo,
+    ] = await queryMulti<
+      [QueryReturnType<typeof instructionDetails>, QueryReturnType<typeof instructionMemos>]
+    >([
+      [instructionDetails as unknown as QueryableStorageEntry<'promise'>, rawId],
+      [instructionMemos as unknown as QueryableStorageEntry<'promise'>, rawId],
+    ]);
     const status = meshInstructionStatusToInstructionStatus(rawStatus);
 
     if (status === InternalInstructionStatus.Unknown) {
@@ -232,6 +239,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       tradeDate: tradeDate.isSome ? momentToDate(tradeDate.unwrap()) : null,
       valueDate: valueDate.isSome ? momentToDate(valueDate.unwrap()) : null,
       venue: new Venue({ id: u64ToBigNumber(venueId) }, context),
+      memo: memo.isSome ? instructionMemoToString(memo.unwrap()) : null,
     };
 
     if (type.isSettleOnAffirmation) {

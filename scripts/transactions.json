@@ -63,7 +63,8 @@
     "remove_secondary_keys_old": "remove_secondary_keys_old",
     "placeholder_legacy_set_permission_to_signer": "placeholder_legacy_set_permission_to_signer",
     "add_secondary_keys_with_authorization_old": "add_secondary_keys_with_authorization_old",
-    "set_secondary_key_permissions": "set_secondary_key_permissions"
+    "set_secondary_key_permissions": "set_secondary_key_permissions",
+    "register_custom_claim_type": "register_custom_claim_type"
   },
   "CddServiceProviders": {
     "set_active_members_limit": "set_active_members_limit",
@@ -239,7 +240,8 @@
     "set_asset_metadata_details": "set_asset_metadata_details",
     "register_and_set_local_asset_metadata": "register_and_set_local_asset_metadata",
     "register_asset_metadata_local_type": "register_asset_metadata_local_type",
-    "register_asset_metadata_global_type": "register_asset_metadata_global_type"
+    "register_asset_metadata_global_type": "register_asset_metadata_global_type",
+    "redeem_from_portfolio": "redeem_from_portfolio"
   },
   "CapitalDistribution": {
     "distribute": "distribute",
@@ -340,7 +342,10 @@
     "disallow_venues": "disallow_venues",
     "change_receipt_validity": "change_receipt_validity",
     "execute_scheduled_instruction": "execute_scheduled_instruction",
-    "reschedule_instruction": "reschedule_instruction"
+    "reschedule_instruction": "reschedule_instruction",
+    "update_venue_signers": "update_venue_signers",
+    "add_instruction_with_memo": "add_instruction_with_memo",
+    "add_and_affirm_instruction_with_memo": "add_and_affirm_instruction_with_memo"
   },
   "Statistics": {
     "add_transfer_manager": "add_transfer_manager",

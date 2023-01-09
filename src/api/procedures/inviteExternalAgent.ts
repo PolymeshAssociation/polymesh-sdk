@@ -26,6 +26,7 @@ import {
   permissionsLikeToPermissions,
   signerToString,
   signerValueToSignatory,
+  stringToIdentityId,
   stringToTicker,
   transactionPermissionsToExtrinsicPermissions,
   u64ToBigNumber,
@@ -89,8 +90,10 @@ export async function prepareInviteExternalAgent(
     });
   }
 
+  const targetDid = signerToString(target);
+
   const rawSignatory = signerValueToSignatory(
-    { type: SignerType.Identity, value: signerToString(target) },
+    { type: SignerType.Identity, value: targetDid },
     context
   );
 
@@ -125,7 +128,8 @@ export async function prepareInviteExternalAgent(
         args: [
           rawTicker,
           transactionPermissionsToExtrinsicPermissions(transactions, context),
-          rawSignatory,
+          stringToIdentityId(targetDid, context),
+          null,
         ],
       });
 

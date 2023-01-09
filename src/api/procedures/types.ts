@@ -437,6 +437,10 @@ export interface AddInstructionParams {
    * block at which the Instruction will be executed automatically (optional, the Instruction will be executed when all participants have authorized it if not supplied)
    */
   endBlock?: BigNumber;
+  /**
+   * identifier string to help differentiate instructions
+   */
+  memo?: string;
 }
 
 export interface AddInstructionsParams {

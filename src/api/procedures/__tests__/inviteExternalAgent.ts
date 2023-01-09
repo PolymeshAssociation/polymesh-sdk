@@ -1,7 +1,7 @@
 import { PolymeshPrimitivesAuthorizationAuthorizationData } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { AgentGroup, Signatory, Ticker } from 'polymesh-types/types';
+import { AgentGroup, IdentityId, Signatory, Ticker } from 'polymesh-types/types';
 import sinon from 'sinon';
 
 import {
@@ -45,6 +45,7 @@ describe('inviteExternalAgent procedure', () => {
   >;
   let signerToStringStub: sinon.SinonStub<[string | Identity | Account], string>;
   let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
+  let stringToIdentityIdStub: sinon.SinonStub;
   let ticker: string;
   let asset: Asset;
   let rawTicker: Ticker;
@@ -53,6 +54,7 @@ describe('inviteExternalAgent procedure', () => {
   let addTransactionStub: sinon.SinonStub;
   let rawSignatory: Signatory;
   let rawAuthorizationData: PolymeshPrimitivesAuthorizationAuthorizationData;
+  let rawIdentityId: IdentityId;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -63,6 +65,7 @@ describe('inviteExternalAgent procedure', () => {
       'authorizationToAuthorizationData'
     );
     signerToStringStub = sinon.stub(utilsConversionModule, 'signerToString');
+    stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
     signerValueToSignatoryStub = sinon.stub(utilsConversionModule, 'signerValueToSignatory');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
@@ -75,6 +78,7 @@ describe('inviteExternalAgent procedure', () => {
     rawAuthorizationData = dsMockUtils.createMockAuthorizationData({
       BecomeAgent: [rawTicker, rawAgentGroup],
     });
+    rawIdentityId = dsMockUtils.createMockIdentityId(target);
   });
 
   beforeEach(() => {
@@ -87,6 +91,7 @@ describe('inviteExternalAgent procedure', () => {
     authorizationToAuthorizationDataStub.returns(rawAuthorizationData);
     signerToStringStub.returns(target);
     signerValueToSignatoryStub.returns(rawSignatory);
+    stringToIdentityIdStub.returns(rawIdentityId);
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
   });
 
@@ -289,7 +294,7 @@ describe('inviteExternalAgent procedure', () => {
       sinon.match({
         transaction,
         resolvers: sinon.match.array,
-        args: [rawTicker, rawPermissions, rawSignatory],
+        args: [rawTicker, rawPermissions, rawIdentityId, null],
       })
     );
   });

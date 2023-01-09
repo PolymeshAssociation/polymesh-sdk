@@ -44,8 +44,9 @@ import {
   SignedBlock,
 } from '@polkadot/types/interfaces';
 import {
-  ConfidentialIdentityClaimProofsScopeClaimProof,
-  ConfidentialIdentityClaimProofsZkProofData,
+  ConfidentialIdentityV2ClaimProofsScopeClaimProof,
+  ConfidentialIdentityV2ClaimProofsZkProofData,
+  ConfidentialIdentityV2SignSignature,
   PalletAssetClassicTickerRegistration,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCaKind,
@@ -56,6 +57,7 @@ import {
   PalletCorporateActionsTargetIdentities,
   PalletRelayerSubsidy,
   PalletSettlementInstruction,
+  PalletSettlementInstructionMemo,
   PalletSettlementVenue,
   PalletStoFundraiser,
   PolymeshPrimitivesAssetIdentifier,
@@ -175,7 +177,6 @@ import {
   TransferCondition,
   TransferConditionResult,
   VenueType,
-  ZkProofData,
 } from '~/polkadot/polymesh';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -3435,30 +3436,30 @@ export const createMockSignature = (signature?: string | Signature): MockCodec<S
  */
 export const createMockZkProofData = (
   zkProofData?:
-    | ConfidentialIdentityClaimProofsZkProofData
+    | ConfidentialIdentityV2ClaimProofsZkProofData
     | {
-        challengeResponses: [Scalar, Scalar] | [string, string];
-        subtractExpressionsRes: RistrettoPoint | string;
-        blindedScopeDidHash: RistrettoPoint | string;
+        challengeResponses: [U8aFixed, U8aFixed] | [string, string];
+        subtractExpressionsRes: U8aFixed | string;
+        blindedScopeDidHash: U8aFixed | string;
       }
-): MockCodec<ConfidentialIdentityClaimProofsZkProofData> => {
+): MockCodec<ConfidentialIdentityV2ClaimProofsZkProofData> => {
   const { challengeResponses, subtractExpressionsRes, blindedScopeDidHash } = zkProofData || {
-    challengeResponses: [createMockScalar(), createMockScalar()],
-    subtractExpressionsRes: createMockRistrettoPoint(),
-    blindedScopeDidHash: createMockRistrettoPoint(),
+    challengeResponses: [createMockU8aFixed(), createMockU8aFixed()],
+    subtractExpressionsRes: createMockU8aFixed(),
+    blindedScopeDidHash: createMockU8aFixed(),
   };
 
   return createMockCodec(
     {
       challengeResponses: [
-        createMockScalar(challengeResponses[0] as string),
-        createMockScalar(challengeResponses[1] as string),
+        createMockU8aFixed(challengeResponses[0] as string),
+        createMockU8aFixed(challengeResponses[1] as string),
       ],
-      subtractExpressionsRes: createMockRistrettoPoint(subtractExpressionsRes as string),
-      blindedScopeDidHash: createMockRistrettoPoint(blindedScopeDidHash as string),
+      subtractExpressionsRes: createMockU8aFixed(subtractExpressionsRes as string),
+      blindedScopeDidHash: createMockU8aFixed(blindedScopeDidHash as string),
     },
     !zkProofData
-  ) as MockCodec<ConfidentialIdentityClaimProofsZkProofData>;
+  ) as MockCodec<ConfidentialIdentityV2ClaimProofsZkProofData>;
 };
 
 /**
@@ -3507,35 +3508,33 @@ export const createMockTargetIdentities = (
  */
 export const createMockScopeClaimProof = (
   scopeClaimProof?:
-    | ConfidentialIdentityClaimProofsScopeClaimProof
+    | ConfidentialIdentityV2ClaimProofsScopeClaimProof
     | {
-        proofScopeIdWellformed: Signature | string;
+        proofScopeIdWellformed: ConfidentialIdentityV2SignSignature | string;
         proofScopeIdCddIdMatch:
-          | ZkProofData
+          | ConfidentialIdentityV2ClaimProofsZkProofData
           | {
               challengeResponses: [string, string];
               subtractExpressionsRes: string;
               blindedScopeDidHash: string;
             };
-        scopeId: RistrettoPoint | string;
+        scopeId: U8aFixed | string;
       }
-): MockCodec<ConfidentialIdentityClaimProofsScopeClaimProof> => {
+): MockCodec<ConfidentialIdentityV2ClaimProofsScopeClaimProof> => {
   const { proofScopeIdWellformed, proofScopeIdCddIdMatch, scopeId } = scopeClaimProof || {
     proofScopeIdWellformed: createMockSignature(),
     proofScopeIdCddIdMatch: createMockZkProofData(),
-    scopeId: createMockRistrettoPoint(),
+    scopeId: createMockU8aFixed(),
   };
 
   return createMockCodec(
     {
       proofScopeIdWellformed: createMockSignature(proofScopeIdWellformed as Signature),
-      proofScopeIdCddIdMatch: createMockZkProofData(
-        proofScopeIdCddIdMatch as ConfidentialIdentityClaimProofsZkProofData
-      ),
-      scopeId: createMockRistrettoPoint(scopeId as RistrettoPoint),
+      proofScopeIdCddIdMatch: createMockZkProofData(proofScopeIdCddIdMatch),
+      scopeId: createMockU8aFixed(scopeId as string),
     },
     !scopeClaimProof
-  ) as MockCodec<ConfidentialIdentityClaimProofsScopeClaimProof>;
+  ) as MockCodec<ConfidentialIdentityV2ClaimProofsScopeClaimProof>;
 };
 
 /**
@@ -4199,4 +4198,18 @@ export const createMockAssetTransferCompliance = (
     result.requirements as Mutable<BTreeSet<PolymeshPrimitivesTransferComplianceTransferCondition>>
   ).size = requirements.size;
   return result;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockInstructionMemo = (
+  memo?: string | PalletSettlementInstructionMemo
+): MockCodec<PalletSettlementInstructionMemo> => {
+  if (isCodec<PalletSettlementInstructionMemo>(memo)) {
+    return memo as MockCodec<PalletSettlementInstructionMemo>;
+  }
+
+  return createMockStringCodec(memo) as MockCodec<PalletSettlementInstructionMemo>;
 };
