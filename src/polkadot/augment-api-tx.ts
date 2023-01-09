@@ -2614,7 +2614,7 @@ declare module '@polkadot/api-base/types/submittable' {
        * Creates a custom agent group (AG) for the given `ticker`.
        *
        * The AG will have the permissions as given by `perms`.
-       * This new AG is then assigned `id = AGIdSequence::get() + 1` as its `AGId`,
+       * This new AG is then assigned `id = AgIdSequence::get() + 1` as its `AGId`,
        * which you can use as `AgentGroup::Custom(id)` when adding agents for `ticker`.
        *
        * # Arguments
@@ -2624,7 +2624,7 @@ declare module '@polkadot/api-base/types/submittable' {
        * # Errors
        * - `UnauthorizedAgent` if `origin` was not authorized as an agent to call this.
        * - `TooLong` if `perms` had some string or list length that was too long.
-       * - `CounterOverflow` if `AGIdSequence::get() + 1` would exceed `u32::MAX`.
+       * - `CounterOverflow` if `AgIdSequence::get() + 1` would exceed `u32::MAX`.
        *
        * # Permissions
        * * Asset
