@@ -22,13 +22,18 @@ import {
   transferAssetOwnership,
 } from '~/internal';
 import { eventByIndexedArgs, tickerExternalAgentHistory } from '~/middleware/queries';
-import { assetQuery, tickerExternalAgentHistoryQuery } from '~/middleware/queriesV2';
+import {
+  assetQuery,
+  assetTransactionQuery,
+  tickerExternalAgentHistoryQuery,
+} from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   ControllerTransferParams,
   EventIdentifier,
   HistoricAgentOperation,
+  HistoricAssetTransaction,
   ModifyAssetParams,
   NoArgsProcedureMethod,
   ProcedureMethod,
@@ -51,6 +56,7 @@ import {
   identityIdToString,
   middlewareEventToEventIdentifier,
   middlewareV2EventDetailsToEventIdentifier,
+  middlewareV2PortfolioToPortfolio,
   stringToTicker,
   tickerToDid,
 } from '~/utils/conversion';
@@ -638,6 +644,45 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
         middlewareV2EventDetailsToEventIdentifier(createdBlock!, eventIdx)
       ),
     }));
+  }
+
+  /**
+   * Retrieve this Asset's transaction History
+   *
+   * @note uses the middlewareV2
+   */
+  public async getTransactionHistory(opts: {
+    size?: BigNumber;
+    start?: BigNumber;
+  }): Promise<HistoricAssetTransaction[]> {
+    const { context, ticker } = this;
+    const { size, start } = opts;
+
+    const {
+      data: {
+        assetTransactions: { nodes },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'assetTransactions'>>(
+      assetTransactionQuery(
+        {
+          assetId: ticker,
+        },
+        size,
+        start
+      )
+    );
+
+    return nodes.map(
+      ({ assetId, amount, fromPortfolio, toPortfolio, createdBlock, eventId, eventIdx }) => ({
+        asset: new Asset({ ticker: assetId }, context),
+        amount: new BigNumber(amount).shiftedBy(-6),
+        event: eventId,
+        from: optionize(middlewareV2PortfolioToPortfolio)(fromPortfolio, context),
+        to: optionize(middlewareV2PortfolioToPortfolio)(toPortfolio, context),
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        ...middlewareV2EventDetailsToEventIdentifier(createdBlock!, eventIdx),
+      })
+    );
   }
 
   /**

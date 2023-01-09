@@ -6,6 +6,8 @@ import {
   Asset,
   AssetHolder,
   AssetHoldersOrderBy,
+  AssetTransaction,
+  AssetTransactionsOrderBy,
   ClaimsGroupBy,
   ClaimsOrderBy,
   Distribution,
@@ -1041,5 +1043,53 @@ export function portfolioMovementsQuery(
   return {
     query,
     variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get the balance history for an Asset
+ */
+export function assetTransactionQuery(
+  filters: QueryArgs<AssetTransaction, 'assetId'>,
+  size?: BigNumber,
+  start?: BigNumber
+): GraphqlQuery<PaginatedQueryArgs<QueryArgs<AssetTransaction, 'assetId'>>> {
+  const query = gql`
+    query AssetTransactionQuery($assetId: String!) {
+      assetTransactions(
+        filter: { assetId: { equalTo: $assetId } }
+        orderBy: [${AssetTransactionsOrderBy.CreatedAtAsc}, ${AssetTransactionsOrderBy.CreatedBlockIdAsc}]
+      ) {
+        nodes {
+          assetId
+          amount
+          fromPortfolioId
+          fromPortfolio {
+            identityId
+            number
+          }
+          toPortfolioId
+          toPortfolio {
+            identityId
+            number
+          }
+          eventId
+          eventIdx
+          fundingRound
+          createdBlock {
+            blockId
+            hash
+            datetime
+          }
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
   };
 }
