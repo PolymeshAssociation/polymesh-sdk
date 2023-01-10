@@ -8,9 +8,20 @@ import {
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import { Asset, Context, Entity, PolymeshTransaction } from '~/internal';
+import {
+  Asset,
+  Context,
+  DefaultPortfolio,
+  Entity,
+  NumberedPortfolio,
+  PolymeshTransaction,
+} from '~/internal';
 import { eventByIndexedArgs, tickerExternalAgentHistory } from '~/middleware/queries';
-import { assetQuery, tickerExternalAgentHistoryQuery } from '~/middleware/queriesV2';
+import {
+  assetQuery,
+  assetTransactionQuery,
+  tickerExternalAgentHistoryQuery,
+} from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
@@ -900,6 +911,104 @@ describe('Asset class', () => {
       result = await asset.getOperationHistoryV2();
 
       expect(result.length).toEqual(0);
+    });
+  });
+
+  describe('method: getTransactionHistory', () => {
+    const ticker = 'TICKER';
+    const context = dsMockUtils.getContextInstance();
+    const asset = new Asset({ ticker }, context);
+
+    it('should return a list of Assets', async () => {
+      const transactionResponse = {
+        totalCount: new BigNumber(5),
+        nodes: [
+          {
+            assetId: ticker,
+            amount: new BigNumber(100).shiftedBy(6),
+            eventId: EventIdEnum.Issued,
+            toPortfolio: {
+              identityId: 'SOME_DID',
+              number: 0,
+            },
+            fromPortfolio: null,
+            eventIdx: '1',
+            createdBlock: {
+              blockId: new BigNumber(123),
+              hash: 'SOME_HASH',
+              datetime: new Date('2022/12/31'),
+            },
+          },
+          {
+            assetId: ticker,
+            amount: new BigNumber(1).shiftedBy(6),
+            eventId: EventIdEnum.Redeemed,
+            fromPortfolio: {
+              identityId: 'SOME_DID',
+              number: 0,
+            },
+            toPortfolio: null,
+            eventIdx: '1',
+            createdBlock: {
+              blockId: new BigNumber(123),
+              hash: 'SOME_HASH',
+              datetime: new Date('2022/12/31'),
+            },
+          },
+          {
+            assetId: ticker,
+            amount: new BigNumber(10).shiftedBy(6),
+            eventId: EventIdEnum.Transfer,
+            fromPortfolio: {
+              identityId: 'SOME_DID',
+              number: 0,
+            },
+            toPortfolio: {
+              identityId: 'SOME_OTHER_DID',
+              number: 1,
+            },
+            eventIdx: '1',
+            createdBlock: {
+              blockId: new BigNumber(123),
+              hash: 'SOME_HASH',
+              datetime: new Date('2022/12/31'),
+            },
+          },
+        ],
+      };
+
+      dsMockUtils.createApolloV2QueryMock(
+        assetTransactionQuery({ assetId: ticker }, new BigNumber(3), new BigNumber(0)),
+        {
+          assetTransactions: transactionResponse,
+        }
+      );
+
+      const result = await asset.getTransactionHistory({
+        size: new BigNumber(3),
+        start: new BigNumber(0),
+      });
+
+      expect(result.data[0].asset.ticker).toEqual(ticker);
+      expect(result.data[0].amount).toEqual(new BigNumber(100));
+      expect(result.data[0].event).toEqual(transactionResponse.nodes[0].eventId);
+      expect(result.data[0].from).toBeNull();
+      expect(result.data[0].to instanceof DefaultPortfolio).toBe(true);
+
+      expect(result.data[1].asset.ticker).toEqual(ticker);
+      expect(result.data[1].amount).toEqual(new BigNumber(1));
+      expect(result.data[1].event).toEqual(transactionResponse.nodes[1].eventId);
+      expect(result.data[1].to).toBeNull();
+      expect(result.data[1].from).toBeInstanceOf(DefaultPortfolio);
+
+      expect(result.data[2].asset.ticker).toEqual(ticker);
+      expect(result.data[2].amount).toEqual(new BigNumber(10));
+      expect(result.data[2].event).toEqual(transactionResponse.nodes[2].eventId);
+      expect(result.data[2].from).toBeInstanceOf(DefaultPortfolio);
+      expect(result.data[2].to).toBeInstanceOf(NumberedPortfolio);
+
+      expect(result.count).toEqual(transactionResponse.totalCount);
+      expect(result.next).toEqual(new BigNumber(3));
     });
   });
 

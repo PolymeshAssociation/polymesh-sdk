@@ -1062,6 +1062,7 @@ export function assetTransactionQuery(
         filter: { assetId: { equalTo: $assetId } }
         orderBy: [${AssetTransactionsOrderBy.CreatedAtAsc}, ${AssetTransactionsOrderBy.CreatedBlockIdAsc}]
       ) {
+        totalCount
         nodes {
           assetId
           amount

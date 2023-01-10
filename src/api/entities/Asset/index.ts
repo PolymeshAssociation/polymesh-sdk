@@ -38,6 +38,7 @@ import {
   NoArgsProcedureMethod,
   ProcedureMethod,
   RedeemTokensParams,
+  ResultSet,
   SecurityIdentifier,
   SubCallback,
   TransferAssetOwnershipParams,
@@ -60,7 +61,7 @@ import {
   stringToTicker,
   tickerToDid,
 } from '~/utils/conversion';
-import { createProcedureMethod, optionize, padString } from '~/utils/internal';
+import { calculateNextKey, createProcedureMethod, optionize, padString } from '~/utils/internal';
 
 import { AssetHolders } from './AssetHolders';
 import { Checkpoints } from './Checkpoints';
@@ -654,13 +655,13 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
   public async getTransactionHistory(opts: {
     size?: BigNumber;
     start?: BigNumber;
-  }): Promise<HistoricAssetTransaction[]> {
+  }): Promise<ResultSet<HistoricAssetTransaction>> {
     const { context, ticker } = this;
     const { size, start } = opts;
 
     const {
       data: {
-        assetTransactions: { nodes },
+        assetTransactions: { nodes, totalCount },
       },
     } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'assetTransactions'>>(
       assetTransactionQuery(
@@ -672,7 +673,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       )
     );
 
-    return nodes.map(
+    const data = nodes.map(
       ({ assetId, amount, fromPortfolio, toPortfolio, createdBlock, eventId, eventIdx }) => ({
         asset: new Asset({ ticker: assetId }, context),
         amount: new BigNumber(amount).shiftedBy(-6),
@@ -683,6 +684,15 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
         ...middlewareV2EventDetailsToEventIdentifier(createdBlock!, eventIdx),
       })
     );
+
+    const count = new BigNumber(totalCount);
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
   }
 
   /**
