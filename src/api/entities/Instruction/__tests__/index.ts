@@ -4,16 +4,17 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Context, Entity, Instruction, PolymeshTransaction } from '~/internal';
+import { EventIdEnum as MiddlewareV2EventId } from '~/middleware/enumsV2';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { instructionsQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
-import { EventIdEnum as MiddlewareV2EventId } from '~/middleware/typesV2';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
   AffirmationStatus,
   InstructionAffirmationOperation,
   InstructionStatus,
+  InstructionStatusResult,
   InstructionType,
 } from '~/types';
 import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
@@ -684,6 +685,9 @@ describe('Instruction class', () => {
 
     beforeEach(() => {
       when(bigNumberToU64Spy).calledWith(id, context).mockReturnValue(rawId);
+      dsMockUtils.configureMocks({
+        contextOptions: { middlewareV2Enabled: false },
+      });
     });
 
     it('should return Pending Instruction status', async () => {
@@ -855,6 +859,18 @@ describe('Instruction class', () => {
         "It isn't possible to determine the current status of this Instruction"
       );
     });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      dsMockUtils.configureMocks({
+        contextOptions: { middlewareV2Enabled: true },
+      });
+      jest.spyOn(instruction, 'isPending').mockResolvedValue(false);
+      const fakeResult = 'fakeResult' as unknown as InstructionStatusResult;
+      jest.spyOn(instruction, 'getStatusV2').mockResolvedValue(fakeResult);
+
+      const result = await instruction.getStatus();
+      expect(result).toEqual(fakeResult);
+    });
   });
 
   describe('method: getStatusV2', () => {
@@ -926,16 +942,20 @@ describe('Instruction class', () => {
 
       dsMockUtils.createApolloMultipleV2QueriesMock([
         {
-          query: instructionsQuery(queryVariables),
+          query: instructionsQuery(queryVariables, new BigNumber(1), new BigNumber(0)),
           returnData: {
             instructions: { nodes: [fakeQueryResult] },
           },
         },
         {
-          query: instructionsQuery({
-            ...queryVariables,
-            eventId: MiddlewareV2EventId.InstructionFailed,
-          }),
+          query: instructionsQuery(
+            {
+              ...queryVariables,
+              eventId: MiddlewareV2EventId.InstructionFailed,
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
           returnData: {
             instructions: { nodes: [] },
           },
@@ -982,7 +1002,7 @@ describe('Instruction class', () => {
 
       dsMockUtils.createApolloMultipleV2QueriesMock([
         {
-          query: instructionsQuery(queryVariables),
+          query: instructionsQuery(queryVariables, new BigNumber(1), new BigNumber(0)),
           returnData: {
             instructions: {
               nodes: [],
@@ -990,10 +1010,14 @@ describe('Instruction class', () => {
           },
         },
         {
-          query: instructionsQuery({
-            ...queryVariables,
-            eventId: MiddlewareV2EventId.InstructionFailed,
-          }),
+          query: instructionsQuery(
+            {
+              ...queryVariables,
+              eventId: MiddlewareV2EventId.InstructionFailed,
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
           returnData: {
             instructions: {
               nodes: [fakeQueryResult],
@@ -1032,16 +1056,20 @@ describe('Instruction class', () => {
 
       dsMockUtils.createApolloMultipleV2QueriesMock([
         {
-          query: instructionsQuery(queryVariables),
+          query: instructionsQuery(queryVariables, new BigNumber(1), new BigNumber(0)),
           returnData: {
             instructions: { nodes: [] },
           },
         },
         {
-          query: instructionsQuery({
-            ...queryVariables,
-            eventId: MiddlewareV2EventId.InstructionFailed,
-          }),
+          query: instructionsQuery(
+            {
+              ...queryVariables,
+              eventId: MiddlewareV2EventId.InstructionFailed,
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
           returnData: {
             instructions: { nodes: [] },
           },

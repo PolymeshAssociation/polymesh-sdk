@@ -2,22 +2,31 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Account, Context, Entity } from '~/internal';
-import { heartbeat, transactions } from '~/middleware/queries';
-import { extrinsicsByArgs } from '~/middleware/queriesV2';
-import { CallIdEnum, ExtrinsicResult, ModuleIdEnum } from '~/middleware/types';
 import {
   CallIdEnum as MiddlewareV2CallId,
   ModuleIdEnum as MiddlewareV2ModuleId,
-} from '~/middleware/typesV2';
+} from '~/middleware/enumsV2';
+import { heartbeat, transactions } from '~/middleware/queries';
+import { extrinsicsByArgs } from '~/middleware/queriesV2';
+import {
+  CallIdEnum,
+  ExtrinsicResult,
+  ModuleIdEnum,
+  Order,
+  TransactionOrderFields,
+} from '~/middleware/types';
+import { ExtrinsicsOrderBy } from '~/middleware/typesV2';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId, createMockIdentityId } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
   Balance,
+  ExtrinsicData,
   ModuleName,
   Permissions,
   PermissionType,
+  ResultSet,
   SubsidyWithAllowance,
   TxTags,
   UnsubCallback,
@@ -294,7 +303,9 @@ describe('Account class', () => {
       };
       /* eslint-enable @typescript-eslint/naming-convention */
 
-      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
+      dsMockUtils.configureMocks({
+        contextOptions: { withSigningManager: true, middlewareV2Enabled: false },
+      });
       dsMockUtils.createApolloQueryMock(heartbeat(), true);
 
       dsMockUtils.createQueryMock('system', 'blockHash', {
@@ -395,6 +406,29 @@ describe('Account class', () => {
       expect(result.data[0].success).toBeFalsy();
       expect(result.count).toEqual(new BigNumber(20));
       expect(result.next).toBeNull();
+    });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      const fakeResult = 'fakeResult' as unknown as ResultSet<ExtrinsicData>;
+      const getTransactionHistoryV2Spy = jest.spyOn(account, 'getTransactionHistoryV2');
+      getTransactionHistoryV2Spy.mockResolvedValue(fakeResult);
+
+      let result = await account.getTransactionHistory();
+      expect(result).toEqual(fakeResult);
+      expect(getTransactionHistoryV2Spy).toHaveBeenCalledWith({
+        orderBy: ExtrinsicsOrderBy.CreatedAtAsc,
+      });
+
+      result = await account.getTransactionHistory({
+        orderBy: {
+          order: Order.Asc,
+          field: TransactionOrderFields.ModuleId,
+        },
+      });
+      expect(getTransactionHistoryV2Spy).toHaveBeenCalledWith({
+        orderBy: ExtrinsicsOrderBy.ModuleIdAsc,
+      });
+      expect(result).toEqual(fakeResult);
     });
   });
 

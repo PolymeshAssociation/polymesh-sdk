@@ -335,6 +335,15 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const { size, start, order } = opts;
 
+    if (context.isMiddlewareV2Enabled()) {
+      return this.getHeldAssetsV2({
+        order:
+          order === Order.Asc ? AssetHoldersOrderBy.AssetIdAsc : AssetHoldersOrderBy.AssetIdDesc,
+        start,
+        size,
+      });
+    }
+
     const result = await context.queryMiddleware<Ensured<Query, 'tokensHeldByDid'>>(
       tokensHeldByDid({
         did,
@@ -437,6 +446,10 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    */
   public async getTrustingAssets(): Promise<Asset[]> {
     const { context, did } = this;
+
+    if (context.isMiddlewareV2Enabled()) {
+      return this.getTrustingAssetsV2();
+    }
 
     const {
       data: { tokensByTrustedClaimIssuer: tickers },

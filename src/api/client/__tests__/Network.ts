@@ -4,6 +4,11 @@ import { when } from 'jest-when';
 import { Network } from '~/api/client/Network';
 import { Context, PolymeshTransaction } from '~/internal';
 import {
+  CallIdEnum as MiddlewareV2CallId,
+  EventIdEnum as MiddlewareV2EventId,
+  ModuleIdEnum as MiddlewareV2ModuleId,
+} from '~/middleware/enumsV2';
+import {
   eventByIndexedArgs,
   eventsByIndexedArgs,
   heartbeat,
@@ -11,14 +16,9 @@ import {
 } from '~/middleware/queries';
 import { eventsByArgs, extrinsicByHash } from '~/middleware/queriesV2';
 import { CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/types';
-import {
-  CallIdEnum as MiddlewareV2CallId,
-  EventIdEnum as MiddlewareV2EventId,
-  ModuleIdEnum as MiddlewareV2ModuleId,
-} from '~/middleware/typesV2';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { AccountBalance, TxTags } from '~/types';
+import { AccountBalance, EventIdentifier, ExtrinsicDataWithFees, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -213,7 +213,9 @@ describe('Network Class', () => {
       const eventIdx = new BigNumber(1);
       const fakeResult = { blockNumber, blockDate, eventIndex: eventIdx };
 
-      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
+      dsMockUtils.configureMocks({
+        contextOptions: { withSigningManager: true, middlewareV2Enabled: false },
+      });
       dsMockUtils.createApolloQueryMock(
         eventByIndexedArgs({
           ...variables,
@@ -237,6 +239,9 @@ describe('Network Class', () => {
     });
 
     it('should return null if the query result is empty', async () => {
+      dsMockUtils.configureMocks({
+        contextOptions: { withSigningManager: true, middlewareV2Enabled: false },
+      });
       dsMockUtils.createApolloQueryMock(
         eventByIndexedArgs({
           ...variables,
@@ -248,6 +253,14 @@ describe('Network Class', () => {
       );
       const result = await network.getEventByIndexedArgs({ ...variables, eventArg0: 'someDid' });
       expect(result).toBeNull();
+    });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      const fakeResult = 'fakeResult' as unknown as EventIdentifier;
+      jest.spyOn(network, 'getEventByIndexedArgsV2').mockResolvedValue(fakeResult);
+
+      const result = await network.getEventByIndexedArgs(variables);
+      expect(result).toEqual(fakeResult);
     });
   });
 
@@ -329,7 +342,9 @@ describe('Network Class', () => {
       const eventIdx = new BigNumber(1);
       const fakeResult = [{ blockNumber, blockDate, eventIndex: eventIdx }];
 
-      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
+      dsMockUtils.configureMocks({
+        contextOptions: { withSigningManager: true, middlewareV2Enabled: false },
+      });
 
       dsMockUtils.createApolloQueryMock(
         eventsByIndexedArgs({
@@ -362,6 +377,10 @@ describe('Network Class', () => {
     });
 
     it('should return null if the query result is empty', async () => {
+      dsMockUtils.configureMocks({
+        contextOptions: { withSigningManager: true, middlewareV2Enabled: false },
+      });
+
       dsMockUtils.createApolloQueryMock(
         eventsByIndexedArgs({
           ...variables,
@@ -378,6 +397,14 @@ describe('Network Class', () => {
         eventArg0: 'someDid',
       });
       expect(result).toBeNull();
+    });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      const fakeResult = 'fakeResult' as unknown as EventIdentifier[];
+      jest.spyOn(network, 'getEventsByIndexedArgsV2').mockResolvedValue(fakeResult);
+
+      const result = await network.getEventsByIndexedArgs(variables);
+      expect(result).toEqual(fakeResult);
     });
   });
 
@@ -475,6 +502,7 @@ describe('Network Class', () => {
       dsMockUtils.configureMocks({
         contextOptions: {
           withSigningManager: true,
+          middlewareV2Enabled: false,
           transactionFees: [
             {
               tag: TxTags.asset.RegisterTicker,
@@ -592,6 +620,9 @@ describe('Network Class', () => {
     });
 
     it('should return null if the query result is empty', async () => {
+      dsMockUtils.configureMocks({
+        contextOptions: { withSigningManager: true, middlewareV2Enabled: false },
+      });
       dsMockUtils.createApolloQueryMock(
         transactionByHash({
           transactionHash: variable.txHash,
@@ -600,6 +631,14 @@ describe('Network Class', () => {
       );
       const result = await network.getTransactionByHash(variable);
       expect(result).toBeNull();
+    });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      const fakeResult = 'fakeResult' as unknown as ExtrinsicDataWithFees;
+      jest.spyOn(network, 'getTransactionByHashV2').mockResolvedValue(fakeResult);
+
+      const result = await network.getTransactionByHash(variable);
+      expect(result).toEqual(fakeResult);
     });
   });
 

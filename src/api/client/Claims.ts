@@ -2,15 +2,11 @@ import BigNumber from 'bignumber.js';
 import { filter, flatten, isEqual, uniqBy, uniqWith } from 'lodash';
 
 import { addInvestorUniquenessClaim, Context, Identity, modifyClaims } from '~/internal';
+import { ClaimTypeEnum as MiddlewareV2ClaimType } from '~/middleware/enumsV2';
 import { didsWithClaims, issuerDidsWithClaimsByTarget } from '~/middleware/queries';
 import { claimsGroupingQuery, claimsQuery } from '~/middleware/queriesV2';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
-import {
-  ClaimsGroupBy,
-  ClaimsOrderBy,
-  ClaimTypeEnum as MiddlewareV2ClaimType,
-  Query as QueryV2,
-} from '~/middleware/typesV2';
+import { ClaimsGroupBy, ClaimsOrderBy, Query as QueryV2 } from '~/middleware/typesV2';
 import {
   AddInvestorUniquenessClaimParams,
   CddClaim,
@@ -158,6 +154,10 @@ export class Claims {
 
     const did = await getDid(target, context);
 
+    if (context.isMiddlewareV2Enabled()) {
+      return this.getIssuedClaimsV2(opts);
+    }
+
     return context.getIdentityClaimsFromMiddleware({
       trustedClaimIssuers: [did],
       includeExpired,
@@ -222,6 +222,10 @@ export class Claims {
     } = {}
   ): Promise<ResultSet<IdentityWithClaims>> {
     const { context } = this;
+
+    if (context.isMiddlewareV2Enabled()) {
+      return this.getIdentitiesWithClaimsV2(opts);
+    }
 
     const {
       targets,
@@ -475,6 +479,10 @@ export class Claims {
     } = {}
   ): Promise<ResultSet<IdentityWithClaims>> {
     const { context } = this;
+
+    if (context.isMiddlewareV2Enabled()) {
+      return this.getTargetingClaimsV2(opts);
+    }
 
     const { target, trustedClaimIssuers, scope, includeExpired = true, size, start } = opts;
 

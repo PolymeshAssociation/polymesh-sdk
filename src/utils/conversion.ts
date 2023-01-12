@@ -111,6 +111,10 @@ import {
   Venue,
 } from '~/internal';
 import {
+  CallIdEnum as MiddlewareV2CallId,
+  ModuleIdEnum as MiddlewareV2ModuleId,
+} from '~/middleware/enumsV2';
+import {
   CallIdEnum,
   ClaimScopeTypeEnum,
   Event as MiddlewareEvent,
@@ -121,9 +125,7 @@ import {
 } from '~/middleware/types';
 import {
   Block as MiddlewareV2Block,
-  CallIdEnum as MiddlewareV2CallId,
   Claim as MiddlewareV2Claim,
-  ModuleIdEnum as MiddlewareV2ModuleId,
   Portfolio as MiddlewareV2Portfolio,
 } from '~/middleware/typesV2';
 import {

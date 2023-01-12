@@ -10,10 +10,11 @@ import {
   rescheduleInstruction,
   Venue,
 } from '~/internal';
+import { EventIdEnum as MiddlewareV2Event } from '~/middleware/enumsV2';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { instructionsQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
-import { EventIdEnum as MiddlewareV2Event, Query as QueryV2 } from '~/middleware/typesV2';
+import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   ErrorCode,
   EventIdentifier,
@@ -364,6 +365,10 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       };
     }
 
+    if (this.context.isMiddlewareV2Enabled()) {
+      return this.getStatusV2();
+    }
+
     let eventIdentifier = await this.getInstructionEventFromMiddleware(
       EventIdEnum.InstructionExecuted
     );
@@ -492,10 +497,14 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
         },
       },
     } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'instructions'>>(
-      instructionsQuery({
-        eventId,
-        id: id.toString(),
-      })
+      instructionsQuery(
+        {
+          eventId,
+          id: id.toString(),
+        },
+        new BigNumber(1),
+        new BigNumber(0)
+      )
     );
 
     return optionize(middlewareV2EventDetailsToEventIdentifier)(
