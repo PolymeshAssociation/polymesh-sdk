@@ -318,7 +318,7 @@ export class Polymesh {
   }
 
   /**
-   * Middleware client
+   * MiddlewareV2 client
    */
   public get _middlewareApiV2(): ApolloClient<NormalizedCacheObject> {
     return this.context.middlewareApiV2;
