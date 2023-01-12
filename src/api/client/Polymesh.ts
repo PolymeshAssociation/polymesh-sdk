@@ -317,6 +317,7 @@ export class Polymesh {
     return this.context.middlewareApi;
   }
 
+  /* istanbul ignore next: not part of the official public API */
   /**
    * MiddlewareV2 client
    */
