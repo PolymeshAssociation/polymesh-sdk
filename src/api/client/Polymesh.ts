@@ -316,5 +316,13 @@ export class Polymesh {
   public get _middlewareApi(): ApolloClient<NormalizedCacheObject> {
     return this.context.middlewareApi;
   }
+
+  /* istanbul ignore next: not part of the official public API */
+  /**
+   * MiddlewareV2 client
+   */
+  public get _middlewareApiV2(): ApolloClient<NormalizedCacheObject> {
+    return this.context.middlewareApiV2;
+  }
   /* eslint-enable @typescript-eslint/naming-convention */
 }
