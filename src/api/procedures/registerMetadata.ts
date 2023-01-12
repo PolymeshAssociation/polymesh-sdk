@@ -79,7 +79,7 @@ export async function prepareRegisterMetadata(
     [typeof assetMetadataGlobalNameToKey, typeof assetMetadataLocalNameToKey]
   >(context, [
     [assetMetadataGlobalNameToKey, rawName],
-    [assetMetadataLocalNameToKey, rawTicker, rawName],
+    [assetMetadataLocalNameToKey, [rawTicker, rawName]],
   ]);
 
   if (rawGlobalId.isSome || rawLocalId.isSome) {
