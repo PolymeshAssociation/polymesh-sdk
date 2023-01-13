@@ -112,7 +112,6 @@ import {
 } from '~/internal';
 import {
   CallIdEnum as MiddlewareV2CallId,
-  InstructionStatusEnum,
   ModuleIdEnum as MiddlewareV2ModuleId,
 } from '~/middleware/enumsV2';
 import {
@@ -4408,7 +4407,7 @@ export function middlewareInstructionToHistoricInstruction(
     id: new BigNumber(instructionId),
     blockNumber: new BigNumber(blockId),
     blockHash: hash,
-    status: status as InstructionStatusEnum,
+    status,
     tradeDate,
     valueDate,
     ...typeDetails,

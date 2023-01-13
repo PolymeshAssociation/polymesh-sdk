@@ -319,6 +319,72 @@ export function instructionsQuery(
   };
 }
 
+/**
+ * @hidden
+ *
+ * Get Instructions where an identity is involved
+ */
+export function instructionsByDidQuery(
+  identityId: string
+): GraphqlQuery<QueryArgs<Leg, 'fromId' | 'toId'>> {
+  const query = gql`
+    query InstructionsByDidQuery($fromId: String!, $toId: String!)
+     {
+      legs(
+        filter: { or: [{ fromId: { startsWith: $fromId } }, { toId: { startsWith: $toId } }] }
+        orderBy: [${LegsOrderBy.CreatedAtAsc}, ${LegsOrderBy.InstructionIdAsc}]
+      ) {
+        nodes {
+          instruction {
+            id
+            eventIdx
+            eventId
+            status
+            settlementType
+            venueId
+            endBlock
+            tradeDate
+            valueDate
+            legs {
+              nodes {
+                fromId
+                from {
+                  identityId
+                  number
+                }
+                toId
+                to {
+                  identityId
+                  number
+                }
+                assetId
+                amount
+                addresses
+              }
+            }
+            memo
+            createdBlock {
+              blockId
+              hash
+              datetime
+            }
+            updatedBlock {
+              blockId
+              hash
+              datetime
+            }
+          }
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: { fromId: `${identityId}/`, toId: `${identityId}/` },
+  };
+}
+
 type EventArgs = 'moduleId' | 'eventId' | 'eventArg0' | 'eventArg1' | 'eventArg2';
 
 /**
