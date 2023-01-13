@@ -13,13 +13,18 @@ import { when } from 'jest-when';
 
 import { Asset, Context, Entity, Identity } from '~/internal';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
-import { assetHoldersQuery, trustingAssetsQuery } from '~/middleware/queriesV2';
+import {
+  assetHoldersQuery,
+  instructionsByDidQuery,
+  trustingAssetsQuery,
+} from '~/middleware/queriesV2';
 import { AssetHoldersOrderBy } from '~/middleware/typesV2';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
 import {
   Account,
   DistributionWithDetails,
+  HistoricInstruction,
   IdentityRole,
   Order,
   PermissionedAccount,
@@ -1251,6 +1256,33 @@ describe('Identity class', () => {
     it('should return a human readable version of the entity', () => {
       const identity = new Identity({ did: 'someDid' }, context);
       expect(identity.toHuman()).toBe('someDid');
+    });
+  });
+
+  describe('method: getHistoricalInstructions', () => {
+    it('should return the list of all instructions where the Identity was involved', async () => {
+      const identity = new Identity({ did: 'someDid' }, context);
+      const middlewareInstructionToHistoricInstructionSpy = jest.spyOn(
+        utilsConversionModule,
+        'middlewareInstructionToHistoricInstruction'
+      );
+
+      const legsResponse = {
+        totalCount: 5,
+        nodes: [{ instruction: 'instruction' }],
+      };
+
+      dsMockUtils.createApolloV2QueryMock(instructionsByDidQuery(identity.did), {
+        legs: legsResponse,
+      });
+
+      const mockHistoricInstruction = 'mockData' as unknown as HistoricInstruction;
+
+      middlewareInstructionToHistoricInstructionSpy.mockReturnValue(mockHistoricInstruction);
+
+      const result = await identity.getHistoricalInstructions();
+
+      expect(result).toEqual([mockHistoricInstruction]);
     });
   });
 });

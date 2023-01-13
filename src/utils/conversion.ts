@@ -126,6 +126,7 @@ import {
 import {
   Block as MiddlewareV2Block,
   Claim as MiddlewareV2Claim,
+  Instruction,
   Portfolio as MiddlewareV2Portfolio,
 } from '~/middleware/typesV2';
 import {
@@ -165,6 +166,7 @@ import {
   ErrorCode,
   EventIdentifier,
   ExternalAgentCondition,
+  HistoricInstruction,
   IdentityCondition,
   IdentityWithClaims,
   InputCorporateActionTargets,
@@ -4364,4 +4366,60 @@ export function metadataValueDetailToMeshMetadataValueDetail(
  */
 export function instructionMemoToString(value: U8aFixed): string {
   return removePadding(hexToString(value.toString()));
+}
+
+/**
+ * @hidden
+ */
+export function middlewareInstructionToHistoricInstruction(
+  instruction: Instruction,
+  context: Context
+): HistoricInstruction {
+  /* eslint-disable @typescript-eslint/no-non-null-assertion */
+  const {
+    id: instructionId,
+    status,
+    settlementType,
+    endBlock,
+    tradeDate,
+    valueDate,
+    legs: { nodes: legs },
+    memo,
+    createdBlock,
+    venueId,
+  } = instruction;
+  const { blockId, hash, datetime } = createdBlock!;
+
+  let typeDetails;
+
+  if (settlementType === InstructionType.SettleOnBlock) {
+    typeDetails = {
+      type: InstructionType.SettleOnBlock,
+      endBlock: new BigNumber(endBlock!),
+    };
+  } else {
+    typeDetails = {
+      type: InstructionType.SettleOnAffirmation,
+    };
+  }
+
+  return {
+    id: new BigNumber(instructionId),
+    blockNumber: new BigNumber(blockId),
+    blockHash: hash,
+    status,
+    tradeDate,
+    valueDate,
+    ...typeDetails,
+    memo: memo || null,
+    venueId: new BigNumber(venueId),
+    createdAt: new Date(datetime),
+    legs: legs.map(({ from, to, assetId, amount }) => ({
+      asset: new Asset({ ticker: assetId }, context),
+      amount: new BigNumber(amount).shiftedBy(-6),
+      from: middlewareV2PortfolioToPortfolio(from!, context),
+      to: middlewareV2PortfolioToPortfolio(to!, context),
+    })),
+  };
+  /* eslint-enable @typescript-eslint/no-non-null-assertion */
 }
