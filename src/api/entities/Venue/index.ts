@@ -2,6 +2,8 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
 import { addInstruction, Context, Entity, Identity, Instruction, modifyVenue } from '~/internal';
+import { instructionsQuery } from '~/middleware/queriesV2';
+import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   AddInstructionParams,
   AddInstructionsParams,
@@ -10,17 +12,20 @@ import {
   ModifyVenueParams,
   NumberedPortfolio,
   ProcedureMethod,
+  ResultSet,
 } from '~/types';
+import { EnsuredV2 } from '~/types/utils';
 import {
   bigNumberToU64,
   bytesToString,
   identityIdToString,
   meshVenueTypeToVenueType,
+  middlewareInstructionToHistoricInstruction,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
+import { calculateNextKey, createProcedureMethod } from '~/utils/internal';
 
-import { VenueDetails } from './types';
+import { HistoricInstruction, VenueDetails } from './types';
 
 export interface UniqueIdentifiers {
   id: BigNumber;
@@ -188,6 +193,54 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
         },
       ]) => new Instruction({ id: u64ToBigNumber(instructionId) }, context)
     );
+  }
+
+  /**
+   * Retrieve all Instructions that have been associated with this Venue instance
+   *
+   * @param opts.size - page size
+   * @param opts.start - page offset
+   *
+   * @note uses the middleware V2
+   * @note supports pagination
+   */
+  public async getHistoricalInstructions(
+    opts: {
+      size?: BigNumber;
+      start?: BigNumber;
+    } = {}
+  ): Promise<ResultSet<HistoricInstruction>> {
+    const { context, id } = this;
+
+    const { size, start } = opts;
+
+    const {
+      data: {
+        instructions: { nodes: instructionsResult, totalCount },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'instructions'>>(
+      instructionsQuery(
+        {
+          venueId: id.toString(),
+        },
+        size,
+        start
+      )
+    );
+
+    const data = instructionsResult.map(middlewareInstruction =>
+      middlewareInstructionToHistoricInstruction(middlewareInstruction, context)
+    );
+
+    const count = new BigNumber(totalCount);
+
+    const next = calculateNextKey(count, size, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
   }
 
   /**
