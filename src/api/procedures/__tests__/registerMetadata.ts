@@ -105,9 +105,11 @@ describe('registerMetadata procedure', () => {
       name,
       specs: {},
     };
+
     dsMockUtils.createQueryMock('asset', 'assetMetadataGlobalNameToKey');
     dsMockUtils.createQueryMock('asset', 'assetMetadataLocalNameToKey');
     queryMultiMock = dsMockUtils.getQueryMultiMock();
+
     registerAssetMetadataLocalTypeTxMock = dsMockUtils.createTxMock(
       'asset',
       'registerAssetMetadataLocalType'
