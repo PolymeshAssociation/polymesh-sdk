@@ -128,6 +128,13 @@ export class Context {
   private nonce?: BigNumber;
 
   /**
+   * A counter for keeping track of internal subscriptions. Disconnect will wait until its zero
+   *
+   * @note it must be an "Object" so cloned Context will share the reference
+   */
+  private subscriptions = { chain: 0 };
+
+  /**
    * @hidden
    */
   private constructor(params: ConstructorParams) {
@@ -207,6 +214,27 @@ export class Context {
     } catch (e) {
       return false;
     }
+  }
+
+  /**
+   * @hidden
+   */
+  public incrementChainSubscription(): void {
+    this.subscriptions.chain += 1;
+  }
+
+  /**
+   * @hidden
+   */
+  public decrementChainSubscription(): void {
+    this.subscriptions.chain -= 1;
+  }
+
+  /**
+   * @hidden
+   */
+  public getChainSubscriptions(): number {
+    return this.subscriptions.chain;
   }
 
   /**
@@ -1346,6 +1374,8 @@ export class Context {
   public async getLatestBlock(): Promise<BigNumber> {
     const { chain } = this.polymeshApi.rpc;
 
+    this.incrementChainSubscription();
+
     /*
      * This is faster than calling `getFinalizedHead` and then `getHeader`.
      * We're promisifying a callback subscription to the latest finalized block
@@ -1358,7 +1388,8 @@ export class Context {
             unsub();
             resolve(header);
           })
-          .catch(err => reject(err));
+          .catch(err => reject(err))
+          .finally(() => this.decrementChainSubscription());
       });
     });
 
@@ -1386,7 +1417,7 @@ export class Context {
    * @note after disconnecting, trying to access any property in this object will result
    *   in an error
    */
-  public disconnect(): Promise<void> {
+  public async disconnect(): Promise<void> {
     const { polymeshApi } = this;
     let middlewareApi, middlewareApiV2;
 
@@ -1398,10 +1429,18 @@ export class Context {
       ({ middlewareApiV2 } = this);
     }
 
-    this.isDisconnected = true;
-
     middlewareApi && middlewareApi.stop();
     middlewareApiV2 && middlewareApiV2.stop();
+
+    // There maybe pending chain subscriptions that should be waited to complete
+    let attempts = 10;
+    const retryInterval = 50;
+    while (this.getChainSubscriptions() > 0 || attempts <= 0) {
+      attempts -= 1;
+      await new Promise(resolve => setTimeout(resolve, retryInterval));
+    }
+
+    this.isDisconnected = true;
 
     return polymeshApi.disconnect();
   }

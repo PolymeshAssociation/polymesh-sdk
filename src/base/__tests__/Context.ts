@@ -1793,6 +1793,50 @@ describe('Context class', () => {
 
       return expect(context.getLatestBlock()).rejects.toThrow(err);
     });
+
+    it('should increment and decrement the pending subscription count', async () => {
+      const blockNumber = new BigNumber(100);
+
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
+      });
+
+      const mock = dsMockUtils.createRpcMock('chain', 'subscribeFinalizedHeads');
+      mock.mockImplementation(async callback => {
+        setImmediate(() => {
+          expect(context.getChainSubscriptions()).toEqual(1);
+
+          // eslint-disable-next-line node/no-callback-literal
+          callback({
+            number: dsMockUtils.createMockCompact(dsMockUtils.createMockU32(blockNumber)),
+          });
+        });
+        return (): void => undefined;
+      });
+
+      await context.getLatestBlock();
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(context.getChainSubscriptions()).toEqual(0);
+
+      const err = new Error('Foo');
+      mock.mockImplementation(callback => {
+        setImmediate(() => {
+          expect(context.getChainSubscriptions()).toEqual(1);
+
+          // eslint-disable-next-line node/no-callback-literal
+          callback({});
+        });
+        return P.delay(0).throw(err);
+      });
+
+      await expect(context.getLatestBlock()).rejects.toThrow();
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(context.getChainSubscriptions()).toEqual(0);
+    });
   });
 
   describe('method: getNetworkVersion', () => {
@@ -2014,6 +2058,33 @@ describe('Context class', () => {
         'Client disconnected. Please create a new instance via "Polymesh.connect()"'
       );
     });
+
+    it('should wait until subscriptions are drained', async () => {
+      const polymeshApi = dsMockUtils.getApiInstance();
+      const context = await Context.create({
+        polymeshApi,
+        middlewareApi: null,
+        middlewareApiV2: null,
+      });
+
+      const waitTime = 75;
+
+      context.incrementChainSubscription();
+
+      let completed = false;
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      context.disconnect().then(() => (completed = true));
+
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+
+      expect(completed).toEqual(false);
+
+      context.decrementChainSubscription();
+
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+
+      expect(completed).toEqual(true);
+    });
   });
 
   describe('method: getDividendDistributionsForAssets', () => {
@@ -2217,6 +2288,20 @@ describe('Context class', () => {
       const cloned = context.clone();
 
       expect(cloned).toEqual(context);
+    });
+
+    it('cloned instance should share a count', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: null,
+        middlewareApiV2: null,
+      });
+
+      const cloned = context.clone();
+
+      cloned.incrementChainSubscription();
+
+      expect(cloned.getChainSubscriptions()).toEqual(context.getChainSubscriptions());
     });
   });
 
