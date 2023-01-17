@@ -6,6 +6,7 @@ import {
   Asset,
   AssetHolder,
   AssetHoldersOrderBy,
+  BlocksOrderBy,
   ClaimsGroupBy,
   ClaimsOrderBy,
   Distribution,
@@ -34,6 +35,28 @@ import {
 } from '~/middleware/typesV2';
 import { GraphqlQuery } from '~/types/internal';
 import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
+
+/**
+ * @hidden
+ *
+ * Get the latest processed block number
+ */
+export function latestBlockQuery(): GraphqlQuery {
+  const query = gql`
+    query latestBlock {
+      blocks(first: 1, orderBy: [${BlocksOrderBy.BlockIdDesc}]) {
+        nodes {
+          blockId
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: undefined,
+  };
+}
 
 /**
  * @hidden
