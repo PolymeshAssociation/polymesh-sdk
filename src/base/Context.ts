@@ -1311,6 +1311,15 @@ export class Context {
   /**
    * @hidden
    *
+   * Return whether any middleware was enabled at startup
+   */
+  public isAnyMiddlewareEnabled(): boolean {
+    return this.isMiddlewareV2Enabled() || this.isMiddlewareEnabled();
+  }
+
+  /**
+   * @hidden
+   *
    * Return whether the middleware is enabled and online
    */
   public async isMiddlewareAvailable(): Promise<boolean> {
