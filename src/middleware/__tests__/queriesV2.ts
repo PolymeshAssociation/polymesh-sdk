@@ -1,5 +1,6 @@
 import BigNumber from 'bignumber.js';
 
+import { CallIdEnum, ClaimTypeEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/enumsV2';
 import {
   assetHoldersQuery,
   assetQuery,
@@ -11,6 +12,7 @@ import {
   extrinsicByHash,
   extrinsicsByArgs,
   heartbeatQuery,
+  instructionsByDidQuery,
   instructionsQuery,
   investmentsQuery,
   portfolioMovementsQuery,
@@ -23,7 +25,6 @@ import {
   trustingAssetsQuery,
 } from '~/middleware/queriesV2';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
-import { CallIdEnum, ClaimTypeEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/typesV2';
 
 describe('heartbeat', () => {
   it('should pass the variables to the grapqhl query', () => {
@@ -103,10 +104,33 @@ describe('instructionsQuery', () => {
       id: '1',
     };
 
-    const result = instructionsQuery(variables);
+    let result = instructionsQuery(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);
+
+    result = instructionsQuery(
+      {
+        venueId: '2',
+      },
+      new BigNumber(10),
+      new BigNumber(2)
+    );
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({
+      venueId: '2',
+      size: 10,
+      start: 2,
+    });
+  });
+});
+
+describe('instructionsByDidQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const result = instructionsByDidQuery('someDid');
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({ fromId: 'someDid/', toId: 'someDid/' });
   });
 });
 

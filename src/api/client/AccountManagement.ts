@@ -10,6 +10,7 @@ import {
   modifySignerPermissionsStorage,
   removeSecondaryAccounts,
   subsidizeAccount,
+  Subsidy,
   toggleFreezeSecondaryAccounts,
 } from '~/internal';
 import {
@@ -26,7 +27,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import { stringToAccountId } from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
+import { asAccount, createProcedureMethod } from '~/utils/internal';
 
 /**
  * Handles functionality related to Account Management
@@ -51,7 +52,7 @@ export class AccountManagement {
       context
     );
     this.revokePermissions = createProcedureMethod<
-      { secondaryAccounts: Account[] },
+      { secondaryAccounts: (string | Account)[] },
       ModifySignerPermissionsParams,
       void,
       modifySignerPermissionsStorage
@@ -121,7 +122,7 @@ export class AccountManagement {
    *
    * @throws if the signing Account is not the primary Account of the Identity whose secondary Account permissions are being revoked
    */
-  public revokePermissions: ProcedureMethod<{ secondaryAccounts: Account[] }, void>;
+  public revokePermissions: ProcedureMethod<{ secondaryAccounts: (string | Account)[] }, void>;
 
   /**
    * Modify all permissions of a list of secondary Accounts associated with the signing Identity
@@ -206,8 +207,8 @@ export class AccountManagement {
 
     if (!account) {
       account = context.getSigningAccount();
-    } else if (typeof account === 'string') {
-      account = new Account({ address: account }, context);
+    } else {
+      account = asAccount(account, context);
     }
 
     if (cb) {
@@ -257,5 +258,22 @@ export class AccountManagement {
    */
   public async getSigningAccounts(): Promise<Account[]> {
     return this.context.getSigningAccounts();
+  }
+
+  /**
+   * Return an Subsidy instance for a pair of beneficiary and subsidizer Account
+   */
+  public getSubsidy(args: {
+    beneficiary: string | Account;
+    subsidizer: string | Account;
+  }): Subsidy {
+    const { context } = this;
+
+    const { beneficiary, subsidizer } = args;
+
+    const { address: beneficiaryAddress } = asAccount(beneficiary, context);
+    const { address: subsidizerAddress } = asAccount(subsidizer, context);
+
+    return new Subsidy({ beneficiary: beneficiaryAddress, subsidizer: subsidizerAddress }, context);
   }
 }

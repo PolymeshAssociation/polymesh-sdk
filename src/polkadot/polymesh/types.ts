@@ -94,7 +94,9 @@ export interface AssetIdentifier extends Enum {
   readonly asIsin: U8aFixed;
   readonly isLei: boolean;
   readonly asLei: U8aFixed;
-  readonly type: 'Cusip' | 'Cins' | 'Isin' | 'Lei';
+  readonly isFigi: boolean;
+  readonly asFigi: U8aFixed;
+  readonly type: 'Cusip' | 'Cins' | 'Isin' | 'Lei' | 'Figi';
 }
 
 /** @name AssetMetadataDescription */
@@ -441,6 +443,8 @@ export interface Claim extends Enum {
   readonly isNoData: boolean;
   readonly isInvestorUniquenessV2: boolean;
   readonly asInvestorUniquenessV2: CddId;
+  readonly isCustom: boolean;
+  readonly asCustom: ITuple<[CustomClaimTypeId, Option<Scope>]>;
   readonly type:
     | 'Accredited'
     | 'Affiliate'
@@ -453,7 +457,8 @@ export interface Claim extends Enum {
     | 'Blocked'
     | 'InvestorUniqueness'
     | 'NoData'
-    | 'InvestorUniquenessV2';
+    | 'InvestorUniquenessV2'
+    | 'Custom';
 }
 
 /** @name Claim1stKey */
@@ -482,6 +487,8 @@ export interface ClaimType extends Enum {
   readonly isInvestorUniqueness: boolean;
   readonly isNoData: boolean;
   readonly isInvestorUniquenessV2: boolean;
+  readonly isCustom: boolean;
+  readonly asCustom: CustomClaimTypeId;
   readonly type:
     | 'Accredited'
     | 'Affiliate'
@@ -494,7 +501,8 @@ export interface ClaimType extends Enum {
     | 'Blocked'
     | 'InvestorUniqueness'
     | 'NoData'
-    | 'InvestorUniquenessV2';
+    | 'InvestorUniquenessV2'
+    | 'Custom';
 }
 
 /** @name ClassicTickerImport */
@@ -532,9 +540,6 @@ export interface ComplianceRequirementResult extends Struct {
   readonly id: u32;
   readonly result: bool;
 }
-
-/** @name CompressedRistretto */
-export interface CompressedRistretto extends U8aFixed {}
 
 /** @name Condition */
 export interface Condition extends Struct {
@@ -1081,6 +1086,9 @@ export interface CountryCode extends Enum {
 /** @name CustomAssetTypeId */
 export interface CustomAssetTypeId extends u32 {}
 
+/** @name CustomClaimTypeId */
+export interface CustomClaimTypeId extends u32 {}
+
 /** @name DepositInfo */
 export interface DepositInfo extends Struct {
   readonly owner: AccountId;
@@ -1183,12 +1191,6 @@ export interface EventCounts extends Vec<u32> {}
 /** @name EventDid */
 export interface EventDid extends IdentityId {}
 
-/** @name ExtensionAttributes */
-export interface ExtensionAttributes extends Struct {
-  readonly usage_fee: Balance;
-  readonly version: MetaVersion;
-}
-
 /** @name ExtrinsicPermissions */
 export interface ExtrinsicPermissions extends Enum {
   readonly isWhole: boolean;
@@ -1198,9 +1200,6 @@ export interface ExtrinsicPermissions extends Enum {
   readonly asExcept: Vec<PalletPermissions>;
   readonly type: 'Whole' | 'These' | 'Except';
 }
-
-/** @name ExtVersion */
-export interface ExtVersion extends u32 {}
 
 /** @name FundingRoundName */
 export interface FundingRoundName extends Text {}
@@ -1311,6 +1310,18 @@ export interface InactiveMember extends Struct {
   readonly expiry: Option<Moment>;
 }
 
+/** @name InitiateCorporateActionArgs */
+export interface InitiateCorporateActionArgs extends Struct {
+  readonly ticker: Ticker;
+  readonly kind: CAKind;
+  readonly decl_date: Moment;
+  readonly record_date: Option<RecordDateSpec>;
+  readonly details: CADetails;
+  readonly targets: Option<TargetIdentities>;
+  readonly default_withholding_tax: Option<Tax>;
+  readonly withholding_tax: Option<Vec<ITuple<[IdentityId, Tax]>>>;
+}
+
 /** @name Instruction */
 export interface Instruction extends Struct {
   readonly instruction_id: InstructionId;
@@ -1337,10 +1348,7 @@ export interface InstructionStatus extends Enum {
 export interface InvestorUid extends U8aFixed {}
 
 /** @name InvestorZKProofData */
-export interface InvestorZKProofData extends Struct {
-  readonly r: CompressedRistretto;
-  readonly s: Scalar;
-}
+export interface InvestorZKProofData extends U8aFixed {}
 
 /** @name ItnRewardStatus */
 export interface ItnRewardStatus extends Enum {
@@ -1401,17 +1409,15 @@ export interface MaybeBlock extends Enum {
   readonly type: 'Some' | 'None';
 }
 
+/** @name Member */
+export interface Member extends Struct {
+  readonly id: IdentityId;
+  readonly expiry_at: Option<Moment>;
+  readonly inactive_from: Option<Moment>;
+}
+
 /** @name Memo */
 export interface Memo extends U8aFixed {}
-
-/** @name MetaDescription */
-export interface MetaDescription extends Text {}
-
-/** @name MetaUrl */
-export interface MetaUrl extends Text {}
-
-/** @name MetaVersion */
-export interface MetaVersion extends u32 {}
 
 /** @name Moment */
 export interface Moment extends u64 {}
@@ -1468,7 +1474,6 @@ export interface Permissions extends Struct {
 export interface Pip extends Struct {
   readonly id: PipId;
   readonly proposal: Call;
-  readonly state: ProposalState;
   readonly proposer: Proposer;
 }
 
@@ -1780,27 +1785,6 @@ export interface SlashingSwitch extends Enum {
   readonly type: 'Validator' | 'ValidatorAndNominator' | 'None';
 }
 
-/** @name SmartExtension */
-export interface SmartExtension extends Struct {
-  readonly extension_type: SmartExtensionType;
-  readonly extension_name: SmartExtensionName;
-  readonly extension_id: AccountId;
-  readonly is_archive: bool;
-}
-
-/** @name SmartExtensionName */
-export interface SmartExtensionName extends Text {}
-
-/** @name SmartExtensionType */
-export interface SmartExtensionType extends Enum {
-  readonly isTransferManager: boolean;
-  readonly isOfferings: boolean;
-  readonly isSmartWallet: boolean;
-  readonly isCustom: boolean;
-  readonly asCustom: Bytes;
-  readonly type: 'TransferManager' | 'Offerings' | 'SmartWallet' | 'Custom';
-}
-
 /** @name SnapshotId */
 export interface SnapshotId extends u32 {}
 
@@ -1913,22 +1897,6 @@ export interface TargetTreatment extends Enum {
 
 /** @name Tax */
 export interface Tax extends Permill {}
-
-/** @name TemplateDetails */
-export interface TemplateDetails extends Struct {
-  readonly instantiation_fee: Balance;
-  readonly owner: IdentityId;
-  readonly frozen: bool;
-}
-
-/** @name TemplateMetadata */
-export interface TemplateMetadata extends Struct {
-  readonly url: Option<MetaUrl>;
-  readonly se_type: SmartExtensionType;
-  readonly usage_fee: Balance;
-  readonly description: MetaDescription;
-  readonly version: MetaVersion;
-}
 
 /** @name Ticker */
 export interface Ticker extends U8aFixed {}

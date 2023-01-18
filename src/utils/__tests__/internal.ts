@@ -10,9 +10,8 @@ import {
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { IdentityId } from 'polymesh-types/types';
 
-import { Asset, Context, Identity, PolymeshError, Procedure } from '~/internal';
+import { Account, Asset, Context, Identity, PolymeshError, Procedure } from '~/internal';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
@@ -24,7 +23,6 @@ import {
   MockWebSocket,
 } from '~/testUtils/mocks/dataSources';
 import {
-  Account,
   CaCheckpointType,
   CalendarPeriod,
   CalendarUnit,
@@ -45,6 +43,7 @@ import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 
 import {
+  asAccount,
   assertAddressValid,
   assertExpectedChainVersion,
   assertIsInteger,
@@ -82,9 +81,14 @@ import {
   sliceBatchReceipt,
   unserialize,
 } from '../internal';
+
 jest.mock(
   '~/api/entities/Asset',
   require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+);
+jest.mock(
+  '~/api/entities/Account',
+  require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
 );
 jest.mock('websocket', require('~/testUtils/mocks/dataSources').mockWebSocketModule());
 
@@ -193,6 +197,43 @@ describe('getDid', () => {
     const result = await getDid(undefined, context);
 
     expect(result).toBe((await context.getSigningIdentity()).did);
+  });
+});
+
+describe('asAccount', () => {
+  let context: Context;
+  let address: string;
+  let account: Account;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+    address = 'someAddress';
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+    account = new Account({ address }, context);
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return Account for given address', async () => {
+    const result = asAccount(address, context);
+
+    expect(result).toEqual(expect.objectContaining({ address }));
+  });
+
+  it('should return the passed Account', async () => {
+    const result = asAccount(account, context);
+
+    expect(result).toBe(account);
   });
 });
 
@@ -916,7 +957,7 @@ describe('getPortfolioIdsByName', () => {
   let portfoliosMock: jest.Mock;
   let firstPortfolioName: MockCodec<Bytes>;
   let rawNames: Bytes[];
-  let identityId: IdentityId;
+  let identityId: PolymeshPrimitivesIdentityId;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -1126,17 +1167,17 @@ describe('assertExpectedChainVersion', () => {
 
   it('should log a warning given a minor or patch RPC node version mismatch', async () => {
     const signal = assertExpectedChainVersion('ws://example.com');
-    client.sendSpecVersion('5000002');
-    client.sendRpcVersion('5.1.0');
+    client.sendSpecVersion('5001030');
+    client.sendRpcVersion('5.1.7');
     await signal;
     expect(warnSpy).toHaveBeenCalledWith(
-      'This version of the SDK supports Polymesh RPC node version 5.0.2. The node is at version 5.1.0. Please upgrade the SDK'
+      'This version of the SDK supports Polymesh RPC node version 5.1.3. The node is at version 5.1.7. Please upgrade the SDK'
     );
   });
 
   it('should throw an error given a major chain spec version mismatch', () => {
     const signal = assertExpectedChainVersion('ws://example.com');
-    client.sendSpecVersion('3000000');
+    client.sendSpecVersion('9000000');
     const expectedError = new PolymeshError({
       code: ErrorCode.FatalError,
       message: 'Unsupported Polymesh chain spec version. Please upgrade the SDK',
@@ -1146,11 +1187,11 @@ describe('assertExpectedChainVersion', () => {
 
   it('should log a warning given a minor or patch chain spec version mismatch', async () => {
     const signal = assertExpectedChainVersion('ws://example.com');
-    client.sendSpecVersion('5001000');
-    client.sendRpcVersion('5.0.2');
+    client.sendSpecVersion('5001007');
+    client.sendRpcVersion('5.1.1');
     await signal;
     expect(warnSpy).toHaveBeenCalledWith(
-      'This version of the SDK supports Polymesh chain spec version 5.0.2. The chain spec is at version 5.1.0. Please upgrade the SDK'
+      'This version of the SDK supports Polymesh chain spec version 5.1.30. The chain spec is at version 5.1.7. Please upgrade the SDK'
     );
   });
 
@@ -1872,6 +1913,7 @@ describe('method: getSecondaryAccountPermissions', () => {
       multi: [
         dsMockUtils.createMockOption(rawPrimaryKeyRecord),
         dsMockUtils.createMockOption(otherSecondaryKey),
+        dsMockUtils.createMockOption(),
         dsMockUtils.createMockOption(rawMultiSigKeyRecord),
       ],
     });

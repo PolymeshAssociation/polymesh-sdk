@@ -1,4 +1,3 @@
-import { QueryableStorageEntry } from '@polkadot/api/types';
 import {
   PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityId,
@@ -7,7 +6,6 @@ import {
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RemoveAssetStatParams, StatClaimIssuer, StatType, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
-import { QueryReturnType } from '~/types/utils';
 import {
   claimIssuerToMeshClaimIssuer,
   statisticsOpTypeToStatType,
@@ -15,7 +13,7 @@ import {
   statTypeToStatOpType,
   stringToTickerKey,
 } from '~/utils/conversion';
-import { compareTransferRestrictionToStat } from '~/utils/internal';
+import { compareTransferRestrictionToStat, requestMulti } from '~/utils/internal';
 
 /**
  * @hidden
@@ -29,7 +27,6 @@ export async function prepareRemoveAssetStat(
       polymeshApi: {
         tx: { statistics },
         query: { statistics: statisticsQuery },
-        queryMulti,
       },
     },
     context,
@@ -37,17 +34,11 @@ export async function prepareRemoveAssetStat(
   const { ticker, type } = args;
   const tickerKey = stringToTickerKey(ticker, context);
 
-  const [currentStats, { requirements }] = await queryMulti<
-    [
-      QueryReturnType<typeof statisticsQuery.activeAssetStats>,
-      QueryReturnType<typeof statisticsQuery.assetTransferCompliances>
-    ]
-  >([
-    [statisticsQuery.activeAssetStats as unknown as QueryableStorageEntry<'promise'>, tickerKey],
-    [
-      statisticsQuery.assetTransferCompliances as unknown as QueryableStorageEntry<'promise'>,
-      tickerKey,
-    ],
+  const [currentStats, { requirements }] = await requestMulti<
+    [typeof statisticsQuery.activeAssetStats, typeof statisticsQuery.assetTransferCompliances]
+  >(context, [
+    [statisticsQuery.activeAssetStats, tickerKey],
+    [statisticsQuery.assetTransferCompliances, tickerKey],
   ]);
 
   let claimIssuer: StatClaimIssuer;

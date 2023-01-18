@@ -1,7 +1,7 @@
 import { bool, u64 } from '@polkadot/types';
+import { PolymeshPrimitivesSecondaryKeySignatory } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { Signatory } from 'polymesh-types/types';
 
 import {
   ConsumeAuthorizationRequestsParams,
@@ -28,7 +28,10 @@ jest.mock(
 
 describe('consumeAuthorizationRequests procedure', () => {
   let mockContext: Mocked<Context>;
-  let signerValueToSignatorySpy: jest.SpyInstance<Signatory, [SignerValue, Context]>;
+  let signerValueToSignatorySpy: jest.SpyInstance<
+    PolymeshPrimitivesSecondaryKeySignatory,
+    [SignerValue, Context]
+  >;
   let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
   let booleanToBoolSpy: jest.SpyInstance<bool, [boolean, Context]>;
   let authParams: {
@@ -39,7 +42,7 @@ describe('consumeAuthorizationRequests procedure', () => {
     data: Authorization;
   }[];
   let auths: AuthorizationRequest[];
-  let rawAuthIdentifiers: [Signatory, u64, bool][];
+  let rawAuthIdentifiers: [PolymeshPrimitivesSecondaryKeySignatory, u64, bool][];
   let rawAuthIds: [u64][];
   let rawFalseBool: bool;
 

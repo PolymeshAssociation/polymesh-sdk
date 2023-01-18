@@ -1,13 +1,14 @@
+import { u64 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import {
   PalletCorporateActionsCorporateAction,
   PalletCorporateActionsDistribution,
   PalletCorporateActionsInitiateCorporateActionArgs,
+  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { Moment, PortfolioNumber, Ticker } from 'polymesh-types/types';
 
 import {
   createDividendDistributionResolver,
@@ -68,12 +69,12 @@ describe('configureDividendDistribution procedure', () => {
   let paymentDate: Date;
   let expiryDate: Date;
 
-  let rawPortfolioNumber: PortfolioNumber;
-  let rawCurrency: Ticker;
+  let rawPortfolioNumber: u64;
+  let rawCurrency: PolymeshPrimitivesTicker;
   let rawPerShare: Balance;
   let rawAmount: Balance;
-  let rawPaymentAt: Moment;
-  let rawExpiresAt: Moment;
+  let rawPaymentAt: u64;
+  let rawExpiresAt: u64;
   let rawCorporateActionArgs: PalletCorporateActionsInitiateCorporateActionArgs;
 
   let mockContext: Mocked<Context>;

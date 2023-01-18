@@ -1,6 +1,7 @@
 import { bool, Bytes } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import {
+  PalletAssetSecurityToken,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
@@ -11,9 +12,13 @@ import { Asset, Context, Entity, PolymeshTransaction } from '~/internal';
 import { eventByIndexedArgs, tickerExternalAgentHistory } from '~/middleware/queries';
 import { assetQuery, tickerExternalAgentHistoryQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
-import { SecurityToken as MeshSecurityToken } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { SecurityIdentifier, SecurityIdentifierType } from '~/types';
+import {
+  EventIdentifier,
+  HistoricAgentOperation,
+  SecurityIdentifier,
+  SecurityIdentifierType,
+} from '~/types';
 import { tuple } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -80,7 +85,7 @@ describe('Asset class', () => {
     let iuDisabled: boolean;
     let did: string;
 
-    let rawToken: MeshSecurityToken;
+    let rawToken: PalletAssetSecurityToken;
     let rawName: Bytes;
     let rawIuDisabled: bool;
 
@@ -422,6 +427,11 @@ describe('Asset class', () => {
   });
 
   describe('method: createdAt', () => {
+    let context: Context;
+    beforeEach(() => {
+      context = dsMockUtils.getContextInstance({ middlewareV2Enabled: false });
+    });
+
     it('should return the event identifier object of the Asset creation', async () => {
       const ticker = 'SOME_TICKER';
       const blockNumber = new BigNumber(1234);
@@ -433,7 +443,6 @@ describe('Asset class', () => {
         eventArg1: utilsInternalModule.padString(ticker, MAX_TICKER_LENGTH),
       };
       const fakeResult = { blockNumber, blockDate, eventIndex: eventIdx };
-      const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
 
       dsMockUtils.createApolloQueryMock(eventByIndexedArgs(variables), {
@@ -458,12 +467,21 @@ describe('Asset class', () => {
         eventId: EventIdEnum.AssetCreated,
         eventArg1: utilsInternalModule.padString(ticker, MAX_TICKER_LENGTH),
       };
-      const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
 
       dsMockUtils.createApolloQueryMock(eventByIndexedArgs(variables), {});
       const result = await asset.createdAt();
       expect(result).toBeNull();
+    });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      dsMockUtils.configureMocks({ contextOptions: { middlewareV2Enabled: true } });
+      const asset = new Asset({ ticker: 'SOME_TICKER' }, context);
+      const fakeResult = 'fakeResult' as unknown as EventIdentifier;
+      jest.spyOn(asset, 'createdAtV2').mockResolvedValue(fakeResult);
+
+      const result = await asset.createdAt();
+      expect(result).toEqual(fakeResult);
     });
   });
 
@@ -680,22 +698,22 @@ describe('Asset class', () => {
 
       const identityScopes = [
         {
-          scopeId: dsMockUtils.createMockScopeId('someScopeId'),
+          scopeId: dsMockUtils.createMockIdentityId('someScopeId'),
           identityId: dsMockUtils.createMockIdentityId('someDid'),
           balance: dsMockUtils.createMockBalance(new BigNumber(100)),
         },
         {
-          scopeId: dsMockUtils.createMockScopeId('someScopeId'),
+          scopeId: dsMockUtils.createMockIdentityId('someScopeId'),
           identityId: dsMockUtils.createMockIdentityId('someOtherDid'),
           balance: dsMockUtils.createMockBalance(new BigNumber(50)),
         },
         {
-          scopeId: dsMockUtils.createMockScopeId('randomScopeId'),
+          scopeId: dsMockUtils.createMockIdentityId('randomScopeId'),
           identityId: dsMockUtils.createMockIdentityId('randomDid'),
           balance: dsMockUtils.createMockBalance(new BigNumber(10)),
         },
         {
-          scopeId: dsMockUtils.createMockScopeId('excludedScopeId'),
+          scopeId: dsMockUtils.createMockIdentityId('excludedScopeId'),
           identityId: dsMockUtils.createMockIdentityId('zeroCountDid'),
           balance: dsMockUtils.createMockBalance(new BigNumber(0)),
         },
@@ -746,7 +764,7 @@ describe('Asset class', () => {
   describe('method: getOperationHistory', () => {
     it('should return a list of agent operations', async () => {
       const ticker = 'TICKER';
-      const context = dsMockUtils.getContextInstance();
+      const context = dsMockUtils.getContextInstance({ middlewareV2Enabled: false });
       const asset = new Asset({ ticker }, context);
 
       const did = 'someDid';
@@ -811,6 +829,15 @@ describe('Asset class', () => {
       expect(result.length).toEqual(1);
       expect(result[0].identity.did).toEqual(did);
       expect(result[0].history.length).toEqual(0);
+    });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      const asset = new Asset({ ticker: 'SOME_TICKER' }, dsMockUtils.getContextInstance());
+      const fakeResult = 'fakeResult' as unknown as HistoricAgentOperation[];
+      jest.spyOn(asset, 'getOperationHistoryV2').mockResolvedValue(fakeResult);
+
+      const result = await asset.getOperationHistory();
+      expect(result).toEqual(fakeResult);
     });
   });
 

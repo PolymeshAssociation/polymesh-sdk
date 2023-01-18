@@ -1,5 +1,5 @@
+import { PolymeshPrimitivesSecondaryKeySignatory } from '@polkadot/types/lookup';
 import { when } from 'jest-when';
-import { Signatory } from 'polymesh-types/types';
 
 import {
   getAuthorization,
@@ -24,7 +24,10 @@ import * as utilsInternalModule from '~/utils/internal';
 
 describe('modifySignerPermissions procedure', () => {
   let mockContext: Mocked<Context>;
-  let signerValueToSignatorySpy: jest.SpyInstance<Signatory, [SignerValue, Context]>;
+  let signerValueToSignatorySpy: jest.SpyInstance<
+    PolymeshPrimitivesSecondaryKeySignatory,
+    [SignerValue, Context]
+  >;
   let signerToSignerValueSpy: jest.SpyInstance<SignerValue, [Signer]>;
   let permissionsToMeshPermissionsSpy: jest.SpyInstance;
   let permissionsLikeToPermissionsSpy: jest.SpyInstance;

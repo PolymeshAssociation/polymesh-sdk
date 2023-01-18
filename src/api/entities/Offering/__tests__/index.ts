@@ -7,10 +7,12 @@ import { investmentsQuery } from '~/middleware/queriesV2';
 import { InvestmentResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
+  Investment,
   OfferingBalanceStatus,
   OfferingDetails,
   OfferingSaleStatus,
   OfferingTimingStatus,
+  ResultSet,
 } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -271,10 +273,20 @@ describe('Offering class', () => {
   });
 
   describe('method: getInvestments', () => {
+    let ticker: string;
+    let id: BigNumber;
+    let offering: Offering;
+
+    beforeEach(() => {
+      ticker = 'SOME_TICKER';
+      id = new BigNumber(1);
+      offering = new Offering({ id, ticker }, context);
+    });
+
     it('should return a list of investors', async () => {
-      const ticker = 'SOME_TICKER';
-      const id = new BigNumber(1);
-      const offering = new Offering({ id, ticker }, context);
+      dsMockUtils.configureMocks({
+        contextOptions: { middlewareV2Enabled: false },
+      });
       const did = 'someDid';
       const offeringToken = 'TICKER';
       const raiseToken = 'USD';
@@ -342,6 +354,14 @@ describe('Offering class', () => {
       result = await offering.getInvestments();
       expect(result.data).toEqual([]);
       expect(result.next).toBeNull();
+    });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      const fakeResult = 'fakeResult' as unknown as ResultSet<Investment>;
+      jest.spyOn(offering, 'getInvestmentsV2').mockResolvedValue(fakeResult);
+
+      const result = await offering.getInvestments();
+      expect(result).toEqual(fakeResult);
     });
   });
 

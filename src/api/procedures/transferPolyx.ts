@@ -1,4 +1,4 @@
-import { Account, PolymeshError, Procedure } from '~/internal';
+import { PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TransferPolyxParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
@@ -7,6 +7,7 @@ import {
   stringToAccountId,
   stringToMemo,
 } from '~/utils/conversion';
+import { asAccount } from '~/utils/internal';
 
 /**
  * @hidden
@@ -27,13 +28,7 @@ export async function prepareTransferPolyx(
 
   const { to, amount, memo } = args;
 
-  let toAccount: Account;
-
-  if (to instanceof Account) {
-    toAccount = to;
-  } else {
-    toAccount = new Account({ address: to }, context);
-  }
+  const toAccount = asAccount(to, context);
 
   const rawAccountId = stringToAccountId(signerToString(to), context);
 

@@ -4,6 +4,7 @@ import P from 'bluebird';
 import { when } from 'jest-when';
 
 import { Account, Context, PolymeshError } from '~/internal';
+import { ClaimTypeEnum as MiddlewareV2ClaimType } from '~/middleware/enumsV2';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { claimsQuery, heartbeatQuery } from '~/middleware/queriesV2';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
@@ -266,6 +267,21 @@ describe('Context class', () => {
         message: 'There is no signing Account associated with the SDK instance',
       });
       expect(() => context.getSigningAccount()).toThrowError(expectedError);
+    });
+
+    it('should set the external api on the polkadot instance', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
+      });
+      const signingManager = dsMockUtils.getSigningManagerInstance();
+      const polymeshApi = context.getPolymeshApi();
+      const polkadotSigner = signingManager.getExternalSigner();
+
+      await context.setSigningManager(signingManager);
+
+      expect(polymeshApi.setSigner).toHaveBeenCalledWith(polkadotSigner);
     });
   });
 
@@ -881,7 +897,7 @@ describe('Context class', () => {
         meta: {
           args: [
             {
-              type: 'IdentityId',
+              type: 'PolymeshPrimitivesIdentityId',
               name: 'target',
             },
             {
@@ -893,7 +909,7 @@ describe('Context class', () => {
               name: 'expiry',
             },
             {
-              type: '(IdentityId, u32)',
+              type: '(PolymeshPrimitivesIdentityId, u32)',
               name: 'identityPair',
             },
           ],
@@ -972,7 +988,7 @@ describe('Context class', () => {
         meta: {
           args: [
             {
-              type: 'Vec<IdentityId>',
+              type: 'Vec<PolymeshPrimitivesIdentityId>',
               name: 'dids',
             },
           ],
@@ -1424,7 +1440,7 @@ describe('Context class', () => {
           {
             dids: [targetDid],
             trustedClaimIssuers: [targetDid],
-            claimTypes: [ClaimTypeEnum.Accredited],
+            claimTypes: [MiddlewareV2ClaimType.Accredited],
             includeExpired: true,
           },
           new BigNumber(2),

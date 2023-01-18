@@ -1,10 +1,8 @@
-import { QueryableStorageEntry } from '@polkadot/api/types';
 import { ISubmittableResult } from '@polkadot/types/types';
 
 import { Asset, Context, MetadataEntry, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, MetadataType, RegisterMetadataParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
-import { QueryReturnType } from '~/types/utils';
 import {
   metadataSpecToMeshMetadataSpec,
   metadataValueDetailToMeshMetadataValueDetail,
@@ -14,7 +12,7 @@ import {
   u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { filterEventRecords, optionize } from '~/utils/internal';
+import { filterEventRecords, optionize, requestMulti } from '~/utils/internal';
 
 /**
  * @hidden
@@ -56,7 +54,6 @@ export async function prepareRegisterMetadata(
         consts: {
           asset: { assetMetadataNameMaxLength },
         },
-        queryMulti,
       },
     },
     context,
@@ -78,17 +75,11 @@ export async function prepareRegisterMetadata(
 
   const rawName = stringToBytes(name, context);
 
-  const [rawGlobalId, rawLocalId] = await queryMulti<
-    [
-      QueryReturnType<typeof assetMetadataGlobalNameToKey>,
-      QueryReturnType<typeof assetMetadataLocalNameToKey>
-    ]
-  >([
-    [assetMetadataGlobalNameToKey as unknown as QueryableStorageEntry<'promise'>, rawName],
-    [
-      assetMetadataLocalNameToKey as unknown as QueryableStorageEntry<'promise'>,
-      [rawTicker, rawName],
-    ],
+  const [rawGlobalId, rawLocalId] = await requestMulti<
+    [typeof assetMetadataGlobalNameToKey, typeof assetMetadataLocalNameToKey]
+  >(context, [
+    [assetMetadataGlobalNameToKey, rawName],
+    [assetMetadataLocalNameToKey, [rawTicker, rawName]],
   ]);
 
   if (rawGlobalId.isSome || rawLocalId.isSome) {

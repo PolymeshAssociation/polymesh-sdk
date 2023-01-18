@@ -1,14 +1,15 @@
 import BigNumber from 'bignumber.js';
 
 import { Account, Context, transferPolyx } from '~/internal';
+import {
+  CallIdEnum as MiddlewareV2CallId,
+  EventIdEnum as MiddlewareV2EventId,
+  ModuleIdEnum as MiddlewareV2ModuleId,
+} from '~/middleware/enumsV2';
 import { eventByIndexedArgs, eventsByIndexedArgs, transactionByHash } from '~/middleware/queries';
 import { eventsByArgs, extrinsicByHash } from '~/middleware/queriesV2';
 import { EventIdEnum as EventId, ModuleIdEnum as ModuleId, Query } from '~/middleware/types';
-import {
-  EventIdEnum as MiddlewareV2EventId,
-  ModuleIdEnum as MiddlewareV2ModuleId,
-  Query as QueryV2,
-} from '~/middleware/typesV2';
+import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   EventIdentifier,
   ExtrinsicDataWithFees,
@@ -167,6 +168,16 @@ export class Network {
 
     const { moduleId, eventId, eventArg0, eventArg1, eventArg2 } = opts;
 
+    if (context.isMiddlewareV2Enabled()) {
+      return this.getEventByIndexedArgsV2({
+        moduleId: moduleId as unknown as MiddlewareV2ModuleId,
+        eventId: eventId as unknown as MiddlewareV2EventId,
+        eventArg0,
+        eventArg1,
+        eventArg2,
+      });
+    }
+
     const {
       data: { eventByIndexedArgs: event },
     } = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
@@ -251,6 +262,18 @@ export class Network {
     const { context } = this;
 
     const { moduleId, eventId, eventArg0, eventArg1, eventArg2, size, start } = opts;
+
+    if (context.isMiddlewareV2Enabled()) {
+      return this.getEventsByIndexedArgsV2({
+        moduleId: moduleId as unknown as MiddlewareV2ModuleId,
+        eventId: eventId as unknown as MiddlewareV2EventId,
+        eventArg0,
+        eventArg1,
+        eventArg2,
+        size,
+        start,
+      });
+    }
 
     const result = await context.queryMiddleware<Ensured<Query, 'eventsByIndexedArgs'>>(
       eventsByIndexedArgs({
@@ -351,6 +374,10 @@ export class Network {
       },
       context,
     } = this;
+
+    if (context.isMiddlewareV2Enabled()) {
+      return this.getTransactionByHashV2(opts);
+    }
 
     const { txHash: transactionHash } = opts;
 
@@ -469,8 +496,8 @@ export class Network {
       } = transaction;
 
       const txTag = extrinsicIdentifierToTxTag({
-        moduleId,
-        callId,
+        moduleId: moduleId as MiddlewareV2ModuleId,
+        callId: callId as MiddlewareV2CallId,
       });
 
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

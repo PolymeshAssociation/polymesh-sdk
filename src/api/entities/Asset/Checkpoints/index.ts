@@ -1,8 +1,8 @@
+import { u64 } from '@polkadot/types';
 import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import { Asset, Checkpoint, Context, createCheckpoint, Namespace, PolymeshError } from '~/internal';
-import { CheckpointId } from '~/polkadot/polymesh';
 import {
   CheckpointWithData,
   ErrorCode,
@@ -10,7 +10,7 @@ import {
   PaginationOptions,
   ResultSet,
 } from '~/types';
-import { QueryReturnType, tuple } from '~/types/utils';
+import { tuple } from '~/types/utils';
 import {
   balanceToBigNumber,
   momentToDate,
@@ -96,7 +96,7 @@ export class Checkpoints extends Namespace<Asset> {
       paginationOpts,
     });
 
-    const checkpointsMultiParams: [PolymeshPrimitivesTicker, CheckpointId][] = [];
+    const checkpointsMultiParams: [PolymeshPrimitivesTicker, u64][] = [];
     const checkpoints: { checkpoint: Checkpoint; totalSupply: BigNumber }[] = [];
 
     entries.forEach(
@@ -114,9 +114,7 @@ export class Checkpoints extends Namespace<Asset> {
       }
     );
 
-    const timestamps = await checkpointQuery.timestamps.multi<
-      QueryReturnType<typeof checkpointQuery.timestamps>
-    >(checkpointsMultiParams);
+    const timestamps = await checkpointQuery.timestamps.multi(checkpointsMultiParams);
 
     const data = timestamps.map((moment, i) => {
       const { totalSupply, checkpoint } = checkpoints[i];

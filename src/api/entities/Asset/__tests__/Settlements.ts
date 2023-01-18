@@ -1,10 +1,14 @@
 import { AccountId, Balance } from '@polkadot/types/interfaces';
-import { PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+import {
+  PolymeshPrimitivesIdentityId,
+  PolymeshPrimitivesIdentityIdPortfolioId,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Context, Namespace } from '~/internal';
-import { GranularCanTransferResult, PortfolioId as MeshPortfolioId } from '~/polkadot/polymesh';
+import { GranularCanTransferResult } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -27,7 +31,10 @@ describe('Settlements class', () => {
   let stringToAccountIdSpy: jest.SpyInstance<AccountId, [string, Context]>;
   let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
   let bigNumberToBalanceSpy: jest.SpyInstance;
-  let portfolioIdToMeshPortfolioIdSpy: jest.SpyInstance<MeshPortfolioId, [PortfolioId, Context]>;
+  let portfolioIdToMeshPortfolioIdSpy: jest.SpyInstance<
+    PolymeshPrimitivesIdentityIdPortfolioId,
+    [PortfolioId, Context]
+  >;
   let portfolioLikeToPortfolioIdSpy: jest.SpyInstance<PortfolioId, [PortfolioLike]>;
   let portfolioIdToPortfolioSpy: jest.SpyInstance<
     DefaultPortfolio | NumberedPortfolio,
@@ -94,8 +101,8 @@ describe('Settlements class', () => {
     let fromDid: string;
     let fromPortfolioId: PortfolioId;
     let toPortfolioId: PortfolioId;
-    let rawFromPortfolio: MeshPortfolioId;
-    let rawToPortfolio: MeshPortfolioId;
+    let rawFromPortfolio: PolymeshPrimitivesIdentityIdPortfolioId;
+    let rawToPortfolio: PolymeshPrimitivesIdentityIdPortfolioId;
     let rawFromDid: PolymeshPrimitivesIdentityId;
     let fromPortfolio: entityMockUtils.MockDefaultPortfolio;
     let toPortfolio: entityMockUtils.MockDefaultPortfolio;

@@ -1,13 +1,13 @@
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
+import { ClaimTypeEnum, middlewareV2EnumMap } from '~/middleware/enumsV2';
 import {
   Asset,
   AssetHolder,
   AssetHoldersOrderBy,
   ClaimsGroupBy,
   ClaimsOrderBy,
-  ClaimTypeEnum,
   Distribution,
   DistributionPayment,
   Event,
@@ -214,44 +214,6 @@ export function investmentsQuery(
 }
 
 /**
- * @hidden
- *
- * Get a specific instruction within a venue for a specific event
- */
-export function instructionsQuery(
-  variables: Pick<Instruction, 'eventId' | 'id'>
-): GraphqlQuery<Pick<Instruction, 'eventId' | 'id'>> {
-  const query = gql`
-    query InstructionsQuery($eventId: String!, $id: String!) {
-      instructions(
-        filter: { eventId: { equalTo: $eventId }, id: { equalTo: $id } }
-        first: 1
-        orderBy: [${InstructionsOrderBy.IdDesc}]
-      ) {
-        nodes {
-          eventIdx
-          eventId
-          status
-          settlementType
-          updatedBlock {
-            blockId
-            hash
-            datetime
-          }
-        }
-      }
-    }
-  `;
-
-  return {
-    query,
-    variables,
-  };
-}
-
-type EventArgs = 'moduleId' | 'eventId' | 'eventArg0' | 'eventArg1' | 'eventArg2';
-
-/**
  * Create args and filters to be supplied to GQL query
  *
  * @param filters - filters to be applied
@@ -272,7 +234,8 @@ function createArgsAndFilters(
   Object.keys(filters).forEach(attribute => {
     if (filters[attribute]) {
       const type = typeMap[attribute] || 'String';
-      args.push(`$${attribute}: ${type}!`);
+      const middlewareType = middlewareV2EnumMap[type] || type;
+      args.push(`$${attribute}: ${middlewareType}!`);
       gqlFilters.push(`${attribute}: { equalTo: $${attribute} }`);
     }
   });
@@ -282,6 +245,147 @@ function createArgsAndFilters(
     filter: gqlFilters.length ? `filter: { ${gqlFilters.join()} }` : '',
   };
 }
+
+type InstructionArgs = 'id' | 'eventId' | 'venueId';
+
+/**
+ * @hidden
+ *
+ * Get a specific instruction within a venue for a specific event
+ */
+export function instructionsQuery(
+  filters: QueryArgs<Instruction, InstructionArgs>,
+  size?: BigNumber,
+  start?: BigNumber
+): GraphqlQuery<PaginatedQueryArgs<QueryArgs<Instruction, InstructionArgs>>> {
+  const { args, filter } = createArgsAndFilters(filters, { eventId: 'EventIdEnum' });
+  const query = gql`
+    query InstructionsQuery
+      ${args} 
+      {
+      instructions(
+        ${filter}
+        first: $size
+        offset: $start
+        orderBy: [${InstructionsOrderBy.CreatedAtDesc}, ${InstructionsOrderBy.IdDesc}]
+      ) {
+        totalCount
+        nodes {
+          id
+          eventIdx
+          eventId
+          status
+          settlementType
+          venueId
+          endBlock
+          tradeDate
+          valueDate
+          legs {
+            nodes {
+              fromId
+              from {
+                identityId
+                number
+              }
+              toId
+              to {
+                identityId
+                number
+              }
+              assetId
+              amount
+              addresses
+            }
+          }
+          memo
+          createdBlock {
+            blockId
+            hash
+            datetime
+          }
+          updatedBlock {
+            blockId
+            hash
+            datetime
+          }
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get Instructions where an identity is involved
+ */
+export function instructionsByDidQuery(
+  identityId: string
+): GraphqlQuery<QueryArgs<Leg, 'fromId' | 'toId'>> {
+  const query = gql`
+    query InstructionsByDidQuery($fromId: String!, $toId: String!)
+     {
+      legs(
+        filter: { or: [{ fromId: { startsWith: $fromId } }, { toId: { startsWith: $toId } }] }
+        orderBy: [${LegsOrderBy.CreatedAtAsc}, ${LegsOrderBy.InstructionIdAsc}]
+      ) {
+        nodes {
+          instruction {
+            id
+            eventIdx
+            eventId
+            status
+            settlementType
+            venueId
+            endBlock
+            tradeDate
+            valueDate
+            legs {
+              nodes {
+                fromId
+                from {
+                  identityId
+                  number
+                }
+                toId
+                to {
+                  identityId
+                  number
+                }
+                assetId
+                amount
+                addresses
+              }
+            }
+            memo
+            createdBlock {
+              blockId
+              hash
+              datetime
+            }
+            updatedBlock {
+              blockId
+              hash
+              datetime
+            }
+          }
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: { fromId: `${identityId}/`, toId: `${identityId}/` },
+  };
+}
+
+type EventArgs = 'moduleId' | 'eventId' | 'eventArg0' | 'eventArg1' | 'eventArg2';
 
 /**
  * @hidden
@@ -785,7 +889,7 @@ function createLegFilters({ identityId, portfolioId, ticker, address }: QuerySet
 
   return {
     args: `(${args.join()})`,
-    filter: `filter: { or: [{ ${fromIdFilters.join()} }, { ${toIdFilters.join()} } ] }`,
+    filter: `filter: { or: [{ ${fromIdFilters.join()}, settlementId: { isNull: false } }, { ${toIdFilters.join()}, settlementId: { isNull: false } } ] }`,
     variables,
   };
 }

@@ -38,7 +38,7 @@ import {
   TransferAssetOwnershipParams,
   UnsubCallback,
 } from '~/types';
-import { Ensured, EnsuredV2, Modify, QueryReturnType } from '~/types/utils';
+import { Ensured, EnsuredV2, Modify } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import {
   assetIdentifierToSecurityIdentifier,
@@ -51,7 +51,6 @@ import {
   identityIdToString,
   middlewareEventToEventIdentifier,
   middlewareV2EventDetailsToEventIdentifier,
-  scopeIdToString,
   stringToTicker,
   tickerToDid,
 } from '~/utils/conversion';
@@ -364,6 +363,10 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
   public async createdAt(): Promise<EventIdentifier | null> {
     const { ticker, context } = this;
 
+    if (context.isMiddlewareV2Enabled()) {
+      return this.createdAtV2();
+    }
+
     const {
       data: { eventByIndexedArgs: event },
     } = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
@@ -504,7 +507,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
         balance,
       ]) => {
         if (!balanceToBigNumber(balance).isZero()) {
-          assetHolders.add(scopeIdToString(scopeId));
+          assetHolders.add(identityIdToString(scopeId));
         }
       }
     );
@@ -534,6 +537,10 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       context,
       ticker,
     } = this;
+
+    if (context.isMiddlewareV2Enabled()) {
+      return this.getOperationHistoryV2();
+    }
 
     const {
       data: { tickerExternalAgentHistory: tickerExternalAgentHistoryResult },
@@ -571,7 +578,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
     let hashes: Hash[] = [];
 
     if (multiParams.length) {
-      hashes = await system.blockHash.multi<QueryReturnType<typeof system.blockHash>>(multiParams);
+      hashes = await system.blockHash.multi(multiParams);
     }
 
     const finalResults: HistoricAgentOperation[] = [];

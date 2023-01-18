@@ -1,6 +1,9 @@
+import {
+  PalletPortfolioMovePortfolioItem,
+  PolymeshPrimitivesIdentityIdPortfolioId,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { MovePortfolioItem, PortfolioId as MeshPortfolioId } from 'polymesh-types/types';
 
 import { getAuthorization, Params, prepareMoveFunds } from '~/api/procedures/moveFunds';
 import * as procedureUtilsModule from '~/api/procedures/utils';
@@ -26,9 +29,12 @@ jest.mock(
 
 describe('moveFunds procedure', () => {
   let mockContext: Mocked<Context>;
-  let portfolioIdToMeshPortfolioIdSpy: jest.SpyInstance<MeshPortfolioId, [PortfolioId, Context]>;
+  let portfolioIdToMeshPortfolioIdSpy: jest.SpyInstance<
+    PolymeshPrimitivesIdentityIdPortfolioId,
+    [PortfolioId, Context]
+  >;
   let portfolioMovementToMovePortfolioItemSpy: jest.SpyInstance<
-    MovePortfolioItem,
+    PalletPortfolioMovePortfolioItem,
     [PortfolioMovement, Context]
   >;
   let portfolioLikeToPortfolioIdSpy: jest.SpyInstance;

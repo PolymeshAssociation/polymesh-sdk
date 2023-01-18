@@ -5,6 +5,7 @@ import {
   PalletCorporateActionsCaId,
   PalletCorporateActionsDistribution,
   PalletRelayerSubsidy,
+  PolymeshCommonUtilitiesProtocolFeeProtocolOp,
 } from '@polkadot/types/lookup';
 import {
   CallFunction,
@@ -21,9 +22,9 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, clone, flatMap, flatten, flattenDeep } from 'lodash';
 import { polymesh } from 'polymesh-types/definitions';
-import { ProtocolOp } from 'polymesh-types/types';
 
 import { Account, Asset, DividendDistribution, Identity, PolymeshError, Subsidy } from '~/internal';
+import { ClaimTypeEnum as MiddlewareV2Claim } from '~/middleware/enumsV2';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { claimsQuery, heartbeatQuery } from '~/middleware/queriesV2';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
@@ -50,7 +51,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import { GraphqlQuery } from '~/types/internal';
-import { Ensured, EnsuredV2, QueryReturnType } from '~/types/utils';
+import { Ensured, EnsuredV2 } from '~/types/utils';
 import {
   DEFAULT_GQL_PAGE_SIZE,
   MAX_CONCURRENT_REQUESTS,
@@ -216,6 +217,7 @@ export class Context {
    */
   public async setSigningManager(signingManager: SigningManager): Promise<void> {
     this._signingManager = signingManager;
+    this._polymeshApi.setSigner(signingManager.getExternalSigner());
 
     signingManager.setSs58Format(this.ss58Format.toNumber());
 
@@ -502,9 +504,7 @@ export class Context {
 
     const dids = identities.map(signerToString);
     const rawIdentities = dids.map(did => stringToIdentityId(did, this));
-    const records = await identity.didRecords.multi<QueryReturnType<typeof identity.didRecords>>(
-      rawIdentities
-    );
+    const records = await identity.didRecords.multi(rawIdentities);
 
     const invalidDids: string[] = [];
 
@@ -565,7 +565,7 @@ export class Context {
       },
     } = this;
 
-    const tagsMap = new Map<TxTag, ProtocolOp | undefined>();
+    const tagsMap = new Map<TxTag, PolymeshCommonUtilitiesProtocolFeeProtocolOp | undefined>();
 
     tags.forEach(tag => {
       try {
@@ -591,7 +591,9 @@ export class Context {
       coefficient(),
     ]);
 
-    const assembleResult = (rawProtocolOp: ProtocolOp | undefined): BigNumber => {
+    const assembleResult = (
+      rawProtocolOp: PolymeshCommonUtilitiesProtocolFeeProtocolOp | undefined
+    ): BigNumber => {
       const baseFeeEntry = baseFeesEntries.find(
         ([
           {
@@ -864,11 +866,7 @@ export class Context {
     const requestChunks = chunk(paramChunks, MAX_CONCURRENT_REQUESTS);
     const distributions = await P.mapSeries(requestChunks, requestChunk =>
       Promise.all(
-        requestChunk.map(paramChunk =>
-          capitalDistribution.distributions.multi<
-            QueryReturnType<typeof capitalDistribution.distributions>
-          >(paramChunk)
-        )
+        requestChunk.map(paramChunk => capitalDistribution.distributions.multi(paramChunk))
       )
     );
 
@@ -1066,7 +1064,7 @@ export class Context {
           trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
             signerToString(trustedClaimIssuer)
           ),
-          claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
+          claimTypes: claimTypes?.map(ct => MiddlewareV2Claim[ct]),
           includeExpired,
         },
         size,

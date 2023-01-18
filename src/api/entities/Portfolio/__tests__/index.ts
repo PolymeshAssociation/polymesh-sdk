@@ -1,4 +1,8 @@
 import { Balance } from '@polkadot/types/interfaces';
+import {
+  PolymeshPrimitivesIdentityIdPortfolioId,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
@@ -17,8 +21,8 @@ import {
   SettlementResult,
   SettlementResultEnum,
 } from '~/middleware/types';
-import { PortfolioId, Ticker } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { HistoricSettlement } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -177,33 +181,29 @@ describe('Portfolio class', () => {
     let id: BigNumber;
     let ticker0: string;
     let ticker1: string;
-    let ticker2: string;
     let total0: BigNumber;
     let total1: BigNumber;
     let locked0: BigNumber;
     let locked1: BigNumber;
-    let rawTicker0: Ticker;
-    let rawTicker1: Ticker;
-    let rawTicker2: Ticker;
+    let rawTicker0: PolymeshPrimitivesTicker;
+    let rawTicker1: PolymeshPrimitivesTicker;
     let rawTotal0: Balance;
     let rawTotal1: Balance;
     let rawLocked0: Balance;
     let rawLocked1: Balance;
-    let rawPortfolioId: PortfolioId;
+    let rawPortfolioId: PolymeshPrimitivesIdentityIdPortfolioId;
 
     beforeAll(() => {
       did = 'someDid';
       id = new BigNumber(1);
       ticker0 = 'TICKER0';
       ticker1 = 'TICKER1';
-      ticker2 = 'TICKER2';
       total0 = new BigNumber(100);
       total1 = new BigNumber(200);
       locked0 = new BigNumber(50);
       locked1 = new BigNumber(25);
       rawTicker0 = dsMockUtils.createMockTicker(ticker0);
       rawTicker1 = dsMockUtils.createMockTicker(ticker1);
-      rawTicker2 = dsMockUtils.createMockTicker(ticker2);
       rawTotal0 = dsMockUtils.createMockBalance(total0.shiftedBy(6));
       rawTotal1 = dsMockUtils.createMockBalance(total1.shiftedBy(6));
       rawLocked0 = dsMockUtils.createMockBalance(locked0.shiftedBy(6));
@@ -229,7 +229,6 @@ describe('Portfolio class', () => {
         entries: [
           tuple([rawPortfolioId, rawTicker0], rawLocked0),
           tuple([rawPortfolioId, rawTicker1], rawLocked1),
-          tuple([rawPortfolioId, rawTicker2], dsMockUtils.createMockBalance(new BigNumber(0))),
         ],
       });
     });
@@ -484,7 +483,9 @@ describe('Portfolio class', () => {
       };
       /* eslint-enable @typescript-eslint/naming-convention */
 
-      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
+      dsMockUtils.configureMocks({
+        contextOptions: { withSigningManager: true, middlewareV2Enabled: false },
+      });
       dsMockUtils.createApolloQueryMock(heartbeat(), true);
       when(jest.spyOn(utilsConversionModule, 'addressToKey'))
         .calledWith(account, context)
@@ -579,6 +580,18 @@ describe('Portfolio class', () => {
 
       return expect(portfolio.getTransactionHistory()).rejects.toThrow(
         "The Portfolio doesn't exist or was removed by its owner"
+      );
+    });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      const portfolio = new NonAbstract({ did, id }, context);
+
+      const fakeResult = ['fakeResult'] as unknown as HistoricSettlement[];
+      jest.spyOn(portfolio, 'getTransactionHistoryV2').mockResolvedValue(fakeResult);
+
+      const result = await portfolio.getTransactionHistory();
+      expect(result).toEqual(
+        expect.objectContaining({ count: new BigNumber(1), data: fakeResult, next: null })
       );
     });
   });

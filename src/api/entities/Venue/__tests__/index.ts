@@ -11,15 +11,32 @@ import {
   PolymeshTransaction,
   Venue,
 } from '~/internal';
+import { instructionsQuery } from '~/middleware/queriesV2';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { InstructionStatus, VenueType } from '~/types';
+import { HistoricInstruction, InstructionStatus, VenueType } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
   '~/api/entities/Identity',
   require('~/testUtils/mocks/entities').mockIdentityModule('~/api/entities/Identity')
+);
+jest.mock(
+  '~/api/entities/Asset',
+  require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
+);
+jest.mock(
+  '~/api/entities/DefaultPortfolio',
+  require('~/testUtils/mocks/entities').mockDefaultPortfolioModule(
+    '~/api/entities/DefaultPortfolio'
+  )
+);
+jest.mock(
+  '~/api/entities/NumberedPortfolio',
+  require('~/testUtils/mocks/entities').mockNumberedPortfolioModule(
+    '~/api/entities/NumberedPortfolio'
+  )
 );
 jest.mock(
   '~/api/entities/Instruction',
@@ -135,6 +152,64 @@ describe('Venue class', () => {
         description,
         type,
       });
+    });
+  });
+
+  describe('method: getHistoricalInstructions', () => {
+    it('should return the paginated list of all instructions that have been associated with a Venue', async () => {
+      const middlewareInstructionToHistoricInstructionSpy = jest.spyOn(
+        utilsConversionModule,
+        'middlewareInstructionToHistoricInstruction'
+      );
+
+      const venueId = new BigNumber(1);
+
+      const instructionsResponse = {
+        totalCount: 5,
+        nodes: ['instructions'],
+      };
+
+      dsMockUtils.createApolloV2QueryMock(
+        instructionsQuery(
+          {
+            venueId: venueId.toString(),
+          },
+          new BigNumber(2),
+          new BigNumber(0)
+        ),
+        {
+          instructions: instructionsResponse,
+        }
+      );
+
+      const mockHistoricInstruction = 'mockData' as unknown as HistoricInstruction;
+
+      middlewareInstructionToHistoricInstructionSpy.mockReturnValue(mockHistoricInstruction);
+
+      let result = await venue.getHistoricalInstructions({
+        size: new BigNumber(2),
+        start: new BigNumber(0),
+      });
+
+      const { data, next, count } = result;
+
+      expect(next).toEqual(new BigNumber(2));
+      expect(count).toEqual(new BigNumber(5));
+      expect(data).toEqual([mockHistoricInstruction]);
+
+      dsMockUtils.createApolloV2QueryMock(
+        instructionsQuery({
+          venueId: venueId.toString(),
+        }),
+        {
+          instructions: instructionsResponse,
+        }
+      );
+
+      result = await venue.getHistoricalInstructions();
+
+      expect(result.count).toEqual(new BigNumber(5));
+      expect(result.next).toEqual(null);
     });
   });
 

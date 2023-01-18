@@ -10,10 +10,11 @@ import {
   rescheduleInstruction,
   Venue,
 } from '~/internal';
+import { EventIdEnum as MiddlewareV2Event } from '~/middleware/enumsV2';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { instructionsQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
-import { EventIdEnum as MiddlewareV2Event, Query as QueryV2 } from '~/middleware/typesV2';
+import { Query as QueryV2 } from '~/middleware/typesV2';
 import { InstructionStatus as MeshInstructionStatus } from '~/polkadot/polymesh';
 import {
   ErrorCode,
@@ -31,6 +32,7 @@ import {
   balanceToBigNumber,
   bigNumberToU64,
   identityIdToString,
+  instructionMemoToString,
   meshAffirmationStatusToAffirmationStatus,
   meshInstructionStatusToInstructionStatus,
   meshPortfolioIdToPortfolio,
@@ -41,7 +43,7 @@ import {
   u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod, optionize, requestPaginated } from '~/utils/internal';
+import { createProcedureMethod, optionize, requestMulti, requestPaginated } from '~/utils/internal';
 
 import {
   InstructionAffirmation,
@@ -239,21 +241,24 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     const {
       context: {
         polymeshApi: {
-          query: { settlement },
+          query: {
+            settlement: { instructionDetails, instructionMemos },
+          },
         },
       },
       id,
       context,
     } = this;
 
-    const {
-      status: rawStatus,
-      createdAt,
-      tradeDate,
-      valueDate,
-      settlementType: type,
-      venueId,
-    } = await settlement.instructionDetails(bigNumberToU64(id, context));
+    const rawId = bigNumberToU64(id, context);
+
+    const [
+      { status: rawStatus, createdAt, tradeDate, valueDate, settlementType: type, venueId },
+      memo,
+    ] = await requestMulti<[typeof instructionDetails, typeof instructionMemos]>(context, [
+      [instructionDetails, rawId],
+      [instructionMemos, rawId],
+    ]);
 
     const status = meshInstructionStatusToInstructionStatus(rawStatus);
 
@@ -273,6 +278,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       tradeDate: tradeDate.isSome ? momentToDate(tradeDate.unwrap()) : null,
       valueDate: valueDate.isSome ? momentToDate(valueDate.unwrap()) : null,
       venue: new Venue({ id: u64ToBigNumber(venueId) }, context),
+      memo: memo.isSome ? instructionMemoToString(memo.unwrap()) : null,
     };
 
     if (type.isSettleOnAffirmation) {
@@ -398,6 +404,10 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       return {
         status: InstructionStatus.Pending,
       };
+    }
+
+    if (this.context.isMiddlewareV2Enabled()) {
+      return this.getStatusV2();
     }
 
     let eventIdentifier = await this.getInstructionEventFromMiddleware(
@@ -528,10 +538,14 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
         },
       },
     } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'instructions'>>(
-      instructionsQuery({
-        eventId,
-        id: id.toString(),
-      })
+      instructionsQuery(
+        {
+          eventId,
+          id: id.toString(),
+        },
+        new BigNumber(1),
+        new BigNumber(0)
+      )
     );
 
     return optionize(middlewareV2EventDetailsToEventIdentifier)(

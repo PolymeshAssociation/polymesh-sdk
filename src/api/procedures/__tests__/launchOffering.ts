@@ -1,9 +1,13 @@
 import { Bytes, u64 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
+import {
+  PalletStoPriceTier,
+  PolymeshPrimitivesIdentityIdPortfolioId,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { Moment, PortfolioId as MeshPortfolioId, PriceTier, Ticker } from 'polymesh-types/types';
 
 import {
   createOfferingResolver,
@@ -49,13 +53,16 @@ jest.mock(
 
 describe('launchOffering procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance<Ticker, [string, Context]>;
-  let portfolioIdToMeshPortfolioIdSpy: jest.SpyInstance<MeshPortfolioId, [PortfolioId, Context]>;
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let portfolioIdToMeshPortfolioIdSpy: jest.SpyInstance<
+    PolymeshPrimitivesIdentityIdPortfolioId,
+    [PortfolioId, Context]
+  >;
   let portfolioLikeToPortfolioIdSpy: jest.SpyInstance<PortfolioId, [PortfolioLike]>;
   let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
-  let dateToMomentSpy: jest.SpyInstance<Moment, [Date, Context]>;
+  let dateToMomentSpy: jest.SpyInstance<u64, [Date, Context]>;
   let bigNumberToBalanceSpy: jest.SpyInstance<Balance, [BigNumber, Context, boolean?]>;
-  let offeringTierToPriceTierSpy: jest.SpyInstance<PriceTier, [OfferingTier, Context]>;
+  let offeringTierToPriceTierSpy: jest.SpyInstance<PalletStoPriceTier, [OfferingTier, Context]>;
   let stringToBytesSpy: jest.SpyInstance<Bytes, [string, Context]>;
   let portfolioIdToPortfolioSpy: jest.SpyInstance;
   let ticker: string;
@@ -73,15 +80,15 @@ describe('launchOffering procedure', () => {
   let amount: BigNumber;
   let price: BigNumber;
   let minInvestment: BigNumber;
-  let rawTicker: Ticker;
-  let rawOfferingPortfolio: MeshPortfolioId;
-  let rawRaisingPortfolio: MeshPortfolioId;
-  let rawRaisingCurrency: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
+  let rawOfferingPortfolio: PolymeshPrimitivesIdentityIdPortfolioId;
+  let rawRaisingPortfolio: PolymeshPrimitivesIdentityIdPortfolioId;
+  let rawRaisingCurrency: PolymeshPrimitivesTicker;
   let rawVenueId: u64;
   let rawName: Bytes;
-  let rawStart: Moment;
-  let rawEnd: Moment;
-  let rawTiers: PriceTier[];
+  let rawStart: u64;
+  let rawEnd: u64;
+  let rawTiers: PalletStoPriceTier[];
   let rawMinInvestment: Balance;
 
   let args: Params;

@@ -29,6 +29,9 @@ import { Settlements } from './Settlements';
 export interface ConnectParams {
   nodeUrl: string;
   signingManager?: SigningManager;
+  /**
+   * @deprecated in favour of middlewareV2
+   */
   middleware?: MiddlewareConfig;
   middlewareV2?: MiddlewareConfig;
 }
@@ -140,12 +143,13 @@ export class Polymesh {
     await assertExpectedChainVersion(nodeUrl);
 
     try {
-      const { types, rpc } = schema;
+      const { types, rpc, signedExtensions } = schema;
 
       const polymeshApi = await ApiPromise.create({
         provider: new WsProvider(nodeUrl),
         types,
         rpc,
+        signedExtensions,
       });
 
       context = await Context.create({
@@ -311,6 +315,14 @@ export class Polymesh {
    */
   public get _middlewareApi(): ApolloClient<NormalizedCacheObject> {
     return this.context.middlewareApi;
+  }
+
+  /* istanbul ignore next: not part of the official public API */
+  /**
+   * MiddlewareV2 client
+   */
+  public get _middlewareApiV2(): ApolloClient<NormalizedCacheObject> {
+    return this.context.middlewareApiV2;
   }
   /* eslint-enable @typescript-eslint/naming-convention */
 }

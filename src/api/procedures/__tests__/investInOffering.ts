@@ -1,8 +1,11 @@
 import { u64 } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
+import {
+  PolymeshPrimitivesIdentityIdPortfolioId,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { PortfolioId as MeshPortfolioId, Ticker } from 'polymesh-types/types';
 
 import {
   getAuthorization,
@@ -39,8 +42,11 @@ jest.mock(
 
 describe('investInOffering procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance<Ticker, [string, Context]>;
-  let portfolioIdToMeshPortfolioIdSpy: jest.SpyInstance<MeshPortfolioId, [PortfolioId, Context]>;
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let portfolioIdToMeshPortfolioIdSpy: jest.SpyInstance<
+    PolymeshPrimitivesIdentityIdPortfolioId,
+    [PortfolioId, Context]
+  >;
   let portfolioLikeToPortfolioIdSpy: jest.SpyInstance<PortfolioId, [PortfolioLike]>;
   let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
   let bigNumberToBalanceSpy: jest.SpyInstance<Balance, [BigNumber, Context, boolean?]>;
@@ -54,9 +60,9 @@ describe('investInOffering procedure', () => {
   let purchaseAmount: BigNumber;
   let maxPrice: BigNumber;
   let rawId: u64;
-  let rawTicker: Ticker;
-  let rawPurchasePortfolio: MeshPortfolioId;
-  let rawFundingPortfolio: MeshPortfolioId;
+  let rawTicker: PolymeshPrimitivesTicker;
+  let rawPurchasePortfolio: PolymeshPrimitivesIdentityIdPortfolioId;
+  let rawFundingPortfolio: PolymeshPrimitivesIdentityIdPortfolioId;
   let rawPurchaseAmount: Balance;
   let rawMaxPrice: Balance;
   let args: Params;

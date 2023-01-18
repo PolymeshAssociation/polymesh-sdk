@@ -1,10 +1,10 @@
 import {
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
   PolymeshPrimitivesCondition,
+  PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { Ticker } from 'polymesh-types/types';
 
 import {
   getAuthorization,
@@ -25,14 +25,14 @@ jest.mock(
 
 describe('addAssetRequirement procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerSpy: jest.SpyInstance<Ticker, [string, Context]>;
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
   let requirementToComplianceRequirementSpy: jest.SpyInstance<
     PolymeshPrimitivesComplianceManagerComplianceRequirement,
     [InputRequirement, Context]
   >;
   let ticker: string;
   let conditions: Condition[];
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
   let args: Params;
 
   beforeAll(() => {
@@ -63,7 +63,7 @@ describe('addAssetRequirement procedure', () => {
     };
   });
 
-  let addComplianceRequirementTransaction: PolymeshTx<[Ticker]>;
+  let addComplianceRequirementTransaction: PolymeshTx<[PolymeshPrimitivesTicker]>;
 
   beforeEach(() => {
     dsMockUtils.setConstMock('complianceManager', 'maxConditionComplexity', {

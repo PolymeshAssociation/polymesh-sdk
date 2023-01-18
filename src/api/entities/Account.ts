@@ -11,6 +11,7 @@ import {
   union,
 } from 'lodash';
 
+import { Subsidies } from '~/api/entities/Subsidies';
 import {
   Asset,
   Authorizations,
@@ -20,6 +21,10 @@ import {
   MultiSig,
   PolymeshError,
 } from '~/internal';
+import {
+  CallIdEnum as MiddlewareV2CallId,
+  ModuleIdEnum as MiddlewareV2ModuleId,
+} from '~/middleware/enumsV2';
 import { transactions as transactionsQuery } from '~/middleware/queries';
 import { extrinsicsByArgs } from '~/middleware/queriesV2';
 import { Query, TransactionOrderByInput } from '~/middleware/types';
@@ -276,6 +281,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
 
   // Namespaces
   public authorizations: Authorizations<Account>;
+  public subsidies: Subsidies;
 
   /**
    * @hidden
@@ -290,6 +296,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     this.address = address;
     this.key = addressToKey(address, context);
     this.authorizations = new Authorizations(this, context);
+    this.subsidies = new Subsidies(this, context);
   }
 
   /**
@@ -318,6 +325,8 @@ export class Account extends Entity<UniqueIdentifiers, string> {
    *   this Account isn't being subsidized, return null
    *
    * @note can be subscribed to
+   *
+   * @deprecated in favour of {@link api/entities/Subsidies!Subsidies.getSubsidizer | subsidies.getSubsidizer}
    */
   public getSubsidy(): Promise<SubsidyWithAllowance | null>;
   public getSubsidy(callback: SubCallback<SubsidyWithAllowance | null>): Promise<UnsubCallback>;
@@ -395,6 +404,15 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     } = {}
   ): Promise<ResultSet<ExtrinsicData>> {
     const { context, address } = this;
+
+    if (context.isMiddlewareV2Enabled()) {
+      const { orderBy, ...rest } = filters;
+      let order: ExtrinsicsOrderBy = ExtrinsicsOrderBy.CreatedAtAsc;
+      if (orderBy) {
+        order = `${orderBy.field}_${orderBy.order}`.toUpperCase() as ExtrinsicsOrderBy;
+      }
+      return this.getTransactionHistoryV2({ ...rest, orderBy: order });
+    }
 
     const { tag, success, size, start, orderBy, blockHash } = filters;
     let { blockNumber } = filters;
@@ -571,8 +589,8 @@ export class Account extends Entity<UniqueIdentifiers, string> {
         address: rawAddress ? keyToAddress(rawAddress, context) : null,
         nonce: nonce ? new BigNumber(nonce) : null,
         txTag: extrinsicIdentifierToTxTag({
-          moduleId: extrinsicModuleId,
-          callId: extrinsicCallId,
+          moduleId: extrinsicModuleId as MiddlewareV2ModuleId,
+          callId: extrinsicCallId as MiddlewareV2CallId,
         }),
         params: JSON.parse(paramsTxt),
         success: !!txSuccess,

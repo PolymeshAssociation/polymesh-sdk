@@ -1,6 +1,6 @@
+import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import { Ticker } from 'polymesh-types/types';
 
 import {
   getAuthorization,
@@ -29,7 +29,7 @@ describe('modifyCaDefaultConfig procedure', () => {
   let assertCaTaxWithholdingsValidSpy: jest.SpyInstance;
 
   let ticker: string;
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
 
   beforeAll(() => {
     dsMockUtils.initMocks();

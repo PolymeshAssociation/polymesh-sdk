@@ -1,33 +1,58 @@
-import { bool, Bytes, Option, Text, u8, u16, u32, u64, u128 } from '@polkadot/types';
+import { bool, Bytes, Option, Text, u8, U8aFixed, u16, u32, u64, u128 } from '@polkadot/types';
+import { AccountId, Balance, BlockHash, Hash, Permill } from '@polkadot/types/interfaces';
 import {
-  AccountId,
-  Balance,
-  BlockHash,
-  Hash,
-  Permill,
-  Signature,
-} from '@polkadot/types/interfaces';
-import {
-  ConfidentialIdentityClaimProofsScopeClaimProof,
+  ConfidentialIdentityV2ClaimProofsScopeClaimProof,
+  ConfidentialIdentityV2ClaimProofsZkProofData,
+  ConfidentialIdentityV2SignSignature,
+  PalletAssetCheckpointScheduleSpec,
   PalletCorporateActionsCaId,
+  PalletCorporateActionsCaKind,
   PalletCorporateActionsCorporateAction,
   PalletCorporateActionsDistribution,
   PalletCorporateActionsInitiateCorporateActionArgs,
+  PalletCorporateActionsRecordDateSpec,
+  PalletCorporateActionsTargetIdentities,
   PalletMultisigProposalStatus,
+  PalletPortfolioMovePortfolioItem,
+  PalletSettlementAffirmationStatus,
+  PalletSettlementInstructionMemo,
+  PalletSettlementInstructionStatus,
+  PalletSettlementSettlementType,
+  PalletSettlementVenueType,
   PalletStoFundraiser,
+  PalletStoFundraiserTier,
+  PalletStoPriceTier,
+  PolymeshCommonUtilitiesBalancesMemo,
+  PolymeshCommonUtilitiesCheckpointStoredSchedule,
+  PolymeshCommonUtilitiesProtocolFeeProtocolOp,
+  PolymeshPrimitivesAgentAgentGroup,
+  PolymeshPrimitivesAssetAssetType,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesAssetMetadataAssetMetadataKey,
   PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
   PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail,
   PolymeshPrimitivesAuthorizationAuthorizationData,
+  PolymeshPrimitivesCalendarCalendarPeriod,
+  PolymeshPrimitivesCddId,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
   PolymeshPrimitivesCondition,
+  PolymeshPrimitivesConditionConditionType,
+  PolymeshPrimitivesConditionTargetIdentity,
   PolymeshPrimitivesConditionTrustedIssuer,
   PolymeshPrimitivesDocument,
   PolymeshPrimitivesDocumentHash,
+  PolymeshPrimitivesEthereumEcdsaSignature,
+  PolymeshPrimitivesIdentityClaimClaim,
   PolymeshPrimitivesIdentityClaimClaimType,
+  PolymeshPrimitivesIdentityClaimScope,
   PolymeshPrimitivesIdentityId,
+  PolymeshPrimitivesIdentityIdPortfolioId,
+  PolymeshPrimitivesIdentityIdPortfolioKind,
+  PolymeshPrimitivesJurisdictionCountryCode,
+  PolymeshPrimitivesPosRatio,
+  PolymeshPrimitivesSecondaryKey,
   PolymeshPrimitivesSecondaryKeyPermissions,
+  PolymeshPrimitivesSecondaryKeySignatory,
   PolymeshPrimitivesStatisticsStat2ndKey,
   PolymeshPrimitivesStatisticsStatClaim,
   PolymeshPrimitivesStatisticsStatOpType,
@@ -40,6 +65,7 @@ import {
 import { ITuple } from '@polkadot/types/types';
 import { BTreeSet } from '@polkadot/types-codec';
 import {
+  hexToString,
   hexToU8a,
   isHex,
   stringLowerFirst,
@@ -66,7 +92,6 @@ import {
   uniq,
   values,
 } from 'lodash';
-import { CountryCode as MeshCountryCode } from 'polymesh-types/types';
 
 import { assertCaTaxWithholdingsValid, UnreachableCaseError } from '~/api/procedures/utils';
 import { countryCodeToMeshCountryCode, meshCountryCodeToCountryCode } from '~/generated/utils';
@@ -86,6 +111,10 @@ import {
   Venue,
 } from '~/internal';
 import {
+  CallIdEnum as MiddlewareV2CallId,
+  ModuleIdEnum as MiddlewareV2ModuleId,
+} from '~/middleware/enumsV2';
+import {
   CallIdEnum,
   ClaimScopeTypeEnum,
   Event as MiddlewareEvent,
@@ -96,55 +125,18 @@ import {
 } from '~/middleware/types';
 import {
   Block as MiddlewareV2Block,
-  CallIdEnum as MiddlewareV2CallId,
   Claim as MiddlewareV2Claim,
-  ModuleIdEnum as MiddlewareV2ModuleId,
+  Instruction,
   Portfolio as MiddlewareV2Portfolio,
 } from '~/middleware/typesV2';
 import {
-  AffirmationStatus as MeshAffirmationStatus,
-  AgentGroup,
   AssetComplianceResult,
-  AssetType,
   AuthorizationType as MeshAuthorizationType,
-  CAKind,
-  CalendarPeriod as MeshCalendarPeriod,
   CanTransferResult,
-  CddId,
   CddStatus,
-  Claim as MeshClaim,
   ComplianceRequirementResult,
-  ConditionType as MeshConditionType,
-  DocumentHash,
-  EcdsaSignature,
-  FundraiserTier,
   GranularCanTransferResult,
-  IdentityId,
-  InstructionStatus as MeshInstructionStatus,
-  InvestorZKProofData,
-  Memo,
   Moment,
-  MovePortfolioItem,
-  Percentage,
-  PortfolioId as MeshPortfolioId,
-  PosRatio,
-  PriceTier,
-  ProtocolOp,
-  RecordDateSpec,
-  RistrettoPoint,
-  Scalar,
-  ScheduleSpec as MeshScheduleSpec,
-  Scope as MeshScope,
-  ScopeId,
-  SecondaryKey as MeshSecondaryKey,
-  SettlementType,
-  Signatory,
-  StatClaim,
-  StoredSchedule,
-  TargetIdentities,
-  TargetIdentity,
-  TransferCondition,
-  VenueType as MeshVenueType,
 } from '~/polkadot/polymesh';
 import {
   AffirmationStatus,
@@ -174,6 +166,7 @@ import {
   ErrorCode,
   EventIdentifier,
   ExternalAgentCondition,
+  HistoricInstruction,
   IdentityCondition,
   IdentityWithClaims,
   InputCorporateActionTargets,
@@ -275,6 +268,7 @@ import {
 import {
   isIdentityCondition,
   isMultiClaimCondition,
+  isNumberedPortfolio,
   isSingleClaimCondition,
 } from '~/utils/typeguards';
 
@@ -344,10 +338,20 @@ export function tickerToString(ticker: PolymeshPrimitivesTicker): string {
 /**
  * @hidden
  */
-export function stringToInvestorZKProofData(proof: string, context: Context): InvestorZKProofData {
-  return context.createType('InvestorZKProofData', proof);
+export function stringToInvestorZKProofData(
+  proof: string,
+  context: Context
+): ConfidentialIdentityV2ClaimProofsZkProofData {
+  return context.createType('ConfidentialIdentityV2ClaimProofsZkProofData', proof);
 }
 /* eslint-enable @typescript-eslint/naming-convention */
+
+/**
+ * @hidden
+ */
+export function stringToU8aFixed(value: string, context: Context): U8aFixed {
+  return context.createType('U8aFixed', value);
+}
 
 /**
  * @hidden
@@ -420,8 +424,11 @@ export function identityIdToString(identityId: PolymeshPrimitivesIdentityId): st
 /**
  * @hidden
  */
-export function stringToEcdsaSignature(signature: string, context: Context): EcdsaSignature {
-  return context.createType('EcdsaSignature', signature);
+export function stringToEcdsaSignature(
+  signature: string,
+  context: Context
+): PolymeshPrimitivesEthereumEcdsaSignature {
+  return context.createType('PolymeshPrimitivesEthereumEcdsaSignature', signature);
 }
 
 /**
@@ -434,8 +441,11 @@ export function accountIdToAccount(accountId: AccountId, context: Context): Acco
 /**
  * @hidden
  */
-export function signerValueToSignatory(signer: SignerValue, context: Context): Signatory {
-  return context.createType('Signatory', {
+export function signerValueToSignatory(
+  signer: SignerValue,
+  context: Context
+): PolymeshPrimitivesSecondaryKeySignatory {
+  return context.createType('PolymeshPrimitivesSecondaryKeySignatory', {
     [signer.type]: signer.value,
   });
 }
@@ -453,7 +463,9 @@ function createSignerValue(type: SignerType, value: string): SignerValue {
 /**
  * @hidden
  */
-export function signatoryToSignerValue(signatory: Signatory): SignerValue {
+export function signatoryToSignerValue(
+  signatory: PolymeshPrimitivesSecondaryKeySignatory
+): SignerValue {
   if (signatory.isAccount) {
     return createSignerValue(SignerType.Account, accountIdToString(signatory.asAccount));
   }
@@ -488,7 +500,10 @@ export function signerValueToSigner(signerValue: SignerValue, context: Context):
 /**
  * @hidden
  */
-export function signerToSignatory(signer: Signer, context: Context): Signatory {
+export function signerToSignatory(
+  signer: Signer,
+  context: Context
+): PolymeshPrimitivesSecondaryKeySignatory {
   return signerValueToSignatory(signerToSignerValue(signer), context);
 }
 
@@ -562,7 +577,9 @@ export function permillToBigNumber(value: Permill): BigNumber {
 /**
  *  @hidden
  */
-export function meshClaimToInputStatClaim(claim: StatClaim): InputStatClaim {
+export function meshClaimToInputStatClaim(
+  claim: PolymeshPrimitivesStatisticsStatClaim
+): InputStatClaim {
   if (claim.isAccredited) {
     return {
       type: ClaimType.Accredited,
@@ -587,7 +604,9 @@ export function meshClaimToInputStatClaim(claim: StatClaim): InputStatClaim {
  * @hidden
  */
 export function claimCountToClaimCountRestrictionValue(
-  value: ITuple<[StatClaim, IdentityId, u64, Option<u64>]>,
+  value: ITuple<
+    [PolymeshPrimitivesStatisticsStatClaim, PolymeshPrimitivesIdentityId, u64, Option<u64>]
+  >,
   context: Context
 ): ClaimCountRestrictionValue {
   const [claim, issuer, min, max] = value;
@@ -603,7 +622,9 @@ export function claimCountToClaimCountRestrictionValue(
  * @hidden
  */
 export function claimPercentageToClaimPercentageRestrictionValue(
-  value: ITuple<[StatClaim, IdentityId, Percentage, Percentage]>,
+  value: ITuple<
+    [PolymeshPrimitivesStatisticsStatClaim, PolymeshPrimitivesIdentityId, Permill, Permill]
+  >,
   context: Context
 ): ClaimPercentageRestrictionValue {
   const [claim, issuer, min, max] = value;
@@ -619,7 +640,7 @@ export function claimPercentageToClaimPercentageRestrictionValue(
  * @hidden
  */
 export function meshPortfolioIdToPortfolio(
-  portfolioId: MeshPortfolioId,
+  portfolioId: PolymeshPrimitivesIdentityIdPortfolioId,
   context: Context
 ): DefaultPortfolio | NumberedPortfolio {
   const { did, kind } = portfolioId;
@@ -701,12 +722,28 @@ export function portfolioLikeToPortfolio(
 export function portfolioIdToMeshPortfolioId(
   portfolioId: PortfolioId,
   context: Context
-): MeshPortfolioId {
+): PolymeshPrimitivesIdentityIdPortfolioId {
   const { did, number } = portfolioId;
-  return context.createType('PortfolioId', {
+  return context.createType('PolymeshPrimitivesIdentityIdPortfolioId', {
     did: stringToIdentityId(did, context),
     kind: number ? { User: bigNumberToU64(number, context) } : 'Default',
   });
+}
+
+/**
+ * @hidden
+ */
+export function portfolioToPortfolioKind(
+  portfolio: DefaultPortfolio | NumberedPortfolio,
+  context: Context
+): PolymeshPrimitivesIdentityIdPortfolioKind {
+  let portfolioKind;
+  if (isNumberedPortfolio(portfolio)) {
+    portfolioKind = { User: bigNumberToU64(portfolio.id, context) };
+  } else {
+    portfolioKind = 'Default';
+  }
+  return context.createType('PolymeshPrimitivesIdentityIdPortfolioKind', portfolioKind);
 }
 
 /**
@@ -733,7 +770,9 @@ export function txGroupToTxTags(group: TxGroup): TxTag[] {
         TxTags.identity.AddInvestorUniquenessClaim,
         TxTags.portfolio.MovePortfolioFunds,
         TxTags.settlement.AddInstruction,
+        TxTags.settlement.AddInstructionWithMemo,
         TxTags.settlement.AddAndAffirmInstruction,
+        TxTags.settlement.AddAndAffirmInstructionWithMemo,
         TxTags.settlement.AffirmInstruction,
         TxTags.settlement.RejectInstruction,
         TxTags.settlement.CreateVenue,
@@ -761,7 +800,9 @@ export function txGroupToTxTags(group: TxGroup): TxTag[] {
         TxTags.identity.AddInvestorUniquenessClaim,
         TxTags.settlement.CreateVenue,
         TxTags.settlement.AddInstruction,
+        TxTags.settlement.AddInstructionWithMemo,
         TxTags.settlement.AddAndAffirmInstruction,
+        TxTags.settlement.AddAndAffirmInstructionWithMemo,
       ];
     }
     case TxGroup.Issuance: {
@@ -1018,7 +1059,7 @@ export function permissionsToMeshPermissions(
     }
   }
 
-  let portfolio: PermissionsEnum<MeshPortfolioId> = 'Whole';
+  let portfolio: PermissionsEnum<PolymeshPrimitivesIdentityIdPortfolioId> = 'Whole';
   if (portfolios) {
     const { values: portfolioValues, type } = portfolios;
     const portfolioIds = portfolioValues.map(pValue =>
@@ -1199,9 +1240,9 @@ export function u8ToBigNumber(value: u8): BigNumber {
 export function permissionGroupIdentifierToAgentGroup(
   permissionGroup: PermissionGroupIdentifier,
   context: Context
-): AgentGroup {
+): PolymeshPrimitivesAgentAgentGroup {
   return context.createType(
-    'AgentGroup',
+    'PolymeshPrimitivesAgentAgentGroup',
     typeof permissionGroup !== 'object'
       ? permissionGroup
       : { Custom: bigNumberToU32(permissionGroup.custom, context) }
@@ -1212,7 +1253,7 @@ export function permissionGroupIdentifierToAgentGroup(
  * @hidden
  */
 export function agentGroupToPermissionGroupIdentifier(
-  agentGroup: AgentGroup
+  agentGroup: PolymeshPrimitivesAgentAgentGroup
 ): PermissionGroupIdentifier {
   if (agentGroup.isFull) {
     return PermissionGroupType.Full;
@@ -1330,7 +1371,7 @@ export function balanceToBigNumber(balance: Balance): BigNumber {
  * @hidden
  */
 export function agentGroupToPermissionGroup(
-  agentGroup: AgentGroup,
+  agentGroup: PolymeshPrimitivesAgentAgentGroup,
   ticker: string,
   context: Context
 ): KnownPermissionGroup | CustomPermissionGroup {
@@ -1445,7 +1486,7 @@ export function authorizationDataToAuthorization(
 /**
  * @hidden
  */
-export function stringToMemo(value: string, context: Context): Memo {
+function assertMemoValid(value: string): void {
   if (value.length > MAX_MEMO_LENGTH) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
@@ -1455,6 +1496,13 @@ export function stringToMemo(value: string, context: Context): Memo {
       },
     });
   }
+}
+
+/**
+ * @hidden
+ */
+export function stringToMemo(value: string, context: Context): PolymeshCommonUtilitiesBalancesMemo {
+  assertMemoValid(value);
 
   return context.createType(
     'PolymeshCommonUtilitiesBalancesMemo',
@@ -1544,14 +1592,19 @@ export function u8ToTransferStatus(status: u8): TransferStatus {
 /**
  * @hidden
  */
-export function internalAssetTypeToAssetType(type: InternalAssetType, context: Context): AssetType {
-  return context.createType('AssetType', type);
+export function internalAssetTypeToAssetType(
+  type: InternalAssetType,
+  context: Context
+): PolymeshPrimitivesAssetAssetType {
+  return context.createType('PolymeshPrimitivesAssetAssetType', type);
 }
 
 /**
  * @hidden
  */
-export function assetTypeToKnownOrId(assetType: AssetType): KnownAssetType | BigNumber {
+export function assetTypeToKnownOrId(
+  assetType: PolymeshPrimitivesAssetAssetType
+): KnownAssetType | BigNumber {
   if (assetType.isEquityCommon) {
     return KnownAssetType.EquityCommon;
   }
@@ -1589,7 +1642,7 @@ export function assetTypeToKnownOrId(assetType: AssetType): KnownAssetType | Big
 /**
  * @hidden
  */
-export function posRatioToBigNumber(postRatio: PosRatio): BigNumber {
+export function posRatioToBigNumber(postRatio: PolymeshPrimitivesPosRatio): BigNumber {
   const [numerator, denominator] = postRatio.map(u32ToBigNumber);
   return numerator.dividedBy(denominator);
 }
@@ -1892,7 +1945,7 @@ export function stringToDocumentHash(
 
   const { maxLength, key } = type;
 
-  return context.createType('DocumentHash', {
+  return context.createType('PolymeshPrimitivesDocumentHash', {
     [key]: hexToU8a(docHash.padEnd(maxLength, '0')),
   });
 }
@@ -1900,7 +1953,7 @@ export function stringToDocumentHash(
 /**
  * @hidden
  */
-export function documentHashToString(docHash: DocumentHash): string | undefined {
+export function documentHashToString(docHash: PolymeshPrimitivesDocumentHash): string | undefined {
   if (docHash.isNone) {
     return;
   }
@@ -2015,7 +2068,10 @@ export function canTransferResultToTransferStatus(
 /**
  * @hidden
  */
-export function scopeToMeshScope(scope: Scope, context: Context): MeshScope {
+export function scopeToMeshScope(
+  scope: Scope,
+  context: Context
+): PolymeshPrimitivesIdentityClaimScope {
   const { type, value } = scope;
 
   let scopeValue: PolymeshPrimitivesTicker | PolymeshPrimitivesIdentityId | string;
@@ -2039,7 +2095,7 @@ export function scopeToMeshScope(scope: Scope, context: Context): MeshScope {
 /**
  * @hidden
  */
-export function meshScopeToScope(scope: MeshScope): Scope {
+export function meshScopeToScope(scope: PolymeshPrimitivesIdentityClaimScope): Scope {
   if (scope.isTicker) {
     return {
       type: ScopeType.Ticker,
@@ -2063,35 +2119,24 @@ export function meshScopeToScope(scope: MeshScope): Scope {
 /**
  * @hidden
  */
-export function stringToCddId(cddId: string, context: Context): CddId {
-  return context.createType('CddId', cddId);
+export function stringToCddId(cddId: string, context: Context): PolymeshPrimitivesCddId {
+  return context.createType('PolymeshPrimitivesCddId', cddId);
 }
 
 /**
  * @hidden
  */
-export function cddIdToString(cddId: CddId): string {
+export function cddIdToString(cddId: PolymeshPrimitivesCddId): string {
   return cddId.toString();
 }
 
 /**
  * @hidden
  */
-export function stringToScopeId(scopeId: string, context: Context): ScopeId {
-  return context.createType('ScopeId', scopeId);
-}
-
-/**
- * @hidden
- */
-export function scopeIdToString(scopeId: ScopeId): string {
-  return scopeId.toString();
-}
-
-/**
- * @hidden
- */
-export function claimToMeshClaim(claim: Claim, context: Context): MeshClaim {
+export function claimToMeshClaim(
+  claim: Claim,
+  context: Context
+): PolymeshPrimitivesIdentityClaimClaim {
   let value;
 
   switch (claim.type) {
@@ -2116,7 +2161,7 @@ export function claimToMeshClaim(claim: Claim, context: Context): MeshClaim {
       const { scope, cddId, scopeId } = claim;
       value = tuple(
         scopeToMeshScope(scope, context),
-        stringToScopeId(scopeId, context),
+        stringToIdentityId(scopeId, context),
         stringToCddId(cddId, context)
       );
       break;
@@ -2130,7 +2175,7 @@ export function claimToMeshClaim(claim: Claim, context: Context): MeshClaim {
     }
   }
 
-  return context.createType('Claim', { [claim.type]: value });
+  return context.createType('PolymeshPrimitivesIdentityClaimClaim', { [claim.type]: value });
 }
 
 /**
@@ -2203,7 +2248,7 @@ export function middlewareV2EventDetailsToEventIdentifier(
 /**
  * @hidden
  */
-export function meshClaimToClaim(claim: MeshClaim): Claim {
+export function meshClaimToClaim(claim: PolymeshPrimitivesIdentityClaimClaim): Claim {
   if (claim.isJurisdiction) {
     const [code, scope] = claim.asJurisdiction;
     return {
@@ -2273,7 +2318,7 @@ export function meshClaimToClaim(claim: MeshClaim): Claim {
     return {
       type: ClaimType.InvestorUniqueness,
       scope: meshScopeToScope(scope),
-      scopeId: scopeIdToString(scopeId),
+      scopeId: identityIdToString(scopeId),
       cddId: cddIdToString(cddId),
     };
   }
@@ -2311,9 +2356,12 @@ export function statsClaimToStatClaimInputType(
 /**
  * @hidden
  */
-export function stringToTargetIdentity(did: string | null, context: Context): TargetIdentity {
+export function stringToTargetIdentity(
+  did: string | null,
+  context: Context
+): PolymeshPrimitivesConditionTargetIdentity {
   return context.createType(
-    'TargetIdentity',
+    'PolymeshPrimitivesConditionTargetIdentity',
     // eslint-disable-next-line @typescript-eslint/naming-convention
     did ? { Specific: stringToIdentityId(did, context) } : 'ExternalAgent'
   );
@@ -2422,7 +2470,10 @@ export function requirementToComplianceRequirement(
   const receiverConditions: PolymeshPrimitivesCondition[] = [];
 
   requirement.conditions.forEach(condition => {
-    let conditionContent: MeshClaim | MeshClaim[] | TargetIdentity;
+    let conditionContent:
+      | PolymeshPrimitivesIdentityClaimClaim
+      | PolymeshPrimitivesIdentityClaimClaim[]
+      | PolymeshPrimitivesConditionTargetIdentity;
     let { type } = condition;
     if (isSingleClaimCondition(condition)) {
       const { claim } = condition;
@@ -2473,7 +2524,7 @@ export function requirementToComplianceRequirement(
  * @hidden
  */
 function meshConditionTypeToCondition(
-  meshConditionType: MeshConditionType,
+  meshConditionType: PolymeshPrimitivesConditionConditionType,
   context: Context
 ):
   | Pick<SingleClaimCondition, 'type' | 'claim'>
@@ -2654,7 +2705,10 @@ export function complianceRequirementToRequirement(
 /**
  * @hidden
  */
-export function txTagToProtocolOp(tag: TxTag, context: Context): ProtocolOp {
+export function txTagToProtocolOp(
+  tag: TxTag,
+  context: Context
+): PolymeshCommonUtilitiesProtocolFeeProtocolOp {
   const protocolOpTags = [
     TxTags.asset.RegisterTicker,
     TxTags.asset.Issue,
@@ -2677,11 +2731,11 @@ export function txTagToProtocolOp(tag: TxTag, context: Context): ProtocolOp {
   if (!includes(protocolOpTags, tag)) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: `${value} does not match any ProtocolOp`,
+      message: `${value} does not match any PolymeshCommonUtilitiesProtocolFeeProtocolOp`,
     });
   }
 
-  return context.createType('ProtocolOp', value);
+  return context.createType('PolymeshCommonUtilitiesProtocolFeeProtocolOp', value);
 }
 
 /**
@@ -2793,10 +2847,10 @@ export function transactionToTxTag<Args extends unknown[]>(tx: PolymeshTx<Args>)
 export function secondaryAccountToMeshSecondaryKey(
   secondaryKey: PermissionedAccount,
   context: Context
-): MeshSecondaryKey {
+): PolymeshPrimitivesSecondaryKey {
   const { account, permissions } = secondaryKey;
 
-  return context.createType('SecondaryKey', {
+  return context.createType('PolymeshPrimitivesSecondaryKey', {
     signer: signerValueToSignatory(signerToSignerValue(account), context),
     permissions: permissionsToMeshPermissions(permissions, context),
   });
@@ -2805,7 +2859,7 @@ export function secondaryAccountToMeshSecondaryKey(
 /**
  * @hidden
  */
-export function meshVenueTypeToVenueType(type: MeshVenueType): VenueType {
+export function meshVenueTypeToVenueType(type: PalletSettlementVenueType): VenueType {
   if (type.isOther) {
     return VenueType.Other;
   }
@@ -2824,15 +2878,18 @@ export function meshVenueTypeToVenueType(type: MeshVenueType): VenueType {
 /**
  * @hidden
  */
-export function venueTypeToMeshVenueType(type: VenueType, context: Context): MeshVenueType {
-  return context.createType('VenueType', type);
+export function venueTypeToMeshVenueType(
+  type: VenueType,
+  context: Context
+): PalletSettlementVenueType {
+  return context.createType('PalletSettlementVenueType', type);
 }
 
 /**
  * @hidden
  */
 export function meshInstructionStatusToInstructionStatus(
-  status: MeshInstructionStatus
+  status: PalletSettlementInstructionStatus
 ): InstructionStatus {
   if (status.isPending) {
     return InstructionStatus.Pending;
@@ -2849,7 +2906,7 @@ export function meshInstructionStatusToInstructionStatus(
  * @hidden
  */
 export function meshAffirmationStatusToAffirmationStatus(
-  status: MeshAffirmationStatus
+  status: PalletSettlementAffirmationStatus
 ): AffirmationStatus {
   if (status.isUnknown) {
     return AffirmationStatus.Unknown;
@@ -2870,7 +2927,7 @@ export function endConditionToSettlementType(
     | { type: InstructionType.SettleOnAffirmation }
     | { type: InstructionType.SettleOnBlock; value: BigNumber },
   context: Context
-): SettlementType {
+): PalletSettlementSettlementType {
   let value;
 
   if (endCondition.type === InstructionType.SettleOnAffirmation) {
@@ -2881,7 +2938,7 @@ export function endConditionToSettlementType(
     };
   }
 
-  return context.createType('SettlementType', value);
+  return context.createType('PalletSettlementSettlementType', value);
 }
 
 /**
@@ -2953,9 +3010,9 @@ export function toIdentityWithClaimsArrayV2(
 export function portfolioMovementToMovePortfolioItem(
   portfolioItem: PortfolioMovement,
   context: Context
-): MovePortfolioItem {
+): PalletPortfolioMovePortfolioItem {
   const { asset, amount, memo } = portfolioItem;
-  return context.createType('MovePortfolioItem', {
+  return context.createType('PalletPortfolioMovePortfolioItem', {
     ticker: stringToTicker(asTicker(asset), context),
     amount: bigNumberToBalance(amount, context),
     memo: optionize(stringToMemo)(memo, context),
@@ -2997,7 +3054,9 @@ export function transferRestrictionToPolymeshTransferCondition(
   let restrictionType: string;
   let restrictionValue;
 
-  const extractClaimValue = (claim: InputStatClaim): bool | MeshCountryCode | null => {
+  const extractClaimValue = (
+    claim: InputStatClaim
+  ): bool | PolymeshPrimitivesJurisdictionCountryCode | null => {
     if (claim.type === ClaimType.Accredited) {
       return booleanToBool(claim.accredited, context);
     } else if (claim.type === ClaimType.Affiliate) {
@@ -3063,7 +3122,7 @@ export function identitiesToBtreeSet(
  * @hidden
  */
 export function transferConditionToTransferRestriction(
-  transferCondition: TransferCondition,
+  transferCondition: PolymeshPrimitivesTransferComplianceTransferCondition,
   context: Context
 ): TransferRestriction {
   if (transferCondition.isMaxInvestorCount) {
@@ -3182,9 +3241,9 @@ export function granularCanTransferResultToTransferBreakdown(
 /**
  * @hidden
  */
-export function offeringTierToPriceTier(tier: OfferingTier, context: Context): PriceTier {
+export function offeringTierToPriceTier(tier: OfferingTier, context: Context): PalletStoPriceTier {
   const { price, amount } = tier;
-  return context.createType('PriceTier', {
+  return context.createType('PalletStoPriceTier', {
     total: bigNumberToBalance(amount, context),
     price: bigNumberToBalance(price, context),
   });
@@ -3300,7 +3359,7 @@ export function middlewareV2PortfolioToPortfolio(
 /**
  * @hidden
  */
-export function fundraiserTierToTier(fundraiserTier: FundraiserTier): Tier {
+export function fundraiserTierToTier(fundraiserTier: PalletStoFundraiserTier): Tier {
   const { total, price, remaining } = fundraiserTier;
   return {
     amount: balanceToBigNumber(total),
@@ -3406,7 +3465,7 @@ export function fundraiserToOfferingDetails(
 export function calendarPeriodToMeshCalendarPeriod(
   period: CalendarPeriod,
   context: Context
-): MeshCalendarPeriod {
+): PolymeshPrimitivesCalendarCalendarPeriod {
   const { unit, amount } = period;
 
   if (amount.isNegative()) {
@@ -3416,7 +3475,7 @@ export function calendarPeriodToMeshCalendarPeriod(
     });
   }
 
-  return context.createType('CalendarPeriod', {
+  return context.createType('PolymeshPrimitivesCalendarCalendarPeriod', {
     unit: stringUpperFirst(unit),
     amount: bigNumberToU64(amount, context),
   });
@@ -3425,7 +3484,9 @@ export function calendarPeriodToMeshCalendarPeriod(
 /**
  * @hidden
  */
-export function meshCalendarPeriodToCalendarPeriod(period: MeshCalendarPeriod): CalendarPeriod {
+export function meshCalendarPeriodToCalendarPeriod(
+  period: PolymeshPrimitivesCalendarCalendarPeriod
+): CalendarPeriod {
   const { unit: rawUnit, amount } = period;
 
   let unit: CalendarUnit;
@@ -3458,10 +3519,10 @@ export function meshCalendarPeriodToCalendarPeriod(period: MeshCalendarPeriod): 
 export function scheduleSpecToMeshScheduleSpec(
   details: ScheduleSpec,
   context: Context
-): MeshScheduleSpec {
+): PalletAssetCheckpointScheduleSpec {
   const { start, period, repetitions } = details;
 
-  return context.createType('ScheduleSpec', {
+  return context.createType('PalletAssetCheckpointScheduleSpec', {
     start: start && dateToMoment(start, context),
     period: calendarPeriodToMeshCalendarPeriod(
       period || { unit: CalendarUnit.Month, amount: new BigNumber(0) },
@@ -3475,7 +3536,7 @@ export function scheduleSpecToMeshScheduleSpec(
  * @hidden
  */
 export function storedScheduleToCheckpointScheduleParams(
-  storedSchedule: StoredSchedule
+  storedSchedule: PolymeshCommonUtilitiesCheckpointStoredSchedule
 ): CheckpointScheduleParams {
   const {
     schedule: { start, period },
@@ -3496,8 +3557,11 @@ export function storedScheduleToCheckpointScheduleParams(
 /**
  * @hidden
  */
-export function stringToSignature(signature: string, context: Context): Signature {
-  return context.createType('Signature', signature);
+export function stringToSignature(
+  signature: string,
+  context: Context
+): ConfidentialIdentityV2SignSignature {
+  return context.createType('ConfidentialIdentityV2SignSignature', signature);
 }
 
 /**
@@ -3555,22 +3619,11 @@ export function meshCorporateActionToCorporateActionParams(
 /**
  * @hidden
  */
-export function stringToRistrettoPoint(ristrettoPoint: string, context: Context): RistrettoPoint {
-  return context.createType('RistrettoPoint', ristrettoPoint);
-}
-
-/**
- * @hidden
- */
-export function corporateActionKindToCaKind(kind: CorporateActionKind, context: Context): CAKind {
-  return context.createType('CAKind', kind);
-}
-
-/**
- * @hidden
- */
-export function stringToScalar(scalar: string, context: Context): Scalar {
-  return context.createType('Scalar', scalar);
+export function corporateActionKindToCaKind(
+  kind: CorporateActionKind,
+  context: Context
+): PalletCorporateActionsCaKind {
+  return context.createType('PalletCorporateActionsCaKind', kind);
 }
 
 /**
@@ -3579,7 +3632,7 @@ export function stringToScalar(scalar: string, context: Context): Scalar {
 export function checkpointToRecordDateSpec(
   checkpoint: Checkpoint | Date | CheckpointSchedule,
   context: Context
-): RecordDateSpec {
+): PalletCorporateActionsRecordDateSpec {
   let value;
 
   if (checkpoint instanceof Checkpoint) {
@@ -3592,7 +3645,7 @@ export function checkpointToRecordDateSpec(
     /* eslint-enable @typescript-eslint/naming-convention */
   }
 
-  return context.createType('RecordDateSpec', value);
+  return context.createType('PalletCorporateActionsRecordDateSpec', value);
 }
 
 /**
@@ -3602,24 +3655,24 @@ export function scopeClaimProofToConfidentialIdentityClaimProof(
   proof: ScopeClaimProof,
   scopeId: string,
   context: Context
-): ConfidentialIdentityClaimProofsScopeClaimProof {
+): ConfidentialIdentityV2ClaimProofsScopeClaimProof {
   const {
     proofScopeIdWellFormed,
     proofScopeIdCddIdMatch: { challengeResponses, subtractExpressionsRes, blindedScopeDidHash },
   } = proof;
 
-  const zkProofData = context.createType('ZkProofData', {
+  const zkProofData = context.createType('ConfidentialIdentityClaimProofsZkProofData', {
     /* eslint-disable @typescript-eslint/naming-convention */
-    challenge_responses: challengeResponses.map(cr => stringToScalar(cr, context)),
-    subtract_expressions_res: stringToRistrettoPoint(subtractExpressionsRes, context),
-    blinded_scope_did_hash: stringToRistrettoPoint(blindedScopeDidHash, context),
+    challenge_responses: challengeResponses.map(cr => stringToU8aFixed(cr, context)),
+    subtract_expressions_res: stringToU8aFixed(subtractExpressionsRes, context),
+    blinded_scope_did_hash: stringToU8aFixed(blindedScopeDidHash, context),
     /* eslint-enable @typescript-eslint/naming-convention */
   });
 
-  return context.createType('ConfidentialIdentityClaimProofsScopeClaimProof', {
+  return context.createType('ConfidentialIdentityV2ClaimProofsScopeClaimProof', {
     proofScopeIdWellformed: stringToSignature(proofScopeIdWellFormed, context),
     proofScopeIdCddIdMatch: zkProofData,
-    scopeId: stringToRistrettoPoint(scopeId, context),
+    scopeId: stringToU8aFixed(scopeId, context),
   });
 }
 
@@ -3627,7 +3680,7 @@ export function scopeClaimProofToConfidentialIdentityClaimProof(
  * @hidden
  */
 export function targetIdentitiesToCorporateActionTargets(
-  targetIdentities: TargetIdentities,
+  targetIdentities: PalletCorporateActionsTargetIdentities,
   context: Context
 ): CorporateActionTargets {
   const { identities, treatment } = targetIdentities;
@@ -3648,7 +3701,7 @@ export function targetsToTargetIdentities(
     identities: (string | Identity)[];
   },
   context: Context
-): TargetIdentities {
+): PalletCorporateActionsTargetIdentities {
   const { treatment, identities } = targets;
   const { maxTargetIds } = context.polymeshApi.consts.corporateAction;
 
@@ -3664,7 +3717,7 @@ export function targetsToTargetIdentities(
     });
   }
 
-  return context.createType('TargetIdentities', {
+  return context.createType('PalletCorporateActionsTargetIdentities', {
     identities: identities.map(identity => stringToIdentityId(signerToString(identity), context)),
     treatment: context.createType('TargetTreatment', treatment),
   });
@@ -3951,7 +4004,7 @@ export function sortTransferRestrictionByClaimValue(
 ): PolymeshPrimitivesTransferComplianceTransferCondition[] {
   const getJurisdictionValue = (
     condition: PolymeshPrimitivesTransferComplianceTransferCondition
-  ): Option<MeshCountryCode> | undefined => {
+  ): Option<PolymeshPrimitivesJurisdictionCountryCode> | undefined => {
     const { isClaimCount, isClaimOwnership } = condition;
     if (isClaimCount) {
       if (!condition.asClaimCount[0].isJurisdiction) {
@@ -4152,6 +4205,18 @@ export function metadataSpecToMeshMetadataSpec(
 /**
  * @hidden
  */
+export function stringToInstructionMemo(
+  value: string,
+  context: Context
+): PalletSettlementInstructionMemo {
+  assertMemoValid(value);
+
+  return context.createType('PalletSettlementInstructionMemo', padString(value, MAX_MEMO_LENGTH));
+}
+
+/**
+ * @hidden
+ */
 export function meshMetadataSpecToMetadataSpec(
   rawSpecs?: Option<PolymeshPrimitivesAssetMetadataAssetMetadataSpec>
 ): MetadataSpec {
@@ -4294,4 +4359,67 @@ export function metadataValueDetailToMeshMetadataValueDetail(
     expire: optionize(dateToMoment)(expiry, context),
     lockStatus: meshLockStatus,
   });
+}
+
+/**
+ * @hidden
+ */
+export function instructionMemoToString(value: U8aFixed): string {
+  return removePadding(hexToString(value.toString()));
+}
+
+/**
+ * @hidden
+ */
+export function middlewareInstructionToHistoricInstruction(
+  instruction: Instruction,
+  context: Context
+): HistoricInstruction {
+  /* eslint-disable @typescript-eslint/no-non-null-assertion */
+  const {
+    id: instructionId,
+    status,
+    settlementType,
+    endBlock,
+    tradeDate,
+    valueDate,
+    legs: { nodes: legs },
+    memo,
+    createdBlock,
+    venueId,
+  } = instruction;
+  const { blockId, hash, datetime } = createdBlock!;
+
+  let typeDetails;
+
+  if (settlementType === InstructionType.SettleOnBlock) {
+    typeDetails = {
+      type: InstructionType.SettleOnBlock,
+      endBlock: new BigNumber(endBlock!),
+    };
+  } else {
+    typeDetails = {
+      type: InstructionType.SettleOnAffirmation,
+    };
+  }
+
+  return {
+    id: new BigNumber(instructionId),
+    blockNumber: new BigNumber(blockId),
+    blockHash: hash,
+    status,
+    tradeDate,
+    valueDate,
+    ...typeDetails,
+    memo: memo || null,
+    venueId: new BigNumber(venueId),
+    createdAt: new Date(datetime),
+    legs: legs.map(({ from, to, assetId, amount }) => ({
+      asset: new Asset({ ticker: assetId }, context),
+      amount: new BigNumber(amount).shiftedBy(-6),
+      from: middlewareV2PortfolioToPortfolio(from!, context),
+      to: middlewareV2PortfolioToPortfolio(to!, context),
+    })),
+  };
+  /* eslint-enable @typescript-eslint/no-non-null-assertion */
 }

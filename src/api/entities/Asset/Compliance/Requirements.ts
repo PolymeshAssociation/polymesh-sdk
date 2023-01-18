@@ -1,4 +1,3 @@
-import { QueryableStorageEntry } from '@polkadot/api/types';
 import { Vec } from '@polkadot/types/codec';
 import {
   PolymeshPrimitivesComplianceManagerAssetCompliance,
@@ -26,14 +25,13 @@ import {
   SubCallback,
   UnsubCallback,
 } from '~/types';
-import { QueryReturnType } from '~/types/utils';
 import {
   boolToBoolean,
   complianceRequirementToRequirement,
   stringToTicker,
   trustedIssuerToTrustedClaimIssuer,
 } from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
+import { createProcedureMethod, requestMulti } from '~/utils/internal';
 
 /**
  * Handles all Asset Compliance Requirements related functionality
@@ -121,7 +119,6 @@ export class Requirements extends Namespace<Asset> {
       context: {
         polymeshApi: {
           query: { complianceManager },
-          queryMulti,
         },
       },
       context,
@@ -145,21 +142,13 @@ export class Requirements extends Namespace<Asset> {
     };
 
     if (callback) {
-      return queryMulti<
-        [
-          QueryReturnType<typeof complianceManager.assetCompliances>,
-          QueryReturnType<typeof complianceManager.trustedClaimIssuer>
-        ]
+      return requestMulti<
+        [typeof complianceManager.assetCompliances, typeof complianceManager.trustedClaimIssuer]
       >(
+        context,
         [
-          [
-            complianceManager.assetCompliances as unknown as QueryableStorageEntry<'promise'>,
-            rawTicker,
-          ],
-          [
-            complianceManager.trustedClaimIssuer as unknown as QueryableStorageEntry<'promise'>,
-            rawTicker,
-          ],
+          [complianceManager.assetCompliances, rawTicker],
+          [complianceManager.trustedClaimIssuer, rawTicker],
         ],
         res => {
           // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
@@ -168,20 +157,11 @@ export class Requirements extends Namespace<Asset> {
       );
     }
 
-    const result = await queryMulti<
-      [
-        QueryReturnType<typeof complianceManager.assetCompliances>,
-        QueryReturnType<typeof complianceManager.trustedClaimIssuer>
-      ]
-    >([
-      [
-        complianceManager.assetCompliances as unknown as QueryableStorageEntry<'promise'>,
-        rawTicker,
-      ],
-      [
-        complianceManager.trustedClaimIssuer as unknown as QueryableStorageEntry<'promise'>,
-        rawTicker,
-      ],
+    const result = await requestMulti<
+      [typeof complianceManager.assetCompliances, typeof complianceManager.trustedClaimIssuer]
+    >(context, [
+      [complianceManager.assetCompliances, rawTicker],
+      [complianceManager.trustedClaimIssuer, rawTicker],
     ]);
 
     return assembleResult(result);

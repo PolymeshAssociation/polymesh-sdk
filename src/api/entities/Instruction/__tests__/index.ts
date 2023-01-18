@@ -1,19 +1,20 @@
 import { StorageKey, u64 } from '@polkadot/types';
+import { PolymeshPrimitivesIdentityIdPortfolioId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Context, Entity, Instruction, PolymeshTransaction } from '~/internal';
+import { EventIdEnum as MiddlewareV2EventId } from '~/middleware/enumsV2';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { instructionsQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
-import { EventIdEnum as MiddlewareV2EventId } from '~/middleware/typesV2';
-import { PortfolioId as MeshPortfolioId } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
   AffirmationStatus,
   InstructionAffirmationOperation,
   InstructionStatus,
+  InstructionStatusResult,
   InstructionType,
 } from '~/types';
 import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
@@ -263,13 +264,19 @@ describe('Instruction class', () => {
     });
 
     let bigNumberToU64Spy: jest.SpyInstance;
+    let queryMultiMock: jest.Mock;
+    let instructionMemoToStringSpy: jest.SpyInstance;
 
     beforeAll(() => {
       bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
+      instructionMemoToStringSpy = jest.spyOn(utilsConversionModule, 'instructionMemoToString');
     });
 
     beforeEach(() => {
       when(bigNumberToU64Spy).calledWith(id, context).mockReturnValue(rawId);
+      dsMockUtils.createQueryMock('settlement', 'instructionDetails');
+      dsMockUtils.createQueryMock('settlement', 'instructionMemos');
+      queryMultiMock = dsMockUtils.getQueryMultiMock();
     });
 
     it('should return the Instruction details', async () => {
@@ -280,10 +287,11 @@ describe('Instruction class', () => {
       const venueId = new BigNumber(1);
       let type = InstructionType.SettleOnAffirmation;
       const owner = 'someDid';
+      const memo = 'someMemo';
 
       entityMockUtils.configureMocks({ identityOptions: { did: owner } });
 
-      const queryResult = dsMockUtils.createMockInstruction({
+      const rawInstructionDetails = dsMockUtils.createMockInstruction({
         instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
         status: dsMockUtils.createMockInstructionStatus(status),
         venueId: dsMockUtils.createMockU64(venueId),
@@ -298,12 +306,12 @@ describe('Instruction class', () => {
         ),
         settlementType: dsMockUtils.createMockSettlementType(type),
       });
+      const rawInstructionMemo = dsMockUtils.createMockInstructionMemo(memo);
+      const rawOptionalMemo = dsMockUtils.createMockOption(rawInstructionMemo);
 
-      const instructionDetailsMock = dsMockUtils.createQueryMock(
-        'settlement',
-        'instructionDetails'
-      );
-      when(instructionDetailsMock).calledWith(rawId).mockResolvedValue(queryResult);
+      when(instructionMemoToStringSpy).calledWith(rawInstructionMemo).mockReturnValue(memo);
+
+      queryMultiMock.mockResolvedValueOnce([rawInstructionDetails, rawOptionalMemo]);
 
       let result = await instruction.details();
 
@@ -313,22 +321,24 @@ describe('Instruction class', () => {
         tradeDate,
         valueDate,
         type,
+        memo,
       });
       expect(result.venue.id).toEqual(venueId);
 
       type = InstructionType.SettleOnBlock;
       const endBlock = new BigNumber(100);
 
-      instructionDetailsMock.mockResolvedValue(
+      queryMultiMock.mockResolvedValueOnce([
         dsMockUtils.createMockInstruction({
-          ...queryResult,
+          ...rawInstructionDetails,
           tradeDate: dsMockUtils.createMockOption(),
           valueDate: dsMockUtils.createMockOption(),
           settlementType: dsMockUtils.createMockSettlementType({
             SettleOnBlock: dsMockUtils.createMockU32(endBlock),
           }),
-        })
-      );
+        }),
+        dsMockUtils.createMockOption(),
+      ]);
 
       result = await instruction.details();
 
@@ -339,18 +349,20 @@ describe('Instruction class', () => {
         valueDate: null,
         type,
         endBlock,
+        memo: null,
       });
       expect(result.venue.id).toEqual(venueId);
 
       status = InstructionStatus.Failed;
       type = InstructionType.SettleOnAffirmation;
 
-      instructionDetailsMock.mockResolvedValue(
+      queryMultiMock.mockResolvedValueOnce([
         dsMockUtils.createMockInstruction({
-          ...queryResult,
+          ...rawInstructionDetails,
           status: dsMockUtils.createMockInstructionStatus(status),
-        })
-      );
+        }),
+        rawOptionalMemo,
+      ]);
 
       result = await instruction.details();
 
@@ -360,24 +372,24 @@ describe('Instruction class', () => {
         tradeDate,
         valueDate,
         type,
+        memo,
       });
       expect(result.venue.id).toEqual(venueId);
     });
 
     it('should throw an error if the Instruction is not pending', () => {
-      when(dsMockUtils.createQueryMock('settlement', 'instructionDetails'))
-        .calledWith(rawId)
-        .mockResolvedValue(
-          dsMockUtils.createMockInstruction({
-            instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
-            status: dsMockUtils.createMockInstructionStatus('Unknown'),
-            venueId: dsMockUtils.createMockU64(new BigNumber(1)),
-            createdAt: dsMockUtils.createMockOption(),
-            tradeDate: dsMockUtils.createMockOption(),
-            valueDate: dsMockUtils.createMockOption(),
-            settlementType: dsMockUtils.createMockSettlementType(),
-          })
-        );
+      queryMultiMock.mockResolvedValueOnce([
+        dsMockUtils.createMockInstruction({
+          instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
+          status: dsMockUtils.createMockInstructionStatus('Unknown'),
+          venueId: dsMockUtils.createMockU64(new BigNumber(1)),
+          createdAt: dsMockUtils.createMockOption(),
+          tradeDate: dsMockUtils.createMockOption(),
+          valueDate: dsMockUtils.createMockOption(),
+          settlementType: dsMockUtils.createMockSettlementType(),
+        }),
+        dsMockUtils.createMockOption(),
+      ]);
 
       return expect(instruction.details()).rejects.toThrow(
         'Instruction has already been executed/rejected and it was purged from chain'
@@ -388,7 +400,7 @@ describe('Instruction class', () => {
   describe('method: getAffirmations', () => {
     const did = 'someDid';
     const status = AffirmationStatus.Affirmed;
-    let rawStorageKey: [u64, MeshPortfolioId][];
+    let rawStorageKey: [u64, PolymeshPrimitivesIdentityIdPortfolioId][];
 
     let instructionDetailsMock: jest.Mock;
 
@@ -673,6 +685,9 @@ describe('Instruction class', () => {
 
     beforeEach(() => {
       when(bigNumberToU64Spy).calledWith(id, context).mockReturnValue(rawId);
+      dsMockUtils.configureMocks({
+        contextOptions: { middlewareV2Enabled: false },
+      });
     });
 
     it('should return Pending Instruction status', async () => {
@@ -844,6 +859,18 @@ describe('Instruction class', () => {
         "It isn't possible to determine the current status of this Instruction"
       );
     });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      dsMockUtils.configureMocks({
+        contextOptions: { middlewareV2Enabled: true },
+      });
+      jest.spyOn(instruction, 'isPending').mockResolvedValue(false);
+      const fakeResult = 'fakeResult' as unknown as InstructionStatusResult;
+      jest.spyOn(instruction, 'getStatusV2').mockResolvedValue(fakeResult);
+
+      const result = await instruction.getStatus();
+      expect(result).toEqual(fakeResult);
+    });
   });
 
   describe('method: getStatusV2', () => {
@@ -915,16 +942,20 @@ describe('Instruction class', () => {
 
       dsMockUtils.createApolloMultipleV2QueriesMock([
         {
-          query: instructionsQuery(queryVariables),
+          query: instructionsQuery(queryVariables, new BigNumber(1), new BigNumber(0)),
           returnData: {
             instructions: { nodes: [fakeQueryResult] },
           },
         },
         {
-          query: instructionsQuery({
-            ...queryVariables,
-            eventId: MiddlewareV2EventId.InstructionFailed,
-          }),
+          query: instructionsQuery(
+            {
+              ...queryVariables,
+              eventId: MiddlewareV2EventId.InstructionFailed,
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
           returnData: {
             instructions: { nodes: [] },
           },
@@ -971,7 +1002,7 @@ describe('Instruction class', () => {
 
       dsMockUtils.createApolloMultipleV2QueriesMock([
         {
-          query: instructionsQuery(queryVariables),
+          query: instructionsQuery(queryVariables, new BigNumber(1), new BigNumber(0)),
           returnData: {
             instructions: {
               nodes: [],
@@ -979,10 +1010,14 @@ describe('Instruction class', () => {
           },
         },
         {
-          query: instructionsQuery({
-            ...queryVariables,
-            eventId: MiddlewareV2EventId.InstructionFailed,
-          }),
+          query: instructionsQuery(
+            {
+              ...queryVariables,
+              eventId: MiddlewareV2EventId.InstructionFailed,
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
           returnData: {
             instructions: {
               nodes: [fakeQueryResult],
@@ -1021,16 +1056,20 @@ describe('Instruction class', () => {
 
       dsMockUtils.createApolloMultipleV2QueriesMock([
         {
-          query: instructionsQuery(queryVariables),
+          query: instructionsQuery(queryVariables, new BigNumber(1), new BigNumber(0)),
           returnData: {
             instructions: { nodes: [] },
           },
         },
         {
-          query: instructionsQuery({
-            ...queryVariables,
-            eventId: MiddlewareV2EventId.InstructionFailed,
-          }),
+          query: instructionsQuery(
+            {
+              ...queryVariables,
+              eventId: MiddlewareV2EventId.InstructionFailed,
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
           returnData: {
             instructions: { nodes: [] },
           },

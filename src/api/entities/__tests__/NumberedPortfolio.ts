@@ -6,7 +6,7 @@ import { eventByIndexedArgs } from '~/middleware/queries';
 import { portfolioQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { ErrorCode } from '~/types';
+import { ErrorCode, EventIdentifier } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -141,6 +141,12 @@ describe('NumberedPortfolio class', () => {
       eventArg1: id.toString(),
     };
 
+    beforeEach(() => {
+      dsMockUtils.configureMocks({
+        contextOptions: { middlewareV2Enabled: false },
+      });
+    });
+
     it('should return the event identifier object of the portfolio creation', async () => {
       const blockNumber = new BigNumber(1234);
       const blockDate = new Date('4/14/2020');
@@ -169,6 +175,18 @@ describe('NumberedPortfolio class', () => {
       dsMockUtils.createApolloQueryMock(eventByIndexedArgs(variables), {});
       const result = await numberedPortfolio.createdAt();
       expect(result).toBeNull();
+    });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      dsMockUtils.configureMocks({
+        contextOptions: { middlewareV2Enabled: true },
+      });
+      const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
+      const fakeResult = 'fakeResult' as unknown as EventIdentifier;
+      jest.spyOn(numberedPortfolio, 'createdAtV2').mockResolvedValue(fakeResult);
+
+      const result = await numberedPortfolio.createdAt();
+      expect(result).toEqual(fakeResult);
     });
   });
 

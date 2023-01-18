@@ -1,10 +1,10 @@
 import { u32, u64 } from '@polkadot/types';
+import {
+  PalletSettlementAffirmationStatus,
+  PolymeshPrimitivesIdentityIdPortfolioId,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
-import {
-  AffirmationStatus as MeshAffirmationStatus,
-  PortfolioId as MeshPortfolioId,
-} from 'polymesh-types/types';
 
 import {
   getAuthorization,
@@ -54,10 +54,13 @@ describe('modifyInstructionAffirmation procedure', () => {
   let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
   let bigNumberToU32Spy: jest.SpyInstance<u32, [BigNumber, Context]>;
   let portfolioLikeToPortfolioIdSpy: jest.SpyInstance<PortfolioId, [PortfolioLike]>;
-  let portfolioIdToMeshPortfolioIdSpy: jest.SpyInstance<MeshPortfolioId, [PortfolioId, Context]>;
+  let portfolioIdToMeshPortfolioIdSpy: jest.SpyInstance<
+    PolymeshPrimitivesIdentityIdPortfolioId,
+    [PortfolioId, Context]
+  >;
   let meshAffirmationStatusToAffirmationStatusSpy: jest.SpyInstance<
     AffirmationStatus,
-    [MeshAffirmationStatus]
+    [PalletSettlementAffirmationStatus]
   >;
 
   beforeAll(() => {

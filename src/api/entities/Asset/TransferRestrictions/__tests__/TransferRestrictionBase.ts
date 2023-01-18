@@ -393,7 +393,7 @@ describe('TransferRestrictionBase class', () => {
         },
       });
       dsMockUtils.createQueryMock('statistics', 'transferConditionExemptEntities', {
-        entries: [[[null, dsMockUtils.createMockScopeId(scopeId)], true]],
+        entries: [[[null, dsMockUtils.createMockIdentityId(scopeId)], true]],
       });
       jest.spyOn(utilsConversionModule, 'u32ToBigNumber').mockClear().mockReturnValue(maxStats);
     });
