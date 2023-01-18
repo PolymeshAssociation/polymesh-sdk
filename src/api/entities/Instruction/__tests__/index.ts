@@ -16,6 +16,7 @@ import {
   InstructionStatus,
   InstructionStatusResult,
   InstructionType,
+  UnsubCallback,
 } from '~/types';
 import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
 import { tuple } from '~/types/utils';
@@ -219,6 +220,100 @@ describe('Instruction class', () => {
       result = await instruction.isPending();
 
       expect(result).toBe(false);
+    });
+  });
+
+  describe('method: onStatusChange', () => {
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    let bigNumberToU64Spy: jest.SpyInstance;
+
+    beforeAll(() => {
+      bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
+    });
+
+    beforeEach(() => {
+      when(bigNumberToU64Spy).calledWith(id, context).mockReturnValue(rawId);
+    });
+
+    it('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallback' as unknown as Promise<UnsubCallback>;
+      const callback = jest.fn();
+
+      const status = InstructionStatus.Pending;
+      const createdAt = new Date('10/14/1987');
+      const tradeDate = new Date('11/17/1987');
+      const valueDate = new Date('11/17/1987');
+      const venueId = new BigNumber(1);
+      const type = InstructionType.SettleOnAffirmation;
+      const owner = 'someDid';
+
+      entityMockUtils.configureMocks({ identityOptions: { did: owner } });
+
+      const queryResult = dsMockUtils.createMockInstruction({
+        instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
+        venueId: dsMockUtils.createMockU64(venueId),
+        createdAt: dsMockUtils.createMockOption(
+          dsMockUtils.createMockMoment(new BigNumber(createdAt.getTime()))
+        ),
+        tradeDate: dsMockUtils.createMockOption(
+          dsMockUtils.createMockMoment(new BigNumber(tradeDate.getTime()))
+        ),
+        valueDate: dsMockUtils.createMockOption(
+          dsMockUtils.createMockMoment(new BigNumber(valueDate.getTime()))
+        ),
+        settlementType: dsMockUtils.createMockSettlementType(type),
+        status: dsMockUtils.createMockInstructionStatus(status),
+      });
+
+      const instructionDetailsMock = dsMockUtils.createQueryMock(
+        'settlement',
+        'instructionDetails'
+      );
+
+      instructionDetailsMock.mockImplementationOnce(async (_, cbFunc) => {
+        cbFunc(queryResult);
+        return unsubCallback;
+      });
+
+      when(instructionDetailsMock).calledWith(rawId).mockResolvedValue(queryResult);
+
+      let result = await instruction.onStatusChange(callback);
+
+      expect(result).toEqual(unsubCallback);
+      expect(callback).toBeCalledWith(InstructionStatus.Pending);
+
+      instructionDetailsMock.mockImplementationOnce(async (_, cbFunc) => {
+        cbFunc(
+          dsMockUtils.createMockInstruction({
+            ...queryResult,
+            status: dsMockUtils.createMockInstructionStatus('Failed'),
+          })
+        );
+        return unsubCallback;
+      });
+
+      result = await instruction.onStatusChange(callback);
+
+      expect(result).toEqual(unsubCallback);
+      expect(callback).toBeCalledWith(InstructionStatus.Failed);
+
+      instructionDetailsMock.mockImplementationOnce(async (_, cbFunc) => {
+        cbFunc(
+          dsMockUtils.createMockInstruction({
+            ...queryResult,
+            status: dsMockUtils.createMockInstructionStatus('Unknown'),
+          })
+        );
+        return unsubCallback;
+      });
+
+      result = await instruction.onStatusChange(callback);
+
+      expect(result).toEqual(unsubCallback);
+      expect(callback).toBeCalledWith(InstructionStatus.Executed);
     });
   });
 

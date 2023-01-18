@@ -182,6 +182,8 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    * Retrieve current status of the Instruction. This can be subscribed to know if instruction fails
    *
    * @note can be subscribed to
+   * @note current status as `Executed` means that the Instruction has been executed/rejected and pruned from
+   *   the chain.
    */
   public async onStatusChange(callback: SubCallback<InstructionStatus>): Promise<UnsubCallback> {
     const {
@@ -199,16 +201,14 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     const assembleResult = (rawStatus: MeshInstructionStatus): InstructionStatus => {
       const status = meshInstructionStatusToInstructionStatus(rawStatus);
 
-      if (status === InternalInstructionStatus.Unknown) {
-        throw new PolymeshError({
-          code: ErrorCode.DataUnavailable,
-          message: executedMessage,
-        });
+      if (status === InternalInstructionStatus.Pending) {
+        return InstructionStatus.Pending;
+      } else if (status === InternalInstructionStatus.Failed) {
+        return InstructionStatus.Failed;
+      } else {
+        // TODO @prashantasdeveloper remove this once the chain handles Executed/Rejected state separately
+        return InstructionStatus.Executed;
       }
-
-      return status === InternalInstructionStatus.Pending
-        ? InstructionStatus.Pending
-        : InstructionStatus.Failed;
     };
 
     return instructionDetails(bigNumberToU64(id, context), ({ status }) => {
