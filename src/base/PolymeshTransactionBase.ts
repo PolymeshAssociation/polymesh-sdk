@@ -8,7 +8,9 @@ import { range } from 'lodash';
 
 import { Context, Identity, PolymeshError } from '~/internal';
 import { latestProcessedBlock } from '~/middleware/queries';
+import { latestBlockQuery } from '~/middleware/queriesV2';
 import { Query } from '~/middleware/types';
+import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   ErrorCode,
   GenericPolymeshTransaction,
@@ -25,7 +27,7 @@ import {
   MaybeResolverFunction,
   TransactionConstructionData,
 } from '~/types/internal';
-import { Ensured } from '~/types/utils';
+import { Ensured, EnsuredV2 } from '~/types/utils';
 import { balanceToBigNumber, hashToString, u32ToBigNumber } from '~/utils/conversion';
 import { defusePromise, delay, filterEventRecords } from '~/utils/internal';
 
@@ -437,7 +439,7 @@ export abstract class PolymeshTransactionBase<
   public onProcessedByMiddleware(listener: (err?: PolymeshError) => void): UnsubCallback {
     const { context, emitter } = this;
 
-    if (!context.isMiddlewareEnabled()) {
+    if (!context.isAnyMiddlewareEnabled()) {
       throw new PolymeshError({
         code: ErrorCode.General,
         message: 'Cannot subscribe without an enabled middleware connection',
@@ -452,6 +454,34 @@ export abstract class PolymeshTransactionBase<
   }
 
   /**
+   * Get the latest processed block from the database
+   *
+   * @note uses the middleware
+   */
+  private async getLatestBlockFromMiddleware(): Promise<BigNumber> {
+    const { context } = this;
+
+    let processedBlock: number;
+    if (context.isMiddlewareV2Enabled()) {
+      ({
+        data: {
+          blocks: {
+            nodes: [{ blockId: processedBlock }],
+          },
+        },
+      } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'blocks'>>(latestBlockQuery()));
+    } else {
+      ({
+        data: {
+          latestBlock: { id: processedBlock },
+        },
+      } = await context.queryMiddleware<Ensured<Query, 'latestBlock'>>(latestProcessedBlock()));
+    }
+
+    return new BigNumber(processedBlock);
+  }
+
+  /**
    * Poll the middleware every 2 seconds to see if it has already processed the
    *   block that reflects the changes brought on by this transaction being run. If so,
    *   emit the corresponding event. After 5 retries (or if the middleware can't be reached),
@@ -463,7 +493,7 @@ export abstract class PolymeshTransactionBase<
     const { context, emitter } = this;
 
     try {
-      if (!context.isMiddlewareEnabled()) {
+      if (!context.isAnyMiddlewareEnabled()) {
         return;
       }
 
@@ -477,12 +507,7 @@ export abstract class PolymeshTransactionBase<
         }
 
         try {
-          const {
-            data: {
-              latestBlock: { id: processedBlock },
-            },
-          } = await context.queryMiddleware<Ensured<Query, 'latestBlock'>>(latestProcessedBlock());
-
+          const processedBlock = await this.getLatestBlockFromMiddleware();
           if (blockNumber.lte(processedBlock)) {
             done = true;
             emitter.emit(Event.ProcessedByMiddleware);

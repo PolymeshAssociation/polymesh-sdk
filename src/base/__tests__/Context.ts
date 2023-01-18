@@ -1891,6 +1891,50 @@ describe('Context class', () => {
     });
   });
 
+  describe('method: isAnyMiddlewareEnabled', () => {
+    beforeAll(() => {
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
+    });
+
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should return true if any middleware is enabled', async () => {
+      let context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: null,
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
+      });
+
+      let result = context.isAnyMiddlewareEnabled();
+
+      expect(result).toBe(true);
+
+      context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApiV2: null,
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+      });
+
+      result = context.isAnyMiddlewareEnabled();
+
+      expect(result).toBe(true);
+    });
+
+    it('should return false if neither middleware are not enabled', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: null,
+        middlewareApiV2: null,
+      });
+
+      const result = context.isMiddlewareV2Enabled();
+
+      expect(result).toBe(false);
+    });
+  });
+
   describe('method: isMiddlewareAvailable', () => {
     beforeAll(() => {
       jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
