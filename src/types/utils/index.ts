@@ -24,7 +24,7 @@ export type UnionOfProcedureFuncs<Args, ReturnValue, Storage> = Args extends unk
   : never;
 
 /**
- * Less strict version of Parameters<T\>
+ * Less strict version of `Parameters<T>`
  */
 export type ArgsType<T> = T extends (...args: infer A) => unknown ? A : never;
 
