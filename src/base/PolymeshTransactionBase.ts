@@ -439,7 +439,7 @@ export abstract class PolymeshTransactionBase<
   public onProcessedByMiddleware(listener: (err?: PolymeshError) => void): UnsubCallback {
     const { context, emitter } = this;
 
-    if (!context.isMiddlewareV2Enabled() && !context.isMiddlewareEnabled()) {
+    if (!context.isAnyMiddlewareEnabled()) {
       throw new PolymeshError({
         code: ErrorCode.General,
         message: 'Cannot subscribe without an enabled middleware connection',
@@ -458,7 +458,7 @@ export abstract class PolymeshTransactionBase<
    *
    * @note uses the middleware
    */
-  private async getLatestBlockFromDb(): Promise<BigNumber> {
+  private async getLatestBlockFromMiddleware(): Promise<BigNumber> {
     const { context } = this;
 
     let processedBlock: number;
@@ -493,7 +493,7 @@ export abstract class PolymeshTransactionBase<
     const { context, emitter } = this;
 
     try {
-      if (!context.isMiddlewareEnabled() && !context.isMiddlewareV2Enabled()) {
+      if (!context.isAnyMiddlewareEnabled()) {
         return;
       }
 
@@ -507,7 +507,7 @@ export abstract class PolymeshTransactionBase<
         }
 
         try {
-          const processedBlock = await this.getLatestBlockFromDb();
+          const processedBlock = await this.getLatestBlockFromMiddleware();
           if (blockNumber.lte(processedBlock)) {
             done = true;
             emitter.emit(Event.ProcessedByMiddleware);
