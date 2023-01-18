@@ -1627,4 +1627,11 @@ export {
   SettlementResultEnum,
   SettlementDirectionEnum,
 } from '~/middleware/types';
+export * from '~/middleware/enumsV2';
+export {
+  PublicEnum8F5A39C8Ee,
+  PublicEnum7A0B4Cc03E,
+  ExtrinsicsOrderBy,
+  AssetHoldersOrderBy,
+} from '~/middleware/typesV2';
 export * from '~/api/procedures/types';
