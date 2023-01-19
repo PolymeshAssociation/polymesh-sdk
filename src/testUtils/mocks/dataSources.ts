@@ -840,6 +840,9 @@ function configureContext(opts: ContextOptions): void {
     getLatestBlock: jest.fn().mockResolvedValue(opts.latestBlock),
     isMiddlewareEnabled: jest.fn().mockReturnValue(opts.middlewareEnabled),
     isMiddlewareV2Enabled: jest.fn().mockReturnValue(opts.middlewareV2Enabled),
+    isAnyMiddlewareEnabled: jest
+      .fn()
+      .mockReturnValue(opts.middlewareEnabled || opts.middlewareV2Enabled),
     isMiddlewareAvailable: jest.fn().mockResolvedValue(opts.middlewareAvailable),
     isMiddlewareV2Available: jest.fn().mockResolvedValue(opts.middlewareV2Available),
     isArchiveNode: opts.isArchiveNode,
