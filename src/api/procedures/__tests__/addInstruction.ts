@@ -346,6 +346,33 @@ describe('addInstruction procedure', () => {
     expect(error.data.failedInstructionIndexes[0]).toBe(0);
   });
 
+  it('should throw an error if any instruction contains leg with transferring Assets within same Identity portfolios', async () => {
+    const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
+      portfoliosToAffirm: [],
+    });
+
+    entityMockUtils.configureMocks({
+      venueOptions: { exists: true },
+    });
+
+    let error;
+    const legs = Array(2).fill({
+      from: to,
+      to,
+      amount: new BigNumber(10),
+      asset: entityMockUtils.getAssetInstance({ ticker: asset }),
+    });
+    try {
+      await prepareAddInstruction.call(proc, { venueId, instructions: [{ legs }] });
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('Instruction leg cannot transfer Assets between same identity');
+    expect(error.code).toBe(ErrorCode.ValidationError);
+    expect(error.data.failedInstructionIndexes[0]).toBe(0);
+  });
+
   it("should throw an error if the Venue doesn't exist", async () => {
     const proc = procedureMockUtils.getInstance<Params, Instruction[], Storage>(mockContext, {
       portfoliosToAffirm: [],
