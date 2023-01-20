@@ -1471,8 +1471,8 @@ export interface MortalProcedureOptValue {
   /**
    * The number of blocks the for which the transaction remains valid. Target block time is 6 seconds. The default should suffice for most use cases
    *
-   * @note this value will get rounded up to the closest power of 2, e.g. `65` rounds to `128`
-   * @note this value should not exceed 250 (rounds to 256), which is the chain's `BlockHashCount` as the lesser of the two will be used.
+   * @note this value will get rounded up to the closest power of 2, e.g. `65` rounds up to `128`
+   * @note this value should not exceed 4096, which is the chain's `BlockHashCount` as the lesser of the two will be used.
    */
   readonly lifetime?: BigNumber;
 }
