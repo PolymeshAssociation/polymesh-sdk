@@ -32,7 +32,8 @@ export async function prepareQuitCustody(
 
   const { portfolio } = args;
 
-  const isOwnedBy = await portfolio.isOwnedBy();
+  const signer = await context.getSigningIdentity();
+  const isOwnedBy = await portfolio.isOwnedBy({ identity: signer });
 
   if (isOwnedBy) {
     throw new PolymeshError({
