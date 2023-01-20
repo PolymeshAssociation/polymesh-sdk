@@ -83,7 +83,13 @@ import {
   u16ToBigNumber,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { assertAddressValid, calculateNextKey, createClaim, getApiAtBlock } from '~/utils/internal';
+import {
+  assertAddressValid,
+  calculateNextKey,
+  createClaim,
+  delay,
+  getApiAtBlock,
+} from '~/utils/internal';
 
 interface ConstructorParams {
   polymeshApi: ApiPromise;
@@ -1395,7 +1401,7 @@ export class Context {
    * @note after disconnecting, trying to access any property in this object will result
    *   in an error
    */
-  public disconnect(): Promise<void> {
+  public async disconnect(): Promise<void> {
     const { polymeshApi } = this;
     let middlewareApi, middlewareApiV2;
 
@@ -1411,6 +1417,8 @@ export class Context {
 
     middlewareApi && middlewareApi.stop();
     middlewareApiV2 && middlewareApiV2.stop();
+
+    await delay(500); // allow pending requests to complete
 
     return polymeshApi.disconnect();
   }
