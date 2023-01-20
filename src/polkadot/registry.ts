@@ -272,6 +272,7 @@ import type {
   PolymeshCommonUtilitiesRelayerRawEvent,
   PolymeshCommonUtilitiesStatisticsEvent,
   PolymeshContractsCall,
+  PolymeshContractsChainExtensionExtrinsicId,
   PolymeshContractsError,
   PolymeshContractsEvent,
   PolymeshExtensionsCheckWeight,
@@ -642,6 +643,7 @@ declare module '@polkadot/types/types/registry' {
     PolymeshCommonUtilitiesRelayerRawEvent: PolymeshCommonUtilitiesRelayerRawEvent;
     PolymeshCommonUtilitiesStatisticsEvent: PolymeshCommonUtilitiesStatisticsEvent;
     PolymeshContractsCall: PolymeshContractsCall;
+    PolymeshContractsChainExtensionExtrinsicId: PolymeshContractsChainExtensionExtrinsicId;
     PolymeshContractsError: PolymeshContractsError;
     PolymeshContractsEvent: PolymeshContractsEvent;
     PolymeshExtensionsCheckWeight: PolymeshExtensionsCheckWeight;
