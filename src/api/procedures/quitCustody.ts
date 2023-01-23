@@ -32,9 +32,10 @@ export async function prepareQuitCustody(
 
   const { portfolio } = args;
 
-  const isOwnedBy = await portfolio.isOwnedBy();
+  const signer = await context.getSigningIdentity();
+  const isOwnedBySigner = await portfolio.isOwnedBy({ identity: signer });
 
-  if (isOwnedBy) {
+  if (isOwnedBySigner) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: 'The Portfolio owner cannot quit custody',
