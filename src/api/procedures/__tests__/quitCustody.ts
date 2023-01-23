@@ -70,6 +70,7 @@ describe('quitCustody procedure', () => {
 
   it('should throw an error if the signing Identity is the Portfolio owner', async () => {
     const portfolio = new NumberedPortfolio({ id, did }, mockContext);
+    const identity = await mockContext.getSigningIdentity();
 
     const proc = procedureMockUtils.getInstance<Params, void, Storage>(mockContext, {
       portfolioId: { did, number: id },
@@ -86,6 +87,7 @@ describe('quitCustody procedure', () => {
     }
 
     expect(error.message).toBe('The Portfolio owner cannot quit custody');
+    expect(portfolio.isOwnedBy).toHaveBeenCalledWith({ identity });
   });
 
   it('should return a quit portfolio custody transaction spec', async () => {
