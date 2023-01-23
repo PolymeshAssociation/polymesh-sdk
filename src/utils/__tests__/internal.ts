@@ -791,10 +791,10 @@ describe('getPortfolioIdsByName', () => {
     identityId = dsMockUtils.createMockIdentityId('someDid');
     dsMockUtils.createQueryStub('portfolio', 'nameToNumber', {
       multi: [
-        dsMockUtils.createMockU64(new BigNumber(1)),
-        dsMockUtils.createMockU64(new BigNumber(2)),
-        dsMockUtils.createMockU64(new BigNumber(1)),
-        dsMockUtils.createMockU64(new BigNumber(1)),
+        dsMockUtils.createMockOption(dsMockUtils.createMockU64(new BigNumber(1))),
+        dsMockUtils.createMockOption(dsMockUtils.createMockU64(new BigNumber(2))),
+        dsMockUtils.createMockOption(),
+        dsMockUtils.createMockOption(),
       ],
     });
     portfoliosStub = dsMockUtils.createQueryStub('portfolio', 'portfolios');
