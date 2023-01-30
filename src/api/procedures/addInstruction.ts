@@ -24,6 +24,7 @@ import {
   AddInstructionParams,
   AddInstructionsParams,
   ErrorCode,
+  InstructionEndCondition,
   InstructionType,
   RoleType,
   SettlementTx,
@@ -148,7 +149,8 @@ async function getTxArgsAndErrors(
    */
   const datesErrIndexes: number[] = [];
 
-  await P.each(instructions, async ({ legs, endBlock, tradeDate, valueDate, memo }, i) => {
+  await P.each(instructions, async (instruction, i) => {
+    const { legs, tradeDate, valueDate, memo } = instruction;
     if (!legs.length) {
       legEmptyErrIndexes.push(i);
     }
@@ -171,16 +173,22 @@ async function getTxArgsAndErrors(
       sameIdentityErrIndexes.push(i);
     }
 
-    let endCondition;
+    let endCondition: InstructionEndCondition;
 
-    if (endBlock) {
+    if ('endBlock' in instruction && instruction.endBlock) {
+      const { endBlock } = instruction;
       if (endBlock.lte(latestBlock)) {
         endBlockErrIndexes.push(i);
       }
-
-      endCondition = { type: InstructionType.SettleOnBlock, value: endBlock } as const;
+      endCondition = { type: InstructionType.SettleOnBlock, endBlock };
+    } else if ('endAfterBlock' in instruction && instruction.endAfterBlock) {
+      const { endAfterBlock } = instruction;
+      if (endAfterBlock.lte(latestBlock)) {
+        endBlockErrIndexes.push(i);
+      }
+      endCondition = { type: InstructionType.SettleManual, endAfterBlock };
     } else {
-      endCondition = { type: InstructionType.SettleOnAffirmation } as const;
+      endCondition = { type: InstructionType.SettleOnAffirmation };
     }
 
     if (tradeDate && valueDate && tradeDate > valueDate) {

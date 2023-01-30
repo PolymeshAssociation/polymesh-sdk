@@ -96,7 +96,12 @@ import {
   Portfolio as MiddlewareV2Portfolio,
 } from '~/middleware/typesV2';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { createMockOption, createMockU64, createMockU128 } from '~/testUtils/mocks/dataSources';
+import {
+  createMockOption,
+  createMockU32,
+  createMockU64,
+  createMockU128,
+} from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import {
   AffirmationStatus,
@@ -228,6 +233,7 @@ import {
   meshPermissionsToPermissions,
   meshProposalStatusToProposalStatus,
   meshScopeToScope,
+  meshSettlementTypeToEndCondition,
   meshStatToStatType,
   meshVenueTypeToVenueType,
   metadataSpecToMeshMetadataSpec,
@@ -5746,6 +5752,52 @@ describe('meshAffirmationStatusToAffirmationStatus', () => {
   });
 });
 
+describe('meshSettlementTypeToEndCondition', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert polkadot PalletSettlementSettlementType to an InstructionEndCondition object', () => {
+    let result = meshSettlementTypeToEndCondition(
+      dsMockUtils.createMockSettlementType('SettleOnAffirmation')
+    );
+
+    expect(result.type).toEqual(InstructionType.SettleOnAffirmation);
+
+    const block = new BigNumber(123);
+
+    result = meshSettlementTypeToEndCondition(
+      dsMockUtils.createMockSettlementType({ SettleOnBlock: createMockU32(block) })
+    );
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        type: InstructionType.SettleOnBlock,
+        endBlock: block,
+      })
+    );
+
+    result = meshSettlementTypeToEndCondition(
+      dsMockUtils.createMockSettlementType({ SettleManual: createMockU32(block) })
+    );
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        type: InstructionType.SettleManual,
+        endAfterBlock: block,
+      })
+    );
+  });
+});
+
 describe('endConditionToSettlementType', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -5787,7 +5839,20 @@ describe('endConditionToSettlementType', () => {
       .mockReturnValue(fakeResult);
 
     result = endConditionToSettlementType(
-      { type: InstructionType.SettleOnBlock, value: new BigNumber(10) },
+      { type: InstructionType.SettleOnBlock, endBlock: blockNumber },
+      context
+    );
+
+    expect(result).toBe(fakeResult);
+
+    when(context.createType)
+      .calledWith('PalletSettlementSettlementType', {
+        [InstructionType.SettleManual]: rawBlockNumber,
+      })
+      .mockReturnValue(fakeResult);
+
+    result = endConditionToSettlementType(
+      { type: InstructionType.SettleManual, endAfterBlock: blockNumber },
       context
     );
 

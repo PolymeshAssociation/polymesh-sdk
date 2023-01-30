@@ -175,6 +175,7 @@ import {
   InputStatClaim,
   InputStatType,
   InputTrustedClaimIssuer,
+  InstructionEndCondition,
   InstructionType,
   KnownAssetType,
   MetadataLockStatus,
@@ -2922,20 +2923,44 @@ export function meshAffirmationStatusToAffirmationStatus(
 /**
  * @hidden
  */
+export function meshSettlementTypeToEndCondition(
+  type: PalletSettlementSettlementType
+): InstructionEndCondition {
+  if (type.isSettleOnBlock) {
+    return { type: InstructionType.SettleOnBlock, endBlock: u32ToBigNumber(type.asSettleOnBlock) };
+  }
+
+  if (type.isSettleManual) {
+    return {
+      type: InstructionType.SettleManual,
+      endAfterBlock: u32ToBigNumber(type.asSettleManual),
+    };
+  }
+  return { type: InstructionType.SettleOnAffirmation };
+}
+
+/**
+ * @hidden
+ */
 export function endConditionToSettlementType(
-  endCondition:
-    | { type: InstructionType.SettleOnAffirmation }
-    | { type: InstructionType.SettleOnBlock; value: BigNumber },
+  endCondition: InstructionEndCondition,
   context: Context
 ): PalletSettlementSettlementType {
   let value;
 
-  if (endCondition.type === InstructionType.SettleOnAffirmation) {
-    value = InstructionType.SettleOnAffirmation;
-  } else {
-    value = {
-      [InstructionType.SettleOnBlock]: bigNumberToU32(endCondition.value, context),
-    };
+  const { type } = endCondition;
+
+  switch (type) {
+    case InstructionType.SettleOnBlock:
+      value = { [InstructionType.SettleOnBlock]: bigNumberToU32(endCondition.endBlock, context) };
+      break;
+    case InstructionType.SettleManual:
+      value = {
+        [InstructionType.SettleManual]: bigNumberToU32(endCondition.endAfterBlock, context),
+      };
+      break;
+    default:
+      value = InstructionType.SettleOnAffirmation;
   }
 
   return context.createType('PalletSettlementSettlementType', value);
@@ -4392,14 +4417,14 @@ export function middlewareInstructionToHistoricInstruction(
 
   let typeDetails;
 
-  if (settlementType === InstructionType.SettleOnBlock) {
+  if (settlementType === InstructionType.SettleOnAffirmation) {
     typeDetails = {
-      type: InstructionType.SettleOnBlock,
-      endBlock: new BigNumber(endBlock!),
+      type: InstructionType.SettleOnAffirmation,
     };
   } else {
     typeDetails = {
-      type: InstructionType.SettleOnAffirmation,
+      type: settlementType as InstructionType,
+      endBlock: new BigNumber(endBlock!),
     };
   }
 

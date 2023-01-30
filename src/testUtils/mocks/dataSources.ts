@@ -3036,7 +3036,7 @@ export const createMockInstructionStatus = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockSettlementType = (
-  settlementType?: 'SettleOnAffirmation' | { SettleOnBlock: u32 }
+  settlementType?: 'SettleOnAffirmation' | { SettleOnBlock: u32 } | { SettleManual: u32 }
 ): MockCodec<PalletSettlementSettlementType> => {
   return createMockEnum<PalletSettlementSettlementType>(settlementType);
 };

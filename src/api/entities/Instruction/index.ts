@@ -36,11 +36,11 @@ import {
   meshAffirmationStatusToAffirmationStatus,
   meshInstructionStatusToInstructionStatus,
   meshPortfolioIdToPortfolio,
+  meshSettlementTypeToEndCondition,
   middlewareEventToEventIdentifier,
   middlewareV2EventDetailsToEventIdentifier,
   momentToDate,
   tickerToString,
-  u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { createProcedureMethod, optionize, requestMulti, requestPaginated } from '~/utils/internal';
@@ -50,7 +50,6 @@ import {
   InstructionDetails,
   InstructionStatus,
   InstructionStatusResult,
-  InstructionType,
   Leg,
 } from './types';
 
@@ -269,7 +268,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       });
     }
 
-    const details = {
+    return {
       status:
         status === InternalInstructionStatus.Pending
           ? InstructionStatus.Pending
@@ -279,19 +278,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       valueDate: valueDate.isSome ? momentToDate(valueDate.unwrap()) : null,
       venue: new Venue({ id: u64ToBigNumber(venueId) }, context),
       memo: memo.isSome ? instructionMemoToString(memo.unwrap()) : null,
-    };
-
-    if (type.isSettleOnAffirmation) {
-      return {
-        ...details,
-        type: InstructionType.SettleOnAffirmation,
-      };
-    }
-
-    return {
-      ...details,
-      type: InstructionType.SettleOnBlock,
-      endBlock: u32ToBigNumber(type.asSettleOnBlock),
+      ...meshSettlementTypeToEndCondition(type),
     };
   }
 
