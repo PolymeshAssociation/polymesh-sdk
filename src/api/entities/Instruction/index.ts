@@ -10,7 +10,7 @@ import {
   rescheduleInstruction,
   Venue,
 } from '~/internal';
-import { EventIdEnum as MiddlewareV2Event } from '~/middleware/enumsV2';
+import { InstructionStatusEnum } from '~/middleware/enumsV2';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { instructionsQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
@@ -449,8 +449,8 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     }
 
     const [executedEventIdentifier, failedEventIdentifier] = await Promise.all([
-      this.getInstructionEventFromMiddlewareV2(MiddlewareV2Event.InstructionExecuted),
-      this.getInstructionEventFromMiddlewareV2(MiddlewareV2Event.InstructionFailed),
+      this.getInstructionEventFromMiddlewareV2(InstructionStatusEnum.Executed),
+      this.getInstructionEventFromMiddlewareV2(InstructionStatusEnum.Failed),
     ]);
 
     if (executedEventIdentifier) {
@@ -527,7 +527,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    * Retrieve Instruction status event from middleware V2
    */
   private async getInstructionEventFromMiddlewareV2(
-    eventId: MiddlewareV2Event
+    status: InstructionStatusEnum
   ): Promise<EventIdentifier | null> {
     const { id, context } = this;
 
@@ -540,7 +540,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'instructions'>>(
       instructionsQuery(
         {
-          eventId,
+          status,
           id: id.toString(),
         },
         new BigNumber(1),
