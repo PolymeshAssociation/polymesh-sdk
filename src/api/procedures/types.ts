@@ -387,6 +387,12 @@ export interface RegisterIdentityParams {
   secondaryAccounts?: Modify<PermissionedAccount, { permissions: PermissionsLike }>[];
 }
 
+export interface RegisterIdentityWithCddParams {
+  targetAccount: string | Account;
+  secondaryAccounts?: Modify<PermissionedAccount, { permissions: PermissionsLike }>[];
+  expiry?: Date;
+}
+
 export interface TransferPolyxParams {
   /**
    * Account that will receive the POLYX

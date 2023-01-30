@@ -36,6 +36,7 @@ export {
   Params as ModifyAssetTrustedClaimIssuersParams,
 } from '~/api/procedures/modifyAssetTrustedClaimIssuers';
 export { registerIdentity } from '~/api/procedures/registerIdentity';
+export { registerIdentityWithCdd } from '~/api/procedures/registerIdentityWithCdd';
 export { removeSecondaryAccounts } from '~/api/procedures/removeSecondaryAccounts';
 export {
   modifySignerPermissions,
