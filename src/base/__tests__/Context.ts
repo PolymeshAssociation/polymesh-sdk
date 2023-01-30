@@ -4,6 +4,7 @@ import P from 'bluebird';
 import { when } from 'jest-when';
 
 import { Account, Context, PolymeshError } from '~/internal';
+import { ClaimTypeEnum as MiddlewareV2ClaimType } from '~/middleware/enumsV2';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { claimsQuery, heartbeatQuery } from '~/middleware/queriesV2';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
@@ -266,6 +267,21 @@ describe('Context class', () => {
         message: 'There is no signing Account associated with the SDK instance',
       });
       expect(() => context.getSigningAccount()).toThrowError(expectedError);
+    });
+
+    it('should set the external api on the polkadot instance', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
+      });
+      const signingManager = dsMockUtils.getSigningManagerInstance();
+      const polymeshApi = context.getPolymeshApi();
+      const polkadotSigner = signingManager.getExternalSigner();
+
+      await context.setSigningManager(signingManager);
+
+      expect(polymeshApi.setSigner).toHaveBeenCalledWith(polkadotSigner);
     });
   });
 
@@ -1424,7 +1440,7 @@ describe('Context class', () => {
           {
             dids: [targetDid],
             trustedClaimIssuers: [targetDid],
-            claimTypes: [ClaimTypeEnum.Accredited],
+            claimTypes: [MiddlewareV2ClaimType.Accredited],
             includeExpired: true,
           },
           new BigNumber(2),
@@ -1863,6 +1879,50 @@ describe('Context class', () => {
     });
 
     it('should return false if the middleware V2 is not enabled', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: null,
+        middlewareApiV2: null,
+      });
+
+      const result = context.isMiddlewareV2Enabled();
+
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('method: isAnyMiddlewareEnabled', () => {
+    beforeAll(() => {
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
+    });
+
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should return true if any middleware is enabled', async () => {
+      let context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: null,
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
+      });
+
+      let result = context.isAnyMiddlewareEnabled();
+
+      expect(result).toBe(true);
+
+      context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApiV2: null,
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+      });
+
+      result = context.isAnyMiddlewareEnabled();
+
+      expect(result).toBe(true);
+    });
+
+    it('should return false if neither middleware are not enabled', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,

@@ -20,7 +20,11 @@ import {
   Venue,
 } from '~/internal';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
-import { assetHoldersQuery, trustingAssetsQuery } from '~/middleware/queriesV2';
+import {
+  assetHoldersQuery,
+  instructionsByDidQuery,
+  trustingAssetsQuery,
+} from '~/middleware/queriesV2';
 import { Query } from '~/middleware/types';
 import { AssetHoldersOrderBy, Query as QueryV2 } from '~/middleware/typesV2';
 import {
@@ -28,6 +32,7 @@ import {
   DistributionWithDetails,
   ErrorCode,
   GroupedInstructions,
+  HistoricInstruction,
   Order,
   PaginationOptions,
   PermissionedAccount,
@@ -52,6 +57,7 @@ import {
   cddStatusToBoolean,
   corporateActionIdentifierToCaId,
   identityIdToString,
+  middlewareInstructionToHistoricInstruction,
   portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
@@ -335,6 +341,15 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const { size, start, order } = opts;
 
+    if (context.isMiddlewareV2Enabled()) {
+      return this.getHeldAssetsV2({
+        order:
+          order === Order.Asc ? AssetHoldersOrderBy.AssetIdAsc : AssetHoldersOrderBy.AssetIdDesc,
+        start,
+        size,
+      });
+    }
+
     const result = await context.queryMiddleware<Ensured<Query, 'tokensHeldByDid'>>(
       tokensHeldByDid({
         did,
@@ -437,6 +452,10 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    */
   public async getTrustingAssets(): Promise<Asset[]> {
     const { context, did } = this;
+
+    if (context.isMiddlewareV2Enabled()) {
+      return this.getTrustingAssetsV2();
+    }
 
     const {
       data: { tokensByTrustedClaimIssuer: tickers },
@@ -789,5 +808,25 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    */
   public toHuman(): string {
     return this.did;
+  }
+
+  /**
+   * Retrieve all Instructions that have been associated with this Identity's DID
+   *
+   * @note uses the middleware V2
+   */
+  public async getHistoricalInstructions(): Promise<HistoricInstruction[]> {
+    const { context, did } = this;
+
+    const {
+      data: {
+        legs: { nodes: instructionsResult },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'legs'>>(instructionsByDidQuery(did));
+
+    return instructionsResult.map(({ instruction }) =>
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      middlewareInstructionToHistoricInstruction(instruction!, context)
+    );
   }
 }

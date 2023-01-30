@@ -10,10 +10,12 @@ import {
   rescheduleInstruction,
   Venue,
 } from '~/internal';
+import { EventIdEnum as MiddlewareV2Event } from '~/middleware/enumsV2';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { instructionsQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
-import { EventIdEnum as MiddlewareV2Event, Query as QueryV2 } from '~/middleware/typesV2';
+import { Query as QueryV2 } from '~/middleware/typesV2';
+import { InstructionStatus as MeshInstructionStatus } from '~/polkadot/polymesh';
 import {
   ErrorCode,
   EventIdentifier,
@@ -21,6 +23,8 @@ import {
   NoArgsProcedureMethod,
   PaginationOptions,
   ResultSet,
+  SubCallback,
+  UnsubCallback,
 } from '~/types';
 import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
 import { Ensured, EnsuredV2 } from '~/types/utils';
@@ -172,6 +176,44 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     const statusResult = meshInstructionStatusToInstructionStatus(status);
 
     return statusResult === InternalInstructionStatus.Pending;
+  }
+
+  /**
+   * Retrieve current status of the Instruction. This can be subscribed to know if instruction fails
+   *
+   * @note can be subscribed to
+   * @note current status as `Executed` means that the Instruction has been executed/rejected and pruned from
+   *   the chain.
+   */
+  public async onStatusChange(callback: SubCallback<InstructionStatus>): Promise<UnsubCallback> {
+    const {
+      context: {
+        polymeshApi: {
+          query: {
+            settlement: { instructionDetails },
+          },
+        },
+      },
+      id,
+      context,
+    } = this;
+
+    const assembleResult = (rawStatus: MeshInstructionStatus): InstructionStatus => {
+      const status = meshInstructionStatusToInstructionStatus(rawStatus);
+
+      if (status === InternalInstructionStatus.Pending) {
+        return InstructionStatus.Pending;
+      } else if (status === InternalInstructionStatus.Failed) {
+        return InstructionStatus.Failed;
+      } else {
+        // TODO @prashantasdeveloper remove this once the chain handles Executed/Rejected state separately
+        return InstructionStatus.Executed;
+      }
+    };
+
+    return instructionDetails(bigNumberToU64(id, context), ({ status }) => {
+      return callback(assembleResult(status));
+    });
   }
 
   /**
@@ -364,6 +406,10 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       };
     }
 
+    if (this.context.isMiddlewareV2Enabled()) {
+      return this.getStatusV2();
+    }
+
     let eventIdentifier = await this.getInstructionEventFromMiddleware(
       EventIdEnum.InstructionExecuted
     );
@@ -492,10 +538,14 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
         },
       },
     } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'instructions'>>(
-      instructionsQuery({
-        eventId,
-        id: id.toString(),
-      })
+      instructionsQuery(
+        {
+          eventId,
+          id: id.toString(),
+        },
+        new BigNumber(1),
+        new BigNumber(0)
+      )
     );
 
     return optionize(middlewareV2EventDetailsToEventIdentifier)(

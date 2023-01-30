@@ -13,18 +13,24 @@ import { when } from 'jest-when';
 
 import { Asset, Context, Entity, Identity } from '~/internal';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
-import { assetHoldersQuery, trustingAssetsQuery } from '~/middleware/queriesV2';
+import {
+  assetHoldersQuery,
+  instructionsByDidQuery,
+  trustingAssetsQuery,
+} from '~/middleware/queriesV2';
 import { AssetHoldersOrderBy } from '~/middleware/typesV2';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
 import {
   Account,
   DistributionWithDetails,
+  HistoricInstruction,
   IdentityRole,
   Order,
   PermissionedAccount,
   Permissions,
   PortfolioCustodianRole,
+  ResultSet,
   Role,
   RoleType,
   TickerOwnerRole,
@@ -535,7 +541,7 @@ describe('Identity class', () => {
 
     it('should return a list of Assets', async () => {
       context = dsMockUtils.getContextInstance({
-        middlewareEnabled: true,
+        middlewareV2Enabled: false,
       });
       dsMockUtils.createApolloQueryMock(tokensByTrustedClaimIssuer({ claimIssuerDid: did }), {
         tokensByTrustedClaimIssuer: tickers,
@@ -546,6 +552,16 @@ describe('Identity class', () => {
 
       expect(result[0].ticker).toBe('ASSET1');
       expect(result[1].ticker).toBe('ASSET2');
+    });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      const identity = new Identity({ did }, context);
+
+      const fakeResult = 'fakeResult' as unknown as Asset[];
+      jest.spyOn(identity, 'getTrustingAssetsV2').mockResolvedValue(fakeResult);
+
+      const result = await identity.getTrustingAssets();
+      expect(result).toEqual(fakeResult);
     });
   });
 
@@ -574,6 +590,9 @@ describe('Identity class', () => {
     const tickers = ['ASSET1', 'ASSET2'];
 
     it('should return a list of Assets', async () => {
+      dsMockUtils.configureMocks({
+        contextOptions: { middlewareV2Enabled: false },
+      });
       const identity = new Identity({ did }, context);
 
       dsMockUtils.createApolloQueryMock(
@@ -603,6 +622,26 @@ describe('Identity class', () => {
 
       expect(result.data[0].ticker).toBe(tickers[0]);
       expect(result.data[1].ticker).toBe(tickers[1]);
+    });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      const identity = new Identity({ did }, context);
+
+      const fakeResult = 'fakeResult' as unknown as ResultSet<Asset>;
+      const getHeldAssetV2Spy = jest.spyOn(identity, 'getHeldAssetsV2');
+      when(getHeldAssetV2Spy)
+        .calledWith({ order: AssetHoldersOrderBy.AssetIdAsc })
+        .mockResolvedValueOnce(fakeResult);
+
+      let result = await identity.getHeldAssets();
+      expect(result).toEqual(fakeResult);
+
+      when(getHeldAssetV2Spy)
+        .calledWith({ order: AssetHoldersOrderBy.AssetIdDesc })
+        .mockResolvedValueOnce(fakeResult);
+
+      result = await identity.getHeldAssets({ order: Order.Desc });
+      expect(result).toEqual(fakeResult);
     });
   });
 
@@ -1217,6 +1256,33 @@ describe('Identity class', () => {
     it('should return a human readable version of the entity', () => {
       const identity = new Identity({ did: 'someDid' }, context);
       expect(identity.toHuman()).toBe('someDid');
+    });
+  });
+
+  describe('method: getHistoricalInstructions', () => {
+    it('should return the list of all instructions where the Identity was involved', async () => {
+      const identity = new Identity({ did: 'someDid' }, context);
+      const middlewareInstructionToHistoricInstructionSpy = jest.spyOn(
+        utilsConversionModule,
+        'middlewareInstructionToHistoricInstruction'
+      );
+
+      const legsResponse = {
+        totalCount: 5,
+        nodes: [{ instruction: 'instruction' }],
+      };
+
+      dsMockUtils.createApolloV2QueryMock(instructionsByDidQuery(identity.did), {
+        legs: legsResponse,
+      });
+
+      const mockHistoricInstruction = 'mockData' as unknown as HistoricInstruction;
+
+      middlewareInstructionToHistoricInstructionSpy.mockReturnValue(mockHistoricInstruction);
+
+      const result = await identity.getHistoricalInstructions();
+
+      expect(result).toEqual([mockHistoricInstruction]);
     });
   });
 });

@@ -203,6 +203,7 @@ function createApi(): Mutable<ApiPromise> & EventEmitter {
     off: (event: string, listener: (...args: unknown[]) => unknown) =>
       apiEmitter.off(event, listener),
     disconnect: jest.fn() as () => Promise<void>,
+    setSigner: jest.fn() as (signer: PolkadotSigner) => void,
   } as Mutable<ApiPromise> & EventEmitter;
 }
 
@@ -415,6 +416,7 @@ interface ContextOptions {
   transactionHistory?: ResultSet<ExtrinsicData>;
   latestBlock?: BigNumber;
   middlewareEnabled?: boolean;
+  middlewareV2Enabled?: boolean;
   middlewareAvailable?: boolean;
   middlewareV2Available?: boolean;
   sentAuthorizations?: ResultSet<AuthorizationRequest>;
@@ -706,6 +708,7 @@ const defaultContextOptions: ContextOptions = {
   },
   latestBlock: new BigNumber(100),
   middlewareEnabled: true,
+  middlewareV2Enabled: true,
   middlewareAvailable: true,
   middlewareV2Available: true,
   sentAuthorizations: {
@@ -836,6 +839,10 @@ function configureContext(opts: ContextOptions): void {
       .mockResolvedValue(opts.getIdentityClaimsFromMiddlewareV2),
     getLatestBlock: jest.fn().mockResolvedValue(opts.latestBlock),
     isMiddlewareEnabled: jest.fn().mockReturnValue(opts.middlewareEnabled),
+    isMiddlewareV2Enabled: jest.fn().mockReturnValue(opts.middlewareV2Enabled),
+    isAnyMiddlewareEnabled: jest
+      .fn()
+      .mockReturnValue(opts.middlewareEnabled || opts.middlewareV2Enabled),
     isMiddlewareAvailable: jest.fn().mockResolvedValue(opts.middlewareAvailable),
     isMiddlewareV2Available: jest.fn().mockResolvedValue(opts.middlewareV2Available),
     isArchiveNode: opts.isArchiveNode,

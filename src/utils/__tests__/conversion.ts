@@ -77,6 +77,12 @@ import {
   PolymeshError,
 } from '~/internal';
 import {
+  CallIdEnum as MiddlewareV2CallId,
+  ClaimTypeEnum as MiddlewareV2ClaimType,
+  InstructionStatusEnum,
+  ModuleIdEnum as MiddlewareV2ModuleId,
+} from '~/middleware/enumsV2';
+import {
   CallIdEnum,
   ClaimScopeTypeEnum,
   ClaimTypeEnum,
@@ -85,9 +91,8 @@ import {
 } from '~/middleware/types';
 import {
   Block as MiddlewareV2Block,
-  CallIdEnum as MiddlewareV2CallId,
   Claim as MiddlewareV2Claim,
-  ModuleIdEnum as MiddlewareV2ModuleId,
+  Instruction,
   Portfolio as MiddlewareV2Portfolio,
 } from '~/middleware/typesV2';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -230,6 +235,7 @@ import {
   metadataValueDetailToMeshMetadataValueDetail,
   metadataValueToMeshMetadataValue,
   middlewareEventToEventIdentifier,
+  middlewareInstructionToHistoricInstruction,
   middlewarePortfolioToPortfolio,
   middlewareScopeToScope,
   middlewareV2ClaimToClaimData,
@@ -4103,6 +4109,124 @@ describe('middlewareEventToEventIdentifier', () => {
   });
 });
 
+describe('middlewareInstructionToHistoricInstruction', () => {
+  it('should convert a middleware Instruction object to a HistoricInstruction', () => {
+    const instructionId1 = new BigNumber(1);
+    const instructionId2 = new BigNumber(2);
+    const blockNumber = new BigNumber(1234);
+    const blockHash = 'someHash';
+    const memo = 'memo';
+    const ticker = 'SOME_TICKER';
+    const amount1 = new BigNumber(10);
+    const amount2 = new BigNumber(5);
+    const venueId = new BigNumber(1);
+    const createdAt = new Date('2022/01/01');
+    const status = InstructionStatusEnum.Executed;
+    const portfolioDid1 = 'portfolioDid1';
+    const portfolioKind1 = 'Default';
+
+    const portfolioDid2 = 'portfolioDid2';
+    const portfolioKind2 = '10';
+    const type1 = InstructionType.SettleOnAffirmation;
+    const type2 = InstructionType.SettleOnBlock;
+    const endBlock = new BigNumber(1238);
+
+    const legs1 = [
+      {
+        assetId: ticker,
+        amount: amount1.shiftedBy(6).toString(),
+        from: {
+          number: portfolioKind1,
+          identityId: portfolioDid1,
+        },
+        to: {
+          number: portfolioKind2,
+          identityId: portfolioDid2,
+        },
+      },
+    ];
+    const legs2 = [
+      {
+        assetId: ticker,
+        amount: amount2.shiftedBy(6).toString(),
+        from: {
+          number: portfolioKind2,
+          identityId: portfolioDid2,
+        },
+        to: {
+          number: portfolioKind1,
+          identityId: portfolioDid1,
+        },
+      },
+    ];
+
+    const context = dsMockUtils.getContextInstance();
+
+    let instruction = {
+      id: instructionId1.toString(),
+      createdBlock: {
+        blockId: blockNumber.toNumber(),
+        hash: blockHash,
+        datetime: createdAt,
+      },
+      status,
+      memo,
+      venueId: venueId.toString(),
+      settlementType: type1,
+      legs: {
+        nodes: legs1,
+      },
+    } as unknown as Instruction;
+
+    let result = middlewareInstructionToHistoricInstruction(instruction, context);
+
+    expect(result.id).toEqual(instructionId1);
+    expect(result.blockHash).toEqual(blockHash);
+    expect(result.blockNumber).toEqual(blockNumber);
+    expect(result.status).toEqual(status);
+    expect(result.memo).toEqual(memo);
+    expect(result.type).toEqual(InstructionType.SettleOnAffirmation);
+    expect(result.venueId).toEqual(venueId);
+    expect(result.createdAt).toEqual(createdAt);
+    expect(result.legs[0].asset.ticker).toBe(ticker);
+    expect(result.legs[0].amount).toEqual(amount1);
+    expect(result.legs[0].from.owner.did).toBe(portfolioDid1);
+    expect(result.legs[0].to.owner.did).toBe(portfolioDid2);
+    expect((result.legs[0].to as NumberedPortfolio).id).toEqual(new BigNumber(portfolioKind2));
+
+    instruction = {
+      id: instructionId2.toString(),
+      createdBlock: {
+        blockId: blockNumber.toNumber(),
+        hash: blockHash,
+        datetime: createdAt,
+      },
+      status,
+      settlementType: type2,
+      endBlock: endBlock.toString(),
+      venueId: venueId.toString(),
+      legs: {
+        nodes: legs2,
+      },
+    } as unknown as Instruction;
+
+    result = middlewareInstructionToHistoricInstruction(instruction, context);
+
+    expect(result.id).toEqual(instructionId2);
+    expect(result.memo).toBeNull();
+    expect(result.type).toEqual(InstructionType.SettleOnBlock);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((result as any).endBlock).toEqual(endBlock);
+    expect(result.venueId).toEqual(venueId);
+    expect(result.createdAt).toEqual(createdAt);
+    expect(result.legs[0].asset.ticker).toBe(ticker);
+    expect(result.legs[0].amount).toEqual(amount2);
+    expect(result.legs[0].from.owner.did).toBe(portfolioDid2);
+    expect(result.legs[0].to.owner.did).toBe(portfolioDid1);
+    expect((result.legs[0].from as NumberedPortfolio).id).toEqual(new BigNumber(portfolioKind2));
+  });
+});
+
 describe('middlewareV2EventDetailsToEventIdentifier', () => {
   it('should convert Event details to an EventIdentifier', () => {
     const eventIdx = 3;
@@ -4208,7 +4332,7 @@ describe('toIdentityWithClaimsArrayV2', () => {
     const issuerDid = 'someIssuerDid';
     const cddId = 'someCddId';
     const date = 1589816265000;
-    const customerDueDiligenceType = ClaimTypeEnum.CustomerDueDiligence;
+    const customerDueDiligenceType = MiddlewareV2ClaimType.CustomerDueDiligence;
     const claim = {
       target: expect.objectContaining({ did: targetDid }),
       issuer: expect.objectContaining({ did: issuerDid }),

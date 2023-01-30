@@ -22,6 +22,7 @@ import {
   SettlementResultEnum,
 } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { HistoricSettlement } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -482,7 +483,9 @@ describe('Portfolio class', () => {
       };
       /* eslint-enable @typescript-eslint/naming-convention */
 
-      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
+      dsMockUtils.configureMocks({
+        contextOptions: { withSigningManager: true, middlewareV2Enabled: false },
+      });
       dsMockUtils.createApolloQueryMock(heartbeat(), true);
       when(jest.spyOn(utilsConversionModule, 'addressToKey'))
         .calledWith(account, context)
@@ -577,6 +580,18 @@ describe('Portfolio class', () => {
 
       return expect(portfolio.getTransactionHistory()).rejects.toThrow(
         "The Portfolio doesn't exist or was removed by its owner"
+      );
+    });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      const portfolio = new NonAbstract({ did, id }, context);
+
+      const fakeResult = ['fakeResult'] as unknown as HistoricSettlement[];
+      jest.spyOn(portfolio, 'getTransactionHistoryV2').mockResolvedValue(fakeResult);
+
+      const result = await portfolio.getTransactionHistory();
+      expect(result).toEqual(
+        expect.objectContaining({ count: new BigNumber(1), data: fakeResult, next: null })
       );
     });
   });

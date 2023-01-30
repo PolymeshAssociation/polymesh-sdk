@@ -1171,7 +1171,7 @@ describe('assertExpectedChainVersion', () => {
     client.sendRpcVersion('5.1.7');
     await signal;
     expect(warnSpy).toHaveBeenCalledWith(
-      'This version of the SDK supports Polymesh RPC node version 5.1.1. The node is at version 5.1.7. Please upgrade the SDK'
+      'This version of the SDK supports Polymesh RPC node version 5.1.3. The node is at version 5.1.7. Please upgrade the SDK'
     );
   });
 

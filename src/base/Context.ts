@@ -24,6 +24,7 @@ import { chunk, clone, flatMap, flatten, flattenDeep } from 'lodash';
 import { polymesh } from 'polymesh-types/definitions';
 
 import { Account, Asset, DividendDistribution, Identity, PolymeshError, Subsidy } from '~/internal';
+import { ClaimTypeEnum as MiddlewareV2Claim } from '~/middleware/enumsV2';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { claimsQuery, heartbeatQuery } from '~/middleware/queriesV2';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
@@ -82,7 +83,13 @@ import {
   u16ToBigNumber,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { assertAddressValid, calculateNextKey, createClaim, getApiAtBlock } from '~/utils/internal';
+import {
+  assertAddressValid,
+  calculateNextKey,
+  createClaim,
+  delay,
+  getApiAtBlock,
+} from '~/utils/internal';
 
 interface ConstructorParams {
   polymeshApi: ApiPromise;
@@ -216,6 +223,7 @@ export class Context {
    */
   public async setSigningManager(signingManager: SigningManager): Promise<void> {
     this._signingManager = signingManager;
+    this._polymeshApi.setSigner(signingManager.getExternalSigner());
 
     signingManager.setSs58Format(this.ss58Format.toNumber());
 
@@ -1062,7 +1070,7 @@ export class Context {
           trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
             signerToString(trustedClaimIssuer)
           ),
-          claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
+          claimTypes: claimTypes?.map(ct => MiddlewareV2Claim[ct]),
           includeExpired,
         },
         size,
@@ -1309,6 +1317,15 @@ export class Context {
   /**
    * @hidden
    *
+   * Return whether any middleware was enabled at startup
+   */
+  public isAnyMiddlewareEnabled(): boolean {
+    return this.isMiddlewareV2Enabled() || this.isMiddlewareEnabled();
+  }
+
+  /**
+   * @hidden
+   *
    * Return whether the middleware is enabled and online
    */
   public async isMiddlewareAvailable(): Promise<boolean> {
@@ -1384,7 +1401,7 @@ export class Context {
    * @note after disconnecting, trying to access any property in this object will result
    *   in an error
    */
-  public disconnect(): Promise<void> {
+  public async disconnect(): Promise<void> {
     const { polymeshApi } = this;
     let middlewareApi, middlewareApiV2;
 
@@ -1400,6 +1417,8 @@ export class Context {
 
     middlewareApi && middlewareApi.stop();
     middlewareApiV2 && middlewareApiV2.stop();
+
+    await delay(500); // allow pending requests to complete
 
     return polymeshApi.disconnect();
   }

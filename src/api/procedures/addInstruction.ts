@@ -130,6 +130,7 @@ async function getTxArgsAndErrors(
     legAmountErrIndexes: number[];
     endBlockErrIndexes: number[];
     datesErrIndexes: number[];
+    sameIdentityErrIndexes: number[];
   };
   addAndAffirmInstructionParams: InternalAddAndAffirmInstructionParams;
   addInstructionParams: InternalAddInstructionParams;
@@ -141,6 +142,7 @@ async function getTxArgsAndErrors(
   const legLengthErrIndexes: number[] = [];
   const legAmountErrIndexes: number[] = [];
   const endBlockErrIndexes: number[] = [];
+  const sameIdentityErrIndexes: number[] = [];
   /**
    * array of indexes of Instructions where the value date is before the trade date
    */
@@ -158,6 +160,15 @@ async function getTxArgsAndErrors(
     const zeroAmountLegs = legs.filter(leg => leg.amount.isZero());
     if (zeroAmountLegs.length) {
       legAmountErrIndexes.push(i);
+    }
+
+    const sameIdentityLegs = legs.filter(({ from, to }) => {
+      const fromId = portfolioLikeToPortfolioId(from);
+      const toId = portfolioLikeToPortfolioId(to);
+      return fromId.did === toId.did;
+    });
+    if (sameIdentityLegs.length) {
+      sameIdentityErrIndexes.push(i);
     }
 
     let endCondition;
@@ -181,7 +192,8 @@ async function getTxArgsAndErrors(
       !legLengthErrIndexes.length &&
       !legAmountErrIndexes.length &&
       !endBlockErrIndexes.length &&
-      !datesErrIndexes.length
+      !datesErrIndexes.length &&
+      !sameIdentityErrIndexes.length
     ) {
       const rawVenueId = bigNumberToU64(venueId, context);
       const rawSettlementType = endConditionToSettlementType(endCondition, context);
@@ -249,6 +261,7 @@ async function getTxArgsAndErrors(
       legAmountErrIndexes,
       endBlockErrIndexes,
       datesErrIndexes,
+      sameIdentityErrIndexes,
     },
     addAndAffirmInstructionParams,
     addInstructionParams,
@@ -292,6 +305,7 @@ export async function prepareAddInstruction(
       legAmountErrIndexes,
       endBlockErrIndexes,
       datesErrIndexes,
+      sameIdentityErrIndexes,
     },
     addAndAffirmInstructionParams,
     addInstructionParams,
@@ -344,6 +358,16 @@ export async function prepareAddInstruction(
       message: 'Value date must be after trade date',
       data: {
         failedInstructionIndexes: datesErrIndexes,
+      },
+    });
+  }
+
+  if (sameIdentityErrIndexes.length) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Instruction leg cannot transfer Assets between same identity',
+      data: {
+        failedInstructionIndexes: sameIdentityErrIndexes,
       },
     });
   }

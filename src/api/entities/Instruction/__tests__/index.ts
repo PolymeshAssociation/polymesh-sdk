@@ -4,17 +4,19 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Context, Entity, Instruction, PolymeshTransaction } from '~/internal';
+import { EventIdEnum as MiddlewareV2EventId } from '~/middleware/enumsV2';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { instructionsQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
-import { EventIdEnum as MiddlewareV2EventId } from '~/middleware/typesV2';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
   AffirmationStatus,
   InstructionAffirmationOperation,
   InstructionStatus,
+  InstructionStatusResult,
   InstructionType,
+  UnsubCallback,
 } from '~/types';
 import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
 import { tuple } from '~/types/utils';
@@ -218,6 +220,100 @@ describe('Instruction class', () => {
       result = await instruction.isPending();
 
       expect(result).toBe(false);
+    });
+  });
+
+  describe('method: onStatusChange', () => {
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    let bigNumberToU64Spy: jest.SpyInstance;
+
+    beforeAll(() => {
+      bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
+    });
+
+    beforeEach(() => {
+      when(bigNumberToU64Spy).calledWith(id, context).mockReturnValue(rawId);
+    });
+
+    it('should allow subscription', async () => {
+      const unsubCallback = 'unsubCallback' as unknown as Promise<UnsubCallback>;
+      const callback = jest.fn();
+
+      const status = InstructionStatus.Pending;
+      const createdAt = new Date('10/14/1987');
+      const tradeDate = new Date('11/17/1987');
+      const valueDate = new Date('11/17/1987');
+      const venueId = new BigNumber(1);
+      const type = InstructionType.SettleOnAffirmation;
+      const owner = 'someDid';
+
+      entityMockUtils.configureMocks({ identityOptions: { did: owner } });
+
+      const queryResult = dsMockUtils.createMockInstruction({
+        instructionId: dsMockUtils.createMockU64(new BigNumber(1)),
+        venueId: dsMockUtils.createMockU64(venueId),
+        createdAt: dsMockUtils.createMockOption(
+          dsMockUtils.createMockMoment(new BigNumber(createdAt.getTime()))
+        ),
+        tradeDate: dsMockUtils.createMockOption(
+          dsMockUtils.createMockMoment(new BigNumber(tradeDate.getTime()))
+        ),
+        valueDate: dsMockUtils.createMockOption(
+          dsMockUtils.createMockMoment(new BigNumber(valueDate.getTime()))
+        ),
+        settlementType: dsMockUtils.createMockSettlementType(type),
+        status: dsMockUtils.createMockInstructionStatus(status),
+      });
+
+      const instructionDetailsMock = dsMockUtils.createQueryMock(
+        'settlement',
+        'instructionDetails'
+      );
+
+      instructionDetailsMock.mockImplementationOnce(async (_, cbFunc) => {
+        cbFunc(queryResult);
+        return unsubCallback;
+      });
+
+      when(instructionDetailsMock).calledWith(rawId).mockResolvedValue(queryResult);
+
+      let result = await instruction.onStatusChange(callback);
+
+      expect(result).toEqual(unsubCallback);
+      expect(callback).toBeCalledWith(InstructionStatus.Pending);
+
+      instructionDetailsMock.mockImplementationOnce(async (_, cbFunc) => {
+        cbFunc(
+          dsMockUtils.createMockInstruction({
+            ...queryResult,
+            status: dsMockUtils.createMockInstructionStatus('Failed'),
+          })
+        );
+        return unsubCallback;
+      });
+
+      result = await instruction.onStatusChange(callback);
+
+      expect(result).toEqual(unsubCallback);
+      expect(callback).toBeCalledWith(InstructionStatus.Failed);
+
+      instructionDetailsMock.mockImplementationOnce(async (_, cbFunc) => {
+        cbFunc(
+          dsMockUtils.createMockInstruction({
+            ...queryResult,
+            status: dsMockUtils.createMockInstructionStatus('Unknown'),
+          })
+        );
+        return unsubCallback;
+      });
+
+      result = await instruction.onStatusChange(callback);
+
+      expect(result).toEqual(unsubCallback);
+      expect(callback).toBeCalledWith(InstructionStatus.Executed);
     });
   });
 
@@ -684,6 +780,9 @@ describe('Instruction class', () => {
 
     beforeEach(() => {
       when(bigNumberToU64Spy).calledWith(id, context).mockReturnValue(rawId);
+      dsMockUtils.configureMocks({
+        contextOptions: { middlewareV2Enabled: false },
+      });
     });
 
     it('should return Pending Instruction status', async () => {
@@ -855,6 +954,18 @@ describe('Instruction class', () => {
         "It isn't possible to determine the current status of this Instruction"
       );
     });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      dsMockUtils.configureMocks({
+        contextOptions: { middlewareV2Enabled: true },
+      });
+      jest.spyOn(instruction, 'isPending').mockResolvedValue(false);
+      const fakeResult = 'fakeResult' as unknown as InstructionStatusResult;
+      jest.spyOn(instruction, 'getStatusV2').mockResolvedValue(fakeResult);
+
+      const result = await instruction.getStatus();
+      expect(result).toEqual(fakeResult);
+    });
   });
 
   describe('method: getStatusV2', () => {
@@ -926,16 +1037,20 @@ describe('Instruction class', () => {
 
       dsMockUtils.createApolloMultipleV2QueriesMock([
         {
-          query: instructionsQuery(queryVariables),
+          query: instructionsQuery(queryVariables, new BigNumber(1), new BigNumber(0)),
           returnData: {
             instructions: { nodes: [fakeQueryResult] },
           },
         },
         {
-          query: instructionsQuery({
-            ...queryVariables,
-            eventId: MiddlewareV2EventId.InstructionFailed,
-          }),
+          query: instructionsQuery(
+            {
+              ...queryVariables,
+              eventId: MiddlewareV2EventId.InstructionFailed,
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
           returnData: {
             instructions: { nodes: [] },
           },
@@ -982,7 +1097,7 @@ describe('Instruction class', () => {
 
       dsMockUtils.createApolloMultipleV2QueriesMock([
         {
-          query: instructionsQuery(queryVariables),
+          query: instructionsQuery(queryVariables, new BigNumber(1), new BigNumber(0)),
           returnData: {
             instructions: {
               nodes: [],
@@ -990,10 +1105,14 @@ describe('Instruction class', () => {
           },
         },
         {
-          query: instructionsQuery({
-            ...queryVariables,
-            eventId: MiddlewareV2EventId.InstructionFailed,
-          }),
+          query: instructionsQuery(
+            {
+              ...queryVariables,
+              eventId: MiddlewareV2EventId.InstructionFailed,
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
           returnData: {
             instructions: {
               nodes: [fakeQueryResult],
@@ -1032,16 +1151,20 @@ describe('Instruction class', () => {
 
       dsMockUtils.createApolloMultipleV2QueriesMock([
         {
-          query: instructionsQuery(queryVariables),
+          query: instructionsQuery(queryVariables, new BigNumber(1), new BigNumber(0)),
           returnData: {
             instructions: { nodes: [] },
           },
         },
         {
-          query: instructionsQuery({
-            ...queryVariables,
-            eventId: MiddlewareV2EventId.InstructionFailed,
-          }),
+          query: instructionsQuery(
+            {
+              ...queryVariables,
+              eventId: MiddlewareV2EventId.InstructionFailed,
+            },
+            new BigNumber(1),
+            new BigNumber(0)
+          ),
           returnData: {
             instructions: { nodes: [] },
           },

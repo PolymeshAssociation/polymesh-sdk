@@ -15,6 +15,8 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import {
   CorporateActionKind,
   CorporateActionTargets,
+  DistributionPayment,
+  ResultSet,
   TargetTreatment,
   TaxWithholding,
 } from '~/types';
@@ -277,6 +279,12 @@ describe('DividendDistribution class', () => {
   });
 
   describe('method: getWithheldTax', () => {
+    beforeEach(() => {
+      dsMockUtils.configureMocks({
+        contextOptions: { middlewareV2Enabled: false },
+      });
+    });
+
     it('should return the amount of the withheld tax', async () => {
       const fakeTax = new BigNumber(100);
 
@@ -315,6 +323,17 @@ describe('DividendDistribution class', () => {
       return expect(dividendDistribution.getWithheldTax()).rejects.toThrow(
         'The Dividend Distribution no longer exists'
       );
+    });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      dsMockUtils.configureMocks({
+        contextOptions: { middlewareV2Enabled: true },
+      });
+      const fakeResult = new BigNumber(1);
+      jest.spyOn(dividendDistribution, 'getWithheldTaxV2').mockResolvedValue(fakeResult);
+
+      const result = await dividendDistribution.getWithheldTax();
+      expect(result).toEqual(fakeResult);
     });
   });
 
@@ -580,6 +599,12 @@ describe('DividendDistribution class', () => {
   });
 
   describe('method: getPaymentHistory', () => {
+    beforeEach(() => {
+      dsMockUtils.configureMocks({
+        contextOptions: { middlewareV2Enabled: false },
+      });
+    });
+
     it('should return the amount of the withheld tax', async () => {
       const blockId = new BigNumber(1);
       const blockHash = 'someHash';
@@ -677,6 +702,15 @@ describe('DividendDistribution class', () => {
       return expect(dividendDistribution.getPaymentHistory()).rejects.toThrow(
         'The Dividend Distribution no longer exists'
       );
+    });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      dsMockUtils.configureMocks({ contextOptions: { middlewareV2Enabled: true } });
+      const fakeResult = 'fakeResult' as unknown as ResultSet<DistributionPayment>;
+      jest.spyOn(dividendDistribution, 'getPaymentHistoryV2').mockResolvedValue(fakeResult);
+
+      const result = await dividendDistribution.getPaymentHistory();
+      expect(result).toEqual(fakeResult);
     });
   });
 
