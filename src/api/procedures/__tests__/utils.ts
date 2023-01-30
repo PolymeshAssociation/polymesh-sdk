@@ -2,7 +2,6 @@ import { u64 } from '@polkadot/types';
 import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
 
 import {
   assertAuthorizationRequestValid,
@@ -232,10 +231,10 @@ describe('assertPortfolioExists', () => {
 });
 
 describe('assertSecondaryAccounts', () => {
-  let signerToSignerValueStub: sinon.SinonStub<[Signer], SignerValue>;
+  let signerToSignerValueSpy: jest.SpyInstance<SignerValue, [Signer]>;
 
   beforeAll(() => {
-    signerToSignerValueStub = sinon.stub(utilsConversionModule, 'signerToSignerValue');
+    signerToSignerValueSpy = jest.spyOn(utilsConversionModule, 'signerToSignerValue');
   });
 
   it('should not throw an error if all signers are secondary Accounts', async () => {
@@ -274,7 +273,7 @@ describe('assertSecondaryAccounts', () => {
       entityMockUtils.getAccountInstance({ address: 'otherAddress', isEqual: false }),
     ];
 
-    signerToSignerValueStub.returns({ type: SignerType.Account, value: address });
+    signerToSignerValueSpy.mockReturnValue({ type: SignerType.Account, value: address });
 
     let error;
 
@@ -552,7 +551,7 @@ describe('authorization request validations', () => {
     mockContext = dsMockUtils.getContextInstance();
     issuer = entityMockUtils.getIdentityInstance();
     target = entityMockUtils.getIdentityInstance();
-    dsMockUtils.createQueryStub('identity', 'authorizations', {
+    dsMockUtils.createQueryMock('identity', 'authorizations', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockAuthorization({
           authorizationData: dsMockUtils.createMockAuthorizationData('RotatePrimaryKey'),
@@ -1194,8 +1193,8 @@ describe('authorization request validations', () => {
       );
 
       dsMockUtils
-        .createQueryStub('identity', 'keyRecords')
-        .resolves(
+        .createQueryMock('identity', 'keyRecords')
+        .mockResolvedValue(
           dsMockUtils.createMockOption(
             dsMockUtils.createMockKeyRecord({ PrimaryKey: createMockIdentityId('someDid') })
           )
@@ -1226,7 +1225,7 @@ describe('authorization request validations', () => {
         mockContext
       );
 
-      dsMockUtils.createQueryStub('identity', 'keyRecords').returns(
+      dsMockUtils.createQueryMock('identity', 'keyRecords').mockReturnValue(
         dsMockUtils.createMockOption(
           dsMockUtils.createMockKeyRecord({
             MultiSigSignerKey: createMockAccountId('someAddress'),

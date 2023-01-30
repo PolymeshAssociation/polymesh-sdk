@@ -1,6 +1,6 @@
 import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Asset, Context, Namespace, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -37,10 +37,9 @@ describe('CorporateActions class', () => {
 
     ticker = 'SOME_TICKER';
 
-    sinon
-      .stub(utilsConversionModule, 'stringToTicker')
-      .withArgs(ticker, context)
-      .returns(rawTicker);
+    when(jest.spyOn(utilsConversionModule, 'stringToTicker'))
+      .calledWith(ticker, context)
+      .mockReturnValue(rawTicker);
   });
 
   beforeEach(() => {
@@ -78,16 +77,16 @@ describe('CorporateActions class', () => {
       ];
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           {
             args: { ticker: 'SOME_TICKER', targets, taxWithholdings, defaultTaxWithholding },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await corporateActions.setDefaultConfig({
         targets,
@@ -99,50 +98,18 @@ describe('CorporateActions class', () => {
     });
   });
 
-  describe('method: setAgent', () => {
-    it('should prepare the procedure and return the resulting transaction', async () => {
-      const target = 'someDid';
-
-      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
-
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { ticker, target }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
-
-      const tx = await corporateActions.setAgent({ target });
-
-      expect(tx).toBe(expectedTransaction);
-    });
-  });
-
-  describe('method: removeAgent', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
-      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
-
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { ticker: 'SOME_TICKER' }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
-
-      const tx = await corporateActions.removeAgent();
-
-      expect(tx).toBe(expectedTransaction);
-    });
-  });
-
   describe('method: remove', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
       const corporateAction = new BigNumber(100);
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           { args: { corporateAction, ticker: 'SOME_TICKER' }, transformer: undefined },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await corporateActions.remove({ corporateAction });
 
@@ -156,7 +123,7 @@ describe('CorporateActions class', () => {
       const otherDid = 'otherDid';
       const fakeTicker = 'TEST';
 
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+      dsMockUtils.createQueryMock('externalAgents', 'groupOfAgent', {
         entries: [
           tuple(
             [dsMockUtils.createMockTicker(fakeTicker), dsMockUtils.createMockIdentityId(did)],
@@ -180,11 +147,11 @@ describe('CorporateActions class', () => {
       const dids = ['someDid', 'otherDid'];
       const defaultTaxWithholding = new BigNumber(10);
 
-      dsMockUtils.createQueryStub('corporateAction', 'defaultTargetIdentities');
-      dsMockUtils.createQueryStub('corporateAction', 'defaultWithholdingTax');
-      dsMockUtils.createQueryStub('corporateAction', 'didWithholdingTax');
+      dsMockUtils.createQueryMock('corporateAction', 'defaultTargetIdentities');
+      dsMockUtils.createQueryMock('corporateAction', 'defaultWithholdingTax');
+      dsMockUtils.createQueryMock('corporateAction', 'didWithholdingTax');
 
-      dsMockUtils.getQueryMultiStub().resolves([
+      dsMockUtils.getQueryMultiMock().mockResolvedValue([
         dsMockUtils.createMockTargetIdentities({
           identities: dids,
           treatment: 'Include',

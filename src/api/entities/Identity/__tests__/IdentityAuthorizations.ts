@@ -1,6 +1,6 @@
 import { StorageKey } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Authorizations, Identity, Namespace } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -43,14 +43,14 @@ describe('IdentityAuthorizations class', () => {
 
   describe('method: getSent', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should retrieve all pending authorizations sent by the Identity', async () => {
-      sinon.stub(utilsConversionModule, 'signerValueToSignatory');
-      dsMockUtils.createQueryStub('identity', 'authorizationsGiven');
+      jest.spyOn(utilsConversionModule, 'signerValueToSignatory').mockImplementation();
+      dsMockUtils.createQueryMock('identity', 'authorizationsGiven');
 
-      const requestPaginatedStub = sinon.stub(utilsInternalModule, 'requestPaginated');
+      const requestPaginatedSpy = jest.spyOn(utilsInternalModule, 'requestPaginated');
 
       const did = 'someDid';
 
@@ -99,16 +99,19 @@ describe('IdentityAuthorizations class', () => {
           )
       );
 
-      requestPaginatedStub.resolves({ entries: authorizationsGivenEntries, lastKey: null });
+      requestPaginatedSpy.mockResolvedValue({
+        entries: authorizationsGivenEntries,
+        lastKey: null,
+      });
 
       const authsMultiArgs = authorizationsGivenEntries.map(([keys, signatory]) =>
         tuple(signatory, keys.args[1])
       );
 
-      const authorizationsStub = dsMockUtils.createQueryStub('identity', 'authorizations');
-      authorizationsStub.multi
-        .withArgs(authsMultiArgs)
-        .resolves(authorizations.map(dsMockUtils.createMockOption));
+      const authorizationsMock = dsMockUtils.createQueryMock('identity', 'authorizations');
+      when(authorizationsMock.multi)
+        .calledWith(authsMultiArgs)
+        .mockResolvedValue(authorizations.map(dsMockUtils.createMockOption));
 
       const expectedAuthorizations = authParams.map(({ authId, target, issuer, expiry, data }) =>
         entityMockUtils.getAuthorizationRequestInstance({
@@ -145,12 +148,12 @@ describe('IdentityAuthorizations class', () => {
 
   describe('method: getOne', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     beforeAll(() => {
-      sinon.stub(utilsConversionModule, 'signerValueToSignatory');
-      sinon.stub(utilsConversionModule, 'bigNumberToU64');
+      jest.spyOn(utilsConversionModule, 'signerValueToSignatory').mockImplementation();
+      jest.spyOn(utilsConversionModule, 'bigNumberToU64').mockImplementation();
     });
 
     it('should return the requested Authorization Request issued by the parent Identity', async () => {
@@ -164,14 +167,14 @@ describe('IdentityAuthorizations class', () => {
 
       const data = { type: AuthorizationType.TransferAssetOwnership, value: 'myTicker' } as const;
 
-      dsMockUtils.createQueryStub('identity', 'authorizationsGiven', {
+      dsMockUtils.createQueryMock('identity', 'authorizationsGiven', {
         returnValue: dsMockUtils.createMockSignatory({
           Identity: dsMockUtils.createMockIdentityId(targetDid),
         }),
       });
 
       /* eslint-disable @typescript-eslint/naming-convention */
-      dsMockUtils.createQueryStub('identity', 'authorizations', {
+      dsMockUtils.createQueryMock('identity', 'authorizations', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockAuthorization({
             authId: dsMockUtils.createMockU64(id),
@@ -205,7 +208,7 @@ describe('IdentityAuthorizations class', () => {
 
       const data = { type: AuthorizationType.TransferAssetOwnership, value: 'myTicker' } as const;
 
-      dsMockUtils.createQueryStub('identity', 'authorizationsGiven', {
+      dsMockUtils.createQueryMock('identity', 'authorizationsGiven', {
         returnValue: dsMockUtils.createMockSignatory(),
       });
 
@@ -233,7 +236,7 @@ describe('IdentityAuthorizations class', () => {
       const authsNamespace = new IdentityAuthorizations(identity, context);
       const id = new BigNumber(1);
 
-      dsMockUtils.createQueryStub('identity', 'authorizationsGiven', {
+      dsMockUtils.createQueryMock('identity', 'authorizationsGiven', {
         returnValue: dsMockUtils.createMockSignatory(),
       });
 

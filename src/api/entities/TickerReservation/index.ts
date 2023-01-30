@@ -1,4 +1,3 @@
-import { QueryableStorageEntry } from '@polkadot/api/types';
 import { PalletAssetSecurityToken, PalletAssetTickerRegistration } from '@polkadot/types/lookup';
 
 import {
@@ -19,9 +18,8 @@ import {
   TransferTickerOwnershipParams,
   UnsubCallback,
 } from '~/types';
-import { QueryReturnType } from '~/types/utils';
 import { identityIdToString, momentToDate, stringToTicker } from '~/utils/conversion';
-import { assertTickerValid, createProcedureMethod } from '~/utils/internal';
+import { assertTickerValid, createProcedureMethod, requestMulti } from '~/utils/internal';
 
 import { TickerReservationDetails, TickerReservationStatus } from './types';
 
@@ -102,7 +100,6 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
       context: {
         polymeshApi: {
           query: { asset },
-          queryMulti,
         },
       },
       ticker,
@@ -147,13 +144,11 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
     };
 
     if (callback) {
-      // NOTE @monitz87: the type assertions are necessary because queryMulti doesn't play nice with strict types
-      return queryMulti<
-        [QueryReturnType<typeof asset.tickers>, QueryReturnType<typeof asset.tokens>]
-      >(
+      return requestMulti<[typeof asset.tickers, typeof asset.tokens]>(
+        context,
         [
-          [asset.tickers as unknown as QueryableStorageEntry<'promise'>, rawTicker],
-          [asset.tokens as unknown as QueryableStorageEntry<'promise'>, rawTicker],
+          [asset.tickers, rawTicker],
+          [asset.tokens, rawTicker],
         ],
         ([registration, token]) => {
           // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
@@ -162,12 +157,11 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
       );
     }
 
-    // NOTE @monitz87: the type assertions are necessary because queryMulti doesn't play nice with strict types
-    const [tickerRegistration, meshAsset] = await queryMulti<
-      [QueryReturnType<typeof asset.tickers>, QueryReturnType<typeof asset.tokens>]
-    >([
-      [asset.tickers as unknown as QueryableStorageEntry<'promise'>, rawTicker],
-      [asset.tokens as unknown as QueryableStorageEntry<'promise'>, rawTicker],
+    const [tickerRegistration, meshAsset] = await requestMulti<
+      [typeof asset.tickers, typeof asset.tokens]
+    >(context, [
+      [asset.tickers, rawTicker],
+      [asset.tokens, rawTicker],
     ]);
 
     return assembleResult(tickerRegistration, meshAsset);

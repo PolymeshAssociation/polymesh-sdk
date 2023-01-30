@@ -1,8 +1,8 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { AccountManagement } from '~/api/client/AccountManagement';
-import { Account, MultiSig, PolymeshTransaction } from '~/internal';
+import { Account, MultiSig, PolymeshTransaction, Subsidy } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
 import { AccountBalance, PermissionType, SubCallback } from '~/types';
@@ -15,6 +15,11 @@ jest.mock(
 jest.mock(
   '~/api/entities/Account',
   require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
+);
+
+jest.mock(
+  '~/api/entities/Subsidy',
+  require('~/testUtils/mocks/entities').mockSubsidyModule('~/api/entities/Subsidy')
 );
 
 describe('AccountManagement class', () => {
@@ -47,10 +52,9 @@ describe('AccountManagement class', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: undefined, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: undefined, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await accountManagement.leaveIdentity();
 
@@ -64,10 +68,9 @@ describe('AccountManagement class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { accounts }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { accounts }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await accountManagement.removeSecondaryAccounts({ accounts });
 
@@ -91,10 +94,9 @@ describe('AccountManagement class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { secondaryAccounts }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { secondaryAccounts }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await accountManagement.revokePermissions({ secondaryAccounts: [account] });
 
@@ -113,10 +115,9 @@ describe('AccountManagement class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { secondaryAccounts }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { secondaryAccounts }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await accountManagement.modifyPermissions({ secondaryAccounts });
 
@@ -132,10 +133,9 @@ describe('AccountManagement class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await accountManagement.inviteAccount(args);
 
@@ -151,10 +151,9 @@ describe('AccountManagement class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await accountManagement.freezeSecondaryAccounts();
 
@@ -170,10 +169,9 @@ describe('AccountManagement class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await accountManagement.unfreezeSecondaryAccounts();
 
@@ -190,10 +188,9 @@ describe('AccountManagement class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await accountManagement.subsidizeAccount(args);
 
@@ -202,9 +199,13 @@ describe('AccountManagement class', () => {
   });
 
   describe('method: getAccount', () => {
+    beforeAll(() => {
+      jest.spyOn(utilsConversionModule, 'stringToAccountId').mockImplementation();
+    });
+
     it('should return an Account object with the passed address', async () => {
       const params = { address: 'testAddress' };
-      dsMockUtils.createQueryStub('multiSig', 'multiSigSigners', {
+      dsMockUtils.createQueryMock('multiSig', 'multiSigSigners', {
         returnValue: [],
       });
 
@@ -216,7 +217,7 @@ describe('AccountManagement class', () => {
 
     it('should return a MultiSig instance if the address is for a MultiSig', async () => {
       const params = { address: 'testAddress' };
-      dsMockUtils.createQueryStub('multiSig', 'multiSigSigners', {
+      dsMockUtils.createQueryMock('multiSig', 'multiSigSigners', {
         entries: [[['someSignerAddress'], 'someSignerAddress']],
       });
 
@@ -228,11 +229,11 @@ describe('AccountManagement class', () => {
   });
 
   describe('method: getSigningAccount', () => {
-    const stringToAccountIdStub = sinon.stub(utilsConversionModule, 'stringToAccountId');
+    const stringToAccountIdSpy = jest.spyOn(utilsConversionModule, 'stringToAccountId');
     it('should return the signing Account', async () => {
       const address = 'someAddress';
       const rawAddress = dsMockUtils.createMockAccountId(address);
-      stringToAccountIdStub.withArgs(address, context).returns(rawAddress);
+      when(stringToAccountIdSpy).calledWith(address, context).mockReturnValue(rawAddress);
       dsMockUtils.configureMocks({ contextOptions: { signingAddress: address } });
 
       const result = accountManagement.getSigningAccount();
@@ -241,7 +242,9 @@ describe('AccountManagement class', () => {
     });
 
     it('should return null if there is no set signing Account', async () => {
-      context.getSigningAccount.throws('err');
+      context.getSigningAccount.mockImplementation(() => {
+        throw new Error('err');
+      });
 
       const result = accountManagement.getSigningAccount();
 
@@ -279,25 +282,25 @@ describe('AccountManagement class', () => {
       dsMockUtils.configureMocks({ contextOptions: { balance: fakeBalance } });
       entityMockUtils.configureMocks({ accountOptions: { getBalance: fakeBalance } });
 
-      let accountBalanceStub = (
-        dsMockUtils.getContextInstance().getSigningAccount().getBalance as sinon.SinonStub
-      ).resolves(unsubCallback);
+      let accountBalanceMock = (
+        dsMockUtils.getContextInstance().getSigningAccount().getBalance as jest.Mock
+      ).mockResolvedValue(unsubCallback);
 
       const callback = (() => 1 as unknown) as SubCallback<AccountBalance>;
       let result = await accountManagement.getAccountBalance(callback);
       expect(result).toEqual(unsubCallback);
-      sinon.assert.calledWithExactly(accountBalanceStub, callback);
+      expect(accountBalanceMock).toBeCalledWith(callback);
 
-      accountBalanceStub = sinon.stub().resolves(unsubCallback);
+      accountBalanceMock = jest.fn().mockResolvedValue(unsubCallback);
       entityMockUtils.configureMocks({
         accountOptions: {
-          getBalance: accountBalanceStub,
+          getBalance: accountBalanceMock,
         },
       });
       const account = 'someId';
       result = await accountManagement.getAccountBalance({ account }, callback);
       expect(result).toEqual(unsubCallback);
-      sinon.assert.calledWithExactly(accountBalanceStub, callback);
+      expect(accountBalanceMock).toBeCalledWith(callback);
     });
   });
 
@@ -325,14 +328,23 @@ describe('AccountManagement class', () => {
 
       const expectedQueue = 'someQueue' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedQueue);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedQueue);
 
       const queue = await accountManagement.createMultiSigAccount(args);
 
       expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: getSubsidy', () => {
+    it('should return an Subsidy object with the passed beneficiary and subsidizer', () => {
+      const params = { beneficiary: 'beneficiary', subsidizer: 'subsidizer' };
+
+      const result = accountManagement.getSubsidy(params);
+
+      expect(result).toBeInstanceOf(Subsidy);
     });
   });
 });

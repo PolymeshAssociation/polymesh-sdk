@@ -1,3 +1,5 @@
+import { when } from 'jest-when';
+
 import { Identities } from '~/api/client/Identities';
 import { createPortfolioTransformer } from '~/api/entities/Venue';
 import { Context, Identity, NumberedPortfolio, PolymeshTransaction } from '~/internal';
@@ -44,7 +46,7 @@ describe('Identities Class', () => {
       const params = { did: 'testDid' };
 
       const identity = new Identity(params, context);
-      context.getIdentity.onFirstCall().resolves(identity);
+      context.getIdentity.mockResolvedValue(identity);
 
       const result = await identities.getIdentity(params);
 
@@ -60,10 +62,9 @@ describe('Identities Class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Identity>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await identities.registerIdentity(args);
 
@@ -78,13 +79,13 @@ describe('Identities Class', () => {
       const expectedTransaction =
         'someTransaction' as unknown as PolymeshTransaction<NumberedPortfolio>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           { args: { names: [args.name] }, transformer: createPortfolioTransformer },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await identities.createPortfolio(args);
 
@@ -99,10 +100,9 @@ describe('Identities Class', () => {
       const expectedTransaction =
         'someTransaction' as unknown as PolymeshTransaction<NumberedPortfolio>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await identities.createPortfolios(args);
 

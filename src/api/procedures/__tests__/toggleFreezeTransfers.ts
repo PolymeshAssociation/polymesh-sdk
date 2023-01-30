@@ -1,5 +1,5 @@
-import { Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
+import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+import { when } from 'jest-when';
 
 import {
   getAuthorization,
@@ -19,22 +19,22 @@ jest.mock(
 
 describe('toggleFreezeTransfers procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
   let ticker: string;
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
     ticker = 'tickerFrozen';
     rawTicker = dsMockUtils.createMockTicker(ticker);
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
   });
 
   afterEach(() => {
@@ -79,7 +79,7 @@ describe('toggleFreezeTransfers procedure', () => {
   it('should return a freeze transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('asset', 'freeze');
+    const transaction = dsMockUtils.createTxMock('asset', 'freeze');
 
     const result = await prepareToggleFreezeTransfers.call(proc, {
       ticker,
@@ -102,7 +102,7 @@ describe('toggleFreezeTransfers procedure', () => {
 
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('asset', 'unfreeze');
+    const transaction = dsMockUtils.createTxMock('asset', 'unfreeze');
 
     const result = await prepareToggleFreezeTransfers.call(proc, {
       ticker,

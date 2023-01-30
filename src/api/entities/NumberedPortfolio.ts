@@ -106,6 +106,10 @@ export class NumberedPortfolio extends Portfolio {
       context,
     } = this;
 
+    if (context.isMiddlewareV2Enabled()) {
+      return this.createdAtV2();
+    }
+
     const {
       data: { eventByIndexedArgs: event },
     } = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(

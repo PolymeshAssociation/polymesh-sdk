@@ -1,6 +1,6 @@
 import { StorageKey } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Checkpoint, Context, Namespace, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -59,16 +59,15 @@ describe('Checkpoints class', () => {
 
   describe('method: create', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Checkpoint>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { ticker }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { ticker }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await checkpoints.create();
 
@@ -78,7 +77,7 @@ describe('Checkpoints class', () => {
 
   describe('method: getOne', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return the requested Checkpoint', async () => {
@@ -101,15 +100,15 @@ describe('Checkpoints class', () => {
 
   describe('method: get', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return all created checkpoints with their timestamps and total supply', async () => {
-      const stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
+      const stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
 
-      dsMockUtils.createQueryStub('checkpoint', 'totalSupply');
+      dsMockUtils.createQueryMock('checkpoint', 'totalSupply');
 
-      const requestPaginatedStub = sinon.stub(utilsInternalModule, 'requestPaginated');
+      const requestPaginatedSpy = jest.spyOn(utilsInternalModule, 'requestPaginated');
 
       const totalSupply = [
         {
@@ -124,7 +123,7 @@ describe('Checkpoints class', () => {
         },
       ];
 
-      stringToTickerStub.withArgs(ticker, context).returns(rawTicker);
+      when(stringToTickerSpy).calledWith(ticker, context).mockReturnValue(rawTicker);
 
       const rawTotalSupply = totalSupply.map(({ checkpointId, balance }) => ({
         checkpointId: dsMockUtils.createMockU64(checkpointId),
@@ -135,10 +134,10 @@ describe('Checkpoints class', () => {
         tuple({ args: [rawTicker, checkpointId] } as unknown as StorageKey, balance)
       );
 
-      requestPaginatedStub.resolves({ entries: totalSupplyEntries, lastKey: null });
+      requestPaginatedSpy.mockResolvedValue({ entries: totalSupplyEntries, lastKey: null });
 
-      const timestampsStub = dsMockUtils.createQueryStub('checkpoint', 'timestamps');
-      timestampsStub.multi.resolves(
+      const timestampsMock = dsMockUtils.createQueryMock('checkpoint', 'timestamps');
+      timestampsMock.multi.mockResolvedValue(
         totalSupply.map(({ moment }) =>
           dsMockUtils.createMockMoment(new BigNumber(moment.getTime()))
         )

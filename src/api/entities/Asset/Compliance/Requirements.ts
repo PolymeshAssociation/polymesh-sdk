@@ -1,4 +1,3 @@
-import { QueryableStorageEntry } from '@polkadot/api/types';
 import { Vec } from '@polkadot/types/codec';
 import {
   PolymeshPrimitivesComplianceManagerAssetCompliance,
@@ -9,17 +8,14 @@ import {
   addAssetRequirement,
   Asset,
   Context,
-  Identity,
   modifyComplianceRequirement,
   Namespace,
   removeAssetRequirement,
   setAssetRequirements,
   togglePauseRequirements,
 } from '~/internal';
-import { AssetComplianceResult } from '~/polkadot/polymesh';
 import {
   AddAssetRequirementParams,
-  Compliance,
   ComplianceRequirements,
   ModifyComplianceRequirementParams,
   NoArgsProcedureMethod,
@@ -29,15 +25,13 @@ import {
   SubCallback,
   UnsubCallback,
 } from '~/types';
-import { QueryReturnType } from '~/types/utils';
 import {
-  assetComplianceResultToCompliance,
   boolToBoolean,
   complianceRequirementToRequirement,
   stringToTicker,
   trustedIssuerToTrustedClaimIssuer,
 } from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
+import { createProcedureMethod, requestMulti } from '~/utils/internal';
 
 /**
  * Handles all Asset Compliance Requirements related functionality
@@ -125,7 +119,6 @@ export class Requirements extends Namespace<Asset> {
       context: {
         polymeshApi: {
           query: { complianceManager },
-          queryMulti,
         },
       },
       context,
@@ -149,21 +142,13 @@ export class Requirements extends Namespace<Asset> {
     };
 
     if (callback) {
-      return queryMulti<
-        [
-          QueryReturnType<typeof complianceManager.assetCompliances>,
-          QueryReturnType<typeof complianceManager.trustedClaimIssuer>
-        ]
+      return requestMulti<
+        [typeof complianceManager.assetCompliances, typeof complianceManager.trustedClaimIssuer]
       >(
+        context,
         [
-          [
-            complianceManager.assetCompliances as unknown as QueryableStorageEntry<'promise'>,
-            rawTicker,
-          ],
-          [
-            complianceManager.trustedClaimIssuer as unknown as QueryableStorageEntry<'promise'>,
-            rawTicker,
-          ],
+          [complianceManager.assetCompliances, rawTicker],
+          [complianceManager.trustedClaimIssuer, rawTicker],
         ],
         res => {
           // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
@@ -172,20 +157,11 @@ export class Requirements extends Namespace<Asset> {
       );
     }
 
-    const result = await queryMulti<
-      [
-        QueryReturnType<typeof complianceManager.assetCompliances>,
-        QueryReturnType<typeof complianceManager.trustedClaimIssuer>
-      ]
-    >([
-      [
-        complianceManager.assetCompliances as unknown as QueryableStorageEntry<'promise'>,
-        rawTicker,
-      ],
-      [
-        complianceManager.trustedClaimIssuer as unknown as QueryableStorageEntry<'promise'>,
-        rawTicker,
-      ],
+    const result = await requestMulti<
+      [typeof complianceManager.assetCompliances, typeof complianceManager.trustedClaimIssuer]
+    >(context, [
+      [complianceManager.assetCompliances, rawTicker],
+      [complianceManager.trustedClaimIssuer, rawTicker],
     ]);
 
     return assembleResult(result);
@@ -205,41 +181,6 @@ export class Requirements extends Namespace<Asset> {
    * Un-pause all the Asset's current requirements
    */
   public unpause: NoArgsProcedureMethod<Asset>;
-
-  /**
-   * Check whether the sender and receiver Identities in a transfer comply with all the requirements of this Asset
-   *
-   * @note this does not take balances into account
-   *
-   * @param args.from - sender Identity (optional, defaults to the signing Identity)
-   * @param args.to - receiver Identity
-   *
-   * @deprecated in favor of `settlements.canTransfer` (set amount to 0 to imitate this call)
-   */
-  public async checkSettle(args: {
-    from?: string | Identity;
-    to: string | Identity;
-  }): Promise<Compliance> {
-    const {
-      parent: { ticker },
-      context: {
-        polymeshApi: { rpc },
-      },
-      context,
-    } = this;
-
-    const { from = await context.getSigningIdentity(), to } = args;
-    const fromDid = typeof from === 'string' ? from : from.did;
-    const toDid = typeof to === 'string' ? to : to.did;
-
-    const res: AssetComplianceResult = await rpc.compliance.canTransfer(
-      stringToTicker(ticker, context),
-      fromDid,
-      toDid
-    );
-
-    return assetComplianceResultToCompliance(res, context);
-  }
 
   /**
    * Check whether Asset compliance requirements are paused or not

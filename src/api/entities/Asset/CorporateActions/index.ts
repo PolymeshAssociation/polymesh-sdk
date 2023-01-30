@@ -1,30 +1,19 @@
-import { QueryableStorageEntry } from '@polkadot/api/types';
-
 import {
   Asset,
   Context,
   Identity,
   modifyCaDefaultConfig,
-  modifyCorporateActionsAgent,
   Namespace,
   removeCorporateAction,
-  removeCorporateActionsAgent,
 } from '~/internal';
-import {
-  ModifyCaDefaultConfigParams,
-  ModifyCorporateActionsAgentParams,
-  NoArgsProcedureMethod,
-  ProcedureMethod,
-  RemoveCorporateActionParams,
-} from '~/types';
-import { QueryReturnType } from '~/types/utils';
+import { ModifyCaDefaultConfigParams, ProcedureMethod, RemoveCorporateActionParams } from '~/types';
 import {
   identityIdToString,
   permillToBigNumber,
   stringToTicker,
   targetIdentitiesToCorporateActionTargets,
 } from '~/utils/conversion';
-import { createProcedureMethod } from '~/utils/internal';
+import { createProcedureMethod, requestMulti } from '~/utils/internal';
 
 import { Distributions } from './Distributions';
 import { CorporateActionDefaultConfig } from './types';
@@ -50,16 +39,6 @@ export class CorporateActions extends Namespace<Asset> {
       context
     );
 
-    this.setAgent = createProcedureMethod(
-      { getProcedureAndArgs: args => [modifyCorporateActionsAgent, { ticker, ...args }] },
-      context
-    );
-
-    this.removeAgent = createProcedureMethod(
-      { getProcedureAndArgs: () => [removeCorporateActionsAgent, { ticker }], voidArgs: true },
-      context
-    );
-
     this.remove = createProcedureMethod(
       { getProcedureAndArgs: args => [removeCorporateAction, { ticker, ...args }] },
       context
@@ -74,26 +53,6 @@ export class CorporateActions extends Namespace<Asset> {
    *   When creating a Corporate Action, values passed explicitly will override these default config values
    */
   public setDefaultConfig: ProcedureMethod<ModifyCaDefaultConfigParams, void>;
-
-  /**
-   * Assign a new Corporate Actions Agent for the Asset
-   *
-   * @note this may create {@link api/entities/AuthorizationRequest!AuthorizationRequest | Authorization Requests} which have to be accepted by the `target` Identity.
-   *   An {@link api/entities/Account!Account} or {@link api/entities/Identity!Identity} can fetch its pending Authorization Requests by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getReceived | authorizations.getReceived}.
-   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getOne | authorizations.getOne}
-   *
-   * @deprecated in favor of `inviteAgent`
-   */
-  public setAgent: ProcedureMethod<ModifyCorporateActionsAgentParams, void>;
-
-  /**
-   * Remove the Corporate Actions Agent of the Asset
-   *
-   * @note this action will leave the Asset owner as the Corporate Actions Agent
-   *
-   * @deprecated
-   */
-  public removeAgent: NoArgsProcedureMethod<void>;
 
   /**
    * Remove a Corporate Action
@@ -145,29 +104,22 @@ export class CorporateActions extends Namespace<Asset> {
         polymeshApi: {
           query: { corporateAction },
         },
-        polymeshApi,
       },
       context,
     } = this;
 
     const rawTicker = stringToTicker(ticker, context);
 
-    const [targets, defaultTaxWithholding, taxWithholdings] = await polymeshApi.queryMulti<
+    const [targets, defaultTaxWithholding, taxWithholdings] = await requestMulti<
       [
-        QueryReturnType<typeof corporateAction.defaultTargetIdentities>,
-        QueryReturnType<typeof corporateAction.defaultWithholdingTax>,
-        QueryReturnType<typeof corporateAction.didWithholdingTax>
+        typeof corporateAction.defaultTargetIdentities,
+        typeof corporateAction.defaultWithholdingTax,
+        typeof corporateAction.didWithholdingTax
       ]
-    >([
-      [
-        corporateAction.defaultTargetIdentities as unknown as QueryableStorageEntry<'promise'>,
-        rawTicker,
-      ],
-      [
-        corporateAction.defaultWithholdingTax as unknown as QueryableStorageEntry<'promise'>,
-        rawTicker,
-      ],
-      [corporateAction.didWithholdingTax as unknown as QueryableStorageEntry<'promise'>, rawTicker],
+    >(context, [
+      [corporateAction.defaultTargetIdentities, rawTicker],
+      [corporateAction.defaultWithholdingTax, rawTicker],
+      [corporateAction.didWithholdingTax, rawTicker],
     ]);
 
     return {

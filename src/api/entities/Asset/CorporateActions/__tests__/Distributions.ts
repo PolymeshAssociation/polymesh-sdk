@@ -1,9 +1,9 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { DividendDistribution, Namespace, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { ConfigureDividendDistributionParams } from '~/types';
+import { ConfigureDividendDistributionParams, DistributionWithDetails } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 import { Distributions } from '../Distributions';
@@ -55,7 +55,7 @@ describe('Distributions class', () => {
 
   describe('method: configureDividendDistribution', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
@@ -68,10 +68,13 @@ describe('Distributions class', () => {
       const expectedTransaction =
         'someTransaction' as unknown as PolymeshTransaction<DividendDistribution>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { ticker: asset.ticker, ...args }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          { args: { ticker: asset.ticker, ...args }, transformer: undefined },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await distributions.configureDividendDistribution(args);
 
@@ -81,18 +84,18 @@ describe('Distributions class', () => {
 
   describe('method: getOne', () => {
     beforeAll(() => {
-      sinon.stub(utilsConversionModule, 'stringToTicker');
-      sinon.stub(utilsConversionModule, 'bigNumberToU32');
+      jest.spyOn(utilsConversionModule, 'stringToTicker').mockImplementation();
+      jest.spyOn(utilsConversionModule, 'bigNumberToU32').mockImplementation();
     });
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return the requested Distribution', async () => {
       const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
 
-      dsMockUtils.createQueryStub('corporateAction', 'corporateActions', {
+      dsMockUtils.createQueryMock('corporateAction', 'corporateActions', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockCorporateAction({
             kind: 'PredictableBenefit',
@@ -109,10 +112,10 @@ describe('Distributions class', () => {
           })
         ),
       });
-      dsMockUtils.createQueryStub('corporateAction', 'details', {
+      dsMockUtils.createQueryMock('corporateAction', 'details', {
         returnValue: dsMockUtils.createMockBytes('something'),
       });
-      dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
+      dsMockUtils.createQueryMock('capitalDistribution', 'distributions', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockDistribution({
             from: { did: 'someDid', kind: 'Default' },
@@ -145,7 +148,7 @@ describe('Distributions class', () => {
       const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
 
-      dsMockUtils.createQueryStub('corporateAction', 'corporateActions', {
+      dsMockUtils.createQueryMock('corporateAction', 'corporateActions', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockCorporateAction({
             kind: 'PredictableBenefit',
@@ -162,10 +165,10 @@ describe('Distributions class', () => {
           })
         ),
       });
-      dsMockUtils.createQueryStub('corporateAction', 'details', {
+      dsMockUtils.createQueryMock('corporateAction', 'details', {
         returnValue: dsMockUtils.createMockText('something'),
       });
-      dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
+      dsMockUtils.createQueryMock('capitalDistribution', 'distributions', {
         returnValue: dsMockUtils.createMockOption(),
       });
 
@@ -178,10 +181,10 @@ describe('Distributions class', () => {
         'The Dividend Distribution does not exist'
       );
 
-      dsMockUtils.createQueryStub('corporateAction', 'corporateActions', {
+      dsMockUtils.createQueryMock('corporateAction', 'corporateActions', {
         returnValue: dsMockUtils.createMockOption(),
       });
-      dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
+      dsMockUtils.createQueryMock('capitalDistribution', 'distributions', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockDistribution({
             from: { did: 'someDid', kind: 'Default' },
@@ -204,7 +207,7 @@ describe('Distributions class', () => {
 
   describe('method: get', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return all distributions associated to the Asset', async () => {
@@ -213,9 +216,9 @@ describe('Distributions class', () => {
       const context = dsMockUtils.getContextInstance();
       const asset = entityMockUtils.getAssetInstance({ ticker });
 
-      context.getDividendDistributionsForAssets
-        .withArgs({ assets: [asset] })
-        .resolves('distributions');
+      when(context.getDividendDistributionsForAssets)
+        .calledWith({ assets: [asset] })
+        .mockResolvedValue('distributions' as unknown as DistributionWithDetails[]);
 
       const target = new Distributions(asset, context);
 

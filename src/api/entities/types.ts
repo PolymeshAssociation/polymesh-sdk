@@ -12,6 +12,7 @@ import {
   Identity as IdentityClass,
   Instruction as InstructionClass,
   KnownPermissionGroup as KnownPermissionGroupClass,
+  MetadataEntry as MetadataEntryClass,
   MultiSig as MultiSigClass,
   NumberedPortfolio as NumberedPortfolioClass,
   Offering as OfferingClass,
@@ -35,6 +36,7 @@ export type Instruction = InstructionClass;
 export type KnownPermissionGroup = KnownPermissionGroupClass;
 export type NumberedPortfolio = NumberedPortfolioClass;
 export type Asset = AssetClass;
+export type MetadataEntry = MetadataEntryClass;
 export type Offering = OfferingClass;
 export type TickerReservation = TickerReservationClass;
 export type Venue = VenueClass;
@@ -52,3 +54,4 @@ export * from './Venue/types';
 export * from './Subsidy/types';
 export * from './MultiSig/types';
 export * from './MultiSigProposal/types';
+export * from './MetadataEntry/types';

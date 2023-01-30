@@ -1,14 +1,15 @@
 import { Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Account, Context, PolymeshError } from '~/internal';
+import { ClaimTypeEnum as MiddlewareV2ClaimType } from '~/middleware/enumsV2';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { claimsQuery, heartbeatQuery } from '~/middleware/queriesV2';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { createMockAccountId } from '~/testUtils/mocks/dataSources';
+import { createMockAccountId, getAtMock } from '~/testUtils/mocks/dataSources';
 import {
   ClaimType,
   CorporateActionKind,
@@ -67,7 +68,7 @@ describe('Context class', () => {
     dsMockUtils.setConstMock('system', 'ss58Prefix', {
       returnValue: dsMockUtils.createMockU8(new BigNumber(42)),
     });
-    dsMockUtils.createQueryStub('identity', 'didRecords', {
+    dsMockUtils.createQueryMock('identity', 'didRecords', {
       returnValue: dsMockUtils.createMockIdentityDidRecord({
         primaryKey: dsMockUtils.createMockOption(dsMockUtils.createMockAccountId('someDid')),
       }),
@@ -110,20 +111,20 @@ describe('Context class', () => {
 
   describe('method: create', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertAddressValid');
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     });
 
     beforeEach(() => {
-      dsMockUtils.createQueryStub('balances', 'totalIssuance', {
+      dsMockUtils.createQueryMock('balances', 'totalIssuance', {
         returnValue: dsMockUtils.createMockBalance(new BigNumber(100)),
       });
-      dsMockUtils.createQueryStub('system', 'blockHash', {
+      dsMockUtils.createQueryMock('system', 'blockHash', {
         returnValue: dsMockUtils.createMockHash('someBlockHash'),
       });
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should create a Context object with a Signing Manager attached', async () => {
@@ -156,11 +157,11 @@ describe('Context class', () => {
 
   describe('method: getSigningAccounts', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertAddressValid');
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should retrieve an array of Accounts', async () => {
@@ -188,11 +189,11 @@ describe('Context class', () => {
 
   describe('method: setSigningAddress', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertAddressValid');
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should throw error if the passed address does not exist in the Signing Manager', async () => {
@@ -230,11 +231,11 @@ describe('Context class', () => {
 
   describe('method: setSigningManager', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertAddressValid');
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should set the passed value as Signing Manager', async () => {
@@ -257,7 +258,7 @@ describe('Context class', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect((context as any).signingManager).toEqual(signingManager);
 
-      signingManager.getAccounts.returns([]);
+      signingManager.getAccounts.mockResolvedValue([]);
 
       await context.setSigningManager(signingManager);
 
@@ -267,15 +268,30 @@ describe('Context class', () => {
       });
       expect(() => context.getSigningAccount()).toThrowError(expectedError);
     });
+
+    it('should set the external api on the polkadot instance', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
+      });
+      const signingManager = dsMockUtils.getSigningManagerInstance();
+      const polymeshApi = context.getPolymeshApi();
+      const polkadotSigner = signingManager.getExternalSigner();
+
+      await context.setSigningManager(signingManager);
+
+      expect(polymeshApi.setSigner).toHaveBeenCalledWith(polkadotSigner);
+    });
   });
 
   describe('method: accountBalance', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertAddressValid');
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     const free = new BigNumber(100);
@@ -307,7 +323,7 @@ describe('Context class', () => {
         }),
       });
 
-      dsMockUtils.createQueryStub('system', 'account', { returnValue });
+      dsMockUtils.createQueryMock('system', 'account', { returnValue });
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -336,7 +352,7 @@ describe('Context class', () => {
         }),
       });
 
-      dsMockUtils.createQueryStub('system', 'account', { returnValue });
+      dsMockUtils.createQueryMock('system', 'account', { returnValue });
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -366,7 +382,7 @@ describe('Context class', () => {
         }),
       });
 
-      dsMockUtils.createQueryStub('system', 'account').callsFake(async (_, cbFunc) => {
+      dsMockUtils.createQueryMock('system', 'account').mockImplementation(async (_, cbFunc) => {
         cbFunc(returnValue);
         return unsubCallback;
       });
@@ -377,11 +393,11 @@ describe('Context class', () => {
         middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
-      const callback = sinon.stub();
+      const callback = jest.fn();
       const result = await context.accountBalance('someAddress', callback);
 
       expect(result).toEqual(unsubCallback);
-      sinon.assert.calledWithExactly(callback, {
+      expect(callback).toHaveBeenCalledWith({
         free: free.minus(miscFrozen).shiftedBy(-6),
         locked: miscFrozen.shiftedBy(-6),
         total: free.plus(reserved).shiftedBy(-6),
@@ -391,11 +407,11 @@ describe('Context class', () => {
 
   describe('method: accountSubsidy', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertAddressValid');
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it("should return the current signer Account's Subsidy with allowance if no address is passed", async () => {
@@ -407,7 +423,7 @@ describe('Context class', () => {
         })
       );
 
-      dsMockUtils.createQueryStub('relayer', 'subsidies', { returnValue });
+      dsMockUtils.createQueryMock('relayer', 'subsidies', { returnValue });
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -437,7 +453,7 @@ describe('Context class', () => {
         })
       );
 
-      dsMockUtils.createQueryStub('relayer', 'subsidies', { returnValue });
+      dsMockUtils.createQueryMock('relayer', 'subsidies', { returnValue });
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -458,7 +474,7 @@ describe('Context class', () => {
     it('should return null if the Account has no subsidizer', async () => {
       const returnValue = dsMockUtils.createMockOption();
 
-      dsMockUtils.createQueryStub('relayer', 'subsidies', { returnValue });
+      dsMockUtils.createQueryMock('relayer', 'subsidies', { returnValue });
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -481,7 +497,7 @@ describe('Context class', () => {
         })
       );
 
-      dsMockUtils.createQueryStub('relayer', 'subsidies').callsFake(async (_, cbFunc) => {
+      dsMockUtils.createQueryMock('relayer', 'subsidies').mockImplementation(async (_, cbFunc) => {
         cbFunc(returnValue);
         return unsubCallback;
       });
@@ -492,16 +508,15 @@ describe('Context class', () => {
         middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
-      const callback = sinon.stub();
+      const callback = jest.fn();
       const result = await context.accountSubsidy('accountId', callback);
 
       expect(result).toEqual(unsubCallback);
-      sinon.assert.calledWithExactly(
-        callback,
-        sinon.match({
-          subsidy: sinon.match({
-            beneficiary: sinon.match({ address: 'accountId' }),
-            subsidizer: sinon.match({ address: 'payingKey' }),
+      expect(callback).toHaveBeenCalledWith(
+        expect.objectContaining({
+          subsidy: expect.objectContaining({
+            beneficiary: expect.objectContaining({ address: 'accountId' }),
+            subsidizer: expect.objectContaining({ address: 'payingKey' }),
           }),
           allowance: utilsConversionModule.balanceToBigNumber(allowance),
         })
@@ -511,16 +526,16 @@ describe('Context class', () => {
 
   describe('method: getSigningIdentity', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertAddressValid');
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return the signing Identity', async () => {
       const did = 'someDid';
-      dsMockUtils.createQueryStub('identity', 'didRecords', {
+      dsMockUtils.createQueryMock('identity', 'didRecords', {
         returnValue: dsMockUtils.createMockIdentityDidRecord({
           primaryKey: dsMockUtils.createMockOption(createMockAccountId(did)),
         }),
@@ -559,11 +574,11 @@ describe('Context class', () => {
 
   describe('method: getSigningAccount', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertAddressValid');
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return the signing Account', async () => {
@@ -597,11 +612,11 @@ describe('Context class', () => {
 
   describe('method: getIdentity', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertAddressValid');
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     const did = 'someDid';
@@ -685,11 +700,11 @@ describe('Context class', () => {
 
   describe('method: getSigningAddress', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertAddressValid');
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return the signing address', async () => {
@@ -710,11 +725,11 @@ describe('Context class', () => {
 
   describe('method: getExternalSigner', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertAddressValid');
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should get and return an external signer from the Signing Manager', async () => {
@@ -734,17 +749,17 @@ describe('Context class', () => {
 
   describe('method: getInvalidDids', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertAddressValid');
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return which DIDs in the input array are invalid', async () => {
       const inputDids = ['someDid', 'otherDid', 'invalidDid', 'otherInvalidDid'];
       /* eslint-disable @typescript-eslint/naming-convention */
-      dsMockUtils.createQueryStub('identity', 'didRecords', {
+      dsMockUtils.createQueryMock('identity', 'didRecords', {
         multi: [
           dsMockUtils.createMockOption(
             dsMockUtils.createMockIdentityDidRecord({
@@ -777,15 +792,15 @@ describe('Context class', () => {
 
   describe('method: getProtocolFees', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertAddressValid');
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return the fees associated to the supplied transaction', async () => {
-      dsMockUtils.createQueryStub('protocolFee', 'coefficient', {
+      dsMockUtils.createQueryMock('protocolFee', 'coefficient', {
         returnValue: dsMockUtils.createMockPosRatio(new BigNumber(1), new BigNumber(2)),
       });
 
@@ -796,15 +811,24 @@ describe('Context class', () => {
       });
 
       const rawProtocolOp = dsMockUtils.createMockProtocolOp('AssetCreateAsset');
-      rawProtocolOp.eq = sinon.stub();
-      rawProtocolOp.eq.withArgs(rawProtocolOp).returns(true);
+      rawProtocolOp.eq = jest.fn();
+      when(rawProtocolOp.eq).calledWith(rawProtocolOp).mockReturnValue(true);
 
-      const txTagToProtocolOpStub = sinon.stub(utilsConversionModule, 'txTagToProtocolOp');
+      const txTagToProtocolOpSpy = jest
+        .spyOn(utilsConversionModule, 'txTagToProtocolOp')
+        .mockClear()
+        .mockImplementation();
 
-      txTagToProtocolOpStub.withArgs(TxTags.asset.CreateAsset, context).returns(rawProtocolOp);
-      txTagToProtocolOpStub.withArgs(TxTags.asset.Freeze, context).throws(); // transaction without fees
+      when(txTagToProtocolOpSpy)
+        .calledWith(TxTags.asset.CreateAsset, context)
+        .mockReturnValue(rawProtocolOp);
+      when(txTagToProtocolOpSpy)
+        .calledWith(TxTags.asset.Freeze, context)
+        .mockImplementation(() => {
+          throw new Error('err');
+        }); // transaction without fees
 
-      dsMockUtils.createQueryStub('protocolFee', 'baseFees', {
+      dsMockUtils.createQueryMock('protocolFee', 'baseFees', {
         entries: [tuple([rawProtocolOp], dsMockUtils.createMockBalance(new BigNumber(500000000)))],
       });
 
@@ -823,22 +847,24 @@ describe('Context class', () => {
 
       expect(result).toEqual(mockResult);
 
+      context.isArchiveNode = true;
       result = await context.getProtocolFees({ tags, blockHash: '0x000' });
+      expect(getAtMock()).toHaveBeenCalledTimes(1);
       expect(result).toEqual(mockResult);
     });
   });
 
   describe('method: getTransactionArguments', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertAddressValid');
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return a representation of the arguments of a transaction', async () => {
-      dsMockUtils.createQueryStub('protocolFee', 'coefficient', {
+      dsMockUtils.createQueryMock('protocolFee', 'coefficient', {
         returnValue: dsMockUtils.createMockPosRatio(new BigNumber(1), new BigNumber(2)),
       });
 
@@ -848,7 +874,7 @@ describe('Context class', () => {
         middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
-      dsMockUtils.createTxStub('asset', 'registerTicker', {
+      dsMockUtils.createTxMock('asset', 'registerTicker', {
         meta: {
           args: [
             {
@@ -867,11 +893,11 @@ describe('Context class', () => {
         },
       ]);
 
-      dsMockUtils.createTxStub('identity', 'addClaim', {
+      dsMockUtils.createTxMock('identity', 'addClaim', {
         meta: {
           args: [
             {
-              type: 'IdentityId',
+              type: 'PolymeshPrimitivesIdentityId',
               name: 'target',
             },
             {
@@ -883,7 +909,7 @@ describe('Context class', () => {
               name: 'expiry',
             },
             {
-              type: '(IdentityId, u32)',
+              type: '(PolymeshPrimitivesIdentityId, u32)',
               name: 'identityPair',
             },
           ],
@@ -937,7 +963,7 @@ describe('Context class', () => {
         },
       ]);
 
-      dsMockUtils.createTxStub('identity', 'cddRegisterDid', {
+      dsMockUtils.createTxMock('identity', 'cddRegisterDid', {
         meta: {
           args: [
             {
@@ -958,11 +984,11 @@ describe('Context class', () => {
         },
       ]);
 
-      dsMockUtils.createTxStub('asset', 'createAsset', {
+      dsMockUtils.createTxMock('asset', 'createAsset', {
         meta: {
           args: [
             {
-              type: 'Vec<IdentityId>',
+              type: 'Vec<PolymeshPrimitivesIdentityId>',
               name: 'dids',
             },
           ],
@@ -982,7 +1008,7 @@ describe('Context class', () => {
         },
       ]);
 
-      dsMockUtils.createTxStub('asset', 'updateIdentifiers', {
+      dsMockUtils.createTxMock('asset', 'updateIdentifiers', {
         meta: {
           args: [
             {
@@ -1003,7 +1029,7 @@ describe('Context class', () => {
         },
       ]);
 
-      dsMockUtils.createTxStub('asset', 'setFundingRound', {
+      dsMockUtils.createTxMock('asset', 'setFundingRound', {
         meta: {
           args: [
             {
@@ -1023,7 +1049,7 @@ describe('Context class', () => {
         },
       ]);
 
-      dsMockUtils.createTxStub('asset', 'unfreeze', {
+      dsMockUtils.createTxMock('asset', 'unfreeze', {
         meta: {
           args: [
             {
@@ -1052,7 +1078,7 @@ describe('Context class', () => {
         },
       ]);
 
-      dsMockUtils.createTxStub('asset', 'claimClassicTicker', {
+      dsMockUtils.createTxMock('asset', 'claimClassicTicker', {
         meta: {
           args: [
             {
@@ -1077,11 +1103,11 @@ describe('Context class', () => {
 
   describe('method: issuedClaims', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertAddressValid');
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return a result set of claims', async () => {
@@ -1149,7 +1175,7 @@ describe('Context class', () => {
         ],
       };
 
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.createApolloQueryMock(
         didsWithClaims({
           dids: [targetDid],
           trustedClaimIssuers: [targetDid],
@@ -1176,7 +1202,7 @@ describe('Context class', () => {
       expect(result.count).toEqual(new BigNumber(25));
       expect(result.next).toEqual(new BigNumber(1));
 
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.createApolloQueryMock(
         didsWithClaims({
           dids: undefined,
           trustedClaimIssuers: undefined,
@@ -1262,8 +1288,8 @@ describe('Context class', () => {
 
       dsMockUtils.throwOnMiddlewareQuery('No Middleware');
 
-      const entriesStub = sinon.stub();
-      entriesStub.resolves([
+      const entriesMock = jest.fn();
+      entriesMock.mockResolvedValue([
         tuple(
           { args: [claim1stKey] },
           {
@@ -1291,7 +1317,7 @@ describe('Context class', () => {
         ),
       ]);
 
-      dsMockUtils.createQueryStub('identity', 'claims').entries = entriesStub;
+      dsMockUtils.createQueryMock('identity', 'claims').entries = entriesMock;
 
       let result = await context.issuedClaims({
         targets: [targetDid],
@@ -1310,7 +1336,7 @@ describe('Context class', () => {
       expect(data[0]).toEqual(fakeClaims[1]);
       expect(data[1]).toEqual(fakeClaims[2]);
 
-      sinon.stub(utilsConversionModule, 'signerToString').returns(targetDid);
+      jest.spyOn(utilsConversionModule, 'signerToString').mockClear().mockReturnValue(targetDid);
 
       result = await context.issuedClaims({
         targets: [targetDid],
@@ -1345,11 +1371,11 @@ describe('Context class', () => {
 
   describe('method: issuedClaimsV2', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertAddressValid');
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return a result set of claims', async () => {
@@ -1409,12 +1435,12 @@ describe('Context class', () => {
         ],
       };
 
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloV2QueryMock(
         claimsQuery(
           {
             dids: [targetDid],
             trustedClaimIssuers: [targetDid],
-            claimTypes: [ClaimTypeEnum.Accredited],
+            claimTypes: [MiddlewareV2ClaimType.Accredited],
             includeExpired: true,
           },
           new BigNumber(2),
@@ -1438,7 +1464,7 @@ describe('Context class', () => {
       expect(result.count).toEqual(new BigNumber(25));
       expect(result.next).toEqual(new BigNumber(2));
 
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloV2QueryMock(
         claimsQuery(
           {
             dids: undefined,
@@ -1525,8 +1551,8 @@ describe('Context class', () => {
         },
       ];
 
-      const entriesStub = sinon.stub();
-      entriesStub.resolves([
+      const entriesMock = jest.fn();
+      entriesMock.mockResolvedValue([
         tuple(
           { args: [claim1stKey] },
           {
@@ -1554,7 +1580,7 @@ describe('Context class', () => {
         ),
       ]);
 
-      dsMockUtils.createQueryStub('identity', 'claims').entries = entriesStub;
+      dsMockUtils.createQueryMock('identity', 'claims').entries = entriesMock;
 
       let result = await context.issuedClaimsV2({
         targets: [targetDid],
@@ -1573,7 +1599,7 @@ describe('Context class', () => {
       expect(data[0]).toEqual(fakeClaims[1]);
       expect(data[1]).toEqual(fakeClaims[2]);
 
-      sinon.stub(utilsConversionModule, 'signerToString').returns(targetDid);
+      jest.spyOn(utilsConversionModule, 'signerToString').mockClear().mockReturnValue(targetDid);
 
       result = await context.issuedClaimsV2({
         targets: [targetDid],
@@ -1608,11 +1634,11 @@ describe('Context class', () => {
 
   describe('method: queryMiddleware', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertAddressValid');
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should throw if the middleware query fails', async () => {
@@ -1651,7 +1677,7 @@ describe('Context class', () => {
         middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
-      dsMockUtils.createApolloQueryStub(fakeQuery, fakeResult);
+      dsMockUtils.createApolloQueryMock(fakeQuery, fakeResult);
 
       const res = await context.queryMiddleware(fakeQuery);
 
@@ -1661,11 +1687,11 @@ describe('Context class', () => {
 
   describe('method: queryMiddlewareV2', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertAddressValid');
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should throw if the middleware V2 query fails', async () => {
@@ -1706,7 +1732,7 @@ describe('Context class', () => {
         middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
-      dsMockUtils.createApolloV2QueryStub(fakeQuery, fakeResult);
+      dsMockUtils.createApolloV2QueryMock(fakeQuery, fakeResult);
 
       const res = await context.queryMiddlewareV2(fakeQuery);
 
@@ -1716,18 +1742,18 @@ describe('Context class', () => {
 
   describe('method: getLatestBlock', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertAddressValid');
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return the latest block', async () => {
       const blockNumber = new BigNumber(100);
 
-      const stub = dsMockUtils.createRpcStub('chain', 'subscribeFinalizedHeads');
-      stub.callsFake(async callback => {
+      const mock = dsMockUtils.createRpcMock('chain', 'subscribeFinalizedHeads');
+      mock.mockImplementation(async callback => {
         setImmediate(() =>
           // eslint-disable-next-line node/no-callback-literal
           callback({
@@ -1749,9 +1775,9 @@ describe('Context class', () => {
     });
 
     it('should throw any errors encountered while fetching', async () => {
-      const stub = dsMockUtils.createRpcStub('chain', 'subscribeFinalizedHeads');
+      const mock = dsMockUtils.createRpcMock('chain', 'subscribeFinalizedHeads');
       const err = new Error('Foo');
-      stub.callsFake(callback => {
+      mock.mockImplementation(callback => {
         setImmediate(() =>
           // eslint-disable-next-line node/no-callback-literal
           callback({})
@@ -1771,17 +1797,17 @@ describe('Context class', () => {
 
   describe('method: getNetworkVersion', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertAddressValid');
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return the network version', async () => {
       const version = '1.0.0';
 
-      dsMockUtils.createRpcStub('system', 'version', {
+      dsMockUtils.createRpcMock('system', 'version', {
         returnValue: dsMockUtils.createMockText(version),
       });
 
@@ -1799,11 +1825,11 @@ describe('Context class', () => {
 
   describe('method: isMiddlewareEnabled', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertAddressValid');
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return true if the middleware is enabled', async () => {
@@ -1833,11 +1859,11 @@ describe('Context class', () => {
 
   describe('method: isMiddlewareV2Enabled', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertAddressValid');
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return true if the middleware V2 is enabled', async () => {
@@ -1865,13 +1891,57 @@ describe('Context class', () => {
     });
   });
 
-  describe('method: isMiddlewareAvailable', () => {
+  describe('method: isAnyMiddlewareEnabled', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertAddressValid');
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
+    });
+
+    it('should return true if any middleware is enabled', async () => {
+      let context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: null,
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
+      });
+
+      let result = context.isAnyMiddlewareEnabled();
+
+      expect(result).toBe(true);
+
+      context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApiV2: null,
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+      });
+
+      result = context.isAnyMiddlewareEnabled();
+
+      expect(result).toBe(true);
+    });
+
+    it('should return false if neither middleware are not enabled', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: null,
+        middlewareApiV2: null,
+      });
+
+      const result = context.isMiddlewareV2Enabled();
+
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('method: isMiddlewareAvailable', () => {
+    beforeAll(() => {
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
+    });
+
+    afterAll(() => {
+      jest.restoreAllMocks();
     });
 
     it('should return true if the middleware is available', async () => {
@@ -1881,7 +1951,7 @@ describe('Context class', () => {
         middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
-      dsMockUtils.createApolloQueryStub(heartbeat(), true);
+      dsMockUtils.createApolloQueryMock(heartbeat(), true);
 
       const result = await context.isMiddlewareAvailable();
 
@@ -1905,11 +1975,11 @@ describe('Context class', () => {
 
   describe('method: isMiddlewareV2Available', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertAddressValid');
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return true if the middleware V2 is available', async () => {
@@ -1919,7 +1989,7 @@ describe('Context class', () => {
         middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
-      dsMockUtils.createApolloV2QueryStub(heartbeatQuery(), true);
+      dsMockUtils.createApolloV2QueryMock(heartbeatQuery(), true);
 
       const result = await context.isMiddlewareV2Available();
 
@@ -1943,11 +2013,11 @@ describe('Context class', () => {
 
   describe('method: disconnect', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertAddressValid');
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should disconnect everything and leave the instance unusable', async () => {
@@ -1963,9 +2033,9 @@ describe('Context class', () => {
       await context.disconnect();
       polymeshApi.emit('disconnected');
 
-      sinon.assert.calledOnce(polymeshApi.disconnect);
-      sinon.assert.calledOnce(middlewareApi.stop);
-      sinon.assert.calledOnce(middlewareApiV2.stop);
+      expect(polymeshApi.disconnect).toHaveBeenCalledTimes(1);
+      expect(middlewareApi.stop).toHaveBeenCalledTimes(1);
+      expect(middlewareApiV2.stop).toHaveBeenCalledTimes(1);
 
       expect(() => context.getSigningAccounts()).toThrow(
         'Client disconnected. Please create a new instance via "Polymesh.connect()"'
@@ -1980,9 +2050,9 @@ describe('Context class', () => {
       await context.disconnect();
       polymeshApi.emit('disconnected');
 
-      sinon.assert.calledTwice(polymeshApi.disconnect);
-      sinon.assert.calledOnce(middlewareApi.stop);
-      sinon.assert.calledOnce(middlewareApiV2.stop);
+      expect(polymeshApi.disconnect).toHaveBeenCalledTimes(2);
+      expect(middlewareApi.stop).toHaveBeenCalledTimes(1);
+      expect(middlewareApiV2.stop).toHaveBeenCalledTimes(1);
 
       expect(() => context.getSigningAccounts()).toThrow(
         'Client disconnected. Please create a new instance via "Polymesh.connect()"'
@@ -1992,11 +2062,11 @@ describe('Context class', () => {
 
   describe('method: getDividendDistributionsForAssets', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertAddressValid');
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return all distributions associated to the passed assets', async () => {
@@ -2098,7 +2168,7 @@ describe('Context class', () => {
         dsMockUtils.createMockCAId({ ticker: rawTickers[1], localId: localIds[2] }),
       ];
 
-      dsMockUtils.createQueryStub('corporateAction', 'corporateActions', {
+      dsMockUtils.createQueryMock('corporateAction', 'corporateActions', {
         entries: [
           [[rawTickers[0], localIds[0]], corporateActions[0]],
           [[rawTickers[1], localIds[1]], corporateActions[1]],
@@ -2110,33 +2180,33 @@ describe('Context class', () => {
         dsMockUtils.createMockBytes('details2'),
         dsMockUtils.createMockBytes('details3'),
       ];
-      const corporateActionIdentifierToCaIdStub = sinon.stub(
+      const corporateActionIdentifierToCaIdSpy = jest.spyOn(
         utilsConversionModule,
         'corporateActionIdentifierToCaId'
       );
-      corporateActionIdentifierToCaIdStub
-        .withArgs({ ticker: tickers[0], localId: new BigNumber(localIds[0]) }, context)
-        .returns(caIds[0]);
-      corporateActionIdentifierToCaIdStub
-        .withArgs({ ticker: tickers[1], localId: new BigNumber(localIds[1]) }, context)
-        .returns(caIds[1]);
-      corporateActionIdentifierToCaIdStub
-        .withArgs({ ticker: tickers[1], localId: new BigNumber(localIds[2]) }, context)
-        .returns(caIds[2]);
+      when(corporateActionIdentifierToCaIdSpy)
+        .calledWith({ ticker: tickers[0], localId: new BigNumber(localIds[0]) }, context)
+        .mockReturnValue(caIds[0]);
+      when(corporateActionIdentifierToCaIdSpy)
+        .calledWith({ ticker: tickers[1], localId: new BigNumber(localIds[1]) }, context)
+        .mockReturnValue(caIds[1]);
+      when(corporateActionIdentifierToCaIdSpy)
+        .calledWith({ ticker: tickers[1], localId: new BigNumber(localIds[2]) }, context)
+        .mockReturnValue(caIds[2]);
 
-      const detailsStub = dsMockUtils.createQueryStub('corporateAction', 'details');
-      detailsStub.withArgs(caIds[0]).resolves(details[0]);
-      detailsStub.withArgs(caIds[1]).resolves(details[1]);
-      detailsStub.withArgs(caIds[2]).resolves(details[2]);
+      const detailsMock = dsMockUtils.createQueryMock('corporateAction', 'details');
+      when(detailsMock).calledWith(caIds[0]).mockResolvedValue(details[0]);
+      when(detailsMock).calledWith(caIds[1]).mockResolvedValue(details[1]);
+      when(detailsMock).calledWith(caIds[2]).mockResolvedValue(details[2]);
 
-      dsMockUtils.createQueryStub('capitalDistribution', 'distributions', {
+      dsMockUtils.createQueryMock('capitalDistribution', 'distributions', {
         multi: distributions,
       });
 
-      const stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
+      const stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
 
       tickers.forEach((ticker, index) =>
-        stringToTickerStub.withArgs(ticker, context).returns(rawTickers[index])
+        when(stringToTickerSpy).calledWith(ticker, context).mockReturnValue(rawTickers[index])
       );
 
       const result = await context.getDividendDistributionsForAssets({
@@ -2173,11 +2243,11 @@ describe('Context class', () => {
 
   describe('method: clone', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertAddressValid');
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return a cloned instance', async () => {
@@ -2196,11 +2266,11 @@ describe('Context class', () => {
 
   describe('method: supportsSubsidy', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertAddressValid');
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return whether the specified transaction supports subsidies', async () => {
@@ -2223,7 +2293,7 @@ describe('Context class', () => {
         middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
-      dsMockUtils.getCreateTypeStub().withArgs('Bytes', 'abc').returns('abc');
+      when(dsMockUtils.getCreateTypeMock()).calledWith('Bytes', 'abc').mockReturnValue('abc');
 
       const result = context.createType('Bytes', 'abc');
       expect(result).toEqual('abc');
@@ -2236,7 +2306,9 @@ describe('Context class', () => {
         middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
       });
 
-      dsMockUtils.getCreateTypeStub().throws('Could not create Polymesh type');
+      dsMockUtils.getCreateTypeMock().mockImplementation(() => {
+        throw new Error('Could not create Polymesh type');
+      });
 
       const expectedError = new PolymeshError({
         code: ErrorCode.UnexpectedError,
@@ -2250,11 +2322,11 @@ describe('Context class', () => {
 
   describe('method: setNonce', () => {
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertAddressValid');
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should set the passed value as nonce', async () => {
@@ -2277,11 +2349,11 @@ describe('Context class', () => {
     let context: Context;
 
     beforeAll(() => {
-      sinon.stub(utilsInternalModule, 'assertAddressValid');
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     beforeEach(async () => {

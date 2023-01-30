@@ -1,8 +1,10 @@
 import { Moment } from '@polkadot/types/interfaces';
-import { PolymeshPrimitivesAuthorizationAuthorizationData } from '@polkadot/types/lookup';
+import {
+  PolymeshPrimitivesAuthorizationAuthorizationData,
+  PolymeshPrimitivesSecondaryKeySignatory,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { Signatory } from 'polymesh-types/types';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { getAuthorization, Params, prepareSetCustodian } from '~/api/procedures/setCustodian';
 import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
@@ -44,26 +46,29 @@ jest.mock(
 
 describe('setCustodian procedure', () => {
   let mockContext: Mocked<Context>;
-  let authorizationToAuthorizationDataStub: sinon.SinonStub<
-    [Authorization, Context],
-    PolymeshPrimitivesAuthorizationAuthorizationData
+  let authorizationToAuthorizationDataSpy: jest.SpyInstance<
+    PolymeshPrimitivesAuthorizationAuthorizationData,
+    [Authorization, Context]
   >;
-  let dateToMomentStub: sinon.SinonStub<[Date, Context], Moment>;
-  let signerToStringStub: sinon.SinonStub<[string | Identity | Account], string>;
-  let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
+  let dateToMomentSpy: jest.SpyInstance<Moment, [Date, Context]>;
+  let signerToStringSpy: jest.SpyInstance<string, [string | Identity | Account]>;
+  let signerValueToSignatorySpy: jest.SpyInstance<
+    PolymeshPrimitivesSecondaryKeySignatory,
+    [SignerValue, Context]
+  >;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
 
-    authorizationToAuthorizationDataStub = sinon.stub(
+    authorizationToAuthorizationDataSpy = jest.spyOn(
       utilsConversionModule,
       'authorizationToAuthorizationData'
     );
-    dateToMomentStub = sinon.stub(utilsConversionModule, 'dateToMoment');
-    signerToStringStub = sinon.stub(utilsConversionModule, 'signerToString');
-    signerValueToSignatoryStub = sinon.stub(utilsConversionModule, 'signerValueToSignatory');
+    dateToMomentSpy = jest.spyOn(utilsConversionModule, 'dateToMoment');
+    signerToStringSpy = jest.spyOn(utilsConversionModule, 'signerToString');
+    signerValueToSignatorySpy = jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
   });
 
   beforeEach(() => {
@@ -104,9 +109,9 @@ describe('setCustodian procedure', () => {
       },
     });
 
-    signerToStringStub.withArgs(signer).returns(signer.address);
-    signerToStringStub.withArgs(args.targetIdentity).returns(args.targetIdentity);
-    signerToStringStub.withArgs(target).returns(args.targetIdentity);
+    when(signerToStringSpy).calledWith(signer).mockReturnValue(signer.address);
+    when(signerToStringSpy).calledWith(args.targetIdentity).mockReturnValue(args.targetIdentity);
+    when(signerToStringSpy).calledWith(target).mockReturnValue(args.targetIdentity);
 
     const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
 
@@ -156,18 +161,18 @@ describe('setCustodian procedure', () => {
       },
     });
 
-    signerToStringStub.withArgs(signer).returns(signer.address);
-    signerToStringStub.withArgs(args.targetIdentity).returns(args.targetIdentity);
-    signerToStringStub.withArgs(target).returns('someValue');
-    signerValueToSignatoryStub
-      .withArgs({ type: SignerType.Identity, value: args.targetIdentity }, mockContext)
-      .returns(rawSignatory);
-    authorizationToAuthorizationDataStub.returns(rawAuthorizationData);
-    dateToMomentStub.withArgs(expiry, mockContext).returns(rawExpiry);
+    when(signerToStringSpy).calledWith(signer).mockReturnValue(signer.address);
+    when(signerToStringSpy).calledWith(args.targetIdentity).mockReturnValue(args.targetIdentity);
+    when(signerToStringSpy).calledWith(target).mockReturnValue('someValue');
+    when(signerValueToSignatorySpy)
+      .calledWith({ type: SignerType.Identity, value: args.targetIdentity }, mockContext)
+      .mockReturnValue(rawSignatory);
+    authorizationToAuthorizationDataSpy.mockReturnValue(rawAuthorizationData);
+    when(dateToMomentSpy).calledWith(expiry, mockContext).mockReturnValue(rawExpiry);
 
     const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('identity', 'addAuthorization');
+    const transaction = dsMockUtils.createTxMock('identity', 'addAuthorization');
 
     let result = await prepareSetCustodian.call(proc, args);
 

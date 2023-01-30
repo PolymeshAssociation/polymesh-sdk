@@ -1,8 +1,7 @@
-import { Vec } from '@polkadot/types';
-import { PolymeshPrimitivesDocument } from '@polkadot/types/lookup';
+import { u32, Vec } from '@polkadot/types';
+import { PolymeshPrimitivesDocument, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { Document, DocumentId, Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   getAuthorization,
@@ -26,16 +25,16 @@ jest.mock(
 
 describe('setAssetDocuments procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let assetDocumentToDocumentStub: sinon.SinonStub<
-    [AssetDocument, Context],
-    PolymeshPrimitivesDocument
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let assetDocumentToDocumentSpy: jest.SpyInstance<
+    PolymeshPrimitivesDocument,
+    [AssetDocument, Context]
   >;
   let ticker: string;
   let documents: AssetDocument[];
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
   let rawDocuments: PolymeshPrimitivesDocument[];
-  let documentEntries: [[Ticker, DocumentId], PolymeshPrimitivesDocument][];
+  let documentEntries: [[PolymeshPrimitivesTicker, u32], PolymeshPrimitivesDocument][];
   let args: Params;
 
   beforeAll(() => {
@@ -50,9 +49,9 @@ describe('setAssetDocuments procedure', () => {
     });
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    sinon.stub(utilsConversionModule, 'signerValueToSignatory');
-    assetDocumentToDocumentStub = sinon.stub(utilsConversionModule, 'assetDocumentToDocument');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
+    assetDocumentToDocumentSpy = jest.spyOn(utilsConversionModule, 'assetDocumentToDocument');
     ticker = 'SOME_TICKER';
     documents = [
       {
@@ -89,22 +88,24 @@ describe('setAssetDocuments procedure', () => {
     };
   });
 
-  let removeDocumentsTransaction: PolymeshTx<[Vec<DocumentId>, Ticker]>;
-  let addDocumentsTransaction: PolymeshTx<[Vec<Document>, Ticker]>;
+  let removeDocumentsTransaction: PolymeshTx<[Vec<u32>, PolymeshPrimitivesTicker]>;
+  let addDocumentsTransaction: PolymeshTx<[Vec<u32>, PolymeshPrimitivesTicker]>;
 
   beforeEach(() => {
-    dsMockUtils.createQueryStub('asset', 'assetDocuments', {
+    dsMockUtils.createQueryMock('asset', 'assetDocuments', {
       entries: [documentEntries[0]],
     });
 
-    removeDocumentsTransaction = dsMockUtils.createTxStub('asset', 'removeDocuments');
-    addDocumentsTransaction = dsMockUtils.createTxStub('asset', 'addDocuments');
+    removeDocumentsTransaction = dsMockUtils.createTxMock('asset', 'removeDocuments');
+    addDocumentsTransaction = dsMockUtils.createTxMock('asset', 'addDocuments');
 
     mockContext = dsMockUtils.getContextInstance();
 
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
     documents.forEach((doc, index) => {
-      assetDocumentToDocumentStub.withArgs(doc, mockContext).returns(rawDocuments[index]);
+      when(assetDocumentToDocumentSpy)
+        .calledWith(doc, mockContext)
+        .mockReturnValue(rawDocuments[index]);
     });
   });
 
@@ -234,7 +235,7 @@ describe('setAssetDocuments procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
 
-      dsMockUtils.createQueryStub('asset', 'assetDocuments', {
+      dsMockUtils.createQueryMock('asset', 'assetDocuments', {
         entries: documentEntries,
       });
 

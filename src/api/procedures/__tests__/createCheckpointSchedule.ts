@@ -1,7 +1,10 @@
+import {
+  PalletAssetCheckpointScheduleSpec,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { ScheduleSpec as MeshScheduleSpec, Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   createCheckpointScheduleResolver,
@@ -30,20 +33,20 @@ jest.mock(
 
 describe('createCheckpointSchedule procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let scheduleSpecToMeshScheduleSpecStub: sinon.SinonStub<
-    [ScheduleSpec, Context],
-    MeshScheduleSpec
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let scheduleSpecToMeshScheduleSpecSpy: jest.SpyInstance<
+    PalletAssetCheckpointScheduleSpec,
+    [ScheduleSpec, Context]
   >;
   let ticker: string;
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    scheduleSpecToMeshScheduleSpecStub = sinon.stub(
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    scheduleSpecToMeshScheduleSpecSpy = jest.spyOn(
       utilsConversionModule,
       'scheduleSpecToMeshScheduleSpec'
     );
@@ -53,7 +56,7 @@ describe('createCheckpointSchedule procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
   });
 
   afterEach(() => {
@@ -83,7 +86,7 @@ describe('createCheckpointSchedule procedure', () => {
   it('should return a create checkpoint schedule transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, CheckpointSchedule>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('checkpoint', 'createSchedule');
+    const transaction = dsMockUtils.createTxMock('checkpoint', 'createSchedule');
 
     const start = new Date(new Date().getTime() + 10000);
     const period = {
@@ -103,9 +106,9 @@ describe('createCheckpointSchedule procedure', () => {
       remaining: dsMockUtils.createMockU32(repetitions),
     });
 
-    scheduleSpecToMeshScheduleSpecStub
-      .withArgs({ start, period, repetitions }, mockContext)
-      .returns(rawSpec);
+    when(scheduleSpecToMeshScheduleSpecSpy)
+      .calledWith({ start, period, repetitions }, mockContext)
+      .mockReturnValue(rawSpec);
 
     const result = await prepareCreateCheckpointSchedule.call(proc, {
       ticker,
@@ -122,7 +125,7 @@ describe('createCheckpointSchedule procedure', () => {
   });
 
   describe('createCheckpointScheduleResolver', () => {
-    const filterEventRecordsStub = sinon.stub(utilsInternalModule, 'filterEventRecords');
+    const filterEventRecordsSpy = jest.spyOn(utilsInternalModule, 'filterEventRecords');
     const id = new BigNumber(1);
     const start = new Date('10/14/1987');
     const period = {
@@ -145,7 +148,7 @@ describe('createCheckpointSchedule procedure', () => {
     });
 
     beforeEach(() => {
-      filterEventRecordsStub.returns([
+      filterEventRecordsSpy.mockReturnValue([
         dsMockUtils.createMockIEvent([
           dsMockUtils.createMockIdentityId('someDid'),
           dsMockUtils.createMockTicker(ticker),
@@ -166,7 +169,7 @@ describe('createCheckpointSchedule procedure', () => {
     });
 
     afterEach(() => {
-      filterEventRecordsStub.reset();
+      filterEventRecordsSpy.mockReset();
     });
 
     it('should return the new CheckpointSchedule', () => {

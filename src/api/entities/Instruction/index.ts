@@ -1,4 +1,3 @@
-import { QueryableStorageEntry } from '@polkadot/api/types';
 import BigNumber from 'bignumber.js';
 
 import {
@@ -11,10 +10,12 @@ import {
   rescheduleInstruction,
   Venue,
 } from '~/internal';
+import { EventIdEnum as MiddlewareV2Event } from '~/middleware/enumsV2';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { instructionsQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
-import { EventIdEnum as MiddlewareV2Event, Query as QueryV2 } from '~/middleware/typesV2';
+import { Query as QueryV2 } from '~/middleware/typesV2';
+import { InstructionStatus as MeshInstructionStatus } from '~/polkadot/polymesh';
 import {
   ErrorCode,
   EventIdentifier,
@@ -22,9 +23,11 @@ import {
   NoArgsProcedureMethod,
   PaginationOptions,
   ResultSet,
+  SubCallback,
+  UnsubCallback,
 } from '~/types';
 import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
-import { Ensured, EnsuredV2, QueryReturnType } from '~/types/utils';
+import { Ensured, EnsuredV2 } from '~/types/utils';
 import {
   balanceToBigNumber,
   bigNumberToU64,
@@ -40,7 +43,7 @@ import {
   u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
-import { createProcedureMethod, optionize, requestPaginated } from '~/utils/internal';
+import { createProcedureMethod, optionize, requestMulti, requestPaginated } from '~/utils/internal';
 
 import {
   InstructionAffirmation,
@@ -176,6 +179,44 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
+   * Retrieve current status of the Instruction. This can be subscribed to know if instruction fails
+   *
+   * @note can be subscribed to
+   * @note current status as `Executed` means that the Instruction has been executed/rejected and pruned from
+   *   the chain.
+   */
+  public async onStatusChange(callback: SubCallback<InstructionStatus>): Promise<UnsubCallback> {
+    const {
+      context: {
+        polymeshApi: {
+          query: {
+            settlement: { instructionDetails },
+          },
+        },
+      },
+      id,
+      context,
+    } = this;
+
+    const assembleResult = (rawStatus: MeshInstructionStatus): InstructionStatus => {
+      const status = meshInstructionStatusToInstructionStatus(rawStatus);
+
+      if (status === InternalInstructionStatus.Pending) {
+        return InstructionStatus.Pending;
+      } else if (status === InternalInstructionStatus.Failed) {
+        return InstructionStatus.Failed;
+      } else {
+        // TODO @prashantasdeveloper remove this once the chain handles Executed/Rejected state separately
+        return InstructionStatus.Executed;
+      }
+    };
+
+    return instructionDetails(bigNumberToU64(id, context), ({ status }) => {
+      return callback(assembleResult(status));
+    });
+  }
+
+  /**
    * Determine whether this Instruction exists on chain (or existed and was pruned)
    */
   public async exists(): Promise<boolean> {
@@ -203,7 +244,6 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
           query: {
             settlement: { instructionDetails, instructionMemos },
           },
-          queryMulti,
         },
       },
       id,
@@ -215,11 +255,9 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     const [
       { status: rawStatus, createdAt, tradeDate, valueDate, settlementType: type, venueId },
       memo,
-    ] = await queryMulti<
-      [QueryReturnType<typeof instructionDetails>, QueryReturnType<typeof instructionMemos>]
-    >([
-      [instructionDetails as unknown as QueryableStorageEntry<'promise'>, rawId],
-      [instructionMemos as unknown as QueryableStorageEntry<'promise'>, rawId],
+    ] = await requestMulti<[typeof instructionDetails, typeof instructionMemos]>(context, [
+      [instructionDetails, rawId],
+      [instructionMemos, rawId],
     ]);
 
     const status = meshInstructionStatusToInstructionStatus(rawStatus);
@@ -368,6 +406,10 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       };
     }
 
+    if (this.context.isMiddlewareV2Enabled()) {
+      return this.getStatusV2();
+    }
+
     let eventIdentifier = await this.getInstructionEventFromMiddleware(
       EventIdEnum.InstructionExecuted
     );
@@ -496,10 +538,14 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
         },
       },
     } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'instructions'>>(
-      instructionsQuery({
-        eventId,
-        id: id.toString(),
-      })
+      instructionsQuery(
+        {
+          eventId,
+          id: id.toString(),
+        },
+        new BigNumber(1),
+        new BigNumber(0)
+      )
     );
 
     return optionize(middlewareV2EventDetailsToEventIdentifier)(

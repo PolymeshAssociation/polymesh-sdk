@@ -1,8 +1,11 @@
 import { Option } from '@polkadot/types';
 import { Balance, Moment } from '@polkadot/types/interfaces';
+import {
+  PolymeshPrimitivesIdentityClaimClaim,
+  PolymeshPrimitivesIdentityId,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { Claim as MeshClaim, IdentityId } from 'polymesh-types/types';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { getAuthorization, prepareModifyClaims } from '~/api/procedures/modifyClaims';
 import { Context, Identity } from '~/internal';
@@ -24,13 +27,13 @@ import * as utilsConversionModule from '~/utils/conversion';
 
 describe('modifyClaims procedure', () => {
   let mockContext: Mocked<Context>;
-  let claimToMeshClaimStub: sinon.SinonStub<[Claim, Context], MeshClaim>;
-  let dateToMomentStub: sinon.SinonStub<[Date, Context], Moment>;
-  let identityIdToStringStub: sinon.SinonStub<[IdentityId], string>;
-  let stringToIdentityIdStub: sinon.SinonStub<[string, Context], IdentityId>;
-  let addClaimTransaction: PolymeshTx<[IdentityId, Claim, Option<Moment>]>;
-  let revokeClaimTransaction: PolymeshTx<[IdentityId, Claim]>;
-  let balanceToBigNumberStub: sinon.SinonStub<[Balance], BigNumber>;
+  let claimToMeshClaimSpy: jest.SpyInstance<PolymeshPrimitivesIdentityClaimClaim, [Claim, Context]>;
+  let dateToMomentSpy: jest.SpyInstance<Moment, [Date, Context]>;
+  let identityIdToStringSpy: jest.SpyInstance<string, [PolymeshPrimitivesIdentityId]>;
+  let stringToIdentityIdSpy: jest.SpyInstance<PolymeshPrimitivesIdentityId, [string, Context]>;
+  let addClaimTransaction: PolymeshTx<[PolymeshPrimitivesIdentityId, Claim, Option<Moment>]>;
+  let revokeClaimTransaction: PolymeshTx<[PolymeshPrimitivesIdentityId, Claim]>;
+  let balanceToBigNumberSpy: jest.SpyInstance<BigNumber, [Balance]>;
 
   let someDid: string;
   let otherDid: string;
@@ -42,12 +45,12 @@ describe('modifyClaims procedure', () => {
   let expiry: Date;
   let args: ModifyClaimsParams;
 
-  let rawCddClaim: MeshClaim;
-  let rawBuyLockupClaim: MeshClaim;
-  let rawIuClaim: MeshClaim;
-  let rawDefaultCddClaim: MeshClaim;
-  let rawSomeDid: IdentityId;
-  let rawOtherDid: IdentityId;
+  let rawCddClaim: PolymeshPrimitivesIdentityClaimClaim;
+  let rawBuyLockupClaim: PolymeshPrimitivesIdentityClaimClaim;
+  let rawIuClaim: PolymeshPrimitivesIdentityClaimClaim;
+  let rawDefaultCddClaim: PolymeshPrimitivesIdentityClaimClaim;
+  let rawSomeDid: PolymeshPrimitivesIdentityId;
+  let rawOtherDid: PolymeshPrimitivesIdentityId;
   let rawExpiry: Moment;
 
   const includeExpired = true;
@@ -57,14 +60,13 @@ describe('modifyClaims procedure', () => {
     procedureMockUtils.initMocks();
     dsMockUtils.initMocks();
 
-    claimToMeshClaimStub = sinon.stub(utilsConversionModule, 'claimToMeshClaim');
-    dateToMomentStub = sinon.stub(utilsConversionModule, 'dateToMoment');
-    identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
-    stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
-    balanceToBigNumberStub = sinon.stub(utilsConversionModule, 'balanceToBigNumber');
+    claimToMeshClaimSpy = jest.spyOn(utilsConversionModule, 'claimToMeshClaim');
+    dateToMomentSpy = jest.spyOn(utilsConversionModule, 'dateToMoment');
+    identityIdToStringSpy = jest.spyOn(utilsConversionModule, 'identityIdToString');
+    stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
+    balanceToBigNumberSpy = jest.spyOn(utilsConversionModule, 'balanceToBigNumber');
 
-    sinon.stub(utilsConversionModule, 'stringToTicker');
-    sinon.stub(utilsConversionModule, 'stringToScopeId');
+    jest.spyOn(utilsConversionModule, 'stringToTicker').mockImplementation();
 
     someDid = 'someDid';
     otherDid = 'otherDid';
@@ -122,7 +124,7 @@ describe('modifyClaims procedure', () => {
     rawIuClaim = dsMockUtils.createMockClaim({
       InvestorUniqueness: [
         dsMockUtils.createMockScope(),
-        dsMockUtils.createMockScopeId(),
+        dsMockUtils.createMockIdentityId(),
         dsMockUtils.createMockCddId(),
       ],
     });
@@ -133,16 +135,20 @@ describe('modifyClaims procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    addClaimTransaction = dsMockUtils.createTxStub('identity', 'addClaim');
-    revokeClaimTransaction = dsMockUtils.createTxStub('identity', 'revokeClaim');
-    claimToMeshClaimStub.withArgs(cddClaim, mockContext).returns(rawCddClaim);
-    claimToMeshClaimStub.withArgs(buyLockupClaim, mockContext).returns(rawBuyLockupClaim);
-    claimToMeshClaimStub.withArgs(iuClaim, mockContext).returns(rawIuClaim);
-    claimToMeshClaimStub.withArgs(defaultCddClaim, mockContext).returns(rawDefaultCddClaim);
-    stringToIdentityIdStub.withArgs(someDid, mockContext).returns(rawSomeDid);
-    stringToIdentityIdStub.withArgs(otherDid, mockContext).returns(rawOtherDid);
-    dateToMomentStub.withArgs(expiry, mockContext).returns(rawExpiry);
-    identityIdToStringStub.withArgs(rawOtherDid).returns(otherDid);
+    addClaimTransaction = dsMockUtils.createTxMock('identity', 'addClaim');
+    revokeClaimTransaction = dsMockUtils.createTxMock('identity', 'revokeClaim');
+    when(claimToMeshClaimSpy).calledWith(cddClaim, mockContext).mockReturnValue(rawCddClaim);
+    when(claimToMeshClaimSpy)
+      .calledWith(buyLockupClaim, mockContext)
+      .mockReturnValue(rawBuyLockupClaim);
+    when(claimToMeshClaimSpy).calledWith(iuClaim, mockContext).mockReturnValue(rawIuClaim);
+    when(claimToMeshClaimSpy)
+      .calledWith(defaultCddClaim, mockContext)
+      .mockReturnValue(rawDefaultCddClaim);
+    when(stringToIdentityIdSpy).calledWith(someDid, mockContext).mockReturnValue(rawSomeDid);
+    when(stringToIdentityIdSpy).calledWith(otherDid, mockContext).mockReturnValue(rawOtherDid);
+    when(dateToMomentSpy).calledWith(expiry, mockContext).mockReturnValue(rawExpiry);
+    when(identityIdToStringSpy).calledWith(rawOtherDid).mockReturnValue(otherDid);
   });
 
   afterEach(() => {
@@ -232,9 +238,9 @@ describe('modifyClaims procedure', () => {
       resolver: undefined,
     });
 
-    sinon.resetHistory();
+    jest.clearAllMocks();
 
-    dsMockUtils.createApolloQueryStub(
+    dsMockUtils.createApolloQueryMock(
       didsWithClaims({
         trustedClaimIssuers: [did],
         dids: [someDid, otherDid],
@@ -330,7 +336,7 @@ describe('modifyClaims procedure', () => {
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
     const { did } = await mockContext.getSigningIdentity();
 
-    dsMockUtils.createApolloQueryStub(
+    dsMockUtils.createApolloQueryMock(
       didsWithClaims({
         trustedClaimIssuers: [did],
         dids: [someDid, otherDid],
@@ -394,7 +400,7 @@ describe('modifyClaims procedure', () => {
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
     const { did } = await mockContext.getSigningIdentity();
 
-    dsMockUtils.createApolloQueryStub(
+    dsMockUtils.createApolloQueryMock(
       didsWithClaims({
         trustedClaimIssuers: [did],
         dids: [someDid, otherDid],
@@ -422,7 +428,7 @@ describe('modifyClaims procedure', () => {
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
     const { did } = await mockContext.getSigningIdentity();
 
-    dsMockUtils.createApolloQueryStub(
+    dsMockUtils.createApolloQueryMock(
       didsWithClaims({
         trustedClaimIssuers: [did],
         dids: [someDid, otherDid],
@@ -446,8 +452,8 @@ describe('modifyClaims procedure', () => {
       }
     );
 
-    dsMockUtils.createQueryStub('asset', 'aggregateBalance');
-    balanceToBigNumberStub.returns(new BigNumber(1));
+    dsMockUtils.createQueryMock('asset', 'aggregateBalance');
+    balanceToBigNumberSpy.mockReturnValue(new BigNumber(1));
 
     return expect(
       prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Revoke })
@@ -460,7 +466,7 @@ describe('modifyClaims procedure', () => {
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
     const { did } = await mockContext.getSigningIdentity();
 
-    dsMockUtils.createApolloQueryStub(
+    dsMockUtils.createApolloQueryMock(
       didsWithClaims({
         trustedClaimIssuers: [did],
         dids: [someDid, otherDid],
@@ -484,8 +490,8 @@ describe('modifyClaims procedure', () => {
       }
     );
 
-    dsMockUtils.createQueryStub('asset', 'aggregateBalance');
-    balanceToBigNumberStub.returns(new BigNumber(0));
+    dsMockUtils.createQueryMock('asset', 'aggregateBalance');
+    balanceToBigNumberSpy.mockReturnValue(new BigNumber(0));
 
     const result = await prepareModifyClaims.call(proc, {
       ...args,

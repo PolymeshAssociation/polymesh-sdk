@@ -1,4 +1,4 @@
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Context, Entity } from '~/internal';
 import * as utilsInternalModule from '~/utils/internal';
@@ -18,31 +18,31 @@ class NonAbstract extends Entity<unknown, boolean> {
 
 describe('Entity class', () => {
   afterAll(() => {
-    sinon.restore();
+    jest.restoreAllMocks();
   });
 
-  const serializeStub = sinon.stub(utilsInternalModule, 'serialize');
+  const serializeSpy = jest.spyOn(utilsInternalModule, 'serialize');
   describe('method: generateUuid', () => {
     it("should generate the Entity's UUID", async () => {
-      serializeStub
-        .withArgs('Entity', {
+      when(serializeSpy)
+        .calledWith('Entity', {
           did: 'abc',
         })
-        .returns('uuid');
+        .mockReturnValue('uuid');
       const result = Entity.generateUuid({ did: 'abc' });
       expect(result).toBe('uuid');
     });
   });
 
   describe('method: unserialize', () => {
-    let unserializeStub: sinon.SinonStub;
+    let unserializeSpy: jest.SpyInstance;
 
     beforeAll(() => {
-      unserializeStub = sinon.stub(utilsInternalModule, 'unserialize');
+      unserializeSpy = jest.spyOn(utilsInternalModule, 'unserialize');
     });
 
     it('should throw an error if the string is not related to an Entity Unique Identifier', async () => {
-      unserializeStub.returns(undefined);
+      unserializeSpy.mockReturnValue(undefined);
       expect(() => Entity.unserialize('def')).toThrow(
         "The string doesn't correspond to the UUID of type Entity"
       );
@@ -50,15 +50,15 @@ describe('Entity class', () => {
 
     it('should return an Entity Unique Identifier object', async () => {
       const fakeReturn = { someIdentifier: 'abc' };
-      unserializeStub.returns(fakeReturn);
+      unserializeSpy.mockReturnValue(fakeReturn);
       expect(Entity.unserialize('def')).toEqual(fakeReturn);
     });
   });
 
   describe('method: isEqual', () => {
     it('should return whether the entities are the same', () => {
-      serializeStub.withArgs('NonAbstract', { foo: 'bar' }).returns('first');
-      serializeStub.withArgs('NonAbstract', { bar: 'baz' }).returns('second');
+      when(serializeSpy).calledWith('NonAbstract', { foo: 'bar' }).mockReturnValue('first');
+      when(serializeSpy).calledWith('NonAbstract', { bar: 'baz' }).mockReturnValue('second');
 
       const first = new NonAbstract({ foo: 'bar' }, {} as Context);
       const second = new NonAbstract({ bar: 'baz' }, {} as Context);

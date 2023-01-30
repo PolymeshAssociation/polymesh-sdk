@@ -1,6 +1,9 @@
+import {
+  PalletPortfolioMovePortfolioItem,
+  PolymeshPrimitivesIdentityIdPortfolioId,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { MovePortfolioItem, PortfolioId as MeshPortfolioId } from 'polymesh-types/types';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { getAuthorization, Params, prepareMoveFunds } from '~/api/procedures/moveFunds';
 import * as procedureUtilsModule from '~/api/procedures/utils';
@@ -26,31 +29,31 @@ jest.mock(
 
 describe('moveFunds procedure', () => {
   let mockContext: Mocked<Context>;
-  let portfolioIdToMeshPortfolioIdStub: sinon.SinonStub<[PortfolioId, Context], MeshPortfolioId>;
-  let portfolioMovementToMovePortfolioItemStub: sinon.SinonStub<
-    [PortfolioMovement, Context],
-    MovePortfolioItem
+  let portfolioIdToMeshPortfolioIdSpy: jest.SpyInstance<
+    PolymeshPrimitivesIdentityIdPortfolioId,
+    [PortfolioId, Context]
   >;
-  let portfolioLikeToPortfolioIdStub: sinon.SinonStub;
-  let assertPortfolioExistsStub: sinon.SinonStub;
+  let portfolioMovementToMovePortfolioItemSpy: jest.SpyInstance<
+    PalletPortfolioMovePortfolioItem,
+    [PortfolioMovement, Context]
+  >;
+  let portfolioLikeToPortfolioIdSpy: jest.SpyInstance;
+  let assertPortfolioExistsSpy: jest.SpyInstance;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    portfolioIdToMeshPortfolioIdStub = sinon.stub(
+    portfolioIdToMeshPortfolioIdSpy = jest.spyOn(
       utilsConversionModule,
       'portfolioIdToMeshPortfolioId'
     );
-    portfolioMovementToMovePortfolioItemStub = sinon.stub(
+    portfolioMovementToMovePortfolioItemSpy = jest.spyOn(
       utilsConversionModule,
       'portfolioMovementToMovePortfolioItem'
     );
-    portfolioLikeToPortfolioIdStub = sinon.stub(
-      utilsConversionModule,
-      'portfolioLikeToPortfolioId'
-    );
-    assertPortfolioExistsStub = sinon.stub(procedureUtilsModule, 'assertPortfolioExists');
+    portfolioLikeToPortfolioIdSpy = jest.spyOn(utilsConversionModule, 'portfolioLikeToPortfolioId');
+    assertPortfolioExistsSpy = jest.spyOn(procedureUtilsModule, 'assertPortfolioExists');
   });
 
   beforeEach(() => {
@@ -60,7 +63,7 @@ describe('moveFunds procedure', () => {
         isOwnedBy: true,
       },
     });
-    assertPortfolioExistsStub.returns(true);
+    assertPortfolioExistsSpy.mockReturnValue(true);
   });
 
   afterEach(() => {
@@ -86,8 +89,12 @@ describe('moveFunds procedure', () => {
     });
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    portfolioLikeToPortfolioIdStub.withArgs(fromPortfolio).returns({ did: fromDid, number: toId });
-    portfolioLikeToPortfolioIdStub.withArgs(toPortfolio).returns({ did: toDid, number: toId });
+    when(portfolioLikeToPortfolioIdSpy)
+      .calledWith(fromPortfolio)
+      .mockReturnValue({ did: fromDid, number: toId });
+    when(portfolioLikeToPortfolioIdSpy)
+      .calledWith(toPortfolio)
+      .mockReturnValue({ did: toDid, number: toId });
 
     return expect(
       prepareMoveFunds.call(proc, {
@@ -105,8 +112,8 @@ describe('moveFunds procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
     const fakePortfolioId = { did, number: id };
 
-    portfolioLikeToPortfolioIdStub.withArgs(samePortfolio).returns(fakePortfolioId);
-    portfolioLikeToPortfolioIdStub.withArgs(samePortfolio).returns(fakePortfolioId);
+    when(portfolioLikeToPortfolioIdSpy).calledWith(samePortfolio).mockReturnValue(fakePortfolioId);
+    when(portfolioLikeToPortfolioIdSpy).calledWith(samePortfolio).mockReturnValue(fakePortfolioId);
 
     return expect(
       prepareMoveFunds.call(proc, {
@@ -146,8 +153,8 @@ describe('moveFunds procedure', () => {
     const from = entityMockUtils.getNumberedPortfolioInstance({ id: fromId, did });
     const to = entityMockUtils.getNumberedPortfolioInstance({ id: toId, did });
 
-    portfolioLikeToPortfolioIdStub.withArgs(from).returns({ did, number: fromId });
-    portfolioLikeToPortfolioIdStub.withArgs(to).returns({ did, number: toId });
+    when(portfolioLikeToPortfolioIdSpy).calledWith(from).mockReturnValue({ did, number: fromId });
+    when(portfolioLikeToPortfolioIdSpy).calledWith(to).mockReturnValue({ did, number: toId });
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
@@ -198,11 +205,11 @@ describe('moveFunds procedure', () => {
     let fromPortfolioId: { did: string; number?: BigNumber } = { did, number: fromId };
     let toPortfolioId: { did: string; number?: BigNumber } = { did, number: toId };
 
-    portfolioLikeToPortfolioIdStub.withArgs(from).returns(fromPortfolioId);
-    portfolioLikeToPortfolioIdStub.withArgs(to).returns(toPortfolioId);
-    portfolioLikeToPortfolioIdStub
-      .withArgs(sinon.match({ owner: sinon.match({ did }), id: toId }))
-      .returns(toPortfolioId);
+    when(portfolioLikeToPortfolioIdSpy).calledWith(from).mockReturnValue(fromPortfolioId);
+    when(portfolioLikeToPortfolioIdSpy).calledWith(to).mockReturnValue(toPortfolioId);
+    when(portfolioLikeToPortfolioIdSpy)
+      .calledWith(expect.objectContaining({ owner: expect.objectContaining({ did }), id: toId }))
+      .mockReturnValue(toPortfolioId);
 
     let rawFromMeshPortfolioId = dsMockUtils.createMockPortfolioId({
       did: dsMockUtils.createMockIdentityId(did),
@@ -210,9 +217,9 @@ describe('moveFunds procedure', () => {
         User: dsMockUtils.createMockU64(fromId),
       }),
     });
-    portfolioIdToMeshPortfolioIdStub
-      .withArgs(fromPortfolioId, mockContext)
-      .returns(rawFromMeshPortfolioId);
+    when(portfolioIdToMeshPortfolioIdSpy)
+      .calledWith(fromPortfolioId, mockContext)
+      .mockReturnValue(rawFromMeshPortfolioId);
 
     let rawToMeshPortfolioId = dsMockUtils.createMockPortfolioId({
       did: dsMockUtils.createMockIdentityId(did),
@@ -220,21 +227,21 @@ describe('moveFunds procedure', () => {
         User: dsMockUtils.createMockU64(toId),
       }),
     });
-    portfolioIdToMeshPortfolioIdStub
-      .withArgs(toPortfolioId, mockContext)
-      .returns(rawToMeshPortfolioId);
+    when(portfolioIdToMeshPortfolioIdSpy)
+      .calledWith(toPortfolioId, mockContext)
+      .mockReturnValue(rawToMeshPortfolioId);
 
     const rawMovePortfolioItem = dsMockUtils.createMockMovePortfolioItem({
       ticker: dsMockUtils.createMockTicker(items[0].asset),
       amount: dsMockUtils.createMockBalance(items[0].amount),
     });
-    portfolioMovementToMovePortfolioItemStub
-      .withArgs(items[0], mockContext)
-      .returns(rawMovePortfolioItem);
+    when(portfolioMovementToMovePortfolioItemSpy)
+      .calledWith(items[0], mockContext)
+      .mockReturnValue(rawMovePortfolioItem);
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('portfolio', 'movePortfolioFunds');
+    const transaction = dsMockUtils.createTxMock('portfolio', 'movePortfolioFunds');
 
     let result = await prepareMoveFunds.call(proc, {
       from,
@@ -250,17 +257,19 @@ describe('moveFunds procedure', () => {
 
     toPortfolioId = { did };
 
-    portfolioLikeToPortfolioIdStub
-      .withArgs(sinon.match({ owner: sinon.match({ did }), id: undefined }))
-      .returns(toPortfolioId);
+    when(portfolioLikeToPortfolioIdSpy)
+      .calledWith(
+        expect.objectContaining({ owner: expect.objectContaining({ did }), id: undefined })
+      )
+      .mockReturnValue(toPortfolioId);
 
     rawToMeshPortfolioId = dsMockUtils.createMockPortfolioId({
       did: dsMockUtils.createMockIdentityId(did),
       kind: dsMockUtils.createMockPortfolioKind('Default'),
     });
-    portfolioIdToMeshPortfolioIdStub
-      .withArgs(toPortfolioId, mockContext)
-      .returns(rawToMeshPortfolioId);
+    when(portfolioIdToMeshPortfolioIdSpy)
+      .calledWith(toPortfolioId, mockContext)
+      .mockReturnValue(rawToMeshPortfolioId);
 
     result = await prepareMoveFunds.call(proc, {
       from,
@@ -278,16 +287,16 @@ describe('moveFunds procedure', () => {
     fromPortfolioId = { did };
     toPortfolioId = { did, number: toId };
 
-    portfolioLikeToPortfolioIdStub.withArgs(defaultFrom).returns(fromPortfolioId);
-    portfolioLikeToPortfolioIdStub.withArgs(to).returns(toPortfolioId);
+    when(portfolioLikeToPortfolioIdSpy).calledWith(defaultFrom).mockReturnValue(fromPortfolioId);
+    when(portfolioLikeToPortfolioIdSpy).calledWith(to).mockReturnValue(toPortfolioId);
 
     rawFromMeshPortfolioId = dsMockUtils.createMockPortfolioId({
       did: dsMockUtils.createMockIdentityId(did),
       kind: dsMockUtils.createMockPortfolioKind('Default'),
     });
-    portfolioIdToMeshPortfolioIdStub
-      .withArgs(fromPortfolioId, mockContext)
-      .returns(rawFromMeshPortfolioId);
+    when(portfolioIdToMeshPortfolioIdSpy)
+      .calledWith(fromPortfolioId, mockContext)
+      .mockReturnValue(rawFromMeshPortfolioId);
 
     rawToMeshPortfolioId = dsMockUtils.createMockPortfolioId({
       did: dsMockUtils.createMockIdentityId(did),
@@ -295,9 +304,9 @@ describe('moveFunds procedure', () => {
         User: dsMockUtils.createMockU64(toId),
       }),
     });
-    portfolioIdToMeshPortfolioIdStub
-      .withArgs(toPortfolioId, mockContext)
-      .returns(rawToMeshPortfolioId);
+    when(portfolioIdToMeshPortfolioIdSpy)
+      .calledWith(toPortfolioId, mockContext)
+      .mockReturnValue(rawToMeshPortfolioId);
 
     result = await prepareMoveFunds.call(proc, {
       from: defaultFrom,

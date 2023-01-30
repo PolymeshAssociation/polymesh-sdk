@@ -8,10 +8,13 @@ import { range } from 'lodash';
 
 import { Context, Identity, PolymeshError } from '~/internal';
 import { latestProcessedBlock } from '~/middleware/queries';
+import { latestBlockQuery } from '~/middleware/queriesV2';
 import { Query } from '~/middleware/types';
+import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   ErrorCode,
   GenericPolymeshTransaction,
+  MortalityProcedureOpt,
   PayingAccount,
   PayingAccountFees,
   PayingAccountType,
@@ -22,9 +25,9 @@ import {
   BaseTransactionSpec,
   isResolverFunction,
   MaybeResolverFunction,
-  TransactionSigningData,
+  TransactionConstructionData,
 } from '~/types/internal';
-import { Ensured } from '~/types/utils';
+import { Ensured, EnsuredV2 } from '~/types/utils';
 import { balanceToBigNumber, hashToString, u32ToBigNumber } from '~/utils/conversion';
 import { defusePromise, delay, filterEventRecords } from '~/utils/internal';
 
@@ -125,6 +128,13 @@ export abstract class PolymeshTransactionBase<
   /**
    * @hidden
    *
+   * Mortality of the transactions
+   */
+  protected mortality: MortalityProcedureOpt;
+
+  /**
+   * @hidden
+   *
    * object that performs the payload signing logic
    */
   protected signer: PolkadotSigner;
@@ -149,15 +159,22 @@ export abstract class PolymeshTransactionBase<
 
   /**
    * @hidden
+   * the result that was returned from this transaction after being successfully ran
+   */
+  private _result: TransformedReturnValue | undefined;
+
+  /**
+   * @hidden
    */
   constructor(
     transactionSpec: BaseTransactionSpec<ReturnValue, TransformedReturnValue> &
-      TransactionSigningData,
+      TransactionConstructionData,
     context: Context
   ) {
-    const { resolver, transformer, signingAddress, signer, paidForBy } = transactionSpec;
+    const { resolver, transformer, signingAddress, signer, paidForBy, mortality } = transactionSpec;
 
     this.signingAddress = signingAddress;
+    this.mortality = mortality;
     this.signer = signer;
     this.context = context;
     this.paidForBy = paidForBy;
@@ -199,9 +216,10 @@ export abstract class PolymeshTransactionBase<
         value = resolver;
       }
 
+      this._result = await transformer(value);
       this.updateStatus(TransactionStatus.Succeeded);
 
-      return transformer(value);
+      return this._result;
     } catch (err) {
       const error: PolymeshError = err;
 
@@ -244,79 +262,92 @@ export abstract class PolymeshTransactionBase<
    *   throwing any pertinent errors
    */
   private async internalRun(): Promise<ISubmittableResult> {
-    const { signingAddress, signer, context } = this;
+    const { signingAddress, signer, mortality, context } = this;
+
+    // era is how many blocks the transaction remains valid for, `undefined` for default
+    const era = mortality.immortal ? 0 : mortality.lifetime?.toNumber();
     const nonce = context.getNonce().toNumber();
+
     this.updateStatus(TransactionStatus.Unapproved);
 
     return new Promise((resolve, reject) => {
       const txWithArgs = this.composeTx();
       let settingBlockData = Promise.resolve();
-      const gettingUnsub = txWithArgs.signAndSend(signingAddress, { nonce, signer }, receipt => {
-        const { status } = receipt;
-        let isLastCallback = false;
-        let unsubscribing = Promise.resolve();
-        let extrinsicFailedEvent;
+      const gettingUnsub = txWithArgs.signAndSend(
+        signingAddress,
+        { nonce, signer, era },
+        receipt => {
+          const { status } = receipt;
+          let isLastCallback = false;
+          let unsubscribing = Promise.resolve();
+          let extrinsicFailedEvent;
 
-        // isCompleted === isFinalized || isInBlock || isError
-        if (receipt.isCompleted) {
-          if (receipt.isInBlock) {
-            const blockHash = status.asInBlock;
+          // isCompleted implies status is one of: isFinalized, isInBlock or isError
+          if (receipt.isCompleted) {
+            if (receipt.isInBlock) {
+              const inBlockHash = status.asInBlock;
+
+              /*
+               * this must be done to ensure that the block hash and number are set before the success event
+               *   is emitted, and at the same time. We do not resolve or reject the containing promise until this
+               *   one resolves
+               */
+              settingBlockData = defusePromise(
+                this.context.polymeshApi.rpc.chain.getBlock(inBlockHash).then(({ block }) => {
+                  this.blockHash = hashToString(inBlockHash);
+                  this.blockNumber = u32ToBigNumber(block.header.number.unwrap());
+
+                  // we know that the index has to be set by the time the transaction is included in a block
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                  this.txIndex = new BigNumber(receipt.txIndex!);
+                })
+              );
+
+              // if the extrinsic failed due to an on-chain error, we should handle it in a special way
+              [extrinsicFailedEvent] = filterEventRecords(
+                receipt,
+                'system',
+                'ExtrinsicFailed',
+                true
+              );
+
+              // extrinsic failed so we can unsubscribe
+              isLastCallback = !!extrinsicFailedEvent;
+            } else {
+              // isFinalized || isError so we know we can unsubscribe
+              isLastCallback = true;
+            }
+
+            if (isLastCallback) {
+              unsubscribing = gettingUnsub.then(unsub => {
+                unsub();
+              });
+            }
 
             /*
-             * this must be done to ensure that the block hash and number are set before the success event
-             *   is emitted, and at the same time. We do not resolve or reject the containing promise until this
-             *   one resolves
+             * Promise chain that handles all sub-promises in this pass through the signAndSend callback.
+             * Primarily for consistent error handling
              */
-            settingBlockData = defusePromise(
-              this.context.polymeshApi.rpc.chain.getBlock(blockHash).then(({ block }) => {
-                this.blockHash = hashToString(blockHash);
-                this.blockNumber = u32ToBigNumber(block.header.number.unwrap());
+            let finishing = Promise.resolve();
 
-                // we know that the index has to be set by the time the transaction is included in a block
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                this.txIndex = new BigNumber(receipt.txIndex!);
-              })
-            );
+            if (extrinsicFailedEvent) {
+              const { data } = extrinsicFailedEvent;
 
-            // if the extrinsic failed due to an on-chain error, we should handle it in a special way
-            [extrinsicFailedEvent] = filterEventRecords(receipt, 'system', 'ExtrinsicFailed', true);
+              finishing = Promise.all([settingBlockData, unsubscribing]).then(() => {
+                this.handleExtrinsicFailure(resolve, reject, data[0]);
+              });
+            } else if (receipt.isFinalized) {
+              finishing = Promise.all([settingBlockData, unsubscribing]).then(() => {
+                this.handleExtrinsicSuccess(resolve, reject, receipt);
+              });
+            } else if (receipt.isError) {
+              reject(new PolymeshError({ code: ErrorCode.TransactionAborted }));
+            }
 
-            // extrinsic failed so we can unsubscribe
-            isLastCallback = !!extrinsicFailedEvent;
-          } else {
-            // isFinalized || isError so we know we can unsubscribe
-            isLastCallback = true;
+            finishing.catch((err: Error) => reject(err));
           }
-
-          if (isLastCallback) {
-            unsubscribing = gettingUnsub.then(unsub => {
-              unsub();
-            });
-          }
-
-          /*
-           * Promise chain that handles all sub-promises in this pass through the signAndSend callback.
-           * Primarily for consistent error handling
-           */
-          let finishing = Promise.resolve();
-
-          if (extrinsicFailedEvent) {
-            const { data } = extrinsicFailedEvent;
-
-            finishing = Promise.all([settingBlockData, unsubscribing]).then(() => {
-              this.handleExtrinsicFailure(resolve, reject, data[0]);
-            });
-          } else if (receipt.isFinalized) {
-            finishing = Promise.all([settingBlockData, unsubscribing]).then(() => {
-              this.handleExtrinsicSuccess(resolve, reject, receipt);
-            });
-          } else if (receipt.isError) {
-            reject(new PolymeshError({ code: ErrorCode.TransactionAborted }));
-          }
-
-          finishing.catch((err: Error) => reject(err));
         }
-      });
+      );
 
       gettingUnsub
         .then(() => {
@@ -408,7 +439,7 @@ export abstract class PolymeshTransactionBase<
   public onProcessedByMiddleware(listener: (err?: PolymeshError) => void): UnsubCallback {
     const { context, emitter } = this;
 
-    if (!context.isMiddlewareEnabled()) {
+    if (!context.isAnyMiddlewareEnabled()) {
       throw new PolymeshError({
         code: ErrorCode.General,
         message: 'Cannot subscribe without an enabled middleware connection',
@@ -423,6 +454,34 @@ export abstract class PolymeshTransactionBase<
   }
 
   /**
+   * Get the latest processed block from the database
+   *
+   * @note uses the middleware
+   */
+  private async getLatestBlockFromMiddleware(): Promise<BigNumber> {
+    const { context } = this;
+
+    let processedBlock: number;
+    if (context.isMiddlewareV2Enabled()) {
+      ({
+        data: {
+          blocks: {
+            nodes: [{ blockId: processedBlock }],
+          },
+        },
+      } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'blocks'>>(latestBlockQuery()));
+    } else {
+      ({
+        data: {
+          latestBlock: { id: processedBlock },
+        },
+      } = await context.queryMiddleware<Ensured<Query, 'latestBlock'>>(latestProcessedBlock()));
+    }
+
+    return new BigNumber(processedBlock);
+  }
+
+  /**
    * Poll the middleware every 2 seconds to see if it has already processed the
    *   block that reflects the changes brought on by this transaction being run. If so,
    *   emit the corresponding event. After 5 retries (or if the middleware can't be reached),
@@ -434,7 +493,7 @@ export abstract class PolymeshTransactionBase<
     const { context, emitter } = this;
 
     try {
-      if (!context.isMiddlewareEnabled()) {
+      if (!context.isAnyMiddlewareEnabled()) {
         return;
       }
 
@@ -448,12 +507,7 @@ export abstract class PolymeshTransactionBase<
         }
 
         try {
-          const {
-            data: {
-              latestBlock: { id: processedBlock },
-            },
-          } = await context.queryMiddleware<Ensured<Query, 'latestBlock'>>(latestProcessedBlock());
-
+          const processedBlock = await this.getLatestBlockFromMiddleware();
           if (blockNumber.lte(processedBlock)) {
             done = true;
             emitter.emit(Event.ProcessedByMiddleware);
@@ -644,6 +698,32 @@ export abstract class PolymeshTransactionBase<
         },
       });
     }
+  }
+
+  /**
+   * returns the transaction result - this is the same value as the Promise run returns
+   * @note it is generally preferable to `await` the `Promise` returned by { @link base/PolymeshTransactionBase!PolymeshTransactionBase.run | transaction.run() } instead of reading this property
+   *
+   * @throws if the { @link base/PolymeshTransactionBase!PolymeshTransactionBase.isSuccess | transaction.isSuccess } property is false — be sure to check that before accessing!
+   */
+  get result(): TransformedReturnValue {
+    if (this.isSuccess) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      return this._result!;
+    } else {
+      throw new PolymeshError({
+        code: ErrorCode.General,
+        message:
+          'The result of the transaction was checked before it has been completed. property `result` should only be read if transaction `isSuccess` property is true',
+      });
+    }
+  }
+
+  /**
+   * returns true if transaction has completed successfully
+   */
+  get isSuccess(): boolean {
+    return this.status === TransactionStatus.Succeeded;
   }
 
   /**

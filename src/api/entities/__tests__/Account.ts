@@ -1,25 +1,35 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Account, Context, Entity } from '~/internal';
-import { heartbeat, transactions } from '~/middleware/queries';
-import { extrinsicsByArgs } from '~/middleware/queriesV2';
-import { CallIdEnum, ExtrinsicResult, ModuleIdEnum } from '~/middleware/types';
 import {
   CallIdEnum as MiddlewareV2CallId,
   ModuleIdEnum as MiddlewareV2ModuleId,
-} from '~/middleware/typesV2';
+} from '~/middleware/enumsV2';
+import { heartbeat, transactions } from '~/middleware/queries';
+import { extrinsicsByArgs } from '~/middleware/queriesV2';
+import {
+  CallIdEnum,
+  ExtrinsicResult,
+  ModuleIdEnum,
+  Order,
+  TransactionOrderFields,
+} from '~/middleware/types';
+import { ExtrinsicsOrderBy } from '~/middleware/typesV2';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId, createMockIdentityId } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
   Balance,
+  ExtrinsicData,
   ModuleName,
   Permissions,
   PermissionType,
+  ResultSet,
   SubsidyWithAllowance,
   TxTags,
+  UnsubCallback,
 } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
@@ -35,27 +45,26 @@ describe('Account class', () => {
   let address: string;
   let key: string;
   let account: Account;
-  let assertAddressValidStub: sinon.SinonStub;
-  let addressToKeyStub: sinon.SinonStub;
-  let getSecondaryAccountPermissionsStub: sinon.SinonStub;
-  let keyToAddressStub: sinon.SinonStub;
-  let txTagToExtrinsicIdentifierStub: sinon.SinonStub;
+  let assertAddressValidSpy: jest.SpyInstance;
+  let addressToKeySpy: jest.SpyInstance;
+  let getSecondaryAccountPermissionsSpy: jest.SpyInstance;
+  let keyToAddressSpy: jest.SpyInstance;
+  let txTagToExtrinsicIdentifierSpy: jest.SpyInstance;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
-    assertAddressValidStub = sinon.stub(utilsInternalModule, 'assertAddressValid');
-    addressToKeyStub = sinon.stub(utilsConversionModule, 'addressToKey');
-    getSecondaryAccountPermissionsStub = sinon.stub(
+    assertAddressValidSpy = jest
+      .spyOn(utilsInternalModule, 'assertAddressValid')
+      .mockImplementation();
+    addressToKeySpy = jest.spyOn(utilsConversionModule, 'addressToKey').mockImplementation();
+    getSecondaryAccountPermissionsSpy = jest.spyOn(
       utilsInternalModule,
       'getSecondaryAccountPermissions'
     );
-    keyToAddressStub = sinon.stub(utilsConversionModule, 'keyToAddress');
-    txTagToExtrinsicIdentifierStub = sinon.stub(
-      utilsConversionModule,
-      'txTagToExtrinsicIdentifier'
-    );
+    keyToAddressSpy = jest.spyOn(utilsConversionModule, 'keyToAddress');
+    txTagToExtrinsicIdentifierSpy = jest.spyOn(utilsConversionModule, 'txTagToExtrinsicIdentifier');
 
     address = 'someAddress';
     key = 'someKey';
@@ -75,7 +84,7 @@ describe('Account class', () => {
   afterAll(() => {
     dsMockUtils.cleanup();
     procedureMockUtils.cleanup();
-    sinon.restore();
+    jest.restoreAllMocks();
   });
 
   it('should extend Entity', () => {
@@ -83,14 +92,14 @@ describe('Account class', () => {
   });
 
   it('should throw an error if the supplied address is not encoded with the correct SS58 format', () => {
-    assertAddressValidStub.throws();
+    assertAddressValidSpy.mockImplementationOnce(() => {
+      throw new Error('err');
+    });
 
     expect(
       // cSpell: disable-next-line
       () => new Account({ address: 'ajYMsCKsEAhEvHpeA4XqsfiA9v1CdzZPrCfS6pEfeGHW9j8' }, context)
     ).toThrow();
-
-    sinon.reset();
   });
 
   describe('method: isUniqueIdentifiers', () => {
@@ -124,10 +133,11 @@ describe('Account class', () => {
     });
 
     it('should allow subscription', async () => {
-      const unsubCallback = 'unsubCallback';
-      const callback = sinon.stub();
+      const unsubCallback = 'unsubCallback' as unknown as Promise<UnsubCallback>;
+      const callback = jest.fn();
 
-      context.accountBalance.callsFake((_, cbFunc: (balance: Balance) => void) => {
+      context.accountBalance = jest.fn();
+      context.accountBalance.mockImplementation((_, cbFunc: (balance: Balance) => void) => {
         cbFunc(fakeResult);
         return unsubCallback;
       });
@@ -135,7 +145,7 @@ describe('Account class', () => {
       const result = await account.getBalance(callback);
 
       expect(result).toEqual(unsubCallback);
-      sinon.assert.calledWithExactly(callback, fakeResult);
+      expect(callback).toBeCalledWith(fakeResult);
     });
   });
 
@@ -143,16 +153,17 @@ describe('Account class', () => {
     let fakeResult: SubsidyWithAllowance;
 
     beforeEach(() => {
-      context = dsMockUtils.getContextInstance();
-      account = new Account({ address }, context);
-
       fakeResult = {
         subsidy: entityMockUtils.getSubsidyInstance({
           beneficiary: address,
         }),
         allowance: new BigNumber(1000),
       };
-      context.accountSubsidy.resolves(fakeResult);
+
+      context = dsMockUtils.getContextInstance({
+        subsidy: fakeResult,
+      });
+      account = new Account({ address }, context);
     });
 
     it('should return the Subsidy with allowance', async () => {
@@ -162,10 +173,10 @@ describe('Account class', () => {
     });
 
     it('should allow subscription', async () => {
-      const unsubCallback = 'unsubCallback';
-      const callback = sinon.stub();
+      const unsubCallback = 'unsubCallback' as unknown as Promise<UnsubCallback>;
+      const callback = jest.fn();
 
-      context.accountSubsidy.callsFake(
+      context.accountSubsidy.mockImplementation(
         async (_, cbFunc: (balance: SubsidyWithAllowance) => void) => {
           cbFunc(fakeResult);
           return unsubCallback;
@@ -175,14 +186,14 @@ describe('Account class', () => {
       const result = await account.getSubsidy(callback);
 
       expect(result).toEqual(unsubCallback);
-      sinon.assert.calledWithExactly(callback, fakeResult);
+      expect(callback).toBeCalledWith(fakeResult);
     });
   });
 
   describe('method: getIdentity', () => {
     it('should return the Identity associated to the Account', async () => {
       const did = 'someDid';
-      dsMockUtils.createQueryStub('identity', 'keyRecords', {
+      dsMockUtils.createQueryMock('identity', 'keyRecords', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockKeyRecord({
             PrimaryKey: createMockIdentityId(did),
@@ -194,7 +205,7 @@ describe('Account class', () => {
       expect(result?.did).toBe(did);
 
       const secondaryDid = 'secondaryDid';
-      dsMockUtils.createQueryStub('identity', 'keyRecords', {
+      dsMockUtils.createQueryMock('identity', 'keyRecords', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockKeyRecord({
             SecondaryKey: [
@@ -208,7 +219,7 @@ describe('Account class', () => {
       expect(result?.did).toBe(secondaryDid);
 
       const multiDid = 'multiDid';
-      dsMockUtils.createQueryStub('identity', 'keyRecords', {
+      dsMockUtils.createQueryMock('identity', 'keyRecords', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockKeyRecord({
             MultiSigSignerKey: createMockAccountId('someAddress'),
@@ -216,7 +227,7 @@ describe('Account class', () => {
         ),
       });
 
-      dsMockUtils.createQueryStub('multiSig', 'multiSigToIdentity', {
+      dsMockUtils.createQueryMock('multiSig', 'multiSigToIdentity', {
         returnValue: multiDid,
       });
 
@@ -225,7 +236,7 @@ describe('Account class', () => {
     });
 
     it('should return null if there is no Identity associated to the Account', async () => {
-      dsMockUtils.createQueryStub('identity', 'keyRecords', {
+      dsMockUtils.createQueryMock('identity', 'keyRecords', {
         returnValue: dsMockUtils.createMockOption(null),
       });
 
@@ -245,9 +256,9 @@ describe('Account class', () => {
       const blockHash1 = 'someHash';
       const blockHash2 = 'otherHash';
 
-      addressToKeyStub.returns(key);
+      addressToKeySpy.mockReturnValue(key);
 
-      txTagToExtrinsicIdentifierStub.withArgs(tag).returns({
+      when(txTagToExtrinsicIdentifierSpy).calledWith(tag).mockReturnValue({
         moduleId,
         callId,
       });
@@ -292,14 +303,16 @@ describe('Account class', () => {
       };
       /* eslint-enable @typescript-eslint/naming-convention */
 
-      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
-      dsMockUtils.createApolloQueryStub(heartbeat(), true);
+      dsMockUtils.configureMocks({
+        contextOptions: { withSigningManager: true, middlewareV2Enabled: false },
+      });
+      dsMockUtils.createApolloQueryMock(heartbeat(), true);
 
-      dsMockUtils.createQueryStub('system', 'blockHash', {
+      dsMockUtils.createQueryMock('system', 'blockHash', {
         multi: [dsMockUtils.createMockHash(blockHash1), dsMockUtils.createMockHash(blockHash2)],
       });
       /* eslint-disable @typescript-eslint/naming-convention */
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.createApolloQueryMock(
         transactions({
           block_id: blockNumber1.toNumber(),
           address: key,
@@ -336,7 +349,7 @@ describe('Account class', () => {
       expect(result.count).toEqual(new BigNumber(20));
       expect(result.next).toEqual(new BigNumber(3));
 
-      dsMockUtils.createRpcStub('chain', 'getBlock', {
+      dsMockUtils.createRpcMock('chain', 'getBlock', {
         returnValue: dsMockUtils.createMockSignedBlock({
           block: {
             header: {
@@ -369,7 +382,7 @@ describe('Account class', () => {
       expect(result.next).toEqual(new BigNumber(3));
 
       /* eslint-disable @typescript-eslint/naming-convention */
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.createApolloQueryMock(
         transactions({
           block_id: undefined,
           address: key,
@@ -394,6 +407,29 @@ describe('Account class', () => {
       expect(result.count).toEqual(new BigNumber(20));
       expect(result.next).toBeNull();
     });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      const fakeResult = 'fakeResult' as unknown as ResultSet<ExtrinsicData>;
+      const getTransactionHistoryV2Spy = jest.spyOn(account, 'getTransactionHistoryV2');
+      getTransactionHistoryV2Spy.mockResolvedValue(fakeResult);
+
+      let result = await account.getTransactionHistory();
+      expect(result).toEqual(fakeResult);
+      expect(getTransactionHistoryV2Spy).toHaveBeenCalledWith({
+        orderBy: ExtrinsicsOrderBy.CreatedAtAsc,
+      });
+
+      result = await account.getTransactionHistory({
+        orderBy: {
+          order: Order.Asc,
+          field: TransactionOrderFields.ModuleId,
+        },
+      });
+      expect(getTransactionHistoryV2Spy).toHaveBeenCalledWith({
+        orderBy: ExtrinsicsOrderBy.ModuleIdAsc,
+      });
+      expect(result).toEqual(fakeResult);
+    });
   });
 
   describe('method: getTransactionHistoryV2', () => {
@@ -407,10 +443,10 @@ describe('Account class', () => {
       const blockHash2 = 'otherHash';
       const addressKey = 'd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d';
 
-      addressToKeyStub.returns(addressKey);
-      keyToAddressStub.returns(address);
+      addressToKeySpy.mockReturnValue(addressKey);
+      keyToAddressSpy.mockReturnValue(address);
 
-      txTagToExtrinsicIdentifierStub.withArgs(tag).returns({
+      when(txTagToExtrinsicIdentifierSpy).calledWith(tag).mockReturnValue({
         moduleId,
         callId,
       });
@@ -453,7 +489,7 @@ describe('Account class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloV2QueryMock(
         extrinsicsByArgs(
           {
             blockId: blockNumber1.toString(),
@@ -470,7 +506,7 @@ describe('Account class', () => {
         }
       );
 
-      dsMockUtils.createRpcStub('chain', 'getBlock', {
+      dsMockUtils.createRpcMock('chain', 'getBlock', {
         returnValue: dsMockUtils.createMockSignedBlock({
           block: {
             header: {
@@ -504,7 +540,7 @@ describe('Account class', () => {
       expect(result.count).toEqual(new BigNumber(20));
       expect(result.next).toEqual(new BigNumber(3));
 
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloV2QueryMock(
         extrinsicsByArgs(
           {
             blockId: blockNumber1.toString(),
@@ -540,7 +576,7 @@ describe('Account class', () => {
       expect(result.count).toEqual(new BigNumber(20));
       expect(result.next).toEqual(new BigNumber(3));
 
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloV2QueryMock(
         extrinsicsByArgs({
           blockId: undefined,
           address: addressKey,
@@ -561,7 +597,7 @@ describe('Account class', () => {
       expect(result.count).toEqual(new BigNumber(20));
       expect(result.next).toBeNull();
 
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloV2QueryMock(
         extrinsicsByArgs({
           blockId: undefined,
           address: addressKey,
@@ -582,9 +618,9 @@ describe('Account class', () => {
 
   describe('method: isFrozen', () => {
     it('should return if the Account is frozen or not', async () => {
-      const didRecordsStub = dsMockUtils.createQueryStub('identity', 'didRecords');
+      const didRecordsMock = dsMockUtils.createQueryMock('identity', 'didRecords');
 
-      const keyRecordsStub = dsMockUtils.createQueryStub('identity', 'keyRecords').returns(
+      const keyRecordsMock = dsMockUtils.createQueryMock('identity', 'keyRecords').mockReturnValue(
         dsMockUtils.createMockOption(
           dsMockUtils.createMockKeyRecord({
             SecondaryKey: [
@@ -595,7 +631,7 @@ describe('Account class', () => {
         )
       );
 
-      didRecordsStub.returns(
+      didRecordsMock.mockReturnValue(
         dsMockUtils.createMockOption(
           dsMockUtils.createMockIdentityDidRecord({
             primaryKey: dsMockUtils.createMockOption(dsMockUtils.createMockAccountId(address)),
@@ -603,7 +639,7 @@ describe('Account class', () => {
         )
       );
 
-      const isDidFrozenStub = dsMockUtils.createQueryStub('identity', 'isDidFrozen', {
+      const isDidFrozenMock = dsMockUtils.createQueryMock('identity', 'isDidFrozen', {
         returnValue: dsMockUtils.createMockBool(false),
       });
 
@@ -616,12 +652,12 @@ describe('Account class', () => {
       result = await account.isFrozen();
       expect(result).toBe(false);
 
-      isDidFrozenStub.resolves(dsMockUtils.createMockBool(true));
+      isDidFrozenMock.mockResolvedValue(dsMockUtils.createMockBool(true));
 
       result = await account.isFrozen();
       expect(result).toBe(true);
 
-      keyRecordsStub.resolves(dsMockUtils.createMockOption());
+      keyRecordsMock.mockResolvedValue(dsMockUtils.createMockOption());
 
       result = await account.isFrozen();
       expect(result).toBe(false);
@@ -656,7 +692,7 @@ describe('Account class', () => {
     });
 
     it('should return full permissions if the Account is the primary Account', async () => {
-      getSecondaryAccountPermissionsStub.returns([]);
+      getSecondaryAccountPermissionsSpy.mockReturnValue([]);
       const identity = entityMockUtils.getIdentityInstance({
         getPrimaryAccount: {
           account: entityMockUtils.getAccountInstance({ address }),
@@ -690,7 +726,7 @@ describe('Account class', () => {
         portfolios: null,
       };
 
-      getSecondaryAccountPermissionsStub.returns([
+      getSecondaryAccountPermissionsSpy.mockReturnValue([
         {
           account: entityMockUtils.getAccountInstance({ address: 'otherAddress' }),
           permissions,
@@ -911,26 +947,13 @@ describe('Account class', () => {
     });
   });
 
-  describe('method: hasPermissions', () => {
-    it('should return whether the Account has the passed permissions', async () => {
-      const checkPermissionsSpy = jest
-        .spyOn(account, 'checkPermissions')
-        .mockResolvedValue({ result: true });
-
-      const result = await account.hasPermissions({ assets: [], portfolios: [], transactions: [] });
-
-      expect(result).toEqual(true);
-      checkPermissionsSpy.mockRestore();
-    });
-  });
-
   describe('method: getCurrentNonce', () => {
     it('should return the current nonce of the Account', async () => {
       const nonce = new BigNumber(123);
-      sinon.stub(utilsConversionModule, 'stringToAccountId');
+      jest.spyOn(utilsConversionModule, 'stringToAccountId').mockImplementation();
       dsMockUtils
-        .createRpcStub('system', 'accountNextIndex')
-        .resolves(dsMockUtils.createMockU32(nonce));
+        .createRpcMock('system', 'accountNextIndex')
+        .mockResolvedValue(dsMockUtils.createMockU32(nonce));
 
       const result = await account.getCurrentNonce();
       expect(result).toEqual(nonce);
@@ -939,7 +962,7 @@ describe('Account class', () => {
 
   describe('method: getMultiSig', () => {
     it('should return null if the Account is not a MultiSig signer', async () => {
-      dsMockUtils.createQueryStub('identity', 'keyRecords', {
+      dsMockUtils.createQueryMock('identity', 'keyRecords', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockKeyRecord({
             PrimaryKey: dsMockUtils.createMockAccountId(),
@@ -952,7 +975,7 @@ describe('Account class', () => {
 
       expect(result).toBeNull();
 
-      dsMockUtils.createQueryStub('identity', 'keyRecords', {
+      dsMockUtils.createQueryMock('identity', 'keyRecords', {
         returnValue: dsMockUtils.createMockOption(),
       });
 
@@ -961,7 +984,7 @@ describe('Account class', () => {
     });
 
     it('should return the MultiSig the Account is a signer for', async () => {
-      dsMockUtils.createQueryStub('identity', 'keyRecords', {
+      dsMockUtils.createQueryMock('identity', 'keyRecords', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockKeyRecord({
             MultiSigSignerKey: dsMockUtils.createMockAccountId('multiAddress'),

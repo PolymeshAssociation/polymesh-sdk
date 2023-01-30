@@ -1,8 +1,9 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Claims } from '~/api/client/Claims';
 import { Context, PolymeshTransaction } from '~/internal';
+import { ClaimTypeEnum as MiddlewareV2ClaimType } from '~/middleware/enumsV2';
 import { didsWithClaims, issuerDidsWithClaimsByTarget } from '~/middleware/queries';
 import { claimsGroupingQuery, claimsQuery } from '~/middleware/queriesV2';
 import { ClaimScopeTypeEnum, ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
@@ -77,6 +78,7 @@ describe('Claims Class', () => {
       dsMockUtils.configureMocks({
         contextOptions: {
           getIdentityClaimsFromMiddleware,
+          middlewareV2Enabled: false,
         },
       });
 
@@ -85,6 +87,14 @@ describe('Claims Class', () => {
 
       result = await claims.getIssuedClaims({ target });
       expect(result).toEqual(getIdentityClaimsFromMiddleware);
+    });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      const fakeResult = 'fakeResult' as unknown as ResultSet<ClaimData>;
+      jest.spyOn(claims, 'getIssuedClaimsV2').mockResolvedValue(fakeResult);
+
+      const result = await claims.getIssuedClaims();
+      expect(result).toEqual(fakeResult);
     });
   });
 
@@ -184,9 +194,11 @@ describe('Claims Class', () => {
       };
       /* eslint-enable @typescript-eslint/naming-convention */
 
-      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
+      dsMockUtils.configureMocks({
+        contextOptions: { withSigningManager: true, middlewareV2Enabled: false },
+      });
 
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.createApolloQueryMock(
         didsWithClaims({
           dids: [targetDid],
           scope: undefined,
@@ -214,7 +226,7 @@ describe('Claims Class', () => {
       expect(result.count).toEqual(new BigNumber(25));
       expect(result.next).toEqual(new BigNumber(1));
 
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.createApolloQueryMock(
         didsWithClaims({
           dids: undefined,
           scope: undefined,
@@ -308,9 +320,11 @@ describe('Claims Class', () => {
         ],
       };
 
-      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
+      dsMockUtils.configureMocks({
+        contextOptions: { withSigningManager: true, middlewareV2Enabled: false },
+      });
 
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.createApolloQueryMock(
         didsWithClaims({
           dids: [targetDid],
           scope: { type: ClaimScopeTypeEnum[scope.type], value: padString(scope.value, 12) },
@@ -338,6 +352,14 @@ describe('Claims Class', () => {
       expect(JSON.stringify(result.data)).toBe(JSON.stringify(fakeClaims));
       expect(result.count).toEqual(new BigNumber(25));
       expect(result.next).toEqual(new BigNumber(1));
+    });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      const fakeResult = 'fakeResult' as unknown as ResultSet<IdentityWithClaims>;
+      jest.spyOn(claims, 'getIdentitiesWithClaimsV2').mockResolvedValue(fakeResult);
+
+      const result = await claims.getIdentitiesWithClaims();
+      expect(result).toEqual(fakeResult);
     });
   });
 
@@ -400,12 +422,12 @@ describe('Claims Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloV2QueryMock(
         claimsQuery({
           dids: [targetDid],
           scope: undefined,
           trustedClaimIssuers: [issuerDid],
-          claimTypes: [ClaimTypeEnum.CustomerDueDiligence],
+          claimTypes: [MiddlewareV2ClaimType.CustomerDueDiligence],
           includeExpired: false,
         }),
         {
@@ -426,7 +448,7 @@ describe('Claims Class', () => {
       expect(result.count).toEqual(new BigNumber(1));
       expect(result.next).toEqual(null);
 
-      dsMockUtils.createApolloMultipleV2QueriesStub([
+      dsMockUtils.createApolloMultipleV2QueriesMock([
         {
           query: claimsGroupingQuery({
             scope: undefined,
@@ -522,12 +544,12 @@ describe('Claims Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloV2QueryMock(
         claimsQuery({
           dids: [targetDid],
           scope: { type: 'Ticker', value: 'someValue' },
           trustedClaimIssuers: [issuerDid],
-          claimTypes: [ClaimTypeEnum.Accredited],
+          claimTypes: [MiddlewareV2ClaimType.Accredited],
           includeExpired: false,
         }),
         {
@@ -553,7 +575,7 @@ describe('Claims Class', () => {
 
   describe('method: addClaims', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
@@ -571,13 +593,13 @@ describe('Claims Class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           { args: { ...args, operation: ClaimOperation.Add }, transformer: undefined },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await claims.addClaims(args);
 
@@ -587,7 +609,7 @@ describe('Claims Class', () => {
 
   describe('method: addInvestorUniquenessClaim', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
@@ -607,10 +629,9 @@ describe('Claims Class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await claims.addInvestorUniquenessClaim(args);
 
@@ -620,7 +641,7 @@ describe('Claims Class', () => {
 
   describe('method: editClaims', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
@@ -638,13 +659,13 @@ describe('Claims Class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           { args: { ...args, operation: ClaimOperation.Edit }, transformer: undefined },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await claims.editClaims(args);
 
@@ -654,7 +675,7 @@ describe('Claims Class', () => {
 
   describe('method: revokeClaims', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
@@ -672,13 +693,13 @@ describe('Claims Class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           { args: { ...args, operation: ClaimOperation.Revoke }, transformer: undefined },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await claims.revokeClaims(args);
 
@@ -774,7 +795,7 @@ describe('Claims Class', () => {
 
   describe('method: getTargetingClaims', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return a list of claims issued with an Identity as target', async () => {
@@ -825,14 +846,15 @@ describe('Claims Class', () => {
         ],
       };
 
-      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
+      dsMockUtils.configureMocks({
+        contextOptions: { withSigningManager: true, middlewareV2Enabled: false },
+      });
 
-      sinon
-        .stub(utilsConversionModule, 'toIdentityWithClaimsArray')
-        .withArgs(issuerDidsWithClaimsByTargetQueryResponse.items, context)
-        .returns(fakeClaims);
+      when(jest.spyOn(utilsConversionModule, 'toIdentityWithClaimsArray'))
+        .calledWith(issuerDidsWithClaimsByTargetQueryResponse.items, context)
+        .mockReturnValue(fakeClaims);
 
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.createApolloQueryMock(
         issuerDidsWithClaimsByTarget({
           target: did,
           scope: undefined,
@@ -858,7 +880,7 @@ describe('Claims Class', () => {
       expect(result.count).toEqual(new BigNumber(25));
       expect(result.next).toEqual(new BigNumber(1));
 
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.createApolloQueryMock(
         issuerDidsWithClaimsByTarget({
           target: did,
           scope: undefined,
@@ -890,11 +912,14 @@ describe('Claims Class', () => {
       };
 
       const issuer1 = entityMockUtils.getIdentityInstance({ did: issuer });
-      issuer1.isEqual.onFirstCall().returns(true).onSecondCall().returns(false);
+      issuer1.isEqual = jest.fn();
+      when(issuer1.isEqual).calledWith(issuer1).mockReturnValue(true);
       const issuer2 = entityMockUtils.getIdentityInstance({ did: issuer });
-      issuer2.isEqual.onFirstCall().returns(true).onSecondCall().returns(false);
+      issuer2.isEqual = jest.fn();
+      when(issuer2.isEqual).calledWith(issuer1).mockReturnValue(true);
       const issuer3 = entityMockUtils.getIdentityInstance({ did: otherIssuer });
-      issuer3.isEqual.onFirstCall().returns(false).onSecondCall().returns(true);
+      issuer3.isEqual = jest.fn();
+      when(issuer3.isEqual).calledWith(issuer3).mockReturnValue(true);
 
       const identityClaims: ClaimData[] = [
         {
@@ -937,6 +962,7 @@ describe('Claims Class', () => {
         contextOptions: {
           middlewareAvailable: false,
           getIdentityClaimsFromChain: identityClaims,
+          middlewareV2Enabled: false,
         },
       });
 
@@ -960,11 +986,105 @@ describe('Claims Class', () => {
 
       expect(result.data.length).toEqual(2);
     });
+
+    it('should return a list of claims issued with an Identity as target and a given Scope', async () => {
+      const did = 'someDid';
+      const issuerDid = 'someIssuerDid';
+      const scope: Scope = { type: ScopeType.Ticker, value: 'someValue' };
+      const date = 1589816265000;
+      const claim = {
+        target: entityMockUtils.getIdentityInstance({ did }),
+        issuer: entityMockUtils.getIdentityInstance({ did: issuerDid }),
+        issuedAt: new Date(date),
+      };
+      const fakeClaims: IdentityWithClaims[] = [
+        {
+          identity: entityMockUtils.getIdentityInstance({ did }),
+          claims: [
+            {
+              ...claim,
+              expiry: new Date(date),
+              claim: {
+                type: ClaimType.Accredited,
+                scope,
+              },
+            },
+          ],
+        },
+      ];
+
+      /* eslint-disable @typescript-eslint/naming-convention */
+      const commonClaimData = {
+        targetDID: did,
+        issuer: issuerDid,
+        issuance_date: date,
+        last_update_date: date,
+      };
+      /* eslint-enable @typescript-eslint/naming-convention */
+      const issuerDidsWithClaimsByTargetQueryResponse: IdentityWithClaimsResult = {
+        totalCount: 25,
+        items: [
+          {
+            did,
+            claims: [
+              {
+                ...commonClaimData,
+                expiry: date,
+                type: ClaimTypeEnum.Accredited,
+                scope: { type: ClaimScopeTypeEnum[scope.type], value: padString(scope.value, 12) },
+              },
+            ],
+          },
+        ],
+      };
+
+      dsMockUtils.configureMocks({
+        contextOptions: { withSigningManager: true, middlewareV2Enabled: false },
+      });
+
+      when(jest.spyOn(utilsConversionModule, 'toIdentityWithClaimsArray'))
+        .calledWith(issuerDidsWithClaimsByTargetQueryResponse.items, context)
+        .mockReturnValue(fakeClaims);
+
+      dsMockUtils.createApolloQueryMock(
+        issuerDidsWithClaimsByTarget({
+          target: did,
+          scope: { type: ClaimScopeTypeEnum[scope.type], value: padString(scope.value, 12) },
+          trustedClaimIssuers: [did],
+          includeExpired: false,
+          count: 1,
+          skip: undefined,
+        }),
+        {
+          issuerDidsWithClaimsByTarget: issuerDidsWithClaimsByTargetQueryResponse,
+        }
+      );
+
+      const result = await claims.getTargetingClaims({
+        target: did,
+        trustedClaimIssuers: [did],
+        scope,
+        includeExpired: false,
+        size: new BigNumber(1),
+      });
+
+      expect(result.data).toEqual(fakeClaims);
+      expect(result.count).toEqual(new BigNumber(25));
+      expect(result.next).toEqual(new BigNumber(1));
+    });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      const fakeResult = 'fakeResult' as unknown as ResultSet<IdentityWithClaims>;
+      jest.spyOn(claims, 'getTargetingClaimsV2').mockResolvedValue(fakeResult);
+
+      const result = await claims.getTargetingClaims();
+      expect(result).toEqual(fakeResult);
+    });
   });
 
   describe('method: getTargetingClaimsV2', () => {
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return a list of claims issued with an Identity as target', async () => {
@@ -1007,12 +1127,11 @@ describe('Claims Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      sinon
-        .stub(utilsConversionModule, 'toIdentityWithClaimsArrayV2')
-        .withArgs(claimsQueryResponse.nodes as unknown as Claim[], context, 'issuerId')
-        .returns(fakeClaims);
+      when(jest.spyOn(utilsConversionModule, 'toIdentityWithClaimsArrayV2'))
+        .calledWith(claimsQueryResponse.nodes as unknown as Claim[], context, 'issuerId')
+        .mockReturnValue(fakeClaims);
 
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloV2QueryMock(
         claimsQuery({
           dids: [did],
           scope,
@@ -1037,7 +1156,7 @@ describe('Claims Class', () => {
       expect(result.count).toEqual(new BigNumber(1));
       expect(result.next).toEqual(null);
 
-      dsMockUtils.createApolloMultipleV2QueriesStub([
+      dsMockUtils.createApolloMultipleV2QueriesMock([
         {
           query: claimsGroupingQuery(
             {
@@ -1089,11 +1208,14 @@ describe('Claims Class', () => {
       };
 
       const issuer1 = entityMockUtils.getIdentityInstance({ did: issuer });
-      issuer1.isEqual.onFirstCall().returns(true).onSecondCall().returns(false);
+      issuer1.isEqual = jest.fn();
+      when(issuer1.isEqual).calledWith(issuer1).mockReturnValue(true);
       const issuer2 = entityMockUtils.getIdentityInstance({ did: issuer });
-      issuer2.isEqual.onFirstCall().returns(true).onSecondCall().returns(false);
+      issuer2.isEqual = jest.fn();
+      when(issuer2.isEqual).calledWith(issuer1).mockReturnValue(true);
       const issuer3 = entityMockUtils.getIdentityInstance({ did: otherIssuer });
-      issuer3.isEqual.onFirstCall().returns(false).onSecondCall().returns(true);
+      issuer3.isEqual = jest.fn();
+      when(issuer3.isEqual).calledWith(issuer3).mockReturnValue(true);
 
       const identityClaims: ClaimData[] = [
         {
@@ -1197,90 +1319,5 @@ describe('Claims Class', () => {
       result = await claims.getInvestorUniquenessClaims();
       expect(result).toEqual(identityClaims);
     });
-  });
-
-  it('should return a list of claims issued with an Identity as target and a given Scope', async () => {
-    const did = 'someDid';
-    const issuerDid = 'someIssuerDid';
-    const scope: Scope = { type: ScopeType.Ticker, value: 'someValue' };
-    const date = 1589816265000;
-    const claim = {
-      target: entityMockUtils.getIdentityInstance({ did }),
-      issuer: entityMockUtils.getIdentityInstance({ did: issuerDid }),
-      issuedAt: new Date(date),
-    };
-    const fakeClaims: IdentityWithClaims[] = [
-      {
-        identity: entityMockUtils.getIdentityInstance({ did }),
-        claims: [
-          {
-            ...claim,
-            expiry: new Date(date),
-            claim: {
-              type: ClaimType.Accredited,
-              scope,
-            },
-          },
-        ],
-      },
-    ];
-
-    /* eslint-disable @typescript-eslint/naming-convention */
-    const commonClaimData = {
-      targetDID: did,
-      issuer: issuerDid,
-      issuance_date: date,
-      last_update_date: date,
-    };
-    /* eslint-enable @typescript-eslint/naming-convention */
-    const issuerDidsWithClaimsByTargetQueryResponse: IdentityWithClaimsResult = {
-      totalCount: 25,
-      items: [
-        {
-          did,
-          claims: [
-            {
-              ...commonClaimData,
-              expiry: date,
-              type: ClaimTypeEnum.Accredited,
-              scope: { type: ClaimScopeTypeEnum[scope.type], value: padString(scope.value, 12) },
-            },
-          ],
-        },
-      ],
-    };
-
-    dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
-
-    sinon
-      .stub(utilsConversionModule, 'toIdentityWithClaimsArray')
-      .withArgs(issuerDidsWithClaimsByTargetQueryResponse.items, context)
-      .returns(fakeClaims);
-
-    dsMockUtils.createApolloQueryStub(
-      issuerDidsWithClaimsByTarget({
-        target: did,
-        scope: { type: ClaimScopeTypeEnum[scope.type], value: padString(scope.value, 12) },
-        trustedClaimIssuers: [did],
-        includeExpired: false,
-        count: 1,
-        skip: undefined,
-      }),
-      {
-        issuerDidsWithClaimsByTarget: issuerDidsWithClaimsByTargetQueryResponse,
-      }
-    );
-
-    const result = await claims.getTargetingClaims({
-      target: did,
-      trustedClaimIssuers: [did],
-      scope,
-      includeExpired: false,
-      size: new BigNumber(1),
-    });
-
-    expect(result.data).toEqual(fakeClaims);
-    expect(result.count).toEqual(new BigNumber(25));
-    expect(result.next).toEqual(new BigNumber(1));
   });
 });

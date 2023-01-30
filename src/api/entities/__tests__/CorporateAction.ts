@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
 
 import { Context, CorporateAction, CorporateActionBase, PolymeshTransaction } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -95,10 +96,9 @@ describe('CorporateAction class', () => {
         checkpoint: new Date(),
       };
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { corporateAction, ...args }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { corporateAction, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await corporateAction.modifyCheckpoint(args);
 
