@@ -92,6 +92,7 @@ import type {
   PolymeshCommonUtilitiesGroupInactiveMember,
   PolymeshCommonUtilitiesMaybeBlock,
   PolymeshCommonUtilitiesProtocolFeeProtocolOp,
+  PolymeshContractsChainExtensionExtrinsicId,
   PolymeshPrimitivesAgentAgentGroup,
   PolymeshPrimitivesAssetIdentifier,
   PolymeshPrimitivesAssetMetadataAssetMetadataKey,
@@ -1825,7 +1826,16 @@ declare module '@polkadot/api-base/types/storage' {
         [H256]
       >;
     };
-    polymeshContracts: {};
+    polymeshContracts: {
+      /**
+       * Whitelist of extrinsics allowed to be called from contracts.
+       **/
+      callRuntimeWhitelist: AugmentedQuery<
+        ApiType,
+        (arg: PolymeshContractsChainExtensionExtrinsicId) => Observable<bool>,
+        [PolymeshContractsChainExtensionExtrinsicId]
+      >;
+    };
     portfolio: {
       /**
        * Inverse map of `Portfolios` used to ensure bijectivitiy,
@@ -1836,7 +1846,7 @@ declare module '@polkadot/api-base/types/storage' {
         (
           arg1: PolymeshPrimitivesIdentityId | string | Uint8Array,
           arg2: Bytes | string | Uint8Array
-        ) => Observable<u64>,
+        ) => Observable<Option<u64>>,
         [PolymeshPrimitivesIdentityId, Bytes]
       >;
       /**
@@ -2495,6 +2505,10 @@ declare module '@polkadot/api-base/types/storage' {
         ) => Observable<Option<PalletStakingPermissionedIdentityPrefs>>,
         [PolymeshPrimitivesIdentityId]
       >;
+      /**
+       * Polymesh Storage version.
+       **/
+      polymeshStorageVersion: AugmentedQuery<ApiType, () => Observable<u8>, []>;
       /**
        * The next validator set. At the end of an era, if this is available (potentially from the
        * result of an offchain worker), it is immediately used. Otherwise, the on-chain election

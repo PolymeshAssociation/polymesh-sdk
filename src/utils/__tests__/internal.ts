@@ -42,6 +42,7 @@ import { tuple } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 
+import { SUPPORTED_NODE_VERSION_RANGE, SUPPORTED_SPEC_VERSION_RANGE } from '../constants';
 import {
   asAccount,
   assertAddressValid,
@@ -971,10 +972,10 @@ describe('getPortfolioIdsByName', () => {
     identityId = dsMockUtils.createMockIdentityId('someDid');
     dsMockUtils.createQueryMock('portfolio', 'nameToNumber', {
       multi: [
-        dsMockUtils.createMockU64(new BigNumber(1)),
-        dsMockUtils.createMockU64(new BigNumber(2)),
-        dsMockUtils.createMockU64(new BigNumber(1)),
-        dsMockUtils.createMockU64(new BigNumber(1)),
+        dsMockUtils.createMockOption(dsMockUtils.createMockU64(new BigNumber(1))),
+        dsMockUtils.createMockOption(dsMockUtils.createMockU64(new BigNumber(2))),
+        dsMockUtils.createMockOption(),
+        dsMockUtils.createMockOption(),
       ],
     });
     portfoliosMock = dsMockUtils.createQueryMock('portfolio', 'portfolios');
@@ -1131,6 +1132,18 @@ describe('assertExpectedChainVersion', () => {
   let client: MockWebSocket;
   let warnSpy: jest.SpyInstance;
 
+  const getSpecVersion = (spec: string): string =>
+    `${+spec
+      .split('.')
+      .map(number => `00${number}`.slice(-3))
+      .join('')}`;
+
+  const getMismatchedVersion = (version: string, versionIndex = 2): string =>
+    version
+      .split('.')
+      .map((number, index) => (index === versionIndex ? +number + 1 : number))
+      .join('.');
+
   beforeAll(() => {
     dsMockUtils.initMocks();
     warnSpy = jest.spyOn(console, 'warn');
@@ -1157,7 +1170,8 @@ describe('assertExpectedChainVersion', () => {
 
   it('should throw an error given a major RPC node version mismatch', () => {
     const signal = assertExpectedChainVersion('ws://example.com');
-    client.sendRpcVersion('3.0.0');
+    const mismatchedVersion = getMismatchedVersion(SUPPORTED_NODE_VERSION_RANGE, 0);
+    client.sendRpcVersion(mismatchedVersion);
     const expectedError = new PolymeshError({
       code: ErrorCode.FatalError,
       message: 'Unsupported Polymesh RPC node version. Please upgrade the SDK',
@@ -1167,17 +1181,22 @@ describe('assertExpectedChainVersion', () => {
 
   it('should log a warning given a minor or patch RPC node version mismatch', async () => {
     const signal = assertExpectedChainVersion('ws://example.com');
-    client.sendSpecVersion('5001030');
-    client.sendRpcVersion('5.1.7');
+
+    client.sendSpecVersion(getSpecVersion(SUPPORTED_SPEC_VERSION_RANGE));
+
+    const mockRpcVersion = getMismatchedVersion(SUPPORTED_NODE_VERSION_RANGE);
+    client.sendRpcVersion(mockRpcVersion);
+
     await signal;
     expect(warnSpy).toHaveBeenCalledWith(
-      'This version of the SDK supports Polymesh RPC node version 5.1.3. The node is at version 5.1.7. Please upgrade the SDK'
+      `This version of the SDK supports Polymesh RPC node version ${SUPPORTED_NODE_VERSION_RANGE}. The node is at version ${mockRpcVersion}. Please upgrade the SDK`
     );
   });
 
   it('should throw an error given a major chain spec version mismatch', () => {
     const signal = assertExpectedChainVersion('ws://example.com');
-    client.sendSpecVersion('9000000');
+    const mismatchedSpecVersion = getMismatchedVersion(SUPPORTED_SPEC_VERSION_RANGE, 0);
+    client.sendSpecVersion(getSpecVersion(mismatchedSpecVersion));
     const expectedError = new PolymeshError({
       code: ErrorCode.FatalError,
       message: 'Unsupported Polymesh chain spec version. Please upgrade the SDK',
@@ -1187,11 +1206,12 @@ describe('assertExpectedChainVersion', () => {
 
   it('should log a warning given a minor or patch chain spec version mismatch', async () => {
     const signal = assertExpectedChainVersion('ws://example.com');
-    client.sendSpecVersion('5001007');
-    client.sendRpcVersion('5.1.1');
+    const mockSpecVersion = getMismatchedVersion(SUPPORTED_SPEC_VERSION_RANGE);
+    client.sendSpecVersion(getSpecVersion(mockSpecVersion));
+    client.sendRpcVersion(SUPPORTED_NODE_VERSION_RANGE);
     await signal;
     expect(warnSpy).toHaveBeenCalledWith(
-      'This version of the SDK supports Polymesh chain spec version 5.1.30. The chain spec is at version 5.1.7. Please upgrade the SDK'
+      `This version of the SDK supports Polymesh chain spec version ${SUPPORTED_SPEC_VERSION_RANGE}. The chain spec is at version ${mockSpecVersion}. Please upgrade the SDK`
     );
   });
 

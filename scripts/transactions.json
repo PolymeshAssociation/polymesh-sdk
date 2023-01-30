@@ -64,7 +64,8 @@
     "placeholder_legacy_set_permission_to_signer": "placeholder_legacy_set_permission_to_signer",
     "add_secondary_keys_with_authorization_old": "add_secondary_keys_with_authorization_old",
     "set_secondary_key_permissions": "set_secondary_key_permissions",
-    "register_custom_claim_type": "register_custom_claim_type"
+    "register_custom_claim_type": "register_custom_claim_type",
+    "cdd_register_did_with_cdd": "cdd_register_did_with_cdd"
   },
   "CddServiceProviders": {
     "set_active_members_limit": "set_active_members_limit",
@@ -196,7 +197,8 @@
     "submit_election_solution_unsigned": "submit_election_solution_unsigned",
     "payout_stakers_by_system": "payout_stakers_by_system",
     "change_slashing_allowed_for": "change_slashing_allowed_for",
-    "update_permissioned_validator_intended_count": "update_permissioned_validator_intended_count"
+    "update_permissioned_validator_intended_count": "update_permissioned_validator_intended_count",
+    "chill_from_governance": "chill_from_governance"
   },
   "Session": {
     "set_keys": "set_keys",
@@ -241,7 +243,8 @@
     "register_and_set_local_asset_metadata": "register_and_set_local_asset_metadata",
     "register_asset_metadata_local_type": "register_asset_metadata_local_type",
     "register_asset_metadata_global_type": "register_asset_metadata_global_type",
-    "redeem_from_portfolio": "redeem_from_portfolio"
+    "redeem_from_portfolio": "redeem_from_portfolio",
+    "update_asset_type": "update_asset_type"
   },
   "CapitalDistribution": {
     "distribute": "distribute",
@@ -345,7 +348,8 @@
     "reschedule_instruction": "reschedule_instruction",
     "update_venue_signers": "update_venue_signers",
     "add_instruction_with_memo": "add_instruction_with_memo",
-    "add_and_affirm_instruction_with_memo": "add_and_affirm_instruction_with_memo"
+    "add_and_affirm_instruction_with_memo": "add_and_affirm_instruction_with_memo",
+    "execute_manual_instruction": "execute_manual_instruction"
   },
   "Statistics": {
     "add_transfer_manager": "add_transfer_manager",
@@ -410,7 +414,8 @@
     "upload_code": "upload_code",
     "remove_code": "remove_code",
     "instantiate_with_code_perms": "instantiate_with_code_perms",
-    "instantiate_with_hash_perms": "instantiate_with_hash_perms"
+    "instantiate_with_hash_perms": "instantiate_with_hash_perms",
+    "update_call_runtime_whitelist": "update_call_runtime_whitelist"
   },
   "Preimage": {
     "note_preimage": "note_preimage",
