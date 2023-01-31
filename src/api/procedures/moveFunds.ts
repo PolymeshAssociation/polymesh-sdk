@@ -3,6 +3,7 @@ import BigNumber from 'bignumber.js';
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import { DefaultPortfolio, NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
 import {
+  Asset,
   ErrorCode,
   MoveFundsParams,
   PortfolioId,
@@ -16,7 +17,7 @@ import {
   portfolioLikeToPortfolioId,
   portfolioMovementToMovePortfolioItem,
 } from '~/utils/conversion';
-import { asTicker } from '~/utils/internal';
+import { asTicker, hasDuplicates } from '~/utils/internal';
 
 /**
  * @hidden
@@ -79,6 +80,15 @@ export async function prepareMoveFunds(
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Origin and destination should be different Portfolios',
+    });
+  }
+
+  const tickers = items.map(({ asset }) => (typeof asset === 'string' ? asset : asset.ticker));
+
+  if (hasDuplicates(tickers)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Portfolio movements cannot contain any Asset more than once',
     });
   }
 
