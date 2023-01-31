@@ -53,12 +53,9 @@ export class Identities {
   }
 
   /**
-   * Register an Identity
+   * Register an Identity, optionally with a CDD claim
    *
-   * This creates an DID for an Identity, without a CDD claim the Identity will not be fully onboarded. Generally {@link api/client/Identities!registerIdentityWithCdd}
-   * is preferred, unless having an on chain Identity that will later later complete the CDD process is explicitly desired.
-   *
-   * @note this signer must be a CDD provider
+   * @note the transaction signer must be a CDD provider
    * @note this may create {@link api/entities/AuthorizationRequest!AuthorizationRequest | Authorization Requests} which have to be accepted by the `targetAccount`.
    *   An {@link api/entities/Account!Account} or {@link api/entities/Identity!Identity} can fetch its pending Authorization Requests by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getReceived | authorizations.getReceived}.
    *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getOne | authorizations.getOne}
