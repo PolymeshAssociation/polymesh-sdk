@@ -1,5 +1,6 @@
 import BigNumber from 'bignumber.js';
 
+import { executeManualInstruction } from '~/api/procedures/executeManualInstruction';
 import {
   Asset,
   Context,
@@ -125,6 +126,14 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     this.reschedule = createProcedureMethod(
       {
         getProcedureAndArgs: () => [rescheduleInstruction, { id }],
+        voidArgs: true,
+      },
+      context
+    );
+
+    this.executeManually = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [executeManualInstruction, { id }],
         voidArgs: true,
       },
       context
@@ -486,6 +495,11 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    * @throws if the Instruction status is not `InstructionStatus.Failed`
    */
   public reschedule: NoArgsProcedureMethod<Instruction>;
+
+  /**
+   * Executes an Instruction of type `SettleManual`
+   */
+  public executeManually: NoArgsProcedureMethod<Instruction>;
 
   /**
    * @hidden
