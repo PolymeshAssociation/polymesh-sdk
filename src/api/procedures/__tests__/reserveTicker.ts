@@ -8,10 +8,10 @@ import {
   getAuthorization,
   prepareReserveTicker,
 } from '~/api/procedures/reserveTicker';
-import { Context, TickerReservation } from '~/internal';
+import { Context, PolymeshError, TickerReservation } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ReserveTickerParams, RoleType, TickerReservationStatus, TxTags } from '~/types';
+import { ErrorCode, ReserveTickerParams, RoleType, TickerReservationStatus, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
@@ -43,7 +43,7 @@ describe('reserveTicker procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
-    ticker = 'SOME_TICKER';
+    ticker = 'TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     args = {
       ticker,
@@ -177,6 +177,16 @@ describe('reserveTicker procedure', () => {
     );
   });
 
+  it('should throw an error if the ticker contains non alphanumeric components', () => {
+    const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>(
+      mockContext
+    );
+
+    return expect(
+      prepareReserveTicker.call(proc, { ...args, ticker: 'TICKER-()_+=' })
+    ).rejects.toThrow('New Tickers can only contain alphanumeric values');
+  });
+
   it('should return a register ticker transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<ReserveTickerParams, TickerReservation>(
       mockContext
@@ -208,7 +218,7 @@ describe('reserveTicker procedure', () => {
 
 describe('tickerReservationResolver', () => {
   const filterEventRecordsSpy = jest.spyOn(utilsInternalModule, 'filterEventRecords');
-  const tickerString = 'SOME_TICKER';
+  const tickerString = 'TICKER';
   const ticker = dsMockUtils.createMockTicker(tickerString);
 
   beforeAll(() => {
@@ -234,7 +244,7 @@ describe('tickerReservationResolver', () => {
 
 describe('getAuthorization', () => {
   it('should return the appropriate roles and permissions', () => {
-    const ticker = 'SOME_TICKER';
+    const ticker = 'TICKER';
     const args = {
       ticker,
       extendPeriod: true,

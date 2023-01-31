@@ -1,5 +1,6 @@
 import { Bytes, u32 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
+import { assert } from 'console';
 import { values } from 'lodash';
 
 import { Asset, Context, PolymeshError, Procedure, TickerReservation } from '~/internal';
@@ -30,7 +31,7 @@ import {
   stringToTicker,
   stringToTickerKey,
 } from '~/utils/conversion';
-import { checkTxType, optionize } from '~/utils/internal';
+import { assertTickerCreatable, checkTxType, isAlphanumeric, optionize } from '~/utils/internal';
 
 /**
  * @hidden
@@ -97,6 +98,8 @@ function assertTickerAvailable(
       message: `You must first reserve ticker "${ticker}" in order to create an Asset with it`,
     });
   }
+
+  assertTickerCreatable(ticker);
 }
 
 /**

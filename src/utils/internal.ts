@@ -458,6 +458,16 @@ export function isPrintableAscii(value: string): boolean {
 }
 
 /**
+ *
+ * @param value @hidden
+ *
+ * Return whether the string is fully alphanumeric
+ */
+export function isAlphanumeric(value: string): boolean {
+  return /^[0-9a-zA-Z]*$/.test(value);
+}
+
+/**
  * @hidden
  *
  * Makes an entries request to the chain. If pagination options are supplied,
@@ -1387,6 +1397,22 @@ export function assertTickerValid(ticker: string): void {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Ticker cannot contain lower case letters',
+    });
+  }
+}
+
+/**
+ * @hidden
+ *
+ * Validates a ticker value is valid to be created. Some tickers were created with more relaxed rules
+ */
+export function assertTickerCreatable(ticker: string): void {
+  assertTickerValid(ticker);
+
+  if (!isAlphanumeric(ticker)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'New Tickers can only contain alphanumeric values',
     });
   }
 }

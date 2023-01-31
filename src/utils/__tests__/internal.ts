@@ -49,6 +49,7 @@ import {
   assertExpectedChainVersion,
   assertIsInteger,
   assertIsPositive,
+  assertTickerCreatable,
   assertTickerValid,
   asTicker,
   calculateNextKey,
@@ -1257,10 +1258,50 @@ describe('assertTickerValid', () => {
     expect(() => assertTickerValid(ticker)).toThrow('Ticker cannot contain lower case letters');
   });
 
+  it('should throw an error if the ticker contains a emoji', () => {
+    const ticker = '💎';
+
+    expect(() => assertTickerValid(ticker)).toThrow(
+      'Only printable ASCII is allowed as ticker name'
+    );
+  });
+
   it('should not throw an error', () => {
     const ticker = 'FAKE_TICKER';
 
     assertTickerValid(ticker);
+  });
+});
+
+describe('assertTickerCreatable', () => {
+  it('should throw an error if the string length exceeds the max ticker length', () => {
+    const ticker = 'VERYLONGTICKER';
+
+    expect(() => assertTickerCreatable(ticker)).toThrow(
+      `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} character`
+    );
+  });
+
+  it('should throw an error if the string begins with an null byte', () => {
+    const ticker = ' TICKER';
+
+    expect(() => assertTickerCreatable(ticker)).toThrow(
+      'New Tickers can only contain alphanumeric values'
+    );
+  });
+
+  it('should throw an error if the ticker contains a -', () => {
+    const ticker = 'SOME-TICKER';
+
+    expect(() => assertTickerCreatable(ticker)).toThrow(
+      'New Tickers can only contain alphanumeric values'
+    );
+  });
+
+  it('should not throw an error', () => {
+    const ticker = 'TICKER';
+
+    expect(() => assertTickerCreatable(ticker)).not.toThrow();
   });
 });
 
