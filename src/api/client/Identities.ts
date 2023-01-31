@@ -53,7 +53,7 @@ export class Identities {
   }
 
   /**
-   * Register an Identity, optionally with a CDD claim
+   * Register an Identity, possibly with a CDD claim
    *
    * @note the transaction signer must be a CDD provider
    * @note this may create {@link api/entities/AuthorizationRequest!AuthorizationRequest | Authorization Requests} which have to be accepted by the `targetAccount`.
