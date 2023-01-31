@@ -118,6 +118,43 @@ export const createAddInstructionResolver =
 /**
  * @hidden
  */
+function getEndCondition(
+  instruction: AddInstructionParams,
+  latestBlock: BigNumber,
+  index: number
+): { endCondition: InstructionEndCondition; errorIndex: number | null } {
+  let endCondition: InstructionEndCondition;
+  let errorIndex = null;
+
+  if ('endBlock' in instruction && instruction.endBlock) {
+    const { endBlock } = instruction;
+
+    if (endBlock.lte(latestBlock)) {
+      errorIndex = index;
+    }
+
+    endCondition = { type: InstructionType.SettleOnBlock, endBlock };
+  } else if ('endAfterBlock' in instruction && instruction.endAfterBlock) {
+    const { endAfterBlock } = instruction;
+
+    if (endAfterBlock.lte(latestBlock)) {
+      errorIndex = index;
+    }
+
+    endCondition = { type: InstructionType.SettleManual, endAfterBlock };
+  } else {
+    endCondition = { type: InstructionType.SettleOnAffirmation };
+  }
+
+  return {
+    endCondition,
+    errorIndex,
+  };
+}
+
+/**
+ * @hidden
+ */
 async function getTxArgsAndErrors(
   instructions: AddInstructionParams[],
   portfoliosToAffirm: (DefaultPortfolio | NumberedPortfolio)[][],
@@ -169,26 +206,15 @@ async function getTxArgsAndErrors(
       const toId = portfolioLikeToPortfolioId(to);
       return fromId.did === toId.did;
     });
+
     if (sameIdentityLegs.length) {
       sameIdentityErrIndexes.push(i);
     }
 
-    let endCondition: InstructionEndCondition;
+    const { endCondition, errorIndex } = getEndCondition(instruction, latestBlock, i);
 
-    if ('endBlock' in instruction && instruction.endBlock) {
-      const { endBlock } = instruction;
-      if (endBlock.lte(latestBlock)) {
-        endBlockErrIndexes.push(i);
-      }
-      endCondition = { type: InstructionType.SettleOnBlock, endBlock };
-    } else if ('endAfterBlock' in instruction && instruction.endAfterBlock) {
-      const { endAfterBlock } = instruction;
-      if (endAfterBlock.lte(latestBlock)) {
-        endBlockErrIndexes.push(i);
-      }
-      endCondition = { type: InstructionType.SettleManual, endAfterBlock };
-    } else {
-      endCondition = { type: InstructionType.SettleOnAffirmation };
+    if (errorIndex !== null) {
+      endBlockErrIndexes.push(errorIndex);
     }
 
     if (tradeDate && valueDate && tradeDate > valueDate) {
