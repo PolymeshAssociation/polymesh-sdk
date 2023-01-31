@@ -1,9 +1,9 @@
 import BigNumber from 'bignumber.js';
+import { uniq } from 'lodash';
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import { DefaultPortfolio, NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
 import {
-  Asset,
   ErrorCode,
   MoveFundsParams,
   PortfolioId,
@@ -17,7 +17,7 @@ import {
   portfolioLikeToPortfolioId,
   portfolioMovementToMovePortfolioItem,
 } from '~/utils/conversion';
-import { asTicker, hasDuplicates } from '~/utils/internal';
+import { asTicker } from '~/utils/internal';
 
 /**
  * @hidden
@@ -85,7 +85,9 @@ export async function prepareMoveFunds(
 
   const tickers = items.map(({ asset }) => (typeof asset === 'string' ? asset : asset.ticker));
 
-  if (hasDuplicates(tickers)) {
+  const hasDuplicates = uniq(tickers).length !== tickers.length;
+
+  if (hasDuplicates) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Portfolio movements cannot contain any Asset more than once',

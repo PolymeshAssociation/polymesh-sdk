@@ -997,26 +997,6 @@ export function hasSameElements<T>(
 /**
  * @hidden
  *
- * Returns whether the array has duplicate elements
- *
- * If the elements are objects, then the pass the property to compare
- */
-export function hasDuplicates<T>(input: T[], selector?: keyof T): boolean {
-  const seen = new Set();
-
-  return input.some(value => {
-    let selected: T | unknown = value;
-    if (selector) {
-      selected = value[selector];
-    }
-
-    return seen.size === seen.add(selected).size;
-  });
-}
-
-/**
- * @hidden
- *
  * Perform a deep comparison between two compliance conditions
  */
 export function conditionsAreEqual(

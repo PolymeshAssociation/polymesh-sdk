@@ -1,6 +1,5 @@
 import { Bytes, u32 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
-import { assert } from 'console';
 import { values } from 'lodash';
 
 import { Asset, Context, PolymeshError, Procedure, TickerReservation } from '~/internal';
@@ -31,7 +30,7 @@ import {
   stringToTicker,
   stringToTickerKey,
 } from '~/utils/conversion';
-import { assertTickerCreatable, checkTxType, isAlphanumeric, optionize } from '~/utils/internal';
+import { assertTickerCreatable, checkTxType, optionize } from '~/utils/internal';
 
 /**
  * @hidden

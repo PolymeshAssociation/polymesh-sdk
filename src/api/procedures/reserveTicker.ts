@@ -33,8 +33,8 @@ export async function prepareReserveTicker(
     context,
   } = this;
   const { ticker, extendPeriod = false } = args;
-  assertTickerCreatable(ticker);
 
+  assertTickerCreatable(ticker);
   const rawTicker = stringToTicker(ticker, context);
 
   const reservation = new TickerReservation({ ticker }, context);

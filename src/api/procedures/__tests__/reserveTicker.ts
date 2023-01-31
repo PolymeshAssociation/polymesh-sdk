@@ -8,10 +8,10 @@ import {
   getAuthorization,
   prepareReserveTicker,
 } from '~/api/procedures/reserveTicker';
-import { Context, PolymeshError, TickerReservation } from '~/internal';
+import { Context, TickerReservation } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { ErrorCode, ReserveTickerParams, RoleType, TickerReservationStatus, TxTags } from '~/types';
+import { ReserveTickerParams, RoleType, TickerReservationStatus, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
