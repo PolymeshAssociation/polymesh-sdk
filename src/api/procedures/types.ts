@@ -397,7 +397,7 @@ export interface RegisterIdentityParams {
    */
   createCdd?: boolean;
   /**
-   * (optional) when the generated CDD claim should expire, `createCdd` must be true
+   * (optional) when the generated CDD claim should expire, `createCdd` must be true if specified
    */
   expiry?: Date;
 }
