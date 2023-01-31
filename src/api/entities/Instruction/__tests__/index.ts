@@ -4,7 +4,7 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Context, Entity, Instruction, PolymeshTransaction } from '~/internal';
-import { EventIdEnum as MiddlewareV2EventId } from '~/middleware/enumsV2';
+import { InstructionStatusEnum } from '~/middleware/enumsV2';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { instructionsQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
@@ -1065,7 +1065,7 @@ describe('Instruction class', () => {
       const fakeEventIdentifierResult = { blockNumber, blockDate, blockHash, eventIndex: eventIdx };
 
       const queryVariables = {
-        eventId: MiddlewareV2EventId.InstructionExecuted,
+        status: InstructionStatusEnum.Executed,
         id: id.toString(),
       };
 
@@ -1095,7 +1095,7 @@ describe('Instruction class', () => {
           query: instructionsQuery(
             {
               ...queryVariables,
-              eventId: MiddlewareV2EventId.InstructionFailed,
+              status: InstructionStatusEnum.Failed,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -1125,7 +1125,7 @@ describe('Instruction class', () => {
       const fakeEventIdentifierResult = { blockNumber, blockDate, blockHash, eventIndex: eventIdx };
 
       const queryVariables = {
-        eventId: MiddlewareV2EventId.InstructionExecuted,
+        status: InstructionStatusEnum.Executed,
         id: id.toString(),
       };
 
@@ -1157,7 +1157,7 @@ describe('Instruction class', () => {
           query: instructionsQuery(
             {
               ...queryVariables,
-              eventId: MiddlewareV2EventId.InstructionFailed,
+              status: InstructionStatusEnum.Failed,
             },
             new BigNumber(1),
             new BigNumber(0)
@@ -1179,7 +1179,7 @@ describe('Instruction class', () => {
 
     it("should throw an error if Instruction status couldn't be determined", async () => {
       const queryVariables = {
-        eventId: MiddlewareV2EventId.InstructionExecuted,
+        status: InstructionStatusEnum.Executed,
         id: id.toString(),
       };
 
@@ -1209,7 +1209,7 @@ describe('Instruction class', () => {
           query: instructionsQuery(
             {
               ...queryVariables,
-              eventId: MiddlewareV2EventId.InstructionFailed,
+              status: InstructionStatusEnum.Failed,
             },
             new BigNumber(1),
             new BigNumber(0)
