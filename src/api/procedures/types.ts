@@ -392,11 +392,12 @@ export interface RegisterIdentityParams {
    * @note Each Account will need to accept the generated authorizations before being linked to the Identity
    */
   secondaryAccounts?: Modify<PermissionedAccount, { permissions: PermissionsLike }>[];
-}
-
-export interface RegisterIdentityWithCddParams extends RegisterIdentityParams {
   /**
-   * (optional) when the generated CDD claim should expire
+   * (optional) also issue a CDD claim for the created DID, completing the onboarding process for the Account
+   */
+  createCdd?: boolean;
+  /**
+   * (optional) when the generated CDD claim should expire, `createCdd` must be true
    */
   expiry?: Date;
 }

@@ -5,9 +5,8 @@ import {
   Identity,
   NumberedPortfolio,
   registerIdentity,
-  registerIdentityWithCdd,
 } from '~/internal';
-import { ProcedureMethod, RegisterIdentityParams, RegisterIdentityWithCddParams } from '~/types';
+import { ProcedureMethod, RegisterIdentityParams } from '~/types';
 import { asIdentity, createProcedureMethod } from '~/utils/internal';
 
 /**
@@ -24,11 +23,6 @@ export class Identities {
 
     this.registerIdentity = createProcedureMethod(
       { getProcedureAndArgs: args => [registerIdentity, args] },
-      context
-    );
-
-    this.registerIdentityWithCdd = createProcedureMethod(
-      { getProcedureAndArgs: args => [registerIdentityWithCdd, args] },
       context
     );
 
@@ -73,20 +67,6 @@ export class Identities {
    *   - Customer Due Diligence Provider
    */
   public registerIdentity: ProcedureMethod<RegisterIdentityParams, Identity>;
-
-  /**
-   * Register an Identity and create a CDD claim for it. This allows for an Account to receive POLYX and interact with the chain.
-   *
-   * Functions like {@link api/client/Identities!registerIdentity | registerIdentity} followed by a CDD claim being added, except in a single transaction.
-   *
-   * @note this may create {@link api/entities/AuthorizationRequest!AuthorizationRequest | Authorization Requests} which have to be accepted by the `targetAccount`.
-   *   An {@link api/entities/Account!Account} or {@link api/entities/Identity!Identity} can fetch its pending Authorization Requests by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getReceived | authorizations.getReceived}.
-   *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getOne | authorizations.getOne}
-   *
-   * @note required role:
-   *   - Customer Due Diligence Provider
-   */
-  public registerIdentityWithCdd: ProcedureMethod<RegisterIdentityWithCddParams, Identity>;
 
   /**
    * Create a new Portfolio under the ownership of the signing Identity
