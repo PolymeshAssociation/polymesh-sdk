@@ -83,7 +83,7 @@ export async function prepareMoveFunds(
     });
   }
 
-  const tickers = items.map(({ asset }) => (typeof asset === 'string' ? asset : asset.ticker));
+  const tickers = items.map(({ asset }) => asTicker(asset));
 
   const hasDuplicates = uniq(tickers).length !== tickers.length;
 
