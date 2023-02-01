@@ -383,8 +383,23 @@ export interface AddInvestorUniquenessClaimParams {
 }
 
 export interface RegisterIdentityParams {
+  /**
+   * The Account that should function as the primary key of the newly created Identity. Can be ss58 encoded address or an instance of Account
+   */
   targetAccount: string | Account;
+  /**
+   * (optional) secondary accounts for the new Identity with their corresponding permissions.
+   * @note Each Account will need to accept the generated authorizations before being linked to the Identity
+   */
   secondaryAccounts?: Modify<PermissionedAccount, { permissions: PermissionsLike }>[];
+  /**
+   * (optional) also issue a CDD claim for the created DID, completing the onboarding process for the Account
+   */
+  createCdd?: boolean;
+  /**
+   * (optional) when the generated CDD claim should expire, `createCdd` must be true if specified
+   */
+  expiry?: Date;
 }
 
 export interface TransferPolyxParams {
@@ -433,7 +448,7 @@ export type AddInstructionParams = {
     }
   | {
       /**
-       * block after which the Instruction will be manually executed (optional, the Instruction will be executed when all participants have authorized it if not supplied)
+       * block after which the Instruction can be manually executed (optional, the Instruction will be executed when all participants have authorized it if not supplied)
        */
       endAfterBlock?: BigNumber;
     }

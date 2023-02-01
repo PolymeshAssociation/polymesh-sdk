@@ -124,6 +124,31 @@ describe('moveFunds procedure', () => {
     ).rejects.toThrow('Origin and destination should be different Portfolios');
   });
 
+  it('should throw an error if an Asset is specified more than once', () => {
+    const fromId = new BigNumber(1);
+    const fromDid = 'someDid';
+    const id = new BigNumber(1);
+    const did = 'someDid';
+    const toPortfolio = new NumberedPortfolio({ id, did }, mockContext);
+    const fromPortfolio = new NumberedPortfolio({ id: fromId, did: fromDid }, mockContext);
+    const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+    const toPortfolioId = { did, number: id };
+
+    when(portfolioLikeToPortfolioIdSpy).calledWith(toPortfolio).mockReturnValue(toPortfolioId);
+    when(portfolioLikeToPortfolioIdSpy).calledWith(toPortfolio).mockReturnValue(fromId);
+
+    return expect(
+      prepareMoveFunds.call(proc, {
+        from: fromPortfolio,
+        to: toPortfolio,
+        items: [
+          { asset: 'TICKER', amount: new BigNumber(10) },
+          { asset: 'TICKER', amount: new BigNumber(20) },
+        ],
+      })
+    ).rejects.toThrow('Portfolio movements cannot contain any Asset more than once');
+  });
+
   it('should throw an error if some of the amount Asset to move exceeds its balance', async () => {
     const fromId = new BigNumber(1);
     const toId = new BigNumber(2);
