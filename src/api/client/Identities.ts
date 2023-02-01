@@ -53,9 +53,9 @@ export class Identities {
   }
 
   /**
-   * Register an Identity
+   * Register an Identity, possibly with a CDD claim
    *
-   * @note must be a CDD provider
+   * @note the transaction signer must be a CDD provider
    * @note this may create {@link api/entities/AuthorizationRequest!AuthorizationRequest | Authorization Requests} which have to be accepted by the `targetAccount`.
    *   An {@link api/entities/Account!Account} or {@link api/entities/Identity!Identity} can fetch its pending Authorization Requests by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getReceived | authorizations.getReceived}.
    *   Also, an Account or Identity can directly fetch the details of an Authorization Request by calling {@link api/entities/common/namespaces/Authorizations!Authorizations.getOne | authorizations.getOne}
