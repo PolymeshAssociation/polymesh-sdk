@@ -18,11 +18,18 @@ import {
   prepareStorage,
   Storage,
 } from '~/api/procedures/addInstruction';
-import { Context, DefaultPortfolio, Instruction, NumberedPortfolio } from '~/internal';
+import {
+  Context,
+  DefaultPortfolio,
+  Instruction,
+  NumberedPortfolio,
+  PolymeshError,
+} from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
   ErrorCode,
+  InstructionEndCondition,
   InstructionType,
   PortfolioLike,
   RoleType,
@@ -52,13 +59,7 @@ describe('addInstruction procedure', () => {
   >;
   let endConditionToSettlementTypeSpy: jest.SpyInstance<
     PalletSettlementSettlementType,
-    [
-      (
-        | { type: InstructionType.SettleOnAffirmation }
-        | { type: InstructionType.SettleOnBlock; value: BigNumber }
-      ),
-      Context
-    ]
+    [InstructionEndCondition, Context]
   >;
   let dateToMomentSpy: jest.SpyInstance<Moment, [Date, Context]>;
   let stringToInstructionMemoSpy: jest.SpyInstance;
@@ -88,6 +89,7 @@ describe('addInstruction procedure', () => {
   let rawInstructionMemo: PalletSettlementInstructionMemo;
   let rawAuthSettlementType: PalletSettlementSettlementType;
   let rawBlockSettlementType: PalletSettlementSettlementType;
+  let rawManualSettlementType: PalletSettlementSettlementType;
   let rawLeg: {
     from: PolymeshPrimitivesIdentityIdPortfolioId;
     to: PolymeshPrimitivesIdentityIdPortfolioId;
@@ -161,6 +163,7 @@ describe('addInstruction procedure', () => {
     rawInstructionMemo = dsMockUtils.createMockInstructionMemo(memo);
     rawAuthSettlementType = dsMockUtils.createMockSettlementType('SettleOnAffirmation');
     rawBlockSettlementType = dsMockUtils.createMockSettlementType({ SettleOnBlock: rawEndBlock });
+    rawManualSettlementType = dsMockUtils.createMockSettlementType({ SettleManual: rawEndBlock });
     rawLeg = {
       from: rawFrom,
       to: rawTo,
@@ -240,8 +243,11 @@ describe('addInstruction procedure', () => {
     when(bigNumberToU64Spy).calledWith(venueId, mockContext).mockReturnValue(rawVenueId);
     when(bigNumberToBalanceSpy).calledWith(amount, mockContext).mockReturnValue(rawAmount);
     when(endConditionToSettlementTypeSpy)
-      .calledWith({ type: InstructionType.SettleOnBlock, value: endBlock }, mockContext)
+      .calledWith({ type: InstructionType.SettleOnBlock, endBlock }, mockContext)
       .mockReturnValue(rawBlockSettlementType);
+    when(endConditionToSettlementTypeSpy)
+      .calledWith({ type: InstructionType.SettleManual, endAfterBlock: endBlock }, mockContext)
+      .mockReturnValue(rawManualSettlementType);
     when(endConditionToSettlementTypeSpy)
       .calledWith({ type: InstructionType.SettleOnAffirmation }, mockContext)
       .mockReturnValue(rawAuthSettlementType);
@@ -437,10 +443,14 @@ describe('addInstruction procedure', () => {
       portfoliosToAffirm: [],
     });
 
-    let error;
+    const expectedError = new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'End block must be a future block',
+      data: { failedInstructionIndexes: [0] },
+    });
 
-    try {
-      await prepareAddInstruction.call(proc, {
+    await expect(
+      prepareAddInstruction.call(proc, {
         venueId,
         instructions: [
           {
@@ -455,14 +465,27 @@ describe('addInstruction procedure', () => {
             endBlock: new BigNumber(100),
           },
         ],
-      });
-    } catch (err) {
-      error = err;
-    }
+      })
+    ).rejects.toThrowError(expectedError);
 
-    expect(error.message).toBe('End block must be a future block');
-    expect(error.code).toBe(ErrorCode.ValidationError);
-    expect(error.data.failedInstructionIndexes[0]).toBe(0);
+    await expect(
+      prepareAddInstruction.call(proc, {
+        venueId,
+        instructions: [
+          {
+            legs: [
+              {
+                from,
+                to,
+                amount,
+                asset: entityMockUtils.getAssetInstance({ ticker: asset }),
+              },
+            ],
+            endAfterBlock: new BigNumber(100),
+          },
+        ],
+      })
+    ).rejects.toThrowError(expectedError);
   });
 
   it('should throw an error if the value date is before the trade date', async () => {
@@ -542,22 +565,26 @@ describe('addInstruction procedure', () => {
       portfoliosToAffirm: [[]],
     });
 
-    const result = await prepareAddInstruction.call(proc, {
+    const instructionDetails = {
+      legs: [
+        {
+          from,
+          to,
+          amount,
+          asset: entityMockUtils.getAssetInstance({ ticker: asset }),
+        },
+      ],
+      tradeDate,
+      valueDate,
+      memo,
+    };
+
+    let result = await prepareAddInstruction.call(proc, {
       venueId,
       instructions: [
         {
-          legs: [
-            {
-              from,
-              to,
-              amount,
-              asset: entityMockUtils.getAssetInstance({ ticker: asset }),
-            },
-          ],
-          tradeDate,
-          valueDate,
+          ...instructionDetails,
           endBlock,
-          memo,
         },
       ],
     });
@@ -569,6 +596,33 @@ describe('addInstruction procedure', () => {
           args: [
             rawVenueId,
             rawBlockSettlementType,
+            rawTradeDate,
+            rawValueDate,
+            [rawLeg],
+            rawInstructionMemo,
+          ],
+        },
+      ],
+      resolver: expect.any(Function),
+    });
+
+    result = await prepareAddInstruction.call(proc, {
+      venueId,
+      instructions: [
+        {
+          ...instructionDetails,
+          endAfterBlock: endBlock,
+        },
+      ],
+    });
+
+    expect(result).toEqual({
+      transactions: [
+        {
+          transaction: addInstructionTransaction,
+          args: [
+            rawVenueId,
+            rawManualSettlementType,
             rawTradeDate,
             rawValueDate,
             [rawLeg],

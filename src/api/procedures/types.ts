@@ -417,7 +417,7 @@ export interface TransferPolyxParams {
   memo?: string;
 }
 
-export interface AddInstructionParams {
+export type AddInstructionParams = {
   /**
    * array of Asset movements (amount, from, to, asset)
    */
@@ -436,14 +436,23 @@ export interface AddInstructionParams {
    */
   valueDate?: Date;
   /**
-   * block at which the Instruction will be executed automatically (optional, the Instruction will be executed when all participants have authorized it if not supplied)
-   */
-  endBlock?: BigNumber;
-  /**
    * identifier string to help differentiate instructions
    */
   memo?: string;
-}
+} & (
+  | {
+      /**
+       * block at which the Instruction will be executed automatically (optional, the Instruction will be executed when all participants have authorized it if not supplied)
+       */
+      endBlock?: BigNumber;
+    }
+  | {
+      /**
+       * block after which the Instruction can be manually executed (optional, the Instruction will be executed when all participants have authorized it if not supplied)
+       */
+      endAfterBlock?: BigNumber;
+    }
+);
 
 export interface AddInstructionsParams {
   /**
@@ -452,9 +461,9 @@ export interface AddInstructionsParams {
   instructions: AddInstructionParams[];
 }
 
-export interface AddInstructionWithVenueIdParams extends AddInstructionParams {
+export type AddInstructionWithVenueIdParams = AddInstructionParams & {
   venueId: BigNumber;
-}
+};
 
 export interface AffirmInstructionParams {
   id: BigNumber;
