@@ -448,7 +448,7 @@ export type AddInstructionParams = {
     }
   | {
       /**
-       * block after which the Instruction will be manually executed (optional, the Instruction will be executed when all participants have authorized it if not supplied)
+       * block after which the Instruction can be manually executed (optional, the Instruction will be executed when all participants have authorized it if not supplied)
        */
       endAfterBlock?: BigNumber;
     }
