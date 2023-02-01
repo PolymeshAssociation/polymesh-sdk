@@ -26,7 +26,7 @@ export interface Storage {
   portfolios: (DefaultPortfolio | NumberedPortfolio)[];
   totalLegAmount: BigNumber;
   instructionDetails: InstructionDetails;
-  signer: string;
+  signerDid: string;
 }
 
 /**
@@ -46,7 +46,7 @@ export async function prepareExecuteManualInstruction(
       },
     },
     context,
-    storage: { portfolios, totalLegAmount, instructionDetails, signer },
+    storage: { portfolios, totalLegAmount, instructionDetails, signerDid },
   } = this;
 
   const { id } = args;
@@ -57,13 +57,13 @@ export async function prepareExecuteManualInstruction(
 
   if (!portfolios.length) {
     const {
-      owner: { did: ownerDid },
+      owner: { did: venueOwner },
     } = await instructionDetails.venue.details();
 
-    if (ownerDid !== signer) {
+    if (venueOwner !== signerDid) {
       throw new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
-        message: 'The signing Identity is not involved in this Instruction',
+        message: 'The signing identity is not involved in this Instruction',
       });
     }
   }
@@ -159,7 +159,7 @@ export async function prepareStorage(
     portfolios,
     totalLegAmount: new BigNumber(legs.length),
     instructionDetails: details,
-    signer: did,
+    signerDid: did,
   };
 }
 

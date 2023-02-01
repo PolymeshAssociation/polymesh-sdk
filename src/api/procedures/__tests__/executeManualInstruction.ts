@@ -120,7 +120,7 @@ describe('executeManualInstruction procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should throw an error if the signing Identity is not the custodian of any of the involved portfolios', () => {
+  it('should throw an error if the signing identity is not the custodian of any of the involved portfolios', () => {
     const proc = procedureMockUtils.getInstance<
       ExecuteManualInstructionParams,
       Instruction,
@@ -129,14 +129,14 @@ describe('executeManualInstruction procedure', () => {
       portfolios: [],
       totalLegAmount: legAmount,
       instructionDetails,
-      signer: 'someOtherDid',
+      signerDid: 'someOtherDid',
     });
 
     return expect(
       prepareExecuteManualInstruction.call(proc, {
         id,
       })
-    ).rejects.toThrow('The signing Identity is not involved in this Instruction');
+    ).rejects.toThrow('The signing identity is not involved in this Instruction');
   });
 
   it('should throw an error if there are some pending affirmations', () => {
@@ -152,7 +152,7 @@ describe('executeManualInstruction procedure', () => {
       portfolios: [portfolio, portfolio],
       totalLegAmount: legAmount,
       instructionDetails,
-      signer: did,
+      signerDid: did,
     });
 
     return expect(
@@ -175,7 +175,7 @@ describe('executeManualInstruction procedure', () => {
         portfolios: [portfolio, portfolio],
         totalLegAmount: legAmount,
         instructionDetails,
-        signer: did,
+        signerDid: did,
       }
     );
 
@@ -196,7 +196,7 @@ describe('executeManualInstruction procedure', () => {
         portfolios: [],
         totalLegAmount: legAmount,
         instructionDetails,
-        signer: did,
+        signerDid: did,
       }
     );
 
@@ -225,7 +225,7 @@ describe('executeManualInstruction procedure', () => {
         portfolios: [from, to],
         totalLegAmount: legAmount,
         instructionDetails,
-        signer: did,
+        signerDid: did,
       });
       const boundFunc = getAuthorization.bind(proc);
 
@@ -250,7 +250,7 @@ describe('executeManualInstruction procedure', () => {
     const amount = new BigNumber(1);
     const asset = entityMockUtils.getAssetInstance({ ticker: 'TICKER' });
 
-    it('should return the custodied portfolios associated in the instruction legs for the signing Identity', async () => {
+    it('should return the custodied portfolios associated in the instruction legs for the signing identity', async () => {
       const proc = procedureMockUtils.getInstance<
         ExecuteManualInstructionParams,
         Instruction,
@@ -275,11 +275,11 @@ describe('executeManualInstruction procedure', () => {
         ],
         totalLegAmount: new BigNumber(1),
         instructionDetails,
-        signer: did,
+        signerDid: did,
       });
     });
 
-    it('should return no portfolios when signing Identity is not part of any legs', async () => {
+    it('should return no portfolios when signing identity is not part of any legs', async () => {
       const proc = procedureMockUtils.getInstance<
         ExecuteManualInstructionParams,
         Instruction,
@@ -305,7 +305,7 @@ describe('executeManualInstruction procedure', () => {
         portfolios: [],
         totalLegAmount: new BigNumber(1),
         instructionDetails,
-        signer: did,
+        signerDid: did,
       });
     });
   });
