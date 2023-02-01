@@ -460,6 +460,15 @@ export function isPrintableAscii(value: string): boolean {
 /**
  * @hidden
  *
+ * Return whether the string is fully alphanumeric
+ */
+export function isAlphanumeric(value: string): boolean {
+  return /^[0-9a-zA-Z]*$/.test(value);
+}
+
+/**
+ * @hidden
+ *
  * Makes an entries request to the chain. If pagination options are supplied,
  *  the request will be paginated. Otherwise, all entries will be requested at once
  */
