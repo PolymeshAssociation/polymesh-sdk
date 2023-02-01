@@ -1403,22 +1403,6 @@ export function assertTickerValid(ticker: string): void {
 
 /**
  * @hidden
- *
- * Validates a ticker value is valid to be created. Some tickers were created with more relaxed rules
- */
-export function assertTickerCreatable(ticker: string): void {
-  assertTickerValid(ticker);
-
-  if (!isAlphanumeric(ticker)) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'New Tickers can only contain alphanumeric values',
-    });
-  }
-}
-
-/**
- * @hidden
  * @returns true is the given stat is able to track the data for the given args
  */
 export function compareStatsToInput(

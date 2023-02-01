@@ -49,7 +49,6 @@ import {
   assertExpectedChainVersion,
   assertIsInteger,
   assertIsPositive,
-  assertTickerCreatable,
   assertTickerValid,
   asTicker,
   calculateNextKey,
@@ -69,6 +68,7 @@ import {
   getPortfolioIdsByName,
   getSecondaryAccountPermissions,
   hasSameElements,
+  isAlphanumeric,
   isModuleOrTagMatch,
   isPrintableAscii,
   mergeReceipts,
@@ -1273,38 +1273,6 @@ describe('assertTickerValid', () => {
   });
 });
 
-describe('assertTickerCreatable', () => {
-  it('should throw an error if the string length exceeds the max ticker length', () => {
-    const ticker = 'VERYLONGTICKER';
-
-    expect(() => assertTickerCreatable(ticker)).toThrow(
-      `Ticker length must be between 1 and ${MAX_TICKER_LENGTH} character`
-    );
-  });
-
-  it('should throw an error if the string begins with an null byte', () => {
-    const ticker = ' TICKER';
-
-    expect(() => assertTickerCreatable(ticker)).toThrow(
-      'New Tickers can only contain alphanumeric values'
-    );
-  });
-
-  it('should throw an error if the ticker contains a -', () => {
-    const ticker = 'SOME-TICKER';
-
-    expect(() => assertTickerCreatable(ticker)).toThrow(
-      'New Tickers can only contain alphanumeric values'
-    );
-  });
-
-  it('should not throw an error', () => {
-    const ticker = 'TICKER';
-
-    expect(() => assertTickerCreatable(ticker)).not.toThrow();
-  });
-});
-
 describe('neededStatTypeForRestrictionInput', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -2028,5 +1996,19 @@ describe('method: getSecondaryAccountPermissions', () => {
 
     expect(callback).toHaveBeenCalledWith(fakeResult);
     expect(result).toEqual(unsubCallback);
+  });
+});
+
+describe('isAlphaNumeric', () => {
+  it('should return true for alphanumeric strings', () => {
+    const alphaNumericStrings = ['abc', 'TICKER', '123XYZ99'];
+
+    expect(alphaNumericStrings.every(input => isAlphanumeric(input))).toBe(true);
+  });
+
+  it('should return false for non alphanumeric strings', () => {
+    const alphaNumericStrings = ['**abc**', 'TICKER-Z', '💎'];
+
+    expect(alphaNumericStrings.some(input => isAlphanumeric(input))).toBe(false);
   });
 });

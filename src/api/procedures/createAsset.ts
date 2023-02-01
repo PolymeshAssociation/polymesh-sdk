@@ -30,7 +30,7 @@ import {
   stringToTicker,
   stringToTickerKey,
 } from '~/utils/conversion';
-import { assertTickerCreatable, checkTxType, optionize } from '~/utils/internal';
+import { checkTxType, isAlphanumeric, optionize } from '~/utils/internal';
 
 /**
  * @hidden
@@ -98,7 +98,12 @@ function assertTickerAvailable(
     });
   }
 
-  assertTickerCreatable(ticker);
+  if (!isAlphanumeric(ticker)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'New Tickers can only contain alphanumeric values',
+    });
+  }
 }
 
 /**
