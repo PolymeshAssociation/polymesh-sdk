@@ -60,6 +60,7 @@ export async function prepareExecuteManualInstruction(
       owner: { did: ownerDid },
     } = await instructionDetails.venue.details();
 
+    console.log(ownerDid, signer);
     if (ownerDid !== signer) {
       throw new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
@@ -78,7 +79,7 @@ export async function prepareExecuteManualInstruction(
   if (!u64ToBigNumber(pendingAffirmationsCount).isZero()) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'Instruction still requires has some pending affirmations',
+      message: 'Instruction needs to be affirmed by all parties before it can be executed',
       data: {
         pendingAffirmationsCount,
       },
@@ -88,7 +89,6 @@ export async function prepareExecuteManualInstruction(
   return {
     transaction: settlementTx.executeManualInstruction,
     resolver: instruction,
-    feeMultiplier: totalLegAmount,
     args: [
       rawInstructionId,
       bigNumberToU32(totalLegAmount, context),
@@ -141,17 +141,17 @@ export async function prepareStorage(
         to.isCustodiedBy({ identity: did }),
       ]);
 
-      let res = [...custodiedPortfolios];
+      const result = [...custodiedPortfolios];
 
       if (fromIsCustodied) {
-        res = [...res, from];
+        result.push(from);
       }
 
       if (toIsCustodied) {
-        res = [...res, to];
+        result.push(to);
       }
 
-      return res;
+      return result;
     },
     []
   );

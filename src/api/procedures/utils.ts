@@ -89,14 +89,14 @@ export async function assertInstructionValidForManualExecution(
   if (status === InstructionStatus.Executed) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
-      message: 'Instruction has already been executed',
+      message: 'The Instruction has already been executed',
     });
   }
 
   if (type !== InstructionType.SettleManual) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: `You cannot execute settlement of type ${type}`,
+      message: `You cannot manually execute settlement of type '${type}'`,
     });
   }
 
