@@ -1,34 +1,59 @@
 import { AccountId } from '@polkadot/types/interfaces';
 import { PolymeshPrimitivesSecondaryKey } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
+import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import {
   createRegisterIdentityResolver,
   prepareRegisterIdentity,
 } from '~/api/procedures/registerIdentity';
-import { Context, Identity } from '~/internal';
+import { Context, Identity, PolymeshError, Procedure } from '~/internal';
+import { Moment } from '~/polkadot';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { PermissionedAccount, RegisterIdentityParams } from '~/types';
+import { ErrorCode, PermissionedAccount, RegisterIdentityParams } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
 describe('registerIdentity procedure', () => {
+  const targetAccount = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY';
+  const secondaryAccounts = [
+    {
+      account: entityMockUtils.getAccountInstance({ address: 'someValue' }),
+      permissions: {
+        assets: null,
+        portfolios: null,
+        transactions: null,
+        transactionGroups: [],
+      },
+    },
+  ];
+  const rawAccountId = dsMockUtils.createMockAccountId(targetAccount);
+  const rawSecondaryAccount = dsMockUtils.createMockSecondaryKey({
+    signer: dsMockUtils.createMockSignatory({
+      Account: dsMockUtils.createMockAccountId(secondaryAccounts[0].account.address),
+    }),
+    permissions: dsMockUtils.createMockPermissions(),
+  });
+
   let mockContext: Mocked<Context>;
   let stringToAccountIdSpy: jest.SpyInstance<AccountId, [string, Context]>;
   let secondaryAccountToMeshSecondaryKeySpy: jest.SpyInstance<
     PolymeshPrimitivesSecondaryKey,
     [PermissionedAccount, Context]
   >;
+  let dateToMomentSpy: jest.SpyInstance<Moment, [Date, Context]>;
   let registerIdentityTransaction: PolymeshTx<unknown[]>;
+  let proc: Procedure<RegisterIdentityParams, Identity, Record<string, unknown>>;
 
   beforeAll(() => {
     entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
     dsMockUtils.initMocks();
     stringToAccountIdSpy = jest.spyOn(utilsConversionModule, 'stringToAccountId');
+    dateToMomentSpy = jest.spyOn(utilsConversionModule, 'dateToMoment');
     secondaryAccountToMeshSecondaryKeySpy = jest.spyOn(
       utilsConversionModule,
       'secondaryAccountToMeshSecondaryKey'
@@ -38,6 +63,7 @@ describe('registerIdentity procedure', () => {
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
     registerIdentityTransaction = dsMockUtils.createTxMock('identity', 'cddRegisterDid');
+    proc = procedureMockUtils.getInstance<RegisterIdentityParams, Identity>(mockContext);
   });
 
   afterEach(() => {
@@ -51,52 +77,104 @@ describe('registerIdentity procedure', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should return a cddRegisterIdentity transaction spec', async () => {
-    const targetAccount = 'someAccount';
-    const secondaryAccounts = [
-      {
-        account: entityMockUtils.getAccountInstance({ address: 'someValue' }),
-        permissions: {
-          assets: null,
-          portfolios: null,
-          transactions: null,
-          transactionGroups: [],
-        },
-      },
-    ];
-    const args = {
-      targetAccount,
-      secondaryAccounts,
-    };
-    const rawAccountId = dsMockUtils.createMockAccountId(targetAccount);
-    const rawSecondaryAccount = dsMockUtils.createMockSecondaryKey({
-      signer: dsMockUtils.createMockSignatory({
-        Account: dsMockUtils.createMockAccountId(secondaryAccounts[0].account.address),
-      }),
-      permissions: dsMockUtils.createMockPermissions(),
+  describe('with falsy `createCdd` arg', () => {
+    beforeEach(() => {
+      registerIdentityTransaction = dsMockUtils.createTxMock('identity', 'cddRegisterDid');
     });
 
-    const proc = procedureMockUtils.getInstance<RegisterIdentityParams, Identity>(mockContext);
+    it('should return a cddRegisterIdentity transaction spec', async () => {
+      const args = {
+        targetAccount,
+        secondaryAccounts,
+      };
 
-    when(stringToAccountIdSpy).calledWith(targetAccount, mockContext).mockReturnValue(rawAccountId);
-    when(secondaryAccountToMeshSecondaryKeySpy)
-      .calledWith(secondaryAccounts[0], mockContext)
-      .mockReturnValue(rawSecondaryAccount);
+      when(stringToAccountIdSpy)
+        .calledWith(targetAccount, mockContext)
+        .mockReturnValue(rawAccountId);
+      when(secondaryAccountToMeshSecondaryKeySpy)
+        .calledWith(secondaryAccounts[0], mockContext)
+        .mockReturnValue(rawSecondaryAccount);
 
-    let result = await prepareRegisterIdentity.call(proc, args);
+      let result = await prepareRegisterIdentity.call(proc, args);
 
-    expect(result).toEqual({
-      transaction: registerIdentityTransaction,
-      args: [rawAccountId, [rawSecondaryAccount]],
-      resolver: expect.any(Function),
+      expect(result).toEqual({
+        transaction: registerIdentityTransaction,
+        args: [rawAccountId, [rawSecondaryAccount]],
+        resolver: expect.any(Function),
+      });
+
+      result = await prepareRegisterIdentity.call(proc, { targetAccount, createCdd: false });
+
+      expect(result).toEqual({
+        transaction: registerIdentityTransaction,
+        args: [rawAccountId, []],
+        resolver: expect.any(Function),
+      });
     });
 
-    result = await prepareRegisterIdentity.call(proc, { targetAccount });
+    it('should throw if `expiry` is passed', () => {
+      const args = {
+        targetAccount,
+        secondaryAccounts,
+        createCdd: false,
+        expiry: new Date(),
+      };
 
-    expect(result).toEqual({
-      transaction: registerIdentityTransaction,
-      args: [rawAccountId, []],
-      resolver: expect.any(Function),
+      const expectedError = new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'Expiry cannot be set unless a CDD claim is being created',
+      });
+
+      return expect(() => prepareRegisterIdentity.call(proc, args)).rejects.toThrow(expectedError);
+    });
+  });
+
+  describe('with true `createCdd` arg', () => {
+    beforeEach(() => {
+      registerIdentityTransaction = dsMockUtils.createTxMock('identity', 'cddRegisterDidWithCdd');
+    });
+
+    it('should return a cddRegisterIdentityWithCdd transaction spec', async () => {
+      const args = {
+        targetAccount,
+        secondaryAccounts,
+        createCdd: true,
+      };
+
+      when(stringToAccountIdSpy)
+        .calledWith(targetAccount, mockContext)
+        .mockReturnValue(rawAccountId);
+      when(secondaryAccountToMeshSecondaryKeySpy)
+        .calledWith(secondaryAccounts[0], mockContext)
+        .mockReturnValue(rawSecondaryAccount);
+
+      let result = await prepareRegisterIdentity.call(proc, args);
+
+      expect(result).toEqual({
+        transaction: registerIdentityTransaction,
+        args: [rawAccountId, [rawSecondaryAccount], null],
+        resolver: expect.any(Function),
+      });
+
+      const expiryDate = new Date();
+      expiryDate.setDate(expiryDate.getDate() + 30);
+      const expiry = new BigNumber(expiryDate.getTime());
+
+      const mockExpiry = dsMockUtils.createMockMoment(expiry);
+
+      when(dateToMomentSpy).calledWith(expiryDate, mockContext).mockReturnValue(mockExpiry);
+
+      result = await prepareRegisterIdentity.call(proc, {
+        targetAccount,
+        createCdd: true,
+        expiry: expiryDate,
+      });
+
+      expect(result).toEqual({
+        transaction: registerIdentityTransaction,
+        args: [rawAccountId, [], mockExpiry],
+        resolver: expect.any(Function),
+      });
     });
   });
 });
