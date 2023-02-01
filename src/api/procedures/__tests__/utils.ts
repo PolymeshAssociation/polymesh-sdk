@@ -281,10 +281,10 @@ describe('assertInstructionValidForManualExecution', () => {
     ).rejects.toThrowError(expectedError);
   });
 
-  it('should not throw an error', async () => {
-    const result = await assertInstructionValidForManualExecution(instructionDetails, mockContext);
-
-    expect(result).toBeUndefined();
+  it('should not throw an error', () => {
+    return expect(
+      assertInstructionValidForManualExecution(instructionDetails, mockContext)
+    ).resolves.not.toThrow();
   });
 });
 

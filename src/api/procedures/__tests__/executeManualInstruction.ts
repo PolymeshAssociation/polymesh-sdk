@@ -248,7 +248,7 @@ describe('executeManualInstruction procedure', () => {
     let from = entityMockUtils.getDefaultPortfolioInstance({ did: fromDid, isCustodiedBy: true });
     let to = entityMockUtils.getDefaultPortfolioInstance({ did: toDid, isCustodiedBy: true });
     const amount = new BigNumber(1);
-    const asset = entityMockUtils.getAssetInstance({ ticker: 'SOME_ASSET' });
+    const asset = entityMockUtils.getAssetInstance({ ticker: 'TICKER' });
 
     it('should return the custodied portfolios associated in the instruction legs for the signing Identity', async () => {
       const proc = procedureMockUtils.getInstance<
@@ -279,7 +279,7 @@ describe('executeManualInstruction procedure', () => {
       });
     });
 
-    it('should return the no portfolios when signing Identity is not part of any legs', async () => {
+    it('should return no portfolios when signing Identity is not part of any legs', async () => {
       const proc = procedureMockUtils.getInstance<
         ExecuteManualInstructionParams,
         Instruction,

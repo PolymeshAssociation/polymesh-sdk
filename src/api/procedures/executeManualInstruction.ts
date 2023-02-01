@@ -60,7 +60,6 @@ export async function prepareExecuteManualInstruction(
       owner: { did: ownerDid },
     } = await instructionDetails.venue.details();
 
-    console.log(ownerDid, signer);
     if (ownerDid !== signer) {
       throw new PolymeshError({
         code: ErrorCode.UnmetPrerequisite,
