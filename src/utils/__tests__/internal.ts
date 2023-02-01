@@ -68,6 +68,7 @@ import {
   getPortfolioIdsByName,
   getSecondaryAccountPermissions,
   hasSameElements,
+  isAlphanumeric,
   isModuleOrTagMatch,
   isPrintableAscii,
   mergeReceipts,
@@ -1257,6 +1258,14 @@ describe('assertTickerValid', () => {
     expect(() => assertTickerValid(ticker)).toThrow('Ticker cannot contain lower case letters');
   });
 
+  it('should throw an error if the ticker contains a emoji', () => {
+    const ticker = '💎';
+
+    expect(() => assertTickerValid(ticker)).toThrow(
+      'Only printable ASCII is allowed as ticker name'
+    );
+  });
+
   it('should not throw an error', () => {
     const ticker = 'FAKE_TICKER';
 
@@ -1987,5 +1996,19 @@ describe('method: getSecondaryAccountPermissions', () => {
 
     expect(callback).toHaveBeenCalledWith(fakeResult);
     expect(result).toEqual(unsubCallback);
+  });
+});
+
+describe('isAlphaNumeric', () => {
+  it('should return true for alphanumeric strings', () => {
+    const alphaNumericStrings = ['abc', 'TICKER', '123XYZ99'];
+
+    expect(alphaNumericStrings.every(input => isAlphanumeric(input))).toBe(true);
+  });
+
+  it('should return false for non alphanumeric strings', () => {
+    const alphaNumericStrings = ['**abc**', 'TICKER-Z', '💎'];
+
+    expect(alphaNumericStrings.some(input => isAlphanumeric(input))).toBe(false);
   });
 });
