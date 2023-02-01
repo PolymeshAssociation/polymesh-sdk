@@ -458,8 +458,7 @@ export function isPrintableAscii(value: string): boolean {
 }
 
 /**
- *
- * @param value @hidden
+ * @hidden
  *
  * Return whether the string is fully alphanumeric
  */
