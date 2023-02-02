@@ -915,7 +915,7 @@ export async function getPortfolioIdsByName(
   );
 
   const portfolioIds = rawPortfolioNumbers
-    .filter(rawPortfolioNumber => !rawPortfolioNumber.isEmpty)
+    .filter(rawPortfolioNumber => !rawPortfolioNumber.isEmpty) // since 5.2.0 chain, nameToNumber return Option<u64>
     .map(number => u64ToBigNumber(number));
 
   // TODO @prashantasdeveloper remove this logic once nameToNumber returns Option<PortfolioNumber>
