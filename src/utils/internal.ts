@@ -86,6 +86,7 @@ import {
   SYSTEM_VERSION_RPC_CALL,
 } from '~/utils/constants';
 import {
+  bigNumberToU64,
   claimIssuerToMeshClaimIssuer,
   identityIdToString,
   meshClaimTypeToClaimType,
@@ -909,13 +910,41 @@ export async function getPortfolioIdsByName(
     },
   } = context;
 
-  const rawPortfolioNumbers = await portfolio.nameToNumber.multi<Option<PortfolioNumber>>(
+  const rawPortfolioNumbers = await portfolio.nameToNumber.multi<PortfolioNumber>(
     rawNames.map<[IdentityId, Bytes]>(name => [rawIdentityId, name])
   );
 
-  return rawPortfolioNumbers.map(number => {
-    const rawPortfolioId = number.unwrapOr(null);
-    return optionize(u64ToBigNumber)(rawPortfolioId);
+  const portfolioIds = rawPortfolioNumbers
+    .filter(rawPortfolioNumber => !rawPortfolioNumber.isEmpty)
+    .map(number => u64ToBigNumber(number));
+
+  // TODO @prashantasdeveloper remove this logic once nameToNumber returns Option<PortfolioNumber>
+  /**
+   * since nameToNumber returns 1 for non-existing portfolios, if a name maps to number 1,
+   *  we need to check if the given name actually matches the first portfolio
+   */
+  let firstPortfolioName: Bytes;
+
+  /*
+   * even though we make this call without knowing if we will need
+   *  the result, we only await for it if necessary, so it's still
+   *  performant
+   */
+  const gettingFirstPortfolioName = portfolio.portfolios(
+    rawIdentityId,
+    bigNumberToU64(new BigNumber(1), context)
+  );
+
+  return P.map(portfolioIds, async (id, index) => {
+    if (id.eq(1)) {
+      firstPortfolioName = await gettingFirstPortfolioName;
+
+      if (!firstPortfolioName.eq(rawNames[index])) {
+        return null;
+      }
+    }
+
+    return id;
   });
 }
 

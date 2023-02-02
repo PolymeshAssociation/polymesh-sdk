@@ -791,10 +791,11 @@ describe('getPortfolioIdsByName', () => {
     identityId = dsMockUtils.createMockIdentityId('someDid');
     dsMockUtils.createQueryStub('portfolio', 'nameToNumber', {
       multi: [
-        dsMockUtils.createMockOption(dsMockUtils.createMockU64(new BigNumber(1))),
-        dsMockUtils.createMockOption(dsMockUtils.createMockU64(new BigNumber(2))),
-        dsMockUtils.createMockOption(),
-        dsMockUtils.createMockOption(),
+        dsMockUtils.createMockU64(new BigNumber(1)),
+        dsMockUtils.createMockU64(new BigNumber(2)),
+        dsMockUtils.createMockU64(new BigNumber(1)),
+        dsMockUtils.createMockU64(new BigNumber(1)), // Use case for backward compatibility where non existing portfolios were returned with 1
+        dsMockUtils.createMockU64(), // 5.2.0 returns Option<u64>
       ],
     });
     portfoliosStub = dsMockUtils.createQueryStub('portfolio', 'portfolios');
@@ -819,6 +820,7 @@ describe('getPortfolioIdsByName', () => {
         ...rawNames,
         dsMockUtils.createMockBytes('anotherName'),
         dsMockUtils.createMockBytes('yetAnotherName'),
+        dsMockUtils.createMockBytes('nonExistingPortfolioName'),
       ],
       context
     );
