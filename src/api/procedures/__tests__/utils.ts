@@ -10,6 +10,7 @@ import {
   assertDistributionDatesValid,
   assertGroupDoesNotExist,
   assertInstructionValid,
+  assertInstructionValidForManualExecution,
   assertPortfolioExists,
   assertRequirementsNotTooComplex,
   assertSecondaryAccounts,
@@ -87,6 +88,11 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockTickerReservationModule(
     '~/api/entities/TickerReservation'
   )
+);
+
+jest.mock(
+  '~/api/entities/Venue',
+  require('~/testUtils/mocks/entities').mockVenueModule('~/api/entities/Venue')
 );
 
 describe('assertInstructionValid', () => {
@@ -194,6 +200,91 @@ describe('assertInstructionValid', () => {
     result = await assertInstructionValid(instruction, mockContext);
 
     expect(result).toBeUndefined();
+  });
+});
+
+describe('assertInstructionValidForManualExecution', () => {
+  const latestBlock = new BigNumber(200);
+  let mockContext: Mocked<Context>;
+  let instructionDetails: InstructionDetails;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks({
+      contextOptions: {
+        latestBlock,
+      },
+    });
+    entityMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockContext = dsMockUtils.getContextInstance();
+    instructionDetails = {
+      status: InstructionStatus.Pending,
+      type: InstructionType.SettleManual,
+      endAfterBlock: new BigNumber(100),
+    } as InstructionDetails;
+  });
+
+  afterEach(() => {
+    entityMockUtils.reset();
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should throw an error if instruction is already Executed', () => {
+    return expect(
+      assertInstructionValidForManualExecution(
+        {
+          ...instructionDetails,
+          status: InstructionStatus.Executed,
+        },
+        mockContext
+      )
+    ).rejects.toThrow('The Instruction has already been executed');
+  });
+
+  it('should throw an error if the instruction is not of type SettleManual', async () => {
+    return expect(
+      assertInstructionValidForManualExecution(
+        {
+          ...instructionDetails,
+          type: InstructionType.SettleOnAffirmation,
+        },
+        mockContext
+      )
+    ).rejects.toThrow("You cannot manually execute settlement of type 'SettleOnAffirmation'");
+  });
+
+  it('should throw an error if the instruction is being executed before endAfterBlock', async () => {
+    const endAfterBlock = new BigNumber(1000);
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The Instruction cannot be executed until the specified end after block',
+      data: {
+        currentBlock: latestBlock,
+        endAfterBlock,
+      },
+    });
+    return expect(
+      assertInstructionValidForManualExecution(
+        {
+          ...instructionDetails,
+          endAfterBlock,
+        } as InstructionDetails,
+        mockContext
+      )
+    ).rejects.toThrowError(expectedError);
+  });
+
+  it('should not throw an error', () => {
+    return expect(
+      assertInstructionValidForManualExecution(instructionDetails, mockContext)
+    ).resolves.not.toThrow();
   });
 });
 

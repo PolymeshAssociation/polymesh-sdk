@@ -480,6 +480,10 @@ export interface ModifyInstructionAffirmationParams {
   operation: InstructionAffirmationOperation;
 }
 
+export interface ExecuteManualInstructionParams {
+  id: BigNumber;
+}
+
 export interface CreateVenueParams {
   description: string;
   type: VenueType;

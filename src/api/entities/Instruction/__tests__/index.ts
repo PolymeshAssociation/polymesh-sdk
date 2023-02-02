@@ -816,6 +816,31 @@ describe('Instruction class', () => {
     });
   });
 
+  describe('method: executeManually', () => {
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Instruction>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          {
+            args: { id },
+            transformer: undefined,
+          },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await instruction.executeManually();
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
   describe('method: getStatus', () => {
     afterAll(() => {
       jest.restoreAllMocks();

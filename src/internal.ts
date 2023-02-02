@@ -17,6 +17,7 @@ export {
   ConsumeJoinOrRotateAuthorizationParams,
 } from '~/api/procedures/consumeJoinOrRotateAuthorization';
 export { addInstruction } from '~/api/procedures/addInstruction';
+export { executeManualInstruction } from '~/api/procedures/executeManualInstruction';
 export {
   consumeAuthorizationRequests,
   ConsumeAuthorizationRequestsParams,
