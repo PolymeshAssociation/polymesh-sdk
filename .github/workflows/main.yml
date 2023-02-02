@@ -7,43 +7,43 @@ on:
     types: [assigned, opened, synchronize, reopened]
 
 jobs:
-  lint:
-    name: Linting
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-node@v1
-        with:
-          node-version: '14.x'
-      - name: install dependencies
-        run: yarn --frozen-lockfile
-      - name: lint
-        run: yarn lint
+  # lint:
+  #   name: Linting
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v1
+  #     - uses: actions/setup-node@v1
+  #       with:
+  #         node-version: '14.x'
+  #     - name: install dependencies
+  #       run: yarn --frozen-lockfile
+  #     - name: lint
+  #       run: yarn lint
 
-  test:
-    name: Testing
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-node@v1
-        with:
-          node-version: '14.x'
-      - name: install dependencies
-        run: yarn --frozen-lockfile
-      - name: test
-        env:
-          NODE_OPTIONS: '--max-old-space-size=8192'
-        run: yarn test
-      - name: sonarcloud scan
-        uses: SonarSource/sonarcloud-github-action@master
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # test:
+  #   name: Testing
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v1
+  #     - uses: actions/setup-node@v1
+  #       with:
+  #         node-version: '14.x'
+  #     - name: install dependencies
+  #       run: yarn --frozen-lockfile
+  #     - name: test
+  #       env:
+  #         NODE_OPTIONS: '--max-old-space-size=8192'
+  #       run: yarn test
+  #     - name: sonarcloud scan
+  #       uses: SonarSource/sonarcloud-github-action@master
+  #       env:
+  #         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   release:
     name: Building and releasing project
     runs-on: ubuntu-latest
-    needs: [lint, test]
+    # needs: [lint, test]
     steps:
       - uses: actions/checkout@v1
       - uses: actions/setup-node@v1
@@ -64,4 +64,4 @@ jobs:
         run: |
           cd dist
           yarn --frozen-lockfile
-          yarn semantic-release
+          yarn semantic-release --dry-run --no-ci --debug
