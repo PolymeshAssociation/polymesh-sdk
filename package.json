@@ -4,7 +4,7 @@
   "description": "High-level API to interact with the Polymesh blockchain",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "author": "Polymath Studios Inc.",
+  "author": "Polymesh Association",
   "license": "ISC",
   "scripts": {
     "start": "cross-env node scripts/generateTsconfigDev.js && cross-env webpack-dev-server --config=webpack.config.dev.js",

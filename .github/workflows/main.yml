@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [master, beta, alpha]
+    branches: [master, beta, alpha, lts]
   pull_request:
     types: [assigned, opened, synchronize, reopened]
 
@@ -59,7 +59,7 @@ jobs:
           cp -R node_modules dist/node_modules
       - name: release
         env:
-          GITHUB_TOKEN: ${{ secrets.JERE_RELEASE_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
           NPM_TOKEN: ${{ secrets.ASSOCIATION_NPM_TOKEN }}
         run: |
           cd dist
