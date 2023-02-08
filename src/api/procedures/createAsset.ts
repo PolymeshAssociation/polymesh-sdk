@@ -30,7 +30,7 @@ import {
   stringToTicker,
   stringToTickerKey,
 } from '~/utils/conversion';
-import { checkTxType, optionize } from '~/utils/internal';
+import { checkTxType, isAlphanumeric, optionize } from '~/utils/internal';
 
 /**
  * @hidden
@@ -95,6 +95,13 @@ function assertTickerAvailable(
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: `You must first reserve ticker "${ticker}" in order to create an Asset with it`,
+    });
+  }
+
+  if (!isAlphanumeric(ticker)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'New Tickers can only contain alphanumeric values',
     });
   }
 }

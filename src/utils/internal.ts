@@ -93,7 +93,6 @@ import {
 } from '~/utils/constants';
 import {
   bigNumberToU32,
-  bigNumberToU64,
   claimIssuerToMeshClaimIssuer,
   identitiesToBtreeSet,
   identityIdToString,
@@ -456,6 +455,15 @@ export function removePadding(value: string): string {
 export function isPrintableAscii(value: string): boolean {
   // eslint-disable-next-line no-control-regex
   return /^[\x00-\x7F]*$/.test(value);
+}
+
+/**
+ * @hidden
+ *
+ * Return whether the string is fully alphanumeric
+ */
+export function isAlphanumeric(value: string): boolean {
+  return /^[0-9a-zA-Z]*$/.test(value);
 }
 
 /**
@@ -1109,35 +1117,9 @@ export async function getPortfolioIdsByName(
     rawNames.map<[PolymeshPrimitivesIdentityId, Bytes]>(name => [rawIdentityId, name])
   );
 
-  const portfolioIds = rawPortfolioNumbers.map(number => u64ToBigNumber(number));
-
-  // TODO @prashantasdeveloper remove this logic once nameToNumber returns Option<PortfolioNumber>
-  /**
-   * since nameToNumber returns 1 for non-existing portfolios, if a name maps to number 1,
-   *  we need to check if the given name actually matches the first portfolio
-   */
-  let firstPortfolioName: Bytes;
-
-  /*
-   * even though we make this call without knowing if we will need
-   *  the result, we only await for it if necessary, so it's still
-   *  performant
-   */
-  const gettingFirstPortfolioName = portfolio.portfolios(
-    rawIdentityId,
-    bigNumberToU64(new BigNumber(1), context)
-  );
-
-  return P.map(portfolioIds, async (id, index) => {
-    if (id.eq(1)) {
-      firstPortfolioName = await gettingFirstPortfolioName;
-
-      if (!firstPortfolioName.eq(rawNames[index])) {
-        return null;
-      }
-    }
-
-    return id;
+  return rawPortfolioNumbers.map(number => {
+    const rawPortfolioId = number.unwrapOr(null);
+    return optionize(u64ToBigNumber)(rawPortfolioId);
   });
 }
 

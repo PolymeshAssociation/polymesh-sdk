@@ -63,6 +63,7 @@ import type {
   PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuthV1,
   PolymeshCommonUtilitiesMaybeBlock,
   PolymeshCommonUtilitiesProtocolFeeProtocolOp,
+  PolymeshContractsChainExtensionExtrinsicId,
   PolymeshPrimitivesAgentAgentGroup,
   PolymeshPrimitivesAssetAssetType,
   PolymeshPrimitivesAssetIdentifier,
@@ -747,6 +748,41 @@ declare module '@polkadot/api-base/types/submittable' {
       unfreeze: AugmentedSubmittable<
         (ticker: PolymeshPrimitivesTicker | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
         [PolymeshPrimitivesTicker]
+      >;
+      /**
+       * Updates the type of an asset.
+       *
+       * # Arguments
+       * * `origin` - the secondary key of the sender.
+       * * `ticker` - the ticker of the token.
+       * * `asset_type` - the new type of the token.
+       *
+       * ## Errors
+       * - `InvalidCustomAssetTypeId` if `asset_type` is of type custom and has an invalid type id.
+       *
+       * # Permissions
+       * * Asset
+       **/
+      updateAssetType: AugmentedSubmittable<
+        (
+          ticker: PolymeshPrimitivesTicker | string | Uint8Array,
+          assetType:
+            | PolymeshPrimitivesAssetAssetType
+            | { EquityCommon: any }
+            | { EquityPreferred: any }
+            | { Commodity: any }
+            | { FixedIncome: any }
+            | { REIT: any }
+            | { Fund: any }
+            | { RevenueShareAgreement: any }
+            | { StructuredProduct: any }
+            | { Derivative: any }
+            | { Custom: any }
+            | { StableCoin: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesTicker, PolymeshPrimitivesAssetAssetType]
       >;
       /**
        * Updates the asset identifiers.
@@ -1742,7 +1778,7 @@ declare module '@polkadot/api-base/types/submittable' {
     complianceManager: {
       /**
        * Adds a compliance requirement to an asset's compliance by ticker.
-       * If the compliance requirement is a duplicate, it does nothing.
+       * If there are duplicate ClaimTypes for a particular trusted issuer, duplicates are removed.
        *
        * # Arguments
        * * origin - Signer of the dispatchable. It should be the owner of the ticker
@@ -3019,9 +3055,6 @@ declare module '@polkadot/api-base/types/submittable' {
        * - `target_account` (primary key of the new Identity) can be linked to just one and only
        * one identity.
        * - External secondary keys can be linked to just one identity.
-       *
-       * # Weight
-       * `7_000_000_000 + 600_000 * secondary_keys.len()`
        **/
       cddRegisterDid: AugmentedSubmittable<
         (
@@ -3036,6 +3069,31 @@ declare module '@polkadot/api-base/types/submittable' {
               )[]
         ) => SubmittableExtrinsic<ApiType>,
         [AccountId32, Vec<PolymeshPrimitivesSecondaryKey>]
+      >;
+      /**
+       * Register `target_account` with a new Identity and issue a CDD claim with a blank CddId
+       *
+       * # Failure
+       * - `origin` has to be a active CDD provider. Inactive CDD providers cannot add new
+       * claims.
+       * - `target_account` (primary key of the new Identity) can be linked to just one and only
+       * one identity.
+       * - External secondary keys can be linked to just one identity.
+       **/
+      cddRegisterDidWithCdd: AugmentedSubmittable<
+        (
+          targetAccount: AccountId32 | string | Uint8Array,
+          secondaryKeys:
+            | Vec<PolymeshPrimitivesSecondaryKey>
+            | (
+                | PolymeshPrimitivesSecondaryKey
+                | { key?: any; permissions?: any }
+                | string
+                | Uint8Array
+              )[],
+          expiry: Option<u64> | null | object | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [AccountId32, Vec<PolymeshPrimitivesSecondaryKey>, Option<u64>]
       >;
       /**
        * Set if CDD authorization is required for updating primary key of an identity.
@@ -4196,6 +4254,21 @@ declare module '@polkadot/api-base/types/submittable' {
         ) => SubmittableExtrinsic<ApiType>,
         [u128, u64, Option<u128>, H256, Bytes, Bytes, PolymeshPrimitivesSecondaryKeyPermissions]
       >;
+      /**
+       * Update CallRuntime whitelist.
+       *
+       * # Arguments
+       *
+       * # Errors
+       **/
+      updateCallRuntimeWhitelist: AugmentedSubmittable<
+        (
+          updates:
+            | Vec<ITuple<[PolymeshContractsChainExtensionExtrinsicId, bool]>>
+            | [PolymeshContractsChainExtensionExtrinsicId, bool | boolean | Uint8Array][]
+        ) => SubmittableExtrinsic<ApiType>,
+        [Vec<ITuple<[PolymeshContractsChainExtensionExtrinsicId, bool]>>]
+      >;
     };
     portfolio: {
       acceptPortfolioCustody: AugmentedSubmittable<
@@ -4713,6 +4786,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | PalletSettlementSettlementType
             | { SettleOnAffirmation: any }
             | { SettleOnBlock: any }
+            | { SettleManual: any }
             | string
             | Uint8Array,
           tradeDate: Option<u64> | null | object | string | Uint8Array,
@@ -4766,6 +4840,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | PalletSettlementSettlementType
             | { SettleOnAffirmation: any }
             | { SettleOnBlock: any }
+            | { SettleManual: any }
             | string
             | Uint8Array,
           tradeDate: Option<u64> | null | object | string | Uint8Array,
@@ -4825,6 +4900,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | PalletSettlementSettlementType
             | { SettleOnAffirmation: any }
             | { SettleOnBlock: any }
+            | { SettleManual: any }
             | string
             | Uint8Array,
           tradeDate: Option<u64> | null | object | string | Uint8Array,
@@ -4862,6 +4938,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | PalletSettlementSettlementType
             | { SettleOnAffirmation: any }
             | { SettleOnBlock: any }
+            | { SettleManual: any }
             | string
             | Uint8Array,
           tradeDate: Option<u64> | null | object | string | Uint8Array,
@@ -5049,6 +5126,29 @@ declare module '@polkadot/api-base/types/submittable' {
           venues: Vec<u64> | (u64 | AnyNumber | Uint8Array)[]
         ) => SubmittableExtrinsic<ApiType>,
         [PolymeshPrimitivesTicker, Vec<u64>]
+      >;
+      /**
+       * Manually execute settlement
+       *
+       * # Arguments
+       * * `id` - Target instruction id to reschedule.
+       * * `_legs_count` - Legs included in this instruction.
+       *
+       * # Errors
+       * * `InstructionNotFailed` - Instruction not in a failed state or does not exist.
+       **/
+      executeManualInstruction: AugmentedSubmittable<
+        (
+          id: u64 | AnyNumber | Uint8Array,
+          legsCount: u32 | AnyNumber | Uint8Array,
+          portfolio:
+            | Option<PolymeshPrimitivesIdentityIdPortfolioId>
+            | null
+            | object
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [u64, u32, Option<PolymeshPrimitivesIdentityIdPortfolioId>]
       >;
       /**
        * Root callable extrinsic, used as an internal call to execute a scheduled settlement instruction.
@@ -5360,6 +5460,29 @@ declare module '@polkadot/api-base/types/submittable' {
        * # </weight>
        **/
       chill: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>, []>;
+      /**
+       * GC forcefully chills a validator.
+       * Effects will be felt at the beginning of the next era.
+       * And, it can be only called when [`EraElectionStatus`] is `Closed`.
+       *
+       * # Arguments
+       * * origin which must be a GC.
+       * * identity must be permissioned to run operator/validator nodes.
+       * * stash_keys contains the secondary keys of the permissioned identity
+       *
+       * # Errors
+       * * `BadOrigin` The origin was not a GC member.
+       * * `CallNotAllowed` The call is not allowed at the given time due to restrictions of election period.
+       * * `NotExists` Permissioned validator doesn't exist.
+       * * `NotStash` Not a stash account for the permissioned identity.
+       **/
+      chillFromGovernance: AugmentedSubmittable<
+        (
+          identity: PolymeshPrimitivesIdentityId | string | Uint8Array,
+          stashKeys: Vec<AccountId32> | (AccountId32 | string | Uint8Array)[]
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesIdentityId, Vec<AccountId32>]
+      >;
       /**
        * Force there to be a new era at the end of the next session. After this, it will be
        * reset to normal (non-forced) behaviour.

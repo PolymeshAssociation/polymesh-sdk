@@ -115,6 +115,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       TickerAlreadyRegistered: AugmentedError<ApiType>;
       /**
+       * Tickers should start with at least one valid byte.
+       **/
+      TickerFirstByteNotValid: AugmentedError<ApiType>;
+      /**
        * The ticker has non-ascii-encoded parts.
        **/
       TickerNotAscii: AugmentedError<ApiType>;
@@ -787,6 +791,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       ClaimAndProofVersionsDoNotMatch: AugmentedError<ApiType>;
       /**
+       * Claim does not exist.
+       **/
+      ClaimDoesNotExist: AugmentedError<ApiType>;
+      /**
        * Try to add a claim variant using un-designated extrinsic.
        **/
       ClaimVariantNotAllowed: AugmentedError<ApiType>;
@@ -1160,7 +1168,7 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       DataLeftAfterDecoding: AugmentedError<ApiType>;
       /**
-       * Input data that a contract passed when making a runtime call was too large.
+       * Input data that a contract passed when using the ChainExtension was too large.
        **/
       InLenTooLarge: AugmentedError<ApiType>;
       /**
@@ -1169,9 +1177,25 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InstantiatorWithNoIdentity: AugmentedError<ApiType>;
       /**
-       * The given `func_id: u32` did not translate into a known runtime call.
+       * Invalid `func_id` provided from contract.
        **/
-      RuntimeCallNotFound: AugmentedError<ApiType>;
+      InvalidFuncId: AugmentedError<ApiType>;
+      /**
+       * Failed to decode a valid `RuntimeCall`.
+       **/
+      InvalidRuntimeCall: AugmentedError<ApiType>;
+      /**
+       * Output data returned from the ChainExtension was too large.
+       **/
+      OutLenTooLarge: AugmentedError<ApiType>;
+      /**
+       * `ReadStorage` failed to write value into the contract's buffer.
+       **/
+      ReadStorageFailed: AugmentedError<ApiType>;
+      /**
+       * Extrinsic is not allowed to be called by contracts.
+       **/
+      RuntimeCallDenied: AugmentedError<ApiType>;
     };
     portfolio: {
       /**
@@ -1190,6 +1214,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Can not unlock more tokens than what are locked
        **/
       InsufficientTokensLocked: AugmentedError<ApiType>;
+      /**
+       * Duplicate asset among the items.
+       **/
+      NoDuplicateAssetsAllowed: AugmentedError<ApiType>;
       /**
        * The portfolio doesn't exist.
        **/
@@ -1341,6 +1369,10 @@ declare module '@polkadot/api-base/types/errors' {
     };
     settlement: {
       /**
+       * The caller is not a party of this instruction.
+       **/
+      CallerIsNotAParty: AugmentedError<ApiType>;
+      /**
        * While affirming the transfer, system failed to lock the assets involved.
        **/
       FailedToLockTokens: AugmentedError<ApiType>;
@@ -1372,6 +1404,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Provided instruction is not pending execution.
        **/
       InstructionNotPending: AugmentedError<ApiType>;
+      /**
+       * Instruction settlement block has not yet been reached.
+       **/
+      InstructionSettleBlockNotReached: AugmentedError<ApiType>;
       /**
        * Instruction's target settle block reached.
        **/
@@ -1526,6 +1562,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Given potential validator identity is invalid.
        **/
       InvalidValidatorIdentity: AugmentedError<ApiType>;
+      /**
+       * Validator should have minimum 50k POLYX bonded.
+       **/
+      InvalidValidatorUnbondAmount: AugmentedError<ApiType>;
       /**
        * Updates with same value.
        **/

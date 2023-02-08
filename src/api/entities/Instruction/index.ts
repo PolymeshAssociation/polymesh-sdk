@@ -1,5 +1,6 @@
 import BigNumber from 'bignumber.js';
 
+import { executeManualInstruction } from '~/api/procedures/executeManualInstruction';
 import {
   Asset,
   Context,
@@ -10,7 +11,7 @@ import {
   rescheduleInstruction,
   Venue,
 } from '~/internal';
-import { EventIdEnum as MiddlewareV2Event } from '~/middleware/enumsV2';
+import { InstructionStatusEnum } from '~/middleware/enumsV2';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { instructionsQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
@@ -36,11 +37,11 @@ import {
   meshAffirmationStatusToAffirmationStatus,
   meshInstructionStatusToInstructionStatus,
   meshPortfolioIdToPortfolio,
+  meshSettlementTypeToEndCondition,
   middlewareEventToEventIdentifier,
   middlewareV2EventDetailsToEventIdentifier,
   momentToDate,
   tickerToString,
-  u32ToBigNumber,
   u64ToBigNumber,
 } from '~/utils/conversion';
 import { createProcedureMethod, optionize, requestMulti, requestPaginated } from '~/utils/internal';
@@ -50,7 +51,6 @@ import {
   InstructionDetails,
   InstructionStatus,
   InstructionStatusResult,
-  InstructionType,
   Leg,
 } from './types';
 
@@ -126,6 +126,14 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     this.reschedule = createProcedureMethod(
       {
         getProcedureAndArgs: () => [rescheduleInstruction, { id }],
+        voidArgs: true,
+      },
+      context
+    );
+
+    this.executeManually = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [executeManualInstruction, { id }],
         voidArgs: true,
       },
       context
@@ -269,7 +277,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       });
     }
 
-    const details = {
+    return {
       status:
         status === InternalInstructionStatus.Pending
           ? InstructionStatus.Pending
@@ -279,19 +287,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       valueDate: valueDate.isSome ? momentToDate(valueDate.unwrap()) : null,
       venue: new Venue({ id: u64ToBigNumber(venueId) }, context),
       memo: memo.isSome ? instructionMemoToString(memo.unwrap()) : null,
-    };
-
-    if (type.isSettleOnAffirmation) {
-      return {
-        ...details,
-        type: InstructionType.SettleOnAffirmation,
-      };
-    }
-
-    return {
-      ...details,
-      type: InstructionType.SettleOnBlock,
-      endBlock: u32ToBigNumber(type.asSettleOnBlock),
+      ...meshSettlementTypeToEndCondition(type),
     };
   }
 
@@ -449,8 +445,8 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     }
 
     const [executedEventIdentifier, failedEventIdentifier] = await Promise.all([
-      this.getInstructionEventFromMiddlewareV2(MiddlewareV2Event.InstructionExecuted),
-      this.getInstructionEventFromMiddlewareV2(MiddlewareV2Event.InstructionFailed),
+      this.getInstructionEventFromMiddlewareV2(InstructionStatusEnum.Executed),
+      this.getInstructionEventFromMiddlewareV2(InstructionStatusEnum.Failed),
     ]);
 
     if (executedEventIdentifier) {
@@ -501,6 +497,11 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
   public reschedule: NoArgsProcedureMethod<Instruction>;
 
   /**
+   * Executes an Instruction of type `SettleManual`
+   */
+  public executeManually: NoArgsProcedureMethod<Instruction>;
+
+  /**
    * @hidden
    * Retrieve Instruction status event from middleware
    */
@@ -527,7 +528,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    * Retrieve Instruction status event from middleware V2
    */
   private async getInstructionEventFromMiddlewareV2(
-    eventId: MiddlewareV2Event
+    status: InstructionStatusEnum
   ): Promise<EventIdentifier | null> {
     const { id, context } = this;
 
@@ -540,7 +541,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'instructions'>>(
       instructionsQuery(
         {
-          eventId,
+          status,
           id: id.toString(),
         },
         new BigNumber(1),

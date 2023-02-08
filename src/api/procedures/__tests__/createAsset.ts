@@ -126,7 +126,7 @@ describe('createAsset procedure', () => {
       'securityIdentifierToAssetIdentifier'
     );
     assetDocumentToDocumentSpy = jest.spyOn(utilsConversionModule, 'assetDocumentToDocument');
-    ticker = 'SOME_TICKER';
+    ticker = 'TICKER';
     name = 'someName';
     initialSupply = new BigNumber(100);
     isDivisible = true;
@@ -279,6 +279,17 @@ describe('createAsset procedure', () => {
     return expect(prepareCreateAsset.call(proc, args)).rejects.toThrow(
       `You must first reserve ticker "${ticker}" in order to create an Asset with it`
     );
+  });
+
+  it('should throw an error if the ticker contains non numeric characters', () => {
+    const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
+      customTypeData: null,
+      status: TickerReservationStatus.Reserved,
+    });
+
+    return expect(
+      prepareCreateAsset.call(proc, { ...args, ticker: 'SOME_TICKER' })
+    ).rejects.toThrow('New Tickers can only contain alphanumeric values');
   });
 
   it('should add an Asset creation transaction to the batch', async () => {

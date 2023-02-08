@@ -383,8 +383,23 @@ export interface AddInvestorUniquenessClaimParams {
 }
 
 export interface RegisterIdentityParams {
+  /**
+   * The Account that should function as the primary key of the newly created Identity. Can be ss58 encoded address or an instance of Account
+   */
   targetAccount: string | Account;
+  /**
+   * (optional) secondary accounts for the new Identity with their corresponding permissions.
+   * @note Each Account will need to accept the generated authorizations before being linked to the Identity
+   */
   secondaryAccounts?: Modify<PermissionedAccount, { permissions: PermissionsLike }>[];
+  /**
+   * (optional) also issue a CDD claim for the created DID, completing the onboarding process for the Account
+   */
+  createCdd?: boolean;
+  /**
+   * (optional) when the generated CDD claim should expire, `createCdd` must be true if specified
+   */
+  expiry?: Date;
 }
 
 export interface TransferPolyxParams {
@@ -402,7 +417,7 @@ export interface TransferPolyxParams {
   memo?: string;
 }
 
-export interface AddInstructionParams {
+export type AddInstructionParams = {
   /**
    * array of Asset movements (amount, from, to, asset)
    */
@@ -421,14 +436,23 @@ export interface AddInstructionParams {
    */
   valueDate?: Date;
   /**
-   * block at which the Instruction will be executed automatically (optional, the Instruction will be executed when all participants have authorized it if not supplied)
-   */
-  endBlock?: BigNumber;
-  /**
    * identifier string to help differentiate instructions
    */
   memo?: string;
-}
+} & (
+  | {
+      /**
+       * block at which the Instruction will be executed automatically (optional, the Instruction will be executed when all participants have authorized it if not supplied)
+       */
+      endBlock?: BigNumber;
+    }
+  | {
+      /**
+       * block after which the Instruction can be manually executed (optional, the Instruction will be executed when all participants have authorized it if not supplied)
+       */
+      endAfterBlock?: BigNumber;
+    }
+);
 
 export interface AddInstructionsParams {
   /**
@@ -437,9 +461,9 @@ export interface AddInstructionsParams {
   instructions: AddInstructionParams[];
 }
 
-export interface AddInstructionWithVenueIdParams extends AddInstructionParams {
+export type AddInstructionWithVenueIdParams = AddInstructionParams & {
   venueId: BigNumber;
-}
+};
 
 export interface AffirmInstructionParams {
   id: BigNumber;
@@ -454,6 +478,10 @@ export enum InstructionAffirmationOperation {
 export interface ModifyInstructionAffirmationParams {
   id: BigNumber;
   operation: InstructionAffirmationOperation;
+}
+
+export interface ExecuteManualInstructionParams {
+  id: BigNumber;
 }
 
 export interface CreateVenueParams {

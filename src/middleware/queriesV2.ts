@@ -269,7 +269,7 @@ function createArgsAndFilters(
   };
 }
 
-type InstructionArgs = 'id' | 'eventId' | 'venueId';
+type InstructionArgs = 'id' | 'eventId' | 'venueId' | 'status';
 
 /**
  * @hidden
@@ -281,7 +281,10 @@ export function instructionsQuery(
   size?: BigNumber,
   start?: BigNumber
 ): GraphqlQuery<PaginatedQueryArgs<QueryArgs<Instruction, InstructionArgs>>> {
-  const { args, filter } = createArgsAndFilters(filters, { eventId: 'EventIdEnum' });
+  const { args, filter } = createArgsAndFilters(filters, {
+    eventId: 'EventIdEnum',
+    status: 'InstructionStatusEnum',
+  });
   const query = gql`
     query InstructionsQuery
       ${args} 
