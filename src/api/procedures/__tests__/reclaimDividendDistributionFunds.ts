@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
 
 import {
   getAuthorization,
@@ -35,7 +34,7 @@ describe('reclaimDividendDistributionFunds procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
 
-    sinon.stub(utilsConversionModule, 'corporateActionIdentifierToCaId').returns(rawCaId);
+    jest.spyOn(utilsConversionModule, 'corporateActionIdentifierToCaId').mockReturnValue(rawCaId);
   });
 
   beforeEach(() => {
@@ -104,7 +103,7 @@ describe('reclaimDividendDistributionFunds procedure', () => {
   it('should return a reclaim transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('capitalDistribution', 'reclaim');
+    const transaction = dsMockUtils.createTxMock('capitalDistribution', 'reclaim');
 
     const result = await prepareReclaimDividendDistributionFunds.call(proc, {
       distribution: entityMockUtils.getDividendDistributionInstance({

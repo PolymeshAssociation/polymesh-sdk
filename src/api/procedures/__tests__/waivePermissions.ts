@@ -1,5 +1,3 @@
-import sinon from 'sinon';
-
 import {
   getAuthorization,
   Params,
@@ -32,11 +30,11 @@ describe('waivePermissions procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
 
-    sinon.stub(utilsConversionModule, 'stringToTicker').returns(rawTicker);
+    jest.spyOn(utilsConversionModule, 'stringToTicker').mockReturnValue(rawTicker);
   });
 
   beforeEach(() => {
-    externalAgentsAbdicateTransaction = dsMockUtils.createTxStub('externalAgents', 'abdicate');
+    externalAgentsAbdicateTransaction = dsMockUtils.createTxMock('externalAgents', 'abdicate');
     mockContext = dsMockUtils.getContextInstance();
   });
 

@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import { uniq } from 'lodash';
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import { DefaultPortfolio, NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
@@ -79,6 +80,17 @@ export async function prepareMoveFunds(
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
       message: 'Origin and destination should be different Portfolios',
+    });
+  }
+
+  const tickers = items.map(({ asset }) => asTicker(asset));
+
+  const hasDuplicates = uniq(tickers).length !== tickers.length;
+
+  if (hasDuplicates) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Portfolio movements cannot contain any Asset more than once',
     });
   }
 

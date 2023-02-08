@@ -1,7 +1,9 @@
 import { u64 } from '@polkadot/types';
+import {
+  PolymeshCommonUtilitiesCheckpointStoredSchedule,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { StoredSchedule, Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
 
 import {
   getAuthorization,
@@ -21,11 +23,11 @@ jest.mock(
 
 describe('removeCheckpointSchedule procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: sinon.SinonStub;
-  let bigNumberToU64Stub: sinon.SinonStub;
-  let u32ToBigNumberStub: sinon.SinonStub;
+  let stringToTickerSpy: jest.SpyInstance;
+  let bigNumberToU64Spy: jest.SpyInstance;
+  let u32ToBigNumberSpy: jest.SpyInstance;
   let ticker: string;
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
   let id: BigNumber;
   let rawId: u64;
 
@@ -33,9 +35,9 @@ describe('removeCheckpointSchedule procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    bigNumberToU64Stub = sinon.stub(utilsConversionModule, 'bigNumberToU64');
-    u32ToBigNumberStub = sinon.stub(utilsConversionModule, 'u32ToBigNumber');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
+    u32ToBigNumberSpy = jest.spyOn(utilsConversionModule, 'u32ToBigNumber');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     id = new BigNumber(1);
@@ -44,10 +46,10 @@ describe('removeCheckpointSchedule procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    stringToTickerStub.returns(rawTicker);
-    bigNumberToU64Stub.returns(rawId);
+    stringToTickerSpy.mockReturnValue(rawTicker);
+    bigNumberToU64Spy.mockReturnValue(rawId);
 
-    dsMockUtils.createQueryStub('checkpoint', 'scheduleRefCount');
+    dsMockUtils.createQueryMock('checkpoint', 'scheduleRefCount');
   });
 
   afterEach(() => {
@@ -67,11 +69,11 @@ describe('removeCheckpointSchedule procedure', () => {
       schedule: id,
     };
 
-    dsMockUtils.createQueryStub('checkpoint', 'schedules', {
+    dsMockUtils.createQueryMock('checkpoint', 'schedules', {
       returnValue: [
         dsMockUtils.createMockStoredSchedule({
           id: dsMockUtils.createMockU64(new BigNumber(5)),
-        } as unknown as StoredSchedule),
+        } as unknown as PolymeshCommonUtilitiesCheckpointStoredSchedule),
       ],
     });
 
@@ -88,15 +90,15 @@ describe('removeCheckpointSchedule procedure', () => {
       schedule: id,
     };
 
-    dsMockUtils.createQueryStub('checkpoint', 'schedules', {
+    dsMockUtils.createQueryMock('checkpoint', 'schedules', {
       returnValue: [
         dsMockUtils.createMockStoredSchedule({
           id: dsMockUtils.createMockU64(id),
-        } as unknown as StoredSchedule),
+        } as unknown as PolymeshCommonUtilitiesCheckpointStoredSchedule),
       ],
     });
 
-    u32ToBigNumberStub.returns(new BigNumber(1));
+    u32ToBigNumberSpy.mockReturnValue(new BigNumber(1));
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
@@ -111,24 +113,24 @@ describe('removeCheckpointSchedule procedure', () => {
       schedule: id,
     };
 
-    dsMockUtils.createQueryStub('checkpoint', 'schedules', {
+    dsMockUtils.createQueryMock('checkpoint', 'schedules', {
       returnValue: [
         dsMockUtils.createMockStoredSchedule({
           id: rawId,
-        } as StoredSchedule),
+        } as PolymeshCommonUtilitiesCheckpointStoredSchedule),
       ],
     });
 
-    u32ToBigNumberStub.returns(new BigNumber(0));
+    u32ToBigNumberSpy.mockReturnValue(new BigNumber(0));
 
-    let transaction = dsMockUtils.createTxStub('checkpoint', 'removeSchedule');
+    let transaction = dsMockUtils.createTxMock('checkpoint', 'removeSchedule');
     let proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     let result = await prepareRemoveCheckpointSchedule.call(proc, args);
 
     expect(result).toEqual({ transaction, args: [rawTicker, rawId], resolver: undefined });
 
-    transaction = dsMockUtils.createTxStub('checkpoint', 'removeSchedule');
+    transaction = dsMockUtils.createTxMock('checkpoint', 'removeSchedule');
     proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     result = await prepareRemoveCheckpointSchedule.call(proc, {

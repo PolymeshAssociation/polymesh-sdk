@@ -41,48 +41,93 @@ import {
   RefCount,
   RuntimeDispatchInfo,
   RuntimeVersion,
-  Signature,
   SignedBlock,
 } from '@polkadot/types/interfaces';
 import {
   ConfidentialIdentityV2ClaimProofsScopeClaimProof,
   ConfidentialIdentityV2ClaimProofsZkProofData,
+  ConfidentialIdentityV2SignSignature,
+  PalletAssetAssetOwnershipRelation,
+  PalletAssetCheckpointScheduleSpec,
   PalletAssetClassicTickerRegistration,
+  PalletAssetSecurityToken,
+  PalletAssetTickerRegistration,
+  PalletAssetTickerRegistrationConfig,
+  PalletCorporateActionsCaCheckpoint,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCaKind,
   PalletCorporateActionsCorporateAction,
   PalletCorporateActionsDistribution,
   PalletCorporateActionsInitiateCorporateActionArgs,
+  PalletCorporateActionsRecordDate,
   PalletCorporateActionsRecordDateSpec,
   PalletCorporateActionsTargetIdentities,
+  PalletCorporateActionsTargetTreatment,
+  PalletIdentityClaim1stKey,
+  PalletMultisigProposalDetails,
+  PalletMultisigProposalStatus,
   PalletPortfolioMovePortfolioItem,
   PalletRelayerSubsidy,
+  PalletSettlementAffirmationStatus,
   PalletSettlementInstruction,
   PalletSettlementInstructionMemo,
+  PalletSettlementInstructionStatus,
+  PalletSettlementSettlementType,
   PalletSettlementVenue,
+  PalletSettlementVenueType,
   PalletStoFundraiser,
+  PalletStoFundraiserStatus,
+  PalletStoFundraiserTier,
+  PalletStoPriceTier,
+  PolymeshCommonUtilitiesCheckpointStoredSchedule,
+  PolymeshCommonUtilitiesProtocolFeeProtocolOp,
+  PolymeshPrimitivesAgentAgentGroup,
+  PolymeshPrimitivesAssetAssetType,
   PolymeshPrimitivesAssetIdentifier,
+  PolymeshPrimitivesAssetMetadataAssetMetadataKey,
+  PolymeshPrimitivesAssetMetadataAssetMetadataLockStatus,
+  PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
+  PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail,
   PolymeshPrimitivesAuthorization,
   PolymeshPrimitivesAuthorizationAuthorizationData,
+  PolymeshPrimitivesCalendarCalendarPeriod,
+  PolymeshPrimitivesCalendarCalendarUnit,
+  PolymeshPrimitivesCalendarCheckpointSchedule,
+  PolymeshPrimitivesCddId,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
   PolymeshPrimitivesCondition,
   PolymeshPrimitivesConditionConditionType,
+  PolymeshPrimitivesConditionTargetIdentity,
   PolymeshPrimitivesConditionTrustedFor,
   PolymeshPrimitivesConditionTrustedIssuer,
   PolymeshPrimitivesDocument,
+  PolymeshPrimitivesDocumentHash,
+  PolymeshPrimitivesEthereumEcdsaSignature,
+  PolymeshPrimitivesEthereumEthereumAddress,
+  PolymeshPrimitivesIdentityClaim,
+  PolymeshPrimitivesIdentityClaimClaim,
   PolymeshPrimitivesIdentityClaimClaimType,
+  PolymeshPrimitivesIdentityClaimScope,
   PolymeshPrimitivesIdentityDidRecord,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesIdentityIdPortfolioId,
+  PolymeshPrimitivesIdentityIdPortfolioKind,
+  PolymeshPrimitivesJurisdictionCountryCode,
+  PolymeshPrimitivesPosRatio,
+  PolymeshPrimitivesSecondaryKey,
   PolymeshPrimitivesSecondaryKeyKeyRecord,
   PolymeshPrimitivesSecondaryKeyPalletPermissions,
   PolymeshPrimitivesSecondaryKeyPermissions,
+  PolymeshPrimitivesSecondaryKeySignatory,
   PolymeshPrimitivesStatisticsStat2ndKey,
   PolymeshPrimitivesStatisticsStatClaim,
   PolymeshPrimitivesStatisticsStatOpType,
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesStatisticsStatUpdate,
+  PolymeshPrimitivesSubsetSubsetRestrictionDispatchableName,
   PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions,
+  PolymeshPrimitivesSubsetSubsetRestrictionPortfolioId,
+  PolymeshPrimitivesSubsetSubsetRestrictionTicker,
   PolymeshPrimitivesTicker,
   PolymeshPrimitivesTransferComplianceAssetTransferCompliance,
   PolymeshPrimitivesTransferComplianceTransferCondition,
@@ -103,83 +148,21 @@ import { NormalizedCacheObject } from 'apollo-cache-inmemory';
 import ApolloClient from 'apollo-client';
 import BigNumber from 'bignumber.js';
 import { EventEmitter } from 'events';
+import { when } from 'jest-when';
 import { cloneDeep, map, merge, upperFirst } from 'lodash';
-import sinon, { SinonStub, SinonStubbedInstance } from 'sinon';
 
 import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
 import {
-  AffirmationStatus,
-  AgentGroup,
-  AGId,
   AssetComplianceResult,
-  AssetOwnershipRelation,
-  AssetPermissions,
-  AssetType,
   AuthorizationType as MeshAuthorizationType,
-  CACheckpoint,
-  CAKind,
-  CalendarPeriod,
-  CalendarUnit,
   CanTransferResult,
-  CddId,
   CddStatus,
-  CheckpointId,
-  CheckpointSchedule,
-  Claim,
-  Claim1stKey,
   ComplianceRequirementResult,
   ConditionResult,
-  ConditionType,
-  CountryCode,
-  CustomAssetTypeId,
-  DispatchableNames,
-  DocumentHash,
-  EcdsaSignature,
-  EthereumAddress,
-  FundraiserStatus,
-  FundraiserTier,
   GranularCanTransferResult,
-  IdentityClaim,
-  InstructionStatus,
-  InvestorZKProofData,
   Moment,
-  PalletName,
-  Pip,
-  PipId,
-  PipsMetadata,
-  PortfolioId,
-  PortfolioKind,
-  PortfolioPermissions,
   PortfolioValidityResult,
-  PosRatio,
-  PriceTier,
-  ProposalDetails,
-  ProposalState,
-  ProposalStatus,
-  ProtocolOp,
-  RecordDate,
-  RecordDateSpec,
-  RistrettoPoint,
-  Scalar,
-  ScheduleId,
-  ScheduleSpec,
-  Scope,
-  ScopeId,
-  SecondaryKey as MeshSecondaryKey,
-  SecurityToken,
-  SettlementType,
-  Signatory,
-  StoredSchedule,
-  TargetIdentities,
-  TargetIdentity,
-  TargetTreatment,
-  Tax,
-  TickerRegistration,
-  TickerRegistrationConfig,
-  TransferCondition,
   TransferConditionResult,
-  VenueType,
-  ZkProofData,
 } from '~/polkadot/polymesh';
 import { dsMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -201,7 +184,7 @@ import {
   TxTags,
   UnsubCallback,
 } from '~/types';
-import { Consts, Extrinsics, GraphqlQuery, PolymeshTx, Queries } from '~/types/internal';
+import { Consts, Extrinsics, GraphqlQuery, PolymeshTx, Queries, Rpcs } from '~/types/internal';
 import { ArgsType, Mutable, tuple } from '~/types/utils';
 import { STATE_RUNTIME_VERSION_CALL, SYSTEM_VERSION_RPC_CALL } from '~/utils/constants';
 
@@ -219,7 +202,8 @@ function createApi(): Mutable<ApiPromise> & EventEmitter {
       apiEmitter.on(event, listener),
     off: (event: string, listener: (...args: unknown[]) => unknown) =>
       apiEmitter.off(event, listener),
-    disconnect: sinon.stub() as () => Promise<void>,
+    disconnect: jest.fn() as () => Promise<void>,
+    setSigner: jest.fn() as (signer: PolkadotSigner) => void,
   } as Mutable<ApiPromise> & EventEmitter;
 }
 
@@ -228,12 +212,12 @@ function createApi(): Mutable<ApiPromise> & EventEmitter {
  */
 function createApolloClient(): Mocked<Mutable<ApolloClient<NormalizedCacheObject>>> {
   return {
-    stop: sinon.stub(),
-    query: sinon.stub(),
+    stop: jest.fn(),
+    query: jest.fn(),
   } as unknown as Mocked<Mutable<ApolloClient<NormalizedCacheObject>>>;
 }
 
-let apolloConstructorStub: SinonStub;
+let apolloConstructorMock: jest.Mock;
 
 /**
  * Creates mock websocket class. Contains additional methods for tests to control it
@@ -243,14 +227,14 @@ export class MockWebSocket {
    * @hidden
    */
   onopen(): void {
-    // stub for onopen
+    // mock for onopen
   }
 
   /**
    * @hidden
    */
   onclose(): void {
-    // stub for onclose
+    // mock for onclose
   }
 
   /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -258,21 +242,21 @@ export class MockWebSocket {
    * @hidden
    */
   onerror(_err: Error): void {
-    // stub for onerror
+    // mock for onerror
   }
 
   /**
    * @hidden
    */
   onmessage(_msg: Record<string, unknown>): void {
-    // stub for onmessage
+    // mock for onmessage
   }
 
   /**
    * @hidden
    */
   close(): void {
-    // stub for close
+    // mock for close
   }
 
   /**
@@ -330,7 +314,7 @@ function createWebSocket(): MockWebSocket {
   return new MockWebSocket();
 }
 
-let webSocketConstructorStub: SinonStub;
+let webSocketConstructorMock: jest.Mock;
 
 export type MockContext = Mocked<Context>;
 
@@ -352,7 +336,7 @@ const MockApolloClientClass = class {
    * @hidden
    */
   public constructor() {
-    return apolloConstructorStub();
+    return apolloConstructorMock();
   }
 };
 
@@ -370,31 +354,31 @@ const MockWebSocketClass = class {
    * @hidden
    */
   public constructor() {
-    return webSocketConstructorStub();
+    return webSocketConstructorMock();
   }
 };
 
-let apiPromiseCreateStub: SinonStub;
+let apiPromiseCreateMock: jest.Mock;
 
 const MockApiPromiseClass = class {
   /**
    * @hidden
    */
-  public static create = apiPromiseCreateStub;
+  public static create = apiPromiseCreateMock;
 };
 
 const MockWsProviderClass = class {};
 
-let contextCreateStub: SinonStub;
+let contextCreateMock: jest.Mock;
 
 const MockContextClass = class {
   /**
    * @hidden
    */
-  public static create = contextCreateStub;
+  public static create = contextCreateMock;
 };
 
-let errorStub: SinonStub;
+let errorMock: jest.Mock;
 
 type StatusCallback = (receipt: ISubmittableResult) => void;
 
@@ -432,6 +416,7 @@ interface ContextOptions {
   transactionHistory?: ResultSet<ExtrinsicData>;
   latestBlock?: BigNumber;
   middlewareEnabled?: boolean;
+  middlewareV2Enabled?: boolean;
   middlewareAvailable?: boolean;
   middlewareV2Available?: boolean;
   sentAuthorizations?: ResultSet<AuthorizationRequest>;
@@ -452,13 +437,17 @@ interface SigningManagerOptions {
   getExternalSigner?: PolkadotSigner | null;
 }
 
-export interface StubQuery {
-  entries: SinonStub;
-  entriesAt: SinonStub;
-  entriesPaged: SinonStub;
-  at: SinonStub;
-  multi: SinonStub;
-  size: SinonStub;
+export interface MockQuery {
+  entries: jest.Mock;
+  entriesAt: jest.Mock;
+  entriesPaged: jest.Mock;
+  at: jest.Mock;
+  multi: jest.Mock;
+  size: jest.Mock;
+}
+
+export interface MockRpc {
+  raw: jest.Mock;
 }
 
 export enum TxFailReason {
@@ -629,7 +618,7 @@ let constsModule = {} as Consts;
 
 let rpcModule = {} as DecoratedRpc<any, any>;
 
-let queryMultiStub = sinon.stub();
+let queryMultiMock = jest.fn();
 
 const defaultContextOptions: ContextOptions = {
   did: 'someDid',
@@ -719,6 +708,7 @@ const defaultContextOptions: ContextOptions = {
   },
   latestBlock: new BigNumber(100),
   middlewareEnabled: true,
+  middlewareV2Enabled: true,
   middlewareAvailable: true,
   middlewareV2Available: true,
   sentAuthorizations: {
@@ -748,14 +738,14 @@ let signingManagerOptions = defaultSigningManagerOptions;
  * @hidden
  */
 function configureContext(opts: ContextOptions): void {
-  const getSigningIdentity = sinon.stub();
+  const getSigningIdentity = jest.fn();
   const identity = {
     did: opts.did,
-    hasRoles: sinon.stub().resolves(opts.hasRoles),
-    checkRoles: sinon.stub().resolves(opts.checkRoles),
-    hasValidCdd: sinon.stub().resolves(opts.validCdd),
-    getAssetBalance: sinon.stub().resolves(opts.assetBalance),
-    getPrimaryAccount: sinon.stub().resolves({
+    hasRoles: jest.fn().mockResolvedValue(opts.hasRoles),
+    checkRoles: jest.fn().mockResolvedValue(opts.checkRoles),
+    hasValidCdd: jest.fn().mockResolvedValue(opts.validCdd),
+    getAssetBalance: jest.fn().mockResolvedValue(opts.assetBalance),
+    getPrimaryAccount: jest.fn().mockResolvedValue({
       account: {
         address: opts.primaryAccount,
       },
@@ -766,110 +756,118 @@ function configureContext(opts: ContextOptions): void {
         portfolios: null,
       },
     }),
-    getSecondaryAccounts: sinon.stub().resolves(opts.secondaryAccounts),
+    getSecondaryAccounts: jest.fn().mockResolvedValue(opts.secondaryAccounts),
     authorizations: {
-      getSent: sinon.stub().resolves(opts.sentAuthorizations),
+      getSent: jest.fn().mockResolvedValue(opts.sentAuthorizations),
     },
     assetPermissions: {
-      hasPermissions: sinon.stub().resolves(opts.hasAssetPermissions),
-      checkPermissions: sinon.stub().resolves(opts.checkAssetPermissions),
+      hasPermissions: jest.fn().mockResolvedValue(opts.hasAssetPermissions),
+      checkPermissions: jest.fn().mockResolvedValue(opts.checkAssetPermissions),
     },
-    areSecondaryAccountsFrozen: sinon.stub().resolves(opts.areSecondaryAccountsFrozen),
-    isEqual: sinon.stub().returns(opts.signingIdentityIsEqual),
+    areSecondaryAccountsFrozen: jest.fn().mockResolvedValue(opts.areSecondaryAccountsFrozen),
+    isEqual: jest.fn().mockReturnValue(opts.signingIdentityIsEqual),
   };
   opts.withSigningManager
-    ? getSigningIdentity.resolves(identity)
-    : getSigningIdentity.throws(
-        new Error('The signing Account does not have an associated Identity')
-      );
-  const getSigningAccount = sinon.stub();
+    ? getSigningIdentity.mockResolvedValue(identity)
+    : getSigningIdentity.mockImplementation(() => {
+        throw new Error('The signing Account does not have an associated Identity');
+      });
+  const getSigningAccount = jest.fn();
   opts.withSigningManager
-    ? getSigningAccount.returns({
+    ? getSigningAccount.mockReturnValue({
         address: opts.signingAddress,
-        getBalance: sinon.stub().resolves(opts.balance),
-        getSubsidy: sinon.stub().resolves(opts.subsidy),
-        getIdentity: sinon.stub().resolves(identity),
-        getTransactionHistory: sinon.stub().resolves(opts.transactionHistory),
-        hasPermissions: sinon.stub().resolves(opts.hasPermissions),
-        checkPermissions: sinon.stub().resolves(opts.checkPermissions),
-        isFrozen: sinon.stub().resolves(opts.isFrozen),
-        isEqual: sinon.stub().returns(opts.signingAccountIsEqual),
+        getBalance: jest.fn().mockResolvedValue(opts.balance),
+        getSubsidy: jest.fn().mockResolvedValue(opts.subsidy),
+        getIdentity: jest.fn().mockResolvedValue(identity),
+        getTransactionHistory: jest.fn().mockResolvedValue(opts.transactionHistory),
+        hasPermissions: jest.fn().mockResolvedValue(opts.hasPermissions),
+        checkPermissions: jest.fn().mockResolvedValue(opts.checkPermissions),
+        isFrozen: jest.fn().mockResolvedValue(opts.isFrozen),
+        isEqual: jest.fn().mockReturnValue(opts.signingAccountIsEqual),
       })
-    : getSigningAccount.throws(new Error('There is no Account associated with the SDK'));
+    : getSigningAccount.mockImplementation(() => {
+        throw new Error('There is no Account associated with the SDK');
+      });
   const signingAddress = opts.withSigningManager ? opts.signingAddress : undefined;
-  const getSigningAddress = sinon.stub();
+  const getSigningAddress = jest.fn();
   opts.withSigningManager
-    ? getSigningAddress.returns(signingAddress)
-    : getSigningAddress.throws(
-        new Error('There is no Account associated with the current SDK instance')
-      );
+    ? getSigningAddress.mockReturnValue(signingAddress)
+    : getSigningAddress.mockImplementation(() => {
+        throw new Error('There is no Account associated with the current SDK instance');
+      });
   const nonce = new BigNumber(opts.nonce || -1);
-  const getNonce = sinon.stub();
-  getNonce.returns(nonce);
+  const getNonce = jest.fn();
+  getNonce.mockReturnValue(nonce);
 
-  const queryStub = mockInstanceContainer.apolloInstance.query;
-  const queryStubV2 = mockInstanceContainer.apolloInstanceV2.query;
+  const queryMock = mockInstanceContainer.apolloInstance.query;
+  const queryMockV2 = mockInstanceContainer.apolloInstanceV2.query;
   const contextInstance = {
     signingAddress,
     nonce,
     getSigningIdentity,
     getSigningAccount,
     getSigningAddress,
-    accountBalance: sinon.stub().resolves(opts.balance),
-    accountSubsidy: sinon.stub().resolves(opts.subsidy),
-    getSigningAccounts: sinon.stub().resolves(opts.getSigningAccounts),
-    setSigningAddress: sinon.stub().callsFake(address => {
+    accountBalance: jest.fn().mockResolvedValue(opts.balance),
+    accountSubsidy: jest.fn().mockResolvedValue(opts.subsidy),
+    getSigningAccounts: jest.fn().mockResolvedValue(opts.getSigningAccounts),
+    setSigningAddress: jest.fn().mockImplementation(address => {
       (contextInstance as any).signingAddress = address;
     }),
-    setNonce: sinon.stub().callsFake(txNonce => {
+    setNonce: jest.fn().mockImplementation(txNonce => {
       (contextInstance as any).nonce = new BigNumber(txNonce || -1);
     }),
     getNonce,
-    setSigningManager: sinon.stub(),
-    getExternalSigner: sinon.stub().returns(opts.getExternalSigner),
+    setSigningManager: jest.fn(),
+    getExternalSigner: jest.fn().mockReturnValue(opts.getExternalSigner),
     polymeshApi: mockInstanceContainer.apiInstance,
     middlewareApi: mockInstanceContainer.apolloInstance,
-    queryMiddleware: sinon.stub().callsFake(query => queryStub(query)),
-    queryMiddlewareV2: sinon.stub().callsFake(query => queryStubV2(query)),
+    queryMiddleware: jest.fn().mockImplementation(query => queryMock(query)),
+    queryMiddlewareV2: jest.fn().mockImplementation(query => queryMockV2(query)),
     middlewareApiV2: mockInstanceContainer.apolloInstanceV2,
-    getInvalidDids: sinon.stub().resolves(opts.invalidDids),
-    getProtocolFees: sinon.stub().resolves(opts.transactionFees),
-    getTransactionArguments: sinon.stub().returns([]),
-    getSecondaryAccounts: sinon.stub().returns({ data: opts.secondaryAccounts, next: null }),
-    issuedClaims: sinon.stub().resolves(opts.issuedClaims),
-    getIdentity: sinon.stub().resolves(opts.getIdentity),
-    getIdentityClaimsFromChain: sinon.stub().resolves(opts.getIdentityClaimsFromChain),
-    getIdentityClaimsFromMiddleware: sinon.stub().resolves(opts.getIdentityClaimsFromMiddleware),
-    getIdentityClaimsFromMiddlewareV2: sinon
-      .stub()
-      .resolves(opts.getIdentityClaimsFromMiddlewareV2),
-    getLatestBlock: sinon.stub().resolves(opts.latestBlock),
-    isMiddlewareEnabled: sinon.stub().returns(opts.middlewareEnabled),
-    isMiddlewareAvailable: sinon.stub().resolves(opts.middlewareAvailable),
-    isMiddlewareV2Available: sinon.stub().resolves(opts.middlewareV2Available),
+    getInvalidDids: jest.fn().mockResolvedValue(opts.invalidDids),
+    getProtocolFees: jest.fn().mockResolvedValue(opts.transactionFees),
+    getTransactionArguments: jest.fn().mockReturnValue([]),
+    getSecondaryAccounts: jest.fn().mockReturnValue({ data: opts.secondaryAccounts, next: null }),
+    issuedClaims: jest.fn().mockResolvedValue(opts.issuedClaims),
+    getIdentity: jest.fn().mockResolvedValue(opts.getIdentity),
+    getIdentityClaimsFromChain: jest.fn().mockResolvedValue(opts.getIdentityClaimsFromChain),
+    getIdentityClaimsFromMiddleware: jest
+      .fn()
+      .mockResolvedValue(opts.getIdentityClaimsFromMiddleware),
+    getIdentityClaimsFromMiddlewareV2: jest
+      .fn()
+      .mockResolvedValue(opts.getIdentityClaimsFromMiddlewareV2),
+    getLatestBlock: jest.fn().mockResolvedValue(opts.latestBlock),
+    isMiddlewareEnabled: jest.fn().mockReturnValue(opts.middlewareEnabled),
+    isMiddlewareV2Enabled: jest.fn().mockReturnValue(opts.middlewareV2Enabled),
+    isAnyMiddlewareEnabled: jest
+      .fn()
+      .mockReturnValue(opts.middlewareEnabled || opts.middlewareV2Enabled),
+    isMiddlewareAvailable: jest.fn().mockResolvedValue(opts.middlewareAvailable),
+    isMiddlewareV2Available: jest.fn().mockResolvedValue(opts.middlewareV2Available),
     isArchiveNode: opts.isArchiveNode,
     ss58Format: opts.ss58Format,
-    disconnect: sinon.stub(),
-    getDividendDistributionsForAssets: sinon
-      .stub()
-      .resolves(opts.getDividendDistributionsForAssets),
-    getNetworkVersion: sinon.stub().resolves(opts.networkVersion),
-    supportsSubsidy: sinon.stub().returns(opts.supportsSubsidy),
-    createType: sinon.stub(),
+    disconnect: jest.fn(),
+    getDividendDistributionsForAssets: jest
+      .fn()
+      .mockResolvedValue(opts.getDividendDistributionsForAssets),
+    getNetworkVersion: jest.fn().mockResolvedValue(opts.networkVersion),
+    supportsSubsidy: jest.fn().mockReturnValue(opts.supportsSubsidy),
+    createType: jest.fn() as jest.Mock<unknown, [unknown]>,
   } as unknown as MockContext;
 
-  contextInstance.clone = sinon.stub<[], Context>().returns(contextInstance);
+  contextInstance.clone = jest.fn().mockReturnValue(contextInstance);
 
   Object.assign(mockInstanceContainer.contextInstance, contextInstance);
 
-  MockContextClass.create = contextCreateStub.resolves(contextInstance);
+  MockContextClass.create = contextCreateMock.mockResolvedValue(contextInstance);
 }
 
 /**
  * @hidden
  */
 function initContext(opts?: ContextOptions): void {
-  contextCreateStub = sinon.stub();
+  contextCreateMock = jest.fn();
 
   contextOptions = { ...defaultContextOptions, ...opts };
 
@@ -934,12 +932,12 @@ function updateConsts(mod?: Consts): void {
 /**
  * @hidden
  */
-function updateQueryMulti(stub?: SinonStub): void {
-  const updateTo = stub || queryMultiStub;
+function updateQueryMulti(mock?: jest.Mock): void {
+  const updateTo = mock || queryMultiMock;
 
-  queryMultiStub = updateTo;
+  queryMultiMock = updateTo;
 
-  mockInstanceContainer.apiInstance.queryMulti = queryMultiStub;
+  mockInstanceContainer.apiInstance.queryMulti = queryMultiMock;
 }
 
 /**
@@ -981,9 +979,9 @@ function initConsts(): void {
  * Mock queryMulti
  */
 function initQueryMulti(): void {
-  const stub = sinon.stub();
+  const mock = jest.fn();
 
-  updateQueryMulti(stub);
+  updateQueryMulti(mock);
 }
 
 /**
@@ -991,7 +989,7 @@ function initQueryMulti(): void {
  */
 function initApi(): void {
   mockInstanceContainer.apiInstance.registry = 'registry' as unknown as Registry;
-  mockInstanceContainer.apiInstance.createType = sinon.stub();
+  mockInstanceContainer.apiInstance.createType = jest.fn();
   mockInstanceContainer.apiInstance.runtimeVersion = {} as RuntimeVersion;
 
   initTx();
@@ -1000,8 +998,13 @@ function initApi(): void {
   initConsts();
   initQueryMulti();
 
-  apiPromiseCreateStub = sinon.stub();
-  MockApiPromiseClass.create = apiPromiseCreateStub.resolves(mockInstanceContainer.apiInstance);
+  mockInstanceContainer.apiInstance.at = jest
+    .fn()
+    .mockResolvedValue(mockInstanceContainer.apiInstance);
+  apiPromiseCreateMock = jest.fn();
+  MockApiPromiseClass.create = apiPromiseCreateMock.mockResolvedValue(
+    mockInstanceContainer.apiInstance
+  );
 }
 
 /**
@@ -1009,9 +1012,9 @@ function initApi(): void {
  */
 function configureSigningManager(opts: SigningManagerOptions): void {
   const signingManagerInstance = {
-    getAccounts: sinon.stub().resolves(opts.getAccounts),
-    getExternalSigner: sinon.stub().returns(opts.getExternalSigner),
-    setSs58Format: sinon.stub(),
+    getAccounts: jest.fn().mockResolvedValue(opts.getAccounts),
+    getExternalSigner: jest.fn().mockReturnValue(opts.getExternalSigner),
+    setSs58Format: jest.fn(),
   };
 
   Object.assign(
@@ -1075,12 +1078,14 @@ export function initMocks(opts?: {
   initSigningManager(opts?.signingManagerOptions);
 
   // Apollo
-  apolloConstructorStub = sinon.stub().returns(mockInstanceContainer.apolloInstance);
+  apolloConstructorMock = jest.fn().mockReturnValue(mockInstanceContainer.apolloInstance);
 
-  webSocketConstructorStub = sinon.stub().returns(mockInstanceContainer.webSocketInstance);
+  webSocketConstructorMock = jest.fn().mockReturnValue(mockInstanceContainer.webSocketInstance);
 
   txMocksData.clear();
-  errorStub = sinon.stub().throws(new Error('Error'));
+  errorMock = jest.fn().mockImplementation(() => {
+    throw new Error('Error');
+  });
 }
 
 /**
@@ -1107,14 +1112,14 @@ export function reset(): void {
 
 /**
  * @hidden
- * Create and returns a mocked transaction. Each call will create a new version of the stub
+ * Create and returns a mocked transaction. Each call will create a new version of the mock
  *
  * @param mod - name of the module
  * @param tx - name of the transaction function
  * @param autoResolve - if set to a status, the transaction will resolve immediately with that status.
  *  If set to false, the transaction lifecycle will be controlled by {@link updateTxStatus}
  */
-export function createTxStub<
+export function createTxMock<
   ModuleName extends keyof Extrinsics,
   TransactionName extends keyof Extrinsics[ModuleName]
 >(
@@ -1125,7 +1130,7 @@ export function createTxStub<
     gas?: Balance;
     meta?: { args: Array<{ name: string; type: string }> };
   } = {}
-): PolymeshTx<ArgsType<Extrinsics[ModuleName][TransactionName]>> & SinonStub {
+): PolymeshTx<ArgsType<Extrinsics[ModuleName][TransactionName]>> & jest.Mock {
   let runtimeModule = txModule[mod];
 
   if (!runtimeModule) {
@@ -1140,15 +1145,15 @@ export function createTxStub<
     meta = { args: [] },
   } = opts;
 
-  const transaction = sinon.stub().returns({
+  const transaction = jest.fn().mockReturnValue({
     method: tx, // should be a `Call` object, but this is enough for testing
     hash: tx,
-    signAndSend: sinon.stub().callsFake((_, __, cb: StatusCallback) => {
+    signAndSend: jest.fn().mockImplementation((_, __, cb: StatusCallback) => {
       if (autoResolve === MockTxStatus.Rejected) {
         return Promise.reject(new Error('Cancelled'));
       }
 
-      const unsubCallback = sinon.stub();
+      const unsubCallback = jest.fn();
 
       txMocksData.set(runtimeModule[tx], {
         statusCallback: cb,
@@ -1164,7 +1169,7 @@ export function createTxStub<
       return new Promise(resolve => setImmediate(() => resolve(unsubCallback)));
     }),
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
-    paymentInfo: sinon.stub().resolves({ partialFee: gas }),
+    paymentInfo: jest.fn().mockResolvedValue({ partialFee: gas }),
   }) as unknown as Extrinsics[ModuleName][TransactionName];
 
   (transaction as any).section = mod;
@@ -1180,41 +1185,45 @@ export function createTxStub<
   return instance.tx[mod][tx] as unknown as PolymeshTx<
     ArgsType<Extrinsics[ModuleName][TransactionName]>
   > &
-    SinonStub;
+    jest.Mock;
 }
 
 /**
  * @hidden
- * Create and return an apollo query stub
+ * Create and return an apollo query mock
  *
  * @param query - apollo document node
  * @param returnValue
  */
-export function createApolloQueryStub(query: GraphqlQuery<any>, returnData: unknown): SinonStub {
-  const { query: stub } = mockInstanceContainer.apolloInstance;
+export function createApolloQueryMock(query: GraphqlQuery<any>, returnData: unknown): jest.Mock {
+  const { query: mock } = mockInstanceContainer.apolloInstance;
 
-  stub.withArgs(query).resolves({
-    data: returnData,
-  });
+  when(mock)
+    .calledWith(query)
+    .mockResolvedValue({
+      data: returnData,
+    } as any);
 
-  return stub;
+  return mock;
 }
 
 /**
  * @hidden
- * Create and return an apollo query stub
+ * Create and return an apollo query mock
  *
  * @param query - apollo document node
  * @param returnValue
  */
-export function createApolloV2QueryStub(query: GraphqlQuery<any>, returnData: unknown): SinonStub {
-  const { query: stub } = mockInstanceContainer.apolloInstanceV2;
+export function createApolloV2QueryMock(query: GraphqlQuery<any>, returnData: unknown): jest.Mock {
+  const { query: mock } = mockInstanceContainer.apolloInstanceV2;
 
-  stub.withArgs(query).resolves({
-    data: returnData,
-  });
+  when(mock)
+    .calledWith(query)
+    .mockResolvedValue({
+      data: returnData,
+    } as any);
 
-  return stub;
+  return mock;
 }
 
 /**
@@ -1224,27 +1233,29 @@ export function createApolloV2QueryStub(query: GraphqlQuery<any>, returnData: un
 function mockQueries(
   queries: { query: GraphqlQuery<any>; returnData: unknown }[],
   instance: Mocked<Mutable<ApolloClient<NormalizedCacheObject>>>
-): sinon.SinonStub {
-  const { query: stub } = instance;
+): jest.Mock {
+  const { query: mock } = instance;
 
   queries.forEach(({ query, returnData: data }) => {
-    stub.withArgs(query).resolves({
-      data,
-    });
+    when(mock)
+      .calledWith(query)
+      .mockResolvedValue({
+        data,
+      } as any);
   });
 
-  return stub;
+  return mock;
 }
 
 /**
  * @hidden
- * Create and return an apollo stub for multiple queries
+ * Create and return an apollo mock for multiple queries
  *
- * @param queries - query and returnData for each stubbed query
+ * @param queries - query and returnData for each mocked query
  */
-export function createApolloMultipleQueriesStub(
+export function createApolloMultipleQueriesMock(
   queries: { query: GraphqlQuery<any>; returnData: unknown }[]
-): sinon.SinonStub {
+): jest.Mock {
   const instance = mockInstanceContainer.apolloInstance;
 
   return mockQueries(queries, instance);
@@ -1252,13 +1263,13 @@ export function createApolloMultipleQueriesStub(
 
 /**
  * @hidden
- * Create and return an apollo stub for multiple V2 queries
+ * Create and return an apollo mock for multiple V2 queries
  *
- * @param queries - query and returnData for each stubbed query
+ * @param queries - query and returnData for each mocked query
  */
-export function createApolloMultipleV2QueriesStub(
+export function createApolloMultipleV2QueriesMock(
   queries: { query: GraphqlQuery<any>; returnData: unknown }[]
-): SinonStub {
+): jest.Mock {
   const instance = mockInstanceContainer.apolloInstanceV2;
 
   return mockQueries(queries, instance);
@@ -1266,12 +1277,12 @@ export function createApolloMultipleV2QueriesStub(
 
 /**
  * @hidden
- * Create and return a query stub
+ * Create and return a query mock
  *
  * @param mod - name of the module
  * @param query - name of the query function
  */
-export function createQueryStub<
+export function createQueryMock<
   ModuleName extends keyof Queries,
   QueryName extends keyof Queries[ModuleName]
 >(
@@ -1283,7 +1294,7 @@ export function createQueryStub<
     multi?: unknown;
     size?: BigNumber;
   }
-): Queries[ModuleName][QueryName] & SinonStub & StubQuery {
+): Queries[ModuleName][QueryName] & jest.Mock & MockQuery {
   let runtimeModule = queryModule[mod];
 
   if (!runtimeModule) {
@@ -1291,24 +1302,23 @@ export function createQueryStub<
     queryModule[mod] = runtimeModule;
   }
 
-  type QueryStub = Queries[ModuleName][QueryName] & SinonStub & StubQuery;
+  type QueryMock = Queries[ModuleName][QueryName] & jest.Mock & MockQuery;
 
-  let stub: QueryStub;
+  let mock: QueryMock;
 
   if (!runtimeModule[query]) {
-    stub = sinon.stub() as unknown as QueryStub;
-    stub.entries = sinon.stub();
-    stub.entriesAt = sinon.stub();
-    stub.entriesPaged = sinon.stub();
-    stub.at = sinon.stub();
-    stub.multi = sinon.stub();
-    stub.size = sinon.stub();
-    runtimeModule[query] = stub;
+    mock = jest.fn() as unknown as QueryMock;
+    mock.entries = jest.fn();
+    mock.entriesPaged = jest.fn();
+    mock.at = jest.fn();
+    mock.multi = jest.fn();
+    mock.size = jest.fn();
+    runtimeModule[query] = mock;
 
     updateQuery();
   } else {
     const instance = mockInstanceContainer.apiInstance;
-    stub = instance.query[mod][query] as QueryStub;
+    mock = instance.query[mod][query] as QueryMock;
   }
 
   const entries = opts?.entries ?? [];
@@ -1317,59 +1327,70 @@ export function createQueryStub<
     { args: keys, toHex: (): string => `key${index}` },
     value,
   ]);
-  stub.entries.resolves(entryResults);
-  stub.entriesPaged.resolves(entryResults);
-  stub.entriesAt.resolves(entryResults);
+  mock.entries.mockResolvedValue(entryResults);
+  mock.entriesPaged.mockResolvedValue(entryResults);
 
   if (opts?.multi) {
-    stub.multi.resolves(opts.multi);
+    mock.multi.mockResolvedValue(opts.multi);
   }
   if (typeof opts?.size !== 'undefined') {
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
-    stub.size.resolves(createMockU64(new BigNumber(opts.size)));
+    mock.size.mockResolvedValue(createMockU64(new BigNumber(opts.size)));
   }
   if (opts?.returnValue) {
-    stub.resolves(opts.returnValue);
-    stub.at.resolves(opts.returnValue);
+    mock.mockResolvedValue(opts.returnValue);
+    mock.at.mockResolvedValue(opts.returnValue);
   }
 
-  return stub;
+  return mock;
 }
 
 let count = 0;
 
 /**
  * @hidden
- * Create and return a rpc stub
+ * Create and return a rpc mock
  *
  * @param mod - name of the module
  * @param rpc - name of the rpc function
  */
-export function createRpcStub(
-  mod: string,
-  rpc: string,
+export function createRpcMock<
+  ModuleName extends keyof Rpcs,
+  RpcName extends keyof Rpcs[ModuleName]
+>(
+  mod: ModuleName,
+  rpc: RpcName,
   opts?: {
     returnValue?: unknown;
   }
-): SinonStub {
+): Rpcs[ModuleName][RpcName] & jest.Mock {
   let runtimeModule: any = rpcModule[mod];
 
   if (!runtimeModule) {
     runtimeModule = rpcModule[mod] = {};
   }
 
-  const stub: SinonStub = sinon.stub();
-  runtimeModule[rpc] = stub;
+  type RpcMock = Rpcs[ModuleName][RpcName] & jest.Mock & MockRpc;
 
-  updateRpc();
+  let mock: RpcMock;
 
-  if (opts?.returnValue) {
-    stub.resolves(opts.returnValue);
+  if (!runtimeModule[rpc]) {
+    mock = jest.fn() as unknown as RpcMock;
+    mock.raw = jest.fn();
+    runtimeModule[rpc] = mock;
+    updateRpc();
+  } else {
+    const instance = mockInstanceContainer.apiInstance;
+    mock = instance.rpc[mod][rpc] as RpcMock;
   }
 
-  (stub as any).count = count++;
+  if (opts?.returnValue) {
+    mock.mockResolvedValue(opts.returnValue);
+  }
 
-  return stub;
+  (mock as any).count = count++;
+
+  return mock;
 }
 
 /**
@@ -1410,8 +1431,8 @@ export function setConstMock<
 /**
  * @hidden
  */
-export function getQueryMultiStub(): SinonStub {
-  return queryMultiStub;
+export function getQueryMultiMock(): jest.Mock {
+  return queryMultiMock;
 }
 
 /**
@@ -1459,7 +1480,9 @@ export function updateTxStatus<
   }
 
   if (status === MockTxStatus.FailedToUnsubscribe) {
-    (txMockData.unsubCallback as sinon.SinonStub).throws('Unsub error');
+    (txMockData.unsubCallback as jest.Mock).mockImplementation(() => {
+      throw new Error('Unsub error');
+    });
   }
 
   txMockData.statusCallback(statusToReceipt(status, failReason));
@@ -1472,7 +1495,9 @@ export function updateTxStatus<
 export function throwOnMiddlewareQuery(err?: unknown): void {
   const instance = mockInstanceContainer.apolloInstance;
 
-  instance.query.throws(err || new Error('Something went wrong'));
+  instance.query.mockImplementation(() => {
+    throw err || new Error('Something went wrong');
+  });
 }
 
 /**
@@ -1482,7 +1507,9 @@ export function throwOnMiddlewareQuery(err?: unknown): void {
 export function throwOnMiddlewareV2Query(err?: unknown): void {
   const instance = mockInstanceContainer.apolloInstanceV2;
 
-  instance.query.throws(err || new Error('Something went wrong'));
+  instance.query.mockImplementation(() => {
+    throw err || new Error('Something went wrong');
+  });
 }
 
 /**
@@ -1490,7 +1517,7 @@ export function throwOnMiddlewareV2Query(err?: unknown): void {
  * Make calls to `Context.create` throw an error
  */
 export function throwOnContextCreation(): void {
-  MockContextClass.create = errorStub;
+  MockContextClass.create = errorMock;
 }
 
 /**
@@ -1498,7 +1525,11 @@ export function throwOnContextCreation(): void {
  * Make calls to `ApiPromise.create` throw an error
  */
 export function throwOnApiCreation(error?: unknown): void {
-  MockApiPromiseClass.create = error ? sinon.stub().throws(error) : errorStub;
+  MockApiPromiseClass.create = error
+    ? jest.fn().mockImplementation(() => {
+        throw error;
+      })
+    : errorMock;
 }
 
 /**
@@ -1508,16 +1539,16 @@ export function throwOnApiCreation(error?: unknown): void {
  * @param balance - new account balance
  */
 export function setContextAccountBalance(balance: AccountBalance): void {
-  mockInstanceContainer.contextInstance.accountBalance.returns(balance);
+  mockInstanceContainer.contextInstance.accountBalance.mockResolvedValue(balance as any);
 }
 
 /**
  * @hidden
  * Retrieve an instance of the mocked Polkadot API
  */
-export function getApiInstance(): ApiPromise & SinonStubbedInstance<ApiPromise> & EventEmitter {
+export function getApiInstance(): ApiPromise & jest.Mocked<ApiPromise> & EventEmitter {
   return mockInstanceContainer.apiInstance as unknown as ApiPromise &
-    SinonStubbedInstance<ApiPromise> &
+    jest.Mocked<ApiPromise> &
     EventEmitter;
 }
 
@@ -1534,9 +1565,9 @@ export function getWebSocketInstance(): MockWebSocket {
  * Retrieve an instance of the mocked Apollo Client
  */
 export function getMiddlewareApi(): ApolloClient<NormalizedCacheObject> &
-  SinonStubbedInstance<ApolloClient<NormalizedCacheObject>> {
-  return mockInstanceContainer.apolloInstance as ApolloClient<NormalizedCacheObject> &
-    SinonStubbedInstance<ApolloClient<NormalizedCacheObject>>;
+  jest.Mocked<ApolloClient<NormalizedCacheObject>> {
+  return mockInstanceContainer.apolloInstance as unknown as ApolloClient<NormalizedCacheObject> &
+    jest.Mocked<ApolloClient<NormalizedCacheObject>>;
 }
 
 /**
@@ -1544,17 +1575,25 @@ export function getMiddlewareApi(): ApolloClient<NormalizedCacheObject> &
  * Retrieve an instance of the mocked v2 Apollo Client
  */
 export function getMiddlewareApiV2(): ApolloClient<NormalizedCacheObject> &
-  SinonStubbedInstance<ApolloClient<NormalizedCacheObject>> {
-  return mockInstanceContainer.apolloInstanceV2 as ApolloClient<NormalizedCacheObject> &
-    SinonStubbedInstance<ApolloClient<NormalizedCacheObject>>;
+  jest.Mocked<ApolloClient<NormalizedCacheObject>> {
+  return mockInstanceContainer.apolloInstanceV2 as unknown as ApolloClient<NormalizedCacheObject> &
+    jest.Mocked<ApolloClient<NormalizedCacheObject>>;
 }
 
 /**
  * @hidden
- * Retrieve the stub of the createType method
+ * Retrieve the mock of the createType method
  */
-export function getCreateTypeStub(): SinonStub {
-  return mockInstanceContainer.apiInstance.createType as SinonStub;
+export function getCreateTypeMock(): jest.Mock {
+  return mockInstanceContainer.apiInstance.createType as jest.Mock;
+}
+
+/**
+ * @hidden
+ * Retrieve the mock of the at method
+ */
+export function getAtMock(): jest.Mock {
+  return mockInstanceContainer.apiInstance.at as jest.Mock;
 }
 
 /**
@@ -1570,10 +1609,10 @@ export function getContextInstance(opts?: ContextOptions): MockContext {
 
 /**
  * @hidden
- * Retrieve the stub of the `Context.create` method
+ * Retrieve the mock of the `Context.create` method
  */
-export function getContextCreateStub(): SinonStub {
-  return contextCreateStub;
+export function getContextCreateMock(): jest.Mock {
+  return contextCreateMock;
 }
 
 /**
@@ -1608,7 +1647,7 @@ function isOption<T extends Codec>(codec: any): codec is Option<T> {
   return typeof codec?.unwrap === 'function';
 }
 
-export type MockCodec<C extends Codec> = C & { eq: sinon.SinonStub };
+export type MockCodec<C extends Codec> = C & { eq: jest.Mock };
 
 /**
  * @hidden
@@ -1621,7 +1660,7 @@ const createMockCodec = <T extends Codec>(codec: unknown, isEmpty: boolean): Moc
 
   (clone as any)._isCodec = true;
   clone.isEmpty = isEmpty;
-  clone.eq = sinon.stub();
+  clone.eq = jest.fn();
 
   return clone;
 };
@@ -1737,14 +1776,14 @@ export const createMockAgentGroup = (
     | 'ExceptMeta'
     | 'PolymeshV1CAA'
     | 'PolymeshV1PIA'
-    | { Custom: AGId }
-    | AgentGroup
-): MockCodec<AgentGroup> => {
-  if (isCodec<AgentGroup>(agentGroup)) {
-    return agentGroup as MockCodec<AgentGroup>;
+    | { Custom: u32 }
+    | PolymeshPrimitivesAgentAgentGroup
+): MockCodec<PolymeshPrimitivesAgentAgentGroup> => {
+  if (isCodec<PolymeshPrimitivesAgentAgentGroup>(agentGroup)) {
+    return agentGroup as MockCodec<PolymeshPrimitivesAgentAgentGroup>;
   }
 
-  return createMockEnum<AgentGroup>(agentGroup);
+  return createMockEnum<PolymeshPrimitivesAgentAgentGroup>(agentGroup);
 };
 
 /**
@@ -1752,13 +1791,13 @@ export const createMockAgentGroup = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockEcdsaSignature = (
-  signature?: string | EcdsaSignature
-): MockCodec<EcdsaSignature> => {
-  if (isCodec<EcdsaSignature>(signature)) {
-    return signature as MockCodec<EcdsaSignature>;
+  signature?: string | PolymeshPrimitivesEthereumEcdsaSignature
+): MockCodec<PolymeshPrimitivesEthereumEcdsaSignature> => {
+  if (isCodec<PolymeshPrimitivesEthereumEcdsaSignature>(signature)) {
+    return signature as MockCodec<PolymeshPrimitivesEthereumEcdsaSignature>;
   }
 
-  return createMockStringCodec<EcdsaSignature>(signature);
+  return createMockStringCodec<PolymeshPrimitivesEthereumEcdsaSignature>(signature);
 };
 
 /**
@@ -1797,13 +1836,13 @@ export const createMockBTreeSet = <T extends Codec>(
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockEthereumAddress = (
-  address?: string | EthereumAddress
-): MockCodec<EthereumAddress> => {
-  if (isCodec<EthereumAddress>(address)) {
-    return address as MockCodec<EthereumAddress>;
+  address?: string | PolymeshPrimitivesEthereumEthereumAddress
+): MockCodec<PolymeshPrimitivesEthereumEthereumAddress> => {
+  if (isCodec<PolymeshPrimitivesEthereumEthereumAddress>(address)) {
+    return address as MockCodec<PolymeshPrimitivesEthereumEthereumAddress>;
   }
 
-  return createMockU8aCodec<EthereumAddress>(address);
+  return createMockU8aCodec<PolymeshPrimitivesEthereumEthereumAddress>(address);
 };
 
 /**
@@ -1859,13 +1898,13 @@ export const createMockDocumentHash = (
     | { H320: U8aFixed }
     | { H384: U8aFixed }
     | { H512: U8aFixed }
-    | DocumentHash
-): MockCodec<DocumentHash> => {
-  if (isCodec<DocumentHash>(hash)) {
-    return hash as MockCodec<DocumentHash>;
+    | PolymeshPrimitivesDocumentHash
+): MockCodec<PolymeshPrimitivesDocumentHash> => {
+  if (isCodec<PolymeshPrimitivesDocumentHash>(hash)) {
+    return hash as MockCodec<PolymeshPrimitivesDocumentHash>;
   }
 
-  return createMockEnum<DocumentHash>(hash);
+  return createMockEnum<PolymeshPrimitivesDocumentHash>(hash);
 };
 
 type MaybeTuple<T extends Codec | Codec[]> = T extends Codec[] ? ITuple<T> : T;
@@ -1926,14 +1965,14 @@ export const createMockMoment = (millis?: BigNumber | Moment): MockCodec<Moment>
  */
 export const createMockTickerRegistration = (
   registration?:
-    | TickerRegistration
+    | PalletAssetTickerRegistration
     | {
         owner: PolymeshPrimitivesIdentityId | Parameters<typeof createMockIdentityId>[0];
         expiry: Option<Moment>;
       }
-): MockCodec<TickerRegistration> => {
-  if (isCodec<TickerRegistration>(registration)) {
-    return registration as MockCodec<TickerRegistration>;
+): MockCodec<PalletAssetTickerRegistration> => {
+  if (isCodec<PalletAssetTickerRegistration>(registration)) {
+    return registration as MockCodec<PalletAssetTickerRegistration>;
   }
 
   const { owner, expiry } = registration || {
@@ -2010,8 +2049,11 @@ export const createMockHash = (value?: string | Hash): MockCodec<Hash> =>
 export const createMockPosRatio = (
   numerator: BigNumber,
   denominator: BigNumber
-): MockCodec<PosRatio> =>
-  [createMockU32(numerator), createMockU32(denominator)] as unknown as MockCodec<PosRatio>;
+): MockCodec<PolymeshPrimitivesPosRatio> =>
+  [
+    createMockU32(numerator),
+    createMockU32(denominator),
+  ] as unknown as MockCodec<PolymeshPrimitivesPosRatio>;
 
 /**
  * @hidden
@@ -2037,13 +2079,13 @@ export const createMockBool = (value?: boolean | bool): MockCodec<bool> => {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockPortfolioKind = (
-  portfolioKind?: 'Default' | { User: u64 } | PortfolioKind
-): MockCodec<PortfolioKind> => {
-  if (isCodec<PortfolioKind>(portfolioKind)) {
-    return portfolioKind as MockCodec<PortfolioKind>;
+  portfolioKind?: 'Default' | { User: u64 } | PolymeshPrimitivesIdentityIdPortfolioKind
+): MockCodec<PolymeshPrimitivesIdentityIdPortfolioKind> => {
+  if (isCodec<PolymeshPrimitivesIdentityIdPortfolioKind>(portfolioKind)) {
+    return portfolioKind as MockCodec<PolymeshPrimitivesIdentityIdPortfolioKind>;
   }
 
-  return createMockEnum<PortfolioKind>(portfolioKind);
+  return createMockEnum<PolymeshPrimitivesIdentityIdPortfolioKind>(portfolioKind);
 };
 
 /**
@@ -2055,7 +2097,9 @@ export const createMockPortfolioId = (
     | PolymeshPrimitivesIdentityIdPortfolioId
     | {
         did: PolymeshPrimitivesIdentityId | Parameters<typeof createMockIdentityId>[0];
-        kind: PortfolioKind | Parameters<typeof createMockPortfolioKind>[0];
+        kind:
+          | PolymeshPrimitivesIdentityIdPortfolioKind
+          | Parameters<typeof createMockPortfolioKind>[0];
       }
 ): MockCodec<PolymeshPrimitivesIdentityIdPortfolioId> => {
   const { did, kind } = portfolioId || {
@@ -2113,10 +2157,10 @@ export const createMockAssetType = (
     | 'StructuredProduct'
     | 'Derivative'
     | 'StableCoin'
-    | { Custom: CustomAssetTypeId }
-    | AssetType
-): MockCodec<AssetType> => {
-  return createMockEnum<AssetType>(assetType);
+    | { Custom: u32 }
+    | PolymeshPrimitivesAssetAssetType
+): MockCodec<PolymeshPrimitivesAssetAssetType> => {
+  return createMockEnum<PolymeshPrimitivesAssetAssetType>(assetType);
 };
 
 /**
@@ -2126,7 +2170,7 @@ export const createMockAssetType = (
 export const createMockTickerRegistrationConfig = (regConfig?: {
   max_ticker_length: u8;
   registration_length: Option<Moment>;
-}): MockCodec<TickerRegistrationConfig> => {
+}): MockCodec<PalletAssetTickerRegistrationConfig> => {
   const config = regConfig || {
     max_ticker_length: createMockU8(),
     registration_length: createMockOption(),
@@ -2142,8 +2186,8 @@ export const createMockSecurityToken = (token?: {
   totalSupply: Balance;
   ownerDid: PolymeshPrimitivesIdentityId;
   divisible: bool;
-  assetType: AssetType;
-}): MockCodec<SecurityToken> => {
+  assetType: PolymeshPrimitivesAssetAssetType;
+}): MockCodec<PalletAssetSecurityToken> => {
   const st = token || {
     totalSupply: createMockBalance(),
     ownerDid: createMockIdentityId(),
@@ -2159,7 +2203,7 @@ export const createMockSecurityToken = (token?: {
  */
 export const createMockDocument = (document?: {
   uri: Bytes;
-  contentHash: DocumentHash;
+  contentHash: PolymeshPrimitivesDocumentHash;
   name: Bytes;
   docType: Option<Bytes>;
   filingDate: Option<Moment>;
@@ -2184,25 +2228,19 @@ export const createMockDocument = (document?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockDispatchableNames = (
-  dispatchableNames?: 'Whole' | { These: Bytes[] } | { Except: Bytes[] } | DispatchableNames
-): MockCodec<DispatchableNames> => {
-  if (isCodec<DispatchableNames>(dispatchableNames)) {
-    return dispatchableNames as MockCodec<DispatchableNames>;
+  dispatchableNames?:
+    | 'Whole'
+    | { These: Bytes[] }
+    | { Except: Bytes[] }
+    | PolymeshPrimitivesSubsetSubsetRestrictionDispatchableName
+): MockCodec<PolymeshPrimitivesSubsetSubsetRestrictionDispatchableName> => {
+  if (isCodec<PolymeshPrimitivesSubsetSubsetRestrictionDispatchableName>(dispatchableNames)) {
+    return dispatchableNames as MockCodec<PolymeshPrimitivesSubsetSubsetRestrictionDispatchableName>;
   }
 
-  return createMockEnum<DispatchableNames>(dispatchableNames);
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockPalletName = (name?: string | PalletName): MockCodec<PalletName> => {
-  if (isCodec<PalletName>(name)) {
-    return name as MockCodec<PalletName>;
-  }
-
-  return createMockStringCodec<PalletName>(name);
+  return createMockEnum<PolymeshPrimitivesSubsetSubsetRestrictionDispatchableName>(
+    dispatchableNames
+  );
 };
 
 /**
@@ -2211,7 +2249,9 @@ export const createMockPalletName = (name?: string | PalletName): MockCodec<Pall
  */
 export const createMockPalletPermissions = (permissions?: {
   palletName: string | Parameters<typeof createMockBytes>[0];
-  dispatchableNames: DispatchableNames | Parameters<typeof createMockDispatchableNames>[0];
+  dispatchableNames:
+    | PolymeshPrimitivesSubsetSubsetRestrictionDispatchableName
+    | Parameters<typeof createMockDispatchableNames>[0];
 }): MockCodec<PolymeshPrimitivesSecondaryKeyPalletPermissions> => {
   const { palletName, dispatchableNames } = permissions || {
     palletName: undefined,
@@ -2318,8 +2358,8 @@ export const createMockSubsidy = (subsidy?: {
  */
 export const createMockSignatory = (
   signatory?: { Identity: PolymeshPrimitivesIdentityId } | { Account: AccountId }
-): MockCodec<Signatory> => {
-  return createMockEnum<Signatory>(signatory);
+): MockCodec<PolymeshPrimitivesSecondaryKeySignatory> => {
+  return createMockEnum<PolymeshPrimitivesSecondaryKeySignatory>(signatory);
 };
 
 /**
@@ -2377,8 +2417,8 @@ export const createMockAssetPermissions = (
     | 'Whole'
     | { These: PolymeshPrimitivesTicker[] }
     | { Except: PolymeshPrimitivesTicker[] }
-): MockCodec<AssetPermissions> => {
-  return createMockEnum<AssetPermissions>(assetPermissions);
+): MockCodec<PolymeshPrimitivesSubsetSubsetRestrictionTicker> => {
+  return createMockEnum<PolymeshPrimitivesSubsetSubsetRestrictionTicker>(assetPermissions);
 };
 
 /**
@@ -2401,9 +2441,12 @@ export const createMockExtrinsicPermissions = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockPortfolioPermissions = (
-  assetPermissions?: 'Whole' | { These: PortfolioId[] } | { Except: PortfolioId[] }
-): MockCodec<PortfolioPermissions> => {
-  return createMockEnum<PortfolioPermissions>(assetPermissions);
+  assetPermissions?:
+    | 'Whole'
+    | { These: PolymeshPrimitivesIdentityIdPortfolioId[] }
+    | { Except: PolymeshPrimitivesIdentityIdPortfolioId[] }
+): MockCodec<PolymeshPrimitivesSubsetSubsetRestrictionPortfolioId> => {
+  return createMockEnum<PolymeshPrimitivesSubsetSubsetRestrictionPortfolioId>(assetPermissions);
 };
 
 /**
@@ -2411,9 +2454,9 @@ export const createMockPortfolioPermissions = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockPermissions = (permissions?: {
-  asset: AssetPermissions;
+  asset: PolymeshPrimitivesSubsetSubsetRestrictionTicker;
   extrinsic: PolymeshPrimitivesSubsetSubsetRestrictionPalletPermissions;
-  portfolio: PortfolioPermissions;
+  portfolio: PolymeshPrimitivesSubsetSubsetRestrictionPortfolioId;
 }): MockCodec<PolymeshPrimitivesSecondaryKeyPermissions> => {
   const perms = permissions || {
     asset: createMockAssetPermissions(),
@@ -2442,9 +2485,9 @@ export const createMockAuthorizationData = (
     | { AddMultiSigSigner: AccountId }
     | { TransferAssetOwnership: PolymeshPrimitivesTicker }
     | { JoinIdentity: PolymeshPrimitivesSecondaryKeyPermissions }
-    | { PortfolioCustody: PortfolioId }
+    | { PortfolioCustody: PolymeshPrimitivesIdentityIdPortfolioId }
     | { AddRelayerPayingKey: [AccountId, AccountId, Balance] }
-    | { BecomeAgent: [PolymeshPrimitivesTicker, AgentGroup] }
+    | { BecomeAgent: [PolymeshPrimitivesTicker, PolymeshPrimitivesAgentAgentGroup] }
     | PolymeshPrimitivesAuthorizationAuthorizationData
 ): MockCodec<PolymeshPrimitivesAuthorizationAuthorizationData> => {
   if (isCodec<PolymeshPrimitivesAuthorizationAuthorizationData>(authorizationData)) {
@@ -2516,8 +2559,10 @@ export const createMockCddStatus = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockCountryCode = (name?: CountryCodeEnum): MockCodec<CountryCode> =>
-  createMockEnum<CountryCode>(name);
+export const createMockCountryCode = (
+  name?: CountryCodeEnum
+): MockCodec<PolymeshPrimitivesJurisdictionCountryCode> =>
+  createMockEnum<PolymeshPrimitivesJurisdictionCountryCode>(name);
 
 /**
  * @hidden
@@ -2528,28 +2573,24 @@ export const createMockScope = (
     | { Identity: PolymeshPrimitivesIdentityId }
     | { Ticker: PolymeshPrimitivesTicker }
     | { Custom: Bytes }
-): MockCodec<Scope> => createMockEnum<Scope>(scope);
+): MockCodec<PolymeshPrimitivesIdentityClaimScope> =>
+  createMockEnum<PolymeshPrimitivesIdentityClaimScope>(scope);
 
 /**
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockCddId = (cddId?: string): MockCodec<CddId> =>
-  createMockStringCodec<CddId>(cddId);
+export const createMockCddId = (cddId?: string): MockCodec<PolymeshPrimitivesCddId> =>
+  createMockStringCodec<PolymeshPrimitivesCddId>(cddId);
 
 /**
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockScopeId = (scopeId?: string): ScopeId =>
-  createMockStringCodec<ScopeId>(scopeId);
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockInvestorZKProofData = (proof?: string): InvestorZKProofData =>
-  createMockStringCodec<InvestorZKProofData>(proof);
+export const createMockInvestorZKProofData = (
+  proof?: string
+): ConfidentialIdentityV2ClaimProofsZkProofData =>
+  createMockStringCodec<ConfidentialIdentityV2ClaimProofsZkProofData>(proof);
 
 /**
  * @hidden
@@ -2557,19 +2598,31 @@ export const createMockInvestorZKProofData = (proof?: string): InvestorZKProofDa
  */
 export const createMockClaim = (
   claim?:
-    | { Accredited: Scope }
-    | { Affiliate: Scope }
-    | { BuyLockup: Scope }
-    | { SellLockup: Scope }
-    | { CustomerDueDiligence: CddId }
-    | { KnowYourCustomer: Scope }
-    | { Jurisdiction: [CountryCode, Scope] }
-    | { Exempted: Scope }
-    | { Blocked: Scope }
-    | { InvestorUniqueness: [Scope, ScopeId, CddId] }
-    | { InvestorUniquenessV2: CddId }
+    | { Accredited: PolymeshPrimitivesIdentityClaimScope }
+    | { Affiliate: PolymeshPrimitivesIdentityClaimScope }
+    | { BuyLockup: PolymeshPrimitivesIdentityClaimScope }
+    | { SellLockup: PolymeshPrimitivesIdentityClaimScope }
+    | { CustomerDueDiligence: PolymeshPrimitivesCddId }
+    | { KnowYourCustomer: PolymeshPrimitivesIdentityClaimScope }
+    | {
+        Jurisdiction: [
+          PolymeshPrimitivesJurisdictionCountryCode,
+          PolymeshPrimitivesIdentityClaimScope
+        ];
+      }
+    | { Exempted: PolymeshPrimitivesIdentityClaimScope }
+    | { Blocked: PolymeshPrimitivesIdentityClaimScope }
+    | {
+        InvestorUniqueness: [
+          PolymeshPrimitivesIdentityClaimScope,
+          PolymeshPrimitivesIdentityId,
+          PolymeshPrimitivesCddId
+        ];
+      }
+    | { InvestorUniquenessV2: PolymeshPrimitivesCddId }
     | 'NoData'
-): Claim => createMockEnum<Claim>(claim);
+): PolymeshPrimitivesIdentityClaimClaim =>
+  createMockEnum<PolymeshPrimitivesIdentityClaimClaim>(claim);
 
 /**
  * @hidden
@@ -2580,8 +2633,8 @@ export const createMockIdentityClaim = (identityClaim?: {
   issuance_date: Moment;
   last_update_date: Moment;
   expiry: Option<Moment>;
-  claim: Claim;
-}): MockCodec<IdentityClaim> => {
+  claim: PolymeshPrimitivesIdentityClaimClaim;
+}): MockCodec<PolymeshPrimitivesIdentityClaim> => {
   const identityClaimMock = identityClaim || {
     claim_issuer: createMockIdentityId(),
     issuance_date: createMockMoment(),
@@ -2603,7 +2656,8 @@ export const createMockIdentityClaim = (identityClaim?: {
  */
 export const createMockTargetIdentity = (
   targetIdentity?: { Specific: PolymeshPrimitivesIdentityId } | 'ExternalAgent'
-): MockCodec<TargetIdentity> => createMockEnum<TargetIdentity>(targetIdentity);
+): MockCodec<PolymeshPrimitivesConditionTargetIdentity> =>
+  createMockEnum<PolymeshPrimitivesConditionTargetIdentity>(targetIdentity);
 
 /**
  * @hidden
@@ -2611,37 +2665,18 @@ export const createMockTargetIdentity = (
  */
 export const createMockConditionType = (
   conditionType?:
-    | { IsPresent: Claim }
-    | { IsAbsent: Claim }
-    | { IsAnyOf: Claim[] }
-    | { IsNoneOf: Claim[] }
-    | { IsIdentity: TargetIdentity }
-    | ConditionType
+    | { IsPresent: PolymeshPrimitivesIdentityClaimClaim }
+    | { IsAbsent: PolymeshPrimitivesIdentityClaimClaim }
+    | { IsAnyOf: PolymeshPrimitivesIdentityClaimClaim[] }
+    | { IsNoneOf: PolymeshPrimitivesIdentityClaimClaim[] }
+    | { IsIdentity: PolymeshPrimitivesConditionTargetIdentity }
+    | PolymeshPrimitivesConditionConditionType
 ): MockCodec<PolymeshPrimitivesConditionConditionType> => {
   if (isCodec<PolymeshPrimitivesConditionConditionType>(conditionType)) {
     return conditionType as MockCodec<PolymeshPrimitivesConditionConditionType>;
   }
 
   return createMockEnum<PolymeshPrimitivesConditionConditionType>(conditionType);
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockRpcConditionType = (
-  conditionType?:
-    | { IsPresent: Claim }
-    | { IsAbsent: Claim }
-    | { IsAnyOf: Claim[] }
-    | { IsNoneOf: Claim[] }
-    | { IsIdentity: TargetIdentity }
-    | ConditionType
-): MockCodec<ConditionType> => {
-  if (isCodec<ConditionType>(conditionType)) {
-    return conditionType as MockCodec<ConditionType>;
-  }
-  return createMockEnum<ConditionType>(conditionType);
 };
 
 /**
@@ -2679,7 +2714,7 @@ export const createMockClaimType = (
 export const createMockClaim1stKey = (claim1stKey?: {
   target: PolymeshPrimitivesIdentityId;
   claimType: PolymeshPrimitivesIdentityClaimClaimType;
-}): MockCodec<Claim1stKey> => {
+}): MockCodec<PalletIdentityClaim1stKey> => {
   const claimTypeMock = claim1stKey || {
     target: createMockIdentityId(),
     claimType: createMockClaimType(),
@@ -2917,18 +2952,8 @@ export const createMockText = (value?: string | Text): MockCodec<Text> => {
  */
 export const createMockAssetOwnershipRelation = (
   assetOwnershipRelation?: 'NotOwned' | 'TickerOwned' | 'AssetOwned'
-): MockCodec<AssetOwnershipRelation> =>
-  createMockEnum<AssetOwnershipRelation>(assetOwnershipRelation);
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockProposalState = (
-  proposalState?: 'Pending' | 'Cancelled' | 'Killed' | 'Rejected' | 'Referendum' | { Custom: Bytes }
-): MockCodec<ProposalState> => {
-  return createMockEnum<ProposalState>(proposalState);
-};
+): MockCodec<PalletAssetAssetOwnershipRelation> =>
+  createMockEnum<PalletAssetAssetOwnershipRelation>(assetOwnershipRelation);
 
 /**
  * @hidden
@@ -2941,54 +2966,8 @@ export const createMockProposalStatus = (
     | 'ExecutionSuccessful'
     | 'ExecutionFailed'
     | 'Rejected'
-): MockCodec<ProposalStatus> => {
-  return createMockEnum(proposalStatus) as MockCodec<ProposalStatus>;
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockPip = (pip?: {
-  id: u32;
-  proposal: Call;
-  state: ProposalState;
-}): MockCodec<Pip> => {
-  const proposal = pip || {
-    id: createMockU32(),
-    proposal: 'proposal' as unknown as Call,
-    state: createMockProposalState(),
-  };
-
-  return createMockCodec(
-    {
-      ...proposal,
-    },
-    !pip
-  );
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockPipsMetadata = (metadata?: {
-  proposer: AccountId;
-  cool_off_until: u32;
-  end: u32;
-}): MockCodec<PipsMetadata> => {
-  const data = metadata || {
-    proposer: createMockAccountId(),
-    cool_off_until: createMockU32(),
-    end: createMockU32(),
-  };
-
-  return createMockCodec(
-    {
-      ...data,
-    },
-    !metadata
-  );
+): MockCodec<PalletMultisigProposalStatus> => {
+  return createMockEnum(proposalStatus) as MockCodec<PalletMultisigProposalStatus>;
 };
 
 /**
@@ -2996,9 +2975,9 @@ export const createMockPipsMetadata = (metadata?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockSecondaryKey = (secondaryKey?: {
-  signer: Signatory;
+  signer: PolymeshPrimitivesSecondaryKeySignatory;
   permissions: PolymeshPrimitivesSecondaryKeyPermissions;
-}): MockCodec<MeshSecondaryKey> => {
+}): MockCodec<PolymeshPrimitivesSecondaryKey> => {
   const key = secondaryKey || {
     signer: createMockSignatory(),
     permissions: createMockPermissions(),
@@ -3015,17 +2994,10 @@ export const createMockSecondaryKey = (secondaryKey?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockPipId = (id: BigNumber): MockCodec<PipId> =>
-  createMockU32(new BigNumber(id));
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
 export const createMockVenueType = (
   venueType?: 'Other' | 'Distribution' | 'Sto' | 'Exchange'
-): MockCodec<VenueType> => {
-  return createMockEnum<VenueType>(venueType);
+): MockCodec<PalletSettlementVenueType> => {
+  return createMockEnum<PalletSettlementVenueType>(venueType);
 };
 
 /**
@@ -3034,7 +3006,7 @@ export const createMockVenueType = (
  */
 export const createMockVenue = (venue?: {
   creator: PolymeshPrimitivesIdentityId;
-  venueType: VenueType;
+  venueType: PalletSettlementVenueType;
 }): MockCodec<PalletSettlementVenue> => {
   const vn = venue || {
     creator: createMockIdentityId(),
@@ -3055,8 +3027,8 @@ export const createMockVenue = (venue?: {
  */
 export const createMockInstructionStatus = (
   instructionStatus?: 'Pending' | 'Unknown' | 'Failed'
-): MockCodec<InstructionStatus> => {
-  return createMockEnum<InstructionStatus>(instructionStatus);
+): MockCodec<PalletSettlementInstructionStatus> => {
+  return createMockEnum<PalletSettlementInstructionStatus>(instructionStatus);
 };
 
 /**
@@ -3064,9 +3036,9 @@ export const createMockInstructionStatus = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockSettlementType = (
-  settlementType?: 'SettleOnAffirmation' | { SettleOnBlock: u32 }
-): MockCodec<SettlementType> => {
-  return createMockEnum<SettlementType>(settlementType);
+  settlementType?: 'SettleOnAffirmation' | { SettleOnBlock: u32 } | { SettleManual: u32 }
+): MockCodec<PalletSettlementSettlementType> => {
+  return createMockEnum<PalletSettlementSettlementType>(settlementType);
 };
 
 /**
@@ -3075,8 +3047,8 @@ export const createMockSettlementType = (
  */
 export const createMockAffirmationStatus = (
   authorizationStatus?: 'Unknown' | 'Pending' | 'Affirmed'
-): MockCodec<AffirmationStatus> => {
-  return createMockEnum<AffirmationStatus>(authorizationStatus);
+): MockCodec<PalletSettlementAffirmationStatus> => {
+  return createMockEnum<PalletSettlementAffirmationStatus>(authorizationStatus);
 };
 
 /**
@@ -3086,8 +3058,8 @@ export const createMockAffirmationStatus = (
 export const createMockInstruction = (instruction?: {
   instructionId: u64;
   venueId: u64;
-  status: InstructionStatus;
-  settlementType: SettlementType;
+  status: PalletSettlementInstructionStatus;
+  settlementType: PalletSettlementSettlementType;
   createdAt: Option<Moment>;
   tradeDate: Option<Moment>;
   valueDate: Option<Moment>;
@@ -3133,7 +3105,7 @@ export const createMockTransferCondition = (
           Permill
         ];
       }
-    | TransferCondition
+    | PolymeshPrimitivesTransferComplianceTransferCondition
 ): MockCodec<PolymeshPrimitivesTransferComplianceTransferCondition> => {
   if (isCodec<PolymeshPrimitivesTransferComplianceTransferCondition>(transferCondition)) {
     return transferCondition as MockCodec<PolymeshPrimitivesTransferComplianceTransferCondition>;
@@ -3149,7 +3121,7 @@ export const createMockFundraiserTier = (fundraiserTier?: {
   total: Balance;
   price: Balance;
   remaining: Balance;
-}): MockCodec<FundraiserTier> => {
+}): MockCodec<PalletStoFundraiserTier> => {
   const data = fundraiserTier || {
     total: createMockBalance(),
     price: createMockBalance(),
@@ -3170,8 +3142,8 @@ export const createMockFundraiserTier = (fundraiserTier?: {
  */
 export const createMockFundraiserStatus = (
   fundraiserStatus?: 'Live' | 'Frozen' | 'Closed' | 'ClosedEarly'
-): MockCodec<FundraiserStatus> => {
-  return createMockEnum<FundraiserStatus>(fundraiserStatus);
+): MockCodec<PalletStoFundraiserStatus> => {
+  return createMockEnum<PalletStoFundraiserStatus>(fundraiserStatus);
 };
 
 /**
@@ -3180,15 +3152,15 @@ export const createMockFundraiserStatus = (
  */
 export const createMockFundraiser = (fundraiser?: {
   creator: PolymeshPrimitivesIdentityId;
-  offeringPortfolio: PortfolioId;
+  offeringPortfolio: PolymeshPrimitivesIdentityIdPortfolioId;
   offeringAsset: PolymeshPrimitivesTicker;
-  raisingPortfolio: PortfolioId;
+  raisingPortfolio: PolymeshPrimitivesIdentityIdPortfolioId;
   raisingAsset: PolymeshPrimitivesTicker;
-  tiers: FundraiserTier[];
+  tiers: PalletStoFundraiserTier[];
   venueId: u64;
   start: Moment;
   end: Option<Moment>;
-  status: FundraiserStatus;
+  status: PalletStoFundraiserStatus;
   minimumInvestment: Balance;
 }): MockCodec<PalletStoFundraiser> => {
   const data = fundraiser || {
@@ -3220,7 +3192,7 @@ export const createMockFundraiser = (fundraiser?: {
 export const createMockPriceTier = (priceTier?: {
   total: Balance;
   price: Balance;
-}): MockCodec<PriceTier> => {
+}): MockCodec<PalletStoPriceTier> => {
   const data = priceTier || {
     total: createMockBalance(),
     price: createMockBalance(),
@@ -3239,13 +3211,21 @@ export const createMockPriceTier = (priceTier?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockCalendarUnit = (
-  calendarUnit?: 'Second' | 'Minute' | 'Hour' | 'Day' | 'Week' | 'Month' | 'Year' | CalendarUnit
-): MockCodec<CalendarUnit> => {
-  if (isCodec<CalendarUnit>(calendarUnit)) {
-    return calendarUnit as MockCodec<CalendarUnit>;
+  calendarUnit?:
+    | 'Second'
+    | 'Minute'
+    | 'Hour'
+    | 'Day'
+    | 'Week'
+    | 'Month'
+    | 'Year'
+    | PolymeshPrimitivesCalendarCalendarUnit
+): MockCodec<PolymeshPrimitivesCalendarCalendarUnit> => {
+  if (isCodec<PolymeshPrimitivesCalendarCalendarUnit>(calendarUnit)) {
+    return calendarUnit as MockCodec<PolymeshPrimitivesCalendarCalendarUnit>;
   }
 
-  return createMockEnum<CalendarUnit>(calendarUnit);
+  return createMockEnum<PolymeshPrimitivesCalendarCalendarUnit>(calendarUnit);
 };
 
 /**
@@ -3254,12 +3234,12 @@ export const createMockCalendarUnit = (
  */
 export const createMockCalendarPeriod = (
   calendarPeriod?:
-    | CalendarPeriod
+    | PolymeshPrimitivesCalendarCalendarPeriod
     | {
-        unit: CalendarUnit | Parameters<typeof createMockCalendarUnit>[0];
+        unit: PolymeshPrimitivesCalendarCalendarUnit | Parameters<typeof createMockCalendarUnit>[0];
         amount: u64 | Parameters<typeof createMockU64>[0];
       }
-): MockCodec<CalendarPeriod> => {
+): MockCodec<PolymeshPrimitivesCalendarCalendarPeriod> => {
   const { unit, amount } = calendarPeriod || {
     unit: createMockCalendarUnit(),
     amount: createMockU64(),
@@ -3280,12 +3260,14 @@ export const createMockCalendarPeriod = (
  */
 export const createMockCheckpointSchedule = (
   checkpointSchedule?:
-    | CheckpointSchedule
+    | PolymeshPrimitivesCalendarCheckpointSchedule
     | {
         start: Moment | Parameters<typeof createMockMoment>[0];
-        period: CalendarPeriod | Parameters<typeof createMockCalendarPeriod>[0];
+        period:
+          | PolymeshPrimitivesCalendarCalendarPeriod
+          | Parameters<typeof createMockCalendarPeriod>[0];
       }
-): MockCodec<CheckpointSchedule> => {
+): MockCodec<PolymeshPrimitivesCalendarCheckpointSchedule> => {
   const { start, period } = checkpointSchedule || {
     start: createMockMoment(),
     period: createMockCalendarPeriod(),
@@ -3306,14 +3288,16 @@ export const createMockCheckpointSchedule = (
  */
 export const createMockStoredSchedule = (
   storedSchedule?:
-    | StoredSchedule
+    | PolymeshCommonUtilitiesCheckpointStoredSchedule
     | {
-        schedule: CheckpointSchedule | Parameters<typeof createMockCheckpointSchedule>[0];
+        schedule:
+          | PolymeshPrimitivesCalendarCheckpointSchedule
+          | Parameters<typeof createMockCheckpointSchedule>[0];
         id: u64 | Parameters<typeof createMockU64>[0];
         at: Moment | Parameters<typeof createMockMoment>[0];
         remaining: u32 | Parameters<typeof createMockU32>[0];
       }
-): MockCodec<StoredSchedule> => {
+): MockCodec<PolymeshCommonUtilitiesCheckpointStoredSchedule> => {
   const { schedule, id, at, remaining } = storedSchedule || {
     schedule: createMockCheckpointSchedule(),
     id: createMockU64(),
@@ -3338,13 +3322,15 @@ export const createMockStoredSchedule = (
  */
 export const createMockScheduleSpec = (
   scheduleSpec?:
-    | ScheduleSpec
+    | PalletAssetCheckpointScheduleSpec
     | {
         start: Option<Moment>;
-        period: CalendarPeriod | Parameters<typeof createMockCalendarPeriod>[0];
+        period:
+          | PolymeshPrimitivesCalendarCalendarPeriod
+          | Parameters<typeof createMockCalendarPeriod>[0];
         remaining: u32 | Parameters<typeof createMockU32>[0];
       }
-): MockCodec<ScheduleSpec> => {
+): MockCodec<PalletAssetCheckpointScheduleSpec> => {
   const { start, period, remaining } = scheduleSpec || {
     start: createMockOption(),
     period: createMockCalendarPeriod(),
@@ -3365,44 +3351,18 @@ export const createMockScheduleSpec = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockScalar = (scalar?: string | Scalar): MockCodec<Scalar> => {
-  if (!scalar || typeof scalar === 'string') {
-    return createMockStringCodec<Scalar>(scalar);
-  } else {
-    return scalar as MockCodec<Scalar>;
-  }
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
 export const createMockRecordDateSpec = (
   recordDateSpec?:
     | { Scheduled: Moment }
-    | { ExistingSchedule: ScheduleId }
-    | { Existing: CheckpointId }
-    | RecordDateSpec
-): MockCodec<RecordDateSpec> => {
-  if (isCodec<RecordDateSpec>(recordDateSpec)) {
-    return recordDateSpec as MockCodec<RecordDateSpec>;
+    | { ExistingSchedule: u64 }
+    | { Existing: u64 }
+    | PalletCorporateActionsRecordDateSpec
+): MockCodec<PalletCorporateActionsRecordDateSpec> => {
+  if (isCodec<PalletCorporateActionsRecordDateSpec>(recordDateSpec)) {
+    return recordDateSpec as MockCodec<PalletCorporateActionsRecordDateSpec>;
   }
 
-  return createMockEnum<RecordDateSpec>(recordDateSpec);
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockRistrettoPoint = (
-  ristrettoPoint?: string | RistrettoPoint
-): MockCodec<RistrettoPoint> => {
-  if (!ristrettoPoint || typeof ristrettoPoint === 'string') {
-    return createMockStringCodec<RistrettoPoint>(ristrettoPoint);
-  } else {
-    return ristrettoPoint as MockCodec<RistrettoPoint>;
-  }
+  return createMockEnum<PalletCorporateActionsRecordDateSpec>(recordDateSpec);
 };
 
 /**
@@ -3410,13 +3370,13 @@ export const createMockRistrettoPoint = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockCACheckpoint = (
-  caCheckpoint?: { Scheduled: [ScheduleId, u64] } | { Existing: CheckpointId } | CACheckpoint
-): MockCodec<CACheckpoint> => {
-  if (isCodec<CACheckpoint>(caCheckpoint)) {
-    return caCheckpoint as MockCodec<CACheckpoint>;
+  caCheckpoint?: { Scheduled: [u64, u64] } | { Existing: u64 } | PalletCorporateActionsCaCheckpoint
+): MockCodec<PalletCorporateActionsCaCheckpoint> => {
+  if (isCodec<PalletCorporateActionsCaCheckpoint>(caCheckpoint)) {
+    return caCheckpoint as MockCodec<PalletCorporateActionsCaCheckpoint>;
   }
 
-  return createMockEnum<CACheckpoint>(caCheckpoint);
+  return createMockEnum<PalletCorporateActionsCaCheckpoint>(caCheckpoint);
 };
 
 /**
@@ -3425,12 +3385,14 @@ export const createMockCACheckpoint = (
  */
 export const createMockRecordDate = (
   recordDate?:
-    | RecordDate
+    | PalletCorporateActionsRecordDate
     | {
         date: Moment | Parameters<typeof createMockMoment>[0];
-        checkpoint: CACheckpoint | Parameters<typeof createMockCACheckpoint>[0];
+        checkpoint:
+          | PalletCorporateActionsCaCheckpoint
+          | Parameters<typeof createMockCACheckpoint>[0];
       }
-): MockCodec<RecordDate> => {
+): MockCodec<PalletCorporateActionsRecordDate> => {
   const { date, checkpoint } = recordDate || {
     date: createMockMoment(),
     checkpoint: createMockCACheckpoint(),
@@ -3449,11 +3411,13 @@ export const createMockRecordDate = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockSignature = (signature?: string | Signature): MockCodec<Signature> => {
+export const createMockSignature = (
+  signature?: string | ConfidentialIdentityV2SignSignature
+): MockCodec<ConfidentialIdentityV2SignSignature> => {
   if (!signature || typeof signature === 'string') {
-    return createMockStringCodec<Signature>(signature);
+    return createMockStringCodec<ConfidentialIdentityV2SignSignature>(signature);
   } else {
-    return signature as MockCodec<Signature>;
+    return signature as MockCodec<ConfidentialIdentityV2SignSignature>;
   }
 };
 
@@ -3465,25 +3429,25 @@ export const createMockZkProofData = (
   zkProofData?:
     | ConfidentialIdentityV2ClaimProofsZkProofData
     | {
-        challengeResponses: [Scalar, Scalar] | [string, string];
-        subtractExpressionsRes: RistrettoPoint | string;
-        blindedScopeDidHash: RistrettoPoint | string;
+        challengeResponses: [U8aFixed, U8aFixed] | [string, string];
+        subtractExpressionsRes: U8aFixed | string;
+        blindedScopeDidHash: U8aFixed | string;
       }
 ): MockCodec<ConfidentialIdentityV2ClaimProofsZkProofData> => {
   const { challengeResponses, subtractExpressionsRes, blindedScopeDidHash } = zkProofData || {
-    challengeResponses: [createMockScalar(), createMockScalar()],
-    subtractExpressionsRes: createMockRistrettoPoint(),
-    blindedScopeDidHash: createMockRistrettoPoint(),
+    challengeResponses: [createMockU8aFixed(), createMockU8aFixed()],
+    subtractExpressionsRes: createMockU8aFixed(),
+    blindedScopeDidHash: createMockU8aFixed(),
   };
 
   return createMockCodec(
     {
       challengeResponses: [
-        createMockScalar(challengeResponses[0] as string),
-        createMockScalar(challengeResponses[1] as string),
+        createMockU8aFixed(challengeResponses[0] as string),
+        createMockU8aFixed(challengeResponses[1] as string),
       ],
-      subtractExpressionsRes: createMockRistrettoPoint(subtractExpressionsRes as string),
-      blindedScopeDidHash: createMockRistrettoPoint(blindedScopeDidHash as string),
+      subtractExpressionsRes: createMockU8aFixed(subtractExpressionsRes as string),
+      blindedScopeDidHash: createMockU8aFixed(blindedScopeDidHash as string),
     },
     !zkProofData
   );
@@ -3494,13 +3458,13 @@ export const createMockZkProofData = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockTargetTreatment = (
-  targetTreatment?: 'Include' | 'Exclude' | TargetTreatment
-): MockCodec<TargetTreatment> => {
-  if (isCodec<TargetTreatment>(targetTreatment)) {
-    return targetTreatment as MockCodec<TargetTreatment>;
+  targetTreatment?: 'Include' | 'Exclude' | PalletCorporateActionsTargetTreatment
+): MockCodec<PalletCorporateActionsTargetTreatment> => {
+  if (isCodec<PalletCorporateActionsTargetTreatment>(targetTreatment)) {
+    return targetTreatment as MockCodec<PalletCorporateActionsTargetTreatment>;
   }
 
-  return createMockEnum<TargetTreatment>(targetTreatment);
+  return createMockEnum<PalletCorporateActionsTargetTreatment>(targetTreatment);
 };
 
 /**
@@ -3509,12 +3473,14 @@ export const createMockTargetTreatment = (
  */
 export const createMockTargetIdentities = (
   targetIdentities?:
-    | TargetIdentities
+    | PalletCorporateActionsTargetIdentities
     | {
         identities: (PolymeshPrimitivesIdentityId | Parameters<typeof createMockIdentityId>[0])[];
-        treatment: TargetTreatment | Parameters<typeof createMockTargetTreatment>[0];
+        treatment:
+          | PalletCorporateActionsTargetTreatment
+          | Parameters<typeof createMockTargetTreatment>[0];
       }
-): MockCodec<TargetIdentities> => {
+): MockCodec<PalletCorporateActionsTargetIdentities> => {
   const { identities, treatment } = targetIdentities || {
     identities: [],
     treatment: createMockTargetTreatment(),
@@ -3537,30 +3503,28 @@ export const createMockScopeClaimProof = (
   scopeClaimProof?:
     | ConfidentialIdentityV2ClaimProofsScopeClaimProof
     | {
-        proofScopeIdWellformed: Signature | string;
+        proofScopeIdWellformed: ConfidentialIdentityV2SignSignature | string;
         proofScopeIdCddIdMatch:
-          | ZkProofData
+          | ConfidentialIdentityV2ClaimProofsZkProofData
           | {
               challengeResponses: [string, string];
               subtractExpressionsRes: string;
               blindedScopeDidHash: string;
             };
-        scopeId: RistrettoPoint | string;
+        scopeId: U8aFixed | string;
       }
 ): MockCodec<ConfidentialIdentityV2ClaimProofsScopeClaimProof> => {
   const { proofScopeIdWellformed, proofScopeIdCddIdMatch, scopeId } = scopeClaimProof || {
     proofScopeIdWellformed: createMockSignature(),
     proofScopeIdCddIdMatch: createMockZkProofData(),
-    scopeId: createMockRistrettoPoint(),
+    scopeId: createMockU8aFixed(),
   };
 
   return createMockCodec(
     {
-      proofScopeIdWellformed: createMockSignature(proofScopeIdWellformed as Signature),
-      proofScopeIdCddIdMatch: createMockZkProofData(
-        proofScopeIdCddIdMatch as ConfidentialIdentityV2ClaimProofsZkProofData
-      ),
-      scopeId: createMockRistrettoPoint(scopeId as RistrettoPoint),
+      proofScopeIdWellformed: createMockSignature(proofScopeIdWellformed),
+      proofScopeIdCddIdMatch: createMockZkProofData(proofScopeIdCddIdMatch),
+      scopeId: createMockU8aFixed(scopeId as string),
     },
     !scopeClaimProof
   );
@@ -3577,13 +3541,13 @@ export const createMockCAKind = (
     | 'IssuerNotice'
     | 'Reorganization'
     | 'Other'
-    | CAKind
-): MockCodec<CAKind> => {
-  if (isCodec<CAKind>(caKind)) {
-    return caKind as MockCodec<CAKind>;
+    | PalletCorporateActionsCaKind
+): MockCodec<PalletCorporateActionsCaKind> => {
+  if (isCodec<PalletCorporateActionsCaKind>(caKind)) {
+    return caKind as MockCodec<PalletCorporateActionsCaKind>;
   }
 
-  return createMockEnum<CAKind>(caKind);
+  return createMockEnum<PalletCorporateActionsCaKind>(caKind);
 };
 
 /**
@@ -3591,14 +3555,16 @@ export const createMockCAKind = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockCorporateAction = (corporateAction?: {
-  kind: CAKind | Parameters<typeof createMockCAKind>[0];
+  kind: PalletCorporateActionsCaKind | Parameters<typeof createMockCAKind>[0];
   decl_date: Moment | Parameters<typeof createMockMoment>[0];
-  record_date: Option<RecordDate> | Parameters<typeof createMockOption>[0];
-  targets: TargetIdentities | Parameters<typeof createMockTargetIdentities>[0];
-  default_withholding_tax: Tax | Parameters<typeof createMockPermill>[0];
+  record_date: Option<PalletCorporateActionsRecordDate> | Parameters<typeof createMockOption>[0];
+  targets:
+    | PalletCorporateActionsTargetIdentities
+    | Parameters<typeof createMockTargetIdentities>[0];
+  default_withholding_tax: Permill | Parameters<typeof createMockPermill>[0];
   withholding_tax: [
     PolymeshPrimitivesIdentityId | Parameters<typeof createMockIdentityId>[0],
-    Tax | Parameters<typeof createMockPermill>[0]
+    Permill | Parameters<typeof createMockPermill>[0]
   ][];
 }): MockCodec<PalletCorporateActionsCorporateAction> => {
   const { kind, decl_date, record_date, targets, default_withholding_tax, withholding_tax } =
@@ -3657,7 +3623,7 @@ export const createMockCAId = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockDistribution = (distribution?: {
-  from: PortfolioId | Parameters<typeof createMockPortfolioId>[0];
+  from: PolymeshPrimitivesIdentityIdPortfolioId | Parameters<typeof createMockPortfolioId>[0];
   currency: PolymeshPrimitivesTicker | Parameters<typeof createMockTicker>[0];
   perShare: Balance | Parameters<typeof createMockBalance>[0];
   amount: Balance | Parameters<typeof createMockBalance>[0];
@@ -3698,7 +3664,9 @@ export const createMockDistribution = (distribution?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockTransferConditionResult = (transferManagerResult?: {
-  condition: TransferCondition | Parameters<typeof createMockTransferCondition>[0];
+  condition:
+    | PolymeshPrimitivesTransferComplianceTransferCondition
+    | Parameters<typeof createMockTransferCondition>[0];
   result: bool | Parameters<typeof createMockBool>[0];
 }): MockCodec<TransferConditionResult> => {
   const { condition, result } = transferManagerResult || {
@@ -3833,7 +3801,9 @@ export const createMockClassicTickerRegistration = (
   registration?:
     | PalletAssetClassicTickerRegistration
     | {
-        ethOwner: EthereumAddress | Parameters<typeof createMockEthereumAddress>[0];
+        ethOwner:
+          | PolymeshPrimitivesEthereumEthereumAddress
+          | Parameters<typeof createMockEthereumAddress>[0];
         isCreated: bool | Parameters<typeof createMockBool>[0];
       }
 ): MockCodec<PalletAssetClassicTickerRegistration> => {
@@ -4010,8 +3980,8 @@ export const createMockProtocolOp = (
     | 'ContractsPutCode'
     | 'CorporateBallotAttachBallot'
     | 'CapitalDistributionDistribute'
-): MockCodec<MockCodec<ProtocolOp>> => {
-  return createMockEnum<ProtocolOp>(protocolOp);
+): MockCodec<MockCodec<PolymeshCommonUtilitiesProtocolFeeProtocolOp>> => {
+  return createMockEnum<PolymeshCommonUtilitiesProtocolFeeProtocolOp>(protocolOp);
 };
 
 /**
@@ -4151,7 +4121,7 @@ export const createMockInitiateCorporateActionArgs = (
         withholdingTax:
           | [
               PolymeshPrimitivesIdentityId | Parameters<typeof createMockIdentityId>[0],
-              Tax | Parameters<typeof createMockPermill>[0]
+              Permill | Parameters<typeof createMockPermill>[0]
             ][]
           | null;
       }
@@ -4196,7 +4166,7 @@ export const createMockStatisticsStatClaim = (
     | PolymeshPrimitivesStatisticsStatClaim
     | { Accredited: bool }
     | { Affiliate: bool }
-    | { Jurisdiction: Option<CountryCode> }
+    | { Jurisdiction: Option<PolymeshPrimitivesJurisdictionCountryCode> }
 ): MockCodec<PolymeshPrimitivesStatisticsStatClaim> => {
   if (statClaim)
     if (isCodec<PolymeshPrimitivesStatisticsStatClaim>(statClaim)) {
@@ -4263,10 +4233,10 @@ export const createMockCall = (callArgs?: {
 export const createMockProposalDetails = (proposalDetails?: {
   approvals: u64 | Parameters<typeof createMockU64>[0];
   rejections: u64 | Parameters<typeof createMockU64>[0];
-  status: ProposalStatus | Parameters<typeof createMockProposalStatus>[0];
+  status: PalletMultisigProposalStatus | Parameters<typeof createMockProposalStatus>[0];
   autoClose: bool | Parameters<typeof createMockBool>[0];
   expiry: Option<Moment> | null;
-}): ProposalDetails => {
+}): PalletMultisigProposalDetails => {
   const { approvals, rejections, status, autoClose, expiry } = proposalDetails || {
     approvals: createMockU64(),
     rejections: createMockU64(),
@@ -4283,7 +4253,111 @@ export const createMockProposalDetails = (proposalDetails?: {
       autoClose,
     },
     !proposalDetails
-  ) as MockCodec<ProposalDetails>;
+  ) as MockCodec<PalletMultisigProposalDetails>;
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAssetMetadataKey = (
+  key: PolymeshPrimitivesAssetMetadataAssetMetadataKey | { Local: u64 } | { Global: u64 }
+): MockCodec<PolymeshPrimitivesAssetMetadataAssetMetadataKey> => {
+  if (isCodec<PolymeshPrimitivesAssetMetadataAssetMetadataKey>(key)) {
+    return key as MockCodec<PolymeshPrimitivesAssetMetadataAssetMetadataKey>;
+  }
+
+  return createMockEnum<PolymeshPrimitivesAssetMetadataAssetMetadataKey>(key);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAssetMetadataSpec = (
+  specs?:
+    | PolymeshPrimitivesAssetMetadataAssetMetadataSpec
+    | {
+        url: Option<Bytes>;
+        description: Option<Bytes>;
+        typeDef: Option<Bytes>;
+      }
+): MockCodec<PolymeshPrimitivesAssetMetadataAssetMetadataSpec> => {
+  if (isCodec<PolymeshPrimitivesAssetMetadataAssetMetadataSpec>(specs)) {
+    return specs as MockCodec<PolymeshPrimitivesAssetMetadataAssetMetadataSpec>;
+  }
+
+  const { url, description, typeDef } = specs || {
+    url: createMockOption(),
+    description: createMockOption(),
+    typeDef: createMockOption(),
+  };
+
+  return createMockCodec(
+    {
+      url,
+      description,
+      typeDef,
+    },
+    !specs
+  );
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAssetMetadataLockStatus = (
+  args:
+    | {
+        lockStatus?: 'Locked' | 'Unlocked';
+      }
+    | {
+        lockStatus: 'LockedUntil';
+        lockedUntil: Date;
+      }
+): MockCodec<PolymeshPrimitivesAssetMetadataAssetMetadataLockStatus> => {
+  const { lockStatus } = args;
+
+  let meshLockStatus;
+  if (lockStatus === 'LockedUntil') {
+    const { lockedUntil } = args;
+    meshLockStatus = { LockedUntil: createMockU64(new BigNumber(lockedUntil.getTime())) };
+  } else {
+    meshLockStatus = lockStatus;
+  }
+
+  return createMockEnum<PolymeshPrimitivesAssetMetadataAssetMetadataLockStatus>(meshLockStatus);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockAssetMetadataValueDetail = (
+  valueDetail?:
+    | PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail
+    | {
+        lockStatus: PolymeshPrimitivesAssetMetadataAssetMetadataLockStatus;
+        expire: Option<u64>;
+      }
+): MockCodec<PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail> => {
+  if (isCodec<PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail>(valueDetail)) {
+    return valueDetail as MockCodec<PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail>;
+  }
+
+  const { lockStatus, expire } = valueDetail || {
+    lockStatus: createMockAssetMetadataLockStatus({ lockStatus: 'Unlocked' }),
+    expire: createMockOption(),
+  };
+
+  return createMockCodec(
+    {
+      lockStatus,
+      expire,
+    },
+    false
+  );
 };
 
 /**

@@ -1,8 +1,8 @@
 import { Bytes, u64 } from '@polkadot/types';
+import { PolymeshPrimitivesIdentityId } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { IdentityId } from 'polymesh-types/types';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   createPortfoliosResolver,
@@ -17,8 +17,8 @@ import * as utilsInternalModule from '~/utils/internal';
 
 describe('createPortfolios procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToBytesStub: sinon.SinonStub<[string, Context], Bytes>;
-  let getPortfolioIdsByNameStub: sinon.SinonStub;
+  let stringToBytesSpy: jest.SpyInstance<Bytes, [string, Context]>;
+  let getPortfolioIdsByNameSpy: jest.SpyInstance;
   let newPortfolioName: string;
   let rawNewPortfolioName: Bytes;
 
@@ -27,8 +27,8 @@ describe('createPortfolios procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
 
-    stringToBytesStub = sinon.stub(utilsConversionModule, 'stringToBytes');
-    getPortfolioIdsByNameStub = sinon.stub(utilsInternalModule, 'getPortfolioIdsByName');
+    stringToBytesSpy = jest.spyOn(utilsConversionModule, 'stringToBytes');
+    getPortfolioIdsByNameSpy = jest.spyOn(utilsInternalModule, 'getPortfolioIdsByName');
 
     newPortfolioName = 'newPortfolioName';
     rawNewPortfolioName = dsMockUtils.createMockBytes(newPortfolioName);
@@ -36,7 +36,9 @@ describe('createPortfolios procedure', () => {
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    stringToBytesStub.withArgs(newPortfolioName, mockContext).returns(rawNewPortfolioName);
+    when(stringToBytesSpy)
+      .calledWith(newPortfolioName, mockContext)
+      .mockReturnValue(rawNewPortfolioName);
   });
 
   afterEach(() => {
@@ -52,7 +54,7 @@ describe('createPortfolios procedure', () => {
 
   it('should throw an error if the portfolio name is duplicated', () => {
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio[]>(mockContext);
-    getPortfolioIdsByNameStub.resolves([new BigNumber(1)]);
+    getPortfolioIdsByNameSpy.mockResolvedValue([new BigNumber(1)]);
 
     return expect(
       prepareCreatePortfolios.call(proc, { names: [newPortfolioName] })
@@ -61,8 +63,8 @@ describe('createPortfolios procedure', () => {
 
   it('should return a create portfolio transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio[]>(mockContext);
-    const createPortfolioTransaction = dsMockUtils.createTxStub('portfolio', 'createPortfolio');
-    getPortfolioIdsByNameStub.resolves([null]);
+    const createPortfolioTransaction = dsMockUtils.createTxMock('portfolio', 'createPortfolio');
+    getPortfolioIdsByNameSpy.mockResolvedValue([null]);
 
     const result = await prepareCreatePortfolios.call(proc, { names: [newPortfolioName] });
 
@@ -79,28 +81,28 @@ describe('createPortfolios procedure', () => {
 });
 
 describe('createPortfoliosResolver', () => {
-  const filterEventRecordsStub = sinon.stub(utilsInternalModule, 'filterEventRecords');
+  const filterEventRecordsSpy = jest.spyOn(utilsInternalModule, 'filterEventRecords');
   const did = 'someDid';
   const rawIdentityId = dsMockUtils.createMockIdentityId(did);
   const id = new BigNumber(1);
   const rawId = dsMockUtils.createMockU64(id);
-  let identityIdToStringStub: sinon.SinonStub<[IdentityId], string>;
-  let u64ToBigNumberStub: sinon.SinonStub<[u64], BigNumber>;
+  let identityIdToStringSpy: jest.SpyInstance<string, [PolymeshPrimitivesIdentityId]>;
+  let u64ToBigNumberSpy: jest.SpyInstance<BigNumber, [u64]>;
 
   beforeAll(() => {
-    identityIdToStringStub = sinon.stub(utilsConversionModule, 'identityIdToString');
-    u64ToBigNumberStub = sinon.stub(utilsConversionModule, 'u64ToBigNumber');
+    identityIdToStringSpy = jest.spyOn(utilsConversionModule, 'identityIdToString');
+    u64ToBigNumberSpy = jest.spyOn(utilsConversionModule, 'u64ToBigNumber');
   });
 
   beforeEach(() => {
-    identityIdToStringStub.withArgs(rawIdentityId).returns(did);
-    u64ToBigNumberStub.withArgs(rawId).returns(id);
-    filterEventRecordsStub.returns([dsMockUtils.createMockIEvent([rawIdentityId, rawId])]);
+    when(identityIdToStringSpy).calledWith(rawIdentityId).mockReturnValue(did);
+    when(u64ToBigNumberSpy).calledWith(rawId).mockReturnValue(id);
+    filterEventRecordsSpy.mockReturnValue([dsMockUtils.createMockIEvent([rawIdentityId, rawId])]);
   });
 
   afterEach(() => {
-    sinon.reset();
-    filterEventRecordsStub.reset();
+    jest.resetAllMocks();
+    filterEventRecordsSpy.mockReset();
   });
 
   it('should return the new Numbered Portfolios', () => {

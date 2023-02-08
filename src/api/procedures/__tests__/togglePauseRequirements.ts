@@ -1,6 +1,6 @@
 import { bool } from '@polkadot/types';
-import { Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
+import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+import { when } from 'jest-when';
 
 import {
   getAuthorization,
@@ -20,32 +20,32 @@ jest.mock(
 
 describe('togglePauseRequirements procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
-  let assetCompliancesStub: sinon.SinonStub;
-  let boolToBooleanStub: sinon.SinonStub<[bool], boolean>;
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let assetCompliancesMock: jest.Mock;
+  let boolToBooleanSpy: jest.SpyInstance<boolean, [bool]>;
   let ticker: string;
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
-    boolToBooleanStub = sinon.stub(utilsConversionModule, 'boolToBoolean');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
+    boolToBooleanSpy = jest.spyOn(utilsConversionModule, 'boolToBoolean');
     ticker = 'TEST';
     rawTicker = dsMockUtils.createMockTicker(ticker);
   });
 
   beforeEach(() => {
     mockContext = dsMockUtils.getContextInstance();
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
-    assetCompliancesStub = dsMockUtils.createQueryStub('complianceManager', 'assetCompliances', {
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    assetCompliancesMock = dsMockUtils.createQueryMock('complianceManager', 'assetCompliances', {
       returnValue: [],
     });
-    assetCompliancesStub.withArgs(rawTicker).resolves({
+    when(assetCompliancesMock).calledWith(rawTicker).mockResolvedValue({
       paused: true,
     });
-    boolToBooleanStub.returns(true);
+    boolToBooleanSpy.mockReturnValue(true);
   });
 
   afterEach(() => {
@@ -71,11 +71,11 @@ describe('togglePauseRequirements procedure', () => {
   });
 
   it('should throw an error if pause is set to false and the asset compliance requirements are already unpaused', () => {
-    assetCompliancesStub.withArgs(rawTicker).returns({
+    when(assetCompliancesMock).calledWith(rawTicker).mockReturnValue({
       paused: false,
     });
 
-    boolToBooleanStub.returns(false);
+    boolToBooleanSpy.mockReturnValue(false);
 
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
@@ -88,15 +88,15 @@ describe('togglePauseRequirements procedure', () => {
   });
 
   it('should return a pause asset compliance transaction spec', async () => {
-    assetCompliancesStub.withArgs(rawTicker).returns({
+    when(assetCompliancesMock).calledWith(rawTicker).mockReturnValue({
       paused: false,
     });
 
-    boolToBooleanStub.returns(false);
+    boolToBooleanSpy.mockReturnValue(false);
 
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('complianceManager', 'pauseAssetCompliance');
+    const transaction = dsMockUtils.createTxMock('complianceManager', 'pauseAssetCompliance');
 
     const result = await prepareTogglePauseRequirements.call(proc, {
       ticker,
@@ -113,7 +113,7 @@ describe('togglePauseRequirements procedure', () => {
   it('should return a resume asset compliance transaction spec', async () => {
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 
-    const transaction = dsMockUtils.createTxStub('complianceManager', 'resumeAssetCompliance');
+    const transaction = dsMockUtils.createTxMock('complianceManager', 'resumeAssetCompliance');
 
     const result = await prepareTogglePauseRequirements.call(proc, {
       ticker,

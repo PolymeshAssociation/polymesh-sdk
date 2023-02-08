@@ -205,6 +205,10 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
       asset: { ticker },
     } = this;
 
+    if (context.isMiddlewareV2Enabled()) {
+      return this.getInvestmentsV2(opts);
+    }
+
     const { size, start } = opts;
 
     const result = await context.queryMiddleware<Ensured<Query, 'investments'>>(

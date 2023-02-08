@@ -1,4 +1,3 @@
-import { QueryableStorageEntry } from '@polkadot/api/types';
 import BigNumber from 'bignumber.js';
 
 import { Asset, PolymeshError, Procedure } from '~/internal';
@@ -13,7 +12,6 @@ import {
   TxTags,
 } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
-import { QueryReturnType } from '~/types/utils';
 import {
   complianceConditionsToBtreeSet,
   stringToTickerKey,
@@ -27,6 +25,7 @@ import {
   checkTxType,
   getExemptedBtreeSet,
   neededStatTypeForRestrictionInput,
+  requestMulti,
 } from '~/utils/internal';
 
 /**
@@ -51,7 +50,6 @@ export async function prepareAddTransferRestriction(
       polymeshApi: {
         tx: { statistics },
         query: { statistics: statisticsQuery },
-        queryMulti,
         consts,
       },
     },
@@ -72,17 +70,11 @@ export async function prepareAddTransferRestriction(
     claimIssuer = { claimType: cType, issuer };
   }
 
-  const [currentStats, { requirements: currentRestrictions }] = await queryMulti<
-    [
-      QueryReturnType<typeof statisticsQuery.activeAssetStats>,
-      QueryReturnType<typeof statisticsQuery.assetTransferCompliances>
-    ]
-  >([
-    [statisticsQuery.activeAssetStats as unknown as QueryableStorageEntry<'promise'>, tickerKey],
-    [
-      statisticsQuery.assetTransferCompliances as unknown as QueryableStorageEntry<'promise'>,
-      tickerKey,
-    ],
+  const [currentStats, { requirements: currentRestrictions }] = await requestMulti<
+    [typeof statisticsQuery.activeAssetStats, typeof statisticsQuery.assetTransferCompliances]
+  >(context, [
+    [statisticsQuery.activeAssetStats, tickerKey],
+    [statisticsQuery.assetTransferCompliances, tickerKey],
   ]);
 
   const neededStat = neededStatTypeForRestrictionInput({ type, claimIssuer }, context);

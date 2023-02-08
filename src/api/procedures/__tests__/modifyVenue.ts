@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
 
 import { getAuthorization, Params, prepareModifyVenue } from '~/api/procedures/modifyVenue';
 import { Context, Venue } from '~/internal';
@@ -97,15 +96,15 @@ describe('modifyVenue procedure', () => {
       type,
     };
 
-    sinon.stub(utilsConversionModule, 'bigNumberToU64').returns(rawId);
-    sinon.stub(utilsConversionModule, 'stringToBytes').returns(rawDetails);
-    sinon.stub(utilsConversionModule, 'venueTypeToMeshVenueType').returns(rawType);
+    jest.spyOn(utilsConversionModule, 'bigNumberToU64').mockReturnValue(rawId);
+    jest.spyOn(utilsConversionModule, 'stringToBytes').mockReturnValue(rawDetails);
+    jest.spyOn(utilsConversionModule, 'venueTypeToMeshVenueType').mockReturnValue(rawType);
 
-    const updateVenueDetailsTransaction = dsMockUtils.createTxStub(
+    const updateVenueDetailsTransaction = dsMockUtils.createTxMock(
       'settlement',
       'updateVenueDetails'
     );
-    const updateVenueTypeTransaction = dsMockUtils.createTxStub('settlement', 'updateVenueType');
+    const updateVenueTypeTransaction = dsMockUtils.createTxMock('settlement', 'updateVenueType');
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     let result = await prepareModifyVenue.call(proc, args);

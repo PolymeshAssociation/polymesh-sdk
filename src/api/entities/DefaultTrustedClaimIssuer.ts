@@ -62,6 +62,10 @@ export class DefaultTrustedClaimIssuer extends Identity {
       context,
     } = this;
 
+    if (context.isMiddlewareV2Enabled()) {
+      return this.addedAtV2();
+    }
+
     const {
       data: { eventByAddedTrustedClaimIssuer: event },
     } = await context.queryMiddleware<Ensured<Query, 'eventByAddedTrustedClaimIssuer'>>(

@@ -12,7 +12,21 @@ export enum InstructionStatus {
 export enum InstructionType {
   SettleOnAffirmation = 'SettleOnAffirmation',
   SettleOnBlock = 'SettleOnBlock',
+  SettleManual = 'SettleManual',
 }
+
+export type InstructionEndCondition =
+  | {
+      type: InstructionType.SettleOnAffirmation;
+    }
+  | {
+      type: InstructionType.SettleOnBlock;
+      endBlock: BigNumber;
+    }
+  | {
+      type: InstructionType.SettleManual;
+      endAfterBlock: BigNumber;
+    };
 
 export type InstructionDetails = {
   status: InstructionStatus;
@@ -27,15 +41,7 @@ export type InstructionDetails = {
   valueDate: Date | null;
   venue: Venue;
   memo: string | null;
-} & (
-  | {
-      type: InstructionType.SettleOnAffirmation;
-    }
-  | {
-      type: InstructionType.SettleOnBlock;
-      endBlock: BigNumber;
-    }
-);
+} & InstructionEndCondition;
 
 export interface Leg {
   from: DefaultPortfolio | NumberedPortfolio;

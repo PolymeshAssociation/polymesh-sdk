@@ -122,6 +122,14 @@ declare module '@polkadot/api-base/types/events' {
         [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, Bytes]
       >;
       /**
+       * An event emitted when the type of an asset changed.
+       * Parameters: caller DID, ticker, new token type.
+       **/
+      AssetTypeChanged: AugmentedEvent<
+        ApiType,
+        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, PolymeshPrimitivesAssetAssetType]
+      >;
+      /**
        * An event emitted when an asset is unfrozen.
        * Parameter: caller DID, ticker.
        **/
@@ -405,6 +413,13 @@ declare module '@polkadot/api-base/types/events' {
        * Bridge limit has been updated.
        **/
       BridgeLimitUpdated: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, u128, u32]>;
+      /**
+       * Bridge Tx failed.  Recipient missing CDD or limit reached.
+       **/
+      BridgeTxFailed: AugmentedEvent<
+        ApiType,
+        [PolymeshPrimitivesIdentityId, PalletBridgeBridgeTx, SpRuntimeDispatchError]
+      >;
       /**
        * Bridge Tx Scheduled.
        **/
@@ -1756,6 +1771,10 @@ declare module '@polkadot/api-base/types/events' {
         [PolymeshPrimitivesIdentityId, PolymeshPrimitivesIdentityIdPortfolioId, u64]
       >;
       /**
+       * Failed to execute instruction.
+       **/
+      FailedToExecuteInstruction: AugmentedEvent<ApiType, [u64, SpRuntimeDispatchError]>;
+      /**
        * An instruction has been affirmed (did, portfolio, instruction_id)
        **/
       InstructionAffirmed: AugmentedEvent<
@@ -1825,6 +1844,10 @@ declare module '@polkadot/api-base/types/events' {
        * Scheduling of instruction fails.
        **/
       SchedulingFailed: AugmentedEvent<ApiType, [SpRuntimeDispatchError]>;
+      /**
+       * Settlement manually executed (did, id)
+       **/
+      SettlementManuallyExecuted: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, u64]>;
       /**
        * A new venue has been created (did, venue_id, details, type)
        **/

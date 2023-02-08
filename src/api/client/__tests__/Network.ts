@@ -1,8 +1,13 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Network } from '~/api/client/Network';
 import { Context, PolymeshTransaction } from '~/internal';
+import {
+  CallIdEnum as MiddlewareV2CallId,
+  EventIdEnum as MiddlewareV2EventId,
+  ModuleIdEnum as MiddlewareV2ModuleId,
+} from '~/middleware/enumsV2';
 import {
   eventByIndexedArgs,
   eventsByIndexedArgs,
@@ -11,14 +16,9 @@ import {
 } from '~/middleware/queries';
 import { eventsByArgs, extrinsicByHash } from '~/middleware/queriesV2';
 import { CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/types';
-import {
-  CallIdEnum as MiddlewareV2CallId,
-  EventIdEnum as MiddlewareV2EventId,
-  ModuleIdEnum as MiddlewareV2ModuleId,
-} from '~/middleware/typesV2';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { AccountBalance, TxTags } from '~/types';
+import { AccountBalance, EventIdentifier, ExtrinsicDataWithFees, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -33,8 +33,8 @@ jest.mock(
 describe('Network Class', () => {
   let context: Mocked<Context>;
   let network: Network;
-  let stringToBlockHashStub: sinon.SinonStub;
-  let balanceToBigNumberStub: sinon.SinonStub;
+  let stringToBlockHashSpy: jest.SpyInstance;
+  let balanceToBigNumberSpy: jest.SpyInstance;
 
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
@@ -45,8 +45,8 @@ describe('Network Class', () => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
     procedureMockUtils.initMocks();
-    stringToBlockHashStub = sinon.stub(utilsConversionModule, 'stringToBlockHash');
-    balanceToBigNumberStub = sinon.stub(utilsConversionModule, 'balanceToBigNumber');
+    stringToBlockHashSpy = jest.spyOn(utilsConversionModule, 'stringToBlockHash');
+    balanceToBigNumberSpy = jest.spyOn(utilsConversionModule, 'balanceToBigNumber');
   });
 
   afterEach(() => {
@@ -67,7 +67,7 @@ describe('Network Class', () => {
       dsMockUtils.configureMocks({
         contextOptions: { withSigningManager: true, latestBlock: blockNumber },
       });
-      dsMockUtils.createApolloQueryStub(heartbeat(), true);
+      dsMockUtils.createApolloQueryMock(heartbeat(), true);
 
       const result = await network.getLatestBlock();
 
@@ -80,7 +80,7 @@ describe('Network Class', () => {
       const networkVersion = '1.0.0';
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true, networkVersion } });
-      dsMockUtils.createApolloQueryStub(heartbeat(), true);
+      dsMockUtils.createApolloQueryMock(heartbeat(), true);
 
       const result = await network.getVersion();
 
@@ -110,7 +110,9 @@ describe('Network Class', () => {
       };
 
       dsMockUtils.setRuntimeVersion({ specVersion: dsMockUtils.createMockU32(version) });
-      dsMockUtils.createRpcStub('system', 'chain').resolves(dsMockUtils.createMockText(name));
+      dsMockUtils
+        .createRpcMock('system', 'chain')
+        .mockResolvedValue(dsMockUtils.createMockText(name));
 
       const result = await network.getNetworkProperties();
       expect(result).toEqual(fakeResult);
@@ -166,17 +168,17 @@ describe('Network Class', () => {
 
       entityMockUtils.configureMocks({
         accountOptions: {
-          getBalance: sinon.stub().callsFake(async cbFunc => {
+          getBalance: jest.fn().mockImplementation(async cbFunc => {
             cbFunc(fakeBalance);
             return unsubCallback;
           }),
         },
       });
 
-      const callback = sinon.stub();
+      const callback = jest.fn();
       const result = await network.getTreasuryBalance(callback);
       expect(result).toEqual(unsubCallback);
-      sinon.assert.calledWithExactly(callback, fakeBalance.free);
+      expect(callback).toBeCalledWith(fakeBalance.free);
     });
   });
 
@@ -189,10 +191,9 @@ describe('Network Class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await network.transferPolyx(args);
 
@@ -212,8 +213,10 @@ describe('Network Class', () => {
       const eventIdx = new BigNumber(1);
       const fakeResult = { blockNumber, blockDate, eventIndex: eventIdx };
 
-      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.configureMocks({
+        contextOptions: { withSigningManager: true, middlewareV2Enabled: false },
+      });
+      dsMockUtils.createApolloQueryMock(
         eventByIndexedArgs({
           ...variables,
           eventArg0: undefined,
@@ -236,7 +239,10 @@ describe('Network Class', () => {
     });
 
     it('should return null if the query result is empty', async () => {
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.configureMocks({
+        contextOptions: { withSigningManager: true, middlewareV2Enabled: false },
+      });
+      dsMockUtils.createApolloQueryMock(
         eventByIndexedArgs({
           ...variables,
           eventArg0: 'someDid',
@@ -247,6 +253,14 @@ describe('Network Class', () => {
       );
       const result = await network.getEventByIndexedArgs({ ...variables, eventArg0: 'someDid' });
       expect(result).toBeNull();
+    });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      const fakeResult = 'fakeResult' as unknown as EventIdentifier;
+      jest.spyOn(network, 'getEventByIndexedArgsV2').mockResolvedValue(fakeResult);
+
+      const result = await network.getEventByIndexedArgs(variables);
+      expect(result).toEqual(fakeResult);
     });
   });
 
@@ -264,7 +278,7 @@ describe('Network Class', () => {
       const fakeResult = { blockNumber, blockDate, blockHash, eventIndex: eventIdx };
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloV2QueryMock(
         eventsByArgs(
           {
             ...variables,
@@ -295,7 +309,7 @@ describe('Network Class', () => {
     });
 
     it('should return null if the query result is empty', async () => {
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloV2QueryMock(
         eventsByArgs(
           {
             ...variables,
@@ -328,9 +342,11 @@ describe('Network Class', () => {
       const eventIdx = new BigNumber(1);
       const fakeResult = [{ blockNumber, blockDate, eventIndex: eventIdx }];
 
-      dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
+      dsMockUtils.configureMocks({
+        contextOptions: { withSigningManager: true, middlewareV2Enabled: false },
+      });
 
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.createApolloQueryMock(
         eventsByIndexedArgs({
           ...variables,
           eventArg0: undefined,
@@ -361,7 +377,11 @@ describe('Network Class', () => {
     });
 
     it('should return null if the query result is empty', async () => {
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.configureMocks({
+        contextOptions: { withSigningManager: true, middlewareV2Enabled: false },
+      });
+
+      dsMockUtils.createApolloQueryMock(
         eventsByIndexedArgs({
           ...variables,
           eventArg0: 'someDid',
@@ -377,6 +397,14 @@ describe('Network Class', () => {
         eventArg0: 'someDid',
       });
       expect(result).toBeNull();
+    });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      const fakeResult = 'fakeResult' as unknown as EventIdentifier[];
+      jest.spyOn(network, 'getEventsByIndexedArgsV2').mockResolvedValue(fakeResult);
+
+      const result = await network.getEventsByIndexedArgs(variables);
+      expect(result).toEqual(fakeResult);
     });
   });
 
@@ -397,7 +425,7 @@ describe('Network Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloV2QueryMock(
         eventsByArgs(
           {
             ...variables,
@@ -433,7 +461,7 @@ describe('Network Class', () => {
     });
 
     it('should return null if the query result is empty', async () => {
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloV2QueryMock(
         eventsByArgs({
           ...variables,
           eventArg0: 'someDid',
@@ -454,12 +482,12 @@ describe('Network Class', () => {
 
   describe('method: getTransactionByHash', () => {
     const variable = { txHash: 'someHash' };
-    let getBlockStub: sinon.SinonStub;
-    let queryInfoStub: sinon.SinonStub;
+    let getBlockMock: jest.Mock;
+    let queryInfoMock: jest.Mock;
 
     beforeEach(() => {
-      getBlockStub = dsMockUtils.createRpcStub('chain', 'getBlock');
-      queryInfoStub = dsMockUtils.createRpcStub('payment', 'queryInfo');
+      getBlockMock = dsMockUtils.createRpcMock('chain', 'getBlock');
+      queryInfoMock = dsMockUtils.createRpcMock('payment', 'queryInfo');
     });
 
     it('should return a transaction', async () => {
@@ -474,6 +502,7 @@ describe('Network Class', () => {
       dsMockUtils.configureMocks({
         contextOptions: {
           withSigningManager: true,
+          middlewareV2Enabled: false,
           transactionFees: [
             {
               tag: TxTags.asset.RegisterTicker,
@@ -483,7 +512,7 @@ describe('Network Class', () => {
         },
       });
 
-      dsMockUtils.createApolloQueryStub(transactionByHash({ transactionHash: variable.txHash }), {
+      dsMockUtils.createApolloQueryMock(transactionByHash({ transactionHash: variable.txHash }), {
         /* eslint-disable @typescript-eslint/naming-convention */
         transactionByHash: {
           module_id: ModuleIdEnum.Asset,
@@ -503,30 +532,34 @@ describe('Network Class', () => {
 
       const rawBlockHash = dsMockUtils.createMockBlockHash(blockHash);
 
-      stringToBlockHashStub.withArgs(blockHash).returns(rawBlockHash);
+      when(stringToBlockHashSpy).calledWith(blockHash, context).mockReturnValue(rawBlockHash);
 
-      getBlockStub.withArgs(rawBlockHash).resolves(
-        dsMockUtils.createMockSignedBlock({
-          block: {
-            header: undefined,
-            extrinsics: [
-              {
-                toHex: jest.fn().mockImplementation(() => 'hex'),
-              },
-            ],
-          },
-        })
-      );
+      when(getBlockMock)
+        .calledWith(rawBlockHash)
+        .mockResolvedValue(
+          dsMockUtils.createMockSignedBlock({
+            block: {
+              header: undefined,
+              extrinsics: [
+                {
+                  toHex: jest.fn().mockImplementation(() => 'hex'),
+                },
+              ],
+            },
+          })
+        );
 
       const rawGasFees = dsMockUtils.createMockBalance(gasFees);
 
-      balanceToBigNumberStub.withArgs(rawGasFees).returns(gasFees);
+      when(balanceToBigNumberSpy).calledWith(rawGasFees).mockReturnValue(gasFees);
 
-      queryInfoStub.withArgs('hex', rawBlockHash).resolves(
-        dsMockUtils.createMockRuntimeDispatchInfo({
-          partialFee: rawGasFees,
-        })
-      );
+      when(queryInfoMock)
+        .calledWith('hex', rawBlockHash)
+        .mockResolvedValue(
+          dsMockUtils.createMockRuntimeDispatchInfo({
+            partialFee: rawGasFees,
+          })
+        );
 
       let result = await network.getTransactionByHash(variable);
       expect(result).toEqual({
@@ -547,7 +580,7 @@ describe('Network Class', () => {
         },
       });
 
-      dsMockUtils.createApolloQueryStub(transactionByHash({ transactionHash: variable.txHash }), {
+      dsMockUtils.createApolloQueryMock(transactionByHash({ transactionHash: variable.txHash }), {
         /* eslint-disable @typescript-eslint/naming-convention */
         transactionByHash: {
           module_id: ModuleIdEnum.Asset,
@@ -587,7 +620,10 @@ describe('Network Class', () => {
     });
 
     it('should return null if the query result is empty', async () => {
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.configureMocks({
+        contextOptions: { withSigningManager: true, middlewareV2Enabled: false },
+      });
+      dsMockUtils.createApolloQueryMock(
         transactionByHash({
           transactionHash: variable.txHash,
         }),
@@ -596,16 +632,24 @@ describe('Network Class', () => {
       const result = await network.getTransactionByHash(variable);
       expect(result).toBeNull();
     });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      const fakeResult = 'fakeResult' as unknown as ExtrinsicDataWithFees;
+      jest.spyOn(network, 'getTransactionByHashV2').mockResolvedValue(fakeResult);
+
+      const result = await network.getTransactionByHash(variable);
+      expect(result).toEqual(fakeResult);
+    });
   });
 
   describe('method: getTransactionByHashV2', () => {
     const variable = { txHash: 'someHash' };
-    let getBlockStub: sinon.SinonStub;
-    let queryInfoStub: sinon.SinonStub;
+    let getBlockMock: jest.Mock;
+    let queryInfoMock: jest.Mock;
 
     beforeEach(() => {
-      getBlockStub = dsMockUtils.createRpcStub('chain', 'getBlock');
-      queryInfoStub = dsMockUtils.createRpcStub('payment', 'queryInfo');
+      getBlockMock = dsMockUtils.createRpcMock('chain', 'getBlock');
+      queryInfoMock = dsMockUtils.createRpcMock('payment', 'queryInfo');
     });
 
     it('should return a transaction', async () => {
@@ -629,7 +673,7 @@ describe('Network Class', () => {
         },
       });
 
-      dsMockUtils.createApolloV2QueryStub(extrinsicByHash({ extrinsicHash: variable.txHash }), {
+      dsMockUtils.createApolloV2QueryMock(extrinsicByHash({ extrinsicHash: variable.txHash }), {
         extrinsics: {
           nodes: [
             {
@@ -651,30 +695,34 @@ describe('Network Class', () => {
 
       const rawBlockHash = dsMockUtils.createMockBlockHash(blockHash);
 
-      stringToBlockHashStub.withArgs(blockHash).returns(rawBlockHash);
+      when(stringToBlockHashSpy).calledWith(blockHash, context).mockReturnValue(rawBlockHash);
 
-      getBlockStub.withArgs(rawBlockHash).resolves(
-        dsMockUtils.createMockSignedBlock({
-          block: {
-            header: undefined,
-            extrinsics: [
-              {
-                toHex: jest.fn().mockImplementation(() => 'hex'),
-              },
-            ],
-          },
-        })
-      );
+      when(getBlockMock)
+        .calledWith(rawBlockHash)
+        .mockResolvedValue(
+          dsMockUtils.createMockSignedBlock({
+            block: {
+              header: undefined,
+              extrinsics: [
+                {
+                  toHex: jest.fn().mockImplementation(() => 'hex'),
+                },
+              ],
+            },
+          })
+        );
 
       const rawGasFees = dsMockUtils.createMockBalance(gasFees);
 
-      balanceToBigNumberStub.withArgs(rawGasFees).returns(gasFees);
+      when(balanceToBigNumberSpy).calledWith(rawGasFees).mockReturnValue(gasFees);
 
-      queryInfoStub.withArgs('hex', rawBlockHash).resolves(
-        dsMockUtils.createMockRuntimeDispatchInfo({
-          partialFee: rawGasFees,
-        })
-      );
+      when(queryInfoMock)
+        .calledWith('hex', rawBlockHash)
+        .mockResolvedValue(
+          dsMockUtils.createMockRuntimeDispatchInfo({
+            partialFee: rawGasFees,
+          })
+        );
 
       let result = await network.getTransactionByHashV2(variable);
       expect(result).toEqual({
@@ -695,7 +743,7 @@ describe('Network Class', () => {
         },
       });
 
-      dsMockUtils.createApolloV2QueryStub(extrinsicByHash({ extrinsicHash: variable.txHash }), {
+      dsMockUtils.createApolloV2QueryMock(extrinsicByHash({ extrinsicHash: variable.txHash }), {
         extrinsics: {
           nodes: [
             {
@@ -737,7 +785,7 @@ describe('Network Class', () => {
     });
 
     it('should return null if the query result is empty', async () => {
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloV2QueryMock(
         extrinsicByHash({
           extrinsicHash: variable.txHash,
         }),

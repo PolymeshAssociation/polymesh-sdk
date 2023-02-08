@@ -1,8 +1,12 @@
 import { Moment } from '@polkadot/types/interfaces';
-import { PolymeshPrimitivesAuthorizationAuthorizationData } from '@polkadot/types/lookup';
+import {
+  PolymeshPrimitivesAgentAgentGroup,
+  PolymeshPrimitivesAuthorizationAuthorizationData,
+  PolymeshPrimitivesSecondaryKeySignatory,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { AgentGroup, Signatory, Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   getAuthorization,
@@ -22,31 +26,34 @@ jest.mock(
 
 describe('modifyCorporateActionAgent procedure', () => {
   let mockContext: Mocked<Context>;
-  let authorizationToAuthorizationDataStub: sinon.SinonStub<
-    [Authorization, Context],
-    PolymeshPrimitivesAuthorizationAuthorizationData
+  let authorizationToAuthorizationDataSpy: jest.SpyInstance<
+    PolymeshPrimitivesAuthorizationAuthorizationData,
+    [Authorization, Context]
   >;
-  let dateToMomentStub: sinon.SinonStub<[Date, Context], Moment>;
-  let signerToStringStub: sinon.SinonStub<[string | Identity | Account], string>;
-  let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
+  let dateToMomentSpy: jest.SpyInstance<Moment, [Date, Context]>;
+  let signerToStringSpy: jest.SpyInstance<string, [string | Identity | Account]>;
+  let signerValueToSignatorySpy: jest.SpyInstance<
+    PolymeshPrimitivesSecondaryKeySignatory,
+    [SignerValue, Context]
+  >;
   let ticker: string;
-  let rawTicker: Ticker;
-  let rawAgentGroup: AgentGroup;
+  let rawTicker: PolymeshPrimitivesTicker;
+  let rawAgentGroup: PolymeshPrimitivesAgentAgentGroup;
   let target: string;
-  let rawSignatory: Signatory;
+  let rawSignatory: PolymeshPrimitivesSecondaryKeySignatory;
   let rawAuthorizationData: PolymeshPrimitivesAuthorizationAuthorizationData;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    authorizationToAuthorizationDataStub = sinon.stub(
+    authorizationToAuthorizationDataSpy = jest.spyOn(
       utilsConversionModule,
       'authorizationToAuthorizationData'
     );
-    dateToMomentStub = sinon.stub(utilsConversionModule, 'dateToMoment');
-    signerToStringStub = sinon.stub(utilsConversionModule, 'signerToString');
-    signerValueToSignatoryStub = sinon.stub(utilsConversionModule, 'signerValueToSignatory');
+    dateToMomentSpy = jest.spyOn(utilsConversionModule, 'dateToMoment');
+    signerToStringSpy = jest.spyOn(utilsConversionModule, 'signerToString');
+    signerValueToSignatorySpy = jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawAgentGroup = dsMockUtils.createMockAgentGroup('Full');
@@ -66,9 +73,9 @@ describe('modifyCorporateActionAgent procedure', () => {
       },
     });
     mockContext = dsMockUtils.getContextInstance();
-    authorizationToAuthorizationDataStub.returns(rawAuthorizationData);
-    signerToStringStub.returns(target);
-    signerValueToSignatoryStub.returns(rawSignatory);
+    authorizationToAuthorizationDataSpy.mockReturnValue(rawAuthorizationData);
+    signerToStringSpy.mockReturnValue(target);
+    signerValueToSignatorySpy.mockReturnValue(rawSignatory);
   });
 
   afterEach(() => {
@@ -145,9 +152,9 @@ describe('modifyCorporateActionAgent procedure', () => {
     const requestExpiry = new Date('12/12/2050');
     const rawExpiry = dsMockUtils.createMockMoment(new BigNumber(requestExpiry.getTime()));
 
-    dateToMomentStub.withArgs(requestExpiry, mockContext).returns(rawExpiry);
+    when(dateToMomentSpy).calledWith(requestExpiry, mockContext).mockReturnValue(rawExpiry);
 
-    const transaction = dsMockUtils.createTxStub('identity', 'addAuthorization');
+    const transaction = dsMockUtils.createTxMock('identity', 'addAuthorization');
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
     let result = await prepareModifyCorporateActionsAgent.call(proc, args);

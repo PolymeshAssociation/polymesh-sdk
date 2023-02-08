@@ -20,15 +20,19 @@ import {
   Venue,
 } from '~/internal';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
-import { assetHoldersQuery, trustingAssetsQuery } from '~/middleware/queriesV2';
+import {
+  assetHoldersQuery,
+  instructionsByDidQuery,
+  trustingAssetsQuery,
+} from '~/middleware/queriesV2';
 import { Query } from '~/middleware/types';
 import { AssetHoldersOrderBy, Query as QueryV2 } from '~/middleware/typesV2';
-import { CddStatus } from '~/polkadot/polymesh';
 import {
   CheckRolesResult,
   DistributionWithDetails,
   ErrorCode,
   GroupedInstructions,
+  HistoricInstruction,
   Order,
   PaginationOptions,
   PermissionedAccount,
@@ -37,7 +41,7 @@ import {
   SubCallback,
   UnsubCallback,
 } from '~/types';
-import { Ensured, EnsuredV2, QueryReturnType, tuple } from '~/types/utils';
+import { Ensured, EnsuredV2, tuple } from '~/types/utils';
 import {
   isCddProviderRole,
   isIdentityRole,
@@ -53,10 +57,10 @@ import {
   cddStatusToBoolean,
   corporateActionIdentifierToCaId,
   identityIdToString,
+  middlewareInstructionToHistoricInstruction,
   portfolioIdToMeshPortfolioId,
   portfolioIdToPortfolio,
   portfolioLikeToPortfolioId,
-  scopeIdToString,
   stringToIdentityId,
   stringToTicker,
   transactionPermissionsToTxGroups,
@@ -230,7 +234,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       },
     } = this;
     const identityId = stringToIdentityId(did, context);
-    const result: CddStatus = await rpc.identity.isIdentityHasValidCdd(identityId);
+    const result = await rpc.identity.isIdentityHasValidCdd(identityId);
     return cddStatusToBoolean(result);
   }
 
@@ -337,6 +341,15 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const { size, start, order } = opts;
 
+    if (context.isMiddlewareV2Enabled()) {
+      return this.getHeldAssetsV2({
+        order:
+          order === Order.Asc ? AssetHoldersOrderBy.AssetIdAsc : AssetHoldersOrderBy.AssetIdDesc,
+        start,
+        size,
+      });
+    }
+
     const result = await context.queryMiddleware<Ensured<Query, 'tokensHeldByDid'>>(
       tokensHeldByDid({
         did,
@@ -433,23 +446,16 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Check whether this Identity possesses all specified roles
-   *
-   * @deprecated in favor of `checkRoles`
-   */
-  public async hasRoles(roles: Role[]): Promise<boolean> {
-    const checkedRoles = await Promise.all(roles.map(this.hasRole.bind(this)));
-
-    return checkedRoles.every(hasRole => hasRole);
-  }
-
-  /**
    * Get the list of Assets for which this Identity is a trusted claim issuer
    *
    * @note uses the middleware
    */
   public async getTrustingAssets(): Promise<Asset[]> {
     const { context, did } = this;
+
+    if (context.isMiddlewareV2Enabled()) {
+      return this.getTrustingAssetsV2();
+    }
 
     const {
       data: { tokensByTrustedClaimIssuer: tickers },
@@ -535,7 +541,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       return null;
     }
 
-    return scopeIdToString(scopeId);
+    return identityIdToString(scopeId);
   }
 
   /**
@@ -582,9 +588,9 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
         flatten(auths).map(([key, status]) => ({ id: key.args[1], status })),
         ({ id }) => id.toNumber()
       );
-      const instructions = await settlement.instructionDetails.multi<
-        QueryReturnType<typeof settlement.instructionDetails>
-      >(uniqueEntries.map(({ id }) => id));
+      const instructions = await settlement.instructionDetails.multi(
+        uniqueEntries.map(({ id }) => id)
+      );
 
       uniqueEntries.forEach(({ id, status }, index) => {
         const instruction = new Instruction({ id: u64ToBigNumber(id) }, context);
@@ -604,59 +610,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       pending,
       failed,
     };
-  }
-
-  /**
-   * Retrieve all pending Instructions involving this Identity
-   *
-   * @deprecated in favor of `getInstructions`
-   */
-  public async getPendingInstructions(): Promise<Instruction[]> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { settlement },
-        },
-      },
-      did,
-      portfolios,
-      context,
-    } = this;
-
-    const ownedPortfolios = await portfolios.getPortfolios();
-
-    const [ownedCustodiedPortfolios, { data: custodiedPortfolios }] = await Promise.all([
-      P.filter(ownedPortfolios, portfolio => portfolio.isCustodiedBy({ identity: did })),
-      this.portfolios.getCustodiedPortfolios(),
-    ]);
-
-    const allPortfolios = [...ownedCustodiedPortfolios, ...custodiedPortfolios];
-
-    const portfolioIds = allPortfolios.map(portfolioLikeToPortfolioId);
-
-    await P.map(portfolioIds, portfolioId => assertPortfolioExists(portfolioId, context));
-
-    const portfolioIdChunks = chunk(portfolioIds, MAX_CONCURRENT_REQUESTS);
-
-    const chunkedInstructions = await P.mapSeries(portfolioIdChunks, async portfolioIdChunk => {
-      const auths = await P.map(portfolioIdChunk, portfolioId =>
-        settlement.userAffirmations.entries(portfolioIdToMeshPortfolioId(portfolioId, context))
-      );
-
-      const instructionIds = uniqBy(
-        flatten(auths).map(([key]) => key.args[1]),
-        id => id.toNumber()
-      );
-      return settlement.instructionDetails.multi<
-        QueryReturnType<typeof settlement.instructionDetails>
-      >(instructionIds);
-    });
-
-    const rawInstructions = flatten(chunkedInstructions);
-
-    return rawInstructions
-      .filter(({ status }) => status.isPending)
-      .map(({ instructionId: id }) => new Instruction({ id: u64ToBigNumber(id) }, context));
   }
 
   /**
@@ -855,5 +808,25 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    */
   public toHuman(): string {
     return this.did;
+  }
+
+  /**
+   * Retrieve all Instructions that have been associated with this Identity's DID
+   *
+   * @note uses the middleware V2
+   */
+  public async getHistoricalInstructions(): Promise<HistoricInstruction[]> {
+    const { context, did } = this;
+
+    const {
+      data: {
+        legs: { nodes: instructionsResult },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'legs'>>(instructionsByDidQuery(did));
+
+    return instructionsResult.map(({ instruction }) =>
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      middlewareInstructionToHistoricInstruction(instruction!, context)
+    );
   }
 }

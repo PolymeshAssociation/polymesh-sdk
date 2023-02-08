@@ -1,6 +1,6 @@
 import { PolymeshPrimitivesTransferComplianceTransferCondition } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { ClaimCount } from '~/api/entities/Asset/TransferRestrictions/ClaimCount';
 import { ClaimPercentage } from '~/api/entities/Asset/TransferRestrictions/ClaimPercentage';
@@ -44,7 +44,7 @@ describe('TransferRestrictionBase class', () => {
   afterEach(() => {
     dsMockUtils.reset();
     entityMockUtils.reset();
-    procedureMockUtils.initMocks();
+    procedureMockUtils.reset();
   });
 
   afterAll(() => {
@@ -66,7 +66,7 @@ describe('TransferRestrictionBase class', () => {
     });
 
     afterEach(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure (count) with the correct arguments and context, and return the resulting transaction', async () => {
@@ -79,16 +79,16 @@ describe('TransferRestrictionBase class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<number>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           {
             args: { ticker: asset.ticker, ...args, type: TransferRestrictionType.Count },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await count.addRestriction({
         ...args,
@@ -107,16 +107,16 @@ describe('TransferRestrictionBase class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<number>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           {
             args: { ticker: asset.ticker, ...args, type: TransferRestrictionType.Percentage },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await percentage.addRestriction({
         ...args,
@@ -136,7 +136,7 @@ describe('TransferRestrictionBase class', () => {
     });
 
     afterEach(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure (count) with the correct arguments and context, and return the resulting transaction', async () => {
@@ -148,16 +148,16 @@ describe('TransferRestrictionBase class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<number>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           {
             args: { ticker: asset.ticker, ...args, type: TransferRestrictionType.Count },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await count.setRestrictions({
         ...args,
@@ -175,16 +175,16 @@ describe('TransferRestrictionBase class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<number>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           {
             args: { ticker: asset.ticker, ...args, type: TransferRestrictionType.Percentage },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await percentage.setRestrictions({
         ...args,
@@ -213,16 +213,16 @@ describe('TransferRestrictionBase class', () => {
         NumberedPortfolio[]
       >;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           {
             args: { ticker: asset.ticker, ...args, type: TransferRestrictionType.ClaimCount },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const transaction = await count.setRestrictions({
         ...args,
@@ -242,16 +242,16 @@ describe('TransferRestrictionBase class', () => {
         NumberedPortfolio[]
       >;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           {
             args: { ticker: asset.ticker, ...args, type: TransferRestrictionType.ClaimPercentage },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const transaction = await claimPercentage.setRestrictions({
         ...args,
@@ -271,7 +271,7 @@ describe('TransferRestrictionBase class', () => {
     });
 
     afterEach(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure (count) with the correct arguments and context, and return the resulting transaction', async () => {
@@ -279,16 +279,16 @@ describe('TransferRestrictionBase class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<number>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           {
             args: { ticker: asset.ticker, restrictions: [], type: TransferRestrictionType.Count },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await count.removeRestrictions();
 
@@ -300,9 +300,8 @@ describe('TransferRestrictionBase class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<number>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           {
             args: {
               ticker: asset.ticker,
@@ -311,9 +310,10 @@ describe('TransferRestrictionBase class', () => {
             },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await percentage.removeRestrictions();
 
@@ -382,7 +382,7 @@ describe('TransferRestrictionBase class', () => {
       dsMockUtils.setConstMock('statistics', 'maxStatsPerAsset', {
         returnValue: dsMockUtils.createMockU32(maxStats),
       });
-      dsMockUtils.createQueryStub('statistics', 'assetTransferCompliances', {
+      dsMockUtils.createQueryMock('statistics', 'assetTransferCompliances', {
         returnValue: {
           requirements: [
             rawCountRestriction,
@@ -392,14 +392,14 @@ describe('TransferRestrictionBase class', () => {
           ],
         },
       });
-      dsMockUtils.createQueryStub('statistics', 'transferConditionExemptEntities', {
-        entries: [[[null, dsMockUtils.createMockScopeId(scopeId)], true]],
+      dsMockUtils.createQueryMock('statistics', 'transferConditionExemptEntities', {
+        entries: [[[null, dsMockUtils.createMockIdentityId(scopeId)], true]],
       });
-      sinon.stub(utilsConversionModule, 'u32ToBigNumber').returns(maxStats);
+      jest.spyOn(utilsConversionModule, 'u32ToBigNumber').mockClear().mockReturnValue(maxStats);
     });
 
     afterEach(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return all count transfer restrictions', async () => {
@@ -422,7 +422,7 @@ describe('TransferRestrictionBase class', () => {
         availableSlots: new BigNumber(1),
       });
 
-      dsMockUtils.createQueryStub('statistics', 'transferConditionExemptEntities', {
+      dsMockUtils.createQueryMock('statistics', 'transferConditionExemptEntities', {
         entries: [],
       });
 
@@ -491,7 +491,7 @@ describe('TransferRestrictionBase class', () => {
     });
 
     afterEach(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure (count) with the correct arguments and context, and return the resulting transaction queue', async () => {
@@ -501,9 +501,8 @@ describe('TransferRestrictionBase class', () => {
         NumberedPortfolio[]
       >;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           {
             args: {
               ticker: asset.ticker,
@@ -512,9 +511,10 @@ describe('TransferRestrictionBase class', () => {
             },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const transaction = await count.enableStat({ count: new BigNumber(3) });
 
@@ -528,9 +528,8 @@ describe('TransferRestrictionBase class', () => {
         NumberedPortfolio[]
       >;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           {
             args: {
               ticker: asset.ticker,
@@ -538,9 +537,10 @@ describe('TransferRestrictionBase class', () => {
             },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const transaction = await percentage.enableStat();
 
@@ -558,7 +558,7 @@ describe('TransferRestrictionBase class', () => {
     });
 
     afterEach(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should prepare the procedure (count) with the correct arguments and context, and return the resulting transaction queue', async () => {
@@ -568,9 +568,8 @@ describe('TransferRestrictionBase class', () => {
         NumberedPortfolio[]
       >;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           {
             args: {
               ticker: asset.ticker,
@@ -578,9 +577,10 @@ describe('TransferRestrictionBase class', () => {
             },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const transaction = await count.disableStat();
 
@@ -594,9 +594,8 @@ describe('TransferRestrictionBase class', () => {
         NumberedPortfolio[]
       >;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           {
             args: {
               ticker: asset.ticker,
@@ -604,9 +603,10 @@ describe('TransferRestrictionBase class', () => {
             },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const transaction = await percentage.disableStat();
 
@@ -621,9 +621,8 @@ describe('TransferRestrictionBase class', () => {
         NumberedPortfolio[]
       >;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           {
             args: {
               ticker: asset.ticker,
@@ -633,9 +632,10 @@ describe('TransferRestrictionBase class', () => {
             },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const transaction = await claimCount.disableStat({
         issuer,
@@ -653,9 +653,8 @@ describe('TransferRestrictionBase class', () => {
         NumberedPortfolio[]
       >;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs(
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
           {
             args: {
               ticker: asset.ticker,
@@ -665,9 +664,10 @@ describe('TransferRestrictionBase class', () => {
             },
             transformer: undefined,
           },
-          context
+          context,
+          {}
         )
-        .resolves(expectedTransaction);
+        .mockResolvedValue(expectedTransaction);
 
       const transaction = await claimPercentage.disableStat({
         issuer,

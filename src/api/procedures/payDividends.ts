@@ -2,7 +2,7 @@ import { assertDistributionOpen } from '~/api/procedures/utils';
 import { DividendDistribution, Identity, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, PayDividendsParams, TargetTreatment, TxTags } from '~/types';
 import { BatchTransactionSpec, ExtrinsicParams, ProcedureAuthorization } from '~/types/internal';
-import { QueryReturnType, tuple } from '~/types/utils';
+import { tuple } from '~/types/utils';
 import {
   boolToBoolean,
   corporateActionIdentifierToCaId,
@@ -68,9 +68,7 @@ export async function preparePayDividends(
     tuple(rawCaId, stringToIdentityId(signerToString(target), context))
   );
 
-  const holderPaidList = await capitalDistribution.holderPaid.multi<
-    QueryReturnType<typeof capitalDistribution.holderPaid>
-  >(rawArgs);
+  const holderPaidList = await capitalDistribution.holderPaid.multi(rawArgs);
 
   const alreadyClaimedList: Identity[] = [];
   holderPaidList.forEach((holderPaid, i) => {

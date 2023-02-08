@@ -1,6 +1,6 @@
 import { PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   Context,
@@ -14,7 +14,14 @@ import { tickerExternalAgentActionsQuery, tickerExternalAgentsQuery } from '~/mi
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { Asset, PermissionGroupType, PermissionType, TxTags } from '~/types';
+import {
+  Asset,
+  EventIdentifier,
+  PermissionGroupType,
+  PermissionType,
+  ResultSet,
+  TxTags,
+} from '~/types';
 import { tuple } from '~/types/utils';
 import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -66,7 +73,7 @@ describe('AssetPermissions class', () => {
 
   describe('method: getGroup', () => {
     it('should throw an error if the Identity is no longer an Agent', async () => {
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+      dsMockUtils.createQueryMock('externalAgents', 'groupOfAgent', {
         returnValue: dsMockUtils.createMockOption(),
       });
 
@@ -82,7 +89,7 @@ describe('AssetPermissions class', () => {
     });
 
     it('should return the permission group associated with the Agent', async () => {
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+      dsMockUtils.createQueryMock('externalAgents', 'groupOfAgent', {
         returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('Full')),
       });
 
@@ -94,6 +101,12 @@ describe('AssetPermissions class', () => {
   });
 
   describe('method: enabledAt', () => {
+    beforeEach(() => {
+      dsMockUtils.configureMocks({
+        contextOptions: { middlewareV2Enabled: false },
+      });
+    });
+
     it('should return the event identifier object of the agent added', async () => {
       const blockNumber = new BigNumber(1234);
       const blockDate = new Date('4/14/2020');
@@ -105,7 +118,7 @@ describe('AssetPermissions class', () => {
       };
       const fakeResult = { blockNumber, blockDate, eventIndex: eventIdx };
 
-      dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {
+      dsMockUtils.createApolloQueryMock(eventByIndexedArgs(variables), {
         /* eslint-disable @typescript-eslint/naming-convention */
         eventByIndexedArgs: {
           block_id: blockNumber.toNumber(),
@@ -127,9 +140,20 @@ describe('AssetPermissions class', () => {
         eventArg1: utilsInternalModule.padString(ticker, MAX_TICKER_LENGTH),
       };
 
-      dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {});
+      dsMockUtils.createApolloQueryMock(eventByIndexedArgs(variables), {});
       const result = await assetPermissions.enabledAt({ asset });
       expect(result).toBeNull();
+    });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      dsMockUtils.configureMocks({
+        contextOptions: { middlewareV2Enabled: true },
+      });
+      const fakeResult = 'fakeResult' as unknown as EventIdentifier;
+      jest.spyOn(assetPermissions, 'enabledAtV2').mockResolvedValue(fakeResult);
+
+      const result = await assetPermissions.enabledAt({ asset });
+      expect(result).toEqual(fakeResult);
     });
   });
 
@@ -144,7 +168,7 @@ describe('AssetPermissions class', () => {
       };
       const fakeResult = { blockNumber, blockHash, blockDate, eventIndex: eventIdx };
 
-      dsMockUtils.createApolloV2QueryStub(tickerExternalAgentsQuery(variables), {
+      dsMockUtils.createApolloV2QueryMock(tickerExternalAgentsQuery(variables), {
         tickerExternalAgents: {
           nodes: [
             {
@@ -169,7 +193,7 @@ describe('AssetPermissions class', () => {
         assetId: ticker,
       };
 
-      dsMockUtils.createApolloV2QueryStub(tickerExternalAgentsQuery(variables), {
+      dsMockUtils.createApolloV2QueryMock(tickerExternalAgentsQuery(variables), {
         tickerExternalAgents: { nodes: [] },
       });
       const result = await assetPermissions.enabledAtV2({ asset });
@@ -188,10 +212,9 @@ describe('AssetPermissions class', () => {
       };
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { identity, group }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { identity, group }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await assetPermissions.setGroup({ group });
 
@@ -209,7 +232,7 @@ describe('AssetPermissions class', () => {
     });
 
     it('should check whether the Identity has the appropriate permissions for the Asset', async () => {
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+      dsMockUtils.createQueryMock('externalAgents', 'groupOfAgent', {
         returnValue: dsMockUtils.createMockOption(),
       });
 
@@ -220,7 +243,7 @@ describe('AssetPermissions class', () => {
         missingPermissions: null,
         message: 'The Identity is not an Agent for the Asset',
       });
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+      dsMockUtils.createQueryMock('externalAgents', 'groupOfAgent', {
         returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('Full')),
       });
 
@@ -228,7 +251,7 @@ describe('AssetPermissions class', () => {
 
       expect(result).toEqual({ result: true });
 
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+      dsMockUtils.createQueryMock('externalAgents', 'groupOfAgent', {
         returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockAgentGroup('ExceptMeta')),
       });
 
@@ -253,7 +276,7 @@ describe('AssetPermissions class', () => {
 
       expect(result).toEqual({ result: true });
 
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+      dsMockUtils.createQueryMock('externalAgents', 'groupOfAgent', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockAgentGroup('PolymeshV1PIA')
         ),
@@ -288,7 +311,7 @@ describe('AssetPermissions class', () => {
         result: true,
       });
 
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+      dsMockUtils.createQueryMock('externalAgents', 'groupOfAgent', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockAgentGroup('PolymeshV1CAA')
         ),
@@ -313,12 +336,12 @@ describe('AssetPermissions class', () => {
         result: true,
       });
 
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
+      dsMockUtils.createQueryMock('externalAgents', 'groupOfAgent', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockAgentGroup({ Custom: dsMockUtils.createMockU32(new BigNumber(1)) })
         ),
       });
-      dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
+      dsMockUtils.createQueryMock('externalAgents', 'groupPermissions', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockExtrinsicPermissions('Whole')
         ),
@@ -334,7 +357,7 @@ describe('AssetPermissions class', () => {
       });
 
       /* eslint-disable @typescript-eslint/naming-convention */
-      dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
+      dsMockUtils.createQueryMock('externalAgents', 'groupPermissions', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockExtrinsicPermissions({
             These: [
@@ -369,7 +392,7 @@ describe('AssetPermissions class', () => {
         missingPermissions: [TxTags.asset.CreateAsset],
       });
 
-      dsMockUtils.createQueryStub('externalAgents', 'groupPermissions', {
+      dsMockUtils.createQueryMock('externalAgents', 'groupPermissions', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockExtrinsicPermissions({
             Except: [
@@ -400,26 +423,6 @@ describe('AssetPermissions class', () => {
     });
   });
 
-  describe('method: hasPermissions', () => {
-    beforeAll(() => {
-      entityMockUtils.initMocks();
-    });
-
-    afterEach(() => {
-      entityMockUtils.reset();
-    });
-
-    it('should check whether the Identity has the appropriate permissions for the Asset', async () => {
-      dsMockUtils.createQueryStub('externalAgents', 'groupOfAgent', {
-        returnValue: dsMockUtils.createMockOption(),
-      });
-
-      const result = await assetPermissions.hasPermissions({ asset, transactions: null });
-
-      expect(result).toBe(false);
-    });
-  });
-
   describe('method: waive', () => {
     it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
       const args = {
@@ -429,10 +432,9 @@ describe('AssetPermissions class', () => {
 
       const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await assetPermissions.waive(args);
 
@@ -443,20 +445,20 @@ describe('AssetPermissions class', () => {
   describe('method: get', () => {
     let rawDid: PolymeshPrimitivesIdentityId;
     let rawTicker: PolymeshPrimitivesTicker;
-    let stringToIdentityIdStub: sinon.SinonStub;
+    let stringToIdentityIdSpy: jest.SpyInstance;
 
     beforeAll(() => {
-      stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
+      stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
       rawDid = dsMockUtils.createMockIdentityId(did);
       rawTicker = dsMockUtils.createMockTicker(ticker);
     });
 
     beforeEach(() => {
-      stringToIdentityIdStub.withArgs(did, context).returns(rawDid);
+      when(stringToIdentityIdSpy).calledWith(did, context).mockReturnValue(rawDid);
     });
 
     afterAll(() => {
-      sinon.restore();
+      jest.restoreAllMocks();
     });
 
     it('should return a list of AgentWithGroup', async () => {
@@ -475,9 +477,9 @@ describe('AssetPermissions class', () => {
         },
       });
 
-      sinon.stub(assetPermissions, 'getGroup').resolves(group);
+      jest.spyOn(assetPermissions, 'getGroup').mockResolvedValue(group);
 
-      dsMockUtils.createQueryStub('externalAgents', 'agentOf', {
+      dsMockUtils.createQueryMock('externalAgents', 'agentOf', {
         entries: [tuple([rawDid, rawTicker], {})],
       });
 
@@ -490,16 +492,19 @@ describe('AssetPermissions class', () => {
 
   describe('method: getOperationHistory', () => {
     it('should return the Events triggered by Operations the Identity has performed on a specific Asset', async () => {
+      dsMockUtils.configureMocks({
+        contextOptions: { middlewareV2Enabled: false },
+      });
       const blockId = new BigNumber(1);
       const blockHash = 'someHash';
       const eventIndex = new BigNumber(1);
       const datetime = '2020-10-10';
 
-      dsMockUtils.createQueryStub('system', 'blockHash', {
+      dsMockUtils.createQueryMock('system', 'blockHash', {
         multi: [dsMockUtils.createMockHash(blockHash)],
       });
       /* eslint-disable @typescript-eslint/naming-convention */
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.createApolloQueryMock(
         tickerExternalAgentActions({
           ticker,
           caller_did: did,
@@ -541,7 +546,7 @@ describe('AssetPermissions class', () => {
       ]);
 
       /* eslint-disable @typescript-eslint/naming-convention */
-      dsMockUtils.createApolloQueryStub(
+      dsMockUtils.createApolloQueryMock(
         tickerExternalAgentActions({
           ticker,
           caller_did: did,
@@ -567,6 +572,14 @@ describe('AssetPermissions class', () => {
       expect(result.count).toEqual(new BigNumber(0));
       expect(result.data).toEqual([]);
     });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      const fakeResult = 'fakeResult' as unknown as ResultSet<EventIdentifier>;
+      jest.spyOn(assetPermissions, 'getOperationHistoryV2').mockResolvedValue(fakeResult);
+
+      const result = await assetPermissions.getOperationHistory({ asset });
+      expect(result).toEqual(fakeResult);
+    });
   });
 
   describe('method: getOperationHistoryV2', () => {
@@ -576,7 +589,7 @@ describe('AssetPermissions class', () => {
       const eventIndex = new BigNumber(1);
       const datetime = '2020-10-10';
 
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloV2QueryMock(
         tickerExternalAgentActionsQuery(
           {
             assetId: ticker,
@@ -621,7 +634,7 @@ describe('AssetPermissions class', () => {
         },
       ]);
 
-      dsMockUtils.createApolloV2QueryStub(
+      dsMockUtils.createApolloV2QueryMock(
         tickerExternalAgentActionsQuery({
           assetId: ticker,
           callerId: did,

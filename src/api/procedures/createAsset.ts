@@ -1,9 +1,8 @@
-import { Bytes } from '@polkadot/types';
+import { Bytes, u32 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { values } from 'lodash';
 
 import { Asset, Context, PolymeshError, Procedure, TickerReservation } from '~/internal';
-import { CustomAssetTypeId } from '~/polkadot/polymesh';
 import {
   AssetTx,
   CreateAssetWithTickerParams,
@@ -31,7 +30,7 @@ import {
   stringToTicker,
   stringToTickerKey,
 } from '~/utils/conversion';
-import { checkTxType, optionize } from '~/utils/internal';
+import { checkTxType, isAlphanumeric, optionize } from '~/utils/internal';
 
 /**
  * @hidden
@@ -49,7 +48,7 @@ export interface Storage {
    *   null value means the type is not custom
    */
   customTypeData: {
-    id: CustomAssetTypeId;
+    id: u32;
     rawValue: Bytes;
   } | null;
 
@@ -96,6 +95,13 @@ function assertTickerAvailable(
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
       message: `You must first reserve ticker "${ticker}" in order to create an Asset with it`,
+    });
+  }
+
+  if (!isAlphanumeric(ticker)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'New Tickers can only contain alphanumeric values',
     });
   }
 }

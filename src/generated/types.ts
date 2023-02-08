@@ -325,6 +325,7 @@ export enum IdentityTx {
   AddSecondaryKeysWithAuthorizationOld = 'identity.addSecondaryKeysWithAuthorizationOld',
   SetSecondaryKeyPermissions = 'identity.setSecondaryKeyPermissions',
   RegisterCustomClaimType = 'identity.registerCustomClaimType',
+  CddRegisterDidWithCdd = 'identity.cddRegisterDidWithCdd',
 }
 
 export enum CddServiceProvidersTx {
@@ -467,6 +468,7 @@ export enum StakingTx {
   PayoutStakersBySystem = 'staking.payoutStakersBySystem',
   ChangeSlashingAllowedFor = 'staking.changeSlashingAllowedFor',
   UpdatePermissionedValidatorIntendedCount = 'staking.updatePermissionedValidatorIntendedCount',
+  ChillFromGovernance = 'staking.chillFromGovernance',
 }
 
 export enum SessionTx {
@@ -517,6 +519,7 @@ export enum AssetTx {
   RegisterAssetMetadataLocalType = 'asset.registerAssetMetadataLocalType',
   RegisterAssetMetadataGlobalType = 'asset.registerAssetMetadataGlobalType',
   RedeemFromPortfolio = 'asset.redeemFromPortfolio',
+  UpdateAssetType = 'asset.updateAssetType',
 }
 
 export enum CapitalDistributionTx {
@@ -631,6 +634,7 @@ export enum SettlementTx {
   UpdateVenueSigners = 'settlement.updateVenueSigners',
   AddInstructionWithMemo = 'settlement.addInstructionWithMemo',
   AddAndAffirmInstructionWithMemo = 'settlement.addAndAffirmInstructionWithMemo',
+  ExecuteManualInstruction = 'settlement.executeManualInstruction',
 }
 
 export enum StatisticsTx {
@@ -705,6 +709,7 @@ export enum PolymeshContractsTx {
   RemoveCode = 'polymeshContracts.removeCode',
   InstantiateWithCodePerms = 'polymeshContracts.instantiateWithCodePerms',
   InstantiateWithHashPerms = 'polymeshContracts.instantiateWithHashPerms',
+  UpdateCallRuntimeWhitelist = 'polymeshContracts.updateCallRuntimeWhitelist',
 }
 
 export enum PreimageTx {

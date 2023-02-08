@@ -1,6 +1,10 @@
+import {
+  PolymeshPrimitivesComplianceManagerComplianceRequirement,
+  PolymeshPrimitivesCondition,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { ComplianceRequirement, Condition as MeshCondition, Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   getAuthorization,
@@ -21,20 +25,20 @@ jest.mock(
 
 describe('removeAssetRequirement procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
   let ticker: string;
   let requirement: BigNumber;
-  let rawTicker: Ticker;
-  let senderConditions: MeshCondition[][];
-  let receiverConditions: MeshCondition[][];
-  let rawComplianceRequirement: ComplianceRequirement[];
+  let rawTicker: PolymeshPrimitivesTicker;
+  let senderConditions: PolymeshPrimitivesCondition[][];
+  let receiverConditions: PolymeshPrimitivesCondition[][];
+  let rawComplianceRequirement: PolymeshPrimitivesComplianceManagerComplianceRequirement[];
   let args: Params;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
     ticker = 'SOME_TICKER';
     requirement = new BigNumber(1);
 
@@ -44,29 +48,29 @@ describe('removeAssetRequirement procedure', () => {
     };
   });
 
-  let removeComplianceRequirementTransaction: PolymeshTx<[Ticker]>;
+  let removeComplianceRequirementTransaction: PolymeshTx<[PolymeshPrimitivesTicker]>;
 
   beforeEach(() => {
     dsMockUtils.setConstMock('complianceManager', 'maxConditionComplexity', {
       returnValue: dsMockUtils.createMockU32(new BigNumber(50)),
     });
 
-    removeComplianceRequirementTransaction = dsMockUtils.createTxStub(
+    removeComplianceRequirementTransaction = dsMockUtils.createTxMock(
       'complianceManager',
       'removeComplianceRequirement'
     );
 
     mockContext = dsMockUtils.getContextInstance();
 
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
 
     senderConditions = [
-      'senderConditions0' as unknown as MeshCondition[],
-      'senderConditions1' as unknown as MeshCondition[],
+      'senderConditions0' as unknown as PolymeshPrimitivesCondition[],
+      'senderConditions1' as unknown as PolymeshPrimitivesCondition[],
     ];
     receiverConditions = [
-      'receiverConditions0' as unknown as MeshCondition[],
-      'receiverConditions1' as unknown as MeshCondition[],
+      'receiverConditions0' as unknown as PolymeshPrimitivesCondition[],
+      'receiverConditions1' as unknown as PolymeshPrimitivesCondition[],
     ];
     rawComplianceRequirement = senderConditions.map(
       (sConditions, index) =>
@@ -76,10 +80,10 @@ describe('removeAssetRequirement procedure', () => {
           receiver_conditions: receiverConditions[index],
           /* eslint-enable @typescript-eslint/naming-convention */
           id: dsMockUtils.createMockU32(new BigNumber(index)),
-        } as unknown as ComplianceRequirement)
+        } as unknown as PolymeshPrimitivesComplianceManagerComplianceRequirement)
     );
 
-    dsMockUtils.createQueryStub('complianceManager', 'assetCompliances', {
+    dsMockUtils.createQueryMock('complianceManager', 'assetCompliances', {
       returnValue: {
         requirements: rawComplianceRequirement,
       },
@@ -111,7 +115,7 @@ describe('removeAssetRequirement procedure', () => {
 
   it('should return a remove compliance requirement transaction spec', async () => {
     const rawId = dsMockUtils.createMockU32(requirement);
-    sinon.stub(utilsConversionModule, 'bigNumberToU32').returns(rawId);
+    jest.spyOn(utilsConversionModule, 'bigNumberToU32').mockClear().mockReturnValue(rawId);
 
     const proc = procedureMockUtils.getInstance<Params, Asset>(mockContext);
 

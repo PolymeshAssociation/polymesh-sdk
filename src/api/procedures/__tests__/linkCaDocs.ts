@@ -1,8 +1,11 @@
-import { Vec } from '@polkadot/types';
-import { PalletCorporateActionsCaId, PolymeshPrimitivesDocument } from '@polkadot/types/lookup';
+import { u32, Vec } from '@polkadot/types';
+import {
+  PalletCorporateActionsCaId,
+  PolymeshPrimitivesDocument,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { Document, DocumentId, Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { getAuthorization, Params, prepareLinkCaDocs } from '~/api/procedures/linkCaDocs';
 import { Context } from '~/internal';
@@ -20,14 +23,14 @@ jest.mock(
 
 describe('linkCaDocs procedure', () => {
   let mockContext: Mocked<Context>;
-  let stringToTickerStub: sinon.SinonStub<[string, Context], Ticker>;
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
   let ticker: string;
   let id: BigNumber;
   let documents: AssetDocument[];
-  let rawTicker: Ticker;
+  let rawTicker: PolymeshPrimitivesTicker;
   let rawDocuments: PolymeshPrimitivesDocument[];
-  let rawDocumentIds: DocumentId[];
-  let documentEntries: [[Ticker, DocumentId], PolymeshPrimitivesDocument][];
+  let rawDocumentIds: u32[];
+  let documentEntries: [[PolymeshPrimitivesTicker, u32], PolymeshPrimitivesDocument][];
   let args: Params;
   let rawCaId: PalletCorporateActionsCaId;
 
@@ -35,7 +38,7 @@ describe('linkCaDocs procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    stringToTickerStub = sinon.stub(utilsConversionModule, 'stringToTicker');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
     ticker = 'SOME_TICKER';
     id = new BigNumber(1);
     documents = [
@@ -77,21 +80,21 @@ describe('linkCaDocs procedure', () => {
       documents,
     };
     rawCaId = dsMockUtils.createMockCAId({ ticker, localId: id });
-    sinon.stub(utilsConversionModule, 'corporateActionIdentifierToCaId').returns(rawCaId);
+    jest.spyOn(utilsConversionModule, 'corporateActionIdentifierToCaId').mockReturnValue(rawCaId);
   });
 
-  let linkCaDocTransaction: PolymeshTx<[Vec<Document>, Ticker]>;
+  let linkCaDocTransaction: PolymeshTx<[Vec<PolymeshPrimitivesDocument>, PolymeshPrimitivesTicker]>;
 
   beforeEach(() => {
-    dsMockUtils.createQueryStub('asset', 'assetDocuments', {
+    dsMockUtils.createQueryMock('asset', 'assetDocuments', {
       entries: [documentEntries[0], documentEntries[1]],
     });
 
-    linkCaDocTransaction = dsMockUtils.createTxStub('corporateAction', 'linkCaDoc');
+    linkCaDocTransaction = dsMockUtils.createTxMock('corporateAction', 'linkCaDoc');
 
     mockContext = dsMockUtils.getContextInstance();
 
-    stringToTickerStub.withArgs(ticker, mockContext).returns(rawTicker);
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
   });
 
   afterEach(() => {

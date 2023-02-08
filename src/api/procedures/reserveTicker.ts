@@ -4,7 +4,7 @@ import { Context, PolymeshError, Procedure, TickerReservation } from '~/internal
 import { ErrorCode, ReserveTickerParams, RoleType, TickerReservationStatus, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { stringToTicker, tickerToString } from '~/utils/conversion';
-import { filterEventRecords } from '~/utils/internal';
+import { filterEventRecords, isAlphanumeric } from '~/utils/internal';
 
 /**
  * @hidden
@@ -33,6 +33,13 @@ export async function prepareReserveTicker(
     context,
   } = this;
   const { ticker, extendPeriod = false } = args;
+
+  if (!isAlphanumeric(ticker)) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'New Tickers can only contain alphanumeric values',
+    });
+  }
 
   const rawTicker = stringToTicker(ticker, context);
 

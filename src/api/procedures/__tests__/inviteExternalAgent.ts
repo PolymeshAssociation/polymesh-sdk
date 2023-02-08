@@ -1,8 +1,13 @@
-import { PolymeshPrimitivesAuthorizationAuthorizationData } from '@polkadot/types/lookup';
+import {
+  PolymeshPrimitivesAgentAgentGroup,
+  PolymeshPrimitivesAuthorizationAuthorizationData,
+  PolymeshPrimitivesIdentityId,
+  PolymeshPrimitivesSecondaryKeySignatory,
+  PolymeshPrimitivesTicker,
+} from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { AgentGroup, IdentityId, Signatory, Ticker } from 'polymesh-types/types';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import {
   createGroupAndAuthorizationResolver,
@@ -39,33 +44,36 @@ jest.mock(
 
 describe('inviteExternalAgent procedure', () => {
   let mockContext: Mocked<Context>;
-  let authorizationToAuthorizationDataStub: sinon.SinonStub<
-    [Authorization, Context],
-    PolymeshPrimitivesAuthorizationAuthorizationData
+  let authorizationToAuthorizationDataSpy: jest.SpyInstance<
+    PolymeshPrimitivesAuthorizationAuthorizationData,
+    [Authorization, Context]
   >;
-  let signerToStringStub: sinon.SinonStub<[string | Identity | Account], string>;
-  let signerValueToSignatoryStub: sinon.SinonStub<[SignerValue, Context], Signatory>;
-  let stringToIdentityIdStub: sinon.SinonStub;
+  let signerToStringSpy: jest.SpyInstance<string, [string | Identity | Account]>;
+  let signerValueToSignatorySpy: jest.SpyInstance<
+    PolymeshPrimitivesSecondaryKeySignatory,
+    [SignerValue, Context]
+  >;
+  let stringToIdentityIdSpy: jest.SpyInstance;
   let ticker: string;
   let asset: Asset;
-  let rawTicker: Ticker;
-  let rawAgentGroup: AgentGroup;
+  let rawTicker: PolymeshPrimitivesTicker;
+  let rawAgentGroup: PolymeshPrimitivesAgentAgentGroup;
   let target: string;
-  let rawSignatory: Signatory;
+  let rawSignatory: PolymeshPrimitivesSecondaryKeySignatory;
   let rawAuthorizationData: PolymeshPrimitivesAuthorizationAuthorizationData;
-  let rawIdentityId: IdentityId;
+  let rawIdentityId: PolymeshPrimitivesIdentityId;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    authorizationToAuthorizationDataStub = sinon.stub(
+    authorizationToAuthorizationDataSpy = jest.spyOn(
       utilsConversionModule,
       'authorizationToAuthorizationData'
     );
-    signerToStringStub = sinon.stub(utilsConversionModule, 'signerToString');
-    stringToIdentityIdStub = sinon.stub(utilsConversionModule, 'stringToIdentityId');
-    signerValueToSignatoryStub = sinon.stub(utilsConversionModule, 'signerValueToSignatory');
+    signerToStringSpy = jest.spyOn(utilsConversionModule, 'signerToString');
+    stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
+    signerValueToSignatorySpy = jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
     rawAgentGroup = dsMockUtils.createMockAgentGroup('Full');
@@ -87,10 +95,10 @@ describe('inviteExternalAgent procedure', () => {
       },
     });
     mockContext = dsMockUtils.getContextInstance();
-    authorizationToAuthorizationDataStub.returns(rawAuthorizationData);
-    signerToStringStub.returns(target);
-    signerValueToSignatoryStub.returns(rawSignatory);
-    stringToIdentityIdStub.returns(rawIdentityId);
+    authorizationToAuthorizationDataSpy.mockReturnValue(rawAuthorizationData);
+    signerToStringSpy.mockReturnValue(target);
+    signerValueToSignatorySpy.mockReturnValue(rawSignatory);
+    stringToIdentityIdSpy.mockReturnValue(rawIdentityId);
   });
 
   afterEach(() => {
@@ -102,7 +110,7 @@ describe('inviteExternalAgent procedure', () => {
   afterAll(() => {
     procedureMockUtils.cleanup();
     dsMockUtils.cleanup();
-    sinon.reset();
+    jest.resetAllMocks();
   });
 
   describe('prepareStorage', () => {
@@ -171,7 +179,7 @@ describe('inviteExternalAgent procedure', () => {
   });
 
   it('should return an add authorization transaction spec if an existing group is passed', async () => {
-    const transaction = dsMockUtils.createTxStub('identity', 'addAuthorization');
+    const transaction = dsMockUtils.createTxMock('identity', 'addAuthorization');
     const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest, Storage>(
       mockContext,
       {
@@ -201,10 +209,10 @@ describe('inviteExternalAgent procedure', () => {
 
   it('should use the existing group ID if there is a group with the same permissions as the ones passed', async () => {
     const groupId = new BigNumber(10);
-    const transaction = dsMockUtils.createTxStub('identity', 'addAuthorization');
-    const getGroupFromPermissionsStub = sinon
-      .stub(procedureUtilsModule, 'getGroupFromPermissions')
-      .resolves(
+    const transaction = dsMockUtils.createTxMock('identity', 'addAuthorization');
+    const getGroupFromPermissionsSpy = jest
+      .spyOn(procedureUtilsModule, 'getGroupFromPermissions')
+      .mockResolvedValue(
         entityMockUtils.getCustomPermissionGroupInstance({
           ticker,
           id: groupId,
@@ -239,11 +247,11 @@ describe('inviteExternalAgent procedure', () => {
       resolver: expect.any(Function),
     });
 
-    getGroupFromPermissionsStub.restore();
+    getGroupFromPermissionsSpy.mockRestore();
   });
 
   it('should return a create group and add authorization transaction spec if the group does not exist', async () => {
-    const transaction = dsMockUtils.createTxStub('externalAgents', 'createGroupAndAddAuth');
+    const transaction = dsMockUtils.createTxMock('externalAgents', 'createGroupAndAddAuth');
     const proc = procedureMockUtils.getInstance<Params, AuthorizationRequest, Storage>(
       mockContext,
       {
@@ -258,17 +266,17 @@ describe('inviteExternalAgent procedure', () => {
       }
     );
 
-    sinon.stub(utilsConversionModule, 'permissionsLikeToPermissions').returns({
+    jest.spyOn(utilsConversionModule, 'permissionsLikeToPermissions').mockClear().mockReturnValue({
       transactions: null,
       assets: null,
       portfolios: null,
       transactionGroups: [],
     });
     const rawPermissions = dsMockUtils.createMockExtrinsicPermissions('Whole');
-    sinon
-      .stub(utilsConversionModule, 'transactionPermissionsToExtrinsicPermissions')
-      .returns(rawPermissions);
-    sinon.stub(utilsConversionModule, 'stringToTicker').returns(rawTicker);
+    jest
+      .spyOn(utilsConversionModule, 'transactionPermissionsToExtrinsicPermissions')
+      .mockReturnValue(rawPermissions);
+    jest.spyOn(utilsConversionModule, 'stringToTicker').mockReturnValue(rawTicker);
 
     const result = await prepareInviteExternalAgent.call(proc, {
       target: entityMockUtils.getIdentityInstance({ did: target }),
@@ -290,22 +298,22 @@ describe('inviteExternalAgent procedure', () => {
 });
 
 describe('createGroupAndAuthorizationResolver', () => {
-  const filterEventRecordsStub = sinon.stub(utilsInternalModule, 'filterEventRecords');
+  const filterEventRecordsSpy = jest.spyOn(utilsInternalModule, 'filterEventRecords');
   const id = new BigNumber(10);
   const rawId = dsMockUtils.createMockU64(id);
 
   beforeEach(() => {
-    filterEventRecordsStub.returns([
+    filterEventRecordsSpy.mockReturnValue([
       dsMockUtils.createMockIEvent([undefined, undefined, undefined, rawId, undefined]),
     ]);
   });
 
   afterEach(() => {
-    filterEventRecordsStub.reset();
+    filterEventRecordsSpy.mockReset();
   });
 
   it('should return the new Authorization', async () => {
-    sinon.stub(utilsConversionModule, 'u64ToBigNumber').withArgs(rawId).returns(id);
+    when(jest.spyOn(utilsConversionModule, 'u64ToBigNumber')).calledWith(rawId).mockReturnValue(id);
     const target = entityMockUtils.getIdentityInstance({
       authorizationsGetOne: entityMockUtils.getAuthorizationRequestInstance({
         authId: id,

@@ -5,6 +5,7 @@ import {
   PalletCorporateActionsCaId,
   PalletCorporateActionsDistribution,
   PalletRelayerSubsidy,
+  PolymeshCommonUtilitiesProtocolFeeProtocolOp,
 } from '@polkadot/types/lookup';
 import {
   CallFunction,
@@ -21,9 +22,9 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, clone, flatMap, flatten, flattenDeep } from 'lodash';
 import { polymesh } from 'polymesh-types/definitions';
-import { ProtocolOp } from 'polymesh-types/types';
 
 import { Account, Asset, DividendDistribution, Identity, PolymeshError, Subsidy } from '~/internal';
+import { ClaimTypeEnum as MiddlewareV2Claim } from '~/middleware/enumsV2';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { claimsQuery, heartbeatQuery } from '~/middleware/queriesV2';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
@@ -50,7 +51,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import { GraphqlQuery } from '~/types/internal';
-import { Ensured, EnsuredV2, QueryReturnType } from '~/types/utils';
+import { Ensured, EnsuredV2 } from '~/types/utils';
 import {
   DEFAULT_GQL_PAGE_SIZE,
   MAX_CONCURRENT_REQUESTS,
@@ -82,7 +83,13 @@ import {
   u16ToBigNumber,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import { assertAddressValid, calculateNextKey, createClaim } from '~/utils/internal';
+import {
+  assertAddressValid,
+  calculateNextKey,
+  createClaim,
+  delay,
+  getApiAtBlock,
+} from '~/utils/internal';
 
 interface ConstructorParams {
   polymeshApi: ApiPromise;
@@ -190,13 +197,18 @@ export class Context {
   private async isCurrentNodeArchive(): Promise<boolean> {
     const {
       polymeshApi: {
-        query: { balances, system },
+        query: { system },
       },
+      polymeshApi,
     } = this;
 
     try {
       const blockHash = await system.blockHash(bigNumberToU32(new BigNumber(0), this));
-      const balance = await balances.totalIssuance.at(blockHash);
+
+      const apiAt = await polymeshApi.at(blockHash);
+
+      const balance = await apiAt.query.balances.totalIssuance();
+
       return balanceToBigNumber(balance).gt(new BigNumber(0));
     } catch (e) {
       return false;
@@ -211,6 +223,7 @@ export class Context {
    */
   public async setSigningManager(signingManager: SigningManager): Promise<void> {
     this._signingManager = signingManager;
+    this._polymeshApi.setSigner(signingManager.getExternalSigner());
 
     signingManager.setSs58Format(this.ss58Format.toNumber());
 
@@ -497,9 +510,7 @@ export class Context {
 
     const dids = identities.map(signerToString);
     const rawIdentities = dids.map(did => stringToIdentityId(did, this));
-    const records = await identity.didRecords.multi<QueryReturnType<typeof identity.didRecords>>(
-      rawIdentities
-    );
+    const records = await identity.didRecords.multi(rawIdentities);
 
     const invalidDids: string[] = [];
 
@@ -560,7 +571,7 @@ export class Context {
       },
     } = this;
 
-    const tagsMap = new Map<TxTag, ProtocolOp | undefined>();
+    const tagsMap = new Map<TxTag, PolymeshCommonUtilitiesProtocolFeeProtocolOp | undefined>();
 
     tags.forEach(tag => {
       try {
@@ -570,12 +581,25 @@ export class Context {
       }
     });
 
+    let baseFeesQuery;
+    if (blockHash) {
+      ({
+        query: {
+          protocolFee: { baseFees: baseFeesQuery },
+        },
+      } = await getApiAtBlock(this, stringToHash(blockHash, this)));
+    } else {
+      baseFeesQuery = baseFees;
+    }
+
     const [baseFeesEntries, coefficientValue] = await Promise.all([
-      blockHash ? baseFees.entriesAt(stringToHash(blockHash, this)) : baseFees.entries(),
+      baseFeesQuery.entries(),
       coefficient(),
     ]);
 
-    const assembleResult = (rawProtocolOp: ProtocolOp | undefined): BigNumber => {
+    const assembleResult = (
+      rawProtocolOp: PolymeshCommonUtilitiesProtocolFeeProtocolOp | undefined
+    ): BigNumber => {
       const baseFeeEntry = baseFeesEntries.find(
         ([
           {
@@ -848,11 +872,7 @@ export class Context {
     const requestChunks = chunk(paramChunks, MAX_CONCURRENT_REQUESTS);
     const distributions = await P.mapSeries(requestChunks, requestChunk =>
       Promise.all(
-        requestChunk.map(paramChunk =>
-          capitalDistribution.distributions.multi<
-            QueryReturnType<typeof capitalDistribution.distributions>
-          >(paramChunk)
-        )
+        requestChunk.map(paramChunk => capitalDistribution.distributions.multi(paramChunk))
       )
     );
 
@@ -1050,7 +1070,7 @@ export class Context {
           trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
             signerToString(trustedClaimIssuer)
           ),
-          claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
+          claimTypes: claimTypes?.map(ct => MiddlewareV2Claim[ct]),
           includeExpired,
         },
         size,
@@ -1297,6 +1317,15 @@ export class Context {
   /**
    * @hidden
    *
+   * Return whether any middleware was enabled at startup
+   */
+  public isAnyMiddlewareEnabled(): boolean {
+    return this.isMiddlewareV2Enabled() || this.isMiddlewareEnabled();
+  }
+
+  /**
+   * @hidden
+   *
    * Return whether the middleware is enabled and online
    */
   public async isMiddlewareAvailable(): Promise<boolean> {
@@ -1372,7 +1401,7 @@ export class Context {
    * @note after disconnecting, trying to access any property in this object will result
    *   in an error
    */
-  public disconnect(): Promise<void> {
+  public async disconnect(): Promise<void> {
     const { polymeshApi } = this;
     let middlewareApi, middlewareApiV2;
 
@@ -1388,6 +1417,8 @@ export class Context {
 
     middlewareApi && middlewareApi.stop();
     middlewareApiV2 && middlewareApiV2.stop();
+
+    await delay(500); // allow pending requests to complete
 
     return polymeshApi.disconnect();
   }

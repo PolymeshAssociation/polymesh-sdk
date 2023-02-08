@@ -30,6 +30,7 @@ import {
   GenericAuthorizationData,
   InputCondition,
   InputTaxWithholding,
+  InstructionDetails,
   InstructionStatus,
   InstructionType,
   PermissionedAccount,
@@ -73,6 +74,43 @@ export async function assertInstructionValid(
         },
       });
     }
+  }
+}
+
+/**
+ * @hidden
+ */
+export async function assertInstructionValidForManualExecution(
+  details: InstructionDetails,
+  context: Context
+): Promise<void> {
+  const { status, type } = details;
+
+  if (status === InstructionStatus.Executed) {
+    throw new PolymeshError({
+      code: ErrorCode.NoDataChange,
+      message: 'The Instruction has already been executed',
+    });
+  }
+
+  if (type !== InstructionType.SettleManual) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: `You cannot manually execute settlement of type '${type}'`,
+    });
+  }
+
+  const latestBlock = await context.getLatestBlock();
+  const { endAfterBlock } = details;
+  if (latestBlock.lte(endAfterBlock)) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The Instruction cannot be executed until the specified end after block',
+      data: {
+        currentBlock: latestBlock,
+        endAfterBlock,
+      },
+    });
   }
 }
 

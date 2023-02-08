@@ -2,7 +2,6 @@ import { u64 } from '@polkadot/types';
 import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
 
 import {
   assertAuthorizationRequestValid,
@@ -11,6 +10,7 @@ import {
   assertDistributionDatesValid,
   assertGroupDoesNotExist,
   assertInstructionValid,
+  assertInstructionValidForManualExecution,
   assertPortfolioExists,
   assertRequirementsNotTooComplex,
   assertSecondaryAccounts,
@@ -88,6 +88,11 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockTickerReservationModule(
     '~/api/entities/TickerReservation'
   )
+);
+
+jest.mock(
+  '~/api/entities/Venue',
+  require('~/testUtils/mocks/entities').mockVenueModule('~/api/entities/Venue')
 );
 
 describe('assertInstructionValid', () => {
@@ -198,6 +203,91 @@ describe('assertInstructionValid', () => {
   });
 });
 
+describe('assertInstructionValidForManualExecution', () => {
+  const latestBlock = new BigNumber(200);
+  let mockContext: Mocked<Context>;
+  let instructionDetails: InstructionDetails;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks({
+      contextOptions: {
+        latestBlock,
+      },
+    });
+    entityMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    mockContext = dsMockUtils.getContextInstance();
+    instructionDetails = {
+      status: InstructionStatus.Pending,
+      type: InstructionType.SettleManual,
+      endAfterBlock: new BigNumber(100),
+    } as InstructionDetails;
+  });
+
+  afterEach(() => {
+    entityMockUtils.reset();
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should throw an error if instruction is already Executed', () => {
+    return expect(
+      assertInstructionValidForManualExecution(
+        {
+          ...instructionDetails,
+          status: InstructionStatus.Executed,
+        },
+        mockContext
+      )
+    ).rejects.toThrow('The Instruction has already been executed');
+  });
+
+  it('should throw an error if the instruction is not of type SettleManual', async () => {
+    return expect(
+      assertInstructionValidForManualExecution(
+        {
+          ...instructionDetails,
+          type: InstructionType.SettleOnAffirmation,
+        },
+        mockContext
+      )
+    ).rejects.toThrow("You cannot manually execute settlement of type 'SettleOnAffirmation'");
+  });
+
+  it('should throw an error if the instruction is being executed before endAfterBlock', async () => {
+    const endAfterBlock = new BigNumber(1000);
+
+    const expectedError = new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'The Instruction cannot be executed until the specified end after block',
+      data: {
+        currentBlock: latestBlock,
+        endAfterBlock,
+      },
+    });
+    return expect(
+      assertInstructionValidForManualExecution(
+        {
+          ...instructionDetails,
+          endAfterBlock,
+        } as InstructionDetails,
+        mockContext
+      )
+    ).rejects.toThrowError(expectedError);
+  });
+
+  it('should not throw an error', () => {
+    return expect(
+      assertInstructionValidForManualExecution(instructionDetails, mockContext)
+    ).resolves.not.toThrow();
+  });
+});
+
 describe('assertPortfolioExists', () => {
   it("should throw an error if the portfolio doesn't exist", async () => {
     entityMockUtils.configureMocks({ numberedPortfolioOptions: { exists: false } });
@@ -232,10 +322,10 @@ describe('assertPortfolioExists', () => {
 });
 
 describe('assertSecondaryAccounts', () => {
-  let signerToSignerValueStub: sinon.SinonStub<[Signer], SignerValue>;
+  let signerToSignerValueSpy: jest.SpyInstance<SignerValue, [Signer]>;
 
   beforeAll(() => {
-    signerToSignerValueStub = sinon.stub(utilsConversionModule, 'signerToSignerValue');
+    signerToSignerValueSpy = jest.spyOn(utilsConversionModule, 'signerToSignerValue');
   });
 
   it('should not throw an error if all signers are secondary Accounts', async () => {
@@ -274,7 +364,7 @@ describe('assertSecondaryAccounts', () => {
       entityMockUtils.getAccountInstance({ address: 'otherAddress', isEqual: false }),
     ];
 
-    signerToSignerValueStub.returns({ type: SignerType.Account, value: address });
+    signerToSignerValueSpy.mockReturnValue({ type: SignerType.Account, value: address });
 
     let error;
 
@@ -552,7 +642,7 @@ describe('authorization request validations', () => {
     mockContext = dsMockUtils.getContextInstance();
     issuer = entityMockUtils.getIdentityInstance();
     target = entityMockUtils.getIdentityInstance();
-    dsMockUtils.createQueryStub('identity', 'authorizations', {
+    dsMockUtils.createQueryMock('identity', 'authorizations', {
       returnValue: dsMockUtils.createMockOption(
         dsMockUtils.createMockAuthorization({
           authorizationData: dsMockUtils.createMockAuthorizationData('RotatePrimaryKey'),
@@ -1194,8 +1284,8 @@ describe('authorization request validations', () => {
       );
 
       dsMockUtils
-        .createQueryStub('identity', 'keyRecords')
-        .resolves(
+        .createQueryMock('identity', 'keyRecords')
+        .mockResolvedValue(
           dsMockUtils.createMockOption(
             dsMockUtils.createMockKeyRecord({ PrimaryKey: createMockIdentityId('someDid') })
           )
@@ -1226,7 +1316,7 @@ describe('authorization request validations', () => {
         mockContext
       );
 
-      dsMockUtils.createQueryStub('identity', 'keyRecords').returns(
+      dsMockUtils.createQueryMock('identity', 'keyRecords').mockReturnValue(
         dsMockUtils.createMockOption(
           dsMockUtils.createMockKeyRecord({
             MultiSigSignerKey: createMockAccountId('someAddress'),

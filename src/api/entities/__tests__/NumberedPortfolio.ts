@@ -1,12 +1,12 @@
 import BigNumber from 'bignumber.js';
-import sinon from 'sinon';
+import { when } from 'jest-when';
 
 import { Context, Entity, NumberedPortfolio, PolymeshError, PolymeshTransaction } from '~/internal';
 import { eventByIndexedArgs } from '~/middleware/queries';
 import { portfolioQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { ErrorCode } from '~/types';
+import { ErrorCode, EventIdentifier } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -78,10 +78,9 @@ describe('NumberedPortfolio class', () => {
       const expectedTransaction =
         'someTransaction' as unknown as PolymeshTransaction<NumberedPortfolio>;
 
-      procedureMockUtils
-        .getPrepareStub()
-        .withArgs({ args: { id, did, name }, transformer: undefined }, context)
-        .resolves(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { id, did, name }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
       const tx = await numberedPortfolio.modifyName({ name });
 
@@ -97,13 +96,12 @@ describe('NumberedPortfolio class', () => {
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
       const spy = jest.spyOn(numberedPortfolio, 'exists').mockResolvedValue(true);
       const rawPortfolioName = dsMockUtils.createMockBytes(portfolioName);
-      dsMockUtils.createQueryStub('portfolio', 'portfolios', {
+      dsMockUtils.createQueryMock('portfolio', 'portfolios', {
         returnValue: rawPortfolioName,
       });
-      sinon
-        .stub(utilsConversionModule, 'bytesToString')
-        .withArgs(rawPortfolioName)
-        .returns(portfolioName);
+      when(jest.spyOn(utilsConversionModule, 'bytesToString'))
+        .calledWith(rawPortfolioName)
+        .mockReturnValue(portfolioName);
 
       const result = await numberedPortfolio.getName();
 
@@ -113,7 +111,7 @@ describe('NumberedPortfolio class', () => {
 
     it('should throw an error if the Portfolio no longer exists', async () => {
       const emptyName = dsMockUtils.createMockText('');
-      dsMockUtils.createQueryStub('portfolio', 'portfolios', {
+      dsMockUtils.createQueryMock('portfolio', 'portfolios', {
         returnValue: emptyName,
       });
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
@@ -143,6 +141,12 @@ describe('NumberedPortfolio class', () => {
       eventArg1: id.toString(),
     };
 
+    beforeEach(() => {
+      dsMockUtils.configureMocks({
+        contextOptions: { middlewareV2Enabled: false },
+      });
+    });
+
     it('should return the event identifier object of the portfolio creation', async () => {
       const blockNumber = new BigNumber(1234);
       const blockDate = new Date('4/14/2020');
@@ -150,7 +154,7 @@ describe('NumberedPortfolio class', () => {
       const fakeResult = { blockNumber, blockDate, eventIndex: eventIdx };
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
 
-      dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {
+      dsMockUtils.createApolloQueryMock(eventByIndexedArgs(variables), {
         /* eslint-disable @typescript-eslint/naming-convention */
         eventByIndexedArgs: {
           block_id: blockNumber.toNumber(),
@@ -168,9 +172,21 @@ describe('NumberedPortfolio class', () => {
     it('should return null if the query result is empty', async () => {
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
 
-      dsMockUtils.createApolloQueryStub(eventByIndexedArgs(variables), {});
+      dsMockUtils.createApolloQueryMock(eventByIndexedArgs(variables), {});
       const result = await numberedPortfolio.createdAt();
       expect(result).toBeNull();
+    });
+
+    it('should call v2 query if middlewareV2 is enabled', async () => {
+      dsMockUtils.configureMocks({
+        contextOptions: { middlewareV2Enabled: true },
+      });
+      const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
+      const fakeResult = 'fakeResult' as unknown as EventIdentifier;
+      jest.spyOn(numberedPortfolio, 'createdAtV2').mockResolvedValue(fakeResult);
+
+      const result = await numberedPortfolio.createdAt();
+      expect(result).toEqual(fakeResult);
     });
   });
 
@@ -190,7 +206,7 @@ describe('NumberedPortfolio class', () => {
       const fakeResult = { blockNumber, blockHash, blockDate, eventIndex: eventIdx };
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
 
-      dsMockUtils.createApolloV2QueryStub(portfolioQuery(variables), {
+      dsMockUtils.createApolloV2QueryMock(portfolioQuery(variables), {
         portfolios: {
           nodes: [
             {
@@ -213,7 +229,7 @@ describe('NumberedPortfolio class', () => {
     it('should return null if the query result is empty', async () => {
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
 
-      dsMockUtils.createApolloV2QueryStub(portfolioQuery(variables), {
+      dsMockUtils.createApolloV2QueryMock(portfolioQuery(variables), {
         portfolios: {
           nodes: [],
         },
@@ -229,23 +245,23 @@ describe('NumberedPortfolio class', () => {
       const id = new BigNumber(1);
       const portfolioId = new BigNumber(0);
 
-      const portfoliosStub = dsMockUtils.createQueryStub('portfolio', 'portfolios', {
+      const portfoliosMock = dsMockUtils.createQueryMock('portfolio', 'portfolios', {
         size: new BigNumber(0),
       });
 
-      sinon
-        .stub(utilsConversionModule, 'stringToIdentityId')
-        .returns(dsMockUtils.createMockIdentityId(did));
-      sinon
-        .stub(utilsConversionModule, 'bigNumberToU64')
-        .returns(dsMockUtils.createMockU64(portfolioId));
+      jest
+        .spyOn(utilsConversionModule, 'stringToIdentityId')
+        .mockReturnValue(dsMockUtils.createMockIdentityId(did));
+      jest
+        .spyOn(utilsConversionModule, 'bigNumberToU64')
+        .mockReturnValue(dsMockUtils.createMockU64(portfolioId));
 
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
 
       let result = await numberedPortfolio.exists();
       expect(result).toBe(false);
 
-      portfoliosStub.size.resolves(dsMockUtils.createMockU64(new BigNumber(10)));
+      portfoliosMock.size.mockResolvedValue(dsMockUtils.createMockU64(new BigNumber(10)));
 
       result = await numberedPortfolio.exists();
       expect(result).toBe(true);

@@ -1,5 +1,7 @@
 import {
+  ApiDecoration,
   AugmentedEvent,
+  AugmentedQueries,
   AugmentedQuery,
   AugmentedQueryDoubleMap,
   DropLast,
@@ -15,6 +17,7 @@ import {
   PolymeshPrimitivesStatisticsStatType,
   PolymeshPrimitivesTransferComplianceTransferCondition,
 } from '@polkadot/types/lookup';
+import type { Callback, Codec, Observable } from '@polkadot/types/types';
 import { AnyFunction, AnyTuple, IEvent, ISubmittableResult } from '@polkadot/types/types';
 import { stringUpperFirst } from '@polkadot/util';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
@@ -22,7 +25,6 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import stringify from 'json-stable-stringify';
 import { differenceWith, flatMap, isEqual, mapValues, noop, padEnd, uniq } from 'lodash';
-import { IdentityId, PortfolioNumber } from 'polymesh-types/types';
 import { major, satisfies } from 'semver';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 
@@ -71,10 +73,16 @@ import {
   Falsyable,
   MapTxWithArgs,
   PolymeshTx,
+  Queries,
   StatClaimIssuer,
   TxWithArgs,
 } from '~/types/internal';
-import { HumanReadableType, ProcedureFunc, UnionOfProcedureFuncs } from '~/types/utils';
+import {
+  HumanReadableType,
+  ProcedureFunc,
+  QueryFunction,
+  UnionOfProcedureFuncs,
+} from '~/types/utils';
 import {
   DEFAULT_GQL_PAGE_SIZE,
   MAX_TICKER_LENGTH,
@@ -85,7 +93,6 @@ import {
 } from '~/utils/constants';
 import {
   bigNumberToU32,
-  bigNumberToU64,
   claimIssuerToMeshClaimIssuer,
   identitiesToBtreeSet,
   identityIdToString,
@@ -453,6 +460,15 @@ export function isPrintableAscii(value: string): boolean {
 /**
  * @hidden
  *
+ * Return whether the string is fully alphanumeric
+ */
+export function isAlphanumeric(value: string): boolean {
+  return /^[0-9a-zA-Z]*$/.test(value);
+}
+
+/**
+ * @hidden
+ *
  * Makes an entries request to the chain. If pagination options are supplied,
  *  the request will be paginated. Otherwise, all entries will be requested at once
  */
@@ -500,30 +516,104 @@ export async function requestPaginated<F extends AnyFunction, T extends AnyTuple
 /**
  * @hidden
  *
+ * Gets Polymesh API instance at a particular block
+ */
+export async function getApiAtBlock(
+  context: Context,
+  blockHash: string | BlockHash
+): Promise<ApiDecoration<'promise'>> {
+  const { polymeshApi, isArchiveNode } = context;
+
+  if (!isArchiveNode) {
+    throw new PolymeshError({
+      code: ErrorCode.DataUnavailable,
+      message: 'Cannot query previous blocks in a non-archive node',
+    });
+  }
+
+  return polymeshApi.at(blockHash);
+}
+
+type QueryMultiParam<T extends AugmentedQuery<'promise', AnyFunction>[]> = {
+  [index in keyof T]: T[index] extends AugmentedQuery<'promise', infer Fun>
+    ? Fun extends (firstArg: infer First, ...restArg: infer Rest) => ReturnType<Fun>
+      ? Rest extends never[]
+        ? [T[index], First]
+        : [T[index], Parameters<Fun>]
+      : never
+    : never;
+};
+
+type QueryMultiReturnType<T extends AugmentedQuery<'promise', AnyFunction>[]> = {
+  [index in keyof T]: T[index] extends AugmentedQuery<'promise', infer Fun>
+    ? ReturnType<Fun> extends Observable<infer R>
+      ? R
+      : never
+    : never;
+};
+
+/**
+ * @hidden
+ *
+ * Makes an multi request to the chain
+ */
+export async function requestMulti<T extends AugmentedQuery<'promise', AnyFunction>[]>(
+  context: Context,
+  queries: QueryMultiParam<T>
+): Promise<QueryMultiReturnType<T>>;
+export async function requestMulti<T extends AugmentedQuery<'promise', AnyFunction>[]>(
+  context: Context,
+  queries: QueryMultiParam<T>,
+  callback: Callback<QueryMultiReturnType<T>>
+): Promise<UnsubCallback>;
+// eslint-disable-next-line require-jsdoc
+export async function requestMulti<T extends AugmentedQuery<'promise', AnyFunction>[]>(
+  context: Context,
+  queries: QueryMultiParam<T>,
+  callback?: Callback<QueryMultiReturnType<T>>
+): Promise<QueryMultiReturnType<T> | UnsubCallback> {
+  const {
+    polymeshApi: { queryMulti },
+  } = context;
+
+  if (callback) {
+    return queryMulti(queries, callback as unknown as Callback<Codec[]>);
+  }
+  return queryMulti(queries) as unknown as QueryMultiReturnType<T>;
+}
+
+/**
+ * @hidden
+ *
  * Makes a request to the chain. If a block hash is supplied,
  *   the request will be made at that block. Otherwise, the most recent block will be queried
  */
-export async function requestAtBlock<F extends AnyFunction>(
-  query: AugmentedQuery<'promise', F> | AugmentedQueryDoubleMap<'promise', F>,
+export async function requestAtBlock<
+  ModuleName extends keyof AugmentedQueries<'promise'>,
+  QueryName extends keyof AugmentedQueries<'promise'>[ModuleName]
+>(
+  moduleName: ModuleName,
+  queryName: QueryName,
   opts: {
     blockHash?: string | BlockHash;
-    args: Parameters<F>;
+    args: Parameters<QueryFunction<ModuleName, QueryName>>;
   },
   context: Context
-): Promise<ObsInnerType<ReturnType<F>>> {
+): Promise<ObsInnerType<ReturnType<QueryFunction<ModuleName, QueryName>>>> {
   const { blockHash, args } = opts;
 
+  let query: Queries;
   if (blockHash) {
-    if (!context.isArchiveNode) {
-      throw new PolymeshError({
-        code: ErrorCode.DataUnavailable,
-        message: 'Cannot query previous blocks in a non-archive node',
-      });
-    }
-    return query.at(blockHash, ...args);
+    ({ query } = await getApiAtBlock(context, blockHash));
+  } else {
+    ({ query } = context.polymeshApi);
   }
 
-  return query(...args);
+  const queryMethod = query[moduleName][queryName] as unknown as QueryFunction<
+    typeof moduleName,
+    typeof queryName
+  >;
+  return queryMethod(...args);
 }
 
 /**
@@ -1013,7 +1103,7 @@ export function assembleBatchTransactions<ArgsArray extends Readonly<unknown[][]
  * Returns portfolio numbers for a set of portfolio names
  */
 export async function getPortfolioIdsByName(
-  rawIdentityId: IdentityId,
+  rawIdentityId: PolymeshPrimitivesIdentityId,
   rawNames: Bytes[],
   context: Context
 ): Promise<(BigNumber | null)[]> {
@@ -1023,39 +1113,13 @@ export async function getPortfolioIdsByName(
     },
   } = context;
 
-  const rawPortfolioNumbers = await portfolio.nameToNumber.multi<PortfolioNumber>(
-    rawNames.map<[IdentityId, Bytes]>(name => [rawIdentityId, name])
+  const rawPortfolioNumbers = await portfolio.nameToNumber.multi(
+    rawNames.map<[PolymeshPrimitivesIdentityId, Bytes]>(name => [rawIdentityId, name])
   );
 
-  const portfolioIds = rawPortfolioNumbers.map(number => u64ToBigNumber(number));
-
-  // TODO @prashantasdeveloper remove this logic once nameToNumber returns Option<PortfolioNumber>
-  /**
-   * since nameToNumber returns 1 for non-existing portfolios, if a name maps to number 1,
-   *  we need to check if the given name actually matches the first portfolio
-   */
-  let firstPortfolioName: Bytes;
-
-  /*
-   * even though we make this call without knowing if we will need
-   *  the result, we only await for it if necessary, so it's still
-   *  performant
-   */
-  const gettingFirstPortfolioName = portfolio.portfolios(
-    rawIdentityId,
-    bigNumberToU64(new BigNumber(1), context)
-  );
-
-  return P.map(portfolioIds, async (id, index) => {
-    if (id.eq(1)) {
-      firstPortfolioName = await gettingFirstPortfolioName;
-
-      if (!firstPortfolioName.eq(rawNames[index])) {
-        return null;
-      }
-    }
-
-    return id;
+  return rawPortfolioNumbers.map(number => {
+    const rawPortfolioId = number.unwrapOr(null);
+    return optionize(u64ToBigNumber)(rawPortfolioId);
   });
 }
 
@@ -1096,7 +1160,7 @@ export function defusePromise<T>(promise: Promise<T>): Promise<T> {
  *
  * @note fetches missing scope IDs from the chain
  * @note even though the signature for `addExemptedEntities` requires `ScopeId`s as parameters,
- *   it accepts and handles `IdentityId` parameters as well. Nothing special has to be done typing-wise since they're both aliases
+ *   it accepts and handles `PolymeshPrimitivesIdentityId` parameters as well. Nothing special has to be done typing-wise since they're both aliases
  *   for `U8aFixed`
  *
  * @throws

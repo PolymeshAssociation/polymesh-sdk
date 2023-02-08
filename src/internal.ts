@@ -17,6 +17,7 @@ export {
   ConsumeJoinOrRotateAuthorizationParams,
 } from '~/api/procedures/consumeJoinOrRotateAuthorization';
 export { addInstruction } from '~/api/procedures/addInstruction';
+export { executeManualInstruction } from '~/api/procedures/executeManualInstruction';
 export {
   consumeAuthorizationRequests,
   ConsumeAuthorizationRequestsParams,
@@ -31,7 +32,6 @@ export { issueTokens, IssueTokensParams } from '~/api/procedures/issueTokens';
 export { modifyClaims } from '~/api/procedures/modifyClaims';
 export { modifyInstructionAffirmation } from '~/api/procedures/modifyInstructionAffirmation';
 export { modifyAsset } from '~/api/procedures/modifyAsset';
-export { modifyPrimaryIssuanceAgent } from '~/api/procedures/modifyPrimaryIssuanceAgent';
 export {
   modifyAssetTrustedClaimIssuers,
   Params as ModifyAssetTrustedClaimIssuersParams,
@@ -58,7 +58,6 @@ export {
 } from '~/api/procedures/togglePauseRequirements';
 export { transferPolyx } from '~/api/procedures/transferPolyx';
 export { transferAssetOwnership } from '~/api/procedures/transferAssetOwnership';
-export { removePrimaryIssuanceAgent } from '~/api/procedures/removePrimaryIssuanceAgent';
 export { deletePortfolio } from '~/api/procedures/deletePortfolio';
 export { renamePortfolio } from '~/api/procedures/renamePortfolio';
 export { moveFunds } from '~/api/procedures/moveFunds';
@@ -90,6 +89,9 @@ export { MultiSig } from '~/api/entities/MultiSig';
 export { MultiSigProposal } from '~/api/entities/MultiSigProposal';
 export { TickerReservation } from '~/api/entities/TickerReservation';
 export { Asset } from '~/api/entities/Asset';
+export { MetadataEntry } from '~/api/entities/MetadataEntry';
+export { registerMetadata } from '~/api/procedures/registerMetadata';
+export { setMetadata } from '~/api/procedures/setMetadata';
 export { AuthorizationRequest } from '~/api/entities/AuthorizationRequest';
 export { DefaultTrustedClaimIssuer } from '~/api/entities/DefaultTrustedClaimIssuer';
 export { Offering } from '~/api/entities/Offering';
@@ -112,7 +114,6 @@ export { DividendDistribution } from '~/api/entities/DividendDistribution';
 export { modifyCorporateActionsAgent } from '~/api/procedures/modifyCorporateActionsAgent';
 export { configureDividendDistribution } from '~/api/procedures/configureDividendDistribution';
 export { claimDividends } from '~/api/procedures/claimDividends';
-export { removeCorporateActionsAgent } from '~/api/procedures/removeCorporateActionsAgent';
 export { modifyCaCheckpoint } from '~/api/procedures/modifyCaCheckpoint';
 export { payDividends } from '~/api/procedures/payDividends';
 export { modifyCaDefaultConfig } from '~/api/procedures/modifyCaDefaultConfig';
