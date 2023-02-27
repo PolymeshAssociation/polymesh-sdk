@@ -41,7 +41,7 @@ jobs:
       - name: commit docs and gitignore
         uses: EndBug/add-and-commit@v4
         with:
-          add: '.gitignore docs'
+          add: '.gitignore docs sdk-docs'
           message: 'docs: autogenerate documentation'
           ref: ${{ steps.setBranch.outputs.result }}
         env:
