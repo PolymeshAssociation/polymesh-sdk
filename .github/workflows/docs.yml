@@ -18,7 +18,9 @@ jobs:
       - name: install dependencies
         run: yarn --frozen-lockfile
       - name: generate docs
-        run: yarn build:docs
+        run: |
+          yarn build:docs
+          yarn build:sdk-docs
       - name: determine branch name
         uses: actions/github-script@v3
         id: setBranch
