@@ -2517,10 +2517,10 @@
   resolved "https://registry.yarnpkg.com/@polymeshassociation/signing-manager-types/-/signing-manager-types-1.2.1.tgz#94876c7f55d35d8ae15e77625e0c9a4480f7e95f"
   integrity sha512-HTEto0PhYHSKkNKz3ntW7F7q82AmKqqkeXX9ozaRbw58BH8AFp5awdZj7fS/9fmY+NzQJj4UN3VobwOjSG8z1g==
 
-"@polymeshassociation/typedoc-theme@^1.0.1":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@polymeshassociation/typedoc-theme/-/typedoc-theme-1.0.1.tgz#690e74468abdc8b00013f61dc4c16905f3517b59"
-  integrity sha512-Do52rEDGddt9SgZnN1gjX7gA8YzbJ85K/O2GzpM0ms2t4qVP1tVqoxsrBtvD+HiK6UTEnRx6gcy48AGjo6/7UA==
+"@polymeshassociation/typedoc-theme@^1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@polymeshassociation/typedoc-theme/-/typedoc-theme-1.1.0.tgz#d393daf72b31faed39074a5b6c27f4a2b36ddc73"
+  integrity sha512-DjAZILq3L+ipdMAt1ceYOg/UHpAKC3LQKWTe42jrwWg0/QSdg0YpcKxlXgZxsqKPTjpynhFDmzCOKiE41UV9Xw==
 
 "@scure/base@1.1.1":
   version "1.1.1"
