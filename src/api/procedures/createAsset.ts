@@ -19,7 +19,6 @@ import {
   assetDocumentToDocument,
   bigNumberToBalance,
   booleanToBool,
-  boolToBoolean,
   fundingRoundToAssetFundingRound,
   inputStatTypeToMeshStatType,
   internalAssetTypeToAssetType,
@@ -115,10 +114,7 @@ export async function prepareCreateAsset(
 ): Promise<BatchTransactionSpec<Asset, unknown[][]>> {
   const {
     context: {
-      polymeshApi: {
-        tx,
-        query: { asset },
-      },
+      polymeshApi: { tx },
     },
     context,
     storage: { customTypeData, status },
@@ -152,22 +148,8 @@ export async function prepareCreateAsset(
 
   const transactions = [];
 
-  /*
-   * we waive any protocol fees if the Asset is created in Ethereum. If not created and ticker is not yet reserved,
-   *   we set the fee to the sum of protocol fees for ticker registration and Asset creation.
-   *
-   * To do this, we keep track of transaction tags, and if manual fee calculations are needed, perform the fee calculation
-   * before adding the batch transaction.
-   */
-  const classicTicker = await asset.classicTickers(rawTicker);
-  const assetCreatedInEthereum =
-    classicTicker.isSome && boolToBoolean(classicTicker.unwrap().isCreated);
-
   let fee: BigNumber | undefined;
-
-  if (assetCreatedInEthereum) {
-    fee = new BigNumber(0);
-  } else if (status === TickerReservationStatus.Free) {
+  if (status === TickerReservationStatus.Free) {
     fee = await addManualFees(
       new BigNumber(0),
       [TxTags.asset.RegisterTicker, TxTags.asset.CreateAsset],

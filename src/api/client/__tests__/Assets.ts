@@ -104,26 +104,6 @@ describe('Assets Class', () => {
     });
   });
 
-  describe('method: claimClassicTicker', () => {
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
-      const args = {
-        ticker: 'SOME_TICKER',
-        ethereumSignature: 'someSig',
-      };
-
-      const expectedTransaction =
-        'someTransaction' as unknown as PolymeshTransaction<TickerReservation>;
-
-      when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args, transformer: undefined }, context, {})
-        .mockResolvedValue(expectedTransaction);
-
-      const tx = await assets.claimClassicTicker(args);
-
-      expect(tx).toBe(expectedTransaction);
-    });
-  });
-
   describe('method: isTickerAvailable', () => {
     afterEach(() => {
       entityMockUtils.reset();

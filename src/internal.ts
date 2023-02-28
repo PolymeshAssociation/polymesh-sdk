@@ -123,7 +123,6 @@ export { transferTickerOwnership } from '~/api/procedures/transferTickerOwnershi
 export { toggleFreezeSecondaryAccounts } from '~/api/procedures/toggleFreezeSecondaryAccounts';
 export { modifyVenue } from '~/api/procedures/modifyVenue';
 export { leaveIdentity } from '~/api/procedures/leaveIdentity';
-export { claimClassicTicker } from '~/api/procedures/claimClassicTicker';
 export { createGroup } from '~/api/procedures/createGroup';
 export { quitCustody } from '~/api/procedures/quitCustody';
 export { inviteExternalAgent } from '~/api/procedures/inviteExternalAgent';

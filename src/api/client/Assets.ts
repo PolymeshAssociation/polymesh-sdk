@@ -1,6 +1,5 @@
 import {
   Asset,
-  claimClassicTicker,
   Context,
   createAsset,
   Identity,
@@ -9,7 +8,6 @@ import {
   TickerReservation,
 } from '~/internal';
 import {
-  ClaimClassicTickerParams,
   CreateAssetWithTickerParams,
   ErrorCode,
   GlobalMetadataKey,
@@ -54,13 +52,6 @@ export class Assets {
       context
     );
 
-    this.claimClassicTicker = createProcedureMethod(
-      {
-        getProcedureAndArgs: args => [claimClassicTicker, args],
-      },
-      context
-    );
-
     this.createAsset = createProcedureMethod(
       {
         getProcedureAndArgs: args => [createAsset, { reservationRequired: false, ...args }],
@@ -74,13 +65,6 @@ export class Assets {
    *   The ticker will expire after a set amount of time, after which other users can reserve it
    */
   public reserveTicker: ProcedureMethod<ReserveTickerParams, TickerReservation>;
-
-  /**
-   * Claim a ticker symbol that was reserved in Polymath Classic (Ethereum). The Ethereum Account
-   *   that owns the ticker must sign a special message that contains the DID of the Identity that will own the ticker
-   *   in Polymesh, and provide the signed data to this call
-   */
-  public claimClassicTicker: ProcedureMethod<ClaimClassicTickerParams, TickerReservation>;
 
   /**
    * Create an Asset

@@ -201,9 +201,6 @@ describe('createAsset procedure', () => {
     dsMockUtils.createQueryMock('asset', 'tickerConfig', {
       returnValue: dsMockUtils.createMockTickerRegistrationConfig(),
     });
-    dsMockUtils.createQueryMock('asset', 'classicTickers', {
-      returnValue: dsMockUtils.createMockOption(),
-    });
 
     createAssetTransaction = dsMockUtils.createTxMock('asset', 'createAsset');
 
@@ -420,42 +417,6 @@ describe('createAsset procedure', () => {
             rawFundingRound,
             rawDisableIu,
           ],
-        },
-      ],
-      resolver: expect.objectContaining({ ticker }),
-    });
-  });
-
-  it('should waive protocol fees if the token was created in Ethereum', async () => {
-    dsMockUtils.createQueryMock('asset', 'classicTickers', {
-      returnValue: dsMockUtils.createMockOption(
-        dsMockUtils.createMockClassicTickerRegistration({
-          ethOwner: 'someAddress',
-          isCreated: true,
-        })
-      ),
-    });
-    const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
-      customTypeData: null,
-      status: TickerReservationStatus.Reserved,
-    });
-
-    const result = await prepareCreateAsset.call(proc, args);
-
-    expect(result).toEqual({
-      transactions: [
-        {
-          transaction: createAssetTransaction,
-          args: [
-            rawName,
-            rawTicker,
-            rawIsDivisible,
-            rawType,
-            rawIdentifiers,
-            rawFundingRound,
-            rawDisableIu,
-          ],
-          fee: new BigNumber(0),
         },
       ],
       resolver: expect.objectContaining({ ticker }),
