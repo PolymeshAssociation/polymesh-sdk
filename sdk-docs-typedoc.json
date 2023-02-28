@@ -1,0 +1,37 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": [
+    "src/api/client",
+    "src/api/entities",
+    "src/api/procedures/types.ts",
+    "src/generated/types.ts",
+    "src/types/index.ts",
+    "src/types/utils",
+    "src/utils/index.ts",
+    "src/base"
+  ],
+  "entryPointStrategy": "expand",
+  "out": "sdk-docs",
+  "theme": "polymesh-docs",
+  "exclude": [
+    "src/internal.ts",
+    "**/{__tests__,polkadot,testUtils}/**/*",
+    "src/base/Context.ts",
+    "src/base/Procedure.ts",
+    "**/sandbox.ts",
+    "src/api/entities/types.ts",
+    "src/api/entities/Namespace.ts",
+    "src/types/internal.ts",
+    "src/utils/**",
+    "src/index.ts",
+    "src-temp/"
+  ],
+  "excludeExternals": true,
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "indexTitle": "Polymesh SDK",
+  "indexLabel": "SDK Module List",
+  "readmeTitle": "Polymesh SDK Readme",
+  "readmeLabel": "SDK Readme",
+  "githubPages": false
+}
