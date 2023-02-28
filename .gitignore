@@ -11,3 +11,4 @@ sandbox.ts
 tsconfig.dev.json
 .env
 docs/
+sdk-docs/
