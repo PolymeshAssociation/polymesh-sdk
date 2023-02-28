@@ -2517,6 +2517,11 @@
   resolved "https://registry.yarnpkg.com/@polymeshassociation/signing-manager-types/-/signing-manager-types-1.2.1.tgz#94876c7f55d35d8ae15e77625e0c9a4480f7e95f"
   integrity sha512-HTEto0PhYHSKkNKz3ntW7F7q82AmKqqkeXX9ozaRbw58BH8AFp5awdZj7fS/9fmY+NzQJj4UN3VobwOjSG8z1g==
 
+"@polymeshassociation/typedoc-theme@^1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@polymeshassociation/typedoc-theme/-/typedoc-theme-1.1.0.tgz#d393daf72b31faed39074a5b6c27f4a2b36ddc73"
+  integrity sha512-DjAZILq3L+ipdMAt1ceYOg/UHpAKC3LQKWTe42jrwWg0/QSdg0YpcKxlXgZxsqKPTjpynhFDmzCOKiE41UV9Xw==
+
 "@scure/base@1.1.1":
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/@scure/base/-/base-1.1.1.tgz#ebb651ee52ff84f420097055f4bf46cfba403938"
@@ -11680,10 +11685,10 @@ tsutils@^3.17.1, tsutils@^3.21.0:
   dependencies:
     tslib "^1.8.1"
 
-ttypescript@1.5.12:
-  version "1.5.12"
-  resolved "https://registry.yarnpkg.com/ttypescript/-/ttypescript-1.5.12.tgz#27a8356d7d4e719d0075a8feb4df14b52384f044"
-  integrity sha512-1ojRyJvpnmgN9kIHmUnQPlEV1gq+VVsxVYjk/NfvMlHSmYxjK5hEvOOU2MQASrbekTUiUM7pR/nXeCc8bzvMOQ==
+ttypescript@1.5.15:
+  version "1.5.15"
+  resolved "https://registry.yarnpkg.com/ttypescript/-/ttypescript-1.5.15.tgz#e45550ad69289d06d3bc3fd4a3c87e7c1ef3eba7"
+  integrity sha512-48ykDNHzFnPMnv4hYX1P8Q84TvCZyL1QlFxeuxsuZ48X2+ameBgPenvmCkHJtoOSxpoWTWi8NcgNrRnVDOmfSg==
   dependencies:
     resolve ">=1.9.0"
 
