@@ -193,6 +193,8 @@ export interface AssetType extends Enum {
   readonly isCustom: boolean;
   readonly asCustom: CustomAssetTypeId;
   readonly isStableCoin: boolean;
+  readonly isNonFungible: boolean;
+  readonly asNonFungible: NonFungibleType;
   readonly type:
     | 'EquityCommon'
     | 'EquityPreferred'
@@ -204,7 +206,8 @@ export interface AssetType extends Enum {
     | 'StructuredProduct'
     | 'Derivative'
     | 'Custom'
-    | 'StableCoin';
+    | 'StableCoin'
+    | 'NonFungible';
 }
 
 /** @name Authorization */
@@ -1201,6 +1204,24 @@ export interface ExtrinsicPermissions extends Enum {
   readonly type: 'Whole' | 'These' | 'Except';
 }
 
+/** @name Fund */
+export interface Fund extends Struct {
+  readonly description: FundDescription;
+  readonly memo: Option<Memo>;
+}
+
+/** @name FundDescription */
+export interface FundDescription extends Enum {
+  readonly isFungible: boolean;
+  readonly asFungible: {
+    readonly ticker: Ticker;
+    readonly amount: Balance;
+  } & Struct;
+  readonly isNonFungible: boolean;
+  readonly asNonFungible: NFTs;
+  readonly type: 'Fungible' | 'NonFungible';
+}
+
 /** @name FundingRoundName */
 export interface FundingRoundName extends Text {}
 
@@ -1383,6 +1404,18 @@ export interface Leg extends Struct {
   readonly amount: Balance;
 }
 
+/** @name LegAsset */
+export interface LegAsset extends Enum {
+  readonly isFungible: boolean;
+  readonly asFungible: {
+    readonly ticker: Ticker;
+    readonly amount: Balance;
+  } & Struct;
+  readonly isNonFungible: boolean;
+  readonly asNonFungible: NFTs;
+  readonly type: 'Fungible' | 'NonFungible';
+}
+
 /** @name LegId */
 export interface LegId extends u64 {}
 
@@ -1393,6 +1426,13 @@ export interface LegStatus extends Enum {
   readonly isExecutionToBeSkipped: boolean;
   readonly asExecutionToBeSkipped: ITuple<[AccountId, u64]>;
   readonly type: 'PendingTokenLock' | 'ExecutionPending' | 'ExecutionToBeSkipped';
+}
+
+/** @name LegV2 */
+export interface LegV2 extends Struct {
+  readonly from: PortfolioId;
+  readonly to: PortfolioId;
+  readonly asset: LegAsset;
 }
 
 /** @name LocalCAId */
@@ -1440,6 +1480,25 @@ export interface MovePortfolioItem extends Struct {
   readonly ticker: Ticker;
   readonly amount: Balance;
   readonly memo: Option<Memo>;
+}
+
+/** @name NFTId */
+export interface NFTId extends u64 {}
+
+/** @name NFTs */
+export interface NFTs extends Struct {
+  readonly ticker: Ticker;
+  readonly ids: Vec<NFTId>;
+}
+
+/** @name NonFungibleType */
+export interface NonFungibleType extends Enum {
+  readonly isDerivative: boolean;
+  readonly isFixedIncome: boolean;
+  readonly isInvoice: boolean;
+  readonly isCustom: boolean;
+  readonly asCustom: CustomAssetTypeId;
+  readonly type: 'Derivative' | 'FixedIncome' | 'Invoice' | 'Custom';
 }
 
 /** @name OffChainSignature */
@@ -1762,7 +1821,9 @@ export interface SettlementType extends Enum {
   readonly isSettleOnAffirmation: boolean;
   readonly isSettleOnBlock: boolean;
   readonly asSettleOnBlock: BlockNumber;
-  readonly type: 'SettleOnAffirmation' | 'SettleOnBlock';
+  readonly isSettleManual: boolean;
+  readonly asSettleManual: BlockNumber;
+  readonly type: 'SettleOnAffirmation' | 'SettleOnBlock' | 'SettleManual';
 }
 
 /** @name Signatory */

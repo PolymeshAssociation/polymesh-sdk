@@ -2,7 +2,7 @@
 /* eslint-disable */
 
 import type { ApiTypes } from '@polkadot/api-base/types';
-import type { Vec, u128, u16, u32, u64 } from '@polkadot/types-codec';
+import type { Vec, u128, u16, u32, u64, u8 } from '@polkadot/types-codec';
 import type { Perbill, Permill } from '@polkadot/types/interfaces/runtime';
 import type {
   FrameSupportWeightsRuntimeDbWeight,
@@ -138,6 +138,9 @@ declare module '@polkadot/api-base/types/consts' {
        * The deposit needed for reserving an index.
        **/
       deposit: u128 & AugmentedConst<ApiType>;
+    };
+    nft: {
+      maxNumberOfCollectionKeys: u8 & AugmentedConst<ApiType>;
     };
     scheduler: {
       /**

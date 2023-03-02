@@ -69,6 +69,7 @@ import type {
   PalletSettlementInstructionMemo,
   PalletSettlementLeg,
   PalletSettlementLegStatus,
+  PalletSettlementLegV2,
   PalletSettlementVenue,
   PalletStakingActiveEraInfo,
   PalletStakingElectionResult,
@@ -106,6 +107,7 @@ import type {
   PolymeshPrimitivesIdentityDidRecord,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesIdentityIdPortfolioId,
+  PolymeshPrimitivesNftNftCollection,
   PolymeshPrimitivesPosRatio,
   PolymeshPrimitivesSecondaryKeyKeyRecord,
   PolymeshPrimitivesSecondaryKeySignatory,
@@ -1591,6 +1593,73 @@ declare module '@polkadot/api-base/types/storage' {
         [ITuple<[AccountId32, PolymeshPrimitivesSecondaryKeySignatory, u64]>]
       >;
     };
+    nft: {
+      /**
+       * All collection details for a given collection id.
+       **/
+      collection: AugmentedQuery<
+        ApiType,
+        (arg: u64 | AnyNumber | Uint8Array) => Observable<PolymeshPrimitivesNftNftCollection>,
+        [u64]
+      >;
+      /**
+       * All mandatory metadata keys for a given collection.
+       **/
+      collectionKeys: AugmentedQuery<
+        ApiType,
+        (
+          arg: u64 | AnyNumber | Uint8Array
+        ) => Observable<BTreeSet<PolymeshPrimitivesAssetMetadataAssetMetadataKey>>,
+        [u64]
+      >;
+      /**
+       * The collection id corresponding to each ticker.
+       **/
+      collectionTicker: AugmentedQuery<
+        ApiType,
+        (arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<u64>,
+        [PolymeshPrimitivesTicker]
+      >;
+      /**
+       * The metadata value of an nft given its collection id, token id and metadata key.
+       **/
+      metadataValue: AugmentedQuery<
+        ApiType,
+        (
+          arg1: ITuple<[u64, u64]> | [u64 | AnyNumber | Uint8Array, u64 | AnyNumber | Uint8Array],
+          arg2:
+            | PolymeshPrimitivesAssetMetadataAssetMetadataKey
+            | { Global: any }
+            | { Local: any }
+            | string
+            | Uint8Array
+        ) => Observable<Bytes>,
+        [ITuple<[u64, u64]>, PolymeshPrimitivesAssetMetadataAssetMetadataKey]
+      >;
+      /**
+       * The next available id for an NFT collection.
+       **/
+      nextCollectionId: AugmentedQuery<ApiType, () => Observable<u64>, []>;
+      /**
+       * The next available id for an NFT within a collection.
+       **/
+      nextNFTId: AugmentedQuery<
+        ApiType,
+        (arg: u64 | AnyNumber | Uint8Array) => Observable<u64>,
+        [u64]
+      >;
+      /**
+       * The total number of NFTs per identity.
+       **/
+      numberOfNFTs: AugmentedQuery<
+        ApiType,
+        (
+          arg1: PolymeshPrimitivesTicker | string | Uint8Array,
+          arg2: PolymeshPrimitivesIdentityId | string | Uint8Array
+        ) => Observable<u64>,
+        [PolymeshPrimitivesTicker, PolymeshPrimitivesIdentityId]
+      >;
+    };
     offences: {
       /**
        * A vector of reports of the same kind that happened at the same time slot.
@@ -1917,6 +1986,40 @@ declare module '@polkadot/api-base/types/storage' {
         [PolymeshPrimitivesIdentityIdPortfolioId, PolymeshPrimitivesTicker]
       >;
       /**
+       * All locked nft for a given portfolio.
+       **/
+      portfolioLockedNFT: AugmentedQuery<
+        ApiType,
+        (
+          arg1:
+            | PolymeshPrimitivesIdentityIdPortfolioId
+            | { did?: any; kind?: any }
+            | string
+            | Uint8Array,
+          arg2:
+            | ITuple<[PolymeshPrimitivesTicker, u64]>
+            | [PolymeshPrimitivesTicker | string | Uint8Array, u64 | AnyNumber | Uint8Array]
+        ) => Observable<bool>,
+        [PolymeshPrimitivesIdentityIdPortfolioId, ITuple<[PolymeshPrimitivesTicker, u64]>]
+      >;
+      /**
+       * The nft associated to the portfolio.
+       **/
+      portfolioNFT: AugmentedQuery<
+        ApiType,
+        (
+          arg1:
+            | PolymeshPrimitivesIdentityIdPortfolioId
+            | { did?: any; kind?: any }
+            | string
+            | Uint8Array,
+          arg2:
+            | ITuple<[PolymeshPrimitivesTicker, u64]>
+            | [PolymeshPrimitivesTicker | string | Uint8Array, u64 | AnyNumber | Uint8Array]
+        ) => Observable<bool>,
+        [PolymeshPrimitivesIdentityIdPortfolioId, ITuple<[PolymeshPrimitivesTicker, u64]>]
+      >;
+      /**
        * The set of existing portfolios with their names. If a certain pair of a DID and
        * portfolio number maps to `None` then such a portfolio doesn't exist. Conversely, if a
        * pair maps to `Some(name)` then such a portfolio exists and is called `name`.
@@ -1991,6 +2094,8 @@ declare module '@polkadot/api-base/types/storage' {
             | 'ContractsPutCode'
             | 'CorporateBallotAttachBallot'
             | 'CapitalDistributionDistribute'
+            | 'NFTCreateCollection'
+            | 'NFTMint'
             | number
             | Uint8Array
         ) => Observable<u128>,
@@ -2173,6 +2278,17 @@ declare module '@polkadot/api-base/types/storage' {
           arg1: u64 | AnyNumber | Uint8Array,
           arg2: u64 | AnyNumber | Uint8Array
         ) => Observable<PalletSettlementLegStatus>,
+        [u64, u64]
+      >;
+      /**
+       * Legs under an instruction. (instruction_id, leg_id) -> Leg
+       **/
+      instructionLegsV2: AugmentedQuery<
+        ApiType,
+        (
+          arg1: u64 | AnyNumber | Uint8Array,
+          arg2: u64 | AnyNumber | Uint8Array
+        ) => Observable<PalletSettlementLegV2>,
         [u64, u64]
       >;
       /**

@@ -52,6 +52,7 @@ export default {
         Derivative: '',
         Custom: 'CustomAssetTypeId',
         StableCoin: '',
+        NonFungible: 'NonFungibleType',
       },
     },
     AssetIdentifier: {
@@ -962,6 +963,7 @@ export default {
       _enum: {
         SettleOnAffirmation: '',
         SettleOnBlock: 'BlockNumber',
+        SettleManual: 'BlockNumber',
       },
     },
     LegId: 'u64',
@@ -1178,6 +1180,46 @@ export default {
       _enum: {
         Unclaimed: 'Balance',
         Claimed: '',
+      },
+    },
+    NFTId: 'u64',
+    NFTs: {
+      ticker: 'Ticker',
+      ids: 'Vec<NFTId>',
+    },
+    LegAsset: {
+      _enum: {
+        Fungible: {
+          ticker: 'Ticker',
+          amount: 'Balance',
+        },
+        NonFungible: 'NFTs',
+      },
+    },
+    LegV2: {
+      from: 'PortfolioId',
+      to: 'PortfolioId',
+      asset: 'LegAsset',
+    },
+    FundDescription: {
+      _enum: {
+        Fungible: {
+          ticker: 'Ticker',
+          amount: 'Balance',
+        },
+        NonFungible: 'NFTs',
+      },
+    },
+    Fund: {
+      description: 'FundDescription',
+      memo: 'Option<Memo>',
+    },
+    NonFungibleType: {
+      _enum: {
+        Derivative: '',
+        FixedIncome: '',
+        Invoice: '',
+        Custom: 'CustomAssetTypeId',
       },
     },
   },

@@ -1115,6 +1115,8 @@ import type {
   EventCounts,
   EventDid,
   ExtrinsicPermissions,
+  Fund,
+  FundDescription,
   FundingRoundName,
   Fundraiser,
   FundraiserId,
@@ -1137,8 +1139,10 @@ import type {
   KeyIdentityData,
   KeyRecord,
   Leg,
+  LegAsset,
   LegId,
   LegStatus,
+  LegV2,
   LocalCAId,
   MaybeBlock,
   Member,
@@ -1147,6 +1151,9 @@ import type {
   MotionInfoLink,
   MotionTitle,
   MovePortfolioItem,
+  NFTId,
+  NFTs,
+  NonFungibleType,
   OffChainSignature,
   PalletName,
   PalletPermissions,
@@ -1680,6 +1687,8 @@ declare module '@polkadot/types/types/registry' {
     FunctionMetadataV13: FunctionMetadataV13;
     FunctionMetadataV14: FunctionMetadataV14;
     FunctionMetadataV9: FunctionMetadataV9;
+    Fund: Fund;
+    FundDescription: FundDescription;
     FundIndex: FundIndex;
     FundInfo: FundInfo;
     FundingRoundName: FundingRoundName;
@@ -1810,8 +1819,10 @@ declare module '@polkadot/types/types/registry' {
     LeasePeriodOf: LeasePeriodOf;
     Leg: Leg;
     LegacyTransaction: LegacyTransaction;
+    LegAsset: LegAsset;
     LegId: LegId;
     LegStatus: LegStatus;
+    LegV2: LegV2;
     Limits: Limits;
     LimitsTo264: LimitsTo264;
     LocalCAId: LocalCAId;
@@ -1895,7 +1906,10 @@ declare module '@polkadot/types/types/registry' {
     NextAuthority: NextAuthority;
     NextConfigDescriptor: NextConfigDescriptor;
     NextConfigDescriptorV1: NextConfigDescriptorV1;
+    NFTId: NFTId;
+    NFTs: NFTs;
     NodeRole: NodeRole;
+    NonFungibleType: NonFungibleType;
     NotConnectedPeer: NotConnectedPeer;
     Null: Null;
     OffChainSignature: OffChainSignature;

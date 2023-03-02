@@ -37,6 +37,7 @@ import type {
   PalletPipsSnapshottedPip,
   PalletSettlementInstructionMemo,
   PalletSettlementLeg,
+  PalletSettlementLegV2,
   PalletSettlementSettlementType,
   PalletSettlementVenueType,
   PalletStakingElectionCompute,
@@ -49,6 +50,7 @@ import type {
   PolymeshPrimitivesAgentAgentGroup,
   PolymeshPrimitivesAssetAssetType,
   PolymeshPrimitivesAssetIdentifier,
+  PolymeshPrimitivesAssetMetadataAssetMetadataKey,
   PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
   PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail,
   PolymeshPrimitivesAuthorizationAuthorizationData,
@@ -61,6 +63,8 @@ import type {
   PolymeshPrimitivesIdentityClaim,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesIdentityIdPortfolioId,
+  PolymeshPrimitivesNftNfTs,
+  PolymeshPrimitivesPortfolioMemo,
   PolymeshPrimitivesPosRatio,
   PolymeshPrimitivesSecondaryKey,
   PolymeshPrimitivesSecondaryKeyPermissions,
@@ -242,6 +246,26 @@ declare module '@polkadot/api-base/types/events' {
           u128,
           Bytes,
           u128
+        ]
+      >;
+      /**
+       * An event emitted when a local metadata key has been removed.
+       * Parameters: caller ticker, Local type name
+       **/
+      LocalMetadataKeyDeleted: AugmentedEvent<
+        ApiType,
+        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, u64]
+      >;
+      /**
+       * An event emitted when a local metadata value has been removed.
+       * Parameters: caller ticker, Local type name
+       **/
+      MetadataValueDeleted: AugmentedEvent<
+        ApiType,
+        [
+          PolymeshPrimitivesIdentityId,
+          PolymeshPrimitivesTicker,
+          PolymeshPrimitivesAssetMetadataAssetMetadataKey
         ]
       >;
       /**
@@ -1357,6 +1381,26 @@ declare module '@polkadot/api-base/types/events' {
        **/
       SchedulingFailed: AugmentedEvent<ApiType, [SpRuntimeDispatchError]>;
     };
+    nft: {
+      /**
+       * Emitted when a new nft is issued.
+       **/
+      IssuedNFT: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, u64, u64]>;
+      /**
+       * Emitted when a new nft collection is created.
+       **/
+      NftCollectionCreated: AugmentedEvent<
+        ApiType,
+        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, u64]
+      >;
+      /**
+       * Emitted when an NFT is redeemed.
+       **/
+      RedeemedNFT: AugmentedEvent<
+        ApiType,
+        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, u64]
+      >;
+    };
     offences: {
       /**
        * There is an offence reported of the given `kind` happened at the `session_index` and
@@ -1585,6 +1629,27 @@ declare module '@polkadot/api-base/types/events' {
        * * asset ticker
        * * asset balance that was moved
        **/
+      FungibleTokensMovedBetweenPortfolios: AugmentedEvent<
+        ApiType,
+        [
+          PolymeshPrimitivesIdentityId,
+          PolymeshPrimitivesIdentityIdPortfolioId,
+          PolymeshPrimitivesIdentityIdPortfolioId,
+          PolymeshPrimitivesTicker,
+          u128,
+          Option<PolymeshPrimitivesPortfolioMemo>
+        ]
+      >;
+      /**
+       * A token amount has been moved from one portfolio to another.
+       *
+       * # Parameters
+       * * origin DID
+       * * source portfolio
+       * * destination portfolio
+       * * asset ticker
+       * * asset balance that was moved
+       **/
       MovedBetweenPortfolios: AugmentedEvent<
         ApiType,
         [
@@ -1594,6 +1659,25 @@ declare module '@polkadot/api-base/types/events' {
           PolymeshPrimitivesTicker,
           u128,
           Option<PolymeshCommonUtilitiesBalancesMemo>
+        ]
+      >;
+      /**
+       * NFTs have been moved from one portfolio to another.
+       *
+       * # Parameters
+       * * origin DID
+       * * source portfolio
+       * * destination portfolio
+       * * NFTs
+       **/
+      NFTsMovedBetweenPortfolios: AugmentedEvent<
+        ApiType,
+        [
+          PolymeshPrimitivesIdentityId,
+          PolymeshPrimitivesIdentityIdPortfolioId,
+          PolymeshPrimitivesIdentityIdPortfolioId,
+          PolymeshPrimitivesNftNfTs,
+          Option<PolymeshPrimitivesPortfolioMemo>
         ]
       >;
       /**
@@ -1815,6 +1899,23 @@ declare module '@polkadot/api-base/types/events' {
        * (caller DID, instruction_id)
        **/
       InstructionRescheduled: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, u64]>;
+      /**
+       * A new instruction has been created
+       * (did, venue_id, instruction_id, settlement_type, trade_date, value_date, legs, memo)
+       **/
+      InstructionV2Created: AugmentedEvent<
+        ApiType,
+        [
+          PolymeshPrimitivesIdentityId,
+          u64,
+          u64,
+          PalletSettlementSettlementType,
+          Option<u64>,
+          Option<u64>,
+          Vec<PalletSettlementLegV2>,
+          Option<PalletSettlementInstructionMemo>
+        ]
+      >;
       /**
        * Execution of a leg failed (did, instruction_id, leg_id)
        **/
