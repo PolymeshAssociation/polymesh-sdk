@@ -1188,12 +1188,13 @@ export default {
       ticker: 'Ticker',
       ids: 'Vec<NFTId>',
     },
+    FungibleToken: {
+      ticker: 'Ticker',
+      amount: 'Balance',
+    },
     LegAsset: {
       _enum: {
-        Fungible: {
-          ticker: 'Ticker',
-          amount: 'Balance',
-        },
+        Fungible: 'FungibleToken',
         NonFungible: 'NFTs',
       },
     },
@@ -1204,10 +1205,7 @@ export default {
     },
     FundDescription: {
       _enum: {
-        Fungible: {
-          ticker: 'Ticker',
-          amount: 'Balance',
-        },
+        Fungible: 'FungibleToken',
         NonFungible: 'NFTs',
       },
     },

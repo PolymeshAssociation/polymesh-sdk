@@ -1213,10 +1213,7 @@ export interface Fund extends Struct {
 /** @name FundDescription */
 export interface FundDescription extends Enum {
   readonly isFungible: boolean;
-  readonly asFungible: {
-    readonly ticker: Ticker;
-    readonly amount: Balance;
-  } & Struct;
+  readonly asFungible: FungibleToken;
   readonly isNonFungible: boolean;
   readonly asNonFungible: NFTs;
   readonly type: 'Fungible' | 'NonFungible';
@@ -1260,6 +1257,12 @@ export interface FundraiserTier extends Struct {
   readonly total: Balance;
   readonly price: Balance;
   readonly remaining: Balance;
+}
+
+/** @name FungibleToken */
+export interface FungibleToken extends Struct {
+  readonly ticker: Ticker;
+  readonly amount: Balance;
 }
 
 /** @name GranularCanTransferResult */
@@ -1407,10 +1410,7 @@ export interface Leg extends Struct {
 /** @name LegAsset */
 export interface LegAsset extends Enum {
   readonly isFungible: boolean;
-  readonly asFungible: {
-    readonly ticker: Ticker;
-    readonly amount: Balance;
-  } & Struct;
+  readonly asFungible: FungibleToken;
   readonly isNonFungible: boolean;
   readonly asNonFungible: NFTs;
   readonly type: 'Fungible' | 'NonFungible';

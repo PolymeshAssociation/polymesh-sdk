@@ -1123,6 +1123,7 @@ import type {
   FundraiserName,
   FundraiserStatus,
   FundraiserTier,
+  FungibleToken,
   GranularCanTransferResult,
   HandledTxStatus,
   IdentityClaim,
@@ -1701,6 +1702,7 @@ declare module '@polkadot/types/types/registry' {
     FungibilityV0: FungibilityV0;
     FungibilityV1: FungibilityV1;
     FungibilityV2: FungibilityV2;
+    FungibleToken: FungibleToken;
     Gas: Gas;
     GiltBid: GiltBid;
     GlobalValidationData: GlobalValidationData;

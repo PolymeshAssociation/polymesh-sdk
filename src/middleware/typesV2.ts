@@ -598,6 +598,8 @@ export type Asset = Node & {
   /** Reads and enables pagination through a set of `Identity`. */
   identitiesByStatTypeAssetIdAndClaimIssuerId: AssetIdentitiesByStatTypeAssetIdAndClaimIssuerIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Identity`. */
+  identitiesByStoOfferingAssetIdAndCreatorId: AssetIdentitiesByStoOfferingAssetIdAndCreatorIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Identity`. */
   identitiesByTickerExternalAgentActionAssetIdAndCallerId: AssetIdentitiesByTickerExternalAgentActionAssetIdAndCallerIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Identity`. */
   identitiesByTickerExternalAgentAssetIdAndCallerId: AssetIdentitiesByTickerExternalAgentAssetIdAndCallerIdManyToManyConnection;
@@ -623,6 +625,10 @@ export type Asset = Node & {
   portfoliosByPortfolioMovementAssetIdAndFromId: AssetPortfoliosByPortfolioMovementAssetIdAndFromIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Portfolio`. */
   portfoliosByPortfolioMovementAssetIdAndToId: AssetPortfoliosByPortfolioMovementAssetIdAndToIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Portfolio`. */
+  portfoliosByStoOfferingAssetIdAndOfferingPortfolioId: AssetPortfoliosByStoOfferingAssetIdAndOfferingPortfolioIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Portfolio`. */
+  portfoliosByStoOfferingAssetIdAndRaisingPortfolioId: AssetPortfoliosByStoOfferingAssetIdAndRaisingPortfolioIdManyToManyConnection;
   /** Reads and enables pagination through a set of `StatType`. */
   statTypes: StatTypesConnection;
   /** Reads and enables pagination through a set of `StatType`. */
@@ -651,6 +657,8 @@ export type Asset = Node & {
   /** Reads a single `Block` that is related to this `Asset`. */
   updatedBlock?: Maybe<Block>;
   updatedBlockId: Scalars['String'];
+  /** Reads and enables pagination through a set of `Venue`. */
+  venuesByStoOfferingAssetIdAndVenueId: AssetVenuesByStoOfferingAssetIdAndVenueIdManyToManyConnection;
 };
 
 export type AssetBlocksByAssetDocumentAssetIdAndCreatedBlockIdArgs = {
@@ -1033,6 +1041,16 @@ export type AssetIdentitiesByStatTypeAssetIdAndClaimIssuerIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+export type AssetIdentitiesByStoOfferingAssetIdAndCreatorIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<IdentityFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
+};
+
 export type AssetIdentitiesByTickerExternalAgentActionAssetIdAndCallerIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -1104,6 +1122,26 @@ export type AssetPortfoliosByPortfolioMovementAssetIdAndFromIdArgs = {
 };
 
 export type AssetPortfoliosByPortfolioMovementAssetIdAndToIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<PortfolioFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
+};
+
+export type AssetPortfoliosByStoOfferingAssetIdAndOfferingPortfolioIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<PortfolioFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
+};
+
+export type AssetPortfoliosByStoOfferingAssetIdAndRaisingPortfolioIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
   filter?: InputMaybe<PortfolioFilter>;
@@ -1211,6 +1249,16 @@ export type AssetTrustedClaimIssuersArgs = {
   last?: InputMaybe<Scalars['Int']>;
   offset?: InputMaybe<Scalars['Int']>;
   orderBy?: InputMaybe<Array<TrustedClaimIssuersOrderBy>>;
+};
+
+export type AssetVenuesByStoOfferingAssetIdAndVenueIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<VenueFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<VenuesOrderBy>>;
 };
 
 export type AssetAggregates = {
@@ -3085,6 +3133,52 @@ export type AssetIdentitiesByStatTypeAssetIdAndClaimIssuerIdManyToManyEdgeStatTy
     orderBy?: InputMaybe<Array<StatTypesOrderBy>>;
   };
 
+/** A connection to a list of `Identity` values, with data from `Sto`. */
+export type AssetIdentitiesByStoOfferingAssetIdAndCreatorIdManyToManyConnection = {
+  __typename?: 'AssetIdentitiesByStoOfferingAssetIdAndCreatorIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<IdentityAggregates>;
+  /** A list of edges which contains the `Identity`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<AssetIdentitiesByStoOfferingAssetIdAndCreatorIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<IdentityAggregates>>;
+  /** A list of `Identity` objects. */
+  nodes: Array<Maybe<Identity>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Identity` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Identity` values, with data from `Sto`. */
+export type AssetIdentitiesByStoOfferingAssetIdAndCreatorIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<IdentitiesGroupBy>;
+    having?: InputMaybe<IdentitiesHavingInput>;
+  };
+
+/** A `Identity` edge in the connection, with data from `Sto`. */
+export type AssetIdentitiesByStoOfferingAssetIdAndCreatorIdManyToManyEdge = {
+  __typename?: 'AssetIdentitiesByStoOfferingAssetIdAndCreatorIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Identity` at the end of the edge. */
+  node?: Maybe<Identity>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stosByCreatorId: StosConnection;
+};
+
+/** A `Identity` edge in the connection, with data from `Sto`. */
+export type AssetIdentitiesByStoOfferingAssetIdAndCreatorIdManyToManyEdgeStosByCreatorIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<StoFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<StosOrderBy>>;
+};
+
 /** A connection to a list of `Identity` values, with data from `TickerExternalAgentAction`. */
 export type AssetIdentitiesByTickerExternalAgentActionAssetIdAndCallerIdManyToManyConnection = {
   __typename?: 'AssetIdentitiesByTickerExternalAgentActionAssetIdAndCallerIdManyToManyConnection';
@@ -3546,6 +3640,100 @@ export type AssetPortfoliosByPortfolioMovementAssetIdAndToIdManyToManyEdgePortfo
     orderBy?: InputMaybe<Array<PortfolioMovementsOrderBy>>;
   };
 
+/** A connection to a list of `Portfolio` values, with data from `Sto`. */
+export type AssetPortfoliosByStoOfferingAssetIdAndOfferingPortfolioIdManyToManyConnection = {
+  __typename?: 'AssetPortfoliosByStoOfferingAssetIdAndOfferingPortfolioIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<PortfolioAggregates>;
+  /** A list of edges which contains the `Portfolio`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<AssetPortfoliosByStoOfferingAssetIdAndOfferingPortfolioIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<PortfolioAggregates>>;
+  /** A list of `Portfolio` objects. */
+  nodes: Array<Maybe<Portfolio>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Portfolio` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Portfolio` values, with data from `Sto`. */
+export type AssetPortfoliosByStoOfferingAssetIdAndOfferingPortfolioIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<PortfoliosGroupBy>;
+    having?: InputMaybe<PortfoliosHavingInput>;
+  };
+
+/** A `Portfolio` edge in the connection, with data from `Sto`. */
+export type AssetPortfoliosByStoOfferingAssetIdAndOfferingPortfolioIdManyToManyEdge = {
+  __typename?: 'AssetPortfoliosByStoOfferingAssetIdAndOfferingPortfolioIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Portfolio` at the end of the edge. */
+  node?: Maybe<Portfolio>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stosByOfferingPortfolioId: StosConnection;
+};
+
+/** A `Portfolio` edge in the connection, with data from `Sto`. */
+export type AssetPortfoliosByStoOfferingAssetIdAndOfferingPortfolioIdManyToManyEdgeStosByOfferingPortfolioIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<StoFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<StosOrderBy>>;
+  };
+
+/** A connection to a list of `Portfolio` values, with data from `Sto`. */
+export type AssetPortfoliosByStoOfferingAssetIdAndRaisingPortfolioIdManyToManyConnection = {
+  __typename?: 'AssetPortfoliosByStoOfferingAssetIdAndRaisingPortfolioIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<PortfolioAggregates>;
+  /** A list of edges which contains the `Portfolio`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<AssetPortfoliosByStoOfferingAssetIdAndRaisingPortfolioIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<PortfolioAggregates>>;
+  /** A list of `Portfolio` objects. */
+  nodes: Array<Maybe<Portfolio>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Portfolio` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Portfolio` values, with data from `Sto`. */
+export type AssetPortfoliosByStoOfferingAssetIdAndRaisingPortfolioIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<PortfoliosGroupBy>;
+    having?: InputMaybe<PortfoliosHavingInput>;
+  };
+
+/** A `Portfolio` edge in the connection, with data from `Sto`. */
+export type AssetPortfoliosByStoOfferingAssetIdAndRaisingPortfolioIdManyToManyEdge = {
+  __typename?: 'AssetPortfoliosByStoOfferingAssetIdAndRaisingPortfolioIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Portfolio` at the end of the edge. */
+  node?: Maybe<Portfolio>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stosByRaisingPortfolioId: StosConnection;
+};
+
+/** A `Portfolio` edge in the connection, with data from `Sto`. */
+export type AssetPortfoliosByStoOfferingAssetIdAndRaisingPortfolioIdManyToManyEdgeStosByRaisingPortfolioIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<StoFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<StosOrderBy>>;
+  };
+
 /** A connection to a list of `StatType` values, with data from `TransferCompliance`. */
 export type AssetStatTypesByTransferComplianceAssetIdAndStatTypeIdManyToManyConnection = {
   __typename?: 'AssetStatTypesByTransferComplianceAssetIdAndStatTypeIdManyToManyConnection';
@@ -3592,6 +3780,51 @@ export type AssetStatTypesByTransferComplianceAssetIdAndStatTypeIdManyToManyEdge
     offset?: InputMaybe<Scalars['Int']>;
     orderBy?: InputMaybe<Array<TransferCompliancesOrderBy>>;
   };
+
+/** A connection to a list of `Venue` values, with data from `Sto`. */
+export type AssetVenuesByStoOfferingAssetIdAndVenueIdManyToManyConnection = {
+  __typename?: 'AssetVenuesByStoOfferingAssetIdAndVenueIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<VenueAggregates>;
+  /** A list of edges which contains the `Venue`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<AssetVenuesByStoOfferingAssetIdAndVenueIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<VenueAggregates>>;
+  /** A list of `Venue` objects. */
+  nodes: Array<Maybe<Venue>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Venue` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Venue` values, with data from `Sto`. */
+export type AssetVenuesByStoOfferingAssetIdAndVenueIdManyToManyConnectionGroupedAggregatesArgs = {
+  groupBy: Array<VenuesGroupBy>;
+  having?: InputMaybe<VenuesHavingInput>;
+};
+
+/** A `Venue` edge in the connection, with data from `Sto`. */
+export type AssetVenuesByStoOfferingAssetIdAndVenueIdManyToManyEdge = {
+  __typename?: 'AssetVenuesByStoOfferingAssetIdAndVenueIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Venue` at the end of the edge. */
+  node?: Maybe<Venue>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stos: StosConnection;
+};
+
+/** A `Venue` edge in the connection, with data from `Sto`. */
+export type AssetVenuesByStoOfferingAssetIdAndVenueIdManyToManyEdgeStosArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<StoFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<StosOrderBy>>;
+};
 
 /** A connection to a list of `Asset` values. */
 export type AssetsConnection = {
@@ -4250,6 +4483,10 @@ export type Block = Node & {
   /** Reads and enables pagination through a set of `Identity`. */
   identitiesByStatTypeUpdatedBlockIdAndClaimIssuerId: BlockIdentitiesByStatTypeUpdatedBlockIdAndClaimIssuerIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Identity`. */
+  identitiesByStoCreatedBlockIdAndCreatorId: BlockIdentitiesByStoCreatedBlockIdAndCreatorIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Identity`. */
+  identitiesByStoUpdatedBlockIdAndCreatorId: BlockIdentitiesByStoUpdatedBlockIdAndCreatorIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Identity`. */
   identitiesByTickerExternalAgentActionCreatedBlockIdAndCallerId: BlockIdentitiesByTickerExternalAgentActionCreatedBlockIdAndCallerIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Identity`. */
   identitiesByTickerExternalAgentActionUpdatedBlockIdAndCallerId: BlockIdentitiesByTickerExternalAgentActionUpdatedBlockIdAndCallerIdManyToManyConnection;
@@ -4326,6 +4563,14 @@ export type Block = Node & {
   /** Reads and enables pagination through a set of `Portfolio`. */
   portfoliosByPortfolioMovementUpdatedBlockIdAndToId: BlockPortfoliosByPortfolioMovementUpdatedBlockIdAndToIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Portfolio`. */
+  portfoliosByStoCreatedBlockIdAndOfferingPortfolioId: BlockPortfoliosByStoCreatedBlockIdAndOfferingPortfolioIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Portfolio`. */
+  portfoliosByStoCreatedBlockIdAndRaisingPortfolioId: BlockPortfoliosByStoCreatedBlockIdAndRaisingPortfolioIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Portfolio`. */
+  portfoliosByStoUpdatedBlockIdAndOfferingPortfolioId: BlockPortfoliosByStoUpdatedBlockIdAndOfferingPortfolioIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Portfolio`. */
+  portfoliosByStoUpdatedBlockIdAndRaisingPortfolioId: BlockPortfoliosByStoUpdatedBlockIdAndRaisingPortfolioIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Portfolio`. */
   portfoliosByUpdatedBlockId: PortfoliosConnection;
   /** Reads and enables pagination through a set of `ProposalVote`. */
   proposalVotesByCreatedBlockId: ProposalVotesConnection;
@@ -4400,6 +4645,10 @@ export type Block = Node & {
   venuesByInstructionCreatedBlockIdAndVenueId: BlockVenuesByInstructionCreatedBlockIdAndVenueIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Venue`. */
   venuesByInstructionUpdatedBlockIdAndVenueId: BlockVenuesByInstructionUpdatedBlockIdAndVenueIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Venue`. */
+  venuesByStoCreatedBlockIdAndVenueId: BlockVenuesByStoCreatedBlockIdAndVenueIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Venue`. */
+  venuesByStoUpdatedBlockIdAndVenueId: BlockVenuesByStoUpdatedBlockIdAndVenueIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Venue`. */
   venuesByUpdatedBlockId: VenuesConnection;
 };
@@ -6094,6 +6343,26 @@ export type BlockIdentitiesByStatTypeUpdatedBlockIdAndClaimIssuerIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+export type BlockIdentitiesByStoCreatedBlockIdAndCreatorIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<IdentityFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
+};
+
+export type BlockIdentitiesByStoUpdatedBlockIdAndCreatorIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<IdentityFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
+};
+
 export type BlockIdentitiesByTickerExternalAgentActionCreatedBlockIdAndCallerIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6454,6 +6723,46 @@ export type BlockPortfoliosByPortfolioMovementUpdatedBlockIdAndToIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+export type BlockPortfoliosByStoCreatedBlockIdAndOfferingPortfolioIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<PortfolioFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
+};
+
+export type BlockPortfoliosByStoCreatedBlockIdAndRaisingPortfolioIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<PortfolioFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
+};
+
+export type BlockPortfoliosByStoUpdatedBlockIdAndOfferingPortfolioIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<PortfolioFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
+};
+
+export type BlockPortfoliosByStoUpdatedBlockIdAndRaisingPortfolioIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<PortfolioFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
+};
+
 export type BlockPortfoliosByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6805,6 +7114,26 @@ export type BlockVenuesByInstructionCreatedBlockIdAndVenueIdArgs = {
 };
 
 export type BlockVenuesByInstructionUpdatedBlockIdAndVenueIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<VenueFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<VenuesOrderBy>>;
+};
+
+export type BlockVenuesByStoCreatedBlockIdAndVenueIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<VenueFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<VenuesOrderBy>>;
+};
+
+export type BlockVenuesByStoUpdatedBlockIdAndVenueIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
   filter?: InputMaybe<VenueFilter>;
@@ -13257,6 +13586,98 @@ export type BlockIdentitiesByStatTypeUpdatedBlockIdAndClaimIssuerIdManyToManyEdg
     orderBy?: InputMaybe<Array<StatTypesOrderBy>>;
   };
 
+/** A connection to a list of `Identity` values, with data from `Sto`. */
+export type BlockIdentitiesByStoCreatedBlockIdAndCreatorIdManyToManyConnection = {
+  __typename?: 'BlockIdentitiesByStoCreatedBlockIdAndCreatorIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<IdentityAggregates>;
+  /** A list of edges which contains the `Identity`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<BlockIdentitiesByStoCreatedBlockIdAndCreatorIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<IdentityAggregates>>;
+  /** A list of `Identity` objects. */
+  nodes: Array<Maybe<Identity>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Identity` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Identity` values, with data from `Sto`. */
+export type BlockIdentitiesByStoCreatedBlockIdAndCreatorIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<IdentitiesGroupBy>;
+    having?: InputMaybe<IdentitiesHavingInput>;
+  };
+
+/** A `Identity` edge in the connection, with data from `Sto`. */
+export type BlockIdentitiesByStoCreatedBlockIdAndCreatorIdManyToManyEdge = {
+  __typename?: 'BlockIdentitiesByStoCreatedBlockIdAndCreatorIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Identity` at the end of the edge. */
+  node?: Maybe<Identity>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stosByCreatorId: StosConnection;
+};
+
+/** A `Identity` edge in the connection, with data from `Sto`. */
+export type BlockIdentitiesByStoCreatedBlockIdAndCreatorIdManyToManyEdgeStosByCreatorIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<StoFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<StosOrderBy>>;
+};
+
+/** A connection to a list of `Identity` values, with data from `Sto`. */
+export type BlockIdentitiesByStoUpdatedBlockIdAndCreatorIdManyToManyConnection = {
+  __typename?: 'BlockIdentitiesByStoUpdatedBlockIdAndCreatorIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<IdentityAggregates>;
+  /** A list of edges which contains the `Identity`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<BlockIdentitiesByStoUpdatedBlockIdAndCreatorIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<IdentityAggregates>>;
+  /** A list of `Identity` objects. */
+  nodes: Array<Maybe<Identity>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Identity` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Identity` values, with data from `Sto`. */
+export type BlockIdentitiesByStoUpdatedBlockIdAndCreatorIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<IdentitiesGroupBy>;
+    having?: InputMaybe<IdentitiesHavingInput>;
+  };
+
+/** A `Identity` edge in the connection, with data from `Sto`. */
+export type BlockIdentitiesByStoUpdatedBlockIdAndCreatorIdManyToManyEdge = {
+  __typename?: 'BlockIdentitiesByStoUpdatedBlockIdAndCreatorIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Identity` at the end of the edge. */
+  node?: Maybe<Identity>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stosByCreatorId: StosConnection;
+};
+
+/** A `Identity` edge in the connection, with data from `Sto`. */
+export type BlockIdentitiesByStoUpdatedBlockIdAndCreatorIdManyToManyEdgeStosByCreatorIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<StoFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<StosOrderBy>>;
+};
+
 /** A connection to a list of `Identity` values, with data from `TickerExternalAgentAction`. */
 export type BlockIdentitiesByTickerExternalAgentActionCreatedBlockIdAndCallerIdManyToManyConnection =
   {
@@ -14379,6 +14800,194 @@ export type BlockPortfoliosByPortfolioMovementUpdatedBlockIdAndToIdManyToManyEdg
     orderBy?: InputMaybe<Array<PortfolioMovementsOrderBy>>;
   };
 
+/** A connection to a list of `Portfolio` values, with data from `Sto`. */
+export type BlockPortfoliosByStoCreatedBlockIdAndOfferingPortfolioIdManyToManyConnection = {
+  __typename?: 'BlockPortfoliosByStoCreatedBlockIdAndOfferingPortfolioIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<PortfolioAggregates>;
+  /** A list of edges which contains the `Portfolio`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<BlockPortfoliosByStoCreatedBlockIdAndOfferingPortfolioIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<PortfolioAggregates>>;
+  /** A list of `Portfolio` objects. */
+  nodes: Array<Maybe<Portfolio>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Portfolio` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Portfolio` values, with data from `Sto`. */
+export type BlockPortfoliosByStoCreatedBlockIdAndOfferingPortfolioIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<PortfoliosGroupBy>;
+    having?: InputMaybe<PortfoliosHavingInput>;
+  };
+
+/** A `Portfolio` edge in the connection, with data from `Sto`. */
+export type BlockPortfoliosByStoCreatedBlockIdAndOfferingPortfolioIdManyToManyEdge = {
+  __typename?: 'BlockPortfoliosByStoCreatedBlockIdAndOfferingPortfolioIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Portfolio` at the end of the edge. */
+  node?: Maybe<Portfolio>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stosByOfferingPortfolioId: StosConnection;
+};
+
+/** A `Portfolio` edge in the connection, with data from `Sto`. */
+export type BlockPortfoliosByStoCreatedBlockIdAndOfferingPortfolioIdManyToManyEdgeStosByOfferingPortfolioIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<StoFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<StosOrderBy>>;
+  };
+
+/** A connection to a list of `Portfolio` values, with data from `Sto`. */
+export type BlockPortfoliosByStoCreatedBlockIdAndRaisingPortfolioIdManyToManyConnection = {
+  __typename?: 'BlockPortfoliosByStoCreatedBlockIdAndRaisingPortfolioIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<PortfolioAggregates>;
+  /** A list of edges which contains the `Portfolio`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<BlockPortfoliosByStoCreatedBlockIdAndRaisingPortfolioIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<PortfolioAggregates>>;
+  /** A list of `Portfolio` objects. */
+  nodes: Array<Maybe<Portfolio>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Portfolio` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Portfolio` values, with data from `Sto`. */
+export type BlockPortfoliosByStoCreatedBlockIdAndRaisingPortfolioIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<PortfoliosGroupBy>;
+    having?: InputMaybe<PortfoliosHavingInput>;
+  };
+
+/** A `Portfolio` edge in the connection, with data from `Sto`. */
+export type BlockPortfoliosByStoCreatedBlockIdAndRaisingPortfolioIdManyToManyEdge = {
+  __typename?: 'BlockPortfoliosByStoCreatedBlockIdAndRaisingPortfolioIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Portfolio` at the end of the edge. */
+  node?: Maybe<Portfolio>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stosByRaisingPortfolioId: StosConnection;
+};
+
+/** A `Portfolio` edge in the connection, with data from `Sto`. */
+export type BlockPortfoliosByStoCreatedBlockIdAndRaisingPortfolioIdManyToManyEdgeStosByRaisingPortfolioIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<StoFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<StosOrderBy>>;
+  };
+
+/** A connection to a list of `Portfolio` values, with data from `Sto`. */
+export type BlockPortfoliosByStoUpdatedBlockIdAndOfferingPortfolioIdManyToManyConnection = {
+  __typename?: 'BlockPortfoliosByStoUpdatedBlockIdAndOfferingPortfolioIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<PortfolioAggregates>;
+  /** A list of edges which contains the `Portfolio`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<BlockPortfoliosByStoUpdatedBlockIdAndOfferingPortfolioIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<PortfolioAggregates>>;
+  /** A list of `Portfolio` objects. */
+  nodes: Array<Maybe<Portfolio>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Portfolio` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Portfolio` values, with data from `Sto`. */
+export type BlockPortfoliosByStoUpdatedBlockIdAndOfferingPortfolioIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<PortfoliosGroupBy>;
+    having?: InputMaybe<PortfoliosHavingInput>;
+  };
+
+/** A `Portfolio` edge in the connection, with data from `Sto`. */
+export type BlockPortfoliosByStoUpdatedBlockIdAndOfferingPortfolioIdManyToManyEdge = {
+  __typename?: 'BlockPortfoliosByStoUpdatedBlockIdAndOfferingPortfolioIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Portfolio` at the end of the edge. */
+  node?: Maybe<Portfolio>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stosByOfferingPortfolioId: StosConnection;
+};
+
+/** A `Portfolio` edge in the connection, with data from `Sto`. */
+export type BlockPortfoliosByStoUpdatedBlockIdAndOfferingPortfolioIdManyToManyEdgeStosByOfferingPortfolioIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<StoFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<StosOrderBy>>;
+  };
+
+/** A connection to a list of `Portfolio` values, with data from `Sto`. */
+export type BlockPortfoliosByStoUpdatedBlockIdAndRaisingPortfolioIdManyToManyConnection = {
+  __typename?: 'BlockPortfoliosByStoUpdatedBlockIdAndRaisingPortfolioIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<PortfolioAggregates>;
+  /** A list of edges which contains the `Portfolio`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<BlockPortfoliosByStoUpdatedBlockIdAndRaisingPortfolioIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<PortfolioAggregates>>;
+  /** A list of `Portfolio` objects. */
+  nodes: Array<Maybe<Portfolio>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Portfolio` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Portfolio` values, with data from `Sto`. */
+export type BlockPortfoliosByStoUpdatedBlockIdAndRaisingPortfolioIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<PortfoliosGroupBy>;
+    having?: InputMaybe<PortfoliosHavingInput>;
+  };
+
+/** A `Portfolio` edge in the connection, with data from `Sto`. */
+export type BlockPortfoliosByStoUpdatedBlockIdAndRaisingPortfolioIdManyToManyEdge = {
+  __typename?: 'BlockPortfoliosByStoUpdatedBlockIdAndRaisingPortfolioIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Portfolio` at the end of the edge. */
+  node?: Maybe<Portfolio>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stosByRaisingPortfolioId: StosConnection;
+};
+
+/** A `Portfolio` edge in the connection, with data from `Sto`. */
+export type BlockPortfoliosByStoUpdatedBlockIdAndRaisingPortfolioIdManyToManyEdgeStosByRaisingPortfolioIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<StoFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<StosOrderBy>>;
+  };
+
 /** A connection to a list of `Proposal` values, with data from `ProposalVote`. */
 export type BlockProposalsByProposalVoteCreatedBlockIdAndProposalIdManyToManyConnection = {
   __typename?: 'BlockProposalsByProposalVoteCreatedBlockIdAndProposalIdManyToManyConnection';
@@ -14747,6 +15356,96 @@ export type BlockVenuesByInstructionUpdatedBlockIdAndVenueIdManyToManyEdgeInstru
   last?: InputMaybe<Scalars['Int']>;
   offset?: InputMaybe<Scalars['Int']>;
   orderBy?: InputMaybe<Array<InstructionsOrderBy>>;
+};
+
+/** A connection to a list of `Venue` values, with data from `Sto`. */
+export type BlockVenuesByStoCreatedBlockIdAndVenueIdManyToManyConnection = {
+  __typename?: 'BlockVenuesByStoCreatedBlockIdAndVenueIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<VenueAggregates>;
+  /** A list of edges which contains the `Venue`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<BlockVenuesByStoCreatedBlockIdAndVenueIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<VenueAggregates>>;
+  /** A list of `Venue` objects. */
+  nodes: Array<Maybe<Venue>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Venue` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Venue` values, with data from `Sto`. */
+export type BlockVenuesByStoCreatedBlockIdAndVenueIdManyToManyConnectionGroupedAggregatesArgs = {
+  groupBy: Array<VenuesGroupBy>;
+  having?: InputMaybe<VenuesHavingInput>;
+};
+
+/** A `Venue` edge in the connection, with data from `Sto`. */
+export type BlockVenuesByStoCreatedBlockIdAndVenueIdManyToManyEdge = {
+  __typename?: 'BlockVenuesByStoCreatedBlockIdAndVenueIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Venue` at the end of the edge. */
+  node?: Maybe<Venue>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stos: StosConnection;
+};
+
+/** A `Venue` edge in the connection, with data from `Sto`. */
+export type BlockVenuesByStoCreatedBlockIdAndVenueIdManyToManyEdgeStosArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<StoFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<StosOrderBy>>;
+};
+
+/** A connection to a list of `Venue` values, with data from `Sto`. */
+export type BlockVenuesByStoUpdatedBlockIdAndVenueIdManyToManyConnection = {
+  __typename?: 'BlockVenuesByStoUpdatedBlockIdAndVenueIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<VenueAggregates>;
+  /** A list of edges which contains the `Venue`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<BlockVenuesByStoUpdatedBlockIdAndVenueIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<VenueAggregates>>;
+  /** A list of `Venue` objects. */
+  nodes: Array<Maybe<Venue>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Venue` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Venue` values, with data from `Sto`. */
+export type BlockVenuesByStoUpdatedBlockIdAndVenueIdManyToManyConnectionGroupedAggregatesArgs = {
+  groupBy: Array<VenuesGroupBy>;
+  having?: InputMaybe<VenuesHavingInput>;
+};
+
+/** A `Venue` edge in the connection, with data from `Sto`. */
+export type BlockVenuesByStoUpdatedBlockIdAndVenueIdManyToManyEdge = {
+  __typename?: 'BlockVenuesByStoUpdatedBlockIdAndVenueIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Venue` at the end of the edge. */
+  node?: Maybe<Venue>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stos: StosConnection;
+};
+
+/** A `Venue` edge in the connection, with data from `Sto`. */
+export type BlockVenuesByStoUpdatedBlockIdAndVenueIdManyToManyEdgeStosArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<StoFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<StosOrderBy>>;
 };
 
 /** A connection to a list of `Block` values. */
@@ -16932,6 +17631,8 @@ export enum IdentitiesOrderBy {
   StakingEventsCountDesc = 'STAKING_EVENTS_COUNT_DESC',
   StatTypesByClaimIssuerIdCountAsc = 'STAT_TYPES_BY_CLAIM_ISSUER_ID_COUNT_ASC',
   StatTypesByClaimIssuerIdCountDesc = 'STAT_TYPES_BY_CLAIM_ISSUER_ID_COUNT_DESC',
+  StosByCreatorIdCountAsc = 'STOS_BY_CREATOR_ID_COUNT_ASC',
+  StosByCreatorIdCountDesc = 'STOS_BY_CREATOR_ID_COUNT_DESC',
   TickerExternalAgentsByCallerIdCountAsc = 'TICKER_EXTERNAL_AGENTS_BY_CALLER_ID_COUNT_ASC',
   TickerExternalAgentsByCallerIdCountDesc = 'TICKER_EXTERNAL_AGENTS_BY_CALLER_ID_COUNT_DESC',
   TickerExternalAgentActionsByCallerIdCountAsc = 'TICKER_EXTERNAL_AGENT_ACTIONS_BY_CALLER_ID_COUNT_ASC',
@@ -16958,6 +17659,8 @@ export type Identity = Node & {
   assetsByOwnerId: AssetsConnection;
   /** Reads and enables pagination through a set of `Asset`. */
   assetsByStatTypeClaimIssuerIdAndAssetId: IdentityAssetsByStatTypeClaimIssuerIdAndAssetIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Asset`. */
+  assetsByStoCreatorIdAndOfferingAssetId: IdentityAssetsByStoCreatorIdAndOfferingAssetIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Asset`. */
   assetsByTickerExternalAgentActionCallerIdAndAssetId: IdentityAssetsByTickerExternalAgentActionCallerIdAndAssetIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Asset`. */
@@ -17029,6 +17732,10 @@ export type Identity = Node & {
   /** Reads and enables pagination through a set of `Block`. */
   blocksByStatTypeClaimIssuerIdAndUpdatedBlockId: IdentityBlocksByStatTypeClaimIssuerIdAndUpdatedBlockIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Block`. */
+  blocksByStoCreatorIdAndCreatedBlockId: IdentityBlocksByStoCreatorIdAndCreatedBlockIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Block`. */
+  blocksByStoCreatorIdAndUpdatedBlockId: IdentityBlocksByStoCreatorIdAndUpdatedBlockIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Block`. */
   blocksByTickerExternalAgentActionCallerIdAndCreatedBlockId: IdentityBlocksByTickerExternalAgentActionCallerIdAndCreatedBlockIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Block`. */
   blocksByTickerExternalAgentActionCallerIdAndUpdatedBlockId: IdentityBlocksByTickerExternalAgentActionCallerIdAndUpdatedBlockIdManyToManyConnection;
@@ -17090,6 +17797,10 @@ export type Identity = Node & {
   portfoliosByCustodianId: PortfoliosConnection;
   /** Reads and enables pagination through a set of `Portfolio`. */
   portfoliosByDistributionIdentityIdAndPortfolioId: IdentityPortfoliosByDistributionIdentityIdAndPortfolioIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Portfolio`. */
+  portfoliosByStoCreatorIdAndOfferingPortfolioId: IdentityPortfoliosByStoCreatorIdAndOfferingPortfolioIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Portfolio`. */
+  portfoliosByStoCreatorIdAndRaisingPortfolioId: IdentityPortfoliosByStoCreatorIdAndRaisingPortfolioIdManyToManyConnection;
   primaryAccount: Scalars['String'];
   /** Reads and enables pagination through a set of `Proposal`. */
   proposalsByOwnerId: ProposalsConnection;
@@ -17102,6 +17813,8 @@ export type Identity = Node & {
   statTypesByClaimIssuerId: StatTypesConnection;
   /** Reads and enables pagination through a set of `StatType`. */
   statTypesByTransferComplianceClaimIssuerIdAndStatTypeId: IdentityStatTypesByTransferComplianceClaimIssuerIdAndStatTypeIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stosByCreatorId: StosConnection;
   /** Reads and enables pagination through a set of `TickerExternalAgentAction`. */
   tickerExternalAgentActionsByCallerId: TickerExternalAgentActionsConnection;
   /** Reads and enables pagination through a set of `TickerExternalAgentHistory`. */
@@ -17116,6 +17829,8 @@ export type Identity = Node & {
   updatedBlockId: Scalars['String'];
   /** Reads and enables pagination through a set of `Venue`. */
   venuesByOwnerId: VenuesConnection;
+  /** Reads and enables pagination through a set of `Venue`. */
+  venuesByStoCreatorIdAndVenueId: IdentityVenuesByStoCreatorIdAndVenueIdManyToManyConnection;
 };
 
 export type IdentityAssetsByAssetHolderIdentityIdAndAssetIdArgs = {
@@ -17149,6 +17864,16 @@ export type IdentityAssetsByOwnerIdArgs = {
 };
 
 export type IdentityAssetsByStatTypeClaimIssuerIdAndAssetIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<AssetFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<AssetsOrderBy>>;
+};
+
+export type IdentityAssetsByStoCreatorIdAndOfferingAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
   filter?: InputMaybe<AssetFilter>;
@@ -17508,6 +18233,26 @@ export type IdentityBlocksByStatTypeClaimIssuerIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+export type IdentityBlocksByStoCreatorIdAndCreatedBlockIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<BlockFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<BlocksOrderBy>>;
+};
+
+export type IdentityBlocksByStoCreatorIdAndUpdatedBlockIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<BlockFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<BlocksOrderBy>>;
+};
+
 export type IdentityBlocksByTickerExternalAgentActionCallerIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -17768,6 +18513,26 @@ export type IdentityPortfoliosByDistributionIdentityIdAndPortfolioIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+export type IdentityPortfoliosByStoCreatorIdAndOfferingPortfolioIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<PortfolioFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
+};
+
+export type IdentityPortfoliosByStoCreatorIdAndRaisingPortfolioIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<PortfolioFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
+};
+
 export type IdentityProposalsByOwnerIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -17818,6 +18583,16 @@ export type IdentityStatTypesByTransferComplianceClaimIssuerIdAndStatTypeIdArgs 
   orderBy?: InputMaybe<Array<StatTypesOrderBy>>;
 };
 
+export type IdentityStosByCreatorIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<StoFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<StosOrderBy>>;
+};
+
 export type IdentityTickerExternalAgentActionsByCallerIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -17859,6 +18634,16 @@ export type IdentityTransferCompliancesByClaimIssuerIdArgs = {
 };
 
 export type IdentityVenuesByOwnerIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<VenueFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<VenuesOrderBy>>;
+};
+
+export type IdentityVenuesByStoCreatorIdAndVenueIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
   filter?: InputMaybe<VenueFilter>;
@@ -18010,6 +18795,53 @@ export type IdentityAssetsByStatTypeClaimIssuerIdAndAssetIdManyToManyEdgeStatTyp
   offset?: InputMaybe<Scalars['Int']>;
   orderBy?: InputMaybe<Array<StatTypesOrderBy>>;
 };
+
+/** A connection to a list of `Asset` values, with data from `Sto`. */
+export type IdentityAssetsByStoCreatorIdAndOfferingAssetIdManyToManyConnection = {
+  __typename?: 'IdentityAssetsByStoCreatorIdAndOfferingAssetIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<AssetAggregates>;
+  /** A list of edges which contains the `Asset`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<IdentityAssetsByStoCreatorIdAndOfferingAssetIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<AssetAggregates>>;
+  /** A list of `Asset` objects. */
+  nodes: Array<Maybe<Asset>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Asset` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Asset` values, with data from `Sto`. */
+export type IdentityAssetsByStoCreatorIdAndOfferingAssetIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<AssetsGroupBy>;
+    having?: InputMaybe<AssetsHavingInput>;
+  };
+
+/** A `Asset` edge in the connection, with data from `Sto`. */
+export type IdentityAssetsByStoCreatorIdAndOfferingAssetIdManyToManyEdge = {
+  __typename?: 'IdentityAssetsByStoCreatorIdAndOfferingAssetIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Asset` at the end of the edge. */
+  node?: Maybe<Asset>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stosByOfferingAssetId: StosConnection;
+};
+
+/** A `Asset` edge in the connection, with data from `Sto`. */
+export type IdentityAssetsByStoCreatorIdAndOfferingAssetIdManyToManyEdgeStosByOfferingAssetIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<StoFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<StosOrderBy>>;
+  };
 
 /** A connection to a list of `Asset` values, with data from `TickerExternalAgentAction`. */
 export type IdentityAssetsByTickerExternalAgentActionCallerIdAndAssetIdManyToManyConnection = {
@@ -19609,6 +20441,98 @@ export type IdentityBlocksByStatTypeClaimIssuerIdAndUpdatedBlockIdManyToManyEdge
     orderBy?: InputMaybe<Array<StatTypesOrderBy>>;
   };
 
+/** A connection to a list of `Block` values, with data from `Sto`. */
+export type IdentityBlocksByStoCreatorIdAndCreatedBlockIdManyToManyConnection = {
+  __typename?: 'IdentityBlocksByStoCreatorIdAndCreatedBlockIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<BlockAggregates>;
+  /** A list of edges which contains the `Block`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<IdentityBlocksByStoCreatorIdAndCreatedBlockIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<BlockAggregates>>;
+  /** A list of `Block` objects. */
+  nodes: Array<Maybe<Block>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Block` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Block` values, with data from `Sto`. */
+export type IdentityBlocksByStoCreatorIdAndCreatedBlockIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<BlocksGroupBy>;
+    having?: InputMaybe<BlocksHavingInput>;
+  };
+
+/** A `Block` edge in the connection, with data from `Sto`. */
+export type IdentityBlocksByStoCreatorIdAndCreatedBlockIdManyToManyEdge = {
+  __typename?: 'IdentityBlocksByStoCreatorIdAndCreatedBlockIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Block` at the end of the edge. */
+  node?: Maybe<Block>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stosByCreatedBlockId: StosConnection;
+};
+
+/** A `Block` edge in the connection, with data from `Sto`. */
+export type IdentityBlocksByStoCreatorIdAndCreatedBlockIdManyToManyEdgeStosByCreatedBlockIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<StoFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<StosOrderBy>>;
+};
+
+/** A connection to a list of `Block` values, with data from `Sto`. */
+export type IdentityBlocksByStoCreatorIdAndUpdatedBlockIdManyToManyConnection = {
+  __typename?: 'IdentityBlocksByStoCreatorIdAndUpdatedBlockIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<BlockAggregates>;
+  /** A list of edges which contains the `Block`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<IdentityBlocksByStoCreatorIdAndUpdatedBlockIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<BlockAggregates>>;
+  /** A list of `Block` objects. */
+  nodes: Array<Maybe<Block>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Block` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Block` values, with data from `Sto`. */
+export type IdentityBlocksByStoCreatorIdAndUpdatedBlockIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<BlocksGroupBy>;
+    having?: InputMaybe<BlocksHavingInput>;
+  };
+
+/** A `Block` edge in the connection, with data from `Sto`. */
+export type IdentityBlocksByStoCreatorIdAndUpdatedBlockIdManyToManyEdge = {
+  __typename?: 'IdentityBlocksByStoCreatorIdAndUpdatedBlockIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Block` at the end of the edge. */
+  node?: Maybe<Block>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stosByUpdatedBlockId: StosConnection;
+};
+
+/** A `Block` edge in the connection, with data from `Sto`. */
+export type IdentityBlocksByStoCreatorIdAndUpdatedBlockIdManyToManyEdgeStosByUpdatedBlockIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<StoFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<StosOrderBy>>;
+};
+
 /** A connection to a list of `Block` values, with data from `TickerExternalAgentAction`. */
 export type IdentityBlocksByTickerExternalAgentActionCallerIdAndCreatedBlockIdManyToManyConnection =
   {
@@ -20440,6 +21364,100 @@ export type IdentityPortfoliosByDistributionIdentityIdAndPortfolioIdManyToManyEd
     orderBy?: InputMaybe<Array<DistributionsOrderBy>>;
   };
 
+/** A connection to a list of `Portfolio` values, with data from `Sto`. */
+export type IdentityPortfoliosByStoCreatorIdAndOfferingPortfolioIdManyToManyConnection = {
+  __typename?: 'IdentityPortfoliosByStoCreatorIdAndOfferingPortfolioIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<PortfolioAggregates>;
+  /** A list of edges which contains the `Portfolio`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<IdentityPortfoliosByStoCreatorIdAndOfferingPortfolioIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<PortfolioAggregates>>;
+  /** A list of `Portfolio` objects. */
+  nodes: Array<Maybe<Portfolio>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Portfolio` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Portfolio` values, with data from `Sto`. */
+export type IdentityPortfoliosByStoCreatorIdAndOfferingPortfolioIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<PortfoliosGroupBy>;
+    having?: InputMaybe<PortfoliosHavingInput>;
+  };
+
+/** A `Portfolio` edge in the connection, with data from `Sto`. */
+export type IdentityPortfoliosByStoCreatorIdAndOfferingPortfolioIdManyToManyEdge = {
+  __typename?: 'IdentityPortfoliosByStoCreatorIdAndOfferingPortfolioIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Portfolio` at the end of the edge. */
+  node?: Maybe<Portfolio>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stosByOfferingPortfolioId: StosConnection;
+};
+
+/** A `Portfolio` edge in the connection, with data from `Sto`. */
+export type IdentityPortfoliosByStoCreatorIdAndOfferingPortfolioIdManyToManyEdgeStosByOfferingPortfolioIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<StoFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<StosOrderBy>>;
+  };
+
+/** A connection to a list of `Portfolio` values, with data from `Sto`. */
+export type IdentityPortfoliosByStoCreatorIdAndRaisingPortfolioIdManyToManyConnection = {
+  __typename?: 'IdentityPortfoliosByStoCreatorIdAndRaisingPortfolioIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<PortfolioAggregates>;
+  /** A list of edges which contains the `Portfolio`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<IdentityPortfoliosByStoCreatorIdAndRaisingPortfolioIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<PortfolioAggregates>>;
+  /** A list of `Portfolio` objects. */
+  nodes: Array<Maybe<Portfolio>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Portfolio` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Portfolio` values, with data from `Sto`. */
+export type IdentityPortfoliosByStoCreatorIdAndRaisingPortfolioIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<PortfoliosGroupBy>;
+    having?: InputMaybe<PortfoliosHavingInput>;
+  };
+
+/** A `Portfolio` edge in the connection, with data from `Sto`. */
+export type IdentityPortfoliosByStoCreatorIdAndRaisingPortfolioIdManyToManyEdge = {
+  __typename?: 'IdentityPortfoliosByStoCreatorIdAndRaisingPortfolioIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Portfolio` at the end of the edge. */
+  node?: Maybe<Portfolio>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stosByRaisingPortfolioId: StosConnection;
+};
+
+/** A `Portfolio` edge in the connection, with data from `Sto`. */
+export type IdentityPortfoliosByStoCreatorIdAndRaisingPortfolioIdManyToManyEdgeStosByRaisingPortfolioIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<StoFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<StosOrderBy>>;
+  };
+
 /** A connection to a list of `StatType` values, with data from `TransferCompliance`. */
 export type IdentityStatTypesByTransferComplianceClaimIssuerIdAndStatTypeIdManyToManyConnection = {
   __typename?: 'IdentityStatTypesByTransferComplianceClaimIssuerIdAndStatTypeIdManyToManyConnection';
@@ -20486,6 +21504,51 @@ export type IdentityStatTypesByTransferComplianceClaimIssuerIdAndStatTypeIdManyT
     offset?: InputMaybe<Scalars['Int']>;
     orderBy?: InputMaybe<Array<TransferCompliancesOrderBy>>;
   };
+
+/** A connection to a list of `Venue` values, with data from `Sto`. */
+export type IdentityVenuesByStoCreatorIdAndVenueIdManyToManyConnection = {
+  __typename?: 'IdentityVenuesByStoCreatorIdAndVenueIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<VenueAggregates>;
+  /** A list of edges which contains the `Venue`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<IdentityVenuesByStoCreatorIdAndVenueIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<VenueAggregates>>;
+  /** A list of `Venue` objects. */
+  nodes: Array<Maybe<Venue>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Venue` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Venue` values, with data from `Sto`. */
+export type IdentityVenuesByStoCreatorIdAndVenueIdManyToManyConnectionGroupedAggregatesArgs = {
+  groupBy: Array<VenuesGroupBy>;
+  having?: InputMaybe<VenuesHavingInput>;
+};
+
+/** A `Venue` edge in the connection, with data from `Sto`. */
+export type IdentityVenuesByStoCreatorIdAndVenueIdManyToManyEdge = {
+  __typename?: 'IdentityVenuesByStoCreatorIdAndVenueIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Venue` at the end of the edge. */
+  node?: Maybe<Venue>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stos: StosConnection;
+};
+
+/** A `Venue` edge in the connection, with data from `Sto`. */
+export type IdentityVenuesByStoCreatorIdAndVenueIdManyToManyEdgeStosArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<StoFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<StosOrderBy>>;
+};
 
 export type Instruction = Node & {
   __typename?: 'Instruction';
@@ -21665,6 +22728,10 @@ export type Portfolio = Node & {
   assetsByPortfolioMovementFromIdAndAssetId: PortfolioAssetsByPortfolioMovementFromIdAndAssetIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Asset`. */
   assetsByPortfolioMovementToIdAndAssetId: PortfolioAssetsByPortfolioMovementToIdAndAssetIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Asset`. */
+  assetsByStoOfferingPortfolioIdAndOfferingAssetId: PortfolioAssetsByStoOfferingPortfolioIdAndOfferingAssetIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Asset`. */
+  assetsByStoRaisingPortfolioIdAndOfferingAssetId: PortfolioAssetsByStoRaisingPortfolioIdAndOfferingAssetIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Block`. */
   blocksByDistributionPortfolioIdAndCreatedBlockId: PortfolioBlocksByDistributionPortfolioIdAndCreatedBlockIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Block`. */
@@ -21685,6 +22752,14 @@ export type Portfolio = Node & {
   blocksByPortfolioMovementToIdAndCreatedBlockId: PortfolioBlocksByPortfolioMovementToIdAndCreatedBlockIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Block`. */
   blocksByPortfolioMovementToIdAndUpdatedBlockId: PortfolioBlocksByPortfolioMovementToIdAndUpdatedBlockIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Block`. */
+  blocksByStoOfferingPortfolioIdAndCreatedBlockId: PortfolioBlocksByStoOfferingPortfolioIdAndCreatedBlockIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Block`. */
+  blocksByStoOfferingPortfolioIdAndUpdatedBlockId: PortfolioBlocksByStoOfferingPortfolioIdAndUpdatedBlockIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Block`. */
+  blocksByStoRaisingPortfolioIdAndCreatedBlockId: PortfolioBlocksByStoRaisingPortfolioIdAndCreatedBlockIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Block`. */
+  blocksByStoRaisingPortfolioIdAndUpdatedBlockId: PortfolioBlocksByStoRaisingPortfolioIdAndUpdatedBlockIdManyToManyConnection;
   createdAt: Scalars['Datetime'];
   /** Reads a single `Block` that is related to this `Portfolio`. */
   createdBlock?: Maybe<Block>;
@@ -21699,6 +22774,10 @@ export type Portfolio = Node & {
   id: Scalars['String'];
   /** Reads and enables pagination through a set of `Identity`. */
   identitiesByDistributionPortfolioIdAndIdentityId: PortfolioIdentitiesByDistributionPortfolioIdAndIdentityIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Identity`. */
+  identitiesByStoOfferingPortfolioIdAndCreatorId: PortfolioIdentitiesByStoOfferingPortfolioIdAndCreatorIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Identity`. */
+  identitiesByStoRaisingPortfolioIdAndCreatorId: PortfolioIdentitiesByStoRaisingPortfolioIdAndCreatorIdManyToManyConnection;
   /** Reads a single `Identity` that is related to this `Portfolio`. */
   identity?: Maybe<Identity>;
   identityId: Scalars['String'];
@@ -21726,14 +22805,26 @@ export type Portfolio = Node & {
   portfoliosByPortfolioMovementFromIdAndToId: PortfolioPortfoliosByPortfolioMovementFromIdAndToIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Portfolio`. */
   portfoliosByPortfolioMovementToIdAndFromId: PortfolioPortfoliosByPortfolioMovementToIdAndFromIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Portfolio`. */
+  portfoliosByStoOfferingPortfolioIdAndRaisingPortfolioId: PortfolioPortfoliosByStoOfferingPortfolioIdAndRaisingPortfolioIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Portfolio`. */
+  portfoliosByStoRaisingPortfolioIdAndOfferingPortfolioId: PortfolioPortfoliosByStoRaisingPortfolioIdAndOfferingPortfolioIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Settlement`. */
   settlementsByLegFromIdAndSettlementId: PortfolioSettlementsByLegFromIdAndSettlementIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Settlement`. */
   settlementsByLegToIdAndSettlementId: PortfolioSettlementsByLegToIdAndSettlementIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stosByOfferingPortfolioId: StosConnection;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stosByRaisingPortfolioId: StosConnection;
   updatedAt: Scalars['Datetime'];
   /** Reads a single `Block` that is related to this `Portfolio`. */
   updatedBlock?: Maybe<Block>;
   updatedBlockId: Scalars['String'];
+  /** Reads and enables pagination through a set of `Venue`. */
+  venuesByStoOfferingPortfolioIdAndVenueId: PortfolioVenuesByStoOfferingPortfolioIdAndVenueIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Venue`. */
+  venuesByStoRaisingPortfolioIdAndVenueId: PortfolioVenuesByStoRaisingPortfolioIdAndVenueIdManyToManyConnection;
 };
 
 export type PortfolioAssetsByDistributionPortfolioIdAndAssetIdArgs = {
@@ -21757,6 +22848,26 @@ export type PortfolioAssetsByPortfolioMovementFromIdAndAssetIdArgs = {
 };
 
 export type PortfolioAssetsByPortfolioMovementToIdAndAssetIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<AssetFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<AssetsOrderBy>>;
+};
+
+export type PortfolioAssetsByStoOfferingPortfolioIdAndOfferingAssetIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<AssetFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<AssetsOrderBy>>;
+};
+
+export type PortfolioAssetsByStoRaisingPortfolioIdAndOfferingAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
   filter?: InputMaybe<AssetFilter>;
@@ -21866,6 +22977,46 @@ export type PortfolioBlocksByPortfolioMovementToIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+export type PortfolioBlocksByStoOfferingPortfolioIdAndCreatedBlockIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<BlockFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<BlocksOrderBy>>;
+};
+
+export type PortfolioBlocksByStoOfferingPortfolioIdAndUpdatedBlockIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<BlockFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<BlocksOrderBy>>;
+};
+
+export type PortfolioBlocksByStoRaisingPortfolioIdAndCreatedBlockIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<BlockFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<BlocksOrderBy>>;
+};
+
+export type PortfolioBlocksByStoRaisingPortfolioIdAndUpdatedBlockIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<BlockFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<BlocksOrderBy>>;
+};
+
 export type PortfolioDistributionsArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -21877,6 +23028,26 @@ export type PortfolioDistributionsArgs = {
 };
 
 export type PortfolioIdentitiesByDistributionPortfolioIdAndIdentityIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<IdentityFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
+};
+
+export type PortfolioIdentitiesByStoOfferingPortfolioIdAndCreatorIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<IdentityFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
+};
+
+export type PortfolioIdentitiesByStoRaisingPortfolioIdAndCreatorIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
   filter?: InputMaybe<IdentityFilter>;
@@ -21986,6 +23157,26 @@ export type PortfolioPortfoliosByPortfolioMovementToIdAndFromIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+export type PortfolioPortfoliosByStoOfferingPortfolioIdAndRaisingPortfolioIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<PortfolioFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
+};
+
+export type PortfolioPortfoliosByStoRaisingPortfolioIdAndOfferingPortfolioIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<PortfolioFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
+};
+
 export type PortfolioSettlementsByLegFromIdAndSettlementIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -22004,6 +23195,46 @@ export type PortfolioSettlementsByLegToIdAndSettlementIdArgs = {
   last?: InputMaybe<Scalars['Int']>;
   offset?: InputMaybe<Scalars['Int']>;
   orderBy?: InputMaybe<Array<SettlementsOrderBy>>;
+};
+
+export type PortfolioStosByOfferingPortfolioIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<StoFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<StosOrderBy>>;
+};
+
+export type PortfolioStosByRaisingPortfolioIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<StoFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<StosOrderBy>>;
+};
+
+export type PortfolioVenuesByStoOfferingPortfolioIdAndVenueIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<VenueFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<VenuesOrderBy>>;
+};
+
+export type PortfolioVenuesByStoRaisingPortfolioIdAndVenueIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<VenueFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<VenuesOrderBy>>;
 };
 
 export type PortfolioAggregates = {
@@ -22149,6 +23380,100 @@ export type PortfolioAssetsByPortfolioMovementToIdAndAssetIdManyToManyEdgePortfo
   offset?: InputMaybe<Scalars['Int']>;
   orderBy?: InputMaybe<Array<PortfolioMovementsOrderBy>>;
 };
+
+/** A connection to a list of `Asset` values, with data from `Sto`. */
+export type PortfolioAssetsByStoOfferingPortfolioIdAndOfferingAssetIdManyToManyConnection = {
+  __typename?: 'PortfolioAssetsByStoOfferingPortfolioIdAndOfferingAssetIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<AssetAggregates>;
+  /** A list of edges which contains the `Asset`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<PortfolioAssetsByStoOfferingPortfolioIdAndOfferingAssetIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<AssetAggregates>>;
+  /** A list of `Asset` objects. */
+  nodes: Array<Maybe<Asset>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Asset` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Asset` values, with data from `Sto`. */
+export type PortfolioAssetsByStoOfferingPortfolioIdAndOfferingAssetIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<AssetsGroupBy>;
+    having?: InputMaybe<AssetsHavingInput>;
+  };
+
+/** A `Asset` edge in the connection, with data from `Sto`. */
+export type PortfolioAssetsByStoOfferingPortfolioIdAndOfferingAssetIdManyToManyEdge = {
+  __typename?: 'PortfolioAssetsByStoOfferingPortfolioIdAndOfferingAssetIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Asset` at the end of the edge. */
+  node?: Maybe<Asset>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stosByOfferingAssetId: StosConnection;
+};
+
+/** A `Asset` edge in the connection, with data from `Sto`. */
+export type PortfolioAssetsByStoOfferingPortfolioIdAndOfferingAssetIdManyToManyEdgeStosByOfferingAssetIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<StoFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<StosOrderBy>>;
+  };
+
+/** A connection to a list of `Asset` values, with data from `Sto`. */
+export type PortfolioAssetsByStoRaisingPortfolioIdAndOfferingAssetIdManyToManyConnection = {
+  __typename?: 'PortfolioAssetsByStoRaisingPortfolioIdAndOfferingAssetIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<AssetAggregates>;
+  /** A list of edges which contains the `Asset`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<PortfolioAssetsByStoRaisingPortfolioIdAndOfferingAssetIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<AssetAggregates>>;
+  /** A list of `Asset` objects. */
+  nodes: Array<Maybe<Asset>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Asset` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Asset` values, with data from `Sto`. */
+export type PortfolioAssetsByStoRaisingPortfolioIdAndOfferingAssetIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<AssetsGroupBy>;
+    having?: InputMaybe<AssetsHavingInput>;
+  };
+
+/** A `Asset` edge in the connection, with data from `Sto`. */
+export type PortfolioAssetsByStoRaisingPortfolioIdAndOfferingAssetIdManyToManyEdge = {
+  __typename?: 'PortfolioAssetsByStoRaisingPortfolioIdAndOfferingAssetIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Asset` at the end of the edge. */
+  node?: Maybe<Asset>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stosByOfferingAssetId: StosConnection;
+};
+
+/** A `Asset` edge in the connection, with data from `Sto`. */
+export type PortfolioAssetsByStoRaisingPortfolioIdAndOfferingAssetIdManyToManyEdgeStosByOfferingAssetIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<StoFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<StosOrderBy>>;
+  };
 
 /** A connection to a list of `Block` values, with data from `Distribution`. */
 export type PortfolioBlocksByDistributionPortfolioIdAndCreatedBlockIdManyToManyConnection = {
@@ -22612,6 +23937,194 @@ export type PortfolioBlocksByPortfolioMovementToIdAndUpdatedBlockIdManyToManyEdg
     orderBy?: InputMaybe<Array<PortfolioMovementsOrderBy>>;
   };
 
+/** A connection to a list of `Block` values, with data from `Sto`. */
+export type PortfolioBlocksByStoOfferingPortfolioIdAndCreatedBlockIdManyToManyConnection = {
+  __typename?: 'PortfolioBlocksByStoOfferingPortfolioIdAndCreatedBlockIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<BlockAggregates>;
+  /** A list of edges which contains the `Block`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<PortfolioBlocksByStoOfferingPortfolioIdAndCreatedBlockIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<BlockAggregates>>;
+  /** A list of `Block` objects. */
+  nodes: Array<Maybe<Block>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Block` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Block` values, with data from `Sto`. */
+export type PortfolioBlocksByStoOfferingPortfolioIdAndCreatedBlockIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<BlocksGroupBy>;
+    having?: InputMaybe<BlocksHavingInput>;
+  };
+
+/** A `Block` edge in the connection, with data from `Sto`. */
+export type PortfolioBlocksByStoOfferingPortfolioIdAndCreatedBlockIdManyToManyEdge = {
+  __typename?: 'PortfolioBlocksByStoOfferingPortfolioIdAndCreatedBlockIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Block` at the end of the edge. */
+  node?: Maybe<Block>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stosByCreatedBlockId: StosConnection;
+};
+
+/** A `Block` edge in the connection, with data from `Sto`. */
+export type PortfolioBlocksByStoOfferingPortfolioIdAndCreatedBlockIdManyToManyEdgeStosByCreatedBlockIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<StoFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<StosOrderBy>>;
+  };
+
+/** A connection to a list of `Block` values, with data from `Sto`. */
+export type PortfolioBlocksByStoOfferingPortfolioIdAndUpdatedBlockIdManyToManyConnection = {
+  __typename?: 'PortfolioBlocksByStoOfferingPortfolioIdAndUpdatedBlockIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<BlockAggregates>;
+  /** A list of edges which contains the `Block`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<PortfolioBlocksByStoOfferingPortfolioIdAndUpdatedBlockIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<BlockAggregates>>;
+  /** A list of `Block` objects. */
+  nodes: Array<Maybe<Block>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Block` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Block` values, with data from `Sto`. */
+export type PortfolioBlocksByStoOfferingPortfolioIdAndUpdatedBlockIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<BlocksGroupBy>;
+    having?: InputMaybe<BlocksHavingInput>;
+  };
+
+/** A `Block` edge in the connection, with data from `Sto`. */
+export type PortfolioBlocksByStoOfferingPortfolioIdAndUpdatedBlockIdManyToManyEdge = {
+  __typename?: 'PortfolioBlocksByStoOfferingPortfolioIdAndUpdatedBlockIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Block` at the end of the edge. */
+  node?: Maybe<Block>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stosByUpdatedBlockId: StosConnection;
+};
+
+/** A `Block` edge in the connection, with data from `Sto`. */
+export type PortfolioBlocksByStoOfferingPortfolioIdAndUpdatedBlockIdManyToManyEdgeStosByUpdatedBlockIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<StoFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<StosOrderBy>>;
+  };
+
+/** A connection to a list of `Block` values, with data from `Sto`. */
+export type PortfolioBlocksByStoRaisingPortfolioIdAndCreatedBlockIdManyToManyConnection = {
+  __typename?: 'PortfolioBlocksByStoRaisingPortfolioIdAndCreatedBlockIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<BlockAggregates>;
+  /** A list of edges which contains the `Block`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<PortfolioBlocksByStoRaisingPortfolioIdAndCreatedBlockIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<BlockAggregates>>;
+  /** A list of `Block` objects. */
+  nodes: Array<Maybe<Block>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Block` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Block` values, with data from `Sto`. */
+export type PortfolioBlocksByStoRaisingPortfolioIdAndCreatedBlockIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<BlocksGroupBy>;
+    having?: InputMaybe<BlocksHavingInput>;
+  };
+
+/** A `Block` edge in the connection, with data from `Sto`. */
+export type PortfolioBlocksByStoRaisingPortfolioIdAndCreatedBlockIdManyToManyEdge = {
+  __typename?: 'PortfolioBlocksByStoRaisingPortfolioIdAndCreatedBlockIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Block` at the end of the edge. */
+  node?: Maybe<Block>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stosByCreatedBlockId: StosConnection;
+};
+
+/** A `Block` edge in the connection, with data from `Sto`. */
+export type PortfolioBlocksByStoRaisingPortfolioIdAndCreatedBlockIdManyToManyEdgeStosByCreatedBlockIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<StoFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<StosOrderBy>>;
+  };
+
+/** A connection to a list of `Block` values, with data from `Sto`. */
+export type PortfolioBlocksByStoRaisingPortfolioIdAndUpdatedBlockIdManyToManyConnection = {
+  __typename?: 'PortfolioBlocksByStoRaisingPortfolioIdAndUpdatedBlockIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<BlockAggregates>;
+  /** A list of edges which contains the `Block`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<PortfolioBlocksByStoRaisingPortfolioIdAndUpdatedBlockIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<BlockAggregates>>;
+  /** A list of `Block` objects. */
+  nodes: Array<Maybe<Block>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Block` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Block` values, with data from `Sto`. */
+export type PortfolioBlocksByStoRaisingPortfolioIdAndUpdatedBlockIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<BlocksGroupBy>;
+    having?: InputMaybe<BlocksHavingInput>;
+  };
+
+/** A `Block` edge in the connection, with data from `Sto`. */
+export type PortfolioBlocksByStoRaisingPortfolioIdAndUpdatedBlockIdManyToManyEdge = {
+  __typename?: 'PortfolioBlocksByStoRaisingPortfolioIdAndUpdatedBlockIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Block` at the end of the edge. */
+  node?: Maybe<Block>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stosByUpdatedBlockId: StosConnection;
+};
+
+/** A `Block` edge in the connection, with data from `Sto`. */
+export type PortfolioBlocksByStoRaisingPortfolioIdAndUpdatedBlockIdManyToManyEdgeStosByUpdatedBlockIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<StoFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<StosOrderBy>>;
+  };
+
 /** A filter to be used against `Portfolio` object types. All fields are combined with a logical ‘and.’ */
 export type PortfolioFilter = {
   /** Checks for all expressions in this list. */
@@ -22689,6 +24202,100 @@ export type PortfolioIdentitiesByDistributionPortfolioIdAndIdentityIdManyToManyE
     last?: InputMaybe<Scalars['Int']>;
     offset?: InputMaybe<Scalars['Int']>;
     orderBy?: InputMaybe<Array<DistributionsOrderBy>>;
+  };
+
+/** A connection to a list of `Identity` values, with data from `Sto`. */
+export type PortfolioIdentitiesByStoOfferingPortfolioIdAndCreatorIdManyToManyConnection = {
+  __typename?: 'PortfolioIdentitiesByStoOfferingPortfolioIdAndCreatorIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<IdentityAggregates>;
+  /** A list of edges which contains the `Identity`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<PortfolioIdentitiesByStoOfferingPortfolioIdAndCreatorIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<IdentityAggregates>>;
+  /** A list of `Identity` objects. */
+  nodes: Array<Maybe<Identity>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Identity` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Identity` values, with data from `Sto`. */
+export type PortfolioIdentitiesByStoOfferingPortfolioIdAndCreatorIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<IdentitiesGroupBy>;
+    having?: InputMaybe<IdentitiesHavingInput>;
+  };
+
+/** A `Identity` edge in the connection, with data from `Sto`. */
+export type PortfolioIdentitiesByStoOfferingPortfolioIdAndCreatorIdManyToManyEdge = {
+  __typename?: 'PortfolioIdentitiesByStoOfferingPortfolioIdAndCreatorIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Identity` at the end of the edge. */
+  node?: Maybe<Identity>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stosByCreatorId: StosConnection;
+};
+
+/** A `Identity` edge in the connection, with data from `Sto`. */
+export type PortfolioIdentitiesByStoOfferingPortfolioIdAndCreatorIdManyToManyEdgeStosByCreatorIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<StoFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<StosOrderBy>>;
+  };
+
+/** A connection to a list of `Identity` values, with data from `Sto`. */
+export type PortfolioIdentitiesByStoRaisingPortfolioIdAndCreatorIdManyToManyConnection = {
+  __typename?: 'PortfolioIdentitiesByStoRaisingPortfolioIdAndCreatorIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<IdentityAggregates>;
+  /** A list of edges which contains the `Identity`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<PortfolioIdentitiesByStoRaisingPortfolioIdAndCreatorIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<IdentityAggregates>>;
+  /** A list of `Identity` objects. */
+  nodes: Array<Maybe<Identity>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Identity` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Identity` values, with data from `Sto`. */
+export type PortfolioIdentitiesByStoRaisingPortfolioIdAndCreatorIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<IdentitiesGroupBy>;
+    having?: InputMaybe<IdentitiesHavingInput>;
+  };
+
+/** A `Identity` edge in the connection, with data from `Sto`. */
+export type PortfolioIdentitiesByStoRaisingPortfolioIdAndCreatorIdManyToManyEdge = {
+  __typename?: 'PortfolioIdentitiesByStoRaisingPortfolioIdAndCreatorIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Identity` at the end of the edge. */
+  node?: Maybe<Identity>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stosByCreatorId: StosConnection;
+};
+
+/** A `Identity` edge in the connection, with data from `Sto`. */
+export type PortfolioIdentitiesByStoRaisingPortfolioIdAndCreatorIdManyToManyEdgeStosByCreatorIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<StoFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<StosOrderBy>>;
   };
 
 /** A connection to a list of `Instruction` values, with data from `Leg`. */
@@ -23112,6 +24719,100 @@ export type PortfolioPortfoliosByPortfolioMovementToIdAndFromIdManyToManyEdgePor
     orderBy?: InputMaybe<Array<PortfolioMovementsOrderBy>>;
   };
 
+/** A connection to a list of `Portfolio` values, with data from `Sto`. */
+export type PortfolioPortfoliosByStoOfferingPortfolioIdAndRaisingPortfolioIdManyToManyConnection = {
+  __typename?: 'PortfolioPortfoliosByStoOfferingPortfolioIdAndRaisingPortfolioIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<PortfolioAggregates>;
+  /** A list of edges which contains the `Portfolio`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<PortfolioPortfoliosByStoOfferingPortfolioIdAndRaisingPortfolioIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<PortfolioAggregates>>;
+  /** A list of `Portfolio` objects. */
+  nodes: Array<Maybe<Portfolio>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Portfolio` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Portfolio` values, with data from `Sto`. */
+export type PortfolioPortfoliosByStoOfferingPortfolioIdAndRaisingPortfolioIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<PortfoliosGroupBy>;
+    having?: InputMaybe<PortfoliosHavingInput>;
+  };
+
+/** A `Portfolio` edge in the connection, with data from `Sto`. */
+export type PortfolioPortfoliosByStoOfferingPortfolioIdAndRaisingPortfolioIdManyToManyEdge = {
+  __typename?: 'PortfolioPortfoliosByStoOfferingPortfolioIdAndRaisingPortfolioIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Portfolio` at the end of the edge. */
+  node?: Maybe<Portfolio>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stosByRaisingPortfolioId: StosConnection;
+};
+
+/** A `Portfolio` edge in the connection, with data from `Sto`. */
+export type PortfolioPortfoliosByStoOfferingPortfolioIdAndRaisingPortfolioIdManyToManyEdgeStosByRaisingPortfolioIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<StoFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<StosOrderBy>>;
+  };
+
+/** A connection to a list of `Portfolio` values, with data from `Sto`. */
+export type PortfolioPortfoliosByStoRaisingPortfolioIdAndOfferingPortfolioIdManyToManyConnection = {
+  __typename?: 'PortfolioPortfoliosByStoRaisingPortfolioIdAndOfferingPortfolioIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<PortfolioAggregates>;
+  /** A list of edges which contains the `Portfolio`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<PortfolioPortfoliosByStoRaisingPortfolioIdAndOfferingPortfolioIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<PortfolioAggregates>>;
+  /** A list of `Portfolio` objects. */
+  nodes: Array<Maybe<Portfolio>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Portfolio` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Portfolio` values, with data from `Sto`. */
+export type PortfolioPortfoliosByStoRaisingPortfolioIdAndOfferingPortfolioIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<PortfoliosGroupBy>;
+    having?: InputMaybe<PortfoliosHavingInput>;
+  };
+
+/** A `Portfolio` edge in the connection, with data from `Sto`. */
+export type PortfolioPortfoliosByStoRaisingPortfolioIdAndOfferingPortfolioIdManyToManyEdge = {
+  __typename?: 'PortfolioPortfoliosByStoRaisingPortfolioIdAndOfferingPortfolioIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Portfolio` at the end of the edge. */
+  node?: Maybe<Portfolio>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stosByOfferingPortfolioId: StosConnection;
+};
+
+/** A `Portfolio` edge in the connection, with data from `Sto`. */
+export type PortfolioPortfoliosByStoRaisingPortfolioIdAndOfferingPortfolioIdManyToManyEdgeStosByOfferingPortfolioIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<StoFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<StosOrderBy>>;
+  };
+
 /** A connection to a list of `Settlement` values, with data from `Leg`. */
 export type PortfolioSettlementsByLegFromIdAndSettlementIdManyToManyConnection = {
   __typename?: 'PortfolioSettlementsByLegFromIdAndSettlementIdManyToManyConnection';
@@ -23204,6 +24905,98 @@ export type PortfolioSettlementsByLegToIdAndSettlementIdManyToManyEdgeLegsArgs =
   orderBy?: InputMaybe<Array<LegsOrderBy>>;
 };
 
+/** A connection to a list of `Venue` values, with data from `Sto`. */
+export type PortfolioVenuesByStoOfferingPortfolioIdAndVenueIdManyToManyConnection = {
+  __typename?: 'PortfolioVenuesByStoOfferingPortfolioIdAndVenueIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<VenueAggregates>;
+  /** A list of edges which contains the `Venue`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<PortfolioVenuesByStoOfferingPortfolioIdAndVenueIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<VenueAggregates>>;
+  /** A list of `Venue` objects. */
+  nodes: Array<Maybe<Venue>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Venue` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Venue` values, with data from `Sto`. */
+export type PortfolioVenuesByStoOfferingPortfolioIdAndVenueIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<VenuesGroupBy>;
+    having?: InputMaybe<VenuesHavingInput>;
+  };
+
+/** A `Venue` edge in the connection, with data from `Sto`. */
+export type PortfolioVenuesByStoOfferingPortfolioIdAndVenueIdManyToManyEdge = {
+  __typename?: 'PortfolioVenuesByStoOfferingPortfolioIdAndVenueIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Venue` at the end of the edge. */
+  node?: Maybe<Venue>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stos: StosConnection;
+};
+
+/** A `Venue` edge in the connection, with data from `Sto`. */
+export type PortfolioVenuesByStoOfferingPortfolioIdAndVenueIdManyToManyEdgeStosArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<StoFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<StosOrderBy>>;
+};
+
+/** A connection to a list of `Venue` values, with data from `Sto`. */
+export type PortfolioVenuesByStoRaisingPortfolioIdAndVenueIdManyToManyConnection = {
+  __typename?: 'PortfolioVenuesByStoRaisingPortfolioIdAndVenueIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<VenueAggregates>;
+  /** A list of edges which contains the `Venue`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<PortfolioVenuesByStoRaisingPortfolioIdAndVenueIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<VenueAggregates>>;
+  /** A list of `Venue` objects. */
+  nodes: Array<Maybe<Venue>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Venue` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Venue` values, with data from `Sto`. */
+export type PortfolioVenuesByStoRaisingPortfolioIdAndVenueIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<VenuesGroupBy>;
+    having?: InputMaybe<VenuesHavingInput>;
+  };
+
+/** A `Venue` edge in the connection, with data from `Sto`. */
+export type PortfolioVenuesByStoRaisingPortfolioIdAndVenueIdManyToManyEdge = {
+  __typename?: 'PortfolioVenuesByStoRaisingPortfolioIdAndVenueIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Venue` at the end of the edge. */
+  node?: Maybe<Venue>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stos: StosConnection;
+};
+
+/** A `Venue` edge in the connection, with data from `Sto`. */
+export type PortfolioVenuesByStoRaisingPortfolioIdAndVenueIdManyToManyEdgeStosArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<StoFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<StosOrderBy>>;
+};
+
 /** A connection to a list of `Portfolio` values. */
 export type PortfoliosConnection = {
   __typename?: 'PortfoliosConnection';
@@ -23289,6 +25082,10 @@ export enum PortfoliosOrderBy {
   PortfolioMovementsByToIdCountDesc = 'PORTFOLIO_MOVEMENTS_BY_TO_ID_COUNT_DESC',
   PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
+  StosByOfferingPortfolioIdCountAsc = 'STOS_BY_OFFERING_PORTFOLIO_ID_COUNT_ASC',
+  StosByOfferingPortfolioIdCountDesc = 'STOS_BY_OFFERING_PORTFOLIO_ID_COUNT_DESC',
+  StosByRaisingPortfolioIdCountAsc = 'STOS_BY_RAISING_PORTFOLIO_ID_COUNT_ASC',
+  StosByRaisingPortfolioIdCountDesc = 'STOS_BY_RAISING_PORTFOLIO_ID_COUNT_DESC',
   UpdatedAtAsc = 'UPDATED_AT_ASC',
   UpdatedAtDesc = 'UPDATED_AT_DESC',
   UpdatedBlockIdAsc = 'UPDATED_BLOCK_ID_ASC',
@@ -24054,7 +25851,9 @@ export enum PublicEnum0Bf3C7D4Ef {
   RemoveDocuments = 'remove_documents',
   RemoveExemptedEntities = 'remove_exempted_entities',
   RemoveFreezeAdmin = 'remove_freeze_admin',
+  RemoveLocalMetadataKey = 'remove_local_metadata_key',
   RemoveMember = 'remove_member',
+  RemoveMetadataValue = 'remove_metadata_value',
   RemoveMultisigSigner = 'remove_multisig_signer',
   RemoveMultisigSignersViaCreator = 'remove_multisig_signers_via_creator',
   RemovePayingKey = 'remove_paying_key',
@@ -24695,6 +26494,40 @@ export type PublicEnum8F5A39C8EeFilter = {
   notEqualTo?: InputMaybe<PublicEnum8F5A39C8Ee>;
   /** Not included in the specified list. */
   notIn?: InputMaybe<Array<PublicEnum8F5A39C8Ee>>;
+};
+
+/** @enum\n@enumName StoStatus */
+export enum PublicEnum9Ceea16A44 {
+  Closed = 'Closed',
+  ClosedEarly = 'ClosedEarly',
+  Frozen = 'Frozen',
+  Live = 'Live',
+}
+
+/** A filter to be used against PublicEnum9Ceea16A44 fields. All fields are combined with a logical ‘and.’ */
+export type PublicEnum9Ceea16A44Filter = {
+  /** Not equal to the specified value, treating null like an ordinary value. */
+  distinctFrom?: InputMaybe<PublicEnum9Ceea16A44>;
+  /** Equal to the specified value. */
+  equalTo?: InputMaybe<PublicEnum9Ceea16A44>;
+  /** Greater than the specified value. */
+  greaterThan?: InputMaybe<PublicEnum9Ceea16A44>;
+  /** Greater than or equal to the specified value. */
+  greaterThanOrEqualTo?: InputMaybe<PublicEnum9Ceea16A44>;
+  /** Included in the specified list. */
+  in?: InputMaybe<Array<PublicEnum9Ceea16A44>>;
+  /** Is null (if `true` is specified) or is not null (if `false` is specified). */
+  isNull?: InputMaybe<Scalars['Boolean']>;
+  /** Less than the specified value. */
+  lessThan?: InputMaybe<PublicEnum9Ceea16A44>;
+  /** Less than or equal to the specified value. */
+  lessThanOrEqualTo?: InputMaybe<PublicEnum9Ceea16A44>;
+  /** Equal to the specified value, treating null like an ordinary value. */
+  notDistinctFrom?: InputMaybe<PublicEnum9Ceea16A44>;
+  /** Not equal to the specified value. */
+  notEqualTo?: InputMaybe<PublicEnum9Ceea16A44>;
+  /** Not included in the specified list. */
+  notIn?: InputMaybe<Array<PublicEnum9Ceea16A44>>;
 };
 
 /** @enum\n@enumName TransferComplianceTypeEnum */
@@ -26978,17 +28811,36 @@ export type Sto = Node & {
   /** Reads a single `Block` that is related to this `Sto`. */
   createdBlock?: Maybe<Block>;
   createdBlockId: Scalars['String'];
+  /** Reads a single `Identity` that is related to this `Sto`. */
+  creator?: Maybe<Identity>;
+  creatorId: Scalars['String'];
+  end?: Maybe<Scalars['Datetime']>;
   id: Scalars['String'];
+  minimumInvestment: Scalars['BigFloat'];
+  name: Scalars['String'];
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
   nodeId: Scalars['ID'];
   /** Reads a single `Asset` that is related to this `Sto`. */
   offeringAsset?: Maybe<Asset>;
   offeringAssetId: Scalars['String'];
+  /** Reads a single `Portfolio` that is related to this `Sto`. */
+  offeringPortfolio?: Maybe<Portfolio>;
+  offeringPortfolioId: Scalars['String'];
+  raisingAssetId: Scalars['String'];
+  /** Reads a single `Portfolio` that is related to this `Sto`. */
+  raisingPortfolio?: Maybe<Portfolio>;
+  raisingPortfolioId: Scalars['String'];
+  start?: Maybe<Scalars['Datetime']>;
+  status: PublicEnum9Ceea16A44;
   stoId: Scalars['Int'];
+  tiers: Scalars['JSON'];
   updatedAt: Scalars['Datetime'];
   /** Reads a single `Block` that is related to this `Sto`. */
   updatedBlock?: Maybe<Block>;
   updatedBlockId: Scalars['String'];
+  /** Reads a single `Venue` that is related to this `Sto`. */
+  venue?: Maybe<Venue>;
+  venueId: Scalars['String'];
 };
 
 export type StoAggregates = {
@@ -27004,20 +28856,42 @@ export type StoFilter = {
   createdAt?: InputMaybe<DatetimeFilter>;
   /** Filter by the object’s `createdBlockId` field. */
   createdBlockId?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `creatorId` field. */
+  creatorId?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `end` field. */
+  end?: InputMaybe<DatetimeFilter>;
   /** Filter by the object’s `id` field. */
   id?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `minimumInvestment` field. */
+  minimumInvestment?: InputMaybe<BigFloatFilter>;
+  /** Filter by the object’s `name` field. */
+  name?: InputMaybe<StringFilter>;
   /** Negates the expression. */
   not?: InputMaybe<StoFilter>;
   /** Filter by the object’s `offeringAssetId` field. */
   offeringAssetId?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `offeringPortfolioId` field. */
+  offeringPortfolioId?: InputMaybe<StringFilter>;
   /** Checks for any expressions in this list. */
   or?: InputMaybe<Array<StoFilter>>;
+  /** Filter by the object’s `raisingAssetId` field. */
+  raisingAssetId?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `raisingPortfolioId` field. */
+  raisingPortfolioId?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `start` field. */
+  start?: InputMaybe<DatetimeFilter>;
+  /** Filter by the object’s `status` field. */
+  status?: InputMaybe<PublicEnum9Ceea16A44Filter>;
   /** Filter by the object’s `stoId` field. */
   stoId?: InputMaybe<IntFilter>;
+  /** Filter by the object’s `tiers` field. */
+  tiers?: InputMaybe<JsonFilter>;
   /** Filter by the object’s `updatedAt` field. */
   updatedAt?: InputMaybe<DatetimeFilter>;
   /** Filter by the object’s `updatedBlockId` field. */
   updatedBlockId?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `venueId` field. */
+  venueId?: InputMaybe<StringFilter>;
 };
 
 /** A connection to a list of `Sto` values. */
@@ -27056,10 +28930,21 @@ export type StosEdge = {
 export enum StosGroupBy {
   CreatedAt = 'CREATED_AT',
   CreatedBlockId = 'CREATED_BLOCK_ID',
+  CreatorId = 'CREATOR_ID',
+  End = 'END',
+  MinimumInvestment = 'MINIMUM_INVESTMENT',
+  Name = 'NAME',
   OfferingAssetId = 'OFFERING_ASSET_ID',
+  OfferingPortfolioId = 'OFFERING_PORTFOLIO_ID',
+  RaisingAssetId = 'RAISING_ASSET_ID',
+  RaisingPortfolioId = 'RAISING_PORTFOLIO_ID',
+  Start = 'START',
+  Status = 'STATUS',
   StoId = 'STO_ID',
+  Tiers = 'TIERS',
   UpdatedAt = 'UPDATED_AT',
   UpdatedBlockId = 'UPDATED_BLOCK_ID',
+  VenueId = 'VENUE_ID',
 }
 
 /** Conditions for `Sto` aggregates. */
@@ -27074,19 +28959,41 @@ export enum StosOrderBy {
   CreatedAtDesc = 'CREATED_AT_DESC',
   CreatedBlockIdAsc = 'CREATED_BLOCK_ID_ASC',
   CreatedBlockIdDesc = 'CREATED_BLOCK_ID_DESC',
+  CreatorIdAsc = 'CREATOR_ID_ASC',
+  CreatorIdDesc = 'CREATOR_ID_DESC',
+  EndAsc = 'END_ASC',
+  EndDesc = 'END_DESC',
   IdAsc = 'ID_ASC',
   IdDesc = 'ID_DESC',
+  MinimumInvestmentAsc = 'MINIMUM_INVESTMENT_ASC',
+  MinimumInvestmentDesc = 'MINIMUM_INVESTMENT_DESC',
+  NameAsc = 'NAME_ASC',
+  NameDesc = 'NAME_DESC',
   Natural = 'NATURAL',
   OfferingAssetIdAsc = 'OFFERING_ASSET_ID_ASC',
   OfferingAssetIdDesc = 'OFFERING_ASSET_ID_DESC',
+  OfferingPortfolioIdAsc = 'OFFERING_PORTFOLIO_ID_ASC',
+  OfferingPortfolioIdDesc = 'OFFERING_PORTFOLIO_ID_DESC',
   PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
+  RaisingAssetIdAsc = 'RAISING_ASSET_ID_ASC',
+  RaisingAssetIdDesc = 'RAISING_ASSET_ID_DESC',
+  RaisingPortfolioIdAsc = 'RAISING_PORTFOLIO_ID_ASC',
+  RaisingPortfolioIdDesc = 'RAISING_PORTFOLIO_ID_DESC',
+  StartAsc = 'START_ASC',
+  StartDesc = 'START_DESC',
+  StatusAsc = 'STATUS_ASC',
+  StatusDesc = 'STATUS_DESC',
   StoIdAsc = 'STO_ID_ASC',
   StoIdDesc = 'STO_ID_DESC',
+  TiersAsc = 'TIERS_ASC',
+  TiersDesc = 'TIERS_DESC',
   UpdatedAtAsc = 'UPDATED_AT_ASC',
   UpdatedAtDesc = 'UPDATED_AT_DESC',
   UpdatedBlockIdAsc = 'UPDATED_BLOCK_ID_ASC',
   UpdatedBlockIdDesc = 'UPDATED_BLOCK_ID_DESC',
+  VenueIdAsc = 'VENUE_ID_ASC',
+  VenueIdDesc = 'VENUE_ID_DESC',
 }
 
 /** A filter to be used against String fields. All fields are combined with a logical ‘and.’ */
@@ -28223,16 +30130,24 @@ export enum TrustedClaimIssuersOrderBy {
 
 export type Venue = Node & {
   __typename?: 'Venue';
+  /** Reads and enables pagination through a set of `Asset`. */
+  assetsByStoVenueIdAndOfferingAssetId: VenueAssetsByStoVenueIdAndOfferingAssetIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Block`. */
   blocksByInstructionVenueIdAndCreatedBlockId: VenueBlocksByInstructionVenueIdAndCreatedBlockIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Block`. */
   blocksByInstructionVenueIdAndUpdatedBlockId: VenueBlocksByInstructionVenueIdAndUpdatedBlockIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Block`. */
+  blocksByStoVenueIdAndCreatedBlockId: VenueBlocksByStoVenueIdAndCreatedBlockIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Block`. */
+  blocksByStoVenueIdAndUpdatedBlockId: VenueBlocksByStoVenueIdAndUpdatedBlockIdManyToManyConnection;
   createdAt: Scalars['Datetime'];
   /** Reads a single `Block` that is related to this `Venue`. */
   createdBlock?: Maybe<Block>;
   createdBlockId: Scalars['String'];
   details?: Maybe<Scalars['String']>;
   id: Scalars['String'];
+  /** Reads and enables pagination through a set of `Identity`. */
+  identitiesByStoVenueIdAndCreatorId: VenueIdentitiesByStoVenueIdAndCreatorIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Instruction`. */
   instructions: InstructionsConnection;
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
@@ -28240,11 +30155,27 @@ export type Venue = Node & {
   /** Reads a single `Identity` that is related to this `Venue`. */
   owner?: Maybe<Identity>;
   ownerId: Scalars['String'];
+  /** Reads and enables pagination through a set of `Portfolio`. */
+  portfoliosByStoVenueIdAndOfferingPortfolioId: VenuePortfoliosByStoVenueIdAndOfferingPortfolioIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Portfolio`. */
+  portfoliosByStoVenueIdAndRaisingPortfolioId: VenuePortfoliosByStoVenueIdAndRaisingPortfolioIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stos: StosConnection;
   type: Scalars['String'];
   updatedAt: Scalars['Datetime'];
   /** Reads a single `Block` that is related to this `Venue`. */
   updatedBlock?: Maybe<Block>;
   updatedBlockId: Scalars['String'];
+};
+
+export type VenueAssetsByStoVenueIdAndOfferingAssetIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<AssetFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
 export type VenueBlocksByInstructionVenueIdAndCreatedBlockIdArgs = {
@@ -28267,6 +30198,36 @@ export type VenueBlocksByInstructionVenueIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+export type VenueBlocksByStoVenueIdAndCreatedBlockIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<BlockFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<BlocksOrderBy>>;
+};
+
+export type VenueBlocksByStoVenueIdAndUpdatedBlockIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<BlockFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<BlocksOrderBy>>;
+};
+
+export type VenueIdentitiesByStoVenueIdAndCreatorIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<IdentityFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
+};
+
 export type VenueInstructionsArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -28277,9 +30238,84 @@ export type VenueInstructionsArgs = {
   orderBy?: InputMaybe<Array<InstructionsOrderBy>>;
 };
 
+export type VenuePortfoliosByStoVenueIdAndOfferingPortfolioIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<PortfolioFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
+};
+
+export type VenuePortfoliosByStoVenueIdAndRaisingPortfolioIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<PortfolioFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
+};
+
+export type VenueStosArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<StoFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<StosOrderBy>>;
+};
+
 export type VenueAggregates = {
   __typename?: 'VenueAggregates';
   keys?: Maybe<Array<Scalars['String']>>;
+};
+
+/** A connection to a list of `Asset` values, with data from `Sto`. */
+export type VenueAssetsByStoVenueIdAndOfferingAssetIdManyToManyConnection = {
+  __typename?: 'VenueAssetsByStoVenueIdAndOfferingAssetIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<AssetAggregates>;
+  /** A list of edges which contains the `Asset`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<VenueAssetsByStoVenueIdAndOfferingAssetIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<AssetAggregates>>;
+  /** A list of `Asset` objects. */
+  nodes: Array<Maybe<Asset>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Asset` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Asset` values, with data from `Sto`. */
+export type VenueAssetsByStoVenueIdAndOfferingAssetIdManyToManyConnectionGroupedAggregatesArgs = {
+  groupBy: Array<AssetsGroupBy>;
+  having?: InputMaybe<AssetsHavingInput>;
+};
+
+/** A `Asset` edge in the connection, with data from `Sto`. */
+export type VenueAssetsByStoVenueIdAndOfferingAssetIdManyToManyEdge = {
+  __typename?: 'VenueAssetsByStoVenueIdAndOfferingAssetIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Asset` at the end of the edge. */
+  node?: Maybe<Asset>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stosByOfferingAssetId: StosConnection;
+};
+
+/** A `Asset` edge in the connection, with data from `Sto`. */
+export type VenueAssetsByStoVenueIdAndOfferingAssetIdManyToManyEdgeStosByOfferingAssetIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<StoFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<StosOrderBy>>;
 };
 
 /** A connection to a list of `Block` values, with data from `Instruction`. */
@@ -28376,6 +30412,96 @@ export type VenueBlocksByInstructionVenueIdAndUpdatedBlockIdManyToManyEdgeInstru
     orderBy?: InputMaybe<Array<InstructionsOrderBy>>;
   };
 
+/** A connection to a list of `Block` values, with data from `Sto`. */
+export type VenueBlocksByStoVenueIdAndCreatedBlockIdManyToManyConnection = {
+  __typename?: 'VenueBlocksByStoVenueIdAndCreatedBlockIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<BlockAggregates>;
+  /** A list of edges which contains the `Block`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<VenueBlocksByStoVenueIdAndCreatedBlockIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<BlockAggregates>>;
+  /** A list of `Block` objects. */
+  nodes: Array<Maybe<Block>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Block` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Block` values, with data from `Sto`. */
+export type VenueBlocksByStoVenueIdAndCreatedBlockIdManyToManyConnectionGroupedAggregatesArgs = {
+  groupBy: Array<BlocksGroupBy>;
+  having?: InputMaybe<BlocksHavingInput>;
+};
+
+/** A `Block` edge in the connection, with data from `Sto`. */
+export type VenueBlocksByStoVenueIdAndCreatedBlockIdManyToManyEdge = {
+  __typename?: 'VenueBlocksByStoVenueIdAndCreatedBlockIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Block` at the end of the edge. */
+  node?: Maybe<Block>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stosByCreatedBlockId: StosConnection;
+};
+
+/** A `Block` edge in the connection, with data from `Sto`. */
+export type VenueBlocksByStoVenueIdAndCreatedBlockIdManyToManyEdgeStosByCreatedBlockIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<StoFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<StosOrderBy>>;
+};
+
+/** A connection to a list of `Block` values, with data from `Sto`. */
+export type VenueBlocksByStoVenueIdAndUpdatedBlockIdManyToManyConnection = {
+  __typename?: 'VenueBlocksByStoVenueIdAndUpdatedBlockIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<BlockAggregates>;
+  /** A list of edges which contains the `Block`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<VenueBlocksByStoVenueIdAndUpdatedBlockIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<BlockAggregates>>;
+  /** A list of `Block` objects. */
+  nodes: Array<Maybe<Block>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Block` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Block` values, with data from `Sto`. */
+export type VenueBlocksByStoVenueIdAndUpdatedBlockIdManyToManyConnectionGroupedAggregatesArgs = {
+  groupBy: Array<BlocksGroupBy>;
+  having?: InputMaybe<BlocksHavingInput>;
+};
+
+/** A `Block` edge in the connection, with data from `Sto`. */
+export type VenueBlocksByStoVenueIdAndUpdatedBlockIdManyToManyEdge = {
+  __typename?: 'VenueBlocksByStoVenueIdAndUpdatedBlockIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Block` at the end of the edge. */
+  node?: Maybe<Block>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stosByUpdatedBlockId: StosConnection;
+};
+
+/** A `Block` edge in the connection, with data from `Sto`. */
+export type VenueBlocksByStoVenueIdAndUpdatedBlockIdManyToManyEdgeStosByUpdatedBlockIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<StoFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<StosOrderBy>>;
+};
+
 /** A filter to be used against `Venue` object types. All fields are combined with a logical ‘and.’ */
 export type VenueFilter = {
   /** Checks for all expressions in this list. */
@@ -28401,6 +30527,145 @@ export type VenueFilter = {
   /** Filter by the object’s `updatedBlockId` field. */
   updatedBlockId?: InputMaybe<StringFilter>;
 };
+
+/** A connection to a list of `Identity` values, with data from `Sto`. */
+export type VenueIdentitiesByStoVenueIdAndCreatorIdManyToManyConnection = {
+  __typename?: 'VenueIdentitiesByStoVenueIdAndCreatorIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<IdentityAggregates>;
+  /** A list of edges which contains the `Identity`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<VenueIdentitiesByStoVenueIdAndCreatorIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<IdentityAggregates>>;
+  /** A list of `Identity` objects. */
+  nodes: Array<Maybe<Identity>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Identity` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Identity` values, with data from `Sto`. */
+export type VenueIdentitiesByStoVenueIdAndCreatorIdManyToManyConnectionGroupedAggregatesArgs = {
+  groupBy: Array<IdentitiesGroupBy>;
+  having?: InputMaybe<IdentitiesHavingInput>;
+};
+
+/** A `Identity` edge in the connection, with data from `Sto`. */
+export type VenueIdentitiesByStoVenueIdAndCreatorIdManyToManyEdge = {
+  __typename?: 'VenueIdentitiesByStoVenueIdAndCreatorIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Identity` at the end of the edge. */
+  node?: Maybe<Identity>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stosByCreatorId: StosConnection;
+};
+
+/** A `Identity` edge in the connection, with data from `Sto`. */
+export type VenueIdentitiesByStoVenueIdAndCreatorIdManyToManyEdgeStosByCreatorIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<StoFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<StosOrderBy>>;
+};
+
+/** A connection to a list of `Portfolio` values, with data from `Sto`. */
+export type VenuePortfoliosByStoVenueIdAndOfferingPortfolioIdManyToManyConnection = {
+  __typename?: 'VenuePortfoliosByStoVenueIdAndOfferingPortfolioIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<PortfolioAggregates>;
+  /** A list of edges which contains the `Portfolio`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<VenuePortfoliosByStoVenueIdAndOfferingPortfolioIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<PortfolioAggregates>>;
+  /** A list of `Portfolio` objects. */
+  nodes: Array<Maybe<Portfolio>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Portfolio` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Portfolio` values, with data from `Sto`. */
+export type VenuePortfoliosByStoVenueIdAndOfferingPortfolioIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<PortfoliosGroupBy>;
+    having?: InputMaybe<PortfoliosHavingInput>;
+  };
+
+/** A `Portfolio` edge in the connection, with data from `Sto`. */
+export type VenuePortfoliosByStoVenueIdAndOfferingPortfolioIdManyToManyEdge = {
+  __typename?: 'VenuePortfoliosByStoVenueIdAndOfferingPortfolioIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Portfolio` at the end of the edge. */
+  node?: Maybe<Portfolio>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stosByOfferingPortfolioId: StosConnection;
+};
+
+/** A `Portfolio` edge in the connection, with data from `Sto`. */
+export type VenuePortfoliosByStoVenueIdAndOfferingPortfolioIdManyToManyEdgeStosByOfferingPortfolioIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<StoFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<StosOrderBy>>;
+  };
+
+/** A connection to a list of `Portfolio` values, with data from `Sto`. */
+export type VenuePortfoliosByStoVenueIdAndRaisingPortfolioIdManyToManyConnection = {
+  __typename?: 'VenuePortfoliosByStoVenueIdAndRaisingPortfolioIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<PortfolioAggregates>;
+  /** A list of edges which contains the `Portfolio`, info from the `Sto`, and the cursor to aid in pagination. */
+  edges: Array<VenuePortfoliosByStoVenueIdAndRaisingPortfolioIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<PortfolioAggregates>>;
+  /** A list of `Portfolio` objects. */
+  nodes: Array<Maybe<Portfolio>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Portfolio` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Portfolio` values, with data from `Sto`. */
+export type VenuePortfoliosByStoVenueIdAndRaisingPortfolioIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<PortfoliosGroupBy>;
+    having?: InputMaybe<PortfoliosHavingInput>;
+  };
+
+/** A `Portfolio` edge in the connection, with data from `Sto`. */
+export type VenuePortfoliosByStoVenueIdAndRaisingPortfolioIdManyToManyEdge = {
+  __typename?: 'VenuePortfoliosByStoVenueIdAndRaisingPortfolioIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Portfolio` at the end of the edge. */
+  node?: Maybe<Portfolio>;
+  /** Reads and enables pagination through a set of `Sto`. */
+  stosByRaisingPortfolioId: StosConnection;
+};
+
+/** A `Portfolio` edge in the connection, with data from `Sto`. */
+export type VenuePortfoliosByStoVenueIdAndRaisingPortfolioIdManyToManyEdgeStosByRaisingPortfolioIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<StoFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<StosOrderBy>>;
+  };
 
 /** A connection to a list of `Venue` values. */
 export type VenuesConnection = {
@@ -28468,6 +30733,8 @@ export enum VenuesOrderBy {
   OwnerIdDesc = 'OWNER_ID_DESC',
   PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
+  StosCountAsc = 'STOS_COUNT_ASC',
+  StosCountDesc = 'STOS_COUNT_DESC',
   TypeAsc = 'TYPE_ASC',
   TypeDesc = 'TYPE_DESC',
   UpdatedAtAsc = 'UPDATED_AT_ASC',
