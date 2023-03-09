@@ -1318,8 +1318,6 @@ function handleSpecVersionResponse(
     return false;
   }
 
-  console.log(specVersionAsSemver);
-  console.log(SUPPORTED_SPEC_VERSION_RANGE);
   if (!satisfies(specVersionAsSemver, SUPPORTED_SPEC_VERSION_RANGE)) {
     console.warn(
       `This version of the SDK supports Polymesh chain spec version ${SUPPORTED_SPEC_VERSION_RANGE}. The chain spec is at version ${specVersionAsSemver}. Please upgrade the SDK`

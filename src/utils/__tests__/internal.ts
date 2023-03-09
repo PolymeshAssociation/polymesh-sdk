@@ -1211,7 +1211,6 @@ describe('assertExpectedChainVersion', () => {
   it('should log a warning given a minor chain spec version mismatch', async () => {
     const signal = assertExpectedChainVersion('ws://example.com');
     const mockSpecVersion = getMismatchedVersion(SUPPORTED_SPEC_VERSION_RANGE);
-    console.log(getMismatchedVersion(SUPPORTED_SPEC_VERSION_RANGE));
     client.sendSpecVersion(getSpecVersion(mockSpecVersion));
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     client.sendRpcVersion(coerce(SUPPORTED_NODE_VERSION_RANGE)!.version);
