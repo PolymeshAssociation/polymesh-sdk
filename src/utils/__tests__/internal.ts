@@ -10,6 +10,7 @@ import {
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
+import { coerce } from 'semver';
 
 import { Account, Asset, Context, Identity, PolymeshError, Procedure } from '~/internal';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
@@ -1133,15 +1134,17 @@ describe('assertExpectedChainVersion', () => {
   let client: MockWebSocket;
   let warnSpy: jest.SpyInstance;
 
-  const getSpecVersion = (spec: string): string =>
-    `${+spec
-      .split('.')
+  const getSpecVersion = (range: string): string =>
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    `${coerce(range)!
+      .version.split('.')
       .map(number => `00${number}`.slice(-3))
       .join('')}`;
 
-  const getMismatchedVersion = (version: string, versionIndex = 2): string =>
-    version
-      .split('.')
+  const getMismatchedVersion = (range: string, versionIndex = 1): string =>
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    coerce(range)!
+      .version.split('.')
       .map((number, index) => (index === versionIndex ? +number + 1 : number))
       .join('.');
 
@@ -1205,11 +1208,13 @@ describe('assertExpectedChainVersion', () => {
     return expect(signal).rejects.toThrowError(expectedError);
   });
 
-  it('should log a warning given a minor or patch chain spec version mismatch', async () => {
+  it('should log a warning given a minor chain spec version mismatch', async () => {
     const signal = assertExpectedChainVersion('ws://example.com');
     const mockSpecVersion = getMismatchedVersion(SUPPORTED_SPEC_VERSION_RANGE);
+    console.log(getMismatchedVersion(SUPPORTED_SPEC_VERSION_RANGE));
     client.sendSpecVersion(getSpecVersion(mockSpecVersion));
-    client.sendRpcVersion(SUPPORTED_NODE_VERSION_RANGE);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    client.sendRpcVersion(coerce(SUPPORTED_NODE_VERSION_RANGE)!.version);
     await signal;
     expect(warnSpy).toHaveBeenCalledWith(
       `This version of the SDK supports Polymesh chain spec version ${SUPPORTED_SPEC_VERSION_RANGE}. The chain spec is at version ${mockSpecVersion}. Please upgrade the SDK`
