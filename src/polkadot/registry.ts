@@ -145,6 +145,8 @@ import type {
   PalletMultisigProposalDetails,
   PalletMultisigProposalStatus,
   PalletMultisigRawEvent,
+  PalletNftCall,
+  PalletNftError,
   PalletOffencesEvent,
   PalletPermissionsError,
   PalletPermissionsStoreCallMetadata,
@@ -194,7 +196,9 @@ import type {
   PalletSettlementInstructionMemo,
   PalletSettlementInstructionStatus,
   PalletSettlementLeg,
+  PalletSettlementLegAsset,
   PalletSettlementLegStatus,
+  PalletSettlementLegV2,
   PalletSettlementRawEvent,
   PalletSettlementReceiptDetails,
   PalletSettlementSettlementType,
@@ -267,6 +271,7 @@ import type {
   PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth,
   PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuthV1,
   PolymeshCommonUtilitiesMaybeBlock,
+  PolymeshCommonUtilitiesNftEvent,
   PolymeshCommonUtilitiesPortfolioEvent,
   PolymeshCommonUtilitiesProtocolFeeProtocolOp,
   PolymeshCommonUtilitiesRelayerRawEvent,
@@ -283,6 +288,7 @@ import type {
   PolymeshPrimitivesAssetMetadataAssetMetadataLockStatus,
   PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
   PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail,
+  PolymeshPrimitivesAssetNonFungibleType,
   PolymeshPrimitivesAuthorization,
   PolymeshPrimitivesAuthorizationAuthorizationData,
   PolymeshPrimitivesBeneficiary,
@@ -312,6 +318,13 @@ import type {
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesIdentityIdPortfolioKind,
   PolymeshPrimitivesJurisdictionCountryCode,
+  PolymeshPrimitivesNftNfTs,
+  PolymeshPrimitivesNftNftCollection,
+  PolymeshPrimitivesNftNftCollectionKeys,
+  PolymeshPrimitivesNftNftMetadataAttribute,
+  PolymeshPrimitivesPortfolioFund,
+  PolymeshPrimitivesPortfolioFundDescription,
+  PolymeshPrimitivesPortfolioMemo,
   PolymeshPrimitivesPosRatio,
   PolymeshPrimitivesSecondaryKey,
   PolymeshPrimitivesSecondaryKeyKeyRecord,
@@ -516,6 +529,8 @@ declare module '@polkadot/types/types/registry' {
     PalletMultisigProposalDetails: PalletMultisigProposalDetails;
     PalletMultisigProposalStatus: PalletMultisigProposalStatus;
     PalletMultisigRawEvent: PalletMultisigRawEvent;
+    PalletNftCall: PalletNftCall;
+    PalletNftError: PalletNftError;
     PalletOffencesEvent: PalletOffencesEvent;
     PalletPermissionsError: PalletPermissionsError;
     PalletPermissionsStoreCallMetadata: PalletPermissionsStoreCallMetadata;
@@ -565,7 +580,9 @@ declare module '@polkadot/types/types/registry' {
     PalletSettlementInstructionMemo: PalletSettlementInstructionMemo;
     PalletSettlementInstructionStatus: PalletSettlementInstructionStatus;
     PalletSettlementLeg: PalletSettlementLeg;
+    PalletSettlementLegAsset: PalletSettlementLegAsset;
     PalletSettlementLegStatus: PalletSettlementLegStatus;
+    PalletSettlementLegV2: PalletSettlementLegV2;
     PalletSettlementRawEvent: PalletSettlementRawEvent;
     PalletSettlementReceiptDetails: PalletSettlementReceiptDetails;
     PalletSettlementSettlementType: PalletSettlementSettlementType;
@@ -638,6 +655,7 @@ declare module '@polkadot/types/types/registry' {
     PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth: PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth;
     PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuthV1: PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuthV1;
     PolymeshCommonUtilitiesMaybeBlock: PolymeshCommonUtilitiesMaybeBlock;
+    PolymeshCommonUtilitiesNftEvent: PolymeshCommonUtilitiesNftEvent;
     PolymeshCommonUtilitiesPortfolioEvent: PolymeshCommonUtilitiesPortfolioEvent;
     PolymeshCommonUtilitiesProtocolFeeProtocolOp: PolymeshCommonUtilitiesProtocolFeeProtocolOp;
     PolymeshCommonUtilitiesRelayerRawEvent: PolymeshCommonUtilitiesRelayerRawEvent;
@@ -654,6 +672,7 @@ declare module '@polkadot/types/types/registry' {
     PolymeshPrimitivesAssetMetadataAssetMetadataLockStatus: PolymeshPrimitivesAssetMetadataAssetMetadataLockStatus;
     PolymeshPrimitivesAssetMetadataAssetMetadataSpec: PolymeshPrimitivesAssetMetadataAssetMetadataSpec;
     PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail: PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail;
+    PolymeshPrimitivesAssetNonFungibleType: PolymeshPrimitivesAssetNonFungibleType;
     PolymeshPrimitivesAuthorization: PolymeshPrimitivesAuthorization;
     PolymeshPrimitivesAuthorizationAuthorizationData: PolymeshPrimitivesAuthorizationAuthorizationData;
     PolymeshPrimitivesBeneficiary: PolymeshPrimitivesBeneficiary;
@@ -683,6 +702,13 @@ declare module '@polkadot/types/types/registry' {
     PolymeshPrimitivesIdentityIdPortfolioId: PolymeshPrimitivesIdentityIdPortfolioId;
     PolymeshPrimitivesIdentityIdPortfolioKind: PolymeshPrimitivesIdentityIdPortfolioKind;
     PolymeshPrimitivesJurisdictionCountryCode: PolymeshPrimitivesJurisdictionCountryCode;
+    PolymeshPrimitivesNftNfTs: PolymeshPrimitivesNftNfTs;
+    PolymeshPrimitivesNftNftCollection: PolymeshPrimitivesNftNftCollection;
+    PolymeshPrimitivesNftNftCollectionKeys: PolymeshPrimitivesNftNftCollectionKeys;
+    PolymeshPrimitivesNftNftMetadataAttribute: PolymeshPrimitivesNftNftMetadataAttribute;
+    PolymeshPrimitivesPortfolioFund: PolymeshPrimitivesPortfolioFund;
+    PolymeshPrimitivesPortfolioFundDescription: PolymeshPrimitivesPortfolioFundDescription;
+    PolymeshPrimitivesPortfolioMemo: PolymeshPrimitivesPortfolioMemo;
     PolymeshPrimitivesPosRatio: PolymeshPrimitivesPosRatio;
     PolymeshPrimitivesSecondaryKey: PolymeshPrimitivesSecondaryKey;
     PolymeshPrimitivesSecondaryKeyKeyRecord: PolymeshPrimitivesSecondaryKeyKeyRecord;

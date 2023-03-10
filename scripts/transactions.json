@@ -244,7 +244,9 @@
     "register_asset_metadata_local_type": "register_asset_metadata_local_type",
     "register_asset_metadata_global_type": "register_asset_metadata_global_type",
     "redeem_from_portfolio": "redeem_from_portfolio",
-    "update_asset_type": "update_asset_type"
+    "update_asset_type": "update_asset_type",
+    "remove_local_metadata_key": "remove_local_metadata_key",
+    "remove_metadata_value": "remove_metadata_value"
   },
   "CapitalDistribution": {
     "distribute": "distribute",
@@ -314,7 +316,8 @@
     "move_portfolio_funds": "move_portfolio_funds",
     "rename_portfolio": "rename_portfolio",
     "quit_portfolio_custody": "quit_portfolio_custody",
-    "accept_portfolio_custody": "accept_portfolio_custody"
+    "accept_portfolio_custody": "accept_portfolio_custody",
+    "move_portfolio_funds_v2": "move_portfolio_funds_v2"
   },
   "ProtocolFee": {
     "change_coefficient": "change_coefficient",
@@ -349,7 +352,14 @@
     "update_venue_signers": "update_venue_signers",
     "add_instruction_with_memo": "add_instruction_with_memo",
     "add_and_affirm_instruction_with_memo": "add_and_affirm_instruction_with_memo",
-    "execute_manual_instruction": "execute_manual_instruction"
+    "execute_manual_instruction": "execute_manual_instruction",
+    "placeholder_claim_receipt": "placeholder_claim_receipt",
+    "placeholder_unclaim_receipt": "placeholder_unclaim_receipt",
+    "add_instruction_with_memo_v2": "add_instruction_with_memo_v2",
+    "add_and_affirm_instruction_with_memo_v2": "add_and_affirm_instruction_with_memo_v2",
+    "affirm_instruction_v2": "affirm_instruction_v2",
+    "withdraw_affirmation_v2": "withdraw_affirmation_v2",
+    "reject_instruction_v2": "reject_instruction_v2"
   },
   "Statistics": {
     "add_transfer_manager": "add_transfer_manager",
@@ -429,5 +439,10 @@
     "instantiate": "instantiate",
     "upload_code": "upload_code",
     "remove_code": "remove_code"
+  },
+  "Nft": {
+    "create_nft_collection": "create_nft_collection",
+    "issue_nft": "issue_nft",
+    "redeem_nft": "redeem_nft"
   }
 }
