@@ -25,7 +25,7 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import stringify from 'json-stable-stringify';
 import { differenceWith, flatMap, isEqual, mapValues, noop, padEnd, uniq } from 'lodash';
-import { major, satisfies } from 'semver';
+import { gtr, major, satisfies } from 'semver';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 
 import {
@@ -87,7 +87,9 @@ import {
   DEFAULT_GQL_PAGE_SIZE,
   MAX_TICKER_LENGTH,
   STATE_RUNTIME_VERSION_CALL,
+  SUPPORTED_NODE_SEMVER,
   SUPPORTED_NODE_VERSION_RANGE,
+  SUPPORTED_SPEC_SEMVER,
   SUPPORTED_SPEC_VERSION_RANGE,
   SYSTEM_VERSION_RPC_CALL,
 } from '~/utils/constants';
@@ -1230,7 +1232,7 @@ function handleNodeVersionResponse(
 ): boolean {
   const { result: version } = data;
 
-  if (!satisfies(version, major(SUPPORTED_NODE_VERSION_RANGE).toString())) {
+  if (!satisfies(version, major(SUPPORTED_NODE_SEMVER).toString())) {
     const error = new PolymeshError({
       code: ErrorCode.FatalError,
       message: 'Unsupported Polymesh RPC node version. Please upgrade the SDK',
@@ -1245,7 +1247,7 @@ function handleNodeVersionResponse(
     return false;
   }
 
-  if (!satisfies(version, SUPPORTED_NODE_VERSION_RANGE)) {
+  if (gtr(version, SUPPORTED_NODE_VERSION_RANGE)) {
     console.warn(
       `This version of the SDK supports Polymesh RPC node version ${SUPPORTED_NODE_VERSION_RANGE}. The node is at version ${version}. Please upgrade the SDK`
     );
@@ -1301,7 +1303,7 @@ function handleSpecVersionResponse(
     .map((ver: string) => ver.replace(/^0+(?!$)/g, ''))
     .join('.');
 
-  if (!satisfies(specVersionAsSemver, major(SUPPORTED_SPEC_VERSION_RANGE).toString())) {
+  if (!satisfies(specVersionAsSemver, major(SUPPORTED_SPEC_SEMVER).toString())) {
     const error = new PolymeshError({
       code: ErrorCode.FatalError,
       message: 'Unsupported Polymesh chain spec version. Please upgrade the SDK',
@@ -1316,7 +1318,7 @@ function handleSpecVersionResponse(
     return false;
   }
 
-  if (!satisfies(specVersionAsSemver, SUPPORTED_SPEC_VERSION_RANGE)) {
+  if (gtr(specVersionAsSemver, SUPPORTED_SPEC_VERSION_RANGE)) {
     console.warn(
       `This version of the SDK supports Polymesh chain spec version ${SUPPORTED_SPEC_VERSION_RANGE}. The chain spec is at version ${specVersionAsSemver}. Please upgrade the SDK`
     );

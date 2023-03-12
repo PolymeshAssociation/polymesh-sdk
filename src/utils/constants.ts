@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import { coerce } from 'semver';
 
 import { TransactionArgumentType } from '~/types';
 
@@ -109,12 +110,18 @@ export const ROOT_TYPES = rootTypes;
 /**
  * The Polymesh RPC node version range that is compatible with this version of the SDK
  */
-export const SUPPORTED_NODE_VERSION_RANGE = '5.2.0';
+export const SUPPORTED_NODE_VERSION_RANGE = '5.3.0';
+
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+export const SUPPORTED_NODE_SEMVER = coerce(SUPPORTED_NODE_VERSION_RANGE)!.version;
 
 /**
  * The Polymesh chain spec version range that is compatible with this version of the SDK
  */
-export const SUPPORTED_SPEC_VERSION_RANGE = '5.2.0';
+export const SUPPORTED_SPEC_VERSION_RANGE = '5.3.0';
+
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+export const SUPPORTED_SPEC_SEMVER = coerce(SUPPORTED_SPEC_VERSION_RANGE)!.version;
 
 export const SYSTEM_VERSION_RPC_CALL = {
   jsonrpc: '2.0',

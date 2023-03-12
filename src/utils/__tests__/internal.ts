@@ -39,7 +39,7 @@ import {
   TxTags,
 } from '~/types';
 import { tuple } from '~/types/utils';
-import { MAX_TICKER_LENGTH } from '~/utils/constants';
+import { MAX_TICKER_LENGTH, SUPPORTED_NODE_SEMVER, SUPPORTED_SPEC_SEMVER } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 
 import { SUPPORTED_NODE_VERSION_RANGE, SUPPORTED_SPEC_VERSION_RANGE } from '../constants';
@@ -1133,13 +1133,13 @@ describe('assertExpectedChainVersion', () => {
   let client: MockWebSocket;
   let warnSpy: jest.SpyInstance;
 
-  const getSpecVersion = (spec: string): string =>
-    `${+spec
+  const getSpecVersion = (version: string): string =>
+    `${version
       .split('.')
       .map(number => `00${number}`.slice(-3))
       .join('')}`;
 
-  const getMismatchedVersion = (version: string, versionIndex = 2): string =>
+  const getMismatchedVersion = (version: string, versionIndex = 1): string =>
     version
       .split('.')
       .map((number, index) => (index === versionIndex ? +number + 1 : number))
@@ -1171,7 +1171,7 @@ describe('assertExpectedChainVersion', () => {
 
   it('should throw an error given a major RPC node version mismatch', () => {
     const signal = assertExpectedChainVersion('ws://example.com');
-    const mismatchedVersion = getMismatchedVersion(SUPPORTED_NODE_VERSION_RANGE, 0);
+    const mismatchedVersion = getMismatchedVersion(SUPPORTED_NODE_SEMVER, 0);
     client.sendRpcVersion(mismatchedVersion);
     const expectedError = new PolymeshError({
       code: ErrorCode.FatalError,
@@ -1183,9 +1183,9 @@ describe('assertExpectedChainVersion', () => {
   it('should log a warning given a minor or patch RPC node version mismatch', async () => {
     const signal = assertExpectedChainVersion('ws://example.com');
 
-    client.sendSpecVersion(getSpecVersion(SUPPORTED_SPEC_VERSION_RANGE));
+    client.sendSpecVersion(getSpecVersion(SUPPORTED_SPEC_SEMVER));
 
-    const mockRpcVersion = getMismatchedVersion(SUPPORTED_NODE_VERSION_RANGE);
+    const mockRpcVersion = getMismatchedVersion(SUPPORTED_NODE_SEMVER);
     client.sendRpcVersion(mockRpcVersion);
 
     await signal;
@@ -1196,7 +1196,7 @@ describe('assertExpectedChainVersion', () => {
 
   it('should throw an error given a major chain spec version mismatch', () => {
     const signal = assertExpectedChainVersion('ws://example.com');
-    const mismatchedSpecVersion = getMismatchedVersion(SUPPORTED_SPEC_VERSION_RANGE, 0);
+    const mismatchedSpecVersion = getMismatchedVersion(SUPPORTED_SPEC_SEMVER, 0);
     client.sendSpecVersion(getSpecVersion(mismatchedSpecVersion));
     const expectedError = new PolymeshError({
       code: ErrorCode.FatalError,
@@ -1207,13 +1207,21 @@ describe('assertExpectedChainVersion', () => {
 
   it('should log a warning given a minor or patch chain spec version mismatch', async () => {
     const signal = assertExpectedChainVersion('ws://example.com');
-    const mockSpecVersion = getMismatchedVersion(SUPPORTED_SPEC_VERSION_RANGE);
+    const mockSpecVersion = getMismatchedVersion(SUPPORTED_SPEC_SEMVER);
     client.sendSpecVersion(getSpecVersion(mockSpecVersion));
-    client.sendRpcVersion(SUPPORTED_NODE_VERSION_RANGE);
+    client.sendRpcVersion(SUPPORTED_NODE_SEMVER);
     await signal;
     expect(warnSpy).toHaveBeenCalledWith(
       `This version of the SDK supports Polymesh chain spec version ${SUPPORTED_SPEC_VERSION_RANGE}. The chain spec is at version ${mockSpecVersion}. Please upgrade the SDK`
     );
+  });
+
+  it('should resolve even with a patch chain spec version mismatch', () => {
+    const signal = assertExpectedChainVersion('ws://example.com');
+    const mockSpecVersion = getMismatchedVersion(SUPPORTED_SPEC_SEMVER, 2);
+    client.sendSpecVersion(getSpecVersion(mockSpecVersion));
+    client.sendRpcVersion(SUPPORTED_NODE_SEMVER);
+    return expect(signal).resolves.not.toThrow();
   });
 
   it('should throw an error if the node cannot be reached', () => {
