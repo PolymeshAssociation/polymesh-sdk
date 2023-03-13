@@ -1205,7 +1205,7 @@ describe('assertExpectedChainVersion', () => {
     return expect(signal).rejects.toThrowError(expectedError);
   });
 
-  it('should log a warning given a minor or patch chain spec version mismatch', async () => {
+  it('should log a warning given a minor chain spec version mismatch', async () => {
     const signal = assertExpectedChainVersion('ws://example.com');
     const mockSpecVersion = getMismatchedVersion(SUPPORTED_SPEC_SEMVER);
     client.sendSpecVersion(getSpecVersion(mockSpecVersion));
