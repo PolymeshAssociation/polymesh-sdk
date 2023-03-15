@@ -48,6 +48,7 @@ import type {
   PalletRewardsItnRewardStatus,
   PalletSettlementInstructionMemo,
   PalletSettlementLeg,
+  PalletSettlementLegV2,
   PalletSettlementReceiptDetails,
   PalletSettlementSettlementType,
   PalletSettlementVenueType,
@@ -70,6 +71,7 @@ import type {
   PolymeshPrimitivesAssetMetadataAssetMetadataKey,
   PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
   PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail,
+  PolymeshPrimitivesAssetNonFungibleType,
   PolymeshPrimitivesAuthorizationAuthorizationData,
   PolymeshPrimitivesBeneficiary,
   PolymeshPrimitivesCddIdInvestorUid,
@@ -84,6 +86,9 @@ import type {
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesIdentityIdPortfolioKind,
+  PolymeshPrimitivesNftNftCollectionKeys,
+  PolymeshPrimitivesNftNftMetadataAttribute,
+  PolymeshPrimitivesPortfolioFund,
   PolymeshPrimitivesPosRatio,
   PolymeshPrimitivesSecondaryKey,
   PolymeshPrimitivesSecondaryKeyPermissions,
@@ -253,6 +258,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | { Derivative: any }
             | { Custom: any }
             | { StableCoin: any }
+            | { NonFungible: any }
             | string
             | Uint8Array,
           identifiers:
@@ -573,6 +579,60 @@ declare module '@polkadot/api-base/types/submittable' {
         [Vec<u32>, PolymeshPrimitivesTicker]
       >;
       /**
+       * Removes the asset metadata key and value of a local key.
+       *
+       * # Arguments
+       * * `origin` - the secondary key of the sender.
+       * * `ticker` - the ticker of the local metadata key.
+       * * `local_key` - the local metadata key.
+       *
+       * # Errors
+       * - `SecondaryKeyNotAuthorizedForAsset` - if called by someone without the appropriate external agent permissions.
+       * - `UnauthorizedAgent` - if called by someone without the appropriate external agent permissions.
+       * - `AssetMetadataKeyIsMissing` - if the key doens't exist.
+       * - `AssetMetadataValueIsLocked` - if the value of the key is locked.
+       * - AssetMetadataKeyBelongsToNFTCollection - if the key is a mandatory key in an NFT collection.
+       *
+       * # Permissions
+       * * Asset
+       **/
+      removeLocalMetadataKey: AugmentedSubmittable<
+        (
+          ticker: PolymeshPrimitivesTicker | string | Uint8Array,
+          localKey: u64 | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesTicker, u64]
+      >;
+      /**
+       * Removes the asset metadata value of a metadata key.
+       *
+       * # Arguments
+       * * `origin` - the secondary key of the sender.
+       * * `ticker` - the ticker of the local metadata key.
+       * * `metadata_key` - the metadata key that will have its value deleted.
+       *
+       * # Errors
+       * - `SecondaryKeyNotAuthorizedForAsset` - if called by someone without the appropriate external agent permissions.
+       * - `UnauthorizedAgent` - if called by someone without the appropriate external agent permissions.
+       * - `AssetMetadataKeyIsMissing` - if the key doens't exist.
+       * - `AssetMetadataValueIsLocked` - if the value of the key is locked.
+       *
+       * # Permissions
+       * * Asset
+       **/
+      removeMetadataValue: AugmentedSubmittable<
+        (
+          ticker: PolymeshPrimitivesTicker | string | Uint8Array,
+          metadataKey:
+            | PolymeshPrimitivesAssetMetadataAssetMetadataKey
+            | { Global: any }
+            | { Local: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesTicker, PolymeshPrimitivesAssetMetadataAssetMetadataKey]
+      >;
+      /**
        * Renames a given token.
        *
        * # Arguments
@@ -779,6 +839,7 @@ declare module '@polkadot/api-base/types/submittable' {
             | { Derivative: any }
             | { Custom: any }
             | { StableCoin: any }
+            | { NonFungible: any }
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
@@ -3827,6 +3888,117 @@ declare module '@polkadot/api-base/types/submittable' {
         [AccountId32, Vec<PolymeshPrimitivesSecondaryKeySignatory>]
       >;
     };
+    nft: {
+      /**
+       * Cretes a new `NFTCollection`.
+       *
+       * # Arguments
+       * * `origin` - contains the secondary key of the caller (i.e. who signed the transaction to execute this function).
+       * * `ticker` - the ticker associated to the new collection.
+       * * `nft_type` - in case the asset hasn't been created yet, one will be created with the given type.
+       * * `collection_keys` - all mandatory metadata keys that the tokens in the collection must have.
+       *
+       * ## Errors
+       * - `CollectionAlredyRegistered` - if the ticker is already associated to an NFT collection.
+       * - `InvalidAssetType` - if the associated asset is not of type NFT.
+       * - `MaxNumberOfKeysExceeded` - if the number of metadata keys for the collection is greater than the maximum allowed.
+       * - `UnregisteredMetadataKey` - if any of the metadata keys needed for the collection has not been registered.
+       * - `DuplicateMetadataKey` - if a duplicate metadata keys has been passed as input.
+       *
+       * # Permissions
+       * * Asset
+       **/
+      createNftCollection: AugmentedSubmittable<
+        (
+          ticker: PolymeshPrimitivesTicker | string | Uint8Array,
+          nftType:
+            | Option<PolymeshPrimitivesAssetNonFungibleType>
+            | null
+            | object
+            | string
+            | Uint8Array,
+          collectionKeys: PolymeshPrimitivesNftNftCollectionKeys
+        ) => SubmittableExtrinsic<ApiType>,
+        [
+          PolymeshPrimitivesTicker,
+          Option<PolymeshPrimitivesAssetNonFungibleType>,
+          PolymeshPrimitivesNftNftCollectionKeys
+        ]
+      >;
+      /**
+       * Issues an NFT to the caller.
+       *
+       * # Arguments
+       * * `origin` - is a signer that has permissions to act as an agent of `ticker`.
+       * * `ticker` - the ticker of the NFT collection.
+       * * `nft_metadata_attributes` - all mandatory metadata keys and values for the NFT.
+       * - `portfolio_kind` - the portfolio that will receive the minted nft.
+       *
+       * ## Errors
+       * - `CollectionNotFound` - if the collection associated to the given ticker has not been created.
+       * - `InvalidMetadataAttribute` - if the number of attributes is not equal to the number set in the collection or attempting to set a value for a key not definied in the collection.
+       * - `DuplicateMetadataKey` - if a duplicate metadata keys has been passed as input.
+       *
+       *
+       * # Permissions
+       * * Asset
+       * * Portfolio
+       **/
+      issueNft: AugmentedSubmittable<
+        (
+          ticker: PolymeshPrimitivesTicker | string | Uint8Array,
+          nftMetadataAttributes:
+            | Vec<PolymeshPrimitivesNftNftMetadataAttribute>
+            | (
+                | PolymeshPrimitivesNftNftMetadataAttribute
+                | { key?: any; value?: any }
+                | string
+                | Uint8Array
+              )[],
+          portfolioKind:
+            | PolymeshPrimitivesIdentityIdPortfolioKind
+            | { Default: any }
+            | { User: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [
+          PolymeshPrimitivesTicker,
+          Vec<PolymeshPrimitivesNftNftMetadataAttribute>,
+          PolymeshPrimitivesIdentityIdPortfolioKind
+        ]
+      >;
+      /**
+       * Redeems the given NFT from the caller's portfolio.
+       *
+       * # Arguments
+       * * `origin` - is a signer that has permissions to act as an agent of `ticker`.
+       * * `ticker` - the ticker of the NFT collection.
+       * * `nft_id` - the id of the NFT to be burned.
+       * * `portfolio_kind` - the portfolio that contains the nft.
+       *
+       * ## Errors
+       * - `CollectionNotFound` - if the collection associated to the given ticker has not been created.
+       * - `NFTNotFound` - if the given NFT does not exist in the portfolio.
+       *
+       * # Permissions
+       * * Asset
+       * * Portfolio
+       **/
+      redeemNft: AugmentedSubmittable<
+        (
+          ticker: PolymeshPrimitivesTicker | string | Uint8Array,
+          nftId: u64 | AnyNumber | Uint8Array,
+          portfolioKind:
+            | PolymeshPrimitivesIdentityIdPortfolioKind
+            | { Default: any }
+            | { User: any }
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesTicker, u64, PolymeshPrimitivesIdentityIdPortfolioKind]
+      >;
+    };
     pips: {
       /**
        * Approves the pending committee PIP given by the `id`.
@@ -4309,6 +4481,7 @@ declare module '@polkadot/api-base/types/submittable' {
        * * `DifferentIdentityPortfolios` if the sender and receiver portfolios belong to different identities
        * * `UnauthorizedCustodian` if the caller is not the custodian of the from portfolio
        * * `InsufficientPortfolioBalance` if the sender does not have enough free balance
+       * * `NoDuplicateAssetsAllowed` the same ticker can't be repeated in the items vector.
        *
        * # Permissions
        * * Portfolio
@@ -4338,6 +4511,53 @@ declare module '@polkadot/api-base/types/submittable' {
           PolymeshPrimitivesIdentityIdPortfolioId,
           PolymeshPrimitivesIdentityIdPortfolioId,
           Vec<PalletPortfolioMovePortfolioItem>
+        ]
+      >;
+      /**
+       * Moves fungigle an non-fungible tokens from one portfolio of an identity to another portfolio of the same
+       * identity. Must be called by the custodian of the sender.
+       * Funds from deleted portfolios can also be recovered via this method.
+       *
+       * A short memo can be added to to each token amount moved.
+       *
+       * # Errors
+       * * `PortfolioDoesNotExist` if one or both of the portfolios reference an invalid portfolio.
+       * * `destination_is_same_portfolio` if both sender and receiver portfolio are the same
+       * * `DifferentIdentityPortfolios` if the sender and receiver portfolios belong to different identities
+       * * `UnauthorizedCustodian` if the caller is not the custodian of the from portfolio
+       * * `InsufficientPortfolioBalance` if the sender does not have enough free balance
+       * * `NoDuplicateAssetsAllowed` the same ticker can't be repeated in the items vector.
+       * * `InvalidTransferNFTNotOwned` if the caller is trying to move an NFT he doesn't own.
+       * * `InvalidTransferNFTIsLocked` if the caller is trying to move a locked NFT.
+       *
+       * # Permissions
+       * * Portfolio
+       **/
+      movePortfolioFundsV2: AugmentedSubmittable<
+        (
+          from:
+            | PolymeshPrimitivesIdentityIdPortfolioId
+            | { did?: any; kind?: any }
+            | string
+            | Uint8Array,
+          to:
+            | PolymeshPrimitivesIdentityIdPortfolioId
+            | { did?: any; kind?: any }
+            | string
+            | Uint8Array,
+          funds:
+            | Vec<PolymeshPrimitivesPortfolioFund>
+            | (
+                | PolymeshPrimitivesPortfolioFund
+                | { description?: any; memo?: any }
+                | string
+                | Uint8Array
+              )[]
+        ) => SubmittableExtrinsic<ApiType>,
+        [
+          PolymeshPrimitivesIdentityIdPortfolioId,
+          PolymeshPrimitivesIdentityIdPortfolioId,
+          Vec<PolymeshPrimitivesPortfolioFund>
         ]
       >;
       /**
@@ -4439,6 +4659,8 @@ declare module '@polkadot/api-base/types/submittable' {
             | 'ContractsPutCode'
             | 'CorporateBallotAttachBallot'
             | 'CapitalDistributionDistribute'
+            | 'NFTCreateCollection'
+            | 'NFTMint'
             | number
             | Uint8Array,
           baseFee: u128 | AnyNumber | Uint8Array
@@ -4879,6 +5101,67 @@ declare module '@polkadot/api-base/types/submittable' {
         ]
       >;
       /**
+       * Adds and affirms a new instruction.
+       *
+       * # Arguments
+       * * `venue_id` - ID of the venue this instruction belongs to.
+       * * `settlement_type` - Defines if the instruction should be settled
+       * in the next block after receiving all affirmations or waiting till a specific block.
+       * * `trade_date` - Optional date from which people can interact with this instruction.
+       * * `value_date` - Optional date after which the instruction should be settled (not enforced)
+       * * `legs` - Legs included in this instruction.
+       * * `portfolios` - Portfolios that the sender controls and wants to use in this affirmations.
+       * * `memo` - Memo field for this instruction.
+       *
+       * # Permissions
+       * * Portfolio
+       **/
+      addAndAffirmInstructionWithMemoV2: AugmentedSubmittable<
+        (
+          venueId: u64 | AnyNumber | Uint8Array,
+          settlementType:
+            | PalletSettlementSettlementType
+            | { SettleOnAffirmation: any }
+            | { SettleOnBlock: any }
+            | { SettleManual: any }
+            | string
+            | Uint8Array,
+          tradeDate: Option<u64> | null | object | string | Uint8Array,
+          valueDate: Option<u64> | null | object | string | Uint8Array,
+          legs:
+            | Vec<PalletSettlementLegV2>
+            | (
+                | PalletSettlementLegV2
+                | { from?: any; to?: any; asset?: any }
+                | string
+                | Uint8Array
+              )[],
+          portfolios:
+            | Vec<PolymeshPrimitivesIdentityIdPortfolioId>
+            | (
+                | PolymeshPrimitivesIdentityIdPortfolioId
+                | { did?: any; kind?: any }
+                | string
+                | Uint8Array
+              )[],
+          instructionMemo:
+            | Option<PalletSettlementInstructionMemo>
+            | null
+            | object
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [
+          u64,
+          PalletSettlementSettlementType,
+          Option<u64>,
+          Option<u64>,
+          Vec<PalletSettlementLegV2>,
+          Vec<PolymeshPrimitivesIdentityIdPortfolioId>,
+          Option<PalletSettlementInstructionMemo>
+        ]
+      >;
+      /**
        * Deprecated. Use `add_instruction_with_memo` instead.
        * Adds a new instruction.
        *
@@ -4968,6 +5251,57 @@ declare module '@polkadot/api-base/types/submittable' {
         ]
       >;
       /**
+       * Adds a new instruction with memo.
+       *
+       * # Arguments
+       * * `venue_id` - ID of the venue this instruction belongs to.
+       * * `settlement_type` - Defines if the instruction should be settled
+       * in the next block after receiving all affirmations or waiting till a specific block.
+       * * `trade_date` - Optional date from which people can interact with this instruction.
+       * * `value_date` - Optional date after which the instruction should be settled (not enforced)
+       * * `legs` - Legs included in this instruction.
+       * * `memo` - Memo field for this instruction.
+       *
+       * # Weight
+       * `950_000_000 + 1_000_000 * legs.len()`
+       **/
+      addInstructionWithMemoV2: AugmentedSubmittable<
+        (
+          venueId: u64 | AnyNumber | Uint8Array,
+          settlementType:
+            | PalletSettlementSettlementType
+            | { SettleOnAffirmation: any }
+            | { SettleOnBlock: any }
+            | { SettleManual: any }
+            | string
+            | Uint8Array,
+          tradeDate: Option<u64> | null | object | string | Uint8Array,
+          valueDate: Option<u64> | null | object | string | Uint8Array,
+          legs:
+            | Vec<PalletSettlementLegV2>
+            | (
+                | PalletSettlementLegV2
+                | { from?: any; to?: any; asset?: any }
+                | string
+                | Uint8Array
+              )[],
+          instructionMemo:
+            | Option<PalletSettlementInstructionMemo>
+            | null
+            | object
+            | string
+            | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [
+          u64,
+          PalletSettlementSettlementType,
+          Option<u64>,
+          Option<u64>,
+          Vec<PalletSettlementLegV2>,
+          Option<PalletSettlementInstructionMemo>
+        ]
+      >;
+      /**
        * Provide affirmation to an existing instruction.
        *
        * # Arguments
@@ -4992,6 +5326,34 @@ declare module '@polkadot/api-base/types/submittable' {
           maxLegsCount: u32 | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [u64, Vec<PolymeshPrimitivesIdentityIdPortfolioId>, u32]
+      >;
+      /**
+       * Provide affirmation to an existing instruction.
+       *
+       * # Arguments
+       * * `id` - Instruction id to affirm.
+       * * `portfolios` - Portfolios that the sender controls and wants to affirm this instruction.
+       * * `fungible_transfers` - number of fungible transfers in the instruction.
+       * * `nfts_transfers` - total number of NFTs being transferred in the instruction.
+       *
+       * # Permissions
+       * * Portfolio
+       **/
+      affirmInstructionV2: AugmentedSubmittable<
+        (
+          id: u64 | AnyNumber | Uint8Array,
+          portfolios:
+            | Vec<PolymeshPrimitivesIdentityIdPortfolioId>
+            | (
+                | PolymeshPrimitivesIdentityIdPortfolioId
+                | { did?: any; kind?: any }
+                | string
+                | Uint8Array
+              )[],
+          fungibleTransfers: u32 | AnyNumber | Uint8Array,
+          nftsTransfers: u32 | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [u64, Vec<PolymeshPrimitivesIdentityIdPortfolioId>, u32, u32]
       >;
       /**
        * Accepts an instruction and claims a signed receipt.
@@ -5066,30 +5428,6 @@ declare module '@polkadot/api-base/types/submittable' {
         [u64, bool]
       >;
       /**
-       * Claims a signed receipt.
-       *
-       * # Arguments
-       * * `id` - Target instruction id for the receipt.
-       * * `leg_id` - Target leg id for the receipt
-       * * `receipt_uid` - Receipt ID generated by the signer.
-       * * `signer` - Signer of the receipt.
-       * * `signed_data` - Signed receipt.
-       *
-       * # Permissions
-       * * Portfolio
-       **/
-      claimReceipt: AugmentedSubmittable<
-        (
-          id: u64 | AnyNumber | Uint8Array,
-          receiptDetails:
-            | PalletSettlementReceiptDetails
-            | { receiptUid?: any; legId?: any; signer?: any; signature?: any; metadata?: any }
-            | string
-            | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [u64, PalletSettlementReceiptDetails]
-      >;
-      /**
        * Registers a new venue.
        *
        * * `details` - Extra details about a venue
@@ -5161,6 +5499,14 @@ declare module '@polkadot/api-base/types/submittable' {
         [u64, u32]
       >;
       /**
+       * Placeholder for removed `claim_receipt`
+       **/
+      placeholderClaimReceipt: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>, []>;
+      /**
+       * Placeholder for removed `unclaim_receipt`
+       **/
+      placeholderUnclaimReceipt: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>, []>;
+      /**
        * Rejects an existing instruction.
        *
        * # Arguments
@@ -5182,6 +5528,31 @@ declare module '@polkadot/api-base/types/submittable' {
           numOfLegs: u32 | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [u64, PolymeshPrimitivesIdentityIdPortfolioId, u32]
+      >;
+      /**
+       * Rejects an existing instruction.
+       *
+       * # Arguments
+       * * `id` - Instruction id to reject.
+       * * `portfolio` - Portfolio to reject the instruction.
+       * * `fungible_transfers` - number of fungible transfers in the instruction.
+       * * `nfts_transfers` - total number of NFTs being transferred in the instruction.
+       *
+       * # Permissions
+       * * Portfolio
+       **/
+      rejectInstructionV2: AugmentedSubmittable<
+        (
+          id: u64 | AnyNumber | Uint8Array,
+          portfolio:
+            | PolymeshPrimitivesIdentityIdPortfolioId
+            | { did?: any; kind?: any }
+            | string
+            | Uint8Array,
+          fungibleTransfers: u32 | AnyNumber | Uint8Array,
+          nftsTransfers: u32 | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [u64, PolymeshPrimitivesIdentityIdPortfolioId, u32, u32]
       >;
       /**
        * Reschedules a failed instruction.
@@ -5215,23 +5586,6 @@ declare module '@polkadot/api-base/types/submittable' {
           enabled: bool | boolean | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [PolymeshPrimitivesTicker, bool]
-      >;
-      /**
-       * Unclaims a previously claimed receipt.
-       *
-       * # Arguments
-       * * `instruction_id` - Target instruction id for the receipt.
-       * * `leg_id` - Target leg id for the receipt
-       *
-       * # Permissions
-       * * Portfolio
-       **/
-      unclaimReceipt: AugmentedSubmittable<
-        (
-          instructionId: u64 | AnyNumber | Uint8Array,
-          legId: u64 | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [u64, u64]
       >;
       /**
        * Edit a venue's details.
@@ -5305,6 +5659,34 @@ declare module '@polkadot/api-base/types/submittable' {
           maxLegsCount: u32 | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [u64, Vec<PolymeshPrimitivesIdentityIdPortfolioId>, u32]
+      >;
+      /**
+       * Withdraw an affirmation for a given instruction.
+       *
+       * # Arguments
+       * * `id` - Instruction id for that affirmation get withdrawn.
+       * * `portfolios` - Portfolios that the sender controls and wants to withdraw affirmation.
+       * * `fungible_transfers` - number of fungible transfers in the instruction.
+       * * `nfts_transfers` - total number of NFTs being transferred in the instruction.
+       *
+       * # Permissions
+       * * Portfolio
+       **/
+      withdrawAffirmationV2: AugmentedSubmittable<
+        (
+          id: u64 | AnyNumber | Uint8Array,
+          portfolios:
+            | Vec<PolymeshPrimitivesIdentityIdPortfolioId>
+            | (
+                | PolymeshPrimitivesIdentityIdPortfolioId
+                | { did?: any; kind?: any }
+                | string
+                | Uint8Array
+              )[],
+          fungibleTransfers: u32 | AnyNumber | Uint8Array,
+          nftsTransfers: u32 | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [u64, Vec<PolymeshPrimitivesIdentityIdPortfolioId>, u32, u32]
       >;
     };
     staking: {

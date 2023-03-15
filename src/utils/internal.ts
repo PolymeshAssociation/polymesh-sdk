@@ -25,7 +25,7 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import stringify from 'json-stable-stringify';
 import { differenceWith, flatMap, isEqual, mapValues, noop, padEnd, uniq } from 'lodash';
-import { gtr, major, satisfies } from 'semver';
+import { major, satisfies } from 'semver';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 
 import {
@@ -1247,7 +1247,7 @@ function handleNodeVersionResponse(
     return false;
   }
 
-  if (gtr(version, SUPPORTED_NODE_VERSION_RANGE)) {
+  if (!satisfies(version, SUPPORTED_NODE_VERSION_RANGE)) {
     console.warn(
       `This version of the SDK supports Polymesh RPC node version ${SUPPORTED_NODE_VERSION_RANGE}. The node is at version ${version}. Please upgrade the SDK`
     );
@@ -1318,7 +1318,7 @@ function handleSpecVersionResponse(
     return false;
   }
 
-  if (gtr(specVersionAsSemver, SUPPORTED_SPEC_VERSION_RANGE)) {
+  if (!satisfies(specVersionAsSemver, SUPPORTED_SPEC_VERSION_RANGE)) {
     console.warn(
       `This version of the SDK supports Polymesh chain spec version ${SUPPORTED_SPEC_VERSION_RANGE}. The chain spec is at version ${specVersionAsSemver}. Please upgrade the SDK`
     );
