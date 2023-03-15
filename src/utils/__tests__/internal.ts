@@ -1142,7 +1142,7 @@ describe('assertExpectedChainVersion', () => {
   const getMismatchedVersion = (version: string, versionIndex = 1): string =>
     version
       .split('.')
-      .map((number, index) => (index === versionIndex ? +number + 1 : number))
+      .map((number, index) => (index === versionIndex ? +number + 4 : number))
       .join('.');
 
   beforeAll(() => {
@@ -1155,6 +1155,7 @@ describe('assertExpectedChainVersion', () => {
   });
 
   afterEach(() => {
+    warnSpy.mockClear();
     dsMockUtils.reset();
   });
 
@@ -1189,6 +1190,7 @@ describe('assertExpectedChainVersion', () => {
     client.sendRpcVersion(mockRpcVersion);
 
     await signal;
+    expect(warnSpy).toHaveBeenCalledTimes(1);
     expect(warnSpy).toHaveBeenCalledWith(
       `This version of the SDK supports Polymesh RPC node version ${SUPPORTED_NODE_VERSION_RANGE}. The node is at version ${mockRpcVersion}. Please upgrade the SDK`
     );
@@ -1211,17 +1213,19 @@ describe('assertExpectedChainVersion', () => {
     client.sendSpecVersion(getSpecVersion(mockSpecVersion));
     client.sendRpcVersion(SUPPORTED_NODE_SEMVER);
     await signal;
+    expect(warnSpy).toHaveBeenCalledTimes(1);
     expect(warnSpy).toHaveBeenCalledWith(
       `This version of the SDK supports Polymesh chain spec version ${SUPPORTED_SPEC_VERSION_RANGE}. The chain spec is at version ${mockSpecVersion}. Please upgrade the SDK`
     );
   });
 
-  it('should resolve even with a patch chain spec version mismatch', () => {
+  it('should resolve even with a patch chain spec version mismatch', async () => {
     const signal = assertExpectedChainVersion('ws://example.com');
     const mockSpecVersion = getMismatchedVersion(SUPPORTED_SPEC_SEMVER, 2);
     client.sendSpecVersion(getSpecVersion(mockSpecVersion));
     client.sendRpcVersion(SUPPORTED_NODE_SEMVER);
-    return expect(signal).resolves.not.toThrow();
+    await signal;
+    expect(warnSpy).toHaveBeenCalledTimes(0);
   });
 
   it('should throw an error if the node cannot be reached', () => {
