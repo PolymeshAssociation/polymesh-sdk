@@ -7,6 +7,7 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import { MockContext } from '~/testUtils/mocks/dataSources';
 import { AccountBalance, PermissionType, SubCallback } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/base/Procedure',
@@ -345,6 +346,35 @@ describe('AccountManagement class', () => {
       const result = accountManagement.getSubsidy(params);
 
       expect(result).toBeInstanceOf(Subsidy);
+    });
+  });
+
+  describe('method: validateAddress', () => {
+    let assertAddressValidSpy: jest.SpyInstance;
+    beforeAll(() => {
+      assertAddressValidSpy = jest
+        .spyOn(utilsInternalModule, 'assertAddressValid')
+        .mockImplementation();
+    });
+
+    it('should return the false if assert address valid throws', () => {
+      const expectedError = new Error('some error');
+
+      assertAddressValidSpy.mockImplementationOnce(() => {
+        throw expectedError;
+      });
+
+      const isValid = accountManagement.isValidAddress({ address: 'someAddress' });
+
+      expect(isValid).toEqual(isValid);
+    });
+
+    it('should return true if assert address valid does not throw', () => {
+      assertAddressValidSpy.mockReturnValue(undefined);
+
+      const isValid = accountManagement.isValidAddress({ address: 'someAddress' });
+
+      expect(isValid).toEqual(true);
     });
   });
 });
