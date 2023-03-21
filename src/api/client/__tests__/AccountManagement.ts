@@ -357,24 +357,24 @@ describe('AccountManagement class', () => {
         .mockImplementation();
     });
 
-    it('should return the error with if assert address valid throws', () => {
+    it('should return the false if assert address valid throws', () => {
       const expectedError = new Error('some error');
 
       assertAddressValidSpy.mockImplementationOnce(() => {
         throw expectedError;
       });
 
-      const error = accountManagement.validateAddress({ address: 'someAddress' });
+      const isValid = accountManagement.isValidAddress({ address: 'someAddress' });
 
-      expect(error).toEqual(expectedError);
+      expect(isValid).toEqual(isValid);
     });
 
     it('should return true if assert address valid does not throw', () => {
       assertAddressValidSpy.mockReturnValue(undefined);
 
-      const error = accountManagement.validateAddress({ address: 'someAddress' });
+      const isValid = accountManagement.isValidAddress({ address: 'someAddress' });
 
-      expect(error).toEqual(null);
+      expect(isValid).toEqual(true);
     });
   });
 });

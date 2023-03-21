@@ -280,13 +280,13 @@ export class AccountManagement {
   /**
    * Returns validation error if @param args.address is not a valid ss58 string for the connected network
    */
-  public validateAddress(args: { address: string }): Error | null {
+  public isValidAddress(args: { address: string }): boolean {
     try {
       assertAddressValid(args.address, this.context.ss58Format);
     } catch (error) {
-      return error;
+      return false;
     }
 
-    return null;
+    return true;
   }
 }
