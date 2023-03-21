@@ -27,7 +27,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import { stringToAccountId } from '~/utils/conversion';
-import { asAccount, createProcedureMethod } from '~/utils/internal';
+import { asAccount, assertAddressValid, createProcedureMethod } from '~/utils/internal';
 
 /**
  * Handles functionality related to Account Management
@@ -275,5 +275,18 @@ export class AccountManagement {
     const { address: subsidizerAddress } = asAccount(subsidizer, context);
 
     return new Subsidy({ beneficiary: beneficiaryAddress, subsidizer: subsidizerAddress }, context);
+  }
+
+  /**
+   * Returns validation error if @param args.address is not a valid ss58 string for the connected network
+   */
+  public validateAddress(args: { address: string }): Error | null {
+    try {
+      assertAddressValid(args.address, this.context.ss58Format);
+    } catch (error) {
+      return error;
+    }
+
+    return null;
   }
 }
