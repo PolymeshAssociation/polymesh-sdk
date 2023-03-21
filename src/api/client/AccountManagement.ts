@@ -278,7 +278,7 @@ export class AccountManagement {
   }
 
   /**
-   * Returns validation error if @param args.address is not a valid ss58 string for the connected network
+   * Returns `true` @param args.address is a valid ss58 address for the connected network
    */
   public isValidAddress(args: { address: string }): boolean {
     try {
