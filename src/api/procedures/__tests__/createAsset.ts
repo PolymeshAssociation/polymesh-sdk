@@ -128,7 +128,7 @@ describe('createAsset procedure', () => {
     ticker = 'TICKER';
     name = 'someName';
     initialSupply = new BigNumber(100);
-    isDivisible = true;
+    isDivisible = false;
     assetType = KnownAssetType.EquityCommon;
     securityIdentifiers = [
       {
@@ -323,7 +323,7 @@ describe('createAsset procedure', () => {
       transactions: [
         {
           transaction: createAssetTransaction,
-          args: [rawName, rawTicker, rawIsDivisible, rawType, [], null, rawIsDivisible], // disable IU = true
+          args: [rawName, rawTicker, rawIsDivisible, rawType, [], null, rawDisableIu], // disable IU = true
         },
       ],
       fee: undefined,
