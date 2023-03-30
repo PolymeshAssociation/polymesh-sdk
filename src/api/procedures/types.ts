@@ -287,11 +287,6 @@ export interface CreateAssetParams {
    */
   fundingRound?: string;
   documents?: AssetDocument[];
-  /**
-   * whether this asset requires investors to have a Investor Uniqueness Claim in order
-   *   to hold it. More information about Investor Uniqueness and PUIS [here](https://developers.polymesh.live/introduction/identity#polymesh-unique-identity-system-puis)
-   */
-  requireInvestorUniqueness: boolean;
 
   /**
    * (optional) type of statistics that should be enabled for the Asset

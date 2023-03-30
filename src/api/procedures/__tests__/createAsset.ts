@@ -77,7 +77,6 @@ describe('createAsset procedure', () => {
   let assetType: string;
   let securityIdentifiers: SecurityIdentifier[];
   let fundingRound: string;
-  let requireInvestorUniqueness: boolean;
   let documents: AssetDocument[];
   let rawTicker: PolymeshPrimitivesTicker;
   let rawName: Bytes;
@@ -138,7 +137,6 @@ describe('createAsset procedure', () => {
       },
     ];
     fundingRound = 'Series A';
-    requireInvestorUniqueness = true;
     documents = [
       {
         name: 'someDocument',
@@ -170,7 +168,7 @@ describe('createAsset procedure', () => {
       })
     );
     rawFundingRound = dsMockUtils.createMockBytes(fundingRound);
-    rawDisableIu = dsMockUtils.createMockBool(!requireInvestorUniqueness);
+    rawDisableIu = dsMockUtils.createMockBool(true);
     args = {
       ticker,
       name,
@@ -178,7 +176,6 @@ describe('createAsset procedure', () => {
       assetType,
       securityIdentifiers,
       fundingRound,
-      requireInvestorUniqueness,
       reservationRequired: true,
     };
     protocolFees = [new BigNumber(250), new BigNumber(150), new BigNumber(100)];
@@ -212,9 +209,7 @@ describe('createAsset procedure', () => {
       .mockReturnValue(rawInitialSupply);
     when(nameToAssetNameSpy).calledWith(name, mockContext).mockReturnValue(rawName);
     when(booleanToBoolSpy).calledWith(isDivisible, mockContext).mockReturnValue(rawIsDivisible);
-    when(booleanToBoolSpy)
-      .calledWith(!requireInvestorUniqueness, mockContext)
-      .mockReturnValue(rawDisableIu);
+    when(booleanToBoolSpy).calledWith(true, mockContext).mockReturnValue(rawDisableIu);
     when(stringToTickerKeySpy)
       .calledWith(ticker, mockContext)
       .mockReturnValue({ Ticker: rawTicker });
