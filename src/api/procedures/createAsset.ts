@@ -128,7 +128,6 @@ export async function prepareCreateAsset(
     securityIdentifiers = [],
     fundingRound,
     documents,
-    requireInvestorUniqueness,
     reservationRequired,
     initialStatistics,
   } = args;
@@ -142,7 +141,7 @@ export async function prepareCreateAsset(
     securityIdentifierToAssetIdentifier(identifier, context)
   );
   const rawFundingRound = optionize(fundingRoundToAssetFundingRound)(fundingRound, context);
-  const rawDisableIu = booleanToBool(!requireInvestorUniqueness, context);
+  const rawDisableIu = booleanToBool(true, context);
 
   const newAsset = new Asset({ ticker }, context);
 
