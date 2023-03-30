@@ -520,6 +520,8 @@ export enum AssetTx {
   RegisterAssetMetadataGlobalType = 'asset.registerAssetMetadataGlobalType',
   RedeemFromPortfolio = 'asset.redeemFromPortfolio',
   UpdateAssetType = 'asset.updateAssetType',
+  RemoveLocalMetadataKey = 'asset.removeLocalMetadataKey',
+  RemoveMetadataValue = 'asset.removeMetadataValue',
 }
 
 export enum CapitalDistributionTx {
@@ -597,6 +599,7 @@ export enum PortfolioTx {
   RenamePortfolio = 'portfolio.renamePortfolio',
   QuitPortfolioCustody = 'portfolio.quitPortfolioCustody',
   AcceptPortfolioCustody = 'portfolio.acceptPortfolioCustody',
+  MovePortfolioFundsV2 = 'portfolio.movePortfolioFundsV2',
 }
 
 export enum ProtocolFeeTx {
@@ -635,6 +638,13 @@ export enum SettlementTx {
   AddInstructionWithMemo = 'settlement.addInstructionWithMemo',
   AddAndAffirmInstructionWithMemo = 'settlement.addAndAffirmInstructionWithMemo',
   ExecuteManualInstruction = 'settlement.executeManualInstruction',
+  PlaceholderClaimReceipt = 'settlement.placeholderClaimReceipt',
+  PlaceholderUnclaimReceipt = 'settlement.placeholderUnclaimReceipt',
+  AddInstructionWithMemoV2 = 'settlement.addInstructionWithMemoV2',
+  AddAndAffirmInstructionWithMemoV2 = 'settlement.addAndAffirmInstructionWithMemoV2',
+  AffirmInstructionV2 = 'settlement.affirmInstructionV2',
+  WithdrawAffirmationV2 = 'settlement.withdrawAffirmationV2',
+  RejectInstructionV2 = 'settlement.rejectInstructionV2',
 }
 
 export enum StatisticsTx {
@@ -727,6 +737,12 @@ export enum ContractsTx {
   RemoveCode = 'contracts.removeCode',
 }
 
+export enum NftTx {
+  CreateNftCollection = 'nft.createNftCollection',
+  IssueNft = 'nft.issueNft',
+  RedeemNft = 'nft.redeemNft',
+}
+
 export enum ModuleName {
   System = 'system',
   Babe = 'babe',
@@ -771,6 +787,7 @@ export enum ModuleName {
   PolymeshContracts = 'polymeshContracts',
   Preimage = 'preimage',
   Contracts = 'contracts',
+  Nft = 'nft',
 }
 
 export type TxTag =
@@ -816,7 +833,8 @@ export type TxTag =
   | TestUtilsTx
   | PolymeshContractsTx
   | PreimageTx
-  | ContractsTx;
+  | ContractsTx
+  | NftTx;
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const TxTags = {
@@ -863,4 +881,5 @@ export const TxTags = {
   polymeshContracts: PolymeshContractsTx,
   preimage: PreimageTx,
   contracts: ContractsTx,
+  nft: NftTx,
 };

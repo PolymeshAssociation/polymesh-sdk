@@ -1077,27 +1077,6 @@ describe('Context class', () => {
           ],
         },
       ]);
-
-      dsMockUtils.createTxMock('asset', 'claimClassicTicker', {
-        meta: {
-          args: [
-            {
-              type: 'UInt<8>',
-              name: 'someArg',
-            },
-          ],
-        },
-      });
-
-      expect(
-        context.getTransactionArguments({ tag: TxTags.asset.ClaimClassicTicker })
-      ).toMatchObject([
-        {
-          type: TransactionArgumentType.Unknown,
-          name: 'someArg',
-          optional: false,
-        },
-      ]);
     });
   });
 

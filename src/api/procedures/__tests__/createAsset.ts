@@ -77,7 +77,6 @@ describe('createAsset procedure', () => {
   let assetType: string;
   let securityIdentifiers: SecurityIdentifier[];
   let fundingRound: string;
-  let requireInvestorUniqueness: boolean;
   let documents: AssetDocument[];
   let rawTicker: PolymeshPrimitivesTicker;
   let rawName: Bytes;
@@ -129,7 +128,7 @@ describe('createAsset procedure', () => {
     ticker = 'TICKER';
     name = 'someName';
     initialSupply = new BigNumber(100);
-    isDivisible = true;
+    isDivisible = false;
     assetType = KnownAssetType.EquityCommon;
     securityIdentifiers = [
       {
@@ -138,7 +137,6 @@ describe('createAsset procedure', () => {
       },
     ];
     fundingRound = 'Series A';
-    requireInvestorUniqueness = true;
     documents = [
       {
         name: 'someDocument',
@@ -170,7 +168,7 @@ describe('createAsset procedure', () => {
       })
     );
     rawFundingRound = dsMockUtils.createMockBytes(fundingRound);
-    rawDisableIu = dsMockUtils.createMockBool(!requireInvestorUniqueness);
+    rawDisableIu = dsMockUtils.createMockBool(true);
     args = {
       ticker,
       name,
@@ -178,7 +176,6 @@ describe('createAsset procedure', () => {
       assetType,
       securityIdentifiers,
       fundingRound,
-      requireInvestorUniqueness,
       reservationRequired: true,
     };
     protocolFees = [new BigNumber(250), new BigNumber(150), new BigNumber(100)];
@@ -201,9 +198,6 @@ describe('createAsset procedure', () => {
     dsMockUtils.createQueryMock('asset', 'tickerConfig', {
       returnValue: dsMockUtils.createMockTickerRegistrationConfig(),
     });
-    dsMockUtils.createQueryMock('asset', 'classicTickers', {
-      returnValue: dsMockUtils.createMockOption(),
-    });
 
     createAssetTransaction = dsMockUtils.createTxMock('asset', 'createAsset');
 
@@ -215,9 +209,7 @@ describe('createAsset procedure', () => {
       .mockReturnValue(rawInitialSupply);
     when(nameToAssetNameSpy).calledWith(name, mockContext).mockReturnValue(rawName);
     when(booleanToBoolSpy).calledWith(isDivisible, mockContext).mockReturnValue(rawIsDivisible);
-    when(booleanToBoolSpy)
-      .calledWith(!requireInvestorUniqueness, mockContext)
-      .mockReturnValue(rawDisableIu);
+    when(booleanToBoolSpy).calledWith(true, mockContext).mockReturnValue(rawDisableIu);
     when(stringToTickerKeySpy)
       .calledWith(ticker, mockContext)
       .mockReturnValue({ Ticker: rawTicker });
@@ -331,7 +323,7 @@ describe('createAsset procedure', () => {
       transactions: [
         {
           transaction: createAssetTransaction,
-          args: [rawName, rawTicker, rawIsDivisible, rawType, [], null, rawIsDivisible], // disable IU = true
+          args: [rawName, rawTicker, rawIsDivisible, rawType, [], null, rawDisableIu], // disable IU = true
         },
       ],
       fee: undefined,
@@ -420,42 +412,6 @@ describe('createAsset procedure', () => {
             rawFundingRound,
             rawDisableIu,
           ],
-        },
-      ],
-      resolver: expect.objectContaining({ ticker }),
-    });
-  });
-
-  it('should waive protocol fees if the token was created in Ethereum', async () => {
-    dsMockUtils.createQueryMock('asset', 'classicTickers', {
-      returnValue: dsMockUtils.createMockOption(
-        dsMockUtils.createMockClassicTickerRegistration({
-          ethOwner: 'someAddress',
-          isCreated: true,
-        })
-      ),
-    });
-    const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
-      customTypeData: null,
-      status: TickerReservationStatus.Reserved,
-    });
-
-    const result = await prepareCreateAsset.call(proc, args);
-
-    expect(result).toEqual({
-      transactions: [
-        {
-          transaction: createAssetTransaction,
-          args: [
-            rawName,
-            rawTicker,
-            rawIsDivisible,
-            rawType,
-            rawIdentifiers,
-            rawFundingRound,
-            rawDisableIu,
-          ],
-          fee: new BigNumber(0),
         },
       ],
       resolver: expect.objectContaining({ ticker }),
