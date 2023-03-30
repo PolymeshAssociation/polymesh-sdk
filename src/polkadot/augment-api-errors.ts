@@ -23,6 +23,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       AssetMetadataGlobalKeyAlreadyExists: AugmentedError<ApiType>;
       /**
+       * Attempt to delete a key that is needed for an NFT collection.
+       **/
+      AssetMetadataKeyBelongsToNFTCollection: AugmentedError<ApiType>;
+      /**
        * Asset Metadata key is missing.
        **/
       AssetMetadataKeyIsMissing: AugmentedError<ApiType>;
@@ -39,6 +43,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       AssetMetadataTypeDefMaxLengthExceeded: AugmentedError<ApiType>;
       /**
+       * Attempt to lock a metadata value that is empty.
+       **/
+      AssetMetadataValueIsEmpty: AugmentedError<ApiType>;
+      /**
        * Asset Metadata value is locked.
        **/
       AssetMetadataValueIsLocked: AugmentedError<ApiType>;
@@ -54,6 +62,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Maximum length of the funding round name has been exceeded.
        **/
       FundingRoundNameMaxLengthExceeded: AugmentedError<ApiType>;
+      /**
+       * Attempt to update the type of a non fungible token to a fungible token or the other way around.
+       **/
+      IncompatibleAssetTypeUpdate: AugmentedError<ApiType>;
       /**
        * The sender balance is not sufficient.
        **/
@@ -142,6 +154,10 @@ declare module '@polkadot/api-base/types/errors' {
        * The user is not authorized.
        **/
       Unauthorized: AugmentedError<ApiType>;
+      /**
+       * Attempt to call an extrinsic that is only permitted for fungible tokens.
+       **/
+      UnexpectedNonFungibleToken: AugmentedError<ApiType>;
     };
     authorship: {
       /**
@@ -1038,6 +1054,76 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       TooManySigners: AugmentedError<ApiType>;
     };
+    nft: {
+      /**
+       * An overflow while calculating the balance.
+       **/
+      BalanceOverflow: AugmentedError<ApiType>;
+      /**
+       * An underflow while calculating the balance.
+       **/
+      BalanceUnderflow: AugmentedError<ApiType>;
+      /**
+       * The ticker is already associated to an NFT collection.
+       **/
+      CollectionAlredyRegistered: AugmentedError<ApiType>;
+      /**
+       * The NFT collection does not exist.
+       **/
+      CollectionNotFound: AugmentedError<ApiType>;
+      /**
+       * A duplicate metadata key has been passed as parameter.
+       **/
+      DuplicateMetadataKey: AugmentedError<ApiType>;
+      /**
+       * The asset must be of type non-fungible.
+       **/
+      InvalidAssetType: AugmentedError<ApiType>;
+      /**
+       * Either the number of keys or the key identifier does not match the keys defined for the collection.
+       **/
+      InvalidMetadataAttribute: AugmentedError<ApiType>;
+      /**
+       * Failed to transfer an NFT - balance would overflow.
+       **/
+      InvalidNFTTransferBalanceOverflow: AugmentedError<ApiType>;
+      /**
+       * Failed to transfer an NFT - NFT collection not found.
+       **/
+      InvalidNFTTransferCollectionNotFound: AugmentedError<ApiType>;
+      /**
+       * Failed to transfer an NFT - compliance failed.
+       **/
+      InvalidNFTTransferComplianceFailure: AugmentedError<ApiType>;
+      /**
+       * Failed to transfer an NFT - asset is frozen.
+       **/
+      InvalidNFTTransferFrozenAsset: AugmentedError<ApiType>;
+      /**
+       * Failed to transfer an NFT - NFT not found in portfolio.
+       **/
+      InvalidNFTTransferNFTNotOwned: AugmentedError<ApiType>;
+      /**
+       * Failed to transfer an NFT - not enough balance.
+       **/
+      InvalidNFTTransferNoBalance: AugmentedError<ApiType>;
+      /**
+       * Failed to transfer an NFT - attempt to move to the same portfolio.
+       **/
+      InvalidNFTTransferSamePortfolio: AugmentedError<ApiType>;
+      /**
+       * The maximum number of metadata keys was exceeded.
+       **/
+      MaxNumberOfKeysExceeded: AugmentedError<ApiType>;
+      /**
+       * The NFT does not exist.
+       **/
+      NFTNotFound: AugmentedError<ApiType>;
+      /**
+       * At least one of the metadata keys has not been registered.
+       **/
+      UnregisteredMetadataKey: AugmentedError<ApiType>;
+    };
     permissions: {
       /**
        * The caller is not authorized to call the current extrinsic.
@@ -1215,6 +1301,26 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InsufficientTokensLocked: AugmentedError<ApiType>;
       /**
+       * Locked NFTs can not be moved between portfolios.
+       **/
+      InvalidTransferNFTIsLocked: AugmentedError<ApiType>;
+      /**
+       * Only owned NFTs can be moved between portfolios.
+       **/
+      InvalidTransferNFTNotOwned: AugmentedError<ApiType>;
+      /**
+       * The NFT is already locked.
+       **/
+      NFTAlreadyLocked: AugmentedError<ApiType>;
+      /**
+       * The NFT does not exist in the portfolio.
+       **/
+      NFTNotFoundInPortfolio: AugmentedError<ApiType>;
+      /**
+       * The NFT has never been locked.
+       **/
+      NFTNotLocked: AugmentedError<ApiType>;
+      /**
        * Duplicate asset among the items.
        **/
       NoDuplicateAssetsAllowed: AugmentedError<ApiType>;
@@ -1373,6 +1479,14 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       CallerIsNotAParty: AugmentedError<ApiType>;
       /**
+       * Deprecated function has been called on a v2 instruction.
+       **/
+      DeprecatedCallOnV2Instruction: AugmentedError<ApiType>;
+      /**
+       * There is a duplicated nft in one of the legs.
+       **/
+      DuplicatedNFTId: AugmentedError<ApiType>;
+      /**
        * While affirming the transfer, system failed to lock the assets involved.
        **/
       FailedToLockTokens: AugmentedError<ApiType>;
@@ -1413,6 +1527,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InstructionSettleBlockPassed: AugmentedError<ApiType>;
       /**
+       * Expected a different type of asset in a leg.
+       **/
+      InvalidLegAsset: AugmentedError<ApiType>;
+      /**
        * Offchain signature is invalid.
        **/
       InvalidSignature: AugmentedError<ApiType>;
@@ -1429,6 +1547,14 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       LegNotPending: AugmentedError<ApiType>;
       /**
+       * The number of nfts being transferred in the instruction was exceeded.
+       **/
+      MaxNumberOfNFTsExceeded: AugmentedError<ApiType>;
+      /**
+       * The number of nfts being transferred in one leg was exceeded.
+       **/
+      MaxNumberOfNFTsPerLegExceeded: AugmentedError<ApiType>;
+      /**
        * No pending affirmation for the provided instruction.
        **/
       NoPendingAffirm: AugmentedError<ApiType>;
@@ -1437,6 +1563,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       NoPortfolioProvided: AugmentedError<ApiType>;
       /**
+       * The given number of nfts being transferred was underestimated.
+       **/
+      NumberOfTransferredNFTsUnderestimated: AugmentedError<ApiType>;
+      /**
        * Portfolio in receipt does not match with portfolios provided by the user.
        **/
       PortfolioMismatch: AugmentedError<ApiType>;
@@ -1444,6 +1574,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Receipt already used.
        **/
       ReceiptAlreadyClaimed: AugmentedError<ApiType>;
+      /**
+       * Off-chain receipts are not accepted for non-fungible tokens.
+       **/
+      ReceiptForNonFungibleAsset: AugmentedError<ApiType>;
       /**
        * Receipt not used yet.
        **/
@@ -1485,7 +1619,7 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       UnknownInstruction: AugmentedError<ApiType>;
       /**
-       * Instruction leg amount can't be zero
+       * Instruction leg amount can't be zero.
        **/
       ZeroAmount: AugmentedError<ApiType>;
     };
