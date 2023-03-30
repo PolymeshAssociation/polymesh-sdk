@@ -122,7 +122,6 @@
     "bluebird": "^3.7.2",
     "cross-fetch": "^3.0.6",
     "dayjs": "1.10.6",
-    "eth-sig-util": "3.0.1",
     "graphql": "^15.0.0",
     "graphql-tag": "2.12.4",
     "iso-7064": "^1.0.2",

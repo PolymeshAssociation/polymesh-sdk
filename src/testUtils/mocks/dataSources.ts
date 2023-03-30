@@ -49,7 +49,6 @@ import {
   ConfidentialIdentityV2SignSignature,
   PalletAssetAssetOwnershipRelation,
   PalletAssetCheckpointScheduleSpec,
-  PalletAssetClassicTickerRegistration,
   PalletAssetSecurityToken,
   PalletAssetTickerRegistration,
   PalletAssetTickerRegistrationConfig,
@@ -3790,34 +3789,6 @@ export const createMockGranularCanTransferResult = (granularCanTransferResult?: 
       result: createMockBool(result),
     },
     !granularCanTransferResult
-  );
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockClassicTickerRegistration = (
-  registration?:
-    | PalletAssetClassicTickerRegistration
-    | {
-        ethOwner:
-          | PolymeshPrimitivesEthereumEthereumAddress
-          | Parameters<typeof createMockEthereumAddress>[0];
-        isCreated: bool | Parameters<typeof createMockBool>[0];
-      }
-): MockCodec<PalletAssetClassicTickerRegistration> => {
-  const { ethOwner, isCreated } = registration || {
-    ethOwner: createMockEthereumAddress(),
-    isCreated: createMockBool(),
-  };
-
-  return createMockCodec(
-    {
-      ethOwner: createMockEthereumAddress(ethOwner),
-      isCreated: createMockBool(isCreated),
-    },
-    !registration
   );
 };
 
