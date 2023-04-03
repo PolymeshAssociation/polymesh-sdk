@@ -631,12 +631,8 @@ export async function requestAtBlock<
  * @hidden
  *
  */
-export function calculateNextKey(
-  totalCount: BigNumber,
-  size?: BigNumber,
-  start?: BigNumber
-): NextKey {
-  const next = (start ?? new BigNumber(0)).plus(size ?? DEFAULT_GQL_PAGE_SIZE);
+export function calculateNextKey(totalCount: BigNumber, size: number, start?: BigNumber): NextKey {
+  const next = (start ?? new BigNumber(0)).plus(size);
   return totalCount.gt(next) ? next : null;
 }
 

@@ -259,7 +259,7 @@ export class Claims {
 
     const count = new BigNumber(totalCount);
     const data = toIdentityWithClaimsArray(didsWithClaimsList, context);
-    const next = calculateNextKey(count, size, start);
+    const next = calculateNextKey(count, didsWithClaimsList.length, start);
 
     return {
       data,
@@ -352,7 +352,7 @@ export class Claims {
     );
 
     const data = toIdentityWithClaimsArrayV2(nodes, context, 'targetId');
-    const next = calculateNextKey(count, size, start);
+    const next = calculateNextKey(count, data.length, start);
 
     return {
       data,
@@ -510,7 +510,7 @@ export class Claims {
 
       const count = new BigNumber(totalCount);
       const data = toIdentityWithClaimsArray(issuerDidsWithClaimsByTargetList, context);
-      const next = calculateNextKey(count, size, start);
+      const next = calculateNextKey(count, data.length, start);
 
       return {
         data,
@@ -629,7 +629,7 @@ export class Claims {
       );
 
       const data = toIdentityWithClaimsArrayV2(nodes, context, 'issuerId');
-      const next = calculateNextKey(count, size, start);
+      const next = calculateNextKey(count, data.length, start);
 
       return {
         data,

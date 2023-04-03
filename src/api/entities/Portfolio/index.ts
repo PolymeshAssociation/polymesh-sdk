@@ -380,7 +380,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     const count = new BigNumber(totalCount);
     /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
-    const next = calculateNextKey(count, size, start);
+    const next = calculateNextKey(count, data.length, start);
 
     let hashes: Hash[] = [];
 

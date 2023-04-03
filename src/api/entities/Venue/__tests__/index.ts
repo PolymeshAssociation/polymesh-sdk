@@ -193,7 +193,7 @@ describe('Venue class', () => {
 
       const { data, next, count } = result;
 
-      expect(next).toEqual(new BigNumber(2));
+      expect(next).toEqual(new BigNumber(1));
       expect(count).toEqual(new BigNumber(5));
       expect(data).toEqual([mockHistoricInstruction]);
 
@@ -209,7 +209,7 @@ describe('Venue class', () => {
       result = await venue.getHistoricalInstructions();
 
       expect(result.count).toEqual(new BigNumber(5));
-      expect(result.next).toEqual(null);
+      expect(result.next).toEqual(new BigNumber(result.data.length));
     });
   });
 

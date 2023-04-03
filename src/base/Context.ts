@@ -1030,7 +1030,7 @@ export class Context {
       );
     });
 
-    const next = calculateNextKey(count, size, start);
+    const next = calculateNextKey(count, data.length, start);
 
     return {
       data,
@@ -1082,7 +1082,7 @@ export class Context {
 
     const data = claimsList.map(claim => middlewareV2ClaimToClaimData(claim, this));
 
-    const next = calculateNextKey(count, size, start);
+    const next = calculateNextKey(count, data.length, start);
 
     return {
       data,
