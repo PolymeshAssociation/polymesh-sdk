@@ -84,7 +84,6 @@ import {
   UnionOfProcedureFuncs,
 } from '~/types/utils';
 import {
-  DEFAULT_GQL_PAGE_SIZE,
   MAX_TICKER_LENGTH,
   STATE_RUNTIME_VERSION_CALL,
   SUPPORTED_NODE_SEMVER,
