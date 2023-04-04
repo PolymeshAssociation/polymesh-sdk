@@ -6,6 +6,19 @@
   "types": "dist/index.d.ts",
   "author": "Polymesh Association",
   "license": "ISC",
+  "homepage": "https://github.com/PolymeshAssociation/polymesh-sdk/wiki",
+  "bugs": {
+    "url": "https://github.com/PolymeshAssociation/polymesh-sdk/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PolymeshAssociation/polymesh-sdk"
+  },
+  "keywords": [
+    "polymesh",
+    "blockchain",
+    "sdk"
+  ],
   "scripts": {
     "start": "cross-env node scripts/generateTsconfigDev.js && cross-env webpack-dev-server --config=webpack.config.dev.js",
     "generate:polkadot-types": "yarn fetch-metadata && yarn fetch-definitions && yarn generate:defs && yarn generate:meta && yarn generate:consts && yarn generate:post-process",
@@ -50,7 +63,7 @@
     "@types/jest-when": "^3.5.2",
     "@types/json-stable-stringify": "^1.0.32",
     "@types/lodash": "^4.14.149",
-    "@types/node": "^13.1.8",
+    "@types/node": "^18.15.11",
     "@types/semver": "^7.3.8",
     "@types/websocket": "^1.0.0",
     "@typescript-eslint/eslint-plugin": "5.14.0",
