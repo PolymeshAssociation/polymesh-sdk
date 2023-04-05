@@ -1712,12 +1712,10 @@ export async function getIdentityFromKeyRecord(
   if (keyRecord.isPrimaryKey) {
     const did = identityIdToString(keyRecord.asPrimaryKey);
     return new Identity({ did }, context);
-  }
-  if (keyRecord.isSecondaryKey) {
+  } else if (keyRecord.isSecondaryKey) {
     const did = identityIdToString(keyRecord.asSecondaryKey[0]);
     return new Identity({ did }, context);
-  }
-  if (keyRecord.isMultiSigSignerKey) {
+  } else {
     const multiSigAddress = keyRecord.asMultiSigSignerKey;
     const optMultiSigKeyRecord = await identity.keyRecords(multiSigAddress);
 
@@ -1728,6 +1726,4 @@ export async function getIdentityFromKeyRecord(
     const multiSigKeyRecord = optMultiSigKeyRecord.unwrap();
     return getIdentityFromKeyRecord(multiSigKeyRecord, context);
   }
-
-  return null;
 }
