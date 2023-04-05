@@ -488,7 +488,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     );
     /* eslint-enable @typescript-eslint/naming-convention */
 
-    const next = calculateNextKey(count, size, start);
+    const next = calculateNextKey(count, data.length, start);
 
     return {
       data,
@@ -600,7 +600,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     );
     /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
-    const next = calculateNextKey(count, size, start);
+    const next = calculateNextKey(count, data.length, start);
 
     return {
       data,

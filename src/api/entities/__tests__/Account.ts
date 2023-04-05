@@ -405,7 +405,7 @@ describe('Account class', () => {
       expect(result.data[0].address).toEqual(address);
       expect(result.data[0].success).toBeFalsy();
       expect(result.count).toEqual(new BigNumber(20));
-      expect(result.next).toBeNull();
+      expect(result.next).toEqual(new BigNumber(result.data.length));
     });
 
     it('should call v2 query if middlewareV2 is enabled', async () => {
@@ -595,7 +595,7 @@ describe('Account class', () => {
       expect(result.data[0].address).toEqual(address);
       expect(result.data[0].success).toBeFalsy();
       expect(result.count).toEqual(new BigNumber(20));
-      expect(result.next).toBeNull();
+      expect(result.next).toEqual(new BigNumber(result.data.length));
 
       dsMockUtils.createApolloV2QueryMock(
         extrinsicsByArgs({

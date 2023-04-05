@@ -469,7 +469,7 @@ export class AssetPermissions extends Namespace<Identity> {
     }
 
     const count = new BigNumber(totalCount);
-    const next = calculateNextKey(count, size, start);
+    const next = calculateNextKey(count, data.length, start);
 
     return {
       data: data.map((event, index) => ({
@@ -531,7 +531,7 @@ export class AssetPermissions extends Namespace<Identity> {
     );
 
     const count = new BigNumber(totalCount);
-    const next = calculateNextKey(count, size, start);
+    const next = calculateNextKey(count, data.length, start);
 
     return {
       data,

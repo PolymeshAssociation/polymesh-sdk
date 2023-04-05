@@ -530,7 +530,7 @@ describe('Portfolio class', () => {
       expect((result.data[1].legs[0].from as NumberedPortfolio).id).toEqual(portfolioId2);
       expect(result.data[1].legs[0].to.owner.did).toEqual(portfolioDid1);
       expect(result.count).toEqual(new BigNumber(20));
-      expect(result.next).toEqual(new BigNumber(5));
+      expect(result.next).toEqual(new BigNumber(2));
 
       dsMockUtils.createApolloQueryMock(
         settlements({

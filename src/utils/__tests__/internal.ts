@@ -615,27 +615,27 @@ describe('requestAtBlock', () => {
 });
 
 describe('calculateNextKey', () => {
-  it('should return NextKey null as there are less elements than the default page size', () => {
+  it('should return NextKey as null when all elements are returned', () => {
     const totalCount = new BigNumber(20);
-    const nextKey = calculateNextKey(totalCount);
+    const nextKey = calculateNextKey(totalCount, 20);
 
     expect(nextKey).toBeNull();
   });
 
   it('should return NextKey null as it is the last page', () => {
     const totalCount = new BigNumber(50);
-    const currentPageSize = new BigNumber(30);
+    const resultSize = 30;
     const currentStart = new BigNumber(31);
-    const nextKey = calculateNextKey(totalCount, currentPageSize, currentStart);
+    const nextKey = calculateNextKey(totalCount, resultSize, currentStart);
 
     expect(nextKey).toBeNull();
   });
 
   it('should return NextKey', () => {
     const totalCount = new BigNumber(50);
-    const currentPageSize = new BigNumber(30);
+    const resultSize = 30;
     const currentStart = new BigNumber(0);
-    const nextKey = calculateNextKey(totalCount, currentPageSize, currentStart);
+    const nextKey = calculateNextKey(totalCount, resultSize, currentStart);
 
     expect(nextKey).toEqual(new BigNumber(30));
   });
@@ -1147,11 +1147,11 @@ describe('assertExpectedChainVersion', () => {
 
   beforeAll(() => {
     dsMockUtils.initMocks();
-    warnSpy = jest.spyOn(console, 'warn');
   });
 
   beforeEach(() => {
     client = getWebSocketInstance();
+    warnSpy = jest.spyOn(console, 'warn');
   });
 
   afterEach(() => {
