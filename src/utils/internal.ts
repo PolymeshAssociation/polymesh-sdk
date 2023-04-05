@@ -39,6 +39,7 @@ import {
 } from '~/internal';
 import { Scope as MiddlewareScope } from '~/middleware/types';
 import {
+  AccountType,
   CaCheckpointType,
   CalendarPeriod,
   CalendarUnit,
@@ -195,7 +196,9 @@ export function asIdentity(value: string | Identity, context: Context): Identity
  * Given an address return the corresponding Account, given an Account return the Account
  */
 export function asAccount(value: string | Account, context: Context): Account {
-  return typeof value === 'string' ? new Account({ address: value }, context) : value;
+  return typeof value === 'string'
+    ? new Account({ address: value }, AccountType.Unknown, context)
+    : value;
 }
 
 /**
@@ -1700,3 +1703,48 @@ export async function getExemptedBtreeSet(
 
   return identitiesToBtreeSet(mapped, context);
 }
+
+/**
+ * @hidden
+ */
+export const getDidFromKeyRecord = async (
+  keyRecord:
+    | Option<PolymeshPrimitivesSecondaryKeyKeyRecord>
+    | PolymeshPrimitivesSecondaryKeyKeyRecord,
+  context: Context
+): Promise<string | null> => {
+  const {
+    polymeshApi: {
+      query: { identity },
+    },
+  } = context;
+
+  let keyRecordValue: PolymeshPrimitivesSecondaryKeyKeyRecord;
+  if (keyRecord instanceof Option) {
+    if (keyRecord.isNone) return null;
+    keyRecordValue = keyRecord.unwrap();
+  } else {
+    keyRecordValue = keyRecord;
+  }
+
+  if (keyRecordValue.isPrimaryKey) {
+    return identityIdToString(keyRecordValue.asPrimaryKey);
+  }
+  if (keyRecordValue.isSecondaryKey) {
+    return identityIdToString(keyRecordValue.asSecondaryKey[0]);
+  }
+  if (keyRecordValue.isMultiSigSignerKey) {
+    const multiSigAddress = keyRecordValue.asMultiSigSignerKey;
+    const optMultiSigKeyRecord = await identity.keyRecords(multiSigAddress);
+
+    if (optMultiSigKeyRecord.isNone) {
+      return null;
+    }
+
+    const multiSigKeyRecord = optMultiSigKeyRecord.unwrap();
+    // Note: this may cause performance issues for pathological cases of Multisig as Multisig signers
+    return getDidFromKeyRecord(multiSigKeyRecord, context);
+  }
+
+  return null;
+};

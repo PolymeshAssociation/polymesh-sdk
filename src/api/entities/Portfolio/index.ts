@@ -19,6 +19,7 @@ import { portfolioMovementsQuery, settlementsQuery } from '~/middleware/queriesV
 import { Query, SettlementDirectionEnum, SettlementResultEnum } from '~/middleware/types';
 import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
+  AccountType,
   ErrorCode,
   MoveFundsParams,
   NoArgsProcedureMethod,
@@ -364,7 +365,8 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
         blockNumber,
         status,
         accounts: addresses!.map(
-          address => new Account({ address: keyToAddress(address, context) }, context)
+          address =>
+            new Account({ address: keyToAddress(address, context) }, AccountType.Unknown, context)
         ),
         legs: settlementLegs.map(leg => {
           return {
@@ -485,7 +487,11 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
         status: settlementResult as unknown as SettlementResultEnum,
         accounts: legs[0].addresses.map(
           (accountAddress: string) =>
-            new Account({ address: keyToAddress(accountAddress, context) }, context)
+            new Account(
+              { address: keyToAddress(accountAddress, context) },
+              AccountType.Unknown,
+              context
+            )
         ),
         legs: legs.map(({ from, to, fromId, toId, assetId, amount }) => ({
           asset: new Asset({ ticker: assetId }, context),
@@ -504,7 +510,13 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
           blockNumber: new BigNumber(blockId),
           blockHash: hash,
           status: SettlementResultEnum.Executed,
-          accounts: [new Account({ address: keyToAddress(accountAddress, context) }, context)],
+          accounts: [
+            new Account(
+              { address: keyToAddress(accountAddress, context) },
+              AccountType.Unknown,
+              context
+            ),
+          ],
           legs: [
             {
               asset: new Asset({ ticker: assetId }, context),

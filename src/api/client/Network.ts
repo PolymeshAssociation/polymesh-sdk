@@ -11,6 +11,7 @@ import { eventsByArgs, extrinsicByHash } from '~/middleware/queriesV2';
 import { EventIdEnum as EventId, ModuleIdEnum as ModuleId, Query } from '~/middleware/types';
 import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
+  AccountType,
   EventIdentifier,
   ExtrinsicDataWithFees,
   NetworkProperties,
@@ -112,6 +113,7 @@ export class Network {
     const { context } = this;
     return new Account(
       { address: moduleAddressToString(TREASURY_MODULE_ADDRESS, context) },
+      AccountType.Treasury,
       context
     );
   }

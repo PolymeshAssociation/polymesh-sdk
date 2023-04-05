@@ -31,6 +31,7 @@ import { Query, TransactionOrderByInput } from '~/middleware/types';
 import { ExtrinsicsOrderBy, Query as QueryV2 } from '~/middleware/typesV2';
 import {
   AccountBalance,
+  AccountType,
   CheckPermissionsResult,
   DefaultPortfolio,
   ErrorCode,
@@ -66,6 +67,8 @@ import {
 import {
   assertAddressValid,
   calculateNextKey,
+  getDid,
+  getDidFromKeyRecord,
   getSecondaryAccountPermissions,
   isModuleOrTagMatch,
 } from '~/utils/internal';
@@ -269,6 +272,11 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
+   * The type of role this account is serving
+   */
+  public accountType: AccountType;
+
+  /**
    * Polymesh-specific address of the Account. Serves as an identifier
    */
   public address: string;
@@ -286,7 +294,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   /**
    * @hidden
    */
-  public constructor(identifiers: UniqueIdentifiers, context: Context) {
+  public constructor(identifiers: UniqueIdentifiers, accountType: AccountType, context: Context) {
     super(identifiers, context);
 
     const { address } = identifiers;
@@ -294,6 +302,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     assertAddressValid(address, context.ss58Format);
 
     this.address = address;
+    this.accountType = accountType;
     this.key = addressToKey(address, context);
     this.authorizations = new Authorizations(this, context);
     this.subsidies = new Subsidies(this, context);
@@ -351,7 +360,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     const {
       context: {
         polymeshApi: {
-          query: { identity, multiSig },
+          query: { identity },
         },
       },
       context,
@@ -360,21 +369,10 @@ export class Account extends Entity<UniqueIdentifiers, string> {
 
     const optKeyRecord = await identity.keyRecords(stringToAccountId(address, context));
 
-    if (optKeyRecord.isNone) {
+    const did = await getDidFromKeyRecord(optKeyRecord, context);
+
+    if (!did) {
       return null;
-    }
-
-    const keyRecord = optKeyRecord.unwrap();
-
-    let did: string;
-    if (keyRecord.isPrimaryKey) {
-      did = identityIdToString(keyRecord.asPrimaryKey);
-    } else if (keyRecord.isSecondaryKey) {
-      did = identityIdToString(keyRecord.asSecondaryKey[0]);
-    } else {
-      const multiSigAddress = keyRecord.asMultiSigSignerKey;
-      const rawMultiSigDid = await multiSig.multiSigToIdentity(multiSigAddress);
-      did = identityIdToString(rawMultiSigDid);
     }
 
     return new Identity({ did }, context);

@@ -767,6 +767,18 @@ export enum PayingAccountType {
   Caller = 'Caller',
 }
 
+export enum AccountType {
+  Unassigned = 'Unassigned',
+  Primary = 'Primary',
+  Secondary = 'Secondary',
+  MultiSigSigner = 'MultiSigSigner',
+  MultiSig = 'MultiSig',
+  SmartContract = 'SmartContract',
+  Treasury = 'Treasury',
+
+  Unknown = 'Unknown',
+}
+
 /**
  * Data representing the Account responsible for paying fees for a transaction
  */

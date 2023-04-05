@@ -139,6 +139,7 @@ import {
   Moment,
 } from '~/polkadot/polymesh';
 import {
+  AccountType,
   AffirmationStatus,
   AssetDocument,
   Authorization,
@@ -435,13 +436,6 @@ export function stringToEcdsaSignature(
 /**
  * @hidden
  */
-export function accountIdToAccount(accountId: AccountId, context: Context): Account {
-  return new Account({ address: accountId.toString() }, context);
-}
-
-/**
- * @hidden
- */
 export function signerValueToSignatory(
   signer: SignerValue,
   context: Context
@@ -492,7 +486,7 @@ export function signerValueToSigner(signerValue: SignerValue, context: Context):
   const { type, value } = signerValue;
 
   if (type === SignerType.Account) {
-    return new Account({ address: value }, context);
+    return new Account({ address: value }, AccountType.Unknown, context);
   }
 
   return new Identity({ did: value }, context);
@@ -1452,8 +1446,16 @@ export function authorizationDataToAuthorization(
     return {
       type: AuthorizationType.AddRelayerPayingKey,
       value: {
-        beneficiary: new Account({ address: accountIdToString(userKey) }, context),
-        subsidizer: new Account({ address: accountIdToString(payingKey) }, context),
+        beneficiary: new Account(
+          { address: accountIdToString(userKey) },
+          AccountType.Unknown,
+          context
+        ),
+        subsidizer: new Account(
+          { address: accountIdToString(payingKey) },
+          AccountType.Unknown,
+          context
+        ),
         allowance: balanceToBigNumber(polyxLimit),
       },
     };

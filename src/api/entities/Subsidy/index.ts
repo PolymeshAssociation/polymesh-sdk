@@ -10,6 +10,7 @@ import {
   quitSubsidy,
 } from '~/internal';
 import {
+  AccountType,
   AllowanceOperation,
   DecreaseAllowanceParams,
   ErrorCode,
@@ -64,8 +65,8 @@ export class Subsidy extends Entity<UniqueIdentifiers, HumanReadable> {
 
     super(identifiers, context);
 
-    this.beneficiary = new Account({ address: beneficiary }, context);
-    this.subsidizer = new Account({ address: subsidizer }, context);
+    this.beneficiary = new Account({ address: beneficiary }, AccountType.Unknown, context);
+    this.subsidizer = new Account({ address: subsidizer }, AccountType.Unknown, context);
 
     this.quit = createProcedureMethod(
       { getProcedureAndArgs: () => [quitSubsidy, { subsidy: this }], voidArgs: true },

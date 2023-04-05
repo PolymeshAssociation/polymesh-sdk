@@ -3,7 +3,13 @@ import BigNumber from 'bignumber.js';
 import { UniqueIdentifiers } from '~/api/entities/Account';
 import { MultiSigProposal } from '~/api/entities/MultiSigProposal';
 import { Account, Context, Identity, modifyMultiSig, PolymeshError } from '~/internal';
-import { ErrorCode, ModifyMultiSigParams, MultiSigDetails, ProcedureMethod } from '~/types';
+import {
+  AccountType,
+  ErrorCode,
+  ModifyMultiSigParams,
+  MultiSigDetails,
+  ProcedureMethod,
+} from '~/types';
 import {
   addressToKey,
   identityIdToString,
@@ -22,7 +28,7 @@ export class MultiSig extends Account {
    * @hidden
    */
   public constructor(identifiers: UniqueIdentifiers, context: Context) {
-    super(identifiers, context);
+    super(identifiers, AccountType.MultiSig, context);
     this.modify = createProcedureMethod(
       {
         getProcedureAndArgs: modifyArgs => [modifyMultiSig, { multiSig: this, ...modifyArgs }],

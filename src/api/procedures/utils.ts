@@ -1,3 +1,4 @@
+import { PolymeshPrimitivesSecondaryKeyKeyRecord } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
@@ -40,7 +41,12 @@ import {
   TickerReservationStatus,
   TransactionPermissions,
 } from '~/types';
-import { tickerToString, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
+import {
+  identityIdToString,
+  tickerToString,
+  u32ToBigNumber,
+  u64ToBigNumber,
+} from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
 
 /**

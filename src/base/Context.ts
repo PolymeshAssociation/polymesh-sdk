@@ -262,7 +262,7 @@ export class Context {
 
     const accounts = await signingManager.getAccounts();
 
-    return accounts.map(address => new Account({ address }, this));
+    return accounts.map(address => new Account({ address }, AccountType.Unknown, this));
   }
 
   /**
@@ -431,7 +431,7 @@ export class Context {
   public getSigningAccount(): Account {
     const address = this.getSigningAddress();
 
-    return new Account({ address }, this);
+    return new Account({ address }, AccountType.Unknown, this);
   }
 
   /**

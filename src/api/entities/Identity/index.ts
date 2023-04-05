@@ -28,6 +28,7 @@ import {
 import { Query } from '~/middleware/types';
 import { AssetHoldersOrderBy, Query as QueryV2 } from '~/middleware/typesV2';
 import {
+  AccountType,
   CheckRolesResult,
   DistributionWithDetails,
   ErrorCode,
@@ -304,7 +305,11 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
       return {
         // we know the primary key exists because Asset Identities aren't considered Identities by the SDK for now
-        account: new Account({ address: accountIdToString(primaryKey.unwrap()) }, context),
+        account: new Account(
+          { address: accountIdToString(primaryKey.unwrap()) },
+          AccountType.Primary,
+          context
+        ),
         permissions: {
           assets: null,
           portfolios: null,
@@ -758,7 +763,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     ): Account => {
       const [, value] = key.args;
       const address = accountIdToString(value);
-      return new Account({ address }, context);
+      return new Account({ address }, AccountType.Secondary, context);
     };
 
     const { entries: keys, lastKey: next } = await requestPaginated(identity.didKeys, {

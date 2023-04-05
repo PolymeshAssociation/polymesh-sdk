@@ -15,6 +15,7 @@ import {
 } from '~/internal';
 import {
   AccountBalance,
+  AccountType,
   CreateMultiSigParams,
   InviteAccountParams,
   ModifySignerPermissionsParams,
@@ -237,7 +238,8 @@ export class AccountManagement {
       return new MultiSig(args, context);
     }
 
-    return new Account(args, context);
+    // TODO could be secondary or unassigned!
+    return new Account(args, AccountType.Primary, context);
   }
 
   /**
