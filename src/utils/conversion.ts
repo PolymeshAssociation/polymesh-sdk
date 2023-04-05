@@ -435,13 +435,6 @@ export function stringToEcdsaSignature(
 /**
  * @hidden
  */
-export function accountIdToAccount(accountId: AccountId, context: Context): Account {
-  return new Account({ address: accountId.toString() }, context);
-}
-
-/**
- * @hidden
- */
 export function signerValueToSignatory(
   signer: SignerValue,
   context: Context
