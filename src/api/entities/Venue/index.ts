@@ -234,7 +234,7 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
 
     const count = new BigNumber(totalCount);
 
-    const next = calculateNextKey(count, size, start);
+    const next = calculateNextKey(count, data.length, start);
 
     return {
       data,

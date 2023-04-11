@@ -2,11 +2,12 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { AccountManagement } from '~/api/client/AccountManagement';
-import { Account, MultiSig, PolymeshTransaction } from '~/internal';
+import { Account, MultiSig, PolymeshTransaction, Subsidy } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
 import { AccountBalance, PermissionType, SubCallback } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
+import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/base/Procedure',
@@ -15,6 +16,11 @@ jest.mock(
 jest.mock(
   '~/api/entities/Account',
   require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
+);
+
+jest.mock(
+  '~/api/entities/Subsidy',
+  require('~/testUtils/mocks/entities').mockSubsidyModule('~/api/entities/Subsidy')
 );
 
 describe('AccountManagement class', () => {
@@ -330,6 +336,45 @@ describe('AccountManagement class', () => {
       const queue = await accountManagement.createMultiSigAccount(args);
 
       expect(queue).toBe(expectedQueue);
+    });
+  });
+
+  describe('method: getSubsidy', () => {
+    it('should return an Subsidy object with the passed beneficiary and subsidizer', () => {
+      const params = { beneficiary: 'beneficiary', subsidizer: 'subsidizer' };
+
+      const result = accountManagement.getSubsidy(params);
+
+      expect(result).toBeInstanceOf(Subsidy);
+    });
+  });
+
+  describe('method: validateAddress', () => {
+    let assertAddressValidSpy: jest.SpyInstance;
+    beforeAll(() => {
+      assertAddressValidSpy = jest
+        .spyOn(utilsInternalModule, 'assertAddressValid')
+        .mockImplementation();
+    });
+
+    it('should return the false if assert address valid throws', () => {
+      const expectedError = new Error('some error');
+
+      assertAddressValidSpy.mockImplementationOnce(() => {
+        throw expectedError;
+      });
+
+      const isValid = accountManagement.isValidAddress({ address: 'someAddress' });
+
+      expect(isValid).toEqual(isValid);
+    });
+
+    it('should return true if assert address valid does not throw', () => {
+      assertAddressValidSpy.mockReturnValue(undefined);
+
+      const isValid = accountManagement.isValidAddress({ address: 'someAddress' });
+
+      expect(isValid).toEqual(true);
     });
   });
 });

@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import { coerce } from 'semver';
 
 import { TransactionArgumentType } from '~/types';
 
@@ -32,16 +33,6 @@ export const DEFAULT_GQL_PAGE_SIZE = 25;
  * Limit to the page size used when fetching large amounts of data from the chain (same goes for `.multi` calls)
  */
 export const MAX_PAGE_SIZE = new BigNumber(1000);
-/**
- * Prefix for the data that must be signed in Ethereum by a classic Ticker owner in order
- *   to claim their Ticker
- */
-export const CLASSIC_CLAIM_SIGNATURE_PREFIX = 'classic_claim';
-/**
- * "Systematic DID" that owns all classic Tickers until they are claimed by their real owners
- */
-export const CLASSIC_TICKER_OWNER_DID =
-  '0x73797374656d3a706f6c796d6174685f636c61737369635f6d69670000000000';
 
 const didTypes = ['PolymeshPrimitivesIdentityId'];
 
@@ -109,12 +100,18 @@ export const ROOT_TYPES = rootTypes;
 /**
  * The Polymesh RPC node version range that is compatible with this version of the SDK
  */
-export const SUPPORTED_NODE_VERSION_RANGE = '5.1.0';
+export const SUPPORTED_NODE_VERSION_RANGE = '5.2 - 5.3';
+
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+export const SUPPORTED_NODE_SEMVER = coerce(SUPPORTED_NODE_VERSION_RANGE)!.version;
 
 /**
  * The Polymesh chain spec version range that is compatible with this version of the SDK
  */
-export const SUPPORTED_SPEC_VERSION_RANGE = '5.1.2';
+export const SUPPORTED_SPEC_VERSION_RANGE = '5.2 - 5.3';
+
+// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+export const SUPPORTED_SPEC_SEMVER = coerce(SUPPORTED_SPEC_VERSION_RANGE)!.version;
 
 export const SYSTEM_VERSION_RPC_CALL = {
   jsonrpc: '2.0',

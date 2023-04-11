@@ -49,7 +49,6 @@ import {
   ConfidentialIdentityV2SignSignature,
   PalletAssetAssetOwnershipRelation,
   PalletAssetCheckpointScheduleSpec,
-  PalletAssetClassicTickerRegistration,
   PalletAssetSecurityToken,
   PalletAssetTickerRegistration,
   PalletAssetTickerRegistrationConfig,
@@ -203,6 +202,7 @@ function createApi(): Mutable<ApiPromise> & EventEmitter {
     off: (event: string, listener: (...args: unknown[]) => unknown) =>
       apiEmitter.off(event, listener),
     disconnect: jest.fn() as () => Promise<void>,
+    setSigner: jest.fn() as (signer: PolkadotSigner) => void,
   } as Mutable<ApiPromise> & EventEmitter;
 }
 
@@ -839,6 +839,9 @@ function configureContext(opts: ContextOptions): void {
     getLatestBlock: jest.fn().mockResolvedValue(opts.latestBlock),
     isMiddlewareEnabled: jest.fn().mockReturnValue(opts.middlewareEnabled),
     isMiddlewareV2Enabled: jest.fn().mockReturnValue(opts.middlewareV2Enabled),
+    isAnyMiddlewareEnabled: jest
+      .fn()
+      .mockReturnValue(opts.middlewareEnabled || opts.middlewareV2Enabled),
     isMiddlewareAvailable: jest.fn().mockResolvedValue(opts.middlewareAvailable),
     isMiddlewareV2Available: jest.fn().mockResolvedValue(opts.middlewareV2Available),
     isArchiveNode: opts.isArchiveNode,
@@ -3032,7 +3035,7 @@ export const createMockInstructionStatus = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockSettlementType = (
-  settlementType?: 'SettleOnAffirmation' | { SettleOnBlock: u32 }
+  settlementType?: 'SettleOnAffirmation' | { SettleOnBlock: u32 } | { SettleManual: u32 }
 ): MockCodec<PalletSettlementSettlementType> => {
   return createMockEnum<PalletSettlementSettlementType>(settlementType);
 };
@@ -3786,34 +3789,6 @@ export const createMockGranularCanTransferResult = (granularCanTransferResult?: 
       result: createMockBool(result),
     },
     !granularCanTransferResult
-  );
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockClassicTickerRegistration = (
-  registration?:
-    | PalletAssetClassicTickerRegistration
-    | {
-        ethOwner:
-          | PolymeshPrimitivesEthereumEthereumAddress
-          | Parameters<typeof createMockEthereumAddress>[0];
-        isCreated: bool | Parameters<typeof createMockBool>[0];
-      }
-): MockCodec<PalletAssetClassicTickerRegistration> => {
-  const { ethOwner, isCreated } = registration || {
-    ethOwner: createMockEthereumAddress(),
-    isCreated: createMockBool(),
-  };
-
-  return createMockCodec(
-    {
-      ethOwner: createMockEthereumAddress(ethOwner),
-      isCreated: createMockBool(isCreated),
-    },
-    !registration
   );
 };
 

@@ -268,6 +268,21 @@ describe('Context class', () => {
       });
       expect(() => context.getSigningAccount()).toThrowError(expectedError);
     });
+
+    it('should set the external api on the polkadot instance', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
+      });
+      const signingManager = dsMockUtils.getSigningManagerInstance();
+      const polymeshApi = context.getPolymeshApi();
+      const polkadotSigner = signingManager.getExternalSigner();
+
+      await context.setSigningManager(signingManager);
+
+      expect(polymeshApi.setSigner).toHaveBeenCalledWith(polkadotSigner);
+    });
   });
 
   describe('method: accountBalance', () => {
@@ -1062,27 +1077,6 @@ describe('Context class', () => {
           ],
         },
       ]);
-
-      dsMockUtils.createTxMock('asset', 'claimClassicTicker', {
-        meta: {
-          args: [
-            {
-              type: 'UInt<8>',
-              name: 'someArg',
-            },
-          ],
-        },
-      });
-
-      expect(
-        context.getTransactionArguments({ tag: TxTags.asset.ClaimClassicTicker })
-      ).toMatchObject([
-        {
-          type: TransactionArgumentType.Unknown,
-          name: 'someArg',
-          optional: false,
-        },
-      ]);
     });
   });
 
@@ -1185,7 +1179,7 @@ describe('Context class', () => {
 
       expect(result.data).toEqual(fakeClaims);
       expect(result.count).toEqual(new BigNumber(25));
-      expect(result.next).toEqual(new BigNumber(1));
+      expect(result.next).toEqual(new BigNumber(2));
 
       dsMockUtils.createApolloQueryMock(
         didsWithClaims({
@@ -1205,7 +1199,7 @@ describe('Context class', () => {
 
       expect(result.data).toEqual(fakeClaims);
       expect(result.count).toEqual(new BigNumber(25));
-      expect(result.next).toBeNull();
+      expect(result.next).toEqual(new BigNumber(result.data.length));
     });
 
     it('should return a result set of claims from chain', async () => {
@@ -1864,6 +1858,50 @@ describe('Context class', () => {
     });
 
     it('should return false if the middleware V2 is not enabled', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: null,
+        middlewareApiV2: null,
+      });
+
+      const result = context.isMiddlewareV2Enabled();
+
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('method: isAnyMiddlewareEnabled', () => {
+    beforeAll(() => {
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
+    });
+
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should return true if any middleware is enabled', async () => {
+      let context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: null,
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
+      });
+
+      let result = context.isAnyMiddlewareEnabled();
+
+      expect(result).toBe(true);
+
+      context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApiV2: null,
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+      });
+
+      result = context.isAnyMiddlewareEnabled();
+
+      expect(result).toBe(true);
+    });
+
+    it('should return false if neither middleware are not enabled', async () => {
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
         middlewareApi: null,

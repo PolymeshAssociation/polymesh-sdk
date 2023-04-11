@@ -24,6 +24,7 @@ import {
   AddInstructionParams,
   AddInstructionsParams,
   ErrorCode,
+  InstructionEndCondition,
   InstructionType,
   RoleType,
   SettlementTx,
@@ -117,6 +118,43 @@ export const createAddInstructionResolver =
 /**
  * @hidden
  */
+function getEndCondition(
+  instruction: AddInstructionParams,
+  latestBlock: BigNumber,
+  index: number
+): { endCondition: InstructionEndCondition; errorIndex: number | null } {
+  let endCondition: InstructionEndCondition;
+  let errorIndex = null;
+
+  if ('endBlock' in instruction && instruction.endBlock) {
+    const { endBlock } = instruction;
+
+    if (endBlock.lte(latestBlock)) {
+      errorIndex = index;
+    }
+
+    endCondition = { type: InstructionType.SettleOnBlock, endBlock };
+  } else if ('endAfterBlock' in instruction && instruction.endAfterBlock) {
+    const { endAfterBlock } = instruction;
+
+    if (endAfterBlock.lte(latestBlock)) {
+      errorIndex = index;
+    }
+
+    endCondition = { type: InstructionType.SettleManual, endAfterBlock };
+  } else {
+    endCondition = { type: InstructionType.SettleOnAffirmation };
+  }
+
+  return {
+    endCondition,
+    errorIndex,
+  };
+}
+
+/**
+ * @hidden
+ */
 async function getTxArgsAndErrors(
   instructions: AddInstructionParams[],
   portfoliosToAffirm: (DefaultPortfolio | NumberedPortfolio)[][],
@@ -130,6 +168,7 @@ async function getTxArgsAndErrors(
     legAmountErrIndexes: number[];
     endBlockErrIndexes: number[];
     datesErrIndexes: number[];
+    sameIdentityErrIndexes: number[];
   };
   addAndAffirmInstructionParams: InternalAddAndAffirmInstructionParams;
   addInstructionParams: InternalAddInstructionParams;
@@ -141,12 +180,14 @@ async function getTxArgsAndErrors(
   const legLengthErrIndexes: number[] = [];
   const legAmountErrIndexes: number[] = [];
   const endBlockErrIndexes: number[] = [];
+  const sameIdentityErrIndexes: number[] = [];
   /**
    * array of indexes of Instructions where the value date is before the trade date
    */
   const datesErrIndexes: number[] = [];
 
-  await P.each(instructions, async ({ legs, endBlock, tradeDate, valueDate, memo }, i) => {
+  await P.each(instructions, async (instruction, i) => {
+    const { legs, tradeDate, valueDate, memo } = instruction;
     if (!legs.length) {
       legEmptyErrIndexes.push(i);
     }
@@ -160,16 +201,20 @@ async function getTxArgsAndErrors(
       legAmountErrIndexes.push(i);
     }
 
-    let endCondition;
+    const sameIdentityLegs = legs.filter(({ from, to }) => {
+      const fromId = portfolioLikeToPortfolioId(from);
+      const toId = portfolioLikeToPortfolioId(to);
+      return fromId.did === toId.did;
+    });
 
-    if (endBlock) {
-      if (endBlock.lte(latestBlock)) {
-        endBlockErrIndexes.push(i);
-      }
+    if (sameIdentityLegs.length) {
+      sameIdentityErrIndexes.push(i);
+    }
 
-      endCondition = { type: InstructionType.SettleOnBlock, value: endBlock } as const;
-    } else {
-      endCondition = { type: InstructionType.SettleOnAffirmation } as const;
+    const { endCondition, errorIndex } = getEndCondition(instruction, latestBlock, i);
+
+    if (errorIndex !== null) {
+      endBlockErrIndexes.push(errorIndex);
     }
 
     if (tradeDate && valueDate && tradeDate > valueDate) {
@@ -181,7 +226,8 @@ async function getTxArgsAndErrors(
       !legLengthErrIndexes.length &&
       !legAmountErrIndexes.length &&
       !endBlockErrIndexes.length &&
-      !datesErrIndexes.length
+      !datesErrIndexes.length &&
+      !sameIdentityErrIndexes.length
     ) {
       const rawVenueId = bigNumberToU64(venueId, context);
       const rawSettlementType = endConditionToSettlementType(endCondition, context);
@@ -249,6 +295,7 @@ async function getTxArgsAndErrors(
       legAmountErrIndexes,
       endBlockErrIndexes,
       datesErrIndexes,
+      sameIdentityErrIndexes,
     },
     addAndAffirmInstructionParams,
     addInstructionParams,
@@ -292,6 +339,7 @@ export async function prepareAddInstruction(
       legAmountErrIndexes,
       endBlockErrIndexes,
       datesErrIndexes,
+      sameIdentityErrIndexes,
     },
     addAndAffirmInstructionParams,
     addInstructionParams,
@@ -344,6 +392,16 @@ export async function prepareAddInstruction(
       message: 'Value date must be after trade date',
       data: {
         failedInstructionIndexes: datesErrIndexes,
+      },
+    });
+  }
+
+  if (sameIdentityErrIndexes.length) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Instruction leg cannot transfer Assets between same identity',
+      data: {
+        failedInstructionIndexes: sameIdentityErrIndexes,
       },
     });
   }

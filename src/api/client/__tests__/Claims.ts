@@ -245,7 +245,7 @@ describe('Claims Class', () => {
 
       expect(JSON.stringify(result.data)).toBe(JSON.stringify(fakeClaims));
       expect(result.count).toEqual(new BigNumber(25));
-      expect(result.next).toEqual(null);
+      expect(result.next).toEqual(new BigNumber(result.data.length));
     });
 
     it('should return a list of Identities with claims associated to them filtered by scope', async () => {
@@ -898,7 +898,7 @@ describe('Claims Class', () => {
 
       expect(result.data).toEqual(fakeClaims);
       expect(result.count).toEqual(new BigNumber(25));
-      expect(result.next).toBeNull();
+      expect(result.next).toEqual(new BigNumber(result.data.length));
     });
 
     it('should return a list of claims issued with an Identity as target from chain', async () => {

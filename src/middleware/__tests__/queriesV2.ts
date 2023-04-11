@@ -16,6 +16,7 @@ import {
   instructionsByDidQuery,
   instructionsQuery,
   investmentsQuery,
+  latestBlockQuery,
   portfolioMovementsQuery,
   portfolioQuery,
   settlementsQuery,
@@ -26,6 +27,15 @@ import {
   trustingAssetsQuery,
 } from '~/middleware/queriesV2';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
+
+describe('latestBlockQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const result = latestBlockQuery();
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toBeUndefined();
+  });
+});
 
 describe('heartbeat', () => {
   it('should pass the variables to the grapqhl query', () => {

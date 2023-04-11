@@ -84,16 +84,16 @@ import {
   UnionOfProcedureFuncs,
 } from '~/types/utils';
 import {
-  DEFAULT_GQL_PAGE_SIZE,
   MAX_TICKER_LENGTH,
   STATE_RUNTIME_VERSION_CALL,
+  SUPPORTED_NODE_SEMVER,
   SUPPORTED_NODE_VERSION_RANGE,
+  SUPPORTED_SPEC_SEMVER,
   SUPPORTED_SPEC_VERSION_RANGE,
   SYSTEM_VERSION_RPC_CALL,
 } from '~/utils/constants';
 import {
   bigNumberToU32,
-  bigNumberToU64,
   claimIssuerToMeshClaimIssuer,
   identitiesToBtreeSet,
   identityIdToString,
@@ -461,6 +461,15 @@ export function isPrintableAscii(value: string): boolean {
 /**
  * @hidden
  *
+ * Return whether the string is fully alphanumeric
+ */
+export function isAlphanumeric(value: string): boolean {
+  return /^[0-9a-zA-Z]*$/.test(value);
+}
+
+/**
+ * @hidden
+ *
  * Makes an entries request to the chain. If pagination options are supplied,
  *  the request will be paginated. Otherwise, all entries will be requested at once
  */
@@ -528,7 +537,11 @@ export async function getApiAtBlock(
 
 type QueryMultiParam<T extends AugmentedQuery<'promise', AnyFunction>[]> = {
   [index in keyof T]: T[index] extends AugmentedQuery<'promise', infer Fun>
-    ? [T[index], ...Parameters<Fun>]
+    ? Fun extends (firstArg: infer First, ...restArg: infer Rest) => ReturnType<Fun>
+      ? Rest extends never[]
+        ? [T[index], First]
+        : [T[index], Parameters<Fun>]
+      : never
     : never;
 };
 
@@ -617,12 +630,8 @@ export async function requestAtBlock<
  * @hidden
  *
  */
-export function calculateNextKey(
-  totalCount: BigNumber,
-  size?: BigNumber,
-  start?: BigNumber
-): NextKey {
-  const next = (start ?? new BigNumber(0)).plus(size ?? DEFAULT_GQL_PAGE_SIZE);
+export function calculateNextKey(totalCount: BigNumber, size: number, start?: BigNumber): NextKey {
+  const next = (start ?? new BigNumber(0)).plus(size);
   return totalCount.gt(next) ? next : null;
 }
 
@@ -1105,35 +1114,9 @@ export async function getPortfolioIdsByName(
     rawNames.map<[PolymeshPrimitivesIdentityId, Bytes]>(name => [rawIdentityId, name])
   );
 
-  const portfolioIds = rawPortfolioNumbers.map(number => u64ToBigNumber(number));
-
-  // TODO @prashantasdeveloper remove this logic once nameToNumber returns Option<PortfolioNumber>
-  /**
-   * since nameToNumber returns 1 for non-existing portfolios, if a name maps to number 1,
-   *  we need to check if the given name actually matches the first portfolio
-   */
-  let firstPortfolioName: Bytes;
-
-  /*
-   * even though we make this call without knowing if we will need
-   *  the result, we only await for it if necessary, so it's still
-   *  performant
-   */
-  const gettingFirstPortfolioName = portfolio.portfolios(
-    rawIdentityId,
-    bigNumberToU64(new BigNumber(1), context)
-  );
-
-  return P.map(portfolioIds, async (id, index) => {
-    if (id.eq(1)) {
-      firstPortfolioName = await gettingFirstPortfolioName;
-
-      if (!firstPortfolioName.eq(rawNames[index])) {
-        return null;
-      }
-    }
-
-    return id;
+  return rawPortfolioNumbers.map(number => {
+    const rawPortfolioId = number.unwrapOr(null);
+    return optionize(u64ToBigNumber)(rawPortfolioId);
   });
 }
 
@@ -1244,7 +1227,7 @@ function handleNodeVersionResponse(
 ): boolean {
   const { result: version } = data;
 
-  if (!satisfies(version, major(SUPPORTED_NODE_VERSION_RANGE).toString())) {
+  if (!satisfies(version, major(SUPPORTED_NODE_SEMVER).toString())) {
     const error = new PolymeshError({
       code: ErrorCode.FatalError,
       message: 'Unsupported Polymesh RPC node version. Please upgrade the SDK',
@@ -1315,7 +1298,7 @@ function handleSpecVersionResponse(
     .map((ver: string) => ver.replace(/^0+(?!$)/g, ''))
     .join('.');
 
-  if (!satisfies(specVersionAsSemver, major(SUPPORTED_SPEC_VERSION_RANGE).toString())) {
+  if (!satisfies(specVersionAsSemver, major(SUPPORTED_SPEC_SEMVER).toString())) {
     const error = new PolymeshError({
       code: ErrorCode.FatalError,
       message: 'Unsupported Polymesh chain spec version. Please upgrade the SDK',

@@ -10,6 +10,7 @@ import {
   modifySignerPermissionsStorage,
   removeSecondaryAccounts,
   subsidizeAccount,
+  Subsidy,
   toggleFreezeSecondaryAccounts,
 } from '~/internal';
 import {
@@ -26,7 +27,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import { stringToAccountId } from '~/utils/conversion';
-import { asAccount, createProcedureMethod } from '~/utils/internal';
+import { asAccount, assertAddressValid, createProcedureMethod } from '~/utils/internal';
 
 /**
  * Handles functionality related to Account Management
@@ -257,5 +258,35 @@ export class AccountManagement {
    */
   public async getSigningAccounts(): Promise<Account[]> {
     return this.context.getSigningAccounts();
+  }
+
+  /**
+   * Return an Subsidy instance for a pair of beneficiary and subsidizer Account
+   */
+  public getSubsidy(args: {
+    beneficiary: string | Account;
+    subsidizer: string | Account;
+  }): Subsidy {
+    const { context } = this;
+
+    const { beneficiary, subsidizer } = args;
+
+    const { address: beneficiaryAddress } = asAccount(beneficiary, context);
+    const { address: subsidizerAddress } = asAccount(subsidizer, context);
+
+    return new Subsidy({ beneficiary: beneficiaryAddress, subsidizer: subsidizerAddress }, context);
+  }
+
+  /**
+   * Returns `true` @param args.address is a valid ss58 address for the connected network
+   */
+  public isValidAddress(args: { address: string }): boolean {
+    try {
+      assertAddressValid(args.address, this.context.ss58Format);
+    } catch (error) {
+      return false;
+    }
+
+    return true;
   }
 }

@@ -369,7 +369,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const data = assetsHeldByDidList.map(ticker => new Asset({ ticker }, context));
 
-    const next = calculateNextKey(count, size, start);
+    const next = calculateNextKey(count, data.length, start);
 
     return {
       data,
@@ -414,7 +414,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const data = nodes.map(({ assetId: ticker }) => new Asset({ ticker }, context));
 
-    const next = calculateNextKey(count, size, start);
+    const next = calculateNextKey(count, data.length, start);
 
     return {
       data,

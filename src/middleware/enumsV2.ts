@@ -1,5 +1,4 @@
 export {
-  PublicEnum05F6462Eea as SettlementResultEnum,
   PublicEnum040F13614F as StatOpTypeEnum,
   PublicEnum0Bf3C7D4Ef as CallIdEnum,
   PublicEnum6E6395Eda7 as ProposalStateEnum,
@@ -14,7 +13,6 @@ export {
 } from '~/middleware/typesV2';
 
 export const middlewareV2EnumMap: Record<string, string> = {
-  SettlementResultEnum: 'PublicEnum05F6462Eea',
   StatOpTypeEnum: 'PublicEnum040F13614F',
   CallIdEnum: 'PublicEnum0Bf3C7D4Ef',
   ProposalStateEnum: 'PublicEnum6E6395Eda7',

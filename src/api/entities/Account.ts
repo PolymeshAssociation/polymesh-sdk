@@ -11,6 +11,7 @@ import {
   union,
 } from 'lodash';
 
+import { Subsidies } from '~/api/entities/Subsidies';
 import {
   Asset,
   Authorizations,
@@ -280,6 +281,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
 
   // Namespaces
   public authorizations: Authorizations<Account>;
+  public subsidies: Subsidies;
 
   /**
    * @hidden
@@ -294,6 +296,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     this.address = address;
     this.key = addressToKey(address, context);
     this.authorizations = new Authorizations(this, context);
+    this.subsidies = new Subsidies(this, context);
   }
 
   /**
@@ -322,6 +325,8 @@ export class Account extends Entity<UniqueIdentifiers, string> {
    *   this Account isn't being subsidized, return null
    *
    * @note can be subscribed to
+   *
+   * @deprecated in favour of {@link api/entities/Subsidies!Subsidies.getSubsidizer | subsidies.getSubsidizer}
    */
   public getSubsidy(): Promise<SubsidyWithAllowance | null>;
   public getSubsidy(callback: SubCallback<SubsidyWithAllowance | null>): Promise<UnsubCallback>;
@@ -483,7 +488,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     );
     /* eslint-enable @typescript-eslint/naming-convention */
 
-    const next = calculateNextKey(count, size, start);
+    const next = calculateNextKey(count, data.length, start);
 
     return {
       data,
@@ -595,7 +600,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     );
     /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
-    const next = calculateNextKey(count, size, start);
+    const next = calculateNextKey(count, data.length, start);
 
     return {
       data,

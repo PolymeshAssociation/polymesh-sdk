@@ -590,7 +590,7 @@ export class DividendDistribution extends CorporateActionBase {
     });
     /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
-    const next = calculateNextKey(count, size, start);
+    const next = calculateNextKey(count, data.length, start);
 
     let hashes: Hash[] = [];
 
@@ -670,7 +670,7 @@ export class DividendDistribution extends CorporateActionBase {
       });
     });
 
-    const next = calculateNextKey(count, size, start);
+    const next = calculateNextKey(count, data.length, start);
 
     return {
       data,

@@ -8,6 +8,7 @@ import {
   AssetHoldersOrderBy,
   AssetTransaction,
   AssetTransactionsOrderBy,
+  BlocksOrderBy,
   ClaimsGroupBy,
   ClaimsOrderBy,
   Distribution,
@@ -36,6 +37,28 @@ import {
 } from '~/middleware/typesV2';
 import { GraphqlQuery } from '~/types/internal';
 import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
+
+/**
+ * @hidden
+ *
+ * Get the latest processed block number
+ */
+export function latestBlockQuery(): GraphqlQuery {
+  const query = gql`
+    query latestBlock {
+      blocks(first: 1, orderBy: [${BlocksOrderBy.BlockIdDesc}]) {
+        nodes {
+          blockId
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: undefined,
+  };
+}
 
 /**
  * @hidden
@@ -248,7 +271,7 @@ function createArgsAndFilters(
   };
 }
 
-type InstructionArgs = 'id' | 'eventId' | 'venueId';
+type InstructionArgs = 'id' | 'eventId' | 'venueId' | 'status';
 
 /**
  * @hidden
@@ -260,7 +283,10 @@ export function instructionsQuery(
   size?: BigNumber,
   start?: BigNumber
 ): GraphqlQuery<PaginatedQueryArgs<QueryArgs<Instruction, InstructionArgs>>> {
-  const { args, filter } = createArgsAndFilters(filters, { eventId: 'EventIdEnum' });
+  const { args, filter } = createArgsAndFilters(filters, {
+    eventId: 'EventIdEnum',
+    status: 'InstructionStatusEnum',
+  });
   const query = gql`
     query InstructionsQuery
       ${args} 
