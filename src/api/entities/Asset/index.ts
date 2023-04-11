@@ -674,19 +674,30 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
     );
 
     const data = nodes.map(
-      ({ assetId, amount, fromPortfolio, toPortfolio, createdBlock, eventId, eventIdx }) => ({
+      ({
+        assetId,
+        amount,
+        fromPortfolio,
+        toPortfolio,
+        createdBlock,
+        eventId,
+        eventIdx,
+        extrinsicIdx,
+      }) => ({
         asset: new Asset({ ticker: assetId }, context),
         amount: new BigNumber(amount).shiftedBy(-6),
         event: eventId,
         from: optionize(middlewareV2PortfolioToPortfolio)(fromPortfolio, context),
         to: optionize(middlewareV2PortfolioToPortfolio)(toPortfolio, context),
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        extrinsicIndex: new BigNumber(extrinsicIdx!),
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         ...middlewareV2EventDetailsToEventIdentifier(createdBlock!, eventIdx),
       })
     );
 
     const count = new BigNumber(totalCount);
-    const next = calculateNextKey(count, size, start);
+    const next = calculateNextKey(count, data.length, start);
 
     return {
       data,

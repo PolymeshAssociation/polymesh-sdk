@@ -70,6 +70,7 @@ export interface HistoricAssetTransaction extends EventIdentifier {
   from: DefaultPortfolio | NumberedPortfolio | null;
   to: DefaultPortfolio | NumberedPortfolio | null;
   event: EventIdEnum;
+  extrinsicIndex: BigNumber;
 }
 
 export * from './Checkpoints/types';

@@ -932,7 +932,8 @@ describe('Asset class', () => {
               number: 0,
             },
             fromPortfolio: null,
-            eventIdx: '1',
+            eventIdx: 1,
+            extrinsicIdx: 1,
             createdBlock: {
               blockId: new BigNumber(123),
               hash: 'SOME_HASH',
@@ -948,7 +949,8 @@ describe('Asset class', () => {
               number: 0,
             },
             toPortfolio: null,
-            eventIdx: '1',
+            eventIdx: 1,
+            extrinsicIdx: 1,
             createdBlock: {
               blockId: new BigNumber(123),
               hash: 'SOME_HASH',
@@ -967,7 +969,8 @@ describe('Asset class', () => {
               identityId: 'SOME_OTHER_DID',
               number: 1,
             },
-            eventIdx: '1',
+            eventIdx: 1,
+            extrinsicIdx: 1,
             createdBlock: {
               blockId: new BigNumber(123),
               hash: 'SOME_HASH',

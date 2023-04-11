@@ -1104,7 +1104,9 @@ export function assetTransactionQuery(
           }
           eventId
           eventIdx
+          extrinsicIdx
           fundingRound
+          datetime
           createdBlock {
             blockId
             hash
