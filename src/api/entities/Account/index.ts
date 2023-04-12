@@ -6,6 +6,11 @@ import {
   getMissingPortfolioPermissions,
   getMissingTransactionPermissions,
 } from '~/api/entities/Account/helpers';
+import {
+  AccountIdentityRelation,
+  AccountKeyType,
+  AccountTypeInfo,
+} from '~/api/entities/Account/types';
 import { Subsidies } from '~/api/entities/Subsidies';
 import { Authorizations, Context, Entity, Identity, MultiSig, PolymeshError } from '~/internal';
 import {
@@ -46,6 +51,7 @@ import {
   assertAddressValid,
   calculateNextKey,
   getSecondaryAccountPermissions,
+  requestMulti,
 } from '~/utils/internal';
 
 /**
@@ -588,5 +594,63 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     const index = await accountNextIndex(stringToAccountId(address, context));
 
     return u32ToBigNumber(index);
+  }
+
+  /**
+   * Retrieve the type of Account, and its relation to an Identity, if applicable
+   */
+  public async getTypeInfo(): Promise<AccountTypeInfo> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { identity, multiSig, contracts },
+        },
+      },
+      context,
+      address,
+    } = this;
+
+    const accountId = stringToAccountId(address, context);
+    const [optKeyRecord, multiSignsRequired, smartContract] = await requestMulti<
+      [
+        typeof identity.keyRecords,
+        typeof multiSig.multiSigSignsRequired,
+        typeof contracts.contractInfoOf
+      ]
+    >(context, [
+      [identity.keyRecords, accountId],
+      [multiSig.multiSigSignsRequired, accountId],
+      [contracts.contractInfoOf, accountId],
+    ]);
+
+    let keyType: AccountKeyType = AccountKeyType.Normal;
+    if (!multiSignsRequired.isZero()) {
+      keyType = AccountKeyType.MultiSig;
+    } else if (smartContract.isSome) {
+      keyType = AccountKeyType.SmartContract;
+    }
+
+    if (optKeyRecord.isNone) {
+      return {
+        keyType,
+        relation: AccountIdentityRelation.Unassigned,
+      };
+    }
+
+    const keyRecord = optKeyRecord.unwrap();
+
+    let relation: AccountIdentityRelation;
+    if (keyRecord.isPrimaryKey) {
+      relation = AccountIdentityRelation.Primary;
+    } else if (keyRecord.isSecondaryKey) {
+      relation = AccountIdentityRelation.Secondary;
+    } else {
+      relation = AccountIdentityRelation.MultiSigSigner;
+    }
+
+    return {
+      keyType,
+      relation,
+    };
   }
 }

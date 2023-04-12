@@ -1,6 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
+import { AccountIdentityRelation, AccountKeyType } from '~/api/entities/Account/types';
 import { Account, Context, Entity } from '~/internal';
 import {
   CallIdEnum as MiddlewareV2CallId,
@@ -17,7 +18,13 @@ import {
 } from '~/middleware/types';
 import { ExtrinsicsOrderBy } from '~/middleware/typesV2';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { createMockAccountId, createMockIdentityId } from '~/testUtils/mocks/dataSources';
+import {
+  createMockAccountId,
+  createMockIdentityId,
+  createMockOption,
+  createMockPermissions,
+  createMockU64,
+} from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
@@ -997,6 +1004,96 @@ describe('Account class', () => {
       const result = await account.getMultiSig();
 
       expect(result?.address).toEqual('someAddress');
+    });
+  });
+
+  describe('method: getAccountInfo', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let mockQueryMulti: any;
+    beforeEach(() => {
+      mockQueryMulti = context.polymeshApi.queryMulti;
+      dsMockUtils.createQueryMock('identity', 'keyRecords', {
+        returnValue: createMockOption(),
+      });
+      dsMockUtils.createQueryMock('multiSig', 'multiSigSignsRequired', {
+        returnValue: createMockU64(new BigNumber(0)),
+      });
+
+      dsMockUtils.createQueryMock('contracts', 'contractInfoOf', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+    });
+
+    it('should return unassigned', async () => {
+      mockQueryMulti.mockResolvedValue([
+        dsMockUtils.createMockOption(),
+        dsMockUtils.createMockU64(new BigNumber(0)),
+        dsMockUtils.createMockOption(),
+      ]);
+
+      const result = await account.getTypeInfo();
+
+      expect(result).toEqual({
+        keyType: AccountKeyType.Normal,
+        relation: AccountIdentityRelation.Unassigned,
+      });
+    });
+
+    it('should return the type for a normal primary key', async () => {
+      mockQueryMulti.mockResolvedValue([
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockKeyRecord({
+            PrimaryKey: createMockAccountId('multiSigAddress'),
+          })
+        ),
+        dsMockUtils.createMockU64(new BigNumber(0)),
+        dsMockUtils.createMockOption(),
+      ]);
+
+      const result = await account.getTypeInfo();
+
+      expect(result).toEqual({
+        keyType: AccountKeyType.Normal,
+        relation: AccountIdentityRelation.Primary,
+      });
+    });
+
+    it('should return the type for a MultiSig secondary key', async () => {
+      mockQueryMulti.mockResolvedValue([
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockKeyRecord({
+            SecondaryKey: [createMockAccountId('secondaryAddress'), createMockPermissions()],
+          })
+        ),
+        dsMockUtils.createMockU64(new BigNumber(2)),
+        dsMockUtils.createMockOption(),
+      ]);
+
+      const result = await account.getTypeInfo();
+
+      expect(result).toEqual({
+        keyType: AccountKeyType.MultiSig,
+        relation: AccountIdentityRelation.Secondary,
+      });
+    });
+
+    it('should return the type for a SmartContract', async () => {
+      mockQueryMulti.mockResolvedValue([
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockKeyRecord({
+            MultiSigSignerKey: createMockAccountId('multiSigAddress'),
+          })
+        ),
+        dsMockUtils.createMockU64(new BigNumber(0)),
+        dsMockUtils.createMockOption(dsMockUtils.createMockContractInfo()),
+      ]);
+
+      const result = await account.getTypeInfo();
+
+      expect(result).toEqual({
+        keyType: AccountKeyType.SmartContract,
+        relation: AccountIdentityRelation.MultiSigSigner,
+      });
     });
   });
 });
