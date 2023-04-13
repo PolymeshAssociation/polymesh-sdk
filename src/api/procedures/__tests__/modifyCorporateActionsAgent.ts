@@ -17,7 +17,6 @@ import {
 import { Procedure } from '~/base/Procedure';
 import { Account, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { MockProcedureClass } from '~/testUtils/mocks/procedure';
 import { Mocked } from '~/testUtils/types';
 import { Authorization, SignerValue, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';

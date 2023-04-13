@@ -14,7 +14,6 @@ import { when } from 'jest-when';
 import { SetTransferRestrictionsParams } from '~/api/entities/Asset/TransferRestrictions/TransferRestrictionBase';
 import {
   addExemptionIfNotPresent,
-  ExemptionRecords,
   getAuthorization,
   newExemptionRecord,
   prepareSetTransferRestrictions,
