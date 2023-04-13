@@ -51,8 +51,8 @@ import {
  */
 
 type ClaimKey = StatClaimType | 'None';
-type ExemptionRecords = Record<ClaimKey, Identity[]>;
-const newExemptionRecord = (): ExemptionRecords => ({
+export type ExemptionRecords = Record<ClaimKey, Identity[]>;
+export const newExemptionRecord = (): ExemptionRecords => ({
   Accredited: [],
   Affiliate: [],
   Jurisdiction: [],
@@ -66,7 +66,7 @@ const newExemptionRecord = (): ExemptionRecords => ({
  * @param claimType - type of Claim the Identity is exempt from
  * @param filterSet - set of Identities that should not be added into exemption records if given
  */
-const addExemptionIfNotPresent = (
+export const addExemptionIfNotPresent = (
   toInsertId: Identity,
   exemptionRecords: ExemptionRecords,
   claimType: ClaimKey,

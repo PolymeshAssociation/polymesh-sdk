@@ -13,7 +13,10 @@ import { when } from 'jest-when';
 
 import { SetTransferRestrictionsParams } from '~/api/entities/Asset/TransferRestrictions/TransferRestrictionBase';
 import {
+  addExemptionIfNotPresent,
+  ExemptionRecords,
   getAuthorization,
+  newExemptionRecord,
   prepareSetTransferRestrictions,
   prepareStorage,
   Storage,
@@ -959,6 +962,30 @@ describe('setTransferRestrictions procedure', () => {
       });
 
       return expect(boundFunc(args)).rejects.toThrowError(expectedError);
+    });
+  });
+
+  describe('addExemptionIfNotPresent', () => {
+    it('should not add the toInsertId object to exemptionRecords if it is already present in the filterSet', () => {
+      const toInsertId = { did: 'testDid' } as Identity;
+      const exemptionRecords = newExemptionRecord();
+      const claimType = ClaimType.Accredited;
+      const filterSet = [toInsertId] as Identity[];
+
+      addExemptionIfNotPresent(toInsertId, exemptionRecords, claimType, filterSet);
+
+      expect(exemptionRecords[claimType]).toEqual([]);
+    });
+
+    it('should add the toInsertId object to exemptionRecords if it is not already present in the filterSet', () => {
+      const toInsertId = { did: 'testDid' } as Identity;
+      const exemptionRecords = newExemptionRecord();
+      const claimType = ClaimType.Accredited;
+      const filterSet = [] as Identity[];
+
+      addExemptionIfNotPresent(toInsertId, exemptionRecords, claimType, filterSet);
+
+      expect(exemptionRecords[claimType]).toEqual([toInsertId]);
     });
   });
 });
