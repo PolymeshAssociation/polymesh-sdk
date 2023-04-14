@@ -163,6 +163,7 @@ describe('Claims Class', () => {
           ],
         },
       ];
+
       /* eslint-disable @typescript-eslint/naming-convention */
       const commonClaimData = {
         targetDID: targetDid,
@@ -822,6 +823,7 @@ describe('Claims Class', () => {
           ],
         },
       ];
+
       /* eslint-disable @typescript-eslint/naming-convention */
       const commonClaimData = {
         targetDID: did,
