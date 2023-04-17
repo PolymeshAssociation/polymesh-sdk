@@ -226,10 +226,28 @@ describe('Account class', () => {
       expect(result?.did).toBe(secondaryDid);
 
       const multiDid = 'multiDid';
+      const keyRecordsMock = dsMockUtils.createQueryMock('identity', 'keyRecords');
+
+      keyRecordsMock.mockReturnValueOnce(
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockKeyRecord({
+            MultiSigSignerKey: createMockAccountId('someAddress'),
+          })
+        )
+      );
+
+      keyRecordsMock.mockReturnValueOnce(
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockKeyRecord({
+            PrimaryKey: createMockIdentityId(did),
+          })
+        )
+      );
+
       dsMockUtils.createQueryMock('identity', 'keyRecords', {
         returnValue: dsMockUtils.createMockOption(
           dsMockUtils.createMockKeyRecord({
-            MultiSigSignerKey: createMockAccountId('someAddress'),
+            PrimaryKey: createMockIdentityId(did),
           })
         ),
       });
@@ -239,7 +257,7 @@ describe('Account class', () => {
       });
 
       result = await account.getIdentity();
-      expect(result?.did).toBe(multiDid);
+      expect(result?.did).toBe(did);
     });
 
     it('should return null if there is no Identity associated to the Account', async () => {

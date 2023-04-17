@@ -39,7 +39,6 @@ import { Ensured, EnsuredV2 } from '~/types/utils';
 import {
   addressToKey,
   extrinsicIdentifierToTxTag,
-  identityIdToString,
   keyToAddress,
   stringToAccountId,
   stringToHash,
@@ -50,6 +49,7 @@ import {
 import {
   assertAddressValid,
   calculateNextKey,
+  getIdentityFromKeyRecord,
   getSecondaryAccountPermissions,
   requestMulti,
 } from '~/utils/internal';
@@ -158,7 +158,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     const {
       context: {
         polymeshApi: {
-          query: { identity, multiSig },
+          query: { identity },
         },
       },
       context,
@@ -173,18 +173,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
 
     const keyRecord = optKeyRecord.unwrap();
 
-    let did: string;
-    if (keyRecord.isPrimaryKey) {
-      did = identityIdToString(keyRecord.asPrimaryKey);
-    } else if (keyRecord.isSecondaryKey) {
-      did = identityIdToString(keyRecord.asSecondaryKey[0]);
-    } else {
-      const multiSigAddress = keyRecord.asMultiSigSignerKey;
-      const rawMultiSigDid = await multiSig.multiSigToIdentity(multiSigAddress);
-      did = identityIdToString(rawMultiSigDid);
-    }
-
-    return new Identity({ did }, context);
+    return getIdentityFromKeyRecord(keyRecord, context);
   }
 
   /**

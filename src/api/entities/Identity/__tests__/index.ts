@@ -1145,7 +1145,6 @@ describe('Identity class', () => {
     let rawSecondaryKeyRecord: PolymeshPrimitivesSecondaryKeyKeyRecord;
     let rawMultiSigKeyRecord: PolymeshPrimitivesSecondaryKeyKeyRecord;
     let rawDidRecord: StorageKey;
-    let accountIdToAccountSpy: jest.SpyInstance<Account, [AccountId, Context]>;
     let meshPermissionsToPermissionsSpy: jest.SpyInstance<
       Permissions,
       [PolymeshPrimitivesSecondaryKeyPermissions, Context]
@@ -1154,7 +1153,6 @@ describe('Identity class', () => {
 
     beforeAll(() => {
       account = entityMockUtils.getAccountInstance({ address: accountId });
-      accountIdToAccountSpy = jest.spyOn(utilsConversionModule, 'accountIdToAccount');
       meshPermissionsToPermissionsSpy = jest.spyOn(
         utilsConversionModule,
         'meshPermissionsToPermissions'
@@ -1205,7 +1203,6 @@ describe('Identity class', () => {
         transactions: null,
         transactionGroups: [],
       });
-      accountIdToAccountSpy.mockReturnValue(account);
     });
 
     it('should return a list of Accounts', async () => {
