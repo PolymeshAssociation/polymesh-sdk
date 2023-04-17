@@ -9,8 +9,8 @@ import { ErrorCode, ProposalStatus } from '~/types';
 import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
-  '~/api/entities/MultiSig',
-  require('~/testUtils/mocks/entities').mockMultiSigModule('~/api/entities/MultiSig')
+  '~/api/entities/Account/MultiSig',
+  require('~/testUtils/mocks/entities').mockMultiSigModule('~/api/entities/Account/MultiSig')
 );
 
 describe('MultiSigProposal class', () => {
