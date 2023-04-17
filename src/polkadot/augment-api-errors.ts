@@ -95,6 +95,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InvestorUniquenessClaimNotAllowed: AugmentedError<ApiType>;
       /**
+       * Investor Uniqueness not allowed.
+       **/
+      InvestorUniquenessNotAllowed: AugmentedError<ApiType>;
+      /**
        * Maximum length of asset name has been exceeded.
        **/
       MaxLengthOfAssetNameExceeded: AugmentedError<ApiType>;
@@ -131,9 +135,9 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       TickerFirstByteNotValid: AugmentedError<ApiType>;
       /**
-       * The ticker has non-ascii-encoded parts.
+       * The ticker has non-alphanumeric parts.
        **/
-      TickerNotAscii: AugmentedError<ApiType>;
+      TickerNotAlphanumeric: AugmentedError<ApiType>;
       /**
        * Registration of ticker has expired.
        **/
@@ -194,6 +198,10 @@ declare module '@polkadot/api-base/types/errors' {
        * A given equivocation report is valid but already previously reported.
        **/
       DuplicateOffenceReport: AugmentedError<ApiType>;
+      /**
+       * Submitted configuration is invalid.
+       **/
+      InvalidConfiguration: AugmentedError<ApiType>;
       /**
        * An equivocation proof provided as part of an equivocation report is invalid.
        **/
@@ -479,8 +487,13 @@ declare module '@polkadot/api-base/types/errors' {
       CodeNotFound: AugmentedError<ApiType>;
       /**
        * The contract's code was found to be invalid during validation or instrumentation.
+       *
+       * The most likely cause of this is that an API was used which is not supported by the
+       * node. This hapens if an older node is used with a new version of ink!. Try updating
+       * your node to the newest available version.
+       *
        * A more detailed error can be found on the node console if debug messages are enabled
-       * or in the debug buffer which is returned to RPC clients.
+       * by supplying `-lruntime::contracts=debug`.
        **/
       CodeRejected: AugmentedError<ApiType>;
       /**
@@ -527,6 +540,10 @@ declare module '@polkadot/api-base/types/errors' {
        * The topics passed to `seal_deposit_events` contains at least one duplicate.
        **/
       DuplicateTopics: AugmentedError<ApiType>;
+      /**
+       * An indetermistic code was used in a context where this is not permitted.
+       **/
+      Indeterministic: AugmentedError<ApiType>;
       /**
        * `seal_call` forwarded this contracts input. It therefore is no longer available.
        **/
@@ -848,6 +865,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       DidMustAlreadyExist: AugmentedError<ApiType>;
       /**
+       * The same key was included multiple times.
+       **/
+      DuplicateKey: AugmentedError<ApiType>;
+      /**
        * Couldn't charge fee for the transaction.
        **/
       FailedToChargeFee: AugmentedError<ApiType>;
@@ -876,6 +897,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InvalidScopeClaim: AugmentedError<ApiType>;
       /**
+       * Identity is already a child of an other identity, can't create grand-child identity.
+       **/
+      IsChildIdentity: AugmentedError<ApiType>;
+      /**
        * This key is not allowed to execute a given operation.
        **/
       KeyNotAllowed: AugmentedError<ApiType>;
@@ -888,6 +913,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       MultiSigHasBalance: AugmentedError<ApiType>;
       /**
+       * The Identity doesn't have a parent identity.
+       **/
+      NoParentIdentity: AugmentedError<ApiType>;
+      /**
        * Signer is not a secondary key of the provided identity
        **/
       NotASigner: AugmentedError<ApiType>;
@@ -895,6 +924,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Attestation was not by a CDD service provider.
        **/
       NotCddProviderAttestation: AugmentedError<ApiType>;
+      /**
+       * The caller is not the parent or child identity.
+       **/
+      NotParentOrChildIdentity: AugmentedError<ApiType>;
       /**
        * Only the primary key is allowed to revoke an Identity Signatory off-chain authorization.
        **/
@@ -1072,6 +1105,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       CollectionNotFound: AugmentedError<ApiType>;
       /**
+       * Duplicate ids are not allowed.
+       **/
+      DuplicatedNFTId: AugmentedError<ApiType>;
+      /**
        * A duplicate metadata key has been passed as parameter.
        **/
       DuplicateMetadataKey: AugmentedError<ApiType>;
@@ -1084,10 +1121,6 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InvalidMetadataAttribute: AugmentedError<ApiType>;
       /**
-       * Failed to transfer an NFT - balance would overflow.
-       **/
-      InvalidNFTTransferBalanceOverflow: AugmentedError<ApiType>;
-      /**
        * Failed to transfer an NFT - NFT collection not found.
        **/
       InvalidNFTTransferCollectionNotFound: AugmentedError<ApiType>;
@@ -1096,17 +1129,21 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InvalidNFTTransferComplianceFailure: AugmentedError<ApiType>;
       /**
+       * Failed to transfer an NFT - identity count would overflow.
+       **/
+      InvalidNFTTransferCountOverflow: AugmentedError<ApiType>;
+      /**
        * Failed to transfer an NFT - asset is frozen.
        **/
       InvalidNFTTransferFrozenAsset: AugmentedError<ApiType>;
       /**
+       * Failed to transfer an NFT - the number of nfts in the identity is insufficient.
+       **/
+      InvalidNFTTransferInsufficientCount: AugmentedError<ApiType>;
+      /**
        * Failed to transfer an NFT - NFT not found in portfolio.
        **/
       InvalidNFTTransferNFTNotOwned: AugmentedError<ApiType>;
-      /**
-       * Failed to transfer an NFT - not enough balance.
-       **/
-      InvalidNFTTransferNoBalance: AugmentedError<ApiType>;
       /**
        * Failed to transfer an NFT - attempt to move to the same portfolio.
        **/
@@ -1116,6 +1153,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       MaxNumberOfKeysExceeded: AugmentedError<ApiType>;
       /**
+       * The maximum number of nfts being transferred in one leg was exceeded.
+       **/
+      MaxNumberOfNFTsPerLegExceeded: AugmentedError<ApiType>;
+      /**
        * The NFT does not exist.
        **/
       NFTNotFound: AugmentedError<ApiType>;
@@ -1123,6 +1164,10 @@ declare module '@polkadot/api-base/types/errors' {
        * At least one of the metadata keys has not been registered.
        **/
       UnregisteredMetadataKey: AugmentedError<ApiType>;
+      /**
+       * It is not possible to transferr zero nft.
+       **/
+      ZeroCount: AugmentedError<ApiType>;
     };
     permissions: {
       /**
@@ -1369,7 +1414,7 @@ declare module '@polkadot/api-base/types/errors' {
       /**
        * Preimage is too large to store on-chain.
        **/
-      TooLarge: AugmentedError<ApiType>;
+      TooBig: AugmentedError<ApiType>;
     };
     protocolFee: {
       /**
@@ -1439,6 +1484,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       FailedToSchedule: AugmentedError<ApiType>;
       /**
+       * Attempt to use a non-named function on a named task.
+       **/
+      Named: AugmentedError<ApiType>;
+      /**
        * Cannot find the scheduled call.
        **/
       NotFound: AugmentedError<ApiType>;
@@ -1482,10 +1531,6 @@ declare module '@polkadot/api-base/types/errors' {
        * Deprecated function has been called on a v2 instruction.
        **/
       DeprecatedCallOnV2Instruction: AugmentedError<ApiType>;
-      /**
-       * There is a duplicated nft in one of the legs.
-       **/
-      DuplicatedNFTId: AugmentedError<ApiType>;
       /**
        * While affirming the transfer, system failed to lock the assets involved.
        **/
@@ -1551,7 +1596,7 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       MaxNumberOfNFTsExceeded: AugmentedError<ApiType>;
       /**
-       * The number of nfts being transferred in one leg was exceeded.
+       * The maximum number of nfts being transferred in one leg was exceeded.
        **/
       MaxNumberOfNFTsPerLegExceeded: AugmentedError<ApiType>;
       /**

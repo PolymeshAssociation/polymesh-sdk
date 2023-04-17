@@ -9,7 +9,8 @@
     "set_storage": "set_storage",
     "kill_storage": "kill_storage",
     "kill_prefix": "kill_prefix",
-    "remark_with_event": "remark_with_event"
+    "remark_with_event": "remark_with_event",
+    "placeholder_fill_block": "placeholder_fill_block"
   },
   "Babe": {
     "report_equivocation": "report_equivocation",
@@ -65,7 +66,10 @@
     "add_secondary_keys_with_authorization_old": "add_secondary_keys_with_authorization_old",
     "set_secondary_key_permissions": "set_secondary_key_permissions",
     "register_custom_claim_type": "register_custom_claim_type",
-    "cdd_register_did_with_cdd": "cdd_register_did_with_cdd"
+    "cdd_register_did_with_cdd": "cdd_register_did_with_cdd",
+    "create_child_identity": "create_child_identity",
+    "create_child_identities": "create_child_identities",
+    "unlink_child_identity": "unlink_child_identity"
   },
   "CddServiceProviders": {
     "set_active_members_limit": "set_active_members_limit",
@@ -359,7 +363,8 @@
     "add_and_affirm_instruction_with_memo_v2": "add_and_affirm_instruction_with_memo_v2",
     "affirm_instruction_v2": "affirm_instruction_v2",
     "withdraw_affirmation_v2": "withdraw_affirmation_v2",
-    "reject_instruction_v2": "reject_instruction_v2"
+    "reject_instruction_v2": "reject_instruction_v2",
+    "execute_scheduled_instruction_v2": "execute_scheduled_instruction_v2"
   },
   "Statistics": {
     "add_transfer_manager": "add_transfer_manager",
@@ -438,7 +443,11 @@
     "instantiate_with_code": "instantiate_with_code",
     "instantiate": "instantiate",
     "upload_code": "upload_code",
-    "remove_code": "remove_code"
+    "remove_code": "remove_code",
+    "call_old_weight": "call_old_weight",
+    "instantiate_with_code_old_weight": "instantiate_with_code_old_weight",
+    "instantiate_old_weight": "instantiate_old_weight",
+    "set_code": "set_code"
   },
   "Nft": {
     "create_nft_collection": "create_nft_collection",

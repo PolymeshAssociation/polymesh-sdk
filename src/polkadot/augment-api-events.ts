@@ -18,9 +18,8 @@ import type {
 import type { ITuple } from '@polkadot/types-codec/types';
 import type { AccountId32, H256, Perbill, Permill } from '@polkadot/types/interfaces/runtime';
 import type {
-  FrameSupportScheduleLookupError,
+  FrameSupportDispatchDispatchInfo,
   FrameSupportTokensMiscBalanceStatus,
-  FrameSupportWeightsDispatchInfo,
   PalletBridgeBridgeTx,
   PalletBridgeHandledTxStatus,
   PalletCorporateActionsBallotBallotMeta,
@@ -795,6 +794,20 @@ declare module '@polkadot/api-base/types/events' {
     };
     contracts: {
       /**
+       * A contract was called either by a plain account or another contract.
+       *
+       * # Note
+       *
+       * Please keep in mind that like all events this is only emitted for successful
+       * calls. This is because on failure all storage changes including events are
+       * rolled back.
+       **/
+      Called: AugmentedEvent<
+        ApiType,
+        [caller: AccountId32, contract: AccountId32],
+        { caller: AccountId32; contract: AccountId32 }
+      >;
+      /**
        * A code with the specified hash was removed.
        **/
       CodeRemoved: AugmentedEvent<ApiType, [codeHash: H256], { codeHash: H256 }>;
@@ -817,6 +830,20 @@ declare module '@polkadot/api-base/types/events' {
         ApiType,
         [contract: AccountId32, data: Bytes],
         { contract: AccountId32; data: Bytes }
+      >;
+      /**
+       * A contract delegate called a code hash.
+       *
+       * # Note
+       *
+       * Please keep in mind that like all events this is only emitted for successful
+       * calls. This is because on failure all storage changes including events are
+       * rolled back.
+       **/
+      DelegateCalled: AugmentedEvent<
+        ApiType,
+        [contract: AccountId32, codeHash: H256],
+        { contract: AccountId32; codeHash: H256 }
       >;
       /**
        * Contract deployed by address at the specified address.
@@ -1151,6 +1178,24 @@ declare module '@polkadot/api-base/types/events' {
        * (new_requirement)
        **/
       CddRequirementForPrimaryKeyUpdated: AugmentedEvent<ApiType, [bool]>;
+      /**
+       * Child identity created.
+       *
+       * (Parent DID, Child DID, primary key)
+       **/
+      ChildDidCreated: AugmentedEvent<
+        ApiType,
+        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesIdentityId, AccountId32]
+      >;
+      /**
+       * Child identity unlinked from parent identity.
+       *
+       * (Caller DID, Parent DID, Child DID)
+       **/
+      ChildDidUnlinked: AugmentedEvent<
+        ApiType,
+        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesIdentityId, PolymeshPrimitivesIdentityId]
+      >;
       /**
        * Claim added to identity.
        *
@@ -1813,10 +1858,10 @@ declare module '@polkadot/api-base/types/events' {
       /**
        * The call for the provided hash was not found so the task has been aborted.
        **/
-      CallLookupFailed: AugmentedEvent<
+      CallUnavailable: AugmentedEvent<
         ApiType,
-        [task: ITuple<[u32, u32]>, id: Option<Bytes>, error: FrameSupportScheduleLookupError],
-        { task: ITuple<[u32, u32]>; id: Option<Bytes>; error: FrameSupportScheduleLookupError }
+        [task: ITuple<[u32, u32]>, id: Option<U8aFixed>],
+        { task: ITuple<[u32, u32]>; id: Option<U8aFixed> }
       >;
       /**
        * Canceled some task.
@@ -1827,12 +1872,32 @@ declare module '@polkadot/api-base/types/events' {
        **/
       Dispatched: AugmentedEvent<
         ApiType,
-        [task: ITuple<[u32, u32]>, id: Option<Bytes>, result: Result<Null, SpRuntimeDispatchError>],
+        [
+          task: ITuple<[u32, u32]>,
+          id: Option<U8aFixed>,
+          result: Result<Null, SpRuntimeDispatchError>
+        ],
         {
           task: ITuple<[u32, u32]>;
-          id: Option<Bytes>;
+          id: Option<U8aFixed>;
           result: Result<Null, SpRuntimeDispatchError>;
         }
+      >;
+      /**
+       * The given task was unable to be renewed since the agenda is full at that block.
+       **/
+      PeriodicFailed: AugmentedEvent<
+        ApiType,
+        [task: ITuple<[u32, u32]>, id: Option<U8aFixed>],
+        { task: ITuple<[u32, u32]>; id: Option<U8aFixed> }
+      >;
+      /**
+       * The given task can never be executed since it is overweight.
+       **/
+      PermanentlyOverweight: AugmentedEvent<
+        ApiType,
+        [task: ITuple<[u32, u32]>, id: Option<U8aFixed>],
+        { task: ITuple<[u32, u32]>; id: Option<U8aFixed> }
       >;
       /**
        * Scheduled some task.
@@ -2259,16 +2324,16 @@ declare module '@polkadot/api-base/types/events' {
        **/
       ExtrinsicFailed: AugmentedEvent<
         ApiType,
-        [dispatchError: SpRuntimeDispatchError, dispatchInfo: FrameSupportWeightsDispatchInfo],
-        { dispatchError: SpRuntimeDispatchError; dispatchInfo: FrameSupportWeightsDispatchInfo }
+        [dispatchError: SpRuntimeDispatchError, dispatchInfo: FrameSupportDispatchDispatchInfo],
+        { dispatchError: SpRuntimeDispatchError; dispatchInfo: FrameSupportDispatchDispatchInfo }
       >;
       /**
        * An extrinsic completed successfully.
        **/
       ExtrinsicSuccess: AugmentedEvent<
         ApiType,
-        [dispatchInfo: FrameSupportWeightsDispatchInfo],
-        { dispatchInfo: FrameSupportWeightsDispatchInfo }
+        [dispatchInfo: FrameSupportDispatchDispatchInfo],
+        { dispatchInfo: FrameSupportDispatchDispatchInfo }
       >;
       /**
        * An account was reaped.
@@ -2432,6 +2497,17 @@ declare module '@polkadot/api-base/types/events' {
       MockInvestorUIDCreated: AugmentedEvent<
         ApiType,
         [PolymeshPrimitivesIdentityId, PolymeshPrimitivesCddIdInvestorUid]
+      >;
+    };
+    transactionPayment: {
+      /**
+       * A transaction fee `actual_fee`, of which `tip` was added to the minimum inclusion fee,
+       * has been paid by `who`.
+       **/
+      TransactionFeePaid: AugmentedEvent<
+        ApiType,
+        [who: AccountId32, actualFee: u128, tip: u128],
+        { who: AccountId32; actualFee: u128; tip: u128 }
       >;
     };
     treasury: {

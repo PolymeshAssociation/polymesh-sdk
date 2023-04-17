@@ -20,7 +20,7 @@ import type {
 import type { AnyNumber, IMethod, ITuple } from '@polkadot/types-codec/types';
 import type { AccountId32, Call, H256, Perbill, Permill } from '@polkadot/types/interfaces/runtime';
 import type {
-  FrameSupportWeightsPerDispatchClassU64,
+  FrameSupportDispatchPerDispatchClassWeight,
   FrameSystemAccountInfo,
   FrameSystemEventRecord,
   FrameSystemLastRuntimeUpgradeInfo,
@@ -34,8 +34,8 @@ import type {
   PalletBalancesBalanceLock,
   PalletBridgeBridgeTxDetail,
   PalletCommitteePolymeshVotes,
+  PalletContractsStorageContractInfo,
   PalletContractsStorageDeletedContract,
-  PalletContractsStorageRawContractInfo,
   PalletContractsWasmOwnerInfo,
   PalletContractsWasmPrefabWasmModule,
   PalletCorporateActionsBallotBallotMeta,
@@ -63,10 +63,11 @@ import type {
   PalletPreimageRequestStatus,
   PalletRelayerSubsidy,
   PalletRewardsItnRewardStatus,
-  PalletSchedulerScheduledV3,
+  PalletSchedulerScheduled,
   PalletSettlementAffirmationStatus,
   PalletSettlementInstruction,
   PalletSettlementInstructionMemo,
+  PalletSettlementInstructionStatus,
   PalletSettlementLeg,
   PalletSettlementLegStatus,
   PalletSettlementLegV2,
@@ -123,6 +124,7 @@ import type {
   SpConsensusBabeAppPublic,
   SpConsensusBabeBabeEpochConfiguration,
   SpConsensusBabeDigestsNextConfigDescriptor,
+  SpConsensusBabeDigestsPreDigest,
   SpCoreCryptoKeyTypeId,
   SpNposElectionsElectionScore,
   SpRuntimeDigest,
@@ -474,7 +476,7 @@ declare module '@polkadot/api-base/types/storage' {
        * This field should always be populated during block processing unless
        * secondary plain slots are enabled (which don't contain a VRF output).
        *
-       * It is set in `on_initialize`, before it will contain the value from the last block.
+       * It is set in `on_finalize`, before it will contain the value from the last block.
        **/
       authorVrfRandomness: AugmentedQuery<ApiType, () => Observable<Option<U8aFixed>>, []>;
       /**
@@ -511,7 +513,11 @@ declare module '@polkadot/api-base/types/storage' {
        * Temporary value (cleared at block finalization) which is `Some`
        * if per-block initialization has already been called for current block.
        **/
-      initialized: AugmentedQuery<ApiType, () => Observable<Option<Option<U8aFixed>>>, []>;
+      initialized: AugmentedQuery<
+        ApiType,
+        () => Observable<Option<Option<SpConsensusBabeDigestsPreDigest>>>,
+        []
+      >;
       /**
        * How late the current block is compared to its parent.
        *
@@ -923,7 +929,7 @@ declare module '@polkadot/api-base/types/storage' {
         ApiType,
         (
           arg: AccountId32 | string | Uint8Array
-        ) => Observable<Option<PalletContractsStorageRawContractInfo>>,
+        ) => Observable<Option<PalletContractsStorageContractInfo>>,
         [AccountId32]
       >;
       /**
@@ -1407,6 +1413,14 @@ declare module '@polkadot/api-base/types/storage' {
       offChainAuthorizationNonce: AugmentedQuery<
         ApiType,
         (arg: PolymeshPrimitivesIdentityId | string | Uint8Array) => Observable<u64>,
+        [PolymeshPrimitivesIdentityId]
+      >;
+      /**
+       * Parent identity if the DID is a child Identity.
+       **/
+      parentDid: AugmentedQuery<
+        ApiType,
+        (arg: PolymeshPrimitivesIdentityId | string | Uint8Array) => Observable<Option<U8aFixed>>,
         [PolymeshPrimitivesIdentityId]
       >;
       /**
@@ -2055,13 +2069,12 @@ declare module '@polkadot/api-base/types/storage' {
       storageVersion: AugmentedQuery<ApiType, () => Observable<u8>, []>;
     };
     preimage: {
-      /**
-       * The preimages stored by this pallet.
-       **/
       preimageFor: AugmentedQuery<
         ApiType,
-        (arg: H256 | string | Uint8Array) => Observable<Option<Bytes>>,
-        [H256]
+        (
+          arg: ITuple<[H256, u32]> | [H256 | string | Uint8Array, u32 | AnyNumber | Uint8Array]
+        ) => Observable<Option<Bytes>>,
+        [ITuple<[H256, u32]>]
       >;
       /**
        * The request status of a given hash.
@@ -2147,16 +2160,20 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       agenda: AugmentedQuery<
         ApiType,
-        (arg: u32 | AnyNumber | Uint8Array) => Observable<Vec<Option<PalletSchedulerScheduledV3>>>,
+        (arg: u32 | AnyNumber | Uint8Array) => Observable<Vec<Option<PalletSchedulerScheduled>>>,
         [u32]
       >;
+      incompleteSince: AugmentedQuery<ApiType, () => Observable<Option<u32>>, []>;
       /**
-       * Lookup from identity to the block number and index of the task.
+       * Lookup from a name to the block number and index of the task.
+       *
+       * For v3 -> v4 the previously unbounded identities are Blake2-256 hashed to form the v4
+       * identities.
        **/
       lookup: AugmentedQuery<
         ApiType,
-        (arg: Bytes | string | Uint8Array) => Observable<Option<ITuple<[u32, u32]>>>,
-        [Bytes]
+        (arg: U8aFixed | string | Uint8Array) => Observable<Option<ITuple<[u32, u32]>>>,
+        [U8aFixed]
       >;
     };
     session: {
@@ -2297,6 +2314,14 @@ declare module '@polkadot/api-base/types/storage' {
       instructionMemos: AugmentedQuery<
         ApiType,
         (arg: u64 | AnyNumber | Uint8Array) => Observable<Option<U8aFixed>>,
+        [u64]
+      >;
+      /**
+       * Instruction statuses. instruction_id -> InstructionStatus
+       **/
+      instructionStatuses: AugmentedQuery<
+        ApiType,
+        (arg: u64 | AnyNumber | Uint8Array) => Observable<PalletSettlementInstructionStatus>,
         [u64]
       >;
       /**
@@ -2861,7 +2886,7 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       blockWeight: AugmentedQuery<
         ApiType,
-        () => Observable<FrameSupportWeightsPerDispatchClassU64>,
+        () => Observable<FrameSupportDispatchPerDispatchClassWeight>,
         []
       >;
       /**

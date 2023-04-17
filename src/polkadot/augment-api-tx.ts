@@ -28,11 +28,11 @@ import type {
 } from '@polkadot/types/interfaces/runtime';
 import type {
   ConfidentialIdentityV2ClaimProofsScopeClaimProof,
-  FrameSupportScheduleMaybeHashed,
   PalletAssetCheckpointScheduleSpec,
   PalletAssetClassicTickerImport,
   PalletAssetTickerRegistrationConfig,
   PalletBridgeBridgeTx,
+  PalletContractsWasmDeterminism,
   PalletCorporateActionsBallotBallotMeta,
   PalletCorporateActionsBallotBallotTimeRange,
   PalletCorporateActionsBallotBallotVote,
@@ -60,6 +60,7 @@ import type {
   PalletStoPriceTier,
   PalletUtilityUniqueCall,
   PolymeshCommonUtilitiesBalancesMemo,
+  PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth,
   PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth,
   PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuthV1,
   PolymeshCommonUtilitiesMaybeBlock,
@@ -108,6 +109,7 @@ import type {
   SpRuntimeHeader,
   SpRuntimeMultiSignature,
   SpSessionMembershipProof,
+  SpWeightsWeightV2Weight,
 } from '@polkadot/types/lookup';
 
 declare module '@polkadot/api-base/types/submittable' {
@@ -235,7 +237,7 @@ declare module '@polkadot/api-base/types/submittable' {
        * - `AssetAlreadyCreated` if asset was already created.
        * - `TickerTooLong` if `ticker`'s length is greater than `config.max_ticker_length` chain
        * parameter.
-       * - `TickerNotAscii` if `ticker` is not yet registered, and contains non-ascii printable characters (from code 32 to 126) or any character after first occurrence of `\0`.
+       * - `TickerNotAlphanumeric` if `ticker` is not yet registered, and contains non-alphanumeric characters or any character after first occurrence of `\0`.
        *
        * ## Permissions
        * * Portfolio
@@ -2061,6 +2063,31 @@ declare module '@polkadot/api-base/types/submittable' {
             | string
             | Uint8Array,
           value: Compact<u128> | AnyNumber | Uint8Array,
+          gasLimit:
+            | SpWeightsWeightV2Weight
+            | { refTime?: any; proofSize?: any }
+            | string
+            | Uint8Array,
+          storageDepositLimit: Option<Compact<u128>> | null | object | string | Uint8Array,
+          data: Bytes | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [MultiAddress, Compact<u128>, SpWeightsWeightV2Weight, Option<Compact<u128>>, Bytes]
+      >;
+      /**
+       * Deprecated version if [`Self::call`] for use in an in-storage `Call`.
+       **/
+      callOldWeight: AugmentedSubmittable<
+        (
+          dest:
+            | MultiAddress
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array,
+          value: Compact<u128> | AnyNumber | Uint8Array,
           gasLimit: Compact<u64> | AnyNumber | Uint8Array,
           storageDepositLimit: Option<Compact<u128>> | null | object | string | Uint8Array,
           data: Bytes | string | Uint8Array
@@ -2075,6 +2102,24 @@ declare module '@polkadot/api-base/types/submittable' {
        * must be supplied.
        **/
       instantiate: AugmentedSubmittable<
+        (
+          value: Compact<u128> | AnyNumber | Uint8Array,
+          gasLimit:
+            | SpWeightsWeightV2Weight
+            | { refTime?: any; proofSize?: any }
+            | string
+            | Uint8Array,
+          storageDepositLimit: Option<Compact<u128>> | null | object | string | Uint8Array,
+          codeHash: H256 | string | Uint8Array,
+          data: Bytes | string | Uint8Array,
+          salt: Bytes | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Compact<u128>, SpWeightsWeightV2Weight, Option<Compact<u128>>, H256, Bytes, Bytes]
+      >;
+      /**
+       * Deprecated version if [`Self::instantiate`] for use in an in-storage `Call`.
+       **/
+      instantiateOldWeight: AugmentedSubmittable<
         (
           value: Compact<u128> | AnyNumber | Uint8Array,
           gasLimit: Compact<u64> | AnyNumber | Uint8Array,
@@ -2116,6 +2161,24 @@ declare module '@polkadot/api-base/types/submittable' {
       instantiateWithCode: AugmentedSubmittable<
         (
           value: Compact<u128> | AnyNumber | Uint8Array,
+          gasLimit:
+            | SpWeightsWeightV2Weight
+            | { refTime?: any; proofSize?: any }
+            | string
+            | Uint8Array,
+          storageDepositLimit: Option<Compact<u128>> | null | object | string | Uint8Array,
+          code: Bytes | string | Uint8Array,
+          data: Bytes | string | Uint8Array,
+          salt: Bytes | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Compact<u128>, SpWeightsWeightV2Weight, Option<Compact<u128>>, Bytes, Bytes, Bytes]
+      >;
+      /**
+       * Deprecated version if [`Self::instantiate_with_code`] for use in an in-storage `Call`.
+       **/
+      instantiateWithCodeOldWeight: AugmentedSubmittable<
+        (
+          value: Compact<u128> | AnyNumber | Uint8Array,
           gasLimit: Compact<u64> | AnyNumber | Uint8Array,
           storageDepositLimit: Option<Compact<u128>> | null | object | string | Uint8Array,
           code: Bytes | string | Uint8Array,
@@ -2135,6 +2198,33 @@ declare module '@polkadot/api-base/types/submittable' {
         [H256]
       >;
       /**
+       * Privileged function that changes the code of an existing contract.
+       *
+       * This takes care of updating refcounts and all other necessary operations. Returns
+       * an error if either the `code_hash` or `dest` do not exist.
+       *
+       * # Note
+       *
+       * This does **not** change the address of the contract in question. This means
+       * that the contract address is no longer derived from its code hash after calling
+       * this dispatchable.
+       **/
+      setCode: AugmentedSubmittable<
+        (
+          dest:
+            | MultiAddress
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array,
+          codeHash: H256 | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [MultiAddress, H256]
+      >;
+      /**
        * Upload new `code` without instantiating a contract from it.
        *
        * If the code does not already exist a deposit is reserved from the caller
@@ -2144,6 +2234,10 @@ declare module '@polkadot/api-base/types/submittable' {
        * If the code already exists in storage it will still return `Ok` and upgrades
        * the in storage version to the current
        * [`InstructionWeights::version`](InstructionWeights).
+       *
+       * - `determinism`: If this is set to any other value but [`Determinism::Deterministic`]
+       * then the only way to use this code is to delegate call into it from an offchain
+       * execution. Set to [`Determinism::Deterministic`] if in doubt.
        *
        * # Note
        *
@@ -2155,9 +2249,15 @@ declare module '@polkadot/api-base/types/submittable' {
       uploadCode: AugmentedSubmittable<
         (
           code: Bytes | string | Uint8Array,
-          storageDepositLimit: Option<Compact<u128>> | null | object | string | Uint8Array
+          storageDepositLimit: Option<Compact<u128>> | null | object | string | Uint8Array,
+          determinism:
+            | PalletContractsWasmDeterminism
+            | 'Deterministic'
+            | 'AllowIndeterminism'
+            | number
+            | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [Bytes, Option<Compact<u128>>]
+        [Bytes, Option<Compact<u128>>, PalletContractsWasmDeterminism]
       >;
     };
     corporateAction: {
@@ -2824,12 +2924,17 @@ declare module '@polkadot/api-base/types/submittable' {
     };
     grandpa: {
       /**
-       * Note that the current authority set of the GRANDPA finality gadget has
-       * stalled. This will trigger a forced authority set change at the beginning
-       * of the next session, to be enacted `delay` blocks after that. The delay
-       * should be high enough to safely assume that the block signalling the
-       * forced change will not be re-orged (e.g. 1000 blocks). The GRANDPA voters
-       * will start the new authority set using the given finalized block as base.
+       * Note that the current authority set of the GRANDPA finality gadget has stalled.
+       *
+       * This will trigger a forced authority set change at the beginning of the next session, to
+       * be enacted `delay` blocks after that. The `delay` should be high enough to safely assume
+       * that the block signalling the forced change will not be re-orged e.g. 1000 blocks.
+       * The block production rate (which may be slowed down because of finality lagging) should
+       * be taken into account when choosing the `delay`. The GRANDPA voters based on the new
+       * authority will start voting on top of `best_finalized_block_number` for new finalized
+       * blocks. `best_finalized_block_number` should be the highest of the latest finalized
+       * block of all validators of the new authority set.
+       *
        * Only callable by root.
        **/
       noteStalled: AugmentedSubmittable<
@@ -3168,6 +3273,55 @@ declare module '@polkadot/api-base/types/submittable' {
         [bool]
       >;
       /**
+       * Create a child identities.
+       *
+       * The new primary key for each child identity will need to sign (off-chain)
+       * an authorization.
+       *
+       * Only the primary key can create child identities.
+       *
+       * # Arguments
+       * - `child_keys` the keys that will become primary keys of their own child identity.
+       *
+       * # Errors
+       * - `KeyNotAllowed` only the primary key can create a new identity.
+       * - `AlreadyLinked` one of the keys is already linked to an identity.
+       * - `DuplicateKey` one of the keys is included multiple times.
+       * - `IsChildIdentity` the caller's identity is already a child identity and can't create child identities.
+       **/
+      createChildIdentities: AugmentedSubmittable<
+        (
+          childKeys:
+            | Vec<PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth>
+            | (
+                | PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth
+                | { key?: any; authSignature?: any }
+                | string
+                | Uint8Array
+              )[],
+          expiresAt: u64 | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [Vec<PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth>, u64]
+      >;
+      /**
+       * Create a child identity and make the `secondary_key` it's primary key.
+       *
+       * Only the primary key can create child identities.
+       *
+       * # Arguments
+       * - `secondary_key` the secondary key that will become the primary key of the new identity.
+       *
+       * # Errors
+       * - `KeyNotAllowed` only the primary key can create a new identity.
+       * - `NotASigner` the `secondary_key` is not a secondary key of the caller's identity.
+       * - `AccountKeyIsBeingUsed` the `secondary_key` can't be unlinked from it's current identity.
+       * - `IsChildIdentity` the caller's identity is already a child identity and can't create child identities.
+       **/
+      createChildIdentity: AugmentedSubmittable<
+        (secondaryKey: AccountId32 | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        [AccountId32]
+      >;
+      /**
        * It disables all secondary keys at `did` identity.
        *
        * # Errors
@@ -3409,6 +3563,25 @@ declare module '@polkadot/api-base/types/submittable' {
        * Re-enables all secondary keys of the caller's identity.
        **/
       unfreezeSecondaryKeys: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>, []>;
+      /**
+       * Unlink a child identity from it's parent identity.
+       *
+       * Only the primary key of the parent or child identities can unlink the identities.
+       *
+       * # Arguments
+       * - `child_did` the child identity to unlink from its parent identity.
+       *
+       * # Errors
+       * - `KeyNotAllowed` only the primary key of either the parent or child identity can unlink the identities.
+       * - `NoParentIdentity` the identity `child_did` doesn't have a parent identity.
+       * - `NotParentOrChildIdentity` the caller's identity isn't the parent or child identity.
+       **/
+      unlinkChildIdentity: AugmentedSubmittable<
+        (
+          childDid: PolymeshPrimitivesIdentityId | string | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [PolymeshPrimitivesIdentityId]
+      >;
     };
     imOnline: {
       /**
@@ -3490,11 +3663,19 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       forceTransfer: AugmentedSubmittable<
         (
-          updated: AccountId32 | string | Uint8Array,
+          updated:
+            | MultiAddress
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array,
           index: u32 | AnyNumber | Uint8Array,
           freeze: bool | boolean | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [AccountId32, u32, bool]
+        [MultiAddress, u32, bool]
       >;
       /**
        * Free up an index owned by the sender.
@@ -3568,10 +3749,18 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       transfer: AugmentedSubmittable<
         (
-          updated: AccountId32 | string | Uint8Array,
+          updated:
+            | MultiAddress
+            | { Id: any }
+            | { Index: any }
+            | { Raw: any }
+            | { Address32: any }
+            | { Address20: any }
+            | string
+            | Uint8Array,
           index: u32 | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [AccountId32, u32]
+        [MultiAddress, u32]
       >;
     };
     multiSig: {
@@ -3785,9 +3974,13 @@ declare module '@polkadot/api-base/types/submittable' {
           multisig: AccountId32 | string | Uint8Array,
           proposalId: u64 | AnyNumber | Uint8Array,
           multisigDid: PolymeshPrimitivesIdentityId | string | Uint8Array,
-          proposalWeight: u64 | AnyNumber | Uint8Array
+          proposalWeight:
+            | SpWeightsWeightV2Weight
+            | { refTime?: any; proofSize?: any }
+            | string
+            | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [AccountId32, u64, PolymeshPrimitivesIdentityId, u64]
+        [AccountId32, u64, PolymeshPrimitivesIdentityId, SpWeightsWeightV2Weight]
       >;
       /**
        * Adds a multisig as the primary key of the current did if the current DID is the creator
@@ -4368,7 +4561,11 @@ declare module '@polkadot/api-base/types/submittable' {
       instantiateWithCodePerms: AugmentedSubmittable<
         (
           endowment: u128 | AnyNumber | Uint8Array,
-          gasLimit: u64 | AnyNumber | Uint8Array,
+          gasLimit:
+            | SpWeightsWeightV2Weight
+            | { refTime?: any; proofSize?: any }
+            | string
+            | Uint8Array,
           storageDepositLimit: Option<u128> | null | object | string | Uint8Array,
           code: Bytes | string | Uint8Array,
           data: Bytes | string | Uint8Array,
@@ -4379,7 +4576,15 @@ declare module '@polkadot/api-base/types/submittable' {
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [u128, u64, Option<u128>, Bytes, Bytes, Bytes, PolymeshPrimitivesSecondaryKeyPermissions]
+        [
+          u128,
+          SpWeightsWeightV2Weight,
+          Option<u128>,
+          Bytes,
+          Bytes,
+          Bytes,
+          PolymeshPrimitivesSecondaryKeyPermissions
+        ]
       >;
       /**
        * Instantiates a smart contract defining using the given `code_hash` and `salt`.
@@ -4413,7 +4618,11 @@ declare module '@polkadot/api-base/types/submittable' {
       instantiateWithHashPerms: AugmentedSubmittable<
         (
           endowment: u128 | AnyNumber | Uint8Array,
-          gasLimit: u64 | AnyNumber | Uint8Array,
+          gasLimit:
+            | SpWeightsWeightV2Weight
+            | { refTime?: any; proofSize?: any }
+            | string
+            | Uint8Array,
           storageDepositLimit: Option<u128> | null | object | string | Uint8Array,
           codeHash: H256 | string | Uint8Array,
           data: Bytes | string | Uint8Array,
@@ -4424,7 +4633,15 @@ declare module '@polkadot/api-base/types/submittable' {
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [u128, u64, Option<u128>, H256, Bytes, Bytes, PolymeshPrimitivesSecondaryKeyPermissions]
+        [
+          u128,
+          SpWeightsWeightV2Weight,
+          Option<u128>,
+          H256,
+          Bytes,
+          Bytes,
+          PolymeshPrimitivesSecondaryKeyPermissions
+        ]
       >;
       /**
        * Update CallRuntime whitelist.
@@ -4620,6 +4837,11 @@ declare module '@polkadot/api-base/types/submittable' {
       >;
       /**
        * Clear an unrequested preimage from the runtime storage.
+       *
+       * If `len` is provided, then it will be a much cheaper operation.
+       *
+       * - `hash`: The hash of the preimage to be removed from the store.
+       * - `len`: The length of the preimage of `hash`.
        **/
       unnotePreimage: AugmentedSubmittable<
         (hash: H256 | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
@@ -4854,8 +5076,8 @@ declare module '@polkadot/api-base/types/submittable' {
        * Cancel a named scheduled task.
        **/
       cancelNamed: AugmentedSubmittable<
-        (id: Bytes | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [Bytes]
+        (id: U8aFixed | string | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        [U8aFixed]
       >;
       /**
        * Anonymously schedule a task.
@@ -4865,14 +5087,9 @@ declare module '@polkadot/api-base/types/submittable' {
           when: u32 | AnyNumber | Uint8Array,
           maybePeriodic: Option<ITuple<[u32, u32]>> | null | object | string | Uint8Array,
           priority: u8 | AnyNumber | Uint8Array,
-          call:
-            | FrameSupportScheduleMaybeHashed
-            | { Value: any }
-            | { Hash: any }
-            | string
-            | Uint8Array
+          call: Call | IMethod | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [u32, Option<ITuple<[u32, u32]>>, u8, FrameSupportScheduleMaybeHashed]
+        [u32, Option<ITuple<[u32, u32]>>, u8, Call]
       >;
       /**
        * Anonymously schedule a task after a delay.
@@ -4886,32 +5103,22 @@ declare module '@polkadot/api-base/types/submittable' {
           after: u32 | AnyNumber | Uint8Array,
           maybePeriodic: Option<ITuple<[u32, u32]>> | null | object | string | Uint8Array,
           priority: u8 | AnyNumber | Uint8Array,
-          call:
-            | FrameSupportScheduleMaybeHashed
-            | { Value: any }
-            | { Hash: any }
-            | string
-            | Uint8Array
+          call: Call | IMethod | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [u32, Option<ITuple<[u32, u32]>>, u8, FrameSupportScheduleMaybeHashed]
+        [u32, Option<ITuple<[u32, u32]>>, u8, Call]
       >;
       /**
        * Schedule a named task.
        **/
       scheduleNamed: AugmentedSubmittable<
         (
-          id: Bytes | string | Uint8Array,
+          id: U8aFixed | string | Uint8Array,
           when: u32 | AnyNumber | Uint8Array,
           maybePeriodic: Option<ITuple<[u32, u32]>> | null | object | string | Uint8Array,
           priority: u8 | AnyNumber | Uint8Array,
-          call:
-            | FrameSupportScheduleMaybeHashed
-            | { Value: any }
-            | { Hash: any }
-            | string
-            | Uint8Array
+          call: Call | IMethod | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [Bytes, u32, Option<ITuple<[u32, u32]>>, u8, FrameSupportScheduleMaybeHashed]
+        [U8aFixed, u32, Option<ITuple<[u32, u32]>>, u8, Call]
       >;
       /**
        * Schedule a named task after a delay.
@@ -4922,18 +5129,13 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       scheduleNamedAfter: AugmentedSubmittable<
         (
-          id: Bytes | string | Uint8Array,
+          id: U8aFixed | string | Uint8Array,
           after: u32 | AnyNumber | Uint8Array,
           maybePeriodic: Option<ITuple<[u32, u32]>> | null | object | string | Uint8Array,
           priority: u8 | AnyNumber | Uint8Array,
-          call:
-            | FrameSupportScheduleMaybeHashed
-            | { Value: any }
-            | { Hash: any }
-            | string
-            | Uint8Array
+          call: Call | IMethod | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [Bytes, u32, Option<ITuple<[u32, u32]>>, u8, FrameSupportScheduleMaybeHashed]
+        [U8aFixed, u32, Option<ITuple<[u32, u32]>>, u8, Call]
       >;
     };
     session: {
@@ -5497,6 +5699,17 @@ declare module '@polkadot/api-base/types/submittable' {
           legsCount: u32 | AnyNumber | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [u64, u32]
+      >;
+      /**
+       * Root callable extrinsic, used as an internal call to execute a scheduled settlement instruction.
+       **/
+      executeScheduledInstructionV2: AugmentedSubmittable<
+        (
+          id: u64 | AnyNumber | Uint8Array,
+          fungibleTransfers: u32 | AnyNumber | Uint8Array,
+          nftsTransfers: u32 | AnyNumber | Uint8Array
+        ) => SubmittableExtrinsic<ApiType>,
+        [u64, u32, u32]
       >;
       /**
        * Placeholder for removed `claim_receipt`
@@ -6891,19 +7104,12 @@ declare module '@polkadot/api-base/types/submittable' {
       sudoUncheckedWeight: AugmentedSubmittable<
         (
           call: Call | IMethod | string | Uint8Array,
-          weight: u64 | AnyNumber | Uint8Array
+          weight: SpWeightsWeightV2Weight | { refTime?: any; proofSize?: any } | string | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [Call, u64]
+        [Call, SpWeightsWeightV2Weight]
       >;
     };
     system: {
-      /**
-       * A dispatch that will fill the block weight up to the given ratio.
-       **/
-      fillBlock: AugmentedSubmittable<
-        (ratio: Perbill | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [Perbill]
-      >;
       /**
        * Kill all storage items with a key that starts with the given prefix.
        *
@@ -6924,6 +7130,10 @@ declare module '@polkadot/api-base/types/submittable' {
         (keys: Vec<Bytes> | (Bytes | string | Uint8Array)[]) => SubmittableExtrinsic<ApiType>,
         [Vec<Bytes>]
       >;
+      /**
+       * Placeholder for removed `fill_block`.
+       **/
+      placeholderFillBlock: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>, []>;
       /**
        * Make some on-chain remark.
        *
