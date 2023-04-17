@@ -1100,7 +1100,13 @@ describe('Claims Class', () => {
   });
 
   describe('method: getTargetingClaimsV2', () => {
+    beforeAll(() => {
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date(2023, 4, 17));
+    });
+
     afterAll(() => {
+      jest.useRealTimers();
       jest.restoreAllMocks();
     });
 
