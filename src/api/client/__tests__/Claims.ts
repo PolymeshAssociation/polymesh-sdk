@@ -365,6 +365,15 @@ describe('Claims Class', () => {
   });
 
   describe('method: getIdentitiesWithClaimsV2', () => {
+    beforeAll(() => {
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date(2023, 4, 17));
+    });
+
+    afterAll(() => {
+      jest.useRealTimers();
+    });
+
     it('should return a list of Identities with claims associated to them', async () => {
       const targetDid = 'someTargetDid';
       const issuerDid = 'someIssuerDid';
@@ -795,7 +804,13 @@ describe('Claims Class', () => {
   });
 
   describe('method: getTargetingClaims', () => {
+    beforeAll(() => {
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date(2023, 4, 17));
+    });
+
     afterAll(() => {
+      jest.useRealTimers();
       jest.restoreAllMocks();
     });
 
