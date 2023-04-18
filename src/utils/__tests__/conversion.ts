@@ -161,7 +161,6 @@ import * as internalUtils from '~/utils/internal';
 import { padString } from '~/utils/internal';
 
 import {
-  accountIdToAccount,
   accountIdToString,
   addressToKey,
   agentGroupToPermissionGroup,
@@ -8103,27 +8102,6 @@ describe('agentGroupToPermissionGroup', () => {
 
       expect(result).toEqual('Scoped2ndKey');
     });
-  });
-});
-
-describe('accountIdToAccount', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  it('should convert an AccountId to a string', () => {
-    const context = dsMockUtils.getContextInstance();
-    const mockAccountId = dsMockUtils.createMockAccountId('someAddress');
-    const result = accountIdToAccount(mockAccountId, context);
-    expect(result.address).toEqual('someAddress');
   });
 });
 
