@@ -26548,7 +26548,9 @@ export enum ProposalsOrderBy {
   VotesCountDesc = 'VOTES_COUNT_DESC',
 }
 
-/** @enum\n@enumName SettlementResultEnum\n Represents all possible states of a Settlement */
+/** @enum
+ * @enumName SettlementResultEnum
+ *  Represents all possible states of a Settlement */
 export enum PublicEnum05F6462Eea {
   Executed = 'Executed',
   Failed = 'Failed',
@@ -26582,7 +26584,9 @@ export type PublicEnum05F6462EeaFilter = {
   notIn?: InputMaybe<Array<PublicEnum05F6462Eea>>;
 };
 
-/** @enum\n@enumName StatOpTypeEnum\n Represents all known stat types */
+/** @enum
+ * @enumName StatOpTypeEnum
+ *  Represents all known stat types */
 export enum PublicEnum040F13614F {
   Balance = 'Balance',
   Count = 'Count',
@@ -26614,7 +26618,9 @@ export type PublicEnum040F13614FFilter = {
   notIn?: InputMaybe<Array<PublicEnum040F13614F>>;
 };
 
-/** @enum\n@enumName CallIdEnum\n Represents all known chain extrinsics */
+/** @enum
+ * @enumName CallIdEnum
+ *  Represents all known chain extrinsics */
 export enum PublicEnum0Bf3C7D4Ef {
   Abdicate = 'abdicate',
   AbdicateMembership = 'abdicate_membership',
@@ -27043,7 +27049,9 @@ export type PublicEnum0Bf3C7D4EfFilter = {
   notIn?: InputMaybe<Array<PublicEnum0Bf3C7D4Ef>>;
 };
 
-/** @enum\n@enumName ProposalStateEnum\n Represents all possible Proposal statuses */
+/** @enum
+ * @enumName ProposalStateEnum
+ *  Represents all possible Proposal statuses */
 export enum PublicEnum6E6395Eda7 {
   All = 'All',
   Executed = 'Executed',
@@ -27080,7 +27088,9 @@ export type PublicEnum6E6395Eda7Filter = {
   notIn?: InputMaybe<Array<PublicEnum6E6395Eda7>>;
 };
 
-/** @enum\n@enumName ModuleIdEnum\n Represents all known chain "pallets" */
+/** @enum
+ * @enumName ModuleIdEnum
+ *  Represents all known chain "pallets" */
 export enum PublicEnum7A0B4Cc03E {
   Asset = 'asset',
   Authoritydiscovery = 'authoritydiscovery',
@@ -27166,7 +27176,9 @@ export type PublicEnum7A0B4Cc03EFilter = {
   notIn?: InputMaybe<Array<PublicEnum7A0B4Cc03E>>;
 };
 
-/** @enum\n@enumName EventIdEnum\n Events are emitted when chain state is changed. This enum represents all known events */
+/** @enum
+ * @enumName EventIdEnum
+ *  Events are emitted when chain state is changed. This enum represents all known events */
 export enum PublicEnum8F5A39C8Ee {
   AcceptedPayingKey = 'AcceptedPayingKey',
   AccountBalanceBurned = 'AccountBalanceBurned',
@@ -27546,7 +27558,9 @@ export type PublicEnum8F5A39C8EeFilter = {
   notIn?: InputMaybe<Array<PublicEnum8F5A39C8Ee>>;
 };
 
-/** @enum\n@enumName StoStatus\n Represents all possible statuses for a STO */
+/** @enum
+ * @enumName StoStatus
+ *  Represents all possible statuses for a STO */
 export enum PublicEnum9Ceea16A44 {
   Closed = 'Closed',
   ClosedEarly = 'ClosedEarly',
@@ -27580,7 +27594,9 @@ export type PublicEnum9Ceea16A44Filter = {
   notIn?: InputMaybe<Array<PublicEnum9Ceea16A44>>;
 };
 
-/** @enum\n@enumName TransferComplianceTypeEnum\n Represents all possible transfer restriction rules that can be enabled */
+/** @enum
+ * @enumName TransferComplianceTypeEnum
+ *  Represents all possible transfer restriction rules that can be enabled */
 export enum PublicEnum71Afee1504 {
   ClaimCount = 'ClaimCount',
   ClaimOwnership = 'ClaimOwnership',
@@ -27614,7 +27630,9 @@ export type PublicEnum71Afee1504Filter = {
   notIn?: InputMaybe<Array<PublicEnum71Afee1504>>;
 };
 
-/** @enum\n@enumName TransferRestrictionTypeEnum\n Represents all possible transfer restriction types */
+/** @enum
+ * @enumName TransferRestrictionTypeEnum
+ *  Represents all possible transfer restriction types */
 export enum PublicEnum72Fc336Bfe {
   Count = 'Count',
   Percentage = 'Percentage',
@@ -27646,7 +27664,9 @@ export type PublicEnum72Fc336BfeFilter = {
   notIn?: InputMaybe<Array<PublicEnum72Fc336Bfe>>;
 };
 
-/** @enum\n@enumName AuthorizationStatusEnum\n Represents all possible authorization statuses */
+/** @enum
+ * @enumName AuthorizationStatusEnum
+ *  Represents all possible authorization statuses */
 export enum PublicEnum31117E090D {
   Consumed = 'Consumed',
   Pending = 'Pending',
@@ -27680,7 +27700,9 @@ export type PublicEnum31117E090DFilter = {
   notIn?: InputMaybe<Array<PublicEnum31117E090D>>;
 };
 
-/** @enum\n@enumName InstructionStatusEnum\n Represents all possible states of an Instruction */
+/** @enum
+ * @enumName InstructionStatusEnum
+ *  Represents all possible states of an Instruction */
 export enum PublicEnumB861Be9158 {
   Created = 'Created',
   Executed = 'Executed',
@@ -27714,7 +27736,9 @@ export type PublicEnumB861Be9158Filter = {
   notIn?: InputMaybe<Array<PublicEnumB861Be9158>>;
 };
 
-/** @enum\n@enumName AuthTypeEnum\n Represents all possible authorization types */
+/** @enum
+ * @enumName AuthTypeEnum
+ *  Represents all possible authorization types */
 export enum PublicEnumCf84Da6Fd1 {
   AddMultiSigSigner = 'AddMultiSigSigner',
   AddRelayerPayingKey = 'AddRelayerPayingKey',
@@ -27757,7 +27781,9 @@ export type PublicEnumCf84Da6Fd1Filter = {
   notIn?: InputMaybe<Array<PublicEnumCf84Da6Fd1>>;
 };
 
-/** @enum\n@enumName ClaimTypeEnum\n Represents all possible claims that can be made of an identity */
+/** @enum
+ * @enumName ClaimTypeEnum
+ *  Represents all possible claims that can be made of an identity */
 export enum PublicEnumEc3243D777 {
   Accredited = 'Accredited',
   Affiliate = 'Affiliate',
