@@ -52,7 +52,7 @@ import {
   PalletAssetSecurityToken,
   PalletAssetTickerRegistration,
   PalletAssetTickerRegistrationConfig,
-  PalletContractsStorageRawContractInfo,
+  PalletContractsStorageContractInfo,
   PalletCorporateActionsCaCheckpoint,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCaKind,
@@ -4354,7 +4354,7 @@ export const createMockContractInfo = (contractInfo?: {
   trieId: Bytes;
   codeHash: U8aFixed;
   storageDeposit: u128;
-}): MockCodec<PalletContractsStorageRawContractInfo> => {
+}): MockCodec<PalletContractsStorageContractInfo> => {
   const { trieId, codeHash, storageDeposit } = contractInfo || {
     trieId: createMockBytes(),
     codeHash: createMockHash(),
