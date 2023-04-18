@@ -1152,7 +1152,7 @@ describe('assertExpectedChainVersion', () => {
 
   beforeEach(() => {
     client = getWebSocketInstance();
-    warnSpy = jest.spyOn(console, 'warn');
+    warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
   });
 
   afterEach(() => {
