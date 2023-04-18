@@ -1,7 +1,7 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 
-import { MultiSig } from '~/api/entities/MultiSig';
+import { MultiSig } from '~/api/entities/Account/MultiSig';
 import {
   createMultiSigResolver,
   prepareCreateMultiSigAccount,
