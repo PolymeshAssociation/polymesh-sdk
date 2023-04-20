@@ -76,7 +76,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Identifier number of the venue
+   * Unique identifier number of the instruction
    */
   public id: BigNumber;
 
