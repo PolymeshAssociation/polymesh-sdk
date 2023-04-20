@@ -89,6 +89,7 @@ import type {
   ApplyExtrinsicResult,
   ChainProperties,
   ChainType,
+  DispatchResult,
   Health,
   NetworkState,
   NodeRole,
@@ -108,6 +109,7 @@ import type {
   IdentityId,
   KeyIdentityData,
   Member,
+  NFTs,
   PipId,
   PortfolioId,
   ProtocolOp,
@@ -886,6 +888,19 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
        * Returns protocol version.
        **/
       version: AugmentedRpc<() => Observable<Text>>;
+    };
+    nft: {
+      /**
+       * Verifies if and the sender and receiver are not the same, if both have valid balances, if the sender owns the nft, and if all compliance rules are being respected.
+       **/
+      validateNFTTransfer: AugmentedRpc<
+        (
+          sender_portfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
+          receiver_portfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
+          nfts: NFTs | { ticker?: any; ids?: any } | string | Uint8Array,
+          blockHash?: Hash | string | Uint8Array
+        ) => Observable<DispatchResult>
+      >;
     };
     offchain: {
       /**
