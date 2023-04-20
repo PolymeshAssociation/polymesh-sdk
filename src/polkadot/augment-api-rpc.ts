@@ -18,6 +18,7 @@ import type {
   U64,
   Vec,
   bool,
+  f64,
   u32,
   u64,
 } from '@polkadot/types-codec';
@@ -34,13 +35,14 @@ import type {
   ContractCallRequest,
   ContractExecResult,
   ContractInstantiateResult,
-  InstantiateRequest,
+  InstantiateRequestV1,
 } from '@polkadot/types/interfaces/contracts';
 import type { BlockStats } from '@polkadot/types/interfaces/dev';
 import type { CreatedBlock } from '@polkadot/types/interfaces/engine';
 import type {
   EthAccount,
   EthCallRequest,
+  EthFeeHistory,
   EthFilter,
   EthFilterChanges,
   EthLog,
@@ -61,7 +63,7 @@ import type {
 } from '@polkadot/types/interfaces/grandpa';
 import type { MmrLeafBatchProof, MmrLeafProof } from '@polkadot/types/interfaces/mmr';
 import type { StorageKind } from '@polkadot/types/interfaces/offchain';
-import type { FeeDetails, RuntimeDispatchInfo } from '@polkadot/types/interfaces/payment';
+import type { FeeDetails, RuntimeDispatchInfoV1 } from '@polkadot/types/interfaces/payment';
 import type { RpcMethods } from '@polkadot/types/interfaces/rpc';
 import type {
   AccountId,
@@ -362,16 +364,8 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
       instantiate: AugmentedRpc<
         (
           request:
-            | InstantiateRequest
-            | {
-                origin?: any;
-                value?: any;
-                gasLimit?: any;
-                storageDepositLimit?: any;
-                code?: any;
-                data?: any;
-                salt?: any;
-              }
+            | InstantiateRequestV1
+            | { origin?: any; value?: any; gasLimit?: any; code?: any; data?: any; salt?: any }
             | string
             | Uint8Array,
           at?: BlockHash | string | Uint8Array
@@ -484,6 +478,16 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
             | Uint8Array,
           number?: BlockNumber | AnyNumber | Uint8Array
         ) => Observable<U256>
+      >;
+      /**
+       * Returns fee history for given block count & reward percentiles
+       **/
+      feeHistory: AugmentedRpc<
+        (
+          blockCount: U256 | AnyNumber | Uint8Array,
+          newestBlock: BlockNumber | AnyNumber | Uint8Array,
+          rewardPercentiles: Option<Vec<f64>> | null | object | string | Uint8Array
+        ) => Observable<EthFeeHistory>
       >;
       /**
        * Returns current gas price.
@@ -610,7 +614,7 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
        **/
       getTransactionCount: AugmentedRpc<
         (
-          hash: H256 | string | Uint8Array,
+          address: H160 | string | Uint8Array,
           number?: BlockNumber | AnyNumber | Uint8Array
         ) => Observable<U256>
       >;
@@ -658,6 +662,10 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
        * Returns the number of hashes per second that the node is mining with.
        **/
       hashrate: AugmentedRpc<() => Observable<U256>>;
+      /**
+       * Returns max priority fee per gas
+       **/
+      maxPriorityFeePerGas: AugmentedRpc<() => Observable<U256>>;
       /**
        * Returns true if client is actively mining new blocks.
        **/
@@ -940,7 +948,7 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
         (
           extrinsic: Bytes | string | Uint8Array,
           at?: BlockHash | string | Uint8Array
-        ) => Observable<RuntimeDispatchInfo>
+        ) => Observable<RuntimeDispatchInfoV1>
       >;
     };
     pips: {
