@@ -4,6 +4,7 @@
 
 import { ApiPromise } from '@polkadot/api';
 import { DecoratedRpc } from '@polkadot/api/types';
+import { RpcInterface } from '@polkadot/rpc-core/types';
 import {
   bool,
   BTreeSet,
@@ -616,7 +617,7 @@ let txModule = {} as Extrinsics;
 let queryModule = {} as Queries;
 let constsModule = {} as Consts;
 
-let rpcModule = {} as DecoratedRpc<any, any>;
+let rpcModule = {} as DecoratedRpc<'promise', RpcInterface>;
 
 let queryMultiMock = jest.fn();
 
@@ -1367,7 +1368,7 @@ export function createRpcMock<
   let runtimeModule: any = rpcModule[mod];
 
   if (!runtimeModule) {
-    runtimeModule = rpcModule[mod] = {};
+    runtimeModule = rpcModule[mod] = {} as any;
   }
 
   type RpcMock = Rpcs[ModuleName][RpcName] & jest.Mock & MockRpc;
