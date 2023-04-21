@@ -23,6 +23,7 @@ declare module '@polkadot/types/lookup' {
     u8,
   } from '@polkadot/types-codec';
   import type { ITuple } from '@polkadot/types-codec/types';
+  import type { OpaqueMultiaddr, OpaquePeerId } from '@polkadot/types/interfaces/imOnline';
   import type {
     AccountId32,
     Call,
@@ -4698,8 +4699,8 @@ declare module '@polkadot/types/lookup' {
 
   /** @name SpCoreOffchainOpaqueNetworkState (483) */
   export interface SpCoreOffchainOpaqueNetworkState extends Struct {
-    readonly peerId: Bytes;
-    readonly externalAddresses: Vec<Bytes>;
+    readonly peerId: OpaquePeerId;
+    readonly externalAddresses: Vec<OpaqueMultiaddr>;
   }
 
   /** @name PalletImOnlineSr25519AppSr25519Signature (487) */

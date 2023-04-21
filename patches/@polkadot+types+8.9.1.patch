@@ -1,7 +1,0 @@
-diff --git a/node_modules/@polkadot/types/lookup.d.ts b/node_modules/@polkadot/types/lookup.d.ts
-index dfa513a..92cbbde 100644
---- a/node_modules/@polkadot/types/lookup.d.ts
-+++ b/node_modules/@polkadot/types/lookup.d.ts
-@@ -1 +1 @@
--export declare const __TYPES_LOOKUP = "augmented";
-+export const __TYPES_LOOKUP = "augmented";
