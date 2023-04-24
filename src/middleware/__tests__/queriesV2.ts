@@ -87,6 +87,7 @@ describe('claimsQuery', () => {
     expect(result.variables).toEqual({
       ...variables,
       includeExpired: false,
+      expiryTimestamp: expect.any(Number),
       size: 1,
       start: 0,
     });
