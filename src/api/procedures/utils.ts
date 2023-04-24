@@ -53,10 +53,10 @@ export async function assertInstructionValid(
   const details = await instruction.details();
   const { status, type } = details;
 
-  if (status !== InstructionStatus.Pending) {
+  if (status !== InstructionStatus.Pending && status !== InstructionStatus.Failed) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,
-      message: 'The Instruction must be in pending state',
+      message: 'The Instruction must be in pending or failed state',
     });
   }
 
