@@ -10,6 +10,7 @@ import {
   AccountIdentityRelation,
   AccountKeyType,
   AccountTypeInfo,
+  HistoricPolyxTransaction,
 } from '~/api/entities/Account/types';
 import { Subsidies } from '~/api/entities/Subsidies';
 import { Authorizations, Context, Entity, Identity, MultiSig, PolymeshError } from '~/internal';
@@ -641,5 +642,25 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       keyType,
       relation,
     };
+  }
+
+  /**
+   * Returns POLYX transactions associated with this account
+   *
+   * @param filters.size - page size
+   * @param filters.start - page offset
+   *
+   * @note uses the middleware
+   */
+  public async getPolyxTransactions(filters: {
+    size?: BigNumber;
+    start?: BigNumber;
+  }): Promise<ResultSet<HistoricPolyxTransaction>> {
+    const { context } = this;
+
+    return context.getPolyxTransactions({
+      accounts: [this],
+      ...filters,
+    });
   }
 }

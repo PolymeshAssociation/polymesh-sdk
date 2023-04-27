@@ -23,10 +23,11 @@ import P from 'bluebird';
 import { chunk, clone, flatMap, flatten, flattenDeep } from 'lodash';
 import { polymesh } from 'polymesh-types/definitions';
 
+import { HistoricPolyxTransaction } from '~/api/entities/Account/types';
 import { Account, Asset, DividendDistribution, Identity, PolymeshError, Subsidy } from '~/internal';
 import { ClaimTypeEnum as MiddlewareV2Claim } from '~/middleware/enumsV2';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
-import { claimsQuery, heartbeatQuery } from '~/middleware/queriesV2';
+import { claimsQuery, heartbeatQuery, polyxTransactionsQuery } from '~/middleware/queriesV2';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
 import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
@@ -70,6 +71,7 @@ import {
   meshClaimToClaim,
   meshCorporateActionToCorporateActionParams,
   middlewareV2ClaimToClaimData,
+  middlewareV2EventDetailsToEventIdentifier,
   momentToDate,
   posRatioToBigNumber,
   signerToString,
@@ -84,6 +86,7 @@ import {
   u32ToBigNumber,
 } from '~/utils/conversion';
 import {
+  asDid,
   assertAddressValid,
   calculateNextKey,
   createClaim,
@@ -1472,5 +1475,86 @@ export class Context {
     // nonce: -1 takes pending transactions into consideration.
     // More information can be found at: https://polkadot.js.org/docs/api/cookbook/tx/#how-do-i-take-the-pending-tx-pool-into-account-in-my-nonce
     return new BigNumber(this.nonce || -1);
+  }
+
+  /**
+   * @hidden
+   *
+   * Retrieve POLYX transactions for a given identity or list of accounts
+   *
+   * @note uses the middleware V2
+   */
+  public async getPolyxTransactions(args: {
+    identity?: string | Identity;
+    accounts?: (string | Account)[];
+    size?: BigNumber;
+    start?: BigNumber;
+  }): Promise<ResultSet<HistoricPolyxTransaction>> {
+    const {
+      identity,
+      accounts,
+      size = new BigNumber(DEFAULT_GQL_PAGE_SIZE),
+      start = new BigNumber(0),
+    } = args;
+
+    const {
+      data: {
+        polyxTransactions: { nodes: transactions, totalCount },
+      },
+    } = await this.queryMiddlewareV2<EnsuredV2<QueryV2, 'polyxTransactions'>>(
+      polyxTransactionsQuery(
+        {
+          identityId: identity ? asDid(identity) : undefined,
+          addresses: accounts?.map(account => signerToString(account)),
+        },
+        size,
+        start
+      )
+    );
+
+    const count = new BigNumber(totalCount);
+
+    const data: HistoricPolyxTransaction[] = transactions.map(transaction => {
+      const {
+        identityId,
+        address,
+        toId,
+        toAddress,
+        amount,
+        type,
+        memo,
+        createdBlock,
+        callId,
+        eventId,
+        moduleId,
+        extrinsic,
+        eventIdx,
+      } = transaction;
+
+      /* eslint-disable @typescript-eslint/no-non-null-assertion */
+      return {
+        fromIdentity: identityId ? new Identity({ did: identityId }, this) : undefined,
+        address: address ? new Account({ address }, this) : undefined,
+        toIdentity: toId ? new Identity({ did: toId }, this) : undefined,
+        toAddress: toAddress ? new Account({ address: toAddress }, this) : undefined,
+        amount: new BigNumber(amount).shiftedBy(-6),
+        type,
+        memo,
+        ...middlewareV2EventDetailsToEventIdentifier(createdBlock!, eventIdx),
+        callId: callId!,
+        eventId: eventId!,
+        moduleId: moduleId!,
+        extrinsicIdx: extrinsic?.extrinsicIdx ? new BigNumber(extrinsic?.extrinsicIdx) : undefined,
+      };
+      /* eslint-enable @typescript-eslint/no-non-null-assertion */
+    });
+
+    const next = calculateNextKey(count, data.length, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
   }
 }

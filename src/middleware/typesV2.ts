@@ -4390,6 +4390,10 @@ export type Block = Node & {
   /** Reads and enables pagination through a set of `Block`. */
   blocksByPermissionUpdatedBlockIdAndCreatedBlockId: BlockBlocksByPermissionUpdatedBlockIdAndCreatedBlockIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Block`. */
+  blocksByPolyxTransactionCreatedBlockIdAndUpdatedBlockId: BlockBlocksByPolyxTransactionCreatedBlockIdAndUpdatedBlockIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Block`. */
+  blocksByPolyxTransactionUpdatedBlockIdAndCreatedBlockId: BlockBlocksByPolyxTransactionUpdatedBlockIdAndCreatedBlockIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Block`. */
   blocksByPortfolioCreatedBlockIdAndUpdatedBlockId: BlockBlocksByPortfolioCreatedBlockIdAndUpdatedBlockIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Block`. */
   blocksByPortfolioMovementCreatedBlockIdAndUpdatedBlockId: BlockBlocksByPortfolioMovementCreatedBlockIdAndUpdatedBlockIdManyToManyConnection;
@@ -4493,6 +4497,10 @@ export type Block = Node & {
   events: EventsConnection;
   /** Reads and enables pagination through a set of `Extrinsic`. */
   extrinsics: ExtrinsicsConnection;
+  /** Reads and enables pagination through a set of `Extrinsic`. */
+  extrinsicsByPolyxTransactionCreatedBlockIdAndExtrinsicId: BlockExtrinsicsByPolyxTransactionCreatedBlockIdAndExtrinsicIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Extrinsic`. */
+  extrinsicsByPolyxTransactionUpdatedBlockIdAndExtrinsicId: BlockExtrinsicsByPolyxTransactionUpdatedBlockIdAndExtrinsicIdManyToManyConnection;
   extrinsicsRoot: Scalars['String'];
   /** Reads and enables pagination through a set of `Funding`. */
   fundingsByCreatedBlockId: FundingsConnection;
@@ -4616,6 +4624,10 @@ export type Block = Node & {
   permissionsByCreatedBlockId: PermissionsConnection;
   /** Reads and enables pagination through a set of `Permission`. */
   permissionsByUpdatedBlockId: PermissionsConnection;
+  /** Reads and enables pagination through a set of `PolyxTransaction`. */
+  polyxTransactionsByCreatedBlockId: PolyxTransactionsConnection;
+  /** Reads and enables pagination through a set of `PolyxTransaction`. */
+  polyxTransactionsByUpdatedBlockId: PolyxTransactionsConnection;
   /** Reads and enables pagination through a set of `PortfolioMovement`. */
   portfolioMovementsByCreatedBlockId: PortfolioMovementsConnection;
   /** Reads and enables pagination through a set of `PortfolioMovement`. */
@@ -5702,6 +5714,28 @@ export type BlockBlocksByPermissionUpdatedBlockIdAndCreatedBlockIdArgs = {
 };
 
 /** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
+export type BlockBlocksByPolyxTransactionCreatedBlockIdAndUpdatedBlockIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<BlockFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<BlocksOrderBy>>;
+};
+
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
+export type BlockBlocksByPolyxTransactionUpdatedBlockIdAndCreatedBlockIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<BlockFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<BlocksOrderBy>>;
+};
+
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByPortfolioCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6220,6 +6254,28 @@ export type BlockEventsArgs = {
 
 /** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockExtrinsicsArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<ExtrinsicFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<ExtrinsicsOrderBy>>;
+};
+
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
+export type BlockExtrinsicsByPolyxTransactionCreatedBlockIdAndExtrinsicIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<ExtrinsicFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<ExtrinsicsOrderBy>>;
+};
+
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
+export type BlockExtrinsicsByPolyxTransactionUpdatedBlockIdAndExtrinsicIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
   filter?: InputMaybe<ExtrinsicFilter>;
@@ -6865,6 +6921,28 @@ export type BlockPermissionsByUpdatedBlockIdArgs = {
   last?: InputMaybe<Scalars['Int']>;
   offset?: InputMaybe<Scalars['Int']>;
   orderBy?: InputMaybe<Array<PermissionsOrderBy>>;
+};
+
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
+export type BlockPolyxTransactionsByCreatedBlockIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<PolyxTransactionFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<PolyxTransactionsOrderBy>>;
+};
+
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
+export type BlockPolyxTransactionsByUpdatedBlockIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<PolyxTransactionFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<PolyxTransactionsOrderBy>>;
 };
 
 /** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
@@ -10864,6 +10942,100 @@ export type BlockBlocksByPermissionUpdatedBlockIdAndCreatedBlockIdManyToManyEdge
     orderBy?: InputMaybe<Array<PermissionsOrderBy>>;
   };
 
+/** A connection to a list of `Block` values, with data from `PolyxTransaction`. */
+export type BlockBlocksByPolyxTransactionCreatedBlockIdAndUpdatedBlockIdManyToManyConnection = {
+  __typename?: 'BlockBlocksByPolyxTransactionCreatedBlockIdAndUpdatedBlockIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<BlockAggregates>;
+  /** A list of edges which contains the `Block`, info from the `PolyxTransaction`, and the cursor to aid in pagination. */
+  edges: Array<BlockBlocksByPolyxTransactionCreatedBlockIdAndUpdatedBlockIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<BlockAggregates>>;
+  /** A list of `Block` objects. */
+  nodes: Array<Maybe<Block>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Block` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Block` values, with data from `PolyxTransaction`. */
+export type BlockBlocksByPolyxTransactionCreatedBlockIdAndUpdatedBlockIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<BlocksGroupBy>;
+    having?: InputMaybe<BlocksHavingInput>;
+  };
+
+/** A `Block` edge in the connection, with data from `PolyxTransaction`. */
+export type BlockBlocksByPolyxTransactionCreatedBlockIdAndUpdatedBlockIdManyToManyEdge = {
+  __typename?: 'BlockBlocksByPolyxTransactionCreatedBlockIdAndUpdatedBlockIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Block` at the end of the edge. */
+  node?: Maybe<Block>;
+  /** Reads and enables pagination through a set of `PolyxTransaction`. */
+  polyxTransactionsByUpdatedBlockId: PolyxTransactionsConnection;
+};
+
+/** A `Block` edge in the connection, with data from `PolyxTransaction`. */
+export type BlockBlocksByPolyxTransactionCreatedBlockIdAndUpdatedBlockIdManyToManyEdgePolyxTransactionsByUpdatedBlockIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<PolyxTransactionFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<PolyxTransactionsOrderBy>>;
+  };
+
+/** A connection to a list of `Block` values, with data from `PolyxTransaction`. */
+export type BlockBlocksByPolyxTransactionUpdatedBlockIdAndCreatedBlockIdManyToManyConnection = {
+  __typename?: 'BlockBlocksByPolyxTransactionUpdatedBlockIdAndCreatedBlockIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<BlockAggregates>;
+  /** A list of edges which contains the `Block`, info from the `PolyxTransaction`, and the cursor to aid in pagination. */
+  edges: Array<BlockBlocksByPolyxTransactionUpdatedBlockIdAndCreatedBlockIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<BlockAggregates>>;
+  /** A list of `Block` objects. */
+  nodes: Array<Maybe<Block>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Block` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Block` values, with data from `PolyxTransaction`. */
+export type BlockBlocksByPolyxTransactionUpdatedBlockIdAndCreatedBlockIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<BlocksGroupBy>;
+    having?: InputMaybe<BlocksHavingInput>;
+  };
+
+/** A `Block` edge in the connection, with data from `PolyxTransaction`. */
+export type BlockBlocksByPolyxTransactionUpdatedBlockIdAndCreatedBlockIdManyToManyEdge = {
+  __typename?: 'BlockBlocksByPolyxTransactionUpdatedBlockIdAndCreatedBlockIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Block` at the end of the edge. */
+  node?: Maybe<Block>;
+  /** Reads and enables pagination through a set of `PolyxTransaction`. */
+  polyxTransactionsByCreatedBlockId: PolyxTransactionsConnection;
+};
+
+/** A `Block` edge in the connection, with data from `PolyxTransaction`. */
+export type BlockBlocksByPolyxTransactionUpdatedBlockIdAndCreatedBlockIdManyToManyEdgePolyxTransactionsByCreatedBlockIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<PolyxTransactionFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<PolyxTransactionsOrderBy>>;
+  };
+
 /** A connection to a list of `Block` values, with data from `Portfolio`. */
 export type BlockBlocksByPortfolioCreatedBlockIdAndUpdatedBlockIdManyToManyConnection = {
   __typename?: 'BlockBlocksByPortfolioCreatedBlockIdAndUpdatedBlockIdManyToManyConnection';
@@ -12470,6 +12642,100 @@ export type BlockDistributionsByDistributionPaymentUpdatedBlockIdAndDistribution
     last?: InputMaybe<Scalars['Int']>;
     offset?: InputMaybe<Scalars['Int']>;
     orderBy?: InputMaybe<Array<DistributionPaymentsOrderBy>>;
+  };
+
+/** A connection to a list of `Extrinsic` values, with data from `PolyxTransaction`. */
+export type BlockExtrinsicsByPolyxTransactionCreatedBlockIdAndExtrinsicIdManyToManyConnection = {
+  __typename?: 'BlockExtrinsicsByPolyxTransactionCreatedBlockIdAndExtrinsicIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<ExtrinsicAggregates>;
+  /** A list of edges which contains the `Extrinsic`, info from the `PolyxTransaction`, and the cursor to aid in pagination. */
+  edges: Array<BlockExtrinsicsByPolyxTransactionCreatedBlockIdAndExtrinsicIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<ExtrinsicAggregates>>;
+  /** A list of `Extrinsic` objects. */
+  nodes: Array<Maybe<Extrinsic>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Extrinsic` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Extrinsic` values, with data from `PolyxTransaction`. */
+export type BlockExtrinsicsByPolyxTransactionCreatedBlockIdAndExtrinsicIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<ExtrinsicsGroupBy>;
+    having?: InputMaybe<ExtrinsicsHavingInput>;
+  };
+
+/** A `Extrinsic` edge in the connection, with data from `PolyxTransaction`. */
+export type BlockExtrinsicsByPolyxTransactionCreatedBlockIdAndExtrinsicIdManyToManyEdge = {
+  __typename?: 'BlockExtrinsicsByPolyxTransactionCreatedBlockIdAndExtrinsicIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Extrinsic` at the end of the edge. */
+  node?: Maybe<Extrinsic>;
+  /** Reads and enables pagination through a set of `PolyxTransaction`. */
+  polyxTransactions: PolyxTransactionsConnection;
+};
+
+/** A `Extrinsic` edge in the connection, with data from `PolyxTransaction`. */
+export type BlockExtrinsicsByPolyxTransactionCreatedBlockIdAndExtrinsicIdManyToManyEdgePolyxTransactionsArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<PolyxTransactionFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<PolyxTransactionsOrderBy>>;
+  };
+
+/** A connection to a list of `Extrinsic` values, with data from `PolyxTransaction`. */
+export type BlockExtrinsicsByPolyxTransactionUpdatedBlockIdAndExtrinsicIdManyToManyConnection = {
+  __typename?: 'BlockExtrinsicsByPolyxTransactionUpdatedBlockIdAndExtrinsicIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<ExtrinsicAggregates>;
+  /** A list of edges which contains the `Extrinsic`, info from the `PolyxTransaction`, and the cursor to aid in pagination. */
+  edges: Array<BlockExtrinsicsByPolyxTransactionUpdatedBlockIdAndExtrinsicIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<ExtrinsicAggregates>>;
+  /** A list of `Extrinsic` objects. */
+  nodes: Array<Maybe<Extrinsic>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Extrinsic` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Extrinsic` values, with data from `PolyxTransaction`. */
+export type BlockExtrinsicsByPolyxTransactionUpdatedBlockIdAndExtrinsicIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<ExtrinsicsGroupBy>;
+    having?: InputMaybe<ExtrinsicsHavingInput>;
+  };
+
+/** A `Extrinsic` edge in the connection, with data from `PolyxTransaction`. */
+export type BlockExtrinsicsByPolyxTransactionUpdatedBlockIdAndExtrinsicIdManyToManyEdge = {
+  __typename?: 'BlockExtrinsicsByPolyxTransactionUpdatedBlockIdAndExtrinsicIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Extrinsic` at the end of the edge. */
+  node?: Maybe<Extrinsic>;
+  /** Reads and enables pagination through a set of `PolyxTransaction`. */
+  polyxTransactions: PolyxTransactionsConnection;
+};
+
+/** A `Extrinsic` edge in the connection, with data from `PolyxTransaction`. */
+export type BlockExtrinsicsByPolyxTransactionUpdatedBlockIdAndExtrinsicIdManyToManyEdgePolyxTransactionsArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<PolyxTransactionFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<PolyxTransactionsOrderBy>>;
   };
 
 /** A filter to be used against `Block` object types. All fields are combined with a logical ‘and.’ */
@@ -15949,6 +16215,10 @@ export enum BlocksOrderBy {
   PermissionsByCreatedBlockIdCountDesc = 'PERMISSIONS_BY_CREATED_BLOCK_ID_COUNT_DESC',
   PermissionsByUpdatedBlockIdCountAsc = 'PERMISSIONS_BY_UPDATED_BLOCK_ID_COUNT_ASC',
   PermissionsByUpdatedBlockIdCountDesc = 'PERMISSIONS_BY_UPDATED_BLOCK_ID_COUNT_DESC',
+  PolyxTransactionsByCreatedBlockIdCountAsc = 'POLYX_TRANSACTIONS_BY_CREATED_BLOCK_ID_COUNT_ASC',
+  PolyxTransactionsByCreatedBlockIdCountDesc = 'POLYX_TRANSACTIONS_BY_CREATED_BLOCK_ID_COUNT_DESC',
+  PolyxTransactionsByUpdatedBlockIdCountAsc = 'POLYX_TRANSACTIONS_BY_UPDATED_BLOCK_ID_COUNT_ASC',
+  PolyxTransactionsByUpdatedBlockIdCountDesc = 'POLYX_TRANSACTIONS_BY_UPDATED_BLOCK_ID_COUNT_DESC',
   PortfoliosByCreatedBlockIdCountAsc = 'PORTFOLIOS_BY_CREATED_BLOCK_ID_COUNT_ASC',
   PortfoliosByCreatedBlockIdCountDesc = 'PORTFOLIOS_BY_CREATED_BLOCK_ID_COUNT_DESC',
   PortfoliosByUpdatedBlockIdCountAsc = 'PORTFOLIOS_BY_UPDATED_BLOCK_ID_COUNT_ASC',
@@ -17493,6 +17763,10 @@ export type Extrinsic = Node & {
   /** Reads a single `Block` that is related to this `Extrinsic`. */
   block?: Maybe<Block>;
   blockId: Scalars['String'];
+  /** Reads and enables pagination through a set of `Block`. */
+  blocksByPolyxTransactionExtrinsicIdAndCreatedBlockId: ExtrinsicBlocksByPolyxTransactionExtrinsicIdAndCreatedBlockIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Block`. */
+  blocksByPolyxTransactionExtrinsicIdAndUpdatedBlockId: ExtrinsicBlocksByPolyxTransactionExtrinsicIdAndUpdatedBlockIdManyToManyConnection;
   callId: PublicEnum0Bf3C7D4Ef;
   createdAt: Scalars['Datetime'];
   extrinsicHash?: Maybe<Scalars['String']>;
@@ -17505,6 +17779,8 @@ export type Extrinsic = Node & {
   nonce?: Maybe<Scalars['Int']>;
   params?: Maybe<Scalars['JSON']>;
   paramsTxt: Scalars['String'];
+  /** Reads and enables pagination through a set of `PolyxTransaction`. */
+  polyxTransactions: PolyxTransactionsConnection;
   signed: Scalars['Int'];
   signedbyAddress: Scalars['Int'];
   specVersionId: Scalars['Int'];
@@ -17512,10 +17788,149 @@ export type Extrinsic = Node & {
   updatedAt: Scalars['Datetime'];
 };
 
+/**
+ * Represents external data included into the chain. Virtually all user actions, as well as runtime operations are extrinsics
+ *
+ * Usually extrinsics are signed. When the block author includes data, e.g. `timestamp.set` then the signature is implied. This is indicated with `signed = 0`
+ */
+export type ExtrinsicBlocksByPolyxTransactionExtrinsicIdAndCreatedBlockIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<BlockFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<BlocksOrderBy>>;
+};
+
+/**
+ * Represents external data included into the chain. Virtually all user actions, as well as runtime operations are extrinsics
+ *
+ * Usually extrinsics are signed. When the block author includes data, e.g. `timestamp.set` then the signature is implied. This is indicated with `signed = 0`
+ */
+export type ExtrinsicBlocksByPolyxTransactionExtrinsicIdAndUpdatedBlockIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<BlockFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<BlocksOrderBy>>;
+};
+
+/**
+ * Represents external data included into the chain. Virtually all user actions, as well as runtime operations are extrinsics
+ *
+ * Usually extrinsics are signed. When the block author includes data, e.g. `timestamp.set` then the signature is implied. This is indicated with `signed = 0`
+ */
+export type ExtrinsicPolyxTransactionsArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<PolyxTransactionFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<PolyxTransactionsOrderBy>>;
+};
+
 export type ExtrinsicAggregates = {
   __typename?: 'ExtrinsicAggregates';
   keys?: Maybe<Array<Scalars['String']>>;
 };
+
+/** A connection to a list of `Block` values, with data from `PolyxTransaction`. */
+export type ExtrinsicBlocksByPolyxTransactionExtrinsicIdAndCreatedBlockIdManyToManyConnection = {
+  __typename?: 'ExtrinsicBlocksByPolyxTransactionExtrinsicIdAndCreatedBlockIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<BlockAggregates>;
+  /** A list of edges which contains the `Block`, info from the `PolyxTransaction`, and the cursor to aid in pagination. */
+  edges: Array<ExtrinsicBlocksByPolyxTransactionExtrinsicIdAndCreatedBlockIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<BlockAggregates>>;
+  /** A list of `Block` objects. */
+  nodes: Array<Maybe<Block>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Block` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Block` values, with data from `PolyxTransaction`. */
+export type ExtrinsicBlocksByPolyxTransactionExtrinsicIdAndCreatedBlockIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<BlocksGroupBy>;
+    having?: InputMaybe<BlocksHavingInput>;
+  };
+
+/** A `Block` edge in the connection, with data from `PolyxTransaction`. */
+export type ExtrinsicBlocksByPolyxTransactionExtrinsicIdAndCreatedBlockIdManyToManyEdge = {
+  __typename?: 'ExtrinsicBlocksByPolyxTransactionExtrinsicIdAndCreatedBlockIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Block` at the end of the edge. */
+  node?: Maybe<Block>;
+  /** Reads and enables pagination through a set of `PolyxTransaction`. */
+  polyxTransactionsByCreatedBlockId: PolyxTransactionsConnection;
+};
+
+/** A `Block` edge in the connection, with data from `PolyxTransaction`. */
+export type ExtrinsicBlocksByPolyxTransactionExtrinsicIdAndCreatedBlockIdManyToManyEdgePolyxTransactionsByCreatedBlockIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<PolyxTransactionFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<PolyxTransactionsOrderBy>>;
+  };
+
+/** A connection to a list of `Block` values, with data from `PolyxTransaction`. */
+export type ExtrinsicBlocksByPolyxTransactionExtrinsicIdAndUpdatedBlockIdManyToManyConnection = {
+  __typename?: 'ExtrinsicBlocksByPolyxTransactionExtrinsicIdAndUpdatedBlockIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<BlockAggregates>;
+  /** A list of edges which contains the `Block`, info from the `PolyxTransaction`, and the cursor to aid in pagination. */
+  edges: Array<ExtrinsicBlocksByPolyxTransactionExtrinsicIdAndUpdatedBlockIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<BlockAggregates>>;
+  /** A list of `Block` objects. */
+  nodes: Array<Maybe<Block>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Block` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Block` values, with data from `PolyxTransaction`. */
+export type ExtrinsicBlocksByPolyxTransactionExtrinsicIdAndUpdatedBlockIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<BlocksGroupBy>;
+    having?: InputMaybe<BlocksHavingInput>;
+  };
+
+/** A `Block` edge in the connection, with data from `PolyxTransaction`. */
+export type ExtrinsicBlocksByPolyxTransactionExtrinsicIdAndUpdatedBlockIdManyToManyEdge = {
+  __typename?: 'ExtrinsicBlocksByPolyxTransactionExtrinsicIdAndUpdatedBlockIdManyToManyEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Block` at the end of the edge. */
+  node?: Maybe<Block>;
+  /** Reads and enables pagination through a set of `PolyxTransaction`. */
+  polyxTransactionsByUpdatedBlockId: PolyxTransactionsConnection;
+};
+
+/** A `Block` edge in the connection, with data from `PolyxTransaction`. */
+export type ExtrinsicBlocksByPolyxTransactionExtrinsicIdAndUpdatedBlockIdManyToManyEdgePolyxTransactionsByUpdatedBlockIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<PolyxTransactionFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<PolyxTransactionsOrderBy>>;
+  };
 
 /** A filter to be used against `Extrinsic` object types. All fields are combined with a logical ‘and.’ */
 export type ExtrinsicFilter = {
@@ -17646,6 +18061,8 @@ export enum ExtrinsicsOrderBy {
   ParamsDesc = 'PARAMS_DESC',
   ParamsTxtAsc = 'PARAMS_TXT_ASC',
   ParamsTxtDesc = 'PARAMS_TXT_DESC',
+  PolyxTransactionsCountAsc = 'POLYX_TRANSACTIONS_COUNT_ASC',
+  PolyxTransactionsCountDesc = 'POLYX_TRANSACTIONS_COUNT_DESC',
   PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
   SignedbyAddressAsc = 'SIGNEDBY_ADDRESS_ASC',
@@ -23536,6 +23953,190 @@ export enum PermissionsOrderBy {
   UpdatedBlockIdDesc = 'UPDATED_BLOCK_ID_DESC',
 }
 
+/** Represents transactions involving POLYX */
+export type PolyxTransaction = Node & {
+  __typename?: 'PolyxTransaction';
+  address?: Maybe<Scalars['String']>;
+  amount: Scalars['BigFloat'];
+  callId?: Maybe<PublicEnum0Bf3C7D4Ef>;
+  createdAt: Scalars['Datetime'];
+  /** Reads a single `Block` that is related to this `PolyxTransaction`. */
+  createdBlock?: Maybe<Block>;
+  createdBlockId: Scalars['String'];
+  datetime: Scalars['Datetime'];
+  eventId?: Maybe<PublicEnum8F5A39C8Ee>;
+  eventIdx: Scalars['Int'];
+  /** Reads a single `Extrinsic` that is related to this `PolyxTransaction`. */
+  extrinsic?: Maybe<Extrinsic>;
+  extrinsicId?: Maybe<Scalars['String']>;
+  id: Scalars['String'];
+  identityId?: Maybe<Scalars['String']>;
+  memo?: Maybe<Scalars['String']>;
+  moduleId?: Maybe<PublicEnum7A0B4Cc03E>;
+  /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
+  nodeId: Scalars['ID'];
+  toAddress?: Maybe<Scalars['String']>;
+  toId?: Maybe<Scalars['String']>;
+  type: PublicEnum5Df0F1D22C;
+  updatedAt: Scalars['Datetime'];
+  /** Reads a single `Block` that is related to this `PolyxTransaction`. */
+  updatedBlock?: Maybe<Block>;
+  updatedBlockId: Scalars['String'];
+};
+
+export type PolyxTransactionAggregates = {
+  __typename?: 'PolyxTransactionAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
+};
+
+/** A filter to be used against `PolyxTransaction` object types. All fields are combined with a logical ‘and.’ */
+export type PolyxTransactionFilter = {
+  /** Filter by the object’s `address` field. */
+  address?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `amount` field. */
+  amount?: InputMaybe<BigFloatFilter>;
+  /** Checks for all expressions in this list. */
+  and?: InputMaybe<Array<PolyxTransactionFilter>>;
+  /** Filter by the object’s `callId` field. */
+  callId?: InputMaybe<PublicEnum0Bf3C7D4EfFilter>;
+  /** Filter by the object’s `createdAt` field. */
+  createdAt?: InputMaybe<DatetimeFilter>;
+  /** Filter by the object’s `createdBlockId` field. */
+  createdBlockId?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `datetime` field. */
+  datetime?: InputMaybe<DatetimeFilter>;
+  /** Filter by the object’s `eventId` field. */
+  eventId?: InputMaybe<PublicEnum8F5A39C8EeFilter>;
+  /** Filter by the object’s `eventIdx` field. */
+  eventIdx?: InputMaybe<IntFilter>;
+  /** Filter by the object’s `extrinsicId` field. */
+  extrinsicId?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `id` field. */
+  id?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `identityId` field. */
+  identityId?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `memo` field. */
+  memo?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `moduleId` field. */
+  moduleId?: InputMaybe<PublicEnum7A0B4Cc03EFilter>;
+  /** Negates the expression. */
+  not?: InputMaybe<PolyxTransactionFilter>;
+  /** Checks for any expressions in this list. */
+  or?: InputMaybe<Array<PolyxTransactionFilter>>;
+  /** Filter by the object’s `toAddress` field. */
+  toAddress?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `toId` field. */
+  toId?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `type` field. */
+  type?: InputMaybe<PublicEnum5Df0F1D22CFilter>;
+  /** Filter by the object’s `updatedAt` field. */
+  updatedAt?: InputMaybe<DatetimeFilter>;
+  /** Filter by the object’s `updatedBlockId` field. */
+  updatedBlockId?: InputMaybe<StringFilter>;
+};
+
+/** A connection to a list of `PolyxTransaction` values. */
+export type PolyxTransactionsConnection = {
+  __typename?: 'PolyxTransactionsConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<PolyxTransactionAggregates>;
+  /** A list of edges which contains the `PolyxTransaction` and cursor to aid in pagination. */
+  edges: Array<PolyxTransactionsEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<PolyxTransactionAggregates>>;
+  /** A list of `PolyxTransaction` objects. */
+  nodes: Array<Maybe<PolyxTransaction>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `PolyxTransaction` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `PolyxTransaction` values. */
+export type PolyxTransactionsConnectionGroupedAggregatesArgs = {
+  groupBy: Array<PolyxTransactionsGroupBy>;
+  having?: InputMaybe<PolyxTransactionsHavingInput>;
+};
+
+/** A `PolyxTransaction` edge in the connection. */
+export type PolyxTransactionsEdge = {
+  __typename?: 'PolyxTransactionsEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `PolyxTransaction` at the end of the edge. */
+  node?: Maybe<PolyxTransaction>;
+};
+
+/** Grouping methods for `PolyxTransaction` for usage during aggregation. */
+export enum PolyxTransactionsGroupBy {
+  Address = 'ADDRESS',
+  Amount = 'AMOUNT',
+  CallId = 'CALL_ID',
+  CreatedAt = 'CREATED_AT',
+  CreatedBlockId = 'CREATED_BLOCK_ID',
+  Datetime = 'DATETIME',
+  EventId = 'EVENT_ID',
+  EventIdx = 'EVENT_IDX',
+  ExtrinsicId = 'EXTRINSIC_ID',
+  IdentityId = 'IDENTITY_ID',
+  Memo = 'MEMO',
+  ModuleId = 'MODULE_ID',
+  ToAddress = 'TO_ADDRESS',
+  ToId = 'TO_ID',
+  Type = 'TYPE',
+  UpdatedAt = 'UPDATED_AT',
+  UpdatedBlockId = 'UPDATED_BLOCK_ID',
+}
+
+/** Conditions for `PolyxTransaction` aggregates. */
+export type PolyxTransactionsHavingInput = {
+  AND?: InputMaybe<Array<PolyxTransactionsHavingInput>>;
+  OR?: InputMaybe<Array<PolyxTransactionsHavingInput>>;
+};
+
+/** Methods to use when ordering `PolyxTransaction`. */
+export enum PolyxTransactionsOrderBy {
+  AddressAsc = 'ADDRESS_ASC',
+  AddressDesc = 'ADDRESS_DESC',
+  AmountAsc = 'AMOUNT_ASC',
+  AmountDesc = 'AMOUNT_DESC',
+  CallIdAsc = 'CALL_ID_ASC',
+  CallIdDesc = 'CALL_ID_DESC',
+  CreatedAtAsc = 'CREATED_AT_ASC',
+  CreatedAtDesc = 'CREATED_AT_DESC',
+  CreatedBlockIdAsc = 'CREATED_BLOCK_ID_ASC',
+  CreatedBlockIdDesc = 'CREATED_BLOCK_ID_DESC',
+  DatetimeAsc = 'DATETIME_ASC',
+  DatetimeDesc = 'DATETIME_DESC',
+  EventIdxAsc = 'EVENT_IDX_ASC',
+  EventIdxDesc = 'EVENT_IDX_DESC',
+  EventIdAsc = 'EVENT_ID_ASC',
+  EventIdDesc = 'EVENT_ID_DESC',
+  ExtrinsicIdAsc = 'EXTRINSIC_ID_ASC',
+  ExtrinsicIdDesc = 'EXTRINSIC_ID_DESC',
+  IdentityIdAsc = 'IDENTITY_ID_ASC',
+  IdentityIdDesc = 'IDENTITY_ID_DESC',
+  IdAsc = 'ID_ASC',
+  IdDesc = 'ID_DESC',
+  MemoAsc = 'MEMO_ASC',
+  MemoDesc = 'MEMO_DESC',
+  ModuleIdAsc = 'MODULE_ID_ASC',
+  ModuleIdDesc = 'MODULE_ID_DESC',
+  Natural = 'NATURAL',
+  PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
+  PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
+  ToAddressAsc = 'TO_ADDRESS_ASC',
+  ToAddressDesc = 'TO_ADDRESS_DESC',
+  ToIdAsc = 'TO_ID_ASC',
+  ToIdDesc = 'TO_ID_DESC',
+  TypeAsc = 'TYPE_ASC',
+  TypeDesc = 'TYPE_DESC',
+  UpdatedAtAsc = 'UPDATED_AT_ASC',
+  UpdatedAtDesc = 'UPDATED_AT_DESC',
+  UpdatedBlockIdAsc = 'UPDATED_BLOCK_ID_ASC',
+  UpdatedBlockIdDesc = 'UPDATED_BLOCK_ID_DESC',
+}
+
 /**
  * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
  *
@@ -27050,6 +27651,43 @@ export type PublicEnum0Bf3C7D4EfFilter = {
 };
 
 /** @enum
+ * @enumName BalanceTypeEnum
+ *  Represents possible all possible balance types */
+export enum PublicEnum5Df0F1D22C {
+  Bonded = 'Bonded',
+  Free = 'Free',
+  Locked = 'Locked',
+  Reserved = 'Reserved',
+  Unbonded = 'Unbonded',
+}
+
+/** A filter to be used against PublicEnum5Df0F1D22C fields. All fields are combined with a logical ‘and.’ */
+export type PublicEnum5Df0F1D22CFilter = {
+  /** Not equal to the specified value, treating null like an ordinary value. */
+  distinctFrom?: InputMaybe<PublicEnum5Df0F1D22C>;
+  /** Equal to the specified value. */
+  equalTo?: InputMaybe<PublicEnum5Df0F1D22C>;
+  /** Greater than the specified value. */
+  greaterThan?: InputMaybe<PublicEnum5Df0F1D22C>;
+  /** Greater than or equal to the specified value. */
+  greaterThanOrEqualTo?: InputMaybe<PublicEnum5Df0F1D22C>;
+  /** Included in the specified list. */
+  in?: InputMaybe<Array<PublicEnum5Df0F1D22C>>;
+  /** Is null (if `true` is specified) or is not null (if `false` is specified). */
+  isNull?: InputMaybe<Scalars['Boolean']>;
+  /** Less than the specified value. */
+  lessThan?: InputMaybe<PublicEnum5Df0F1D22C>;
+  /** Less than or equal to the specified value. */
+  lessThanOrEqualTo?: InputMaybe<PublicEnum5Df0F1D22C>;
+  /** Equal to the specified value, treating null like an ordinary value. */
+  notDistinctFrom?: InputMaybe<PublicEnum5Df0F1D22C>;
+  /** Not equal to the specified value. */
+  notEqualTo?: InputMaybe<PublicEnum5Df0F1D22C>;
+  /** Not included in the specified list. */
+  notIn?: InputMaybe<Array<PublicEnum5Df0F1D22C>>;
+};
+
+/** @enum
  * @enumName ProposalStateEnum
  *  Represents all possible Proposal statuses */
 export enum PublicEnum6E6395Eda7 {
@@ -27959,6 +28597,11 @@ export type Query = Node & {
   permissionByNodeId?: Maybe<Permission>;
   /** Reads and enables pagination through a set of `Permission`. */
   permissions?: Maybe<PermissionsConnection>;
+  polyxTransaction?: Maybe<PolyxTransaction>;
+  /** Reads a single `PolyxTransaction` using its globally unique `ID`. */
+  polyxTransactionByNodeId?: Maybe<PolyxTransaction>;
+  /** Reads and enables pagination through a set of `PolyxTransaction`. */
+  polyxTransactions?: Maybe<PolyxTransactionsConnection>;
   portfolio?: Maybe<Portfolio>;
   /** Reads a single `Portfolio` using its globally unique `ID`. */
   portfolioByNodeId?: Maybe<Portfolio>;
@@ -28579,6 +29222,27 @@ export type QueryPermissionsArgs = {
   last?: InputMaybe<Scalars['Int']>;
   offset?: InputMaybe<Scalars['Int']>;
   orderBy?: InputMaybe<Array<PermissionsOrderBy>>;
+};
+
+/** The root query type which gives access points into the data universe. */
+export type QueryPolyxTransactionArgs = {
+  id: Scalars['String'];
+};
+
+/** The root query type which gives access points into the data universe. */
+export type QueryPolyxTransactionByNodeIdArgs = {
+  nodeId: Scalars['ID'];
+};
+
+/** The root query type which gives access points into the data universe. */
+export type QueryPolyxTransactionsArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<PolyxTransactionFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<PolyxTransactionsOrderBy>>;
 };
 
 /** The root query type which gives access points into the data universe. */
