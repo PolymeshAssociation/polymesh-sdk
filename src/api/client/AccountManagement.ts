@@ -1,4 +1,4 @@
-import { MultiSig } from '~/api/entities/MultiSig';
+import { MultiSig } from '~/api/entities/Account/MultiSig';
 import {
   Account,
   AuthorizationRequest,

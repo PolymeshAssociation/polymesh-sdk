@@ -65,6 +65,7 @@ import {
   getDid,
   getExemptedIds,
   getIdentity,
+  getIdentityFromKeyRecord,
   getPortfolioIdsByName,
   getSecondaryAccountPermissions,
   hasSameElements,
@@ -615,27 +616,27 @@ describe('requestAtBlock', () => {
 });
 
 describe('calculateNextKey', () => {
-  it('should return NextKey null as there are less elements than the default page size', () => {
+  it('should return NextKey as null when all elements are returned', () => {
     const totalCount = new BigNumber(20);
-    const nextKey = calculateNextKey(totalCount);
+    const nextKey = calculateNextKey(totalCount, 20);
 
     expect(nextKey).toBeNull();
   });
 
   it('should return NextKey null as it is the last page', () => {
     const totalCount = new BigNumber(50);
-    const currentPageSize = new BigNumber(30);
+    const resultSize = 30;
     const currentStart = new BigNumber(31);
-    const nextKey = calculateNextKey(totalCount, currentPageSize, currentStart);
+    const nextKey = calculateNextKey(totalCount, resultSize, currentStart);
 
     expect(nextKey).toBeNull();
   });
 
   it('should return NextKey', () => {
     const totalCount = new BigNumber(50);
-    const currentPageSize = new BigNumber(30);
+    const resultSize = 30;
     const currentStart = new BigNumber(0);
-    const nextKey = calculateNextKey(totalCount, currentPageSize, currentStart);
+    const nextKey = calculateNextKey(totalCount, resultSize, currentStart);
 
     expect(nextKey).toEqual(new BigNumber(30));
   });
@@ -1147,11 +1148,11 @@ describe('assertExpectedChainVersion', () => {
 
   beforeAll(() => {
     dsMockUtils.initMocks();
-    warnSpy = jest.spyOn(console, 'warn');
   });
 
   beforeEach(() => {
     client = getWebSocketInstance();
+    warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
   });
 
   afterEach(() => {
@@ -2022,5 +2023,80 @@ describe('isAlphaNumeric', () => {
     const alphaNumericStrings = ['**abc**', 'TICKER-Z', '💎'];
 
     expect(alphaNumericStrings.some(input => isAlphanumeric(input))).toBe(false);
+  });
+});
+
+describe('getIdentityFromKeyRecord', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should return the associated Identity', async () => {
+    const did = 'someDid';
+    const secondaryDid = 'secondaryDid';
+    const multiDid = 'multiDid';
+
+    const mockContext = dsMockUtils.getContextInstance();
+
+    const primaryKeyRecord = dsMockUtils.createMockKeyRecord({
+      PrimaryKey: dsMockUtils.createMockIdentityId(did),
+    });
+
+    let identity = await getIdentityFromKeyRecord(primaryKeyRecord, mockContext);
+
+    expect(identity?.did).toEqual(did);
+
+    const secondaryKeyRecord = dsMockUtils.createMockKeyRecord({
+      SecondaryKey: [
+        dsMockUtils.createMockIdentityId(secondaryDid),
+        dsMockUtils.createMockPermissions(),
+      ],
+    });
+
+    identity = await getIdentityFromKeyRecord(secondaryKeyRecord, mockContext);
+
+    expect(identity?.did).toEqual(secondaryDid);
+
+    const multiSigKeyRecord = dsMockUtils.createMockKeyRecord({
+      MultiSigSignerKey: dsMockUtils.createMockAccountId(
+        dsMockUtils.createMockAccountId('someAddress')
+      ),
+    });
+
+    const multiKeyRecord = dsMockUtils.createMockKeyRecord({
+      PrimaryKey: dsMockUtils.createMockIdentityId(multiDid),
+    });
+
+    const mockKeyRecords = dsMockUtils.createQueryMock('identity', 'keyRecords');
+    mockKeyRecords.mockResolvedValue(dsMockUtils.createMockOption(multiKeyRecord));
+
+    identity = await getIdentityFromKeyRecord(multiSigKeyRecord, mockContext);
+
+    expect(identity?.did).toEqual(multiDid);
+  });
+
+  it('should return null if the record is unassigned', async () => {
+    const mockContext = dsMockUtils.getContextInstance();
+
+    const unassignedKeyRecord = dsMockUtils.createMockKeyRecord({
+      MultiSigSignerKey: dsMockUtils.createMockAccountId(
+        dsMockUtils.createMockAccountId('someAddress')
+      ),
+    });
+
+    const mockKeyRecords = dsMockUtils.createQueryMock('identity', 'keyRecords');
+    mockKeyRecords.mockResolvedValue(dsMockUtils.createMockOption());
+
+    const result = await getIdentityFromKeyRecord(unassignedKeyRecord, mockContext);
+
+    expect(result).toBeNull();
   });
 });

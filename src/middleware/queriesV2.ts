@@ -88,7 +88,7 @@ function createClaimsFilters(variables: ClaimsQueryFilter): {
   const args = ['$size: Int, $start: Int'];
   const filters = ['revokeDate: { isNull: true }'];
   const { dids, claimTypes, trustedClaimIssuers, scope, includeExpired } = variables;
-  if (dids) {
+  if (dids && dids.length) {
     args.push('$dids: [String!]');
     filters.push('targetId: { in: $dids }');
   }
@@ -96,7 +96,7 @@ function createClaimsFilters(variables: ClaimsQueryFilter): {
     args.push('$claimTypes: [ClaimTypeEnum!]!');
     filters.push('type: { in: $claimTypes }');
   }
-  if (trustedClaimIssuers) {
+  if (trustedClaimIssuers && trustedClaimIssuers.length) {
     args.push('$trustedClaimIssuers: [String!]');
     filters.push('issuerId: { in: $trustedClaimIssuers }');
   }
@@ -106,7 +106,9 @@ function createClaimsFilters(variables: ClaimsQueryFilter): {
   }
   if (!includeExpired) {
     args.push('$expiryTimestamp: BigFloat');
-    filters.push('filterExpiry: { lessThan: $expiryTimestamp }');
+    filters.push(
+      'or: [{ filterExpiry: { lessThan: $expiryTimestamp } }, { expiry: { isNull: true } }]'
+    );
   }
   return {
     args: `(${args.join()})`,
@@ -120,6 +122,7 @@ export interface ClaimsQueryFilter {
   trustedClaimIssuers?: string[];
   claimTypes?: ClaimTypeEnum[];
   includeExpired?: boolean;
+  expiryTimestamp?: number;
 }
 /**
  * @hidden
@@ -171,32 +174,37 @@ export function claimsQuery(
   const query = gql`
     query ClaimsQuery
       ${args}
-     {
-      claims(
-        ${filter}
-        orderBy: [${ClaimsOrderBy.TargetIdAsc}, ${ClaimsOrderBy.CreatedAtAsc}, ${ClaimsOrderBy.CreatedBlockIdAsc}, ${ClaimsOrderBy.EventIdxAsc}]
-        first: $size
-        offset: $start
-      ) {
-        totalCount
-        nodes {
-          targetId
-          type
-          scope
-          cddId
-          issuerId
-          issuanceDate
-          lastUpdateDate
-          expiry
-          jurisdiction
+      {
+        claims(
+          ${filter}
+          orderBy: [${ClaimsOrderBy.TargetIdAsc}, ${ClaimsOrderBy.CreatedAtAsc}, ${ClaimsOrderBy.CreatedBlockIdAsc}, ${ClaimsOrderBy.EventIdxAsc}]
+          first: $size
+          offset: $start
+        ) {
+          totalCount
+          nodes {
+            targetId
+            type
+            scope
+            cddId
+            issuerId
+            issuanceDate
+            lastUpdateDate
+            expiry
+            jurisdiction
+          }
         }
       }
-    }
-  `;
+    `;
 
   return {
     query,
-    variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
+    variables: {
+      ...filters,
+      expiryTimestamp: filters.includeExpired ? undefined : new Date().getTime(),
+      size: size?.toNumber(),
+      start: start?.toNumber(),
+    },
   };
 }
 
@@ -287,7 +295,7 @@ export function instructionsQuery(
   });
   const query = gql`
     query InstructionsQuery
-      ${args} 
+      ${args}
       {
       instructions(
         ${filter}
@@ -433,7 +441,7 @@ export function eventsByArgs(
      {
       events(
         ${filter}
-        orderBy: [${EventsOrderBy.BlockIdAsc}]
+        orderBy: [${EventsOrderBy.CreatedAtAsc}, ${EventsOrderBy.BlockIdAsc}]
         first: $size
         offset: $start
       ) {
@@ -589,7 +597,7 @@ export function trustingAssetsQuery(
   const query = gql`
     query TrustedClaimIssuerQuery($issuer: String!) {
       trustedClaimIssuers(
-        filter: { issuer: { equalTo: $issuer } }, 
+        filter: { issuer: { equalTo: $issuer } },
         orderBy: [${TrustedClaimIssuersOrderBy.AssetIdAsc}]
       ) {
         nodes {
@@ -675,7 +683,7 @@ export function tickerExternalAgentsQuery(
     query TickerExternalAgentQuery($assetId: String!) {
       tickerExternalAgents(
         filter: { assetId: { equalTo: $assetId } }
-        orderBy: [${TickerExternalAgentsOrderBy.CreatedBlockIdDesc}]
+        orderBy: [${TickerExternalAgentsOrderBy.CreatedAtDesc}, ${TickerExternalAgentsOrderBy.CreatedBlockIdDesc}]
         first: 1
       ) {
         nodes {
@@ -935,7 +943,7 @@ export function settlementsQuery(
      {
       legs(
         ${filter}
-        orderBy: [${LegsOrderBy.InstructionIdAsc}]
+        orderBy: [${LegsOrderBy.CreatedAtAsc}, ${LegsOrderBy.InstructionIdAsc}]
       ) {
         nodes {
           settlement {
@@ -1037,7 +1045,7 @@ export function portfolioMovementsQuery(
      {
       portfolioMovements(
         ${filter}
-        orderBy: [${PortfolioMovementsOrderBy.IdAsc}]
+        orderBy: [${PortfolioMovementsOrderBy.CreatedAtAsc}, ${PortfolioMovementsOrderBy.IdAsc}]
       ) {
         nodes {
           id

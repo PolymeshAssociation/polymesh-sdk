@@ -4,6 +4,7 @@
 
 import { ApiPromise } from '@polkadot/api';
 import { DecoratedRpc } from '@polkadot/api/types';
+import { RpcInterface } from '@polkadot/rpc-core/types';
 import {
   bool,
   BTreeSet,
@@ -52,6 +53,7 @@ import {
   PalletAssetSecurityToken,
   PalletAssetTickerRegistration,
   PalletAssetTickerRegistrationConfig,
+  PalletContractsStorageContractInfo,
   PalletCorporateActionsCaCheckpoint,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCaKind,
@@ -615,7 +617,7 @@ let txModule = {} as Extrinsics;
 let queryModule = {} as Queries;
 let constsModule = {} as Consts;
 
-let rpcModule = {} as DecoratedRpc<any, any>;
+let rpcModule = {} as DecoratedRpc<'promise', RpcInterface>;
 
 let queryMultiMock = jest.fn();
 
@@ -1366,7 +1368,7 @@ export function createRpcMock<
   let runtimeModule: any = rpcModule[mod];
 
   if (!runtimeModule) {
-    runtimeModule = rpcModule[mod] = {};
+    runtimeModule = rpcModule[mod] = {} as any;
   }
 
   type RpcMock = Rpcs[ModuleName][RpcName] & jest.Mock & MockRpc;
@@ -4343,4 +4345,29 @@ export const createMockInstructionMemo = (
   }
 
   return createMockStringCodec<PalletSettlementInstructionMemo>(memo);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockContractInfo = (contractInfo?: {
+  trieId: Bytes;
+  codeHash: U8aFixed;
+  storageDeposit: u128;
+}): MockCodec<PalletContractsStorageContractInfo> => {
+  const { trieId, codeHash, storageDeposit } = contractInfo || {
+    trieId: createMockBytes(),
+    codeHash: createMockHash(),
+    storageDeposit: createMockU128(),
+  };
+
+  return createMockCodec(
+    {
+      trieId,
+      codeHash,
+      storageDeposit,
+    },
+    !contractInfo
+  );
 };
