@@ -442,7 +442,7 @@ export function eventsByArgs(
      {
       events(
         ${filter}
-        orderBy: [${EventsOrderBy.BlockIdAsc}]
+        orderBy: [${EventsOrderBy.CreatedAtAsc}, ${EventsOrderBy.BlockIdAsc}]
         first: $size
         offset: $start
       ) {
@@ -684,7 +684,7 @@ export function tickerExternalAgentsQuery(
     query TickerExternalAgentQuery($assetId: String!) {
       tickerExternalAgents(
         filter: { assetId: { equalTo: $assetId } }
-        orderBy: [${TickerExternalAgentsOrderBy.CreatedBlockIdDesc}]
+        orderBy: [${TickerExternalAgentsOrderBy.CreatedAtDesc}, ${TickerExternalAgentsOrderBy.CreatedBlockIdDesc}]
         first: 1
       ) {
         nodes {
@@ -944,7 +944,7 @@ export function settlementsQuery(
      {
       legs(
         ${filter}
-        orderBy: [${LegsOrderBy.InstructionIdAsc}]
+        orderBy: [${LegsOrderBy.CreatedAtAsc}, ${LegsOrderBy.InstructionIdAsc}]
       ) {
         nodes {
           settlement {
@@ -1046,7 +1046,7 @@ export function portfolioMovementsQuery(
      {
       portfolioMovements(
         ${filter}
-        orderBy: [${PortfolioMovementsOrderBy.IdAsc}]
+        orderBy: [${PortfolioMovementsOrderBy.CreatedAtAsc}, ${PortfolioMovementsOrderBy.IdAsc}]
       ) {
         nodes {
           id
