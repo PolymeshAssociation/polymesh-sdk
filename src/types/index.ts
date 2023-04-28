@@ -724,6 +724,9 @@ export type NextKey = string | BigNumber | null;
 export interface ResultSet<T> {
   data: T[];
   next: NextKey;
+  /**
+   * @note methods will have `count` defined when middleware is configured, but be undefined otherwise. This happens when the chain node is queried directly
+   */
   count?: BigNumber;
 }
 

@@ -1179,7 +1179,7 @@ describe('Context class', () => {
 
       expect(result.data).toEqual(fakeClaims);
       expect(result.count).toEqual(new BigNumber(25));
-      expect(result.next).toEqual(new BigNumber(1));
+      expect(result.next).toEqual(new BigNumber(2));
 
       dsMockUtils.createApolloQueryMock(
         didsWithClaims({
@@ -1199,7 +1199,7 @@ describe('Context class', () => {
 
       expect(result.data).toEqual(fakeClaims);
       expect(result.count).toEqual(new BigNumber(25));
-      expect(result.next).toBeNull();
+      expect(result.next).toEqual(new BigNumber(result.data.length));
     });
 
     it('should return a result set of claims from chain', async () => {

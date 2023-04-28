@@ -163,6 +163,7 @@ describe('Claims Class', () => {
           ],
         },
       ];
+
       /* eslint-disable @typescript-eslint/naming-convention */
       const commonClaimData = {
         targetDID: targetDid,
@@ -245,7 +246,7 @@ describe('Claims Class', () => {
 
       expect(JSON.stringify(result.data)).toBe(JSON.stringify(fakeClaims));
       expect(result.count).toEqual(new BigNumber(25));
-      expect(result.next).toEqual(null);
+      expect(result.next).toEqual(new BigNumber(result.data.length));
     });
 
     it('should return a list of Identities with claims associated to them filtered by scope', async () => {
@@ -364,6 +365,15 @@ describe('Claims Class', () => {
   });
 
   describe('method: getIdentitiesWithClaimsV2', () => {
+    beforeAll(() => {
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date(2023, 4, 17));
+    });
+
+    afterAll(() => {
+      jest.useRealTimers();
+    });
+
     it('should return a list of Identities with claims associated to them', async () => {
       const targetDid = 'someTargetDid';
       const issuerDid = 'someIssuerDid';
@@ -794,7 +804,13 @@ describe('Claims Class', () => {
   });
 
   describe('method: getTargetingClaims', () => {
+    beforeAll(() => {
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date(2023, 4, 17));
+    });
+
     afterAll(() => {
+      jest.useRealTimers();
       jest.restoreAllMocks();
     });
 
@@ -822,6 +838,7 @@ describe('Claims Class', () => {
           ],
         },
       ];
+
       /* eslint-disable @typescript-eslint/naming-convention */
       const commonClaimData = {
         targetDID: did,
@@ -898,7 +915,7 @@ describe('Claims Class', () => {
 
       expect(result.data).toEqual(fakeClaims);
       expect(result.count).toEqual(new BigNumber(25));
-      expect(result.next).toBeNull();
+      expect(result.next).toEqual(new BigNumber(result.data.length));
     });
 
     it('should return a list of claims issued with an Identity as target from chain', async () => {
@@ -1083,7 +1100,13 @@ describe('Claims Class', () => {
   });
 
   describe('method: getTargetingClaimsV2', () => {
+    beforeAll(() => {
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date(2023, 4, 17));
+    });
+
     afterAll(() => {
+      jest.useRealTimers();
       jest.restoreAllMocks();
     });
 

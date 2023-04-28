@@ -17,6 +17,11 @@ export type Scalars = {
   JSON: any;
 };
 
+/**
+ * Represents a public/private key pair. Most actions must be signed by an appropriately permissioned Account
+ *
+ * Before an Account can sign most Extrinsics it must first be attached to an Identity
+ */
 export type Account = Node & {
   __typename?: 'Account';
   address: Scalars['String'];
@@ -153,6 +158,7 @@ export enum AccountsOrderBy {
   UpdatedBlockIdDesc = 'UPDATED_BLOCK_ID_DESC',
 }
 
+/** Represents a set of agents authorized to perform actions for a given Asset */
 export type AgentGroup = Node & {
   __typename?: 'AgentGroup';
   /** Reads and enables pagination through a set of `Block`. */
@@ -175,6 +181,7 @@ export type AgentGroup = Node & {
   updatedBlockId: Scalars['String'];
 };
 
+/** Represents a set of agents authorized to perform actions for a given Asset */
 export type AgentGroupBlocksByAgentGroupMembershipGroupIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -185,6 +192,7 @@ export type AgentGroupBlocksByAgentGroupMembershipGroupIdAndCreatedBlockIdArgs =
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a set of agents authorized to perform actions for a given Asset */
 export type AgentGroupBlocksByAgentGroupMembershipGroupIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -195,6 +203,7 @@ export type AgentGroupBlocksByAgentGroupMembershipGroupIdAndUpdatedBlockIdArgs =
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a set of agents authorized to perform actions for a given Asset */
 export type AgentGroupMembersArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -326,6 +335,7 @@ export type AgentGroupFilter = {
   updatedBlockId?: InputMaybe<StringFilter>;
 };
 
+/** Represent membership in a group. Tracks which members belong to which groups */
 export type AgentGroupMembership = Node & {
   __typename?: 'AgentGroupMembership';
   createdAt: Scalars['Datetime'];
@@ -511,6 +521,7 @@ export enum AgentGroupsOrderBy {
   UpdatedBlockIdDesc = 'UPDATED_BLOCK_ID_DESC',
 }
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type Asset = Node & {
   __typename?: 'Asset';
   /** Reads and enables pagination through a set of `Block`. */
@@ -661,6 +672,7 @@ export type Asset = Node & {
   venuesByStoOfferingAssetIdAndVenueId: AssetVenuesByStoOfferingAssetIdAndVenueIdManyToManyConnection;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetBlocksByAssetDocumentAssetIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -671,6 +683,7 @@ export type AssetBlocksByAssetDocumentAssetIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetBlocksByAssetDocumentAssetIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -681,6 +694,7 @@ export type AssetBlocksByAssetDocumentAssetIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetBlocksByAssetHolderAssetIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -691,6 +705,7 @@ export type AssetBlocksByAssetHolderAssetIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetBlocksByAssetHolderAssetIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -701,6 +716,7 @@ export type AssetBlocksByAssetHolderAssetIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetBlocksByComplianceAssetIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -711,6 +727,7 @@ export type AssetBlocksByComplianceAssetIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetBlocksByComplianceAssetIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -721,6 +738,7 @@ export type AssetBlocksByComplianceAssetIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetBlocksByDistributionAssetIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -731,6 +749,7 @@ export type AssetBlocksByDistributionAssetIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetBlocksByDistributionAssetIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -741,6 +760,7 @@ export type AssetBlocksByDistributionAssetIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetBlocksByFundingAssetIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -751,6 +771,7 @@ export type AssetBlocksByFundingAssetIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetBlocksByFundingAssetIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -761,6 +782,7 @@ export type AssetBlocksByFundingAssetIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetBlocksByPortfolioMovementAssetIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -771,6 +793,7 @@ export type AssetBlocksByPortfolioMovementAssetIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetBlocksByPortfolioMovementAssetIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -781,6 +804,7 @@ export type AssetBlocksByPortfolioMovementAssetIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetBlocksByStatTypeAssetIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -791,6 +815,7 @@ export type AssetBlocksByStatTypeAssetIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetBlocksByStatTypeAssetIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -801,6 +826,7 @@ export type AssetBlocksByStatTypeAssetIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetBlocksByStoOfferingAssetIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -811,6 +837,7 @@ export type AssetBlocksByStoOfferingAssetIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetBlocksByStoOfferingAssetIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -821,6 +848,7 @@ export type AssetBlocksByStoOfferingAssetIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetBlocksByTickerExternalAgentActionAssetIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -831,6 +859,7 @@ export type AssetBlocksByTickerExternalAgentActionAssetIdAndCreatedBlockIdArgs =
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetBlocksByTickerExternalAgentActionAssetIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -841,6 +870,7 @@ export type AssetBlocksByTickerExternalAgentActionAssetIdAndUpdatedBlockIdArgs =
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetBlocksByTickerExternalAgentAssetIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -851,6 +881,7 @@ export type AssetBlocksByTickerExternalAgentAssetIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetBlocksByTickerExternalAgentAssetIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -861,6 +892,7 @@ export type AssetBlocksByTickerExternalAgentAssetIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetBlocksByTickerExternalAgentHistoryAssetIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -871,6 +903,7 @@ export type AssetBlocksByTickerExternalAgentHistoryAssetIdAndCreatedBlockIdArgs 
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetBlocksByTickerExternalAgentHistoryAssetIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -881,6 +914,7 @@ export type AssetBlocksByTickerExternalAgentHistoryAssetIdAndUpdatedBlockIdArgs 
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetBlocksByTransferComplianceAssetIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -891,6 +925,7 @@ export type AssetBlocksByTransferComplianceAssetIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetBlocksByTransferComplianceAssetIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -901,6 +936,7 @@ export type AssetBlocksByTransferComplianceAssetIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetBlocksByTransferComplianceExemptionAssetIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -911,6 +947,7 @@ export type AssetBlocksByTransferComplianceExemptionAssetIdAndCreatedBlockIdArgs
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetBlocksByTransferComplianceExemptionAssetIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -921,6 +958,7 @@ export type AssetBlocksByTransferComplianceExemptionAssetIdAndUpdatedBlockIdArgs
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetBlocksByTransferManagerAssetIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -931,6 +969,7 @@ export type AssetBlocksByTransferManagerAssetIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetBlocksByTransferManagerAssetIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -941,6 +980,7 @@ export type AssetBlocksByTransferManagerAssetIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetBlocksByTrustedClaimIssuerAssetIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -951,6 +991,7 @@ export type AssetBlocksByTrustedClaimIssuerAssetIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetBlocksByTrustedClaimIssuerAssetIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -961,6 +1002,7 @@ export type AssetBlocksByTrustedClaimIssuerAssetIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetComplianceArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -971,6 +1013,7 @@ export type AssetComplianceArgs = {
   orderBy?: InputMaybe<Array<CompliancesOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetDistributionsArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -981,6 +1024,7 @@ export type AssetDistributionsArgs = {
   orderBy?: InputMaybe<Array<DistributionsOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetDocumentsArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -991,6 +1035,7 @@ export type AssetDocumentsArgs = {
   orderBy?: InputMaybe<Array<AssetDocumentsOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetFundingsArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -1001,6 +1046,7 @@ export type AssetFundingsArgs = {
   orderBy?: InputMaybe<Array<FundingsOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetHoldersArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -1011,6 +1057,7 @@ export type AssetHoldersArgs = {
   orderBy?: InputMaybe<Array<AssetHoldersOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetIdentitiesByAssetHolderAssetIdAndIdentityIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -1021,6 +1068,7 @@ export type AssetIdentitiesByAssetHolderAssetIdAndIdentityIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetIdentitiesByDistributionAssetIdAndIdentityIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -1031,6 +1079,7 @@ export type AssetIdentitiesByDistributionAssetIdAndIdentityIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetIdentitiesByStatTypeAssetIdAndClaimIssuerIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -1041,6 +1090,7 @@ export type AssetIdentitiesByStatTypeAssetIdAndClaimIssuerIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetIdentitiesByStoOfferingAssetIdAndCreatorIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -1051,6 +1101,7 @@ export type AssetIdentitiesByStoOfferingAssetIdAndCreatorIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetIdentitiesByTickerExternalAgentActionAssetIdAndCallerIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -1061,6 +1112,7 @@ export type AssetIdentitiesByTickerExternalAgentActionAssetIdAndCallerIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetIdentitiesByTickerExternalAgentAssetIdAndCallerIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -1071,6 +1123,7 @@ export type AssetIdentitiesByTickerExternalAgentAssetIdAndCallerIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetIdentitiesByTickerExternalAgentHistoryAssetIdAndIdentityIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -1081,6 +1134,7 @@ export type AssetIdentitiesByTickerExternalAgentHistoryAssetIdAndIdentityIdArgs 
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetIdentitiesByTransferComplianceAssetIdAndClaimIssuerIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -1091,6 +1145,7 @@ export type AssetIdentitiesByTransferComplianceAssetIdAndClaimIssuerIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetPortfolioMovementsArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -1101,6 +1156,7 @@ export type AssetPortfolioMovementsArgs = {
   orderBy?: InputMaybe<Array<PortfolioMovementsOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetPortfoliosByDistributionAssetIdAndPortfolioIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -1111,6 +1167,7 @@ export type AssetPortfoliosByDistributionAssetIdAndPortfolioIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetPortfoliosByPortfolioMovementAssetIdAndFromIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -1121,6 +1178,7 @@ export type AssetPortfoliosByPortfolioMovementAssetIdAndFromIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetPortfoliosByPortfolioMovementAssetIdAndToIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -1131,6 +1189,7 @@ export type AssetPortfoliosByPortfolioMovementAssetIdAndToIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetPortfoliosByStoOfferingAssetIdAndOfferingPortfolioIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -1141,6 +1200,7 @@ export type AssetPortfoliosByStoOfferingAssetIdAndOfferingPortfolioIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetPortfoliosByStoOfferingAssetIdAndRaisingPortfolioIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -1151,6 +1211,7 @@ export type AssetPortfoliosByStoOfferingAssetIdAndRaisingPortfolioIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetStatTypesArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -1161,6 +1222,7 @@ export type AssetStatTypesArgs = {
   orderBy?: InputMaybe<Array<StatTypesOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetStatTypesByTransferComplianceAssetIdAndStatTypeIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -1171,6 +1233,7 @@ export type AssetStatTypesByTransferComplianceAssetIdAndStatTypeIdArgs = {
   orderBy?: InputMaybe<Array<StatTypesOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetStosByOfferingAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -1181,6 +1244,7 @@ export type AssetStosByOfferingAssetIdArgs = {
   orderBy?: InputMaybe<Array<StosOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetTickerExternalAgentActionsArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -1191,6 +1255,7 @@ export type AssetTickerExternalAgentActionsArgs = {
   orderBy?: InputMaybe<Array<TickerExternalAgentActionsOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetTickerExternalAgentHistoriesArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -1201,6 +1266,7 @@ export type AssetTickerExternalAgentHistoriesArgs = {
   orderBy?: InputMaybe<Array<TickerExternalAgentHistoriesOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetTickerExternalAgentsArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -1211,6 +1277,7 @@ export type AssetTickerExternalAgentsArgs = {
   orderBy?: InputMaybe<Array<TickerExternalAgentsOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetTransferComplianceExemptionsArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -1221,6 +1288,7 @@ export type AssetTransferComplianceExemptionsArgs = {
   orderBy?: InputMaybe<Array<TransferComplianceExemptionsOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetTransferCompliancesArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -1231,6 +1299,7 @@ export type AssetTransferCompliancesArgs = {
   orderBy?: InputMaybe<Array<TransferCompliancesOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetTransferManagersArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -1241,6 +1310,7 @@ export type AssetTransferManagersArgs = {
   orderBy?: InputMaybe<Array<TransferManagersOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetTrustedClaimIssuersArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -1251,6 +1321,7 @@ export type AssetTrustedClaimIssuersArgs = {
   orderBy?: InputMaybe<Array<TrustedClaimIssuersOrderBy>>;
 };
 
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetVenuesByStoOfferingAssetIdAndVenueIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -2676,6 +2747,11 @@ export type AssetBlocksByTrustedClaimIssuerAssetIdAndUpdatedBlockIdManyToManyEdg
     orderBy?: InputMaybe<Array<TrustedClaimIssuersOrderBy>>;
   };
 
+/**
+ * Represents off chain documentation for an Asset. A hash should be included on chain so readers can be sure their copy has not been tampered with
+ *
+ * e.g. A companies 10-K report
+ */
 export type AssetDocument = Node & {
   __typename?: 'AssetDocument';
   /** Reads a single `Asset` that is related to this `AssetDocument`. */
@@ -2869,6 +2945,7 @@ export type AssetFilter = {
   updatedBlockId?: InputMaybe<StringFilter>;
 };
 
+/** Represents how much of a given Asset an Identity owns */
 export type AssetHolder = Node & {
   __typename?: 'AssetHolder';
   amount: Scalars['BigFloat'];
@@ -3367,6 +3444,7 @@ export type AssetIdentitiesByTransferComplianceAssetIdAndClaimIssuerIdManyToMany
     orderBy?: InputMaybe<Array<TransferCompliancesOrderBy>>;
   };
 
+/** Represents a request to take ownership of a particular Asset */
 export type AssetPendingOwnershipTransfer = Node & {
   __typename?: 'AssetPendingOwnershipTransfer';
   createdAt: Scalars['Datetime'];
@@ -3957,6 +4035,7 @@ export enum AssetsOrderBy {
   UpdatedBlockIdDesc = 'UPDATED_BLOCK_ID_DESC',
 }
 
+/** Represents a request to grant an Account some permission to perform actions for an Identity. e.g. become a Portfolio custodian */
 export type Authorization = Node & {
   __typename?: 'Authorization';
   createdAt: Scalars['Datetime'];
@@ -4130,6 +4209,7 @@ export type BigFloatFilter = {
   notIn?: InputMaybe<Array<Scalars['BigFloat']>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type Block = Node & {
   __typename?: 'Block';
   /** Reads and enables pagination through a set of `Account`. */
@@ -4653,6 +4733,7 @@ export type Block = Node & {
   venuesByUpdatedBlockId: VenuesConnection;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAccountsByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4663,6 +4744,7 @@ export type BlockAccountsByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<AccountsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAccountsByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4673,6 +4755,7 @@ export type BlockAccountsByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<AccountsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAgentGroupMembershipsByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4683,6 +4766,7 @@ export type BlockAgentGroupMembershipsByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<AgentGroupMembershipsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAgentGroupMembershipsByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4693,6 +4777,7 @@ export type BlockAgentGroupMembershipsByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<AgentGroupMembershipsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAgentGroupsByAgentGroupMembershipCreatedBlockIdAndGroupIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4703,6 +4788,7 @@ export type BlockAgentGroupsByAgentGroupMembershipCreatedBlockIdAndGroupIdArgs =
   orderBy?: InputMaybe<Array<AgentGroupsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAgentGroupsByAgentGroupMembershipUpdatedBlockIdAndGroupIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4713,6 +4799,7 @@ export type BlockAgentGroupsByAgentGroupMembershipUpdatedBlockIdAndGroupIdArgs =
   orderBy?: InputMaybe<Array<AgentGroupsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAgentGroupsByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4723,6 +4810,7 @@ export type BlockAgentGroupsByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<AgentGroupsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAgentGroupsByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4733,6 +4821,7 @@ export type BlockAgentGroupsByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<AgentGroupsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetDocumentsByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4743,6 +4832,7 @@ export type BlockAssetDocumentsByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<AssetDocumentsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetDocumentsByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4753,6 +4843,7 @@ export type BlockAssetDocumentsByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<AssetDocumentsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetHoldersByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4763,6 +4854,7 @@ export type BlockAssetHoldersByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<AssetHoldersOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetHoldersByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4773,6 +4865,7 @@ export type BlockAssetHoldersByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<AssetHoldersOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetPendingOwnershipTransfersByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4783,6 +4876,7 @@ export type BlockAssetPendingOwnershipTransfersByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<AssetPendingOwnershipTransfersOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetPendingOwnershipTransfersByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4793,6 +4887,7 @@ export type BlockAssetPendingOwnershipTransfersByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<AssetPendingOwnershipTransfersOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetsByAssetDocumentCreatedBlockIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4803,6 +4898,7 @@ export type BlockAssetsByAssetDocumentCreatedBlockIdAndAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetsByAssetDocumentUpdatedBlockIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4813,6 +4909,7 @@ export type BlockAssetsByAssetDocumentUpdatedBlockIdAndAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetsByAssetHolderCreatedBlockIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4823,6 +4920,7 @@ export type BlockAssetsByAssetHolderCreatedBlockIdAndAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetsByAssetHolderUpdatedBlockIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4833,6 +4931,7 @@ export type BlockAssetsByAssetHolderUpdatedBlockIdAndAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetsByComplianceCreatedBlockIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4843,6 +4942,7 @@ export type BlockAssetsByComplianceCreatedBlockIdAndAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetsByComplianceUpdatedBlockIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4853,6 +4953,7 @@ export type BlockAssetsByComplianceUpdatedBlockIdAndAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetsByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4863,6 +4964,7 @@ export type BlockAssetsByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetsByDistributionCreatedBlockIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4873,6 +4975,7 @@ export type BlockAssetsByDistributionCreatedBlockIdAndAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetsByDistributionUpdatedBlockIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4883,6 +4986,7 @@ export type BlockAssetsByDistributionUpdatedBlockIdAndAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetsByFundingCreatedBlockIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4893,6 +4997,7 @@ export type BlockAssetsByFundingCreatedBlockIdAndAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetsByFundingUpdatedBlockIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4903,6 +5008,7 @@ export type BlockAssetsByFundingUpdatedBlockIdAndAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetsByPortfolioMovementCreatedBlockIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4913,6 +5019,7 @@ export type BlockAssetsByPortfolioMovementCreatedBlockIdAndAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetsByPortfolioMovementUpdatedBlockIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4923,6 +5030,7 @@ export type BlockAssetsByPortfolioMovementUpdatedBlockIdAndAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetsByStatTypeCreatedBlockIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4933,6 +5041,7 @@ export type BlockAssetsByStatTypeCreatedBlockIdAndAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetsByStatTypeUpdatedBlockIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4943,6 +5052,7 @@ export type BlockAssetsByStatTypeUpdatedBlockIdAndAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetsByStoCreatedBlockIdAndOfferingAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4953,6 +5063,7 @@ export type BlockAssetsByStoCreatedBlockIdAndOfferingAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetsByStoUpdatedBlockIdAndOfferingAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4963,6 +5074,7 @@ export type BlockAssetsByStoUpdatedBlockIdAndOfferingAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetsByTickerExternalAgentActionCreatedBlockIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4973,6 +5085,7 @@ export type BlockAssetsByTickerExternalAgentActionCreatedBlockIdAndAssetIdArgs =
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetsByTickerExternalAgentActionUpdatedBlockIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4983,6 +5096,7 @@ export type BlockAssetsByTickerExternalAgentActionUpdatedBlockIdAndAssetIdArgs =
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetsByTickerExternalAgentCreatedBlockIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4993,6 +5107,7 @@ export type BlockAssetsByTickerExternalAgentCreatedBlockIdAndAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetsByTickerExternalAgentHistoryCreatedBlockIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5003,6 +5118,7 @@ export type BlockAssetsByTickerExternalAgentHistoryCreatedBlockIdAndAssetIdArgs 
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetsByTickerExternalAgentHistoryUpdatedBlockIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5013,6 +5129,7 @@ export type BlockAssetsByTickerExternalAgentHistoryUpdatedBlockIdAndAssetIdArgs 
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetsByTickerExternalAgentUpdatedBlockIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5023,6 +5140,7 @@ export type BlockAssetsByTickerExternalAgentUpdatedBlockIdAndAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetsByTransferComplianceCreatedBlockIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5033,6 +5151,7 @@ export type BlockAssetsByTransferComplianceCreatedBlockIdAndAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetsByTransferComplianceExemptionCreatedBlockIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5043,6 +5162,7 @@ export type BlockAssetsByTransferComplianceExemptionCreatedBlockIdAndAssetIdArgs
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetsByTransferComplianceExemptionUpdatedBlockIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5053,6 +5173,7 @@ export type BlockAssetsByTransferComplianceExemptionUpdatedBlockIdAndAssetIdArgs
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetsByTransferComplianceUpdatedBlockIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5063,6 +5184,7 @@ export type BlockAssetsByTransferComplianceUpdatedBlockIdAndAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetsByTransferManagerCreatedBlockIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5073,6 +5195,7 @@ export type BlockAssetsByTransferManagerCreatedBlockIdAndAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetsByTransferManagerUpdatedBlockIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5083,6 +5206,7 @@ export type BlockAssetsByTransferManagerUpdatedBlockIdAndAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetsByTrustedClaimIssuerCreatedBlockIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5093,6 +5217,7 @@ export type BlockAssetsByTrustedClaimIssuerCreatedBlockIdAndAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetsByTrustedClaimIssuerUpdatedBlockIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5103,6 +5228,7 @@ export type BlockAssetsByTrustedClaimIssuerUpdatedBlockIdAndAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetsByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5113,6 +5239,7 @@ export type BlockAssetsByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAuthorizationsByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5123,6 +5250,7 @@ export type BlockAuthorizationsByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<AuthorizationsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAuthorizationsByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5133,6 +5261,7 @@ export type BlockAuthorizationsByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<AuthorizationsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByAccountCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5143,6 +5272,7 @@ export type BlockBlocksByAccountCreatedBlockIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByAccountUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5153,6 +5283,7 @@ export type BlockBlocksByAccountUpdatedBlockIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByAgentGroupCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5163,6 +5294,7 @@ export type BlockBlocksByAgentGroupCreatedBlockIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByAgentGroupMembershipCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5173,6 +5305,7 @@ export type BlockBlocksByAgentGroupMembershipCreatedBlockIdAndUpdatedBlockIdArgs
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByAgentGroupMembershipUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5183,6 +5316,7 @@ export type BlockBlocksByAgentGroupMembershipUpdatedBlockIdAndCreatedBlockIdArgs
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByAgentGroupUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5193,6 +5327,7 @@ export type BlockBlocksByAgentGroupUpdatedBlockIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByAssetCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5203,6 +5338,7 @@ export type BlockBlocksByAssetCreatedBlockIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByAssetDocumentCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5213,6 +5349,7 @@ export type BlockBlocksByAssetDocumentCreatedBlockIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByAssetDocumentUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5223,6 +5360,7 @@ export type BlockBlocksByAssetDocumentUpdatedBlockIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByAssetHolderCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5233,6 +5371,7 @@ export type BlockBlocksByAssetHolderCreatedBlockIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByAssetHolderUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5243,6 +5382,7 @@ export type BlockBlocksByAssetHolderUpdatedBlockIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByAssetPendingOwnershipTransferCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5253,6 +5393,7 @@ export type BlockBlocksByAssetPendingOwnershipTransferCreatedBlockIdAndUpdatedBl
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByAssetPendingOwnershipTransferUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5263,6 +5404,7 @@ export type BlockBlocksByAssetPendingOwnershipTransferUpdatedBlockIdAndCreatedBl
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByAssetUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5273,6 +5415,7 @@ export type BlockBlocksByAssetUpdatedBlockIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByAuthorizationCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5283,6 +5426,7 @@ export type BlockBlocksByAuthorizationCreatedBlockIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByAuthorizationUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5293,6 +5437,7 @@ export type BlockBlocksByAuthorizationUpdatedBlockIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByBridgeEventCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5303,6 +5448,7 @@ export type BlockBlocksByBridgeEventCreatedBlockIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByBridgeEventUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5313,6 +5459,7 @@ export type BlockBlocksByBridgeEventUpdatedBlockIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByClaimCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5323,6 +5470,7 @@ export type BlockBlocksByClaimCreatedBlockIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByClaimScopeCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5333,6 +5481,7 @@ export type BlockBlocksByClaimScopeCreatedBlockIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByClaimScopeUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5343,6 +5492,7 @@ export type BlockBlocksByClaimScopeUpdatedBlockIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByClaimUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5353,6 +5503,7 @@ export type BlockBlocksByClaimUpdatedBlockIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByComplianceCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5363,6 +5514,7 @@ export type BlockBlocksByComplianceCreatedBlockIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByComplianceUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5373,6 +5525,7 @@ export type BlockBlocksByComplianceUpdatedBlockIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByDistributionCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5383,6 +5536,7 @@ export type BlockBlocksByDistributionCreatedBlockIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByDistributionPaymentCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5393,6 +5547,7 @@ export type BlockBlocksByDistributionPaymentCreatedBlockIdAndUpdatedBlockIdArgs 
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByDistributionPaymentUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5403,6 +5558,7 @@ export type BlockBlocksByDistributionPaymentUpdatedBlockIdAndCreatedBlockIdArgs 
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByDistributionUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5413,6 +5569,7 @@ export type BlockBlocksByDistributionUpdatedBlockIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByFundingCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5423,6 +5580,7 @@ export type BlockBlocksByFundingCreatedBlockIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByFundingUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5433,6 +5591,7 @@ export type BlockBlocksByFundingUpdatedBlockIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByIdentityCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5443,6 +5602,7 @@ export type BlockBlocksByIdentityCreatedBlockIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByIdentityUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5453,6 +5613,7 @@ export type BlockBlocksByIdentityUpdatedBlockIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByInstructionCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5463,6 +5624,7 @@ export type BlockBlocksByInstructionCreatedBlockIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByInstructionUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5473,6 +5635,7 @@ export type BlockBlocksByInstructionUpdatedBlockIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByInvestmentCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5483,6 +5646,7 @@ export type BlockBlocksByInvestmentCreatedBlockIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByInvestmentUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5493,6 +5657,7 @@ export type BlockBlocksByInvestmentUpdatedBlockIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByLegCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5503,6 +5668,7 @@ export type BlockBlocksByLegCreatedBlockIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByLegUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5513,6 +5679,7 @@ export type BlockBlocksByLegUpdatedBlockIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByPermissionCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5523,6 +5690,7 @@ export type BlockBlocksByPermissionCreatedBlockIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByPermissionUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5533,6 +5701,7 @@ export type BlockBlocksByPermissionUpdatedBlockIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByPortfolioCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5543,6 +5712,7 @@ export type BlockBlocksByPortfolioCreatedBlockIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByPortfolioMovementCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5553,6 +5723,7 @@ export type BlockBlocksByPortfolioMovementCreatedBlockIdAndUpdatedBlockIdArgs = 
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByPortfolioMovementUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5563,6 +5734,7 @@ export type BlockBlocksByPortfolioMovementUpdatedBlockIdAndCreatedBlockIdArgs = 
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByPortfolioUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5573,6 +5745,7 @@ export type BlockBlocksByPortfolioUpdatedBlockIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByProposalCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5583,6 +5756,7 @@ export type BlockBlocksByProposalCreatedBlockIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByProposalUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5593,6 +5767,7 @@ export type BlockBlocksByProposalUpdatedBlockIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByProposalVoteCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5603,6 +5778,7 @@ export type BlockBlocksByProposalVoteCreatedBlockIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByProposalVoteUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5613,6 +5789,7 @@ export type BlockBlocksByProposalVoteUpdatedBlockIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksBySettlementCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5623,6 +5800,7 @@ export type BlockBlocksBySettlementCreatedBlockIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksBySettlementUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5633,6 +5811,7 @@ export type BlockBlocksBySettlementUpdatedBlockIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByStakingEventCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5643,6 +5822,7 @@ export type BlockBlocksByStakingEventCreatedBlockIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByStakingEventUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5653,6 +5833,7 @@ export type BlockBlocksByStakingEventUpdatedBlockIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByStatTypeCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5663,6 +5844,7 @@ export type BlockBlocksByStatTypeCreatedBlockIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByStatTypeUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5673,6 +5855,7 @@ export type BlockBlocksByStatTypeUpdatedBlockIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByStoCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5683,6 +5866,7 @@ export type BlockBlocksByStoCreatedBlockIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByStoUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5693,6 +5877,7 @@ export type BlockBlocksByStoUpdatedBlockIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByTickerExternalAgentActionCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5703,6 +5888,7 @@ export type BlockBlocksByTickerExternalAgentActionCreatedBlockIdAndUpdatedBlockI
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByTickerExternalAgentActionUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5713,6 +5899,7 @@ export type BlockBlocksByTickerExternalAgentActionUpdatedBlockIdAndCreatedBlockI
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByTickerExternalAgentCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5723,6 +5910,7 @@ export type BlockBlocksByTickerExternalAgentCreatedBlockIdAndUpdatedBlockIdArgs 
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByTickerExternalAgentHistoryCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5733,6 +5921,7 @@ export type BlockBlocksByTickerExternalAgentHistoryCreatedBlockIdAndUpdatedBlock
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByTickerExternalAgentHistoryUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5743,6 +5932,7 @@ export type BlockBlocksByTickerExternalAgentHistoryUpdatedBlockIdAndCreatedBlock
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByTickerExternalAgentUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5753,6 +5943,7 @@ export type BlockBlocksByTickerExternalAgentUpdatedBlockIdAndCreatedBlockIdArgs 
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByTransferComplianceCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5763,6 +5954,7 @@ export type BlockBlocksByTransferComplianceCreatedBlockIdAndUpdatedBlockIdArgs =
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByTransferComplianceExemptionCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5773,6 +5965,7 @@ export type BlockBlocksByTransferComplianceExemptionCreatedBlockIdAndUpdatedBloc
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByTransferComplianceExemptionUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5783,6 +5976,7 @@ export type BlockBlocksByTransferComplianceExemptionUpdatedBlockIdAndCreatedBloc
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByTransferComplianceUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5793,6 +5987,7 @@ export type BlockBlocksByTransferComplianceUpdatedBlockIdAndCreatedBlockIdArgs =
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByTransferManagerCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5803,6 +5998,7 @@ export type BlockBlocksByTransferManagerCreatedBlockIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByTransferManagerUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5813,6 +6009,7 @@ export type BlockBlocksByTransferManagerUpdatedBlockIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByTrustedClaimIssuerCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5823,6 +6020,7 @@ export type BlockBlocksByTrustedClaimIssuerCreatedBlockIdAndUpdatedBlockIdArgs =
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByTrustedClaimIssuerUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5833,6 +6031,7 @@ export type BlockBlocksByTrustedClaimIssuerUpdatedBlockIdAndCreatedBlockIdArgs =
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByVenueCreatedBlockIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5843,6 +6042,7 @@ export type BlockBlocksByVenueCreatedBlockIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByVenueUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5853,6 +6053,7 @@ export type BlockBlocksByVenueUpdatedBlockIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBridgeEventsByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5863,6 +6064,7 @@ export type BlockBridgeEventsByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BridgeEventsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBridgeEventsByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5873,6 +6075,7 @@ export type BlockBridgeEventsByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BridgeEventsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockClaimScopesByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5883,6 +6086,7 @@ export type BlockClaimScopesByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<ClaimScopesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockClaimScopesByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5893,6 +6097,7 @@ export type BlockClaimScopesByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<ClaimScopesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockClaimsByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5903,6 +6108,7 @@ export type BlockClaimsByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<ClaimsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockClaimsByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5913,6 +6119,7 @@ export type BlockClaimsByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<ClaimsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockCompliancesByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5923,6 +6130,7 @@ export type BlockCompliancesByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<CompliancesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockCompliancesByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5933,6 +6141,7 @@ export type BlockCompliancesByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<CompliancesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockDistributionPaymentsByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5943,6 +6152,7 @@ export type BlockDistributionPaymentsByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<DistributionPaymentsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockDistributionPaymentsByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5953,6 +6163,7 @@ export type BlockDistributionPaymentsByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<DistributionPaymentsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockDistributionsByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5963,6 +6174,7 @@ export type BlockDistributionsByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<DistributionsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockDistributionsByDistributionPaymentCreatedBlockIdAndDistributionIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5973,6 +6185,7 @@ export type BlockDistributionsByDistributionPaymentCreatedBlockIdAndDistribution
   orderBy?: InputMaybe<Array<DistributionsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockDistributionsByDistributionPaymentUpdatedBlockIdAndDistributionIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5983,6 +6196,7 @@ export type BlockDistributionsByDistributionPaymentUpdatedBlockIdAndDistribution
   orderBy?: InputMaybe<Array<DistributionsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockDistributionsByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -5993,6 +6207,7 @@ export type BlockDistributionsByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<DistributionsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockEventsArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6003,6 +6218,7 @@ export type BlockEventsArgs = {
   orderBy?: InputMaybe<Array<EventsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockExtrinsicsArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6013,6 +6229,7 @@ export type BlockExtrinsicsArgs = {
   orderBy?: InputMaybe<Array<ExtrinsicsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockFundingsByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6023,6 +6240,7 @@ export type BlockFundingsByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<FundingsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockFundingsByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6033,6 +6251,7 @@ export type BlockFundingsByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<FundingsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByAccountCreatedBlockIdAndIdentityIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6043,6 +6262,7 @@ export type BlockIdentitiesByAccountCreatedBlockIdAndIdentityIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByAccountUpdatedBlockIdAndIdentityIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6053,6 +6273,7 @@ export type BlockIdentitiesByAccountUpdatedBlockIdAndIdentityIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByAssetCreatedBlockIdAndOwnerIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6063,6 +6284,7 @@ export type BlockIdentitiesByAssetCreatedBlockIdAndOwnerIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByAssetHolderCreatedBlockIdAndIdentityIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6073,6 +6295,7 @@ export type BlockIdentitiesByAssetHolderCreatedBlockIdAndIdentityIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByAssetHolderUpdatedBlockIdAndIdentityIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6083,6 +6306,7 @@ export type BlockIdentitiesByAssetHolderUpdatedBlockIdAndIdentityIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByAssetUpdatedBlockIdAndOwnerIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6093,6 +6317,7 @@ export type BlockIdentitiesByAssetUpdatedBlockIdAndOwnerIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByAuthorizationCreatedBlockIdAndFromIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6103,6 +6328,7 @@ export type BlockIdentitiesByAuthorizationCreatedBlockIdAndFromIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByAuthorizationUpdatedBlockIdAndFromIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6113,6 +6339,7 @@ export type BlockIdentitiesByAuthorizationUpdatedBlockIdAndFromIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByBridgeEventCreatedBlockIdAndIdentityIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6123,6 +6350,7 @@ export type BlockIdentitiesByBridgeEventCreatedBlockIdAndIdentityIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByBridgeEventUpdatedBlockIdAndIdentityIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6133,6 +6361,7 @@ export type BlockIdentitiesByBridgeEventUpdatedBlockIdAndIdentityIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByClaimCreatedBlockIdAndIssuerIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6143,6 +6372,7 @@ export type BlockIdentitiesByClaimCreatedBlockIdAndIssuerIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByClaimCreatedBlockIdAndTargetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6153,6 +6383,7 @@ export type BlockIdentitiesByClaimCreatedBlockIdAndTargetIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByClaimUpdatedBlockIdAndIssuerIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6163,6 +6394,7 @@ export type BlockIdentitiesByClaimUpdatedBlockIdAndIssuerIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByClaimUpdatedBlockIdAndTargetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6173,6 +6405,7 @@ export type BlockIdentitiesByClaimUpdatedBlockIdAndTargetIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6183,6 +6416,7 @@ export type BlockIdentitiesByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByDistributionCreatedBlockIdAndIdentityIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6193,6 +6427,7 @@ export type BlockIdentitiesByDistributionCreatedBlockIdAndIdentityIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByDistributionPaymentCreatedBlockIdAndTargetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6203,6 +6438,7 @@ export type BlockIdentitiesByDistributionPaymentCreatedBlockIdAndTargetIdArgs = 
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByDistributionPaymentUpdatedBlockIdAndTargetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6213,6 +6449,7 @@ export type BlockIdentitiesByDistributionPaymentUpdatedBlockIdAndTargetIdArgs = 
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByDistributionUpdatedBlockIdAndIdentityIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6223,6 +6460,7 @@ export type BlockIdentitiesByDistributionUpdatedBlockIdAndIdentityIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByInvestmentCreatedBlockIdAndInvestorIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6233,6 +6471,7 @@ export type BlockIdentitiesByInvestmentCreatedBlockIdAndInvestorIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByInvestmentUpdatedBlockIdAndInvestorIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6243,6 +6482,7 @@ export type BlockIdentitiesByInvestmentUpdatedBlockIdAndInvestorIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByPortfolioCreatedBlockIdAndCustodianIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6253,6 +6493,7 @@ export type BlockIdentitiesByPortfolioCreatedBlockIdAndCustodianIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByPortfolioCreatedBlockIdAndIdentityIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6263,6 +6504,7 @@ export type BlockIdentitiesByPortfolioCreatedBlockIdAndIdentityIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByPortfolioUpdatedBlockIdAndCustodianIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6273,6 +6515,7 @@ export type BlockIdentitiesByPortfolioUpdatedBlockIdAndCustodianIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByPortfolioUpdatedBlockIdAndIdentityIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6283,6 +6526,7 @@ export type BlockIdentitiesByPortfolioUpdatedBlockIdAndIdentityIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByProposalCreatedBlockIdAndOwnerIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6293,6 +6537,7 @@ export type BlockIdentitiesByProposalCreatedBlockIdAndOwnerIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByProposalUpdatedBlockIdAndOwnerIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6303,6 +6548,7 @@ export type BlockIdentitiesByProposalUpdatedBlockIdAndOwnerIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByStakingEventCreatedBlockIdAndIdentityIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6313,6 +6559,7 @@ export type BlockIdentitiesByStakingEventCreatedBlockIdAndIdentityIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByStakingEventUpdatedBlockIdAndIdentityIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6323,6 +6570,7 @@ export type BlockIdentitiesByStakingEventUpdatedBlockIdAndIdentityIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByStatTypeCreatedBlockIdAndClaimIssuerIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6333,6 +6581,7 @@ export type BlockIdentitiesByStatTypeCreatedBlockIdAndClaimIssuerIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByStatTypeUpdatedBlockIdAndClaimIssuerIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6343,6 +6592,7 @@ export type BlockIdentitiesByStatTypeUpdatedBlockIdAndClaimIssuerIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByStoCreatedBlockIdAndCreatorIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6353,6 +6603,7 @@ export type BlockIdentitiesByStoCreatedBlockIdAndCreatorIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByStoUpdatedBlockIdAndCreatorIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6363,6 +6614,7 @@ export type BlockIdentitiesByStoUpdatedBlockIdAndCreatorIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByTickerExternalAgentActionCreatedBlockIdAndCallerIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6373,6 +6625,7 @@ export type BlockIdentitiesByTickerExternalAgentActionCreatedBlockIdAndCallerIdA
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByTickerExternalAgentActionUpdatedBlockIdAndCallerIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6383,6 +6636,7 @@ export type BlockIdentitiesByTickerExternalAgentActionUpdatedBlockIdAndCallerIdA
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByTickerExternalAgentCreatedBlockIdAndCallerIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6393,6 +6647,7 @@ export type BlockIdentitiesByTickerExternalAgentCreatedBlockIdAndCallerIdArgs = 
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByTickerExternalAgentHistoryCreatedBlockIdAndIdentityIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6403,6 +6658,7 @@ export type BlockIdentitiesByTickerExternalAgentHistoryCreatedBlockIdAndIdentity
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByTickerExternalAgentHistoryUpdatedBlockIdAndIdentityIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6413,6 +6669,7 @@ export type BlockIdentitiesByTickerExternalAgentHistoryUpdatedBlockIdAndIdentity
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByTickerExternalAgentUpdatedBlockIdAndCallerIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6423,6 +6680,7 @@ export type BlockIdentitiesByTickerExternalAgentUpdatedBlockIdAndCallerIdArgs = 
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByTransferComplianceCreatedBlockIdAndClaimIssuerIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6433,6 +6691,7 @@ export type BlockIdentitiesByTransferComplianceCreatedBlockIdAndClaimIssuerIdArg
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByTransferComplianceUpdatedBlockIdAndClaimIssuerIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6443,6 +6702,7 @@ export type BlockIdentitiesByTransferComplianceUpdatedBlockIdAndClaimIssuerIdArg
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6453,6 +6713,7 @@ export type BlockIdentitiesByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByVenueCreatedBlockIdAndOwnerIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6463,6 +6724,7 @@ export type BlockIdentitiesByVenueCreatedBlockIdAndOwnerIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockIdentitiesByVenueUpdatedBlockIdAndOwnerIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6473,6 +6735,7 @@ export type BlockIdentitiesByVenueUpdatedBlockIdAndOwnerIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockInstructionsByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6483,6 +6746,7 @@ export type BlockInstructionsByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<InstructionsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockInstructionsByLegCreatedBlockIdAndInstructionIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6493,6 +6757,7 @@ export type BlockInstructionsByLegCreatedBlockIdAndInstructionIdArgs = {
   orderBy?: InputMaybe<Array<InstructionsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockInstructionsByLegUpdatedBlockIdAndInstructionIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6503,6 +6768,7 @@ export type BlockInstructionsByLegUpdatedBlockIdAndInstructionIdArgs = {
   orderBy?: InputMaybe<Array<InstructionsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockInstructionsByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6513,6 +6779,7 @@ export type BlockInstructionsByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<InstructionsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockInvestmentsByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6523,6 +6790,7 @@ export type BlockInvestmentsByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<InvestmentsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockInvestmentsByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6533,6 +6801,7 @@ export type BlockInvestmentsByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<InvestmentsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockLegsByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6543,6 +6812,7 @@ export type BlockLegsByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<LegsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockLegsByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6553,6 +6823,7 @@ export type BlockLegsByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<LegsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockPermissionsByAccountCreatedBlockIdAndPermissionsIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6563,6 +6834,7 @@ export type BlockPermissionsByAccountCreatedBlockIdAndPermissionsIdArgs = {
   orderBy?: InputMaybe<Array<PermissionsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockPermissionsByAccountUpdatedBlockIdAndPermissionsIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6573,6 +6845,7 @@ export type BlockPermissionsByAccountUpdatedBlockIdAndPermissionsIdArgs = {
   orderBy?: InputMaybe<Array<PermissionsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockPermissionsByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6583,6 +6856,7 @@ export type BlockPermissionsByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<PermissionsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockPermissionsByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6593,6 +6867,7 @@ export type BlockPermissionsByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<PermissionsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockPortfolioMovementsByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6603,6 +6878,7 @@ export type BlockPortfolioMovementsByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<PortfolioMovementsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockPortfolioMovementsByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6613,6 +6889,7 @@ export type BlockPortfolioMovementsByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<PortfolioMovementsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockPortfoliosByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6623,6 +6900,7 @@ export type BlockPortfoliosByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockPortfoliosByDistributionCreatedBlockIdAndPortfolioIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6633,6 +6911,7 @@ export type BlockPortfoliosByDistributionCreatedBlockIdAndPortfolioIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockPortfoliosByDistributionUpdatedBlockIdAndPortfolioIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6643,6 +6922,7 @@ export type BlockPortfoliosByDistributionUpdatedBlockIdAndPortfolioIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockPortfoliosByLegCreatedBlockIdAndFromIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6653,6 +6933,7 @@ export type BlockPortfoliosByLegCreatedBlockIdAndFromIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockPortfoliosByLegCreatedBlockIdAndToIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6663,6 +6944,7 @@ export type BlockPortfoliosByLegCreatedBlockIdAndToIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockPortfoliosByLegUpdatedBlockIdAndFromIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6673,6 +6955,7 @@ export type BlockPortfoliosByLegUpdatedBlockIdAndFromIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockPortfoliosByLegUpdatedBlockIdAndToIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6683,6 +6966,7 @@ export type BlockPortfoliosByLegUpdatedBlockIdAndToIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockPortfoliosByPortfolioMovementCreatedBlockIdAndFromIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6693,6 +6977,7 @@ export type BlockPortfoliosByPortfolioMovementCreatedBlockIdAndFromIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockPortfoliosByPortfolioMovementCreatedBlockIdAndToIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6703,6 +6988,7 @@ export type BlockPortfoliosByPortfolioMovementCreatedBlockIdAndToIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockPortfoliosByPortfolioMovementUpdatedBlockIdAndFromIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6713,6 +6999,7 @@ export type BlockPortfoliosByPortfolioMovementUpdatedBlockIdAndFromIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockPortfoliosByPortfolioMovementUpdatedBlockIdAndToIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6723,6 +7010,7 @@ export type BlockPortfoliosByPortfolioMovementUpdatedBlockIdAndToIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockPortfoliosByStoCreatedBlockIdAndOfferingPortfolioIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6733,6 +7021,7 @@ export type BlockPortfoliosByStoCreatedBlockIdAndOfferingPortfolioIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockPortfoliosByStoCreatedBlockIdAndRaisingPortfolioIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6743,6 +7032,7 @@ export type BlockPortfoliosByStoCreatedBlockIdAndRaisingPortfolioIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockPortfoliosByStoUpdatedBlockIdAndOfferingPortfolioIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6753,6 +7043,7 @@ export type BlockPortfoliosByStoUpdatedBlockIdAndOfferingPortfolioIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockPortfoliosByStoUpdatedBlockIdAndRaisingPortfolioIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6763,6 +7054,7 @@ export type BlockPortfoliosByStoUpdatedBlockIdAndRaisingPortfolioIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockPortfoliosByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6773,6 +7065,7 @@ export type BlockPortfoliosByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockProposalVotesByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6783,6 +7076,7 @@ export type BlockProposalVotesByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<ProposalVotesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockProposalVotesByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6793,6 +7087,7 @@ export type BlockProposalVotesByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<ProposalVotesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockProposalsByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6803,6 +7098,7 @@ export type BlockProposalsByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<ProposalsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockProposalsByProposalVoteCreatedBlockIdAndProposalIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6813,6 +7109,7 @@ export type BlockProposalsByProposalVoteCreatedBlockIdAndProposalIdArgs = {
   orderBy?: InputMaybe<Array<ProposalsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockProposalsByProposalVoteUpdatedBlockIdAndProposalIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6823,6 +7120,7 @@ export type BlockProposalsByProposalVoteUpdatedBlockIdAndProposalIdArgs = {
   orderBy?: InputMaybe<Array<ProposalsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockProposalsByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6833,6 +7131,7 @@ export type BlockProposalsByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<ProposalsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockSettlementsByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6843,6 +7142,7 @@ export type BlockSettlementsByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<SettlementsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockSettlementsByLegCreatedBlockIdAndSettlementIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6853,6 +7153,7 @@ export type BlockSettlementsByLegCreatedBlockIdAndSettlementIdArgs = {
   orderBy?: InputMaybe<Array<SettlementsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockSettlementsByLegUpdatedBlockIdAndSettlementIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6863,6 +7164,7 @@ export type BlockSettlementsByLegUpdatedBlockIdAndSettlementIdArgs = {
   orderBy?: InputMaybe<Array<SettlementsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockSettlementsByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6873,6 +7175,7 @@ export type BlockSettlementsByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<SettlementsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockStakingEventsByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6883,6 +7186,7 @@ export type BlockStakingEventsByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<StakingEventsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockStakingEventsByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6893,6 +7197,7 @@ export type BlockStakingEventsByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<StakingEventsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockStatTypesByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6903,6 +7208,7 @@ export type BlockStatTypesByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<StatTypesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockStatTypesByTransferComplianceCreatedBlockIdAndStatTypeIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6913,6 +7219,7 @@ export type BlockStatTypesByTransferComplianceCreatedBlockIdAndStatTypeIdArgs = 
   orderBy?: InputMaybe<Array<StatTypesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockStatTypesByTransferComplianceUpdatedBlockIdAndStatTypeIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6923,6 +7230,7 @@ export type BlockStatTypesByTransferComplianceUpdatedBlockIdAndStatTypeIdArgs = 
   orderBy?: InputMaybe<Array<StatTypesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockStatTypesByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6933,6 +7241,7 @@ export type BlockStatTypesByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<StatTypesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockStosByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6943,6 +7252,7 @@ export type BlockStosByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<StosOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockStosByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6953,6 +7263,7 @@ export type BlockStosByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<StosOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockTickerExternalAgentActionsByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6963,6 +7274,7 @@ export type BlockTickerExternalAgentActionsByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<TickerExternalAgentActionsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockTickerExternalAgentActionsByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6973,6 +7285,7 @@ export type BlockTickerExternalAgentActionsByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<TickerExternalAgentActionsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockTickerExternalAgentHistoriesByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6983,6 +7296,7 @@ export type BlockTickerExternalAgentHistoriesByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<TickerExternalAgentHistoriesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockTickerExternalAgentHistoriesByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -6993,6 +7307,7 @@ export type BlockTickerExternalAgentHistoriesByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<TickerExternalAgentHistoriesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockTickerExternalAgentsByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -7003,6 +7318,7 @@ export type BlockTickerExternalAgentsByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<TickerExternalAgentsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockTickerExternalAgentsByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -7013,6 +7329,7 @@ export type BlockTickerExternalAgentsByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<TickerExternalAgentsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockTransferComplianceExemptionsByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -7023,6 +7340,7 @@ export type BlockTransferComplianceExemptionsByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<TransferComplianceExemptionsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockTransferComplianceExemptionsByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -7033,6 +7351,7 @@ export type BlockTransferComplianceExemptionsByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<TransferComplianceExemptionsOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockTransferCompliancesByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -7043,6 +7362,7 @@ export type BlockTransferCompliancesByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<TransferCompliancesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockTransferCompliancesByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -7053,6 +7373,7 @@ export type BlockTransferCompliancesByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<TransferCompliancesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockTransferManagersByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -7063,6 +7384,7 @@ export type BlockTransferManagersByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<TransferManagersOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockTransferManagersByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -7073,6 +7395,7 @@ export type BlockTransferManagersByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<TransferManagersOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockTrustedClaimIssuersByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -7083,6 +7406,7 @@ export type BlockTrustedClaimIssuersByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<TrustedClaimIssuersOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockTrustedClaimIssuersByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -7093,6 +7417,7 @@ export type BlockTrustedClaimIssuersByUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<TrustedClaimIssuersOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockVenuesByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -7103,6 +7428,7 @@ export type BlockVenuesByCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<VenuesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockVenuesByInstructionCreatedBlockIdAndVenueIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -7113,6 +7439,7 @@ export type BlockVenuesByInstructionCreatedBlockIdAndVenueIdArgs = {
   orderBy?: InputMaybe<Array<VenuesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockVenuesByInstructionUpdatedBlockIdAndVenueIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -7123,6 +7450,7 @@ export type BlockVenuesByInstructionUpdatedBlockIdAndVenueIdArgs = {
   orderBy?: InputMaybe<Array<VenuesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockVenuesByStoCreatedBlockIdAndVenueIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -7133,6 +7461,7 @@ export type BlockVenuesByStoCreatedBlockIdAndVenueIdArgs = {
   orderBy?: InputMaybe<Array<VenuesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockVenuesByStoUpdatedBlockIdAndVenueIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -7143,6 +7472,7 @@ export type BlockVenuesByStoUpdatedBlockIdAndVenueIdArgs = {
   orderBy?: InputMaybe<Array<VenuesOrderBy>>;
 };
 
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockVenuesByUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -15719,6 +16049,7 @@ export type BooleanFilter = {
   notIn?: InputMaybe<Array<Scalars['Boolean']>>;
 };
 
+/** Represents `POLY`, the Ethereum based ERC-20 token, being converted to POLYX, the native Polymesh token */
 export type BridgeEvent = Node & {
   __typename?: 'BridgeEvent';
   amount: Scalars['BigFloat'];
@@ -15860,6 +16191,11 @@ export enum BridgeEventsOrderBy {
   UpdatedBlockIdDesc = 'UPDATED_BLOCK_ID_DESC',
 }
 
+/**
+ * A claim made about an Identity. All active identities must have a valid CDD claim, but additional claims can be made.
+ *
+ * e.g. The Identity belongs to an accredited, US citizen
+ */
 export type Claim = Node & {
   __typename?: 'Claim';
   cddId?: Maybe<Scalars['String']>;
@@ -15940,6 +16276,11 @@ export type ClaimFilter = {
   updatedBlockId?: InputMaybe<StringFilter>;
 };
 
+/**
+ * The scope of a claim.
+ *
+ * e.g. `target` is Blocked from owning "TICKER-A" or `target` is an Affiliate of "TICKER-B"
+ */
 export type ClaimScope = Node & {
   __typename?: 'ClaimScope';
   createdAt: Scalars['Datetime'];
@@ -16160,6 +16501,11 @@ export enum ClaimsOrderBy {
   UpdatedBlockIdDesc = 'UPDATED_BLOCK_ID_DESC',
 }
 
+/**
+ * Represents a restriction all investor must comply with for a given Asset
+ *
+ * e.g. All investors must be German citizens
+ */
 export type Compliance = Node & {
   __typename?: 'Compliance';
   /** Reads a single `Asset` that is related to this `Compliance`. */
@@ -16408,6 +16754,7 @@ export enum DebugsOrderBy {
   UpdatedAtDesc = 'UPDATED_AT_DESC',
 }
 
+/** Represents a distribution to the owners of an Asset. e.g. dividend payment */
 export type Distribution = Node & {
   __typename?: 'Distribution';
   amount: Scalars['BigFloat'];
@@ -16448,6 +16795,7 @@ export type Distribution = Node & {
   updatedBlockId: Scalars['String'];
 };
 
+/** Represents a distribution to the owners of an Asset. e.g. dividend payment */
 export type DistributionBlocksByDistributionPaymentDistributionIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -16458,6 +16806,7 @@ export type DistributionBlocksByDistributionPaymentDistributionIdAndCreatedBlock
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a distribution to the owners of an Asset. e.g. dividend payment */
 export type DistributionBlocksByDistributionPaymentDistributionIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -16468,6 +16817,7 @@ export type DistributionBlocksByDistributionPaymentDistributionIdAndUpdatedBlock
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a distribution to the owners of an Asset. e.g. dividend payment */
 export type DistributionDistributionPaymentsArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -16478,6 +16828,7 @@ export type DistributionDistributionPaymentsArgs = {
   orderBy?: InputMaybe<Array<DistributionPaymentsOrderBy>>;
 };
 
+/** Represents a distribution to the owners of an Asset. e.g. dividend payment */
 export type DistributionIdentitiesByDistributionPaymentDistributionIdAndTargetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -16679,6 +17030,7 @@ export type DistributionIdentitiesByDistributionPaymentDistributionIdAndTargetId
     orderBy?: InputMaybe<Array<DistributionPaymentsOrderBy>>;
   };
 
+/** Represents an owner of an asset collecting a distribution e.g. accepting a dividend */
 export type DistributionPayment = Node & {
   __typename?: 'DistributionPayment';
   amount: Scalars['BigFloat'];
@@ -16926,6 +17278,7 @@ export enum DistributionsOrderBy {
   UpdatedBlockIdDesc = 'UPDATED_BLOCK_ID_DESC',
 }
 
+/** Information of a chain state transition on. For most use cases a more specific entity should be queried */
 export type Event = Node & {
   __typename?: 'Event';
   attributes?: Maybe<Scalars['JSON']>;
@@ -17129,6 +17482,11 @@ export enum EventsOrderBy {
   UpdatedAtDesc = 'UPDATED_AT_DESC',
 }
 
+/**
+ * Represents external data included into the chain. Virtually all user actions, as well as runtime operations are extrinsics
+ *
+ * Usually extrinsics are signed. When the block author includes data, e.g. `timestamp.set` then the signature is implied. This is indicated with `signed = 0`
+ */
 export type Extrinsic = Node & {
   __typename?: 'Extrinsic';
   address?: Maybe<Scalars['String']>;
@@ -17395,6 +17753,7 @@ export enum FoundTypesOrderBy {
   UpdatedAtDesc = 'UPDATED_AT_DESC',
 }
 
+/** Represents an investment into an Asset */
 export type Funding = Node & {
   __typename?: 'Funding';
   amount: Scalars['BigFloat'];
@@ -17649,6 +18008,11 @@ export enum IdentitiesOrderBy {
   VenuesByOwnerIdCountDesc = 'VENUES_BY_OWNER_ID_COUNT_DESC',
 }
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type Identity = Node & {
   __typename?: 'Identity';
   /** Reads and enables pagination through a set of `Asset`. */
@@ -17833,6 +18197,11 @@ export type Identity = Node & {
   venuesByStoCreatorIdAndVenueId: IdentityVenuesByStoCreatorIdAndVenueIdManyToManyConnection;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityAssetsByAssetHolderIdentityIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -17843,6 +18212,11 @@ export type IdentityAssetsByAssetHolderIdentityIdAndAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityAssetsByDistributionIdentityIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -17853,6 +18227,11 @@ export type IdentityAssetsByDistributionIdentityIdAndAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityAssetsByOwnerIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -17863,6 +18242,11 @@ export type IdentityAssetsByOwnerIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityAssetsByStatTypeClaimIssuerIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -17873,6 +18257,11 @@ export type IdentityAssetsByStatTypeClaimIssuerIdAndAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityAssetsByStoCreatorIdAndOfferingAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -17883,6 +18272,11 @@ export type IdentityAssetsByStoCreatorIdAndOfferingAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityAssetsByTickerExternalAgentActionCallerIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -17893,6 +18287,11 @@ export type IdentityAssetsByTickerExternalAgentActionCallerIdAndAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityAssetsByTickerExternalAgentCallerIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -17903,6 +18302,11 @@ export type IdentityAssetsByTickerExternalAgentCallerIdAndAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityAssetsByTickerExternalAgentHistoryIdentityIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -17913,6 +18317,11 @@ export type IdentityAssetsByTickerExternalAgentHistoryIdentityIdAndAssetIdArgs =
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityAssetsByTransferComplianceClaimIssuerIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -17923,6 +18332,11 @@ export type IdentityAssetsByTransferComplianceClaimIssuerIdAndAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityAuthorizationsByFromIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -17933,6 +18347,11 @@ export type IdentityAuthorizationsByFromIdArgs = {
   orderBy?: InputMaybe<Array<AuthorizationsOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByAccountIdentityIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -17943,6 +18362,11 @@ export type IdentityBlocksByAccountIdentityIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByAccountIdentityIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -17953,6 +18377,11 @@ export type IdentityBlocksByAccountIdentityIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByAssetHolderIdentityIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -17963,6 +18392,11 @@ export type IdentityBlocksByAssetHolderIdentityIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByAssetHolderIdentityIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -17973,6 +18407,11 @@ export type IdentityBlocksByAssetHolderIdentityIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByAssetOwnerIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -17983,6 +18422,11 @@ export type IdentityBlocksByAssetOwnerIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByAssetOwnerIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -17993,6 +18437,11 @@ export type IdentityBlocksByAssetOwnerIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByAuthorizationFromIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18003,6 +18452,11 @@ export type IdentityBlocksByAuthorizationFromIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByAuthorizationFromIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18013,6 +18467,11 @@ export type IdentityBlocksByAuthorizationFromIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByBridgeEventIdentityIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18023,6 +18482,11 @@ export type IdentityBlocksByBridgeEventIdentityIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByBridgeEventIdentityIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18033,6 +18497,11 @@ export type IdentityBlocksByBridgeEventIdentityIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByClaimIssuerIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18043,6 +18512,11 @@ export type IdentityBlocksByClaimIssuerIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByClaimIssuerIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18053,6 +18527,11 @@ export type IdentityBlocksByClaimIssuerIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByClaimTargetIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18063,6 +18542,11 @@ export type IdentityBlocksByClaimTargetIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByClaimTargetIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18073,6 +18557,11 @@ export type IdentityBlocksByClaimTargetIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByDistributionIdentityIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18083,6 +18572,11 @@ export type IdentityBlocksByDistributionIdentityIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByDistributionIdentityIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18093,6 +18587,11 @@ export type IdentityBlocksByDistributionIdentityIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByDistributionPaymentTargetIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18103,6 +18602,11 @@ export type IdentityBlocksByDistributionPaymentTargetIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByDistributionPaymentTargetIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18113,6 +18617,11 @@ export type IdentityBlocksByDistributionPaymentTargetIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByInvestmentInvestorIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18123,6 +18632,11 @@ export type IdentityBlocksByInvestmentInvestorIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByInvestmentInvestorIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18133,6 +18647,11 @@ export type IdentityBlocksByInvestmentInvestorIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByPortfolioCustodianIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18143,6 +18662,11 @@ export type IdentityBlocksByPortfolioCustodianIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByPortfolioCustodianIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18153,6 +18677,11 @@ export type IdentityBlocksByPortfolioCustodianIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByPortfolioIdentityIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18163,6 +18692,11 @@ export type IdentityBlocksByPortfolioIdentityIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByPortfolioIdentityIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18173,6 +18707,11 @@ export type IdentityBlocksByPortfolioIdentityIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByProposalOwnerIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18183,6 +18722,11 @@ export type IdentityBlocksByProposalOwnerIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByProposalOwnerIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18193,6 +18737,11 @@ export type IdentityBlocksByProposalOwnerIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByStakingEventIdentityIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18203,6 +18752,11 @@ export type IdentityBlocksByStakingEventIdentityIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByStakingEventIdentityIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18213,6 +18767,11 @@ export type IdentityBlocksByStakingEventIdentityIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByStatTypeClaimIssuerIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18223,6 +18782,11 @@ export type IdentityBlocksByStatTypeClaimIssuerIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByStatTypeClaimIssuerIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18233,6 +18797,11 @@ export type IdentityBlocksByStatTypeClaimIssuerIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByStoCreatorIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18243,6 +18812,11 @@ export type IdentityBlocksByStoCreatorIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByStoCreatorIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18253,6 +18827,11 @@ export type IdentityBlocksByStoCreatorIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByTickerExternalAgentActionCallerIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18263,6 +18842,11 @@ export type IdentityBlocksByTickerExternalAgentActionCallerIdAndCreatedBlockIdAr
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByTickerExternalAgentActionCallerIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18273,6 +18857,11 @@ export type IdentityBlocksByTickerExternalAgentActionCallerIdAndUpdatedBlockIdAr
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByTickerExternalAgentCallerIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18283,6 +18872,11 @@ export type IdentityBlocksByTickerExternalAgentCallerIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByTickerExternalAgentCallerIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18293,6 +18887,11 @@ export type IdentityBlocksByTickerExternalAgentCallerIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByTickerExternalAgentHistoryIdentityIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18303,6 +18902,11 @@ export type IdentityBlocksByTickerExternalAgentHistoryIdentityIdAndCreatedBlockI
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByTickerExternalAgentHistoryIdentityIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18313,6 +18917,11 @@ export type IdentityBlocksByTickerExternalAgentHistoryIdentityIdAndUpdatedBlockI
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByTransferComplianceClaimIssuerIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18323,6 +18932,11 @@ export type IdentityBlocksByTransferComplianceClaimIssuerIdAndCreatedBlockIdArgs
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByTransferComplianceClaimIssuerIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18333,6 +18947,11 @@ export type IdentityBlocksByTransferComplianceClaimIssuerIdAndUpdatedBlockIdArgs
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByVenueOwnerIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18343,6 +18962,11 @@ export type IdentityBlocksByVenueOwnerIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBlocksByVenueOwnerIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18353,6 +18977,11 @@ export type IdentityBlocksByVenueOwnerIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityBridgeEventsArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18363,6 +18992,11 @@ export type IdentityBridgeEventsArgs = {
   orderBy?: InputMaybe<Array<BridgeEventsOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityClaimsByIssuerIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18373,6 +19007,11 @@ export type IdentityClaimsByIssuerIdArgs = {
   orderBy?: InputMaybe<Array<ClaimsOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityClaimsByTargetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18383,6 +19022,11 @@ export type IdentityClaimsByTargetIdArgs = {
   orderBy?: InputMaybe<Array<ClaimsOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityDistributionPaymentsByTargetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18393,6 +19037,11 @@ export type IdentityDistributionPaymentsByTargetIdArgs = {
   orderBy?: InputMaybe<Array<DistributionPaymentsOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityDistributionsArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18403,6 +19052,11 @@ export type IdentityDistributionsArgs = {
   orderBy?: InputMaybe<Array<DistributionsOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityDistributionsByDistributionPaymentTargetIdAndDistributionIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18413,6 +19067,11 @@ export type IdentityDistributionsByDistributionPaymentTargetIdAndDistributionIdA
   orderBy?: InputMaybe<Array<DistributionsOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityHeldAssetsArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18423,6 +19082,11 @@ export type IdentityHeldAssetsArgs = {
   orderBy?: InputMaybe<Array<AssetHoldersOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityIdentitiesByClaimIssuerIdAndTargetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18433,6 +19097,11 @@ export type IdentityIdentitiesByClaimIssuerIdAndTargetIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityIdentitiesByClaimTargetIdAndIssuerIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18443,6 +19112,11 @@ export type IdentityIdentitiesByClaimTargetIdAndIssuerIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityIdentitiesByPortfolioCustodianIdAndIdentityIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18453,6 +19127,11 @@ export type IdentityIdentitiesByPortfolioCustodianIdAndIdentityIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityIdentitiesByPortfolioIdentityIdAndCustodianIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18463,6 +19142,11 @@ export type IdentityIdentitiesByPortfolioIdentityIdAndCustodianIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityInvestmentsByInvestorIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18473,6 +19157,11 @@ export type IdentityInvestmentsByInvestorIdArgs = {
   orderBy?: InputMaybe<Array<InvestmentsOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityPermissionsByAccountIdentityIdAndPermissionsIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18483,6 +19172,11 @@ export type IdentityPermissionsByAccountIdentityIdAndPermissionsIdArgs = {
   orderBy?: InputMaybe<Array<PermissionsOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityPortfoliosArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18493,6 +19187,11 @@ export type IdentityPortfoliosArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityPortfoliosByCustodianIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18503,6 +19202,11 @@ export type IdentityPortfoliosByCustodianIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityPortfoliosByDistributionIdentityIdAndPortfolioIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18513,6 +19217,11 @@ export type IdentityPortfoliosByDistributionIdentityIdAndPortfolioIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityPortfoliosByStoCreatorIdAndOfferingPortfolioIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18523,6 +19232,11 @@ export type IdentityPortfoliosByStoCreatorIdAndOfferingPortfolioIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityPortfoliosByStoCreatorIdAndRaisingPortfolioIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18533,6 +19247,11 @@ export type IdentityPortfoliosByStoCreatorIdAndRaisingPortfolioIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityProposalsByOwnerIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18543,6 +19262,11 @@ export type IdentityProposalsByOwnerIdArgs = {
   orderBy?: InputMaybe<Array<ProposalsOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentitySecondaryAccountsArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18553,6 +19277,11 @@ export type IdentitySecondaryAccountsArgs = {
   orderBy?: InputMaybe<Array<AccountsOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityStakingEventsArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18563,6 +19292,11 @@ export type IdentityStakingEventsArgs = {
   orderBy?: InputMaybe<Array<StakingEventsOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityStatTypesByClaimIssuerIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18573,6 +19307,11 @@ export type IdentityStatTypesByClaimIssuerIdArgs = {
   orderBy?: InputMaybe<Array<StatTypesOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityStatTypesByTransferComplianceClaimIssuerIdAndStatTypeIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18583,6 +19322,11 @@ export type IdentityStatTypesByTransferComplianceClaimIssuerIdAndStatTypeIdArgs 
   orderBy?: InputMaybe<Array<StatTypesOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityStosByCreatorIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18593,6 +19337,11 @@ export type IdentityStosByCreatorIdArgs = {
   orderBy?: InputMaybe<Array<StosOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityTickerExternalAgentActionsByCallerIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18603,6 +19352,11 @@ export type IdentityTickerExternalAgentActionsByCallerIdArgs = {
   orderBy?: InputMaybe<Array<TickerExternalAgentActionsOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityTickerExternalAgentHistoriesArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18613,6 +19367,11 @@ export type IdentityTickerExternalAgentHistoriesArgs = {
   orderBy?: InputMaybe<Array<TickerExternalAgentHistoriesOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityTickerExternalAgentsByCallerIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18623,6 +19382,11 @@ export type IdentityTickerExternalAgentsByCallerIdArgs = {
   orderBy?: InputMaybe<Array<TickerExternalAgentsOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityTransferCompliancesByClaimIssuerIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18633,6 +19397,11 @@ export type IdentityTransferCompliancesByClaimIssuerIdArgs = {
   orderBy?: InputMaybe<Array<TransferCompliancesOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityVenuesByOwnerIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -18643,6 +19412,11 @@ export type IdentityVenuesByOwnerIdArgs = {
   orderBy?: InputMaybe<Array<VenuesOrderBy>>;
 };
 
+/**
+ * Represents a person or business on chain. All Polymesh assets belong to an Identity. A single Identity can have many accounts (i.e. "keys")
+ *
+ * An Identity needs a valid CDD claim from at least one KYC/KYB provider to perform most actions on chain
+ */
 export type IdentityVenuesByStoCreatorIdAndVenueIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -21550,6 +22324,11 @@ export type IdentityVenuesByStoCreatorIdAndVenueIdManyToManyEdgeStosArgs = {
   orderBy?: InputMaybe<Array<StosOrderBy>>;
 };
 
+/**
+ * Represents a request to exchange Assets between parties.
+ *
+ * Before an Instruction is executed all involved parties must sign and submit an affirmation. Once an Instruction is affirmed it will then be attempted to be executed. If any party fails to satisfy any compliance or transfer restriction the Instruction will fail, and no movement of assets will occur.
+ */
 export type Instruction = Node & {
   __typename?: 'Instruction';
   /** Reads and enables pagination through a set of `Block`. */
@@ -21588,6 +22367,11 @@ export type Instruction = Node & {
   venueId: Scalars['String'];
 };
 
+/**
+ * Represents a request to exchange Assets between parties.
+ *
+ * Before an Instruction is executed all involved parties must sign and submit an affirmation. Once an Instruction is affirmed it will then be attempted to be executed. If any party fails to satisfy any compliance or transfer restriction the Instruction will fail, and no movement of assets will occur.
+ */
 export type InstructionBlocksByLegInstructionIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -21598,6 +22382,11 @@ export type InstructionBlocksByLegInstructionIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a request to exchange Assets between parties.
+ *
+ * Before an Instruction is executed all involved parties must sign and submit an affirmation. Once an Instruction is affirmed it will then be attempted to be executed. If any party fails to satisfy any compliance or transfer restriction the Instruction will fail, and no movement of assets will occur.
+ */
 export type InstructionBlocksByLegInstructionIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -21608,6 +22397,11 @@ export type InstructionBlocksByLegInstructionIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a request to exchange Assets between parties.
+ *
+ * Before an Instruction is executed all involved parties must sign and submit an affirmation. Once an Instruction is affirmed it will then be attempted to be executed. If any party fails to satisfy any compliance or transfer restriction the Instruction will fail, and no movement of assets will occur.
+ */
 export type InstructionLegsArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -21618,6 +22412,11 @@ export type InstructionLegsArgs = {
   orderBy?: InputMaybe<Array<LegsOrderBy>>;
 };
 
+/**
+ * Represents a request to exchange Assets between parties.
+ *
+ * Before an Instruction is executed all involved parties must sign and submit an affirmation. Once an Instruction is affirmed it will then be attempted to be executed. If any party fails to satisfy any compliance or transfer restriction the Instruction will fail, and no movement of assets will occur.
+ */
 export type InstructionPortfoliosByLegInstructionIdAndFromIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -21628,6 +22427,11 @@ export type InstructionPortfoliosByLegInstructionIdAndFromIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/**
+ * Represents a request to exchange Assets between parties.
+ *
+ * Before an Instruction is executed all involved parties must sign and submit an affirmation. Once an Instruction is affirmed it will then be attempted to be executed. If any party fails to satisfy any compliance or transfer restriction the Instruction will fail, and no movement of assets will occur.
+ */
 export type InstructionPortfoliosByLegInstructionIdAndToIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -21638,6 +22442,11 @@ export type InstructionPortfoliosByLegInstructionIdAndToIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/**
+ * Represents a request to exchange Assets between parties.
+ *
+ * Before an Instruction is executed all involved parties must sign and submit an affirmation. Once an Instruction is affirmed it will then be attempted to be executed. If any party fails to satisfy any compliance or transfer restriction the Instruction will fail, and no movement of assets will occur.
+ */
 export type InstructionSettlementsByLegInstructionIdAndSettlementIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -22041,6 +22850,7 @@ export type IntFilter = {
   notIn?: InputMaybe<Array<Scalars['Int']>>;
 };
 
+/** Represents participation in an STO */
 export type Investment = Node & {
   __typename?: 'Investment';
   createdAt: Scalars['Datetime'];
@@ -22224,6 +23034,7 @@ export type JsonFilter = {
   notIn?: InputMaybe<Array<Scalars['JSON']>>;
 };
 
+/** Represents the movement of a single Asset in a trade, e.g. Alice will give Bob 1 USDS */
 export type Leg = Node & {
   __typename?: 'Leg';
   addresses: Scalars['JSON'];
@@ -22396,6 +23207,7 @@ export type PageInfo = {
   startCursor?: Maybe<Scalars['Cursor']>;
 };
 
+/** Represents an Account's permissions. The primary key for an Identity always has full permission */
 export type Permission = Node & {
   __typename?: 'Permission';
   /** Reads and enables pagination through a set of `Account`. */
@@ -22424,6 +23236,7 @@ export type Permission = Node & {
   updatedBlockId: Scalars['String'];
 };
 
+/** Represents an Account's permissions. The primary key for an Identity always has full permission */
 export type PermissionAccountsByPermissionsIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -22434,6 +23247,7 @@ export type PermissionAccountsByPermissionsIdArgs = {
   orderBy?: InputMaybe<Array<AccountsOrderBy>>;
 };
 
+/** Represents an Account's permissions. The primary key for an Identity always has full permission */
 export type PermissionBlocksByAccountPermissionsIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -22444,6 +23258,7 @@ export type PermissionBlocksByAccountPermissionsIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents an Account's permissions. The primary key for an Identity always has full permission */
 export type PermissionBlocksByAccountPermissionsIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -22454,6 +23269,7 @@ export type PermissionBlocksByAccountPermissionsIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents an Account's permissions. The primary key for an Identity always has full permission */
 export type PermissionIdentitiesByAccountPermissionsIdAndIdentityIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -22720,6 +23536,11 @@ export enum PermissionsOrderBy {
   UpdatedBlockIdDesc = 'UPDATED_BLOCK_ID_DESC',
 }
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type Portfolio = Node & {
   __typename?: 'Portfolio';
   /** Reads and enables pagination through a set of `Asset`. */
@@ -22827,6 +23648,11 @@ export type Portfolio = Node & {
   venuesByStoRaisingPortfolioIdAndVenueId: PortfolioVenuesByStoRaisingPortfolioIdAndVenueIdManyToManyConnection;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioAssetsByDistributionPortfolioIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -22837,6 +23663,11 @@ export type PortfolioAssetsByDistributionPortfolioIdAndAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioAssetsByPortfolioMovementFromIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -22847,6 +23678,11 @@ export type PortfolioAssetsByPortfolioMovementFromIdAndAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioAssetsByPortfolioMovementToIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -22857,6 +23693,11 @@ export type PortfolioAssetsByPortfolioMovementToIdAndAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioAssetsByStoOfferingPortfolioIdAndOfferingAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -22867,6 +23708,11 @@ export type PortfolioAssetsByStoOfferingPortfolioIdAndOfferingAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioAssetsByStoRaisingPortfolioIdAndOfferingAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -22877,6 +23723,11 @@ export type PortfolioAssetsByStoRaisingPortfolioIdAndOfferingAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioBlocksByDistributionPortfolioIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -22887,6 +23738,11 @@ export type PortfolioBlocksByDistributionPortfolioIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioBlocksByDistributionPortfolioIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -22897,6 +23753,11 @@ export type PortfolioBlocksByDistributionPortfolioIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioBlocksByLegFromIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -22907,6 +23768,11 @@ export type PortfolioBlocksByLegFromIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioBlocksByLegFromIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -22917,6 +23783,11 @@ export type PortfolioBlocksByLegFromIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioBlocksByLegToIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -22927,6 +23798,11 @@ export type PortfolioBlocksByLegToIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioBlocksByLegToIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -22937,6 +23813,11 @@ export type PortfolioBlocksByLegToIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioBlocksByPortfolioMovementFromIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -22947,6 +23828,11 @@ export type PortfolioBlocksByPortfolioMovementFromIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioBlocksByPortfolioMovementFromIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -22957,6 +23843,11 @@ export type PortfolioBlocksByPortfolioMovementFromIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioBlocksByPortfolioMovementToIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -22967,6 +23858,11 @@ export type PortfolioBlocksByPortfolioMovementToIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioBlocksByPortfolioMovementToIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -22977,6 +23873,11 @@ export type PortfolioBlocksByPortfolioMovementToIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioBlocksByStoOfferingPortfolioIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -22987,6 +23888,11 @@ export type PortfolioBlocksByStoOfferingPortfolioIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioBlocksByStoOfferingPortfolioIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -22997,6 +23903,11 @@ export type PortfolioBlocksByStoOfferingPortfolioIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioBlocksByStoRaisingPortfolioIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -23007,6 +23918,11 @@ export type PortfolioBlocksByStoRaisingPortfolioIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioBlocksByStoRaisingPortfolioIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -23017,6 +23933,11 @@ export type PortfolioBlocksByStoRaisingPortfolioIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioDistributionsArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -23027,6 +23948,11 @@ export type PortfolioDistributionsArgs = {
   orderBy?: InputMaybe<Array<DistributionsOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioIdentitiesByDistributionPortfolioIdAndIdentityIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -23037,6 +23963,11 @@ export type PortfolioIdentitiesByDistributionPortfolioIdAndIdentityIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioIdentitiesByStoOfferingPortfolioIdAndCreatorIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -23047,6 +23978,11 @@ export type PortfolioIdentitiesByStoOfferingPortfolioIdAndCreatorIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioIdentitiesByStoRaisingPortfolioIdAndCreatorIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -23057,6 +23993,11 @@ export type PortfolioIdentitiesByStoRaisingPortfolioIdAndCreatorIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioInstructionsByLegFromIdAndInstructionIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -23067,6 +24008,11 @@ export type PortfolioInstructionsByLegFromIdAndInstructionIdArgs = {
   orderBy?: InputMaybe<Array<InstructionsOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioInstructionsByLegToIdAndInstructionIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -23077,6 +24023,11 @@ export type PortfolioInstructionsByLegToIdAndInstructionIdArgs = {
   orderBy?: InputMaybe<Array<InstructionsOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioLegsByFromIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -23087,6 +24038,11 @@ export type PortfolioLegsByFromIdArgs = {
   orderBy?: InputMaybe<Array<LegsOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioLegsByToIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -23097,6 +24053,11 @@ export type PortfolioLegsByToIdArgs = {
   orderBy?: InputMaybe<Array<LegsOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioPortfolioMovementsByFromIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -23107,6 +24068,11 @@ export type PortfolioPortfolioMovementsByFromIdArgs = {
   orderBy?: InputMaybe<Array<PortfolioMovementsOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioPortfolioMovementsByToIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -23117,6 +24083,11 @@ export type PortfolioPortfolioMovementsByToIdArgs = {
   orderBy?: InputMaybe<Array<PortfolioMovementsOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioPortfoliosByLegFromIdAndToIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -23127,6 +24098,11 @@ export type PortfolioPortfoliosByLegFromIdAndToIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioPortfoliosByLegToIdAndFromIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -23137,6 +24113,11 @@ export type PortfolioPortfoliosByLegToIdAndFromIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioPortfoliosByPortfolioMovementFromIdAndToIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -23147,6 +24128,11 @@ export type PortfolioPortfoliosByPortfolioMovementFromIdAndToIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioPortfoliosByPortfolioMovementToIdAndFromIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -23157,6 +24143,11 @@ export type PortfolioPortfoliosByPortfolioMovementToIdAndFromIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioPortfoliosByStoOfferingPortfolioIdAndRaisingPortfolioIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -23167,6 +24158,11 @@ export type PortfolioPortfoliosByStoOfferingPortfolioIdAndRaisingPortfolioIdArgs
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioPortfoliosByStoRaisingPortfolioIdAndOfferingPortfolioIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -23177,6 +24173,11 @@ export type PortfolioPortfoliosByStoRaisingPortfolioIdAndOfferingPortfolioIdArgs
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioSettlementsByLegFromIdAndSettlementIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -23187,6 +24188,11 @@ export type PortfolioSettlementsByLegFromIdAndSettlementIdArgs = {
   orderBy?: InputMaybe<Array<SettlementsOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioSettlementsByLegToIdAndSettlementIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -23197,6 +24203,11 @@ export type PortfolioSettlementsByLegToIdAndSettlementIdArgs = {
   orderBy?: InputMaybe<Array<SettlementsOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioStosByOfferingPortfolioIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -23207,6 +24218,11 @@ export type PortfolioStosByOfferingPortfolioIdArgs = {
   orderBy?: InputMaybe<Array<StosOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioStosByRaisingPortfolioIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -23217,6 +24233,11 @@ export type PortfolioStosByRaisingPortfolioIdArgs = {
   orderBy?: InputMaybe<Array<StosOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioVenuesByStoOfferingPortfolioIdAndVenueIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -23227,6 +24248,11 @@ export type PortfolioVenuesByStoOfferingPortfolioIdAndVenueIdArgs = {
   orderBy?: InputMaybe<Array<VenuesOrderBy>>;
 };
 
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioVenuesByStoRaisingPortfolioIdAndVenueIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -24390,6 +25416,11 @@ export type PortfolioInstructionsByLegToIdAndInstructionIdManyToManyEdgeLegsArgs
   orderBy?: InputMaybe<Array<LegsOrderBy>>;
 };
 
+/**
+ * Represents a transfer of Assets between a single identities portfolios.
+ *
+ * Note: transfers between identities are known as `Settlements`
+ */
 export type PortfolioMovement = Node & {
   __typename?: 'PortfolioMovement';
   address: Scalars['String'];
@@ -25092,6 +26123,7 @@ export enum PortfoliosOrderBy {
   UpdatedBlockIdDesc = 'UPDATED_BLOCK_ID_DESC',
 }
 
+/** Represents a potential change to how the chain will operate. It will need gain sufficient "Aye" votes before having effect */
 export type Proposal = Node & {
   __typename?: 'Proposal';
   balance: Scalars['BigFloat'];
@@ -25124,6 +26156,7 @@ export type Proposal = Node & {
   votes: ProposalVotesConnection;
 };
 
+/** Represents a potential change to how the chain will operate. It will need gain sufficient "Aye" votes before having effect */
 export type ProposalBlocksByProposalVoteProposalIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -25134,6 +26167,7 @@ export type ProposalBlocksByProposalVoteProposalIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a potential change to how the chain will operate. It will need gain sufficient "Aye" votes before having effect */
 export type ProposalBlocksByProposalVoteProposalIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -25144,6 +26178,7 @@ export type ProposalBlocksByProposalVoteProposalIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a potential change to how the chain will operate. It will need gain sufficient "Aye" votes before having effect */
 export type ProposalVotesArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -25291,6 +26326,7 @@ export type ProposalFilter = {
   url?: InputMaybe<StringFilter>;
 };
 
+/** Represents a vote on a governance proposal */
 export type ProposalVote = Node & {
   __typename?: 'ProposalVote';
   account: Scalars['String'];
@@ -25512,7 +26548,9 @@ export enum ProposalsOrderBy {
   VotesCountDesc = 'VOTES_COUNT_DESC',
 }
 
-/** @enum\n@enumName SettlementResultEnum */
+/** @enum
+ * @enumName SettlementResultEnum
+ *  Represents all possible states of a Settlement */
 export enum PublicEnum05F6462Eea {
   Executed = 'Executed',
   Failed = 'Failed',
@@ -25546,7 +26584,9 @@ export type PublicEnum05F6462EeaFilter = {
   notIn?: InputMaybe<Array<PublicEnum05F6462Eea>>;
 };
 
-/** @enum\n@enumName StatOpTypeEnum */
+/** @enum
+ * @enumName StatOpTypeEnum
+ *  Represents all known stat types */
 export enum PublicEnum040F13614F {
   Balance = 'Balance',
   Count = 'Count',
@@ -25578,7 +26618,9 @@ export type PublicEnum040F13614FFilter = {
   notIn?: InputMaybe<Array<PublicEnum040F13614F>>;
 };
 
-/** @enum\n@enumName CallIdEnum */
+/** @enum
+ * @enumName CallIdEnum
+ *  Represents all known chain extrinsics */
 export enum PublicEnum0Bf3C7D4Ef {
   Abdicate = 'abdicate',
   AbdicateMembership = 'abdicate_membership',
@@ -25663,6 +26705,7 @@ export enum PublicEnum0Bf3C7D4Ef {
   BurnAccountBalance = 'burn_account_balance',
   BuyTokens = 'buy_tokens',
   Call = 'call',
+  CallOldWeight = 'call_old_weight',
   Cancel = 'cancel',
   CancelBallot = 'cancel_ballot',
   CancelDeferredSlash = 'cancel_deferred_slash',
@@ -25733,6 +26776,7 @@ export enum PublicEnum0Bf3C7D4Ef {
   EnactSnapshotResults = 'enact_snapshot_results',
   ExecuteManualInstruction = 'execute_manual_instruction',
   ExecuteScheduledInstruction = 'execute_scheduled_instruction',
+  ExecuteScheduledInstructionV2 = 'execute_scheduled_instruction_v2',
   ExecuteScheduledPip = 'execute_scheduled_pip',
   ExecuteScheduledProposal = 'execute_scheduled_proposal',
   ExpireScheduledPip = 'expire_scheduled_pip',
@@ -25767,7 +26811,9 @@ export enum PublicEnum0Bf3C7D4Ef {
   InitiateCorporateAction = 'initiate_corporate_action',
   InitiateCorporateActionAndDistribute = 'initiate_corporate_action_and_distribute',
   Instantiate = 'instantiate',
+  InstantiateOldWeight = 'instantiate_old_weight',
   InstantiateWithCode = 'instantiate_with_code',
+  InstantiateWithCodeOldWeight = 'instantiate_with_code_old_weight',
   InstantiateWithCodePerms = 'instantiate_with_code_perms',
   InstantiateWithHashPerms = 'instantiate_with_hash_perms',
   InvalidateCddClaims = 'invalidate_cdd_claims',
@@ -25805,6 +26851,7 @@ export enum PublicEnum0Bf3C7D4Ef {
   PayoutStakers = 'payout_stakers',
   PayoutStakersBySystem = 'payout_stakers_by_system',
   PlaceholderClaimReceipt = 'placeholder_claim_receipt',
+  PlaceholderFillBlock = 'placeholder_fill_block',
   PlaceholderLegacySetPermissionToSigner = 'placeholder_legacy_set_permission_to_signer',
   PlaceholderUnclaimReceipt = 'placeholder_unclaim_receipt',
   PlanConfigChange = 'plan_config_change',
@@ -26002,7 +27049,9 @@ export type PublicEnum0Bf3C7D4EfFilter = {
   notIn?: InputMaybe<Array<PublicEnum0Bf3C7D4Ef>>;
 };
 
-/** @enum\n@enumName ProposalStateEnum */
+/** @enum
+ * @enumName ProposalStateEnum
+ *  Represents all possible Proposal statuses */
 export enum PublicEnum6E6395Eda7 {
   All = 'All',
   Executed = 'Executed',
@@ -26039,7 +27088,9 @@ export type PublicEnum6E6395Eda7Filter = {
   notIn?: InputMaybe<Array<PublicEnum6E6395Eda7>>;
 };
 
-/** @enum\n@enumName ModuleIdEnum */
+/** @enum
+ * @enumName ModuleIdEnum
+ *  Represents all known chain "pallets" */
 export enum PublicEnum7A0B4Cc03E {
   Asset = 'asset',
   Authoritydiscovery = 'authoritydiscovery',
@@ -26125,7 +27176,9 @@ export type PublicEnum7A0B4Cc03EFilter = {
   notIn?: InputMaybe<Array<PublicEnum7A0B4Cc03E>>;
 };
 
-/** @enum\n@enumName EventIdEnum */
+/** @enum
+ * @enumName EventIdEnum
+ *  Events are emitted when chain state is changed. This enum represents all known events */
 export enum PublicEnum8F5A39C8Ee {
   AcceptedPayingKey = 'AcceptedPayingKey',
   AccountBalanceBurned = 'AccountBalanceBurned',
@@ -26181,6 +27234,8 @@ export enum PublicEnum8F5A39C8Ee {
   CaLinkedToDoc = 'CALinkedToDoc',
   CaRemoved = 'CARemoved',
   CallLookupFailed = 'CallLookupFailed',
+  CallUnavailable = 'CallUnavailable',
+  Called = 'Called',
   Canceled = 'Canceled',
   CddClaimsInvalidated = 'CddClaimsInvalidated',
   CddRequirementForMasterKeyUpdated = 'CddRequirementForMasterKeyUpdated',
@@ -26215,6 +27270,7 @@ export enum PublicEnum8F5A39C8Ee {
   DefaultEnactmentPeriodChanged = 'DefaultEnactmentPeriodChanged',
   DefaultTargetIdentitiesChanged = 'DefaultTargetIdentitiesChanged',
   DefaultWithholdingTaxChanged = 'DefaultWithholdingTaxChanged',
+  DelegateCalled = 'DelegateCalled',
   DidCreated = 'DidCreated',
   DidStatus = 'DidStatus',
   DidWithholdingTaxChanged = 'DidWithholdingTaxChanged',
@@ -26298,6 +27354,7 @@ export enum PublicEnum8F5A39C8Ee {
   KeyChanged = 'KeyChanged',
   KilledAccount = 'KilledAccount',
   LegFailedExecution = 'LegFailedExecution',
+  LocalMetadataKeyDeleted = 'LocalMetadataKeyDeleted',
   MasterKeyUpdated = 'MasterKeyUpdated',
   MaxDetailsLengthChanged = 'MaxDetailsLengthChanged',
   MaxPipSkipCountChanged = 'MaxPipSkipCountChanged',
@@ -26308,6 +27365,7 @@ export enum PublicEnum8F5A39C8Ee {
   MembersReset = 'MembersReset',
   MembersSwapped = 'MembersSwapped',
   MetaChanged = 'MetaChanged',
+  MetadataValueDeleted = 'MetadataValueDeleted',
   MinimumBondThresholdUpdated = 'MinimumBondThresholdUpdated',
   MinimumProposalDepositChanged = 'MinimumProposalDepositChanged',
   MockInvestorUidCreated = 'MockInvestorUIDCreated',
@@ -26330,6 +27388,8 @@ export enum PublicEnum8F5A39C8Ee {
   OldSlashingReportDiscarded = 'OldSlashingReportDiscarded',
   Paused = 'Paused',
   PendingPipExpiryChanged = 'PendingPipExpiryChanged',
+  PeriodicFailed = 'PeriodicFailed',
+  PermanentlyOverweight = 'PermanentlyOverweight',
   PermissionedIdentityAdded = 'PermissionedIdentityAdded',
   PermissionedIdentityRemoved = 'PermissionedIdentityRemoved',
   PermissionedValidatorAdded = 'PermissionedValidatorAdded',
@@ -26337,6 +27397,7 @@ export enum PublicEnum8F5A39C8Ee {
   PermissionedValidatorStatusChanged = 'PermissionedValidatorStatusChanged',
   PipClosed = 'PipClosed',
   PipSkipped = 'PipSkipped',
+  PlaceholderFillBlock = 'PlaceholderFillBlock',
   PortfolioCreated = 'PortfolioCreated',
   PortfolioCustodianChanged = 'PortfolioCustodianChanged',
   PortfolioDeleted = 'PortfolioDeleted',
@@ -26431,6 +27492,7 @@ export enum PublicEnum8F5A39C8Ee {
   TickerRegistered = 'TickerRegistered',
   TickerTransferred = 'TickerTransferred',
   TimelockChanged = 'TimelockChanged',
+  TransactionFeePaid = 'TransactionFeePaid',
   Transfer = 'Transfer',
   TransferConditionExemptionsAdded = 'TransferConditionExemptionsAdded',
   TransferConditionExemptionsRemoved = 'TransferConditionExemptionsRemoved',
@@ -26496,7 +27558,9 @@ export type PublicEnum8F5A39C8EeFilter = {
   notIn?: InputMaybe<Array<PublicEnum8F5A39C8Ee>>;
 };
 
-/** @enum\n@enumName StoStatus */
+/** @enum
+ * @enumName StoStatus
+ *  Represents all possible statuses for a STO */
 export enum PublicEnum9Ceea16A44 {
   Closed = 'Closed',
   ClosedEarly = 'ClosedEarly',
@@ -26530,7 +27594,9 @@ export type PublicEnum9Ceea16A44Filter = {
   notIn?: InputMaybe<Array<PublicEnum9Ceea16A44>>;
 };
 
-/** @enum\n@enumName TransferComplianceTypeEnum */
+/** @enum
+ * @enumName TransferComplianceTypeEnum
+ *  Represents all possible transfer restriction rules that can be enabled */
 export enum PublicEnum71Afee1504 {
   ClaimCount = 'ClaimCount',
   ClaimOwnership = 'ClaimOwnership',
@@ -26564,7 +27630,9 @@ export type PublicEnum71Afee1504Filter = {
   notIn?: InputMaybe<Array<PublicEnum71Afee1504>>;
 };
 
-/** @enum\n@enumName TransferRestrictionTypeEnum */
+/** @enum
+ * @enumName TransferRestrictionTypeEnum
+ *  Represents all possible transfer restriction types */
 export enum PublicEnum72Fc336Bfe {
   Count = 'Count',
   Percentage = 'Percentage',
@@ -26596,7 +27664,9 @@ export type PublicEnum72Fc336BfeFilter = {
   notIn?: InputMaybe<Array<PublicEnum72Fc336Bfe>>;
 };
 
-/** @enum\n@enumName AuthorizationStatusEnum */
+/** @enum
+ * @enumName AuthorizationStatusEnum
+ *  Represents all possible authorization statuses */
 export enum PublicEnum31117E090D {
   Consumed = 'Consumed',
   Pending = 'Pending',
@@ -26630,7 +27700,9 @@ export type PublicEnum31117E090DFilter = {
   notIn?: InputMaybe<Array<PublicEnum31117E090D>>;
 };
 
-/** @enum\n@enumName InstructionStatusEnum */
+/** @enum
+ * @enumName InstructionStatusEnum
+ *  Represents all possible states of an Instruction */
 export enum PublicEnumB861Be9158 {
   Created = 'Created',
   Executed = 'Executed',
@@ -26664,7 +27736,9 @@ export type PublicEnumB861Be9158Filter = {
   notIn?: InputMaybe<Array<PublicEnumB861Be9158>>;
 };
 
-/** @enum\n@enumName AuthTypeEnum */
+/** @enum
+ * @enumName AuthTypeEnum
+ *  Represents all possible authorization types */
 export enum PublicEnumCf84Da6Fd1 {
   AddMultiSigSigner = 'AddMultiSigSigner',
   AddRelayerPayingKey = 'AddRelayerPayingKey',
@@ -26707,7 +27781,9 @@ export type PublicEnumCf84Da6Fd1Filter = {
   notIn?: InputMaybe<Array<PublicEnumCf84Da6Fd1>>;
 };
 
-/** @enum\n@enumName ClaimTypeEnum */
+/** @enum
+ * @enumName ClaimTypeEnum
+ *  Represents all possible claims that can be made of an identity */
 export enum PublicEnumEc3243D777 {
   Accredited = 'Accredited',
   Affiliate = 'Affiliate',
@@ -27862,6 +28938,7 @@ export type QueryVenuesArgs = {
   orderBy?: InputMaybe<Array<VenuesOrderBy>>;
 };
 
+/** Represents a trade of assets between parties */
 export type Settlement = Node & {
   __typename?: 'Settlement';
   /** Reads and enables pagination through a set of `Block`. */
@@ -27890,6 +28967,7 @@ export type Settlement = Node & {
   updatedBlockId: Scalars['String'];
 };
 
+/** Represents a trade of assets between parties */
 export type SettlementBlocksByLegSettlementIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -27900,6 +28978,7 @@ export type SettlementBlocksByLegSettlementIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a trade of assets between parties */
 export type SettlementBlocksByLegSettlementIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -27910,6 +28989,7 @@ export type SettlementBlocksByLegSettlementIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/** Represents a trade of assets between parties */
 export type SettlementInstructionsByLegSettlementIdAndInstructionIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -27920,6 +29000,7 @@ export type SettlementInstructionsByLegSettlementIdAndInstructionIdArgs = {
   orderBy?: InputMaybe<Array<InstructionsOrderBy>>;
 };
 
+/** Represents a trade of assets between parties */
 export type SettlementLegsArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -27930,6 +29011,7 @@ export type SettlementLegsArgs = {
   orderBy?: InputMaybe<Array<LegsOrderBy>>;
 };
 
+/** Represents a trade of assets between parties */
 export type SettlementPortfoliosByLegSettlementIdAndFromIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -27940,6 +29022,7 @@ export type SettlementPortfoliosByLegSettlementIdAndFromIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/** Represents a trade of assets between parties */
 export type SettlementPortfoliosByLegSettlementIdAndToIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -28277,6 +29360,7 @@ export enum SettlementsOrderBy {
   UpdatedBlockIdDesc = 'UPDATED_BLOCK_ID_DESC',
 }
 
+/** Represents a change in staking status */
 export type StakingEvent = Node & {
   __typename?: 'StakingEvent';
   amount?: Maybe<Scalars['BigFloat']>;
@@ -28424,6 +29508,13 @@ export enum StakingEventsOrderBy {
   UpdatedBlockIdDesc = 'UPDATED_BLOCK_ID_DESC',
 }
 
+/**
+ * Represents an on chain statistic about the Asset owners. e.g. How many investors hold the Asset
+ *
+ * These are required to be enabled in order for the chain to enforce transfer restrictions
+ *
+ * e.g. A restriction requiring ownership to be at least 50% Canadian would require a StatType of type `Balance` scoped to Jurisdiction before being created
+ */
 export type StatType = Node & {
   __typename?: 'StatType';
   /** Reads a single `Asset` that is related to this `StatType`. */
@@ -28457,6 +29548,13 @@ export type StatType = Node & {
   updatedBlockId: Scalars['String'];
 };
 
+/**
+ * Represents an on chain statistic about the Asset owners. e.g. How many investors hold the Asset
+ *
+ * These are required to be enabled in order for the chain to enforce transfer restrictions
+ *
+ * e.g. A restriction requiring ownership to be at least 50% Canadian would require a StatType of type `Balance` scoped to Jurisdiction before being created
+ */
 export type StatTypeAssetsByTransferComplianceStatTypeIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -28467,6 +29565,13 @@ export type StatTypeAssetsByTransferComplianceStatTypeIdAndAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/**
+ * Represents an on chain statistic about the Asset owners. e.g. How many investors hold the Asset
+ *
+ * These are required to be enabled in order for the chain to enforce transfer restrictions
+ *
+ * e.g. A restriction requiring ownership to be at least 50% Canadian would require a StatType of type `Balance` scoped to Jurisdiction before being created
+ */
 export type StatTypeBlocksByTransferComplianceStatTypeIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -28477,6 +29582,13 @@ export type StatTypeBlocksByTransferComplianceStatTypeIdAndCreatedBlockIdArgs = 
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents an on chain statistic about the Asset owners. e.g. How many investors hold the Asset
+ *
+ * These are required to be enabled in order for the chain to enforce transfer restrictions
+ *
+ * e.g. A restriction requiring ownership to be at least 50% Canadian would require a StatType of type `Balance` scoped to Jurisdiction before being created
+ */
 export type StatTypeBlocksByTransferComplianceStatTypeIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -28487,6 +29599,13 @@ export type StatTypeBlocksByTransferComplianceStatTypeIdAndUpdatedBlockIdArgs = 
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents an on chain statistic about the Asset owners. e.g. How many investors hold the Asset
+ *
+ * These are required to be enabled in order for the chain to enforce transfer restrictions
+ *
+ * e.g. A restriction requiring ownership to be at least 50% Canadian would require a StatType of type `Balance` scoped to Jurisdiction before being created
+ */
 export type StatTypeIdentitiesByTransferComplianceStatTypeIdAndClaimIssuerIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -28497,6 +29616,13 @@ export type StatTypeIdentitiesByTransferComplianceStatTypeIdAndClaimIssuerIdArgs
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/**
+ * Represents an on chain statistic about the Asset owners. e.g. How many investors hold the Asset
+ *
+ * These are required to be enabled in order for the chain to enforce transfer restrictions
+ *
+ * e.g. A restriction requiring ownership to be at least 50% Canadian would require a StatType of type `Balance` scoped to Jurisdiction before being created
+ */
 export type StatTypeTransferCompliancesArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -28805,6 +29931,7 @@ export enum StatTypesOrderBy {
   UpdatedBlockIdDesc = 'UPDATED_BLOCK_ID_DESC',
 }
 
+/** Securities Token Offering. Represents a fund raising effort from a company. e.g. sale of company equity in exchange for a stable coin */
 export type Sto = Node & {
   __typename?: 'Sto';
   createdAt: Scalars['Datetime'];
@@ -29074,6 +30201,7 @@ export type StringFilter = {
   startsWithInsensitive?: InputMaybe<Scalars['String']>;
 };
 
+/** Represents the deployed version of the node indexing the data */
 export type SubqueryVersion = Node & {
   __typename?: 'SubqueryVersion';
   createdAt: Scalars['Datetime'];
@@ -29173,6 +30301,7 @@ export type TableEstimate = {
   table?: Maybe<Scalars['String']>;
 };
 
+/** Represents an Identity authorized to perform actions on behalf of a company */
 export type TickerExternalAgent = Node & {
   __typename?: 'TickerExternalAgent';
   /** Reads a single `Asset` that is related to this `TickerExternalAgent`. */
@@ -29196,6 +30325,7 @@ export type TickerExternalAgent = Node & {
   updatedBlockId: Scalars['String'];
 };
 
+/** Represents an administrative action on an Asset, e.g. tokens issued, compliance rules updated, document added, etc. */
 export type TickerExternalAgentAction = Node & {
   __typename?: 'TickerExternalAgentAction';
   /** Reads a single `Asset` that is related to this `TickerExternalAgentAction`. */
@@ -29447,6 +30577,11 @@ export enum TickerExternalAgentHistoriesOrderBy {
   UpdatedBlockIdDesc = 'UPDATED_BLOCK_ID_DESC',
 }
 
+/**
+ * Represents a change in the status of an external agent.
+ *
+ * "AgentAdded" and "AgentPermissionsChanged" will have `permissions` field. `AgentRemoved` will have an empty `permissions` value
+ */
 export type TickerExternalAgentHistory = Node & {
   __typename?: 'TickerExternalAgentHistory';
   /** Reads a single `Asset` that is related to this `TickerExternalAgentHistory`. */
@@ -29584,6 +30719,11 @@ export enum TickerExternalAgentsOrderBy {
   UpdatedBlockIdDesc = 'UPDATED_BLOCK_ID_DESC',
 }
 
+/**
+ * Represents restriction that will ensure the composition of ownership remains a certain way
+ *
+ * e.g. No more than 2000 individual investors to avoid additional reporting requirements
+ */
 export type TransferCompliance = Node & {
   __typename?: 'TransferCompliance';
   /** Reads a single `Asset` that is related to this `TransferCompliance`. */
@@ -29619,6 +30759,7 @@ export type TransferComplianceAggregates = {
   keys?: Maybe<Array<Scalars['String']>>;
 };
 
+/** Represents an exemption for an individual for TransferCompliance rules */
 export type TransferComplianceExemption = Node & {
   __typename?: 'TransferComplianceExemption';
   /** Reads a single `Asset` that is related to this `TransferComplianceExemption`. */
@@ -29876,6 +31017,7 @@ export enum TransferCompliancesOrderBy {
   ValueDesc = 'VALUE_DESC',
 }
 
+/** deprecated in favor of `TransferCompliance` */
 export type TransferManager = Node & {
   __typename?: 'TransferManager';
   /** Reads a single `Asset` that is related to this `TransferManager`. */
@@ -30005,6 +31147,11 @@ export enum TransferManagersOrderBy {
   ValueDesc = 'VALUE_DESC',
 }
 
+/**
+ * An claim issuer that is trusted for an Asset.
+ *
+ * Assets relying on on chain compliance should be explicit on which issuers they trust
+ */
 export type TrustedClaimIssuer = Node & {
   __typename?: 'TrustedClaimIssuer';
   /** Reads a single `Asset` that is related to this `TrustedClaimIssuer`. */
@@ -30128,6 +31275,11 @@ export enum TrustedClaimIssuersOrderBy {
   UpdatedBlockIdDesc = 'UPDATED_BLOCK_ID_DESC',
 }
 
+/**
+ * Represents a place to trade assets. This allows for additional mediation and control over the exchange of Assets
+ *
+ * e.g. An asset may specify it can only be exchanged at a particular Venue, allowing the Venue owner to explicitly approve transactions
+ */
 export type Venue = Node & {
   __typename?: 'Venue';
   /** Reads and enables pagination through a set of `Asset`. */
@@ -30168,6 +31320,11 @@ export type Venue = Node & {
   updatedBlockId: Scalars['String'];
 };
 
+/**
+ * Represents a place to trade assets. This allows for additional mediation and control over the exchange of Assets
+ *
+ * e.g. An asset may specify it can only be exchanged at a particular Venue, allowing the Venue owner to explicitly approve transactions
+ */
 export type VenueAssetsByStoVenueIdAndOfferingAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -30178,6 +31335,11 @@ export type VenueAssetsByStoVenueIdAndOfferingAssetIdArgs = {
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
+/**
+ * Represents a place to trade assets. This allows for additional mediation and control over the exchange of Assets
+ *
+ * e.g. An asset may specify it can only be exchanged at a particular Venue, allowing the Venue owner to explicitly approve transactions
+ */
 export type VenueBlocksByInstructionVenueIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -30188,6 +31350,11 @@ export type VenueBlocksByInstructionVenueIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a place to trade assets. This allows for additional mediation and control over the exchange of Assets
+ *
+ * e.g. An asset may specify it can only be exchanged at a particular Venue, allowing the Venue owner to explicitly approve transactions
+ */
 export type VenueBlocksByInstructionVenueIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -30198,6 +31365,11 @@ export type VenueBlocksByInstructionVenueIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a place to trade assets. This allows for additional mediation and control over the exchange of Assets
+ *
+ * e.g. An asset may specify it can only be exchanged at a particular Venue, allowing the Venue owner to explicitly approve transactions
+ */
 export type VenueBlocksByStoVenueIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -30208,6 +31380,11 @@ export type VenueBlocksByStoVenueIdAndCreatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a place to trade assets. This allows for additional mediation and control over the exchange of Assets
+ *
+ * e.g. An asset may specify it can only be exchanged at a particular Venue, allowing the Venue owner to explicitly approve transactions
+ */
 export type VenueBlocksByStoVenueIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -30218,6 +31395,11 @@ export type VenueBlocksByStoVenueIdAndUpdatedBlockIdArgs = {
   orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
+/**
+ * Represents a place to trade assets. This allows for additional mediation and control over the exchange of Assets
+ *
+ * e.g. An asset may specify it can only be exchanged at a particular Venue, allowing the Venue owner to explicitly approve transactions
+ */
 export type VenueIdentitiesByStoVenueIdAndCreatorIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -30228,6 +31410,11 @@ export type VenueIdentitiesByStoVenueIdAndCreatorIdArgs = {
   orderBy?: InputMaybe<Array<IdentitiesOrderBy>>;
 };
 
+/**
+ * Represents a place to trade assets. This allows for additional mediation and control over the exchange of Assets
+ *
+ * e.g. An asset may specify it can only be exchanged at a particular Venue, allowing the Venue owner to explicitly approve transactions
+ */
 export type VenueInstructionsArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -30238,6 +31425,11 @@ export type VenueInstructionsArgs = {
   orderBy?: InputMaybe<Array<InstructionsOrderBy>>;
 };
 
+/**
+ * Represents a place to trade assets. This allows for additional mediation and control over the exchange of Assets
+ *
+ * e.g. An asset may specify it can only be exchanged at a particular Venue, allowing the Venue owner to explicitly approve transactions
+ */
 export type VenuePortfoliosByStoVenueIdAndOfferingPortfolioIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -30248,6 +31440,11 @@ export type VenuePortfoliosByStoVenueIdAndOfferingPortfolioIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/**
+ * Represents a place to trade assets. This allows for additional mediation and control over the exchange of Assets
+ *
+ * e.g. An asset may specify it can only be exchanged at a particular Venue, allowing the Venue owner to explicitly approve transactions
+ */
 export type VenuePortfoliosByStoVenueIdAndRaisingPortfolioIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -30258,6 +31455,11 @@ export type VenuePortfoliosByStoVenueIdAndRaisingPortfolioIdArgs = {
   orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
 };
 
+/**
+ * Represents a place to trade assets. This allows for additional mediation and control over the exchange of Assets
+ *
+ * e.g. An asset may specify it can only be exchanged at a particular Venue, allowing the Venue owner to explicitly approve transactions
+ */
 export type VenueStosArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;

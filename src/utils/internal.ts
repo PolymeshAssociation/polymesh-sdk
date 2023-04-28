@@ -84,7 +84,6 @@ import {
   UnionOfProcedureFuncs,
 } from '~/types/utils';
 import {
-  DEFAULT_GQL_PAGE_SIZE,
   MAX_TICKER_LENGTH,
   STATE_RUNTIME_VERSION_CALL,
   SUPPORTED_NODE_SEMVER,
@@ -631,12 +630,8 @@ export async function requestAtBlock<
  * @hidden
  *
  */
-export function calculateNextKey(
-  totalCount: BigNumber,
-  size?: BigNumber,
-  start?: BigNumber
-): NextKey {
-  const next = (start ?? new BigNumber(0)).plus(size ?? DEFAULT_GQL_PAGE_SIZE);
+export function calculateNextKey(totalCount: BigNumber, size: number, start?: BigNumber): NextKey {
+  const next = (start ?? new BigNumber(0)).plus(size);
   return totalCount.gt(next) ? next : null;
 }
 
@@ -1699,4 +1694,36 @@ export async function getExemptedBtreeSet(
   const mapped = exemptedIds.map(exemptedId => asIdentity(exemptedId, context));
 
   return identitiesToBtreeSet(mapped, context);
+}
+
+/**
+ * @hidden
+ */
+export async function getIdentityFromKeyRecord(
+  keyRecord: PolymeshPrimitivesSecondaryKeyKeyRecord,
+  context: Context
+): Promise<Identity | null> {
+  const {
+    polymeshApi: {
+      query: { identity },
+    },
+  } = context;
+
+  if (keyRecord.isPrimaryKey) {
+    const did = identityIdToString(keyRecord.asPrimaryKey);
+    return new Identity({ did }, context);
+  } else if (keyRecord.isSecondaryKey) {
+    const did = identityIdToString(keyRecord.asSecondaryKey[0]);
+    return new Identity({ did }, context);
+  } else {
+    const multiSigAddress = keyRecord.asMultiSigSignerKey;
+    const optMultiSigKeyRecord = await identity.keyRecords(multiSigAddress);
+
+    if (optMultiSigKeyRecord.isNone) {
+      return null;
+    }
+
+    const multiSigKeyRecord = optMultiSigKeyRecord.unwrap();
+    return getIdentityFromKeyRecord(multiSigKeyRecord, context);
+  }
 }

@@ -242,7 +242,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
     });
     /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
-    const next = calculateNextKey(count, size, start);
+    const next = calculateNextKey(count, data.length, start);
 
     return {
       data,
@@ -297,7 +297,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
       investedAmount: new BigNumber(raiseTokenAmount).shiftedBy(-6),
     }));
 
-    const next = calculateNextKey(count, size, start);
+    const next = calculateNextKey(count, data.length, start);
 
     return {
       data,

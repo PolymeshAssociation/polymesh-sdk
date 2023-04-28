@@ -9,18 +9,15 @@ import type {
   FinalityGrandpaEquivocationPrevote,
   FinalityGrandpaPrecommit,
   FinalityGrandpaPrevote,
+  FrameSupportDispatchDispatchClass,
+  FrameSupportDispatchDispatchInfo,
+  FrameSupportDispatchPays,
+  FrameSupportDispatchPerDispatchClassU32,
+  FrameSupportDispatchPerDispatchClassWeight,
+  FrameSupportDispatchPerDispatchClassWeightsPerClass,
   FrameSupportDispatchRawOrigin,
-  FrameSupportScheduleLookupError,
-  FrameSupportScheduleMaybeHashed,
+  FrameSupportPreimagesBounded,
   FrameSupportTokensMiscBalanceStatus,
-  FrameSupportWeightsDispatchClass,
-  FrameSupportWeightsDispatchInfo,
-  FrameSupportWeightsPays,
-  FrameSupportWeightsPerDispatchClassU32,
-  FrameSupportWeightsPerDispatchClassU64,
-  FrameSupportWeightsPerDispatchClassWeightsPerClass,
-  FrameSupportWeightsRuntimeDbWeight,
-  FrameSupportWeightsWeightToFeeCoefficient,
   FrameSystemAccountInfo,
   FrameSystemCall,
   FrameSystemError,
@@ -86,8 +83,9 @@ import type {
   PalletContractsScheduleHostFnWeights,
   PalletContractsScheduleInstructionWeights,
   PalletContractsScheduleLimits,
+  PalletContractsStorageContractInfo,
   PalletContractsStorageDeletedContract,
-  PalletContractsStorageRawContractInfo,
+  PalletContractsWasmDeterminism,
   PalletContractsWasmOwnerInfo,
   PalletContractsWasmPrefabWasmModule,
   PalletCorporateActionsBallotBallotMeta,
@@ -185,7 +183,7 @@ import type {
   PalletSchedulerCall,
   PalletSchedulerError,
   PalletSchedulerEvent,
-  PalletSchedulerScheduledV3,
+  PalletSchedulerScheduled,
   PalletSessionCall,
   PalletSessionError,
   PalletSessionEvent,
@@ -245,6 +243,7 @@ import type {
   PalletTestUtilsRawEvent,
   PalletTimestampCall,
   PalletTransactionPaymentChargeTransactionPayment,
+  PalletTransactionPaymentRawEvent,
   PalletTransactionPaymentReleases,
   PalletTreasuryCall,
   PalletTreasuryError,
@@ -355,6 +354,10 @@ import type {
   SpConsensusBabeAppPublic,
   SpConsensusBabeBabeEpochConfiguration,
   SpConsensusBabeDigestsNextConfigDescriptor,
+  SpConsensusBabeDigestsPreDigest,
+  SpConsensusBabeDigestsPrimaryPreDigest,
+  SpConsensusBabeDigestsSecondaryPlainPreDigest,
+  SpConsensusBabeDigestsSecondaryVRFPreDigest,
   SpConsensusSlotsEquivocationProof,
   SpCoreCryptoKeyTypeId,
   SpCoreEcdsaSignature,
@@ -382,6 +385,9 @@ import type {
   SpSessionMembershipProof,
   SpStakingOffenceOffenceDetails,
   SpVersionRuntimeVersion,
+  SpWeightsRuntimeDbWeight,
+  SpWeightsWeightToFeeCoefficient,
+  SpWeightsWeightV2Weight,
 } from '@polkadot/types/lookup';
 
 declare module '@polkadot/types/types/registry' {
@@ -393,18 +399,15 @@ declare module '@polkadot/types/types/registry' {
     FinalityGrandpaEquivocationPrevote: FinalityGrandpaEquivocationPrevote;
     FinalityGrandpaPrecommit: FinalityGrandpaPrecommit;
     FinalityGrandpaPrevote: FinalityGrandpaPrevote;
+    FrameSupportDispatchDispatchClass: FrameSupportDispatchDispatchClass;
+    FrameSupportDispatchDispatchInfo: FrameSupportDispatchDispatchInfo;
+    FrameSupportDispatchPays: FrameSupportDispatchPays;
+    FrameSupportDispatchPerDispatchClassU32: FrameSupportDispatchPerDispatchClassU32;
+    FrameSupportDispatchPerDispatchClassWeight: FrameSupportDispatchPerDispatchClassWeight;
+    FrameSupportDispatchPerDispatchClassWeightsPerClass: FrameSupportDispatchPerDispatchClassWeightsPerClass;
     FrameSupportDispatchRawOrigin: FrameSupportDispatchRawOrigin;
-    FrameSupportScheduleLookupError: FrameSupportScheduleLookupError;
-    FrameSupportScheduleMaybeHashed: FrameSupportScheduleMaybeHashed;
+    FrameSupportPreimagesBounded: FrameSupportPreimagesBounded;
     FrameSupportTokensMiscBalanceStatus: FrameSupportTokensMiscBalanceStatus;
-    FrameSupportWeightsDispatchClass: FrameSupportWeightsDispatchClass;
-    FrameSupportWeightsDispatchInfo: FrameSupportWeightsDispatchInfo;
-    FrameSupportWeightsPays: FrameSupportWeightsPays;
-    FrameSupportWeightsPerDispatchClassU32: FrameSupportWeightsPerDispatchClassU32;
-    FrameSupportWeightsPerDispatchClassU64: FrameSupportWeightsPerDispatchClassU64;
-    FrameSupportWeightsPerDispatchClassWeightsPerClass: FrameSupportWeightsPerDispatchClassWeightsPerClass;
-    FrameSupportWeightsRuntimeDbWeight: FrameSupportWeightsRuntimeDbWeight;
-    FrameSupportWeightsWeightToFeeCoefficient: FrameSupportWeightsWeightToFeeCoefficient;
     FrameSystemAccountInfo: FrameSystemAccountInfo;
     FrameSystemCall: FrameSystemCall;
     FrameSystemError: FrameSystemError;
@@ -470,8 +473,9 @@ declare module '@polkadot/types/types/registry' {
     PalletContractsScheduleHostFnWeights: PalletContractsScheduleHostFnWeights;
     PalletContractsScheduleInstructionWeights: PalletContractsScheduleInstructionWeights;
     PalletContractsScheduleLimits: PalletContractsScheduleLimits;
+    PalletContractsStorageContractInfo: PalletContractsStorageContractInfo;
     PalletContractsStorageDeletedContract: PalletContractsStorageDeletedContract;
-    PalletContractsStorageRawContractInfo: PalletContractsStorageRawContractInfo;
+    PalletContractsWasmDeterminism: PalletContractsWasmDeterminism;
     PalletContractsWasmOwnerInfo: PalletContractsWasmOwnerInfo;
     PalletContractsWasmPrefabWasmModule: PalletContractsWasmPrefabWasmModule;
     PalletCorporateActionsBallotBallotMeta: PalletCorporateActionsBallotBallotMeta;
@@ -569,7 +573,7 @@ declare module '@polkadot/types/types/registry' {
     PalletSchedulerCall: PalletSchedulerCall;
     PalletSchedulerError: PalletSchedulerError;
     PalletSchedulerEvent: PalletSchedulerEvent;
-    PalletSchedulerScheduledV3: PalletSchedulerScheduledV3;
+    PalletSchedulerScheduled: PalletSchedulerScheduled;
     PalletSessionCall: PalletSessionCall;
     PalletSessionError: PalletSessionError;
     PalletSessionEvent: PalletSessionEvent;
@@ -629,6 +633,7 @@ declare module '@polkadot/types/types/registry' {
     PalletTestUtilsRawEvent: PalletTestUtilsRawEvent;
     PalletTimestampCall: PalletTimestampCall;
     PalletTransactionPaymentChargeTransactionPayment: PalletTransactionPaymentChargeTransactionPayment;
+    PalletTransactionPaymentRawEvent: PalletTransactionPaymentRawEvent;
     PalletTransactionPaymentReleases: PalletTransactionPaymentReleases;
     PalletTreasuryCall: PalletTreasuryCall;
     PalletTreasuryError: PalletTreasuryError;
@@ -739,6 +744,10 @@ declare module '@polkadot/types/types/registry' {
     SpConsensusBabeAppPublic: SpConsensusBabeAppPublic;
     SpConsensusBabeBabeEpochConfiguration: SpConsensusBabeBabeEpochConfiguration;
     SpConsensusBabeDigestsNextConfigDescriptor: SpConsensusBabeDigestsNextConfigDescriptor;
+    SpConsensusBabeDigestsPreDigest: SpConsensusBabeDigestsPreDigest;
+    SpConsensusBabeDigestsPrimaryPreDigest: SpConsensusBabeDigestsPrimaryPreDigest;
+    SpConsensusBabeDigestsSecondaryPlainPreDigest: SpConsensusBabeDigestsSecondaryPlainPreDigest;
+    SpConsensusBabeDigestsSecondaryVRFPreDigest: SpConsensusBabeDigestsSecondaryVRFPreDigest;
     SpConsensusSlotsEquivocationProof: SpConsensusSlotsEquivocationProof;
     SpCoreCryptoKeyTypeId: SpCoreCryptoKeyTypeId;
     SpCoreEcdsaSignature: SpCoreEcdsaSignature;
@@ -766,5 +775,8 @@ declare module '@polkadot/types/types/registry' {
     SpSessionMembershipProof: SpSessionMembershipProof;
     SpStakingOffenceOffenceDetails: SpStakingOffenceOffenceDetails;
     SpVersionRuntimeVersion: SpVersionRuntimeVersion;
+    SpWeightsRuntimeDbWeight: SpWeightsRuntimeDbWeight;
+    SpWeightsWeightToFeeCoefficient: SpWeightsWeightToFeeCoefficient;
+    SpWeightsWeightV2Weight: SpWeightsWeightV2Weight;
   } // InterfaceTypes
 } // declare module

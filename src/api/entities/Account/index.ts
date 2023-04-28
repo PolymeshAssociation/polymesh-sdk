@@ -1,26 +1,18 @@
 import { hexStripPrefix } from '@polkadot/util';
 import BigNumber from 'bignumber.js';
-import {
-  difference,
-  differenceBy,
-  differenceWith,
-  intersection,
-  intersectionBy,
-  intersectionWith,
-  isEqual,
-  union,
-} from 'lodash';
 
-import { Subsidies } from '~/api/entities/Subsidies';
 import {
-  Asset,
-  Authorizations,
-  Context,
-  Entity,
-  Identity,
-  MultiSig,
-  PolymeshError,
-} from '~/internal';
+  getMissingAssetPermissions,
+  getMissingPortfolioPermissions,
+  getMissingTransactionPermissions,
+} from '~/api/entities/Account/helpers';
+import {
+  AccountIdentityRelation,
+  AccountKeyType,
+  AccountTypeInfo,
+} from '~/api/entities/Account/types';
+import { Subsidies } from '~/api/entities/Subsidies';
+import { Authorizations, Context, Entity, Identity, MultiSig, PolymeshError } from '~/internal';
 import {
   CallIdEnum as MiddlewareV2CallId,
   ModuleIdEnum as MiddlewareV2ModuleId,
@@ -32,31 +24,22 @@ import { ExtrinsicsOrderBy, Query as QueryV2 } from '~/middleware/typesV2';
 import {
   AccountBalance,
   CheckPermissionsResult,
-  DefaultPortfolio,
   ErrorCode,
   ExtrinsicData,
-  ModuleName,
-  NumberedPortfolio,
   Permissions,
-  PermissionType,
   ResultSet,
-  SectionPermissions,
   SignerType,
   SimplePermissions,
   SubCallback,
   SubsidyWithAllowance,
-  TransactionPermissions,
   TxTag,
-  TxTags,
   UnsubCallback,
 } from '~/types';
 import { Ensured, EnsuredV2 } from '~/types/utils';
 import {
   addressToKey,
   extrinsicIdentifierToTxTag,
-  identityIdToString,
   keyToAddress,
-  portfolioToPortfolioId,
   stringToAccountId,
   stringToHash,
   txTagToExtrinsicIdentifier,
@@ -66,190 +49,14 @@ import {
 import {
   assertAddressValid,
   calculateNextKey,
+  getIdentityFromKeyRecord,
   getSecondaryAccountPermissions,
-  isModuleOrTagMatch,
+  requestMulti,
 } from '~/utils/internal';
 
 /**
  * @hidden
- *
- * Calculate the difference between the required Asset permissions and the current ones
  */
-function getMissingAssetPermissions(
-  requiredPermissions: Asset[] | null | undefined,
-  currentPermissions: SectionPermissions<Asset> | null
-): SimplePermissions['assets'] {
-  if (currentPermissions === null) {
-    return undefined;
-  } else if (requiredPermissions === null) {
-    return null;
-  } else if (requiredPermissions) {
-    const { type: permissionType, values: assetValues } = currentPermissions;
-
-    if (requiredPermissions.length) {
-      let missingPermissions: Asset[];
-
-      if (permissionType === PermissionType.Include) {
-        missingPermissions = differenceBy(requiredPermissions, assetValues, 'ticker');
-      } else {
-        missingPermissions = intersectionBy(requiredPermissions, assetValues, 'ticker');
-      }
-
-      if (missingPermissions.length) {
-        return missingPermissions;
-      }
-    }
-  }
-
-  return undefined;
-}
-
-/**
- * @hidden
- *
- * Calculate the difference between the required Transaction permissions and the current ones
- */
-function getMissingTransactionPermissions(
-  requiredPermissions: TxTag[] | null | undefined,
-  currentPermissions: TransactionPermissions | null
-): SimplePermissions['transactions'] {
-  // these transactions are allowed to any Account, independent of permissions
-  const exemptedTransactions: (TxTag | ModuleName)[] = [
-    TxTags.identity.LeaveIdentityAsKey,
-    TxTags.identity.JoinIdentityAsKey,
-    TxTags.multiSig.AcceptMultisigSignerAsKey,
-    ...difference(Object.values(TxTags.balances), [
-      TxTags.balances.DepositBlockRewardReserveBalance,
-      TxTags.balances.BurnAccountBalance,
-    ]),
-    ModuleName.Staking,
-    ModuleName.Sudo,
-    ModuleName.Session,
-    ModuleName.Authorship,
-    ModuleName.Babe,
-    ModuleName.Grandpa,
-    ModuleName.ImOnline,
-    ModuleName.Indices,
-    ModuleName.Scheduler,
-    ModuleName.System,
-    ModuleName.Timestamp,
-  ];
-
-  if (currentPermissions === null) {
-    return undefined;
-  }
-
-  if (requiredPermissions === null) {
-    return null;
-  }
-
-  if (!requiredPermissions?.length) {
-    return undefined;
-  }
-
-  const {
-    type: transactionsType,
-    values: transactionsValues,
-    exceptions = [],
-  } = currentPermissions;
-
-  let missingPermissions: TxTag[];
-
-  const exceptionMatches = intersection(requiredPermissions, exceptions);
-
-  if (transactionsType === PermissionType.Include) {
-    const includedTransactions = union(transactionsValues, exemptedTransactions);
-
-    missingPermissions = union(
-      differenceWith(requiredPermissions, includedTransactions, isModuleOrTagMatch),
-      exceptionMatches
-    );
-  } else {
-    /*
-     * if the exclusion is a module, we only remove it from the list if the module itself is present in `exemptedTransactions`.
-     *   Otherwise, if, for example, `transactionsValues` contains `ModuleName.Identity`,
-     *   since `exemptedTransactions` contains `TxTags.identity.LeaveIdentityAsKey`, we would be
-     *   removing the entire Identity module from the result, which doesn't make sense
-     */
-    const txComparator = (tx: TxTag | ModuleName, exemptedTx: TxTag | ModuleName): boolean => {
-      if (!tx.includes('.')) {
-        return tx === exemptedTx;
-      }
-
-      return isModuleOrTagMatch(tx, exemptedTx);
-    };
-
-    const excludedTransactions = differenceWith(
-      transactionsValues,
-      exemptedTransactions,
-      txComparator
-    );
-
-    missingPermissions = difference(
-      intersectionWith(requiredPermissions, excludedTransactions, isModuleOrTagMatch),
-      exceptionMatches
-    );
-  }
-
-  if (missingPermissions.length) {
-    return missingPermissions;
-  }
-
-  return undefined;
-}
-
-/**
- * @hidden
- *
- * Calculate the difference between the required Transaction permissions and the current ones
- */
-function getMissingPortfolioPermissions(
-  requiredPermissions: (DefaultPortfolio | NumberedPortfolio)[] | null | undefined,
-  currentPermissions: SectionPermissions<DefaultPortfolio | NumberedPortfolio> | null
-): SimplePermissions['portfolios'] {
-  if (currentPermissions === null) {
-    return undefined;
-  } else if (requiredPermissions === null) {
-    return null;
-  } else if (requiredPermissions) {
-    const { type: portfoliosType, values: portfoliosValues } = currentPermissions;
-
-    if (requiredPermissions.length) {
-      let missingPermissions: (DefaultPortfolio | NumberedPortfolio)[];
-
-      const portfolioComparator = (
-        a: DefaultPortfolio | NumberedPortfolio,
-        b: DefaultPortfolio | NumberedPortfolio
-      ): boolean => {
-        const aId = portfolioToPortfolioId(a);
-        const bId = portfolioToPortfolioId(b);
-
-        return isEqual(aId, bId);
-      };
-
-      if (portfoliosType === PermissionType.Include) {
-        missingPermissions = differenceWith(
-          requiredPermissions,
-          portfoliosValues,
-          portfolioComparator
-        );
-      } else {
-        missingPermissions = intersectionWith(
-          requiredPermissions,
-          portfoliosValues,
-          portfolioComparator
-        );
-      }
-
-      if (missingPermissions.length) {
-        return missingPermissions;
-      }
-    }
-  }
-
-  return undefined;
-}
-
 export interface UniqueIdentifiers {
   address: string;
 }
@@ -351,7 +158,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     const {
       context: {
         polymeshApi: {
-          query: { identity, multiSig },
+          query: { identity },
         },
       },
       context,
@@ -366,18 +173,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
 
     const keyRecord = optKeyRecord.unwrap();
 
-    let did: string;
-    if (keyRecord.isPrimaryKey) {
-      did = identityIdToString(keyRecord.asPrimaryKey);
-    } else if (keyRecord.isSecondaryKey) {
-      did = identityIdToString(keyRecord.asSecondaryKey[0]);
-    } else {
-      const multiSigAddress = keyRecord.asMultiSigSignerKey;
-      const rawMultiSigDid = await multiSig.multiSigToIdentity(multiSigAddress);
-      did = identityIdToString(rawMultiSigDid);
-    }
-
-    return new Identity({ did }, context);
+    return getIdentityFromKeyRecord(keyRecord, context);
   }
 
   /**
@@ -488,7 +284,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     );
     /* eslint-enable @typescript-eslint/naming-convention */
 
-    const next = calculateNextKey(count, size, start);
+    const next = calculateNextKey(count, data.length, start);
 
     return {
       data,
@@ -600,7 +396,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     );
     /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
-    const next = calculateNextKey(count, size, start);
+    const next = calculateNextKey(count, data.length, start);
 
     return {
       data,
@@ -787,5 +583,63 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     const index = await accountNextIndex(stringToAccountId(address, context));
 
     return u32ToBigNumber(index);
+  }
+
+  /**
+   * Retrieve the type of Account, and its relation to an Identity, if applicable
+   */
+  public async getTypeInfo(): Promise<AccountTypeInfo> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { identity, multiSig, contracts },
+        },
+      },
+      context,
+      address,
+    } = this;
+
+    const accountId = stringToAccountId(address, context);
+    const [optKeyRecord, multiSignsRequired, smartContract] = await requestMulti<
+      [
+        typeof identity.keyRecords,
+        typeof multiSig.multiSigSignsRequired,
+        typeof contracts.contractInfoOf
+      ]
+    >(context, [
+      [identity.keyRecords, accountId],
+      [multiSig.multiSigSignsRequired, accountId],
+      [contracts.contractInfoOf, accountId],
+    ]);
+
+    let keyType: AccountKeyType = AccountKeyType.Normal;
+    if (!multiSignsRequired.isZero()) {
+      keyType = AccountKeyType.MultiSig;
+    } else if (smartContract.isSome) {
+      keyType = AccountKeyType.SmartContract;
+    }
+
+    if (optKeyRecord.isNone) {
+      return {
+        keyType,
+        relation: AccountIdentityRelation.Unassigned,
+      };
+    }
+
+    const keyRecord = optKeyRecord.unwrap();
+
+    let relation: AccountIdentityRelation;
+    if (keyRecord.isPrimaryKey) {
+      relation = AccountIdentityRelation.Primary;
+    } else if (keyRecord.isSecondaryKey) {
+      relation = AccountIdentityRelation.Secondary;
+    } else {
+      relation = AccountIdentityRelation.MultiSigSigner;
+    }
+
+    return {
+      keyType,
+      relation,
+    };
   }
 }
