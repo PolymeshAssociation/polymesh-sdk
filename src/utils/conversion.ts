@@ -2973,6 +2973,7 @@ export function toIdentityWithClaimsArray(
         targetDID: targetDid,
         issuer,
         issuance_date: issuanceDate,
+        last_update_date: lastUpdateDate,
         expiry,
         type,
         jurisdiction,
@@ -2982,6 +2983,7 @@ export function toIdentityWithClaimsArray(
         target: new Identity({ did: targetDid }, context),
         issuer: new Identity({ did: issuer }, context),
         issuedAt: new Date(issuanceDate),
+        lastUpdatedAt: new Date(lastUpdateDate),
         expiry: expiry ? new Date(expiry) : null,
         claim: createClaim(type, jurisdiction, claimScope, cddId, undefined),
       })
@@ -2996,11 +2998,22 @@ export function middlewareV2ClaimToClaimData(
   claim: MiddlewareV2Claim,
   context: Context
 ): ClaimData {
-  const { targetId, issuerId, issuanceDate, expiry, type, jurisdiction, scope, cddId } = claim;
+  const {
+    targetId,
+    issuerId,
+    issuanceDate,
+    lastUpdateDate,
+    expiry,
+    type,
+    jurisdiction,
+    scope,
+    cddId,
+  } = claim;
   return {
     target: new Identity({ did: targetId }, context),
     issuer: new Identity({ did: issuerId }, context),
     issuedAt: new Date(parseFloat(issuanceDate)),
+    lastUpdatedAt: new Date(parseFloat(lastUpdateDate)),
     expiry: expiry ? new Date(parseFloat(expiry)) : null,
     claim: createClaim(type, jurisdiction, scope, cddId, undefined),
   };
