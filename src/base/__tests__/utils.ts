@@ -6,7 +6,7 @@ import { processType } from '../utils';
 
 describe('Process Type', () => {
   it('should be a function', () => {
-    expect(typeof processType).toBe('function');
+    expect(processType).toBeInstanceOf(Function);
   });
 
   it('should return unknown type if info contains previously unknown type', () => {
