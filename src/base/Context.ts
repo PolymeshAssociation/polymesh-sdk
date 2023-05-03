@@ -1420,8 +1420,12 @@ export class Context {
 
     this.isDisconnected = true;
 
-    middlewareApi && middlewareApi.stop();
-    middlewareApiV2 && middlewareApiV2.stop();
+    if (middlewareApi) {
+      middlewareApi.stop();
+    }
+    if (middlewareApiV2) {
+      middlewareApiV2.stop();
+    }
 
     await delay(500); // allow pending requests to complete
 
