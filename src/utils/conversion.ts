@@ -3349,7 +3349,7 @@ export function permissionsLikeToPermissions(
     assets: assetPermissions,
     transactions: transactionPermissions && {
       ...transactionPermissions,
-      values: [...transactionPermissions.values].sort(),
+      values: [...transactionPermissions.values].sort((a, b) => a.localeCompare(b)),
     },
     transactionGroups: transactionGroupPermissions,
     portfolios: portfolioPermissions,
@@ -3556,7 +3556,7 @@ export function scheduleSpecToMeshScheduleSpec(
   return context.createType('PalletAssetCheckpointScheduleSpec', {
     start: start && dateToMoment(start, context),
     period: calendarPeriodToMeshCalendarPeriod(
-      period || { unit: CalendarUnit.Month, amount: new BigNumber(0) },
+      period ?? { unit: CalendarUnit.Month, amount: new BigNumber(0) },
       context
     ),
     remaining: bigNumberToU64(repetitions || new BigNumber(0), context),
@@ -4253,7 +4253,7 @@ export function meshMetadataSpecToMetadataSpec(
 ): MetadataSpec {
   const specs: MetadataSpec = {};
 
-  if (rawSpecs && rawSpecs.isSome) {
+  if (rawSpecs?.isSome) {
     const { url: rawUrl, description: rawDescription, typeDef: rawTypeDef } = rawSpecs.unwrap();
 
     if (rawUrl.isSome) {
@@ -4442,7 +4442,7 @@ export function middlewareInstructionToHistoricInstruction(
     tradeDate,
     valueDate,
     ...typeDetails,
-    memo: memo || null,
+    memo: memo ?? null,
     venueId: new BigNumber(venueId),
     createdAt: new Date(datetime),
     legs: legs.map(({ from, to, assetId, amount }) => ({
