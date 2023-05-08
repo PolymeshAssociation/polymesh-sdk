@@ -1070,6 +1070,11 @@ export enum PermissionGroupType {
   PolymeshV1Pia = 'PolymeshV1Pia',
 }
 
+export type AttestPrimaryKeyRotationAuthorizationData = {
+  type: AuthorizationType.AttestPrimaryKeyRotation;
+  value: Identity;
+};
+
 export type RotatePrimaryKeyAuthorizationData = {
   type: AuthorizationType.RotatePrimaryKey;
 };
@@ -1108,6 +1113,7 @@ export type GenericAuthorizationData = {
     | AuthorizationType.BecomeAgent
     | AuthorizationType.AddRelayerPayingKey
     | AuthorizationType.RotatePrimaryKeyToSecondary
+    | AuthorizationType.AttestPrimaryKeyRotation
   >;
   value: string;
 };
@@ -1115,6 +1121,7 @@ export type GenericAuthorizationData = {
  * Authorization request data corresponding to type
  */
 export type Authorization =
+  | AttestPrimaryKeyRotationAuthorizationData
   | RotatePrimaryKeyAuthorizationData
   | JoinIdentityAuthorizationData
   | PortfolioCustodyAuthorizationData

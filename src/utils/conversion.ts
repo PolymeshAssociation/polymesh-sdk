@@ -1273,7 +1273,9 @@ export function authorizationToAuthorizationData(
 
   const { type } = auth;
 
-  if (type === AuthorizationType.RotatePrimaryKey) {
+  if (type === AuthorizationType.AttestPrimaryKeyRotation) {
+    value = stringToIdentityId(auth.value.did, context);
+  } else if (type === AuthorizationType.RotatePrimaryKey) {
     value = null;
   } else if (type === AuthorizationType.JoinIdentity) {
     value = permissionsToMeshPermissions(auth.value, context);
@@ -1394,7 +1396,12 @@ export function authorizationDataToAuthorization(
   if (auth.isAttestPrimaryKeyRotation) {
     return {
       type: AuthorizationType.AttestPrimaryKeyRotation,
-      value: identityIdToString(auth.asAttestPrimaryKeyRotation),
+      value: new Identity(
+        {
+          did: identityIdToString(auth.asAttestPrimaryKeyRotation),
+        },
+        context
+      ),
     };
   }
 
@@ -4440,4 +4447,18 @@ export function middlewareInstructionToHistoricInstruction(
     })),
   };
   /* eslint-enable @typescript-eslint/no-non-null-assertion */
+}
+
+/**
+ * @hidden
+ */
+export function expiryToMoment(expiry: Date | undefined, context: Context): Moment | null {
+  if (expiry && expiry <= new Date()) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Expiry date must be in the future',
+    });
+  }
+
+  return optionize(dateToMoment)(expiry, context);
 }
