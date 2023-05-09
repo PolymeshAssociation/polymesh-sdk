@@ -10,9 +10,11 @@ import { when } from 'jest-when';
 
 import {
   getAuthorization,
+  modifyCorporateActionsAgent,
   Params,
   prepareModifyCorporateActionsAgent,
 } from '~/api/procedures/modifyCorporateActionsAgent';
+import { Procedure } from '~/base/Procedure';
 import { Account, Context, Identity } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
@@ -24,7 +26,7 @@ jest.mock(
   require('~/testUtils/mocks/entities').mockAssetModule('~/api/entities/Asset')
 );
 
-describe('modifyCorporateActionAgent procedure', () => {
+describe('modifyCorporateActionsAgent procedure', () => {
   let mockContext: Mocked<Context>;
   let authorizationToAuthorizationDataSpy: jest.SpyInstance<
     PolymeshPrimitivesAuthorizationAuthorizationData,
@@ -193,5 +195,25 @@ describe('modifyCorporateActionAgent procedure', () => {
         },
       });
     });
+  });
+});
+
+jest.mock('~/base/Procedure');
+
+describe('modifyCorporateActionsAgent', () => {
+  afterAll(() => {
+    // Reset the mock after all tests have run
+    jest.resetAllMocks();
+  });
+
+  it('should be defined', () => {
+    expect(modifyCorporateActionsAgent).toBeDefined();
+  });
+
+  it('should return new Procedure called with prepareModifyCorporateActionsAgent and getAuthorization', () => {
+    const result = modifyCorporateActionsAgent();
+
+    expect(Procedure).toHaveBeenCalledWith(prepareModifyCorporateActionsAgent, getAuthorization);
+    expect(result).toBeInstanceOf(Procedure);
   });
 });
