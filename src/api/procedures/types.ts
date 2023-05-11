@@ -974,3 +974,8 @@ export type RegisterMetadataParams =
       value: string;
       details?: MetadataValueDetails;
     };
+
+export type SetVenueFilteringParams = {
+  ticker: string;
+  enabled: boolean;
+};

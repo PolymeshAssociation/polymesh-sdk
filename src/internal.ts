@@ -144,3 +144,4 @@ export {
 } from '~/api/procedures/types';
 export { addAssetStat } from '~/api/procedures/addAssetStat';
 export { removeAssetStat } from '~/api/procedures/removeAssetStat';
+export { setVenueFiltering } from '~/api/procedures/setVenueFiltering';
