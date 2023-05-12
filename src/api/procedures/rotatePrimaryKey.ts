@@ -1,9 +1,10 @@
 import { createAuthorizationResolver } from '~/api/procedures/utils';
-import { Procedure } from '~/internal';
+import { PolymeshError, Procedure } from '~/internal';
 import {
   Authorization,
   AuthorizationRequest,
   AuthorizationType,
+  ErrorCode,
   RotatePrimaryKeyParams,
   TxTags,
 } from '~/types';
@@ -12,6 +13,7 @@ import {
   authorizationToAuthorizationData,
   expiryToMoment,
   signerToSignatory,
+  signerToString,
 } from '~/utils/conversion';
 import { asAccount } from '~/utils/internal';
 
@@ -37,11 +39,37 @@ export async function prepareRotatePrimaryKey(
   const issuerIdentity = await context.getSigningIdentity();
 
   const target = asAccount(targetAccount, context);
+
+  const authorizationRequests = await issuerIdentity.authorizations.getSent();
+  const pendingAuthorization = authorizationRequests.data.find(authorizationRequest => {
+    const {
+      target: targetSigner,
+      data: { type },
+    } = authorizationRequest;
+    return (
+      signerToString(targetSigner) === targetAccount &&
+      !authorizationRequest.isExpired() &&
+      type === AuthorizationType.RotatePrimaryKey
+    );
+  });
+
+  if (pendingAuthorization) {
+    throw new PolymeshError({
+      code: ErrorCode.NoDataChange,
+      message:
+        'The target Account already has a pending invitation to become the primary key of the given Identity',
+      data: {
+        pendingAuthorization,
+      },
+    });
+  }
+
   const rawSignatory = signerToSignatory(target, context);
 
   const authorization: Authorization = {
     type: AuthorizationType.RotatePrimaryKey,
   };
+
   const rawAuthorizationData = authorizationToAuthorizationData(authorization, context);
 
   const rawExpiry = expiryToMoment(expiry, context);
