@@ -807,19 +807,22 @@ export class Context {
     const claimData = await P.map(claim1stKeys, async claim1stKey => {
       const entries = await identity.claims.entries(claim1stKey);
       const data: ClaimData[] = [];
-      entries.forEach(([key, { claimIssuer, issuanceDate, expiry: rawExpiry, claim }]) => {
-        const { target } = key.args[0];
-        const expiry = !rawExpiry.isEmpty ? momentToDate(rawExpiry.unwrap()) : null;
-        if ((!includeExpired && (expiry === null || expiry > new Date())) || includeExpired) {
-          data.push({
-            target: new Identity({ did: identityIdToString(target) }, this),
-            issuer: new Identity({ did: identityIdToString(claimIssuer) }, this),
-            issuedAt: momentToDate(issuanceDate),
-            expiry,
-            claim: meshClaimToClaim(claim),
-          });
+      entries.forEach(
+        ([key, { claimIssuer, issuanceDate, lastUpdateDate, expiry: rawExpiry, claim }]) => {
+          const { target } = key.args[0];
+          const expiry = !rawExpiry.isEmpty ? momentToDate(rawExpiry.unwrap()) : null;
+          if ((!includeExpired && (expiry === null || expiry > new Date())) || includeExpired) {
+            data.push({
+              target: new Identity({ did: identityIdToString(target) }, this),
+              issuer: new Identity({ did: identityIdToString(claimIssuer) }, this),
+              issuedAt: momentToDate(issuanceDate),
+              lastUpdatedAt: momentToDate(lastUpdateDate),
+              expiry,
+              claim: meshClaimToClaim(claim),
+            });
+          }
         }
-      });
+      );
       return data;
     });
 
@@ -870,6 +873,7 @@ export class Context {
           targetDID: target,
           issuer,
           issuance_date: issuanceDate,
+          last_update_date: lastUpdateDate,
           expiry,
           type,
           jurisdiction,
@@ -880,6 +884,7 @@ export class Context {
             target: new Identity({ did: target }, this),
             issuer: new Identity({ did: issuer }, this),
             issuedAt: new Date(issuanceDate),
+            lastUpdatedAt: new Date(lastUpdateDate),
             expiry: expiry ? new Date(expiry) : null,
             claim: createClaim(type, jurisdiction, scope, cddId, undefined),
           });
@@ -1272,8 +1277,12 @@ export class Context {
 
     this.isDisconnected = true;
 
-    middlewareApi && middlewareApi.stop();
-    middlewareApiV2 && middlewareApiV2.stop();
+    if (middlewareApi) {
+      middlewareApi.stop();
+    }
+    if (middlewareApiV2) {
+      middlewareApiV2.stop();
+    }
 
     await delay(500); // allow pending requests to complete
 
