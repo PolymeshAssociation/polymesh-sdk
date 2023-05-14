@@ -1105,25 +1105,30 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
       let value: Authorization = {
         type: AuthorizationType.AttestPrimaryKeyRotation,
-        value: 'someIdentity',
+        value: entityMockUtils.getIdentityInstance({ did: 'someIdentity' }),
       };
+
       const fakeResult =
         'AuthorizationDataEnum' as unknown as PolymeshPrimitivesAuthorizationAuthorizationData;
 
       const createTypeMock = context.createType;
+      const rawIdentity = dsMockUtils.createMockIdentityId(value.value.did);
+      when(createTypeMock)
+        .calledWith('PolymeshPrimitivesIdentityId', value.value.did)
+        .mockReturnValue(rawIdentity);
       when(createTypeMock)
         .calledWith('PolymeshPrimitivesAuthorizationAuthorizationData', {
-          [value.type]: value.value,
+          [value.type]: rawIdentity,
         })
         .mockReturnValue(fakeResult);
+
+      let result = authorizationToAuthorizationData(value, context);
+      expect(result).toBe(fakeResult);
 
       const fakeTicker = 'convertedTicker' as unknown as PolymeshPrimitivesTicker;
       when(createTypeMock)
         .calledWith('PolymeshPrimitivesTicker', padString(ticker, 12))
         .mockReturnValue(fakeTicker);
-
-      let result = authorizationToAuthorizationData(value, context);
-      expect(result).toBe(fakeResult);
 
       value = {
         type: AuthorizationType.JoinIdentity,
@@ -1303,10 +1308,10 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       const context = dsMockUtils.getContextInstance();
       let fakeResult: Authorization = {
         type: AuthorizationType.AttestPrimaryKeyRotation,
-        value: 'someIdentity',
+        value: expect.objectContaining({ did: 'someDid' }),
       };
       let authorizationData = dsMockUtils.createMockAuthorizationData({
-        AttestPrimaryKeyRotation: dsMockUtils.createMockIdentityId(fakeResult.value),
+        AttestPrimaryKeyRotation: dsMockUtils.createMockIdentityId('someDid'),
       });
 
       let result = authorizationDataToAuthorization(authorizationData, context);

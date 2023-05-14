@@ -1,7 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import { prepareInviteAccount } from '~/api/procedures/inviteAccount';
 import { prepareRotatePrimaryKey } from '~/api/procedures/rotatePrimaryKey';
 import { Account, AuthorizationRequest, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
@@ -17,7 +16,7 @@ jest.mock(
 describe('rotatePrimaryKey procedure', () => {
   let mockContext: Mocked<Context>;
   let authorizationToAuthorizationDataSpy: jest.SpyInstance;
-  let dateToMomentSpy: jest.SpyInstance;
+  let expiryToMomentSpy: jest.SpyInstance;
   let signerToSignatorySpy: jest.SpyInstance;
   let signerToStringSpy: jest.SpyInstance;
 
@@ -34,7 +33,7 @@ describe('rotatePrimaryKey procedure', () => {
       utilsConversionModule,
       'authorizationToAuthorizationData'
     );
-    dateToMomentSpy = jest.spyOn(utilsConversionModule, 'dateToMoment');
+    expiryToMomentSpy = jest.spyOn(utilsConversionModule, 'expiryToMoment');
     signerToStringSpy = jest.spyOn(utilsConversionModule, 'signerToString');
     signerToSignatorySpy = jest.spyOn(utilsConversionModule, 'signerToSignatory');
   });
@@ -59,16 +58,6 @@ describe('rotatePrimaryKey procedure', () => {
     const expiry = new Date('1/1/2040');
     const target = new Account({ address }, mockContext);
     const someOtherTarget = new Account({ address: 'someOtherAccount' }, mockContext);
-    const rawSignatory = dsMockUtils.createMockSignatory({
-      Account: dsMockUtils.createMockAccountId('someAccountId'),
-    });
-
-    const authorization = {
-      type: AuthorizationType.RotatePrimaryKey,
-    };
-    const rawAuthorizationData = dsMockUtils.createMockAuthorizationData('RotatePrimaryKey');
-
-    const rawExpiry = dsMockUtils.createMockMoment(new BigNumber(expiry.getTime()));
 
     const sentAuthorizations: ResultSet<AuthorizationRequest> = {
       data: [
@@ -125,15 +114,24 @@ describe('rotatePrimaryKey procedure', () => {
       },
     });
 
-    when(signerToSignatorySpy).calledWith(target).mockReturnValue(rawSignatory);
+    const rawSignatory = dsMockUtils.createMockSignatory({
+      Account: dsMockUtils.createMockAccountId('someAccountId'),
+    });
+
+    const authorization = {
+      type: AuthorizationType.RotatePrimaryKey,
+    };
+    const rawAuthorizationData = dsMockUtils.createMockAuthorizationData('RotatePrimaryKey');
+
+    const rawExpiry = dsMockUtils.createMockMoment(new BigNumber(expiry.getTime()));
+
+    signerToSignatorySpy.mockReturnValue(rawSignatory);
     when(signerToStringSpy).calledWith(target).mockReturnValue(address);
     when(signerToStringSpy).calledWith(someOtherTarget).mockReturnValue('someOtherAccount');
 
     when(authorizationToAuthorizationDataSpy)
       .calledWith(authorization, mockContext)
       .mockReturnValue(rawAuthorizationData);
-
-    when(dateToMomentSpy).calledWith(expiry, mockContext).mockReturnValue(rawExpiry);
 
     const proc = procedureMockUtils.getInstance<RotatePrimaryKeyParams, AuthorizationRequest>(
       mockContext
@@ -149,7 +147,9 @@ describe('rotatePrimaryKey procedure', () => {
       resolver: expect.any(Function),
     });
 
-    result = await prepareInviteAccount.call(proc, { ...args, expiry });
+    when(expiryToMomentSpy).calledWith(expiry, mockContext).mockReturnValue(rawExpiry);
+
+    result = await prepareRotatePrimaryKey.call(proc, { ...args, expiry });
 
     expect(result).toEqual({
       transaction,
@@ -162,6 +162,7 @@ describe('rotatePrimaryKey procedure', () => {
     const target = entityMockUtils.getAccountInstance({
       address,
     });
+    dsMockUtils.createTxMock('identity', 'addAuthorization');
 
     const sentAuthorizations: ResultSet<AuthorizationRequest> = {
       data: [
@@ -195,8 +196,8 @@ describe('rotatePrimaryKey procedure', () => {
       mockContext
     );
 
-    return expect(prepareInviteAccount.call(proc, { ...args })).rejects.toThrow(
-      'The target Account already has a pending invitation to join this Identity'
+    return expect(prepareRotatePrimaryKey.call(proc, { ...args })).rejects.toThrow(
+      'The target Account already has a pending invitation to become the primary key of the given Identity'
     );
   });
 });

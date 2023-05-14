@@ -1,6 +1,7 @@
 import { createAuthorizationResolver } from '~/api/procedures/utils';
 import { PolymeshError, Procedure } from '~/internal';
 import {
+  AttestPrimaryKeyRotationAuthorizationData,
   AttestPrimaryKeyRotationParams,
   Authorization,
   AuthorizationRequest,
@@ -12,10 +13,10 @@ import {
 import { ExtrinsicParams, TransactionSpec } from '~/types/internal';
 import {
   authorizationToAuthorizationData,
-  dateToMoment,
+  expiryToMoment,
   signerToSignatory,
 } from '~/utils/conversion';
-import { asAccount, asIdentity, optionize } from '~/utils/internal';
+import { asAccount, asIdentity } from '~/utils/internal';
 
 /**
  * @hidden
@@ -39,21 +40,37 @@ export async function prepareAttestPrimaryKeyRotation(
   const issuerIdentity = await context.getSigningIdentity();
 
   const target = asAccount(targetAccount, context);
+  const targetIdentity = asIdentity(identity, context);
+
+  const authorizationRequests = await target.authorizations.getReceived({
+    type: AuthorizationType.AttestPrimaryKeyRotation,
+    includeExpired: false,
+  });
+
+  const pendingAuthorization = authorizationRequests.find(authorizationRequest => {
+    const { value } = authorizationRequest.data as AttestPrimaryKeyRotationAuthorizationData;
+    return value.did === targetIdentity.did;
+  });
+
+  if (pendingAuthorization) {
+    throw new PolymeshError({
+      code: ErrorCode.NoDataChange,
+      message:
+        'The target Account already has a pending attestation to become the primary key of the target Identity',
+      data: {
+        pendingAuthorization,
+      },
+    });
+  }
   const rawSignatory = signerToSignatory(target, context);
 
   const authRequest: Authorization = {
     type: AuthorizationType.AttestPrimaryKeyRotation,
-    value: asIdentity(identity, context),
+    value: targetIdentity,
   };
   const rawAuthorizationData = authorizationToAuthorizationData(authRequest, context);
 
-  if (expiry && expiry <= new Date()) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'Expiry date must be in the future',
-    });
-  }
-  const rawExpiry = optionize(dateToMoment)(expiry, context);
+  const rawExpiry = expiryToMoment(expiry, context);
 
   return {
     transaction: addAuthorization,
