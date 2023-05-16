@@ -85,7 +85,7 @@ describe('manageAllowedVenues procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    it('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions for enabling venues', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args: Params = {
@@ -97,6 +97,23 @@ describe('manageAllowedVenues procedure', () => {
       expect(boundFunc(args)).toEqual({
         permissions: {
           transactions: [TxTags.settlement.AllowVenues],
+          assets: [expect.objectContaining({ ticker })],
+        },
+      });
+    });
+
+    it('should return the appropriate roles and permissions for disabling venues', () => {
+      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+      const boundFunc = getAuthorization.bind(proc);
+      const args: Params = {
+        ticker,
+        venues: [1],
+        action: 'disallow',
+      };
+
+      expect(boundFunc(args)).toEqual({
+        permissions: {
+          transactions: [TxTags.settlement.DisallowVenues],
           assets: [expect.objectContaining({ ticker })],
         },
       });
