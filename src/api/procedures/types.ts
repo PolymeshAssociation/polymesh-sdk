@@ -974,3 +974,9 @@ export type RegisterMetadataParams =
       value: string;
       details?: MetadataValueDetails;
     };
+
+export type ManageAllowedVenuesParams = {
+  action: 'allow' | 'disallow';
+  ticker: string;
+  venues: number[];
+};
