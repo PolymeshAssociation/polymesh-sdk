@@ -295,6 +295,7 @@ export interface ClaimData<ClaimType = Claim> {
   target: Identity;
   issuer: Identity;
   issuedAt: Date;
+  lastUpdatedAt: Date;
   expiry: Date | null;
   claim: ClaimType;
 }

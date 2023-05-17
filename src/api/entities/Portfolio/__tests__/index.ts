@@ -407,6 +407,8 @@ describe('Portfolio class', () => {
     });
 
     it('should return a list of transactions', async () => {
+      context = dsMockUtils.getContextInstance({ middlewareV2Enabled: false });
+
       let portfolio = new NonAbstract({ id, did }, context);
 
       const account = 'someAccount';
@@ -557,6 +559,8 @@ describe('Portfolio class', () => {
     });
 
     it('should throw an error if the portfolio does not exist', () => {
+      context = dsMockUtils.getContextInstance({ middlewareV2Enabled: false });
+
       const portfolio = new NonAbstract({ did, id }, context);
       exists = false;
 
@@ -584,6 +588,8 @@ describe('Portfolio class', () => {
     });
 
     it('should call v2 query if middlewareV2 is enabled', async () => {
+      context = dsMockUtils.getContextInstance({ middlewareV2Enabled: true });
+
       const portfolio = new NonAbstract({ did, id }, context);
 
       const fakeResult = ['fakeResult'] as unknown as HistoricSettlement[];
