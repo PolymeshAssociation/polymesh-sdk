@@ -935,4 +935,27 @@ describe('Asset class', () => {
       expect(asset.toHuman()).toBe('SOME_TICKER');
     });
   });
+
+  describe('method: setVenueFiltering', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const ticker = 'TEST';
+      const context = dsMockUtils.getContextInstance();
+      const asset = new Asset({ ticker }, context);
+      const enabled = true;
+
+      const args = {
+        enabled,
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { ticker, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await asset.setVenueFiltering(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
 });
