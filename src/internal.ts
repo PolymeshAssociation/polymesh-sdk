@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 export { PolymeshError } from '~/base/PolymeshError';
 export { Context } from '~/base/Context';
 export { PolymeshTransactionBase } from '~/base/PolymeshTransactionBase';
