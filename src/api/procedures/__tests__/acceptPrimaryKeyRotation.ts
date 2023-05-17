@@ -137,7 +137,7 @@ describe('acceptPrimaryKeyRotation procedure', () => {
       let proc = procedureMockUtils.getInstance<AcceptPrimaryKeyRotationParams, void, Storage>(
         mockContext
       );
-      const boundFunc = prepareStorage.bind(proc);
+      let boundFunc = prepareStorage.bind(proc);
 
       let result = await boundFunc({
         ownerAuth: ownerAuthId,
@@ -153,6 +153,8 @@ describe('acceptPrimaryKeyRotation procedure', () => {
       proc = procedureMockUtils.getInstance<AcceptPrimaryKeyRotationParams, void, Storage>(
         mockContext
       );
+
+      boundFunc = prepareStorage.bind(proc);
 
       dsMockUtils.getContextInstance({
         signingAddress: 'someOtherAddress',
