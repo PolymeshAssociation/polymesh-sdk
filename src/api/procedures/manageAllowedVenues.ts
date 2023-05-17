@@ -1,11 +1,15 @@
 import { Asset, Procedure } from '~/internal';
-import { ManageAllowedVenuesParams, TxTags } from '~/types';
+import { ManageAllowedVenuesParams, ManageVenuesAction, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
+import { bigNumberToU64, stringToTicker } from '~/utils/conversion';
 
 /**
  * @hidden
  */
-export type Params = ManageAllowedVenuesParams;
+export type Params = ManageAllowedVenuesParams & {
+  action: ManageVenuesAction;
+  ticker: string;
+};
 
 /**
  * @hidden
@@ -14,17 +18,22 @@ export async function prepareManageAllowedVenues(
   this: Procedure<Params, void>,
   args: Params
 ): Promise<TransactionSpec<void, ExtrinsicParams<'settlement', 'allowVenues'>>> {
+  const { context } = this;
   const {
-    context: {
-      polymeshApi: { tx },
-    },
-  } = this;
+    polymeshApi: { tx },
+  } = context;
 
   const { ticker, venues, action } = args;
 
+  const rawTicker = stringToTicker(ticker, context);
+  const rawVenues = venues.map(v => bigNumberToU64(v, context));
+
   return {
-    transaction: action === 'allow' ? tx.settlement.allowVenues : tx.settlement.disallowVenues,
-    args: [ticker, venues],
+    transaction:
+      action === ManageVenuesAction.Allow
+        ? tx.settlement.allowVenues
+        : tx.settlement.disallowVenues,
+    args: [rawTicker, rawVenues],
     resolver: undefined,
   };
 }
@@ -39,7 +48,9 @@ export function getAuthorization(
   return {
     permissions: {
       transactions: [
-        action === 'allow' ? TxTags.settlement.AllowVenues : TxTags.settlement.DisallowVenues,
+        action === ManageVenuesAction.Allow
+          ? TxTags.settlement.AllowVenues
+          : TxTags.settlement.DisallowVenues,
       ],
       assets: [new Asset({ ticker }, this.context)],
     },

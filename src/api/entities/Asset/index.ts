@@ -16,6 +16,7 @@ import {
   controllerTransfer,
   Entity,
   Identity,
+  manageAllowedVenues,
   modifyAsset,
   redeemTokens,
   toggleFreezeTransfers,
@@ -29,6 +30,8 @@ import {
   ControllerTransferParams,
   EventIdentifier,
   HistoricAgentOperation,
+  ManageAllowedVenuesParams,
+  ManageVenuesAction,
   ModifyAssetParams,
   NoArgsProcedureMethod,
   ProcedureMethod,
@@ -166,6 +169,24 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
     );
     this.controllerTransfer = createProcedureMethod(
       { getProcedureAndArgs: args => [controllerTransfer, { ticker, ...args }] },
+      context
+    );
+    this.allowVenues = createProcedureMethod(
+      {
+        getProcedureAndArgs: ({ venues }) => [
+          manageAllowedVenues,
+          { ticker, action: ManageVenuesAction.Allow, venues },
+        ],
+      },
+      context
+    );
+    this.disallowVenues = createProcedureMethod(
+      {
+        getProcedureAndArgs: ({ venues }) => [
+          manageAllowedVenues,
+          { ticker, action: ManageVenuesAction.Disallow, venues },
+        ],
+      },
       context
     );
   }
@@ -659,4 +680,8 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
   public toHuman(): string {
     return this.ticker;
   }
+
+  public allowVenues: ProcedureMethod<ManageAllowedVenuesParams, void>;
+
+  public disallowVenues: ProcedureMethod<ManageAllowedVenuesParams, void>;
 }

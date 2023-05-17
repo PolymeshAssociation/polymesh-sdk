@@ -975,8 +975,11 @@ export type RegisterMetadataParams =
       details?: MetadataValueDetails;
     };
 
+export enum ManageVenuesAction {
+  Allow = 'Allow',
+  Disallow = 'Disallow',
+}
+
 export type ManageAllowedVenuesParams = {
-  action: 'allow' | 'disallow';
-  ticker: string;
-  venues: number[];
+  venues: BigNumber[];
 };

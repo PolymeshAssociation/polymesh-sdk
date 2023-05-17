@@ -1,3 +1,8 @@
+import { u64 } from '@polkadot/types';
+import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+import BigNumber from 'bignumber.js';
+import { when } from 'jest-when';
+
 import {
   getAuthorization,
   manageAllowedVenues,
@@ -6,22 +11,35 @@ import {
 } from '~/api/procedures/manageAllowedVenues';
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { MockCodec } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
-import { TxTags } from '~/types';
+import { ManageVenuesAction, TxTags } from '~/types';
+import * as utilsConversionModule from '~/utils/conversion';
 
 describe('manageAllowedVenues procedure', () => {
   let mockContext: Mocked<Context>;
   const ticker = 'TICKER';
+  const venues: BigNumber[] = [new BigNumber(1)];
+  let rawTicker: PolymeshPrimitivesTicker;
+  let rawVenues: MockCodec<u64>[];
+  let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
+  let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
+    rawTicker = dsMockUtils.createMockTicker(ticker);
+    rawVenues = venues.map(venue => dsMockUtils.createMockU64(venue));
+    bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
+    stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
   });
 
   beforeEach(() => {
     entityMockUtils.configureMocks();
     mockContext = dsMockUtils.getContextInstance();
+    when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
+    when(bigNumberToU64Spy).calledWith(venues[0], mockContext).mockReturnValue(rawVenues[0]);
   });
 
   afterEach(() => {
@@ -55,13 +73,13 @@ describe('manageAllowedVenues procedure', () => {
 
       const result = await prepareManageAllowedVenues.call(proc, {
         ticker,
-        venues: [1],
-        action: 'allow',
+        venues,
+        action: ManageVenuesAction.Allow,
       });
 
       expect(result).toEqual({
         transaction,
-        args: [ticker, [1]],
+        args: [rawTicker, rawVenues],
         resolver: undefined,
       });
     });
@@ -72,13 +90,13 @@ describe('manageAllowedVenues procedure', () => {
 
       const result = await prepareManageAllowedVenues.call(proc, {
         ticker,
-        venues: [1],
-        action: 'disallow',
+        venues,
+        action: ManageVenuesAction.Disallow,
       });
 
       expect(result).toEqual({
         transaction,
-        args: [ticker, [1]],
+        args: [rawTicker, rawVenues],
         resolver: undefined,
       });
     });
@@ -90,8 +108,8 @@ describe('manageAllowedVenues procedure', () => {
       const boundFunc = getAuthorization.bind(proc);
       const args: Params = {
         ticker,
-        venues: [1],
-        action: 'allow',
+        venues,
+        action: ManageVenuesAction.Allow,
       };
 
       expect(boundFunc(args)).toEqual({
@@ -107,8 +125,8 @@ describe('manageAllowedVenues procedure', () => {
       const boundFunc = getAuthorization.bind(proc);
       const args: Params = {
         ticker,
-        venues: [1],
-        action: 'disallow',
+        venues,
+        action: ManageVenuesAction.Disallow,
       };
 
       expect(boundFunc(args)).toEqual({
