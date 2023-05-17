@@ -79,7 +79,7 @@ export async function prepareAttestPrimaryKeyRotation(
       authRequest,
       issuerIdentity,
       target,
-      expiry || null,
+      expiry ?? null,
       context
     ),
   };

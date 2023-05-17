@@ -81,7 +81,7 @@ export async function prepareRotatePrimaryKey(
       authorization,
       issuerIdentity,
       target,
-      expiry || null,
+      expiry ?? null,
       context
     ),
   };

@@ -203,6 +203,7 @@ import {
   documentHashToString,
   documentToAssetDocument,
   endConditionToSettlementType,
+  expiryToMoment,
   extrinsicIdentifierToTxTag,
   fundingRoundToAssetFundingRound,
   fundraiserTierToTier,
@@ -9299,5 +9300,39 @@ describe('stringToInstructionMemo and instructionMemoToString', () => {
       const result = instructionMemoToString(rawMemo);
       expect(result).toBe(fakeResult);
     });
+  });
+});
+
+describe('expiryToMoment', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should throw an error if the expiry date is in the past', () => {
+    const value = new Date('01/01/2023');
+    const context = dsMockUtils.getContextInstance();
+    expect(() => expiryToMoment(value, context)).toThrow('Expiry date must be in the future');
+  });
+
+  it('should convert a expiry Date to a polkadot Moment object', () => {
+    const value = new Date('01/01/2040');
+    const fakeResult = 10000 as unknown as Moment;
+    const context = dsMockUtils.getContextInstance();
+
+    when(context.createType)
+      .calledWith('u64', Math.round(value.getTime()))
+      .mockReturnValue(fakeResult);
+
+    const result = expiryToMoment(value, context);
+
+    expect(result).toBe(fakeResult);
   });
 });

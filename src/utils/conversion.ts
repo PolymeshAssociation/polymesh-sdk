@@ -3550,7 +3550,7 @@ export function scheduleSpecToMeshScheduleSpec(
   return context.createType('PalletAssetCheckpointScheduleSpec', {
     start: start && dateToMoment(start, context),
     period: calendarPeriodToMeshCalendarPeriod(
-      period || { unit: CalendarUnit.Month, amount: new BigNumber(0) },
+      period ?? { unit: CalendarUnit.Month, amount: new BigNumber(0) },
       context
     ),
     remaining: bigNumberToU64(repetitions || new BigNumber(0), context),
@@ -4436,7 +4436,7 @@ export function middlewareInstructionToHistoricInstruction(
     tradeDate,
     valueDate,
     ...typeDetails,
-    memo: memo || null,
+    memo: memo ?? null,
     venueId: new BigNumber(venueId),
     createdAt: new Date(datetime),
     legs: legs.map(({ from, to, assetId, amount }) => ({
