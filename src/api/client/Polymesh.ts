@@ -251,9 +251,11 @@ export class Polymesh {
   }
 
   /**
-   * Set the SDK's Signing Manager to the provided one
+   * Set the SDK's Signing Manager to the provided one.
+   *
+   * @note Pass `null` to unset the current signing manager
    */
-  public setSigningManager(signingManager: SigningManager): Promise<void> {
+  public setSigningManager(signingManager: SigningManager | null): Promise<void> {
     return this.context.setSigningManager(signingManager);
   }
 

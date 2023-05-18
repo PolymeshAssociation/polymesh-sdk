@@ -205,7 +205,15 @@ export class Context {
    * @note the signing Account will be set to the Signing Manager's first Account. If the Signing Manager has
    *   no Accounts yet, the signing Account will be left empty
    */
-  public async setSigningManager(signingManager: SigningManager): Promise<void> {
+  public async setSigningManager(signingManager: SigningManager | null): Promise<void> {
+    if (signingManager === null) {
+      this._signingManager = undefined;
+      this.signingAddress = undefined;
+      // note polkadot API does not currently support unsetting a signer
+
+      return;
+    }
+
     this._signingManager = signingManager;
     this._polymeshApi.setSigner(signingManager.getExternalSigner());
 
