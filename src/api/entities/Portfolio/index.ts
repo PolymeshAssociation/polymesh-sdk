@@ -190,10 +190,12 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       const ticker = tickerToString(key.args[1]);
       const locked = balanceToBigNumber(balance);
 
-      const tickerBalance = assetBalances[ticker];
+      if (!locked.isZero()) {
+        const tickerBalance = assetBalances[ticker];
 
-      tickerBalance.locked = locked;
-      tickerBalance.free = assetBalances[ticker].total.minus(locked);
+        tickerBalance.locked = locked;
+        tickerBalance.free = assetBalances[ticker].total.minus(locked);
+      }
     });
 
     const mask: PortfolioBalance[] | undefined = args?.assets.map(asset => ({
