@@ -197,6 +197,8 @@ interface AccountOptions extends EntityOptions {
   getTransactionHistory?: EntityGetter<ExtrinsicData[]>;
   hasPermissions?: EntityGetter<boolean>;
   checkPermissions?: EntityGetter<CheckPermissionsResult<SignerType.Account>>;
+  authorizationsGetReceived?: EntityGetter<AuthorizationRequest[]>;
+  authorizationsGetOne?: EntityGetter<AuthorizationRequest>;
 }
 
 interface SubsidyOptions extends EntityOptions {
@@ -620,6 +622,10 @@ const MockAccountClass = createMockEntityClass<AccountOptions>(
     getTransactionHistory!: jest.Mock;
     hasPermissions!: jest.Mock;
     checkPermissions!: jest.Mock;
+    authorizations = {} as {
+      getReceived: jest.Mock;
+      getOne: jest.Mock;
+    };
 
     /**
      * @hidden
@@ -641,6 +647,8 @@ const MockAccountClass = createMockEntityClass<AccountOptions>(
       this.getTransactionHistory = createEntityGetterMock(opts.getTransactionHistory);
       this.hasPermissions = createEntityGetterMock(opts.hasPermissions);
       this.checkPermissions = createEntityGetterMock(opts.checkPermissions);
+      this.authorizations.getReceived = createEntityGetterMock(opts.authorizationsGetReceived);
+      this.authorizations.getOne = createEntityGetterMock(opts.authorizationsGetOne);
     }
   },
   () => ({
@@ -658,6 +666,8 @@ const MockAccountClass = createMockEntityClass<AccountOptions>(
     checkPermissions: {
       result: true,
     },
+    authorizationsGetReceived: [],
+    authorizationsGetOne: getAuthorizationRequestInstance(),
   }),
   ['Account']
 );
@@ -1586,6 +1596,8 @@ const MockMultiSigClass = createMockEntityClass<MultiSigOptions>(
       requiredSignatures: new BigNumber(0),
     },
     getCreator: getIdentityInstance(),
+    authorizationsGetReceived: [],
+    authorizationsGetOne: getAuthorizationRequestInstance(),
   }),
   ['MultiSig', 'Account']
 );

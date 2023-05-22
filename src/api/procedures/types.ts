@@ -3,6 +3,7 @@ import BigNumber from 'bignumber.js';
 import {
   Account,
   Asset,
+  AuthorizationRequest,
   CheckpointSchedule,
   CorporateActionBase,
   CustomPermissionGroup,
@@ -237,6 +238,17 @@ export interface InviteAccountParams {
   expiry?: Date;
 }
 
+export interface AcceptPrimaryKeyRotationParams {
+  /**
+   * Authorization from the owner who initiated the change
+   */
+  ownerAuth: BigNumber | AuthorizationRequest;
+  /**
+   * (optional) Authorization from a CDD service provider attesting the rotation of primary key
+   */
+  cddAuth?: BigNumber | AuthorizationRequest;
+}
+
 export interface ModifySignerPermissionsParams {
   /**
    * list of secondary Accounts
@@ -380,6 +392,35 @@ export interface RegisterIdentityParams {
   createCdd?: boolean;
   /**
    * (optional) when the generated CDD claim should expire, `createCdd` must be true if specified
+   */
+  expiry?: Date;
+}
+
+export interface AttestPrimaryKeyRotationParams {
+  /**
+   * The Account that will be attested to become the primary key of the `identity`. Can be ss58 encoded address or an instance of Account
+   */
+  targetAccount: string | Account;
+
+  /**
+   * Identity or the DID of the Identity that is to be rotated
+   */
+  identity: string | Identity;
+
+  /**
+   * (optional) when the generated authorization should expire
+   */
+  expiry?: Date;
+}
+
+export interface RotatePrimaryKeyParams {
+  /**
+   * The Account that should function as the primary key of the newly created Identity. Can be ss58 encoded address or an instance of Account
+   */
+  targetAccount: string | Account;
+
+  /**
+   * (optional) when the generated authorization should expire
    */
   expiry?: Date;
 }

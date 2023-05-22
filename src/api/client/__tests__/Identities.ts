@@ -130,4 +130,43 @@ describe('Identities Class', () => {
       expect(result).toBe(false);
     });
   });
+
+  describe('method: attestPrimaryKeyRotation', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const args = {
+        targetAccount: 'someAccount',
+        identity: 'someDid',
+        expiry: new Date('01/01/2040'),
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await identities.attestPrimaryKeyRotation(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: rotatePrimaryKey', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const args = {
+        targetAccount: 'someAccount',
+        expiry: new Date('01/01/2050'),
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await identities.rotatePrimaryKey(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
 });
