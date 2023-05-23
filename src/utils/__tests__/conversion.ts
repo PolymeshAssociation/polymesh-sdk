@@ -7373,7 +7373,9 @@ describe('scopeClaimProofToConfidentialIdentityClaimProof', () => {
     context.createType
       .withArgs('RistrettoPoint', blindedScopeDidHash)
       .returns(rawBlindedScopeDidHash);
-    context.createType.withArgs('ZkProofData', zkProofData).returns(rawZkProofData);
+    context.createType
+      .withArgs('ConfidentialIdentityClaimProofsZkProofData', zkProofData)
+      .returns(rawZkProofData);
 
     context.createType
       .withArgs('Signature', proofScopeIdWellFormed)
@@ -7381,7 +7383,7 @@ describe('scopeClaimProofToConfidentialIdentityClaimProof', () => {
     context.createType.withArgs('RistrettoPoint', scopeId).returns(rawScopeId);
 
     context.createType
-      .withArgs('ConfidentialIdentityClaimProofsScopeClaimProof', scopeClaimProof)
+      .withArgs('ConfidentialIdentityV2ClaimProofsScopeClaimProof', scopeClaimProof)
       .returns(fakeResult);
 
     const result = scopeClaimProofToConfidentialIdentityClaimProof(proof, scopeId, context);

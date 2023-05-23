@@ -7,17 +7,9 @@ declare module '@polkadot/api-base/types/errors' {
   export interface AugmentedErrors<ApiType extends ApiTypes> {
     asset: {
       /**
-       * When extension already archived.
-       **/
-      AlreadyArchived: AugmentedError<ApiType>;
-      /**
        * The token is already frozen.
        **/
       AlreadyFrozen: AugmentedError<ApiType>;
-      /**
-       * When extension already un-archived.
-       **/
-      AlreadyUnArchived: AugmentedError<ApiType>;
       /**
        * The token has already been created.
        **/
@@ -30,6 +22,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Asset Metadata Global type already exists.
        **/
       AssetMetadataGlobalKeyAlreadyExists: AugmentedError<ApiType>;
+      /**
+       * Attempt to delete a key that is needed for an NFT collection.
+       **/
+      AssetMetadataKeyBelongsToNFTCollection: AugmentedError<ApiType>;
       /**
        * Asset Metadata key is missing.
        **/
@@ -47,6 +43,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       AssetMetadataTypeDefMaxLengthExceeded: AugmentedError<ApiType>;
       /**
+       * Attempt to lock a metadata value that is empty.
+       **/
+      AssetMetadataValueIsEmpty: AugmentedError<ApiType>;
+      /**
        * Asset Metadata value is locked.
        **/
       AssetMetadataValueIsLocked: AugmentedError<ApiType>;
@@ -59,17 +59,13 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       BalanceOverflow: AugmentedError<ApiType>;
       /**
-       * When extension is already added.
-       **/
-      ExtensionAlreadyPresent: AugmentedError<ApiType>;
-      /**
        * Maximum length of the funding round name has been exceeded.
        **/
       FundingRoundNameMaxLengthExceeded: AugmentedError<ApiType>;
       /**
-       * Given smart extension is not compatible with the asset.
+       * Attempt to update the type of a non fungible token to a fungible token or the other way around.
        **/
-      IncompatibleExtensionVersion: AugmentedError<ApiType>;
+      IncompatibleAssetTypeUpdate: AugmentedError<ApiType>;
       /**
        * The sender balance is not sufficient.
        **/
@@ -99,9 +95,9 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InvestorUniquenessClaimNotAllowed: AugmentedError<ApiType>;
       /**
-       * Number of Transfer Manager extensions attached to an asset is equal to MaxNumberOfTMExtensionForAsset.
+       * Investor Uniqueness not allowed.
        **/
-      MaximumTMExtensionLimitReached: AugmentedError<ApiType>;
+      InvestorUniquenessNotAllowed: AugmentedError<ApiType>;
       /**
        * Maximum length of asset name has been exceeded.
        **/
@@ -135,9 +131,13 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       TickerAlreadyRegistered: AugmentedError<ApiType>;
       /**
-       * The ticker has non-ascii-encoded parts.
+       * Tickers should start with at least one valid byte.
        **/
-      TickerNotAscii: AugmentedError<ApiType>;
+      TickerFirstByteNotValid: AugmentedError<ApiType>;
+      /**
+       * The ticker has non-alphanumeric parts.
+       **/
+      TickerNotAlphanumeric: AugmentedError<ApiType>;
       /**
        * Registration of ticker has expired.
        **/
@@ -158,6 +158,10 @@ declare module '@polkadot/api-base/types/errors' {
        * The user is not authorized.
        **/
       Unauthorized: AugmentedError<ApiType>;
+      /**
+       * Attempt to call an extrinsic that is only permitted for fungible tokens.
+       **/
+      UnexpectedNonFungibleToken: AugmentedError<ApiType>;
     };
     authorship: {
       /**
@@ -194,6 +198,10 @@ declare module '@polkadot/api-base/types/errors' {
        * A given equivocation report is valid but already previously reported.
        **/
       DuplicateOffenceReport: AugmentedError<ApiType>;
+      /**
+       * Submitted configuration is invalid.
+       **/
+      InvalidConfiguration: AugmentedError<ApiType>;
       /**
        * An equivocation proof provided as part of an equivocation report is invalid.
        **/
@@ -479,8 +487,13 @@ declare module '@polkadot/api-base/types/errors' {
       CodeNotFound: AugmentedError<ApiType>;
       /**
        * The contract's code was found to be invalid during validation or instrumentation.
+       *
+       * The most likely cause of this is that an API was used which is not supported by the
+       * node. This hapens if an older node is used with a new version of ink!. Try updating
+       * your node to the newest available version.
+       *
        * A more detailed error can be found on the node console if debug messages are enabled
-       * or in the debug buffer which is returned to RPC clients.
+       * by supplying `-lruntime::contracts=debug`.
        **/
       CodeRejected: AugmentedError<ApiType>;
       /**
@@ -527,6 +540,10 @@ declare module '@polkadot/api-base/types/errors' {
        * The topics passed to `seal_deposit_events` contains at least one duplicate.
        **/
       DuplicateTopics: AugmentedError<ApiType>;
+      /**
+       * An indetermistic code was used in a context where this is not permitted.
+       **/
+      Indeterministic: AugmentedError<ApiType>;
       /**
        * `seal_call` forwarded this contracts input. It therefore is no longer available.
        **/
@@ -807,6 +824,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       ClaimAndProofVersionsDoNotMatch: AugmentedError<ApiType>;
       /**
+       * Claim does not exist.
+       **/
+      ClaimDoesNotExist: AugmentedError<ApiType>;
+      /**
        * Try to add a claim variant using un-designated extrinsic.
        **/
       ClaimVariantNotAllowed: AugmentedError<ApiType>;
@@ -818,6 +839,14 @@ declare module '@polkadot/api-base/types/errors' {
        * Current identity cannot be forwarded, it is not a secondary key of target identity.
        **/
       CurrentIdentityCannotBeForwarded: AugmentedError<ApiType>;
+      /**
+       * The custom claim type trying to be registered already exists.
+       **/
+      CustomClaimTypeAlreadyExists: AugmentedError<ApiType>;
+      /**
+       * The custom claim type does not exist.
+       **/
+      CustomClaimTypeDoesNotExist: AugmentedError<ApiType>;
       /**
        * A custom scope is too long.
        * It can at most be `32` characters long.
@@ -1042,6 +1071,88 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       TooManySigners: AugmentedError<ApiType>;
     };
+    nft: {
+      /**
+       * An overflow while calculating the balance.
+       **/
+      BalanceOverflow: AugmentedError<ApiType>;
+      /**
+       * An underflow while calculating the balance.
+       **/
+      BalanceUnderflow: AugmentedError<ApiType>;
+      /**
+       * The ticker is already associated to an NFT collection.
+       **/
+      CollectionAlredyRegistered: AugmentedError<ApiType>;
+      /**
+       * The NFT collection does not exist.
+       **/
+      CollectionNotFound: AugmentedError<ApiType>;
+      /**
+       * Duplicate ids are not allowed.
+       **/
+      DuplicatedNFTId: AugmentedError<ApiType>;
+      /**
+       * A duplicate metadata key has been passed as parameter.
+       **/
+      DuplicateMetadataKey: AugmentedError<ApiType>;
+      /**
+       * The asset must be of type non-fungible.
+       **/
+      InvalidAssetType: AugmentedError<ApiType>;
+      /**
+       * Either the number of keys or the key identifier does not match the keys defined for the collection.
+       **/
+      InvalidMetadataAttribute: AugmentedError<ApiType>;
+      /**
+       * Failed to transfer an NFT - NFT collection not found.
+       **/
+      InvalidNFTTransferCollectionNotFound: AugmentedError<ApiType>;
+      /**
+       * Failed to transfer an NFT - compliance failed.
+       **/
+      InvalidNFTTransferComplianceFailure: AugmentedError<ApiType>;
+      /**
+       * Failed to transfer an NFT - identity count would overflow.
+       **/
+      InvalidNFTTransferCountOverflow: AugmentedError<ApiType>;
+      /**
+       * Failed to transfer an NFT - asset is frozen.
+       **/
+      InvalidNFTTransferFrozenAsset: AugmentedError<ApiType>;
+      /**
+       * Failed to transfer an NFT - the number of nfts in the identity is insufficient.
+       **/
+      InvalidNFTTransferInsufficientCount: AugmentedError<ApiType>;
+      /**
+       * Failed to transfer an NFT - NFT not found in portfolio.
+       **/
+      InvalidNFTTransferNFTNotOwned: AugmentedError<ApiType>;
+      /**
+       * Failed to transfer an NFT - attempt to move to the same portfolio.
+       **/
+      InvalidNFTTransferSamePortfolio: AugmentedError<ApiType>;
+      /**
+       * The maximum number of metadata keys was exceeded.
+       **/
+      MaxNumberOfKeysExceeded: AugmentedError<ApiType>;
+      /**
+       * The maximum number of nfts being transferred in one leg was exceeded.
+       **/
+      MaxNumberOfNFTsPerLegExceeded: AugmentedError<ApiType>;
+      /**
+       * The NFT does not exist.
+       **/
+      NFTNotFound: AugmentedError<ApiType>;
+      /**
+       * At least one of the metadata keys has not been registered.
+       **/
+      UnregisteredMetadataKey: AugmentedError<ApiType>;
+      /**
+       * It is not possible to transferr zero nft.
+       **/
+      ZeroCount: AugmentedError<ApiType>;
+    };
     permissions: {
       /**
        * The caller is not authorized to call the current extrinsic.
@@ -1172,7 +1283,7 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       DataLeftAfterDecoding: AugmentedError<ApiType>;
       /**
-       * Input data that a contract passed when making a runtime call was too large.
+       * Input data that a contract passed when using the ChainExtension was too large.
        **/
       InLenTooLarge: AugmentedError<ApiType>;
       /**
@@ -1181,9 +1292,25 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InstantiatorWithNoIdentity: AugmentedError<ApiType>;
       /**
-       * The given `func_id: u32` did not translate into a known runtime call.
+       * Invalid `func_id` provided from contract.
        **/
-      RuntimeCallNotFound: AugmentedError<ApiType>;
+      InvalidFuncId: AugmentedError<ApiType>;
+      /**
+       * Failed to decode a valid `RuntimeCall`.
+       **/
+      InvalidRuntimeCall: AugmentedError<ApiType>;
+      /**
+       * Output data returned from the ChainExtension was too large.
+       **/
+      OutLenTooLarge: AugmentedError<ApiType>;
+      /**
+       * `ReadStorage` failed to write value into the contract's buffer.
+       **/
+      ReadStorageFailed: AugmentedError<ApiType>;
+      /**
+       * Extrinsic is not allowed to be called by contracts.
+       **/
+      RuntimeCallDenied: AugmentedError<ApiType>;
     };
     portfolio: {
       /**
@@ -1202,6 +1329,30 @@ declare module '@polkadot/api-base/types/errors' {
        * Can not unlock more tokens than what are locked
        **/
       InsufficientTokensLocked: AugmentedError<ApiType>;
+      /**
+       * Locked NFTs can not be moved between portfolios.
+       **/
+      InvalidTransferNFTIsLocked: AugmentedError<ApiType>;
+      /**
+       * Only owned NFTs can be moved between portfolios.
+       **/
+      InvalidTransferNFTNotOwned: AugmentedError<ApiType>;
+      /**
+       * The NFT is already locked.
+       **/
+      NFTAlreadyLocked: AugmentedError<ApiType>;
+      /**
+       * The NFT does not exist in the portfolio.
+       **/
+      NFTNotFoundInPortfolio: AugmentedError<ApiType>;
+      /**
+       * The NFT has never been locked.
+       **/
+      NFTNotLocked: AugmentedError<ApiType>;
+      /**
+       * Duplicate asset among the items.
+       **/
+      NoDuplicateAssetsAllowed: AugmentedError<ApiType>;
       /**
        * The portfolio doesn't exist.
        **/
@@ -1247,7 +1398,7 @@ declare module '@polkadot/api-base/types/errors' {
       /**
        * Preimage is too large to store on-chain.
        **/
-      TooLarge: AugmentedError<ApiType>;
+      TooBig: AugmentedError<ApiType>;
     };
     protocolFee: {
       /**
@@ -1317,6 +1468,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       FailedToSchedule: AugmentedError<ApiType>;
       /**
+       * Attempt to use a non-named function on a named task.
+       **/
+      Named: AugmentedError<ApiType>;
+      /**
        * Cannot find the scheduled call.
        **/
       NotFound: AugmentedError<ApiType>;
@@ -1353,6 +1508,14 @@ declare module '@polkadot/api-base/types/errors' {
     };
     settlement: {
       /**
+       * The caller is not a party of this instruction.
+       **/
+      CallerIsNotAParty: AugmentedError<ApiType>;
+      /**
+       * Deprecated function has been called on a v2 instruction.
+       **/
+      DeprecatedCallOnV2Instruction: AugmentedError<ApiType>;
+      /**
        * While affirming the transfer, system failed to lock the assets involved.
        **/
       FailedToLockTokens: AugmentedError<ApiType>;
@@ -1385,9 +1548,17 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InstructionNotPending: AugmentedError<ApiType>;
       /**
+       * Instruction settlement block has not yet been reached.
+       **/
+      InstructionSettleBlockNotReached: AugmentedError<ApiType>;
+      /**
        * Instruction's target settle block reached.
        **/
       InstructionSettleBlockPassed: AugmentedError<ApiType>;
+      /**
+       * Expected a different type of asset in a leg.
+       **/
+      InvalidLegAsset: AugmentedError<ApiType>;
       /**
        * Offchain signature is invalid.
        **/
@@ -1405,6 +1576,14 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       LegNotPending: AugmentedError<ApiType>;
       /**
+       * The number of nfts being transferred in the instruction was exceeded.
+       **/
+      MaxNumberOfNFTsExceeded: AugmentedError<ApiType>;
+      /**
+       * The maximum number of nfts being transferred in one leg was exceeded.
+       **/
+      MaxNumberOfNFTsPerLegExceeded: AugmentedError<ApiType>;
+      /**
        * No pending affirmation for the provided instruction.
        **/
       NoPendingAffirm: AugmentedError<ApiType>;
@@ -1413,6 +1592,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       NoPortfolioProvided: AugmentedError<ApiType>;
       /**
+       * The given number of nfts being transferred was underestimated.
+       **/
+      NumberOfTransferredNFTsUnderestimated: AugmentedError<ApiType>;
+      /**
        * Portfolio in receipt does not match with portfolios provided by the user.
        **/
       PortfolioMismatch: AugmentedError<ApiType>;
@@ -1420,6 +1603,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Receipt already used.
        **/
       ReceiptAlreadyClaimed: AugmentedError<ApiType>;
+      /**
+       * Off-chain receipts are not accepted for non-fungible tokens.
+       **/
+      ReceiptForNonFungibleAsset: AugmentedError<ApiType>;
       /**
        * Receipt not used yet.
        **/
@@ -1432,6 +1619,14 @@ declare module '@polkadot/api-base/types/errors' {
        * The provided settlement block number is in the past and cannot be used by the scheduler.
        **/
       SettleOnPastBlock: AugmentedError<ApiType>;
+      /**
+       * Signer is already added to venue.
+       **/
+      SignerAlreadyExists: AugmentedError<ApiType>;
+      /**
+       * Signer is not added to venue.
+       **/
+      SignerDoesNotExist: AugmentedError<ApiType>;
       /**
        * Sender does not have required permissions.
        **/
@@ -1452,6 +1647,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Instruction status is unknown
        **/
       UnknownInstruction: AugmentedError<ApiType>;
+      /**
+       * Instruction leg amount can't be zero.
+       **/
+      ZeroAmount: AugmentedError<ApiType>;
     };
     staking: {
       /**
@@ -1526,6 +1725,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Given potential validator identity is invalid.
        **/
       InvalidValidatorIdentity: AugmentedError<ApiType>;
+      /**
+       * Validator should have minimum 50k POLYX bonded.
+       **/
+      InvalidValidatorUnbondAmount: AugmentedError<ApiType>;
       /**
        * Updates with same value.
        **/

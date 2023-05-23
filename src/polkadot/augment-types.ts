@@ -6,6 +6,8 @@ import type {
   BitVec,
   Bool,
   Bytes,
+  F32,
+  F64,
   I128,
   I16,
   I256,
@@ -26,6 +28,8 @@ import type {
   U8,
   USize,
   bool,
+  f32,
+  f64,
   i128,
   i16,
   i256,
@@ -64,12 +68,16 @@ import type {
   BabeBlockWeight,
   BabeEpochConfiguration,
   BabeEquivocationProof,
+  BabeGenesisConfiguration,
+  BabeGenesisConfigurationV1,
   BabeWeight,
+  Epoch,
   EpochAuthorship,
   MaybeRandomness,
   MaybeVrf,
   NextConfigDescriptor,
   NextConfigDescriptorV1,
+  OpaqueKeyOwnershipProof,
   Randomness,
   RawBabePreDigest,
   RawBabePreDigestCompat,
@@ -96,14 +104,30 @@ import type {
   WithdrawReasons,
 } from '@polkadot/types/interfaces/balances';
 import type {
+  BeefyAuthoritySet,
   BeefyCommitment,
   BeefyId,
   BeefyNextAuthoritySet,
   BeefyPayload,
+  BeefyPayloadId,
   BeefySignedCommitment,
   MmrRootHash,
+  ValidatorSet,
   ValidatorSetId,
 } from '@polkadot/types/interfaces/beefy';
+import type {
+  BenchmarkBatch,
+  BenchmarkConfig,
+  BenchmarkList,
+  BenchmarkMetadata,
+  BenchmarkParameter,
+  BenchmarkResult,
+} from '@polkadot/types/interfaces/benchmark';
+import type {
+  CheckInherentsResult,
+  InherentData,
+  InherentIdentifier,
+} from '@polkadot/types/interfaces/blockbuilder';
 import type {
   BridgeMessageId,
   BridgedBlockHash,
@@ -159,10 +183,12 @@ import type {
   ContractExecResultTo255,
   ContractExecResultTo260,
   ContractExecResultTo267,
+  ContractExecResultU64,
   ContractInfo,
   ContractInstantiateResult,
   ContractInstantiateResultTo267,
   ContractInstantiateResultTo299,
+  ContractInstantiateResultU64,
   ContractReturnFlags,
   ContractStorageKey,
   DeletedContract,
@@ -200,6 +226,7 @@ import type {
   ContractContractSpecV1,
   ContractContractSpecV2,
   ContractContractSpecV3,
+  ContractContractSpecV4,
   ContractCryptoHasher,
   ContractDiscriminant,
   ContractDisplayName,
@@ -231,6 +258,7 @@ import type {
   ContractMetadataV1,
   ContractMetadataV2,
   ContractMetadataV3,
+  ContractMetadataV4,
   ContractProject,
   ContractProjectContract,
   ContractProjectInfo,
@@ -247,6 +275,8 @@ import type {
   TrieIndex,
 } from '@polkadot/types/interfaces/crowdloan';
 import type {
+  CollationInfo,
+  CollationInfoV1,
   ConfigData,
   MessageId,
   OverweightIndex,
@@ -301,6 +331,7 @@ import type {
   EthBlock,
   EthBloom,
   EthCallRequest,
+  EthFeeHistory,
   EthFilter,
   EthFilterAddress,
   EthFilterChanges,
@@ -310,6 +341,8 @@ import type {
   EthHeader,
   EthLog,
   EthReceipt,
+  EthReceiptV0,
+  EthReceiptV3,
   EthRichBlock,
   EthRichHeader,
   EthStorageProof,
@@ -336,6 +369,8 @@ import type {
 } from '@polkadot/types/interfaces/eth';
 import type {
   EvmAccount,
+  EvmCallInfo,
+  EvmCreateInfo,
   EvmLog,
   EvmVicinity,
   ExitError,
@@ -474,6 +509,7 @@ import type {
   ModuleMetadataV12,
   ModuleMetadataV13,
   ModuleMetadataV9,
+  OpaqueMetadata,
   PalletCallMetadataLatest,
   PalletCallMetadataV14,
   PalletConstantMetadataLatest,
@@ -524,7 +560,17 @@ import type {
   StorageMetadataV13,
   StorageMetadataV9,
 } from '@polkadot/types/interfaces/metadata';
-import type { MmrLeafBatchProof, MmrLeafProof } from '@polkadot/types/interfaces/mmr';
+import type {
+  MmrBatchProof,
+  MmrEncodableOpaqueLeaf,
+  MmrError,
+  MmrLeafBatchProof,
+  MmrLeafIndex,
+  MmrLeafProof,
+  MmrNodeIndex,
+  MmrProof,
+} from '@polkadot/types/interfaces/mmr';
+import type { NpApiError } from '@polkadot/types/interfaces/nompools';
 import type { StorageKind } from '@polkadot/types/interfaces/offchain';
 import type {
   DeferredOffenceOf,
@@ -551,6 +597,7 @@ import type {
   BufferedSessionChange,
   CandidateCommitments,
   CandidateDescriptor,
+  CandidateEvent,
   CandidateHash,
   CandidateInfo,
   CandidatePendingAvailability,
@@ -561,6 +608,7 @@ import type {
   CoreAssignment,
   CoreIndex,
   CoreOccupied,
+  CoreState,
   DisputeLocation,
   DisputeResult,
   DisputeState,
@@ -572,6 +620,7 @@ import type {
   GlobalValidationData,
   GlobalValidationSchedule,
   GroupIndex,
+  GroupRotationInfo,
   HeadData,
   HostConfiguration,
   HrmpChannel,
@@ -593,6 +642,9 @@ import type {
   MessagingStateSnapshotEgressEntry,
   MultiDisputeStatementSet,
   NewBidder,
+  OccupiedCore,
+  OccupiedCoreAssumption,
+  OldV1SessionInfo,
   OutboundHrmpMessage,
   ParaGenesisArgs,
   ParaId,
@@ -609,6 +661,7 @@ import type {
   ParathreadClaimQueue,
   ParathreadEntry,
   PersistedValidationData,
+  PvfCheckStatement,
   QueuedParathread,
   RegisteredParachainInfo,
   RelayBlockNumber,
@@ -618,7 +671,9 @@ import type {
   Remark,
   ReplacementTimes,
   Retriable,
+  ScheduledCore,
   Scheduling,
+  ScrapedOnChainVotes,
   ServiceQuality,
   SessionInfo,
   SessionInfoValidatorGroup,
@@ -655,6 +710,8 @@ import type {
   FeeDetails,
   InclusionFee,
   RuntimeDispatchInfo,
+  RuntimeDispatchInfoV1,
+  RuntimeDispatchInfoV2,
 } from '@polkadot/types/interfaces/payment';
 import type { Approvals } from '@polkadot/types/interfaces/poll';
 import type {
@@ -669,6 +726,7 @@ import type {
   AccountId,
   AccountId20,
   AccountId32,
+  AccountId33,
   AccountIdOf,
   AccountIndex,
   Address,
@@ -739,23 +797,32 @@ import type {
   PhantomData,
   PreRuntime,
   Releases,
+  RuntimeCall,
   RuntimeDbWeight,
+  RuntimeEvent,
   Seal,
   SealV0,
   SignedBlock,
   SignedBlockWithJustification,
   SignedBlockWithJustifications,
   Slot,
+  SlotDuration,
   StorageData,
+  StorageInfo,
   StorageProof,
   TransactionInfo,
+  TransactionLongevity,
   TransactionPriority,
   TransactionStorageProof,
+  TransactionTag,
   U32F32,
   ValidatorId,
   ValidatorIdOf,
   Weight,
   WeightMultiplier,
+  WeightV0,
+  WeightV1,
+  WeightV2,
 } from '@polkadot/types/interfaces/runtime';
 import type {
   Si0Field,
@@ -858,6 +925,8 @@ import type {
   RuntimeVersion,
   RuntimeVersionApi,
   RuntimeVersionPartial,
+  RuntimeVersionPre3,
+  RuntimeVersionPre4,
   SpecVersion,
   StorageChangeSet,
   TraceBlockResponse,
@@ -872,6 +941,7 @@ import type {
   AccountInfoWithRefCountU8,
   AccountInfoWithTripleRefCount,
   ApplyExtrinsicResult,
+  ApplyExtrinsicResultPre6,
   ArithmeticError,
   BlockLength,
   BlockWeights,
@@ -882,13 +952,17 @@ import type {
   DispatchClass,
   DispatchError,
   DispatchErrorModule,
+  DispatchErrorModulePre6,
   DispatchErrorModuleU8,
   DispatchErrorModuleU8a,
+  DispatchErrorPre6,
+  DispatchErrorPre6First,
   DispatchErrorTo198,
   DispatchInfo,
   DispatchInfoTo190,
   DispatchInfoTo244,
   DispatchOutcome,
+  DispatchOutcomePre6,
   DispatchResult,
   DispatchResultOf,
   DispatchResultTo198,
@@ -939,6 +1013,11 @@ import type {
   TreasuryProposal,
 } from '@polkadot/types/interfaces/treasury';
 import type { Multiplier } from '@polkadot/types/interfaces/txpayment';
+import type {
+  TransactionSource,
+  TransactionValidity,
+  ValidTransaction,
+} from '@polkadot/types/interfaces/txqueue';
 import type {
   ClassDetails,
   ClassId,
@@ -1092,13 +1171,13 @@ import type {
   Committee,
   ComplianceRequirement,
   ComplianceRequirementResult,
-  CompressedRistretto,
   Condition,
   ConditionResult,
   ConditionType,
   CorporateAction,
   CountryCode,
   CustomAssetTypeId,
+  CustomClaimTypeId,
   DepositInfo,
   DidRecord,
   DidStatus,
@@ -1114,21 +1193,23 @@ import type {
   ErrorAt,
   EventCounts,
   EventDid,
-  ExtVersion,
-  ExtensionAttributes,
   ExtrinsicPermissions,
+  Fund,
+  FundDescription,
   FundingRoundName,
   Fundraiser,
   FundraiserId,
   FundraiserName,
   FundraiserStatus,
   FundraiserTier,
+  FungibleToken,
   GranularCanTransferResult,
   HandledTxStatus,
   IdentityClaim,
   IdentityId,
   IdentityRole,
   InactiveMember,
+  InitiateCorporateActionArgs,
   Instruction,
   InstructionId,
   InstructionStatus,
@@ -1138,18 +1219,21 @@ import type {
   KeyIdentityData,
   KeyRecord,
   Leg,
+  LegAsset,
   LegId,
   LegStatus,
+  LegV2,
   LocalCAId,
   MaybeBlock,
+  Member,
   Memo,
-  MetaDescription,
-  MetaUrl,
-  MetaVersion,
   Motion,
   MotionInfoLink,
   MotionTitle,
   MovePortfolioItem,
+  NFTId,
+  NFTs,
+  NonFungibleType,
   OffChainSignature,
   PalletName,
   PalletPermissions,
@@ -1198,9 +1282,6 @@ import type {
   Signatory,
   SkippedCount,
   SlashingSwitch,
-  SmartExtension,
-  SmartExtensionName,
-  SmartExtensionType,
   SnapshotId,
   SnapshotMetadata,
   SnapshotResult,
@@ -1218,8 +1299,6 @@ import type {
   TargetIdentity,
   TargetTreatment,
   Tax,
-  TemplateDetails,
-  TemplateMetadata,
   Ticker,
   TickerRegistration,
   TickerRegistrationConfig,
@@ -1251,6 +1330,7 @@ declare module '@polkadot/types/types/registry' {
     AccountId: AccountId;
     AccountId20: AccountId20;
     AccountId32: AccountId32;
+    AccountId33: AccountId33;
     AccountIdOf: AccountIdOf;
     AccountIndex: AccountIndex;
     AccountInfo: AccountInfo;
@@ -1277,6 +1357,7 @@ declare module '@polkadot/types/types/registry' {
     AnySignature: AnySignature;
     ApiId: ApiId;
     ApplyExtrinsicResult: ApplyExtrinsicResult;
+    ApplyExtrinsicResultPre6: ApplyExtrinsicResultPre6;
     ApprovalFlag: ApprovalFlag;
     Approvals: Approvals;
     ArithmeticError: ArithmeticError;
@@ -1335,6 +1416,8 @@ declare module '@polkadot/types/types/registry' {
     BabeBlockWeight: BabeBlockWeight;
     BabeEpochConfiguration: BabeEpochConfiguration;
     BabeEquivocationProof: BabeEquivocationProof;
+    BabeGenesisConfiguration: BabeGenesisConfiguration;
+    BabeGenesisConfigurationV1: BabeGenesisConfigurationV1;
     BabeWeight: BabeWeight;
     BackedCandidate: BackedCandidate;
     Balance: Balance;
@@ -1346,12 +1429,20 @@ declare module '@polkadot/types/types/registry' {
     BallotTimeRange: BallotTimeRange;
     BallotTitle: BallotTitle;
     BallotVote: BallotVote;
+    BeefyAuthoritySet: BeefyAuthoritySet;
     BeefyCommitment: BeefyCommitment;
     BeefyId: BeefyId;
     BeefyKey: BeefyKey;
     BeefyNextAuthoritySet: BeefyNextAuthoritySet;
     BeefyPayload: BeefyPayload;
+    BeefyPayloadId: BeefyPayloadId;
     BeefySignedCommitment: BeefySignedCommitment;
+    BenchmarkBatch: BenchmarkBatch;
+    BenchmarkConfig: BenchmarkConfig;
+    BenchmarkList: BenchmarkList;
+    BenchmarkMetadata: BenchmarkMetadata;
+    BenchmarkParameter: BenchmarkParameter;
+    BenchmarkResult: BenchmarkResult;
     Beneficiary: Beneficiary;
     Bid: Bid;
     Bidder: Bidder;
@@ -1405,6 +1496,7 @@ declare module '@polkadot/types/types/registry' {
     CallOrigin: CallOrigin;
     CandidateCommitments: CandidateCommitments;
     CandidateDescriptor: CandidateDescriptor;
+    CandidateEvent: CandidateEvent;
     CandidateHash: CandidateHash;
     CandidateInfo: CandidateInfo;
     CandidatePendingAvailability: CandidatePendingAvailability;
@@ -1418,6 +1510,7 @@ declare module '@polkadot/types/types/registry' {
     ChainType: ChainType;
     ChangesTrieConfiguration: ChangesTrieConfiguration;
     ChangesTrieSignal: ChangesTrieSignal;
+    CheckInherentsResult: CheckInherentsResult;
     CheckpointId: CheckpointId;
     CheckpointSchedule: CheckpointSchedule;
     ChoiceTitle: ChoiceTitle;
@@ -1436,6 +1529,8 @@ declare module '@polkadot/types/types/registry' {
     CodeUploadRequest: CodeUploadRequest;
     CodeUploadResult: CodeUploadResult;
     CodeUploadResultValue: CodeUploadResultValue;
+    CollationInfo: CollationInfo;
+    CollationInfoV1: CollationInfoV1;
     CollatorId: CollatorId;
     CollatorSignature: CollatorSignature;
     CollectiveOrigin: CollectiveOrigin;
@@ -1443,7 +1538,6 @@ declare module '@polkadot/types/types/registry' {
     Committee: Committee;
     ComplianceRequirement: ComplianceRequirement;
     ComplianceRequirementResult: ComplianceRequirementResult;
-    CompressedRistretto: CompressedRistretto;
     Condition: Condition;
     ConditionResult: ConditionResult;
     ConditionType: ConditionType;
@@ -1462,6 +1556,7 @@ declare module '@polkadot/types/types/registry' {
     ContractContractSpecV1: ContractContractSpecV1;
     ContractContractSpecV2: ContractContractSpecV2;
     ContractContractSpecV3: ContractContractSpecV3;
+    ContractContractSpecV4: ContractContractSpecV4;
     ContractCryptoHasher: ContractCryptoHasher;
     ContractDiscriminant: ContractDiscriminant;
     ContractDisplayName: ContractDisplayName;
@@ -1480,10 +1575,12 @@ declare module '@polkadot/types/types/registry' {
     ContractExecResultTo255: ContractExecResultTo255;
     ContractExecResultTo260: ContractExecResultTo260;
     ContractExecResultTo267: ContractExecResultTo267;
+    ContractExecResultU64: ContractExecResultU64;
     ContractInfo: ContractInfo;
     ContractInstantiateResult: ContractInstantiateResult;
     ContractInstantiateResultTo267: ContractInstantiateResultTo267;
     ContractInstantiateResultTo299: ContractInstantiateResultTo299;
+    ContractInstantiateResultU64: ContractInstantiateResultU64;
     ContractLayoutArray: ContractLayoutArray;
     ContractLayoutCell: ContractLayoutCell;
     ContractLayoutEnum: ContractLayoutEnum;
@@ -1505,6 +1602,7 @@ declare module '@polkadot/types/types/registry' {
     ContractMetadataV1: ContractMetadataV1;
     ContractMetadataV2: ContractMetadataV2;
     ContractMetadataV3: ContractMetadataV3;
+    ContractMetadataV4: ContractMetadataV4;
     ContractProject: ContractProject;
     ContractProjectContract: ContractProjectContract;
     ContractProjectInfo: ContractProjectInfo;
@@ -1519,11 +1617,13 @@ declare module '@polkadot/types/types/registry' {
     CoreAssignment: CoreAssignment;
     CoreIndex: CoreIndex;
     CoreOccupied: CoreOccupied;
+    CoreState: CoreState;
     CorporateAction: CorporateAction;
     CountryCode: CountryCode;
     CrateVersion: CrateVersion;
     CreatedBlock: CreatedBlock;
     CustomAssetTypeId: CustomAssetTypeId;
+    CustomClaimTypeId: CustomClaimTypeId;
     Data: Data;
     DeferredOffenceOf: DeferredOffenceOf;
     DefunctVoter: DefunctVoter;
@@ -1546,14 +1646,18 @@ declare module '@polkadot/types/types/registry' {
     DispatchClass: DispatchClass;
     DispatchError: DispatchError;
     DispatchErrorModule: DispatchErrorModule;
+    DispatchErrorModulePre6: DispatchErrorModulePre6;
     DispatchErrorModuleU8: DispatchErrorModuleU8;
     DispatchErrorModuleU8a: DispatchErrorModuleU8a;
+    DispatchErrorPre6: DispatchErrorPre6;
+    DispatchErrorPre6First: DispatchErrorPre6First;
     DispatchErrorTo198: DispatchErrorTo198;
     DispatchFeePayment: DispatchFeePayment;
     DispatchInfo: DispatchInfo;
     DispatchInfoTo190: DispatchInfoTo190;
     DispatchInfoTo244: DispatchInfoTo244;
     DispatchOutcome: DispatchOutcome;
+    DispatchOutcomePre6: DispatchOutcomePre6;
     DispatchResult: DispatchResult;
     DispatchResultOf: DispatchResultOf;
     DispatchResultTo198: DispatchResultTo198;
@@ -1578,6 +1682,7 @@ declare module '@polkadot/types/types/registry' {
     EIP2930Transaction: EIP2930Transaction;
     EncodedFinalityProofs: EncodedFinalityProofs;
     EncodedJustification: EncodedJustification;
+    Epoch: Epoch;
     EpochAuthorship: EpochAuthorship;
     Era: Era;
     ErrorAt: ErrorAt;
@@ -1599,6 +1704,7 @@ declare module '@polkadot/types/types/registry' {
     EthereumAddress: EthereumAddress;
     EthereumLookupSource: EthereumLookupSource;
     EthereumSignature: EthereumSignature;
+    EthFeeHistory: EthFeeHistory;
     EthFilter: EthFilter;
     EthFilterAddress: EthFilterAddress;
     EthFilterChanges: EthFilterChanges;
@@ -1608,6 +1714,8 @@ declare module '@polkadot/types/types/registry' {
     EthHeader: EthHeader;
     EthLog: EthLog;
     EthReceipt: EthReceipt;
+    EthReceiptV0: EthReceiptV0;
+    EthReceiptV3: EthReceiptV3;
     EthRichBlock: EthRichBlock;
     EthRichHeader: EthRichHeader;
     EthStorageProof: EthStorageProof;
@@ -1637,6 +1745,8 @@ declare module '@polkadot/types/types/registry' {
     EventMetadataV9: EventMetadataV9;
     EventRecord: EventRecord;
     EvmAccount: EvmAccount;
+    EvmCallInfo: EvmCallInfo;
+    EvmCreateInfo: EvmCreateInfo;
     EvmLog: EvmLog;
     EvmVicinity: EvmVicinity;
     ExecReturnValue: ExecReturnValue;
@@ -1646,7 +1756,6 @@ declare module '@polkadot/types/types/registry' {
     ExitRevert: ExitRevert;
     ExitSucceed: ExitSucceed;
     ExplicitDisputeStatement: ExplicitDisputeStatement;
-    ExtensionAttributes: ExtensionAttributes;
     Extrinsic: Extrinsic;
     ExtrinsicEra: ExtrinsicEra;
     ExtrinsicMetadataLatest: ExtrinsicMetadataLatest;
@@ -1665,7 +1774,10 @@ declare module '@polkadot/types/types/registry' {
     ExtrinsicsWeight: ExtrinsicsWeight;
     ExtrinsicUnknown: ExtrinsicUnknown;
     ExtrinsicV4: ExtrinsicV4;
-    ExtVersion: ExtVersion;
+    f32: f32;
+    F32: F32;
+    f64: f64;
+    F64: F64;
     FeeDetails: FeeDetails;
     Fixed128: Fixed128;
     Fixed64: Fixed64;
@@ -1690,6 +1802,8 @@ declare module '@polkadot/types/types/registry' {
     FunctionMetadataV13: FunctionMetadataV13;
     FunctionMetadataV14: FunctionMetadataV14;
     FunctionMetadataV9: FunctionMetadataV9;
+    Fund: Fund;
+    FundDescription: FundDescription;
     FundIndex: FundIndex;
     FundInfo: FundInfo;
     FundingRoundName: FundingRoundName;
@@ -1702,6 +1816,7 @@ declare module '@polkadot/types/types/registry' {
     FungibilityV0: FungibilityV0;
     FungibilityV1: FungibilityV1;
     FungibilityV2: FungibilityV2;
+    FungibleToken: FungibleToken;
     Gas: Gas;
     GiltBid: GiltBid;
     GlobalValidationData: GlobalValidationData;
@@ -1716,6 +1831,7 @@ declare module '@polkadot/types/types/registry' {
     GrandpaSignedPrecommit: GrandpaSignedPrecommit;
     GranularCanTransferResult: GranularCanTransferResult;
     GroupIndex: GroupIndex;
+    GroupRotationInfo: GroupRotationInfo;
     H1024: H1024;
     H128: H128;
     H160: H160;
@@ -1771,7 +1887,10 @@ declare module '@polkadot/types/types/registry' {
     IncomingParachainFixed: IncomingParachainFixed;
     Index: Index;
     IndicesLookupSource: IndicesLookupSource;
+    InherentData: InherentData;
+    InherentIdentifier: InherentIdentifier;
     InitializationData: InitializationData;
+    InitiateCorporateActionArgs: InitiateCorporateActionArgs;
     InstanceDetails: InstanceDetails;
     InstanceId: InstanceId;
     InstanceMetadata: InstanceMetadata;
@@ -1819,8 +1938,10 @@ declare module '@polkadot/types/types/registry' {
     LeasePeriodOf: LeasePeriodOf;
     Leg: Leg;
     LegacyTransaction: LegacyTransaction;
+    LegAsset: LegAsset;
     LegId: LegId;
     LegStatus: LegStatus;
+    LegV2: LegV2;
     Limits: Limits;
     LimitsTo264: LimitsTo264;
     LocalCAId: LocalCAId;
@@ -1832,6 +1953,7 @@ declare module '@polkadot/types/types/registry' {
     MaybeBlock: MaybeBlock;
     MaybeRandomness: MaybeRandomness;
     MaybeVrf: MaybeVrf;
+    Member: Member;
     MemberCount: MemberCount;
     MembershipProof: MembershipProof;
     Memo: Memo;
@@ -1853,12 +1975,15 @@ declare module '@polkadot/types/types/registry' {
     MetadataV13: MetadataV13;
     MetadataV14: MetadataV14;
     MetadataV9: MetadataV9;
-    MetaDescription: MetaDescription;
-    MetaUrl: MetaUrl;
-    MetaVersion: MetaVersion;
     MigrationStatusResult: MigrationStatusResult;
+    MmrBatchProof: MmrBatchProof;
+    MmrEncodableOpaqueLeaf: MmrEncodableOpaqueLeaf;
+    MmrError: MmrError;
     MmrLeafBatchProof: MmrLeafBatchProof;
+    MmrLeafIndex: MmrLeafIndex;
     MmrLeafProof: MmrLeafProof;
+    MmrNodeIndex: MmrNodeIndex;
+    MmrProof: MmrProof;
     MmrRootHash: MmrRootHash;
     ModuleConstantMetadataV10: ModuleConstantMetadataV10;
     ModuleConstantMetadataV11: ModuleConstantMetadataV11;
@@ -1906,13 +2031,22 @@ declare module '@polkadot/types/types/registry' {
     NextAuthority: NextAuthority;
     NextConfigDescriptor: NextConfigDescriptor;
     NextConfigDescriptorV1: NextConfigDescriptorV1;
+    NFTId: NFTId;
+    NFTs: NFTs;
     NodeRole: NodeRole;
+    NonFungibleType: NonFungibleType;
     NotConnectedPeer: NotConnectedPeer;
+    NpApiError: NpApiError;
     Null: Null;
+    OccupiedCore: OccupiedCore;
+    OccupiedCoreAssumption: OccupiedCoreAssumption;
     OffChainSignature: OffChainSignature;
     OffenceDetails: OffenceDetails;
     Offender: Offender;
+    OldV1SessionInfo: OldV1SessionInfo;
     OpaqueCall: OpaqueCall;
+    OpaqueKeyOwnershipProof: OpaqueKeyOwnershipProof;
+    OpaqueMetadata: OpaqueMetadata;
     OpaqueMultiaddr: OpaqueMultiaddr;
     OpaqueNetworkState: OpaqueNetworkState;
     OpaquePeerId: OpaquePeerId;
@@ -2036,6 +2170,7 @@ declare module '@polkadot/types/types/registry' {
     ProxyDefinition: ProxyDefinition;
     ProxyState: ProxyState;
     ProxyType: ProxyType;
+    PvfCheckStatement: PvfCheckStatement;
     QueryId: QueryId;
     QueryStatus: QueryStatus;
     QueueConfigData: QueueConfigData;
@@ -2097,14 +2232,21 @@ declare module '@polkadot/types/types/registry' {
     RpcDidRecords: RpcDidRecords;
     RpcDidRecordsSuccess: RpcDidRecordsSuccess;
     RpcMethods: RpcMethods;
+    RuntimeCall: RuntimeCall;
     RuntimeDbWeight: RuntimeDbWeight;
     RuntimeDispatchInfo: RuntimeDispatchInfo;
+    RuntimeDispatchInfoV1: RuntimeDispatchInfoV1;
+    RuntimeDispatchInfoV2: RuntimeDispatchInfoV2;
+    RuntimeEvent: RuntimeEvent;
     RuntimeVersion: RuntimeVersion;
     RuntimeVersionApi: RuntimeVersionApi;
     RuntimeVersionPartial: RuntimeVersionPartial;
+    RuntimeVersionPre3: RuntimeVersionPre3;
+    RuntimeVersionPre4: RuntimeVersionPre4;
     Scalar: Scalar;
     Schedule: Schedule;
     Scheduled: Scheduled;
+    ScheduledCore: ScheduledCore;
     ScheduledTo254: ScheduledTo254;
     ScheduleId: ScheduleId;
     SchedulePeriod: SchedulePeriod;
@@ -2117,6 +2259,7 @@ declare module '@polkadot/types/types/registry' {
     Scope: Scope;
     ScopeClaimProof: ScopeClaimProof;
     ScopeId: ScopeId;
+    ScrapedOnChainVotes: ScrapedOnChainVotes;
     Seal: Seal;
     SealV0: SealV0;
     SecondaryKey: SecondaryKey;
@@ -2205,12 +2348,10 @@ declare module '@polkadot/types/types/registry' {
     SkippedCount: SkippedCount;
     SlashingSwitch: SlashingSwitch;
     Slot: Slot;
+    SlotDuration: SlotDuration;
     SlotNumber: SlotNumber;
     SlotRange: SlotRange;
     SlotRange10: SlotRange10;
-    SmartExtension: SmartExtension;
-    SmartExtensionName: SmartExtensionName;
-    SmartExtensionType: SmartExtensionType;
     SnapshotId: SnapshotId;
     SnapshotMetadata: SnapshotMetadata;
     SnapshotResult: SnapshotResult;
@@ -2258,6 +2399,7 @@ declare module '@polkadot/types/types/registry' {
     StorageHasherV13: StorageHasherV13;
     StorageHasherV14: StorageHasherV14;
     StorageHasherV9: StorageHasherV9;
+    StorageInfo: StorageInfo;
     StorageKey: StorageKey;
     StorageKind: StorageKind;
     StorageMetadataV10: StorageMetadataV10;
@@ -2284,8 +2426,6 @@ declare module '@polkadot/types/types/registry' {
     TAssetBalance: TAssetBalance;
     TAssetDepositBalance: TAssetDepositBalance;
     Tax: Tax;
-    TemplateDetails: TemplateDetails;
-    TemplateMetadata: TemplateMetadata;
     Text: Text;
     Ticker: Ticker;
     TickerRegistration: TickerRegistration;
@@ -2297,11 +2437,15 @@ declare module '@polkadot/types/types/registry' {
     TraceError: TraceError;
     TransactionalError: TransactionalError;
     TransactionInfo: TransactionInfo;
+    TransactionLongevity: TransactionLongevity;
     TransactionPriority: TransactionPriority;
+    TransactionSource: TransactionSource;
     TransactionStorageProof: TransactionStorageProof;
+    TransactionTag: TransactionTag;
     TransactionV0: TransactionV0;
     TransactionV1: TransactionV1;
     TransactionV2: TransactionV2;
+    TransactionValidity: TransactionValidity;
     TransactionValidityError: TransactionValidityError;
     TransferCondition: TransferCondition;
     TransferConditionExemptKey: TransferConditionExemptKey;
@@ -2345,10 +2489,12 @@ declare module '@polkadot/types/types/registry' {
     ValidatorCount: ValidatorCount;
     ValidatorId: ValidatorId;
     ValidatorIdOf: ValidatorIdOf;
+    ValidatorSet: ValidatorSet;
     ValidatorSetId: ValidatorSetId;
     ValidatorSignature: ValidatorSignature;
     ValidDisputeStatementKind: ValidDisputeStatementKind;
     ValidityAttestation: ValidityAttestation;
+    ValidTransaction: ValidTransaction;
     VecInboundHrmpMessage: VecInboundHrmpMessage;
     Venue: Venue;
     VenueDetails: VenueDetails;
@@ -2386,6 +2532,9 @@ declare module '@polkadot/types/types/registry' {
     WeightMultiplier: WeightMultiplier;
     WeightPerClass: WeightPerClass;
     WeightToFeeCoefficient: WeightToFeeCoefficient;
+    WeightV0: WeightV0;
+    WeightV1: WeightV1;
+    WeightV2: WeightV2;
     WildFungibility: WildFungibility;
     WildFungibilityV0: WildFungibilityV0;
     WildFungibilityV1: WildFungibilityV1;

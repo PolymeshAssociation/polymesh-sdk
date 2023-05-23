@@ -8,7 +8,7 @@ import {
   Signature,
 } from '@polkadot/types/interfaces';
 import {
-  ConfidentialIdentityClaimProofsScopeClaimProof,
+  ConfidentialIdentityV2ClaimProofsScopeClaimProof,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCorporateAction,
   PalletCorporateActionsDistribution,
@@ -24,6 +24,7 @@ import {
   PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesSecondaryKeyPermissions,
+  PolymeshPrimitivesSecondaryKeySignatory,
   PolymeshPrimitivesStatisticsStat2ndKey,
   PolymeshPrimitivesStatisticsStatClaim,
   PolymeshPrimitivesStatisticsStatOpType,
@@ -425,7 +426,10 @@ export function accountIdToAccount(accountId: AccountId, context: Context): Acco
 /**
  * @hidden
  */
-export function signerValueToSignatory(signer: SignerValue, context: Context): Signatory {
+export function signerValueToSignatory(
+  signer: SignerValue,
+  context: Context
+): PolymeshPrimitivesSecondaryKeySignatory {
   return context.createType('Signatory', {
     [signer.type]: signer.value,
   });
@@ -3532,13 +3536,13 @@ export function scopeClaimProofToConfidentialIdentityClaimProof(
   proof: ScopeClaimProof,
   scopeId: string,
   context: Context
-): ConfidentialIdentityClaimProofsScopeClaimProof {
+): ConfidentialIdentityV2ClaimProofsScopeClaimProof {
   const {
     proofScopeIdWellFormed,
     proofScopeIdCddIdMatch: { challengeResponses, subtractExpressionsRes, blindedScopeDidHash },
   } = proof;
 
-  const zkProofData = context.createType('ZkProofData', {
+  const zkProofData = context.createType('ConfidentialIdentityClaimProofsZkProofData', {
     /* eslint-disable @typescript-eslint/naming-convention */
     challenge_responses: challengeResponses.map(cr => stringToScalar(cr, context)),
     subtract_expressions_res: stringToRistrettoPoint(subtractExpressionsRes, context),
@@ -3546,7 +3550,7 @@ export function scopeClaimProofToConfidentialIdentityClaimProof(
     /* eslint-enable @typescript-eslint/naming-convention */
   });
 
-  return context.createType('ConfidentialIdentityClaimProofsScopeClaimProof', {
+  return context.createType('ConfidentialIdentityV2ClaimProofsScopeClaimProof', {
     proofScopeIdWellformed: stringToSignature(proofScopeIdWellFormed, context),
     proofScopeIdCddIdMatch: zkProofData,
     scopeId: stringToRistrettoPoint(scopeId, context),

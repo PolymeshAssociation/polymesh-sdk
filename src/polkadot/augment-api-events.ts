@@ -18,9 +18,8 @@ import type {
 import type { ITuple } from '@polkadot/types-codec/types';
 import type { AccountId32, H256, Perbill, Permill } from '@polkadot/types/interfaces/runtime';
 import type {
-  FrameSupportScheduleLookupError,
+  FrameSupportDispatchDispatchInfo,
   FrameSupportTokensMiscBalanceStatus,
-  FrameSupportWeightsDispatchInfo,
   PalletBridgeBridgeTx,
   PalletBridgeHandledTxStatus,
   PalletCorporateActionsBallotBallotMeta,
@@ -35,7 +34,9 @@ import type {
   PalletPipsProposalState,
   PalletPipsProposer,
   PalletPipsSnapshottedPip,
+  PalletSettlementInstructionMemo,
   PalletSettlementLeg,
+  PalletSettlementLegV2,
   PalletSettlementSettlementType,
   PalletSettlementVenueType,
   PalletStakingElectionCompute,
@@ -48,6 +49,7 @@ import type {
   PolymeshPrimitivesAgentAgentGroup,
   PolymeshPrimitivesAssetAssetType,
   PolymeshPrimitivesAssetIdentifier,
+  PolymeshPrimitivesAssetMetadataAssetMetadataKey,
   PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
   PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail,
   PolymeshPrimitivesAuthorizationAuthorizationData,
@@ -60,6 +62,8 @@ import type {
   PolymeshPrimitivesIdentityClaim,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesIdentityIdPortfolioId,
+  PolymeshPrimitivesNftNfTs,
+  PolymeshPrimitivesPortfolioMemo,
   PolymeshPrimitivesPosRatio,
   PolymeshPrimitivesSecondaryKey,
   PolymeshPrimitivesSecondaryKeyPermissions,
@@ -80,7 +84,7 @@ declare module '@polkadot/api-base/types/events' {
     asset: {
       /**
        * Event for creation of the asset.
-       * caller DID/ owner DID, ticker, divisibility, asset type, beneficiary DID, disable investor uniqueness
+       * caller DID/ owner DID, ticker, divisibility, asset type, beneficiary DID, disable investor uniqueness, asset name, identifiers, funding round
        **/
       AssetCreated: AugmentedEvent<
         ApiType,
@@ -90,7 +94,10 @@ declare module '@polkadot/api-base/types/events' {
           bool,
           PolymeshPrimitivesAssetAssetType,
           PolymeshPrimitivesIdentityId,
-          bool
+          bool,
+          Bytes,
+          Vec<PolymeshPrimitivesAssetIdentifier>,
+          Option<Bytes>
         ]
       >;
       /**
@@ -116,6 +123,14 @@ declare module '@polkadot/api-base/types/events' {
       AssetRenamed: AugmentedEvent<
         ApiType,
         [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, Bytes]
+      >;
+      /**
+       * An event emitted when the type of an asset changed.
+       * Parameters: caller DID, ticker, new token type.
+       **/
+      AssetTypeChanged: AugmentedEvent<
+        ApiType,
+        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, PolymeshPrimitivesAssetAssetType]
       >;
       /**
        * An event emitted when an asset is unfrozen.
@@ -230,6 +245,26 @@ declare module '@polkadot/api-base/types/events' {
           u128,
           Bytes,
           u128
+        ]
+      >;
+      /**
+       * An event emitted when a local metadata key has been removed.
+       * Parameters: caller ticker, Local type name
+       **/
+      LocalMetadataKeyDeleted: AugmentedEvent<
+        ApiType,
+        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, u64]
+      >;
+      /**
+       * An event emitted when a local metadata value has been removed.
+       * Parameters: caller ticker, Local type name
+       **/
+      MetadataValueDeleted: AugmentedEvent<
+        ApiType,
+        [
+          PolymeshPrimitivesIdentityId,
+          PolymeshPrimitivesTicker,
+          PolymeshPrimitivesAssetMetadataAssetMetadataKey
         ]
       >;
       /**
@@ -401,6 +436,13 @@ declare module '@polkadot/api-base/types/events' {
        * Bridge limit has been updated.
        **/
       BridgeLimitUpdated: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, u128, u32]>;
+      /**
+       * Bridge Tx failed.  Recipient missing CDD or limit reached.
+       **/
+      BridgeTxFailed: AugmentedEvent<
+        ApiType,
+        [PolymeshPrimitivesIdentityId, PalletBridgeBridgeTx, SpRuntimeDispatchError]
+      >;
       /**
        * Bridge Tx Scheduled.
        **/
@@ -752,6 +794,20 @@ declare module '@polkadot/api-base/types/events' {
     };
     contracts: {
       /**
+       * A contract was called either by a plain account or another contract.
+       *
+       * # Note
+       *
+       * Please keep in mind that like all events this is only emitted for successful
+       * calls. This is because on failure all storage changes including events are
+       * rolled back.
+       **/
+      Called: AugmentedEvent<
+        ApiType,
+        [caller: AccountId32, contract: AccountId32],
+        { caller: AccountId32; contract: AccountId32 }
+      >;
+      /**
        * A code with the specified hash was removed.
        **/
       CodeRemoved: AugmentedEvent<ApiType, [codeHash: H256], { codeHash: H256 }>;
@@ -774,6 +830,20 @@ declare module '@polkadot/api-base/types/events' {
         ApiType,
         [contract: AccountId32, data: Bytes],
         { contract: AccountId32; data: Bytes }
+      >;
+      /**
+       * A contract delegate called a code hash.
+       *
+       * # Note
+       *
+       * Please keep in mind that like all events this is only emitted for successful
+       * calls. This is because on failure all storage changes including events are
+       * rolled back.
+       **/
+      DelegateCalled: AugmentedEvent<
+        ApiType,
+        [contract: AccountId32, codeHash: H256],
+        { contract: AccountId32; codeHash: H256 }
       >;
       /**
        * Contract deployed by address at the specified address.
@@ -1078,6 +1148,15 @@ declare module '@polkadot/api-base/types/events' {
         [Option<PolymeshPrimitivesIdentityId>, Option<AccountId32>, u64]
       >;
       /**
+       * Accepting Authorization retry limit reached.
+       *
+       * (authorized_identity, authorized_key, auth_id)
+       **/
+      AuthorizationRetryLimitReached: AugmentedEvent<
+        ApiType,
+        [Option<PolymeshPrimitivesIdentityId>, Option<AccountId32>, u64]
+      >;
+      /**
        * Authorization revoked by the authorizer.
        *
        * (authorized_identity, authorized_key, auth_id)
@@ -1117,6 +1196,12 @@ declare module '@polkadot/api-base/types/events' {
         ApiType,
         [PolymeshPrimitivesIdentityId, PolymeshPrimitivesIdentityClaim]
       >;
+      /**
+       * A new CustomClaimType was added.
+       *
+       * (DID, id, Type)
+       **/
+      CustomClaimTypeAdded: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, u32, Bytes]>;
       /**
        * Identity created.
        *
@@ -1322,6 +1407,26 @@ declare module '@polkadot/api-base/types/events' {
        * Scheduling of proposal fails.
        **/
       SchedulingFailed: AugmentedEvent<ApiType, [SpRuntimeDispatchError]>;
+    };
+    nft: {
+      /**
+       * Emitted when a new nft is issued.
+       **/
+      IssuedNFT: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, u64, u64]>;
+      /**
+       * Emitted when a new nft collection is created.
+       **/
+      NftCollectionCreated: AugmentedEvent<
+        ApiType,
+        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, u64]
+      >;
+      /**
+       * Emitted when an NFT is redeemed.
+       **/
+      RedeemedNFT: AugmentedEvent<
+        ApiType,
+        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, u64]
+      >;
     };
     offences: {
       /**
@@ -1551,6 +1656,27 @@ declare module '@polkadot/api-base/types/events' {
        * * asset ticker
        * * asset balance that was moved
        **/
+      FungibleTokensMovedBetweenPortfolios: AugmentedEvent<
+        ApiType,
+        [
+          PolymeshPrimitivesIdentityId,
+          PolymeshPrimitivesIdentityIdPortfolioId,
+          PolymeshPrimitivesIdentityIdPortfolioId,
+          PolymeshPrimitivesTicker,
+          u128,
+          Option<PolymeshPrimitivesPortfolioMemo>
+        ]
+      >;
+      /**
+       * A token amount has been moved from one portfolio to another.
+       *
+       * # Parameters
+       * * origin DID
+       * * source portfolio
+       * * destination portfolio
+       * * asset ticker
+       * * asset balance that was moved
+       **/
       MovedBetweenPortfolios: AugmentedEvent<
         ApiType,
         [
@@ -1560,6 +1686,25 @@ declare module '@polkadot/api-base/types/events' {
           PolymeshPrimitivesTicker,
           u128,
           Option<PolymeshCommonUtilitiesBalancesMemo>
+        ]
+      >;
+      /**
+       * NFTs have been moved from one portfolio to another.
+       *
+       * # Parameters
+       * * origin DID
+       * * source portfolio
+       * * destination portfolio
+       * * NFTs
+       **/
+      NFTsMovedBetweenPortfolios: AugmentedEvent<
+        ApiType,
+        [
+          PolymeshPrimitivesIdentityId,
+          PolymeshPrimitivesIdentityIdPortfolioId,
+          PolymeshPrimitivesIdentityIdPortfolioId,
+          PolymeshPrimitivesNftNfTs,
+          Option<PolymeshPrimitivesPortfolioMemo>
         ]
       >;
       /**
@@ -1695,10 +1840,10 @@ declare module '@polkadot/api-base/types/events' {
       /**
        * The call for the provided hash was not found so the task has been aborted.
        **/
-      CallLookupFailed: AugmentedEvent<
+      CallUnavailable: AugmentedEvent<
         ApiType,
-        [task: ITuple<[u32, u32]>, id: Option<Bytes>, error: FrameSupportScheduleLookupError],
-        { task: ITuple<[u32, u32]>; id: Option<Bytes>; error: FrameSupportScheduleLookupError }
+        [task: ITuple<[u32, u32]>, id: Option<U8aFixed>],
+        { task: ITuple<[u32, u32]>; id: Option<U8aFixed> }
       >;
       /**
        * Canceled some task.
@@ -1709,12 +1854,32 @@ declare module '@polkadot/api-base/types/events' {
        **/
       Dispatched: AugmentedEvent<
         ApiType,
-        [task: ITuple<[u32, u32]>, id: Option<Bytes>, result: Result<Null, SpRuntimeDispatchError>],
+        [
+          task: ITuple<[u32, u32]>,
+          id: Option<U8aFixed>,
+          result: Result<Null, SpRuntimeDispatchError>
+        ],
         {
           task: ITuple<[u32, u32]>;
-          id: Option<Bytes>;
+          id: Option<U8aFixed>;
           result: Result<Null, SpRuntimeDispatchError>;
         }
+      >;
+      /**
+       * The given task was unable to be renewed since the agenda is full at that block.
+       **/
+      PeriodicFailed: AugmentedEvent<
+        ApiType,
+        [task: ITuple<[u32, u32]>, id: Option<U8aFixed>],
+        { task: ITuple<[u32, u32]>; id: Option<U8aFixed> }
+      >;
+      /**
+       * The given task can never be executed since it is overweight.
+       **/
+      PermanentlyOverweight: AugmentedEvent<
+        ApiType,
+        [task: ITuple<[u32, u32]>, id: Option<U8aFixed>],
+        { task: ITuple<[u32, u32]>; id: Option<U8aFixed> }
       >;
       /**
        * Scheduled some task.
@@ -1737,6 +1902,10 @@ declare module '@polkadot/api-base/types/events' {
         [PolymeshPrimitivesIdentityId, PolymeshPrimitivesIdentityIdPortfolioId, u64]
       >;
       /**
+       * Failed to execute instruction.
+       **/
+      FailedToExecuteInstruction: AugmentedEvent<ApiType, [u64, SpRuntimeDispatchError]>;
+      /**
        * An instruction has been affirmed (did, portfolio, instruction_id)
        **/
       InstructionAffirmed: AugmentedEvent<
@@ -1745,7 +1914,7 @@ declare module '@polkadot/api-base/types/events' {
       >;
       /**
        * A new instruction has been created
-       * (did, venue_id, instruction_id, settlement_type, trade_date, value_date, legs)
+       * (did, venue_id, instruction_id, settlement_type, trade_date, value_date, legs, memo)
        **/
       InstructionCreated: AugmentedEvent<
         ApiType,
@@ -1756,7 +1925,8 @@ declare module '@polkadot/api-base/types/events' {
           PalletSettlementSettlementType,
           Option<u64>,
           Option<u64>,
-          Vec<PalletSettlementLeg>
+          Vec<PalletSettlementLeg>,
+          Option<PalletSettlementInstructionMemo>
         ]
       >;
       /**
@@ -1776,6 +1946,23 @@ declare module '@polkadot/api-base/types/events' {
        * (caller DID, instruction_id)
        **/
       InstructionRescheduled: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, u64]>;
+      /**
+       * A new instruction has been created
+       * (did, venue_id, instruction_id, settlement_type, trade_date, value_date, legs, memo)
+       **/
+      InstructionV2Created: AugmentedEvent<
+        ApiType,
+        [
+          PolymeshPrimitivesIdentityId,
+          u64,
+          u64,
+          PalletSettlementSettlementType,
+          Option<u64>,
+          Option<u64>,
+          Vec<PalletSettlementLegV2>,
+          Option<PalletSettlementInstructionMemo>
+        ]
+      >;
       /**
        * Execution of a leg failed (did, instruction_id, leg_id)
        **/
@@ -1805,6 +1992,10 @@ declare module '@polkadot/api-base/types/events' {
        * Scheduling of instruction fails.
        **/
       SchedulingFailed: AugmentedEvent<ApiType, [SpRuntimeDispatchError]>;
+      /**
+       * Settlement manually executed (did, id)
+       **/
+      SettlementManuallyExecuted: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, u64]>;
       /**
        * A new venue has been created (did, venue_id, details, type)
        **/
@@ -1836,6 +2027,13 @@ declare module '@polkadot/api-base/types/events' {
       VenuesBlocked: AugmentedEvent<
         ApiType,
         [PolymeshPrimitivesIdentityId, PolymeshPrimitivesTicker, Vec<u64>]
+      >;
+      /**
+       * An existing venue's signers has been updated (did, venue_id, signers, update_type)
+       **/
+      VenueSignersUpdated: AugmentedEvent<
+        ApiType,
+        [PolymeshPrimitivesIdentityId, u64, Vec<AccountId32>, bool]
       >;
       /**
        * An existing venue's type has been updated (did, venue_id, type)
@@ -2108,16 +2306,16 @@ declare module '@polkadot/api-base/types/events' {
        **/
       ExtrinsicFailed: AugmentedEvent<
         ApiType,
-        [dispatchError: SpRuntimeDispatchError, dispatchInfo: FrameSupportWeightsDispatchInfo],
-        { dispatchError: SpRuntimeDispatchError; dispatchInfo: FrameSupportWeightsDispatchInfo }
+        [dispatchError: SpRuntimeDispatchError, dispatchInfo: FrameSupportDispatchDispatchInfo],
+        { dispatchError: SpRuntimeDispatchError; dispatchInfo: FrameSupportDispatchDispatchInfo }
       >;
       /**
        * An extrinsic completed successfully.
        **/
       ExtrinsicSuccess: AugmentedEvent<
         ApiType,
-        [dispatchInfo: FrameSupportWeightsDispatchInfo],
-        { dispatchInfo: FrameSupportWeightsDispatchInfo }
+        [dispatchInfo: FrameSupportDispatchDispatchInfo],
+        { dispatchInfo: FrameSupportDispatchDispatchInfo }
       >;
       /**
        * An account was reaped.
@@ -2281,6 +2479,17 @@ declare module '@polkadot/api-base/types/events' {
       MockInvestorUIDCreated: AugmentedEvent<
         ApiType,
         [PolymeshPrimitivesIdentityId, PolymeshPrimitivesCddIdInvestorUid]
+      >;
+    };
+    transactionPayment: {
+      /**
+       * A transaction fee `actual_fee`, of which `tip` was added to the minimum inclusion fee,
+       * has been paid by `who`.
+       **/
+      TransactionFeePaid: AugmentedEvent<
+        ApiType,
+        [who: AccountId32, actualFee: u128, tip: u128],
+        { who: AccountId32; actualFee: u128; tip: u128 }
       >;
     };
     treasury: {
