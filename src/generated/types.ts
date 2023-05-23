@@ -264,6 +264,7 @@ export enum SystemTx {
   KillStorage = 'system.killStorage',
   KillPrefix = 'system.killPrefix',
   RemarkWithEvent = 'system.remarkWithEvent',
+  PlaceholderFillBlock = 'system.placeholderFillBlock',
 }
 
 export enum BabeTx {
@@ -324,6 +325,8 @@ export enum IdentityTx {
   PlaceholderLegacySetPermissionToSigner = 'identity.placeholderLegacySetPermissionToSigner',
   AddSecondaryKeysWithAuthorizationOld = 'identity.addSecondaryKeysWithAuthorizationOld',
   SetSecondaryKeyPermissions = 'identity.setSecondaryKeyPermissions',
+  RegisterCustomClaimType = 'identity.registerCustomClaimType',
+  CddRegisterDidWithCdd = 'identity.cddRegisterDidWithCdd',
 }
 
 export enum CddServiceProvidersTx {
@@ -466,6 +469,7 @@ export enum StakingTx {
   PayoutStakersBySystem = 'staking.payoutStakersBySystem',
   ChangeSlashingAllowedFor = 'staking.changeSlashingAllowedFor',
   UpdatePermissionedValidatorIntendedCount = 'staking.updatePermissionedValidatorIntendedCount',
+  ChillFromGovernance = 'staking.chillFromGovernance',
 }
 
 export enum SessionTx {
@@ -515,6 +519,10 @@ export enum AssetTx {
   RegisterAndSetLocalAssetMetadata = 'asset.registerAndSetLocalAssetMetadata',
   RegisterAssetMetadataLocalType = 'asset.registerAssetMetadataLocalType',
   RegisterAssetMetadataGlobalType = 'asset.registerAssetMetadataGlobalType',
+  RedeemFromPortfolio = 'asset.redeemFromPortfolio',
+  UpdateAssetType = 'asset.updateAssetType',
+  RemoveLocalMetadataKey = 'asset.removeLocalMetadataKey',
+  RemoveMetadataValue = 'asset.removeMetadataValue',
 }
 
 export enum CapitalDistributionTx {
@@ -592,6 +600,7 @@ export enum PortfolioTx {
   RenamePortfolio = 'portfolio.renamePortfolio',
   QuitPortfolioCustody = 'portfolio.quitPortfolioCustody',
   AcceptPortfolioCustody = 'portfolio.acceptPortfolioCustody',
+  MovePortfolioFundsV2 = 'portfolio.movePortfolioFundsV2',
 }
 
 export enum ProtocolFeeTx {
@@ -626,6 +635,18 @@ export enum SettlementTx {
   ChangeReceiptValidity = 'settlement.changeReceiptValidity',
   ExecuteScheduledInstruction = 'settlement.executeScheduledInstruction',
   RescheduleInstruction = 'settlement.rescheduleInstruction',
+  PlaceholderClaimReceipt = 'settlement.placeholderClaimReceipt',
+  PlaceholderUnclaimReceipt = 'settlement.placeholderUnclaimReceipt',
+  UpdateVenueSigners = 'settlement.updateVenueSigners',
+  AddInstructionWithMemo = 'settlement.addInstructionWithMemo',
+  AddAndAffirmInstructionWithMemo = 'settlement.addAndAffirmInstructionWithMemo',
+  ExecuteManualInstruction = 'settlement.executeManualInstruction',
+  AddInstructionWithMemoV2 = 'settlement.addInstructionWithMemoV2',
+  AddAndAffirmInstructionWithMemoV2 = 'settlement.addAndAffirmInstructionWithMemoV2',
+  AffirmInstructionV2 = 'settlement.affirmInstructionV2',
+  WithdrawAffirmationV2 = 'settlement.withdrawAffirmationV2',
+  RejectInstructionV2 = 'settlement.rejectInstructionV2',
+  ExecuteScheduledInstructionV2 = 'settlement.executeScheduledInstructionV2',
 }
 
 export enum StatisticsTx {
@@ -700,6 +721,7 @@ export enum PolymeshContractsTx {
   RemoveCode = 'polymeshContracts.removeCode',
   InstantiateWithCodePerms = 'polymeshContracts.instantiateWithCodePerms',
   InstantiateWithHashPerms = 'polymeshContracts.instantiateWithHashPerms',
+  UpdateCallRuntimeWhitelist = 'polymeshContracts.updateCallRuntimeWhitelist',
 }
 
 export enum PreimageTx {
@@ -715,6 +737,16 @@ export enum ContractsTx {
   Instantiate = 'contracts.instantiate',
   UploadCode = 'contracts.uploadCode',
   RemoveCode = 'contracts.removeCode',
+  CallOldWeight = 'contracts.callOldWeight',
+  InstantiateWithCodeOldWeight = 'contracts.instantiateWithCodeOldWeight',
+  InstantiateOldWeight = 'contracts.instantiateOldWeight',
+  SetCode = 'contracts.setCode',
+}
+
+export enum NftTx {
+  CreateNftCollection = 'nft.createNftCollection',
+  IssueNft = 'nft.issueNft',
+  RedeemNft = 'nft.redeemNft',
 }
 
 export enum ModuleName {
@@ -761,6 +793,7 @@ export enum ModuleName {
   PolymeshContracts = 'polymeshContracts',
   Preimage = 'preimage',
   Contracts = 'contracts',
+  Nft = 'nft',
 }
 
 export type TxTag =
@@ -806,7 +839,8 @@ export type TxTag =
   | TestUtilsTx
   | PolymeshContractsTx
   | PreimageTx
-  | ContractsTx;
+  | ContractsTx
+  | NftTx;
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const TxTags = {
@@ -853,4 +887,5 @@ export const TxTags = {
   polymeshContracts: PolymeshContractsTx,
   preimage: PreimageTx,
   contracts: ContractsTx,
+  nft: NftTx,
 };

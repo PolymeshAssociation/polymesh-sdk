@@ -1,5 +1,5 @@
 import {
-  ConfidentialIdentityClaimProofsScopeClaimProof,
+  ConfidentialIdentityV2ClaimProofsScopeClaimProof,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
@@ -51,7 +51,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
   let stringToInvestorZkProofDataStub: sinon.SinonStub<[string, Context], InvestorZKProofData>;
   let scopeClaimProofToMeshScopeClaimProofStub: sinon.SinonStub<
     [ScopeClaimProof, string, Context],
-    ConfidentialIdentityClaimProofsScopeClaimProof
+    ConfidentialIdentityV2ClaimProofsScopeClaimProof
   >;
   let scopeToMeshScopeStub: sinon.SinonStub<[Scope, Context], MeshScope>;
   let stringToScopeIdStub: sinon.SinonStub<[string, Context], ScopeId>;
@@ -63,7 +63,7 @@ describe('addInvestorUniquenessClaim procedure', () => {
   let rawClaim: MeshClaim;
   let rawClaimV2: MeshClaim;
   let rawProof: InvestorZKProofData;
-  let rawScopeClaimProof: ConfidentialIdentityClaimProofsScopeClaimProof;
+  let rawScopeClaimProof: ConfidentialIdentityV2ClaimProofsScopeClaimProof;
   let rawExpiry: Moment;
   let addTransactionStub: sinon.SinonStub;
 

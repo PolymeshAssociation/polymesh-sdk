@@ -44,8 +44,8 @@ import {
   SignedBlock,
 } from '@polkadot/types/interfaces';
 import {
-  ConfidentialIdentityClaimProofsScopeClaimProof,
-  ConfidentialIdentityClaimProofsZkProofData,
+  ConfidentialIdentityV2ClaimProofsScopeClaimProof,
+  ConfidentialIdentityV2ClaimProofsZkProofData,
   PalletAssetClassicTickerRegistration,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCaKind,
@@ -906,7 +906,7 @@ function updateRpc(mod?: any): void {
 
   rpcModule = updateTo;
 
-  mockInstanceContainer.apiInstance.rpc = rpcModule;
+  mockInstanceContainer.apiInstance.rpc = rpcModule as any;
 }
 
 /**
@@ -2605,7 +2605,6 @@ export const createMockConditionType = (
     return conditionType as MockCodec<PolymeshPrimitivesConditionConditionType>;
   }
 
-  // return createMockEnum(conditionType) as ConditionType;
   return createMockEnum(conditionType) as MockCodec<PolymeshPrimitivesConditionConditionType>;
 };
 
@@ -3435,13 +3434,13 @@ export const createMockSignature = (signature?: string | Signature): MockCodec<S
  */
 export const createMockZkProofData = (
   zkProofData?:
-    | ConfidentialIdentityClaimProofsZkProofData
+    | ConfidentialIdentityV2ClaimProofsZkProofData
     | {
         challengeResponses: [Scalar, Scalar] | [string, string];
         subtractExpressionsRes: RistrettoPoint | string;
         blindedScopeDidHash: RistrettoPoint | string;
       }
-): MockCodec<ConfidentialIdentityClaimProofsZkProofData> => {
+): MockCodec<ConfidentialIdentityV2ClaimProofsZkProofData> => {
   const { challengeResponses, subtractExpressionsRes, blindedScopeDidHash } = zkProofData || {
     challengeResponses: [createMockScalar(), createMockScalar()],
     subtractExpressionsRes: createMockRistrettoPoint(),
@@ -3458,7 +3457,7 @@ export const createMockZkProofData = (
       blindedScopeDidHash: createMockRistrettoPoint(blindedScopeDidHash as string),
     },
     !zkProofData
-  ) as MockCodec<ConfidentialIdentityClaimProofsZkProofData>;
+  ) as MockCodec<ConfidentialIdentityV2ClaimProofsZkProofData>;
 };
 
 /**
@@ -3507,7 +3506,7 @@ export const createMockTargetIdentities = (
  */
 export const createMockScopeClaimProof = (
   scopeClaimProof?:
-    | ConfidentialIdentityClaimProofsScopeClaimProof
+    | ConfidentialIdentityV2ClaimProofsScopeClaimProof
     | {
         proofScopeIdWellformed: Signature | string;
         proofScopeIdCddIdMatch:
@@ -3519,7 +3518,7 @@ export const createMockScopeClaimProof = (
             };
         scopeId: RistrettoPoint | string;
       }
-): MockCodec<ConfidentialIdentityClaimProofsScopeClaimProof> => {
+): MockCodec<ConfidentialIdentityV2ClaimProofsScopeClaimProof> => {
   const { proofScopeIdWellformed, proofScopeIdCddIdMatch, scopeId } = scopeClaimProof || {
     proofScopeIdWellformed: createMockSignature(),
     proofScopeIdCddIdMatch: createMockZkProofData(),
@@ -3530,12 +3529,12 @@ export const createMockScopeClaimProof = (
     {
       proofScopeIdWellformed: createMockSignature(proofScopeIdWellformed as Signature),
       proofScopeIdCddIdMatch: createMockZkProofData(
-        proofScopeIdCddIdMatch as ConfidentialIdentityClaimProofsZkProofData
+        proofScopeIdCddIdMatch as ConfidentialIdentityV2ClaimProofsZkProofData
       ),
       scopeId: createMockRistrettoPoint(scopeId as RistrettoPoint),
     },
     !scopeClaimProof
-  ) as MockCodec<ConfidentialIdentityClaimProofsScopeClaimProof>;
+  ) as MockCodec<ConfidentialIdentityV2ClaimProofsScopeClaimProof>;
 };
 
 /**

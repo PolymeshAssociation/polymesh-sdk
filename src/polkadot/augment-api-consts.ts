@@ -2,15 +2,16 @@
 /* eslint-disable */
 
 import type { ApiTypes } from '@polkadot/api-base/types';
-import type { Vec, u128, u16, u32, u64 } from '@polkadot/types-codec';
+import type { Vec, bool, u128, u16, u32, u64, u8 } from '@polkadot/types-codec';
 import type { Perbill, Permill } from '@polkadot/types/interfaces/runtime';
 import type {
-  FrameSupportWeightsRuntimeDbWeight,
-  FrameSupportWeightsWeightToFeeCoefficient,
   FrameSystemLimitsBlockLength,
   FrameSystemLimitsBlockWeights,
   PalletContractsSchedule,
   SpVersionRuntimeVersion,
+  SpWeightsRuntimeDbWeight,
+  SpWeightsWeightToFeeCoefficient,
+  SpWeightsWeightV2Weight,
 } from '@polkadot/types/lookup';
 
 declare module '@polkadot/api-base/types/consts' {
@@ -21,7 +22,6 @@ declare module '@polkadot/api-base/types/consts' {
       assetMetadataValueMaxLength: u32 & AugmentedConst<ApiType>;
       assetNameMaxLength: u32 & AugmentedConst<ApiType>;
       fundingRoundNameMaxLength: u32 & AugmentedConst<ApiType>;
-      maxNumberOfTMExtensionForAsset: u32 & AugmentedConst<ApiType>;
     };
     authorship: {
       /**
@@ -90,7 +90,7 @@ declare module '@polkadot/api-base/types/consts' {
        * weight that is left for transactions. See [`Self::DeletionQueueDepth`] for more
        * information about the deletion queue.
        **/
-      deletionWeightLimit: u64 & AugmentedConst<ApiType>;
+      deletionWeightLimit: SpWeightsWeightV2Weight & AugmentedConst<ApiType>;
       /**
        * The amount of balance a caller has to pay for each byte of storage.
        *
@@ -108,9 +108,31 @@ declare module '@polkadot/api-base/types/consts' {
        **/
       depositPerItem: u128 & AugmentedConst<ApiType>;
       /**
+       * The maximum length of a contract code in bytes. This limit applies to the instrumented
+       * version of the code. Therefore `instantiate_with_code` can fail even when supplying
+       * a wasm binary below this maximum size.
+       **/
+      maxCodeLen: u32 & AugmentedConst<ApiType>;
+      /**
+       * The maximum allowable length in bytes for storage keys.
+       **/
+      maxStorageKeyLen: u32 & AugmentedConst<ApiType>;
+      /**
        * Cost schedule and limits.
        **/
       schedule: PalletContractsSchedule & AugmentedConst<ApiType>;
+      /**
+       * Make contract callable functions marked as `#[unstable]` available.
+       *
+       * Contracts that use `#[unstable]` functions won't be able to be uploaded unless
+       * this is set to `true`. This is only meant for testnets and dev nodes in order to
+       * experiment with new features.
+       *
+       * # Warning
+       *
+       * Do **not** set to `true` on productions chains.
+       **/
+      unsafeUnstableInterface: bool & AugmentedConst<ApiType>;
     };
     corporateAction: {
       maxDidWhts: u32 & AugmentedConst<ApiType>;
@@ -140,15 +162,17 @@ declare module '@polkadot/api-base/types/consts' {
        **/
       deposit: u128 & AugmentedConst<ApiType>;
     };
+    nft: {
+      maxNumberOfCollectionKeys: u8 & AugmentedConst<ApiType>;
+      maxNumberOfNFTsCount: u32 & AugmentedConst<ApiType>;
+    };
     scheduler: {
       /**
-       * The maximum weight that may be scheduled per block for any dispatchables of less
-       * priority than `schedule::HARD_DEADLINE`.
+       * The maximum weight that may be scheduled per block for any dispatchables.
        **/
-      maximumWeight: u64 & AugmentedConst<ApiType>;
+      maximumWeight: SpWeightsWeightV2Weight & AugmentedConst<ApiType>;
       /**
        * The maximum number of scheduled calls in the queue for a single block.
-       * Not strictly enforced, but used for weight estimation.
        **/
       maxScheduledPerBlock: u32 & AugmentedConst<ApiType>;
     };
@@ -235,9 +259,9 @@ declare module '@polkadot/api-base/types/consts' {
       /**
        * The weight of runtime database operations the runtime can invoke.
        **/
-      dbWeight: FrameSupportWeightsRuntimeDbWeight & AugmentedConst<ApiType>;
+      dbWeight: SpWeightsRuntimeDbWeight & AugmentedConst<ApiType>;
       /**
-       * The designated SS85 prefix of this chain.
+       * The designated SS58 prefix of this chain.
        *
        * This replaces the "ss58Format" property declared in the chain spec. Reason is
        * that the runtime should know about the prefix in order to make use of it as
@@ -266,7 +290,7 @@ declare module '@polkadot/api-base/types/consts' {
       /**
        * The polynomial that is applied in order to derive fee from weight.
        **/
-      weightToFee: Vec<FrameSupportWeightsWeightToFeeCoefficient> & AugmentedConst<ApiType>;
+      weightToFee: Vec<SpWeightsWeightToFeeCoefficient> & AugmentedConst<ApiType>;
     };
   } // AugmentedConsts
 } // declare module
