@@ -294,7 +294,7 @@ describe('inviteExternalAgent procedure', () => {
       sinon.match({
         transaction,
         resolvers: sinon.match.array,
-        args: [rawTicker, rawPermissions, rawIdentityId, null],
+        args: [rawTicker, rawPermissions, undefined, null],
       })
     );
   });
