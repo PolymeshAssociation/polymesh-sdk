@@ -209,7 +209,9 @@ export class Context {
     if (signingManager === null) {
       this._signingManager = undefined;
       this.signingAddress = undefined;
-      // note polkadot API does not currently support unsetting a signer
+      // TODO remove cast when polkadot/api >= v10.7.2
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      this._polymeshApi.setSigner(undefined as any);
 
       return;
     }
