@@ -429,6 +429,7 @@ interface ContextOptions {
   getSigningAccounts?: Account[];
   signingIdentityIsEqual?: boolean;
   signingAccountIsEqual?: boolean;
+  signingAccountAuthorizationsGetOne?: AuthorizationRequest;
   networkVersion?: string;
   supportsSubsidy?: boolean;
 }
@@ -729,6 +730,7 @@ const defaultContextOptions: ContextOptions = {
   getSigningAccounts: [],
   signingIdentityIsEqual: true,
   signingAccountIsEqual: true,
+  signingAccountAuthorizationsGetOne: {} as AuthorizationRequest,
   networkVersion: '1.0.0',
   supportsSubsidy: true,
 };
@@ -781,6 +783,9 @@ function configureContext(opts: ContextOptions): void {
   opts.withSigningManager
     ? getSigningAccount.mockReturnValue({
         address: opts.signingAddress,
+        authorizations: {
+          getOne: jest.fn().mockResolvedValueOnce(opts.signingAccountAuthorizationsGetOne),
+        },
         getBalance: jest.fn().mockResolvedValue(opts.balance),
         getSubsidy: jest.fn().mockResolvedValue(opts.subsidy),
         getIdentity: jest.fn().mockResolvedValue(identity),

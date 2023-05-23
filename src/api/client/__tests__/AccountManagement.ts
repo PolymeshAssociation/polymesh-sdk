@@ -377,4 +377,23 @@ describe('AccountManagement class', () => {
       expect(isValid).toEqual(true);
     });
   });
+
+  describe('method: acceptPrimaryKey', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const args = {
+        ownerAuth: new BigNumber(1),
+        cddAuth: new BigNumber(2),
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await accountManagement.acceptPrimaryKey(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
 });

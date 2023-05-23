@@ -1,5 +1,6 @@
 import { MultiSig } from '~/api/entities/Account/MultiSig';
 import {
+  acceptPrimaryKeyRotation,
   Account,
   AuthorizationRequest,
   Context,
@@ -14,6 +15,7 @@ import {
   toggleFreezeSecondaryAccounts,
 } from '~/internal';
 import {
+  AcceptPrimaryKeyRotationParams,
   AccountBalance,
   CreateMultiSigParams,
   InviteAccountParams,
@@ -103,6 +105,10 @@ export class AccountManagement {
     );
     this.createMultiSigAccount = createProcedureMethod(
       { getProcedureAndArgs: args => [createMultiSigAccount, args] },
+      context
+    );
+    this.acceptPrimaryKey = createProcedureMethod(
+      { getProcedureAndArgs: args => [acceptPrimaryKeyRotation, args] },
       context
     );
   }
@@ -289,4 +295,14 @@ export class AccountManagement {
 
     return true;
   }
+
+  /**
+   * Accepts the authorization to become the new primary key of the issuing identity.
+   *
+   * If a CDD service provider approved this change (or this is not required), primary key of the Identity is updated.
+   *
+   * @note The caller (new primary key) must be either a secondary key of the issuing identity, or
+   * unlinked to any identity.
+   */
+  public acceptPrimaryKey: ProcedureMethod<AcceptPrimaryKeyRotationParams, void>;
 }
