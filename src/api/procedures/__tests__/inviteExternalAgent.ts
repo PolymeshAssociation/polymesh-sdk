@@ -1,4 +1,7 @@
-import { PolymeshPrimitivesAuthorizationAuthorizationData } from '@polkadot/types/lookup';
+import {
+  PolymeshPrimitivesAuthorizationAuthorizationData,
+  PolymeshPrimitivesIdentityId,
+} from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { AgentGroup, Signatory, Ticker } from 'polymesh-types/types';
@@ -53,6 +56,7 @@ describe('inviteExternalAgent procedure', () => {
   let addTransactionStub: sinon.SinonStub;
   let rawSignatory: Signatory;
   let rawAuthorizationData: PolymeshPrimitivesAuthorizationAuthorizationData;
+  let rawIdentityId: PolymeshPrimitivesIdentityId;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -88,6 +92,7 @@ describe('inviteExternalAgent procedure', () => {
     signerToStringStub.returns(target);
     signerValueToSignatoryStub.returns(rawSignatory);
     addTransactionStub = procedureMockUtils.getAddTransactionStub();
+    rawIdentityId = dsMockUtils.createMockIdentityId(target);
   });
 
   afterEach(() => {
@@ -289,7 +294,7 @@ describe('inviteExternalAgent procedure', () => {
       sinon.match({
         transaction,
         resolvers: sinon.match.array,
-        args: [rawTicker, rawPermissions, undefined, null],
+        args: [rawTicker, rawPermissions, rawIdentityId, null],
       })
     );
   });
