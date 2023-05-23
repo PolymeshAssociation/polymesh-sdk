@@ -16,6 +16,7 @@ import {
   controllerTransfer,
   Entity,
   Identity,
+  manageAllowedVenues,
   modifyAsset,
   redeemTokens,
   setVenueFiltering,
@@ -30,6 +31,8 @@ import {
   ControllerTransferParams,
   EventIdentifier,
   HistoricAgentOperation,
+  ManageAllowedVenuesParams,
+  ManageVenuesAction,
   ModifyAssetParams,
   NoArgsProcedureMethod,
   ProcedureMethod,
@@ -172,6 +175,24 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
     );
     this.setVenueFiltering = createProcedureMethod(
       { getProcedureAndArgs: args => [setVenueFiltering, { ticker, ...args }] },
+      context
+    );
+    this.allowVenues = createProcedureMethod(
+      {
+        getProcedureAndArgs: ({ venues }) => [
+          manageAllowedVenues,
+          { ticker, action: ManageVenuesAction.Allow, venues },
+        ],
+      },
+      context
+    );
+    this.disallowVenues = createProcedureMethod(
+      {
+        getProcedureAndArgs: ({ venues }) => [
+          manageAllowedVenues,
+          { ticker, action: ManageVenuesAction.Disallow, venues },
+        ],
+      },
       context
     );
   }
@@ -670,4 +691,8 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
    * Enable/disable venue filtering for this Asset
    */
   public setVenueFiltering: ProcedureMethod<SetVenueFilteringParams, void>;
+
+  public allowVenues: ProcedureMethod<ManageAllowedVenuesParams, void>;
+
+  public disallowVenues: ProcedureMethod<ManageAllowedVenuesParams, void>;
 }

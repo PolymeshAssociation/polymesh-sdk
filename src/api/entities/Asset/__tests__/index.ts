@@ -16,6 +16,7 @@ import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mo
 import {
   EventIdentifier,
   HistoricAgentOperation,
+  ManageVenuesAction,
   SecurityIdentifier,
   SecurityIdentifierType,
 } from '~/types';
@@ -954,6 +955,62 @@ describe('Asset class', () => {
         .mockResolvedValue(expectedTransaction);
 
       const tx = await asset.setVenueFiltering(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: allowVenues', () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const ticker = 'TICKER';
+      const venues = [new BigNumber(1), new BigNumber(2)];
+
+      const context = dsMockUtils.getContextInstance();
+      const asset = new Asset({ ticker }, context);
+
+      const args = {
+        venues,
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          { args: { ticker, action: ManageVenuesAction.Allow, venues }, transformer: undefined },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await asset.allowVenues(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
+
+  describe('method: disallowVenues', () => {
+    it('should prepare the procedure and return the resulting transaction', async () => {
+      const ticker = 'TICKER';
+      const venues = [new BigNumber(1), new BigNumber(2)];
+
+      const context = dsMockUtils.getContextInstance();
+      const asset = new Asset({ ticker }, context);
+
+      const args = {
+        venues,
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith(
+          { args: { ticker, action: ManageVenuesAction.Disallow, venues }, transformer: undefined },
+          context,
+          {}
+        )
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await asset.disallowVenues(args);
 
       expect(tx).toBe(expectedTransaction);
     });
