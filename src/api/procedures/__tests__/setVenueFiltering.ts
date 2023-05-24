@@ -1,5 +1,6 @@
-import { bool } from '@polkadot/types';
+import { bool, u64 } from '@polkadot/types';
 import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
+import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import {
@@ -10,6 +11,7 @@ import {
 } from '~/api/procedures/setVenueFiltering';
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { MockCodec } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import { TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -26,8 +28,11 @@ describe('setVenueFiltering procedure', () => {
   const disabledTicker = 'DISABLED';
   let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
   let booleanToBoolSpy: jest.SpyInstance<bool, [boolean, Context]>;
+  let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
   let rawEnabledTicker: PolymeshPrimitivesTicker;
   let rawFalse: bool;
+  const venues: BigNumber[] = [new BigNumber(1)];
+  let rawVenues: MockCodec<u64>[];
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -35,6 +40,7 @@ describe('setVenueFiltering procedure', () => {
     entityMockUtils.initMocks();
     stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
     booleanToBoolSpy = jest.spyOn(utilsConversionModule, 'booleanToBool');
+    bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
     rawEnabledTicker = dsMockUtils.createMockTicker(enabledTicker);
     rawFalse = dsMockUtils.createMockBool(false);
   });
@@ -43,6 +49,7 @@ describe('setVenueFiltering procedure', () => {
     entityMockUtils.configureMocks();
     mockContext = dsMockUtils.getContextInstance();
     venueFilteringMock = dsMockUtils.createQueryMock('settlement', 'venueFiltering');
+    rawVenues = venues.map(venue => dsMockUtils.createMockU64(venue));
 
     when(venueFilteringMock)
       .calledWith(enabledTicker)
@@ -54,6 +61,7 @@ describe('setVenueFiltering procedure', () => {
       .calledWith(enabledTicker, mockContext)
       .mockReturnValue(rawEnabledTicker);
     when(booleanToBoolSpy).calledWith(false, mockContext).mockReturnValue(rawFalse);
+    when(bigNumberToU64Spy).calledWith(venues[0], mockContext).mockReturnValue(rawVenues[0]);
   });
 
   afterEach(() => {
@@ -81,33 +89,7 @@ describe('setVenueFiltering procedure', () => {
   });
 
   describe('prepareVenueFiltering', () => {
-    it('should throw an error if already enabled', () => {
-      const args = {
-        ticker: enabledTicker,
-        enabled: true,
-      };
-
-      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
-
-      return expect(prepareVenueFiltering.call(proc, args)).rejects.toThrow(
-        'Venue filtering is already enabled'
-      );
-    });
-
-    it('should throw an error if already disabled', () => {
-      const args = {
-        ticker: disabledTicker,
-        enabled: false,
-      };
-
-      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
-
-      return expect(prepareVenueFiltering.call(proc, args)).rejects.toThrow(
-        'Venue filtering is already disabled'
-      );
-    });
-
-    it('should return a set venue filtering transaction spec', async () => {
+    it('should return a setVenueFiltering transaction spec', async () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const setEnabled = false;
       const transaction = dsMockUtils.createTxMock('settlement', 'setVenueFiltering');
@@ -118,15 +100,76 @@ describe('setVenueFiltering procedure', () => {
       });
 
       expect(result).toEqual({
-        transaction,
-        args: [rawEnabledTicker, rawFalse],
+        transactions: [
+          {
+            transaction,
+            args: [rawEnabledTicker, rawFalse],
+          },
+        ],
+        resolver: undefined,
+      });
+    });
+
+    it('should return a allowVenues transaction spec', async () => {
+      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+      const transaction = dsMockUtils.createTxMock('settlement', 'allowVenues');
+
+      const result = await prepareVenueFiltering.call(proc, {
+        ticker: enabledTicker,
+        allowedVenues: venues,
+      });
+
+      expect(result).toEqual({
+        transactions: [
+          {
+            transaction,
+            args: [rawEnabledTicker, rawVenues],
+          },
+        ],
+        resolver: undefined,
+      });
+    });
+
+    it('should return a disallowVenues transaction spec', async () => {
+      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+      const transaction = dsMockUtils.createTxMock('settlement', 'disallowVenues');
+
+      const result = await prepareVenueFiltering.call(proc, {
+        ticker: enabledTicker,
+        disallowedVenues: venues,
+      });
+
+      expect(result).toEqual({
+        transactions: [
+          {
+            transaction,
+            args: [rawEnabledTicker, rawVenues],
+          },
+        ],
+        resolver: undefined,
+      });
+    });
+
+    it('should return empty transaction spec', async () => {
+      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+
+      const result = await prepareVenueFiltering.call(proc, {
+        ticker: enabledTicker,
+        disallowedVenues: [],
+        allowedVenues: [],
+      });
+
+      console.log(result);
+
+      expect(result).toEqual({
+        transactions: [],
         resolver: undefined,
       });
     });
   });
 
   describe('getAuthorization', () => {
-    it('should return the appropriate roles and permissions', () => {
+    it('should return the appropriate roles and permissions for setVenueFiltering', () => {
       const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
       const args: Params = {
@@ -137,6 +180,38 @@ describe('setVenueFiltering procedure', () => {
       expect(boundFunc(args)).toEqual({
         permissions: {
           transactions: [TxTags.settlement.SetVenueFiltering],
+          assets: [expect.objectContaining({ ticker: enabledTicker })],
+        },
+      });
+    });
+
+    it('should return the appropriate roles and permissions for allowVenues', () => {
+      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+      const boundFunc = getAuthorization.bind(proc);
+      const args: Params = {
+        ticker: enabledTicker,
+        allowedVenues: venues,
+      };
+
+      expect(boundFunc(args)).toEqual({
+        permissions: {
+          transactions: [TxTags.settlement.AllowVenues],
+          assets: [expect.objectContaining({ ticker: enabledTicker })],
+        },
+      });
+    });
+
+    it('should return the appropriate roles and permissions for disallowVenues', () => {
+      const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
+      const boundFunc = getAuthorization.bind(proc);
+      const args: Params = {
+        ticker: enabledTicker,
+        disallowedVenues: venues,
+      };
+
+      expect(boundFunc(args)).toEqual({
+        permissions: {
+          transactions: [TxTags.settlement.DisallowVenues],
           assets: [expect.objectContaining({ ticker: enabledTicker })],
         },
       });

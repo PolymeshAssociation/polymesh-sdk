@@ -1,7 +1,8 @@
-import { Asset, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, SetVenueFilteringParams, TxTags } from '~/types';
-import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
-import { booleanToBool, stringToTicker } from '~/utils/conversion';
+import { Asset, Procedure } from '~/internal';
+import { SetVenueFilteringParams, TxTags } from '~/types';
+import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
+import { bigNumberToU64, booleanToBool, stringToTicker } from '~/utils/conversion';
+import { checkTxType } from '~/utils/internal';
 
 /**
  * @hidden
@@ -16,28 +17,45 @@ export type Params = {
 export async function prepareVenueFiltering(
   this: Procedure<Params, void>,
   args: Params
-): Promise<TransactionSpec<void, ExtrinsicParams<'settlement', 'setVenueFiltering'>>> {
+): Promise<BatchTransactionSpec<void, unknown[][]>> {
   const { context } = this;
   const {
     polymeshApi: { tx, query },
   } = context;
-
-  const { ticker, enabled } = args;
+  const { ticker, enabled, allowedVenues, disallowedVenues } = args;
+  const rawTicker = stringToTicker(ticker, context);
+  const transactions = [];
 
   const isEnabled = await query.settlement.venueFiltering(ticker);
 
-  if (isEnabled.valueOf() === enabled) {
-    throw new PolymeshError({
-      code: ErrorCode.NoDataChange,
-      message: `Venue filtering is already ${enabled ? 'enabled' : 'disabled'}`,
-    });
+  if (enabled !== undefined && isEnabled.valueOf() !== enabled) {
+    transactions.push(
+      checkTxType({
+        transaction: tx.settlement.setVenueFiltering,
+        args: [rawTicker, booleanToBool(enabled, context)],
+      })
+    );
   }
 
-  return {
-    transaction: tx.settlement.setVenueFiltering,
-    args: [stringToTicker(ticker, context), booleanToBool(enabled, context)],
-    resolver: undefined,
-  };
+  if (allowedVenues?.length) {
+    transactions.push(
+      checkTxType({
+        transaction: tx.settlement.allowVenues,
+        args: [rawTicker, allowedVenues.map(v => bigNumberToU64(v, context))],
+      })
+    );
+  }
+
+  if (disallowedVenues?.length) {
+    transactions.push(
+      checkTxType({
+        transaction: tx.settlement.disallowVenues,
+        args: [rawTicker, disallowedVenues.map(v => bigNumberToU64(v, context))],
+      })
+    );
+  }
+
+  return { transactions, resolver: undefined };
 }
 
 /**
@@ -45,13 +63,27 @@ export async function prepareVenueFiltering(
  */
 export function getAuthorization(
   this: Procedure<Params, void>,
-  { ticker }: Params
+  { ticker, enabled, disallowedVenues, allowedVenues }: Params
 ): ProcedureAuthorization {
   const { context } = this;
 
+  const transactions = [];
+
+  if (enabled !== undefined) {
+    transactions.push(TxTags.settlement.SetVenueFiltering);
+  }
+
+  if (allowedVenues?.length) {
+    transactions.push(TxTags.settlement.AllowVenues);
+  }
+
+  if (disallowedVenues?.length) {
+    transactions.push(TxTags.settlement.DisallowVenues);
+  }
+
   return {
     permissions: {
-      transactions: [TxTags.settlement.SetVenueFiltering],
+      transactions,
       assets: [new Asset({ ticker }, context)],
     },
   };

@@ -1017,14 +1017,7 @@ export type RegisterMetadataParams =
     };
 
 export type SetVenueFilteringParams = {
-  enabled: boolean;
-};
-
-export enum ManageVenuesAction {
-  Allow = 'Allow',
-  Disallow = 'Disallow',
-}
-
-export type ManageAllowedVenuesParams = {
-  venues: BigNumber[];
+  enabled?: boolean;
+  allowedVenues?: BigNumber[];
+  disallowedVenues?: BigNumber[];
 };
