@@ -58,6 +58,8 @@ export class NumberedPortfolio extends Portfolio {
 
   /**
    * Rename portfolio
+   *
+   * @note Only the owner is allowed to rename the Portfolio.
    */
   public modifyName: ProcedureMethod<RenamePortfolioParams, NumberedPortfolio>;
 
