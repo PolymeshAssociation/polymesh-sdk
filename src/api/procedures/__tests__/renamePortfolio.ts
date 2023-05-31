@@ -114,7 +114,7 @@ describe('renamePortfolio procedure', () => {
   describe('getAuthorization', () => {
     it('should return the appropriate roles and permissions', async () => {
       let proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
-      const boundFunc = getAuthorization.bind(proc);
+      let boundFunc = getAuthorization.bind(proc);
       const args = {
         did,
         id,
@@ -133,6 +133,8 @@ describe('renamePortfolio procedure', () => {
       proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(
         dsMockUtils.getContextInstance({ did: 'custodianDid' })
       );
+
+      boundFunc = getAuthorization.bind(proc);
 
       result = await boundFunc(args);
       expect(result).toEqual({
