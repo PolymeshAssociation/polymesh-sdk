@@ -79,6 +79,35 @@ export function heartbeatQuery(): GraphqlQuery {
 }
 
 /**
+ * @hidden
+ *
+ * Get details about the SubQuery indexer
+ */
+export function metadataQuery(): GraphqlQuery {
+  const query = gql`
+    query Metadata {
+      _metadata {
+        chain
+        specName
+        genesisHash
+        lastProcessedHeight
+        lastProcessedTimestamp
+        targetHeight
+        indexerHealthy
+        indexerNodeVersion
+        queryNodeVersion
+        dynamicDatasources
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: undefined,
+  };
+}
+
+/**
  *  @hidden
  */
 function createClaimsFilters(variables: ClaimsQueryFilter): {

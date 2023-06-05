@@ -1617,6 +1617,16 @@ export interface TxData<Args extends unknown[] = unknown[]> {
   args: Args;
 }
 
+export interface MiddlewareMetadata {
+  chain: string;
+  genesisHash: string;
+  indexerHealthy: boolean;
+  lastProcessedHeight: BigNumber;
+  lastProcessedTimestamp: Date;
+  specName: string;
+  targetHeight: BigNumber;
+}
+
 /**
  * Apply the {@link TxData} type to all args in an array
  */
