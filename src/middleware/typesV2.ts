@@ -17969,6 +17969,7 @@ export type DistributionIdentitiesByDistributionPaymentDistributionIdAndTargetId
 export type DistributionPayment = Node & {
   __typename?: 'DistributionPayment';
   amount: Scalars['BigFloat'];
+  amountAfterTax: Scalars['BigFloat'];
   createdAt: Scalars['Datetime'];
   /** Reads a single `Block` that is related to this `DistributionPayment`. */
   createdBlock?: Maybe<Block>;
@@ -18001,6 +18002,8 @@ export type DistributionPaymentAggregates = {
 export type DistributionPaymentFilter = {
   /** Filter by the object’s `amount` field. */
   amount?: InputMaybe<BigFloatFilter>;
+  /** Filter by the object’s `amountAfterTax` field. */
+  amountAfterTax?: InputMaybe<BigFloatFilter>;
   /** Checks for all expressions in this list. */
   and?: InputMaybe<Array<DistributionPaymentFilter>>;
   /** Filter by the object’s `createdAt` field. */
@@ -18066,6 +18069,7 @@ export type DistributionPaymentsEdge = {
 /** Grouping methods for `DistributionPayment` for usage during aggregation. */
 export enum DistributionPaymentsGroupBy {
   Amount = 'AMOUNT',
+  AmountAfterTax = 'AMOUNT_AFTER_TAX',
   CreatedAt = 'CREATED_AT',
   CreatedBlockId = 'CREATED_BLOCK_ID',
   Datetime = 'DATETIME',
@@ -18086,6 +18090,8 @@ export type DistributionPaymentsHavingInput = {
 
 /** Methods to use when ordering `DistributionPayment`. */
 export enum DistributionPaymentsOrderBy {
+  AmountAfterTaxAsc = 'AMOUNT_AFTER_TAX_ASC',
+  AmountAfterTaxDesc = 'AMOUNT_AFTER_TAX_DESC',
   AmountAsc = 'AMOUNT_ASC',
   AmountDesc = 'AMOUNT_DESC',
   CreatedAtAsc = 'CREATED_AT_ASC',
@@ -28038,11 +28044,7 @@ export enum ProposalsOrderBy {
   VotesCountDesc = 'VOTES_COUNT_DESC',
 }
 
-/**
- * @enum
- * @enumName SettlementResultEnum
- * Represents all possible states of a Settlement
- */
+/** @enum\n@enumName SettlementResultEnum\n Represents all possible states of a Settlement */
 export enum PublicEnum05F6462Eea {
   Executed = 'Executed',
   Failed = 'Failed',
@@ -28193,6 +28195,7 @@ export enum PublicEnum0Bf3C7D4Ef {
   BurnAccountBalance = 'burn_account_balance',
   BuyTokens = 'buy_tokens',
   Call = 'call',
+  CallOldWeight = 'call_old_weight',
   Cancel = 'cancel',
   CancelBallot = 'cancel_ballot',
   CancelDeferredSlash = 'cancel_deferred_slash',
@@ -28263,6 +28266,7 @@ export enum PublicEnum0Bf3C7D4Ef {
   EnactSnapshotResults = 'enact_snapshot_results',
   ExecuteManualInstruction = 'execute_manual_instruction',
   ExecuteScheduledInstruction = 'execute_scheduled_instruction',
+  ExecuteScheduledInstructionV2 = 'execute_scheduled_instruction_v2',
   ExecuteScheduledPip = 'execute_scheduled_pip',
   ExecuteScheduledProposal = 'execute_scheduled_proposal',
   ExpireScheduledPip = 'expire_scheduled_pip',
@@ -28297,7 +28301,9 @@ export enum PublicEnum0Bf3C7D4Ef {
   InitiateCorporateAction = 'initiate_corporate_action',
   InitiateCorporateActionAndDistribute = 'initiate_corporate_action_and_distribute',
   Instantiate = 'instantiate',
+  InstantiateOldWeight = 'instantiate_old_weight',
   InstantiateWithCode = 'instantiate_with_code',
+  InstantiateWithCodeOldWeight = 'instantiate_with_code_old_weight',
   InstantiateWithCodePerms = 'instantiate_with_code_perms',
   InstantiateWithHashPerms = 'instantiate_with_hash_perms',
   InvalidateCddClaims = 'invalidate_cdd_claims',
@@ -28335,6 +28341,7 @@ export enum PublicEnum0Bf3C7D4Ef {
   PayoutStakers = 'payout_stakers',
   PayoutStakersBySystem = 'payout_stakers_by_system',
   PlaceholderClaimReceipt = 'placeholder_claim_receipt',
+  PlaceholderFillBlock = 'placeholder_fill_block',
   PlaceholderLegacySetPermissionToSigner = 'placeholder_legacy_set_permission_to_signer',
   PlaceholderUnclaimReceipt = 'placeholder_unclaim_receipt',
   PlanConfigChange = 'plan_config_change',
@@ -28711,6 +28718,8 @@ export enum PublicEnum8F5A39C8Ee {
   CaLinkedToDoc = 'CALinkedToDoc',
   CaRemoved = 'CARemoved',
   CallLookupFailed = 'CallLookupFailed',
+  CallUnavailable = 'CallUnavailable',
+  Called = 'Called',
   Canceled = 'Canceled',
   CddClaimsInvalidated = 'CddClaimsInvalidated',
   CddRequirementForMasterKeyUpdated = 'CddRequirementForMasterKeyUpdated',
@@ -28745,6 +28754,7 @@ export enum PublicEnum8F5A39C8Ee {
   DefaultEnactmentPeriodChanged = 'DefaultEnactmentPeriodChanged',
   DefaultTargetIdentitiesChanged = 'DefaultTargetIdentitiesChanged',
   DefaultWithholdingTaxChanged = 'DefaultWithholdingTaxChanged',
+  DelegateCalled = 'DelegateCalled',
   DidCreated = 'DidCreated',
   DidStatus = 'DidStatus',
   DidWithholdingTaxChanged = 'DidWithholdingTaxChanged',
@@ -28828,6 +28838,7 @@ export enum PublicEnum8F5A39C8Ee {
   KeyChanged = 'KeyChanged',
   KilledAccount = 'KilledAccount',
   LegFailedExecution = 'LegFailedExecution',
+  LocalMetadataKeyDeleted = 'LocalMetadataKeyDeleted',
   MasterKeyUpdated = 'MasterKeyUpdated',
   MaxDetailsLengthChanged = 'MaxDetailsLengthChanged',
   MaxPipSkipCountChanged = 'MaxPipSkipCountChanged',
@@ -28838,6 +28849,7 @@ export enum PublicEnum8F5A39C8Ee {
   MembersReset = 'MembersReset',
   MembersSwapped = 'MembersSwapped',
   MetaChanged = 'MetaChanged',
+  MetadataValueDeleted = 'MetadataValueDeleted',
   MinimumBondThresholdUpdated = 'MinimumBondThresholdUpdated',
   MinimumProposalDepositChanged = 'MinimumProposalDepositChanged',
   MockInvestorUidCreated = 'MockInvestorUIDCreated',
@@ -28860,6 +28872,8 @@ export enum PublicEnum8F5A39C8Ee {
   OldSlashingReportDiscarded = 'OldSlashingReportDiscarded',
   Paused = 'Paused',
   PendingPipExpiryChanged = 'PendingPipExpiryChanged',
+  PeriodicFailed = 'PeriodicFailed',
+  PermanentlyOverweight = 'PermanentlyOverweight',
   PermissionedIdentityAdded = 'PermissionedIdentityAdded',
   PermissionedIdentityRemoved = 'PermissionedIdentityRemoved',
   PermissionedValidatorAdded = 'PermissionedValidatorAdded',
@@ -28867,6 +28881,7 @@ export enum PublicEnum8F5A39C8Ee {
   PermissionedValidatorStatusChanged = 'PermissionedValidatorStatusChanged',
   PipClosed = 'PipClosed',
   PipSkipped = 'PipSkipped',
+  PlaceholderFillBlock = 'PlaceholderFillBlock',
   PortfolioCreated = 'PortfolioCreated',
   PortfolioCustodianChanged = 'PortfolioCustodianChanged',
   PortfolioDeleted = 'PortfolioDeleted',
@@ -28961,6 +28976,7 @@ export enum PublicEnum8F5A39C8Ee {
   TickerRegistered = 'TickerRegistered',
   TickerTransferred = 'TickerTransferred',
   TimelockChanged = 'TimelockChanged',
+  TransactionFeePaid = 'TransactionFeePaid',
   Transfer = 'Transfer',
   TransferConditionExemptionsAdded = 'TransferConditionExemptionsAdded',
   TransferConditionExemptionsRemoved = 'TransferConditionExemptionsRemoved',
