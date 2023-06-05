@@ -20,13 +20,14 @@ const matches = rawData.matchAll(enumRegex);
 let aliases = [];
 let enumMappings = [];
 for (const match of matches) {
-  aliases.push(`${match[2]} as ${match[1]}Enum`);
-  enumMappings.push(`${match[1]}Enum: '${match[2]}'`);
+  aliases.push(`${match[2]} as ${match[1]}`);
+  enumMappings.push(`${match[1]}: '${match[2]}'`);
 }
 
 fs.writeFileSync(
   enumAliasFile,
-  `export { 
+  `/* istanbul ignore file */
+export { 
   ${aliases.join(',\n  ')} 
 } from '~/middleware/typesV2';
   
