@@ -283,6 +283,32 @@ describe('Context class', () => {
 
       expect(polymeshApi.setSigner).toHaveBeenCalledWith(polkadotSigner);
     });
+
+    it('should unset the SigningManager when given null', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
+      });
+
+      const signingManager = dsMockUtils.getSigningManagerInstance({
+        getExternalSigner: 'signer' as PolkadotSigner,
+      });
+      await context.setSigningManager(signingManager);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect(() => (context as any).signingManager).not.toThrow();
+
+      await context.setSigningManager(null);
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.General,
+        message: 'There is no Signing Manager attached to the SDK',
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect(() => (context as any).signingManager).toThrowError(expectedError);
+    });
   });
 
   describe('method: accountBalance', () => {

@@ -205,7 +205,17 @@ export class Context {
    * @note the signing Account will be set to the Signing Manager's first Account. If the Signing Manager has
    *   no Accounts yet, the signing Account will be left empty
    */
-  public async setSigningManager(signingManager: SigningManager): Promise<void> {
+  public async setSigningManager(signingManager: SigningManager | null): Promise<void> {
+    if (signingManager === null) {
+      this._signingManager = undefined;
+      this.signingAddress = undefined;
+      // TODO remove cast when polkadot/api >= v10.7.2
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      this._polymeshApi.setSigner(undefined as any);
+
+      return;
+    }
+
     this._signingManager = signingManager;
     this._polymeshApi.setSigner(signingManager.getExternalSigner());
 
