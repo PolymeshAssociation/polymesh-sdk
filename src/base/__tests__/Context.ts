@@ -1105,6 +1105,7 @@ describe('Context class', () => {
         target: expect.objectContaining({ did: targetDid }),
         issuer: expect.objectContaining({ did: issuerDid }),
         issuedAt: new Date(date),
+        lastUpdatedAt: new Date(date),
       };
       const fakeClaims = [
         {
@@ -1213,6 +1214,7 @@ describe('Context class', () => {
       const issuerDid = 'someIssuerDid';
       const cddId = 'someCddId';
       const issuedAt = new Date('10/14/2019');
+      const lastUpdatedAt = new Date('10/14/2019');
       const expiryOne = new Date('10/14/2020');
       const expiryTwo = new Date('10/14/2060');
 
@@ -1226,7 +1228,7 @@ describe('Context class', () => {
       const identityClaim = {
         claimIssuer: dsMockUtils.createMockIdentityId(issuerDid),
         issuanceDate: dsMockUtils.createMockMoment(new BigNumber(issuedAt.getTime())),
-        lastUpdateDate: dsMockUtils.createMockMoment(),
+        lastUpdateDate: dsMockUtils.createMockMoment(new BigNumber(lastUpdatedAt.getTime())),
         claim: dsMockUtils.createMockClaim({
           CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
         }),
@@ -1237,6 +1239,7 @@ describe('Context class', () => {
           target: expect.objectContaining({ did: targetDid }),
           issuer: expect.objectContaining({ did: issuerDid }),
           issuedAt,
+          lastUpdatedAt,
           expiry: expiryOne,
           claim: {
             type: ClaimType.CustomerDueDiligence,
@@ -1247,6 +1250,7 @@ describe('Context class', () => {
           target: expect.objectContaining({ did: targetDid }),
           issuer: expect.objectContaining({ did: issuerDid }),
           issuedAt,
+          lastUpdatedAt,
           expiry: null,
           claim: {
             type: ClaimType.CustomerDueDiligence,
@@ -1257,6 +1261,7 @@ describe('Context class', () => {
           target: expect.objectContaining({ did: targetDid }),
           issuer: expect.objectContaining({ did: issuerDid }),
           issuedAt,
+          lastUpdatedAt,
           expiry: expiryTwo,
           claim: {
             type: ClaimType.CustomerDueDiligence,
@@ -1373,6 +1378,7 @@ describe('Context class', () => {
         target: expect.objectContaining({ did: targetDid }),
         issuer: expect.objectContaining({ did: issuerDid }),
         issuedAt: new Date(date),
+        lastUpdatedAt: new Date(date),
       };
       const fakeClaims = [
         {
@@ -1396,6 +1402,7 @@ describe('Context class', () => {
         targetId: targetDid,
         issuerId: issuerDid,
         issuanceDate: date,
+        lastUpdateDate: date,
         cddId: cddId,
       };
       const claimsQueryResponse = {
@@ -1479,6 +1486,7 @@ describe('Context class', () => {
       const issuerDid = 'someIssuerDid';
       const cddId = 'someCddId';
       const issuedAt = new Date('10/14/2019');
+      const lastUpdatedAt = new Date('10/14/2019');
       const expiryOne = new Date('10/14/2020');
       const expiryTwo = new Date('10/14/2060');
 
@@ -1490,7 +1498,7 @@ describe('Context class', () => {
       const identityClaim = {
         claimIssuer: dsMockUtils.createMockIdentityId(issuerDid),
         issuanceDate: dsMockUtils.createMockMoment(new BigNumber(issuedAt.getTime())),
-        lastUpdateDate: dsMockUtils.createMockMoment(),
+        lastUpdateDate: dsMockUtils.createMockMoment(new BigNumber(lastUpdatedAt.getTime())),
         claim: dsMockUtils.createMockClaim({
           CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
         }),
@@ -1502,6 +1510,7 @@ describe('Context class', () => {
           target: expect.objectContaining({ did: targetDid }),
           issuer: expect.objectContaining({ did: issuerDid }),
           issuedAt,
+          lastUpdatedAt,
           expiry: expiryOne,
           claim: {
             type: ClaimType.CustomerDueDiligence,
@@ -1512,6 +1521,7 @@ describe('Context class', () => {
           target: expect.objectContaining({ did: targetDid }),
           issuer: expect.objectContaining({ did: issuerDid }),
           issuedAt,
+          lastUpdatedAt,
           expiry: null,
           claim: {
             type: ClaimType.CustomerDueDiligence,
@@ -1522,6 +1532,7 @@ describe('Context class', () => {
           target: expect.objectContaining({ did: targetDid }),
           issuer: expect.objectContaining({ did: issuerDid }),
           issuedAt,
+          lastUpdatedAt,
           expiry: expiryTwo,
           claim: {
             type: ClaimType.CustomerDueDiligence,

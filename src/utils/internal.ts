@@ -1695,3 +1695,35 @@ export async function getExemptedBtreeSet(
 
   return identitiesToBtreeSet(mapped, context);
 }
+
+/**
+ * @hidden
+ */
+export async function getIdentityFromKeyRecord(
+  keyRecord: PolymeshPrimitivesSecondaryKeyKeyRecord,
+  context: Context
+): Promise<Identity | null> {
+  const {
+    polymeshApi: {
+      query: { identity },
+    },
+  } = context;
+
+  if (keyRecord.isPrimaryKey) {
+    const did = identityIdToString(keyRecord.asPrimaryKey);
+    return new Identity({ did }, context);
+  } else if (keyRecord.isSecondaryKey) {
+    const did = identityIdToString(keyRecord.asSecondaryKey[0]);
+    return new Identity({ did }, context);
+  } else {
+    const multiSigAddress = keyRecord.asMultiSigSignerKey;
+    const optMultiSigKeyRecord = await identity.keyRecords(multiSigAddress);
+
+    if (optMultiSigKeyRecord.isNone) {
+      return null;
+    }
+
+    const multiSigKeyRecord = optMultiSigKeyRecord.unwrap();
+    return getIdentityFromKeyRecord(multiSigKeyRecord, context);
+  }
+}

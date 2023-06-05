@@ -67,6 +67,7 @@ describe('Claims Class', () => {
             target: entityMockUtils.getIdentityInstance({ did: target }),
             issuer: entityMockUtils.getIdentityInstance({ did: 'otherDid' }),
             issuedAt: new Date(),
+            lastUpdatedAt: new Date(),
             expiry: null,
             claim: { type: ClaimType.NoData },
           },
@@ -107,6 +108,7 @@ describe('Claims Class', () => {
             target: entityMockUtils.getIdentityInstance({ did: target }),
             issuer: entityMockUtils.getIdentityInstance({ did: 'otherDid' }),
             issuedAt: new Date(),
+            lastUpdatedAt: new Date(),
             expiry: null,
             claim: { type: ClaimType.NoData },
           },
@@ -144,6 +146,7 @@ describe('Claims Class', () => {
         target: entityMockUtils.getIdentityInstance({ did: targetDid }),
         issuer: entityMockUtils.getIdentityInstance({ did: issuerDid }),
         issuedAt: new Date(date),
+        lastUpdatedAt: new Date(date),
       };
 
       const fakeClaims = [
@@ -163,6 +166,7 @@ describe('Claims Class', () => {
           ],
         },
       ];
+
       /* eslint-disable @typescript-eslint/naming-convention */
       const commonClaimData = {
         targetDID: targetDid,
@@ -258,6 +262,7 @@ describe('Claims Class', () => {
         target: entityMockUtils.getIdentityInstance({ did: targetDid }),
         issuer: entityMockUtils.getIdentityInstance({ did: issuerDid }),
         issuedAt: new Date(date),
+        lastUpdatedAt: new Date(date),
       };
 
       const fakeClaims = [
@@ -364,6 +369,15 @@ describe('Claims Class', () => {
   });
 
   describe('method: getIdentitiesWithClaimsV2', () => {
+    beforeAll(() => {
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date(2023, 4, 17));
+    });
+
+    afterAll(() => {
+      jest.useRealTimers();
+    });
+
     it('should return a list of Identities with claims associated to them', async () => {
       const targetDid = 'someTargetDid';
       const issuerDid = 'someIssuerDid';
@@ -378,6 +392,7 @@ describe('Claims Class', () => {
         target: entityMockUtils.getIdentityInstance({ did: targetDid }),
         issuer: entityMockUtils.getIdentityInstance({ did: issuerDid }),
         issuedAt: new Date(date),
+        lastUpdatedAt: new Date(date),
       };
 
       const fakeClaims = [
@@ -402,6 +417,7 @@ describe('Claims Class', () => {
         targetId: targetDid,
         issuerId: issuerDid,
         issuanceDate: date,
+        lastUpdateDate: date,
       };
       const claimsQueryResponse = {
         nodes: [
@@ -501,6 +517,7 @@ describe('Claims Class', () => {
         target: entityMockUtils.getIdentityInstance({ did: targetDid }),
         issuer: entityMockUtils.getIdentityInstance({ did: issuerDid }),
         issuedAt: new Date(date),
+        lastUpdatedAt: new Date(date),
       };
 
       const fakeClaims = [
@@ -524,6 +541,7 @@ describe('Claims Class', () => {
         targetId: targetDid,
         issuerId: issuerDid,
         issuanceDate: date,
+        lastUpdateDate: date,
       };
       const claimsQueryResponse = {
         nodes: [
@@ -716,6 +734,7 @@ describe('Claims Class', () => {
           target: entityMockUtils.getIdentityInstance({ did: target }),
           issuer: entityMockUtils.getIdentityInstance({ did: 'otherDid' }),
           issuedAt: new Date(),
+          lastUpdatedAt: new Date(),
           expiry: null,
           claim: {
             type: ClaimType.CustomerDueDiligence,
@@ -794,7 +813,13 @@ describe('Claims Class', () => {
   });
 
   describe('method: getTargetingClaims', () => {
+    beforeAll(() => {
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date(2023, 4, 17));
+    });
+
     afterAll(() => {
+      jest.useRealTimers();
       jest.restoreAllMocks();
     });
 
@@ -806,6 +831,7 @@ describe('Claims Class', () => {
         target: entityMockUtils.getIdentityInstance({ did }),
         issuer: entityMockUtils.getIdentityInstance({ did: issuerDid }),
         issuedAt: new Date(date),
+        lastUpdatedAt: new Date(date),
       };
       const fakeClaims: IdentityWithClaims[] = [
         {
@@ -822,6 +848,7 @@ describe('Claims Class', () => {
           ],
         },
       ];
+
       /* eslint-disable @typescript-eslint/naming-convention */
       const commonClaimData = {
         targetDID: did,
@@ -926,6 +953,7 @@ describe('Claims Class', () => {
           target: entityMockUtils.getIdentityInstance({ did: target }),
           issuer: issuer1,
           issuedAt: new Date(),
+          lastUpdatedAt: new Date(),
           expiry: null,
           claim: {
             type: ClaimType.Accredited,
@@ -936,6 +964,7 @@ describe('Claims Class', () => {
           target: entityMockUtils.getIdentityInstance({ did: target }),
           issuer: issuer2,
           issuedAt: new Date(),
+          lastUpdatedAt: new Date(),
           expiry: null,
           claim: {
             type: ClaimType.InvestorUniqueness,
@@ -948,6 +977,7 @@ describe('Claims Class', () => {
           target: entityMockUtils.getIdentityInstance({ did: target }),
           issuer: issuer3,
           issuedAt: new Date(),
+          lastUpdatedAt: new Date(),
           expiry: null,
           claim: {
             type: ClaimType.InvestorUniqueness,
@@ -996,6 +1026,7 @@ describe('Claims Class', () => {
         target: entityMockUtils.getIdentityInstance({ did }),
         issuer: entityMockUtils.getIdentityInstance({ did: issuerDid }),
         issuedAt: new Date(date),
+        lastUpdatedAt: new Date(date),
       };
       const fakeClaims: IdentityWithClaims[] = [
         {
@@ -1083,7 +1114,13 @@ describe('Claims Class', () => {
   });
 
   describe('method: getTargetingClaimsV2', () => {
+    beforeAll(() => {
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date(2023, 4, 17));
+    });
+
     afterAll(() => {
+      jest.useRealTimers();
       jest.restoreAllMocks();
     });
 
@@ -1096,6 +1133,7 @@ describe('Claims Class', () => {
         target: entityMockUtils.getIdentityInstance({ did }),
         issuer: entityMockUtils.getIdentityInstance({ did: issuerDid }),
         issuedAt: new Date(date),
+        lastUpdatedAt: new Date(date),
       };
       const fakeClaims: IdentityWithClaims[] = [
         {
@@ -1119,6 +1157,7 @@ describe('Claims Class', () => {
             targetId: did,
             issuerId: issuerDid,
             issuanceDate: date,
+            lastUpdateDate: date,
             expiry: date,
             type: ClaimTypeEnum.CustomerDueDiligence,
           },
@@ -1222,6 +1261,7 @@ describe('Claims Class', () => {
           target: entityMockUtils.getIdentityInstance({ did: target }),
           issuer: issuer1,
           issuedAt: new Date(),
+          lastUpdatedAt: new Date(),
           expiry: null,
           claim: {
             type: ClaimType.Accredited,
@@ -1232,6 +1272,7 @@ describe('Claims Class', () => {
           target: entityMockUtils.getIdentityInstance({ did: target }),
           issuer: issuer2,
           issuedAt: new Date(),
+          lastUpdatedAt: new Date(),
           expiry: null,
           claim: {
             type: ClaimType.InvestorUniqueness,
@@ -1244,6 +1285,7 @@ describe('Claims Class', () => {
           target: entityMockUtils.getIdentityInstance({ did: target }),
           issuer: issuer3,
           issuedAt: new Date(),
+          lastUpdatedAt: new Date(),
           expiry: null,
           claim: {
             type: ClaimType.InvestorUniqueness,
@@ -1297,6 +1339,7 @@ describe('Claims Class', () => {
           target: entityMockUtils.getIdentityInstance({ did: target }),
           issuer: entityMockUtils.getIdentityInstance({ did: 'otherDid' }),
           issuedAt: new Date(),
+          lastUpdatedAt: new Date(),
           expiry: null,
           claim: {
             type: ClaimType.InvestorUniqueness,

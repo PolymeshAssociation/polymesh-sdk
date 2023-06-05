@@ -122,7 +122,7 @@ describe('assertInstructionValid', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should throw an error if instruction is not in pending state', () => {
+  it('should throw an error if instruction is not in pending or failed state', () => {
     entityMockUtils.configureMocks({
       instructionOptions: {
         details: {
@@ -134,7 +134,7 @@ describe('assertInstructionValid', () => {
     instruction = entityMockUtils.getInstructionInstance();
 
     return expect(assertInstructionValid(instruction, mockContext)).rejects.toThrow(
-      'The Instruction must be in pending state'
+      'The Instruction must be in pending or failed state'
     );
   });
 
@@ -182,6 +182,21 @@ describe('assertInstructionValid', () => {
     instruction = entityMockUtils.getInstructionInstance();
 
     let result = await assertInstructionValid(instruction, mockContext);
+
+    expect(result).toBeUndefined();
+
+    entityMockUtils.configureMocks({
+      instructionOptions: {
+        details: {
+          status: InstructionStatus.Failed,
+          type: InstructionType.SettleOnAffirmation,
+        } as InstructionDetails,
+      },
+    });
+
+    instruction = entityMockUtils.getInstructionInstance();
+
+    result = await assertInstructionValid(instruction, mockContext);
 
     expect(result).toBeUndefined();
 

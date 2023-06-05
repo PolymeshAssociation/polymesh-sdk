@@ -435,13 +435,6 @@ export function stringToEcdsaSignature(
 /**
  * @hidden
  */
-export function accountIdToAccount(accountId: AccountId, context: Context): Account {
-  return new Account({ address: accountId.toString() }, context);
-}
-
-/**
- * @hidden
- */
 export function signerValueToSignatory(
   signer: SignerValue,
   context: Context
@@ -2980,6 +2973,7 @@ export function toIdentityWithClaimsArray(
         targetDID: targetDid,
         issuer,
         issuance_date: issuanceDate,
+        last_update_date: lastUpdateDate,
         expiry,
         type,
         jurisdiction,
@@ -2989,6 +2983,7 @@ export function toIdentityWithClaimsArray(
         target: new Identity({ did: targetDid }, context),
         issuer: new Identity({ did: issuer }, context),
         issuedAt: new Date(issuanceDate),
+        lastUpdatedAt: new Date(lastUpdateDate),
         expiry: expiry ? new Date(expiry) : null,
         claim: createClaim(type, jurisdiction, claimScope, cddId, undefined),
       })
@@ -3003,11 +2998,22 @@ export function middlewareV2ClaimToClaimData(
   claim: MiddlewareV2Claim,
   context: Context
 ): ClaimData {
-  const { targetId, issuerId, issuanceDate, expiry, type, jurisdiction, scope, cddId } = claim;
+  const {
+    targetId,
+    issuerId,
+    issuanceDate,
+    lastUpdateDate,
+    expiry,
+    type,
+    jurisdiction,
+    scope,
+    cddId,
+  } = claim;
   return {
     target: new Identity({ did: targetId }, context),
     issuer: new Identity({ did: issuerId }, context),
     issuedAt: new Date(parseFloat(issuanceDate)),
+    lastUpdatedAt: new Date(parseFloat(lastUpdateDate)),
     expiry: expiry ? new Date(parseFloat(expiry)) : null,
     claim: createClaim(type, jurisdiction, scope, cddId, undefined),
   };
@@ -3343,7 +3349,7 @@ export function permissionsLikeToPermissions(
     assets: assetPermissions,
     transactions: transactionPermissions && {
       ...transactionPermissions,
-      values: [...transactionPermissions.values].sort(),
+      values: [...transactionPermissions.values].sort((a, b) => a.localeCompare(b)),
     },
     transactionGroups: transactionGroupPermissions,
     portfolios: portfolioPermissions,
@@ -3550,7 +3556,7 @@ export function scheduleSpecToMeshScheduleSpec(
   return context.createType('PalletAssetCheckpointScheduleSpec', {
     start: start && dateToMoment(start, context),
     period: calendarPeriodToMeshCalendarPeriod(
-      period || { unit: CalendarUnit.Month, amount: new BigNumber(0) },
+      period ?? { unit: CalendarUnit.Month, amount: new BigNumber(0) },
       context
     ),
     remaining: bigNumberToU64(repetitions || new BigNumber(0), context),
@@ -4247,7 +4253,7 @@ export function meshMetadataSpecToMetadataSpec(
 ): MetadataSpec {
   const specs: MetadataSpec = {};
 
-  if (rawSpecs && rawSpecs.isSome) {
+  if (rawSpecs?.isSome) {
     const { url: rawUrl, description: rawDescription, typeDef: rawTypeDef } = rawSpecs.unwrap();
 
     if (rawUrl.isSome) {
@@ -4436,7 +4442,7 @@ export function middlewareInstructionToHistoricInstruction(
     tradeDate,
     valueDate,
     ...typeDetails,
-    memo: memo || null,
+    memo: memo ?? null,
     venueId: new BigNumber(venueId),
     createdAt: new Date(datetime),
     legs: legs.map(({ from, to, assetId, amount }) => ({

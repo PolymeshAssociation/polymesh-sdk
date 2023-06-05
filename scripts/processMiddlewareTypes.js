@@ -1,15 +1,20 @@
 /* eslint-disable */
 const fs = require('fs');
 const path = require('path');
+const replace = require('replace-in-file');
 
 const typesV2File = path.resolve('src', 'middleware', 'typesV2.ts');
 const enumAliasFile = path.resolve('src', 'middleware', 'enumsV2.ts');
 
 let rawData = fs.readFileSync(typesV2File).toString('utf8');
 
-const enumRegex = new RegExp(
-  /\/\*\* @enum\\n@enumName (.*)Enum(?:\\n (?:.*))? \*\/\nexport enum (.*) {/g
-);
+replace.sync({
+  files: typesV2File,
+  from: /\\n/gs,
+  to: ' \n* ',
+});
+
+const enumRegex = new RegExp(/@enumName (.*)(?:\\n.*) \*\/\nexport enum (.*) {/g);
 
 const matches = rawData.matchAll(enumRegex);
 let aliases = [];

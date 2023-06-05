@@ -264,6 +264,7 @@ export enum SystemTx {
   KillStorage = 'system.killStorage',
   KillPrefix = 'system.killPrefix',
   RemarkWithEvent = 'system.remarkWithEvent',
+  PlaceholderFillBlock = 'system.placeholderFillBlock',
 }
 
 export enum BabeTx {
@@ -645,6 +646,7 @@ export enum SettlementTx {
   AffirmInstructionV2 = 'settlement.affirmInstructionV2',
   WithdrawAffirmationV2 = 'settlement.withdrawAffirmationV2',
   RejectInstructionV2 = 'settlement.rejectInstructionV2',
+  ExecuteScheduledInstructionV2 = 'settlement.executeScheduledInstructionV2',
 }
 
 export enum StatisticsTx {
@@ -735,6 +737,10 @@ export enum ContractsTx {
   Instantiate = 'contracts.instantiate',
   UploadCode = 'contracts.uploadCode',
   RemoveCode = 'contracts.removeCode',
+  CallOldWeight = 'contracts.callOldWeight',
+  InstantiateWithCodeOldWeight = 'contracts.instantiateWithCodeOldWeight',
+  InstantiateOldWeight = 'contracts.instantiateOldWeight',
+  SetCode = 'contracts.setCode',
 }
 
 export enum NftTx {

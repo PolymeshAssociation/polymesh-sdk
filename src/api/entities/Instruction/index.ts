@@ -76,7 +76,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Identifier number of the venue
+   * Unique identifier number of the instruction
    */
   public id: BigNumber;
 
@@ -474,6 +474,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    *
    * @note reject on `SettleOnAffirmation` will execute the settlement and it will fail immediately.
    * @note reject on `SettleOnBlock` behaves just like unauthorize
+   * @note reject on `SettleManual` behaves just like unauthorize
    */
 
   public reject: NoArgsProcedureMethod<Instruction>;
