@@ -17,7 +17,6 @@ import {
 } from '@polkadot/types/lookup';
 import { ISubmittableResult, Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { DocumentNode } from 'graphql';
 
 import { Identity, Procedure } from '~/internal';
 import {
@@ -243,11 +242,6 @@ export interface TransactionConstructionData {
 export interface AuthTarget {
   target: SignerValue;
   authId: BigNumber;
-}
-
-export interface GraphqlQuery<Variables = undefined> {
-  query: DocumentNode;
-  variables: Variables;
 }
 
 export enum TrustedClaimIssuerOperation {
