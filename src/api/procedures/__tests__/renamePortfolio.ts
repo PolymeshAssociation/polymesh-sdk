@@ -7,7 +7,7 @@ import { getAuthorization, Params, prepareRenamePortfolio } from '~/api/procedur
 import { Context, NumberedPortfolio } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { RoleType, TxTags } from '~/types';
+import { TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -112,16 +112,33 @@ describe('renamePortfolio procedure', () => {
   });
 
   describe('getAuthorization', () => {
-    it('should return the appropriate roles and permissions', () => {
-      const proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
-      const boundFunc = getAuthorization.bind(proc);
+    it('should return the appropriate roles and permissions', async () => {
+      let proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(mockContext);
+      let boundFunc = getAuthorization.bind(proc);
       const args = {
         did,
         id,
       } as Params;
 
-      expect(boundFunc(args)).toEqual({
-        roles: [{ type: RoleType.PortfolioCustodian, portfolioId: { did, number: id } }],
+      let result = await boundFunc(args);
+      expect(result).toEqual({
+        roles: true,
+        permissions: {
+          assets: [],
+          portfolios: [expect.objectContaining({ owner: expect.objectContaining({ did }), id })],
+          transactions: [TxTags.portfolio.RenamePortfolio],
+        },
+      });
+
+      proc = procedureMockUtils.getInstance<Params, NumberedPortfolio>(
+        dsMockUtils.getContextInstance({ did: 'custodianDid' })
+      );
+
+      boundFunc = getAuthorization.bind(proc);
+
+      result = await boundFunc(args);
+      expect(result).toEqual({
+        roles: 'Only the owner is allowed to modify the name of a Portfolio',
         permissions: {
           assets: [],
           portfolios: [expect.objectContaining({ owner: expect.objectContaining({ did }), id })],
