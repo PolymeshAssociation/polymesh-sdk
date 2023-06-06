@@ -7,12 +7,13 @@ import {
   ModuleIdEnum as MiddlewareV2ModuleId,
 } from '~/middleware/enumsV2';
 import { eventByIndexedArgs, eventsByIndexedArgs, transactionByHash } from '~/middleware/queries';
-import { eventsByArgs, extrinsicByHash } from '~/middleware/queriesV2';
+import { eventsByArgs, extrinsicByHash, metadataQuery } from '~/middleware/queriesV2';
 import { EventIdEnum as EventId, ModuleIdEnum as ModuleId, Query } from '~/middleware/types';
 import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   EventIdentifier,
   ExtrinsicDataWithFees,
+  MiddlewareMetadata,
   NetworkProperties,
   ProcedureMethod,
   ProtocolFees,
@@ -537,5 +538,45 @@ export class Network {
     }
 
     return null;
+  }
+
+  /**
+   * Retrieve middleware metadata.
+   * Returns null if middleware V2 is disabled
+   *
+   * @note uses the middleware V2
+   */
+  public async getMiddlewareMetadata(): Promise<MiddlewareMetadata | null> {
+    const { context } = this;
+
+    if (!context.isMiddlewareV2Enabled()) {
+      return null;
+    }
+
+    const {
+      data: {
+        _metadata: {
+          chain,
+          specName,
+          genesisHash,
+          targetHeight,
+          lastProcessedHeight,
+          lastProcessedTimestamp,
+          indexerHealthy,
+        },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, '_metadata'>>(metadataQuery());
+
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
+    return {
+      chain: chain!,
+      specName: specName!,
+      genesisHash: genesisHash!,
+      targetHeight: new BigNumber(targetHeight!),
+      lastProcessedHeight: new BigNumber(lastProcessedHeight!),
+      lastProcessedTimestamp: new Date(parseInt(lastProcessedTimestamp)),
+      indexerHealthy: Boolean(indexerHealthy),
+    };
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
   }
 }
