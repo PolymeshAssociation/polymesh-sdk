@@ -549,4 +549,23 @@ export class Network {
   public async getMiddlewareMetadata(): Promise<MiddlewareMetadata | null> {
     return this.context.getMiddlewareMetadata();
   }
+
+  /**
+   * Get the number of blocks the middleware needs to process to be synced with chain
+   *
+   * @note uses the middleware V2
+   */
+  public async getMiddlewareLag(): Promise<BigNumber> {
+    let lastProcessedBlockFromMiddleware = new BigNumber(0);
+    const [latestBlockFromChain, middlewareMetadata] = await Promise.all([
+      this.context.getLatestBlock(),
+      this.context.getMiddlewareMetadata(),
+    ]);
+
+    if (middlewareMetadata) {
+      lastProcessedBlockFromMiddleware = middlewareMetadata.lastProcessedHeight;
+    }
+
+    return latestBlockFromChain.minus(lastProcessedBlockFromMiddleware);
+  }
 }

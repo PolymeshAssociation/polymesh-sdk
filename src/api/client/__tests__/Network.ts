@@ -18,7 +18,13 @@ import { eventsByArgs, extrinsicByHash } from '~/middleware/queriesV2';
 import { CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { AccountBalance, EventIdentifier, ExtrinsicDataWithFees, TxTags } from '~/types';
+import {
+  AccountBalance,
+  EventIdentifier,
+  ExtrinsicDataWithFees,
+  MiddlewareMetadata,
+  TxTags,
+} from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -35,10 +41,12 @@ describe('Network Class', () => {
   let network: Network;
   let stringToBlockHashSpy: jest.SpyInstance;
   let balanceToBigNumberSpy: jest.SpyInstance;
+  let metadata: MiddlewareMetadata | null;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     context = dsMockUtils.getContextInstance();
     network = new Network(context);
+    metadata = await context.getMiddlewareMetadata();
   });
 
   beforeAll(() => {
@@ -798,9 +806,39 @@ describe('Network Class', () => {
 
   describe('method: getMiddlewareMetadata', () => {
     it('should return the middleware metadata', async () => {
-      const metadata = await context.getMiddlewareMetadata();
       const result = await network.getMiddlewareMetadata();
       expect(result).toEqual(metadata);
+    });
+  });
+
+  describe('method: getMiddlewareLag', () => {
+    it('should return the number of blocks by which middleware is lagged', async () => {
+      dsMockUtils.configureMocks({
+        contextOptions: {
+          latestBlock: new BigNumber(10000),
+        },
+      });
+
+      let result = await network.getMiddlewareLag();
+      expect(result).toEqual(new BigNumber(0));
+
+      dsMockUtils.configureMocks({
+        contextOptions: {
+          latestBlock: new BigNumber(10034),
+        },
+      });
+
+      result = await network.getMiddlewareLag();
+      expect(result).toEqual(new BigNumber(34));
+
+      dsMockUtils.configureMocks({
+        contextOptions: {
+          latestBlock: new BigNumber(10000),
+          getMiddlewareMetadata: undefined,
+        },
+      });
+      result = await network.getMiddlewareLag();
+      expect(result).toEqual(new BigNumber(10000));
     });
   });
 });
