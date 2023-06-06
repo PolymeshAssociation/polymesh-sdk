@@ -5,6 +5,7 @@ import { ApolloClient } from 'apollo-client';
 import { ApolloLink } from 'apollo-link';
 import { setContext } from 'apollo-link-context';
 import { HttpLink } from 'apollo-link-http';
+import BigNumber from 'bignumber.js';
 import fetch from 'cross-fetch';
 import schema from 'polymesh-types/schema';
 
@@ -16,7 +17,7 @@ import {
   MiddlewareConfig,
   UnsubCallback,
 } from '~/types';
-import { signerToString } from '~/utils/conversion';
+import { bigNumberToU32, signerToString } from '~/utils/conversion';
 import { assertExpectedChainVersion, createProcedureMethod } from '~/utils/internal';
 
 import { AccountManagement } from './AccountManagement';
@@ -139,13 +140,14 @@ export class Polymesh {
   static async connect(params: ConnectParams): Promise<Polymesh> {
     const { nodeUrl, signingManager, middleware, middlewareV2 } = params;
     let context: Context;
+    let polymeshApi: ApiPromise;
 
     await assertExpectedChainVersion(nodeUrl);
 
     try {
       const { types, rpc, signedExtensions } = schema;
 
-      const polymeshApi = await ApiPromise.create({
+      polymeshApi = await ApiPromise.create({
         provider: new WsProvider(nodeUrl),
         types,
         rpc,
@@ -181,6 +183,29 @@ export class Polymesh {
             message: 'Incorrect middleware URL or API key',
           });
         }
+      }
+    }
+
+    if (middlewareV2) {
+      let metadata = null;
+      try {
+        metadata = await context.getMiddlewareMetadata();
+      } catch (err) {
+        console.log(err);
+        throw new PolymeshError({
+          code: ErrorCode.FatalError,
+          message: 'Incorrect middleware V2 URL',
+        });
+      }
+
+      const rawGenesisBlock = bigNumberToU32(new BigNumber(0), context);
+      const genesisHash = await polymeshApi.rpc.chain.getBlockHash(rawGenesisBlock);
+
+      if (!metadata || metadata.genesisHash !== genesisHash.toString()) {
+        throw new PolymeshError({
+          code: ErrorCode.FatalError,
+          message: 'Middleware V2 URL is incompatible with the given node URL',
+        });
       }
     }
 
