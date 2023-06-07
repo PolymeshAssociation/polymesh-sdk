@@ -1,3 +1,4 @@
+import { QueryOptions } from '@apollo/client';
 import { Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
@@ -18,7 +19,6 @@ import {
   TransactionArgumentType,
   TxTags,
 } from '~/types';
-import { GraphqlQuery } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
@@ -1640,26 +1640,26 @@ describe('Context class', () => {
 
       dsMockUtils.throwOnMiddlewareQuery({ message: 'Error' });
 
-      await expect(
-        context.queryMiddleware('query' as unknown as GraphqlQuery<unknown>)
-      ).rejects.toThrow('Error in middleware query: Error');
+      await expect(context.queryMiddleware('query' as unknown as QueryOptions)).rejects.toThrow(
+        'Error in middleware query: Error'
+      );
 
       dsMockUtils.throwOnMiddlewareQuery({ networkError: {}, message: 'Error' });
 
-      await expect(
-        context.queryMiddleware('query' as unknown as GraphqlQuery<unknown>)
-      ).rejects.toThrow('Error in middleware query: Error');
+      await expect(context.queryMiddleware('query' as unknown as QueryOptions)).rejects.toThrow(
+        'Error in middleware query: Error'
+      );
 
       dsMockUtils.throwOnMiddlewareQuery({ networkError: { result: { message: 'Some Message' } } });
 
-      return expect(
-        context.queryMiddleware('query' as unknown as GraphqlQuery<unknown>)
-      ).rejects.toThrow('Error in middleware query: Some Message');
+      return expect(context.queryMiddleware('query' as unknown as QueryOptions)).rejects.toThrow(
+        'Error in middleware query: Some Message'
+      );
     });
 
     it('should perform a middleware query and return the results', async () => {
       const fakeResult = 'res';
-      const fakeQuery = 'fakeQuery' as unknown as GraphqlQuery<unknown>;
+      const fakeQuery = 'fakeQuery' as unknown as QueryOptions;
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -1693,28 +1693,28 @@ describe('Context class', () => {
 
       dsMockUtils.throwOnMiddlewareV2Query({ message: 'Error' });
 
-      await expect(
-        context.queryMiddlewareV2('query' as unknown as GraphqlQuery<unknown>)
-      ).rejects.toThrow('Error in middleware V2 query: Error');
+      await expect(context.queryMiddlewareV2('query' as unknown as QueryOptions)).rejects.toThrow(
+        'Error in middleware V2 query: Error'
+      );
 
       dsMockUtils.throwOnMiddlewareV2Query({ networkError: {}, message: 'Error' });
 
-      await expect(
-        context.queryMiddlewareV2('query' as unknown as GraphqlQuery<unknown>)
-      ).rejects.toThrow('Error in middleware V2 query: Error');
+      await expect(context.queryMiddlewareV2('query' as unknown as QueryOptions)).rejects.toThrow(
+        'Error in middleware V2 query: Error'
+      );
 
       dsMockUtils.throwOnMiddlewareV2Query({
         networkError: { result: { message: 'Some Message' } },
       });
 
-      return expect(
-        context.queryMiddlewareV2('query' as unknown as GraphqlQuery<unknown>)
-      ).rejects.toThrow('Error in middleware V2 query: Some Message');
+      return expect(context.queryMiddlewareV2('query' as unknown as QueryOptions)).rejects.toThrow(
+        'Error in middleware V2 query: Some Message'
+      );
     });
 
     it('should perform a middleware V2 query and return the results', async () => {
       const fakeResult = 'res';
-      const fakeQuery = 'fakeQuery' as unknown as GraphqlQuery<unknown>;
+      const fakeQuery = 'fakeQuery' as unknown as QueryOptions;
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),

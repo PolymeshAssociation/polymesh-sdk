@@ -1,10 +1,13 @@
+import {
+  ApolloClient,
+  ApolloLink,
+  HttpLink,
+  InMemoryCache,
+  NormalizedCacheObject,
+} from '@apollo/client';
+import { setContext } from '@apollo/client/link/context';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { SigningManager } from '@polymeshassociation/signing-manager-types';
-import { InMemoryCache, NormalizedCacheObject } from 'apollo-cache-inmemory';
-import { ApolloClient } from 'apollo-client';
-import { ApolloLink } from 'apollo-link';
-import { setContext } from 'apollo-link-context';
-import { HttpLink } from 'apollo-link-http';
 import fetch from 'cross-fetch';
 import schema from 'polymesh-types/schema';
 
