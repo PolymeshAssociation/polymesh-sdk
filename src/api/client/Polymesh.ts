@@ -192,10 +192,9 @@ export class Polymesh {
       try {
         metadata = await context.getMiddlewareMetadata();
       } catch (err) {
-        console.log(err);
         throw new PolymeshError({
           code: ErrorCode.FatalError,
-          message: 'Incorrect middleware V2 URL',
+          message: 'Could not query for middleware V2 metadata',
         });
       }
 
@@ -205,7 +204,7 @@ export class Polymesh {
       if (!metadata || metadata.genesisHash !== genesisHash.toString()) {
         throw new PolymeshError({
           code: ErrorCode.FatalError,
-          message: 'Middleware V2 URL is incompatible with the given node URL',
+          message: 'Middleware V2 URL is for a different chain than the given node URL',
         });
       }
     }

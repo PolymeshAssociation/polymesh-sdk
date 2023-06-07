@@ -251,7 +251,6 @@ describe('Polymesh Class', () => {
       const context = dsMockUtils.getContextInstance();
 
       context.getMiddlewareMetadata = jest.fn().mockImplementation(() => {
-        console.log('something');
         throw new Error('Network error');
       });
 
@@ -262,7 +261,7 @@ describe('Polymesh Class', () => {
           nodeUrl: 'wss://some.url',
           middlewareV2,
         })
-      ).rejects.toThrow('Incorrect middleware V2 URL');
+      ).rejects.toThrow('Could not query for middleware V2 metadata');
     });
 
     it('should throw an error if the middleware V2 URL is incompatible with given node URl', async () => {
@@ -280,7 +279,7 @@ describe('Polymesh Class', () => {
         },
       });
       await expect(connection).rejects.toThrow(
-        'Middleware V2 URL is incompatible with the given node URL'
+        'Middleware V2 URL is for a different chain than the given node URL'
       );
 
       dsMockUtils.configureMocks({
@@ -288,7 +287,7 @@ describe('Polymesh Class', () => {
       });
 
       await expect(connection).rejects.toThrow(
-        'Middleware V2 URL is incompatible with the given node URL'
+        'Middleware V2 URL is for a different chain than the given node URL'
       );
     });
 
