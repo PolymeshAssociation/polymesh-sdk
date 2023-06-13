@@ -549,4 +549,25 @@ export class Network {
   public async getMiddlewareMetadata(): Promise<MiddlewareMetadata | null> {
     return this.context.getMiddlewareMetadata();
   }
+
+  /**
+   * Get the number of blocks the middleware needs to process to be synced with chain.
+   * The lag can be around somewhere upto 15 blocks, but this can increase if the block size being processed by the Middleware is too large.
+   * If the lag is too large, its recommended to check the indexer health to make sure the Middleware is processing the blocks.
+   *
+   * @note uses the middleware V2
+   */
+  public async getMiddlewareLag(): Promise<BigNumber> {
+    let lastProcessedBlockFromMiddleware = new BigNumber(0);
+    const [latestBlockFromChain, middlewareMetadata] = await Promise.all([
+      this.context.getLatestBlock(),
+      this.context.getMiddlewareMetadata(),
+    ]);
+
+    if (middlewareMetadata) {
+      lastProcessedBlockFromMiddleware = middlewareMetadata.lastProcessedHeight;
+    }
+
+    return latestBlockFromChain.minus(lastProcessedBlockFromMiddleware);
+  }
 }
