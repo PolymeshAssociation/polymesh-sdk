@@ -551,7 +551,8 @@ export class Network {
   }
 
   /**
-   * Get the number of blocks the middleware needs to process to be synced with chain
+   * Get the number of blocks the middleware needs to process to be synced with chain.
+   * The lag can be around somewhere upto 15 blocks, but this can increase if the block size being processed by the Middleware is too large.
    *
    * @note uses the middleware V2
    */
