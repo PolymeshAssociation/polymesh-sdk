@@ -62,6 +62,7 @@ describe('Polymesh Class', () => {
       .mockClear()
       .mockImplementation()
       .mockResolvedValue(undefined);
+    jest.spyOn(internalUtils, 'assertExpectedSqVersion').mockImplementation();
     bigNumberToU32Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU32');
     dsMockUtils.configureMocks({ contextOptions: undefined });
   });

@@ -12,6 +12,7 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Account, Asset, Context, Identity, PolymeshError, Procedure } from '~/internal';
+import { latestSqVersionQuery } from '~/middleware/queriesV2';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
@@ -20,6 +21,7 @@ import {
   getAtMock,
   getWebSocketInstance,
   MockCodec,
+  MockContext,
   MockWebSocket,
 } from '~/testUtils/mocks/dataSources';
 import {
@@ -39,7 +41,12 @@ import {
   TxTags,
 } from '~/types';
 import { tuple } from '~/types/utils';
-import { MAX_TICKER_LENGTH, SUPPORTED_NODE_SEMVER, SUPPORTED_SPEC_SEMVER } from '~/utils/constants';
+import {
+  MAX_TICKER_LENGTH,
+  MINIMUM_SQ_VERSION,
+  SUPPORTED_NODE_SEMVER,
+  SUPPORTED_SPEC_SEMVER,
+} from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 
 import { SUPPORTED_NODE_VERSION_RANGE, SUPPORTED_SPEC_VERSION_RANGE } from '../constants';
@@ -47,6 +54,7 @@ import {
   asAccount,
   assertAddressValid,
   assertExpectedChainVersion,
+  assertExpectedSqVersion,
   assertIsInteger,
   assertIsPositive,
   assertTickerValid,
@@ -1127,6 +1135,73 @@ describe('getExemptedIds', () => {
     return expect(getExemptedIds(dids, context, asset.ticker)).rejects.toThrow(
       'One or more of the passed exempted Identities are repeated or have the same Scope ID'
     );
+  });
+});
+
+describe('assertExpectedSqVersion', () => {
+  let warnSpy: jest.SpyInstance;
+  let context: MockContext;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+    warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    warnSpy.mockClear();
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    warnSpy.mockRestore();
+  });
+
+  it('should resolve if SDK is initialized with correct Middleware V2 version', () => {
+    dsMockUtils.createApolloV2QueryMock(latestSqVersionQuery(), {
+      subqueryVersions: {
+        nodes: [
+          {
+            version: '9.7.1',
+          },
+        ],
+      },
+    });
+    const promise = assertExpectedSqVersion(dsMockUtils.getContextInstance());
+
+    return expect(promise).resolves.not.toThrow();
+  });
+
+  it('should log a warning for incompatible Subquery version', async () => {
+    dsMockUtils.createApolloV2QueryMock(latestSqVersionQuery(), {
+      subqueryVersions: {
+        nodes: [
+          {
+            version: '9.6.0',
+          },
+        ],
+      },
+    });
+    await assertExpectedSqVersion(context);
+
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy).toHaveBeenCalledWith(
+      `This version of the SDK supports Polymesh Subquery version ${MINIMUM_SQ_VERSION} or higher. Please upgrade the MiddlewareV2`
+    );
+
+    warnSpy.mockReset();
+
+    dsMockUtils.createApolloV2QueryMock(latestSqVersionQuery(), {
+      subqueryVersions: {
+        nodes: [],
+      },
+    });
+    await assertExpectedSqVersion(context);
+
+    expect(warnSpy).toHaveBeenCalledTimes(1);
   });
 });
 
