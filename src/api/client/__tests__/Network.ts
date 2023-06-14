@@ -14,11 +14,17 @@ import {
   heartbeat,
   transactionByHash,
 } from '~/middleware/queries';
-import { eventsByArgs, extrinsicByHash, metadataQuery } from '~/middleware/queriesV2';
+import { eventsByArgs, extrinsicByHash } from '~/middleware/queriesV2';
 import { CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { AccountBalance, EventIdentifier, ExtrinsicDataWithFees, TxTags } from '~/types';
+import {
+  AccountBalance,
+  EventIdentifier,
+  ExtrinsicDataWithFees,
+  MiddlewareMetadata,
+  TxTags,
+} from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -35,10 +41,12 @@ describe('Network Class', () => {
   let network: Network;
   let stringToBlockHashSpy: jest.SpyInstance;
   let balanceToBigNumberSpy: jest.SpyInstance;
+  let metadata: MiddlewareMetadata | null;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     context = dsMockUtils.getContextInstance();
     network = new Network(context);
+    metadata = await context.getMiddlewareMetadata();
   });
 
   beforeAll(() => {
@@ -798,35 +806,39 @@ describe('Network Class', () => {
 
   describe('method: getMiddlewareMetadata', () => {
     it('should return the middleware metadata', async () => {
-      const metadata = {
-        chain: 'Polymesh Testnet Develop',
-        specName: 'polymesh_testnet',
-        genesisHash: '0x3c3183f6d701500766ff7d147b79c4f10014a095eaaa98e960dcef6b3ead50ee',
-        lastProcessedHeight: new BigNumber(6120220),
-        lastProcessedTimestamp: new Date('01/06/2023'),
-        targetHeight: new BigNumber(6120219),
-        indexerHealthy: true,
-      };
-
-      dsMockUtils.createApolloV2QueryMock(metadataQuery(), {
-        _metadata: {
-          ...metadata,
-          lastProcessedTimestamp: metadata.lastProcessedTimestamp.getTime().toString(),
-          lastProcessedHeight: metadata.lastProcessedHeight.toString(),
-          targetHeight: metadata.targetHeight.toString(),
-        },
-      });
-
       const result = await network.getMiddlewareMetadata();
       expect(result).toEqual(metadata);
     });
+  });
 
-    it('should return null if middleware V2 is disabled', async () => {
+  describe('method: getMiddlewareLag', () => {
+    it('should return the number of blocks by which middleware is lagged', async () => {
       dsMockUtils.configureMocks({
-        contextOptions: { withSigningManager: true, middlewareV2Enabled: false },
+        contextOptions: {
+          latestBlock: new BigNumber(10000),
+        },
       });
-      const result = await network.getMiddlewareMetadata();
-      expect(result).toBeNull();
+
+      let result = await network.getMiddlewareLag();
+      expect(result).toEqual(new BigNumber(0));
+
+      dsMockUtils.configureMocks({
+        contextOptions: {
+          latestBlock: new BigNumber(10034),
+        },
+      });
+
+      result = await network.getMiddlewareLag();
+      expect(result).toEqual(new BigNumber(34));
+
+      dsMockUtils.configureMocks({
+        contextOptions: {
+          latestBlock: new BigNumber(10000),
+          getMiddlewareMetadata: undefined,
+        },
+      });
+      result = await network.getMiddlewareLag();
+      expect(result).toEqual(new BigNumber(10000));
     });
   });
 });

@@ -7,7 +7,7 @@ import {
   ModuleIdEnum as MiddlewareV2ModuleId,
 } from '~/middleware/enumsV2';
 import { eventByIndexedArgs, eventsByIndexedArgs, transactionByHash } from '~/middleware/queries';
-import { eventsByArgs, extrinsicByHash, metadataQuery } from '~/middleware/queriesV2';
+import { eventsByArgs, extrinsicByHash } from '~/middleware/queriesV2';
 import { EventIdEnum as EventId, ModuleIdEnum as ModuleId, Query } from '~/middleware/types';
 import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
@@ -547,36 +547,27 @@ export class Network {
    * @note uses the middleware V2
    */
   public async getMiddlewareMetadata(): Promise<MiddlewareMetadata | null> {
-    const { context } = this;
+    return this.context.getMiddlewareMetadata();
+  }
 
-    if (!context.isMiddlewareV2Enabled()) {
-      return null;
+  /**
+   * Get the number of blocks the middleware needs to process to be synced with chain.
+   * The lag can be around somewhere upto 15 blocks, but this can increase if the block size being processed by the Middleware is too large.
+   * If the lag is too large, its recommended to check the indexer health to make sure the Middleware is processing the blocks.
+   *
+   * @note uses the middleware V2
+   */
+  public async getMiddlewareLag(): Promise<BigNumber> {
+    let lastProcessedBlockFromMiddleware = new BigNumber(0);
+    const [latestBlockFromChain, middlewareMetadata] = await Promise.all([
+      this.context.getLatestBlock(),
+      this.context.getMiddlewareMetadata(),
+    ]);
+
+    if (middlewareMetadata) {
+      lastProcessedBlockFromMiddleware = middlewareMetadata.lastProcessedHeight;
     }
 
-    const {
-      data: {
-        _metadata: {
-          chain,
-          specName,
-          genesisHash,
-          targetHeight,
-          lastProcessedHeight,
-          lastProcessedTimestamp,
-          indexerHealthy,
-        },
-      },
-    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, '_metadata'>>(metadataQuery());
-
-    /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    return {
-      chain: chain!,
-      specName: specName!,
-      genesisHash: genesisHash!,
-      targetHeight: new BigNumber(targetHeight!),
-      lastProcessedHeight: new BigNumber(lastProcessedHeight!),
-      lastProcessedTimestamp: new Date(parseInt(lastProcessedTimestamp)),
-      indexerHealthy: Boolean(indexerHealthy),
-    };
-    /* eslint-enable @typescript-eslint/no-non-null-assertion */
+    return latestBlockFromChain.minus(lastProcessedBlockFromMiddleware);
   }
 }

@@ -176,6 +176,7 @@ import {
   CountryCode as CountryCodeEnum,
   DistributionWithDetails,
   ExtrinsicData,
+  MiddlewareMetadata,
   PermissionedAccount,
   ProtocolFees,
   ResultSet,
@@ -420,6 +421,7 @@ interface ContextOptions {
   middlewareV2Enabled?: boolean;
   middlewareAvailable?: boolean;
   middlewareV2Available?: boolean;
+  getMiddlewareMetadata?: MiddlewareMetadata;
   sentAuthorizations?: ResultSet<AuthorizationRequest>;
   isArchiveNode?: boolean;
   ss58Format?: BigNumber;
@@ -717,6 +719,15 @@ const defaultContextOptions: ContextOptions = {
   middlewareV2Enabled: true,
   middlewareAvailable: true,
   middlewareV2Available: true,
+  getMiddlewareMetadata: {
+    chain: 'Polymesh Develop',
+    specName: 'polymesh_dev',
+    genesisHash: 'someGenesisHash',
+    lastProcessedHeight: new BigNumber(10000),
+    lastProcessedTimestamp: new Date('01/06/2023'),
+    targetHeight: new BigNumber(10000),
+    indexerHealthy: true,
+  },
   sentAuthorizations: {
     data: [{} as AuthorizationRequest],
     next: new BigNumber(1),
@@ -855,6 +866,7 @@ function configureContext(opts: ContextOptions): void {
       .mockReturnValue(opts.middlewareEnabled || opts.middlewareV2Enabled),
     isMiddlewareAvailable: jest.fn().mockResolvedValue(opts.middlewareAvailable),
     isMiddlewareV2Available: jest.fn().mockResolvedValue(opts.middlewareV2Available),
+    getMiddlewareMetadata: jest.fn().mockResolvedValue(opts.getMiddlewareMetadata),
     isArchiveNode: opts.isArchiveNode,
     ss58Format: opts.ss58Format,
     disconnect: jest.fn(),

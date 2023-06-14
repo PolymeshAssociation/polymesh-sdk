@@ -18,7 +18,7 @@ import { chunk, clone, flatMap, flatten, flattenDeep } from 'lodash';
 import { Account, Asset, DividendDistribution, Identity, PolymeshError, Subsidy } from '~/internal';
 import { ClaimTypeEnum as MiddlewareV2Claim } from '~/middleware/enumsV2';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
-import { claimsQuery, heartbeatQuery } from '~/middleware/queriesV2';
+import { claimsQuery, heartbeatQuery, metadataQuery } from '~/middleware/queriesV2';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
 import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
@@ -28,6 +28,7 @@ import {
   CorporateActionParams,
   DistributionWithDetails,
   ErrorCode,
+  MiddlewareMetadata,
   ModuleName,
   ProtocolFees,
   ResultSet,
@@ -1348,5 +1349,43 @@ export class Context {
     // nonce: -1 takes pending transactions into consideration.
     // More information can be found at: https://polkadot.js.org/docs/api/cookbook/tx/#how-do-i-take-the-pending-tx-pool-into-account-in-my-nonce
     return new BigNumber(this.nonce || -1);
+  }
+
+  /**
+   * Retrieve middleware metadata.
+   * Returns null if middleware V2 is disabled
+   *
+   * @note uses the middleware V2
+   */
+  public async getMiddlewareMetadata(): Promise<MiddlewareMetadata | null> {
+    if (!this.isMiddlewareV2Enabled()) {
+      return null;
+    }
+
+    const {
+      data: {
+        _metadata: {
+          chain,
+          specName,
+          genesisHash,
+          targetHeight,
+          lastProcessedHeight,
+          lastProcessedTimestamp,
+          indexerHealthy,
+        },
+      },
+    } = await this.queryMiddlewareV2<EnsuredV2<QueryV2, '_metadata'>>(metadataQuery());
+
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
+    return {
+      chain: chain!,
+      specName: specName!,
+      genesisHash: genesisHash!,
+      targetHeight: new BigNumber(targetHeight!),
+      lastProcessedHeight: new BigNumber(lastProcessedHeight!),
+      lastProcessedTimestamp: new Date(parseInt(lastProcessedTimestamp)),
+      indexerHealthy: Boolean(indexerHealthy),
+    };
+    /* eslint-enable @typescript-eslint/no-non-null-assertion */
   }
 }
