@@ -1,3 +1,4 @@
+import { QueryOptions } from '@apollo/client';
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
@@ -35,7 +36,6 @@ import {
   TrustedClaimIssuer,
   TrustedClaimIssuersOrderBy,
 } from '~/middleware/typesV2';
-import { GraphqlQuery } from '~/types/internal';
 import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
 
 /**
@@ -43,7 +43,7 @@ import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
  *
  * Get the latest processed block number
  */
-export function latestBlockQuery(): GraphqlQuery {
+export function latestBlockQuery(): QueryOptions {
   const query = gql`
     query latestBlock {
       blocks(first: 1, orderBy: [${BlocksOrderBy.BlockIdDesc}]) {
@@ -65,7 +65,7 @@ export function latestBlockQuery(): GraphqlQuery {
  *
  * Middleware V2 heartbeat
  */
-export function heartbeatQuery(): GraphqlQuery {
+export function heartbeatQuery(): QueryOptions {
   const query = gql`
     query {
       block(id: "1") {
@@ -135,7 +135,7 @@ export function claimsGroupingQuery(
   variables: ClaimsQueryFilter,
   orderBy = ClaimsOrderBy.TargetIdAsc,
   groupBy = ClaimsGroupBy.TargetId
-): GraphqlQuery<PaginatedQueryArgs<ClaimsQueryFilter>> {
+): QueryOptions<PaginatedQueryArgs<ClaimsQueryFilter>> {
   const { args, filter } = createClaimsFilters(variables);
 
   const query = gql`
@@ -170,7 +170,7 @@ export function claimsQuery(
   filters: ClaimsQueryFilter,
   size?: BigNumber,
   start?: BigNumber
-): GraphqlQuery<PaginatedQueryArgs<ClaimsQueryFilter>> {
+): QueryOptions<PaginatedQueryArgs<ClaimsQueryFilter>> {
   const { args, filter } = createClaimsFilters(filters);
 
   const query = gql`
@@ -219,7 +219,7 @@ export function investmentsQuery(
   filters: QueryArgs<Investment, 'stoId' | 'offeringToken'>,
   size?: BigNumber,
   start?: BigNumber
-): GraphqlQuery<PaginatedQueryArgs<QueryArgs<Investment, 'stoId' | 'offeringToken'>>> {
+): QueryOptions<PaginatedQueryArgs<QueryArgs<Investment, 'stoId' | 'offeringToken'>>> {
   const query = gql`
     query InvestmentsQuery($stoId: Int!, $offeringToken: String!, $size: Int, $start: Int) {
       investments(
@@ -290,7 +290,7 @@ export function instructionsQuery(
   filters: QueryArgs<Instruction, InstructionArgs>,
   size?: BigNumber,
   start?: BigNumber
-): GraphqlQuery<PaginatedQueryArgs<QueryArgs<Instruction, InstructionArgs>>> {
+): QueryOptions<PaginatedQueryArgs<QueryArgs<Instruction, InstructionArgs>>> {
   const { args, filter } = createArgsAndFilters(filters, {
     eventId: 'EventIdEnum',
     status: 'InstructionStatusEnum',
@@ -362,7 +362,7 @@ export function instructionsQuery(
  */
 export function instructionsByDidQuery(
   identityId: string
-): GraphqlQuery<QueryArgs<Leg, 'fromId' | 'toId'>> {
+): QueryOptions<QueryArgs<Leg, 'fromId' | 'toId'>> {
   const query = gql`
     query InstructionsByDidQuery($fromId: String!, $toId: String!)
      {
@@ -432,7 +432,7 @@ export function eventsByArgs(
   filters: QueryArgs<Event, EventArgs>,
   size?: BigNumber,
   start?: BigNumber
-): GraphqlQuery<PaginatedQueryArgs<QueryArgs<Event, EventArgs>>> {
+): QueryOptions<PaginatedQueryArgs<QueryArgs<Event, EventArgs>>> {
   const { args, filter } = createArgsAndFilters(filters, {
     moduleId: 'ModuleIdEnum',
     eventId: 'EventIdEnum',
@@ -472,7 +472,7 @@ export function eventsByArgs(
  */
 export function extrinsicByHash(
   variables: QueryArgs<Extrinsic, 'extrinsicHash'>
-): GraphqlQuery<QueryArgs<Extrinsic, 'extrinsicHash'>> {
+): QueryOptions<QueryArgs<Extrinsic, 'extrinsicHash'>> {
   const query = gql`
     query TransactionByHashQuery($extrinsicHash: String!) {
       extrinsics(filter: { extrinsicHash: { equalTo: $extrinsicHash } }) {
@@ -514,7 +514,7 @@ export function extrinsicsByArgs(
   size?: BigNumber,
   start?: BigNumber,
   orderBy: ExtrinsicsOrderBy = ExtrinsicsOrderBy.BlockIdAsc
-): GraphqlQuery<PaginatedQueryArgs<QueryArgs<Extrinsic, ExtrinsicArgs>>> {
+): QueryOptions<PaginatedQueryArgs<QueryArgs<Extrinsic, ExtrinsicArgs>>> {
   const { args, filter } = createArgsAndFilters(filters, {
     moduleId: 'ModuleIdEnum',
     callId: 'CallIdEnum',
@@ -563,7 +563,7 @@ export function extrinsicsByArgs(
  */
 export function trustedClaimIssuerQuery(
   variables: QueryArgs<TrustedClaimIssuer, 'issuer' | 'assetId'>
-): GraphqlQuery<QueryArgs<TrustedClaimIssuer, 'issuer' | 'assetId'>> {
+): QueryOptions<QueryArgs<TrustedClaimIssuer, 'issuer' | 'assetId'>> {
   const query = gql`
     query TrustedClaimIssuerQuery($assetId: String!, $issuer: String!) {
       trustedClaimIssuers(
@@ -595,7 +595,7 @@ export function trustedClaimIssuerQuery(
  */
 export function trustingAssetsQuery(
   variables: QueryArgs<TrustedClaimIssuer, 'issuer'>
-): GraphqlQuery<QueryArgs<TrustedClaimIssuer, 'issuer'>> {
+): QueryOptions<QueryArgs<TrustedClaimIssuer, 'issuer'>> {
   const query = gql`
     query TrustedClaimIssuerQuery($issuer: String!) {
       trustedClaimIssuers(
@@ -622,7 +622,7 @@ export function trustingAssetsQuery(
  */
 export function portfolioQuery(
   variables: QueryArgs<Portfolio, 'identityId' | 'number'>
-): GraphqlQuery<QueryArgs<Portfolio, 'identityId' | 'number'>> {
+): QueryOptions<QueryArgs<Portfolio, 'identityId' | 'number'>> {
   const query = gql`
     query PortfolioQuery($identityId: String!, $number: Int!) {
       portfolios(filter: { identityId: { equalTo: $identityId }, number: { equalTo: $number } }) {
@@ -651,7 +651,7 @@ export function portfolioQuery(
  */
 export function assetQuery(
   variables: QueryArgs<Asset, 'ticker'>
-): GraphqlQuery<QueryArgs<Asset, 'ticker'>> {
+): QueryOptions<QueryArgs<Asset, 'ticker'>> {
   const query = gql`
     query AssetQuery($ticker: String!) {
       assets(filter: { ticker: { equalTo: $ticker } }) {
@@ -680,7 +680,7 @@ export function assetQuery(
  */
 export function tickerExternalAgentsQuery(
   variables: QueryArgs<TickerExternalAgent, 'assetId'>
-): GraphqlQuery<QueryArgs<TickerExternalAgent, 'assetId'>> {
+): QueryOptions<QueryArgs<TickerExternalAgent, 'assetId'>> {
   const query = gql`
     query TickerExternalAgentQuery($assetId: String!) {
       tickerExternalAgents(
@@ -713,7 +713,7 @@ export function tickerExternalAgentsQuery(
  */
 export function tickerExternalAgentHistoryQuery(
   variables: QueryArgs<TickerExternalAgentHistory, 'assetId'>
-): GraphqlQuery<QueryArgs<TickerExternalAgentHistory, 'assetId'>> {
+): QueryOptions<QueryArgs<TickerExternalAgentHistory, 'assetId'>> {
   const query = gql`
     query TickerExternalAgentHistoryQuery($assetId: String!) {
       tickerExternalAgentHistories(
@@ -751,7 +751,7 @@ export function tickerExternalAgentActionsQuery(
   filters: QueryArgs<TickerExternalAgentAction, TickerExternalAgentActionArgs>,
   size?: BigNumber,
   start?: BigNumber
-): GraphqlQuery<
+): QueryOptions<
   PaginatedQueryArgs<QueryArgs<TickerExternalAgentAction, TickerExternalAgentActionArgs>>
 > {
   const { args, filter } = createArgsAndFilters(filters, { eventId: 'EventIdEnum' });
@@ -794,7 +794,7 @@ export function tickerExternalAgentActionsQuery(
  */
 export function distributionQuery(
   variables: QueryArgs<Distribution, 'id'>
-): GraphqlQuery<QueryArgs<Distribution, 'id'>> {
+): QueryOptions<QueryArgs<Distribution, 'id'>> {
   const query = gql`
     query DistributionQuery($id: String!) {
       distribution(id: $id) {
@@ -818,7 +818,7 @@ export function distributionPaymentsQuery(
   filters: QueryArgs<DistributionPayment, 'distributionId'>,
   size?: BigNumber,
   start?: BigNumber
-): GraphqlQuery<PaginatedQueryArgs<QueryArgs<DistributionPayment, 'distributionId'>>> {
+): QueryOptions<PaginatedQueryArgs<QueryArgs<DistributionPayment, 'distributionId'>>> {
   const query = gql`
     query DistributionPaymentQuery($distributionId: String!, $size: Int, $start: Int) {
       distributionPayments(
@@ -858,7 +858,7 @@ export function assetHoldersQuery(
   size?: BigNumber,
   start?: BigNumber,
   orderBy = AssetHoldersOrderBy.AssetIdAsc
-): GraphqlQuery<PaginatedQueryArgs<QueryArgs<DistributionPayment, 'distributionId'>>> {
+): QueryOptions<PaginatedQueryArgs<QueryArgs<DistributionPayment, 'distributionId'>>> {
   const query = gql`
     query AssetHoldersQuery($identityId: String!, $size: Int, $start: Int) {
       assetHolders(
@@ -937,7 +937,7 @@ function createLegFilters({ identityId, portfolioId, ticker, address }: QuerySet
  */
 export function settlementsQuery(
   filters: QuerySettlementFilters
-): GraphqlQuery<QueryArgs<Leg, 'fromId' | 'toId' | 'assetId' | 'addresses'>> {
+): QueryOptions<QueryArgs<Leg, 'fromId' | 'toId' | 'assetId' | 'addresses'>> {
   const { args, filter, variables } = createLegFilters(filters);
   const query = gql`
     query SettlementsQuery
@@ -1039,7 +1039,7 @@ function createPortfolioMovementFilters({
  */
 export function portfolioMovementsQuery(
   filters: QuerySettlementFilters
-): GraphqlQuery<QueryArgs<PortfolioMovement, 'fromId' | 'toId' | 'assetId' | 'address'>> {
+): QueryOptions<QueryArgs<PortfolioMovement, 'fromId' | 'toId' | 'assetId' | 'address'>> {
   const { args, filter, variables } = createPortfolioMovementFilters(filters);
   const query = gql`
     query PortfolioMovementsQuery
