@@ -1089,7 +1089,7 @@ export function assetTransactionQuery(
   filters: QueryArgs<AssetTransaction, 'assetId'>,
   size?: BigNumber,
   start?: BigNumber
-): GraphqlQuery<PaginatedQueryArgs<QueryArgs<AssetTransaction, 'assetId'>>> {
+): QueryOptions<PaginatedQueryArgs<QueryArgs<AssetTransaction, 'assetId'>>> {
   const query = gql`
     query AssetTransactionQuery($assetId: String!) {
       assetTransactions(
