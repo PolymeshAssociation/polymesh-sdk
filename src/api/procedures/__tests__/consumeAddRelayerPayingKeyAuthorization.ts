@@ -282,6 +282,24 @@ describe('consumeAddRelayerPayingKeyAuthorization procedure', () => {
         void,
         Storage
       >(mockContext, {
+        signingAccount: targetAccount,
+        calledByTarget: false,
+      });
+      boundFunc = getAuthorization.bind(proc);
+
+      result = await boundFunc(args);
+      expect(result).toEqual({
+        roles: true,
+        permissions: {
+          transactions: [TxTags.identity.RemoveAuthorization],
+        },
+      });
+
+      proc = procedureMockUtils.getInstance<
+        ConsumeAddRelayerPayingKeyAuthorizationParams,
+        void,
+        Storage
+      >(mockContext, {
         signingAccount: entityMockUtils.getAccountInstance({
           address: 'someOtherAddress',
           getIdentity: entityMockUtils.getIdentityInstance({ did: 'someOtherDid', isEqual: false }),
