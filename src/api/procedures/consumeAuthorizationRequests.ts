@@ -46,7 +46,6 @@ export async function prepareConsumeAuthorizationRequests(
   if (accept) {
     // auth types not present in this object should not be possible in this procedure
     const typesToExtrinsics = {
-      [AuthorizationType.AddRelayerPayingKey]: tx.relayer.acceptPayingKey,
       [AuthorizationType.BecomeAgent]: tx.externalAgents.acceptBecomeAgent,
       [AuthorizationType.PortfolioCustody]: tx.portfolio.acceptPortfolioCustody,
       [AuthorizationType.TransferAssetOwnership]: tx.asset.acceptAssetOwnershipTransfer,
@@ -146,7 +145,6 @@ export async function getAuthorization(
 
   if (accept) {
     const typesToTags = {
-      [AuthorizationType.AddRelayerPayingKey]: TxTags.relayer.AcceptPayingKey,
       [AuthorizationType.BecomeAgent]: TxTags.externalAgents.AcceptBecomeAgent,
       [AuthorizationType.PortfolioCustody]: TxTags.portfolio.AcceptPortfolioCustody,
       [AuthorizationType.TransferAssetOwnership]: TxTags.asset.AcceptAssetOwnershipTransfer,
