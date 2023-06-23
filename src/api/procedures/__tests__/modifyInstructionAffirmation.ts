@@ -378,8 +378,26 @@ describe('modifyInstructionAffirmation procedure', () => {
     const fromDid = 'fromDid';
     const toDid = 'toDid';
 
-    let from = entityMockUtils.getDefaultPortfolioInstance({ did: fromDid, isCustodiedBy: true });
-    let to = entityMockUtils.getDefaultPortfolioInstance({ did: toDid, isCustodiedBy: true });
+    let from1 = entityMockUtils.getDefaultPortfolioInstance({
+      did: fromDid,
+      isCustodiedBy: true,
+      exists: true,
+    });
+    const from2 = entityMockUtils.getNumberedPortfolioInstance({
+      did: 'someOtherDid',
+      id: new BigNumber(1),
+      exists: false,
+    });
+    let to1 = entityMockUtils.getDefaultPortfolioInstance({
+      did: toDid,
+      isCustodiedBy: true,
+      exists: true,
+    });
+    const to2 = entityMockUtils.getNumberedPortfolioInstance({
+      did: toDid,
+      id: new BigNumber(1),
+      exists: false,
+    });
     const amount = new BigNumber(1);
     const asset = entityMockUtils.getAssetInstance({ ticker: 'SOME_ASSET' });
 
@@ -393,7 +411,13 @@ describe('modifyInstructionAffirmation procedure', () => {
       const boundFunc = prepareStorage.bind(proc);
       entityMockUtils.configureMocks({
         instructionOptions: {
-          getLegs: { data: [{ from, to, amount, asset }], next: null },
+          getLegs: {
+            data: [
+              { from: from1, to: to1, amount, asset },
+              { from: from2, to: to2, amount, asset },
+            ],
+            next: null,
+          },
         },
       });
       const result = await boundFunc({
@@ -407,7 +431,7 @@ describe('modifyInstructionAffirmation procedure', () => {
           expect.objectContaining({ owner: expect.objectContaining({ did: toDid }) }),
         ],
         senderLegAmount: new BigNumber(1),
-        totalLegAmount: new BigNumber(1),
+        totalLegAmount: new BigNumber(2),
       });
     });
 
@@ -419,12 +443,12 @@ describe('modifyInstructionAffirmation procedure', () => {
       >(mockContext);
 
       const boundFunc = prepareStorage.bind(proc);
-      from = entityMockUtils.getDefaultPortfolioInstance({ did: fromDid, isCustodiedBy: false });
-      to = entityMockUtils.getDefaultPortfolioInstance({ did: toDid, isCustodiedBy: false });
+      from1 = entityMockUtils.getDefaultPortfolioInstance({ did: fromDid, isCustodiedBy: false });
+      to1 = entityMockUtils.getDefaultPortfolioInstance({ did: toDid, isCustodiedBy: false });
 
       entityMockUtils.configureMocks({
         instructionOptions: {
-          getLegs: { data: [{ from, to, amount, asset }], next: null },
+          getLegs: { data: [{ from: from1, to: to1, amount, asset }], next: null },
         },
       });
 
