@@ -394,7 +394,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       exists: true,
     });
     const to2 = entityMockUtils.getNumberedPortfolioInstance({
-      did: toDid,
+      did: 'someDid',
       id: new BigNumber(1),
       exists: false,
     });
@@ -429,6 +429,10 @@ describe('modifyInstructionAffirmation procedure', () => {
         portfolios: [
           expect.objectContaining({ owner: expect.objectContaining({ did: fromDid }) }),
           expect.objectContaining({ owner: expect.objectContaining({ did: toDid }) }),
+          expect.objectContaining({
+            owner: expect.objectContaining({ did: 'someDid' }),
+            id: new BigNumber(1),
+          }),
         ],
         senderLegAmount: new BigNumber(1),
         totalLegAmount: new BigNumber(2),
