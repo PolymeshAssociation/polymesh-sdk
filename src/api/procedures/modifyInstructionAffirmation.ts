@@ -195,24 +195,32 @@ export async function prepareStorage(
   >(
     legs,
     async (result, { from, to }) => {
-      const [fromIsCustodied, toIsCustodied] = await Promise.all([
-        from.isCustodiedBy({ identity: did }),
-        to.isCustodiedBy({ identity: did }),
-      ]);
+      const [fromExists, toExists] = await Promise.all([from.exists(), to.exists()]);
 
       const [custodiedPortfolios, amount] = result;
 
       let res = [...custodiedPortfolios];
       let legAmount = amount;
 
-      if (fromIsCustodied) {
-        res = [...res, from];
-        legAmount = legAmount.plus(1);
-      }
+      const checkCustody = async (
+        legPortfolio: DefaultPortfolio | NumberedPortfolio,
+        exists: boolean,
+        sender: boolean
+      ): Promise<void> => {
+        if (exists) {
+          const isCustodied = await legPortfolio.isCustodiedBy({ identity: did });
+          if (isCustodied) {
+            res = [...res, legPortfolio];
+            if (sender) {
+              legAmount = legAmount.plus(1);
+            }
+          }
+        } else if (legPortfolio.owner.did === did) {
+          res = [...res, legPortfolio];
+        }
+      };
 
-      if (toIsCustodied) {
-        res = [...res, to];
-      }
+      await Promise.all([checkCustody(from, fromExists, true), checkCustody(to, toExists, false)]);
 
       return tuple(res, legAmount);
     },
