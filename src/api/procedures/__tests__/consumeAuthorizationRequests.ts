@@ -44,7 +44,6 @@ describe('consumeAuthorizationRequests procedure', () => {
   let rawFalseBool: bool;
 
   let acceptAssetOwnershipTransferTransaction: sinon.SinonStub;
-  let acceptPayingKeyTransaction: sinon.SinonStub;
   let acceptBecomeAgentTransaction: sinon.SinonStub;
   let acceptPortfolioCustodyTransaction: sinon.SinonStub;
   let acceptTickerTransferTransaction: sinon.SinonStub;
@@ -86,20 +85,6 @@ describe('consumeAuthorizationRequests procedure', () => {
         data: {
           type: AuthorizationType.TransferAssetOwnership,
           value: 'SOME_TICKER1',
-        },
-      },
-      {
-        authId: new BigNumber(2),
-        expiry: null,
-        target: entityMockUtils.getAccountInstance({ address: 'targetAddress2' }),
-        issuer: entityMockUtils.getIdentityInstance({ did: 'issuerDid2' }),
-        data: {
-          type: AuthorizationType.AddRelayerPayingKey,
-          value: {
-            beneficiary: entityMockUtils.getAccountInstance({ address: 'targetAddress2' }),
-            subsidizer: entityMockUtils.getAccountInstance({ address: 'payingKey' }),
-            allowance: new BigNumber(1000),
-          },
         },
       },
       {
@@ -169,7 +154,6 @@ describe('consumeAuthorizationRequests procedure', () => {
       'asset',
       'acceptAssetOwnershipTransfer'
     );
-    acceptPayingKeyTransaction = dsMockUtils.createTxStub('relayer', 'acceptPayingKey');
     acceptBecomeAgentTransaction = dsMockUtils.createTxStub('externalAgents', 'acceptBecomeAgent');
     acceptPortfolioCustodyTransaction = dsMockUtils.createTxStub(
       'portfolio',
@@ -207,20 +191,12 @@ describe('consumeAuthorizationRequests procedure', () => {
         },
       ],
     });
-    sinon.assert.calledWith(addBatchTransactionStub, {
-      transactions: [
-        {
-          transaction: acceptPayingKeyTransaction,
-          args: rawAuthIds[1],
-        },
-      ],
-    });
 
     sinon.assert.calledWith(addBatchTransactionStub, {
       transactions: [
         {
           transaction: acceptBecomeAgentTransaction,
-          args: rawAuthIds[2],
+          args: rawAuthIds[1],
         },
       ],
     });
@@ -228,7 +204,7 @@ describe('consumeAuthorizationRequests procedure', () => {
       transactions: [
         {
           transaction: acceptPortfolioCustodyTransaction,
-          args: rawAuthIds[3],
+          args: rawAuthIds[2],
         },
       ],
     });
@@ -236,7 +212,7 @@ describe('consumeAuthorizationRequests procedure', () => {
       transactions: [
         {
           transaction: acceptTickerTransferTransaction,
-          args: rawAuthIds[4],
+          args: rawAuthIds[3],
         },
       ],
     });
