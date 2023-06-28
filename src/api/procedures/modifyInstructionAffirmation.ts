@@ -227,16 +227,16 @@ const assemblePortfolios = async (
     exists: boolean,
     sender: boolean
   ): Promise<void> => {
-    if (exists) {
-      const isCustodied = await legPortfolio.isCustodiedBy({ identity: signingDid });
-      if (isCustodied) {
-        res = [...res, legPortfolio];
-        if (sender) {
-          legAmount = legAmount.plus(1);
-        }
-      }
-    } else if (legPortfolio.owner.did === signingDid) {
+    if (!exists || legPortfolio.owner.did === signingDid) {
       res = [...res, legPortfolio];
+      return;
+    }
+    const isCustodied = await legPortfolio.isCustodiedBy({ identity: signingDid });
+    if (isCustodied) {
+      res = [...res, legPortfolio];
+      if (sender) {
+        legAmount = legAmount.plus(1);
+      }
     }
   };
 
