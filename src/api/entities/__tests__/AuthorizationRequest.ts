@@ -80,6 +80,42 @@ describe('AuthorizationRequest class', () => {
       sinon.restore();
     });
 
+    it('should prepare the consumeAddRelayerPayingKeyAuthorization procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const authorizationRequest = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          expiry: null,
+          target: new Identity({ did: 'someDid' }, context),
+          issuer: new Identity({ did: 'otherDid' }, context),
+          data: {
+            type: AuthorizationType.AddRelayerPayingKey,
+            value: {
+              beneficiary: new Account({ address: 'beneficiary' }, context),
+              subsidizer: new Account({ address: 'subsidizer' }, context),
+              allowance: new BigNumber(100),
+            },
+          },
+        },
+        context
+      );
+
+      const args = {
+        authRequest: authorizationRequest,
+        accept: true,
+      };
+
+      const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
+
+      procedureMockUtils
+        .getPrepareStub()
+        .withArgs({ args, transformer: undefined }, context)
+        .resolves(expectedQueue);
+
+      const queue = await authorizationRequest.accept();
+
+      expect(queue).toBe(expectedQueue);
+    });
+
     it('should prepare the consumeAuthorizationRequests procedure with the correct arguments and context, and return the resulting transaction queue', async () => {
       const authorizationRequest = new AuthorizationRequest(
         {
@@ -252,7 +288,7 @@ describe('AuthorizationRequest class', () => {
         .withArgs({ args, transformer: undefined }, context)
         .resolves(expectedQueue);
 
-      const queue = await authorizationRequest.accept();
+      const queue = await authorizationRequest.remove();
 
       expect(queue).toBe(expectedQueue);
     });
