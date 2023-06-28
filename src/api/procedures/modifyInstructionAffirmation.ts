@@ -13,6 +13,7 @@ import {
   Leg,
   ModifyInstructionAffirmationParams,
   NumberedPortfolio,
+  PortfolioId,
   PortfolioLike,
   TxTag,
   TxTags,
@@ -187,13 +188,8 @@ export async function getAuthorization(
 /**
  * @hidden
  */
-export async function prepareStorage(
-  this: Procedure<ModifyInstructionAffirmationParams, Instruction, Storage>,
-  params: ModifyInstructionAffirmationParams
-): Promise<Storage> {
-  const { context } = this;
-  const { id, operation } = params;
-
+function extractPortfolioParams(params: ModifyInstructionAffirmationParams): PortfolioLike[] {
+  const { operation } = params;
   let portfolioParams: PortfolioLike[] = [];
   if (operation === InstructionAffirmationOperation.Reject) {
     const { portfolio } = params;
@@ -206,6 +202,82 @@ export async function prepareStorage(
       portfolioParams = [...portfolioParams, ...portfolios];
     }
   }
+  return portfolioParams;
+}
+
+/**
+ * @hidden
+ */
+const assemblePortfolios = async (
+  result: [(DefaultPortfolio | NumberedPortfolio)[], BigNumber],
+  from: DefaultPortfolio | NumberedPortfolio,
+  to: DefaultPortfolio | NumberedPortfolio,
+  signingDid: string,
+  portfolioIdParams: PortfolioId[]
+): Promise<[(DefaultPortfolio | NumberedPortfolio)[], BigNumber]> => {
+  const [fromExists, toExists] = await Promise.all([from.exists(), to.exists()]);
+
+  const [custodiedPortfolios, amount] = result;
+
+  let res = [...custodiedPortfolios];
+  let legAmount = amount;
+
+  const checkCustody = async (
+    legPortfolio: DefaultPortfolio | NumberedPortfolio,
+    exists: boolean,
+    sender: boolean
+  ): Promise<void> => {
+    if (exists) {
+      const isCustodied = await legPortfolio.isCustodiedBy({ identity: signingDid });
+      if (isCustodied) {
+        res = [...res, legPortfolio];
+        if (sender) {
+          legAmount = legAmount.plus(1);
+        }
+      }
+    } else if (legPortfolio.owner.did === signingDid) {
+      res = [...res, legPortfolio];
+    }
+  };
+
+  const isParam = (legPortfolio: DefaultPortfolio | NumberedPortfolio): boolean => {
+    const { did: legPortfolioDid, number: legPortfolioNumber } =
+      portfolioLikeToPortfolioId(legPortfolio);
+    return (
+      !portfolioIdParams.length ||
+      portfolioIdParams.some(
+        ({ did, number }) =>
+          did === legPortfolioDid &&
+          new BigNumber(legPortfolioNumber || 0).eq(new BigNumber(number || 0))
+      )
+    );
+  };
+
+  const promises = [];
+  if (isParam(from)) {
+    promises.push(checkCustody(from, fromExists, true));
+  }
+
+  if (isParam(to)) {
+    promises.push(checkCustody(to, toExists, false));
+  }
+
+  await Promise.all(promises);
+
+  return tuple(res, legAmount);
+};
+
+/**
+ * @hidden
+ */
+export async function prepareStorage(
+  this: Procedure<ModifyInstructionAffirmationParams, Instruction, Storage>,
+  params: ModifyInstructionAffirmationParams
+): Promise<Storage> {
+  const { context } = this;
+  const { id } = params;
+
+  const portfolioParams = extractPortfolioParams(params);
 
   const portfolioIdParams = portfolioParams.map(portfolioLikeToPortfolioId);
 
@@ -220,58 +292,8 @@ export async function prepareStorage(
     [(DefaultPortfolio | NumberedPortfolio)[], BigNumber]
   >(
     legs,
-    async (result, { from, to }) => {
-      const [fromExists, toExists] = await Promise.all([from.exists(), to.exists()]);
-
-      const [custodiedPortfolios, amount] = result;
-
-      let res = [...custodiedPortfolios];
-      let legAmount = amount;
-
-      const checkCustody = async (
-        legPortfolio: DefaultPortfolio | NumberedPortfolio,
-        exists: boolean,
-        sender: boolean
-      ): Promise<void> => {
-        if (exists) {
-          const isCustodied = await legPortfolio.isCustodiedBy({ identity: signingDid });
-          if (isCustodied) {
-            res = [...res, legPortfolio];
-            if (sender) {
-              legAmount = legAmount.plus(1);
-            }
-          }
-        } else if (legPortfolio.owner.did === signingDid) {
-          res = [...res, legPortfolio];
-        }
-      };
-
-      const isParam = (legPortfolio: DefaultPortfolio | NumberedPortfolio): boolean => {
-        const { did: legPortfolioDid, number: legPortfolioNumber } =
-          portfolioLikeToPortfolioId(legPortfolio);
-        return (
-          !portfolioIdParams.length ||
-          portfolioIdParams.some(
-            ({ did, number }) =>
-              did === legPortfolioDid &&
-              new BigNumber(legPortfolioNumber || 0).eq(new BigNumber(number || 0))
-          )
-        );
-      };
-
-      const promises = [];
-      if (isParam(from)) {
-        promises.push(checkCustody(from, fromExists, true));
-      }
-
-      if (isParam(to)) {
-        promises.push(checkCustody(to, toExists, false));
-      }
-
-      await Promise.all(promises);
-
-      return tuple(res, legAmount);
-    },
+    async (result, { from, to }) =>
+      assemblePortfolios(result, from, to, signingDid, portfolioIdParams),
     [[], new BigNumber(0)]
   );
 
