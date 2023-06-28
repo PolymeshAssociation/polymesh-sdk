@@ -498,10 +498,33 @@ export enum InstructionAffirmationOperation {
   Reject = 'Reject',
 }
 
-export interface ModifyInstructionAffirmationParams {
-  id: BigNumber;
-  operation: InstructionAffirmationOperation;
-}
+export type RejectInstructionParams = {
+  /**
+   * (optional) Portfolio that the signer controls and wants to reject the instruction
+   */
+  portfolio?: PortfolioLike;
+};
+
+export type AffirmOrWithdrawInstructionParams = {
+  /**
+   * (optional) Portfolios that the signer controls and wants to affirm the instruction or withdraw affirmation
+   *
+   * @note if empty, all the legs containing any custodied Portfolios of the signer will be affirmed/affirmation will be withdrawn, based on the operation.
+   */
+  portfolios?: PortfolioLike[];
+};
+
+export type ModifyInstructionAffirmationParams = AffirmInstructionParams &
+  (
+    | ({
+        operation:
+          | InstructionAffirmationOperation.Affirm
+          | InstructionAffirmationOperation.Withdraw;
+      } & AffirmOrWithdrawInstructionParams)
+    | ({
+        operation: InstructionAffirmationOperation.Reject;
+      } & RejectInstructionParams)
+  );
 
 export interface ExecuteManualInstructionParams {
   id: BigNumber;

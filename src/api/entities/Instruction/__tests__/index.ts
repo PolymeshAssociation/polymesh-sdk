@@ -736,7 +736,7 @@ describe('Instruction class', () => {
         )
         .mockResolvedValue(expectedTransaction);
 
-      const tx = await instruction.reject();
+      const tx = await instruction.reject({});
       expect(tx).toBe(expectedTransaction);
     });
   });
@@ -760,7 +760,7 @@ describe('Instruction class', () => {
         )
         .mockResolvedValue(expectedTransaction);
 
-      const tx = await instruction.affirm();
+      const tx = await instruction.affirm({});
 
       expect(tx).toBe(expectedTransaction);
     });
@@ -785,7 +785,7 @@ describe('Instruction class', () => {
         )
         .mockResolvedValue(expectedTransaction);
 
-      const tx = await instruction.withdraw();
+      const tx = await instruction.withdraw({});
 
       expect(tx).toBe(expectedTransaction);
     });

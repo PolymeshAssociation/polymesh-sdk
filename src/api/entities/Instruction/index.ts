@@ -18,11 +18,14 @@ import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Query as QueryV2 } from '~/middleware/typesV2';
 import { InstructionStatus as MeshInstructionStatus } from '~/polkadot/polymesh';
 import {
+  AffirmOrWithdrawInstructionParams,
   ErrorCode,
   EventIdentifier,
   InstructionAffirmationOperation,
   NoArgsProcedureMethod,
   PaginationOptions,
+  ProcedureMethod,
+  RejectInstructionParams,
   ResultSet,
   SubCallback,
   UnsubCallback,
@@ -92,33 +95,30 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     this.reject = createProcedureMethod(
       {
-        getProcedureAndArgs: () => [
+        getProcedureAndArgs: args => [
           modifyInstructionAffirmation,
-          { id, operation: InstructionAffirmationOperation.Reject },
+          { id, operation: InstructionAffirmationOperation.Reject, ...args },
         ],
-        voidArgs: true,
       },
       context
     );
 
     this.affirm = createProcedureMethod(
       {
-        getProcedureAndArgs: () => [
+        getProcedureAndArgs: args => [
           modifyInstructionAffirmation,
-          { id, operation: InstructionAffirmationOperation.Affirm },
+          { id, operation: InstructionAffirmationOperation.Affirm, ...args },
         ],
-        voidArgs: true,
       },
       context
     );
 
     this.withdraw = createProcedureMethod(
       {
-        getProcedureAndArgs: () => [
+        getProcedureAndArgs: args => [
           modifyInstructionAffirmation,
-          { id, operation: InstructionAffirmationOperation.Withdraw },
+          { id, operation: InstructionAffirmationOperation.Withdraw, ...args },
         ],
-        voidArgs: true,
       },
       context
     );
@@ -477,18 +477,17 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    * @note reject on `SettleManual` behaves just like unauthorize
    */
 
-  public reject: NoArgsProcedureMethod<Instruction>;
+  public reject: ProcedureMethod<RejectInstructionParams, Instruction>;
 
   /**
    * Affirm this instruction (authorize)
    */
-
-  public affirm: NoArgsProcedureMethod<Instruction>;
+  public affirm: ProcedureMethod<AffirmOrWithdrawInstructionParams, Instruction>;
 
   /**
    * Withdraw affirmation from this instruction (unauthorize)
    */
-  public withdraw: NoArgsProcedureMethod<Instruction>;
+  public withdraw: ProcedureMethod<AffirmOrWithdrawInstructionParams, Instruction>;
 
   /**
    * Reschedules a failed Instruction to be tried again
