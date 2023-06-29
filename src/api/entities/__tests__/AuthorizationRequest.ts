@@ -278,7 +278,7 @@ describe('AuthorizationRequest class', () => {
 
       const args = {
         authRequest: authorizationRequest,
-        accept: true,
+        accept: false,
       };
 
       const expectedQueue = 'someQueue' as unknown as TransactionQueue<void>;
