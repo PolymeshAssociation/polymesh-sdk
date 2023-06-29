@@ -4278,11 +4278,13 @@ describe('middlewareV2ClaimToClaimData', () => {
   it('should convert middleware V2 Claim to ClaimData', () => {
     const context = dsMockUtils.getContextInstance();
     const issuanceDate = new Date('10/14/1987');
+    const lastUpdateDate = new Date('10/14/1987');
     const expiry = new Date('10/10/1988');
     const middlewareV2Claim = {
       targetId: 'targetId',
       issuerId: 'issuerId',
       issuanceDate: issuanceDate.getTime(),
+      lastUpdateDate: lastUpdateDate.getTime(),
       expiry: null,
       cddId: 'someCddId',
       type: 'CustomerDueDiligence',
@@ -4297,6 +4299,7 @@ describe('middlewareV2ClaimToClaimData', () => {
       target: expect.objectContaining({ did: 'targetId' }),
       issuer: expect.objectContaining({ did: 'issuerId' }),
       issuedAt: issuanceDate,
+      lastUpdatedAt: lastUpdateDate,
       expiry: null,
       claim,
     };
@@ -4342,6 +4345,7 @@ describe('toIdentityWithClaimsArrayV2', () => {
       target: expect.objectContaining({ did: targetDid }),
       issuer: expect.objectContaining({ did: issuerDid }),
       issuedAt: new Date(date),
+      lastUpdatedAt: new Date(date),
     };
     const fakeResult = [
       {
@@ -4370,6 +4374,7 @@ describe('toIdentityWithClaimsArrayV2', () => {
       targetId: targetDid,
       issuerId: issuerDid,
       issuanceDate: date,
+      lastUpdateDate: date,
       cddId: cddId,
     };
     const fakeMiddlewareV2Claims = [
@@ -5990,6 +5995,7 @@ describe('toIdentityWithClaimsArray', () => {
       target: expect.objectContaining({ did: targetDid }),
       issuer: expect.objectContaining({ did: issuerDid }),
       issuedAt: new Date(date),
+      lastUpdatedAt: new Date(date),
     };
     const fakeResult = [
       {

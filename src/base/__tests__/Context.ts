@@ -1,3 +1,4 @@
+import { QueryOptions } from '@apollo/client';
 import { Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
@@ -18,7 +19,6 @@ import {
   TransactionArgumentType,
   TxTags,
 } from '~/types';
-import { GraphqlQuery } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
@@ -1105,6 +1105,7 @@ describe('Context class', () => {
         target: expect.objectContaining({ did: targetDid }),
         issuer: expect.objectContaining({ did: issuerDid }),
         issuedAt: new Date(date),
+        lastUpdatedAt: new Date(date),
       };
       const fakeClaims = [
         {
@@ -1213,6 +1214,7 @@ describe('Context class', () => {
       const issuerDid = 'someIssuerDid';
       const cddId = 'someCddId';
       const issuedAt = new Date('10/14/2019');
+      const lastUpdatedAt = new Date('10/14/2019');
       const expiryOne = new Date('10/14/2020');
       const expiryTwo = new Date('10/14/2060');
 
@@ -1226,7 +1228,7 @@ describe('Context class', () => {
       const identityClaim = {
         claimIssuer: dsMockUtils.createMockIdentityId(issuerDid),
         issuanceDate: dsMockUtils.createMockMoment(new BigNumber(issuedAt.getTime())),
-        lastUpdateDate: dsMockUtils.createMockMoment(),
+        lastUpdateDate: dsMockUtils.createMockMoment(new BigNumber(lastUpdatedAt.getTime())),
         claim: dsMockUtils.createMockClaim({
           CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
         }),
@@ -1237,6 +1239,7 @@ describe('Context class', () => {
           target: expect.objectContaining({ did: targetDid }),
           issuer: expect.objectContaining({ did: issuerDid }),
           issuedAt,
+          lastUpdatedAt,
           expiry: expiryOne,
           claim: {
             type: ClaimType.CustomerDueDiligence,
@@ -1247,6 +1250,7 @@ describe('Context class', () => {
           target: expect.objectContaining({ did: targetDid }),
           issuer: expect.objectContaining({ did: issuerDid }),
           issuedAt,
+          lastUpdatedAt,
           expiry: null,
           claim: {
             type: ClaimType.CustomerDueDiligence,
@@ -1257,6 +1261,7 @@ describe('Context class', () => {
           target: expect.objectContaining({ did: targetDid }),
           issuer: expect.objectContaining({ did: issuerDid }),
           issuedAt,
+          lastUpdatedAt,
           expiry: expiryTwo,
           claim: {
             type: ClaimType.CustomerDueDiligence,
@@ -1373,6 +1378,7 @@ describe('Context class', () => {
         target: expect.objectContaining({ did: targetDid }),
         issuer: expect.objectContaining({ did: issuerDid }),
         issuedAt: new Date(date),
+        lastUpdatedAt: new Date(date),
       };
       const fakeClaims = [
         {
@@ -1396,6 +1402,7 @@ describe('Context class', () => {
         targetId: targetDid,
         issuerId: issuerDid,
         issuanceDate: date,
+        lastUpdateDate: date,
         cddId: cddId,
       };
       const claimsQueryResponse = {
@@ -1479,6 +1486,7 @@ describe('Context class', () => {
       const issuerDid = 'someIssuerDid';
       const cddId = 'someCddId';
       const issuedAt = new Date('10/14/2019');
+      const lastUpdatedAt = new Date('10/14/2019');
       const expiryOne = new Date('10/14/2020');
       const expiryTwo = new Date('10/14/2060');
 
@@ -1490,7 +1498,7 @@ describe('Context class', () => {
       const identityClaim = {
         claimIssuer: dsMockUtils.createMockIdentityId(issuerDid),
         issuanceDate: dsMockUtils.createMockMoment(new BigNumber(issuedAt.getTime())),
-        lastUpdateDate: dsMockUtils.createMockMoment(),
+        lastUpdateDate: dsMockUtils.createMockMoment(new BigNumber(lastUpdatedAt.getTime())),
         claim: dsMockUtils.createMockClaim({
           CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
         }),
@@ -1502,6 +1510,7 @@ describe('Context class', () => {
           target: expect.objectContaining({ did: targetDid }),
           issuer: expect.objectContaining({ did: issuerDid }),
           issuedAt,
+          lastUpdatedAt,
           expiry: expiryOne,
           claim: {
             type: ClaimType.CustomerDueDiligence,
@@ -1512,6 +1521,7 @@ describe('Context class', () => {
           target: expect.objectContaining({ did: targetDid }),
           issuer: expect.objectContaining({ did: issuerDid }),
           issuedAt,
+          lastUpdatedAt,
           expiry: null,
           claim: {
             type: ClaimType.CustomerDueDiligence,
@@ -1522,6 +1532,7 @@ describe('Context class', () => {
           target: expect.objectContaining({ did: targetDid }),
           issuer: expect.objectContaining({ did: issuerDid }),
           issuedAt,
+          lastUpdatedAt,
           expiry: expiryTwo,
           claim: {
             type: ClaimType.CustomerDueDiligence,
@@ -1629,26 +1640,26 @@ describe('Context class', () => {
 
       dsMockUtils.throwOnMiddlewareQuery({ message: 'Error' });
 
-      await expect(
-        context.queryMiddleware('query' as unknown as GraphqlQuery<unknown>)
-      ).rejects.toThrow('Error in middleware query: Error');
+      await expect(context.queryMiddleware('query' as unknown as QueryOptions)).rejects.toThrow(
+        'Error in middleware query: Error'
+      );
 
       dsMockUtils.throwOnMiddlewareQuery({ networkError: {}, message: 'Error' });
 
-      await expect(
-        context.queryMiddleware('query' as unknown as GraphqlQuery<unknown>)
-      ).rejects.toThrow('Error in middleware query: Error');
+      await expect(context.queryMiddleware('query' as unknown as QueryOptions)).rejects.toThrow(
+        'Error in middleware query: Error'
+      );
 
       dsMockUtils.throwOnMiddlewareQuery({ networkError: { result: { message: 'Some Message' } } });
 
-      return expect(
-        context.queryMiddleware('query' as unknown as GraphqlQuery<unknown>)
-      ).rejects.toThrow('Error in middleware query: Some Message');
+      return expect(context.queryMiddleware('query' as unknown as QueryOptions)).rejects.toThrow(
+        'Error in middleware query: Some Message'
+      );
     });
 
     it('should perform a middleware query and return the results', async () => {
       const fakeResult = 'res';
-      const fakeQuery = 'fakeQuery' as unknown as GraphqlQuery<unknown>;
+      const fakeQuery = 'fakeQuery' as unknown as QueryOptions;
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -1682,28 +1693,28 @@ describe('Context class', () => {
 
       dsMockUtils.throwOnMiddlewareV2Query({ message: 'Error' });
 
-      await expect(
-        context.queryMiddlewareV2('query' as unknown as GraphqlQuery<unknown>)
-      ).rejects.toThrow('Error in middleware V2 query: Error');
+      await expect(context.queryMiddlewareV2('query' as unknown as QueryOptions)).rejects.toThrow(
+        'Error in middleware V2 query: Error'
+      );
 
       dsMockUtils.throwOnMiddlewareV2Query({ networkError: {}, message: 'Error' });
 
-      await expect(
-        context.queryMiddlewareV2('query' as unknown as GraphqlQuery<unknown>)
-      ).rejects.toThrow('Error in middleware V2 query: Error');
+      await expect(context.queryMiddlewareV2('query' as unknown as QueryOptions)).rejects.toThrow(
+        'Error in middleware V2 query: Error'
+      );
 
       dsMockUtils.throwOnMiddlewareV2Query({
         networkError: { result: { message: 'Some Message' } },
       });
 
-      return expect(
-        context.queryMiddlewareV2('query' as unknown as GraphqlQuery<unknown>)
-      ).rejects.toThrow('Error in middleware V2 query: Some Message');
+      return expect(context.queryMiddlewareV2('query' as unknown as QueryOptions)).rejects.toThrow(
+        'Error in middleware V2 query: Some Message'
+      );
     });
 
     it('should perform a middleware V2 query and return the results', async () => {
       const fakeResult = 'res';
-      const fakeQuery = 'fakeQuery' as unknown as GraphqlQuery<unknown>;
+      const fakeQuery = 'fakeQuery' as unknown as QueryOptions;
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),

@@ -1,3 +1,10 @@
+import {
+  ApolloClient,
+  ApolloQueryResult,
+  NormalizedCacheObject,
+  OperationVariables,
+  QueryOptions,
+} from '@apollo/client';
 import { ApiPromise } from '@polkadot/api';
 import { getTypeDef, Option } from '@polkadot/types';
 import { AccountInfo, Header } from '@polkadot/types/interfaces';
@@ -7,21 +14,11 @@ import {
   PalletRelayerSubsidy,
   PolymeshCommonUtilitiesProtocolFeeProtocolOp,
 } from '@polkadot/types/lookup';
-import {
-  CallFunction,
-  Codec,
-  DetectCodec,
-  Signer as PolkadotSigner,
-  TypeDef,
-  TypeDefInfo,
-} from '@polkadot/types/types';
+import { CallFunction, Codec, DetectCodec, Signer as PolkadotSigner } from '@polkadot/types/types';
 import { SigningManager } from '@polymeshassociation/signing-manager-types';
-import { NormalizedCacheObject } from 'apollo-cache-inmemory';
-import ApolloClient, { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, clone, flatMap, flatten, flattenDeep } from 'lodash';
-import { polymesh } from 'polymesh-types/definitions';
 
 import { Account, Asset, DividendDistribution, Identity, PolymeshError, Subsidy } from '~/internal';
 import { ClaimTypeEnum as MiddlewareV2Claim } from '~/middleware/enumsV2';
@@ -31,33 +28,22 @@ import { ClaimTypeEnum, Query } from '~/middleware/types';
 import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   AccountBalance,
-  ArrayTransactionArgument,
   ClaimData,
   ClaimType,
-  ComplexTransactionArgument,
   CorporateActionParams,
   DistributionWithDetails,
   ErrorCode,
   ModuleName,
-  PlainTransactionArgument,
   ProtocolFees,
   ResultSet,
-  SimpleEnumTransactionArgument,
   SubCallback,
   SubsidyWithAllowance,
   TransactionArgument,
-  TransactionArgumentType,
   TxTag,
   UnsubCallback,
 } from '~/types';
-import { GraphqlQuery } from '~/types/internal';
 import { Ensured, EnsuredV2 } from '~/types/utils';
-import {
-  DEFAULT_GQL_PAGE_SIZE,
-  MAX_CONCURRENT_REQUESTS,
-  MAX_PAGE_SIZE,
-  ROOT_TYPES,
-} from '~/utils/constants';
+import { DEFAULT_GQL_PAGE_SIZE, MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   accountIdToString,
   balanceToBigNumber,
@@ -90,6 +76,8 @@ import {
   delay,
   getApiAtBlock,
 } from '~/utils/internal';
+
+import { processType } from './utils';
 
 interface ConstructorParams {
   polymeshApi: ApiPromise;
@@ -664,135 +652,8 @@ export class Context {
        */
       _polymeshApi: { tx },
     } = this;
-    const { types } = polymesh;
 
     const [section, method] = tag.split('.');
-
-    const getRootType = (
-      type: string
-    ):
-      | PlainTransactionArgument
-      | ArrayTransactionArgument
-      | SimpleEnumTransactionArgument
-      | ComplexTransactionArgument => {
-      const rootType = ROOT_TYPES[type];
-
-      if (rootType) {
-        return {
-          type: rootType,
-        };
-      }
-      if (type === 'Null') {
-        return {
-          type: TransactionArgumentType.Null,
-        };
-      }
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const definition = (types as any)[type];
-
-      if (!definition) {
-        return {
-          type: TransactionArgumentType.Unknown,
-        };
-      }
-
-      const typeDef = getTypeDef(JSON.stringify(definition));
-
-      if (typeDef.info === TypeDefInfo.Plain) {
-        return getRootType(definition);
-      }
-
-      // eslint-disable-next-line @typescript-eslint/no-use-before-define
-      return processType(typeDef, '');
-    };
-
-    const processType = (rawType: TypeDef, name: string): TransactionArgument => {
-      const { type, info, sub } = rawType;
-
-      const arg = {
-        name,
-        optional: false,
-        _rawType: rawType,
-      };
-
-      switch (info) {
-        case TypeDefInfo.Plain: {
-          return {
-            ...getRootType(type),
-            ...arg,
-          };
-        }
-        case TypeDefInfo.Compact: {
-          return {
-            ...processType(sub as TypeDef, name),
-            ...arg,
-          };
-        }
-        case TypeDefInfo.Option: {
-          return {
-            ...processType(sub as TypeDef, name),
-            ...arg,
-            optional: true,
-          };
-        }
-        case TypeDefInfo.Tuple: {
-          return {
-            type: TransactionArgumentType.Tuple,
-            ...arg,
-            internal: (sub as TypeDef[]).map((def, index) => processType(def, `${index}`)),
-          };
-        }
-        case TypeDefInfo.Vec: {
-          return {
-            type: TransactionArgumentType.Array,
-            ...arg,
-            internal: processType(sub as TypeDef, ''),
-          };
-        }
-        case TypeDefInfo.VecFixed: {
-          return {
-            type: TransactionArgumentType.Text,
-            ...arg,
-          };
-        }
-        case TypeDefInfo.Enum: {
-          const subTypes = sub as TypeDef[];
-
-          const isSimple = subTypes.every(({ type: subType }) => subType === 'Null');
-
-          if (isSimple) {
-            return {
-              type: TransactionArgumentType.SimpleEnum,
-              ...arg,
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              internal: subTypes.map(({ name: subName }) => subName!),
-            };
-          }
-
-          return {
-            type: TransactionArgumentType.RichEnum,
-            ...arg,
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            internal: subTypes.map(def => processType(def, def.name!)),
-          };
-        }
-        case TypeDefInfo.Struct: {
-          return {
-            type: TransactionArgumentType.Object,
-            ...arg,
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            internal: (sub as TypeDef[]).map(def => processType(def, def.name!)),
-          };
-        }
-        default: {
-          return {
-            type: TransactionArgumentType.Unknown,
-            ...arg,
-          };
-        }
-      }
-    };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return ((tx as any)[section][method] as CallFunction).meta.args.map(({ name, type }) => {
@@ -950,19 +811,22 @@ export class Context {
     const claimData = await P.map(claim1stKeys, async claim1stKey => {
       const entries = await identity.claims.entries(claim1stKey);
       const data: ClaimData[] = [];
-      entries.forEach(([key, { claimIssuer, issuanceDate, expiry: rawExpiry, claim }]) => {
-        const { target } = key.args[0];
-        const expiry = !rawExpiry.isEmpty ? momentToDate(rawExpiry.unwrap()) : null;
-        if ((!includeExpired && (expiry === null || expiry > new Date())) || includeExpired) {
-          data.push({
-            target: new Identity({ did: identityIdToString(target) }, this),
-            issuer: new Identity({ did: identityIdToString(claimIssuer) }, this),
-            issuedAt: momentToDate(issuanceDate),
-            expiry,
-            claim: meshClaimToClaim(claim),
-          });
+      entries.forEach(
+        ([key, { claimIssuer, issuanceDate, lastUpdateDate, expiry: rawExpiry, claim }]) => {
+          const { target } = key.args[0];
+          const expiry = !rawExpiry.isEmpty ? momentToDate(rawExpiry.unwrap()) : null;
+          if ((!includeExpired && (expiry === null || expiry > new Date())) || includeExpired) {
+            data.push({
+              target: new Identity({ did: identityIdToString(target) }, this),
+              issuer: new Identity({ did: identityIdToString(claimIssuer) }, this),
+              issuedAt: momentToDate(issuanceDate),
+              lastUpdatedAt: momentToDate(lastUpdateDate),
+              expiry,
+              claim: meshClaimToClaim(claim),
+            });
+          }
         }
-      });
+      );
       return data;
     });
 
@@ -1013,6 +877,7 @@ export class Context {
           targetDID: target,
           issuer,
           issuance_date: issuanceDate,
+          last_update_date: lastUpdateDate,
           expiry,
           type,
           jurisdiction,
@@ -1023,6 +888,7 @@ export class Context {
             target: new Identity({ did: target }, this),
             issuer: new Identity({ did: issuer }, this),
             issuedAt: new Date(issuanceDate),
+            lastUpdatedAt: new Date(lastUpdateDate),
             expiry: expiry ? new Date(expiry) : null,
             claim: createClaim(type, jurisdiction, scope, cddId, undefined),
           });
@@ -1254,7 +1120,7 @@ export class Context {
    * Make a query to the middleware server using the apollo client
    */
   public async queryMiddleware<Result extends Partial<Query>>(
-    query: GraphqlQuery<unknown>
+    query: QueryOptions<OperationVariables, Result>
   ): Promise<ApolloQueryResult<Result>> {
     let result: ApolloQueryResult<Result>;
     try {
@@ -1278,7 +1144,7 @@ export class Context {
    * Make a query to the middleware V2 server using the apollo client
    */
   public async queryMiddlewareV2<Result extends Partial<QueryV2>>(
-    query: GraphqlQuery<unknown>
+    query: QueryOptions<OperationVariables, Result>
   ): Promise<ApolloQueryResult<Result>> {
     let result: ApolloQueryResult<Result>;
     try {
@@ -1415,8 +1281,12 @@ export class Context {
 
     this.isDisconnected = true;
 
-    middlewareApi && middlewareApi.stop();
-    middlewareApiV2 && middlewareApiV2.stop();
+    if (middlewareApi) {
+      middlewareApi.stop();
+    }
+    if (middlewareApiV2) {
+      middlewareApiV2.stop();
+    }
 
     await delay(500); // allow pending requests to complete
 
