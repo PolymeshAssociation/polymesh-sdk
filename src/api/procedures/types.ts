@@ -526,9 +526,12 @@ export type ModifyInstructionAffirmationParams = AffirmInstructionParams &
       } & RejectInstructionParams)
   );
 
-export interface ExecuteManualInstructionParams {
-  id: BigNumber;
-}
+export type ExecuteManualInstructionParams = AffirmInstructionParams & {
+  /**
+   * (optional) Set to `true` to skip affirmation check, useful for batch transactions
+   */
+  skipAffirmationCheck?: boolean;
+};
 
 export interface CreateVenueParams {
   description: string;

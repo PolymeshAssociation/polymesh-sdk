@@ -827,7 +827,7 @@ describe('Instruction class', () => {
       when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
-            args: { id },
+            args: { id, skipAffirmationCheck: false },
             transformer: undefined,
           },
           context,
@@ -835,7 +835,7 @@ describe('Instruction class', () => {
         )
         .mockResolvedValue(expectedTransaction);
 
-      const tx = await instruction.executeManually();
+      const tx = await instruction.executeManually({ id, skipAffirmationCheck: false });
 
       expect(tx).toBe(expectedTransaction);
     });
