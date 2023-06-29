@@ -208,6 +208,25 @@ function extractPortfolioParams(params: ModifyInstructionAffirmationParams): Por
 /**
  * @hidden
  */
+const isParam = (
+  legPortfolio: DefaultPortfolio | NumberedPortfolio,
+  portfolioIdParams: PortfolioId[]
+): boolean => {
+  const { did: legPortfolioDid, number: legPortfolioNumber } =
+    portfolioLikeToPortfolioId(legPortfolio);
+  return (
+    !portfolioIdParams.length ||
+    portfolioIdParams.some(
+      ({ did, number }) =>
+        did === legPortfolioDid &&
+        new BigNumber(legPortfolioNumber || 0).eq(new BigNumber(number || 0))
+    )
+  );
+};
+
+/**
+ * @hidden
+ */
 const assemblePortfolios = async (
   result: [(DefaultPortfolio | NumberedPortfolio)[], BigNumber],
   from: DefaultPortfolio | NumberedPortfolio,
@@ -227,38 +246,25 @@ const assemblePortfolios = async (
     exists: boolean,
     sender: boolean
   ): Promise<void> => {
-    if (!exists || legPortfolio.owner.did === signingDid) {
-      res = [...res, legPortfolio];
-      return;
-    }
-    const isCustodied = await legPortfolio.isCustodiedBy({ identity: signingDid });
-    if (isCustodied) {
-      res = [...res, legPortfolio];
-      if (sender) {
-        legAmount = legAmount.plus(1);
+    if (exists) {
+      const isCustodied = await legPortfolio.isCustodiedBy({ identity: signingDid });
+      if (isCustodied) {
+        res = [...res, legPortfolio];
+        if (sender) {
+          legAmount = legAmount.plus(1);
+        }
       }
+    } else if (legPortfolio.owner.did === signingDid) {
+      res = [...res, legPortfolio];
     }
-  };
-
-  const isParam = (legPortfolio: DefaultPortfolio | NumberedPortfolio): boolean => {
-    const { did: legPortfolioDid, number: legPortfolioNumber } =
-      portfolioLikeToPortfolioId(legPortfolio);
-    return (
-      !portfolioIdParams.length ||
-      portfolioIdParams.some(
-        ({ did, number }) =>
-          did === legPortfolioDid &&
-          new BigNumber(legPortfolioNumber || 0).eq(new BigNumber(number || 0))
-      )
-    );
   };
 
   const promises = [];
-  if (isParam(from)) {
+  if (isParam(from, portfolioIdParams)) {
     promises.push(checkCustody(from, fromExists, true));
   }
 
-  if (isParam(to)) {
+  if (isParam(to, portfolioIdParams)) {
     promises.push(checkCustody(to, toExists, false));
   }
 
