@@ -4,7 +4,7 @@ import { Asset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { MAX_BALANCE } from '~/utils/constants';
-import { bigNumberToBalance, stringToTicker } from '~/utils/conversion';
+import { bigNumberToBalance, portfolioToPortfolioKind, stringToTicker } from '~/utils/conversion';
 
 export interface IssueTokensParams {
   amount: BigNumber;
@@ -33,8 +33,10 @@ export async function prepareIssueTokens(
   } = this;
   const { ticker, amount } = args;
 
-  const { isDivisible, totalSupply } = await assetEntity.details();
-
+  const [{ isDivisible, totalSupply }, signingIdentity] = await Promise.all([
+    assetEntity.details(),
+    context.getSigningIdentity(),
+  ]);
   const supplyAfterMint = amount.plus(totalSupply);
 
   if (supplyAfterMint.isGreaterThan(MAX_BALANCE)) {
@@ -48,12 +50,15 @@ export async function prepareIssueTokens(
     });
   }
 
+  const defaultPortfolio = await signingIdentity.portfolios.getPortfolio();
+
   const rawTicker = stringToTicker(ticker, context);
   const rawValue = bigNumberToBalance(amount, context, isDivisible);
+  const rawPortfolio = portfolioToPortfolioKind(defaultPortfolio, context);
 
   return {
     transaction: asset.issue,
-    args: [rawTicker, rawValue],
+    args: [rawTicker, rawValue, rawPortfolio],
     resolver: assetEntity,
   };
 }

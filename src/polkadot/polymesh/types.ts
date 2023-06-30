@@ -385,6 +385,15 @@ export interface CalendarUnit extends Enum {
   readonly type: 'Second' | 'Minute' | 'Hour' | 'Day' | 'Week' | 'Month' | 'Year';
 }
 
+/** @name canTransferGranularReturn */
+export interface canTransferGranularReturn extends Enum {
+  readonly isOk: boolean;
+  readonly asOk: GranularCanTransferResult;
+  readonly isErr: boolean;
+  readonly asErr: DispatchError;
+  readonly type: 'Ok' | 'Err';
+}
+
 /** @name CanTransferResult */
 export interface CanTransferResult extends Enum {
   readonly isOk: boolean;
@@ -506,20 +515,6 @@ export interface ClaimType extends Enum {
     | 'NoData'
     | 'InvestorUniquenessV2'
     | 'Custom';
-}
-
-/** @name ClassicTickerImport */
-export interface ClassicTickerImport extends Struct {
-  readonly eth_owner: EthereumAddress;
-  readonly ticker: Ticker;
-  readonly is_contract: bool;
-  readonly is_created: bool;
-}
-
-/** @name ClassicTickerRegistration */
-export interface ClassicTickerRegistration extends Struct {
-  readonly eth_owner: EthereumAddress;
-  readonly is_created: bool;
 }
 
 /** @name Committee */
@@ -1259,6 +1254,14 @@ export interface FundraiserTier extends Struct {
   readonly remaining: Balance;
 }
 
+/** @name FungibleLeg */
+export interface FungibleLeg extends Struct {
+  readonly sender: PortfolioId;
+  readonly receiver: PortfolioId;
+  readonly ticker: Ticker;
+  readonly amount: Balance;
+}
+
 /** @name FungibleToken */
 export interface FungibleToken extends Struct {
   readonly ticker: Ticker;
@@ -1400,20 +1403,14 @@ export interface KeyRecord extends Enum {
 }
 
 /** @name Leg */
-export interface Leg extends Struct {
-  readonly from: PortfolioId;
-  readonly to: PortfolioId;
-  readonly asset: Ticker;
-  readonly amount: Balance;
-}
-
-/** @name LegAsset */
-export interface LegAsset extends Enum {
+export interface Leg extends Enum {
   readonly isFungible: boolean;
-  readonly asFungible: FungibleToken;
+  readonly asFungible: FungibleLeg;
   readonly isNonFungible: boolean;
-  readonly asNonFungible: NFTs;
-  readonly type: 'Fungible' | 'NonFungible';
+  readonly asNonFungible: NonFungibleLeg;
+  readonly isOffChain: boolean;
+  readonly asOffChain: OffChainLeg;
+  readonly type: 'Fungible' | 'NonFungible' | 'OffChain';
 }
 
 /** @name LegId */
@@ -1426,13 +1423,6 @@ export interface LegStatus extends Enum {
   readonly isExecutionToBeSkipped: boolean;
   readonly asExecutionToBeSkipped: ITuple<[AccountId, u64]>;
   readonly type: 'PendingTokenLock' | 'ExecutionPending' | 'ExecutionToBeSkipped';
-}
-
-/** @name LegV2 */
-export interface LegV2 extends Struct {
-  readonly from: PortfolioId;
-  readonly to: PortfolioId;
-  readonly asset: LegAsset;
 }
 
 /** @name LocalCAId */
@@ -1491,6 +1481,13 @@ export interface NFTs extends Struct {
   readonly ids: Vec<NFTId>;
 }
 
+/** @name NonFungibleLeg */
+export interface NonFungibleLeg extends Struct {
+  readonly sender: PortfolioId;
+  readonly receiver: PortfolioId;
+  readonly nfts: NFTs;
+}
+
 /** @name NonFungibleType */
 export interface NonFungibleType extends Enum {
   readonly isDerivative: boolean;
@@ -1499,6 +1496,20 @@ export interface NonFungibleType extends Enum {
   readonly isCustom: boolean;
   readonly asCustom: CustomAssetTypeId;
   readonly type: 'Derivative' | 'FixedIncome' | 'Invoice' | 'Custom';
+}
+
+/** @name OffChainAsset */
+export interface OffChainAsset extends Struct {
+  readonly ticker: Ticker;
+  readonly amount: Balance;
+}
+
+/** @name OffChainLeg */
+export interface OffChainLeg extends Struct {
+  readonly sender_identity: IdentityId;
+  readonly receiver_identity: IdentityId;
+  readonly ticker: Ticker;
+  readonly amount: Balance;
 }
 
 /** @name OffChainSignature */

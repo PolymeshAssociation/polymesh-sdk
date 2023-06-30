@@ -564,16 +564,6 @@ export default {
       max_ticker_length: 'u8',
       registration_length: 'Option<Moment>',
     },
-    ClassicTickerRegistration: {
-      eth_owner: 'EthereumAddress',
-      is_created: 'bool',
-    },
-    ClassicTickerImport: {
-      eth_owner: 'EthereumAddress',
-      ticker: 'Ticker',
-      is_contract: 'bool',
-      is_created: 'bool',
-    },
     EthereumAddress: '[u8; 20]',
     EcdsaSignature: '[u8; 65]',
     MotionTitle: 'Text',
@@ -978,12 +968,6 @@ export default {
       trade_date: 'Option<Moment>',
       value_date: 'Option<Moment>',
     },
-    Leg: {
-      from: 'PortfolioId',
-      to: 'PortfolioId',
-      asset: 'Ticker',
-      amount: 'Balance',
-    },
     Venue: {
       creator: 'IdentityId',
       venue_type: 'VenueType',
@@ -1136,6 +1120,12 @@ export default {
       intended_count: 'u32',
       running_count: 'u32',
     },
+    canTransferGranularReturn: {
+      _enum: {
+        Ok: 'GranularCanTransferResult',
+        Err: 'DispatchError',
+      },
+    },
     GranularCanTransferResult: {
       invalid_granularity: 'bool',
       self_transfer: 'bool',
@@ -1192,16 +1182,33 @@ export default {
       ticker: 'Ticker',
       amount: 'Balance',
     },
-    LegAsset: {
-      _enum: {
-        Fungible: 'FungibleToken',
-        NonFungible: 'NFTs',
-      },
+    OffChainAsset: {
+      ticker: 'Ticker',
+      amount: 'Balance',
     },
-    LegV2: {
-      from: 'PortfolioId',
-      to: 'PortfolioId',
-      asset: 'LegAsset',
+    FungibleLeg: {
+      sender: 'PortfolioId',
+      receiver: 'PortfolioId',
+      ticker: 'Ticker',
+      amount: 'Balance',
+    },
+    NonFungibleLeg: {
+      sender: 'PortfolioId',
+      receiver: 'PortfolioId',
+      nfts: 'NFTs',
+    },
+    OffChainLeg: {
+      sender_identity: 'IdentityId',
+      receiver_identity: 'IdentityId',
+      ticker: 'Ticker',
+      amount: 'Balance',
+    },
+    Leg: {
+      _enum: {
+        Fungible: 'FungibleLeg',
+        NonFungible: 'NonFungibleLeg',
+        OffChain: 'OffChainLeg',
+      },
     },
     FundDescription: {
       _enum: {

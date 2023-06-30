@@ -66,7 +66,10 @@
     "add_secondary_keys_with_authorization_old": "add_secondary_keys_with_authorization_old",
     "set_secondary_key_permissions": "set_secondary_key_permissions",
     "register_custom_claim_type": "register_custom_claim_type",
-    "cdd_register_did_with_cdd": "cdd_register_did_with_cdd"
+    "cdd_register_did_with_cdd": "cdd_register_did_with_cdd",
+    "create_child_identity": "create_child_identity",
+    "create_child_identities": "create_child_identities",
+    "unlink_child_identity": "unlink_child_identity"
   },
   "CddServiceProviders": {
     "set_active_members_limit": "set_active_members_limit",
@@ -145,7 +148,9 @@
     "make_multisig_signer": "make_multisig_signer",
     "make_multisig_primary": "make_multisig_primary",
     "execute_scheduled_proposal": "execute_scheduled_proposal",
-    "make_multisig_secondary": "make_multisig_secondary"
+    "make_multisig_secondary": "make_multisig_secondary",
+    "change_sigs_required_via_creator": "change_sigs_required_via_creator",
+    "remove_creator_controls": "remove_creator_controls"
   },
   "Bridge": {
     "change_controller": "change_controller",
@@ -247,7 +252,11 @@
     "redeem_from_portfolio": "redeem_from_portfolio",
     "update_asset_type": "update_asset_type",
     "remove_local_metadata_key": "remove_local_metadata_key",
-    "remove_metadata_value": "remove_metadata_value"
+    "remove_metadata_value": "remove_metadata_value",
+    "exempt_ticker_affirmation": "exempt_ticker_affirmation",
+    "remove_ticker_affirmation_exemption": "remove_ticker_affirmation_exemption",
+    "pre_approve_ticker": "pre_approve_ticker",
+    "remove_ticker_pre_approval": "remove_ticker_pre_approval"
   },
   "CapitalDistribution": {
     "distribute": "distribute",
@@ -318,7 +327,9 @@
     "rename_portfolio": "rename_portfolio",
     "quit_portfolio_custody": "quit_portfolio_custody",
     "accept_portfolio_custody": "accept_portfolio_custody",
-    "move_portfolio_funds_v2": "move_portfolio_funds_v2"
+    "move_portfolio_funds_v2": "move_portfolio_funds_v2",
+    "pre_approve_portfolio": "pre_approve_portfolio",
+    "remove_portfolio_pre_approval": "remove_portfolio_pre_approval"
   },
   "ProtocolFee": {
     "change_coefficient": "change_coefficient",
@@ -361,7 +372,15 @@
     "affirm_instruction_v2": "affirm_instruction_v2",
     "withdraw_affirmation_v2": "withdraw_affirmation_v2",
     "reject_instruction_v2": "reject_instruction_v2",
-    "execute_scheduled_instruction_v2": "execute_scheduled_instruction_v2"
+    "execute_scheduled_instruction_v2": "execute_scheduled_instruction_v2",
+    "placeholder_add_instruction": "placeholder_add_instruction",
+    "placeholder_add_and_affirm_instruction": "placeholder_add_and_affirm_instruction",
+    "placeholder_affirm_instruction": "placeholder_affirm_instruction",
+    "placeholder_withdraw_affirmation": "placeholder_withdraw_affirmation",
+    "placeholder_reject_instruction": "placeholder_reject_instruction",
+    "placeholder_add_instruction_with_memo": "placeholder_add_instruction_with_memo",
+    "placeholder_add_and_affirm_instruction_with_memo": "placeholder_add_and_affirm_instruction_with_memo",
+    "execute_scheduled_instruction_v3": "execute_scheduled_instruction_v3"
   },
   "Statistics": {
     "add_transfer_manager": "add_transfer_manager",
@@ -389,7 +408,12 @@
     "batch": "batch",
     "batch_atomic": "batch_atomic",
     "batch_optimistic": "batch_optimistic",
-    "relay_tx": "relay_tx"
+    "relay_tx": "relay_tx",
+    "batch_all": "batch_all",
+    "dispatch_as": "dispatch_as",
+    "force_batch": "force_batch",
+    "with_weight": "with_weight",
+    "batch_old": "batch_old"
   },
   "ExternalAgents": {
     "create_group": "create_group",

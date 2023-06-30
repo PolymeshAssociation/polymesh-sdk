@@ -113,6 +113,28 @@ export default {
       ],
       type: 'Option<KeyIdentityData>',
     },
+    validCDDClaims: {
+      description:
+        'Returns all valid IdentityClaim of type CustomerDueDiligence for the given target_identity',
+      params: [
+        {
+          name: 'target_identity',
+          type: 'IdentityId',
+          isOptional: false,
+        },
+        {
+          name: 'cdd_checker_leeway',
+          type: 'u64',
+          isOptional: true,
+        },
+        {
+          name: 'blockHash',
+          type: 'Hash',
+          isOptional: true,
+        },
+      ],
+      type: 'Vec<IdentityClaim>',
+    },
   },
   types: {},
 };

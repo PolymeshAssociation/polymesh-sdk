@@ -294,7 +294,7 @@ describe('sliceBatchReceipt', () => {
 
   beforeEach(() => {
     when(filterRecordsMock)
-      .calledWith('utility', 'BatchCompleted')
+      .calledWith('utility', 'BatchCompletedOld')
       .mockReturnValue([
         {
           event: {

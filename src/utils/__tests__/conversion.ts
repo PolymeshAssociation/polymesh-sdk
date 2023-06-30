@@ -16,13 +16,7 @@ import {
   PalletCorporateActionsCaKind,
   PalletCorporateActionsRecordDateSpec,
   PalletCorporateActionsTargetIdentities,
-  PalletMultisigProposalStatus,
-  PalletPortfolioMovePortfolioItem,
-  PalletSettlementInstructionMemo,
-  PalletSettlementSettlementType,
-  PalletSettlementVenueType,
   PalletStoPriceTier,
-  PolymeshCommonUtilitiesBalancesMemo,
   PolymeshCommonUtilitiesProtocolFeeProtocolOp,
   PolymeshPrimitivesAgentAgentGroup,
   PolymeshPrimitivesAssetAssetType,
@@ -39,14 +33,19 @@ import {
   PolymeshPrimitivesConditionTrustedIssuer,
   PolymeshPrimitivesDocument,
   PolymeshPrimitivesDocumentHash,
-  PolymeshPrimitivesEthereumEcdsaSignature,
   PolymeshPrimitivesIdentityClaimClaim,
   PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityClaimScope,
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesIdentityIdPortfolioKind,
+  PolymeshPrimitivesMemo,
+  PolymeshPrimitivesMultisigProposalStatus,
+  PolymeshPrimitivesPortfolioFund,
   PolymeshPrimitivesSecondaryKeySignatory,
+  PolymeshPrimitivesSettlementLeg,
+  PolymeshPrimitivesSettlementSettlementType,
+  PolymeshPrimitivesSettlementVenueType,
   PolymeshPrimitivesStatisticsStat2ndKey,
   PolymeshPrimitivesStatisticsStatClaim,
   PolymeshPrimitivesStatisticsStatOpType,
@@ -98,6 +97,8 @@ import {
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   createMockOption,
+  createMockPortfolioId,
+  createMockTicker,
   createMockU32,
   createMockU64,
   createMockU128,
@@ -221,6 +222,7 @@ import {
   isLeiValid,
   keyAndValueToStatUpdate,
   keyToAddress,
+  legToSettlementLeg,
   meshAffirmationStatusToAffirmationStatus,
   meshCalendarPeriodToCalendarPeriod,
   meshClaimToClaim,
@@ -259,7 +261,7 @@ import {
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolio,
   portfolioLikeToPortfolioId,
-  portfolioMovementToMovePortfolioItem,
+  portfolioMovementToPortfolioFund,
   portfolioToPortfolioKind,
   posRatioToBigNumber,
   requirementToComplianceRequirement,
@@ -287,10 +289,8 @@ import {
   stringToBytes,
   stringToCddId,
   stringToDocumentHash,
-  stringToEcdsaSignature,
   stringToHash,
   stringToIdentityId,
-  stringToInstructionMemo,
   stringToInvestorZKProofData,
   stringToMemo,
   stringToSignature,
@@ -491,7 +491,7 @@ describe('stringToInvestorZKProofData', () => {
   });
 });
 
-describe('portfolioMovementToMovePortfolioItem', () => {
+describe('portfolioMovementToPortfolioFund', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
@@ -514,9 +514,9 @@ describe('portfolioMovementToMovePortfolioItem', () => {
     const asset = entityMockUtils.getAssetInstance({ ticker });
     const rawTicker = dsMockUtils.createMockTicker(ticker);
     const rawAmount = dsMockUtils.createMockBalance(amount);
-    const rawMemo = 'memo' as unknown as PolymeshCommonUtilitiesBalancesMemo;
+    const rawMemo = 'memo' as unknown as PolymeshPrimitivesMemo;
     const fakeResult =
-      'PalletPortfolioMovePortfolioItem' as unknown as PalletPortfolioMovePortfolioItem;
+      'PolymeshPrimitivesPortfolioFund' as unknown as PolymeshPrimitivesPortfolioFund;
 
     let portfolioMovement: PortfolioMovement = {
       asset: ticker,
@@ -532,14 +532,18 @@ describe('portfolioMovementToMovePortfolioItem', () => {
       .mockReturnValue(rawAmount);
 
     when(context.createType)
-      .calledWith('PalletPortfolioMovePortfolioItem', {
-        ticker: rawTicker,
-        amount: rawAmount,
+      .calledWith('PolymeshPrimitivesPortfolioFund', {
+        description: {
+          Fungible: {
+            ticker: rawTicker,
+            amount: rawAmount,
+          },
+        },
         memo: null,
       })
       .mockReturnValue(fakeResult);
 
-    let result = portfolioMovementToMovePortfolioItem(portfolioMovement, context);
+    let result = portfolioMovementToPortfolioFund(portfolioMovement, context);
 
     expect(result).toBe(fakeResult);
 
@@ -548,18 +552,22 @@ describe('portfolioMovementToMovePortfolioItem', () => {
       amount,
     };
 
-    result = portfolioMovementToMovePortfolioItem(portfolioMovement, context);
+    result = portfolioMovementToPortfolioFund(portfolioMovement, context);
 
     expect(result).toBe(fakeResult);
 
     when(context.createType)
-      .calledWith('PolymeshCommonUtilitiesBalancesMemo', padString(memo, 32))
+      .calledWith('PolymeshPrimitivesMemo', padString(memo, 32))
       .mockReturnValue(rawMemo);
 
     when(context.createType)
-      .calledWith('PalletPortfolioMovePortfolioItem', {
-        ticker: rawTicker,
-        amount: rawAmount,
+      .calledWith('PolymeshPrimitivesPortfolioFund', {
+        description: {
+          Fungible: {
+            ticker: rawTicker,
+            amount: rawAmount,
+          },
+        },
         memo: rawMemo,
       })
       .mockReturnValue(fakeResult);
@@ -570,7 +578,7 @@ describe('portfolioMovementToMovePortfolioItem', () => {
       memo,
     };
 
-    result = portfolioMovementToMovePortfolioItem(portfolioMovement, context);
+    result = portfolioMovementToPortfolioFund(portfolioMovement, context);
 
     expect(result).toBe(fakeResult);
   });
@@ -857,34 +865,6 @@ describe('stringToIdentityId and identityIdToString', () => {
       const result = identityIdToString(identityId);
       expect(result).toBe(fakeResult);
     });
-  });
-});
-
-describe('stringToEcdsaSignature', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  it('should convert a signature string into a polkadot PolymeshPrimitivesEthereumEcdsaSignature object', () => {
-    const signature = 'hexSig';
-    const fakeResult = 'sig' as unknown as PolymeshPrimitivesEthereumEcdsaSignature;
-    const context = dsMockUtils.getContextInstance();
-
-    when(context.createType)
-      .calledWith('PolymeshPrimitivesEthereumEcdsaSignature', signature)
-      .mockReturnValue(fakeResult);
-
-    const result = stringToEcdsaSignature(signature, context);
-
-    expect(result).toBe(fakeResult);
   });
 });
 
@@ -1296,6 +1276,24 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       when(createTypeMock)
         .calledWith('PolymeshPrimitivesAuthorizationAuthorizationData', {
           [value.type]: rawPermissions,
+        })
+        .mockReturnValue(fakeResult);
+
+      result = authorizationToAuthorizationData(value, context);
+      expect(result).toBe(fakeResult);
+
+      value = {
+        type: AuthorizationType.AddRelayerPayingKey,
+        value: {
+          beneficiary: new Account({ address: 'beneficiary' }, context),
+          subsidizer: new Account({ address: 'subsidizer' }, context),
+          allowance: new BigNumber(100),
+        },
+      };
+
+      when(createTypeMock)
+        .calledWith('PolymeshPrimitivesAuthorizationAuthorizationData', {
+          [value.type]: value.value,
         })
         .mockReturnValue(fakeResult);
 
@@ -2431,13 +2429,13 @@ describe('stringToMemo', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should convert a string to a polkadot PolymeshCommonUtilitiesBalancesMemo object', () => {
+  it('should convert a string to a polkadot PolymeshPrimitivesMemo object', () => {
     const value = 'someDescription';
-    const fakeResult = 'memoDescription' as unknown as PolymeshCommonUtilitiesBalancesMemo;
+    const fakeResult = 'memoDescription' as unknown as PolymeshPrimitivesMemo;
     const context = dsMockUtils.getContextInstance();
 
     when(context.createType)
-      .calledWith('PolymeshCommonUtilitiesBalancesMemo', padString(value, 32))
+      .calledWith('PolymeshPrimitivesMemo', padString(value, 32))
       .mockReturnValue(fakeResult);
 
     const result = stringToMemo(value, context);
@@ -5647,13 +5645,13 @@ describe('venueTypeToMeshVenueType and meshVenueTypeToVenueType', () => {
   });
 
   describe('venueTypeToMeshVenueType', () => {
-    it('should convert a VenueType to a polkadot PalletSettlementVenueType object', () => {
+    it('should convert a VenueType to a polkadot PolymeshPrimitivesSettlementVenueType object', () => {
       const value = VenueType.Other;
-      const fakeResult = 'Other' as unknown as PalletSettlementVenueType;
+      const fakeResult = 'Other' as unknown as PolymeshPrimitivesSettlementVenueType;
       const context = dsMockUtils.getContextInstance();
 
       when(context.createType)
-        .calledWith('PalletSettlementVenueType', value)
+        .calledWith('PolymeshPrimitivesSettlementVenueType', value)
         .mockReturnValue(fakeResult);
 
       const result = venueTypeToMeshVenueType(value, context);
@@ -5718,6 +5716,12 @@ describe('meshInstructionStatusToInstructionStatus', () => {
     expect(result).toEqual(fakeResult);
 
     fakeResult = InstructionStatus.Unknown;
+    instructionStatus = dsMockUtils.createMockInstructionStatus(fakeResult);
+
+    result = meshInstructionStatusToInstructionStatus(instructionStatus);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = InstructionStatus.Rejected;
     instructionStatus = dsMockUtils.createMockInstructionStatus(fakeResult);
 
     result = meshInstructionStatusToInstructionStatus(instructionStatus);
@@ -5821,12 +5825,12 @@ describe('endConditionToSettlementType', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should convert an end condition to a polkadot PalletSettlementSettlementType object', () => {
-    const fakeResult = 'type' as unknown as PalletSettlementSettlementType;
+  it('should convert an end condition to a polkadot PolymeshPrimitivesSettlementSettlementType object', () => {
+    const fakeResult = 'type' as unknown as PolymeshPrimitivesSettlementSettlementType;
     const context = dsMockUtils.getContextInstance();
 
     when(context.createType)
-      .calledWith('PalletSettlementSettlementType', InstructionType.SettleOnAffirmation)
+      .calledWith('PolymeshPrimitivesSettlementSettlementType', InstructionType.SettleOnAffirmation)
       .mockReturnValue(fakeResult);
 
     let result = endConditionToSettlementType(
@@ -5843,7 +5847,7 @@ describe('endConditionToSettlementType', () => {
       .calledWith('u32', blockNumber.toString())
       .mockReturnValue(rawBlockNumber);
     when(context.createType)
-      .calledWith('PalletSettlementSettlementType', {
+      .calledWith('PolymeshPrimitivesSettlementSettlementType', {
         [InstructionType.SettleOnBlock]: rawBlockNumber,
       })
       .mockReturnValue(fakeResult);
@@ -5856,7 +5860,7 @@ describe('endConditionToSettlementType', () => {
     expect(result).toBe(fakeResult);
 
     when(context.createType)
-      .calledWith('PalletSettlementSettlementType', {
+      .calledWith('PolymeshPrimitivesSettlementSettlementType', {
         [InstructionType.SettleManual]: rawBlockNumber,
       })
       .mockReturnValue(fakeResult);
@@ -8865,7 +8869,7 @@ describe('meshProposalStatusToProposalStatus', () => {
     const expectedError = new UnreachableCaseError('UnknownStatus' as never);
     return expect(() =>
       meshProposalStatusToProposalStatus(
-        { type: 'UnknownStatus' } as unknown as PalletMultisigProposalStatus,
+        { type: 'UnknownStatus' } as unknown as PolymeshPrimitivesMultisigProposalStatus,
         null
       )
     ).toThrowError(expectedError);
@@ -9282,17 +9286,17 @@ describe('stringToInstructionMemo and instructionMemoToString', () => {
     dsMockUtils.cleanup();
   });
 
-  describe('stringToInstructionMemo', () => {
+  describe('stringToMemo', () => {
     it('should convert a string to a polkadot PalletSettlementInstructionMemo object', () => {
       const value = 'someDescription';
-      const fakeResult = 'memoDescription' as unknown as PalletSettlementInstructionMemo;
+      const fakeResult = 'memoDescription' as unknown as PolymeshPrimitivesMemo;
       const context = dsMockUtils.getContextInstance();
 
       when(context.createType)
-        .calledWith('PalletSettlementInstructionMemo', padString(value, 32))
+        .calledWith('PolymeshPrimitivesMemo', padString(value, 32))
         .mockReturnValue(fakeResult);
 
-      const result = stringToInstructionMemo(value, context);
+      const result = stringToMemo(value, context);
 
       expect(result).toEqual(fakeResult);
     });
@@ -9301,7 +9305,7 @@ describe('stringToInstructionMemo and instructionMemoToString', () => {
   describe('instructionMemoToString', () => {
     it('should convert an InstructionMemo to string', () => {
       const fakeResult = 'memoDescription';
-      const rawMemo = dsMockUtils.createMockInstructionMemo(stringToHex(fakeResult));
+      const rawMemo = dsMockUtils.createMockMemo(stringToHex(fakeResult));
 
       const result = instructionMemoToString(rawMemo);
       expect(result).toBe(fakeResult);
@@ -9340,5 +9344,41 @@ describe('expiryToMoment', () => {
     const result = expiryToMoment(value, context);
 
     expect(result).toBe(fakeResult);
+  });
+});
+
+describe('legToSettlementLeg', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should make a fungible leg', () => {
+    const context = dsMockUtils.getContextInstance();
+    const fakeResult = 'fakeResult' as unknown as PolymeshPrimitivesSettlementLeg;
+
+    const value = {
+      Fungible: {
+        sender: createMockPortfolioId(),
+        receiver: createMockPortfolioId(),
+        ticker: createMockTicker(),
+        amount: createMockU128(),
+      },
+    } as const;
+
+    when(context.createType)
+      .calledWith('PolymeshPrimitivesSettlementLeg', value)
+      .mockReturnValue(fakeResult);
+
+    const result = legToSettlementLeg(value, context);
+
+    expect(result).toEqual(fakeResult);
   });
 });

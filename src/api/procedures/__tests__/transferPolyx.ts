@@ -1,4 +1,4 @@
-import { PolymeshCommonUtilitiesBalancesMemo } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesMemo } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import { getAuthorization, prepareTransferPolyx } from '~/api/procedures/transferPolyx';
@@ -113,7 +113,7 @@ describe('transferPolyx procedure', () => {
     const memo = 'someMessage';
     const rawAccount = dsMockUtils.createMockAccountId(to.address);
     const rawAmount = dsMockUtils.createMockBalance(amount);
-    const rawMemo = 'memo' as unknown as PolymeshCommonUtilitiesBalancesMemo;
+    const rawMemo = 'memo' as unknown as PolymeshPrimitivesMemo;
 
     dsMockUtils
       .createQueryMock('identity', 'didRecords')

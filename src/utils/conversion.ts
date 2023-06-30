@@ -12,17 +12,9 @@ import {
   PalletCorporateActionsInitiateCorporateActionArgs,
   PalletCorporateActionsRecordDateSpec,
   PalletCorporateActionsTargetIdentities,
-  PalletMultisigProposalStatus,
-  PalletPortfolioMovePortfolioItem,
-  PalletSettlementAffirmationStatus,
-  PalletSettlementInstructionMemo,
-  PalletSettlementInstructionStatus,
-  PalletSettlementSettlementType,
-  PalletSettlementVenueType,
   PalletStoFundraiser,
   PalletStoFundraiserTier,
   PalletStoPriceTier,
-  PolymeshCommonUtilitiesBalancesMemo,
   PolymeshCommonUtilitiesCheckpointStoredSchedule,
   PolymeshCommonUtilitiesProtocolFeeProtocolOp,
   PolymeshPrimitivesAgentAgentGroup,
@@ -41,7 +33,6 @@ import {
   PolymeshPrimitivesConditionTrustedIssuer,
   PolymeshPrimitivesDocument,
   PolymeshPrimitivesDocumentHash,
-  PolymeshPrimitivesEthereumEcdsaSignature,
   PolymeshPrimitivesIdentityClaimClaim,
   PolymeshPrimitivesIdentityClaimClaimType,
   PolymeshPrimitivesIdentityClaimScope,
@@ -49,10 +40,18 @@ import {
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesIdentityIdPortfolioKind,
   PolymeshPrimitivesJurisdictionCountryCode,
+  PolymeshPrimitivesMemo,
+  PolymeshPrimitivesMultisigProposalStatus,
+  PolymeshPrimitivesPortfolioFund,
   PolymeshPrimitivesPosRatio,
   PolymeshPrimitivesSecondaryKey,
   PolymeshPrimitivesSecondaryKeyPermissions,
   PolymeshPrimitivesSecondaryKeySignatory,
+  PolymeshPrimitivesSettlementAffirmationStatus,
+  PolymeshPrimitivesSettlementInstructionStatus,
+  PolymeshPrimitivesSettlementLeg,
+  PolymeshPrimitivesSettlementSettlementType,
+  PolymeshPrimitivesSettlementVenueType,
   PolymeshPrimitivesStatisticsStat2ndKey,
   PolymeshPrimitivesStatisticsStatClaim,
   PolymeshPrimitivesStatisticsStatOpType,
@@ -420,16 +419,6 @@ export function stringToIdentityId(
  */
 export function identityIdToString(identityId: PolymeshPrimitivesIdentityId): string {
   return identityId.toString();
-}
-
-/**
- * @hidden
- */
-export function stringToEcdsaSignature(
-  signature: string,
-  context: Context
-): PolymeshPrimitivesEthereumEcdsaSignature {
-  return context.createType('PolymeshPrimitivesEthereumEcdsaSignature', signature);
 }
 
 /**
@@ -1502,13 +1491,10 @@ function assertMemoValid(value: string): void {
 /**
  * @hidden
  */
-export function stringToMemo(value: string, context: Context): PolymeshCommonUtilitiesBalancesMemo {
+export function stringToMemo(value: string, context: Context): PolymeshPrimitivesMemo {
   assertMemoValid(value);
 
-  return context.createType(
-    'PolymeshCommonUtilitiesBalancesMemo',
-    padString(value, MAX_MEMO_LENGTH)
-  );
+  return context.createType('PolymeshPrimitivesMemo', padString(value, MAX_MEMO_LENGTH));
 }
 
 /**
@@ -2860,7 +2846,7 @@ export function secondaryAccountToMeshSecondaryKey(
 /**
  * @hidden
  */
-export function meshVenueTypeToVenueType(type: PalletSettlementVenueType): VenueType {
+export function meshVenueTypeToVenueType(type: PolymeshPrimitivesSettlementVenueType): VenueType {
   if (type.isOther) {
     return VenueType.Other;
   }
@@ -2882,22 +2868,30 @@ export function meshVenueTypeToVenueType(type: PalletSettlementVenueType): Venue
 export function venueTypeToMeshVenueType(
   type: VenueType,
   context: Context
-): PalletSettlementVenueType {
-  return context.createType('PalletSettlementVenueType', type);
+): PolymeshPrimitivesSettlementVenueType {
+  return context.createType('PolymeshPrimitivesSettlementVenueType', type);
 }
 
 /**
  * @hidden
  */
 export function meshInstructionStatusToInstructionStatus(
-  status: PalletSettlementInstructionStatus
+  instruction: PolymeshPrimitivesSettlementInstructionStatus
 ): InstructionStatus {
-  if (status.isPending) {
+  if (instruction.isPending) {
     return InstructionStatus.Pending;
   }
 
-  if (status.isFailed) {
+  if (instruction.isFailed) {
     return InstructionStatus.Failed;
+  }
+
+  if (instruction.isRejected) {
+    return InstructionStatus.Rejected;
+  }
+
+  if (instruction.isSuccess) {
+    return InstructionStatus.Success;
   }
 
   return InstructionStatus.Unknown;
@@ -2907,7 +2901,7 @@ export function meshInstructionStatusToInstructionStatus(
  * @hidden
  */
 export function meshAffirmationStatusToAffirmationStatus(
-  status: PalletSettlementAffirmationStatus
+  status: PolymeshPrimitivesSettlementAffirmationStatus
 ): AffirmationStatus {
   if (status.isUnknown) {
     return AffirmationStatus.Unknown;
@@ -2924,7 +2918,7 @@ export function meshAffirmationStatusToAffirmationStatus(
  * @hidden
  */
 export function meshSettlementTypeToEndCondition(
-  type: PalletSettlementSettlementType
+  type: PolymeshPrimitivesSettlementSettlementType
 ): InstructionEndCondition {
   if (type.isSettleOnBlock) {
     return { type: InstructionType.SettleOnBlock, endBlock: u32ToBigNumber(type.asSettleOnBlock) };
@@ -2945,7 +2939,7 @@ export function meshSettlementTypeToEndCondition(
 export function endConditionToSettlementType(
   endCondition: InstructionEndCondition,
   context: Context
-): PalletSettlementSettlementType {
+): PolymeshPrimitivesSettlementSettlementType {
   let value;
 
   const { type } = endCondition;
@@ -2963,7 +2957,7 @@ export function endConditionToSettlementType(
       value = InstructionType.SettleOnAffirmation;
   }
 
-  return context.createType('PalletSettlementSettlementType', value);
+  return context.createType('PolymeshPrimitivesSettlementSettlementType', value);
 }
 
 /**
@@ -3045,14 +3039,19 @@ export function toIdentityWithClaimsArrayV2(
 /**
  * @hidden
  */
-export function portfolioMovementToMovePortfolioItem(
+export function portfolioMovementToPortfolioFund(
   portfolioItem: PortfolioMovement,
   context: Context
-): PalletPortfolioMovePortfolioItem {
+): PolymeshPrimitivesPortfolioFund {
   const { asset, amount, memo } = portfolioItem;
-  return context.createType('PalletPortfolioMovePortfolioItem', {
-    ticker: stringToTicker(asTicker(asset), context),
-    amount: bigNumberToBalance(amount, context),
+
+  return context.createType('PolymeshPrimitivesPortfolioFund', {
+    description: {
+      Fungible: {
+        ticker: stringToTicker(asTicker(asset), context),
+        amount: bigNumberToBalance(amount, context),
+      },
+    },
     memo: optionize(stringToMemo)(memo, context),
   });
 }
@@ -4180,7 +4179,7 @@ export function inputStatTypeToMeshStatType(
  * @hidden
  */
 export function meshProposalStatusToProposalStatus(
-  status: PalletMultisigProposalStatus,
+  status: PolymeshPrimitivesMultisigProposalStatus,
   expiry: Date | null
 ): ProposalStatus {
   const { type } = status;
@@ -4238,18 +4237,6 @@ export function metadataSpecToMeshMetadataSpec(
     description: optionize(stringToBytes)(description, context),
     typeDef: optionize(stringToBytes)(typeDef, context),
   });
-}
-
-/**
- * @hidden
- */
-export function stringToInstructionMemo(
-  value: string,
-  context: Context
-): PalletSettlementInstructionMemo {
-  assertMemoValid(value);
-
-  return context.createType('PalletSettlementInstructionMemo', padString(value, MAX_MEMO_LENGTH));
 }
 
 /**
@@ -4474,4 +4461,23 @@ export function expiryToMoment(expiry: Date | undefined, context: Context): Mome
   }
 
   return optionize(dateToMoment)(expiry, context);
+}
+
+/**
+ * @hidden
+ *
+ * Note: currently only supports fungible legs, see `portfolioToPortfolioKind` for exemplary API
+ */
+export function legToSettlementLeg(
+  leg: {
+    Fungible: {
+      sender: PolymeshPrimitivesIdentityIdPortfolioId;
+      receiver: PolymeshPrimitivesIdentityIdPortfolioId;
+      ticker: PolymeshPrimitivesTicker;
+      amount: Balance;
+    };
+  },
+  context: Context
+): PolymeshPrimitivesSettlementLeg {
+  return context.createType('PolymeshPrimitivesSettlementLeg', leg);
 }

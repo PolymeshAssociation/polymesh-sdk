@@ -1,3 +1,7 @@
+import {
+  PolymeshPrimitivesSettlementInstructionStatus,
+  PolymeshPrimitivesSettlementLeg,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
@@ -17,7 +21,6 @@ import { eventByIndexedArgs } from '~/middleware/queries';
 import { instructionsQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Query as QueryV2 } from '~/middleware/typesV2';
-import { InstructionStatus as MeshInstructionStatus } from '~/polkadot/polymesh';
 import {
   AffirmOrWithdrawInstructionParams,
   DefaultPortfolio,
@@ -162,14 +165,18 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const [{ status }, exists] = await Promise.all([
-      settlement.instructionDetails(bigNumberToU64(id, context)),
+    const [status, exists] = await Promise.all([
+      settlement.instructionStatuses(bigNumberToU64(id, context)),
       this.exists(),
     ]);
 
     const statusResult = meshInstructionStatusToInstructionStatus(status);
 
-    return statusResult === InternalInstructionStatus.Unknown && exists;
+    return (
+      (statusResult === InternalInstructionStatus.Success ||
+        statusResult === InternalInstructionStatus.Rejected) &&
+      exists
+    );
   }
 
   /**
@@ -186,7 +193,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const { status } = await settlement.instructionDetails(bigNumberToU64(id, context));
+    const status = await settlement.instructionStatuses(bigNumberToU64(id, context));
 
     const statusResult = meshInstructionStatusToInstructionStatus(status);
 
@@ -205,7 +212,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       context: {
         polymeshApi: {
           query: {
-            settlement: { instructionDetails },
+            settlement: { instructionStatuses },
           },
         },
       },
@@ -213,20 +220,20 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const assembleResult = (rawStatus: MeshInstructionStatus): InstructionStatus => {
-      const status = meshInstructionStatusToInstructionStatus(rawStatus);
+    const assembleResult = (
+      rawStatus: PolymeshPrimitivesSettlementInstructionStatus
+    ): InstructionStatus => {
+      const internalStatus = meshInstructionStatusToInstructionStatus(rawStatus);
+      const status = this.internalToExternalStatus(internalStatus);
 
-      if (status === InternalInstructionStatus.Pending) {
-        return InstructionStatus.Pending;
-      } else if (status === InternalInstructionStatus.Failed) {
-        return InstructionStatus.Failed;
-      } else {
-        // TODO @prashantasdeveloper remove this once the chain handles Executed/Rejected state separately
-        return InstructionStatus.Executed;
+      if (!status) {
+        throw new Error('Unknown instruction status');
       }
+
+      return status;
     };
 
-    return instructionDetails(bigNumberToU64(id, context), ({ status }) => {
+    return instructionStatuses(bigNumberToU64(id, context), status => {
       return callback(assembleResult(status));
     });
   }
@@ -257,7 +264,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       context: {
         polymeshApi: {
           query: {
-            settlement: { instructionDetails, instructionMemos },
+            settlement: { instructionDetails, instructionStatuses, instructionMemos },
           },
         },
       },
@@ -267,17 +274,20 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     const rawId = bigNumberToU64(id, context);
 
-    const [
-      { status: rawStatus, createdAt, tradeDate, valueDate, settlementType: type, venueId },
-      memo,
-    ] = await requestMulti<[typeof instructionDetails, typeof instructionMemos]>(context, [
-      [instructionDetails, rawId],
-      [instructionMemos, rawId],
-    ]);
+    const [{ createdAt, tradeDate, valueDate, settlementType: type, venueId }, rawStatus, memo] =
+      await requestMulti<
+        [typeof instructionDetails, typeof instructionStatuses, typeof instructionMemos]
+      >(context, [
+        [instructionDetails, rawId],
+        [instructionStatuses, rawId],
+        [instructionMemos, rawId],
+      ]);
 
-    const status = meshInstructionStatusToInstructionStatus(rawStatus);
+    const internalStatus = meshInstructionStatusToInstructionStatus(rawStatus);
 
-    if (status === InternalInstructionStatus.Unknown) {
+    const status = this.internalToExternalStatus(internalStatus);
+
+    if (!status) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
         message: executedMessage,
@@ -285,10 +295,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     }
 
     return {
-      status:
-        status === InternalInstructionStatus.Pending
-          ? InstructionStatus.Pending
-          : InstructionStatus.Failed,
+      status,
       createdAt: momentToDate(createdAt.unwrap()),
       tradeDate: tradeDate.isSome ? momentToDate(tradeDate.unwrap()) : null,
       valueDate: valueDate.isSome ? momentToDate(valueDate.unwrap()) : null,
@@ -375,18 +382,32 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     });
 
     const data = legs.map(([, leg]) => {
-      const { from, to, amount, asset } = leg;
+      if (leg.isSome) {
+        const legValue: PolymeshPrimitivesSettlementLeg = leg.unwrap();
+        if (legValue.isFungible) {
+          const { sender, receiver, amount, ticker: rawTicker } = legValue.asFungible;
 
-      const ticker = tickerToString(asset);
-      const fromPortfolio = meshPortfolioIdToPortfolio(from, context);
-      const toPortfolio = meshPortfolioIdToPortfolio(to, context);
+          const ticker = tickerToString(rawTicker);
+          const fromPortfolio = meshPortfolioIdToPortfolio(sender, context);
+          const toPortfolio = meshPortfolioIdToPortfolio(receiver, context);
 
-      return {
-        from: fromPortfolio,
-        to: toPortfolio,
-        amount: balanceToBigNumber(amount),
-        asset: new Asset({ ticker }, context),
-      };
+          return {
+            from: fromPortfolio,
+            to: toPortfolio,
+            amount: balanceToBigNumber(amount),
+            asset: new Asset({ ticker }, context),
+          };
+        } else if (legValue.isNonFungible) {
+          throw new Error('TODO ERROR: NFT legs are not supported yet');
+        } else {
+          // assume it is offchain
+          throw new Error('TODO ERROR: Offchain legs are not supported yet');
+        }
+      } else {
+        throw new Error(
+          'Instruction has already been executed/rejected and it was purged from chain'
+        );
+      }
     });
 
     return {
@@ -612,5 +633,24 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     );
 
     return portfolios;
+  }
+
+  /**
+   * @hidden
+   */
+  private internalToExternalStatus(status: InternalInstructionStatus): InstructionStatus | null {
+    switch (status) {
+      case InternalInstructionStatus.Pending:
+        return InstructionStatus.Pending;
+      case InternalInstructionStatus.Failed:
+        return InstructionStatus.Failed;
+      case InternalInstructionStatus.Rejected:
+        // return executed for backwards compatibility. Should be updated to be explicit
+        return InstructionStatus.Executed;
+      case InternalInstructionStatus.Success:
+        return InstructionStatus.Executed;
+    }
+
+    return null;
   }
 }

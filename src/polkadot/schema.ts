@@ -563,16 +563,6 @@ export default {
       max_ticker_length: 'u8',
       registration_length: 'Option<Moment>',
     },
-    ClassicTickerRegistration: {
-      eth_owner: 'EthereumAddress',
-      is_created: 'bool',
-    },
-    ClassicTickerImport: {
-      eth_owner: 'EthereumAddress',
-      ticker: 'Ticker',
-      is_contract: 'bool',
-      is_created: 'bool',
-    },
     EthereumAddress: '[u8; 20]',
     EcdsaSignature: '[u8; 65]',
     MotionTitle: 'Text',
@@ -977,12 +967,6 @@ export default {
       trade_date: 'Option<Moment>',
       value_date: 'Option<Moment>',
     },
-    Leg: {
-      from: 'PortfolioId',
-      to: 'PortfolioId',
-      asset: 'Ticker',
-      amount: 'Balance',
-    },
     Venue: {
       creator: 'IdentityId',
       venue_type: 'VenueType',
@@ -1135,6 +1119,12 @@ export default {
       intended_count: 'u32',
       running_count: 'u32',
     },
+    canTransferGranularReturn: {
+      _enum: {
+        Ok: 'GranularCanTransferResult',
+        Err: 'DispatchError',
+      },
+    },
     GranularCanTransferResult: {
       invalid_granularity: 'bool',
       self_transfer: 'bool',
@@ -1191,16 +1181,33 @@ export default {
       ticker: 'Ticker',
       amount: 'Balance',
     },
-    LegAsset: {
-      _enum: {
-        Fungible: 'FungibleToken',
-        NonFungible: 'NFTs',
-      },
+    OffChainAsset: {
+      ticker: 'Ticker',
+      amount: 'Balance',
     },
-    LegV2: {
-      from: 'PortfolioId',
-      to: 'PortfolioId',
-      asset: 'LegAsset',
+    FungibleLeg: {
+      sender: 'PortfolioId',
+      receiver: 'PortfolioId',
+      ticker: 'Ticker',
+      amount: 'Balance',
+    },
+    NonFungibleLeg: {
+      sender: 'PortfolioId',
+      receiver: 'PortfolioId',
+      nfts: 'NFTs',
+    },
+    OffChainLeg: {
+      sender_identity: 'IdentityId',
+      receiver_identity: 'IdentityId',
+      ticker: 'Ticker',
+      amount: 'Balance',
+    },
+    Leg: {
+      _enum: {
+        Fungible: 'FungibleLeg',
+        NonFungible: 'NonFungibleLeg',
+        OffChain: 'OffChainLeg',
+      },
     },
     FundDescription: {
       _enum: {
@@ -1222,35 +1229,6 @@ export default {
     },
   },
   rpc: {
-    compliance: {
-      canTransfer: {
-        description:
-          'Checks whether a transaction with given parameters is compliant to the compliance manager conditions',
-        params: [
-          {
-            name: 'ticker',
-            type: 'Ticker',
-            isOptional: false,
-          },
-          {
-            name: 'fromDid',
-            type: 'Option<IdentityId>',
-            isOptional: false,
-          },
-          {
-            name: 'toDid',
-            type: 'Option<IdentityId>',
-            isOptional: false,
-          },
-          {
-            name: 'blockHash',
-            type: 'Hash',
-            isOptional: true,
-          },
-        ],
-        type: 'AssetComplianceResult',
-      },
-    },
     identity: {
       isIdentityHasValidCdd: {
         description: 'use to tell whether the given did has valid cdd claim or not',
@@ -1364,6 +1342,28 @@ export default {
         ],
         type: 'Option<KeyIdentityData>',
       },
+      validCDDClaims: {
+        description:
+          'Returns all valid IdentityClaim of type CustomerDueDiligence for the given target_identity',
+        params: [
+          {
+            name: 'target_identity',
+            type: 'IdentityId',
+            isOptional: false,
+          },
+          {
+            name: 'cdd_checker_leeway',
+            type: 'u64',
+            isOptional: true,
+          },
+          {
+            name: 'blockHash',
+            type: 'Hash',
+            isOptional: true,
+          },
+        ],
+        type: 'Vec<IdentityClaim>',
+      },
     },
     pips: {
       getVotes: {
@@ -1447,52 +1447,6 @@ export default {
       },
     },
     asset: {
-      canTransfer: {
-        description: 'Checks whether a transaction with given parameters can take place or not',
-        params: [
-          {
-            name: 'sender',
-            type: 'AccountId',
-            isOptional: false,
-          },
-          {
-            name: 'fromCustodian',
-            type: 'Option<PolymeshPrimitivesIdentityId>',
-            isOptional: false,
-          },
-          {
-            name: 'fromPortfolio',
-            type: 'PortfolioId',
-            isOptional: false,
-          },
-          {
-            name: 'toCustodian',
-            type: 'Option<PolymeshPrimitivesIdentityId>',
-            isOptional: false,
-          },
-          {
-            name: 'toPortfolio',
-            type: 'PortfolioId',
-            isOptional: false,
-          },
-          {
-            name: 'ticker',
-            type: 'Ticker',
-            isOptional: false,
-          },
-          {
-            name: 'value',
-            type: 'Balance',
-            isOptional: false,
-          },
-          {
-            name: 'blockHash',
-            type: 'Hash',
-            isOptional: true,
-          },
-        ],
-        type: 'CanTransferResult',
-      },
       canTransferGranular: {
         description:
           'Checks whether a transaction with given parameters can take place or not. The result is granular meaning each check is run and returned regardless of outcome.',
@@ -1533,7 +1487,7 @@ export default {
             isOptional: true,
           },
         ],
-        type: 'GranularCanTransferResult',
+        type: 'canTransferGranularReturn',
       },
     },
     group: {

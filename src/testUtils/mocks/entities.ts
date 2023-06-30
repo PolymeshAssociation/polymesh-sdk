@@ -25,6 +25,7 @@ import {
   MultiSigProposal,
   NumberedPortfolio,
   Offering,
+  Portfolio,
   Subsidy,
   TickerReservation,
   Venue,
@@ -126,6 +127,7 @@ interface IdentityOptions extends EntityOptions {
   hasValidCdd?: EntityGetter<boolean>;
   isCddProvider?: EntityGetter<boolean>;
   getPrimaryAccount?: EntityGetter<PermissionedAccount>;
+  portfoliosGetPortfolio?: EntityGetter<Portfolio>;
   authorizationsGetReceived?: EntityGetter<AuthorizationRequest[]>;
   authorizationsGetSent?: EntityGetter<ResultSet<AuthorizationRequest>>;
   authorizationsGetOne?: EntityGetter<AuthorizationRequest>;
@@ -516,7 +518,10 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     hasRole!: jest.Mock;
     hasValidCdd!: jest.Mock;
     getPrimaryAccount!: jest.Mock;
-    portfolios = {};
+    portfolios = {} as {
+      getPortfolio: jest.Mock;
+    };
+
     authorizations = {} as {
       getReceived: jest.Mock;
       getSent: jest.Mock;
@@ -555,6 +560,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
       this.hasRole = createEntityGetterMock(opts.hasRole);
       this.hasValidCdd = createEntityGetterMock(opts.hasValidCdd);
       this.getPrimaryAccount = createEntityGetterMock(opts.getPrimaryAccount);
+      this.portfolios.getPortfolio = createEntityGetterMock(opts.portfoliosGetPortfolio);
       this.authorizations.getReceived = createEntityGetterMock(opts.authorizationsGetReceived);
       this.authorizations.getSent = createEntityGetterMock(opts.authorizationsGetSent);
       this.authorizations.getOne = createEntityGetterMock(opts.authorizationsGetOne);
@@ -600,6 +606,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     assetPermissionsCheckPermissions: {
       result: true,
     },
+    portfoliosGetPortfolio: getDefaultPortfolioInstance(),
     assetPermissionsHasPermissions: true,
     hasRole: true,
     hasRoles: true,

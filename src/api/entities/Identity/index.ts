@@ -610,16 +610,17 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
         ({ id, status }) => `${id.toString()}-${status.type}`
       );
 
-      const instructions = await settlement.instructionDetails.multi(
+      const instructionStatuses = await settlement.instructionStatuses.multi(
         uniqueEntries.map(({ id }) => id)
       );
 
-      uniqueEntries.forEach(({ id, status }, index) => {
+      uniqueEntries.forEach(({ id, status: affirmationStatus }, index) => {
         const instruction = new Instruction({ id: u64ToBigNumber(id) }, context);
+        const status = instructionStatuses[index];
 
-        if (instructions[index].status.isFailed) {
+        if (status.isFailed) {
           failed.push(instruction);
-        } else if (status.isAffirmed) {
+        } else if (affirmationStatus.isAffirmed) {
           affirmed.push(instruction);
         } else if (status.isPending) {
           pending.push(instruction);

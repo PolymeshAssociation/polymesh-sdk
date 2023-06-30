@@ -2,7 +2,15 @@ import { Bytes, u32 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { values } from 'lodash';
 
-import { Asset, Context, PolymeshError, Procedure, TickerReservation } from '~/internal';
+import {
+  Asset,
+  Context,
+  DefaultPortfolio,
+  Identity,
+  PolymeshError,
+  Procedure,
+  TickerReservation,
+} from '~/internal';
 import {
   AssetTx,
   CreateAssetWithTickerParams,
@@ -23,6 +31,7 @@ import {
   inputStatTypeToMeshStatType,
   internalAssetTypeToAssetType,
   nameToAssetName,
+  portfolioToPortfolioKind,
   securityIdentifierToAssetIdentifier,
   statisticStatTypesToBtreeStatType,
   stringToBytes,
@@ -52,6 +61,8 @@ export interface Storage {
   } | null;
 
   status: TickerReservationStatus;
+
+  signingIdentity: Identity;
 }
 
 /**
@@ -117,7 +128,7 @@ export async function prepareCreateAsset(
       polymeshApi: { tx },
     },
     context,
-    storage: { customTypeData, status },
+    storage: { customTypeData, status, signingIdentity },
   } = this;
   const {
     ticker,
@@ -242,11 +253,13 @@ export async function prepareCreateAsset(
 
   if (initialSupply && initialSupply.gt(0)) {
     const rawInitialSupply = bigNumberToBalance(initialSupply, context, isDivisible);
+    const defaultPortfolio = new DefaultPortfolio({ did: signingIdentity.did }, context);
+    const rawPortfolioId = portfolioToPortfolioKind(defaultPortfolio, context);
 
     transactions.push(
       checkTxType({
         transaction: tx.asset.issue,
-        args: [rawTicker, rawInitialSupply],
+        args: [rawTicker, rawInitialSupply, rawPortfolioId],
       })
     );
   }
@@ -323,7 +336,10 @@ export async function prepareStorage(
   const { context } = this;
 
   const reservation = new TickerReservation({ ticker }, context);
-  const { status } = await reservation.details();
+  const [{ status }, signingIdentity] = await Promise.all([
+    reservation.details(),
+    context.getSigningIdentity(),
+  ]);
 
   const isCustomType = !values<string>(KnownAssetType).includes(assetType);
 
@@ -337,12 +353,14 @@ export async function prepareStorage(
         rawValue,
       },
       status,
+      signingIdentity,
     };
   }
 
   return {
     customTypeData: null,
     status,
+    signingIdentity,
   };
 }
 

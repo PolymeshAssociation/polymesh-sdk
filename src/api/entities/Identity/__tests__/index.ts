@@ -981,9 +981,9 @@ describe('Identity class', () => {
 
       userAuthsMock.entries = entriesMock;
 
-      const instructionDetailsMock = dsMockUtils.createQueryMock(
+      const instructionStatusesMock = dsMockUtils.createQueryMock(
         'settlement',
-        'instructionDetails',
+        'instructionStatuses',
         {
           multi: [],
         }
@@ -991,52 +991,27 @@ describe('Identity class', () => {
 
       const multiMock = jest.fn();
 
-      const rawInstructions = [
-        dsMockUtils.createMockInstruction({
-          instructionId: dsMockUtils.createMockU64(id1),
-          venueId: dsMockUtils.createMockU64(),
-          status: dsMockUtils.createMockInstructionStatus('Pending'),
-          settlementType: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
-          createdAt: dsMockUtils.createMockOption(),
-          tradeDate: dsMockUtils.createMockOption(),
-          valueDate: dsMockUtils.createMockOption(),
-        }),
-        dsMockUtils.createMockInstruction({
-          instructionId: dsMockUtils.createMockU64(id2),
-          venueId: dsMockUtils.createMockU64(),
-          status: dsMockUtils.createMockInstructionStatus('Pending'),
-          settlementType: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
-          createdAt: dsMockUtils.createMockOption(),
-          tradeDate: dsMockUtils.createMockOption(),
-          valueDate: dsMockUtils.createMockOption(),
-        }),
-        dsMockUtils.createMockInstruction({
-          instructionId: dsMockUtils.createMockU64(id3),
-          venueId: dsMockUtils.createMockU64(),
-          status: dsMockUtils.createMockInstructionStatus('Unknown'),
-          settlementType: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
-          createdAt: dsMockUtils.createMockOption(),
-          tradeDate: dsMockUtils.createMockOption(),
-          valueDate: dsMockUtils.createMockOption(),
-        }),
-        dsMockUtils.createMockInstruction({
-          instructionId: dsMockUtils.createMockU64(id4),
-          venueId: dsMockUtils.createMockU64(),
-          status: dsMockUtils.createMockInstructionStatus('Failed'),
-          settlementType: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
-          createdAt: dsMockUtils.createMockOption(),
-          tradeDate: dsMockUtils.createMockOption(),
-          valueDate: dsMockUtils.createMockOption(),
-        }),
+      const rawInstructionStatuses = [
+        dsMockUtils.createMockInstructionStatus('Pending'),
+        dsMockUtils.createMockInstructionStatus('Pending'),
+        dsMockUtils.createMockInstructionStatus('Unknown'),
+        dsMockUtils.createMockInstructionStatus('Failed'),
       ];
 
-      multiMock.mockResolvedValueOnce([...rawInstructions, rawInstructions[0], rawInstructions[1]]);
-      multiMock.mockResolvedValueOnce([...rawInstructions, rawInstructions[0], rawInstructions[1]]);
+      multiMock.mockResolvedValueOnce([
+        ...rawInstructionStatuses,
+        rawInstructionStatuses[0],
+        rawInstructionStatuses[1],
+      ]);
+      multiMock.mockResolvedValueOnce([
+        ...rawInstructionStatuses,
+        rawInstructionStatuses[0],
+        rawInstructionStatuses[1],
+      ]);
       multiMock.mockResolvedValueOnce([
         dsMockUtils.createMockInstruction({
           instructionId: dsMockUtils.createMockU64(id5),
           venueId: dsMockUtils.createMockU64(),
-          status: dsMockUtils.createMockInstructionStatus('Pending'),
           settlementType: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
           createdAt: dsMockUtils.createMockOption(),
           tradeDate: dsMockUtils.createMockOption(),
@@ -1044,7 +1019,7 @@ describe('Identity class', () => {
         }),
       ]);
 
-      instructionDetailsMock.multi = multiMock;
+      instructionStatusesMock.multi = multiMock;
     });
 
     it('should return all instructions in which the identity is involved, grouped by status', async () => {

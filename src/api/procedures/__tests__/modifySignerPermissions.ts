@@ -1,4 +1,3 @@
-import { PolymeshPrimitivesSecondaryKeySignatory } from '@polkadot/types/lookup';
 import { when } from 'jest-when';
 
 import {
@@ -14,9 +13,6 @@ import {
   ModifySignerPermissionsParams,
   PermissionedAccount,
   PermissionType,
-  Signer,
-  SignerType,
-  SignerValue,
   TxTags,
 } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -24,11 +20,7 @@ import * as utilsInternalModule from '~/utils/internal';
 
 describe('modifySignerPermissions procedure', () => {
   let mockContext: Mocked<Context>;
-  let signerValueToSignatorySpy: jest.SpyInstance<
-    PolymeshPrimitivesSecondaryKeySignatory,
-    [SignerValue, Context]
-  >;
-  let signerToSignerValueSpy: jest.SpyInstance<SignerValue, [Signer]>;
+  let stringToAccountIdSpy: jest.SpyInstance;
   let permissionsToMeshPermissionsSpy: jest.SpyInstance;
   let permissionsLikeToPermissionsSpy: jest.SpyInstance;
   let getSecondaryAccountPermissionsSpy: jest.SpyInstance;
@@ -39,8 +31,7 @@ describe('modifySignerPermissions procedure', () => {
     dsMockUtils.initMocks();
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
-    signerValueToSignatorySpy = jest.spyOn(utilsConversionModule, 'signerValueToSignatory');
-    signerToSignerValueSpy = jest.spyOn(utilsConversionModule, 'signerToSignerValue');
+    stringToAccountIdSpy = jest.spyOn(utilsConversionModule, 'stringToAccountId');
     permissionsToMeshPermissionsSpy = jest.spyOn(
       utilsConversionModule,
       'permissionsToMeshPermissions'
@@ -112,13 +103,7 @@ describe('modifySignerPermissions procedure', () => {
       portfolio: dsMockUtils.createMockPortfolioPermissions(),
     });
 
-    const signerValue = {
-      type: SignerType.Account,
-      value: secondaryAccounts[0].account.address,
-    };
-    const rawSignatory = dsMockUtils.createMockSignatory({
-      Account: dsMockUtils.createMockAccountId(signerValue.value),
-    });
+    const rawSignatory = dsMockUtils.createMockAccountId(account.address);
 
     dsMockUtils.configureMocks({
       contextOptions: {
@@ -126,10 +111,8 @@ describe('modifySignerPermissions procedure', () => {
       },
     });
 
-    signerToSignerValueSpy.mockReturnValue(signerValue);
-
-    when(signerValueToSignatorySpy)
-      .calledWith(signerValue, mockContext)
+    when(stringToAccountIdSpy)
+      .calledWith(account.address, mockContext)
       .mockReturnValue(rawSignatory);
 
     const proc = procedureMockUtils.getInstance<ModifySignerPermissionsParams, void, Storage>(
@@ -139,7 +122,7 @@ describe('modifySignerPermissions procedure', () => {
       }
     );
 
-    const transaction = dsMockUtils.createTxMock('identity', 'setPermissionToSigner');
+    const transaction = dsMockUtils.createTxMock('identity', 'setSecondaryKeyPermissions');
 
     permissionsToMeshPermissionsSpy.mockReturnValue(fakeMeshPermissions);
 

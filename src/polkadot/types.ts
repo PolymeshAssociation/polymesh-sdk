@@ -2,7 +2,6 @@
 /* eslint-disable */
 
 export * from './polymesh/types';
-export * from './compliance/types';
 export * from './identity/types';
 export * from './pips/types';
 export * from './protocolFee/types';

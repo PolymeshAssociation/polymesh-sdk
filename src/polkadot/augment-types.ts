@@ -1,6 +1,10 @@
 // Auto-generated via `yarn polkadot-types-from-defs`, do not edit
 /* eslint-disable */
 
+// import type lookup before we augment - in some environments
+// this is required to allow for ambient/previous definitions
+import '@polkadot/types/types/registry';
+
 import type { Data, StorageKey } from '@polkadot/types';
 import type {
   BitVec,
@@ -1166,8 +1170,6 @@ import type {
   Claim1stKey,
   Claim2ndKey,
   ClaimType,
-  ClassicTickerImport,
-  ClassicTickerRegistration,
   Committee,
   ComplianceRequirement,
   ComplianceRequirementResult,
@@ -1202,6 +1204,7 @@ import type {
   FundraiserName,
   FundraiserStatus,
   FundraiserTier,
+  FungibleLeg,
   FungibleToken,
   GranularCanTransferResult,
   HandledTxStatus,
@@ -1219,10 +1222,8 @@ import type {
   KeyIdentityData,
   KeyRecord,
   Leg,
-  LegAsset,
   LegId,
   LegStatus,
-  LegV2,
   LocalCAId,
   MaybeBlock,
   Member,
@@ -1233,7 +1234,10 @@ import type {
   MovePortfolioItem,
   NFTId,
   NFTs,
+  NonFungibleLeg,
   NonFungibleType,
+  OffChainAsset,
+  OffChainLeg,
   OffChainSignature,
   PalletName,
   PalletPermissions,
@@ -1319,10 +1323,11 @@ import type {
   VoteCountProposalFound,
   VotingResult,
   ZkProofData,
+  canTransferGranularReturn,
 } from 'polymesh-types/polymesh';
 
 declare module '@polkadot/types/types/registry' {
-  export interface InterfaceTypes {
+  interface InterfaceTypes {
     AbridgedCandidateReceipt: AbridgedCandidateReceipt;
     AbridgedHostConfiguration: AbridgedHostConfiguration;
     AbridgedHrmpChannel: AbridgedHrmpChannel;
@@ -1501,6 +1506,7 @@ declare module '@polkadot/types/types/registry' {
     CandidateInfo: CandidateInfo;
     CandidatePendingAvailability: CandidatePendingAvailability;
     CandidateReceipt: CandidateReceipt;
+    canTransferGranularReturn: canTransferGranularReturn;
     CanTransferResult: CanTransferResult;
     CappedFee: CappedFee;
     CddId: CddId;
@@ -1519,8 +1525,6 @@ declare module '@polkadot/types/types/registry' {
     Claim2ndKey: Claim2ndKey;
     ClaimType: ClaimType;
     ClassDetails: ClassDetails;
-    ClassicTickerImport: ClassicTickerImport;
-    ClassicTickerRegistration: ClassicTickerRegistration;
     ClassId: ClassId;
     ClassMetadata: ClassMetadata;
     CodecHash: CodecHash;
@@ -1816,6 +1820,7 @@ declare module '@polkadot/types/types/registry' {
     FungibilityV0: FungibilityV0;
     FungibilityV1: FungibilityV1;
     FungibilityV2: FungibilityV2;
+    FungibleLeg: FungibleLeg;
     FungibleToken: FungibleToken;
     Gas: Gas;
     GiltBid: GiltBid;
@@ -1938,10 +1943,8 @@ declare module '@polkadot/types/types/registry' {
     LeasePeriodOf: LeasePeriodOf;
     Leg: Leg;
     LegacyTransaction: LegacyTransaction;
-    LegAsset: LegAsset;
     LegId: LegId;
     LegStatus: LegStatus;
-    LegV2: LegV2;
     Limits: Limits;
     LimitsTo264: LimitsTo264;
     LocalCAId: LocalCAId;
@@ -2034,12 +2037,15 @@ declare module '@polkadot/types/types/registry' {
     NFTId: NFTId;
     NFTs: NFTs;
     NodeRole: NodeRole;
+    NonFungibleLeg: NonFungibleLeg;
     NonFungibleType: NonFungibleType;
     NotConnectedPeer: NotConnectedPeer;
     NpApiError: NpApiError;
     Null: Null;
     OccupiedCore: OccupiedCore;
     OccupiedCoreAssumption: OccupiedCoreAssumption;
+    OffChainAsset: OffChainAsset;
+    OffChainLeg: OffChainLeg;
     OffChainSignature: OffChainSignature;
     OffenceDetails: OffenceDetails;
     Offender: Offender;

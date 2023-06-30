@@ -1,10 +1,16 @@
 // Auto-generated via `yarn polkadot-types-from-chain`, do not edit
 /* eslint-disable */
 
-import type { ApiTypes } from '@polkadot/api-base/types';
+// import type lookup before we augment - in some environments
+// this is required to allow for ambient/previous definitions
+import '@polkadot/api-base/types/errors';
+
+import type { ApiTypes, AugmentedError } from '@polkadot/api-base/types';
+
+export type __AugmentedError<ApiType extends ApiTypes> = AugmentedError<ApiType>;
 
 declare module '@polkadot/api-base/types/errors' {
-  export interface AugmentedErrors<ApiType extends ApiTypes> {
+  interface AugmentedErrors<ApiType extends ApiTypes> {
     asset: {
       /**
        * The token is already frozen.
@@ -107,10 +113,6 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       NoSuchAsset: AugmentedError<ApiType>;
       /**
-       * The given ticker is not a classic one.
-       **/
-      NoSuchClassicTicker: AugmentedError<ApiType>;
-      /**
        * The given Document does not exist.
        **/
       NoSuchDoc: AugmentedError<ApiType>;
@@ -162,36 +164,6 @@ declare module '@polkadot/api-base/types/errors' {
        * Attempt to call an extrinsic that is only permitted for fungible tokens.
        **/
       UnexpectedNonFungibleToken: AugmentedError<ApiType>;
-    };
-    authorship: {
-      /**
-       * The uncle is genesis.
-       **/
-      GenesisUncle: AugmentedError<ApiType>;
-      /**
-       * The uncle parent not in the chain.
-       **/
-      InvalidUncleParent: AugmentedError<ApiType>;
-      /**
-       * The uncle isn't recent enough to be included.
-       **/
-      OldUncle: AugmentedError<ApiType>;
-      /**
-       * The uncle is too high in chain.
-       **/
-      TooHighUncle: AugmentedError<ApiType>;
-      /**
-       * Too many uncles.
-       **/
-      TooManyUncles: AugmentedError<ApiType>;
-      /**
-       * The uncle is already included.
-       **/
-      UncleAlreadyIncluded: AugmentedError<ApiType>;
-      /**
-       * Uncles already set in the block.
-       **/
-      UnclesAlreadySet: AugmentedError<ApiType>;
     };
     babe: {
       /**
@@ -452,11 +424,11 @@ declare module '@polkadot/api-base/types/errors' {
     };
     complianceManager: {
       /**
-       * The worst case scenario of the compliance requirement is too complex
+       * The worst case scenario of the compliance requirement is too complex.
        **/
       ComplianceRequirementTooComplex: AugmentedError<ApiType>;
       /**
-       * Did not exist
+       * Did not exist.
        **/
       DidNotExist: AugmentedError<ApiType>;
       /**
@@ -464,17 +436,21 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       DuplicateComplianceRequirements: AugmentedError<ApiType>;
       /**
-       * Issuer exist but trying to add it again
+       * Issuer exist but trying to add it again.
        **/
       IncorrectOperationOnTrustedIssuer: AugmentedError<ApiType>;
       /**
-       * Compliance requirement id doesn't exist
+       * Compliance requirement id doesn't exist.
        **/
       InvalidComplianceRequirementId: AugmentedError<ApiType>;
       /**
        * User is not authorized.
        **/
       Unauthorized: AugmentedError<ApiType>;
+      /**
+       * The maximum weight limit for executing the function was exceeded.
+       **/
+      WeightLimitExceeded: AugmentedError<ApiType>;
     };
     contracts: {
       /**
@@ -517,10 +493,6 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       ContractTrapped: AugmentedError<ApiType>;
       /**
-       * The debug message specified to `seal_debug_message` does contain invalid UTF-8.
-       **/
-      DebugMessageInvalidUTF8: AugmentedError<ApiType>;
-      /**
        * Input passed to a contract API function failed to decode as expected type.
        **/
       DecodingFailed: AugmentedError<ApiType>;
@@ -536,10 +508,6 @@ declare module '@polkadot/api-base/types/errors' {
        * A contract with the same AccountId already exists.
        **/
       DuplicateContract: AugmentedError<ApiType>;
-      /**
-       * The topics passed to `seal_deposit_events` contains at least one duplicate.
-       **/
-      DuplicateTopics: AugmentedError<ApiType>;
       /**
        * An indetermistic code was used in a context where this is not permitted.
        **/
@@ -621,10 +589,6 @@ declare module '@polkadot/api-base/types/errors' {
       ValueTooLarge: AugmentedError<ApiType>;
     };
     corporateAction: {
-      /**
-       * The authorization type is not to transfer the CAA to another DID.
-       **/
-      AuthNotCAATransfer: AugmentedError<ApiType>;
       /**
        * A CA's declaration date was strictly after its record date.
        **/
@@ -865,6 +829,14 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       DidMustAlreadyExist: AugmentedError<ApiType>;
       /**
+       * The same key was included multiple times.
+       **/
+      DuplicateKey: AugmentedError<ApiType>;
+      /**
+       * Cannot use Except when specifying extrinsic permissions.
+       **/
+      ExceptNotAllowedForExtrinsics: AugmentedError<ApiType>;
+      /**
        * Couldn't charge fee for the transaction.
        **/
       FailedToChargeFee: AugmentedError<ApiType>;
@@ -893,6 +865,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InvalidScopeClaim: AugmentedError<ApiType>;
       /**
+       * Identity is already a child of an other identity, can't create grand-child identity.
+       **/
+      IsChildIdentity: AugmentedError<ApiType>;
+      /**
        * This key is not allowed to execute a given operation.
        **/
       KeyNotAllowed: AugmentedError<ApiType>;
@@ -905,6 +881,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       MultiSigHasBalance: AugmentedError<ApiType>;
       /**
+       * The Identity doesn't have a parent identity.
+       **/
+      NoParentIdentity: AugmentedError<ApiType>;
+      /**
        * Signer is not a secondary key of the provided identity
        **/
       NotASigner: AugmentedError<ApiType>;
@@ -912,6 +892,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Attestation was not by a CDD service provider.
        **/
       NotCddProviderAttestation: AugmentedError<ApiType>;
+      /**
+       * The caller is not the parent or child identity.
+       **/
+      NotParentOrChildIdentity: AugmentedError<ApiType>;
       /**
        * Only the primary key is allowed to revoke an Identity Signatory off-chain authorization.
        **/
@@ -986,6 +970,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Changing multisig parameters not allowed since multisig is a primary key.
        **/
       ChangeNotAllowed: AugmentedError<ApiType>;
+      /**
+       * The creator is no longer allowed to call via creator extrinsics.
+       **/
+      CreatorControlsHaveBeenRemoved: AugmentedError<ApiType>;
       /**
        * Multisig address.
        **/
@@ -1322,6 +1310,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       DifferentIdentityPortfolios: AugmentedError<ApiType>;
       /**
+       * Trying to move an amount of zero assets.
+       **/
+      EmptyTransfer: AugmentedError<ApiType>;
+      /**
        * Insufficient balance for a transaction.
        **/
       InsufficientPortfolioBalance: AugmentedError<ApiType>;
@@ -1512,17 +1504,17 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       CallerIsNotAParty: AugmentedError<ApiType>;
       /**
-       * Deprecated function has been called on a v2 instruction.
+       * No duplicate uid are allowed for different receipts.
        **/
-      DeprecatedCallOnV2Instruction: AugmentedError<ApiType>;
-      /**
-       * While affirming the transfer, system failed to lock the assets involved.
-       **/
-      FailedToLockTokens: AugmentedError<ApiType>;
+      DuplicateReceiptUid: AugmentedError<ApiType>;
       /**
        * Scheduling of an instruction fails.
        **/
       FailedToSchedule: AugmentedError<ApiType>;
+      /**
+       * The input weight is less than the minimum required.
+       **/
+      InputWeightIsLessThanMinimum: AugmentedError<ApiType>;
       /**
        * Instruction has invalid dates
        **/
@@ -1531,10 +1523,6 @@ declare module '@polkadot/api-base/types/errors' {
        * Instruction failed to execute.
        **/
       InstructionFailed: AugmentedError<ApiType>;
-      /**
-       * Maximum legs that can be in a single instruction.
-       **/
-      InstructionHasTooManyLegs: AugmentedError<ApiType>;
       /**
        * Instruction has not been affirmed.
        **/
@@ -1556,10 +1544,6 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InstructionSettleBlockPassed: AugmentedError<ApiType>;
       /**
-       * Expected a different type of asset in a leg.
-       **/
-      InvalidLegAsset: AugmentedError<ApiType>;
-      /**
        * Offchain signature is invalid.
        **/
       InvalidSignature: AugmentedError<ApiType>;
@@ -1568,49 +1552,57 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InvalidVenue: AugmentedError<ApiType>;
       /**
-       * Legs count should matches with the total number of legs in which given portfolio act as `from_portfolio`.
+       * No leg with the given id was found
        **/
-      LegCountTooSmall: AugmentedError<ApiType>;
+      LegNotFound: AugmentedError<ApiType>;
       /**
-       * Provided leg is not pending execution.
+       * The maximum number of fungible assets was exceeded.
        **/
-      LegNotPending: AugmentedError<ApiType>;
+      MaxNumberOfFungibleAssetsExceeded: AugmentedError<ApiType>;
       /**
        * The number of nfts being transferred in the instruction was exceeded.
        **/
       MaxNumberOfNFTsExceeded: AugmentedError<ApiType>;
       /**
-       * The maximum number of nfts being transferred in one leg was exceeded.
+       * The maximum number of off-chain assets was exceeded.
        **/
-      MaxNumberOfNFTsPerLegExceeded: AugmentedError<ApiType>;
+      MaxNumberOfOffChainAssetsExceeded: AugmentedError<ApiType>;
       /**
-       * No pending affirmation for the provided instruction.
+       * The maximum number of receipts was exceeded.
        **/
-      NoPendingAffirm: AugmentedError<ApiType>;
+      MaxNumberOfReceiptsExceeded: AugmentedError<ApiType>;
       /**
-       * Portfolio based actions require at least one portfolio to be provided as input.
+       * Multiple receipts for the same leg are not allowed.
        **/
-      NoPortfolioProvided: AugmentedError<ApiType>;
+      MultipleReceiptsForOneLeg: AugmentedError<ApiType>;
+      /**
+       * The given number of fungible transfers was underestimated.
+       **/
+      NumberOfFungibleTransfersUnderestimated: AugmentedError<ApiType>;
+      /**
+       * The given number of off-chain transfers was underestimated.
+       **/
+      NumberOfOffChainTransfersUnderestimated: AugmentedError<ApiType>;
       /**
        * The given number of nfts being transferred was underestimated.
        **/
       NumberOfTransferredNFTsUnderestimated: AugmentedError<ApiType>;
       /**
-       * Portfolio in receipt does not match with portfolios provided by the user.
+       * Off-Chain assets cannot be locked.
        **/
-      PortfolioMismatch: AugmentedError<ApiType>;
+      OffChainAssetCantBeLocked: AugmentedError<ApiType>;
       /**
        * Receipt already used.
        **/
       ReceiptAlreadyClaimed: AugmentedError<ApiType>;
       /**
-       * Off-chain receipts are not accepted for non-fungible tokens.
+       * Off-chain receipts can only be used for off-chain leg type.
        **/
-      ReceiptForNonFungibleAsset: AugmentedError<ApiType>;
+      ReceiptForInvalidLegType: AugmentedError<ApiType>;
       /**
-       * Receipt not used yet.
+       * The instruction id in all receipts must match the extrinsic parameter.
        **/
-      ReceiptNotClaimed: AugmentedError<ApiType>;
+      ReceiptInstructionIdMissmatch: AugmentedError<ApiType>;
       /**
        * Sender and receiver are the same.
        **/
@@ -1644,9 +1636,21 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       UnexpectedAffirmationStatus: AugmentedError<ApiType>;
       /**
+       * An invalid has been reached.
+       **/
+      UnexpectedLegStatus: AugmentedError<ApiType>;
+      /**
+       * Ticker could not be found on chain.
+       **/
+      UnexpectedOFFChainAsset: AugmentedError<ApiType>;
+      /**
        * Instruction status is unknown
        **/
       UnknownInstruction: AugmentedError<ApiType>;
+      /**
+       * The maximum weight limit for executing the function was exceeded.
+       **/
+      WeightLimitExceeded: AugmentedError<ApiType>;
       /**
        * Instruction leg amount can't be zero.
        **/
@@ -1854,6 +1858,10 @@ declare module '@polkadot/api-base/types/errors' {
        * The limit of TransferConditions allowed for an asset has been reached.
        **/
       TransferConditionLimitReached: AugmentedError<ApiType>;
+      /**
+       * The maximum weight limit for executing the function was exceeded.
+       **/
+      WeightLimitExceeded: AugmentedError<ApiType>;
     };
     sto: {
       /**
@@ -2099,16 +2107,23 @@ declare module '@polkadot/api-base/types/errors' {
        * Provided nonce was invalid
        * If the provided nonce < current nonce, the call was already executed
        * If the provided nonce > current nonce, the call(s) before the current failed to execute
+       * POLYMESH error
        **/
       InvalidNonce: AugmentedError<ApiType>;
       /**
        * Offchain signature is invalid
+       * POLYMESH error
        **/
       InvalidSignature: AugmentedError<ApiType>;
       /**
        * Target does not have a valid CDD
+       * POLYMESH error
        **/
       TargetCddMissing: AugmentedError<ApiType>;
+      /**
+       * Too many calls batched.
+       **/
+      TooManyCalls: AugmentedError<ApiType>;
     };
   } // AugmentedErrors
 } // declare module

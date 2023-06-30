@@ -66,17 +66,7 @@ import {
   PalletCorporateActionsTargetIdentities,
   PalletCorporateActionsTargetTreatment,
   PalletIdentityClaim1stKey,
-  PalletMultisigProposalDetails,
-  PalletMultisigProposalStatus,
-  PalletPortfolioMovePortfolioItem,
   PalletRelayerSubsidy,
-  PalletSettlementAffirmationStatus,
-  PalletSettlementInstruction,
-  PalletSettlementInstructionMemo,
-  PalletSettlementInstructionStatus,
-  PalletSettlementSettlementType,
-  PalletSettlementVenue,
-  PalletSettlementVenueType,
   PalletStoFundraiser,
   PalletStoFundraiserStatus,
   PalletStoFundraiserTier,
@@ -104,8 +94,6 @@ import {
   PolymeshPrimitivesConditionTrustedIssuer,
   PolymeshPrimitivesDocument,
   PolymeshPrimitivesDocumentHash,
-  PolymeshPrimitivesEthereumEcdsaSignature,
-  PolymeshPrimitivesEthereumEthereumAddress,
   PolymeshPrimitivesIdentityClaim,
   PolymeshPrimitivesIdentityClaimClaim,
   PolymeshPrimitivesIdentityClaimClaimType,
@@ -115,12 +103,23 @@ import {
   PolymeshPrimitivesIdentityIdPortfolioId,
   PolymeshPrimitivesIdentityIdPortfolioKind,
   PolymeshPrimitivesJurisdictionCountryCode,
+  PolymeshPrimitivesMemo,
+  PolymeshPrimitivesMultisigProposalDetails,
+  PolymeshPrimitivesMultisigProposalStatus,
+  PolymeshPrimitivesNftNfTs,
+  PolymeshPrimitivesPortfolioFund,
   PolymeshPrimitivesPosRatio,
   PolymeshPrimitivesSecondaryKey,
   PolymeshPrimitivesSecondaryKeyKeyRecord,
   PolymeshPrimitivesSecondaryKeyPalletPermissions,
   PolymeshPrimitivesSecondaryKeyPermissions,
   PolymeshPrimitivesSecondaryKeySignatory,
+  PolymeshPrimitivesSettlementAffirmationStatus,
+  PolymeshPrimitivesSettlementInstruction,
+  PolymeshPrimitivesSettlementInstructionStatus,
+  PolymeshPrimitivesSettlementLeg,
+  PolymeshPrimitivesSettlementSettlementType,
+  PolymeshPrimitivesSettlementVenueType,
   PolymeshPrimitivesStatisticsStat2ndKey,
   PolymeshPrimitivesStatisticsStatClaim,
   PolymeshPrimitivesStatisticsStatOpType,
@@ -155,6 +154,7 @@ import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
 import {
   AssetComplianceResult,
   AuthorizationType as MeshAuthorizationType,
+  canTransferGranularReturn,
   CanTransferResult,
   CddStatus,
   ComplianceRequirementResult,
@@ -268,10 +268,10 @@ export class MockWebSocket {
     const nodeVersionId = SYSTEM_VERSION_RPC_CALL.id;
 
     if (msg.indexOf(nodeVersionId) >= 0) {
-      response = { data: `{ "result": "5.0.0", "id": "${nodeVersionId}" }` };
+      response = { data: `{ "result": "6.0.0", "id": "${nodeVersionId}" }` };
     } else {
       response = {
-        data: `{ "result": { "specVersion": "5000000"}, "id": "${STATE_RUNTIME_VERSION_CALL.id}" }`,
+        data: `{ "result": { "specVersion": "6000000"}, "id": "${STATE_RUNTIME_VERSION_CALL.id}" }`,
       };
     }
 
@@ -428,6 +428,7 @@ interface ContextOptions {
   getDividendDistributionsForAssets?: DistributionWithDetails[];
   isFrozen?: boolean;
   getSigningAccounts?: Account[];
+  getSigningIdentity?: Identity;
   signingIdentityIsEqual?: boolean;
   signingAccountIsEqual?: boolean;
   signingAccountAuthorizationsGetOne?: AuthorizationRequest;
@@ -495,11 +496,11 @@ const successReceipt: ISubmittableResult = merge({}, defaultReceipt, {
 
 const batchFailedReceipt: ISubmittableResult = merge({}, successReceipt, {
   findRecord: (mod: string, event: string) =>
-    mod === 'utility' && event === 'BatchInterrupted'
+    mod === 'utility' && event === 'BatchInterruptedOld'
       ? { event: { data: [[], [{ toString: (): string => '1' }, 'Some Error']] } }
       : undefined,
   filterRecords: (mod: string, event: string) =>
-    mod === 'utility' && event === 'BatchInterrupted'
+    mod === 'utility' && event === 'BatchInterruptedOld'
       ? [{ event: { data: [[], [{ toString: (): string => '1' }, 'Some Error']] } }]
       : [],
 });
@@ -738,6 +739,7 @@ const defaultContextOptions: ContextOptions = {
   areSecondaryAccountsFrozen: false,
   isFrozen: false,
   getSigningAccounts: [],
+  getSigningIdentity: 'signingIdentity' as unknown as Identity,
   signingIdentityIsEqual: true,
   signingAccountIsEqual: true,
   signingAccountAuthorizationsGetOne: {} as AuthorizationRequest,
@@ -1809,20 +1811,6 @@ export const createMockAgentGroup = (
 
 /**
  * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockEcdsaSignature = (
-  signature?: string | PolymeshPrimitivesEthereumEcdsaSignature
-): MockCodec<PolymeshPrimitivesEthereumEcdsaSignature> => {
-  if (isCodec<PolymeshPrimitivesEthereumEcdsaSignature>(signature)) {
-    return signature as MockCodec<PolymeshPrimitivesEthereumEcdsaSignature>;
-  }
-
-  return createMockStringCodec<PolymeshPrimitivesEthereumEcdsaSignature>(signature);
-};
-
-/**
- * @hidden
  */
 export const createMockBTreeSet = <T extends Codec>(
   items: BTreeSet<T> | unknown[] = []
@@ -1850,20 +1838,6 @@ export const createMockBTreeSet = <T extends Codec>(
   const res = createMockCodec(new Set(codecItems), !items) as unknown as Mutable<BTreeSet>;
 
   return res as MockCodec<BTreeSet<T>>;
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockEthereumAddress = (
-  address?: string | PolymeshPrimitivesEthereumEthereumAddress
-): MockCodec<PolymeshPrimitivesEthereumEthereumAddress> => {
-  if (isCodec<PolymeshPrimitivesEthereumEthereumAddress>(address)) {
-    return address as MockCodec<PolymeshPrimitivesEthereumEthereumAddress>;
-  }
-
-  return createMockU8aCodec<PolymeshPrimitivesEthereumEthereumAddress>(address);
 };
 
 /**
@@ -2143,10 +2117,10 @@ export const createMockPortfolioId = (
 export const createMockMovePortfolioItem = (movePortfolioItem?: {
   ticker: PolymeshPrimitivesTicker | Parameters<typeof createMockTicker>[0];
   amount: Balance | Parameters<typeof createMockBalance>[0];
-}): MockCodec<PalletPortfolioMovePortfolioItem> => {
-  if (isCodec<PalletPortfolioMovePortfolioItem>(movePortfolioItem)) {
-    return movePortfolioItem as MockCodec<PalletPortfolioMovePortfolioItem>;
-  }
+}): MockCodec<PolymeshPrimitivesPortfolioFund> => {
+  // if (isCodec<PolymeshPrimitivesPortfolioFund>(movePortfolioItem)) {
+  //   return movePortfolioItem as MockCodec<PolymeshPrimitivesPortfolioFund>;
+  // }
 
   const { ticker, amount } = movePortfolioItem ?? {
     ticker: createMockTicker(),
@@ -2987,8 +2961,8 @@ export const createMockProposalStatus = (
     | 'ExecutionSuccessful'
     | 'ExecutionFailed'
     | 'Rejected'
-): MockCodec<PalletMultisigProposalStatus> => {
-  return createMockEnum(proposalStatus) as MockCodec<PalletMultisigProposalStatus>;
+): MockCodec<PolymeshPrimitivesMultisigProposalStatus> => {
+  return createMockEnum(proposalStatus) as MockCodec<PolymeshPrimitivesMultisigProposalStatus>;
 };
 
 /**
@@ -3017,8 +2991,8 @@ export const createMockSecondaryKey = (secondaryKey?: {
  */
 export const createMockVenueType = (
   venueType?: 'Other' | 'Distribution' | 'Sto' | 'Exchange'
-): MockCodec<PalletSettlementVenueType> => {
-  return createMockEnum<PalletSettlementVenueType>(venueType);
+): MockCodec<PolymeshPrimitivesSettlementVenueType> => {
+  return createMockEnum<PolymeshPrimitivesSettlementVenueType>(venueType);
 };
 
 /**
@@ -3027,8 +3001,8 @@ export const createMockVenueType = (
  */
 export const createMockVenue = (venue?: {
   creator: PolymeshPrimitivesIdentityId;
-  venueType: PalletSettlementVenueType;
-}): MockCodec<PalletSettlementVenue> => {
+  venueType: PolymeshPrimitivesSettlementVenueType;
+}): MockCodec<PolymeshPrimitivesSettlementVenueType> => {
   const vn = venue ?? {
     creator: createMockIdentityId(),
     venueType: createMockVenueType(),
@@ -3047,9 +3021,9 @@ export const createMockVenue = (venue?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockInstructionStatus = (
-  instructionStatus?: 'Pending' | 'Unknown' | 'Failed'
-): MockCodec<PalletSettlementInstructionStatus> => {
-  return createMockEnum<PalletSettlementInstructionStatus>(instructionStatus);
+  instructionStatus?: 'Pending' | 'Unknown' | 'Failed' | 'Rejected' | 'Success'
+): MockCodec<PolymeshPrimitivesSettlementInstructionStatus> => {
+  return createMockEnum<PolymeshPrimitivesSettlementInstructionStatus>(instructionStatus);
 };
 
 /**
@@ -3058,8 +3032,8 @@ export const createMockInstructionStatus = (
  */
 export const createMockSettlementType = (
   settlementType?: 'SettleOnAffirmation' | { SettleOnBlock: u32 } | { SettleManual: u32 }
-): MockCodec<PalletSettlementSettlementType> => {
-  return createMockEnum<PalletSettlementSettlementType>(settlementType);
+): MockCodec<PolymeshPrimitivesSettlementSettlementType> => {
+  return createMockEnum<PolymeshPrimitivesSettlementSettlementType>(settlementType);
 };
 
 /**
@@ -3068,8 +3042,8 @@ export const createMockSettlementType = (
  */
 export const createMockAffirmationStatus = (
   authorizationStatus?: 'Unknown' | 'Pending' | 'Affirmed'
-): MockCodec<PalletSettlementAffirmationStatus> => {
-  return createMockEnum<PalletSettlementAffirmationStatus>(authorizationStatus);
+): MockCodec<PolymeshPrimitivesSettlementAffirmationStatus> => {
+  return createMockEnum<PolymeshPrimitivesSettlementAffirmationStatus>(authorizationStatus);
 };
 
 /**
@@ -3079,16 +3053,14 @@ export const createMockAffirmationStatus = (
 export const createMockInstruction = (instruction?: {
   instructionId: u64;
   venueId: u64;
-  status: PalletSettlementInstructionStatus;
-  settlementType: PalletSettlementSettlementType;
+  settlementType: PolymeshPrimitivesSettlementSettlementType;
   createdAt: Option<Moment>;
   tradeDate: Option<Moment>;
   valueDate: Option<Moment>;
-}): MockCodec<PalletSettlementInstruction> => {
+}): MockCodec<PolymeshPrimitivesSettlementInstruction> => {
   const data = instruction ?? {
     instructionId: createMockU64(),
     venueId: createMockU64(),
-    status: createMockInstructionStatus(),
     settlementType: createMockSettlementType(),
     createdAt: createMockOption(),
     tradeDate: createMockOption(),
@@ -3100,6 +3072,44 @@ export const createMockInstruction = (instruction?: {
     },
     !instruction
   );
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockInstructionLeg = (
+  leg?:
+    | {
+        Fungible: {
+          sender: PolymeshPrimitivesIdentityIdPortfolioId;
+          receiver: PolymeshPrimitivesIdentityIdPortfolioId;
+          ticker: PolymeshPrimitivesTicker;
+          amount: Balance;
+        };
+      }
+    | {
+        NonFungible: {
+          sender: PolymeshPrimitivesIdentityIdPortfolioId;
+          receiver: PolymeshPrimitivesIdentityIdPortfolioId;
+          nfts: PolymeshPrimitivesNftNfTs;
+        };
+      }
+    | {
+        OffChain: {
+          senderIdentity: PolymeshPrimitivesIdentityId;
+          receiverIdentity: PolymeshPrimitivesIdentityId;
+          ticker: PolymeshPrimitivesTicker;
+          amount: Balance;
+        };
+      }
+    | PolymeshPrimitivesSettlementLeg
+): MockCodec<PolymeshPrimitivesSettlementLeg> => {
+  if (isCodec<PolymeshPrimitivesSettlementLeg>(leg)) {
+    return leg as MockCodec<PolymeshPrimitivesSettlementLeg>;
+  }
+
+  return createMockEnum<PolymeshPrimitivesSettlementLeg>(leg as any);
 };
 
 /**
@@ -4226,10 +4236,10 @@ export const createMockCall = (callArgs?: {
 export const createMockProposalDetails = (proposalDetails?: {
   approvals: u64 | Parameters<typeof createMockU64>[0];
   rejections: u64 | Parameters<typeof createMockU64>[0];
-  status: PalletMultisigProposalStatus | Parameters<typeof createMockProposalStatus>[0];
+  status: PolymeshPrimitivesMultisigProposalStatus | Parameters<typeof createMockProposalStatus>[0];
   autoClose: bool | Parameters<typeof createMockBool>[0];
   expiry: Option<Moment> | null;
-}): PalletMultisigProposalDetails => {
+}): PolymeshPrimitivesMultisigProposalDetails => {
   const { approvals, rejections, status, autoClose, expiry } = proposalDetails ?? {
     approvals: createMockU64(),
     rejections: createMockU64(),
@@ -4246,7 +4256,7 @@ export const createMockProposalDetails = (proposalDetails?: {
       autoClose,
     },
     !proposalDetails
-  ) as MockCodec<PalletMultisigProposalDetails>;
+  ) as MockCodec<PolymeshPrimitivesMultisigProposalDetails>;
 };
 
 /**
@@ -4357,14 +4367,14 @@ export const createMockAssetMetadataValueDetail = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockInstructionMemo = (
-  memo?: string | PalletSettlementInstructionMemo
-): MockCodec<PalletSettlementInstructionMemo> => {
-  if (isCodec<PalletSettlementInstructionMemo>(memo)) {
-    return memo as MockCodec<PalletSettlementInstructionMemo>;
+export const createMockMemo = (
+  memo?: string | PolymeshPrimitivesMemo
+): MockCodec<PolymeshPrimitivesMemo> => {
+  if (isCodec<PolymeshPrimitivesMemo>(memo)) {
+    return memo as MockCodec<PolymeshPrimitivesMemo>;
   }
 
-  return createMockStringCodec<PalletSettlementInstructionMemo>(memo);
+  return createMockStringCodec<PolymeshPrimitivesMemo>(memo);
 };
 
 /**
@@ -4390,4 +4400,36 @@ export const createMockContractInfo = (contractInfo?: {
     },
     !contractInfo
   );
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockNfts = (nfts?: {
+  ticker: PolymeshPrimitivesTicker;
+  ids: Vec<u64>;
+}): MockCodec<PolymeshPrimitivesNftNfTs> => {
+  const { ticker, ids } = nfts ?? {
+    ticker: createMockTicker(),
+    ids: [],
+  };
+
+  return createMockCodec({ ticker, ids }, !nfts);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockCanTransferGranularReturn = (
+  result?:
+    | {
+        Ok: GranularCanTransferResult;
+      }
+    | {
+        Err: DispatchError;
+      }
+): MockCodec<canTransferGranularReturn> => {
+  return createMockEnum<canTransferGranularReturn>(result);
 };

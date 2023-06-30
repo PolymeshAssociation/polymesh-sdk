@@ -23,6 +23,7 @@ import { Mocked } from '~/testUtils/types';
 import {
   AssetDocument,
   ClaimType,
+  Identity,
   KnownAssetType,
   RoleType,
   SecurityIdentifier,
@@ -71,6 +72,7 @@ describe('createAsset procedure', () => {
     [AssetDocument, Context]
   >;
   let ticker: string;
+  let signingIdentity: Identity;
   let name: string;
   let initialSupply: BigNumber;
   let isDivisible: boolean;
@@ -127,6 +129,7 @@ describe('createAsset procedure', () => {
     assetDocumentToDocumentSpy = jest.spyOn(utilsConversionModule, 'assetDocumentToDocument');
     ticker = 'TICKER';
     name = 'someName';
+    signingIdentity = entityMockUtils.getIdentityInstance();
     initialSupply = new BigNumber(100);
     isDivisible = false;
     assetType = KnownAssetType.EquityCommon;
@@ -201,7 +204,7 @@ describe('createAsset procedure', () => {
 
     createAssetTransaction = dsMockUtils.createTxMock('asset', 'createAsset');
 
-    mockContext = dsMockUtils.getContextInstance();
+    mockContext = dsMockUtils.getContextInstance({ withSigningManager: true });
 
     when(stringToTickerSpy).calledWith(ticker, mockContext).mockReturnValue(rawTicker);
     when(bigNumberToBalanceSpy)
@@ -255,6 +258,7 @@ describe('createAsset procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
       customTypeData: null,
       status: TickerReservationStatus.AssetCreated,
+      signingIdentity,
     });
 
     return expect(prepareCreateAsset.call(proc, args)).rejects.toThrow(
@@ -266,6 +270,7 @@ describe('createAsset procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
       customTypeData: null,
       status: TickerReservationStatus.Free,
+      signingIdentity,
     });
 
     return expect(prepareCreateAsset.call(proc, args)).rejects.toThrow(
@@ -277,6 +282,7 @@ describe('createAsset procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
       customTypeData: null,
       status: TickerReservationStatus.Reserved,
+      signingIdentity,
     });
 
     return expect(
@@ -288,6 +294,7 @@ describe('createAsset procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
       customTypeData: null,
       status: TickerReservationStatus.Reserved,
+      signingIdentity,
     });
 
     let result = await prepareCreateAsset.call(proc, args);
@@ -362,6 +369,7 @@ describe('createAsset procedure', () => {
     let proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
       customTypeData: null,
       status: TickerReservationStatus.Reserved,
+      signingIdentity,
     });
 
     let result = await prepareCreateAsset.call(proc, {
@@ -391,6 +399,7 @@ describe('createAsset procedure', () => {
     proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
       customTypeData: null,
       status: TickerReservationStatus.Free,
+      signingIdentity,
     });
 
     result = await prepareCreateAsset.call(proc, {
@@ -427,6 +436,7 @@ describe('createAsset procedure', () => {
         id: rawTypeId,
       },
       status: TickerReservationStatus.Free,
+      signingIdentity,
     });
     const createAssetTx = dsMockUtils.createTxMock('asset', 'createAsset');
     const addDocumentsTx = dsMockUtils.createTxMock('asset', 'addDocuments');
@@ -471,6 +481,7 @@ describe('createAsset procedure', () => {
     const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
       customTypeData: null,
       status: TickerReservationStatus.Reserved,
+      signingIdentity,
     });
     const createAssetTx = dsMockUtils.createTxMock('asset', 'createAsset');
     const addStatsTx = dsMockUtils.createTxMock('statistics', 'setActiveAssetStats');
@@ -516,6 +527,7 @@ describe('createAsset procedure', () => {
         rawValue,
       },
       status: TickerReservationStatus.Reserved,
+      signingIdentity,
     });
     const createAssetWithCustomTypeTx = dsMockUtils.createTxMock(
       'asset',
@@ -548,6 +560,7 @@ describe('createAsset procedure', () => {
       let proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext, {
         customTypeData: null,
         status: TickerReservationStatus.Reserved,
+        signingIdentity,
       });
 
       let boundFunc = getAuthorization.bind(proc);
@@ -569,6 +582,7 @@ describe('createAsset procedure', () => {
           rawValue: dsMockUtils.createMockBytes('something'),
         },
         status: TickerReservationStatus.Reserved,
+        signingIdentity,
       });
 
       boundFunc = getAuthorization.bind(proc);
@@ -599,6 +613,7 @@ describe('createAsset procedure', () => {
           rawValue: dsMockUtils.createMockBytes('something'),
         },
         status: TickerReservationStatus.Reserved,
+        signingIdentity,
       });
 
       boundFunc = getAuthorization.bind(proc);
@@ -620,6 +635,7 @@ describe('createAsset procedure', () => {
           rawValue: dsMockUtils.createMockBytes('something'),
         },
         status: TickerReservationStatus.Free,
+        signingIdentity,
       });
 
       boundFunc = getAuthorization.bind(proc);
@@ -637,6 +653,10 @@ describe('createAsset procedure', () => {
   });
 
   describe('prepareStorage', () => {
+    beforeEach(() => {
+      mockContext.getSigningIdentity.mockResolvedValue(signingIdentity);
+    });
+
     it('should return the custom asset type ID and bytes representation along with ticker reservation status', async () => {
       const proc = procedureMockUtils.getInstance<Params, Asset, Storage>(mockContext);
       const boundFunc = prepareStorage.bind(proc);
@@ -656,6 +676,7 @@ describe('createAsset procedure', () => {
       expect(result).toEqual({
         customTypeData: null,
         status: TickerReservationStatus.Reserved,
+        signingIdentity,
       });
 
       const rawValue = dsMockUtils.createMockBytes('something');
@@ -674,6 +695,7 @@ describe('createAsset procedure', () => {
           id,
         },
         status: TickerReservationStatus.Reserved,
+        signingIdentity,
       });
 
       id = dsMockUtils.createMockU32(new BigNumber(10));
@@ -687,6 +709,7 @@ describe('createAsset procedure', () => {
           id,
         },
         status: TickerReservationStatus.Reserved,
+        signingIdentity,
       });
     });
   });

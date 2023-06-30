@@ -358,7 +358,7 @@ export function sliceBatchReceipt(
     {
       data: [rawEventsPerExtrinsic],
     },
-  ] = filterEventRecords(receipt, 'utility', 'BatchCompleted');
+  ] = filterEventRecords(receipt, 'utility', 'BatchCompletedOld');
 
   if (rawEventsPerExtrinsic.length < to || from < 0) {
     throw new PolymeshError({
