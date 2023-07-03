@@ -786,6 +786,7 @@ export function createProcedureMethod<
   context: Context
 ):
   | ProcedureMethod<MethodArgs, ProcedureReturnValue, ReturnValue>
+  | OptionalArgsProcedureMethod<MethodArgs, ProcedureReturnValue, ReturnValue>
   | NoArgsProcedureMethod<ProcedureReturnValue, ReturnValue> {
   const { getProcedureAndArgs, transformer, voidArgs, optionalArgs } = args;
 
