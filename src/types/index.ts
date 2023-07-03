@@ -1537,6 +1537,24 @@ export interface GroupedInstructions {
   failed: Instruction[];
 }
 
+export type InstructionsByStatus = GroupedInstructions & {
+  /**
+   * Instructions that have one or more legs already affirmed, but still need to be one or more legs to be affirmed/rejected by the Identity
+   */
+  partiallyAffirmed: Instruction[];
+};
+
+export interface GroupedInvolvedInstructions {
+  /**
+   * Instructions where the Identity is the custodian of the leg portfolios
+   */
+  custodied: GroupedInstructions;
+  /**
+   * Instructions where the Identity is the owner of the leg portfolios
+   */
+  owned: Omit<GroupedInstructions, 'affirmed'>;
+}
+
 export interface AssetWithGroup {
   asset: Asset;
   group: KnownPermissionGroup | CustomPermissionGroup;
