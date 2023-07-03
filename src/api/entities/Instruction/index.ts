@@ -23,8 +23,8 @@ import {
   EventIdentifier,
   InstructionAffirmationOperation,
   NoArgsProcedureMethod,
+  OptionalArgsProcedureMethod,
   PaginationOptions,
-  ProcedureMethod,
   RejectInstructionParams,
   ResultSet,
   SubCallback,
@@ -99,6 +99,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
           modifyInstructionAffirmation,
           { id, operation: InstructionAffirmationOperation.Reject, ...args },
         ],
+        optionalArgs: true,
       },
       context
     );
@@ -109,6 +110,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
           modifyInstructionAffirmation,
           { id, operation: InstructionAffirmationOperation.Affirm, ...args },
         ],
+        optionalArgs: true,
       },
       context
     );
@@ -119,6 +121,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
           modifyInstructionAffirmation,
           { id, operation: InstructionAffirmationOperation.Withdraw, ...args },
         ],
+        optionalArgs: true,
       },
       context
     );
@@ -477,17 +480,17 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    * @note reject on `SettleManual` behaves just like unauthorize
    */
 
-  public reject: ProcedureMethod<RejectInstructionParams, Instruction>;
+  public reject: OptionalArgsProcedureMethod<RejectInstructionParams, Instruction>;
 
   /**
    * Affirm this instruction (authorize)
    */
-  public affirm: ProcedureMethod<AffirmOrWithdrawInstructionParams, Instruction>;
+  public affirm: OptionalArgsProcedureMethod<AffirmOrWithdrawInstructionParams, Instruction>;
 
   /**
    * Withdraw affirmation from this instruction (unauthorize)
    */
-  public withdraw: ProcedureMethod<AffirmOrWithdrawInstructionParams, Instruction>;
+  public withdraw: OptionalArgsProcedureMethod<AffirmOrWithdrawInstructionParams, Instruction>;
 
   /**
    * Reschedules a failed Instruction to be tried again
