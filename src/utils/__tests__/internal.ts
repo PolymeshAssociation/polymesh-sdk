@@ -655,6 +655,10 @@ describe('isPrintableAscii', () => {
 
 describe('createProcedureMethod', () => {
   let context: Context;
+  let prepare: jest.Mock;
+  let checkAuthorization: jest.Mock;
+  let transformer: jest.Mock;
+  let fakeProcedure: () => Procedure<number, void>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -662,6 +666,14 @@ describe('createProcedureMethod', () => {
 
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
+    prepare = jest.fn();
+    checkAuthorization = jest.fn();
+    transformer = jest.fn();
+    fakeProcedure = (): Procedure<number, void> =>
+      ({
+        prepare,
+        checkAuthorization,
+      } as unknown as Procedure<number, void>);
   });
 
   afterEach(() => {
@@ -673,15 +685,6 @@ describe('createProcedureMethod', () => {
   });
 
   it('should return a ProcedureMethod object', async () => {
-    const prepare = jest.fn();
-    const checkAuthorization = jest.fn();
-    const transformer = jest.fn();
-    const fakeProcedure = (): Procedure<number, void> =>
-      ({
-        prepare,
-        checkAuthorization,
-      } as unknown as Procedure<number, void>);
-
     const method: ProcedureMethod<number, void> = createProcedureMethod(
       { getProcedureAndArgs: args => [fakeProcedure, args], transformer },
       context
@@ -698,15 +701,6 @@ describe('createProcedureMethod', () => {
   });
 
   it('should return a OptionalArgsProcedureMethod object', async () => {
-    const prepare = jest.fn();
-    const checkAuthorization = jest.fn();
-    const transformer = jest.fn();
-    const fakeProcedure = (): Procedure<number, void> =>
-      ({
-        prepare,
-        checkAuthorization,
-      } as unknown as Procedure<number, void>);
-
     const method: OptionalArgsProcedureMethod<number, void> = createProcedureMethod(
       {
         getProcedureAndArgs: (args?: number) => [fakeProcedure, args],
@@ -735,17 +729,14 @@ describe('createProcedureMethod', () => {
   });
 
   it('should return a NoArgsProcedureMethod object', async () => {
-    const prepare = jest.fn();
-    const checkAuthorization = jest.fn();
-    const transformer = jest.fn();
-    const fakeProcedure = (): Procedure<void, void> =>
+    const noArgsFakeProcedure = (): Procedure<void, void> =>
       ({
         prepare,
         checkAuthorization,
       } as unknown as Procedure<void, void>);
 
     const method = createProcedureMethod(
-      { getProcedureAndArgs: () => [fakeProcedure, undefined], transformer, voidArgs: true },
+      { getProcedureAndArgs: () => [noArgsFakeProcedure, undefined], transformer, voidArgs: true },
       context
     );
 
