@@ -30,6 +30,7 @@ import {
   CountryCode,
   ErrorCode,
   ModuleName,
+  OptionalArgsProcedureMethod,
   PermissionedAccount,
   ProcedureMethod,
   RemoveAssetStatParams,
@@ -685,6 +686,43 @@ describe('createProcedureMethod', () => {
       { getProcedureAndArgs: args => [fakeProcedure, args], transformer },
       context
     );
+
+    const procArgs = 1;
+    await method(procArgs);
+
+    expect(prepare).toHaveBeenCalledWith({ args: procArgs, transformer }, context, {});
+
+    await method.checkAuthorization(procArgs);
+
+    expect(checkAuthorization).toHaveBeenCalledWith(procArgs, context, {});
+  });
+
+  it('should return a OptionalArgsProcedureMethod object', async () => {
+    const prepare = jest.fn();
+    const checkAuthorization = jest.fn();
+    const transformer = jest.fn();
+    const fakeProcedure = (): Procedure<number, void> =>
+      ({
+        prepare,
+        checkAuthorization,
+      } as unknown as Procedure<number, void>);
+
+    const method: OptionalArgsProcedureMethod<number, void> = createProcedureMethod(
+      {
+        getProcedureAndArgs: (args?: number) => [fakeProcedure, args],
+        transformer,
+        optionalArgs: true,
+      },
+      context
+    );
+
+    await method();
+
+    expect(prepare).toHaveBeenCalledWith({ args: undefined, transformer }, context, {});
+
+    await method.checkAuthorization(undefined);
+
+    expect(checkAuthorization).toHaveBeenCalledWith(undefined, context, {});
 
     const procArgs = 1;
     await method(procArgs);
