@@ -54,6 +54,7 @@ import {
   ModuleName,
   NextKey,
   NoArgsProcedureMethod,
+  OptionalArgsProcedureMethod,
   PaginationOptions,
   PermissionedAccount,
   ProcedureAuthorizationStatus,
@@ -676,6 +677,50 @@ export function createProcedureMethod<
 ): NoArgsProcedureMethod<ProcedureReturnValue, ReturnValue>;
 export function createProcedureMethod<
   // eslint-disable-next-line @typescript-eslint/ban-types
+  MethodArgs,
+  ProcedureArgs,
+  ProcedureReturnValue,
+  Storage = Record<string, unknown>
+>(
+  args: {
+    getProcedureAndArgs: (
+      methodArgs?: MethodArgs
+    ) => [
+      (
+        | UnionOfProcedureFuncs<ProcedureArgs, ProcedureReturnValue, Storage>
+        | ProcedureFunc<ProcedureArgs, ProcedureReturnValue, Storage>
+      ),
+      ProcedureArgs
+    ];
+    optionalArgs: true;
+  },
+  context: Context
+): OptionalArgsProcedureMethod<MethodArgs, ProcedureReturnValue, ProcedureReturnValue>;
+export function createProcedureMethod<
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  MethodArgs,
+  ProcedureArgs,
+  ProcedureReturnValue,
+  ReturnValue,
+  Storage = Record<string, unknown>
+>(
+  args: {
+    getProcedureAndArgs: (
+      methodArgs: MethodArgs
+    ) => [
+      (
+        | UnionOfProcedureFuncs<ProcedureArgs, ProcedureReturnValue, Storage>
+        | ProcedureFunc<ProcedureArgs, ProcedureReturnValue, Storage>
+      ),
+      ProcedureArgs
+    ];
+    optionalArgs: true;
+    transformer: (value: ProcedureReturnValue) => ReturnValue | Promise<ReturnValue>;
+  },
+  context: Context
+): OptionalArgsProcedureMethod<MethodArgs, ProcedureReturnValue, ReturnValue>;
+export function createProcedureMethod<
+  // eslint-disable-next-line @typescript-eslint/ban-types
   MethodArgs extends {},
   ProcedureArgs,
   ProcedureReturnValue,
@@ -736,12 +781,14 @@ export function createProcedureMethod<
     ];
     transformer?: (value: ProcedureReturnValue) => ReturnValue | Promise<ReturnValue>;
     voidArgs?: true;
+    optionalArgs?: true;
   },
   context: Context
 ):
   | ProcedureMethod<MethodArgs, ProcedureReturnValue, ReturnValue>
+  | OptionalArgsProcedureMethod<MethodArgs, ProcedureReturnValue, ReturnValue>
   | NoArgsProcedureMethod<ProcedureReturnValue, ReturnValue> {
-  const { getProcedureAndArgs, transformer, voidArgs } = args;
+  const { getProcedureAndArgs, transformer, voidArgs, optionalArgs } = args;
 
   if (voidArgs) {
     const voidMethod = (
@@ -760,6 +807,27 @@ export function createProcedureMethod<
     };
 
     return voidMethod;
+  }
+
+  if (optionalArgs) {
+    const methodWithOptionalArgs = (
+      methodArgs?: MethodArgs,
+      opts: ProcedureOpts = {}
+    ): Promise<GenericPolymeshTransaction<ProcedureReturnValue, ReturnValue>> => {
+      const [proc, procArgs] = getProcedureAndArgs(methodArgs);
+      return proc().prepare({ args: procArgs, transformer }, context, opts);
+    };
+
+    methodWithOptionalArgs.checkAuthorization = async (
+      methodArgs?: MethodArgs,
+      opts: ProcedureOpts = {}
+    ): Promise<ProcedureAuthorizationStatus> => {
+      const [proc, procArgs] = getProcedureAndArgs(methodArgs);
+
+      return proc().checkAuthorization(procArgs, context, opts);
+    };
+
+    return methodWithOptionalArgs;
   }
 
   const method = (

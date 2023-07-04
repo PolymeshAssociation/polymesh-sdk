@@ -114,6 +114,26 @@ describe('modifyInstructionAffirmation procedure', () => {
     dsMockUtils.cleanup();
   });
 
+  it('should throw an error if the one or more portfolio params are not a part of the Instruction', () => {
+    const proc = procedureMockUtils.getInstance<
+      ModifyInstructionAffirmationParams,
+      Instruction,
+      Storage
+    >(mockContext, {
+      portfolios: [],
+      portfolioParams: ['someDid'],
+      senderLegAmount: legAmount,
+      totalLegAmount: legAmount,
+    });
+
+    return expect(
+      prepareModifyInstructionAffirmation.call(proc, {
+        id,
+        operation: InstructionAffirmationOperation.Affirm,
+      })
+    ).rejects.toThrow('Some of the portfolios are not a involved in this instruction');
+  });
+
   it('should throw an error if the signing Identity is not the custodian of any of the involved portfolios', () => {
     const rawAffirmationStatus = dsMockUtils.createMockAffirmationStatus('Affirmed');
     dsMockUtils.createQueryMock('settlement', 'userAffirmations', {
@@ -129,6 +149,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       Storage
     >(mockContext, {
       portfolios: [],
+      portfolioParams: [],
       senderLegAmount: legAmount,
       totalLegAmount: legAmount,
     });
@@ -156,6 +177,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       Storage
     >(mockContext, {
       portfolios: [portfolio, portfolio],
+      portfolioParams: [],
       senderLegAmount: legAmount,
       totalLegAmount: legAmount,
     });
@@ -183,6 +205,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       Storage
     >(mockContext, {
       portfolios: [portfolio, portfolio],
+      portfolioParams: [],
       senderLegAmount: legAmount,
       totalLegAmount: legAmount,
     });
@@ -217,6 +240,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       Storage
     >(mockContext, {
       portfolios: [portfolio, portfolio],
+      portfolioParams: [],
       senderLegAmount: legAmount,
       totalLegAmount: legAmount,
     });
@@ -244,6 +268,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       Storage
     >(mockContext, {
       portfolios: [portfolio, portfolio],
+      portfolioParams: [],
       senderLegAmount: legAmount,
       totalLegAmount: legAmount,
     });
@@ -291,6 +316,7 @@ describe('modifyInstructionAffirmation procedure', () => {
       Storage
     >(mockContext, {
       portfolios: [portfolio, portfolio],
+      portfolioParams: [],
       senderLegAmount: legAmount,
       totalLegAmount: legAmount,
     });
@@ -325,6 +351,7 @@ describe('modifyInstructionAffirmation procedure', () => {
         Storage
       >(mockContext, {
         portfolios: [from, to],
+        portfolioParams: [],
         senderLegAmount: legAmount,
         totalLegAmount: legAmount,
       });
@@ -346,6 +373,7 @@ describe('modifyInstructionAffirmation procedure', () => {
         Storage
       >(mockContext, {
         portfolios: [],
+        portfolioParams: [],
         senderLegAmount: legAmount,
         totalLegAmount: legAmount,
       });
@@ -420,7 +448,7 @@ describe('modifyInstructionAffirmation procedure', () => {
           },
         },
       });
-      const result = await boundFunc({
+      let result = await boundFunc({
         id: new BigNumber(1),
         operation: InstructionAffirmationOperation.Affirm,
       });
@@ -434,12 +462,52 @@ describe('modifyInstructionAffirmation procedure', () => {
             id: new BigNumber(1),
           }),
         ],
+        portfolioParams: [],
+        senderLegAmount: new BigNumber(1),
+        totalLegAmount: new BigNumber(2),
+      });
+
+      result = await boundFunc({
+        id: new BigNumber(1),
+        operation: InstructionAffirmationOperation.Affirm,
+        portfolios: [fromDid],
+      });
+
+      expect(result).toEqual({
+        portfolios: [expect.objectContaining({ owner: expect.objectContaining({ did: fromDid }) })],
+        portfolioParams: [fromDid],
+        senderLegAmount: new BigNumber(1),
+        totalLegAmount: new BigNumber(2),
+      });
+
+      result = await boundFunc({
+        id: new BigNumber(1),
+        operation: InstructionAffirmationOperation.Withdraw,
+        portfolios: [fromDid],
+      });
+
+      expect(result).toEqual({
+        portfolios: [expect.objectContaining({ owner: expect.objectContaining({ did: fromDid }) })],
+        portfolioParams: [fromDid],
+        senderLegAmount: new BigNumber(1),
+        totalLegAmount: new BigNumber(2),
+      });
+
+      result = await boundFunc({
+        id: new BigNumber(1),
+        operation: InstructionAffirmationOperation.Reject,
+        portfolio: fromDid,
+      });
+
+      expect(result).toEqual({
+        portfolios: [expect.objectContaining({ owner: expect.objectContaining({ did: fromDid }) })],
+        portfolioParams: [fromDid],
         senderLegAmount: new BigNumber(1),
         totalLegAmount: new BigNumber(2),
       });
     });
 
-    it('should return the portfolios  for which to modify affirmation status when there is no sender legs', async () => {
+    it('should return the portfolios for which to modify affirmation status when there is no sender legs', async () => {
       const proc = procedureMockUtils.getInstance<
         ModifyInstructionAffirmationParams,
         Instruction,
@@ -463,6 +531,7 @@ describe('modifyInstructionAffirmation procedure', () => {
 
       expect(result).toEqual({
         portfolios: [],
+        portfolioParams: [],
         senderLegAmount: new BigNumber(0),
         totalLegAmount: new BigNumber(1),
       });
