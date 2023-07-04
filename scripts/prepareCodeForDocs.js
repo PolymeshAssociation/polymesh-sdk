@@ -4,7 +4,7 @@
  *  (and we're using an older version), the way we're handling it is:
  *
  *   1. copy and rename the `src` directory
- *   2. replace all `ProcedureMethod` and `NoArgsProcedureMethod` declarations in the code to resemble a method signature
+ *   2. replace all `ProcedureMethod`, `OptionalArgsProcedureMethod` and `NoArgsProcedureMethod` declarations in the code to resemble a method signature
  *   3. add a `@note` tag explaining the special functionality of procedure methods
  *   4. add necessary imports to modified files
  *   5. run typedoc targeting the modified source code
@@ -17,14 +17,16 @@ const replace = require('replace-in-file');
 const path = require('path');
 
 const methodRegex =
-  /\*\/\n\s+?public ((?:abstract )?\w+?)!?: ((?:(:?NoArgs)|(?:CreateTransactionBatch))?ProcedureMethod(?:<[\w\W]+?>)?);/gs;
+  /\*\/\n\s+?public ((?:abstract )?\w+?)!?: ((?:(:?NoArgs|OptionalArgs)|(?:CreateTransactionBatch))?ProcedureMethod(?:<[\w\W]+?>)?);/gs;
 const importRegex = /(import .+? from '.+?';\n)\n/s;
 
 /**
- * Get type arguments from a `ProcedureMethod`, `NoArgsProcedureMethod` or `CreateTransactionBatchProcedureMethod`  type declaration
+ * Get type arguments from a `ProcedureMethod`, `OptionalArgsProcedureMethod`, `NoArgsProcedureMethod` or `CreateTransactionBatchProcedureMethod`  type declaration
  *
  * - calling the function with `ProcedureMethod<Foo, Bar, Baz>` will return `{ methodArgs: 'Foo', procedureReturnValue: 'Bar', returnValue: 'Baz', kind: 'ProcedureMethod' }`
  * - calling the function with `ProcedureMethod<Foo, Bar>` will return `{ methodArgs: 'Foo', procedureReturnValue: 'Bar', returnValue: undefined, kind: 'ProcedureMethod' }`
+ * - calling the function with `OptionalArgsProcedureMethod<Foo, Bar, Baz>` will return `{ methodArgs: 'Foo', procedureReturnValue: 'Bar', returnValue: 'Baz', kind: 'ProcedureMethod' }`
+ * - calling the function with `OptionalArgsProcedureMethod<Foo, Bar>` will return `{ methodArgs: 'Foo', procedureReturnValue: 'Bar', returnValue: undefined, kind: 'ProcedureMethod' }`
  * - calling the function with `NoArgsProcedureMethod<Foo, Bar>` will return `{ procedureReturnValue: 'Foo', returnValue: 'Bar', kind: 'NoArgsProcedureMethod' }`
  * - calling the function with `NoArgsProcedureMethod<Foo>` will return `{ procedureReturnValue: 'Foo', returnValue: undefined, kind: 'NoArgsProcedureMethod' }`
  * - calling the function with `CreateTransactionBatchProcedureMethod` will return  `{ methodArgs: 'CreateTransactionBatchParams<ReturnValues>', procedureReturnValue: 'ReturnValues', returnValue: undefined, kind: 'CreateTransactionBatchProcedureMethod' }`
@@ -54,7 +56,7 @@ const getTypeArgumentsFromProcedureMethod = typeString => {
     .getChildren(source)
     .map(child => child.getText(source));
 
-  if (kind === 'ProcedureMethod') {
+  if (kind === 'ProcedureMethod' || kind === 'OptionalArgsProcedureMethod') {
     return {
       methodArgs: first,
       procedureReturnValue: second,
@@ -79,9 +81,16 @@ const createReplacementSignature = (_, funcName, type) => {
   const returnValueString = `, ${returnValue || procedureReturnValue}`;
   const returnType = `Promise<GenericPolymeshTransaction<${procedureReturnValue}${returnValueString}>>`;
 
-  const args = `args: ${methodArgs}, `;
+  const args =
+    kind === 'OptionalArgsProcedureMethod' ? `args?: ${methodArgs}, ` : `args: ${methodArgs}, `;
   const funcArgs = `(${
-    ['ProcedureMethod', 'CreateTransactionBatchProcedureMethod'].includes(kind) ? args : ''
+    [
+      'ProcedureMethod',
+      'OptionalArgsProcedureMethod',
+      'CreateTransactionBatchProcedureMethod',
+    ].includes(kind)
+      ? args
+      : ''
   }opts?: ProcedureOpts)`;
   const name = funcName.replace('abstract ', '');
   const isAbstract = name !== funcName;
