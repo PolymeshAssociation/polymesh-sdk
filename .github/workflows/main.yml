@@ -38,7 +38,7 @@ jobs:
       - name: test
         env:
           NODE_OPTIONS: '--max-old-space-size=8192'
-        run: yarn test --runInBand --shard=${{ matrix.shard }}/${{ strategy.job-total }} --verbose
+        run: yarn test --runInBand --shard=${{ matrix.shard }}/${{ strategy.job-total }}
       - name: Rename coverage to shard coverage
         run: |
           mv coverage/clover.xml coverage/clover-${{matrix.shard}}.xml
