@@ -605,14 +605,11 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
         settlement.userAffirmations.entries(portfolioIdToMeshPortfolioId(portfolioId, context))
       );
 
-      console.log(flatten(auths).length);
-
       const uniqueEntries = uniqBy(
         flatten(auths).map(([key, status]) => ({ id: key.args[1], status })),
         ({ id, status }) => `${id.toString()}-${status.type}`
       );
 
-      console.log(uniqueEntries.length);
       const instructions = await settlement.instructionDetails.multi(
         uniqueEntries.map(({ id }) => id)
       );
@@ -630,11 +627,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       });
     });
 
-    console.log({
-      affirmed: affirmed.map(({ id }) => id.toString()),
-      pending: pending.map(({ id }) => id.toString()),
-      failed: failed.map(({ id }) => id.toString()),
-    });
     return {
       affirmed,
       pending,
