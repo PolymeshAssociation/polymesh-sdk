@@ -488,7 +488,7 @@ export type AddInstructionWithVenueIdParams = AddInstructionParams & {
   venueId: BigNumber;
 };
 
-export interface AffirmInstructionParams {
+export interface InstructionIdParams {
   id: BigNumber;
 }
 
@@ -514,7 +514,7 @@ export type AffirmOrWithdrawInstructionParams = {
   portfolios?: PortfolioLike[];
 };
 
-export type ModifyInstructionAffirmationParams = AffirmInstructionParams &
+export type ModifyInstructionAffirmationParams = InstructionIdParams &
   (
     | ({
         operation:
@@ -526,9 +526,12 @@ export type ModifyInstructionAffirmationParams = AffirmInstructionParams &
       } & RejectInstructionParams)
   );
 
-export interface ExecuteManualInstructionParams {
-  id: BigNumber;
-}
+export type ExecuteManualInstructionParams = InstructionIdParams & {
+  /**
+   * (optional) Set to `true` to skip affirmation check, useful for batch transactions
+   */
+  skipAffirmationCheck?: boolean;
+};
 
 export interface CreateVenueParams {
   description: string;
