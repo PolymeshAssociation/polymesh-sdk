@@ -23,6 +23,7 @@ import {
   DefaultPortfolio,
   ErrorCode,
   EventIdentifier,
+  ExecuteManualInstructionParams,
   InstructionAffirmationOperation,
   NoArgsProcedureMethod,
   NumberedPortfolio,
@@ -139,8 +140,8 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     this.executeManually = createProcedureMethod(
       {
-        getProcedureAndArgs: () => [executeManualInstruction, { id }],
-        voidArgs: true,
+        getProcedureAndArgs: args => [executeManualInstruction, { id, ...args }],
+        optionalArgs: true,
       },
       context
     );
@@ -505,7 +506,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
   /**
    * Executes an Instruction of type `SettleManual`
    */
-  public executeManually: NoArgsProcedureMethod<Instruction>;
+  public executeManually: OptionalArgsProcedureMethod<ExecuteManualInstructionParams, Instruction>;
 
   /**
    * @hidden
