@@ -47,7 +47,6 @@ describe('consumeAuthorizationRequests procedure', () => {
   let rawFalseBool: bool;
 
   let acceptAssetOwnershipTransferTransaction: jest.Mock;
-  let acceptPayingKeyTransaction: jest.Mock;
   let acceptBecomeAgentTransaction: jest.Mock;
   let acceptPortfolioCustodyTransaction: jest.Mock;
   let acceptTickerTransferTransaction: jest.Mock;
@@ -86,20 +85,6 @@ describe('consumeAuthorizationRequests procedure', () => {
         data: {
           type: AuthorizationType.TransferAssetOwnership,
           value: 'SOME_TICKER1',
-        },
-      },
-      {
-        authId: new BigNumber(2),
-        expiry: null,
-        target: entityMockUtils.getAccountInstance({ address: 'targetAddress2' }),
-        issuer: entityMockUtils.getIdentityInstance({ did: 'issuerDid2' }),
-        data: {
-          type: AuthorizationType.AddRelayerPayingKey,
-          value: {
-            beneficiary: entityMockUtils.getAccountInstance({ address: 'targetAddress2' }),
-            subsidizer: entityMockUtils.getAccountInstance({ address: 'payingKey' }),
-            allowance: new BigNumber(1000),
-          },
         },
       },
       {
@@ -171,7 +156,6 @@ describe('consumeAuthorizationRequests procedure', () => {
       'asset',
       'acceptAssetOwnershipTransfer'
     );
-    acceptPayingKeyTransaction = dsMockUtils.createTxMock('relayer', 'acceptPayingKey');
     acceptBecomeAgentTransaction = dsMockUtils.createTxMock('externalAgents', 'acceptBecomeAgent');
     acceptPortfolioCustodyTransaction = dsMockUtils.createTxMock(
       'portfolio',
@@ -204,16 +188,12 @@ describe('consumeAuthorizationRequests procedure', () => {
     expect(result).toEqual({
       transactions: [
         {
-          transaction: acceptPayingKeyTransaction,
+          transaction: acceptBecomeAgentTransaction,
           args: rawAuthIds[1],
         },
         {
-          transaction: acceptBecomeAgentTransaction,
-          args: rawAuthIds[2],
-        },
-        {
           transaction: acceptPortfolioCustodyTransaction,
-          args: rawAuthIds[3],
+          args: rawAuthIds[2],
         },
         {
           transaction: acceptAssetOwnershipTransferTransaction,
@@ -221,7 +201,7 @@ describe('consumeAuthorizationRequests procedure', () => {
         },
         {
           transaction: acceptTickerTransferTransaction,
-          args: rawAuthIds[4],
+          args: rawAuthIds[3],
         },
       ],
       resolver: undefined,
