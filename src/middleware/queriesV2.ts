@@ -83,7 +83,7 @@ export function heartbeatQuery(): QueryOptions {
  *
  * Get details about the SubQuery indexer
  */
-export function metadataQuery(): GraphqlQuery {
+export function metadataQuery(): QueryOptions {
   const query = gql`
     query Metadata {
       _metadata {
