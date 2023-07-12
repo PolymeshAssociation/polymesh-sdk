@@ -1,13 +1,25 @@
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import { AuthorizationRequest, Context, Entity, Identity, PolymeshTransaction } from '~/internal';
+import {
+  Account,
+  AuthorizationRequest,
+  Context,
+  Entity,
+  Identity,
+  PolymeshTransaction,
+} from '~/internal';
 import { dsMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Authorization, AuthorizationType, SignerType } from '~/types';
 
 jest.mock(
   '~/base/Procedure',
   require('~/testUtils/mocks/procedure').mockProcedureModule('~/base/Procedure')
+);
+
+jest.mock(
+  '~/api/entities/Account',
+  require('~/testUtils/mocks/entities').mockAccountModule('~/api/entities/Account')
 );
 
 describe('AuthorizationRequest class', () => {
@@ -199,6 +211,41 @@ describe('AuthorizationRequest class', () => {
 
       expect(tx).toBe(expectedTransaction);
     });
+
+    it('should prepare the consumeAddRelayerPayingKeyAuthorization procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const authorizationRequest = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          expiry: null,
+          target: new Identity({ did: 'someDid' }, context),
+          issuer: new Identity({ did: 'otherDid' }, context),
+          data: {
+            type: AuthorizationType.AddRelayerPayingKey,
+            value: {
+              beneficiary: new Account({ address: 'beneficiary' }, context),
+              subsidizer: new Account({ address: 'subsidizer' }, context),
+              allowance: new BigNumber(100),
+            },
+          },
+        },
+        context
+      );
+
+      const args = {
+        authRequest: authorizationRequest,
+        accept: true,
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await authorizationRequest.accept();
+
+      expect(tx).toBe(expectedTransaction);
+    });
   });
 
   describe('method: remove', () => {
@@ -300,42 +347,77 @@ describe('AuthorizationRequest class', () => {
 
       expect(tx).toBe(expectedTransaction);
     });
-  });
 
-  it('should prepare the consumeRotatePrimaryKeyToSecondary procedure with the correct arguments and context, and return the resulting transaction', async () => {
-    const authorizationRequest = new AuthorizationRequest(
-      {
-        authId: new BigNumber(1),
-        expiry: null,
-        target: new Identity({ did: 'someDid' }, context),
-        issuer: new Identity({ did: 'otherDid' }, context),
-        data: {
-          type: AuthorizationType.RotatePrimaryKeyToSecondary,
-          value: {
-            assets: null,
-            transactions: null,
-            transactionGroups: [],
-            portfolios: null,
+    it('should prepare the consumeRotatePrimaryKeyToSecondary procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const authorizationRequest = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          expiry: null,
+          target: new Identity({ did: 'someDid' }, context),
+          issuer: new Identity({ did: 'otherDid' }, context),
+          data: {
+            type: AuthorizationType.RotatePrimaryKeyToSecondary,
+            value: {
+              assets: null,
+              transactions: null,
+              transactionGroups: [],
+              portfolios: null,
+            },
           },
         },
-      },
-      context
-    );
+        context
+      );
 
-    const args = {
-      authRequest: authorizationRequest,
-      accept: false,
-    };
+      const args = {
+        authRequest: authorizationRequest,
+        accept: false,
+      };
 
-    const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
 
-    when(procedureMockUtils.getPrepareMock())
-      .calledWith({ args, transformer: undefined }, context, {})
-      .mockResolvedValue(expectedTransaction);
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
 
-    const tx = await authorizationRequest.remove();
+      const tx = await authorizationRequest.remove();
 
-    expect(tx).toBe(expectedTransaction);
+      expect(tx).toBe(expectedTransaction);
+    });
+
+    it('should prepare the consumeAddRelayerPayingKeyAuthorization procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const authorizationRequest = new AuthorizationRequest(
+        {
+          authId: new BigNumber(1),
+          expiry: null,
+          target: new Identity({ did: 'someDid' }, context),
+          issuer: new Identity({ did: 'otherDid' }, context),
+          data: {
+            type: AuthorizationType.AddRelayerPayingKey,
+            value: {
+              beneficiary: new Account({ address: 'beneficiary' }, context),
+              subsidizer: new Account({ address: 'subsidizer' }, context),
+              allowance: new BigNumber(100),
+            },
+          },
+        },
+        context
+      );
+
+      const args = {
+        authRequest: authorizationRequest,
+        accept: false,
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await authorizationRequest.remove();
+
+      expect(tx).toBe(expectedTransaction);
+    });
   });
 
   describe('method: isExpired', () => {

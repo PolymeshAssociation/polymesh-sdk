@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { ApolloClient, NormalizedCacheObject, QueryOptions } from '@apollo/client';
 import { ApiPromise } from '@polkadot/api';
 import { DecoratedRpc } from '@polkadot/api/types';
 import { RpcInterface } from '@polkadot/rpc-core/types';
@@ -145,8 +146,6 @@ import {
 } from '@polkadot/types/types';
 import { hexToU8a, stringToU8a } from '@polkadot/util';
 import { SigningManager } from '@polymeshassociation/signing-manager-types';
-import { NormalizedCacheObject } from 'apollo-cache-inmemory';
-import ApolloClient from 'apollo-client';
 import BigNumber from 'bignumber.js';
 import { EventEmitter } from 'events';
 import { when } from 'jest-when';
@@ -186,7 +185,7 @@ import {
   TxTags,
   UnsubCallback,
 } from '~/types';
-import { Consts, Extrinsics, GraphqlQuery, PolymeshTx, Queries, Rpcs } from '~/types/internal';
+import { Consts, Extrinsics, PolymeshTx, Queries, Rpcs } from '~/types/internal';
 import { ArgsType, Mutable, tuple } from '~/types/utils';
 import { STATE_RUNTIME_VERSION_CALL, SYSTEM_VERSION_RPC_CALL } from '~/utils/constants';
 
@@ -1217,7 +1216,7 @@ export function createTxMock<
  * @param query - apollo document node
  * @param returnValue
  */
-export function createApolloQueryMock(query: GraphqlQuery<any>, returnData: unknown): jest.Mock {
+export function createApolloQueryMock(query: QueryOptions<any>, returnData: unknown): jest.Mock {
   const { query: mock } = mockInstanceContainer.apolloInstance;
 
   when(mock)
@@ -1236,7 +1235,7 @@ export function createApolloQueryMock(query: GraphqlQuery<any>, returnData: unkn
  * @param query - apollo document node
  * @param returnValue
  */
-export function createApolloV2QueryMock(query: GraphqlQuery<any>, returnData: unknown): jest.Mock {
+export function createApolloV2QueryMock(query: QueryOptions<any>, returnData: unknown): jest.Mock {
   const { query: mock } = mockInstanceContainer.apolloInstanceV2;
 
   when(mock)
@@ -1253,7 +1252,7 @@ export function createApolloV2QueryMock(query: GraphqlQuery<any>, returnData: un
  * @hidden
  */
 function mockQueries(
-  queries: { query: GraphqlQuery<any>; returnData: unknown }[],
+  queries: { query: QueryOptions<any>; returnData: unknown }[],
   instance: Mocked<Mutable<ApolloClient<NormalizedCacheObject>>>
 ): jest.Mock {
   const { query: mock } = instance;
@@ -1276,7 +1275,7 @@ function mockQueries(
  * @param queries - query and returnData for each mocked query
  */
 export function createApolloMultipleQueriesMock(
-  queries: { query: GraphqlQuery<any>; returnData: unknown }[]
+  queries: { query: QueryOptions<any>; returnData: unknown }[]
 ): jest.Mock {
   const instance = mockInstanceContainer.apolloInstance;
 
@@ -1290,7 +1289,7 @@ export function createApolloMultipleQueriesMock(
  * @param queries - query and returnData for each mocked query
  */
 export function createApolloMultipleV2QueriesMock(
-  queries: { query: GraphqlQuery<any>; returnData: unknown }[]
+  queries: { query: QueryOptions<any>; returnData: unknown }[]
 ): jest.Mock {
   const instance = mockInstanceContainer.apolloInstanceV2;
 
