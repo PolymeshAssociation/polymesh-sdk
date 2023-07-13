@@ -135,6 +135,7 @@ describe('executeManualInstruction procedure', () => {
     return expect(
       prepareExecuteManualInstruction.call(proc, {
         id,
+        skipAffirmationCheck: false,
       })
     ).rejects.toThrow('The signing identity is not involved in this Instruction');
   });
@@ -158,8 +159,33 @@ describe('executeManualInstruction procedure', () => {
     return expect(
       prepareExecuteManualInstruction.call(proc, {
         id,
+        skipAffirmationCheck: false,
       })
     ).rejects.toThrow('Instruction needs to be affirmed by all parties before it can be executed');
+  });
+
+  it('should not throw an error if there are some pending affirmations but skipAffirmationCheck is `true`', () => {
+    dsMockUtils.createQueryMock('settlement', 'instructionAffirmsPending', {
+      returnValue: dsMockUtils.createMockU64(new BigNumber(1)),
+    });
+
+    const proc = procedureMockUtils.getInstance<
+      ExecuteManualInstructionParams,
+      Instruction,
+      Storage
+    >(mockContext, {
+      portfolios: [portfolio, portfolio],
+      totalLegAmount: legAmount,
+      instructionDetails,
+      signerDid: did,
+    });
+
+    return expect(
+      prepareExecuteManualInstruction.call(proc, {
+        id,
+        skipAffirmationCheck: true,
+      })
+    ).resolves.not.toThrow();
   });
 
   it('should return an execute manual instruction transaction spec', async () => {
@@ -181,6 +207,7 @@ describe('executeManualInstruction procedure', () => {
 
     let result = await prepareExecuteManualInstruction.call(proc, {
       id,
+      skipAffirmationCheck: false,
       operation: InstructionAffirmationOperation.Affirm,
     });
 
@@ -202,6 +229,7 @@ describe('executeManualInstruction procedure', () => {
 
     result = await prepareExecuteManualInstruction.call(proc, {
       id,
+      skipAffirmationCheck: false,
       operation: InstructionAffirmationOperation.Affirm,
     });
 
@@ -266,6 +294,7 @@ describe('executeManualInstruction procedure', () => {
       });
       const result = await boundFunc({
         id: new BigNumber(1),
+        skipAffirmationCheck: false,
       });
 
       expect(result).toEqual({
@@ -299,6 +328,7 @@ describe('executeManualInstruction procedure', () => {
 
       const result = await boundFunc({
         id: new BigNumber(1),
+        skipAffirmationCheck: false,
       });
 
       expect(result).toEqual({

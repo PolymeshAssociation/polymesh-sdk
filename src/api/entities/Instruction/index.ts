@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import P from 'bluebird';
 
 import { executeManualInstruction } from '~/api/procedures/executeManualInstruction';
 import {
@@ -18,11 +19,17 @@ import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Query as QueryV2 } from '~/middleware/typesV2';
 import { InstructionStatus as MeshInstructionStatus } from '~/polkadot/polymesh';
 import {
+  AffirmOrWithdrawInstructionParams,
+  DefaultPortfolio,
   ErrorCode,
   EventIdentifier,
+  ExecuteManualInstructionParams,
   InstructionAffirmationOperation,
   NoArgsProcedureMethod,
+  NumberedPortfolio,
+  OptionalArgsProcedureMethod,
   PaginationOptions,
+  RejectInstructionParams,
   ResultSet,
   SubCallback,
   UnsubCallback,
@@ -92,33 +99,33 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     this.reject = createProcedureMethod(
       {
-        getProcedureAndArgs: () => [
+        getProcedureAndArgs: args => [
           modifyInstructionAffirmation,
-          { id, operation: InstructionAffirmationOperation.Reject },
+          { id, operation: InstructionAffirmationOperation.Reject, ...args },
         ],
-        voidArgs: true,
+        optionalArgs: true,
       },
       context
     );
 
     this.affirm = createProcedureMethod(
       {
-        getProcedureAndArgs: () => [
+        getProcedureAndArgs: args => [
           modifyInstructionAffirmation,
-          { id, operation: InstructionAffirmationOperation.Affirm },
+          { id, operation: InstructionAffirmationOperation.Affirm, ...args },
         ],
-        voidArgs: true,
+        optionalArgs: true,
       },
       context
     );
 
     this.withdraw = createProcedureMethod(
       {
-        getProcedureAndArgs: () => [
+        getProcedureAndArgs: args => [
           modifyInstructionAffirmation,
-          { id, operation: InstructionAffirmationOperation.Withdraw },
+          { id, operation: InstructionAffirmationOperation.Withdraw, ...args },
         ],
-        voidArgs: true,
+        optionalArgs: true,
       },
       context
     );
@@ -133,8 +140,8 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     this.executeManually = createProcedureMethod(
       {
-        getProcedureAndArgs: () => [executeManualInstruction, { id }],
-        voidArgs: true,
+        getProcedureAndArgs: args => [executeManualInstruction, { id, ...args }],
+        optionalArgs: true,
       },
       context
     );
@@ -477,18 +484,17 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    * @note reject on `SettleManual` behaves just like unauthorize
    */
 
-  public reject: NoArgsProcedureMethod<Instruction>;
+  public reject: OptionalArgsProcedureMethod<RejectInstructionParams, Instruction>;
 
   /**
    * Affirm this instruction (authorize)
    */
-
-  public affirm: NoArgsProcedureMethod<Instruction>;
+  public affirm: OptionalArgsProcedureMethod<AffirmOrWithdrawInstructionParams, Instruction>;
 
   /**
    * Withdraw affirmation from this instruction (unauthorize)
    */
-  public withdraw: NoArgsProcedureMethod<Instruction>;
+  public withdraw: OptionalArgsProcedureMethod<AffirmOrWithdrawInstructionParams, Instruction>;
 
   /**
    * Reschedules a failed Instruction to be tried again
@@ -500,7 +506,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
   /**
    * Executes an Instruction of type `SettleManual`
    */
-  public executeManually: NoArgsProcedureMethod<Instruction>;
+  public executeManually: OptionalArgsProcedureMethod<ExecuteManualInstructionParams, Instruction>;
 
   /**
    * @hidden
@@ -561,5 +567,50 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    */
   public toHuman(): string {
     return this.id.toString();
+  }
+
+  /**
+   * Retrieve all the involved portfolios in this Instruction where the given identity is a custodian of
+   */
+  public async getInvolvedPortfolios(args: {
+    did: string;
+  }): Promise<(DefaultPortfolio | NumberedPortfolio)[]> {
+    const { did } = args;
+
+    const { data: legs } = await this.getLegs();
+
+    const assemblePortfolios = async (
+      involvedPortfolios: (DefaultPortfolio | NumberedPortfolio)[],
+      from: DefaultPortfolio | NumberedPortfolio,
+      to: DefaultPortfolio | NumberedPortfolio
+    ): Promise<(DefaultPortfolio | NumberedPortfolio)[]> => {
+      const [fromExists, toExists] = await Promise.all([from.exists(), to.exists()]);
+
+      const checkCustody = async (
+        legPortfolio: DefaultPortfolio | NumberedPortfolio,
+        exists: boolean
+      ): Promise<void> => {
+        if (exists) {
+          const isCustodied = await legPortfolio.isCustodiedBy({ identity: did });
+          if (isCustodied) {
+            involvedPortfolios.push(legPortfolio);
+          }
+        } else if (legPortfolio.owner.did === did) {
+          involvedPortfolios.push(legPortfolio);
+        }
+      };
+
+      await Promise.all([checkCustody(from, fromExists), checkCustody(to, toExists)]);
+
+      return involvedPortfolios;
+    };
+
+    const portfolios = await P.reduce<Leg, (DefaultPortfolio | NumberedPortfolio)[]>(
+      legs,
+      async (result, { from, to }) => assemblePortfolios(result, from, to),
+      []
+    );
+
+    return portfolios;
   }
 }

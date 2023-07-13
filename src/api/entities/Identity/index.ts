@@ -6,7 +6,7 @@ import {
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
-import { chunk, flatten, uniqBy } from 'lodash';
+import { chunk, differenceWith, flatten, intersectionWith, uniqBy } from 'lodash';
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import {
@@ -29,10 +29,14 @@ import { Query } from '~/middleware/types';
 import { AssetHoldersOrderBy, Query as QueryV2 } from '~/middleware/typesV2';
 import {
   CheckRolesResult,
+  DefaultPortfolio,
   DistributionWithDetails,
   ErrorCode,
   GroupedInstructions,
+  GroupedInvolvedInstructions,
   HistoricInstruction,
+  InstructionsByStatus,
+  NumberedPortfolio,
   Order,
   PaginationOptions,
   PermissionedAccount,
@@ -545,20 +549,11 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   }
 
   /**
-   * Retrieve all Instructions where this Identity is a participant,
+   * Retrieve all Instructions where this Identity is a custodian of one or more portfolios in the legs,
    *   grouped by status
    */
   public async getInstructions(): Promise<GroupedInstructions> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { settlement },
-        },
-      },
-      did,
-      portfolios,
-      context,
-    } = this;
+    const { did, portfolios } = this;
 
     const ownedPortfolios = await portfolios.getPortfolios();
 
@@ -569,15 +564,41 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const allPortfolios = [...ownedCustodiedPortfolios, ...custodiedPortfolios];
 
-    const portfolioIds = allPortfolios.map(portfolioLikeToPortfolioId);
+    const { affirmed, pending, failed } = await this.assembleGroupedInstructions(allPortfolios);
 
-    await P.map(portfolioIds, portfolioId => assertPortfolioExists(portfolioId, context));
+    return {
+      affirmed: differenceWith(affirmed, pending, (obj1, obj2) => obj1.id.eq(obj2.id)),
+      pending,
+      failed,
+    };
+  }
 
-    const portfolioIdChunks = chunk(portfolioIds, MAX_CONCURRENT_REQUESTS);
+  /**
+   * Get all the instructions grouped by status, where given portfolios are involved
+   *
+   * @hidden
+   */
+  private async assembleGroupedInstructions(
+    portfolios: (DefaultPortfolio | NumberedPortfolio)[]
+  ): Promise<GroupedInstructions> {
+    const {
+      context: {
+        polymeshApi: {
+          query: { settlement },
+        },
+      },
+      context,
+    } = this;
 
     const affirmed: Instruction[] = [];
     const pending: Instruction[] = [];
     const failed: Instruction[] = [];
+
+    const portfolioIds = portfolios.map(portfolioLikeToPortfolioId);
+
+    await P.map(portfolioIds, portfolioId => assertPortfolioExists(portfolioId, context));
+
+    const portfolioIdChunks = chunk(portfolioIds, MAX_CONCURRENT_REQUESTS);
 
     await P.each(portfolioIdChunks, async portfolioIdChunk => {
       const auths = await P.map(portfolioIdChunk, portfolioId =>
@@ -586,8 +607,9 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
       const uniqueEntries = uniqBy(
         flatten(auths).map(([key, status]) => ({ id: key.args[1], status })),
-        ({ id }) => id.toNumber()
+        ({ id, status }) => `${id.toString()}-${status.type}`
       );
+
       const instructions = await settlement.instructionDetails.multi(
         uniqueEntries.map(({ id }) => id)
       );
@@ -609,6 +631,64 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       affirmed,
       pending,
       failed,
+    };
+  }
+
+  /**
+   * Retrieve all Instructions where this Identity is a participant (owner/custodian),
+   *   grouped by the role of the Identity and Instruction status
+   */
+  public async getInvolvedInstructions(): Promise<GroupedInvolvedInstructions> {
+    const { portfolios, did } = this;
+
+    const [allPortfolios, { data: custodiedPortfolios }] = await Promise.all([
+      portfolios.getPortfolios(),
+      portfolios.getCustodiedPortfolios(),
+    ]);
+
+    const ownedPortfolios: (DefaultPortfolio | NumberedPortfolio)[] = [];
+    const ownedCustodiedPortfolios: (DefaultPortfolio | NumberedPortfolio)[] = [];
+    const custodies = await Promise.all(
+      allPortfolios.map(portfolio => portfolio.isCustodiedBy({ identity: did }))
+    );
+
+    custodies.forEach((custody, index) => {
+      if (custody) {
+        ownedCustodiedPortfolios.push(allPortfolios[index]);
+      } else {
+        ownedPortfolios.push(allPortfolios[index]);
+      }
+    });
+
+    /**
+     * This gathers all the partiallyAffirmed Instructions as the intersection of pending + affirmed.
+     * These partiallyAffirmed ones, are then removed from the affirmed and pending to get the unique sets.
+     */
+    const assembleResult = ({
+      affirmed,
+      pending,
+      failed,
+    }: GroupedInstructions): InstructionsByStatus => {
+      const partiallyAffirmed = intersectionWith(affirmed, pending, (obj1, obj2) =>
+        obj1.id.eq(obj2.id)
+      );
+
+      return {
+        affirmed: differenceWith(affirmed, partiallyAffirmed, (obj1, obj2) => obj1.id.eq(obj2.id)),
+        pending: differenceWith(pending, partiallyAffirmed, (obj1, obj2) => obj1.id.eq(obj2.id)),
+        partiallyAffirmed,
+        failed,
+      };
+    };
+
+    const [owned, custodied] = await Promise.all([
+      this.assembleGroupedInstructions(ownedPortfolios),
+      this.assembleGroupedInstructions([...ownedCustodiedPortfolios, ...custodiedPortfolios]),
+    ]);
+
+    return {
+      owned: assembleResult(owned),
+      custodied: assembleResult(custodied),
     };
   }
 

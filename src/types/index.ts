@@ -1515,6 +1515,20 @@ export interface ProcedureMethod<
   ) => Promise<ProcedureAuthorizationStatus>;
 }
 
+export interface OptionalArgsProcedureMethod<
+  MethodArgs,
+  ProcedureReturnValue,
+  ReturnValue = ProcedureReturnValue
+> {
+  (args?: MethodArgs, opts?: ProcedureOpts): Promise<
+    GenericPolymeshTransaction<ProcedureReturnValue, ReturnValue>
+  >;
+  checkAuthorization: (
+    args?: MethodArgs,
+    opts?: ProcedureOpts
+  ) => Promise<ProcedureAuthorizationStatus>;
+}
+
 export interface NoArgsProcedureMethod<ProcedureReturnValue, ReturnValue = ProcedureReturnValue> {
   (opts?: ProcedureOpts): Promise<GenericPolymeshTransaction<ProcedureReturnValue, ReturnValue>>;
   checkAuthorization: (opts?: ProcedureOpts) => Promise<ProcedureAuthorizationStatus>;
@@ -1535,6 +1549,24 @@ export interface GroupedInstructions {
    *   might also belong in the `affirmed` group, but it will only be included in this one
    */
   failed: Instruction[];
+}
+
+export type InstructionsByStatus = GroupedInstructions & {
+  /**
+   * Instructions that have one or more legs already affirmed, but still need to be one or more legs to be affirmed/rejected by the Identity
+   */
+  partiallyAffirmed: Instruction[];
+};
+
+export interface GroupedInvolvedInstructions {
+  /**
+   * Instructions where the Identity is the custodian of the leg portfolios
+   */
+  custodied: GroupedInstructions;
+  /**
+   * Instructions where the Identity is the owner of the leg portfolios
+   */
+  owned: Omit<GroupedInstructions, 'affirmed'>;
 }
 
 export interface AssetWithGroup {

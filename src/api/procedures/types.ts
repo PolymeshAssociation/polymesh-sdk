@@ -488,7 +488,7 @@ export type AddInstructionWithVenueIdParams = AddInstructionParams & {
   venueId: BigNumber;
 };
 
-export interface AffirmInstructionParams {
+export interface InstructionIdParams {
   id: BigNumber;
 }
 
@@ -498,14 +498,40 @@ export enum InstructionAffirmationOperation {
   Reject = 'Reject',
 }
 
-export interface ModifyInstructionAffirmationParams {
-  id: BigNumber;
-  operation: InstructionAffirmationOperation;
-}
+export type RejectInstructionParams = {
+  /**
+   * (optional) Portfolio that the signer controls and wants to reject the instruction
+   */
+  portfolio?: PortfolioLike;
+};
 
-export interface ExecuteManualInstructionParams {
-  id: BigNumber;
-}
+export type AffirmOrWithdrawInstructionParams = {
+  /**
+   * (optional) Portfolios that the signer controls and wants to affirm the instruction or withdraw affirmation
+   *
+   * @note if empty, all the legs containing any custodied Portfolios of the signer will be affirmed/affirmation will be withdrawn, based on the operation.
+   */
+  portfolios?: PortfolioLike[];
+};
+
+export type ModifyInstructionAffirmationParams = InstructionIdParams &
+  (
+    | ({
+        operation:
+          | InstructionAffirmationOperation.Affirm
+          | InstructionAffirmationOperation.Withdraw;
+      } & AffirmOrWithdrawInstructionParams)
+    | ({
+        operation: InstructionAffirmationOperation.Reject;
+      } & RejectInstructionParams)
+  );
+
+export type ExecuteManualInstructionParams = InstructionIdParams & {
+  /**
+   * (optional) Set to `true` to skip affirmation check, useful for batch transactions
+   */
+  skipAffirmationCheck?: boolean;
+};
 
 export interface CreateVenueParams {
   description: string;

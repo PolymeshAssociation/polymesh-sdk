@@ -1,3 +1,4 @@
+import { QueryOptions } from '@apollo/client';
 import gql from 'graphql-tag';
 
 import {
@@ -20,7 +21,6 @@ import {
   QueryTransactionByHashArgs,
   QueryTransactionsArgs,
 } from '~/middleware/types';
-import { GraphqlQuery } from '~/types/internal';
 
 /**
  * @hidden
@@ -29,7 +29,7 @@ import { GraphqlQuery } from '~/types/internal';
  */
 export function proposalVotes(
   variables: QueryProposalVotesArgs
-): GraphqlQuery<QueryProposalVotesArgs> {
+): QueryOptions<QueryProposalVotesArgs> {
   const query = gql`
     query ProposalVotesQuery(
       $pipId: Int!
@@ -61,7 +61,7 @@ export function proposalVotes(
  */
 export function didsWithClaims(
   variables: QueryDidsWithClaimsArgs
-): GraphqlQuery<QueryDidsWithClaimsArgs> {
+): QueryOptions<QueryDidsWithClaimsArgs> {
   const query = gql`
     query DidsWithClaimsQuery(
       $dids: [String!]
@@ -116,7 +116,7 @@ export function didsWithClaims(
  */
 export function eventByIndexedArgs(
   variables: QueryEventsByIndexedArgsArgs
-): GraphqlQuery<QueryEventsByIndexedArgsArgs> {
+): QueryOptions<QueryEventsByIndexedArgsArgs> {
   const query = gql`
     query EventByIndexedArgsQuery(
       $moduleId: ModuleIdEnum!
@@ -156,7 +156,7 @@ export function eventByIndexedArgs(
  */
 export function eventsByIndexedArgs(
   variables: QueryEventsByIndexedArgsArgs
-): GraphqlQuery<QueryEventsByIndexedArgsArgs> {
+): QueryOptions<QueryEventsByIndexedArgsArgs> {
   const query = gql`
     query EventsByIndexedArgsQuery(
       $moduleId: ModuleIdEnum!
@@ -200,7 +200,7 @@ export function eventsByIndexedArgs(
  */
 export function transactionByHash(
   variables: QueryTransactionByHashArgs
-): GraphqlQuery<QueryTransactionByHashArgs> {
+): QueryOptions<QueryTransactionByHashArgs> {
   const query = gql`
     query TransactionByHashQuery($transactionHash: String) {
       transactionByHash(transactionHash: $transactionHash) {
@@ -232,9 +232,7 @@ export function transactionByHash(
  *
  * Get all proposals optionally filtered by pipId, proposer or state
  */
-export function proposals(
-  variables?: QueryProposalsArgs
-): GraphqlQuery<QueryProposalsArgs | undefined> {
+export function proposals(variables?: QueryProposalsArgs): QueryOptions<QueryProposalsArgs> {
   const query = gql`
     query ProposalsQuery(
       $pipIds: [Int!]
@@ -282,7 +280,7 @@ export function proposals(
  */
 export function tokensByTrustedClaimIssuer(
   variables: QueryTokensByTrustedClaimIssuerArgs
-): GraphqlQuery<QueryTokensByTrustedClaimIssuerArgs> {
+): QueryOptions<QueryTokensByTrustedClaimIssuerArgs> {
   const query = gql`
     query TokensByTrustedClaimIssuerQuery($claimIssuerDid: String!) {
       tokensByTrustedClaimIssuer(claimIssuerDid: $claimIssuerDid)
@@ -302,7 +300,7 @@ export function tokensByTrustedClaimIssuer(
  */
 export function tokensHeldByDid(
   variables: QueryTokensHeldByDidArgs
-): GraphqlQuery<QueryTokensHeldByDidArgs> {
+): QueryOptions<QueryTokensHeldByDidArgs> {
   const query = gql`
     query TokensHeldByDidQuery($did: String!, $count: Int, $skip: Int, $order: Order) {
       tokensHeldByDid(did: $did, count: $count, skip: $skip, order: $order) {
@@ -325,7 +323,7 @@ export function tokensHeldByDid(
  */
 export function transactions(
   variables?: QueryTransactionsArgs
-): GraphqlQuery<QueryTransactionsArgs | undefined> {
+): QueryOptions<QueryTransactionsArgs> {
   const query = gql`
     query TransactionsQuery(
       $block_id: Int
@@ -380,7 +378,7 @@ export function transactions(
  */
 export function scopesByIdentity(
   variables: QueryScopesByIdentityArgs
-): GraphqlQuery<QueryScopesByIdentityArgs> {
+): QueryOptions<QueryScopesByIdentityArgs> {
   const query = gql`
     query ScopesByIdentityQuery($did: String!) {
       scopesByIdentity(did: $did) {
@@ -406,7 +404,7 @@ export function scopesByIdentity(
  */
 export function issuerDidsWithClaimsByTarget(
   variables: QueryIssuerDidsWithClaimsByTargetArgs
-): GraphqlQuery<QueryIssuerDidsWithClaimsByTargetArgs> {
+): QueryOptions<QueryIssuerDidsWithClaimsByTargetArgs> {
   const query = gql`
     query IssuerDidsWithClaimsByTargetQuery(
       $target: String!
@@ -457,7 +455,7 @@ export function issuerDidsWithClaimsByTarget(
  *
  * Get a proposal by its pipId
  */
-export function proposal(variables: QueryProposalArgs): GraphqlQuery<QueryProposalArgs> {
+export function proposal(variables: QueryProposalArgs): QueryOptions<QueryProposalArgs> {
   const query = gql`
     query ProposalQuery($pipId: Int!) {
       proposal(pipId: $pipId) {
@@ -489,7 +487,7 @@ export function proposal(variables: QueryProposalArgs): GraphqlQuery<QueryPropos
  *
  * Fetch the number of the latest block that has been processed by the middleware
  */
-export function latestProcessedBlock(): GraphqlQuery {
+export function latestProcessedBlock(): QueryOptions {
   const query = gql`
     query {
       latestBlock {
@@ -509,7 +507,7 @@ export function latestProcessedBlock(): GraphqlQuery {
  *
  * Middleware heartbeat
  */
-export function heartbeat(): GraphqlQuery {
+export function heartbeat(): QueryOptions {
   const query = gql`
     query {
       heartbeat
@@ -529,7 +527,7 @@ export function heartbeat(): GraphqlQuery {
  */
 export function eventByAddedTrustedClaimIssuer(
   variables: QueryEventByAddedTrustedClaimIssuerArgs
-): GraphqlQuery<QueryEventByAddedTrustedClaimIssuerArgs> {
+): QueryOptions<QueryEventByAddedTrustedClaimIssuerArgs> {
   const query = gql`
     query EventByAddedTrustedClaimIssuerQuery($ticker: String!, $identityId: String!) {
       eventByAddedTrustedClaimIssuer(ticker: $ticker, identityId: $identityId) {
@@ -555,7 +553,7 @@ export function eventByAddedTrustedClaimIssuer(
  *
  * Get Settlements where a Portfolio is involved
  */
-export function settlements(variables: QuerySettlementsArgs): GraphqlQuery<QuerySettlementsArgs> {
+export function settlements(variables: QuerySettlementsArgs): QueryOptions<QuerySettlementsArgs> {
   const query = gql`
     query SettlementsQuery(
       $identityId: String!
@@ -607,7 +605,7 @@ export function settlements(variables: QuerySettlementsArgs): GraphqlQuery<Query
  *
  * Get all investments for a given offering
  */
-export function investments(variables: QueryInvestmentsArgs): GraphqlQuery<QueryInvestmentsArgs> {
+export function investments(variables: QueryInvestmentsArgs): QueryOptions<QueryInvestmentsArgs> {
   const query = gql`
     query InvestmentsQuery($stoId: Int!, $ticker: String!, $count: Int, $skip: Int) {
       investments(stoId: $stoId, ticker: $ticker, count: $count, skip: $skip) {
@@ -634,7 +632,7 @@ export function investments(variables: QueryInvestmentsArgs): GraphqlQuery<Query
  */
 export function getWithholdingTaxesOfCa(
   variables: QueryGetWithholdingTaxesOfCaArgs
-): GraphqlQuery<QueryGetWithholdingTaxesOfCaArgs> {
+): QueryOptions<QueryGetWithholdingTaxesOfCaArgs> {
   const query = gql`
     query GetWithholdingTaxesOfCAQuery($CAId: CAId!, $fromDate: DateTime, $toDate: DateTime) {
       getWithholdingTaxesOfCA(CAId: $CAId, fromDate: $fromDate, toDate: $toDate) {
@@ -656,7 +654,7 @@ export function getWithholdingTaxesOfCa(
  */
 export function getHistoryOfPaymentEventsForCa(
   variables: QueryGetHistoryOfPaymentEventsForCaArgs
-): GraphqlQuery<QueryGetHistoryOfPaymentEventsForCaArgs> {
+): QueryOptions<QueryGetHistoryOfPaymentEventsForCaArgs> {
   const query = gql`
     query GetHistoryOfPaymentEventsForCAQuery(
       $CAId: CAId!
@@ -700,7 +698,7 @@ export function getHistoryOfPaymentEventsForCa(
  */
 export function tickerExternalAgentHistory(
   variables: QueryTickerExternalAgentHistoryArgs
-): GraphqlQuery<QueryTickerExternalAgentHistoryArgs> {
+): QueryOptions<QueryTickerExternalAgentHistoryArgs> {
   const query = gql`
     query TickerExternalAgentHistoryQuery($ticker: String!) {
       tickerExternalAgentHistory(ticker: $ticker) {
@@ -727,7 +725,7 @@ export function tickerExternalAgentHistory(
  */
 export function tickerExternalAgentActions(
   variables: QueryTickerExternalAgentActionsArgs
-): GraphqlQuery<QueryTickerExternalAgentActionsArgs> {
+): QueryOptions<QueryTickerExternalAgentActionsArgs> {
   const query = gql`
     query TickerExternalAgentActionsQuery(
       $ticker: String!

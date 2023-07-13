@@ -14,6 +14,10 @@ export {
   ConsumeAddMultiSigSignerAuthorizationParams,
 } from '~/api/procedures/consumeAddMultiSigSignerAuthorization';
 export {
+  consumeAddRelayerPayingKeyAuthorization,
+  ConsumeAddRelayerPayingKeyAuthorizationParams,
+} from '~/api/procedures/consumeAddRelayerPayingKeyAuthorization';
+export {
   consumeJoinOrRotateAuthorization,
   ConsumeJoinOrRotateAuthorizationParams,
 } from '~/api/procedures/consumeJoinOrRotateAuthorization';
