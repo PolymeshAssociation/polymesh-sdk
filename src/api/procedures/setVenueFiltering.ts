@@ -18,15 +18,18 @@ export async function prepareVenueFiltering(
   this: Procedure<Params, void>,
   args: Params
 ): Promise<BatchTransactionSpec<void, unknown[][]>> {
-  const { context } = this;
   const {
-    polymeshApi: { tx, query },
-  } = context;
+    context: {
+      polymeshApi: { tx, query },
+    },
+    context,
+  } = this;
+
   const { ticker, enabled, allowedVenues, disallowedVenues } = args;
   const rawTicker = stringToTicker(ticker, context);
   const transactions = [];
 
-  const isEnabled = await query.settlement.venueFiltering(ticker);
+  const isEnabled = await query.settlement.venueFiltering(rawTicker);
 
   if (enabled !== undefined && isEnabled.valueOf() !== enabled) {
     transactions.push(
@@ -41,7 +44,7 @@ export async function prepareVenueFiltering(
     transactions.push(
       checkTxType({
         transaction: tx.settlement.allowVenues,
-        args: [rawTicker, allowedVenues.map(v => bigNumberToU64(v, context))],
+        args: [rawTicker, allowedVenues.map(venue => bigNumberToU64(venue, context))],
       })
     );
   }
@@ -50,7 +53,7 @@ export async function prepareVenueFiltering(
     transactions.push(
       checkTxType({
         transaction: tx.settlement.disallowVenues,
-        args: [rawTicker, disallowedVenues.map(v => bigNumberToU64(v, context))],
+        args: [rawTicker, disallowedVenues.map(venue => bigNumberToU64(venue, context))],
       })
     );
   }

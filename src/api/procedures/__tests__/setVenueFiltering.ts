@@ -30,6 +30,7 @@ describe('setVenueFiltering procedure', () => {
   let booleanToBoolSpy: jest.SpyInstance<bool, [boolean, Context]>;
   let bigNumberToU64Spy: jest.SpyInstance<u64, [BigNumber, Context]>;
   let rawEnabledTicker: PolymeshPrimitivesTicker;
+  let rawDisabledTicker: PolymeshPrimitivesTicker;
   let rawFalse: bool;
   const venues: BigNumber[] = [new BigNumber(1)];
   let rawVenues: MockCodec<u64>[];
@@ -42,6 +43,7 @@ describe('setVenueFiltering procedure', () => {
     booleanToBoolSpy = jest.spyOn(utilsConversionModule, 'booleanToBool');
     bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
     rawEnabledTicker = dsMockUtils.createMockTicker(enabledTicker);
+    rawDisabledTicker = dsMockUtils.createMockTicker(disabledTicker);
     rawFalse = dsMockUtils.createMockBool(false);
   });
 
@@ -51,15 +53,20 @@ describe('setVenueFiltering procedure', () => {
     venueFilteringMock = dsMockUtils.createQueryMock('settlement', 'venueFiltering');
     rawVenues = venues.map(venue => dsMockUtils.createMockU64(venue));
 
-    when(venueFilteringMock)
-      .calledWith(enabledTicker)
-      .mockResolvedValue(dsMockUtils.createMockBool(true));
-    when(venueFilteringMock)
-      .calledWith(disabledTicker)
-      .mockResolvedValue(dsMockUtils.createMockBool(false));
     when(stringToTickerSpy)
       .calledWith(enabledTicker, mockContext)
       .mockReturnValue(rawEnabledTicker);
+    when(stringToTickerSpy)
+      .calledWith(disabledTicker, mockContext)
+      .mockReturnValue(rawDisabledTicker);
+
+    when(venueFilteringMock)
+      .calledWith(rawEnabledTicker)
+      .mockResolvedValue(dsMockUtils.createMockBool(true));
+    when(venueFilteringMock)
+      .calledWith(rawDisabledTicker)
+      .mockResolvedValue(dsMockUtils.createMockBool(false));
+
     when(booleanToBoolSpy).calledWith(false, mockContext).mockReturnValue(rawFalse);
     when(bigNumberToU64Spy).calledWith(venues[0], mockContext).mockReturnValue(rawVenues[0]);
   });
