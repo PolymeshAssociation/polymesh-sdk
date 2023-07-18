@@ -1,3 +1,10 @@
+import {
+  ApolloClient,
+  ApolloQueryResult,
+  NormalizedCacheObject,
+  OperationVariables,
+  QueryOptions,
+} from '@apollo/client';
 import { ApiPromise } from '@polkadot/api';
 import { getTypeDef, Option } from '@polkadot/types';
 import { AccountInfo, Header } from '@polkadot/types/interfaces';
@@ -9,8 +16,6 @@ import {
 } from '@polkadot/types/lookup';
 import { CallFunction, Codec, DetectCodec, Signer as PolkadotSigner } from '@polkadot/types/types';
 import { SigningManager } from '@polymeshassociation/signing-manager-types';
-import { NormalizedCacheObject } from 'apollo-cache-inmemory';
-import ApolloClient, { ApolloQueryResult } from 'apollo-client';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { chunk, clone, flatMap, flatten, flattenDeep } from 'lodash';
@@ -38,7 +43,6 @@ import {
   TxTag,
   UnsubCallback,
 } from '~/types';
-import { GraphqlQuery } from '~/types/internal';
 import { Ensured, EnsuredV2 } from '~/types/utils';
 import { DEFAULT_GQL_PAGE_SIZE, MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
@@ -1127,7 +1131,7 @@ export class Context {
    * Make a query to the middleware server using the apollo client
    */
   public async queryMiddleware<Result extends Partial<Query>>(
-    query: GraphqlQuery<unknown>
+    query: QueryOptions<OperationVariables, Result>
   ): Promise<ApolloQueryResult<Result>> {
     let result: ApolloQueryResult<Result>;
     try {
@@ -1151,7 +1155,7 @@ export class Context {
    * Make a query to the middleware V2 server using the apollo client
    */
   public async queryMiddlewareV2<Result extends Partial<QueryV2>>(
-    query: GraphqlQuery<unknown>
+    query: QueryOptions<OperationVariables, Result>
   ): Promise<ApolloQueryResult<Result>> {
     let result: ApolloQueryResult<Result>;
     try {

@@ -32,7 +32,29 @@ import {
 } from '~/internal';
 import { Modify } from '~/types/utils';
 
+export { EventRecord } from '@polkadot/types/interfaces';
+export { ConnectParams } from '~/api/client/Polymesh';
+export * from '~/api/entities/types';
+export * from '~/api/procedures/types';
+export * from '~/base/types';
 export * from '~/generated/types';
+export * from '~/middleware/enumsV2';
+export {
+  EventIdEnum,
+  ModuleIdEnum,
+  Order,
+  SettlementDirectionEnum,
+  SettlementResultEnum,
+  TransactionOrderByInput,
+  TransactionOrderFields,
+} from '~/middleware/types';
+export {
+  AssetHoldersOrderBy,
+  ExtrinsicsOrderBy,
+  PublicEnum7A0B4Cc03E,
+  PublicEnum8F5A39C8Ee,
+} from '~/middleware/typesV2';
+export { TxTags, TxTag, ModuleName, CountryCode };
 
 export enum TransactionStatus {
   /**
@@ -1515,6 +1537,20 @@ export interface ProcedureMethod<
   ) => Promise<ProcedureAuthorizationStatus>;
 }
 
+export interface OptionalArgsProcedureMethod<
+  MethodArgs,
+  ProcedureReturnValue,
+  ReturnValue = ProcedureReturnValue
+> {
+  (args?: MethodArgs, opts?: ProcedureOpts): Promise<
+    GenericPolymeshTransaction<ProcedureReturnValue, ReturnValue>
+  >;
+  checkAuthorization: (
+    args?: MethodArgs,
+    opts?: ProcedureOpts
+  ) => Promise<ProcedureAuthorizationStatus>;
+}
+
 export interface NoArgsProcedureMethod<ProcedureReturnValue, ReturnValue = ProcedureReturnValue> {
   (opts?: ProcedureOpts): Promise<GenericPolymeshTransaction<ProcedureReturnValue, ReturnValue>>;
   checkAuthorization: (opts?: ProcedureOpts) => Promise<ProcedureAuthorizationStatus>;
@@ -1535,6 +1571,24 @@ export interface GroupedInstructions {
    *   might also belong in the `affirmed` group, but it will only be included in this one
    */
   failed: Instruction[];
+}
+
+export type InstructionsByStatus = GroupedInstructions & {
+  /**
+   * Instructions that have one or more legs already affirmed, but still need to be one or more legs to be affirmed/rejected by the Identity
+   */
+  partiallyAffirmed: Instruction[];
+};
+
+export interface GroupedInvolvedInstructions {
+  /**
+   * Instructions where the Identity is the custodian of the leg portfolios
+   */
+  custodied: GroupedInstructions;
+  /**
+   * Instructions where the Identity is the owner of the leg portfolios
+   */
+  owned: Omit<GroupedInstructions, 'affirmed'>;
 }
 
 export interface AssetWithGroup {
@@ -1633,26 +1687,3 @@ export interface MiddlewareMetadata {
 export type MapTxData<ArgsArray extends unknown[][]> = {
   [K in keyof ArgsArray]: ArgsArray[K] extends unknown[] ? TxData<ArgsArray[K]> : never;
 };
-
-export { TxTags, TxTag, ModuleName, CountryCode };
-export { EventRecord } from '@polkadot/types/interfaces';
-export { ConnectParams } from '~/api/client/Polymesh';
-export * from '~/api/entities/types';
-export * from '~/base/types';
-export {
-  Order,
-  EventIdEnum,
-  ModuleIdEnum,
-  TransactionOrderByInput,
-  TransactionOrderFields,
-  SettlementResultEnum,
-  SettlementDirectionEnum,
-} from '~/middleware/types';
-export * from '~/middleware/enumsV2';
-export {
-  PublicEnum8F5A39C8Ee,
-  PublicEnum7A0B4Cc03E,
-  ExtrinsicsOrderBy,
-  AssetHoldersOrderBy,
-} from '~/middleware/typesV2';
-export * from '~/api/procedures/types';

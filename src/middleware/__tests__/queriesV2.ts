@@ -4,6 +4,7 @@ import { CallIdEnum, ClaimTypeEnum, EventIdEnum, ModuleIdEnum } from '~/middlewa
 import {
   assetHoldersQuery,
   assetQuery,
+  assetTransactionQuery,
   claimsGroupingQuery,
   claimsQuery,
   distributionPaymentsQuery,
@@ -425,6 +426,28 @@ describe('portfolioMovementsQuery', () => {
       assetId: 'SOME_TICKER',
       fromId: 'someDid/1',
       toId: 'someDid/1',
+    });
+  });
+});
+
+describe('assetTransactionQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      assetId: 'SOME_TICKER',
+    };
+
+    let result = assetTransactionQuery(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+
+    result = assetTransactionQuery(variables, new BigNumber(1), new BigNumber(0));
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({
+      ...variables,
+      size: 1,
+      start: 0,
     });
   });
 });
