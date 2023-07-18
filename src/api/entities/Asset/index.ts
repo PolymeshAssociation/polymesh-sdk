@@ -18,6 +18,7 @@ import {
   Identity,
   modifyAsset,
   redeemTokens,
+  setVenueFiltering,
   toggleFreezeTransfers,
   transferAssetOwnership,
 } from '~/internal';
@@ -40,6 +41,7 @@ import {
   RedeemTokensParams,
   ResultSet,
   SecurityIdentifier,
+  SetVenueFilteringParams,
   SubCallback,
   TransferAssetOwnershipParams,
   UnsubCallback,
@@ -173,6 +175,10 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
     );
     this.controllerTransfer = createProcedureMethod(
       { getProcedureAndArgs: args => [controllerTransfer, { ticker, ...args }] },
+      context
+    );
+    this.setVenueFiltering = createProcedureMethod(
+      { getProcedureAndArgs: args => [setVenueFiltering, { ticker, ...args }] },
       context
     );
   }
@@ -725,4 +731,9 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
   public toHuman(): string {
     return this.ticker;
   }
+
+  /**
+   * Enable/disable venue filtering for this Asset and/or set allowed/disallowed venues
+   */
+  public setVenueFiltering: ProcedureMethod<SetVenueFilteringParams, void>;
 }

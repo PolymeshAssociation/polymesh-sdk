@@ -17,6 +17,7 @@ import {
   instructionsQuery,
   investmentsQuery,
   latestBlockQuery,
+  metadataQuery,
   portfolioMovementsQuery,
   portfolioQuery,
   settlementsQuery,
@@ -40,6 +41,15 @@ describe('latestBlockQuery', () => {
 describe('heartbeat', () => {
   it('should pass the variables to the grapqhl query', () => {
     const result = heartbeatQuery();
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toBeUndefined();
+  });
+});
+
+describe('metadataQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const result = metadataQuery();
 
     expect(result.query).toBeDefined();
     expect(result.variables).toBeUndefined();

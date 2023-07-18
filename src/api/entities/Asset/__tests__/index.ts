@@ -1047,4 +1047,71 @@ describe('Asset class', () => {
       expect(asset.toHuman()).toBe('SOME_TICKER');
     });
   });
+
+  describe('method: setVenueFiltering', () => {
+    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
+      const ticker = 'TEST';
+      const context = dsMockUtils.getContextInstance();
+      const asset = new Asset({ ticker }, context);
+      const enabled = true;
+
+      const args = {
+        enabled,
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { ticker, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await asset.setVenueFiltering(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+
+    it('should prepare the procedure and return the resulting transaction for allowingVenues', async () => {
+      const ticker = 'TICKER';
+      const venues = [new BigNumber(1), new BigNumber(2)];
+
+      const context = dsMockUtils.getContextInstance();
+      const asset = new Asset({ ticker }, context);
+
+      const args = {
+        allowedVenues: venues,
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { ticker, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await asset.setVenueFiltering(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+
+    it('should prepare the procedure and return the resulting transaction for disallowingVenues', async () => {
+      const ticker = 'TICKER';
+      const venues = [new BigNumber(1), new BigNumber(2)];
+
+      const context = dsMockUtils.getContextInstance();
+      const asset = new Asset({ ticker }, context);
+
+      const args = {
+        disallowedVenues: venues,
+      };
+
+      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Asset>;
+
+      when(procedureMockUtils.getPrepareMock())
+        .calledWith({ args: { ticker, ...args }, transformer: undefined }, context, {})
+        .mockResolvedValue(expectedTransaction);
+
+      const tx = await asset.setVenueFiltering(args);
+
+      expect(tx).toBe(expectedTransaction);
+    });
+  });
 });

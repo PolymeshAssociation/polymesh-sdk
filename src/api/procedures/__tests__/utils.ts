@@ -739,7 +739,7 @@ describe('authorization request validations', () => {
   describe('assertAttestPrimaryKeyAuthorizationValid', () => {
     const data: Authorization = {
       type: AuthorizationType.AttestPrimaryKeyRotation,
-      value: '',
+      value: entityMockUtils.getIdentityInstance(),
     };
 
     it('should not throw with a valid request', () => {

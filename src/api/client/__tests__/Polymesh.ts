@@ -1,5 +1,6 @@
 import { ApolloLink, GraphQLRequest } from '@apollo/client';
 import { SigningManager } from '@polymeshassociation/signing-manager-types';
+import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Polymesh } from '~/api/client/Polymesh';
@@ -8,6 +9,7 @@ import { heartbeat } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { ErrorCode, TransactionArray } from '~/types';
 import { SUPPORTED_NODE_VERSION_RANGE } from '~/utils/constants';
+import * as utilsConversionModule from '~/utils/conversion';
 import * as internalUtils from '~/utils/internal';
 
 jest.mock('@apollo/client/react', () => ({}));
@@ -55,12 +57,15 @@ jest.mock(
 
 describe('Polymesh Class', () => {
   let versionSpy: jest.SpyInstance;
+  let bigNumberToU32Spy: jest.SpyInstance;
   beforeEach(() => {
     versionSpy = jest
       .spyOn(internalUtils, 'assertExpectedChainVersion')
       .mockClear()
       .mockImplementation()
       .mockResolvedValue(undefined);
+    bigNumberToU32Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU32');
+    dsMockUtils.configureMocks({ contextOptions: undefined });
   });
 
   beforeAll(() => {
@@ -129,6 +134,31 @@ describe('Polymesh Class', () => {
         middlewareApiV2: null,
         signingManager: undefined,
       });
+    });
+
+    it('should instantiate Context with middleware V2 URL and return a Polymesh instance', async () => {
+      const createMock = dsMockUtils.getContextCreateMock();
+
+      const middlewareV2 = {
+        link: 'someLink',
+        key: '',
+      };
+
+      const rawGenesisBlock = dsMockUtils.createMockU32(new BigNumber(0));
+      bigNumberToU32Spy.mockResolvedValue(rawGenesisBlock);
+
+      const genesisHash = 'someGenesisHash';
+      const rawGenesisHash = dsMockUtils.createMockBlockHash(genesisHash);
+
+      const getBlockHashMock = dsMockUtils.createRpcMock('chain', 'getBlockHash');
+      getBlockHashMock.mockResolvedValue(rawGenesisHash);
+
+      await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        middlewareV2,
+      });
+
+      expect(createMock).toHaveBeenCalledTimes(1);
     });
 
     it('should throw if the Polymesh version does not satisfy the supported version range', async () => {
@@ -212,6 +242,55 @@ describe('Polymesh Class', () => {
       }
 
       expect(err).toBeUndefined();
+    });
+
+    it('should throw an error if the middleware V2 URL is incorrect', () => {
+      const middlewareV2 = {
+        link: 'wrong',
+        key: '',
+      };
+
+      const context = dsMockUtils.getContextInstance();
+
+      context.getMiddlewareMetadata = jest.fn().mockImplementation(() => {
+        throw new Error('Network error');
+      });
+
+      dsMockUtils.getContextCreateMock().mockResolvedValue(context);
+
+      return expect(
+        Polymesh.connect({
+          nodeUrl: 'wss://some.url',
+          middlewareV2,
+        })
+      ).rejects.toThrow('Could not query for middleware V2 metadata');
+    });
+
+    it('should throw an error if the middleware V2 URL is incompatible with given node URl', async () => {
+      const genesisHash = 'someOtherHash';
+      const rawGenesisHash = dsMockUtils.createMockBlockHash(genesisHash);
+
+      const getBlockHashMock = dsMockUtils.createRpcMock('chain', 'getBlockHash');
+      getBlockHashMock.mockResolvedValue(rawGenesisHash);
+
+      const connection = Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        middlewareV2: {
+          link: 'someLink',
+          key: '',
+        },
+      });
+      await expect(connection).rejects.toThrow(
+        'Middleware V2 URL is for a different chain than the given node URL'
+      );
+
+      dsMockUtils.configureMocks({
+        contextOptions: { getMiddlewareMetadata: undefined },
+      });
+
+      await expect(connection).rejects.toThrow(
+        'Middleware V2 URL is for a different chain than the given node URL'
+      );
     });
 
     it('should throw if Context fails in the connection process', async () => {
