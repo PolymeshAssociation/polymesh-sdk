@@ -12,6 +12,7 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Account, Asset, Context, Identity, PolymeshError, Procedure } from '~/internal';
+import { latestSqVersionQuery } from '~/middleware/queriesV2';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
@@ -20,6 +21,7 @@ import {
   getAtMock,
   getWebSocketInstance,
   MockCodec,
+  MockContext,
   MockWebSocket,
 } from '~/testUtils/mocks/dataSources';
 import {
@@ -30,6 +32,7 @@ import {
   CountryCode,
   ErrorCode,
   ModuleName,
+  OptionalArgsProcedureMethod,
   PermissionedAccount,
   ProcedureMethod,
   RemoveAssetStatParams,
@@ -39,7 +42,12 @@ import {
   TxTags,
 } from '~/types';
 import { tuple } from '~/types/utils';
-import { MAX_TICKER_LENGTH, SUPPORTED_NODE_SEMVER, SUPPORTED_SPEC_SEMVER } from '~/utils/constants';
+import {
+  MAX_TICKER_LENGTH,
+  MINIMUM_SQ_VERSION,
+  SUPPORTED_NODE_SEMVER,
+  SUPPORTED_SPEC_SEMVER,
+} from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 
 import { SUPPORTED_NODE_VERSION_RANGE, SUPPORTED_SPEC_VERSION_RANGE } from '../constants';
@@ -47,6 +55,7 @@ import {
   asAccount,
   assertAddressValid,
   assertExpectedChainVersion,
+  assertExpectedSqVersion,
   assertIsInteger,
   assertIsPositive,
   assertTickerValid,
@@ -654,6 +663,10 @@ describe('isPrintableAscii', () => {
 
 describe('createProcedureMethod', () => {
   let context: Context;
+  let prepare: jest.Mock;
+  let checkAuthorization: jest.Mock;
+  let transformer: jest.Mock;
+  let fakeProcedure: () => Procedure<number, void>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -661,6 +674,14 @@ describe('createProcedureMethod', () => {
 
   beforeEach(() => {
     context = dsMockUtils.getContextInstance();
+    prepare = jest.fn();
+    checkAuthorization = jest.fn();
+    transformer = jest.fn();
+    fakeProcedure = (): Procedure<number, void> =>
+      ({
+        prepare,
+        checkAuthorization,
+      } as unknown as Procedure<number, void>);
   });
 
   afterEach(() => {
@@ -672,15 +693,6 @@ describe('createProcedureMethod', () => {
   });
 
   it('should return a ProcedureMethod object', async () => {
-    const prepare = jest.fn();
-    const checkAuthorization = jest.fn();
-    const transformer = jest.fn();
-    const fakeProcedure = (): Procedure<number, void> =>
-      ({
-        prepare,
-        checkAuthorization,
-      } as unknown as Procedure<number, void>);
-
     const method: ProcedureMethod<number, void> = createProcedureMethod(
       { getProcedureAndArgs: args => [fakeProcedure, args], transformer },
       context
@@ -696,18 +708,43 @@ describe('createProcedureMethod', () => {
     expect(checkAuthorization).toHaveBeenCalledWith(procArgs, context, {});
   });
 
+  it('should return a OptionalArgsProcedureMethod object', async () => {
+    const method: OptionalArgsProcedureMethod<number, void> = createProcedureMethod(
+      {
+        getProcedureAndArgs: (args?: number) => [fakeProcedure, args],
+        transformer,
+        optionalArgs: true,
+      },
+      context
+    );
+
+    await method();
+
+    expect(prepare).toHaveBeenCalledWith({ args: undefined, transformer }, context, {});
+
+    await method.checkAuthorization(undefined);
+
+    expect(checkAuthorization).toHaveBeenCalledWith(undefined, context, {});
+
+    const procArgs = 1;
+    await method(procArgs);
+
+    expect(prepare).toHaveBeenCalledWith({ args: procArgs, transformer }, context, {});
+
+    await method.checkAuthorization(procArgs);
+
+    expect(checkAuthorization).toHaveBeenCalledWith(procArgs, context, {});
+  });
+
   it('should return a NoArgsProcedureMethod object', async () => {
-    const prepare = jest.fn();
-    const checkAuthorization = jest.fn();
-    const transformer = jest.fn();
-    const fakeProcedure = (): Procedure<void, void> =>
+    const noArgsFakeProcedure = (): Procedure<void, void> =>
       ({
         prepare,
         checkAuthorization,
       } as unknown as Procedure<void, void>);
 
     const method = createProcedureMethod(
-      { getProcedureAndArgs: () => [fakeProcedure, undefined], transformer, voidArgs: true },
+      { getProcedureAndArgs: () => [noArgsFakeProcedure, undefined], transformer, voidArgs: true },
       context
     );
 
@@ -1127,6 +1164,73 @@ describe('getExemptedIds', () => {
     return expect(getExemptedIds(dids, context, asset.ticker)).rejects.toThrow(
       'One or more of the passed exempted Identities are repeated or have the same Scope ID'
     );
+  });
+});
+
+describe('assertExpectedSqVersion', () => {
+  let warnSpy: jest.SpyInstance;
+  let context: MockContext;
+
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  beforeEach(() => {
+    context = dsMockUtils.getContextInstance();
+    warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    warnSpy.mockClear();
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    warnSpy.mockRestore();
+  });
+
+  it('should resolve if SDK is initialized with correct Middleware V2 version', () => {
+    dsMockUtils.createApolloV2QueryMock(latestSqVersionQuery(), {
+      subqueryVersions: {
+        nodes: [
+          {
+            version: '9.7.1',
+          },
+        ],
+      },
+    });
+    const promise = assertExpectedSqVersion(dsMockUtils.getContextInstance());
+
+    return expect(promise).resolves.not.toThrow();
+  });
+
+  it('should log a warning for incompatible Subquery version', async () => {
+    dsMockUtils.createApolloV2QueryMock(latestSqVersionQuery(), {
+      subqueryVersions: {
+        nodes: [
+          {
+            version: '9.6.0',
+          },
+        ],
+      },
+    });
+    await assertExpectedSqVersion(context);
+
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy).toHaveBeenCalledWith(
+      `This version of the SDK supports Polymesh Subquery version ${MINIMUM_SQ_VERSION} or higher. Please upgrade the MiddlewareV2`
+    );
+
+    warnSpy.mockReset();
+
+    dsMockUtils.createApolloV2QueryMock(latestSqVersionQuery(), {
+      subqueryVersions: {
+        nodes: [],
+      },
+    });
+    await assertExpectedSqVersion(context);
+
+    expect(warnSpy).toHaveBeenCalledTimes(1);
   });
 });
 

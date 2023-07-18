@@ -524,6 +524,8 @@ export enum AgentGroupsOrderBy {
 /** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type Asset = Node & {
   __typename?: 'Asset';
+  /** Reads and enables pagination through a set of `AssetTransaction`. */
+  assetTransactions: AssetTransactionsConnection;
   /** Reads and enables pagination through a set of `Block`. */
   blocksByAssetDocumentAssetIdAndCreatedBlockId: AssetBlocksByAssetDocumentAssetIdAndCreatedBlockIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Block`. */
@@ -532,6 +534,10 @@ export type Asset = Node & {
   blocksByAssetHolderAssetIdAndCreatedBlockId: AssetBlocksByAssetHolderAssetIdAndCreatedBlockIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Block`. */
   blocksByAssetHolderAssetIdAndUpdatedBlockId: AssetBlocksByAssetHolderAssetIdAndUpdatedBlockIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Block`. */
+  blocksByAssetTransactionAssetIdAndCreatedBlockId: AssetBlocksByAssetTransactionAssetIdAndCreatedBlockIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Block`. */
+  blocksByAssetTransactionAssetIdAndUpdatedBlockId: AssetBlocksByAssetTransactionAssetIdAndUpdatedBlockIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Block`. */
   blocksByComplianceAssetIdAndCreatedBlockId: AssetBlocksByComplianceAssetIdAndCreatedBlockIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Block`. */
@@ -631,6 +637,10 @@ export type Asset = Node & {
   /** Reads and enables pagination through a set of `PortfolioMovement`. */
   portfolioMovements: PortfolioMovementsConnection;
   /** Reads and enables pagination through a set of `Portfolio`. */
+  portfoliosByAssetTransactionAssetIdAndFromPortfolioId: AssetPortfoliosByAssetTransactionAssetIdAndFromPortfolioIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Portfolio`. */
+  portfoliosByAssetTransactionAssetIdAndToPortfolioId: AssetPortfoliosByAssetTransactionAssetIdAndToPortfolioIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Portfolio`. */
   portfoliosByDistributionAssetIdAndPortfolioId: AssetPortfoliosByDistributionAssetIdAndPortfolioIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Portfolio`. */
   portfoliosByPortfolioMovementAssetIdAndFromId: AssetPortfoliosByPortfolioMovementAssetIdAndFromIdManyToManyConnection;
@@ -673,6 +683,17 @@ export type Asset = Node & {
 };
 
 /** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
+export type AssetAssetTransactionsArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<AssetTransactionFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<AssetTransactionsOrderBy>>;
+};
+
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetBlocksByAssetDocumentAssetIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -707,6 +728,28 @@ export type AssetBlocksByAssetHolderAssetIdAndCreatedBlockIdArgs = {
 
 /** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetBlocksByAssetHolderAssetIdAndUpdatedBlockIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<BlockFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<BlocksOrderBy>>;
+};
+
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
+export type AssetBlocksByAssetTransactionAssetIdAndCreatedBlockIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<BlockFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<BlocksOrderBy>>;
+};
+
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
+export type AssetBlocksByAssetTransactionAssetIdAndUpdatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
   filter?: InputMaybe<BlockFilter>;
@@ -1157,6 +1200,28 @@ export type AssetPortfolioMovementsArgs = {
 };
 
 /** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
+export type AssetPortfoliosByAssetTransactionAssetIdAndFromPortfolioIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<PortfolioFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
+};
+
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
+export type AssetPortfoliosByAssetTransactionAssetIdAndToPortfolioIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<PortfolioFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
+};
+
+/** Represents a tokenized Asset on the Polymesh chain. The central data structure for the ecosystem */
 export type AssetPortfoliosByDistributionAssetIdAndPortfolioIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -1523,6 +1588,100 @@ export type AssetBlocksByAssetHolderAssetIdAndUpdatedBlockIdManyToManyEdgeAssetH
     last?: InputMaybe<Scalars['Int']>;
     offset?: InputMaybe<Scalars['Int']>;
     orderBy?: InputMaybe<Array<AssetHoldersOrderBy>>;
+  };
+
+/** A connection to a list of `Block` values, with data from `AssetTransaction`. */
+export type AssetBlocksByAssetTransactionAssetIdAndCreatedBlockIdManyToManyConnection = {
+  __typename?: 'AssetBlocksByAssetTransactionAssetIdAndCreatedBlockIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<BlockAggregates>;
+  /** A list of edges which contains the `Block`, info from the `AssetTransaction`, and the cursor to aid in pagination. */
+  edges: Array<AssetBlocksByAssetTransactionAssetIdAndCreatedBlockIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<BlockAggregates>>;
+  /** A list of `Block` objects. */
+  nodes: Array<Maybe<Block>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Block` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Block` values, with data from `AssetTransaction`. */
+export type AssetBlocksByAssetTransactionAssetIdAndCreatedBlockIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<BlocksGroupBy>;
+    having?: InputMaybe<BlocksHavingInput>;
+  };
+
+/** A `Block` edge in the connection, with data from `AssetTransaction`. */
+export type AssetBlocksByAssetTransactionAssetIdAndCreatedBlockIdManyToManyEdge = {
+  __typename?: 'AssetBlocksByAssetTransactionAssetIdAndCreatedBlockIdManyToManyEdge';
+  /** Reads and enables pagination through a set of `AssetTransaction`. */
+  assetTransactionsByCreatedBlockId: AssetTransactionsConnection;
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Block` at the end of the edge. */
+  node?: Maybe<Block>;
+};
+
+/** A `Block` edge in the connection, with data from `AssetTransaction`. */
+export type AssetBlocksByAssetTransactionAssetIdAndCreatedBlockIdManyToManyEdgeAssetTransactionsByCreatedBlockIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<AssetTransactionFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<AssetTransactionsOrderBy>>;
+  };
+
+/** A connection to a list of `Block` values, with data from `AssetTransaction`. */
+export type AssetBlocksByAssetTransactionAssetIdAndUpdatedBlockIdManyToManyConnection = {
+  __typename?: 'AssetBlocksByAssetTransactionAssetIdAndUpdatedBlockIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<BlockAggregates>;
+  /** A list of edges which contains the `Block`, info from the `AssetTransaction`, and the cursor to aid in pagination. */
+  edges: Array<AssetBlocksByAssetTransactionAssetIdAndUpdatedBlockIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<BlockAggregates>>;
+  /** A list of `Block` objects. */
+  nodes: Array<Maybe<Block>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Block` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Block` values, with data from `AssetTransaction`. */
+export type AssetBlocksByAssetTransactionAssetIdAndUpdatedBlockIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<BlocksGroupBy>;
+    having?: InputMaybe<BlocksHavingInput>;
+  };
+
+/** A `Block` edge in the connection, with data from `AssetTransaction`. */
+export type AssetBlocksByAssetTransactionAssetIdAndUpdatedBlockIdManyToManyEdge = {
+  __typename?: 'AssetBlocksByAssetTransactionAssetIdAndUpdatedBlockIdManyToManyEdge';
+  /** Reads and enables pagination through a set of `AssetTransaction`. */
+  assetTransactionsByUpdatedBlockId: AssetTransactionsConnection;
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Block` at the end of the edge. */
+  node?: Maybe<Block>;
+};
+
+/** A `Block` edge in the connection, with data from `AssetTransaction`. */
+export type AssetBlocksByAssetTransactionAssetIdAndUpdatedBlockIdManyToManyEdgeAssetTransactionsByUpdatedBlockIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<AssetTransactionFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<AssetTransactionsOrderBy>>;
   };
 
 /** A connection to a list of `Block` values, with data from `Compliance`. */
@@ -3578,6 +3737,100 @@ export enum AssetPendingOwnershipTransfersOrderBy {
   UpdatedBlockIdDesc = 'UPDATED_BLOCK_ID_DESC',
 }
 
+/** A connection to a list of `Portfolio` values, with data from `AssetTransaction`. */
+export type AssetPortfoliosByAssetTransactionAssetIdAndFromPortfolioIdManyToManyConnection = {
+  __typename?: 'AssetPortfoliosByAssetTransactionAssetIdAndFromPortfolioIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<PortfolioAggregates>;
+  /** A list of edges which contains the `Portfolio`, info from the `AssetTransaction`, and the cursor to aid in pagination. */
+  edges: Array<AssetPortfoliosByAssetTransactionAssetIdAndFromPortfolioIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<PortfolioAggregates>>;
+  /** A list of `Portfolio` objects. */
+  nodes: Array<Maybe<Portfolio>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Portfolio` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Portfolio` values, with data from `AssetTransaction`. */
+export type AssetPortfoliosByAssetTransactionAssetIdAndFromPortfolioIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<PortfoliosGroupBy>;
+    having?: InputMaybe<PortfoliosHavingInput>;
+  };
+
+/** A `Portfolio` edge in the connection, with data from `AssetTransaction`. */
+export type AssetPortfoliosByAssetTransactionAssetIdAndFromPortfolioIdManyToManyEdge = {
+  __typename?: 'AssetPortfoliosByAssetTransactionAssetIdAndFromPortfolioIdManyToManyEdge';
+  /** Reads and enables pagination through a set of `AssetTransaction`. */
+  assetTransactionsByFromPortfolioId: AssetTransactionsConnection;
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Portfolio` at the end of the edge. */
+  node?: Maybe<Portfolio>;
+};
+
+/** A `Portfolio` edge in the connection, with data from `AssetTransaction`. */
+export type AssetPortfoliosByAssetTransactionAssetIdAndFromPortfolioIdManyToManyEdgeAssetTransactionsByFromPortfolioIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<AssetTransactionFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<AssetTransactionsOrderBy>>;
+  };
+
+/** A connection to a list of `Portfolio` values, with data from `AssetTransaction`. */
+export type AssetPortfoliosByAssetTransactionAssetIdAndToPortfolioIdManyToManyConnection = {
+  __typename?: 'AssetPortfoliosByAssetTransactionAssetIdAndToPortfolioIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<PortfolioAggregates>;
+  /** A list of edges which contains the `Portfolio`, info from the `AssetTransaction`, and the cursor to aid in pagination. */
+  edges: Array<AssetPortfoliosByAssetTransactionAssetIdAndToPortfolioIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<PortfolioAggregates>>;
+  /** A list of `Portfolio` objects. */
+  nodes: Array<Maybe<Portfolio>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Portfolio` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Portfolio` values, with data from `AssetTransaction`. */
+export type AssetPortfoliosByAssetTransactionAssetIdAndToPortfolioIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<PortfoliosGroupBy>;
+    having?: InputMaybe<PortfoliosHavingInput>;
+  };
+
+/** A `Portfolio` edge in the connection, with data from `AssetTransaction`. */
+export type AssetPortfoliosByAssetTransactionAssetIdAndToPortfolioIdManyToManyEdge = {
+  __typename?: 'AssetPortfoliosByAssetTransactionAssetIdAndToPortfolioIdManyToManyEdge';
+  /** Reads and enables pagination through a set of `AssetTransaction`. */
+  assetTransactionsByToPortfolioId: AssetTransactionsConnection;
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Portfolio` at the end of the edge. */
+  node?: Maybe<Portfolio>;
+};
+
+/** A `Portfolio` edge in the connection, with data from `AssetTransaction`. */
+export type AssetPortfoliosByAssetTransactionAssetIdAndToPortfolioIdManyToManyEdgeAssetTransactionsByToPortfolioIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<AssetTransactionFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<AssetTransactionsOrderBy>>;
+  };
+
 /** A connection to a list of `Portfolio` values, with data from `Distribution`. */
 export type AssetPortfoliosByDistributionAssetIdAndPortfolioIdManyToManyConnection = {
   __typename?: 'AssetPortfoliosByDistributionAssetIdAndPortfolioIdManyToManyConnection';
@@ -3859,6 +4112,174 @@ export type AssetStatTypesByTransferComplianceAssetIdAndStatTypeIdManyToManyEdge
     orderBy?: InputMaybe<Array<TransferCompliancesOrderBy>>;
   };
 
+/** Represents all the transactions related to an Asset */
+export type AssetTransaction = Node & {
+  __typename?: 'AssetTransaction';
+  amount: Scalars['BigFloat'];
+  /** Reads a single `Asset` that is related to this `AssetTransaction`. */
+  asset?: Maybe<Asset>;
+  assetId: Scalars['String'];
+  createdAt: Scalars['Datetime'];
+  /** Reads a single `Block` that is related to this `AssetTransaction`. */
+  createdBlock?: Maybe<Block>;
+  createdBlockId: Scalars['String'];
+  datetime: Scalars['Datetime'];
+  eventId: PublicEnum8F5A39C8Ee;
+  eventIdx: Scalars['Int'];
+  /** `extrinsicIdx` will be null for scheduled transactions */
+  extrinsicIdx?: Maybe<Scalars['Int']>;
+  /** Reads a single `Portfolio` that is related to this `AssetTransaction`. */
+  fromPortfolio?: Maybe<Portfolio>;
+  /** `fromPortfolioId` will be null in transactions where the Asset was issued */
+  fromPortfolioId?: Maybe<Scalars['String']>;
+  /** `fundingRound` will only be present for the cases where Assets are issued with a fundingRound name */
+  fundingRound?: Maybe<Scalars['String']>;
+  id: Scalars['String'];
+  /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
+  nodeId: Scalars['ID'];
+  /** Reads a single `Portfolio` that is related to this `AssetTransaction`. */
+  toPortfolio?: Maybe<Portfolio>;
+  /** `toPortfolioId` will be null in transactions where the Asset was redeemed */
+  toPortfolioId?: Maybe<Scalars['String']>;
+  updatedAt: Scalars['Datetime'];
+  /** Reads a single `Block` that is related to this `AssetTransaction`. */
+  updatedBlock?: Maybe<Block>;
+  updatedBlockId: Scalars['String'];
+};
+
+export type AssetTransactionAggregates = {
+  __typename?: 'AssetTransactionAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
+};
+
+/** A filter to be used against `AssetTransaction` object types. All fields are combined with a logical ‘and.’ */
+export type AssetTransactionFilter = {
+  /** Filter by the object’s `amount` field. */
+  amount?: InputMaybe<BigFloatFilter>;
+  /** Checks for all expressions in this list. */
+  and?: InputMaybe<Array<AssetTransactionFilter>>;
+  /** Filter by the object’s `assetId` field. */
+  assetId?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `createdAt` field. */
+  createdAt?: InputMaybe<DatetimeFilter>;
+  /** Filter by the object’s `createdBlockId` field. */
+  createdBlockId?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `datetime` field. */
+  datetime?: InputMaybe<DatetimeFilter>;
+  /** Filter by the object’s `eventId` field. */
+  eventId?: InputMaybe<PublicEnum8F5A39C8EeFilter>;
+  /** Filter by the object’s `eventIdx` field. */
+  eventIdx?: InputMaybe<IntFilter>;
+  /** Filter by the object’s `extrinsicIdx` field. */
+  extrinsicIdx?: InputMaybe<IntFilter>;
+  /** Filter by the object’s `fromPortfolioId` field. */
+  fromPortfolioId?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `fundingRound` field. */
+  fundingRound?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `id` field. */
+  id?: InputMaybe<StringFilter>;
+  /** Negates the expression. */
+  not?: InputMaybe<AssetTransactionFilter>;
+  /** Checks for any expressions in this list. */
+  or?: InputMaybe<Array<AssetTransactionFilter>>;
+  /** Filter by the object’s `toPortfolioId` field. */
+  toPortfolioId?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `updatedAt` field. */
+  updatedAt?: InputMaybe<DatetimeFilter>;
+  /** Filter by the object’s `updatedBlockId` field. */
+  updatedBlockId?: InputMaybe<StringFilter>;
+};
+
+/** A connection to a list of `AssetTransaction` values. */
+export type AssetTransactionsConnection = {
+  __typename?: 'AssetTransactionsConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<AssetTransactionAggregates>;
+  /** A list of edges which contains the `AssetTransaction` and cursor to aid in pagination. */
+  edges: Array<AssetTransactionsEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<AssetTransactionAggregates>>;
+  /** A list of `AssetTransaction` objects. */
+  nodes: Array<Maybe<AssetTransaction>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `AssetTransaction` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `AssetTransaction` values. */
+export type AssetTransactionsConnectionGroupedAggregatesArgs = {
+  groupBy: Array<AssetTransactionsGroupBy>;
+  having?: InputMaybe<AssetTransactionsHavingInput>;
+};
+
+/** A `AssetTransaction` edge in the connection. */
+export type AssetTransactionsEdge = {
+  __typename?: 'AssetTransactionsEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `AssetTransaction` at the end of the edge. */
+  node?: Maybe<AssetTransaction>;
+};
+
+/** Grouping methods for `AssetTransaction` for usage during aggregation. */
+export enum AssetTransactionsGroupBy {
+  Amount = 'AMOUNT',
+  AssetId = 'ASSET_ID',
+  CreatedAt = 'CREATED_AT',
+  CreatedBlockId = 'CREATED_BLOCK_ID',
+  Datetime = 'DATETIME',
+  EventId = 'EVENT_ID',
+  EventIdx = 'EVENT_IDX',
+  ExtrinsicIdx = 'EXTRINSIC_IDX',
+  FromPortfolioId = 'FROM_PORTFOLIO_ID',
+  FundingRound = 'FUNDING_ROUND',
+  ToPortfolioId = 'TO_PORTFOLIO_ID',
+  UpdatedAt = 'UPDATED_AT',
+  UpdatedBlockId = 'UPDATED_BLOCK_ID',
+}
+
+/** Conditions for `AssetTransaction` aggregates. */
+export type AssetTransactionsHavingInput = {
+  AND?: InputMaybe<Array<AssetTransactionsHavingInput>>;
+  OR?: InputMaybe<Array<AssetTransactionsHavingInput>>;
+};
+
+/** Methods to use when ordering `AssetTransaction`. */
+export enum AssetTransactionsOrderBy {
+  AmountAsc = 'AMOUNT_ASC',
+  AmountDesc = 'AMOUNT_DESC',
+  AssetIdAsc = 'ASSET_ID_ASC',
+  AssetIdDesc = 'ASSET_ID_DESC',
+  CreatedAtAsc = 'CREATED_AT_ASC',
+  CreatedAtDesc = 'CREATED_AT_DESC',
+  CreatedBlockIdAsc = 'CREATED_BLOCK_ID_ASC',
+  CreatedBlockIdDesc = 'CREATED_BLOCK_ID_DESC',
+  DatetimeAsc = 'DATETIME_ASC',
+  DatetimeDesc = 'DATETIME_DESC',
+  EventIdxAsc = 'EVENT_IDX_ASC',
+  EventIdxDesc = 'EVENT_IDX_DESC',
+  EventIdAsc = 'EVENT_ID_ASC',
+  EventIdDesc = 'EVENT_ID_DESC',
+  ExtrinsicIdxAsc = 'EXTRINSIC_IDX_ASC',
+  ExtrinsicIdxDesc = 'EXTRINSIC_IDX_DESC',
+  FromPortfolioIdAsc = 'FROM_PORTFOLIO_ID_ASC',
+  FromPortfolioIdDesc = 'FROM_PORTFOLIO_ID_DESC',
+  FundingRoundAsc = 'FUNDING_ROUND_ASC',
+  FundingRoundDesc = 'FUNDING_ROUND_DESC',
+  IdAsc = 'ID_ASC',
+  IdDesc = 'ID_DESC',
+  Natural = 'NATURAL',
+  PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
+  PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
+  ToPortfolioIdAsc = 'TO_PORTFOLIO_ID_ASC',
+  ToPortfolioIdDesc = 'TO_PORTFOLIO_ID_DESC',
+  UpdatedAtAsc = 'UPDATED_AT_ASC',
+  UpdatedAtDesc = 'UPDATED_AT_DESC',
+  UpdatedBlockIdAsc = 'UPDATED_BLOCK_ID_ASC',
+  UpdatedBlockIdDesc = 'UPDATED_BLOCK_ID_DESC',
+}
+
 /** A connection to a list of `Venue` values, with data from `Sto`. */
 export type AssetVenuesByStoOfferingAssetIdAndVenueIdManyToManyConnection = {
   __typename?: 'AssetVenuesByStoOfferingAssetIdAndVenueIdManyToManyConnection';
@@ -3964,6 +4385,8 @@ export type AssetsHavingInput = {
 
 /** Methods to use when ordering `Asset`. */
 export enum AssetsOrderBy {
+  AssetTransactionsCountAsc = 'ASSET_TRANSACTIONS_COUNT_ASC',
+  AssetTransactionsCountDesc = 'ASSET_TRANSACTIONS_COUNT_DESC',
   ComplianceCountAsc = 'COMPLIANCE_COUNT_ASC',
   ComplianceCountDesc = 'COMPLIANCE_COUNT_DESC',
   CreatedAtAsc = 'CREATED_AT_ASC',
@@ -4240,6 +4663,10 @@ export type Block = Node & {
   assetPendingOwnershipTransfersByCreatedBlockId: AssetPendingOwnershipTransfersConnection;
   /** Reads and enables pagination through a set of `AssetPendingOwnershipTransfer`. */
   assetPendingOwnershipTransfersByUpdatedBlockId: AssetPendingOwnershipTransfersConnection;
+  /** Reads and enables pagination through a set of `AssetTransaction`. */
+  assetTransactionsByCreatedBlockId: AssetTransactionsConnection;
+  /** Reads and enables pagination through a set of `AssetTransaction`. */
+  assetTransactionsByUpdatedBlockId: AssetTransactionsConnection;
   /** Reads and enables pagination through a set of `Asset`. */
   assetsByAssetDocumentCreatedBlockIdAndAssetId: BlockAssetsByAssetDocumentCreatedBlockIdAndAssetIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Asset`. */
@@ -4248,6 +4675,10 @@ export type Block = Node & {
   assetsByAssetHolderCreatedBlockIdAndAssetId: BlockAssetsByAssetHolderCreatedBlockIdAndAssetIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Asset`. */
   assetsByAssetHolderUpdatedBlockIdAndAssetId: BlockAssetsByAssetHolderUpdatedBlockIdAndAssetIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Asset`. */
+  assetsByAssetTransactionCreatedBlockIdAndAssetId: BlockAssetsByAssetTransactionCreatedBlockIdAndAssetIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Asset`. */
+  assetsByAssetTransactionUpdatedBlockIdAndAssetId: BlockAssetsByAssetTransactionUpdatedBlockIdAndAssetIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Asset`. */
   assetsByComplianceCreatedBlockIdAndAssetId: BlockAssetsByComplianceCreatedBlockIdAndAssetIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Asset`. */
@@ -4335,6 +4766,10 @@ export type Block = Node & {
   blocksByAssetPendingOwnershipTransferCreatedBlockIdAndUpdatedBlockId: BlockBlocksByAssetPendingOwnershipTransferCreatedBlockIdAndUpdatedBlockIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Block`. */
   blocksByAssetPendingOwnershipTransferUpdatedBlockIdAndCreatedBlockId: BlockBlocksByAssetPendingOwnershipTransferUpdatedBlockIdAndCreatedBlockIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Block`. */
+  blocksByAssetTransactionCreatedBlockIdAndUpdatedBlockId: BlockBlocksByAssetTransactionCreatedBlockIdAndUpdatedBlockIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Block`. */
+  blocksByAssetTransactionUpdatedBlockIdAndCreatedBlockId: BlockBlocksByAssetTransactionUpdatedBlockIdAndCreatedBlockIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Block`. */
   blocksByAssetUpdatedBlockIdAndCreatedBlockId: BlockBlocksByAssetUpdatedBlockIdAndCreatedBlockIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Block`. */
@@ -4621,6 +5056,14 @@ export type Block = Node & {
   /** Reads and enables pagination through a set of `PortfolioMovement`. */
   portfolioMovementsByUpdatedBlockId: PortfolioMovementsConnection;
   /** Reads and enables pagination through a set of `Portfolio`. */
+  portfoliosByAssetTransactionCreatedBlockIdAndFromPortfolioId: BlockPortfoliosByAssetTransactionCreatedBlockIdAndFromPortfolioIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Portfolio`. */
+  portfoliosByAssetTransactionCreatedBlockIdAndToPortfolioId: BlockPortfoliosByAssetTransactionCreatedBlockIdAndToPortfolioIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Portfolio`. */
+  portfoliosByAssetTransactionUpdatedBlockIdAndFromPortfolioId: BlockPortfoliosByAssetTransactionUpdatedBlockIdAndFromPortfolioIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Portfolio`. */
+  portfoliosByAssetTransactionUpdatedBlockIdAndToPortfolioId: BlockPortfoliosByAssetTransactionUpdatedBlockIdAndToPortfolioIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Portfolio`. */
   portfoliosByCreatedBlockId: PortfoliosConnection;
   /** Reads and enables pagination through a set of `Portfolio`. */
   portfoliosByDistributionCreatedBlockIdAndPortfolioId: BlockPortfoliosByDistributionCreatedBlockIdAndPortfolioIdManyToManyConnection;
@@ -4888,6 +5331,28 @@ export type BlockAssetPendingOwnershipTransfersByUpdatedBlockIdArgs = {
 };
 
 /** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
+export type BlockAssetTransactionsByCreatedBlockIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<AssetTransactionFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<AssetTransactionsOrderBy>>;
+};
+
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
+export type BlockAssetTransactionsByUpdatedBlockIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<AssetTransactionFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<AssetTransactionsOrderBy>>;
+};
+
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetsByAssetDocumentCreatedBlockIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -4922,6 +5387,28 @@ export type BlockAssetsByAssetHolderCreatedBlockIdAndAssetIdArgs = {
 
 /** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockAssetsByAssetHolderUpdatedBlockIdAndAssetIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<AssetFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<AssetsOrderBy>>;
+};
+
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
+export type BlockAssetsByAssetTransactionCreatedBlockIdAndAssetIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<AssetFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<AssetsOrderBy>>;
+};
+
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
+export type BlockAssetsByAssetTransactionUpdatedBlockIdAndAssetIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
   filter?: InputMaybe<AssetFilter>;
@@ -5395,6 +5882,28 @@ export type BlockBlocksByAssetPendingOwnershipTransferCreatedBlockIdAndUpdatedBl
 
 /** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockBlocksByAssetPendingOwnershipTransferUpdatedBlockIdAndCreatedBlockIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<BlockFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<BlocksOrderBy>>;
+};
+
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
+export type BlockBlocksByAssetTransactionCreatedBlockIdAndUpdatedBlockIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<BlockFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<BlocksOrderBy>>;
+};
+
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
+export type BlockBlocksByAssetTransactionUpdatedBlockIdAndCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
   filter?: InputMaybe<BlockFilter>;
@@ -6890,6 +7399,50 @@ export type BlockPortfolioMovementsByUpdatedBlockIdArgs = {
 };
 
 /** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
+export type BlockPortfoliosByAssetTransactionCreatedBlockIdAndFromPortfolioIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<PortfolioFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
+};
+
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
+export type BlockPortfoliosByAssetTransactionCreatedBlockIdAndToPortfolioIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<PortfolioFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
+};
+
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
+export type BlockPortfoliosByAssetTransactionUpdatedBlockIdAndFromPortfolioIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<PortfolioFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
+};
+
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
+export type BlockPortfoliosByAssetTransactionUpdatedBlockIdAndToPortfolioIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<PortfolioFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
+};
+
+/** A set of transactions that were executed together. Includes a reference to its parent, which reference its parent, this forms a chain to the genesis block */
 export type BlockPortfoliosByCreatedBlockIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -7765,6 +8318,100 @@ export type BlockAssetsByAssetHolderUpdatedBlockIdAndAssetIdManyToManyEdgeHolder
   offset?: InputMaybe<Scalars['Int']>;
   orderBy?: InputMaybe<Array<AssetHoldersOrderBy>>;
 };
+
+/** A connection to a list of `Asset` values, with data from `AssetTransaction`. */
+export type BlockAssetsByAssetTransactionCreatedBlockIdAndAssetIdManyToManyConnection = {
+  __typename?: 'BlockAssetsByAssetTransactionCreatedBlockIdAndAssetIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<AssetAggregates>;
+  /** A list of edges which contains the `Asset`, info from the `AssetTransaction`, and the cursor to aid in pagination. */
+  edges: Array<BlockAssetsByAssetTransactionCreatedBlockIdAndAssetIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<AssetAggregates>>;
+  /** A list of `Asset` objects. */
+  nodes: Array<Maybe<Asset>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Asset` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Asset` values, with data from `AssetTransaction`. */
+export type BlockAssetsByAssetTransactionCreatedBlockIdAndAssetIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<AssetsGroupBy>;
+    having?: InputMaybe<AssetsHavingInput>;
+  };
+
+/** A `Asset` edge in the connection, with data from `AssetTransaction`. */
+export type BlockAssetsByAssetTransactionCreatedBlockIdAndAssetIdManyToManyEdge = {
+  __typename?: 'BlockAssetsByAssetTransactionCreatedBlockIdAndAssetIdManyToManyEdge';
+  /** Reads and enables pagination through a set of `AssetTransaction`. */
+  assetTransactions: AssetTransactionsConnection;
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Asset` at the end of the edge. */
+  node?: Maybe<Asset>;
+};
+
+/** A `Asset` edge in the connection, with data from `AssetTransaction`. */
+export type BlockAssetsByAssetTransactionCreatedBlockIdAndAssetIdManyToManyEdgeAssetTransactionsArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<AssetTransactionFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<AssetTransactionsOrderBy>>;
+  };
+
+/** A connection to a list of `Asset` values, with data from `AssetTransaction`. */
+export type BlockAssetsByAssetTransactionUpdatedBlockIdAndAssetIdManyToManyConnection = {
+  __typename?: 'BlockAssetsByAssetTransactionUpdatedBlockIdAndAssetIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<AssetAggregates>;
+  /** A list of edges which contains the `Asset`, info from the `AssetTransaction`, and the cursor to aid in pagination. */
+  edges: Array<BlockAssetsByAssetTransactionUpdatedBlockIdAndAssetIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<AssetAggregates>>;
+  /** A list of `Asset` objects. */
+  nodes: Array<Maybe<Asset>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Asset` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Asset` values, with data from `AssetTransaction`. */
+export type BlockAssetsByAssetTransactionUpdatedBlockIdAndAssetIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<AssetsGroupBy>;
+    having?: InputMaybe<AssetsHavingInput>;
+  };
+
+/** A `Asset` edge in the connection, with data from `AssetTransaction`. */
+export type BlockAssetsByAssetTransactionUpdatedBlockIdAndAssetIdManyToManyEdge = {
+  __typename?: 'BlockAssetsByAssetTransactionUpdatedBlockIdAndAssetIdManyToManyEdge';
+  /** Reads and enables pagination through a set of `AssetTransaction`. */
+  assetTransactions: AssetTransactionsConnection;
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Asset` at the end of the edge. */
+  node?: Maybe<Asset>;
+};
+
+/** A `Asset` edge in the connection, with data from `AssetTransaction`. */
+export type BlockAssetsByAssetTransactionUpdatedBlockIdAndAssetIdManyToManyEdgeAssetTransactionsArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<AssetTransactionFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<AssetTransactionsOrderBy>>;
+  };
 
 /** A connection to a list of `Asset` values, with data from `Compliance`. */
 export type BlockAssetsByComplianceCreatedBlockIdAndAssetIdManyToManyConnection = {
@@ -9593,6 +10240,100 @@ export type BlockBlocksByAssetPendingOwnershipTransferUpdatedBlockIdAndCreatedBl
     last?: InputMaybe<Scalars['Int']>;
     offset?: InputMaybe<Scalars['Int']>;
     orderBy?: InputMaybe<Array<AssetPendingOwnershipTransfersOrderBy>>;
+  };
+
+/** A connection to a list of `Block` values, with data from `AssetTransaction`. */
+export type BlockBlocksByAssetTransactionCreatedBlockIdAndUpdatedBlockIdManyToManyConnection = {
+  __typename?: 'BlockBlocksByAssetTransactionCreatedBlockIdAndUpdatedBlockIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<BlockAggregates>;
+  /** A list of edges which contains the `Block`, info from the `AssetTransaction`, and the cursor to aid in pagination. */
+  edges: Array<BlockBlocksByAssetTransactionCreatedBlockIdAndUpdatedBlockIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<BlockAggregates>>;
+  /** A list of `Block` objects. */
+  nodes: Array<Maybe<Block>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Block` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Block` values, with data from `AssetTransaction`. */
+export type BlockBlocksByAssetTransactionCreatedBlockIdAndUpdatedBlockIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<BlocksGroupBy>;
+    having?: InputMaybe<BlocksHavingInput>;
+  };
+
+/** A `Block` edge in the connection, with data from `AssetTransaction`. */
+export type BlockBlocksByAssetTransactionCreatedBlockIdAndUpdatedBlockIdManyToManyEdge = {
+  __typename?: 'BlockBlocksByAssetTransactionCreatedBlockIdAndUpdatedBlockIdManyToManyEdge';
+  /** Reads and enables pagination through a set of `AssetTransaction`. */
+  assetTransactionsByUpdatedBlockId: AssetTransactionsConnection;
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Block` at the end of the edge. */
+  node?: Maybe<Block>;
+};
+
+/** A `Block` edge in the connection, with data from `AssetTransaction`. */
+export type BlockBlocksByAssetTransactionCreatedBlockIdAndUpdatedBlockIdManyToManyEdgeAssetTransactionsByUpdatedBlockIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<AssetTransactionFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<AssetTransactionsOrderBy>>;
+  };
+
+/** A connection to a list of `Block` values, with data from `AssetTransaction`. */
+export type BlockBlocksByAssetTransactionUpdatedBlockIdAndCreatedBlockIdManyToManyConnection = {
+  __typename?: 'BlockBlocksByAssetTransactionUpdatedBlockIdAndCreatedBlockIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<BlockAggregates>;
+  /** A list of edges which contains the `Block`, info from the `AssetTransaction`, and the cursor to aid in pagination. */
+  edges: Array<BlockBlocksByAssetTransactionUpdatedBlockIdAndCreatedBlockIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<BlockAggregates>>;
+  /** A list of `Block` objects. */
+  nodes: Array<Maybe<Block>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Block` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Block` values, with data from `AssetTransaction`. */
+export type BlockBlocksByAssetTransactionUpdatedBlockIdAndCreatedBlockIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<BlocksGroupBy>;
+    having?: InputMaybe<BlocksHavingInput>;
+  };
+
+/** A `Block` edge in the connection, with data from `AssetTransaction`. */
+export type BlockBlocksByAssetTransactionUpdatedBlockIdAndCreatedBlockIdManyToManyEdge = {
+  __typename?: 'BlockBlocksByAssetTransactionUpdatedBlockIdAndCreatedBlockIdManyToManyEdge';
+  /** Reads and enables pagination through a set of `AssetTransaction`. */
+  assetTransactionsByCreatedBlockId: AssetTransactionsConnection;
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Block` at the end of the edge. */
+  node?: Maybe<Block>;
+};
+
+/** A `Block` edge in the connection, with data from `AssetTransaction`. */
+export type BlockBlocksByAssetTransactionUpdatedBlockIdAndCreatedBlockIdManyToManyEdgeAssetTransactionsByCreatedBlockIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<AssetTransactionFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<AssetTransactionsOrderBy>>;
   };
 
 /** A connection to a list of `Block` values, with data from `Asset`. */
@@ -14668,6 +15409,196 @@ export type BlockPermissionsByAccountUpdatedBlockIdAndPermissionsIdManyToManyEdg
     orderBy?: InputMaybe<Array<AccountsOrderBy>>;
   };
 
+/** A connection to a list of `Portfolio` values, with data from `AssetTransaction`. */
+export type BlockPortfoliosByAssetTransactionCreatedBlockIdAndFromPortfolioIdManyToManyConnection =
+  {
+    __typename?: 'BlockPortfoliosByAssetTransactionCreatedBlockIdAndFromPortfolioIdManyToManyConnection';
+    /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+    aggregates?: Maybe<PortfolioAggregates>;
+    /** A list of edges which contains the `Portfolio`, info from the `AssetTransaction`, and the cursor to aid in pagination. */
+    edges: Array<BlockPortfoliosByAssetTransactionCreatedBlockIdAndFromPortfolioIdManyToManyEdge>;
+    /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+    groupedAggregates?: Maybe<Array<PortfolioAggregates>>;
+    /** A list of `Portfolio` objects. */
+    nodes: Array<Maybe<Portfolio>>;
+    /** Information to aid in pagination. */
+    pageInfo: PageInfo;
+    /** The count of *all* `Portfolio` you could get from the connection. */
+    totalCount: Scalars['Int'];
+  };
+
+/** A connection to a list of `Portfolio` values, with data from `AssetTransaction`. */
+export type BlockPortfoliosByAssetTransactionCreatedBlockIdAndFromPortfolioIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<PortfoliosGroupBy>;
+    having?: InputMaybe<PortfoliosHavingInput>;
+  };
+
+/** A `Portfolio` edge in the connection, with data from `AssetTransaction`. */
+export type BlockPortfoliosByAssetTransactionCreatedBlockIdAndFromPortfolioIdManyToManyEdge = {
+  __typename?: 'BlockPortfoliosByAssetTransactionCreatedBlockIdAndFromPortfolioIdManyToManyEdge';
+  /** Reads and enables pagination through a set of `AssetTransaction`. */
+  assetTransactionsByFromPortfolioId: AssetTransactionsConnection;
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Portfolio` at the end of the edge. */
+  node?: Maybe<Portfolio>;
+};
+
+/** A `Portfolio` edge in the connection, with data from `AssetTransaction`. */
+export type BlockPortfoliosByAssetTransactionCreatedBlockIdAndFromPortfolioIdManyToManyEdgeAssetTransactionsByFromPortfolioIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<AssetTransactionFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<AssetTransactionsOrderBy>>;
+  };
+
+/** A connection to a list of `Portfolio` values, with data from `AssetTransaction`. */
+export type BlockPortfoliosByAssetTransactionCreatedBlockIdAndToPortfolioIdManyToManyConnection = {
+  __typename?: 'BlockPortfoliosByAssetTransactionCreatedBlockIdAndToPortfolioIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<PortfolioAggregates>;
+  /** A list of edges which contains the `Portfolio`, info from the `AssetTransaction`, and the cursor to aid in pagination. */
+  edges: Array<BlockPortfoliosByAssetTransactionCreatedBlockIdAndToPortfolioIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<PortfolioAggregates>>;
+  /** A list of `Portfolio` objects. */
+  nodes: Array<Maybe<Portfolio>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Portfolio` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Portfolio` values, with data from `AssetTransaction`. */
+export type BlockPortfoliosByAssetTransactionCreatedBlockIdAndToPortfolioIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<PortfoliosGroupBy>;
+    having?: InputMaybe<PortfoliosHavingInput>;
+  };
+
+/** A `Portfolio` edge in the connection, with data from `AssetTransaction`. */
+export type BlockPortfoliosByAssetTransactionCreatedBlockIdAndToPortfolioIdManyToManyEdge = {
+  __typename?: 'BlockPortfoliosByAssetTransactionCreatedBlockIdAndToPortfolioIdManyToManyEdge';
+  /** Reads and enables pagination through a set of `AssetTransaction`. */
+  assetTransactionsByToPortfolioId: AssetTransactionsConnection;
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Portfolio` at the end of the edge. */
+  node?: Maybe<Portfolio>;
+};
+
+/** A `Portfolio` edge in the connection, with data from `AssetTransaction`. */
+export type BlockPortfoliosByAssetTransactionCreatedBlockIdAndToPortfolioIdManyToManyEdgeAssetTransactionsByToPortfolioIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<AssetTransactionFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<AssetTransactionsOrderBy>>;
+  };
+
+/** A connection to a list of `Portfolio` values, with data from `AssetTransaction`. */
+export type BlockPortfoliosByAssetTransactionUpdatedBlockIdAndFromPortfolioIdManyToManyConnection =
+  {
+    __typename?: 'BlockPortfoliosByAssetTransactionUpdatedBlockIdAndFromPortfolioIdManyToManyConnection';
+    /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+    aggregates?: Maybe<PortfolioAggregates>;
+    /** A list of edges which contains the `Portfolio`, info from the `AssetTransaction`, and the cursor to aid in pagination. */
+    edges: Array<BlockPortfoliosByAssetTransactionUpdatedBlockIdAndFromPortfolioIdManyToManyEdge>;
+    /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+    groupedAggregates?: Maybe<Array<PortfolioAggregates>>;
+    /** A list of `Portfolio` objects. */
+    nodes: Array<Maybe<Portfolio>>;
+    /** Information to aid in pagination. */
+    pageInfo: PageInfo;
+    /** The count of *all* `Portfolio` you could get from the connection. */
+    totalCount: Scalars['Int'];
+  };
+
+/** A connection to a list of `Portfolio` values, with data from `AssetTransaction`. */
+export type BlockPortfoliosByAssetTransactionUpdatedBlockIdAndFromPortfolioIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<PortfoliosGroupBy>;
+    having?: InputMaybe<PortfoliosHavingInput>;
+  };
+
+/** A `Portfolio` edge in the connection, with data from `AssetTransaction`. */
+export type BlockPortfoliosByAssetTransactionUpdatedBlockIdAndFromPortfolioIdManyToManyEdge = {
+  __typename?: 'BlockPortfoliosByAssetTransactionUpdatedBlockIdAndFromPortfolioIdManyToManyEdge';
+  /** Reads and enables pagination through a set of `AssetTransaction`. */
+  assetTransactionsByFromPortfolioId: AssetTransactionsConnection;
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Portfolio` at the end of the edge. */
+  node?: Maybe<Portfolio>;
+};
+
+/** A `Portfolio` edge in the connection, with data from `AssetTransaction`. */
+export type BlockPortfoliosByAssetTransactionUpdatedBlockIdAndFromPortfolioIdManyToManyEdgeAssetTransactionsByFromPortfolioIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<AssetTransactionFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<AssetTransactionsOrderBy>>;
+  };
+
+/** A connection to a list of `Portfolio` values, with data from `AssetTransaction`. */
+export type BlockPortfoliosByAssetTransactionUpdatedBlockIdAndToPortfolioIdManyToManyConnection = {
+  __typename?: 'BlockPortfoliosByAssetTransactionUpdatedBlockIdAndToPortfolioIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<PortfolioAggregates>;
+  /** A list of edges which contains the `Portfolio`, info from the `AssetTransaction`, and the cursor to aid in pagination. */
+  edges: Array<BlockPortfoliosByAssetTransactionUpdatedBlockIdAndToPortfolioIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<PortfolioAggregates>>;
+  /** A list of `Portfolio` objects. */
+  nodes: Array<Maybe<Portfolio>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Portfolio` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Portfolio` values, with data from `AssetTransaction`. */
+export type BlockPortfoliosByAssetTransactionUpdatedBlockIdAndToPortfolioIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<PortfoliosGroupBy>;
+    having?: InputMaybe<PortfoliosHavingInput>;
+  };
+
+/** A `Portfolio` edge in the connection, with data from `AssetTransaction`. */
+export type BlockPortfoliosByAssetTransactionUpdatedBlockIdAndToPortfolioIdManyToManyEdge = {
+  __typename?: 'BlockPortfoliosByAssetTransactionUpdatedBlockIdAndToPortfolioIdManyToManyEdge';
+  /** Reads and enables pagination through a set of `AssetTransaction`. */
+  assetTransactionsByToPortfolioId: AssetTransactionsConnection;
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Portfolio` at the end of the edge. */
+  node?: Maybe<Portfolio>;
+};
+
+/** A `Portfolio` edge in the connection, with data from `AssetTransaction`. */
+export type BlockPortfoliosByAssetTransactionUpdatedBlockIdAndToPortfolioIdManyToManyEdgeAssetTransactionsByToPortfolioIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<AssetTransactionFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<AssetTransactionsOrderBy>>;
+  };
+
 /** A connection to a list of `Portfolio` values, with data from `Distribution`. */
 export type BlockPortfoliosByDistributionCreatedBlockIdAndPortfolioIdManyToManyConnection = {
   __typename?: 'BlockPortfoliosByDistributionCreatedBlockIdAndPortfolioIdManyToManyConnection';
@@ -15864,6 +16795,10 @@ export enum BlocksOrderBy {
   AssetPendingOwnershipTransfersByCreatedBlockIdCountDesc = 'ASSET_PENDING_OWNERSHIP_TRANSFERS_BY_CREATED_BLOCK_ID_COUNT_DESC',
   AssetPendingOwnershipTransfersByUpdatedBlockIdCountAsc = 'ASSET_PENDING_OWNERSHIP_TRANSFERS_BY_UPDATED_BLOCK_ID_COUNT_ASC',
   AssetPendingOwnershipTransfersByUpdatedBlockIdCountDesc = 'ASSET_PENDING_OWNERSHIP_TRANSFERS_BY_UPDATED_BLOCK_ID_COUNT_DESC',
+  AssetTransactionsByCreatedBlockIdCountAsc = 'ASSET_TRANSACTIONS_BY_CREATED_BLOCK_ID_COUNT_ASC',
+  AssetTransactionsByCreatedBlockIdCountDesc = 'ASSET_TRANSACTIONS_BY_CREATED_BLOCK_ID_COUNT_DESC',
+  AssetTransactionsByUpdatedBlockIdCountAsc = 'ASSET_TRANSACTIONS_BY_UPDATED_BLOCK_ID_COUNT_ASC',
+  AssetTransactionsByUpdatedBlockIdCountDesc = 'ASSET_TRANSACTIONS_BY_UPDATED_BLOCK_ID_COUNT_DESC',
   AuthorizationsByCreatedBlockIdCountAsc = 'AUTHORIZATIONS_BY_CREATED_BLOCK_ID_COUNT_ASC',
   AuthorizationsByCreatedBlockIdCountDesc = 'AUTHORIZATIONS_BY_CREATED_BLOCK_ID_COUNT_DESC',
   AuthorizationsByUpdatedBlockIdCountAsc = 'AUTHORIZATIONS_BY_UPDATED_BLOCK_ID_COUNT_ASC',
@@ -17034,6 +17969,7 @@ export type DistributionIdentitiesByDistributionPaymentDistributionIdAndTargetId
 export type DistributionPayment = Node & {
   __typename?: 'DistributionPayment';
   amount: Scalars['BigFloat'];
+  amountAfterTax: Scalars['BigFloat'];
   createdAt: Scalars['Datetime'];
   /** Reads a single `Block` that is related to this `DistributionPayment`. */
   createdBlock?: Maybe<Block>;
@@ -17066,6 +18002,8 @@ export type DistributionPaymentAggregates = {
 export type DistributionPaymentFilter = {
   /** Filter by the object’s `amount` field. */
   amount?: InputMaybe<BigFloatFilter>;
+  /** Filter by the object’s `amountAfterTax` field. */
+  amountAfterTax?: InputMaybe<BigFloatFilter>;
   /** Checks for all expressions in this list. */
   and?: InputMaybe<Array<DistributionPaymentFilter>>;
   /** Filter by the object’s `createdAt` field. */
@@ -17131,6 +18069,7 @@ export type DistributionPaymentsEdge = {
 /** Grouping methods for `DistributionPayment` for usage during aggregation. */
 export enum DistributionPaymentsGroupBy {
   Amount = 'AMOUNT',
+  AmountAfterTax = 'AMOUNT_AFTER_TAX',
   CreatedAt = 'CREATED_AT',
   CreatedBlockId = 'CREATED_BLOCK_ID',
   Datetime = 'DATETIME',
@@ -17151,6 +18090,8 @@ export type DistributionPaymentsHavingInput = {
 
 /** Methods to use when ordering `DistributionPayment`. */
 export enum DistributionPaymentsOrderBy {
+  AmountAfterTaxAsc = 'AMOUNT_AFTER_TAX_ASC',
+  AmountAfterTaxDesc = 'AMOUNT_AFTER_TAX_DESC',
   AmountAsc = 'AMOUNT_ASC',
   AmountDesc = 'AMOUNT_DESC',
   CreatedAtAsc = 'CREATED_AT_ASC',
@@ -17506,6 +18447,7 @@ export type Extrinsic = Node & {
   params?: Maybe<Scalars['JSON']>;
   paramsTxt: Scalars['String'];
   signed: Scalars['Int'];
+  /** `signedbyAddress` is now deprecated in favour of `signed` */
   signedbyAddress: Scalars['Int'];
   specVersionId: Scalars['Int'];
   success: Scalars['Int'];
@@ -23543,6 +24485,14 @@ export enum PermissionsOrderBy {
  */
 export type Portfolio = Node & {
   __typename?: 'Portfolio';
+  /** Reads and enables pagination through a set of `AssetTransaction`. */
+  assetTransactionsByFromPortfolioId: AssetTransactionsConnection;
+  /** Reads and enables pagination through a set of `AssetTransaction`. */
+  assetTransactionsByToPortfolioId: AssetTransactionsConnection;
+  /** Reads and enables pagination through a set of `Asset`. */
+  assetsByAssetTransactionFromPortfolioIdAndAssetId: PortfolioAssetsByAssetTransactionFromPortfolioIdAndAssetIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Asset`. */
+  assetsByAssetTransactionToPortfolioIdAndAssetId: PortfolioAssetsByAssetTransactionToPortfolioIdAndAssetIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Asset`. */
   assetsByDistributionPortfolioIdAndAssetId: PortfolioAssetsByDistributionPortfolioIdAndAssetIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Asset`. */
@@ -23553,6 +24503,14 @@ export type Portfolio = Node & {
   assetsByStoOfferingPortfolioIdAndOfferingAssetId: PortfolioAssetsByStoOfferingPortfolioIdAndOfferingAssetIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Asset`. */
   assetsByStoRaisingPortfolioIdAndOfferingAssetId: PortfolioAssetsByStoRaisingPortfolioIdAndOfferingAssetIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Block`. */
+  blocksByAssetTransactionFromPortfolioIdAndCreatedBlockId: PortfolioBlocksByAssetTransactionFromPortfolioIdAndCreatedBlockIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Block`. */
+  blocksByAssetTransactionFromPortfolioIdAndUpdatedBlockId: PortfolioBlocksByAssetTransactionFromPortfolioIdAndUpdatedBlockIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Block`. */
+  blocksByAssetTransactionToPortfolioIdAndCreatedBlockId: PortfolioBlocksByAssetTransactionToPortfolioIdAndCreatedBlockIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Block`. */
+  blocksByAssetTransactionToPortfolioIdAndUpdatedBlockId: PortfolioBlocksByAssetTransactionToPortfolioIdAndUpdatedBlockIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Block`. */
   blocksByDistributionPortfolioIdAndCreatedBlockId: PortfolioBlocksByDistributionPortfolioIdAndCreatedBlockIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Block`. */
@@ -23619,6 +24577,10 @@ export type Portfolio = Node & {
   /** Reads and enables pagination through a set of `PortfolioMovement`. */
   portfolioMovementsByToId: PortfolioMovementsConnection;
   /** Reads and enables pagination through a set of `Portfolio`. */
+  portfoliosByAssetTransactionFromPortfolioIdAndToPortfolioId: PortfolioPortfoliosByAssetTransactionFromPortfolioIdAndToPortfolioIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Portfolio`. */
+  portfoliosByAssetTransactionToPortfolioIdAndFromPortfolioId: PortfolioPortfoliosByAssetTransactionToPortfolioIdAndFromPortfolioIdManyToManyConnection;
+  /** Reads and enables pagination through a set of `Portfolio`. */
   portfoliosByLegFromIdAndToId: PortfolioPortfoliosByLegFromIdAndToIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Portfolio`. */
   portfoliosByLegToIdAndFromId: PortfolioPortfoliosByLegToIdAndFromIdManyToManyConnection;
@@ -23646,6 +24608,66 @@ export type Portfolio = Node & {
   venuesByStoOfferingPortfolioIdAndVenueId: PortfolioVenuesByStoOfferingPortfolioIdAndVenueIdManyToManyConnection;
   /** Reads and enables pagination through a set of `Venue`. */
   venuesByStoRaisingPortfolioIdAndVenueId: PortfolioVenuesByStoRaisingPortfolioIdAndVenueIdManyToManyConnection;
+};
+
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
+export type PortfolioAssetTransactionsByFromPortfolioIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<AssetTransactionFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<AssetTransactionsOrderBy>>;
+};
+
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
+export type PortfolioAssetTransactionsByToPortfolioIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<AssetTransactionFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<AssetTransactionsOrderBy>>;
+};
+
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
+export type PortfolioAssetsByAssetTransactionFromPortfolioIdAndAssetIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<AssetFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<AssetsOrderBy>>;
+};
+
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
+export type PortfolioAssetsByAssetTransactionToPortfolioIdAndAssetIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<AssetFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<AssetsOrderBy>>;
 };
 
 /**
@@ -23721,6 +24743,66 @@ export type PortfolioAssetsByStoRaisingPortfolioIdAndOfferingAssetIdArgs = {
   last?: InputMaybe<Scalars['Int']>;
   offset?: InputMaybe<Scalars['Int']>;
   orderBy?: InputMaybe<Array<AssetsOrderBy>>;
+};
+
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
+export type PortfolioBlocksByAssetTransactionFromPortfolioIdAndCreatedBlockIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<BlockFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<BlocksOrderBy>>;
+};
+
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
+export type PortfolioBlocksByAssetTransactionFromPortfolioIdAndUpdatedBlockIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<BlockFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<BlocksOrderBy>>;
+};
+
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
+export type PortfolioBlocksByAssetTransactionToPortfolioIdAndCreatedBlockIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<BlockFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<BlocksOrderBy>>;
+};
+
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
+export type PortfolioBlocksByAssetTransactionToPortfolioIdAndUpdatedBlockIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<BlockFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<BlocksOrderBy>>;
 };
 
 /**
@@ -24088,6 +25170,36 @@ export type PortfolioPortfolioMovementsByToIdArgs = {
  *
  * Note: identities will always have a default Portfolio (id = 0)
  */
+export type PortfolioPortfoliosByAssetTransactionFromPortfolioIdAndToPortfolioIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<PortfolioFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
+};
+
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
+export type PortfolioPortfoliosByAssetTransactionToPortfolioIdAndFromPortfolioIdArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<PortfolioFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<PortfoliosOrderBy>>;
+};
+
+/**
+ * Represents a grouping of Assets held by an Identity. Particular accounts maybe authorized only over certain portfolios
+ *
+ * Note: identities will always have a default Portfolio (id = 0)
+ */
 export type PortfolioPortfoliosByLegFromIdAndToIdArgs = {
   after?: InputMaybe<Scalars['Cursor']>;
   before?: InputMaybe<Scalars['Cursor']>;
@@ -24267,6 +25379,100 @@ export type PortfolioAggregates = {
   __typename?: 'PortfolioAggregates';
   keys?: Maybe<Array<Scalars['String']>>;
 };
+
+/** A connection to a list of `Asset` values, with data from `AssetTransaction`. */
+export type PortfolioAssetsByAssetTransactionFromPortfolioIdAndAssetIdManyToManyConnection = {
+  __typename?: 'PortfolioAssetsByAssetTransactionFromPortfolioIdAndAssetIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<AssetAggregates>;
+  /** A list of edges which contains the `Asset`, info from the `AssetTransaction`, and the cursor to aid in pagination. */
+  edges: Array<PortfolioAssetsByAssetTransactionFromPortfolioIdAndAssetIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<AssetAggregates>>;
+  /** A list of `Asset` objects. */
+  nodes: Array<Maybe<Asset>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Asset` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Asset` values, with data from `AssetTransaction`. */
+export type PortfolioAssetsByAssetTransactionFromPortfolioIdAndAssetIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<AssetsGroupBy>;
+    having?: InputMaybe<AssetsHavingInput>;
+  };
+
+/** A `Asset` edge in the connection, with data from `AssetTransaction`. */
+export type PortfolioAssetsByAssetTransactionFromPortfolioIdAndAssetIdManyToManyEdge = {
+  __typename?: 'PortfolioAssetsByAssetTransactionFromPortfolioIdAndAssetIdManyToManyEdge';
+  /** Reads and enables pagination through a set of `AssetTransaction`. */
+  assetTransactions: AssetTransactionsConnection;
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Asset` at the end of the edge. */
+  node?: Maybe<Asset>;
+};
+
+/** A `Asset` edge in the connection, with data from `AssetTransaction`. */
+export type PortfolioAssetsByAssetTransactionFromPortfolioIdAndAssetIdManyToManyEdgeAssetTransactionsArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<AssetTransactionFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<AssetTransactionsOrderBy>>;
+  };
+
+/** A connection to a list of `Asset` values, with data from `AssetTransaction`. */
+export type PortfolioAssetsByAssetTransactionToPortfolioIdAndAssetIdManyToManyConnection = {
+  __typename?: 'PortfolioAssetsByAssetTransactionToPortfolioIdAndAssetIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<AssetAggregates>;
+  /** A list of edges which contains the `Asset`, info from the `AssetTransaction`, and the cursor to aid in pagination. */
+  edges: Array<PortfolioAssetsByAssetTransactionToPortfolioIdAndAssetIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<AssetAggregates>>;
+  /** A list of `Asset` objects. */
+  nodes: Array<Maybe<Asset>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Asset` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Asset` values, with data from `AssetTransaction`. */
+export type PortfolioAssetsByAssetTransactionToPortfolioIdAndAssetIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<AssetsGroupBy>;
+    having?: InputMaybe<AssetsHavingInput>;
+  };
+
+/** A `Asset` edge in the connection, with data from `AssetTransaction`. */
+export type PortfolioAssetsByAssetTransactionToPortfolioIdAndAssetIdManyToManyEdge = {
+  __typename?: 'PortfolioAssetsByAssetTransactionToPortfolioIdAndAssetIdManyToManyEdge';
+  /** Reads and enables pagination through a set of `AssetTransaction`. */
+  assetTransactions: AssetTransactionsConnection;
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Asset` at the end of the edge. */
+  node?: Maybe<Asset>;
+};
+
+/** A `Asset` edge in the connection, with data from `AssetTransaction`. */
+export type PortfolioAssetsByAssetTransactionToPortfolioIdAndAssetIdManyToManyEdgeAssetTransactionsArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<AssetTransactionFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<AssetTransactionsOrderBy>>;
+  };
 
 /** A connection to a list of `Asset` values, with data from `Distribution`. */
 export type PortfolioAssetsByDistributionPortfolioIdAndAssetIdManyToManyConnection = {
@@ -24499,6 +25705,196 @@ export type PortfolioAssetsByStoRaisingPortfolioIdAndOfferingAssetIdManyToManyEd
     last?: InputMaybe<Scalars['Int']>;
     offset?: InputMaybe<Scalars['Int']>;
     orderBy?: InputMaybe<Array<StosOrderBy>>;
+  };
+
+/** A connection to a list of `Block` values, with data from `AssetTransaction`. */
+export type PortfolioBlocksByAssetTransactionFromPortfolioIdAndCreatedBlockIdManyToManyConnection =
+  {
+    __typename?: 'PortfolioBlocksByAssetTransactionFromPortfolioIdAndCreatedBlockIdManyToManyConnection';
+    /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+    aggregates?: Maybe<BlockAggregates>;
+    /** A list of edges which contains the `Block`, info from the `AssetTransaction`, and the cursor to aid in pagination. */
+    edges: Array<PortfolioBlocksByAssetTransactionFromPortfolioIdAndCreatedBlockIdManyToManyEdge>;
+    /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+    groupedAggregates?: Maybe<Array<BlockAggregates>>;
+    /** A list of `Block` objects. */
+    nodes: Array<Maybe<Block>>;
+    /** Information to aid in pagination. */
+    pageInfo: PageInfo;
+    /** The count of *all* `Block` you could get from the connection. */
+    totalCount: Scalars['Int'];
+  };
+
+/** A connection to a list of `Block` values, with data from `AssetTransaction`. */
+export type PortfolioBlocksByAssetTransactionFromPortfolioIdAndCreatedBlockIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<BlocksGroupBy>;
+    having?: InputMaybe<BlocksHavingInput>;
+  };
+
+/** A `Block` edge in the connection, with data from `AssetTransaction`. */
+export type PortfolioBlocksByAssetTransactionFromPortfolioIdAndCreatedBlockIdManyToManyEdge = {
+  __typename?: 'PortfolioBlocksByAssetTransactionFromPortfolioIdAndCreatedBlockIdManyToManyEdge';
+  /** Reads and enables pagination through a set of `AssetTransaction`. */
+  assetTransactionsByCreatedBlockId: AssetTransactionsConnection;
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Block` at the end of the edge. */
+  node?: Maybe<Block>;
+};
+
+/** A `Block` edge in the connection, with data from `AssetTransaction`. */
+export type PortfolioBlocksByAssetTransactionFromPortfolioIdAndCreatedBlockIdManyToManyEdgeAssetTransactionsByCreatedBlockIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<AssetTransactionFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<AssetTransactionsOrderBy>>;
+  };
+
+/** A connection to a list of `Block` values, with data from `AssetTransaction`. */
+export type PortfolioBlocksByAssetTransactionFromPortfolioIdAndUpdatedBlockIdManyToManyConnection =
+  {
+    __typename?: 'PortfolioBlocksByAssetTransactionFromPortfolioIdAndUpdatedBlockIdManyToManyConnection';
+    /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+    aggregates?: Maybe<BlockAggregates>;
+    /** A list of edges which contains the `Block`, info from the `AssetTransaction`, and the cursor to aid in pagination. */
+    edges: Array<PortfolioBlocksByAssetTransactionFromPortfolioIdAndUpdatedBlockIdManyToManyEdge>;
+    /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+    groupedAggregates?: Maybe<Array<BlockAggregates>>;
+    /** A list of `Block` objects. */
+    nodes: Array<Maybe<Block>>;
+    /** Information to aid in pagination. */
+    pageInfo: PageInfo;
+    /** The count of *all* `Block` you could get from the connection. */
+    totalCount: Scalars['Int'];
+  };
+
+/** A connection to a list of `Block` values, with data from `AssetTransaction`. */
+export type PortfolioBlocksByAssetTransactionFromPortfolioIdAndUpdatedBlockIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<BlocksGroupBy>;
+    having?: InputMaybe<BlocksHavingInput>;
+  };
+
+/** A `Block` edge in the connection, with data from `AssetTransaction`. */
+export type PortfolioBlocksByAssetTransactionFromPortfolioIdAndUpdatedBlockIdManyToManyEdge = {
+  __typename?: 'PortfolioBlocksByAssetTransactionFromPortfolioIdAndUpdatedBlockIdManyToManyEdge';
+  /** Reads and enables pagination through a set of `AssetTransaction`. */
+  assetTransactionsByUpdatedBlockId: AssetTransactionsConnection;
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Block` at the end of the edge. */
+  node?: Maybe<Block>;
+};
+
+/** A `Block` edge in the connection, with data from `AssetTransaction`. */
+export type PortfolioBlocksByAssetTransactionFromPortfolioIdAndUpdatedBlockIdManyToManyEdgeAssetTransactionsByUpdatedBlockIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<AssetTransactionFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<AssetTransactionsOrderBy>>;
+  };
+
+/** A connection to a list of `Block` values, with data from `AssetTransaction`. */
+export type PortfolioBlocksByAssetTransactionToPortfolioIdAndCreatedBlockIdManyToManyConnection = {
+  __typename?: 'PortfolioBlocksByAssetTransactionToPortfolioIdAndCreatedBlockIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<BlockAggregates>;
+  /** A list of edges which contains the `Block`, info from the `AssetTransaction`, and the cursor to aid in pagination. */
+  edges: Array<PortfolioBlocksByAssetTransactionToPortfolioIdAndCreatedBlockIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<BlockAggregates>>;
+  /** A list of `Block` objects. */
+  nodes: Array<Maybe<Block>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Block` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Block` values, with data from `AssetTransaction`. */
+export type PortfolioBlocksByAssetTransactionToPortfolioIdAndCreatedBlockIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<BlocksGroupBy>;
+    having?: InputMaybe<BlocksHavingInput>;
+  };
+
+/** A `Block` edge in the connection, with data from `AssetTransaction`. */
+export type PortfolioBlocksByAssetTransactionToPortfolioIdAndCreatedBlockIdManyToManyEdge = {
+  __typename?: 'PortfolioBlocksByAssetTransactionToPortfolioIdAndCreatedBlockIdManyToManyEdge';
+  /** Reads and enables pagination through a set of `AssetTransaction`. */
+  assetTransactionsByCreatedBlockId: AssetTransactionsConnection;
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Block` at the end of the edge. */
+  node?: Maybe<Block>;
+};
+
+/** A `Block` edge in the connection, with data from `AssetTransaction`. */
+export type PortfolioBlocksByAssetTransactionToPortfolioIdAndCreatedBlockIdManyToManyEdgeAssetTransactionsByCreatedBlockIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<AssetTransactionFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<AssetTransactionsOrderBy>>;
+  };
+
+/** A connection to a list of `Block` values, with data from `AssetTransaction`. */
+export type PortfolioBlocksByAssetTransactionToPortfolioIdAndUpdatedBlockIdManyToManyConnection = {
+  __typename?: 'PortfolioBlocksByAssetTransactionToPortfolioIdAndUpdatedBlockIdManyToManyConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<BlockAggregates>;
+  /** A list of edges which contains the `Block`, info from the `AssetTransaction`, and the cursor to aid in pagination. */
+  edges: Array<PortfolioBlocksByAssetTransactionToPortfolioIdAndUpdatedBlockIdManyToManyEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<BlockAggregates>>;
+  /** A list of `Block` objects. */
+  nodes: Array<Maybe<Block>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Block` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Block` values, with data from `AssetTransaction`. */
+export type PortfolioBlocksByAssetTransactionToPortfolioIdAndUpdatedBlockIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<BlocksGroupBy>;
+    having?: InputMaybe<BlocksHavingInput>;
+  };
+
+/** A `Block` edge in the connection, with data from `AssetTransaction`. */
+export type PortfolioBlocksByAssetTransactionToPortfolioIdAndUpdatedBlockIdManyToManyEdge = {
+  __typename?: 'PortfolioBlocksByAssetTransactionToPortfolioIdAndUpdatedBlockIdManyToManyEdge';
+  /** Reads and enables pagination through a set of `AssetTransaction`. */
+  assetTransactionsByUpdatedBlockId: AssetTransactionsConnection;
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Block` at the end of the edge. */
+  node?: Maybe<Block>;
+};
+
+/** A `Block` edge in the connection, with data from `AssetTransaction`. */
+export type PortfolioBlocksByAssetTransactionToPortfolioIdAndUpdatedBlockIdManyToManyEdgeAssetTransactionsByUpdatedBlockIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<AssetTransactionFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<AssetTransactionsOrderBy>>;
   };
 
 /** A connection to a list of `Block` values, with data from `Distribution`. */
@@ -25566,6 +26962,102 @@ export enum PortfolioMovementsOrderBy {
   UpdatedBlockIdDesc = 'UPDATED_BLOCK_ID_DESC',
 }
 
+/** A connection to a list of `Portfolio` values, with data from `AssetTransaction`. */
+export type PortfolioPortfoliosByAssetTransactionFromPortfolioIdAndToPortfolioIdManyToManyConnection =
+  {
+    __typename?: 'PortfolioPortfoliosByAssetTransactionFromPortfolioIdAndToPortfolioIdManyToManyConnection';
+    /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+    aggregates?: Maybe<PortfolioAggregates>;
+    /** A list of edges which contains the `Portfolio`, info from the `AssetTransaction`, and the cursor to aid in pagination. */
+    edges: Array<PortfolioPortfoliosByAssetTransactionFromPortfolioIdAndToPortfolioIdManyToManyEdge>;
+    /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+    groupedAggregates?: Maybe<Array<PortfolioAggregates>>;
+    /** A list of `Portfolio` objects. */
+    nodes: Array<Maybe<Portfolio>>;
+    /** Information to aid in pagination. */
+    pageInfo: PageInfo;
+    /** The count of *all* `Portfolio` you could get from the connection. */
+    totalCount: Scalars['Int'];
+  };
+
+/** A connection to a list of `Portfolio` values, with data from `AssetTransaction`. */
+export type PortfolioPortfoliosByAssetTransactionFromPortfolioIdAndToPortfolioIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<PortfoliosGroupBy>;
+    having?: InputMaybe<PortfoliosHavingInput>;
+  };
+
+/** A `Portfolio` edge in the connection, with data from `AssetTransaction`. */
+export type PortfolioPortfoliosByAssetTransactionFromPortfolioIdAndToPortfolioIdManyToManyEdge = {
+  __typename?: 'PortfolioPortfoliosByAssetTransactionFromPortfolioIdAndToPortfolioIdManyToManyEdge';
+  /** Reads and enables pagination through a set of `AssetTransaction`. */
+  assetTransactionsByToPortfolioId: AssetTransactionsConnection;
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Portfolio` at the end of the edge. */
+  node?: Maybe<Portfolio>;
+};
+
+/** A `Portfolio` edge in the connection, with data from `AssetTransaction`. */
+export type PortfolioPortfoliosByAssetTransactionFromPortfolioIdAndToPortfolioIdManyToManyEdgeAssetTransactionsByToPortfolioIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<AssetTransactionFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<AssetTransactionsOrderBy>>;
+  };
+
+/** A connection to a list of `Portfolio` values, with data from `AssetTransaction`. */
+export type PortfolioPortfoliosByAssetTransactionToPortfolioIdAndFromPortfolioIdManyToManyConnection =
+  {
+    __typename?: 'PortfolioPortfoliosByAssetTransactionToPortfolioIdAndFromPortfolioIdManyToManyConnection';
+    /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+    aggregates?: Maybe<PortfolioAggregates>;
+    /** A list of edges which contains the `Portfolio`, info from the `AssetTransaction`, and the cursor to aid in pagination. */
+    edges: Array<PortfolioPortfoliosByAssetTransactionToPortfolioIdAndFromPortfolioIdManyToManyEdge>;
+    /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+    groupedAggregates?: Maybe<Array<PortfolioAggregates>>;
+    /** A list of `Portfolio` objects. */
+    nodes: Array<Maybe<Portfolio>>;
+    /** Information to aid in pagination. */
+    pageInfo: PageInfo;
+    /** The count of *all* `Portfolio` you could get from the connection. */
+    totalCount: Scalars['Int'];
+  };
+
+/** A connection to a list of `Portfolio` values, with data from `AssetTransaction`. */
+export type PortfolioPortfoliosByAssetTransactionToPortfolioIdAndFromPortfolioIdManyToManyConnectionGroupedAggregatesArgs =
+  {
+    groupBy: Array<PortfoliosGroupBy>;
+    having?: InputMaybe<PortfoliosHavingInput>;
+  };
+
+/** A `Portfolio` edge in the connection, with data from `AssetTransaction`. */
+export type PortfolioPortfoliosByAssetTransactionToPortfolioIdAndFromPortfolioIdManyToManyEdge = {
+  __typename?: 'PortfolioPortfoliosByAssetTransactionToPortfolioIdAndFromPortfolioIdManyToManyEdge';
+  /** Reads and enables pagination through a set of `AssetTransaction`. */
+  assetTransactionsByFromPortfolioId: AssetTransactionsConnection;
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Portfolio` at the end of the edge. */
+  node?: Maybe<Portfolio>;
+};
+
+/** A `Portfolio` edge in the connection, with data from `AssetTransaction`. */
+export type PortfolioPortfoliosByAssetTransactionToPortfolioIdAndFromPortfolioIdManyToManyEdgeAssetTransactionsByFromPortfolioIdArgs =
+  {
+    after?: InputMaybe<Scalars['Cursor']>;
+    before?: InputMaybe<Scalars['Cursor']>;
+    filter?: InputMaybe<AssetTransactionFilter>;
+    first?: InputMaybe<Scalars['Int']>;
+    last?: InputMaybe<Scalars['Int']>;
+    offset?: InputMaybe<Scalars['Int']>;
+    orderBy?: InputMaybe<Array<AssetTransactionsOrderBy>>;
+  };
+
 /** A connection to a list of `Portfolio` values, with data from `Leg`. */
 export type PortfolioPortfoliosByLegFromIdAndToIdManyToManyConnection = {
   __typename?: 'PortfolioPortfoliosByLegFromIdAndToIdManyToManyConnection';
@@ -26082,6 +27574,10 @@ export type PortfoliosHavingInput = {
 
 /** Methods to use when ordering `Portfolio`. */
 export enum PortfoliosOrderBy {
+  AssetTransactionsByFromPortfolioIdCountAsc = 'ASSET_TRANSACTIONS_BY_FROM_PORTFOLIO_ID_COUNT_ASC',
+  AssetTransactionsByFromPortfolioIdCountDesc = 'ASSET_TRANSACTIONS_BY_FROM_PORTFOLIO_ID_COUNT_DESC',
+  AssetTransactionsByToPortfolioIdCountAsc = 'ASSET_TRANSACTIONS_BY_TO_PORTFOLIO_ID_COUNT_ASC',
+  AssetTransactionsByToPortfolioIdCountDesc = 'ASSET_TRANSACTIONS_BY_TO_PORTFOLIO_ID_COUNT_DESC',
   CreatedAtAsc = 'CREATED_AT_ASC',
   CreatedAtDesc = 'CREATED_AT_DESC',
   CreatedBlockIdAsc = 'CREATED_BLOCK_ID_ASC',
@@ -27863,6 +29359,11 @@ export type Query = Node & {
   assetPendingOwnershipTransferByNodeId?: Maybe<AssetPendingOwnershipTransfer>;
   /** Reads and enables pagination through a set of `AssetPendingOwnershipTransfer`. */
   assetPendingOwnershipTransfers?: Maybe<AssetPendingOwnershipTransfersConnection>;
+  assetTransaction?: Maybe<AssetTransaction>;
+  /** Reads a single `AssetTransaction` using its globally unique `ID`. */
+  assetTransactionByNodeId?: Maybe<AssetTransaction>;
+  /** Reads and enables pagination through a set of `AssetTransaction`. */
+  assetTransactions?: Maybe<AssetTransactionsConnection>;
   /** Reads and enables pagination through a set of `Asset`. */
   assets?: Maybe<AssetsConnection>;
   authorization?: Maybe<Authorization>;
@@ -28185,6 +29686,27 @@ export type QueryAssetPendingOwnershipTransfersArgs = {
   last?: InputMaybe<Scalars['Int']>;
   offset?: InputMaybe<Scalars['Int']>;
   orderBy?: InputMaybe<Array<AssetPendingOwnershipTransfersOrderBy>>;
+};
+
+/** The root query type which gives access points into the data universe. */
+export type QueryAssetTransactionArgs = {
+  id: Scalars['String'];
+};
+
+/** The root query type which gives access points into the data universe. */
+export type QueryAssetTransactionByNodeIdArgs = {
+  nodeId: Scalars['ID'];
+};
+
+/** The root query type which gives access points into the data universe. */
+export type QueryAssetTransactionsArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<AssetTransactionFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<AssetTransactionsOrderBy>>;
 };
 
 /** The root query type which gives access points into the data universe. */

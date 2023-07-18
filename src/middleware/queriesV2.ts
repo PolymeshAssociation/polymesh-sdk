@@ -7,6 +7,8 @@ import {
   Asset,
   AssetHolder,
   AssetHoldersOrderBy,
+  AssetTransaction,
+  AssetTransactionsOrderBy,
   BlocksOrderBy,
   ClaimsGroupBy,
   ClaimsOrderBy,
@@ -25,6 +27,7 @@ import {
   Portfolio,
   PortfolioMovement,
   PortfolioMovementsOrderBy,
+  SubqueryVersionsOrderBy,
   TickerExternalAgent,
   TickerExternalAgentAction,
   TickerExternalAgentActionsOrderBy,
@@ -68,6 +71,60 @@ export function heartbeatQuery(): QueryOptions {
     query {
       block(id: "1") {
         id
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: undefined,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get details about the SubQuery indexer
+ */
+export function metadataQuery(): QueryOptions {
+  const query = gql`
+    query Metadata {
+      _metadata {
+        chain
+        specName
+        genesisHash
+        lastProcessedHeight
+        lastProcessedTimestamp
+        targetHeight
+        indexerHealthy
+        indexerNodeVersion
+        queryNodeVersion
+        dynamicDatasources
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: undefined,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get details about the latest Subquery version
+ */
+export function latestSqVersionQuery(): QueryOptions {
+  const query = gql`
+    query SubqueryVersions {
+      subqueryVersions(orderBy: [${SubqueryVersionsOrderBy.UpdatedAtDesc}], first: 1) {
+        nodes {
+          id
+          version
+          createdAt
+          updatedAt
+        }
       }
     }
   `;
@@ -1075,5 +1132,56 @@ export function portfolioMovementsQuery(
   return {
     query,
     variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get the balance history for an Asset
+ */
+export function assetTransactionQuery(
+  filters: QueryArgs<AssetTransaction, 'assetId'>,
+  size?: BigNumber,
+  start?: BigNumber
+): QueryOptions<PaginatedQueryArgs<QueryArgs<AssetTransaction, 'assetId'>>> {
+  const query = gql`
+    query AssetTransactionQuery($assetId: String!) {
+      assetTransactions(
+        filter: { assetId: { equalTo: $assetId } }
+        orderBy: [${AssetTransactionsOrderBy.CreatedAtAsc}, ${AssetTransactionsOrderBy.CreatedBlockIdAsc}]
+      ) {
+        totalCount
+        nodes {
+          assetId
+          amount
+          fromPortfolioId
+          fromPortfolio {
+            identityId
+            number
+          }
+          toPortfolioId
+          toPortfolio {
+            identityId
+            number
+          }
+          eventId
+          eventIdx
+          extrinsicIdx
+          fundingRound
+          datetime
+          createdBlock {
+            blockId
+            hash
+            datetime
+          }
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
   };
 }

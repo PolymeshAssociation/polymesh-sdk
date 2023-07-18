@@ -25,7 +25,7 @@ import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import stringify from 'json-stable-stringify';
 import { differenceWith, flatMap, isEqual, mapValues, noop, padEnd, uniq } from 'lodash';
-import { major, satisfies } from 'semver';
+import { lt, major, satisfies } from 'semver';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 
 import {
@@ -37,7 +37,9 @@ import {
   Identity,
   PolymeshError,
 } from '~/internal';
+import { latestSqVersionQuery } from '~/middleware/queriesV2';
 import { Scope as MiddlewareScope } from '~/middleware/types';
+import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   CaCheckpointType,
   CalendarPeriod,
@@ -54,6 +56,7 @@ import {
   ModuleName,
   NextKey,
   NoArgsProcedureMethod,
+  OptionalArgsProcedureMethod,
   PaginationOptions,
   PermissionedAccount,
   ProcedureAuthorizationStatus,
@@ -78,6 +81,7 @@ import {
   TxWithArgs,
 } from '~/types/internal';
 import {
+  EnsuredV2,
   HumanReadableType,
   ProcedureFunc,
   QueryFunction,
@@ -85,6 +89,7 @@ import {
 } from '~/types/utils';
 import {
   MAX_TICKER_LENGTH,
+  MINIMUM_SQ_VERSION,
   STATE_RUNTIME_VERSION_CALL,
   SUPPORTED_NODE_SEMVER,
   SUPPORTED_NODE_VERSION_RANGE,
@@ -676,6 +681,50 @@ export function createProcedureMethod<
 ): NoArgsProcedureMethod<ProcedureReturnValue, ReturnValue>;
 export function createProcedureMethod<
   // eslint-disable-next-line @typescript-eslint/ban-types
+  MethodArgs,
+  ProcedureArgs,
+  ProcedureReturnValue,
+  Storage = Record<string, unknown>
+>(
+  args: {
+    getProcedureAndArgs: (
+      methodArgs?: MethodArgs
+    ) => [
+      (
+        | UnionOfProcedureFuncs<ProcedureArgs, ProcedureReturnValue, Storage>
+        | ProcedureFunc<ProcedureArgs, ProcedureReturnValue, Storage>
+      ),
+      ProcedureArgs
+    ];
+    optionalArgs: true;
+  },
+  context: Context
+): OptionalArgsProcedureMethod<MethodArgs, ProcedureReturnValue, ProcedureReturnValue>;
+export function createProcedureMethod<
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  MethodArgs,
+  ProcedureArgs,
+  ProcedureReturnValue,
+  ReturnValue,
+  Storage = Record<string, unknown>
+>(
+  args: {
+    getProcedureAndArgs: (
+      methodArgs: MethodArgs
+    ) => [
+      (
+        | UnionOfProcedureFuncs<ProcedureArgs, ProcedureReturnValue, Storage>
+        | ProcedureFunc<ProcedureArgs, ProcedureReturnValue, Storage>
+      ),
+      ProcedureArgs
+    ];
+    optionalArgs: true;
+    transformer: (value: ProcedureReturnValue) => ReturnValue | Promise<ReturnValue>;
+  },
+  context: Context
+): OptionalArgsProcedureMethod<MethodArgs, ProcedureReturnValue, ReturnValue>;
+export function createProcedureMethod<
+  // eslint-disable-next-line @typescript-eslint/ban-types
   MethodArgs extends {},
   ProcedureArgs,
   ProcedureReturnValue,
@@ -736,12 +785,14 @@ export function createProcedureMethod<
     ];
     transformer?: (value: ProcedureReturnValue) => ReturnValue | Promise<ReturnValue>;
     voidArgs?: true;
+    optionalArgs?: true;
   },
   context: Context
 ):
   | ProcedureMethod<MethodArgs, ProcedureReturnValue, ReturnValue>
+  | OptionalArgsProcedureMethod<MethodArgs, ProcedureReturnValue, ReturnValue>
   | NoArgsProcedureMethod<ProcedureReturnValue, ReturnValue> {
-  const { getProcedureAndArgs, transformer, voidArgs } = args;
+  const { getProcedureAndArgs, transformer, voidArgs, optionalArgs } = args;
 
   if (voidArgs) {
     const voidMethod = (
@@ -760,6 +811,27 @@ export function createProcedureMethod<
     };
 
     return voidMethod;
+  }
+
+  if (optionalArgs) {
+    const methodWithOptionalArgs = (
+      methodArgs?: MethodArgs,
+      opts: ProcedureOpts = {}
+    ): Promise<GenericPolymeshTransaction<ProcedureReturnValue, ReturnValue>> => {
+      const [proc, procArgs] = getProcedureAndArgs(methodArgs);
+      return proc().prepare({ args: procArgs, transformer }, context, opts);
+    };
+
+    methodWithOptionalArgs.checkAuthorization = async (
+      methodArgs?: MethodArgs,
+      opts: ProcedureOpts = {}
+    ): Promise<ProcedureAuthorizationStatus> => {
+      const [proc, procArgs] = getProcedureAndArgs(methodArgs);
+
+      return proc().checkAuthorization(procArgs, context, opts);
+    };
+
+    return methodWithOptionalArgs;
   }
 
   const method = (
@@ -1320,6 +1392,29 @@ function handleSpecVersionResponse(
   }
 
   return true;
+}
+
+/**
+ * @hidden
+ *
+ * Checks SQ version compatibility with the SDK
+ */
+export async function assertExpectedSqVersion(context: Context): Promise<void> {
+  const {
+    data: {
+      subqueryVersions: {
+        nodes: [sqVersion],
+      },
+    },
+  } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'subqueryVersions'>>(
+    latestSqVersionQuery()
+  );
+
+  if (!sqVersion || lt(sqVersion.version, MINIMUM_SQ_VERSION)) {
+    console.warn(
+      `This version of the SDK supports Polymesh Subquery version ${MINIMUM_SQ_VERSION} or higher. Please upgrade the MiddlewareV2`
+    );
+  }
 }
 
 /**

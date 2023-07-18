@@ -7,7 +7,7 @@ import { when } from 'jest-when';
 import { Account, Context, PolymeshError } from '~/internal';
 import { ClaimTypeEnum as MiddlewareV2ClaimType } from '~/middleware/enumsV2';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
-import { claimsQuery, heartbeatQuery } from '~/middleware/queriesV2';
+import { claimsQuery, heartbeatQuery, metadataQuery } from '~/middleware/queriesV2';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId, getAtMock } from '~/testUtils/mocks/dataSources';
@@ -282,6 +282,32 @@ describe('Context class', () => {
       await context.setSigningManager(signingManager);
 
       expect(polymeshApi.setSigner).toHaveBeenCalledWith(polkadotSigner);
+    });
+
+    it('should unset the SigningManager when given null', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
+      });
+
+      const signingManager = dsMockUtils.getSigningManagerInstance({
+        getExternalSigner: 'signer' as PolkadotSigner,
+      });
+      await context.setSigningManager(signingManager);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect(() => (context as any).signingManager).not.toThrow();
+
+      await context.setSigningManager(null);
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.General,
+        message: 'There is no Signing Manager attached to the SDK',
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect(() => (context as any).signingManager).toThrowError(expectedError);
     });
   });
 
@@ -2364,6 +2390,57 @@ describe('Context class', () => {
     it('should return the nonce value', async () => {
       context.setNonce(new BigNumber(10));
       expect(context.getNonce()).toEqual(new BigNumber(10));
+    });
+  });
+
+  describe('method: getMiddlewareMetadata', () => {
+    beforeAll(() => {
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
+    });
+
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should return the middleware metadata', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
+      });
+
+      const metadata = {
+        chain: 'Polymesh Testnet Develop',
+        specName: 'polymesh_testnet',
+        genesisHash: '0x3c3183f6d701500766ff7d147b79c4f10014a095eaaa98e960dcef6b3ead50ee',
+        lastProcessedHeight: new BigNumber(6120220),
+        lastProcessedTimestamp: new Date('01/06/2023'),
+        targetHeight: new BigNumber(6120219),
+        indexerHealthy: true,
+      };
+
+      dsMockUtils.createApolloV2QueryMock(metadataQuery(), {
+        _metadata: {
+          ...metadata,
+          lastProcessedTimestamp: metadata.lastProcessedTimestamp.getTime().toString(),
+          lastProcessedHeight: metadata.lastProcessedHeight.toString(),
+          targetHeight: metadata.targetHeight.toString(),
+        },
+      });
+
+      const result = await context.getMiddlewareMetadata();
+      expect(result).toEqual(metadata);
+    });
+
+    it('should return null if middleware V2 is disabled', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: null,
+      });
+
+      const result = await context.getMiddlewareMetadata();
+      expect(result).toBeNull();
     });
   });
 });
