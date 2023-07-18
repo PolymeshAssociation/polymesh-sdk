@@ -115,7 +115,7 @@ export function metadataQuery(): QueryOptions {
  *
  * Get details about the latest Subquery version
  */
-export function latestSqVersionQuery(): GraphqlQuery {
+export function latestSqVersionQuery(): QueryOptions {
   const query = gql`
     query SubqueryVersions {
       subqueryVersions(orderBy: [${SubqueryVersionsOrderBy.UpdatedAtDesc}], first: 1) {
