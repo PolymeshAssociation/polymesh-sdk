@@ -17,6 +17,7 @@ import {
   instructionsQuery,
   investmentsQuery,
   latestBlockQuery,
+  latestSqVersionQuery,
   metadataQuery,
   portfolioMovementsQuery,
   portfolioQuery,
@@ -50,6 +51,15 @@ describe('heartbeat', () => {
 describe('metadataQuery', () => {
   it('should pass the variables to the grapqhl query', () => {
     const result = metadataQuery();
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toBeUndefined();
+  });
+});
+
+describe('latestSqVersionQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const result = latestSqVersionQuery();
 
     expect(result.query).toBeDefined();
     expect(result.variables).toBeUndefined();

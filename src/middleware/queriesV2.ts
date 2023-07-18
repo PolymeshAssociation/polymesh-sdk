@@ -27,6 +27,7 @@ import {
   Portfolio,
   PortfolioMovement,
   PortfolioMovementsOrderBy,
+  SubqueryVersionsOrderBy,
   TickerExternalAgent,
   TickerExternalAgentAction,
   TickerExternalAgentActionsOrderBy,
@@ -99,6 +100,31 @@ export function metadataQuery(): QueryOptions {
         indexerNodeVersion
         queryNodeVersion
         dynamicDatasources
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: undefined,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get details about the latest Subquery version
+ */
+export function latestSqVersionQuery(): QueryOptions {
+  const query = gql`
+    query SubqueryVersions {
+      subqueryVersions(orderBy: [${SubqueryVersionsOrderBy.UpdatedAtDesc}], first: 1) {
+        nodes {
+          id
+          version
+          createdAt
+          updatedAt
+        }
       }
     }
   `;

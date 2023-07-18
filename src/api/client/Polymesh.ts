@@ -21,7 +21,11 @@ import {
   UnsubCallback,
 } from '~/types';
 import { bigNumberToU32, signerToString } from '~/utils/conversion';
-import { assertExpectedChainVersion, createProcedureMethod } from '~/utils/internal';
+import {
+  assertExpectedChainVersion,
+  assertExpectedSqVersion,
+  createProcedureMethod,
+} from '~/utils/internal';
 
 import { AccountManagement } from './AccountManagement';
 import { Assets } from './Assets';
@@ -210,6 +214,8 @@ export class Polymesh {
           message: 'Middleware V2 URL is for a different chain than the given node URL',
         });
       }
+
+      await assertExpectedSqVersion(context);
     }
 
     return new Polymesh(context);
