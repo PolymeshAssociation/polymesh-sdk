@@ -32,7 +32,29 @@ import {
 } from '~/internal';
 import { Modify } from '~/types/utils';
 
+export { EventRecord } from '@polkadot/types/interfaces';
+export { ConnectParams } from '~/api/client/Polymesh';
+export * from '~/api/entities/types';
+export * from '~/api/procedures/types';
+export * from '~/base/types';
 export * from '~/generated/types';
+export * from '~/middleware/enumsV2';
+export {
+  EventIdEnum,
+  ModuleIdEnum,
+  Order,
+  SettlementDirectionEnum,
+  SettlementResultEnum,
+  TransactionOrderByInput,
+  TransactionOrderFields,
+} from '~/middleware/types';
+export {
+  AssetHoldersOrderBy,
+  ExtrinsicsOrderBy,
+  PublicEnum7A0B4Cc03E,
+  PublicEnum8F5A39C8Ee,
+} from '~/middleware/typesV2';
+export { TxTags, TxTag, ModuleName, CountryCode };
 
 export enum TransactionStatus {
   /**
@@ -1665,26 +1687,3 @@ export interface MiddlewareMetadata {
 export type MapTxData<ArgsArray extends unknown[][]> = {
   [K in keyof ArgsArray]: ArgsArray[K] extends unknown[] ? TxData<ArgsArray[K]> : never;
 };
-
-export { TxTags, TxTag, ModuleName, CountryCode };
-export { EventRecord } from '@polkadot/types/interfaces';
-export { ConnectParams } from '~/api/client/Polymesh';
-export * from '~/api/entities/types';
-export * from '~/base/types';
-export {
-  Order,
-  EventIdEnum,
-  ModuleIdEnum,
-  TransactionOrderByInput,
-  TransactionOrderFields,
-  SettlementResultEnum,
-  SettlementDirectionEnum,
-} from '~/middleware/types';
-export * from '~/middleware/enumsV2';
-export {
-  PublicEnum8F5A39C8Ee,
-  PublicEnum7A0B4Cc03E,
-  ExtrinsicsOrderBy,
-  AssetHoldersOrderBy,
-} from '~/middleware/typesV2';
-export * from '~/api/procedures/types';
