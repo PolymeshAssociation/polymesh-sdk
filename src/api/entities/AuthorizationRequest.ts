@@ -3,6 +3,8 @@ import BigNumber from 'bignumber.js';
 import {
   consumeAddMultiSigSignerAuthorization,
   ConsumeAddMultiSigSignerAuthorizationParams,
+  consumeAddRelayerPayingKeyAuthorization,
+  ConsumeAddRelayerPayingKeyAuthorizationParams,
   consumeAuthorizationRequests,
   ConsumeAuthorizationRequestsParams,
   consumeJoinOrRotateAuthorization,
@@ -115,7 +117,8 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
     this.accept = createProcedureMethod<
       | ConsumeAuthorizationRequestsParams
       | ConsumeJoinOrRotateAuthorizationParams
-      | ConsumeAddMultiSigSignerAuthorizationParams,
+      | ConsumeAddMultiSigSignerAuthorizationParams
+      | ConsumeAddRelayerPayingKeyAuthorizationParams,
       void,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       any
@@ -123,6 +126,9 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
       {
         getProcedureAndArgs: () => {
           switch (this.data.type) {
+            case AuthorizationType.AddRelayerPayingKey: {
+              return [consumeAddRelayerPayingKeyAuthorization, { authRequest: this, accept: true }];
+            }
             case AuthorizationType.JoinIdentity:
             case AuthorizationType.RotatePrimaryKey:
             case AuthorizationType.RotatePrimaryKeyToSecondary: {
@@ -144,7 +150,8 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
     this.remove = createProcedureMethod<
       | ConsumeAuthorizationRequestsParams
       | ConsumeJoinOrRotateAuthorizationParams
-      | ConsumeAddMultiSigSignerAuthorizationParams,
+      | ConsumeAddMultiSigSignerAuthorizationParams
+      | ConsumeAddRelayerPayingKeyAuthorizationParams,
       void,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       any
@@ -152,9 +159,13 @@ export class AuthorizationRequest extends Entity<UniqueIdentifiers, HumanReadabl
       {
         getProcedureAndArgs: () => {
           switch (this.data.type) {
-            case AuthorizationType.JoinIdentity: {
-              return [consumeJoinOrRotateAuthorization, { authRequest: this, accept: false }];
+            case AuthorizationType.AddRelayerPayingKey: {
+              return [
+                consumeAddRelayerPayingKeyAuthorization,
+                { authRequest: this, accept: false },
+              ];
             }
+            case AuthorizationType.JoinIdentity:
             case AuthorizationType.RotatePrimaryKeyToSecondary: {
               return [consumeJoinOrRotateAuthorization, { authRequest: this, accept: false }];
             }
