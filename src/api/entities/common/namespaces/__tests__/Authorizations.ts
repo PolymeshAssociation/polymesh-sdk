@@ -243,15 +243,12 @@ describe('Authorizations class', () => {
         toId: did,
       }));
 
-      dsMockUtils.createApolloV2QueryMock(
-        authorizationsQuery({ toId: did }, undefined, undefined),
-        {
-          authorizations: {
-            nodes: fakeAuths,
-            totalCount: new BigNumber(10),
-          },
-        }
-      );
+      dsMockUtils.createApolloV2QueryMock(authorizationsQuery({ toId: did }), {
+        authorizations: {
+          nodes: fakeAuths,
+          totalCount: new BigNumber(10),
+        },
+      });
 
       const expectedAuthorizations = authParams.map(({ authId, target, issuer, expiry, data }) =>
         entityMockUtils.getAuthorizationRequestInstance({

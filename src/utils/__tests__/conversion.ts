@@ -9620,11 +9620,7 @@ describe('middlewareAuthorizationDataToAuthorization', () => {
       type: AuthorizationType.RotatePrimaryKey,
     };
 
-    result = middlewareAuthorizationDataToAuthorization(
-      context,
-      AuthTypeEnum.RotatePrimaryKey,
-      undefined
-    );
+    result = middlewareAuthorizationDataToAuthorization(context, AuthTypeEnum.RotatePrimaryKey);
     expect(result).toEqual(fakeResult);
 
     fakeResult = {
