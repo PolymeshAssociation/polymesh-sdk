@@ -462,6 +462,10 @@ describe('assetTransactionQuery', () => {
 
 describe('authorizationsQuery', () => {
   it('should pass the variables to the grapqhl query', () => {
+    let result = authorizationsQuery({});
+
+    expect(result.query).toBeDefined();
+
     const variables = {
       fromId: 'someId',
       toId: 'someOtherId',
@@ -470,7 +474,7 @@ describe('authorizationsQuery', () => {
       status: AuthorizationStatusEnum.Consumed,
     };
 
-    let result = authorizationsQuery(variables);
+    result = authorizationsQuery(variables);
 
     expect(result.query).toBeDefined();
     expect(result.variables).toEqual(variables);

@@ -9778,12 +9778,9 @@ describe('middlewareAuthorizationDataToAuthorization', () => {
 
   it('should throw an error if the authorization has an unsupported type', () => {
     const context = dsMockUtils.getContextInstance();
-    const authorizationData = dsMockUtils.createMockAuthorizationData(
-      'Whatever' as 'RotatePrimaryKey'
-    );
 
-    expect(() => authorizationDataToAuthorization(authorizationData, context)).toThrow(
-      'Unsupported Authorization Type. Please contact the Polymesh team'
-    );
+    expect(() =>
+      middlewareAuthorizationDataToAuthorization(context, AuthTypeEnum.Custom, 'randomData')
+    ).toThrow('Unsupported Authorization Type. Please contact the Polymesh team');
   });
 });

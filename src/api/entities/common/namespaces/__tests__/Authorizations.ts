@@ -273,6 +273,14 @@ describe('Authorizations class', () => {
       const account = entityMockUtils.getAccountInstance({ address: DUMMY_ACCOUNT_ID });
       const accountAuthsNamespace = new Authorizations(account, context);
 
+      const accountAuth = {
+        id: new BigNumber(3),
+        expiry: null,
+        type: AuthorizationType.RotatePrimaryKey,
+        data: null,
+        toKey: address,
+        fromId: did,
+      };
       dsMockUtils.createApolloV2QueryMock(
         authorizationsQuery(
           {
@@ -285,8 +293,8 @@ describe('Authorizations class', () => {
         ),
         {
           authorizations: {
-            nodes: [],
-            totalCount: new BigNumber(0),
+            nodes: [accountAuth],
+            totalCount: new BigNumber(4),
           },
         }
       );
@@ -298,9 +306,17 @@ describe('Authorizations class', () => {
         size: new BigNumber(10),
       });
 
-      expect(result.data).toEqual([]);
+      expect(result.data).toEqual([
+        expect.objectContaining({
+          authId: accountAuth.id,
+          issuer: expect.objectContaining({ did }),
+          target: expect.objectContaining({ address: DUMMY_ACCOUNT_ID }),
+          expiry: null,
+          data: { type: AuthorizationType.RotatePrimaryKey },
+        }),
+      ]);
       expect(result.next).toBeNull();
-      expect(result.count).toEqual(new BigNumber(0));
+      expect(result.count).toEqual(new BigNumber(4));
     });
   });
 });
