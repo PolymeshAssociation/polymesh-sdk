@@ -1201,15 +1201,15 @@ function createAuthorizationFilters(variables: QueryArgs<Authorization, Authoriz
   const args = ['$size: Int, $start: Int'];
   const filters = [];
   const { fromId, toId, toKey, status, type } = variables;
-  if (fromId && fromId.length) {
+  if (fromId?.length) {
     args.push('$fromId: String!');
     filters.push('fromId: { equalTo: $fromId }');
   }
-  if (toId && toId.length) {
+  if (toId?.length) {
     args.push('$toId: String!');
     filters.push('toId: { equalTo: $toId }');
   }
-  if (toKey && toKey.length) {
+  if (toKey?.length) {
     args.push('$toKey: String!');
     filters.push('toKey: { equalTo: $toKey }');
   }
@@ -1239,7 +1239,7 @@ export function authorizationsQuery(
   start?: BigNumber
 ): QueryOptions<PaginatedQueryArgs<QueryArgs<Investment, 'stoId' | 'offeringToken'>>> {
   const { args, filter } = createAuthorizationFilters(filters);
-  const query = `
+  const query = gql`
     query AuthorizationsQuery
       ${args}
       {
@@ -1265,12 +1265,9 @@ export function authorizationsQuery(
       }
     }
   `;
-  console.log(filters);
 
   return {
-    query: gql`
-      ${query}
-    `,
+    query,
     variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
   };
 }

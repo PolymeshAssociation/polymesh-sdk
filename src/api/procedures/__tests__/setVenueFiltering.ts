@@ -166,8 +166,6 @@ describe('setVenueFiltering procedure', () => {
         allowedVenues: [],
       });
 
-      console.log(result);
-
       expect(result).toEqual({
         transactions: [],
         resolver: undefined,

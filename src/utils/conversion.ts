@@ -4521,11 +4521,11 @@ export function middlewarePortfolioDataToPortfolio(
  * @hidden
  */
 export function middlewareAgentGroupDataToPermissionGroup(
-  becomeAgentData: Record<string, string>,
+  agentGroupData: Record<string, Record<string, null | number>>,
   context: Context
 ): KnownPermissionGroup | CustomPermissionGroup {
-  const asset = Object.keys(becomeAgentData)[0];
-  const agentGroup = JSON.parse(becomeAgentData[asset]);
+  const asset = Object.keys(agentGroupData)[0];
+  const agentGroup = agentGroupData[asset];
 
   let permissionGroupIdentifier: PermissionGroupIdentifier;
   if ('full' in agentGroup) {
@@ -4537,7 +4537,8 @@ export function middlewareAgentGroupDataToPermissionGroup(
   } else if ('polymeshV1PIA' in agentGroup) {
     permissionGroupIdentifier = PermissionGroupType.PolymeshV1Pia;
   } else {
-    permissionGroupIdentifier = { custom: new BigNumber(agentGroup.custom) };
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    permissionGroupIdentifier = { custom: new BigNumber(agentGroup.custom!) };
   }
 
   const ticker = coerceHexToString(asset);
@@ -4547,7 +4548,7 @@ export function middlewareAgentGroupDataToPermissionGroup(
 /**
  * @hidden
  */
-export function middlewareExtrinsicPermissionsDataToTransactionPermissions(
+function middlewareExtrinsicPermissionsDataToTransactionPermissions(
   permissions: Record<
     string,
     {
@@ -4728,12 +4729,12 @@ export function middlewareAuthorizationDataToAuthorization(
     case AuthTypeEnum.TransferTicker:
       return {
         type: AuthorizationType.TransferTicker,
-        value: removePadding(hexToString(data)),
+        value: coerceHexToString(data!),
       };
     case AuthTypeEnum.TransferAssetOwnership: {
       return {
         type: AuthorizationType.TransferAssetOwnership,
-        value: removePadding(hexToString(data)),
+        value: coerceHexToString(data!),
       };
     }
     case AuthTypeEnum.PortfolioCustody: {

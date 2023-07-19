@@ -142,6 +142,11 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
    *
    * @param opts.type - fetch only authorizations of this type. Fetches all types if not passed
    * @param opts.status - fetch only authorizations with this status. Fetches all statuses if not passed
+   * @param opts.size - page size
+   * @param opts.start - page offset
+   *
+   * @note supports pagination
+   * @note uses the middlewareV2
    */
   public async getHistoricalAuthorizations(
     opts: {
@@ -183,7 +188,6 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
         expiry,
       } = middlewareAuthorization;
 
-      console.log(middlewareAuthorization);
       return new AuthorizationRequest(
         {
           authId: new BigNumber(id),
