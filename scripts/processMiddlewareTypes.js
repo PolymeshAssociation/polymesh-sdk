@@ -17,7 +17,6 @@ replace.sync({
 const enumRegex = new RegExp(/@enumName (.*)(?:\\n.*) \*\/\nexport enum (.*) {/g);
 
 const matches = rawData.matchAll(enumRegex);
-
 let aliases = [];
 let enumMappings = [];
 for (const match of matches) {
@@ -27,7 +26,8 @@ for (const match of matches) {
 
 fs.writeFileSync(
   enumAliasFile,
-  `export { 
+  `/* istanbul ignore file */
+export { 
   ${aliases.join(',\n  ')} 
 } from '~/middleware/typesV2';
   

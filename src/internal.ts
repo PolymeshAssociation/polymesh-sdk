@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 export { PolymeshError } from '~/base/PolymeshError';
 export { Context } from '~/base/Context';
 export { PolymeshTransactionBase } from '~/base/PolymeshTransactionBase';
@@ -41,6 +42,8 @@ export {
   Params as ModifyAssetTrustedClaimIssuersParams,
 } from '~/api/procedures/modifyAssetTrustedClaimIssuers';
 export { registerIdentity } from '~/api/procedures/registerIdentity';
+export { attestPrimaryKeyRotation } from '~/api/procedures/attestPrimaryKeyRotation';
+export { rotatePrimaryKey } from '~/api/procedures/rotatePrimaryKey';
 export { removeSecondaryAccounts } from '~/api/procedures/removeSecondaryAccounts';
 export {
   modifySignerPermissions,
@@ -139,6 +142,7 @@ export { quitSubsidy, QuitSubsidyParams } from '~/api/procedures/quitSubsidy';
 export { modifyAllowance, ModifyAllowanceParams } from '~/api/procedures/modifyAllowance';
 export { createTransactionBatch } from '~/api/procedures/createTransactionBatch';
 export { createMultiSigAccount } from '~/api/procedures/createMultiSig';
+export { acceptPrimaryKeyRotation } from '~/api/procedures/acceptPrimaryKeyRotation';
 export { Storage as ModifyMultiSigStorage, modifyMultiSig } from '~/api/procedures/modifyMultiSig';
 export {
   SetCountTransferRestrictionsParams,
@@ -148,3 +152,4 @@ export {
 } from '~/api/procedures/types';
 export { addAssetStat } from '~/api/procedures/addAssetStat';
 export { removeAssetStat } from '~/api/procedures/removeAssetStat';
+export { setVenueFiltering } from '~/api/procedures/setVenueFiltering';

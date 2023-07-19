@@ -203,6 +203,7 @@ import {
   documentHashToString,
   documentToAssetDocument,
   endConditionToSettlementType,
+  expiryToMoment,
   extrinsicIdentifierToTxTag,
   fundingRoundToAssetFundingRound,
   fundraiserTierToTier,
@@ -1105,25 +1106,30 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
 
       let value: Authorization = {
         type: AuthorizationType.AttestPrimaryKeyRotation,
-        value: 'someIdentity',
+        value: entityMockUtils.getIdentityInstance({ did: 'someIdentity' }),
       };
+
       const fakeResult =
         'AuthorizationDataEnum' as unknown as PolymeshPrimitivesAuthorizationAuthorizationData;
 
       const createTypeMock = context.createType;
+      const rawIdentity = dsMockUtils.createMockIdentityId(value.value.did);
+      when(createTypeMock)
+        .calledWith('PolymeshPrimitivesIdentityId', value.value.did)
+        .mockReturnValue(rawIdentity);
       when(createTypeMock)
         .calledWith('PolymeshPrimitivesAuthorizationAuthorizationData', {
-          [value.type]: value.value,
+          [value.type]: rawIdentity,
         })
         .mockReturnValue(fakeResult);
+
+      let result = authorizationToAuthorizationData(value, context);
+      expect(result).toBe(fakeResult);
 
       const fakeTicker = 'convertedTicker' as unknown as PolymeshPrimitivesTicker;
       when(createTypeMock)
         .calledWith('PolymeshPrimitivesTicker', padString(ticker, 12))
         .mockReturnValue(fakeTicker);
-
-      let result = authorizationToAuthorizationData(value, context);
-      expect(result).toBe(fakeResult);
 
       value = {
         type: AuthorizationType.JoinIdentity,
@@ -1303,10 +1309,10 @@ describe('authorizationToAuthorizationData and authorizationDataToAuthorization'
       const context = dsMockUtils.getContextInstance();
       let fakeResult: Authorization = {
         type: AuthorizationType.AttestPrimaryKeyRotation,
-        value: 'someIdentity',
+        value: expect.objectContaining({ did: 'someDid' }),
       };
       let authorizationData = dsMockUtils.createMockAuthorizationData({
-        AttestPrimaryKeyRotation: dsMockUtils.createMockIdentityId(fakeResult.value),
+        AttestPrimaryKeyRotation: dsMockUtils.createMockIdentityId('someDid'),
       });
 
       let result = authorizationDataToAuthorization(authorizationData, context);
@@ -4278,11 +4284,13 @@ describe('middlewareV2ClaimToClaimData', () => {
   it('should convert middleware V2 Claim to ClaimData', () => {
     const context = dsMockUtils.getContextInstance();
     const issuanceDate = new Date('10/14/1987');
+    const lastUpdateDate = new Date('10/14/1987');
     const expiry = new Date('10/10/1988');
     const middlewareV2Claim = {
       targetId: 'targetId',
       issuerId: 'issuerId',
       issuanceDate: issuanceDate.getTime(),
+      lastUpdateDate: lastUpdateDate.getTime(),
       expiry: null,
       cddId: 'someCddId',
       type: 'CustomerDueDiligence',
@@ -4297,6 +4305,7 @@ describe('middlewareV2ClaimToClaimData', () => {
       target: expect.objectContaining({ did: 'targetId' }),
       issuer: expect.objectContaining({ did: 'issuerId' }),
       issuedAt: issuanceDate,
+      lastUpdatedAt: lastUpdateDate,
       expiry: null,
       claim,
     };
@@ -4342,6 +4351,7 @@ describe('toIdentityWithClaimsArrayV2', () => {
       target: expect.objectContaining({ did: targetDid }),
       issuer: expect.objectContaining({ did: issuerDid }),
       issuedAt: new Date(date),
+      lastUpdatedAt: new Date(date),
     };
     const fakeResult = [
       {
@@ -4370,6 +4380,7 @@ describe('toIdentityWithClaimsArrayV2', () => {
       targetId: targetDid,
       issuerId: issuerDid,
       issuanceDate: date,
+      lastUpdateDate: date,
       cddId: cddId,
     };
     const fakeMiddlewareV2Claims = [
@@ -5990,6 +6001,7 @@ describe('toIdentityWithClaimsArray', () => {
       target: expect.objectContaining({ did: targetDid }),
       issuer: expect.objectContaining({ did: issuerDid }),
       issuedAt: new Date(date),
+      lastUpdatedAt: new Date(date),
     };
     const fakeResult = [
       {
@@ -9294,5 +9306,39 @@ describe('stringToInstructionMemo and instructionMemoToString', () => {
       const result = instructionMemoToString(rawMemo);
       expect(result).toBe(fakeResult);
     });
+  });
+});
+
+describe('expiryToMoment', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should throw an error if the expiry date is in the past', () => {
+    const value = new Date('01/01/2023');
+    const context = dsMockUtils.getContextInstance();
+    expect(() => expiryToMoment(value, context)).toThrow('Expiry date must be in the future');
+  });
+
+  it('should convert a expiry Date to a polkadot Moment object', () => {
+    const value = new Date('01/01/2040');
+    const fakeResult = 10000 as unknown as Moment;
+    const context = dsMockUtils.getContextInstance();
+
+    when(context.createType)
+      .calledWith('u64', Math.round(value.getTime()))
+      .mockReturnValue(fakeResult);
+
+    const result = expiryToMoment(value, context);
+
+    expect(result).toBe(fakeResult);
   });
 });

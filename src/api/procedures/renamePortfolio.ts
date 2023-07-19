@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { NumberedPortfolio, PolymeshError, Procedure } from '~/internal';
-import { ErrorCode, RenamePortfolioParams, RoleType, TxTags } from '~/types';
+import { ErrorCode, RenamePortfolioParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import { bigNumberToU64, stringToBytes, stringToIdentityId } from '~/utils/conversion';
 import { getPortfolioIdsByName } from '~/utils/internal';
@@ -58,13 +58,18 @@ export async function prepareRenamePortfolio(
 /**
  * @hidden
  */
-export function getAuthorization(
+export async function getAuthorization(
   this: Procedure<Params, NumberedPortfolio>,
   { did, id }: Params
-): ProcedureAuthorization {
-  const portfolioId = { did, number: id };
+): Promise<ProcedureAuthorization> {
+  const { context } = this;
+
+  const { did: signingDid } = await context.getSigningIdentity();
+
+  const hasRoles = signingDid === did;
+
   return {
-    roles: [{ type: RoleType.PortfolioCustodian, portfolioId }],
+    roles: hasRoles || 'Only the owner is allowed to modify the name of a Portfolio',
     permissions: {
       transactions: [TxTags.portfolio.RenamePortfolio],
       portfolios: [new NumberedPortfolio({ did, id }, this.context)],

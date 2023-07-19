@@ -1,7 +1,15 @@
 import BigNumber from 'bignumber.js';
 
-import { CustomPermissionGroup, Identity, KnownPermissionGroup } from '~/internal';
-import { Compliance, TransferError, TransferRestriction } from '~/types';
+import {
+  Asset,
+  CustomPermissionGroup,
+  DefaultPortfolio,
+  Identity,
+  KnownPermissionGroup,
+  NumberedPortfolio,
+} from '~/internal';
+import { EventIdEnum } from '~/middleware/enumsV2';
+import { Compliance, EventIdentifier, TransferError, TransferRestriction } from '~/types';
 
 export interface AssetDetails {
   assetType: string;
@@ -56,5 +64,14 @@ export interface AgentWithGroup {
   group: KnownPermissionGroup | CustomPermissionGroup;
 }
 
-export * from './CorporateActions/types';
+export interface HistoricAssetTransaction extends EventIdentifier {
+  asset: Asset;
+  amount: BigNumber;
+  from: DefaultPortfolio | NumberedPortfolio | null;
+  to: DefaultPortfolio | NumberedPortfolio | null;
+  event: EventIdEnum;
+  extrinsicIndex: BigNumber;
+}
+
 export * from './Checkpoints/types';
+export * from './CorporateActions/types';

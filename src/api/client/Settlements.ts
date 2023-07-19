@@ -12,10 +12,10 @@ import {
 } from '~/internal';
 import {
   AddInstructionWithVenueIdParams,
-  AffirmInstructionParams,
   CreateVenueParams,
   ErrorCode,
   InstructionAffirmationOperation,
+  InstructionIdParams,
   ProcedureMethod,
 } from '~/types';
 import { createProcedureMethod } from '~/utils/internal';
@@ -118,5 +118,5 @@ export class Settlements {
   /**
    * Affirm an Instruction (authorize)
    */
-  public affirmInstruction: ProcedureMethod<AffirmInstructionParams, Instruction>;
+  public affirmInstruction: ProcedureMethod<InstructionIdParams, Instruction>;
 }
