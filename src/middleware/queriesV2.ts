@@ -9,6 +9,8 @@ import {
   AssetHoldersOrderBy,
   AssetTransaction,
   AssetTransactionsOrderBy,
+  Authorization,
+  AuthorizationsOrderBy,
   BlocksOrderBy,
   ClaimsGroupBy,
   ClaimsOrderBy,
@@ -1182,6 +1184,93 @@ export function assetTransactionQuery(
 
   return {
     query,
+    variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
+  };
+}
+
+export type AuthorizationArgs = 'fromId' | 'type' | 'status' | 'toId' | 'toKey' | 'expiry';
+
+/**
+ *  @hidden
+ */
+function createAuthorizationFilters(variables: QueryArgs<Authorization, AuthorizationArgs>): {
+  args: string;
+  filter: string;
+  variables: QueryArgs<Authorization, AuthorizationArgs>;
+} {
+  const args = ['$size: Int, $start: Int'];
+  const filters = [];
+  const { fromId, toId, toKey, status, type } = variables;
+  if (fromId && fromId.length) {
+    args.push('$fromId: String!');
+    filters.push('fromId: { equalTo: $fromId }');
+  }
+  if (toId && toId.length) {
+    args.push('$toId: String!');
+    filters.push('toId: { equalTo: $toId }');
+  }
+  if (toKey && toKey.length) {
+    args.push('$toKey: String!');
+    filters.push('toKey: { equalTo: $toKey }');
+  }
+  if (type) {
+    args.push(`$type: ${middlewareV2EnumMap.AuthTypeEnum}!`);
+    filters.push('type: { equalTo: $type }');
+  }
+  if (status) {
+    args.push(`$status: ${middlewareV2EnumMap.AuthorizationStatusEnum}!`);
+    filters.push('status: { equalTo: $status }');
+  }
+  return {
+    args: `(${args.join()})`,
+    filter: filters.length ? `filter: { ${filters.join()} }` : '',
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get all authorizations with specified filters
+ */
+export function authorizationsQuery(
+  filters: QueryArgs<Authorization, AuthorizationArgs>,
+  size?: BigNumber,
+  start?: BigNumber
+): QueryOptions<PaginatedQueryArgs<QueryArgs<Investment, 'stoId' | 'offeringToken'>>> {
+  const { args, filter } = createAuthorizationFilters(filters);
+  const query = `
+    query AuthorizationsQuery
+      ${args}
+      {
+      authorizations(
+        ${filter}
+        first: $size
+        offset: $start
+        orderBy: [${AuthorizationsOrderBy.CreatedAtAsc}, ${AuthorizationsOrderBy.CreatedBlockIdAsc}]
+      ) {
+        totalCount
+        nodes {
+          id
+          type
+          fromId
+          toId
+          toKey
+          data
+          expiry
+          status
+          createdBlockId
+          updatedBlockId
+        }
+      }
+    }
+  `;
+  console.log(filters);
+
+  return {
+    query: gql`
+      ${query}
+    `,
     variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
   };
 }

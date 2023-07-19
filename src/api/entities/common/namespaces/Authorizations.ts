@@ -1,20 +1,36 @@
 import { PolymeshPrimitivesAuthorization } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
-import { AuthorizationRequest, Identity, Namespace, PolymeshError } from '~/internal';
-import { AuthorizationType, ErrorCode, Signer, SignerValue } from '~/types';
+import { Account, AuthorizationRequest, Identity, Namespace, PolymeshError } from '~/internal';
+import { AuthorizationArgs, authorizationsQuery } from '~/middleware/queriesV2';
+import { Authorization as MiddlewareAuthorization, Query as QueryV2 } from '~/middleware/typesV2';
 import {
+  AuthorizationStatusEnum,
+  AuthorizationType,
+  AuthTypeEnum,
+  ErrorCode,
+  ResultSet,
+  Signer,
+  SignerType,
+  SignerValue,
+} from '~/types';
+import { EnsuredV2, QueryArgs } from '~/types/utils';
+import {
+  addressToKey,
   authorizationDataToAuthorization,
   authorizationTypeToMeshAuthorizationType,
   bigNumberToU64,
   booleanToBool,
   identityIdToString,
+  keyToAddress,
+  middlewareAuthorizationDataToAuthorization,
   momentToDate,
   signerToSignerValue,
   signerValueToSignatory,
   signerValueToSigner,
   u64ToBigNumber,
 } from '~/utils/conversion';
+import { calculateNextKey } from '~/utils/internal';
 
 /**
  * Handles all Authorization related functionality
@@ -119,5 +135,78 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
       .map(args => {
         return new AuthorizationRequest(args, context);
       });
+  }
+
+  /**
+   * Fetch all historical Authorization Requests for which this Signer is the target
+   *
+   * @param opts.type - fetch only authorizations of this type. Fetches all types if not passed
+   * @param opts.status - fetch only authorizations with this status. Fetches all statuses if not passed
+   */
+  public async getHistoricalAuthorizations(
+    opts: {
+      status?: AuthorizationStatusEnum;
+      type?: AuthTypeEnum;
+      size?: BigNumber;
+      start?: BigNumber;
+    } = {}
+  ): Promise<ResultSet<AuthorizationRequest>> {
+    const { context, parent } = this;
+
+    const signerValue = signerToSignerValue(parent);
+
+    const { status, type, start, size } = opts;
+
+    const filters: QueryArgs<MiddlewareAuthorization, AuthorizationArgs> = { type, status };
+    if (signerValue.type === SignerType.Identity) {
+      filters.toId = signerValue.value;
+    } else {
+      filters.toKey = addressToKey(signerValue.value, context);
+    }
+
+    const {
+      data: {
+        authorizations: { totalCount, nodes: authorizationResult },
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'authorizations'>>(
+      authorizationsQuery(filters, size, start)
+    );
+
+    const data = authorizationResult.map(middlewareAuthorization => {
+      const {
+        id,
+        type: authType,
+        data: authData,
+        fromId,
+        toId,
+        toKey,
+        expiry,
+      } = middlewareAuthorization;
+
+      console.log(middlewareAuthorization);
+      return new AuthorizationRequest(
+        {
+          authId: new BigNumber(id),
+          expiry: expiry ? new Date(expiry) : null,
+          data: middlewareAuthorizationDataToAuthorization(context, authType, authData),
+          target: toId
+            ? new Identity({ did: toId }, context)
+            : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              new Account({ address: keyToAddress(toKey!, context) }, context),
+          issuer: new Identity({ did: fromId }, context),
+        },
+        context
+      );
+    });
+
+    const count = new BigNumber(totalCount);
+
+    const next = calculateNextKey(count, data.length, start);
+
+    return {
+      data,
+      next,
+      count,
+    };
   }
 }

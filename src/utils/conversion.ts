@@ -65,6 +65,7 @@ import {
 import { ITuple } from '@polkadot/types/types';
 import { BTreeSet } from '@polkadot/types-codec';
 import {
+  hexHasPrefix,
   hexToString,
   hexToU8a,
   isHex,
@@ -111,6 +112,7 @@ import {
   Venue,
 } from '~/internal';
 import {
+  AuthTypeEnum,
   CallIdEnum as MiddlewareV2CallId,
   ModuleIdEnum as MiddlewareV2ModuleId,
 } from '~/middleware/enumsV2';
@@ -1080,6 +1082,10 @@ export function permissionsToMeshPermissions(
   return context.createType('PolymeshPrimitivesSecondaryKeyPermissions', value);
 }
 
+const formatTxTag = (dispatchable: string, moduleName: string): TxTag => {
+  return `${moduleName}.${camelCase(dispatchable)}` as TxTag;
+};
+
 /**
  * @hidden
  */
@@ -1098,9 +1104,6 @@ export function extrinsicPermissionsToTransactionPermissions(
 
   let txValues: (ModuleName | TxTag)[] = [];
   let exceptions: TxTag[] = [];
-  const formatTxTag = (dispatchable: string, moduleName: string): TxTag => {
-    return `${moduleName}.${camelCase(dispatchable)}` as TxTag;
-  };
 
   if (pallets) {
     pallets.forEach(({ palletName, dispatchableNames }) => {
@@ -1364,14 +1367,13 @@ export function balanceToBigNumber(balance: Balance): BigNumber {
 }
 
 /**
- * @hidden
+ * Assembles permissions group identifier + ticker into appropriate permission group based on group identifier
  */
-export function agentGroupToPermissionGroup(
-  agentGroup: PolymeshPrimitivesAgentAgentGroup,
+function assemblePermissionGroup(
+  permissionGroupIdentifier: PermissionGroupIdentifier,
   ticker: string,
   context: Context
 ): KnownPermissionGroup | CustomPermissionGroup {
-  const permissionGroupIdentifier = agentGroupToPermissionGroupIdentifier(agentGroup);
   switch (permissionGroupIdentifier) {
     case PermissionGroupType.ExceptMeta:
     case PermissionGroupType.Full:
@@ -1384,6 +1386,17 @@ export function agentGroupToPermissionGroup(
       return new CustomPermissionGroup({ id, ticker }, context);
     }
   }
+}
+/**
+ * @hidden
+ */
+export function agentGroupToPermissionGroup(
+  agentGroup: PolymeshPrimitivesAgentAgentGroup,
+  ticker: string,
+  context: Context
+): KnownPermissionGroup | CustomPermissionGroup {
+  const permissionGroupIdentifier = agentGroupToPermissionGroupIdentifier(agentGroup);
+  return assemblePermissionGroup(permissionGroupIdentifier, ticker, context);
 }
 
 /**
@@ -2822,6 +2835,16 @@ export function keyToAddress(key: string, context: Context): string {
 export function addressToKey(address: string, context: Context): string {
   return u8aToHex(decodeAddress(address, IGNORE_CHECKSUM, context.ss58Format.toNumber()));
 }
+
+/**
+ *
+ */
+export const coerceHexToString = (input: string): string => {
+  if (hexHasPrefix(input)) {
+    return removePadding(hexToString(input));
+  }
+  return input;
+};
 
 /**
  * @hidden
@@ -4475,3 +4498,258 @@ export function expiryToMoment(expiry: Date | undefined, context: Context): Mome
 
   return optionize(dateToMoment)(expiry, context);
 }
+
+/**
+ * @hidden
+ */
+export function middlewarePortfolioDataToPortfolio(
+  data: {
+    did: string;
+    kind: { default: null } | { user: number };
+  },
+  context: Context
+): DefaultPortfolio | NumberedPortfolio {
+  const { did, kind } = data;
+
+  if ('default' in kind) {
+    return new DefaultPortfolio({ did: did }, context);
+  }
+  return new NumberedPortfolio({ did: did, id: new BigNumber(kind.user) }, context);
+}
+
+/**
+ * @hidden
+ */
+export function middlewareAgentGroupDataToPermissionGroup(
+  becomeAgentData: Record<string, string>,
+  context: Context
+): KnownPermissionGroup | CustomPermissionGroup {
+  const asset = Object.keys(becomeAgentData)[0];
+  const agentGroup = JSON.parse(becomeAgentData[asset]);
+
+  let permissionGroupIdentifier: PermissionGroupIdentifier;
+  if ('full' in agentGroup) {
+    permissionGroupIdentifier = PermissionGroupType.Full;
+  } else if ('exceptMeta' in agentGroup) {
+    permissionGroupIdentifier = PermissionGroupType.ExceptMeta;
+  } else if ('polymeshV1CAA' in agentGroup) {
+    permissionGroupIdentifier = PermissionGroupType.PolymeshV1Caa;
+  } else if ('polymeshV1PIA' in agentGroup) {
+    permissionGroupIdentifier = PermissionGroupType.PolymeshV1Pia;
+  } else {
+    permissionGroupIdentifier = { custom: new BigNumber(agentGroup.custom) };
+  }
+
+  const ticker = coerceHexToString(asset);
+  return assemblePermissionGroup(permissionGroupIdentifier, ticker, context);
+}
+
+/**
+ * @hidden
+ */
+export function middlewareExtrinsicPermissionsDataToTransactionPermissions(
+  permissions: Record<
+    string,
+    {
+      palletName: string;
+      dispatchableNames: Record<string, string[]>;
+    }[]
+  >
+): TransactionPermissions | null {
+  let extrinsicType: PermissionType;
+  let pallets;
+  if ('these' in permissions) {
+    extrinsicType = PermissionType.Include;
+    pallets = permissions.these;
+  } else if ('except' in permissions) {
+    extrinsicType = PermissionType.Exclude;
+    pallets = permissions.except;
+  }
+
+  let txValues: (ModuleName | TxTag)[] = [];
+  let exceptions: TxTag[] = [];
+
+  if (pallets) {
+    pallets.forEach(({ palletName, dispatchableNames }) => {
+      const moduleName = stringLowerFirst(coerceHexToString(palletName));
+      if ('except' in dispatchableNames) {
+        const dispatchables = [...dispatchableNames.except];
+        exceptions = [
+          ...exceptions,
+          ...dispatchables.map(name => formatTxTag(coerceHexToString(name), moduleName)),
+        ];
+        txValues = [...txValues, moduleName as ModuleName];
+      } else if ('these' in dispatchableNames) {
+        const dispatchables = [...dispatchableNames.these];
+        txValues = [
+          ...txValues,
+          ...dispatchables.map(name => formatTxTag(coerceHexToString(name), moduleName)),
+        ];
+      } else {
+        txValues = [...txValues, moduleName as ModuleName];
+      }
+    });
+
+    const result = {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      type: extrinsicType!,
+      values: txValues,
+    };
+
+    return exceptions.length ? { ...result, exceptions } : result;
+  }
+
+  return null;
+}
+
+/**
+ * @hidden
+ */
+export function middlewarePermissionsDataToPermissions(
+  permissionsData: string,
+  context: Context
+): Permissions {
+  const { asset, extrinsic, portfolio } = JSON.parse(permissionsData);
+
+  let assets: SectionPermissions<Asset> | null = null;
+  let transactions: TransactionPermissions | null = null;
+  let portfolios: SectionPermissions<DefaultPortfolio | NumberedPortfolio> | null = null;
+
+  let assetsType: PermissionType;
+  let assetsPermissions;
+  if ('these' in asset) {
+    assetsType = PermissionType.Include;
+    assetsPermissions = asset.these;
+  } else if ('except' in asset) {
+    assetsType = PermissionType.Exclude;
+    assetsPermissions = asset.except;
+  }
+
+  if (assetsPermissions) {
+    assets = {
+      values: [...assetsPermissions].map(
+        ticker => new Asset({ ticker: coerceHexToString(ticker) }, context)
+      ),
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      type: assetsType!,
+    };
+  }
+
+  transactions = middlewareExtrinsicPermissionsDataToTransactionPermissions(extrinsic);
+
+  let portfoliosType: PermissionType;
+  let portfolioIds;
+  if ('these' in portfolio) {
+    portfoliosType = PermissionType.Include;
+    portfolioIds = portfolio.these;
+  } else if ('except' in portfolio) {
+    portfoliosType = PermissionType.Exclude;
+    portfolioIds = portfolio.except;
+  }
+
+  if (portfolioIds) {
+    portfolios = {
+      values: [...portfolioIds].map(portfolioId =>
+        middlewarePortfolioDataToPortfolio(portfolioId, context)
+      ),
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      type: portfoliosType!,
+    };
+  }
+
+  return {
+    assets,
+    transactions,
+    transactionGroups: transactions ? transactionPermissionsToTxGroups(transactions) : [],
+    portfolios,
+  };
+}
+
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
+/**
+ * @hidden
+ */
+export function middlewareAuthorizationDataToAuthorization(
+  context: Context,
+  type: AuthTypeEnum,
+  data?: string
+): Authorization {
+  switch (type) {
+    case AuthTypeEnum.AttestPrimaryKeyRotation:
+      return {
+        type: AuthorizationType.AttestPrimaryKeyRotation,
+        value: new Identity({ did: data! }, context),
+      };
+    case AuthTypeEnum.RotatePrimaryKey: {
+      return {
+        type: AuthorizationType.RotatePrimaryKey,
+      };
+    }
+    case AuthTypeEnum.RotatePrimaryKeyToSecondary: {
+      return {
+        type: AuthorizationType.RotatePrimaryKeyToSecondary,
+        value: middlewarePermissionsDataToPermissions(data!, context),
+      };
+    }
+    case AuthTypeEnum.JoinIdentity: {
+      return {
+        type: AuthorizationType.JoinIdentity,
+        value: middlewarePermissionsDataToPermissions(data!, context),
+      };
+    }
+    case AuthTypeEnum.AddMultiSigSigner:
+      return {
+        type: AuthorizationType.AddMultiSigSigner,
+        value: data!,
+      };
+    case AuthTypeEnum.AddRelayerPayingKey: {
+      // data is received in the format - {"5Ci94GCJC2JBM8U1PCkpHX6HkscWmucN9XwUrjb7o4TDgVns","5DZp1QYH49MKZhCtDupNaAeHp8xtqetuSzgf2p2cUWoxW3iu","1000000000"}
+      const [beneficiary, subsidizer, allowance] = data!
+        .substring(1, data!.length - 1)
+        .replace(/"/g, '')
+        .split(',');
+
+      return {
+        type: AuthorizationType.AddRelayerPayingKey,
+        value: {
+          beneficiary: new Account({ address: beneficiary }, context),
+          subsidizer: new Account({ address: subsidizer }, context),
+          allowance: new BigNumber(allowance).shiftedBy(-6),
+        },
+      };
+    }
+    case AuthTypeEnum.BecomeAgent: {
+      const becomeAgentData = JSON.parse(data!.replace(',', ':'));
+      return {
+        type: AuthorizationType.BecomeAgent,
+        value: middlewareAgentGroupDataToPermissionGroup(becomeAgentData, context),
+      };
+    }
+    case AuthTypeEnum.TransferTicker:
+      return {
+        type: AuthorizationType.TransferTicker,
+        value: removePadding(hexToString(data)),
+      };
+    case AuthTypeEnum.TransferAssetOwnership: {
+      return {
+        type: AuthorizationType.TransferAssetOwnership,
+        value: removePadding(hexToString(data)),
+      };
+    }
+    case AuthTypeEnum.PortfolioCustody: {
+      return {
+        type: AuthorizationType.PortfolioCustody,
+        value: middlewarePortfolioDataToPortfolio(JSON.parse(data!), context),
+      };
+    }
+  }
+
+  throw new PolymeshError({
+    code: ErrorCode.UnexpectedError,
+    message: 'Unsupported Authorization Type. Please contact the Polymesh team',
+    data: {
+      auth: data,
+    },
+  });
+}
+/* eslint-enable @typescript-eslint/no-non-null-assertion */
