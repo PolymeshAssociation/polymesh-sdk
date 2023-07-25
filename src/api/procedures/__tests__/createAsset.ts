@@ -87,7 +87,6 @@ describe('createAsset procedure', () => {
   let rawType: PolymeshPrimitivesAssetAssetType;
   let rawIdentifiers: PolymeshPrimitivesAssetIdentifier[];
   let rawFundingRound: Bytes;
-  let rawDisableIu: bool;
   let rawDocuments: PolymeshPrimitivesDocument[];
   let args: Params;
   let protocolFees: BigNumber[];
@@ -171,7 +170,6 @@ describe('createAsset procedure', () => {
       })
     );
     rawFundingRound = dsMockUtils.createMockBytes(fundingRound);
-    rawDisableIu = dsMockUtils.createMockBool(true);
     args = {
       ticker,
       name,
@@ -212,7 +210,6 @@ describe('createAsset procedure', () => {
       .mockReturnValue(rawInitialSupply);
     when(nameToAssetNameSpy).calledWith(name, mockContext).mockReturnValue(rawName);
     when(booleanToBoolSpy).calledWith(isDivisible, mockContext).mockReturnValue(rawIsDivisible);
-    when(booleanToBoolSpy).calledWith(true, mockContext).mockReturnValue(rawDisableIu);
     when(stringToTickerKeySpy)
       .calledWith(ticker, mockContext)
       .mockReturnValue({ Ticker: rawTicker });
@@ -303,15 +300,7 @@ describe('createAsset procedure', () => {
       transactions: [
         {
           transaction: createAssetTransaction,
-          args: [
-            rawName,
-            rawTicker,
-            rawIsDivisible,
-            rawType,
-            rawIdentifiers,
-            rawFundingRound,
-            rawDisableIu,
-          ],
+          args: [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
         },
       ],
       fee: undefined,
@@ -330,7 +319,7 @@ describe('createAsset procedure', () => {
       transactions: [
         {
           transaction: createAssetTransaction,
-          args: [rawName, rawTicker, rawIsDivisible, rawType, [], null, rawDisableIu], // disable IU = true
+          args: [rawName, rawTicker, rawIsDivisible, rawType, [], null],
         },
       ],
       fee: undefined,
@@ -345,15 +334,7 @@ describe('createAsset procedure', () => {
       transactions: [
         {
           transaction: createAssetTransaction,
-          args: [
-            rawName,
-            rawTicker,
-            rawIsDivisible,
-            rawType,
-            rawIdentifiers,
-            rawFundingRound,
-            rawDisableIu,
-          ], // disable IU = true
+          args: [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
         },
         {
           transaction: issueTransaction,
@@ -381,15 +362,7 @@ describe('createAsset procedure', () => {
       transactions: [
         {
           transaction: createAssetTransaction,
-          args: [
-            rawName,
-            rawTicker,
-            rawIsDivisible,
-            rawType,
-            rawIdentifiers,
-            rawFundingRound,
-            rawDisableIu,
-          ],
+          args: [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
         },
       ],
       fee: undefined,
@@ -412,15 +385,7 @@ describe('createAsset procedure', () => {
         {
           transaction: createAssetTransaction,
           fee: protocolFees[0].plus(protocolFees[1]),
-          args: [
-            rawName,
-            rawTicker,
-            rawIsDivisible,
-            rawType,
-            rawIdentifiers,
-            rawFundingRound,
-            rawDisableIu,
-          ],
+          args: [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
         },
       ],
       resolver: expect.objectContaining({ ticker }),
@@ -454,15 +419,7 @@ describe('createAsset procedure', () => {
       transactions: [
         {
           transaction: createAssetTx,
-          args: [
-            rawName,
-            rawTicker,
-            rawIsDivisible,
-            rawType,
-            rawIdentifiers,
-            rawFundingRound,
-            rawDisableIu,
-          ],
+          args: [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
           fee: protocolFees[0].plus(protocolFees[1]).plus(protocolFees[2]),
         },
         {
@@ -500,15 +457,7 @@ describe('createAsset procedure', () => {
       transactions: [
         {
           transaction: createAssetTx,
-          args: [
-            rawName,
-            rawTicker,
-            rawIsDivisible,
-            rawType,
-            rawIdentifiers,
-            rawFundingRound,
-            rawDisableIu,
-          ],
+          args: [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
         },
         {
           transaction: addStatsTx,
@@ -540,15 +489,7 @@ describe('createAsset procedure', () => {
       transactions: [
         {
           transaction: createAssetWithCustomTypeTx,
-          args: [
-            rawName,
-            rawTicker,
-            rawIsDivisible,
-            rawValue,
-            rawIdentifiers,
-            rawFundingRound,
-            rawDisableIu,
-          ],
+          args: [rawName, rawTicker, rawIsDivisible, rawValue, rawIdentifiers, rawFundingRound],
         },
       ],
       resolver: expect.objectContaining({ ticker }),
@@ -684,7 +625,7 @@ describe('createAsset procedure', () => {
       let id = dsMockUtils.createMockU32();
 
       const customTypesMock = dsMockUtils.createQueryMock('asset', 'customTypesInverse', {
-        returnValue: id,
+        returnValue: dsMockUtils.createMockOption(id),
       });
 
       result = await boundFunc({ assetType: 'something' } as Params);
@@ -699,7 +640,7 @@ describe('createAsset procedure', () => {
       });
 
       id = dsMockUtils.createMockU32(new BigNumber(10));
-      customTypesMock.mockResolvedValue(id);
+      customTypesMock.mockResolvedValue(dsMockUtils.createMockOption(id));
 
       result = await boundFunc({ assetType: 'something' } as Params);
 

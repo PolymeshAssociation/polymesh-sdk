@@ -226,10 +226,10 @@ export enum ClaimType {
   Jurisdiction = 'Jurisdiction',
   Exempted = 'Exempted',
   Blocked = 'Blocked',
-  InvestorUniqueness = 'InvestorUniqueness',
-  NoType = 'NoType',
-  NoData = 'NoData',
-  InvestorUniquenessV2 = 'InvestorUniquenessV2',
+  // InvestorUniqueness = 'InvestorUniqueness',
+  // NoType = 'NoType',
+  // NoData = 'NoData',
+  // InvestorUniquenessV2 = 'InvestorUniquenessV2',
 }
 
 export interface AccreditedClaim {
@@ -278,29 +278,8 @@ export interface BlockedClaim {
   scope: Scope;
 }
 
-export interface InvestorUniquenessClaim {
-  type: ClaimType.InvestorUniqueness;
-  scope: Scope;
-  cddId: string;
-  scopeId: string;
-}
-
-export interface NoTypeClaim {
-  type: ClaimType.NoType;
-}
-
-export interface NoDataClaim {
-  type: ClaimType.NoData;
-}
-
-export interface InvestorUniquenessV2Claim {
-  type: ClaimType.InvestorUniquenessV2;
-  cddId: string;
-}
-
 export type ScopedClaim =
   | JurisdictionClaim
-  | InvestorUniquenessClaim
   | AccreditedClaim
   | AffiliateClaim
   | BuyLockupClaim
@@ -309,7 +288,7 @@ export type ScopedClaim =
   | ExemptedClaim
   | BlockedClaim;
 
-export type UnscopedClaim = NoDataClaim | NoTypeClaim | CddClaim | InvestorUniquenessV2Claim;
+export type UnscopedClaim = CddClaim;
 
 export type Claim = ScopedClaim | UnscopedClaim;
 
@@ -1425,24 +1404,6 @@ export type ClaimCountStatInput =
       claimType: ClaimType.Jurisdiction;
       value: { countryCode: CountryCode; count: BigNumber }[];
     };
-
-export enum CalendarUnit {
-  Second = 'second',
-  Minute = 'minute',
-  Hour = 'hour',
-  Day = 'day',
-  Week = 'week',
-  Month = 'month',
-  Year = 'year',
-}
-
-/**
- * Represents a period of time measured in a specific unit (e.g. 20 days)
- */
-export interface CalendarPeriod {
-  unit: CalendarUnit;
-  amount: BigNumber;
-}
 
 export interface ScheduleWithDetails {
   schedule: CheckpointSchedule;

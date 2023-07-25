@@ -36,8 +36,6 @@ import type {
   Permill,
 } from '@polkadot/types/interfaces/runtime';
 import type {
-  ConfidentialIdentityV2ClaimProofsScopeClaimProof,
-  PalletAssetCheckpointScheduleSpec,
   PalletBridgeBridgeTx,
   PalletContractsWasmDeterminism,
   PalletCorporateActionsBallotBallotMeta,
@@ -59,6 +57,7 @@ import type {
   PalletStakingValidatorPrefs,
   PalletStoPriceTier,
   PalletUtilityUniqueCall,
+  PolymeshCommonUtilitiesCheckpointScheduleCheckpoints,
   PolymeshCommonUtilitiesIdentityCreateChildIdentityWithAuth,
   PolymeshCommonUtilitiesIdentitySecondaryKeyWithAuth,
   PolymeshCommonUtilitiesMaybeBlock,
@@ -73,7 +72,6 @@ import type {
   PolymeshPrimitivesAssetNonFungibleType,
   PolymeshPrimitivesAuthorizationAuthorizationData,
   PolymeshPrimitivesBeneficiary,
-  PolymeshPrimitivesCddIdInvestorUid,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
   PolymeshPrimitivesCondition,
   PolymeshPrimitivesConditionTrustedIssuer,
@@ -210,8 +208,6 @@ declare module '@polkadot/api-base/types/submittable' {
        * * `asset_type` - the asset type.
        * * `identifiers` - a vector of asset identifiers.
        * * `funding_round` - name of the funding round.
-       * * `disable_iu` - whether or not investor uniqueness enforcement should be disabled.
-       * This cannot be changed after creating the asset.
        *
        * ## Errors
        * - `InvalidAssetIdentifier` if any of `identifiers` are invalid.
@@ -259,8 +255,7 @@ declare module '@polkadot/api-base/types/submittable' {
                 | string
                 | Uint8Array
               )[],
-          fundingRound: Option<Bytes> | null | Uint8Array | Bytes | string,
-          disableIu: bool | boolean | Uint8Array
+          fundingRound: Option<Bytes> | null | Uint8Array | Bytes | string
         ) => SubmittableExtrinsic<ApiType>,
         [
           Bytes,
@@ -268,8 +263,7 @@ declare module '@polkadot/api-base/types/submittable' {
           bool,
           PolymeshPrimitivesAssetAssetType,
           Vec<PolymeshPrimitivesAssetIdentifier>,
-          Option<Bytes>,
-          bool
+          Option<Bytes>
         ]
       >;
       /**
@@ -293,8 +287,7 @@ declare module '@polkadot/api-base/types/submittable' {
                 | string
                 | Uint8Array
               )[],
-          fundingRound: Option<Bytes> | null | Uint8Array | Bytes | string,
-          disableIu: bool | boolean | Uint8Array
+          fundingRound: Option<Bytes> | null | Uint8Array | Bytes | string
         ) => SubmittableExtrinsic<ApiType>,
         [
           Bytes,
@@ -302,8 +295,7 @@ declare module '@polkadot/api-base/types/submittable' {
           bool,
           Bytes,
           Vec<PolymeshPrimitivesAssetIdentifier>,
-          Option<Bytes>,
-          bool
+          Option<Bytes>
         ]
       >;
       /**
@@ -1658,10 +1650,8 @@ declare module '@polkadot/api-base/types/submittable' {
        *
        * # Errors
        * - `UnauthorizedAgent` if the DID of `origin` isn't a permissioned agent for `ticker`.
-       * - `ScheduleDurationTooShort` if the schedule duration is too short.
        * - `InsufficientAccountBalance` if the protocol fee could not be charged.
        * - `CounterOverflow` if the schedule ID or total checkpoint counters would overflow.
-       * - `FailedToComputeNextCheckpoint` if the next checkpoint for `schedule` is in the past.
        *
        * # Permissions
        * * Asset
@@ -1670,12 +1660,12 @@ declare module '@polkadot/api-base/types/submittable' {
         (
           ticker: PolymeshPrimitivesTicker | string | Uint8Array,
           schedule:
-            | PalletAssetCheckpointScheduleSpec
-            | { start?: any; period?: any; remaining?: any }
+            | PolymeshCommonUtilitiesCheckpointScheduleCheckpoints
+            | { pending?: any }
             | string
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
-        [PolymeshPrimitivesTicker, PalletAssetCheckpointScheduleSpec]
+        [PolymeshPrimitivesTicker, PolymeshCommonUtilitiesCheckpointScheduleCheckpoints]
       >;
       /**
        * Removes the checkpoint schedule of an asset identified by `id`.
@@ -3101,104 +3091,12 @@ declare module '@polkadot/api-base/types/submittable' {
             | { Jurisdiction: any }
             | { Exempted: any }
             | { Blocked: any }
-            | { InvestorUniqueness: any }
-            | { NoData: any }
-            | { InvestorUniquenessV2: any }
             | { Custom: any }
             | string
             | Uint8Array,
           expiry: Option<u64> | null | Uint8Array | u64 | AnyNumber
         ) => SubmittableExtrinsic<ApiType>,
         [PolymeshPrimitivesIdentityId, PolymeshPrimitivesIdentityClaimClaim, Option<u64>]
-      >;
-      /**
-       * Add `Claim::InvestorUniqueness` claim for a given target identity.
-       *
-       * # <weight>
-       * Weight of the this extrinsic is depend on the computation that used to validate
-       * the proof of claim, which will be a constant independent of user inputs.
-       * # </weight>
-       *
-       * # Arguments
-       * * origin - Who provides the claim to the user? In this case, it's the user's account id as the user provides.
-       * * target - `IdentityId` to which the claim gets assigned.
-       * * claim - `InvestorUniqueness` claim details.
-       * * proof - To validate the self attestation.
-       * * expiry - Expiry of claim.
-       *
-       * # Errors
-       * * `DidMustAlreadyExist` Target should already been a part of the ecosystem.
-       * * `ClaimVariantNotAllowed` When origin trying to pass claim variant other than `InvestorUniqueness`.
-       * * `ConfidentialScopeClaimNotAllowed` When issuer is different from target or CDD_ID is invalid for given user.
-       * * `InvalidScopeClaim When proof is invalid.
-       * * `InvalidCDDId` when you are not the owner of that CDD_ID.
-       **/
-      addInvestorUniquenessClaim: AugmentedSubmittable<
-        (
-          target: PolymeshPrimitivesIdentityId | string | Uint8Array,
-          claim:
-            | PolymeshPrimitivesIdentityClaimClaim
-            | { Accredited: any }
-            | { Affiliate: any }
-            | { BuyLockup: any }
-            | { SellLockup: any }
-            | { CustomerDueDiligence: any }
-            | { KnowYourCustomer: any }
-            | { Jurisdiction: any }
-            | { Exempted: any }
-            | { Blocked: any }
-            | { InvestorUniqueness: any }
-            | { NoData: any }
-            | { InvestorUniquenessV2: any }
-            | { Custom: any }
-            | string
-            | Uint8Array,
-          proof: U8aFixed | string | Uint8Array,
-          expiry: Option<u64> | null | Uint8Array | u64 | AnyNumber
-        ) => SubmittableExtrinsic<ApiType>,
-        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesIdentityClaimClaim, U8aFixed, Option<u64>]
-      >;
-      addInvestorUniquenessClaimV2: AugmentedSubmittable<
-        (
-          target: PolymeshPrimitivesIdentityId | string | Uint8Array,
-          scope:
-            | PolymeshPrimitivesIdentityClaimScope
-            | { Identity: any }
-            | { Ticker: any }
-            | { Custom: any }
-            | string
-            | Uint8Array,
-          claim:
-            | PolymeshPrimitivesIdentityClaimClaim
-            | { Accredited: any }
-            | { Affiliate: any }
-            | { BuyLockup: any }
-            | { SellLockup: any }
-            | { CustomerDueDiligence: any }
-            | { KnowYourCustomer: any }
-            | { Jurisdiction: any }
-            | { Exempted: any }
-            | { Blocked: any }
-            | { InvestorUniqueness: any }
-            | { NoData: any }
-            | { InvestorUniquenessV2: any }
-            | { Custom: any }
-            | string
-            | Uint8Array,
-          proof:
-            | ConfidentialIdentityV2ClaimProofsScopeClaimProof
-            | { proofScopeIdWellformed?: any; proofScopeIdCddIdMatch?: any; scopeId?: any }
-            | string
-            | Uint8Array,
-          expiry: Option<u64> | null | Uint8Array | u64 | AnyNumber
-        ) => SubmittableExtrinsic<ApiType>,
-        [
-          PolymeshPrimitivesIdentityId,
-          PolymeshPrimitivesIdentityClaimScope,
-          PolymeshPrimitivesIdentityClaimClaim,
-          ConfidentialIdentityV2ClaimProofsScopeClaimProof,
-          Option<u64>
-        ]
       >;
       /**
        * Adds secondary keys to target identity `id`.
@@ -3447,9 +3345,6 @@ declare module '@polkadot/api-base/types/submittable' {
             | { Jurisdiction: any }
             | { Exempted: any }
             | { Blocked: any }
-            | { InvestorUniqueness: any }
-            | { NoData: any }
-            | { InvestorUniquenessV2: any }
             | { Custom: any }
             | string
             | Uint8Array
@@ -3461,10 +3356,6 @@ declare module '@polkadot/api-base/types/submittable' {
        * `claim_type`, and `scope`.
        *
        * Please note that `origin` must be the issuer of the target claim.
-       *
-       * # Errors
-       * - `TargetHasNonZeroBalanceAtScopeId` when you try to revoke a `InvestorUniqueness*`
-       * claim, and `target` identity still have any balance on the given `scope`.
        **/
       revokeClaimByIndex: AugmentedSubmittable<
         (
@@ -3480,9 +3371,6 @@ declare module '@polkadot/api-base/types/submittable' {
             | { Jurisdiction: any }
             | { Exempted: any }
             | { Blocked: any }
-            | { InvestorUniqueness: any }
-            | { NoType: any }
-            | { InvestorUniquenessV2: any }
             | { Custom: any }
             | string
             | Uint8Array,
@@ -5451,27 +5339,6 @@ declare module '@polkadot/api-base/types/submittable' {
       executeScheduledInstruction: AugmentedSubmittable<
         (
           id: u64 | AnyNumber | Uint8Array,
-          legsCount: u32 | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [u64, u32]
-      >;
-      /**
-       * Root callable extrinsic, used as an internal call to execute a scheduled settlement instruction.
-       **/
-      executeScheduledInstructionV2: AugmentedSubmittable<
-        (
-          id: u64 | AnyNumber | Uint8Array,
-          fungibleTransfers: u32 | AnyNumber | Uint8Array,
-          nftsTransfers: u32 | AnyNumber | Uint8Array
-        ) => SubmittableExtrinsic<ApiType>,
-        [u64, u32, u32]
-      >;
-      /**
-       * Root callable extrinsic, used as an internal call to execute a scheduled settlement instruction.
-       **/
-      executeScheduledInstructionV3: AugmentedSubmittable<
-        (
-          id: u64 | AnyNumber | Uint8Array,
           weightLimit:
             | SpWeightsWeightV2Weight
             | { refTime?: any; proofSize?: any }
@@ -5480,51 +5347,6 @@ declare module '@polkadot/api-base/types/submittable' {
         ) => SubmittableExtrinsic<ApiType>,
         [u64, SpWeightsWeightV2Weight]
       >;
-      /**
-       * Placeholder for removed `add_and_affirm_instruction`
-       **/
-      placeholderAddAndAffirmInstruction: AugmentedSubmittable<
-        () => SubmittableExtrinsic<ApiType>,
-        []
-      >;
-      /**
-       * Placeholder for removed `add_and_affirm_instruction_with_memo`
-       **/
-      placeholderAddAndAffirmInstructionWithMemo: AugmentedSubmittable<
-        () => SubmittableExtrinsic<ApiType>,
-        []
-      >;
-      /**
-       * Placeholder for removed `add_instruction`
-       **/
-      placeholderAddInstruction: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>, []>;
-      /**
-       * Placeholder for removed `add_instruction_with_memo`
-       **/
-      placeholderAddInstructionWithMemo: AugmentedSubmittable<
-        () => SubmittableExtrinsic<ApiType>,
-        []
-      >;
-      /**
-       * Placeholder for removed `affirm_instruction`
-       **/
-      placeholderAffirmInstruction: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>, []>;
-      /**
-       * Placeholder for removed `claim_receipt`
-       **/
-      placeholderClaimReceipt: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>, []>;
-      /**
-       * Placeholder for removed `reject_instruction`
-       **/
-      placeholderRejectInstruction: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>, []>;
-      /**
-       * Placeholder for removed `unclaim_receipt`
-       **/
-      placeholderUnclaimReceipt: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>, []>;
-      /**
-       * Placeholder for removed `withdraw_affirmation`
-       **/
-      placeholderWithdrawAffirmation: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>, []>;
       /**
        * Rejects an existing instruction.
        *
@@ -5545,22 +5367,6 @@ declare module '@polkadot/api-base/types/submittable' {
             | Uint8Array
         ) => SubmittableExtrinsic<ApiType>,
         [u64, PolymeshPrimitivesIdentityIdPortfolioId]
-      >;
-      /**
-       * Reschedules a failed instruction.
-       *
-       * # Arguments
-       * * `id` - Target instruction id to reschedule.
-       *
-       * # Permissions
-       * * Portfolio
-       *
-       * # Errors
-       * * `InstructionNotFailed` - Instruction not in a failed state or does not exist.
-       **/
-      rescheduleInstruction: AugmentedSubmittable<
-        (id: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
-        [u64]
       >;
       /**
        * Enables or disabled venue filtering for a token.
@@ -7166,11 +6972,6 @@ declare module '@polkadot/api-base/types/submittable' {
       getMyDid: AugmentedSubmittable<() => SubmittableExtrinsic<ApiType>, []>;
       /**
        * Registers a new Identity for the `target_account` and issues a CDD claim to it.
-       * The Investor UID is generated deterministically by the hash of the generated DID and
-       * then we fix it to be compliant with UUID v4.
-       *
-       * # See
-       * - [RFC 4122: UUID](https://tools.ietf.org/html/rfc4122)
        *
        * # Failure
        * - `origin` has to be an active CDD provider. Inactive CDD providers cannot add new
@@ -7196,7 +6997,6 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       registerDid: AugmentedSubmittable<
         (
-          uid: PolymeshPrimitivesCddIdInvestorUid | string | Uint8Array,
           secondaryKeys:
             | Vec<PolymeshPrimitivesSecondaryKey>
             | (
@@ -7206,7 +7006,7 @@ declare module '@polkadot/api-base/types/submittable' {
                 | Uint8Array
               )[]
         ) => SubmittableExtrinsic<ApiType>,
-        [PolymeshPrimitivesCddIdInvestorUid, Vec<PolymeshPrimitivesSecondaryKey>]
+        [Vec<PolymeshPrimitivesSecondaryKey>]
       >;
     };
     timestamp: {

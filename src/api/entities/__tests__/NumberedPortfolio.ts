@@ -97,7 +97,7 @@ describe('NumberedPortfolio class', () => {
       const spy = jest.spyOn(numberedPortfolio, 'exists').mockResolvedValue(true);
       const rawPortfolioName = dsMockUtils.createMockBytes(portfolioName);
       dsMockUtils.createQueryMock('portfolio', 'portfolios', {
-        returnValue: rawPortfolioName,
+        returnValue: dsMockUtils.createMockOption(rawPortfolioName),
       });
       when(jest.spyOn(utilsConversionModule, 'bytesToString'))
         .calledWith(rawPortfolioName)
@@ -109,25 +109,18 @@ describe('NumberedPortfolio class', () => {
       spy.mockRestore();
     });
 
-    it('should throw an error if the Portfolio no longer exists', async () => {
-      const emptyName = dsMockUtils.createMockText('');
+    it('should throw an error if the Portfolio no longer exists', () => {
       dsMockUtils.createQueryMock('portfolio', 'portfolios', {
-        returnValue: emptyName,
+        returnValue: dsMockUtils.createMockOption(),
       });
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
-      const spy = jest.spyOn(numberedPortfolio, 'exists').mockResolvedValue(false);
-      let error;
-      try {
-        await numberedPortfolio.getName();
-      } catch (err) {
-        error = err;
-      }
+
       const expectedError = new PolymeshError({
         code: ErrorCode.DataUnavailable,
         message: "The Portfolio doesn't exist",
       });
-      expect(error).toEqual(expectedError);
-      spy.mockRestore();
+
+      return expect(numberedPortfolio.getName()).rejects.toThrow(expectedError);
     });
   });
 

@@ -101,10 +101,6 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InvestorUniquenessClaimNotAllowed: AugmentedError<ApiType>;
       /**
-       * Investor Uniqueness not allowed.
-       **/
-      InvestorUniquenessNotAllowed: AugmentedError<ApiType>;
-      /**
        * Maximum length of asset name has been exceeded.
        **/
       MaxLengthOfAssetNameExceeded: AugmentedError<ApiType>;
@@ -370,27 +366,29 @@ declare module '@polkadot/api-base/types/errors' {
     };
     checkpoint: {
       /**
-       * Failed to compute the next checkpoint.
-       * The schedule does not have any upcoming checkpoints.
-       **/
-      FailedToComputeNextCheckpoint: AugmentedError<ApiType>;
-      /**
        * A checkpoint schedule does not exist for the asset.
        **/
       NoSuchSchedule: AugmentedError<ApiType>;
       /**
-       * The duration of a schedule period is too short.
+       * The schedule has no more checkpoints.
        **/
-      ScheduleDurationTooShort: AugmentedError<ApiType>;
+      ScheduleFinished: AugmentedError<ApiType>;
+      /**
+       * The schedule has expired checkpoints.
+       **/
+      ScheduleHasExpiredCheckpoints: AugmentedError<ApiType>;
+      /**
+       * Can't create an empty schedule.
+       **/
+      ScheduleIsEmpty: AugmentedError<ApiType>;
       /**
        * A checkpoint schedule is not removable as `ref_count(schedule_id) > 0`.
        **/
       ScheduleNotRemovable: AugmentedError<ApiType>;
       /**
-       * The set of schedules taken together are too complex.
-       * For example, they are too many, or they occurs too frequently.
+       * The new schedule would put the ticker over the maximum complexity allowed.
        **/
-      SchedulesTooComplex: AugmentedError<ApiType>;
+      SchedulesOverMaxComplexity: AugmentedError<ApiType>;
     };
     committeeMembership: {
       /**
@@ -780,29 +778,9 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       CannotDecodeSignerAccountId: AugmentedError<ApiType>;
       /**
-       * CDDId should be unique & same within all cdd claims possessed by a DID.
-       **/
-      CDDIdNotUniqueForIdentity: AugmentedError<ApiType>;
-      /**
-       * Claim and Proof versions are different.
-       **/
-      ClaimAndProofVersionsDoNotMatch: AugmentedError<ApiType>;
-      /**
        * Claim does not exist.
        **/
       ClaimDoesNotExist: AugmentedError<ApiType>;
-      /**
-       * Try to add a claim variant using un-designated extrinsic.
-       **/
-      ClaimVariantNotAllowed: AugmentedError<ApiType>;
-      /**
-       * Confidential Scope claims can be added by an Identity to it-self.
-       **/
-      ConfidentialScopeClaimNotAllowed: AugmentedError<ApiType>;
-      /**
-       * Current identity cannot be forwarded, it is not a secondary key of target identity.
-       **/
-      CurrentIdentityCannotBeForwarded: AugmentedError<ApiType>;
       /**
        * The custom claim type trying to be registered already exists.
        **/
@@ -857,14 +835,6 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InvalidAuthorizationSignature: AugmentedError<ApiType>;
       /**
-       * Non systematic CDD providers can not create default cdd_id claims.
-       **/
-      InvalidCDDId: AugmentedError<ApiType>;
-      /**
-       * Addition of a new scope claim gets invalidated.
-       **/
-      InvalidScopeClaim: AugmentedError<ApiType>;
-      /**
        * Identity is already a child of an other identity, can't create grand-child identity.
        **/
       IsChildIdentity: AugmentedError<ApiType>;
@@ -908,10 +878,6 @@ declare module '@polkadot/api-base/types/errors' {
        * The target DID has no valid CDD.
        **/
       TargetHasNoCdd: AugmentedError<ApiType>;
-      /**
-       * Try to delete the IU claim even when the user has non zero balance at given scopeId.
-       **/
-      TargetHasNonZeroBalanceAtScopeId: AugmentedError<ApiType>;
       /**
        * Signatory is not pre authorized by the identity
        **/
@@ -1508,6 +1474,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       DuplicateReceiptUid: AugmentedError<ApiType>;
       /**
+       * The instruction failed to release asset locks or transfer the assets.
+       **/
+      FailedToReleaseLockOrTransferAssets: AugmentedError<ApiType>;
+      /**
        * Scheduling of an instruction fails.
        **/
       FailedToSchedule: AugmentedError<ApiType>;
@@ -1520,21 +1490,9 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InstructionDatesInvalid: AugmentedError<ApiType>;
       /**
-       * Instruction failed to execute.
-       **/
-      InstructionFailed: AugmentedError<ApiType>;
-      /**
        * Instruction has not been affirmed.
        **/
       InstructionNotAffirmed: AugmentedError<ApiType>;
-      /**
-       * Provided instruction is not failing execution.
-       **/
-      InstructionNotFailed: AugmentedError<ApiType>;
-      /**
-       * Provided instruction is not pending execution.
-       **/
-      InstructionNotPending: AugmentedError<ApiType>;
       /**
        * Instruction settlement block has not yet been reached.
        **/
@@ -1543,6 +1501,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Instruction's target settle block reached.
        **/
       InstructionSettleBlockPassed: AugmentedError<ApiType>;
+      /**
+       * Only [`InstructionStatus::Pending`] or [`InstructionStatus::Failed`] instructions can be executed.
+       **/
+      InvalidInstructionStatusForExecution: AugmentedError<ApiType>;
       /**
        * Offchain signature is invalid.
        **/
@@ -1575,6 +1537,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Multiple receipts for the same leg are not allowed.
        **/
       MultipleReceiptsForOneLeg: AugmentedError<ApiType>;
+      /**
+       * There are parties who have not affirmed the instruction.
+       **/
+      NotAllAffirmationsHaveBeenReceived: AugmentedError<ApiType>;
       /**
        * The given number of fungible transfers was underestimated.
        **/

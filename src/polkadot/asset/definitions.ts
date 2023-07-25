@@ -41,7 +41,7 @@ export default {
           isOptional: true,
         },
       ],
-      type: 'canTransferGranularReturn',
+      type: 'CanTransferGranularReturn',
     },
   },
   types: {},

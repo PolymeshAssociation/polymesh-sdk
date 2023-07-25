@@ -5,8 +5,13 @@ import { EventIdentifier } from '~/types';
 
 export enum InstructionStatus {
   Pending = 'Pending',
-  Executed = 'Executed',
   Failed = 'Failed',
+  Rejected = 'Rejected',
+  Success = 'Success',
+  /**
+   * @deprecated v6.0 chain will specify Success or Rejected. "Executed" is kept for historical instructions
+   */
+  Executed = 'Executed',
 }
 
 export enum InstructionType {

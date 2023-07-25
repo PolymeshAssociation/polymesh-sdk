@@ -106,11 +106,14 @@ import type { IExtrinsic, Observable } from '@polkadot/types/types';
 import type {
   AssetDidResult,
   AuthorizationType,
+  CanTransferGranularReturn,
   CappedFee,
   CddStatus,
   DidStatus,
+  ExecuteInstructionInfo,
   IdentityClaim,
   IdentityId,
+  InstructionId,
   KeyIdentityData,
   Member,
   NFTs,
@@ -121,7 +124,6 @@ import type {
   Signatory,
   Ticker,
   VoteCount,
-  canTransferGranularReturn,
 } from 'polymesh-types/polymesh';
 
 export type __AugmentedRpc = AugmentedRpc<() => unknown>;
@@ -149,7 +151,7 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
           ticker: Ticker | string | Uint8Array,
           value: Balance | AnyNumber | Uint8Array,
           blockHash?: Hash | string | Uint8Array
-        ) => Observable<canTransferGranularReturn>
+        ) => Observable<CanTransferGranularReturn>
       >;
     };
     author: {
@@ -1018,6 +1020,17 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
        * Retrieves the list of RPC methods that are exposed by the node
        **/
       methods: AugmentedRpc<() => Observable<RpcMethods>>;
+    };
+    settlement: {
+      /**
+       * Returns an ExecuteInstructionInfo instance, containing the consumed weight and the number of tokens in the instruction.
+       **/
+      getExecuteInstructionInfo: AugmentedRpc<
+        (
+          instruction_id: InstructionId | AnyNumber | Uint8Array,
+          blockHash?: Hash | string | Uint8Array
+        ) => Observable<ExecuteInstructionInfo>
+      >;
     };
     staking: {
       /**

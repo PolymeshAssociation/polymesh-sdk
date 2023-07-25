@@ -122,6 +122,11 @@ describe('Instruction class', () => {
 
       expect(result).toBe(true);
 
+      when(instructionStatusesMock)
+        .calledWith(rawId)
+        .mockResolvedValue(
+          dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Unknown)
+        );
       instructionCounterMock.mockResolvedValue(dsMockUtils.createMockU64(new BigNumber(0)));
 
       result = await instruction.isExecuted();
@@ -238,7 +243,7 @@ describe('Instruction class', () => {
       result = await instruction.onStatusChange(callback);
 
       expect(result).toEqual(unsubCallback);
-      expect(callback).toBeCalledWith(InstructionStatus.Executed);
+      expect(callback).toBeCalledWith(InstructionStatus.Success);
 
       instructionStatusesMock.mockImplementationOnce(async (_, cbFunc) => {
         cbFunc(dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Rejected));
@@ -248,8 +253,7 @@ describe('Instruction class', () => {
       result = await instruction.onStatusChange(callback);
 
       expect(result).toEqual(unsubCallback);
-      // Note: for backwards compatibility, should be updated to more accurate "Rejected"
-      expect(callback).toBeCalledWith(InstructionStatus.Executed);
+      expect(callback).toBeCalledWith(InstructionStatus.Rejected);
     });
 
     it('should error on unknown instruction status', () => {
@@ -483,8 +487,7 @@ describe('Instruction class', () => {
       });
       expect(result.venue.id).toEqual(venueId);
 
-      // Note: for backwards compatibility, should be updated to more accurate "Rejected"
-      status = InstructionStatus.Executed;
+      status = InstructionStatus.Rejected;
 
       queryMultiMock.mockResolvedValueOnce([
         dsMockUtils.createMockInstruction({
@@ -505,7 +508,7 @@ describe('Instruction class', () => {
         memo,
       });
 
-      status = InstructionStatus.Executed;
+      status = InstructionStatus.Success;
 
       queryMultiMock.mockResolvedValueOnce([
         dsMockUtils.createMockInstruction({
@@ -645,7 +648,9 @@ describe('Instruction class', () => {
       const amount = new BigNumber(1000);
 
       entityMockUtils.configureMocks({ assetOptions: { ticker } });
-      instructionStatusMock.mockResolvedValue(InternalInstructionStatus.Pending);
+      instructionStatusMock.mockResolvedValue(
+        createMockInstructionStatus(InternalInstructionStatus.Pending)
+      );
       const mockLeg = dsMockUtils.createMockOption(
         dsMockUtils.createMockInstructionLeg({
           Fungible: {
@@ -693,7 +698,9 @@ describe('Instruction class', () => {
       const ticker = 'SOME_TICKER';
 
       entityMockUtils.configureMocks({ assetOptions: { ticker } });
-      instructionStatusMock.mockResolvedValue(InternalInstructionStatus.Pending);
+      instructionStatusMock.mockResolvedValue(
+        createMockInstructionStatus(InternalInstructionStatus.Pending)
+      );
       const mockLeg = dsMockUtils.createMockOption(
         dsMockUtils.createMockInstructionLeg({
           NonFungible: {
@@ -726,7 +733,9 @@ describe('Instruction class', () => {
       const ticker = 'SOME_TICKER';
 
       entityMockUtils.configureMocks({ assetOptions: { ticker } });
-      instructionStatusMock.mockResolvedValue(InternalInstructionStatus.Pending);
+      instructionStatusMock.mockResolvedValue(
+        createMockInstructionStatus(InternalInstructionStatus.Pending)
+      );
       const mockLeg = dsMockUtils.createMockOption(
         dsMockUtils.createMockInstructionLeg({
           OffChain: {
@@ -752,7 +761,9 @@ describe('Instruction class', () => {
       const ticker = 'SOME_TICKER';
 
       entityMockUtils.configureMocks({ assetOptions: { ticker } });
-      instructionStatusMock.mockResolvedValue(InternalInstructionStatus.Pending);
+      instructionStatusMock.mockResolvedValue(
+        createMockInstructionStatus(InternalInstructionStatus.Pending)
+      );
       const mockLeg = dsMockUtils.createMockOption();
       const entries = [tuple(['instructionId', 'legId'] as unknown as StorageKey, mockLeg)];
 
@@ -835,31 +846,6 @@ describe('Instruction class', () => {
         .mockResolvedValue(expectedTransaction);
 
       const tx = await instruction.withdraw();
-
-      expect(tx).toBe(expectedTransaction);
-    });
-  });
-
-  describe('method: reschedule', () => {
-    afterAll(() => {
-      jest.restoreAllMocks();
-    });
-
-    it('should prepare the procedure and return the resulting transaction', async () => {
-      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<Instruction>;
-
-      when(procedureMockUtils.getPrepareMock())
-        .calledWith(
-          {
-            args: { id },
-            transformer: undefined,
-          },
-          context,
-          {}
-        )
-        .mockResolvedValue(expectedTransaction);
-
-      const tx = await instruction.reschedule();
 
       expect(tx).toBe(expectedTransaction);
     });

@@ -6,9 +6,6 @@
 import '@polkadot/types/types/registry';
 
 import type {
-  ConfidentialIdentityV2ClaimProofsScopeClaimProof,
-  ConfidentialIdentityV2ClaimProofsZkProofData,
-  ConfidentialIdentityV2SignSignature,
   FinalityGrandpaEquivocationPrecommit,
   FinalityGrandpaEquivocationPrevote,
   FinalityGrandpaPrecommit,
@@ -41,7 +38,6 @@ import type {
   PalletAssetCall,
   PalletAssetCheckpointCall,
   PalletAssetCheckpointError,
-  PalletAssetCheckpointScheduleSpec,
   PalletAssetError,
   PalletAssetSecurityToken,
   PalletAssetTickerRegistration,
@@ -239,7 +235,8 @@ import type {
   PolymeshCommonUtilitiesBalancesReasons,
   PolymeshCommonUtilitiesBaseEvent,
   PolymeshCommonUtilitiesCheckpointEvent,
-  PolymeshCommonUtilitiesCheckpointStoredSchedule,
+  PolymeshCommonUtilitiesCheckpointNextCheckpoints,
+  PolymeshCommonUtilitiesCheckpointScheduleCheckpoints,
   PolymeshCommonUtilitiesComplianceManagerEvent,
   PolymeshCommonUtilitiesExternalAgentsEvent,
   PolymeshCommonUtilitiesGroupInactiveMember,
@@ -274,11 +271,7 @@ import type {
   PolymeshPrimitivesAuthorization,
   PolymeshPrimitivesAuthorizationAuthorizationData,
   PolymeshPrimitivesBeneficiary,
-  PolymeshPrimitivesCalendarCalendarPeriod,
-  PolymeshPrimitivesCalendarCalendarUnit,
-  PolymeshPrimitivesCalendarCheckpointSchedule,
   PolymeshPrimitivesCddId,
-  PolymeshPrimitivesCddIdInvestorUid,
   PolymeshPrimitivesComplianceManagerAssetCompliance,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
   PolymeshPrimitivesCondition,
@@ -385,9 +378,6 @@ import type {
 
 declare module '@polkadot/types/types/registry' {
   interface InterfaceTypes {
-    ConfidentialIdentityV2ClaimProofsScopeClaimProof: ConfidentialIdentityV2ClaimProofsScopeClaimProof;
-    ConfidentialIdentityV2ClaimProofsZkProofData: ConfidentialIdentityV2ClaimProofsZkProofData;
-    ConfidentialIdentityV2SignSignature: ConfidentialIdentityV2SignSignature;
     FinalityGrandpaEquivocationPrecommit: FinalityGrandpaEquivocationPrecommit;
     FinalityGrandpaEquivocationPrevote: FinalityGrandpaEquivocationPrevote;
     FinalityGrandpaPrecommit: FinalityGrandpaPrecommit;
@@ -420,7 +410,6 @@ declare module '@polkadot/types/types/registry' {
     PalletAssetCall: PalletAssetCall;
     PalletAssetCheckpointCall: PalletAssetCheckpointCall;
     PalletAssetCheckpointError: PalletAssetCheckpointError;
-    PalletAssetCheckpointScheduleSpec: PalletAssetCheckpointScheduleSpec;
     PalletAssetError: PalletAssetError;
     PalletAssetSecurityToken: PalletAssetSecurityToken;
     PalletAssetTickerRegistration: PalletAssetTickerRegistration;
@@ -618,7 +607,8 @@ declare module '@polkadot/types/types/registry' {
     PolymeshCommonUtilitiesBalancesReasons: PolymeshCommonUtilitiesBalancesReasons;
     PolymeshCommonUtilitiesBaseEvent: PolymeshCommonUtilitiesBaseEvent;
     PolymeshCommonUtilitiesCheckpointEvent: PolymeshCommonUtilitiesCheckpointEvent;
-    PolymeshCommonUtilitiesCheckpointStoredSchedule: PolymeshCommonUtilitiesCheckpointStoredSchedule;
+    PolymeshCommonUtilitiesCheckpointNextCheckpoints: PolymeshCommonUtilitiesCheckpointNextCheckpoints;
+    PolymeshCommonUtilitiesCheckpointScheduleCheckpoints: PolymeshCommonUtilitiesCheckpointScheduleCheckpoints;
     PolymeshCommonUtilitiesComplianceManagerEvent: PolymeshCommonUtilitiesComplianceManagerEvent;
     PolymeshCommonUtilitiesExternalAgentsEvent: PolymeshCommonUtilitiesExternalAgentsEvent;
     PolymeshCommonUtilitiesGroupInactiveMember: PolymeshCommonUtilitiesGroupInactiveMember;
@@ -653,11 +643,7 @@ declare module '@polkadot/types/types/registry' {
     PolymeshPrimitivesAuthorization: PolymeshPrimitivesAuthorization;
     PolymeshPrimitivesAuthorizationAuthorizationData: PolymeshPrimitivesAuthorizationAuthorizationData;
     PolymeshPrimitivesBeneficiary: PolymeshPrimitivesBeneficiary;
-    PolymeshPrimitivesCalendarCalendarPeriod: PolymeshPrimitivesCalendarCalendarPeriod;
-    PolymeshPrimitivesCalendarCalendarUnit: PolymeshPrimitivesCalendarCalendarUnit;
-    PolymeshPrimitivesCalendarCheckpointSchedule: PolymeshPrimitivesCalendarCheckpointSchedule;
     PolymeshPrimitivesCddId: PolymeshPrimitivesCddId;
-    PolymeshPrimitivesCddIdInvestorUid: PolymeshPrimitivesCddIdInvestorUid;
     PolymeshPrimitivesComplianceManagerAssetCompliance: PolymeshPrimitivesComplianceManagerAssetCompliance;
     PolymeshPrimitivesComplianceManagerComplianceRequirement: PolymeshPrimitivesComplianceManagerComplianceRequirement;
     PolymeshPrimitivesCondition: PolymeshPrimitivesCondition;

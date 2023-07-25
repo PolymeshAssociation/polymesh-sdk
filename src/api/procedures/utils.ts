@@ -86,7 +86,11 @@ export async function assertInstructionValidForManualExecution(
 ): Promise<void> {
   const { status, type } = details;
 
-  if (status === InstructionStatus.Executed) {
+  if (
+    status === InstructionStatus.Success ||
+    status === InstructionStatus.Rejected ||
+    status === InstructionStatus.Executed
+  ) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
       message: 'The Instruction has already been executed',

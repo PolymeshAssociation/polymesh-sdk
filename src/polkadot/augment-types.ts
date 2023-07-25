@@ -1159,6 +1159,7 @@ import type {
   CAKind,
   CalendarPeriod,
   CalendarUnit,
+  CanTransferGranularReturn,
   CanTransferResult,
   CappedFee,
   CddId,
@@ -1195,6 +1196,7 @@ import type {
   ErrorAt,
   EventCounts,
   EventDid,
+  ExecuteInstructionInfo,
   ExtrinsicPermissions,
   Fund,
   FundDescription,
@@ -1216,8 +1218,6 @@ import type {
   Instruction,
   InstructionId,
   InstructionStatus,
-  InvestorUid,
-  InvestorZKProofData,
   ItnRewardStatus,
   KeyIdentityData,
   KeyRecord,
@@ -1270,15 +1270,11 @@ import type {
   RecordDate,
   RecordDateSpec,
   RestrictionResult,
-  RistrettoPoint,
   RpcDidRecords,
   RpcDidRecordsSuccess,
-  Scalar,
   ScheduleId,
   ScheduleSpec,
   Scope,
-  ScopeClaimProof,
-  ScopeId,
   SecondaryKey,
   SecondaryKeyWithAuth,
   SecurityToken,
@@ -1322,8 +1318,6 @@ import type {
   VoteCount,
   VoteCountProposalFound,
   VotingResult,
-  ZkProofData,
-  canTransferGranularReturn,
 } from 'polymesh-types/polymesh';
 
 declare module '@polkadot/types/types/registry' {
@@ -1506,7 +1500,7 @@ declare module '@polkadot/types/types/registry' {
     CandidateInfo: CandidateInfo;
     CandidatePendingAvailability: CandidatePendingAvailability;
     CandidateReceipt: CandidateReceipt;
-    canTransferGranularReturn: canTransferGranularReturn;
+    CanTransferGranularReturn: CanTransferGranularReturn;
     CanTransferResult: CanTransferResult;
     CappedFee: CappedFee;
     CddId: CddId;
@@ -1754,6 +1748,7 @@ declare module '@polkadot/types/types/registry' {
     EvmLog: EvmLog;
     EvmVicinity: EvmVicinity;
     ExecReturnValue: ExecReturnValue;
+    ExecuteInstructionInfo: ExecuteInstructionInfo;
     ExitError: ExitError;
     ExitFatal: ExitFatal;
     ExitReason: ExitReason;
@@ -1913,8 +1908,6 @@ declare module '@polkadot/types/types/registry' {
     InteriorMultiLocation: InteriorMultiLocation;
     InvalidDisputeStatementKind: InvalidDisputeStatementKind;
     InvalidTransaction: InvalidTransaction;
-    InvestorUid: InvestorUid;
-    InvestorZKProofData: InvestorZKProofData;
     ItnRewardStatus: ItnRewardStatus;
     Json: Json;
     Junction: Junction;
@@ -2233,7 +2226,6 @@ declare module '@polkadot/types/types/registry' {
     ResponseV2Result: ResponseV2Result;
     RestrictionResult: RestrictionResult;
     Retriable: Retriable;
-    RistrettoPoint: RistrettoPoint;
     RoundState: RoundState;
     RpcDidRecords: RpcDidRecords;
     RpcDidRecordsSuccess: RpcDidRecordsSuccess;
@@ -2249,7 +2241,6 @@ declare module '@polkadot/types/types/registry' {
     RuntimeVersionPartial: RuntimeVersionPartial;
     RuntimeVersionPre3: RuntimeVersionPre3;
     RuntimeVersionPre4: RuntimeVersionPre4;
-    Scalar: Scalar;
     Schedule: Schedule;
     Scheduled: Scheduled;
     ScheduledCore: ScheduledCore;
@@ -2263,8 +2254,6 @@ declare module '@polkadot/types/types/registry' {
     ScheduleTo264: ScheduleTo264;
     Scheduling: Scheduling;
     Scope: Scope;
-    ScopeClaimProof: ScopeClaimProof;
-    ScopeId: ScopeId;
     ScrapedOnChainVotes: ScrapedOnChainVotes;
     Seal: Seal;
     SealV0: SealV0;
@@ -2573,6 +2562,5 @@ declare module '@polkadot/types/types/registry' {
     XcmV1: XcmV1;
     XcmV2: XcmV2;
     XcmVersion: XcmVersion;
-    ZkProofData: ZkProofData;
   } // InterfaceTypes
 } // declare module

@@ -13,7 +13,6 @@ import {
   Identity,
   modifyInstructionAffirmation,
   PolymeshError,
-  rescheduleInstruction,
   Venue,
 } from '~/internal';
 import { InstructionStatusEnum } from '~/middleware/enumsV2';
@@ -28,7 +27,6 @@ import {
   EventIdentifier,
   ExecuteManualInstructionParams,
   InstructionAffirmationOperation,
-  NoArgsProcedureMethod,
   NumberedPortfolio,
   OptionalArgsProcedureMethod,
   PaginationOptions,
@@ -133,14 +131,6 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       context
     );
 
-    this.reschedule = createProcedureMethod(
-      {
-        getProcedureAndArgs: () => [rescheduleInstruction, { id }],
-        voidArgs: true,
-      },
-      context
-    );
-
     this.executeManually = createProcedureMethod(
       {
         getProcedureAndArgs: args => [executeManualInstruction, { id, ...args }],
@@ -173,7 +163,8 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     const statusResult = meshInstructionStatusToInstructionStatus(status);
 
     return (
-      (statusResult === InternalInstructionStatus.Success ||
+      (statusResult === InternalInstructionStatus.Unknown ||
+        statusResult === InternalInstructionStatus.Success ||
         statusResult === InternalInstructionStatus.Rejected) &&
       exists
     );
@@ -518,13 +509,6 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
   public withdraw: OptionalArgsProcedureMethod<AffirmOrWithdrawInstructionParams, Instruction>;
 
   /**
-   * Reschedules a failed Instruction to be tried again
-   *
-   * @throws if the Instruction status is not `InstructionStatus.Failed`
-   */
-  public reschedule: NoArgsProcedureMethod<Instruction>;
-
-  /**
    * Executes an Instruction of type `SettleManual`
    */
   public executeManually: OptionalArgsProcedureMethod<ExecuteManualInstructionParams, Instruction>;
@@ -645,10 +629,9 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       case InternalInstructionStatus.Failed:
         return InstructionStatus.Failed;
       case InternalInstructionStatus.Rejected:
-        // return executed for backwards compatibility. Should be updated to be explicit
-        return InstructionStatus.Executed;
+        return InstructionStatus.Rejected;
       case InternalInstructionStatus.Success:
-        return InstructionStatus.Executed;
+        return InstructionStatus.Success;
     }
 
     return null;

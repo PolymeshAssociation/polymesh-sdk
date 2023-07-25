@@ -42,7 +42,7 @@ import type {
   PalletStakingExposure,
   PalletStakingSlashingSwitch,
   PalletStoFundraiser,
-  PolymeshCommonUtilitiesCheckpointStoredSchedule,
+  PolymeshCommonUtilitiesCheckpointScheduleCheckpoints,
   PolymeshCommonUtilitiesMaybeBlock,
   PolymeshPrimitivesAgentAgentGroup,
   PolymeshPrimitivesAssetAssetType,
@@ -51,7 +51,6 @@ import type {
   PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
   PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail,
   PolymeshPrimitivesAuthorizationAuthorizationData,
-  PolymeshPrimitivesCddIdInvestorUid,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
   PolymeshPrimitivesConditionTrustedIssuer,
   PolymeshPrimitivesDocument,
@@ -105,7 +104,7 @@ declare module '@polkadot/api-base/types/events' {
       >;
       /**
        * Event for creation of the asset.
-       * caller DID/ owner DID, ticker, divisibility, asset type, beneficiary DID, disable investor uniqueness, asset name, identifiers, funding round
+       * caller DID/ owner DID, ticker, divisibility, asset type, beneficiary DID, asset name, identifiers, funding round
        **/
       AssetCreated: AugmentedEvent<
         ApiType,
@@ -115,7 +114,6 @@ declare module '@polkadot/api-base/types/events' {
           bool,
           PolymeshPrimitivesAssetAssetType,
           PolymeshPrimitivesIdentityId,
-          bool,
           Bytes,
           Vec<PolymeshPrimitivesAssetIdentifier>,
           Option<Bytes>
@@ -587,7 +585,7 @@ declare module '@polkadot/api-base/types/events' {
        **/
       CheckpointCreated: AugmentedEvent<
         ApiType,
-        [Option<PolymeshPrimitivesEventOnly>, PolymeshPrimitivesTicker, u64, u128, u64]
+        [Option<PolymeshPrimitivesIdentityId>, PolymeshPrimitivesTicker, u64, u128, u64]
       >;
       /**
        * The maximum complexity for an arbitrary ticker's schedule set was changed.
@@ -601,27 +599,29 @@ declare module '@polkadot/api-base/types/events' {
       /**
        * A checkpoint schedule was created.
        *
-       * (caller DID, ticker, schedule)
+       * (caller DID, ticker, schedule id, schedule)
        **/
       ScheduleCreated: AugmentedEvent<
         ApiType,
         [
-          PolymeshPrimitivesEventOnly,
+          PolymeshPrimitivesIdentityId,
           PolymeshPrimitivesTicker,
-          PolymeshCommonUtilitiesCheckpointStoredSchedule
+          u64,
+          PolymeshCommonUtilitiesCheckpointScheduleCheckpoints
         ]
       >;
       /**
        * A checkpoint schedule was removed.
        *
-       * (caller DID, ticker, schedule)
+       * (caller DID, ticker, schedule id, schedule)
        **/
       ScheduleRemoved: AugmentedEvent<
         ApiType,
         [
           PolymeshPrimitivesIdentityId,
           PolymeshPrimitivesTicker,
-          PolymeshCommonUtilitiesCheckpointStoredSchedule
+          u64,
+          PolymeshCommonUtilitiesCheckpointScheduleCheckpoints
         ]
       >;
     };
@@ -2130,7 +2130,7 @@ declare module '@polkadot/api-base/types/events' {
         ]
       >;
       /**
-       * Add `ScopeId`s exempt for transfer conditions matching exempt key.
+       * Add `IdentityId`s exempt for transfer conditions matching exempt key.
        *
        * (Caller DID, Exempt key, Entities)
        **/
@@ -2143,7 +2143,7 @@ declare module '@polkadot/api-base/types/events' {
         ]
       >;
       /**
-       * Remove `ScopeId`s exempt for transfer conditions matching exempt key.
+       * Remove `IdentityId`s exempt for transfer conditions matching exempt key.
        *
        * (Caller DID, Exempt key, Entities)
        **/
@@ -2394,14 +2394,6 @@ declare module '@polkadot/api-base/types/events' {
        * (Caller DID, Caller account)
        **/
       DidStatus: AugmentedEvent<ApiType, [PolymeshPrimitivesIdentityId, AccountId32]>;
-      /**
-       * A new mocked `InvestorUid` has been created for the given Identity.
-       * (Target DID, New InvestorUid)
-       **/
-      MockInvestorUIDCreated: AugmentedEvent<
-        ApiType,
-        [PolymeshPrimitivesIdentityId, PolymeshPrimitivesCddIdInvestorUid]
-      >;
     };
     transactionPayment: {
       /**

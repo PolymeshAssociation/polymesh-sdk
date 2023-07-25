@@ -9,10 +9,8 @@ export default {
     EventDid: 'IdentityId',
     EventCounts: 'Vec<u32>',
     ErrorAt: '(u32, DispatchError)',
-    InvestorUid: '[u8; 16]',
     Ticker: '[u8; 12]',
     CddId: '[u8; 32]',
-    ScopeId: '[u8; 32]',
     PosRatio: '(u32, u32)',
     DocumentId: 'u32',
     DocumentName: 'Text',
@@ -458,19 +456,6 @@ export default {
         Custom: 'Vec<u8>',
       },
     },
-    InvestorZKProofData: '[u8; 64]',
-    Scalar: '[u8; 32]',
-    RistrettoPoint: '[u8; 32]',
-    ZkProofData: {
-      challenge_responses: '[Scalar; 2]',
-      subtract_expressions_res: 'RistrettoPoint',
-      blinded_scope_did_hash: 'RistrettoPoint',
-    },
-    ScopeClaimProof: {
-      proof_scope_id_wellformed: 'Signature',
-      proof_scope_id_cdd_id_match: 'ZkProofData',
-      scope_id: 'RistrettoPoint',
-    },
     CustomClaimTypeId: 'u32',
     Claim: {
       _enum: {
@@ -483,9 +468,6 @@ export default {
         Jurisdiction: '(CountryCode, Scope)',
         Exempted: 'Scope',
         Blocked: 'Scope',
-        InvestorUniqueness: '(Scope, ScopeId, CddId)',
-        NoData: '',
-        InvestorUniquenessV2: 'CddId',
         Custom: '(CustomClaimTypeId, Option<Scope>)',
       },
     },
@@ -500,9 +482,6 @@ export default {
         Jurisdiction: '',
         Exempted: '',
         Blocked: '',
-        InvestorUniqueness: '',
-        NoData: '',
-        InvestorUniquenessV2: '',
         Custom: 'CustomClaimTypeId',
       },
     },
@@ -1120,7 +1099,7 @@ export default {
       intended_count: 'u32',
       running_count: 'u32',
     },
-    canTransferGranularReturn: {
+    CanTransferGranularReturn: {
       _enum: {
         Ok: 'GranularCanTransferResult',
         Err: 'DispatchError',
@@ -1227,6 +1206,13 @@ export default {
         Invoice: '',
         Custom: 'CustomAssetTypeId',
       },
+    },
+    ExecuteInstructionInfo: {
+      fungible_tokens: 'u32',
+      non_fungible_tokens: 'u32',
+      off_chain_assets: 'u32',
+      consumed_weight: 'Weight',
+      error: 'Option<String>',
     },
   },
 };

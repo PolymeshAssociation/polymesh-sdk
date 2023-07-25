@@ -1,4 +1,4 @@
-import { bool, Bytes } from '@polkadot/types';
+import { bool, Bytes, Option } from '@polkadot/types';
 import { Balance } from '@polkadot/types/interfaces';
 import {
   PalletAssetSecurityToken,
@@ -14,6 +14,7 @@ import {
   DefaultPortfolio,
   Entity,
   NumberedPortfolio,
+  PolymeshError,
   PolymeshTransaction,
 } from '~/internal';
 import { eventByIndexedArgs, tickerExternalAgentHistory } from '~/middleware/queries';
@@ -25,6 +26,7 @@ import {
 import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
+  ErrorCode,
   EventIdentifier,
   HistoricAgentOperation,
   SecurityIdentifier,
@@ -93,12 +95,10 @@ describe('Asset class', () => {
     let isDivisible: boolean;
     let owner: string;
     let assetType: 'EquityCommon';
-    let iuDisabled: boolean;
     let did: string;
 
-    let rawToken: PalletAssetSecurityToken;
-    let rawName: Bytes;
-    let rawIuDisabled: bool;
+    let rawToken: Option<PalletAssetSecurityToken>;
+    let rawName: Option<Bytes>;
 
     let context: Context;
     let asset: Asset;
@@ -110,20 +110,20 @@ describe('Asset class', () => {
       isDivisible = true;
       owner = '0x0wn3r';
       assetType = 'EquityCommon';
-      iuDisabled = false;
       did = 'someDid';
       bytesToStringSpy = jest.spyOn(utilsConversionModule, 'bytesToString');
     });
 
     beforeEach(() => {
-      rawToken = dsMockUtils.createMockSecurityToken({
-        ownerDid: dsMockUtils.createMockIdentityId(owner),
-        assetType: dsMockUtils.createMockAssetType(assetType),
-        divisible: dsMockUtils.createMockBool(isDivisible),
-        totalSupply: dsMockUtils.createMockBalance(totalSupply),
-      });
-      rawIuDisabled = dsMockUtils.createMockBool(iuDisabled);
-      rawName = dsMockUtils.createMockBytes(name);
+      rawToken = dsMockUtils.createMockOption(
+        dsMockUtils.createMockSecurityToken({
+          ownerDid: dsMockUtils.createMockIdentityId(owner),
+          assetType: dsMockUtils.createMockAssetType(assetType),
+          divisible: dsMockUtils.createMockBool(isDivisible),
+          totalSupply: dsMockUtils.createMockBalance(totalSupply),
+        })
+      );
+      rawName = dsMockUtils.createMockOption(dsMockUtils.createMockBytes(name));
       context = dsMockUtils.getContextInstance();
       asset = new Asset({ ticker }, context);
 
@@ -146,9 +146,6 @@ describe('Asset class', () => {
       dsMockUtils.createQueryMock('asset', 'assetNames', {
         returnValue: rawName,
       });
-      dsMockUtils.createQueryMock('asset', 'disableInvestorUniqueness', {
-        returnValue: rawIuDisabled,
-      });
     });
 
     it('should return details for an Asset', async () => {
@@ -167,7 +164,6 @@ describe('Asset class', () => {
       expect(details.owner.did).toBe(owner);
       expect(details.assetType).toBe(assetType);
       expect(details.fullAgents[0].did).toBe(owner);
-      expect(details.requiresInvestorUniqueness).toBe(true);
 
       dsMockUtils.createQueryMock('externalAgents', 'groupOfAgent', {
         entries: [
@@ -182,14 +178,16 @@ describe('Asset class', () => {
       expect(details.fullAgents[0].did).toEqual(did);
 
       tokensMock.mockResolvedValue(
-        dsMockUtils.createMockSecurityToken({
-          ownerDid: dsMockUtils.createMockIdentityId(owner),
-          assetType: dsMockUtils.createMockAssetType({
-            Custom: dsMockUtils.createMockU32(new BigNumber(10)),
-          }),
-          divisible: dsMockUtils.createMockBool(isDivisible),
-          totalSupply: dsMockUtils.createMockBalance(totalSupply),
-        })
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockSecurityToken({
+            ownerDid: dsMockUtils.createMockIdentityId(owner),
+            assetType: dsMockUtils.createMockAssetType({
+              Custom: dsMockUtils.createMockU32(new BigNumber(10)),
+            }),
+            divisible: dsMockUtils.createMockBool(isDivisible),
+            totalSupply: dsMockUtils.createMockBalance(totalSupply),
+          })
+        )
       );
 
       const customType = 'something';
@@ -201,6 +199,20 @@ describe('Asset class', () => {
 
       details = await asset.details();
       expect(details.assetType).toEqual(customType);
+    });
+
+    it('should throw if asset was not found', () => {
+      const tokensMock = dsMockUtils.createQueryMock('asset', 'tokens', {
+        returnValue: dsMockUtils.createMockOption(),
+      });
+      tokensMock.mockResolvedValue(dsMockUtils.createMockOption());
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: 'Asset detail information not found',
+      });
+
+      return expect(asset.details()).rejects.toThrow(expectedError);
     });
 
     it('should allow subscription', async () => {
@@ -227,7 +239,6 @@ describe('Asset class', () => {
           owner: expect.objectContaining({ did: owner }),
           totalSupply: new BigNumber(totalSupply).div(Math.pow(10, 6)),
           fullAgents: [expect.objectContaining({ did: owner })],
-          requiresInvestorUniqueness: true,
         })
       );
     });
@@ -669,10 +680,6 @@ describe('Asset class', () => {
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
 
-      dsMockUtils.createQueryMock('asset', 'disableInvestorUniqueness', {
-        returnValue: dsMockUtils.createMockBool(true),
-      });
-
       boolToBooleanSpy.mockReturnValue(true);
 
       dsMockUtils.createQueryMock('asset', 'balanceOf', {
@@ -690,56 +697,6 @@ describe('Asset class', () => {
             dsMockUtils.createMockBalance(new BigNumber(0))
           ),
         ],
-      });
-
-      const result = await asset.investorCount();
-
-      expect(result).toEqual(new BigNumber(2));
-    });
-
-    it('should return the amount of unique investors that hold the Asset when PUIS is enabled', async () => {
-      const context = dsMockUtils.getContextInstance();
-      const asset = new Asset({ ticker }, context);
-
-      dsMockUtils.createQueryMock('asset', 'disableInvestorUniqueness', {
-        returnValue: dsMockUtils.createMockBool(false),
-      });
-
-      boolToBooleanSpy.mockReturnValue(false);
-
-      const identityScopes = [
-        {
-          scopeId: dsMockUtils.createMockIdentityId('someScopeId'),
-          identityId: dsMockUtils.createMockIdentityId('someDid'),
-          balance: dsMockUtils.createMockBalance(new BigNumber(100)),
-        },
-        {
-          scopeId: dsMockUtils.createMockIdentityId('someScopeId'),
-          identityId: dsMockUtils.createMockIdentityId('someOtherDid'),
-          balance: dsMockUtils.createMockBalance(new BigNumber(50)),
-        },
-        {
-          scopeId: dsMockUtils.createMockIdentityId('randomScopeId'),
-          identityId: dsMockUtils.createMockIdentityId('randomDid'),
-          balance: dsMockUtils.createMockBalance(new BigNumber(10)),
-        },
-        {
-          scopeId: dsMockUtils.createMockIdentityId('excludedScopeId'),
-          identityId: dsMockUtils.createMockIdentityId('zeroCountDid'),
-          balance: dsMockUtils.createMockBalance(new BigNumber(0)),
-        },
-      ];
-
-      dsMockUtils.createQueryMock('asset', 'scopeIdOf', {
-        entries: identityScopes.map(({ identityId, scopeId }) =>
-          tuple([rawTicker, identityId], scopeId)
-        ),
-      });
-
-      dsMockUtils.createQueryMock('asset', 'balanceOfAtScope', {
-        entries: identityScopes.map(({ identityId, scopeId, balance }) =>
-          tuple([scopeId, identityId], balance)
-        ),
       });
 
       const result = await asset.investorCount();

@@ -822,22 +822,28 @@ export class Context {
     const claimData = await P.map(claim1stKeys, async claim1stKey => {
       const entries = await identity.claims.entries(claim1stKey);
       const data: ClaimData[] = [];
-      entries.forEach(
-        ([key, { claimIssuer, issuanceDate, lastUpdateDate, expiry: rawExpiry, claim }]) => {
-          const { target } = key.args[0];
-          const expiry = !rawExpiry.isEmpty ? momentToDate(rawExpiry.unwrap()) : null;
-          if ((!includeExpired && (expiry === null || expiry > new Date())) || includeExpired) {
-            data.push({
-              target: new Identity({ did: identityIdToString(target) }, this),
-              issuer: new Identity({ did: identityIdToString(claimIssuer) }, this),
-              issuedAt: momentToDate(issuanceDate),
-              lastUpdatedAt: momentToDate(lastUpdateDate),
-              expiry,
-              claim: meshClaimToClaim(claim),
-            });
-          }
+      entries.forEach(([key, optClaim]) => {
+        const { target } = key.args[0];
+
+        const {
+          claimIssuer,
+          issuanceDate,
+          lastUpdateDate,
+          expiry: rawExpiry,
+          claim,
+        } = optClaim.unwrap();
+        const expiry = !rawExpiry.isEmpty ? momentToDate(rawExpiry.unwrap()) : null;
+        if ((!includeExpired && (expiry === null || expiry > new Date())) || includeExpired) {
+          data.push({
+            target: new Identity({ did: identityIdToString(target) }, this),
+            issuer: new Identity({ did: identityIdToString(claimIssuer) }, this),
+            issuedAt: momentToDate(issuanceDate),
+            lastUpdatedAt: momentToDate(lastUpdateDate),
+            expiry,
+            claim: meshClaimToClaim(claim),
+          });
         }
-      );
+      });
       return data;
     });
 
@@ -852,7 +858,7 @@ export class Context {
   public async getIdentityClaimsFromMiddleware(args: {
     targets?: (string | Identity)[];
     trustedClaimIssuers?: (string | Identity)[];
-    claimTypes?: Exclude<ClaimType, ClaimType.InvestorUniquenessV2>[];
+    claimTypes?: ClaimType[];
     includeExpired?: boolean;
     size?: BigNumber;
     start?: BigNumber;
@@ -901,7 +907,7 @@ export class Context {
             issuedAt: new Date(issuanceDate),
             lastUpdatedAt: new Date(lastUpdateDate),
             expiry: expiry ? new Date(expiry) : null,
-            claim: createClaim(type, jurisdiction, scope, cddId, undefined),
+            claim: createClaim(type, jurisdiction, scope, cddId),
           });
         }
       );
@@ -922,7 +928,7 @@ export class Context {
   public async getIdentityClaimsFromMiddlewareV2(args: {
     targets?: (string | Identity)[];
     trustedClaimIssuers?: (string | Identity)[];
-    claimTypes?: Exclude<ClaimType, ClaimType.InvestorUniquenessV2>[];
+    claimTypes?: ClaimType[];
     includeExpired?: boolean;
     size?: BigNumber;
     start?: BigNumber;
@@ -986,7 +992,7 @@ export class Context {
     opts: {
       targets?: (string | Identity)[];
       trustedClaimIssuers?: (string | Identity)[];
-      claimTypes?: Exclude<ClaimType, ClaimType.InvestorUniquenessV2>[];
+      claimTypes?: ClaimType[];
       includeExpired?: boolean;
       size?: BigNumber;
       start?: BigNumber;
@@ -1046,7 +1052,7 @@ export class Context {
     opts: {
       targets?: (string | Identity)[];
       trustedClaimIssuers?: (string | Identity)[];
-      claimTypes?: Exclude<ClaimType, ClaimType.InvestorUniquenessV2>[];
+      claimTypes?: ClaimType[];
       includeExpired?: boolean;
       size?: BigNumber;
       start?: BigNumber;

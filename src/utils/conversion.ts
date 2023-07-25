@@ -1,10 +1,6 @@
 import { bool, Bytes, Option, Text, u8, U8aFixed, u16, u32, u64, u128 } from '@polkadot/types';
 import { AccountId, Balance, BlockHash, Hash, Permill } from '@polkadot/types/interfaces';
 import {
-  ConfidentialIdentityV2ClaimProofsScopeClaimProof,
-  ConfidentialIdentityV2ClaimProofsZkProofData,
-  ConfidentialIdentityV2SignSignature,
-  PalletAssetCheckpointScheduleSpec,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCaKind,
   PalletCorporateActionsCorporateAction,
@@ -15,7 +11,7 @@ import {
   PalletStoFundraiser,
   PalletStoFundraiserTier,
   PalletStoPriceTier,
-  PolymeshCommonUtilitiesCheckpointStoredSchedule,
+  PolymeshCommonUtilitiesCheckpointScheduleCheckpoints,
   PolymeshCommonUtilitiesProtocolFeeProtocolOp,
   PolymeshPrimitivesAgentAgentGroup,
   PolymeshPrimitivesAssetAssetType,
@@ -24,7 +20,6 @@ import {
   PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
   PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail,
   PolymeshPrimitivesAuthorizationAuthorizationData,
-  PolymeshPrimitivesCalendarCalendarPeriod,
   PolymeshPrimitivesCddId,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
   PolymeshPrimitivesCondition,
@@ -142,9 +137,6 @@ import {
   AssetDocument,
   Authorization,
   AuthorizationType,
-  CalendarPeriod,
-  CalendarUnit,
-  CheckpointScheduleParams,
   Claim,
   ClaimCountRestrictionValue,
   ClaimCountStatInput,
@@ -201,7 +193,6 @@ import {
   Requirement,
   RequirementCompliance,
   Scope,
-  ScopeClaimProof,
   ScopeType,
   SectionPermissions,
   SecurityIdentifier,
@@ -237,7 +228,6 @@ import {
   PermissionGroupIdentifier,
   PermissionsEnum,
   PolymeshTx,
-  ScheduleSpec,
   StatClaimInputType,
   StatClaimIssuer,
   TickerKey,
@@ -333,18 +323,6 @@ export function stringToTickerKey(ticker: string, context: Context): TickerKey {
 export function tickerToString(ticker: PolymeshPrimitivesTicker): string {
   return removePadding(u8aToString(ticker));
 }
-
-/* eslint-disable @typescript-eslint/naming-convention */
-/**
- * @hidden
- */
-export function stringToInvestorZKProofData(
-  proof: string,
-  context: Context
-): ConfidentialIdentityV2ClaimProofsZkProofData {
-  return context.createType('ConfidentialIdentityV2ClaimProofsZkProofData', proof);
-}
-/* eslint-enable @typescript-eslint/naming-convention */
 
 /**
  * @hidden
@@ -2127,14 +2105,6 @@ export function claimToMeshClaim(
   let value;
 
   switch (claim.type) {
-    case ClaimType.NoData: {
-      value = null;
-      break;
-    }
-    case ClaimType.NoType: {
-      value = null;
-      break;
-    }
     case ClaimType.CustomerDueDiligence: {
       value = stringToCddId(claim.id, context);
       break;
@@ -2142,19 +2112,6 @@ export function claimToMeshClaim(
     case ClaimType.Jurisdiction: {
       const { code, scope } = claim;
       value = tuple(code, scopeToMeshScope(scope, context));
-      break;
-    }
-    case ClaimType.InvestorUniqueness: {
-      const { scope, cddId, scopeId } = claim;
-      value = tuple(
-        scopeToMeshScope(scope, context),
-        stringToIdentityId(scopeId, context),
-        stringToCddId(cddId, context)
-      );
-      break;
-    }
-    case ClaimType.InvestorUniquenessV2: {
-      value = stringToCddId(claim.cddId, context);
       break;
     }
     default: {
@@ -2245,12 +2202,6 @@ export function meshClaimToClaim(claim: PolymeshPrimitivesIdentityClaimClaim): C
     };
   }
 
-  if (claim.isNoData) {
-    return {
-      type: ClaimType.NoData,
-    };
-  }
-
   if (claim.isAccredited) {
     return {
       type: ClaimType.Accredited,
@@ -2297,23 +2248,6 @@ export function meshClaimToClaim(claim: PolymeshPrimitivesIdentityClaimClaim): C
     return {
       type: ClaimType.Exempted,
       scope: meshScopeToScope(claim.asExempted),
-    };
-  }
-
-  if (claim.isInvestorUniqueness) {
-    const [scope, scopeId, cddId] = claim.asInvestorUniqueness;
-    return {
-      type: ClaimType.InvestorUniqueness,
-      scope: meshScopeToScope(scope),
-      scopeId: identityIdToString(scopeId),
-      cddId: cddIdToString(cddId),
-    };
-  }
-
-  if (claim.isInvestorUniquenessV2) {
-    return {
-      type: ClaimType.InvestorUniquenessV2,
-      cddId: cddIdToString(claim.asInvestorUniquenessV2),
     };
   }
 
@@ -2390,10 +2324,6 @@ export function meshClaimTypeToClaimType(
 
   if (claimType.isExempted) {
     return ClaimType.Exempted;
-  }
-
-  if (claimType.isNoType) {
-    return ClaimType.NoType;
   }
 
   return ClaimType.Blocked;
@@ -2986,7 +2916,7 @@ export function toIdentityWithClaimsArray(
         issuedAt: new Date(issuanceDate),
         lastUpdatedAt: new Date(lastUpdateDate),
         expiry: expiry ? new Date(expiry) : null,
-        claim: createClaim(type, jurisdiction, claimScope, cddId, undefined),
+        claim: createClaim(type, jurisdiction, claimScope, cddId),
       })
     ),
   }));
@@ -3016,7 +2946,7 @@ export function middlewareV2ClaimToClaimData(
     issuedAt: new Date(parseFloat(issuanceDate)),
     lastUpdatedAt: new Date(parseFloat(lastUpdateDate)),
     expiry: expiry ? new Date(parseFloat(expiry)) : null,
-    claim: createClaim(type, jurisdiction, scope, cddId, undefined),
+    claim: createClaim(type, jurisdiction, scope, cddId),
   };
 }
 
@@ -3063,9 +2993,7 @@ export function claimTypeToMeshClaimType(
   claimType: ClaimType,
   context: Context
 ): PolymeshPrimitivesIdentityClaimClaimType {
-  // NoData is the legacy name for NoType. Functionally they are the same, but createType only knows about one
-  const data = claimType === ClaimType.NoData ? ClaimType.NoType : claimType;
-  return context.createType('PolymeshPrimitivesIdentityClaimClaimType', data);
+  return context.createType('PolymeshPrimitivesIdentityClaimClaimType', claimType);
 }
 
 /**
@@ -3499,111 +3427,6 @@ export function fundraiserToOfferingDetails(
 /**
  * @hidden
  */
-export function calendarPeriodToMeshCalendarPeriod(
-  period: CalendarPeriod,
-  context: Context
-): PolymeshPrimitivesCalendarCalendarPeriod {
-  const { unit, amount } = period;
-
-  if (amount.isNegative()) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Calendar period cannot have a negative amount',
-    });
-  }
-
-  return context.createType('PolymeshPrimitivesCalendarCalendarPeriod', {
-    unit: stringUpperFirst(unit),
-    amount: bigNumberToU64(amount, context),
-  });
-}
-
-/**
- * @hidden
- */
-export function meshCalendarPeriodToCalendarPeriod(
-  period: PolymeshPrimitivesCalendarCalendarPeriod
-): CalendarPeriod {
-  const { unit: rawUnit, amount } = period;
-
-  let unit: CalendarUnit;
-
-  if (rawUnit.isSecond) {
-    unit = CalendarUnit.Second;
-  } else if (rawUnit.isMinute) {
-    unit = CalendarUnit.Minute;
-  } else if (rawUnit.isHour) {
-    unit = CalendarUnit.Hour;
-  } else if (rawUnit.isDay) {
-    unit = CalendarUnit.Day;
-  } else if (rawUnit.isWeek) {
-    unit = CalendarUnit.Week;
-  } else if (rawUnit.isMonth) {
-    unit = CalendarUnit.Month;
-  } else {
-    unit = CalendarUnit.Year;
-  }
-
-  return {
-    unit,
-    amount: u64ToBigNumber(amount),
-  };
-}
-
-/**
- * @hidden
- */
-export function scheduleSpecToMeshScheduleSpec(
-  details: ScheduleSpec,
-  context: Context
-): PalletAssetCheckpointScheduleSpec {
-  const { start, period, repetitions } = details;
-
-  return context.createType('PalletAssetCheckpointScheduleSpec', {
-    start: start && dateToMoment(start, context),
-    period: calendarPeriodToMeshCalendarPeriod(
-      period ?? { unit: CalendarUnit.Month, amount: new BigNumber(0) },
-      context
-    ),
-    remaining: bigNumberToU64(repetitions || new BigNumber(0), context),
-  });
-}
-
-/**
- * @hidden
- */
-export function storedScheduleToCheckpointScheduleParams(
-  storedSchedule: PolymeshCommonUtilitiesCheckpointStoredSchedule
-): CheckpointScheduleParams {
-  const {
-    schedule: { start, period },
-    id,
-    at,
-    remaining,
-  } = storedSchedule;
-
-  return {
-    id: u64ToBigNumber(id),
-    period: meshCalendarPeriodToCalendarPeriod(period),
-    start: momentToDate(start),
-    remaining: u32ToBigNumber(remaining),
-    nextCheckpointDate: momentToDate(at),
-  };
-}
-
-/**
- * @hidden
- */
-export function stringToSignature(
-  signature: string,
-  context: Context
-): ConfidentialIdentityV2SignSignature {
-  return context.createType('ConfidentialIdentityV2SignSignature', signature);
-}
-
-/**
- * @hidden
- */
 export function meshCorporateActionToCorporateActionParams(
   corporateAction: PalletCorporateActionsCorporateAction,
   details: Bytes,
@@ -3683,34 +3506,6 @@ export function checkpointToRecordDateSpec(
   }
 
   return context.createType('PalletCorporateActionsRecordDateSpec', value);
-}
-
-/**
- * @hidden
- */
-export function scopeClaimProofToConfidentialIdentityClaimProof(
-  proof: ScopeClaimProof,
-  scopeId: string,
-  context: Context
-): ConfidentialIdentityV2ClaimProofsScopeClaimProof {
-  const {
-    proofScopeIdWellFormed,
-    proofScopeIdCddIdMatch: { challengeResponses, subtractExpressionsRes, blindedScopeDidHash },
-  } = proof;
-
-  const zkProofData = context.createType('ConfidentialIdentityClaimProofsZkProofData', {
-    /* eslint-disable @typescript-eslint/naming-convention */
-    challenge_responses: challengeResponses.map(cr => stringToU8aFixed(cr, context)),
-    subtract_expressions_res: stringToU8aFixed(subtractExpressionsRes, context),
-    blinded_scope_did_hash: stringToU8aFixed(blindedScopeDidHash, context),
-    /* eslint-enable @typescript-eslint/naming-convention */
-  });
-
-  return context.createType('ConfidentialIdentityV2ClaimProofsScopeClaimProof', {
-    proofScopeIdWellformed: stringToSignature(proofScopeIdWellFormed, context),
-    proofScopeIdCddIdMatch: zkProofData,
-    scopeId: stringToU8aFixed(scopeId, context),
-  });
 }
 
 /**
@@ -4480,4 +4275,18 @@ export function legToSettlementLeg(
   context: Context
 ): PolymeshPrimitivesSettlementLeg {
   return context.createType('PolymeshPrimitivesSettlementLeg', leg);
+}
+
+/**
+ * @hidden
+ */
+export function datesToScheduleCheckpoints(
+  points: Date[],
+  context: Context
+): PolymeshCommonUtilitiesCheckpointScheduleCheckpoints {
+  const rawPoints = points.map(point => dateToMoment(point, context));
+
+  const pending = context.createType('BTreeSet<Moment>', rawPoints);
+
+  return context.createType('PolymeshCommonUtilitiesCheckpointScheduleCheckpoints', { pending });
 }

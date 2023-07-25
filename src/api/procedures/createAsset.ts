@@ -152,7 +152,6 @@ export async function prepareCreateAsset(
     securityIdentifierToAssetIdentifier(identifier, context)
   );
   const rawFundingRound = optionize(fundingRoundToAssetFundingRound)(fundingRound, context);
-  const rawDisableIu = booleanToBool(true, context);
 
   const newAsset = new Asset({ ticker }, context);
 
@@ -188,15 +187,7 @@ export async function prepareCreateAsset(
         checkTxType({
           transaction: tx.asset.createAssetWithCustomType,
           fee,
-          args: [
-            rawName,
-            rawTicker,
-            rawIsDivisible,
-            rawValue,
-            rawIdentifiers,
-            rawFundingRound,
-            rawDisableIu,
-          ],
+          args: [rawName, rawTicker, rawIsDivisible, rawValue, rawIdentifiers, rawFundingRound],
         })
       );
     } else {
@@ -206,15 +197,7 @@ export async function prepareCreateAsset(
         checkTxType({
           transaction: tx.asset.createAsset,
           fee,
-          args: [
-            rawName,
-            rawTicker,
-            rawIsDivisible,
-            rawType,
-            rawIdentifiers,
-            rawFundingRound,
-            rawDisableIu,
-          ],
+          args: [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
         })
       );
     }
@@ -225,15 +208,7 @@ export async function prepareCreateAsset(
       checkTxType({
         transaction: tx.asset.createAsset,
         fee,
-        args: [
-          rawName,
-          rawTicker,
-          rawIsDivisible,
-          rawType,
-          rawIdentifiers,
-          rawFundingRound,
-          rawDisableIu,
-        ],
+        args: [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
       })
     );
   }
@@ -349,7 +324,7 @@ export async function prepareStorage(
 
     return {
       customTypeData: {
-        id,
+        id: id.unwrap(),
         rawValue,
       },
       status,

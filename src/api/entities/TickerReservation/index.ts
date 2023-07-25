@@ -1,4 +1,5 @@
 import { PalletAssetSecurityToken, PalletAssetTickerRegistration } from '@polkadot/types/lookup';
+import { Option } from '@polkadot/types-codec';
 
 import {
   Asset,
@@ -109,31 +110,25 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
     const rawTicker = stringToTicker(ticker, context);
 
     const assembleResult = (
-      { owner: tickerOwner, expiry }: PalletAssetTickerRegistration,
-      { ownerDid: assetOwner }: PalletAssetSecurityToken
+      reservationOpt: Option<PalletAssetTickerRegistration>,
+      tokenOpt: Option<PalletAssetSecurityToken>
     ): TickerReservationDetails => {
-      const tickerOwned = !tickerOwner.isEmpty;
-      const assetOwned = !assetOwner.isEmpty;
-
-      let status: TickerReservationStatus;
+      let owner: Identity | null = null;
+      let status = TickerReservationStatus.Free;
       let expiryDate: Date | null = null;
-      const owner = tickerOwned
-        ? new Identity({ did: identityIdToString(tickerOwner) }, context)
-        : null;
 
-      if (assetOwned) {
+      if (tokenOpt.isSome) {
         status = TickerReservationStatus.AssetCreated;
-      } else if (tickerOwned) {
-        status = TickerReservationStatus.Reserved;
-        if (expiry.isSome) {
-          expiryDate = momentToDate(expiry.unwrap());
+        const rawOwnerDid = tokenOpt.unwrap().ownerDid;
+        owner = new Identity({ did: identityIdToString(rawOwnerDid) }, context);
+      } else if (reservationOpt.isSome) {
+        const { owner: rawOwnerDid, expiry } = reservationOpt.unwrap();
+        owner = new Identity({ did: identityIdToString(rawOwnerDid) }, context);
 
-          if (expiryDate < new Date()) {
-            status = TickerReservationStatus.Free;
-          }
+        expiryDate = expiry.isSome ? momentToDate(expiry.unwrap()) : null;
+        if (!expiryDate || expiryDate > new Date()) {
+          status = TickerReservationStatus.Reserved;
         }
-      } else {
-        status = TickerReservationStatus.Free;
       }
 
       return {

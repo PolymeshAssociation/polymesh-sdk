@@ -1244,21 +1244,10 @@ describe('Context class', () => {
       const expiryOne = new Date('10/14/2020');
       const expiryTwo = new Date('10/14/2060');
 
-      /* eslint-disable @typescript-eslint/naming-convention */
       const claim1stKey = dsMockUtils.createMockClaim1stKey({
         target: dsMockUtils.createMockIdentityId(targetDid),
         claimType: dsMockUtils.createMockClaimType(ClaimType.CustomerDueDiligence),
       });
-      /* eslint-enable @typescript-eslint/naming-convention */
-
-      const identityClaim = {
-        claimIssuer: dsMockUtils.createMockIdentityId(issuerDid),
-        issuanceDate: dsMockUtils.createMockMoment(new BigNumber(issuedAt.getTime())),
-        lastUpdateDate: dsMockUtils.createMockMoment(new BigNumber(lastUpdatedAt.getTime())),
-        claim: dsMockUtils.createMockClaim({
-          CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
-        }),
-      };
 
       const fakeClaims = [
         {
@@ -1302,28 +1291,49 @@ describe('Context class', () => {
       entriesMock.mockResolvedValue([
         tuple(
           { args: [claim1stKey] },
-          {
-            ...identityClaim,
-            expiry: dsMockUtils.createMockOption(
-              dsMockUtils.createMockMoment(new BigNumber(expiryOne.getTime()))
-            ),
-          }
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockIdentityClaim({
+              claimIssuer: dsMockUtils.createMockIdentityId(issuerDid),
+              issuanceDate: dsMockUtils.createMockMoment(new BigNumber(issuedAt.getTime())),
+              lastUpdateDate: dsMockUtils.createMockMoment(new BigNumber(lastUpdatedAt.getTime())),
+              claim: dsMockUtils.createMockClaim({
+                CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
+              }),
+              expiry: dsMockUtils.createMockOption(
+                dsMockUtils.createMockMoment(new BigNumber(expiryOne.getTime()))
+              ),
+            })
+          )
         ),
         tuple(
           { args: [claim1stKey] },
-          {
-            ...identityClaim,
-            expiry: dsMockUtils.createMockOption(),
-          }
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockIdentityClaim({
+              claimIssuer: dsMockUtils.createMockIdentityId(issuerDid),
+              issuanceDate: dsMockUtils.createMockMoment(new BigNumber(issuedAt.getTime())),
+              lastUpdateDate: dsMockUtils.createMockMoment(new BigNumber(lastUpdatedAt.getTime())),
+              claim: dsMockUtils.createMockClaim({
+                CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
+              }),
+              expiry: dsMockUtils.createMockOption(),
+            })
+          )
         ),
         tuple(
           { args: [claim1stKey] },
-          {
-            ...identityClaim,
-            expiry: dsMockUtils.createMockOption(
-              dsMockUtils.createMockMoment(new BigNumber(expiryTwo.getTime()))
-            ),
-          }
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockIdentityClaim({
+              claimIssuer: dsMockUtils.createMockIdentityId(issuerDid),
+              issuanceDate: dsMockUtils.createMockMoment(new BigNumber(issuedAt.getTime())),
+              lastUpdateDate: dsMockUtils.createMockMoment(new BigNumber(lastUpdatedAt.getTime())),
+              claim: dsMockUtils.createMockClaim({
+                CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
+              }),
+              expiry: dsMockUtils.createMockOption(
+                dsMockUtils.createMockMoment(new BigNumber(expiryTwo.getTime()))
+              ),
+            })
+          )
         ),
       ]);
 
@@ -1521,16 +1531,6 @@ describe('Context class', () => {
         claimType: dsMockUtils.createMockClaimType(ClaimType.CustomerDueDiligence),
       });
 
-      const identityClaim = {
-        claimIssuer: dsMockUtils.createMockIdentityId(issuerDid),
-        issuanceDate: dsMockUtils.createMockMoment(new BigNumber(issuedAt.getTime())),
-        lastUpdateDate: dsMockUtils.createMockMoment(new BigNumber(lastUpdatedAt.getTime())),
-        claim: dsMockUtils.createMockClaim({
-          CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
-        }),
-      };
-      /* eslint-enable @typescript-eslint/naming-convention */
-
       const fakeClaims = [
         {
           target: expect.objectContaining({ did: targetDid }),
@@ -1571,28 +1571,49 @@ describe('Context class', () => {
       entriesMock.mockResolvedValue([
         tuple(
           { args: [claim1stKey] },
-          {
-            ...identityClaim,
-            expiry: dsMockUtils.createMockOption(
-              dsMockUtils.createMockMoment(new BigNumber(expiryOne.getTime()))
-            ),
-          }
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockIdentityClaim({
+              claimIssuer: dsMockUtils.createMockIdentityId(issuerDid),
+              issuanceDate: dsMockUtils.createMockMoment(new BigNumber(issuedAt.getTime())),
+              lastUpdateDate: dsMockUtils.createMockMoment(new BigNumber(lastUpdatedAt.getTime())),
+              claim: dsMockUtils.createMockClaim({
+                CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
+              }),
+              expiry: dsMockUtils.createMockOption(
+                dsMockUtils.createMockMoment(new BigNumber(expiryOne.getTime()))
+              ),
+            })
+          )
         ),
         tuple(
           { args: [claim1stKey] },
-          {
-            ...identityClaim,
-            expiry: dsMockUtils.createMockOption(),
-          }
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockIdentityClaim({
+              claimIssuer: dsMockUtils.createMockIdentityId(issuerDid),
+              issuanceDate: dsMockUtils.createMockMoment(new BigNumber(issuedAt.getTime())),
+              lastUpdateDate: dsMockUtils.createMockMoment(new BigNumber(lastUpdatedAt.getTime())),
+              claim: dsMockUtils.createMockClaim({
+                CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
+              }),
+              expiry: dsMockUtils.createMockOption(),
+            })
+          )
         ),
         tuple(
           { args: [claim1stKey] },
-          {
-            ...identityClaim,
-            expiry: dsMockUtils.createMockOption(
-              dsMockUtils.createMockMoment(new BigNumber(expiryTwo.getTime()))
-            ),
-          }
+          dsMockUtils.createMockOption(
+            dsMockUtils.createMockIdentityClaim({
+              claimIssuer: dsMockUtils.createMockIdentityId(issuerDid),
+              issuanceDate: dsMockUtils.createMockMoment(new BigNumber(issuedAt.getTime())),
+              lastUpdateDate: dsMockUtils.createMockMoment(new BigNumber(lastUpdatedAt.getTime())),
+              claim: dsMockUtils.createMockClaim({
+                CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
+              }),
+              expiry: dsMockUtils.createMockOption(
+                dsMockUtils.createMockMoment(new BigNumber(expiryTwo.getTime()))
+              ),
+            })
+          )
         ),
       ]);
 

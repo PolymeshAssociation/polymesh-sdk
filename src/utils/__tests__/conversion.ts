@@ -7,16 +7,14 @@ import {
   Hash,
   Moment,
   Permill,
-  Signature,
 } from '@polkadot/types/interfaces';
 import {
-  ConfidentialIdentityV2ClaimProofsZkProofData,
-  PalletAssetCheckpointScheduleSpec,
   PalletCorporateActionsCaId,
   PalletCorporateActionsCaKind,
   PalletCorporateActionsRecordDateSpec,
   PalletCorporateActionsTargetIdentities,
   PalletStoPriceTier,
+  PolymeshCommonUtilitiesCheckpointScheduleCheckpoints,
   PolymeshCommonUtilitiesProtocolFeeProtocolOp,
   PolymeshPrimitivesAgentAgentGroup,
   PolymeshPrimitivesAssetAssetType,
@@ -25,7 +23,6 @@ import {
   PolymeshPrimitivesAssetMetadataAssetMetadataSpec,
   PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail,
   PolymeshPrimitivesAuthorizationAuthorizationData,
-  PolymeshPrimitivesCalendarCalendarPeriod,
   PolymeshPrimitivesCddId,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
   PolymeshPrimitivesCondition,
@@ -109,7 +106,6 @@ import {
   AssetDocument,
   Authorization,
   AuthorizationType,
-  CalendarUnit,
   Claim,
   ClaimType,
   Condition,
@@ -138,7 +134,6 @@ import {
   PortfolioMovement,
   ProposalStatus,
   Scope,
-  ScopeClaimProof,
   ScopeType,
   SecurityIdentifierType,
   Signer,
@@ -181,7 +176,6 @@ import {
   booleanToBool,
   boolToBoolean,
   bytesToString,
-  calendarPeriodToMeshCalendarPeriod,
   canTransferResultToTransferStatus,
   caTaxWithholdingsToMeshTaxWithholdings,
   cddIdToString,
@@ -199,6 +193,7 @@ import {
   corporateActionParamsToMeshCorporateActionArgs,
   countStatInputToStatUpdates,
   createStat2ndKey,
+  datesToScheduleCheckpoints,
   dateToMoment,
   distributionToDividendDistributionParams,
   documentHashToString,
@@ -224,7 +219,6 @@ import {
   keyToAddress,
   legToSettlementLeg,
   meshAffirmationStatusToAffirmationStatus,
-  meshCalendarPeriodToCalendarPeriod,
   meshClaimToClaim,
   meshClaimToInputStatClaim,
   meshClaimTypeToClaimType,
@@ -265,8 +259,6 @@ import {
   portfolioToPortfolioKind,
   posRatioToBigNumber,
   requirementToComplianceRequirement,
-  scheduleSpecToMeshScheduleSpec,
-  scopeClaimProofToConfidentialIdentityClaimProof,
   scopeToMeshScope,
   scopeToMiddlewareScope,
   secondaryAccountToMeshSecondaryKey,
@@ -283,7 +275,6 @@ import {
   statisticStatTypesToBtreeStatType,
   statsClaimToStatClaimInputType,
   statUpdatesToBtreeStatUpdate,
-  storedScheduleToCheckpointScheduleParams,
   stringToAccountId,
   stringToBlockHash,
   stringToBytes,
@@ -291,9 +282,7 @@ import {
   stringToDocumentHash,
   stringToHash,
   stringToIdentityId,
-  stringToInvestorZKProofData,
   stringToMemo,
-  stringToSignature,
   stringToText,
   stringToTicker,
   stringToTickerKey,
@@ -460,34 +449,6 @@ describe('stringToBytes and bytesToString', () => {
       const result = bytesToString(ticker);
       expect(result).toEqual(fakeResult);
     });
-  });
-});
-
-describe('stringToInvestorZKProofData', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  it('should convert a string to a polkadot ConfidentialIdentityV2ClaimProofsZkProofData object', () => {
-    const value = 'someProof';
-    const fakeResult = 'convertedProof' as unknown as ConfidentialIdentityV2ClaimProofsZkProofData;
-    const context = dsMockUtils.getContextInstance();
-
-    when(context.createType)
-      .calledWith('ConfidentialIdentityV2ClaimProofsZkProofData', value)
-      .mockReturnValue(fakeResult);
-
-    const result = stringToInvestorZKProofData(value, context);
-
-    expect(result).toBe(fakeResult);
   });
 });
 
@@ -3550,68 +3511,6 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
       result = claimToMeshClaim(value, context);
 
       expect(result).toBe(fakeResult);
-
-      value = {
-        type: ClaimType.NoData,
-      };
-
-      when(createTypeMock)
-        .calledWith('PolymeshPrimitivesIdentityClaimClaim', { [value.type]: null })
-        .mockReturnValue(fakeResult);
-
-      result = claimToMeshClaim(value, context);
-
-      expect(result).toBe(fakeResult);
-
-      value = {
-        type: ClaimType.InvestorUniqueness,
-        scope: { type: ScopeType.Ticker, value: 'SOME_TICKER' },
-        cddId: 'someCddId',
-        scopeId: 'someScopeId',
-      };
-
-      when(createTypeMock)
-        .calledWith('PolymeshPrimitivesIdentityClaimClaim', {
-          [value.type]: [
-            scopeToMeshScope(value.scope, context),
-            stringToIdentityId(value.scopeId, context),
-            stringToCddId(value.cddId, context),
-          ],
-        })
-        .mockReturnValue(fakeResult);
-
-      result = claimToMeshClaim(value, context);
-
-      expect(result).toBe(fakeResult);
-
-      value = {
-        type: ClaimType.InvestorUniquenessV2,
-        cddId: 'someCddId',
-      };
-
-      when(createTypeMock)
-        .calledWith('PolymeshPrimitivesIdentityClaimClaim', {
-          [value.type]: stringToCddId(value.cddId, context),
-        })
-        .mockReturnValue(fakeResult);
-
-      result = claimToMeshClaim(value, context);
-
-      expect(result).toBe(fakeResult);
-
-      value = {
-        type: ClaimType.NoType,
-      };
-
-      when(createTypeMock)
-        .calledWith('PolymeshPrimitivesIdentityClaimClaim', {
-          [value.type]: null,
-        })
-        .mockReturnValue(fakeResult);
-
-      result = claimToMeshClaim(value, context);
-
-      expect(result).toBe(fakeResult);
     });
   });
 
@@ -3715,14 +3614,6 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
       expect(result).toEqual(fakeResult);
 
       fakeResult = {
-        type: ClaimType.NoData,
-      };
-      claim = dsMockUtils.createMockClaim('NoData');
-
-      result = meshClaimToClaim(claim);
-      expect(result).toEqual(fakeResult);
-
-      fakeResult = {
         type: ClaimType.SellLockup,
         scope,
       };
@@ -3743,34 +3634,6 @@ describe('claimToMeshClaim and meshClaimToClaim', () => {
         Exempted: dsMockUtils.createMockScope({
           Identity: dsMockUtils.createMockIdentityId(scope.value),
         }),
-      });
-
-      result = meshClaimToClaim(claim);
-      expect(result).toEqual(fakeResult);
-
-      fakeResult = {
-        type: ClaimType.InvestorUniqueness,
-        scope,
-        scopeId: 'scopeId',
-        cddId: 'cddId',
-      };
-      claim = dsMockUtils.createMockClaim({
-        InvestorUniqueness: [
-          dsMockUtils.createMockScope({ Identity: dsMockUtils.createMockIdentityId(scope.value) }),
-          dsMockUtils.createMockIdentityId(fakeResult.scopeId),
-          dsMockUtils.createMockCddId(fakeResult.cddId),
-        ],
-      });
-
-      result = meshClaimToClaim(claim);
-      expect(result).toEqual(fakeResult);
-
-      fakeResult = {
-        type: ClaimType.InvestorUniquenessV2,
-        cddId: 'cddId',
-      };
-      claim = dsMockUtils.createMockClaim({
-        InvestorUniquenessV2: dsMockUtils.createMockCddId(fakeResult.cddId),
       });
 
       result = meshClaimToClaim(claim);
@@ -3983,13 +3846,6 @@ describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
       result = meshClaimTypeToClaimType(claimType);
       expect(result).toEqual(fakeResult);
 
-      fakeResult = ClaimType.NoType;
-
-      claimType = dsMockUtils.createMockClaimType(fakeResult);
-
-      result = meshClaimTypeToClaimType(claimType);
-      expect(result).toEqual(fakeResult);
-
       fakeResult = ClaimType.SellLockup;
 
       claimType = dsMockUtils.createMockClaimType(fakeResult);
@@ -4008,17 +3864,6 @@ describe('meshClaimTypeToClaimType and claimTypeToMeshClaimType', () => {
         .mockReturnValue(mockClaim);
 
       const result = claimTypeToMeshClaimType(ClaimType.Accredited, context);
-      expect(result).toEqual(mockClaim);
-    });
-
-    it('should treat NoData as NoType', () => {
-      const context = dsMockUtils.getContextInstance();
-      const mockClaim = dsMockUtils.createMockClaimType(ClaimType.NoType);
-      when(context.createType)
-        .calledWith('PolymeshPrimitivesIdentityClaimClaimType', ClaimType.NoType)
-        .mockReturnValue(mockClaim);
-
-      const result = claimTypeToMeshClaimType(ClaimType.NoData, context);
       expect(result).toEqual(mockClaim);
     });
   });
@@ -7024,246 +6869,6 @@ describe('fundraiserToOfferingDetails', () => {
   });
 });
 
-describe('calendarPeriodToMeshCalendarPeriod and meshCalendarPeriodToCalendarPeriod', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  describe('calendarPeriodToMeshCalendarPeriod', () => {
-    it('should throw an error if amount is negative', () => {
-      const context = dsMockUtils.getContextInstance();
-
-      expect(() =>
-        calendarPeriodToMeshCalendarPeriod(
-          { unit: CalendarUnit.Month, amount: new BigNumber(-3) },
-          context
-        )
-      ).toThrow('Calendar period cannot have a negative amount');
-    });
-
-    it('should convert a CalendarPeriod to a polkadot PolymeshPrimitivesCalendarCalendarPeriod object', () => {
-      const amount = new BigNumber(1);
-      const value = { unit: CalendarUnit.Month, amount };
-      const fakeResult = 'Period' as unknown as PolymeshPrimitivesCalendarCalendarPeriod;
-      const context = dsMockUtils.getContextInstance();
-
-      const createTypeMock = context.createType;
-      const rawAmount = dsMockUtils.createMockU64(amount);
-
-      when(createTypeMock).calledWith('u64', `${amount}`).mockReturnValue(rawAmount);
-      when(createTypeMock)
-        .calledWith('PolymeshPrimitivesCalendarCalendarPeriod', {
-          unit: 'Month',
-          amount: rawAmount,
-        })
-        .mockReturnValue(fakeResult);
-
-      const result = calendarPeriodToMeshCalendarPeriod(value, context);
-
-      expect(result).toBe(fakeResult);
-    });
-  });
-
-  describe('meshCalendarPeriodToCalendarPeriod', () => {
-    it('should convert a polkadot PolymeshPrimitivesCalendarCalendarPeriod object to a CalendarPeriod', () => {
-      let fakeResult = { unit: CalendarUnit.Second, amount: new BigNumber(1) };
-      let calendarPeriod = dsMockUtils.createMockCalendarPeriod({
-        unit: dsMockUtils.createMockCalendarUnit('Second'),
-        amount: dsMockUtils.createMockU64(fakeResult.amount),
-      });
-
-      let result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
-      expect(result).toEqual(fakeResult);
-
-      fakeResult = { unit: CalendarUnit.Minute, amount: new BigNumber(1) };
-      calendarPeriod = dsMockUtils.createMockCalendarPeriod({
-        unit: dsMockUtils.createMockCalendarUnit('Minute'),
-        amount: dsMockUtils.createMockU64(fakeResult.amount),
-      });
-
-      result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
-      expect(result).toEqual(fakeResult);
-
-      fakeResult = { unit: CalendarUnit.Hour, amount: new BigNumber(1) };
-      calendarPeriod = dsMockUtils.createMockCalendarPeriod({
-        unit: dsMockUtils.createMockCalendarUnit('Hour'),
-        amount: dsMockUtils.createMockU64(fakeResult.amount),
-      });
-
-      result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
-      expect(result).toEqual(fakeResult);
-
-      fakeResult = { unit: CalendarUnit.Day, amount: new BigNumber(1) };
-      calendarPeriod = dsMockUtils.createMockCalendarPeriod({
-        unit: dsMockUtils.createMockCalendarUnit('Day'),
-        amount: dsMockUtils.createMockU64(fakeResult.amount),
-      });
-
-      result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
-      expect(result).toEqual(fakeResult);
-
-      fakeResult = { unit: CalendarUnit.Week, amount: new BigNumber(1) };
-      calendarPeriod = dsMockUtils.createMockCalendarPeriod({
-        unit: dsMockUtils.createMockCalendarUnit('Week'),
-        amount: dsMockUtils.createMockU64(fakeResult.amount),
-      });
-
-      result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
-      expect(result).toEqual(fakeResult);
-
-      fakeResult = { unit: CalendarUnit.Month, amount: new BigNumber(1) };
-      calendarPeriod = dsMockUtils.createMockCalendarPeriod({
-        unit: dsMockUtils.createMockCalendarUnit('Month'),
-        amount: dsMockUtils.createMockU64(fakeResult.amount),
-      });
-
-      result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
-      expect(result).toEqual(fakeResult);
-
-      fakeResult = { unit: CalendarUnit.Year, amount: new BigNumber(1) };
-      calendarPeriod = dsMockUtils.createMockCalendarPeriod({
-        unit: dsMockUtils.createMockCalendarUnit('Year'),
-        amount: dsMockUtils.createMockU64(fakeResult.amount),
-      });
-
-      result = meshCalendarPeriodToCalendarPeriod(calendarPeriod);
-      expect(result).toEqual(fakeResult);
-    });
-  });
-});
-
-describe('scheduleSpecToMeshScheduleSpec', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  it('should convert a ScheduleDetails object to a polkadot PalletAssetCheckpointScheduleSpec object', () => {
-    const start = new Date('10/14/1987');
-    const amount = new BigNumber(1);
-    const period = { unit: CalendarUnit.Month, amount };
-    const repetitions = new BigNumber(10);
-
-    const value = { start, period, repetitions };
-    const fakeResult = 'Spec' as unknown as PalletAssetCheckpointScheduleSpec;
-    const context = dsMockUtils.getContextInstance();
-
-    const createTypeMock = context.createType;
-    const rawStart = dsMockUtils.createMockMoment(new BigNumber(start.getTime()));
-    const rawAmount = dsMockUtils.createMockU64(amount);
-    const rawZero = dsMockUtils.createMockU64(new BigNumber(0));
-    const rawPeriod = dsMockUtils.createMockCalendarPeriod({
-      unit: dsMockUtils.createMockCalendarUnit('Month'),
-      amount: rawAmount,
-    });
-    const rawZeroPeriod = dsMockUtils.createMockCalendarPeriod({
-      unit: dsMockUtils.createMockCalendarUnit('Month'),
-      amount: rawZero,
-    });
-    const rawRepetitions = dsMockUtils.createMockU64(repetitions);
-
-    when(createTypeMock).calledWith('u64', `${amount}`).mockReturnValue(rawAmount);
-    when(createTypeMock).calledWith('u64', '0').mockReturnValue(rawZero);
-    when(createTypeMock).calledWith('u64', `${repetitions}`).mockReturnValue(rawRepetitions);
-    when(createTypeMock).calledWith('u64', start.getTime()).mockReturnValue(rawStart);
-    when(createTypeMock)
-      .calledWith('PolymeshPrimitivesCalendarCalendarPeriod', { unit: 'Month', amount: rawAmount })
-      .mockReturnValue(rawPeriod);
-    when(createTypeMock)
-      .calledWith('PolymeshPrimitivesCalendarCalendarPeriod', { unit: 'Month', amount: rawZero })
-      .mockReturnValue(rawZeroPeriod);
-    when(createTypeMock)
-      .calledWith('PalletAssetCheckpointScheduleSpec', {
-        start: rawStart,
-        period: rawPeriod,
-        remaining: rawRepetitions,
-      })
-      .mockReturnValue(fakeResult);
-    when(createTypeMock)
-      .calledWith('PalletAssetCheckpointScheduleSpec', {
-        start: null,
-        period: rawZeroPeriod,
-        remaining: rawZero,
-      })
-      .mockReturnValue(fakeResult);
-
-    let result = scheduleSpecToMeshScheduleSpec(value, context);
-
-    expect(result).toBe(fakeResult);
-
-    result = scheduleSpecToMeshScheduleSpec(
-      { start: null, period: null, repetitions: null },
-      context
-    );
-
-    expect(result).toBe(fakeResult);
-  });
-});
-
-describe('storedScheduleToCheckpointScheduleParams', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  it('should convert a polkadot PolymeshCommonUtilitiesCheckpointStoredSchedule object to a CheckpointScheduleParams object', () => {
-    const start = new Date('10/14/1987');
-    const nextCheckpointDate = new Date('10/14/2021');
-    const id = new BigNumber(1);
-    const remaining = new BigNumber(5);
-
-    const fakeResult = {
-      id,
-      period: {
-        unit: CalendarUnit.Month,
-        amount: new BigNumber(1),
-      },
-      start,
-      remaining,
-      nextCheckpointDate,
-    };
-
-    const storedSchedule = dsMockUtils.createMockStoredSchedule({
-      schedule: dsMockUtils.createMockCheckpointSchedule({
-        start: dsMockUtils.createMockMoment(new BigNumber(start.getTime())),
-        period: dsMockUtils.createMockCalendarPeriod({
-          unit: dsMockUtils.createMockCalendarUnit('Month'),
-          amount: dsMockUtils.createMockU64(new BigNumber(1)),
-        }),
-      }),
-      id: dsMockUtils.createMockU64(id),
-      remaining: dsMockUtils.createMockU32(remaining),
-      at: dsMockUtils.createMockMoment(new BigNumber(nextCheckpointDate.getTime())),
-    });
-
-    const result = storedScheduleToCheckpointScheduleParams(storedSchedule);
-
-    expect(result).toEqual(fakeResult);
-  });
-});
-
 describe('meshCorporateActionToCorporateActionParams', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -7737,34 +7342,6 @@ describe('corporateActionIdentifierToCaId', () => {
   });
 });
 
-describe('stringToSignature', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  it('should convert a string to a polkadot Signature object', () => {
-    const value = 'someValue';
-    const fakeResult = 'convertedSignature' as unknown as Signature;
-    const context = dsMockUtils.getContextInstance();
-
-    when(context.createType)
-      .calledWith('ConfidentialIdentityV2SignSignature', value)
-      .mockReturnValue(fakeResult);
-
-    const result = stringToSignature(value, context);
-
-    expect(result).toEqual(fakeResult);
-  });
-});
-
 describe('stringToU8aFixed', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -7786,109 +7363,6 @@ describe('stringToU8aFixed', () => {
     when(context.createType).calledWith('U8aFixed', value).mockReturnValue(fakeResult);
 
     const result = stringToU8aFixed(value, context);
-
-    expect(result).toEqual(fakeResult);
-  });
-});
-
-describe('scopeClaimProofToConfidentialIdentityClaimProof', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  it('should convert a proof and a scopeId to a polkadot ScopeClaimProof object', () => {
-    const [
-      scopeId,
-      proofScopeIdWellFormed,
-      firstChallengeResponse,
-      secondChallengeResponse,
-      subtractExpressionsRes,
-      blindedScopeDidHash,
-    ] = [
-      'someScopeId',
-      'someProofScopeIdWellFormed',
-      'someFirstChallengeResponse',
-      'someSecondChallengeResponse',
-      'someSubtractExpressionsRes',
-      'someBlindedScopeDidHash',
-    ];
-    const proof: ScopeClaimProof = {
-      proofScopeIdWellFormed,
-      proofScopeIdCddIdMatch: {
-        challengeResponses: [firstChallengeResponse, secondChallengeResponse],
-        subtractExpressionsRes,
-        blindedScopeDidHash,
-      },
-    };
-    /* eslint-disable @typescript-eslint/naming-convention */
-    const rawFirstChallengeResponse = dsMockUtils.createMockU8aFixed(firstChallengeResponse);
-    const rawSecondChallengeResponse = dsMockUtils.createMockU8aFixed(secondChallengeResponse);
-    const rawSubtractExpressionsRes = dsMockUtils.createMockU8aFixed(subtractExpressionsRes);
-    const rawBlindedScopeDidHash = dsMockUtils.createMockU8aFixed(blindedScopeDidHash);
-    const rawZkProofData = dsMockUtils.createMockZkProofData({
-      subtractExpressionsRes: subtractExpressionsRes,
-      challengeResponses: [firstChallengeResponse, secondChallengeResponse],
-      blindedScopeDidHash: blindedScopeDidHash,
-    });
-    const rawProofScopeIdWellFormed = dsMockUtils.createMockSignature(proofScopeIdWellFormed);
-    const rawScopeId = dsMockUtils.createMockU8aFixed(scopeId);
-    const fakeResult = dsMockUtils.createMockScopeClaimProof({
-      proofScopeIdWellformed: proofScopeIdWellFormed,
-      proofScopeIdCddIdMatch: {
-        subtractExpressionsRes: subtractExpressionsRes,
-        challengeResponses: [firstChallengeResponse, secondChallengeResponse],
-        blindedScopeDidHash: blindedScopeDidHash,
-      },
-      scopeId,
-    });
-
-    const zkProofData = {
-      challenge_responses: [rawFirstChallengeResponse, rawSecondChallengeResponse],
-      subtract_expressions_res: rawSubtractExpressionsRes,
-      blinded_scope_did_hash: rawBlindedScopeDidHash,
-    };
-    const scopeClaimProof = {
-      proofScopeIdWellformed: rawProofScopeIdWellFormed,
-      proofScopeIdCddIdMatch: rawZkProofData,
-      scopeId: rawScopeId,
-    };
-    /* eslint-enable @typescript-eslint/naming-convention */
-    const context = dsMockUtils.getContextInstance();
-
-    when(context.createType)
-      .calledWith('U8aFixed', firstChallengeResponse)
-      .mockReturnValue(rawFirstChallengeResponse);
-    when(context.createType)
-      .calledWith('U8aFixed', secondChallengeResponse)
-      .mockReturnValue(rawSecondChallengeResponse);
-    when(context.createType)
-      .calledWith('U8aFixed', subtractExpressionsRes)
-      .mockReturnValue(rawSubtractExpressionsRes);
-    when(context.createType)
-      .calledWith('U8aFixed', blindedScopeDidHash)
-      .mockReturnValue(rawBlindedScopeDidHash);
-    when(context.createType)
-      .calledWith('ConfidentialIdentityClaimProofsZkProofData', zkProofData)
-      .mockReturnValue(rawZkProofData);
-
-    when(context.createType)
-      .calledWith('ConfidentialIdentityV2SignSignature', proofScopeIdWellFormed)
-      .mockReturnValue(rawProofScopeIdWellFormed);
-    when(context.createType).calledWith('U8aFixed', scopeId).mockReturnValue(rawScopeId);
-
-    when(context.createType)
-      .calledWith('ConfidentialIdentityV2ClaimProofsScopeClaimProof', scopeClaimProof)
-      .mockReturnValue(fakeResult);
-
-    const result = scopeClaimProofToConfidentialIdentityClaimProof(proof, scopeId, context);
 
     expect(result).toEqual(fakeResult);
   });
@@ -9378,6 +8852,48 @@ describe('legToSettlementLeg', () => {
       .mockReturnValue(fakeResult);
 
     const result = legToSettlementLeg(value, context);
+
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('datesToScheduleCheckpoints', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should make a BtreeSet<Moment>', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    const fakeMoment = 'fakeMoment' as unknown as Moment;
+
+    const fakeBtree = 'fakeBtree' as unknown as BTreeSet<Moment>;
+
+    const fakeResult =
+      'fakeResult' as unknown as PolymeshCommonUtilitiesCheckpointScheduleCheckpoints;
+
+    const input = [new Date()];
+
+    when(context.createType).calledWith('u64', input[0].getTime()).mockReturnValue(fakeMoment);
+    when(context.createType)
+      .calledWith('BTreeSet<Moment>', [fakeMoment])
+      .mockReturnValue(fakeBtree);
+
+    when(context.createType)
+      .calledWith('PolymeshCommonUtilitiesCheckpointScheduleCheckpoints', {
+        pending: fakeBtree,
+      })
+      .mockReturnValue(fakeResult);
+
+    const result = datesToScheduleCheckpoints(input, context);
 
     expect(result).toEqual(fakeResult);
   });

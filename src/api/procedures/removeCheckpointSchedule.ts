@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import { Asset, PolymeshError, Procedure } from '~/internal';
 import { ErrorCode, RemoveCheckpointScheduleParams, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
-import { bigNumberToU64, stringToTicker, u32ToBigNumber, u64ToBigNumber } from '~/utils/conversion';
+import { bigNumberToU64, stringToTicker, u32ToBigNumber } from '~/utils/conversion';
 
 /**
  * @hidden
@@ -29,9 +29,10 @@ export async function prepareRemoveCheckpointSchedule(
 
   const id = schedule instanceof BigNumber ? schedule : schedule.id;
   const rawTicker = stringToTicker(ticker, context);
+  const rawId = bigNumberToU64(id, context);
 
-  const rawSchedules = await query.checkpoint.schedules(rawTicker);
-  const exists = rawSchedules.find(({ id: scheduleId }) => u64ToBigNumber(scheduleId).eq(id));
+  const rawSchedule = await query.checkpoint.scheduledCheckpoints(rawTicker, rawId);
+  const exists = rawSchedule.isSome;
 
   if (!exists) {
     throw new PolymeshError({

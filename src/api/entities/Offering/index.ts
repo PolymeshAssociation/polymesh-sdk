@@ -129,13 +129,14 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
 
     const assembleResult = (
       rawFundraiser: Option<PalletStoFundraiser>,
-      rawName: Bytes
-    ): OfferingDetails => fundraiserToOfferingDetails(rawFundraiser.unwrap(), rawName, context);
+      rawName: Option<Bytes>
+    ): OfferingDetails =>
+      fundraiserToOfferingDetails(rawFundraiser.unwrap(), rawName.unwrap(), context);
 
     const rawTicker = stringToTicker(ticker, context);
     const rawU64 = bigNumberToU64(id, context);
 
-    const fetchName = (): Promise<Bytes> => sto.fundraiserNames(rawTicker, rawU64);
+    const fetchName = (): Promise<Option<Bytes>> => sto.fundraiserNames(rawTicker, rawU64);
 
     if (callback) {
       const fundraiserName = await fetchName();

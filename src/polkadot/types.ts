@@ -9,3 +9,4 @@ export * from './staking/types';
 export * from './asset/types';
 export * from './group/types';
 export * from './nft/types';
+export * from './settlement/types';

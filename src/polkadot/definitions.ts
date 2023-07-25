@@ -8,3 +8,4 @@ export { default as staking } from './staking/definitions';
 export { default as asset } from './asset/definitions';
 export { default as group } from './group/definitions';
 export { default as nft } from './nft/definitions';
+export { default as settlement } from './settlement/definitions';

@@ -16,7 +16,6 @@ import { Asset, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
-  ClaimType,
   Condition,
   ConditionTarget,
   ConditionType,
@@ -84,15 +83,6 @@ describe('setAssetRequirements procedure', () => {
         {
           type: ConditionType.IsAnyOf,
           claims: [],
-          target: ConditionTarget.Both,
-        },
-      ],
-      [
-        {
-          type: ConditionType.IsPresent,
-          claim: {
-            type: ClaimType.NoData,
-          },
           target: ConditionTarget.Both,
         },
       ],

@@ -46,11 +46,7 @@ import {
   SignedBlock,
 } from '@polkadot/types/interfaces';
 import {
-  ConfidentialIdentityV2ClaimProofsScopeClaimProof,
-  ConfidentialIdentityV2ClaimProofsZkProofData,
-  ConfidentialIdentityV2SignSignature,
   PalletAssetAssetOwnershipRelation,
-  PalletAssetCheckpointScheduleSpec,
   PalletAssetSecurityToken,
   PalletAssetTickerRegistration,
   PalletAssetTickerRegistrationConfig,
@@ -71,7 +67,7 @@ import {
   PalletStoFundraiserStatus,
   PalletStoFundraiserTier,
   PalletStoPriceTier,
-  PolymeshCommonUtilitiesCheckpointStoredSchedule,
+  PolymeshCommonUtilitiesCheckpointScheduleCheckpoints,
   PolymeshCommonUtilitiesProtocolFeeProtocolOp,
   PolymeshPrimitivesAgentAgentGroup,
   PolymeshPrimitivesAssetAssetType,
@@ -82,9 +78,6 @@ import {
   PolymeshPrimitivesAssetMetadataAssetMetadataValueDetail,
   PolymeshPrimitivesAuthorization,
   PolymeshPrimitivesAuthorizationAuthorizationData,
-  PolymeshPrimitivesCalendarCalendarPeriod,
-  PolymeshPrimitivesCalendarCalendarUnit,
-  PolymeshPrimitivesCalendarCheckpointSchedule,
   PolymeshPrimitivesCddId,
   PolymeshPrimitivesComplianceManagerComplianceRequirement,
   PolymeshPrimitivesCondition,
@@ -154,7 +147,7 @@ import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
 import {
   AssetComplianceResult,
   AuthorizationType as MeshAuthorizationType,
-  canTransferGranularReturn,
+  CanTransferGranularReturn,
   CanTransferResult,
   CddStatus,
   ComplianceRequirementResult,
@@ -179,6 +172,7 @@ import {
   PermissionedAccount,
   ProtocolFees,
   ResultSet,
+  ScopeType,
   SignerType,
   StatType,
   SubsidyWithAllowance,
@@ -663,7 +657,7 @@ const defaultContextOptions: ContextOptions = {
         issuedAt: new Date(),
         lastUpdatedAt: new Date(),
         expiry: null,
-        claim: { type: ClaimType.NoData },
+        claim: { type: ClaimType.Accredited, scope: { type: ScopeType.Ticker, value: 'TICKER' } },
       },
     ],
     next: new BigNumber(1),
@@ -676,7 +670,7 @@ const defaultContextOptions: ContextOptions = {
       issuedAt: new Date(),
       lastUpdatedAt: new Date(),
       expiry: null,
-      claim: { type: ClaimType.NoData },
+      claim: { type: ClaimType.Accredited, scope: { type: ScopeType.Ticker, value: 'TICKER' } },
     },
   ],
   getIdentityClaimsFromMiddleware: {
@@ -687,7 +681,7 @@ const defaultContextOptions: ContextOptions = {
         issuedAt: new Date(),
         lastUpdatedAt: new Date(),
         expiry: null,
-        claim: { type: ClaimType.NoData },
+        claim: { type: ClaimType.Accredited, scope: { type: ScopeType.Ticker, value: 'TICKER' } },
       },
     ],
     next: new BigNumber(1),
@@ -701,7 +695,7 @@ const defaultContextOptions: ContextOptions = {
         issuedAt: new Date(),
         lastUpdatedAt: new Date(),
         expiry: null,
-        claim: { type: ClaimType.NoData },
+        claim: { type: ClaimType.Accredited, scope: { type: ScopeType.Ticker, value: 'TICKER' } },
       },
     ],
     next: new BigNumber(1),
@@ -2118,9 +2112,9 @@ export const createMockMovePortfolioItem = (movePortfolioItem?: {
   ticker: PolymeshPrimitivesTicker | Parameters<typeof createMockTicker>[0];
   amount: Balance | Parameters<typeof createMockBalance>[0];
 }): MockCodec<PolymeshPrimitivesPortfolioFund> => {
-  // if (isCodec<PolymeshPrimitivesPortfolioFund>(movePortfolioItem)) {
-  //   return movePortfolioItem as MockCodec<PolymeshPrimitivesPortfolioFund>;
-  // }
+  if (isCodec<PolymeshPrimitivesPortfolioFund>(movePortfolioItem)) {
+    return movePortfolioItem as unknown as MockCodec<PolymeshPrimitivesPortfolioFund>;
+  }
 
   const { ticker, amount } = movePortfolioItem ?? {
     ticker: createMockTicker(),
@@ -2582,15 +2576,6 @@ export const createMockCddId = (cddId?: string): MockCodec<PolymeshPrimitivesCdd
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockInvestorZKProofData = (
-  proof?: string
-): ConfidentialIdentityV2ClaimProofsZkProofData =>
-  createMockStringCodec<ConfidentialIdentityV2ClaimProofsZkProofData>(proof);
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
 export const createMockClaim = (
   claim?:
     | { Accredited: PolymeshPrimitivesIdentityClaimScope }
@@ -2607,15 +2592,15 @@ export const createMockClaim = (
       }
     | { Exempted: PolymeshPrimitivesIdentityClaimScope }
     | { Blocked: PolymeshPrimitivesIdentityClaimScope }
-    | {
-        InvestorUniqueness: [
-          PolymeshPrimitivesIdentityClaimScope,
-          PolymeshPrimitivesIdentityId,
-          PolymeshPrimitivesCddId
-        ];
-      }
-    | { InvestorUniquenessV2: PolymeshPrimitivesCddId }
-    | 'NoData'
+  // | {
+  //     InvestorUniqueness: [
+  //       PolymeshPrimitivesIdentityClaimScope,
+  //       PolymeshPrimitivesIdentityId,
+  //       PolymeshPrimitivesCddId
+  //     ];
+  //   }
+  // | { InvestorUniquenessV2: PolymeshPrimitivesCddId }
+  // | 'NoData'
 ): PolymeshPrimitivesIdentityClaimClaim =>
   createMockEnum<PolymeshPrimitivesIdentityClaimClaim>(claim);
 
@@ -2624,16 +2609,16 @@ export const createMockClaim = (
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockIdentityClaim = (identityClaim?: {
-  claim_issuer: PolymeshPrimitivesIdentityId;
-  issuance_date: Moment;
-  last_update_date: Moment;
+  claimIssuer: PolymeshPrimitivesIdentityId;
+  issuanceDate: Moment;
+  lastUpdateDate: Moment;
   expiry: Option<Moment>;
   claim: PolymeshPrimitivesIdentityClaimClaim;
 }): MockCodec<PolymeshPrimitivesIdentityClaim> => {
   const identityClaimMock = identityClaim ?? {
-    claim_issuer: createMockIdentityId(),
-    issuance_date: createMockMoment(),
-    last_update_date: createMockMoment(),
+    claimIssuer: createMockIdentityId(),
+    issuanceDate: createMockMoment(),
+    lastUpdateDate: createMockMoment(),
     expiry: createMockOption(),
     claim: createMockClaim(),
   };
@@ -2692,9 +2677,7 @@ export const createMockClaimType = (
     Exempted: 8,
     Blocked: 9,
     InvestorUniqueness: 10,
-    NoType: 11,
-    NoData: 11,
-    InvestorUniquenessV2: 12,
+    InvestorUniquenessV2: 11,
   };
   return createMockEnum<PolymeshPrimitivesIdentityClaimClaimType>(
     claimType,
@@ -3241,140 +3224,22 @@ export const createMockPriceTier = (priceTier?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockCalendarUnit = (
-  calendarUnit?:
-    | 'Second'
-    | 'Minute'
-    | 'Hour'
-    | 'Day'
-    | 'Week'
-    | 'Month'
-    | 'Year'
-    | PolymeshPrimitivesCalendarCalendarUnit
-): MockCodec<PolymeshPrimitivesCalendarCalendarUnit> => {
-  if (isCodec<PolymeshPrimitivesCalendarCalendarUnit>(calendarUnit)) {
-    return calendarUnit as MockCodec<PolymeshPrimitivesCalendarCalendarUnit>;
-  }
-
-  return createMockEnum<PolymeshPrimitivesCalendarCalendarUnit>(calendarUnit);
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockCalendarPeriod = (
-  calendarPeriod?:
-    | PolymeshPrimitivesCalendarCalendarPeriod
-    | {
-        unit: PolymeshPrimitivesCalendarCalendarUnit | Parameters<typeof createMockCalendarUnit>[0];
-        amount: u64 | Parameters<typeof createMockU64>[0];
-      }
-): MockCodec<PolymeshPrimitivesCalendarCalendarPeriod> => {
-  const { unit, amount } = calendarPeriod ?? {
-    unit: createMockCalendarUnit(),
-    amount: createMockU64(),
-  };
-
-  return createMockCodec(
-    {
-      unit: createMockCalendarUnit(unit),
-      amount: createMockU64(amount),
-    },
-    !calendarPeriod
-  );
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
 export const createMockCheckpointSchedule = (
   checkpointSchedule?:
-    | PolymeshPrimitivesCalendarCheckpointSchedule
+    | PolymeshCommonUtilitiesCheckpointScheduleCheckpoints
     | {
-        start: Moment | Parameters<typeof createMockMoment>[0];
-        period:
-          | PolymeshPrimitivesCalendarCalendarPeriod
-          | Parameters<typeof createMockCalendarPeriod>[0];
+        pending: BTreeSet<u64> | Parameters<typeof createMockBTreeSet>[0];
       }
-): MockCodec<PolymeshPrimitivesCalendarCheckpointSchedule> => {
-  const { start, period } = checkpointSchedule ?? {
-    start: createMockMoment(),
-    period: createMockCalendarPeriod(),
+): MockCodec<PolymeshCommonUtilitiesCheckpointScheduleCheckpoints> => {
+  const { pending } = checkpointSchedule ?? {
+    pending: createMockBTreeSet(),
   };
 
   return createMockCodec(
     {
-      start: createMockMoment(start),
-      period: createMockCalendarPeriod(period),
+      pending,
     },
     !checkpointSchedule
-  );
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockStoredSchedule = (
-  storedSchedule?:
-    | PolymeshCommonUtilitiesCheckpointStoredSchedule
-    | {
-        schedule:
-          | PolymeshPrimitivesCalendarCheckpointSchedule
-          | Parameters<typeof createMockCheckpointSchedule>[0];
-        id: u64 | Parameters<typeof createMockU64>[0];
-        at: Moment | Parameters<typeof createMockMoment>[0];
-        remaining: u32 | Parameters<typeof createMockU32>[0];
-      }
-): MockCodec<PolymeshCommonUtilitiesCheckpointStoredSchedule> => {
-  const { schedule, id, at, remaining } = storedSchedule ?? {
-    schedule: createMockCheckpointSchedule(),
-    id: createMockU64(),
-    at: createMockMoment(),
-    remaining: createMockU32(),
-  };
-
-  return createMockCodec(
-    {
-      schedule: createMockCheckpointSchedule(schedule),
-      id: createMockU64(id),
-      at: createMockMoment(at),
-      remaining: createMockU32(remaining),
-    },
-    !storedSchedule
-  );
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockScheduleSpec = (
-  scheduleSpec?:
-    | PalletAssetCheckpointScheduleSpec
-    | {
-        start: Option<Moment>;
-        period:
-          | PolymeshPrimitivesCalendarCalendarPeriod
-          | Parameters<typeof createMockCalendarPeriod>[0];
-        remaining: u32 | Parameters<typeof createMockU32>[0];
-      }
-): MockCodec<PalletAssetCheckpointScheduleSpec> => {
-  const { start, period, remaining } = scheduleSpec ?? {
-    start: createMockOption(),
-    period: createMockCalendarPeriod(),
-    remaining: createMockU32(),
-  };
-
-  return createMockCodec(
-    {
-      start: createMockOption(start),
-      period: createMockCalendarPeriod(period),
-      remaining: createMockU32(remaining),
-    },
-    !scheduleSpec
   );
 };
 
@@ -3442,52 +3307,6 @@ export const createMockRecordDate = (
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
-export const createMockSignature = (
-  signature?: string | ConfidentialIdentityV2SignSignature
-): MockCodec<ConfidentialIdentityV2SignSignature> => {
-  if (!signature || typeof signature === 'string') {
-    return createMockStringCodec<ConfidentialIdentityV2SignSignature>(signature);
-  } else {
-    return signature as MockCodec<ConfidentialIdentityV2SignSignature>;
-  }
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockZkProofData = (
-  zkProofData?:
-    | ConfidentialIdentityV2ClaimProofsZkProofData
-    | {
-        challengeResponses: [U8aFixed, U8aFixed] | [string, string];
-        subtractExpressionsRes: U8aFixed | string;
-        blindedScopeDidHash: U8aFixed | string;
-      }
-): MockCodec<ConfidentialIdentityV2ClaimProofsZkProofData> => {
-  const { challengeResponses, subtractExpressionsRes, blindedScopeDidHash } = zkProofData ?? {
-    challengeResponses: [createMockU8aFixed(), createMockU8aFixed()],
-    subtractExpressionsRes: createMockU8aFixed(),
-    blindedScopeDidHash: createMockU8aFixed(),
-  };
-
-  return createMockCodec(
-    {
-      challengeResponses: [
-        createMockU8aFixed(challengeResponses[0] as string),
-        createMockU8aFixed(challengeResponses[1] as string),
-      ],
-      subtractExpressionsRes: createMockU8aFixed(subtractExpressionsRes as string),
-      blindedScopeDidHash: createMockU8aFixed(blindedScopeDidHash as string),
-    },
-    !zkProofData
-  );
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
 export const createMockTargetTreatment = (
   targetTreatment?: 'Include' | 'Exclude' | PalletCorporateActionsTargetTreatment
 ): MockCodec<PalletCorporateActionsTargetTreatment> => {
@@ -3523,41 +3342,6 @@ export const createMockTargetIdentities = (
       treatment: createMockTargetTreatment(treatment),
     },
     !targetIdentities
-  );
-};
-
-/**
- * @hidden
- * NOTE: `isEmpty` will be set to true if no value is passed
- */
-export const createMockScopeClaimProof = (
-  scopeClaimProof?:
-    | ConfidentialIdentityV2ClaimProofsScopeClaimProof
-    | {
-        proofScopeIdWellformed: ConfidentialIdentityV2SignSignature | string;
-        proofScopeIdCddIdMatch:
-          | ConfidentialIdentityV2ClaimProofsZkProofData
-          | {
-              challengeResponses: [string, string];
-              subtractExpressionsRes: string;
-              blindedScopeDidHash: string;
-            };
-        scopeId: U8aFixed | string;
-      }
-): MockCodec<ConfidentialIdentityV2ClaimProofsScopeClaimProof> => {
-  const { proofScopeIdWellformed, proofScopeIdCddIdMatch, scopeId } = scopeClaimProof ?? {
-    proofScopeIdWellformed: createMockSignature(),
-    proofScopeIdCddIdMatch: createMockZkProofData(),
-    scopeId: createMockU8aFixed(),
-  };
-
-  return createMockCodec(
-    {
-      proofScopeIdWellformed: createMockSignature(proofScopeIdWellformed),
-      proofScopeIdCddIdMatch: createMockZkProofData(proofScopeIdCddIdMatch),
-      scopeId: createMockU8aFixed(scopeId as string),
-    },
-    !scopeClaimProof
   );
 };
 
@@ -4430,6 +4214,6 @@ export const createMockCanTransferGranularReturn = (
     | {
         Err: DispatchError;
       }
-): MockCodec<canTransferGranularReturn> => {
-  return createMockEnum<canTransferGranularReturn>(result);
+): MockCodec<CanTransferGranularReturn> => {
+  return createMockEnum<CanTransferGranularReturn>(result);
 };

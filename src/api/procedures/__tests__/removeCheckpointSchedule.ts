@@ -1,8 +1,5 @@
 import { u64 } from '@polkadot/types';
-import {
-  PolymeshCommonUtilitiesCheckpointStoredSchedule,
-  PolymeshPrimitivesTicker,
-} from '@polkadot/types/lookup';
+import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import {
@@ -12,6 +9,7 @@ import {
 } from '~/api/procedures/removeCheckpointSchedule';
 import { Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { createMockBTreeSet } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import { TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
@@ -69,12 +67,8 @@ describe('removeCheckpointSchedule procedure', () => {
       schedule: id,
     };
 
-    dsMockUtils.createQueryMock('checkpoint', 'schedules', {
-      returnValue: [
-        dsMockUtils.createMockStoredSchedule({
-          id: dsMockUtils.createMockU64(new BigNumber(5)),
-        } as unknown as PolymeshCommonUtilitiesCheckpointStoredSchedule),
-      ],
+    dsMockUtils.createQueryMock('checkpoint', 'scheduledCheckpoints', {
+      returnValue: [dsMockUtils.createMockCheckpointSchedule()],
     });
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
@@ -90,12 +84,10 @@ describe('removeCheckpointSchedule procedure', () => {
       schedule: id,
     };
 
-    dsMockUtils.createQueryMock('checkpoint', 'schedules', {
-      returnValue: [
-        dsMockUtils.createMockStoredSchedule({
-          id: dsMockUtils.createMockU64(id),
-        } as unknown as PolymeshCommonUtilitiesCheckpointStoredSchedule),
-      ],
+    dsMockUtils.createQueryMock('checkpoint', 'scheduledCheckpoints', {
+      returnValue: dsMockUtils.createMockOption(
+        dsMockUtils.createMockCheckpointSchedule({ pending: createMockBTreeSet() })
+      ),
     });
 
     u32ToBigNumberSpy.mockReturnValue(new BigNumber(1));
@@ -113,12 +105,8 @@ describe('removeCheckpointSchedule procedure', () => {
       schedule: id,
     };
 
-    dsMockUtils.createQueryMock('checkpoint', 'schedules', {
-      returnValue: [
-        dsMockUtils.createMockStoredSchedule({
-          id: rawId,
-        } as PolymeshCommonUtilitiesCheckpointStoredSchedule),
-      ],
+    dsMockUtils.createQueryMock('checkpoint', 'scheduledCheckpoints', {
+      returnValue: dsMockUtils.createMockOption(dsMockUtils.createMockCheckpointSchedule()),
     });
 
     u32ToBigNumberSpy.mockReturnValue(new BigNumber(0));
@@ -135,9 +123,7 @@ describe('removeCheckpointSchedule procedure', () => {
 
     result = await prepareRemoveCheckpointSchedule.call(proc, {
       ticker,
-      schedule: entityMockUtils.getCheckpointScheduleInstance({
-        id: new BigNumber(1),
-      }),
+      schedule: entityMockUtils.getCheckpointScheduleInstance(),
     });
 
     expect(result).toEqual({ transaction, args: [rawTicker, rawId], resolver: undefined });

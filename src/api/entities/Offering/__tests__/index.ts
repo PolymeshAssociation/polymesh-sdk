@@ -138,7 +138,7 @@ describe('Offering class', () => {
       })
     );
 
-    const rawName = dsMockUtils.createMockBytes(name);
+    const rawName = dsMockUtils.createMockOption(dsMockUtils.createMockBytes(name));
 
     let offering: Offering;
 

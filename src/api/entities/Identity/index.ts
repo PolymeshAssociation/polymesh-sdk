@@ -71,7 +71,6 @@ import {
   u64ToBigNumber,
 } from '~/utils/conversion';
 import {
-  asTicker,
   calculateNextKey,
   getSecondaryAccountPermissions,
   removePadding,
@@ -207,7 +206,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const meshAsset = await asset.tokens(rawTicker);
 
-    if (meshAsset.ownerDid.isEmpty) {
+    if (meshAsset.isNone) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
         message: `There is no Asset with ticker "${ticker}"`,
@@ -495,10 +494,10 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    * @note can be subscribed to
    */
   public async getVenues(): Promise<Venue[]>;
-  public async getVenues(callback: SubCallback<Venue[]>): Promise<UnsubCallback>;
+  // public async getVenues(callback: SubCallback<Venue[]>): Promise<UnsubCallback>;
 
   // eslint-disable-next-line require-jsdoc
-  public async getVenues(callback?: SubCallback<Venue[]>): Promise<Venue[] | UnsubCallback> {
+  public async getVenues(): Promise<Venue[]> {
     const {
       context: {
         polymeshApi: {
@@ -514,38 +513,16 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
 
     const rawDid = stringToIdentityId(did, context);
 
-    if (callback) {
-      return settlement.userVenues(rawDid, ids => callback(assembleResult(ids)));
-    }
+    // if (callback) {
+    //   return settlement.userVenues(rawDid, ids => callback(assembleResult(ids))) as any;
+    // }
 
-    const venueIds = await settlement.userVenues(rawDid);
+    const venueIdsKeys = await settlement.userVenues.keys(rawDid);
+    const venueIds = venueIdsKeys.map(key => {
+      return key.args[1];
+    });
 
     return assembleResult(venueIds);
-  }
-
-  /**
-   * Retrieve the Scope ID associated to this Identity's Investor Uniqueness Claim for a specific Asset, or null
-   *   if there is none
-   *
-   * @note more on Investor Uniqueness [here](https://developers.polymesh.network/introduction/identity#polymesh-unique-identity-system-puis) and
-   *   [here](https://developers.polymesh.network/polymesh-docs/primitives/confidential-identity)
-   */
-  public async getScopeId(args: { asset: Asset | string }): Promise<string | null> {
-    const { context, did } = this;
-    const { asset } = args;
-
-    const ticker = asTicker(asset);
-
-    const scopeId = await context.polymeshApi.query.asset.scopeIdOf(
-      stringToTicker(ticker, context),
-      stringToIdentityId(did, context)
-    );
-
-    if (scopeId.isEmpty) {
-      return null;
-    }
-
-    return identityIdToString(scopeId);
   }
 
   /**
