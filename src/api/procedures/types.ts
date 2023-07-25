@@ -3,6 +3,7 @@ import BigNumber from 'bignumber.js';
 import {
   Account,
   Asset,
+  AuthorizationRequest,
   CheckpointSchedule,
   CorporateActionBase,
   CustomPermissionGroup,
@@ -237,6 +238,17 @@ export interface InviteAccountParams {
   expiry?: Date;
 }
 
+export interface AcceptPrimaryKeyRotationParams {
+  /**
+   * Authorization from the owner who initiated the change
+   */
+  ownerAuth: BigNumber | AuthorizationRequest;
+  /**
+   * (optional) Authorization from a CDD service provider attesting the rotation of primary key
+   */
+  cddAuth?: BigNumber | AuthorizationRequest;
+}
+
 export interface ModifySignerPermissionsParams {
   /**
    * list of secondary Accounts
@@ -384,6 +396,35 @@ export interface RegisterIdentityParams {
   expiry?: Date;
 }
 
+export interface AttestPrimaryKeyRotationParams {
+  /**
+   * The Account that will be attested to become the primary key of the `identity`. Can be ss58 encoded address or an instance of Account
+   */
+  targetAccount: string | Account;
+
+  /**
+   * Identity or the DID of the Identity that is to be rotated
+   */
+  identity: string | Identity;
+
+  /**
+   * (optional) when the generated authorization should expire
+   */
+  expiry?: Date;
+}
+
+export interface RotatePrimaryKeyParams {
+  /**
+   * The Account that should function as the primary key of the newly created Identity. Can be ss58 encoded address or an instance of Account
+   */
+  targetAccount: string | Account;
+
+  /**
+   * (optional) when the generated authorization should expire
+   */
+  expiry?: Date;
+}
+
 export interface TransferPolyxParams {
   /**
    * Account that will receive the POLYX
@@ -447,7 +488,7 @@ export type AddInstructionWithVenueIdParams = AddInstructionParams & {
   venueId: BigNumber;
 };
 
-export interface AffirmInstructionParams {
+export interface InstructionIdParams {
   id: BigNumber;
 }
 
@@ -457,14 +498,40 @@ export enum InstructionAffirmationOperation {
   Reject = 'Reject',
 }
 
-export interface ModifyInstructionAffirmationParams {
-  id: BigNumber;
-  operation: InstructionAffirmationOperation;
-}
+export type RejectInstructionParams = {
+  /**
+   * (optional) Portfolio that the signer controls and wants to reject the instruction
+   */
+  portfolio?: PortfolioLike;
+};
 
-export interface ExecuteManualInstructionParams {
-  id: BigNumber;
-}
+export type AffirmOrWithdrawInstructionParams = {
+  /**
+   * (optional) Portfolios that the signer controls and wants to affirm the instruction or withdraw affirmation
+   *
+   * @note if empty, all the legs containing any custodied Portfolios of the signer will be affirmed/affirmation will be withdrawn, based on the operation.
+   */
+  portfolios?: PortfolioLike[];
+};
+
+export type ModifyInstructionAffirmationParams = InstructionIdParams &
+  (
+    | ({
+        operation:
+          | InstructionAffirmationOperation.Affirm
+          | InstructionAffirmationOperation.Withdraw;
+      } & AffirmOrWithdrawInstructionParams)
+    | ({
+        operation: InstructionAffirmationOperation.Reject;
+      } & RejectInstructionParams)
+  );
+
+export type ExecuteManualInstructionParams = InstructionIdParams & {
+  /**
+   * (optional) Set to `true` to skip affirmation check, useful for batch transactions
+   */
+  skipAffirmationCheck?: boolean;
+};
 
 export interface CreateVenueParams {
   description: string;
@@ -974,3 +1041,9 @@ export type RegisterMetadataParams =
       value: string;
       details?: MetadataValueDetails;
     };
+
+export type SetVenueFilteringParams = {
+  enabled?: boolean;
+  allowedVenues?: BigNumber[];
+  disallowedVenues?: BigNumber[];
+};

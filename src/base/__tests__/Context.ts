@@ -1,9 +1,10 @@
+import { QueryOptions } from '@apollo/client';
 import { Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 import { when } from 'jest-when';
 
-import { Account, Context, Identity, PolymeshError } from '~/internal';
+import { Account, Context, PolymeshError } from '~/internal';
 import {
   BalanceTypeEnum,
   CallIdEnum,
@@ -12,7 +13,12 @@ import {
   ModuleIdEnum,
 } from '~/middleware/enumsV2';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
-import { claimsQuery, heartbeatQuery, polyxTransactionsQuery } from '~/middleware/queriesV2';
+import {
+  claimsQuery,
+  heartbeatQuery,
+  metadataQuery,
+  polyxTransactionsQuery,
+} from '~/middleware/queriesV2';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId, getAtMock } from '~/testUtils/mocks/dataSources';
@@ -24,7 +30,6 @@ import {
   TransactionArgumentType,
   TxTags,
 } from '~/types';
-import { GraphqlQuery } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
@@ -288,6 +293,32 @@ describe('Context class', () => {
       await context.setSigningManager(signingManager);
 
       expect(polymeshApi.setSigner).toHaveBeenCalledWith(polkadotSigner);
+    });
+
+    it('should unset the SigningManager when given null', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
+      });
+
+      const signingManager = dsMockUtils.getSigningManagerInstance({
+        getExternalSigner: 'signer' as PolkadotSigner,
+      });
+      await context.setSigningManager(signingManager);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect(() => (context as any).signingManager).not.toThrow();
+
+      await context.setSigningManager(null);
+
+      const expectedError = new PolymeshError({
+        code: ErrorCode.General,
+        message: 'There is no Signing Manager attached to the SDK',
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect(() => (context as any).signingManager).toThrowError(expectedError);
     });
   });
 
@@ -1111,6 +1142,7 @@ describe('Context class', () => {
         target: expect.objectContaining({ did: targetDid }),
         issuer: expect.objectContaining({ did: issuerDid }),
         issuedAt: new Date(date),
+        lastUpdatedAt: new Date(date),
       };
       const fakeClaims = [
         {
@@ -1219,6 +1251,7 @@ describe('Context class', () => {
       const issuerDid = 'someIssuerDid';
       const cddId = 'someCddId';
       const issuedAt = new Date('10/14/2019');
+      const lastUpdatedAt = new Date('10/14/2019');
       const expiryOne = new Date('10/14/2020');
       const expiryTwo = new Date('10/14/2060');
 
@@ -1232,7 +1265,7 @@ describe('Context class', () => {
       const identityClaim = {
         claimIssuer: dsMockUtils.createMockIdentityId(issuerDid),
         issuanceDate: dsMockUtils.createMockMoment(new BigNumber(issuedAt.getTime())),
-        lastUpdateDate: dsMockUtils.createMockMoment(),
+        lastUpdateDate: dsMockUtils.createMockMoment(new BigNumber(lastUpdatedAt.getTime())),
         claim: dsMockUtils.createMockClaim({
           CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
         }),
@@ -1243,6 +1276,7 @@ describe('Context class', () => {
           target: expect.objectContaining({ did: targetDid }),
           issuer: expect.objectContaining({ did: issuerDid }),
           issuedAt,
+          lastUpdatedAt,
           expiry: expiryOne,
           claim: {
             type: ClaimType.CustomerDueDiligence,
@@ -1253,6 +1287,7 @@ describe('Context class', () => {
           target: expect.objectContaining({ did: targetDid }),
           issuer: expect.objectContaining({ did: issuerDid }),
           issuedAt,
+          lastUpdatedAt,
           expiry: null,
           claim: {
             type: ClaimType.CustomerDueDiligence,
@@ -1263,6 +1298,7 @@ describe('Context class', () => {
           target: expect.objectContaining({ did: targetDid }),
           issuer: expect.objectContaining({ did: issuerDid }),
           issuedAt,
+          lastUpdatedAt,
           expiry: expiryTwo,
           claim: {
             type: ClaimType.CustomerDueDiligence,
@@ -1379,6 +1415,7 @@ describe('Context class', () => {
         target: expect.objectContaining({ did: targetDid }),
         issuer: expect.objectContaining({ did: issuerDid }),
         issuedAt: new Date(date),
+        lastUpdatedAt: new Date(date),
       };
       const fakeClaims = [
         {
@@ -1402,6 +1439,7 @@ describe('Context class', () => {
         targetId: targetDid,
         issuerId: issuerDid,
         issuanceDate: date,
+        lastUpdateDate: date,
         cddId: cddId,
       };
       const claimsQueryResponse = {
@@ -1485,6 +1523,7 @@ describe('Context class', () => {
       const issuerDid = 'someIssuerDid';
       const cddId = 'someCddId';
       const issuedAt = new Date('10/14/2019');
+      const lastUpdatedAt = new Date('10/14/2019');
       const expiryOne = new Date('10/14/2020');
       const expiryTwo = new Date('10/14/2060');
 
@@ -1496,7 +1535,7 @@ describe('Context class', () => {
       const identityClaim = {
         claimIssuer: dsMockUtils.createMockIdentityId(issuerDid),
         issuanceDate: dsMockUtils.createMockMoment(new BigNumber(issuedAt.getTime())),
-        lastUpdateDate: dsMockUtils.createMockMoment(),
+        lastUpdateDate: dsMockUtils.createMockMoment(new BigNumber(lastUpdatedAt.getTime())),
         claim: dsMockUtils.createMockClaim({
           CustomerDueDiligence: dsMockUtils.createMockCddId(cddId),
         }),
@@ -1508,6 +1547,7 @@ describe('Context class', () => {
           target: expect.objectContaining({ did: targetDid }),
           issuer: expect.objectContaining({ did: issuerDid }),
           issuedAt,
+          lastUpdatedAt,
           expiry: expiryOne,
           claim: {
             type: ClaimType.CustomerDueDiligence,
@@ -1518,6 +1558,7 @@ describe('Context class', () => {
           target: expect.objectContaining({ did: targetDid }),
           issuer: expect.objectContaining({ did: issuerDid }),
           issuedAt,
+          lastUpdatedAt,
           expiry: null,
           claim: {
             type: ClaimType.CustomerDueDiligence,
@@ -1528,6 +1569,7 @@ describe('Context class', () => {
           target: expect.objectContaining({ did: targetDid }),
           issuer: expect.objectContaining({ did: issuerDid }),
           issuedAt,
+          lastUpdatedAt,
           expiry: expiryTwo,
           claim: {
             type: ClaimType.CustomerDueDiligence,
@@ -1635,26 +1677,26 @@ describe('Context class', () => {
 
       dsMockUtils.throwOnMiddlewareQuery({ message: 'Error' });
 
-      await expect(
-        context.queryMiddleware('query' as unknown as GraphqlQuery<unknown>)
-      ).rejects.toThrow('Error in middleware query: Error');
+      await expect(context.queryMiddleware('query' as unknown as QueryOptions)).rejects.toThrow(
+        'Error in middleware query: Error'
+      );
 
       dsMockUtils.throwOnMiddlewareQuery({ networkError: {}, message: 'Error' });
 
-      await expect(
-        context.queryMiddleware('query' as unknown as GraphqlQuery<unknown>)
-      ).rejects.toThrow('Error in middleware query: Error');
+      await expect(context.queryMiddleware('query' as unknown as QueryOptions)).rejects.toThrow(
+        'Error in middleware query: Error'
+      );
 
       dsMockUtils.throwOnMiddlewareQuery({ networkError: { result: { message: 'Some Message' } } });
 
-      return expect(
-        context.queryMiddleware('query' as unknown as GraphqlQuery<unknown>)
-      ).rejects.toThrow('Error in middleware query: Some Message');
+      return expect(context.queryMiddleware('query' as unknown as QueryOptions)).rejects.toThrow(
+        'Error in middleware query: Some Message'
+      );
     });
 
     it('should perform a middleware query and return the results', async () => {
       const fakeResult = 'res';
-      const fakeQuery = 'fakeQuery' as unknown as GraphqlQuery<unknown>;
+      const fakeQuery = 'fakeQuery' as unknown as QueryOptions;
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -1688,28 +1730,28 @@ describe('Context class', () => {
 
       dsMockUtils.throwOnMiddlewareV2Query({ message: 'Error' });
 
-      await expect(
-        context.queryMiddlewareV2('query' as unknown as GraphqlQuery<unknown>)
-      ).rejects.toThrow('Error in middleware V2 query: Error');
+      await expect(context.queryMiddlewareV2('query' as unknown as QueryOptions)).rejects.toThrow(
+        'Error in middleware V2 query: Error'
+      );
 
       dsMockUtils.throwOnMiddlewareV2Query({ networkError: {}, message: 'Error' });
 
-      await expect(
-        context.queryMiddlewareV2('query' as unknown as GraphqlQuery<unknown>)
-      ).rejects.toThrow('Error in middleware V2 query: Error');
+      await expect(context.queryMiddlewareV2('query' as unknown as QueryOptions)).rejects.toThrow(
+        'Error in middleware V2 query: Error'
+      );
 
       dsMockUtils.throwOnMiddlewareV2Query({
         networkError: { result: { message: 'Some Message' } },
       });
 
-      return expect(
-        context.queryMiddlewareV2('query' as unknown as GraphqlQuery<unknown>)
-      ).rejects.toThrow('Error in middleware V2 query: Some Message');
+      return expect(context.queryMiddlewareV2('query' as unknown as QueryOptions)).rejects.toThrow(
+        'Error in middleware V2 query: Some Message'
+      );
     });
 
     it('should perform a middleware V2 query and return the results', async () => {
       const fakeResult = 'res';
-      const fakeQuery = 'fakeQuery' as unknown as GraphqlQuery<unknown>;
+      const fakeQuery = 'fakeQuery' as unknown as QueryOptions;
 
       const context = await Context.create({
         polymeshApi: dsMockUtils.getApiInstance(),
@@ -2359,6 +2401,57 @@ describe('Context class', () => {
     it('should return the nonce value', async () => {
       context.setNonce(new BigNumber(10));
       expect(context.getNonce()).toEqual(new BigNumber(10));
+    });
+  });
+
+  describe('method: getMiddlewareMetadata', () => {
+    beforeAll(() => {
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
+    });
+
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should return the middleware metadata', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
+      });
+
+      const metadata = {
+        chain: 'Polymesh Testnet Develop',
+        specName: 'polymesh_testnet',
+        genesisHash: '0x3c3183f6d701500766ff7d147b79c4f10014a095eaaa98e960dcef6b3ead50ee',
+        lastProcessedHeight: new BigNumber(6120220),
+        lastProcessedTimestamp: new Date('01/06/2023'),
+        targetHeight: new BigNumber(6120219),
+        indexerHealthy: true,
+      };
+
+      dsMockUtils.createApolloV2QueryMock(metadataQuery(), {
+        _metadata: {
+          ...metadata,
+          lastProcessedTimestamp: metadata.lastProcessedTimestamp.getTime().toString(),
+          lastProcessedHeight: metadata.lastProcessedHeight.toString(),
+          targetHeight: metadata.targetHeight.toString(),
+        },
+      });
+
+      const result = await context.getMiddlewareMetadata();
+      expect(result).toEqual(metadata);
+    });
+
+    it('should return null if middleware V2 is disabled', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: null,
+      });
+
+      const result = await context.getMiddlewareMetadata();
+      expect(result).toBeNull();
     });
   });
 

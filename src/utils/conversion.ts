@@ -1273,7 +1273,9 @@ export function authorizationToAuthorizationData(
 
   const { type } = auth;
 
-  if (type === AuthorizationType.RotatePrimaryKey) {
+  if (type === AuthorizationType.AttestPrimaryKeyRotation) {
+    value = stringToIdentityId(auth.value.did, context);
+  } else if (type === AuthorizationType.RotatePrimaryKey) {
     value = null;
   } else if (type === AuthorizationType.JoinIdentity) {
     value = permissionsToMeshPermissions(auth.value, context);
@@ -1394,7 +1396,12 @@ export function authorizationDataToAuthorization(
   if (auth.isAttestPrimaryKeyRotation) {
     return {
       type: AuthorizationType.AttestPrimaryKeyRotation,
-      value: identityIdToString(auth.asAttestPrimaryKeyRotation),
+      value: new Identity(
+        {
+          did: identityIdToString(auth.asAttestPrimaryKeyRotation),
+        },
+        context
+      ),
     };
   }
 
@@ -2973,6 +2980,7 @@ export function toIdentityWithClaimsArray(
         targetDID: targetDid,
         issuer,
         issuance_date: issuanceDate,
+        last_update_date: lastUpdateDate,
         expiry,
         type,
         jurisdiction,
@@ -2982,6 +2990,7 @@ export function toIdentityWithClaimsArray(
         target: new Identity({ did: targetDid }, context),
         issuer: new Identity({ did: issuer }, context),
         issuedAt: new Date(issuanceDate),
+        lastUpdatedAt: new Date(lastUpdateDate),
         expiry: expiry ? new Date(expiry) : null,
         claim: createClaim(type, jurisdiction, claimScope, cddId, undefined),
       })
@@ -2996,11 +3005,22 @@ export function middlewareV2ClaimToClaimData(
   claim: MiddlewareV2Claim,
   context: Context
 ): ClaimData {
-  const { targetId, issuerId, issuanceDate, expiry, type, jurisdiction, scope, cddId } = claim;
+  const {
+    targetId,
+    issuerId,
+    issuanceDate,
+    lastUpdateDate,
+    expiry,
+    type,
+    jurisdiction,
+    scope,
+    cddId,
+  } = claim;
   return {
     target: new Identity({ did: targetId }, context),
     issuer: new Identity({ did: issuerId }, context),
     issuedAt: new Date(parseFloat(issuanceDate)),
+    lastUpdatedAt: new Date(parseFloat(lastUpdateDate)),
     expiry: expiry ? new Date(parseFloat(expiry)) : null,
     claim: createClaim(type, jurisdiction, scope, cddId, undefined),
   };
@@ -3336,7 +3356,7 @@ export function permissionsLikeToPermissions(
     assets: assetPermissions,
     transactions: transactionPermissions && {
       ...transactionPermissions,
-      values: [...transactionPermissions.values].sort(),
+      values: [...transactionPermissions.values].sort((a, b) => a.localeCompare(b)),
     },
     transactionGroups: transactionGroupPermissions,
     portfolios: portfolioPermissions,
@@ -3543,7 +3563,7 @@ export function scheduleSpecToMeshScheduleSpec(
   return context.createType('PalletAssetCheckpointScheduleSpec', {
     start: start && dateToMoment(start, context),
     period: calendarPeriodToMeshCalendarPeriod(
-      period || { unit: CalendarUnit.Month, amount: new BigNumber(0) },
+      period ?? { unit: CalendarUnit.Month, amount: new BigNumber(0) },
       context
     ),
     remaining: bigNumberToU64(repetitions || new BigNumber(0), context),
@@ -4240,7 +4260,7 @@ export function meshMetadataSpecToMetadataSpec(
 ): MetadataSpec {
   const specs: MetadataSpec = {};
 
-  if (rawSpecs && rawSpecs.isSome) {
+  if (rawSpecs?.isSome) {
     const { url: rawUrl, description: rawDescription, typeDef: rawTypeDef } = rawSpecs.unwrap();
 
     if (rawUrl.isSome) {
@@ -4429,7 +4449,7 @@ export function middlewareInstructionToHistoricInstruction(
     tradeDate,
     valueDate,
     ...typeDetails,
-    memo: memo || null,
+    memo: memo ?? null,
     venueId: new BigNumber(venueId),
     createdAt: new Date(datetime),
     legs: legs.map(({ from, to, assetId, amount }) => ({
@@ -4440,4 +4460,18 @@ export function middlewareInstructionToHistoricInstruction(
     })),
   };
   /* eslint-enable @typescript-eslint/no-non-null-assertion */
+}
+
+/**
+ * @hidden
+ */
+export function expiryToMoment(expiry: Date | undefined, context: Context): Moment | null {
+  if (expiry && expiry <= new Date()) {
+    throw new PolymeshError({
+      code: ErrorCode.UnmetPrerequisite,
+      message: 'Expiry date must be in the future',
+    });
+  }
+
+  return optionize(dateToMoment)(expiry, context);
 }

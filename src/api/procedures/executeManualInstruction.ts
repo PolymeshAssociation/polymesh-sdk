@@ -49,7 +49,7 @@ export async function prepareExecuteManualInstruction(
     storage: { portfolios, totalLegAmount, instructionDetails, signerDid },
   } = this;
 
-  const { id } = args;
+  const { id, skipAffirmationCheck } = args;
 
   const instruction = new Instruction({ id }, context);
 
@@ -73,16 +73,17 @@ export async function prepareExecuteManualInstruction(
     portfolioIdToMeshPortfolioId(portfolioLikeToPortfolioId(portfolio), context)
   );
 
-  const pendingAffirmationsCount = await settlement.instructionAffirmsPending(rawInstructionId);
-
-  if (!u64ToBigNumber(pendingAffirmationsCount).isZero()) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'Instruction needs to be affirmed by all parties before it can be executed',
-      data: {
-        pendingAffirmationsCount,
-      },
-    });
+  if (!skipAffirmationCheck) {
+    const pendingAffirmationsCount = await settlement.instructionAffirmsPending(rawInstructionId);
+    if (!u64ToBigNumber(pendingAffirmationsCount).isZero()) {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'Instruction needs to be affirmed by all parties before it can be executed',
+        data: {
+          pendingAffirmationsCount,
+        },
+      });
+    }
   }
 
   return {

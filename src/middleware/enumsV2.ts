@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 export {
   PublicEnum05F6462Eea as SettlementResultEnum,
   PublicEnum040F13614F as StatOpTypeEnum,
@@ -9,6 +10,7 @@ export {
   PublicEnum9Ceea16A44 as StoStatus,
   PublicEnum71Afee1504 as TransferComplianceTypeEnum,
   PublicEnum72Fc336Bfe as TransferRestrictionTypeEnum,
+  PublicEnum2792Cc24Ad as LegTypeEnum,
   PublicEnum31117E090D as AuthorizationStatusEnum,
   PublicEnumB861Be9158 as InstructionStatusEnum,
   PublicEnumCf84Da6Fd1 as AuthTypeEnum,
@@ -26,6 +28,7 @@ export const middlewareV2EnumMap: Record<string, string> = {
   StoStatus: 'PublicEnum9Ceea16A44',
   TransferComplianceTypeEnum: 'PublicEnum71Afee1504',
   TransferRestrictionTypeEnum: 'PublicEnum72Fc336Bfe',
+  LegTypeEnum: 'PublicEnum2792Cc24Ad',
   AuthorizationStatusEnum: 'PublicEnum31117E090D',
   InstructionStatusEnum: 'PublicEnumB861Be9158',
   AuthTypeEnum: 'PublicEnumCf84Da6Fd1',

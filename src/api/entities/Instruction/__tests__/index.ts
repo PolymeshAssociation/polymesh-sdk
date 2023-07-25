@@ -827,7 +827,7 @@ describe('Instruction class', () => {
       when(procedureMockUtils.getPrepareMock())
         .calledWith(
           {
-            args: { id },
+            args: { id, skipAffirmationCheck: false },
             transformer: undefined,
           },
           context,
@@ -835,7 +835,7 @@ describe('Instruction class', () => {
         )
         .mockResolvedValue(expectedTransaction);
 
-      const tx = await instruction.executeManually();
+      const tx = await instruction.executeManually({ id, skipAffirmationCheck: false });
 
       expect(tx).toBe(expectedTransaction);
     });
@@ -1254,6 +1254,54 @@ describe('Instruction class', () => {
   describe('method: toHuman', () => {
     it('should return a human readable version of the entity', () => {
       expect(instruction.toHuman()).toBe('1');
+    });
+  });
+
+  describe('method: getInvolvedPortfolios', () => {
+    it('should return the portfolios in the instruction where the given DID is the custodian', async () => {
+      const fromDid = 'fromDid';
+      const toDid = 'toDid';
+
+      const from1 = entityMockUtils.getDefaultPortfolioInstance({
+        did: fromDid,
+        isCustodiedBy: true,
+        exists: true,
+      });
+      const from2 = entityMockUtils.getNumberedPortfolioInstance({
+        did: 'someOtherDid',
+        id: new BigNumber(1),
+        exists: false,
+      });
+      const to1 = entityMockUtils.getDefaultPortfolioInstance({
+        did: toDid,
+        isCustodiedBy: true,
+        exists: true,
+      });
+      const to2 = entityMockUtils.getNumberedPortfolioInstance({
+        did: 'someDid',
+        id: new BigNumber(1),
+        exists: false,
+      });
+      const amount = new BigNumber(1);
+      const asset = entityMockUtils.getAssetInstance({ ticker: 'SOME_ASSET' });
+
+      jest.spyOn(instruction, 'getLegs').mockResolvedValue({
+        data: [
+          { from: from1, to: to1, amount, asset },
+          { from: from2, to: to2, amount, asset },
+        ],
+        next: null,
+      });
+
+      const result = await instruction.getInvolvedPortfolios({ did: 'someDid' });
+      expect(result).toEqual([
+        expect.objectContaining({ owner: expect.objectContaining({ did: fromDid }) }),
+        expect.objectContaining({ owner: expect.objectContaining({ did: toDid }) }),
+        expect.objectContaining({
+          owner: expect.objectContaining({ did: 'someDid' }),
+          id: new BigNumber(1),
+        }),
+      ]);
     });
   });
 });
