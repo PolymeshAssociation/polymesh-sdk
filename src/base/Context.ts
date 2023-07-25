@@ -1458,17 +1458,17 @@ export class Context {
       /* eslint-disable @typescript-eslint/no-non-null-assertion */
       return {
         fromIdentity: identityId ? new Identity({ did: identityId }, this) : undefined,
-        address: address ? new Account({ address }, this) : undefined,
+        fromAccount: address ? new Account({ address }, this) : undefined,
         toIdentity: toId ? new Identity({ did: toId }, this) : undefined,
-        toAddress: toAddress ? new Account({ address: toAddress }, this) : undefined,
+        toAccount: toAddress ? new Account({ address: toAddress }, this) : undefined,
         amount: new BigNumber(amount).shiftedBy(-6),
         type,
         memo,
         ...middlewareV2EventDetailsToEventIdentifier(createdBlock!, eventIdx),
-        callId: callId!,
+        callId,
         eventId: eventId!,
         moduleId: moduleId!,
-        extrinsicIdx: extrinsic?.extrinsicIdx ? new BigNumber(extrinsic?.extrinsicIdx) : undefined,
+        extrinsicIdx: extrinsic ? new BigNumber(extrinsic.extrinsicIdx) : undefined,
       };
       /* eslint-enable @typescript-eslint/no-non-null-assertion */
     });

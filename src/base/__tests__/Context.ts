@@ -2486,14 +2486,31 @@ describe('Context class', () => {
           type: BalanceTypeEnum.Free,
           amount: new BigNumber(3000).shiftedBy(-6),
           fromIdentity: expect.objectContaining({ did: 'someDid' }),
-          address: expect.objectContaining({ address: 'someAddress' }),
+          fromAccount: expect.objectContaining({ address: 'someAddress' }),
           toIdentity: undefined,
-          toAddress: undefined,
+          toAccount: undefined,
+          memo: undefined,
+        }),
+        expect.objectContaining({
+          callId: undefined,
+          moduleId: ModuleIdEnum.Staking,
+          eventId: EventIdEnum.Reward,
+          extrinsicIdx: undefined,
+          eventIndex: new BigNumber(0),
+          blockNumber: new BigNumber(124),
+          blockHash: 'someHash2',
+          blockDate: new Date(date),
+          type: BalanceTypeEnum.Free,
+          amount: new BigNumber(876023429).shiftedBy(-6),
+          fromIdentity: undefined,
+          fromAccount: undefined,
+          toIdentity: expect.objectContaining({ did: 'someDid' }),
+          toAccount: expect.objectContaining({ address: 'someAddress' }),
           memo: undefined,
         }),
       ];
       const transactionsQueryResponse = {
-        totalCount: 1,
+        totalCount: 2,
         nodes: [
           {
             callId: CallIdEnum.CreateAsset,
@@ -2513,6 +2530,21 @@ describe('Context class', () => {
             identityId: 'someDid',
             address: 'someAddress',
           },
+          {
+            moduleId: ModuleIdEnum.Staking,
+            eventId: EventIdEnum.Reward,
+            eventIdx: 0,
+            createdBlock: {
+              blockId: '124',
+              hash: 'someHash2',
+              datetime: date,
+            },
+            extrinsic: undefined,
+            type: BalanceTypeEnum.Free,
+            amount: '876023429',
+            toId: 'someDid',
+            toAddress: 'someAddress',
+          },
         ],
       };
 
@@ -2522,7 +2554,7 @@ describe('Context class', () => {
             identityId: 'someDid',
             addresses: ['someAddress'],
           },
-          new BigNumber(1),
+          new BigNumber(2),
           new BigNumber(0)
         ),
         {
@@ -2533,12 +2565,13 @@ describe('Context class', () => {
       let result = await context.getPolyxTransactions({
         identity: 'someDid',
         accounts: ['someAddress'],
-        size: new BigNumber(1),
+        size: new BigNumber(2),
         start: new BigNumber(0),
       });
 
-      expect(result.data).toEqual(fakeTxs);
-      expect(result.count).toEqual(new BigNumber(1));
+      expect(result.data[0]).toEqual(fakeTxs[0]);
+      expect(result.data[1]).toEqual(fakeTxs[1]);
+      expect(result.count).toEqual(new BigNumber(2));
       expect(result.next).toEqual(null);
 
       dsMockUtils.createApolloV2QueryMock(

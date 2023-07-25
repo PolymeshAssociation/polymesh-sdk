@@ -92,7 +92,7 @@ export interface HistoricPolyxTransaction extends EventIdentifier {
   memo?: string;
   extrinsicIdx?: BigNumber;
 
-  callId: CallIdEnum;
+  callId?: CallIdEnum;
   moduleId: ModuleIdEnum;
   eventId: EventIdEnum;
 }

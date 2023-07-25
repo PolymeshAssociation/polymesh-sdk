@@ -1168,17 +1168,12 @@ function createPolyxTransactionFilters({ identityId, addresses }: QueryPolyxTran
     toIdFilters.push('toAddress: { in: $addresses }');
   }
 
-  if (args.length > 0) {
-    return {
-      args: `(${args.join()})`,
-      filter: `filter: { or: [ { ${fromIdFilters.join()} }, { ${toIdFilters.join()} } ] }`,
-      variables,
-    };
-  }
-
   return {
-    args: '',
-    filter: '',
+    args: `(${args.join()})`,
+    filter:
+      fromIdFilters.length && toIdFilters.length
+        ? `filter: { or: [ { ${fromIdFilters.join()} }, { ${toIdFilters.join()} } ] }`
+        : '',
     variables,
   };
 }
