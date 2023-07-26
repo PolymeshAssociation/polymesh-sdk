@@ -23980,7 +23980,8 @@ export type JsonFilter = {
 export type Leg = Node & {
   __typename?: 'Leg';
   addresses: Scalars['JSON'];
-  amount: Scalars['BigFloat'];
+  /** `amount` can be null for non-fungible tokens */
+  amount?: Maybe<Scalars['BigFloat']>;
   assetId: Scalars['String'];
   createdAt: Scalars['Datetime'];
   /** Reads a single `Block` that is related to this `Leg`. */
@@ -23993,6 +23994,7 @@ export type Leg = Node & {
   /** Reads a single `Instruction` that is related to this `Leg`. */
   instruction?: Maybe<Instruction>;
   instructionId?: Maybe<Scalars['String']>;
+  legType: PublicEnum2792Cc24Ad;
   /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
   nodeId: Scalars['ID'];
   /** Reads a single `Settlement` that is related to this `Leg`. */
@@ -24032,6 +24034,8 @@ export type LegFilter = {
   id?: InputMaybe<StringFilter>;
   /** Filter by the object’s `instructionId` field. */
   instructionId?: InputMaybe<StringFilter>;
+  /** Filter by the object’s `legType` field. */
+  legType?: InputMaybe<PublicEnum2792Cc24AdFilter>;
   /** Negates the expression. */
   not?: InputMaybe<LegFilter>;
   /** Checks for any expressions in this list. */
@@ -24087,6 +24091,7 @@ export enum LegsGroupBy {
   CreatedBlockId = 'CREATED_BLOCK_ID',
   FromId = 'FROM_ID',
   InstructionId = 'INSTRUCTION_ID',
+  LegType = 'LEG_TYPE',
   SettlementId = 'SETTLEMENT_ID',
   ToId = 'TO_ID',
   UpdatedAt = 'UPDATED_AT',
@@ -24117,6 +24122,8 @@ export enum LegsOrderBy {
   IdDesc = 'ID_DESC',
   InstructionIdAsc = 'INSTRUCTION_ID_ASC',
   InstructionIdDesc = 'INSTRUCTION_ID_DESC',
+  LegTypeAsc = 'LEG_TYPE_ASC',
+  LegTypeDesc = 'LEG_TYPE_DESC',
   Natural = 'NATURAL',
   PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
   PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
@@ -24128,6 +24135,106 @@ export enum LegsOrderBy {
   UpdatedAtDesc = 'UPDATED_AT_DESC',
   UpdatedBlockIdAsc = 'UPDATED_BLOCK_ID_ASC',
   UpdatedBlockIdDesc = 'UPDATED_BLOCK_ID_DESC',
+}
+
+/** Represents the list of migrations executed */
+export type Migration = Node & {
+  __typename?: 'Migration';
+  createdAt: Scalars['Datetime'];
+  id: Scalars['String'];
+  /** A globally unique identifier. Can be used in various places throughout the system to identify this single value. */
+  nodeId: Scalars['ID'];
+  number: Scalars['Int'];
+  updatedAt: Scalars['Datetime'];
+  version: Scalars['String'];
+};
+
+export type MigrationAggregates = {
+  __typename?: 'MigrationAggregates';
+  keys?: Maybe<Array<Scalars['String']>>;
+};
+
+/** A filter to be used against `Migration` object types. All fields are combined with a logical ‘and.’ */
+export type MigrationFilter = {
+  /** Checks for all expressions in this list. */
+  and?: InputMaybe<Array<MigrationFilter>>;
+  /** Filter by the object’s `createdAt` field. */
+  createdAt?: InputMaybe<DatetimeFilter>;
+  /** Filter by the object’s `id` field. */
+  id?: InputMaybe<StringFilter>;
+  /** Negates the expression. */
+  not?: InputMaybe<MigrationFilter>;
+  /** Filter by the object’s `number` field. */
+  number?: InputMaybe<IntFilter>;
+  /** Checks for any expressions in this list. */
+  or?: InputMaybe<Array<MigrationFilter>>;
+  /** Filter by the object’s `updatedAt` field. */
+  updatedAt?: InputMaybe<DatetimeFilter>;
+  /** Filter by the object’s `version` field. */
+  version?: InputMaybe<StringFilter>;
+};
+
+/** A connection to a list of `Migration` values. */
+export type MigrationsConnection = {
+  __typename?: 'MigrationsConnection';
+  /** Aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  aggregates?: Maybe<MigrationAggregates>;
+  /** A list of edges which contains the `Migration` and cursor to aid in pagination. */
+  edges: Array<MigrationsEdge>;
+  /** Grouped aggregates across the matching connection (ignoring before/after/first/last/offset) */
+  groupedAggregates?: Maybe<Array<MigrationAggregates>>;
+  /** A list of `Migration` objects. */
+  nodes: Array<Maybe<Migration>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The count of *all* `Migration` you could get from the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** A connection to a list of `Migration` values. */
+export type MigrationsConnectionGroupedAggregatesArgs = {
+  groupBy: Array<MigrationsGroupBy>;
+  having?: InputMaybe<MigrationsHavingInput>;
+};
+
+/** A `Migration` edge in the connection. */
+export type MigrationsEdge = {
+  __typename?: 'MigrationsEdge';
+  /** A cursor for use in pagination. */
+  cursor?: Maybe<Scalars['Cursor']>;
+  /** The `Migration` at the end of the edge. */
+  node?: Maybe<Migration>;
+};
+
+/** Grouping methods for `Migration` for usage during aggregation. */
+export enum MigrationsGroupBy {
+  CreatedAt = 'CREATED_AT',
+  Number = 'NUMBER',
+  UpdatedAt = 'UPDATED_AT',
+  Version = 'VERSION',
+}
+
+/** Conditions for `Migration` aggregates. */
+export type MigrationsHavingInput = {
+  AND?: InputMaybe<Array<MigrationsHavingInput>>;
+  OR?: InputMaybe<Array<MigrationsHavingInput>>;
+};
+
+/** Methods to use when ordering `Migration`. */
+export enum MigrationsOrderBy {
+  CreatedAtAsc = 'CREATED_AT_ASC',
+  CreatedAtDesc = 'CREATED_AT_DESC',
+  IdAsc = 'ID_ASC',
+  IdDesc = 'ID_DESC',
+  Natural = 'NATURAL',
+  NumberAsc = 'NUMBER_ASC',
+  NumberDesc = 'NUMBER_DESC',
+  PrimaryKeyAsc = 'PRIMARY_KEY_ASC',
+  PrimaryKeyDesc = 'PRIMARY_KEY_DESC',
+  UpdatedAtAsc = 'UPDATED_AT_ASC',
+  UpdatedAtDesc = 'UPDATED_AT_DESC',
+  VersionAsc = 'VERSION_ASC',
+  VersionDesc = 'VERSION_DESC',
 }
 
 /** An object with a globally unique `ID`. */
@@ -28180,6 +28287,7 @@ export enum PublicEnum0Bf3C7D4Ef {
   BatchAddDocument = 'batch_add_document',
   BatchAddSecondaryKeyWithAuthorization = 'batch_add_secondary_key_with_authorization',
   BatchAddSigningKeyWithAuthorization = 'batch_add_signing_key_with_authorization',
+  BatchAll = 'batch_all',
   BatchAtomic = 'batch_atomic',
   BatchChangeAssetRule = 'batch_change_asset_rule',
   BatchChangeComplianceRequirement = 'batch_change_compliance_requirement',
@@ -28187,6 +28295,7 @@ export enum PublicEnum0Bf3C7D4Ef {
   BatchFreezeTx = 'batch_freeze_tx',
   BatchHandleBridgeTx = 'batch_handle_bridge_tx',
   BatchIssue = 'batch_issue',
+  BatchOld = 'batch_old',
   BatchOptimistic = 'batch_optimistic',
   BatchProposeBridgeTx = 'batch_propose_bridge_tx',
   BatchRemoveAuthorization = 'batch_remove_authorization',
@@ -28226,6 +28335,7 @@ export enum PublicEnum0Bf3C7D4Ef {
   ChangeReceiptValidity = 'change_receipt_validity',
   ChangeRecordDate = 'change_record_date',
   ChangeSigsRequired = 'change_sigs_required',
+  ChangeSigsRequiredViaCreator = 'change_sigs_required_via_creator',
   ChangeSlashingAllowedFor = 'change_slashing_allowed_for',
   ChangeTemplateFees = 'change_template_fees',
   ChangeTemplateMetaUrl = 'change_template_meta_url',
@@ -28247,6 +28357,8 @@ export enum PublicEnum0Bf3C7D4Ef {
   CreateAssetAndMint = 'create_asset_and_mint',
   CreateAssetWithCustomType = 'create_asset_with_custom_type',
   CreateCheckpoint = 'create_checkpoint',
+  CreateChildIdentities = 'create_child_identities',
+  CreateChildIdentity = 'create_child_identity',
   CreateFundraiser = 'create_fundraiser',
   CreateGroup = 'create_group',
   CreateGroupAndAddAuth = 'create_group_and_add_auth',
@@ -28265,6 +28377,7 @@ export enum PublicEnum0Bf3C7D4Ef {
   DisableMember = 'disable_member',
   DisallowVenues = 'disallow_venues',
   Disbursement = 'disbursement',
+  DispatchAs = 'dispatch_as',
   Distribute = 'distribute',
   EmergencyReferendum = 'emergency_referendum',
   EnableIndividualCommissions = 'enable_individual_commissions',
@@ -28273,12 +28386,15 @@ export enum PublicEnum0Bf3C7D4Ef {
   ExecuteManualInstruction = 'execute_manual_instruction',
   ExecuteScheduledInstruction = 'execute_scheduled_instruction',
   ExecuteScheduledInstructionV2 = 'execute_scheduled_instruction_v2',
+  ExecuteScheduledInstructionV3 = 'execute_scheduled_instruction_v3',
   ExecuteScheduledPip = 'execute_scheduled_pip',
   ExecuteScheduledProposal = 'execute_scheduled_proposal',
+  ExemptTickerAffirmation = 'exempt_ticker_affirmation',
   ExpireScheduledPip = 'expire_scheduled_pip',
   FastTrackProposal = 'fast_track_proposal',
   FillBlock = 'fill_block',
   FinalHint = 'final_hint',
+  ForceBatch = 'force_batch',
   ForceHandleBridgeTx = 'force_handle_bridge_tx',
   ForceNewEra = 'force_new_era',
   ForceNewEraAlways = 'force_new_era_always',
@@ -28346,11 +28462,20 @@ export enum PublicEnum0Bf3C7D4Ef {
   PauseSto = 'pause_sto',
   PayoutStakers = 'payout_stakers',
   PayoutStakersBySystem = 'payout_stakers_by_system',
+  PlaceholderAddAndAffirmInstruction = 'placeholder_add_and_affirm_instruction',
+  PlaceholderAddAndAffirmInstructionWithMemo = 'placeholder_add_and_affirm_instruction_with_memo',
+  PlaceholderAddInstruction = 'placeholder_add_instruction',
+  PlaceholderAddInstructionWithMemo = 'placeholder_add_instruction_with_memo',
+  PlaceholderAffirmInstruction = 'placeholder_affirm_instruction',
   PlaceholderClaimReceipt = 'placeholder_claim_receipt',
   PlaceholderFillBlock = 'placeholder_fill_block',
   PlaceholderLegacySetPermissionToSigner = 'placeholder_legacy_set_permission_to_signer',
+  PlaceholderRejectInstruction = 'placeholder_reject_instruction',
   PlaceholderUnclaimReceipt = 'placeholder_unclaim_receipt',
+  PlaceholderWithdrawAffirmation = 'placeholder_withdraw_affirmation',
   PlanConfigChange = 'plan_config_change',
+  PreApprovePortfolio = 'pre_approve_portfolio',
+  PreApproveTicker = 'pre_approve_ticker',
   Propose = 'propose',
   ProposeBridgeTx = 'propose_bridge_tx',
   PruneProposal = 'prune_proposal',
@@ -28389,6 +28514,7 @@ export enum PublicEnum0Bf3C7D4Ef {
   RemoveCa = 'remove_ca',
   RemoveCode = 'remove_code',
   RemoveComplianceRequirement = 'remove_compliance_requirement',
+  RemoveCreatorControls = 'remove_creator_controls',
   RemoveDefaultTrustedClaimIssuer = 'remove_default_trusted_claim_issuer',
   RemoveDistribution = 'remove_distribution',
   RemoveDocuments = 'remove_documents',
@@ -28401,12 +28527,15 @@ export enum PublicEnum0Bf3C7D4Ef {
   RemoveMultisigSignersViaCreator = 'remove_multisig_signers_via_creator',
   RemovePayingKey = 'remove_paying_key',
   RemovePermissionedValidator = 'remove_permissioned_validator',
+  RemovePortfolioPreApproval = 'remove_portfolio_pre_approval',
   RemovePrimaryIssuanceAgent = 'remove_primary_issuance_agent',
   RemoveSchedule = 'remove_schedule',
   RemoveSecondaryKeys = 'remove_secondary_keys',
   RemoveSecondaryKeysOld = 'remove_secondary_keys_old',
   RemoveSigningKeys = 'remove_signing_keys',
   RemoveSmartExtension = 'remove_smart_extension',
+  RemoveTickerAffirmationExemption = 'remove_ticker_affirmation_exemption',
+  RemoveTickerPreApproval = 'remove_ticker_pre_approval',
   RemoveTransferManager = 'remove_transfer_manager',
   RemoveTxs = 'remove_txs',
   RenameAsset = 'rename_asset',
@@ -28499,6 +28628,7 @@ export enum PublicEnum0Bf3C7D4Ef {
   UnfreezeFundraiser = 'unfreeze_fundraiser',
   UnfreezeSecondaryKeys = 'unfreeze_secondary_keys',
   UnfreezeTxs = 'unfreeze_txs',
+  UnlinkChildIdentity = 'unlink_child_identity',
   UnnotePreimage = 'unnote_preimage',
   UnrequestPreimage = 'unrequest_preimage',
   UpdateAssetType = 'update_asset_type',
@@ -28514,6 +28644,7 @@ export enum PublicEnum0Bf3C7D4Ef {
   ValidateCddExpiryNominators = 'validate_cdd_expiry_nominators',
   Vote = 'vote',
   VoteOrPropose = 'vote_or_propose',
+  WithWeight = 'with_weight',
   WithdrawAffirmation = 'withdraw_affirmation',
   WithdrawAffirmationV2 = 'withdraw_affirmation_v2',
   WithdrawUnbonded = 'withdraw_unbonded',
@@ -28687,6 +28818,7 @@ export enum PublicEnum8F5A39C8Ee {
   AllGood = 'AllGood',
   Approval = 'Approval',
   Approved = 'Approved',
+  AssetBalanceUpdated = 'AssetBalanceUpdated',
   AssetCompliancePaused = 'AssetCompliancePaused',
   AssetComplianceReplaced = 'AssetComplianceReplaced',
   AssetComplianceReset = 'AssetComplianceReset',
@@ -28716,7 +28848,10 @@ export enum PublicEnum8F5A39C8Ee {
   BallotCancelled = 'BallotCancelled',
   BallotCreated = 'BallotCreated',
   BatchCompleted = 'BatchCompleted',
+  BatchCompletedOld = 'BatchCompletedOld',
+  BatchCompletedWithErrors = 'BatchCompletedWithErrors',
   BatchInterrupted = 'BatchInterrupted',
+  BatchInterruptedOld = 'BatchInterruptedOld',
   BatchOptimisticFailed = 'BatchOptimisticFailed',
   BenefitClaimed = 'BenefitClaimed',
   Bonded = 'Bonded',
@@ -28738,6 +28873,8 @@ export enum PublicEnum8F5A39C8Ee {
   CddRequirementForPrimaryKeyUpdated = 'CddRequirementForPrimaryKeyUpdated',
   CddStatus = 'CddStatus',
   CheckpointCreated = 'CheckpointCreated',
+  ChildDidCreated = 'ChildDidCreated',
+  ChildDidUnlinked = 'ChildDidUnlinked',
   ClaimAdded = 'ClaimAdded',
   ClaimRevoked = 'ClaimRevoked',
   ClassicTickerClaimed = 'ClassicTickerClaimed',
@@ -28771,6 +28908,7 @@ export enum PublicEnum8F5A39C8Ee {
   DidStatus = 'DidStatus',
   DidWithholdingTaxChanged = 'DidWithholdingTaxChanged',
   Dispatched = 'Dispatched',
+  DispatchedAs = 'DispatchedAs',
   DividendCanceled = 'DividendCanceled',
   DividendCreated = 'DividendCreated',
   DividendPaidOutToUser = 'DividendPaidOutToUser',
@@ -28814,6 +28952,7 @@ export enum PublicEnum8F5A39C8Ee {
   FundraiserUnfrozen = 'FundraiserUnfrozen',
   FundraiserWindowModifed = 'FundraiserWindowModifed',
   FundraiserWindowModified = 'FundraiserWindowModified',
+  FundsMovedBetweenPortfolios = 'FundsMovedBetweenPortfolios',
   FundsRaised = 'FundsRaised',
   FungibleTokensMovedBetweenPortfolios = 'FungibleTokensMovedBetweenPortfolios',
   GlobalCommissionUpdated = 'GlobalCommissionUpdated',
@@ -28846,6 +28985,8 @@ export enum PublicEnum8F5A39C8Ee {
   IsIssuable = 'IsIssuable',
   Issued = 'Issued',
   IssuedNft = 'IssuedNFT',
+  ItemCompleted = 'ItemCompleted',
+  ItemFailed = 'ItemFailed',
   ItnRewardClaimed = 'ItnRewardClaimed',
   KeyChanged = 'KeyChanged',
   KilledAccount = 'KilledAccount',
@@ -28871,6 +29012,7 @@ export enum PublicEnum8F5A39C8Ee {
   MultiSigSignerAdded = 'MultiSigSignerAdded',
   MultiSigSignerAuthorized = 'MultiSigSignerAuthorized',
   MultiSigSignerRemoved = 'MultiSigSignerRemoved',
+  NftPortfolioUpdated = 'NFTPortfolioUpdated',
   NfTsMovedBetweenPortfolios = 'NFTsMovedBetweenPortfolios',
   NewAccount = 'NewAccount',
   NewAssetRuleCreated = 'NewAssetRuleCreated',
@@ -28934,6 +29076,7 @@ export enum PublicEnum8F5A39C8Ee {
   RegisterAssetMetadataGlobalType = 'RegisterAssetMetadataGlobalType',
   RegisterAssetMetadataLocalType = 'RegisterAssetMetadataLocalType',
   Rejected = 'Rejected',
+  RelayedTx = 'RelayedTx',
   ReleaseCoordinatorUpdated = 'ReleaseCoordinatorUpdated',
   Remarked = 'Remarked',
   Removed = 'Removed',
@@ -29158,6 +29301,41 @@ export type PublicEnum72Fc336BfeFilter = {
   notEqualTo?: InputMaybe<PublicEnum72Fc336Bfe>;
   /** Not included in the specified list. */
   notIn?: InputMaybe<Array<PublicEnum72Fc336Bfe>>;
+};
+
+/** @enum
+ * @enumName LegTypeEnum
+ *  Represents all possible states of an Instruction */
+export enum PublicEnum2792Cc24Ad {
+  Fungible = 'Fungible',
+  NonFungible = 'NonFungible',
+  OffChain = 'OffChain',
+}
+
+/** A filter to be used against PublicEnum2792Cc24Ad fields. All fields are combined with a logical ‘and.’ */
+export type PublicEnum2792Cc24AdFilter = {
+  /** Not equal to the specified value, treating null like an ordinary value. */
+  distinctFrom?: InputMaybe<PublicEnum2792Cc24Ad>;
+  /** Equal to the specified value. */
+  equalTo?: InputMaybe<PublicEnum2792Cc24Ad>;
+  /** Greater than the specified value. */
+  greaterThan?: InputMaybe<PublicEnum2792Cc24Ad>;
+  /** Greater than or equal to the specified value. */
+  greaterThanOrEqualTo?: InputMaybe<PublicEnum2792Cc24Ad>;
+  /** Included in the specified list. */
+  in?: InputMaybe<Array<PublicEnum2792Cc24Ad>>;
+  /** Is null (if `true` is specified) or is not null (if `false` is specified). */
+  isNull?: InputMaybe<Scalars['Boolean']>;
+  /** Less than the specified value. */
+  lessThan?: InputMaybe<PublicEnum2792Cc24Ad>;
+  /** Less than or equal to the specified value. */
+  lessThanOrEqualTo?: InputMaybe<PublicEnum2792Cc24Ad>;
+  /** Equal to the specified value, treating null like an ordinary value. */
+  notDistinctFrom?: InputMaybe<PublicEnum2792Cc24Ad>;
+  /** Not equal to the specified value. */
+  notEqualTo?: InputMaybe<PublicEnum2792Cc24Ad>;
+  /** Not included in the specified list. */
+  notIn?: InputMaybe<Array<PublicEnum2792Cc24Ad>>;
 };
 
 /** @enum
@@ -29451,6 +29629,11 @@ export type Query = Node & {
   legByNodeId?: Maybe<Leg>;
   /** Reads and enables pagination through a set of `Leg`. */
   legs?: Maybe<LegsConnection>;
+  migration?: Maybe<Migration>;
+  /** Reads a single `Migration` using its globally unique `ID`. */
+  migrationByNodeId?: Maybe<Migration>;
+  /** Reads and enables pagination through a set of `Migration`. */
+  migrations?: Maybe<MigrationsConnection>;
   /** Fetches an object given its globally unique `ID`. */
   node?: Maybe<Node>;
   /** The root query type must be a `Node` to work well with Relay 1 mutations. This just resolves to `query`. */
@@ -30075,6 +30258,27 @@ export type QueryLegsArgs = {
   last?: InputMaybe<Scalars['Int']>;
   offset?: InputMaybe<Scalars['Int']>;
   orderBy?: InputMaybe<Array<LegsOrderBy>>;
+};
+
+/** The root query type which gives access points into the data universe. */
+export type QueryMigrationArgs = {
+  id: Scalars['String'];
+};
+
+/** The root query type which gives access points into the data universe. */
+export type QueryMigrationByNodeIdArgs = {
+  nodeId: Scalars['ID'];
+};
+
+/** The root query type which gives access points into the data universe. */
+export type QueryMigrationsArgs = {
+  after?: InputMaybe<Scalars['Cursor']>;
+  before?: InputMaybe<Scalars['Cursor']>;
+  filter?: InputMaybe<MigrationFilter>;
+  first?: InputMaybe<Scalars['Int']>;
+  last?: InputMaybe<Scalars['Int']>;
+  offset?: InputMaybe<Scalars['Int']>;
+  orderBy?: InputMaybe<Array<MigrationsOrderBy>>;
 };
 
 /** The root query type which gives access points into the data universe. */
