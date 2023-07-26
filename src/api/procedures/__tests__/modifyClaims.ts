@@ -16,6 +16,7 @@ import {
   Claim,
   ClaimOperation,
   ClaimType,
+  ClaimTypeEnum,
   ModifyClaimsParams,
   RoleType,
   ScopeType,
@@ -234,7 +235,13 @@ describe('modifyClaims procedure', () => {
             },
             {
               did: otherDid,
-              claims: [cddClaim],
+              claims: [
+                { type: ClaimTypeEnum.NoData },
+                { type: ClaimTypeEnum.NoType },
+                { type: ClaimTypeEnum.InvestorUniqueness },
+                { type: ClaimTypeEnum.InvestorUniquenessV2 },
+                cddClaim,
+              ],
             },
           ],
         },

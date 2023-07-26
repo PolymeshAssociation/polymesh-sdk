@@ -201,9 +201,7 @@ describe('CorporateAction class', () => {
 
     beforeEach(() => {
       dsMockUtils.createQueryMock('checkpoint', 'scheduledCheckpoints', {
-        returnValue: dsMockUtils.createMockCheckpointSchedule({
-          pending: createMockBTreeSet([createMockU64(new BigNumber(1))]),
-        }),
+        returnValue: dsMockUtils.createMockOption(),
       });
 
       schedulePointsQueryMock = dsMockUtils.createQueryMock('checkpoint', 'schedulePoints', {
@@ -223,9 +221,16 @@ describe('CorporateAction class', () => {
     });
 
     it('should return the Checkpoint Schedule associated to the Corporate Action', async () => {
+      dsMockUtils.createQueryMock('checkpoint', 'scheduledCheckpoints', {
+        returnValue: dsMockUtils.createMockOption(
+          dsMockUtils.createMockCheckpointSchedule({
+            pending: createMockBTreeSet([createMockU64(new BigNumber(1))]),
+          })
+        ),
+      });
       const result = (await corporateAction.checkpoint()) as CheckpointSchedule;
 
-      expect(result.id).toEqual(new BigNumber(2));
+      expect(result.id).toEqual(new BigNumber(1));
     });
 
     it('should return null if the CA does not have a record date', async () => {
