@@ -226,10 +226,6 @@ export enum ClaimType {
   Jurisdiction = 'Jurisdiction',
   Exempted = 'Exempted',
   Blocked = 'Blocked',
-  // InvestorUniqueness = 'InvestorUniqueness',
-  // NoType = 'NoType',
-  // NoData = 'NoData',
-  // InvestorUniquenessV2 = 'InvestorUniquenessV2',
 }
 
 export interface AccreditedClaim {

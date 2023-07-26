@@ -1,6 +1,7 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
+import { stat } from 'fs';
 import { isEqual } from 'lodash';
 
 import {
@@ -97,6 +98,7 @@ export async function assertInstructionValidForManualExecution(
     });
   }
 
+  // TODO allow for "Failed" instructions to be executed manually
   if (type !== InstructionType.SettleManual) {
     throw new PolymeshError({
       code: ErrorCode.UnmetPrerequisite,

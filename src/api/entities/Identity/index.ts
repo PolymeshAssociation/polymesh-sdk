@@ -493,10 +493,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    *
    * @note can be subscribed to
    */
-  public async getVenues(): Promise<Venue[]>;
-  // public async getVenues(callback: SubCallback<Venue[]>): Promise<UnsubCallback>;
-
-  // eslint-disable-next-line require-jsdoc
   public async getVenues(): Promise<Venue[]> {
     const {
       context: {
@@ -512,10 +508,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       ids.map(id => new Venue({ id: u64ToBigNumber(id) }, context));
 
     const rawDid = stringToIdentityId(did, context);
-
-    // if (callback) {
-    //   return settlement.userVenues(rawDid, ids => callback(assembleResult(ids))) as any;
-    // }
 
     const venueIdsKeys = await settlement.userVenues.keys(rawDid);
     const venueIds = venueIdsKeys.map(key => {
