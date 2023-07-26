@@ -297,10 +297,12 @@ describe('assertInstructionValidForManualExecution', () => {
   });
 
   it('should not throw an error', async () => {
+    // executing instruction of type SettleManual
     await expect(
       assertInstructionValidForManualExecution(instructionDetails, mockContext)
     ).resolves.not.toThrow();
 
+    // executing failed instruction
     await expect(
       assertInstructionValidForManualExecution(
         {
