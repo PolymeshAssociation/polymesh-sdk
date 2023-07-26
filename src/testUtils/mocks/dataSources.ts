@@ -1913,6 +1913,7 @@ export const createMockOption = <T extends Codec | Codec[]>(
     {
       unwrap: () => wrapped as T,
       unwrapOr: (val: unknown) => wrapped ?? val,
+      unwrapOrDefault: () => wrapped ?? null,
       isNone: !wrapped,
       isSome: !!wrapped,
     },

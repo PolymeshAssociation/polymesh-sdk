@@ -430,7 +430,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     );
     if (eventIdentifier) {
       return {
-        status: InstructionStatus.Executed,
+        status: InstructionStatus.Success,
         eventIdentifier,
       };
     }
@@ -470,7 +470,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     if (executedEventIdentifier) {
       return {
-        status: InstructionStatus.Executed,
+        status: InstructionStatus.Success,
         eventIdentifier: executedEventIdentifier,
       };
     }

@@ -943,7 +943,7 @@ describe('Instruction class', () => {
 
       const result = await instruction.getStatus();
       expect(result).toMatchObject({
-        status: InstructionStatus.Executed,
+        status: InstructionStatus.Success,
         eventIdentifier: fakeEventIdentifierResult,
       });
     });
@@ -1148,7 +1148,7 @@ describe('Instruction class', () => {
 
       const result = await instruction.getStatusV2();
       expect(result).toMatchObject({
-        status: InstructionStatus.Executed,
+        status: InstructionStatus.Success,
         eventIdentifier: fakeEventIdentifierResult,
       });
     });

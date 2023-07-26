@@ -126,7 +126,7 @@ describe('assertInstructionValid', () => {
     entityMockUtils.configureMocks({
       instructionOptions: {
         details: {
-          status: InstructionStatus.Executed,
+          status: InstructionStatus.Success,
         } as InstructionDetails,
       },
     });
@@ -296,9 +296,20 @@ describe('assertInstructionValidForManualExecution', () => {
     ).rejects.toThrowError(expectedError);
   });
 
-  it('should not throw an error', () => {
-    return expect(
+  it('should not throw an error', async () => {
+    await expect(
       assertInstructionValidForManualExecution(instructionDetails, mockContext)
+    ).resolves.not.toThrow();
+
+    await expect(
+      assertInstructionValidForManualExecution(
+        {
+          ...instructionDetails,
+          status: InstructionStatus.Failed,
+          type: InstructionType.SettleOnAffirmation,
+        },
+        mockContext
+      )
     ).resolves.not.toThrow();
   });
 });
