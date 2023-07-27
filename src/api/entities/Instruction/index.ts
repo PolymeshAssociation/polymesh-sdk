@@ -509,7 +509,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
   public withdraw: OptionalArgsProcedureMethod<AffirmOrWithdrawInstructionParams, Instruction>;
 
   /**
-   * Executes an Instruction of type `SettleManual`
+   * Executes an Instruction either of type `SettleManual` or a `Failed` instruction
    */
   public executeManually: OptionalArgsProcedureMethod<ExecuteManualInstructionParams, Instruction>;
 
