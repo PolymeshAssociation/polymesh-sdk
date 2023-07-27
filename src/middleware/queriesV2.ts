@@ -26,6 +26,7 @@ import {
   InvestmentsOrderBy,
   Leg,
   LegsOrderBy,
+  PolyxTransactionsOrderBy,
   Portfolio,
   PortfolioMovement,
   PortfolioMovementsOrderBy,
@@ -1077,7 +1078,7 @@ function createPortfolioMovementFilters({
   if (address) {
     variables.address = address;
     args.push('$address: String!');
-    const addressFilter = 'address: { in: $address }';
+    const addressFilter = 'address: { equalTo: $address }';
     toIdFilters.push(addressFilter);
     fromIdFilters.push(addressFilter);
   }
@@ -1137,6 +1138,48 @@ export function portfolioMovementsQuery(
   };
 }
 
+export interface QueryPolyxTransactionFilters {
+  identityId?: string;
+  addresses?: string[];
+}
+
+/**
+ *  @hidden
+ */
+function createPolyxTransactionFilters({ identityId, addresses }: QueryPolyxTransactionFilters): {
+  args: string;
+  filter: string;
+  variables: QueryPolyxTransactionFilters;
+} {
+  const args = ['$size: Int, $start: Int'];
+  const fromIdFilters = [];
+  const toIdFilters = [];
+  const variables: QueryPolyxTransactionFilters = {};
+
+  if (identityId) {
+    variables.identityId = identityId;
+    args.push('$identityId: String!');
+    fromIdFilters.push('identityId: { equalTo: $identityId }');
+    toIdFilters.push('toId: { equalTo: $identityId }');
+  }
+
+  if (addresses?.length) {
+    variables.addresses = addresses;
+    args.push('$addresses: [String!]!');
+    fromIdFilters.push('address: { in: $addresses }');
+    toIdFilters.push('toAddress: { in: $addresses }');
+  }
+
+  return {
+    args: `(${args.join()})`,
+    filter:
+      fromIdFilters.length && toIdFilters.length
+        ? `filter: { or: [ { ${fromIdFilters.join()} }, { ${toIdFilters.join()} } ] }`
+        : '',
+    variables,
+  };
+}
+
 /**
  * @hidden
  *
@@ -1185,6 +1228,60 @@ export function assetTransactionQuery(
   return {
     query,
     variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get POLYX transactions where an Account or an Identity is involved
+ */
+export function polyxTransactionsQuery(
+  filters: QueryPolyxTransactionFilters,
+  size?: BigNumber,
+  start?: BigNumber
+): QueryOptions<PaginatedQueryArgs<QueryPolyxTransactionFilters>> {
+  const { args, filter, variables } = createPolyxTransactionFilters(filters);
+  const query = gql`
+    query PolyxTransactionsQuery
+      ${args}
+     {
+      polyxTransactions(
+        ${filter}
+        first: $size
+        offset: $start
+        orderBy: [${PolyxTransactionsOrderBy.CreatedAtAsc}, ${PolyxTransactionsOrderBy.CreatedBlockIdAsc}]
+      ) {
+        nodes {
+          id
+          identityId
+          address
+          toId
+          toAddress
+          amount
+          type
+          extrinsic {
+            extrinsicIdx
+          }
+          callId
+          eventId
+          moduleId
+          eventIdx
+          memo
+          datetime
+          createdBlock {
+            blockId
+            datetime
+            hash
+          }
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: { ...variables, size: size?.toNumber(), start: start?.toNumber() },
   };
 }
 

@@ -5,9 +5,20 @@ import P from 'bluebird';
 import { when } from 'jest-when';
 
 import { Account, Context, PolymeshError } from '~/internal';
-import { ClaimTypeEnum as MiddlewareV2ClaimType } from '~/middleware/enumsV2';
+import {
+  BalanceTypeEnum,
+  CallIdEnum,
+  ClaimTypeEnum as MiddlewareV2ClaimType,
+  EventIdEnum,
+  ModuleIdEnum,
+} from '~/middleware/enumsV2';
 import { didsWithClaims, heartbeat } from '~/middleware/queries';
-import { claimsQuery, heartbeatQuery, metadataQuery } from '~/middleware/queriesV2';
+import {
+  claimsQuery,
+  heartbeatQuery,
+  metadataQuery,
+  polyxTransactionsQuery,
+} from '~/middleware/queriesV2';
 import { ClaimTypeEnum, IdentityWithClaimsResult } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId, getAtMock } from '~/testUtils/mocks/dataSources';
@@ -2441,6 +2452,147 @@ describe('Context class', () => {
 
       const result = await context.getMiddlewareMetadata();
       expect(result).toBeNull();
+    });
+  });
+
+  describe('method: getPolyxTransactions', () => {
+    beforeAll(() => {
+      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
+    });
+
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should return a result set of POLYX transactions', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApi: dsMockUtils.getMiddlewareApi(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApiV2(),
+      });
+
+      const date = new Date('2023/01/01');
+
+      const fakeTxs = [
+        expect.objectContaining({
+          callId: CallIdEnum.CreateAsset,
+          moduleId: ModuleIdEnum.Protocolfee,
+          eventId: EventIdEnum.FeeCharged,
+          extrinsicIdx: new BigNumber(3),
+          eventIndex: new BigNumber(0),
+          blockNumber: new BigNumber(123),
+          blockHash: 'someHash',
+          blockDate: new Date(date),
+          type: BalanceTypeEnum.Free,
+          amount: new BigNumber(3000).shiftedBy(-6),
+          fromIdentity: expect.objectContaining({ did: 'someDid' }),
+          fromAccount: expect.objectContaining({ address: 'someAddress' }),
+          toIdentity: undefined,
+          toAccount: undefined,
+          memo: undefined,
+        }),
+        expect.objectContaining({
+          callId: undefined,
+          moduleId: ModuleIdEnum.Staking,
+          eventId: EventIdEnum.Reward,
+          extrinsicIdx: undefined,
+          eventIndex: new BigNumber(0),
+          blockNumber: new BigNumber(124),
+          blockHash: 'someHash2',
+          blockDate: new Date(date),
+          type: BalanceTypeEnum.Free,
+          amount: new BigNumber(876023429).shiftedBy(-6),
+          fromIdentity: undefined,
+          fromAccount: undefined,
+          toIdentity: expect.objectContaining({ did: 'someDid' }),
+          toAccount: expect.objectContaining({ address: 'someAddress' }),
+          memo: undefined,
+        }),
+      ];
+      const transactionsQueryResponse = {
+        totalCount: 2,
+        nodes: [
+          {
+            callId: CallIdEnum.CreateAsset,
+            moduleId: ModuleIdEnum.Protocolfee,
+            eventId: EventIdEnum.FeeCharged,
+            extrinsic: {
+              extrinsicIdx: 3,
+            },
+            eventIdx: 0,
+            createdBlock: {
+              blockId: '123',
+              hash: 'someHash',
+              datetime: date,
+            },
+            type: BalanceTypeEnum.Free,
+            amount: '3000',
+            identityId: 'someDid',
+            address: 'someAddress',
+          },
+          {
+            moduleId: ModuleIdEnum.Staking,
+            eventId: EventIdEnum.Reward,
+            eventIdx: 0,
+            createdBlock: {
+              blockId: '124',
+              hash: 'someHash2',
+              datetime: date,
+            },
+            extrinsic: undefined,
+            type: BalanceTypeEnum.Free,
+            amount: '876023429',
+            toId: 'someDid',
+            toAddress: 'someAddress',
+          },
+        ],
+      };
+
+      dsMockUtils.createApolloV2QueryMock(
+        polyxTransactionsQuery(
+          {
+            identityId: 'someDid',
+            addresses: ['someAddress'],
+          },
+          new BigNumber(2),
+          new BigNumber(0)
+        ),
+        {
+          polyxTransactions: transactionsQueryResponse,
+        }
+      );
+
+      let result = await context.getPolyxTransactions({
+        identity: 'someDid',
+        accounts: ['someAddress'],
+        size: new BigNumber(2),
+        start: new BigNumber(0),
+      });
+
+      expect(result.data[0]).toEqual(fakeTxs[0]);
+      expect(result.data[1]).toEqual(fakeTxs[1]);
+      expect(result.count).toEqual(new BigNumber(2));
+      expect(result.next).toEqual(null);
+
+      dsMockUtils.createApolloV2QueryMock(
+        polyxTransactionsQuery(
+          {
+            identityId: undefined,
+            addresses: undefined,
+          },
+          new BigNumber(25),
+          new BigNumber(0)
+        ),
+        {
+          polyxTransactions: { nodes: [], totalCount: 0 },
+        }
+      );
+
+      result = await context.getPolyxTransactions({});
+
+      expect(result.data).toEqual([]);
+      expect(result.count).toEqual(new BigNumber(0));
+      expect(result.next).toBeNull();
     });
   });
 });

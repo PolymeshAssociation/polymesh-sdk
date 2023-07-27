@@ -1,7 +1,11 @@
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import { AccountIdentityRelation, AccountKeyType } from '~/api/entities/Account/types';
+import {
+  AccountIdentityRelation,
+  AccountKeyType,
+  HistoricPolyxTransaction,
+} from '~/api/entities/Account/types';
 import { Account, Context, Entity } from '~/internal';
 import {
   CallIdEnum as MiddlewareV2CallId,
@@ -1112,6 +1116,19 @@ describe('Account class', () => {
         keyType: AccountKeyType.SmartContract,
         relation: AccountIdentityRelation.MultiSigSigner,
       });
+    });
+  });
+
+  describe('method: getPolyxTransactions', () => {
+    it('should return the polyx transactions for the current Account', async () => {
+      const fakeResult = 'someTransactions' as unknown as ResultSet<HistoricPolyxTransaction>;
+      context = dsMockUtils.getContextInstance({
+        getPolyxTransactions: fakeResult,
+      });
+      account = new Account({ address }, context);
+      const result = await account.getPolyxTransactions({});
+
+      expect(result).toEqual(fakeResult);
     });
   });
 });

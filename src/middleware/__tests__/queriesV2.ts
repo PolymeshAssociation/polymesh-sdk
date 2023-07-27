@@ -27,6 +27,7 @@ import {
   latestBlockQuery,
   latestSqVersionQuery,
   metadataQuery,
+  polyxTransactionsQuery,
   portfolioMovementsQuery,
   portfolioQuery,
   settlementsQuery,
@@ -456,6 +457,28 @@ describe('assetTransactionQuery', () => {
       ...variables,
       size: 1,
       start: 0,
+    });
+  });
+});
+
+describe('polyxTransactionsQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    const variables = {
+      addresses: ['someAddress'],
+      identityId: 'someDid',
+    };
+
+    let result = polyxTransactionsQuery(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+
+    result = polyxTransactionsQuery({}, new BigNumber(10), new BigNumber(2));
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({
+      size: 10,
+      start: 2,
     });
   });
 });
