@@ -1,10 +1,18 @@
 import BigNumber from 'bignumber.js';
 
-import { CallIdEnum, ClaimTypeEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/enumsV2';
+import {
+  AuthorizationStatusEnum,
+  AuthTypeEnum,
+  CallIdEnum,
+  ClaimTypeEnum,
+  EventIdEnum,
+  ModuleIdEnum,
+} from '~/middleware/enumsV2';
 import {
   assetHoldersQuery,
   assetQuery,
   assetTransactionQuery,
+  authorizationsQuery,
   claimsGroupingQuery,
   claimsQuery,
   distributionPaymentsQuery,
@@ -471,6 +479,36 @@ describe('polyxTransactionsQuery', () => {
     expect(result.variables).toEqual({
       size: 10,
       start: 2,
+    });
+  });
+});
+
+describe('authorizationsQuery', () => {
+  it('should pass the variables to the grapqhl query', () => {
+    let result = authorizationsQuery({});
+
+    expect(result.query).toBeDefined();
+
+    const variables = {
+      fromId: 'someId',
+      toId: 'someOtherId',
+      toKey: 'someKey',
+      type: AuthTypeEnum.RotatePrimaryKey,
+      status: AuthorizationStatusEnum.Consumed,
+    };
+
+    result = authorizationsQuery(variables);
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual(variables);
+
+    result = authorizationsQuery(variables, new BigNumber(1), new BigNumber(0));
+
+    expect(result.query).toBeDefined();
+    expect(result.variables).toEqual({
+      ...variables,
+      size: 1,
+      start: 0,
     });
   });
 });
