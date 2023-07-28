@@ -77,19 +77,16 @@ export class NumberedPortfolio extends Portfolio {
       },
       context,
     } = this;
-    const [rawPortfolioName, exists] = await Promise.all([
-      portfolio.portfolios(did, bigNumberToU64(id, context)),
-      this.exists(),
-    ]);
+    const rawPortfolioName = await portfolio.portfolios(did, bigNumberToU64(id, context));
 
-    if (!exists) {
+    if (rawPortfolioName.isNone) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
         message: "The Portfolio doesn't exist",
       });
     }
 
-    return bytesToString(rawPortfolioName);
+    return bytesToString(rawPortfolioName.unwrap());
   }
 
   /**

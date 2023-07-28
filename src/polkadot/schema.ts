@@ -8,10 +8,8 @@ export default {
     EventDid: 'IdentityId',
     EventCounts: 'Vec<u32>',
     ErrorAt: '(u32, DispatchError)',
-    InvestorUid: '[u8; 16]',
     Ticker: '[u8; 12]',
     CddId: '[u8; 32]',
-    ScopeId: '[u8; 32]',
     PosRatio: '(u32, u32)',
     DocumentId: 'u32',
     DocumentName: 'Text',
@@ -457,19 +455,6 @@ export default {
         Custom: 'Vec<u8>',
       },
     },
-    InvestorZKProofData: '[u8; 64]',
-    Scalar: '[u8; 32]',
-    RistrettoPoint: '[u8; 32]',
-    ZkProofData: {
-      challenge_responses: '[Scalar; 2]',
-      subtract_expressions_res: 'RistrettoPoint',
-      blinded_scope_did_hash: 'RistrettoPoint',
-    },
-    ScopeClaimProof: {
-      proof_scope_id_wellformed: 'Signature',
-      proof_scope_id_cdd_id_match: 'ZkProofData',
-      scope_id: 'RistrettoPoint',
-    },
     CustomClaimTypeId: 'u32',
     Claim: {
       _enum: {
@@ -482,9 +467,6 @@ export default {
         Jurisdiction: '(CountryCode, Scope)',
         Exempted: 'Scope',
         Blocked: 'Scope',
-        InvestorUniqueness: '(Scope, ScopeId, CddId)',
-        NoData: '',
-        InvestorUniquenessV2: 'CddId',
         Custom: '(CustomClaimTypeId, Option<Scope>)',
       },
     },
@@ -499,9 +481,6 @@ export default {
         Jurisdiction: '',
         Exempted: '',
         Blocked: '',
-        InvestorUniqueness: '',
-        NoData: '',
-        InvestorUniquenessV2: '',
         Custom: 'CustomClaimTypeId',
       },
     },
@@ -562,16 +541,6 @@ export default {
     TickerRegistrationConfig: {
       max_ticker_length: 'u8',
       registration_length: 'Option<Moment>',
-    },
-    ClassicTickerRegistration: {
-      eth_owner: 'EthereumAddress',
-      is_created: 'bool',
-    },
-    ClassicTickerImport: {
-      eth_owner: 'EthereumAddress',
-      ticker: 'Ticker',
-      is_contract: 'bool',
-      is_created: 'bool',
     },
     EthereumAddress: '[u8; 20]',
     EcdsaSignature: '[u8; 65]',
@@ -977,12 +946,6 @@ export default {
       trade_date: 'Option<Moment>',
       value_date: 'Option<Moment>',
     },
-    Leg: {
-      from: 'PortfolioId',
-      to: 'PortfolioId',
-      asset: 'Ticker',
-      amount: 'Balance',
-    },
     Venue: {
       creator: 'IdentityId',
       venue_type: 'VenueType',
@@ -1135,6 +1098,12 @@ export default {
       intended_count: 'u32',
       running_count: 'u32',
     },
+    CanTransferGranularReturn: {
+      _enum: {
+        Ok: 'GranularCanTransferResult',
+        Err: 'DispatchError',
+      },
+    },
     GranularCanTransferResult: {
       invalid_granularity: 'bool',
       self_transfer: 'bool',
@@ -1191,16 +1160,33 @@ export default {
       ticker: 'Ticker',
       amount: 'Balance',
     },
-    LegAsset: {
-      _enum: {
-        Fungible: 'FungibleToken',
-        NonFungible: 'NFTs',
-      },
+    OffChainAsset: {
+      ticker: 'Ticker',
+      amount: 'Balance',
     },
-    LegV2: {
-      from: 'PortfolioId',
-      to: 'PortfolioId',
-      asset: 'LegAsset',
+    FungibleLeg: {
+      sender: 'PortfolioId',
+      receiver: 'PortfolioId',
+      ticker: 'Ticker',
+      amount: 'Balance',
+    },
+    NonFungibleLeg: {
+      sender: 'PortfolioId',
+      receiver: 'PortfolioId',
+      nfts: 'NFTs',
+    },
+    OffChainLeg: {
+      sender_identity: 'IdentityId',
+      receiver_identity: 'IdentityId',
+      ticker: 'Ticker',
+      amount: 'Balance',
+    },
+    Leg: {
+      _enum: {
+        Fungible: 'FungibleLeg',
+        NonFungible: 'NonFungibleLeg',
+        OffChain: 'OffChainLeg',
+      },
     },
     FundDescription: {
       _enum: {
@@ -1220,37 +1206,15 @@ export default {
         Custom: 'CustomAssetTypeId',
       },
     },
+    ExecuteInstructionInfo: {
+      fungible_tokens: 'u32',
+      non_fungible_tokens: 'u32',
+      off_chain_assets: 'u32',
+      consumed_weight: 'Weight',
+      error: 'Option<String>',
+    },
   },
   rpc: {
-    compliance: {
-      canTransfer: {
-        description:
-          'Checks whether a transaction with given parameters is compliant to the compliance manager conditions',
-        params: [
-          {
-            name: 'ticker',
-            type: 'Ticker',
-            isOptional: false,
-          },
-          {
-            name: 'fromDid',
-            type: 'Option<IdentityId>',
-            isOptional: false,
-          },
-          {
-            name: 'toDid',
-            type: 'Option<IdentityId>',
-            isOptional: false,
-          },
-          {
-            name: 'blockHash',
-            type: 'Hash',
-            isOptional: true,
-          },
-        ],
-        type: 'AssetComplianceResult',
-      },
-    },
     identity: {
       isIdentityHasValidCdd: {
         description: 'use to tell whether the given did has valid cdd claim or not',
@@ -1364,6 +1328,28 @@ export default {
         ],
         type: 'Option<KeyIdentityData>',
       },
+      validCDDClaims: {
+        description:
+          'Returns all valid IdentityClaim of type CustomerDueDiligence for the given target_identity',
+        params: [
+          {
+            name: 'target_identity',
+            type: 'IdentityId',
+            isOptional: false,
+          },
+          {
+            name: 'cdd_checker_leeway',
+            type: 'u64',
+            isOptional: true,
+          },
+          {
+            name: 'blockHash',
+            type: 'Hash',
+            isOptional: true,
+          },
+        ],
+        type: 'Vec<IdentityClaim>',
+      },
     },
     pips: {
       getVotes: {
@@ -1447,52 +1433,6 @@ export default {
       },
     },
     asset: {
-      canTransfer: {
-        description: 'Checks whether a transaction with given parameters can take place or not',
-        params: [
-          {
-            name: 'sender',
-            type: 'AccountId',
-            isOptional: false,
-          },
-          {
-            name: 'fromCustodian',
-            type: 'Option<PolymeshPrimitivesIdentityId>',
-            isOptional: false,
-          },
-          {
-            name: 'fromPortfolio',
-            type: 'PortfolioId',
-            isOptional: false,
-          },
-          {
-            name: 'toCustodian',
-            type: 'Option<PolymeshPrimitivesIdentityId>',
-            isOptional: false,
-          },
-          {
-            name: 'toPortfolio',
-            type: 'PortfolioId',
-            isOptional: false,
-          },
-          {
-            name: 'ticker',
-            type: 'Ticker',
-            isOptional: false,
-          },
-          {
-            name: 'value',
-            type: 'Balance',
-            isOptional: false,
-          },
-          {
-            name: 'blockHash',
-            type: 'Hash',
-            isOptional: true,
-          },
-        ],
-        type: 'CanTransferResult',
-      },
       canTransferGranular: {
         description:
           'Checks whether a transaction with given parameters can take place or not. The result is granular meaning each check is run and returned regardless of outcome.',
@@ -1533,7 +1473,7 @@ export default {
             isOptional: true,
           },
         ],
-        type: 'GranularCanTransferResult',
+        type: 'CanTransferGranularReturn',
       },
     },
     group: {
@@ -1589,6 +1529,287 @@ export default {
         type: 'DispatchResult',
       },
     },
+    settlement: {
+      getExecuteInstructionInfo: {
+        description:
+          'Returns an ExecuteInstructionInfo instance, containing the consumed weight and the number of tokens in the instruction.',
+        params: [
+          {
+            name: 'instruction_id',
+            type: 'InstructionId',
+            isOptional: false,
+          },
+          {
+            name: 'blockHash',
+            type: 'Hash',
+            isOptional: true,
+          },
+        ],
+        type: 'ExecuteInstructionInfo',
+      },
+    },
+  },
+  runtime: {
+    AssetApi: [
+      {
+        methods: {
+          can_transfer_granular: {
+            description:
+              'Checks whether a transaction with given parameters can take place or not. The result is granular meaning each check is run and returned regardless of outcome.',
+            params: [
+              {
+                name: 'from_custodian',
+                type: 'Option<IdentityId>',
+              },
+              {
+                name: 'from_portfolio',
+                type: 'PortfolioId',
+              },
+              {
+                name: 'to_custodian',
+                type: 'Option<IdentityId>',
+              },
+              {
+                name: 'to_portfolio',
+                type: 'PortfolioId',
+              },
+              {
+                name: 'ticker',
+                type: 'Ticker',
+              },
+              {
+                name: 'value',
+                type: 'Balance',
+              },
+            ],
+            type: 'CanTransferGranularReturn',
+          },
+        },
+        version: 3,
+      },
+    ],
+    GroupApi: [
+      {
+        methods: {
+          get_cdd_valid_members: {
+            description: 'Get the CDD members',
+            params: [],
+            type: 'Vec<Member>',
+          },
+          get_gc_valid_members: {
+            description: 'Get the GC members',
+            params: [],
+            type: 'Vec<Member>',
+          },
+        },
+        version: 1,
+      },
+    ],
+    IdentityApi: [
+      {
+        methods: {
+          is_identity_has_valid_ddd: {
+            description: 'use to tell whether the given did has valid cdd claim or not',
+            params: [
+              {
+                name: 'did',
+                type: 'IdentityId',
+              },
+              {
+                name: 'buffer_time',
+                type: 'Option<u64>',
+              },
+            ],
+            type: 'CddStatus',
+          },
+          get_asset_did: {
+            description: 'function is used to query the given ticker DID',
+            params: [
+              {
+                name: 'ticker',
+                type: 'Ticker',
+              },
+            ],
+            type: 'AssetDidResult',
+          },
+          get_did_records: {
+            description: 'Used to get the did record values for a given DID',
+            params: [
+              {
+                name: 'did',
+                type: 'IdentityId',
+              },
+            ],
+            type: 'RpcDidRecords',
+          },
+          get_did_status: {
+            description: 'Retrieve status of the DID',
+            params: [
+              {
+                name: 'did',
+                type: 'Vec<IdentityId>',
+              },
+            ],
+            type: 'Vec<DidStatus>',
+          },
+          get_filtered_authorizations: {
+            description:
+              'Retrieve authorizations data for a given signatory and filtered using the given authorization type',
+            params: [
+              {
+                name: 'signatory',
+                type: 'Signatory',
+              },
+              {
+                name: 'allow_expired',
+                type: 'bool',
+              },
+              {
+                name: 'auth_type',
+                type: 'Option<AuthorizationType>',
+              },
+            ],
+            type: 'Vec<Authorization>',
+          },
+          get_key_identity_data: {
+            description: 'Query relation between a signing key and a DID',
+            params: [
+              {
+                name: 'acc',
+                type: 'AccountId',
+              },
+            ],
+            type: 'Option<KeyIdentityData>',
+          },
+          valid_cdd_claims: {
+            description:
+              'Returns all valid IdentityClaim of type CustomerDueDiligence for the given target_identity',
+            params: [
+              {
+                name: 'target_identity',
+                type: 'IdentityId',
+              },
+              {
+                name: 'cdd_checker_leeway',
+                type: 'Option<u64>',
+              },
+            ],
+            type: 'Vec<IdentityClaim>',
+          },
+        },
+        version: 3,
+      },
+    ],
+    NFTApi: [
+      {
+        methods: {
+          validate_nft_transfer: {
+            description:
+              'Verifies if and the sender and receiver are not the same, if both have valid balances, if the sender owns the nft, and if all compliance rules are being respected.',
+            params: [
+              {
+                name: 'sender_portfolio',
+                type: 'PortfolioId',
+              },
+              {
+                name: 'receiver_portfolio',
+                type: 'PortfolioId',
+              },
+              {
+                name: 'nfts',
+                type: 'NFTs',
+              },
+            ],
+            type: 'DispatchResult',
+          },
+        },
+        version: 1,
+      },
+    ],
+    SettlementApi: [
+      {
+        methods: {
+          get_execute_instruction_info: {
+            description:
+              'Returns an ExecuteInstructionInfo instance, containing the consumed weight and the number of tokens in the instruction.',
+            params: [
+              {
+                name: 'instruction_id',
+                type: 'InstructionId',
+              },
+            ],
+            type: 'ExecuteInstructionInfo',
+          },
+        },
+        version: 1,
+      },
+    ],
+    PipsApi: [
+      {
+        methods: {
+          get_votes: {
+            description: 'Summary of votes of a proposal given by index',
+            params: [
+              {
+                name: 'index',
+                type: 'PipId',
+              },
+            ],
+            type: 'VoteCount',
+          },
+          proposed_by: {
+            description: 'Retrieves proposal indices started by address',
+            params: [
+              {
+                name: 'address',
+                type: 'AccountId',
+              },
+            ],
+            type: 'Vec<PipId>',
+          },
+          voted_on: {
+            description: 'Retrieves proposal address indices voted on',
+            params: [
+              {
+                name: 'address',
+                type: 'AccountId',
+              },
+            ],
+            type: 'Vec<PipId>',
+          },
+        },
+        version: 1,
+      },
+    ],
+    ProtocolFeeApi: [
+      {
+        methods: {
+          compute_fee: {
+            description: 'Gets the fee of a chargeable extrinsic operation',
+            params: [
+              {
+                name: 'op',
+                type: 'ProtocolOp',
+              },
+            ],
+            type: 'CappedFee',
+          },
+        },
+        version: 1,
+      },
+    ],
+    StakingApi: [
+      {
+        methods: {
+          get_curve: {
+            description: 'Retrieves curves parameters',
+            params: [],
+            type: 'Vec<(Perbill, Perbill)>',
+          },
+        },
+        version: 1,
+      },
+    ],
   },
   signedExtensions: {
     StoreCallMetadata: {

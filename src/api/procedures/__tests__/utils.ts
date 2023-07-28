@@ -126,7 +126,7 @@ describe('assertInstructionValid', () => {
     entityMockUtils.configureMocks({
       instructionOptions: {
         details: {
-          status: InstructionStatus.Executed,
+          status: InstructionStatus.Success,
         } as InstructionDetails,
       },
     });
@@ -255,7 +255,7 @@ describe('assertInstructionValidForManualExecution', () => {
       assertInstructionValidForManualExecution(
         {
           ...instructionDetails,
-          status: InstructionStatus.Executed,
+          status: InstructionStatus.Success,
         },
         mockContext
       )
@@ -296,9 +296,22 @@ describe('assertInstructionValidForManualExecution', () => {
     ).rejects.toThrowError(expectedError);
   });
 
-  it('should not throw an error', () => {
-    return expect(
+  it('should not throw an error', async () => {
+    // executing instruction of type SettleManual
+    await expect(
       assertInstructionValidForManualExecution(instructionDetails, mockContext)
+    ).resolves.not.toThrow();
+
+    // executing failed instruction
+    await expect(
+      assertInstructionValidForManualExecution(
+        {
+          ...instructionDetails,
+          status: InstructionStatus.Failed,
+          type: InstructionType.SettleOnAffirmation,
+        },
+        mockContext
+      )
     ).resolves.not.toThrow();
   });
 });
@@ -535,9 +548,7 @@ describe('assertCaCheckpointValid', () => {
     expect(error.message).toBe('Payment date must be after the Checkpoint date');
 
     checkpoint = entityMockUtils.getCheckpointScheduleInstance({
-      details: {
-        nextCheckpointDate: date,
-      },
+      points: [date],
     });
     try {
       await assertDistributionDatesValid(checkpoint, paymentDate, expiryDate);
@@ -565,23 +576,9 @@ describe('assertCaCheckpointValid', () => {
     expect(error.message).toBe('Expiry date must be after the Checkpoint date');
 
     checkpoint = entityMockUtils.getCheckpointScheduleInstance({
-      details: {
-        nextCheckpointDate: date,
-      },
-    });
-
-    try {
-      await assertDistributionDatesValid(checkpoint, paymentDate, expiryDate);
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).toBe('Expiry date must be after the Checkpoint date');
-
-    checkpoint = entityMockUtils.getCheckpointScheduleInstance({
-      details: {
-        nextCheckpointDate: new Date(new Date().getTime() - 300000),
-      },
+      points: [date],
+      exists: true,
+      details: { nextCheckpointDate: expiryDate },
     });
 
     return expect(

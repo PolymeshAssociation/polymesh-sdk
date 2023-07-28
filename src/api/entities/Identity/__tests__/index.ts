@@ -11,7 +11,7 @@ import { bool } from '@polkadot/types/primitive';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import { Asset, Context, Entity, Identity } from '~/internal';
+import { Asset, Context, Entity, Identity, PolymeshError } from '~/internal';
 import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import {
   assetHoldersQuery,
@@ -24,6 +24,7 @@ import { MockContext } from '~/testUtils/mocks/dataSources';
 import {
   Account,
   DistributionWithDetails,
+  ErrorCode,
   HistoricInstruction,
   IdentityRole,
   Order,
@@ -80,12 +81,14 @@ describe('Identity class', () => {
   let context: MockContext;
   let stringToIdentityIdSpy: jest.SpyInstance<PolymeshPrimitivesIdentityId, [string, Context]>;
   let identityIdToStringSpy: jest.SpyInstance<string, [PolymeshPrimitivesIdentityId]>;
+  let u64ToBigNumberSpy: jest.SpyInstance<BigNumber, [u64]>;
 
   beforeAll(() => {
     dsMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToIdentityIdSpy = jest.spyOn(utilsConversionModule, 'stringToIdentityId');
     identityIdToStringSpy = jest.spyOn(utilsConversionModule, 'identityIdToString');
+    u64ToBigNumberSpy = jest.spyOn(utilsConversionModule, 'u64ToBigNumber');
   });
 
   beforeEach(() => {
@@ -380,20 +383,15 @@ describe('Identity class', () => {
       expect(callback).toBeCalledWith(fakeValue);
     });
 
-    it("should throw an error if the Asset doesn't exist", async () => {
-      when(assetMock)
-        .calledWith(rawTicker)
-        .mockResolvedValue(dsMockUtils.createMockSecurityToken());
+    it("should throw an error if the Asset doesn't exist", () => {
+      when(assetMock).calledWith(rawTicker).mockResolvedValue(dsMockUtils.createMockOption());
 
-      let error;
+      const expectedError = new PolymeshError({
+        code: ErrorCode.DataUnavailable,
+        message: `There is no Asset with ticker "${ticker}"`,
+      });
 
-      try {
-        await identity.getAssetBalance({ ticker });
-      } catch (err) {
-        error = err;
-      }
-
-      expect(error.message).toBe(`There is no Asset with ticker "${ticker}"`);
+      return expect(identity.getAssetBalance({ ticker })).rejects.toThrow(expectedError);
     });
   });
 
@@ -708,32 +706,16 @@ describe('Identity class', () => {
     });
 
     it('should return a list of Venues', async () => {
-      when(dsMockUtils.createQueryMock('settlement', 'userVenues'))
-        .calledWith(rawDid)
-        .mockResolvedValue([rawVenueId]);
+      when(u64ToBigNumberSpy).calledWith(rawVenueId).mockReturnValue(venueId);
+      const mock = dsMockUtils.createQueryMock('settlement', 'userVenues');
+      const mockStorageKey = { args: [rawDid, rawVenueId] };
+
+      mock.keys = jest.fn().mockResolvedValue([mockStorageKey]);
 
       const identity = new Identity({ did }, context);
 
       const result = await identity.getVenues();
       expect(result[0].id).toEqual(venueId);
-    });
-
-    it('should allow subscription', async () => {
-      const unsubCallback = 'unsubCallBack';
-
-      dsMockUtils
-        .createQueryMock('settlement', 'userVenues')
-        .mockImplementation(async (_, cbFunc) => {
-          cbFunc([rawVenueId]);
-          return unsubCallback;
-        });
-
-      const identity = new Identity({ did }, context);
-
-      const callback = jest.fn();
-      const result = await identity.getVenues(callback);
-      expect(result).toEqual(unsubCallback);
-      expect(callback).toHaveBeenCalledWith([expect.objectContaining({ id: venueId })]);
     });
   });
 
@@ -766,64 +748,6 @@ describe('Identity class', () => {
       });
 
       return expect(identity.exists()).resolves.toBe(false);
-    });
-  });
-
-  describe('method: getScopeId', () => {
-    let did: string;
-    let identity: Identity;
-    let ticker: string;
-    let scopeId: string;
-
-    let rawDid: PolymeshPrimitivesIdentityId;
-    let rawTicker: PolymeshPrimitivesTicker;
-    let rawScopeId: PolymeshPrimitivesIdentityId;
-
-    let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
-
-    beforeAll(() => {
-      did = 'someDid';
-      ticker = 'SOME_TICKER';
-      scopeId = 'someScopeId';
-
-      rawDid = dsMockUtils.createMockIdentityId(did);
-      rawTicker = dsMockUtils.createMockTicker(ticker);
-      rawScopeId = dsMockUtils.createMockIdentityId(scopeId);
-
-      stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
-    });
-
-    beforeEach(() => {
-      when(stringToIdentityIdSpy).calledWith(did, context).mockReturnValue(rawDid);
-      when(stringToTickerSpy).calledWith(ticker, context).mockReturnValue(rawTicker);
-      identity = new Identity({ did: 'someDid' }, context);
-
-      dsMockUtils.createQueryMock('asset', 'scopeIdOf', {
-        returnValue: rawScopeId,
-      });
-    });
-
-    afterAll(() => {
-      jest.restoreAllMocks();
-    });
-
-    it("should return the Identity's scopeId associated to the Asset", async () => {
-      let result = await identity.getScopeId({ asset: ticker });
-      expect(result).toEqual(scopeId);
-
-      result = await identity.getScopeId({
-        asset: entityMockUtils.getAssetInstance({ ticker }),
-      });
-      expect(result).toEqual(scopeId);
-    });
-
-    it("should return null if the Identity doesn't have a ScopeId for the Asset", async () => {
-      dsMockUtils.createQueryMock('asset', 'scopeIdOf', {
-        returnValue: dsMockUtils.createMockIdentityId(),
-      });
-
-      const result = await identity.getScopeId({ asset: ticker });
-      expect(result).toBeNull();
     });
   });
 
@@ -981,9 +905,9 @@ describe('Identity class', () => {
 
       userAuthsMock.entries = entriesMock;
 
-      const instructionDetailsMock = dsMockUtils.createQueryMock(
+      const instructionStatusesMock = dsMockUtils.createQueryMock(
         'settlement',
-        'instructionDetails',
+        'instructionStatuses',
         {
           multi: [],
         }
@@ -991,52 +915,27 @@ describe('Identity class', () => {
 
       const multiMock = jest.fn();
 
-      const rawInstructions = [
-        dsMockUtils.createMockInstruction({
-          instructionId: dsMockUtils.createMockU64(id1),
-          venueId: dsMockUtils.createMockU64(),
-          status: dsMockUtils.createMockInstructionStatus('Pending'),
-          settlementType: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
-          createdAt: dsMockUtils.createMockOption(),
-          tradeDate: dsMockUtils.createMockOption(),
-          valueDate: dsMockUtils.createMockOption(),
-        }),
-        dsMockUtils.createMockInstruction({
-          instructionId: dsMockUtils.createMockU64(id2),
-          venueId: dsMockUtils.createMockU64(),
-          status: dsMockUtils.createMockInstructionStatus('Pending'),
-          settlementType: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
-          createdAt: dsMockUtils.createMockOption(),
-          tradeDate: dsMockUtils.createMockOption(),
-          valueDate: dsMockUtils.createMockOption(),
-        }),
-        dsMockUtils.createMockInstruction({
-          instructionId: dsMockUtils.createMockU64(id3),
-          venueId: dsMockUtils.createMockU64(),
-          status: dsMockUtils.createMockInstructionStatus('Unknown'),
-          settlementType: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
-          createdAt: dsMockUtils.createMockOption(),
-          tradeDate: dsMockUtils.createMockOption(),
-          valueDate: dsMockUtils.createMockOption(),
-        }),
-        dsMockUtils.createMockInstruction({
-          instructionId: dsMockUtils.createMockU64(id4),
-          venueId: dsMockUtils.createMockU64(),
-          status: dsMockUtils.createMockInstructionStatus('Failed'),
-          settlementType: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
-          createdAt: dsMockUtils.createMockOption(),
-          tradeDate: dsMockUtils.createMockOption(),
-          valueDate: dsMockUtils.createMockOption(),
-        }),
+      const rawInstructionStatuses = [
+        dsMockUtils.createMockInstructionStatus('Pending'),
+        dsMockUtils.createMockInstructionStatus('Pending'),
+        dsMockUtils.createMockInstructionStatus('Unknown'),
+        dsMockUtils.createMockInstructionStatus('Failed'),
       ];
 
-      multiMock.mockResolvedValueOnce([...rawInstructions, rawInstructions[0], rawInstructions[1]]);
-      multiMock.mockResolvedValueOnce([...rawInstructions, rawInstructions[0], rawInstructions[1]]);
+      multiMock.mockResolvedValueOnce([
+        ...rawInstructionStatuses,
+        rawInstructionStatuses[0],
+        rawInstructionStatuses[1],
+      ]);
+      multiMock.mockResolvedValueOnce([
+        ...rawInstructionStatuses,
+        rawInstructionStatuses[0],
+        rawInstructionStatuses[1],
+      ]);
       multiMock.mockResolvedValueOnce([
         dsMockUtils.createMockInstruction({
           instructionId: dsMockUtils.createMockU64(id5),
           venueId: dsMockUtils.createMockU64(),
-          status: dsMockUtils.createMockInstructionStatus('Pending'),
           settlementType: dsMockUtils.createMockSettlementType('SettleOnAffirmation'),
           createdAt: dsMockUtils.createMockOption(),
           tradeDate: dsMockUtils.createMockOption(),
@@ -1044,7 +943,7 @@ describe('Identity class', () => {
         }),
       ]);
 
-      instructionDetailsMock.multi = multiMock;
+      instructionStatusesMock.multi = multiMock;
     });
 
     it('should return all instructions in which the identity is involved, grouped by status', async () => {

@@ -1,5 +1,4 @@
 import BigNumber from 'bignumber.js';
-import P from 'bluebird';
 
 import {
   Asset,
@@ -11,19 +10,14 @@ import {
   removeCheckpointSchedule,
 } from '~/internal';
 import {
-  CalendarPeriod,
   CreateCheckpointScheduleParams,
   ErrorCode,
   ProcedureMethod,
   RemoveCheckpointScheduleParams,
   ScheduleWithDetails,
 } from '~/types';
-import {
-  storedScheduleToCheckpointScheduleParams,
-  stringToTicker,
-  u64ToBigNumber,
-} from '~/utils/conversion';
-import { createProcedureMethod, periodComplexity } from '~/utils/internal';
+import { momentToDate, stringToTicker, u64ToBigNumber } from '~/utils/conversion';
+import { createProcedureMethod } from '~/utils/internal';
 
 /**
  * Handles all Asset Checkpoint Schedules related functionality
@@ -97,38 +91,24 @@ export class Schedules extends Namespace<Asset> {
 
     const rawTicker = stringToTicker(ticker, context);
 
-    const rawSchedules = await checkpoint.schedules(rawTicker);
+    const rawSchedulesEntries = await checkpoint.scheduledCheckpoints.entries(rawTicker);
 
-    return P.map(rawSchedules, async rawSchedule => {
-      const scheduleParams = storedScheduleToCheckpointScheduleParams(rawSchedule);
-      const schedule = new CheckpointSchedule({ ...scheduleParams, ticker }, context);
+    return rawSchedulesEntries.map(([key, rawScheduleOpt]) => {
+      const rawSchedule = rawScheduleOpt.unwrap();
+      const rawId = key.args[1];
+      const id = u64ToBigNumber(rawId);
+      const points = [...rawSchedule.pending].map(rawPoint => momentToDate(rawPoint));
+      const schedule = new CheckpointSchedule({ ticker, id, pendingPoints: points }, context);
 
-      const { remaining: remainingCheckpoints, nextCheckpointDate } = scheduleParams;
+      const remainingCheckpoints = new BigNumber([...rawSchedule.pending].length);
       return {
         schedule,
         details: {
           remainingCheckpoints,
-          nextCheckpointDate,
+          nextCheckpointDate: points[0],
         },
       };
     });
-  }
-
-  /**
-   * Calculate an abstract measure of the complexity of a given Calendar Period
-   */
-  public complexityOf(period: CalendarPeriod): BigNumber {
-    return periodComplexity(period);
-  }
-
-  /**
-   * Calculate the sum of the complexity of all current Checkpoint Schedules for this Asset.
-   *   The number cannot exceed the Asset's maximum complexity (obtained via {@link maxComplexity})
-   */
-  public async currentComplexity(): Promise<BigNumber> {
-    const schedules = await this.get();
-
-    return schedules.reduce((prev, next) => prev.plus(next.schedule.complexity), new BigNumber(0));
   }
 
   /**

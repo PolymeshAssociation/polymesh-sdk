@@ -25,6 +25,7 @@ import {
   MultiSigProposal,
   NumberedPortfolio,
   Offering,
+  Portfolio,
   Subsidy,
   TickerReservation,
   Venue,
@@ -38,8 +39,6 @@ import {
   AssetWithGroup,
   Authorization,
   AuthorizationType,
-  CalendarPeriod,
-  CalendarUnit,
   CheckPermissionsResult,
   CheckRolesResult,
   ComplianceRequirements,
@@ -126,6 +125,7 @@ interface IdentityOptions extends EntityOptions {
   hasValidCdd?: EntityGetter<boolean>;
   isCddProvider?: EntityGetter<boolean>;
   getPrimaryAccount?: EntityGetter<PermissionedAccount>;
+  portfoliosGetPortfolio?: EntityGetter<Portfolio>;
   authorizationsGetReceived?: EntityGetter<AuthorizationRequest[]>;
   authorizationsGetSent?: EntityGetter<ResultSet<AuthorizationRequest>>;
   authorizationsGetOne?: EntityGetter<AuthorizationRequest>;
@@ -266,8 +266,8 @@ interface CheckpointOptions extends EntityOptions {
 interface CheckpointScheduleOptions extends EntityOptions {
   id?: BigNumber;
   ticker?: string;
+  points?: Date[];
   start?: Date;
-  period?: CalendarPeriod | null;
   expiryDate?: Date | null;
   complexity?: BigNumber;
   details?: EntityGetter<ScheduleDetails>;
@@ -516,7 +516,10 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     hasRole!: jest.Mock;
     hasValidCdd!: jest.Mock;
     getPrimaryAccount!: jest.Mock;
-    portfolios = {};
+    portfolios = {} as {
+      getPortfolio: jest.Mock;
+    };
+
     authorizations = {} as {
       getReceived: jest.Mock;
       getSent: jest.Mock;
@@ -555,6 +558,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
       this.hasRole = createEntityGetterMock(opts.hasRole);
       this.hasValidCdd = createEntityGetterMock(opts.hasValidCdd);
       this.getPrimaryAccount = createEntityGetterMock(opts.getPrimaryAccount);
+      this.portfolios.getPortfolio = createEntityGetterMock(opts.portfoliosGetPortfolio);
       this.authorizations.getReceived = createEntityGetterMock(opts.authorizationsGetReceived);
       this.authorizations.getSent = createEntityGetterMock(opts.authorizationsGetSent);
       this.authorizations.getOne = createEntityGetterMock(opts.authorizationsGetOne);
@@ -600,6 +604,7 @@ const MockIdentityClass = createMockEntityClass<IdentityOptions>(
     assetPermissionsCheckPermissions: {
       result: true,
     },
+    portfoliosGetPortfolio: getDefaultPortfolioInstance(),
     assetPermissionsHasPermissions: true,
     hasRole: true,
     hasRoles: true,
@@ -1291,7 +1296,6 @@ const MockCheckpointScheduleClass = createMockEntityClass<CheckpointScheduleOpti
     id!: BigNumber;
     asset!: Asset;
     start!: Date;
-    period!: CalendarPeriod | null;
     expiryDate!: Date | null;
     complexity!: BigNumber;
     details!: jest.Mock;
@@ -1300,7 +1304,7 @@ const MockCheckpointScheduleClass = createMockEntityClass<CheckpointScheduleOpti
      * @hidden
      */
     public argsToOpts(...args: ConstructorParameters<typeof CheckpointSchedule>) {
-      return extractFromArgs(args, ['id', 'ticker', 'start', 'period']);
+      return extractFromArgs(args, ['id', 'ticker', 'pendingPoints']);
     }
 
     /**
@@ -1311,7 +1315,6 @@ const MockCheckpointScheduleClass = createMockEntityClass<CheckpointScheduleOpti
       this.id = opts.id;
       this.asset = getAssetInstance({ ticker: opts.ticker });
       this.start = opts.start;
-      this.period = opts.period;
       this.expiryDate = opts.expiryDate;
       this.complexity = opts.complexity;
       this.details = createEntityGetterMock(opts.details);
@@ -1321,10 +1324,7 @@ const MockCheckpointScheduleClass = createMockEntityClass<CheckpointScheduleOpti
     id: new BigNumber(1),
     ticker: 'SOME_TICKER',
     start: new Date(new Date().getTime() + 24 * 60 * 60 * 1000),
-    period: {
-      unit: CalendarUnit.Month,
-      amount: new BigNumber(1),
-    },
+    points: [new Date(new Date().getTime() + 24 * 60 * 60 * 1000)],
     expiryDate: new Date(new Date().getTime() + 60 * 24 * 60 * 60 * 1000),
     complexity: new BigNumber(2),
     details: {

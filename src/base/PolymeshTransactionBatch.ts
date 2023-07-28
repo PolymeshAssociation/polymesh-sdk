@@ -242,7 +242,7 @@ export class PolymeshTransactionBatch<
     receipt: ISubmittableResult
   ): void {
     // If one of the transactions in the batch fails, this event gets emitted
-    const [failed] = filterEventRecords(receipt, 'utility', 'BatchInterrupted', true);
+    const [failed] = filterEventRecords(receipt, 'utility', 'BatchInterruptedOld', true);
 
     if (failed) {
       const {

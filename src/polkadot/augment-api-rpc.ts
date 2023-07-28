@@ -1,10 +1,14 @@
 // Auto-generated via `yarn polkadot-types-from-chain`, do not edit
 /* eslint-disable */
 
+// import type lookup before we augment - in some environments
+// this is required to allow for ambient/previous definitions
 import {
   PolymeshPrimitivesAuthorization,
   PolymeshPrimitivesIdentityId,
 } from '@polkadot/types/lookup';
+import '@polkadot/rpc-core/types/jsonrpc';
+
 import type { AugmentedRpc } from '@polkadot/rpc-core/types';
 import type { Metadata, StorageKey } from '@polkadot/types';
 import type {
@@ -100,15 +104,16 @@ import type {
 } from '@polkadot/types/interfaces/system';
 import type { IExtrinsic, Observable } from '@polkadot/types/types';
 import type {
-  AssetComplianceResult,
   AssetDidResult,
   AuthorizationType,
-  CanTransferResult,
+  CanTransferGranularReturn,
   CappedFee,
   CddStatus,
   DidStatus,
-  GranularCanTransferResult,
+  ExecuteInstructionInfo,
+  IdentityClaim,
   IdentityId,
+  InstructionId,
   KeyIdentityData,
   Member,
   NFTs,
@@ -121,37 +126,32 @@ import type {
   VoteCount,
 } from 'polymesh-types/polymesh';
 
+export type __AugmentedRpc = AugmentedRpc<() => unknown>;
+
 declare module '@polkadot/rpc-core/types/jsonrpc' {
-  export interface RpcInterface {
+  interface RpcInterface {
     asset: {
-      /**
-       * Checks whether a transaction with given parameters can take place or not
-       **/
-      canTransfer: AugmentedRpc<
-        (
-          sender: AccountId | string | Uint8Array,
-          fromCustodian: Option<PolymeshPrimitivesIdentityId> | null | object | string | Uint8Array,
-          fromPortfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
-          toCustodian: Option<PolymeshPrimitivesIdentityId> | null | object | string | Uint8Array,
-          toPortfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
-          ticker: Ticker | string | Uint8Array,
-          value: Balance | AnyNumber | Uint8Array,
-          blockHash?: Hash | string | Uint8Array
-        ) => Observable<CanTransferResult>
-      >;
       /**
        * Checks whether a transaction with given parameters can take place or not. The result is granular meaning each check is run and returned regardless of outcome.
        **/
       canTransferGranular: AugmentedRpc<
         (
-          fromCustodian: Option<PolymeshPrimitivesIdentityId> | null | object | string | Uint8Array,
+          fromCustodian:
+            | Option<PolymeshPrimitivesIdentityId>
+            | null
+            | Uint8Array
+            | PolymeshPrimitivesIdentityId,
           fromPortfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
-          toCustodian: Option<PolymeshPrimitivesIdentityId> | null | object | string | Uint8Array,
+          toCustodian:
+            | Option<PolymeshPrimitivesIdentityId>
+            | null
+            | Uint8Array
+            | PolymeshPrimitivesIdentityId,
           toPortfolio: PortfolioId | { did?: any; kind?: any } | string | Uint8Array,
           ticker: Ticker | string | Uint8Array,
           value: Balance | AnyNumber | Uint8Array,
           blockHash?: Hash | string | Uint8Array
-        ) => Observable<GranularCanTransferResult>
+        ) => Observable<CanTransferGranularReturn>
       >;
     };
     author: {
@@ -196,11 +196,15 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
       /**
        * Submit and subscribe to watch an extrinsic until unsubscribed
        **/
-      submitAndWatchExtrinsic: AugmentedRpc<(extrinsic: IExtrinsic) => Observable<ExtrinsicStatus>>;
+      submitAndWatchExtrinsic: AugmentedRpc<
+        (extrinsic: Extrinsic | IExtrinsic | string | Uint8Array) => Observable<ExtrinsicStatus>
+      >;
       /**
        * Submit a fully formatted extrinsic for block inclusion
        **/
-      submitExtrinsic: AugmentedRpc<(extrinsic: IExtrinsic) => Observable<Hash>>;
+      submitExtrinsic: AugmentedRpc<
+        (extrinsic: Extrinsic | IExtrinsic | string | Uint8Array) => Observable<Hash>
+      >;
     };
     babe: {
       /**
@@ -314,21 +318,9 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
         ) => Observable<Option<u64>>
       >;
     };
-    compliance: {
-      /**
-       * Checks whether a transaction with given parameters is compliant to the compliance manager conditions
-       **/
-      canTransfer: AugmentedRpc<
-        (
-          ticker: Ticker | string | Uint8Array,
-          fromDid: Option<IdentityId> | null | object | string | Uint8Array,
-          toDid: Option<IdentityId> | null | object | string | Uint8Array,
-          blockHash?: Hash | string | Uint8Array
-        ) => Observable<AssetComplianceResult>
-      >;
-    };
     contracts: {
       /**
+       * @deprecated Use the runtime interface `api.call.contractsApi.call` instead
        * Executes a call to a contract
        **/
       call: AugmentedRpc<
@@ -349,6 +341,7 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
         ) => Observable<ContractExecResult>
       >;
       /**
+       * @deprecated Use the runtime interface `api.call.contractsApi.getStorage` instead
        * Returns the value under a specified storage key in a contract
        **/
       getStorage: AugmentedRpc<
@@ -359,6 +352,7 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
         ) => Observable<Option<Bytes>>
       >;
       /**
+       * @deprecated Use the runtime interface `api.call.contractsApi.instantiate` instead
        * Instantiate a new contract
        **/
       instantiate: AugmentedRpc<
@@ -372,6 +366,7 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
         ) => Observable<ContractInstantiateResult>
       >;
       /**
+       * @deprecated Not available in newer versions of the contracts interfaces
        * Returns the projected time a given contract will be able to sustain paying its rent
        **/
       rentProjection: AugmentedRpc<
@@ -381,6 +376,7 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
         ) => Observable<Option<BlockNumber>>
       >;
       /**
+       * @deprecated Use the runtime interface `api.call.contractsApi.uploadCode` instead
        * Upload new code without instantiating a contract from it
        **/
       uploadCode: AugmentedRpc<
@@ -486,7 +482,7 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
         (
           blockCount: U256 | AnyNumber | Uint8Array,
           newestBlock: BlockNumber | AnyNumber | Uint8Array,
-          rewardPercentiles: Option<Vec<f64>> | null | object | string | Uint8Array
+          rewardPercentiles: Option<Vec<f64>> | null | Uint8Array | Vec<f64> | f64[]
         ) => Observable<EthFeeHistory>
       >;
       /**
@@ -862,6 +858,16 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
           blockHash?: Hash | string | Uint8Array
         ) => Observable<CddStatus>
       >;
+      /**
+       * Returns all valid IdentityClaim of type CustomerDueDiligence for the given target_identity
+       **/
+      validCDDClaims: AugmentedRpc<
+        (
+          target_identity: IdentityId | string | Uint8Array,
+          cdd_checker_leeway?: u64 | AnyNumber | Uint8Array,
+          blockHash?: Hash | string | Uint8Array
+        ) => Observable<Vec<IdentityClaim>>
+      >;
     };
     mmr: {
       /**
@@ -933,6 +939,7 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
     };
     payment: {
       /**
+       * @deprecated Use `api.call.transactionPaymentApi.queryFeeDetails` instead
        * Query the detailed fee of a given encoded extrinsic
        **/
       queryFeeDetails: AugmentedRpc<
@@ -942,6 +949,7 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
         ) => Observable<FeeDetails>
       >;
       /**
+       * @deprecated Use `api.call.transactionPaymentApi.queryInfo` instead
        * Retrieves the fee information for an encoded extrinsic
        **/
       queryInfo: AugmentedRpc<
@@ -1012,6 +1020,17 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
        * Retrieves the list of RPC methods that are exposed by the node
        **/
       methods: AugmentedRpc<() => Observable<RpcMethods>>;
+    };
+    settlement: {
+      /**
+       * Returns an ExecuteInstructionInfo instance, containing the consumed weight and the number of tokens in the instruction.
+       **/
+      getExecuteInstructionInfo: AugmentedRpc<
+        (
+          instruction_id: InstructionId | AnyNumber | Uint8Array,
+          blockHash?: Hash | string | Uint8Array
+        ) => Observable<ExecuteInstructionInfo>
+      >;
     };
     staking: {
       /**
@@ -1091,6 +1110,7 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
         ) => Observable<u64>
       >;
       /**
+       * @deprecated Use `api.rpc.state.getKeysPaged` to retrieve keys
        * Retrieves the keys with a certain prefix
        **/
       getKeys: AugmentedRpc<
@@ -1115,6 +1135,7 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
        **/
       getMetadata: AugmentedRpc<(at?: BlockHash | string | Uint8Array) => Observable<Metadata>>;
       /**
+       * @deprecated Use `api.rpc.state.getKeysPaged` to retrieve keys
        * Returns the keys with prefix, leave empty to get all the keys (deprecated: Use getKeysPaged)
        **/
       getPairs: AugmentedRpc<
@@ -1202,9 +1223,9 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
       traceBlock: AugmentedRpc<
         (
           block: Hash | string | Uint8Array,
-          targets: Option<Text> | null | object | string | Uint8Array,
-          storageKeys: Option<Text> | null | object | string | Uint8Array,
-          methods: Option<Text> | null | object | string | Uint8Array
+          targets: Option<Text> | null | Uint8Array | Text | string,
+          storageKeys: Option<Text> | null | Uint8Array | Text | string,
+          methods: Option<Text> | null | Uint8Array | Text | string
         ) => Observable<TraceBlockResponse>
       >;
       /**

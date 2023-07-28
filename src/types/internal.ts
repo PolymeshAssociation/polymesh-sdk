@@ -25,7 +25,6 @@ import {
 } from '~/middleware/enumsV2';
 import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
 import {
-  CalendarPeriod,
   ClaimType,
   InputStatClaim,
   KnownAssetType,
@@ -260,12 +259,6 @@ export interface ExtrinsicIdentifierV2 {
   callId: MiddlewareV2CallId;
 }
 
-export interface ScheduleSpec {
-  start: Date | null;
-  period: CalendarPeriod | null;
-  repetitions: BigNumber | null;
-}
-
 export interface CorporateActionIdentifier {
   ticker: string;
   localId: BigNumber;
@@ -316,6 +309,8 @@ export enum InstructionStatus {
   Pending = 'Pending',
   Unknown = 'Unknown',
   Failed = 'Failed',
+  Rejected = 'Rejected',
+  Success = 'Success',
 }
 
 /**

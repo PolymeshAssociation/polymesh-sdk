@@ -4,9 +4,10 @@ import { Asset, CheckpointSchedule, Context, PolymeshError, Procedure } from '~/
 import { CreateCheckpointScheduleParams, ErrorCode, TxTags } from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
-  scheduleSpecToMeshScheduleSpec,
-  storedScheduleToCheckpointScheduleParams,
+  datesToScheduleCheckpoints,
+  momentToDate,
   stringToTicker,
+  u64ToBigNumber,
 } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
 
@@ -24,13 +25,17 @@ export const createCheckpointScheduleResolver =
   (ticker: string, context: Context) =>
   (receipt: ISubmittableResult): CheckpointSchedule => {
     const [{ data }] = filterEventRecords(receipt, 'checkpoint', 'ScheduleCreated');
+    const rawId = data[2];
+    const id = u64ToBigNumber(rawId);
 
-    const scheduleParams = storedScheduleToCheckpointScheduleParams(data[2]);
+    const rawPoints = data[3];
+    const points = [...rawPoints.pending].map(rawPoint => momentToDate(rawPoint));
 
     return new CheckpointSchedule(
       {
+        id,
         ticker,
-        ...scheduleParams,
+        pendingPoints: points,
       },
       context
     );
@@ -44,22 +49,24 @@ export async function prepareCreateCheckpointSchedule(
   args: Params
 ): Promise<TransactionSpec<CheckpointSchedule, ExtrinsicParams<'checkpoint', 'createSchedule'>>> {
   const { context } = this;
-  const { ticker, start, period, repetitions } = args;
+  const { ticker, points } = args;
 
   const now = new Date();
-  if (start && start < now) {
+
+  const anyInPast = points.some(point => point < now);
+  if (anyInPast) {
     throw new PolymeshError({
       code: ErrorCode.ValidationError,
-      message: 'Schedule start date must be in the future',
+      message: 'Schedule points must be in the future',
     });
   }
 
   const rawTicker = stringToTicker(ticker, context);
-  const rawSchedule = scheduleSpecToMeshScheduleSpec({ start, period, repetitions }, context);
+  const checkpointSchedule = datesToScheduleCheckpoints(points, context);
 
   return {
     transaction: context.polymeshApi.tx.checkpoint.createSchedule,
-    args: [rawTicker, rawSchedule],
+    args: [rawTicker, checkpointSchedule],
     resolver: createCheckpointScheduleResolver(ticker, context),
   };
 }

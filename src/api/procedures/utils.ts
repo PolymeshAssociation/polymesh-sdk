@@ -86,7 +86,7 @@ export async function assertInstructionValidForManualExecution(
 ): Promise<void> {
   const { status, type } = details;
 
-  if (status === InstructionStatus.Executed) {
+  if (status === InstructionStatus.Success || status === InstructionStatus.Rejected) {
     throw new PolymeshError({
       code: ErrorCode.NoDataChange,
       message: 'The Instruction has already been executed',
@@ -94,23 +94,27 @@ export async function assertInstructionValidForManualExecution(
   }
 
   if (type !== InstructionType.SettleManual) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: `You cannot manually execute settlement of type '${type}'`,
-    });
+    if (status !== InstructionStatus.Failed) {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: `You cannot manually execute settlement of type '${type}'`,
+      });
+    }
   }
 
-  const latestBlock = await context.getLatestBlock();
-  const { endAfterBlock } = details;
-  if (latestBlock.lte(endAfterBlock)) {
-    throw new PolymeshError({
-      code: ErrorCode.UnmetPrerequisite,
-      message: 'The Instruction cannot be executed until the specified end after block',
-      data: {
-        currentBlock: latestBlock,
-        endAfterBlock,
-      },
-    });
+  if (type === InstructionType.SettleManual) {
+    const latestBlock = await context.getLatestBlock();
+    const { endAfterBlock } = details;
+    if (latestBlock.lte(endAfterBlock)) {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: 'The Instruction cannot be executed until the specified end after block',
+        data: {
+          currentBlock: latestBlock,
+          endAfterBlock,
+        },
+      });
+    }
   }
 }
 

@@ -1,21 +1,19 @@
 import BigNumber from 'bignumber.js';
 import { filter, flatten, isEqual, uniqBy, uniqWith } from 'lodash';
 
-import { addInvestorUniquenessClaim, Context, Identity, modifyClaims } from '~/internal';
+import { Context, Identity, modifyClaims } from '~/internal';
 import { ClaimTypeEnum as MiddlewareV2ClaimType } from '~/middleware/enumsV2';
 import { didsWithClaims, issuerDidsWithClaimsByTarget } from '~/middleware/queries';
 import { claimsGroupingQuery, claimsQuery } from '~/middleware/queriesV2';
 import { ClaimTypeEnum, Query } from '~/middleware/types';
 import { ClaimsGroupBy, ClaimsOrderBy, Query as QueryV2 } from '~/middleware/typesV2';
 import {
-  AddInvestorUniquenessClaimParams,
   CddClaim,
   ClaimData,
   ClaimOperation,
   ClaimScope,
   ClaimType,
   IdentityWithClaims,
-  InvestorUniquenessClaim,
   ModifyClaimsParams,
   ProcedureMethod,
   ResultSet,
@@ -95,17 +93,7 @@ export class Claims {
       },
       context
     );
-
-    this.addInvestorUniquenessClaim = createProcedureMethod(
-      { getProcedureAndArgs: args => [addInvestorUniquenessClaim, args] },
-      context
-    );
   }
-
-  /**
-   * Add an Investor Uniqueness Claim to the signing Identity
-   */
-  public addInvestorUniquenessClaim: ProcedureMethod<AddInvestorUniquenessClaimParams, void>;
 
   /**
    * Add claims to Identities
@@ -215,7 +203,7 @@ export class Claims {
       targets?: (string | Identity)[];
       trustedClaimIssuers?: (string | Identity)[];
       scope?: Scope;
-      claimTypes?: Exclude<ClaimType, ClaimType.InvestorUniquenessV2>[];
+      claimTypes?: ClaimType[];
       includeExpired?: boolean;
       size?: BigNumber;
       start?: BigNumber;
@@ -287,7 +275,7 @@ export class Claims {
       targets?: (string | Identity)[];
       trustedClaimIssuers?: (string | Identity)[];
       scope?: Scope;
-      claimTypes?: Exclude<ClaimType, ClaimType.InvestorUniquenessV2>[];
+      claimTypes?: ClaimType[];
       includeExpired?: boolean;
       size?: BigNumber;
       start?: BigNumber;
@@ -381,7 +369,6 @@ export class Claims {
         ClaimType.Blocked,
         ClaimType.BuyLockup,
         ClaimType.Exempted,
-        ClaimType.InvestorUniqueness,
         ClaimType.Jurisdiction,
         ClaimType.KnowYourCustomer,
         ClaimType.SellLockup,
@@ -433,30 +420,6 @@ export class Claims {
       claimTypes: [ClaimType.CustomerDueDiligence],
       includeExpired,
     }) as Promise<ClaimData<CddClaim>[]>;
-  }
-
-  /**
-   * Retrieve the list of InvestorUniqueness claims for a target Identity
-   *
-   * @param opts.target - Identity for which to fetch CDD claims (optional, defaults to the signing Identity)
-   * @param opts.includeExpired - whether to include expired claims. Defaults to true
-   */
-  public async getInvestorUniquenessClaims(
-    opts: {
-      target?: string | Identity;
-      includeExpired?: boolean;
-    } = {}
-  ): Promise<ClaimData<InvestorUniquenessClaim>[]> {
-    const { context } = this;
-    const { target, includeExpired = true } = opts;
-
-    const did = await getDid(target, context);
-
-    return context.getIdentityClaimsFromChain({
-      targets: [did],
-      claimTypes: [ClaimType.InvestorUniqueness],
-      includeExpired,
-    }) as Promise<ClaimData<InvestorUniquenessClaim>[]>;
   }
 
   /**

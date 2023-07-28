@@ -1,9 +1,10 @@
 import { Option, u32, u64 } from '@polkadot/types';
 import { Balance, Moment } from '@polkadot/types/interfaces';
 import {
-  PalletSettlementInstructionMemo,
-  PalletSettlementSettlementType,
   PolymeshPrimitivesIdentityIdPortfolioId,
+  PolymeshPrimitivesMemo,
+  PolymeshPrimitivesSettlementLeg,
+  PolymeshPrimitivesSettlementSettlementType,
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
@@ -58,11 +59,12 @@ describe('addInstruction procedure', () => {
     [BigNumber, Context, (boolean | undefined)?]
   >;
   let endConditionToSettlementTypeSpy: jest.SpyInstance<
-    PalletSettlementSettlementType,
+    PolymeshPrimitivesSettlementSettlementType,
     [InstructionEndCondition, Context]
   >;
   let dateToMomentSpy: jest.SpyInstance<Moment, [Date, Context]>;
   let stringToInstructionMemoSpy: jest.SpyInstance;
+  let legToRawLegSpy: jest.SpyInstance;
   let venueId: BigNumber;
   let amount: BigNumber;
   let from: PortfolioLike;
@@ -86,16 +88,11 @@ describe('addInstruction procedure', () => {
   let rawTradeDate: Moment;
   let rawValueDate: Moment;
   let rawEndBlock: u32;
-  let rawInstructionMemo: PalletSettlementInstructionMemo;
-  let rawAuthSettlementType: PalletSettlementSettlementType;
-  let rawBlockSettlementType: PalletSettlementSettlementType;
-  let rawManualSettlementType: PalletSettlementSettlementType;
-  let rawLeg: {
-    from: PolymeshPrimitivesIdentityIdPortfolioId;
-    to: PolymeshPrimitivesIdentityIdPortfolioId;
-    asset: PolymeshPrimitivesTicker;
-    amount: Balance;
-  };
+  let rawInstructionMemo: PolymeshPrimitivesMemo;
+  let rawAuthSettlementType: PolymeshPrimitivesSettlementSettlementType;
+  let rawBlockSettlementType: PolymeshPrimitivesSettlementSettlementType;
+  let rawManualSettlementType: PolymeshPrimitivesSettlementSettlementType;
+  let rawLeg: PolymeshPrimitivesSettlementLeg;
 
   beforeAll(() => {
     dsMockUtils.initMocks({
@@ -124,7 +121,8 @@ describe('addInstruction procedure', () => {
       'endConditionToSettlementType'
     );
     dateToMomentSpy = jest.spyOn(utilsConversionModule, 'dateToMoment');
-    stringToInstructionMemoSpy = jest.spyOn(utilsConversionModule, 'stringToInstructionMemo');
+    stringToInstructionMemoSpy = jest.spyOn(utilsConversionModule, 'stringToMemo');
+    legToRawLegSpy = jest.spyOn(utilsConversionModule, 'legToSettlementLeg');
 
     venueId = new BigNumber(1);
     amount = new BigNumber(100);
@@ -160,22 +158,24 @@ describe('addInstruction procedure', () => {
     rawTradeDate = dsMockUtils.createMockMoment(new BigNumber(tradeDate.getTime()));
     rawValueDate = dsMockUtils.createMockMoment(new BigNumber(valueDate.getTime()));
     rawEndBlock = dsMockUtils.createMockU32(endBlock);
-    rawInstructionMemo = dsMockUtils.createMockInstructionMemo(memo);
+    rawInstructionMemo = dsMockUtils.createMockMemo(memo);
     rawAuthSettlementType = dsMockUtils.createMockSettlementType('SettleOnAffirmation');
     rawBlockSettlementType = dsMockUtils.createMockSettlementType({ SettleOnBlock: rawEndBlock });
     rawManualSettlementType = dsMockUtils.createMockSettlementType({ SettleManual: rawEndBlock });
-    rawLeg = {
-      from: rawFrom,
-      to: rawTo,
-      amount: rawAmount,
-      asset: rawTicker,
-    };
+    rawLeg = dsMockUtils.createMockInstructionLeg({
+      Fungible: {
+        sender: rawFrom,
+        receiver: rawTo,
+        amount: rawAmount,
+        ticker: rawTicker,
+      },
+    });
   });
 
   let addAndAuthorizeInstructionTransaction: PolymeshTx<
     [
       u64,
-      PalletSettlementSettlementType,
+      PolymeshPrimitivesSettlementSettlementType,
       Option<Moment>,
       {
         from: PolymeshPrimitivesIdentityIdPortfolioId;
@@ -184,13 +184,13 @@ describe('addInstruction procedure', () => {
         amount: Balance;
       }[],
       PolymeshPrimitivesIdentityIdPortfolioId[],
-      Option<PalletSettlementInstructionMemo>
+      Option<PolymeshPrimitivesMemo>
     ]
   >;
   let addInstructionTransaction: PolymeshTx<
     [
       u64,
-      PalletSettlementSettlementType,
+      PolymeshPrimitivesSettlementSettlementType,
       Option<Moment>,
       {
         from: PolymeshPrimitivesIdentityIdPortfolioId;
@@ -198,7 +198,7 @@ describe('addInstruction procedure', () => {
         asset: PolymeshPrimitivesTicker;
         amount: Balance;
       }[],
-      Option<PalletSettlementInstructionMemo>
+      Option<PolymeshPrimitivesMemo>
     ]
   >;
 
@@ -212,9 +212,9 @@ describe('addInstruction procedure', () => {
 
     addAndAuthorizeInstructionTransaction = dsMockUtils.createTxMock(
       'settlement',
-      'addAndAffirmInstructionWithMemo'
+      'addAndAffirmInstruction'
     );
-    addInstructionTransaction = dsMockUtils.createTxMock('settlement', 'addInstructionWithMemo');
+    addInstructionTransaction = dsMockUtils.createTxMock('settlement', 'addInstruction');
 
     mockContext = dsMockUtils.getContextInstance();
 
@@ -256,6 +256,10 @@ describe('addInstruction procedure', () => {
     when(stringToInstructionMemoSpy)
       .calledWith(memo, mockContext)
       .mockReturnValue(rawInstructionMemo);
+
+    when(legToRawLegSpy.mockReturnValue(rawLeg))
+      .calledWith({ from, to, asset, amount }, mockContext)
+      .mockReturnValue(rawLeg);
 
     args = {
       venueId,

@@ -46,11 +46,13 @@ export async function prepareLinkCaDocs(
 
   rawAssetDocuments.forEach(([key, doc]) => {
     const [, id] = key.args;
-    const removedList = remove(documentsCopy, document =>
-      isEqual(document, documentToAssetDocument(doc))
-    );
-    if (removedList.length) {
-      docIdsToLink.push(id);
+    if (doc.isSome) {
+      const removedList = remove(documentsCopy, document =>
+        isEqual(document, documentToAssetDocument(doc.unwrap()))
+      );
+      if (removedList.length) {
+        docIdsToLink.push(id);
+      }
     }
   });
 

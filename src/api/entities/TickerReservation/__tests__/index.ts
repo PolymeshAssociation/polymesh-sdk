@@ -77,8 +77,8 @@ describe('TickerReservation class', () => {
       const tickerReservation = new TickerReservation({ ticker }, context);
 
       queryMultiMock.mockResolvedValue([
-        dsMockUtils.createMockTickerRegistration(),
-        dsMockUtils.createMockSecurityToken(),
+        dsMockUtils.createMockOption(),
+        dsMockUtils.createMockOption(),
       ]);
 
       const details = await tickerReservation.details();
@@ -97,13 +97,15 @@ describe('TickerReservation class', () => {
       const tickerReservation = new TickerReservation({ ticker }, context);
 
       queryMultiMock.mockResolvedValue([
-        dsMockUtils.createMockTickerRegistration({
-          owner: dsMockUtils.createMockIdentityId(ownerDid),
-          expiry: dsMockUtils.createMockOption(
-            dsMockUtils.createMockMoment(new BigNumber(expiryDate.getTime()))
-          ),
-        }),
-        dsMockUtils.createMockSecurityToken(),
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockTickerRegistration({
+            owner: dsMockUtils.createMockIdentityId(ownerDid),
+            expiry: dsMockUtils.createMockOption(
+              dsMockUtils.createMockMoment(new BigNumber(expiryDate.getTime()))
+            ),
+          })
+        ),
+        dsMockUtils.createMockOption(),
       ]);
 
       const details = await tickerReservation.details();
@@ -122,11 +124,13 @@ describe('TickerReservation class', () => {
       const tickerReservation = new TickerReservation({ ticker }, context);
 
       queryMultiMock.mockResolvedValue([
-        dsMockUtils.createMockTickerRegistration({
-          owner: dsMockUtils.createMockIdentityId(ownerDid),
-          expiry: dsMockUtils.createMockOption(), // null expiry
-        }),
-        dsMockUtils.createMockSecurityToken(),
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockTickerRegistration({
+            owner: dsMockUtils.createMockIdentityId(ownerDid),
+            expiry: dsMockUtils.createMockOption(), // null expiry
+          })
+        ),
+        dsMockUtils.createMockOption(),
       ]);
 
       const details = await tickerReservation.details();
@@ -145,13 +149,15 @@ describe('TickerReservation class', () => {
       const tickerReservation = new TickerReservation({ ticker }, context);
 
       queryMultiMock.mockResolvedValue([
-        dsMockUtils.createMockTickerRegistration({
-          owner: dsMockUtils.createMockIdentityId(ownerDid),
-          expiry: dsMockUtils.createMockOption(
-            dsMockUtils.createMockMoment(new BigNumber(expiryDate.getTime()))
-          ),
-        }),
-        dsMockUtils.createMockSecurityToken(),
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockTickerRegistration({
+            owner: dsMockUtils.createMockIdentityId(ownerDid),
+            expiry: dsMockUtils.createMockOption(
+              dsMockUtils.createMockMoment(new BigNumber(expiryDate.getTime()))
+            ),
+          })
+        ),
+        dsMockUtils.createMockOption(),
       ]);
 
       const details = await tickerReservation.details();
@@ -170,16 +176,20 @@ describe('TickerReservation class', () => {
       const tickerReservation = new TickerReservation({ ticker }, context);
 
       queryMultiMock.mockResolvedValue([
-        dsMockUtils.createMockTickerRegistration({
-          owner: dsMockUtils.createMockIdentityId(ownerDid),
-          expiry: dsMockUtils.createMockOption(),
-        }),
-        dsMockUtils.createMockSecurityToken({
-          ownerDid: dsMockUtils.createMockIdentityId(ownerDid),
-          assetType: dsMockUtils.createMockAssetType('EquityCommon'),
-          divisible: dsMockUtils.createMockBool(true),
-          totalSupply: dsMockUtils.createMockBalance(new BigNumber(1000)),
-        }),
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockTickerRegistration({
+            owner: dsMockUtils.createMockIdentityId(ownerDid),
+            expiry: dsMockUtils.createMockOption(),
+          })
+        ),
+        dsMockUtils.createMockOption(
+          dsMockUtils.createMockSecurityToken({
+            ownerDid: dsMockUtils.createMockIdentityId(ownerDid),
+            assetType: dsMockUtils.createMockAssetType('EquityCommon'),
+            divisible: dsMockUtils.createMockBool(true),
+            totalSupply: dsMockUtils.createMockBalance(new BigNumber(1000)),
+          })
+        ),
       ]);
 
       const details = await tickerReservation.details();
@@ -197,7 +207,7 @@ describe('TickerReservation class', () => {
       const unsubCallback = 'unsubCallback';
 
       queryMultiMock.mockImplementation(async (_, cbFunc) => {
-        cbFunc([dsMockUtils.createMockTickerRegistration(), dsMockUtils.createMockSecurityToken()]);
+        cbFunc([dsMockUtils.createMockOption(), dsMockUtils.createMockOption()]);
         return unsubCallback;
       });
 

@@ -1,3 +1,7 @@
+import {
+  PolymeshPrimitivesSettlementInstructionStatus,
+  PolymeshPrimitivesSettlementLeg,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
@@ -9,7 +13,6 @@ import {
   Identity,
   modifyInstructionAffirmation,
   PolymeshError,
-  rescheduleInstruction,
   Venue,
 } from '~/internal';
 import { InstructionStatusEnum } from '~/middleware/enumsV2';
@@ -17,7 +20,6 @@ import { eventByIndexedArgs } from '~/middleware/queries';
 import { instructionsQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Query as QueryV2 } from '~/middleware/typesV2';
-import { InstructionStatus as MeshInstructionStatus } from '~/polkadot/polymesh';
 import {
   AffirmOrWithdrawInstructionParams,
   DefaultPortfolio,
@@ -25,7 +27,6 @@ import {
   EventIdentifier,
   ExecuteManualInstructionParams,
   InstructionAffirmationOperation,
-  NoArgsProcedureMethod,
   NumberedPortfolio,
   OptionalArgsProcedureMethod,
   PaginationOptions,
@@ -130,14 +131,6 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       context
     );
 
-    this.reschedule = createProcedureMethod(
-      {
-        getProcedureAndArgs: () => [rescheduleInstruction, { id }],
-        voidArgs: true,
-      },
-      context
-    );
-
     this.executeManually = createProcedureMethod(
       {
         getProcedureAndArgs: args => [executeManualInstruction, { id, ...args }],
@@ -162,14 +155,19 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const [{ status }, exists] = await Promise.all([
-      settlement.instructionDetails(bigNumberToU64(id, context)),
+    const [status, exists] = await Promise.all([
+      settlement.instructionStatuses(bigNumberToU64(id, context)),
       this.exists(),
     ]);
 
     const statusResult = meshInstructionStatusToInstructionStatus(status);
 
-    return statusResult === InternalInstructionStatus.Unknown && exists;
+    return (
+      (statusResult === InternalInstructionStatus.Unknown ||
+        statusResult === InternalInstructionStatus.Success ||
+        statusResult === InternalInstructionStatus.Rejected) &&
+      exists
+    );
   }
 
   /**
@@ -186,7 +184,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const { status } = await settlement.instructionDetails(bigNumberToU64(id, context));
+    const status = await settlement.instructionStatuses(bigNumberToU64(id, context));
 
     const statusResult = meshInstructionStatusToInstructionStatus(status);
 
@@ -205,7 +203,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       context: {
         polymeshApi: {
           query: {
-            settlement: { instructionDetails },
+            settlement: { instructionStatuses },
           },
         },
       },
@@ -213,20 +211,20 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const assembleResult = (rawStatus: MeshInstructionStatus): InstructionStatus => {
-      const status = meshInstructionStatusToInstructionStatus(rawStatus);
+    const assembleResult = (
+      rawStatus: PolymeshPrimitivesSettlementInstructionStatus
+    ): InstructionStatus => {
+      const internalStatus = meshInstructionStatusToInstructionStatus(rawStatus);
+      const status = this.internalToExternalStatus(internalStatus);
 
-      if (status === InternalInstructionStatus.Pending) {
-        return InstructionStatus.Pending;
-      } else if (status === InternalInstructionStatus.Failed) {
-        return InstructionStatus.Failed;
-      } else {
-        // TODO @prashantasdeveloper remove this once the chain handles Executed/Rejected state separately
-        return InstructionStatus.Executed;
+      if (!status) {
+        throw new Error('Unknown instruction status');
       }
+
+      return status;
     };
 
-    return instructionDetails(bigNumberToU64(id, context), ({ status }) => {
+    return instructionStatuses(bigNumberToU64(id, context), status => {
       return callback(assembleResult(status));
     });
   }
@@ -257,7 +255,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       context: {
         polymeshApi: {
           query: {
-            settlement: { instructionDetails, instructionMemos },
+            settlement: { instructionDetails, instructionStatuses, instructionMemos },
           },
         },
       },
@@ -267,17 +265,20 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     const rawId = bigNumberToU64(id, context);
 
-    const [
-      { status: rawStatus, createdAt, tradeDate, valueDate, settlementType: type, venueId },
-      memo,
-    ] = await requestMulti<[typeof instructionDetails, typeof instructionMemos]>(context, [
-      [instructionDetails, rawId],
-      [instructionMemos, rawId],
-    ]);
+    const [{ createdAt, tradeDate, valueDate, settlementType: type, venueId }, rawStatus, memo] =
+      await requestMulti<
+        [typeof instructionDetails, typeof instructionStatuses, typeof instructionMemos]
+      >(context, [
+        [instructionDetails, rawId],
+        [instructionStatuses, rawId],
+        [instructionMemos, rawId],
+      ]);
 
-    const status = meshInstructionStatusToInstructionStatus(rawStatus);
+    const internalStatus = meshInstructionStatusToInstructionStatus(rawStatus);
 
-    if (status === InternalInstructionStatus.Unknown) {
+    const status = this.internalToExternalStatus(internalStatus);
+
+    if (!status) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
         message: executedMessage,
@@ -285,10 +286,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     }
 
     return {
-      status:
-        status === InternalInstructionStatus.Pending
-          ? InstructionStatus.Pending
-          : InstructionStatus.Failed,
+      status,
       createdAt: momentToDate(createdAt.unwrap()),
       tradeDate: tradeDate.isSome ? momentToDate(tradeDate.unwrap()) : null,
       valueDate: valueDate.isSome ? momentToDate(valueDate.unwrap()) : null,
@@ -375,18 +373,32 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     });
 
     const data = legs.map(([, leg]) => {
-      const { from, to, amount, asset } = leg;
+      if (leg.isSome) {
+        const legValue: PolymeshPrimitivesSettlementLeg = leg.unwrap();
+        if (legValue.isFungible) {
+          const { sender, receiver, amount, ticker: rawTicker } = legValue.asFungible;
 
-      const ticker = tickerToString(asset);
-      const fromPortfolio = meshPortfolioIdToPortfolio(from, context);
-      const toPortfolio = meshPortfolioIdToPortfolio(to, context);
+          const ticker = tickerToString(rawTicker);
+          const fromPortfolio = meshPortfolioIdToPortfolio(sender, context);
+          const toPortfolio = meshPortfolioIdToPortfolio(receiver, context);
 
-      return {
-        from: fromPortfolio,
-        to: toPortfolio,
-        amount: balanceToBigNumber(amount),
-        asset: new Asset({ ticker }, context),
-      };
+          return {
+            from: fromPortfolio,
+            to: toPortfolio,
+            amount: balanceToBigNumber(amount),
+            asset: new Asset({ ticker }, context),
+          };
+        } else if (legValue.isNonFungible) {
+          throw new Error('TODO ERROR: NFT legs are not supported yet');
+        } else {
+          // assume it is offchain
+          throw new Error('TODO ERROR: Offchain legs are not supported yet');
+        }
+      } else {
+        throw new Error(
+          'Instruction has already been executed/rejected and it was purged from chain'
+        );
+      }
     });
 
     return {
@@ -418,7 +430,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     );
     if (eventIdentifier) {
       return {
-        status: InstructionStatus.Executed,
+        status: InstructionStatus.Success,
         eventIdentifier,
       };
     }
@@ -458,7 +470,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     if (executedEventIdentifier) {
       return {
-        status: InstructionStatus.Executed,
+        status: InstructionStatus.Success,
         eventIdentifier: executedEventIdentifier,
       };
     }
@@ -497,14 +509,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
   public withdraw: OptionalArgsProcedureMethod<AffirmOrWithdrawInstructionParams, Instruction>;
 
   /**
-   * Reschedules a failed Instruction to be tried again
-   *
-   * @throws if the Instruction status is not `InstructionStatus.Failed`
-   */
-  public reschedule: NoArgsProcedureMethod<Instruction>;
-
-  /**
-   * Executes an Instruction of type `SettleManual`
+   * Executes an Instruction either of type `SettleManual` or a `Failed` instruction
    */
   public executeManually: OptionalArgsProcedureMethod<ExecuteManualInstructionParams, Instruction>;
 
@@ -612,5 +617,23 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     );
 
     return portfolios;
+  }
+
+  /**
+   * @hidden
+   */
+  private internalToExternalStatus(status: InternalInstructionStatus): InstructionStatus | null {
+    switch (status) {
+      case InternalInstructionStatus.Pending:
+        return InstructionStatus.Pending;
+      case InternalInstructionStatus.Failed:
+        return InstructionStatus.Failed;
+      case InternalInstructionStatus.Rejected:
+        return InstructionStatus.Rejected;
+      case InternalInstructionStatus.Success:
+        return InstructionStatus.Success;
+    }
+
+    return null;
   }
 }

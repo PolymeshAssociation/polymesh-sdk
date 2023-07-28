@@ -9,10 +9,8 @@ export default {
     EventDid: 'IdentityId',
     EventCounts: 'Vec<u32>',
     ErrorAt: '(u32, DispatchError)',
-    InvestorUid: '[u8; 16]',
     Ticker: '[u8; 12]',
     CddId: '[u8; 32]',
-    ScopeId: '[u8; 32]',
     PosRatio: '(u32, u32)',
     DocumentId: 'u32',
     DocumentName: 'Text',
@@ -458,19 +456,6 @@ export default {
         Custom: 'Vec<u8>',
       },
     },
-    InvestorZKProofData: '[u8; 64]',
-    Scalar: '[u8; 32]',
-    RistrettoPoint: '[u8; 32]',
-    ZkProofData: {
-      challenge_responses: '[Scalar; 2]',
-      subtract_expressions_res: 'RistrettoPoint',
-      blinded_scope_did_hash: 'RistrettoPoint',
-    },
-    ScopeClaimProof: {
-      proof_scope_id_wellformed: 'Signature',
-      proof_scope_id_cdd_id_match: 'ZkProofData',
-      scope_id: 'RistrettoPoint',
-    },
     CustomClaimTypeId: 'u32',
     Claim: {
       _enum: {
@@ -483,9 +468,6 @@ export default {
         Jurisdiction: '(CountryCode, Scope)',
         Exempted: 'Scope',
         Blocked: 'Scope',
-        InvestorUniqueness: '(Scope, ScopeId, CddId)',
-        NoData: '',
-        InvestorUniquenessV2: 'CddId',
         Custom: '(CustomClaimTypeId, Option<Scope>)',
       },
     },
@@ -500,9 +482,6 @@ export default {
         Jurisdiction: '',
         Exempted: '',
         Blocked: '',
-        InvestorUniqueness: '',
-        NoData: '',
-        InvestorUniquenessV2: '',
         Custom: 'CustomClaimTypeId',
       },
     },
@@ -563,16 +542,6 @@ export default {
     TickerRegistrationConfig: {
       max_ticker_length: 'u8',
       registration_length: 'Option<Moment>',
-    },
-    ClassicTickerRegistration: {
-      eth_owner: 'EthereumAddress',
-      is_created: 'bool',
-    },
-    ClassicTickerImport: {
-      eth_owner: 'EthereumAddress',
-      ticker: 'Ticker',
-      is_contract: 'bool',
-      is_created: 'bool',
     },
     EthereumAddress: '[u8; 20]',
     EcdsaSignature: '[u8; 65]',
@@ -978,12 +947,6 @@ export default {
       trade_date: 'Option<Moment>',
       value_date: 'Option<Moment>',
     },
-    Leg: {
-      from: 'PortfolioId',
-      to: 'PortfolioId',
-      asset: 'Ticker',
-      amount: 'Balance',
-    },
     Venue: {
       creator: 'IdentityId',
       venue_type: 'VenueType',
@@ -1136,6 +1099,12 @@ export default {
       intended_count: 'u32',
       running_count: 'u32',
     },
+    CanTransferGranularReturn: {
+      _enum: {
+        Ok: 'GranularCanTransferResult',
+        Err: 'DispatchError',
+      },
+    },
     GranularCanTransferResult: {
       invalid_granularity: 'bool',
       self_transfer: 'bool',
@@ -1192,16 +1161,33 @@ export default {
       ticker: 'Ticker',
       amount: 'Balance',
     },
-    LegAsset: {
-      _enum: {
-        Fungible: 'FungibleToken',
-        NonFungible: 'NFTs',
-      },
+    OffChainAsset: {
+      ticker: 'Ticker',
+      amount: 'Balance',
     },
-    LegV2: {
-      from: 'PortfolioId',
-      to: 'PortfolioId',
-      asset: 'LegAsset',
+    FungibleLeg: {
+      sender: 'PortfolioId',
+      receiver: 'PortfolioId',
+      ticker: 'Ticker',
+      amount: 'Balance',
+    },
+    NonFungibleLeg: {
+      sender: 'PortfolioId',
+      receiver: 'PortfolioId',
+      nfts: 'NFTs',
+    },
+    OffChainLeg: {
+      sender_identity: 'IdentityId',
+      receiver_identity: 'IdentityId',
+      ticker: 'Ticker',
+      amount: 'Balance',
+    },
+    Leg: {
+      _enum: {
+        Fungible: 'FungibleLeg',
+        NonFungible: 'NonFungibleLeg',
+        OffChain: 'OffChainLeg',
+      },
     },
     FundDescription: {
       _enum: {
@@ -1220,6 +1206,13 @@ export default {
         Invoice: '',
         Custom: 'CustomAssetTypeId',
       },
+    },
+    ExecuteInstructionInfo: {
+      fungible_tokens: 'u32',
+      non_fungible_tokens: 'u32',
+      off_chain_assets: 'u32',
+      consumed_weight: 'Weight',
+      error: 'Option<String>',
     },
   },
 };

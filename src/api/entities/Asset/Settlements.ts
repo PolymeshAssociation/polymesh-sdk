@@ -1,9 +1,8 @@
 import BigNumber from 'bignumber.js';
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
-import { Asset, Namespace } from '~/internal';
-import { GranularCanTransferResult } from '~/polkadot/polymesh';
-import { PortfolioLike, TransferBreakdown } from '~/types';
+import { Asset, Namespace, PolymeshError } from '~/internal';
+import { ErrorCode, PortfolioLike, TransferBreakdown } from '~/types';
 import {
   bigNumberToBalance,
   granularCanTransferResultToTransferBreakdown,
@@ -69,7 +68,7 @@ export class Settlements extends Namespace<Asset> {
       toPortfolio.getCustodian(),
     ]);
 
-    const res: GranularCanTransferResult = await rpc.asset.canTransferGranular(
+    const res = await rpc.asset.canTransferGranular(
       stringToIdentityId(fromCustodian.did, context),
       portfolioIdToMeshPortfolioId(fromPortfolioId, context),
       stringToIdentityId(toCustodian.did, context),
@@ -78,6 +77,14 @@ export class Settlements extends Namespace<Asset> {
       bigNumberToBalance(amount, context, isDivisible)
     );
 
-    return granularCanTransferResultToTransferBreakdown(res, context);
+    if (!res.isOk) {
+      throw new PolymeshError({
+        message:
+          'RPC result from "asset.canTransferGranular" was not OK. Execution meter was likely exceeded',
+        code: ErrorCode.LimitExceeded,
+      });
+    }
+
+    return granularCanTransferResultToTransferBreakdown(res.asOk, context);
   }
 }

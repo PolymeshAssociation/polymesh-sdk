@@ -1,4 +1,4 @@
-import { AccountId, Balance } from '@polkadot/types/interfaces';
+import { AccountId, Balance, DispatchError } from '@polkadot/types/interfaces';
 import {
   PolymeshPrimitivesIdentityId,
   PolymeshPrimitivesIdentityIdPortfolioId,
@@ -7,12 +7,14 @@ import {
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
-import { Context, Namespace } from '~/internal';
-import { GranularCanTransferResult } from '~/polkadot/polymesh';
+import { Context, Namespace, PolymeshError } from '~/internal';
+import { GranularCanTransferResult } from '~/polkadot';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { createMockCanTransferGranularReturn } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
 import {
   DefaultPortfolio,
+  ErrorCode,
   NumberedPortfolio,
   PortfolioId,
   PortfolioLike,
@@ -170,7 +172,10 @@ describe('Settlements class', () => {
           })
         );
 
-      const response = 'rpcResponse' as unknown as GranularCanTransferResult;
+      const okResponse = 'rpcResponse' as unknown as GranularCanTransferResult;
+      const response = createMockCanTransferGranularReturn({
+        Ok: okResponse,
+      });
 
       when(dsMockUtils.createRpcMock('asset', 'canTransferGranular'))
         .calledWith(rawSigningDid, rawFromPortfolio, rawToDid, rawToPortfolio, rawTicker, rawAmount)
@@ -179,7 +184,7 @@ describe('Settlements class', () => {
       const expected = 'breakdown' as unknown as TransferBreakdown;
 
       when(granularCanTransferResultToTransferBreakdownSpy)
-        .calledWith(response, mockContext)
+        .calledWith(okResponse, mockContext)
         .mockReturnValue(expected);
 
       const result = await settlements.canTransfer({ to: toDid, amount });
@@ -188,7 +193,10 @@ describe('Settlements class', () => {
     });
 
     it('should return a transfer breakdown representing whether the transaction can be made from another Identity', async () => {
-      const response = 'rpcResponse' as unknown as GranularCanTransferResult;
+      const okResponse = 'rpcResponse' as unknown as GranularCanTransferResult;
+      const response = createMockCanTransferGranularReturn({
+        Ok: okResponse,
+      });
 
       when(portfolioIdToMeshPortfolioIdSpy)
         .calledWith({ did: fromDid }, mockContext)
@@ -207,12 +215,43 @@ describe('Settlements class', () => {
       const expected = 'breakdown' as unknown as TransferBreakdown;
 
       when(granularCanTransferResultToTransferBreakdownSpy)
-        .calledWith(response, mockContext)
+        .calledWith(okResponse, mockContext)
         .mockReturnValue(expected);
 
       const result = await settlements.canTransfer({ from: fromDid, to: toDid, amount });
 
       expect(result).toEqual(expected);
+    });
+
+    it('should error if response is Err', () => {
+      const errResponse = 'unexpected error' as unknown as DispatchError;
+      const response = createMockCanTransferGranularReturn({
+        Err: errResponse,
+      });
+
+      when(portfolioIdToMeshPortfolioIdSpy)
+        .calledWith({ did: fromDid }, mockContext)
+        .mockReturnValue(rawFromPortfolio);
+
+      fromPortfolio.getCustodian.mockResolvedValue(
+        entityMockUtils.getIdentityInstance({ did: fromDid })
+      );
+      toPortfolio.getCustodian.mockResolvedValue(
+        entityMockUtils.getIdentityInstance({ did: toDid })
+      );
+      when(dsMockUtils.createRpcMock('asset', 'canTransferGranular'))
+        .calledWith(rawFromDid, rawFromPortfolio, rawToDid, rawToPortfolio, rawTicker, rawAmount)
+        .mockReturnValue(response);
+
+      const expectedError = new PolymeshError({
+        message:
+          'RPC result from "asset.canTransferGranular" was not OK. Execution meter was likely exceeded',
+        code: ErrorCode.LimitExceeded,
+      });
+
+      return expect(settlements.canTransfer({ from: fromDid, to: toDid, amount })).rejects.toThrow(
+        expectedError
+      );
     });
   });
 });

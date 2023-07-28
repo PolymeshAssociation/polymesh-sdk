@@ -18,10 +18,6 @@ export interface AssetDetails {
   owner: Identity;
   totalSupply: BigNumber;
   fullAgents: Identity[];
-  /**
-   * @deprecated This attribute will be removed in the future
-   */
-  requiresInvestorUniqueness: boolean;
 }
 
 /**

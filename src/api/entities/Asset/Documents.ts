@@ -53,7 +53,7 @@ export class Documents extends Namespace<Asset> {
       paginationOpts,
     });
 
-    const data: AssetDocument[] = entries.map(([, doc]) => documentToAssetDocument(doc));
+    const data: AssetDocument[] = entries.map(([, doc]) => documentToAssetDocument(doc.unwrap()));
 
     return {
       data,

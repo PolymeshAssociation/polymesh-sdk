@@ -18,7 +18,7 @@ import type {
   u8,
 } from '@polkadot/types-codec';
 import type { ITuple } from '@polkadot/types-codec/types';
-import type { MultiSignature, Signature } from '@polkadot/types/interfaces/extrinsics';
+import type { MultiSignature } from '@polkadot/types/interfaces/extrinsics';
 import type {
   AccountId,
   Balance,
@@ -385,6 +385,15 @@ export interface CalendarUnit extends Enum {
   readonly type: 'Second' | 'Minute' | 'Hour' | 'Day' | 'Week' | 'Month' | 'Year';
 }
 
+/** @name CanTransferGranularReturn */
+export interface CanTransferGranularReturn extends Enum {
+  readonly isOk: boolean;
+  readonly asOk: GranularCanTransferResult;
+  readonly isErr: boolean;
+  readonly asErr: DispatchError;
+  readonly type: 'Ok' | 'Err';
+}
+
 /** @name CanTransferResult */
 export interface CanTransferResult extends Enum {
   readonly isOk: boolean;
@@ -441,11 +450,6 @@ export interface Claim extends Enum {
   readonly asExempted: Scope;
   readonly isBlocked: boolean;
   readonly asBlocked: Scope;
-  readonly isInvestorUniqueness: boolean;
-  readonly asInvestorUniqueness: ITuple<[Scope, ScopeId, CddId]>;
-  readonly isNoData: boolean;
-  readonly isInvestorUniquenessV2: boolean;
-  readonly asInvestorUniquenessV2: CddId;
   readonly isCustom: boolean;
   readonly asCustom: ITuple<[CustomClaimTypeId, Option<Scope>]>;
   readonly type:
@@ -458,9 +462,6 @@ export interface Claim extends Enum {
     | 'Jurisdiction'
     | 'Exempted'
     | 'Blocked'
-    | 'InvestorUniqueness'
-    | 'NoData'
-    | 'InvestorUniquenessV2'
     | 'Custom';
 }
 
@@ -487,9 +488,6 @@ export interface ClaimType extends Enum {
   readonly isJurisdiction: boolean;
   readonly isExempted: boolean;
   readonly isBlocked: boolean;
-  readonly isInvestorUniqueness: boolean;
-  readonly isNoData: boolean;
-  readonly isInvestorUniquenessV2: boolean;
   readonly isCustom: boolean;
   readonly asCustom: CustomClaimTypeId;
   readonly type:
@@ -502,24 +500,7 @@ export interface ClaimType extends Enum {
     | 'Jurisdiction'
     | 'Exempted'
     | 'Blocked'
-    | 'InvestorUniqueness'
-    | 'NoData'
-    | 'InvestorUniquenessV2'
     | 'Custom';
-}
-
-/** @name ClassicTickerImport */
-export interface ClassicTickerImport extends Struct {
-  readonly eth_owner: EthereumAddress;
-  readonly ticker: Ticker;
-  readonly is_contract: bool;
-  readonly is_created: bool;
-}
-
-/** @name ClassicTickerRegistration */
-export interface ClassicTickerRegistration extends Struct {
-  readonly eth_owner: EthereumAddress;
-  readonly is_created: bool;
 }
 
 /** @name Committee */
@@ -1194,6 +1175,15 @@ export interface EventCounts extends Vec<u32> {}
 /** @name EventDid */
 export interface EventDid extends IdentityId {}
 
+/** @name ExecuteInstructionInfo */
+export interface ExecuteInstructionInfo extends Struct {
+  readonly fungible_tokens: u32;
+  readonly non_fungible_tokens: u32;
+  readonly off_chain_assets: u32;
+  readonly consumed_weight: Weight;
+  readonly error: Option<Text>;
+}
+
 /** @name ExtrinsicPermissions */
 export interface ExtrinsicPermissions extends Enum {
   readonly isWhole: boolean;
@@ -1257,6 +1247,14 @@ export interface FundraiserTier extends Struct {
   readonly total: Balance;
   readonly price: Balance;
   readonly remaining: Balance;
+}
+
+/** @name FungibleLeg */
+export interface FungibleLeg extends Struct {
+  readonly sender: PortfolioId;
+  readonly receiver: PortfolioId;
+  readonly ticker: Ticker;
+  readonly amount: Balance;
 }
 
 /** @name FungibleToken */
@@ -1368,12 +1366,6 @@ export interface InstructionStatus extends Enum {
   readonly type: 'Unknown' | 'Pending' | 'Failed';
 }
 
-/** @name InvestorUid */
-export interface InvestorUid extends U8aFixed {}
-
-/** @name InvestorZKProofData */
-export interface InvestorZKProofData extends U8aFixed {}
-
 /** @name ItnRewardStatus */
 export interface ItnRewardStatus extends Enum {
   readonly isUnclaimed: boolean;
@@ -1400,20 +1392,14 @@ export interface KeyRecord extends Enum {
 }
 
 /** @name Leg */
-export interface Leg extends Struct {
-  readonly from: PortfolioId;
-  readonly to: PortfolioId;
-  readonly asset: Ticker;
-  readonly amount: Balance;
-}
-
-/** @name LegAsset */
-export interface LegAsset extends Enum {
+export interface Leg extends Enum {
   readonly isFungible: boolean;
-  readonly asFungible: FungibleToken;
+  readonly asFungible: FungibleLeg;
   readonly isNonFungible: boolean;
-  readonly asNonFungible: NFTs;
-  readonly type: 'Fungible' | 'NonFungible';
+  readonly asNonFungible: NonFungibleLeg;
+  readonly isOffChain: boolean;
+  readonly asOffChain: OffChainLeg;
+  readonly type: 'Fungible' | 'NonFungible' | 'OffChain';
 }
 
 /** @name LegId */
@@ -1426,13 +1412,6 @@ export interface LegStatus extends Enum {
   readonly isExecutionToBeSkipped: boolean;
   readonly asExecutionToBeSkipped: ITuple<[AccountId, u64]>;
   readonly type: 'PendingTokenLock' | 'ExecutionPending' | 'ExecutionToBeSkipped';
-}
-
-/** @name LegV2 */
-export interface LegV2 extends Struct {
-  readonly from: PortfolioId;
-  readonly to: PortfolioId;
-  readonly asset: LegAsset;
 }
 
 /** @name LocalCAId */
@@ -1491,6 +1470,13 @@ export interface NFTs extends Struct {
   readonly ids: Vec<NFTId>;
 }
 
+/** @name NonFungibleLeg */
+export interface NonFungibleLeg extends Struct {
+  readonly sender: PortfolioId;
+  readonly receiver: PortfolioId;
+  readonly nfts: NFTs;
+}
+
 /** @name NonFungibleType */
 export interface NonFungibleType extends Enum {
   readonly isDerivative: boolean;
@@ -1499,6 +1485,20 @@ export interface NonFungibleType extends Enum {
   readonly isCustom: boolean;
   readonly asCustom: CustomAssetTypeId;
   readonly type: 'Derivative' | 'FixedIncome' | 'Invoice' | 'Custom';
+}
+
+/** @name OffChainAsset */
+export interface OffChainAsset extends Struct {
+  readonly ticker: Ticker;
+  readonly amount: Balance;
+}
+
+/** @name OffChainLeg */
+export interface OffChainLeg extends Struct {
+  readonly sender_identity: IdentityId;
+  readonly receiver_identity: IdentityId;
+  readonly ticker: Ticker;
+  readonly amount: Balance;
 }
 
 /** @name OffChainSignature */
@@ -1744,9 +1744,6 @@ export interface RestrictionResult extends Enum {
   readonly type: 'Valid' | 'Invalid' | 'ForceValid';
 }
 
-/** @name RistrettoPoint */
-export interface RistrettoPoint extends U8aFixed {}
-
 /** @name RpcDidRecords */
 export interface RpcDidRecords extends Enum {
   readonly isSuccess: boolean;
@@ -1761,9 +1758,6 @@ export interface RpcDidRecordsSuccess extends Struct {
   readonly primary_key: AccountId;
   readonly secondary_keys: Vec<SecondaryKey>;
 }
-
-/** @name Scalar */
-export interface Scalar extends U8aFixed {}
 
 /** @name ScheduleId */
 export interface ScheduleId extends u64 {}
@@ -1785,16 +1779,6 @@ export interface Scope extends Enum {
   readonly asCustom: Bytes;
   readonly type: 'Identity' | 'Ticker' | 'Custom';
 }
-
-/** @name ScopeClaimProof */
-export interface ScopeClaimProof extends Struct {
-  readonly proof_scope_id_wellformed: Signature;
-  readonly proof_scope_id_cdd_id_match: ZkProofData;
-  readonly scope_id: RistrettoPoint;
-}
-
-/** @name ScopeId */
-export interface ScopeId extends U8aFixed {}
 
 /** @name SecondaryKey */
 export interface SecondaryKey extends Struct {
@@ -2092,13 +2076,6 @@ export interface WeightToFeeCoefficient extends Struct {
   readonly coeffFrac: Perbill;
   readonly negative: bool;
   readonly degree: u8;
-}
-
-/** @name ZkProofData */
-export interface ZkProofData extends Struct {
-  readonly challenge_responses: Vec<Scalar>;
-  readonly subtract_expressions_res: RistrettoPoint;
-  readonly blinded_scope_did_hash: RistrettoPoint;
 }
 
 export type PHANTOM_POLYMESH = 'polymesh';

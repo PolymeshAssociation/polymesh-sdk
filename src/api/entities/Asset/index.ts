@@ -1,4 +1,4 @@
-import { bool, Bytes, Option, StorageKey } from '@polkadot/types';
+import { Bytes, Option, StorageKey } from '@polkadot/types';
 import { BlockNumber, Hash } from '@polkadot/types/interfaces/runtime';
 import {
   PalletAssetSecurityToken,
@@ -7,7 +7,7 @@ import {
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { flatten, groupBy, map } from 'lodash';
+import { groupBy, map } from 'lodash';
 
 import { Metadata } from '~/api/entities/Asset/Metadata';
 import {
@@ -17,6 +17,7 @@ import {
   Entity,
   Identity,
   modifyAsset,
+  PolymeshError,
   redeemTokens,
   setVenueFiltering,
   toggleFreezeTransfers,
@@ -32,6 +33,7 @@ import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   ControllerTransferParams,
+  ErrorCode,
   EventIdentifier,
   HistoricAgentOperation,
   HistoricAssetTransaction,
@@ -222,15 +224,23 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
     } = this;
 
     const assembleResult = async (
-      { totalSupply, divisible, ownerDid, assetType: rawAssetType }: PalletAssetSecurityToken,
+      optToken: Option<PalletAssetSecurityToken>,
       agentGroups: [
         StorageKey<[PolymeshPrimitivesTicker, PolymeshPrimitivesIdentityId]>,
         Option<PolymeshPrimitivesAgentAgentGroup>
       ][],
-      assetName: Bytes,
-      iuDisabled: bool
+      assetName: Option<Bytes>
     ): Promise<AssetDetails> => {
       const fullAgents: Identity[] = [];
+
+      if (optToken.isNone) {
+        throw new PolymeshError({
+          message: 'Asset detail information not found',
+          code: ErrorCode.DataUnavailable,
+        });
+      }
+
+      const { totalSupply, divisible, ownerDid, assetType: rawAssetType } = optToken.unwrap();
 
       agentGroups.forEach(([storageKey, agentGroup]) => {
         const rawAgentGroup = agentGroup.unwrap();
@@ -253,11 +263,10 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       return {
         assetType,
         isDivisible: boolToBoolean(divisible),
-        name: bytesToString(assetName),
+        name: bytesToString(assetName.unwrapOrDefault()),
         owner,
         totalSupply: balanceToBigNumber(totalSupply),
         fullAgents,
-        requiresInvestorUniqueness: !boolToBoolean(iuDisabled),
       };
     };
 
@@ -265,33 +274,25 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
 
     const groupOfAgentPromise = externalAgents.groupOfAgent.entries(rawTicker);
     const namePromise = asset.assetNames(rawTicker);
-    const disabledIuPromise = asset.disableInvestorUniqueness(rawTicker);
 
     if (callback) {
       const groupEntries = await groupOfAgentPromise;
       const assetName = await namePromise;
-      const disabledInvestorUniqueness = await disabledIuPromise;
 
       return asset.tokens(rawTicker, async securityToken => {
-        const result = await assembleResult(
-          securityToken,
-          groupEntries,
-          assetName,
-          disabledInvestorUniqueness
-        );
+        const result = await assembleResult(securityToken, groupEntries, assetName);
 
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(result);
       });
     }
 
-    const [token, groups, name, disabledIu] = await Promise.all([
+    const [token, groups, name] = await Promise.all([
       asset.tokens(rawTicker),
       groupOfAgentPromise,
       namePromise,
-      disabledIuPromise,
     ]);
-    return assembleResult(token, groups, name, disabledIu);
+    return assembleResult(token, groups, name);
   }
 
   /**
@@ -473,17 +474,13 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
 
   /**
    * Retrieve the amount of unique investors that hold this Asset
-   *
-   * @note this takes into account the Scope ID of Investor Uniqueness Claims. If an investor holds balances
-   *   of this Asset in two or more different Identities, but they all have Investor Uniqueness Claims with the same
-   *   Scope ID, then they will only be counted once for the purposes of this result
    */
   public async investorCount(): Promise<BigNumber> {
     const {
       context: {
         polymeshApi: {
           query: {
-            asset: { disableInvestorUniqueness, scopeIdOf, balanceOfAtScope, balanceOf },
+            asset: { balanceOf },
           },
         },
       },
@@ -493,39 +490,13 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
 
     const rawTicker = stringToTicker(ticker, context);
 
-    const iuDisabled = await disableInvestorUniqueness(rawTicker);
+    const balanceEntries = await balanceOf.entries(rawTicker);
 
-    if (boolToBoolean(iuDisabled)) {
-      const balanceEntries = await balanceOf.entries(rawTicker);
-
-      const assetBalances = balanceEntries.filter(
-        ([, balance]) => !balanceToBigNumber(balance).isZero()
-      );
-
-      return new BigNumber(assetBalances.length);
-    }
-
-    const scopeIdEntries = await scopeIdOf.entries(rawTicker);
-
-    const scopeBalanceEntries = await Promise.all(
-      scopeIdEntries.map(([, scopeId]) => balanceOfAtScope.entries(scopeId))
+    const assetBalances = balanceEntries.filter(
+      ([, balance]) => !balanceToBigNumber(balance).isZero()
     );
 
-    const assetHolders = new Set<string>();
-    flatten(scopeBalanceEntries).forEach(
-      ([
-        {
-          args: [scopeId],
-        },
-        balance,
-      ]) => {
-        if (!balanceToBigNumber(balance).isZero()) {
-          assetHolders.add(identityIdToString(scopeId));
-        }
-      }
-    );
-
-    return new BigNumber(assetHolders.size);
+    return new BigNumber(assetBalances.length);
   }
 
   /**

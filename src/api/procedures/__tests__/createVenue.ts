@@ -1,5 +1,5 @@
 import { Bytes } from '@polkadot/types';
-import { PalletSettlementVenueType } from '@polkadot/types/lookup';
+import { PolymeshPrimitivesSettlementVenueType } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
@@ -17,7 +17,7 @@ describe('createVenue procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToBytes: jest.SpyInstance<Bytes, [string, Context]>;
   let venueTypeToMeshVenueTypeSpy: jest.SpyInstance<
-    PalletSettlementVenueType,
+    PolymeshPrimitivesSettlementVenueType,
     [VenueType, Context]
   >;
   let createVenueTransaction: PolymeshTx<unknown[]>;
