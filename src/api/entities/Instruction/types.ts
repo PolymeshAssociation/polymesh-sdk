@@ -6,8 +6,7 @@ import { EventIdentifier } from '~/types';
 export enum InstructionStatus {
   Pending = 'Pending',
   Failed = 'Failed',
-  Rejected = 'Rejected',
-  Success = 'Success',
+  Executed = 'Executed',
 }
 
 export enum InstructionType {

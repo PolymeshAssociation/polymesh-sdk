@@ -6,7 +6,7 @@ export default {
         'Returns an ExecuteInstructionInfo instance, containing the consumed weight and the number of tokens in the instruction.',
       params: [
         {
-          name: 'instruction_id',
+          name: 'instructionId',
           type: 'InstructionId',
           isOptional: false,
         },

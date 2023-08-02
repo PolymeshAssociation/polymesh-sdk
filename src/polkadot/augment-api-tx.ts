@@ -5333,6 +5333,12 @@ declare module '@polkadot/api-base/types/submittable' {
           Option<SpWeightsWeightV2Weight>
         ]
       >;
+      //Removed in 6.0
+      rescheduleInstruction: AugmentedSubmittable<
+        (id: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        [u64]
+      >;
+
       /**
        * Root callable extrinsic, used as an internal call to execute a scheduled settlement instruction.
        **/

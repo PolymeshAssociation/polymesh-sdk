@@ -1177,10 +1177,10 @@ export interface EventDid extends IdentityId {}
 
 /** @name ExecuteInstructionInfo */
 export interface ExecuteInstructionInfo extends Struct {
-  readonly fungible_tokens: u32;
-  readonly non_fungible_tokens: u32;
-  readonly off_chain_assets: u32;
-  readonly consumed_weight: Weight;
+  readonly fungibleTokens: u32;
+  readonly nonFungibleTokens: u32;
+  readonly offChainAssets: u32;
+  readonly consumedWeight: Weight;
   readonly error: Option<Text>;
 }
 

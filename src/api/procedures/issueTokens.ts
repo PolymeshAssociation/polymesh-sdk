@@ -27,6 +27,7 @@ export async function prepareIssueTokens(
       polymeshApi: {
         tx: { asset },
       },
+      isV5,
     },
     context,
     storage: { asset: assetEntity },
@@ -56,9 +57,16 @@ export async function prepareIssueTokens(
   const rawValue = bigNumberToBalance(amount, context, isDivisible);
   const rawPortfolio = portfolioToPortfolioKind(defaultPortfolio, context);
 
+  const issueArgs: unknown[] = [rawTicker, rawValue];
+
+  if (!isV5) {
+    issueArgs.push(rawPortfolio);
+  }
+
   return {
     transaction: asset.issue,
-    args: [rawTicker, rawValue, rawPortfolio],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    args: issueArgs as any,
     resolver: assetEntity,
   };
 }

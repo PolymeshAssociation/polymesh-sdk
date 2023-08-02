@@ -137,6 +137,9 @@ import {
   AssetDocument,
   Authorization,
   AuthorizationType,
+  CalendarPeriod,
+  CalendarUnit,
+  CheckpointScheduleParams,
   Claim,
   ClaimCountRestrictionValue,
   ClaimCountStatInput,
@@ -1472,7 +1475,14 @@ function assertMemoValid(value: string): void {
 export function stringToMemo(value: string, context: Context): PolymeshPrimitivesMemo {
   assertMemoValid(value);
 
-  return context.createType('PolymeshPrimitivesMemo', padString(value, MAX_MEMO_LENGTH));
+  if (context.isV5) {
+    return context.createType(
+      'PolymeshCommonUtilitiesBalancesMemo',
+      padString(value, MAX_MEMO_LENGTH)
+    );
+  } else {
+    return context.createType('PolymeshPrimitivesMemo', padString(value, MAX_MEMO_LENGTH));
+  }
 }
 
 /**
@@ -2799,7 +2809,11 @@ export function venueTypeToMeshVenueType(
   type: VenueType,
   context: Context
 ): PolymeshPrimitivesSettlementVenueType {
-  return context.createType('PolymeshPrimitivesSettlementVenueType', type);
+  if (context.isV5) {
+    return context.createType('PalletSettlementVenueType', type);
+  } else {
+    return context.createType('PolymeshPrimitivesSettlementVenueType', type);
+  }
 }
 
 /**
@@ -2817,11 +2831,11 @@ export function meshInstructionStatusToInstructionStatus(
   }
 
   if (instruction.isRejected) {
-    return InstructionStatus.Rejected;
+    return InstructionStatus.Executed;
   }
 
   if (instruction.isSuccess) {
-    return InstructionStatus.Success;
+    return InstructionStatus.Executed;
   }
 
   return InstructionStatus.Unknown;
@@ -2887,7 +2901,11 @@ export function endConditionToSettlementType(
       value = InstructionType.SettleOnAffirmation;
   }
 
-  return context.createType('PolymeshPrimitivesSettlementSettlementType', value);
+  if (context.isV5) {
+    return context.createType('PalletSettlementSettlementType', value);
+  } else {
+    return context.createType('PolymeshPrimitivesSettlementSettlementType', value);
+  }
 }
 
 /**
@@ -4290,3 +4308,111 @@ export function datesToScheduleCheckpoints(
 
   return context.createType('PolymeshCommonUtilitiesCheckpointScheduleCheckpoints', { pending });
 }
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/**
+ * @hidden
+ *
+ * @note legacy, only for v5 chain
+ */
+export function calendarPeriodToMeshCalendarPeriod(period: CalendarPeriod, context: Context): any {
+  const { unit, amount } = period;
+
+  if (amount.isNegative()) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Calendar period cannot have a negative amount',
+    });
+  }
+
+  return context.createType('PolymeshPrimitivesCalendarCalendarPeriod', {
+    unit: stringUpperFirst(unit),
+    amount: bigNumberToU64(amount, context),
+  });
+}
+
+/**
+ * @hidden
+ *
+ * @note: legacy, only for < v5 chains
+ */
+export function meshCalendarPeriodToCalendarPeriod(period: any): CalendarPeriod {
+  const { unit: rawUnit, amount } = period;
+
+  let unit: CalendarUnit;
+
+  if (rawUnit.isSecond) {
+    unit = CalendarUnit.Second;
+  } else if (rawUnit.isMinute) {
+    unit = CalendarUnit.Minute;
+  } else if (rawUnit.isHour) {
+    unit = CalendarUnit.Hour;
+  } else if (rawUnit.isDay) {
+    unit = CalendarUnit.Day;
+  } else if (rawUnit.isWeek) {
+    unit = CalendarUnit.Week;
+  } else if (rawUnit.isMonth) {
+    unit = CalendarUnit.Month;
+  } else {
+    unit = CalendarUnit.Year;
+  }
+
+  return {
+    unit,
+    amount: u64ToBigNumber(amount),
+  };
+}
+
+/**
+ * @hidden
+ *
+ * @note: legacy, only for < v5 chains
+ */
+export function storedScheduleToCheckpointScheduleParams(
+  storedSchedule: any
+): CheckpointScheduleParams {
+  const {
+    schedule: { start, period },
+    id,
+    at,
+    remaining,
+  } = storedSchedule;
+
+  return {
+    id: u64ToBigNumber(id),
+    period: meshCalendarPeriodToCalendarPeriod(period),
+    start: momentToDate(start),
+    remaining: u32ToBigNumber(remaining),
+    nextCheckpointDate: momentToDate(at),
+  };
+}
+
+/**
+ * @hidden
+ *
+ * @note: legacy, only for < v5 chains
+ */
+export function scheduleSpecToMeshScheduleSpec(details: any, context: Context): any {
+  const { start, period, repetitions } = details;
+
+  return context.createType('PalletAssetCheckpointScheduleSpec', {
+    start: start && dateToMoment(start, context),
+    period: calendarPeriodToMeshCalendarPeriod(
+      period ?? { unit: CalendarUnit.Month, amount: new BigNumber(0) },
+      context
+    ),
+    remaining: bigNumberToU64(repetitions || new BigNumber(0), context),
+  });
+}
+
+/**
+ * @hidden
+ *
+ * @deprecated - v6 unifies memo structure so only `stringToMemo` is needed
+ */
+export function stringToInstructionMemo(value: string, context: Context): any {
+  assertMemoValid(value);
+
+  return context.createType('PalletSettlementInstructionMemo', padString(value, MAX_MEMO_LENGTH));
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */

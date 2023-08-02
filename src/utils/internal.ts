@@ -24,7 +24,7 @@ import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
 import { differenceWith, flatMap, isEqual, mapValues, noop, padEnd, uniq } from 'lodash';
-import { lt, major, satisfies } from 'semver';
+import { coerce, lt, major, satisfies } from 'semver';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 
 import {
@@ -41,6 +41,8 @@ import { Scope as MiddlewareScope } from '~/middleware/types';
 import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   CaCheckpointType,
+  CalendarPeriod,
+  CalendarUnit,
   Claim,
   ClaimType,
   Condition,
@@ -329,13 +331,16 @@ function cloneReceipt(receipt: ISubmittableResult, events: EventRecord[]): ISubm
 export function sliceBatchReceipt(
   receipt: ISubmittableResult,
   from: number,
-  to: number
+  to: number,
+  isV5: boolean
 ): ISubmittableResult {
   const [
     {
       data: [rawEventsPerExtrinsic],
     },
-  ] = filterEventRecords(receipt, 'utility', 'BatchCompletedOld');
+  ] = isV5
+    ? filterEventRecords(receipt, 'utility', 'BatchCompleted')
+    : filterEventRecords(receipt, 'utility', 'BatchCompletedOld');
 
   if (rawEventsPerExtrinsic.length < to || from < 0) {
     throw new PolymeshError({
@@ -1187,8 +1192,12 @@ function handleNodeVersionResponse(
   reject: (reason?: unknown) => void
 ): boolean {
   const { result: version } = data;
+  const lowMajor = major(SUPPORTED_NODE_SEMVER).toString();
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const high = coerce(SUPPORTED_NODE_VERSION_RANGE.split('||')[1].trim())!.version;
+  const highMajor = major(high).toString();
 
-  if (!satisfies(version, major(SUPPORTED_NODE_SEMVER).toString())) {
+  if (!satisfies(version, lowMajor) && !satisfies(version, highMajor)) {
     const error = new PolymeshError({
       code: ErrorCode.FatalError,
       message: 'Unsupported Polymesh RPC node version. Please upgrade the SDK',
@@ -1259,7 +1268,12 @@ function handleSpecVersionResponse(
     .map((ver: string) => ver.replace(/^0+(?!$)/g, ''))
     .join('.');
 
-  if (!satisfies(specVersionAsSemver, major(SUPPORTED_SPEC_SEMVER).toString())) {
+  const lowMajor = major(SUPPORTED_SPEC_SEMVER).toString();
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const high = coerce(SUPPORTED_SPEC_VERSION_RANGE.split('||')[1].trim())!.version;
+  const highMajor = major(high).toString();
+
+  if (!satisfies(specVersionAsSemver, lowMajor) && !satisfies(specVersionAsSemver, highMajor)) {
     const error = new PolymeshError({
       code: ErrorCode.FatalError,
       message: 'Unsupported Polymesh chain spec version. Please upgrade the SDK',
@@ -1273,7 +1287,6 @@ function handleSpecVersionResponse(
 
     return false;
   }
-
   if (!satisfies(specVersionAsSemver, SUPPORTED_SPEC_VERSION_RANGE)) {
     console.warn(
       `This version of the SDK supports Polymesh chain spec version ${SUPPORTED_SPEC_VERSION_RANGE}. The chain spec is at version ${specVersionAsSemver}. Please upgrade the SDK`
@@ -1710,4 +1723,59 @@ export async function getIdentityFromKeyRecord(
     const multiSigKeyRecord = optMultiSigKeyRecord.unwrap();
     return getIdentityFromKeyRecord(multiSigKeyRecord, context);
   }
+}
+
+/**
+ * @hidden
+ */
+function secondsInUnit(unit: CalendarUnit): BigNumber {
+  const SECOND = new BigNumber(1);
+  const MINUTE = SECOND.multipliedBy(60);
+  const HOUR = MINUTE.multipliedBy(60);
+  const DAY = HOUR.multipliedBy(24);
+  const WEEK = DAY.multipliedBy(7);
+  const MONTH = DAY.multipliedBy(30);
+  const YEAR = DAY.multipliedBy(365);
+
+  switch (unit) {
+    case CalendarUnit.Second: {
+      return SECOND;
+    }
+    case CalendarUnit.Minute: {
+      return MINUTE;
+    }
+    case CalendarUnit.Hour: {
+      return HOUR;
+    }
+    case CalendarUnit.Day: {
+      return DAY;
+    }
+    case CalendarUnit.Week: {
+      return WEEK;
+    }
+    case CalendarUnit.Month: {
+      return MONTH;
+    }
+    case CalendarUnit.Year: {
+      return YEAR;
+    }
+  }
+}
+
+/**
+ * @hidden
+ * Calculate the numeric complexity of a calendar period
+ */
+export function periodComplexity(period: CalendarPeriod): BigNumber {
+  const secsInYear = secondsInUnit(CalendarUnit.Year);
+  const { amount, unit } = period;
+
+  if (amount.isZero()) {
+    return new BigNumber(1);
+  }
+
+  const secsInUnit = secondsInUnit(unit);
+
+  const complexity = secsInYear.dividedBy(secsInUnit.multipliedBy(amount));
+  return BigNumber.maximum(2, complexity.integerValue(BigNumber.ROUND_FLOOR));
 }

@@ -1207,10 +1207,10 @@ export default {
       },
     },
     ExecuteInstructionInfo: {
-      fungible_tokens: 'u32',
-      non_fungible_tokens: 'u32',
-      off_chain_assets: 'u32',
-      consumed_weight: 'Weight',
+      fungibleTokens: 'u32',
+      nonFungibleTokens: 'u32',
+      offChainAssets: 'u32',
+      consumedWeight: 'Weight',
       error: 'Option<String>',
     },
   },
@@ -1535,7 +1535,7 @@ export default {
           'Returns an ExecuteInstructionInfo instance, containing the consumed weight and the number of tokens in the instruction.',
         params: [
           {
-            name: 'instruction_id',
+            name: 'instructionId',
             type: 'InstructionId',
             isOptional: false,
           },

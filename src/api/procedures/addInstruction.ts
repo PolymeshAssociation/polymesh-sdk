@@ -40,6 +40,7 @@ import {
   portfolioIdToMeshPortfolioId,
   portfolioLikeToPortfolio,
   portfolioLikeToPortfolioId,
+  stringToInstructionMemo,
   stringToMemo,
   stringToTicker,
   u64ToBigNumber,
@@ -224,7 +225,8 @@ async function getTxArgsAndErrors(
       const rawTradeDate = optionize(dateToMoment)(tradeDate, context);
       const rawValueDate = optionize(dateToMoment)(valueDate, context);
       const rawLegs: PolymeshPrimitivesSettlementLeg[] = [];
-      const rawInstructionMemo = optionize(stringToMemo)(memo, context);
+      const memoConverter = context.isV5 ? stringToInstructionMemo : stringToMemo;
+      const rawInstructionMemo = optionize(memoConverter)(memo, context);
 
       await Promise.all(
         legs.map(async ({ from, to, amount, asset }) => {
@@ -239,17 +241,27 @@ async function getTxArgsAndErrors(
           const rawFromPortfolio = portfolioIdToMeshPortfolioId(fromId, context);
           const rawToPortfolio = portfolioIdToMeshPortfolioId(toId, context);
 
-          const rawLeg = legToSettlementLeg(
-            {
-              Fungible: {
-                sender: rawFromPortfolio,
-                receiver: rawToPortfolio,
-                ticker: stringToTicker(asTicker(asset), context),
-                amount: bigNumberToBalance(amount, context),
+          let rawLeg;
+          if (context.isV5) {
+            rawLeg = {
+              from: rawFromPortfolio,
+              to: rawToPortfolio,
+              asset: stringToTicker(asTicker(asset), context),
+              amount: bigNumberToBalance(amount, context),
+            } as unknown as PolymeshPrimitivesSettlementLeg;
+          } else {
+            rawLeg = legToSettlementLeg(
+              {
+                Fungible: {
+                  sender: rawFromPortfolio,
+                  receiver: rawToPortfolio,
+                  ticker: stringToTicker(asTicker(asset), context),
+                  amount: bigNumberToBalance(amount, context),
+                },
               },
-            },
-            context
-          );
+              context
+            );
+          }
 
           rawLegs.push(rawLeg);
         })
@@ -306,6 +318,7 @@ export async function prepareAddInstruction(
       polymeshApi: {
         tx: { settlement },
       },
+      isV5,
     },
     context,
     storage: { portfoliosToAffirm },
@@ -398,8 +411,12 @@ export async function prepareAddInstruction(
     });
   }
 
-  const addTx = settlement.addInstruction;
-  const addAndAffirmTx = settlement.addAndAffirmInstruction;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const addTx = isV5 ? (settlement as any).addInstructionWithMemo : settlement.addInstruction;
+  const addAndAffirmTx = isV5
+    ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (settlement as any).addAndAffirmInstructionWithMemo
+    : settlement.addAndAffirmInstruction;
 
   const transactions = assembleBatchTransactions([
     {

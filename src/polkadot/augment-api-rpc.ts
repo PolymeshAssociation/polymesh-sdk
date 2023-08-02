@@ -1027,7 +1027,7 @@ declare module '@polkadot/rpc-core/types/jsonrpc' {
        **/
       getExecuteInstructionInfo: AugmentedRpc<
         (
-          instruction_id: InstructionId | AnyNumber | Uint8Array,
+          instructionId: InstructionId | AnyNumber | Uint8Array,
           blockHash?: Hash | string | Uint8Array
         ) => Observable<ExecuteInstructionInfo>
       >;

@@ -102,6 +102,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
         polymeshApi: {
           query: { asset },
         },
+        isV5,
       },
       ticker,
       context,
@@ -117,25 +118,58 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
       let status = TickerReservationStatus.Free;
       let expiryDate: Date | null = null;
 
-      if (tokenOpt.isSome) {
-        status = TickerReservationStatus.AssetCreated;
-        const rawOwnerDid = tokenOpt.unwrap().ownerDid;
-        owner = new Identity({ did: identityIdToString(rawOwnerDid) }, context);
-      } else if (reservationOpt.isSome) {
-        const { owner: rawOwnerDid, expiry } = reservationOpt.unwrap();
-        owner = new Identity({ did: identityIdToString(rawOwnerDid) }, context);
+      if (isV5) {
+        const { owner: tickerOwner, expiry } =
+          reservationOpt as unknown as PalletAssetTickerRegistration;
+        const tickerOwned = !tickerOwner.isEmpty;
+        const assetOwner = (tokenOpt as unknown as PalletAssetSecurityToken).ownerDid;
+        const assetOwned = !assetOwner.isEmpty;
 
-        expiryDate = expiry.isSome ? momentToDate(expiry.unwrap()) : null;
-        if (!expiryDate || expiryDate > new Date()) {
+        owner = tickerOwned
+          ? new Identity({ did: identityIdToString(tickerOwner) }, context)
+          : null;
+
+        if (assetOwned) {
+          status = TickerReservationStatus.AssetCreated;
+        } else if (tickerOwned) {
           status = TickerReservationStatus.Reserved;
-        }
-      }
+          if (expiry.isSome) {
+            expiryDate = momentToDate(expiry.unwrap());
 
-      return {
-        owner,
-        expiryDate,
-        status,
-      };
+            if (expiryDate < new Date()) {
+              status = TickerReservationStatus.Free;
+            }
+          }
+        } else {
+          status = TickerReservationStatus.Free;
+        }
+
+        return {
+          owner,
+          expiryDate,
+          status,
+        };
+      } else {
+        if (tokenOpt.isSome) {
+          status = TickerReservationStatus.AssetCreated;
+          const rawOwnerDid = tokenOpt.unwrap().ownerDid;
+          owner = new Identity({ did: identityIdToString(rawOwnerDid) }, context);
+        } else if (reservationOpt.isSome) {
+          const { owner: rawOwnerDid, expiry } = reservationOpt.unwrap();
+          owner = new Identity({ did: identityIdToString(rawOwnerDid) }, context);
+
+          expiryDate = expiry.isSome ? momentToDate(expiry.unwrap()) : null;
+          if (!expiryDate || expiryDate > new Date()) {
+            status = TickerReservationStatus.Reserved;
+          }
+        }
+
+        return {
+          owner,
+          expiryDate,
+          status,
+        };
+      }
     };
 
     if (callback) {
