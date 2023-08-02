@@ -119,7 +119,7 @@ export function prepareStorage<ReturnValues extends unknown[]>(
       let value;
 
       if (isResolverFunction(resolver)) {
-        value = resolver(sliceBatchReceipt(receipt, startIndex, endIndex));
+        value = resolver(sliceBatchReceipt(receipt, startIndex, endIndex, this.context));
       } else {
         value = resolver;
       }

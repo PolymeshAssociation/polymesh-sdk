@@ -43,6 +43,7 @@ export class Documents extends Namespace<Asset> {
     const {
       context: {
         polymeshApi: { query },
+        isV5,
       },
       context,
       parent: { ticker },
@@ -53,7 +54,9 @@ export class Documents extends Namespace<Asset> {
       paginationOpts,
     });
 
-    const data: AssetDocument[] = entries.map(([, doc]) => documentToAssetDocument(doc.unwrap()));
+    const data: AssetDocument[] = isV5
+      ? entries.map(([, doc]) => documentToAssetDocument(doc as any))
+      : entries.map(([, doc]) => documentToAssetDocument(doc.unwrap()));
 
     return {
       data,

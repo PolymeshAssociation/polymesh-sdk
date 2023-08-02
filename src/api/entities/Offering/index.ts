@@ -121,6 +121,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
         polymeshApi: {
           query: { sto },
         },
+        isV5,
       },
       id,
       asset: { ticker },
@@ -130,25 +131,30 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
     const assembleResult = (
       rawFundraiser: Option<PalletStoFundraiser>,
       rawName: Option<Bytes>
-    ): OfferingDetails =>
-      fundraiserToOfferingDetails(rawFundraiser.unwrap(), rawName.unwrap(), context);
+    ): OfferingDetails => {
+      if (isV5) {
+        return fundraiserToOfferingDetails(rawFundraiser as any, rawName as any, context);
+      } else {
+        return fundraiserToOfferingDetails(rawFundraiser.unwrap(), rawName.unwrap(), context);
+      }
+    };
 
     const rawTicker = stringToTicker(ticker, context);
     const rawU64 = bigNumberToU64(id, context);
 
-    const fetchName = (): Promise<Option<Bytes>> => sto.fundraiserNames(rawTicker, rawU64);
+    const fetchName = () => sto.fundraiserNames(rawTicker, rawU64);
 
     if (callback) {
       const fundraiserName = await fetchName();
       return sto.fundraisers(rawTicker, rawU64, fundraiserData => {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
-        callback(assembleResult(fundraiserData, fundraiserName));
+        callback(assembleResult(fundraiserData, fundraiserName as any));
       });
     }
 
     const [fundraiser, name] = await Promise.all([sto.fundraisers(rawTicker, rawU64), fetchName()]);
 
-    return assembleResult(fundraiser, name);
+    return assembleResult(fundraiser, name as any);
   }
 
   /**

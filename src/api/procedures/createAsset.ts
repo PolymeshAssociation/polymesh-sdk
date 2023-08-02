@@ -143,6 +143,7 @@ export async function prepareCreateAsset(
     initialStatistics,
   } = args;
 
+  const { isV5 } = context;
   assertTickerAvailable(ticker, status, reservationRequired);
 
   const rawTicker = stringToTicker(ticker, context);
@@ -183,32 +184,73 @@ export async function prepareCreateAsset(
     fee = await addManualFees(fee, [TxTags.asset.RegisterCustomAssetType], context);
 
     if (id.isEmpty) {
+      const assetArgs = [
+        rawName,
+        rawTicker,
+        rawIsDivisible,
+        rawValue,
+        rawIdentifiers,
+        rawFundingRound,
+      ];
+
+      if (isV5) {
+        const rawIu = booleanToBool(true, context);
+        assetArgs.push(rawIu);
+      }
       transactions.push(
         checkTxType({
           transaction: tx.asset.createAssetWithCustomType,
           fee,
-          args: [rawName, rawTicker, rawIsDivisible, rawValue, rawIdentifiers, rawFundingRound],
+          args: assetArgs as any,
         })
       );
     } else {
       const rawType = internalAssetTypeToAssetType({ Custom: id }, context);
 
+      const assetArgs = [
+        rawName,
+        rawTicker,
+        rawIsDivisible,
+        rawType,
+        rawIdentifiers,
+        rawFundingRound,
+      ];
+
+      if (isV5) {
+        const rawIu = booleanToBool(true, context);
+        assetArgs.push(rawIu);
+      }
+
       transactions.push(
         checkTxType({
           transaction: tx.asset.createAsset,
           fee,
-          args: [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
+          args: assetArgs as any,
         })
       );
     }
   } else {
     const rawType = internalAssetTypeToAssetType(assetType as KnownAssetType, context);
 
+    const assetArgs = [
+      rawName,
+      rawTicker,
+      rawIsDivisible,
+      rawType,
+      rawIdentifiers,
+      rawFundingRound,
+    ];
+
+    if (isV5) {
+      const rawIu = booleanToBool(true, context);
+      assetArgs.push(rawIu);
+    }
+
     transactions.push(
       checkTxType({
         transaction: tx.asset.createAsset,
         fee,
-        args: [rawName, rawTicker, rawIsDivisible, rawType, rawIdentifiers, rawFundingRound],
+        args: assetArgs as any,
       })
     );
   }
@@ -231,10 +273,16 @@ export async function prepareCreateAsset(
     const defaultPortfolio = new DefaultPortfolio({ did: signingIdentity.did }, context);
     const rawPortfolioId = portfolioToPortfolioKind(defaultPortfolio, context);
 
+    const issueArgs: any[] = [rawTicker, rawInitialSupply];
+
+    if (!isV5) {
+      issueArgs.push(rawPortfolioId);
+    }
+
     transactions.push(
       checkTxType({
         transaction: tx.asset.issue,
-        args: [rawTicker, rawInitialSupply, rawPortfolioId],
+        args: issueArgs as any,
       })
     );
   }
@@ -320,11 +368,13 @@ export async function prepareStorage(
 
   if (isCustomType) {
     const rawValue = stringToBytes(assetType, context);
-    const id = await context.polymeshApi.query.asset.customTypesInverse(rawValue);
+    const rawId = await context.polymeshApi.query.asset.customTypesInverse(rawValue);
+
+    const id = context.isV5 ? rawId : rawId.unwrap();
 
     return {
       customTypeData: {
-        id: id.unwrap(),
+        id: id as unknown as u32,
         rawValue,
       },
       status,

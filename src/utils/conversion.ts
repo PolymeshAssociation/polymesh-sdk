@@ -2817,11 +2817,11 @@ export function meshInstructionStatusToInstructionStatus(
   }
 
   if (instruction.isRejected) {
-    return InstructionStatus.Rejected;
+    return InstructionStatus.Executed;
   }
 
   if (instruction.isSuccess) {
-    return InstructionStatus.Success;
+    return InstructionStatus.Executed;
   }
 
   return InstructionStatus.Unknown;

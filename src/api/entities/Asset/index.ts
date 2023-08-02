@@ -218,6 +218,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
         polymeshApi: {
           query: { asset, externalAgents },
         },
+        isV5,
       },
       ticker,
       context,
@@ -233,14 +234,19 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
     ): Promise<AssetDetails> => {
       const fullAgents: Identity[] = [];
 
-      if (optToken.isNone) {
+      if (!isV5 && optToken.isNone) {
         throw new PolymeshError({
           message: 'Asset detail information not found',
           code: ErrorCode.DataUnavailable,
         });
       }
 
-      const { totalSupply, divisible, ownerDid, assetType: rawAssetType } = optToken.unwrap();
+      const {
+        totalSupply,
+        divisible,
+        ownerDid,
+        assetType: rawAssetType,
+      } = isV5 ? (optToken as unknown as PalletAssetSecurityToken) : optToken.unwrap();
 
       agentGroups.forEach(([storageKey, agentGroup]) => {
         const rawAgentGroup = agentGroup.unwrap();
@@ -280,7 +286,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       const assetName = await namePromise;
 
       return asset.tokens(rawTicker, async securityToken => {
-        const result = await assembleResult(securityToken, groupEntries, assetName);
+        const result = await assembleResult(securityToken as any, groupEntries, assetName as any);
 
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(result);
@@ -292,7 +298,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       groupOfAgentPromise,
       namePromise,
     ]);
-    return assembleResult(token, groups, name);
+    return assembleResult(token as any, groups, name as any);
   }
 
   /**

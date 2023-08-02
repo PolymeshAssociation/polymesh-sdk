@@ -41,6 +41,7 @@ export class Settlements extends Namespace<Asset> {
       parent: { ticker },
       context: {
         polymeshApi: { rpc },
+        isV5,
       },
       context,
       parent,
@@ -77,7 +78,7 @@ export class Settlements extends Namespace<Asset> {
       bigNumberToBalance(amount, context, isDivisible)
     );
 
-    if (!res.isOk) {
+    if (!isV5 && !res.isOk) {
       throw new PolymeshError({
         message:
           'RPC result from "asset.canTransferGranular" was not OK. Execution meter was likely exceeded',
@@ -85,6 +86,10 @@ export class Settlements extends Namespace<Asset> {
       });
     }
 
-    return granularCanTransferResultToTransferBreakdown(res.asOk, context);
+    if (isV5) {
+      return granularCanTransferResultToTransferBreakdown(res as any, context);
+    } else {
+      return granularCanTransferResultToTransferBreakdown(res.asOk, context);
+    }
   }
 }

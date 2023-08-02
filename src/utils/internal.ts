@@ -23,7 +23,7 @@ import { stringUpperFirst } from '@polkadot/util';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
 import stringify from 'json-stable-stringify';
-import { differenceWith, flatMap, isEqual, mapValues, noop, padEnd, uniq } from 'lodash';
+import { differenceWith, flatMap, gt, isEqual, mapValues, noop, padEnd, uniq } from 'lodash';
 import { lt, major, satisfies } from 'semver';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 
@@ -329,13 +329,16 @@ function cloneReceipt(receipt: ISubmittableResult, events: EventRecord[]): ISubm
 export function sliceBatchReceipt(
   receipt: ISubmittableResult,
   from: number,
-  to: number
+  to: number,
+  context: Context
 ): ISubmittableResult {
   const [
     {
       data: [rawEventsPerExtrinsic],
     },
-  ] = filterEventRecords(receipt, 'utility', 'BatchCompletedOld');
+  ] = context.isV5
+    ? filterEventRecords(receipt, 'utility', 'BatchCompleted')
+    : filterEventRecords(receipt, 'utility', 'BatchCompletedOld');
 
   if (rawEventsPerExtrinsic.length < to || from < 0) {
     throw new PolymeshError({
@@ -1188,7 +1191,7 @@ function handleNodeVersionResponse(
 ): boolean {
   const { result: version } = data;
 
-  if (!satisfies(version, major(SUPPORTED_NODE_SEMVER).toString())) {
+  if (!gt(version, major(SUPPORTED_NODE_SEMVER).toString())) {
     const error = new PolymeshError({
       code: ErrorCode.FatalError,
       message: 'Unsupported Polymesh RPC node version. Please upgrade the SDK',
@@ -1259,7 +1262,7 @@ function handleSpecVersionResponse(
     .map((ver: string) => ver.replace(/^0+(?!$)/g, ''))
     .join('.');
 
-  if (!satisfies(specVersionAsSemver, major(SUPPORTED_SPEC_SEMVER).toString())) {
+  if (gt(specVersionAsSemver, major(SUPPORTED_SPEC_SEMVER).toString())) {
     const error = new PolymeshError({
       code: ErrorCode.FatalError,
       message: 'Unsupported Polymesh chain spec version. Please upgrade the SDK',
