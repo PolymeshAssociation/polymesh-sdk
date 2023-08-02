@@ -3,6 +3,7 @@ import { when } from 'jest-when';
 
 import { CheckpointSchedule, Context, Entity } from '~/internal';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
+import { CalendarPeriod, CalendarUnit } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -19,7 +20,9 @@ describe('CheckpointSchedule class', () => {
 
   let id: BigNumber;
   let ticker: string;
+  let period: CalendarPeriod;
   let start: Date;
+  let remaining: BigNumber;
   let nextCheckpointDate: Date;
   let stringToTickerSpy: jest.SpyInstance;
   let bigNumberToU64Spy: jest.SpyInstance;
@@ -30,7 +33,12 @@ describe('CheckpointSchedule class', () => {
 
     id = new BigNumber(1);
     ticker = 'SOME_TICKER';
+    period = {
+      unit: CalendarUnit.Month,
+      amount: new BigNumber(1),
+    };
     start = new Date('10/14/1987 UTC');
+    remaining = new BigNumber(11);
     nextCheckpointDate = new Date(new Date().getTime() + 60 * 60 * 1000 * 24 * 365 * 60);
     stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
     bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
@@ -55,23 +63,48 @@ describe('CheckpointSchedule class', () => {
 
   describe('constructor', () => {
     it('should assign ticker and id to instance', () => {
-      let schedule = new CheckpointSchedule({ id, ticker, pendingPoints: [start] }, context);
+      let schedule = new CheckpointSchedule(
+        { id, ticker, start, period, remaining: new BigNumber(0), nextCheckpointDate },
+        context
+      );
 
       expect(schedule.asset.ticker).toBe(ticker);
       expect(schedule.id).toEqual(id);
-      expect(schedule.expiryDate).toEqual(start);
+      expect(schedule.period).toEqual(period);
+      expect(schedule.start).toEqual(start);
+      expect(schedule.expiryDate).toBeNull();
 
-      const end = new Date('10/14/1988 UTC');
       schedule = new CheckpointSchedule(
         {
           id,
           ticker,
-          pendingPoints: [start, end],
+          start,
+          period: { unit: CalendarUnit.Month, amount: new BigNumber(0) },
+          remaining,
+          nextCheckpointDate,
         },
         context
       );
 
-      expect(schedule.expiryDate).toEqual(end);
+      expect(schedule.asset.ticker).toBe(ticker);
+      expect(schedule.id).toEqual(id);
+      expect(schedule.period).toEqual(null);
+      expect(schedule.start).toEqual(start);
+      expect(schedule.expiryDate).toEqual(start);
+
+      schedule = new CheckpointSchedule(
+        {
+          id,
+          ticker,
+          start,
+          period: { unit: CalendarUnit.Year, amount: new BigNumber(1) },
+          remaining: new BigNumber(2),
+          nextCheckpointDate: start,
+        },
+        context
+      );
+
+      expect(schedule.expiryDate).toEqual(new Date('10/14/1988 UTC'));
     });
   });
 
@@ -89,12 +122,11 @@ describe('CheckpointSchedule class', () => {
   describe('method: details', () => {
     it('should throw an error if Schedule does not exists', async () => {
       const checkpointSchedule = new CheckpointSchedule(
-        { id: new BigNumber(2), ticker, pendingPoints: [start] },
+        { id: new BigNumber(2), ticker, period, start, remaining, nextCheckpointDate },
         context
       );
 
       stringToTickerSpy.mockReturnValue(dsMockUtils.createMockTicker(ticker));
-
       dsMockUtils.createQueryMock('checkpoint', 'scheduledCheckpoints', {
         returnValue: dsMockUtils.createMockOption(),
       });
@@ -113,7 +145,7 @@ describe('CheckpointSchedule class', () => {
     it('should return the Schedule details ', async () => {
       const rawRemaining = new BigNumber(1);
       const checkpointSchedule = new CheckpointSchedule(
-        { id, ticker, pendingPoints: [start] },
+        { id, ticker, period, start, remaining, nextCheckpointDate },
         context
       );
 
@@ -137,7 +169,7 @@ describe('CheckpointSchedule class', () => {
   describe('method: getCheckpoints', () => {
     it("should throw an error if the schedule doesn't exist", async () => {
       const schedule = new CheckpointSchedule(
-        { id: new BigNumber(2), ticker, pendingPoints: [start] },
+        { id: new BigNumber(2), ticker, start, period, remaining, nextCheckpointDate },
         context
       );
 
@@ -163,7 +195,17 @@ describe('CheckpointSchedule class', () => {
     });
 
     it('should return all the checkpoints created by the schedule', async () => {
-      const schedule = new CheckpointSchedule({ id, ticker, pendingPoints: [start] }, context);
+      const schedule = new CheckpointSchedule(
+        {
+          id: new BigNumber(2),
+          ticker,
+          start,
+          period,
+          remaining,
+          nextCheckpointDate,
+        },
+        context
+      );
       const firstId = new BigNumber(1);
       const secondId = new BigNumber(2);
       const rawFirstId = dsMockUtils.createMockU64(firstId);
@@ -191,7 +233,10 @@ describe('CheckpointSchedule class', () => {
 
   describe('method: exists', () => {
     it('should return whether the schedule exists', async () => {
-      let schedule = new CheckpointSchedule({ id, ticker, pendingPoints: [start] }, context);
+      let schedule = new CheckpointSchedule(
+        { id, ticker, start, period, remaining, nextCheckpointDate },
+        context
+      );
 
       dsMockUtils.createQueryMock('checkpoint', 'scheduledCheckpoints', {
         returnValue: dsMockUtils.createMockOption(
@@ -200,7 +245,6 @@ describe('CheckpointSchedule class', () => {
           })
         ),
       });
-
       let result = await schedule.exists();
 
       expect(result).toBe(true);
@@ -210,7 +254,7 @@ describe('CheckpointSchedule class', () => {
       });
 
       schedule = new CheckpointSchedule(
-        { id: new BigNumber(2), ticker, pendingPoints: [start] },
+        { id: new BigNumber(2), ticker, start, period, remaining, nextCheckpointDate },
         context
       );
 
@@ -226,15 +270,23 @@ describe('CheckpointSchedule class', () => {
         {
           id: new BigNumber(1),
           ticker: 'SOME_TICKER',
-          pendingPoints: [start],
+          start,
+          period,
+          remaining,
+          nextCheckpointDate,
         },
         context
       );
       expect(schedule.toHuman()).toEqual({
         id: '1',
         ticker: 'SOME_TICKER',
-        expiryDate: start.toISOString(),
-        pendingPoints: [start.toISOString()],
+        period: {
+          unit: 'month',
+          amount: '1',
+        },
+        start: '1987-10-14T00:00:00.000Z',
+        complexity: '12',
+        expiryDate: schedule.expiryDate?.toISOString(),
       });
     });
   });

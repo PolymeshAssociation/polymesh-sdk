@@ -39,6 +39,8 @@ import {
   AssetWithGroup,
   Authorization,
   AuthorizationType,
+  CalendarPeriod,
+  CalendarUnit,
   CheckPermissionsResult,
   CheckRolesResult,
   ComplianceRequirements,
@@ -266,8 +268,8 @@ interface CheckpointOptions extends EntityOptions {
 interface CheckpointScheduleOptions extends EntityOptions {
   id?: BigNumber;
   ticker?: string;
-  points?: Date[];
   start?: Date;
+  period?: CalendarPeriod | null;
   expiryDate?: Date | null;
   complexity?: BigNumber;
   details?: EntityGetter<ScheduleDetails>;
@@ -1304,7 +1306,7 @@ const MockCheckpointScheduleClass = createMockEntityClass<CheckpointScheduleOpti
      * @hidden
      */
     public argsToOpts(...args: ConstructorParameters<typeof CheckpointSchedule>) {
-      return extractFromArgs(args, ['id', 'ticker', 'pendingPoints']);
+      return extractFromArgs(args, ['id', 'ticker', 'start', 'period']);
     }
 
     /**
@@ -1324,7 +1326,10 @@ const MockCheckpointScheduleClass = createMockEntityClass<CheckpointScheduleOpti
     id: new BigNumber(1),
     ticker: 'SOME_TICKER',
     start: new Date(new Date().getTime() + 24 * 60 * 60 * 1000),
-    points: [new Date(new Date().getTime() + 24 * 60 * 60 * 1000)],
+    period: {
+      unit: CalendarUnit.Month,
+      amount: new BigNumber(1),
+    },
     expiryDate: new Date(new Date().getTime() + 60 * 24 * 60 * 60 * 1000),
     complexity: new BigNumber(2),
     details: {

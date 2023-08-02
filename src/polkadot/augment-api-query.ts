@@ -843,6 +843,12 @@ declare module '@polkadot/api-base/types/storage' {
         ) => Observable<u128>,
         [PolymeshPrimitivesTicker, u64]
       >;
+      //removed in v6
+      schedules: AugmentedQuery<
+        ApiType,
+        (arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<Vec<any>>,
+        [PolymeshPrimitivesTicker]
+      >;
     };
     committeeMembership: {
       /**

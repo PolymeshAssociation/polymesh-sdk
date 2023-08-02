@@ -3005,7 +3005,7 @@ export const createMockVenue = (venue?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockInstructionStatus = (
-  instructionStatus?: 'Pending' | 'Unknown' | 'Failed' | 'Rejected' | 'Success'
+  instructionStatus?: 'Pending' | 'Unknown' | 'Failed' | 'Executed'
 ): MockCodec<PolymeshPrimitivesSettlementInstructionStatus> => {
   return createMockEnum<PolymeshPrimitivesSettlementInstructionStatus>(instructionStatus);
 };
@@ -3225,6 +3225,47 @@ export const createMockPriceTier = (priceTier?: {
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
+export const createMockCalendarUnit = (
+  calendarUnit?: 'Second' | 'Minute' | 'Hour' | 'Day' | 'Week' | 'Month' | 'Year'
+  // | PolymeshPrimitivesCalendarCalendarUnit
+): MockCodec<any> => {
+  if (isCodec<any>(calendarUnit)) {
+    return calendarUnit as MockCodec<any>;
+  }
+
+  return createMockEnum<any>(calendarUnit);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockCalendarPeriod = (
+  calendarPeriod?:
+    | any
+    | {
+        unit: any | Parameters<typeof createMockCalendarUnit>[0];
+        amount: u64 | Parameters<typeof createMockU64>[0];
+      }
+): MockCodec<any> => {
+  const { unit, amount } = calendarPeriod ?? {
+    unit: createMockCalendarUnit(),
+    amount: createMockU64(),
+  };
+
+  return createMockCodec(
+    {
+      unit: createMockCalendarUnit(unit),
+      amount: createMockU64(amount),
+    },
+    !calendarPeriod
+  );
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
 export const createMockCheckpointSchedule = (
   checkpointSchedule?:
     | PolymeshCommonUtilitiesCheckpointScheduleCheckpoints
@@ -3243,7 +3284,6 @@ export const createMockCheckpointSchedule = (
     !checkpointSchedule
   );
 };
-
 /**
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed
@@ -4217,4 +4257,57 @@ export const createMockCanTransferGranularReturn = (
       }
 ): MockCodec<CanTransferGranularReturn> => {
   return createMockEnum<CanTransferGranularReturn>(result);
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockStoredSchedule = (storedSchedule?: {
+  schedule: Parameters<typeof createMockCheckpointSchedule>[0];
+  id: u64 | Parameters<typeof createMockU64>[0];
+  at: Moment | Parameters<typeof createMockMoment>[0];
+  remaining: u32 | Parameters<typeof createMockU32>[0];
+}): MockCodec<any> => {
+  const { schedule, id, at, remaining } = storedSchedule ?? {
+    schedule: createMockCheckpointSchedule(),
+    id: createMockU64(),
+    at: createMockMoment(),
+    remaining: createMockU32(),
+  };
+
+  return createMockCodec(
+    {
+      schedule: createMockCheckpointSchedule(schedule),
+      id: createMockU64(id),
+      at: createMockMoment(at),
+      remaining: createMockU32(remaining),
+    },
+    !storedSchedule
+  );
+};
+
+/**
+ * @hidden
+ * NOTE: `isEmpty` will be set to true if no value is passed
+ */
+export const createMockScheduleSpec = (scheduleSpec?: {
+  start: Option<Moment>;
+  period: Parameters<typeof createMockCalendarPeriod>[0];
+  remaining: u32 | Parameters<typeof createMockU32>[0];
+}): MockCodec<any> => {
+  const { start, period, remaining } = scheduleSpec ?? {
+    start: createMockOption(),
+    period: createMockCalendarPeriod(),
+    remaining: createMockU32(),
+  };
+
+  return createMockCodec(
+    {
+      start: createMockOption(start),
+      period: createMockCalendarPeriod(period),
+      remaining: createMockU32(remaining),
+    },
+    !scheduleSpec
+  );
 };

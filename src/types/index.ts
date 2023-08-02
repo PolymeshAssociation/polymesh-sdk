@@ -1644,3 +1644,29 @@ export interface MiddlewareMetadata {
 export type MapTxData<ArgsArray extends unknown[][]> = {
   [K in keyof ArgsArray]: ArgsArray[K] extends unknown[] ? TxData<ArgsArray[K]> : never;
 };
+
+export enum CalendarUnit {
+  Second = 'second',
+  Minute = 'minute',
+  Hour = 'hour',
+  Day = 'day',
+  Week = 'week',
+  Month = 'month',
+  Year = 'year',
+}
+
+/**
+ * Represents a period of time measured in a specific unit (e.g. 20 days)
+ */
+export interface CalendarPeriod {
+  unit: CalendarUnit;
+  amount: BigNumber;
+}
+
+/**
+ *
+ */
+export interface SpWeightV2 {
+  refTime: BigNumber;
+  proofSize: BigNumber;
+}

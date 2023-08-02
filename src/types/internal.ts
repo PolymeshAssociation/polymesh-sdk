@@ -309,8 +309,7 @@ export enum InstructionStatus {
   Pending = 'Pending',
   Unknown = 'Unknown',
   Failed = 'Failed',
-  Rejected = 'Rejected',
-  Success = 'Success',
+  Executed = 'Executed',
 }
 
 /**

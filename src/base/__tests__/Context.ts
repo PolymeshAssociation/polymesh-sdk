@@ -73,6 +73,8 @@ describe('Context class', () => {
         primaryKey: dsMockUtils.createMockOption(dsMockUtils.createMockAccountId('someDid')),
       }),
     });
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    dsMockUtils.createQueryMock('system', 'lastRuntimeUpgrade', { returnValue: () => {} });
   });
 
   afterEach(() => {

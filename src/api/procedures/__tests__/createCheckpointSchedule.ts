@@ -1,7 +1,4 @@
-import {
-  PolymeshCommonUtilitiesCheckpointScheduleCheckpoints,
-  PolymeshPrimitivesTicker,
-} from '@polkadot/types/lookup';
+import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
@@ -15,7 +12,7 @@ import {
 import { CheckpointSchedule, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { TxTags } from '~/types';
+import { CalendarUnit, TxTags } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -33,12 +30,9 @@ jest.mock(
 describe('createCheckpointSchedule procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
-  let datesToCheckpointScheduleSpy: jest.SpyInstance<
-    PolymeshCommonUtilitiesCheckpointScheduleCheckpoints,
-    [Date[], Context]
-  >;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let datesToScheduleCheckpointsSpy: jest.SpyInstance<any, [Date[], Context]>;
   let ticker: string;
-  let points: Date[];
   let rawTicker: PolymeshPrimitivesTicker;
 
   beforeAll(() => {
@@ -46,9 +40,8 @@ describe('createCheckpointSchedule procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
-    datesToCheckpointScheduleSpy = jest.spyOn(utilsConversionModule, 'datesToScheduleCheckpoints');
+    datesToScheduleCheckpointsSpy = jest.spyOn(utilsConversionModule, 'datesToScheduleCheckpoints');
     ticker = 'SOME_TICKER';
-    points = [new Date(new Date().getTime() + 10000)];
     rawTicker = dsMockUtils.createMockTicker(ticker);
   });
 
@@ -74,11 +67,11 @@ describe('createCheckpointSchedule procedure', () => {
     return expect(
       prepareCreateCheckpointSchedule.call(proc, {
         ticker,
-        points: [new Date(new Date().getTime() - 10000)],
+        start: new Date(new Date().getTime() - 10000),
         period: null,
         repetitions: null,
       })
-    ).rejects.toThrow('Schedule points must be in the future');
+    ).rejects.toThrow('Schedule start date must be in the future');
   });
 
   it('should return a create checkpoint schedule transaction spec', async () => {
@@ -86,20 +79,37 @@ describe('createCheckpointSchedule procedure', () => {
 
     const transaction = dsMockUtils.createTxMock('checkpoint', 'createSchedule');
 
-    const rawSpec = dsMockUtils.createMockCheckpointSchedule({
-      pending: dsMockUtils.createMockBTreeSet(points),
+    const start = new Date(new Date().getTime() + 10000);
+    const period = {
+      unit: CalendarUnit.Month,
+      amount: new BigNumber(1),
+    };
+    const repetitions = new BigNumber(1);
+
+    const rawSchedule = dsMockUtils.createMockScheduleSpec({
+      start: dsMockUtils.createMockOption(
+        dsMockUtils.createMockMoment(new BigNumber(start.getTime()))
+      ),
+      period: dsMockUtils.createMockCalendarPeriod({
+        unit: dsMockUtils.createMockCalendarUnit('Month'),
+        amount: dsMockUtils.createMockU64(period.amount),
+      }),
+      remaining: dsMockUtils.createMockU32(repetitions),
     });
-    when(datesToCheckpointScheduleSpy).calledWith(points, mockContext).mockReturnValue(rawSpec);
+
+    datesToScheduleCheckpointsSpy.mockReturnValue(rawSchedule);
 
     const result = await prepareCreateCheckpointSchedule.call(proc, {
       ticker,
-      points,
+      start,
+      period,
+      repetitions,
     });
 
     expect(result).toEqual({
       transaction,
       resolver: expect.any(Function),
-      args: [rawTicker, rawSpec],
+      args: [rawTicker, rawSchedule],
     });
   });
 
@@ -107,6 +117,10 @@ describe('createCheckpointSchedule procedure', () => {
     const filterEventRecordsSpy = jest.spyOn(utilsInternalModule, 'filterEventRecords');
     const id = new BigNumber(1);
     const start = new Date('10/14/1987');
+    const period = {
+      unit: CalendarUnit.Month,
+      amount: new BigNumber(1),
+    };
 
     beforeAll(() => {
       entityMockUtils.initMocks({
@@ -114,12 +128,11 @@ describe('createCheckpointSchedule procedure', () => {
           ticker,
           id,
           start,
+          period,
           expiryDate: new Date(new Date().getTime() + 60 * 24 * 60 * 60 * 1000),
-          points: [start],
         },
       });
     });
-
     beforeEach(() => {
       filterEventRecordsSpy.mockReturnValue([
         dsMockUtils.createMockIEvent([
@@ -154,7 +167,14 @@ describe('createCheckpointSchedule procedure', () => {
       const proc = procedureMockUtils.getInstance<Params, CheckpointSchedule>(mockContext);
       const boundFunc = getAuthorization.bind(proc);
 
-      expect(boundFunc({ ticker, points: [] })).toEqual({
+      const start = new Date('10/14/1987');
+      const period = {
+        unit: CalendarUnit.Month,
+        amount: new BigNumber(1),
+      };
+      const repetitions = new BigNumber(10);
+
+      expect(boundFunc({ ticker, start, period, repetitions })).toEqual({
         permissions: {
           transactions: [TxTags.checkpoint.CreateSchedule],
           assets: [expect.objectContaining({ ticker })],

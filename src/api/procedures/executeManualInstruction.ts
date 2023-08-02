@@ -24,7 +24,7 @@ import {
 
 export interface Storage {
   portfolios: (DefaultPortfolio | NumberedPortfolio)[];
-  totalLegAmount: BigNumber;
+  totalLegAmount: BigNumber; // v5 param
   instructionDetails: InstructionDetails;
   signerDid: string;
 }
@@ -43,7 +43,9 @@ export async function prepareExecuteManualInstruction(
       polymeshApi: {
         tx: { settlement: settlementTx },
         query: { settlement },
+        rpc,
       },
+      isV5,
     },
     context,
     storage: { portfolios, totalLegAmount, instructionDetails, signerDid },
@@ -86,15 +88,33 @@ export async function prepareExecuteManualInstruction(
     }
   }
 
-  return {
-    transaction: settlementTx.executeManualInstruction,
-    resolver: instruction,
-    args: [
-      rawInstructionId,
-      bigNumberToU32(totalLegAmount, context),
-      rawPortfolioIds.length ? rawPortfolioIds[0] : null,
-    ],
-  };
+  if (isV5) {
+    return {
+      transaction: settlementTx.executeManualInstruction,
+      resolver: instruction,
+      args: [
+        rawInstructionId,
+        bigNumberToU32(totalLegAmount, context),
+        rawPortfolioIds.length ? rawPortfolioIds[0] : null,
+      ],
+    };
+  } else {
+    const { fungibleTokens, nonFungibleTokens, offChainAssets, consumedWeight } =
+      await rpc.settlement.getExecuteInstructionInfo(rawInstructionId);
+
+    return {
+      transaction: settlementTx.executeManualInstruction,
+      resolver: instruction,
+      args: [
+        rawInstructionId,
+        rawPortfolioIds.length ? rawPortfolioIds[0] : null,
+        fungibleTokens,
+        nonFungibleTokens,
+        offChainAssets,
+        consumedWeight,
+      ],
+    };
+  }
 }
 
 /**
