@@ -1,4 +1,4 @@
-import { u32, u64 } from '@polkadot/types';
+import { u64 } from '@polkadot/types';
 import { PolymeshPrimitivesIdentityIdPortfolioId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
@@ -26,7 +26,6 @@ import {
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
-  bigNumberToU32,
   bigNumberToU64,
   meshAffirmationStatusToAffirmationStatus,
   portfolioIdToMeshPortfolioId,
@@ -89,7 +88,7 @@ export async function prepareModifyInstructionAffirmation(
 
   const excludeCriteria: AffirmationStatus[] = [];
   let errorMessage: string;
-  let transaction: PolymeshTx<[u64, PolymeshPrimitivesIdentityIdPortfolioId[], u32]> | null = null;
+  let transaction: PolymeshTx<[u64, PolymeshPrimitivesIdentityIdPortfolioId[]]> | null = null;
 
   switch (operation) {
     case InstructionAffirmationOperation.Affirm: {
@@ -134,14 +133,14 @@ export async function prepareModifyInstructionAffirmation(
       transaction,
       resolver: instruction,
       feeMultiplier: senderLegAmount,
-      args: [rawInstructionId, validPortfolioIds, bigNumberToU32(senderLegAmount, context)],
+      args: [rawInstructionId, validPortfolioIds],
     };
   }
   return {
     transaction: settlementTx.rejectInstruction,
     resolver: instruction,
     feeMultiplier: totalLegAmount,
-    args: [rawInstructionId, validPortfolioIds[0], bigNumberToU32(totalLegAmount, context)],
+    args: [rawInstructionId, validPortfolioIds[0]],
   };
 }
 

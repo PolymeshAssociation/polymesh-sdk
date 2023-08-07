@@ -220,7 +220,7 @@ describe('modifyInstructionAffirmation procedure', () => {
     expect(result).toEqual({
       transaction,
       feeMultiplier: new BigNumber(2),
-      args: [rawInstructionId, [rawPortfolioId, rawPortfolioId], rawLegAmount],
+      args: [rawInstructionId, [rawPortfolioId, rawPortfolioId]],
       resolver: expect.objectContaining({ id }),
     });
   });
@@ -283,7 +283,7 @@ describe('modifyInstructionAffirmation procedure', () => {
     expect(result).toEqual({
       transaction,
       feeMultiplier: new BigNumber(2),
-      args: [rawInstructionId, [rawPortfolioId, rawPortfolioId], rawLegAmount],
+      args: [rawInstructionId, [rawPortfolioId, rawPortfolioId]],
       resolver: expect.objectContaining({ id }),
     });
   });
@@ -331,7 +331,7 @@ describe('modifyInstructionAffirmation procedure', () => {
     expect(result).toEqual({
       transaction,
       feeMultiplier: new BigNumber(2),
-      args: [rawInstructionId, rawPortfolioId, rawLegAmount],
+      args: [rawInstructionId, rawPortfolioId],
       resolver: expect.objectContaining({ id }),
     });
   });
