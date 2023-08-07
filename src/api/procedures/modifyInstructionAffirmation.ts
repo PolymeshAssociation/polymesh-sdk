@@ -1,4 +1,4 @@
-import { u32, u64 } from '@polkadot/types';
+import { u64 } from '@polkadot/types';
 import { PolymeshPrimitivesIdentityIdPortfolioId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
@@ -26,7 +26,6 @@ import {
 } from '~/types/internal';
 import { tuple } from '~/types/utils';
 import {
-  bigNumberToU32,
   bigNumberToU64,
   meshAffirmationStatusToAffirmationStatus,
   portfolioIdToMeshPortfolioId,
