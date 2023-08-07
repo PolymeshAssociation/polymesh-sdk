@@ -1304,7 +1304,7 @@ const MockCheckpointScheduleClass = createMockEntityClass<CheckpointScheduleOpti
      * @hidden
      */
     public argsToOpts(...args: ConstructorParameters<typeof CheckpointSchedule>) {
-      return extractFromArgs(args, ['id', 'ticker', 'pendingPoints']);
+      return extractFromArgs(args, ['id', 'ticker', 'start', 'period']);
     }
 
     /**

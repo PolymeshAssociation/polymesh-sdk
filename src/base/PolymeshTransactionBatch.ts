@@ -252,8 +252,6 @@ export class PolymeshTransactionBatch<
 
     const t = filterEventRecords(receipt, 'utility', 'BatchInterruptedOld', true);
 
-    console.log(t);
-
     if (failed) {
       const {
         data: [, failedData],

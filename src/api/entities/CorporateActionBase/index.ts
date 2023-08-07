@@ -12,6 +12,7 @@ import {
   PolymeshError,
 } from '~/internal';
 import {
+  CalendarUnit,
   ErrorCode,
   InputCaCheckpoint,
   LinkCaDocsParams,
@@ -214,7 +215,20 @@ export abstract class CorporateActionBase extends Entity<UniqueIdentifiers, unkn
     if (schedule.isSome) {
       const id = u64ToBigNumber(scheduleId);
       const points = [...schedule.unwrap().pending].map(rawPoint => momentToDate(rawPoint));
-      return new CheckpointSchedule({ ticker, id, pendingPoints: points }, context);
+      return new CheckpointSchedule(
+        {
+          ticker,
+          id,
+          start: points[0],
+          nextCheckpointDate: points[0],
+          remaining: new BigNumber(points.length),
+          period: {
+            amount: new BigNumber(0),
+            unit: CalendarUnit.Second,
+          },
+        },
+        context
+      );
     }
 
     return new Checkpoint(

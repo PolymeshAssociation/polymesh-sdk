@@ -131,12 +131,16 @@ import {
   ComplianceRequirementResult,
   GranularCanTransferResult,
   Moment,
+  ScheduleSpec,
 } from '~/polkadot/polymesh';
 import {
   AffirmationStatus,
   AssetDocument,
   Authorization,
   AuthorizationType,
+  CalendarPeriod,
+  CalendarUnit,
+  CheckpointScheduleParams,
   Claim,
   ClaimCountRestrictionValue,
   ClaimCountStatInput,
@@ -4289,4 +4293,99 @@ export function datesToScheduleCheckpoints(
   const pending = context.createType('BTreeSet<Moment>', rawPoints);
 
   return context.createType('PolymeshCommonUtilitiesCheckpointScheduleCheckpoints', { pending });
+}
+
+/**
+ * @hidden
+ *
+ * @note legacy, only for v5 chain
+ */
+export function calendarPeriodToMeshCalendarPeriod(period: CalendarPeriod, context: Context): any {
+  const { unit, amount } = period;
+
+  if (amount.isNegative()) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Calendar period cannot have a negative amount',
+    });
+  }
+
+  return context.createType('PolymeshPrimitivesCalendarCalendarPeriod', {
+    unit: stringUpperFirst(unit),
+    amount: bigNumberToU64(amount, context),
+  });
+}
+
+/**
+ * @hidden
+ *
+ * @note: legacy, only for < v5 chains
+ */
+export function meshCalendarPeriodToCalendarPeriod(period: any): CalendarPeriod {
+  const { unit: rawUnit, amount } = period;
+
+  let unit: CalendarUnit;
+
+  if (rawUnit.isSecond) {
+    unit = CalendarUnit.Second;
+  } else if (rawUnit.isMinute) {
+    unit = CalendarUnit.Minute;
+  } else if (rawUnit.isHour) {
+    unit = CalendarUnit.Hour;
+  } else if (rawUnit.isDay) {
+    unit = CalendarUnit.Day;
+  } else if (rawUnit.isWeek) {
+    unit = CalendarUnit.Week;
+  } else if (rawUnit.isMonth) {
+    unit = CalendarUnit.Month;
+  } else {
+    unit = CalendarUnit.Year;
+  }
+
+  return {
+    unit,
+    amount: u64ToBigNumber(amount),
+  };
+}
+
+/**
+ * @hidden
+ *
+ * @note: legacy, only for < v5 chains
+ */
+export function storedScheduleToCheckpointScheduleParams(
+  storedSchedule: any
+): CheckpointScheduleParams {
+  const {
+    schedule: { start, period },
+    id,
+    at,
+    remaining,
+  } = storedSchedule;
+
+  return {
+    id: u64ToBigNumber(id),
+    period: meshCalendarPeriodToCalendarPeriod(period),
+    start: momentToDate(start),
+    remaining: u32ToBigNumber(remaining),
+    nextCheckpointDate: momentToDate(at),
+  };
+}
+
+/**
+ * @hidden
+ *
+ * @note: legacy, only for < v5 chains
+ */
+export function scheduleSpecToMeshScheduleSpec(details: any, context: Context): any {
+  const { start, period, repetitions } = details;
+
+  return context.createType('PalletAssetCheckpointScheduleSpec', {
+    start: start && dateToMoment(start, context),
+    period: calendarPeriodToMeshCalendarPeriod(
+      period ?? { unit: CalendarUnit.Month, amount: new BigNumber(0) },
+      context
+    ),
+    remaining: bigNumberToU64(repetitions || new BigNumber(0), context),
+  });
 }

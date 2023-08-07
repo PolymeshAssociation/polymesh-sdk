@@ -312,21 +312,23 @@ describe('sliceBatchReceipt', () => {
   });
 
   it('should return the cloned receipt with a subset of events', () => {
-    let slicedReceipt = sliceBatchReceipt(mockReceipt, 1, 3);
+    const mockContext = dsMockUtils.getContextInstance();
+    let slicedReceipt = sliceBatchReceipt(mockReceipt, 1, 3, mockContext);
 
     expect(slicedReceipt.events).toEqual(['tx1event0', 'tx2event0', 'tx2event1', 'tx2event2']);
 
-    slicedReceipt = sliceBatchReceipt(mockReceipt, 0, 2);
+    slicedReceipt = sliceBatchReceipt(mockReceipt, 0, 2, mockContext);
 
     expect(slicedReceipt.events).toEqual(['tx0event0', 'tx0event1', 'tx1event0']);
   });
 
   it('should throw an error if the transaction indexes are out of bounds', () => {
-    expect(() => sliceBatchReceipt(mockReceipt, -1, 2)).toThrow(
+    const mockContext = dsMockUtils.getContextInstance();
+    expect(() => sliceBatchReceipt(mockReceipt, -1, 2, mockContext)).toThrow(
       'Transaction index range out of bounds. Please report this to the Polymesh team'
     );
 
-    expect(() => sliceBatchReceipt(mockReceipt, 1, 4)).toThrow(
+    expect(() => sliceBatchReceipt(mockReceipt, 1, 4, mockContext)).toThrow(
       'Transaction index range out of bounds. Please report this to the Polymesh team'
     );
   });
@@ -1206,6 +1208,7 @@ describe('assertExpectedChainVersion', () => {
   it('should log a warning given a minor chain spec version mismatch', async () => {
     const signal = assertExpectedChainVersion('ws://example.com');
     const mockSpecVersion = getMismatchedVersion(SUPPORTED_SPEC_SEMVER);
+    console.log({ mockSpecVersion }, getSpecVersion(mockSpecVersion));
     client.sendSpecVersion(getSpecVersion(mockSpecVersion));
     client.sendRpcVersion(SUPPORTED_NODE_SEMVER);
     await signal;
@@ -1218,6 +1221,7 @@ describe('assertExpectedChainVersion', () => {
   it('should resolve even with a patch chain spec version mismatch', async () => {
     const signal = assertExpectedChainVersion('ws://example.com');
     const mockSpecVersion = getMismatchedVersion(SUPPORTED_SPEC_SEMVER, 2);
+    console.log({ mockSpecVersion });
     client.sendSpecVersion(getSpecVersion(mockSpecVersion));
     client.sendRpcVersion(SUPPORTED_NODE_SEMVER);
     await signal;

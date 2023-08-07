@@ -115,7 +115,7 @@ describe('Instruction class', () => {
       when(instructionStatusesMock)
         .calledWith(rawId)
         .mockResolvedValue(
-          dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Success)
+          dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Executed)
         );
 
       let result = await instruction.isExecuted();
@@ -178,7 +178,7 @@ describe('Instruction class', () => {
       expect(result).toBe(true);
 
       instructionStatusesMock.mockResolvedValue(
-        dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Success)
+        dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Executed)
       );
 
       result = await instruction.isPending();
@@ -236,24 +236,14 @@ describe('Instruction class', () => {
       expect(callback).toBeCalledWith(InstructionStatus.Failed);
 
       instructionStatusesMock.mockImplementationOnce(async (_, cbFunc) => {
-        cbFunc(dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Success));
+        cbFunc(dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Executed));
         return unsubCallback;
       });
 
       result = await instruction.onStatusChange(callback);
 
       expect(result).toEqual(unsubCallback);
-      expect(callback).toBeCalledWith(InstructionStatus.Success);
-
-      instructionStatusesMock.mockImplementationOnce(async (_, cbFunc) => {
-        cbFunc(dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Rejected));
-        return unsubCallback;
-      });
-
-      result = await instruction.onStatusChange(callback);
-
-      expect(result).toEqual(unsubCallback);
-      expect(callback).toBeCalledWith(InstructionStatus.Rejected);
+      expect(callback).toBeCalledWith(InstructionStatus.Executed);
     });
 
     it('should error on unknown instruction status', () => {
@@ -487,34 +477,13 @@ describe('Instruction class', () => {
       });
       expect(result.venue.id).toEqual(venueId);
 
-      status = InstructionStatus.Rejected;
+      status = InstructionStatus.Executed;
 
       queryMultiMock.mockResolvedValueOnce([
         dsMockUtils.createMockInstruction({
           ...rawInstructionDetails,
         }),
-        dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Rejected),
-        rawOptionalMemo,
-      ]);
-
-      result = await instruction.details();
-
-      expect(result).toMatchObject({
-        status,
-        createdAt,
-        tradeDate,
-        valueDate,
-        type,
-        memo,
-      });
-
-      status = InstructionStatus.Success;
-
-      queryMultiMock.mockResolvedValueOnce([
-        dsMockUtils.createMockInstruction({
-          ...rawInstructionDetails,
-        }),
-        dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Success),
+        dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Executed),
         rawOptionalMemo,
       ]);
 
@@ -602,7 +571,7 @@ describe('Instruction class', () => {
 
     it('should throw an error if the instruction is not pending', () => {
       instructionStatusesMock.mockResolvedValue(
-        dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Success)
+        dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Executed)
       );
 
       return expect(instruction.getAffirmations()).rejects.toThrow(
@@ -685,7 +654,7 @@ describe('Instruction class', () => {
 
     it('should throw an error if the instruction is not pending', () => {
       instructionStatusMock.mockResolvedValue(
-        createMockInstructionStatus(InternalInstructionStatus.Success)
+        createMockInstructionStatus(InternalInstructionStatus.Executed)
       );
       return expect(instruction.getLegs()).rejects.toThrow(
         'Instruction has already been executed/rejected and it was purged from chain'
@@ -930,7 +899,7 @@ describe('Instruction class', () => {
 
       // Should return Pending status
       const queryResult = dsMockUtils.createMockInstructionStatus(
-        InternalInstructionStatus.Success
+        InternalInstructionStatus.Executed
       );
 
       when(dsMockUtils.createQueryMock('settlement', 'instructionStatuses'))
@@ -943,7 +912,7 @@ describe('Instruction class', () => {
 
       const result = await instruction.getStatus();
       expect(result).toMatchObject({
-        status: InstructionStatus.Success,
+        status: InstructionStatus.Executed,
         eventIdentifier: fakeEventIdentifierResult,
       });
     });
@@ -1121,7 +1090,7 @@ describe('Instruction class', () => {
       when(dsMockUtils.createQueryMock('settlement', 'instructionStatuses'))
         .calledWith(rawId)
         .mockResolvedValue(
-          dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Success)
+          dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Executed)
         );
 
       dsMockUtils.createApolloMultipleV2QueriesMock([
@@ -1148,7 +1117,7 @@ describe('Instruction class', () => {
 
       const result = await instruction.getStatusV2();
       expect(result).toMatchObject({
-        status: InstructionStatus.Success,
+        status: InstructionStatus.Executed,
         eventIdentifier: fakeEventIdentifierResult,
       });
     });

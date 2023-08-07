@@ -5306,33 +5306,23 @@ declare module '@polkadot/api-base/types/submittable' {
       executeManualInstruction: AugmentedSubmittable<
         (
           id: u64 | AnyNumber | Uint8Array,
+          legsCount: u32 | AnyNumber | Uint8Array,
           portfolio:
             | Option<PolymeshPrimitivesIdentityIdPortfolioId>
             | null
             | Uint8Array
             | PolymeshPrimitivesIdentityIdPortfolioId
             | { did?: any; kind?: any }
-            | string,
-          fungibleTransfers: u32 | AnyNumber | Uint8Array,
-          nftsTransfers: u32 | AnyNumber | Uint8Array,
-          offchainTransfers: u32 | AnyNumber | Uint8Array,
-          weightLimit:
-            | Option<SpWeightsWeightV2Weight>
-            | null
-            | Uint8Array
-            | SpWeightsWeightV2Weight
-            | { refTime?: any; proofSize?: any }
             | string
         ) => SubmittableExtrinsic<ApiType>,
-        [
-          u64,
-          Option<PolymeshPrimitivesIdentityIdPortfolioId>,
-          u32,
-          u32,
-          u32,
-          Option<SpWeightsWeightV2Weight>
-        ]
+        [u64, u32, Option<PolymeshPrimitivesIdentityIdPortfolioId>]
       >;
+      //Removed in 6.0
+      rescheduleInstruction: AugmentedSubmittable<
+        (id: u64 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>,
+        [u64]
+      >;
+
       /**
        * Root callable extrinsic, used as an internal call to execute a scheduled settlement instruction.
        **/

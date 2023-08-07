@@ -13,6 +13,7 @@ import {
   Identity,
   modifyInstructionAffirmation,
   PolymeshError,
+  rescheduleInstruction,
   Venue,
 } from '~/internal';
 import { InstructionStatusEnum } from '~/middleware/enumsV2';
@@ -27,6 +28,7 @@ import {
   EventIdentifier,
   ExecuteManualInstructionParams,
   InstructionAffirmationOperation,
+  NoArgsProcedureMethod,
   NumberedPortfolio,
   OptionalArgsProcedureMethod,
   PaginationOptions,
@@ -127,6 +129,14 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
           { id, operation: InstructionAffirmationOperation.Withdraw, ...args },
         ],
         optionalArgs: true,
+      },
+      context
+    );
+
+    this.reschedule = createProcedureMethod(
+      {
+        getProcedureAndArgs: () => [rescheduleInstruction, { id }],
+        voidArgs: true,
       },
       context
     );
@@ -596,6 +606,15 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    * Withdraw affirmation from this instruction (unauthorize)
    */
   public withdraw: OptionalArgsProcedureMethod<AffirmOrWithdrawInstructionParams, Instruction>;
+
+  /**
+   * Reschedules a failed Instruction to be tried again
+   *
+   * @throws if the Instruction status is not `InstructionStatus.Failed`
+   *
+   * @deprecated - chain v6 will allow executeManually to work instead
+   */
+  public reschedule: NoArgsProcedureMethod<Instruction>;
 
   /**
    * Executes an Instruction either of type `SettleManual` or a `Failed` instruction

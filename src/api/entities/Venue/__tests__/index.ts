@@ -232,7 +232,7 @@ describe('Venue class', () => {
           status: InstructionStatus.Failed,
         })
         .mockResolvedValue({
-          status: InstructionStatus.Success,
+          status: InstructionStatus.Executed,
         });
 
       entityMockUtils.configureMocks({

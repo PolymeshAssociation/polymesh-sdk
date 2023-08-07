@@ -5,6 +5,7 @@ import { when } from 'jest-when';
 import { CheckpointSchedule, Context, Namespace, PolymeshTransaction } from '~/internal';
 import { Moment } from '~/polkadot';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
+import { CalendarUnit } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -69,7 +70,11 @@ describe('Schedules class', () => {
         'someTransaction' as unknown as PolymeshTransaction<CheckpointSchedule>;
       const args = {
         start: null,
-        points: [],
+        period: {
+          unit: CalendarUnit.Month,
+          amount: new BigNumber(1),
+        },
+        repetitions: null,
       };
 
       when(procedureMockUtils.getPrepareMock())

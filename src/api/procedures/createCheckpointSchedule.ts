@@ -1,11 +1,21 @@
 import { ISubmittableResult } from '@polkadot/types/types';
+import BigNumber from 'bignumber.js';
+import { Dayjs } from 'dayjs';
 
 import { Asset, CheckpointSchedule, Context, PolymeshError, Procedure } from '~/internal';
-import { CreateCheckpointScheduleParams, ErrorCode, TxTags } from '~/types';
+import {
+  CalendarPeriod,
+  CalendarUnit,
+  CreateCheckpointScheduleParams,
+  ErrorCode,
+  TxTags,
+} from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
   datesToScheduleCheckpoints,
   momentToDate,
+  scheduleSpecToMeshScheduleSpec,
+  storedScheduleToCheckpointScheduleParams,
   stringToTicker,
   u64ToBigNumber,
 } from '~/utils/conversion';
@@ -16,6 +26,21 @@ import { filterEventRecords } from '~/utils/internal';
  */
 export type Params = CreateCheckpointScheduleParams & {
   ticker: string;
+};
+
+const calculatePoints = (start: Date, reps: number, period: CalendarPeriod): Date[] => {
+  const dates = [start];
+
+  const { unit, amount } = period;
+
+  const nextDay = new Dayjs(start);
+  for (let i = 0; i < reps; i++) {
+    nextDay.add(amount.toNumber(), unit);
+
+    dates.push(nextDay.toDate());
+  }
+
+  return dates;
 };
 
 /**
@@ -35,7 +60,33 @@ export const createCheckpointScheduleResolver =
       {
         id,
         ticker,
-        pendingPoints: points,
+        start: points[0],
+        nextCheckpointDate: points[0],
+        // Note: we provide a zero value instead of trying to infer
+        period: {
+          amount: new BigNumber(0),
+          unit: CalendarUnit.Second,
+        },
+        remaining: new BigNumber(points.length),
+      },
+      context
+    );
+  };
+
+/**
+ * @hidden
+ */
+export const legacyCreateCheckpointScheduleResolver =
+  (ticker: string, context: Context) =>
+  (receipt: ISubmittableResult): CheckpointSchedule => {
+    const [{ data }] = filterEventRecords(receipt, 'checkpoint', 'ScheduleCreated');
+
+    const scheduleParams = storedScheduleToCheckpointScheduleParams(data[2]);
+
+    return new CheckpointSchedule(
+      {
+        ticker,
+        ...scheduleParams,
       },
       context
     );
@@ -49,26 +100,41 @@ export async function prepareCreateCheckpointSchedule(
   args: Params
 ): Promise<TransactionSpec<CheckpointSchedule, ExtrinsicParams<'checkpoint', 'createSchedule'>>> {
   const { context } = this;
-  const { ticker, points } = args;
+  const { ticker, start, period, repetitions } = args;
 
   const now = new Date();
 
-  const anyInPast = points.some(point => point < now);
-  if (anyInPast) {
-    throw new PolymeshError({
-      code: ErrorCode.ValidationError,
-      message: 'Schedule points must be in the future',
-    });
+  if (context.isV5) {
+    if (start && start < now) {
+      throw new PolymeshError({
+        code: ErrorCode.ValidationError,
+        message: 'Schedule start date must be in the future',
+      });
+    }
+
+    const rawTicker = stringToTicker(ticker, context);
+    const rawSchedule = scheduleSpecToMeshScheduleSpec({ start, period, repetitions }, context);
+
+    return {
+      transaction: context.polymeshApi.tx.checkpoint.createSchedule,
+      args: [rawTicker, rawSchedule],
+      resolver: legacyCreateCheckpointScheduleResolver(ticker, context),
+    };
+  } else {
+    const startDate = start || new Date();
+    const reps = repetitions || new BigNumber(10);
+
+    const points = period ? calculatePoints(startDate, reps.toNumber(), period) : [startDate];
+
+    const rawTicker = stringToTicker(ticker, context);
+    const checkpointSchedule = datesToScheduleCheckpoints(points, context);
+
+    return {
+      transaction: context.polymeshApi.tx.checkpoint.createSchedule,
+      args: [rawTicker, checkpointSchedule],
+      resolver: createCheckpointScheduleResolver(ticker, context),
+    };
   }
-
-  const rawTicker = stringToTicker(ticker, context);
-  const checkpointSchedule = datesToScheduleCheckpoints(points, context);
-
-  return {
-    transaction: context.polymeshApi.tx.checkpoint.createSchedule,
-    args: [rawTicker, checkpointSchedule],
-    resolver: createCheckpointScheduleResolver(ticker, context),
-  };
 }
 
 /**

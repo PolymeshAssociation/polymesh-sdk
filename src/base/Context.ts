@@ -144,8 +144,6 @@ export class Context {
       if (upgrade.isSome) {
         const { specVersion } = upgrade.unwrap();
         this.isV5 = specVersion.toNumber() < 6000000;
-
-        console.log({ specVersion, isV5: this.isV5 });
       }
     });
   }
