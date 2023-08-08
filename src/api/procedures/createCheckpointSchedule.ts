@@ -1,6 +1,6 @@
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
-import { Dayjs } from 'dayjs';
+import dayjs, { Dayjs } from 'dayjs';
 
 import { Asset, CheckpointSchedule, Context, PolymeshError, Procedure } from '~/internal';
 import {
@@ -33,9 +33,9 @@ const calculatePoints = (start: Date, reps: number, period: CalendarPeriod): Dat
 
   const { unit, amount } = period;
 
-  const nextDay = new Dayjs(start);
+  let nextDay = dayjs(start);
   for (let i = 0; i < reps; i++) {
-    nextDay.add(amount.toNumber(), unit);
+    nextDay = nextDay.add(amount.toNumber(), unit);
 
     dates.push(nextDay.toDate());
   }
@@ -103,15 +103,14 @@ export async function prepareCreateCheckpointSchedule(
   const { ticker, start, period, repetitions } = args;
 
   const now = new Date();
+  if (start && start < now) {
+    throw new PolymeshError({
+      code: ErrorCode.ValidationError,
+      message: 'Schedule start date must be in the future',
+    });
+  }
 
   if (context.isV5) {
-    if (start && start < now) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: 'Schedule start date must be in the future',
-      });
-    }
-
     const rawTicker = stringToTicker(ticker, context);
     const rawSchedule = scheduleSpecToMeshScheduleSpec({ start, period, repetitions }, context);
 
@@ -127,11 +126,10 @@ export async function prepareCreateCheckpointSchedule(
     const points = period ? calculatePoints(startDate, reps.toNumber(), period) : [startDate];
 
     const rawTicker = stringToTicker(ticker, context);
-    const checkpointSchedule = datesToScheduleCheckpoints(points, context);
-
+    const rawSchedule = datesToScheduleCheckpoints(points, context);
     return {
       transaction: context.polymeshApi.tx.checkpoint.createSchedule,
-      args: [rawTicker, checkpointSchedule],
+      args: [rawTicker, rawSchedule],
       resolver: createCheckpointScheduleResolver(ticker, context),
     };
   }

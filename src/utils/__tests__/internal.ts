@@ -1208,7 +1208,6 @@ describe('assertExpectedChainVersion', () => {
   it('should log a warning given a minor chain spec version mismatch', async () => {
     const signal = assertExpectedChainVersion('ws://example.com');
     const mockSpecVersion = getMismatchedVersion(SUPPORTED_SPEC_SEMVER);
-    console.log({ mockSpecVersion }, getSpecVersion(mockSpecVersion));
     client.sendSpecVersion(getSpecVersion(mockSpecVersion));
     client.sendRpcVersion(SUPPORTED_NODE_SEMVER);
     await signal;
@@ -1221,7 +1220,6 @@ describe('assertExpectedChainVersion', () => {
   it('should resolve even with a patch chain spec version mismatch', async () => {
     const signal = assertExpectedChainVersion('ws://example.com');
     const mockSpecVersion = getMismatchedVersion(SUPPORTED_SPEC_SEMVER, 2);
-    console.log({ mockSpecVersion });
     client.sendSpecVersion(getSpecVersion(mockSpecVersion));
     client.sendRpcVersion(SUPPORTED_NODE_SEMVER);
     await signal;

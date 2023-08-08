@@ -548,7 +548,9 @@ describe('assertCaCheckpointValid', () => {
     expect(error.message).toBe('Payment date must be after the Checkpoint date');
 
     checkpoint = entityMockUtils.getCheckpointScheduleInstance({
-      points: [date],
+      details: {
+        nextCheckpointDate: date,
+      },
     });
     try {
       await assertDistributionDatesValid(checkpoint, paymentDate, expiryDate);
@@ -576,9 +578,23 @@ describe('assertCaCheckpointValid', () => {
     expect(error.message).toBe('Expiry date must be after the Checkpoint date');
 
     checkpoint = entityMockUtils.getCheckpointScheduleInstance({
-      points: [date],
-      exists: true,
-      details: { nextCheckpointDate: expiryDate },
+      details: {
+        nextCheckpointDate: date,
+      },
+    });
+
+    try {
+      await assertDistributionDatesValid(checkpoint, paymentDate, expiryDate);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).toBe('Expiry date must be after the Checkpoint date');
+
+    checkpoint = entityMockUtils.getCheckpointScheduleInstance({
+      details: {
+        nextCheckpointDate: new Date(new Date().getTime() - 300000),
+      },
     });
 
     return expect(

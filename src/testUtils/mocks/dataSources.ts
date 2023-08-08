@@ -67,6 +67,7 @@ import {
   PalletStoFundraiserStatus,
   PalletStoFundraiserTier,
   PalletStoPriceTier,
+  PolymeshCommonUtilitiesCheckpointScheduleCheckpoints,
   PolymeshCommonUtilitiesProtocolFeeProtocolOp,
   PolymeshPrimitivesAgentAgentGroup,
   PolymeshPrimitivesAssetAssetType,
@@ -3267,26 +3268,22 @@ export const createMockCalendarPeriod = (
  */
 export const createMockCheckpointSchedule = (
   checkpointSchedule?:
-    | any
+    | PolymeshCommonUtilitiesCheckpointScheduleCheckpoints
     | {
-        start: Moment | Parameters<typeof createMockMoment>[0];
-        period: any | Parameters<typeof createMockCalendarPeriod>[0];
+        pending: BTreeSet<u64> | Parameters<typeof createMockBTreeSet>[0];
       }
-): MockCodec<any> => {
-  const { start, period } = checkpointSchedule ?? {
-    start: createMockMoment(),
-    period: createMockCalendarPeriod(),
+): MockCodec<PolymeshCommonUtilitiesCheckpointScheduleCheckpoints> => {
+  const { pending } = checkpointSchedule ?? {
+    pending: createMockBTreeSet(),
   };
 
   return createMockCodec(
     {
-      start: createMockMoment(start),
-      period: createMockCalendarPeriod(period),
+      pending,
     },
     !checkpointSchedule
   );
 };
-
 /**
  * @hidden
  * NOTE: `isEmpty` will be set to true if no value is passed

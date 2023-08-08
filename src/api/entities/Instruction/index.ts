@@ -306,14 +306,10 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     const rawId = bigNumberToU64(id, context);
 
     if (isV5) {
-      const [
-        // { status: rawStatus, createdAt, tradeDate, valueDate, settlementType: type, venueId },
-        details,
-        memo,
-      ] = await requestMulti<[any, typeof settlement.instructionMemos]>(context, [
-        [settlement.instructionDetails, rawId] as any,
-        [settlement.instructionMemos, rawId],
-      ]);
+      const [details, memo] = await requestMulti<[any, typeof settlement.instructionMemos]>(
+        context,
+        [[settlement.instructionDetails, rawId] as any, [settlement.instructionMemos, rawId]]
+      );
 
       const {
         status: rawStatus,
@@ -362,7 +358,6 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     const internalStatus = meshInstructionStatusToInstructionStatus(rawStatus);
 
     const status = this.internalToExternalStatus(internalStatus);
-
     if (!status) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,

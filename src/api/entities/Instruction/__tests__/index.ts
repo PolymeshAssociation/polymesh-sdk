@@ -234,16 +234,6 @@ describe('Instruction class', () => {
 
       expect(result).toEqual(unsubCallback);
       expect(callback).toBeCalledWith(InstructionStatus.Failed);
-
-      instructionStatusesMock.mockImplementationOnce(async (_, cbFunc) => {
-        cbFunc(dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Executed));
-        return unsubCallback;
-      });
-
-      result = await instruction.onStatusChange(callback);
-
-      expect(result).toEqual(unsubCallback);
-      expect(callback).toBeCalledWith(InstructionStatus.Executed);
     });
 
     it('should error on unknown instruction status', () => {
@@ -476,27 +466,6 @@ describe('Instruction class', () => {
         memo,
       });
       expect(result.venue.id).toEqual(venueId);
-
-      status = InstructionStatus.Executed;
-
-      queryMultiMock.mockResolvedValueOnce([
-        dsMockUtils.createMockInstruction({
-          ...rawInstructionDetails,
-        }),
-        dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Executed),
-        rawOptionalMemo,
-      ]);
-
-      result = await instruction.details();
-
-      expect(result).toMatchObject({
-        status,
-        createdAt,
-        tradeDate,
-        valueDate,
-        type,
-        memo,
-      });
     });
 
     it('should throw an error if an Instruction leg is not present', () => {

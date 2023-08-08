@@ -9090,55 +9090,6 @@ describe('scheduleSpecToMeshScheduleSpec', () => {
   });
 });
 
-describe('storedScheduleToCheckpointScheduleParams', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  it('should convert a polkadot PolymeshCommonUtilitiesCheckpointStoredSchedule object to a CheckpointScheduleParams object', () => {
-    const start = new Date('10/14/1987');
-    const nextCheckpointDate = new Date('10/14/2021');
-    const id = new BigNumber(1);
-    const remaining = new BigNumber(5);
-
-    const fakeResult = {
-      id,
-      period: {
-        unit: CalendarUnit.Month,
-        amount: new BigNumber(1),
-      },
-      start,
-      remaining,
-      nextCheckpointDate,
-    };
-
-    const storedSchedule = dsMockUtils.createMockStoredSchedule({
-      schedule: dsMockUtils.createMockCheckpointSchedule({
-        start: dsMockUtils.createMockMoment(new BigNumber(start.getTime())),
-        period: dsMockUtils.createMockCalendarPeriod({
-          unit: dsMockUtils.createMockCalendarUnit('Month'),
-          amount: dsMockUtils.createMockU64(new BigNumber(1)),
-        }),
-      }),
-      id: dsMockUtils.createMockU64(id),
-      remaining: dsMockUtils.createMockU32(remaining),
-      at: dsMockUtils.createMockMoment(new BigNumber(nextCheckpointDate.getTime())),
-    });
-
-    const result = storedScheduleToCheckpointScheduleParams(storedSchedule);
-
-    expect(result).toEqual(fakeResult);
-  });
-});
-
 describe('periodComplexity', () => {
   it('should calculate complexity for any period', () => {
     const period: CalendarPeriod = {
