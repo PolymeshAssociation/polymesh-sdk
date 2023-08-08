@@ -181,7 +181,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
         ],
         ([registration, token]) => {
           // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
-          callback(assembleResult(registration as any, token as any));
+          callback(assembleResult(registration, token));
         }
       );
     }
@@ -193,7 +193,7 @@ export class TickerReservation extends Entity<UniqueIdentifiers, string> {
       [asset.tokens, rawTicker],
     ]);
 
-    return assembleResult(tickerRegistration as any, meshAsset as any);
+    return assembleResult(tickerRegistration, meshAsset);
   }
 
   /**

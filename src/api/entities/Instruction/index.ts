@@ -168,6 +168,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     if (isV5) {
       const [{ status }, exists] = await Promise.all([
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         settlement.instructionDetails(bigNumberToU64(id, context)) as any,
         this.exists(),
       ]);
@@ -242,12 +243,14 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
         } else if (status === InternalInstructionStatus.Failed) {
           return InstructionStatus.Failed;
         } else {
-          // TODO @prashantasdeveloper remove this once the chain handles Executed/Rejected state separately
+          // TODO this can be `Success` or `Rejected` after v6 is rolled out
           return InstructionStatus.Executed;
         }
       };
 
       return settlement.instructionDetails(bigNumberToU64(id, context), details => {
+        // v6 moves status to dedicate storage. `any` is needed here
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return callback(assembleResult((details as any).status));
       });
     } else {
@@ -306,10 +309,12 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     const rawId = bigNumberToU64(id, context);
 
     if (isV5) {
-      const [details, memo] = await requestMulti<[any, typeof settlement.instructionMemos]>(
-        context,
-        [[settlement.instructionDetails, rawId] as any, [settlement.instructionMemos, rawId]]
-      );
+      const [details, memo] = await requestMulti<
+        [typeof settlement.instructionDetails, typeof settlement.instructionMemos]
+      >(context, [
+        [settlement.instructionDetails, rawId],
+        [settlement.instructionMemos, rawId],
+      ]);
 
       const {
         status: rawStatus,
@@ -318,6 +323,8 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
         valueDate,
         settlementType: type,
         venueId,
+        // status is moved to dedicated storage in v6. `any` is needed here
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } = details as any;
 
       const status = meshInstructionStatusToInstructionStatus(rawStatus);
@@ -455,6 +462,8 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     const data = legs.map(([, leg]) => {
       if (isV5) {
+        // v6 changes Leg API. `any` is needed here
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { from, to, amount, asset } = leg as any;
 
         const ticker = tickerToString(asset);

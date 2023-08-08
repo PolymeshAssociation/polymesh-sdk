@@ -257,7 +257,9 @@ export class PolymeshTransactionBatch<
         data: [, failedData],
       } = failed;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const failedIndex = u32ToBigNumber((failedData as any)[0]).toNumber();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const dispatchError = (failedData as any)[1];
 
       this.handleExtrinsicFailure(resolve, reject, dispatchError, { failedIndex });

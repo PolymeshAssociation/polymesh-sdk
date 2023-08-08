@@ -201,6 +201,7 @@ export async function prepareCreateAsset(
         checkTxType({
           transaction: tx.asset.createAssetWithCustomType,
           fee,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           args: assetArgs as any,
         })
       );
@@ -225,6 +226,7 @@ export async function prepareCreateAsset(
         checkTxType({
           transaction: tx.asset.createAsset,
           fee,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           args: assetArgs as any,
         })
       );
@@ -250,6 +252,7 @@ export async function prepareCreateAsset(
       checkTxType({
         transaction: tx.asset.createAsset,
         fee,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         args: assetArgs as any,
       })
     );
@@ -273,7 +276,7 @@ export async function prepareCreateAsset(
     const defaultPortfolio = new DefaultPortfolio({ did: signingIdentity.did }, context);
     const rawPortfolioId = portfolioToPortfolioKind(defaultPortfolio, context);
 
-    const issueArgs: any[] = [rawTicker, rawInitialSupply];
+    const issueArgs: unknown[] = [rawTicker, rawInitialSupply];
 
     if (!isV5) {
       issueArgs.push(rawPortfolioId);
@@ -282,6 +285,7 @@ export async function prepareCreateAsset(
     transactions.push(
       checkTxType({
         transaction: tx.asset.issue,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         args: issueArgs as any,
       })
     );

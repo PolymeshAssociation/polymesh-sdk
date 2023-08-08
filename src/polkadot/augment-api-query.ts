@@ -846,9 +846,7 @@ declare module '@polkadot/api-base/types/storage' {
       //removed in v6
       schedules: AugmentedQuery<
         ApiType,
-        (
-          arg: PolymeshPrimitivesTicker | string | Uint8Array
-        ) => Observable<Vec<PolymeshCommonUtilitiesCheckpointStoredSchedule>>,
+        (arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<Vec<any>>,
         [PolymeshPrimitivesTicker]
       >;
     };

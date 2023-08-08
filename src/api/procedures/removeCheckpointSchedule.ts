@@ -34,8 +34,8 @@ export async function prepareRemoveCheckpointSchedule(
 
   let exists: boolean;
   if (isV5) {
-    const rawSchedules = await (query.checkpoint as any).schedules(rawTicker);
-    exists = !!rawSchedules.find((rawSchedule: any) => u64ToBigNumber(rawSchedule.id).eq(id));
+    const rawSchedules = await query.checkpoint.schedules(rawTicker);
+    exists = !!rawSchedules.find(rawSchedule => u64ToBigNumber(rawSchedule.id).eq(id));
   } else {
     const rawSchedule = await query.checkpoint.scheduledCheckpoints(rawTicker, rawId);
     exists = rawSchedule.isSome;

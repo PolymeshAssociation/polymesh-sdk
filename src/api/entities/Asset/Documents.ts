@@ -1,3 +1,5 @@
+import { PolymeshPrimitivesDocument } from '@polkadot/types/lookup';
+
 import { Asset, Context, Namespace, setAssetDocuments } from '~/internal';
 import {
   AssetDocument,
@@ -55,7 +57,9 @@ export class Documents extends Namespace<Asset> {
     });
 
     const data: AssetDocument[] = isV5
-      ? entries.map(([, doc]) => documentToAssetDocument(doc as any))
+      ? entries.map(([, doc]) =>
+          documentToAssetDocument(doc as unknown as PolymeshPrimitivesDocument)
+        )
       : entries.map(([, doc]) => documentToAssetDocument(doc.unwrap()));
 
     return {

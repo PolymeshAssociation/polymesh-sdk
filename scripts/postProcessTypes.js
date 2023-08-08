@@ -38,6 +38,6 @@ replace.sync({
     'totalSupply: AugmentedQuery<ApiType, (arg1: PolymeshPrimitivesTicker | string | Uint8Array, arg2: u64 | AnyNumber | Uint8Array) => Observable<u128>, [PolymeshPrimitivesTicker, u64]>;',
   ],
   to: [
-    'totalSupply: AugmentedQuery<ApiType, (arg1: PolymeshPrimitivesTicker | string | Uint8Array, arg2: u64 | AnyNumber | Uint8Array) => Observable<u128>, [PolymeshPrimitivesTicker, u64]>;\n//removed in v6\nschedules: AugmentedQuery< ApiType, ( arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<Vec<PolymeshCommonUtilitiesCheckpointStoredSchedule>>, [PolymeshPrimitivesTicker] >;',
+    'totalSupply: AugmentedQuery<ApiType, (arg1: PolymeshPrimitivesTicker | string | Uint8Array, arg2: u64 | AnyNumber | Uint8Array) => Observable<u128>, [PolymeshPrimitivesTicker, u64]>;\n//removed in v6\nschedules: AugmentedQuery< ApiType, ( arg: PolymeshPrimitivesTicker | string | Uint8Array) => Observable<Vec<any>>, [PolymeshPrimitivesTicker] >;',
   ],
 });

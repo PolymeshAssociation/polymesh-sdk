@@ -1,6 +1,7 @@
 import { Option, StorageKey, u64 } from '@polkadot/types';
 import { AccountId32 } from '@polkadot/types/interfaces';
 import {
+  PalletAssetSecurityToken,
   PolymeshPrimitivesIdentityDidRecord,
   PolymeshPrimitivesIdentityId,
 } from '@polkadot/types/lookup';
@@ -208,7 +209,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     const meshAsset = await asset.tokens(rawTicker);
 
     if (isV5) {
-      if ((meshAsset as any).ownerDid.isEmpty) {
+      if ((meshAsset as unknown as PalletAssetSecurityToken).ownerDid.isEmpty) {
         throw new PolymeshError({
           code: ErrorCode.DataUnavailable,
           message: `There is no Asset with ticker "${ticker}"`,
@@ -521,6 +522,8 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     const rawDid = stringToIdentityId(did, context);
 
     if (isV5) {
+      // v6 changes userVenues storage, `any` is needed
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const venueIds = await (settlement as any).userVenues(rawDid);
 
       return assembleResult(venueIds);
@@ -605,6 +608,8 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
         uniqueEntries.forEach(({ id, status }, index) => {
           const instruction = new Instruction({ id: u64ToBigNumber(id) }, context);
 
+          // v6 moves status to dedicated storage, `any` is necessary
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           if ((instructions[index] as any).status.isFailed) {
             failed.push(instruction);
           } else if (status.isAffirmed) {

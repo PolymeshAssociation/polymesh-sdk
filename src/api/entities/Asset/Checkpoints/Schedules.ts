@@ -102,9 +102,9 @@ export class Schedules extends Namespace<Asset> {
     const rawTicker = stringToTicker(ticker, context);
 
     if (isV5) {
-      const rawSchedules = await (checkpoint as any).schedules(rawTicker);
+      const rawSchedules = await checkpoint.schedules(rawTicker);
 
-      return P.map(rawSchedules, async (rawSchedule: any) => {
+      return P.map(rawSchedules, async rawSchedule => {
         const scheduleParams = storedScheduleToCheckpointScheduleParams(rawSchedule);
         const schedule = new CheckpointSchedule({ ...scheduleParams, ticker }, context);
 

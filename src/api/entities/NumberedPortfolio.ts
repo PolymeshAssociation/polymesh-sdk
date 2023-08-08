@@ -1,3 +1,4 @@
+import { Bytes } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 
 import { Context, PolymeshError, Portfolio, renamePortfolio } from '~/internal';
@@ -88,7 +89,7 @@ export class NumberedPortfolio extends Portfolio {
     }
 
     if (isV5) {
-      return bytesToString(rawPortfolioName as any);
+      return bytesToString(rawPortfolioName as unknown as Bytes);
     } else {
       return bytesToString(rawPortfolioName.unwrap());
     }

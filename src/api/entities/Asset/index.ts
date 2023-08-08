@@ -286,7 +286,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       const assetName = await namePromise;
 
       return asset.tokens(rawTicker, async securityToken => {
-        const result = await assembleResult(securityToken as any, groupEntries, assetName as any);
+        const result = await assembleResult(securityToken, groupEntries, assetName);
 
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(result);
@@ -298,7 +298,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       groupOfAgentPromise,
       namePromise,
     ]);
-    return assembleResult(token as any, groups, name as any);
+    return assembleResult(token, groups, name);
   }
 
   /**

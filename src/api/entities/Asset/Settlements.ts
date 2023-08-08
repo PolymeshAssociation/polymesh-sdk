@@ -2,6 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { assertPortfolioExists } from '~/api/procedures/utils';
 import { Asset, Namespace, PolymeshError } from '~/internal';
+import { GranularCanTransferResult } from '~/polkadot';
 import { ErrorCode, PortfolioLike, TransferBreakdown } from '~/types';
 import {
   bigNumberToBalance,
@@ -87,7 +88,10 @@ export class Settlements extends Namespace<Asset> {
     }
 
     if (isV5) {
-      return granularCanTransferResultToTransferBreakdown(res as any, context);
+      return granularCanTransferResultToTransferBreakdown(
+        res as unknown as GranularCanTransferResult,
+        context
+      );
     } else {
       return granularCanTransferResultToTransferBreakdown(res.asOk, context);
     }
