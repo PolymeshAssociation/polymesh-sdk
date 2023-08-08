@@ -259,5 +259,13 @@ describe('NumberedPortfolio class', () => {
       result = await numberedPortfolio.exists();
       expect(result).toBe(true);
     });
+
+    it('should return true for id 0 (default always exists)', () => {
+      const did = 'someDid';
+      const id = new BigNumber(0);
+      const numberedDefaultPortfolio = new NumberedPortfolio({ id, did }, context);
+
+      return expect(numberedDefaultPortfolio.exists()).resolves.toEqual(true);
+    });
   });
 });

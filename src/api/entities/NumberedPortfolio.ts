@@ -170,6 +170,11 @@ export class NumberedPortfolio extends Portfolio {
       },
     } = this;
 
+    // Default portfolios always exist. Sometimes they get mistakenly created as "NumberPortfolio"
+    if (id.eq(0)) {
+      return true;
+    }
+
     const identityId = stringToIdentityId(did, context);
     const rawPortfolioNumber = bigNumberToU64(id, context);
     const size = await portfolio.portfolios.size(identityId, rawPortfolioNumber);
