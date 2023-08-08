@@ -1476,7 +1476,25 @@ function assertMemoValid(value: string): void {
 export function stringToMemo(value: string, context: Context): PolymeshPrimitivesMemo {
   assertMemoValid(value);
 
-  return context.createType('PolymeshPrimitivesMemo', padString(value, MAX_MEMO_LENGTH));
+  if (context.isV5) {
+    return context.createType(
+      'PolymeshCommonUtilitiesBalancesMemo',
+      padString(value, MAX_MEMO_LENGTH)
+    );
+  } else {
+    return context.createType('PolymeshPrimitivesMemo', padString(value, MAX_MEMO_LENGTH));
+  }
+}
+
+/**
+ * @hidden
+ *
+ * @deprecated - v6 unifies memo structure so only `stringToMemo` is needed
+ */
+export function stringToInstructionMemo(value: string, context: Context): any {
+  assertMemoValid(value);
+
+  return context.createType('PalletSettlementInstructionMemo', padString(value, MAX_MEMO_LENGTH));
 }
 
 /**
@@ -2895,7 +2913,11 @@ export function endConditionToSettlementType(
       value = InstructionType.SettleOnAffirmation;
   }
 
-  return context.createType('PolymeshPrimitivesSettlementSettlementType', value);
+  if (context.isV5) {
+    return context.createType('PalletSettlementSettlementType', value);
+  } else {
+    return context.createType('PolymeshPrimitivesSettlementSettlementType', value);
+  }
 }
 
 /**
