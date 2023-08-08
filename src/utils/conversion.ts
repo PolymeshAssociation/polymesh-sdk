@@ -2803,7 +2803,11 @@ export function venueTypeToMeshVenueType(
   type: VenueType,
   context: Context
 ): PolymeshPrimitivesSettlementVenueType {
-  return context.createType('PolymeshPrimitivesSettlementVenueType', type);
+  if (context.isV5) {
+    return context.createType('PalletSettlementVenueType', type);
+  } else {
+    return context.createType('PolymeshPrimitivesSettlementVenueType', type);
+  }
 }
 
 /**
