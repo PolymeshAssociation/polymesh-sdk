@@ -1,4 +1,3 @@
-import { ApolloLink, GraphQLRequest } from '@apollo/client';
 import { SigningManager } from '@polymeshassociation/signing-manager-types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
@@ -12,14 +11,6 @@ import { SUPPORTED_NODE_VERSION_RANGE } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as internalUtils from '~/utils/internal';
 
-jest.mock('@apollo/client/react', () => ({}));
-
-jest.mock('@apollo/client/link/context', () => ({
-  ...jest.requireActual('@apollo/client/link/context'),
-  setContext: jest.fn().mockImplementation(cbFunc => {
-    return new ApolloLink(cbFunc({} as GraphQLRequest, {}));
-  }),
-}));
 jest.mock(
   '@polkadot/api',
   require('~/testUtils/mocks/dataSources').mockPolkadotModule('@polkadot/api')
@@ -29,8 +20,8 @@ jest.mock(
   require('~/testUtils/mocks/dataSources').mockContextModule('~/base/Context')
 );
 jest.mock(
-  '@apollo/client',
-  require('~/testUtils/mocks/dataSources').mockApolloModule('@apollo/client')
+  '@apollo/client/core',
+  require('~/testUtils/mocks/dataSources').mockApolloModule('@apollo/client/core')
 );
 jest.mock(
   '~/api/entities/TickerReservation',

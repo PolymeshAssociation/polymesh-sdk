@@ -1,4 +1,4 @@
-import { QueryOptions } from '@apollo/client';
+import { QueryOptions } from '@apollo/client/core';
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 

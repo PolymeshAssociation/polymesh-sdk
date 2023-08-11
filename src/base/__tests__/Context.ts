@@ -1,4 +1,4 @@
-import { QueryOptions } from '@apollo/client';
+import { QueryOptions } from '@apollo/client/core';
 import { Signer as PolkadotSigner } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
