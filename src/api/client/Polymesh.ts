@@ -1,11 +1,9 @@
 import {
   ApolloClient,
-  ApolloLink,
-  HttpLink,
+  createHttpLink,
   InMemoryCache,
   NormalizedCacheObject,
-} from '@apollo/client';
-import { setContext } from '@apollo/client/link/context';
+} from '@apollo/client/core';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { SigningManager } from '@polymeshassociation/signing-manager-types';
 import BigNumber from 'bignumber.js';
@@ -52,22 +50,12 @@ function createMiddlewareApi(
 ): ApolloClient<NormalizedCacheObject> | null {
   return middleware
     ? new ApolloClient({
-        link: setContext((_, { headers }) => {
-          return {
-            headers: {
-              ...headers,
-              // eslint-disable-next-line @typescript-eslint/naming-convention
-              'x-api-key': middleware.key,
-            },
-          };
-        }).concat(
-          ApolloLink.from([
-            new HttpLink({
-              uri: middleware.link,
-              fetch,
-            }),
-          ])
-        ),
+        link: createHttpLink({
+          uri: middleware.link,
+          fetch,
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          headers: { 'x-api-key': middleware.key },
+        }),
         cache: new InMemoryCache(),
         defaultOptions: {
           watchQuery: {

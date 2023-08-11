@@ -1,4 +1,4 @@
-import { QueryOptions } from '@apollo/client';
+import { QueryOptions } from '@apollo/client/core';
 import gql from 'graphql-tag';
 
 import {

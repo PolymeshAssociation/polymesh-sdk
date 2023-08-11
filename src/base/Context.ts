@@ -4,7 +4,7 @@ import {
   NormalizedCacheObject,
   OperationVariables,
   QueryOptions,
-} from '@apollo/client';
+} from '@apollo/client/core';
 import { ApiPromise } from '@polkadot/api';
 import { UnsubscribePromise } from '@polkadot/api/types';
 import { getTypeDef, Option } from '@polkadot/types';

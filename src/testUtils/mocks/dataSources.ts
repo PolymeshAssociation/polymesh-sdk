@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { ApolloClient, NormalizedCacheObject, QueryOptions } from '@apollo/client';
+import { ApolloClient, NormalizedCacheObject, QueryOptions } from '@apollo/client/core';
 import { ApiPromise } from '@polkadot/api';
 import { DecoratedRpc } from '@polkadot/api/types';
 import { RpcInterface } from '@polkadot/rpc-core/types';

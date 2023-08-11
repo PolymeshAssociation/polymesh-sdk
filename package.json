@@ -94,7 +94,6 @@
     "prettier": "2.5.1",
     "prettier-eslint": "13.0.0",
     "prettier-eslint-cli": "5.0.1",
-    "react": "^18.2.0",
     "replace-in-file": "^6.2.0",
     "semantic-release": "^19.0.2",
     "stream-browserify": "^3.0.0",
