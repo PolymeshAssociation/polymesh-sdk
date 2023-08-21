@@ -269,7 +269,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       return {
         assetType,
         isDivisible: boolToBoolean(divisible),
-        name: bytesToString(assetName.unwrapOrDefault()),
+        name: bytesToString(isV5 ? (assetName as unknown as Bytes) : assetName.unwrap()),
         owner,
         totalSupply: balanceToBigNumber(totalSupply),
         fullAgents,
