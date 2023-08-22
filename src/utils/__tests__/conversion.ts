@@ -79,6 +79,7 @@ import {
   Instruction,
   Portfolio as MiddlewarePortfolio,
 } from '~/middleware/types';
+import { ClaimScopeTypeEnum } from '~/middleware/typesV1';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   createMockOption,
@@ -229,6 +230,7 @@ import {
   metadataValueDetailToMeshMetadataValueDetail,
   metadataValueToMeshMetadataValue,
   middlewareInstructionToHistoricInstruction,
+  middlewareScopeToScope,
   middlewareV2ClaimToClaimData,
   middlewareV2EventDetailsToEventIdentifier,
   middlewareV2PortfolioToPortfolio,
@@ -250,6 +252,7 @@ import {
   requirementToComplianceRequirement,
   scheduleSpecToMeshScheduleSpec,
   scopeToMeshScope,
+  scopeToMiddlewareScope,
   secondaryAccountToMeshSecondaryKey,
   securityIdentifierToAssetIdentifier,
   signatoryToSignerValue,
@@ -281,7 +284,7 @@ import {
   textToString,
   tickerToDid,
   tickerToString,
-  toIdentityWithClaimsArrayV2,
+  toIdentityWithClaimsArray,
   transactionHexToTxTag,
   transactionPermissionsToExtrinsicPermissions,
   transactionPermissionsToTxGroups,
@@ -293,7 +296,6 @@ import {
   trustedClaimIssuerToTrustedIssuer,
   txGroupToTxTags,
   txTagToExtrinsicIdentifier,
-  txTagToExtrinsicIdentifierV2,
   txTagToProtocolOp,
   u8ToBigNumber,
   u8ToTransferStatus,
@@ -3891,45 +3893,45 @@ describe('meshClaimTypeToClaimType', () => {
   });
 });
 
-// describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
-//   describe('middlewareScopeToScope', () => {
-//     it('should convert a MiddlewareScope object to a Scope', () => {
-//       let result = middlewareScopeToScope({
-//         type: ClaimScopeTypeEnum.Ticker,
-//         value: 'SOMETHING\u0000\u0000\u0000',
-//       });
+describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
+  describe('middlewareScopeToScope', () => {
+    it('should convert a MiddlewareScope object to a Scope', () => {
+      let result = middlewareScopeToScope({
+        type: ClaimScopeTypeEnum.Ticker,
+        value: 'SOMETHING\u0000\u0000\u0000',
+      });
 
-//       expect(result).toEqual({ type: ScopeType.Ticker, value: 'SOMETHING' });
+      expect(result).toEqual({ type: ScopeType.Ticker, value: 'SOMETHING' });
 
-//       result = middlewareScopeToScope({ type: ClaimScopeTypeEnum.Identity, value: 'someDid' });
+      result = middlewareScopeToScope({ type: ClaimScopeTypeEnum.Identity, value: 'someDid' });
 
-//       expect(result).toEqual({ type: ScopeType.Identity, value: 'someDid' });
+      expect(result).toEqual({ type: ScopeType.Identity, value: 'someDid' });
 
-//       result = middlewareScopeToScope({ type: ClaimScopeTypeEnum.Custom, value: 'SOMETHING_ELSE' });
+      result = middlewareScopeToScope({ type: ClaimScopeTypeEnum.Custom, value: 'SOMETHING_ELSE' });
 
-//       expect(result).toEqual({ type: ScopeType.Custom, value: 'SOMETHING_ELSE' });
-//     });
-//   });
+      expect(result).toEqual({ type: ScopeType.Custom, value: 'SOMETHING_ELSE' });
+    });
+  });
 
-//   describe('scopeToMiddlewareScope', () => {
-//     it('should convert a Scope to a MiddlewareScope object', () => {
-//       let scope: Scope = { type: ScopeType.Identity, value: 'someDid' };
-//       let result = scopeToMiddlewareScope(scope);
-//       expect(result).toEqual({ type: ClaimScopeTypeEnum.Identity, value: scope.value });
+  describe('scopeToMiddlewareScope', () => {
+    it('should convert a Scope to a MiddlewareScope object', () => {
+      let scope: Scope = { type: ScopeType.Identity, value: 'someDid' };
+      let result = scopeToMiddlewareScope(scope);
+      expect(result).toEqual({ type: ClaimScopeTypeEnum.Identity, value: scope.value });
 
-//       scope = { type: ScopeType.Ticker, value: 'someTicker' };
-//       result = scopeToMiddlewareScope(scope);
-//       expect(result).toEqual({ type: ClaimScopeTypeEnum.Ticker, value: 'someTicker\0\0' });
+      scope = { type: ScopeType.Ticker, value: 'someTicker' };
+      result = scopeToMiddlewareScope(scope);
+      expect(result).toEqual({ type: ClaimScopeTypeEnum.Ticker, value: 'someTicker\0\0' });
 
-//       result = scopeToMiddlewareScope(scope, false);
-//       expect(result).toEqual({ type: ClaimScopeTypeEnum.Ticker, value: 'someTicker' });
+      result = scopeToMiddlewareScope(scope, false);
+      expect(result).toEqual({ type: ClaimScopeTypeEnum.Ticker, value: 'someTicker' });
 
-//       scope = { type: ScopeType.Custom, value: 'customValue' };
-//       result = scopeToMiddlewareScope(scope);
-//       expect(result).toEqual({ type: ClaimScopeTypeEnum.Custom, value: scope.value });
-//     });
-//   });
-// });
+      scope = { type: ScopeType.Custom, value: 'customValue' };
+      result = scopeToMiddlewareScope(scope);
+      expect(result).toEqual({ type: ClaimScopeTypeEnum.Custom, value: scope.value });
+    });
+  });
+});
 
 describe('middlewareInstructionToHistoricInstruction', () => {
   it('should convert a middleware Instruction object to a HistoricInstruction', () => {
@@ -4208,7 +4210,7 @@ describe('toIdentityWithClaimsArrayV2', () => {
     ] as MiddlewareClaim[];
     /* eslint-enable @typescript-eslint/naming-convention */
 
-    const result = toIdentityWithClaimsArrayV2(fakeMiddlewareV2Claims, context, 'targetId');
+    const result = toIdentityWithClaimsArray(fakeMiddlewareV2Claims, context, 'targetId');
 
     expect(result).toEqual(fakeResult);
   });
@@ -4698,7 +4700,7 @@ describe('txTagToExtrinsicIdentifier and extrinsicIdentifierToTxTag', () => {
     });
   });
 
-  it('should convert a ExtrinsicIdentifierV2 object to a TxTag', () => {
+  it('should convert a ExtrinsicIdentifier object to a TxTag', () => {
     let result = extrinsicIdentifierToTxTag({
       moduleId: ModuleIdEnum.Identity,
       callId: CallIdEnum.CddRegisterDid,
@@ -4715,16 +4717,16 @@ describe('txTagToExtrinsicIdentifier and extrinsicIdentifierToTxTag', () => {
   });
 });
 
-describe('txTagToExtrinsicIdentifierV2', () => {
-  it('should convert a TxTag enum to a ExtrinsicIdentifierV2 object', () => {
-    let result = txTagToExtrinsicIdentifierV2(TxTags.identity.CddRegisterDid);
+describe('txTagToExtrinsicIdentifier', () => {
+  it('should convert a TxTag enum to a ExtrinsicIdentifier object', () => {
+    let result = txTagToExtrinsicIdentifier(TxTags.identity.CddRegisterDid);
 
     expect(result).toEqual({
       moduleId: ModuleIdEnum.Identity,
       callId: CallIdEnum.CddRegisterDid,
     });
 
-    result = txTagToExtrinsicIdentifierV2(TxTags.babe.ReportEquivocation);
+    result = txTagToExtrinsicIdentifier(TxTags.babe.ReportEquivocation);
 
     expect(result).toEqual({
       moduleId: ModuleIdEnum.Babe,

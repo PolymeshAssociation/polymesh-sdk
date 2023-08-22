@@ -24,7 +24,7 @@ import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 import {
   scopeToMiddlewareScope,
   signerToString,
-  toIdentityWithClaimsArrayV2,
+  toIdentityWithClaimsArray,
 } from '~/utils/conversion';
 import { calculateNextKey, createProcedureMethod, getDid, removePadding } from '~/utils/internal';
 
@@ -126,7 +126,7 @@ export class Claims {
    * @note supports pagination
    * @note uses the middlewareV2
    */
-  public async getIssuedClaimsV2(
+  public async getIssuedClaims(
     opts: {
       target?: string | Identity;
       includeExpired?: boolean;
@@ -139,7 +139,7 @@ export class Claims {
 
     const did = await getDid(target, context);
 
-    return context.getIdentityClaimsFromMiddlewareV2({
+    return context.getIdentityClaimsFromMiddleware({
       trustedClaimIssuers: [did],
       includeExpired,
       size,
@@ -161,7 +161,7 @@ export class Claims {
    * @note supports pagination
    * @note uses the middleware V2
    */
-  public async getIdentitiesWithClaimsV2(
+  public async getIdentitiesWithClaims(
     opts: {
       targets?: (string | Identity)[];
       trustedClaimIssuers?: (string | Identity)[];
@@ -200,7 +200,7 @@ export class Claims {
         data: {
           claims: { groupedAggregates: groupedTargets },
         },
-      } = await context.queryMiddlewareV2<Ensured<Query, 'claims'>>(
+      } = await context.queryMiddleware<Ensured<Query, 'claims'>>(
         claimsGroupingQuery({
           ...filters,
         })
@@ -223,14 +223,14 @@ export class Claims {
       data: {
         claims: { nodes },
       },
-    } = await context.queryMiddlewareV2<Ensured<Query, 'claims'>>(
+    } = await context.queryMiddleware<Ensured<Query, 'claims'>>(
       claimsQuery({
         dids: targetIssuers,
         ...filters,
       })
     );
 
-    const data = toIdentityWithClaimsArrayV2(nodes, context, 'targetId');
+    const data = toIdentityWithClaimsArray(nodes, context, 'targetId');
     const next = calculateNextKey(count, data.length, start);
 
     return {
@@ -354,7 +354,7 @@ export class Claims {
    * @note supports pagination
    * @note uses the middlewareV2 (optional)
    */
-  public async getTargetingClaimsV2(
+  public async getTargetingClaims(
     opts: {
       target?: string | Identity;
       scope?: Scope;
@@ -377,9 +377,9 @@ export class Claims {
 
     const did = await getDid(target, context);
 
-    const isMiddlewareV2Available = await context.isMiddlewareV2Available();
+    const isMiddlewareAvailable = await context.isMiddlewareAvailable();
 
-    if (isMiddlewareV2Available) {
+    if (isMiddlewareAvailable) {
       const filters = {
         dids: [did],
         scope: scope ? scopeToMiddlewareScope(scope, false) : undefined,
@@ -392,7 +392,7 @@ export class Claims {
           data: {
             claims: { groupedAggregates: groupedIssuers },
           },
-        } = await context.queryMiddlewareV2<Ensured<Query, 'claims'>>(
+        } = await context.queryMiddleware<Ensured<Query, 'claims'>>(
           claimsGroupingQuery(filters, ClaimsOrderBy.IssuerIdAsc, ClaimsGroupBy.IssuerId)
         );
 
@@ -412,14 +412,14 @@ export class Claims {
         data: {
           claims: { nodes },
         },
-      } = await context.queryMiddlewareV2<Ensured<Query, 'claims'>>(
+      } = await context.queryMiddleware<Ensured<Query, 'claims'>>(
         claimsQuery({
           trustedClaimIssuers: claimIssuers,
           ...filters,
         })
       );
 
-      const data = toIdentityWithClaimsArrayV2(nodes, context, 'issuerId');
+      const data = toIdentityWithClaimsArray(nodes, context, 'issuerId');
       const next = calculateNextKey(count, data.length, start);
 
       return {

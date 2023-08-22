@@ -834,7 +834,7 @@ function configureContext(opts: ContextOptions): void {
     setSigningManager: jest.fn(),
     getExternalSigner: jest.fn().mockReturnValue(opts.getExternalSigner),
     polymeshApi: mockInstanceContainer.apiInstance,
-    queryMiddlewareV2: jest.fn().mockImplementation(query => queryMockV2(query)),
+    queryMiddlewareV2: jest.fn().mockImplementation(query => queryMock(query)),
     middlewareApiV2: mockInstanceContainer.apolloInstanceV2,
     getInvalidDids: jest.fn().mockResolvedValue(opts.invalidDids),
     getProtocolFees: jest.fn().mockResolvedValue(opts.transactionFees),
@@ -849,7 +849,7 @@ function configureContext(opts: ContextOptions): void {
     getLatestBlock: jest.fn().mockResolvedValue(opts.latestBlock),
     isMiddlewareV2Enabled: jest.fn().mockReturnValue(opts.middlewareV2Enabled),
     isAnyMiddlewareEnabled: jest.fn().mockReturnValue(opts.middlewareV2Enabled),
-    isMiddlewareV2Available: jest.fn().mockResolvedValue(opts.middlewareV2Available),
+    isMiddlewareAvailable: jest.fn().mockResolvedValue(opts.middlewareV2Available),
     getMiddlewareMetadata: jest.fn().mockResolvedValue(opts.getMiddlewareMetadata),
     isArchiveNode: opts.isArchiveNode,
     ss58Format: opts.ss58Format,
@@ -1525,7 +1525,7 @@ export function getWebSocketInstance(): MockWebSocket {
  * @hidden
  * Retrieve an instance of the mocked v2 Apollo Client
  */
-export function getMiddlewareApiV2(): ApolloClient<NormalizedCacheObject> &
+export function getMiddlewareApi(): ApolloClient<NormalizedCacheObject> &
   jest.Mocked<ApolloClient<NormalizedCacheObject>> {
   return mockInstanceContainer.apolloInstanceV2 as unknown as ApolloClient<NormalizedCacheObject> &
     jest.Mocked<ApolloClient<NormalizedCacheObject>>;

@@ -465,7 +465,7 @@ export abstract class PolymeshTransactionBase<
           nodes: [{ blockId: processedBlock }],
         },
       },
-    } = await context.queryMiddlewareV2<Ensured<Query, 'blocks'>>(latestBlockQuery());
+    } = await context.queryMiddleware<Ensured<Query, 'blocks'>>(latestBlockQuery());
 
     return new BigNumber(processedBlock);
   }

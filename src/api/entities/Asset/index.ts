@@ -374,7 +374,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
    * @note uses the middlewareV2
    * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
    */
-  public async createdAtV2(): Promise<EventIdentifier | null> {
+  public async createdAt(): Promise<EventIdentifier | null> {
     const { ticker, context } = this;
 
     const {
@@ -383,7 +383,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
           nodes: [asset],
         },
       },
-    } = await context.queryMiddlewareV2<Ensured<Query, 'assets'>>(
+    } = await context.queryMiddleware<Ensured<Query, 'assets'>>(
       assetQuery({
         ticker,
       })
@@ -485,14 +485,14 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
    *
    * @note uses the middlewareV2
    */
-  public async getOperationHistoryV2(): Promise<HistoricAgentOperation[]> {
+  public async getOperationHistory(): Promise<HistoricAgentOperation[]> {
     const { context, ticker: assetId } = this;
 
     const {
       data: {
         tickerExternalAgentHistories: { nodes },
       },
-    } = await context.queryMiddlewareV2<Ensured<Query, 'tickerExternalAgentHistories'>>(
+    } = await context.queryMiddleware<Ensured<Query, 'tickerExternalAgentHistories'>>(
       tickerExternalAgentHistoryQuery({
         assetId,
       })
@@ -525,7 +525,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       data: {
         assetTransactions: { nodes, totalCount },
       },
-    } = await context.queryMiddlewareV2<Ensured<Query, 'assetTransactions'>>(
+    } = await context.queryMiddleware<Ensured<Query, 'assetTransactions'>>(
       assetTransactionQuery(
         {
           assetId: ticker,

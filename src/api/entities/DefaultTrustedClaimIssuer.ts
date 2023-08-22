@@ -51,7 +51,7 @@ export class DefaultTrustedClaimIssuer extends Identity {
    * @note uses the middlewareV2
    * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
    */
-  public async addedAtV2(): Promise<EventIdentifier | null> {
+  public async addedAt(): Promise<EventIdentifier | null> {
     const {
       asset: { ticker: assetId },
       did: issuer,
@@ -64,7 +64,7 @@ export class DefaultTrustedClaimIssuer extends Identity {
           nodes: [node],
         },
       },
-    } = await context.queryMiddlewareV2<Ensured<Query, 'trustedClaimIssuers'>>(
+    } = await context.queryMiddleware<Ensured<Query, 'trustedClaimIssuers'>>(
       trustedClaimIssuerQuery({
         assetId,
         issuer,

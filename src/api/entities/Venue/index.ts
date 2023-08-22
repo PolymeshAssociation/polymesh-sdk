@@ -218,7 +218,7 @@ export class Venue extends Entity<UniqueIdentifiers, string> {
       data: {
         instructions: { nodes: instructionsResult, totalCount },
       },
-    } = await context.queryMiddlewareV2<Ensured<Query, 'instructions'>>(
+    } = await context.queryMiddleware<Ensured<Query, 'instructions'>>(
       instructionsQuery(
         {
           venueId: id.toString(),

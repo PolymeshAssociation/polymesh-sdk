@@ -153,7 +153,7 @@ describe('NumberedPortfolio class', () => {
         },
       });
 
-      const result = await numberedPortfolio.createdAtV2();
+      const result = await numberedPortfolio.createdAt();
 
       expect(result).toEqual(fakeResult);
     });
@@ -166,7 +166,7 @@ describe('NumberedPortfolio class', () => {
           nodes: [],
         },
       });
-      const result = await numberedPortfolio.createdAtV2();
+      const result = await numberedPortfolio.createdAt();
       expect(result).toBeNull();
     });
   });

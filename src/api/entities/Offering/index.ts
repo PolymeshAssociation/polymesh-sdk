@@ -202,7 +202,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
    * @note supports pagination
    * @note uses the middleware V2
    */
-  public async getInvestmentsV2(
+  public async getInvestments(
     opts: {
       size?: BigNumber;
       start?: BigNumber;
@@ -220,7 +220,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
       data: {
         investments: { nodes, totalCount },
       },
-    } = await context.queryMiddlewareV2<Ensured<Query, 'investments'>>(
+    } = await context.queryMiddleware<Ensured<Query, 'investments'>>(
       investmentsQuery(
         {
           stoId: id.toNumber(),

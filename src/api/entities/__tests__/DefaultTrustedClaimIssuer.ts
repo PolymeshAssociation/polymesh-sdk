@@ -89,7 +89,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
         },
       });
 
-      const result = await trustedClaimIssuer.addedAtV2();
+      const result = await trustedClaimIssuer.addedAt();
 
       expect(result).toEqual(fakeResult);
     });
@@ -102,7 +102,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
           nodes: [],
         },
       });
-      const result = await trustedClaimIssuer.addedAtV2();
+      const result = await trustedClaimIssuer.addedAt();
       expect(result).toBeNull();
     });
   });

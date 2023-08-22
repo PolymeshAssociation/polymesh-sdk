@@ -282,7 +282,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
    *
    * @note uses the middlewareV2
    */
-  public async getTransactionHistoryV2(
+  public async getTransactionHistory(
     filters: {
       account?: string;
       ticker?: string;
@@ -298,7 +298,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
 
     const address = account ? addressToKey(account, context) : undefined;
 
-    const settlementsPromise = context.queryMiddlewareV2<Ensured<Query, 'legs'>>(
+    const settlementsPromise = context.queryMiddleware<Ensured<Query, 'legs'>>(
       settlementsQuery({
         identityId,
         portfolioId,
@@ -307,9 +307,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
       })
     );
 
-    const portfolioMovementsPromise = context.queryMiddlewareV2<
-      Ensured<Query, 'portfolioMovements'>
-    >(
+    const portfolioMovementsPromise = context.queryMiddleware<Ensured<Query, 'portfolioMovements'>>(
       portfolioMovementsQuery({
         identityId,
         portfolioId,

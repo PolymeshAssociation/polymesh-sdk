@@ -517,7 +517,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    *
    * @note uses the middlewareV2
    */
-  public async getStatusV2(): Promise<InstructionStatusResult> {
+  public async getStatus(): Promise<InstructionStatusResult> {
     const isPending = await this.isPending();
 
     if (isPending) {
@@ -527,8 +527,8 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     }
 
     const [executedEventIdentifier, failedEventIdentifier] = await Promise.all([
-      this.getInstructionEventFromMiddlewareV2(InstructionStatusEnum.Executed),
-      this.getInstructionEventFromMiddlewareV2(InstructionStatusEnum.Failed),
+      this.getInstructionEventFromMiddleware(InstructionStatusEnum.Executed),
+      this.getInstructionEventFromMiddleware(InstructionStatusEnum.Failed),
     ]);
 
     if (executedEventIdentifier) {
@@ -589,7 +589,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    * @hidden
    * Retrieve Instruction status event from middleware V2
    */
-  private async getInstructionEventFromMiddlewareV2(
+  private async getInstructionEventFromMiddleware(
     status: InstructionStatusEnum
   ): Promise<EventIdentifier | null> {
     const { id, context } = this;
@@ -600,7 +600,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
           nodes: [details],
         },
       },
-    } = await context.queryMiddlewareV2<Ensured<Query, 'instructions'>>(
+    } = await context.queryMiddleware<Ensured<Query, 'instructions'>>(
       instructionsQuery(
         {
           status,

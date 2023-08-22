@@ -529,7 +529,7 @@ describe('Portfolio class', () => {
         },
       ]);
 
-      let result = await portfolio.getTransactionHistoryV2({
+      let result = await portfolio.getTransactionHistory({
         account,
       });
 
@@ -598,7 +598,7 @@ describe('Portfolio class', () => {
       ]);
 
       portfolio = new NonAbstract({ did }, context);
-      result = await portfolio.getTransactionHistoryV2();
+      result = await portfolio.getTransactionHistory();
 
       expect(result[0].blockNumber).toEqual(blockNumber1);
       expect(result[0].blockHash).toBe(blockHash1);
@@ -642,7 +642,7 @@ describe('Portfolio class', () => {
         },
       ]);
 
-      return expect(portfolio.getTransactionHistoryV2()).rejects.toThrow(
+      return expect(portfolio.getTransactionHistory()).rejects.toThrow(
         "The Portfolio doesn't exist or was removed by its owner"
       );
     });

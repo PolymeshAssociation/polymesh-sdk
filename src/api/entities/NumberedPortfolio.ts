@@ -98,7 +98,7 @@ export class NumberedPortfolio extends Portfolio {
    * @note uses the middlewareV2
    * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
    */
-  public async createdAtV2(): Promise<EventIdentifier | null> {
+  public async createdAt(): Promise<EventIdentifier | null> {
     const {
       owner: { did },
       id,
@@ -111,7 +111,7 @@ export class NumberedPortfolio extends Portfolio {
           nodes: [node],
         },
       },
-    } = await context.queryMiddlewareV2<Ensured<Query, 'portfolios'>>(
+    } = await context.queryMiddleware<Ensured<Query, 'portfolios'>>(
       portfolioQuery({
         identityId: did,
         number: id.toNumber(),

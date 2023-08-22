@@ -13,7 +13,7 @@ import { when } from 'jest-when';
 
 import { Account, Asset, Context, Identity, PolymeshError, Procedure } from '~/internal';
 import { latestSqVersionQuery } from '~/middleware/queries';
-import { ClaimScopeTypeEnum } from '~/middleware/types';
+import { ClaimScopeTypeEnum } from '~/middleware/typesV1';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   createMockStatisticsStatClaim,

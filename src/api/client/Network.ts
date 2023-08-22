@@ -151,7 +151,7 @@ export class Network {
    *
    * @note uses the middlewareV2
    */
-  public async getEventByIndexedArgsV2(opts: {
+  public async getEventByIndexedArgs(opts: {
     moduleId: ModuleIdEnum;
     eventId: EventIdEnum;
     eventArg0?: string;
@@ -168,7 +168,7 @@ export class Network {
           nodes: [event],
         },
       },
-    } = await context.queryMiddlewareV2<Ensured<Query, 'events'>>(
+    } = await context.queryMiddleware<Ensured<Query, 'events'>>(
       eventsByArgs(
         {
           moduleId,
@@ -197,7 +197,7 @@ export class Network {
    *
    * @note uses the middlewareV2
    */
-  public async getEventsByIndexedArgsV2(opts: {
+  public async getEventsByIndexedArgs(opts: {
     moduleId: ModuleIdEnum;
     eventId: EventIdEnum;
     eventArg0?: string;
@@ -214,7 +214,7 @@ export class Network {
       data: {
         events: { nodes: events },
       },
-    } = await context.queryMiddlewareV2<Ensured<Query, 'events'>>(
+    } = await context.queryMiddleware<Ensured<Query, 'events'>>(
       eventsByArgs(
         {
           moduleId,
@@ -245,7 +245,7 @@ export class Network {
    *
    * @note uses the middlewareV2
    */
-  public async getTransactionByHashV2(opts: {
+  public async getTransactionByHash(opts: {
     txHash: string;
   }): Promise<ExtrinsicDataWithFees | null> {
     const {
@@ -266,7 +266,7 @@ export class Network {
           nodes: [transaction],
         },
       },
-    } = await context.queryMiddlewareV2<Ensured<Query, 'extrinsics'>>(
+    } = await context.queryMiddleware<Ensured<Query, 'extrinsics'>>(
       extrinsicByHash({
         extrinsicHash: opts.txHash,
       })
@@ -332,7 +332,7 @@ export class Network {
 
   /**
    * Retrieve middleware metadata.
-   * Returns null if middleware V2 is disabled
+   * Returns null if middleware is disabled
    *
    * @note uses the middleware V2
    */

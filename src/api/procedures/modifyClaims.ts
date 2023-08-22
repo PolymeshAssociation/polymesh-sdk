@@ -84,7 +84,7 @@ const findInvalidCddClaims = async (
   );
 
   if (newCddClaims.length) {
-    const issuedCddClaims = await context.issuedClaimsV2({
+    const issuedCddClaims = await context.issuedClaims({
       targets: newCddClaims.map(({ target }) => target),
       claimTypes: [ClaimType.CustomerDueDiligence],
       includeExpired: false,
@@ -157,7 +157,7 @@ export async function prepareModifyClaims(
 
   const [nonExistentDids, middlewareAvailable] = await Promise.all([
     context.getInvalidDids(allTargets),
-    context.isMiddlewareV2Available(),
+    context.isMiddlewareAvailable(),
   ]);
 
   if (nonExistentDids.length) {

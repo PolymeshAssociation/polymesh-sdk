@@ -5,7 +5,7 @@ import { AccountIdentityRelation, AccountKeyType } from '~/api/entities/Account/
 import { Account, Context, Entity } from '~/internal';
 import { CallIdEnum, ModuleIdEnum } from '~/middleware/enums';
 import { extrinsicsByArgs } from '~/middleware/queries';
-import { ExtrinsicsOrderBy,Order, TransactionOrderFields  } from '~/middleware/types';
+import { ExtrinsicsOrderBy, Order, TransactionOrderFields } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   createMockAccountId,
@@ -371,7 +371,7 @@ describe('Account class', () => {
         }),
       });
 
-      let result = await account.getTransactionHistoryV2({
+      let result = await account.getTransactionHistory({
         blockNumber: blockNumber1,
         tag,
         size: new BigNumber(2),
@@ -408,7 +408,7 @@ describe('Account class', () => {
         }
       );
 
-      result = await account.getTransactionHistoryV2({
+      result = await account.getTransactionHistory({
         blockHash: blockHash1,
         tag,
         success: false,
@@ -440,7 +440,7 @@ describe('Account class', () => {
         }
       );
 
-      result = await account.getTransactionHistoryV2({ success: true });
+      result = await account.getTransactionHistory({ success: true });
 
       expect(result.data[0].blockNumber).toEqual(blockNumber1);
       expect(result.data[0].address).toEqual(address);
@@ -461,7 +461,7 @@ describe('Account class', () => {
         }
       );
 
-      result = await account.getTransactionHistoryV2();
+      result = await account.getTransactionHistory();
       expect(result.data).toEqual([]);
       expect(result.next).toBeNull();
     });

@@ -38,7 +38,7 @@ import {
   keyToAddress,
   stringToAccountId,
   stringToHash,
-  txTagToExtrinsicIdentifierV2,
+  txTagToExtrinsicIdentifier,
   u32ToBigNumber,
 } from '~/utils/conversion';
 import {
@@ -232,7 +232,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
     let moduleId;
     let callId;
     if (tag) {
-      ({ moduleId, callId } = txTagToExtrinsicIdentifierV2(tag));
+      ({ moduleId, callId } = txTagToExtrinsicIdentifier(tag));
     }
 
     let successFilter;
@@ -256,7 +256,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       data: {
         extrinsics: { nodes: transactionList, totalCount },
       },
-    } = await context.queryMiddlewareV2<Ensured<Query, 'extrinsics'>>(
+    } = await context.queryMiddleware<Ensured<Query, 'extrinsics'>>(
       extrinsicsByArgs(
         {
           blockId: blockNumber ? blockNumber.toString() : undefined,

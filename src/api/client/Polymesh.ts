@@ -315,7 +315,7 @@ export class Polymesh {
    * MiddlewareV2 client
    */
   public get _middlewareApiV2(): ApolloClient<NormalizedCacheObject> {
-    return this.context.middlewareApiV2;
+    return this.context.middlewareApi;
   }
   /* eslint-enable @typescript-eslint/naming-convention */
 }

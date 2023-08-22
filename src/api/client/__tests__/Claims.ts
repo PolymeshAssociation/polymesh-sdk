@@ -82,10 +82,10 @@ describe('Claims Class', () => {
         },
       });
 
-      let result = await claims.getIssuedClaimsV2();
+      let result = await claims.getIssuedClaims();
       expect(result).toEqual(getIdentityClaimsFromMiddlewareV2);
 
-      result = await claims.getIssuedClaimsV2({ target });
+      result = await claims.getIssuedClaims({ target });
       expect(result).toEqual(getIdentityClaimsFromMiddlewareV2);
     });
   });
@@ -173,7 +173,7 @@ describe('Claims Class', () => {
         }
       );
 
-      let result = await claims.getIdentitiesWithClaimsV2({
+      let result = await claims.getIdentitiesWithClaims({
         targets: [targetDid],
         trustedClaimIssuers: [issuerDid],
         claimTypes: [ClaimType.CustomerDueDiligence],
@@ -218,7 +218,7 @@ describe('Claims Class', () => {
         },
       ]);
 
-      result = await claims.getIdentitiesWithClaimsV2();
+      result = await claims.getIdentitiesWithClaims();
 
       expect(JSON.stringify(result.data)).toBe(JSON.stringify(fakeClaims));
       expect(result.count).toEqual(new BigNumber(1));
@@ -297,7 +297,7 @@ describe('Claims Class', () => {
         }
       );
 
-      const result = await claims.getIdentitiesWithClaimsV2({
+      const result = await claims.getIdentitiesWithClaims({
         targets: [targetDid],
         trustedClaimIssuers: [issuerDid],
         scope,
@@ -559,7 +559,7 @@ describe('Claims Class', () => {
         }
       );
 
-      let result = await claims.getTargetingClaimsV2({
+      let result = await claims.getTargetingClaims({
         target: did,
         trustedClaimIssuers: [issuerDid],
         scope,
@@ -606,7 +606,7 @@ describe('Claims Class', () => {
         },
       ]);
 
-      result = await claims.getTargetingClaimsV2();
+      result = await claims.getTargetingClaims();
 
       expect(result.data).toEqual(fakeClaims);
       expect(result.count).toEqual(new BigNumber(1));
@@ -676,7 +676,7 @@ describe('Claims Class', () => {
         },
       });
 
-      let result = await claims.getTargetingClaimsV2({
+      let result = await claims.getTargetingClaims({
         target,
       });
 
@@ -689,7 +689,7 @@ describe('Claims Class', () => {
       expect(result.data[1].claims.length).toEqual(1);
       expect(result.data[1].claims[0].claim).toEqual(identityClaims[2].claim);
 
-      result = await claims.getTargetingClaimsV2({
+      result = await claims.getTargetingClaims({
         target,
         trustedClaimIssuers: ['trusted'],
       });

@@ -340,7 +340,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    * @note uses the middlewareV2
    * @note supports pagination
    */
-  public async getHeldAssetsV2(
+  public async getHeldAssets(
     opts: {
       order?: AssetHoldersOrderBy;
       size?: BigNumber;
@@ -355,7 +355,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       data: {
         assetHolders: { nodes, totalCount },
       },
-    } = await context.queryMiddlewareV2<Ensured<Query, 'assetHolders'>>(
+    } = await context.queryMiddleware<Ensured<Query, 'assetHolders'>>(
       assetHoldersQuery(
         {
           identityId: did,
@@ -406,14 +406,14 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
    *
    * @note uses the middlewareV2
    */
-  public async getTrustingAssetsV2(): Promise<Asset[]> {
+  public async getTrustingAssets(): Promise<Asset[]> {
     const { context, did } = this;
 
     const {
       data: {
         trustedClaimIssuers: { nodes },
       },
-    } = await context.queryMiddlewareV2<Ensured<Query, 'trustedClaimIssuers'>>(
+    } = await context.queryMiddleware<Ensured<Query, 'trustedClaimIssuers'>>(
       trustingAssetsQuery({ issuer: did })
     );
 
@@ -683,7 +683,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     let start: BigNumber | undefined;
 
     while (!allFetched) {
-      const { data, next } = await this.getHeldAssetsV2({ size: MAX_PAGE_SIZE, start });
+      const { data, next } = await this.getHeldAssets({ size: MAX_PAGE_SIZE, start });
       start = next ? new BigNumber(next) : undefined;
       allFetched = !next;
       assets = [...assets, ...data];
@@ -844,7 +844,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       data: {
         legs: { nodes: instructionsResult },
       },
-    } = await context.queryMiddlewareV2<Ensured<Query, 'legs'>>(instructionsByDidQuery(did));
+    } = await context.queryMiddleware<Ensured<Query, 'legs'>>(instructionsByDidQuery(did));
 
     return instructionsResult.map(({ instruction }) =>
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

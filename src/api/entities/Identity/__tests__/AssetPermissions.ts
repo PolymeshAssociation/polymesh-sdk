@@ -115,7 +115,7 @@ describe('AssetPermissions class', () => {
         },
       });
 
-      const result = await assetPermissions.enabledAtV2({ asset });
+      const result = await assetPermissions.enabledAt({ asset });
 
       expect(result).toEqual(fakeResult);
     });
@@ -128,7 +128,7 @@ describe('AssetPermissions class', () => {
       dsMockUtils.createApolloV2QueryMock(tickerExternalAgentsQuery(variables), {
         tickerExternalAgents: { nodes: [] },
       });
-      const result = await assetPermissions.enabledAtV2({ asset });
+      const result = await assetPermissions.enabledAt({ asset });
       expect(result).toBeNull();
     });
   });
@@ -457,7 +457,7 @@ describe('AssetPermissions class', () => {
         }
       );
 
-      let result = await assetPermissions.getOperationHistoryV2({
+      let result = await assetPermissions.getOperationHistory({
         asset: ticker,
         start: new BigNumber(0),
         size: new BigNumber(1),
@@ -489,7 +489,7 @@ describe('AssetPermissions class', () => {
         }
       );
 
-      result = await assetPermissions.getOperationHistoryV2({
+      result = await assetPermissions.getOperationHistory({
         asset: ticker,
       });
 

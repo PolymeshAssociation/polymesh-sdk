@@ -1308,7 +1308,7 @@ export async function assertExpectedSqVersion(context: Context): Promise<void> {
         nodes: [sqVersion],
       },
     },
-  } = await context.queryMiddlewareV2<Ensured<Query, 'subqueryVersions'>>(latestSqVersionQuery());
+  } = await context.queryMiddleware<Ensured<Query, 'subqueryVersions'>>(latestSqVersionQuery());
 
   if (!sqVersion || lt(sqVersion.version, MINIMUM_SQ_VERSION)) {
     console.warn(

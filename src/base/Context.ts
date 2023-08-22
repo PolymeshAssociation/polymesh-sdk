@@ -103,7 +103,7 @@ export class Context {
 
   public ss58Format: BigNumber;
 
-  private _middlewareApiV2: ApolloClient<NormalizedCacheObject> | null;
+  private _middlewareApi: ApolloClient<NormalizedCacheObject> | null;
 
   private _polymeshApi: ApiPromise;
 
@@ -123,7 +123,7 @@ export class Context {
   private constructor(params: ConstructorParams) {
     const { polymeshApi, middlewareApiV2, ss58Format } = params;
 
-    this._middlewareApiV2 = middlewareApiV2;
+    this._middlewareApi = middlewareApiV2;
     this._polymeshApi = polymeshApi;
     this.polymeshApi = polymeshApi;
     this.ss58Format = ss58Format;
@@ -855,7 +855,7 @@ export class Context {
   /**
    * @hidden
    */
-  public async getIdentityClaimsFromMiddlewareV2(args: {
+  public async getIdentityClaimsFromMiddleware(args: {
     targets?: (string | Identity)[];
     trustedClaimIssuers?: (string | Identity)[];
     claimTypes?: ClaimType[];
@@ -876,7 +876,7 @@ export class Context {
       data: {
         claims: { nodes: claimsList, totalCount },
       },
-    } = await this.queryMiddlewareV2<Ensured<Query, 'claims'>>(
+    } = await this.queryMiddleware<Ensured<Query, 'claims'>>(
       claimsQuery(
         {
           dids: targets?.map(target => signerToString(target)),
@@ -918,7 +918,7 @@ export class Context {
    *
    * @note uses the middleware V2 (optional)
    */
-  public async issuedClaimsV2(
+  public async issuedClaims(
     opts: {
       targets?: (string | Identity)[];
       trustedClaimIssuers?: (string | Identity)[];
@@ -930,10 +930,10 @@ export class Context {
   ): Promise<ResultSet<ClaimData>> {
     const { targets, trustedClaimIssuers, claimTypes, includeExpired = true, size, start } = opts;
 
-    const isMiddlewareV2Available = await this.isMiddlewareV2Available();
+    const isMiddlewareAvailable = await this.isMiddlewareAvailable();
 
-    if (isMiddlewareV2Available) {
-      return this.getIdentityClaimsFromMiddlewareV2({
+    if (isMiddlewareAvailable) {
+      return this.getIdentityClaimsFromMiddleware({
         targets,
         trustedClaimIssuers,
         claimTypes,
@@ -965,12 +965,12 @@ export class Context {
   }
 
   /**
-   * Retrieve the middleware v2 client
+   * Retrieve the middleware client
    *
    * @throws if the middleware V2 is not enabled
    */
-  public get middlewareApiV2(): ApolloClient<NormalizedCacheObject> {
-    const { _middlewareApiV2: api } = this;
+  public get middlewareApi(): ApolloClient<NormalizedCacheObject> {
+    const { _middlewareApi: api } = this;
 
     if (!api) {
       throw new PolymeshError({
@@ -986,12 +986,12 @@ export class Context {
    *
    * Make a query to the middleware V2 server using the apollo client
    */
-  public async queryMiddlewareV2<Result extends Partial<Query>>(
+  public async queryMiddleware<Result extends Partial<Query>>(
     query: QueryOptions<OperationVariables, Result>
   ): Promise<ApolloQueryResult<Result>> {
     let result: ApolloQueryResult<Result>;
     try {
-      result = await this.middlewareApiV2.query(query);
+      result = await this.middlewareApi.query(query);
     } catch (err) {
       const resultMessage = err.networkError?.result?.message;
       const { message: errorMessage } = err;
@@ -1010,8 +1010,8 @@ export class Context {
    *
    * Return whether the middleware V2 was enabled at startup
    */
-  public isMiddlewareV2Enabled(): boolean {
-    return !!this._middlewareApiV2;
+  public isMiddlewareEnabled(): boolean {
+    return !!this._middlewareApi;
   }
 
   /**
@@ -1020,7 +1020,7 @@ export class Context {
    * Return whether any middleware was enabled at startup
    */
   public isAnyMiddlewareEnabled(): boolean {
-    return this.isMiddlewareV2Enabled();
+    return this.isMiddlewareEnabled();
   }
 
   /**
@@ -1028,9 +1028,9 @@ export class Context {
    *
    * Return whether the middleware V2 is enabled and online
    */
-  public async isMiddlewareV2Available(): Promise<boolean> {
+  public async isMiddlewareAvailable(): Promise<boolean> {
     try {
-      await this.middlewareApiV2.query(heartbeatQuery());
+      await this.middlewareApi.query(heartbeatQuery());
     } catch (err) {
       return false;
     }
@@ -1088,19 +1088,19 @@ export class Context {
    */
   public async disconnect(): Promise<void> {
     const { polymeshApi } = this;
-    let middlewareApiV2;
+    let middlewareApi;
 
     const unsub = await this.unsubChainVersion;
     unsub();
 
-    if (this.isMiddlewareV2Enabled()) {
-      ({ middlewareApiV2 } = this);
+    if (this.isMiddlewareEnabled()) {
+      ({ middlewareApi } = this);
     }
 
     this.isDisconnected = true;
 
-    if (middlewareApiV2) {
-      middlewareApiV2.stop();
+    if (middlewareApi) {
+      middlewareApi.stop();
     }
 
     await delay(500); // allow pending requests to complete
@@ -1166,7 +1166,7 @@ export class Context {
    * @note uses the middleware V2
    */
   public async getMiddlewareMetadata(): Promise<MiddlewareMetadata | null> {
-    if (!this.isMiddlewareV2Enabled()) {
+    if (!this.isMiddlewareEnabled()) {
       return null;
     }
 
@@ -1182,7 +1182,7 @@ export class Context {
           indexerHealthy,
         },
       },
-    } = await this.queryMiddlewareV2<Ensured<Query, '_metadata'>>(metadataQuery());
+    } = await this.queryMiddleware<Ensured<Query, '_metadata'>>(metadataQuery());
 
     /* eslint-disable @typescript-eslint/no-non-null-assertion */
     return {

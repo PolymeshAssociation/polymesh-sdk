@@ -314,7 +314,7 @@ export class AssetPermissions extends Namespace<Identity> {
    * @note uses the middlewareV2
    * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
    */
-  public async enabledAtV2({ asset }: { asset: string | Asset }): Promise<EventIdentifier | null> {
+  public async enabledAt({ asset }: { asset: string | Asset }): Promise<EventIdentifier | null> {
     const { context } = this;
     const ticker = asTicker(asset);
 
@@ -324,7 +324,7 @@ export class AssetPermissions extends Namespace<Identity> {
           nodes: [node],
         },
       },
-    } = await context.queryMiddlewareV2<Ensured<Query, 'tickerExternalAgents'>>(
+    } = await context.queryMiddleware<Ensured<Query, 'tickerExternalAgents'>>(
       tickerExternalAgentsQuery({
         assetId: ticker,
       })
@@ -357,7 +357,7 @@ export class AssetPermissions extends Namespace<Identity> {
    * @note uses the middlewareV2
    * @note supports pagination
    */
-  public async getOperationHistoryV2(opts: {
+  public async getOperationHistory(opts: {
     asset: string | Asset;
     moduleId?: ModuleIdEnum;
     eventId?: EventIdEnum;
@@ -377,7 +377,7 @@ export class AssetPermissions extends Namespace<Identity> {
       data: {
         tickerExternalAgentActions: { nodes, totalCount },
       },
-    } = await context.queryMiddlewareV2<Ensured<Query, 'tickerExternalAgentActions'>>(
+    } = await context.queryMiddleware<Ensured<Query, 'tickerExternalAgentActions'>>(
       tickerExternalAgentActionsQuery(
         {
           assetId: ticker,

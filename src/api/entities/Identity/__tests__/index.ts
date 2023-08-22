@@ -543,7 +543,7 @@ describe('Identity class', () => {
         },
       });
 
-      const result = await identity.getTrustingAssetsV2();
+      const result = await identity.getTrustingAssets();
 
       expect(result[0].ticker).toBe('ASSET1');
       expect(result[1].ticker).toBe('ASSET2');
@@ -561,7 +561,7 @@ describe('Identity class', () => {
         assetHolders: { nodes: tickers.map(ticker => ({ assetId: ticker })), totalCount: 2 },
       });
 
-      let result = await identity.getHeldAssetsV2();
+      let result = await identity.getHeldAssets();
 
       expect(result.data[0].ticker).toBe(tickers[0]);
       expect(result.data[1].ticker).toBe(tickers[1]);
@@ -578,7 +578,7 @@ describe('Identity class', () => {
         }
       );
 
-      result = await identity.getHeldAssetsV2({
+      result = await identity.getHeldAssets({
         start: new BigNumber(0),
         size: new BigNumber(1),
         order: AssetHoldersOrderBy.CreatedBlockIdAsc,

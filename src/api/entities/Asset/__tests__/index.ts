@@ -468,7 +468,7 @@ describe('Asset class', () => {
         },
       });
 
-      const result = await asset.createdAtV2();
+      const result = await asset.createdAt();
 
       expect(result).toEqual(fakeResult);
     });
@@ -486,7 +486,7 @@ describe('Asset class', () => {
           nodes: [],
         },
       });
-      const result = await asset.createdAtV2();
+      const result = await asset.createdAt();
       expect(result).toBeNull();
     });
   });
@@ -694,7 +694,7 @@ describe('Asset class', () => {
         }
       );
 
-      let result = await asset.getOperationHistoryV2();
+      let result = await asset.getOperationHistory();
 
       expect(result.length).toEqual(1);
       expect(result[0].identity.did).toEqual(did);
@@ -717,7 +717,7 @@ describe('Asset class', () => {
         }
       );
 
-      result = await asset.getOperationHistoryV2();
+      result = await asset.getOperationHistory();
 
       expect(result.length).toEqual(0);
     });

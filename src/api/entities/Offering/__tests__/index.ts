@@ -308,7 +308,7 @@ describe('Offering class', () => {
         }
       );
 
-      let result = await offering.getInvestmentsV2({
+      let result = await offering.getInvestments({
         size: new BigNumber(5),
         start: new BigNumber(0),
       });
@@ -332,7 +332,7 @@ describe('Offering class', () => {
         }
       );
 
-      result = await offering.getInvestmentsV2();
+      result = await offering.getInvestments();
       expect(result.data).toEqual([]);
       expect(result.next).toBeNull();
     });

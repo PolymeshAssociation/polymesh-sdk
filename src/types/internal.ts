@@ -250,11 +250,6 @@ export interface ExtrinsicIdentifier {
   callId: CallIdEnum;
 }
 
-export interface ExtrinsicIdentifierV2 {
-  moduleId: ModuleIdEnum;
-  callId: CallIdEnum;
-}
-
 export interface CorporateActionIdentifier {
   ticker: string;
   localId: BigNumber;

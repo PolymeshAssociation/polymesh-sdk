@@ -846,7 +846,7 @@ describe('Instruction class', () => {
           dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Pending)
         );
 
-      const result = await instruction.getStatusV2();
+      const result = await instruction.getStatus();
       expect(result).toMatchObject({
         status: InstructionStatus.Pending,
       });
@@ -910,7 +910,7 @@ describe('Instruction class', () => {
         },
       ]);
 
-      const result = await instruction.getStatusV2();
+      const result = await instruction.getStatus();
       expect(result).toMatchObject({
         status: InstructionStatus.Executed,
         eventIdentifier: fakeEventIdentifierResult,
@@ -977,7 +977,7 @@ describe('Instruction class', () => {
         },
       ]);
 
-      const result = await instruction.getStatusV2();
+      const result = await instruction.getStatus();
       expect(result).toMatchObject({
         status: InstructionStatus.Failed,
         eventIdentifier: fakeEventIdentifierResult,
@@ -1032,7 +1032,7 @@ describe('Instruction class', () => {
         },
       ]);
 
-      return expect(instruction.getStatusV2()).rejects.toThrow(
+      return expect(instruction.getStatus()).rejects.toThrow(
         "It isn't possible to determine the current status of this Instruction"
       );
     });

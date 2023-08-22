@@ -230,7 +230,7 @@ describe('Network Class', () => {
         }
       );
 
-      const result = await network.getEventByIndexedArgsV2(variables);
+      const result = await network.getEventByIndexedArgs(variables);
       expect(result).toEqual(fakeResult);
     });
 
@@ -251,7 +251,7 @@ describe('Network Class', () => {
           },
         }
       );
-      const result = await network.getEventByIndexedArgsV2({ ...variables, eventArg0: 'someDid' });
+      const result = await network.getEventByIndexedArgs({ ...variables, eventArg0: 'someDid' });
       expect(result).toBeNull();
     });
   });
@@ -300,7 +300,7 @@ describe('Network Class', () => {
         }
       );
 
-      const result = await network.getEventsByIndexedArgsV2({
+      const result = await network.getEventsByIndexedArgs({
         ...variables,
         start,
         size,
@@ -320,7 +320,7 @@ describe('Network Class', () => {
           events: { nodes: [] },
         }
       );
-      const result = await network.getEventsByIndexedArgsV2({
+      const result = await network.getEventsByIndexedArgs({
         ...variables,
         eventArg0: 'someDid',
       });
@@ -410,7 +410,7 @@ describe('Network Class', () => {
           })
         );
 
-      let result = await network.getTransactionByHashV2(variable);
+      let result = await network.getTransactionByHash(variable);
       expect(result).toEqual({
         blockNumber,
         blockHash,
@@ -450,7 +450,7 @@ describe('Network Class', () => {
         },
       });
 
-      result = await network.getTransactionByHashV2(variable);
+      result = await network.getTransactionByHash(variable);
       expect(result).toEqual({
         blockNumber,
         blockHash,
@@ -477,7 +477,7 @@ describe('Network Class', () => {
         }),
         { extrinsics: { nodes: [] } }
       );
-      const result = await network.getTransactionByHashV2(variable);
+      const result = await network.getTransactionByHash(variable);
       expect(result).toBeNull();
     });
   });

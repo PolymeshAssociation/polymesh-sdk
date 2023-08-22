@@ -442,14 +442,14 @@ export class DividendDistribution extends CorporateActionBase {
    *
    * @note uses the middlewareV2
    */
-  public async getWithheldTaxV2(): Promise<BigNumber> {
+  public async getWithheldTax(): Promise<BigNumber> {
     const {
       id,
       asset: { ticker },
       context,
     } = this;
 
-    const taxPromise = context.queryMiddlewareV2<Ensured<Query, 'distribution'>>(
+    const taxPromise = context.queryMiddleware<Ensured<Query, 'distribution'>>(
       distributionQuery({
         id: `${ticker}/${id.toString()}`,
       })
@@ -480,7 +480,7 @@ export class DividendDistribution extends CorporateActionBase {
    * @note uses the middleware V2
    * @note supports pagination
    */
-  public async getPaymentHistoryV2(
+  public async getPaymentHistory(
     opts: { size?: BigNumber; start?: BigNumber } = {}
   ): Promise<ResultSet<DistributionPayment>> {
     const {
@@ -490,7 +490,7 @@ export class DividendDistribution extends CorporateActionBase {
     } = this;
     const { size, start } = opts;
 
-    const paymentsPromise = context.queryMiddlewareV2<Ensured<Query, 'distributionPayments'>>(
+    const paymentsPromise = context.queryMiddleware<Ensured<Query, 'distributionPayments'>>(
       distributionPaymentsQuery(
         {
           distributionId: `${ticker}/${id.toString()}`,

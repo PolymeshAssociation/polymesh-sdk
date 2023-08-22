@@ -213,7 +213,6 @@ import {
   CorporateActionIdentifier,
   ExemptKey,
   ExtrinsicIdentifier,
-  ExtrinsicIdentifierV2,
   InstructionStatus,
   InternalAssetType,
   PalletPermissions,
@@ -2648,18 +2647,7 @@ export function txTagToProtocolOp(
 /**
  * @hidden
  */
-export function txTagToExtrinsicIdentifier(tag: TxTag): ExtrinsicIdentifier {
-  const [moduleName, extrinsicName] = tag.split('.');
-  return {
-    moduleId: moduleName.toLowerCase() as ModuleIdEnum,
-    callId: snakeCase(extrinsicName) as CallIdEnum,
-  };
-}
-
-/**
- * @hidden
- */
-export function extrinsicIdentifierToTxTag(extrinsicIdentifier: ExtrinsicIdentifierV2): TxTag {
+export function extrinsicIdentifierToTxTag(extrinsicIdentifier: ExtrinsicIdentifier): TxTag {
   const { moduleId, callId } = extrinsicIdentifier;
   let moduleName;
   for (const txTagItem in TxTags) {
@@ -2674,7 +2662,7 @@ export function extrinsicIdentifierToTxTag(extrinsicIdentifier: ExtrinsicIdentif
 /**
  * @hidden
  */
-export function txTagToExtrinsicIdentifierV2(tag: TxTag): ExtrinsicIdentifierV2 {
+export function txTagToExtrinsicIdentifier(tag: TxTag): ExtrinsicIdentifier {
   const [moduleName, extrinsicName] = tag.split('.');
   return {
     moduleId: moduleName.toLowerCase() as ModuleIdEnum,
@@ -2914,7 +2902,7 @@ export function middlewareV2ClaimToClaimData(claim: MiddlewareClaim, context: Co
 /**
  * @hidden
  */
-export function toIdentityWithClaimsArrayV2(
+export function toIdentityWithClaimsArray(
   data: MiddlewareClaim[],
   context: Context,
   groupByAttribute: string

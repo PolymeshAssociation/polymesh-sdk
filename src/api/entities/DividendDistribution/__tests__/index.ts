@@ -290,7 +290,7 @@ describe('DividendDistribution class', () => {
         }
       );
 
-      const result = await dividendDistribution.getWithheldTaxV2();
+      const result = await dividendDistribution.getWithheldTax();
 
       expect(result).toEqual(new BigNumber(1));
     });
@@ -311,7 +311,7 @@ describe('DividendDistribution class', () => {
         }
       );
 
-      return expect(dividendDistribution.getWithheldTaxV2()).rejects.toThrow(
+      return expect(dividendDistribution.getWithheldTax()).rejects.toThrow(
         'The Dividend Distribution no longer exists'
       );
     });
@@ -579,7 +579,7 @@ describe('DividendDistribution class', () => {
 
       const {
         data: [result],
-      } = await dividendDistribution.getPaymentHistoryV2({
+      } = await dividendDistribution.getPaymentHistory({
         size,
         start,
       });
@@ -604,7 +604,7 @@ describe('DividendDistribution class', () => {
           },
         }
       );
-      const result = await dividendDistribution.getPaymentHistoryV2();
+      const result = await dividendDistribution.getPaymentHistory();
       expect(result.data).toEqual([]);
       expect(result.next).toBeNull();
     });
@@ -626,7 +626,7 @@ describe('DividendDistribution class', () => {
         }
       );
 
-      return expect(dividendDistribution.getPaymentHistoryV2()).rejects.toThrow(
+      return expect(dividendDistribution.getPaymentHistory()).rejects.toThrow(
         'The Dividend Distribution no longer exists'
       );
     });
