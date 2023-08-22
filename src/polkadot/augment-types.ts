@@ -1,6 +1,10 @@
 // Auto-generated via `yarn polkadot-types-from-defs`, do not edit
 /* eslint-disable */
 
+// import type lookup before we augment - in some environments
+// this is required to allow for ambient/previous definitions
+import '@polkadot/types/types/registry';
+
 import type { Data, StorageKey } from '@polkadot/types';
 import type {
   BitVec,
@@ -1155,6 +1159,7 @@ import type {
   CAKind,
   CalendarPeriod,
   CalendarUnit,
+  CanTransferGranularReturn,
   CanTransferResult,
   CappedFee,
   CddId,
@@ -1166,8 +1171,6 @@ import type {
   Claim1stKey,
   Claim2ndKey,
   ClaimType,
-  ClassicTickerImport,
-  ClassicTickerRegistration,
   Committee,
   ComplianceRequirement,
   ComplianceRequirementResult,
@@ -1193,6 +1196,7 @@ import type {
   ErrorAt,
   EventCounts,
   EventDid,
+  ExecuteInstructionInfo,
   ExtrinsicPermissions,
   Fund,
   FundDescription,
@@ -1202,6 +1206,7 @@ import type {
   FundraiserName,
   FundraiserStatus,
   FundraiserTier,
+  FungibleLeg,
   FungibleToken,
   GranularCanTransferResult,
   HandledTxStatus,
@@ -1213,16 +1218,12 @@ import type {
   Instruction,
   InstructionId,
   InstructionStatus,
-  InvestorUid,
-  InvestorZKProofData,
   ItnRewardStatus,
   KeyIdentityData,
   KeyRecord,
   Leg,
-  LegAsset,
   LegId,
   LegStatus,
-  LegV2,
   LocalCAId,
   MaybeBlock,
   Member,
@@ -1233,7 +1234,10 @@ import type {
   MovePortfolioItem,
   NFTId,
   NFTs,
+  NonFungibleLeg,
   NonFungibleType,
+  OffChainAsset,
+  OffChainLeg,
   OffChainSignature,
   PalletName,
   PalletPermissions,
@@ -1266,15 +1270,11 @@ import type {
   RecordDate,
   RecordDateSpec,
   RestrictionResult,
-  RistrettoPoint,
   RpcDidRecords,
   RpcDidRecordsSuccess,
-  Scalar,
   ScheduleId,
   ScheduleSpec,
   Scope,
-  ScopeClaimProof,
-  ScopeId,
   SecondaryKey,
   SecondaryKeyWithAuth,
   SecurityToken,
@@ -1318,11 +1318,10 @@ import type {
   VoteCount,
   VoteCountProposalFound,
   VotingResult,
-  ZkProofData,
 } from 'polymesh-types/polymesh';
 
 declare module '@polkadot/types/types/registry' {
-  export interface InterfaceTypes {
+  interface InterfaceTypes {
     AbridgedCandidateReceipt: AbridgedCandidateReceipt;
     AbridgedHostConfiguration: AbridgedHostConfiguration;
     AbridgedHrmpChannel: AbridgedHrmpChannel;
@@ -1501,6 +1500,7 @@ declare module '@polkadot/types/types/registry' {
     CandidateInfo: CandidateInfo;
     CandidatePendingAvailability: CandidatePendingAvailability;
     CandidateReceipt: CandidateReceipt;
+    CanTransferGranularReturn: CanTransferGranularReturn;
     CanTransferResult: CanTransferResult;
     CappedFee: CappedFee;
     CddId: CddId;
@@ -1519,8 +1519,6 @@ declare module '@polkadot/types/types/registry' {
     Claim2ndKey: Claim2ndKey;
     ClaimType: ClaimType;
     ClassDetails: ClassDetails;
-    ClassicTickerImport: ClassicTickerImport;
-    ClassicTickerRegistration: ClassicTickerRegistration;
     ClassId: ClassId;
     ClassMetadata: ClassMetadata;
     CodecHash: CodecHash;
@@ -1750,6 +1748,7 @@ declare module '@polkadot/types/types/registry' {
     EvmLog: EvmLog;
     EvmVicinity: EvmVicinity;
     ExecReturnValue: ExecReturnValue;
+    ExecuteInstructionInfo: ExecuteInstructionInfo;
     ExitError: ExitError;
     ExitFatal: ExitFatal;
     ExitReason: ExitReason;
@@ -1816,6 +1815,7 @@ declare module '@polkadot/types/types/registry' {
     FungibilityV0: FungibilityV0;
     FungibilityV1: FungibilityV1;
     FungibilityV2: FungibilityV2;
+    FungibleLeg: FungibleLeg;
     FungibleToken: FungibleToken;
     Gas: Gas;
     GiltBid: GiltBid;
@@ -1908,8 +1908,6 @@ declare module '@polkadot/types/types/registry' {
     InteriorMultiLocation: InteriorMultiLocation;
     InvalidDisputeStatementKind: InvalidDisputeStatementKind;
     InvalidTransaction: InvalidTransaction;
-    InvestorUid: InvestorUid;
-    InvestorZKProofData: InvestorZKProofData;
     ItnRewardStatus: ItnRewardStatus;
     Json: Json;
     Junction: Junction;
@@ -1938,10 +1936,8 @@ declare module '@polkadot/types/types/registry' {
     LeasePeriodOf: LeasePeriodOf;
     Leg: Leg;
     LegacyTransaction: LegacyTransaction;
-    LegAsset: LegAsset;
     LegId: LegId;
     LegStatus: LegStatus;
-    LegV2: LegV2;
     Limits: Limits;
     LimitsTo264: LimitsTo264;
     LocalCAId: LocalCAId;
@@ -2034,12 +2030,15 @@ declare module '@polkadot/types/types/registry' {
     NFTId: NFTId;
     NFTs: NFTs;
     NodeRole: NodeRole;
+    NonFungibleLeg: NonFungibleLeg;
     NonFungibleType: NonFungibleType;
     NotConnectedPeer: NotConnectedPeer;
     NpApiError: NpApiError;
     Null: Null;
     OccupiedCore: OccupiedCore;
     OccupiedCoreAssumption: OccupiedCoreAssumption;
+    OffChainAsset: OffChainAsset;
+    OffChainLeg: OffChainLeg;
     OffChainSignature: OffChainSignature;
     OffenceDetails: OffenceDetails;
     Offender: Offender;
@@ -2227,7 +2226,6 @@ declare module '@polkadot/types/types/registry' {
     ResponseV2Result: ResponseV2Result;
     RestrictionResult: RestrictionResult;
     Retriable: Retriable;
-    RistrettoPoint: RistrettoPoint;
     RoundState: RoundState;
     RpcDidRecords: RpcDidRecords;
     RpcDidRecordsSuccess: RpcDidRecordsSuccess;
@@ -2243,7 +2241,6 @@ declare module '@polkadot/types/types/registry' {
     RuntimeVersionPartial: RuntimeVersionPartial;
     RuntimeVersionPre3: RuntimeVersionPre3;
     RuntimeVersionPre4: RuntimeVersionPre4;
-    Scalar: Scalar;
     Schedule: Schedule;
     Scheduled: Scheduled;
     ScheduledCore: ScheduledCore;
@@ -2257,8 +2254,6 @@ declare module '@polkadot/types/types/registry' {
     ScheduleTo264: ScheduleTo264;
     Scheduling: Scheduling;
     Scope: Scope;
-    ScopeClaimProof: ScopeClaimProof;
-    ScopeId: ScopeId;
     ScrapedOnChainVotes: ScrapedOnChainVotes;
     Seal: Seal;
     SealV0: SealV0;
@@ -2567,6 +2562,5 @@ declare module '@polkadot/types/types/registry' {
     XcmV1: XcmV1;
     XcmV2: XcmV2;
     XcmVersion: XcmVersion;
-    ZkProofData: ZkProofData;
   } // InterfaceTypes
 } // declare module

@@ -296,9 +296,22 @@ describe('assertInstructionValidForManualExecution', () => {
     ).rejects.toThrowError(expectedError);
   });
 
-  it('should not throw an error', () => {
-    return expect(
+  it('should not throw an error', async () => {
+    // executing instruction of type SettleManual
+    await expect(
       assertInstructionValidForManualExecution(instructionDetails, mockContext)
+    ).resolves.not.toThrow();
+
+    // executing failed instruction
+    await expect(
+      assertInstructionValidForManualExecution(
+        {
+          ...instructionDetails,
+          status: InstructionStatus.Failed,
+          type: InstructionType.SettleOnAffirmation,
+        },
+        mockContext
+      )
     ).resolves.not.toThrow();
   });
 });

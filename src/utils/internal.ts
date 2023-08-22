@@ -22,10 +22,9 @@ import { AnyFunction, AnyTuple, IEvent, ISubmittableResult } from '@polkadot/typ
 import { stringUpperFirst } from '@polkadot/util';
 import { decodeAddress, encodeAddress } from '@polkadot/util-crypto';
 import BigNumber from 'bignumber.js';
-import P from 'bluebird';
 import stringify from 'json-stable-stringify';
 import { differenceWith, flatMap, isEqual, mapValues, noop, padEnd, uniq } from 'lodash';
-import { lt, major, satisfies } from 'semver';
+import { coerce, lt, major, satisfies } from 'semver';
 import { w3cwebsocket as W3CWebSocket } from 'websocket';
 
 import {
@@ -232,8 +231,7 @@ export function createClaim(
   claimType: string,
   jurisdiction: Falsyable<string>,
   middlewareScope: Falsyable<MiddlewareScope>,
-  cddId: Falsyable<string>,
-  scopeId: Falsyable<string>
+  cddId: Falsyable<string>
 ): Claim {
   const type = claimType as ClaimType;
   const scope = (middlewareScope ? middlewareScopeToScope(middlewareScope) : {}) as Scope;
@@ -248,29 +246,10 @@ export function createClaim(
         scope,
       };
     }
-    case ClaimType.NoData: {
-      return {
-        type,
-      };
-    }
     case ClaimType.CustomerDueDiligence: {
       return {
         type,
         id: cddId as string,
-      };
-    }
-    case ClaimType.InvestorUniqueness: {
-      return {
-        type,
-        scope,
-        scopeId: scopeId as string,
-        cddId: cddId as string,
-      };
-    }
-    case ClaimType.InvestorUniquenessV2: {
-      return {
-        type,
-        cddId: cddId as string,
       };
     }
   }
@@ -352,13 +331,16 @@ function cloneReceipt(receipt: ISubmittableResult, events: EventRecord[]): ISubm
 export function sliceBatchReceipt(
   receipt: ISubmittableResult,
   from: number,
-  to: number
+  to: number,
+  isV5: boolean
 ): ISubmittableResult {
   const [
     {
       data: [rawEventsPerExtrinsic],
     },
-  ] = filterEventRecords(receipt, 'utility', 'BatchCompleted');
+  ] = isV5
+    ? filterEventRecords(receipt, 'utility', 'BatchCompleted')
+    : filterEventRecords(receipt, 'utility', 'BatchCompletedOld');
 
   if (rawEventsPerExtrinsic.length < to || from < 0) {
     throw new PolymeshError({
@@ -926,61 +908,6 @@ export function xor(a: boolean, b: boolean): boolean {
 
 /**
  * @hidden
- */
-function secondsInUnit(unit: CalendarUnit): BigNumber {
-  const SECOND = new BigNumber(1);
-  const MINUTE = SECOND.multipliedBy(60);
-  const HOUR = MINUTE.multipliedBy(60);
-  const DAY = HOUR.multipliedBy(24);
-  const WEEK = DAY.multipliedBy(7);
-  const MONTH = DAY.multipliedBy(30);
-  const YEAR = DAY.multipliedBy(365);
-
-  switch (unit) {
-    case CalendarUnit.Second: {
-      return SECOND;
-    }
-    case CalendarUnit.Minute: {
-      return MINUTE;
-    }
-    case CalendarUnit.Hour: {
-      return HOUR;
-    }
-    case CalendarUnit.Day: {
-      return DAY;
-    }
-    case CalendarUnit.Week: {
-      return WEEK;
-    }
-    case CalendarUnit.Month: {
-      return MONTH;
-    }
-    case CalendarUnit.Year: {
-      return YEAR;
-    }
-  }
-}
-
-/**
- * @hidden
- * Calculate the numeric complexity of a calendar period
- */
-export function periodComplexity(period: CalendarPeriod): BigNumber {
-  const secsInYear = secondsInUnit(CalendarUnit.Year);
-  const { amount, unit } = period;
-
-  if (amount.isZero()) {
-    return new BigNumber(1);
-  }
-
-  const secsInUnit = secondsInUnit(unit);
-
-  const complexity = secsInYear.dividedBy(secsInUnit.multipliedBy(amount));
-  return BigNumber.maximum(2, complexity.integerValue(BigNumber.ROUND_FLOOR));
-}
-
-/**
- * @hidden
  * Transform a conversion util into a version that returns null if the input is falsy
  */
 export function optionize<InputType, OutputType, RestType extends unknown[]>(
@@ -1224,57 +1151,24 @@ export function defusePromise<T>(promise: Promise<T>): Promise<T> {
 /**
  * @hidden
  *
- * Transform an array of Identities into exempted IDs for Transfer Managers. If the asset requires
- *   investor uniqueness, Scope IDs are fetched and returned. Otherwise, we use Identity IDs
+ * Transform an array of Identities into exempted IDs for Transfer Managers.
  *
- * @note fetches missing scope IDs from the chain
  * @note even though the signature for `addExemptedEntities` requires `ScopeId`s as parameters,
  *   it accepts and handles `PolymeshPrimitivesIdentityId` parameters as well. Nothing special has to be done typing-wise since they're both aliases
  *   for `U8aFixed`
  *
  * @throws
- *   - if the Asset requires Investor Uniqueness and one or more of the passed Identities don't have Scope IDs
  *   - if there are duplicated Identities/ScopeIDs
  */
 export async function getExemptedIds(
   identities: (string | Identity)[],
-  context: Context,
-  ticker: string
+  context: Context
 ): Promise<string[]> {
-  const asset = new Asset({ ticker }, context);
-  const { requiresInvestorUniqueness } = await asset.details();
-
-  const didsWithNoScopeId: string[] = [];
-
   const exemptedIds: string[] = [];
 
   const identityEntities = identities.map(identity => asIdentity(identity, context));
 
-  if (requiresInvestorUniqueness) {
-    const scopeIds = await P.map(identityEntities, async identity =>
-      identity.getScopeId({ asset: ticker })
-    );
-
-    scopeIds.forEach((scopeId, index) => {
-      if (!scopeId) {
-        didsWithNoScopeId.push(identityEntities[index].did);
-      } else {
-        exemptedIds.push(scopeId);
-      }
-    });
-
-    if (didsWithNoScopeId.length) {
-      throw new PolymeshError({
-        code: ErrorCode.ValidationError,
-        message: `Identities must have an Investor Uniqueness claim Scope ID in order to be exempted from Transfer Restrictions for Asset "${ticker}"`,
-        data: {
-          didsWithNoScopeId,
-        },
-      });
-    }
-  } else {
-    exemptedIds.push(...identityEntities.map(identity => asDid(identity), context));
-  }
+  exemptedIds.push(...identityEntities.map(identity => asDid(identity), context));
   const hasDuplicates = uniq(exemptedIds).length !== exemptedIds.length;
 
   if (hasDuplicates) {
@@ -1298,8 +1192,12 @@ function handleNodeVersionResponse(
   reject: (reason?: unknown) => void
 ): boolean {
   const { result: version } = data;
+  const lowMajor = major(SUPPORTED_NODE_SEMVER).toString();
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const high = coerce(SUPPORTED_NODE_VERSION_RANGE.split('||')[1].trim())!.version;
+  const highMajor = major(high).toString();
 
-  if (!satisfies(version, major(SUPPORTED_NODE_SEMVER).toString())) {
+  if (!satisfies(version, lowMajor) && !satisfies(version, highMajor)) {
     const error = new PolymeshError({
       code: ErrorCode.FatalError,
       message: 'Unsupported Polymesh RPC node version. Please upgrade the SDK',
@@ -1370,7 +1268,12 @@ function handleSpecVersionResponse(
     .map((ver: string) => ver.replace(/^0+(?!$)/g, ''))
     .join('.');
 
-  if (!satisfies(specVersionAsSemver, major(SUPPORTED_SPEC_SEMVER).toString())) {
+  const lowMajor = major(SUPPORTED_SPEC_SEMVER).toString();
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const high = coerce(SUPPORTED_SPEC_VERSION_RANGE.split('||')[1].trim())!.version;
+  const highMajor = major(high).toString();
+
+  if (!satisfies(specVersionAsSemver, lowMajor) && !satisfies(specVersionAsSemver, highMajor)) {
     const error = new PolymeshError({
       code: ErrorCode.FatalError,
       message: 'Unsupported Polymesh chain spec version. Please upgrade the SDK',
@@ -1384,7 +1287,6 @@ function handleSpecVersionResponse(
 
     return false;
   }
-
   if (!satisfies(specVersionAsSemver, SUPPORTED_SPEC_VERSION_RANGE)) {
     console.warn(
       `This version of the SDK supports Polymesh chain spec version ${SUPPORTED_SPEC_VERSION_RANGE}. The chain spec is at version ${specVersionAsSemver}. Please upgrade the SDK`
@@ -1785,7 +1687,7 @@ export async function getExemptedBtreeSet(
   ticker: string,
   context: Context
 ): Promise<BTreeSet<PolymeshPrimitivesIdentityId>> {
-  const exemptedIds = await getExemptedIds(identities, context, ticker);
+  const exemptedIds = await getExemptedIds(identities, context);
   const mapped = exemptedIds.map(exemptedId => asIdentity(exemptedId, context));
 
   return identitiesToBtreeSet(mapped, context);
@@ -1821,4 +1723,59 @@ export async function getIdentityFromKeyRecord(
     const multiSigKeyRecord = optMultiSigKeyRecord.unwrap();
     return getIdentityFromKeyRecord(multiSigKeyRecord, context);
   }
+}
+
+/**
+ * @hidden
+ */
+function secondsInUnit(unit: CalendarUnit): BigNumber {
+  const SECOND = new BigNumber(1);
+  const MINUTE = SECOND.multipliedBy(60);
+  const HOUR = MINUTE.multipliedBy(60);
+  const DAY = HOUR.multipliedBy(24);
+  const WEEK = DAY.multipliedBy(7);
+  const MONTH = DAY.multipliedBy(30);
+  const YEAR = DAY.multipliedBy(365);
+
+  switch (unit) {
+    case CalendarUnit.Second: {
+      return SECOND;
+    }
+    case CalendarUnit.Minute: {
+      return MINUTE;
+    }
+    case CalendarUnit.Hour: {
+      return HOUR;
+    }
+    case CalendarUnit.Day: {
+      return DAY;
+    }
+    case CalendarUnit.Week: {
+      return WEEK;
+    }
+    case CalendarUnit.Month: {
+      return MONTH;
+    }
+    case CalendarUnit.Year: {
+      return YEAR;
+    }
+  }
+}
+
+/**
+ * @hidden
+ * Calculate the numeric complexity of a calendar period
+ */
+export function periodComplexity(period: CalendarPeriod): BigNumber {
+  const secsInYear = secondsInUnit(CalendarUnit.Year);
+  const { amount, unit } = period;
+
+  if (amount.isZero()) {
+    return new BigNumber(1);
+  }
+
+  const secsInUnit = secondsInUnit(unit);
+
+  const complexity = secsInYear.dividedBy(secsInUnit.multipliedBy(amount));
+  return BigNumber.maximum(2, complexity.integerValue(BigNumber.ROUND_FLOOR));
 }

@@ -126,29 +126,54 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
         polymeshApi: {
           query: { checkpoint },
         },
+        isV5,
       },
       id,
       context,
       asset: { ticker },
     } = this;
 
-    const rawSchedules = await checkpoint.schedules(stringToTicker(ticker, context));
+    if (isV5) {
+      const rawSchedules = await checkpoint.schedules(stringToTicker(ticker, context));
 
-    const schedule = rawSchedules.find(({ id: scheduleId }) => u64ToBigNumber(scheduleId).eq(id));
+      const schedule = rawSchedules.find(({ id: scheduleId }) => u64ToBigNumber(scheduleId).eq(id));
 
-    if (!schedule) {
-      throw new PolymeshError({
-        code: ErrorCode.DataUnavailable,
-        message: notExistsMessage,
-      });
+      if (!schedule) {
+        throw new PolymeshError({
+          code: ErrorCode.DataUnavailable,
+          message: notExistsMessage,
+        });
+      }
+
+      const { at, remaining } = schedule;
+
+      return {
+        remainingCheckpoints: u32ToBigNumber(remaining),
+        nextCheckpointDate: momentToDate(at),
+      };
+    } else {
+      const rawId = bigNumberToU64(id, context);
+
+      const scheduleOpt = await checkpoint.scheduledCheckpoints(
+        stringToTicker(ticker, context),
+        rawId
+      );
+
+      if (scheduleOpt.isNone) {
+        throw new PolymeshError({
+          code: ErrorCode.DataUnavailable,
+          message: notExistsMessage,
+        });
+      }
+
+      const schedule = scheduleOpt.unwrap();
+      const points = [...schedule.pending].map(point => momentToDate(point));
+
+      return {
+        remainingCheckpoints: new BigNumber(points.length),
+        nextCheckpointDate: points[0],
+      };
     }
-
-    const { at, remaining } = schedule;
-
-    return {
-      remainingCheckpoints: u32ToBigNumber(remaining),
-      nextCheckpointDate: momentToDate(at),
-    };
   }
 
   /**
@@ -192,17 +217,29 @@ export class CheckpointSchedule extends Entity<UniqueIdentifiers, HumanReadable>
         polymeshApi: {
           query: { checkpoint },
         },
+        isV5,
       },
       context,
       asset: { ticker },
       id,
     } = this;
 
-    const rawSchedules = await checkpoint.schedules(stringToTicker(ticker, context));
+    const rawId = bigNumberToU64(id, context);
 
-    const exists = rawSchedules.find(({ id: scheduleId }) => u64ToBigNumber(scheduleId).eq(id));
+    if (isV5) {
+      const rawSchedules = await checkpoint.schedules(stringToTicker(ticker, context));
 
-    return !!exists;
+      const exists = rawSchedules.find(({ id: scheduleId }) => u64ToBigNumber(scheduleId).eq(id));
+
+      return !!exists;
+    } else {
+      const rawSchedule = await checkpoint.scheduledCheckpoints(
+        stringToTicker(ticker, context),
+        rawId
+      );
+
+      return rawSchedule.isSome;
+    }
   }
 
   /**

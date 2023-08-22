@@ -1,3 +1,4 @@
+import { Bytes } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 
 import { Context, PolymeshError, Portfolio, renamePortfolio } from '~/internal';
@@ -74,22 +75,24 @@ export class NumberedPortfolio extends Portfolio {
         polymeshApi: {
           query: { portfolio },
         },
+        isV5,
       },
       context,
     } = this;
-    const [rawPortfolioName, exists] = await Promise.all([
-      portfolio.portfolios(did, bigNumberToU64(id, context)),
-      this.exists(),
-    ]);
+    const rawPortfolioName = await portfolio.portfolios(did, bigNumberToU64(id, context));
 
-    if (!exists) {
+    if (!isV5 && rawPortfolioName.isNone) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
         message: "The Portfolio doesn't exist",
       });
     }
 
-    return bytesToString(rawPortfolioName);
+    if (isV5) {
+      return bytesToString(rawPortfolioName as unknown as Bytes);
+    } else {
+      return bytesToString(rawPortfolioName.unwrap());
+    }
   }
 
   /**

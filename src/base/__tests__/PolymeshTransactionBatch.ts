@@ -163,7 +163,9 @@ describe('Polymesh Transaction Batch class', () => {
 
     it('should throw an error when one of the transactions in the batch fails', async () => {
       const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
-      const batchMock = dsMockUtils.createTxMock('utility', 'batchAtomic', { autoResolve: false });
+      const batchMock = dsMockUtils.createTxMock('utility', 'batchAtomic', {
+        autoResolve: false,
+      });
       const args = tuple('ANOTHER_TICKER');
 
       const tx = new PolymeshTransactionBatch(

@@ -110,7 +110,7 @@ export class Offerings extends Namespace<Asset> {
         );
         return {
           offering: new Offering({ id, ticker }, context),
-          details: fundraiserToOfferingDetails(fundraiser.unwrap(), name, context),
+          details: fundraiserToOfferingDetails(fundraiser.unwrap(), name.unwrap(), context),
         };
       }
     );

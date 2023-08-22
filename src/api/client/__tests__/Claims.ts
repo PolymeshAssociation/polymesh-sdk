@@ -69,7 +69,10 @@ describe('Claims Class', () => {
             issuedAt: new Date(),
             lastUpdatedAt: new Date(),
             expiry: null,
-            claim: { type: ClaimType.NoData },
+            claim: {
+              type: ClaimType.Accredited,
+              scope: { type: ScopeType.Identity, value: 'someDid' },
+            },
           },
         ],
         next: new BigNumber(1),
@@ -110,7 +113,10 @@ describe('Claims Class', () => {
             issuedAt: new Date(),
             lastUpdatedAt: new Date(),
             expiry: null,
-            claim: { type: ClaimType.NoData },
+            claim: {
+              type: ClaimType.Accredited,
+              scope: { type: ScopeType.Ticker, value: 'TICKER' },
+            },
           },
         ],
         next: new BigNumber(1),
@@ -625,38 +631,6 @@ describe('Claims Class', () => {
     });
   });
 
-  describe('method: addInvestorUniquenessClaim', () => {
-    afterAll(() => {
-      jest.restoreAllMocks();
-    });
-
-    it('should prepare the procedure with the correct arguments and context, and return the resulting transaction', async () => {
-      const ticker = 'SOME_ASSET';
-      const cddId = 'someId';
-      const proof = 'someProof';
-      const scopeId = 'someScopeId';
-      const expiry = new Date();
-
-      const args = {
-        scope: { type: ScopeType.Ticker, value: ticker },
-        cddId,
-        proof,
-        scopeId,
-        expiry,
-      };
-
-      const expectedTransaction = 'someTransaction' as unknown as PolymeshTransaction<void>;
-
-      when(procedureMockUtils.getPrepareMock())
-        .calledWith({ args, transformer: undefined }, context, {})
-        .mockResolvedValue(expectedTransaction);
-
-      const tx = await claims.addInvestorUniquenessClaim(args);
-
-      expect(tx).toBe(expectedTransaction);
-    });
-  });
-
   describe('method: editClaims', () => {
     afterAll(() => {
       jest.restoreAllMocks();
@@ -760,33 +734,23 @@ describe('Claims Class', () => {
   describe('method: getClaimScopes', () => {
     it('should return a list of scopes and tickers', async () => {
       const target = 'someTarget';
-      const ticker = 'FAKE_TICKER';
       const someDid = 'someDid';
       const fakeClaimData = [
         {
           claim: {
-            type: ClaimType.InvestorUniqueness,
+            type: ClaimType.Jurisdiction,
+            scope: {
+              type: ScopeType.Identity,
+              value: someDid,
+            },
+          },
+        },
+        {
+          claim: {
+            type: ClaimType.Jurisdiction,
             scope: {
               type: ScopeType.Ticker,
-              value: ticker,
-            },
-          },
-        },
-        {
-          claim: {
-            type: ClaimType.Jurisdiction,
-            scope: {
-              type: ScopeType.Identity,
-              value: someDid,
-            },
-          },
-        },
-        {
-          claim: {
-            type: ClaimType.Jurisdiction,
-            scope: {
-              type: ScopeType.Identity,
-              value: someDid,
+              value: 'someTicker',
             },
           },
         },
@@ -801,10 +765,8 @@ describe('Claims Class', () => {
 
       let result = await claims.getClaimScopes({ target });
 
-      expect(result[0].ticker).toBe(ticker);
-      expect(result[0].scope).toEqual({ type: ScopeType.Ticker, value: ticker });
-      expect(result[1].ticker).toBeUndefined();
-      expect(result[1].scope).toEqual({ type: ScopeType.Identity, value: someDid });
+      expect(result[0].ticker).toBeUndefined();
+      expect(result[0].scope).toEqual({ type: ScopeType.Identity, value: someDid });
 
       result = await claims.getClaimScopes();
 
@@ -967,10 +929,8 @@ describe('Claims Class', () => {
           lastUpdatedAt: new Date(),
           expiry: null,
           claim: {
-            type: ClaimType.InvestorUniqueness,
+            type: ClaimType.Accredited,
             scope,
-            cddId: 'someCddId',
-            scopeId: 'someScopeId',
           },
         },
         {
@@ -980,10 +940,8 @@ describe('Claims Class', () => {
           lastUpdatedAt: new Date(),
           expiry: null,
           claim: {
-            type: ClaimType.InvestorUniqueness,
+            type: ClaimType.Blocked,
             scope,
-            cddId: 'otherCddId',
-            scopeId: 'someScopeId',
           },
         },
       ];
@@ -1275,10 +1233,8 @@ describe('Claims Class', () => {
           lastUpdatedAt: new Date(),
           expiry: null,
           claim: {
-            type: ClaimType.InvestorUniqueness,
+            type: ClaimType.Affiliate,
             scope,
-            cddId: 'someCddId',
-            scopeId: 'someScopeId',
           },
         },
         {
@@ -1288,10 +1244,8 @@ describe('Claims Class', () => {
           lastUpdatedAt: new Date(),
           expiry: null,
           claim: {
-            type: ClaimType.InvestorUniqueness,
+            type: ClaimType.Accredited,
             scope,
-            cddId: 'otherCddId',
-            scopeId: 'someScopeId',
           },
         },
       ];
@@ -1322,45 +1276,6 @@ describe('Claims Class', () => {
       });
 
       expect(result.data.length).toEqual(2);
-    });
-  });
-
-  describe('method: getInvestorUniquenessClaims', () => {
-    it('should return a list of claim data', async () => {
-      const target = 'someTarget';
-
-      const scope = {
-        type: ScopeType.Identity,
-        value: 'someIdentityScope',
-      };
-
-      const identityClaims: ClaimData[] = [
-        {
-          target: entityMockUtils.getIdentityInstance({ did: target }),
-          issuer: entityMockUtils.getIdentityInstance({ did: 'otherDid' }),
-          issuedAt: new Date(),
-          lastUpdatedAt: new Date(),
-          expiry: null,
-          claim: {
-            type: ClaimType.InvestorUniqueness,
-            scope,
-            cddId: 'someCddId',
-            scopeId: 'someScopeId',
-          },
-        },
-      ];
-
-      dsMockUtils.configureMocks({
-        contextOptions: {
-          getIdentityClaimsFromChain: identityClaims,
-        },
-      });
-
-      let result = await claims.getInvestorUniquenessClaims({ target });
-      expect(result).toEqual(identityClaims);
-
-      result = await claims.getInvestorUniquenessClaims();
-      expect(result).toEqual(identityClaims);
     });
   });
 });

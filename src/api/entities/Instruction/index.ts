@@ -1,3 +1,7 @@
+import {
+  PolymeshPrimitivesSettlementInstructionStatus,
+  PolymeshPrimitivesSettlementLeg,
+} from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
 
@@ -17,7 +21,6 @@ import { eventByIndexedArgs } from '~/middleware/queries';
 import { instructionsQuery } from '~/middleware/queriesV2';
 import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Query as QueryV2 } from '~/middleware/typesV2';
-import { InstructionStatus as MeshInstructionStatus } from '~/polkadot/polymesh';
 import {
   AffirmOrWithdrawInstructionParams,
   DefaultPortfolio,
@@ -132,7 +135,12 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     this.reschedule = createProcedureMethod(
       {
-        getProcedureAndArgs: () => [rescheduleInstruction, { id }],
+        getProcedureAndArgs: () => {
+          return this.context.isV5
+            ? [rescheduleInstruction, { id }]
+            : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              ([executeManualInstruction, { id, skipAffirmationCheck: false }] as any);
+        },
         voidArgs: true,
       },
       context
@@ -157,19 +165,36 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
         polymeshApi: {
           query: { settlement },
         },
+        isV5,
       },
       id,
       context,
     } = this;
 
-    const [{ status }, exists] = await Promise.all([
-      settlement.instructionDetails(bigNumberToU64(id, context)),
-      this.exists(),
-    ]);
+    if (isV5) {
+      const [{ status }, exists] = await Promise.all([
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        settlement.instructionDetails(bigNumberToU64(id, context)) as any,
+        this.exists(),
+      ]);
 
-    const statusResult = meshInstructionStatusToInstructionStatus(status);
+      const statusResult = meshInstructionStatusToInstructionStatus(status);
 
-    return statusResult === InternalInstructionStatus.Unknown && exists;
+      return statusResult === InternalInstructionStatus.Unknown && exists;
+    } else {
+      const [status, exists] = await Promise.all([
+        settlement.instructionStatuses(bigNumberToU64(id, context)),
+        this.exists(),
+      ]);
+
+      const statusResult = meshInstructionStatusToInstructionStatus(status);
+
+      return (
+        (statusResult === InternalInstructionStatus.Unknown ||
+          statusResult === InternalInstructionStatus.Executed) &&
+        exists
+      );
+    }
   }
 
   /**
@@ -186,7 +211,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       context,
     } = this;
 
-    const { status } = await settlement.instructionDetails(bigNumberToU64(id, context));
+    const status = await settlement.instructionStatuses(bigNumberToU64(id, context));
 
     const statusResult = meshInstructionStatusToInstructionStatus(status);
 
@@ -204,31 +229,53 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     const {
       context: {
         polymeshApi: {
-          query: {
-            settlement: { instructionDetails },
-          },
+          query: { settlement },
         },
+        isV5,
       },
       id,
       context,
     } = this;
 
-    const assembleResult = (rawStatus: MeshInstructionStatus): InstructionStatus => {
-      const status = meshInstructionStatusToInstructionStatus(rawStatus);
+    if (isV5) {
+      const assembleResult = (
+        rawStatus: PolymeshPrimitivesSettlementInstructionStatus
+      ): InstructionStatus => {
+        const status = meshInstructionStatusToInstructionStatus(rawStatus);
 
-      if (status === InternalInstructionStatus.Pending) {
-        return InstructionStatus.Pending;
-      } else if (status === InternalInstructionStatus.Failed) {
-        return InstructionStatus.Failed;
-      } else {
-        // TODO @prashantasdeveloper remove this once the chain handles Executed/Rejected state separately
-        return InstructionStatus.Executed;
-      }
-    };
+        if (status === InternalInstructionStatus.Pending) {
+          return InstructionStatus.Pending;
+        } else if (status === InternalInstructionStatus.Failed) {
+          return InstructionStatus.Failed;
+        } else {
+          // TODO this can be `Success` or `Rejected` after v6 is rolled out
+          return InstructionStatus.Executed;
+        }
+      };
 
-    return instructionDetails(bigNumberToU64(id, context), ({ status }) => {
-      return callback(assembleResult(status));
-    });
+      return settlement.instructionDetails(bigNumberToU64(id, context), details => {
+        // v6 moves status to dedicate storage. `any` is needed here
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return callback(assembleResult((details as any).status));
+      });
+    } else {
+      const assembleResult = (
+        rawStatus: PolymeshPrimitivesSettlementInstructionStatus
+      ): InstructionStatus => {
+        const internalStatus = meshInstructionStatusToInstructionStatus(rawStatus);
+        const status = this.internalToExternalStatus(internalStatus);
+
+        if (!status) {
+          throw new Error('Unknown instruction status');
+        }
+
+        return status;
+      };
+
+      return settlement.instructionStatuses(bigNumberToU64(id, context), status => {
+        return callback(assembleResult(status));
+      });
+    }
   }
 
   /**
@@ -256,10 +303,9 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     const {
       context: {
         polymeshApi: {
-          query: {
-            settlement: { instructionDetails, instructionMemos },
-          },
+          query: { settlement },
         },
+        isV5,
       },
       id,
       context,
@@ -267,17 +313,64 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
     const rawId = bigNumberToU64(id, context);
 
-    const [
-      { status: rawStatus, createdAt, tradeDate, valueDate, settlementType: type, venueId },
-      memo,
-    ] = await requestMulti<[typeof instructionDetails, typeof instructionMemos]>(context, [
-      [instructionDetails, rawId],
-      [instructionMemos, rawId],
-    ]);
+    if (isV5) {
+      const [details, memo] = await requestMulti<
+        [typeof settlement.instructionDetails, typeof settlement.instructionMemos]
+      >(context, [
+        [settlement.instructionDetails, rawId],
+        [settlement.instructionMemos, rawId],
+      ]);
 
-    const status = meshInstructionStatusToInstructionStatus(rawStatus);
+      const {
+        status: rawStatus,
+        createdAt,
+        tradeDate,
+        valueDate,
+        settlementType: type,
+        venueId,
+        // status is moved to dedicated storage in v6. `any` is needed here
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } = details as any;
 
-    if (status === InternalInstructionStatus.Unknown) {
+      const status = meshInstructionStatusToInstructionStatus(rawStatus);
+
+      if (status === InternalInstructionStatus.Unknown) {
+        throw new PolymeshError({
+          code: ErrorCode.DataUnavailable,
+          message: executedMessage,
+        });
+      }
+
+      return {
+        status:
+          status === InternalInstructionStatus.Pending
+            ? InstructionStatus.Pending
+            : InstructionStatus.Failed,
+        createdAt: momentToDate(createdAt.unwrap()),
+        tradeDate: tradeDate.isSome ? momentToDate(tradeDate.unwrap()) : null,
+        valueDate: valueDate.isSome ? momentToDate(valueDate.unwrap()) : null,
+        venue: new Venue({ id: u64ToBigNumber(venueId) }, context),
+        memo: memo.isSome ? instructionMemoToString(memo.unwrap()) : null,
+        ...meshSettlementTypeToEndCondition(type),
+      };
+    }
+    const [{ createdAt, tradeDate, valueDate, settlementType: type, venueId }, rawStatus, memo] =
+      await requestMulti<
+        [
+          typeof settlement.instructionDetails,
+          typeof settlement.instructionStatuses,
+          typeof settlement.instructionMemos
+        ]
+      >(context, [
+        [settlement.instructionDetails, rawId],
+        [settlement.instructionStatuses, rawId],
+        [settlement.instructionMemos, rawId],
+      ]);
+
+    const internalStatus = meshInstructionStatusToInstructionStatus(rawStatus);
+
+    const status = this.internalToExternalStatus(internalStatus);
+    if (!status) {
       throw new PolymeshError({
         code: ErrorCode.DataUnavailable,
         message: executedMessage,
@@ -285,10 +378,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     }
 
     return {
-      status:
-        status === InternalInstructionStatus.Pending
-          ? InstructionStatus.Pending
-          : InstructionStatus.Failed,
+      status,
       createdAt: momentToDate(createdAt.unwrap()),
       tradeDate: tradeDate.isSome ? momentToDate(tradeDate.unwrap()) : null,
       valueDate: valueDate.isSome ? momentToDate(valueDate.unwrap()) : null,
@@ -355,6 +445,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
         polymeshApi: {
           query: { settlement },
         },
+        isV5,
       },
       id,
       context,
@@ -375,18 +466,47 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     });
 
     const data = legs.map(([, leg]) => {
-      const { from, to, amount, asset } = leg;
+      if (isV5) {
+        // v6 changes Leg API. `any` is needed here
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { from, to, amount, asset } = leg as any;
 
-      const ticker = tickerToString(asset);
-      const fromPortfolio = meshPortfolioIdToPortfolio(from, context);
-      const toPortfolio = meshPortfolioIdToPortfolio(to, context);
+        const ticker = tickerToString(asset);
+        const fromPortfolio = meshPortfolioIdToPortfolio(from, context);
+        const toPortfolio = meshPortfolioIdToPortfolio(to, context);
 
-      return {
-        from: fromPortfolio,
-        to: toPortfolio,
-        amount: balanceToBigNumber(amount),
-        asset: new Asset({ ticker }, context),
-      };
+        return {
+          from: fromPortfolio,
+          to: toPortfolio,
+          amount: balanceToBigNumber(amount),
+          asset: new Asset({ ticker }, context),
+        };
+      } else if (leg.isSome) {
+        const legValue: PolymeshPrimitivesSettlementLeg = leg.unwrap();
+        if (legValue.isFungible) {
+          const { sender, receiver, amount, ticker: rawTicker } = legValue.asFungible;
+
+          const ticker = tickerToString(rawTicker);
+          const fromPortfolio = meshPortfolioIdToPortfolio(sender, context);
+          const toPortfolio = meshPortfolioIdToPortfolio(receiver, context);
+
+          return {
+            from: fromPortfolio,
+            to: toPortfolio,
+            amount: balanceToBigNumber(amount),
+            asset: new Asset({ ticker }, context),
+          };
+        } else if (legValue.isNonFungible) {
+          throw new Error('TODO ERROR: NFT legs are not supported yet');
+        } else {
+          // assume it is offchain
+          throw new Error('TODO ERROR: Offchain legs are not supported yet');
+        }
+      } else {
+        throw new Error(
+          'Instruction has already been executed/rejected and it was purged from chain'
+        );
+      }
     });
 
     return {
@@ -500,11 +620,13 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    * Reschedules a failed Instruction to be tried again
    *
    * @throws if the Instruction status is not `InstructionStatus.Failed`
+   *
+   * @deprecated chain v6 will allow executeManually to be used instead
    */
   public reschedule: NoArgsProcedureMethod<Instruction>;
 
   /**
-   * Executes an Instruction of type `SettleManual`
+   * Executes an Instruction either of type `SettleManual` or a `Failed` instruction
    */
   public executeManually: OptionalArgsProcedureMethod<ExecuteManualInstructionParams, Instruction>;
 
@@ -612,5 +734,21 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
     );
 
     return portfolios;
+  }
+
+  /**
+   * @hidden
+   */
+  private internalToExternalStatus(status: InternalInstructionStatus): InstructionStatus | null {
+    switch (status) {
+      case InternalInstructionStatus.Pending:
+        return InstructionStatus.Pending;
+      case InternalInstructionStatus.Failed:
+        return InstructionStatus.Failed;
+      case InternalInstructionStatus.Executed:
+        return InstructionStatus.Executed;
+    }
+
+    return null;
   }
 }

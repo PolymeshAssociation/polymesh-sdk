@@ -16,6 +16,7 @@ import {
   Claim,
   ClaimOperation,
   ClaimType,
+  ClaimTypeEnum,
   ModifyClaimsParams,
   RoleType,
   ScopeType,
@@ -41,13 +42,11 @@ describe('modifyClaims procedure', () => {
   let defaultCddClaim: Claim;
   let cddClaim: Claim;
   let buyLockupClaim: Claim;
-  let iuClaim: Claim;
   let expiry: Date;
   let args: ModifyClaimsParams;
 
   let rawCddClaim: PolymeshPrimitivesIdentityClaimClaim;
   let rawBuyLockupClaim: PolymeshPrimitivesIdentityClaimClaim;
-  let rawIuClaim: PolymeshPrimitivesIdentityClaimClaim;
   let rawDefaultCddClaim: PolymeshPrimitivesIdentityClaimClaim;
   let rawSomeDid: PolymeshPrimitivesIdentityId;
   let rawOtherDid: PolymeshPrimitivesIdentityId;
@@ -73,15 +72,6 @@ describe('modifyClaims procedure', () => {
     cddId = 'cddId';
     cddClaim = { type: ClaimType.CustomerDueDiligence, id: cddId };
     defaultCddClaim = { type: ClaimType.CustomerDueDiligence, id: DEFAULT_CDD_ID };
-    iuClaim = {
-      type: ClaimType.InvestorUniqueness,
-      scope: {
-        type: ScopeType.Ticker,
-        value: 'SOME_TICKER',
-      },
-      cddId: 'someCddId',
-      scopeId: 'someScopeId',
-    };
     buyLockupClaim = {
       type: ClaimType.BuyLockup,
       scope: { type: ScopeType.Identity, value: 'someIdentityId' },
@@ -102,10 +92,6 @@ describe('modifyClaims procedure', () => {
           claim: buyLockupClaim,
           expiry,
         },
-        {
-          target: someDid,
-          claim: iuClaim,
-        },
       ],
       operation: ClaimOperation.Add,
     };
@@ -121,13 +107,6 @@ describe('modifyClaims procedure', () => {
     rawBuyLockupClaim = dsMockUtils.createMockClaim({
       BuyLockup: dsMockUtils.createMockScope(),
     });
-    rawIuClaim = dsMockUtils.createMockClaim({
-      InvestorUniqueness: [
-        dsMockUtils.createMockScope(),
-        dsMockUtils.createMockIdentityId(),
-        dsMockUtils.createMockCddId(),
-      ],
-    });
     rawSomeDid = dsMockUtils.createMockIdentityId(someDid);
     rawOtherDid = dsMockUtils.createMockIdentityId(otherDid);
     rawExpiry = dsMockUtils.createMockMoment(new BigNumber(expiry.getTime()));
@@ -141,7 +120,6 @@ describe('modifyClaims procedure', () => {
     when(claimToMeshClaimSpy)
       .calledWith(buyLockupClaim, mockContext)
       .mockReturnValue(rawBuyLockupClaim);
-    when(claimToMeshClaimSpy).calledWith(iuClaim, mockContext).mockReturnValue(rawIuClaim);
     when(claimToMeshClaimSpy)
       .calledWith(defaultCddClaim, mockContext)
       .mockReturnValue(rawDefaultCddClaim);
@@ -228,7 +206,6 @@ describe('modifyClaims procedure', () => {
       [rawSomeDid, rawCddClaim, null],
       [rawOtherDid, rawCddClaim, null],
       [rawSomeDid, rawBuyLockupClaim, rawExpiry],
-      [rawSomeDid, rawIuClaim, null],
     ] as const;
 
     expect(result).toEqual({
@@ -254,11 +231,17 @@ describe('modifyClaims procedure', () => {
           items: [
             {
               did: someDid,
-              claims: [cddClaim, buyLockupClaim, iuClaim],
+              claims: [cddClaim, buyLockupClaim],
             },
             {
               did: otherDid,
-              claims: [cddClaim],
+              claims: [
+                { type: ClaimTypeEnum.NoData },
+                { type: ClaimTypeEnum.NoType },
+                { type: ClaimTypeEnum.InvestorUniqueness },
+                { type: ClaimTypeEnum.InvestorUniquenessV2 },
+                cddClaim,
+              ],
             },
           ],
         },
@@ -427,44 +410,6 @@ describe('modifyClaims procedure', () => {
     ).rejects.toThrow("Attempt to revoke claims that weren't issued by the signing Identity");
   });
 
-  it('should throw an error if any Investor Uniqueness claim has balance in a revoke operation', async () => {
-    const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
-    const { did } = await mockContext.getSigningIdentity();
-
-    dsMockUtils.createApolloQueryMock(
-      didsWithClaims({
-        trustedClaimIssuers: [did],
-        dids: [someDid, otherDid],
-        includeExpired,
-        count: 2,
-      }),
-      {
-        didsWithClaims: {
-          totalCount: 2,
-          items: [
-            {
-              did: someDid,
-              claims: [cddClaim, buyLockupClaim, iuClaim],
-            },
-            {
-              did: otherDid,
-              claims: [cddClaim],
-            },
-          ],
-        },
-      }
-    );
-
-    dsMockUtils.createQueryMock('asset', 'aggregateBalance');
-    balanceToBigNumberSpy.mockReturnValue(new BigNumber(1));
-
-    return expect(
-      prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Revoke })
-    ).rejects.toThrow(
-      'Attempt to revoke Investor Uniqueness claims from investors with positive balance'
-    );
-  });
-
   it('should return a batch of revoke claim transactions spec', async () => {
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
     const { did } = await mockContext.getSigningIdentity();
@@ -482,7 +427,7 @@ describe('modifyClaims procedure', () => {
           items: [
             {
               did: someDid,
-              claims: [cddClaim, buyLockupClaim, iuClaim],
+              claims: [cddClaim, buyLockupClaim],
             },
             {
               did: otherDid,
@@ -493,7 +438,6 @@ describe('modifyClaims procedure', () => {
       }
     );
 
-    dsMockUtils.createQueryMock('asset', 'aggregateBalance');
     balanceToBigNumberSpy.mockReturnValue(new BigNumber(0));
 
     const result = await prepareModifyClaims.call(proc, {
@@ -505,7 +449,6 @@ describe('modifyClaims procedure', () => {
       [rawSomeDid, rawCddClaim],
       [rawOtherDid, rawCddClaim],
       [rawSomeDid, rawBuyLockupClaim],
-      [rawSomeDid, rawIuClaim],
     ];
 
     expect(result).toEqual({

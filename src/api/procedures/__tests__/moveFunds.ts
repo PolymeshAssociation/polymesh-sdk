@@ -1,6 +1,6 @@
 import {
-  PalletPortfolioMovePortfolioItem,
   PolymeshPrimitivesIdentityIdPortfolioId,
+  PolymeshPrimitivesPortfolioFund,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
@@ -33,8 +33,8 @@ describe('moveFunds procedure', () => {
     PolymeshPrimitivesIdentityIdPortfolioId,
     [PortfolioId, Context]
   >;
-  let portfolioMovementToMovePortfolioItemSpy: jest.SpyInstance<
-    PalletPortfolioMovePortfolioItem,
+  let portfolioMovementToMovePortfolioFundSpy: jest.SpyInstance<
+    PolymeshPrimitivesPortfolioFund,
     [PortfolioMovement, Context]
   >;
   let portfolioLikeToPortfolioIdSpy: jest.SpyInstance;
@@ -48,9 +48,9 @@ describe('moveFunds procedure', () => {
       utilsConversionModule,
       'portfolioIdToMeshPortfolioId'
     );
-    portfolioMovementToMovePortfolioItemSpy = jest.spyOn(
+    portfolioMovementToMovePortfolioFundSpy = jest.spyOn(
       utilsConversionModule,
-      'portfolioMovementToMovePortfolioItem'
+      'portfolioMovementToPortfolioFund'
     );
     portfolioLikeToPortfolioIdSpy = jest.spyOn(utilsConversionModule, 'portfolioLikeToPortfolioId');
     assertPortfolioExistsSpy = jest.spyOn(procedureUtilsModule, 'assertPortfolioExists');
@@ -260,7 +260,7 @@ describe('moveFunds procedure', () => {
       ticker: dsMockUtils.createMockTicker(items[0].asset),
       amount: dsMockUtils.createMockBalance(items[0].amount),
     });
-    when(portfolioMovementToMovePortfolioItemSpy)
+    when(portfolioMovementToMovePortfolioFundSpy)
       .calledWith(items[0], mockContext)
       .mockReturnValue(rawMovePortfolioItem);
 
