@@ -1,7 +1,8 @@
 import BigNumber from 'bignumber.js';
 
-import { Signer } from '~/types';
-
+import { Account, Identity } from '~/internal';
+import { BalanceTypeEnum, CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/enumsV2';
+import { EventIdentifier, Signer } from '~/types';
 export interface MultiSigDetails {
   signers: Signer[];
   requiredSignatures: BigNumber;
@@ -59,4 +60,39 @@ export interface AccountTypeInfo {
    * How or if the account is associated to an Identity
    */
   relation: AccountIdentityRelation;
+}
+
+export interface HistoricPolyxTransaction extends EventIdentifier {
+  /**
+   * Identity from which the POLYX transaction has been initiated/deducted in case of a transfer.
+   * @note this can be null in cases where some balance are endowed/transferred from treasury
+   */
+  fromIdentity?: Identity;
+  /**
+   * Account from which the POLYX transaction has been initiated/deducted in case of a transfer.
+   * @note this can be null in cases where some balance are endowed/transferred from treasury
+   */
+  fromAccount?: Account;
+  /**
+   * Identity in which the POLYX amount was deposited.
+   * @note this can be null in case when account balance was burned
+   */
+  toIdentity?: Identity;
+  /**
+   * Account in which the POLYX amount was deposited.
+   * @note this can be null in case when account balance was burned
+   */
+  toAccount?: Account;
+
+  amount: BigNumber;
+  type: BalanceTypeEnum;
+  /**
+   * identifier string to help differentiate transfers
+   */
+  memo?: string;
+  extrinsicIdx?: BigNumber;
+
+  callId?: CallIdEnum;
+  moduleId: ModuleIdEnum;
+  eventId: EventIdEnum;
 }
