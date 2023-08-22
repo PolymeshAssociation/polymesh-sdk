@@ -11,7 +11,7 @@ import {
   PolymeshTransaction,
   Venue,
 } from '~/internal';
-import { instructionsQuery } from '~/middleware/queriesV2';
+import { instructionsQuery } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { HistoricInstruction, InstructionStatus, VenueType } from '~/types';

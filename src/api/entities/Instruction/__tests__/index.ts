@@ -4,8 +4,8 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Context, Entity, Instruction, PolymeshTransaction } from '~/internal';
-import { InstructionStatusEnum } from '~/middleware/enumsV2';
-import { instructionsQuery } from '~/middleware/queriesV2';
+import { InstructionStatusEnum } from '~/middleware/enums';
+import { instructionsQuery } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { createMockInstructionStatus, createMockNfts } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';

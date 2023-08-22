@@ -3,13 +3,13 @@ const fs = require('fs');
 const path = require('path');
 const replace = require('replace-in-file');
 
-const typesV2File = path.resolve('src', 'middleware', 'typesV2.ts');
-const enumAliasFile = path.resolve('src', 'middleware', 'enumsV2.ts');
+const typesFile = path.resolve('src', 'middleware', 'types.ts');
+const enumAliasFile = path.resolve('src', 'middleware', 'enums.ts');
 
-let rawData = fs.readFileSync(typesV2File).toString('utf8');
+let rawData = fs.readFileSync(typesFile).toString('utf8');
 
 replace.sync({
-  files: typesV2File,
+  files: typesFile,
   from: /\\n/gs,
   to: ' \n* ',
 });
@@ -29,9 +29,9 @@ fs.writeFileSync(
   `/* istanbul ignore file */
 export { 
   ${aliases.join(',\n  ')} 
-} from '~/middleware/typesV2';
+} from '~/middleware/types';
   
-export const middlewareV2EnumMap: Record<string, string> = {
+export const middlewareEnumMap: Record<string, string> = {
   ${enumMappings.join(',\n  ')}
 };
 `

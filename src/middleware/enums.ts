@@ -14,9 +14,9 @@ export {
   PublicEnumB861Be9158 as InstructionStatusEnum,
   PublicEnumCf84Da6Fd1 as AuthTypeEnum,
   PublicEnumEc3243D777 as ClaimTypeEnum,
-} from '~/middleware/typesV2';
+} from '~/middleware/types';
 
-export const middlewareV2EnumMap: Record<string, string> = {
+export const middlewareEnumMap: Record<string, string> = {
   SettlementResultEnum: 'PublicEnum05F6462Eea',
   StatOpTypeEnum: 'PublicEnum040F13614F',
   CallIdEnum: 'PublicEnum0Bf3C7D4Ef',

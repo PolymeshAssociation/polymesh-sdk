@@ -14,7 +14,7 @@ import {
   PolymeshTransaction,
   Portfolio,
 } from '~/internal';
-import { portfolioMovementsQuery, settlementsQuery } from '~/middleware/queriesV2';
+import { portfolioMovementsQuery, settlementsQuery } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { SettlementDirectionEnum, SettlementResultEnum } from '~/types';
 import { tuple } from '~/types/utils';

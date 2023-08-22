@@ -23,9 +23,9 @@ import P from 'bluebird';
 import { chunk, clone, flatMap, flatten, flattenDeep } from 'lodash';
 
 import { Account, Asset, DividendDistribution, Identity, PolymeshError, Subsidy } from '~/internal';
-import { ClaimTypeEnum as MiddlewareV2Claim } from '~/middleware/enumsV2';
-import { claimsQuery, heartbeatQuery, metadataQuery } from '~/middleware/queriesV2';
-import { Query as QueryV2 } from '~/middleware/typesV2';
+import { ClaimTypeEnum as MiddlewareV2Claim } from '~/middleware/enums';
+import { claimsQuery, heartbeatQuery, metadataQuery } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
 import {
   AccountBalance,
   ClaimData,
@@ -43,7 +43,7 @@ import {
   TxTag,
   UnsubCallback,
 } from '~/types';
-import { EnsuredV2 } from '~/types/utils';
+import { Ensured } from '~/types/utils';
 import { DEFAULT_GQL_PAGE_SIZE, MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   accountIdToString,
@@ -876,7 +876,7 @@ export class Context {
       data: {
         claims: { nodes: claimsList, totalCount },
       },
-    } = await this.queryMiddlewareV2<EnsuredV2<QueryV2, 'claims'>>(
+    } = await this.queryMiddlewareV2<Ensured<Query, 'claims'>>(
       claimsQuery(
         {
           dids: targets?.map(target => signerToString(target)),
@@ -986,7 +986,7 @@ export class Context {
    *
    * Make a query to the middleware V2 server using the apollo client
    */
-  public async queryMiddlewareV2<Result extends Partial<QueryV2>>(
+  public async queryMiddlewareV2<Result extends Partial<Query>>(
     query: QueryOptions<OperationVariables, Result>
   ): Promise<ApolloQueryResult<Result>> {
     let result: ApolloQueryResult<Result>;
@@ -1182,7 +1182,7 @@ export class Context {
           indexerHealthy,
         },
       },
-    } = await this.queryMiddlewareV2<EnsuredV2<QueryV2, '_metadata'>>(metadataQuery());
+    } = await this.queryMiddlewareV2<Ensured<Query, '_metadata'>>(metadataQuery());
 
     /* eslint-disable @typescript-eslint/no-non-null-assertion */
     return {

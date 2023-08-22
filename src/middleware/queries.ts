@@ -2,7 +2,7 @@ import { QueryOptions } from '@apollo/client/core';
 import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
-import { ClaimTypeEnum, middlewareV2EnumMap } from '~/middleware/enumsV2';
+import { ClaimTypeEnum, middlewareEnumMap } from '~/middleware/enums';
 import {
   Asset,
   AssetHolder,
@@ -36,7 +36,7 @@ import {
   TickerExternalAgentsOrderBy,
   TrustedClaimIssuer,
   TrustedClaimIssuersOrderBy,
-} from '~/middleware/typesV2';
+} from '~/middleware/types';
 import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
 
 /**
@@ -322,7 +322,7 @@ function createArgsAndFilters(
   Object.keys(filters).forEach(attribute => {
     if (filters[attribute]) {
       const type = typeMap[attribute] || 'String';
-      const middlewareType = middlewareV2EnumMap[type] || type;
+      const middlewareType = middlewareEnumMap[type] || type;
       args.push(`$${attribute}: ${middlewareType}!`);
       gqlFilters.push(`${attribute}: { equalTo: $${attribute} }`);
     }

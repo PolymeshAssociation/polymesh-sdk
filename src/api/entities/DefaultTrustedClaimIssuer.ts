@@ -1,8 +1,8 @@
 import { Asset, Context, Identity, PolymeshError } from '~/internal';
-import { trustedClaimIssuerQuery } from '~/middleware/queriesV2';
-import { Query as QueryV2 } from '~/middleware/typesV2';
+import { trustedClaimIssuerQuery } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
 import { ClaimType, ErrorCode, EventIdentifier } from '~/types';
-import { EnsuredV2 } from '~/types/utils';
+import { Ensured } from '~/types/utils';
 import {
   middlewareV2EventDetailsToEventIdentifier,
   stringToTicker,
@@ -64,7 +64,7 @@ export class DefaultTrustedClaimIssuer extends Identity {
           nodes: [node],
         },
       },
-    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'trustedClaimIssuers'>>(
+    } = await context.queryMiddlewareV2<Ensured<Query, 'trustedClaimIssuers'>>(
       trustedClaimIssuerQuery({
         assetId,
         issuer,

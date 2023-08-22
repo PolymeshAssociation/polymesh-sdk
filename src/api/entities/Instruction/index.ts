@@ -16,9 +16,9 @@ import {
   rescheduleInstruction,
   Venue,
 } from '~/internal';
-import { InstructionStatusEnum } from '~/middleware/enumsV2';
-import { instructionsQuery } from '~/middleware/queriesV2';
-import { Query as QueryV2 } from '~/middleware/typesV2';
+import { InstructionStatusEnum } from '~/middleware/enums';
+import { instructionsQuery } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
 import {
   AffirmOrWithdrawInstructionParams,
   DefaultPortfolio,
@@ -36,7 +36,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
-import { EnsuredV2 } from '~/types/utils';
+import { Ensured } from '~/types/utils';
 import {
   balanceToBigNumber,
   bigNumberToU64,
@@ -600,7 +600,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
           nodes: [details],
         },
       },
-    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'instructions'>>(
+    } = await context.queryMiddlewareV2<Ensured<Query, 'instructions'>>(
       instructionsQuery(
         {
           status,

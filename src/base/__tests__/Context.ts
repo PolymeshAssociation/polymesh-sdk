@@ -5,8 +5,8 @@ import P from 'bluebird';
 import { when } from 'jest-when';
 
 import { Account, Context, PolymeshError } from '~/internal';
-import { ClaimTypeEnum, ClaimTypeEnum as MiddlewareV2ClaimType } from '~/middleware/enumsV2';
-import { claimsQuery, heartbeatQuery, metadataQuery } from '~/middleware/queriesV2';
+import { ClaimTypeEnum, ClaimTypeEnum as MiddlewareV2ClaimType } from '~/middleware/enums';
+import { claimsQuery, heartbeatQuery, metadataQuery } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId, getAtMock } from '~/testUtils/mocks/dataSources';
 import {

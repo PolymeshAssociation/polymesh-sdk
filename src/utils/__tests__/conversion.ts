@@ -72,25 +72,13 @@ import {
   NumberedPortfolio,
   PolymeshError,
 } from '~/internal';
+import { CallIdEnum, ClaimTypeEnum, InstructionStatusEnum, ModuleIdEnum } from '~/middleware/enums';
 import {
-  CallIdEnum as MiddlewareV2CallId,
-  ClaimTypeEnum as MiddlewareV2ClaimType,
-  InstructionStatusEnum,
-  ModuleIdEnum as MiddlewareV2ModuleId,
-} from '~/middleware/enumsV2';
-import {
-  CallIdEnum,
-  ClaimScopeTypeEnum,
-  ClaimTypeEnum,
-  Event as MiddlewareEvent,
-  ModuleIdEnum,
-} from '~/middleware/types';
-import {
-  Block as MiddlewareV2Block,
-  Claim as MiddlewareV2Claim,
+  Block,
+  Claim as MiddlewareClaim,
   Instruction,
-  Portfolio as MiddlewareV2Portfolio,
-} from '~/middleware/typesV2';
+  Portfolio as MiddlewarePortfolio,
+} from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   createMockOption,
@@ -240,10 +228,7 @@ import {
   metadataToMeshMetadataKey,
   metadataValueDetailToMeshMetadataValueDetail,
   metadataValueToMeshMetadataValue,
-  middlewareEventToEventIdentifier,
   middlewareInstructionToHistoricInstruction,
-  middlewarePortfolioToPortfolio,
-  middlewareScopeToScope,
   middlewareV2ClaimToClaimData,
   middlewareV2EventDetailsToEventIdentifier,
   middlewareV2PortfolioToPortfolio,
@@ -265,7 +250,6 @@ import {
   requirementToComplianceRequirement,
   scheduleSpecToMeshScheduleSpec,
   scopeToMeshScope,
-  scopeToMiddlewareScope,
   secondaryAccountToMeshSecondaryKey,
   securityIdentifierToAssetIdentifier,
   signatoryToSignerValue,
@@ -297,7 +281,6 @@ import {
   textToString,
   tickerToDid,
   tickerToString,
-  toIdentityWithClaimsArray,
   toIdentityWithClaimsArrayV2,
   transactionHexToTxTag,
   transactionPermissionsToExtrinsicPermissions,
@@ -3908,65 +3891,45 @@ describe('meshClaimTypeToClaimType', () => {
   });
 });
 
-describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
-  describe('middlewareScopeToScope', () => {
-    it('should convert a MiddlewareScope object to a Scope', () => {
-      let result = middlewareScopeToScope({
-        type: ClaimScopeTypeEnum.Ticker,
-        value: 'SOMETHING\u0000\u0000\u0000',
-      });
+// describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
+//   describe('middlewareScopeToScope', () => {
+//     it('should convert a MiddlewareScope object to a Scope', () => {
+//       let result = middlewareScopeToScope({
+//         type: ClaimScopeTypeEnum.Ticker,
+//         value: 'SOMETHING\u0000\u0000\u0000',
+//       });
 
-      expect(result).toEqual({ type: ScopeType.Ticker, value: 'SOMETHING' });
+//       expect(result).toEqual({ type: ScopeType.Ticker, value: 'SOMETHING' });
 
-      result = middlewareScopeToScope({ type: ClaimScopeTypeEnum.Identity, value: 'someDid' });
+//       result = middlewareScopeToScope({ type: ClaimScopeTypeEnum.Identity, value: 'someDid' });
 
-      expect(result).toEqual({ type: ScopeType.Identity, value: 'someDid' });
+//       expect(result).toEqual({ type: ScopeType.Identity, value: 'someDid' });
 
-      result = middlewareScopeToScope({ type: ClaimScopeTypeEnum.Custom, value: 'SOMETHING_ELSE' });
+//       result = middlewareScopeToScope({ type: ClaimScopeTypeEnum.Custom, value: 'SOMETHING_ELSE' });
 
-      expect(result).toEqual({ type: ScopeType.Custom, value: 'SOMETHING_ELSE' });
-    });
-  });
+//       expect(result).toEqual({ type: ScopeType.Custom, value: 'SOMETHING_ELSE' });
+//     });
+//   });
 
-  describe('scopeToMiddlewareScope', () => {
-    it('should convert a Scope to a MiddlewareScope object', () => {
-      let scope: Scope = { type: ScopeType.Identity, value: 'someDid' };
-      let result = scopeToMiddlewareScope(scope);
-      expect(result).toEqual({ type: ClaimScopeTypeEnum.Identity, value: scope.value });
+//   describe('scopeToMiddlewareScope', () => {
+//     it('should convert a Scope to a MiddlewareScope object', () => {
+//       let scope: Scope = { type: ScopeType.Identity, value: 'someDid' };
+//       let result = scopeToMiddlewareScope(scope);
+//       expect(result).toEqual({ type: ClaimScopeTypeEnum.Identity, value: scope.value });
 
-      scope = { type: ScopeType.Ticker, value: 'someTicker' };
-      result = scopeToMiddlewareScope(scope);
-      expect(result).toEqual({ type: ClaimScopeTypeEnum.Ticker, value: 'someTicker\0\0' });
+//       scope = { type: ScopeType.Ticker, value: 'someTicker' };
+//       result = scopeToMiddlewareScope(scope);
+//       expect(result).toEqual({ type: ClaimScopeTypeEnum.Ticker, value: 'someTicker\0\0' });
 
-      result = scopeToMiddlewareScope(scope, false);
-      expect(result).toEqual({ type: ClaimScopeTypeEnum.Ticker, value: 'someTicker' });
+//       result = scopeToMiddlewareScope(scope, false);
+//       expect(result).toEqual({ type: ClaimScopeTypeEnum.Ticker, value: 'someTicker' });
 
-      scope = { type: ScopeType.Custom, value: 'customValue' };
-      result = scopeToMiddlewareScope(scope);
-      expect(result).toEqual({ type: ClaimScopeTypeEnum.Custom, value: scope.value });
-    });
-  });
-});
-
-describe('middlewareEventToEventIdentifier', () => {
-  it('should convert a middleware Event object to an EventIdentifier', () => {
-    const event = {
-      /* eslint-disable @typescript-eslint/naming-convention */
-      block_id: 3000,
-      event_idx: 3,
-      /* eslint-enable @typescript-eslint/naming-convention */
-      block: {
-        datetime: new Date('10/14/1987').toISOString(),
-      },
-    } as MiddlewareEvent;
-
-    expect(middlewareEventToEventIdentifier(event)).toEqual({
-      blockNumber: new BigNumber(3000),
-      blockDate: new Date('10/14/1987'),
-      eventIndex: new BigNumber(3),
-    });
-  });
-});
+//       scope = { type: ScopeType.Custom, value: 'customValue' };
+//       result = scopeToMiddlewareScope(scope);
+//       expect(result).toEqual({ type: ClaimScopeTypeEnum.Custom, value: scope.value });
+//     });
+//   });
+// });
 
 describe('middlewareInstructionToHistoricInstruction', () => {
   it('should convert a middleware Instruction object to a HistoricInstruction', () => {
@@ -4093,7 +4056,7 @@ describe('middlewareV2EventDetailsToEventIdentifier', () => {
       blockId: 3000,
       hash: 'someHash',
       datetime: new Date('10/14/1987').toISOString(),
-    } as MiddlewareV2Block;
+    } as Block;
 
     const fakeResult = {
       blockNumber: new BigNumber(3000),
@@ -4142,7 +4105,7 @@ describe('middlewareV2ClaimToClaimData', () => {
       expiry: null,
       cddId: 'someCddId',
       type: 'CustomerDueDiligence',
-    } as MiddlewareV2Claim;
+    } as MiddlewareClaim;
     const claim = {
       type: ClaimType.CustomerDueDiligence,
       id: 'someCddId',
@@ -4194,7 +4157,7 @@ describe('toIdentityWithClaimsArrayV2', () => {
     const issuerDid = 'someIssuerDid';
     const cddId = 'someCddId';
     const date = 1589816265000;
-    const customerDueDiligenceType = MiddlewareV2ClaimType.CustomerDueDiligence;
+    const customerDueDiligenceType = ClaimTypeEnum.CustomerDueDiligence;
     const claim = {
       target: expect.objectContaining({ did: targetDid }),
       issuer: expect.objectContaining({ did: issuerDid }),
@@ -4242,7 +4205,7 @@ describe('toIdentityWithClaimsArrayV2', () => {
         expiry: null,
         type: customerDueDiligenceType,
       },
-    ] as MiddlewareV2Claim[];
+    ] as MiddlewareClaim[];
     /* eslint-enable @typescript-eslint/naming-convention */
 
     const result = toIdentityWithClaimsArrayV2(fakeMiddlewareV2Claims, context, 'targetId');
@@ -4737,15 +4700,15 @@ describe('txTagToExtrinsicIdentifier and extrinsicIdentifierToTxTag', () => {
 
   it('should convert a ExtrinsicIdentifierV2 object to a TxTag', () => {
     let result = extrinsicIdentifierToTxTag({
-      moduleId: MiddlewareV2ModuleId.Identity,
-      callId: MiddlewareV2CallId.CddRegisterDid,
+      moduleId: ModuleIdEnum.Identity,
+      callId: CallIdEnum.CddRegisterDid,
     });
 
     expect(result).toEqual(TxTags.identity.CddRegisterDid);
 
     result = extrinsicIdentifierToTxTag({
-      moduleId: MiddlewareV2ModuleId.Babe,
-      callId: MiddlewareV2CallId.ReportEquivocation,
+      moduleId: ModuleIdEnum.Babe,
+      callId: CallIdEnum.ReportEquivocation,
     });
 
     expect(result).toEqual(TxTags.babe.ReportEquivocation);
@@ -4757,15 +4720,15 @@ describe('txTagToExtrinsicIdentifierV2', () => {
     let result = txTagToExtrinsicIdentifierV2(TxTags.identity.CddRegisterDid);
 
     expect(result).toEqual({
-      moduleId: MiddlewareV2ModuleId.Identity,
-      callId: MiddlewareV2CallId.CddRegisterDid,
+      moduleId: ModuleIdEnum.Identity,
+      callId: CallIdEnum.CddRegisterDid,
     });
 
     result = txTagToExtrinsicIdentifierV2(TxTags.babe.ReportEquivocation);
 
     expect(result).toEqual({
-      moduleId: MiddlewareV2ModuleId.Babe,
-      callId: MiddlewareV2CallId.ReportEquivocation,
+      moduleId: ModuleIdEnum.Babe,
+      callId: CallIdEnum.ReportEquivocation,
     });
   });
 });
@@ -5823,90 +5786,6 @@ describe('portfolioLikeToPortfolio', () => {
   });
 });
 
-describe('toIdentityWithClaimsArray', () => {
-  beforeAll(() => {
-    dsMockUtils.initMocks();
-    entityMockUtils.initMocks();
-  });
-
-  afterEach(() => {
-    dsMockUtils.reset();
-    entityMockUtils.reset();
-  });
-
-  afterAll(() => {
-    dsMockUtils.cleanup();
-  });
-
-  it('should return an IdentityWithClaims array object', () => {
-    const context = dsMockUtils.getContextInstance();
-    const targetDid = 'someTargetDid';
-    const issuerDid = 'someIssuerDid';
-    const cddId = 'someCddId';
-    const date = 1589816265000;
-    const customerDueDiligenceType = ClaimTypeEnum.CustomerDueDiligence;
-    const claim = {
-      target: expect.objectContaining({ did: targetDid }),
-      issuer: expect.objectContaining({ did: issuerDid }),
-      issuedAt: new Date(date),
-      lastUpdatedAt: new Date(date),
-    };
-    const fakeResult = [
-      {
-        identity: expect.objectContaining({ did: targetDid }),
-        claims: [
-          {
-            ...claim,
-            expiry: new Date(date),
-            claim: {
-              type: customerDueDiligenceType,
-              id: cddId,
-            },
-          },
-          {
-            ...claim,
-            expiry: null,
-            claim: {
-              type: customerDueDiligenceType,
-              id: cddId,
-            },
-          },
-        ],
-      },
-    ];
-    /* eslint-disable @typescript-eslint/naming-convention */
-    const commonClaimData = {
-      targetDID: targetDid,
-      issuer: issuerDid,
-      issuance_date: date,
-      last_update_date: date,
-      cdd_id: cddId,
-    };
-    const fakeMiddlewareIdentityWithClaims = [
-      {
-        did: targetDid,
-        claims: [
-          {
-            ...commonClaimData,
-            expiry: date,
-            type: customerDueDiligenceType,
-          },
-          {
-            ...commonClaimData,
-            expiry: null,
-            type: customerDueDiligenceType,
-          },
-        ],
-      },
-    ];
-    /* eslint-enable @typescript-eslint/naming-convention */
-
-    const result = toIdentityWithClaimsArray(fakeMiddlewareIdentityWithClaims, context);
-
-    expect(result).toEqual(fakeResult);
-  });
-});
-
 describe('trustedClaimIssuerToTrustedIssuer and trustedIssuerToTrustedClaimIssuer', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -6095,42 +5974,13 @@ describe('permissionsLikeToPermissions', () => {
   });
 });
 
-describe('middlewarePortfolioToPortfolio', () => {
-  it('should convert a MiddlewarePortfolio into a Portfolio', async () => {
-    const context = dsMockUtils.getContextInstance();
-    let middlewarePortfolio = {
-      kind: 'Default',
-      did: 'someDid',
-    };
-
-    let result = await middlewarePortfolioToPortfolio(middlewarePortfolio, context);
-    expect(result instanceof DefaultPortfolio).toBe(true);
-
-    middlewarePortfolio = {
-      kind: '0',
-      did: 'someDid',
-    };
-
-    result = await middlewarePortfolioToPortfolio(middlewarePortfolio, context);
-    expect(result instanceof DefaultPortfolio).toBe(true);
-
-    middlewarePortfolio = {
-      kind: '10',
-      did: 'someDid',
-    };
-
-    result = await middlewarePortfolioToPortfolio(middlewarePortfolio, context);
-    expect(result instanceof NumberedPortfolio).toBe(true);
-  });
-});
-
 describe('middlewareV2PortfolioToPortfolio', () => {
   it('should convert a MiddlewarePortfolio into a Portfolio', async () => {
     const context = dsMockUtils.getContextInstance();
     let middlewareV2Portfolio = {
       identityId: 'someDid',
       number: 0,
-    } as MiddlewareV2Portfolio;
+    } as MiddlewarePortfolio;
 
     let result = await middlewareV2PortfolioToPortfolio(middlewareV2Portfolio, context);
     expect(result instanceof DefaultPortfolio).toBe(true);
@@ -6138,7 +5988,7 @@ describe('middlewareV2PortfolioToPortfolio', () => {
     middlewareV2Portfolio = {
       identityId: 'someDid',
       number: 10,
-    } as MiddlewareV2Portfolio;
+    } as MiddlewarePortfolio;
 
     result = await middlewareV2PortfolioToPortfolio(middlewareV2Portfolio, context);
     expect(result instanceof NumberedPortfolio).toBe(true);

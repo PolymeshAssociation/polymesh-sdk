@@ -24,8 +24,8 @@ import {
   assetHoldersQuery,
   instructionsByDidQuery,
   trustingAssetsQuery,
-} from '~/middleware/queriesV2';
-import { AssetHoldersOrderBy, Query as QueryV2 } from '~/middleware/typesV2';
+} from '~/middleware/queries';
+import { AssetHoldersOrderBy, Query } from '~/middleware/types';
 import {
   CheckRolesResult,
   DefaultPortfolio,
@@ -43,7 +43,7 @@ import {
   SubCallback,
   UnsubCallback,
 } from '~/types';
-import { EnsuredV2, tuple } from '~/types/utils';
+import { Ensured, tuple } from '~/types/utils';
 import {
   isCddProviderRole,
   isIdentityRole,
@@ -355,7 +355,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       data: {
         assetHolders: { nodes, totalCount },
       },
-    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'assetHolders'>>(
+    } = await context.queryMiddlewareV2<Ensured<Query, 'assetHolders'>>(
       assetHoldersQuery(
         {
           identityId: did,
@@ -413,7 +413,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       data: {
         trustedClaimIssuers: { nodes },
       },
-    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'trustedClaimIssuers'>>(
+    } = await context.queryMiddlewareV2<Ensured<Query, 'trustedClaimIssuers'>>(
       trustingAssetsQuery({ issuer: did })
     );
 
@@ -844,7 +844,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       data: {
         legs: { nodes: instructionsResult },
       },
-    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'legs'>>(instructionsByDidQuery(did));
+    } = await context.queryMiddlewareV2<Ensured<Query, 'legs'>>(instructionsByDidQuery(did));
 
     return instructionsResult.map(({ instruction }) =>
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

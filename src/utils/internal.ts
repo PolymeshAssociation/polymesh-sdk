@@ -36,9 +36,9 @@ import {
   Identity,
   PolymeshError,
 } from '~/internal';
-import { latestSqVersionQuery } from '~/middleware/queriesV2';
-import { Scope as MiddlewareScope } from '~/middleware/types';
-import { Query as QueryV2 } from '~/middleware/typesV2';
+import { latestSqVersionQuery } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
+import { MiddlewareScope } from '~/middleware/typesV1';
 import {
   CaCheckpointType,
   CalendarPeriod,
@@ -80,7 +80,7 @@ import {
   TxWithArgs,
 } from '~/types/internal';
 import {
-  EnsuredV2,
+  Ensured,
   HumanReadableType,
   ProcedureFunc,
   QueryFunction,
@@ -1308,9 +1308,7 @@ export async function assertExpectedSqVersion(context: Context): Promise<void> {
         nodes: [sqVersion],
       },
     },
-  } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'subqueryVersions'>>(
-    latestSqVersionQuery()
-  );
+  } = await context.queryMiddlewareV2<Ensured<Query, 'subqueryVersions'>>(latestSqVersionQuery());
 
   if (!sqVersion || lt(sqVersion.version, MINIMUM_SQ_VERSION)) {
     console.warn(

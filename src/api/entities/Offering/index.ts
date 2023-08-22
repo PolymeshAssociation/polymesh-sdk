@@ -12,8 +12,8 @@ import {
   modifyOfferingTimes,
   toggleFreezeOffering,
 } from '~/internal';
-import { investmentsQuery } from '~/middleware/queriesV2';
-import { Query as QueryV2 } from '~/middleware/typesV2';
+import { investmentsQuery } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
 import {
   InvestInOfferingParams,
   ModifyOfferingTimesParams,
@@ -23,7 +23,7 @@ import {
   SubCallback,
   UnsubCallback,
 } from '~/types';
-import { EnsuredV2 } from '~/types/utils';
+import { Ensured } from '~/types/utils';
 import { bigNumberToU64, fundraiserToOfferingDetails, stringToTicker } from '~/utils/conversion';
 import { calculateNextKey, createProcedureMethod, toHumanReadable } from '~/utils/internal';
 
@@ -220,7 +220,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
       data: {
         investments: { nodes, totalCount },
       },
-    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'investments'>>(
+    } = await context.queryMiddlewareV2<Ensured<Query, 'investments'>>(
       investmentsQuery(
         {
           stoId: id.toNumber(),

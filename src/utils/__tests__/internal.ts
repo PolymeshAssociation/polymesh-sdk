@@ -12,7 +12,7 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Account, Asset, Context, Identity, PolymeshError, Procedure } from '~/internal';
-import { latestSqVersionQuery } from '~/middleware/queriesV2';
+import { latestSqVersionQuery } from '~/middleware/queries';
 import { ClaimScopeTypeEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {

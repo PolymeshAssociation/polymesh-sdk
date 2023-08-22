@@ -16,8 +16,8 @@ import {
   assetHoldersQuery,
   instructionsByDidQuery,
   trustingAssetsQuery,
-} from '~/middleware/queriesV2';
-import { AssetHoldersOrderBy } from '~/middleware/typesV2';
+} from '~/middleware/queries';
+import { AssetHoldersOrderBy } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
 import {

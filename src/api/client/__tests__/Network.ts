@@ -3,12 +3,8 @@ import { when } from 'jest-when';
 
 import { Network } from '~/api/client/Network';
 import { Context, PolymeshTransaction } from '~/internal';
-import {
-  CallIdEnum as MiddlewareV2CallId,
-  EventIdEnum as MiddlewareV2EventId,
-  ModuleIdEnum as MiddlewareV2ModuleId,
-} from '~/middleware/enumsV2';
-import { eventsByArgs, extrinsicByHash } from '~/middleware/queriesV2';
+import { CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/enums';
+import { eventsByArgs, extrinsicByHash } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { AccountBalance, MiddlewareMetadata, TxTags } from '~/types';
@@ -196,8 +192,8 @@ describe('Network Class', () => {
 
   describe('method: getEventByIndexedArgsV2', () => {
     const variables = {
-      moduleId: MiddlewareV2ModuleId.Asset,
-      eventId: MiddlewareV2EventId.AssetCreated,
+      moduleId: ModuleIdEnum.Asset,
+      eventId: EventIdEnum.AssetCreated,
     };
 
     it('should return a single event', async () => {
@@ -262,8 +258,8 @@ describe('Network Class', () => {
 
   describe('method: getEventsByIndexedArgsV2', () => {
     const variables = {
-      moduleId: MiddlewareV2ModuleId.Asset,
-      eventId: MiddlewareV2EventId.AssetCreated,
+      moduleId: ModuleIdEnum.Asset,
+      eventId: EventIdEnum.AssetCreated,
     };
 
     it('should return a list of events', async () => {
@@ -367,8 +363,8 @@ describe('Network Class', () => {
         extrinsics: {
           nodes: [
             {
-              moduleId: MiddlewareV2ModuleId.Asset,
-              callId: MiddlewareV2CallId.RegisterTicker,
+              moduleId: ModuleIdEnum.Asset,
+              callId: CallIdEnum.RegisterTicker,
               extrinsicIdx: extrinsicIdx.toNumber(),
               specVersionId: specVersionId.toNumber(),
               paramsTxt: '[]',
@@ -437,8 +433,8 @@ describe('Network Class', () => {
         extrinsics: {
           nodes: [
             {
-              moduleId: MiddlewareV2ModuleId.Asset,
-              callId: MiddlewareV2CallId.RegisterTicker,
+              moduleId: ModuleIdEnum.Asset,
+              callId: CallIdEnum.RegisterTicker,
               extrinsicIdx: extrinsicIdx,
               specVersionId: specVersionId,
               paramsTxt: '[]',

@@ -13,17 +13,18 @@ import {
   quitCustody,
   setCustodian,
 } from '~/internal';
-import { portfolioMovementsQuery, settlementsQuery } from '~/middleware/queriesV2';
-import { SettlementDirectionEnum, SettlementResultEnum } from '~/middleware/types';
-import { Query as QueryV2 } from '~/middleware/typesV2';
+import { portfolioMovementsQuery, settlementsQuery } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
+import { SettlementDirectionEnum } from '~/middleware/typesV1';
 import {
   ErrorCode,
   MoveFundsParams,
   NoArgsProcedureMethod,
   ProcedureMethod,
   SetCustodianParams,
+  SettlementResultEnum,
 } from '~/types';
-import { EnsuredV2 } from '~/types/utils';
+import { Ensured } from '~/types/utils';
 import {
   addressToKey,
   balanceToBigNumber,
@@ -297,7 +298,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
 
     const address = account ? addressToKey(account, context) : undefined;
 
-    const settlementsPromise = context.queryMiddlewareV2<EnsuredV2<QueryV2, 'legs'>>(
+    const settlementsPromise = context.queryMiddlewareV2<Ensured<Query, 'legs'>>(
       settlementsQuery({
         identityId,
         portfolioId,
@@ -307,7 +308,7 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     );
 
     const portfolioMovementsPromise = context.queryMiddlewareV2<
-      EnsuredV2<QueryV2, 'portfolioMovements'>
+      Ensured<Query, 'portfolioMovements'>
     >(
       portfolioMovementsQuery({
         identityId,

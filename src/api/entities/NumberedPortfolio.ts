@@ -2,10 +2,10 @@ import { Bytes } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 
 import { Context, PolymeshError, Portfolio, renamePortfolio } from '~/internal';
-import { portfolioQuery } from '~/middleware/queriesV2';
-import { Query as QueryV2 } from '~/middleware/typesV2';
+import { portfolioQuery } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
 import { ErrorCode, EventIdentifier, ProcedureMethod, RenamePortfolioParams } from '~/types';
-import { EnsuredV2 } from '~/types/utils';
+import { Ensured } from '~/types/utils';
 import {
   bigNumberToU64,
   bytesToString,
@@ -111,7 +111,7 @@ export class NumberedPortfolio extends Portfolio {
           nodes: [node],
         },
       },
-    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'portfolios'>>(
+    } = await context.queryMiddlewareV2<Ensured<Query, 'portfolios'>>(
       portfolioQuery({
         identityId: did,
         number: id.toNumber(),

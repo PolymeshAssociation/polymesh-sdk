@@ -3,10 +3,9 @@ import { when } from 'jest-when';
 
 import { Claims } from '~/api/client/Claims';
 import { Context, PolymeshTransaction } from '~/internal';
-import { ClaimTypeEnum as MiddlewareV2ClaimType } from '~/middleware/enumsV2';
-import { claimsGroupingQuery, claimsQuery } from '~/middleware/queriesV2';
-import { ClaimTypeEnum } from '~/middleware/types';
-import { Claim, ClaimsGroupBy, ClaimsOrderBy } from '~/middleware/typesV2';
+import { ClaimTypeEnum } from '~/middleware/enums';
+import { claimsGroupingQuery, claimsQuery } from '~/middleware/queries';
+import { Claim, ClaimsGroupBy, ClaimsOrderBy } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
@@ -166,7 +165,7 @@ describe('Claims Class', () => {
           dids: [targetDid],
           scope: undefined,
           trustedClaimIssuers: [issuerDid],
-          claimTypes: [MiddlewareV2ClaimType.CustomerDueDiligence],
+          claimTypes: [ClaimTypeEnum.CustomerDueDiligence],
           includeExpired: false,
         }),
         {
@@ -290,7 +289,7 @@ describe('Claims Class', () => {
           dids: [targetDid],
           scope: { type: 'Ticker', value: 'someValue' },
           trustedClaimIssuers: [issuerDid],
-          claimTypes: [MiddlewareV2ClaimType.Accredited],
+          claimTypes: [ClaimTypeEnum.Accredited],
           includeExpired: false,
         }),
         {

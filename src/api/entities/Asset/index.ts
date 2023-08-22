@@ -26,8 +26,8 @@ import {
   assetQuery,
   assetTransactionQuery,
   tickerExternalAgentHistoryQuery,
-} from '~/middleware/queriesV2';
-import { Query as QueryV2 } from '~/middleware/typesV2';
+} from '~/middleware/queries';
+import { Query } from '~/middleware/types';
 import {
   ControllerTransferParams,
   ErrorCode,
@@ -45,7 +45,7 @@ import {
   TransferAssetOwnershipParams,
   UnsubCallback,
 } from '~/types';
-import { EnsuredV2 } from '~/types/utils';
+import { Ensured } from '~/types/utils';
 import {
   assetIdentifierToSecurityIdentifier,
   assetTypeToKnownOrId,
@@ -383,7 +383,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
           nodes: [asset],
         },
       },
-    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'assets'>>(
+    } = await context.queryMiddlewareV2<Ensured<Query, 'assets'>>(
       assetQuery({
         ticker,
       })
@@ -492,7 +492,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       data: {
         tickerExternalAgentHistories: { nodes },
       },
-    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'tickerExternalAgentHistories'>>(
+    } = await context.queryMiddlewareV2<Ensured<Query, 'tickerExternalAgentHistories'>>(
       tickerExternalAgentHistoryQuery({
         assetId,
       })
@@ -525,7 +525,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       data: {
         assetTransactions: { nodes, totalCount },
       },
-    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'assetTransactions'>>(
+    } = await context.queryMiddlewareV2<Ensured<Query, 'assetTransactions'>>(
       assetTransactionQuery(
         {
           assetId: ticker,

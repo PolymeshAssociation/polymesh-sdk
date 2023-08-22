@@ -19,11 +19,7 @@ import { ISubmittableResult, Signer as PolkadotSigner } from '@polkadot/types/ty
 import BigNumber from 'bignumber.js';
 
 import { Identity, Procedure } from '~/internal';
-import {
-  CallIdEnum as MiddlewareV2CallId,
-  ModuleIdEnum as MiddlewareV2ModuleId,
-} from '~/middleware/enumsV2';
-import { CallIdEnum, ModuleIdEnum } from '~/middleware/types';
+import { CallIdEnum, ModuleIdEnum } from '~/middleware/enums';
 import {
   ClaimType,
   InputStatClaim,
@@ -255,8 +251,8 @@ export interface ExtrinsicIdentifier {
 }
 
 export interface ExtrinsicIdentifierV2 {
-  moduleId: MiddlewareV2ModuleId;
-  callId: MiddlewareV2CallId;
+  moduleId: ModuleIdEnum;
+  callId: CallIdEnum;
 }
 
 export interface CorporateActionIdentifier {

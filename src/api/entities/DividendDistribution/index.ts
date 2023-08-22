@@ -23,8 +23,8 @@ import {
   PolymeshError,
   reclaimDividendDistributionFunds,
 } from '~/internal';
-import { distributionPaymentsQuery, distributionQuery } from '~/middleware/queriesV2';
-import { Query as QueryV2 } from '~/middleware/typesV2';
+import { distributionPaymentsQuery, distributionQuery } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
 import {
   CorporateActionKind,
   DistributionPayment,
@@ -40,7 +40,7 @@ import {
   TargetTreatment,
 } from '~/types';
 import { ProcedureParams } from '~/types/internal';
-import { EnsuredV2, HumanReadableType, Modify, tuple } from '~/types/utils';
+import { Ensured, HumanReadableType, Modify, tuple } from '~/types/utils';
 import { MAX_CONCURRENT_REQUESTS, MAX_DECIMALS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   balanceToBigNumber,
@@ -449,7 +449,7 @@ export class DividendDistribution extends CorporateActionBase {
       context,
     } = this;
 
-    const taxPromise = context.queryMiddlewareV2<EnsuredV2<QueryV2, 'distribution'>>(
+    const taxPromise = context.queryMiddlewareV2<Ensured<Query, 'distribution'>>(
       distributionQuery({
         id: `${ticker}/${id.toString()}`,
       })
@@ -490,7 +490,7 @@ export class DividendDistribution extends CorporateActionBase {
     } = this;
     const { size, start } = opts;
 
-    const paymentsPromise = context.queryMiddlewareV2<EnsuredV2<QueryV2, 'distributionPayments'>>(
+    const paymentsPromise = context.queryMiddlewareV2<Ensured<Query, 'distributionPayments'>>(
       distributionPaymentsQuery(
         {
           distributionId: `${ticker}/${id.toString()}`,

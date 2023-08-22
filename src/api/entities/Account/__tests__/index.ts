@@ -3,13 +3,9 @@ import { when } from 'jest-when';
 
 import { AccountIdentityRelation, AccountKeyType } from '~/api/entities/Account/types';
 import { Account, Context, Entity } from '~/internal';
-import {
-  CallIdEnum as MiddlewareV2CallId,
-  ModuleIdEnum as MiddlewareV2ModuleId,
-} from '~/middleware/enumsV2';
-import { extrinsicsByArgs } from '~/middleware/queriesV2';
-import { Order, TransactionOrderFields } from '~/middleware/types';
-import { ExtrinsicsOrderBy } from '~/middleware/typesV2';
+import { CallIdEnum, ModuleIdEnum } from '~/middleware/enums';
+import { extrinsicsByArgs } from '~/middleware/queries';
+import { ExtrinsicsOrderBy,Order, TransactionOrderFields  } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   createMockAccountId,
@@ -290,8 +286,8 @@ describe('Account class', () => {
   describe('method: getTransactionHistoryV2', () => {
     it('should return a list of transactions', async () => {
       const tag = TxTags.identity.CddRegisterDid;
-      const moduleId = MiddlewareV2ModuleId.Identity;
-      const callId = MiddlewareV2CallId.CddRegisterDid;
+      const moduleId = ModuleIdEnum.Identity;
+      const callId = CallIdEnum.CddRegisterDid;
       const blockNumber1 = new BigNumber(1);
       const blockNumber2 = new BigNumber(2);
       const blockHash1 = 'someHash';
@@ -310,8 +306,8 @@ describe('Account class', () => {
         totalCount: 20,
         nodes: [
           {
-            moduleId: MiddlewareV2ModuleId.Asset,
-            callId: MiddlewareV2CallId.RegisterTicker,
+            moduleId: ModuleIdEnum.Asset,
+            callId: CallIdEnum.RegisterTicker,
             extrinsicIdx: 2,
             specVersionId: 2006,
             paramsTxt: '[]',
@@ -325,8 +321,8 @@ describe('Account class', () => {
             },
           },
           {
-            moduleId: MiddlewareV2ModuleId.Asset,
-            callId: MiddlewareV2CallId.RegisterTicker,
+            moduleId: ModuleIdEnum.Asset,
+            callId: CallIdEnum.RegisterTicker,
             extrinsicIdx: 2,
             specVersionId: 2006,
             paramsTxt: '[]',

@@ -21,7 +21,7 @@ import {
   assetQuery,
   assetTransactionQuery,
   tickerExternalAgentHistoryQuery,
-} from '~/middleware/queriesV2';
+} from '~/middleware/queries';
 import { EventIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { ErrorCode, SecurityIdentifier, SecurityIdentifierType } from '~/types';

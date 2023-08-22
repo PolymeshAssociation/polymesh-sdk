@@ -13,13 +13,10 @@ import {
 } from '~/api/entities/Account/types';
 import { Subsidies } from '~/api/entities/Subsidies';
 import { Authorizations, Context, Entity, Identity, MultiSig, PolymeshError } from '~/internal';
-import {
-  CallIdEnum as MiddlewareV2CallId,
-  ModuleIdEnum as MiddlewareV2ModuleId,
-} from '~/middleware/enumsV2';
-import { extrinsicsByArgs } from '~/middleware/queriesV2';
-import { TransactionOrderByInput } from '~/middleware/types';
-import { ExtrinsicsOrderBy, Query as QueryV2 } from '~/middleware/typesV2';
+import { CallIdEnum, ModuleIdEnum } from '~/middleware/enums';
+import { extrinsicsByArgs } from '~/middleware/queries';
+import { ExtrinsicsOrderBy, Query } from '~/middleware/types';
+import { TransactionOrderByInput } from '~/middleware/typesV1';
 import {
   AccountBalance,
   CheckPermissionsResult,
@@ -34,7 +31,7 @@ import {
   TxTag,
   UnsubCallback,
 } from '~/types';
-import { EnsuredV2 } from '~/types/utils';
+import { Ensured } from '~/types/utils';
 import {
   addressToKey,
   extrinsicIdentifierToTxTag,
@@ -259,7 +256,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       data: {
         extrinsics: { nodes: transactionList, totalCount },
       },
-    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'extrinsics'>>(
+    } = await context.queryMiddlewareV2<Ensured<Query, 'extrinsics'>>(
       extrinsicsByArgs(
         {
           blockId: blockNumber ? blockNumber.toString() : undefined,
@@ -297,8 +294,8 @@ export class Account extends Entity<UniqueIdentifiers, string> {
         address: rawAddress ? keyToAddress(rawAddress, context) : null,
         nonce: nonce ? new BigNumber(nonce) : null,
         txTag: extrinsicIdentifierToTxTag({
-          moduleId: extrinsicModuleId as MiddlewareV2ModuleId,
-          callId: extrinsicCallId as MiddlewareV2CallId,
+          moduleId: extrinsicModuleId as ModuleIdEnum,
+          callId: extrinsicCallId as CallIdEnum,
         }),
         params: JSON.parse(paramsTxt),
         success: !!txSuccess,

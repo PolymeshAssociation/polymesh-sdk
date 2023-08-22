@@ -3,27 +3,24 @@ import {
   PolymeshPrimitivesIdentityClaimClaim,
   PolymeshPrimitivesIdentityId,
 } from '@polkadot/types/lookup';
-import BigNumber from 'bignumber.js';
-import { cloneDeep, isEqual, uniq } from 'lodash';
+import { isEqual, uniq } from 'lodash';
 
 import { Context, Identity, PolymeshError, Procedure } from '~/internal';
-import { didsWithClaims } from '~/middleware/queries';
-import { claimsQuery } from '~/middleware/queriesV2';
-import { Claim as MiddlewareClaim, ClaimTypeEnum } from '~/middleware/types';
-import { Query } from '~/middleware/typesV2';
+import { Claim as MiddlewareClaim } from '~/middleware/types';
 import {
   CddClaim,
   Claim,
   ClaimOperation,
   ClaimTarget,
   ClaimType,
+  ClaimTypeEnum,
   ErrorCode,
   ModifyClaimsParams,
   RoleType,
   TxTags,
 } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
-import { EnsuredV2, tuple } from '~/types/utils';
+import { tuple } from '~/types/utils';
 import { DEFAULT_CDD_ID } from '~/utils/constants';
 import {
   claimToMeshClaim,
@@ -182,7 +179,7 @@ export async function prepareModifyClaims(
     //   data: {
     //     claims: { nodes: currentClaims },
     //   },
-    // } = await context.queryMiddlewareV2<EnsuredV2<Query, 'claims'>>(
+    // } = await context.queryMiddlewareV2<Ensured<Query, 'claims'>>(
     //   claimsQuery(
     //     {
     //       dids: allTargets,

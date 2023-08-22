@@ -104,25 +104,14 @@ import {
   Portfolio,
   Venue,
 } from '~/internal';
+import { CallIdEnum, ModuleIdEnum } from '~/middleware/enums';
 import {
-  CallIdEnum as MiddlewareV2CallId,
-  ModuleIdEnum as MiddlewareV2ModuleId,
-} from '~/middleware/enumsV2';
-import {
-  CallIdEnum,
-  ClaimScopeTypeEnum,
-  Event as MiddlewareEvent,
-  IdentityWithClaims as MiddlewareIdentityWithClaims,
-  ModuleIdEnum,
-  Portfolio as MiddlewarePortfolio,
-  Scope as MiddlewareScope,
-} from '~/middleware/types';
-import {
-  Block as MiddlewareV2Block,
-  Claim as MiddlewareV2Claim,
+  Block,
+  Claim as MiddlewareClaim,
   Instruction,
-  Portfolio as MiddlewareV2Portfolio,
-} from '~/middleware/typesV2';
+  Portfolio as MiddlewarePortfolio,
+} from '~/middleware/types';
+import { ClaimScopeTypeEnum, MiddlewareScope } from '~/middleware/typesV1';
 import {
   AssetComplianceResult,
   AuthorizationType as MeshAuthorizationType,
@@ -2140,12 +2129,19 @@ export function middlewareScopeToScope(scope: MiddlewareScope): Scope {
 
   switch (type) {
     case ClaimScopeTypeEnum.Ticker:
-      // eslint-disable-next-line no-control-regex
       return { type: ScopeType.Ticker, value: removePadding(value) };
     case ClaimScopeTypeEnum.Identity:
     case ClaimScopeTypeEnum.Custom:
-      return { type: ScopeType[scope.type], value };
+      return { type: scope.type as ScopeType, value };
   }
+
+  throw new PolymeshError({
+    code: ErrorCode.UnexpectedError,
+    message: 'Unsupported Scope Type. Please contact the Polymesh team',
+    data: {
+      scope,
+    },
+  });
 }
 
 /**
@@ -2169,24 +2165,8 @@ export function scopeToMiddlewareScope(scope: Scope, padTicker = true): Middlewa
 /**
  * @hidden
  */
-export function middlewareEventToEventIdentifier(event: MiddlewareEvent): EventIdentifier {
-  const { block_id: blockNumber, block, event_idx: eventIndex } = event;
-
-  return {
-    blockNumber: new BigNumber(blockNumber),
-    /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    blockDate: new Date(block!.datetime),
-    blockHash: block!.hash!,
-    /* eslint-enable @typescript-eslint/no-non-null-assertion */
-    eventIndex: new BigNumber(eventIndex),
-  };
-}
-
-/**
- * @hidden
- */
 export function middlewareV2EventDetailsToEventIdentifier(
-  block: MiddlewareV2Block,
+  block: Block,
   eventIdx = 0
 ): EventIdentifier {
   const { blockId, datetime, hash } = block;
@@ -2679,9 +2659,7 @@ export function txTagToExtrinsicIdentifier(tag: TxTag): ExtrinsicIdentifier {
 /**
  * @hidden
  */
-export function extrinsicIdentifierToTxTag(
-  extrinsicIdentifier: ExtrinsicIdentifier | ExtrinsicIdentifierV2
-): TxTag {
+export function extrinsicIdentifierToTxTag(extrinsicIdentifier: ExtrinsicIdentifierV2): TxTag {
   const { moduleId, callId } = extrinsicIdentifier;
   let moduleName;
   for (const txTagItem in TxTags) {
@@ -2699,8 +2677,8 @@ export function extrinsicIdentifierToTxTag(
 export function txTagToExtrinsicIdentifierV2(tag: TxTag): ExtrinsicIdentifierV2 {
   const [moduleName, extrinsicName] = tag.split('.');
   return {
-    moduleId: moduleName.toLowerCase() as MiddlewareV2ModuleId,
-    callId: snakeCase(extrinsicName) as MiddlewareV2CallId,
+    moduleId: moduleName.toLowerCase() as ModuleIdEnum,
+    callId: snakeCase(extrinsicName) as CallIdEnum,
   };
 }
 
@@ -2911,42 +2889,7 @@ export function endConditionToSettlementType(
 /**
  * @hidden
  */
-export function toIdentityWithClaimsArray(
-  data: MiddlewareIdentityWithClaims[],
-  context: Context
-): IdentityWithClaims[] {
-  return data.map(({ did, claims }) => ({
-    identity: new Identity({ did }, context),
-    claims: claims.map(
-      ({
-        targetDID: targetDid,
-        issuer,
-        issuance_date: issuanceDate,
-        last_update_date: lastUpdateDate,
-        expiry,
-        type,
-        jurisdiction,
-        scope: claimScope,
-        cdd_id: cddId,
-      }) => ({
-        target: new Identity({ did: targetDid }, context),
-        issuer: new Identity({ did: issuer }, context),
-        issuedAt: new Date(issuanceDate),
-        lastUpdatedAt: new Date(lastUpdateDate),
-        expiry: expiry ? new Date(expiry) : null,
-        claim: createClaim(type, jurisdiction, claimScope, cddId),
-      })
-    ),
-  }));
-}
-
-/**
- * @hidden
- */
-export function middlewareV2ClaimToClaimData(
-  claim: MiddlewareV2Claim,
-  context: Context
-): ClaimData {
+export function middlewareV2ClaimToClaimData(claim: MiddlewareClaim, context: Context): ClaimData {
   const {
     targetId,
     issuerId,
@@ -2972,7 +2915,7 @@ export function middlewareV2ClaimToClaimData(
  * @hidden
  */
 export function toIdentityWithClaimsArrayV2(
-  data: MiddlewareV2Claim[],
+  data: MiddlewareClaim[],
   context: Context,
   groupByAttribute: string
 ): IdentityWithClaims[] {
@@ -3311,23 +3254,8 @@ export function permissionsLikeToPermissions(
 /**
  * @hidden
  */
-export function middlewarePortfolioToPortfolio(
-  portfolio: MiddlewarePortfolio,
-  context: Context
-): DefaultPortfolio | NumberedPortfolio {
-  const { did, kind } = portfolio;
-
-  if (kind.toLowerCase() === 'default' || kind === '0') {
-    return new DefaultPortfolio({ did }, context);
-  }
-  return new NumberedPortfolio({ did, id: new BigNumber(kind) }, context);
-}
-
-/**
- * @hidden
- */
 export function middlewareV2PortfolioToPortfolio(
-  portfolio: MiddlewareV2Portfolio,
+  portfolio: MiddlewarePortfolio,
   context: Context
 ): DefaultPortfolio | NumberedPortfolio {
   const { identityId: did, number } = portfolio;

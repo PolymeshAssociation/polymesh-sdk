@@ -12,12 +12,9 @@ import {
   setPermissionGroup,
   waivePermissions,
 } from '~/internal';
-import {
-  EventIdEnum as MiddlewareV2EventId,
-  ModuleIdEnum as MiddlewareV2ModuleId,
-} from '~/middleware/enumsV2';
-import { tickerExternalAgentActionsQuery, tickerExternalAgentsQuery } from '~/middleware/queriesV2';
-import { Query as QueryV2 } from '~/middleware/typesV2';
+import { EventIdEnum, ModuleIdEnum } from '~/middleware/enums';
+import { tickerExternalAgentActionsQuery, tickerExternalAgentsQuery } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
 import {
   AssetWithGroup,
   CheckPermissionsResult,
@@ -33,7 +30,7 @@ import {
   TxTags,
   WaivePermissionsParams,
 } from '~/types';
-import { EnsuredV2 } from '~/types/utils';
+import { Ensured } from '~/types/utils';
 import {
   agentGroupToPermissionGroup,
   extrinsicPermissionsToTransactionPermissions,
@@ -327,7 +324,7 @@ export class AssetPermissions extends Namespace<Identity> {
           nodes: [node],
         },
       },
-    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'tickerExternalAgents'>>(
+    } = await context.queryMiddlewareV2<Ensured<Query, 'tickerExternalAgents'>>(
       tickerExternalAgentsQuery({
         assetId: ticker,
       })
@@ -362,8 +359,8 @@ export class AssetPermissions extends Namespace<Identity> {
    */
   public async getOperationHistoryV2(opts: {
     asset: string | Asset;
-    moduleId?: MiddlewareV2ModuleId;
-    eventId?: MiddlewareV2EventId;
+    moduleId?: ModuleIdEnum;
+    eventId?: EventIdEnum;
     size?: BigNumber;
     start?: BigNumber;
   }): Promise<ResultSet<EventIdentifier>> {
@@ -380,7 +377,7 @@ export class AssetPermissions extends Namespace<Identity> {
       data: {
         tickerExternalAgentActions: { nodes, totalCount },
       },
-    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'tickerExternalAgentActions'>>(
+    } = await context.queryMiddlewareV2<Ensured<Query, 'tickerExternalAgentActions'>>(
       tickerExternalAgentActionsQuery(
         {
           assetId: ticker,

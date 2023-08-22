@@ -7,8 +7,8 @@ import { EventEmitter } from 'events';
 import { range } from 'lodash';
 
 import { Context, Identity, PolymeshError } from '~/internal';
-import { latestBlockQuery } from '~/middleware/queriesV2';
-import { Query as QueryV2 } from '~/middleware/typesV2';
+import { latestBlockQuery } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
 import {
   ErrorCode,
   GenericPolymeshTransaction,
@@ -25,7 +25,7 @@ import {
   MaybeResolverFunction,
   TransactionConstructionData,
 } from '~/types/internal';
-import { EnsuredV2 } from '~/types/utils';
+import { Ensured } from '~/types/utils';
 import { balanceToBigNumber, hashToString, u32ToBigNumber } from '~/utils/conversion';
 import { defusePromise, delay, filterEventRecords } from '~/utils/internal';
 
@@ -465,7 +465,7 @@ export abstract class PolymeshTransactionBase<
           nodes: [{ blockId: processedBlock }],
         },
       },
-    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'blocks'>>(latestBlockQuery());
+    } = await context.queryMiddlewareV2<Ensured<Query, 'blocks'>>(latestBlockQuery());
 
     return new BigNumber(processedBlock);
   }

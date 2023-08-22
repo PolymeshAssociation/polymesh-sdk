@@ -38,23 +38,10 @@ export * from '~/api/entities/types';
 export * from '~/api/procedures/types';
 export * from '~/base/types';
 export * from '~/generated/types';
-export * from '~/middleware/enumsV2';
-export {
-  EventIdEnum,
-  ModuleIdEnum,
-  Order,
-  SettlementDirectionEnum,
-  SettlementResultEnum,
-  TransactionOrderByInput,
-  TransactionOrderFields,
-} from '~/middleware/types';
-export {
-  AssetHoldersOrderBy,
-  ExtrinsicsOrderBy,
-  PublicEnum7A0B4Cc03E,
-  PublicEnum8F5A39C8Ee,
-} from '~/middleware/typesV2';
-export { TxTags, TxTag, ModuleName, CountryCode };
+export * from '~/middleware/enums';
+
+export { ClaimScopeTypeEnum, MiddlewareScope, SettlementDirectionEnum } from '~/middleware/typesV1';
+export { CountryCode, ModuleName, TxTag, TxTags };
 
 export enum TransactionStatus {
   /**

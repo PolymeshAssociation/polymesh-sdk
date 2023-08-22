@@ -2,9 +2,9 @@ import BigNumber from 'bignumber.js';
 import { filter, flatten, isEqual, uniqBy, uniqWith } from 'lodash';
 
 import { Context, Identity, modifyClaims } from '~/internal';
-import { ClaimTypeEnum as MiddlewareV2ClaimType } from '~/middleware/enumsV2';
-import { claimsGroupingQuery, claimsQuery } from '~/middleware/queriesV2';
-import { ClaimsGroupBy, ClaimsOrderBy, Query as QueryV2 } from '~/middleware/typesV2';
+import { ClaimTypeEnum } from '~/middleware/enums';
+import { claimsGroupingQuery, claimsQuery } from '~/middleware/queries';
+import { ClaimsGroupBy, ClaimsOrderBy, Query } from '~/middleware/types';
 import {
   CddClaim,
   ClaimData,
@@ -19,7 +19,7 @@ import {
   ScopedClaim,
   ScopeType,
 } from '~/types';
-import { EnsuredV2 } from '~/types/utils';
+import { Ensured } from '~/types/utils';
 import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 import {
   scopeToMiddlewareScope,
@@ -191,7 +191,7 @@ export class Claims {
       trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
         signerToString(trustedClaimIssuer)
       ),
-      claimTypes: claimTypes?.map(ct => MiddlewareV2ClaimType[ct]),
+      claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
       includeExpired,
     };
 
@@ -200,7 +200,7 @@ export class Claims {
         data: {
           claims: { groupedAggregates: groupedTargets },
         },
-      } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'claims'>>(
+      } = await context.queryMiddlewareV2<Ensured<Query, 'claims'>>(
         claimsGroupingQuery({
           ...filters,
         })
@@ -223,7 +223,7 @@ export class Claims {
       data: {
         claims: { nodes },
       },
-    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'claims'>>(
+    } = await context.queryMiddlewareV2<Ensured<Query, 'claims'>>(
       claimsQuery({
         dids: targetIssuers,
         ...filters,
@@ -392,7 +392,7 @@ export class Claims {
           data: {
             claims: { groupedAggregates: groupedIssuers },
           },
-        } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'claims'>>(
+        } = await context.queryMiddlewareV2<Ensured<Query, 'claims'>>(
           claimsGroupingQuery(filters, ClaimsOrderBy.IssuerIdAsc, ClaimsGroupBy.IssuerId)
         );
 
@@ -412,7 +412,7 @@ export class Claims {
         data: {
           claims: { nodes },
         },
-      } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'claims'>>(
+      } = await context.queryMiddlewareV2<Ensured<Query, 'claims'>>(
         claimsQuery({
           trustedClaimIssuers: claimIssuers,
           ...filters,

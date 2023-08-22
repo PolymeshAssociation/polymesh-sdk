@@ -1,13 +1,9 @@
 import BigNumber from 'bignumber.js';
 
 import { Account, Context, transferPolyx } from '~/internal';
-import {
-  CallIdEnum as MiddlewareV2CallId,
-  EventIdEnum as MiddlewareV2EventId,
-  ModuleIdEnum as MiddlewareV2ModuleId,
-} from '~/middleware/enumsV2';
-import { eventsByArgs, extrinsicByHash } from '~/middleware/queriesV2';
-import { Query as QueryV2 } from '~/middleware/typesV2';
+import { EventIdEnum, ModuleIdEnum } from '~/middleware/enums';
+import { eventsByArgs, extrinsicByHash } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
 import {
   EventIdentifier,
   ExtrinsicDataWithFees,
@@ -20,7 +16,7 @@ import {
   TxTag,
   UnsubCallback,
 } from '~/types';
-import { EnsuredV2 } from '~/types/utils';
+import { Ensured } from '~/types/utils';
 import { TREASURY_MODULE_ADDRESS } from '~/utils/constants';
 import {
   balanceToBigNumber,
@@ -156,8 +152,8 @@ export class Network {
    * @note uses the middlewareV2
    */
   public async getEventByIndexedArgsV2(opts: {
-    moduleId: MiddlewareV2ModuleId;
-    eventId: MiddlewareV2EventId;
+    moduleId: ModuleIdEnum;
+    eventId: EventIdEnum;
     eventArg0?: string;
     eventArg1?: string;
     eventArg2?: string;
@@ -172,7 +168,7 @@ export class Network {
           nodes: [event],
         },
       },
-    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'events'>>(
+    } = await context.queryMiddlewareV2<Ensured<Query, 'events'>>(
       eventsByArgs(
         {
           moduleId,
@@ -202,8 +198,8 @@ export class Network {
    * @note uses the middlewareV2
    */
   public async getEventsByIndexedArgsV2(opts: {
-    moduleId: MiddlewareV2ModuleId;
-    eventId: MiddlewareV2EventId;
+    moduleId: ModuleIdEnum;
+    eventId: EventIdEnum;
     eventArg0?: string;
     eventArg1?: string;
     eventArg2?: string;
@@ -218,7 +214,7 @@ export class Network {
       data: {
         events: { nodes: events },
       },
-    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'events'>>(
+    } = await context.queryMiddlewareV2<Ensured<Query, 'events'>>(
       eventsByArgs(
         {
           moduleId,
@@ -270,7 +266,7 @@ export class Network {
           nodes: [transaction],
         },
       },
-    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'extrinsics'>>(
+    } = await context.queryMiddlewareV2<Ensured<Query, 'extrinsics'>>(
       extrinsicByHash({
         extrinsicHash: opts.txHash,
       })
@@ -291,8 +287,8 @@ export class Network {
       } = transaction;
 
       const txTag = extrinsicIdentifierToTxTag({
-        moduleId: moduleId as MiddlewareV2ModuleId,
-        callId: callId as MiddlewareV2CallId,
+        moduleId: moduleId,
+        callId: callId,
       });
 
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

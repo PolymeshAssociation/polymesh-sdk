@@ -9,7 +9,7 @@ import {
   Namespace,
   PolymeshTransaction,
 } from '~/internal';
-import { tickerExternalAgentActionsQuery, tickerExternalAgentsQuery } from '~/middleware/queriesV2';
+import { tickerExternalAgentActionsQuery, tickerExternalAgentsQuery } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { Asset, PermissionGroupType, PermissionType, TxTags } from '~/types';

@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Context, Entity, NumberedPortfolio, PolymeshError, PolymeshTransaction } from '~/internal';
-import { portfolioQuery } from '~/middleware/queriesV2';
+import { portfolioQuery } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { ErrorCode } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';

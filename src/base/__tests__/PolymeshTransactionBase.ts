@@ -11,7 +11,7 @@ import {
   PolymeshTransactionBase,
   PolymeshTransactionBatch,
 } from '~/internal';
-import { latestBlockQuery } from '~/middleware/queriesV2';
+import { latestBlockQuery } from '~/middleware/queries';
 import { fakePromise, fakePromises } from '~/testUtils';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { MockTxStatus } from '~/testUtils/mocks/dataSources';

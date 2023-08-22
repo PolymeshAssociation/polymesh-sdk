@@ -6,7 +6,7 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Context, DefaultTrustedClaimIssuer, Identity } from '~/internal';
-import { trustedClaimIssuerQuery } from '~/middleware/queriesV2';
+import { trustedClaimIssuerQuery } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { ClaimType } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
