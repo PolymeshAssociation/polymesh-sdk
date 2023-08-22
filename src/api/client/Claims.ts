@@ -3,9 +3,7 @@ import { filter, flatten, isEqual, uniqBy, uniqWith } from 'lodash';
 
 import { Context, Identity, modifyClaims } from '~/internal';
 import { ClaimTypeEnum as MiddlewareV2ClaimType } from '~/middleware/enumsV2';
-import { didsWithClaims, issuerDidsWithClaimsByTarget } from '~/middleware/queries';
 import { claimsGroupingQuery, claimsQuery } from '~/middleware/queriesV2';
-import { ClaimTypeEnum, Query } from '~/middleware/types';
 import { ClaimsGroupBy, ClaimsOrderBy, Query as QueryV2 } from '~/middleware/typesV2';
 import {
   CddClaim,
@@ -21,12 +19,11 @@ import {
   ScopedClaim,
   ScopeType,
 } from '~/types';
-import { Ensured, EnsuredV2 } from '~/types/utils';
+import { EnsuredV2 } from '~/types/utils';
 import { DEFAULT_GQL_PAGE_SIZE } from '~/utils/constants';
 import {
   scopeToMiddlewareScope,
   signerToString,
-  toIdentityWithClaimsArray,
   toIdentityWithClaimsArrayV2,
 } from '~/utils/conversion';
 import { calculateNextKey, createProcedureMethod, getDid, removePadding } from '~/utils/internal';
@@ -127,40 +124,6 @@ export class Claims {
    * @param opts.includeExpired - whether to include expired claims. Defaults to true
    *
    * @note supports pagination
-   * @note uses the middleware
-   */
-  public async getIssuedClaims(
-    opts: {
-      target?: string | Identity;
-      includeExpired?: boolean;
-      size?: BigNumber;
-      start?: BigNumber;
-    } = {}
-  ): Promise<ResultSet<ClaimData>> {
-    const { context } = this;
-    const { target, includeExpired = true, size, start } = opts;
-
-    const did = await getDid(target, context);
-
-    if (context.isMiddlewareV2Enabled()) {
-      return this.getIssuedClaimsV2(opts);
-    }
-
-    return context.getIdentityClaimsFromMiddleware({
-      trustedClaimIssuers: [did],
-      includeExpired,
-      size,
-      start,
-    });
-  }
-
-  /**
-   * Retrieve all claims issued by an Identity
-   *
-   * @param opts.target - Identity (optional, defaults to the signing Identity)
-   * @param opts.includeExpired - whether to include expired claims. Defaults to true
-   *
-   * @note supports pagination
    * @note uses the middlewareV2
    */
   public async getIssuedClaimsV2(
@@ -182,78 +145,6 @@ export class Claims {
       size,
       start,
     });
-  }
-
-  /**
-   * Retrieve a list of Identities with claims associated to them. Can be filtered using parameters
-   *
-   * @param opts.targets - Identities (or Identity IDs) for which to fetch targeting claims. Defaults to all targets
-   * @param opts.trustedClaimIssuers - Identity IDs of claim issuers. Defaults to all claim issuers
-   * @param opts.scope - scope of the claims to fetch. Defaults to any scope
-   * @param opts.claimTypes - types of the claims to fetch. Defaults to any type
-   * @param opts.includeExpired - whether to include expired claims. Defaults to true
-   * @param opts.size - page size
-   * @param opts.start - page offset
-   *
-   * @note supports pagination
-   * @note uses the middleware
-   */
-  public async getIdentitiesWithClaims(
-    opts: {
-      targets?: (string | Identity)[];
-      trustedClaimIssuers?: (string | Identity)[];
-      scope?: Scope;
-      claimTypes?: ClaimType[];
-      includeExpired?: boolean;
-      size?: BigNumber;
-      start?: BigNumber;
-    } = {}
-  ): Promise<ResultSet<IdentityWithClaims>> {
-    const { context } = this;
-
-    if (context.isMiddlewareV2Enabled()) {
-      return this.getIdentitiesWithClaimsV2(opts);
-    }
-
-    const {
-      targets,
-      trustedClaimIssuers,
-      scope,
-      claimTypes,
-      includeExpired = true,
-      size,
-      start,
-    } = opts;
-
-    const result = await context.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
-      didsWithClaims({
-        dids: targets?.map(target => signerToString(target)),
-        scope: scope ? scopeToMiddlewareScope(scope) : undefined,
-        trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
-          signerToString(trustedClaimIssuer)
-        ),
-        claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
-        includeExpired,
-        count: size?.toNumber(),
-        skip: start?.toNumber(),
-      })
-    );
-
-    const {
-      data: {
-        didsWithClaims: { items: didsWithClaimsList, totalCount },
-      },
-    } = result;
-
-    const count = new BigNumber(totalCount);
-    const data = toIdentityWithClaimsArray(didsWithClaimsList, context);
-    const next = calculateNextKey(count, didsWithClaimsList.length, start);
-
-    return {
-      data,
-      next,
-      count,
-    };
   }
 
   /**
@@ -420,69 +311,6 @@ export class Claims {
       claimTypes: [ClaimType.CustomerDueDiligence],
       includeExpired,
     }) as Promise<ClaimData<CddClaim>[]>;
-  }
-
-  /**
-   * Retrieve all claims issued about an Identity, grouped by claim issuer
-   *
-   * @param opts.target - Identity for which to fetch targeting claims (optional, defaults to the signing Identity)
-   * @param opts.includeExpired - whether to include expired claims. Defaults to true
-   *
-   * @note supports pagination
-   * @note uses the middleware (optional)
-   */
-  public async getTargetingClaims(
-    opts: {
-      target?: string | Identity;
-      scope?: Scope;
-      trustedClaimIssuers?: (string | Identity)[];
-      includeExpired?: boolean;
-      size?: BigNumber;
-      start?: BigNumber;
-    } = {}
-  ): Promise<ResultSet<IdentityWithClaims>> {
-    const { context } = this;
-
-    if (context.isMiddlewareV2Enabled()) {
-      return this.getTargetingClaimsV2(opts);
-    }
-
-    const { target, trustedClaimIssuers, scope, includeExpired = true, size, start } = opts;
-
-    const did = await getDid(target, context);
-
-    const isMiddlewareAvailable = await context.isMiddlewareAvailable();
-
-    if (isMiddlewareAvailable) {
-      const result = await context.queryMiddleware<Ensured<Query, 'issuerDidsWithClaimsByTarget'>>(
-        issuerDidsWithClaimsByTarget({
-          target: did,
-          scope: scope ? scopeToMiddlewareScope(scope) : undefined,
-          trustedClaimIssuers: trustedClaimIssuers?.map(signerToString),
-          includeExpired,
-          count: size?.toNumber(),
-          skip: start?.toNumber(),
-        })
-      );
-
-      const {
-        data: {
-          issuerDidsWithClaimsByTarget: { items: issuerDidsWithClaimsByTargetList, totalCount },
-        },
-      } = result;
-
-      const count = new BigNumber(totalCount);
-      const data = toIdentityWithClaimsArray(issuerDidsWithClaimsByTargetList, context);
-      const next = calculateNextKey(count, data.length, start);
-
-      return {
-        data,
-        next,
-        count,
-      };
-    }
-
-    return this.getClaimsFromChain(context, did, trustedClaimIssuers, includeExpired);
   }
 
   /**

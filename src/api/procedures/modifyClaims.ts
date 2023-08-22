@@ -3,11 +3,14 @@ import {
   PolymeshPrimitivesIdentityClaimClaim,
   PolymeshPrimitivesIdentityId,
 } from '@polkadot/types/lookup';
+import BigNumber from 'bignumber.js';
 import { cloneDeep, isEqual, uniq } from 'lodash';
 
 import { Context, Identity, PolymeshError, Procedure } from '~/internal';
 import { didsWithClaims } from '~/middleware/queries';
-import { Claim as MiddlewareClaim, ClaimTypeEnum, Query } from '~/middleware/types';
+import { claimsQuery } from '~/middleware/queriesV2';
+import { Claim as MiddlewareClaim, ClaimTypeEnum } from '~/middleware/types';
+import { Query } from '~/middleware/typesV2';
 import {
   CddClaim,
   Claim,
@@ -20,7 +23,7 @@ import {
   TxTags,
 } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
-import { Ensured, tuple } from '~/types/utils';
+import { EnsuredV2, tuple } from '~/types/utils';
 import { DEFAULT_CDD_ID } from '~/utils/constants';
 import {
   claimToMeshClaim,
@@ -84,7 +87,7 @@ const findInvalidCddClaims = async (
   );
 
   if (newCddClaims.length) {
-    const issuedCddClaims = await context.issuedClaims({
+    const issuedCddClaims = await context.issuedClaimsV2({
       targets: newCddClaims.map(({ target }) => target),
       claimTypes: [ClaimType.CustomerDueDiligence],
       includeExpired: false,
@@ -157,7 +160,7 @@ export async function prepareModifyClaims(
 
   const [nonExistentDids, middlewareAvailable] = await Promise.all([
     context.getInvalidDids(allTargets),
-    context.isMiddlewareAvailable(),
+    context.isMiddlewareV2Available(),
   ]);
 
   if (nonExistentDids.length) {
@@ -174,40 +177,39 @@ export async function prepareModifyClaims(
 
   // skip validation if the middleware is unavailable
   if (shouldValidateWithMiddleware) {
-    const { did: currentDid } = await context.getSigningIdentity();
-    const {
-      data: {
-        didsWithClaims: { items: currentClaims },
-      },
-    } = await context.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
-      didsWithClaims({
-        dids: allTargets,
-        trustedClaimIssuers: [currentDid],
-        includeExpired: true,
-        count: allTargets.length,
-      })
-    );
-    const claimsByDid = currentClaims.reduce<Record<string, MiddlewareClaim[]>>(
-      (prev, { did, claims: didClaims }) => {
-        const copy = cloneDeep(prev);
-        copy[did] = didClaims;
-
-        return copy;
-      },
-      {}
-    );
-
-    const claimsByOtherIssuers: Claim[] = findClaimsByOtherIssuers(claims, claimsByDid);
-
-    if (claimsByOtherIssuers.length) {
-      throw new PolymeshError({
-        code: ErrorCode.UnmetPrerequisite,
-        message: `Attempt to ${operation.toLowerCase()} claims that weren't issued by the signing Identity`,
-        data: {
-          claimsByOtherIssuers,
-        },
-      });
-    }
+    // const { did: currentDid } = await context.getSigningIdentity();
+    // const {
+    //   data: {
+    //     claims: { nodes: currentClaims },
+    //   },
+    // } = await context.queryMiddlewareV2<EnsuredV2<Query, 'claims'>>(
+    //   claimsQuery(
+    //     {
+    //       dids: allTargets,
+    //       trustedClaimIssuers: [currentDid],
+    //       includeExpired: true,
+    //     },
+    //     new BigNumber(allTargets.length)
+    //   )
+    // );
+    // const claimsByDid = currentClaims.reduce<Record<string, MiddlewareClaim[]>>(
+    //   (prev, { did, claims: didClaims }) => {
+    //     const copy = cloneDeep(prev);
+    //     copy[did] = didClaims;
+    //     return copy;
+    //   },
+    //   {}
+    // );
+    // const claimsByOtherIssuers: Claim[] = findClaimsByOtherIssuers(claims, claimsByDid);
+    // if (claimsByOtherIssuers.length) {
+    //   throw new PolymeshError({
+    //     code: ErrorCode.UnmetPrerequisite,
+    //     message: `Attempt to ${operation.toLowerCase()} claims that weren't issued by the signing Identity`,
+    //     data: {
+    //       claimsByOtherIssuers,
+    //     },
+    //   });
+    // }
   }
 
   if (operation === ClaimOperation.Revoke) {

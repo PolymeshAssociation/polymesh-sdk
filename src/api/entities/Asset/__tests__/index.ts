@@ -17,25 +17,16 @@ import {
   PolymeshError,
   PolymeshTransaction,
 } from '~/internal';
-import { eventByIndexedArgs, tickerExternalAgentHistory } from '~/middleware/queries';
 import {
   assetQuery,
   assetTransactionQuery,
   tickerExternalAgentHistoryQuery,
 } from '~/middleware/queriesV2';
-import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
+import { EventIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import {
-  ErrorCode,
-  EventIdentifier,
-  HistoricAgentOperation,
-  SecurityIdentifier,
-  SecurityIdentifierType,
-} from '~/types';
+import { ErrorCode, SecurityIdentifier, SecurityIdentifierType } from '~/types';
 import { tuple } from '~/types/utils';
-import { MAX_TICKER_LENGTH } from '~/utils/constants';
 import * as utilsConversionModule from '~/utils/conversion';
-import * as utilsInternalModule from '~/utils/internal';
 
 jest.mock(
   '~/api/entities/Identity',
@@ -448,65 +439,6 @@ describe('Asset class', () => {
     });
   });
 
-  describe('method: createdAt', () => {
-    let context: Context;
-    beforeEach(() => {
-      context = dsMockUtils.getContextInstance({ middlewareV2Enabled: false });
-    });
-
-    it('should return the event identifier object of the Asset creation', async () => {
-      const ticker = 'SOME_TICKER';
-      const blockNumber = new BigNumber(1234);
-      const blockDate = new Date('4/14/2020');
-      const eventIdx = new BigNumber(1);
-      const variables = {
-        moduleId: ModuleIdEnum.Asset,
-        eventId: EventIdEnum.AssetCreated,
-        eventArg1: utilsInternalModule.padString(ticker, MAX_TICKER_LENGTH),
-      };
-      const fakeResult = { blockNumber, blockDate, eventIndex: eventIdx };
-      const asset = new Asset({ ticker }, context);
-
-      dsMockUtils.createApolloQueryMock(eventByIndexedArgs(variables), {
-        /* eslint-disable @typescript-eslint/naming-convention */
-        eventByIndexedArgs: {
-          block_id: blockNumber.toNumber(),
-          block: { datetime: blockDate },
-          event_idx: eventIdx.toNumber(),
-        },
-        /* eslint-enable @typescript-eslint/naming-convention */
-      });
-
-      const result = await asset.createdAt();
-
-      expect(result).toEqual(fakeResult);
-    });
-
-    it('should return null if the query result is empty', async () => {
-      const ticker = 'SOME_TICKER';
-      const variables = {
-        moduleId: ModuleIdEnum.Asset,
-        eventId: EventIdEnum.AssetCreated,
-        eventArg1: utilsInternalModule.padString(ticker, MAX_TICKER_LENGTH),
-      };
-      const asset = new Asset({ ticker }, context);
-
-      dsMockUtils.createApolloQueryMock(eventByIndexedArgs(variables), {});
-      const result = await asset.createdAt();
-      expect(result).toBeNull();
-    });
-
-    it('should call v2 query if middlewareV2 is enabled', async () => {
-      dsMockUtils.configureMocks({ contextOptions: { middlewareV2Enabled: true } });
-      const asset = new Asset({ ticker: 'SOME_TICKER' }, context);
-      const fakeResult = 'fakeResult' as unknown as EventIdentifier;
-      jest.spyOn(asset, 'createdAtV2').mockResolvedValue(fakeResult);
-
-      const result = await asset.createdAt();
-      expect(result).toEqual(fakeResult);
-    });
-  });
-
   describe('method: createdAtV2', () => {
     it('should return the event identifier object of the Asset creation', async () => {
       const ticker = 'SOME_TICKER';
@@ -726,86 +658,6 @@ describe('Asset class', () => {
       const queue = await asset.controllerTransfer({ originPortfolio, amount });
 
       expect(queue).toBe(expectedTransaction);
-    });
-  });
-
-  describe('method: getOperationHistory', () => {
-    it('should return a list of agent operations', async () => {
-      const ticker = 'TICKER';
-      const context = dsMockUtils.getContextInstance({ middlewareV2Enabled: false });
-      const asset = new Asset({ ticker }, context);
-
-      const did = 'someDid';
-      const blockId = new BigNumber(1);
-      const blockHash = 'someHash';
-      const eventIndex = new BigNumber(1);
-      const datetime = '2020-10-10';
-
-      dsMockUtils.createQueryMock('system', 'blockHash', {
-        multi: [dsMockUtils.createMockHash(blockHash)],
-      });
-      dsMockUtils.createApolloQueryMock(
-        tickerExternalAgentHistory({
-          ticker,
-        }),
-        {
-          tickerExternalAgentHistory: [
-            /* eslint-disable @typescript-eslint/naming-convention */
-            {
-              did,
-              history: [
-                {
-                  block_id: blockId.toNumber(),
-                  datetime,
-                  event_idx: eventIndex.toNumber(),
-                },
-              ],
-            },
-            /* eslint-enable @typescript-eslint/naming-convention */
-          ],
-        }
-      );
-
-      let result = await asset.getOperationHistory();
-
-      expect(result.length).toEqual(1);
-      expect(result[0].identity.did).toEqual(did);
-      expect(result[0].history.length).toEqual(1);
-      expect(result[0].history[0]).toEqual({
-        blockNumber: blockId,
-        blockHash,
-        blockDate: new Date(`${datetime}Z`),
-        eventIndex,
-      });
-
-      dsMockUtils.createApolloQueryMock(
-        tickerExternalAgentHistory({
-          ticker,
-        }),
-        {
-          tickerExternalAgentHistory: [
-            {
-              did,
-              history: [],
-            },
-          ],
-        }
-      );
-
-      result = await asset.getOperationHistory();
-
-      expect(result.length).toEqual(1);
-      expect(result[0].identity.did).toEqual(did);
-      expect(result[0].history.length).toEqual(0);
-    });
-
-    it('should call v2 query if middlewareV2 is enabled', async () => {
-      const asset = new Asset({ ticker: 'SOME_TICKER' }, dsMockUtils.getContextInstance());
-      const fakeResult = 'fakeResult' as unknown as HistoricAgentOperation[];
-      jest.spyOn(asset, 'getOperationHistoryV2').mockResolvedValue(fakeResult);
-
-      const result = await asset.getOperationHistory();
-      expect(result).toEqual(fakeResult);
     });
   });
 

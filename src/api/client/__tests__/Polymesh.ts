@@ -4,7 +4,6 @@ import { when } from 'jest-when';
 
 import { Polymesh } from '~/api/client/Polymesh';
 import { PolymeshError, PolymeshTransactionBatch } from '~/internal';
-import { heartbeat } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { ErrorCode, TransactionArray } from '~/types';
 import { SUPPORTED_NODE_VERSION_RANGE } from '~/utils/constants';
@@ -99,32 +98,8 @@ describe('Polymesh Class', () => {
       expect(createMock).toHaveBeenCalledTimes(1);
       expect(createMock).toHaveBeenCalledWith({
         polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApi: null,
         middlewareApiV2: null,
         signingManager,
-      });
-    });
-
-    it('should instantiate Context with middleware credentials and return a Polymesh instance', async () => {
-      const createMock = dsMockUtils.getContextCreateMock();
-      const middleware = {
-        link: 'someLink',
-        key: 'someKey',
-      };
-
-      dsMockUtils.createApolloQueryMock(heartbeat(), true);
-
-      await Polymesh.connect({
-        nodeUrl: 'wss://some.url',
-        middleware,
-      });
-
-      expect(createMock).toHaveBeenCalledTimes(1);
-      expect(createMock).toHaveBeenCalledWith({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApi: dsMockUtils.getMiddlewareApi(),
-        middlewareApiV2: null,
-        signingManager: undefined,
       });
     });
 
@@ -184,56 +159,6 @@ describe('Polymesh Class', () => {
           nodeUrl: 'wss://some.url',
         })
       ).rejects.toThrowError(error);
-    });
-
-    it('should throw an error if the middleware credentials are incorrect', async () => {
-      const middleware = {
-        link: 'wrong',
-        key: 'alsoWrong',
-      };
-
-      dsMockUtils.throwOnMiddlewareQuery(new Error('Forbidden'));
-
-      let err;
-      try {
-        await Polymesh.connect({
-          nodeUrl: 'wss://some.url',
-          middleware,
-        });
-      } catch (e) {
-        err = e;
-      }
-
-      expect(err.message).toBe('Incorrect middleware URL or API key');
-
-      dsMockUtils.throwOnMiddlewareQuery(new Error('Missing Authentication Token'));
-      err = undefined;
-
-      try {
-        await Polymesh.connect({
-          nodeUrl: 'wss://some.url',
-          middleware,
-        });
-      } catch (e) {
-        err = e;
-      }
-
-      expect(err.message).toBe('Incorrect middleware URL or API key');
-
-      // other errors are caught when performing queries later on
-      dsMockUtils.throwOnMiddlewareQuery(new Error('Anything else'));
-      err = undefined;
-
-      try {
-        await Polymesh.connect({
-          nodeUrl: 'wss://some.url',
-          middleware,
-        });
-      } catch (e) {
-        err = e;
-      }
-
-      expect(err).toBeUndefined();
     });
 
     it('should throw an error if the middleware V2 URL is incorrect', () => {
@@ -390,9 +315,9 @@ describe('Polymesh Class', () => {
     it('should call the underlying disconnect function', async () => {
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
-        middleware: {
+        middlewareV2: {
           link: 'someLink',
-          key: 'someKey',
+          key: '',
         },
       });
 
@@ -406,9 +331,9 @@ describe('Polymesh Class', () => {
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
         signingManager: 'signingManager' as unknown as SigningManager,
-        middleware: {
+        middlewareV2: {
           link: 'someLink',
-          key: 'someKey',
+          key: '',
         },
       });
 
@@ -424,9 +349,9 @@ describe('Polymesh Class', () => {
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
         signingManager: 'signingManager' as unknown as SigningManager,
-        middleware: {
+        middlewareV2: {
           link: 'someLink',
-          key: 'someKey',
+          key: '',
         },
       });
 
@@ -444,9 +369,9 @@ describe('Polymesh Class', () => {
       const polymesh = await Polymesh.connect({
         nodeUrl: 'wss://some.url',
         signingManager: 'signingManager' as unknown as SigningManager,
-        middleware: {
+        middlewareV2: {
           link: 'someLink',
-          key: 'someKey',
+          key: '',
         },
       });
       const context = dsMockUtils.getContextInstance();

@@ -339,7 +339,6 @@ const mockInstanceContainer = {
   contextInstance: {} as MockContext,
   apiInstance: createApi(),
   signingManagerInstance: {} as Mutable<SigningManager>,
-  apolloInstance: createApolloClient(),
   apolloInstanceV2: createApolloClient(),
   webSocketInstance: createWebSocket(),
 };
@@ -815,7 +814,6 @@ function configureContext(opts: ContextOptions): void {
   const getNonce = jest.fn();
   getNonce.mockReturnValue(nonce);
 
-  const queryMock = mockInstanceContainer.apolloInstance.query;
   const queryMockV2 = mockInstanceContainer.apolloInstanceV2.query;
   const contextInstance = {
     signingAddress,
@@ -836,8 +834,6 @@ function configureContext(opts: ContextOptions): void {
     setSigningManager: jest.fn(),
     getExternalSigner: jest.fn().mockReturnValue(opts.getExternalSigner),
     polymeshApi: mockInstanceContainer.apiInstance,
-    middlewareApi: mockInstanceContainer.apolloInstance,
-    queryMiddleware: jest.fn().mockImplementation(query => queryMock(query)),
     queryMiddlewareV2: jest.fn().mockImplementation(query => queryMockV2(query)),
     middlewareApiV2: mockInstanceContainer.apolloInstanceV2,
     getInvalidDids: jest.fn().mockResolvedValue(opts.invalidDids),
@@ -847,19 +843,12 @@ function configureContext(opts: ContextOptions): void {
     issuedClaims: jest.fn().mockResolvedValue(opts.issuedClaims),
     getIdentity: jest.fn().mockResolvedValue(opts.getIdentity),
     getIdentityClaimsFromChain: jest.fn().mockResolvedValue(opts.getIdentityClaimsFromChain),
-    getIdentityClaimsFromMiddleware: jest
-      .fn()
-      .mockResolvedValue(opts.getIdentityClaimsFromMiddleware),
     getIdentityClaimsFromMiddlewareV2: jest
       .fn()
       .mockResolvedValue(opts.getIdentityClaimsFromMiddlewareV2),
     getLatestBlock: jest.fn().mockResolvedValue(opts.latestBlock),
-    isMiddlewareEnabled: jest.fn().mockReturnValue(opts.middlewareEnabled),
     isMiddlewareV2Enabled: jest.fn().mockReturnValue(opts.middlewareV2Enabled),
-    isAnyMiddlewareEnabled: jest
-      .fn()
-      .mockReturnValue(opts.middlewareEnabled || opts.middlewareV2Enabled),
-    isMiddlewareAvailable: jest.fn().mockResolvedValue(opts.middlewareAvailable),
+    isAnyMiddlewareEnabled: jest.fn().mockReturnValue(opts.middlewareV2Enabled),
     isMiddlewareV2Available: jest.fn().mockResolvedValue(opts.middlewareV2Available),
     getMiddlewareMetadata: jest.fn().mockResolvedValue(opts.getMiddlewareMetadata),
     isArchiveNode: opts.isArchiveNode,
@@ -1095,7 +1084,7 @@ export function initMocks(opts?: {
   initSigningManager(opts?.signingManagerOptions);
 
   // Apollo
-  apolloConstructorMock = jest.fn().mockReturnValue(mockInstanceContainer.apolloInstance);
+  apolloConstructorMock = jest.fn().mockReturnValue(mockInstanceContainer.apolloInstanceV2);
 
   webSocketConstructorMock = jest.fn().mockReturnValue(mockInstanceContainer.webSocketInstance);
 
@@ -1113,7 +1102,7 @@ export function cleanup(): void {
   mockInstanceContainer.apiInstance = createApi();
   mockInstanceContainer.contextInstance = {} as MockContext;
   mockInstanceContainer.signingManagerInstance = {} as Mutable<SigningManager>;
-  mockInstanceContainer.apolloInstance = createApolloClient();
+  mockInstanceContainer.apolloInstanceV2 = createApolloClient();
   mockInstanceContainer.webSocketInstance = createWebSocket();
 }
 
@@ -1212,25 +1201,6 @@ export function createTxMock<
  * @param query - apollo document node
  * @param returnValue
  */
-export function createApolloQueryMock(query: QueryOptions<any>, returnData: unknown): jest.Mock {
-  const { query: mock } = mockInstanceContainer.apolloInstance;
-
-  when(mock)
-    .calledWith(query)
-    .mockResolvedValue({
-      data: returnData,
-    } as any);
-
-  return mock;
-}
-
-/**
- * @hidden
- * Create and return an apollo query mock
- *
- * @param query - apollo document node
- * @param returnValue
- */
 export function createApolloV2QueryMock(query: QueryOptions<any>, returnData: unknown): jest.Mock {
   const { query: mock } = mockInstanceContainer.apolloInstanceV2;
 
@@ -1262,20 +1232,6 @@ function mockQueries(
   });
 
   return mock;
-}
-
-/**
- * @hidden
- * Create and return an apollo mock for multiple queries
- *
- * @param queries - query and returnData for each mocked query
- */
-export function createApolloMultipleQueriesMock(
-  queries: { query: QueryOptions<any>; returnData: unknown }[]
-): jest.Mock {
-  const instance = mockInstanceContainer.apolloInstance;
-
-  return mockQueries(queries, instance);
 }
 
 /**
@@ -1507,18 +1463,6 @@ export function updateTxStatus<
 
 /**
  * @hidden
- * Make calls to `Middleware.query` throw an error
- */
-export function throwOnMiddlewareQuery(err?: unknown): void {
-  const instance = mockInstanceContainer.apolloInstance;
-
-  instance.query.mockImplementation(() => {
-    throw err ?? new Error('Something went wrong');
-  });
-}
-
-/**
- * @hidden
  * Make calls to `MiddlewareV2.query` throw an error
  */
 export function throwOnMiddlewareV2Query(err?: unknown): void {
@@ -1575,16 +1519,6 @@ export function getApiInstance(): ApiPromise & jest.Mocked<ApiPromise> & EventEm
  */
 export function getWebSocketInstance(): MockWebSocket {
   return mockInstanceContainer.webSocketInstance;
-}
-
-/**
- * @hidden
- * Retrieve an instance of the mocked Apollo Client
- */
-export function getMiddlewareApi(): ApolloClient<NormalizedCacheObject> &
-  jest.Mocked<ApolloClient<NormalizedCacheObject>> {
-  return mockInstanceContainer.apolloInstance as unknown as ApolloClient<NormalizedCacheObject> &
-    jest.Mocked<ApolloClient<NormalizedCacheObject>>;
 }
 
 /**

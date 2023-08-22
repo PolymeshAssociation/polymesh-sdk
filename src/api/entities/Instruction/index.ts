@@ -17,9 +17,7 @@ import {
   Venue,
 } from '~/internal';
 import { InstructionStatusEnum } from '~/middleware/enumsV2';
-import { eventByIndexedArgs } from '~/middleware/queries';
 import { instructionsQuery } from '~/middleware/queriesV2';
-import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   AffirmOrWithdrawInstructionParams,
@@ -38,7 +36,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
-import { Ensured, EnsuredV2 } from '~/types/utils';
+import { EnsuredV2 } from '~/types/utils';
 import {
   balanceToBigNumber,
   bigNumberToU64,
@@ -48,7 +46,6 @@ import {
   meshInstructionStatusToInstructionStatus,
   meshPortfolioIdToPortfolio,
   meshSettlementTypeToEndCondition,
-  middlewareEventToEventIdentifier,
   middlewareV2EventDetailsToEventIdentifier,
   momentToDate,
   tickerToString,
@@ -518,48 +515,6 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
   /**
    * Retrieve current status of this Instruction
    *
-   * @note uses the middleware
-   */
-  public async getStatus(): Promise<InstructionStatusResult> {
-    const isPending = await this.isPending();
-
-    if (isPending) {
-      return {
-        status: InstructionStatus.Pending,
-      };
-    }
-
-    if (this.context.isMiddlewareV2Enabled()) {
-      return this.getStatusV2();
-    }
-
-    let eventIdentifier = await this.getInstructionEventFromMiddleware(
-      EventIdEnum.InstructionExecuted
-    );
-    if (eventIdentifier) {
-      return {
-        status: InstructionStatus.Executed,
-        eventIdentifier,
-      };
-    }
-
-    eventIdentifier = await this.getInstructionEventFromMiddleware(EventIdEnum.InstructionFailed);
-    if (eventIdentifier) {
-      return {
-        status: InstructionStatus.Failed,
-        eventIdentifier,
-      };
-    }
-
-    throw new PolymeshError({
-      code: ErrorCode.DataUnavailable,
-      message: "It isn't possible to determine the current status of this Instruction",
-    });
-  }
-
-  /**
-   * Retrieve current status of this Instruction
-   *
    * @note uses the middlewareV2
    */
   public async getStatusV2(): Promise<InstructionStatusResult> {
@@ -629,28 +584,6 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
    * Executes an Instruction either of type `SettleManual` or a `Failed` instruction
    */
   public executeManually: OptionalArgsProcedureMethod<ExecuteManualInstructionParams, Instruction>;
-
-  /**
-   * @hidden
-   * Retrieve Instruction status event from middleware
-   */
-  private async getInstructionEventFromMiddleware(
-    eventId: EventIdEnum
-  ): Promise<EventIdentifier | null> {
-    const { id, context } = this;
-
-    const {
-      data: { eventByIndexedArgs: event },
-    } = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
-      eventByIndexedArgs({
-        moduleId: ModuleIdEnum.Settlement,
-        eventId: eventId,
-        eventArg1: id.toString(),
-      })
-    );
-
-    return optionize(middlewareEventToEventIdentifier)(event);
-  }
 
   /**
    * @hidden

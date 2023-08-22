@@ -1,4 +1,3 @@
-import { BlockNumber, Hash } from '@polkadot/types/interfaces/runtime';
 import BigNumber from 'bignumber.js';
 import { values } from 'lodash';
 
@@ -14,38 +13,27 @@ import {
   quitCustody,
   setCustodian,
 } from '~/internal';
-import { settlements } from '~/middleware/queries';
 import { portfolioMovementsQuery, settlementsQuery } from '~/middleware/queriesV2';
-import { Query, SettlementDirectionEnum, SettlementResultEnum } from '~/middleware/types';
+import { SettlementDirectionEnum, SettlementResultEnum } from '~/middleware/types';
 import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   ErrorCode,
   MoveFundsParams,
   NoArgsProcedureMethod,
   ProcedureMethod,
-  ResultSet,
   SetCustodianParams,
 } from '~/types';
-import { Ensured, EnsuredV2 } from '~/types/utils';
+import { EnsuredV2 } from '~/types/utils';
 import {
   addressToKey,
   balanceToBigNumber,
-  bigNumberToU32,
-  hashToString,
   identityIdToString,
   keyToAddress,
-  middlewarePortfolioToPortfolio,
   middlewareV2PortfolioToPortfolio,
   portfolioIdToMeshPortfolioId,
   tickerToString,
 } from '~/utils/conversion';
-import {
-  asAsset,
-  calculateNextKey,
-  createProcedureMethod,
-  getIdentity,
-  toHumanReadable,
-} from '~/utils/internal';
+import { asAsset, createProcedureMethod, getIdentity, toHumanReadable } from '~/utils/internal';
 
 import { HistoricSettlement, PortfolioBalance } from './types';
 
@@ -283,121 +271,6 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
     } catch (_) {
       return owner;
     }
-  }
-
-  /**
-   * Retrieve a list of transactions where this portfolio was involved. Can be filtered using parameters
-   *
-   * @param filters.account - Account involved in the settlement
-   * @param filters.ticker - ticker involved in the transaction
-   * @param filters.size - page size
-   * @param filters.start - page offset
-   *
-   * @note supports pagination
-   * @note uses the middleware
-   */
-  public async getTransactionHistory(
-    filters: {
-      account?: string;
-      ticker?: string;
-      size?: BigNumber;
-      start?: BigNumber;
-    } = {}
-  ): Promise<ResultSet<HistoricSettlement>> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { system },
-        },
-      },
-      context,
-      owner: { did },
-      _id: portfolioId,
-    } = this;
-
-    if (context.isMiddlewareV2Enabled()) {
-      const data = await this.getTransactionHistoryV2(filters);
-
-      return {
-        data,
-        count: new BigNumber(data.length),
-        next: null,
-      };
-    }
-
-    const { account, ticker, size, start } = filters;
-
-    const settlementsPromise = context.queryMiddleware<Ensured<Query, 'settlements'>>(
-      settlements({
-        identityId: did,
-        portfolioNumber: portfolioId ? portfolioId.toString() : null,
-        addressFilter: account ? addressToKey(account, context) : undefined,
-        tickerFilter: ticker,
-        count: size?.toNumber(),
-        skip: start?.toNumber(),
-      })
-    );
-
-    const [result, exists] = await Promise.all([settlementsPromise, this.exists()]);
-
-    if (!exists) {
-      throw new PolymeshError({
-        code: ErrorCode.DataUnavailable,
-        message: notExistsMessage,
-      });
-    }
-
-    const {
-      data: { settlements: settlementsResult },
-    } = result;
-
-    /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    const { items, totalCount } = settlementsResult!;
-
-    const multiParams: BlockNumber[] = [];
-    const data: Omit<HistoricSettlement, 'blockHash'>[] = [];
-
-    items!.forEach(item => {
-      const { block_id: blockId, result: status, addresses, legs: settlementLegs } = item!;
-
-      const blockNumber = new BigNumber(blockId);
-      multiParams.push(bigNumberToU32(blockNumber, context));
-      data.push({
-        blockNumber,
-        status,
-        accounts: addresses!.map(
-          address => new Account({ address: keyToAddress(address, context) }, context)
-        ),
-        legs: settlementLegs.map(leg => {
-          return {
-            asset: new Asset({ ticker: leg!.ticker }, context),
-            amount: new BigNumber(leg!.amount).shiftedBy(-6),
-            direction: leg!.direction,
-            from: middlewarePortfolioToPortfolio(leg!.from, context),
-            to: middlewarePortfolioToPortfolio(leg!.to, context),
-          };
-        }),
-      });
-    });
-    const count = new BigNumber(totalCount);
-    /* eslint-enable @typescript-eslint/no-non-null-assertion */
-
-    const next = calculateNextKey(count, data.length, start);
-
-    let hashes: Hash[] = [];
-
-    if (multiParams.length) {
-      hashes = await system.blockHash.multi(multiParams);
-    }
-
-    return {
-      data: data.map((settlement, index) => ({
-        ...settlement,
-        blockHash: hashToString(hashes[index]),
-      })),
-      next,
-      count,
-    };
   }
 
   /**

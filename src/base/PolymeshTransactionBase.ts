@@ -7,9 +7,7 @@ import { EventEmitter } from 'events';
 import { range } from 'lodash';
 
 import { Context, Identity, PolymeshError } from '~/internal';
-import { latestProcessedBlock } from '~/middleware/queries';
 import { latestBlockQuery } from '~/middleware/queriesV2';
-import { Query } from '~/middleware/types';
 import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   ErrorCode,
@@ -27,7 +25,7 @@ import {
   MaybeResolverFunction,
   TransactionConstructionData,
 } from '~/types/internal';
-import { Ensured, EnsuredV2 } from '~/types/utils';
+import { EnsuredV2 } from '~/types/utils';
 import { balanceToBigNumber, hashToString, u32ToBigNumber } from '~/utils/conversion';
 import { defusePromise, delay, filterEventRecords } from '~/utils/internal';
 
@@ -461,22 +459,13 @@ export abstract class PolymeshTransactionBase<
   private async getLatestBlockFromMiddleware(): Promise<BigNumber> {
     const { context } = this;
 
-    let processedBlock: number;
-    if (context.isMiddlewareV2Enabled()) {
-      ({
-        data: {
-          blocks: {
-            nodes: [{ blockId: processedBlock }],
-          },
+    const {
+      data: {
+        blocks: {
+          nodes: [{ blockId: processedBlock }],
         },
-      } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'blocks'>>(latestBlockQuery()));
-    } else {
-      ({
-        data: {
-          latestBlock: { id: processedBlock },
-        },
-      } = await context.queryMiddleware<Ensured<Query, 'latestBlock'>>(latestProcessedBlock()));
-    }
+      },
+    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'blocks'>>(latestBlockQuery());
 
     return new BigNumber(processedBlock);
   }

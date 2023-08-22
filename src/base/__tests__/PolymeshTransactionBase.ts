@@ -11,7 +11,6 @@ import {
   PolymeshTransactionBase,
   PolymeshTransactionBatch,
 } from '~/internal';
-import { latestProcessedBlock } from '~/middleware/queries';
 import { latestBlockQuery } from '~/middleware/queriesV2';
 import { fakePromise, fakePromises } from '~/testUtils';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
@@ -830,38 +829,6 @@ describe('Polymesh Transaction Base class', () => {
       });
     });
 
-    it("should execute a callback when the queue's data has been processed by middleware V1", async () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
-      const args = tuple('MAKE_IT_STOP');
-
-      const tx = new PolymeshTransaction(
-        {
-          ...txSpec,
-          transaction,
-          args,
-          resolver: undefined,
-        },
-        context
-      );
-
-      const listenerMock = jest.fn();
-      tx.onProcessedByMiddleware(err => listenerMock(err));
-
-      const mock = dsMockUtils.createApolloQueryMock(latestProcessedBlock(), {
-        latestBlock: { id: blockNumber.minus(1).toNumber() },
-      });
-
-      when(mock)
-        .calledWith(latestProcessedBlock())
-        .mockResolvedValue({ data: { latestBlock: { id: blockNumber.toNumber() } } });
-
-      await tx.run();
-
-      await fakePromises();
-
-      expect(listenerMock).toHaveBeenCalledWith(undefined);
-    });
-
     it("should execute a callback when the queue's data has been processed by middleware V2", async () => {
       const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
       const args = tuple('MAKE_IT_STOP');
@@ -905,36 +872,6 @@ describe('Polymesh Transaction Base class', () => {
       await fakePromises();
 
       expect(listenerMock).toHaveBeenCalledWith(undefined);
-    });
-
-    it('should execute a callback with an error if 10 seconds pass without the data being processed by middleware V1', async () => {
-      const transaction = dsMockUtils.createTxMock('asset', 'registerTicker');
-      const args = tuple('THE_PAIN_IS_UNBEARABLE');
-
-      const tx = new PolymeshTransaction(
-        {
-          ...txSpec,
-          transaction,
-          args,
-          resolver: undefined,
-        },
-        context
-      );
-
-      const listenerMock = jest.fn();
-      tx.onProcessedByMiddleware(err => listenerMock(err));
-
-      dsMockUtils.createApolloQueryMock(latestProcessedBlock(), {
-        latestBlock: { id: blockNumber.minus(1).toNumber() },
-      });
-
-      await tx.run();
-
-      await fakePromises();
-
-      expect(listenerMock.mock.calls[0][0].message).toBe(
-        'Middleware has not synced after 5 attempts'
-      );
     });
 
     it('should execute a callback with an error if 10 seconds pass without the data being processed by middleware V2', async () => {
@@ -1023,8 +960,8 @@ describe('Polymesh Transaction Base class', () => {
       const listenerMock = jest.fn();
       const unsub = tx.onProcessedByMiddleware(err => listenerMock(err));
 
-      dsMockUtils.createApolloQueryMock(latestProcessedBlock(), {
-        latestBlock: { id: blockNumber.minus(1).toNumber() },
+      dsMockUtils.createApolloV2QueryMock(latestBlockQuery(), {
+        blocks: { nodes: [{ blockId: blockNumber.minus(1).toNumber() }] },
       });
 
       await tx.run();

@@ -20,13 +20,11 @@ import {
   TickerReservation,
   Venue,
 } from '~/internal';
-import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import {
   assetHoldersQuery,
   instructionsByDidQuery,
   trustingAssetsQuery,
 } from '~/middleware/queriesV2';
-import { Query } from '~/middleware/types';
 import { AssetHoldersOrderBy, Query as QueryV2 } from '~/middleware/typesV2';
 import {
   CheckRolesResult,
@@ -38,7 +36,6 @@ import {
   HistoricInstruction,
   InstructionsByStatus,
   NumberedPortfolio,
-  Order,
   PaginationOptions,
   PermissionedAccount,
   ResultSet,
@@ -46,7 +43,7 @@ import {
   SubCallback,
   UnsubCallback,
 } from '~/types';
-import { Ensured, EnsuredV2, tuple } from '~/types/utils';
+import { EnsuredV2, tuple } from '~/types/utils';
 import {
   isCddProviderRole,
   isIdentityRole,
@@ -74,7 +71,6 @@ import {
 import {
   calculateNextKey,
   getSecondaryAccountPermissions,
-  removePadding,
   requestPaginated,
 } from '~/utils/internal';
 
@@ -341,60 +337,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
   /**
    * Retrieve a list of all Assets which were held at one point by this Identity
    *
-   * @note uses the middleware
-   * @note supports pagination
-   */
-  public async getHeldAssets(
-    opts: {
-      order?: Order;
-      size?: BigNumber;
-      start?: BigNumber;
-    } = { order: Order.Asc }
-  ): Promise<ResultSet<Asset>> {
-    const { context, did } = this;
-
-    const { size, start, order } = opts;
-
-    if (context.isMiddlewareV2Enabled()) {
-      return this.getHeldAssetsV2({
-        order:
-          order === Order.Asc ? AssetHoldersOrderBy.AssetIdAsc : AssetHoldersOrderBy.AssetIdDesc,
-        start,
-        size,
-      });
-    }
-
-    const result = await context.queryMiddleware<Ensured<Query, 'tokensHeldByDid'>>(
-      tokensHeldByDid({
-        did,
-        count: size?.toNumber(),
-        skip: start?.toNumber(),
-        order,
-      })
-    );
-
-    const {
-      data: {
-        tokensHeldByDid: { items: assetsHeldByDidList, totalCount },
-      },
-    } = result;
-
-    const count = new BigNumber(totalCount);
-
-    const data = assetsHeldByDidList.map(ticker => new Asset({ ticker }, context));
-
-    const next = calculateNextKey(count, data.length, start);
-
-    return {
-      data,
-      next,
-      count,
-    };
-  }
-
-  /**
-   * Retrieve a list of all Assets which were held at one point by this Identity
-   *
    * @note uses the middlewareV2
    * @note supports pagination
    */
@@ -457,27 +399,6 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     return {
       result: true,
     };
-  }
-
-  /**
-   * Get the list of Assets for which this Identity is a trusted claim issuer
-   *
-   * @note uses the middleware
-   */
-  public async getTrustingAssets(): Promise<Asset[]> {
-    const { context, did } = this;
-
-    if (context.isMiddlewareV2Enabled()) {
-      return this.getTrustingAssetsV2();
-    }
-
-    const {
-      data: { tokensByTrustedClaimIssuer: tickers },
-    } = await context.queryMiddleware<Ensured<Query, 'tokensByTrustedClaimIssuer'>>(
-      tokensByTrustedClaimIssuer({ claimIssuerDid: did })
-    );
-
-    return tickers.map(ticker => new Asset({ ticker: removePadding(ticker) }, context));
   }
 
   /**
@@ -762,7 +683,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
     let start: BigNumber | undefined;
 
     while (!allFetched) {
-      const { data, next } = await this.getHeldAssets({ size: MAX_PAGE_SIZE, start });
+      const { data, next } = await this.getHeldAssetsV2({ size: MAX_PAGE_SIZE, start });
       start = next ? new BigNumber(next) : undefined;
       allFetched = !next;
       assets = [...assets, ...data];

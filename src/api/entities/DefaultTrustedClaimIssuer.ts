@@ -1,18 +1,14 @@
 import { Asset, Context, Identity, PolymeshError } from '~/internal';
-import { eventByAddedTrustedClaimIssuer } from '~/middleware/queries';
 import { trustedClaimIssuerQuery } from '~/middleware/queriesV2';
-import { Query } from '~/middleware/types';
 import { Query as QueryV2 } from '~/middleware/typesV2';
 import { ClaimType, ErrorCode, EventIdentifier } from '~/types';
-import { Ensured, EnsuredV2 } from '~/types/utils';
-import { MAX_TICKER_LENGTH } from '~/utils/constants';
+import { EnsuredV2 } from '~/types/utils';
 import {
-  middlewareEventToEventIdentifier,
   middlewareV2EventDetailsToEventIdentifier,
   stringToTicker,
   trustedIssuerToTrustedClaimIssuer,
 } from '~/utils/conversion';
-import { optionize, padString } from '~/utils/internal';
+import { optionize } from '~/utils/internal';
 
 export interface UniqueIdentifiers {
   did: string;
@@ -47,35 +43,6 @@ export class DefaultTrustedClaimIssuer extends Identity {
     super(identifiers, context);
 
     this.asset = new Asset({ ticker }, context);
-  }
-
-  /**
-   * Retrieve the identifier data (block number, date and event index) of the event that was emitted when the trusted claim issuer was added
-   *
-   * @note uses the middleware
-   * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
-   */
-  public async addedAt(): Promise<EventIdentifier | null> {
-    const {
-      asset: { ticker },
-      did,
-      context,
-    } = this;
-
-    if (context.isMiddlewareV2Enabled()) {
-      return this.addedAtV2();
-    }
-
-    const {
-      data: { eventByAddedTrustedClaimIssuer: event },
-    } = await context.queryMiddleware<Ensured<Query, 'eventByAddedTrustedClaimIssuer'>>(
-      eventByAddedTrustedClaimIssuer({
-        ticker: padString(ticker, MAX_TICKER_LENGTH),
-        identityId: did,
-      })
-    );
-
-    return optionize(middlewareEventToEventIdentifier)(event);
   }
 
   /**

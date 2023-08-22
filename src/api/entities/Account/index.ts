@@ -17,9 +17,8 @@ import {
   CallIdEnum as MiddlewareV2CallId,
   ModuleIdEnum as MiddlewareV2ModuleId,
 } from '~/middleware/enumsV2';
-import { transactions as transactionsQuery } from '~/middleware/queries';
 import { extrinsicsByArgs } from '~/middleware/queriesV2';
-import { Query, TransactionOrderByInput } from '~/middleware/types';
+import { TransactionOrderByInput } from '~/middleware/types';
 import { ExtrinsicsOrderBy, Query as QueryV2 } from '~/middleware/typesV2';
 import {
   AccountBalance,
@@ -35,14 +34,13 @@ import {
   TxTag,
   UnsubCallback,
 } from '~/types';
-import { Ensured, EnsuredV2 } from '~/types/utils';
+import { EnsuredV2 } from '~/types/utils';
 import {
   addressToKey,
   extrinsicIdentifierToTxTag,
   keyToAddress,
   stringToAccountId,
   stringToHash,
-  txTagToExtrinsicIdentifier,
   txTagToExtrinsicIdentifierV2,
   u32ToBigNumber,
 } from '~/utils/conversion';
@@ -199,98 +197,12 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       orderBy?: TransactionOrderByInput;
     } = {}
   ): Promise<ResultSet<ExtrinsicData>> {
-    const { context, address } = this;
-
-    if (context.isMiddlewareV2Enabled()) {
-      const { orderBy, ...rest } = filters;
-      let order: ExtrinsicsOrderBy = ExtrinsicsOrderBy.CreatedAtAsc;
-      if (orderBy) {
-        order = `${orderBy.field}_${orderBy.order}`.toUpperCase() as ExtrinsicsOrderBy;
-      }
-      return this.getTransactionHistoryV2({ ...rest, orderBy: order });
+    const { orderBy, ...rest } = filters;
+    let order: ExtrinsicsOrderBy = ExtrinsicsOrderBy.CreatedAtAsc;
+    if (orderBy) {
+      order = `${orderBy.field}_${orderBy.order}`.toUpperCase() as ExtrinsicsOrderBy;
     }
-
-    const { tag, success, size, start, orderBy, blockHash } = filters;
-    let { blockNumber } = filters;
-
-    if (!blockNumber && blockHash) {
-      const {
-        block: {
-          header: { number },
-        },
-      } = await context.polymeshApi.rpc.chain.getBlock(stringToHash(blockHash, context));
-
-      blockNumber = u32ToBigNumber(number.unwrap());
-    }
-
-    let moduleId;
-    let callId;
-    if (tag) {
-      ({ moduleId, callId } = txTagToExtrinsicIdentifier(tag));
-    }
-
-    /* eslint-disable @typescript-eslint/naming-convention */
-    const result = await context.queryMiddleware<Ensured<Query, 'transactions'>>(
-      transactionsQuery({
-        block_id: blockNumber ? blockNumber.toNumber() : undefined,
-        address: addressToKey(address, context),
-        module_id: moduleId,
-        call_id: callId,
-        success,
-        count: size?.toNumber(),
-        skip: start?.toNumber(),
-        orderBy,
-      })
-    );
-
-    const {
-      data: {
-        transactions: { items: transactionList, totalCount },
-      },
-    } = result;
-
-    const count = new BigNumber(totalCount);
-
-    const data = transactionList.map(
-      ({
-        block_id,
-        extrinsic_idx,
-        address: rawAddress,
-        nonce,
-        module_id,
-        call_id,
-        params,
-        success: txSuccess,
-        spec_version_id,
-        extrinsic_hash,
-        block,
-      }) => {
-        // TODO remove null check once types fixed
-        /* eslint-disable @typescript-eslint/no-non-null-assertion */
-        return {
-          blockNumber: new BigNumber(block_id),
-          blockHash: block!.hash!,
-          extrinsicIdx: new BigNumber(extrinsic_idx),
-          address: rawAddress ?? null,
-          nonce: nonce ? new BigNumber(nonce) : null,
-          txTag: extrinsicIdentifierToTxTag({ moduleId: module_id, callId: call_id }),
-          params,
-          success: !!txSuccess,
-          specVersionId: new BigNumber(spec_version_id),
-          extrinsicHash: extrinsic_hash!,
-        };
-        /* eslint-enable @typescript-eslint/no-non-null-assertion */
-      }
-    );
-    /* eslint-enable @typescript-eslint/naming-convention */
-
-    const next = calculateNextKey(count, data.length, start);
-
-    return {
-      data,
-      next,
-      count,
-    };
+    return this.getTransactionHistoryV2({ ...rest, orderBy: order });
   }
 
   /**

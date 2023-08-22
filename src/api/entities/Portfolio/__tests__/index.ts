@@ -14,15 +14,9 @@ import {
   PolymeshTransaction,
   Portfolio,
 } from '~/internal';
-import { heartbeat, settlements } from '~/middleware/queries';
 import { portfolioMovementsQuery, settlementsQuery } from '~/middleware/queriesV2';
-import {
-  SettlementDirectionEnum,
-  SettlementResult,
-  SettlementResultEnum,
-} from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { HistoricSettlement } from '~/types';
+import { SettlementDirectionEnum, SettlementResultEnum } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -402,215 +396,6 @@ describe('Portfolio class', () => {
     });
   });
 
-  describe('method: getTransactionHistory', () => {
-    let did: string;
-    let id: BigNumber;
-
-    beforeAll(() => {
-      did = 'someDid';
-      id = new BigNumber(1);
-    });
-
-    afterAll(() => {
-      jest.restoreAllMocks();
-    });
-
-    it('should return a list of transactions', async () => {
-      context = dsMockUtils.getContextInstance({ middlewareV2Enabled: false });
-
-      let portfolio = new NonAbstract({ id, did }, context);
-
-      const account = 'someAccount';
-      const key = 'someKey';
-
-      const blockNumber1 = new BigNumber(1);
-      const blockNumber2 = new BigNumber(2);
-
-      const blockHash1 = 'someHash';
-      const blockHash2 = 'otherHash';
-
-      const ticker1 = 'TICKER_1';
-      const ticker2 = 'TICKER_2';
-
-      const amount1 = new BigNumber(1000);
-      const amount2 = new BigNumber(2000);
-
-      const portfolioDid1 = 'portfolioDid1';
-      const portfolioKind1 = 'Default';
-
-      const portfolioDid2 = 'portfolioDid2';
-      const portfolioKind2 = '10';
-
-      const portfolioId2 = new BigNumber(portfolioKind2);
-
-      const legs1 = [
-        {
-          ticker: ticker1,
-          amount: amount1.toString(),
-          direction: SettlementDirectionEnum.Incoming,
-          from: {
-            kind: portfolioKind1,
-            did: portfolioDid1,
-          },
-          to: {
-            kind: portfolioKind2,
-            did: portfolioDid2,
-          },
-        },
-      ];
-      const legs2 = [
-        {
-          ticker: ticker2,
-          amount: amount2.toString(),
-          direction: SettlementDirectionEnum.Outgoing,
-          from: {
-            kind: portfolioKind2,
-            did: portfolioDid2,
-          },
-          to: {
-            kind: portfolioKind1,
-            did: portfolioDid1,
-          },
-        },
-      ];
-
-      /* eslint-disable @typescript-eslint/naming-convention */
-      const transactionsQueryResponse: SettlementResult = {
-        totalCount: 20,
-        items: [
-          {
-            block_id: blockNumber1.toNumber(),
-            addresses: ['be865155e5b6be843e99117a825e9580bb03e401a9c2ace644fff604fe624917'],
-            result: SettlementResultEnum.Executed,
-            legs: legs1,
-          },
-          {
-            block_id: blockNumber2.toNumber(),
-            addresses: ['be865155e5b6be843e99117a825e9580bb03e401a9c2ace644fff604fe624917'],
-            result: SettlementResultEnum.Executed,
-            legs: legs2,
-          },
-        ],
-      };
-      /* eslint-enable @typescript-eslint/naming-convention */
-
-      dsMockUtils.configureMocks({
-        contextOptions: { withSigningManager: true, middlewareV2Enabled: false },
-      });
-      dsMockUtils.createApolloQueryMock(heartbeat(), true);
-      when(jest.spyOn(utilsConversionModule, 'addressToKey'))
-        .calledWith(account, context)
-        .mockReturnValue(key);
-
-      dsMockUtils.createQueryMock('system', 'blockHash', {
-        multi: [dsMockUtils.createMockHash(blockHash1), dsMockUtils.createMockHash(blockHash2)],
-      });
-
-      dsMockUtils.createApolloQueryMock(
-        settlements({
-          identityId: did,
-          portfolioNumber: id.toString(),
-          addressFilter: key,
-          tickerFilter: undefined,
-          count: 5,
-          skip: 0,
-        }),
-        {
-          settlements: transactionsQueryResponse,
-        }
-      );
-
-      let result = await portfolio.getTransactionHistory({
-        account,
-        size: new BigNumber(5),
-        start: new BigNumber(0),
-      });
-
-      expect(result.data[0].blockNumber).toEqual(blockNumber1);
-      expect(result.data[1].blockNumber).toEqual(blockNumber2);
-      expect(result.data[0].blockHash).toBe(blockHash1);
-      expect(result.data[1].blockHash).toBe(blockHash2);
-      expect(result.data[0].legs[0].asset.ticker).toBe(ticker1);
-      expect(result.data[1].legs[0].asset.ticker).toBe(ticker2);
-      expect(result.data[0].legs[0].amount).toEqual(amount1.div(Math.pow(10, 6)));
-      expect(result.data[1].legs[0].amount).toEqual(amount2.div(Math.pow(10, 6)));
-      expect(result.data[0].legs[0].from.owner.did).toBe(portfolioDid1);
-      expect(result.data[0].legs[0].to.owner.did).toBe(portfolioDid2);
-      expect((result.data[0].legs[0].to as NumberedPortfolio).id).toEqual(portfolioId2);
-      expect(result.data[1].legs[0].from.owner.did).toBe(portfolioDid2);
-      expect((result.data[1].legs[0].from as NumberedPortfolio).id).toEqual(portfolioId2);
-      expect(result.data[1].legs[0].to.owner.did).toEqual(portfolioDid1);
-      expect(result.count).toEqual(new BigNumber(20));
-      expect(result.next).toEqual(new BigNumber(2));
-
-      dsMockUtils.createApolloQueryMock(
-        settlements({
-          identityId: did,
-          portfolioNumber: null,
-          addressFilter: undefined,
-          tickerFilter: undefined,
-          count: undefined,
-          skip: undefined,
-        }),
-        {
-          settlements: {
-            totalCount: 0,
-            items: [],
-          },
-        }
-      );
-
-      portfolio = new NonAbstract({ did }, context);
-      result = await portfolio.getTransactionHistory();
-
-      expect(result.data).toEqual([]);
-      expect(result.next).toBeNull();
-    });
-
-    it('should throw an error if the portfolio does not exist', () => {
-      context = dsMockUtils.getContextInstance({ middlewareV2Enabled: false });
-
-      const portfolio = new NonAbstract({ did, id }, context);
-      exists = false;
-
-      dsMockUtils.createApolloQueryMock(heartbeat(), true);
-      dsMockUtils.createApolloQueryMock(
-        settlements({
-          identityId: did,
-          portfolioNumber: null,
-          addressFilter: undefined,
-          tickerFilter: undefined,
-          count: undefined,
-          skip: undefined,
-        }),
-        {
-          settlements: {
-            totalCount: 0,
-            items: null,
-          },
-        }
-      );
-
-      return expect(portfolio.getTransactionHistory()).rejects.toThrow(
-        "The Portfolio doesn't exist or was removed by its owner"
-      );
-    });
-
-    it('should call v2 query if middlewareV2 is enabled', async () => {
-      context = dsMockUtils.getContextInstance({ middlewareV2Enabled: true });
-
-      const portfolio = new NonAbstract({ did, id }, context);
-
-      const fakeResult = ['fakeResult'] as unknown as HistoricSettlement[];
-      jest.spyOn(portfolio, 'getTransactionHistoryV2').mockResolvedValue(fakeResult);
-
-      const result = await portfolio.getTransactionHistory();
-      expect(result).toEqual(
-        expect.objectContaining({ count: new BigNumber(1), data: fakeResult, next: null })
-      );
-    });
-  });
-
   describe('method: getTransactionHistoryV2', () => {
     let did: string;
     let id: BigNumber;
@@ -713,7 +498,6 @@ describe('Portfolio class', () => {
       };
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
-      dsMockUtils.createApolloQueryMock(heartbeat(), true);
       when(jest.spyOn(utilsConversionModule, 'addressToKey'))
         .calledWith(account, context)
         .mockReturnValue(key);
@@ -829,23 +613,34 @@ describe('Portfolio class', () => {
       const portfolio = new NonAbstract({ did, id }, context);
       exists = false;
 
-      dsMockUtils.createApolloQueryMock(heartbeat(), true);
-      dsMockUtils.createApolloQueryMock(
-        settlements({
-          identityId: did,
-          portfolioNumber: null,
-          addressFilter: undefined,
-          tickerFilter: undefined,
-          count: undefined,
-          skip: undefined,
-        }),
+      dsMockUtils.createApolloMultipleV2QueriesMock([
         {
-          settlements: {
-            totalCount: 0,
-            nodes: [],
+          query: settlementsQuery({
+            identityId: did,
+            portfolioId: undefined,
+            address: undefined,
+            ticker: undefined,
+          }),
+          returnData: {
+            legs: {
+              nodes: [],
+            },
           },
-        }
-      );
+        },
+        {
+          query: portfolioMovementsQuery({
+            identityId: did,
+            portfolioId: undefined,
+            address: undefined,
+            ticker: undefined,
+          }),
+          returnData: {
+            portfolioMovements: {
+              nodes: [],
+            },
+          },
+        },
+      ]);
 
       return expect(portfolio.getTransactionHistoryV2()).rejects.toThrow(
         "The Portfolio doesn't exist or was removed by its owner"

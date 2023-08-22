@@ -24,9 +24,7 @@ import { chunk, clone, flatMap, flatten, flattenDeep } from 'lodash';
 
 import { Account, Asset, DividendDistribution, Identity, PolymeshError, Subsidy } from '~/internal';
 import { ClaimTypeEnum as MiddlewareV2Claim } from '~/middleware/enumsV2';
-import { didsWithClaims, heartbeat } from '~/middleware/queries';
 import { claimsQuery, heartbeatQuery, metadataQuery } from '~/middleware/queriesV2';
-import { ClaimTypeEnum, Query } from '~/middleware/types';
 import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   AccountBalance,
@@ -45,7 +43,7 @@ import {
   TxTag,
   UnsubCallback,
 } from '~/types';
-import { Ensured, EnsuredV2 } from '~/types/utils';
+import { EnsuredV2 } from '~/types/utils';
 import { DEFAULT_GQL_PAGE_SIZE, MAX_CONCURRENT_REQUESTS, MAX_PAGE_SIZE } from '~/utils/constants';
 import {
   accountIdToString,
@@ -72,19 +70,12 @@ import {
   u16ToBigNumber,
   u32ToBigNumber,
 } from '~/utils/conversion';
-import {
-  assertAddressValid,
-  calculateNextKey,
-  createClaim,
-  delay,
-  getApiAtBlock,
-} from '~/utils/internal';
+import { assertAddressValid, calculateNextKey, delay, getApiAtBlock } from '~/utils/internal';
 
 import { processType } from './utils';
 
 interface ConstructorParams {
   polymeshApi: ApiPromise;
-  middlewareApi: ApolloClient<NormalizedCacheObject> | null;
   middlewareApiV2: ApolloClient<NormalizedCacheObject> | null;
   ss58Format: BigNumber;
   signingManager?: SigningManager;
@@ -112,8 +103,6 @@ export class Context {
 
   public ss58Format: BigNumber;
 
-  private _middlewareApi: ApolloClient<NormalizedCacheObject> | null;
-
   private _middlewareApiV2: ApolloClient<NormalizedCacheObject> | null;
 
   private _polymeshApi: ApiPromise;
@@ -132,9 +121,8 @@ export class Context {
    * @hidden
    */
   private constructor(params: ConstructorParams) {
-    const { polymeshApi, middlewareApi, middlewareApiV2, ss58Format } = params;
+    const { polymeshApi, middlewareApiV2, ss58Format } = params;
 
-    this._middlewareApi = middlewareApi;
     this._middlewareApiV2 = middlewareApiV2;
     this._polymeshApi = polymeshApi;
     this.polymeshApi = polymeshApi;
@@ -155,17 +143,15 @@ export class Context {
    */
   static async create(params: {
     polymeshApi: ApiPromise;
-    middlewareApi: ApolloClient<NormalizedCacheObject> | null;
     middlewareApiV2: ApolloClient<NormalizedCacheObject> | null;
     signingManager?: SigningManager;
   }): Promise<Context> {
-    const { polymeshApi, middlewareApi, middlewareApiV2, signingManager } = params;
+    const { polymeshApi, middlewareApiV2, signingManager } = params;
 
     const ss58Format: BigNumber = u16ToBigNumber(polymeshApi.consts.system.ss58Prefix);
 
     const context = new Context({
       polymeshApi,
-      middlewareApi,
       middlewareApiV2,
       signingManager,
       ss58Format,
@@ -869,76 +855,6 @@ export class Context {
   /**
    * @hidden
    */
-  public async getIdentityClaimsFromMiddleware(args: {
-    targets?: (string | Identity)[];
-    trustedClaimIssuers?: (string | Identity)[];
-    claimTypes?: ClaimType[];
-    includeExpired?: boolean;
-    size?: BigNumber;
-    start?: BigNumber;
-  }): Promise<ResultSet<ClaimData>> {
-    const { targets, claimTypes, trustedClaimIssuers, includeExpired, size, start } = args;
-
-    const data: ClaimData[] = [];
-
-    const result = await this.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
-      didsWithClaims({
-        dids: targets?.map(target => signerToString(target)),
-        trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
-          signerToString(trustedClaimIssuer)
-        ),
-        claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
-        includeExpired,
-        count: size?.toNumber(),
-        skip: start?.toNumber(),
-      })
-    );
-
-    const {
-      data: {
-        didsWithClaims: { items: didsWithClaimsList, totalCount },
-      },
-    } = result;
-
-    const count = new BigNumber(totalCount);
-
-    didsWithClaimsList.forEach(({ claims }) => {
-      claims.forEach(
-        ({
-          targetDID: target,
-          issuer,
-          issuance_date: issuanceDate,
-          last_update_date: lastUpdateDate,
-          expiry,
-          type,
-          jurisdiction,
-          scope,
-          cdd_id: cddId,
-        }) => {
-          data.push({
-            target: new Identity({ did: target }, this),
-            issuer: new Identity({ did: issuer }, this),
-            issuedAt: new Date(issuanceDate),
-            lastUpdatedAt: new Date(lastUpdateDate),
-            expiry: expiry ? new Date(expiry) : null,
-            claim: createClaim(type, jurisdiction, scope, cddId),
-          });
-        }
-      );
-    });
-
-    const next = calculateNextKey(count, data.length, start);
-
-    return {
-      data,
-      next,
-      count,
-    };
-  }
-
-  /**
-   * @hidden
-   */
   public async getIdentityClaimsFromMiddlewareV2(args: {
     targets?: (string | Identity)[];
     trustedClaimIssuers?: (string | Identity)[];
@@ -985,66 +901,6 @@ export class Context {
       data,
       next,
       count,
-    };
-  }
-
-  /**
-   * @hidden
-   *
-   * Retrieve a list of claims. Can be filtered using parameters
-   *
-   * @param opts.targets - Identities (or Identity IDs) for which to fetch claims (targets). Defaults to all targets
-   * @param opts.trustedClaimIssuers - Identity IDs of claim issuers. Defaults to all claim issuers
-   * @param opts.claimTypes - types of the claims to fetch. Defaults to any type
-   * @param opts.includeExpired - whether to include expired claims. Defaults to true
-   * @param opts.size - page size
-   * @param opts.start - page offset
-   *
-   * @note uses the middleware (optional)
-   */
-  public async issuedClaims(
-    opts: {
-      targets?: (string | Identity)[];
-      trustedClaimIssuers?: (string | Identity)[];
-      claimTypes?: ClaimType[];
-      includeExpired?: boolean;
-      size?: BigNumber;
-      start?: BigNumber;
-    } = {}
-  ): Promise<ResultSet<ClaimData>> {
-    const { targets, trustedClaimIssuers, claimTypes, includeExpired = true, size, start } = opts;
-
-    const isMiddlewareAvailable = await this.isMiddlewareAvailable();
-
-    if (isMiddlewareAvailable) {
-      return this.getIdentityClaimsFromMiddleware({
-        targets,
-        trustedClaimIssuers,
-        claimTypes,
-        includeExpired,
-        size,
-        start,
-      });
-    }
-
-    if (!targets) {
-      throw new PolymeshError({
-        code: ErrorCode.MiddlewareError,
-        message: 'Cannot perform this action without an active middleware connection',
-      });
-    }
-
-    const identityClaimsFromChain = await this.getIdentityClaimsFromChain({
-      targets,
-      claimTypes,
-      trustedClaimIssuers,
-      includeExpired,
-    });
-
-    return {
-      data: identityClaimsFromChain,
-      next: null,
-      count: undefined,
     };
   }
 
@@ -1109,26 +965,6 @@ export class Context {
   }
 
   /**
-   * @hidden
-   *
-   * Retrieve the middleware client
-   *
-   * @throws if the middleware is not enabled
-   */
-  public get middlewareApi(): ApolloClient<NormalizedCacheObject> {
-    const { _middlewareApi: api } = this;
-
-    if (!api) {
-      throw new PolymeshError({
-        code: ErrorCode.MiddlewareError,
-        message: 'Cannot perform this action without an active middleware connection',
-      });
-    }
-
-    return api;
-  }
-
-  /**
    * Retrieve the middleware v2 client
    *
    * @throws if the middleware V2 is not enabled
@@ -1143,30 +979,6 @@ export class Context {
       });
     }
     return api;
-  }
-
-  /**
-   * @hidden
-   *
-   * Make a query to the middleware server using the apollo client
-   */
-  public async queryMiddleware<Result extends Partial<Query>>(
-    query: QueryOptions<OperationVariables, Result>
-  ): Promise<ApolloQueryResult<Result>> {
-    let result: ApolloQueryResult<Result>;
-    try {
-      result = await this.middlewareApi.query(query);
-    } catch (err) {
-      const resultMessage = err.networkError?.result?.message;
-      const { message: errorMessage } = err;
-      const message = resultMessage ?? errorMessage;
-      throw new PolymeshError({
-        code: ErrorCode.MiddlewareError,
-        message: `Error in middleware query: ${message}`,
-      });
-    }
-
-    return result;
   }
 
   /**
@@ -1196,15 +1008,6 @@ export class Context {
   /**
    * @hidden
    *
-   * Return whether the middleware was enabled at startup
-   */
-  public isMiddlewareEnabled(): boolean {
-    return !!this._middlewareApi;
-  }
-
-  /**
-   * @hidden
-   *
    * Return whether the middleware V2 was enabled at startup
    */
   public isMiddlewareV2Enabled(): boolean {
@@ -1217,22 +1020,7 @@ export class Context {
    * Return whether any middleware was enabled at startup
    */
   public isAnyMiddlewareEnabled(): boolean {
-    return this.isMiddlewareV2Enabled() || this.isMiddlewareEnabled();
-  }
-
-  /**
-   * @hidden
-   *
-   * Return whether the middleware is enabled and online
-   */
-  public async isMiddlewareAvailable(): Promise<boolean> {
-    try {
-      await this.middlewareApi.query(heartbeat());
-    } catch (err) {
-      return false;
-    }
-
-    return true;
+    return this.isMiddlewareV2Enabled();
   }
 
   /**
@@ -1300,14 +1088,10 @@ export class Context {
    */
   public async disconnect(): Promise<void> {
     const { polymeshApi } = this;
-    let middlewareApi, middlewareApiV2;
+    let middlewareApiV2;
 
     const unsub = await this.unsubChainVersion;
     unsub();
-
-    if (this.isMiddlewareEnabled()) {
-      ({ middlewareApi } = this);
-    }
 
     if (this.isMiddlewareV2Enabled()) {
       ({ middlewareApiV2 } = this);
@@ -1315,9 +1099,6 @@ export class Context {
 
     this.isDisconnected = true;
 
-    if (middlewareApi) {
-      middlewareApi.stop();
-    }
     if (middlewareApiV2) {
       middlewareApiV2.stop();
     }

@@ -1,5 +1,4 @@
 import { Bytes, Option, StorageKey } from '@polkadot/types';
-import { BlockNumber, Hash } from '@polkadot/types/interfaces/runtime';
 import {
   PalletAssetSecurityToken,
   PolymeshPrimitivesAgentAgentGroup,
@@ -23,13 +22,11 @@ import {
   toggleFreezeTransfers,
   transferAssetOwnership,
 } from '~/internal';
-import { eventByIndexedArgs, tickerExternalAgentHistory } from '~/middleware/queries';
 import {
   assetQuery,
   assetTransactionQuery,
   tickerExternalAgentHistoryQuery,
 } from '~/middleware/queriesV2';
-import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
 import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   ControllerTransferParams,
@@ -48,8 +45,7 @@ import {
   TransferAssetOwnershipParams,
   UnsubCallback,
 } from '~/types';
-import { Ensured, EnsuredV2, Modify } from '~/types/utils';
-import { MAX_TICKER_LENGTH } from '~/utils/constants';
+import { EnsuredV2 } from '~/types/utils';
 import {
   assetIdentifierToSecurityIdentifier,
   assetTypeToKnownOrId,
@@ -57,15 +53,13 @@ import {
   bigNumberToU32,
   boolToBoolean,
   bytesToString,
-  hashToString,
   identityIdToString,
-  middlewareEventToEventIdentifier,
   middlewareV2EventDetailsToEventIdentifier,
   middlewareV2PortfolioToPortfolio,
   stringToTicker,
   tickerToDid,
 } from '~/utils/conversion';
-import { calculateNextKey, createProcedureMethod, optionize, padString } from '~/utils/internal';
+import { calculateNextKey, createProcedureMethod, optionize } from '~/utils/internal';
 
 import { AssetHolders } from './AssetHolders';
 import { Checkpoints } from './Checkpoints';
@@ -377,32 +371,6 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
   /**
    * Retrieve the identifier data (block number, date and event index) of the event that was emitted when the token was created
    *
-   * @note uses the middleware
-   * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
-   */
-  public async createdAt(): Promise<EventIdentifier | null> {
-    const { ticker, context } = this;
-
-    if (context.isMiddlewareV2Enabled()) {
-      return this.createdAtV2();
-    }
-
-    const {
-      data: { eventByIndexedArgs: event },
-    } = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
-      eventByIndexedArgs({
-        moduleId: ModuleIdEnum.Asset,
-        eventId: EventIdEnum.AssetCreated,
-        eventArg1: padString(ticker, MAX_TICKER_LENGTH),
-      })
-    );
-
-    return optionize(middlewareEventToEventIdentifier)(event);
-  }
-
-  /**
-   * Retrieve the identifier data (block number, date and event index) of the event that was emitted when the token was created
-   *
    * @note uses the middlewareV2
    * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
    */
@@ -509,95 +477,6 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
    * Force a transfer from a given Portfolio to the caller’s default Portfolio
    */
   public controllerTransfer: ProcedureMethod<ControllerTransferParams, void>;
-
-  /**
-   * Retrieve this Asset's Operation History
-   *
-   * @note Operations are grouped by the agent Identity who performed them
-   *
-   * @note uses the middleware
-   */
-  public async getOperationHistory(): Promise<HistoricAgentOperation[]> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { system },
-        },
-      },
-      context,
-      ticker,
-    } = this;
-
-    if (context.isMiddlewareV2Enabled()) {
-      return this.getOperationHistoryV2();
-    }
-
-    const {
-      data: { tickerExternalAgentHistory: tickerExternalAgentHistoryResult },
-    } = await context.queryMiddleware<Ensured<Query, 'tickerExternalAgentHistory'>>(
-      tickerExternalAgentHistory({
-        ticker,
-      })
-    );
-
-    const multiParams: BlockNumber[] = [];
-    const results: Modify<
-      HistoricAgentOperation,
-      {
-        history: Omit<EventIdentifier, 'blockHash'>[];
-      }
-    >[] = [];
-
-    tickerExternalAgentHistoryResult.forEach(({ did, history }) => {
-      const historyResult: Omit<EventIdentifier, 'blockHash'>[] = [];
-      history.forEach(({ block_id: blockId, datetime, event_idx: eventIndex }) => {
-        const blockNumber = new BigNumber(blockId);
-        multiParams.push(bigNumberToU32(blockNumber, context));
-        historyResult.push({
-          blockNumber,
-          blockDate: new Date(datetime),
-          eventIndex: new BigNumber(eventIndex),
-        });
-      });
-      results.push({
-        identity: new Identity({ did }, context),
-        history: historyResult,
-      });
-    });
-
-    let hashes: Hash[] = [];
-
-    if (multiParams.length) {
-      hashes = await system.blockHash.multi(multiParams);
-    }
-
-    const finalResults: HistoricAgentOperation[] = [];
-
-    results.forEach(({ identity, history }) => {
-      const historyWithHashes: EventIdentifier[] = [];
-
-      history.forEach(event => {
-        /*
-         * Since we filled the params array in the order in which the events appeared and this is being done
-         *   synchronously, the order and amount of results should be the same and the array should never be empty
-         *   until all the data is in place
-         */
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const blockHash = hashToString(hashes.shift()!);
-        historyWithHashes.push({
-          ...event,
-          blockHash,
-        });
-      });
-
-      finalResults.push({
-        identity,
-        history: historyWithHashes,
-      });
-    });
-
-    return finalResults;
-  }
 
   /**
    * Retrieve this Asset's Operation History

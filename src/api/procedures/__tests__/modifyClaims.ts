@@ -9,14 +9,12 @@ import { when } from 'jest-when';
 
 import { getAuthorization, prepareModifyClaims } from '~/api/procedures/modifyClaims';
 import { Context, Identity } from '~/internal';
-import { didsWithClaims } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
   Claim,
   ClaimOperation,
   ClaimType,
-  ClaimTypeEnum,
   ModifyClaimsParams,
   RoleType,
   ScopeType,
@@ -218,35 +216,35 @@ describe('modifyClaims procedure', () => {
 
     jest.clearAllMocks();
 
-    dsMockUtils.createApolloQueryMock(
-      didsWithClaims({
-        trustedClaimIssuers: [did],
-        dids: [someDid, otherDid],
-        includeExpired,
-        count: 2,
-      }),
-      {
-        didsWithClaims: {
-          totalCount: 2,
-          items: [
-            {
-              did: someDid,
-              claims: [cddClaim, buyLockupClaim],
-            },
-            {
-              did: otherDid,
-              claims: [
-                { type: ClaimTypeEnum.NoData },
-                { type: ClaimTypeEnum.NoType },
-                { type: ClaimTypeEnum.InvestorUniqueness },
-                { type: ClaimTypeEnum.InvestorUniquenessV2 },
-                cddClaim,
-              ],
-            },
-          ],
-        },
-      }
-    );
+    // dsMockUtils.createApolloQueryMock(
+    //   didsWithClaims({
+    //     trustedClaimIssuers: [did],
+    //     dids: [someDid, otherDid],
+    //     includeExpired,
+    //     count: 2,
+    //   }),
+    //   {
+    //     didsWithClaims: {
+    //       totalCount: 2,
+    //       items: [
+    //         {
+    //           did: someDid,
+    //           claims: [cddClaim, buyLockupClaim],
+    //         },
+    //         {
+    //           did: otherDid,
+    //           claims: [
+    //             { type: ClaimTypeEnum.NoData },
+    //             { type: ClaimTypeEnum.NoType },
+    //             { type: ClaimTypeEnum.InvestorUniqueness },
+    //             { type: ClaimTypeEnum.InvestorUniquenessV2 },
+    //             cddClaim,
+    //           ],
+    //         },
+    //       ],
+    //     },
+    //   }
+    // );
 
     result = await prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Edit });
 
@@ -322,29 +320,29 @@ describe('modifyClaims procedure', () => {
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
     const { did } = await mockContext.getSigningIdentity();
 
-    dsMockUtils.createApolloQueryMock(
-      didsWithClaims({
-        trustedClaimIssuers: [did],
-        dids: [someDid, otherDid],
-        includeExpired,
-        count: 2,
-      }),
-      {
-        didsWithClaims: {
-          totalCount: 2,
-          items: [
-            {
-              did: someDid,
-              claims: [cddClaim, buyLockupClaim],
-            },
-            {
-              did: otherDid,
-              claims: [cddClaim],
-            },
-          ],
-        },
-      }
-    );
+    // dsMockUtils.createApolloQueryMock(
+    //   didsWithClaims({
+    //     trustedClaimIssuers: [did],
+    //     dids: [someDid, otherDid],
+    //     includeExpired,
+    //     count: 2,
+    //   }),
+    //   {
+    //     didsWithClaims: {
+    //       totalCount: 2,
+    //       items: [
+    //         {
+    //           did: someDid,
+    //           claims: [cddClaim, buyLockupClaim],
+    //         },
+    //         {
+    //           did: otherDid,
+    //           claims: [cddClaim],
+    //         },
+    //       ],
+    //     },
+    //   }
+    // );
 
     let error;
 
@@ -386,20 +384,20 @@ describe('modifyClaims procedure', () => {
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
     const { did } = await mockContext.getSigningIdentity();
 
-    dsMockUtils.createApolloQueryMock(
-      didsWithClaims({
-        trustedClaimIssuers: [did],
-        dids: [someDid, otherDid],
-        includeExpired,
-        count: 2,
-      }),
-      {
-        didsWithClaims: {
-          totalCount: 0,
-          items: [],
-        },
-      }
-    );
+    // dsMockUtils.createApolloQueryMock(
+    //   didsWithClaims({
+    //     trustedClaimIssuers: [did],
+    //     dids: [someDid, otherDid],
+    //     includeExpired,
+    //     count: 2,
+    //   }),
+    //   {
+    //     didsWithClaims: {
+    //       totalCount: 0,
+    //       items: [],
+    //     },
+    //   }
+    // );
 
     await expect(
       prepareModifyClaims.call(proc, { ...args, operation: ClaimOperation.Edit })
@@ -414,29 +412,29 @@ describe('modifyClaims procedure', () => {
     const proc = procedureMockUtils.getInstance<ModifyClaimsParams, void>(mockContext);
     const { did } = await mockContext.getSigningIdentity();
 
-    dsMockUtils.createApolloQueryMock(
-      didsWithClaims({
-        trustedClaimIssuers: [did],
-        dids: [someDid, otherDid],
-        includeExpired,
-        count: 2,
-      }),
-      {
-        didsWithClaims: {
-          totalCount: 2,
-          items: [
-            {
-              did: someDid,
-              claims: [cddClaim, buyLockupClaim],
-            },
-            {
-              did: otherDid,
-              claims: [cddClaim],
-            },
-          ],
-        },
-      }
-    );
+    // dsMockUtils.createApolloQueryMock(
+    //   didsWithClaims({
+    //     trustedClaimIssuers: [did],
+    //     dids: [someDid, otherDid],
+    //     includeExpired,
+    //     count: 2,
+    //   }),
+    //   {
+    //     didsWithClaims: {
+    //       totalCount: 2,
+    //       items: [
+    //         {
+    //           did: someDid,
+    //           claims: [cddClaim, buyLockupClaim],
+    //         },
+    //         {
+    //           did: otherDid,
+    //           claims: [cddClaim],
+    //         },
+    //       ],
+    //     },
+    //   }
+    // );
 
     balanceToBigNumberSpy.mockReturnValue(new BigNumber(0));
 
