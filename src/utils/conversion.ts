@@ -3016,6 +3016,14 @@ export function portfolioMovementToPortfolioFund(
 ): PolymeshPrimitivesPortfolioFund {
   const { asset, amount, memo } = portfolioItem;
 
+  if (context.isV5) {
+    return context.createType('PalletPortfolioMovePortfolioItem', {
+      ticker: stringToTicker(asTicker(asset), context),
+      amount: bigNumberToBalance(amount, context),
+      memo: optionize(stringToMemo)(memo, context),
+    });
+  }
+
   return context.createType('PolymeshPrimitivesPortfolioFund', {
     description: {
       Fungible: {
