@@ -2,15 +2,7 @@ import { Bytes, u32 } from '@polkadot/types';
 import BigNumber from 'bignumber.js';
 import { values } from 'lodash';
 
-import {
-  Asset,
-  Context,
-  DefaultPortfolio,
-  Identity,
-  PolymeshError,
-  Procedure,
-  TickerReservation,
-} from '~/internal';
+import { Asset, Context, Identity, PolymeshError, Procedure, TickerReservation } from '~/internal';
 import {
   AssetTx,
   CreateAssetWithTickerParams,
@@ -134,6 +126,7 @@ export async function prepareCreateAsset(
     ticker,
     name,
     initialSupply,
+    portfolioId,
     isDivisible,
     assetType,
     securityIdentifiers = [],
@@ -227,15 +220,19 @@ export async function prepareCreateAsset(
     );
   }
 
-  if (initialSupply && initialSupply.gt(0)) {
+  if (initialSupply?.gt(0)) {
     const rawInitialSupply = bigNumberToBalance(initialSupply, context, isDivisible);
-    const defaultPortfolio = new DefaultPortfolio({ did: signingIdentity.did }, context);
-    const rawPortfolioId = portfolioToPortfolioKind(defaultPortfolio, context);
+
+    const portfolio = portfolioId
+      ? await signingIdentity.portfolios.getPortfolio({ portfolioId })
+      : await signingIdentity.portfolios.getPortfolio();
+
+    const rawPortfolio = portfolioToPortfolioKind(portfolio, context);
 
     transactions.push(
       checkTxType({
         transaction: tx.asset.issue,
-        args: [rawTicker, rawInitialSupply, rawPortfolioId],
+        args: [rawTicker, rawInitialSupply, rawPortfolio],
       })
     );
   }

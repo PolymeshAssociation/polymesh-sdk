@@ -113,7 +113,7 @@ interface EntityOptions {
   toHuman?: any;
 }
 
-type EntityGetter<Result> = Partial<Result> | ((...args: any) => any) | jest.Mock;
+export type EntityGetter<Result> = Partial<Result> | ((...args: any) => any) | jest.Mock;
 
 interface IdentityOptions extends EntityOptions {
   did?: string;

@@ -9,6 +9,7 @@ import { bigNumberToBalance, portfolioToPortfolioKind, stringToTicker } from '~/
 export interface IssueTokensParams {
   amount: BigNumber;
   ticker: string;
+  portfolioId?: BigNumber;
 }
 
 export interface Storage {
@@ -31,7 +32,7 @@ export async function prepareIssueTokens(
     context,
     storage: { asset: assetEntity },
   } = this;
-  const { ticker, amount } = args;
+  const { ticker, amount, portfolioId } = args;
 
   const [{ isDivisible, totalSupply }, signingIdentity] = await Promise.all([
     assetEntity.details(),
@@ -50,11 +51,15 @@ export async function prepareIssueTokens(
     });
   }
 
-  const defaultPortfolio = await signingIdentity.portfolios.getPortfolio();
+  console.log({ portfolioId: portfolioId?.toString() });
+
+  const portfolio = portfolioId
+    ? await signingIdentity.portfolios.getPortfolio({ portfolioId })
+    : await signingIdentity.portfolios.getPortfolio();
 
   const rawTicker = stringToTicker(ticker, context);
   const rawValue = bigNumberToBalance(amount, context, isDivisible);
-  const rawPortfolio = portfolioToPortfolioKind(defaultPortfolio, context);
+  const rawPortfolio = portfolioToPortfolioKind(portfolio, context);
 
   return {
     transaction: asset.issue,

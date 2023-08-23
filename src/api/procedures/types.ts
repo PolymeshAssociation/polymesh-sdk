@@ -280,6 +280,10 @@ export interface CreateAssetParams {
    */
   initialSupply?: BigNumber;
   /**
+   * portfolio to which the Asset tokens will be issued on creation (optional, default is the default portfolio)
+   */
+  portfolioId?: BigNumber;
+  /**
    * whether a single Asset token can be divided into decimal parts
    */
   isDivisible: boolean;
