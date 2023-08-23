@@ -111,9 +111,7 @@ describe('Instruction class', () => {
       );
       when(instructionStatusesMock)
         .calledWith(rawId)
-        .mockResolvedValue(
-          dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Executed)
-        );
+        .mockResolvedValue(dsMockUtils.createMockInstructionStatus('Success'));
 
       let result = await instruction.isExecuted();
 
@@ -174,9 +172,7 @@ describe('Instruction class', () => {
 
       expect(result).toBe(true);
 
-      instructionStatusesMock.mockResolvedValue(
-        dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Executed)
-      );
+      instructionStatusesMock.mockResolvedValue(dsMockUtils.createMockInstructionStatus('Success'));
 
       result = await instruction.isPending();
 
@@ -536,9 +532,7 @@ describe('Instruction class', () => {
     });
 
     it('should throw an error if the instruction is not pending', () => {
-      instructionStatusesMock.mockResolvedValue(
-        dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Executed)
-      );
+      instructionStatusesMock.mockResolvedValue(dsMockUtils.createMockInstructionStatus('Success'));
 
       return expect(instruction.getAffirmations()).rejects.toThrow(
         'Instruction has already been executed/rejected and it was purged from chain'
@@ -619,9 +613,7 @@ describe('Instruction class', () => {
     });
 
     it('should throw an error if the instruction is not pending', () => {
-      instructionStatusMock.mockResolvedValue(
-        createMockInstructionStatus(InternalInstructionStatus.Executed)
-      );
+      instructionStatusMock.mockResolvedValue(createMockInstructionStatus('Success'));
       return expect(instruction.getLegs()).rejects.toThrow(
         'Instruction has already been executed/rejected and it was purged from chain'
       );
@@ -884,9 +876,7 @@ describe('Instruction class', () => {
 
       when(dsMockUtils.createQueryMock('settlement', 'instructionStatuses'))
         .calledWith(rawId)
-        .mockResolvedValue(
-          dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Executed)
-        );
+        .mockResolvedValue(dsMockUtils.createMockInstructionStatus('Success'));
 
       dsMockUtils.createApolloMultipleQueriesMock([
         {
