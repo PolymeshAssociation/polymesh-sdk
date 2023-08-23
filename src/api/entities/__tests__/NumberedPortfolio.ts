@@ -122,7 +122,7 @@ describe('NumberedPortfolio class', () => {
     });
   });
 
-  describe('method: createdAtV2', () => {
+  describe('method: createdAt', () => {
     const id = new BigNumber(1);
     const did = 'someDid';
     const variables = {
@@ -138,7 +138,7 @@ describe('NumberedPortfolio class', () => {
       const fakeResult = { blockNumber, blockHash, blockDate, eventIndex: eventIdx };
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
 
-      dsMockUtils.createApolloV2QueryMock(portfolioQuery(variables), {
+      dsMockUtils.createApolloQueryMock(portfolioQuery(variables), {
         portfolios: {
           nodes: [
             {
@@ -161,7 +161,7 @@ describe('NumberedPortfolio class', () => {
     it('should return null if the query result is empty', async () => {
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
 
-      dsMockUtils.createApolloV2QueryMock(portfolioQuery(variables), {
+      dsMockUtils.createApolloQueryMock(portfolioQuery(variables), {
         portfolios: {
           nodes: [],
         },

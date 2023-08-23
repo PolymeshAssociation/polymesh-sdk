@@ -181,7 +181,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
    * @param filters.size - page size
    * @param filters.start - page offset
    *
-   * @note uses the middleware
+   * @note uses the middleware v2
    */
   public async getTransactionHistory(
     filters: {
@@ -194,40 +194,13 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       orderBy?: TransactionOrderByInput;
     } = {}
   ): Promise<ResultSet<ExtrinsicData>> {
-    const { orderBy, ...rest } = filters;
+    const { tag, success, size, start, orderBy, blockHash } = filters;
     let order: ExtrinsicsOrderBy = ExtrinsicsOrderBy.CreatedAtAsc;
     if (orderBy) {
       order = `${orderBy.field}_${orderBy.order}`.toUpperCase() as ExtrinsicsOrderBy;
     }
-    return this.getTransactionHistoryV2({ ...rest, orderBy: order });
-  }
 
-  /**
-   * Retrieve a list of transactions signed by this Account. Can be filtered using parameters
-   *
-   * @note if both `blockNumber` and `blockHash` are passed, only `blockNumber` is taken into account
-   *
-   * @param filters.tag - tag associated with the transaction
-   * @param filters.success - whether the transaction was successful or not
-   * @param filters.size - page size
-   * @param filters.start - page offset
-   *
-   * @note uses the middlewareV2
-   */
-  public async getTransactionHistoryV2(
-    filters: {
-      blockNumber?: BigNumber;
-      blockHash?: string;
-      tag?: TxTag;
-      success?: boolean;
-      size?: BigNumber;
-      start?: BigNumber;
-      orderBy?: ExtrinsicsOrderBy;
-    } = {}
-  ): Promise<ResultSet<ExtrinsicData>> {
     const { context, address } = this;
-
-    const { tag, success, size, start, orderBy, blockHash } = filters;
 
     let moduleId;
     let callId;
@@ -267,7 +240,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
         },
         size,
         start,
-        orderBy
+        order
       )
     );
 

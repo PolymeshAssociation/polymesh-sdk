@@ -57,6 +57,15 @@ describe('Polymesh Class', () => {
     jest.spyOn(internalUtils, 'assertExpectedSqVersion').mockImplementation();
     bigNumberToU32Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU32');
     dsMockUtils.configureMocks({ contextOptions: undefined });
+
+    const rawGenesisBlock = dsMockUtils.createMockU32(new BigNumber(0));
+    bigNumberToU32Spy.mockResolvedValue(rawGenesisBlock);
+
+    const genesisHash = 'someGenesisHash';
+    const rawGenesisHash = dsMockUtils.createMockBlockHash(genesisHash);
+
+    const getBlockHashMock = dsMockUtils.createRpcMock('chain', 'getBlockHash');
+    getBlockHashMock.mockResolvedValue(rawGenesisHash);
   });
 
   beforeAll(() => {
@@ -110,15 +119,6 @@ describe('Polymesh Class', () => {
         link: 'someLink',
         key: '',
       };
-
-      const rawGenesisBlock = dsMockUtils.createMockU32(new BigNumber(0));
-      bigNumberToU32Spy.mockResolvedValue(rawGenesisBlock);
-
-      const genesisHash = 'someGenesisHash';
-      const rawGenesisHash = dsMockUtils.createMockBlockHash(genesisHash);
-
-      const getBlockHashMock = dsMockUtils.createRpcMock('chain', 'getBlockHash');
-      getBlockHashMock.mockResolvedValue(rawGenesisHash);
 
       await Polymesh.connect({
         nodeUrl: 'wss://some.url',

@@ -339,7 +339,7 @@ const mockInstanceContainer = {
   contextInstance: {} as MockContext,
   apiInstance: createApi(),
   signingManagerInstance: {} as Mutable<SigningManager>,
-  apolloInstanceV2: createApolloClient(),
+  apolloInstance: createApolloClient(),
   webSocketInstance: createWebSocket(),
 };
 
@@ -403,16 +403,13 @@ interface ContextOptions {
   getIdentity?: Identity;
   getIdentityClaimsFromChain?: ClaimData[];
   getIdentityClaimsFromMiddleware?: ResultSet<ClaimData>;
-  getIdentityClaimsFromMiddlewareV2?: ResultSet<ClaimData>;
   getExternalSigner?: PolkadotSigner;
   primaryAccount?: string;
   secondaryAccounts?: ResultSet<PermissionedAccount>;
   transactionHistory?: ResultSet<ExtrinsicData>;
   latestBlock?: BigNumber;
   middlewareEnabled?: boolean;
-  middlewareV2Enabled?: boolean;
   middlewareAvailable?: boolean;
-  middlewareV2Available?: boolean;
   getMiddlewareMetadata?: MiddlewareMetadata;
   sentAuthorizations?: ResultSet<AuthorizationRequest>;
   isArchiveNode?: boolean;
@@ -686,20 +683,6 @@ const defaultContextOptions: ContextOptions = {
     next: new BigNumber(1),
     count: new BigNumber(1),
   },
-  getIdentityClaimsFromMiddlewareV2: {
-    data: [
-      {
-        target: 'targetIdentity' as unknown as Identity,
-        issuer: 'issuerIdentity' as unknown as Identity,
-        issuedAt: new Date(),
-        lastUpdatedAt: new Date(),
-        expiry: null,
-        claim: { type: ClaimType.Accredited, scope: { type: ScopeType.Ticker, value: 'TICKER' } },
-      },
-    ],
-    next: new BigNumber(1),
-    count: new BigNumber(1),
-  },
   primaryAccount: 'primaryAccount',
   secondaryAccounts: { data: [], next: null },
   transactionHistory: {
@@ -709,9 +692,7 @@ const defaultContextOptions: ContextOptions = {
   },
   latestBlock: new BigNumber(100),
   middlewareEnabled: true,
-  middlewareV2Enabled: true,
   middlewareAvailable: true,
-  middlewareV2Available: true,
   getMiddlewareMetadata: {
     chain: 'Polymesh Develop',
     specName: 'polymesh_dev',
@@ -814,7 +795,7 @@ function configureContext(opts: ContextOptions): void {
   const getNonce = jest.fn();
   getNonce.mockReturnValue(nonce);
 
-  const queryMockV2 = mockInstanceContainer.apolloInstanceV2.query;
+  const queryMock = mockInstanceContainer.apolloInstance.query;
   const contextInstance = {
     signingAddress,
     nonce,
@@ -834,8 +815,8 @@ function configureContext(opts: ContextOptions): void {
     setSigningManager: jest.fn(),
     getExternalSigner: jest.fn().mockReturnValue(opts.getExternalSigner),
     polymeshApi: mockInstanceContainer.apiInstance,
-    queryMiddlewareV2: jest.fn().mockImplementation(query => queryMock(query)),
-    middlewareApiV2: mockInstanceContainer.apolloInstanceV2,
+    queryMiddleware: jest.fn().mockImplementation(query => queryMock(query)),
+    middlewareApi: mockInstanceContainer.apolloInstance,
     getInvalidDids: jest.fn().mockResolvedValue(opts.invalidDids),
     getProtocolFees: jest.fn().mockResolvedValue(opts.transactionFees),
     getTransactionArguments: jest.fn().mockReturnValue([]),
@@ -843,13 +824,12 @@ function configureContext(opts: ContextOptions): void {
     issuedClaims: jest.fn().mockResolvedValue(opts.issuedClaims),
     getIdentity: jest.fn().mockResolvedValue(opts.getIdentity),
     getIdentityClaimsFromChain: jest.fn().mockResolvedValue(opts.getIdentityClaimsFromChain),
-    getIdentityClaimsFromMiddlewareV2: jest
+    getIdentityClaimsFromMiddleware: jest
       .fn()
-      .mockResolvedValue(opts.getIdentityClaimsFromMiddlewareV2),
+      .mockResolvedValue(opts.getIdentityClaimsFromMiddleware),
     getLatestBlock: jest.fn().mockResolvedValue(opts.latestBlock),
-    isMiddlewareV2Enabled: jest.fn().mockReturnValue(opts.middlewareV2Enabled),
-    isAnyMiddlewareEnabled: jest.fn().mockReturnValue(opts.middlewareV2Enabled),
-    isMiddlewareAvailable: jest.fn().mockResolvedValue(opts.middlewareV2Available),
+    isMiddlewareEnabled: jest.fn().mockReturnValue(opts.middlewareEnabled),
+    isMiddlewareAvailable: jest.fn().mockResolvedValue(opts.middlewareAvailable),
     getMiddlewareMetadata: jest.fn().mockResolvedValue(opts.getMiddlewareMetadata),
     isArchiveNode: opts.isArchiveNode,
     ss58Format: opts.ss58Format,
@@ -1084,7 +1064,7 @@ export function initMocks(opts?: {
   initSigningManager(opts?.signingManagerOptions);
 
   // Apollo
-  apolloConstructorMock = jest.fn().mockReturnValue(mockInstanceContainer.apolloInstanceV2);
+  apolloConstructorMock = jest.fn().mockReturnValue(mockInstanceContainer.apolloInstance);
 
   webSocketConstructorMock = jest.fn().mockReturnValue(mockInstanceContainer.webSocketInstance);
 
@@ -1102,7 +1082,7 @@ export function cleanup(): void {
   mockInstanceContainer.apiInstance = createApi();
   mockInstanceContainer.contextInstance = {} as MockContext;
   mockInstanceContainer.signingManagerInstance = {} as Mutable<SigningManager>;
-  mockInstanceContainer.apolloInstanceV2 = createApolloClient();
+  mockInstanceContainer.apolloInstance = createApolloClient();
   mockInstanceContainer.webSocketInstance = createWebSocket();
 }
 
@@ -1201,8 +1181,8 @@ export function createTxMock<
  * @param query - apollo document node
  * @param returnValue
  */
-export function createApolloV2QueryMock(query: QueryOptions<any>, returnData: unknown): jest.Mock {
-  const { query: mock } = mockInstanceContainer.apolloInstanceV2;
+export function createApolloQueryMock(query: QueryOptions<any>, returnData: unknown): jest.Mock {
+  const { query: mock } = mockInstanceContainer.apolloInstance;
 
   when(mock)
     .calledWith(query)
@@ -1240,10 +1220,10 @@ function mockQueries(
  *
  * @param queries - query and returnData for each mocked query
  */
-export function createApolloMultipleV2QueriesMock(
+export function createApolloMultipleQueriesMock(
   queries: { query: QueryOptions<any>; returnData: unknown }[]
 ): jest.Mock {
-  const instance = mockInstanceContainer.apolloInstanceV2;
+  const instance = mockInstanceContainer.apolloInstance;
 
   return mockQueries(queries, instance);
 }
@@ -1465,8 +1445,8 @@ export function updateTxStatus<
  * @hidden
  * Make calls to `MiddlewareV2.query` throw an error
  */
-export function throwOnMiddlewareV2Query(err?: unknown): void {
-  const instance = mockInstanceContainer.apolloInstanceV2;
+export function throwOnMiddlewareQuery(err?: unknown): void {
+  const instance = mockInstanceContainer.apolloInstance;
 
   instance.query.mockImplementation(() => {
     throw err ?? new Error('Something went wrong');
@@ -1527,7 +1507,7 @@ export function getWebSocketInstance(): MockWebSocket {
  */
 export function getMiddlewareApi(): ApolloClient<NormalizedCacheObject> &
   jest.Mocked<ApolloClient<NormalizedCacheObject>> {
-  return mockInstanceContainer.apolloInstanceV2 as unknown as ApolloClient<NormalizedCacheObject> &
+  return mockInstanceContainer.apolloInstance as unknown as ApolloClient<NormalizedCacheObject> &
     jest.Mocked<ApolloClient<NormalizedCacheObject>>;
 }
 

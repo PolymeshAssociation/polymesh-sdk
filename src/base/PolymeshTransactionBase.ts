@@ -437,7 +437,7 @@ export abstract class PolymeshTransactionBase<
   public onProcessedByMiddleware(listener: (err?: PolymeshError) => void): UnsubCallback {
     const { context, emitter } = this;
 
-    if (!context.isAnyMiddlewareEnabled()) {
+    if (!context.isMiddlewareEnabled()) {
       throw new PolymeshError({
         code: ErrorCode.General,
         message: 'Cannot subscribe without an enabled middleware connection',
@@ -482,7 +482,7 @@ export abstract class PolymeshTransactionBase<
     const { context, emitter } = this;
 
     try {
-      if (!context.isAnyMiddlewareEnabled()) {
+      if (!context.isMiddlewareEnabled()) {
         return;
       }
 

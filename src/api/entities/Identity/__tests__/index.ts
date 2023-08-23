@@ -530,14 +530,14 @@ describe('Identity class', () => {
     });
   });
 
-  describe('method: getTrustingAssetsV2', () => {
+  describe('method: getTrustingAssets', () => {
     const did = 'someDid';
     const tickers = ['ASSET1', 'ASSET2'];
 
     it('should return a list of Assets', async () => {
       const identity = new Identity({ did }, context);
 
-      dsMockUtils.createApolloV2QueryMock(trustingAssetsQuery({ issuer: did }), {
+      dsMockUtils.createApolloQueryMock(trustingAssetsQuery({ issuer: did }), {
         trustedClaimIssuers: {
           nodes: tickers.map(ticker => ({ assetId: ticker })),
         },
@@ -550,14 +550,14 @@ describe('Identity class', () => {
     });
   });
 
-  describe('method: getHeldAssetsV2', () => {
+  describe('method: getHeldAssets', () => {
     const did = 'someDid';
     const tickers = ['ASSET1', 'ASSET2'];
 
     it('should return a list of Assets', async () => {
       const identity = new Identity({ did }, context);
 
-      dsMockUtils.createApolloV2QueryMock(assetHoldersQuery({ identityId: did }), {
+      dsMockUtils.createApolloQueryMock(assetHoldersQuery({ identityId: did }), {
         assetHolders: { nodes: tickers.map(ticker => ({ assetId: ticker })), totalCount: 2 },
       });
 
@@ -566,7 +566,7 @@ describe('Identity class', () => {
       expect(result.data[0].ticker).toBe(tickers[0]);
       expect(result.data[1].ticker).toBe(tickers[1]);
 
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         assetHoldersQuery(
           { identityId: did },
           new BigNumber(1),
@@ -1010,7 +1010,7 @@ describe('Identity class', () => {
 
       const identity = new Identity({ did: 'someDid' }, context);
 
-      const heldAssetsSpy = jest.spyOn(identity, 'getHeldAssetsV2');
+      const heldAssetsSpy = jest.spyOn(identity, 'getHeldAssets');
       heldAssetsSpy
         .mockResolvedValueOnce({ data: [assets[0]], next: new BigNumber(1) })
         .mockResolvedValue({ data: [assets[1]], next: null });
@@ -1155,7 +1155,7 @@ describe('Identity class', () => {
         nodes: [{ instruction: 'instruction' }],
       };
 
-      dsMockUtils.createApolloV2QueryMock(instructionsByDidQuery(identity.did), {
+      dsMockUtils.createApolloQueryMock(instructionsByDidQuery(identity.did), {
         legs: legsResponse,
       });
 

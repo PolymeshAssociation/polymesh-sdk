@@ -275,11 +275,11 @@ describe('DividendDistribution class', () => {
     });
   });
 
-  describe('method: getWithheldTaxV2', () => {
+  describe('method: getWithheldTax', () => {
     it('should return the amount of the withheld tax', async () => {
       const fakeTax = new BigNumber(1000000);
 
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         distributionQuery({
           id: `${ticker}/${id.toString()}`,
         }),
@@ -300,7 +300,7 @@ describe('DividendDistribution class', () => {
         returnValue: dsMockUtils.createMockOption(),
       });
 
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         distributionQuery({
           id: `${ticker}/${id.toString()}`,
         }),
@@ -536,7 +536,7 @@ describe('DividendDistribution class', () => {
     });
   });
 
-  describe('method: getPaymentHistoryV2', () => {
+  describe('method: getPaymentHistory', () => {
     it('should return the amount of the withheld tax', async () => {
       const blockId = new BigNumber(1);
       const blockHash = 'someHash';
@@ -548,7 +548,7 @@ describe('DividendDistribution class', () => {
       const size = new BigNumber(1);
       const start = new BigNumber(0);
 
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         distributionPaymentsQuery(
           {
             distributionId: `${ticker}/${id.toString()}`,
@@ -593,7 +593,7 @@ describe('DividendDistribution class', () => {
     });
 
     it('should return null if the query result is empty', async () => {
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         distributionPaymentsQuery({
           distributionId: `${ticker}/${id.toString()}`,
         }),
@@ -614,7 +614,7 @@ describe('DividendDistribution class', () => {
         returnValue: dsMockUtils.createMockOption(),
       });
 
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         distributionPaymentsQuery({
           distributionId: `${ticker}/${id.toString()}`,
         }),

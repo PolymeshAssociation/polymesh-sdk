@@ -58,7 +58,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
     });
   });
 
-  describe('method: addedAtV2', () => {
+  describe('method: addedAt', () => {
     const did = 'someDid';
     const ticker = 'SOME_TICKER';
     const variables = {
@@ -74,7 +74,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
       const fakeResult = { blockNumber, blockHash, blockDate, eventIndex: eventIdx };
       const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, ticker }, context);
 
-      dsMockUtils.createApolloV2QueryMock(trustedClaimIssuerQuery(variables), {
+      dsMockUtils.createApolloQueryMock(trustedClaimIssuerQuery(variables), {
         trustedClaimIssuers: {
           nodes: [
             {
@@ -97,7 +97,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
     it('should return null if the query result is empty', async () => {
       const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, ticker }, context);
 
-      dsMockUtils.createApolloV2QueryMock(trustedClaimIssuerQuery(variables), {
+      dsMockUtils.createApolloQueryMock(trustedClaimIssuerQuery(variables), {
         trustedClaimIssuers: {
           nodes: [],
         },

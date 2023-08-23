@@ -34,7 +34,7 @@ import { Ensured } from '~/types/utils';
 import {
   agentGroupToPermissionGroup,
   extrinsicPermissionsToTransactionPermissions,
-  middlewareV2EventDetailsToEventIdentifier,
+  middlewareEventDetailsToEventIdentifier,
   stringToIdentityId,
   stringToTicker,
   tickerToString,
@@ -330,7 +330,7 @@ export class AssetPermissions extends Namespace<Identity> {
       })
     );
 
-    return optionize(middlewareV2EventDetailsToEventIdentifier)(node?.createdBlock, node?.eventIdx);
+    return optionize(middlewareEventDetailsToEventIdentifier)(node?.createdBlock, node?.eventIdx);
   }
 
   /**
@@ -392,7 +392,7 @@ export class AssetPermissions extends Namespace<Identity> {
 
     const data = nodes.map(({ createdBlock, eventIdx }) =>
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      middlewareV2EventDetailsToEventIdentifier(createdBlock!, eventIdx)
+      middlewareEventDetailsToEventIdentifier(createdBlock!, eventIdx)
     );
 
     const count = new BigNumber(totalCount);

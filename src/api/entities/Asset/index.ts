@@ -54,8 +54,8 @@ import {
   boolToBoolean,
   bytesToString,
   identityIdToString,
-  middlewareV2EventDetailsToEventIdentifier,
-  middlewareV2PortfolioToPortfolio,
+  middlewareEventDetailsToEventIdentifier,
+  middlewarePortfolioToPortfolio,
   stringToTicker,
   tickerToDid,
 } from '~/utils/conversion';
@@ -389,10 +389,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       })
     );
 
-    return optionize(middlewareV2EventDetailsToEventIdentifier)(
-      asset?.createdBlock,
-      asset?.eventIdx
-    );
+    return optionize(middlewareEventDetailsToEventIdentifier)(asset?.createdBlock, asset?.eventIdx);
   }
 
   /**
@@ -504,7 +501,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       identity: new Identity({ did }, context),
       history: history.map(({ createdBlock, eventIdx }) =>
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        middlewareV2EventDetailsToEventIdentifier(createdBlock!, eventIdx)
+        middlewareEventDetailsToEventIdentifier(createdBlock!, eventIdx)
       ),
     }));
   }
@@ -549,12 +546,12 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
         asset: new Asset({ ticker: assetId }, context),
         amount: new BigNumber(amount).shiftedBy(-6),
         event: eventId,
-        from: optionize(middlewareV2PortfolioToPortfolio)(fromPortfolio, context),
-        to: optionize(middlewareV2PortfolioToPortfolio)(toPortfolio, context),
+        from: optionize(middlewarePortfolioToPortfolio)(fromPortfolio, context),
+        to: optionize(middlewarePortfolioToPortfolio)(toPortfolio, context),
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         extrinsicIndex: new BigNumber(extrinsicIdx!),
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        ...middlewareV2EventDetailsToEventIdentifier(createdBlock!, eventIdx),
+        ...middlewareEventDetailsToEventIdentifier(createdBlock!, eventIdx),
       })
     );
 

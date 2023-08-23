@@ -9,7 +9,7 @@ import { Ensured } from '~/types/utils';
 import {
   bigNumberToU64,
   bytesToString,
-  middlewareV2EventDetailsToEventIdentifier,
+  middlewareEventDetailsToEventIdentifier,
   stringToIdentityId,
 } from '~/utils/conversion';
 import { createProcedureMethod, optionize } from '~/utils/internal';
@@ -118,7 +118,7 @@ export class NumberedPortfolio extends Portfolio {
       })
     );
 
-    return optionize(middlewareV2EventDetailsToEventIdentifier)(node?.createdBlock, node?.eventIdx);
+    return optionize(middlewareEventDetailsToEventIdentifier)(node?.createdBlock, node?.eventIdx);
   }
 
   /**

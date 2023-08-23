@@ -21,7 +21,7 @@ import { TREASURY_MODULE_ADDRESS } from '~/utils/constants';
 import {
   balanceToBigNumber,
   extrinsicIdentifierToTxTag,
-  middlewareV2EventDetailsToEventIdentifier,
+  middlewareEventDetailsToEventIdentifier,
   moduleAddressToString,
   stringToBlockHash,
   textToString,
@@ -181,7 +181,7 @@ export class Network {
       )
     );
 
-    return optionize(middlewareV2EventDetailsToEventIdentifier)(event?.block, event?.eventIdx);
+    return optionize(middlewareEventDetailsToEventIdentifier)(event?.block, event?.eventIdx);
   }
 
   /**
@@ -231,7 +231,7 @@ export class Network {
     if (events.length) {
       return events.map(({ block, eventIdx }) =>
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        middlewareV2EventDetailsToEventIdentifier(block!, eventIdx)
+        middlewareEventDetailsToEventIdentifier(block!, eventIdx)
       );
     }
 

@@ -30,7 +30,7 @@ import {
   balanceToBigNumber,
   identityIdToString,
   keyToAddress,
-  middlewareV2PortfolioToPortfolio,
+  middlewarePortfolioToPortfolio,
   portfolioIdToMeshPortfolioId,
   tickerToString,
 } from '~/utils/conversion';
@@ -365,8 +365,8 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
           asset: new Asset({ ticker: assetId }, context),
           amount: new BigNumber(amount).shiftedBy(-6),
           direction: getDirection(fromId, toId),
-          from: middlewareV2PortfolioToPortfolio(from!, context),
-          to: middlewareV2PortfolioToPortfolio(to!, context),
+          from: middlewarePortfolioToPortfolio(from!, context),
+          to: middlewarePortfolioToPortfolio(to!, context),
         })),
       });
     });
@@ -384,8 +384,8 @@ export abstract class Portfolio extends Entity<UniqueIdentifiers, HumanReadable>
               asset: new Asset({ ticker: assetId }, context),
               amount: new BigNumber(amount).shiftedBy(-6),
               direction: getDirection(fromId, toId),
-              from: middlewareV2PortfolioToPortfolio(from!, context),
-              to: middlewareV2PortfolioToPortfolio(to!, context),
+              from: middlewarePortfolioToPortfolio(from!, context),
+              to: middlewarePortfolioToPortfolio(to!, context),
             },
           ],
         });

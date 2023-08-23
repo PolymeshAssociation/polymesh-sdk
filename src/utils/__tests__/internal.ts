@@ -1081,7 +1081,7 @@ describe('assertExpectedSqVersion', () => {
   });
 
   it('should resolve if SDK is initialized with correct Middleware V2 version', () => {
-    dsMockUtils.createApolloV2QueryMock(latestSqVersionQuery(), {
+    dsMockUtils.createApolloQueryMock(latestSqVersionQuery(), {
       subqueryVersions: {
         nodes: [
           {
@@ -1096,7 +1096,7 @@ describe('assertExpectedSqVersion', () => {
   });
 
   it('should log a warning for incompatible Subquery version', async () => {
-    dsMockUtils.createApolloV2QueryMock(latestSqVersionQuery(), {
+    dsMockUtils.createApolloQueryMock(latestSqVersionQuery(), {
       subqueryVersions: {
         nodes: [
           {
@@ -1114,7 +1114,7 @@ describe('assertExpectedSqVersion', () => {
 
     warnSpy.mockReset();
 
-    dsMockUtils.createApolloV2QueryMock(latestSqVersionQuery(), {
+    dsMockUtils.createApolloQueryMock(latestSqVersionQuery(), {
       subqueryVersions: {
         nodes: [],
       },

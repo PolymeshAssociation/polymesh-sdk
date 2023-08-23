@@ -22,9 +22,8 @@ import {
   assetTransactionQuery,
   tickerExternalAgentHistoryQuery,
 } from '~/middleware/queries';
-import { EventIdEnum } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { ErrorCode, SecurityIdentifier, SecurityIdentifierType } from '~/types';
+import { ErrorCode, EventIdEnum, SecurityIdentifier, SecurityIdentifierType } from '~/types';
 import { tuple } from '~/types/utils';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -439,7 +438,7 @@ describe('Asset class', () => {
     });
   });
 
-  describe('method: createdAtV2', () => {
+  describe('method: createdAt', () => {
     it('should return the event identifier object of the Asset creation', async () => {
       const ticker = 'SOME_TICKER';
       const blockNumber = new BigNumber(1234);
@@ -453,7 +452,7 @@ describe('Asset class', () => {
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
 
-      dsMockUtils.createApolloV2QueryMock(assetQuery(variables), {
+      dsMockUtils.createApolloQueryMock(assetQuery(variables), {
         assets: {
           nodes: [
             {
@@ -481,7 +480,7 @@ describe('Asset class', () => {
       const context = dsMockUtils.getContextInstance();
       const asset = new Asset({ ticker }, context);
 
-      dsMockUtils.createApolloV2QueryMock(assetQuery(variables), {
+      dsMockUtils.createApolloQueryMock(assetQuery(variables), {
         assets: {
           nodes: [],
         },
@@ -661,7 +660,7 @@ describe('Asset class', () => {
     });
   });
 
-  describe('method: getOperationHistoryV2', () => {
+  describe('method: getOperationHistory', () => {
     it('should return a list of agent operations', async () => {
       const ticker = 'TICKER';
       const context = dsMockUtils.getContextInstance();
@@ -673,7 +672,7 @@ describe('Asset class', () => {
       const eventIndex = new BigNumber(1);
       const datetime = '2020-10-10';
 
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         tickerExternalAgentHistoryQuery({
           assetId: ticker,
         }),
@@ -706,7 +705,7 @@ describe('Asset class', () => {
         eventIndex,
       });
 
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         tickerExternalAgentHistoryQuery({
           assetId: ticker,
         }),
@@ -724,11 +723,10 @@ describe('Asset class', () => {
   });
 
   describe('method: getTransactionHistory', () => {
-    const ticker = 'TICKER';
-    const context = dsMockUtils.getContextInstance();
-    const asset = new Asset({ ticker }, context);
-
-    it('should return a list of Assets', async () => {
+    it('should return the list of asset transactions', async () => {
+      const ticker = 'TICKER';
+      const context = dsMockUtils.getContextInstance();
+      const asset = new Asset({ ticker }, context);
       const transactionResponse = {
         totalCount: new BigNumber(5),
         nodes: [
@@ -789,7 +787,7 @@ describe('Asset class', () => {
         ],
       };
 
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         assetTransactionQuery({ assetId: ticker }, new BigNumber(3), new BigNumber(0)),
         {
           assetTransactions: transactionResponse,

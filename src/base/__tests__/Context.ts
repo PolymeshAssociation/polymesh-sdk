@@ -5,7 +5,7 @@ import P from 'bluebird';
 import { when } from 'jest-when';
 
 import { Account, Context, PolymeshError } from '~/internal';
-import { ClaimTypeEnum, ClaimTypeEnum as MiddlewareV2ClaimType } from '~/middleware/enums';
+import { ClaimTypeEnum } from '~/middleware/enums';
 import { claimsQuery, heartbeatQuery, metadataQuery } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { createMockAccountId, getAtMock } from '~/testUtils/mocks/dataSources';
@@ -90,8 +90,8 @@ describe('Context class', () => {
       middlewareApiV2: null,
     });
 
-    expect(() => context.middlewareApiV2).toThrow(
-      'Cannot perform this action without an active middleware connection'
+    expect(() => context.middlewareApi).toThrow(
+      'Cannot perform this action without an active middleware v2 connection'
     );
   });
 
@@ -103,7 +103,7 @@ describe('Context class', () => {
       middlewareApiV2,
     });
 
-    expect(context.middlewareApiV2).toEqual(middlewareApiV2);
+    expect(context.middlewareApi).toEqual(middlewareApiV2);
   });
 
   describe('method: create', () => {
@@ -1074,7 +1074,7 @@ describe('Context class', () => {
     });
   });
 
-  describe('method: issuedClaimsV2', () => {
+  describe('method: issuedClaims', () => {
     beforeAll(() => {
       jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     });
@@ -1141,12 +1141,12 @@ describe('Context class', () => {
         ],
       };
 
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         claimsQuery(
           {
             dids: [targetDid],
             trustedClaimIssuers: [targetDid],
-            claimTypes: [MiddlewareV2ClaimType.Accredited],
+            claimTypes: [ClaimTypeEnum.Accredited],
             includeExpired: true,
           },
           new BigNumber(2),
@@ -1170,7 +1170,7 @@ describe('Context class', () => {
       expect(result.count).toEqual(new BigNumber(25));
       expect(result.next).toEqual(new BigNumber(2));
 
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         claimsQuery(
           {
             dids: undefined,
@@ -1199,7 +1199,7 @@ describe('Context class', () => {
         middlewareApiV2: dsMockUtils.getMiddlewareApi(),
       });
 
-      dsMockUtils.throwOnMiddlewareV2Query();
+      dsMockUtils.throwOnMiddlewareQuery();
 
       const targetDid = 'someTargetDid';
       const issuerDid = 'someIssuerDid';
@@ -1343,7 +1343,7 @@ describe('Context class', () => {
         middlewareApiV2: dsMockUtils.getMiddlewareApi(),
       });
 
-      dsMockUtils.throwOnMiddlewareV2Query();
+      dsMockUtils.throwOnMiddlewareQuery();
 
       return expect(context.issuedClaims()).rejects.toThrow(
         'Cannot perform this action without an active middleware V2 connection'
@@ -1351,7 +1351,7 @@ describe('Context class', () => {
     });
   });
 
-  describe('method: queryMiddlewareV2', () => {
+  describe('method: queryMiddleware', () => {
     beforeAll(() => {
       jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     });
@@ -1366,19 +1366,19 @@ describe('Context class', () => {
         middlewareApiV2: dsMockUtils.getMiddlewareApi(),
       });
 
-      dsMockUtils.throwOnMiddlewareV2Query({ message: 'Error' });
+      dsMockUtils.throwOnMiddlewareQuery({ message: 'Error' });
 
       await expect(context.queryMiddleware('query' as unknown as QueryOptions)).rejects.toThrow(
         'Error in middleware V2 query: Error'
       );
 
-      dsMockUtils.throwOnMiddlewareV2Query({ networkError: {}, message: 'Error' });
+      dsMockUtils.throwOnMiddlewareQuery({ networkError: {}, message: 'Error' });
 
       await expect(context.queryMiddleware('query' as unknown as QueryOptions)).rejects.toThrow(
         'Error in middleware V2 query: Error'
       );
 
-      dsMockUtils.throwOnMiddlewareV2Query({
+      dsMockUtils.throwOnMiddlewareQuery({
         networkError: { result: { message: 'Some Message' } },
       });
 
@@ -1396,7 +1396,7 @@ describe('Context class', () => {
         middlewareApiV2: dsMockUtils.getMiddlewareApi(),
       });
 
-      dsMockUtils.createApolloV2QueryMock(fakeQuery, fakeResult);
+      dsMockUtils.createApolloQueryMock(fakeQuery, fakeResult);
 
       const res = await context.queryMiddleware(fakeQuery);
 
@@ -1484,7 +1484,7 @@ describe('Context class', () => {
     });
   });
 
-  describe('method: isMiddlewareV2Enabled', () => {
+  describe('method: isMiddlewareEnabled', () => {
     beforeAll(() => {
       jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
     });
@@ -1499,7 +1499,7 @@ describe('Context class', () => {
         middlewareApiV2: dsMockUtils.getMiddlewareApi(),
       });
 
-      const result = context.isMiddlewareV2Enabled();
+      const result = context.isMiddlewareEnabled();
 
       expect(result).toBe(true);
     });
@@ -1510,48 +1510,7 @@ describe('Context class', () => {
         middlewareApiV2: null,
       });
 
-      const result = context.isMiddlewareV2Enabled();
-
-      expect(result).toBe(false);
-    });
-  });
-
-  describe('method: isAnyMiddlewareEnabled', () => {
-    beforeAll(() => {
-      jest.spyOn(utilsInternalModule, 'assertAddressValid').mockImplementation();
-    });
-
-    afterAll(() => {
-      jest.restoreAllMocks();
-    });
-
-    it('should return true if any middleware is enabled', async () => {
-      let context = await Context.create({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
-      });
-
-      let result = context.isAnyMiddlewareEnabled();
-
-      expect(result).toBe(true);
-
-      context = await Context.create({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApiV2: null,
-      });
-
-      result = context.isAnyMiddlewareEnabled();
-
-      expect(result).toBe(true);
-    });
-
-    it('should return false if neither middleware are not enabled', async () => {
-      const context = await Context.create({
-        polymeshApi: dsMockUtils.getApiInstance(),
-        middlewareApiV2: null,
-      });
-
-      const result = context.isMiddlewareV2Enabled();
+      const result = context.isMiddlewareEnabled();
 
       expect(result).toBe(false);
     });
@@ -1572,7 +1531,7 @@ describe('Context class', () => {
         middlewareApiV2: dsMockUtils.getMiddlewareApi(),
       });
 
-      dsMockUtils.createApolloV2QueryMock(heartbeatQuery(), true);
+      dsMockUtils.createApolloQueryMock(heartbeatQuery(), true);
 
       const result = await context.isMiddlewareAvailable();
 
@@ -1585,7 +1544,7 @@ describe('Context class', () => {
         middlewareApiV2: null,
       });
 
-      dsMockUtils.throwOnMiddlewareV2Query();
+      dsMockUtils.throwOnMiddlewareQuery();
 
       const result = await context.isMiddlewareAvailable();
 
@@ -1971,7 +1930,7 @@ describe('Context class', () => {
         indexerHealthy: true,
       };
 
-      dsMockUtils.createApolloV2QueryMock(metadataQuery(), {
+      dsMockUtils.createApolloQueryMock(metadataQuery(), {
         _metadata: {
           ...metadata,
           lastProcessedTimestamp: metadata.lastProcessedTimestamp.getTime().toString(),

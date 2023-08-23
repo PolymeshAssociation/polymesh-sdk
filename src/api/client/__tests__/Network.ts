@@ -190,7 +190,7 @@ describe('Network Class', () => {
     });
   });
 
-  describe('method: getEventByIndexedArgsV2', () => {
+  describe('method: getEventByIndexedArgs', () => {
     const variables = {
       moduleId: ModuleIdEnum.Asset,
       eventId: EventIdEnum.AssetCreated,
@@ -204,7 +204,7 @@ describe('Network Class', () => {
       const fakeResult = { blockNumber, blockDate, blockHash, eventIndex: eventIdx };
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         eventsByArgs(
           {
             ...variables,
@@ -235,7 +235,7 @@ describe('Network Class', () => {
     });
 
     it('should return null if the query result is empty', async () => {
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         eventsByArgs(
           {
             ...variables,
@@ -256,7 +256,7 @@ describe('Network Class', () => {
     });
   });
 
-  describe('method: getEventsByIndexedArgsV2', () => {
+  describe('method: getEventsByIndexedArgs', () => {
     const variables = {
       moduleId: ModuleIdEnum.Asset,
       eventId: EventIdEnum.AssetCreated,
@@ -273,7 +273,7 @@ describe('Network Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         eventsByArgs(
           {
             ...variables,
@@ -309,7 +309,7 @@ describe('Network Class', () => {
     });
 
     it('should return null if the query result is empty', async () => {
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         eventsByArgs({
           ...variables,
           eventArg0: 'someDid',
@@ -328,7 +328,7 @@ describe('Network Class', () => {
     });
   });
 
-  describe('method: getTransactionByHashV2', () => {
+  describe('method: getTransactionByHash', () => {
     const variable = { txHash: 'someHash' };
     let getBlockMock: jest.Mock;
     let queryInfoMock: jest.Mock;
@@ -359,7 +359,7 @@ describe('Network Class', () => {
         },
       });
 
-      dsMockUtils.createApolloV2QueryMock(extrinsicByHash({ extrinsicHash: variable.txHash }), {
+      dsMockUtils.createApolloQueryMock(extrinsicByHash({ extrinsicHash: variable.txHash }), {
         extrinsics: {
           nodes: [
             {
@@ -429,7 +429,7 @@ describe('Network Class', () => {
         },
       });
 
-      dsMockUtils.createApolloV2QueryMock(extrinsicByHash({ extrinsicHash: variable.txHash }), {
+      dsMockUtils.createApolloQueryMock(extrinsicByHash({ extrinsicHash: variable.txHash }), {
         extrinsics: {
           nodes: [
             {
@@ -471,7 +471,7 @@ describe('Network Class', () => {
     });
 
     it('should return null if the query result is empty', async () => {
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         extrinsicByHash({
           extrinsicHash: variable.txHash,
         }),

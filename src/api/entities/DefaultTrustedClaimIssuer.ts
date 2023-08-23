@@ -4,7 +4,7 @@ import { Query } from '~/middleware/types';
 import { ClaimType, ErrorCode, EventIdentifier } from '~/types';
 import { Ensured } from '~/types/utils';
 import {
-  middlewareV2EventDetailsToEventIdentifier,
+  middlewareEventDetailsToEventIdentifier,
   stringToTicker,
   trustedIssuerToTrustedClaimIssuer,
 } from '~/utils/conversion';
@@ -71,7 +71,7 @@ export class DefaultTrustedClaimIssuer extends Identity {
       })
     );
 
-    return optionize(middlewareV2EventDetailsToEventIdentifier)(node?.createdBlock, node?.eventIdx);
+    return optionize(middlewareEventDetailsToEventIdentifier)(node?.createdBlock, node?.eventIdx);
   }
 
   /**

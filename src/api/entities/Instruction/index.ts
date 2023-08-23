@@ -46,7 +46,7 @@ import {
   meshInstructionStatusToInstructionStatus,
   meshPortfolioIdToPortfolio,
   meshSettlementTypeToEndCondition,
-  middlewareV2EventDetailsToEventIdentifier,
+  middlewareEventDetailsToEventIdentifier,
   momentToDate,
   tickerToString,
   u64ToBigNumber,
@@ -611,7 +611,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       )
     );
 
-    return optionize(middlewareV2EventDetailsToEventIdentifier)(
+    return optionize(middlewareEventDetailsToEventIdentifier)(
       details?.updatedBlock,
       details?.eventIdx
     );

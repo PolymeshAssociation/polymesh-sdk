@@ -229,11 +229,11 @@ import {
   metadataToMeshMetadataKey,
   metadataValueDetailToMeshMetadataValueDetail,
   metadataValueToMeshMetadataValue,
+  middlewareClaimToClaimData,
+  middlewareEventDetailsToEventIdentifier,
   middlewareInstructionToHistoricInstruction,
+  middlewarePortfolioToPortfolio,
   middlewareScopeToScope,
-  middlewareV2ClaimToClaimData,
-  middlewareV2EventDetailsToEventIdentifier,
-  middlewareV2PortfolioToPortfolio,
   moduleAddressToString,
   momentToDate,
   nameToAssetName,
@@ -4051,7 +4051,7 @@ describe('middlewareInstructionToHistoricInstruction', () => {
   });
 });
 
-describe('middlewareV2EventDetailsToEventIdentifier', () => {
+describe('middlewareEventDetailsToEventIdentifier', () => {
   it('should convert Event details to an EventIdentifier', () => {
     const eventIdx = 3;
     const block = {
@@ -4067,16 +4067,16 @@ describe('middlewareV2EventDetailsToEventIdentifier', () => {
       eventIndex: new BigNumber(3),
     };
 
-    expect(middlewareV2EventDetailsToEventIdentifier(block)).toEqual({
+    expect(middlewareEventDetailsToEventIdentifier(block)).toEqual({
       ...fakeResult,
       eventIndex: new BigNumber(0),
     });
 
-    expect(middlewareV2EventDetailsToEventIdentifier(block, eventIdx)).toEqual(fakeResult);
+    expect(middlewareEventDetailsToEventIdentifier(block, eventIdx)).toEqual(fakeResult);
   });
 });
 
-describe('middlewareV2ClaimToClaimData', () => {
+describe('middlewareClaimToClaimData', () => {
   let createClaimSpy: jest.SpyInstance;
 
   beforeAll(() => {
@@ -4094,12 +4094,12 @@ describe('middlewareV2ClaimToClaimData', () => {
     dsMockUtils.cleanup();
   });
 
-  it('should convert middleware V2 Claim to ClaimData', () => {
+  it('should convert middleware Claim to ClaimData', () => {
     const context = dsMockUtils.getContextInstance();
     const issuanceDate = new Date('10/14/1987');
     const lastUpdateDate = new Date('10/14/1987');
     const expiry = new Date('10/10/1988');
-    const middlewareV2Claim = {
+    const middlewareClaim = {
       targetId: 'targetId',
       issuerId: 'issuerId',
       issuanceDate: issuanceDate.getTime(),
@@ -4123,12 +4123,12 @@ describe('middlewareV2ClaimToClaimData', () => {
       claim,
     };
 
-    expect(middlewareV2ClaimToClaimData(middlewareV2Claim, context)).toEqual(fakeResult);
+    expect(middlewareClaimToClaimData(middlewareClaim, context)).toEqual(fakeResult);
 
     expect(
-      middlewareV2ClaimToClaimData(
+      middlewareClaimToClaimData(
         {
-          ...middlewareV2Claim,
+          ...middlewareClaim,
           expiry: expiry.getTime(),
         },
         context
@@ -4140,7 +4140,7 @@ describe('middlewareV2ClaimToClaimData', () => {
   });
 });
 
-describe('toIdentityWithClaimsArrayV2', () => {
+describe('toIdentityWithClaimsArray', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -4196,7 +4196,7 @@ describe('toIdentityWithClaimsArrayV2', () => {
       lastUpdateDate: date,
       cddId: cddId,
     };
-    const fakeMiddlewareV2Claims = [
+    const fakemiddlewareClaims = [
       {
         ...commonClaimData,
         expiry: date,
@@ -4210,7 +4210,7 @@ describe('toIdentityWithClaimsArrayV2', () => {
     ] as MiddlewareClaim[];
     /* eslint-enable @typescript-eslint/naming-convention */
 
-    const result = toIdentityWithClaimsArray(fakeMiddlewareV2Claims, context, 'targetId');
+    const result = toIdentityWithClaimsArray(fakemiddlewareClaims, context, 'targetId');
 
     expect(result).toEqual(fakeResult);
   });
@@ -5976,23 +5976,23 @@ describe('permissionsLikeToPermissions', () => {
   });
 });
 
-describe('middlewareV2PortfolioToPortfolio', () => {
+describe('middlewarePortfolioToPortfolio', () => {
   it('should convert a MiddlewarePortfolio into a Portfolio', async () => {
     const context = dsMockUtils.getContextInstance();
-    let middlewareV2Portfolio = {
+    let middlewarePortfolio = {
       identityId: 'someDid',
       number: 0,
     } as MiddlewarePortfolio;
 
-    let result = await middlewareV2PortfolioToPortfolio(middlewareV2Portfolio, context);
+    let result = await middlewarePortfolioToPortfolio(middlewarePortfolio, context);
     expect(result instanceof DefaultPortfolio).toBe(true);
 
-    middlewareV2Portfolio = {
+    middlewarePortfolio = {
       identityId: 'someDid',
       number: 10,
     } as MiddlewarePortfolio;
 
-    result = await middlewareV2PortfolioToPortfolio(middlewareV2Portfolio, context);
+    result = await middlewarePortfolioToPortfolio(middlewarePortfolio, context);
     expect(result instanceof NumberedPortfolio).toBe(true);
   });
 });

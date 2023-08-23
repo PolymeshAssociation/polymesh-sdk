@@ -179,7 +179,7 @@ export async function prepareModifyClaims(
     //   data: {
     //     claims: { nodes: currentClaims },
     //   },
-    // } = await context.queryMiddlewareV2<Ensured<Query, 'claims'>>(
+    // } = await context.queryMiddleware<Ensured<Query, 'claims'>>(
     //   claimsQuery(
     //     {
     //       dids: allTargets,

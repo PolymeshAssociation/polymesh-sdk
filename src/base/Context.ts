@@ -23,7 +23,7 @@ import P from 'bluebird';
 import { chunk, clone, flatMap, flatten, flattenDeep } from 'lodash';
 
 import { Account, Asset, DividendDistribution, Identity, PolymeshError, Subsidy } from '~/internal';
-import { ClaimTypeEnum as MiddlewareV2Claim } from '~/middleware/enums';
+import { ClaimTypeEnum } from '~/middleware/enums';
 import { claimsQuery, heartbeatQuery, metadataQuery } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
 import {
@@ -56,7 +56,7 @@ import {
   identityIdToString,
   meshClaimToClaim,
   meshCorporateActionToCorporateActionParams,
-  middlewareV2ClaimToClaimData,
+  middlewareClaimToClaimData,
   momentToDate,
   posRatioToBigNumber,
   signerToString,
@@ -883,7 +883,7 @@ export class Context {
           trustedClaimIssuers: trustedClaimIssuers?.map(trustedClaimIssuer =>
             signerToString(trustedClaimIssuer)
           ),
-          claimTypes: claimTypes?.map(ct => MiddlewareV2Claim[ct]),
+          claimTypes: claimTypes?.map(ct => ClaimTypeEnum[ct]),
           includeExpired,
         },
         size,
@@ -893,7 +893,7 @@ export class Context {
 
     const count = new BigNumber(totalCount);
 
-    const data = claimsList.map(claim => middlewareV2ClaimToClaimData(claim, this));
+    const data = claimsList.map(claim => middlewareClaimToClaimData(claim, this));
 
     const next = calculateNextKey(count, data.length, start);
 
@@ -1012,15 +1012,6 @@ export class Context {
    */
   public isMiddlewareEnabled(): boolean {
     return !!this._middlewareApi;
-  }
-
-  /**
-   * @hidden
-   *
-   * Return whether any middleware was enabled at startup
-   */
-  public isAnyMiddlewareEnabled(): boolean {
-    return this.isMiddlewareEnabled();
   }
 
   /**

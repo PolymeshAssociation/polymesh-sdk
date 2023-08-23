@@ -396,7 +396,7 @@ describe('Portfolio class', () => {
     });
   });
 
-  describe('method: getTransactionHistoryV2', () => {
+  describe('method: getTransactionHistory', () => {
     let did: string;
     let id: BigNumber;
 
@@ -502,7 +502,7 @@ describe('Portfolio class', () => {
         .calledWith(account, context)
         .mockReturnValue(key);
 
-      dsMockUtils.createApolloMultipleV2QueriesMock([
+      dsMockUtils.createApolloMultipleQueriesMock([
         {
           query: settlementsQuery({
             identityId: did,
@@ -548,7 +548,7 @@ describe('Portfolio class', () => {
       expect((result[1].legs[0].from as NumberedPortfolio).id).toEqual(portfolioId2);
       expect(result[1].legs[0].to.owner.did).toEqual(portfolioDid1);
 
-      dsMockUtils.createApolloMultipleV2QueriesMock([
+      dsMockUtils.createApolloMultipleQueriesMock([
         {
           query: settlementsQuery({
             identityId: did,
@@ -613,7 +613,7 @@ describe('Portfolio class', () => {
       const portfolio = new NonAbstract({ did, id }, context);
       exists = false;
 
-      dsMockUtils.createApolloMultipleV2QueriesMock([
+      dsMockUtils.createApolloMultipleQueriesMock([
         {
           query: settlementsQuery({
             identityId: did,

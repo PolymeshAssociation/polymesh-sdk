@@ -5,7 +5,8 @@ import { AccountIdentityRelation, AccountKeyType } from '~/api/entities/Account/
 import { Account, Context, Entity } from '~/internal';
 import { CallIdEnum, ModuleIdEnum } from '~/middleware/enums';
 import { extrinsicsByArgs } from '~/middleware/queries';
-import { ExtrinsicsOrderBy, Order, TransactionOrderFields } from '~/middleware/types';
+import { ExtrinsicsOrderBy } from '~/middleware/types';
+import { Order, TransactionOrderFields } from '~/middleware/typesV1';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   createMockAccountId,
@@ -18,11 +19,9 @@ import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
   Balance,
-  ExtrinsicData,
   ModuleName,
   Permissions,
   PermissionType,
-  ResultSet,
   SubsidyWithAllowance,
   TxTags,
   UnsubCallback,
@@ -259,31 +258,6 @@ describe('Account class', () => {
   });
 
   describe('method: getTransactionHistory', () => {
-    it('should call v2 query if middlewareV2 is enabled', async () => {
-      const fakeResult = 'fakeResult' as unknown as ResultSet<ExtrinsicData>;
-      const getTransactionHistoryV2Spy = jest.spyOn(account, 'getTransactionHistoryV2');
-      getTransactionHistoryV2Spy.mockResolvedValue(fakeResult);
-
-      let result = await account.getTransactionHistory();
-      expect(result).toEqual(fakeResult);
-      expect(getTransactionHistoryV2Spy).toHaveBeenCalledWith({
-        orderBy: ExtrinsicsOrderBy.CreatedAtAsc,
-      });
-
-      result = await account.getTransactionHistory({
-        orderBy: {
-          order: Order.Asc,
-          field: TransactionOrderFields.ModuleId,
-        },
-      });
-      expect(getTransactionHistoryV2Spy).toHaveBeenCalledWith({
-        orderBy: ExtrinsicsOrderBy.ModuleIdAsc,
-      });
-      expect(result).toEqual(fakeResult);
-    });
-  });
-
-  describe('method: getTransactionHistoryV2', () => {
     it('should return a list of transactions', async () => {
       const tag = TxTags.identity.CddRegisterDid;
       const moduleId = ModuleIdEnum.Identity;
@@ -293,6 +267,7 @@ describe('Account class', () => {
       const blockHash1 = 'someHash';
       const blockHash2 = 'otherHash';
       const addressKey = 'd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d';
+      const order = ExtrinsicsOrderBy.CreatedAtAsc;
 
       addressToKeySpy.mockReturnValue(addressKey);
       keyToAddressSpy.mockReturnValue(address);
@@ -340,7 +315,7 @@ describe('Account class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         extrinsicsByArgs(
           {
             blockId: blockNumber1.toString(),
@@ -350,7 +325,8 @@ describe('Account class', () => {
             success: undefined,
           },
           new BigNumber(2),
-          new BigNumber(1)
+          new BigNumber(1),
+          order
         ),
         {
           extrinsics: extrinsicsQueryResponse,
@@ -391,7 +367,7 @@ describe('Account class', () => {
       expect(result.count).toEqual(new BigNumber(20));
       expect(result.next).toEqual(new BigNumber(3));
 
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         extrinsicsByArgs(
           {
             blockId: blockNumber1.toString(),
@@ -401,7 +377,8 @@ describe('Account class', () => {
             success: 0,
           },
           new BigNumber(2),
-          new BigNumber(1)
+          new BigNumber(1),
+          order
         ),
         {
           extrinsics: extrinsicsQueryResponse,
@@ -427,20 +404,31 @@ describe('Account class', () => {
       expect(result.count).toEqual(new BigNumber(20));
       expect(result.next).toEqual(new BigNumber(3));
 
-      dsMockUtils.createApolloV2QueryMock(
-        extrinsicsByArgs({
-          blockId: undefined,
-          address: addressKey,
-          moduleId: undefined,
-          callId: undefined,
-          success: 1,
-        }),
+      dsMockUtils.createApolloQueryMock(
+        extrinsicsByArgs(
+          {
+            blockId: undefined,
+            address: addressKey,
+            moduleId: undefined,
+            callId: undefined,
+            success: 1,
+          },
+          undefined,
+          undefined,
+          ExtrinsicsOrderBy.ModuleIdAsc
+        ),
         {
           extrinsics: extrinsicsQueryResponse,
         }
       );
 
-      result = await account.getTransactionHistory({ success: true });
+      result = await account.getTransactionHistory({
+        success: true,
+        orderBy: {
+          order: Order.Asc,
+          field: TransactionOrderFields.ModuleId,
+        },
+      });
 
       expect(result.data[0].blockNumber).toEqual(blockNumber1);
       expect(result.data[0].address).toEqual(address);
@@ -448,14 +436,19 @@ describe('Account class', () => {
       expect(result.count).toEqual(new BigNumber(20));
       expect(result.next).toEqual(new BigNumber(result.data.length));
 
-      dsMockUtils.createApolloV2QueryMock(
-        extrinsicsByArgs({
-          blockId: undefined,
-          address: addressKey,
-          moduleId: undefined,
-          callId: undefined,
-          success: undefined,
-        }),
+      dsMockUtils.createApolloQueryMock(
+        extrinsicsByArgs(
+          {
+            blockId: undefined,
+            address: addressKey,
+            moduleId: undefined,
+            callId: undefined,
+            success: undefined,
+          },
+          undefined,
+          undefined,
+          order
+        ),
         {
           extrinsics: { nodes: [] },
         }

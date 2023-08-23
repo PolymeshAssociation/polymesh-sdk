@@ -55,10 +55,10 @@ describe('Claims Class', () => {
     procedureMockUtils.cleanup();
   });
 
-  describe('method: getIssuedClaimsV2', () => {
+  describe('method: getIssuedClaims', () => {
     it('should return a list of issued claims', async () => {
       const target = 'someDid';
-      const getIdentityClaimsFromMiddlewareV2: ResultSet<ClaimData> = {
+      const getIdentityClaimsFromMiddleware: ResultSet<ClaimData> = {
         data: [
           {
             target: entityMockUtils.getIdentityInstance({ did: target }),
@@ -78,19 +78,19 @@ describe('Claims Class', () => {
 
       dsMockUtils.configureMocks({
         contextOptions: {
-          getIdentityClaimsFromMiddlewareV2,
+          getIdentityClaimsFromMiddleware,
         },
       });
 
       let result = await claims.getIssuedClaims();
-      expect(result).toEqual(getIdentityClaimsFromMiddlewareV2);
+      expect(result).toEqual(getIdentityClaimsFromMiddleware);
 
       result = await claims.getIssuedClaims({ target });
-      expect(result).toEqual(getIdentityClaimsFromMiddlewareV2);
+      expect(result).toEqual(getIdentityClaimsFromMiddleware);
     });
   });
 
-  describe('method: getIdentitiesWithClaimsV2', () => {
+  describe('method: getIdentitiesWithClaims', () => {
     beforeAll(() => {
       jest.useFakeTimers();
       jest.setSystemTime(new Date(2023, 4, 17));
@@ -160,7 +160,7 @@ describe('Claims Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         claimsQuery({
           dids: [targetDid],
           scope: undefined,
@@ -186,7 +186,7 @@ describe('Claims Class', () => {
       expect(result.count).toEqual(new BigNumber(1));
       expect(result.next).toEqual(null);
 
-      dsMockUtils.createApolloMultipleV2QueriesMock([
+      dsMockUtils.createApolloMultipleQueriesMock([
         {
           query: claimsGroupingQuery({
             scope: undefined,
@@ -284,7 +284,7 @@ describe('Claims Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         claimsQuery({
           dids: [targetDid],
           scope: { type: 'Ticker', value: 'someValue' },
@@ -490,7 +490,7 @@ describe('Claims Class', () => {
     });
   });
 
-  describe('method: getTargetingClaimsV2', () => {
+  describe('method: getTargetingClaims', () => {
     beforeAll(() => {
       jest.useFakeTimers();
       jest.setSystemTime(new Date(2023, 4, 17));
@@ -543,11 +543,11 @@ describe('Claims Class', () => {
 
       dsMockUtils.configureMocks({ contextOptions: { withSigningManager: true } });
 
-      when(jest.spyOn(utilsConversionModule, 'toIdentityWithClaimsArrayV2'))
+      when(jest.spyOn(utilsConversionModule, 'toIdentityWithClaimsArray'))
         .calledWith(claimsQueryResponse.nodes as unknown as Claim[], context, 'issuerId')
         .mockReturnValue(fakeClaims);
 
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         claimsQuery({
           dids: [did],
           scope,
@@ -572,7 +572,7 @@ describe('Claims Class', () => {
       expect(result.count).toEqual(new BigNumber(1));
       expect(result.next).toEqual(null);
 
-      dsMockUtils.createApolloMultipleV2QueriesMock([
+      dsMockUtils.createApolloMultipleQueriesMock([
         {
           query: claimsGroupingQuery(
             {
@@ -671,7 +671,7 @@ describe('Claims Class', () => {
 
       dsMockUtils.configureMocks({
         contextOptions: {
-          middlewareV2Available: false,
+          middlewareAvailable: false,
           getIdentityClaimsFromChain: identityClaims,
         },
       });

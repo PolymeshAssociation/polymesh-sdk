@@ -2164,7 +2164,7 @@ export function scopeToMiddlewareScope(scope: Scope, padTicker = true): Middlewa
 /**
  * @hidden
  */
-export function middlewareV2EventDetailsToEventIdentifier(
+export function middlewareEventDetailsToEventIdentifier(
   block: Block,
   eventIdx = 0
 ): EventIdentifier {
@@ -2877,7 +2877,7 @@ export function endConditionToSettlementType(
 /**
  * @hidden
  */
-export function middlewareV2ClaimToClaimData(claim: MiddlewareClaim, context: Context): ClaimData {
+export function middlewareClaimToClaimData(claim: MiddlewareClaim, context: Context): ClaimData {
   const {
     targetId,
     issuerId,
@@ -2911,7 +2911,7 @@ export function toIdentityWithClaimsArray(
 
   return map(groupedData, (claims, did) => ({
     identity: new Identity({ did }, context),
-    claims: claims.map(claim => middlewareV2ClaimToClaimData(claim, context)),
+    claims: claims.map(claim => middlewareClaimToClaimData(claim, context)),
   }));
 }
 
@@ -3242,7 +3242,7 @@ export function permissionsLikeToPermissions(
 /**
  * @hidden
  */
-export function middlewareV2PortfolioToPortfolio(
+export function middlewarePortfolioToPortfolio(
   portfolio: MiddlewarePortfolio,
   context: Context
 ): DefaultPortfolio | NumberedPortfolio {
@@ -4171,8 +4171,8 @@ export function middlewareInstructionToHistoricInstruction(
     legs: legs.map(({ from, to, assetId, amount }) => ({
       asset: new Asset({ ticker: assetId }, context),
       amount: new BigNumber(amount).shiftedBy(-6),
-      from: middlewareV2PortfolioToPortfolio(from!, context),
-      to: middlewareV2PortfolioToPortfolio(to!, context),
+      from: middlewarePortfolioToPortfolio(from!, context),
+      to: middlewarePortfolioToPortfolio(to!, context),
     })),
   };
   /* eslint-enable @typescript-eslint/no-non-null-assertion */

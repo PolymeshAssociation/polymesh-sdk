@@ -268,7 +268,7 @@ describe('Offering class', () => {
     });
   });
 
-  describe('method: getInvestmentsV2', () => {
+  describe('method: getInvestments', () => {
     it('should return a list of investors', async () => {
       const ticker = 'SOME_TICKER';
       const id = new BigNumber(1);
@@ -294,7 +294,7 @@ describe('Offering class', () => {
         nodes,
       };
 
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         investmentsQuery(
           {
             stoId: id.toNumber(),
@@ -319,7 +319,7 @@ describe('Offering class', () => {
       expect(data[0].soldAmount).toEqual(offeringTokenAmount.div(Math.pow(10, 6)));
       expect(data[0].investedAmount).toEqual(raiseTokenAmount.div(Math.pow(10, 6)));
 
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         investmentsQuery({
           stoId: id.toNumber(),
           offeringToken: ticker,

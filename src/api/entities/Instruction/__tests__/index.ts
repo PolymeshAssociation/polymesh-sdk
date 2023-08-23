@@ -811,7 +811,7 @@ describe('Instruction class', () => {
     });
   });
 
-  describe('method: getStatusV2', () => {
+  describe('method: getStatus', () => {
     afterAll(() => {
       jest.restoreAllMocks();
     });
@@ -888,7 +888,7 @@ describe('Instruction class', () => {
           dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Executed)
         );
 
-      dsMockUtils.createApolloMultipleV2QueriesMock([
+      dsMockUtils.createApolloMultipleQueriesMock([
         {
           query: instructionsQuery(queryVariables, new BigNumber(1), new BigNumber(0)),
           returnData: {
@@ -951,7 +951,7 @@ describe('Instruction class', () => {
         .calledWith(rawId)
         .mockResolvedValue(dsMockUtils.createMockInstructionStatus('Failed'));
 
-      dsMockUtils.createApolloMultipleV2QueriesMock([
+      dsMockUtils.createApolloMultipleQueriesMock([
         {
           query: instructionsQuery(queryVariables, new BigNumber(1), new BigNumber(0)),
           returnData: {
@@ -1010,7 +1010,7 @@ describe('Instruction class', () => {
           dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Unknown)
         );
 
-      dsMockUtils.createApolloMultipleV2QueriesMock([
+      dsMockUtils.createApolloMultipleQueriesMock([
         {
           query: instructionsQuery(queryVariables, new BigNumber(1), new BigNumber(0)),
           returnData: {
