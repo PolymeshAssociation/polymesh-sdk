@@ -134,7 +134,7 @@ export class Offering extends Entity<UniqueIdentifiers, HumanReadable> {
     ): OfferingDetails => {
       if (isV5) {
         return fundraiserToOfferingDetails(
-          rawFundraiser as unknown as PalletStoFundraiser,
+          rawFundraiser.unwrap(),
           rawName as unknown as Bytes,
           context
         );
