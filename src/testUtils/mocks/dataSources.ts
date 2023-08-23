@@ -143,7 +143,9 @@ import { EventEmitter } from 'events';
 import { when } from 'jest-when';
 import { cloneDeep, map, merge, upperFirst } from 'lodash';
 
+import { HistoricPolyxTransaction } from '~/api/entities/Account/types';
 import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
+import { BalanceTypeEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/enums';
 import {
   AssetComplianceResult,
   AuthorizationType as MeshAuthorizationType,
@@ -161,6 +163,7 @@ import { dsMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import {
   AccountBalance,
+  CallIdEnum,
   CheckPermissionsResult,
   CheckRolesResult,
   ClaimData,
@@ -404,6 +407,7 @@ interface ContextOptions {
   getIdentityClaimsFromChain?: ClaimData[];
   getIdentityClaimsFromMiddleware?: ResultSet<ClaimData>;
   getExternalSigner?: PolkadotSigner;
+  getPolyxTransactions?: ResultSet<HistoricPolyxTransaction>;
   primaryAccount?: string;
   secondaryAccounts?: ResultSet<PermissionedAccount>;
   transactionHistory?: ResultSet<ExtrinsicData>;
@@ -683,6 +687,29 @@ const defaultContextOptions: ContextOptions = {
     next: new BigNumber(1),
     count: new BigNumber(1),
   },
+  getPolyxTransactions: {
+    data: [
+      {
+        callId: CallIdEnum.CreateAsset,
+        moduleId: ModuleIdEnum.Protocolfee,
+        eventId: EventIdEnum.FeeCharged,
+        extrinsicIdx: new BigNumber(3),
+        eventIndex: new BigNumber(0),
+        blockNumber: new BigNumber(123),
+        blockHash: 'someHash',
+        blockDate: new Date('2023/01/01'),
+        type: BalanceTypeEnum.Free,
+        amount: new BigNumber(3000).shiftedBy(-6),
+        fromIdentity: 'fromDid' as unknown as Identity,
+        fromAccount: 'fromAddress' as unknown as Account,
+        toIdentity: undefined,
+        toAccount: undefined,
+        memo: undefined,
+      },
+    ],
+    next: new BigNumber(1),
+    count: new BigNumber(1),
+  },
   primaryAccount: 'primaryAccount',
   secondaryAccounts: { data: [], next: null },
   transactionHistory: {
@@ -840,6 +867,7 @@ function configureContext(opts: ContextOptions): void {
     getNetworkVersion: jest.fn().mockResolvedValue(opts.networkVersion),
     supportsSubsidy: jest.fn().mockReturnValue(opts.supportsSubsidy),
     createType: jest.fn() as jest.Mock<unknown, [unknown]>,
+    getPolyxTransactions: jest.fn().mockResolvedValue(opts.getPolyxTransactions),
   } as unknown as MockContext;
 
   contextInstance.clone = jest.fn().mockReturnValue(contextInstance);

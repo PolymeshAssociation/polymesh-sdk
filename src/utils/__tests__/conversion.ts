@@ -72,7 +72,13 @@ import {
   NumberedPortfolio,
   PolymeshError,
 } from '~/internal';
-import { CallIdEnum, ClaimTypeEnum, InstructionStatusEnum, ModuleIdEnum } from '~/middleware/enums';
+import {
+  AuthTypeEnum,
+  CallIdEnum,
+  ClaimTypeEnum,
+  InstructionStatusEnum,
+  ModuleIdEnum,
+} from '~/middleware/enums';
 import {
   Block,
   Claim as MiddlewareClaim,
@@ -177,6 +183,7 @@ import {
   claimCountToClaimCountRestrictionValue,
   claimToMeshClaim,
   claimTypeToMeshClaimType,
+  coerceHexToString,
   complianceConditionsToBtreeSet,
   complianceRequirementResultToRequirementCompliance,
   complianceRequirementToRequirement,
@@ -229,9 +236,13 @@ import {
   metadataToMeshMetadataKey,
   metadataValueDetailToMeshMetadataValueDetail,
   metadataValueToMeshMetadataValue,
+  middlewareAgentGroupDataToPermissionGroup,
+  middlewareAuthorizationDataToAuthorization,
   middlewareClaimToClaimData,
   middlewareEventDetailsToEventIdentifier,
   middlewareInstructionToHistoricInstruction,
+  middlewarePermissionsDataToPermissions,
+  middlewarePortfolioDataToPortfolio,
   middlewarePortfolioToPortfolio,
   middlewareScopeToScope,
   moduleAddressToString,
@@ -5305,6 +5316,31 @@ describe('keyToAddress and addressToKey', () => {
   });
 });
 
+describe('coerceHexToString', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a hex string to string', () => {
+    const hex = '0x41434D450000000000000000';
+    const mockResult = 'ACME';
+
+    let result = coerceHexToString(hex);
+    expect(result).toEqual(mockResult);
+
+    result = coerceHexToString(mockResult);
+    expect(result).toEqual(mockResult);
+  });
+});
+
 describe('transactionHexToTxTag', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
@@ -8672,7 +8708,221 @@ describe('expiryToMoment', () => {
   });
 });
 
-describe('legToSettlementLeg', () => {
+describe('middlewarePortfolioDataToPortfolio', () => {
+  it('should convert middleware portfolio like data into a Portfolio', async () => {
+    const context = dsMockUtils.getContextInstance();
+    const defaultPortfolioData = {
+      did: 'someDid',
+      kind: { default: null },
+    };
+
+    let result = await middlewarePortfolioDataToPortfolio(defaultPortfolioData, context);
+    expect(result instanceof DefaultPortfolio).toBe(true);
+
+    const numberedPortfolioData = {
+      did: 'someDid',
+      kind: { user: 10 },
+    };
+
+    result = await middlewarePortfolioDataToPortfolio(numberedPortfolioData, context);
+    expect(result instanceof NumberedPortfolio).toBe(true);
+  });
+});
+
+describe('middlewareAgentGroupDataToPermissionGroup', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a middleware agent group data object to a PermissionGroup entity', () => {
+    const ticker = 'SOME_TICKER';
+    const context = dsMockUtils.getContextInstance();
+
+    let agentGroup: Record<string, Record<string, null | number>> = { [ticker]: { full: null } };
+    let result = middlewareAgentGroupDataToPermissionGroup(agentGroup, context);
+    expect(result).toEqual(
+      expect.objectContaining({
+        asset: expect.objectContaining({ ticker }),
+        type: PermissionGroupType.Full,
+      })
+    );
+
+    agentGroup = { [ticker]: { exceptMeta: null } };
+
+    result = middlewareAgentGroupDataToPermissionGroup(agentGroup, context);
+    expect(result).toEqual(
+      expect.objectContaining({
+        asset: expect.objectContaining({ ticker }),
+        type: PermissionGroupType.ExceptMeta,
+      })
+    );
+
+    agentGroup = { [ticker]: { polymeshV1CAA: null } };
+    result = middlewareAgentGroupDataToPermissionGroup(agentGroup, context);
+    expect(result).toEqual(
+      expect.objectContaining({
+        asset: expect.objectContaining({ ticker }),
+        type: PermissionGroupType.PolymeshV1Caa,
+      })
+    );
+
+    agentGroup = { [ticker]: { polymeshV1PIA: null } };
+
+    result = middlewareAgentGroupDataToPermissionGroup(agentGroup, context);
+    expect(result).toEqual(
+      expect.objectContaining({
+        asset: expect.objectContaining({ ticker }),
+        type: PermissionGroupType.PolymeshV1Pia,
+      })
+    );
+
+    agentGroup = { [ticker]: { custom: 1 } };
+
+    result = middlewareAgentGroupDataToPermissionGroup(agentGroup, context);
+    expect(result).toEqual(
+      expect.objectContaining({ asset: expect.objectContaining({ ticker }), id: new BigNumber(1) })
+    );
+  });
+});
+
+describe('middlewarePermissionsDataToPermissions', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+    entityMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+    entityMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
+
+  it('should convert a middleware permissions data to a Permissions', () => {
+    const context = dsMockUtils.getContextInstance();
+    const ticker = 'SOME_TICKER';
+    const hexTicker = '0x534F4D455F5449434B455200';
+    const did = 'someDid';
+    let fakeResult: Permissions = {
+      assets: {
+        values: [expect.objectContaining({ ticker })],
+        type: PermissionType.Include,
+      },
+      transactions: {
+        type: PermissionType.Include,
+        values: [TxTags.identity.AddClaim, ModuleName.Authorship],
+      },
+      transactionGroups: [],
+      portfolios: {
+        values: [expect.objectContaining({ owner: expect.objectContaining({ did }) })],
+        type: PermissionType.Include,
+      },
+    };
+    let permissions: Record<string, unknown> = {
+      asset: { these: [hexTicker] },
+      extrinsic: {
+        these: [
+          {
+            palletName: 'Identity',
+            dispatchableNames: {
+              these: ['add_claim'],
+            },
+          },
+          {
+            palletName: 'Authorship',
+            dispatchableNames: {
+              whole: null,
+            },
+          },
+        ],
+      },
+      portfolio: {
+        these: [
+          {
+            did,
+            kind: { default: null },
+          },
+        ],
+      },
+    };
+
+    let result = middlewarePermissionsDataToPermissions(JSON.stringify(permissions), context);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      assets: null,
+      transactions: null,
+      transactionGroups: [],
+      portfolios: null,
+    };
+    permissions = {
+      asset: { whole: null },
+      portfolio: { whole: null },
+      extrinsic: { whole: null },
+    };
+
+    result = middlewarePermissionsDataToPermissions(JSON.stringify(permissions), context);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      assets: {
+        values: [expect.objectContaining({ ticker })],
+        type: PermissionType.Exclude,
+      },
+      transactions: {
+        type: PermissionType.Exclude,
+        values: [ModuleName.Identity],
+        exceptions: [TxTags.identity.AddClaim],
+      },
+      transactionGroups: [],
+      portfolios: {
+        values: [expect.objectContaining({ owner: expect.objectContaining({ did }) })],
+        type: PermissionType.Exclude,
+      },
+    };
+
+    permissions = {
+      asset: {
+        except: [hexTicker],
+      },
+      extrinsic: {
+        except: [
+          {
+            palletName: 'Identity',
+            dispatchableNames: {
+              except: ['add_claim'],
+            },
+          },
+        ],
+      },
+      portfolio: {
+        except: [
+          {
+            did,
+            kind: { default: null },
+          },
+        ],
+      },
+    };
+
+    result = middlewarePermissionsDataToPermissions(JSON.stringify(permissions), context);
+    expect(result).toEqual(fakeResult);
+  });
+});
+
+describe('middlewareAuthorizationDataToAuthorization', () => {
   beforeAll(() => {
     dsMockUtils.initMocks();
   });
@@ -8685,6 +8935,198 @@ describe('legToSettlementLeg', () => {
     dsMockUtils.cleanup();
   });
 
+  it('should convert a middleware Authorization data to an Authorization', () => {
+    const context = dsMockUtils.getContextInstance();
+    let fakeResult: Authorization = {
+      type: AuthorizationType.AttestPrimaryKeyRotation,
+      value: expect.objectContaining({ did: 'someDid' }),
+    };
+    let authorizationData = 'someDid';
+
+    let result = middlewareAuthorizationDataToAuthorization(
+      context,
+      AuthTypeEnum.AttestPrimaryKeyRotation,
+      authorizationData
+    );
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: AuthorizationType.RotatePrimaryKey,
+    };
+
+    result = middlewareAuthorizationDataToAuthorization(context, AuthTypeEnum.RotatePrimaryKey);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: AuthorizationType.TransferTicker,
+      value: 'SOME_TICKER',
+    };
+    authorizationData = '0x534F4D455F5449434B455200';
+
+    result = middlewareAuthorizationDataToAuthorization(
+      context,
+      AuthTypeEnum.TransferTicker,
+      authorizationData
+    );
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: AuthorizationType.AddMultiSigSigner,
+      value: 'someAccount',
+    };
+    authorizationData = 'someAccount';
+
+    result = middlewareAuthorizationDataToAuthorization(
+      context,
+      AuthTypeEnum.AddMultiSigSigner,
+      authorizationData
+    );
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: AuthorizationType.PortfolioCustody,
+      value: expect.objectContaining({ owner: expect.objectContaining({ did: 'someDid' }) }),
+    };
+    authorizationData = JSON.stringify({
+      did: 'someDid',
+      kind: { default: null },
+    });
+
+    result = middlewareAuthorizationDataToAuthorization(
+      context,
+      AuthTypeEnum.PortfolioCustody,
+      authorizationData
+    );
+    expect(result).toEqual(fakeResult);
+
+    const portfolioId = new BigNumber(1);
+    fakeResult = {
+      type: AuthorizationType.PortfolioCustody,
+      value: expect.objectContaining({
+        owner: expect.objectContaining({ did: 'someDid' }),
+        id: portfolioId,
+      }),
+    };
+    authorizationData = JSON.stringify({
+      did: 'someDid',
+      kind: { user: 1 },
+    });
+
+    result = middlewareAuthorizationDataToAuthorization(
+      context,
+      AuthTypeEnum.PortfolioCustody,
+      authorizationData
+    );
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: AuthorizationType.TransferAssetOwnership,
+      value: 'SOME_TICKER',
+    };
+    authorizationData = '0x534F4D455F5449434B455200';
+
+    result = middlewareAuthorizationDataToAuthorization(
+      context,
+      AuthTypeEnum.TransferAssetOwnership,
+      authorizationData
+    );
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = {
+      type: AuthorizationType.JoinIdentity,
+      value: { assets: null, portfolios: null, transactions: null, transactionGroups: [] },
+    };
+    authorizationData = JSON.stringify({
+      asset: { whole: null },
+      portfolio: { whole: null },
+      extrinsic: { whole: null },
+    });
+
+    result = middlewareAuthorizationDataToAuthorization(
+      context,
+      AuthTypeEnum.JoinIdentity,
+      authorizationData
+    );
+    expect(result).toEqual(fakeResult);
+
+    const beneficiaryAddress = 'beneficiaryAddress';
+    const relayerAddress = 'relayerAddress';
+    const allowance = new BigNumber(1000);
+    fakeResult = {
+      type: AuthorizationType.AddRelayerPayingKey,
+      value: {
+        beneficiary: expect.objectContaining({ address: beneficiaryAddress }),
+        subsidizer: expect.objectContaining({ address: relayerAddress }),
+        allowance,
+      },
+    };
+    authorizationData = `{"${beneficiaryAddress}","${relayerAddress}",${allowance.shiftedBy(6)}}`;
+
+    result = middlewareAuthorizationDataToAuthorization(
+      context,
+      AuthTypeEnum.AddRelayerPayingKey,
+      authorizationData
+    );
+    expect(result).toEqual(fakeResult);
+
+    const ticker = 'SOME_TICKER';
+    const type = PermissionGroupType.Full;
+    fakeResult = {
+      type: AuthorizationType.BecomeAgent,
+      value: expect.objectContaining({
+        asset: expect.objectContaining({ ticker }),
+        type,
+      }),
+    };
+
+    authorizationData = `{"${ticker}",${JSON.stringify({ full: null })}}`;
+
+    result = middlewareAuthorizationDataToAuthorization(
+      context,
+      AuthTypeEnum.BecomeAgent,
+      authorizationData
+    );
+    expect(result).toEqual(fakeResult);
+
+    authorizationData = JSON.stringify({
+      asset: { whole: null },
+      portfolio: { whole: null },
+      extrinsic: { whole: null },
+    });
+    fakeResult = {
+      type: AuthorizationType.RotatePrimaryKeyToSecondary,
+      value: { assets: null, portfolios: null, transactions: null, transactionGroups: [] },
+    };
+
+    result = middlewareAuthorizationDataToAuthorization(
+      context,
+      AuthTypeEnum.RotatePrimaryKeyToSecondary,
+      authorizationData
+    );
+    expect(result).toEqual(fakeResult);
+  });
+
+  it('should throw an error if the authorization has an unsupported type', () => {
+    const context = dsMockUtils.getContextInstance();
+
+    expect(() =>
+      middlewareAuthorizationDataToAuthorization(context, AuthTypeEnum.Custom, 'randomData')
+    ).toThrow('Unsupported Authorization Type. Please contact the Polymesh team');
+  });
+});
+
+describe('legToSettlementLeg', () => {
+  beforeAll(() => {
+    dsMockUtils.initMocks();
+  });
+
+  afterEach(() => {
+    dsMockUtils.reset();
+  });
+
+  afterAll(() => {
+    dsMockUtils.cleanup();
+  });
   it('should make a fungible leg', () => {
     const context = dsMockUtils.getContextInstance();
     const fakeResult = 'fakeResult' as unknown as PolymeshPrimitivesSettlementLeg;
