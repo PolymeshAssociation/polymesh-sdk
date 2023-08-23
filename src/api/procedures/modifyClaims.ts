@@ -3,10 +3,11 @@ import {
   PolymeshPrimitivesIdentityClaimClaim,
   PolymeshPrimitivesIdentityId,
 } from '@polkadot/types/lookup';
-import { isEqual, uniq } from 'lodash';
+import { groupBy, isEqual, uniq } from 'lodash';
 
 import { Context, Identity, PolymeshError, Procedure } from '~/internal';
-import { Claim as MiddlewareClaim } from '~/middleware/types';
+import { claimsQuery } from '~/middleware/queries';
+import { Claim as MiddlewareClaim, Query } from '~/middleware/types';
 import {
   CddClaim,
   Claim,
@@ -20,7 +21,7 @@ import {
   TxTags,
 } from '~/types';
 import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
-import { tuple } from '~/types/utils';
+import { Ensured, tuple } from '~/types/utils';
 import { DEFAULT_CDD_ID } from '~/utils/constants';
 import {
   claimToMeshClaim,
@@ -174,39 +175,32 @@ export async function prepareModifyClaims(
 
   // skip validation if the middleware is unavailable
   if (shouldValidateWithMiddleware) {
-    // const { did: currentDid } = await context.getSigningIdentity();
-    // const {
-    //   data: {
-    //     claims: { nodes: currentClaims },
-    //   },
-    // } = await context.queryMiddleware<Ensured<Query, 'claims'>>(
-    //   claimsQuery(
-    //     {
-    //       dids: allTargets,
-    //       trustedClaimIssuers: [currentDid],
-    //       includeExpired: true,
-    //     },
-    //     new BigNumber(allTargets.length)
-    //   )
-    // );
-    // const claimsByDid = currentClaims.reduce<Record<string, MiddlewareClaim[]>>(
-    //   (prev, { did, claims: didClaims }) => {
-    //     const copy = cloneDeep(prev);
-    //     copy[did] = didClaims;
-    //     return copy;
-    //   },
-    //   {}
-    // );
-    // const claimsByOtherIssuers: Claim[] = findClaimsByOtherIssuers(claims, claimsByDid);
-    // if (claimsByOtherIssuers.length) {
-    //   throw new PolymeshError({
-    //     code: ErrorCode.UnmetPrerequisite,
-    //     message: `Attempt to ${operation.toLowerCase()} claims that weren't issued by the signing Identity`,
-    //     data: {
-    //       claimsByOtherIssuers,
-    //     },
-    //   });
-    // }
+    const { did: currentDid } = await context.getSigningIdentity();
+    const {
+      data: {
+        claims: { nodes: claimsData },
+      },
+    } = await context.queryMiddleware<Ensured<Query, 'claims'>>(
+      claimsQuery({
+        dids: allTargets,
+        trustedClaimIssuers: [currentDid],
+        includeExpired: true,
+      })
+    );
+
+    const claimsByDid = groupBy(claimsData, 'targetId');
+
+    const claimsByOtherIssuers: Claim[] = findClaimsByOtherIssuers(claims, claimsByDid);
+
+    if (claimsByOtherIssuers.length) {
+      throw new PolymeshError({
+        code: ErrorCode.UnmetPrerequisite,
+        message: `Attempt to ${operation.toLowerCase()} claims that weren't issued by the signing Identity`,
+        data: {
+          claimsByOtherIssuers,
+        },
+      });
+    }
   }
 
   if (operation === ClaimOperation.Revoke) {
