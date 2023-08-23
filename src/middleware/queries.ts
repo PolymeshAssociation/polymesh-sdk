@@ -148,7 +148,7 @@ function createClaimsFilters(variables: ClaimsQueryFilter): {
   const args = ['$size: Int, $start: Int'];
   const filters = ['revokeDate: { isNull: true }'];
   const { dids, claimTypes, trustedClaimIssuers, scope, includeExpired } = variables;
-  if (dids && dids.length) {
+  if (dids?.length) {
     args.push('$dids: [String!]');
     filters.push('targetId: { in: $dids }');
   }
@@ -156,7 +156,7 @@ function createClaimsFilters(variables: ClaimsQueryFilter): {
     args.push('$claimTypes: [ClaimTypeEnum!]!');
     filters.push('type: { in: $claimTypes }');
   }
-  if (trustedClaimIssuers && trustedClaimIssuers.length) {
+  if (trustedClaimIssuers?.length) {
     args.push('$trustedClaimIssuers: [String!]');
     filters.push('issuerId: { in: $trustedClaimIssuers }');
   }
