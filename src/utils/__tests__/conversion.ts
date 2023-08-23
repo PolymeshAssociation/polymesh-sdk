@@ -3922,6 +3922,12 @@ describe('middlewareScopeToScope and scopeToMiddlewareScope', () => {
 
       expect(result).toEqual({ type: ScopeType.Custom, value: 'SOMETHING_ELSE' });
     });
+
+    it('should throw an error for invalid scope type', () => {
+      expect(() =>
+        middlewareScopeToScope({ type: 'RANDOM_TYPE', value: 'SOMETHING_ELSE' })
+      ).toThrow('Unsupported Scope Type. Please contact the Polymesh team');
+    });
   });
 
   describe('scopeToMiddlewareScope', () => {
@@ -5562,6 +5568,17 @@ describe('meshInstructionStatusToInstructionStatus', () => {
 
     fakeResult = InstructionStatus.Failed;
     instructionStatus = dsMockUtils.createMockInstructionStatus(fakeResult);
+
+    result = meshInstructionStatusToInstructionStatus(instructionStatus);
+    expect(result).toEqual(fakeResult);
+
+    fakeResult = InstructionStatus.Executed;
+    instructionStatus = dsMockUtils.createMockInstructionStatus('Rejected');
+
+    result = meshInstructionStatusToInstructionStatus(instructionStatus);
+    expect(result).toEqual(fakeResult);
+
+    instructionStatus = dsMockUtils.createMockInstructionStatus('Success');
 
     result = meshInstructionStatusToInstructionStatus(instructionStatus);
     expect(result).toEqual(fakeResult);

@@ -27,6 +27,7 @@ for (const match of matches) {
 fs.writeFileSync(
   enumAliasFile,
   `/* istanbul ignore file */
+
 export { 
   ${aliases.join(',\n  ')} 
 } from '~/middleware/types';

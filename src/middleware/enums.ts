@@ -1,4 +1,5 @@
 /* istanbul ignore file */
+
 export {
   PublicEnum05F6462Eea as SettlementResultEnum,
   PublicEnum040F13614F as StatOpTypeEnum,

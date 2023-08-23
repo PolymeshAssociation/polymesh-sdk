@@ -2947,7 +2947,7 @@ export const createMockVenue = (venue?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockInstructionStatus = (
-  instructionStatus?: 'Pending' | 'Unknown' | 'Failed' | 'Executed'
+  instructionStatus?: 'Unknown' | 'Pending' | 'Failed' | 'Success' | 'Rejected'
 ): MockCodec<PolymeshPrimitivesSettlementInstructionStatus> => {
   return createMockEnum<PolymeshPrimitivesSettlementInstructionStatus>(instructionStatus);
 };
