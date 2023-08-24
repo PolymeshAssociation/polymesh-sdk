@@ -51,7 +51,6 @@ export async function prepareIssueTokens(
     });
   }
 
-  console.log({ portfolioId: portfolioId?.toString() });
 
   const portfolio = portfolioId
     ? await signingIdentity.portfolios.getPortfolio({ portfolioId })
