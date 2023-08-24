@@ -4,7 +4,7 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Context, Namespace } from '~/internal';
-import { authorizationsQuery } from '~/middleware/queriesV2';
+import { authorizationsQuery } from '~/middleware/queries';
 import { AuthorizationType as MeshAuthorizationType } from '~/polkadot/polymesh';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
@@ -243,7 +243,7 @@ describe('Authorizations class', () => {
         toId: did,
       }));
 
-      dsMockUtils.createApolloV2QueryMock(authorizationsQuery({ toId: did }), {
+      dsMockUtils.createApolloQueryMock(authorizationsQuery({ toId: did }), {
         authorizations: {
           nodes: fakeAuths,
           totalCount: new BigNumber(10),
@@ -278,7 +278,7 @@ describe('Authorizations class', () => {
         toKey: address,
         fromId: did,
       };
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         authorizationsQuery(
           {
             type: AuthTypeEnum.RotatePrimaryKey,

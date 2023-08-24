@@ -12,13 +12,12 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Asset, Context, Entity, Identity, PolymeshError } from '~/internal';
-import { tokensByTrustedClaimIssuer, tokensHeldByDid } from '~/middleware/queries';
 import {
   assetHoldersQuery,
   instructionsByDidQuery,
   trustingAssetsQuery,
-} from '~/middleware/queriesV2';
-import { AssetHoldersOrderBy } from '~/middleware/typesV2';
+} from '~/middleware/queries';
+import { AssetHoldersOrderBy } from '~/middleware/types';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import { MockContext } from '~/testUtils/mocks/dataSources';
 import {
@@ -27,11 +26,9 @@ import {
   ErrorCode,
   HistoricInstruction,
   IdentityRole,
-  Order,
   PermissionedAccount,
   Permissions,
   PortfolioCustodianRole,
-  ResultSet,
   Role,
   RoleType,
   TickerOwnerRole,
@@ -535,48 +532,18 @@ describe('Identity class', () => {
 
   describe('method: getTrustingAssets', () => {
     const did = 'someDid';
-    const tickers = ['ASSET1\0\0', 'ASSET2\0\0'];
-
-    it('should return a list of Assets', async () => {
-      context = dsMockUtils.getContextInstance({
-        middlewareV2Enabled: false,
-      });
-      dsMockUtils.createApolloQueryMock(tokensByTrustedClaimIssuer({ claimIssuerDid: did }), {
-        tokensByTrustedClaimIssuer: tickers,
-      });
-      const identity = new Identity({ did }, context);
-
-      const result = await identity.getTrustingAssets();
-
-      expect(result[0].ticker).toBe('ASSET1');
-      expect(result[1].ticker).toBe('ASSET2');
-    });
-
-    it('should call v2 query if middlewareV2 is enabled', async () => {
-      const identity = new Identity({ did }, context);
-
-      const fakeResult = 'fakeResult' as unknown as Asset[];
-      jest.spyOn(identity, 'getTrustingAssetsV2').mockResolvedValue(fakeResult);
-
-      const result = await identity.getTrustingAssets();
-      expect(result).toEqual(fakeResult);
-    });
-  });
-
-  describe('method: getTrustingAssetsV2', () => {
-    const did = 'someDid';
     const tickers = ['ASSET1', 'ASSET2'];
 
     it('should return a list of Assets', async () => {
       const identity = new Identity({ did }, context);
 
-      dsMockUtils.createApolloV2QueryMock(trustingAssetsQuery({ issuer: did }), {
+      dsMockUtils.createApolloQueryMock(trustingAssetsQuery({ issuer: did }), {
         trustedClaimIssuers: {
           nodes: tickers.map(ticker => ({ assetId: ticker })),
         },
       });
 
-      const result = await identity.getTrustingAssetsV2();
+      const result = await identity.getTrustingAssets();
 
       expect(result[0].ticker).toBe('ASSET1');
       expect(result[1].ticker).toBe('ASSET2');
@@ -588,78 +555,18 @@ describe('Identity class', () => {
     const tickers = ['ASSET1', 'ASSET2'];
 
     it('should return a list of Assets', async () => {
-      dsMockUtils.configureMocks({
-        contextOptions: { middlewareV2Enabled: false },
-      });
       const identity = new Identity({ did }, context);
 
-      dsMockUtils.createApolloQueryMock(
-        tokensHeldByDid({ did, count: undefined, skip: undefined, order: Order.Asc }),
-        {
-          tokensHeldByDid: { items: tickers, totalCount: 2 },
-        }
-      );
-
-      let result = await identity.getHeldAssets();
-
-      expect(result.data[0].ticker).toBe(tickers[0]);
-      expect(result.data[1].ticker).toBe(tickers[1]);
-
-      dsMockUtils.createApolloQueryMock(
-        tokensHeldByDid({ did, count: 1, skip: 0, order: Order.Asc }),
-        {
-          tokensHeldByDid: { items: tickers, totalCount: 2 },
-        }
-      );
-
-      result = await identity.getHeldAssets({
-        start: new BigNumber(0),
-        size: new BigNumber(1),
-        order: Order.Asc,
-      });
-
-      expect(result.data[0].ticker).toBe(tickers[0]);
-      expect(result.data[1].ticker).toBe(tickers[1]);
-    });
-
-    it('should call v2 query if middlewareV2 is enabled', async () => {
-      const identity = new Identity({ did }, context);
-
-      const fakeResult = 'fakeResult' as unknown as ResultSet<Asset>;
-      const getHeldAssetV2Spy = jest.spyOn(identity, 'getHeldAssetsV2');
-      when(getHeldAssetV2Spy)
-        .calledWith({ order: AssetHoldersOrderBy.AssetIdAsc })
-        .mockResolvedValueOnce(fakeResult);
-
-      let result = await identity.getHeldAssets();
-      expect(result).toEqual(fakeResult);
-
-      when(getHeldAssetV2Spy)
-        .calledWith({ order: AssetHoldersOrderBy.AssetIdDesc })
-        .mockResolvedValueOnce(fakeResult);
-
-      result = await identity.getHeldAssets({ order: Order.Desc });
-      expect(result).toEqual(fakeResult);
-    });
-  });
-
-  describe('method: getHeldAssetsV2', () => {
-    const did = 'someDid';
-    const tickers = ['ASSET1', 'ASSET2'];
-
-    it('should return a list of Assets', async () => {
-      const identity = new Identity({ did }, context);
-
-      dsMockUtils.createApolloV2QueryMock(assetHoldersQuery({ identityId: did }), {
+      dsMockUtils.createApolloQueryMock(assetHoldersQuery({ identityId: did }), {
         assetHolders: { nodes: tickers.map(ticker => ({ assetId: ticker })), totalCount: 2 },
       });
 
-      let result = await identity.getHeldAssetsV2();
+      let result = await identity.getHeldAssets();
 
       expect(result.data[0].ticker).toBe(tickers[0]);
       expect(result.data[1].ticker).toBe(tickers[1]);
 
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         assetHoldersQuery(
           { identityId: did },
           new BigNumber(1),
@@ -671,7 +578,7 @@ describe('Identity class', () => {
         }
       );
 
-      result = await identity.getHeldAssetsV2({
+      result = await identity.getHeldAssets({
         start: new BigNumber(0),
         size: new BigNumber(1),
         order: AssetHoldersOrderBy.CreatedBlockIdAsc,
@@ -1248,7 +1155,7 @@ describe('Identity class', () => {
         nodes: [{ instruction: 'instruction' }],
       };
 
-      dsMockUtils.createApolloV2QueryMock(instructionsByDidQuery(identity.did), {
+      dsMockUtils.createApolloQueryMock(instructionsByDidQuery(identity.did), {
         legs: legsResponse,
       });
 

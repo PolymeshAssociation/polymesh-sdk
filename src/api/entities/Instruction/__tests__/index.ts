@@ -4,10 +4,8 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Context, Entity, Instruction, PolymeshTransaction } from '~/internal';
-import { InstructionStatusEnum } from '~/middleware/enumsV2';
-import { eventByIndexedArgs } from '~/middleware/queries';
-import { instructionsQuery } from '~/middleware/queriesV2';
-import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
+import { InstructionStatusEnum } from '~/middleware/enums';
+import { instructionsQuery } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { createMockInstructionStatus, createMockNfts } from '~/testUtils/mocks/dataSources';
 import { Mocked } from '~/testUtils/types';
@@ -15,7 +13,6 @@ import {
   AffirmationStatus,
   InstructionAffirmationOperation,
   InstructionStatus,
-  InstructionStatusResult,
   InstructionType,
   UnsubCallback,
 } from '~/types';
@@ -114,9 +111,7 @@ describe('Instruction class', () => {
       );
       when(instructionStatusesMock)
         .calledWith(rawId)
-        .mockResolvedValue(
-          dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Executed)
-        );
+        .mockResolvedValue(dsMockUtils.createMockInstructionStatus('Success'));
 
       let result = await instruction.isExecuted();
 
@@ -177,9 +172,7 @@ describe('Instruction class', () => {
 
       expect(result).toBe(true);
 
-      instructionStatusesMock.mockResolvedValue(
-        dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Executed)
-      );
+      instructionStatusesMock.mockResolvedValue(dsMockUtils.createMockInstructionStatus('Success'));
 
       result = await instruction.isPending();
 
@@ -539,9 +532,7 @@ describe('Instruction class', () => {
     });
 
     it('should throw an error if the instruction is not pending', () => {
-      instructionStatusesMock.mockResolvedValue(
-        dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Executed)
-      );
+      instructionStatusesMock.mockResolvedValue(dsMockUtils.createMockInstructionStatus('Success'));
 
       return expect(instruction.getAffirmations()).rejects.toThrow(
         'Instruction has already been executed/rejected and it was purged from chain'
@@ -622,9 +613,7 @@ describe('Instruction class', () => {
     });
 
     it('should throw an error if the instruction is not pending', () => {
-      instructionStatusMock.mockResolvedValue(
-        createMockInstructionStatus(InternalInstructionStatus.Executed)
-      );
+      instructionStatusMock.mockResolvedValue(createMockInstructionStatus('Success'));
       return expect(instruction.getLegs()).rejects.toThrow(
         'Instruction has already been executed/rejected and it was purged from chain'
       );
@@ -827,177 +816,6 @@ describe('Instruction class', () => {
 
     beforeEach(() => {
       when(bigNumberToU64Spy).calledWith(id, context).mockReturnValue(rawId);
-      dsMockUtils.configureMocks({
-        contextOptions: { middlewareV2Enabled: false },
-      });
-    });
-
-    it('should return Pending Instruction status', async () => {
-      const statusResult = dsMockUtils.createMockInstructionStatus(
-        InternalInstructionStatus.Pending
-      );
-
-      when(dsMockUtils.createQueryMock('settlement', 'instructionStatuses'))
-        .calledWith(rawId)
-        .mockResolvedValue(statusResult);
-
-      const result = await instruction.getStatus();
-      expect(result).toMatchObject({
-        status: InstructionStatus.Pending,
-      });
-    });
-
-    it('should return Executed Instruction status', async () => {
-      const blockNumber = new BigNumber(1234);
-      const blockDate = new Date('4/14/2020');
-      const eventIdx = new BigNumber(1);
-      const fakeQueryResult = {
-        /* eslint-disable @typescript-eslint/naming-convention */
-        block_id: blockNumber.toNumber(),
-        block: { datetime: blockDate },
-        event_idx: eventIdx.toNumber(),
-        /* eslint-enable @typescript-eslint/naming-convention */
-      };
-      const fakeEventIdentifierResult = { blockNumber, blockDate, eventIndex: eventIdx };
-
-      const queryVariables = {
-        moduleId: ModuleIdEnum.Settlement,
-        eventId: EventIdEnum.InstructionExecuted,
-        eventArg1: id.toString(),
-      };
-
-      // Should return Pending status
-      const queryResult = dsMockUtils.createMockInstructionStatus(
-        InternalInstructionStatus.Executed
-      );
-
-      when(dsMockUtils.createQueryMock('settlement', 'instructionStatuses'))
-        .calledWith(rawId)
-        .mockResolvedValue(queryResult);
-
-      dsMockUtils.createApolloQueryMock(eventByIndexedArgs(queryVariables), {
-        eventByIndexedArgs: fakeQueryResult,
-      });
-
-      const result = await instruction.getStatus();
-      expect(result).toMatchObject({
-        status: InstructionStatus.Executed,
-        eventIdentifier: fakeEventIdentifierResult,
-      });
-    });
-
-    it('should return Failed Instruction status', async () => {
-      const blockNumber = new BigNumber(1234);
-      const blockDate = new Date('4/14/2020');
-      const eventIdx = new BigNumber(1);
-      const fakeQueryResult = {
-        /* eslint-disable @typescript-eslint/naming-convention */
-        block_id: blockNumber.toNumber(),
-        block: { datetime: blockDate },
-        event_idx: eventIdx.toNumber(),
-        /* eslint-enable @typescript-eslint/naming-convention */
-      };
-      const fakeEventIdentifierResult = { blockNumber, blockDate, eventIndex: eventIdx };
-
-      const queryVariables = {
-        moduleId: ModuleIdEnum.Settlement,
-        eventId: EventIdEnum.InstructionExecuted,
-        eventArg1: id.toString(),
-      };
-
-      when(dsMockUtils.createQueryMock('settlement', 'instructionStatuses'))
-        .calledWith(rawId)
-        .mockResolvedValue(
-          dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Failed)
-        );
-
-      dsMockUtils.createApolloMultipleQueriesMock([
-        {
-          query: eventByIndexedArgs(queryVariables),
-          returnData: {
-            eventByIndexedArgs: null,
-          },
-        },
-        {
-          query: eventByIndexedArgs({
-            ...queryVariables,
-            eventId: EventIdEnum.InstructionFailed,
-          }),
-          returnData: {
-            eventByIndexedArgs: fakeQueryResult,
-          },
-        },
-      ]);
-
-      const result = await instruction.getStatus();
-      expect(result).toMatchObject({
-        status: InstructionStatus.Failed,
-        eventIdentifier: fakeEventIdentifierResult,
-      });
-    });
-
-    it("should throw an error if Instruction status couldn't be determined", async () => {
-      const queryVariables = {
-        moduleId: ModuleIdEnum.Settlement,
-        eventId: EventIdEnum.InstructionExecuted,
-        eventArg1: id.toString(),
-      };
-
-      when(dsMockUtils.createQueryMock('settlement', 'instructionStatuses'))
-        .calledWith(rawId)
-        .mockResolvedValue(
-          dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Unknown)
-        );
-
-      dsMockUtils.createApolloMultipleQueriesMock([
-        {
-          query: eventByIndexedArgs(queryVariables),
-          returnData: {
-            eventByIndexedArgs: null,
-          },
-        },
-        {
-          query: eventByIndexedArgs({
-            ...queryVariables,
-            eventId: EventIdEnum.InstructionFailed,
-          }),
-          returnData: {
-            eventByIndexedArgs: null,
-          },
-        },
-      ]);
-
-      return expect(instruction.getStatus()).rejects.toThrow(
-        "It isn't possible to determine the current status of this Instruction"
-      );
-    });
-
-    it('should call v2 query if middlewareV2 is enabled', async () => {
-      dsMockUtils.configureMocks({
-        contextOptions: { middlewareV2Enabled: true },
-      });
-      jest.spyOn(instruction, 'isPending').mockResolvedValue(false);
-      const fakeResult = 'fakeResult' as unknown as InstructionStatusResult;
-      jest.spyOn(instruction, 'getStatusV2').mockResolvedValue(fakeResult);
-
-      const result = await instruction.getStatus();
-      expect(result).toEqual(fakeResult);
-    });
-  });
-
-  describe('method: getStatusV2', () => {
-    afterAll(() => {
-      jest.restoreAllMocks();
-    });
-
-    let bigNumberToU64Spy: jest.SpyInstance;
-
-    beforeAll(() => {
-      bigNumberToU64Spy = jest.spyOn(utilsConversionModule, 'bigNumberToU64');
-    });
-
-    beforeEach(() => {
-      when(bigNumberToU64Spy).calledWith(id, context).mockReturnValue(rawId);
     });
 
     it('should return Pending Instruction status', async () => {
@@ -1020,7 +838,7 @@ describe('Instruction class', () => {
           dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Pending)
         );
 
-      const result = await instruction.getStatusV2();
+      const result = await instruction.getStatus();
       expect(result).toMatchObject({
         status: InstructionStatus.Pending,
       });
@@ -1058,11 +876,9 @@ describe('Instruction class', () => {
 
       when(dsMockUtils.createQueryMock('settlement', 'instructionStatuses'))
         .calledWith(rawId)
-        .mockResolvedValue(
-          dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Executed)
-        );
+        .mockResolvedValue(dsMockUtils.createMockInstructionStatus('Success'));
 
-      dsMockUtils.createApolloMultipleV2QueriesMock([
+      dsMockUtils.createApolloMultipleQueriesMock([
         {
           query: instructionsQuery(queryVariables, new BigNumber(1), new BigNumber(0)),
           returnData: {
@@ -1084,7 +900,7 @@ describe('Instruction class', () => {
         },
       ]);
 
-      const result = await instruction.getStatusV2();
+      const result = await instruction.getStatus();
       expect(result).toMatchObject({
         status: InstructionStatus.Executed,
         eventIdentifier: fakeEventIdentifierResult,
@@ -1125,7 +941,7 @@ describe('Instruction class', () => {
         .calledWith(rawId)
         .mockResolvedValue(dsMockUtils.createMockInstructionStatus('Failed'));
 
-      dsMockUtils.createApolloMultipleV2QueriesMock([
+      dsMockUtils.createApolloMultipleQueriesMock([
         {
           query: instructionsQuery(queryVariables, new BigNumber(1), new BigNumber(0)),
           returnData: {
@@ -1151,7 +967,7 @@ describe('Instruction class', () => {
         },
       ]);
 
-      const result = await instruction.getStatusV2();
+      const result = await instruction.getStatus();
       expect(result).toMatchObject({
         status: InstructionStatus.Failed,
         eventIdentifier: fakeEventIdentifierResult,
@@ -1184,7 +1000,7 @@ describe('Instruction class', () => {
           dsMockUtils.createMockInstructionStatus(InternalInstructionStatus.Unknown)
         );
 
-      dsMockUtils.createApolloMultipleV2QueriesMock([
+      dsMockUtils.createApolloMultipleQueriesMock([
         {
           query: instructionsQuery(queryVariables, new BigNumber(1), new BigNumber(0)),
           returnData: {
@@ -1206,7 +1022,7 @@ describe('Instruction class', () => {
         },
       ]);
 
-      return expect(instruction.getStatusV2()).rejects.toThrow(
+      return expect(instruction.getStatus()).rejects.toThrow(
         "It isn't possible to determine the current status of this Instruction"
       );
     });

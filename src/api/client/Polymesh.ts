@@ -11,7 +11,6 @@ import fetch from 'cross-fetch';
 import schema from 'polymesh-types/schema';
 
 import { Account, Context, createTransactionBatch, Identity, PolymeshError } from '~/internal';
-import { heartbeat } from '~/middleware/queries';
 import {
   CreateTransactionBatchProcedureMethod,
   ErrorCode,
@@ -35,10 +34,6 @@ import { Settlements } from './Settlements';
 export interface ConnectParams {
   nodeUrl: string;
   signingManager?: SigningManager;
-  /**
-   * @deprecated in favour of middlewareV2
-   */
-  middleware?: MiddlewareConfig;
   middlewareV2?: MiddlewareConfig;
 }
 
@@ -130,11 +125,10 @@ export class Polymesh {
    * @param params.signingManager - object in charge of managing keys and signing transactions
    *   (optional, if not passed the SDK will not be able to submit transactions). Can be set later with
    *   `setSigningManager`
-   * @param params.middleware - middleware API URL and key (optional, used for historic queries)
    * @param params.middlewareV2 - middleware V2 API URL (optional, used for historic queries)
    */
   static async connect(params: ConnectParams): Promise<Polymesh> {
-    const { nodeUrl, signingManager, middleware, middlewareV2 } = params;
+    const { nodeUrl, signingManager, middlewareV2 } = params;
     let context: Context;
     let polymeshApi: ApiPromise;
 
@@ -152,7 +146,6 @@ export class Polymesh {
 
       context = await Context.create({
         polymeshApi,
-        middlewareApi: createMiddlewareApi(middleware),
         middlewareApiV2: createMiddlewareApi(middlewareV2),
         signingManager,
       });
@@ -164,22 +157,6 @@ export class Polymesh {
           message || 'The node couldn’t be reached'
         }"`,
       });
-    }
-
-    if (middleware) {
-      try {
-        await context.queryMiddleware(heartbeat());
-      } catch (err) {
-        if (
-          err.message.indexOf('Forbidden') > -1 ||
-          err.message.indexOf('Missing Authentication Token') > -1
-        ) {
-          throw new PolymeshError({
-            code: ErrorCode.FatalError,
-            message: 'Incorrect middleware URL or API key',
-          });
-        }
-      }
     }
 
     if (middlewareV2) {
@@ -335,18 +312,10 @@ export class Polymesh {
 
   /* istanbul ignore next: not part of the official public API */
   /**
-   * Middleware client
-   */
-  public get _middlewareApi(): ApolloClient<NormalizedCacheObject> {
-    return this.context.middlewareApi;
-  }
-
-  /* istanbul ignore next: not part of the official public API */
-  /**
    * MiddlewareV2 client
    */
   public get _middlewareApiV2(): ApolloClient<NormalizedCacheObject> {
-    return this.context.middlewareApiV2;
+    return this.context.middlewareApi;
   }
   /* eslint-enable @typescript-eslint/naming-convention */
 }

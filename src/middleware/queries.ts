@@ -1,49 +1,214 @@
 import { QueryOptions } from '@apollo/client/core';
+import BigNumber from 'bignumber.js';
 import gql from 'graphql-tag';
 
+import { ClaimTypeEnum, middlewareEnumMap } from '~/middleware/enums';
 import {
-  QueryDidsWithClaimsArgs,
-  QueryEventByAddedTrustedClaimIssuerArgs,
-  QueryEventsByIndexedArgsArgs,
-  QueryGetHistoryOfPaymentEventsForCaArgs,
-  QueryGetWithholdingTaxesOfCaArgs,
-  QueryInvestmentsArgs,
-  QueryIssuerDidsWithClaimsByTargetArgs,
-  QueryProposalArgs,
-  QueryProposalsArgs,
-  QueryProposalVotesArgs,
-  QueryScopesByIdentityArgs,
-  QuerySettlementsArgs,
-  QueryTickerExternalAgentActionsArgs,
-  QueryTickerExternalAgentHistoryArgs,
-  QueryTokensByTrustedClaimIssuerArgs,
-  QueryTokensHeldByDidArgs,
-  QueryTransactionByHashArgs,
-  QueryTransactionsArgs,
+  Asset,
+  AssetHolder,
+  AssetHoldersOrderBy,
+  AssetTransaction,
+  AssetTransactionsOrderBy,
+  Authorization,
+  AuthorizationsOrderBy,
+  BlocksOrderBy,
+  ClaimsGroupBy,
+  ClaimsOrderBy,
+  Distribution,
+  DistributionPayment,
+  Event,
+  EventsOrderBy,
+  Extrinsic,
+  ExtrinsicsOrderBy,
+  Instruction,
+  InstructionsOrderBy,
+  Investment,
+  InvestmentsOrderBy,
+  Leg,
+  LegsOrderBy,
+  PolyxTransactionsOrderBy,
+  Portfolio,
+  PortfolioMovement,
+  PortfolioMovementsOrderBy,
+  SubqueryVersionsOrderBy,
+  TickerExternalAgent,
+  TickerExternalAgentAction,
+  TickerExternalAgentActionsOrderBy,
+  TickerExternalAgentHistoriesOrderBy,
+  TickerExternalAgentHistory,
+  TickerExternalAgentsOrderBy,
+  TrustedClaimIssuer,
+  TrustedClaimIssuersOrderBy,
 } from '~/middleware/types';
+import { PaginatedQueryArgs, QueryArgs } from '~/types/utils';
 
 /**
  * @hidden
  *
- * Get the current voters list for given pipId
+ * Get the latest processed block number
  */
-export function proposalVotes(
-  variables: QueryProposalVotesArgs
-): QueryOptions<QueryProposalVotesArgs> {
+export function latestBlockQuery(): QueryOptions {
   const query = gql`
-    query ProposalVotesQuery(
-      $pipId: Int!
-      $vote: Boolean!
-      $count: Int
-      $skip: Int
-      $orderBy: ProposalVotesOrderByInput
-    ) {
-      proposalVotes(pipId: $pipId, vote: $vote, count: $count, skip: $skip, orderBy: $orderBy) {
-        blockId
-        eventIdx
-        account
-        vote
-        weight
+    query latestBlock {
+      blocks(first: 1, orderBy: [${BlocksOrderBy.BlockIdDesc}]) {
+        nodes {
+          blockId
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: undefined,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Middleware V2 heartbeat
+ */
+export function heartbeatQuery(): QueryOptions {
+  const query = gql`
+    query {
+      block(id: "1") {
+        id
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: undefined,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get details about the SubQuery indexer
+ */
+export function metadataQuery(): QueryOptions {
+  const query = gql`
+    query Metadata {
+      _metadata {
+        chain
+        specName
+        genesisHash
+        lastProcessedHeight
+        lastProcessedTimestamp
+        targetHeight
+        indexerHealthy
+        indexerNodeVersion
+        queryNodeVersion
+        dynamicDatasources
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: undefined,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get details about the latest Subquery version
+ */
+export function latestSqVersionQuery(): QueryOptions {
+  const query = gql`
+    query SubqueryVersions {
+      subqueryVersions(orderBy: [${SubqueryVersionsOrderBy.UpdatedAtDesc}], first: 1) {
+        nodes {
+          id
+          version
+          createdAt
+          updatedAt
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: undefined,
+  };
+}
+
+/**
+ *  @hidden
+ */
+function createClaimsFilters(variables: ClaimsQueryFilter): {
+  args: string;
+  filter: string;
+} {
+  const args = ['$size: Int, $start: Int'];
+  const filters = ['revokeDate: { isNull: true }'];
+  const { dids, claimTypes, trustedClaimIssuers, scope, includeExpired } = variables;
+  if (dids?.length) {
+    args.push('$dids: [String!]');
+    filters.push('targetId: { in: $dids }');
+  }
+  if (claimTypes) {
+    args.push('$claimTypes: [ClaimTypeEnum!]!');
+    filters.push('type: { in: $claimTypes }');
+  }
+  if (trustedClaimIssuers?.length) {
+    args.push('$trustedClaimIssuers: [String!]');
+    filters.push('issuerId: { in: $trustedClaimIssuers }');
+  }
+  if (scope !== undefined) {
+    args.push('$scope: JSON!');
+    filters.push('scope: { contains: $scope }');
+  }
+  if (!includeExpired) {
+    args.push('$expiryTimestamp: BigFloat');
+    filters.push(
+      'or: [{ filterExpiry: { lessThan: $expiryTimestamp } }, { expiry: { isNull: true } }]'
+    );
+  }
+  return {
+    args: `(${args.join()})`,
+    filter: `filter: { ${filters.join()} },`,
+  };
+}
+
+export interface ClaimsQueryFilter {
+  dids?: string[];
+  scope?: Record<string, unknown>;
+  trustedClaimIssuers?: string[];
+  claimTypes?: ClaimTypeEnum[];
+  includeExpired?: boolean;
+  expiryTimestamp?: number;
+}
+/**
+ * @hidden
+ *
+ * Get all dids with at least one claim for a given scope and from one of the given trusted claim issuers
+ */
+export function claimsGroupingQuery(
+  variables: ClaimsQueryFilter,
+  orderBy = ClaimsOrderBy.TargetIdAsc,
+  groupBy = ClaimsGroupBy.TargetId
+): QueryOptions<PaginatedQueryArgs<ClaimsQueryFilter>> {
+  const { args, filter } = createClaimsFilters(variables);
+
+  const query = gql`
+    query claimsGroupingQuery
+      ${args}
+     {
+      claims(
+        ${filter}
+        orderBy: [${orderBy}]
+        first: $size
+        offset: $start
+      ) {
+        groupedAggregates(groupBy: [${groupBy}], having: {}) {
+          keys
+        }
       }
     }
   `;
@@ -57,46 +222,332 @@ export function proposalVotes(
 /**
  * @hidden
  *
- * Get all dids with at least one claim for a given scope and from one the given trustedClaimIssuers
+ * Get all claims that a given target DID has, with a given scope and from one of the given trustedClaimIssuers
  */
-export function didsWithClaims(
-  variables: QueryDidsWithClaimsArgs
-): QueryOptions<QueryDidsWithClaimsArgs> {
+export function claimsQuery(
+  filters: ClaimsQueryFilter,
+  size?: BigNumber,
+  start?: BigNumber
+): QueryOptions<PaginatedQueryArgs<ClaimsQueryFilter>> {
+  const { args, filter } = createClaimsFilters(filters);
+
   const query = gql`
-    query DidsWithClaimsQuery(
-      $dids: [String!]
-      $scope: ScopeInput
-      $trustedClaimIssuers: [String!]
-      $claimTypes: [ClaimTypeEnum!]
-      $includeExpired: Boolean
-      $count: Int
-      $skip: Int
-    ) {
-      didsWithClaims(
-        dids: $dids
-        scope: $scope
-        trustedClaimIssuers: $trustedClaimIssuers
-        claimTypes: $claimTypes
-        includeExpired: $includeExpired
-        count: $count
-        skip: $skip
+    query ClaimsQuery
+      ${args}
+      {
+        claims(
+          ${filter}
+          orderBy: [${ClaimsOrderBy.TargetIdAsc}, ${ClaimsOrderBy.CreatedAtAsc}, ${ClaimsOrderBy.CreatedBlockIdAsc}, ${ClaimsOrderBy.EventIdxAsc}]
+          first: $size
+          offset: $start
+        ) {
+          totalCount
+          nodes {
+            targetId
+            type
+            scope
+            cddId
+            issuerId
+            issuanceDate
+            lastUpdateDate
+            expiry
+            jurisdiction
+          }
+        }
+      }
+    `;
+
+  return {
+    query,
+    variables: {
+      ...filters,
+      expiryTimestamp: filters.includeExpired ? undefined : new Date().getTime(),
+      size: size?.toNumber(),
+      start: start?.toNumber(),
+    },
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get all investments for a given offering
+ */
+export function investmentsQuery(
+  filters: QueryArgs<Investment, 'stoId' | 'offeringToken'>,
+  size?: BigNumber,
+  start?: BigNumber
+): QueryOptions<PaginatedQueryArgs<QueryArgs<Investment, 'stoId' | 'offeringToken'>>> {
+  const query = gql`
+    query InvestmentsQuery($stoId: Int!, $offeringToken: String!, $size: Int, $start: Int) {
+      investments(
+        filter: { stoId: { equalTo: $stoId }, offeringToken: { equalTo: $offeringToken } }
+        first: $size
+        offset: $start
+        orderBy: [${InvestmentsOrderBy.CreatedAtAsc}, ${InvestmentsOrderBy.CreatedBlockIdAsc}]
       ) {
         totalCount
-        items {
-          did
-          claims {
-            targetDID
-            issuer
-            issuance_date
-            last_update_date
-            expiry
-            type
-            jurisdiction
-            cdd_id
-            scope {
-              type
-              value
+        nodes {
+          investorId
+          offeringToken
+          raiseToken
+          offeringTokenAmount
+          raiseTokenAmount
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
+  };
+}
+
+/**
+ * Create args and filters to be supplied to GQL query
+ *
+ * @param filters - filters to be applied
+ * @param typeMap - Map defining the types corresponding to each attribute. All missing attributes whose types are not defined are considered to be `String`
+ *
+ * @hidden
+ */
+function createArgsAndFilters(
+  filters: Record<string, unknown>,
+  typeMap: Record<string, string>
+): {
+  args: string;
+  filter: string;
+} {
+  const args: string[] = ['$start: Int', '$size: Int'];
+  const gqlFilters: string[] = [];
+
+  Object.keys(filters).forEach(attribute => {
+    if (filters[attribute]) {
+      const type = typeMap[attribute] || 'String';
+      const middlewareType = middlewareEnumMap[type] || type;
+      args.push(`$${attribute}: ${middlewareType}!`);
+      gqlFilters.push(`${attribute}: { equalTo: $${attribute} }`);
+    }
+  });
+
+  return {
+    args: `(${args.join()})`,
+    filter: gqlFilters.length ? `filter: { ${gqlFilters.join()} }` : '',
+  };
+}
+
+type InstructionArgs = 'id' | 'eventId' | 'venueId' | 'status';
+
+/**
+ * @hidden
+ *
+ * Get a specific instruction within a venue for a specific event
+ */
+export function instructionsQuery(
+  filters: QueryArgs<Instruction, InstructionArgs>,
+  size?: BigNumber,
+  start?: BigNumber
+): QueryOptions<PaginatedQueryArgs<QueryArgs<Instruction, InstructionArgs>>> {
+  const { args, filter } = createArgsAndFilters(filters, {
+    eventId: 'EventIdEnum',
+    status: 'InstructionStatusEnum',
+  });
+  const query = gql`
+    query InstructionsQuery
+      ${args}
+      {
+      instructions(
+        ${filter}
+        first: $size
+        offset: $start
+        orderBy: [${InstructionsOrderBy.CreatedAtDesc}, ${InstructionsOrderBy.IdDesc}]
+      ) {
+        totalCount
+        nodes {
+          id
+          eventIdx
+          eventId
+          status
+          settlementType
+          venueId
+          endBlock
+          tradeDate
+          valueDate
+          legs {
+            nodes {
+              fromId
+              from {
+                identityId
+                number
+              }
+              toId
+              to {
+                identityId
+                number
+              }
+              assetId
+              amount
+              addresses
             }
+          }
+          memo
+          createdBlock {
+            blockId
+            hash
+            datetime
+          }
+          updatedBlock {
+            blockId
+            hash
+            datetime
+          }
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get Instructions where an identity is involved
+ */
+export function instructionsByDidQuery(
+  identityId: string
+): QueryOptions<QueryArgs<Leg, 'fromId' | 'toId'>> {
+  const query = gql`
+    query InstructionsByDidQuery($fromId: String!, $toId: String!)
+     {
+      legs(
+        filter: { or: [{ fromId: { startsWith: $fromId } }, { toId: { startsWith: $toId } }] }
+        orderBy: [${LegsOrderBy.CreatedAtAsc}, ${LegsOrderBy.InstructionIdAsc}]
+      ) {
+        nodes {
+          instruction {
+            id
+            eventIdx
+            eventId
+            status
+            settlementType
+            venueId
+            endBlock
+            tradeDate
+            valueDate
+            legs {
+              nodes {
+                fromId
+                from {
+                  identityId
+                  number
+                }
+                toId
+                to {
+                  identityId
+                  number
+                }
+                assetId
+                amount
+                addresses
+              }
+            }
+            memo
+            createdBlock {
+              blockId
+              hash
+              datetime
+            }
+            updatedBlock {
+              blockId
+              hash
+              datetime
+            }
+          }
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: { fromId: `${identityId}/`, toId: `${identityId}/` },
+  };
+}
+
+type EventArgs = 'moduleId' | 'eventId' | 'eventArg0' | 'eventArg1' | 'eventArg2';
+
+/**
+ * @hidden
+ *
+ * Get a single event by any of its indexed arguments
+ */
+export function eventsByArgs(
+  filters: QueryArgs<Event, EventArgs>,
+  size?: BigNumber,
+  start?: BigNumber
+): QueryOptions<PaginatedQueryArgs<QueryArgs<Event, EventArgs>>> {
+  const { args, filter } = createArgsAndFilters(filters, {
+    moduleId: 'ModuleIdEnum',
+    eventId: 'EventIdEnum',
+  });
+  const query = gql`
+    query EventsQuery
+      ${args}
+     {
+      events(
+        ${filter}
+        orderBy: [${EventsOrderBy.CreatedAtAsc}, ${EventsOrderBy.BlockIdAsc}]
+        first: $size
+        offset: $start
+      ) {
+        nodes {
+          eventIdx
+          block {
+            blockId
+            hash
+            datetime
+          }
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get a transaction by hash
+ */
+export function extrinsicByHash(
+  variables: QueryArgs<Extrinsic, 'extrinsicHash'>
+): QueryOptions<QueryArgs<Extrinsic, 'extrinsicHash'>> {
+  const query = gql`
+    query TransactionByHashQuery($extrinsicHash: String!) {
+      extrinsics(filter: { extrinsicHash: { equalTo: $extrinsicHash } }) {
+        nodes {
+          extrinsicIdx
+          address
+          nonce
+          moduleId
+          callId
+          paramsTxt
+          success
+          specVersionId
+          extrinsicHash
+          block {
+            blockId
+            hash
+            datetime
           }
         }
       }
@@ -109,255 +560,79 @@ export function didsWithClaims(
   };
 }
 
-/**
- * @hidden
- *
- * Get a single event by any of its indexed arguments
- */
-export function eventByIndexedArgs(
-  variables: QueryEventsByIndexedArgsArgs
-): QueryOptions<QueryEventsByIndexedArgsArgs> {
-  const query = gql`
-    query EventByIndexedArgsQuery(
-      $moduleId: ModuleIdEnum!
-      $eventId: EventIdEnum!
-      $eventArg0: String
-      $eventArg1: String
-      $eventArg2: String
-    ) {
-      eventByIndexedArgs(
-        moduleId: $moduleId
-        eventId: $eventId
-        eventArg0: $eventArg0
-        eventArg1: $eventArg1
-        eventArg2: $eventArg2
-      ) {
-        block_id
-        event_idx
-        extrinsic_idx
-        block {
-          datetime
-          hash
-        }
-      }
-    }
-  `;
-
-  return {
-    query,
-    variables,
-  };
-}
-
-/**
- * @hidden
- *
- * Get all events by any of its indexed arguments
- */
-export function eventsByIndexedArgs(
-  variables: QueryEventsByIndexedArgsArgs
-): QueryOptions<QueryEventsByIndexedArgsArgs> {
-  const query = gql`
-    query EventsByIndexedArgsQuery(
-      $moduleId: ModuleIdEnum!
-      $eventId: EventIdEnum!
-      $eventArg0: String
-      $eventArg1: String
-      $eventArg2: String
-      $count: Int
-      $skip: Int
-    ) {
-      eventsByIndexedArgs(
-        moduleId: $moduleId
-        eventId: $eventId
-        eventArg0: $eventArg0
-        eventArg1: $eventArg1
-        eventArg2: $eventArg2
-        count: $count
-        skip: $skip
-      ) {
-        block_id
-        event_idx
-        extrinsic_idx
-        block {
-          datetime
-          hash
-        }
-      }
-    }
-  `;
-
-  return {
-    query,
-    variables,
-  };
-}
-
-/**
- * @hidden
- *
- * Get a transaction by hash
- */
-export function transactionByHash(
-  variables: QueryTransactionByHashArgs
-): QueryOptions<QueryTransactionByHashArgs> {
-  const query = gql`
-    query TransactionByHashQuery($transactionHash: String) {
-      transactionByHash(transactionHash: $transactionHash) {
-        block_id
-        extrinsic_idx
-        address
-        nonce
-        module_id
-        call_id
-        params
-        success
-        spec_version_id
-        extrinsic_hash
-        block {
-          hash
-        }
-      }
-    }
-  `;
-
-  return {
-    query,
-    variables,
-  };
-}
-
-/**
- * @hidden
- *
- * Get all proposals optionally filtered by pipId, proposer or state
- */
-export function proposals(variables?: QueryProposalsArgs): QueryOptions<QueryProposalsArgs> {
-  const query = gql`
-    query ProposalsQuery(
-      $pipIds: [Int!]
-      $proposers: [String!]
-      $states: [ProposalState!]
-      $count: Int
-      $skip: Int
-      $orderBy: ProposalOrderByInput
-    ) {
-      proposals(
-        pipIds: $pipIds
-        proposers: $proposers
-        states: $states
-        count: $count
-        skip: $skip
-        orderBy: $orderBy
-      ) {
-        pipId
-        proposer
-        createdAt
-        url
-        description
-        coolOffEndBlock
-        endBlock
-        proposal
-        lastState
-        lastStateUpdatedAt
-        totalVotes
-        totalAyesWeight
-        totalNaysWeight
-      }
-    }
-  `;
-
-  return {
-    query,
-    variables,
-  };
-}
-
-/**
- * @hidden
- *
- * Get the tickers of all the Assets for which the passed DID is a trusted claim issuer
- */
-export function tokensByTrustedClaimIssuer(
-  variables: QueryTokensByTrustedClaimIssuerArgs
-): QueryOptions<QueryTokensByTrustedClaimIssuerArgs> {
-  const query = gql`
-    query TokensByTrustedClaimIssuerQuery($claimIssuerDid: String!) {
-      tokensByTrustedClaimIssuer(claimIssuerDid: $claimIssuerDid)
-    }
-  `;
-
-  return {
-    query,
-    variables,
-  };
-}
-
-/**
- * @hidden
- *
- * Get all tickers of Assets that were held at some point by the given did
- */
-export function tokensHeldByDid(
-  variables: QueryTokensHeldByDidArgs
-): QueryOptions<QueryTokensHeldByDidArgs> {
-  const query = gql`
-    query TokensHeldByDidQuery($did: String!, $count: Int, $skip: Int, $order: Order) {
-      tokensHeldByDid(did: $did, count: $count, skip: $skip, order: $order) {
-        totalCount
-        items
-      }
-    }
-  `;
-
-  return {
-    query,
-    variables,
-  };
-}
+type ExtrinsicArgs = 'blockId' | 'address' | 'moduleId' | 'callId' | 'success';
 
 /**
  * @hidden
  *
  * Get transactions
  */
-export function transactions(
-  variables?: QueryTransactionsArgs
-): QueryOptions<QueryTransactionsArgs> {
+export function extrinsicsByArgs(
+  filters: QueryArgs<Extrinsic, ExtrinsicArgs>,
+  size?: BigNumber,
+  start?: BigNumber,
+  orderBy: ExtrinsicsOrderBy = ExtrinsicsOrderBy.BlockIdAsc
+): QueryOptions<PaginatedQueryArgs<QueryArgs<Extrinsic, ExtrinsicArgs>>> {
+  const { args, filter } = createArgsAndFilters(filters, {
+    moduleId: 'ModuleIdEnum',
+    callId: 'CallIdEnum',
+    success: 'Int',
+  });
   const query = gql`
-    query TransactionsQuery(
-      $block_id: Int
-      $address: String
-      $module_id: ModuleIdEnum
-      $call_id: CallIdEnum
-      $success: Boolean
-      $count: Int
-      $skip: Int
-      $orderBy: TransactionOrderByInput
-    ) {
-      transactions(
-        block_id: $block_id
-        address: $address
-        module_id: $module_id
-        call_id: $call_id
-        success: $success
-        count: $count
-        skip: $skip
-        orderBy: $orderBy
+    query TransactionsQuery
+      ${args}
+     {
+      extrinsics(
+        ${filter}
+        orderBy: [${orderBy}]
+        first: $size
+        offset: $start
       ) {
         totalCount
-        items {
-          block_id
-          extrinsic_idx
+        nodes {
+          blockId
+          extrinsicIdx
           address
           nonce
-          module_id
-          call_id
-          params
+          moduleId
+          callId
+          paramsTxt
           success
-          spec_version_id
-          extrinsic_hash
+          specVersionId
+          extrinsicHash
           block {
+            hash
+          }
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get an trusted claim issuer event for an asset and an issuer
+ */
+export function trustedClaimIssuerQuery(
+  variables: QueryArgs<TrustedClaimIssuer, 'issuer' | 'assetId'>
+): QueryOptions<QueryArgs<TrustedClaimIssuer, 'issuer' | 'assetId'>> {
+  const query = gql`
+    query TrustedClaimIssuerQuery($assetId: String!, $issuer: String!) {
+      trustedClaimIssuers(
+        filter: { assetId: { equalTo: $assetId }, issuer: { equalTo: $issuer } },
+        orderBy: [${TrustedClaimIssuersOrderBy.CreatedAtDesc}, ${TrustedClaimIssuersOrderBy.CreatedBlockIdDesc}]
+      ) {
+        nodes {
+          eventIdx
+          createdBlock {
+            blockId
+            datetime
             hash
           }
         }
@@ -374,19 +649,20 @@ export function transactions(
 /**
  * @hidden
  *
- * Get the scopes (and ticker, if applicable) of claims issued on an Identity
+ * Get an trusted claim issuer event for an asset and an issuer
  */
-export function scopesByIdentity(
-  variables: QueryScopesByIdentityArgs
-): QueryOptions<QueryScopesByIdentityArgs> {
+export function trustingAssetsQuery(
+  variables: QueryArgs<TrustedClaimIssuer, 'issuer'>
+): QueryOptions<QueryArgs<TrustedClaimIssuer, 'issuer'>> {
   const query = gql`
-    query ScopesByIdentityQuery($did: String!) {
-      scopesByIdentity(did: $did) {
-        scope {
-          type
-          value
+    query TrustedClaimIssuerQuery($issuer: String!) {
+      trustedClaimIssuers(
+        filter: { issuer: { equalTo: $issuer } },
+        orderBy: [${TrustedClaimIssuersOrderBy.AssetIdAsc}]
+      ) {
+        nodes {
+          assetId
         }
-        ticker
       }
     }
   `;
@@ -400,44 +676,20 @@ export function scopesByIdentity(
 /**
  * @hidden
  *
- * Get issuer dids with at least one claim for given target
+ * Get portfolio details for a given DID and portfolio number
  */
-export function issuerDidsWithClaimsByTarget(
-  variables: QueryIssuerDidsWithClaimsByTargetArgs
-): QueryOptions<QueryIssuerDidsWithClaimsByTargetArgs> {
+export function portfolioQuery(
+  variables: QueryArgs<Portfolio, 'identityId' | 'number'>
+): QueryOptions<QueryArgs<Portfolio, 'identityId' | 'number'>> {
   const query = gql`
-    query IssuerDidsWithClaimsByTargetQuery(
-      $target: String!
-      $scope: ScopeInput
-      $trustedClaimIssuers: [String!]
-      $includeExpired: Boolean
-      $count: Int
-      $skip: Int
-    ) {
-      issuerDidsWithClaimsByTarget(
-        target: $target
-        scope: $scope
-        trustedClaimIssuers: $trustedClaimIssuers
-        includeExpired: $includeExpired
-        count: $count
-        skip: $skip
-      ) {
-        totalCount
-        items {
-          did
-          claims {
-            targetDID
-            issuer
-            issuance_date
-            last_update_date
-            expiry
-            type
-            jurisdiction
-            cdd_id
-            scope {
-              type
-              value
-            }
+    query PortfolioQuery($identityId: String!, $number: Int!) {
+      portfolios(filter: { identityId: { equalTo: $identityId }, number: { equalTo: $number } }) {
+        nodes {
+          eventIdx
+          createdBlock {
+            blockId
+            datetime
+            hash
           }
         }
       }
@@ -453,141 +705,20 @@ export function issuerDidsWithClaimsByTarget(
 /**
  * @hidden
  *
- * Get a proposal by its pipId
+ * Get Asset details for a given ticker
  */
-export function proposal(variables: QueryProposalArgs): QueryOptions<QueryProposalArgs> {
+export function assetQuery(
+  variables: QueryArgs<Asset, 'ticker'>
+): QueryOptions<QueryArgs<Asset, 'ticker'>> {
   const query = gql`
-    query ProposalQuery($pipId: Int!) {
-      proposal(pipId: $pipId) {
-        pipId
-        proposer
-        createdAt
-        url
-        description
-        coolOffEndBlock
-        endBlock
-        proposal
-        lastState
-        lastStateUpdatedAt
-        totalVotes
-        totalAyesWeight
-        totalNaysWeight
-      }
-    }
-  `;
-
-  return {
-    query,
-    variables,
-  };
-}
-
-/**
- * @hidden
- *
- * Fetch the number of the latest block that has been processed by the middleware
- */
-export function latestProcessedBlock(): QueryOptions {
-  const query = gql`
-    query {
-      latestBlock {
-        id
-      }
-    }
-  `;
-
-  return {
-    query,
-    variables: undefined,
-  };
-}
-
-/**
- * @hidden
- *
- * Middleware heartbeat
- */
-export function heartbeat(): QueryOptions {
-  const query = gql`
-    query {
-      heartbeat
-    }
-  `;
-
-  return {
-    query,
-    variables: undefined,
-  };
-}
-
-/**
- * @hidden
- *
- * Get an added trusted claim issuer event by its indexed arguments
- */
-export function eventByAddedTrustedClaimIssuer(
-  variables: QueryEventByAddedTrustedClaimIssuerArgs
-): QueryOptions<QueryEventByAddedTrustedClaimIssuerArgs> {
-  const query = gql`
-    query EventByAddedTrustedClaimIssuerQuery($ticker: String!, $identityId: String!) {
-      eventByAddedTrustedClaimIssuer(ticker: $ticker, identityId: $identityId) {
-        block_id
-        event_idx
-        extrinsic_idx
-        block {
-          datetime
-          hash
-        }
-      }
-    }
-  `;
-
-  return {
-    query,
-    variables,
-  };
-}
-
-/**
- * @hidden
- *
- * Get Settlements where a Portfolio is involved
- */
-export function settlements(variables: QuerySettlementsArgs): QueryOptions<QuerySettlementsArgs> {
-  const query = gql`
-    query SettlementsQuery(
-      $identityId: String!
-      $portfolioNumber: String
-      $addressFilter: String
-      $tickerFilter: String
-      $count: Int
-      $skip: Int
-    ) {
-      settlements(
-        identityId: $identityId
-        portfolioNumber: $portfolioNumber
-        addressFilter: $addressFilter
-        tickerFilter: $tickerFilter
-        count: $count
-        skip: $skip
-      ) {
-        totalCount
-        items {
-          block_id
-          result
-          addresses
-          legs {
-            ticker
-            amount
-            direction
-            from {
-              did
-              kind
-            }
-            to {
-              did
-              kind
-            }
+    query AssetQuery($ticker: String!) {
+      assets(filter: { ticker: { equalTo: $ticker } }) {
+        nodes {
+          eventIdx
+          createdBlock {
+            blockId
+            datetime
+            hash
           }
         }
       }
@@ -603,83 +734,25 @@ export function settlements(variables: QuerySettlementsArgs): QueryOptions<Query
 /**
  * @hidden
  *
- * Get all investments for a given offering
+ * Get the event details when external agent added for a ticker
  */
-export function investments(variables: QueryInvestmentsArgs): QueryOptions<QueryInvestmentsArgs> {
+export function tickerExternalAgentsQuery(
+  variables: QueryArgs<TickerExternalAgent, 'assetId'>
+): QueryOptions<QueryArgs<TickerExternalAgent, 'assetId'>> {
   const query = gql`
-    query InvestmentsQuery($stoId: Int!, $ticker: String!, $count: Int, $skip: Int) {
-      investments(stoId: $stoId, ticker: $ticker, count: $count, skip: $skip) {
-        totalCount
-        items {
-          investor
-          offeringTokenAmount
-          raiseTokenAmount
-        }
-      }
-    }
-  `;
-
-  return {
-    query,
-    variables,
-  };
-}
-
-/**
- * @hidden
- *
- * Get current amount of withheld tax for a distribution
- */
-export function getWithholdingTaxesOfCa(
-  variables: QueryGetWithholdingTaxesOfCaArgs
-): QueryOptions<QueryGetWithholdingTaxesOfCaArgs> {
-  const query = gql`
-    query GetWithholdingTaxesOfCAQuery($CAId: CAId!, $fromDate: DateTime, $toDate: DateTime) {
-      getWithholdingTaxesOfCA(CAId: $CAId, fromDate: $fromDate, toDate: $toDate) {
-        taxes
-      }
-    }
-  `;
-
-  return {
-    query,
-    variables,
-  };
-}
-
-/**
- * @hidden
- *
- * Get history of claims for a distribution
- */
-export function getHistoryOfPaymentEventsForCa(
-  variables: QueryGetHistoryOfPaymentEventsForCaArgs
-): QueryOptions<QueryGetHistoryOfPaymentEventsForCaArgs> {
-  const query = gql`
-    query GetHistoryOfPaymentEventsForCAQuery(
-      $CAId: CAId!
-      $fromDate: DateTime
-      $toDate: DateTime
-      $count: Int
-      $skip: Int
-    ) {
-      getHistoryOfPaymentEventsForCA(
-        CAId: $CAId
-        fromDate: $fromDate
-        toDate: $toDate
-        count: $count
-        skip: $skip
+    query TickerExternalAgentQuery($assetId: String!) {
+      tickerExternalAgents(
+        filter: { assetId: { equalTo: $assetId } }
+        orderBy: [${TickerExternalAgentsOrderBy.CreatedAtDesc}, ${TickerExternalAgentsOrderBy.CreatedBlockIdDesc}]
+        first: 1
       ) {
-        totalCount
-        items {
-          blockId
-          eventId
-          eventDid
-          datetime
-          ticker
-          localId
-          balance
-          tax
+        nodes {
+          eventIdx
+          createdBlock {
+            blockId
+            datetime
+            hash
+          }
         }
       }
     }
@@ -696,18 +769,94 @@ export function getHistoryOfPaymentEventsForCa(
  *
  * Get the transaction history of each external agent of an Asset
  */
-export function tickerExternalAgentHistory(
-  variables: QueryTickerExternalAgentHistoryArgs
-): QueryOptions<QueryTickerExternalAgentHistoryArgs> {
+export function tickerExternalAgentHistoryQuery(
+  variables: QueryArgs<TickerExternalAgentHistory, 'assetId'>
+): QueryOptions<QueryArgs<TickerExternalAgentHistory, 'assetId'>> {
   const query = gql`
-    query TickerExternalAgentHistoryQuery($ticker: String!) {
-      tickerExternalAgentHistory(ticker: $ticker) {
-        did
-        history {
-          datetime
-          block_id
-          event_idx
+    query TickerExternalAgentHistoryQuery($assetId: String!) {
+      tickerExternalAgentHistories(
+        filter: { assetId: { equalTo: $assetId } }
+        orderBy: [${TickerExternalAgentHistoriesOrderBy.CreatedAtAsc}, ${TickerExternalAgentHistoriesOrderBy.CreatedBlockIdAsc}]
+      ) {
+        nodes {
+          identityId
+          assetId
+          eventIdx
+          createdBlock {
+            blockId
+            hash
+            datetime
+          }
         }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+type TickerExternalAgentActionArgs = 'assetId' | 'callerId' | 'palletName' | 'eventId';
+
+/**
+ * @hidden
+ *
+ * Get list of Events triggered by actions (from the set of actions that can only be performed by external agents) that have been performed on a specific Asset
+ */
+export function tickerExternalAgentActionsQuery(
+  filters: QueryArgs<TickerExternalAgentAction, TickerExternalAgentActionArgs>,
+  size?: BigNumber,
+  start?: BigNumber
+): QueryOptions<
+  PaginatedQueryArgs<QueryArgs<TickerExternalAgentAction, TickerExternalAgentActionArgs>>
+> {
+  const { args, filter } = createArgsAndFilters(filters, { eventId: 'EventIdEnum' });
+  const query = gql`
+    query TickerExternalAgentActionsQuery
+      ${args}
+     {
+      tickerExternalAgentActions(
+        ${filter}
+        first: $size
+        offset: $start
+        orderBy: [${TickerExternalAgentActionsOrderBy.CreatedAtDesc}, ${TickerExternalAgentActionsOrderBy.CreatedBlockIdDesc}]
+      ) {
+        totalCount
+        nodes {
+          eventIdx
+          palletName
+          eventId
+          callerId
+          createdBlock {
+            blockId
+            datetime
+            hash
+          }
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get distribution details for a CAId
+ */
+export function distributionQuery(
+  variables: QueryArgs<Distribution, 'id'>
+): QueryOptions<QueryArgs<Distribution, 'id'>> {
+  const query = gql`
+    query DistributionQuery($id: String!) {
+      distribution(id: $id) {
+        taxes
       }
     }
   `;
@@ -721,40 +870,168 @@ export function tickerExternalAgentHistory(
 /**
  * @hidden
  *
- * Get list of Events triggered by actions (from the set of actions that can only be performed by external agents) that have been performed on a specific Asset
+ * Get history of claims for a distribution
  */
-export function tickerExternalAgentActions(
-  variables: QueryTickerExternalAgentActionsArgs
-): QueryOptions<QueryTickerExternalAgentActionsArgs> {
+export function distributionPaymentsQuery(
+  filters: QueryArgs<DistributionPayment, 'distributionId'>,
+  size?: BigNumber,
+  start?: BigNumber
+): QueryOptions<PaginatedQueryArgs<QueryArgs<DistributionPayment, 'distributionId'>>> {
   const query = gql`
-    query TickerExternalAgentActionsQuery(
-      $ticker: String!
-      $caller_did: String
-      $pallet_name: ModuleIdEnum
-      $event_id: EventIdEnum
-      $max_block: Int
-      $count: Int
-      $skip: Int
-      $order: Order
-    ) {
-      tickerExternalAgentActions(
-        ticker: $ticker
-        caller_did: $caller_did
-        pallet_name: $pallet_name
-        event_id: $event_id
-        max_block: $max_block
-        count: $count
-        skip: $skip
-        order: $order
+    query DistributionPaymentQuery($distributionId: String!, $size: Int, $start: Int) {
+      distributionPayments(
+        filter: { distributionId: { equalTo: $distributionId } }
+        first: $size
+        offset: $start
       ) {
         totalCount
-        items {
+        nodes {
+          eventId
+          targetId
           datetime
-          block_id
-          event_idx
-          pallet_name
-          event_id
-          caller_did
+          amount
+          tax
+          createdBlock {
+            blockId
+            hash
+          }
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get asset held by a DID
+ */
+export function assetHoldersQuery(
+  filters: QueryArgs<AssetHolder, 'identityId'>,
+  size?: BigNumber,
+  start?: BigNumber,
+  orderBy = AssetHoldersOrderBy.AssetIdAsc
+): QueryOptions<PaginatedQueryArgs<QueryArgs<DistributionPayment, 'distributionId'>>> {
+  const query = gql`
+    query AssetHoldersQuery($identityId: String!, $size: Int, $start: Int) {
+      assetHolders(
+        filter: { identityId: { equalTo: $identityId } }
+        first: $size
+        offset: $start
+        orderBy: [${orderBy}]
+      ) {
+        totalCount
+        nodes {
+          assetId
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
+  };
+}
+
+export interface QuerySettlementFilters {
+  identityId: string;
+  portfolioId?: BigNumber;
+  ticker?: string;
+  address?: string;
+}
+
+type LegArgs = 'fromId' | 'toId' | 'assetId' | 'addresses';
+
+/**
+ *  @hidden
+ */
+function createLegFilters({ identityId, portfolioId, ticker, address }: QuerySettlementFilters): {
+  args: string;
+  filter: string;
+  variables: QueryArgs<Leg, LegArgs>;
+} {
+  const args: string[] = ['$fromId: String!, $toId: String!'];
+  const fromIdFilters = ['fromId: { equalTo: $fromId }'];
+  const toIdFilters = ['toId: { equalTo: $toId }'];
+  const portfolioNumber = portfolioId ? portfolioId.toNumber() : 0;
+  const variables: QueryArgs<Leg, LegArgs> = {
+    fromId: `${identityId}/${portfolioNumber}`,
+    toId: `${identityId}/${portfolioNumber}`,
+  };
+
+  if (ticker) {
+    variables.assetId = ticker;
+    args.push('$assetId: String!');
+    const assetIdFilter = 'assetId: { equalTo: $assetId }';
+    toIdFilters.push(assetIdFilter);
+    fromIdFilters.push(assetIdFilter);
+  }
+
+  if (address) {
+    variables.addresses = [address];
+    args.push('$addresses: [String!]!');
+    const addressFilter = 'addresses: { in: $addresses }';
+    toIdFilters.push(addressFilter);
+    fromIdFilters.push(addressFilter);
+  }
+
+  return {
+    args: `(${args.join()})`,
+    filter: `filter: { or: [{ ${fromIdFilters.join()}, settlementId: { isNull: false } }, { ${toIdFilters.join()}, settlementId: { isNull: false } } ] }`,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get Settlements where a Portfolio is involved
+ */
+export function settlementsQuery(
+  filters: QuerySettlementFilters
+): QueryOptions<QueryArgs<Leg, 'fromId' | 'toId' | 'assetId' | 'addresses'>> {
+  const { args, filter, variables } = createLegFilters(filters);
+  const query = gql`
+    query SettlementsQuery
+      ${args}
+     {
+      legs(
+        ${filter}
+        orderBy: [${LegsOrderBy.CreatedAtAsc}, ${LegsOrderBy.InstructionIdAsc}]
+      ) {
+        nodes {
+          settlement {
+            id
+            createdBlock {
+              blockId
+              datetime
+              hash
+            }
+            result
+            legs {
+              nodes {
+                fromId
+                from {
+                  identityId
+                  number
+                }
+                toId
+                to {
+                  identityId
+                  number
+                }
+                assetId
+                amount
+                addresses
+              }
+            }
+          }
         }
       }
     }
@@ -763,5 +1040,331 @@ export function tickerExternalAgentActions(
   return {
     query,
     variables,
+  };
+}
+
+type PortfolioMovementArgs = 'fromId' | 'toId' | 'assetId' | 'address';
+
+/**
+ *  @hidden
+ */
+function createPortfolioMovementFilters({
+  identityId,
+  portfolioId,
+  ticker,
+  address,
+}: QuerySettlementFilters): {
+  args: string;
+  filter: string;
+  variables: QueryArgs<PortfolioMovement, PortfolioMovementArgs>;
+} {
+  const args: string[] = ['$fromId: String!, $toId: String!'];
+  const fromIdFilters = ['fromId: { equalTo: $fromId }'];
+  const toIdFilters = ['toId: { equalTo: $toId }'];
+  const portfolioNumber = portfolioId ? portfolioId.toNumber() : 0;
+  const variables: QueryArgs<PortfolioMovement, PortfolioMovementArgs> = {
+    fromId: `${identityId}/${portfolioNumber}`,
+    toId: `${identityId}/${portfolioNumber}`,
+  };
+
+  if (ticker) {
+    variables.assetId = ticker;
+    args.push('$assetId: String!');
+    const assetIdFilter = 'assetId: { equalTo: $assetId }';
+    toIdFilters.push(assetIdFilter);
+    fromIdFilters.push(assetIdFilter);
+  }
+
+  if (address) {
+    variables.address = address;
+    args.push('$address: String!');
+    const addressFilter = 'address: { equalTo: $address }';
+    toIdFilters.push(addressFilter);
+    fromIdFilters.push(addressFilter);
+  }
+
+  return {
+    args: `(${args.join()})`,
+    filter: `filter: { or: [ { ${fromIdFilters.join()} }, { ${toIdFilters.join()} } ] }`,
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get Settlements where a Portfolio is involved
+ */
+export function portfolioMovementsQuery(
+  filters: QuerySettlementFilters
+): QueryOptions<QueryArgs<PortfolioMovement, 'fromId' | 'toId' | 'assetId' | 'address'>> {
+  const { args, filter, variables } = createPortfolioMovementFilters(filters);
+  const query = gql`
+    query PortfolioMovementsQuery
+      ${args}
+     {
+      portfolioMovements(
+        ${filter}
+        orderBy: [${PortfolioMovementsOrderBy.CreatedAtAsc}, ${PortfolioMovementsOrderBy.IdAsc}]
+      ) {
+        nodes {
+          id
+          fromId
+          from {
+            identityId
+            number
+          }
+          toId
+          to {
+            identityId
+            number
+          }
+          assetId
+          amount
+          address
+          createdBlock {
+            blockId
+            datetime
+            hash
+          }
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables,
+  };
+}
+
+export interface QueryPolyxTransactionFilters {
+  identityId?: string;
+  addresses?: string[];
+}
+
+/**
+ *  @hidden
+ */
+function createPolyxTransactionFilters({ identityId, addresses }: QueryPolyxTransactionFilters): {
+  args: string;
+  filter: string;
+  variables: QueryPolyxTransactionFilters;
+} {
+  const args = ['$size: Int, $start: Int'];
+  const fromIdFilters = [];
+  const toIdFilters = [];
+  const variables: QueryPolyxTransactionFilters = {};
+
+  if (identityId) {
+    variables.identityId = identityId;
+    args.push('$identityId: String!');
+    fromIdFilters.push('identityId: { equalTo: $identityId }');
+    toIdFilters.push('toId: { equalTo: $identityId }');
+  }
+
+  if (addresses?.length) {
+    variables.addresses = addresses;
+    args.push('$addresses: [String!]!');
+    fromIdFilters.push('address: { in: $addresses }');
+    toIdFilters.push('toAddress: { in: $addresses }');
+  }
+
+  return {
+    args: `(${args.join()})`,
+    filter:
+      fromIdFilters.length && toIdFilters.length
+        ? `filter: { or: [ { ${fromIdFilters.join()} }, { ${toIdFilters.join()} } ] }`
+        : '',
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get the balance history for an Asset
+ */
+export function assetTransactionQuery(
+  filters: QueryArgs<AssetTransaction, 'assetId'>,
+  size?: BigNumber,
+  start?: BigNumber
+): QueryOptions<PaginatedQueryArgs<QueryArgs<AssetTransaction, 'assetId'>>> {
+  const query = gql`
+    query AssetTransactionQuery($assetId: String!) {
+      assetTransactions(
+        filter: { assetId: { equalTo: $assetId } }
+        orderBy: [${AssetTransactionsOrderBy.CreatedAtAsc}, ${AssetTransactionsOrderBy.CreatedBlockIdAsc}]
+      ) {
+        totalCount
+        nodes {
+          assetId
+          amount
+          fromPortfolioId
+          fromPortfolio {
+            identityId
+            number
+          }
+          toPortfolioId
+          toPortfolio {
+            identityId
+            number
+          }
+          eventId
+          eventIdx
+          extrinsicIdx
+          fundingRound
+          datetime
+          createdBlock {
+            blockId
+            hash
+            datetime
+          }
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get POLYX transactions where an Account or an Identity is involved
+ */
+export function polyxTransactionsQuery(
+  filters: QueryPolyxTransactionFilters,
+  size?: BigNumber,
+  start?: BigNumber
+): QueryOptions<PaginatedQueryArgs<QueryPolyxTransactionFilters>> {
+  const { args, filter, variables } = createPolyxTransactionFilters(filters);
+  const query = gql`
+    query PolyxTransactionsQuery
+      ${args}
+     {
+      polyxTransactions(
+        ${filter}
+        first: $size
+        offset: $start
+        orderBy: [${PolyxTransactionsOrderBy.CreatedAtAsc}, ${PolyxTransactionsOrderBy.CreatedBlockIdAsc}]
+      ) {
+        nodes {
+          id
+          identityId
+          address
+          toId
+          toAddress
+          amount
+          type
+          extrinsic {
+            extrinsicIdx
+          }
+          callId
+          eventId
+          moduleId
+          eventIdx
+          memo
+          datetime
+          createdBlock {
+            blockId
+            datetime
+            hash
+          }
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: { ...variables, size: size?.toNumber(), start: start?.toNumber() },
+  };
+}
+
+export type AuthorizationArgs = 'fromId' | 'type' | 'status' | 'toId' | 'toKey' | 'expiry';
+
+/**
+ *  @hidden
+ */
+function createAuthorizationFilters(variables: QueryArgs<Authorization, AuthorizationArgs>): {
+  args: string;
+  filter: string;
+  variables: QueryArgs<Authorization, AuthorizationArgs>;
+} {
+  const args = ['$size: Int, $start: Int'];
+  const filters = [];
+  const { fromId, toId, toKey, status, type } = variables;
+  if (fromId?.length) {
+    args.push('$fromId: String!');
+    filters.push('fromId: { equalTo: $fromId }');
+  }
+  if (toId?.length) {
+    args.push('$toId: String!');
+    filters.push('toId: { equalTo: $toId }');
+  }
+  if (toKey?.length) {
+    args.push('$toKey: String!');
+    filters.push('toKey: { equalTo: $toKey }');
+  }
+  if (type) {
+    args.push(`$type: ${middlewareEnumMap.AuthTypeEnum}!`);
+    filters.push('type: { equalTo: $type }');
+  }
+  if (status) {
+    args.push(`$status: ${middlewareEnumMap.AuthorizationStatusEnum}!`);
+    filters.push('status: { equalTo: $status }');
+  }
+  return {
+    args: `(${args.join()})`,
+    filter: filters.length ? `filter: { ${filters.join()} }` : '',
+    variables,
+  };
+}
+
+/**
+ * @hidden
+ *
+ * Get all authorizations with specified filters
+ */
+export function authorizationsQuery(
+  filters: QueryArgs<Authorization, AuthorizationArgs>,
+  size?: BigNumber,
+  start?: BigNumber
+): QueryOptions<PaginatedQueryArgs<QueryArgs<Investment, 'stoId' | 'offeringToken'>>> {
+  const { args, filter } = createAuthorizationFilters(filters);
+  const query = gql`
+    query AuthorizationsQuery
+      ${args}
+      {
+      authorizations(
+        ${filter}
+        first: $size
+        offset: $start
+        orderBy: [${AuthorizationsOrderBy.CreatedAtAsc}, ${AuthorizationsOrderBy.CreatedBlockIdAsc}]
+      ) {
+        totalCount
+        nodes {
+          id
+          type
+          fromId
+          toId
+          toKey
+          data
+          expiry
+          status
+          createdBlockId
+          updatedBlockId
+        }
+      }
+    }
+  `;
+
+  return {
+    query,
+    variables: { ...filters, size: size?.toNumber(), start: start?.toNumber() },
   };
 }

@@ -16,11 +16,9 @@ import {
   rescheduleInstruction,
   Venue,
 } from '~/internal';
-import { InstructionStatusEnum } from '~/middleware/enumsV2';
-import { eventByIndexedArgs } from '~/middleware/queries';
-import { instructionsQuery } from '~/middleware/queriesV2';
-import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
-import { Query as QueryV2 } from '~/middleware/typesV2';
+import { InstructionStatusEnum } from '~/middleware/enums';
+import { instructionsQuery } from '~/middleware/queries';
+import { Query } from '~/middleware/types';
 import {
   AffirmOrWithdrawInstructionParams,
   DefaultPortfolio,
@@ -38,7 +36,7 @@ import {
   UnsubCallback,
 } from '~/types';
 import { InstructionStatus as InternalInstructionStatus } from '~/types/internal';
-import { Ensured, EnsuredV2 } from '~/types/utils';
+import { Ensured } from '~/types/utils';
 import {
   balanceToBigNumber,
   bigNumberToU64,
@@ -48,8 +46,7 @@ import {
   meshInstructionStatusToInstructionStatus,
   meshPortfolioIdToPortfolio,
   meshSettlementTypeToEndCondition,
-  middlewareEventToEventIdentifier,
-  middlewareV2EventDetailsToEventIdentifier,
+  middlewareEventDetailsToEventIdentifier,
   momentToDate,
   tickerToString,
   u64ToBigNumber,
@@ -518,7 +515,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
   /**
    * Retrieve current status of this Instruction
    *
-   * @note uses the middleware
+   * @note uses the middlewareV2
    */
   public async getStatus(): Promise<InstructionStatusResult> {
     const isPending = await this.isPending();
@@ -529,51 +526,9 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       };
     }
 
-    if (this.context.isMiddlewareV2Enabled()) {
-      return this.getStatusV2();
-    }
-
-    let eventIdentifier = await this.getInstructionEventFromMiddleware(
-      EventIdEnum.InstructionExecuted
-    );
-    if (eventIdentifier) {
-      return {
-        status: InstructionStatus.Executed,
-        eventIdentifier,
-      };
-    }
-
-    eventIdentifier = await this.getInstructionEventFromMiddleware(EventIdEnum.InstructionFailed);
-    if (eventIdentifier) {
-      return {
-        status: InstructionStatus.Failed,
-        eventIdentifier,
-      };
-    }
-
-    throw new PolymeshError({
-      code: ErrorCode.DataUnavailable,
-      message: "It isn't possible to determine the current status of this Instruction",
-    });
-  }
-
-  /**
-   * Retrieve current status of this Instruction
-   *
-   * @note uses the middlewareV2
-   */
-  public async getStatusV2(): Promise<InstructionStatusResult> {
-    const isPending = await this.isPending();
-
-    if (isPending) {
-      return {
-        status: InstructionStatus.Pending,
-      };
-    }
-
     const [executedEventIdentifier, failedEventIdentifier] = await Promise.all([
-      this.getInstructionEventFromMiddlewareV2(InstructionStatusEnum.Executed),
-      this.getInstructionEventFromMiddlewareV2(InstructionStatusEnum.Failed),
+      this.getInstructionEventFromMiddleware(InstructionStatusEnum.Executed),
+      this.getInstructionEventFromMiddleware(InstructionStatusEnum.Failed),
     ]);
 
     if (executedEventIdentifier) {
@@ -632,31 +587,9 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
 
   /**
    * @hidden
-   * Retrieve Instruction status event from middleware
-   */
-  private async getInstructionEventFromMiddleware(
-    eventId: EventIdEnum
-  ): Promise<EventIdentifier | null> {
-    const { id, context } = this;
-
-    const {
-      data: { eventByIndexedArgs: event },
-    } = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
-      eventByIndexedArgs({
-        moduleId: ModuleIdEnum.Settlement,
-        eventId: eventId,
-        eventArg1: id.toString(),
-      })
-    );
-
-    return optionize(middlewareEventToEventIdentifier)(event);
-  }
-
-  /**
-   * @hidden
    * Retrieve Instruction status event from middleware V2
    */
-  private async getInstructionEventFromMiddlewareV2(
+  private async getInstructionEventFromMiddleware(
     status: InstructionStatusEnum
   ): Promise<EventIdentifier | null> {
     const { id, context } = this;
@@ -667,7 +600,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
           nodes: [details],
         },
       },
-    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'instructions'>>(
+    } = await context.queryMiddleware<Ensured<Query, 'instructions'>>(
       instructionsQuery(
         {
           status,
@@ -678,7 +611,7 @@ export class Instruction extends Entity<UniqueIdentifiers, string> {
       )
     );
 
-    return optionize(middlewareV2EventDetailsToEventIdentifier)(
+    return optionize(middlewareEventDetailsToEventIdentifier)(
       details?.updatedBlock,
       details?.eventIdx
     );

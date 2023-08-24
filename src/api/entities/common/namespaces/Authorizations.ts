@@ -2,8 +2,8 @@ import { PolymeshPrimitivesAuthorization } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 
 import { Account, AuthorizationRequest, Identity, Namespace, PolymeshError } from '~/internal';
-import { AuthorizationArgs, authorizationsQuery } from '~/middleware/queriesV2';
-import { Authorization as MiddlewareAuthorization, Query as QueryV2 } from '~/middleware/typesV2';
+import { AuthorizationArgs, authorizationsQuery } from '~/middleware/queries';
+import { Authorization as MiddlewareAuthorization, Query } from '~/middleware/types';
 import {
   AuthorizationStatusEnum,
   AuthorizationType,
@@ -14,7 +14,7 @@ import {
   SignerType,
   SignerValue,
 } from '~/types';
-import { EnsuredV2, QueryArgs } from '~/types/utils';
+import { Ensured, QueryArgs } from '~/types/utils';
 import {
   addressToKey,
   authorizationDataToAuthorization,
@@ -173,7 +173,7 @@ export class Authorizations<Parent extends Signer> extends Namespace<Parent> {
       data: {
         authorizations: { totalCount, nodes: authorizationResult },
       },
-    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'authorizations'>>(
+    } = await context.queryMiddleware<Ensured<Query, 'authorizations'>>(
       authorizationsQuery(filters, size, start)
     );
 

@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { Identity } from '~/internal';
-import { InstructionStatusEnum } from '~/middleware/enumsV2';
+import { InstructionStatusEnum } from '~/middleware/enums';
 import { InstructionDetails, Leg } from '~/types';
 
 export enum VenueType {

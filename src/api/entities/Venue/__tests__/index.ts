@@ -11,7 +11,7 @@ import {
   PolymeshTransaction,
   Venue,
 } from '~/internal';
-import { instructionsQuery } from '~/middleware/queriesV2';
+import { instructionsQuery } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { HistoricInstruction, InstructionStatus, VenueType } from '~/types';
@@ -169,7 +169,7 @@ describe('Venue class', () => {
         nodes: ['instructions'],
       };
 
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         instructionsQuery(
           {
             venueId: venueId.toString(),
@@ -197,7 +197,7 @@ describe('Venue class', () => {
       expect(count).toEqual(new BigNumber(5));
       expect(data).toEqual([mockHistoricInstruction]);
 
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         instructionsQuery({
           venueId: venueId.toString(),
         }),

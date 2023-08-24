@@ -3,17 +3,18 @@ import {
   PolymeshPrimitivesIdentityClaimClaim,
   PolymeshPrimitivesIdentityId,
 } from '@polkadot/types/lookup';
-import { cloneDeep, isEqual, uniq } from 'lodash';
+import { groupBy, isEqual, uniq } from 'lodash';
 
 import { Context, Identity, PolymeshError, Procedure } from '~/internal';
-import { didsWithClaims } from '~/middleware/queries';
-import { Claim as MiddlewareClaim, ClaimTypeEnum, Query } from '~/middleware/types';
+import { claimsQuery } from '~/middleware/queries';
+import { Claim as MiddlewareClaim, Query } from '~/middleware/types';
 import {
   CddClaim,
   Claim,
   ClaimOperation,
   ClaimTarget,
   ClaimType,
+  ClaimTypeEnum,
   ErrorCode,
   ModifyClaimsParams,
   RoleType,
@@ -177,25 +178,17 @@ export async function prepareModifyClaims(
     const { did: currentDid } = await context.getSigningIdentity();
     const {
       data: {
-        didsWithClaims: { items: currentClaims },
+        claims: { nodes: claimsData },
       },
-    } = await context.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
-      didsWithClaims({
+    } = await context.queryMiddleware<Ensured<Query, 'claims'>>(
+      claimsQuery({
         dids: allTargets,
         trustedClaimIssuers: [currentDid],
         includeExpired: true,
-        count: allTargets.length,
       })
     );
-    const claimsByDid = currentClaims.reduce<Record<string, MiddlewareClaim[]>>(
-      (prev, { did, claims: didClaims }) => {
-        const copy = cloneDeep(prev);
-        copy[did] = didClaims;
 
-        return copy;
-      },
-      {}
-    );
+    const claimsByDid = groupBy(claimsData, 'targetId');
 
     const claimsByOtherIssuers: Claim[] = findClaimsByOtherIssuers(claims, claimsByDid);
 

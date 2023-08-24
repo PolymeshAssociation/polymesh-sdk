@@ -145,7 +145,7 @@ import { cloneDeep, map, merge, upperFirst } from 'lodash';
 
 import { HistoricPolyxTransaction } from '~/api/entities/Account/types';
 import { Account, AuthorizationRequest, Context, Identity } from '~/internal';
-import { BalanceTypeEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/enumsV2';
+import { BalanceTypeEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/enums';
 import {
   AssetComplianceResult,
   AuthorizationType as MeshAuthorizationType,
@@ -343,7 +343,6 @@ const mockInstanceContainer = {
   apiInstance: createApi(),
   signingManagerInstance: {} as Mutable<SigningManager>,
   apolloInstance: createApolloClient(),
-  apolloInstanceV2: createApolloClient(),
   webSocketInstance: createWebSocket(),
 };
 
@@ -407,7 +406,6 @@ interface ContextOptions {
   getIdentity?: Identity;
   getIdentityClaimsFromChain?: ClaimData[];
   getIdentityClaimsFromMiddleware?: ResultSet<ClaimData>;
-  getIdentityClaimsFromMiddlewareV2?: ResultSet<ClaimData>;
   getExternalSigner?: PolkadotSigner;
   getPolyxTransactions?: ResultSet<HistoricPolyxTransaction>;
   primaryAccount?: string;
@@ -415,9 +413,7 @@ interface ContextOptions {
   transactionHistory?: ResultSet<ExtrinsicData>;
   latestBlock?: BigNumber;
   middlewareEnabled?: boolean;
-  middlewareV2Enabled?: boolean;
   middlewareAvailable?: boolean;
-  middlewareV2Available?: boolean;
   getMiddlewareMetadata?: MiddlewareMetadata;
   sentAuthorizations?: ResultSet<AuthorizationRequest>;
   isArchiveNode?: boolean;
@@ -691,20 +687,6 @@ const defaultContextOptions: ContextOptions = {
     next: new BigNumber(1),
     count: new BigNumber(1),
   },
-  getIdentityClaimsFromMiddlewareV2: {
-    data: [
-      {
-        target: 'targetIdentity' as unknown as Identity,
-        issuer: 'issuerIdentity' as unknown as Identity,
-        issuedAt: new Date(),
-        lastUpdatedAt: new Date(),
-        expiry: null,
-        claim: { type: ClaimType.Accredited, scope: { type: ScopeType.Ticker, value: 'TICKER' } },
-      },
-    ],
-    next: new BigNumber(1),
-    count: new BigNumber(1),
-  },
   getPolyxTransactions: {
     data: [
       {
@@ -737,9 +719,7 @@ const defaultContextOptions: ContextOptions = {
   },
   latestBlock: new BigNumber(100),
   middlewareEnabled: true,
-  middlewareV2Enabled: true,
   middlewareAvailable: true,
-  middlewareV2Available: true,
   getMiddlewareMetadata: {
     chain: 'Polymesh Develop',
     specName: 'polymesh_dev',
@@ -843,7 +823,6 @@ function configureContext(opts: ContextOptions): void {
   getNonce.mockReturnValue(nonce);
 
   const queryMock = mockInstanceContainer.apolloInstance.query;
-  const queryMockV2 = mockInstanceContainer.apolloInstanceV2.query;
   const contextInstance = {
     signingAddress,
     nonce,
@@ -863,10 +842,8 @@ function configureContext(opts: ContextOptions): void {
     setSigningManager: jest.fn(),
     getExternalSigner: jest.fn().mockReturnValue(opts.getExternalSigner),
     polymeshApi: mockInstanceContainer.apiInstance,
-    middlewareApi: mockInstanceContainer.apolloInstance,
     queryMiddleware: jest.fn().mockImplementation(query => queryMock(query)),
-    queryMiddlewareV2: jest.fn().mockImplementation(query => queryMockV2(query)),
-    middlewareApiV2: mockInstanceContainer.apolloInstanceV2,
+    middlewareApi: mockInstanceContainer.apolloInstance,
     getInvalidDids: jest.fn().mockResolvedValue(opts.invalidDids),
     getProtocolFees: jest.fn().mockResolvedValue(opts.transactionFees),
     getTransactionArguments: jest.fn().mockReturnValue([]),
@@ -877,17 +854,9 @@ function configureContext(opts: ContextOptions): void {
     getIdentityClaimsFromMiddleware: jest
       .fn()
       .mockResolvedValue(opts.getIdentityClaimsFromMiddleware),
-    getIdentityClaimsFromMiddlewareV2: jest
-      .fn()
-      .mockResolvedValue(opts.getIdentityClaimsFromMiddlewareV2),
     getLatestBlock: jest.fn().mockResolvedValue(opts.latestBlock),
     isMiddlewareEnabled: jest.fn().mockReturnValue(opts.middlewareEnabled),
-    isMiddlewareV2Enabled: jest.fn().mockReturnValue(opts.middlewareV2Enabled),
-    isAnyMiddlewareEnabled: jest
-      .fn()
-      .mockReturnValue(opts.middlewareEnabled || opts.middlewareV2Enabled),
     isMiddlewareAvailable: jest.fn().mockResolvedValue(opts.middlewareAvailable),
-    isMiddlewareV2Available: jest.fn().mockResolvedValue(opts.middlewareV2Available),
     getMiddlewareMetadata: jest.fn().mockResolvedValue(opts.getMiddlewareMetadata),
     isArchiveNode: opts.isArchiveNode,
     ss58Format: opts.ss58Format,
@@ -1253,25 +1222,6 @@ export function createApolloQueryMock(query: QueryOptions<any>, returnData: unkn
 }
 
 /**
- * @hidden
- * Create and return an apollo query mock
- *
- * @param query - apollo document node
- * @param returnValue
- */
-export function createApolloV2QueryMock(query: QueryOptions<any>, returnData: unknown): jest.Mock {
-  const { query: mock } = mockInstanceContainer.apolloInstanceV2;
-
-  when(mock)
-    .calledWith(query)
-    .mockResolvedValue({
-      data: returnData,
-    } as any);
-
-  return mock;
-}
-
-/**
  *
  * @hidden
  */
@@ -1294,7 +1244,7 @@ function mockQueries(
 
 /**
  * @hidden
- * Create and return an apollo mock for multiple queries
+ * Create and return an apollo mock for multiple V2 queries
  *
  * @param queries - query and returnData for each mocked query
  */
@@ -1302,20 +1252,6 @@ export function createApolloMultipleQueriesMock(
   queries: { query: QueryOptions<any>; returnData: unknown }[]
 ): jest.Mock {
   const instance = mockInstanceContainer.apolloInstance;
-
-  return mockQueries(queries, instance);
-}
-
-/**
- * @hidden
- * Create and return an apollo mock for multiple V2 queries
- *
- * @param queries - query and returnData for each mocked query
- */
-export function createApolloMultipleV2QueriesMock(
-  queries: { query: QueryOptions<any>; returnData: unknown }[]
-): jest.Mock {
-  const instance = mockInstanceContainer.apolloInstanceV2;
 
   return mockQueries(queries, instance);
 }
@@ -1535,22 +1471,10 @@ export function updateTxStatus<
 
 /**
  * @hidden
- * Make calls to `Middleware.query` throw an error
+ * Make calls to `MiddlewareV2.query` throw an error
  */
 export function throwOnMiddlewareQuery(err?: unknown): void {
   const instance = mockInstanceContainer.apolloInstance;
-
-  instance.query.mockImplementation(() => {
-    throw err ?? new Error('Something went wrong');
-  });
-}
-
-/**
- * @hidden
- * Make calls to `MiddlewareV2.query` throw an error
- */
-export function throwOnMiddlewareV2Query(err?: unknown): void {
-  const instance = mockInstanceContainer.apolloInstanceV2;
 
   instance.query.mockImplementation(() => {
     throw err ?? new Error('Something went wrong');
@@ -1607,21 +1531,11 @@ export function getWebSocketInstance(): MockWebSocket {
 
 /**
  * @hidden
- * Retrieve an instance of the mocked Apollo Client
+ * Retrieve an instance of the mocked v2 Apollo Client
  */
 export function getMiddlewareApi(): ApolloClient<NormalizedCacheObject> &
   jest.Mocked<ApolloClient<NormalizedCacheObject>> {
   return mockInstanceContainer.apolloInstance as unknown as ApolloClient<NormalizedCacheObject> &
-    jest.Mocked<ApolloClient<NormalizedCacheObject>>;
-}
-
-/**
- * @hidden
- * Retrieve an instance of the mocked v2 Apollo Client
- */
-export function getMiddlewareApiV2(): ApolloClient<NormalizedCacheObject> &
-  jest.Mocked<ApolloClient<NormalizedCacheObject>> {
-  return mockInstanceContainer.apolloInstanceV2 as unknown as ApolloClient<NormalizedCacheObject> &
     jest.Mocked<ApolloClient<NormalizedCacheObject>>;
 }
 
@@ -3033,7 +2947,7 @@ export const createMockVenue = (venue?: {
  * NOTE: `isEmpty` will be set to true if no value is passed
  */
 export const createMockInstructionStatus = (
-  instructionStatus?: 'Pending' | 'Unknown' | 'Failed' | 'Executed'
+  instructionStatus?: 'Unknown' | 'Pending' | 'Failed' | 'Success' | 'Rejected'
 ): MockCodec<PolymeshPrimitivesSettlementInstructionStatus> => {
   return createMockEnum<PolymeshPrimitivesSettlementInstructionStatus>(instructionStatus);
 };

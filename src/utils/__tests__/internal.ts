@@ -12,8 +12,8 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Account, Asset, Context, Identity, PolymeshError, Procedure } from '~/internal';
-import { latestSqVersionQuery } from '~/middleware/queriesV2';
-import { ClaimScopeTypeEnum } from '~/middleware/types';
+import { latestSqVersionQuery } from '~/middleware/queries';
+import { ClaimScopeTypeEnum } from '~/middleware/typesV1';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   createMockStatisticsStatClaim,
@@ -1081,7 +1081,7 @@ describe('assertExpectedSqVersion', () => {
   });
 
   it('should resolve if SDK is initialized with correct Middleware V2 version', () => {
-    dsMockUtils.createApolloV2QueryMock(latestSqVersionQuery(), {
+    dsMockUtils.createApolloQueryMock(latestSqVersionQuery(), {
       subqueryVersions: {
         nodes: [
           {
@@ -1096,7 +1096,7 @@ describe('assertExpectedSqVersion', () => {
   });
 
   it('should log a warning for incompatible Subquery version', async () => {
-    dsMockUtils.createApolloV2QueryMock(latestSqVersionQuery(), {
+    dsMockUtils.createApolloQueryMock(latestSqVersionQuery(), {
       subqueryVersions: {
         nodes: [
           {
@@ -1114,7 +1114,7 @@ describe('assertExpectedSqVersion', () => {
 
     warnSpy.mockReset();
 
-    dsMockUtils.createApolloV2QueryMock(latestSqVersionQuery(), {
+    dsMockUtils.createApolloQueryMock(latestSqVersionQuery(), {
       subqueryVersions: {
         nodes: [],
       },
