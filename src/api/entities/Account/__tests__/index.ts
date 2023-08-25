@@ -10,7 +10,6 @@ import { Account, Context, Entity } from '~/internal';
 import { CallIdEnum, ModuleIdEnum } from '~/middleware/enums';
 import { extrinsicsByArgs } from '~/middleware/queries';
 import { ExtrinsicsOrderBy } from '~/middleware/types';
-import { Order, TransactionOrderFields } from '~/middleware/typesV1';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   createMockAccountId,
@@ -429,10 +428,7 @@ describe('Account class', () => {
 
       result = await account.getTransactionHistory({
         success: true,
-        orderBy: {
-          order: Order.Asc,
-          field: TransactionOrderFields.ModuleId,
-        },
+        orderBy: ExtrinsicsOrderBy.ModuleIdAsc,
       });
 
       expect(result.data[0].blockNumber).toEqual(blockNumber1);
