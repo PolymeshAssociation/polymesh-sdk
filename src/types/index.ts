@@ -40,15 +40,8 @@ export * from '~/base/types';
 export * from '~/generated/types';
 export * from '~/middleware/enums';
 
-export {
-  ClaimScopeTypeEnum,
-  MiddlewareScope,
-  SettlementDirectionEnum,
-  TransactionOrderByInput,
-  Order,
-  TransactionOrderFields,
-} from '~/middleware/typesV1';
-export { AssetHoldersOrderBy, Scalars } from '~/middleware/types';
+export { AssetHoldersOrderBy, ExtrinsicsOrderBy, Scalars } from '~/middleware/types';
+export { ClaimScopeTypeEnum, MiddlewareScope, SettlementDirectionEnum } from '~/middleware/typesV1';
 export { CountryCode, ModuleName, TxTag, TxTags };
 
 export enum TransactionStatus {

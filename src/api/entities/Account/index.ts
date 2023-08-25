@@ -17,7 +17,6 @@ import { Authorizations, Context, Entity, Identity, MultiSig, PolymeshError } fr
 import { CallIdEnum, ModuleIdEnum } from '~/middleware/enums';
 import { extrinsicsByArgs } from '~/middleware/queries';
 import { ExtrinsicsOrderBy, Query } from '~/middleware/types';
-import { TransactionOrderByInput } from '~/middleware/typesV1';
 import {
   AccountBalance,
   CheckPermissionsResult,
@@ -175,7 +174,9 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   /**
    * Retrieve a list of transactions signed by this Account. Can be filtered using parameters
    *
-   * @note if both `blockNumber` and `blockHash` are passed, only `blockNumber` is taken into account
+   * @note if both `blockNumber` and `blockHash` are passed, only `blockNumber` is taken into account.
+   * Also, for ordering by block_id, one should pass `ExtrinsicsOrderBy.CreatedAtAsc` or `ExtrinsicsOrderBy.CreatedAtDesc`
+   * in order of their choice (since block ID is a string field in middleware v2)
    *
    * @param filters.tag - tag associated with the transaction
    * @param filters.success - whether the transaction was successful or not
@@ -192,14 +193,17 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       success?: boolean;
       size?: BigNumber;
       start?: BigNumber;
-      orderBy?: TransactionOrderByInput;
+      orderBy?: ExtrinsicsOrderBy;
     } = {}
   ): Promise<ResultSet<ExtrinsicData>> {
-    const { tag, success, size, start, orderBy, blockHash } = filters;
-    let order: ExtrinsicsOrderBy = ExtrinsicsOrderBy.CreatedAtAsc;
-    if (orderBy) {
-      order = `${orderBy.field}_${orderBy.order}`.toUpperCase() as ExtrinsicsOrderBy;
-    }
+    const {
+      tag,
+      success,
+      size,
+      start,
+      orderBy = ExtrinsicsOrderBy.CreatedAtAsc,
+      blockHash,
+    } = filters;
 
     const { context, address } = this;
 
@@ -241,7 +245,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
         },
         size,
         start,
-        order
+        orderBy
       )
     );
 
