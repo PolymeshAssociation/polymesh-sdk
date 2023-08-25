@@ -7,10 +7,8 @@ import { EventEmitter } from 'events';
 import { range } from 'lodash';
 
 import { Context, Identity, PolymeshError } from '~/internal';
-import { latestProcessedBlock } from '~/middleware/queries';
-import { latestBlockQuery } from '~/middleware/queriesV2';
+import { latestBlockQuery } from '~/middleware/queries';
 import { Query } from '~/middleware/types';
-import { Query as QueryV2 } from '~/middleware/typesV2';
 import {
   ErrorCode,
   GenericPolymeshTransaction,
@@ -27,7 +25,7 @@ import {
   MaybeResolverFunction,
   TransactionConstructionData,
 } from '~/types/internal';
-import { Ensured, EnsuredV2 } from '~/types/utils';
+import { Ensured } from '~/types/utils';
 import { balanceToBigNumber, hashToString, u32ToBigNumber } from '~/utils/conversion';
 import { defusePromise, delay, filterEventRecords } from '~/utils/internal';
 
@@ -439,7 +437,7 @@ export abstract class PolymeshTransactionBase<
   public onProcessedByMiddleware(listener: (err?: PolymeshError) => void): UnsubCallback {
     const { context, emitter } = this;
 
-    if (!context.isAnyMiddlewareEnabled()) {
+    if (!context.isMiddlewareEnabled()) {
       throw new PolymeshError({
         code: ErrorCode.General,
         message: 'Cannot subscribe without an enabled middleware connection',
@@ -461,22 +459,13 @@ export abstract class PolymeshTransactionBase<
   private async getLatestBlockFromMiddleware(): Promise<BigNumber> {
     const { context } = this;
 
-    let processedBlock: number;
-    if (context.isMiddlewareV2Enabled()) {
-      ({
-        data: {
-          blocks: {
-            nodes: [{ blockId: processedBlock }],
-          },
+    const {
+      data: {
+        blocks: {
+          nodes: [{ blockId: processedBlock }],
         },
-      } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'blocks'>>(latestBlockQuery()));
-    } else {
-      ({
-        data: {
-          latestBlock: { id: processedBlock },
-        },
-      } = await context.queryMiddleware<Ensured<Query, 'latestBlock'>>(latestProcessedBlock()));
-    }
+      },
+    } = await context.queryMiddleware<Ensured<Query, 'blocks'>>(latestBlockQuery());
 
     return new BigNumber(processedBlock);
   }
@@ -493,7 +482,7 @@ export abstract class PolymeshTransactionBase<
     const { context, emitter } = this;
 
     try {
-      if (!context.isAnyMiddlewareEnabled()) {
+      if (!context.isMiddlewareEnabled()) {
         return;
       }
 

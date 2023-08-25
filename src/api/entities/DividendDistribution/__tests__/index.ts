@@ -9,14 +9,11 @@ import {
   DividendDistribution,
   PolymeshTransaction,
 } from '~/internal';
-import { getHistoryOfPaymentEventsForCa, getWithholdingTaxesOfCa } from '~/middleware/queries';
-import { distributionPaymentsQuery, distributionQuery } from '~/middleware/queriesV2';
+import { distributionPaymentsQuery, distributionQuery } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import {
   CorporateActionKind,
   CorporateActionTargets,
-  DistributionPayment,
-  ResultSet,
   TargetTreatment,
   TaxWithholding,
 } from '~/types';
@@ -279,69 +276,10 @@ describe('DividendDistribution class', () => {
   });
 
   describe('method: getWithheldTax', () => {
-    beforeEach(() => {
-      dsMockUtils.configureMocks({
-        contextOptions: { middlewareV2Enabled: false },
-      });
-    });
-
-    it('should return the amount of the withheld tax', async () => {
-      const fakeTax = new BigNumber(100);
-
-      dsMockUtils.createApolloQueryMock(
-        getWithholdingTaxesOfCa({
-          CAId: { ticker, localId: id.toNumber() },
-        }),
-        {
-          getWithholdingTaxesOfCA: {
-            taxes: fakeTax.toNumber(),
-          },
-        }
-      );
-
-      const result = await dividendDistribution.getWithheldTax();
-
-      expect(result).toEqual(fakeTax);
-    });
-
-    it('should throw an error if the Dividend Distribution does not exist', () => {
-      dsMockUtils.createQueryMock('capitalDistribution', 'distributions', {
-        returnValue: dsMockUtils.createMockOption(),
-      });
-
-      dsMockUtils.createApolloQueryMock(
-        getWithholdingTaxesOfCa({
-          CAId: { ticker, localId: id.toNumber() },
-        }),
-        {
-          getWithholdingTaxesOfCA: {
-            taxes: 0,
-          },
-        }
-      );
-
-      return expect(dividendDistribution.getWithheldTax()).rejects.toThrow(
-        'The Dividend Distribution no longer exists'
-      );
-    });
-
-    it('should call v2 query if middlewareV2 is enabled', async () => {
-      dsMockUtils.configureMocks({
-        contextOptions: { middlewareV2Enabled: true },
-      });
-      const fakeResult = new BigNumber(1);
-      jest.spyOn(dividendDistribution, 'getWithheldTaxV2').mockResolvedValue(fakeResult);
-
-      const result = await dividendDistribution.getWithheldTax();
-      expect(result).toEqual(fakeResult);
-    });
-  });
-
-  describe('method: getWithheldTaxV2', () => {
     it('should return the amount of the withheld tax', async () => {
       const fakeTax = new BigNumber(1000000);
 
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         distributionQuery({
           id: `${ticker}/${id.toString()}`,
         }),
@@ -352,7 +290,7 @@ describe('DividendDistribution class', () => {
         }
       );
 
-      const result = await dividendDistribution.getWithheldTaxV2();
+      const result = await dividendDistribution.getWithheldTax();
 
       expect(result).toEqual(new BigNumber(1));
     });
@@ -362,7 +300,7 @@ describe('DividendDistribution class', () => {
         returnValue: dsMockUtils.createMockOption(),
       });
 
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         distributionQuery({
           id: `${ticker}/${id.toString()}`,
         }),
@@ -373,7 +311,7 @@ describe('DividendDistribution class', () => {
         }
       );
 
-      return expect(dividendDistribution.getWithheldTaxV2()).rejects.toThrow(
+      return expect(dividendDistribution.getWithheldTax()).rejects.toThrow(
         'The Dividend Distribution no longer exists'
       );
     });
@@ -599,122 +537,6 @@ describe('DividendDistribution class', () => {
   });
 
   describe('method: getPaymentHistory', () => {
-    beforeEach(() => {
-      dsMockUtils.configureMocks({
-        contextOptions: { middlewareV2Enabled: false },
-      });
-    });
-
-    it('should return the amount of the withheld tax', async () => {
-      const blockId = new BigNumber(1);
-      const blockHash = 'someHash';
-      const eventId = 'eventId';
-      const datetime = '2020-10-10';
-      const eventDid = 'eventDid';
-      const balance = new BigNumber(100);
-      const tax = new BigNumber(10);
-
-      dsMockUtils.createQueryMock('system', 'blockHash', {
-        multi: [dsMockUtils.createMockHash(blockHash)],
-      });
-      dsMockUtils.createApolloQueryMock(
-        getHistoryOfPaymentEventsForCa({
-          CAId: { ticker, localId: id.toNumber() },
-          fromDate: null,
-          toDate: null,
-          count: 1,
-          skip: 0,
-        }),
-        {
-          getHistoryOfPaymentEventsForCA: {
-            totalCount: 1,
-            items: [
-              {
-                blockId: blockId.toNumber(),
-                eventId,
-                datetime,
-                eventDid,
-                balance: balance.toNumber(),
-                tax: tax.toNumber(),
-              },
-            ],
-          },
-        }
-      );
-
-      const {
-        data: [result],
-      } = await dividendDistribution.getPaymentHistory({
-        size: new BigNumber(1),
-        start: new BigNumber(0),
-      });
-
-      expect(result.blockNumber).toEqual(blockId);
-      expect(result.blockHash).toEqual(blockHash);
-      expect(result.date).toEqual(new Date(`${datetime}Z`));
-      expect(result.target.did).toBe(eventDid);
-      expect(result.amount).toEqual(balance.shiftedBy(-6));
-      expect(result.withheldTax).toEqual(tax.shiftedBy(-4));
-    });
-
-    it('should return null if the query result is empty', async () => {
-      dsMockUtils.createApolloQueryMock(
-        getHistoryOfPaymentEventsForCa({
-          CAId: { ticker, localId: id.toNumber() },
-          fromDate: null,
-          toDate: null,
-          count: undefined,
-          skip: undefined,
-        }),
-        {
-          getHistoryOfPaymentEventsForCA: {
-            totalCount: 0,
-            items: [],
-          },
-        }
-      );
-      const result = await dividendDistribution.getPaymentHistory();
-      expect(result.data).toEqual([]);
-      expect(result.next).toBeNull();
-    });
-
-    it('should throw an error if the Dividend Distribution does not exist', () => {
-      dsMockUtils.createQueryMock('capitalDistribution', 'distributions', {
-        returnValue: dsMockUtils.createMockOption(),
-      });
-
-      dsMockUtils.createApolloQueryMock(
-        getHistoryOfPaymentEventsForCa({
-          CAId: { ticker, localId: id.toNumber() },
-          fromDate: null,
-          toDate: null,
-          count: undefined,
-          skip: undefined,
-        }),
-        {
-          getHistoryOfPaymentEventsForCA: {
-            totalCount: 0,
-            items: [],
-          },
-        }
-      );
-
-      return expect(dividendDistribution.getPaymentHistory()).rejects.toThrow(
-        'The Dividend Distribution no longer exists'
-      );
-    });
-
-    it('should call v2 query if middlewareV2 is enabled', async () => {
-      dsMockUtils.configureMocks({ contextOptions: { middlewareV2Enabled: true } });
-      const fakeResult = 'fakeResult' as unknown as ResultSet<DistributionPayment>;
-      jest.spyOn(dividendDistribution, 'getPaymentHistoryV2').mockResolvedValue(fakeResult);
-
-      const result = await dividendDistribution.getPaymentHistory();
-      expect(result).toEqual(fakeResult);
-    });
-  });
-
-  describe('method: getPaymentHistoryV2', () => {
     it('should return the amount of the withheld tax', async () => {
       const blockId = new BigNumber(1);
       const blockHash = 'someHash';
@@ -726,7 +548,7 @@ describe('DividendDistribution class', () => {
       const size = new BigNumber(1);
       const start = new BigNumber(0);
 
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         distributionPaymentsQuery(
           {
             distributionId: `${ticker}/${id.toString()}`,
@@ -757,7 +579,7 @@ describe('DividendDistribution class', () => {
 
       const {
         data: [result],
-      } = await dividendDistribution.getPaymentHistoryV2({
+      } = await dividendDistribution.getPaymentHistory({
         size,
         start,
       });
@@ -771,7 +593,7 @@ describe('DividendDistribution class', () => {
     });
 
     it('should return null if the query result is empty', async () => {
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         distributionPaymentsQuery({
           distributionId: `${ticker}/${id.toString()}`,
         }),
@@ -782,7 +604,7 @@ describe('DividendDistribution class', () => {
           },
         }
       );
-      const result = await dividendDistribution.getPaymentHistoryV2();
+      const result = await dividendDistribution.getPaymentHistory();
       expect(result.data).toEqual([]);
       expect(result.next).toBeNull();
     });
@@ -792,7 +614,7 @@ describe('DividendDistribution class', () => {
         returnValue: dsMockUtils.createMockOption(),
       });
 
-      dsMockUtils.createApolloV2QueryMock(
+      dsMockUtils.createApolloQueryMock(
         distributionPaymentsQuery({
           distributionId: `${ticker}/${id.toString()}`,
         }),
@@ -804,7 +626,7 @@ describe('DividendDistribution class', () => {
         }
       );
 
-      return expect(dividendDistribution.getPaymentHistoryV2()).rejects.toThrow(
+      return expect(dividendDistribution.getPaymentHistory()).rejects.toThrow(
         'The Dividend Distribution no longer exists'
       );
     });

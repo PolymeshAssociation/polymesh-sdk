@@ -6,13 +6,10 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Context, DefaultTrustedClaimIssuer, Identity } from '~/internal';
-import { eventByAddedTrustedClaimIssuer } from '~/middleware/queries';
-import { trustedClaimIssuerQuery } from '~/middleware/queriesV2';
+import { trustedClaimIssuerQuery } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
-import { ClaimType, EventIdentifier } from '~/types';
-import { MAX_TICKER_LENGTH } from '~/utils/constants';
+import { ClaimType } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
-import * as utilsInternalModule from '~/utils/internal';
 
 describe('DefaultTrustedClaimIssuer class', () => {
   let context: Context;
@@ -65,63 +62,6 @@ describe('DefaultTrustedClaimIssuer class', () => {
     const did = 'someDid';
     const ticker = 'SOME_TICKER';
     const variables = {
-      ticker: utilsInternalModule.padString(ticker, MAX_TICKER_LENGTH),
-      identityId: did,
-    };
-
-    beforeEach(() => {
-      dsMockUtils.configureMocks({
-        contextOptions: { middlewareV2Enabled: false },
-      });
-    });
-
-    it('should return the event identifier object of the trusted claim issuer creation', async () => {
-      const blockNumber = new BigNumber(1234);
-      const blockDate = new Date('4/14/2020');
-      const eventIdx = new BigNumber(1);
-      const fakeResult = { blockNumber, blockDate, eventIndex: eventIdx };
-      const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, ticker }, context);
-
-      dsMockUtils.createApolloQueryMock(eventByAddedTrustedClaimIssuer(variables), {
-        /* eslint-disable @typescript-eslint/naming-convention */
-        eventByAddedTrustedClaimIssuer: {
-          block_id: blockNumber.toNumber(),
-          block: { datetime: blockDate },
-          event_idx: eventIdx.toNumber(),
-        },
-        /* eslint-enable @typescript-eslint/naming-convention */
-      });
-
-      const result = await trustedClaimIssuer.addedAt();
-
-      expect(result).toEqual(fakeResult);
-    });
-
-    it('should return null if the query result is empty', async () => {
-      const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, ticker }, context);
-
-      dsMockUtils.createApolloQueryMock(eventByAddedTrustedClaimIssuer(variables), {});
-      const result = await trustedClaimIssuer.addedAt();
-      expect(result).toBeNull();
-    });
-
-    it('should call v2 query if middlewareV2 is enabled', async () => {
-      dsMockUtils.configureMocks({
-        contextOptions: { middlewareV2Enabled: true },
-      });
-      const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, ticker }, context);
-      const fakeResult = 'fakeResult' as unknown as EventIdentifier;
-      jest.spyOn(trustedClaimIssuer, 'addedAtV2').mockResolvedValue(fakeResult);
-
-      const result = await trustedClaimIssuer.addedAt();
-      expect(result).toEqual(fakeResult);
-    });
-  });
-
-  describe('method: addedAtV2', () => {
-    const did = 'someDid';
-    const ticker = 'SOME_TICKER';
-    const variables = {
       assetId: ticker,
       issuer: did,
     };
@@ -134,7 +74,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
       const fakeResult = { blockNumber, blockHash, blockDate, eventIndex: eventIdx };
       const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, ticker }, context);
 
-      dsMockUtils.createApolloV2QueryMock(trustedClaimIssuerQuery(variables), {
+      dsMockUtils.createApolloQueryMock(trustedClaimIssuerQuery(variables), {
         trustedClaimIssuers: {
           nodes: [
             {
@@ -149,7 +89,7 @@ describe('DefaultTrustedClaimIssuer class', () => {
         },
       });
 
-      const result = await trustedClaimIssuer.addedAtV2();
+      const result = await trustedClaimIssuer.addedAt();
 
       expect(result).toEqual(fakeResult);
     });
@@ -157,12 +97,12 @@ describe('DefaultTrustedClaimIssuer class', () => {
     it('should return null if the query result is empty', async () => {
       const trustedClaimIssuer = new DefaultTrustedClaimIssuer({ did, ticker }, context);
 
-      dsMockUtils.createApolloV2QueryMock(trustedClaimIssuerQuery(variables), {
+      dsMockUtils.createApolloQueryMock(trustedClaimIssuerQuery(variables), {
         trustedClaimIssuers: {
           nodes: [],
         },
       });
-      const result = await trustedClaimIssuer.addedAtV2();
+      const result = await trustedClaimIssuer.addedAt();
       expect(result).toBeNull();
     });
   });

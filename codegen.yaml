@@ -1,7 +1,7 @@
 overwrite: true
 schema: 'http://localhost:3001'
 generates:
-  ./src/middleware/typesV2.ts:
+  ./src/middleware/types.ts:
     plugins:
       - 'typescript'
     config:

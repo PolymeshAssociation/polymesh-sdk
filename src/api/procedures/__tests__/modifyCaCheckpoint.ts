@@ -5,10 +5,10 @@ import {
   Params,
   prepareModifyCaCheckpoint,
 } from '~/api/procedures/modifyCaCheckpoint';
-import { Context } from '~/internal';
+import { Context, PolymeshError } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
-import { TxTags } from '~/types';
+import { ErrorCode, TxTags } from '~/types';
 import { PolymeshTx } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 
@@ -88,7 +88,7 @@ describe('modifyCaCheckpoint procedure', () => {
     expect(err.message).toBe('Payment date must be after the Checkpoint date');
   });
 
-  it('should throw an error if the checkpoint date is after the expiry date', async () => {
+  it('should throw an error if the checkpoint date is after the expiry date', () => {
     const checkpoint = new Date(new Date().getTime() + 1000);
     const paymentDate = new Date(checkpoint.getTime() + 2000);
     const args = {
@@ -105,15 +105,9 @@ describe('modifyCaCheckpoint procedure', () => {
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    let err;
-
-    try {
-      await prepareModifyCaCheckpoint.call(proc, args);
-    } catch (error) {
-      err = error;
-    }
-
-    expect(err.message).toBe('Expiry date must be after the Checkpoint date');
+    return expect(prepareModifyCaCheckpoint.call(proc, args)).rejects.toThrow(
+      'Expiry date must be after the Checkpoint date'
+    );
   });
 
   it('should throw an error if the checkpoint does not exist', async () => {
@@ -137,7 +131,7 @@ describe('modifyCaCheckpoint procedure', () => {
     expect(err.message).toBe("Checkpoint doesn't exist");
   });
 
-  it('should throw an error if checkpoint schedule no longer exists', async () => {
+  it('should throw an error if checkpoint schedule no longer exists', () => {
     const args = {
       corporateAction: entityMockUtils.getCorporateActionInstance(),
       checkpoint: entityMockUtils.getCheckpointScheduleInstance({
@@ -147,15 +141,12 @@ describe('modifyCaCheckpoint procedure', () => {
 
     const proc = procedureMockUtils.getInstance<Params, void>(mockContext);
 
-    let err;
+    const expectedError = new PolymeshError({
+      message: "Checkpoint Schedule doesn't exist",
+      code: ErrorCode.DataUnavailable,
+    });
 
-    try {
-      await prepareModifyCaCheckpoint.call(proc, args);
-    } catch (error) {
-      err = error;
-    }
-
-    expect(err.message).toBe("Checkpoint Schedule doesn't exist");
+    return expect(prepareModifyCaCheckpoint.call(proc, args)).rejects.toThrow(expectedError);
   });
 
   it('should throw an error if date is in the past', async () => {

@@ -3,11 +3,10 @@ import {
   PolymeshPrimitivesIdentityClaimClaim,
   PolymeshPrimitivesIdentityId,
 } from '@polkadot/types/lookup';
-import P from 'bluebird';
-import { cloneDeep, isEqual, uniq } from 'lodash';
+import { groupBy, isEqual, uniq } from 'lodash';
 
 import { Context, Identity, PolymeshError, Procedure } from '~/internal';
-import { didsWithClaims } from '~/middleware/queries';
+import { claimsQuery } from '~/middleware/queries';
 import { Claim as MiddlewareClaim, Query } from '~/middleware/types';
 import {
   CddClaim,
@@ -15,6 +14,7 @@ import {
   ClaimOperation,
   ClaimTarget,
   ClaimType,
+  ClaimTypeEnum,
   ErrorCode,
   ModifyClaimsParams,
   RoleType,
@@ -24,22 +24,30 @@ import { BatchTransactionSpec, ProcedureAuthorization } from '~/types/internal';
 import { Ensured, tuple } from '~/types/utils';
 import { DEFAULT_CDD_ID } from '~/utils/constants';
 import {
-  balanceToBigNumber,
   claimToMeshClaim,
   dateToMoment,
   middlewareScopeToScope,
   signerToString,
   stringToIdentityId,
-  stringToTicker,
 } from '~/utils/conversion';
 import { asIdentity, assembleBatchTransactions } from '~/utils/internal';
-import { isInvestorUniquenessClaim, isScopedClaim } from '~/utils/typeguards';
+import { isScopedClaim } from '~/utils/typeguards';
 
 const areSameClaims = (claim: Claim, { scope, type }: MiddlewareClaim): boolean => {
   let isSameScope = true;
 
   if (isScopedClaim(claim)) {
     isSameScope = scope ? isEqual(middlewareScopeToScope(scope), claim.scope) : false;
+  }
+
+  // filter out deprecated claim types
+  if (
+    type === ClaimTypeEnum.NoData ||
+    type === ClaimTypeEnum.NoType ||
+    type === ClaimTypeEnum.InvestorUniqueness ||
+    type === ClaimTypeEnum.InvestorUniquenessV2
+  ) {
+    return false;
   }
 
   return isSameScope && ClaimType[type] === claim.type;
@@ -60,30 +68,6 @@ const findClaimsByOtherIssuers = (
 
     return [...prev];
   }, []);
-
-const findPositiveBalanceIuClaims = (claims: ClaimTarget[], context: Context): Promise<Claim[]> =>
-  P.reduce<ClaimTarget, Claim[]>(
-    claims,
-    async (prev, { claim }) => {
-      if (isInvestorUniquenessClaim(claim)) {
-        const {
-          scope: { value },
-          scopeId,
-        } = claim;
-
-        const balance = await context.polymeshApi.query.asset.aggregateBalance(
-          stringToTicker(value, context),
-          stringToIdentityId(scopeId, context)
-        );
-
-        if (!balanceToBigNumber(balance).isZero()) {
-          return [...prev, claim];
-        }
-      }
-      return [...prev];
-    },
-    []
-  );
 
 /**
  * @hidden
@@ -194,25 +178,17 @@ export async function prepareModifyClaims(
     const { did: currentDid } = await context.getSigningIdentity();
     const {
       data: {
-        didsWithClaims: { items: currentClaims },
+        claims: { nodes: claimsData },
       },
-    } = await context.queryMiddleware<Ensured<Query, 'didsWithClaims'>>(
-      didsWithClaims({
+    } = await context.queryMiddleware<Ensured<Query, 'claims'>>(
+      claimsQuery({
         dids: allTargets,
         trustedClaimIssuers: [currentDid],
         includeExpired: true,
-        count: allTargets.length,
       })
     );
-    const claimsByDid = currentClaims.reduce<Record<string, MiddlewareClaim[]>>(
-      (prev, { did, claims: didClaims }) => {
-        const copy = cloneDeep(prev);
-        copy[did] = didClaims;
 
-        return copy;
-      },
-      {}
-    );
+    const claimsByDid = groupBy(claimsData, 'targetId');
 
     const claimsByOtherIssuers: Claim[] = findClaimsByOtherIssuers(claims, claimsByDid);
 
@@ -228,19 +204,6 @@ export async function prepareModifyClaims(
   }
 
   if (operation === ClaimOperation.Revoke) {
-    const claimsWithBalance: Claim[] = await findPositiveBalanceIuClaims(claims, context);
-
-    if (claimsWithBalance.length) {
-      throw new PolymeshError({
-        code: ErrorCode.EntityInUse,
-        message:
-          'Attempt to revoke Investor Uniqueness claims from investors with positive balance',
-        data: {
-          claimsWithBalance,
-        },
-      });
-    }
-
     const argsArray: [PolymeshPrimitivesIdentityId, PolymeshPrimitivesIdentityClaimClaim][] =
       modifyClaimArgs.map(([identityId, claim]) => [identityId, claim]);
 

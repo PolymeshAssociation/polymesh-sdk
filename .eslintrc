@@ -16,7 +16,7 @@
     "@typescript-eslint/no-useless-constructor": "error",
     "@typescript-eslint/indent": "off",
     "@typescript-eslint/no-var-requires": "off",
-    "@typescript-eslint/no-shadow": ["error"],    
+    "@typescript-eslint/no-shadow": ["error"],
     "@typescript-eslint/naming-convention": [
       "error",
       {
@@ -82,7 +82,18 @@
     "no-dupe-class-members": "off",
     "no-shadow": "off",
     "arrow-parens": "off",
-    "camelcase": "off"
+    "camelcase": "off",
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "@apollo/client",
+            "message": "@apollo/client/core must be used instead (default client requires react, which isn't suitable for a library)"
+          }
+        ]
+      }
+    ]
   },
   "plugins": ["@typescript-eslint", "simple-import-sort"],
   "parserOptions": {
@@ -90,5 +101,5 @@
     "project": "./tsconfig.json"
   },
   "extends": ["standard", "semistandard", "plugin:@typescript-eslint/recommended", "prettier"],
-  "ignorePatterns": ["src/polkadot/", "src/middleware/types.ts", "src/middleware/typesV2.ts", "docs/*"]
+  "ignorePatterns": ["src/polkadot/", "src/middleware/types.ts", "docs/*"]
 }

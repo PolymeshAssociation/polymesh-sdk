@@ -38,12 +38,9 @@ import {
   IdentityRole,
   InputCondition,
   InputConditionBase,
-  InvestorUniquenessClaim,
-  InvestorUniquenessV2Claim,
   JurisdictionClaim,
   KycClaim,
   MultiClaimCondition,
-  NoDataClaim,
   PortfolioCustodianRole,
   ProposalStatus,
   Role,
@@ -195,12 +192,7 @@ export function isPolymeshError(value: unknown): value is PolymeshError {
  * Return whether a Claim is an UnscopedClaim
  */
 export function isUnscopedClaim(claim: Claim): claim is UnscopedClaim {
-  return [
-    ClaimType.NoData,
-    ClaimType.NoType,
-    ClaimType.CustomerDueDiligence,
-    ClaimType.InvestorUniquenessV2,
-  ].includes(claim.type);
+  return [ClaimType.CustomerDueDiligence].includes(claim.type);
 }
 
 /**
@@ -271,27 +263,6 @@ export function isExemptedClaim(claim: Claim): claim is ExemptedClaim {
  */
 export function isBlockedClaim(claim: Claim): claim is BlockedClaim {
   return claim.type === ClaimType.Blocked;
-}
-
-/**
- * Return whether a Claim is an InvestorUniquenessClaim
- */
-export function isInvestorUniquenessClaim(claim: Claim): claim is InvestorUniquenessClaim {
-  return claim.type === ClaimType.InvestorUniqueness;
-}
-
-/**
- * Return whether Claim is a NoDataClaim
- */
-export function isNoDataClaim(claim: Claim): claim is NoDataClaim {
-  return claim.type === ClaimType.NoData;
-}
-
-/**
- * Return whether a Claim is an InvestorUniquenessV2Claim
- */
-export function isInvestorUniquenessV2Claim(claim: Claim): claim is InvestorUniquenessV2Claim {
-  return claim.type === ClaimType.InvestorUniquenessV2;
 }
 
 /**

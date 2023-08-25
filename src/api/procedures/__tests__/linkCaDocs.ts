@@ -1,4 +1,4 @@
-import { u32, Vec } from '@polkadot/types';
+import { Option, u32, Vec } from '@polkadot/types';
 import {
   PalletCorporateActionsCaId,
   PolymeshPrimitivesDocument,
@@ -30,7 +30,7 @@ describe('linkCaDocs procedure', () => {
   let rawTicker: PolymeshPrimitivesTicker;
   let rawDocuments: PolymeshPrimitivesDocument[];
   let rawDocumentIds: u32[];
-  let documentEntries: [[PolymeshPrimitivesTicker, u32], PolymeshPrimitivesDocument][];
+  let documentEntries: [[PolymeshPrimitivesTicker, u32], Option<PolymeshPrimitivesDocument>][];
   let args: Params;
   let rawCaId: PalletCorporateActionsCaId;
 
@@ -71,7 +71,7 @@ describe('linkCaDocs procedure', () => {
     rawDocumentIds = [];
     rawDocuments.forEach((doc, index) => {
       const rawId = dsMockUtils.createMockU32(new BigNumber(index));
-      documentEntries.push(tuple([rawTicker, rawId], doc));
+      documentEntries.push(tuple([rawTicker, rawId], dsMockUtils.createMockOption(doc)));
       rawDocumentIds.push(rawId);
     });
     args = {

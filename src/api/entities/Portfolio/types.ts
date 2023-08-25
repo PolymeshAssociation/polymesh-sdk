@@ -1,10 +1,8 @@
 import BigNumber from 'bignumber.js';
 
 import { Account, Asset } from '~/internal';
-import {
-  SettlementDirectionEnum as SettlementDirection,
-  SettlementResultEnum as SettlementResult,
-} from '~/middleware/types';
+import { SettlementResultEnum as SettlementResult } from '~/middleware/enums';
+import { SettlementDirectionEnum as SettlementDirection } from '~/middleware/typesV1';
 import { Balance, Leg } from '~/types';
 
 export interface PortfolioBalance extends Balance {

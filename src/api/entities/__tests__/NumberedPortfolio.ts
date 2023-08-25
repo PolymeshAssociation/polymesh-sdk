@@ -2,11 +2,9 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Context, Entity, NumberedPortfolio, PolymeshError, PolymeshTransaction } from '~/internal';
-import { eventByIndexedArgs } from '~/middleware/queries';
-import { portfolioQuery } from '~/middleware/queriesV2';
-import { EventIdEnum, ModuleIdEnum } from '~/middleware/types';
+import { portfolioQuery } from '~/middleware/queries';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
-import { ErrorCode, EventIdentifier } from '~/types';
+import { ErrorCode } from '~/types';
 import * as utilsConversionModule from '~/utils/conversion';
 
 jest.mock(
@@ -97,7 +95,7 @@ describe('NumberedPortfolio class', () => {
       const spy = jest.spyOn(numberedPortfolio, 'exists').mockResolvedValue(true);
       const rawPortfolioName = dsMockUtils.createMockBytes(portfolioName);
       dsMockUtils.createQueryMock('portfolio', 'portfolios', {
-        returnValue: rawPortfolioName,
+        returnValue: dsMockUtils.createMockOption(rawPortfolioName),
       });
       when(jest.spyOn(utilsConversionModule, 'bytesToString'))
         .calledWith(rawPortfolioName)
@@ -109,88 +107,22 @@ describe('NumberedPortfolio class', () => {
       spy.mockRestore();
     });
 
-    it('should throw an error if the Portfolio no longer exists', async () => {
-      const emptyName = dsMockUtils.createMockText('');
+    it('should throw an error if the Portfolio no longer exists', () => {
       dsMockUtils.createQueryMock('portfolio', 'portfolios', {
-        returnValue: emptyName,
+        returnValue: dsMockUtils.createMockOption(),
       });
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
-      const spy = jest.spyOn(numberedPortfolio, 'exists').mockResolvedValue(false);
-      let error;
-      try {
-        await numberedPortfolio.getName();
-      } catch (err) {
-        error = err;
-      }
+
       const expectedError = new PolymeshError({
         code: ErrorCode.DataUnavailable,
         message: "The Portfolio doesn't exist",
       });
-      expect(error).toEqual(expectedError);
-      spy.mockRestore();
+
+      return expect(numberedPortfolio.getName()).rejects.toThrow(expectedError);
     });
   });
 
   describe('method: createdAt', () => {
-    const id = new BigNumber(1);
-    const did = 'someDid';
-    const variables = {
-      moduleId: ModuleIdEnum.Portfolio,
-      eventId: EventIdEnum.PortfolioCreated,
-      eventArg0: did,
-      eventArg1: id.toString(),
-    };
-
-    beforeEach(() => {
-      dsMockUtils.configureMocks({
-        contextOptions: { middlewareV2Enabled: false },
-      });
-    });
-
-    it('should return the event identifier object of the portfolio creation', async () => {
-      const blockNumber = new BigNumber(1234);
-      const blockDate = new Date('4/14/2020');
-      const eventIdx = new BigNumber(1);
-      const fakeResult = { blockNumber, blockDate, eventIndex: eventIdx };
-      const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
-
-      dsMockUtils.createApolloQueryMock(eventByIndexedArgs(variables), {
-        /* eslint-disable @typescript-eslint/naming-convention */
-        eventByIndexedArgs: {
-          block_id: blockNumber.toNumber(),
-          block: { datetime: blockDate },
-          event_idx: eventIdx.toNumber(),
-        },
-        /* eslint-enable @typescript-eslint/naming-convention */
-      });
-
-      const result = await numberedPortfolio.createdAt();
-
-      expect(result).toEqual(fakeResult);
-    });
-
-    it('should return null if the query result is empty', async () => {
-      const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
-
-      dsMockUtils.createApolloQueryMock(eventByIndexedArgs(variables), {});
-      const result = await numberedPortfolio.createdAt();
-      expect(result).toBeNull();
-    });
-
-    it('should call v2 query if middlewareV2 is enabled', async () => {
-      dsMockUtils.configureMocks({
-        contextOptions: { middlewareV2Enabled: true },
-      });
-      const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
-      const fakeResult = 'fakeResult' as unknown as EventIdentifier;
-      jest.spyOn(numberedPortfolio, 'createdAtV2').mockResolvedValue(fakeResult);
-
-      const result = await numberedPortfolio.createdAt();
-      expect(result).toEqual(fakeResult);
-    });
-  });
-
-  describe('method: createdAtV2', () => {
     const id = new BigNumber(1);
     const did = 'someDid';
     const variables = {
@@ -206,7 +138,7 @@ describe('NumberedPortfolio class', () => {
       const fakeResult = { blockNumber, blockHash, blockDate, eventIndex: eventIdx };
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
 
-      dsMockUtils.createApolloV2QueryMock(portfolioQuery(variables), {
+      dsMockUtils.createApolloQueryMock(portfolioQuery(variables), {
         portfolios: {
           nodes: [
             {
@@ -221,7 +153,7 @@ describe('NumberedPortfolio class', () => {
         },
       });
 
-      const result = await numberedPortfolio.createdAtV2();
+      const result = await numberedPortfolio.createdAt();
 
       expect(result).toEqual(fakeResult);
     });
@@ -229,12 +161,12 @@ describe('NumberedPortfolio class', () => {
     it('should return null if the query result is empty', async () => {
       const numberedPortfolio = new NumberedPortfolio({ id, did }, context);
 
-      dsMockUtils.createApolloV2QueryMock(portfolioQuery(variables), {
+      dsMockUtils.createApolloQueryMock(portfolioQuery(variables), {
         portfolios: {
           nodes: [],
         },
       });
-      const result = await numberedPortfolio.createdAtV2();
+      const result = await numberedPortfolio.createdAt();
       expect(result).toBeNull();
     });
   });

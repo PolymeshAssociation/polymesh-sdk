@@ -1,4 +1,4 @@
-import { Bytes } from '@polkadot/types';
+import { Bytes, Option } from '@polkadot/types';
 import { PalletStoFundraiser, PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
@@ -119,7 +119,7 @@ describe('Offerings class', () => {
 
   describe('method: get', () => {
     let rawTicker: PolymeshPrimitivesTicker;
-    let rawName: Bytes;
+    let rawName: Option<Bytes>;
 
     let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
     let fundraiserToOfferingDetailsSpy: jest.SpyInstance<
@@ -140,7 +140,7 @@ describe('Offerings class', () => {
 
       const creator = entityMockUtils.getIdentityInstance();
       const name = 'someSto';
-      rawName = dsMockUtils.createMockFundraiserName(name);
+      rawName = dsMockUtils.createMockOption(dsMockUtils.createMockFundraiserName(name));
       const offeringPortfolio = entityMockUtils.getDefaultPortfolioInstance();
       const raisingPortfolio = entityMockUtils.getDefaultPortfolioInstance();
       const venue = entityMockUtils.getVenueInstance();
@@ -257,10 +257,10 @@ describe('Offerings class', () => {
     beforeEach(() => {
       when(stringToTickerSpy).calledWith(ticker, context).mockReturnValue(rawTicker);
       when(fundraiserToOfferingDetailsSpy)
-        .calledWith(fundraisers[0], rawName, context)
+        .calledWith(fundraisers[0], rawName.unwrap(), context)
         .mockReturnValue(details[0]);
       when(fundraiserToOfferingDetailsSpy)
-        .calledWith(fundraisers[1], rawName, context)
+        .calledWith(fundraisers[1], rawName.unwrap(), context)
         .mockReturnValue(details[1]);
 
       dsMockUtils.createQueryMock('sto', 'fundraisers', {

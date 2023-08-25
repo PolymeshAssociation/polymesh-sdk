@@ -14,14 +14,9 @@ import {
 } from '~/api/entities/Account/types';
 import { Subsidies } from '~/api/entities/Subsidies';
 import { Authorizations, Context, Entity, Identity, MultiSig, PolymeshError } from '~/internal';
-import {
-  CallIdEnum as MiddlewareV2CallId,
-  ModuleIdEnum as MiddlewareV2ModuleId,
-} from '~/middleware/enumsV2';
-import { transactions as transactionsQuery } from '~/middleware/queries';
-import { extrinsicsByArgs } from '~/middleware/queriesV2';
-import { Query, TransactionOrderByInput } from '~/middleware/types';
-import { ExtrinsicsOrderBy, Query as QueryV2 } from '~/middleware/typesV2';
+import { CallIdEnum, ModuleIdEnum } from '~/middleware/enums';
+import { extrinsicsByArgs } from '~/middleware/queries';
+import { ExtrinsicsOrderBy, Query } from '~/middleware/types';
 import {
   AccountBalance,
   CheckPermissionsResult,
@@ -36,7 +31,7 @@ import {
   TxTag,
   UnsubCallback,
 } from '~/types';
-import { Ensured, EnsuredV2 } from '~/types/utils';
+import { Ensured } from '~/types/utils';
 import {
   addressToKey,
   extrinsicIdentifierToTxTag,
@@ -44,7 +39,6 @@ import {
   stringToAccountId,
   stringToHash,
   txTagToExtrinsicIdentifier,
-  txTagToExtrinsicIdentifierV2,
   u32ToBigNumber,
 } from '~/utils/conversion';
 import {
@@ -180,133 +174,18 @@ export class Account extends Entity<UniqueIdentifiers, string> {
   /**
    * Retrieve a list of transactions signed by this Account. Can be filtered using parameters
    *
-   * @note if both `blockNumber` and `blockHash` are passed, only `blockNumber` is taken into account
+   * @note if both `blockNumber` and `blockHash` are passed, only `blockNumber` is taken into account.
+   * Also, for ordering by block_id, one should pass `ExtrinsicsOrderBy.CreatedAtAsc` or `ExtrinsicsOrderBy.CreatedAtDesc`
+   * in order of their choice (since block ID is a string field in middleware v2)
    *
    * @param filters.tag - tag associated with the transaction
    * @param filters.success - whether the transaction was successful or not
    * @param filters.size - page size
    * @param filters.start - page offset
    *
-   * @note uses the middleware
+   * @note uses the middleware v2
    */
   public async getTransactionHistory(
-    filters: {
-      blockNumber?: BigNumber;
-      blockHash?: string;
-      tag?: TxTag;
-      success?: boolean;
-      size?: BigNumber;
-      start?: BigNumber;
-      orderBy?: TransactionOrderByInput;
-    } = {}
-  ): Promise<ResultSet<ExtrinsicData>> {
-    const { context, address } = this;
-
-    if (context.isMiddlewareV2Enabled()) {
-      const { orderBy, ...rest } = filters;
-      let order: ExtrinsicsOrderBy = ExtrinsicsOrderBy.CreatedAtAsc;
-      if (orderBy) {
-        order = `${orderBy.field}_${orderBy.order}`.toUpperCase() as ExtrinsicsOrderBy;
-      }
-      return this.getTransactionHistoryV2({ ...rest, orderBy: order });
-    }
-
-    const { tag, success, size, start, orderBy, blockHash } = filters;
-    let { blockNumber } = filters;
-
-    if (!blockNumber && blockHash) {
-      const {
-        block: {
-          header: { number },
-        },
-      } = await context.polymeshApi.rpc.chain.getBlock(stringToHash(blockHash, context));
-
-      blockNumber = u32ToBigNumber(number.unwrap());
-    }
-
-    let moduleId;
-    let callId;
-    if (tag) {
-      ({ moduleId, callId } = txTagToExtrinsicIdentifier(tag));
-    }
-
-    /* eslint-disable @typescript-eslint/naming-convention */
-    const result = await context.queryMiddleware<Ensured<Query, 'transactions'>>(
-      transactionsQuery({
-        block_id: blockNumber ? blockNumber.toNumber() : undefined,
-        address: addressToKey(address, context),
-        module_id: moduleId,
-        call_id: callId,
-        success,
-        count: size?.toNumber(),
-        skip: start?.toNumber(),
-        orderBy,
-      })
-    );
-
-    const {
-      data: {
-        transactions: { items: transactionList, totalCount },
-      },
-    } = result;
-
-    const count = new BigNumber(totalCount);
-
-    const data = transactionList.map(
-      ({
-        block_id,
-        extrinsic_idx,
-        address: rawAddress,
-        nonce,
-        module_id,
-        call_id,
-        params,
-        success: txSuccess,
-        spec_version_id,
-        extrinsic_hash,
-        block,
-      }) => {
-        // TODO remove null check once types fixed
-        /* eslint-disable @typescript-eslint/no-non-null-assertion */
-        return {
-          blockNumber: new BigNumber(block_id),
-          blockHash: block!.hash!,
-          extrinsicIdx: new BigNumber(extrinsic_idx),
-          address: rawAddress ?? null,
-          nonce: nonce ? new BigNumber(nonce) : null,
-          txTag: extrinsicIdentifierToTxTag({ moduleId: module_id, callId: call_id }),
-          params,
-          success: !!txSuccess,
-          specVersionId: new BigNumber(spec_version_id),
-          extrinsicHash: extrinsic_hash!,
-        };
-        /* eslint-enable @typescript-eslint/no-non-null-assertion */
-      }
-    );
-    /* eslint-enable @typescript-eslint/naming-convention */
-
-    const next = calculateNextKey(count, data.length, start);
-
-    return {
-      data,
-      next,
-      count,
-    };
-  }
-
-  /**
-   * Retrieve a list of transactions signed by this Account. Can be filtered using parameters
-   *
-   * @note if both `blockNumber` and `blockHash` are passed, only `blockNumber` is taken into account
-   *
-   * @param filters.tag - tag associated with the transaction
-   * @param filters.success - whether the transaction was successful or not
-   * @param filters.size - page size
-   * @param filters.start - page offset
-   *
-   * @note uses the middlewareV2
-   */
-  public async getTransactionHistoryV2(
     filters: {
       blockNumber?: BigNumber;
       blockHash?: string;
@@ -317,14 +196,21 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       orderBy?: ExtrinsicsOrderBy;
     } = {}
   ): Promise<ResultSet<ExtrinsicData>> {
-    const { context, address } = this;
+    const {
+      tag,
+      success,
+      size,
+      start,
+      orderBy = ExtrinsicsOrderBy.CreatedAtAsc,
+      blockHash,
+    } = filters;
 
-    const { tag, success, size, start, orderBy, blockHash } = filters;
+    const { context, address } = this;
 
     let moduleId;
     let callId;
     if (tag) {
-      ({ moduleId, callId } = txTagToExtrinsicIdentifierV2(tag));
+      ({ moduleId, callId } = txTagToExtrinsicIdentifier(tag));
     }
 
     let successFilter;
@@ -348,7 +234,7 @@ export class Account extends Entity<UniqueIdentifiers, string> {
       data: {
         extrinsics: { nodes: transactionList, totalCount },
       },
-    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'extrinsics'>>(
+    } = await context.queryMiddleware<Ensured<Query, 'extrinsics'>>(
       extrinsicsByArgs(
         {
           blockId: blockNumber ? blockNumber.toString() : undefined,
@@ -386,8 +272,8 @@ export class Account extends Entity<UniqueIdentifiers, string> {
         address: rawAddress ? keyToAddress(rawAddress, context) : null,
         nonce: nonce ? new BigNumber(nonce) : null,
         txTag: extrinsicIdentifierToTxTag({
-          moduleId: extrinsicModuleId as MiddlewareV2ModuleId,
-          callId: extrinsicCallId as MiddlewareV2CallId,
+          moduleId: extrinsicModuleId as ModuleIdEnum,
+          callId: extrinsicCallId as CallIdEnum,
         }),
         params: JSON.parse(paramsTxt),
         success: !!txSuccess,

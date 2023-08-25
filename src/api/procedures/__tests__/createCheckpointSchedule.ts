@@ -1,7 +1,4 @@
-import {
-  PalletAssetCheckpointScheduleSpec,
-  PolymeshPrimitivesTicker,
-} from '@polkadot/types/lookup';
+import { PolymeshPrimitivesTicker } from '@polkadot/types/lookup';
 import { ISubmittableResult } from '@polkadot/types/types';
 import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
@@ -16,7 +13,6 @@ import { CheckpointSchedule, Context } from '~/internal';
 import { dsMockUtils, entityMockUtils, procedureMockUtils } from '~/testUtils/mocks';
 import { Mocked } from '~/testUtils/types';
 import { CalendarUnit, TxTags } from '~/types';
-import { ScheduleSpec } from '~/types/internal';
 import * as utilsConversionModule from '~/utils/conversion';
 import * as utilsInternalModule from '~/utils/internal';
 
@@ -34,10 +30,8 @@ jest.mock(
 describe('createCheckpointSchedule procedure', () => {
   let mockContext: Mocked<Context>;
   let stringToTickerSpy: jest.SpyInstance<PolymeshPrimitivesTicker, [string, Context]>;
-  let scheduleSpecToMeshScheduleSpecSpy: jest.SpyInstance<
-    PalletAssetCheckpointScheduleSpec,
-    [ScheduleSpec, Context]
-  >;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let datesToScheduleCheckpointsSpy: jest.SpyInstance<any, [Date[], Context]>;
   let ticker: string;
   let rawTicker: PolymeshPrimitivesTicker;
 
@@ -46,10 +40,7 @@ describe('createCheckpointSchedule procedure', () => {
     procedureMockUtils.initMocks();
     entityMockUtils.initMocks();
     stringToTickerSpy = jest.spyOn(utilsConversionModule, 'stringToTicker');
-    scheduleSpecToMeshScheduleSpecSpy = jest.spyOn(
-      utilsConversionModule,
-      'scheduleSpecToMeshScheduleSpec'
-    );
+    datesToScheduleCheckpointsSpy = jest.spyOn(utilsConversionModule, 'datesToScheduleCheckpoints');
     ticker = 'SOME_TICKER';
     rawTicker = dsMockUtils.createMockTicker(ticker);
   });
@@ -93,9 +84,9 @@ describe('createCheckpointSchedule procedure', () => {
       unit: CalendarUnit.Month,
       amount: new BigNumber(1),
     };
-    const repetitions = new BigNumber(12);
+    const repetitions = new BigNumber(1);
 
-    const rawSpec = dsMockUtils.createMockScheduleSpec({
+    const rawSchedule = dsMockUtils.createMockScheduleSpec({
       start: dsMockUtils.createMockOption(
         dsMockUtils.createMockMoment(new BigNumber(start.getTime()))
       ),
@@ -106,9 +97,7 @@ describe('createCheckpointSchedule procedure', () => {
       remaining: dsMockUtils.createMockU32(repetitions),
     });
 
-    when(scheduleSpecToMeshScheduleSpecSpy)
-      .calledWith({ start, period, repetitions }, mockContext)
-      .mockReturnValue(rawSpec);
+    datesToScheduleCheckpointsSpy.mockReturnValue(rawSchedule);
 
     const result = await prepareCreateCheckpointSchedule.call(proc, {
       ticker,
@@ -120,7 +109,7 @@ describe('createCheckpointSchedule procedure', () => {
     expect(result).toEqual({
       transaction,
       resolver: expect.any(Function),
-      args: [rawTicker, rawSpec],
+      args: [rawTicker, rawSchedule],
     });
   });
 
@@ -132,8 +121,6 @@ describe('createCheckpointSchedule procedure', () => {
       unit: CalendarUnit.Month,
       amount: new BigNumber(1),
     };
-    const remaining = new BigNumber(10);
-    const at = new Date('10/10/2030');
 
     beforeAll(() => {
       entityMockUtils.initMocks({
@@ -146,23 +133,16 @@ describe('createCheckpointSchedule procedure', () => {
         },
       });
     });
-
     beforeEach(() => {
       filterEventRecordsSpy.mockReturnValue([
         dsMockUtils.createMockIEvent([
           dsMockUtils.createMockIdentityId('someDid'),
           dsMockUtils.createMockTicker(ticker),
-          dsMockUtils.createMockStoredSchedule({
-            id: dsMockUtils.createMockU64(id),
-            schedule: dsMockUtils.createMockCheckpointSchedule({
-              start: dsMockUtils.createMockMoment(new BigNumber(start.getTime())),
-              period: dsMockUtils.createMockCalendarPeriod({
-                unit: dsMockUtils.createMockCalendarUnit('Month'),
-                amount: dsMockUtils.createMockU64(period.amount),
-              }),
-            }),
-            remaining: dsMockUtils.createMockU32(remaining),
-            at: dsMockUtils.createMockMoment(new BigNumber(at.getTime())),
+          dsMockUtils.createMockU64(id),
+          dsMockUtils.createMockCheckpointSchedule({
+            pending: dsMockUtils.createMockBTreeSet([
+              dsMockUtils.createMockMoment(new BigNumber(start.getTime())),
+            ]),
           }),
         ]),
       ]);
@@ -179,8 +159,6 @@ describe('createCheckpointSchedule procedure', () => {
       )({} as ISubmittableResult);
       expect(result.asset.ticker).toBe(ticker);
       expect(result.id).toEqual(id);
-      expect(result.start).toEqual(start);
-      expect(result.period).toEqual(period);
     });
   });
 

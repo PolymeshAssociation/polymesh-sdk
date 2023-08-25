@@ -12,8 +12,8 @@ import BigNumber from 'bignumber.js';
 import { when } from 'jest-when';
 
 import { Account, Asset, Context, Identity, PolymeshError, Procedure } from '~/internal';
-import { latestSqVersionQuery } from '~/middleware/queriesV2';
-import { ClaimScopeTypeEnum } from '~/middleware/types';
+import { latestSqVersionQuery } from '~/middleware/queries';
+import { ClaimScopeTypeEnum } from '~/middleware/typesV1';
 import { dsMockUtils, entityMockUtils } from '~/testUtils/mocks';
 import {
   createMockStatisticsStatClaim,
@@ -26,8 +26,6 @@ import {
 } from '~/testUtils/mocks/dataSources';
 import {
   CaCheckpointType,
-  CalendarPeriod,
-  CalendarUnit,
   ClaimType,
   CountryCode,
   ErrorCode,
@@ -85,7 +83,6 @@ import {
   neededStatTypeForRestrictionInput,
   optionize,
   padString,
-  periodComplexity,
   removePadding,
   requestAtBlock,
   requestPaginated,
@@ -294,7 +291,7 @@ describe('sliceBatchReceipt', () => {
 
   beforeEach(() => {
     when(filterRecordsMock)
-      .calledWith('utility', 'BatchCompleted')
+      .calledWith('utility', 'BatchCompletedOld')
       .mockReturnValue([
         {
           event: {
@@ -315,21 +312,21 @@ describe('sliceBatchReceipt', () => {
   });
 
   it('should return the cloned receipt with a subset of events', () => {
-    let slicedReceipt = sliceBatchReceipt(mockReceipt, 1, 3);
+    let slicedReceipt = sliceBatchReceipt(mockReceipt, 1, 3, false);
 
     expect(slicedReceipt.events).toEqual(['tx1event0', 'tx2event0', 'tx2event1', 'tx2event2']);
 
-    slicedReceipt = sliceBatchReceipt(mockReceipt, 0, 2);
+    slicedReceipt = sliceBatchReceipt(mockReceipt, 0, 2, false);
 
     expect(slicedReceipt.events).toEqual(['tx0event0', 'tx0event1', 'tx1event0']);
   });
 
   it('should throw an error if the transaction indexes are out of bounds', () => {
-    expect(() => sliceBatchReceipt(mockReceipt, -1, 2)).toThrow(
+    expect(() => sliceBatchReceipt(mockReceipt, -1, 2, false)).toThrow(
       'Transaction index range out of bounds. Please report this to the Polymesh team'
     );
 
-    expect(() => sliceBatchReceipt(mockReceipt, 1, 4)).toThrow(
+    expect(() => sliceBatchReceipt(mockReceipt, 1, 4, false)).toThrow(
       'Transaction index range out of bounds. Please report this to the Polymesh team'
     );
   });
@@ -422,7 +419,7 @@ describe('createClaim', () => {
     const jurisdiction = 'CL';
     let scope = { type: ClaimScopeTypeEnum.Identity, value: 'someScope' };
 
-    let result = createClaim(type, jurisdiction, scope, null, undefined);
+    let result = createClaim(type, jurisdiction, scope, null);
     expect(result).toEqual({
       type: ClaimType.Jurisdiction,
       code: CountryCode.Cl,
@@ -432,44 +429,19 @@ describe('createClaim', () => {
     type = 'BuyLockup';
     scope = { type: ClaimScopeTypeEnum.Identity, value: 'someScope' };
 
-    result = createClaim(type, null, scope, null, undefined);
+    result = createClaim(type, null, scope, null);
     expect(result).toEqual({
       type: ClaimType.BuyLockup,
       scope,
     });
 
-    type = 'NoData';
-
-    result = createClaim(type, null, null, null, undefined);
-    expect(result).toEqual({
-      type: ClaimType.NoData,
-    });
-
     type = 'CustomerDueDiligence';
     const id = 'someId';
 
-    result = createClaim(type, null, null, id, undefined);
+    result = createClaim(type, null, null, id);
     expect(result).toEqual({
       type: ClaimType.CustomerDueDiligence,
       id,
-    });
-
-    type = 'InvestorUniqueness';
-    scope = { type: ClaimScopeTypeEnum.Ticker, value: 'SOME_TICKER' };
-
-    result = createClaim(type, null, scope, id, undefined);
-    expect(result).toEqual({
-      type: ClaimType.InvestorUniqueness,
-      scope: scope,
-      cddId: id,
-    });
-
-    type = 'InvestorUniquenessV2';
-
-    result = createClaim(type, null, null, id, undefined);
-    expect(result).toEqual({
-      type: ClaimType.InvestorUniquenessV2,
-      cddId: id,
     });
   });
 });
@@ -821,45 +793,6 @@ describe('asTicker', () => {
   });
 });
 
-describe('periodComplexity', () => {
-  it('should calculate complexity for any period', () => {
-    const period: CalendarPeriod = {
-      unit: CalendarUnit.Second,
-      amount: new BigNumber(1),
-    };
-    let result = periodComplexity(period);
-    expect(result).toEqual(new BigNumber(31536000));
-
-    period.unit = CalendarUnit.Minute;
-    result = periodComplexity(period);
-    expect(result).toEqual(new BigNumber(525600));
-
-    period.unit = CalendarUnit.Hour;
-    result = periodComplexity(period);
-    expect(result).toEqual(new BigNumber(8760));
-
-    period.unit = CalendarUnit.Day;
-    result = periodComplexity(period);
-    expect(result).toEqual(new BigNumber(365));
-
-    period.unit = CalendarUnit.Week;
-    result = periodComplexity(period);
-    expect(result).toEqual(new BigNumber(52));
-
-    period.unit = CalendarUnit.Month;
-    result = periodComplexity(period);
-    expect(result).toEqual(new BigNumber(12));
-
-    period.unit = CalendarUnit.Year;
-    result = periodComplexity(period);
-    expect(result).toEqual(new BigNumber(2));
-
-    period.amount = new BigNumber(0);
-    result = periodComplexity(period);
-    expect(result).toEqual(new BigNumber(1));
-  });
-});
-
 describe('optionize', () => {
   it('should transform a conversion util into a version that returns null if the first input is falsy, passing along the rest if not', () => {
     const number = new BigNumber(1);
@@ -1109,59 +1042,17 @@ describe('getExemptedIds', () => {
   });
 
   it('should return a list of DIDs if the Asset does not support PUIS', async () => {
-    const asset = entityMockUtils.getAssetInstance({
-      details: { requiresInvestorUniqueness: false },
-    });
     const dids = ['someDid', 'otherDid'];
 
-    const result = await getExemptedIds(dids, context, asset.ticker);
+    const result = await getExemptedIds(dids, context);
 
     expect(result).toEqual(dids);
   });
 
-  it('should return a list of Scope IDs if the Asset supports PUIS', async () => {
-    entityMockUtils.configureMocks({
-      assetOptions: {
-        details: {
-          requiresInvestorUniqueness: true,
-        },
-      },
-    });
-    const scopeIds = ['someScopeId', 'otherScopeId'];
-    const identities = scopeIds.map(scopeId =>
-      entityMockUtils.getIdentityInstance({ getScopeId: scopeId })
-    );
-
-    const result = await getExemptedIds(identities, context, 'SOME_TICKER');
-
-    expect(result).toEqual(scopeIds);
-  });
-
-  it('should throw an error if one or more of the passed Identities have no Scope ID for the Asset', () => {
-    entityMockUtils.configureMocks({
-      assetOptions: {
-        details: {
-          requiresInvestorUniqueness: true,
-        },
-      },
-    });
-    const scopeIds = ['someScopeId', null];
-    const identities = scopeIds.map(scopeId =>
-      entityMockUtils.getIdentityInstance({ getScopeId: scopeId })
-    );
-
-    return expect(getExemptedIds(identities, context, 'SOME_TICKER')).rejects.toThrow(
-      'Identities must have an Investor Uniqueness claim Scope ID in order to be exempted from Transfer Restrictions for Asset "SOME_TICKER"'
-    );
-  });
-
   it('should throw an error if the exempted IDs have duplicates', () => {
-    const asset = entityMockUtils.getAssetInstance({
-      details: { requiresInvestorUniqueness: false },
-    });
     const dids = ['someDid', 'someDid'];
 
-    return expect(getExemptedIds(dids, context, asset.ticker)).rejects.toThrow(
+    return expect(getExemptedIds(dids, context)).rejects.toThrow(
       'One or more of the passed exempted Identities are repeated or have the same Scope ID'
     );
   });
@@ -1190,7 +1081,7 @@ describe('assertExpectedSqVersion', () => {
   });
 
   it('should resolve if SDK is initialized with correct Middleware V2 version', () => {
-    dsMockUtils.createApolloV2QueryMock(latestSqVersionQuery(), {
+    dsMockUtils.createApolloQueryMock(latestSqVersionQuery(), {
       subqueryVersions: {
         nodes: [
           {
@@ -1205,7 +1096,7 @@ describe('assertExpectedSqVersion', () => {
   });
 
   it('should log a warning for incompatible Subquery version', async () => {
-    dsMockUtils.createApolloV2QueryMock(latestSqVersionQuery(), {
+    dsMockUtils.createApolloQueryMock(latestSqVersionQuery(), {
       subqueryVersions: {
         nodes: [
           {
@@ -1223,7 +1114,7 @@ describe('assertExpectedSqVersion', () => {
 
     warnSpy.mockReset();
 
-    dsMockUtils.createApolloV2QueryMock(latestSqVersionQuery(), {
+    dsMockUtils.createApolloQueryMock(latestSqVersionQuery(), {
       subqueryVersions: {
         nodes: [],
       },

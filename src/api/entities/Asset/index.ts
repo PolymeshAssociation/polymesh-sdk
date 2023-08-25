@@ -1,5 +1,4 @@
-import { bool, Bytes, Option, StorageKey } from '@polkadot/types';
-import { BlockNumber, Hash } from '@polkadot/types/interfaces/runtime';
+import { Bytes, Option, StorageKey } from '@polkadot/types';
 import {
   PalletAssetSecurityToken,
   PolymeshPrimitivesAgentAgentGroup,
@@ -7,7 +6,7 @@ import {
   PolymeshPrimitivesTicker,
 } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
-import { flatten, groupBy, map } from 'lodash';
+import { groupBy, map } from 'lodash';
 
 import { Metadata } from '~/api/entities/Asset/Metadata';
 import {
@@ -17,21 +16,21 @@ import {
   Entity,
   Identity,
   modifyAsset,
+  PolymeshError,
   redeemTokens,
   setVenueFiltering,
   toggleFreezeTransfers,
   transferAssetOwnership,
 } from '~/internal';
-import { eventByIndexedArgs, tickerExternalAgentHistory } from '~/middleware/queries';
 import {
   assetQuery,
   assetTransactionQuery,
   tickerExternalAgentHistoryQuery,
-} from '~/middleware/queriesV2';
-import { EventIdEnum, ModuleIdEnum, Query } from '~/middleware/types';
-import { Query as QueryV2 } from '~/middleware/typesV2';
+} from '~/middleware/queries';
+import { Query } from '~/middleware/types';
 import {
   ControllerTransferParams,
+  ErrorCode,
   EventIdentifier,
   HistoricAgentOperation,
   HistoricAssetTransaction,
@@ -46,8 +45,7 @@ import {
   TransferAssetOwnershipParams,
   UnsubCallback,
 } from '~/types';
-import { Ensured, EnsuredV2, Modify } from '~/types/utils';
-import { MAX_TICKER_LENGTH } from '~/utils/constants';
+import { Ensured } from '~/types/utils';
 import {
   assetIdentifierToSecurityIdentifier,
   assetTypeToKnownOrId,
@@ -55,15 +53,13 @@ import {
   bigNumberToU32,
   boolToBoolean,
   bytesToString,
-  hashToString,
   identityIdToString,
-  middlewareEventToEventIdentifier,
-  middlewareV2EventDetailsToEventIdentifier,
-  middlewareV2PortfolioToPortfolio,
+  middlewareEventDetailsToEventIdentifier,
+  middlewarePortfolioToPortfolio,
   stringToTicker,
   tickerToDid,
 } from '~/utils/conversion';
-import { calculateNextKey, createProcedureMethod, optionize, padString } from '~/utils/internal';
+import { calculateNextKey, createProcedureMethod, optionize } from '~/utils/internal';
 
 import { AssetHolders } from './AssetHolders';
 import { Checkpoints } from './Checkpoints';
@@ -216,21 +212,35 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
         polymeshApi: {
           query: { asset, externalAgents },
         },
+        isV5,
       },
       ticker,
       context,
     } = this;
 
     const assembleResult = async (
-      { totalSupply, divisible, ownerDid, assetType: rawAssetType }: PalletAssetSecurityToken,
+      optToken: Option<PalletAssetSecurityToken>,
       agentGroups: [
         StorageKey<[PolymeshPrimitivesTicker, PolymeshPrimitivesIdentityId]>,
         Option<PolymeshPrimitivesAgentAgentGroup>
       ][],
-      assetName: Bytes,
-      iuDisabled: bool
+      assetName: Option<Bytes>
     ): Promise<AssetDetails> => {
       const fullAgents: Identity[] = [];
+
+      if (!isV5 && optToken.isNone) {
+        throw new PolymeshError({
+          message: 'Asset detail information not found',
+          code: ErrorCode.DataUnavailable,
+        });
+      }
+
+      const {
+        totalSupply,
+        divisible,
+        ownerDid,
+        assetType: rawAssetType,
+      } = isV5 ? (optToken as unknown as PalletAssetSecurityToken) : optToken.unwrap();
 
       agentGroups.forEach(([storageKey, agentGroup]) => {
         const rawAgentGroup = agentGroup.unwrap();
@@ -253,11 +263,10 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       return {
         assetType,
         isDivisible: boolToBoolean(divisible),
-        name: bytesToString(assetName),
+        name: bytesToString(isV5 ? (assetName as unknown as Bytes) : assetName.unwrap()),
         owner,
         totalSupply: balanceToBigNumber(totalSupply),
         fullAgents,
-        requiresInvestorUniqueness: !boolToBoolean(iuDisabled),
       };
     };
 
@@ -265,33 +274,25 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
 
     const groupOfAgentPromise = externalAgents.groupOfAgent.entries(rawTicker);
     const namePromise = asset.assetNames(rawTicker);
-    const disabledIuPromise = asset.disableInvestorUniqueness(rawTicker);
 
     if (callback) {
       const groupEntries = await groupOfAgentPromise;
       const assetName = await namePromise;
-      const disabledInvestorUniqueness = await disabledIuPromise;
 
       return asset.tokens(rawTicker, async securityToken => {
-        const result = await assembleResult(
-          securityToken,
-          groupEntries,
-          assetName,
-          disabledInvestorUniqueness
-        );
+        const result = await assembleResult(securityToken, groupEntries, assetName);
 
         // eslint-disable-next-line @typescript-eslint/no-floating-promises -- callback errors should be handled by the caller
         callback(result);
       });
     }
 
-    const [token, groups, name, disabledIu] = await Promise.all([
+    const [token, groups, name] = await Promise.all([
       asset.tokens(rawTicker),
       groupOfAgentPromise,
       namePromise,
-      disabledIuPromise,
     ]);
-    return assembleResult(token, groups, name, disabledIu);
+    return assembleResult(token, groups, name);
   }
 
   /**
@@ -370,36 +371,10 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
   /**
    * Retrieve the identifier data (block number, date and event index) of the event that was emitted when the token was created
    *
-   * @note uses the middleware
-   * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
-   */
-  public async createdAt(): Promise<EventIdentifier | null> {
-    const { ticker, context } = this;
-
-    if (context.isMiddlewareV2Enabled()) {
-      return this.createdAtV2();
-    }
-
-    const {
-      data: { eventByIndexedArgs: event },
-    } = await context.queryMiddleware<Ensured<Query, 'eventByIndexedArgs'>>(
-      eventByIndexedArgs({
-        moduleId: ModuleIdEnum.Asset,
-        eventId: EventIdEnum.AssetCreated,
-        eventArg1: padString(ticker, MAX_TICKER_LENGTH),
-      })
-    );
-
-    return optionize(middlewareEventToEventIdentifier)(event);
-  }
-
-  /**
-   * Retrieve the identifier data (block number, date and event index) of the event that was emitted when the token was created
-   *
    * @note uses the middlewareV2
    * @note there is a possibility that the data is not ready by the time it is requested. In that case, `null` is returned
    */
-  public async createdAtV2(): Promise<EventIdentifier | null> {
+  public async createdAt(): Promise<EventIdentifier | null> {
     const { ticker, context } = this;
 
     const {
@@ -408,16 +383,13 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
           nodes: [asset],
         },
       },
-    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'assets'>>(
+    } = await context.queryMiddleware<Ensured<Query, 'assets'>>(
       assetQuery({
         ticker,
       })
     );
 
-    return optionize(middlewareV2EventDetailsToEventIdentifier)(
-      asset?.createdBlock,
-      asset?.eventIdx
-    );
+    return optionize(middlewareEventDetailsToEventIdentifier)(asset?.createdBlock, asset?.eventIdx);
   }
 
   /**
@@ -473,17 +445,13 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
 
   /**
    * Retrieve the amount of unique investors that hold this Asset
-   *
-   * @note this takes into account the Scope ID of Investor Uniqueness Claims. If an investor holds balances
-   *   of this Asset in two or more different Identities, but they all have Investor Uniqueness Claims with the same
-   *   Scope ID, then they will only be counted once for the purposes of this result
    */
   public async investorCount(): Promise<BigNumber> {
     const {
       context: {
         polymeshApi: {
           query: {
-            asset: { disableInvestorUniqueness, scopeIdOf, balanceOfAtScope, balanceOf },
+            asset: { balanceOf },
           },
         },
       },
@@ -493,39 +461,13 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
 
     const rawTicker = stringToTicker(ticker, context);
 
-    const iuDisabled = await disableInvestorUniqueness(rawTicker);
+    const balanceEntries = await balanceOf.entries(rawTicker);
 
-    if (boolToBoolean(iuDisabled)) {
-      const balanceEntries = await balanceOf.entries(rawTicker);
-
-      const assetBalances = balanceEntries.filter(
-        ([, balance]) => !balanceToBigNumber(balance).isZero()
-      );
-
-      return new BigNumber(assetBalances.length);
-    }
-
-    const scopeIdEntries = await scopeIdOf.entries(rawTicker);
-
-    const scopeBalanceEntries = await Promise.all(
-      scopeIdEntries.map(([, scopeId]) => balanceOfAtScope.entries(scopeId))
+    const assetBalances = balanceEntries.filter(
+      ([, balance]) => !balanceToBigNumber(balance).isZero()
     );
 
-    const assetHolders = new Set<string>();
-    flatten(scopeBalanceEntries).forEach(
-      ([
-        {
-          args: [scopeId],
-        },
-        balance,
-      ]) => {
-        if (!balanceToBigNumber(balance).isZero()) {
-          assetHolders.add(identityIdToString(scopeId));
-        }
-      }
-    );
-
-    return new BigNumber(assetHolders.size);
+    return new BigNumber(assetBalances.length);
   }
 
   /**
@@ -538,105 +480,16 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
    *
    * @note Operations are grouped by the agent Identity who performed them
    *
-   * @note uses the middleware
-   */
-  public async getOperationHistory(): Promise<HistoricAgentOperation[]> {
-    const {
-      context: {
-        polymeshApi: {
-          query: { system },
-        },
-      },
-      context,
-      ticker,
-    } = this;
-
-    if (context.isMiddlewareV2Enabled()) {
-      return this.getOperationHistoryV2();
-    }
-
-    const {
-      data: { tickerExternalAgentHistory: tickerExternalAgentHistoryResult },
-    } = await context.queryMiddleware<Ensured<Query, 'tickerExternalAgentHistory'>>(
-      tickerExternalAgentHistory({
-        ticker,
-      })
-    );
-
-    const multiParams: BlockNumber[] = [];
-    const results: Modify<
-      HistoricAgentOperation,
-      {
-        history: Omit<EventIdentifier, 'blockHash'>[];
-      }
-    >[] = [];
-
-    tickerExternalAgentHistoryResult.forEach(({ did, history }) => {
-      const historyResult: Omit<EventIdentifier, 'blockHash'>[] = [];
-      history.forEach(({ block_id: blockId, datetime, event_idx: eventIndex }) => {
-        const blockNumber = new BigNumber(blockId);
-        multiParams.push(bigNumberToU32(blockNumber, context));
-        historyResult.push({
-          blockNumber,
-          blockDate: new Date(datetime),
-          eventIndex: new BigNumber(eventIndex),
-        });
-      });
-      results.push({
-        identity: new Identity({ did }, context),
-        history: historyResult,
-      });
-    });
-
-    let hashes: Hash[] = [];
-
-    if (multiParams.length) {
-      hashes = await system.blockHash.multi(multiParams);
-    }
-
-    const finalResults: HistoricAgentOperation[] = [];
-
-    results.forEach(({ identity, history }) => {
-      const historyWithHashes: EventIdentifier[] = [];
-
-      history.forEach(event => {
-        /*
-         * Since we filled the params array in the order in which the events appeared and this is being done
-         *   synchronously, the order and amount of results should be the same and the array should never be empty
-         *   until all the data is in place
-         */
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const blockHash = hashToString(hashes.shift()!);
-        historyWithHashes.push({
-          ...event,
-          blockHash,
-        });
-      });
-
-      finalResults.push({
-        identity,
-        history: historyWithHashes,
-      });
-    });
-
-    return finalResults;
-  }
-
-  /**
-   * Retrieve this Asset's Operation History
-   *
-   * @note Operations are grouped by the agent Identity who performed them
-   *
    * @note uses the middlewareV2
    */
-  public async getOperationHistoryV2(): Promise<HistoricAgentOperation[]> {
+  public async getOperationHistory(): Promise<HistoricAgentOperation[]> {
     const { context, ticker: assetId } = this;
 
     const {
       data: {
         tickerExternalAgentHistories: { nodes },
       },
-    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'tickerExternalAgentHistories'>>(
+    } = await context.queryMiddleware<Ensured<Query, 'tickerExternalAgentHistories'>>(
       tickerExternalAgentHistoryQuery({
         assetId,
       })
@@ -648,7 +501,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       identity: new Identity({ did }, context),
       history: history.map(({ createdBlock, eventIdx }) =>
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        middlewareV2EventDetailsToEventIdentifier(createdBlock!, eventIdx)
+        middlewareEventDetailsToEventIdentifier(createdBlock!, eventIdx)
       ),
     }));
   }
@@ -669,7 +522,7 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
       data: {
         assetTransactions: { nodes, totalCount },
       },
-    } = await context.queryMiddlewareV2<EnsuredV2<QueryV2, 'assetTransactions'>>(
+    } = await context.queryMiddleware<Ensured<Query, 'assetTransactions'>>(
       assetTransactionQuery(
         {
           assetId: ticker,
@@ -693,12 +546,12 @@ export class Asset extends Entity<UniqueIdentifiers, string> {
         asset: new Asset({ ticker: assetId }, context),
         amount: new BigNumber(amount).shiftedBy(-6),
         event: eventId,
-        from: optionize(middlewareV2PortfolioToPortfolio)(fromPortfolio, context),
-        to: optionize(middlewareV2PortfolioToPortfolio)(toPortfolio, context),
+        from: optionize(middlewarePortfolioToPortfolio)(fromPortfolio, context),
+        to: optionize(middlewarePortfolioToPortfolio)(toPortfolio, context),
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         extrinsicIndex: new BigNumber(extrinsicIdx!),
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        ...middlewareV2EventDetailsToEventIdentifier(createdBlock!, eventIdx),
+        ...middlewareEventDetailsToEventIdentifier(createdBlock!, eventIdx),
       })
     );
 

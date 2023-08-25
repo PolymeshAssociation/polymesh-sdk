@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { Account, Identity } from '~/internal';
-import { BalanceTypeEnum, CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/enumsV2';
+import { BalanceTypeEnum, CallIdEnum, EventIdEnum, ModuleIdEnum } from '~/middleware/enums';
 import { EventIdentifier, Signer } from '~/types';
 export interface MultiSigDetails {
   signers: Signer[];

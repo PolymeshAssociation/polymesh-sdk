@@ -1,4 +1,4 @@
-import { u32, u64 } from '@polkadot/types';
+import { u64 } from '@polkadot/types';
 import { PolymeshPrimitivesIdentityIdPortfolioId } from '@polkadot/types/lookup';
 import BigNumber from 'bignumber.js';
 import P from 'bluebird';
@@ -57,6 +57,7 @@ export async function prepareModifyInstructionAffirmation(
         tx: { settlement: settlementTx },
         query: { settlement },
       },
+      isV5,
     },
     context,
     storage: { portfolios, portfolioParams, senderLegAmount, totalLegAmount },
@@ -89,7 +90,7 @@ export async function prepareModifyInstructionAffirmation(
 
   const excludeCriteria: AffirmationStatus[] = [];
   let errorMessage: string;
-  let transaction: PolymeshTx<[u64, PolymeshPrimitivesIdentityIdPortfolioId[], u32]> | null = null;
+  let transaction: PolymeshTx<[u64, PolymeshPrimitivesIdentityIdPortfolioId[]]> | null = null;
 
   switch (operation) {
     case InstructionAffirmationOperation.Affirm: {
@@ -128,20 +129,32 @@ export async function prepareModifyInstructionAffirmation(
     });
   }
 
+  const affirmArgs: unknown[] = [rawInstructionId, validPortfolioIds];
+
+  if (isV5) {
+    affirmArgs.push(bigNumberToU32(senderLegAmount, context));
+  }
   // rejection works a bit different
   if (transaction) {
     return {
       transaction,
       resolver: instruction,
       feeMultiplier: senderLegAmount,
-      args: [rawInstructionId, validPortfolioIds, bigNumberToU32(senderLegAmount, context)],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      args: affirmArgs as any,
     };
+  }
+
+  const rejectArgs: unknown[] = [rawInstructionId, validPortfolioIds[0]];
+
+  if (isV5) {
+    rejectArgs.push(bigNumberToU32(totalLegAmount, context));
   }
   return {
     transaction: settlementTx.rejectInstruction,
     resolver: instruction,
     feeMultiplier: totalLegAmount,
-    args: [rawInstructionId, validPortfolioIds[0], bigNumberToU32(totalLegAmount, context)],
+    args: rejectArgs,
   };
 }
 

@@ -1,12 +1,23 @@
 import { ISubmittableResult } from '@polkadot/types/types';
+import BigNumber from 'bignumber.js';
+import dayjs from 'dayjs';
 
 import { Asset, CheckpointSchedule, Context, PolymeshError, Procedure } from '~/internal';
-import { CreateCheckpointScheduleParams, ErrorCode, TxTags } from '~/types';
+import {
+  CalendarPeriod,
+  CalendarUnit,
+  CreateCheckpointScheduleParams,
+  ErrorCode,
+  TxTags,
+} from '~/types';
 import { ExtrinsicParams, ProcedureAuthorization, TransactionSpec } from '~/types/internal';
 import {
+  datesToScheduleCheckpoints,
+  momentToDate,
   scheduleSpecToMeshScheduleSpec,
   storedScheduleToCheckpointScheduleParams,
   stringToTicker,
+  u64ToBigNumber,
 } from '~/utils/conversion';
 import { filterEventRecords } from '~/utils/internal';
 
@@ -17,10 +28,55 @@ export type Params = CreateCheckpointScheduleParams & {
   ticker: string;
 };
 
+const calculatePoints = (start: Date, reps: number, period: CalendarPeriod): Date[] => {
+  const dates = [start];
+
+  const { unit, amount } = period;
+
+  let nextDay = dayjs(start);
+  for (let i = 0; i < reps; i++) {
+    nextDay = nextDay.add(amount.toNumber(), unit);
+
+    dates.push(nextDay.toDate());
+  }
+
+  return dates;
+};
+
 /**
  * @hidden
  */
 export const createCheckpointScheduleResolver =
+  (ticker: string, context: Context) =>
+  (receipt: ISubmittableResult): CheckpointSchedule => {
+    const [{ data }] = filterEventRecords(receipt, 'checkpoint', 'ScheduleCreated');
+    const rawId = data[2];
+    const id = u64ToBigNumber(rawId);
+
+    const rawPoints = data[3];
+    const points = [...rawPoints.pending].map(rawPoint => momentToDate(rawPoint));
+
+    return new CheckpointSchedule(
+      {
+        id,
+        ticker,
+        start: points[0],
+        nextCheckpointDate: points[0],
+        // Note: we provide a zero value instead of trying to infer
+        period: {
+          amount: new BigNumber(0),
+          unit: CalendarUnit.Second,
+        },
+        remaining: new BigNumber(points.length),
+      },
+      context
+    );
+  };
+
+/**
+ * @hidden
+ */
+export const legacyCreateCheckpointScheduleResolver =
   (ticker: string, context: Context) =>
   (receipt: ISubmittableResult): CheckpointSchedule => {
     const [{ data }] = filterEventRecords(receipt, 'checkpoint', 'ScheduleCreated');
@@ -54,14 +110,29 @@ export async function prepareCreateCheckpointSchedule(
     });
   }
 
-  const rawTicker = stringToTicker(ticker, context);
-  const rawSchedule = scheduleSpecToMeshScheduleSpec({ start, period, repetitions }, context);
+  if (context.isV5) {
+    const rawTicker = stringToTicker(ticker, context);
+    const rawSchedule = scheduleSpecToMeshScheduleSpec({ start, period, repetitions }, context);
 
-  return {
-    transaction: context.polymeshApi.tx.checkpoint.createSchedule,
-    args: [rawTicker, rawSchedule],
-    resolver: createCheckpointScheduleResolver(ticker, context),
-  };
+    return {
+      transaction: context.polymeshApi.tx.checkpoint.createSchedule,
+      args: [rawTicker, rawSchedule],
+      resolver: legacyCreateCheckpointScheduleResolver(ticker, context),
+    };
+  } else {
+    const startDate = start || new Date();
+    const reps = repetitions || new BigNumber(10);
+
+    const points = period ? calculatePoints(startDate, reps.toNumber(), period) : [startDate];
+
+    const rawTicker = stringToTicker(ticker, context);
+    const rawSchedule = datesToScheduleCheckpoints(points, context);
+    return {
+      transaction: context.polymeshApi.tx.checkpoint.createSchedule,
+      args: [rawTicker, rawSchedule],
+      resolver: createCheckpointScheduleResolver(ticker, context),
+    };
+  }
 }
 
 /**
