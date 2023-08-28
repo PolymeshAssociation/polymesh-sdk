@@ -416,7 +416,7 @@ interface ContextOptions {
   middlewareAvailable?: boolean;
   getMiddlewareMetadata?: MiddlewareMetadata;
   sentAuthorizations?: ResultSet<AuthorizationRequest>;
-  isArchiveNode?: boolean;
+  isCurrentNodeArchive?: boolean;
   ss58Format?: BigNumber;
   areSecondaryAccountsFrozen?: boolean;
   getDividendDistributionsForAssets?: DistributionWithDetails[];
@@ -734,7 +734,7 @@ const defaultContextOptions: ContextOptions = {
     next: new BigNumber(1),
     count: new BigNumber(1),
   },
-  isArchiveNode: true,
+  isCurrentNodeArchive: true,
   ss58Format: new BigNumber(42),
   getDividendDistributionsForAssets: [],
   areSecondaryAccountsFrozen: false,
@@ -858,7 +858,7 @@ function configureContext(opts: ContextOptions): void {
     isMiddlewareEnabled: jest.fn().mockReturnValue(opts.middlewareEnabled),
     isMiddlewareAvailable: jest.fn().mockResolvedValue(opts.middlewareAvailable),
     getMiddlewareMetadata: jest.fn().mockResolvedValue(opts.getMiddlewareMetadata),
-    isArchiveNode: opts.isArchiveNode,
+    isCurrentNodeArchive: jest.fn().mockResolvedValue(opts.isCurrentNodeArchive),
     ss58Format: opts.ss58Format,
     disconnect: jest.fn(),
     getDividendDistributionsForAssets: jest

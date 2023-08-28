@@ -15,6 +15,7 @@ import {
   CreateTransactionBatchProcedureMethod,
   ErrorCode,
   MiddlewareConfig,
+  PolkadotConfig,
   UnsubCallback,
 } from '~/types';
 import { bigNumberToU32, signerToString } from '~/utils/conversion';
@@ -32,9 +33,22 @@ import { Network } from './Network';
 import { Settlements } from './Settlements';
 
 export interface ConnectParams {
+  /**
+   * The websocket URL for the Polymesh node to connect to
+   */
   nodeUrl: string;
+  /**
+   * Handles signing of transactions. Required to be set before submitting transactions
+   */
   signingManager?: SigningManager;
+  /**
+   * Allows for historical data to be queried. Required for some methods to work
+   */
   middlewareV2?: MiddlewareConfig;
+  /**
+   * Advanced options that will be used with the underling polkadot.js instance
+   */
+  polkadot?: PolkadotConfig;
 }
 
 /**
@@ -128,11 +142,14 @@ export class Polymesh {
    * @param params.middlewareV2 - middleware V2 API URL (optional, used for historic queries)
    */
   static async connect(params: ConnectParams): Promise<Polymesh> {
-    const { nodeUrl, signingManager, middlewareV2 } = params;
+    const { nodeUrl, signingManager, middlewareV2, polkadot } = params;
     let context: Context;
     let polymeshApi: ApiPromise;
 
-    await assertExpectedChainVersion(nodeUrl);
+    const { metadata, noInitWarn, typesBundle } = polkadot || {};
+
+    // Defer `await` on any checks to minimize total startup time
+    const requiredChecks: Promise<void>[] = [assertExpectedChainVersion(nodeUrl)];
 
     try {
       const { types, rpc, signedExtensions } = schema;
@@ -142,8 +159,10 @@ export class Polymesh {
         types,
         rpc,
         signedExtensions,
+        metadata,
+        noInitWarn,
+        typesBundle,
       });
-
       context = await Context.create({
         polymeshApi,
         middlewareApiV2: createMiddlewareApi(middlewareV2),
@@ -160,28 +179,35 @@ export class Polymesh {
     }
 
     if (middlewareV2) {
-      let metadata = null;
-      try {
-        metadata = await context.getMiddlewareMetadata();
-      } catch (err) {
-        throw new PolymeshError({
-          code: ErrorCode.FatalError,
-          message: 'Could not query for middleware V2 metadata',
-        });
-      }
+      let middlewareMetadata = null;
+      let genesisHash;
 
-      const rawGenesisBlock = bigNumberToU32(new BigNumber(0), context);
-      const genesisHash = await polymeshApi.rpc.chain.getBlockHash(rawGenesisBlock);
+      const checkMiddleware = async (): Promise<void> => {
+        try {
+          const rawGenesisBlock = bigNumberToU32(new BigNumber(0), context);
+          [middlewareMetadata, genesisHash] = await Promise.all([
+            context.getMiddlewareMetadata(),
+            polymeshApi.rpc.chain.getBlockHash(rawGenesisBlock),
+          ]);
+        } catch (err) {
+          throw new PolymeshError({
+            code: ErrorCode.FatalError,
+            message: 'Could not query for middleware V2 metadata',
+          });
+        }
 
-      if (!metadata || metadata.genesisHash !== genesisHash.toString()) {
-        throw new PolymeshError({
-          code: ErrorCode.FatalError,
-          message: 'Middleware V2 URL is for a different chain than the given node URL',
-        });
-      }
+        if (!middlewareMetadata || middlewareMetadata.genesisHash !== genesisHash.toString()) {
+          throw new PolymeshError({
+            code: ErrorCode.FatalError,
+            message: 'Middleware V2 URL is for a different chain than the given node URL',
+          });
+        }
+      };
 
-      await assertExpectedSqVersion(context);
+      requiredChecks.push(checkMiddleware(), assertExpectedSqVersion(context));
     }
+
+    await Promise.all(requiredChecks);
 
     return new Polymesh(context);
   }
