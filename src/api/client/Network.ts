@@ -287,8 +287,8 @@ export class Network {
       } = transaction;
 
       const txTag = extrinsicIdentifierToTxTag({
-        moduleId: moduleId,
-        callId: callId,
+        moduleId,
+        callId,
       });
 
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

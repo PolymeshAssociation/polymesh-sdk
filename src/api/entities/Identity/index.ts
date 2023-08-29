@@ -689,7 +689,7 @@ export class Identity extends Entity<UniqueIdentifiers, string> {
       assets = [...assets, ...data];
     }
 
-    const distributions = await this.context.getDividendDistributionsForAssets({ assets: assets });
+    const distributions = await this.context.getDividendDistributionsForAssets({ assets });
 
     const now = new Date();
 
