@@ -146,7 +146,7 @@ export class Polymesh {
     let context: Context;
     let polymeshApi: ApiPromise;
 
-    const { metadata, noInitWarn, typesBundle } = polkadot || {};
+    const { metadata, noInitWarn, typesBundle } = polkadot ?? {};
 
     // Defer `await` on any checks to minimize total startup time
     const requiredChecks: Promise<void>[] = [assertExpectedChainVersion(nodeUrl)];
