@@ -338,52 +338,11 @@ function cloneReceipt(receipt: ISubmittableResult, events: EventRecord[]): ISubm
  *
  * @note this function does not mutate the original receipt
  */
-export function sliceBatchReceipt(
-  receipt: ISubmittableResult,
-  from: number,
-  to: number
-): ISubmittableResult {
-  const [
-    {
-      data: [rawEventsPerExtrinsic],
-    },
-  ] = filterEventRecords(receipt, 'utility', 'BatchCompletedOld');
+export function sliceBatchReceipt(receipt: ISubmittableResult): ISubmittableResult {
+  // check for "BatchCompleted" if not will throw an error
+  filterEventRecords(receipt, 'utility', 'BatchCompleted');
 
-  if (rawEventsPerExtrinsic.length < to || from < 0) {
-    throw new PolymeshError({
-      code: ErrorCode.UnexpectedError,
-      message: 'Transaction index range out of bounds. Please report this to the Polymesh team',
-      data: {
-        to,
-        from,
-      },
-    });
-  }
-
-  const { events } = receipt;
-
-  const eventsPerExtrinsic = rawEventsPerExtrinsic.map(u32ToBigNumber);
-  const clonedEvents = [...events];
-
-  const slicedEvents: EventRecord[] = [];
-
-  /*
-   * For each extrinsic, we remove the first N events from the original receipt, where N is the amount
-   * of events emitted for that extrinsic according to the `BatchCompleted` event's data. If the extrinsic is in the desired range,
-   * we add the removed events to the cloned receipt. Otherwise we ignore them
-   *
-   * The order of events in the receipt is such that the events of all extrinsics in the batch come first (in the same order
-   * in which the extrinsics were added to the batch), and then come the events related to the batch itself
-   */
-  eventsPerExtrinsic.forEach((n, index) => {
-    const removedEvents = clonedEvents.splice(0, n.toNumber());
-
-    if (index >= from && index < to) {
-      slicedEvents.push(...removedEvents);
-    }
-  });
-
-  return cloneReceipt(receipt, slicedEvents);
+  return receipt;
 }
 
 /**

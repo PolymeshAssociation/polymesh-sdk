@@ -33,6 +33,7 @@ import {
   InputTargets,
   InputTaxWithholding,
   InputTrustedClaimIssuer,
+  KnownAssetType,
   KnownNftType,
   MetadataSpec,
   MetadataType,
@@ -295,7 +296,7 @@ export interface CreateAssetParams {
    *   {@link types!KnownAssetType} enum, but custom values can be used as well. Custom values must be registered on-chain the first time
    *   they're used, requiring an additional transaction. They aren't tied to a specific Asset
    */
-  assetType: string;
+  assetType: KnownAssetType | string;
   /**
    * array of domestic or international alphanumeric security identifiers for the Asset (e.g. ISIN, CUSIP, FIGI)
    */

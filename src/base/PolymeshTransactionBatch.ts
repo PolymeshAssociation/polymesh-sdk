@@ -93,7 +93,7 @@ export class PolymeshTransactionBatch<
       },
     } = this;
 
-    return utility.batchAtomic(
+    return utility.batchAll(
       this.transactionData.map(({ transaction, args }) => transaction(...args))
     );
   }
@@ -242,7 +242,7 @@ export class PolymeshTransactionBatch<
     receipt: ISubmittableResult
   ): void {
     // If one of the transactions in the batch fails, this event gets emitted
-    const [failed] = filterEventRecords(receipt, 'utility', 'BatchInterruptedOld', true);
+    const [failed] = filterEventRecords(receipt, 'utility', 'BatchInterrupted', true);
 
     if (failed) {
       const {

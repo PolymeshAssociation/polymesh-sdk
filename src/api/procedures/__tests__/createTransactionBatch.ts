@@ -117,7 +117,7 @@ describe('createTransactionBatch procedure', () => {
 
       expect(boundFunc()).toEqual({
         permissions: {
-          transactions: [...tags, TxTags.utility.BatchAtomic],
+          transactions: [...tags, TxTags.utility.BatchAll],
         },
       });
     });

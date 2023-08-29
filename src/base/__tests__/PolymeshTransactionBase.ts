@@ -109,7 +109,7 @@ describe('Polymesh Transaction Base class', () => {
     });
 
     it('should execute the underlying transaction with the provided arguments, setting the tx and block hash when finished', async () => {
-      const transaction = dsMockUtils.createTxMock('utility', 'batchAtomic', {
+      const transaction = dsMockUtils.createTxMock('utility', 'batchAll', {
         autoResolve: false,
       });
       const underlyingTx = dsMockUtils.createTxMock('asset', 'registerTicker');
@@ -149,7 +149,7 @@ describe('Polymesh Transaction Base class', () => {
     });
 
     it('should update the transaction status', async () => {
-      const transaction = dsMockUtils.createTxMock('utility', 'batchAtomic', {
+      const transaction = dsMockUtils.createTxMock('utility', 'batchAll', {
         autoResolve: false,
       });
       const args = tuple('ANOTHER_TICKER');
@@ -703,7 +703,7 @@ describe('Polymesh Transaction Base class', () => {
     it('should fetch (if missing) and return transaction fees', async () => {
       const tx1 = dsMockUtils.createTxMock('asset', 'registerTicker', { gas: rawGasFees[0] });
       const tx2 = dsMockUtils.createTxMock('asset', 'createAsset', { gas: rawGasFees[1] });
-      dsMockUtils.createTxMock('utility', 'batchAtomic', { gas: rawGasFees[1] });
+      dsMockUtils.createTxMock('utility', 'batchAll', { gas: rawGasFees[1] });
 
       const args = tuple('OH_GOD_NO_IT_IS_BACK');
 
