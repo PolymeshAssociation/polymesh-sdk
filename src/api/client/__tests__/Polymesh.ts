@@ -128,6 +128,25 @@ describe('Polymesh Class', () => {
       expect(createMock).toHaveBeenCalledTimes(1);
     });
 
+    it('should instantiate Context with Polkadot config and return  Polymesh instance', async () => {
+      const createMock = dsMockUtils.getContextCreateMock();
+
+      const metadata = {
+        someHashAndVersion: '0x00',
+      } as const;
+
+      const polkadot = {
+        metadata,
+      };
+
+      await Polymesh.connect({
+        nodeUrl: 'wss://some.url',
+        polkadot,
+      });
+
+      expect(createMock).toHaveBeenCalledTimes(1);
+    });
+
     it('should throw if the Polymesh version does not satisfy the supported version range', async () => {
       const error = new PolymeshError({
         code: ErrorCode.FatalError,
