@@ -6,7 +6,6 @@ import {
 } from '@apollo/client/core';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import { SigningManager } from '@polymeshassociation/signing-manager-types';
-import BigNumber from 'bignumber.js';
 import fetch from 'cross-fetch';
 import schema from 'polymesh-types/schema';
 
@@ -18,7 +17,7 @@ import {
   PolkadotConfig,
   UnsubCallback,
 } from '~/types';
-import { bigNumberToU32, signerToString } from '~/utils/conversion';
+import { signerToString } from '~/utils/conversion';
 import {
   assertExpectedChainVersion,
   assertExpectedSqVersion,
