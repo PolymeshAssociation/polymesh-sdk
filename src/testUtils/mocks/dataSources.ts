@@ -202,6 +202,7 @@ function createApi(): Mutable<ApiPromise> & EventEmitter {
       apiEmitter.off(event, listener),
     disconnect: jest.fn() as () => Promise<void>,
     setSigner: jest.fn() as (signer: PolkadotSigner) => void,
+    genesisHash: { toString: jest.fn().mockReturnValue('someGenesisHash') } as unknown as Hash,
   } as Mutable<ApiPromise> & EventEmitter;
 }
 

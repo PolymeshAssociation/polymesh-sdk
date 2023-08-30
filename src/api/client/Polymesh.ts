@@ -180,15 +180,10 @@ export class Polymesh {
 
     if (middlewareV2) {
       let middlewareMetadata = null;
-      let genesisHash;
 
       const checkMiddleware = async (): Promise<void> => {
         try {
-          const rawGenesisBlock = bigNumberToU32(new BigNumber(0), context);
-          [middlewareMetadata, genesisHash] = await Promise.all([
-            context.getMiddlewareMetadata(),
-            polymeshApi.rpc.chain.getBlockHash(rawGenesisBlock),
-          ]);
+          middlewareMetadata = await context.getMiddlewareMetadata();
         } catch (err) {
           throw new PolymeshError({
             code: ErrorCode.FatalError,
@@ -196,7 +191,10 @@ export class Polymesh {
           });
         }
 
-        if (!middlewareMetadata || middlewareMetadata.genesisHash !== genesisHash.toString()) {
+        if (
+          !middlewareMetadata ||
+          middlewareMetadata.genesisHash !== polymeshApi.genesisHash.toString()
+        ) {
           throw new PolymeshError({
             code: ErrorCode.FatalError,
             message: 'Middleware V2 URL is for a different chain than the given node URL',
