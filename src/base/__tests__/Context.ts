@@ -816,6 +816,8 @@ describe('Context class', () => {
         middlewareApiV2: dsMockUtils.getMiddlewareApi(),
       });
 
+      jest.spyOn(context, 'isCurrentNodeArchive').mockResolvedValue(true);
+
       const rawProtocolOp = dsMockUtils.createMockProtocolOp('AssetCreateAsset');
       rawProtocolOp.eq = jest.fn();
       when(rawProtocolOp.eq).calledWith(rawProtocolOp).mockReturnValue(true);
@@ -853,7 +855,6 @@ describe('Context class', () => {
 
       expect(result).toEqual(mockResult);
 
-      context.isArchiveNode = true;
       result = await context.getProtocolFees({ tags, blockHash: '0x000' });
       expect(getAtMock()).toHaveBeenCalledTimes(1);
       expect(result).toEqual(mockResult);
@@ -2102,6 +2103,82 @@ describe('Context class', () => {
       expect(result.data).toEqual([]);
       expect(result.count).toEqual(new BigNumber(0));
       expect(result.next).toBeNull();
+    });
+  });
+
+  describe('method: isCurrentNodeArchive', () => {
+    afterAll(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should return true if node is archive', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+      });
+
+      dsMockUtils.createQueryMock('system', 'blockHash', { returnValue: 'fakeHash' });
+
+      when(jest.spyOn(context.polymeshApi, 'at'))
+        .calledWith('fakeHash')
+        .mockResolvedValueOnce({
+          query: {
+            balances: {
+              totalIssuance: jest
+                .fn()
+                .mockResolvedValue(dsMockUtils.createMockU128(new BigNumber(10000))),
+            },
+          },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any);
+
+      let result = await context.isCurrentNodeArchive();
+
+      expect(result).toEqual(true);
+
+      // should read cached value
+      result = await context.isCurrentNodeArchive();
+
+      expect(result).toEqual(true);
+    });
+
+    it('should return false if node is archive', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+      });
+
+      dsMockUtils.createQueryMock('system', 'blockHash', { returnValue: 'fakeHash' });
+
+      when(jest.spyOn(context.polymeshApi, 'at'))
+        .calledWith('fakeHash')
+        .mockResolvedValueOnce({
+          query: {
+            balances: {
+              totalIssuance: jest
+                .fn()
+                .mockResolvedValue(dsMockUtils.createMockU128(new BigNumber(0))),
+            },
+          },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any);
+
+      const result = await context.isCurrentNodeArchive();
+
+      expect(result).toEqual(false);
+    });
+
+    it('should return false if there is an error', async () => {
+      const context = await Context.create({
+        polymeshApi: dsMockUtils.getApiInstance(),
+        middlewareApiV2: dsMockUtils.getMiddlewareApi(),
+      });
+
+      dsMockUtils.createQueryMock('system', 'blockHash').mockRejectedValue('fakeError');
+
+      const result = await context.isCurrentNodeArchive();
+
+      expect(result).toEqual(false);
     });
   });
 });
